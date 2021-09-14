@@ -22,12 +22,12 @@ use tracing::instrument;
 
 use super::{
     EditableText, ImeHandlerRef, ImeInvalidation, InputHandler, Movement, Selection, TextAction,
-    TextLayout, TextStorage,
+    TextLayout, TextStorage, TextAlignment,
 };
 use crate::kurbo::{Line, Point, Rect, Vec2};
 use crate::piet::TextLayout as _;
 use crate::widget::prelude::*;
-use crate::{text, theme, Cursor, Env, Modifiers, Selector, TextAlignment, UpdateCtx};
+use crate::{text, theme, Cursor, Env, Modifiers, Selector, UpdateCtx};
 
 /// A widget that accepts text input.
 ///

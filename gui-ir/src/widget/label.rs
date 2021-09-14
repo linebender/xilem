@@ -21,11 +21,10 @@ use druid_shell::Cursor;
 
 use crate::debug_state::DebugState;
 use crate::kurbo::Vec2;
-use crate::text::TextStorage;
+use crate::text::{TextStorage, TextAlignment, TextLayout};
 use crate::widget::prelude::*;
 use crate::{
-    ArcStr, Color, Data, FontDescriptor, KeyOrValue, LocalizedString, Point, TextAlignment,
-    TextLayout,
+    ArcStr, Color, Data, FontDescriptor, KeyOrValue, LocalizedString, Point,
 };
 use tracing::{instrument, trace};
 

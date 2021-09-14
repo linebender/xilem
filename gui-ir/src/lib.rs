@@ -101,12 +101,7 @@ pub use win_handler::DruidHandler;
 pub use window::{Window, WindowId};
 
 #[deprecated(since = "0.8.0", note = "import from druid::text module instead")]
-pub use piet::{FontFamily, FontStyle, FontWeight, TextAlignment};
-#[deprecated(since = "0.8.0", note = "import from druid::text module instead")]
-pub use text::{ArcStr, FontDescriptor, TextLayout};
-
-#[cfg(not(target_arch = "wasm32"))]
-pub(crate) use event::{DebugStateCell, StateCell, StateCheckFn};
+pub use text::{ArcStr, FontDescriptor};
 
 /// The meaning (mapped value) of a keypress.
 ///

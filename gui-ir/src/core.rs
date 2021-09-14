@@ -21,12 +21,12 @@ use crate::bloom::Bloom;
 use crate::command::sys::{CLOSE_WINDOW};
 use crate::contexts::ContextState;
 use crate::kurbo::{Affine, Insets, Point, Rect, Shape, Size, Vec2};
-use crate::text::TextFieldRegistration;
+use crate::text::{TextFieldRegistration, TextLayout};
 use crate::util::ExtendDrain;
 use crate::{
     ArcStr, BoxConstraints, Color, Command, Cursor, Data, Env, Event, EventCtx, InternalEvent,
     InternalLifeCycle, LayoutCtx, LifeCycle, LifeCycleCtx, Notification, PaintCtx, Region,
-    RenderContext, Target, TextLayout, TimerToken, UpdateCtx, Widget, WidgetId, WindowId,
+    RenderContext, Target, TimerToken, UpdateCtx, Widget, WidgetId, WindowId,
 };
 
 /// Our queue type
@@ -831,7 +831,7 @@ impl<T: Data, W: Widget<T>> WidgetPod<T, W> {
             };
             let inner_event = modified_event.as_ref().unwrap_or(event);
             inner_ctx.widget_state.has_active = false;
-            
+
             self.inner.event(&mut inner_ctx, inner_event, data, env);
 
             inner_ctx.widget_state.has_active |= inner_ctx.widget_state.is_active;
@@ -963,32 +963,6 @@ impl<T: Data, W: Widget<T>> WidgetPod<T, W> {
                 InternalLifeCycle::ParentWindowOrigin => {
                     self.state.parent_window_origin = ctx.widget_state.window_origin();
                     self.state.needs_window_origin = false;
-                    true
-                }
-                InternalLifeCycle::DebugRequestState { widget, state_cell } => {
-                    if *widget == self.id() {
-                        state_cell.set(self.state.clone());
-                        false
-                    } else {
-                        // Recurse when the target widget could be our descendant.
-                        // The bloom filter we're checking can return false positives.
-                        self.state.children.may_contain(widget)
-                    }
-                }
-                InternalLifeCycle::DebugRequestDebugState { widget, state_cell } => {
-                    if *widget == self.id() {
-                        if let Some(data) = &self.old_data {
-                            state_cell.set(self.inner.debug_state(data));
-                        }
-                        false
-                    } else {
-                        // Recurse when the target widget could be our descendant.
-                        // The bloom filter we're checking can return false positives.
-                        self.state.children.may_contain(widget)
-                    }
-                }
-                InternalLifeCycle::DebugInspectState(f) => {
-                    f.call(&self.state);
                     true
                 }
             },

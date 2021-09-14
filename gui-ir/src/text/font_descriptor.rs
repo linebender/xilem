@@ -14,7 +14,8 @@
 
 //! Font attributes
 
-use crate::{Data, FontFamily, FontStyle, FontWeight};
+use crate::{Data};
+use crate::piet::{FontFamily, FontStyle, FontWeight};
 
 /// A collection of attributes that describe a font.
 ///
