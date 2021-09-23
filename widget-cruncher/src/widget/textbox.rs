@@ -17,7 +17,7 @@
 use std::time::Duration;
 use tracing::{instrument, trace};
 
-use crate::debug_state::DebugState;
+
 use crate::kurbo::Insets;
 use crate::piet::TextLayout as _;
 use crate::text::{
@@ -532,28 +532,6 @@ impl<T: TextStorage + EditableText> Widget<T> for TextBox<T> {
         self.inner.lifecycle(ctx, event, data, env);
     }
 
-    #[instrument(name = "TextBox", level = "trace", skip(self, ctx, old, data, env))]
-    fn update(&mut self, ctx: &mut UpdateCtx, old: &T, data: &T, env: &Env) {
-        let placeholder_changed = self.placeholder_text.resolve(data, env);
-        if placeholder_changed {
-            let new_text = self.placeholder_text.display_text();
-            self.placeholder_layout.set_text(new_text);
-        }
-
-        self.inner.update(ctx, old, data, env);
-        if placeholder_changed
-            || (ctx.env_changed() && self.placeholder_layout.needs_rebuild_after_update(ctx))
-        {
-            ctx.request_layout();
-        }
-        if self.text().can_write() {
-            if let Some(ime_invalidation) = self.text_mut().borrow_mut().pending_ime_invalidation()
-            {
-                ctx.invalidate_text_input(ime_invalidation);
-            }
-        }
-    }
-
     #[instrument(name = "TextBox", level = "trace", skip(self, ctx, bc, data, env))]
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, data: &T, env: &Env) -> Size {
         if !self.text().can_write() {
@@ -673,14 +651,6 @@ impl<T: TextStorage + EditableText> Widget<T> for TextBox<T> {
         ctx.stroke(clip_rect, &border_color, border_width);
     }
 
-    fn debug_state(&self, data: &T) -> DebugState {
-        let text = data.slice(0..data.len()).unwrap_or_default();
-        DebugState {
-            display_name: self.short_type_name().to_string(),
-            main_value: text.to_string(),
-            ..Default::default()
-        }
-    }
 }
 
 impl<T: TextStorage + EditableText> Default for TextBox<T> {

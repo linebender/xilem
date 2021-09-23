@@ -50,7 +50,6 @@ mod command;
 mod contexts;
 mod core;
 mod data;
-pub mod debug_state;
 mod dialog;
 pub mod env;
 mod event;

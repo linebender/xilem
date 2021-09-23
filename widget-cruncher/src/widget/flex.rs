@@ -14,7 +14,7 @@
 
 //! A widget that arranges its children in a one-dimensional array.
 
-use crate::debug_state::DebugState;
+
 use crate::kurbo::{common::FloatExt, Vec2};
 use crate::widget::prelude::*;
 use crate::{Data, KeyOrValue, Point, Rect, WidgetPod};
@@ -640,21 +640,6 @@ impl<T: Data> Widget<T> for Flex<T> {
         }
     }
 
-    #[instrument(name = "Flex", level = "trace", skip(self, ctx, _old_data, data, env))]
-    fn update(&mut self, ctx: &mut UpdateCtx, _old_data: &T, data: &T, env: &Env) {
-        for child in self.children.iter_mut() {
-            match child {
-                Child::Fixed { widget, .. } | Child::Flex { widget, .. } => {
-                    widget.update(ctx, data, env)
-                }
-                Child::FixedSpacer(key_or_val, _) if ctx.env_key_changed(key_or_val) => {
-                    ctx.request_layout()
-                }
-                _ => {}
-            }
-        }
-    }
-
     #[instrument(name = "Flex", level = "trace", skip(self, ctx, bc, data, env))]
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, data: &T, env: &Env) -> Size {
         bc.debug_check("Flex");
@@ -878,22 +863,6 @@ impl<T: Data> Widget<T> for Flex<T> {
         }
     }
 
-    fn debug_state(&self, data: &T) -> DebugState {
-        let children_state = self
-            .children
-            .iter()
-            .map(|child| {
-                let child_widget_pod = child.widget()?;
-                Some(child_widget_pod.widget().debug_state(data))
-            })
-            .flatten()
-            .collect();
-        DebugState {
-            display_name: self.short_type_name().to_string(),
-            children: children_state,
-            ..Default::default()
-        }
-    }
 }
 
 impl CrossAxisAlignment {

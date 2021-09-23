@@ -14,7 +14,7 @@
 
 //! A checkbox widget.
 
-use crate::debug_state::DebugState;
+
 use crate::kurbo::{BezPath, Size};
 use crate::piet::{LineCap, LineJoin, LinearGradient, RenderContext, StrokeStyle, UnitPoint};
 use crate::theme;
@@ -76,16 +76,6 @@ impl Widget<bool> for Checkbox {
         if let LifeCycle::HotChanged(_) | LifeCycle::DisabledChanged(_) = event {
             ctx.request_paint();
         }
-    }
-
-    #[instrument(
-        name = "CheckBox",
-        level = "trace",
-        skip(self, ctx, old_data, data, env)
-    )]
-    fn update(&mut self, ctx: &mut UpdateCtx, old_data: &bool, data: &bool, env: &Env) {
-        self.child_label.update(ctx, old_data, data, env);
-        ctx.request_paint();
     }
 
     #[instrument(name = "CheckBox", level = "trace", skip(self, ctx, bc, data, env))]
@@ -161,16 +151,4 @@ impl Widget<bool> for Checkbox {
         self.child_label.draw_at(ctx, (size + x_padding, 0.0));
     }
 
-    fn debug_state(&self, data: &bool) -> DebugState {
-        let display_value = if *data {
-            format!("[X] {}", self.child_label.text())
-        } else {
-            format!("[_] {}", self.child_label.text())
-        };
-        DebugState {
-            display_name: self.short_type_name().to_string(),
-            main_value: display_value,
-            ..Default::default()
-        }
-    }
 }

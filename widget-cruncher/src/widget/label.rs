@@ -19,7 +19,7 @@ use std::sync::Arc;
 
 use druid_shell::Cursor;
 
-use crate::debug_state::DebugState;
+
 use crate::kurbo::Vec2;
 use crate::text::{TextStorage, TextAlignment, TextLayout};
 use crate::widget::prelude::*;
@@ -502,20 +502,6 @@ impl<T: Data> Widget<T> for Label<T> {
             .lifecycle(ctx, event, &self.text.display_text(), env);
     }
 
-    #[instrument(name = "Label", level = "trace", skip(self, ctx, _old_data, data, env))]
-    fn update(&mut self, ctx: &mut UpdateCtx, _old_data: &T, data: &T, env: &Env) {
-        let data_changed = self.text.resolve(data, env);
-        self.text_should_be_updated = false;
-        if data_changed {
-            let new_text = self.text.display_text();
-            self.label.update(ctx, &self.current_text, &new_text, env);
-            self.current_text = new_text;
-        } else if ctx.env_changed() {
-            self.label
-                .update(ctx, &self.current_text, &self.current_text, env);
-        }
-    }
-
     #[instrument(name = "Label", level = "trace", skip(self, ctx, bc, _data, env))]
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, _data: &T, env: &Env) -> Size {
         self.label.layout(ctx, bc, &self.current_text, env)
@@ -529,13 +515,6 @@ impl<T: Data> Widget<T> for Label<T> {
         self.label.paint(ctx, &self.current_text, env)
     }
 
-    fn debug_state(&self, _data: &T) -> DebugState {
-        DebugState {
-            display_name: self.short_type_name().to_string(),
-            main_value: self.current_text.to_string(),
-            ..Default::default()
-        }
-    }
 }
 
 impl<T: TextStorage> Widget<T> for RawLabel<T> {
@@ -583,21 +562,6 @@ impl<T: TextStorage> Widget<T> for RawLabel<T> {
                 ctx.request_layout();
             }
             _ => {}
-        }
-    }
-
-    #[instrument(
-        name = "RawLabel",
-        level = "trace",
-        skip(self, ctx, old_data, data, _env)
-    )]
-    fn update(&mut self, ctx: &mut UpdateCtx, old_data: &T, data: &T, _env: &Env) {
-        if !old_data.same(data) {
-            self.layout.set_text(data.clone());
-            ctx.request_layout();
-        }
-        if self.layout.needs_rebuild_after_update(ctx) {
-            ctx.request_layout();
         }
     }
 

@@ -1083,51 +1083,6 @@ impl<T: Data, W: Widget<T>> WidgetPod<T, W> {
 
         ctx.widget_state.merge_up(&mut self.state);
     }
-
-    /// Propagate a data update.
-    ///
-    /// Generally called by container widgets as part of their [`update`]
-    /// method.
-    ///
-    /// [`update`]: trait.Widget.html#tymethod.update
-    pub fn update(&mut self, ctx: &mut UpdateCtx, data: &T, env: &Env) {
-        if !self.state.request_update {
-            match (self.old_data.as_ref(), self.env.as_ref()) {
-                (Some(d), Some(e)) if d.same(data) && e.same(env) => {
-                    trace!("data and env are unchanged, returning early.");
-                    return;
-                }
-                (Some(_), None) => self.env = Some(env.clone()),
-                (None, _) => {
-                    debug_panic!(
-                        "{:?} is receiving an update without having first received WidgetAdded.",
-                        self.id()
-                    );
-                    return;
-                }
-                (Some(_), Some(_)) => {}
-            }
-        }
-
-        let data_changed =
-            self.old_data.is_none() || self.old_data.as_ref().filter(|p| !p.same(data)).is_some();
-
-        let prev_env = self.env.as_ref().filter(|p| !p.same(env));
-        let mut child_ctx = UpdateCtx {
-            state: ctx.state,
-            widget_state: &mut self.state,
-            prev_env,
-            env,
-        };
-
-        self.inner
-            .update(&mut child_ctx, self.old_data.as_ref().unwrap(), data, env);
-        self.old_data = Some(data.clone());
-        self.env = Some(env.clone());
-
-        self.state.request_update = false;
-        ctx.widget_state.merge_up(&mut self.state);
-    }
 }
 
 impl<T, W: Widget<T> + 'static> WidgetPod<T, W> {

@@ -400,16 +400,13 @@ impl<T: TextStorage + EditableText> Widget<T> for TextComponent<T> {
         }
     }
 
-    #[instrument(
-        name = "InputComponent",
-        level = "trace",
-        skip(self, ctx, _old, data, env)
-    )]
+    /*
     fn update(&mut self, ctx: &mut UpdateCtx, _old: &T, data: &T, env: &Env) {
         if self.can_write() {
             self.borrow_mut().update(ctx, data, env);
         }
     }
+    */
 
     #[instrument(
         name = "InputComponent",

@@ -411,6 +411,7 @@ impl<T: Data> InnerAppState<T> {
     }
 
     fn do_update(&mut self) {
+        /*
         // we send `update` to all windows, not just the active one:
         for window in self.windows.iter_mut() {
             window.update(&mut self.command_queue, &self.data, &self.env);
@@ -424,6 +425,7 @@ impl<T: Data> InnerAppState<T> {
             }
         }
         self.invalidate_and_finalize();
+        */
     }
 
     /// invalidate any window handles that need it.

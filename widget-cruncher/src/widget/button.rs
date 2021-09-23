@@ -14,7 +14,7 @@
 
 //! A button widget.
 
-use crate::debug_state::DebugState;
+
 use crate::widget::prelude::*;
 use crate::widget::{Click, ControllerHost, Label, LabelText};
 use crate::{theme, Affine, Data, Insets, LinearGradient, UnitPoint};
@@ -141,11 +141,6 @@ impl<T: Data> Widget<T> for Button<T> {
         self.label.lifecycle(ctx, event, data, env)
     }
 
-    #[instrument(name = "Button", level = "trace", skip(self, ctx, old_data, data, env))]
-    fn update(&mut self, ctx: &mut UpdateCtx, old_data: &T, data: &T, env: &Env) {
-        self.label.update(ctx, old_data, data, env)
-    }
-
     #[instrument(name = "Button", level = "trace", skip(self, ctx, bc, data, env))]
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, data: &T, env: &Env) -> Size {
         bc.debug_check("Button");
@@ -219,11 +214,4 @@ impl<T: Data> Widget<T> for Button<T> {
         });
     }
 
-    fn debug_state(&self, _data: &T) -> DebugState {
-        DebugState {
-            display_name: self.short_type_name().to_string(),
-            main_value: self.label.text().to_string(),
-            ..Default::default()
-        }
-    }
 }
