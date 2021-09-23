@@ -60,6 +60,7 @@ pub enum Event {
     ///
     /// [`LifeCycle::WidgetAdded`]: enum.LifeCycle.html#variant.WidgetAdded
     WindowConnected,
+
     /// Sent to all widgets in a given window when the system requests to close the window.
     ///
     /// If the event is handled (with [`set_handled`]), the window will not be closed.
@@ -69,11 +70,13 @@ pub enum Event {
     ///
     /// [`set_handled`]: crate::EventCtx::set_handled
     WindowCloseRequested,
+
     /// Sent to all widgets in a given window when the system is going to close that window.
     ///
     /// This event means the window *will* go away; it is safe to dispose of resources and
     /// do any other cleanup.
     WindowDisconnected,
+
     /// Called on the root widget when the window size changes.
     ///
     /// Discussion: it's not obvious this should be propagated to user
@@ -81,10 +84,13 @@ pub enum Event {
     /// in the WindowPod, but after that it might be considered better
     /// to just handle it in `layout`.
     WindowSize(Size),
+
     /// Called when a mouse button is pressed.
     MouseDown(MouseEvent),
+
     /// Called when a mouse button is released.
     MouseUp(MouseEvent),
+
     /// Called when the mouse is moved.
     ///
     /// The `MouseMove` event is propagated to the active widget, if
@@ -100,21 +106,27 @@ pub enum Event {
     ///
     /// [`set_cursor`]: struct.EventCtx.html#method.set_cursor
     MouseMove(MouseEvent),
+
     /// Called when the mouse wheel or trackpad is scrolled.
     Wheel(MouseEvent),
+
     /// Called when a key is pressed.
     KeyDown(KeyEvent),
+
     /// Called when a key is released.
     ///
     /// Because of repeat, there may be a number `KeyDown` events before
     /// a corresponding `KeyUp` is sent.
     KeyUp(KeyEvent),
+
     /// Called when a paste command is received.
     Paste(Clipboard),
+
     /// Called when the trackpad is pinched.
     ///
     /// The value is a delta.
     Zoom(f64),
+
     /// Called on a timer event.
     ///
     /// Request a timer event through [`EventCtx::request_timer()`]. That will
@@ -126,6 +138,7 @@ pub enum Event {
     ///
     /// [`EventCtx::request_timer()`]: struct.EventCtx.html#method.request_timer
     Timer(TimerToken),
+
     /// Called at the beginning of a new animation frame.
     ///
     /// On the first frame when transitioning from idle to animating, `interval`
@@ -137,6 +150,7 @@ pub enum Event {
     /// intensive in response to an `AnimFrame` event: it might make Druid miss
     /// the monitor's refresh, causing lag or jerky animation.
     AnimFrame(u64),
+
     /// An event containing a [`Command`] to be handled by the widget.
     ///
     /// [`Command`]s are messages, optionally with attached data, that can
@@ -158,6 +172,7 @@ pub enum Event {
     /// [`ExtEventSink`]: crate::ExtEventSink
     /// [`MenuItem`]: crate::MenuItem
     Command(Command),
+
     /// A [`Notification`] from one of this widget's descendants.
     ///
     /// While handling events, widgets can submit notifications to be
@@ -176,6 +191,7 @@ pub enum Event {
     ///
     /// [`EventCtx::set_handled`]: crate::EventCtx::set_handled
     Notification(Notification),
+
     /// Sent to a widget when the platform may have mutated shared IME state.
     ///
     /// This is sent to a widget that has an attached IME session anytime the
@@ -185,6 +201,7 @@ pub enum Event {
     /// should check the shared state, perform invalidation, and update `Data`
     /// as necessary.
     ImeStateChange,
+
     /// Internal druid event.
     ///
     /// This should always be passed down to descendant [`WidgetPod`]s.
@@ -207,10 +224,13 @@ pub enum InternalEvent {
     /// This is used in cases when the platform no longer sends mouse events,
     /// but we know that we've stopped receiving the mouse events.
     MouseLeave,
+
     /// A command still in the process of being dispatched.
     TargetedCommand(Command),
+
     /// Used for routing timer events.
     RouteTimer(TimerToken, WidgetId),
+
     /// Route an IME change event.
     RouteImeStateChange(WidgetId),
 }
@@ -257,6 +277,7 @@ pub enum LifeCycle {
     /// [`WidgetPod`]: struct.WidgetPod.html
     /// [`LifeCycleCtx::register_for_focus`]: struct.LifeCycleCtx.html#method.register_for_focus
     WidgetAdded,
+
     /// Called when the [`Size`] of the widget changes.
     ///
     /// This will be called after [`Widget::layout`], if the [`Size`] returned
@@ -265,6 +286,7 @@ pub enum LifeCycle {
     /// [`Size`]: struct.Size.html
     /// [`Widget::layout`]: trait.Widget.html#tymethod.layout
     Size(Size),
+
     /// Called when the Disabled state of the widgets is changed.
     ///
     /// To check if a widget is disabled, see [`is_disabled`].
@@ -274,15 +296,18 @@ pub enum LifeCycle {
     /// [`is_disabled`]: crate::EventCtx::is_disabled
     /// [`set_disabled`]: crate::EventCtx::set_disabled
     DisabledChanged(bool),
+
     /// Called when the "hot" status changes.
     ///
     /// This will always be called _before_ the event that triggered it; that is,
+
     /// when the mouse moves over a widget, that widget will receive
     /// `LifeCycle::HotChanged` before it receives `Event::MouseMove`.
     ///
     /// See [`is_hot`](struct.EventCtx.html#method.is_hot) for
     /// discussion about the hot status.
     HotChanged(bool),
+
     /// This is called when the widget-tree changes and druid wants to rebuild the
     /// Focus-chain.
     ///
@@ -293,6 +318,7 @@ pub enum LifeCycle {
     /// [`focus_next`]: crate::EventCtx::focus_next
     /// [`focus_prev`]: crate::EventCtx::focus_prev
     BuildFocusChain,
+
     /// Called when the focus status changes.
     ///
     /// This will always be called immediately after a new widget gains focus.
@@ -303,6 +329,7 @@ pub enum LifeCycle {
     ///
     /// [`EventCtx::is_focused`]: struct.EventCtx.html#method.is_focused
     FocusChanged(bool),
+
     /// Internal druid lifecycle event.
     ///
     /// This should always be passed down to descendant [`WidgetPod`]s.
@@ -322,6 +349,7 @@ pub enum LifeCycle {
 pub enum InternalLifeCycle {
     /// Used to route the `WidgetAdded` event to the required widgets.
     RouteWidgetAdded,
+
     /// Used to route the `FocusChanged` event.
     RouteFocusChanged {
         /// the widget that is losing focus, if any
@@ -329,8 +357,10 @@ pub enum InternalLifeCycle {
         /// the widget that is gaining focus, if any
         new: Option<WidgetId>,
     },
+
     /// Used to route the `DisabledChanged` event to the required widgets.
     RouteDisabledChanged,
+
     /// The parents widget origin in window coordinate space has changed.
     ParentWindowOrigin,
 }
