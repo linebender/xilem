@@ -157,13 +157,6 @@ pub trait Widget<T> {
     fn paint(&mut self, ctx: &mut PaintCtx, data: &T, env: &Env);
 
     #[doc(hidden)]
-    /// Get the identity of the widget; this is basically only implemented by
-    /// `IdentityWrapper`. Widgets should not implement this on their own.
-    fn id(&self) -> Option<WidgetId> {
-        None
-    }
-
-    #[doc(hidden)]
     /// Get the (verbose) type name of the widget for debugging purposes.
     /// You should not override this method.
     fn type_name(&self) -> &'static str {
@@ -234,10 +227,6 @@ impl<T> Widget<T> for Box<dyn Widget<T>> {
 
     fn paint(&mut self, ctx: &mut PaintCtx, data: &T, env: &Env) {
         self.deref_mut().paint(ctx, data, env);
-    }
-
-    fn id(&self) -> Option<WidgetId> {
-        self.deref().id()
     }
 
     fn type_name(&self) -> &'static str {

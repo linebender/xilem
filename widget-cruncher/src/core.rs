@@ -191,7 +191,8 @@ impl<T, W: Widget<T>> WidgetPod<T, W> {
     /// so it can participate in layout and event flow. The process of
     /// adding a child widget to a container should call this method.
     pub fn new(inner: W) -> WidgetPod<T, W> {
-        let mut state = WidgetState::new(inner.id().unwrap_or_else(WidgetId::next), None);
+        // TODO - id argument
+        let mut state = WidgetState::new(WidgetId::next(), None);
         state.children_changed = true;
         state.needs_layout = true;
         WidgetPod {
