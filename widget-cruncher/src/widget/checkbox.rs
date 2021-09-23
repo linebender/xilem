@@ -42,7 +42,7 @@ impl Checkbox {
 
 impl Widget<bool> for Checkbox {
     #[instrument(name = "CheckBox", level = "trace", skip(self, ctx, event, data, _env))]
-    fn event(&mut self, ctx: &mut EventCtx, event: &Event, data: &mut bool, _env: &Env) {
+    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, data: &mut bool, _env: &Env) {
         match event {
             Event::MouseDown(_) => {
                 if !ctx.is_disabled() {

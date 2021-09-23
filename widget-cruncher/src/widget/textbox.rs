@@ -374,7 +374,7 @@ impl<T: TextStorage + EditableText> TextBox<T> {
 
 impl<T: TextStorage + EditableText> Widget<T> for TextBox<T> {
     #[instrument(name = "TextBox", level = "trace", skip(self, ctx, event, data, env))]
-    fn event(&mut self, ctx: &mut EventCtx, event: &Event, data: &mut T, env: &Env) {
+    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, data: &mut T, env: &Env) {
         match event {
             Event::Notification(cmd) => match cmd {
                 cmd if cmd.is(TextComponent::SCROLL_TO) => {
@@ -485,7 +485,7 @@ impl<T: TextStorage + EditableText> Widget<T> for TextBox<T> {
             }
             _ => (),
         }
-        self.inner.event(ctx, event, data, env)
+        self.inner.on_event(ctx, event, data, env)
     }
 
     #[instrument(name = "TextBox", level = "trace", skip(self, ctx, event, data, env))]

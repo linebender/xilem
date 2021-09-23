@@ -490,7 +490,7 @@ impl<T: Data> LabelText<T> {
 
 impl<T: Data> Widget<T> for Label<T> {
     #[instrument(name = "Label", level = "trace", skip(self, _ctx, _event, _data, _env))]
-    fn event(&mut self, _ctx: &mut EventCtx, _event: &Event, _data: &mut T, _env: &Env) {}
+    fn on_event(&mut self, _ctx: &mut EventCtx, _event: &Event, _data: &mut T, _env: &Env) {}
 
     #[instrument(name = "Label", level = "trace", skip(self, ctx, event, data, env))]
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, data: &T, env: &Env) {
@@ -523,7 +523,7 @@ impl<T: TextStorage> Widget<T> for RawLabel<T> {
         level = "trace",
         skip(self, ctx, event, _data, _env)
     )]
-    fn event(&mut self, ctx: &mut EventCtx, event: &Event, _data: &mut T, _env: &Env) {
+    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, _data: &mut T, _env: &Env) {
         match event {
             Event::MouseUp(event) => {
                 // Account for the padding

@@ -638,7 +638,7 @@ impl<T: Data, W: Widget<T>> WidgetPod<T, W> {
     /// the event.
     ///
     /// [`event`]: trait.Widget.html#tymethod.event
-    pub fn event(&mut self, ctx: &mut EventCtx, event: &Event, data: &mut T, env: &Env) {
+    pub fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, data: &mut T, env: &Env) {
         if !self.is_initialized() {
             debug_panic!(
                 "{:?}: event method called before receiving WidgetAdded.",
@@ -833,7 +833,7 @@ impl<T: Data, W: Widget<T>> WidgetPod<T, W> {
             let inner_event = modified_event.as_ref().unwrap_or(event);
             inner_ctx.widget_state.has_active = false;
 
-            self.inner.event(&mut inner_ctx, inner_event, data, env);
+            self.inner.on_event(&mut inner_ctx, inner_event, data, env);
 
             inner_ctx.widget_state.has_active |= inner_ctx.widget_state.is_active;
             ctx.is_handled |= inner_ctx.is_handled;
@@ -879,7 +879,7 @@ impl<T: Data, W: Widget<T>> WidgetPod<T, W> {
             // skip notifications that were submitted by our child
             if notification.source() != self_id {
                 let event = Event::Notification(notification);
-                self.inner.event(&mut inner_ctx, &event, data, env);
+                self.inner.on_event(&mut inner_ctx, &event, data, env);
                 if inner_ctx.is_handled {
                     inner_ctx.is_handled = false;
                 } else if let Event::Notification(notification) = event {

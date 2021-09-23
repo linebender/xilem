@@ -309,7 +309,8 @@ impl<T: Data> InnerAppState<T> {
         if let Some(win) = self.windows.get_mut(window_id) {
             win.prepare_paint(&mut self.command_queue, &mut self.data, &self.env);
         }
-        self.do_update();
+        //self.do_update();
+        self.invalidate_and_finalize();
     }
 
     fn paint(&mut self, window_id: WindowId, piet: &mut Piet, invalid: &Region) {
@@ -326,7 +327,8 @@ impl<T: Data> InnerAppState<T> {
 
     fn dispatch_cmd(&mut self, cmd: Command) -> Handled {
         let handled = self.delegate_cmd(&cmd);
-        self.do_update();
+        //self.do_update();
+        self.invalidate_and_finalize();
         if handled.is_handled() {
             return handled;
         }
@@ -514,7 +516,8 @@ impl<T: Data> AppState<T> {
     fn do_window_event(&mut self, event: Event, window_id: WindowId) -> Handled {
         let result = self.inner.borrow_mut().do_window_event(window_id, event);
         self.process_commands();
-        self.inner.borrow_mut().do_update();
+        //self.inner.borrow_mut().do_update();
+        self.inner.borrow_mut().invalidate_and_finalize();
         let ime_change = self.inner.borrow_mut().ime_focus_change.take();
         if let Some(ime_change) = ime_change {
             (ime_change)()
@@ -534,12 +537,14 @@ impl<T: Data> AppState<T> {
         match token {
             RUN_COMMANDS_TOKEN => {
                 self.process_commands();
-                self.inner.borrow_mut().do_update();
+                //self.inner.borrow_mut().do_update();
+                self.inner.borrow_mut().invalidate_and_finalize();
             }
             EXT_EVENT_IDLE_TOKEN => {
                 self.process_ext_events();
                 self.process_commands();
-                self.inner.borrow_mut().do_update();
+                //self.inner.borrow_mut().do_update();
+                self.inner.borrow_mut().invalidate_and_finalize();
             }
             other => tracing::warn!("unexpected idle token {:?}", other),
         }
@@ -548,7 +553,8 @@ impl<T: Data> AppState<T> {
     pub(crate) fn handle_idle_callback(&mut self, cb: impl FnOnce(&mut T)) {
         let mut inner = self.inner.borrow_mut();
         cb(&mut inner.data);
-        inner.do_update();
+        //inner.do_update();
+        inner.invalidate_and_finalize();
     }
 
     fn process_commands(&mut self) {
@@ -692,7 +698,8 @@ impl<T: Data> AppState<T> {
 
         std::mem::drop(inner);
         self.process_commands();
-        self.inner.borrow_mut().do_update();
+        //self.inner.borrow_mut().do_update();
+        self.inner.borrow_mut().invalidate_and_finalize();
     }
 
     fn new_window(&mut self, cmd: Command) -> Result<(), Box<dyn std::error::Error>> {
@@ -906,7 +913,8 @@ impl<T: Data> WinHandler for DruidHandler<T> {
         self.app_state
             .handle_cmd(sys_cmd::CLOSE_WINDOW.to(self.window_id));
         self.app_state.process_commands();
-        self.app_state.inner.borrow_mut().do_update();
+        //self.app_state.inner.borrow_mut().do_update();
+        self.app_state.inner.borrow_mut().invalidate_and_finalize();
     }
 
     fn destroy(&mut self) {

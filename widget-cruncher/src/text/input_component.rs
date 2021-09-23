@@ -270,7 +270,7 @@ impl<T: TextStorage + EditableText> Widget<T> for TextComponent<T> {
         level = "trace",
         skip(self, ctx, event, data, env)
     )]
-    fn event(&mut self, ctx: &mut EventCtx, event: &Event, data: &mut T, env: &Env) {
+    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, data: &mut T, env: &Env) {
         match event {
             Event::MouseDown(mouse) if self.can_write() && !ctx.is_disabled() => {
                 ctx.set_active(true);

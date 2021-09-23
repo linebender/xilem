@@ -627,9 +627,9 @@ impl<T: Data> Flex<T> {
 
 impl<T: Data> Widget<T> for Flex<T> {
     #[instrument(name = "Flex", level = "trace", skip(self, ctx, event, data, env))]
-    fn event(&mut self, ctx: &mut EventCtx, event: &Event, data: &mut T, env: &Env) {
+    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, data: &mut T, env: &Env) {
         for child in self.children.iter_mut().filter_map(|x| x.widget_mut()) {
-            child.event(ctx, event, data, env);
+            child.on_event(ctx, event, data, env);
         }
     }
 

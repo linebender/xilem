@@ -101,7 +101,7 @@ pub trait Widget<T> {
     /// [`Event`]: enum.Event.html
     /// [`EventCtx`]: struct.EventCtx.html
     /// [`Command`]: struct.Command.html
-    fn event(&mut self, ctx: &mut EventCtx, event: &Event, data: &mut T, env: &Env);
+    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, data: &mut T, env: &Env);
 
     /// Handle a life cycle notification.
     ///
@@ -213,8 +213,8 @@ impl WidgetId {
 }
 
 impl<T> Widget<T> for Box<dyn Widget<T>> {
-    fn event(&mut self, ctx: &mut EventCtx, event: &Event, data: &mut T, env: &Env) {
-        self.deref_mut().event(ctx, event, data, env)
+    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, data: &mut T, env: &Env) {
+        self.deref_mut().on_event(ctx, event, data, env)
     }
 
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, data: &T, env: &Env) {

@@ -246,7 +246,7 @@ impl<T: Data> Window<T> {
             {
                 let _span = info_span!("event");
                 let _span = _span.enter();
-                self.root.event(&mut ctx, &event, data, env);
+                self.root.on_event(&mut ctx, &event, data, env);
             }
 
             if !ctx.notifications.is_empty() {

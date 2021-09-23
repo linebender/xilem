@@ -105,7 +105,7 @@ impl<T: Data> Button<T> {
 
 impl<T: Data> Widget<T> for Button<T> {
     #[instrument(name = "Button", level = "trace", skip(self, ctx, event, _data, _env))]
-    fn event(&mut self, ctx: &mut EventCtx, event: &Event, _data: &mut T, _env: &Env) {
+    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, _data: &mut T, _env: &Env) {
         match event {
             Event::MouseDown(_) => {
                 if !ctx.is_disabled() {
