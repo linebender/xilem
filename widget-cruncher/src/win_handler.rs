@@ -424,8 +424,8 @@ impl<T: Data> InnerAppState<T> {
                 self.ime_focus_change = Some(f);
             }
         }
-        self.invalidate_and_finalize();
         */
+        self.invalidate_and_finalize();
     }
 
     /// invalidate any window handles that need it.

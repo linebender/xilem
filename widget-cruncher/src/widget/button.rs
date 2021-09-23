@@ -16,7 +16,7 @@
 
 
 use crate::widget::prelude::*;
-use crate::widget::{Click, ControllerHost, Label, LabelText};
+use crate::widget::{Label, LabelText};
 use crate::{theme, Affine, Data, Insets, LinearGradient, UnitPoint};
 use tracing::{instrument, trace};
 
@@ -101,14 +101,6 @@ impl<T: Data> Button<T> {
         let text: LabelText<T> = text.into();
         Button::new(text)
     }
-
-    /// Provide a closure to be called when this button is clicked.
-    pub fn on_click(
-        self,
-        f: impl Fn(&mut EventCtx, &mut T, &Env) + 'static,
-    ) -> ControllerHost<Self, Click<T>> {
-        ControllerHost::new(self, Click::new(f))
-    }
 }
 
 impl<T: Data> Widget<T> for Button<T> {
@@ -124,6 +116,7 @@ impl<T: Data> Widget<T> for Button<T> {
             }
             Event::MouseUp(_) => {
                 if ctx.is_active() && !ctx.is_disabled() {
+                    println!("Hello!");
                     ctx.request_paint();
                     trace!("Button {:?} released", ctx.widget_id());
                 }

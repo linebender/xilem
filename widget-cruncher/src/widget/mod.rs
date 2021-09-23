@@ -14,7 +14,7 @@
 
 //! Common widgets.
 
-//mod button;
+mod button;
 //mod checkbox;
 mod flex;
 //mod click;
@@ -27,7 +27,7 @@ mod widget;
 #[doc(hidden)]
 pub use widget::{Widget, WidgetId};
 
-//pub use button::Button;
+pub use button::Button;
 //pub use checkbox::Checkbox;
 //pub use click::Click;
 pub use flex::{Axis, CrossAxisAlignment, Flex, FlexParams, MainAxisAlignment};
