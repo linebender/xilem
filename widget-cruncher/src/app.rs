@@ -78,7 +78,7 @@ pub struct WindowDesc<T> {
 /// or are not part of the druid shells windowing abstraction.
 /// This includes the boxed root widget, as well as other window properties such as the title.
 pub struct PendingWindow<T> {
-    pub(crate) root: Box<dyn Widget<T>>,
+    pub(crate) root: Box<dyn Widget>,
     pub(crate) title: LabelText<T>,
     pub(crate) transparent: bool,
     pub(crate) size_policy: WindowSizePolicy, // This is copied over from the WindowConfig
@@ -89,7 +89,7 @@ impl<T: Data> PendingWindow<T> {
     /// Create a pending window from any widget.
     pub fn new<W>(root: W) -> PendingWindow<T>
     where
-        W: Widget<T> + 'static,
+        W: Widget + 'static,
     {
         // This just makes our API slightly cleaner; callers don't need to explicitly box.
         PendingWindow {
@@ -437,7 +437,7 @@ impl<T: Data> WindowDesc<T> {
     /// [`Widget`]: trait.Widget.html
     pub fn new<W>(root: W) -> WindowDesc<T>
     where
-        W: Widget<T> + 'static,
+        W: Widget + 'static,
     {
         WindowDesc {
             pending: PendingWindow::new(root),

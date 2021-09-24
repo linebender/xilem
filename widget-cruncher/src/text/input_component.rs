@@ -264,18 +264,21 @@ impl<T: EditableText + TextStorage> TextComponent<T> {
     }
 }
 
-impl<T: TextStorage + EditableText> Widget<T> for TextComponent<T> {
+impl<T: TextStorage + EditableText> Widget for TextComponent<T> {
     #[instrument(
         name = "InputComponent",
         level = "trace",
-        skip(self, ctx, event, data, env)
+        skip(self, ctx, event, env)
     )]
-    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, data: &mut T, env: &Env) {
+    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, env: &Env) {
         match event {
             Event::MouseDown(mouse) if self.can_write() && !ctx.is_disabled() => {
                 ctx.set_active(true);
                 // ensure data is up to date before a click
-                let needs_rebuild = self
+                // TODO
+                let needs_rebuild = true;
+                /*
+                self
                     .borrow()
                     .layout
                     .text()
@@ -287,6 +290,7 @@ impl<T: TextStorage + EditableText> Widget<T> for TextComponent<T> {
                     self.borrow_mut()
                         .update_pending_invalidation(ImeInvalidation::Reset);
                 }
+                */
                 self.borrow_mut()
                     .do_mouse_down(mouse.pos, mouse.mods, mouse.count);
                 self.borrow_mut()
@@ -344,7 +348,7 @@ impl<T: TextStorage + EditableText> Widget<T> for TextComponent<T> {
                 let selection = self.borrow_mut().take_external_selection_change();
                 if let Some(text) = text {
                     self.borrow_mut().layout.set_text(text.clone());
-                    *data = text;
+                    //*data = text;
                 }
                 if let Some(selection) = selection {
                     self.borrow_mut().selection = selection;
@@ -359,16 +363,15 @@ impl<T: TextStorage + EditableText> Widget<T> for TextComponent<T> {
     #[instrument(
         name = "InputComponent",
         level = "trace",
-        skip(self, ctx, event, data, env)
+        skip(self, ctx, event, env)
     )]
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, data: &T, env: &Env) {
+    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
         match event {
             LifeCycle::WidgetAdded => {
                 assert!(
                     self.can_write(),
                     "ime should never be locked at WidgetAdded"
                 );
-                self.borrow_mut().layout.set_text(data.to_owned());
                 self.borrow_mut().layout.rebuild_if_needed(ctx.text(), env);
             }
             //FIXME: this should happen in the parent too?
@@ -411,9 +414,9 @@ impl<T: TextStorage + EditableText> Widget<T> for TextComponent<T> {
     #[instrument(
         name = "InputComponent",
         level = "trace",
-        skip(self, ctx, bc, _data, env)
+        skip(self, ctx, bc, env)
     )]
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, _data: &T, env: &Env) -> Size {
+    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
         if !self.can_write() {
             tracing::warn!("Text layout called with IME lock held.");
             return Size::ZERO;
@@ -439,8 +442,8 @@ impl<T: TextStorage + EditableText> Widget<T> for TextComponent<T> {
         size
     }
 
-    #[instrument(name = "InputComponent", level = "trace", skip(self, ctx, _data, env))]
-    fn paint(&mut self, ctx: &mut PaintCtx, _data: &T, env: &Env) {
+    #[instrument(name = "InputComponent", level = "trace", skip(self, ctx, env))]
+    fn paint(&mut self, ctx: &mut PaintCtx, env: &Env) {
         if !self.can_read() {
             tracing::warn!("Text paint called with IME lock held.");
         }

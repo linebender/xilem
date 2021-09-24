@@ -82,10 +82,11 @@ const LABEL_X_PADDING: f64 = 2.0;
 pub struct Label<T> {
     label: RawLabel<ArcStr>,
     current_text: ArcStr,
-    text: LabelText<T>,
+    text: LabelText<ArcStr>,
     // for debuging, we track if the user modifies the text and we don't get
     // an update call, which might cause us to display stale text.
     text_should_be_updated: bool,
+    _marker: std::marker::PhantomData<T>,
 }
 
 /// A widget that displays text data.
@@ -126,16 +127,6 @@ pub enum LabelText<T> {
     Localized(LocalizedString<T>),
     /// Static text.
     Static(Static),
-    /// The provided closure is called on update, and its return
-    /// value is used as the text for the label.
-    Dynamic(Dynamic<T>),
-}
-
-/// Text that is computed dynamically.
-#[derive(Clone)]
-pub struct Dynamic<T> {
-    f: Arc<dyn Fn(&T, &Env) -> String>,
-    resolved: ArcStr,
 }
 
 /// Static text.
@@ -209,6 +200,11 @@ impl<T: TextStorage> RawLabel<T> {
     pub fn with_text_alignment(mut self, alignment: TextAlignment) -> Self {
         self.set_text_alignment(alignment);
         self
+    }
+
+    /// Set the text.
+    pub fn set_text(&mut self, new_text: impl Into<T>) {
+        self.layout.set_text(new_text.into());
     }
 
     /// Set the text color.
@@ -317,40 +313,18 @@ impl<T: Data> Label<T> {
     /// // Construct a new dynamic Label. Text will be updated when data changes.
     /// let _: Label<u32> = Label::new(|data: &u32, _env: &_| format!("Hello world: {}", data));
     /// ```
-    pub fn new(text: impl Into<LabelText<T>>) -> Self {
+    pub fn new(text: impl Into<LabelText<ArcStr>>) -> Self {
         let text = text.into();
         let current_text = text.display_text();
+        let mut label = RawLabel::new();
+        label.set_text(current_text.clone());
         Self {
             text,
             current_text,
-            label: RawLabel::new(),
-            text_should_be_updated: true,
+            label,
+            text_should_be_updated: false,
+            _marker: Default::default(),
         }
-    }
-
-    /// Construct a new dynamic label.
-    ///
-    /// The contents of this label are generated from the data using a closure.
-    ///
-    /// This is provided as a convenience; a closure can also be passed to [`new`],
-    /// but due to limitations of the implementation of that method, the types in
-    /// the closure need to be annotated, which is not true for this method.
-    ///
-    /// # Examples
-    ///
-    /// The following are equivalent.
-    ///
-    /// ```
-    /// use druid::Env;
-    /// use druid::widget::Label;
-    /// let label1: Label<u32> = Label::new(|data: &u32, _: &Env| format!("total is {}", data));
-    /// let label2: Label<u32> = Label::dynamic(|data, _| format!("total is {}", data));
-    /// ```
-    ///
-    /// [`new`]: #method.new
-    pub fn dynamic(text: impl Fn(&T, &Env) -> String + 'static) -> Self {
-        let text: LabelText<T> = text.into();
-        Label::new(text)
     }
 
     /// Return the current value of the label's text.
@@ -368,7 +342,7 @@ impl<T: Data> Label<T> {
     ///
     /// [`update`]: ../trait.Widget.html#tymethod.update
     /// [`request_update`]: ../struct.EventCtx.html#method.request_update
-    pub fn set_text(&mut self, text: impl Into<LabelText<T>>) {
+    pub fn set_text(&mut self, text: impl Into<LabelText<ArcStr>>) {
         self.text = text.into();
         self.text_should_be_updated = true;
     }
@@ -447,22 +421,12 @@ impl Static {
     }
 }
 
-impl<T> Dynamic<T> {
-    fn resolve(&mut self, data: &T, env: &Env) -> bool {
-        let new = (self.f)(data, env);
-        let changed = new.as_str() != self.resolved.as_ref();
-        self.resolved = new.into();
-        changed
-    }
-}
-
 impl<T: Data> LabelText<T> {
     /// Call callback with the text that should be displayed.
     pub fn with_display_text<V>(&self, mut cb: impl FnMut(&str) -> V) -> V {
         match self {
             LabelText::Static(s) => cb(&s.string),
             LabelText::Localized(s) => cb(&s.localized_str()),
-            LabelText::Dynamic(s) => cb(&s.resolved),
         }
     }
 
@@ -471,7 +435,6 @@ impl<T: Data> LabelText<T> {
         match self {
             LabelText::Static(s) => s.string.clone(),
             LabelText::Localized(s) => s.localized_str(),
-            LabelText::Dynamic(s) => s.resolved.clone(),
         }
     }
 
@@ -479,51 +442,46 @@ impl<T: Data> LabelText<T> {
     /// This ensures that localized strings are up to date.
     ///
     /// Returns `true` if the string has changed.
-    pub fn resolve(&mut self, data: &T, env: &Env) -> bool {
+    pub fn resolve(&mut self, env: &Env) -> bool {
         match self {
             LabelText::Static(s) => s.resolve(),
-            LabelText::Localized(s) => s.resolve(data, env),
-            LabelText::Dynamic(s) => s.resolve(data, env),
+            LabelText::Localized(s) => s.resolve(None.unwrap(), env),
         }
     }
 }
 
-impl<T: Data> Widget<T> for Label<T> {
-    #[instrument(name = "Label", level = "trace", skip(self, _ctx, _event, _data, _env))]
-    fn on_event(&mut self, _ctx: &mut EventCtx, _event: &Event, _data: &mut T, _env: &Env) {}
+impl<T: Data> Widget for Label<T> {
+    #[instrument(name = "Label", level = "trace", skip(self, _ctx, _event, _env))]
+    fn on_event(&mut self, _ctx: &mut EventCtx, _event: &Event, _env: &Env) {}
 
-    #[instrument(name = "Label", level = "trace", skip(self, ctx, event, data, env))]
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, data: &T, env: &Env) {
-        if matches!(event, LifeCycle::WidgetAdded) {
-            self.text.resolve(data, env);
-            self.text_should_be_updated = false;
-        }
+    #[instrument(name = "Label", level = "trace", skip(self, ctx, event, env))]
+    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
         self.label
-            .lifecycle(ctx, event, &self.text.display_text(), env);
+            .lifecycle(ctx, event, env);
     }
 
-    #[instrument(name = "Label", level = "trace", skip(self, ctx, bc, _data, env))]
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, _data: &T, env: &Env) -> Size {
-        self.label.layout(ctx, bc, &self.current_text, env)
+    #[instrument(name = "Label", level = "trace", skip(self, ctx, bc, env))]
+    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
+        self.label.layout(ctx, bc, env)
     }
 
-    #[instrument(name = "Label", level = "trace", skip(self, ctx, _data, env))]
-    fn paint(&mut self, ctx: &mut PaintCtx, _data: &T, env: &Env) {
+    #[instrument(name = "Label", level = "trace", skip(self, ctx, env))]
+    fn paint(&mut self, ctx: &mut PaintCtx, env: &Env) {
         if self.text_should_be_updated {
             tracing::warn!("Label text changed without call to update. See LabelAdapter::set_text for information.");
         }
-        self.label.paint(ctx, &self.current_text, env)
+        self.label.paint(ctx, env)
     }
 
 }
 
-impl<T: TextStorage> Widget<T> for RawLabel<T> {
+impl<T: TextStorage> Widget for RawLabel<T> {
     #[instrument(
         name = "RawLabel",
         level = "trace",
-        skip(self, ctx, event, _data, _env)
+        skip(self, ctx, event, _env)
     )]
-    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, _data: &mut T, _env: &Env) {
+    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, _env: &Env) {
         match event {
             Event::MouseUp(event) => {
                 // Account for the padding
@@ -546,12 +504,9 @@ impl<T: TextStorage> Widget<T> for RawLabel<T> {
         }
     }
 
-    #[instrument(name = "RawLabel", level = "trace", skip(self, ctx, event, data, _env))]
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, data: &T, _env: &Env) {
+    #[instrument(name = "RawLabel", level = "trace", skip(self, ctx, event, _env))]
+    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, _env: &Env) {
         match event {
-            LifeCycle::WidgetAdded => {
-                self.layout.set_text(data.to_owned());
-            }
             LifeCycle::DisabledChanged(disabled) => {
                 let color = if *disabled {
                     KeyOrValue::Key(crate::theme::DISABLED_TEXT_COLOR)
@@ -565,8 +520,8 @@ impl<T: TextStorage> Widget<T> for RawLabel<T> {
         }
     }
 
-    #[instrument(name = "RawLabel", level = "trace", skip(self, ctx, bc, _data, env))]
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, _data: &T, env: &Env) -> Size {
+    #[instrument(name = "RawLabel", level = "trace", skip(self, ctx, bc, env))]
+    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
         bc.debug_check("Label");
 
         let width = match self.line_break_mode {
@@ -587,8 +542,8 @@ impl<T: TextStorage> Widget<T> for RawLabel<T> {
         size
     }
 
-    #[instrument(name = "RawLabel", level = "trace", skip(self, ctx, _data, _env))]
-    fn paint(&mut self, ctx: &mut PaintCtx, _data: &T, _env: &Env) {
+    #[instrument(name = "RawLabel", level = "trace", skip(self, ctx, _env))]
+    fn paint(&mut self, ctx: &mut PaintCtx, _env: &Env) {
         let origin = Point::new(LABEL_X_PADDING, 0.0);
         let label_size = ctx.size();
 
@@ -638,15 +593,5 @@ impl<T> From<ArcStr> for LabelText<T> {
 impl<T> From<LocalizedString<T>> for LabelText<T> {
     fn from(src: LocalizedString<T>) -> LabelText<T> {
         LabelText::Localized(src)
-    }
-}
-
-impl<T, F: Fn(&T, &Env) -> String + 'static> From<F> for LabelText<T> {
-    fn from(src: F) -> LabelText<T> {
-        let f = Arc::new(src);
-        LabelText::Dynamic(Dynamic {
-            f,
-            resolved: ArcStr::from(""),
-        })
     }
 }

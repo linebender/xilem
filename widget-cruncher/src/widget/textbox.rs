@@ -51,7 +51,7 @@ const SCROLL_TO_INSETS: Insets = Insets::uniform_xy(40.0, 0.0);
 /// [`ValueTextBox`]: super::ValueTextBox
 pub struct TextBox<T> {
     placeholder_text: LabelText<T>,
-    placeholder_layout: TextLayout<ArcStr>,
+    placeholder_layout: TextLayout,
     inner: Scroll<T, Padding<T, TextComponent<T>>>,
     scroll_to_selection_after_layout: bool,
     multiline: bool,
@@ -372,9 +372,9 @@ impl<T: TextStorage + EditableText> TextBox<T> {
     }
 }
 
-impl<T: TextStorage + EditableText> Widget<T> for TextBox<T> {
-    #[instrument(name = "TextBox", level = "trace", skip(self, ctx, event, data, env))]
-    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, data: &mut T, env: &Env) {
+impl<T: TextStorage + EditableText> Widget for TextBox<T> {
+    #[instrument(name = "TextBox", level = "trace", skip(self, ctx, event, env))]
+    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, env: &Env) {
         match event {
             Event::Notification(cmd) => match cmd {
                 cmd if cmd.is(TextComponent::SCROLL_TO) => {
@@ -599,7 +599,7 @@ impl<T: TextStorage + EditableText> Widget<T> for TextBox<T> {
         ctx.fill(clip_rect, &background_color);
 
         if !data.is_empty() {
-            self.inner.paint(ctx, data, env);
+            self.inner.paint(ctx, env);
         } else {
             let text_width = self.placeholder_layout.layout_metrics().size.width;
             let extra_width = (size.width - text_width - textbox_insets.x_value()).max(0.);

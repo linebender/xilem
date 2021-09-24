@@ -90,7 +90,7 @@ pub struct WidgetId(NonZeroU64);
 /// [`Data`]: trait.Data.html
 /// [`Env`]: struct.Env.html
 /// [`WidgetPod`]: struct.WidgetPod.html
-pub trait Widget<T> {
+pub trait Widget {
     /// Handle an event.
     ///
     /// A number of different events (in the [`Event`] enum) are handled in this
@@ -101,7 +101,7 @@ pub trait Widget<T> {
     /// [`Event`]: enum.Event.html
     /// [`EventCtx`]: struct.EventCtx.html
     /// [`Command`]: struct.Command.html
-    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, data: &mut T, env: &Env);
+    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, env: &Env);
 
     /// Handle a life cycle notification.
     ///
@@ -117,7 +117,7 @@ pub trait Widget<T> {
     /// [`LifeCycle`]: enum.LifeCycle.html
     /// [`LifeCycleCtx`]: struct.LifeCycleCtx.html
     /// [`Command`]: struct.Command.html
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, data: &T, env: &Env);
+    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env);
 
     /// Compute layout.
     ///
@@ -139,7 +139,7 @@ pub trait Widget<T> {
     ///
     /// [`WidgetPod::layout`]: struct.WidgetPod.html#method.layout
     /// [`set_origin`]: struct.WidgetPod.html#method.set_origin
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, data: &T, env: &Env) -> Size;
+    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size;
 
     /// Paint the widget appearance.
     ///
@@ -154,7 +154,7 @@ pub trait Widget<T> {
     ///
     /// [`PaintCtx`]: struct.PaintCtx.html
     /// [`RenderContext`]: trait.RenderContext.html
-    fn paint(&mut self, ctx: &mut PaintCtx, data: &T, env: &Env);
+    fn paint(&mut self, ctx: &mut PaintCtx, env: &Env);
 
     #[doc(hidden)]
     /// Get the (verbose) type name of the widget for debugging purposes.
@@ -212,21 +212,21 @@ impl WidgetId {
     }
 }
 
-impl<T> Widget<T> for Box<dyn Widget<T>> {
-    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, data: &mut T, env: &Env) {
-        self.deref_mut().on_event(ctx, event, data, env)
+impl Widget for Box<dyn Widget> {
+    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, env: &Env) {
+        self.deref_mut().on_event(ctx, event, env)
     }
 
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, data: &T, env: &Env) {
-        self.deref_mut().lifecycle(ctx, event, data, env);
+    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
+        self.deref_mut().lifecycle(ctx, event, env);
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, data: &T, env: &Env) -> Size {
-        self.deref_mut().layout(ctx, bc, data, env)
+    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
+        self.deref_mut().layout(ctx, bc, env)
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, data: &T, env: &Env) {
-        self.deref_mut().paint(ctx, data, env);
+    fn paint(&mut self, ctx: &mut PaintCtx, env: &Env) {
+        self.deref_mut().paint(ctx, env);
     }
 
     fn type_name(&self) -> &'static str {

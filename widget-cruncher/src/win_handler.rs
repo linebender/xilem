@@ -307,7 +307,7 @@ impl<T: Data> InnerAppState<T> {
 
     fn prepare_paint(&mut self, window_id: WindowId) {
         if let Some(win) = self.windows.get_mut(window_id) {
-            win.prepare_paint(&mut self.command_queue, &mut self.data, &self.env);
+            win.prepare_paint(&mut self.command_queue, &self.env);
         }
         //self.do_update();
         self.invalidate_and_finalize();
@@ -319,7 +319,6 @@ impl<T: Data> InnerAppState<T> {
                 piet,
                 invalid,
                 &mut self.command_queue,
-                &self.data,
                 &self.env,
             );
         }
@@ -340,15 +339,13 @@ impl<T: Data> InnerAppState<T> {
                         let handled = w.event(
                             &mut self.command_queue,
                             Event::WindowCloseRequested,
-                            &mut self.data,
                             &self.env,
                         );
                         if !handled.is_handled() {
                             w.event(
                                 &mut self.command_queue,
                                 Event::WindowDisconnected,
-                                &mut self.data,
-                                &self.env,
+                                    &self.env,
                             );
                         }
                         handled
@@ -356,7 +353,6 @@ impl<T: Data> InnerAppState<T> {
                         w.event(
                             &mut self.command_queue,
                             Event::Command(cmd),
-                            &mut self.data,
                             &self.env,
                         )
                     };
@@ -367,7 +363,7 @@ impl<T: Data> InnerAppState<T> {
             Target::Widget(id) => {
                 for w in self.windows.iter_mut().filter(|w| w.may_contain_widget(id)) {
                     let event = Event::Internal(InternalEvent::TargetedCommand(cmd.clone()));
-                    if w.event(&mut self.command_queue, event, &mut self.data, &self.env)
+                    if w.event(&mut self.command_queue, event, &self.env)
                         .is_handled()
                     {
                         return Handled::Yes;
@@ -377,7 +373,7 @@ impl<T: Data> InnerAppState<T> {
             Target::Global => {
                 for w in self.windows.iter_mut() {
                     let event = Event::Command(cmd.clone());
-                    if w.event(&mut self.command_queue, event, &mut self.data, &self.env)
+                    if w.event(&mut self.command_queue, event, &self.env)
                         .is_handled()
                     {
                         return Handled::Yes;
@@ -406,7 +402,7 @@ impl<T: Data> InnerAppState<T> {
         };
 
         if let Some(win) = self.windows.get_mut(source_id) {
-            win.event(&mut self.command_queue, event, &mut self.data, &self.env)
+            win.event(&mut self.command_queue, event, &self.env)
         } else {
             Handled::No
         }
@@ -416,7 +412,7 @@ impl<T: Data> InnerAppState<T> {
         /*
         // we send `update` to all windows, not just the active one:
         for window in self.windows.iter_mut() {
-            window.update(&mut self.command_queue, &self.data, &self.env);
+            window.update(&mut self.command_queue, &self.env);
             if let Some(focus_change) = window.ime_focus_change.take() {
                 // we need to call this outside of the borrow, so we create a
                 // closure that takes the correct window handle. yes, it feels
@@ -780,7 +776,7 @@ impl<T: Data> AppState<T> {
         let env = self.env();
 
         pending.size_policy = config.size_policy;
-        pending.title.resolve(&data, &env);
+        pending.title.resolve(&env);
         builder.set_title(pending.title.display_text().to_string());
 
         let handler = DruidHandler::new_shared((*self).clone(), id);

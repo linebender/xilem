@@ -49,8 +49,8 @@ pub struct ModularWidget<S, T> {
 
 /// A widget that can replace its child on command
 pub struct ReplaceChild<T> {
-    child: WidgetPod<T, Box<dyn Widget<T>>>,
-    replacer: Box<dyn Fn() -> Box<dyn Widget<T>>>,
+    child: WidgetPod<T, Box<dyn Widget>>,
+    replacer: Box<dyn Fn() -> Box<dyn Widget>>,
 }
 
 /// A widget that records each time one of its methods is called.
@@ -98,7 +98,7 @@ pub enum Record {
 }
 
 /// like WidgetExt but just for this one thing
-pub trait TestWidgetExt<T: Data>: Widget<T> + Sized + 'static {
+pub trait TestWidgetExt<T: Data>: Widget + Sized + 'static {
     fn record(self, recording: &Recording) -> Recorder<Self> {
         Recorder {
             child: self,
@@ -107,7 +107,7 @@ pub trait TestWidgetExt<T: Data>: Widget<T> + Sized + 'static {
     }
 }
 
-impl<T: Data, W: Widget<T> + 'static> TestWidgetExt<T> for W {}
+impl<T: Data, W: Widget + 'static> TestWidgetExt<T> for W {}
 
 #[allow(dead_code)]
 impl<S, T> ModularWidget<S, T> {
@@ -160,8 +160,8 @@ impl<S, T> ModularWidget<S, T> {
     }
 }
 
-impl<S, T: Data> Widget<T> for ModularWidget<S, T> {
-    fn event(&mut self, ctx: &mut EventCtx, event: &Event, data: &mut T, env: &Env) {
+impl<S, T: Data> Widget for ModularWidget<S, T> {
+    fn event(&mut self, ctx: &mut EventCtx, event: &Event, env: &Env) {
         if let Some(f) = self.event.as_mut() {
             f(&mut self.state, ctx, event, data, env)
         }
@@ -199,8 +199,8 @@ impl<S, T: Data> Widget<T> for ModularWidget<S, T> {
 }
 
 impl<T: Data> ReplaceChild<T> {
-    pub fn new<W: Widget<T> + 'static>(
-        child: impl Widget<T> + 'static,
+    pub fn new<W: Widget + 'static>(
+        child: impl Widget + 'static,
         f: impl Fn() -> W + 'static,
     ) -> Self {
         let child = WidgetPod::new(child.boxed());
@@ -209,8 +209,8 @@ impl<T: Data> ReplaceChild<T> {
     }
 }
 
-impl<T: Data> Widget<T> for ReplaceChild<T> {
-    fn event(&mut self, ctx: &mut EventCtx, event: &Event, data: &mut T, env: &Env) {
+impl<T: Data> Widget for ReplaceChild<T> {
+    fn event(&mut self, ctx: &mut EventCtx, event: &Event, env: &Env) {
         if let Event::Command(cmd) = event {
             if cmd.is(REPLACE_CHILD) {
                 self.child = WidgetPod::new((self.replacer)());
@@ -274,8 +274,8 @@ impl Recording {
     }
 }
 
-impl<T: Data, W: Widget<T>> Widget<T> for Recorder<W> {
-    fn event(&mut self, ctx: &mut EventCtx, event: &Event, data: &mut T, env: &Env) {
+impl<T: Data, W: Widget> Widget for Recorder<W> {
+    fn event(&mut self, ctx: &mut EventCtx, event: &Event, env: &Env) {
         self.recording.push(Record::E(event.clone()));
         self.child.event(ctx, event, data, env)
     }
@@ -307,7 +307,7 @@ impl<T: Data, W: Widget<T>> Widget<T> for Recorder<W> {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, data: &T, env: &Env) {
-        self.child.paint(ctx, data, env);
+        self.child.paint(ctx, env);
         self.recording.push(Record::Paint)
     }
 }

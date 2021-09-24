@@ -50,13 +50,13 @@ impl<T: Data> Click<T> {
     }
 }
 
-impl<T: Data, W: Widget<T>> Controller<T, W> for Click<T> {
+impl<T: Data, W: Widget> Controller<T, W> for Click<T> {
     #[instrument(
         name = "Click",
         level = "trace",
         skip(self, child, ctx, event, data, env)
     )]
-    fn event(&mut self, child: &mut W, ctx: &mut EventCtx, event: &Event, data: &mut T, env: &Env) {
+    fn event(&mut self, child: &mut W, ctx: &mut EventCtx, event: &Event, env: &Env) {
         match event {
             Event::MouseDown(mouse_event) => {
                 if mouse_event.button == MouseButton::Left && !ctx.is_disabled() {

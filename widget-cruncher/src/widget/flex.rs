@@ -431,7 +431,7 @@ impl<T: Data> Flex<T> {
     /// Builder-style variant of `add_child`.
     ///
     /// Convenient for assembling a group of widgets in a single expression.
-    pub fn with_child(mut self, child: impl Widget<T> + 'static) -> Self {
+    pub fn with_child(mut self, child: impl Widget + 'static) -> Self {
         self.add_child(child);
         self
     }
@@ -464,7 +464,7 @@ impl<T: Data> Flex<T> {
     /// [`CrossAxisAlignment`]: enum.CrossAxisAlignment.html
     pub fn with_flex_child(
         mut self,
-        child: impl Widget<T> + 'static,
+        child: impl Widget + 'static,
         params: impl Into<FlexParams>,
     ) -> Self {
         self.add_flex_child(child, params);
@@ -522,7 +522,7 @@ impl<T: Data> Flex<T> {
     /// See also [`with_child`].
     ///
     /// [`with_child`]: Flex::with_child
-    pub fn add_child(&mut self, child: impl Widget<T> + 'static) {
+    pub fn add_child(&mut self, child: impl Widget + 'static) {
         let child = Child::Fixed {
             widget: WidgetPod::new(Box::new(child)),
             alignment: None,
@@ -556,7 +556,7 @@ impl<T: Data> Flex<T> {
     /// [`with_flex_child`]: Flex::with_flex_child
     pub fn add_flex_child(
         &mut self,
-        child: impl Widget<T> + 'static,
+        child: impl Widget + 'static,
         params: impl Into<FlexParams>,
     ) {
         let params = params.into();
@@ -625,23 +625,23 @@ impl<T: Data> Flex<T> {
     }
 }
 
-impl<T: Data> Widget<T> for Flex<T> {
-    #[instrument(name = "Flex", level = "trace", skip(self, ctx, event, data, env))]
-    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, data: &mut T, env: &Env) {
+impl<T: Data> Widget for Flex<T> {
+    #[instrument(name = "Flex", level = "trace", skip(self, ctx, event, env))]
+    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, env: &Env) {
         for child in self.children.iter_mut().filter_map(|x| x.widget_mut()) {
-            child.on_event(ctx, event, data, env);
+            child.on_event(ctx, event, env);
         }
     }
 
-    #[instrument(name = "Flex", level = "trace", skip(self, ctx, event, data, env))]
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, data: &T, env: &Env) {
+    #[instrument(name = "Flex", level = "trace", skip(self, ctx, event, env))]
+    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
         for child in self.children.iter_mut().filter_map(|x| x.widget_mut()) {
-            child.lifecycle(ctx, event, data, env);
+            child.lifecycle(ctx, event, env);
         }
     }
 
-    #[instrument(name = "Flex", level = "trace", skip(self, ctx, bc, data, env))]
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, data: &T, env: &Env) -> Size {
+    #[instrument(name = "Flex", level = "trace", skip(self, ctx, bc, env))]
+    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
         bc.debug_check("Flex");
         // we loosen our constraints when passing to children.
         let loosened_bc = bc.loosen();
@@ -664,7 +664,7 @@ impl<T: Data> Widget<T> for Flex<T> {
                     let child_bc =
                         self.direction
                             .constraints(&loosened_bc, 0.0, std::f64::INFINITY);
-                    let child_size = widget.layout(ctx, &child_bc, data, env);
+                    let child_size = widget.layout(ctx, &child_bc, env);
                     let baseline_offset = widget.baseline_offset();
 
                     if child_size.width.is_infinite() {
@@ -708,7 +708,7 @@ impl<T: Data> Widget<T> for Flex<T> {
                     remainder = desired_major - actual_major;
 
                     let child_bc = self.direction.constraints(&loosened_bc, 0.0, actual_major);
-                    let child_size = widget.layout(ctx, &child_bc, data, env);
+                    let child_size = widget.layout(ctx, &child_bc, env);
                     let baseline_offset = widget.baseline_offset();
 
                     major_flex += self.direction.major(child_size).expand();
@@ -774,7 +774,7 @@ impl<T: Data> Widget<T> for Flex<T> {
                                 .pack(self.direction.major(child_size), minor_dim)
                                 .into();
                             let child_bc = BoxConstraints::tight(fill_size);
-                            widget.layout(ctx, &child_bc, data, env);
+                            widget.layout(ctx, &child_bc, env);
                             0.0
                         }
                         _ => {
@@ -784,7 +784,7 @@ impl<T: Data> Widget<T> for Flex<T> {
                     };
 
                     let child_pos: Point = self.direction.pack(major, child_minor_offset).into();
-                    widget.set_origin(ctx, data, env, child_pos);
+                    widget.set_origin(ctx, env, child_pos);
                     child_paint_rect = child_paint_rect.union(widget.paint_rect());
                     major += self.direction.major(child_size).expand();
                     major += spacing.next().unwrap_or(0.);
@@ -847,10 +847,10 @@ impl<T: Data> Widget<T> for Flex<T> {
         my_size
     }
 
-    #[instrument(name = "Flex", level = "trace", skip(self, ctx, data, env))]
-    fn paint(&mut self, ctx: &mut PaintCtx, data: &T, env: &Env) {
+    #[instrument(name = "Flex", level = "trace", skip(self, ctx, env))]
+    fn paint(&mut self, ctx: &mut PaintCtx, env: &Env) {
         for child in self.children.iter_mut().filter_map(|x| x.widget_mut()) {
-            child.paint(ctx, data, env);
+            child.paint(ctx, env);
         }
 
         // paint the baseline if we're debugging layout
@@ -983,11 +983,11 @@ impl From<f64> for FlexParams {
 
 enum Child<T> {
     Fixed {
-        widget: WidgetPod<T, Box<dyn Widget<T>>>,
+        widget: WidgetPod<T, Box<dyn Widget>>,
         alignment: Option<CrossAxisAlignment>,
     },
     Flex {
-        widget: WidgetPod<T, Box<dyn Widget<T>>>,
+        widget: WidgetPod<T, Box<dyn Widget>>,
         alignment: Option<CrossAxisAlignment>,
         flex: f64,
     },
@@ -996,13 +996,13 @@ enum Child<T> {
 }
 
 impl<T> Child<T> {
-    fn widget_mut(&mut self) -> Option<&mut WidgetPod<T, Box<dyn Widget<T>>>> {
+    fn widget_mut(&mut self) -> Option<&mut WidgetPod<T, Box<dyn Widget>>> {
         match self {
             Child::Fixed { widget, .. } | Child::Flex { widget, .. } => Some(widget),
             _ => None,
         }
     }
-    fn widget(&self) -> Option<&WidgetPod<T, Box<dyn Widget<T>>>> {
+    fn widget(&self) -> Option<&WidgetPod<T, Box<dyn Widget>>> {
         match self {
             Child::Fixed { widget, .. } | Child::Flex { widget, .. } => Some(widget),
             _ => None,

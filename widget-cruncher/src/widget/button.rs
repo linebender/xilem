@@ -19,6 +19,7 @@ use crate::widget::prelude::*;
 use crate::widget::{Label, LabelText};
 use crate::{theme, Affine, Data, Insets, LinearGradient, UnitPoint};
 use tracing::{instrument, trace};
+use crate::ArcStr;
 
 // the minimum padding added to a button.
 // NOTE: these values are chosen to match the existing look of TextBox; these
@@ -48,7 +49,7 @@ impl<T: Data> Button<T> {
     /// ```
     ///
     /// [`.on_click`]: #method.on_click
-    pub fn new(text: impl Into<LabelText<T>>) -> Button<T> {
+    pub fn new(text: impl Into<LabelText<ArcStr>>) -> Button<T> {
         Button::from_label(Label::new(text))
     }
 
@@ -76,36 +77,11 @@ impl<T: Data> Button<T> {
             label_size: Size::ZERO,
         }
     }
-
-    /// Construct a new dynamic button.
-    ///
-    /// The contents of this button are generated from the data using a closure.
-    ///
-    /// This is provided as a convenience; a closure can also be passed to [`new`],
-    /// but due to limitations of the implementation of that method, the types in
-    /// the closure need to be annotated, which is not true for this method.
-    ///
-    /// # Examples
-    ///
-    /// The following are equivalent.
-    ///
-    /// ```
-    /// use druid::Env;
-    /// use druid::widget::Button;
-    /// let button1: Button<u32> = Button::new(|data: &u32, _: &Env| format!("total is {}", data));
-    /// let button2: Button<u32> = Button::dynamic(|data, _| format!("total is {}", data));
-    /// ```
-    ///
-    /// [`new`]: #method.new
-    pub fn dynamic(text: impl Fn(&T, &Env) -> String + 'static) -> Self {
-        let text: LabelText<T> = text.into();
-        Button::new(text)
-    }
 }
 
-impl<T: Data> Widget<T> for Button<T> {
-    #[instrument(name = "Button", level = "trace", skip(self, ctx, event, _data, _env))]
-    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, _data: &mut T, _env: &Env) {
+impl<T: Data> Widget for Button<T> {
+    #[instrument(name = "Button", level = "trace", skip(self, ctx, event, _env))]
+    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, _env: &Env) {
         match event {
             Event::MouseDown(_) => {
                 if !ctx.is_disabled() {
@@ -126,20 +102,20 @@ impl<T: Data> Widget<T> for Button<T> {
         }
     }
 
-    #[instrument(name = "Button", level = "trace", skip(self, ctx, event, data, env))]
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, data: &T, env: &Env) {
+    #[instrument(name = "Button", level = "trace", skip(self, ctx, event, env))]
+    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
         if let LifeCycle::HotChanged(_) | LifeCycle::DisabledChanged(_) = event {
             ctx.request_paint();
         }
-        self.label.lifecycle(ctx, event, data, env)
+        self.label.lifecycle(ctx, event, env)
     }
 
-    #[instrument(name = "Button", level = "trace", skip(self, ctx, bc, data, env))]
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, data: &T, env: &Env) -> Size {
+    #[instrument(name = "Button", level = "trace", skip(self, ctx, bc, env))]
+    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
         bc.debug_check("Button");
         let padding = Size::new(LABEL_INSETS.x_value(), LABEL_INSETS.y_value());
         let label_bc = bc.shrink(padding).loosen();
-        self.label_size = self.label.layout(ctx, &label_bc, data, env);
+        self.label_size = self.label.layout(ctx, &label_bc, env);
         // HACK: to make sure we look okay at default sizes when beside a textbox,
         // we make sure we will have at least the same height as the default textbox.
         let min_height = env.get(theme::BORDERED_WIDGET_HEIGHT);
@@ -154,8 +130,8 @@ impl<T: Data> Widget<T> for Button<T> {
         button_size
     }
 
-    #[instrument(name = "Button", level = "trace", skip(self, ctx, data, env))]
-    fn paint(&mut self, ctx: &mut PaintCtx, data: &T, env: &Env) {
+    #[instrument(name = "Button", level = "trace", skip(self, ctx, env))]
+    fn paint(&mut self, ctx: &mut PaintCtx, env: &Env) {
         let is_active = ctx.is_active() && !ctx.is_disabled();
         let is_hot = ctx.is_hot();
         let size = ctx.size();
@@ -203,7 +179,7 @@ impl<T: Data> Widget<T> for Button<T> {
 
         ctx.with_save(|ctx| {
             ctx.transform(Affine::translate(label_offset));
-            self.label.paint(ctx, data, env);
+            self.label.paint(ctx, env);
         });
     }
 

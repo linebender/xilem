@@ -41,8 +41,8 @@ impl Checkbox {
 }
 
 impl Widget<bool> for Checkbox {
-    #[instrument(name = "CheckBox", level = "trace", skip(self, ctx, event, data, _env))]
-    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, data: &mut bool, _env: &Env) {
+    #[instrument(name = "CheckBox", level = "trace", skip(self, ctx, event, _env))]
+    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, _env: &Env) {
         match event {
             Event::MouseDown(_) => {
                 if !ctx.is_disabled() {
@@ -70,20 +70,20 @@ impl Widget<bool> for Checkbox {
         }
     }
 
-    #[instrument(name = "CheckBox", level = "trace", skip(self, ctx, event, data, env))]
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, data: &bool, env: &Env) {
-        self.child_label.lifecycle(ctx, event, data, env);
+    #[instrument(name = "CheckBox", level = "trace", skip(self, ctx, event, env))]
+    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
+        self.child_label.lifecycle(ctx, event, env);
         if let LifeCycle::HotChanged(_) | LifeCycle::DisabledChanged(_) = event {
             ctx.request_paint();
         }
     }
 
-    #[instrument(name = "CheckBox", level = "trace", skip(self, ctx, bc, data, env))]
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, data: &bool, env: &Env) -> Size {
+    #[instrument(name = "CheckBox", level = "trace", skip(self, ctx, bc, env))]
+    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
         bc.debug_check("Checkbox");
         let x_padding = env.get(theme::WIDGET_CONTROL_COMPONENT_PADDING);
         let check_size = env.get(theme::BASIC_WIDGET_HEIGHT);
-        let label_size = self.child_label.layout(ctx, bc, data, env);
+        let label_size = self.child_label.layout(ctx, bc, env);
 
         let desired_size = Size::new(
             check_size + x_padding + label_size.width,
@@ -96,8 +96,8 @@ impl Widget<bool> for Checkbox {
         our_size
     }
 
-    #[instrument(name = "CheckBox", level = "trace", skip(self, ctx, data, env))]
-    fn paint(&mut self, ctx: &mut PaintCtx, data: &bool, env: &Env) {
+    #[instrument(name = "CheckBox", level = "trace", skip(self, ctx, env))]
+    fn paint(&mut self, ctx: &mut PaintCtx, env: &Env) {
         let size = env.get(theme::BASIC_WIDGET_HEIGHT);
         let x_padding = env.get(theme::WIDGET_CONTROL_COMPONENT_PADDING);
         let border_width = 1.;

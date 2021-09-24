@@ -197,8 +197,8 @@ In addition, all trait methods are provided with an environment `Env`, which
 includes the current theme parameters (colors, dimensions, etc.).
 
 ```rust
-impl<T: Data> Widget<T> for Button<T> {
-    fn event(&mut self, ctx: &mut EventCtx, event: &Event, data: &mut T, env: &Env) {
+impl<T: Data> Widget for Button<T> {
+    fn event(&mut self, ctx: &mut EventCtx, event: &Event, env: &Env) {
       ...
     }
 

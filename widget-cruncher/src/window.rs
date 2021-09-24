@@ -47,7 +47,7 @@ pub struct WindowId(u64);
 /// Per-window state not owned by user code.
 pub struct Window<T> {
     pub(crate) id: WindowId,
-    pub(crate) root: WidgetPod<T, Box<dyn Widget<T>>>,
+    pub(crate) root: WidgetPod<T, Box<dyn Widget>>,
     pub(crate) title: LabelText<T>,
     size_policy: WindowSizePolicy,
     size: Size,
@@ -113,7 +113,6 @@ impl<T: Data> Window<T> {
         &mut self,
         widget_state: &mut WidgetState,
         queue: &mut CommandQueue,
-        data: &T,
         env: &Env,
         process_commands: bool,
     ) {
@@ -139,7 +138,6 @@ impl<T: Data> Window<T> {
             self.lifecycle(
                 queue,
                 &LifeCycle::Internal(InternalLifeCycle::RouteWidgetAdded),
-                data,
                 env,
                 false,
             );
@@ -147,24 +145,24 @@ impl<T: Data> Window<T> {
 
         if self.root.state().needs_window_origin && !self.root.state().needs_layout {
             let event = LifeCycle::Internal(InternalLifeCycle::ParentWindowOrigin);
-            self.lifecycle(queue, &event, data, env, false);
+            self.lifecycle(queue, &event, env, false);
         }
 
         // Update the disabled state if necessary
         // Always do this before updating the focus-chain
         if self.root.state().tree_disabled_changed() {
             let event = LifeCycle::Internal(InternalLifeCycle::RouteDisabledChanged);
-            self.lifecycle(queue, &event, data, env, false);
+            self.lifecycle(queue, &event, env, false);
         }
 
         // Update the focus-chain if necessary
         // Always do this before sending focus change, since this event updates the focus chain.
         if self.root.state().update_focus_chain {
             let event = LifeCycle::BuildFocusChain;
-            self.lifecycle(queue, &event, data, env, false);
+            self.lifecycle(queue, &event, env, false);
         }
 
-        self.update_focus(widget_state, queue, data, env);
+        self.update_focus(widget_state, queue, env);
 
         // Add all the requested timers to the window's timers map.
         self.timers.extend_drain(&mut widget_state.timers);
@@ -196,7 +194,6 @@ impl<T: Data> Window<T> {
         &mut self,
         queue: &mut CommandQueue,
         event: Event,
-        data: &mut T,
         env: &Env,
     ) -> Handled {
         match &event {
@@ -224,7 +221,6 @@ impl<T: Data> Window<T> {
             self.lifecycle(
                 queue,
                 &LifeCycle::Internal(InternalLifeCycle::RouteWidgetAdded),
-                data,
                 env,
                 false,
             );
@@ -246,7 +242,7 @@ impl<T: Data> Window<T> {
             {
                 let _span = info_span!("event");
                 let _span = _span.enter();
-                self.root.on_event(&mut ctx, &event, data, env);
+                self.root.on_event(&mut ctx, &event, env);
             }
 
             if !ctx.notifications.is_empty() {
@@ -279,10 +275,10 @@ impl<T: Data> Window<T> {
         ) {
             // Because our initial size can be zero, the window system won't ask us to paint.
             // So layout ourselves and hopefully we resize
-            self.layout(queue, data, env);
+            self.layout(queue, env);
         }
 
-        self.post_event_processing(&mut widget_state, queue, data, env, false);
+        self.post_event_processing(&mut widget_state, queue, env, false);
 
         is_handled
     }
@@ -291,7 +287,6 @@ impl<T: Data> Window<T> {
         &mut self,
         queue: &mut CommandQueue,
         event: &LifeCycle,
-        data: &T,
         env: &Env,
         process_commands: bool,
     ) {
@@ -306,10 +301,10 @@ impl<T: Data> Window<T> {
         {
             let _span = info_span!("lifecycle");
             let _span = _span.enter();
-            self.root.lifecycle(&mut ctx, event, data, env);
+            self.root.lifecycle(&mut ctx, event, env);
         }
 
-        self.post_event_processing(&mut widget_state, queue, data, env, process_commands);
+        self.post_event_processing(&mut widget_state, queue, env, process_commands);
     }
 
     pub(crate) fn invalidate_and_finalize(&mut self) {
@@ -334,7 +329,7 @@ impl<T: Data> Window<T> {
     }
 
     /// Get ready for painting, by doing layout and sending an `AnimFrame` event.
-    pub(crate) fn prepare_paint(&mut self, queue: &mut CommandQueue, data: &mut T, env: &Env) {
+    pub(crate) fn prepare_paint(&mut self, queue: &mut CommandQueue, env: &Env) {
         let now = Instant::now();
         // TODO: this calculation uses wall-clock time of the paint call, which
         // potentially has jitter.
@@ -344,7 +339,7 @@ impl<T: Data> Window<T> {
         let elapsed_ns = last.map(|t| now.duration_since(t).as_nanos()).unwrap_or(0) as u64;
 
         if self.wants_animation_frame() {
-            self.event(queue, Event::AnimFrame(elapsed_ns), data, env);
+            self.event(queue, Event::AnimFrame(elapsed_ns), env);
             self.last_anim = Some(now);
         }
     }
@@ -354,11 +349,10 @@ impl<T: Data> Window<T> {
         piet: &mut Piet,
         invalid: &Region,
         queue: &mut CommandQueue,
-        data: &T,
         env: &Env,
     ) {
         if self.root.state().needs_layout {
-            self.layout(queue, data, env);
+            self.layout(queue, env);
         }
 
         for &r in invalid.rects() {
@@ -371,10 +365,10 @@ impl<T: Data> Window<T> {
                 },
             );
         }
-        self.paint(piet, invalid, queue, data, env);
+        self.paint(piet, invalid, queue, env);
     }
 
-    fn layout(&mut self, queue: &mut CommandQueue, data: &T, env: &Env) {
+    fn layout(&mut self, queue: &mut CommandQueue, env: &Env) {
         let mut widget_state = WidgetState::new(self.root.id(), Some(self.size));
         let mut state =
             ContextState::new::<T>(queue, &self.ext_handle, &self.handle, self.id, self.focus);
@@ -391,7 +385,7 @@ impl<T: Data> Window<T> {
         let content_size = {
             let _span = info_span!("layout");
             let _span = _span.enter();
-            self.root.layout(&mut layout_ctx, &bc, data, env)
+            self.root.layout(&mut layout_ctx, &bc, env)
         };
 
         if let WindowSizePolicy::Content = self.size_policy {
@@ -403,21 +397,20 @@ impl<T: Data> Window<T> {
             }
         }
         self.root
-            .set_origin(&mut layout_ctx, data, env, Point::ORIGIN);
+            .set_origin(&mut layout_ctx, env, Point::ORIGIN);
         self.lifecycle(
             queue,
             &LifeCycle::Internal(InternalLifeCycle::ParentWindowOrigin),
-            data,
             env,
             false,
         );
-        self.post_event_processing(&mut widget_state, queue, data, env, true);
+        self.post_event_processing(&mut widget_state, queue, env, true);
     }
 
     /// only expose `layout` for testing; normally it is called as part of `do_paint`
     #[cfg(not(target_arch = "wasm32"))]
-    pub(crate) fn just_layout(&mut self, queue: &mut CommandQueue, data: &T, env: &Env) {
-        self.layout(queue, data, env)
+    pub(crate) fn just_layout(&mut self, queue: &mut CommandQueue, env: &Env) {
+        self.layout(queue, env)
     }
 
     fn paint(
@@ -425,7 +418,6 @@ impl<T: Data> Window<T> {
         piet: &mut Piet,
         invalid: &Region,
         queue: &mut CommandQueue,
-        data: &T,
         env: &Env,
     ) {
         let widget_state = WidgetState::new(self.root.id(), Some(self.size));
@@ -442,7 +434,7 @@ impl<T: Data> Window<T> {
 
         let root = &mut self.root;
         info_span!("paint").in_scope(|| {
-            ctx.with_child_ctx(invalid.clone(), |ctx| root.paint_raw(ctx, data, env));
+            ctx.with_child_ctx(invalid.clone(), |ctx| root.paint_raw(ctx, env));
         });
 
         let mut z_ops = mem::take(&mut ctx.z_ops);
@@ -463,7 +455,7 @@ impl<T: Data> Window<T> {
     }
 
     pub(crate) fn update_title(&mut self, data: &T, env: &Env) {
-        if self.title.resolve(data, env) {
+        if self.title.resolve(env) {
             self.handle.set_title(&self.title.display_text());
         }
     }
@@ -484,7 +476,6 @@ impl<T: Data> Window<T> {
         &mut self,
         widget_state: &mut WidgetState,
         queue: &mut CommandQueue,
-        data: &T,
         env: &Env,
     ) {
         if let Some(focus_req) = widget_state.request_focus.take() {
@@ -493,7 +484,7 @@ impl<T: Data> Window<T> {
             // Only send RouteFocusChanged in case there's actual change
             if old != new {
                 let event = LifeCycle::Internal(InternalLifeCycle::RouteFocusChanged { old, new });
-                self.lifecycle(queue, &event, data, env, false);
+                self.lifecycle(queue, &event, env, false);
                 self.focus = new;
                 // check if the newly focused widget has an IME session, and
                 // notify the system if so.

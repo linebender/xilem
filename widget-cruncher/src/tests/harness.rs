@@ -97,7 +97,7 @@ impl<T: Data> Harness<'_, T> {
     /// This function is a subset of [create_with_render](struct.Harness.html#create_with_render)
     pub fn create_simple(
         data: T,
-        root: impl Widget<T> + 'static,
+        root: impl Widget + 'static,
         harness_closure: impl FnMut(&mut Harness<T>),
     ) {
         Self::create_with_render(data, root, DEFAULT_SIZE, harness_closure, |_target| {})
@@ -136,7 +136,7 @@ impl<T: Data> Harness<'_, T> {
     ///
     pub fn create_with_render(
         data: T,
-        root: impl Widget<T> + 'static,
+        root: impl Widget + 'static,
         window_size: Size,
         mut harness_closure: impl FnMut(&mut Harness<T>),
         mut render_context_closure: impl FnMut(TargetGuard),
