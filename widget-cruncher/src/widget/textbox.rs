@@ -49,10 +49,10 @@ const SCROLL_TO_INSETS: Insets = Insets::uniform_xy(40.0, 0.0);
 ///
 /// [`Formatter`]: crate::text::format::Formatter
 /// [`ValueTextBox`]: super::ValueTextBox
-pub struct TextBox<T> {
-    placeholder_text: LabelText<T>,
+pub struct TextBox {
+    placeholder_text: LabelText,
     placeholder_layout: TextLayout,
-    inner: Scroll<T, Padding<T, TextComponent<T>>>,
+    inner: Scroll<T, Padding<T, TextComponent>>,
     scroll_to_selection_after_layout: bool,
     multiline: bool,
     /// true if a click event caused us to gain focus.
@@ -71,7 +71,7 @@ pub struct TextBox<T> {
     text_pos: Point,
 }
 
-impl<T: EditableText + TextStorage> TextBox<T> {
+impl<T: EditableText + TextStorage> TextBox {
     /// Create a new TextBox widget.
     pub fn new() -> Self {
         let placeholder_text = ArcStr::from("");
@@ -123,7 +123,7 @@ impl<T: EditableText + TextStorage> TextBox<T> {
     }
 }
 
-impl<T> TextBox<T> {
+impl TextBox {
     /// Builder-style method for setting the text size.
     ///
     /// The argument can be either an `f64` or a [`Key<f64>`].
@@ -272,27 +272,27 @@ impl<T> TextBox<T> {
     }
 }
 
-impl<T: Data> TextBox<T> {
+impl<T: Data> TextBox {
     /// Builder-style method to set the `TextBox`'s placeholder text.
-    pub fn with_placeholder(mut self, placeholder: impl Into<LabelText<T>>) -> Self {
+    pub fn with_placeholder(mut self, placeholder: impl Into<LabelText>) -> Self {
         self.set_placeholder(placeholder);
         self
     }
 
     /// Set the `TextBox`'s placeholder text.
-    pub fn set_placeholder(&mut self, placeholder: impl Into<LabelText<T>>) {
+    pub fn set_placeholder(&mut self, placeholder: impl Into<LabelText>) {
         self.placeholder_text = placeholder.into();
         self.placeholder_layout
             .set_text(self.placeholder_text.display_text());
     }
 }
 
-impl<T> TextBox<T> {
+impl TextBox {
     /// An immutable reference to the inner [`TextComponent`].
     ///
     /// Using this correctly is difficult; please see the [`TextComponent`]
     /// docs for more information.
-    pub fn text(&self) -> &TextComponent<T> {
+    pub fn text(&self) -> &TextComponent {
         self.inner.child().wrapped()
     }
 
@@ -300,7 +300,7 @@ impl<T> TextBox<T> {
     ///
     /// Using this correctly is difficult; please see the [`TextComponent`]
     /// docs for more information.
-    pub fn text_mut(&mut self) -> &mut TextComponent<T> {
+    pub fn text_mut(&mut self) -> &mut TextComponent {
         self.inner.child_mut().wrapped_mut()
     }
 
@@ -318,7 +318,7 @@ impl<T> TextBox<T> {
     }
 }
 
-impl<T: TextStorage + EditableText> TextBox<T> {
+impl<T: TextStorage + EditableText> TextBox {
     fn rect_for_selection_end(&self) -> Rect {
         let text = self.text().borrow();
         let layout = text.layout.layout().unwrap();
@@ -372,7 +372,7 @@ impl<T: TextStorage + EditableText> TextBox<T> {
     }
 }
 
-impl<T: TextStorage + EditableText> Widget for TextBox<T> {
+impl<T: TextStorage + EditableText> Widget for TextBox {
     #[instrument(name = "TextBox", level = "trace", skip(self, ctx, event, env))]
     fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, env: &Env) {
         match event {
@@ -485,11 +485,11 @@ impl<T: TextStorage + EditableText> Widget for TextBox<T> {
             }
             _ => (),
         }
-        self.inner.on_event(ctx, event, data, env)
+        self.inner.on_event(ctx, event, env)
     }
 
-    #[instrument(name = "TextBox", level = "trace", skip(self, ctx, event, data, env))]
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, data: &T, env: &Env) {
+    #[instrument(name = "TextBox", level = "trace", skip(self, ctx, event, env))]
+    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
         match event {
             LifeCycle::WidgetAdded => {
                 if matches!(event, LifeCycle::WidgetAdded) {
@@ -529,11 +529,11 @@ impl<T: TextStorage + EditableText> Widget for TextBox<T> {
             }
             _ => (),
         }
-        self.inner.lifecycle(ctx, event, data, env);
+        self.inner.lifecycle(ctx, event, env);
     }
 
     #[instrument(name = "TextBox", level = "trace", skip(self, ctx, bc, data, env))]
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, data: &T, env: &Env) -> Size {
+    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
         if !self.text().can_write() {
             tracing::warn!("Widget::layout called with outstanding IME lock.");
         }
@@ -571,7 +571,7 @@ impl<T: TextStorage + EditableText> Widget for TextBox<T> {
     }
 
     #[instrument(name = "TextBox", level = "trace", skip(self, ctx, data, env))]
-    fn paint(&mut self, ctx: &mut PaintCtx, data: &T, env: &Env) {
+    fn paint(&mut self, ctx: &mut PaintCtx, env: &Env) {
         if !self.text().can_read() {
             tracing::warn!("Widget::paint called with outstanding IME lock, skipping");
             return;
@@ -653,7 +653,7 @@ impl<T: TextStorage + EditableText> Widget for TextBox<T> {
 
 }
 
-impl<T: TextStorage + EditableText> Default for TextBox<T> {
+impl<T: TextStorage + EditableText> Default for TextBox {
     fn default() -> Self {
         TextBox::new()
     }

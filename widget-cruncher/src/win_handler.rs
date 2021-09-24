@@ -26,7 +26,6 @@ use crate::shell::{
     Scale, TextFieldToken, WinHandler, WindowHandle,
 };
 
-use crate::app_delegate::{AppDelegate, DelegateCtx};
 use crate::core::CommandQueue;
 use crate::ext_event::{ExtEventHost, ExtEventSink};
 use crate::window::{ImeUpdateFn, Window};
@@ -50,9 +49,9 @@ pub(crate) const EXT_EVENT_IDLE_TOKEN: IdleToken = IdleToken::new(2);
 ///
 /// This is something of an internal detail and possibly we don't want to surface
 /// it publicly.
-pub struct DruidHandler<T> {
+pub struct DruidHandler {
     /// The shared app state.
-    pub(crate) app_state: AppState<T>,
+    pub(crate) app_state: AppState,
     /// The id for the current window.
     window_id: WindowId,
 }
@@ -63,14 +62,14 @@ pub struct DruidHandler<T> {
 /// used to handle events that are not associated with a window.
 ///
 /// Currently, this means only menu items on macOS when no window is open.
-pub(crate) struct AppHandler<T> {
-    app_state: AppState<T>,
+pub(crate) struct AppHandler {
+    app_state: AppState,
 }
 
 /// State shared by all windows in the UI.
 #[derive(Clone)]
-pub(crate) struct AppState<T> {
-    inner: Rc<RefCell<InnerAppState<T>>>,
+pub(crate) struct AppState {
+    inner: Rc<RefCell<InnerAppState>>,
 }
 
 /// The information for forwarding druid-shell's file dialog reply to the right place.
@@ -83,29 +82,27 @@ struct DialogInfo {
     cancel_cmd: Selector<()>,
 }
 
-struct InnerAppState<T> {
+struct InnerAppState {
     app: Application,
-    delegate: Option<Box<dyn AppDelegate<T>>>,
     command_queue: CommandQueue,
     file_dialogs: HashMap<FileDialogToken, DialogInfo>,
     ext_event_host: ExtEventHost,
-    windows: Windows<T>,
+    windows: Windows,
     /// The id of the most-recently-focused window that has a menu. On macOS, this
     /// is the window that's currently in charge of the app menu.
     #[allow(unused)]
     menu_window: Option<WindowId>,
     pub(crate) env: Env,
-    pub(crate) data: T,
     ime_focus_change: Option<Box<dyn Fn()>>,
 }
 
 /// All active windows.
-struct Windows<T> {
-    pending: HashMap<WindowId, PendingWindow<T>>,
-    windows: HashMap<WindowId, Window<T>>,
+struct Windows {
+    pending: HashMap<WindowId, PendingWindow>,
+    windows: HashMap<WindowId, Window>,
 }
 
-impl<T> Windows<T> {
+impl Windows {
     fn connect(&mut self, id: WindowId, handle: WindowHandle, ext_handle: ExtEventSink) {
         if let Some(pending) = self.pending.remove(&id) {
             let win = Window::new(id, handle, pending, ext_handle);
@@ -115,23 +112,23 @@ impl<T> Windows<T> {
         }
     }
 
-    fn add(&mut self, id: WindowId, win: PendingWindow<T>) {
+    fn add(&mut self, id: WindowId, win: PendingWindow) {
         assert!(self.pending.insert(id, win).is_none(), "duplicate pending");
     }
 
-    fn remove(&mut self, id: WindowId) -> Option<Window<T>> {
+    fn remove(&mut self, id: WindowId) -> Option<Window> {
         self.windows.remove(&id)
     }
 
-    fn iter_mut(&mut self) -> impl Iterator<Item = &'_ mut Window<T>> {
+    fn iter_mut(&mut self) -> impl Iterator<Item = &'_ mut Window> {
         self.windows.values_mut()
     }
 
-    fn get(&self, id: WindowId) -> Option<&Window<T>> {
+    fn get(&self, id: WindowId) -> Option<&Window> {
         self.windows.get(&id)
     }
 
-    fn get_mut(&mut self, id: WindowId) -> Option<&mut Window<T>> {
+    fn get_mut(&mut self, id: WindowId) -> Option<&mut Window> {
         self.windows.get_mut(&id)
     }
 
@@ -140,28 +137,24 @@ impl<T> Windows<T> {
     }
 }
 
-impl<T> AppHandler<T> {
-    pub(crate) fn new(app_state: AppState<T>) -> Self {
+impl AppHandler {
+    pub(crate) fn new(app_state: AppState) -> Self {
         Self { app_state }
     }
 }
 
-impl<T> AppState<T> {
+impl AppState {
     pub(crate) fn new(
         app: Application,
-        data: T,
         env: Env,
-        delegate: Option<Box<dyn AppDelegate<T>>>,
         ext_event_host: ExtEventHost,
     ) -> Self {
         let inner = Rc::new(RefCell::new(InnerAppState {
             app,
-            delegate,
             command_queue: VecDeque::new(),
             file_dialogs: HashMap::new(),
             menu_window: None,
             ext_event_host,
-            data,
             env,
             windows: Windows::default(),
             ime_focus_change: None,
@@ -175,48 +168,9 @@ impl<T> AppState<T> {
     }
 }
 
-impl<T: Data> InnerAppState<T> {
+impl InnerAppState {
     fn append_command(&mut self, cmd: Command) {
         self.command_queue.push_back(cmd);
-    }
-
-    /// A helper fn for setting up the `DelegateCtx`. Takes a closure with
-    /// an arbitrary return type `R`, and returns `Some(R)` if an `AppDelegate`
-    /// is configured.
-    fn with_delegate<R, F>(&mut self, f: F) -> Option<R>
-    where
-        F: FnOnce(&mut dyn AppDelegate<T>, &mut T, &Env, &mut DelegateCtx) -> R,
-    {
-        let InnerAppState {
-            ref mut delegate,
-            ref mut command_queue,
-            ref mut data,
-            ref ext_event_host,
-            ref env,
-            ..
-        } = self;
-        let mut ctx = DelegateCtx {
-            command_queue,
-            app_data_type: TypeId::of::<T>(),
-            ext_event_host,
-        };
-        delegate
-            .as_deref_mut()
-            .map(|delegate| f(delegate, data, env, &mut ctx))
-    }
-
-    fn delegate_event(&mut self, id: WindowId, event: Event) -> Option<Event> {
-        if self.delegate.is_some() {
-            self.with_delegate(|del, data, env, ctx| del.event(ctx, id, event, data, env))
-                .unwrap()
-        } else {
-            Some(event)
-        }
-    }
-
-    fn delegate_cmd(&mut self, cmd: &Command) -> Handled {
-        self.with_delegate(|del, data, env, ctx| del.command(ctx, cmd.target(), cmd, data, env))
-            .unwrap_or(Handled::No)
     }
 
     fn connect(&mut self, id: WindowId, handle: WindowHandle) {
@@ -228,15 +182,12 @@ impl<T: Data> InnerAppState<T> {
         if self.ext_event_host.handle_window_id.is_none() {
             self.set_ext_event_idle_handler(id);
         }
-
-        self.with_delegate(|del, data, env, ctx| del.window_added(id, data, env, ctx));
     }
 
     /// Called after this window has been closed by the platform.
     ///
-    /// We clean up resources and notifiy the delegate, if necessary.
+    /// We clean up resources.
     fn remove_window(&mut self, window_id: WindowId) {
-        self.with_delegate(|del, data, env, ctx| del.window_removed(window_id, data, env, ctx));
         // when closing the last window:
         if let Some(mut win) = self.windows.remove(window_id) {
             if self.windows.windows.is_empty() {
@@ -325,12 +276,7 @@ impl<T: Data> InnerAppState<T> {
     }
 
     fn dispatch_cmd(&mut self, cmd: Command) -> Handled {
-        let handled = self.delegate_cmd(&cmd);
-        //self.do_update();
         self.invalidate_and_finalize();
-        if handled.is_handled() {
-            return handled;
-        }
 
         match cmd.target() {
             Target::Window(id) => {
@@ -394,12 +340,6 @@ impl<T: Data> InnerAppState<T> {
             }
             _ => (),
         }
-
-        // if the event was swallowed by the delegate we consider it handled?
-        let event = match self.delegate_event(source_id, event) {
-            Some(event) => event,
-            None => return Handled::Yes,
-        };
 
         if let Some(win) = self.windows.get_mut(source_id) {
             win.event(&mut self.command_queue, event, &self.env)
@@ -467,10 +407,10 @@ impl<T: Data> InnerAppState<T> {
     }
 }
 
-impl<T: Data> DruidHandler<T> {
+impl DruidHandler {
     /// Note: the root widget doesn't go in here, because it gets added to the
     /// app state.
-    pub(crate) fn new_shared(app_state: AppState<T>, window_id: WindowId) -> DruidHandler<T> {
+    pub(crate) fn new_shared(app_state: AppState, window_id: WindowId) -> DruidHandler {
         DruidHandler {
             app_state,
             window_id,
@@ -478,16 +418,12 @@ impl<T: Data> DruidHandler<T> {
     }
 }
 
-impl<T: Data> AppState<T> {
-    pub(crate) fn data(&self) -> T {
-        self.inner.borrow().data.clone()
-    }
-
+impl AppState {
     pub(crate) fn env(&self) -> Env {
         self.inner.borrow().env.clone()
     }
 
-    pub(crate) fn add_window(&self, id: WindowId, window: PendingWindow<T>) {
+    pub(crate) fn add_window(&self, id: WindowId, window: PendingWindow) {
         self.inner.borrow_mut().windows.add(id, window);
     }
 
@@ -544,13 +480,6 @@ impl<T: Data> AppState<T> {
             }
             other => tracing::warn!("unexpected idle token {:?}", other),
         }
-    }
-
-    pub(crate) fn handle_idle_callback(&mut self, cb: impl FnOnce(&mut T)) {
-        let mut inner = self.inner.borrow_mut();
-        cb(&mut inner.data);
-        //inner.do_update();
-        inner.invalidate_and_finalize();
     }
 
     fn process_commands(&mut self) {
@@ -702,7 +631,7 @@ impl<T: Data> AppState<T> {
         let desc = cmd.get_unchecked(sys_cmd::NEW_WINDOW);
         // The NEW_WINDOW command is private and only druid can receive it by normal means,
         // thus unwrapping can be considered safe and deserves a panic.
-        let desc = desc.take().unwrap().downcast::<WindowDesc<T>>().unwrap();
+        let desc = desc.take().unwrap().downcast::<WindowDesc>().unwrap();
         let window = desc.build_native(self)?;
         window.show();
         Ok(())
@@ -766,13 +695,12 @@ impl<T: Data> AppState<T> {
     pub(crate) fn build_native_window(
         &mut self,
         id: WindowId,
-        mut pending: PendingWindow<T>,
+        mut pending: PendingWindow,
         config: WindowConfig,
     ) -> Result<WindowHandle, PlatformError> {
         let mut builder = WindowBuilder::new(self.app());
         config.apply_to_builder(&mut builder);
 
-        let data = self.data();
         let env = self.env();
 
         pending.size_policy = config.size_policy;
@@ -787,13 +715,13 @@ impl<T: Data> AppState<T> {
     }
 }
 
-impl<T: Data> crate::shell::AppHandler for AppHandler<T> {
+impl crate::shell::AppHandler for AppHandler {
     fn command(&mut self, id: u32) {
         self.app_state.handle_system_cmd(id, None)
     }
 }
 
-impl<T: Data> WinHandler for DruidHandler<T> {
+impl WinHandler for DruidHandler {
     fn connect(&mut self, handle: &WindowHandle) {
         self.app_state
             .connect_window(self.window_id, handle.clone());
@@ -918,7 +846,7 @@ impl<T: Data> WinHandler for DruidHandler<T> {
     }
 }
 
-impl<T> Default for Windows<T> {
+impl Default for Windows {
     fn default() -> Self {
         Windows {
             windows: HashMap::new(),

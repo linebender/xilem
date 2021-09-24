@@ -47,9 +47,9 @@ pub(crate) type CommandQueue = VecDeque<Command>;
 /// widget can process a diff between the old value and the new.
 ///
 /// [`update`]: trait.Widget.html#tymethod.update
-pub struct WidgetPod<T, W> {
+pub struct WidgetPod<W> {
     state: WidgetState,
-    old_data: Option<T>,
+    old_data: Option<()>,
     env: Option<Env>,
     inner: W,
     // stashed layout so we don't recompute this when debugging
@@ -184,13 +184,13 @@ pub(crate) enum CursorChange {
     Override(Cursor),
 }
 
-impl<T, W: Widget> WidgetPod<T, W> {
+impl<W: Widget> WidgetPod<W> {
     /// Create a new widget pod.
     ///
     /// In a widget hierarchy, each widget is wrapped in a `WidgetPod`
     /// so it can participate in layout and event flow. The process of
     /// adding a child widget to a container should call this method.
-    pub fn new(inner: W) -> WidgetPod<T, W> {
+    pub fn new(inner: W) -> WidgetPod<W> {
         // TODO - id argument
         let mut state = WidgetState::new(WidgetId::next(), None);
         state.children_changed = true;
@@ -265,7 +265,7 @@ impl<T, W: Widget> WidgetPod<T, W> {
 
         // if the widget has moved, it may have moved under the mouse, in which
         // case we need to handle that.
-        if WidgetPod::<T, W>::set_hot_state(
+        if WidgetPod::<W>::set_hot_state(
             &mut self.inner,
             &mut self.state,
             ctx.state,
@@ -410,7 +410,7 @@ impl<T, W: Widget> WidgetPod<T, W> {
     }
 }
 
-impl<T: Data, W: Widget> WidgetPod<T, W> {
+impl<W: Widget> WidgetPod<W> {
     /// Paint a child widget.
     ///
     /// Generally called by container widgets as part of their [`Widget::paint`]
@@ -659,7 +659,7 @@ impl<T: Data, W: Widget> WidgetPod<T, W> {
         let recurse = match event {
             Event::Internal(internal) => match internal {
                 InternalEvent::MouseLeave => {
-                    let hot_changed = WidgetPod::<T, W>::set_hot_state(
+                    let hot_changed = WidgetPod::<W>::set_hot_state(
                         &mut self.inner,
                         &mut self.state,
                         ctx.state,
@@ -713,7 +713,7 @@ impl<T: Data, W: Widget> WidgetPod<T, W> {
                 ctx.is_root
             }
             Event::MouseDown(mouse_event) => {
-                WidgetPod::<T, W>::set_hot_state(
+                WidgetPod::<W>::set_hot_state(
                     &mut self.inner,
                     &mut self.state,
                     ctx.state,
@@ -731,7 +731,7 @@ impl<T: Data, W: Widget> WidgetPod<T, W> {
                 }
             }
             Event::MouseUp(mouse_event) => {
-                WidgetPod::<T, W>::set_hot_state(
+                WidgetPod::<W>::set_hot_state(
                     &mut self.inner,
                     &mut self.state,
                     ctx.state,
@@ -749,7 +749,7 @@ impl<T: Data, W: Widget> WidgetPod<T, W> {
                 }
             }
             Event::MouseMove(mouse_event) => {
-                let hot_changed = WidgetPod::<T, W>::set_hot_state(
+                let hot_changed = WidgetPod::<W>::set_hot_state(
                     &mut self.inner,
                     &mut self.state,
                     ctx.state,
@@ -770,7 +770,7 @@ impl<T: Data, W: Widget> WidgetPod<T, W> {
                 }
             }
             Event::Wheel(mouse_event) => {
-                WidgetPod::<T, W>::set_hot_state(
+                WidgetPod::<W>::set_hot_state(
                     &mut self.inner,
                     &mut self.state,
                     ctx.state,
@@ -1069,17 +1069,17 @@ impl<T: Data, W: Widget> WidgetPod<T, W> {
     }
 }
 
-impl<T, W: Widget + 'static> WidgetPod<T, W> {
+impl<W: Widget + 'static> WidgetPod<W> {
     /// Box the contained widget.
     ///
     /// Convert a `WidgetPod` containing a widget of a specific concrete type
     /// into a dynamically boxed widget.
-    pub fn boxed(self) -> WidgetPod<T, Box<dyn Widget>> {
+    pub fn boxed(self) -> WidgetPod<Box<dyn Widget>> {
         WidgetPod::new(Box::new(self.inner))
     }
 }
 
-impl<T, W> WidgetPod<T, W> {
+impl<W> WidgetPod<W> {
     /// Return a reference to the inner widget.
     pub fn widget(&self) -> &W {
         &self.inner

@@ -79,22 +79,21 @@ const LABEL_X_PADDING: f64 = 2.0;
 /// [`LocalizedString`]: ../struct.LocalizedString.html
 /// [`draw_at`]: #method.draw_at
 /// [`Widget`]: ../trait.Widget.html
-pub struct Label<T> {
-    label: RawLabel<ArcStr>,
+pub struct Label {
+    label: RawLabel,
     current_text: ArcStr,
-    text: LabelText<ArcStr>,
+    text: LabelText,
     // for debuging, we track if the user modifies the text and we don't get
     // an update call, which might cause us to display stale text.
     text_should_be_updated: bool,
-    _marker: std::marker::PhantomData<T>,
 }
 
 /// A widget that displays text data.
 ///
 /// This requires the `Data` to implement [`TextStorage`]; to handle static, dynamic, or
 /// localized text, use [`Label`].
-pub struct RawLabel<T> {
-    layout: TextLayout<T>,
+pub struct RawLabel {
+    layout: TextLayout<ArcStr>,
     line_break_mode: LineBreaking,
 
     disabled: bool,
@@ -122,9 +121,9 @@ pub enum LineBreaking {
 /// [`LocalizedString`]: ../struct.LocalizedString.html
 /// [`Label`]: struct.Label.html
 #[derive(Clone)]
-pub enum LabelText<T> {
+pub enum LabelText {
     /// Localized string that will be resolved through `Env`.
-    Localized(LocalizedString<T>),
+    Localized(LocalizedString<ArcStr>),
     /// Static text.
     Static(Static),
 }
@@ -142,7 +141,7 @@ pub struct Static {
     resolved: bool,
 }
 
-impl<T: TextStorage> RawLabel<T> {
+impl RawLabel {
     /// Create a new `RawLabel`.
     pub fn new() -> Self {
         Self {
@@ -203,7 +202,7 @@ impl<T: TextStorage> RawLabel<T> {
     }
 
     /// Set the text.
-    pub fn set_text(&mut self, new_text: impl Into<T>) {
+    pub fn set_text(&mut self, new_text: impl Into<ArcStr>) {
         self.layout.set_text(new_text.into());
     }
 
@@ -287,16 +286,16 @@ impl<T: TextStorage> RawLabel<T> {
     }
 }
 
-impl<T: TextStorage> Label<T> {
+impl Label {
     /// Create a new [`RawLabel`].
     ///
     /// This can display text `Data` directly.
-    pub fn raw() -> RawLabel<T> {
+    pub fn raw() -> RawLabel {
         RawLabel::new()
     }
 }
 
-impl<T: Data> Label<T> {
+impl Label {
     /// Construct a new `Label` widget.
     ///
     /// ```
@@ -313,7 +312,7 @@ impl<T: Data> Label<T> {
     /// // Construct a new dynamic Label. Text will be updated when data changes.
     /// let _: Label<u32> = Label::new(|data: &u32, _env: &_| format!("Hello world: {}", data));
     /// ```
-    pub fn new(text: impl Into<LabelText<ArcStr>>) -> Self {
+    pub fn new(text: impl Into<LabelText>) -> Self {
         let text = text.into();
         let current_text = text.display_text();
         let mut label = RawLabel::new();
@@ -323,7 +322,6 @@ impl<T: Data> Label<T> {
             current_text,
             label,
             text_should_be_updated: false,
-            _marker: Default::default(),
         }
     }
 
@@ -342,7 +340,7 @@ impl<T: Data> Label<T> {
     ///
     /// [`update`]: ../trait.Widget.html#tymethod.update
     /// [`request_update`]: ../struct.EventCtx.html#method.request_update
-    pub fn set_text(&mut self, text: impl Into<LabelText<ArcStr>>) {
+    pub fn set_text(&mut self, text: impl Into<LabelText>) {
         self.text = text.into();
         self.text_should_be_updated = true;
     }
@@ -421,7 +419,7 @@ impl Static {
     }
 }
 
-impl<T: Data> LabelText<T> {
+impl LabelText {
     /// Call callback with the text that should be displayed.
     pub fn with_display_text<V>(&self, mut cb: impl FnMut(&str) -> V) -> V {
         match self {
@@ -450,7 +448,7 @@ impl<T: Data> LabelText<T> {
     }
 }
 
-impl<T: Data> Widget for Label<T> {
+impl Widget for Label {
     #[instrument(name = "Label", level = "trace", skip(self, _ctx, _event, _env))]
     fn on_event(&mut self, _ctx: &mut EventCtx, _event: &Event, _env: &Env) {}
 
@@ -475,7 +473,7 @@ impl<T: Data> Widget for Label<T> {
 
 }
 
-impl<T: TextStorage> Widget for RawLabel<T> {
+impl Widget for RawLabel {
     #[instrument(
         name = "RawLabel",
         level = "trace",
@@ -554,44 +552,44 @@ impl<T: TextStorage> Widget for RawLabel<T> {
     }
 }
 
-impl<T: TextStorage> Default for RawLabel<T> {
+impl Default for RawLabel {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<T> Deref for Label<T> {
-    type Target = RawLabel<ArcStr>;
+impl Deref for Label {
+    type Target = RawLabel;
     fn deref(&self) -> &Self::Target {
         &self.label
     }
 }
 
-impl<T> DerefMut for Label<T> {
+impl DerefMut for Label {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.label
     }
 }
-impl<T> From<String> for LabelText<T> {
-    fn from(src: String) -> LabelText<T> {
+impl From<String> for LabelText {
+    fn from(src: String) -> LabelText {
         LabelText::Static(Static::new(src.into()))
     }
 }
 
-impl<T> From<&str> for LabelText<T> {
-    fn from(src: &str) -> LabelText<T> {
+impl From<&str> for LabelText {
+    fn from(src: &str) -> LabelText {
         LabelText::Static(Static::new(src.into()))
     }
 }
 
-impl<T> From<ArcStr> for LabelText<T> {
-    fn from(string: ArcStr) -> LabelText<T> {
+impl From<ArcStr> for LabelText {
+    fn from(string: ArcStr) -> LabelText {
         LabelText::Static(Static::new(string))
     }
 }
 
-impl<T> From<LocalizedString<T>> for LabelText<T> {
-    fn from(src: LocalizedString<T>) -> LabelText<T> {
+impl From<LocalizedString<ArcStr>> for LabelText {
+    fn from(src: LocalizedString<ArcStr>) -> LabelText {
         LabelText::Localized(src)
     }
 }

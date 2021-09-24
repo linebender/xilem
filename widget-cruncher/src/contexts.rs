@@ -58,7 +58,6 @@ pub(crate) struct ContextState<'a> {
     pub(crate) text: PietText,
     /// The id of the widget that currently has focus.
     pub(crate) focus_widget: Option<WidgetId>,
-    pub(crate) root_app_data_type: TypeId,
 }
 
 /// A mutable context provided to event handling methods of widgets.
@@ -515,17 +514,13 @@ impl EventCtx<'_, '_> {
     /// `T` must be the application's root `Data` type (the type provided to [`AppLauncher::launch`]).
     ///
     /// [`AppLauncher::launch`]: struct.AppLauncher.html#method.launch
-    pub fn new_window<T: Any>(&mut self, desc: WindowDesc<T>) {
+    pub fn new_window(&mut self, desc: WindowDesc) {
         trace!("new_window");
-        if self.state.root_app_data_type == TypeId::of::<T>() {
-            self.submit_command(
-                commands::NEW_WINDOW
-                    .with(SingleUse::new(Box::new(desc)))
-                    .to(Target::Global),
-            );
-        } else {
-            debug_panic!("EventCtx::new_window<T> - T must match the application data type.");
-        }
+        self.submit_command(
+            commands::NEW_WINDOW
+                .with(SingleUse::new(Box::new(desc)))
+                .to(Target::Global),
+        );
     }
 
     /// Set the event as "handled", which stops its propagation to other
@@ -840,7 +835,7 @@ impl PaintCtx<'_, '_, '_> {
 }
 
 impl<'a> ContextState<'a> {
-    pub(crate) fn new<T: 'static>(
+    pub(crate) fn new(
         command_queue: &'a mut CommandQueue,
         ext_handle: &'a ExtEventSink,
         window: &'a WindowHandle,
@@ -854,7 +849,6 @@ impl<'a> ContextState<'a> {
             window_id,
             focus_widget,
             text: window.text(),
-            root_app_data_type: TypeId::of::<T>(),
         }
     }
 

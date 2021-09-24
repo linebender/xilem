@@ -136,12 +136,12 @@ use tracing::{instrument, trace};
 /// [`expand_width`]: ../trait.WidgetExt.html#method.expand_width
 /// [`TextBox`]: struct.TextBox.html
 /// [`SizedBox`]: struct.SizedBox.html
-pub struct Flex<T> {
+pub struct Flex {
     direction: Axis,
     cross_alignment: CrossAxisAlignment,
     main_alignment: MainAxisAlignment,
     fill_major_axis: bool,
-    children: Vec<Child<T>>,
+    children: Vec<Child>,
 }
 
 /// Optional parameters for an item in a [`Flex`] container (row or column).
@@ -366,7 +366,7 @@ impl FlexParams {
     }
 }
 
-impl<T: Data> Flex<T> {
+impl Flex {
     /// Create a new Flex oriented along the provided axis.
     pub fn for_axis(axis: Axis) -> Self {
         Flex {
@@ -625,7 +625,7 @@ impl<T: Data> Flex<T> {
     }
 }
 
-impl<T: Data> Widget for Flex<T> {
+impl Widget for Flex {
     #[instrument(name = "Flex", level = "trace", skip(self, ctx, event, env))]
     fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, env: &Env) {
         for child in self.children.iter_mut().filter_map(|x| x.widget_mut()) {
@@ -981,13 +981,13 @@ impl From<f64> for FlexParams {
     }
 }
 
-enum Child<T> {
+enum Child {
     Fixed {
-        widget: WidgetPod<T, Box<dyn Widget>>,
+        widget: WidgetPod<Box<dyn Widget>>,
         alignment: Option<CrossAxisAlignment>,
     },
     Flex {
-        widget: WidgetPod<T, Box<dyn Widget>>,
+        widget: WidgetPod<Box<dyn Widget>>,
         alignment: Option<CrossAxisAlignment>,
         flex: f64,
     },
@@ -995,14 +995,14 @@ enum Child<T> {
     FlexedSpacer(f64, f64),
 }
 
-impl<T> Child<T> {
-    fn widget_mut(&mut self) -> Option<&mut WidgetPod<T, Box<dyn Widget>>> {
+impl Child {
+    fn widget_mut(&mut self) -> Option<&mut WidgetPod<Box<dyn Widget>>> {
         match self {
             Child::Fixed { widget, .. } | Child::Flex { widget, .. } => Some(widget),
             _ => None,
         }
     }
-    fn widget(&self) -> Option<&WidgetPod<T, Box<dyn Widget>>> {
+    fn widget(&self) -> Option<&WidgetPod<Box<dyn Widget>>> {
         match self {
             Child::Fixed { widget, .. } | Child::Flex { widget, .. } => Some(widget),
             _ => None,

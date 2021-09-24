@@ -27,12 +27,12 @@ use crate::ArcStr;
 const LABEL_INSETS: Insets = Insets::uniform_xy(8., 2.);
 
 /// A button with a text label.
-pub struct Button<T> {
-    label: Label<T>,
+pub struct Button {
+    label: Label,
     label_size: Size,
 }
 
-impl<T: Data> Button<T> {
+impl Button {
     /// Create a new button with a text label.
     ///
     /// Use the [`.on_click`] method to provide a closure to be called when the
@@ -49,7 +49,7 @@ impl<T: Data> Button<T> {
     /// ```
     ///
     /// [`.on_click`]: #method.on_click
-    pub fn new(text: impl Into<LabelText<ArcStr>>) -> Button<T> {
+    pub fn new(text: impl Into<LabelText>) -> Button {
         Button::from_label(Label::new(text))
     }
 
@@ -71,7 +71,7 @@ impl<T: Data> Button<T> {
     ///
     /// [`Label`]: struct.Label.html
     /// [`.on_click`]: #method.on_click
-    pub fn from_label(label: Label<T>) -> Button<T> {
+    pub fn from_label(label: Label) -> Button {
         Button {
             label,
             label_size: Size::ZERO,
@@ -79,7 +79,7 @@ impl<T: Data> Button<T> {
     }
 }
 
-impl<T: Data> Widget for Button<T> {
+impl Widget for Button {
     #[instrument(name = "Button", level = "trace", skip(self, ctx, event, _env))]
     fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, _env: &Env) {
         match event {

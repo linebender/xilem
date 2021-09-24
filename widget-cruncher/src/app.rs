@@ -20,19 +20,14 @@ use crate::shell::{Application, Error as PlatformError, WindowBuilder, WindowHan
 use crate::widget::LabelText;
 use crate::win_handler::{AppHandler, AppState};
 use crate::window::WindowId;
-use crate::{AppDelegate, Data, Env, LocalizedString, Widget};
+use crate::{Data, Env, LocalizedString, Widget};
 
 use druid_shell::WindowState;
 
-/// A function that modifies the initial environment.
-type EnvSetupFn<T> = dyn FnOnce(&mut Env, &T);
-
 /// Handles initial setup of an application, and starts the runloop.
-pub struct AppLauncher<T> {
-    windows: Vec<WindowDesc<T>>,
-    env_setup: Option<Box<EnvSetupFn<T>>>,
+pub struct AppLauncher {
+    windows: Vec<WindowDesc>,
     l10n_resources: Option<(Vec<String>, String)>,
-    delegate: Option<Box<dyn AppDelegate<T>>>,
     ext_event_host: ExtEventHost,
 }
 
@@ -64,8 +59,8 @@ pub struct WindowConfig {
 }
 
 /// A description of a window to be instantiated.
-pub struct WindowDesc<T> {
-    pub(crate) pending: PendingWindow<T>,
+pub struct WindowDesc {
+    pub(crate) pending: PendingWindow,
     pub(crate) config: WindowConfig,
     /// The `WindowId` that will be assigned to this window.
     ///
@@ -77,17 +72,17 @@ pub struct WindowDesc<T> {
 /// The parts of a window, pending construction, that are dependent on top level app state
 /// or are not part of the druid shells windowing abstraction.
 /// This includes the boxed root widget, as well as other window properties such as the title.
-pub struct PendingWindow<T> {
+pub struct PendingWindow {
     pub(crate) root: Box<dyn Widget>,
-    pub(crate) title: LabelText<T>,
+    pub(crate) title: LabelText,
     pub(crate) transparent: bool,
     pub(crate) size_policy: WindowSizePolicy, // This is copied over from the WindowConfig
                                               // when the native window is constructed.
 }
 
-impl<T: Data> PendingWindow<T> {
+impl PendingWindow {
     /// Create a pending window from any widget.
-    pub fn new<W>(root: W) -> PendingWindow<T>
+    pub fn new<W>(root: W) -> PendingWindow
     where
         W: Widget + 'static,
     {
@@ -106,7 +101,7 @@ impl<T: Data> PendingWindow<T> {
     ///
     /// [`LabelText`]: widget/enum.LocalizedString.html
     /// [`LocalizedString`]: struct.LocalizedString.html
-    pub fn title(mut self, title: impl Into<LabelText<T>>) -> Self {
+    pub fn title(mut self, title: impl Into<LabelText>) -> Self {
         self.title = title.into();
         self
     }
@@ -118,33 +113,14 @@ impl<T: Data> PendingWindow<T> {
     }
 }
 
-impl<T: Data> AppLauncher<T> {
+impl AppLauncher {
     /// Create a new `AppLauncher` with the provided window.
-    pub fn with_window(window: WindowDesc<T>) -> Self {
+    pub fn with_window(window: WindowDesc) -> Self {
         AppLauncher {
             windows: vec![window],
-            env_setup: None,
             l10n_resources: None,
-            delegate: None,
             ext_event_host: ExtEventHost::new(),
         }
-    }
-
-    /// Provide an optional closure that will be given mutable access to
-    /// the environment and immutable access to the app state before launch.
-    ///
-    /// This can be used to set or override theme values.
-    pub fn configure_env(mut self, f: impl Fn(&mut Env, &T) + 'static) -> Self {
-        self.env_setup = Some(Box::new(f));
-        self
-    }
-
-    /// Set the [`AppDelegate`].
-    ///
-    /// [`AppDelegate`]: trait.AppDelegate.html
-    pub fn delegate(mut self, delegate: impl AppDelegate<T> + 'static) -> Self {
-        self.delegate = Some(Box::new(delegate));
-        self
     }
 
     /// Initialize a minimal logger with DEBUG max level for printing logs out to stderr.
@@ -220,7 +196,7 @@ impl<T: Data> AppLauncher<T> {
     ///
     /// Returns an error if a window cannot be instantiated. This is usually
     /// a fatal error.
-    pub fn launch(mut self, data: T) -> Result<(), PlatformError> {
+    pub fn launch(mut self) -> Result<(), PlatformError> {
         let app = Application::new()?;
 
         let mut env = self
@@ -228,15 +204,9 @@ impl<T: Data> AppLauncher<T> {
             .map(|it| Env::with_i10n(it.0, &it.1))
             .unwrap_or_else(Env::with_default_i10n);
 
-        if let Some(f) = self.env_setup.take() {
-            f(&mut env, &data);
-        }
-
         let mut state = AppState::new(
             app.clone(),
-            data,
             env,
-            self.delegate.take(),
             self.ext_event_host,
         );
 
@@ -431,11 +401,11 @@ impl WindowConfig {
     }
 }
 
-impl<T: Data> WindowDesc<T> {
+impl WindowDesc {
     /// Create a new `WindowDesc`, taking the root [`Widget`] for this window.
     ///
     /// [`Widget`]: trait.Widget.html
-    pub fn new<W>(root: W) -> WindowDesc<T>
+    pub fn new<W>(root: W) -> WindowDesc
     where
         W: Widget + 'static,
     {
@@ -452,7 +422,7 @@ impl<T: Data> WindowDesc<T> {
     ///
     /// [`LabelText`]: widget/enum.LocalizedString.html
     /// [`LocalizedString`]: struct.LocalizedString.html
-    pub fn title(mut self, title: impl Into<LabelText<T>>) -> Self {
+    pub fn title(mut self, title: impl Into<LabelText>) -> Self {
         self.pending = self.pending.title(title);
         self
     }
@@ -562,7 +532,7 @@ impl<T: Data> WindowDesc<T> {
     /// Attempt to create a platform window from this `WindowDesc`.
     pub(crate) fn build_native(
         self,
-        state: &mut AppState<T>,
+        state: &mut AppState,
     ) -> Result<WindowHandle, PlatformError> {
         state.build_native_window(self.id, self.pending, self.config)
     }

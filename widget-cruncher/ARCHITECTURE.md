@@ -10,6 +10,14 @@
 - Benchmarks
 
 
+## Needs to be re-implemented
+
+- Animation handling?
+- Idle: add_idle_callback, etc
+- env_setup
+- AppDelegate
+
+
 ## ARCHITECTURE
 
 The main communication between druid and druid-shell is in `druid-shell/src/window.rs`

@@ -43,7 +43,6 @@ pub use druid_shell::{kurbo, piet};
 mod util;
 
 mod app;
-mod app_delegate;
 mod bloom;
 mod box_constraints;
 mod command;
@@ -83,7 +82,6 @@ pub use crate::shell::raw_window_handle::{HasRawWindowHandle, RawWindowHandle};
 
 pub use crate::core::{WidgetPod, WidgetState};
 pub use app::{AppLauncher, WindowConfig, WindowDesc, WindowSizePolicy};
-pub use app_delegate::{AppDelegate, DelegateCtx};
 pub use box_constraints::BoxConstraints;
 pub use command::{sys as commands, Command, Notification, Selector, SingleUse, Target};
 pub use contexts::{EventCtx, LayoutCtx, LifeCycleCtx, PaintCtx, UpdateCtx};

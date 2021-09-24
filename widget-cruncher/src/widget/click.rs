@@ -36,12 +36,12 @@ use tracing::{instrument, trace};
 /// [`WidgetExt`]: ../trait.WidgetExt.html
 /// [`Button`]: struct.Button.html
 /// [`LifeCycle::HotChanged`]: ../enum.LifeCycle.html#variant.HotChanged
-pub struct Click<T> {
+pub struct Click {
     /// A closure that will be invoked when the child widget is clicked.
     action: Box<dyn Fn(&mut EventCtx, &mut T, &Env)>,
 }
 
-impl<T: Data> Click<T> {
+impl Click {
     /// Create a new clickable [`Controller`] widget.
     pub fn new(action: impl Fn(&mut EventCtx, &mut T, &Env) + 'static) -> Self {
         Click {
@@ -50,11 +50,11 @@ impl<T: Data> Click<T> {
     }
 }
 
-impl<T: Data, W: Widget> Controller<T, W> for Click<T> {
+impl<W: Widget> Controller<W> for Click {
     #[instrument(
         name = "Click",
         level = "trace",
-        skip(self, child, ctx, event, data, env)
+        skip(self, child, ctx, event, env)
     )]
     fn event(&mut self, child: &mut W, ctx: &mut EventCtx, event: &Event, env: &Env) {
         match event {
@@ -78,26 +78,25 @@ impl<T: Data, W: Widget> Controller<T, W> for Click<T> {
             _ => {}
         }
 
-        child.event(ctx, event, data, env);
+        child.event(ctx, event, env);
     }
 
     #[instrument(
         name = "Click",
         level = "trace",
-        skip(self, child, ctx, event, data, env)
+        skip(self, child, ctx, event, env)
     )]
     fn lifecycle(
         &mut self,
         child: &mut W,
         ctx: &mut LifeCycleCtx,
         event: &LifeCycle,
-        data: &T,
         env: &Env,
     ) {
         if let LifeCycle::HotChanged(_) | LifeCycle::FocusChanged(_) = event {
             ctx.request_paint();
         }
 
-        child.lifecycle(ctx, event, data, env);
+        child.lifecycle(ctx, event, env);
     }
 }

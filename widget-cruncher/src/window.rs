@@ -45,10 +45,10 @@ pub type ImeUpdateFn = dyn FnOnce(crate::shell::text::Event);
 pub struct WindowId(u64);
 
 /// Per-window state not owned by user code.
-pub struct Window<T> {
+pub struct Window {
     pub(crate) id: WindowId,
-    pub(crate) root: WidgetPod<T, Box<dyn Widget>>,
-    pub(crate) title: LabelText<T>,
+    pub(crate) root: WidgetPod<Box<dyn Widget>>,
+    pub(crate) title: LabelText,
     size_policy: WindowSizePolicy,
     size: Size,
     invalid: Region,
@@ -64,13 +64,13 @@ pub struct Window<T> {
     pub(crate) ime_focus_change: Option<Option<TextFieldToken>>,
 }
 
-impl<T> Window<T> {
+impl Window {
     pub(crate) fn new(
         id: WindowId,
         handle: WindowHandle,
-        pending: PendingWindow<T>,
+        pending: PendingWindow,
         ext_handle: ExtEventSink,
-    ) -> Window<T> {
+    ) -> Window {
         Window {
             id,
             root: WidgetPod::new(pending.root),
@@ -91,7 +91,7 @@ impl<T> Window<T> {
     }
 }
 
-impl<T: Data> Window<T> {
+impl Window {
     /// `true` iff any child requested an animation frame since the last `AnimFrame` event.
     pub(crate) fn wants_animation_frame(&self) -> bool {
         self.root.state().request_anim
@@ -229,7 +229,7 @@ impl<T: Data> Window<T> {
         let mut widget_state = WidgetState::new(self.root.id(), Some(self.size));
         let is_handled = {
             let mut state =
-                ContextState::new::<T>(queue, &self.ext_handle, &self.handle, self.id, self.focus);
+                ContextState::new(queue, &self.ext_handle, &self.handle, self.id, self.focus);
             let mut notifications = VecDeque::new();
             let mut ctx = EventCtx {
                 state: &mut state,
@@ -292,7 +292,7 @@ impl<T: Data> Window<T> {
     ) {
         let mut widget_state = WidgetState::new(self.root.id(), Some(self.size));
         let mut state =
-            ContextState::new::<T>(queue, &self.ext_handle, &self.handle, self.id, self.focus);
+            ContextState::new(queue, &self.ext_handle, &self.handle, self.id, self.focus);
         let mut ctx = LifeCycleCtx {
             state: &mut state,
             widget_state: &mut widget_state,
@@ -371,7 +371,7 @@ impl<T: Data> Window<T> {
     fn layout(&mut self, queue: &mut CommandQueue, env: &Env) {
         let mut widget_state = WidgetState::new(self.root.id(), Some(self.size));
         let mut state =
-            ContextState::new::<T>(queue, &self.ext_handle, &self.handle, self.id, self.focus);
+            ContextState::new(queue, &self.ext_handle, &self.handle, self.id, self.focus);
         let mut layout_ctx = LayoutCtx {
             state: &mut state,
             widget_state: &mut widget_state,
@@ -422,7 +422,7 @@ impl<T: Data> Window<T> {
     ) {
         let widget_state = WidgetState::new(self.root.id(), Some(self.size));
         let mut state =
-            ContextState::new::<T>(queue, &self.ext_handle, &self.handle, self.id, self.focus);
+            ContextState::new(queue, &self.ext_handle, &self.handle, self.id, self.focus);
         let mut ctx = PaintCtx {
             render_ctx: piet,
             state: &mut state,
@@ -454,7 +454,7 @@ impl<T: Data> Window<T> {
         }
     }
 
-    pub(crate) fn update_title(&mut self, data: &T, env: &Env) {
+    pub(crate) fn update_title(&mut self, env: &Env) {
         if self.title.resolve(env) {
             self.handle.set_title(&self.title.display_text());
         }
