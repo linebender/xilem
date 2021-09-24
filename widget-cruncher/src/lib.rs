@@ -42,7 +42,7 @@ pub use druid_shell::{kurbo, piet};
 #[macro_use]
 mod util;
 
-mod app;
+mod window_handling;
 mod bloom;
 mod box_constraints;
 mod command;
@@ -59,8 +59,10 @@ pub mod scroll_component;
 pub mod text;
 pub mod theme;
 pub mod widget;
-mod win_handler;
-mod window;
+
+pub use window_handling::app;
+pub use window_handling::win_handler;
+pub use window_handling::window;
 
 // Types from kurbo & piet that are required by public API.
 pub use kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
