@@ -12,6 +12,8 @@
 
 ## Needs to be re-implemented
 
+- Test harness
+
 - Animation handling?
 - Idle: add_idle_callback, etc
 - env_setup
