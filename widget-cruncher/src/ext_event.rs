@@ -21,7 +21,7 @@ use std::sync::{Arc, Mutex};
 use crate::command::SelectorSymbol;
 use druid_shell::IdleHandle;
 use crate::window_handling::win_handler::EXT_EVENT_IDLE_TOKEN;
-use crate::{Command, Data, DruidHandler, Selector, Target, WindowId};
+use crate::{ Data, DruidHandler, Selector, Target, WindowId};
 
 pub(crate) type ExtCommand = (SelectorSymbol, Box<dyn Any + Send>, Target);
 
@@ -74,14 +74,6 @@ impl ExtEventHost {
 
     pub(crate) fn has_pending_items(&self) -> bool {
         !self.queue.lock().unwrap().is_empty()
-    }
-
-    pub(crate) fn recv(&mut self) -> Option<Command> {
-        self.queue
-            .lock()
-            .unwrap()
-            .pop_front()
-            .map(|(selector, payload, target)| Command::from_ext(selector, payload, target))
     }
 }
 

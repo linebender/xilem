@@ -23,7 +23,7 @@ use crate::piet::{
     util, Color, FontFamily, FontStyle, FontWeight, PietTextLayoutBuilder, TextLayoutBuilder,
     TextStorage as PietTextStorage,
 };
-use crate::{ArcStr, Command, Data, Env, FontDescriptor, KeyOrValue};
+use crate::{ArcStr, Data, Env, FontDescriptor, KeyOrValue};
 
 /// Text with optional style spans.
 #[derive(Clone, Debug, Data)]
@@ -238,13 +238,5 @@ impl AttributesAdder<'_> {
         self
     }
 
-    /// Add a [`Link`] attribute.
-    ///
-    /// [`Link`]: super::attribute::Link
-    pub fn link(&mut self, command: impl Into<Command>) -> &mut Self {
-        self.rich_text_builder
-            .links
-            .push(Link::new(self.range.clone(), command.into()));
-        self
-    }
+    //pub fn link(&mut self, command: impl Into<Command>) -> &mut Self;
 }

@@ -485,7 +485,8 @@ impl Widget for RawLabel {
                 // Account for the padding
                 let pos = event.pos - Vec2::new(LABEL_X_PADDING, 0.0);
                 if let Some(link) = self.layout.link_for_pos(pos) {
-                    ctx.submit_command(link.command.clone());
+                    todo!();
+                    //ctx.submit_command(link.command.clone());
                 }
             }
             Event::MouseMove(event) => {

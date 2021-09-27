@@ -328,6 +328,8 @@ impl<T: TextStorage + EditableText> Widget for TextComponent<T> {
                 let scroll_to = self.borrow_mut().take_scroll_to();
                 let action = self.borrow_mut().take_external_action();
 
+                // TODO
+                /*
                 if let Some(scroll_to) = scroll_to {
                     ctx.submit_notification(TextComponent::SCROLL_TO.with(scroll_to));
                 }
@@ -344,6 +346,7 @@ impl<T: TextStorage + EditableText> Widget for TextComponent<T> {
                         _ => tracing::warn!("unexepcted external action '{:?}'", action),
                     };
                 }
+                */
                 let text = self.borrow_mut().take_external_text_change();
                 let selection = self.borrow_mut().take_external_selection_change();
                 if let Some(text) = text {

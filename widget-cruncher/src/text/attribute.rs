@@ -17,7 +17,7 @@
 use std::ops::Range;
 
 use crate::piet::{Color, FontFamily, FontStyle, FontWeight, TextAttribute as PietAttr};
-use crate::{Command, Env, FontDescriptor, KeyOrValue};
+use crate::{Env, FontDescriptor, KeyOrValue};
 
 use super::EnvUpdateCtx;
 
@@ -26,8 +26,6 @@ use super::EnvUpdateCtx;
 pub struct Link {
     /// The range of text for the link.
     pub range: Range<usize>,
-    /// A [`Command`] representing the link's payload.
-    pub command: Command,
 }
 
 /// A collection of spans of attributes of various kinds.
@@ -106,8 +104,8 @@ pub enum Attribute {
 
 impl Link {
     /// Create a new `Link`.
-    pub fn new(range: Range<usize>, command: Command) -> Self {
-        Self { range, command }
+    pub fn new(range: Range<usize>) -> Self {
+        Self { range, }
     }
 
     /// Get this `Link`'s range.

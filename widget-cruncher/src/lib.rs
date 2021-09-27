@@ -83,7 +83,7 @@ pub use crate::core::{WidgetPod, WidgetState};
 pub use window_handling::window_description::{WindowId, WindowConfig, WindowDesc, WindowSizePolicy};
 pub use app_launcher::AppLauncher;
 pub use box_constraints::BoxConstraints;
-pub use command::{sys as commands, Command, Notification, Selector, SingleUse, Target};
+pub use command::{Selector, SingleUse, Target};
 pub use contexts::{EventCtx, LayoutCtx, LifeCycleCtx, PaintCtx, UpdateCtx};
 pub use data::Data;
 pub use dialog::FileDialogOptions;

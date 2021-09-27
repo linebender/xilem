@@ -23,15 +23,15 @@ use std::{
 };
 use tracing::{error, trace, warn};
 
-use crate::core::{CommandQueue, CursorChange, FocusChange, WidgetState};
+use crate::core::{CursorChange, FocusChange, WidgetState};
 use crate::env::KeyLike;
 use crate::piet::{Piet, PietText, RenderContext};
 use druid_shell::text::Event as ImeInvalidation;
 use druid_shell::Region;
 use crate::text::{ImeHandlerRef, TextFieldRegistration};
 use crate::{
-    commands, widget::Widget, Affine, Command, Cursor, Data, Env,
-    ExtEventSink, Insets, Notification, Point, Rect, SingleUse, Size, Target, TimerToken,
+    widget::Widget, Affine, Cursor, Data, Env,
+    ExtEventSink, Insets, Point, Rect, SingleUse, Size, Target, TimerToken,
     Vec2, WidgetId, WindowConfig, WindowDesc, WindowHandle, WindowId,
 };
 
@@ -51,7 +51,6 @@ macro_rules! impl_context_method {
 
 /// Static state that is shared between most contexts.
 pub(crate) struct ContextState<'a> {
-    pub(crate) command_queue: &'a mut CommandQueue,
     pub(crate) ext_handle: &'a ExtEventSink,
     pub(crate) window_id: WindowId,
     pub(crate) window: &'a WindowHandle,
@@ -69,7 +68,6 @@ pub(crate) struct ContextState<'a> {
 pub struct EventCtx<'a, 'b> {
     pub(crate) state: &'a mut ContextState<'b>,
     pub(crate) widget_state: &'a mut WidgetState,
-    pub(crate) notifications: &'a mut VecDeque<Notification>,
     pub(crate) is_handled: bool,
     pub(crate) is_root: bool,
 }
@@ -417,6 +415,8 @@ impl_context_method!(EventCtx<'_, '_>, UpdateCtx<'_, '_>, LifeCycleCtx<'_, '_>, 
     /// (such as the text or the selection) changes as a result of a non text-input
     /// event.
     pub fn invalidate_text_input(&mut self, event: ImeInvalidation) {
+        todo!();
+        /*
         let payload = commands::ImeInvalidation {
             widget: self.widget_id(),
             event,
@@ -425,6 +425,7 @@ impl_context_method!(EventCtx<'_, '_>, UpdateCtx<'_, '_>, LifeCycleCtx<'_, '_>, 
             .with(payload)
             .to(Target::Window(self.window_id()));
         self.submit_command(cmd);
+        */
     }
 });
 
@@ -435,22 +436,6 @@ impl_context_method!(
     LifeCycleCtx<'_, '_>,
     LayoutCtx<'_, '_>,
     {
-        /// Submit a [`Command`] to be run after this event is handled.
-        ///
-        /// Commands are run in the order they are submitted; all commands
-        /// submitted during the handling of an event are executed before
-        /// the [`update`] method is called; events submitted during [`update`]
-        /// are handled after painting.
-        ///
-        /// [`Target::Auto`] commands will be sent to the window containing the widget.
-        ///
-        /// [`Command`]: struct.Command.html
-        /// [`update`]: trait.Widget.html#tymethod.update
-        pub fn submit_command(&mut self, cmd: impl Into<Command>) {
-            trace!("submit_command");
-            self.state.submit_command(cmd.into())
-        }
-
         /// Returns an [`ExtEventSink`] that can be moved between threads,
         /// and can be used to submit commands back to the application.
         ///
@@ -472,35 +457,6 @@ impl_context_method!(
 );
 
 impl EventCtx<'_, '_> {
-    /// Submit a [`Notification`].
-    ///
-    /// The provided argument can be a [`Selector`] or a [`Command`]; this lets
-    /// us work with the existing API for addding a payload to a [`Selector`].
-    ///
-    /// If the argument is a `Command`, the command's target will be ignored.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use druid::{Event, EventCtx, Selector};
-    /// const IMPORTANT_EVENT: Selector<String> = Selector::new("druid-example.important-event");
-    ///
-    /// fn check_event(ctx: &mut EventCtx, event: &Event) {
-    ///     if is_this_the_event_we_were_looking_for(event) {
-    ///         ctx.submit_notification(IMPORTANT_EVENT.with("That's the one".to_string()))
-    ///     }
-    /// }
-    ///
-    /// # fn is_this_the_event_we_were_looking_for(event: &Event) -> bool { true }
-    /// ```
-    ///
-    /// [`Selector`]: crate::Selector
-    pub fn submit_notification(&mut self, note: impl Into<Command>) {
-        trace!("submit_notification");
-        let note = note.into().into_notification(self.widget_state.id);
-        self.notifications.push_back(note);
-    }
-
     /// Set the "active" state of the widget.
     ///
     /// See [`EventCtx::is_active`](struct.EventCtx.html#method.is_active).
@@ -508,19 +464,6 @@ impl EventCtx<'_, '_> {
         trace!("set_active({})", active);
         self.widget_state.is_active = active;
         // TODO: plumb mouse grab through to platform (through druid-shell)
-    }
-
-    /// Create a new window.
-    /// `T` must be the application's root `Data` type (the type provided to [`AppLauncher::launch`]).
-    ///
-    /// [`AppLauncher::launch`]: struct.AppLauncher.html#method.launch
-    pub fn new_window(&mut self, desc: WindowDesc) {
-        trace!("new_window");
-        self.submit_command(
-            commands::NEW_WINDOW
-                .with(SingleUse::new(Box::new(desc)))
-                .to(Target::Global),
-        );
     }
 
     /// Set the event as "handled", which stops its propagation to other
@@ -836,26 +779,18 @@ impl PaintCtx<'_, '_, '_> {
 
 impl<'a> ContextState<'a> {
     pub(crate) fn new(
-        command_queue: &'a mut CommandQueue,
         ext_handle: &'a ExtEventSink,
         window: &'a WindowHandle,
         window_id: WindowId,
         focus_widget: Option<WidgetId>,
     ) -> Self {
         ContextState {
-            command_queue,
             ext_handle,
             window,
             window_id,
             focus_widget,
             text: window.text(),
         }
-    }
-
-    fn submit_command(&mut self, command: Command) {
-        trace!("submit_command");
-        self.command_queue
-            .push_back(command.default_to(self.window_id.into()));
     }
 
     fn request_timer(&self, widget_state: &mut WidgetState, deadline: Duration) -> TimerToken {

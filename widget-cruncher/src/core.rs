@@ -24,13 +24,10 @@ use crate::kurbo::{Affine, Insets, Point, Rect, Shape, Size, Vec2};
 use crate::text::{TextFieldRegistration, TextLayout};
 use crate::util::ExtendDrain;
 use crate::{
-    ArcStr, BoxConstraints, Color, Command, Cursor, Data, Env, Event, EventCtx, InternalEvent,
-    InternalLifeCycle, LayoutCtx, LifeCycle, LifeCycleCtx, Notification, PaintCtx, Region,
+    ArcStr, BoxConstraints, Color, Cursor, Data, Env, Event, EventCtx, InternalEvent,
+    InternalLifeCycle, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Region,
     RenderContext, Target, TimerToken, UpdateCtx, Widget, WidgetId, WindowId,
 };
-
-/// Our queue type
-pub(crate) type CommandQueue = VecDeque<Command>;
 
 /// A container for one widget in the hierarchy.
 ///
@@ -608,7 +605,6 @@ impl<W: Widget> WidgetPod<W> {
         let mut ctx = EventCtx {
             state: parent_ctx.state,
             widget_state: &mut self.state,
-            notifications: parent_ctx.notifications,
             is_handled: false,
             is_root: false,
         };
@@ -668,24 +664,6 @@ impl<W: Widget> WidgetPod<W> {
                             env,
                     );
                     had_active || hot_changed
-                }
-                InternalEvent::TargetedCommand(cmd) => {
-                    match cmd.target() {
-                        Target::Widget(id) if id == self.id() => {
-                            modified_event = Some(Event::Command(cmd.clone()));
-                            true
-                        }
-                        Target::Widget(id) => {
-                            // Recurse when the target widget could be our descendant.
-                            // The bloom filter we're checking can return false positives.
-                            self.state.children.may_contain(&id)
-                        }
-                        Target::Global | Target::Window(_) => {
-                            modified_event = Some(Event::Command(cmd.clone()));
-                            true
-                        }
-                        _ => false,
-                    }
                 }
                 InternalEvent::RouteTimer(token, widget_id) => {
                     if *widget_id == self.id() {
@@ -798,16 +776,14 @@ impl<W: Widget> WidgetPod<W> {
             Event::Zoom(_) => had_active || self.state.is_hot,
             Event::Timer(_) => false, // This event was targeted only to our parent
             Event::ImeStateChange => true, // once delivered to the focus widget, recurse to the component?
-            Event::Command(_) => true,
-            Event::Notification(_) => false,
+            //Event::Command(_) => true,
+            //Event::Notification(_) => false,
         };
 
         if recurse {
-            let mut notifications = VecDeque::new();
             let mut inner_ctx = EventCtx {
                 state: ctx.state,
                 widget_state: &mut self.state,
-                notifications: &mut notifications,
                 is_handled: false,
                 is_root: false,
             };
@@ -819,8 +795,6 @@ impl<W: Widget> WidgetPod<W> {
             inner_ctx.widget_state.has_active |= inner_ctx.widget_state.is_active;
             ctx.is_handled |= inner_ctx.is_handled;
 
-            // we try to handle the notifications that occured below us in the tree
-            self.send_notifications(ctx, &mut notifications, env);
         } else {
             trace!("event wasn't propagated to {:?}", self.state.id);
         }
@@ -828,51 +802,6 @@ impl<W: Widget> WidgetPod<W> {
         // Always merge even if not needed, because merging is idempotent and gives us simpler code.
         // Doing this conditionally only makes sense when there's a measurable performance boost.
         ctx.widget_state.merge_up(&mut self.state);
-    }
-
-    /// Send notifications originating from this widget's children to this
-    /// widget.
-    ///
-    /// Notifications that are unhandled will be added to the notification
-    /// list for the parent's `EventCtx`, to be retried there.
-    fn send_notifications(
-        &mut self,
-        ctx: &mut EventCtx,
-        notifications: &mut VecDeque<Notification>,
-        env: &Env,
-    ) {
-        let EventCtx {
-            state,
-            notifications: parent_notifications,
-            ..
-        } = ctx;
-        let self_id = self.id();
-        let mut inner_ctx = EventCtx {
-            state,
-            notifications: parent_notifications,
-            widget_state: &mut self.state,
-            is_handled: false,
-            is_root: false,
-        };
-
-        for notification in notifications.drain(..) {
-            // skip notifications that were submitted by our child
-            if notification.source() != self_id {
-                let event = Event::Notification(notification);
-                self.inner.on_event(&mut inner_ctx, &event, env);
-                if inner_ctx.is_handled {
-                    inner_ctx.is_handled = false;
-                } else if let Event::Notification(notification) = event {
-                    // we will try again with the next parent
-                    inner_ctx.notifications.push_back(notification);
-                } else {
-                    // could be unchecked but we avoid unsafe in druid :shrug:
-                    unreachable!()
-                }
-            } else {
-                inner_ctx.notifications.push_back(notification);
-            }
-        }
     }
 
     /// Propagate a [`LifeCycle`] event.
@@ -1240,6 +1169,7 @@ impl CursorChange {
     }
 }
 
+#[cfg(FALSE)]
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1280,7 +1210,6 @@ mod tests {
         let widget = make_widgets();
         let mut widget = WidgetPod::new(widget).boxed();
 
-        let mut command_queue: CommandQueue = VecDeque::new();
         let mut widget_state = WidgetState::new(WidgetId::next(), None);
         let window = WindowHandle::default();
         let ext_host = ExtEventHost::default();

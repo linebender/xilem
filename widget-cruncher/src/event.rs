@@ -19,7 +19,7 @@ use crate::kurbo::{Rect, Shape, Size, Vec2};
 use druid_shell::{Clipboard, KeyEvent, TimerToken};
 
 use crate::mouse::MouseEvent;
-use crate::{Command, Notification, WidgetId};
+use crate::{WidgetId};
 
 /// An event, propagated downwards during event flow.
 ///
@@ -151,47 +151,6 @@ pub enum Event {
     /// the monitor's refresh, causing lag or jerky animation.
     AnimFrame(u64),
 
-    /// An event containing a [`Command`] to be handled by the widget.
-    ///
-    /// [`Command`]s are messages, optionally with attached data, that can
-    /// may be generated from a number of sources:
-    ///
-    /// - If your application uses  menus (either window or context menus)
-    /// then the [`MenuItem`]s in the menu will each correspond to a `Command`.
-    /// When the menu item is selected, that [`Command`] will be delivered to
-    /// the root widget of the appropriate window.
-    /// - If you are doing work in another thread (using an [`ExtEventSink`])
-    /// then [`Command`]s are the mechanism by which you communicate back to
-    /// the main thread.
-    /// - Widgets and other Druid components can send custom [`Command`]s at
-    /// runtime, via methods such as [`EventCtx::submit_command`].
-    ///
-    /// [`Command`]: struct.Command.html
-    /// [`Widget`]: trait.Widget.html
-    /// [`EventCtx::submit_command`]: struct.EventCtx.html#method.submit_command
-    /// [`ExtEventSink`]: crate::ExtEventSink
-    /// [`MenuItem`]: crate::MenuItem
-    Command(Command),
-
-    /// A [`Notification`] from one of this widget's descendants.
-    ///
-    /// While handling events, widgets can submit notifications to be
-    /// delivered to their ancestors immdiately after they return.
-    ///
-    /// If you handle a [`Notification`], you should call [`EventCtx::set_handled`]
-    /// to stop the notification from being delivered to further ancestors.
-    ///
-    /// ## Special considerations
-    ///
-    /// Notifications are slightly different from other events; they originate
-    /// inside Druid, and they are delivered as part of the handling of another
-    /// event. In this sense, they can sort of be thought of as an augmentation
-    /// of an event; they are a way for multiple widgets to coordinate the
-    /// handling of an event.
-    ///
-    /// [`EventCtx::set_handled`]: crate::EventCtx::set_handled
-    Notification(Notification),
-
     /// Sent to a widget when the platform may have mutated shared IME state.
     ///
     /// This is sent to a widget that has an attached IME session anytime the
@@ -224,9 +183,6 @@ pub enum InternalEvent {
     /// This is used in cases when the platform no longer sends mouse events,
     /// but we know that we've stopped receiving the mouse events.
     MouseLeave,
-
-    /// A command still in the process of being dispatched.
-    TargetedCommand(Command),
 
     /// Used for routing timer events.
     RouteTimer(TimerToken, WidgetId),
@@ -438,8 +394,6 @@ impl Event {
             | Event::WindowSize(_)
             | Event::Timer(_)
             | Event::AnimFrame(_)
-            | Event::Command(_)
-            | Event::Notification(_)
             | Event::Internal(_) => true,
             Event::MouseDown(_)
             | Event::MouseUp(_)
