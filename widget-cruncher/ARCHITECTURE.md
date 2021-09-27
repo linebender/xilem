@@ -9,7 +9,11 @@
 - Widget: impl Debug
 - Benchmarks
 
+- Rename "window_handling" to "platform"
 - Rename druid_shell::WindowState to "WindowIsMaximised"
+- Reduce usage of word "State"
+
+- Rename PietText to PietTextFormat or something.
 
 ## Needs to be re-implemented
 
