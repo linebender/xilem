@@ -24,7 +24,7 @@ use instant::Instant;
 use crate::piet::{Color, Piet, RenderContext};
 use crate::shell::{text::InputHandler, Counter, Cursor, Region, TextFieldToken, WindowHandle};
 
-use crate::app::{PendingWindow, WindowSizePolicy};
+use crate::window_handling::window_description::{PendingWindow, WindowSizePolicy};
 use crate::contexts::ContextState;
 use crate::core::{CommandQueue, FocusChange, WidgetState};
 
@@ -89,9 +89,7 @@ impl Window {
             ime_focus_change: None,
         }
     }
-}
 
-impl Window {
     /// `true` iff any child requested an animation frame since the last `AnimFrame` event.
     pub(crate) fn wants_animation_frame(&self) -> bool {
         self.root.state().request_anim

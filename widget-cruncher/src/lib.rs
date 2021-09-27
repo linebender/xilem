@@ -59,10 +59,14 @@ pub mod scroll_component;
 pub mod text;
 pub mod theme;
 pub mod widget;
+/// Launcher
+pub mod app_launcher;
+pub mod app_root;
 
 pub use window_handling::app;
 pub use window_handling::win_handler;
 pub use window_handling::window;
+//pub use window_handling::window_description;
 
 // Types from kurbo & piet that are required by public API.
 pub use kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
@@ -83,7 +87,8 @@ pub use shell::{
 pub use crate::shell::raw_window_handle::{HasRawWindowHandle, RawWindowHandle};
 
 pub use crate::core::{WidgetPod, WidgetState};
-pub use app::{AppLauncher, WindowConfig, WindowDesc, WindowSizePolicy};
+pub use window_handling::window_description::{WindowConfig, WindowDesc, WindowSizePolicy};
+pub use app_launcher::AppLauncher;
 pub use box_constraints::BoxConstraints;
 pub use command::{sys as commands, Command, Notification, Selector, SingleUse, Target};
 pub use contexts::{EventCtx, LayoutCtx, LifeCycleCtx, PaintCtx, UpdateCtx};
