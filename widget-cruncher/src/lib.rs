@@ -19,7 +19,7 @@
     unsafe_code,
     clippy::trivially_copy_pass_by_ref
 )]
-#![warn(missing_docs)]
+//#![warn(missing_docs)]
 #![allow(clippy::new_ret_no_self, clippy::needless_doctest_main)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![doc(
