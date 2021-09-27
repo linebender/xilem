@@ -29,7 +29,7 @@ use druid_shell::Region;
 use crate::text::{ImeHandlerRef, TextFieldRegistration};
 use crate::{
     Affine, Cursor, Env,
-    ExtEventSink, Insets, Point, Rect, Size, TimerToken,
+    Insets, Point, Rect, Size, TimerToken,
     Vec2, WidgetId, WindowHandle, WindowId,
 };
 
@@ -49,7 +49,6 @@ macro_rules! impl_context_method {
 
 /// Static state that is shared between most contexts.
 pub(crate) struct ContextState<'a> {
-    pub(crate) ext_handle: &'a ExtEventSink,
     pub(crate) window_id: WindowId,
     pub(crate) window: &'a WindowHandle,
     pub(crate) text: PietText,
@@ -434,15 +433,6 @@ impl_context_method!(
     LifeCycleCtx<'_, '_>,
     LayoutCtx<'_, '_>,
     {
-        /// Returns an [`ExtEventSink`] that can be moved between threads,
-        /// and can be used to submit commands back to the application.
-        ///
-        /// [`ExtEventSink`]: struct.ExtEventSink.html
-        pub fn get_external_handle(&self) -> ExtEventSink {
-            trace!("get_external_handle");
-            self.state.ext_handle.clone()
-        }
-
         /// Request a timer event.
         ///
         /// The return value is a token, which can be used to associate the
@@ -777,13 +767,11 @@ impl PaintCtx<'_, '_, '_> {
 
 impl<'a> ContextState<'a> {
     pub(crate) fn new(
-        ext_handle: &'a ExtEventSink,
         window: &'a WindowHandle,
         window_id: WindowId,
         focus_widget: Option<WidgetId>,
     ) -> Self {
         ContextState {
-            ext_handle,
             window,
             window_id,
             focus_widget,

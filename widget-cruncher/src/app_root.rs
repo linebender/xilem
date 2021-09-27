@@ -8,7 +8,6 @@ use instant::Instant;
 use crate::kurbo::{Point, Size};
 use crate::piet::{Color, Piet, RenderContext};
 
-use crate::ext_event::{ExtEventHost, ExtEventSink};
 use crate::{
     Env, Event, Handled, InternalEvent,
     TimerToken, WidgetId, WindowId,
@@ -34,7 +33,6 @@ use druid_shell::{
 pub(crate) struct AppRoot {
     pub app: Application,
     pub file_dialogs: HashMap<FileDialogToken, DialogInfo>,
-    pub ext_event_host: ExtEventHost,
     pub windows: Windows,
     /// The id of the most-recently-focused window that has a menu. On macOS, this
     /// is the window that's currently in charge of the app menu.
@@ -70,16 +68,15 @@ pub struct WindowRoot {
     pub(crate) timers: HashMap<TimerToken, WidgetId>,
     pub(crate) transparent: bool,
     pub(crate) ime_handlers: Vec<(TextFieldToken, TextFieldRegistration)>,
-    ext_handle: ExtEventSink,
     pub(crate) ime_focus_change: Option<Option<TextFieldToken>>,
 }
 
 // ---
 
 impl Windows {
-    pub fn connect(&mut self, id: WindowId, handle: WindowHandle, ext_handle: ExtEventSink) {
+    pub fn connect(&mut self, id: WindowId, handle: WindowHandle) {
         if let Some(pending) = self.pending.remove(&id) {
-            let win = WindowRoot::new(id, handle, pending, ext_handle);
+            let win = WindowRoot::new(id, handle, pending);
             assert!(self.active_windows.insert(id, win).is_none(), "duplicate window");
         } else {
             tracing::error!("no window for connecting handle {:?}", id);
@@ -99,13 +96,7 @@ impl Windows {
 impl AppRoot {
     pub fn connect(&mut self, id: WindowId, handle: WindowHandle) {
         self.windows
-            .connect(id, handle, self.ext_event_host.make_sink());
-
-        // If the external event host has no handle, it cannot wake us
-        // when an event arrives.
-        if self.ext_event_host.handle_window_id.is_none() {
-            self.set_ext_event_idle_handler(id);
-        }
+            .connect(id, handle);
     }
 
     /// Called after this window has been closed by the platform.
@@ -121,32 +112,6 @@ impl AppRoot {
                     self.app.quit();
                 }
             }
-        }
-
-        // if we are closing the window that is currently responsible for
-        // waking us when external events arrive, we want to pass that responsibility
-        // to another window.
-        if self.ext_event_host.handle_window_id == Some(window_id) {
-            self.ext_event_host.handle_window_id = None;
-            // find any other live window
-            let win_id = self.windows.active_windows.keys().find(|k| *k != &window_id);
-            if let Some(any_other_window) = win_id.cloned() {
-                self.set_ext_event_idle_handler(any_other_window);
-            }
-        }
-    }
-
-    /// Set the idle handle that will be used to wake us when external events arrive.
-    pub fn set_ext_event_idle_handler(&mut self, id: WindowId) {
-        if let Some(mut idle) = self
-            .windows
-            .active_windows.get_mut(&id)
-            .and_then(|win| win.handle.get_idle_handle())
-        {
-            if self.ext_event_host.has_pending_items() {
-                idle.schedule_idle(EXT_EVENT_IDLE_TOKEN);
-            }
-            self.ext_event_host.set_idle(idle, id);
         }
     }
 
@@ -276,7 +241,6 @@ impl WindowRoot {
         id: WindowId,
         handle: WindowHandle,
         pending: PendingWindow,
-        ext_handle: ExtEventSink,
     ) -> WindowRoot {
         WindowRoot {
             id,
@@ -291,7 +255,6 @@ impl WindowRoot {
             focus: None,
             handle,
             timers: HashMap::new(),
-            ext_handle,
             ime_handlers: Vec::new(),
             ime_focus_change: None,
         }
@@ -419,7 +382,7 @@ impl WindowRoot {
         let mut widget_state = WidgetState::new(self.root.id(), Some(self.size));
         let is_handled = {
             let mut state =
-                ContextState::new(&self.ext_handle, &self.handle, self.id, self.focus);
+                ContextState::new(&self.handle, self.id, self.focus);
             let mut ctx = EventCtx {
                 state: &mut state,
                 widget_state: &mut widget_state,
@@ -473,7 +436,7 @@ impl WindowRoot {
     ) {
         let mut widget_state = WidgetState::new(self.root.id(), Some(self.size));
         let mut state =
-            ContextState::new(&self.ext_handle, &self.handle, self.id, self.focus);
+            ContextState::new(&self.handle, self.id, self.focus);
         let mut ctx = LifeCycleCtx {
             state: &mut state,
             widget_state: &mut widget_state,
@@ -551,7 +514,7 @@ impl WindowRoot {
     fn layout(&mut self, env: &Env) {
         let mut widget_state = WidgetState::new(self.root.id(), Some(self.size));
         let mut state =
-            ContextState::new(&self.ext_handle, &self.handle, self.id, self.focus);
+            ContextState::new( &self.handle, self.id, self.focus);
         let mut layout_ctx = LayoutCtx {
             state: &mut state,
             widget_state: &mut widget_state,
@@ -600,7 +563,7 @@ impl WindowRoot {
     ) {
         let widget_state = WidgetState::new(self.root.id(), Some(self.size));
         let mut state =
-            ContextState::new(&self.ext_handle, &self.handle, self.id, self.focus);
+            ContextState::new(&self.handle, self.id, self.focus);
         let mut ctx = PaintCtx {
             render_ctx: piet,
             state: &mut state,

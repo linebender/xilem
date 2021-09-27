@@ -22,7 +22,6 @@ use std::rc::Rc;
 use crate::kurbo::Size;
 use crate::piet::Piet;
 
-use crate::ext_event::{ExtEventHost};
 use crate::{
     Env, Event, Handled, InternalEvent, KeyEvent, PlatformError, Selector,
     TimerToken, WindowId,
@@ -91,13 +90,11 @@ impl AppState {
     pub(crate) fn new(
         app: Application,
         env: Env,
-        ext_event_host: ExtEventHost,
     ) -> Self {
         let inner = Rc::new(RefCell::new(AppRoot {
             app,
             file_dialogs: HashMap::new(),
             menu_window: None,
-            ext_event_host,
             env,
             windows: Default::default(),
             ime_focus_change: None,
