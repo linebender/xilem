@@ -14,21 +14,20 @@
 
 //! The implementation of the WinHandler trait (druid-shell integration).
 
-use std::any::{Any};
+use std::any::Any;
 use std::cell::RefCell;
-use std::collections::{HashMap};
+use std::collections::HashMap;
 use std::rc::Rc;
 
 use crate::kurbo::Size;
 use crate::piet::Piet;
 
 use crate::{
-    Env, Event, Handled, InternalEvent, KeyEvent, PlatformError, Selector,
-    TimerToken, WindowId,
+    Env, Event, Handled, InternalEvent, KeyEvent, PlatformError, Selector, TimerToken, WindowId,
 };
 
+use crate::app_root::AppRoot;
 use crate::platform::window_description::{PendingWindow, WindowConfig};
-use crate::app_root::{AppRoot};
 
 use druid_shell::WindowBuilder;
 use druid_shell::{
@@ -87,10 +86,7 @@ impl AppHandler {
 }
 
 impl AppState {
-    pub(crate) fn new(
-        app: Application,
-        env: Env,
-    ) -> Self {
+    pub(crate) fn new(app: Application, env: Env) -> Self {
         let inner = Rc::new(RefCell::new(AppRoot {
             app,
             file_dialogs: HashMap::new(),

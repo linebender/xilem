@@ -14,7 +14,7 @@
 
 //! The fundamental druid types.
 
-use std::collections::{HashMap};
+use std::collections::HashMap;
 use tracing::{info_span, trace, warn};
 
 use crate::bloom::Bloom;
@@ -23,9 +23,9 @@ use crate::kurbo::{Affine, Insets, Point, Rect, Shape, Size, Vec2};
 use crate::text::{TextFieldRegistration, TextLayout};
 use crate::util::ExtendDrain;
 use crate::{
-    ArcStr, BoxConstraints, Color, Cursor, Env, Event, EventCtx, InternalEvent,
-    InternalLifeCycle, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Region,
-    RenderContext, TimerToken, Widget, WidgetId,
+    ArcStr, BoxConstraints, Color, Cursor, Env, Event, EventCtx, InternalEvent, InternalLifeCycle,
+    LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Region, RenderContext, TimerToken, Widget,
+    WidgetId,
 };
 
 /// A container for one widget in the hierarchy.
@@ -534,12 +534,7 @@ impl<W: Widget> WidgetPod<W> {
     /// method.
     ///
     /// [`layout`]: trait.Widget.html#tymethod.layout
-    pub fn layout(
-        &mut self,
-        ctx: &mut LayoutCtx,
-        bc: &BoxConstraints,
-        env: &Env,
-    ) -> Size {
+    pub fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
         if !self.is_initialized() {
             debug_panic!(
                 "{:?}: layout method called before receiving WidgetAdded.",
@@ -660,7 +655,7 @@ impl<W: Widget> WidgetPod<W> {
                         ctx.state,
                         rect,
                         None,
-                            env,
+                        env,
                     );
                     had_active || hot_changed
                 }
@@ -682,9 +677,7 @@ impl<W: Widget> WidgetPod<W> {
                 }
             },
             Event::WindowConnected | Event::WindowCloseRequested => true,
-            Event::WindowDisconnected => {
-                true
-            }
+            Event::WindowDisconnected => true,
             Event::WindowSize(_) => {
                 self.state.needs_layout = true;
                 ctx.is_root
@@ -775,8 +768,8 @@ impl<W: Widget> WidgetPod<W> {
             Event::Zoom(_) => had_active || self.state.is_hot,
             Event::Timer(_) => false, // This event was targeted only to our parent
             Event::ImeStateChange => true, // once delivered to the focus widget, recurse to the component?
-            //Event::Command(_) => true,
-            //Event::Notification(_) => false,
+                                           //Event::Command(_) => true,
+                                           //Event::Notification(_) => false,
         };
 
         if recurse {
@@ -793,7 +786,6 @@ impl<W: Widget> WidgetPod<W> {
 
             inner_ctx.widget_state.has_active |= inner_ctx.widget_state.is_active;
             ctx.is_handled |= inner_ctx.is_handled;
-
         } else {
             trace!("event wasn't propagated to {:?}", self.state.id);
         }

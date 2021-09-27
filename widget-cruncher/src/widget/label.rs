@@ -18,13 +18,10 @@ use std::ops::{Deref, DerefMut};
 
 use druid_shell::Cursor;
 
-
 use crate::kurbo::Vec2;
 use crate::text::{TextAlignment, TextLayout};
 use crate::widget::prelude::*;
-use crate::{
-    ArcStr, Color, Data, FontDescriptor, KeyOrValue, Point,
-};
+use crate::{ArcStr, Color, Data, FontDescriptor, KeyOrValue, Point};
 use tracing::{instrument, trace};
 
 // added padding between the edges of the widget and the text.
@@ -448,8 +445,7 @@ impl Widget for Label {
 
     #[instrument(name = "Label", level = "trace", skip(self, ctx, event, env))]
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
-        self.label
-            .lifecycle(ctx, event, env);
+        self.label.lifecycle(ctx, event, env);
     }
 
     #[instrument(name = "Label", level = "trace", skip(self, ctx, bc, env))]
@@ -464,15 +460,10 @@ impl Widget for Label {
         }
         self.label.paint(ctx, env)
     }
-
 }
 
 impl Widget for RawLabel {
-    #[instrument(
-        name = "RawLabel",
-        level = "trace",
-        skip(self, ctx, event, _env)
-    )]
+    #[instrument(name = "RawLabel", level = "trace", skip(self, ctx, event, _env))]
     fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, _env: &Env) {
         match event {
             Event::MouseUp(event) => {

@@ -14,7 +14,6 @@
 
 //! A button widget.
 
-
 use crate::widget::prelude::*;
 use crate::widget::{Label, LabelText};
 use crate::{theme, Affine, Insets, LinearGradient, UnitPoint};
@@ -181,5 +180,4 @@ impl Widget for Button {
             self.label.paint(ctx, env);
         });
     }
-
 }

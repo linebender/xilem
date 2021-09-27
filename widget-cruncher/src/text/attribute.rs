@@ -105,7 +105,7 @@ pub enum Attribute {
 impl Link {
     /// Create a new `Link`.
     pub fn new(range: Range<usize>) -> Self {
-        Self { range, }
+        Self { range }
     }
 
     /// Get this `Link`'s range.

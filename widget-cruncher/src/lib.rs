@@ -25,7 +25,6 @@
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/linebender/druid/screenshots/images/doc_logo.png"
 )]
-
 #![allow(unused_imports)]
 #![allow(unused_variables)]
 #![allow(unused_mut)]
@@ -41,7 +40,8 @@ pub use druid_shell::{kurbo, piet};
 #[macro_use]
 mod util;
 
-mod platform;
+pub mod app_launcher;
+pub mod app_root;
 mod bloom;
 mod box_constraints;
 mod command;
@@ -51,11 +51,10 @@ mod data;
 pub mod env;
 mod event;
 mod mouse;
+mod platform;
 pub mod text;
 pub mod theme;
 pub mod widget;
-pub mod app_launcher;
-pub mod app_root;
 
 // Types from kurbo & piet that are required by public API.
 pub use kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
@@ -76,8 +75,8 @@ pub use druid_shell::{
 pub use druid_shell::raw_window_handle::{HasRawWindowHandle, RawWindowHandle};
 
 pub use crate::core::{WidgetPod, WidgetState};
-pub use platform::window_description::{WindowId, WindowConfig, WindowDesc, WindowSizePolicy};
 pub use app_launcher::AppLauncher;
+pub use app_root::WindowRoot;
 pub use box_constraints::BoxConstraints;
 pub use command::{Selector, SingleUse, Target};
 pub use contexts::{EventCtx, LayoutCtx, LifeCycleCtx, PaintCtx, UpdateCtx};
@@ -85,10 +84,10 @@ pub use data::Data;
 pub use env::{Env, Key, KeyOrValue, Value, ValueType, ValueTypeError};
 pub use event::{Event, InternalEvent, InternalLifeCycle, LifeCycle};
 pub use mouse::MouseEvent;
+pub use platform::win_handler::DruidHandler;
+pub use platform::window_description::{WindowConfig, WindowDesc, WindowId, WindowSizePolicy};
 pub use util::Handled;
 pub use widget::{Widget, WidgetId};
-pub use platform::win_handler::DruidHandler;
-pub use app_root::{WindowRoot};
 
 #[deprecated(since = "0.8.0", note = "import from druid::text module instead")]
 pub use text::{ArcStr, FontDescriptor};

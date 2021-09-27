@@ -22,7 +22,7 @@ use tracing::instrument;
 
 use super::{
     EditableText, ImeHandlerRef, ImeInvalidation, InputHandler, Movement, Selection, TextAction,
-    TextLayout, TextStorage, TextAlignment,
+    TextAlignment, TextLayout, TextStorage,
 };
 use crate::kurbo::{Line, Point, Rect, Vec2};
 use crate::piet::TextLayout as _;
@@ -265,11 +265,7 @@ impl<T: EditableText + TextStorage> TextComponent<T> {
 }
 
 impl<T: TextStorage + EditableText> Widget for TextComponent<T> {
-    #[instrument(
-        name = "InputComponent",
-        level = "trace",
-        skip(self, ctx, event, env)
-    )]
+    #[instrument(name = "InputComponent", level = "trace", skip(self, ctx, event, env))]
     fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, env: &Env) {
         match event {
             Event::MouseDown(mouse) if self.can_write() && !ctx.is_disabled() => {
@@ -363,11 +359,7 @@ impl<T: TextStorage + EditableText> Widget for TextComponent<T> {
         }
     }
 
-    #[instrument(
-        name = "InputComponent",
-        level = "trace",
-        skip(self, ctx, event, env)
-    )]
+    #[instrument(name = "InputComponent", level = "trace", skip(self, ctx, event, env))]
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
         match event {
             LifeCycle::WidgetAdded => {
@@ -414,11 +406,7 @@ impl<T: TextStorage + EditableText> Widget for TextComponent<T> {
     }
     */
 
-    #[instrument(
-        name = "InputComponent",
-        level = "trace",
-        skip(self, ctx, bc, env)
-    )]
+    #[instrument(name = "InputComponent", level = "trace", skip(self, ctx, bc, env))]
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
         if !self.can_write() {
             tracing::warn!("Text layout called with IME lock held.");

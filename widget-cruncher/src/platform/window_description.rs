@@ -1,13 +1,12 @@
 // TODO - remove methods, add public fields
 
 use crate::kurbo::{Point, Size};
+use crate::platform::win_handler::AppState;
 use crate::widget::LabelText;
-use crate::platform::win_handler::{AppState};
-use crate::{Widget};
+use crate::Widget;
 
-use druid_shell::{Error as PlatformError, Counter, WindowBuilder, WindowHandle, WindowLevel};
 use druid_shell::WindowState;
-
+use druid_shell::{Counter, Error as PlatformError, WindowBuilder, WindowHandle, WindowLevel};
 
 /// A unique identifier for a window.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -23,7 +22,6 @@ pub struct WindowDesc {
     /// it actually connects.
     pub id: WindowId,
 }
-
 
 /// Defines how a windows size should be determined
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -202,14 +200,10 @@ impl WindowDesc {
     }
 
     /// Attempt to create a platform window from this `WindowDesc`.
-    pub(crate) fn build_native(
-        self,
-        state: &mut AppState,
-    ) -> Result<WindowHandle, PlatformError> {
+    pub(crate) fn build_native(self, state: &mut AppState) -> Result<WindowHandle, PlatformError> {
         state.build_native_window(self.id, self.pending, self.config)
     }
 }
-
 
 impl PendingWindow {
     /// Create a pending window from any widget.

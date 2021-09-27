@@ -175,9 +175,7 @@ pub mod sys {
     use std::any::Any;
 
     use super::Selector;
-    use crate::{
-        FileInfo, SingleUse, WidgetId, WindowConfig,
-    };
+    use crate::{FileInfo, SingleUse, WidgetId, WindowConfig};
 
     /// Quit the running application. This command is handled by the druid library.
     pub const QUIT_APP: Selector = Selector::new("druid-builtin.quit-app");

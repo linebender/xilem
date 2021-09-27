@@ -1,5 +1,4 @@
-
-use std::collections::{HashMap};
+use std::collections::HashMap;
 use tracing::{error, info, info_span};
 
 // Automatically defaults to std::time::Instant on non Wasm platforms
@@ -8,27 +7,22 @@ use instant::Instant;
 use crate::kurbo::{Point, Size};
 use crate::piet::{Color, Piet, RenderContext};
 
-use crate::{
-    Env, Event, Handled, InternalEvent,
-    TimerToken, WidgetId, WindowId,
-    BoxConstraints, EventCtx,
-    InternalLifeCycle, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
-    Widget, WidgetPod,
-};
+use crate::contexts::ContextState;
+use crate::core::{FocusChange, WidgetState};
 use crate::text::TextFieldRegistration;
 use crate::util::ExtendDrain;
 use crate::widget::LabelText;
-use crate::contexts::ContextState;
-use crate::core::{FocusChange, WidgetState};
-
-use crate::platform::win_handler::{DialogInfo, EXT_EVENT_IDLE_TOKEN};
-use crate::platform::window_description::{WindowConfig, PendingWindow, WindowSizePolicy};
-
-use druid_shell::{
-    Cursor, text::InputHandler, Application, FileDialogToken, Region,
-    TextFieldToken, WindowHandle,
+use crate::{
+    BoxConstraints, Env, Event, EventCtx, Handled, InternalEvent, InternalLifeCycle, LayoutCtx,
+    LifeCycle, LifeCycleCtx, PaintCtx, TimerToken, Widget, WidgetId, WidgetPod, WindowId,
 };
 
+use crate::platform::win_handler::{DialogInfo, EXT_EVENT_IDLE_TOKEN};
+use crate::platform::window_description::{PendingWindow, WindowConfig, WindowSizePolicy};
+
+use druid_shell::{
+    text::InputHandler, Application, Cursor, FileDialogToken, Region, TextFieldToken, WindowHandle,
+};
 
 pub(crate) struct AppRoot {
     pub app: Application,
@@ -77,7 +71,10 @@ impl Windows {
     pub fn connect(&mut self, id: WindowId, handle: WindowHandle) {
         if let Some(pending) = self.pending.remove(&id) {
             let win = WindowRoot::new(id, handle, pending);
-            assert!(self.active_windows.insert(id, win).is_none(), "duplicate window");
+            assert!(
+                self.active_windows.insert(id, win).is_none(),
+                "duplicate window"
+            );
         } else {
             tracing::error!("no window for connecting handle {:?}", id);
         }
@@ -92,11 +89,9 @@ impl Windows {
     }
 }
 
-
 impl AppRoot {
     pub fn connect(&mut self, id: WindowId, handle: WindowHandle) {
-        self.windows
-            .connect(id, handle);
+        self.windows.connect(id, handle);
     }
 
     /// Called after this window has been closed by the platform.
@@ -147,7 +142,7 @@ impl AppRoot {
 
     pub fn prepare_paint(&mut self, window_id: WindowId) {
         if let Some(win) = self.windows.active_windows.get_mut(&window_id) {
-            win.prepare_paint( &self.env);
+            win.prepare_paint(&self.env);
         }
         //self.do_update();
         self.invalidate_and_finalize();
@@ -155,12 +150,7 @@ impl AppRoot {
 
     pub fn paint(&mut self, window_id: WindowId, piet: &mut Piet, invalid: &Region) {
         if let Some(win) = self.windows.active_windows.get_mut(&window_id) {
-            win.do_paint(
-                piet,
-                invalid,
-
-                &self.env,
-            );
+            win.do_paint(piet, invalid, &self.env);
         }
     }
 
@@ -169,7 +159,7 @@ impl AppRoot {
         //panic!("commands should be dispatched via dispatch_cmd");
 
         if let Some(win) = self.windows.active_windows.get_mut(&source_id) {
-            win.event( event, &self.env)
+            win.event(event, &self.env)
         } else {
             Handled::No
         }
@@ -203,9 +193,14 @@ impl AppRoot {
         }
     }
 
-    pub fn ime_update_fn(&self, window_id: WindowId, widget_id: WidgetId) -> Option<Box<ImeUpdateFn>> {
+    pub fn ime_update_fn(
+        &self,
+        window_id: WindowId,
+        widget_id: WidgetId,
+    ) -> Option<Box<ImeUpdateFn>> {
         self.windows
-            .active_windows.get(&window_id)
+            .active_windows
+            .get(&window_id)
             .and_then(|window| window.ime_invalidation_fn(widget_id))
     }
 
@@ -216,15 +211,21 @@ impl AppRoot {
         mutable: bool,
     ) -> Box<dyn InputHandler> {
         self.windows
-            .active_windows.get_mut(&window_id)
+            .active_windows
+            .get_mut(&window_id)
             .unwrap()
             .get_ime_handler(token, mutable)
     }
 
     /// Returns a `WidgetId` if the lock was mutable; the widget should be updated.
-    pub fn release_ime_lock(&mut self, window_id: WindowId, token: TextFieldToken) -> Option<WidgetId> {
+    pub fn release_ime_lock(
+        &mut self,
+        window_id: WindowId,
+        token: TextFieldToken,
+    ) -> Option<WidgetId> {
         self.windows
-            .active_windows.get_mut(&window_id)
+            .active_windows
+            .get_mut(&window_id)
             .unwrap()
             .release_ime_lock(token)
     }
@@ -237,11 +238,7 @@ impl AppRoot {
 // ---
 
 impl WindowRoot {
-    pub(crate) fn new(
-        id: WindowId,
-        handle: WindowHandle,
-        pending: PendingWindow,
-    ) -> WindowRoot {
+    pub(crate) fn new(id: WindowId, handle: WindowHandle, pending: PendingWindow) -> WindowRoot {
         WindowRoot {
             id,
             root: WidgetPod::new(pending.root),
@@ -345,11 +342,7 @@ impl WindowRoot {
         }
     }
 
-    pub(crate) fn event(
-        &mut self,
-        event: Event,
-        env: &Env,
-    ) -> Handled {
+    pub(crate) fn event(&mut self, event: Event, env: &Env) -> Handled {
         match &event {
             Event::WindowSize(size) => self.size = *size,
             Event::MouseDown(e) | Event::MouseUp(e) | Event::MouseMove(e) | Event::Wheel(e) => {
@@ -381,8 +374,7 @@ impl WindowRoot {
 
         let mut widget_state = WidgetState::new(self.root.id(), Some(self.size));
         let is_handled = {
-            let mut state =
-                ContextState::new(&self.handle, self.id, self.focus);
+            let mut state = ContextState::new(&self.handle, self.id, self.focus);
             let mut ctx = EventCtx {
                 state: &mut state,
                 widget_state: &mut widget_state,
@@ -428,15 +420,9 @@ impl WindowRoot {
         is_handled
     }
 
-    pub(crate) fn lifecycle(
-        &mut self,
-        event: &LifeCycle,
-        env: &Env,
-        process_commands: bool,
-    ) {
+    pub(crate) fn lifecycle(&mut self, event: &LifeCycle, env: &Env, process_commands: bool) {
         let mut widget_state = WidgetState::new(self.root.id(), Some(self.size));
-        let mut state =
-            ContextState::new(&self.handle, self.id, self.focus);
+        let mut state = ContextState::new(&self.handle, self.id, self.focus);
         let mut ctx = LifeCycleCtx {
             state: &mut state,
             widget_state: &mut widget_state,
@@ -488,12 +474,7 @@ impl WindowRoot {
         }
     }
 
-    pub(crate) fn do_paint(
-        &mut self,
-        piet: &mut Piet,
-        invalid: &Region,
-        env: &Env,
-    ) {
+    pub(crate) fn do_paint(&mut self, piet: &mut Piet, invalid: &Region, env: &Env) {
         if self.root.state().needs_layout {
             self.layout(env);
         }
@@ -513,8 +494,7 @@ impl WindowRoot {
 
     fn layout(&mut self, env: &Env) {
         let mut widget_state = WidgetState::new(self.root.id(), Some(self.size));
-        let mut state =
-            ContextState::new( &self.handle, self.id, self.focus);
+        let mut state = ContextState::new(&self.handle, self.id, self.focus);
         let mut layout_ctx = LayoutCtx {
             state: &mut state,
             widget_state: &mut widget_state,
@@ -539,8 +519,7 @@ impl WindowRoot {
                 self.handle.set_size(full_size)
             }
         }
-        self.root
-            .set_origin(&mut layout_ctx, env, Point::ORIGIN);
+        self.root.set_origin(&mut layout_ctx, env, Point::ORIGIN);
         self.lifecycle(
             &LifeCycle::Internal(InternalLifeCycle::ParentWindowOrigin),
             env,
@@ -555,15 +534,9 @@ impl WindowRoot {
         self.layout(env)
     }
 
-    fn paint(
-        &mut self,
-        piet: &mut Piet,
-        invalid: &Region,
-        env: &Env,
-    ) {
+    fn paint(&mut self, piet: &mut Piet, invalid: &Region, env: &Env) {
         let widget_state = WidgetState::new(self.root.id(), Some(self.size));
-        let mut state =
-            ContextState::new(&self.handle, self.id, self.focus);
+        let mut state = ContextState::new(&self.handle, self.id, self.focus);
         let mut ctx = PaintCtx {
             render_ctx: piet,
             state: &mut state,
@@ -613,11 +586,7 @@ impl WindowRoot {
             .unwrap()
     }
 
-    fn update_focus(
-        &mut self,
-        widget_state: &mut WidgetState,
-        env: &Env,
-    ) {
+    fn update_focus(&mut self, widget_state: &mut WidgetState, env: &Env) {
         if let Some(focus_req) = widget_state.request_focus.take() {
             let old = self.focus;
             let new = self.widget_for_focus_request(focus_req);

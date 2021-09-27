@@ -1,7 +1,6 @@
-
 use crate::platform::win_handler::{AppHandler, AppState};
-use crate::platform::window_description::{WindowDesc};
-use crate::{Env};
+use crate::platform::window_description::WindowDesc;
+use crate::Env;
 
 use druid_shell::{Application, Error as PlatformError};
 
@@ -61,10 +60,7 @@ impl AppLauncher {
     pub fn launch(mut self) -> Result<(), PlatformError> {
         let app = Application::new()?;
 
-        let mut state = AppState::new(
-            app.clone(),
-            Env::with_theme(),
-        );
+        let mut state = AppState::new(app.clone(), Env::with_theme());
 
         for desc in self.windows {
             let window = desc.build_native(&mut state)?;

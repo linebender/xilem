@@ -14,7 +14,6 @@
 
 //! A widget that arranges its children in a one-dimensional array.
 
-
 use crate::kurbo::{common::FloatExt, Vec2};
 use crate::widget::prelude::*;
 use crate::{Data, KeyOrValue, Point, Rect, WidgetPod};
@@ -554,11 +553,7 @@ impl Flex {
     /// ```
     ///
     /// [`with_flex_child`]: Flex::with_flex_child
-    pub fn add_flex_child(
-        &mut self,
-        child: impl Widget + 'static,
-        params: impl Into<FlexParams>,
-    ) {
+    pub fn add_flex_child(&mut self, child: impl Widget + 'static, params: impl Into<FlexParams>) {
         let params = params.into();
         let child = if params.flex > 0.0 {
             Child::Flex {
@@ -862,7 +857,6 @@ impl Widget for Flex {
             ctx.stroke_styled(line, &color, 1.0, &stroke_style);
         }
     }
-
 }
 
 impl CrossAxisAlignment {

@@ -1,4 +1,3 @@
-
 //! This is a very small example of how to setup a druid application.
 //! It does the almost bare minimum while still being useful.
 
@@ -6,7 +5,7 @@
 #![windows_subsystem = "windows"]
 
 use widget_cruncher::widget::prelude::*;
-use widget_cruncher::widget::{Flex, Label, Button};
+use widget_cruncher::widget::{Button, Flex, Label};
 use widget_cruncher::{AppLauncher, WindowDesc};
 
 const VERTICAL_WIDGET_SPACING: f64 = 20.0;

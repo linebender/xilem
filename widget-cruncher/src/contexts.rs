@@ -24,14 +24,13 @@ use tracing::{error, trace, warn};
 use crate::core::{CursorChange, FocusChange, WidgetState};
 use crate::env::KeyLike;
 use crate::piet::{Piet, PietText, RenderContext};
-use druid_shell::text::Event as ImeInvalidation;
-use druid_shell::Region;
 use crate::text::{ImeHandlerRef, TextFieldRegistration};
 use crate::{
-    Affine, Cursor, Env,
-    Insets, Point, Rect, Size, TimerToken,
-    Vec2, WidgetId, WindowHandle, WindowId,
+    Affine, Cursor, Env, Insets, Point, Rect, Size, TimerToken, Vec2, WidgetId, WindowHandle,
+    WindowId,
 };
+use druid_shell::text::Event as ImeInvalidation;
+use druid_shell::Region;
 
 /// A macro for implementing methods on multiple contexts.
 ///

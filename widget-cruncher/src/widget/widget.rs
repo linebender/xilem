@@ -17,7 +17,6 @@ use std::ops::{Deref, DerefMut};
 
 use super::prelude::*;
 
-
 /// A unique identifier for a single [`Widget`].
 ///
 /// `WidgetId`s are generated automatically for all widgets that participate

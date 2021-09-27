@@ -19,7 +19,7 @@ use crate::kurbo::{Rect, Shape, Size, Vec2};
 use druid_shell::{Clipboard, KeyEvent, TimerToken};
 
 use crate::mouse::MouseEvent;
-use crate::{WidgetId};
+use crate::WidgetId;
 
 /// An event, propagated downwards during event flow.
 ///
