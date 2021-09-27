@@ -35,7 +35,6 @@
 extern crate self as druid;
 pub use druid_derive::Lens;
 
-use druid_shell as shell;
 #[doc(inline)]
 pub use druid_shell::{kurbo, piet};
 
@@ -59,24 +58,22 @@ pub mod scroll_component;
 pub mod text;
 pub mod theme;
 pub mod widget;
-/// Launcher
 pub mod app_launcher;
 pub mod app_root;
 
 pub use window_handling::app;
 pub use window_handling::win_handler;
 pub use window_handling::window;
-//pub use window_handling::window_description;
 
 // Types from kurbo & piet that are required by public API.
 pub use kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
 pub use piet::{Color, ImageBuf, LinearGradient, RadialGradient, RenderContext, UnitPoint};
 
-// these are the types from shell that we expose; others we only use internally.
+// these are the types from druid_shell that we expose; others we only use internally.
 #[cfg(feature = "image")]
-pub use shell::image;
-pub use shell::keyboard_types;
-pub use shell::{
+pub use druid_shell::image;
+pub use druid_shell::keyboard_types;
+pub use druid_shell::{
     Application, Clipboard, ClipboardFormat, Code, Cursor, CursorDesc, Error as PlatformError,
     FileInfo, FileSpec, FormatId, HotKey, KbKey, KeyEvent, Location, Modifiers, Monitor,
     MouseButton, MouseButtons, RawMods, Region, Scalable, Scale, Screen, SysMods, TimerToken,
@@ -84,7 +81,7 @@ pub use shell::{
 };
 
 #[cfg(feature = "raw-win-handle")]
-pub use crate::shell::raw_window_handle::{HasRawWindowHandle, RawWindowHandle};
+pub use druid_shell::raw_window_handle::{HasRawWindowHandle, RawWindowHandle};
 
 pub use crate::core::{WidgetPod, WidgetState};
 pub use window_handling::window_description::{WindowConfig, WindowDesc, WindowSizePolicy};

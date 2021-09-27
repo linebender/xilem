@@ -19,7 +19,7 @@
 
 use std::rc::Rc;
 
-use crate::shell::text::InputHandler;
+use druid_shell::text::InputHandler;
 use crate::WidgetId;
 
 /// A trait for input handlers registered by widgets.

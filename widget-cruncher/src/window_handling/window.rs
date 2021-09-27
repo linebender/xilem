@@ -22,7 +22,7 @@ use tracing::{error, info, info_span};
 use instant::Instant;
 
 use crate::piet::{Color, Piet, RenderContext};
-use crate::shell::{text::InputHandler, Counter, Cursor, Region, TextFieldToken, WindowHandle};
+use druid_shell::{text::InputHandler, Counter, Cursor, Region, TextFieldToken, WindowHandle};
 
 use crate::window_handling::window_description::{PendingWindow, WindowSizePolicy};
 use crate::contexts::ContextState;
@@ -38,7 +38,7 @@ use crate::{
     UpdateCtx, Widget, WidgetId, WidgetPod,
 };
 
-pub type ImeUpdateFn = dyn FnOnce(crate::shell::text::Event);
+pub type ImeUpdateFn = dyn FnOnce(druid_shell::text::Event);
 
 /// A unique identifier for a window.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]

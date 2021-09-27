@@ -311,7 +311,7 @@ pub mod sys {
     /// communicated to the platform.
     pub(crate) struct ImeInvalidation {
         pub widget: WidgetId,
-        pub event: crate::shell::text::Event,
+        pub event: druid_shell::text::Event,
     }
 }
 

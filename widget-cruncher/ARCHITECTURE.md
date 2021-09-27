@@ -9,6 +9,7 @@
 - Widget: impl Debug
 - Benchmarks
 
+- Rename druid_shell::WindowState to "WindowIsMaximised"
 
 ## Needs to be re-implemented
 

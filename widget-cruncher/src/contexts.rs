@@ -26,8 +26,8 @@ use tracing::{error, trace, warn};
 use crate::core::{CommandQueue, CursorChange, FocusChange, WidgetState};
 use crate::env::KeyLike;
 use crate::piet::{Piet, PietText, RenderContext};
-use crate::shell::text::Event as ImeInvalidation;
-use crate::shell::Region;
+use druid_shell::text::Event as ImeInvalidation;
+use druid_shell::Region;
 use crate::text::{ImeHandlerRef, TextFieldRegistration};
 use crate::{
     commands, widget::Widget, Affine, Command, Cursor, Data, Env,
@@ -203,7 +203,7 @@ impl_context_method!(
         /// Convert a point from the widget's coordinate space to the screen's.
         /// See the [`Screen`] module
         ///
-        /// [`Screen`]: crate::shell::Screen
+        /// [`Screen`]: druid_shell::Screen
         pub fn to_screen(&self, widget_point: Point) -> Point {
             let insets = self.window().content_insets();
             let content_origin = self.window().get_position() + Vec2::new(insets.x0, insets.y0);

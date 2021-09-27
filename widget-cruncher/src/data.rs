@@ -20,7 +20,7 @@ use std::sync::Arc;
 
 use crate::kurbo::{self, ParamCurve};
 use crate::piet;
-use crate::shell::Scale;
+use druid_shell::Scale;
 
 pub use druid_derive::Data;
 use piet::ImageBuf;

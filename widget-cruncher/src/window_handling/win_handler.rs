@@ -423,7 +423,7 @@ impl AppState {
     }
 }
 
-impl crate::shell::AppHandler for AppHandler {
+impl druid_shell::AppHandler for AppHandler {
     fn command(&mut self, id: u32) {
         self.app_state.handle_system_cmd(id, None)
     }
