@@ -51,7 +51,6 @@ mod data;
 pub mod env;
 mod event;
 mod mouse;
-pub mod scroll_component;
 pub mod text;
 pub mod theme;
 pub mod widget;
