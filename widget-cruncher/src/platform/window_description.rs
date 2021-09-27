@@ -2,7 +2,7 @@
 
 use crate::kurbo::{Point, Size};
 use crate::widget::LabelText;
-use crate::window_handling::win_handler::{AppState};
+use crate::platform::win_handler::{AppState};
 use crate::{Widget};
 
 use druid_shell::{Error as PlatformError, Counter, WindowBuilder, WindowHandle, WindowLevel};

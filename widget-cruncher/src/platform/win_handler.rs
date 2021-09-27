@@ -27,7 +27,7 @@ use crate::{
     TimerToken, WindowId,
 };
 
-use crate::window_handling::window_description::{PendingWindow, WindowConfig};
+use crate::platform::window_description::{PendingWindow, WindowConfig};
 use crate::app_root::{AppRoot};
 
 use druid_shell::WindowBuilder;

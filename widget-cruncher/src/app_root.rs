@@ -21,8 +21,8 @@ use crate::widget::LabelText;
 use crate::contexts::ContextState;
 use crate::core::{FocusChange, WidgetState};
 
-use crate::window_handling::win_handler::{DialogInfo, EXT_EVENT_IDLE_TOKEN};
-use crate::window_handling::window_description::{WindowConfig, PendingWindow, WindowSizePolicy};
+use crate::platform::win_handler::{DialogInfo, EXT_EVENT_IDLE_TOKEN};
+use crate::platform::window_description::{WindowConfig, PendingWindow, WindowSizePolicy};
 
 use druid_shell::{
     Cursor, text::InputHandler, Application, FileDialogToken, Region,

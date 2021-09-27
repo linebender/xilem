@@ -1,6 +1,6 @@
 
-use crate::window_handling::win_handler::{AppHandler, AppState};
-use crate::window_handling::window_description::{WindowDesc};
+use crate::platform::win_handler::{AppHandler, AppState};
+use crate::platform::window_description::{WindowDesc};
 use crate::{Env};
 
 use druid_shell::{Application, Error as PlatformError};

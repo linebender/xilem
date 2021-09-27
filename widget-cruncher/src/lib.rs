@@ -41,7 +41,7 @@ pub use druid_shell::{kurbo, piet};
 #[macro_use]
 mod util;
 
-mod window_handling;
+mod platform;
 mod bloom;
 mod box_constraints;
 mod command;
@@ -76,7 +76,7 @@ pub use druid_shell::{
 pub use druid_shell::raw_window_handle::{HasRawWindowHandle, RawWindowHandle};
 
 pub use crate::core::{WidgetPod, WidgetState};
-pub use window_handling::window_description::{WindowId, WindowConfig, WindowDesc, WindowSizePolicy};
+pub use platform::window_description::{WindowId, WindowConfig, WindowDesc, WindowSizePolicy};
 pub use app_launcher::AppLauncher;
 pub use box_constraints::BoxConstraints;
 pub use command::{Selector, SingleUse, Target};
@@ -87,7 +87,7 @@ pub use event::{Event, InternalEvent, InternalLifeCycle, LifeCycle};
 pub use mouse::MouseEvent;
 pub use util::Handled;
 pub use widget::{Widget, WidgetId};
-pub use window_handling::win_handler::DruidHandler;
+pub use platform::win_handler::DruidHandler;
 pub use app_root::{WindowRoot};
 
 #[deprecated(since = "0.8.0", note = "import from druid::text module instead")]
