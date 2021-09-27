@@ -8,7 +8,6 @@ use druid_shell::{Application, Error as PlatformError};
 /// Handles initial setup of an application, and starts the runloop.
 pub struct AppLauncher {
     windows: Vec<WindowDesc>,
-    l10n_resources: Option<(Vec<String>, String)>,
 }
 
 impl AppLauncher {
@@ -16,7 +15,6 @@ impl AppLauncher {
     pub fn with_window(window: WindowDesc) -> Self {
         AppLauncher {
             windows: vec![window],
-            l10n_resources: None,
         }
     }
 
@@ -56,19 +54,6 @@ impl AppLauncher {
         self
     }
 
-    /// Use custom localization resource
-    ///
-    /// `resources` is a list of file names that contain strings. `base_dir`
-    /// is a path to a directory that includes per-locale subdirectories.
-    ///
-    /// This directory should be of the structure `base_dir/{locale}/{resource}`,
-    /// where '{locale}' is a valid BCP47 language tag, and {resource} is a `.ftl`
-    /// included in `resources`.
-    pub fn localization_resources(mut self, resources: Vec<String>, base_dir: String) -> Self {
-        self.l10n_resources = Some((resources, base_dir));
-        self
-    }
-
     /// Build the windows and start the runloop.
     ///
     /// Returns an error if a window cannot be instantiated. This is usually
@@ -76,14 +61,9 @@ impl AppLauncher {
     pub fn launch(mut self) -> Result<(), PlatformError> {
         let app = Application::new()?;
 
-        let mut env = self
-            .l10n_resources
-            .map(|it| Env::with_i10n(it.0, &it.1))
-            .unwrap_or_else(Env::with_default_i10n);
-
         let mut state = AppState::new(
             app.clone(),
-            env,
+            Env::with_theme(),
         );
 
         for desc in self.windows {

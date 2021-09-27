@@ -3,7 +3,7 @@
 use crate::kurbo::{Point, Size};
 use crate::widget::LabelText;
 use crate::window_handling::win_handler::{AppState};
-use crate::{LocalizedString, Widget};
+use crate::{Widget};
 
 use druid_shell::{Error as PlatformError, Counter, WindowBuilder, WindowHandle, WindowLevel};
 use druid_shell::WindowState;
@@ -220,7 +220,7 @@ impl PendingWindow {
         // This just makes our API slightly cleaner; callers don't need to explicitly box.
         PendingWindow {
             root: Box::new(root),
-            title: LocalizedString::new("app-name").into(),
+            title: "widget_cruncher app".into(),
             transparent: false,
             size_policy: WindowSizePolicy::User,
         }

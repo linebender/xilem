@@ -23,7 +23,7 @@ use crate::kurbo::Vec2;
 use crate::text::{TextAlignment, TextLayout};
 use crate::widget::prelude::*;
 use crate::{
-    ArcStr, Color, Data, FontDescriptor, KeyOrValue, LocalizedString, Point,
+    ArcStr, Color, Data, FontDescriptor, KeyOrValue, Point,
 };
 use tracing::{instrument, trace};
 
@@ -121,8 +121,6 @@ pub enum LineBreaking {
 /// [`Label`]: struct.Label.html
 #[derive(Clone)]
 pub enum LabelText {
-    /// Localized string that will be resolved through `Env`.
-    Localized(LocalizedString<ArcStr>),
     /// Static text.
     Static(Static),
 }
@@ -423,7 +421,6 @@ impl LabelText {
     pub fn with_display_text<V>(&self, mut cb: impl FnMut(&str) -> V) -> V {
         match self {
             LabelText::Static(s) => cb(&s.string),
-            LabelText::Localized(s) => cb(&s.localized_str()),
         }
     }
 
@@ -431,7 +428,6 @@ impl LabelText {
     pub fn display_text(&self) -> ArcStr {
         match self {
             LabelText::Static(s) => s.string.clone(),
-            LabelText::Localized(s) => s.localized_str(),
         }
     }
 
@@ -442,7 +438,6 @@ impl LabelText {
     pub fn resolve(&mut self, env: &Env) -> bool {
         match self {
             LabelText::Static(s) => s.resolve(),
-            LabelText::Localized(s) => s.resolve(None.unwrap(), env),
         }
     }
 }
@@ -585,11 +580,5 @@ impl From<&str> for LabelText {
 impl From<ArcStr> for LabelText {
     fn from(string: ArcStr) -> LabelText {
         LabelText::Static(Static::new(string))
-    }
-}
-
-impl From<LocalizedString<ArcStr>> for LabelText {
-    fn from(src: LocalizedString<ArcStr>) -> LabelText {
-        LabelText::Localized(src)
     }
 }

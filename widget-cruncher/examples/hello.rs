@@ -7,10 +7,9 @@
 
 use widget_cruncher::widget::prelude::*;
 use widget_cruncher::widget::{Flex, Label, Button};
-use widget_cruncher::{AppLauncher, Data, Lens, UnitPoint, WindowDesc};
+use widget_cruncher::{AppLauncher, WindowDesc};
 
 const VERTICAL_WIDGET_SPACING: f64 = 20.0;
-const TEXT_BOX_WIDTH: f64 = 200.0;
 
 pub fn main() {
     // describe the main window

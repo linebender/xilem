@@ -22,7 +22,6 @@ use std::marker::PhantomData;
 use std::ops::Deref;
 use std::sync::Arc;
 
-use crate::localization::L10nManager;
 use crate::text::FontDescriptor;
 use crate::{ArcStr, Color, Data, Insets, Point, Rect, Size};
 
@@ -54,7 +53,6 @@ pub struct Env(Arc<EnvImpl>);
 #[derive(Debug, Clone)]
 struct EnvImpl {
     map: HashMap<ArcStr, Value>,
-    l10n: Option<Arc<L10nManager>>,
 }
 
 /// A typed [`Env`] key.
@@ -354,16 +352,6 @@ impl Env {
         Ok(())
     }
 
-    /// Returns a reference to the [`L10nManager`], which handles localization
-    /// resources.
-    ///
-    /// This always exists on the base `Env` configured by druid.
-    ///
-    /// [`L10nManager`]: struct.L10nManager.html
-    pub(crate) fn localization_manager(&self) -> Option<&L10nManager> {
-        self.0.l10n.as_deref()
-    }
-
     /// Given an id, returns one of 18 distinct colors
     #[doc(hidden)]
     pub fn get_debug_color(&self, id: u64) -> Color {
@@ -375,7 +363,6 @@ impl Env {
 impl std::fmt::Debug for Env {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         f.debug_struct("Env")
-            .field("l10n", &self.0.l10n)
             .field("map", &self.0.map)
             .finish()
     }
@@ -520,24 +507,12 @@ impl Env {
     /// This is useful for creating a set of overrides.
     pub fn empty() -> Self {
         Env(Arc::new(EnvImpl {
-            l10n: None,
             map: HashMap::new(),
         }))
     }
 
-    pub(crate) fn with_default_i10n() -> Self {
-        Env::with_i10n(vec!["builtin.ftl".into()], "./resources/i18n/")
-    }
-
-    pub(crate) fn with_i10n(resources: Vec<String>, base_dir: &str) -> Self {
-        let l10n = L10nManager::new(resources, base_dir);
-
-        let inner = EnvImpl {
-            l10n: Some(Arc::new(l10n)),
-            map: HashMap::new(),
-        };
-
-        let env = Env(Arc::new(inner))
+    pub(crate) fn with_theme() -> Self {
+        let env = Env::empty()
             .adding(Env::DEBUG_PAINT, false)
             .adding(Env::DEBUG_WIDGET_ID, false)
             .adding(Env::DEBUG_WIDGET, false);
