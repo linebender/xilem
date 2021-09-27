@@ -176,7 +176,7 @@ pub mod sys {
 
     use super::Selector;
     use crate::{
-        FileDialogOptions, FileInfo, SingleUse, WidgetId, WindowConfig,
+        FileInfo, SingleUse, WidgetId, WindowConfig,
     };
 
     /// Quit the running application. This command is handled by the druid library.
@@ -233,13 +233,6 @@ pub mod sys {
     /// Show the new file dialog.
     pub const NEW_FILE: Selector = Selector::new("druid-builtin.menu-file-new");
 
-    /// When submitted by the application, a file picker dialog will be shown to the user,
-    /// and an [`OPEN_FILE`] command will be sent if a path is chosen.
-    ///
-    /// [`OPEN_FILE`]: constant.OPEN_FILE.html
-    pub const SHOW_OPEN_PANEL: Selector<FileDialogOptions> =
-        Selector::new("druid-builtin.menu-file-open");
-
     /// Sent when the user cancels an open file panel.
     pub const OPEN_PANEL_CANCELLED: Selector = Selector::new("druid-builtin.open-panel-cancelled");
 
@@ -247,14 +240,6 @@ pub mod sys {
     ///
     /// [`FileInfo`]: ../struct.FileInfo.html
     pub const OPEN_FILE: Selector<FileInfo> = Selector::new("druid-builtin.open-file-path");
-
-    /// When submitted by the application, the system will show the 'save as' panel,
-    /// and if a path is selected the system will issue a [`SAVE_FILE`] command
-    /// with the selected path as the payload.
-    ///
-    /// [`SAVE_FILE`]: constant.SAVE_FILE.html
-    pub const SHOW_SAVE_PANEL: Selector<FileDialogOptions> =
-        Selector::new("druid-builtin.menu-file-save-as");
 
     /// Sent when the user cancels a save file panel.
     pub const SAVE_PANEL_CANCELLED: Selector = Selector::new("druid-builtin.save-panel-cancelled");
