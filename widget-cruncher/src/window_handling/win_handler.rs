@@ -16,7 +16,7 @@
 
 use std::any::{Any};
 use std::cell::RefCell;
-use std::collections::{HashMap, VecDeque};
+use std::collections::{HashMap};
 use std::rc::Rc;
 
 use crate::kurbo::Size;
@@ -25,12 +25,11 @@ use crate::piet::Piet;
 use crate::ext_event::{ExtEventHost};
 use crate::{
     Env, Event, Handled, InternalEvent, KeyEvent, PlatformError, Selector,
-    TimerToken, WindowDesc, WindowId,
+    TimerToken, WindowId,
 };
 
 use crate::window_handling::window_description::{PendingWindow, WindowConfig};
 use crate::app_root::{AppRoot};
-use crate::command::sys as sys_cmd;
 
 use druid_shell::WindowBuilder;
 use druid_shell::{

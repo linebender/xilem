@@ -15,13 +15,12 @@
 //! A label widget.
 
 use std::ops::{Deref, DerefMut};
-use std::sync::Arc;
 
 use druid_shell::Cursor;
 
 
 use crate::kurbo::Vec2;
-use crate::text::{TextStorage, TextAlignment, TextLayout};
+use crate::text::{TextAlignment, TextLayout};
 use crate::widget::prelude::*;
 use crate::{
     ArcStr, Color, Data, FontDescriptor, KeyOrValue, LocalizedString, Point,

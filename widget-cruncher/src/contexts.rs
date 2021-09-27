@@ -15,8 +15,6 @@
 //! The context types that are passed into various widget methods.
 
 use std::{
-    any::{Any, TypeId},
-    collections::VecDeque,
     ops::{Deref, DerefMut},
     rc::Rc,
     time::Duration,
@@ -30,9 +28,9 @@ use druid_shell::text::Event as ImeInvalidation;
 use druid_shell::Region;
 use crate::text::{ImeHandlerRef, TextFieldRegistration};
 use crate::{
-    widget::Widget, Affine, Cursor, Data, Env,
-    ExtEventSink, Insets, Point, Rect, SingleUse, Size, Target, TimerToken,
-    Vec2, WidgetId, WindowConfig, WindowDesc, WindowHandle, WindowId,
+    Affine, Cursor, Env,
+    ExtEventSink, Insets, Point, Rect, Size, TimerToken,
+    Vec2, WidgetId, WindowHandle, WindowId,
 };
 
 /// A macro for implementing methods on multiple contexts.

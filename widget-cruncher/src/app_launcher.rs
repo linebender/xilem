@@ -1,13 +1,10 @@
 
 use crate::ext_event::{ExtEventHost, ExtEventSink};
-use crate::kurbo::{Point, Size};
-use crate::widget::LabelText;
 use crate::window_handling::win_handler::{AppHandler, AppState};
-use crate::window_handling::window_description::{WindowId, WindowDesc};
-use crate::{Data, Env, LocalizedString, Widget};
+use crate::window_handling::window_description::{WindowDesc};
+use crate::{Env};
 
-use druid_shell::{Application, Error as PlatformError, WindowBuilder, WindowHandle, WindowLevel};
-use druid_shell::WindowState;
+use druid_shell::{Application, Error as PlatformError};
 
 /// Handles initial setup of an application, and starts the runloop.
 pub struct AppLauncher {

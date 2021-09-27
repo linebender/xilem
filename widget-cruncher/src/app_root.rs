@@ -1,8 +1,5 @@
 
-use std::any::{Any, TypeId};
-use std::cell::RefCell;
-use std::collections::{HashMap, VecDeque};
-use std::rc::Rc;
+use std::collections::{HashMap};
 use tracing::{error, info, info_span};
 
 // Automatically defaults to std::time::Instant on non Wasm platforms
@@ -13,11 +10,11 @@ use crate::piet::{Color, Piet, RenderContext};
 
 use crate::ext_event::{ExtEventHost, ExtEventSink};
 use crate::{
-    Data, Env, Event, Handled, InternalEvent, KeyEvent, PlatformError, Selector, Target,
-    TimerToken, WidgetId, WindowDesc, WindowId,
+    Env, Event, Handled, InternalEvent,
+    TimerToken, WidgetId, WindowId,
     BoxConstraints, EventCtx,
     InternalLifeCycle, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
-    UpdateCtx, Widget, WidgetPod,
+    Widget, WidgetPod,
 };
 use crate::text::TextFieldRegistration;
 use crate::util::ExtendDrain;
@@ -27,13 +24,10 @@ use crate::core::{FocusChange, WidgetState};
 
 use crate::window_handling::win_handler::{DialogInfo, EXT_EVENT_IDLE_TOKEN};
 use crate::window_handling::window_description::{WindowConfig, PendingWindow, WindowSizePolicy};
-use crate::window_handling::win_handler::RUN_COMMANDS_TOKEN;
-use crate::command::sys as sys_cmd;
 
-use druid_shell::WindowBuilder;
 use druid_shell::{
-    Cursor, text::InputHandler, Application, FileDialogToken, FileInfo, IdleToken, MouseEvent, Region,
-    Scale, TextFieldToken, WinHandler, WindowHandle,
+    Cursor, text::InputHandler, Application, FileDialogToken, Region,
+    TextFieldToken, WindowHandle,
 };
 
 

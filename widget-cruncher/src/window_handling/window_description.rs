@@ -1,12 +1,11 @@
 // TODO - remove methods, add public fields
 
-use crate::ext_event::{ExtEventHost, ExtEventSink};
 use crate::kurbo::{Point, Size};
 use crate::widget::LabelText;
-use crate::window_handling::win_handler::{AppHandler, AppState};
-use crate::{Data, Env, LocalizedString, Widget};
+use crate::window_handling::win_handler::{AppState};
+use crate::{LocalizedString, Widget};
 
-use druid_shell::{Application, Error as PlatformError, Counter, WindowBuilder, WindowHandle, WindowLevel};
+use druid_shell::{Error as PlatformError, Counter, WindowBuilder, WindowHandle, WindowLevel};
 use druid_shell::WindowState;
 
 

@@ -63,7 +63,7 @@ pub use label::{Label, LabelText, LineBreaking, RawLabel};
 pub mod prelude {
     #[doc(hidden)]
     pub use crate::{
-        BoxConstraints, Data, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
+        BoxConstraints, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
         RenderContext, Size, UpdateCtx, Widget, WidgetId,
     };
 }

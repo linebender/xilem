@@ -14,19 +14,18 @@
 
 //! The fundamental druid types.
 
-use std::collections::{HashMap, VecDeque};
+use std::collections::{HashMap};
 use tracing::{info_span, trace, warn};
 
 use crate::bloom::Bloom;
-use crate::command::sys::{CLOSE_WINDOW};
 use crate::contexts::ContextState;
 use crate::kurbo::{Affine, Insets, Point, Rect, Shape, Size, Vec2};
 use crate::text::{TextFieldRegistration, TextLayout};
 use crate::util::ExtendDrain;
 use crate::{
-    ArcStr, BoxConstraints, Color, Cursor, Data, Env, Event, EventCtx, InternalEvent,
+    ArcStr, BoxConstraints, Color, Cursor, Env, Event, EventCtx, InternalEvent,
     InternalLifeCycle, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Region,
-    RenderContext, Target, TimerToken, UpdateCtx, Widget, WidgetId, WindowId,
+    RenderContext, TimerToken, Widget, WidgetId,
 };
 
 /// A container for one widget in the hierarchy.
