@@ -14,7 +14,7 @@
 
 //! The implementation of the WinHandler trait (druid-shell integration).
 
-use std::any::{Any, TypeId};
+use std::any::{Any};
 use std::cell::RefCell;
 use std::collections::{HashMap, VecDeque};
 use std::rc::Rc;
@@ -22,12 +22,10 @@ use std::rc::Rc;
 use crate::kurbo::Size;
 use crate::piet::Piet;
 
-use crate::core::CommandQueue;
-use crate::ext_event::{ExtEventHost, ExtEventSink};
-use crate::window::{ImeUpdateFn, Window};
+use crate::ext_event::{ExtEventHost};
 use crate::{
-    Command, Data, Env, Event, Handled, InternalEvent, KeyEvent, PlatformError, Selector, Target,
-    TimerToken, WidgetId, WindowDesc, WindowId,
+    Command, Env, Event, Handled, InternalEvent, KeyEvent, PlatformError, Selector, Target,
+    TimerToken, WindowDesc, WindowId,
 };
 
 use crate::window_handling::window_description::{PendingWindow, WindowConfig};

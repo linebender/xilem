@@ -3,12 +3,16 @@
 use crate::ext_event::{ExtEventHost, ExtEventSink};
 use crate::kurbo::{Point, Size};
 use crate::widget::LabelText;
-use crate::win_handler::{AppHandler, AppState};
-use crate::window::WindowId;
+use crate::window_handling::win_handler::{AppHandler, AppState};
 use crate::{Data, Env, LocalizedString, Widget};
 
-use druid_shell::{Application, Error as PlatformError, WindowBuilder, WindowHandle, WindowLevel};
+use druid_shell::{Application, Error as PlatformError, Counter, WindowBuilder, WindowHandle, WindowLevel};
 use druid_shell::WindowState;
+
+
+/// A unique identifier for a window.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct WindowId(u64);
 
 /// A description of a window to be instantiated.
 pub struct WindowDesc {
@@ -61,6 +65,14 @@ pub struct PendingWindow {
 }
 
 // ---
+
+impl WindowId {
+    /// Allocate a new, unique window id.
+    pub fn next() -> WindowId {
+        static WINDOW_COUNTER: Counter = Counter::new();
+        WindowId(WINDOW_COUNTER.next())
+    }
+}
 
 impl WindowDesc {
     /// Create a new `WindowDesc`, taking the root [`Widget`] for this window.

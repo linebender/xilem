@@ -61,10 +61,6 @@ pub mod widget;
 pub mod app_launcher;
 pub mod app_root;
 
-pub use window_handling::app;
-pub use window_handling::win_handler;
-pub use window_handling::window;
-
 // Types from kurbo & piet that are required by public API.
 pub use kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
 pub use piet::{Color, ImageBuf, LinearGradient, RadialGradient, RenderContext, UnitPoint};
@@ -84,7 +80,7 @@ pub use druid_shell::{
 pub use druid_shell::raw_window_handle::{HasRawWindowHandle, RawWindowHandle};
 
 pub use crate::core::{WidgetPod, WidgetState};
-pub use window_handling::window_description::{WindowConfig, WindowDesc, WindowSizePolicy};
+pub use window_handling::window_description::{WindowId, WindowConfig, WindowDesc, WindowSizePolicy};
 pub use app_launcher::AppLauncher;
 pub use box_constraints::BoxConstraints;
 pub use command::{sys as commands, Command, Notification, Selector, SingleUse, Target};
@@ -98,8 +94,8 @@ pub use localization::LocalizedString;
 pub use mouse::MouseEvent;
 pub use util::Handled;
 pub use widget::{Widget, WidgetId};
-pub use win_handler::DruidHandler;
-pub use window::{Window, WindowId};
+pub use window_handling::win_handler::DruidHandler;
+pub use app_root::{WindowRoot};
 
 #[deprecated(since = "0.8.0", note = "import from druid::text module instead")]
 pub use text::{ArcStr, FontDescriptor};

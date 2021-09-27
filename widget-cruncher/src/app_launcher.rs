@@ -2,9 +2,8 @@
 use crate::ext_event::{ExtEventHost, ExtEventSink};
 use crate::kurbo::{Point, Size};
 use crate::widget::LabelText;
-use crate::win_handler::{AppHandler, AppState};
-use crate::window_handling::window_description::{WindowDesc};
-use crate::window::WindowId;
+use crate::window_handling::win_handler::{AppHandler, AppState};
+use crate::window_handling::window_description::{WindowId, WindowDesc};
 use crate::{Data, Env, LocalizedString, Widget};
 
 use druid_shell::{Application, Error as PlatformError, WindowBuilder, WindowHandle, WindowLevel};
