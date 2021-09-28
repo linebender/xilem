@@ -866,6 +866,14 @@ impl Widget for Flex {
             .map(|widget_pod| widget_pod as &dyn AsWidgetPod)
             .collect()
     }
+
+    fn children_mut(&mut self) -> SmallVec<[&mut dyn AsWidgetPod; 16]> {
+        self.children
+            .iter_mut()
+            .filter_map(|child| child.widget_mut())
+            .map(|widget_pod| widget_pod as &mut dyn AsWidgetPod)
+            .collect()
+    }
 }
 
 impl CrossAxisAlignment {

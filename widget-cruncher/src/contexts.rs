@@ -26,8 +26,8 @@ use crate::env::KeyLike;
 use crate::piet::{Piet, PietText, RenderContext};
 use crate::text::{ImeHandlerRef, TextFieldRegistration};
 use crate::{
-    Affine, Cursor, Env, Insets, Point, Rect, Size, TimerToken, Vec2, WidgetId, WindowHandle,
-    WindowId,
+    Affine, Cursor, Env, Insets, Point, Rect, Size, TimerToken, Vec2, Widget, WidgetId, WidgetPod,
+    WindowHandle, WindowId,
 };
 use druid_shell::text::Event as ImeInvalidation;
 use druid_shell::Region;
@@ -157,6 +157,11 @@ impl_context_method!(
         /// Get an object which can create text layouts.
         pub fn text(&mut self) -> &mut PietText {
             &mut self.state.text
+        }
+
+        // TODO - document
+        pub fn skip_child<W: Widget>(&self, child: &mut WidgetPod<W>) {
+            child.mark_as_visited();
         }
     }
 );

@@ -17,6 +17,7 @@ use std::num::NonZeroU64;
 use std::ops::{Deref, DerefMut};
 
 use super::prelude::*;
+use crate::Point;
 
 /// A unique identifier for a single [`Widget`].
 ///
@@ -158,6 +159,28 @@ pub trait Widget {
 
     fn children(&self) -> SmallVec<[&dyn AsWidgetPod; 16]>;
 
+    fn children_mut(&mut self) -> SmallVec<[&mut dyn AsWidgetPod; 16]>;
+
+    // Returns direct child, not recursive child
+    fn find_child_by_pos(&self, pos: Point) -> Option<&dyn AsWidgetPod> {
+        // layout_rect() is in parent coordinate space
+        self.children()
+            .into_iter()
+            .find(|child| child.state().layout_rect().contains(pos))
+    }
+
+    fn find_subchild_by_id(&self, id: WidgetId) -> Option<&dyn AsWidgetPod> {
+        self.children().into_iter().find_map(|child| {
+            if child.state().id == id {
+                Some(child)
+            } else if child.state().children.may_contain(&id) {
+                child.widget().find_subchild_by_id(id)
+            } else {
+                None
+            }
+        })
+    }
+
     #[doc(hidden)]
     /// Get the (verbose) type name of the widget for debugging purposes.
     /// You should not override this method.
@@ -237,5 +260,9 @@ impl Widget for Box<dyn Widget> {
 
     fn children(&self) -> SmallVec<[&dyn AsWidgetPod; 16]> {
         self.deref().children()
+    }
+
+    fn children_mut(&mut self) -> SmallVec<[&mut dyn AsWidgetPod; 16]> {
+        self.deref_mut().children_mut()
     }
 }

@@ -153,6 +153,11 @@ pub struct WidgetState {
     pub(crate) cursor: Option<Cursor>,
 
     pub(crate) text_registrations: Vec<TextFieldRegistration>,
+
+    // Used in event/lifecycle/etc methods that are expected to be called recursively
+    // on a widget's children, to make sure each child was visited.
+    #[cfg(debug_assertions)]
+    pub(crate) was_visited: bool,
 }
 
 /// Methods by which a widget can attempt to change focus state.
@@ -184,8 +189,14 @@ pub(crate) enum CursorChange {
 pub trait AsWidgetPod {
     fn state(&self) -> &WidgetState;
 
+    // FIXME - remove
+    fn state_mut(&mut self) -> &mut WidgetState;
+
     // Return a reference to the inner widget.
     fn widget(&self) -> &dyn Widget;
+
+    // FIXME - remove
+    fn widget_mut(&mut self) -> &mut dyn Widget;
 }
 
 // ---
@@ -373,6 +384,14 @@ impl<W: Widget> WidgetPod<W> {
         self.state.baseline_offset
     }
 
+    #[inline(always)]
+    pub(crate) fn mark_as_visited(&mut self) {
+        #[cfg(debug_assertions)]
+        {
+            self.state.was_visited = true;
+        }
+    }
+
     /// Determines if the provided `mouse_pos` is inside `rect`
     /// and if so updates the hot state and sends `LifeCycle::HotChanged`.
     ///
@@ -415,6 +434,35 @@ impl<W: Widget> WidgetPod<W> {
         }
         false
     }
+
+    #[inline(always)]
+    fn call_widget_method_with_checks<Ret>(
+        &mut self,
+        method_name: &str,
+        visit: impl FnOnce(&mut Self) -> Ret,
+    ) -> Ret {
+        #[cfg(debug_assertions)]
+        for child in self.inner.children_mut() {
+            child.state_mut().was_visited = false;
+        }
+
+        let return_value = visit(self);
+
+        #[cfg(debug_assertions)]
+        for child in self.inner.children() {
+            if !child.state().was_visited {
+                // TODO - error message
+                panic!(
+                    "Error in widget {:?}: child widget {:?} not visited during method {}",
+                    self.state.id,
+                    child.state().id,
+                    method_name,
+                )
+            }
+        }
+
+        return_value
+    }
 }
 
 impl<W: Widget> WidgetPod<W> {
@@ -435,27 +483,31 @@ impl<W: Widget> WidgetPod<W> {
             self.make_widget_id_layout_if_needed(self.state.id, ctx, env);
         }
 
-        let mut inner_ctx = PaintCtx {
-            render_ctx: ctx.render_ctx,
-            state: ctx.state,
-            z_ops: Vec::new(),
-            region: ctx.region.clone(),
-            widget_state: &self.state,
-            depth: ctx.depth,
-        };
-        self.inner.paint(&mut inner_ctx, env);
+        self.call_widget_method_with_checks("paint", |widget_pod| {
+            // widget_pod is a reborrow of `self`
 
-        let debug_ids = inner_ctx.is_hot() && env.get(Env::DEBUG_WIDGET_ID);
-        if debug_ids {
-            // this also draws layout bounds
-            self.debug_paint_widget_ids(&mut inner_ctx, env);
-        }
+            let mut inner_ctx = PaintCtx {
+                render_ctx: ctx.render_ctx,
+                state: ctx.state,
+                z_ops: Vec::new(),
+                region: ctx.region.clone(),
+                widget_state: &widget_pod.state,
+                depth: ctx.depth,
+            };
+            widget_pod.inner.paint(&mut inner_ctx, env);
 
-        if !debug_ids && env.get(Env::DEBUG_PAINT) {
-            self.debug_paint_layout_bounds(&mut inner_ctx, env);
-        }
+            let debug_ids = inner_ctx.is_hot() && env.get(Env::DEBUG_WIDGET_ID);
+            if debug_ids {
+                // this also draws layout bounds
+                widget_pod.debug_paint_widget_ids(&mut inner_ctx, env);
+            }
 
-        ctx.z_ops.append(&mut inner_ctx.z_ops);
+            if !debug_ids && env.get(Env::DEBUG_PAINT) {
+                widget_pod.debug_paint_layout_bounds(&mut inner_ctx, env);
+            }
+
+            ctx.z_ops.append(&mut inner_ctx.z_ops);
+        });
     }
 
     /// Paint the widget, translating it by the origin of its layout rectangle.
@@ -474,6 +526,9 @@ impl<W: Widget> WidgetPod<W> {
 
     /// Shared implementation that can skip drawing non-visible content.
     fn paint_impl(&mut self, ctx: &mut PaintCtx, env: &Env, paint_if_not_visible: bool) {
+        // TODO - explain this
+        self.mark_as_visited();
+
         if !paint_if_not_visible && !ctx.region().intersects(self.state.paint_rect()) {
             return;
         }
@@ -546,6 +601,9 @@ impl<W: Widget> WidgetPod<W> {
     ///
     /// [`layout`]: trait.Widget.html#tymethod.layout
     pub fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
+        // TODO - explain this
+        self.mark_as_visited();
+
         if !self.is_initialized() {
             debug_panic!(
                 "{:?}: layout method called before receiving WidgetAdded.",
@@ -563,17 +621,22 @@ impl<W: Widget> WidgetPod<W> {
             .map(|pos| pos - self.layout_rect().origin().to_vec2() + self.viewport_offset());
         let prev_size = self.state.size;
 
-        let mut child_ctx = LayoutCtx {
-            widget_state: &mut self.state,
-            state: ctx.state,
-            mouse_pos: child_mouse_pos,
-        };
+        let new_size = self.call_widget_method_with_checks("layout", |widget_pod| {
+            // widget_pod is a reborrow of `self`
 
-        let new_size = self.inner.layout(&mut child_ctx, bc, env);
+            let mut child_ctx = LayoutCtx {
+                widget_state: &mut widget_pod.state,
+                state: ctx.state,
+                mouse_pos: child_mouse_pos,
+            };
+
+            widget_pod.inner.layout(&mut child_ctx, bc, env)
+        });
+
         if new_size != prev_size {
             let mut child_ctx = LifeCycleCtx {
-                widget_state: child_ctx.widget_state,
-                state: child_ctx.state,
+                widget_state: &mut self.state,
+                state: ctx.state,
             };
             let size_event = LifeCycle::Size(new_size);
 
@@ -583,7 +646,7 @@ impl<W: Widget> WidgetPod<W> {
             self.inner.lifecycle(&mut child_ctx, &size_event, env);
         }
 
-        ctx.widget_state.merge_up(&mut child_ctx.widget_state);
+        ctx.widget_state.merge_up(&mut self.state);
         self.state.size = new_size;
         self.log_layout_issues(new_size);
 
@@ -626,6 +689,9 @@ impl<W: Widget> WidgetPod<W> {
     ///
     /// [`event`]: trait.Widget.html#tymethod.event
     pub fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, env: &Env) {
+        // TODO - explain this
+        self.mark_as_visited();
+
         if !self.is_initialized() {
             debug_panic!(
                 "{:?}: event method called before receiving WidgetAdded.",
@@ -784,19 +850,21 @@ impl<W: Widget> WidgetPod<W> {
         };
 
         if recurse {
-            let mut inner_ctx = EventCtx {
-                state: ctx.state,
-                widget_state: &mut self.state,
-                is_handled: false,
-                is_root: false,
-            };
-            let inner_event = modified_event.as_ref().unwrap_or(event);
-            inner_ctx.widget_state.has_active = false;
+            self.call_widget_method_with_checks("event", |widget_pod| {
+                let mut inner_ctx = EventCtx {
+                    state: ctx.state,
+                    widget_state: &mut widget_pod.state,
+                    is_handled: false,
+                    is_root: false,
+                };
+                let inner_event = modified_event.as_ref().unwrap_or(event);
+                inner_ctx.widget_state.has_active = false;
 
-            self.inner.on_event(&mut inner_ctx, inner_event, env);
+                widget_pod.inner.on_event(&mut inner_ctx, inner_event, env);
 
-            inner_ctx.widget_state.has_active |= inner_ctx.widget_state.is_active;
-            ctx.is_handled |= inner_ctx.is_handled;
+                inner_ctx.widget_state.has_active |= inner_ctx.widget_state.is_active;
+                ctx.is_handled |= inner_ctx.is_handled;
+            });
         } else {
             trace!("event wasn't propagated to {:?}", self.state.id);
         }
@@ -810,6 +878,9 @@ impl<W: Widget> WidgetPod<W> {
     ///
     /// [`LifeCycle`]: enum.LifeCycle.html
     pub fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
+        // TODO - explain this
+        self.mark_as_visited();
+
         // in the case of an internal routing event, if we are at our target
         // we may send an extra event after the actual event
         let mut extra_event = None;
@@ -939,18 +1010,20 @@ impl<W: Widget> WidgetPod<W> {
             }
         };
 
-        let mut child_ctx = LifeCycleCtx {
-            state: ctx.state,
-            widget_state: &mut self.state,
-        };
+        self.call_widget_method_with_checks("lifecycle", |widget_pod| {
+            let mut child_ctx = LifeCycleCtx {
+                state: ctx.state,
+                widget_state: &mut widget_pod.state,
+            };
 
-        if recurse {
-            self.inner.lifecycle(&mut child_ctx, event, env);
-        }
+            if recurse {
+                widget_pod.inner.lifecycle(&mut child_ctx, event, env);
+            }
 
-        if let Some(event) = extra_event.as_ref() {
-            self.inner.lifecycle(&mut child_ctx, event, env);
-        }
+            if let Some(event) = extra_event.as_ref() {
+                widget_pod.inner.lifecycle(&mut child_ctx, event, env);
+            }
+        });
 
         // Sync our state with our parent's state after the event!
 
@@ -1027,9 +1100,19 @@ impl<W: Widget> AsWidgetPod for WidgetPod<W> {
         &self.state
     }
 
+    // FIXME - remove
+    fn state_mut(&mut self) -> &mut WidgetState {
+        &mut self.state
+    }
+
     // Return a reference to the inner widget.
     fn widget(&self) -> &dyn Widget {
         &self.inner
+    }
+
+    // FIXME - remove
+    fn widget_mut(&mut self) -> &mut dyn Widget {
+        &mut self.inner
     }
 }
 
@@ -1068,6 +1151,7 @@ impl WidgetState {
             is_explicitly_disabled_new: false,
             text_registrations: Vec::new(),
             update_focus_chain: false,
+            was_visited: false,
         }
     }
 

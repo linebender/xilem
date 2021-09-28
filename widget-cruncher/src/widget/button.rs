@@ -185,4 +185,8 @@ impl Widget for Button {
     fn children(&self) -> SmallVec<[&dyn AsWidgetPod; 16]> {
         SmallVec::new()
     }
+
+    fn children_mut(&mut self) -> SmallVec<[&mut dyn AsWidgetPod; 16]> {
+        SmallVec::new()
+    }
 }

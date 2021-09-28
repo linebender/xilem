@@ -655,6 +655,10 @@ impl<T: TextStorage + EditableText> Widget for TextBox {
     fn children(&self) -> SmallVec<[&dyn AsWidgetPod; 16]> {
         SmallVec::new()
     }
+
+    fn children_mut(&mut self) -> SmallVec<[&mut dyn AsWidgetPod; 16]> {
+        SmallVec::new()
+    }
 }
 
 impl<T: TextStorage + EditableText> Default for TextBox {
