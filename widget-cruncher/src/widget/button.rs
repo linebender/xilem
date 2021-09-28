@@ -17,6 +17,7 @@
 use crate::widget::prelude::*;
 use crate::widget::{Label, LabelText};
 use crate::{theme, Affine, Insets, LinearGradient, UnitPoint};
+use smallvec::SmallVec;
 use tracing::{instrument, trace};
 
 // the minimum padding added to a button.
@@ -179,5 +180,9 @@ impl Widget for Button {
             ctx.transform(Affine::translate(label_offset));
             self.label.paint(ctx, env);
         });
+    }
+
+    fn children(&self) -> SmallVec<[&dyn AsWidgetPod; 16]> {
+        SmallVec::new()
     }
 }

@@ -19,6 +19,7 @@
 use crate::widget::Controller;
 use crate::{Data, Env, Event, EventCtx, LifeCycle, LifeCycleCtx, MouseButton, Widget};
 use tracing::{instrument, trace};
+use smallvec::SmallVec;
 
 /// A clickable [`Controller`] widget. Pass this and a child widget to a
 /// [`ControllerHost`] to make the child interactive. More conveniently, this is
@@ -98,5 +99,9 @@ impl<W: Widget> Controller<W> for Click {
         }
 
         child.lifecycle(ctx, event, env);
+    }
+
+    fn children(&self) -> SmallVec<[&dyn AsWidgetPod; 16]> {
+        SmallVec::new()
     }
 }

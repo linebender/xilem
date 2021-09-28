@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use smallvec::SmallVec;
 use std::num::NonZeroU64;
 use std::ops::{Deref, DerefMut};
 
@@ -155,6 +156,8 @@ pub trait Widget {
     /// [`RenderContext`]: trait.RenderContext.html
     fn paint(&mut self, ctx: &mut PaintCtx, env: &Env);
 
+    fn children(&self) -> SmallVec<[&dyn AsWidgetPod; 16]>;
+
     #[doc(hidden)]
     /// Get the (verbose) type name of the widget for debugging purposes.
     /// You should not override this method.
@@ -230,5 +233,9 @@ impl Widget for Box<dyn Widget> {
 
     fn type_name(&self) -> &'static str {
         self.deref().type_name()
+    }
+
+    fn children(&self) -> SmallVec<[&dyn AsWidgetPod; 16]> {
+        self.deref().children()
     }
 }

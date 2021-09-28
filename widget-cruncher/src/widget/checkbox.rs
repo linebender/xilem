@@ -20,6 +20,7 @@ use crate::piet::{LineCap, LineJoin, LinearGradient, RenderContext, StrokeStyle,
 use crate::theme;
 use crate::widget::{prelude::*, Label, LabelText};
 use tracing::{instrument, trace};
+use smallvec::SmallVec;
 
 /// A checkbox that toggles a `bool`.
 pub struct Checkbox {
@@ -151,4 +152,7 @@ impl Widget<bool> for Checkbox {
         self.child_label.draw_at(ctx, (size + x_padding, 0.0));
     }
 
+    fn children(&self) -> SmallVec<[&dyn AsWidgetPod; 16]> {
+        SmallVec::new()
+    }
 }

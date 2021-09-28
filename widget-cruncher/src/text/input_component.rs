@@ -14,6 +14,7 @@
 
 //! A widget component that integrates with the platform text system.
 
+use smallvec::SmallVec;
 use std::cell::{Cell, Ref, RefCell, RefMut};
 use std::ops::Range;
 use std::sync::{Arc, Weak};
@@ -472,6 +473,10 @@ impl<T: TextStorage + EditableText> Widget for TextComponent<T> {
             }
         }
         self.borrow().layout.draw(ctx, text_offset.to_point());
+    }
+
+    fn children(&self) -> SmallVec<[&dyn AsWidgetPod; 16]> {
+        SmallVec::new()
     }
 }
 

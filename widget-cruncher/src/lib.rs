@@ -74,7 +74,7 @@ pub use druid_shell::{
 #[cfg(feature = "raw-win-handle")]
 pub use druid_shell::raw_window_handle::{HasRawWindowHandle, RawWindowHandle};
 
-pub use crate::core::{WidgetPod, WidgetState};
+pub use crate::core::{AsWidgetPod, WidgetPod, WidgetState};
 pub use app_launcher::AppLauncher;
 pub use app_root::WindowRoot;
 pub use box_constraints::BoxConstraints;

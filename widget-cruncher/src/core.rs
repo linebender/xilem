@@ -180,6 +180,16 @@ pub(crate) enum CursorChange {
     Override(Cursor),
 }
 
+// Trait used to abstract over WidgetPods of any widget type.
+pub trait AsWidgetPod {
+    fn state(&self) -> &WidgetState;
+
+    // Return a reference to the inner widget.
+    fn widget(&self) -> &dyn Widget;
+}
+
+// ---
+
 impl<W: Widget> WidgetPod<W> {
     /// Create a new widget pod.
     ///
@@ -369,6 +379,7 @@ impl<W: Widget> WidgetPod<W> {
     /// Returns `true` if the hot state changed.
     ///
     /// The provided `child_state` should be merged up if this returns `true`.
+    // TODO - rename to "update_hot_state""
     fn set_hot_state(
         child: &mut W,
         child_state: &mut WidgetState,
@@ -1010,6 +1021,19 @@ impl<W> WidgetPod<W> {
         &mut self.inner
     }
 }
+
+impl<W: Widget> AsWidgetPod for WidgetPod<W> {
+    fn state(&self) -> &WidgetState {
+        &self.state
+    }
+
+    // Return a reference to the inner widget.
+    fn widget(&self) -> &dyn Widget {
+        &self.inner
+    }
+}
+
+// ---
 
 impl WidgetState {
     pub(crate) fn new(id: WidgetId, size: Option<Size>) -> WidgetState {

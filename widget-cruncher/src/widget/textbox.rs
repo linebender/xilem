@@ -16,6 +16,7 @@
 
 use std::time::Duration;
 use tracing::{instrument, trace};
+use smallvec::SmallVec;
 
 
 use crate::kurbo::Insets;
@@ -651,6 +652,9 @@ impl<T: TextStorage + EditableText> Widget for TextBox {
         ctx.stroke(clip_rect, &border_color, border_width);
     }
 
+    fn children(&self) -> SmallVec<[&dyn AsWidgetPod; 16]> {
+        SmallVec::new()
+    }
 }
 
 impl<T: TextStorage + EditableText> Default for TextBox {

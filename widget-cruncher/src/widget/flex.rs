@@ -17,6 +17,7 @@
 use crate::kurbo::{common::FloatExt, Vec2};
 use crate::widget::prelude::*;
 use crate::{Data, KeyOrValue, Point, Rect, WidgetPod};
+use smallvec::SmallVec;
 use tracing::{instrument, trace};
 
 /// A container with either horizontal or vertical layout.
@@ -856,6 +857,14 @@ impl Widget for Flex {
             let stroke_style = crate::piet::StrokeStyle::new().dash_pattern(&[4.0, 4.0]);
             ctx.stroke_styled(line, &color, 1.0, &stroke_style);
         }
+    }
+
+    fn children(&self) -> SmallVec<[&dyn AsWidgetPod; 16]> {
+        self.children
+            .iter()
+            .filter_map(|child| child.widget())
+            .map(|widget_pod| widget_pod as &dyn AsWidgetPod)
+            .collect()
     }
 }
 

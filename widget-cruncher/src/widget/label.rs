@@ -14,6 +14,7 @@
 
 //! A label widget.
 
+use smallvec::SmallVec;
 use std::ops::{Deref, DerefMut};
 
 use druid_shell::Cursor;
@@ -460,6 +461,10 @@ impl Widget for Label {
         }
         self.label.paint(ctx, env)
     }
+
+    fn children(&self) -> SmallVec<[&dyn AsWidgetPod; 16]> {
+        SmallVec::new()
+    }
 }
 
 impl Widget for RawLabel {
@@ -535,6 +540,10 @@ impl Widget for RawLabel {
             ctx.clip(label_size.to_rect());
         }
         self.draw_at(ctx, origin)
+    }
+
+    fn children(&self) -> SmallVec<[&dyn AsWidgetPod; 16]> {
+        SmallVec::new()
     }
 }
 
