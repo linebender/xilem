@@ -237,8 +237,7 @@ impl AppState {
         let env = self.env();
 
         pending.size_policy = config.size_policy;
-        pending.title.resolve(&env);
-        builder.set_title(pending.title.display_text().to_string());
+        builder.set_title(pending.title.to_string());
 
         let handler = DruidHandler::new_shared((*self).clone(), id);
         builder.set_handler(Box::new(handler));

@@ -128,12 +128,6 @@ pub enum LabelText {
 pub struct Static {
     /// The text.
     string: ArcStr,
-    /// Whether or not the `resolved` method has been called yet.
-    ///
-    /// We want to return `true` from that method when it is first called,
-    /// so that callers will know to retrieve the text. This matches
-    /// the behaviour of the other variants.
-    resolved: bool,
 }
 
 impl RawLabel {
@@ -403,14 +397,7 @@ impl Static {
     fn new(s: ArcStr) -> Self {
         Static {
             string: s,
-            resolved: false,
         }
-    }
-
-    fn resolve(&mut self) -> bool {
-        let is_first_call = !self.resolved;
-        self.resolved = true;
-        is_first_call
     }
 }
 
@@ -426,16 +413,6 @@ impl LabelText {
     pub fn display_text(&self) -> ArcStr {
         match self {
             LabelText::Static(s) => s.string.clone(),
-        }
-    }
-
-    /// Update the localization, if necessary.
-    /// This ensures that localized strings are up to date.
-    ///
-    /// Returns `true` if the string has changed.
-    pub fn resolve(&mut self, env: &Env) -> bool {
-        match self {
-            LabelText::Static(s) => s.resolve(),
         }
     }
 }

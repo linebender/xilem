@@ -3,6 +3,7 @@
 use crate::kurbo::{Point, Size};
 use crate::platform::win_handler::AppState;
 use crate::widget::LabelText;
+use crate::ArcStr;
 use crate::Widget;
 
 use druid_shell::WindowState;
@@ -55,7 +56,7 @@ pub struct WindowConfig {
 /// This includes the boxed root widget, as well as other window properties such as the title.
 pub struct PendingWindow {
     pub(crate) root: Box<dyn Widget>,
-    pub(crate) title: LabelText,
+    pub(crate) title: ArcStr,
     pub(crate) transparent: bool,
     pub(crate) size_policy: WindowSizePolicy, // This is copied over from the WindowConfig
                                               // when the native window is constructed.
@@ -92,7 +93,7 @@ impl WindowDesc {
     ///
     /// [`LabelText`]: widget/enum.LocalizedString.html
     /// [`LocalizedString`]: struct.LocalizedString.html
-    pub fn title(mut self, title: impl Into<LabelText>) -> Self {
+    pub fn title(mut self, title: impl Into<ArcStr>) -> Self {
         self.pending = self.pending.title(title);
         self
     }
@@ -226,7 +227,7 @@ impl PendingWindow {
     ///
     /// [`LabelText`]: widget/enum.LocalizedString.html
     /// [`LocalizedString`]: struct.LocalizedString.html
-    pub fn title(mut self, title: impl Into<LabelText>) -> Self {
+    pub fn title(mut self, title: impl Into<ArcStr>) -> Self {
         self.title = title.into();
         self
     }

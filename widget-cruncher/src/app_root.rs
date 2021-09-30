@@ -13,8 +13,9 @@ use crate::text::TextFieldRegistration;
 use crate::util::ExtendDrain;
 use crate::widget::LabelText;
 use crate::{
-    BoxConstraints, Env, Event, EventCtx, Handled, InternalEvent, InternalLifeCycle, LayoutCtx,
-    LifeCycle, LifeCycleCtx, PaintCtx, TimerToken, Widget, WidgetId, WidgetPod, WindowId,
+    ArcStr, AsWidgetPod, BoxConstraints, Env, Event, EventCtx, Handled, InternalEvent,
+    InternalLifeCycle, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, TimerToken, Widget, WidgetId,
+    WidgetPod, WindowId,
 };
 
 use crate::platform::win_handler::{DialogInfo, EXT_EVENT_IDLE_TOKEN};
@@ -50,7 +51,7 @@ pub type ImeUpdateFn = dyn FnOnce(druid_shell::text::Event);
 pub struct WindowRoot {
     pub(crate) id: WindowId,
     pub(crate) root: WidgetPod<Box<dyn Widget>>,
-    pub(crate) title: LabelText,
+    pub(crate) title: ArcStr,
     size_policy: WindowSizePolicy,
     size: Size,
     invalid: Region,
@@ -565,12 +566,6 @@ impl WindowRoot {
 
         if self.wants_animation_frame() {
             self.handle.request_anim_frame();
-        }
-    }
-
-    pub(crate) fn update_title(&mut self, env: &Env) {
-        if self.title.resolve(env) {
-            self.handle.set_title(&self.title.display_text());
         }
     }
 
