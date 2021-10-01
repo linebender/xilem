@@ -28,65 +28,9 @@ use tracing::{instrument, trace};
 // added padding between the edges of the widget and the text.
 const LABEL_X_PADDING: f64 = 2.0;
 
-/// A label that displays static or dynamic text.
-///
-/// This type manages an inner [`RawLabel`], updating its text based on the
-/// current [`Data`] and [`Env`] as required.
-///
-/// If your [`Data`] is *already* text, you may use a [`RawLabel`] directly.
-/// As a convenience, you can create a [`RawLabel`] with the [`Label::raw`]
-/// constructor method.
-///
-/// A label is the easiest way to display text in Druid. A label is instantiated
-/// with some [`LabelText`] type, such as an [`ArcStr`] or a [`LocalizedString`],
-/// and also has methods for setting the default font, font-size, text color,
-/// and other attributes.
-///
-/// In addition to being a [`Widget`], `Label` is also regularly used as a
-/// component in other widgets that wish to display text; to facilitate this
-/// it has a [`draw_at`] method that allows the caller to easily draw the label's
-/// text at the desired position on screen.
-///
-/// # Examples
-///
-/// Make a label to say something **very** important:
-///
-/// ```
-/// # use druid::widget::{Label, SizedBox};
-/// # use druid::*;
-///
-/// let font = FontDescriptor::new(FontFamily::SYSTEM_UI)
-///     .with_weight(FontWeight::BOLD)
-///     .with_size(48.0);
-///
-/// let important_label = Label::new("WATCH OUT!")
-///     .with_font(font)
-///     .with_text_color(Color::rgb(1.0, 0.2, 0.2));
-/// # // our data type T isn't known; this is just a trick for the compiler
-/// # // to keep our example clean
-/// # let _ = SizedBox::<()>::new(important_label);
-/// ```
-///
-/// [`ArcStr`]: ../type.ArcStr.html
-/// [`Data`]: ../trait.Data.html
-/// [`Env`]: ../struct.Env.html
-/// [`RawLabel`]: struct.RawLabel.html
-/// [`Label::raw`]: #method.raw
-/// [`LabelText`]: struct.LabelText.html
-/// [`LocalizedString`]: ../struct.LocalizedString.html
-/// [`draw_at`]: #method.draw_at
-/// [`Widget`]: ../trait.Widget.html
 pub struct Label {
-    label: RawLabel,
     current_text: ArcStr,
-}
-
-/// A widget that displays text data.
-///
-/// This requires the `Data` to implement [`TextStorage`]; to handle static, dynamic, or
-/// localized text, use [`Label`].
-pub struct RawLabel {
-    layout: TextLayout<ArcStr>,
+    text_layout: TextLayout<ArcStr>,
     line_break_mode: LineBreaking,
 
     disabled: bool,
@@ -106,11 +50,26 @@ pub enum LineBreaking {
 
 // --- METHODS ---
 
-impl RawLabel {
-    /// Create a new `RawLabel`.
-    pub fn new() -> Self {
+impl Label {
+    /// Create a new `Label`.
+    pub fn new(text: impl Into<ArcStr>) -> Self {
+        let current_text = text.into();
+        let mut text_layout = TextLayout::new();
+        text_layout.set_text(current_text.clone());
+
         Self {
-            layout: TextLayout::new(),
+            current_text,
+            text_layout: text_layout,
+            line_break_mode: LineBreaking::Overflow,
+            disabled: false,
+            default_text_color: crate::theme::TEXT_COLOR.into(),
+        }
+    }
+
+    pub fn empty() -> Self {
+        Self {
+            current_text: "".into(),
+            text_layout: TextLayout::new(),
             line_break_mode: LineBreaking::Overflow,
             disabled: false,
             default_text_color: crate::theme::TEXT_COLOR.into(),
@@ -166,9 +125,14 @@ impl RawLabel {
         self
     }
 
+    /// Return the current value of the label's text.
+    pub fn text(&self) -> ArcStr {
+        self.current_text.clone()
+    }
+
     /// Set the text.
     pub fn set_text(&mut self, new_text: impl Into<ArcStr>) {
-        self.layout.set_text(new_text.into());
+        self.text_layout.set_text(new_text.into());
     }
 
     /// Set the text color.
@@ -183,7 +147,7 @@ impl RawLabel {
     pub fn set_text_color(&mut self, color: impl Into<KeyOrValue<Color>>) {
         let color = color.into();
         if !self.disabled {
-            self.layout.set_text_color(color.clone());
+            self.text_layout.set_text_color(color.clone());
         }
         self.default_text_color = color;
     }
@@ -198,7 +162,7 @@ impl RawLabel {
     /// [`request_layout`]: ../struct.EventCtx.html#method.request_layout
     /// [`Key<f64>`]: ../struct.Key.html
     pub fn set_text_size(&mut self, size: impl Into<KeyOrValue<f64>>) {
-        self.layout.set_text_size(size);
+        self.text_layout.set_text_size(size);
     }
 
     /// Set the font.
@@ -214,7 +178,7 @@ impl RawLabel {
     /// [`FontDescriptor`]: ../struct.FontDescriptor.html
     /// [`Key<FontDescriptor>`]: ../struct.Key.html
     pub fn set_font(&mut self, font: impl Into<KeyOrValue<FontDescriptor>>) {
-        self.layout.set_font(font);
+        self.text_layout.set_font(font);
     }
 
     /// Set the [`LineBreaking`] behaviour.
@@ -232,7 +196,7 @@ impl RawLabel {
     ///
     /// [`TextAlignment`]: enum.TextAlignment.html
     pub fn set_text_alignment(&mut self, alignment: TextAlignment) {
-        self.layout.set_text_alignment(alignment);
+        self.text_layout.set_text_alignment(alignment);
     }
 
     /// Draw this label's text at the provided `Point`, without internal padding.
@@ -241,168 +205,26 @@ impl RawLabel {
     /// of managing a dynamic or localized string, but want finer control
     /// over where the text is drawn.
     pub fn draw_at(&self, ctx: &mut PaintCtx, origin: impl Into<Point>) {
-        self.layout.draw(ctx, origin)
+        self.text_layout.draw(ctx, origin)
     }
 
     /// Return the offset of the first baseline relative to the bottom of the widget.
     pub fn baseline_offset(&self) -> f64 {
-        let text_metrics = self.layout.layout_metrics();
+        let text_metrics = self.text_layout.layout_metrics();
         text_metrics.size.height - text_metrics.first_baseline
-    }
-}
-
-impl Label {
-    /// Create a new [`RawLabel`].
-    ///
-    /// This can display text `Data` directly.
-    pub fn raw() -> RawLabel {
-        RawLabel::new()
-    }
-}
-
-impl Label {
-    /// Construct a new `Label` widget.
-    ///
-    /// ```
-    /// use druid::LocalizedString;
-    /// use druid::widget::Label;
-    ///
-    /// // Construct a new Label using static string.
-    /// let _: Label<u32> = Label::new("Hello world");
-    ///
-    /// // Construct a new Label using localized string.
-    /// let text = LocalizedString::new("hello-counter").with_arg("count", |data: &u32, _env| (*data).into());
-    /// let _: Label<u32> = Label::new(text);
-    ///
-    /// // Construct a new dynamic Label. Text will be updated when data changes.
-    /// let _: Label<u32> = Label::new(|data: &u32, _env: &_| format!("Hello world: {}", data));
-    /// ```
-    pub fn new(text: impl Into<ArcStr>) -> Self {
-        let current_text = text.into();
-        let mut label = RawLabel::new();
-        label.set_text(current_text.clone());
-        Self {
-            current_text,
-            label,
-        }
-    }
-
-    /// Return the current value of the label's text.
-    pub fn text(&self) -> ArcStr {
-        self.current_text.clone()
-    }
-
-    /// Set the label's text.
-    ///
-    /// # Note
-    ///
-    /// If you change this property, at runtime, you **must** ensure that [`update`]
-    /// is called in order to correctly recompute the text. If you are unsure,
-    /// call [`request_update`] explicitly.
-    ///
-    /// [`update`]: ../trait.Widget.html#tymethod.update
-    /// [`request_update`]: ../struct.EventCtx.html#method.request_update
-    pub fn set_text(&mut self, text: impl Into<ArcStr>) {
-        self.current_text = text.into();
-    }
-
-    /// Builder-style method for setting the text color.
-    ///
-    /// The argument can be either a `Color` or a [`Key<Color>`].
-    ///
-    /// [`Key<Color>`]: ../struct.Key.html
-    pub fn with_text_color(mut self, color: impl Into<KeyOrValue<Color>>) -> Self {
-        self.label.set_text_color(color);
-        self
-    }
-
-    /// Builder-style method for setting the text size.
-    ///
-    /// The argument can be either an `f64` or a [`Key<f64>`].
-    ///
-    /// [`Key<f64>`]: ../struct.Key.html
-    pub fn with_text_size(mut self, size: impl Into<KeyOrValue<f64>>) -> Self {
-        self.label.set_text_size(size);
-        self
-    }
-
-    /// Builder-style method for setting the font.
-    ///
-    /// The argument can be a [`FontDescriptor`] or a [`Key<FontDescriptor>`]
-    /// that refers to a font defined in the [`Env`].
-    ///
-    /// [`Env`]: ../struct.Env.html
-    /// [`FontDescriptor`]: ../struct.FontDescriptor.html
-    /// [`Key<FontDescriptor>`]: ../struct.Key.html
-    pub fn with_font(mut self, font: impl Into<KeyOrValue<FontDescriptor>>) -> Self {
-        self.label.set_font(font);
-        self
-    }
-
-    /// Builder-style method to set the [`LineBreaking`] behaviour.
-    ///
-    /// [`LineBreaking`]: enum.LineBreaking.html
-    pub fn with_line_break_mode(mut self, mode: LineBreaking) -> Self {
-        self.label.set_line_break_mode(mode);
-        self
-    }
-
-    /// Builder-style method to set the [`TextAlignment`].
-    ///
-    /// [`TextAlignment`]: enum.TextAlignment.html
-    pub fn with_text_alignment(mut self, alignment: TextAlignment) -> Self {
-        self.label.set_text_alignment(alignment);
-        self
-    }
-
-    /// Draw this label's text at the provided `Point`, without internal padding.
-    ///
-    /// This is a convenience for widgets that want to use Label as a way
-    /// of managing a dynamic or localized string, but want finer control
-    /// over where the text is drawn.
-    pub fn draw_at(&self, ctx: &mut PaintCtx, origin: impl Into<Point>) {
-        self.label.draw_at(ctx, origin)
     }
 }
 
 // --- TRAIT IMPLS ---
 
 impl Widget for Label {
-    #[instrument(name = "Label", level = "trace", skip(self, _ctx, _event, _env))]
-    fn on_event(&mut self, _ctx: &mut EventCtx, _event: &Event, _env: &Env) {}
-
-    #[instrument(name = "Label", level = "trace", skip(self, ctx, event, env))]
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
-        self.label.lifecycle(ctx, event, env);
-    }
-
-    #[instrument(name = "Label", level = "trace", skip(self, ctx, bc, env))]
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
-        self.label.layout(ctx, bc, env)
-    }
-
-    #[instrument(name = "Label", level = "trace", skip(self, ctx, env))]
-    fn paint(&mut self, ctx: &mut PaintCtx, env: &Env) {
-        self.label.paint(ctx, env)
-    }
-
-    fn children(&self) -> SmallVec<[&dyn AsWidgetPod; 16]> {
-        SmallVec::new()
-    }
-
-    fn children_mut(&mut self) -> SmallVec<[&mut dyn AsWidgetPod; 16]> {
-        SmallVec::new()
-    }
-}
-
-impl Widget for RawLabel {
-    #[instrument(name = "RawLabel", level = "trace", skip(self, ctx, event, _env))]
+    #[instrument(name = "Label", level = "trace", skip(self, ctx, event, _env))]
     fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, _env: &Env) {
         match event {
             Event::MouseUp(event) => {
                 // Account for the padding
                 let pos = event.pos - Vec2::new(LABEL_X_PADDING, 0.0);
-                if let Some(link) = self.layout.link_for_pos(pos) {
+                if let Some(link) = self.text_layout.link_for_pos(pos) {
                     todo!();
                     //ctx.submit_command(link.command.clone());
                 }
@@ -411,7 +233,7 @@ impl Widget for RawLabel {
                 // Account for the padding
                 let pos = event.pos - Vec2::new(LABEL_X_PADDING, 0.0);
 
-                if self.layout.link_for_pos(pos).is_some() {
+                if self.text_layout.link_for_pos(pos).is_some() {
                     ctx.set_cursor(&Cursor::Pointer);
                 } else {
                     ctx.clear_cursor();
@@ -421,7 +243,7 @@ impl Widget for RawLabel {
         }
     }
 
-    #[instrument(name = "RawLabel", level = "trace", skip(self, ctx, event, _env))]
+    #[instrument(name = "Label", level = "trace", skip(self, ctx, event, _env))]
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, _env: &Env) {
         match event {
             LifeCycle::DisabledChanged(disabled) => {
@@ -430,14 +252,14 @@ impl Widget for RawLabel {
                 } else {
                     self.default_text_color.clone()
                 };
-                self.layout.set_text_color(color);
+                self.text_layout.set_text_color(color);
                 ctx.request_layout();
             }
             _ => {}
         }
     }
 
-    #[instrument(name = "RawLabel", level = "trace", skip(self, ctx, bc, env))]
+    #[instrument(name = "Label", level = "trace", skip(self, ctx, bc, env))]
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
         bc.debug_check("Label");
 
@@ -446,10 +268,10 @@ impl Widget for RawLabel {
             _ => f64::INFINITY,
         };
 
-        self.layout.set_wrap_width(width);
-        self.layout.rebuild_if_needed(ctx.text(), env);
+        self.text_layout.set_wrap_width(width);
+        self.text_layout.rebuild_if_needed(ctx.text(), env);
 
-        let text_metrics = self.layout.layout_metrics();
+        let text_metrics = self.text_layout.layout_metrics();
         ctx.set_baseline_offset(text_metrics.size.height - text_metrics.first_baseline);
         let size = bc.constrain(Size::new(
             text_metrics.size.width + 2. * LABEL_X_PADDING,
@@ -459,7 +281,7 @@ impl Widget for RawLabel {
         size
     }
 
-    #[instrument(name = "RawLabel", level = "trace", skip(self, ctx, _env))]
+    #[instrument(name = "Label", level = "trace", skip(self, ctx, _env))]
     fn paint(&mut self, ctx: &mut PaintCtx, _env: &Env) {
         let origin = Point::new(LABEL_X_PADDING, 0.0);
         let label_size = ctx.size();
@@ -476,24 +298,5 @@ impl Widget for RawLabel {
 
     fn children_mut(&mut self) -> SmallVec<[&mut dyn AsWidgetPod; 16]> {
         SmallVec::new()
-    }
-}
-
-impl Default for RawLabel {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl Deref for Label {
-    type Target = RawLabel;
-    fn deref(&self) -> &Self::Target {
-        &self.label
-    }
-}
-
-impl DerefMut for Label {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.label
     }
 }
