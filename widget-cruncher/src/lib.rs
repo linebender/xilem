@@ -77,6 +77,10 @@ pub use druid_shell::raw_window_handle::{HasRawWindowHandle, RawWindowHandle};
 pub use crate::core::{AsWidgetPod, WidgetPod, WidgetState};
 pub use app_launcher::AppLauncher;
 pub use app_root::WindowRoot;
+
+pub use platform::DruidHandler;
+pub use platform::{WindowConfig, WindowDesc, WindowId, WindowSizePolicy};
+
 pub use box_constraints::BoxConstraints;
 pub use command::{Selector, SingleUse, Target};
 pub use contexts::{EventCtx, LayoutCtx, LifeCycleCtx, PaintCtx, UpdateCtx};
@@ -84,8 +88,6 @@ pub use data::Data;
 pub use env::{Env, Key, KeyOrValue, Value, ValueType, ValueTypeError};
 pub use event::{Event, InternalEvent, InternalLifeCycle, LifeCycle};
 pub use mouse::MouseEvent;
-pub use platform::win_handler::DruidHandler;
-pub use platform::window_description::{WindowConfig, WindowDesc, WindowId, WindowSizePolicy};
 pub use util::Handled;
 pub use widget::{Widget, WidgetId};
 
