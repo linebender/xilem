@@ -2,7 +2,6 @@
 
 use crate::kurbo::{Point, Size};
 use crate::platform::win_handler::AppState;
-use crate::widget::LabelText;
 use crate::ArcStr;
 use crate::Widget;
 
@@ -87,12 +86,6 @@ impl WindowDesc {
         }
     }
 
-    /// Set the title for this window. This is a [`LabelText`]; it can be either
-    /// a `String`, a [`LocalizedString`], or a closure that computes a string;
-    /// it will be kept up to date as the application's state changes.
-    ///
-    /// [`LabelText`]: widget/enum.LocalizedString.html
-    /// [`LocalizedString`]: struct.LocalizedString.html
     pub fn title(mut self, title: impl Into<ArcStr>) -> Self {
         self.pending = self.pending.title(title);
         self
@@ -221,12 +214,6 @@ impl PendingWindow {
         }
     }
 
-    /// Set the title for this window. This is a [`LabelText`]; it can be either
-    /// a `String`, a [`LocalizedString`], or a closure that computes a string;
-    /// it will be kept up to date as the application's state changes.
-    ///
-    /// [`LabelText`]: widget/enum.LocalizedString.html
-    /// [`LocalizedString`]: struct.LocalizedString.html
     pub fn title(mut self, title: impl Into<ArcStr>) -> Self {
         self.title = title.into();
         self

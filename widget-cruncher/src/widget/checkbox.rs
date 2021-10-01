@@ -18,7 +18,8 @@
 use crate::kurbo::{BezPath, Size};
 use crate::piet::{LineCap, LineJoin, LinearGradient, RenderContext, StrokeStyle, UnitPoint};
 use crate::theme;
-use crate::widget::{prelude::*, Label, LabelText};
+use crate::widget::{prelude::*, Label};
+use crate::ArcStr;
 use tracing::{instrument, trace};
 use smallvec::SmallVec;
 
@@ -29,14 +30,14 @@ pub struct Checkbox {
 
 impl Checkbox {
     /// Create a new `Checkbox` with a text label.
-    pub fn new(text: impl Into<LabelText<bool>>) -> Checkbox {
+    pub fn new(text: impl Into<ArcStr>) -> Checkbox {
         Checkbox {
             child_label: Label::new(text),
         }
     }
 
     /// Update the text label.
-    pub fn set_text(&mut self, label: impl Into<LabelText<bool>>) {
+    pub fn set_text(&mut self, label: impl Into<ArcStr>) {
         self.child_label.set_text(label);
     }
 }

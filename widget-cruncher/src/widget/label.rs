@@ -79,10 +79,6 @@ const LABEL_X_PADDING: f64 = 2.0;
 pub struct Label {
     label: RawLabel,
     current_text: ArcStr,
-    text: LabelText,
-    // for debuging, we track if the user modifies the text and we don't get
-    // an update call, which might cause us to display stale text.
-    text_should_be_updated: bool,
 }
 
 /// A widget that displays text data.
@@ -108,27 +104,7 @@ pub enum LineBreaking {
     Overflow,
 }
 
-/// The text for a [`Label`].
-///
-/// This can be one of three things; either an [`ArcStr`], a [`LocalizedString`],
-/// or a closure with the signature, `Fn(&T, &Env) -> String`, where `T` is
-/// the `Data` at this point in the tree.
-///
-/// [`ArcStr`]: ../type.ArcStr.html
-/// [`LocalizedString`]: ../struct.LocalizedString.html
-/// [`Label`]: struct.Label.html
-#[derive(Clone)]
-pub enum LabelText {
-    /// Static text.
-    Static(Static),
-}
-
-/// Static text.
-#[derive(Debug, Clone)]
-pub struct Static {
-    /// The text.
-    string: ArcStr,
-}
+// --- METHODS ---
 
 impl RawLabel {
     /// Create a new `RawLabel`.
@@ -301,22 +277,19 @@ impl Label {
     /// // Construct a new dynamic Label. Text will be updated when data changes.
     /// let _: Label<u32> = Label::new(|data: &u32, _env: &_| format!("Hello world: {}", data));
     /// ```
-    pub fn new(text: impl Into<LabelText>) -> Self {
-        let text = text.into();
-        let current_text = text.display_text();
+    pub fn new(text: impl Into<ArcStr>) -> Self {
+        let current_text = text.into();
         let mut label = RawLabel::new();
         label.set_text(current_text.clone());
         Self {
-            text,
             current_text,
             label,
-            text_should_be_updated: false,
         }
     }
 
     /// Return the current value of the label's text.
     pub fn text(&self) -> ArcStr {
-        self.text.display_text()
+        self.current_text.clone()
     }
 
     /// Set the label's text.
@@ -329,9 +302,8 @@ impl Label {
     ///
     /// [`update`]: ../trait.Widget.html#tymethod.update
     /// [`request_update`]: ../struct.EventCtx.html#method.request_update
-    pub fn set_text(&mut self, text: impl Into<LabelText>) {
-        self.text = text.into();
-        self.text_should_be_updated = true;
+    pub fn set_text(&mut self, text: impl Into<ArcStr>) {
+        self.current_text = text.into();
     }
 
     /// Builder-style method for setting the text color.
@@ -393,29 +365,7 @@ impl Label {
     }
 }
 
-impl Static {
-    fn new(s: ArcStr) -> Self {
-        Static {
-            string: s,
-        }
-    }
-}
-
-impl LabelText {
-    /// Call callback with the text that should be displayed.
-    pub fn with_display_text<V>(&self, mut cb: impl FnMut(&str) -> V) -> V {
-        match self {
-            LabelText::Static(s) => cb(&s.string),
-        }
-    }
-
-    /// Return the current resolved text.
-    pub fn display_text(&self) -> ArcStr {
-        match self {
-            LabelText::Static(s) => s.string.clone(),
-        }
-    }
-}
+// --- TRAIT IMPLS ---
 
 impl Widget for Label {
     #[instrument(name = "Label", level = "trace", skip(self, _ctx, _event, _env))]
@@ -433,9 +383,6 @@ impl Widget for Label {
 
     #[instrument(name = "Label", level = "trace", skip(self, ctx, env))]
     fn paint(&mut self, ctx: &mut PaintCtx, env: &Env) {
-        if self.text_should_be_updated {
-            tracing::warn!("Label text changed without call to update. See LabelAdapter::set_text for information.");
-        }
         self.label.paint(ctx, env)
     }
 
@@ -548,22 +495,5 @@ impl Deref for Label {
 impl DerefMut for Label {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.label
-    }
-}
-impl From<String> for LabelText {
-    fn from(src: String) -> LabelText {
-        LabelText::Static(Static::new(src.into()))
-    }
-}
-
-impl From<&str> for LabelText {
-    fn from(src: &str) -> LabelText {
-        LabelText::Static(Static::new(src.into()))
-    }
-}
-
-impl From<ArcStr> for LabelText {
-    fn from(string: ArcStr) -> LabelText {
-        LabelText::Static(Static::new(string))
     }
 }

@@ -31,8 +31,6 @@ use crate::{
     SysMods, TextAlignment, TimerToken, Vec2,
 };
 
-use super::LabelText;
-
 const CURSOR_BLINK_DURATION: Duration = Duration::from_millis(500);
 const MAC_OR_LINUX: bool = cfg!(any(target_os = "macos", target_os = "linux"));
 
@@ -51,7 +49,7 @@ const SCROLL_TO_INSETS: Insets = Insets::uniform_xy(40.0, 0.0);
 /// [`Formatter`]: crate::text::format::Formatter
 /// [`ValueTextBox`]: super::ValueTextBox
 pub struct TextBox {
-    placeholder_text: LabelText,
+    placeholder_text: ArcStr,
     placeholder_layout: TextLayout,
     inner: Scroll<T, Padding<T, TextComponent>>,
     scroll_to_selection_after_layout: bool,
@@ -275,13 +273,13 @@ impl TextBox {
 
 impl<T: Data> TextBox {
     /// Builder-style method to set the `TextBox`'s placeholder text.
-    pub fn with_placeholder(mut self, placeholder: impl Into<LabelText>) -> Self {
+    pub fn with_placeholder(mut self, placeholder: impl Into<ArcStr>) -> Self {
         self.set_placeholder(placeholder);
         self
     }
 
     /// Set the `TextBox`'s placeholder text.
-    pub fn set_placeholder(&mut self, placeholder: impl Into<LabelText>) {
+    pub fn set_placeholder(&mut self, placeholder: impl Into<ArcStr>) {
         self.placeholder_text = placeholder.into();
         self.placeholder_layout
             .set_text(self.placeholder_text.display_text());

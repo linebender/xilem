@@ -31,7 +31,7 @@ pub use button::Button;
 //pub use checkbox::Checkbox;
 //pub use click::Click;
 pub use flex::{Axis, CrossAxisAlignment, Flex, FlexParams, MainAxisAlignment};
-pub use label::{Label, LabelText, LineBreaking, RawLabel};
+pub use label::{Label, LineBreaking, RawLabel};
 //pub use textbox::TextBox;
 
 //#[doc(hidden)]

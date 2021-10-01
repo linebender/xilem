@@ -15,8 +15,8 @@
 //! A button widget.
 
 use crate::widget::prelude::*;
-use crate::widget::{Label, LabelText};
-use crate::{theme, Affine, Insets, LinearGradient, UnitPoint};
+use crate::widget::Label;
+use crate::{theme, Affine, ArcStr, Insets, LinearGradient, UnitPoint};
 use smallvec::SmallVec;
 use tracing::{instrument, trace};
 
@@ -48,7 +48,7 @@ impl Button {
     /// ```
     ///
     /// [`.on_click`]: #method.on_click
-    pub fn new(text: impl Into<LabelText>) -> Button {
+    pub fn new(text: impl Into<ArcStr>) -> Button {
         Button::from_label(Label::new(text))
     }
 

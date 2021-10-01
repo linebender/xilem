@@ -11,7 +11,6 @@ use crate::contexts::ContextState;
 use crate::core::{FocusChange, WidgetState};
 use crate::text::TextFieldRegistration;
 use crate::util::ExtendDrain;
-use crate::widget::LabelText;
 use crate::{
     ArcStr, AsWidgetPod, BoxConstraints, Env, Event, EventCtx, Handled, InternalEvent,
     InternalLifeCycle, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, TimerToken, Widget, WidgetId,
