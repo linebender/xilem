@@ -52,6 +52,7 @@ pub mod env;
 mod event;
 mod mouse;
 mod platform;
+pub mod testing;
 pub mod text;
 pub mod theme;
 pub mod widget;

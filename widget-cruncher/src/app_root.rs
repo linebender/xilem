@@ -681,4 +681,12 @@ impl WindowRoot {
                 })
         })
     }
+
+    pub fn find_widget_by_id(&self, id: WidgetId) -> Option<&dyn AsWidgetPod> {
+        if self.root.id() == id {
+            Some(&self.root)
+        } else {
+            self.root.widget().find_subchild_by_id(id)
+        }
+    }
 }
