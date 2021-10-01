@@ -282,7 +282,7 @@ impl<W: Widget> WidgetPod<W> {
 
         // if the widget has moved, it may have moved under the mouse, in which
         // case we need to handle that.
-        if WidgetPod::<W>::set_hot_state(
+        if WidgetPod::set_hot_state(
             &mut self.inner,
             &mut self.state,
             ctx.state,
@@ -726,7 +726,7 @@ impl<W: Widget> WidgetPod<W> {
         let recurse = match event {
             Event::Internal(internal) => match internal {
                 InternalEvent::MouseLeave => {
-                    let hot_changed = WidgetPod::<W>::set_hot_state(
+                    let hot_changed = WidgetPod::set_hot_state(
                         &mut self.inner,
                         &mut self.state,
                         ctx.state,
@@ -760,7 +760,7 @@ impl<W: Widget> WidgetPod<W> {
                 ctx.is_root
             }
             Event::MouseDown(mouse_event) => {
-                WidgetPod::<W>::set_hot_state(
+                WidgetPod::set_hot_state(
                     &mut self.inner,
                     &mut self.state,
                     ctx.state,
@@ -778,7 +778,7 @@ impl<W: Widget> WidgetPod<W> {
                 }
             }
             Event::MouseUp(mouse_event) => {
-                WidgetPod::<W>::set_hot_state(
+                WidgetPod::set_hot_state(
                     &mut self.inner,
                     &mut self.state,
                     ctx.state,
@@ -796,7 +796,7 @@ impl<W: Widget> WidgetPod<W> {
                 }
             }
             Event::MouseMove(mouse_event) => {
-                let hot_changed = WidgetPod::<W>::set_hot_state(
+                let hot_changed = WidgetPod::set_hot_state(
                     &mut self.inner,
                     &mut self.state,
                     ctx.state,
@@ -817,7 +817,7 @@ impl<W: Widget> WidgetPod<W> {
                 }
             }
             Event::Wheel(mouse_event) => {
-                WidgetPod::<W>::set_hot_state(
+                WidgetPod::set_hot_state(
                     &mut self.inner,
                     &mut self.state,
                     ctx.state,
