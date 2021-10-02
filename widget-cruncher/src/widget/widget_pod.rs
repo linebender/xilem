@@ -354,17 +354,29 @@ impl<W: Widget> WidgetPod<W> {
         #[cfg(debug_assertions)]
         for child in self.inner.children() {
             if !child.state().was_visited {
-                // TODO - error message
-                panic!(
-                    "Error in widget {:?}: child widget {:?} not visited during method {}",
-                    self.state.id,
-                    child.state().id,
+                debug_panic!(
+                    "Error in '{}' #{}: child widget '{}' #{} not visited in method {}",
+                    self.widget().short_type_name(),
+                    self.state().id.to_raw(),
+                    child.widget().short_type_name(),
+                    child.state().id.to_raw(),
                     method_name,
                 )
             }
         }
 
         return_value
+    }
+
+    fn check_initialized(&self, method_name: &str) {
+        if !self.is_initialized() {
+            debug_panic!(
+                "Error in '{}' #{}: method '{}' called before receiving WidgetAdded.",
+                self.inner.short_type_name(),
+                self.state.id.to_raw(),
+                method_name,
+            );
+        }
     }
 }
 
@@ -394,15 +406,7 @@ impl<W: Widget> WidgetPod<W> {
     pub fn on_event(&mut self, parent_ctx: &mut EventCtx, event: &Event, env: &Env) {
         // TODO - explain this
         self.mark_as_visited();
-
-        if !self.is_initialized() {
-            warn!(
-                "{} {:?}: event method called before receiving WidgetAdded.",
-                self.inner.short_type_name(),
-                parent_ctx.widget_id()
-            );
-            return;
-        }
+        self.check_initialized("on_event");
 
         // log if we seem not to be laid out when we should be
         if self.state.is_expecting_set_origin_call && !event.should_propagate_to_hidden() {
@@ -673,10 +677,10 @@ impl<W: Widget> WidgetPod<W> {
                 true
             }
             _ if !self.is_initialized() => {
-                warn!(
-                    "{} {:?}: received LifeCycle::{:?} before WidgetAdded.",
+                debug_panic!(
+                    "Error in '{}' #{}: received LifeCycle::{:?} before receiving WidgetAdded.",
                     self.inner.short_type_name(),
-                    self.id(),
+                    self.state.id.to_raw(),
                     event
                 );
                 return;
@@ -797,14 +801,7 @@ impl<W: Widget> WidgetPod<W> {
     pub fn layout(&mut self, parent_ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
         // TODO - explain this
         self.mark_as_visited();
-
-        if !self.is_initialized() {
-            warn!(
-                "{} {:?}: layout method called before receiving WidgetAdded.",
-                self.inner.short_type_name(),
-                parent_ctx.widget_id()
-            );
-        }
+        self.check_initialized("layout");
 
         self.state.needs_layout = false;
         self.state.needs_window_origin = false;
@@ -922,17 +919,10 @@ impl<W: Widget> WidgetPod<W> {
     fn paint_impl(&mut self, parent_ctx: &mut PaintCtx, env: &Env, paint_if_not_visible: bool) {
         // TODO - explain this
         self.mark_as_visited();
+        self.check_initialized("paint");
 
         if !paint_if_not_visible && !parent_ctx.region().intersects(self.state.paint_rect()) {
             return;
-        }
-
-        if !self.is_initialized() {
-            warn!(
-                "{} {:?}: paint method called before receiving WidgetAdded.",
-                self.inner.short_type_name(),
-                parent_ctx.widget_id()
-            );
         }
 
         parent_ctx.with_save(|ctx| {
