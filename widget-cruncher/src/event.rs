@@ -234,15 +234,6 @@ pub enum LifeCycle {
     /// [`LifeCycleCtx::register_for_focus`]: struct.LifeCycleCtx.html#method.register_for_focus
     WidgetAdded,
 
-    /// Called when the [`Size`] of the widget changes.
-    ///
-    /// This will be called after [`Widget::layout`], if the [`Size`] returned
-    /// by the widget differs from its previous size.
-    ///
-    /// [`Size`]: struct.Size.html
-    /// [`Widget::layout`]: trait.Widget.html#tymethod.layout
-    Size(Size),
-
     /// Called when the Disabled state of the widgets is changed.
     ///
     /// To check if a widget is disabled, see [`is_disabled`].
@@ -421,8 +412,7 @@ impl LifeCycle {
         match self {
             LifeCycle::Internal(internal) => internal.should_propagate_to_hidden(),
             LifeCycle::WidgetAdded | LifeCycle::DisabledChanged(_) => true,
-            LifeCycle::Size(_)
-            | LifeCycle::HotChanged(_)
+            LifeCycle::HotChanged(_)
             | LifeCycle::FocusChanged(_)
             | LifeCycle::BuildFocusChain => false,
         }

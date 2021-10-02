@@ -684,11 +684,6 @@ impl<W: Widget> WidgetPod<W> {
                 );
                 return;
             }
-            LifeCycle::Size(_) => {
-                // We are a descendant of a widget that received the Size event.
-                // This event was meant only for our parent, so don't recurse.
-                false
-            }
             LifeCycle::DisabledChanged(ancestors_disabled) => {
                 self.state.update_focus_chain = true;
 
@@ -822,19 +817,6 @@ impl<W: Widget> WidgetPod<W> {
 
             widget_pod.inner.layout(&mut inner_ctx, bc, env)
         });
-
-        if new_size != prev_size {
-            let mut inner_ctx = LifeCycleCtx {
-                widget_state: &mut self.state,
-                global_state: parent_ctx.global_state,
-            };
-            let size_event = LifeCycle::Size(new_size);
-
-            // We add a span so that inner logs are marked as being in a lifecycle pass
-            let _span = info_span!("lifecycle");
-            let _span = _span.enter();
-            self.inner.lifecycle(&mut inner_ctx, &size_event, env);
-        }
 
         parent_ctx.widget_state.merge_up(&mut self.state);
         self.state.size = new_size;
