@@ -23,7 +23,6 @@ use crate::{
 /// synthesize additional events of interest, and stop propagation when it makes sense.
 pub struct WidgetPod<W> {
     state: WidgetState,
-    old_data: Option<()>,
     env: Option<Env>,
     inner: W,
     // stashed layout so we don't recompute this when debugging
@@ -53,15 +52,26 @@ impl<W: Widget> WidgetPod<W> {
     /// so it can participate in layout and event flow. The process of
     /// adding a child widget to a container should call this method.
     pub fn new(inner: W) -> WidgetPod<W> {
-        // TODO - id argument
         let mut state = WidgetState::new(WidgetId::next(), None);
         state.children_changed = true;
         state.needs_layout = true;
         WidgetPod {
             state,
-            old_data: None,
             env: None,
             inner,
+            debug_widget_text: TextLayout::new(),
+        }
+    }
+
+    /// Create a new widget pod with fixed id.
+    pub fn new_with_id(inner: W, id: WidgetId) -> WidgetPod<W> {
+        let mut state = WidgetState::new(id, None);
+        state.children_changed = true;
+        state.needs_layout = true;
+        WidgetPod {
+            state,
+            inner,
+            env: None,
             debug_widget_text: TextLayout::new(),
         }
     }
@@ -76,8 +86,7 @@ impl<W: Widget> WidgetPod<W> {
     ///
     /// [`LifeCycle::WidgetAdded`]: ./enum.LifeCycle.html#variant.WidgetAdded
     pub fn is_initialized(&self) -> bool {
-        true
-        //self.old_data.is_some()
+        !self.state.is_new
     }
 
     /// Returns `true` if widget or any descendent is focused
@@ -379,11 +388,11 @@ impl<W: Widget> WidgetPod<W> {
         }
 
         if !self.is_initialized() {
-            debug_panic!(
-                "{:?}: paint method called before receiving WidgetAdded.",
+            warn!(
+                "{} {:?}: paint method called before receiving WidgetAdded.",
+                self.inner.short_type_name(),
                 ctx.widget_id()
             );
-            return;
         }
 
         ctx.with_save(|ctx| {
@@ -450,11 +459,11 @@ impl<W: Widget> WidgetPod<W> {
         self.mark_as_visited();
 
         if !self.is_initialized() {
-            debug_panic!(
-                "{:?}: layout method called before receiving WidgetAdded.",
+            warn!(
+                "{} {:?}: layout method called before receiving WidgetAdded.",
+                self.inner.short_type_name(),
                 ctx.widget_id()
             );
-            return Size::ZERO;
         }
 
         self.state.needs_layout = false;
@@ -538,8 +547,9 @@ impl<W: Widget> WidgetPod<W> {
         self.mark_as_visited();
 
         if !self.is_initialized() {
-            debug_panic!(
-                "{:?}: event method called before receiving WidgetAdded.",
+            warn!(
+                "{} {:?}: event method called before receiving WidgetAdded.",
+                self.inner.short_type_name(),
                 ctx.widget_id()
             );
             return;
@@ -739,11 +749,12 @@ impl<W: Widget> WidgetPod<W> {
                     // which case we need to change lifecycle event to
                     // WidgetAdded or in case we were already created
                     // we just pass this event down
-                    if self.old_data.is_none() {
+                    if self.state.is_new {
                         self.lifecycle(ctx, &LifeCycle::WidgetAdded, env);
                         return;
                     } else {
                         if self.state.children_changed {
+                            // Separate "widget removed" case.
                             self.state.children.clear();
                         }
                         self.state.children_changed
@@ -795,27 +806,27 @@ impl<W: Widget> WidgetPod<W> {
                 }
             },
             LifeCycle::WidgetAdded => {
-                assert!(self.old_data.is_none());
-                trace!("Received LifeCycle::WidgetAdded");
+                if self.state.is_new {
+                    // TODO - better warning.
+                    warn!("Already initialized.");
+                }
+                trace!("{} Received LifeCycle::WidgetAdded", self.inner.short_type_name());
 
                 self.state.update_focus_chain = true;
-
-                self.old_data = None;
                 self.env = Some(env.clone());
+                self.state.is_new = false;
 
                 true
             }
-            // TODO
-            /*
             _ if !self.is_initialized() => {
-                debug_panic!(
-                    "{:?}: received LifeCycle::{:?} before WidgetAdded.",
+                warn!(
+                    "{} {:?}: received LifeCycle::{:?} before WidgetAdded.",
+                    self.inner.short_type_name(),
                     self.id(),
                     event
                 );
                 return;
             }
-            */
             LifeCycle::Size(_) => {
                 // We are a descendant of a widget that received the Size event.
                 // This event was meant only for our parent, so don't recurse.

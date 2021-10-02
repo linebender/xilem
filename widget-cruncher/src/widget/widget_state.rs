@@ -62,6 +62,9 @@ pub struct WidgetState {
     pub(crate) viewport_offset: Vec2,
 
     // TODO: consider using bitflags for the booleans.
+
+    pub(crate) is_new: bool,
+
     // `true` if a descendent of this widget changed its disabled state and should receive
     // LifeCycle::DisabledChanged or InternalLifeCycle::RouteDisabledChanged
     pub(crate) children_disabled_changed: bool,
@@ -132,6 +135,7 @@ impl WidgetState {
             paint_insets: Insets::ZERO,
             invalid: Region::EMPTY,
             viewport_offset: Vec2::ZERO,
+            is_new: true,
             children_disabled_changed: false,
             ancestor_disabled: false,
             is_explicitly_disabled: false,
