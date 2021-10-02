@@ -683,10 +683,10 @@ impl WindowRoot {
     }
 
     pub fn find_widget_by_id(&self, id: WidgetId) -> Option<&dyn AsWidgetPod> {
-        if self.root.id() == id {
-            Some(&self.root)
-        } else {
-            self.root.widget().find_subchild_by_id(id)
-        }
+        self.root.find_widget_by_id(id)
+    }
+
+    pub fn find_widget_at_pos(&self, pos: Point) -> Option<&dyn AsWidgetPod> {
+        self.root.find_widget_at_pos(pos)
     }
 }

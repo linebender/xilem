@@ -1,3 +1,4 @@
+use smallvec::SmallVec;
 use std::collections::HashMap;
 use tracing::{info_span, trace, warn};
 
@@ -41,6 +42,11 @@ pub trait AsWidgetPod {
 
     // FIXME - remove
     fn widget_mut(&mut self) -> &mut dyn Widget;
+
+    fn children(&self) -> SmallVec<[&dyn AsWidgetPod; 16]>;
+    fn children_mut(&mut self) -> SmallVec<[&mut dyn AsWidgetPod; 16]>;
+    fn find_widget_by_id(&self, id: WidgetId) -> Option<&dyn AsWidgetPod>;
+    fn find_widget_at_pos(&self, pos: Point) -> Option<&dyn AsWidgetPod>;
 }
 
 // ---
@@ -247,7 +253,40 @@ impl<W: Widget> WidgetPod<W> {
     pub fn baseline_offset(&self) -> f64 {
         self.state.baseline_offset
     }
+}
 
+impl<W: Widget> WidgetPod<W> {
+    pub fn find_widget_by_id(&self, id: WidgetId) -> Option<&dyn AsWidgetPod> {
+        if self.id() == id {
+            Some(self)
+        } else {
+            self.children().into_iter().find_map(|child| {
+                child.find_widget_by_id(id)
+            })
+        }
+    }
+
+    pub fn find_widget_at_pos(&self, pos: Point) -> Option<&dyn AsWidgetPod> {
+        let mut pos = pos;
+        let mut innermost_widget: &dyn AsWidgetPod = self;
+
+        if !self.state.layout_rect().contains(pos) {
+            return None;
+        }
+
+        // FIXME - Handle hidden widgets (eg in scroll areas).
+        loop {
+            if let Some(child) = innermost_widget.widget().get_child_at_pos(pos) {
+                pos -= innermost_widget.state().layout_rect().origin().to_vec2();
+                innermost_widget = child;
+            } else {
+                return Some(innermost_widget);
+            }
+        }
+    }
+}
+
+impl<W: Widget> WidgetPod<W> {
     #[inline(always)]
     pub(crate) fn mark_as_visited(&mut self) {
         #[cfg(debug_assertions)]
@@ -982,6 +1021,23 @@ impl<W: Widget> AsWidgetPod for WidgetPod<W> {
     fn widget_mut(&mut self) -> &mut dyn Widget {
         &mut self.inner
     }
+
+    fn children(&self) -> SmallVec<[&dyn AsWidgetPod; 16]> {
+        self.inner.children()
+    }
+
+    fn children_mut(&mut self) -> SmallVec<[&mut dyn AsWidgetPod; 16]> {
+        self.inner.children_mut()
+    }
+
+    fn find_widget_by_id(&self, id: WidgetId) -> Option<&dyn AsWidgetPod> {
+        WidgetPod::find_widget_by_id(self, id)
+    }
+
+    fn find_widget_at_pos(&self, pos: Point) -> Option<&dyn AsWidgetPod> {
+        WidgetPod::find_widget_at_pos(self, pos)
+    }
+
 }
 
 // ---

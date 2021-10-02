@@ -162,23 +162,11 @@ pub trait Widget {
     fn children_mut(&mut self) -> SmallVec<[&mut dyn AsWidgetPod; 16]>;
 
     // Returns direct child, not recursive child
-    fn find_child_by_pos(&self, pos: Point) -> Option<&dyn AsWidgetPod> {
+    fn get_child_at_pos(&self, pos: Point) -> Option<&dyn AsWidgetPod> {
         // layout_rect() is in parent coordinate space
         self.children()
             .into_iter()
             .find(|child| child.state().layout_rect().contains(pos))
-    }
-
-    fn find_subchild_by_id(&self, id: WidgetId) -> Option<&dyn AsWidgetPod> {
-        self.children().into_iter().find_map(|child| {
-            if child.state().id == id {
-                Some(child)
-            } else if child.state().children.may_contain(&id) {
-                child.widget().find_subchild_by_id(id)
-            } else {
-                None
-            }
-        })
     }
 
     #[doc(hidden)]
