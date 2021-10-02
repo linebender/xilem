@@ -418,20 +418,19 @@ impl<W: Widget> WidgetPod<W> {
             );
         }
 
-        // TODO: factor as much logic as possible into monomorphic functions.
         if parent_ctx.is_handled {
-            // This function is called by containers to propagate an event from
-            // containers to children. Non-recurse events will be invoked directly
-            // from other points in the library.
+            // If the event was already handled, we quit early.
             return;
         }
+
         let had_active = self.state.has_active;
         let rect = self.layout_rect();
 
         // If we need to replace either the event or its data.
         let mut modified_event = None;
 
-        let recurse = match event {
+        // TODO: factor as much logic as possible into monomorphic functions.
+        let call_inner = match event {
             Event::Internal(internal) => match internal {
                 InternalEvent::MouseLeave => {
                     let hot_changed = WidgetPod::set_hot_state(
@@ -553,11 +552,11 @@ impl<W: Widget> WidgetPod<W> {
             Event::Zoom(_) => had_active || self.state.is_hot,
             Event::Timer(_) => false, // This event was targeted only to our parent
             Event::ImeStateChange => true, // once delivered to the focus widget, recurse to the component?
-                                           //Event::Command(_) => true,
-                                           //Event::Notification(_) => false,
+            //Event::Command(_) => true,
+            //Event::Notification(_) => false,
         };
 
-        if recurse {
+        if call_inner {
             self.call_widget_method_with_checks("event", |widget_pod| {
                 let mut inner_ctx = EventCtx {
                     global_state: parent_ctx.global_state,
@@ -597,7 +596,7 @@ impl<W: Widget> WidgetPod<W> {
 
         let had_focus = self.state.has_focus;
 
-        let recurse = match event {
+        let call_inner = match event {
             LifeCycle::Internal(internal) => match internal {
                 InternalLifeCycle::RouteWidgetAdded => {
                     // if this is called either we were just created, in
@@ -730,7 +729,7 @@ impl<W: Widget> WidgetPod<W> {
                 widget_state: &mut widget_pod.state,
             };
 
-            if recurse {
+            if call_inner {
                 widget_pod.inner.lifecycle(&mut inner_ctx, event, env);
             }
 
