@@ -63,6 +63,7 @@ pub struct WidgetState {
 
     // TODO: consider using bitflags for the booleans.
 
+    // True until a WidgetAdded event is received.
     pub(crate) is_new: bool,
 
     // `true` if a descendent of this widget changed its disabled state and should receive
