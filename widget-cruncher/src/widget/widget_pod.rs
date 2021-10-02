@@ -23,8 +23,8 @@ use crate::{
 /// synthesize additional events of interest, and stop propagation when it makes sense.
 pub struct WidgetPod<W> {
     state: WidgetState,
-    env: Option<Env>,
     inner: W,
+    env: Option<Env>,
     // stashed layout so we don't recompute this when debugging
     debug_widget_text: TextLayout<ArcStr>,
 }
@@ -57,8 +57,8 @@ impl<W: Widget> WidgetPod<W> {
         state.needs_layout = true;
         WidgetPod {
             state,
-            env: None,
             inner,
+            env: None,
             debug_widget_text: TextLayout::new(),
         }
     }
@@ -80,6 +80,16 @@ impl<W: Widget> WidgetPod<W> {
     /// we want to control mutation.
     pub(crate) fn state(&self) -> &WidgetState {
         &self.state
+    }
+
+    /// Return a reference to the inner widget.
+    pub fn widget(&self) -> &W {
+        &self.inner
+    }
+
+    /// Return a mutable reference to the inner widget.
+    pub fn widget_mut(&mut self) -> &mut W {
+        &mut self.inner
     }
 
     /// Returns `true` if the widget has received [`LifeCycle::WidgetAdded`].
@@ -319,220 +329,21 @@ impl<W: Widget> WidgetPod<W> {
     }
 }
 
+impl<W: Widget + 'static> WidgetPod<W> {
+    /// Box the contained widget.
+    ///
+    /// Convert a `WidgetPod` containing a widget of a specific concrete type
+    /// into a dynamically boxed widget.
+    pub fn boxed(self) -> WidgetPod<Box<dyn Widget>> {
+        WidgetPod::new(Box::new(self.inner))
+    }
+}
+
+
+// --- TRAIT IMPLS ---
+
 impl<W: Widget> WidgetPod<W> {
-    /// Paint a child widget.
-    ///
-    /// Generally called by container widgets as part of their [`Widget::paint`]
-    /// method.
-    ///
-    /// Note that this method does not apply the offset of the layout rect.
-    /// If that is desired, use [`paint`] instead.
-    ///
-    /// [`layout`]: trait.Widget.html#tymethod.layout
-    /// [`Widget::paint`]: trait.Widget.html#tymethod.paint
-    /// [`paint`]: #method.paint
-    pub fn paint_raw(&mut self, ctx: &mut PaintCtx, env: &Env) {
-        // we need to do this before we borrow from self
-        if env.get(Env::DEBUG_WIDGET_ID) {
-            self.make_widget_id_layout_if_needed(self.state.id, ctx, env);
-        }
-
-        self.call_widget_method_with_checks("paint", |widget_pod| {
-            // widget_pod is a reborrow of `self`
-
-            let mut inner_ctx = PaintCtx {
-                render_ctx: ctx.render_ctx,
-                state: ctx.state,
-                z_ops: Vec::new(),
-                region: ctx.region.clone(),
-                widget_state: &widget_pod.state,
-                depth: ctx.depth,
-            };
-            widget_pod.inner.paint(&mut inner_ctx, env);
-
-            let debug_ids = inner_ctx.is_hot() && env.get(Env::DEBUG_WIDGET_ID);
-            if debug_ids {
-                // this also draws layout bounds
-                widget_pod.debug_paint_widget_ids(&mut inner_ctx, env);
-            }
-
-            if !debug_ids && env.get(Env::DEBUG_PAINT) {
-                widget_pod.debug_paint_layout_bounds(&mut inner_ctx, env);
-            }
-
-            ctx.z_ops.append(&mut inner_ctx.z_ops);
-        });
-    }
-
-    /// Paint the widget, translating it by the origin of its layout rectangle.
-    ///
-    /// This will recursively paint widgets, stopping if a widget's layout
-    /// rect is outside of the currently visible region.
-    pub fn paint(&mut self, ctx: &mut PaintCtx, env: &Env) {
-        self.paint_impl(ctx, env, false)
-    }
-
-    /// Paint the widget, even if its layout rect is outside of the currently
-    /// visible region.
-    pub fn paint_always(&mut self, ctx: &mut PaintCtx, env: &Env) {
-        self.paint_impl(ctx, env, true)
-    }
-
-    /// Shared implementation that can skip drawing non-visible content.
-    fn paint_impl(&mut self, ctx: &mut PaintCtx, env: &Env, paint_if_not_visible: bool) {
-        // TODO - explain this
-        self.mark_as_visited();
-
-        if !paint_if_not_visible && !ctx.region().intersects(self.state.paint_rect()) {
-            return;
-        }
-
-        if !self.is_initialized() {
-            warn!(
-                "{} {:?}: paint method called before receiving WidgetAdded.",
-                self.inner.short_type_name(),
-                ctx.widget_id()
-            );
-        }
-
-        ctx.with_save(|ctx| {
-            let layout_origin = self.layout_rect().origin().to_vec2();
-            ctx.transform(Affine::translate(layout_origin));
-            let mut visible = ctx.region().clone();
-            visible.intersect_with(self.state.paint_rect());
-            visible -= layout_origin;
-            ctx.with_child_ctx(visible, |ctx| self.paint_raw(ctx, env));
-        });
-    }
-
-    fn make_widget_id_layout_if_needed(&mut self, id: WidgetId, ctx: &mut PaintCtx, env: &Env) {
-        if self.debug_widget_text.needs_rebuild() {
-            // switch text color based on background, this is meh and that's okay
-            let border_color = env.get_debug_color(id.to_raw());
-            let (r, g, b, _) = border_color.as_rgba8();
-            let avg = (r as u32 + g as u32 + b as u32) / 3;
-            let text_color = if avg < 128 {
-                Color::WHITE
-            } else {
-                Color::BLACK
-            };
-            let id_string = id.to_raw().to_string();
-            self.debug_widget_text.set_text(id_string.into());
-            self.debug_widget_text.set_text_size(10.0);
-            self.debug_widget_text.set_text_color(text_color);
-            self.debug_widget_text.rebuild_if_needed(ctx.text(), env);
-        }
-    }
-
-    fn debug_paint_widget_ids(&self, ctx: &mut PaintCtx, env: &Env) {
-        // we clone because we need to move it for paint_with_z_index
-        let text = self.debug_widget_text.clone();
-        let text_size = text.size();
-        let origin = ctx.size().to_vec2() - text_size.to_vec2();
-        let border_color = env.get_debug_color(ctx.widget_id().to_raw());
-        self.debug_paint_layout_bounds(ctx, env);
-
-        ctx.paint_with_z_index(ctx.depth(), move |ctx| {
-            let origin = Point::new(origin.x.max(0.0), origin.y.max(0.0));
-            let text_rect = Rect::from_origin_size(origin, text_size);
-            ctx.fill(text_rect, &border_color);
-            text.draw(ctx, origin);
-        })
-    }
-
-    fn debug_paint_layout_bounds(&self, ctx: &mut PaintCtx, env: &Env) {
-        const BORDER_WIDTH: f64 = 1.0;
-        let rect = ctx.size().to_rect().inset(BORDER_WIDTH / -2.0);
-        let id = self.id().to_raw();
-        let color = env.get_debug_color(id);
-        ctx.stroke(rect, &color, BORDER_WIDTH);
-    }
-
-    /// Compute layout of a widget.
-    ///
-    /// Generally called by container widgets as part of their [`layout`]
-    /// method.
-    ///
-    /// [`layout`]: trait.Widget.html#tymethod.layout
-    pub fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
-        // TODO - explain this
-        self.mark_as_visited();
-
-        if !self.is_initialized() {
-            warn!(
-                "{} {:?}: layout method called before receiving WidgetAdded.",
-                self.inner.short_type_name(),
-                ctx.widget_id()
-            );
-        }
-
-        self.state.needs_layout = false;
-        self.state.needs_window_origin = false;
-        self.state.is_expecting_set_origin_call = true;
-
-        let child_mouse_pos = ctx
-            .mouse_pos
-            .map(|pos| pos - self.layout_rect().origin().to_vec2() + self.viewport_offset());
-        let prev_size = self.state.size;
-
-        let new_size = self.call_widget_method_with_checks("layout", |widget_pod| {
-            // widget_pod is a reborrow of `self`
-
-            let mut child_ctx = LayoutCtx {
-                widget_state: &mut widget_pod.state,
-                state: ctx.state,
-                mouse_pos: child_mouse_pos,
-            };
-
-            widget_pod.inner.layout(&mut child_ctx, bc, env)
-        });
-
-        if new_size != prev_size {
-            let mut child_ctx = LifeCycleCtx {
-                widget_state: &mut self.state,
-                state: ctx.state,
-            };
-            let size_event = LifeCycle::Size(new_size);
-
-            // We add a span so that inner logs are marked as being in a lifecycle pass
-            let _span = info_span!("lifecycle");
-            let _span = _span.enter();
-            self.inner.lifecycle(&mut child_ctx, &size_event, env);
-        }
-
-        ctx.widget_state.merge_up(&mut self.state);
-        self.state.size = new_size;
-        self.log_layout_issues(new_size);
-
-        new_size
-    }
-
-    fn log_layout_issues(&self, size: Size) {
-        if size.width.is_infinite() {
-            let name = self.widget().type_name();
-            warn!("Widget `{}` has an infinite width.", name);
-        }
-        if size.height.is_infinite() {
-            let name = self.widget().type_name();
-            warn!("Widget `{}` has an infinite height.", name);
-        }
-    }
-
-    /// Execute the closure with this widgets `EventCtx`.
-    #[cfg(feature = "crochet")]
-    pub fn with_event_context<F>(&mut self, parent_ctx: &mut EventCtx, mut fun: F)
-    where
-        F: FnMut(&mut W, &mut EventCtx),
-    {
-        let mut ctx = EventCtx {
-            state: parent_ctx.state,
-            widget_state: &mut self.state,
-            is_handled: false,
-            is_root: false,
-        };
-        fun(&mut self.inner, &mut ctx);
-        parent_ctx.widget_state.merge_up(&mut self.state);
-    }
+    /// --- ON_EVENT ---
 
     /// Propagate an event.
     ///
@@ -728,6 +539,8 @@ impl<W: Widget> WidgetPod<W> {
         // Doing this conditionally only makes sense when there's a measurable performance boost.
         ctx.widget_state.merge_up(&mut self.state);
     }
+
+    // --- LIFECYCLE ---
 
     /// Propagate a [`LifeCycle`] event.
     ///
@@ -927,27 +740,226 @@ impl<W: Widget> WidgetPod<W> {
 
         ctx.widget_state.merge_up(&mut self.state);
     }
-}
 
-impl<W: Widget + 'static> WidgetPod<W> {
-    /// Box the contained widget.
+    // --- LAYOUT ---
+
+    /// Compute layout of a widget.
     ///
-    /// Convert a `WidgetPod` containing a widget of a specific concrete type
-    /// into a dynamically boxed widget.
-    pub fn boxed(self) -> WidgetPod<Box<dyn Widget>> {
-        WidgetPod::new(Box::new(self.inner))
-    }
-}
+    /// Generally called by container widgets as part of their [`layout`]
+    /// method.
+    ///
+    /// [`layout`]: trait.Widget.html#tymethod.layout
+    pub fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
+        // TODO - explain this
+        self.mark_as_visited();
 
-impl<W> WidgetPod<W> {
-    /// Return a reference to the inner widget.
-    pub fn widget(&self) -> &W {
-        &self.inner
+        if !self.is_initialized() {
+            warn!(
+                "{} {:?}: layout method called before receiving WidgetAdded.",
+                self.inner.short_type_name(),
+                ctx.widget_id()
+            );
+        }
+
+        self.state.needs_layout = false;
+        self.state.needs_window_origin = false;
+        self.state.is_expecting_set_origin_call = true;
+
+        let child_mouse_pos = ctx
+            .mouse_pos
+            .map(|pos| pos - self.layout_rect().origin().to_vec2() + self.viewport_offset());
+        let prev_size = self.state.size;
+
+        let new_size = self.call_widget_method_with_checks("layout", |widget_pod| {
+            // widget_pod is a reborrow of `self`
+
+            let mut child_ctx = LayoutCtx {
+                widget_state: &mut widget_pod.state,
+                state: ctx.state,
+                mouse_pos: child_mouse_pos,
+            };
+
+            widget_pod.inner.layout(&mut child_ctx, bc, env)
+        });
+
+        if new_size != prev_size {
+            let mut child_ctx = LifeCycleCtx {
+                widget_state: &mut self.state,
+                state: ctx.state,
+            };
+            let size_event = LifeCycle::Size(new_size);
+
+            // We add a span so that inner logs are marked as being in a lifecycle pass
+            let _span = info_span!("lifecycle");
+            let _span = _span.enter();
+            self.inner.lifecycle(&mut child_ctx, &size_event, env);
+        }
+
+        ctx.widget_state.merge_up(&mut self.state);
+        self.state.size = new_size;
+        self.log_layout_issues(new_size);
+
+        new_size
     }
 
-    /// Return a mutable reference to the inner widget.
-    pub fn widget_mut(&mut self) -> &mut W {
-        &mut self.inner
+    fn log_layout_issues(&self, size: Size) {
+        if size.width.is_infinite() {
+            let name = self.widget().type_name();
+            warn!("Widget `{}` has an infinite width.", name);
+        }
+        if size.height.is_infinite() {
+            let name = self.widget().type_name();
+            warn!("Widget `{}` has an infinite height.", name);
+        }
+    }
+
+    // --- PAINT ---
+
+    /// Paint a child widget.
+    ///
+    /// Generally called by container widgets as part of their [`Widget::paint`]
+    /// method.
+    ///
+    /// Note that this method does not apply the offset of the layout rect.
+    /// If that is desired, use [`paint`] instead.
+    ///
+    /// [`layout`]: trait.Widget.html#tymethod.layout
+    /// [`Widget::paint`]: trait.Widget.html#tymethod.paint
+    /// [`paint`]: #method.paint
+    pub fn paint_raw(&mut self, ctx: &mut PaintCtx, env: &Env) {
+        // we need to do this before we borrow from self
+        if env.get(Env::DEBUG_WIDGET_ID) {
+            self.make_widget_id_layout_if_needed(self.state.id, ctx, env);
+        }
+
+        self.call_widget_method_with_checks("paint", |widget_pod| {
+            // widget_pod is a reborrow of `self`
+
+            let mut inner_ctx = PaintCtx {
+                render_ctx: ctx.render_ctx,
+                state: ctx.state,
+                z_ops: Vec::new(),
+                region: ctx.region.clone(),
+                widget_state: &widget_pod.state,
+                depth: ctx.depth,
+            };
+            widget_pod.inner.paint(&mut inner_ctx, env);
+
+            let debug_ids = inner_ctx.is_hot() && env.get(Env::DEBUG_WIDGET_ID);
+            if debug_ids {
+                // this also draws layout bounds
+                widget_pod.debug_paint_widget_ids(&mut inner_ctx, env);
+            }
+
+            if !debug_ids && env.get(Env::DEBUG_PAINT) {
+                widget_pod.debug_paint_layout_bounds(&mut inner_ctx, env);
+            }
+
+            ctx.z_ops.append(&mut inner_ctx.z_ops);
+        });
+    }
+
+    /// Paint the widget, translating it by the origin of its layout rectangle.
+    ///
+    /// This will recursively paint widgets, stopping if a widget's layout
+    /// rect is outside of the currently visible region.
+    pub fn paint(&mut self, ctx: &mut PaintCtx, env: &Env) {
+        self.paint_impl(ctx, env, false)
+    }
+
+    /// Paint the widget, even if its layout rect is outside of the currently
+    /// visible region.
+    pub fn paint_always(&mut self, ctx: &mut PaintCtx, env: &Env) {
+        self.paint_impl(ctx, env, true)
+    }
+
+    /// Shared implementation that can skip drawing non-visible content.
+    fn paint_impl(&mut self, ctx: &mut PaintCtx, env: &Env, paint_if_not_visible: bool) {
+        // TODO - explain this
+        self.mark_as_visited();
+
+        if !paint_if_not_visible && !ctx.region().intersects(self.state.paint_rect()) {
+            return;
+        }
+
+        if !self.is_initialized() {
+            warn!(
+                "{} {:?}: paint method called before receiving WidgetAdded.",
+                self.inner.short_type_name(),
+                ctx.widget_id()
+            );
+        }
+
+        ctx.with_save(|ctx| {
+            let layout_origin = self.layout_rect().origin().to_vec2();
+            ctx.transform(Affine::translate(layout_origin));
+            let mut visible = ctx.region().clone();
+            visible.intersect_with(self.state.paint_rect());
+            visible -= layout_origin;
+            ctx.with_child_ctx(visible, |ctx| self.paint_raw(ctx, env));
+        });
+    }
+
+    fn make_widget_id_layout_if_needed(&mut self, id: WidgetId, ctx: &mut PaintCtx, env: &Env) {
+        if self.debug_widget_text.needs_rebuild() {
+            // switch text color based on background, this is meh and that's okay
+            let border_color = env.get_debug_color(id.to_raw());
+            let (r, g, b, _) = border_color.as_rgba8();
+            let avg = (r as u32 + g as u32 + b as u32) / 3;
+            let text_color = if avg < 128 {
+                Color::WHITE
+            } else {
+                Color::BLACK
+            };
+            let id_string = id.to_raw().to_string();
+            self.debug_widget_text.set_text(id_string.into());
+            self.debug_widget_text.set_text_size(10.0);
+            self.debug_widget_text.set_text_color(text_color);
+            self.debug_widget_text.rebuild_if_needed(ctx.text(), env);
+        }
+    }
+
+    fn debug_paint_widget_ids(&self, ctx: &mut PaintCtx, env: &Env) {
+        // we clone because we need to move it for paint_with_z_index
+        let text = self.debug_widget_text.clone();
+        let text_size = text.size();
+        let origin = ctx.size().to_vec2() - text_size.to_vec2();
+        let border_color = env.get_debug_color(ctx.widget_id().to_raw());
+        self.debug_paint_layout_bounds(ctx, env);
+
+        ctx.paint_with_z_index(ctx.depth(), move |ctx| {
+            let origin = Point::new(origin.x.max(0.0), origin.y.max(0.0));
+            let text_rect = Rect::from_origin_size(origin, text_size);
+            ctx.fill(text_rect, &border_color);
+            text.draw(ctx, origin);
+        })
+    }
+
+    fn debug_paint_layout_bounds(&self, ctx: &mut PaintCtx, env: &Env) {
+        const BORDER_WIDTH: f64 = 1.0;
+        let rect = ctx.size().to_rect().inset(BORDER_WIDTH / -2.0);
+        let id = self.id().to_raw();
+        let color = env.get_debug_color(id);
+        ctx.stroke(rect, &color, BORDER_WIDTH);
+    }
+
+    // ---
+
+    // TODO - recurse
+    //#[cfg(feature = "crochet")]
+    /// Execute the closure with this widgets `EventCtx`.
+    pub fn with_event_context<F>(&mut self, parent_ctx: &mut EventCtx, mut fun: F)
+    where
+        F: FnMut(&mut W, &mut EventCtx),
+    {
+        let mut ctx = EventCtx {
+            state: parent_ctx.state,
+            widget_state: &mut self.state,
+            is_handled: false,
+            is_root: false,
+        };
+        fun(&mut self.inner, &mut ctx);
+        parent_ctx.widget_state.merge_up(&mut self.state);
     }
 }
 
