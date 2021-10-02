@@ -21,10 +21,10 @@ use std::{
 };
 use tracing::{error, trace, warn};
 
-use crate::core::{CursorChange, FocusChange, WidgetState};
 use crate::env::KeyLike;
 use crate::piet::{Piet, PietText, RenderContext};
 use crate::text::{ImeHandlerRef, TextFieldRegistration};
+use crate::widget::{CursorChange, FocusChange, WidgetState};
 use crate::{
     Affine, Cursor, Env, Insets, Point, Rect, Size, TimerToken, Vec2, Widget, WidgetId, WidgetPod,
     WindowHandle, WindowId,

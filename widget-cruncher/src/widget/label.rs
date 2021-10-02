@@ -59,7 +59,7 @@ impl Label {
 
         Self {
             current_text,
-            text_layout: text_layout,
+            text_layout,
             line_break_mode: LineBreaking::Overflow,
             disabled: false,
             default_text_color: crate::theme::TEXT_COLOR.into(),

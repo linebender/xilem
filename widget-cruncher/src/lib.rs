@@ -46,7 +46,6 @@ mod bloom;
 mod box_constraints;
 mod command;
 mod contexts;
-mod core;
 mod data;
 pub mod env;
 mod event;
@@ -75,7 +74,6 @@ pub use druid_shell::{
 #[cfg(feature = "raw-win-handle")]
 pub use druid_shell::raw_window_handle::{HasRawWindowHandle, RawWindowHandle};
 
-pub use crate::core::{AsWidgetPod, WidgetPod, WidgetState};
 pub use app_launcher::AppLauncher;
 pub use app_root::WindowRoot;
 
@@ -90,7 +88,7 @@ pub use env::{Env, Key, KeyOrValue, Value, ValueType, ValueTypeError};
 pub use event::{Event, InternalEvent, InternalLifeCycle, LifeCycle};
 pub use mouse::MouseEvent;
 pub use util::Handled;
-pub use widget::{Widget, WidgetId};
+pub use widget::{AsWidgetPod, Widget, WidgetId, WidgetPod, WidgetState};
 
 #[deprecated(since = "0.8.0", note = "import from druid::text module instead")]
 pub use text::{ArcStr, FontDescriptor};

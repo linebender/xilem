@@ -23,6 +23,8 @@ mod label;
 
 #[allow(clippy::module_inception)]
 mod widget;
+mod widget_pod;
+mod widget_state;
 
 #[doc(hidden)]
 pub use widget::{Widget, WidgetId};
@@ -38,27 +40,45 @@ pub use label::{Label, LineBreaking};
 //pub use widget_ext::WidgetExt;
 //pub use widget_wrapper::WidgetWrapper;
 
-/// The types required to implement a `Widget`.
-///
-/// # Structs
-/// [`BoxConstraints`](../../struct.BoxConstraints.html)\
-/// [`Env`](../../struct.Env.html)\
-/// [`EventCtx`](../../struct.EventCtx.html)\
-/// [`LayoutCtx`](../../struct.LayoutCtx.html)\
-/// [`LifeCycleCtx`](../../struct.LifeCycleCtx.html)\
-/// [`PaintCtx`](../../struct.PaintCtx.html)\
-/// [`Size`](../../struct.Size.html)\
-/// [`UpdateCtx`](../../struct.UpdateCtx.html)\
-/// [`WidgetId`](../../struct.WidgetId.html)\
-///
-/// # Enums
-/// [`Event`](../../enum.Event.html)\
-/// [`LifeCycle`](../../enum.LifeCycle.html)\
-///
-/// # Traits
-/// [`RenderContext`](../../trait.RenderContext.html)\
-/// [`Widget`](../../trait.Widget.html)
-// NOTE: \ at the end works as a line break, but skip on last line!
+pub use widget_pod::{AsWidgetPod, WidgetPod};
+pub use widget_state::WidgetState;
+
+/// Methods by which a widget can attempt to change focus state.
+#[derive(Debug, Clone, Copy)]
+pub(crate) enum FocusChange {
+    /// The focused widget is giving up focus.
+    Resign,
+    /// A specific widget wants focus
+    Focus(WidgetId),
+    /// Focus should pass to the next focusable widget
+    Next,
+    /// Focus should pass to the previous focusable widget
+    Previous,
+}
+
+/// The possible cursor states for a widget.
+#[derive(Clone, Debug)]
+pub(crate) enum CursorChange {
+    /// No cursor has been set.
+    Default,
+    /// Someone set a cursor, but if a child widget also set their cursor then we'll use theirs
+    /// instead of ours.
+    Set(druid_shell::Cursor),
+    /// Someone set a cursor, and we'll use it regardless of what the children say.
+    Override(druid_shell::Cursor),
+}
+
+// TODO
+impl CursorChange {
+    pub fn cursor(&self) -> Option<druid_shell::Cursor> {
+        match self {
+            CursorChange::Set(c) | CursorChange::Override(c) => Some(c.clone()),
+            CursorChange::Default => None,
+        }
+    }
+}
+
+// TODO - remove
 pub mod prelude {
     #[doc(hidden)]
     pub use crate::{

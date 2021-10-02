@@ -17,8 +17,8 @@
 use std::path::Path;
 use std::sync::Arc;
 
-use crate::core::WidgetState;
 use crate::platform::PendingWindow;
+use crate::widget::WidgetState;
 //use crate::ext_event::ExtEventHost;
 use crate::piet::{BitmapTarget, Device, Error, ImageFormat, Piet};
 use crate::*;
