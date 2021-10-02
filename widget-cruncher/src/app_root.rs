@@ -374,9 +374,9 @@ impl WindowRoot {
 
         let mut widget_state = WidgetState::new(self.root.id(), Some(self.size));
         let is_handled = {
-            let mut state = ContextState::new(&self.handle, self.id, self.focus);
+            let mut global_state = ContextState::new(&self.handle, self.id, self.focus);
             let mut ctx = EventCtx {
-                state: &mut state,
+                global_state: &mut global_state,
                 widget_state: &mut widget_state,
                 is_handled: false,
                 is_root: true,
@@ -422,9 +422,9 @@ impl WindowRoot {
 
     pub(crate) fn lifecycle(&mut self, event: &LifeCycle, env: &Env, process_commands: bool) {
         let mut widget_state = WidgetState::new(self.root.id(), Some(self.size));
-        let mut state = ContextState::new(&self.handle, self.id, self.focus);
+        let mut global_state = ContextState::new(&self.handle, self.id, self.focus);
         let mut ctx = LifeCycleCtx {
-            state: &mut state,
+            global_state: &mut global_state,
             widget_state: &mut widget_state,
         };
 
@@ -494,9 +494,9 @@ impl WindowRoot {
 
     fn layout(&mut self, env: &Env) {
         let mut widget_state = WidgetState::new(self.root.id(), Some(self.size));
-        let mut state = ContextState::new(&self.handle, self.id, self.focus);
+        let mut global_state = ContextState::new(&self.handle, self.id, self.focus);
         let mut layout_ctx = LayoutCtx {
-            state: &mut state,
+            global_state: &mut global_state,
             widget_state: &mut widget_state,
             mouse_pos: self.last_mouse_pos,
         };
@@ -536,10 +536,10 @@ impl WindowRoot {
 
     fn paint(&mut self, piet: &mut Piet, invalid: &Region, env: &Env) {
         let widget_state = WidgetState::new(self.root.id(), Some(self.size));
-        let mut state = ContextState::new(&self.handle, self.id, self.focus);
+        let mut global_state = ContextState::new(&self.handle, self.id, self.focus);
         let mut ctx = PaintCtx {
             render_ctx: piet,
-            state: &mut state,
+            global_state: &mut global_state,
             widget_state: &widget_state,
             z_ops: Vec::new(),
             region: invalid.clone(),

@@ -155,7 +155,7 @@ impl<W: Widget> WidgetPod<W> {
         if WidgetPod::set_hot_state(
             &mut self.inner,
             &mut self.state,
-            ctx.state,
+            ctx.global_state,
             layout_rect,
             ctx.mouse_pos,
             env,
@@ -260,9 +260,9 @@ impl<W: Widget> WidgetPod<W> {
         if self.id() == id {
             Some(self)
         } else {
-            self.children().into_iter().find_map(|child| {
-                child.find_widget_by_id(id)
-            })
+            self.children()
+                .into_iter()
+                .find_map(|child| child.find_widget_by_id(id))
         }
     }
 
@@ -305,7 +305,7 @@ impl<W: Widget> WidgetPod<W> {
     fn set_hot_state(
         child: &mut W,
         child_state: &mut WidgetState,
-        state: &mut ContextState,
+        global_state: &mut ContextState,
         rect: Rect,
         mouse_pos: Option<Point>,
         env: &Env,
@@ -323,7 +323,7 @@ impl<W: Widget> WidgetPod<W> {
         if had_hot != child_state.is_hot {
             let hot_changed_event = LifeCycle::HotChanged(child_state.is_hot);
             let mut child_ctx = LifeCycleCtx {
-                state,
+                global_state,
                 widget_state: child_state,
             };
             // We add a span so that inner logs are marked as being in a lifecycle pass
@@ -377,7 +377,6 @@ impl<W: Widget + 'static> WidgetPod<W> {
         WidgetPod::new(Box::new(self.inner))
     }
 }
-
 
 // --- TRAIT IMPLS ---
 
@@ -434,7 +433,7 @@ impl<W: Widget> WidgetPod<W> {
                     let hot_changed = WidgetPod::set_hot_state(
                         &mut self.inner,
                         &mut self.state,
-                        ctx.state,
+                        ctx.global_state,
                         rect,
                         None,
                         env,
@@ -468,7 +467,7 @@ impl<W: Widget> WidgetPod<W> {
                 WidgetPod::set_hot_state(
                     &mut self.inner,
                     &mut self.state,
-                    ctx.state,
+                    ctx.global_state,
                     rect,
                     Some(mouse_event.pos),
                     env,
@@ -486,7 +485,7 @@ impl<W: Widget> WidgetPod<W> {
                 WidgetPod::set_hot_state(
                     &mut self.inner,
                     &mut self.state,
-                    ctx.state,
+                    ctx.global_state,
                     rect,
                     Some(mouse_event.pos),
                     env,
@@ -504,7 +503,7 @@ impl<W: Widget> WidgetPod<W> {
                 let hot_changed = WidgetPod::set_hot_state(
                     &mut self.inner,
                     &mut self.state,
-                    ctx.state,
+                    ctx.global_state,
                     rect,
                     Some(mouse_event.pos),
                     env,
@@ -525,7 +524,7 @@ impl<W: Widget> WidgetPod<W> {
                 WidgetPod::set_hot_state(
                     &mut self.inner,
                     &mut self.state,
-                    ctx.state,
+                    ctx.global_state,
                     rect,
                     Some(mouse_event.pos),
                     env,
@@ -557,7 +556,7 @@ impl<W: Widget> WidgetPod<W> {
         if recurse {
             self.call_widget_method_with_checks("event", |widget_pod| {
                 let mut inner_ctx = EventCtx {
-                    state: ctx.state,
+                    global_state: ctx.global_state,
                     widget_state: &mut widget_pod.state,
                     is_handled: false,
                     is_root: false,
@@ -662,7 +661,10 @@ impl<W: Widget> WidgetPod<W> {
                     // TODO - better warning.
                     warn!("Already initialized.");
                 }
-                trace!("{} Received LifeCycle::WidgetAdded", self.inner.short_type_name());
+                trace!(
+                    "{} Received LifeCycle::WidgetAdded",
+                    self.inner.short_type_name()
+                );
 
                 self.state.update_focus_chain = true;
                 self.env = Some(env.clone());
@@ -707,7 +709,7 @@ impl<W: Widget> WidgetPod<W> {
             LifeCycle::BuildFocusChain => {
                 if self.state.update_focus_chain {
                     // Replace has_focus to check if the value changed in the meantime
-                    let is_focused = ctx.state.focus_widget == Some(self.state.id);
+                    let is_focused = ctx.global_state.focus_widget == Some(self.state.id);
                     self.state.has_focus = is_focused;
 
                     self.state.focus_chain.clear();
@@ -720,7 +722,7 @@ impl<W: Widget> WidgetPod<W> {
 
         self.call_widget_method_with_checks("lifecycle", |widget_pod| {
             let mut child_ctx = LifeCycleCtx {
-                state: ctx.state,
+                global_state: ctx.global_state,
                 widget_state: &mut widget_pod.state,
             };
 
@@ -814,7 +816,7 @@ impl<W: Widget> WidgetPod<W> {
 
             let mut child_ctx = LayoutCtx {
                 widget_state: &mut widget_pod.state,
-                state: ctx.state,
+                global_state: ctx.global_state,
                 mouse_pos: child_mouse_pos,
             };
 
@@ -824,7 +826,7 @@ impl<W: Widget> WidgetPod<W> {
         if new_size != prev_size {
             let mut child_ctx = LifeCycleCtx {
                 widget_state: &mut self.state,
-                state: ctx.state,
+                global_state: ctx.global_state,
             };
             let size_event = LifeCycle::Size(new_size);
 
@@ -876,7 +878,7 @@ impl<W: Widget> WidgetPod<W> {
 
             let mut inner_ctx = PaintCtx {
                 render_ctx: ctx.render_ctx,
-                state: ctx.state,
+                global_state: ctx.global_state,
                 z_ops: Vec::new(),
                 region: ctx.region.clone(),
                 widget_state: &widget_pod.state,
@@ -992,7 +994,7 @@ impl<W: Widget> WidgetPod<W> {
         F: FnMut(&mut W, &mut EventCtx),
     {
         let mut ctx = EventCtx {
-            state: parent_ctx.state,
+            global_state: parent_ctx.global_state,
             widget_state: &mut self.state,
             is_handled: false,
             is_root: false,
@@ -1037,7 +1039,6 @@ impl<W: Widget> AsWidgetPod for WidgetPod<W> {
     fn find_widget_at_pos(&self, pos: Point) -> Option<&dyn AsWidgetPod> {
         WidgetPod::find_widget_at_pos(self, pos)
     }
-
 }
 
 // ---
@@ -1097,7 +1098,7 @@ mod tests {
 
         let mut ctx = LifeCycleCtx {
             widget_state: &mut widget_state,
-            state: &mut state,
+            global_state: &mut global_state,
         };
 
         let env = Env::with_default_i10n();

@@ -62,7 +62,7 @@ pub(crate) struct ContextState<'a> {
 ///
 /// [`request_paint`]: #method.request_paint
 pub struct EventCtx<'a, 'b> {
-    pub(crate) state: &'a mut ContextState<'b>,
+    pub(crate) global_state: &'a mut ContextState<'b>,
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) is_handled: bool,
     pub(crate) is_root: bool,
@@ -78,7 +78,7 @@ pub struct EventCtx<'a, 'b> {
 /// [`register_child`]: #method.register_child
 /// [`LifeCycle::WidgetAdded`]: enum.LifeCycle.html#variant.WidgetAdded
 pub struct LifeCycleCtx<'a, 'b> {
-    pub(crate) state: &'a mut ContextState<'b>,
+    pub(crate) global_state: &'a mut ContextState<'b>,
     pub(crate) widget_state: &'a mut WidgetState,
 }
 
@@ -89,7 +89,7 @@ pub struct LifeCycleCtx<'a, 'b> {
 ///
 /// [`request_paint`]: #method.request_paint
 pub struct UpdateCtx<'a, 'b> {
-    pub(crate) state: &'a mut ContextState<'b>,
+    pub(crate) global_state: &'a mut ContextState<'b>,
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) prev_env: Option<&'a Env>,
     pub(crate) env: &'a Env,
@@ -101,7 +101,7 @@ pub struct UpdateCtx<'a, 'b> {
 /// creating text layout objects, which are likely to be useful
 /// during widget layout.
 pub struct LayoutCtx<'a, 'b> {
-    pub(crate) state: &'a mut ContextState<'b>,
+    pub(crate) global_state: &'a mut ContextState<'b>,
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) mouse_pos: Option<Point>,
 }
@@ -119,7 +119,7 @@ pub(crate) struct ZOrderPaintOp {
 /// the [`RenderContext`] trait, which defines the basic available drawing
 /// commands.
 pub struct PaintCtx<'a, 'b, 'c> {
-    pub(crate) state: &'a mut ContextState<'b>,
+    pub(crate) global_state: &'a mut ContextState<'b>,
     pub(crate) widget_state: &'a WidgetState,
     /// The render context for actually painting.
     pub render_ctx: &'a mut Piet<'c>,
@@ -146,17 +146,17 @@ impl_context_method!(
 
         /// Returns a reference to the current `WindowHandle`.
         pub fn window(&self) -> &WindowHandle {
-            self.state.window
+            self.global_state.window
         }
 
         /// Get the `WindowId` of the current window.
         pub fn window_id(&self) -> WindowId {
-            self.state.window_id
+            self.global_state.window_id
         }
 
         /// Get an object which can create text layouts.
         pub fn text(&mut self) -> &mut PietText {
-            &mut self.state.text
+            &mut self.global_state.text
         }
 
         // TODO - document
@@ -261,7 +261,7 @@ impl_context_method!(
         /// [`LifeCycle::FocusChanged`]: enum.LifeCycle.html#variant.FocusChanged
         /// [`has_focus`]: #method.has_focus
         pub fn is_focused(&self) -> bool {
-            self.state.focus_widget == Some(self.widget_id())
+            self.global_state.focus_widget == Some(self.widget_id())
         }
 
         /// The (tree) focus status of a widget.
@@ -443,7 +443,8 @@ impl_context_method!(
         /// request with the event.
         pub fn request_timer(&mut self, deadline: Duration) -> TimerToken {
             trace!("request_timer deadline={:?}", deadline);
-            self.state.request_timer(&mut self.widget_state, deadline)
+            self.global_state
+                .request_timer(&mut self.widget_state, deadline)
         }
     }
 );
@@ -708,7 +709,7 @@ impl PaintCtx<'_, '_, '_> {
     pub fn with_child_ctx(&mut self, region: impl Into<Region>, f: impl FnOnce(&mut PaintCtx)) {
         let mut child_ctx = PaintCtx {
             render_ctx: self.render_ctx,
-            state: self.state,
+            global_state: self.global_state,
             widget_state: self.widget_state,
             z_ops: Vec::new(),
             region: region.into(),
