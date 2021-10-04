@@ -104,6 +104,8 @@ pub trait Widget {
     /// [`Command`]: struct.Command.html
     fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, env: &Env);
 
+    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange, env: &Env);
+
     /// Handle a life cycle notification.
     ///
     /// This method is called to notify your widget of certain special events,
@@ -228,6 +230,10 @@ impl WidgetId {
 impl Widget for Box<dyn Widget> {
     fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, env: &Env) {
         self.deref_mut().on_event(ctx, event, env)
+    }
+
+    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange, env: &Env) {
+        self.deref_mut().on_status_change(ctx, event, env)
     }
 
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {

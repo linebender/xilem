@@ -48,6 +48,7 @@ mod command;
 mod contexts;
 mod data;
 pub mod env;
+// TODO - rename to events.
 mod event;
 mod mouse;
 mod platform;

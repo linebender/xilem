@@ -361,6 +361,24 @@ impl<T: TextStorage + EditableText> Widget for TextComponent<T> {
     }
 
     #[instrument(name = "InputComponent", level = "trace", skip(self, ctx, event, env))]
+    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange, env: &Env) {
+        match event {
+            StatusChange::DisabledChanged(disabled) => {
+                if self.can_write() {
+                    let color = if *disabled {
+                        env.get(theme::DISABLED_TEXT_COLOR)
+                    } else {
+                        env.get(theme::TEXT_COLOR)
+                    };
+                    self.borrow_mut().layout.set_text_color(color);
+                }
+                ctx.request_layout();
+            }
+            _ => (),
+        }
+    }
+
+    #[instrument(name = "InputComponent", level = "trace", skip(self, ctx, event, env))]
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
         match event {
             LifeCycle::WidgetAdded => {
@@ -382,18 +400,6 @@ impl<T: TextStorage + EditableText> Widget for TextComponent<T> {
                         ctx.invalidate_text_input(ImeInvalidation::LayoutChanged);
                     }
                 }
-            }
-            LifeCycle::DisabledChanged(disabled) => {
-                if self.can_write() {
-                    let color = if *disabled {
-                        env.get(theme::DISABLED_TEXT_COLOR)
-                    } else {
-                        env.get(theme::TEXT_COLOR)
-                    };
-
-                    self.borrow_mut().layout.set_text_color(color);
-                }
-                ctx.request_layout();
             }
             _ => (),
         }

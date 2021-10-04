@@ -85,4 +85,5 @@ pub mod prelude {
         AsWidgetPod, BoxConstraints, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx,
         PaintCtx, RenderContext, Size, UpdateCtx, Widget, WidgetId,
     };
+    pub use crate::event::StatusChange;
 }

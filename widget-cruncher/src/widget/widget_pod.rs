@@ -14,6 +14,9 @@ use crate::{
     WidgetId,
 };
 
+// TODO
+use crate::event::StatusChange;
+
 /// A container for one widget in the hierarchy.
 ///
 /// Generally, container widgets don't contain other widgets directly,
@@ -152,7 +155,7 @@ impl<W: Widget> WidgetPod<W> {
 
         // if the widget has moved, it may have moved under the mouse, in which
         // case we need to handle that.
-        if WidgetPod::set_hot_state(
+        if WidgetPod::update_hot_state(
             &mut self.inner,
             &mut self.state,
             ctx.global_state,
@@ -301,8 +304,7 @@ impl<W: Widget> WidgetPod<W> {
     /// Returns `true` if the hot state changed.
     ///
     /// The provided `child_state` should be merged up if this returns `true`.
-    // TODO - rename to "update_hot_state""
-    fn set_hot_state(
+    fn update_hot_state(
         inner: &mut W,
         inner_state: &mut WidgetState,
         global_state: &mut ContextState,
@@ -320,15 +322,16 @@ impl<W: Widget> WidgetPod<W> {
             inner_state.id,
             inner_state.is_hot
         );
+        // FIXME - don't send event, update flags instead
         if had_hot != inner_state.is_hot {
-            let hot_changed_event = LifeCycle::HotChanged(inner_state.is_hot);
+            let hot_changed_event = StatusChange::HotChanged(inner_state.is_hot);
             let mut inner_ctx = LifeCycleCtx {
                 global_state,
                 widget_state: inner_state,
             };
             // We add a span so that inner logs are marked as being in a lifecycle pass
             info_span!("lifecycle")
-                .in_scope(|| inner.lifecycle(&mut inner_ctx, &hot_changed_event, env));
+                .in_scope(|| inner.on_status_change(&mut inner_ctx, &hot_changed_event, env));
             // if hot changes and we're showing widget ids, always repaint
             if env.get(Env::DEBUG_WIDGET_ID) {
                 inner_ctx.request_paint();
@@ -433,7 +436,7 @@ impl<W: Widget> WidgetPod<W> {
         let call_inner = match event {
             Event::Internal(internal) => match internal {
                 InternalEvent::MouseLeave => {
-                    let hot_changed = WidgetPod::set_hot_state(
+                    let hot_changed = WidgetPod::update_hot_state(
                         &mut self.inner,
                         &mut self.state,
                         parent_ctx.global_state,
@@ -467,7 +470,7 @@ impl<W: Widget> WidgetPod<W> {
                 parent_ctx.is_root
             }
             Event::MouseDown(mouse_event) => {
-                WidgetPod::set_hot_state(
+                WidgetPod::update_hot_state(
                     &mut self.inner,
                     &mut self.state,
                     parent_ctx.global_state,
@@ -485,7 +488,7 @@ impl<W: Widget> WidgetPod<W> {
                 }
             }
             Event::MouseUp(mouse_event) => {
-                WidgetPod::set_hot_state(
+                WidgetPod::update_hot_state(
                     &mut self.inner,
                     &mut self.state,
                     parent_ctx.global_state,
@@ -503,7 +506,7 @@ impl<W: Widget> WidgetPod<W> {
                 }
             }
             Event::MouseMove(mouse_event) => {
-                let hot_changed = WidgetPod::set_hot_state(
+                let hot_changed = WidgetPod::update_hot_state(
                     &mut self.inner,
                     &mut self.state,
                     parent_ctx.global_state,
@@ -524,7 +527,7 @@ impl<W: Widget> WidgetPod<W> {
                 }
             }
             Event::Wheel(mouse_event) => {
-                WidgetPod::set_hot_state(
+                WidgetPod::update_hot_state(
                     &mut self.inner,
                     &mut self.state,
                     parent_ctx.global_state,
@@ -590,7 +593,7 @@ impl<W: Widget> WidgetPod<W> {
         // TODO - explain this
         self.mark_as_visited();
 
-        // in the case of an internal routing event, if we are at our target
+        // when routing a status change event, if we are at our target
         // we may send an extra event after the actual event
         let mut extra_event = None;
 
@@ -622,7 +625,7 @@ impl<W: Widget> WidgetPod<W> {
                     self.state.is_explicitly_disabled = self.state.is_explicitly_disabled_new;
 
                     if was_disabled != self.state.is_disabled() {
-                        extra_event = Some(LifeCycle::DisabledChanged(self.state.is_disabled()));
+                        extra_event = Some(StatusChange::DisabledChanged(self.state.is_disabled()));
                         //Each widget needs only one of DisabledChanged and RouteDisabledChanged
                         false
                     } else {
@@ -640,7 +643,7 @@ impl<W: Widget> WidgetPod<W> {
 
                     if let Some(change) = this_changed {
                         self.state.has_focus = change;
-                        extra_event = Some(LifeCycle::FocusChanged(change));
+                        extra_event = Some(StatusChange::FocusChanged(change));
                     } else {
                         self.state.has_focus = false;
                     }
@@ -684,6 +687,7 @@ impl<W: Widget> WidgetPod<W> {
                 );
                 return;
             }
+            /*
             LifeCycle::DisabledChanged(ancestors_disabled) => {
                 self.state.update_focus_chain = true;
 
@@ -697,13 +701,14 @@ impl<W: Widget> WidgetPod<W> {
                 // we or our parent are disabled.
                 was_disabled != self.state.is_disabled()
             }
-            //NOTE: this is not sent here, but from the special set_hot_state method
+            //NOTE: this is not sent here, but from the special update_hot_state method
             LifeCycle::HotChanged(_) => false,
             LifeCycle::FocusChanged(_) => {
                 // We are a descendant of a widget that has/had focus.
                 // Descendants don't inherit focus, so don't recurse.
                 false
             }
+            */
             LifeCycle::BuildFocusChain => {
                 if self.state.update_focus_chain {
                     // Replace has_focus to check if the value changed in the meantime
@@ -727,11 +732,16 @@ impl<W: Widget> WidgetPod<W> {
             if call_inner {
                 widget_pod.inner.lifecycle(&mut inner_ctx, event, env);
             }
-
-            if let Some(event) = extra_event.as_ref() {
-                widget_pod.inner.lifecycle(&mut inner_ctx, event, env);
-            }
         });
+
+        let mut inner_ctx = LifeCycleCtx {
+            global_state: parent_ctx.global_state,
+            widget_state: &mut self.state,
+        };
+
+        if let Some(event) = extra_event.as_ref() {
+            self.inner.on_status_change(&mut inner_ctx, event, env);
+        }
 
         // Sync our state with our parent's state after the event!
 
@@ -743,8 +753,8 @@ impl<W: Widget> WidgetPod<W> {
                     parent_ctx.widget_state.children.union(self.state.children);
                 parent_ctx.register_child(self.id());
             }
-            LifeCycle::DisabledChanged(_)
-            | LifeCycle::Internal(InternalLifeCycle::RouteDisabledChanged) => {
+            //LifeCycle::DisabledChanged(_)
+            LifeCycle::Internal(InternalLifeCycle::RouteDisabledChanged) => {
                 self.state.children_disabled_changed = false;
 
                 if self.state.is_disabled() && self.state.has_focus {

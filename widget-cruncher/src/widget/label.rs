@@ -244,9 +244,9 @@ impl Widget for Label {
     }
 
     #[instrument(name = "Label", level = "trace", skip(self, ctx, event, _env))]
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, _env: &Env) {
+    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange, _env: &Env) {
         match event {
-            LifeCycle::DisabledChanged(disabled) => {
+            StatusChange::DisabledChanged(disabled) => {
                 let color = if *disabled {
                     KeyOrValue::Key(crate::theme::DISABLED_TEXT_COLOR)
                 } else {
@@ -258,6 +258,9 @@ impl Widget for Label {
             _ => {}
         }
     }
+
+    #[instrument(name = "Label", level = "trace", skip(self, ctx, event, _env))]
+    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, _env: &Env) {}
 
     #[instrument(name = "Label", level = "trace", skip(self, ctx, bc, env))]
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {

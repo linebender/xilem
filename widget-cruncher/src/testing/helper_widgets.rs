@@ -27,8 +27,10 @@ use std::collections::VecDeque;
 use std::rc::Rc;
 
 use crate::*;
+use crate::event::StatusChange;
 
 pub type EventFn<S> = dyn FnMut(&mut S, &mut EventCtx, &Event, &Env);
+pub type StatusChangeFn<S> = dyn FnMut(&mut S, &mut LifeCycleCtx, &StatusChange, &Env);
 pub type LifeCycleFn<S> = dyn FnMut(&mut S, &mut LifeCycleCtx, &LifeCycle, &Env);
 pub type LayoutFn<S> = dyn FnMut(&mut S, &mut LayoutCtx, &BoxConstraints, &Env) -> Size;
 pub type PaintFn<S> = dyn FnMut(&mut S, &mut PaintCtx, &Env);
@@ -43,6 +45,7 @@ pub const REPLACE_CHILD: Selector = Selector::new("druid-test.replace-child");
 pub struct ModularWidget<S> {
     state: S,
     on_event: Option<Box<EventFn<S>>>,
+    on_status_change: Option<Box<StatusChangeFn<S>>>,
     lifecycle: Option<Box<LifeCycleFn<S>>>,
     layout: Option<Box<LayoutFn<S>>>,
     paint: Option<Box<PaintFn<S>>>,
@@ -89,10 +92,10 @@ pub struct Recording(Rc<RefCell<VecDeque<Record>>>);
 pub enum Record {
     /// An `Event`.
     E(Event),
+    SC(StatusChange),
     /// A `LifeCycle` event.
     L(LifeCycle),
     Layout(Size),
-    Update(Region),
     Paint,
     // instead of always returning an Option<Record>, we have a none variant;
     // this would be code smell elsewhere but here I think it makes the tests
@@ -117,6 +120,7 @@ impl<S> ModularWidget<S> {
         ModularWidget {
             state,
             on_event: None,
+            on_status_change: None,
             lifecycle: None,
             layout: None,
             paint: None,
@@ -130,6 +134,14 @@ impl<S> ModularWidget<S> {
         f: impl FnMut(&mut S, &mut EventCtx, &Event, &Env) + 'static,
     ) -> Self {
         self.on_event = Some(Box::new(f));
+        self
+    }
+
+    pub fn status_change_fn(
+        mut self,
+        f: impl FnMut(&mut S, &mut LifeCycleCtx, &StatusChange, &Env) + 'static,
+    ) -> Self {
+        self.on_status_change = Some(Box::new(f));
         self
     }
 
@@ -168,6 +180,12 @@ impl<S> ModularWidget<S> {
 impl<S> Widget for ModularWidget<S> {
     fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, env: &Env) {
         if let Some(f) = self.on_event.as_mut() {
+            f(&mut self.state, ctx, event, env)
+        }
+    }
+
+    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange, env: &Env) {
+        if let Some(f) = self.on_status_change.as_mut() {
             f(&mut self.state, ctx, event, env)
         }
     }
@@ -239,6 +257,10 @@ impl Widget for ReplaceChild {
         self.child.on_event(ctx, event, env)
     }
 
+    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange, env: &Env) {
+        ctx.request_layout();
+    }
+
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
         self.child.lifecycle(ctx, event, env)
     }
@@ -300,6 +322,11 @@ impl<W: Widget> Widget for Recorder<W> {
     fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, env: &Env) {
         self.recording.push(Record::E(event.clone()));
         self.child.on_event(ctx, event, env)
+    }
+
+    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange, env: &Env) {
+        self.recording.push(Record::SC(event.clone()));
+        self.child.on_status_change(ctx, event, env)
     }
 
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {

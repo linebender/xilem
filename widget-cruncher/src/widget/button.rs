@@ -101,11 +101,13 @@ impl Widget for Button {
         }
     }
 
+    #[instrument(name = "Button", level = "trace", skip(self, ctx, event, _env))]
+    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange, _env: &Env) {
+        ctx.request_paint();
+    }
+
     #[instrument(name = "Button", level = "trace", skip(self, ctx, event, env))]
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
-        if let LifeCycle::HotChanged(_) | LifeCycle::DisabledChanged(_) = event {
-            ctx.request_paint();
-        }
         self.label.lifecycle(ctx, event, env)
     }
 

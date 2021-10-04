@@ -629,6 +629,9 @@ impl Widget for Flex {
         }
     }
 
+    #[instrument(name = "Flex", level = "trace", skip(self, ctx, event, _env))]
+    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange, _env: &Env) {}
+
     #[instrument(name = "Flex", level = "trace", skip(self, ctx, event, env))]
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
         for child in self.children.iter_mut().filter_map(|x| x.widget_mut()) {

@@ -234,27 +234,6 @@ pub enum LifeCycle {
     /// [`LifeCycleCtx::register_for_focus`]: struct.LifeCycleCtx.html#method.register_for_focus
     WidgetAdded,
 
-    /// Called when the Disabled state of the widgets is changed.
-    ///
-    /// To check if a widget is disabled, see [`is_disabled`].
-    ///
-    /// To change a widget's disabled state, see [`set_disabled`].
-    ///
-    /// [`is_disabled`]: crate::EventCtx::is_disabled
-    /// [`set_disabled`]: crate::EventCtx::set_disabled
-    DisabledChanged(bool),
-
-    /// Called when the "hot" status changes.
-    ///
-    /// This will always be called _before_ the event that triggered it; that is,
-
-    /// when the mouse moves over a widget, that widget will receive
-    /// `LifeCycle::HotChanged` before it receives `Event::MouseMove`.
-    ///
-    /// See [`is_hot`](struct.EventCtx.html#method.is_hot) for
-    /// discussion about the hot status.
-    HotChanged(bool),
-
     /// This is called when the widget-tree changes and druid wants to rebuild the
     /// Focus-chain.
     ///
@@ -265,17 +244,6 @@ pub enum LifeCycle {
     /// [`focus_next`]: crate::EventCtx::focus_next
     /// [`focus_prev`]: crate::EventCtx::focus_prev
     BuildFocusChain,
-
-    /// Called when the focus status changes.
-    ///
-    /// This will always be called immediately after a new widget gains focus.
-    /// The newly focused widget will receive this with `true` and the widget
-    /// that lost focus will receive this with `false`.
-    ///
-    /// See [`EventCtx::is_focused`] for more information about focus.
-    ///
-    /// [`EventCtx::is_focused`]: struct.EventCtx.html#method.is_focused
-    FocusChanged(bool),
 
     /// Internal druid lifecycle event.
     ///
@@ -310,6 +278,41 @@ pub enum InternalLifeCycle {
 
     /// The parents widget origin in window coordinate space has changed.
     ParentWindowOrigin,
+}
+
+#[derive(Debug, Clone)]
+pub enum StatusChange {
+    /// Called when the Disabled state of the widgets is changed.
+    ///
+    /// To check if a widget is disabled, see [`is_disabled`].
+    ///
+    /// To change a widget's disabled state, see [`set_disabled`].
+    ///
+    /// [`is_disabled`]: crate::EventCtx::is_disabled
+    /// [`set_disabled`]: crate::EventCtx::set_disabled
+    DisabledChanged(bool),
+
+    /// Called when the "hot" status changes.
+    ///
+    /// This will always be called _before_ the event that triggered it; that is,
+
+    /// when the mouse moves over a widget, that widget will receive
+    /// `LifeCycle::HotChanged` before it receives `Event::MouseMove`.
+    ///
+    /// See [`is_hot`](struct.EventCtx.html#method.is_hot) for
+    /// discussion about the hot status.
+    HotChanged(bool),
+
+    /// Called when the focus status changes.
+    ///
+    /// This will always be called immediately after a new widget gains focus.
+    /// The newly focused widget will receive this with `true` and the widget
+    /// that lost focus will receive this with `false`.
+    ///
+    /// See [`EventCtx::is_focused`] for more information about focus.
+    ///
+    /// [`EventCtx::is_focused`]: struct.EventCtx.html#method.is_focused
+    FocusChanged(bool),
 }
 
 impl Event {
@@ -411,10 +414,8 @@ impl LifeCycle {
     pub fn should_propagate_to_hidden(&self) -> bool {
         match self {
             LifeCycle::Internal(internal) => internal.should_propagate_to_hidden(),
-            LifeCycle::WidgetAdded | LifeCycle::DisabledChanged(_) => true,
-            LifeCycle::HotChanged(_)
-            | LifeCycle::FocusChanged(_)
-            | LifeCycle::BuildFocusChain => false,
+            LifeCycle::WidgetAdded => true,
+            LifeCycle::BuildFocusChain => false,
         }
     }
 }
@@ -434,6 +435,17 @@ impl InternalLifeCycle {
             | InternalLifeCycle::RouteFocusChanged { .. }
             | InternalLifeCycle::RouteDisabledChanged => true,
             InternalLifeCycle::ParentWindowOrigin => false,
+        }
+    }
+}
+
+// TODO - remove?
+impl StatusChange {
+    pub fn should_propagate_to_hidden(&self) -> bool {
+        match self {
+            StatusChange::DisabledChanged(_) => true,
+            StatusChange::HotChanged(_)
+            | StatusChange::FocusChanged(_) => false,
         }
     }
 }
