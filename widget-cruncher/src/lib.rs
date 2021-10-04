@@ -89,6 +89,7 @@ pub use env::{Env, Key, KeyOrValue, Value, ValueType, ValueTypeError};
 pub use event::{Event, InternalEvent, InternalLifeCycle, LifeCycle};
 pub use mouse::MouseEvent;
 pub use util::Handled;
+pub use util::AsAny;
 pub use widget::{AsWidgetPod, Widget, WidgetId, WidgetPod, WidgetState};
 
 #[deprecated(since = "0.8.0", note = "import from druid::text module instead")]

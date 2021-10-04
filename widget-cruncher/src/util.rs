@@ -16,6 +16,7 @@
 
 use std::collections::HashMap;
 use std::hash::Hash;
+use std::any::Any;
 use std::mem;
 
 /// Panic in debug and tracing::error in release mode.
@@ -42,6 +43,8 @@ macro_rules! debug_panic {
         }
     };
 }
+
+// ---
 
 /// Fast path for equal type extend + drain.
 pub trait ExtendDrain {
@@ -76,6 +79,8 @@ where
     }
 }
 
+// ---
+
 /// An enum for specifying whether an event was handled.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum Handled {
@@ -100,5 +105,17 @@ impl From<bool> for Handled {
         } else {
             Handled::No
         }
+    }
+}
+
+// ---
+
+pub trait AsAny: Any {
+    fn as_any(&self) -> &dyn Any;
+}
+
+impl<T: Any> AsAny for T {
+    fn as_any(&self) -> &dyn Any {
+        self
     }
 }

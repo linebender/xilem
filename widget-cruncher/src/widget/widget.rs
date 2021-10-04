@@ -15,9 +15,11 @@
 use smallvec::SmallVec;
 use std::num::NonZeroU64;
 use std::ops::{Deref, DerefMut};
+use std::any::Any;
 
 use super::prelude::*;
 use crate::Point;
+use crate::AsAny;
 
 /// A unique identifier for a single [`Widget`].
 ///
@@ -91,7 +93,7 @@ pub struct WidgetId(NonZeroU64);
 /// [`Data`]: trait.Data.html
 /// [`Env`]: struct.Env.html
 /// [`WidgetPod`]: struct.WidgetPod.html
-pub trait Widget {
+pub trait Widget: Any {
     /// Handle an event.
     ///
     /// A number of different events (in the [`Event`] enum) are handled in this
@@ -190,6 +192,10 @@ pub trait Widget {
             .last()
             .unwrap_or(name)
     }
+
+    fn downcast<W: Widget>(&self) -> Option<&W> where Self: Sized {
+        (self as &dyn Any).downcast_ref::<W>()
+    }
 }
 
 impl WidgetId {
@@ -258,5 +264,9 @@ impl Widget for Box<dyn Widget> {
 
     fn children_mut(&mut self) -> SmallVec<[&mut dyn AsWidgetPod; 16]> {
         self.deref_mut().children_mut()
+    }
+
+    fn downcast<W: Widget>(&self) -> Option<&W> where Self: Sized {
+        self.as_any().downcast_ref::<W>()
     }
 }

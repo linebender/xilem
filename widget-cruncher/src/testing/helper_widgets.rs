@@ -177,7 +177,7 @@ impl<S> ModularWidget<S> {
     }
 }
 
-impl<S> Widget for ModularWidget<S> {
+impl<S: 'static> Widget for ModularWidget<S> {
     fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, env: &Env) {
         if let Some(f) = self.on_event.as_mut() {
             f(&mut self.state, ctx, event, env)
