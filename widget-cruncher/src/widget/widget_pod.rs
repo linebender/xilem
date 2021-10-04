@@ -341,6 +341,17 @@ impl<W: Widget> WidgetPod<W> {
         false
     }
 
+    fn recurse_pass<Ret>(
+        &mut self,
+        pass_name: &str,
+        parent_state: &mut WidgetState,
+        visit: impl FnOnce(&mut W, &mut WidgetState) -> Ret,
+    ) -> Ret {
+        let res = visit(&mut self.inner, &mut self.state);
+        parent_state.merge_up(&mut self.state);
+        res
+    }
+
     #[inline(always)]
     fn call_widget_method_with_checks<Ret>(
         &mut self,
@@ -967,25 +978,6 @@ impl<W: Widget> WidgetPod<W> {
         let id = self.id().to_raw();
         let color = env.get_debug_color(id);
         ctx.stroke(rect, &color, BORDER_WIDTH);
-    }
-
-    // ---
-
-    // TODO - recurse
-    //#[cfg(feature = "crochet")]
-    /// Execute the closure with this widgets `EventCtx`.
-    pub fn with_event_context<F>(&mut self, parent_ctx: &mut EventCtx, mut fun: F)
-    where
-        F: FnMut(&mut W, &mut EventCtx),
-    {
-        let mut inner_ctx = EventCtx {
-            global_state: parent_ctx.global_state,
-            widget_state: &mut self.state,
-            is_handled: false,
-            is_root: false,
-        };
-        fun(&mut self.inner, &mut inner_ctx);
-        parent_ctx.widget_state.merge_up(&mut self.state);
     }
 }
 

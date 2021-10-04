@@ -430,6 +430,11 @@ impl_context_method!(
             self.global_state
                 .request_timer(&mut self.widget_state, deadline)
         }
+
+        /// get the `WidgetState` of the current widget.
+        pub fn widget_state(&mut self) -> &mut WidgetState {
+            self.widget_state
+        }
     }
 );
 
