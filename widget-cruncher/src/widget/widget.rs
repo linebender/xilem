@@ -13,13 +13,13 @@
 // limitations under the License.
 
 use smallvec::SmallVec;
+use std::any::Any;
 use std::num::NonZeroU64;
 use std::ops::{Deref, DerefMut};
-use std::any::Any;
 
 use super::prelude::*;
-use crate::Point;
 use crate::AsAny;
+use crate::Point;
 
 /// A unique identifier for a single [`Widget`].
 ///
@@ -193,7 +193,10 @@ pub trait Widget: Any {
             .unwrap_or(name)
     }
 
-    fn downcast<W: Widget>(&self) -> Option<&W> where Self: Sized {
+    fn downcast<W: Widget>(&self) -> Option<&W>
+    where
+        Self: Sized,
+    {
         (self as &dyn Any).downcast_ref::<W>()
     }
 }
@@ -266,7 +269,10 @@ impl Widget for Box<dyn Widget> {
         self.deref_mut().children_mut()
     }
 
-    fn downcast<W: Widget>(&self) -> Option<&W> where Self: Sized {
+    fn downcast<W: Widget>(&self) -> Option<&W>
+    where
+        Self: Sized,
+    {
         self.as_any().downcast_ref::<W>()
     }
 }

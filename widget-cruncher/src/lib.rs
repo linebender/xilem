@@ -83,13 +83,13 @@ pub use platform::{WindowConfig, WindowDesc, WindowId, WindowSizePolicy};
 
 pub use box_constraints::BoxConstraints;
 pub use command::{Selector, SingleUse, Target};
-pub use contexts::{EventCtx, LayoutCtx, LifeCycleCtx, PaintCtx };
+pub use contexts::{EventCtx, LayoutCtx, LifeCycleCtx, PaintCtx};
 pub use data::Data;
 pub use env::{Env, Key, KeyOrValue, Value, ValueType, ValueTypeError};
 pub use event::{Event, InternalEvent, InternalLifeCycle, LifeCycle};
 pub use mouse::MouseEvent;
-pub use util::Handled;
 pub use util::AsAny;
+pub use util::Handled;
 pub use widget::{AsWidgetPod, Widget, WidgetId, WidgetPod, WidgetState};
 
 #[deprecated(since = "0.8.0", note = "import from druid::text module instead")]

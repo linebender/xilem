@@ -416,27 +416,22 @@ impl_context_method!(EventCtx<'_, '_>, LifeCycleCtx<'_, '_>, {
 });
 
 // methods on everyone but paintctx
-impl_context_method!(
-    EventCtx<'_, '_>,
-    LifeCycleCtx<'_, '_>,
-    LayoutCtx<'_, '_>,
-    {
-        /// Request a timer event.
-        ///
-        /// The return value is a token, which can be used to associate the
-        /// request with the event.
-        pub fn request_timer(&mut self, deadline: Duration) -> TimerToken {
-            trace!("request_timer deadline={:?}", deadline);
-            self.global_state
-                .request_timer(&mut self.widget_state, deadline)
-        }
-
-        /// get the `WidgetState` of the current widget.
-        pub fn widget_state(&mut self) -> &mut WidgetState {
-            self.widget_state
-        }
+impl_context_method!(EventCtx<'_, '_>, LifeCycleCtx<'_, '_>, LayoutCtx<'_, '_>, {
+    /// Request a timer event.
+    ///
+    /// The return value is a token, which can be used to associate the
+    /// request with the event.
+    pub fn request_timer(&mut self, deadline: Duration) -> TimerToken {
+        trace!("request_timer deadline={:?}", deadline);
+        self.global_state
+            .request_timer(&mut self.widget_state, deadline)
     }
-);
+
+    /// get the `WidgetState` of the current widget.
+    pub fn widget_state(&mut self) -> &mut WidgetState {
+        self.widget_state
+    }
+});
 
 impl EventCtx<'_, '_> {
     /// Set the "active" state of the widget.

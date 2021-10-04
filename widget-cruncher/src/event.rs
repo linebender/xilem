@@ -444,8 +444,7 @@ impl StatusChange {
     pub fn should_propagate_to_hidden(&self) -> bool {
         match self {
             StatusChange::DisabledChanged(_) => true,
-            StatusChange::HotChanged(_)
-            | StatusChange::FocusChanged(_) => false,
+            StatusChange::HotChanged(_) | StatusChange::FocusChanged(_) => false,
         }
     }
 }

@@ -28,7 +28,7 @@ use super::{
 use crate::kurbo::{Line, Point, Rect, Vec2};
 use crate::piet::TextLayout as _;
 use crate::widget::prelude::*;
-use crate::{text, theme, Cursor, Env, Modifiers, Selector };
+use crate::{text, theme, Cursor, Env, Modifiers, Selector};
 
 /// A widget that accepts text input.
 ///

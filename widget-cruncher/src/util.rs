@@ -14,9 +14,9 @@
 
 //! Miscellaneous utility functions.
 
+use std::any::Any;
 use std::collections::HashMap;
 use std::hash::Hash;
-use std::any::Any;
 use std::mem;
 
 /// Panic in debug and tracing::error in release mode.

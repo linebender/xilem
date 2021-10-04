@@ -26,8 +26,8 @@ use std::cell::RefCell;
 use std::collections::VecDeque;
 use std::rc::Rc;
 
-use crate::*;
 use crate::event::StatusChange;
+use crate::*;
 
 pub type EventFn<S> = dyn FnMut(&mut S, &mut EventCtx, &Event, &Env);
 pub type StatusChangeFn<S> = dyn FnMut(&mut S, &mut LifeCycleCtx, &StatusChange, &Env);

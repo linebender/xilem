@@ -23,7 +23,7 @@ use crate::piet::{
     Color, PietText, PietTextLayout, Text as _, TextAlignment, TextAttribute, TextLayout as _,
     TextLayoutBuilder as _,
 };
-use crate::{Env, FontDescriptor, KeyOrValue, PaintCtx, RenderContext };
+use crate::{Env, FontDescriptor, KeyOrValue, PaintCtx, RenderContext};
 
 /// A component for displaying text on screen.
 ///

@@ -80,10 +80,10 @@ impl CursorChange {
 
 // TODO - remove
 pub mod prelude {
+    pub use crate::event::StatusChange;
     #[doc(hidden)]
     pub use crate::{
         AsWidgetPod, BoxConstraints, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx,
-        PaintCtx, RenderContext, Size , Widget, WidgetId,
+        PaintCtx, RenderContext, Size, Widget, WidgetId,
     };
-    pub use crate::event::StatusChange;
 }
