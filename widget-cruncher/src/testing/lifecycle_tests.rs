@@ -295,7 +295,7 @@ fn simple_disable() {
             })
             .event_fn(|_, ctx, event, _, _| {
                 if let Event::Command(cmd) = event {
-                    if let Some(disabled) = cmd.get(CHANGE_DISABLED) {
+                    if let Some(disabled) = cmd.try_get(CHANGE_DISABLED) {
                         ctx.set_disabled(*disabled);
                     }
                 }
@@ -387,7 +387,7 @@ fn resign_focus_on_disable() {
                 })
                 .event_fn(|state, ctx, event, data, env| {
                     if let Event::Command(cmd) = event {
-                        if let Some(disabled) = cmd.get(CHANGE_DISABLED) {
+                        if let Some(disabled) = cmd.try_get(CHANGE_DISABLED) {
                             ctx.set_disabled(*disabled);
                             return;
                         }
@@ -468,7 +468,7 @@ fn disable_tree() {
             })
             .event_fn(|inner, ctx, event, data, env| {
                 if let Event::Command(cmd) = event {
-                    if let Some(map) = cmd.get(MULTI_CHANGE_DISABLED) {
+                    if let Some(map) = cmd.try_get(MULTI_CHANGE_DISABLED) {
                         if let Some(disabled) = map.get(&ctx.widget_id()) {
                             ctx.set_disabled(*disabled);
                             return;

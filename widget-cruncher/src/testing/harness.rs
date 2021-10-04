@@ -20,6 +20,7 @@ use std::sync::Arc;
 use crate::platform::PendingWindow;
 use crate::widget::WidgetState;
 //use crate::ext_event::ExtEventHost;
+use crate::command::CommandQueue;
 use crate::piet::{BitmapTarget, Device, Error, ImageFormat, Piet};
 use crate::*;
 
@@ -51,12 +52,13 @@ pub struct Harness {
     window_size: Size,
 }
 
+// TODO - merge
 /// All of the state except for the `Piet` (render context). We need to pass
 /// that in to get around some lifetime issues.
 struct MockAppState {
     env: Env,
     window: WindowRoot,
-    //cmds: CommandQueue,
+    command_queue: CommandQueue,
 }
 
 #[allow(missing_docs)]
@@ -87,7 +89,7 @@ impl Harness {
             mock_app: MockAppState {
                 env: Env::with_theme(),
                 window,
-                //cmds: Default::default(),
+                command_queue: Default::default(),
             },
             mouse_state,
             window_size,
@@ -102,10 +104,20 @@ impl Harness {
     /// Send an event to the widget.
     ///
     /// If this event triggers lifecycle events, they will also be dispatched,
-    /// as will any resulting commands. This will also trigger `update`.
+    /// as will any resulting commands. Commands created as a result of this event
+    /// will also be dispatched.
     pub fn process_event(&mut self, event: Event) {
         self.mock_app.event(event);
-        //self.process_commands();
+
+        loop {
+            let cmd = self.mock_app.command_queue.pop_front();
+            match cmd {
+                Some(cmd) => self
+                    .mock_app
+                    .event(Event::Internal(InternalEvent::TargetedCommand(cmd))),
+                None => break,
+            }
+        }
     }
 
     /// Create a Piet bitmap render context (an array of pixels), paint the
@@ -247,18 +259,20 @@ impl Harness {
 
 impl MockAppState {
     fn event(&mut self, event: Event) {
-        self.window.event(event, &self.env);
+        self.window.event(event, &mut self.command_queue, &self.env);
     }
 
     fn lifecycle(&mut self, event: LifeCycle) {
-        self.window.lifecycle(&event, &self.env, false);
+        self.window
+            .lifecycle(&event, &mut self.command_queue, &self.env, false);
     }
 
     fn layout(&mut self) {
-        self.window.just_layout(&self.env);
+        self.window.layout(&mut self.command_queue, &self.env);
     }
 
     fn paint_region(&mut self, piet: &mut Piet, invalid: &Region) {
-        self.window.do_paint(piet, invalid, &self.env);
+        self.window
+            .do_paint(piet, invalid, &mut self.command_queue, &self.env);
     }
 }

@@ -14,11 +14,10 @@
 
 //! Custom commands.
 
-use std::any::{self, Any};
-use std::{
-    marker::PhantomData,
-    sync::{Arc, Mutex},
-};
+use std::any::Any;
+use std::collections::VecDeque;
+use std::marker::PhantomData;
+use std::sync::{Arc, Mutex};
 
 use crate::{WidgetId, WindowId};
 
@@ -31,18 +30,15 @@ pub(crate) type SelectorSymbol = &'static str;
 ///
 /// This should be a unique string identifier.
 /// Having multiple selectors with the same identifier but different payload
-/// types is not allowed and can cause [`Command::get`] and [`get_unchecked`] to panic.
+/// types is not allowed and can cause [`Command::try_get`] and [`get`] to panic.
 ///
 /// The type parameter `T` specifies the command's payload type.
 /// See [`Command`] for more information.
 ///
 /// Certain `Selector`s are defined by druid, and have special meaning
-/// to the framework; these are listed in the [`druid::commands`] module.
+/// to the framework; these are listed in the [`druid::command`] module.
 ///
 /// [`Command`]: struct.Command.html
-/// [`Command::get`]: struct.Command.html#method.get
-/// [`get_unchecked`]: struct.Command.html#method.get_unchecked
-/// [`druid::commands`]: commands/index.html
 #[derive(Debug, PartialEq, Eq)]
 pub struct Selector<T = ()>(SelectorSymbol, PhantomData<T>);
 
@@ -120,7 +116,7 @@ pub struct Notification {
 /// let num = CantClone(42);
 /// let command = selector.with(SingleUse::new(num));
 ///
-/// let payload: &SingleUse<CantClone> = command.get_unchecked(selector);
+/// let payload: &SingleUse<CantClone> = command.get(selector);
 /// if let Some(num) = payload.take() {
 ///     // now you own the data
 ///     assert_eq!(num.0, 42);
@@ -131,7 +127,12 @@ pub struct Notification {
 /// ```
 ///
 /// [`Command`]: struct.Command.html
+
+// TODO replace
 pub struct SingleUse<T>(Mutex<Option<T>>);
+
+/// Our queue type
+pub(crate) type CommandQueue = VecDeque<Command>;
 
 /// The target of a [`Command`].
 ///
@@ -154,6 +155,7 @@ pub enum Target {
     Window(WindowId),
     /// The target is a specific widget.
     Widget(WidgetId),
+    // FIXME - remove this variant
     /// The target will be determined automatically.
     ///
     /// How this behaves depends on the context used to submit the command.
@@ -166,16 +168,12 @@ pub enum Target {
     Auto,
 }
 
-/// Commands with special meaning, defined by druid.
-///
-/// See [`Command`] for more info.
-///
-/// [`Command`]: ../struct.Command.html
-pub mod sys {
-    use std::any::Any;
+pub use sys::*;
 
+mod sys {
     use super::Selector;
     use crate::{FileInfo, SingleUse, WidgetId, WindowConfig};
+    use std::any::Any;
 
     /// Quit the running application. This command is handled by the druid library.
     pub const QUIT_APP: Selector = Selector::new("druid-builtin.quit-app");
@@ -408,7 +406,7 @@ impl Command {
     ///
     /// Returns `None` when `self.is(selector) == false`.
     ///
-    /// Alternatively you can check the selector with [`is`] and then use [`get_unchecked`].
+    /// Alternatively you can check the selector with [`is`] and then use [`get`].
     ///
     /// # Panics
     ///
@@ -416,8 +414,8 @@ impl Command {
     /// This can happen when two selectors with different types but the same key are used.
     ///
     /// [`is`]: #method.is
-    /// [`get_unchecked`]: #method.get_unchecked
-    pub fn get<T: Any>(&self, selector: Selector<T>) -> Option<&T> {
+    /// [`get`]: #method.get
+    pub fn try_get<T: Any>(&self, selector: Selector<T>) -> Option<&T> {
         if self.symbol == selector.symbol() {
             Some(self.payload.downcast_ref().unwrap_or_else(|| {
                 panic!(
@@ -432,8 +430,8 @@ impl Command {
 
     /// Returns a reference to this `Command`'s payload.
     ///
-    /// If the selector has already been checked with [`is`], then `get_unchecked` can be used safely.
-    /// Otherwise you should use [`get`] instead.
+    /// If the selector has already been checked with [`is`], then `get` can be used safely.
+    /// Otherwise you should use [`try_get`] instead.
     ///
     /// # Panics
     ///
@@ -444,8 +442,8 @@ impl Command {
     ///
     /// [`is`]: #method.is
     /// [`get`]: #method.get
-    pub fn get_unchecked<T: Any>(&self, selector: Selector<T>) -> &T {
-        self.get(selector).unwrap_or_else(|| {
+    pub fn get<T: Any>(&self, selector: Selector<T>) -> &T {
+        self.try_get(selector).unwrap_or_else(|| {
             panic!(
                 "Expected selector \"{}\" but the command was \"{}\".",
                 selector.symbol(),
@@ -516,7 +514,12 @@ impl From<Selector> for Command {
 
 impl<T> std::fmt::Display for Selector<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "Selector(\"{}\", {})", self.0, any::type_name::<T>())
+        write!(
+            f,
+            "Selector(\"{}\", {})",
+            self.0,
+            std::any::type_name::<T>()
+        )
     }
 }
 
@@ -582,7 +585,7 @@ mod tests {
         let sel = Selector::new("my-selector");
         let payload = vec![0, 1, 2];
         let command = sel.with(payload);
-        assert_eq!(command.get(sel), Some(&vec![0, 1, 2]));
+        assert_eq!(command.try_get(sel), Some(&vec![0, 1, 2]));
     }
 
     #[test]

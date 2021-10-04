@@ -348,24 +348,23 @@ impl<T: TextStorage + EditableText> TextBox {
         ctx: &mut EventCtx,
         key: &KeyEvent,
     ) -> Option<Command> {
-        use crate::commands as sys;
         let our_id = ctx.widget_id();
         match key {
-            key if HotKey::new(SysMods::Cmd, "c").matches(key) => Some(sys::COPY.to(our_id)),
-            key if HotKey::new(SysMods::Cmd, "x").matches(key) => Some(sys::CUT.to(our_id)),
+            key if HotKey::new(SysMods::Cmd, "c").matches(key) => Some(crate::command::COPY.to(our_id)),
+            key if HotKey::new(SysMods::Cmd, "x").matches(key) => Some(crate::command::CUT.to(our_id)),
             // we have to send paste to the window, in order to get it converted into the `Paste`
             // event
             key if HotKey::new(SysMods::Cmd, "v").matches(key) => {
-                Some(sys::PASTE.to(ctx.window_id()))
+                Some(crate::command::PASTE.to(ctx.window_id()))
             }
-            key if HotKey::new(SysMods::Cmd, "z").matches(key) => Some(sys::UNDO.to(our_id)),
+            key if HotKey::new(SysMods::Cmd, "z").matches(key) => Some(crate::command::UNDO.to(our_id)),
             key if HotKey::new(SysMods::CmdShift, "Z").matches(key) && !cfg!(windows) => {
-                Some(sys::REDO.to(our_id))
+                Some(crate::command::REDO.to(our_id))
             }
             key if HotKey::new(SysMods::Cmd, "y").matches(key) && cfg!(windows) => {
-                Some(sys::REDO.to(our_id))
+                Some(crate::command::REDO.to(our_id))
             }
-            key if HotKey::new(SysMods::Cmd, "a").matches(key) => Some(sys::SELECT_ALL.to(our_id)),
+            key if HotKey::new(SysMods::Cmd, "a").matches(key) => Some(crate::command::SELECT_ALL.to(our_id)),
             _ => None,
         }
     }
@@ -439,7 +438,7 @@ impl<T: TextStorage + EditableText> Widget for TextBox {
             Event::Command(ref cmd)
                 if !self.text().is_composing()
                     && ctx.is_focused()
-                    && cmd.is(crate::commands::COPY) =>
+                    && cmd.is(crate::command::COPY) =>
             {
                 self.text().borrow().set_clipboard();
                 ctx.set_handled();
@@ -447,7 +446,7 @@ impl<T: TextStorage + EditableText> Widget for TextBox {
             Event::Command(cmd)
                 if !self.text().is_composing()
                     && ctx.is_focused()
-                    && cmd.is(crate::commands::CUT) =>
+                    && cmd.is(crate::command::CUT) =>
             {
                 if self.text().borrow().set_clipboard() {
                     let inval = self.text_mut().borrow_mut().insert_text(data, "");
@@ -458,7 +457,7 @@ impl<T: TextStorage + EditableText> Widget for TextBox {
             Event::Command(cmd)
                 if !self.text().is_composing()
                     && ctx.is_focused()
-                    && cmd.is(crate::commands::SELECT_ALL) =>
+                    && cmd.is(crate::command::SELECT_ALL) =>
             {
                 if let Some(inval) = self
                     .text_mut()

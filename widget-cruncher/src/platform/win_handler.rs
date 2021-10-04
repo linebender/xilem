@@ -16,18 +16,20 @@
 
 use std::any::Any;
 use std::cell::RefCell;
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 use std::rc::Rc;
 
 use crate::kurbo::Size;
 use crate::piet::Piet;
 
+use crate::command as sys_cmd;
 use crate::{
-    Env, Event, Handled, InternalEvent, KeyEvent, PlatformError, Selector, TimerToken, WindowId,
+    Command, Env, Event, Handled, InternalEvent, KeyEvent, PlatformError, Selector, Target,
+    TimerToken, WindowId,
 };
 
 use crate::app_root::AppRoot;
-use crate::platform::window_description::{PendingWindow, WindowConfig};
+use crate::platform::window_description::{PendingWindow, WindowConfig, WindowDesc};
 
 use druid_shell::WindowBuilder;
 use druid_shell::{
@@ -89,6 +91,7 @@ impl AppState {
     pub(crate) fn new(app: Application, env: Env) -> Self {
         let inner = Rc::new(RefCell::new(AppRoot {
             app,
+            command_queue: VecDeque::new(),
             file_dialogs: HashMap::new(),
             menu_window: None,
             env,
@@ -144,7 +147,7 @@ impl AppState {
     /// the OS needs to know if an event was handled.
     fn do_window_event(&mut self, event: Event, window_id: WindowId) -> Handled {
         let result = self.inner.borrow_mut().do_window_event(window_id, event);
-        //self.process_commands();
+        self.process_commands();
         //self.inner.borrow_mut().do_update();
         self.inner.borrow_mut().invalidate_and_finalize();
         let ime_change = self.inner.borrow_mut().ime_focus_change.take();
@@ -165,17 +168,27 @@ impl AppState {
     fn idle(&mut self, token: IdleToken) {
         match token {
             RUN_COMMANDS_TOKEN => {
-                //self.process_commands();
+                self.process_commands();
                 //self.inner.borrow_mut().do_update();
                 self.inner.borrow_mut().invalidate_and_finalize();
             }
             EXT_EVENT_IDLE_TOKEN => {
                 //self.process_ext_events();
-                //self.process_commands();
+                self.process_commands();
                 //self.inner.borrow_mut().do_update();
                 self.inner.borrow_mut().invalidate_and_finalize();
             }
             other => tracing::warn!("unexpected idle token {:?}", other),
+        }
+    }
+
+    fn process_commands(&mut self) {
+        loop {
+            let next_cmd = self.inner.borrow_mut().command_queue.pop_front();
+            match next_cmd {
+                Some(cmd) => self.handle_cmd(cmd),
+                None => break,
+            }
         }
     }
 
@@ -187,6 +200,136 @@ impl AppState {
     /// is open but a menu exists, as on macOS) it will be `None`.
     fn handle_system_cmd(&mut self, cmd_id: u32, window_id: Option<WindowId>) {
         todo!();
+    }
+
+    /// Handle a command. Top level commands (e.g. for creating and destroying
+    /// windows) have their logic here; other commands are passed to the window.
+    fn handle_cmd(&mut self, cmd: Command) {
+        use Target as T;
+        match cmd.target() {
+            // these are handled the same no matter where they come from
+            _ if cmd.is(sys_cmd::QUIT_APP) => self.quit(),
+            #[cfg(target_os = "macos")]
+            _ if cmd.is(sys_cmd::HIDE_APPLICATION) => self.hide_app(),
+            #[cfg(target_os = "macos")]
+            _ if cmd.is(sys_cmd::HIDE_OTHERS) => self.hide_others(),
+            _ if cmd.is(sys_cmd::NEW_WINDOW) => {
+                if let Err(e) = self.new_window(cmd) {
+                    tracing::error!("failed to create window: '{}'", e);
+                }
+            }
+            _ if cmd.is(sys_cmd::CLOSE_ALL_WINDOWS) => self.request_close_all_windows(),
+            //T::Window(id) if cmd.is(sys_cmd::INVALIDATE_IME) => self.invalidate_ime(cmd, id),
+            // these should come from a window
+            // FIXME: we need to be able to open a file without a window handle
+            // TODO - uncomment
+            //T::Window(id) if cmd.is(sys_cmd::SHOW_OPEN_PANEL) => self.show_open_panel(cmd, id),
+            //T::Window(id) if cmd.is(sys_cmd::SHOW_SAVE_PANEL) => self.show_save_panel(cmd, id),
+            //T::Window(id) if cmd.is(sys_cmd::CONFIGURE_WINDOW) => self.configure_window(cmd, id),
+            T::Window(id) if cmd.is(sys_cmd::CLOSE_WINDOW) => {
+                if !self.inner.borrow_mut().dispatch_cmd(cmd).is_handled() {
+                    self.request_close_window(id);
+                }
+            }
+            T::Window(id) if cmd.is(sys_cmd::SHOW_WINDOW) => self.show_window(id),
+            //T::Window(id) if cmd.is(sys_cmd::PASTE) => self.do_paste(id),
+            _ if cmd.is(sys_cmd::CLOSE_WINDOW) => {
+                tracing::warn!("CLOSE_WINDOW command must target a window.")
+            }
+            _ if cmd.is(sys_cmd::SHOW_WINDOW) => {
+                tracing::warn!("SHOW_WINDOW command must target a window.")
+            }
+            // TODO - uncomment
+            /*
+            _ if cmd.is(sys_cmd::SHOW_OPEN_PANEL) => {
+                tracing::warn!("SHOW_OPEN_PANEL command must target a window.")
+            }
+            */
+            _ => {
+                self.inner.borrow_mut().dispatch_cmd(cmd);
+            }
+        }
+    }
+
+    #[cfg(FALSE)]
+    fn show_open_panel(&mut self, cmd: Command, window_id: WindowId) {
+        let options = cmd.get(sys_cmd::SHOW_OPEN_PANEL).to_owned();
+        let handle = self
+            .inner
+            .borrow_mut()
+            .windows
+            .active_windows
+            .get_mut(&window_id)
+            .map(|w| w.handle.clone());
+
+        let accept_cmd = options.accept_cmd.unwrap_or(sys_cmd::OPEN_FILE);
+        let cancel_cmd = options.cancel_cmd.unwrap_or(sys_cmd::OPEN_PANEL_CANCELLED);
+        let token = handle.and_then(|mut handle| handle.open_file(options.opt));
+        if let Some(token) = token {
+            self.inner.borrow_mut().file_dialogs.insert(
+                token,
+                DialogInfo {
+                    id: window_id,
+                    accept_cmd,
+                    cancel_cmd,
+                },
+            );
+        }
+    }
+
+    #[cfg(FALSE)]
+    fn show_save_panel(&mut self, cmd: Command, window_id: WindowId) {
+        let options = cmd.get(sys_cmd::SHOW_SAVE_PANEL).to_owned();
+        let handle = self
+            .inner
+            .borrow_mut()
+            .windows
+            .active_windows
+            .get_mut(&window_id)
+            .map(|w| w.handle.clone());
+        let accept_cmd = options.accept_cmd.unwrap_or(sys_cmd::SAVE_FILE_AS);
+        let cancel_cmd = options.cancel_cmd.unwrap_or(sys_cmd::SAVE_PANEL_CANCELLED);
+        let token = handle.and_then(|mut handle| handle.save_as(options.opt));
+        if let Some(token) = token {
+            self.inner.borrow_mut().file_dialogs.insert(
+                token,
+                DialogInfo {
+                    id: window_id,
+                    accept_cmd,
+                    cancel_cmd,
+                },
+            );
+        }
+    }
+
+    // TODO - Promises
+    fn handle_dialog_response(&mut self, token: FileDialogToken, file_info: Option<FileInfo>) {
+        let mut inner = self.inner.borrow_mut();
+        if let Some(dialog_info) = inner.file_dialogs.remove(&token) {
+            let cmd = if let Some(info) = file_info {
+                dialog_info.accept_cmd.with(info).to(dialog_info.id)
+            } else {
+                dialog_info.cancel_cmd.to(dialog_info.id)
+            };
+            inner.append_command(cmd);
+        } else {
+            tracing::error!("unknown dialog token");
+        }
+
+        std::mem::drop(inner);
+        self.process_commands();
+        //self.inner.borrow_mut().do_update();
+        self.inner.borrow_mut().invalidate_and_finalize();
+    }
+
+    fn new_window(&mut self, cmd: Command) -> Result<(), Box<dyn std::error::Error>> {
+        let desc = cmd.get(sys_cmd::NEW_WINDOW);
+        // The NEW_WINDOW command is private and only druid can receive it by normal means,
+        // thus unwrapping can be considered safe and deserves a panic.
+        let desc = desc.take().unwrap().downcast::<WindowDesc>().unwrap();
+        let window = desc.build_native(self)?;
+        window.show();
+        Ok(())
     }
 
     fn request_close_window(&mut self, id: WindowId) {
@@ -284,11 +427,11 @@ impl WinHandler for DruidHandler {
     }
 
     fn save_as(&mut self, token: FileDialogToken, file_info: Option<FileInfo>) {
-        //self.app_state.handle_dialog_response(token, file_info);
+        self.app_state.handle_dialog_response(token, file_info);
     }
 
     fn open_file(&mut self, token: FileDialogToken, file_info: Option<FileInfo>) {
-        //self.app_state.handle_dialog_response(token, file_info);
+        self.app_state.handle_dialog_response(token, file_info);
     }
 
     fn mouse_down(&mut self, event: &MouseEvent) {
@@ -366,11 +509,9 @@ impl WinHandler for DruidHandler {
     }
 
     fn request_close(&mut self) {
-        /*
         self.app_state
             .handle_cmd(sys_cmd::CLOSE_WINDOW.to(self.window_id));
         self.app_state.process_commands();
-        */
         //self.app_state.inner.borrow_mut().do_update();
         self.app_state.inner.borrow_mut().invalidate_and_finalize();
     }

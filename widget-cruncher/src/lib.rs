@@ -82,7 +82,7 @@ pub use platform::DruidHandler;
 pub use platform::{WindowConfig, WindowDesc, WindowId, WindowSizePolicy};
 
 pub use box_constraints::BoxConstraints;
-pub use command::{Selector, SingleUse, Target};
+pub use command::{Command, Notification, Selector, SingleUse, Target};
 pub use contexts::{EventCtx, LayoutCtx, LifeCycleCtx, PaintCtx};
 pub use data::Data;
 pub use env::{Env, Key, KeyOrValue, Value, ValueType, ValueTypeError};

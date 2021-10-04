@@ -1,5 +1,5 @@
 use smallvec::SmallVec;
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 use tracing::{info_span, trace, warn};
 
 use crate::bloom::Bloom;
@@ -9,9 +9,9 @@ use crate::text::{TextFieldRegistration, TextLayout};
 use crate::util::ExtendDrain;
 use crate::widget::{CursorChange, FocusChange, WidgetState};
 use crate::{
-    ArcStr, BoxConstraints, Color, Cursor, Env, Event, EventCtx, InternalEvent, InternalLifeCycle,
-    LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Region, RenderContext, TimerToken, Widget,
-    WidgetId,
+    ArcStr, BoxConstraints, Color, Command, Cursor, Env, Event, EventCtx, InternalEvent,
+    InternalLifeCycle, LayoutCtx, LifeCycle, LifeCycleCtx, Notification, PaintCtx, Region,
+    RenderContext, Target, TimerToken, Widget, WidgetId,
 };
 
 // TODO
@@ -457,6 +457,24 @@ impl<W: Widget> WidgetPod<W> {
                     );
                     had_active || hot_changed
                 }
+                InternalEvent::TargetedCommand(cmd) => {
+                    match cmd.target() {
+                        Target::Widget(id) if id == self.id() => {
+                            modified_event = Some(Event::Command(cmd.clone()));
+                            true
+                        }
+                        Target::Widget(id) => {
+                            // Recurse when the target widget could be our descendant.
+                            // The bloom filter we're checking can return false positives.
+                            self.state.children.may_contain(&id)
+                        }
+                        Target::Global | Target::Window(_) => {
+                            modified_event = Some(Event::Command(cmd.clone()));
+                            true
+                        }
+                        _ => false,
+                    }
+                }
                 InternalEvent::RouteTimer(token, widget_id) => {
                     if *widget_id == self.id() {
                         modified_event = Some(Event::Timer(*token));
@@ -566,15 +584,18 @@ impl<W: Widget> WidgetPod<W> {
             Event::Zoom(_) => had_active || self.state.is_hot,
             Event::Timer(_) => false, // This event was targeted only to our parent
             Event::ImeStateChange => true, // once delivered to the focus widget, recurse to the component?
-            //Event::Command(_) => true,
-            //Event::Notification(_) => false,
+            Event::Command(_) => true,
+            Event::Notification(_) => false,
         };
 
         if call_inner {
             self.call_widget_method_with_checks("event", |widget_pod| {
+                // widget_pod is a reborrow of `self`
+                let mut notifications = VecDeque::new();
                 let mut inner_ctx = EventCtx {
                     global_state: parent_ctx.global_state,
                     widget_state: &mut widget_pod.state,
+                    notifications: parent_ctx.notifications,
                     is_handled: false,
                     is_root: false,
                 };
@@ -585,6 +606,9 @@ impl<W: Widget> WidgetPod<W> {
 
                 inner_ctx.widget_state.has_active |= inner_ctx.widget_state.is_active;
                 parent_ctx.is_handled |= inner_ctx.is_handled;
+
+                // we try to handle the notifications that occured below us in the tree
+                widget_pod.process_notifications(parent_ctx, &mut notifications, env);
             });
         } else {
             trace!("event wasn't propagated to {:?}", self.state.id);
@@ -593,6 +617,46 @@ impl<W: Widget> WidgetPod<W> {
         // Always merge even if not needed, because merging is idempotent and gives us simpler code.
         // Doing this conditionally only makes sense when there's a measurable performance boost.
         parent_ctx.widget_state.merge_up(&mut self.state);
+    }
+
+    /// Send notifications originating from this widget's children to this
+    /// widget.
+    ///
+    /// Notifications that are unhandled will be added to the notification
+    /// list for the parent's `EventCtx`, to be retried there.
+    fn process_notifications(
+        &mut self,
+        parent_ctx: &mut EventCtx,
+        notifications: &mut VecDeque<Notification>,
+        env: &Env,
+    ) {
+        let self_id = self.id();
+        let mut inner_ctx = EventCtx {
+            global_state: parent_ctx.global_state,
+            notifications: parent_ctx.notifications,
+            widget_state: &mut self.state,
+            is_handled: false,
+            is_root: false,
+        };
+
+        for notification in notifications.drain(..) {
+            // skip notifications that were submitted by our child
+            if notification.source() != self_id {
+                let event = Event::Notification(notification);
+                self.inner.on_event(&mut inner_ctx, &event, env);
+                if inner_ctx.is_handled {
+                    inner_ctx.is_handled = false;
+                } else if let Event::Notification(notification) = event {
+                    // we will try again with the next parent
+                    inner_ctx.notifications.push_back(notification);
+                } else {
+                    // could be unchecked but we avoid unsafe in druid :shrug:
+                    unreachable!()
+                }
+            } else {
+                inner_ctx.notifications.push_back(notification);
+            }
+        }
     }
 
     // --- LIFECYCLE ---
@@ -735,6 +799,7 @@ impl<W: Widget> WidgetPod<W> {
         };
 
         self.call_widget_method_with_checks("lifecycle", |widget_pod| {
+            // widget_pod is a reborrow of `self`
             let mut inner_ctx = LifeCycleCtx {
                 global_state: parent_ctx.global_state,
                 widget_state: &mut widget_pod.state,
