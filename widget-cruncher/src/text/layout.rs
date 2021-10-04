@@ -17,13 +17,13 @@
 use std::ops::Range;
 use std::rc::Rc;
 
-use super::{EnvUpdateCtx, Link, TextStorage};
+use super::{Link, TextStorage};
 use crate::kurbo::{Line, Point, Rect, Size};
 use crate::piet::{
     Color, PietText, PietTextLayout, Text as _, TextAlignment, TextAttribute, TextLayout as _,
     TextLayoutBuilder as _,
 };
-use crate::{Env, FontDescriptor, KeyOrValue, PaintCtx, RenderContext, UpdateCtx};
+use crate::{Env, FontDescriptor, KeyOrValue, PaintCtx, RenderContext };
 
 /// A component for displaying text on screen.
 ///
@@ -332,33 +332,6 @@ impl<T: TextStorage> TextLayout<T> {
 
         let text = self.text()?;
         text.links().get(*i)
-    }
-
-    /// Called during the containing widgets `update` method; this text object
-    /// will check to see if any used environment items have changed,
-    /// and invalidate itself as needed.
-    ///
-    /// Returns `true` if the text item needs to be rebuilt.
-    pub fn needs_rebuild_after_update(&mut self, ctx: &mut UpdateCtx) -> bool {
-        if ctx.env_changed() && self.layout.is_some() {
-            let rebuild = ctx.env_key_changed(&self.font)
-                || ctx.env_key_changed(&self.text_color)
-                || self
-                    .text_size_override
-                    .as_ref()
-                    .map(|k| ctx.env_key_changed(k))
-                    .unwrap_or(false)
-                || self
-                    .text
-                    .as_ref()
-                    .map(|text| text.env_update(&EnvUpdateCtx::for_update(ctx)))
-                    .unwrap_or(false);
-
-            if rebuild {
-                self.layout = None;
-            }
-        }
-        self.layout.is_none()
     }
 
     /// Rebuild the inner layout as needed.

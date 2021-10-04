@@ -28,7 +28,7 @@ use super::{
 use crate::kurbo::{Line, Point, Rect, Vec2};
 use crate::piet::TextLayout as _;
 use crate::widget::prelude::*;
-use crate::{text, theme, Cursor, Env, Modifiers, Selector, UpdateCtx};
+use crate::{text, theme, Cursor, Env, Modifiers, Selector };
 
 /// A widget that accepts text input.
 ///
@@ -404,14 +404,6 @@ impl<T: TextStorage + EditableText> Widget for TextComponent<T> {
             _ => (),
         }
     }
-
-    /*
-    fn update(&mut self, ctx: &mut UpdateCtx, _old: &T, data: &T, env: &Env) {
-        if self.can_write() {
-            self.borrow_mut().update(ctx, data, env);
-        }
-    }
-    */
 
     #[instrument(name = "InputComponent", level = "trace", skip(self, ctx, bc, env))]
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
@@ -816,28 +808,6 @@ impl<T: TextStorage + EditableText> EditSession<T> {
         range.start += lm.start_offset;
         range.end += lm.start_offset;
         range
-    }
-
-    fn update(&mut self, ctx: &mut UpdateCtx, new_data: &T, env: &Env) {
-        if self
-            .layout
-            .text()
-            .as_ref()
-            .map(|t| !t.same(new_data))
-            .unwrap_or(true)
-        {
-            self.update_pending_invalidation(ImeInvalidation::Reset);
-            self.layout.set_text(new_data.clone());
-        }
-        if self.layout.needs_rebuild_after_update(ctx) {
-            ctx.request_layout();
-        }
-        let new_sel = self.selection.constrained(new_data.as_str());
-        if new_sel != self.selection {
-            self.selection = new_sel;
-            self.update_pending_invalidation(ImeInvalidation::SelectionChanged);
-        }
-        self.layout.rebuild_if_needed(ctx.text(), env);
     }
 }
 

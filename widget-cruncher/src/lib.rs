@@ -83,7 +83,7 @@ pub use platform::{WindowConfig, WindowDesc, WindowId, WindowSizePolicy};
 
 pub use box_constraints::BoxConstraints;
 pub use command::{Selector, SingleUse, Target};
-pub use contexts::{EventCtx, LayoutCtx, LifeCycleCtx, PaintCtx, UpdateCtx};
+pub use contexts::{EventCtx, LayoutCtx, LifeCycleCtx, PaintCtx };
 pub use data::Data;
 pub use env::{Env, Key, KeyOrValue, Value, ValueType, ValueTypeError};
 pub use event::{Event, InternalEvent, InternalLifeCycle, LifeCycle};
