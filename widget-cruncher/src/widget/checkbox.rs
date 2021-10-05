@@ -44,6 +44,7 @@ impl Checkbox {
 
 impl Widget<bool> for Checkbox {
     fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, _env: &Env) {
+        ctx.init();
         match event {
             Event::MouseDown(_) => {
                 if !ctx.is_disabled() {
@@ -72,6 +73,7 @@ impl Widget<bool> for Checkbox {
     }
 
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
+        ctx.init();
         self.child_label.lifecycle(ctx, event, env);
         if let LifeCycle::HotChanged(_) | LifeCycle::DisabledChanged(_) = event {
             ctx.request_paint();
@@ -79,7 +81,8 @@ impl Widget<bool> for Checkbox {
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
-        bc.debug_check("Checkbox");
+        ctx.init();
+
         let x_padding = env.get(theme::WIDGET_CONTROL_COMPONENT_PADDING);
         let check_size = env.get(theme::BASIC_WIDGET_HEIGHT);
         let label_size = self.child_label.layout(ctx, bc, env);
@@ -96,6 +99,7 @@ impl Widget<bool> for Checkbox {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, env: &Env) {
+        ctx.init();
         let size = env.get(theme::BASIC_WIDGET_HEIGHT);
         let x_padding = env.get(theme::WIDGET_CONTROL_COMPONENT_PADDING);
         let border_width = 1.;

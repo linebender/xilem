@@ -372,6 +372,8 @@ impl<T: TextStorage + EditableText> TextBox {
 
 impl<T: TextStorage + EditableText> Widget for TextBox {
     fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, env: &Env) {
+        ctx.init();
+
         match event {
             Event::Notification(cmd) => match cmd {
                 cmd if cmd.is(TextComponent::SCROLL_TO) => {
@@ -486,6 +488,8 @@ impl<T: TextStorage + EditableText> Widget for TextBox {
     }
 
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
+        ctx.init();
+
         match event {
             LifeCycle::WidgetAdded => {
                 if matches!(event, LifeCycle::WidgetAdded) {
@@ -529,6 +533,8 @@ impl<T: TextStorage + EditableText> Widget for TextBox {
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
+        ctx.init();
+
         if !self.text().can_write() {
             tracing::warn!("Widget::layout called with outstanding IME lock.");
         }
@@ -566,6 +572,8 @@ impl<T: TextStorage + EditableText> Widget for TextBox {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, env: &Env) {
+        ctx.init();
+
         if !self.text().can_read() {
             tracing::warn!("Widget::paint called with outstanding IME lock, skipping");
             return;

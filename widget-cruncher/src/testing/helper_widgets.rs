@@ -249,6 +249,7 @@ impl ReplaceChild {
 
 impl Widget for ReplaceChild {
     fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, env: &Env) {
+        ctx.init();
         if let Event::Command(cmd) = event {
             if cmd.is(REPLACE_CHILD) {
                 self.child = (self.replacer)();
@@ -260,6 +261,7 @@ impl Widget for ReplaceChild {
     }
 
     fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange, env: &Env) {
+        ctx.init();
         ctx.request_layout();
     }
 

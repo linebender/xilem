@@ -15,7 +15,7 @@
 //! A button widget.
 
 use crate::widget::prelude::*;
-use crate::widget::Label;
+use crate::widget::{Label,WidgetPod};
 use crate::{theme, Affine, ArcStr, Insets, LinearGradient, UnitPoint};
 use smallvec::SmallVec;
 use tracing::{trace, trace_span, Span};
@@ -27,8 +27,7 @@ const LABEL_INSETS: Insets = Insets::uniform_xy(8., 2.);
 
 /// A button with a text label.
 pub struct Button {
-    label: Label,
-    label_size: Size,
+    label: WidgetPod<Label>,
 }
 
 impl Button {
@@ -72,14 +71,14 @@ impl Button {
     /// [`.on_click`]: #method.on_click
     pub fn from_label(label: Label) -> Button {
         Button {
-            label,
-            label_size: Size::ZERO,
+            label: WidgetPod::new(label),
         }
     }
 }
 
 impl Widget for Button {
     fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, _env: &Env) {
+        ctx.init();
         match event {
             Event::MouseDown(_) => {
                 if !ctx.is_disabled() {
@@ -101,33 +100,44 @@ impl Widget for Button {
     }
 
     fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange, _env: &Env) {
+        ctx.init();
         ctx.request_paint();
     }
 
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
+        ctx.init();
         self.label.lifecycle(ctx, event, env)
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
-        bc.debug_check("Button");
-        let padding = Size::new(LABEL_INSETS.x_value(), LABEL_INSETS.y_value());
-        let label_bc = bc.shrink(padding).loosen();
-        self.label_size = self.label.layout(ctx, &label_bc, env);
-        // HACK: to make sure we look okay at default sizes when beside a textbox,
-        // we make sure we will have at least the same height as the default textbox.
-        let min_height = env.get(theme::BORDERED_WIDGET_HEIGHT);
+        ctx.init();
+
         let baseline = self.label.baseline_offset();
         ctx.set_baseline_offset(baseline + LABEL_INSETS.y1);
 
+        let padding = Size::new(LABEL_INSETS.x_value(), LABEL_INSETS.y_value());
+        let label_bc = bc.shrink(padding).loosen();
+
+        let label_size = self.label.layout(ctx, &label_bc, env);
+
+        // HACK: to make sure we look okay at default sizes when beside a textbox,
+        // we make sure we will have at least the same height as the default textbox.
+        let min_height = env.get(theme::BORDERED_WIDGET_HEIGHT);
+
         let button_size = bc.constrain(Size::new(
-            self.label_size.width + padding.width,
-            (self.label_size.height + padding.height).max(min_height),
+            label_size.width + padding.width,
+            (label_size.height + padding.height).max(min_height),
         ));
+
+        let label_offset = (button_size.to_vec2() - label_size.to_vec2()) / 2.0;
+        self.label.set_origin(ctx, env, label_offset.to_point());
+
         trace!("Computed button size: {}", button_size);
         button_size
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, env: &Env) {
+        ctx.init();
         let is_active = ctx.is_active() && !ctx.is_disabled();
         let is_hot = ctx.is_hot();
         let size = ctx.size();
@@ -168,15 +178,9 @@ impl Widget for Button {
         };
 
         ctx.stroke(rounded_rect, &border_color, stroke_width);
-
         ctx.fill(rounded_rect, &bg_gradient);
 
-        let label_offset = (size.to_vec2() - self.label_size.to_vec2()) / 2.0;
-
-        ctx.with_save(|ctx| {
-            ctx.transform(Affine::translate(label_offset));
-            self.label.paint(ctx, env);
-        });
+        self.label.paint(ctx, env);
     }
 
     fn children(&self) -> SmallVec<[&dyn AsWidgetPod; 16]> {

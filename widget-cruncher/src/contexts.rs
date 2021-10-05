@@ -14,6 +14,7 @@
 
 //! The context types that are passed into various widget methods.
 
+use std::any::Any;
 use std::collections::VecDeque;
 use std::ops::{Deref, DerefMut};
 use std::rc::Rc;
@@ -66,6 +67,7 @@ pub(crate) struct ContextState<'a> {
 pub struct EventCtx<'a, 'b> {
     pub(crate) global_state: &'a mut ContextState<'b>,
     pub(crate) widget_state: &'a mut WidgetState,
+    pub(crate) is_init: bool,
     pub(crate) notifications: &'a mut VecDeque<Notification>,
     pub(crate) is_handled: bool,
     pub(crate) is_root: bool,
@@ -83,6 +85,7 @@ pub struct EventCtx<'a, 'b> {
 pub struct LifeCycleCtx<'a, 'b> {
     pub(crate) global_state: &'a mut ContextState<'b>,
     pub(crate) widget_state: &'a mut WidgetState,
+    pub(crate) is_init: bool,
 }
 
 /// A context provided to layout handling methods of widgets.
@@ -93,6 +96,7 @@ pub struct LifeCycleCtx<'a, 'b> {
 pub struct LayoutCtx<'a, 'b> {
     pub(crate) global_state: &'a mut ContextState<'b>,
     pub(crate) widget_state: &'a mut WidgetState,
+    pub(crate) is_init: bool,
     pub(crate) mouse_pos: Option<Point>,
 }
 
@@ -111,6 +115,7 @@ pub(crate) struct ZOrderPaintOp {
 pub struct PaintCtx<'a, 'b, 'c> {
     pub(crate) global_state: &'a mut ContextState<'b>,
     pub(crate) widget_state: &'a WidgetState,
+    pub(crate) is_init: bool,
     /// The render context for actually painting.
     pub render_ctx: &'a mut Piet<'c>,
     /// The z-order paint operations.
@@ -128,23 +133,66 @@ impl_context_method!(
     PaintCtx<'_, '_, '_>,
     LayoutCtx<'_, '_>,
     {
+        fn ctx_name(&self) -> &'static str {
+            let name = std::any::type_name::<Self>();
+            name.split('<')
+                .next()
+                .unwrap_or(name)
+                .split("::")
+                .last()
+                .unwrap_or(name)
+        }
+
+        pub fn init(&mut self) {
+            #[cfg(debug_assertions)]
+            if self.is_init {
+                debug_panic!(
+                    "{ctx_name} initialized multiple times in widget '{widget_name}' #{widget_id}. This likely indicates '{widget_name}' called <trait Widget>::{method_name} instead of WidgetPod::{method_name}",
+                    ctx_name = self.ctx_name(),
+                    widget_name = self.widget_state.widget_name,
+                    widget_id = self.widget_state.id.to_raw(),
+                    method_name = Self::method_name(),
+                )
+            } else {
+                self.is_init = true;
+            }
+        }
+
+        fn check_init(&self, method_name: &str) {
+            #[cfg(debug_assertions)]
+            if !self.is_init {
+                debug_panic!(
+                    "{ctx_name}::{ctx_method_name} called before {ctx_name}::init in {method_name} by '{widget_name}' #{widget_id}",
+                    ctx_name = self.ctx_name(),
+                    ctx_method_name = method_name,
+                    widget_name = self.widget_state.widget_name,
+                    widget_id = self.widget_state.id.to_raw(),
+                    method_name = Self::method_name(),
+                )
+            }
+        }
+
         /// get the `WidgetId` of the current widget.
         pub fn widget_id(&self) -> WidgetId {
+            self.check_init("widget_id");
             self.widget_state.id
         }
 
         /// Returns a reference to the current `WindowHandle`.
         pub fn window(&self) -> &WindowHandle {
+            self.check_init("window");
             self.global_state.window
         }
 
         /// Get the `WindowId` of the current window.
         pub fn window_id(&self) -> WindowId {
+            self.check_init("window_id");
             self.global_state.window_id
         }
 
         /// Get an object which can create text layouts.
         pub fn text(&mut self) -> &mut PietText {
+            self.check_init("text");
             &mut self.global_state.text
         }
 
@@ -171,12 +219,14 @@ impl_context_method!(
         ///
         /// [`layout`]: trait.Widget.html#tymethod.layout
         pub fn size(&self) -> Size {
+            self.check_init("size");
             self.widget_state.size()
         }
 
         /// The origin of the widget in window coordinates, relative to the top left corner of the
         /// content area.
         pub fn window_origin(&self) -> Point {
+            self.check_init("window_origin");
             self.widget_state.window_origin()
         }
 
@@ -184,6 +234,7 @@ impl_context_method!(
         ///
         /// The returned point is relative to the content area; it excludes window chrome.
         pub fn to_window(&self, widget_point: Point) -> Point {
+            self.check_init("to_window");
             self.window_origin() + widget_point.to_vec2()
         }
 
@@ -192,6 +243,7 @@ impl_context_method!(
         ///
         /// [`Screen`]: druid_shell::Screen
         pub fn to_screen(&self, widget_point: Point) -> Point {
+            self.check_init("to_screen");
             let insets = self.window().content_insets();
             let content_origin = self.window().get_position() + Vec2::new(insets.x0, insets.y0);
             content_origin + self.to_window(widget_point).to_vec2()
@@ -212,6 +264,7 @@ impl_context_method!(
         /// example, when clicking to one widget and dragging to the next).
         /// The documentation should clearly state the resolution.
         pub fn is_hot(&self) -> bool {
+            self.check_init("is_hot");
             self.widget_state.is_hot
         }
 
@@ -226,6 +279,7 @@ impl_context_method!(
         ///
         /// [`set_active`]: struct.EventCtx.html#method.set_active
         pub fn is_active(&self) -> bool {
+            self.check_init("is_active");
             self.widget_state.is_active
         }
 
@@ -249,6 +303,7 @@ impl_context_method!(
         /// [`LifeCycle::FocusChanged`]: enum.LifeCycle.html#variant.FocusChanged
         /// [`has_focus`]: #method.has_focus
         pub fn is_focused(&self) -> bool {
+            self.check_init("is_focused");
             self.global_state.focus_widget == Some(self.widget_id())
         }
 
@@ -259,6 +314,7 @@ impl_context_method!(
         ///
         /// [`is_focused`]: #method.is_focused
         pub fn has_focus(&self) -> bool {
+            self.check_init("has_focus");
             self.widget_state.has_focus
         }
 
@@ -276,6 +332,7 @@ impl_context_method!(
         ///
         /// [`set_disabled`]: EventCtx::set_disabled
         pub fn is_disabled(&self) -> bool {
+            self.check_init("is_disabled");
             self.widget_state.is_disabled()
         }
     }
@@ -294,6 +351,7 @@ impl_context_method!(EventCtx<'_, '_>, {
     /// [`hot`]: EventCtx::is_hot
     /// [`active`]: EventCtx::is_active
     pub fn set_cursor(&mut self, cursor: &Cursor) {
+        self.check_init("set_cursor");
         trace!("set_cursor {:?}", cursor);
         self.widget_state.cursor_change = CursorChange::Set(cursor.clone());
     }
@@ -309,6 +367,7 @@ impl_context_method!(EventCtx<'_, '_>, {
     /// [`hot`]: EventCtx::is_hot
     /// [`active`]: EventCtx::is_active
     pub fn override_cursor(&mut self, cursor: &Cursor) {
+        self.check_init("override_cursor");
         trace!("override_cursor {:?}", cursor);
         self.widget_state.cursor_change = CursorChange::Override(cursor.clone());
     }
@@ -320,6 +379,7 @@ impl_context_method!(EventCtx<'_, '_>, {
     /// [`override_cursor`]: EventCtx::override_cursor
     /// [`set_cursor`]: EventCtx::set_cursor
     pub fn clear_cursor(&mut self) {
+        self.check_init("clear_cursor");
         trace!("clear_cursor");
         self.widget_state.cursor_change = CursorChange::Default;
     }
@@ -334,6 +394,7 @@ impl_context_method!(EventCtx<'_, '_>, LifeCycleCtx<'_, '_>, {
     /// [`request_paint_rect`]: #method.request_paint_rect
     /// [`paint_rect`]: struct.WidgetPod.html#method.paint_rect
     pub fn request_paint(&mut self) {
+        self.check_init("request_paint");
         trace!("request_paint");
         self.widget_state.invalid.set_rect(
             self.widget_state.paint_rect() - self.widget_state.layout_rect().origin().to_vec2(),
@@ -345,6 +406,7 @@ impl_context_method!(EventCtx<'_, '_>, LifeCycleCtx<'_, '_>, {
     ///
     /// [`paint`]: trait.Widget.html#tymethod.paint
     pub fn request_paint_rect(&mut self, rect: Rect) {
+        self.check_init("request_paint_rect");
         trace!("request_paint_rect {}", rect);
         self.widget_state.invalid.add_rect(rect);
     }
@@ -360,12 +422,14 @@ impl_context_method!(EventCtx<'_, '_>, LifeCycleCtx<'_, '_>, {
     ///
     /// [`layout`]: trait.Widget.html#tymethod.layout
     pub fn request_layout(&mut self) {
+        self.check_init("request_layout");
         trace!("request_layout");
         self.widget_state.needs_layout = true;
     }
 
     /// Request an animation frame.
     pub fn request_anim_frame(&mut self) {
+        self.check_init("request_anim_frame");
         trace!("request_anim_frame");
         self.widget_state.request_anim = true;
     }
@@ -377,6 +441,7 @@ impl_context_method!(EventCtx<'_, '_>, LifeCycleCtx<'_, '_>, {
     ///
     /// [`should_propagate_to_hidden`]: crate::Event::should_propagate_to_hidden
     pub fn children_changed(&mut self) {
+        self.check_init("children_changed");
         trace!("children_changed");
         self.widget_state.children_changed = true;
         self.widget_state.update_focus_chain = true;
@@ -393,6 +458,7 @@ impl_context_method!(EventCtx<'_, '_>, LifeCycleCtx<'_, '_>, {
     /// [`LifeCycle::DisabledChanged`]: struct.LifeCycle.html#variant.DisabledChanged
     /// [`is_disabled`]: EventCtx::is_disabled
     pub fn set_disabled(&mut self, disabled: bool) {
+        self.check_init("set_disabled");
         // widget_state.children_disabled_changed is not set because we want to be able to delete
         // changes that happened during DisabledChanged.
         self.widget_state.is_explicitly_disabled_new = disabled;
@@ -404,6 +470,7 @@ impl_context_method!(EventCtx<'_, '_>, LifeCycleCtx<'_, '_>, {
     /// (such as the text or the selection) changes as a result of a non text-input
     /// event.
     pub fn invalidate_text_input(&mut self, event: ImeInvalidation) {
+        self.check_init("invalidate_text_input");
         let payload = crate::command::ImeInvalidation {
             widget: self.widget_id(),
             event,
@@ -429,6 +496,7 @@ impl_context_method!(EventCtx<'_, '_>, LifeCycleCtx<'_, '_>, LayoutCtx<'_, '_>, 
     /// [`Command`]: struct.Command.html
     /// [`update`]: trait.Widget.html#tymethod.update
     pub fn submit_command(&mut self, cmd: impl Into<Command>) {
+        self.check_init("submit_command");
         trace!("submit_command");
         self.global_state.submit_command(cmd.into())
     }
@@ -438,6 +506,7 @@ impl_context_method!(EventCtx<'_, '_>, LifeCycleCtx<'_, '_>, LayoutCtx<'_, '_>, 
     /// The return value is a token, which can be used to associate the
     /// request with the event.
     pub fn request_timer(&mut self, deadline: Duration) -> TimerToken {
+        self.check_init("request_timer");
         trace!("request_timer deadline={:?}", deadline);
         self.global_state
             .request_timer(&mut self.widget_state, deadline)
@@ -445,11 +514,17 @@ impl_context_method!(EventCtx<'_, '_>, LifeCycleCtx<'_, '_>, LayoutCtx<'_, '_>, 
 
     /// get the `WidgetState` of the current widget.
     pub fn widget_state(&mut self) -> &mut WidgetState {
+        self.check_init("widget_state");
         self.widget_state
     }
 });
 
 impl EventCtx<'_, '_> {
+    // Used in `init` error message.
+    fn method_name() -> &'static str {
+        "on_event"
+    }
+
     /// Submit a [`Notification`].
     ///
     /// The provided argument can be a [`Selector`] or a [`Command`]; this lets
@@ -474,12 +549,14 @@ impl EventCtx<'_, '_> {
     ///
     /// [`Selector`]: crate::Selector
     pub fn submit_notification(&mut self, note: impl Into<Command>) {
+        self.check_init("submit_notification");
         trace!("submit_notification");
         let note = note.into().into_notification(self.widget_state.id);
         self.notifications.push_back(note);
     }
 
     pub fn new_window(&mut self, desc: WindowDesc) {
+        self.check_init("new_window");
         trace!("new_window");
         self.submit_command(
             crate::command::NEW_WINDOW
@@ -492,6 +569,7 @@ impl EventCtx<'_, '_> {
     ///
     /// See [`EventCtx::is_active`](struct.EventCtx.html#method.is_active).
     pub fn set_active(&mut self, active: bool) {
+        self.check_init("set_active");
         trace!("set_active({})", active);
         self.widget_state.is_active = active;
         // TODO: plumb mouse grab through to platform (through druid-shell)
@@ -500,12 +578,14 @@ impl EventCtx<'_, '_> {
     /// Set the event as "handled", which stops its propagation to other
     /// widgets.
     pub fn set_handled(&mut self) {
+        self.check_init("set_handled");
         trace!("set_handled");
         self.is_handled = true;
     }
 
     /// Determine whether the event has been handled by some other widget.
     pub fn is_handled(&self) -> bool {
+        self.check_init("is_handled");
         self.is_handled
     }
 
@@ -519,6 +599,7 @@ impl EventCtx<'_, '_> {
     ///
     /// [`is_focused`]: struct.EventCtx.html#method.is_focused
     pub fn request_focus(&mut self) {
+        self.check_init("request_focus");
         trace!("request_focus");
         // We need to send the request even if we're currently focused,
         // because we may have a sibling widget that already requested focus
@@ -534,6 +615,7 @@ impl EventCtx<'_, '_> {
     ///
     /// [`is_focused`]: struct.EventCtx.html#method.is_focused
     pub fn set_focus(&mut self, target: WidgetId) {
+        self.check_init("set_focus");
         trace!("set_focus target={:?}", target);
         self.widget_state.request_focus = Some(FocusChange::Focus(target));
     }
@@ -546,6 +628,7 @@ impl EventCtx<'_, '_> {
     ///
     /// [`is_focused`]: struct.EventCtx.html#method.is_focused
     pub fn focus_next(&mut self) {
+        self.check_init("focus_next");
         trace!("focus_next");
         if self.has_focus() {
             self.widget_state.request_focus = Some(FocusChange::Next);
@@ -565,6 +648,7 @@ impl EventCtx<'_, '_> {
     ///
     /// [`is_focused`]: struct.EventCtx.html#method.is_focused
     pub fn focus_prev(&mut self) {
+        self.check_init("focus_prev");
         trace!("focus_prev");
         if self.has_focus() {
             self.widget_state.request_focus = Some(FocusChange::Previous);
@@ -584,6 +668,7 @@ impl EventCtx<'_, '_> {
     ///
     /// [`is_focused`]: struct.EventCtx.html#method.is_focused
     pub fn resign_focus(&mut self) {
+        self.check_init("resign_focus");
         trace!("resign_focus");
         if self.has_focus() {
             self.widget_state.request_focus = Some(FocusChange::Resign);
@@ -606,19 +691,26 @@ impl EventCtx<'_, '_> {
     /// method, consider whether it might be better to refactor to be more idiomatic, in
     /// particular to make that data available in the app state.
     pub fn request_update(&mut self) {
+        self.check_init("request_update");
         trace!("request_update");
         self.widget_state.request_update = true;
     }
 }
 
 impl LifeCycleCtx<'_, '_> {
+    // Used in `init` error message.
+    fn method_name() -> &'static str {
+        "lifecycle"
+    }
+
     /// Registers a child widget.
     ///
     /// This should only be called in response to a `LifeCycle::WidgetAdded` event.
     ///
     /// In general, you should not need to call this method; it is handled by
     /// the `WidgetPod`.
-    pub fn register_child(&mut self, child_id: WidgetId) {
+    // TODO
+    pub(crate) fn register_child(&mut self, child_id: WidgetId) {
         trace!("register_child id={:?}", child_id);
         self.widget_state.children.add(&child_id);
     }
@@ -632,12 +724,14 @@ impl LifeCycleCtx<'_, '_> {
     /// [`LifeCycle::BuildFocusChain`]: enum.Lifecycle.html#variant.BuildFocusChain
     /// [`EventCtx::is_focused`]: struct.EventCtx.html#method.is_focused
     pub fn register_for_focus(&mut self) {
+        self.check_init("register_for_focus");
         trace!("register_for_focus");
         self.widget_state.focus_chain.push(self.widget_id());
     }
 
     /// Register this widget as accepting text input.
     pub fn register_text_input(&mut self, document: impl ImeHandlerRef + 'static) {
+        self.check_init("register_text_input");
         let registration = TextFieldRegistration {
             document: Rc::new(document),
             widget_id: self.widget_id(),
@@ -647,6 +741,11 @@ impl LifeCycleCtx<'_, '_> {
 }
 
 impl LayoutCtx<'_, '_> {
+    // Used in `init` error message.
+    fn method_name() -> &'static str {
+        "layout"
+    }
+
     /// Set explicit paint [`Insets`] for this widget.
     ///
     /// You are not required to set explicit paint bounds unless you need
@@ -659,6 +758,7 @@ impl LayoutCtx<'_, '_> {
     /// [`Insets`]: struct.Insets.html
     /// [`WidgetPod::paint_insets`]: struct.WidgetPod.html#method.paint_insets
     pub fn set_paint_insets(&mut self, insets: impl Into<Insets>) {
+        self.check_init("set_paint_insets");
         let insets = insets.into();
         trace!("set_paint_insets {:?}", insets);
         self.widget_state.paint_insets = insets.nonnegative();
@@ -674,12 +774,18 @@ impl LayoutCtx<'_, '_> {
     /// The provided value should be the distance from the *bottom* of the
     /// widget to the baseline.
     pub fn set_baseline_offset(&mut self, baseline: f64) {
+        self.check_init("set_baseline_offset");
         trace!("set_baseline_offset {}", baseline);
         self.widget_state.baseline_offset = baseline
     }
 }
 
 impl PaintCtx<'_, '_, '_> {
+    // Used in `init` error message.
+    fn method_name() -> &'static str {
+        "paint"
+    }
+
     /// The depth in the tree of the currently painting widget.
     ///
     /// This may be used in combination with [`paint_with_z_index`] in order
@@ -709,6 +815,7 @@ impl PaintCtx<'_, '_, '_> {
         let mut child_ctx = PaintCtx {
             render_ctx: self.render_ctx,
             global_state: self.global_state,
+            is_init: false,
             widget_state: self.widget_state,
             z_ops: Vec::new(),
             region: region.into(),

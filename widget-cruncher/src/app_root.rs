@@ -457,7 +457,7 @@ impl WindowRoot {
             );
         }
 
-        let mut widget_state = WidgetState::new(self.root.id(), Some(self.size));
+        let mut widget_state = WidgetState::new(self.root.id(), Some(self.size), "<root>");
         let is_handled = {
             let mut global_state = ContextState::new(queue, &self.handle, self.id, self.focus);
             let mut notifications = VecDeque::new();
@@ -465,6 +465,7 @@ impl WindowRoot {
             let mut ctx = EventCtx {
                 global_state: &mut global_state,
                 widget_state: &mut widget_state,
+                is_init: false,
                 notifications: &mut notifications,
                 is_handled: false,
                 is_root: true,
@@ -522,11 +523,12 @@ impl WindowRoot {
         env: &Env,
         process_commands: bool,
     ) {
-        let mut widget_state = WidgetState::new(self.root.id(), Some(self.size));
+        let mut widget_state = WidgetState::new(self.root.id(), Some(self.size), "<root>");
         let mut global_state = ContextState::new(queue, &self.handle, self.id, self.focus);
         let mut ctx = LifeCycleCtx {
             global_state: &mut global_state,
             widget_state: &mut widget_state,
+            is_init: false,
         };
 
         {
@@ -600,11 +602,12 @@ impl WindowRoot {
     }
 
     pub(crate) fn layout(&mut self, queue: &mut CommandQueue, env: &Env) {
-        let mut widget_state = WidgetState::new(self.root.id(), Some(self.size));
+        let mut widget_state = WidgetState::new(self.root.id(), Some(self.size), "<root>");
         let mut global_state = ContextState::new(queue, &self.handle, self.id, self.focus);
         let mut layout_ctx = LayoutCtx {
             global_state: &mut global_state,
             widget_state: &mut widget_state,
+            is_init: false,
             mouse_pos: self.last_mouse_pos,
         };
         let bc = match self.size_policy {
@@ -637,12 +640,13 @@ impl WindowRoot {
     }
 
     fn paint(&mut self, piet: &mut Piet, invalid: &Region, queue: &mut CommandQueue, env: &Env) {
-        let widget_state = WidgetState::new(self.root.id(), Some(self.size));
+        let widget_state = WidgetState::new(self.root.id(), Some(self.size), "<root>");
         let mut global_state = ContextState::new(queue, &self.handle, self.id, self.focus);
         let mut ctx = PaintCtx {
             render_ctx: piet,
             global_state: &mut global_state,
             widget_state: &widget_state,
+            is_init: false,
             z_ops: Vec::new(),
             region: invalid.clone(),
             depth: 0,

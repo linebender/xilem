@@ -122,8 +122,12 @@ impl BoxConstraints {
 
     /// Check to see if these constraints are legit.
     ///
-    /// Logs a warning if BoxConstraints are invalid.
+    /// In Debug mode, logs a warning if BoxConstraints are invalid.
     pub fn debug_check(&self, name: &str) {
+        if cfg!(not(debug_assertions)) {
+            return;
+        }
+
         if !(0.0 <= self.min.width
             && self.min.width <= self.max.width
             && 0.0 <= self.min.height

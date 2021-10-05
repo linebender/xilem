@@ -123,10 +123,14 @@ pub struct WidgetState {
     // on a widget's children, to make sure each child was visited.
     #[cfg(debug_assertions)]
     pub(crate) needs_visit: bool,
+
+    // TODO - document
+    #[cfg(debug_assertions)]
+    pub(crate) widget_name: &'static str,
 }
 
 impl WidgetState {
-    pub(crate) fn new(id: WidgetId, size: Option<Size>) -> WidgetState {
+    pub(crate) fn new(id: WidgetId, size: Option<Size>, widget_name: &'static str) -> WidgetState {
         WidgetState {
             id,
             origin: Point::ORIGIN,
@@ -159,7 +163,10 @@ impl WidgetState {
             is_explicitly_disabled_new: false,
             text_registrations: Vec::new(),
             update_focus_chain: false,
+            #[cfg(debug_assertions)]
             needs_visit: false,
+            #[cfg(debug_assertions)]
+            widget_name,
         }
     }
 

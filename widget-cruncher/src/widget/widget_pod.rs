@@ -59,20 +59,12 @@ impl<W: Widget> WidgetPod<W> {
     /// so it can participate in layout and event flow. The process of
     /// adding a child widget to a container should call this method.
     pub fn new(inner: W) -> WidgetPod<W> {
-        let mut state = WidgetState::new(WidgetId::next(), None);
-        state.children_changed = true;
-        state.needs_layout = true;
-        WidgetPod {
-            state,
-            inner,
-            env: None,
-            debug_widget_text: TextLayout::new(),
-        }
+        Self::new_with_id(inner, WidgetId::next())
     }
 
     /// Create a new widget pod with fixed id.
     pub fn new_with_id(inner: W, id: WidgetId) -> WidgetPod<W> {
-        let mut state = WidgetState::new(id, None);
+        let mut state = WidgetState::new(id, None, inner.short_type_name());
         state.children_changed = true;
         state.needs_layout = true;
         WidgetPod {
@@ -328,6 +320,7 @@ impl<W: Widget> WidgetPod<W> {
             let mut inner_ctx = LifeCycleCtx {
                 global_state,
                 widget_state: inner_state,
+                is_init: false,
             };
             // We add a span so that inner logs are marked as being in a lifecycle pass
             info_span!("lifecycle")
@@ -598,6 +591,7 @@ impl<W: Widget> WidgetPod<W> {
                 let mut inner_ctx = EventCtx {
                     global_state: parent_ctx.global_state,
                     widget_state: &mut widget_pod.state,
+                    is_init: false,
                     notifications: parent_ctx.notifications,
                     is_handled: false,
                     is_root: false,
@@ -635,6 +629,7 @@ impl<W: Widget> WidgetPod<W> {
         let mut inner_ctx = EventCtx {
             global_state: parent_ctx.global_state,
             notifications: parent_ctx.notifications,
+            is_init: false,
             widget_state: &mut self.state,
             is_handled: false,
             is_root: false,
@@ -808,6 +803,7 @@ impl<W: Widget> WidgetPod<W> {
                 let mut inner_ctx = LifeCycleCtx {
                     global_state: parent_ctx.global_state,
                     widget_state: &mut widget_pod.state,
+                    is_init: false,
                 };
 
                 widget_pod.inner.lifecycle(&mut inner_ctx, event, env);
@@ -818,6 +814,7 @@ impl<W: Widget> WidgetPod<W> {
             let mut inner_ctx = LifeCycleCtx {
                 global_state: parent_ctx.global_state,
                 widget_state: &mut self.state,
+                is_init: false,
             };
 
             // We add a span so that inner logs are marked as being in a lifecycle pass
@@ -898,6 +895,8 @@ impl<W: Widget> WidgetPod<W> {
         self.state.needs_window_origin = false;
         self.state.is_expecting_set_origin_call = true;
 
+        bc.debug_check(self.inner.short_type_name());
+
         let inner_mouse_pos = parent_ctx
             .mouse_pos
             .map(|pos| pos - self.layout_rect().origin().to_vec2() + self.viewport_offset());
@@ -909,6 +908,7 @@ impl<W: Widget> WidgetPod<W> {
             let mut inner_ctx = LayoutCtx {
                 widget_state: &mut widget_pod.state,
                 global_state: parent_ctx.global_state,
+                is_init: false,
                 mouse_pos: inner_mouse_pos,
             };
 
@@ -956,11 +956,12 @@ impl<W: Widget> WidgetPod<W> {
             // widget_pod is a reborrow of `self`
 
             let mut inner_ctx = PaintCtx {
-                render_ctx: ctx.render_ctx,
                 global_state: ctx.global_state,
+                widget_state: &widget_pod.state,
+                is_init: false,
+                render_ctx: ctx.render_ctx,
                 z_ops: Vec::new(),
                 region: ctx.region.clone(),
-                widget_state: &widget_pod.state,
                 depth: ctx.depth,
             };
             widget_pod.inner.paint(&mut inner_ctx, env);
@@ -1155,6 +1156,7 @@ mod tests {
         let mut ctx = LifeCycleCtx {
             widget_state: &mut widget_state,
             global_state: &mut global_state,
+            is_init: false,
         };
 
         let env = Env::with_default_i10n();
