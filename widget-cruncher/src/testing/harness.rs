@@ -24,7 +24,7 @@ use crate::command::CommandQueue;
 use crate::piet::{BitmapTarget, Device, Error, ImageFormat, Piet};
 use crate::*;
 
-pub(crate) const DEFAULT_SIZE: Size = Size::new(400., 400.);
+pub const HARNESS_DEFAULT_SIZE: Size = Size::new(400., 400.);
 
 /// A type that tries very hard to provide a comforting and safe environment
 /// for widgets who are trying to find their way.
@@ -64,7 +64,7 @@ struct MockAppState {
 #[allow(missing_docs)]
 impl Harness {
     pub fn create(root: impl Widget + 'static) -> Self {
-        Self::create_with_size(root, DEFAULT_SIZE)
+        Self::create_with_size(root, HARNESS_DEFAULT_SIZE)
     }
 
     pub fn create_with_size(root: impl Widget + 'static, window_size: Size) -> Self {

@@ -27,6 +27,9 @@ mod widget;
 mod widget_pod;
 mod widget_state;
 
+#[cfg(test)]
+mod tests;
+
 #[doc(hidden)]
 pub use widget::{Widget, WidgetId};
 

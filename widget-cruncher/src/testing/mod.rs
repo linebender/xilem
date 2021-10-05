@@ -16,8 +16,11 @@
 
 #![allow(unused_imports)]
 
-pub mod harness;
-pub mod helper_widgets;
+mod harness;
+mod helper_widgets;
+
+pub use harness::{Harness, HARNESS_DEFAULT_SIZE};
+pub use helper_widgets::{ModularWidget, Record, Recorder, Recording, ReplaceChild, TestWidgetExt};
 
 #[cfg(test)]
 mod invalidation_tests;
