@@ -23,7 +23,7 @@ use crate::kurbo::Vec2;
 use crate::text::{TextAlignment, TextLayout};
 use crate::widget::prelude::*;
 use crate::{ArcStr, Color, Data, FontDescriptor, KeyOrValue, Point};
-use tracing::{instrument, trace};
+use tracing::{trace, trace_span, Span};
 
 // added padding between the edges of the widget and the text.
 const LABEL_X_PADDING: f64 = 2.0;
@@ -218,7 +218,6 @@ impl Label {
 // --- TRAIT IMPLS ---
 
 impl Widget for Label {
-    #[instrument(name = "Label", level = "trace", skip(self, ctx, event, _env))]
     fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, _env: &Env) {
         match event {
             Event::MouseUp(event) => {
@@ -243,7 +242,6 @@ impl Widget for Label {
         }
     }
 
-    #[instrument(name = "Label", level = "trace", skip(self, ctx, event, _env))]
     fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange, _env: &Env) {
         match event {
             StatusChange::DisabledChanged(disabled) => {
@@ -259,10 +257,8 @@ impl Widget for Label {
         }
     }
 
-    #[instrument(name = "Label", level = "trace", skip(self, ctx, event, _env))]
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, _env: &Env) {}
 
-    #[instrument(name = "Label", level = "trace", skip(self, ctx, bc, env))]
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
         bc.debug_check("Label");
 
@@ -284,7 +280,6 @@ impl Widget for Label {
         size
     }
 
-    #[instrument(name = "Label", level = "trace", skip(self, ctx, _env))]
     fn paint(&mut self, ctx: &mut PaintCtx, _env: &Env) {
         let origin = Point::new(LABEL_X_PADDING, 0.0);
         let label_size = ctx.size();
@@ -301,5 +296,9 @@ impl Widget for Label {
 
     fn children_mut(&mut self) -> SmallVec<[&mut dyn AsWidgetPod; 16]> {
         SmallVec::new()
+    }
+
+    fn make_trace_span(&self) -> Span {
+        trace_span!("Label")
     }
 }

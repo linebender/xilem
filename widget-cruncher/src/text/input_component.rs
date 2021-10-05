@@ -19,7 +19,7 @@ use std::cell::{Cell, Ref, RefCell, RefMut};
 use std::ops::Range;
 use std::sync::{Arc, Weak};
 
-use tracing::instrument;
+use tracing::{trace_span, Span};
 
 use super::{
     EditableText, ImeHandlerRef, ImeInvalidation, InputHandler, Movement, Selection, TextAction,
@@ -266,7 +266,6 @@ impl<T: EditableText + TextStorage> TextComponent<T> {
 }
 
 impl<T: TextStorage + EditableText> Widget for TextComponent<T> {
-    #[instrument(name = "InputComponent", level = "trace", skip(self, ctx, event, env))]
     fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, env: &Env) {
         match event {
             Event::MouseDown(mouse) if self.can_write() && !ctx.is_disabled() => {
@@ -360,7 +359,6 @@ impl<T: TextStorage + EditableText> Widget for TextComponent<T> {
         }
     }
 
-    #[instrument(name = "InputComponent", level = "trace", skip(self, ctx, event, env))]
     fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange, env: &Env) {
         match event {
             StatusChange::DisabledChanged(disabled) => {
@@ -378,7 +376,6 @@ impl<T: TextStorage + EditableText> Widget for TextComponent<T> {
         }
     }
 
-    #[instrument(name = "InputComponent", level = "trace", skip(self, ctx, event, env))]
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
         match event {
             LifeCycle::WidgetAdded => {
@@ -405,7 +402,6 @@ impl<T: TextStorage + EditableText> Widget for TextComponent<T> {
         }
     }
 
-    #[instrument(name = "InputComponent", level = "trace", skip(self, ctx, bc, env))]
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
         if !self.can_write() {
             tracing::warn!("Text layout called with IME lock held.");
@@ -432,7 +428,6 @@ impl<T: TextStorage + EditableText> Widget for TextComponent<T> {
         size
     }
 
-    #[instrument(name = "InputComponent", level = "trace", skip(self, ctx, env))]
     fn paint(&mut self, ctx: &mut PaintCtx, env: &Env) {
         if !self.can_read() {
             tracing::warn!("Text paint called with IME lock held.");
@@ -479,6 +474,10 @@ impl<T: TextStorage + EditableText> Widget for TextComponent<T> {
 
     fn children_mut(&mut self) -> SmallVec<[&mut dyn AsWidgetPod; 16]> {
         SmallVec::new()
+    }
+
+    fn make_trace_span(&self) -> Span {
+        trace_span!("Button")
     }
 }
 

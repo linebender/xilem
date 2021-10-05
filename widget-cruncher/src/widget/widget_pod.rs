@@ -317,13 +317,15 @@ impl<W: Widget> WidgetPod<W> {
             Some(pos) => rect.winding(pos) != 0,
             None => false,
         };
-        trace!(
-            "Widget {:?}: set hot state to {}",
-            inner_state.id,
-            inner_state.is_hot
-        );
         // FIXME - don't send event, update flags instead
         if had_hot != inner_state.is_hot {
+            trace!(
+                "Widget '{}' #{}: set hot state to {}",
+                inner.short_type_name(),
+                inner_state.id.to_raw(),
+                inner_state.is_hot
+            );
+
             let hot_changed_event = StatusChange::HotChanged(inner_state.is_hot);
             let mut inner_ctx = LifeCycleCtx {
                 global_state,
@@ -418,6 +420,9 @@ impl<W: Widget> WidgetPod<W> {
     ///
     /// [`event`]: trait.Widget.html#tymethod.event
     pub fn on_event(&mut self, parent_ctx: &mut EventCtx, event: &Event, env: &Env) {
+        let _span = self.inner.make_trace_span();
+        let _span = _span.enter();
+
         // TODO - explain this
         self.mark_as_visited();
         self.check_initialized("on_event");
@@ -610,8 +615,6 @@ impl<W: Widget> WidgetPod<W> {
                 // we try to handle the notifications that occured below us in the tree
                 widget_pod.process_notifications(parent_ctx, &mut notifications, env);
             });
-        } else {
-            trace!("event wasn't propagated to {:?}", self.state.id);
         }
 
         // Always merge even if not needed, because merging is idempotent and gives us simpler code.
@@ -665,6 +668,9 @@ impl<W: Widget> WidgetPod<W> {
     ///
     /// [`LifeCycle`]: enum.LifeCycle.html
     pub fn lifecycle(&mut self, parent_ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
+        let _span = self.inner.make_trace_span();
+        let _span = _span.enter();
+
         // TODO - explain this
         self.mark_as_visited();
 
@@ -798,24 +804,28 @@ impl<W: Widget> WidgetPod<W> {
             }
         };
 
+        // widget_pod is a reborrow of `self`
         self.call_widget_method_with_checks("lifecycle", |widget_pod| {
-            // widget_pod is a reborrow of `self`
-            let mut inner_ctx = LifeCycleCtx {
-                global_state: parent_ctx.global_state,
-                widget_state: &mut widget_pod.state,
-            };
-
             if call_inner {
+                let mut inner_ctx = LifeCycleCtx {
+                    global_state: parent_ctx.global_state,
+                    widget_state: &mut widget_pod.state,
+                };
+
                 widget_pod.inner.lifecycle(&mut inner_ctx, event, env);
             }
         });
 
-        let mut inner_ctx = LifeCycleCtx {
-            global_state: parent_ctx.global_state,
-            widget_state: &mut self.state,
-        };
-
         if let Some(event) = extra_event.as_ref() {
+            let mut inner_ctx = LifeCycleCtx {
+                global_state: parent_ctx.global_state,
+                widget_state: &mut self.state,
+            };
+
+            // We add a span so that inner logs are marked as being in a lifecycle pass
+            let _span = info_span!("on_status_change");
+            let _span = _span.enter();
+
             self.inner.on_status_change(&mut inner_ctx, event, env);
         }
 
@@ -879,6 +889,9 @@ impl<W: Widget> WidgetPod<W> {
     ///
     /// [`layout`]: trait.Widget.html#tymethod.layout
     pub fn layout(&mut self, parent_ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
+        let _span = self.inner.make_trace_span();
+        let _span = _span.enter();
+
         // TODO - explain this
         self.mark_as_visited();
         self.check_initialized("layout");
@@ -984,6 +997,9 @@ impl<W: Widget> WidgetPod<W> {
 
     /// Shared implementation that can skip drawing non-visible content.
     fn paint_impl(&mut self, parent_ctx: &mut PaintCtx, env: &Env, paint_if_not_visible: bool) {
+        let _span = self.inner.make_trace_span();
+        let _span = _span.enter();
+
         // TODO - explain this
         self.mark_as_visited();
         self.check_initialized("paint");

@@ -16,7 +16,7 @@
 
 use smallvec::{smallvec, SmallVec};
 use std::f64::INFINITY;
-use tracing::{instrument, trace, warn};
+use tracing::{trace, trace_span, warn, Span};
 
 use crate::widget::prelude::*;
 use crate::widget::{WidgetId, WidgetPod};
@@ -199,6 +199,10 @@ impl Widget for SizedBox {
         } else {
             smallvec![]
         }
+    }
+
+    fn make_trace_span(&self) -> Span {
+        trace_span!("SizedBox")
     }
 }
 

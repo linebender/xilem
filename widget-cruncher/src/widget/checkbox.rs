@@ -20,7 +20,7 @@ use crate::piet::{LineCap, LineJoin, LinearGradient, RenderContext, StrokeStyle,
 use crate::theme;
 use crate::widget::{prelude::*, Label};
 use crate::ArcStr;
-use tracing::{instrument, trace};
+use tracing::{trace, trace_span, Span};
 use smallvec::SmallVec;
 
 /// A checkbox that toggles a `bool`.
@@ -43,7 +43,6 @@ impl Checkbox {
 }
 
 impl Widget<bool> for Checkbox {
-    #[instrument(name = "CheckBox", level = "trace", skip(self, ctx, event, _env))]
     fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, _env: &Env) {
         match event {
             Event::MouseDown(_) => {
@@ -72,7 +71,6 @@ impl Widget<bool> for Checkbox {
         }
     }
 
-    #[instrument(name = "CheckBox", level = "trace", skip(self, ctx, event, env))]
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
         self.child_label.lifecycle(ctx, event, env);
         if let LifeCycle::HotChanged(_) | LifeCycle::DisabledChanged(_) = event {
@@ -80,7 +78,6 @@ impl Widget<bool> for Checkbox {
         }
     }
 
-    #[instrument(name = "CheckBox", level = "trace", skip(self, ctx, bc, env))]
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
         bc.debug_check("Checkbox");
         let x_padding = env.get(theme::WIDGET_CONTROL_COMPONENT_PADDING);
@@ -98,7 +95,6 @@ impl Widget<bool> for Checkbox {
         our_size
     }
 
-    #[instrument(name = "CheckBox", level = "trace", skip(self, ctx, env))]
     fn paint(&mut self, ctx: &mut PaintCtx, env: &Env) {
         let size = env.get(theme::BASIC_WIDGET_HEIGHT);
         let x_padding = env.get(theme::WIDGET_CONTROL_COMPONENT_PADDING);
@@ -151,6 +147,10 @@ impl Widget<bool> for Checkbox {
 
         // Paint the text label
         self.child_label.draw_at(ctx, (size + x_padding, 0.0));
+    }
+
+    fn make_trace_span(&self) -> Span {
+        trace_span!("Checkbox")
     }
 
     fn children(&self) -> SmallVec<[&dyn AsWidgetPod; 16]> {

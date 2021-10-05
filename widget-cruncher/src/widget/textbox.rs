@@ -15,7 +15,7 @@
 //! A textbox widget.
 
 use std::time::Duration;
-use tracing::{instrument, trace};
+use tracing::{trace, trace_span, Span};
 use smallvec::SmallVec;
 
 
@@ -371,7 +371,6 @@ impl<T: TextStorage + EditableText> TextBox {
 }
 
 impl<T: TextStorage + EditableText> Widget for TextBox {
-    #[instrument(name = "TextBox", level = "trace", skip(self, ctx, event, env))]
     fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, env: &Env) {
         match event {
             Event::Notification(cmd) => match cmd {
@@ -486,7 +485,6 @@ impl<T: TextStorage + EditableText> Widget for TextBox {
         self.inner.on_event(ctx, event, env)
     }
 
-    #[instrument(name = "TextBox", level = "trace", skip(self, ctx, event, env))]
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
         match event {
             LifeCycle::WidgetAdded => {
@@ -530,7 +528,6 @@ impl<T: TextStorage + EditableText> Widget for TextBox {
         self.inner.lifecycle(ctx, event, env);
     }
 
-    #[instrument(name = "TextBox", level = "trace", skip(self, ctx, bc, data, env))]
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
         if !self.text().can_write() {
             tracing::warn!("Widget::layout called with outstanding IME lock.");
@@ -568,7 +565,6 @@ impl<T: TextStorage + EditableText> Widget for TextBox {
         size
     }
 
-    #[instrument(name = "TextBox", level = "trace", skip(self, ctx, data, env))]
     fn paint(&mut self, ctx: &mut PaintCtx, env: &Env) {
         if !self.text().can_read() {
             tracing::warn!("Widget::paint called with outstanding IME lock, skipping");
@@ -655,6 +651,10 @@ impl<T: TextStorage + EditableText> Widget for TextBox {
 
     fn children_mut(&mut self) -> SmallVec<[&mut dyn AsWidgetPod; 16]> {
         SmallVec::new()
+    }
+
+    fn make_trace_span(&self) -> Span {
+        trace_span!("TextBox")
     }
 }
 

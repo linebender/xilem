@@ -18,7 +18,7 @@ use crate::kurbo::{common::FloatExt, Vec2};
 use crate::widget::prelude::*;
 use crate::{Data, KeyOrValue, Point, Rect, WidgetPod};
 use smallvec::SmallVec;
-use tracing::{instrument, trace};
+use tracing::{trace, trace_span, Span};
 
 /// A container with either horizontal or vertical layout.
 ///
@@ -622,24 +622,20 @@ impl Flex {
 }
 
 impl Widget for Flex {
-    #[instrument(name = "Flex", level = "trace", skip(self, ctx, event, env))]
     fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, env: &Env) {
         for child in self.children.iter_mut().filter_map(|x| x.widget_mut()) {
             child.on_event(ctx, event, env);
         }
     }
 
-    #[instrument(name = "Flex", level = "trace", skip(self, ctx, event, _env))]
     fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange, _env: &Env) {}
 
-    #[instrument(name = "Flex", level = "trace", skip(self, ctx, event, env))]
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
         for child in self.children.iter_mut().filter_map(|x| x.widget_mut()) {
             child.lifecycle(ctx, event, env);
         }
     }
 
-    #[instrument(name = "Flex", level = "trace", skip(self, ctx, bc, env))]
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
         bc.debug_check("Flex");
         // we loosen our constraints when passing to children.
@@ -846,7 +842,6 @@ impl Widget for Flex {
         my_size
     }
 
-    #[instrument(name = "Flex", level = "trace", skip(self, ctx, env))]
     fn paint(&mut self, ctx: &mut PaintCtx, env: &Env) {
         for child in self.children.iter_mut().filter_map(|x| x.widget_mut()) {
             child.paint(ctx, env);
@@ -876,6 +871,10 @@ impl Widget for Flex {
             .filter_map(|child| child.widget_mut())
             .map(|widget_pod| widget_pod as &mut dyn AsWidgetPod)
             .collect()
+    }
+
+    fn make_trace_span(&self) -> Span {
+        trace_span!("Flex")
     }
 }
 

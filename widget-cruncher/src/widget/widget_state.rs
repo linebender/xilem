@@ -182,11 +182,6 @@ impl WidgetState {
     ///
     /// This method is idempotent and can be called multiple times.
     pub(crate) fn merge_up(&mut self, child_state: &mut WidgetState) {
-        trace!(
-            "merge_up self.id={:?} child.id={:?}",
-            self.id,
-            child_state.id
-        );
         let clip = self
             .layout_rect()
             .with_origin(Point::ORIGIN)

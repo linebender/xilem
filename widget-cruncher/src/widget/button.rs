@@ -18,7 +18,7 @@ use crate::widget::prelude::*;
 use crate::widget::Label;
 use crate::{theme, Affine, ArcStr, Insets, LinearGradient, UnitPoint};
 use smallvec::SmallVec;
-use tracing::{instrument, trace};
+use tracing::{trace, trace_span, Span};
 
 // the minimum padding added to a button.
 // NOTE: these values are chosen to match the existing look of TextBox; these
@@ -79,7 +79,6 @@ impl Button {
 }
 
 impl Widget for Button {
-    #[instrument(name = "Button", level = "trace", skip(self, ctx, event, _env))]
     fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, _env: &Env) {
         match event {
             Event::MouseDown(_) => {
@@ -101,17 +100,14 @@ impl Widget for Button {
         }
     }
 
-    #[instrument(name = "Button", level = "trace", skip(self, ctx, event, _env))]
     fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange, _env: &Env) {
         ctx.request_paint();
     }
 
-    #[instrument(name = "Button", level = "trace", skip(self, ctx, event, env))]
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
         self.label.lifecycle(ctx, event, env)
     }
 
-    #[instrument(name = "Button", level = "trace", skip(self, ctx, bc, env))]
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
         bc.debug_check("Button");
         let padding = Size::new(LABEL_INSETS.x_value(), LABEL_INSETS.y_value());
@@ -131,7 +127,6 @@ impl Widget for Button {
         button_size
     }
 
-    #[instrument(name = "Button", level = "trace", skip(self, ctx, env))]
     fn paint(&mut self, ctx: &mut PaintCtx, env: &Env) {
         let is_active = ctx.is_active() && !ctx.is_disabled();
         let is_hot = ctx.is_hot();
@@ -190,5 +185,9 @@ impl Widget for Button {
 
     fn children_mut(&mut self) -> SmallVec<[&mut dyn AsWidgetPod; 16]> {
         SmallVec::new()
+    }
+
+    fn make_trace_span(&self) -> Span {
+        trace_span!("Button")
     }
 }

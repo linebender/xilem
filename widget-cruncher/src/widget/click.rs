@@ -18,7 +18,7 @@
 
 use crate::widget::Controller;
 use crate::{Data, Env, Event, EventCtx, LifeCycle, LifeCycleCtx, MouseButton, Widget};
-use tracing::{instrument, trace};
+use tracing::{trace, trace_span, Span};
 use smallvec::SmallVec;
 
 /// A clickable [`Controller`] widget. Pass this and a child widget to a
@@ -52,11 +52,6 @@ impl Click {
 }
 
 impl<W: Widget> Controller<W> for Click {
-    #[instrument(
-        name = "Click",
-        level = "trace",
-        skip(self, child, ctx, event, env)
-    )]
     fn event(&mut self, child: &mut W, ctx: &mut EventCtx, event: &Event, env: &Env) {
         match event {
             Event::MouseDown(mouse_event) => {
@@ -82,11 +77,6 @@ impl<W: Widget> Controller<W> for Click {
         child.event(ctx, event, env);
     }
 
-    #[instrument(
-        name = "Click",
-        level = "trace",
-        skip(self, child, ctx, event, env)
-    )]
     fn lifecycle(
         &mut self,
         child: &mut W,
@@ -99,6 +89,10 @@ impl<W: Widget> Controller<W> for Click {
         }
 
         child.lifecycle(ctx, event, env);
+    }
+
+    fn make_trace_span(&self) -> Span {
+        trace_span!("Click")
     }
 
     fn children(&self) -> SmallVec<[&dyn AsWidgetPod; 16]> {

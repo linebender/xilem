@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use super::prelude::*;
+use crate::AsAny;
+use crate::Point;
 use smallvec::SmallVec;
 use std::any::Any;
 use std::num::NonZeroU64;
 use std::ops::{Deref, DerefMut};
-
-use super::prelude::*;
-use crate::AsAny;
-use crate::Point;
+use tracing::{trace_span, Span};
 
 /// A unique identifier for a single [`Widget`].
 ///
@@ -165,6 +165,12 @@ pub trait Widget: Any {
 
     fn children_mut(&mut self) -> SmallVec<[&mut dyn AsWidgetPod; 16]>;
 
+    fn make_trace_span(&self) -> Span {
+        trace_span!("Widget", r#type = self.short_type_name())
+    }
+
+    // --- Auto-generated implementations ---
+
     // Returns direct child, not recursive child
     fn get_child_at_pos(&self, pos: Point) -> Option<&dyn AsWidgetPod> {
         // layout_rect() is in parent coordinate space
@@ -269,6 +275,11 @@ impl Widget for Box<dyn Widget> {
         self.deref_mut().children_mut()
     }
 
+    fn make_trace_span(&self) -> Span {
+        self.deref().make_trace_span()
+    }
+
+    // TODO - add unit test
     fn downcast<W: Widget>(&self) -> Option<&W>
     where
         Self: Sized,
