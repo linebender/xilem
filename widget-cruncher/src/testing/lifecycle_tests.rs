@@ -2,7 +2,6 @@
 
 use super::*;
 
-/// test that the first widget to request focus during an event gets it.
 #[cfg(FALSE)]
 #[test]
 fn propagate_hot() {
@@ -102,6 +101,8 @@ fn propagate_hot() {
         assert!(root_rec.is_empty() && padding_rec.is_empty() && button_rec.is_empty());
     });
 }
+
+/// test that the first widget to request focus during an event gets it.
 #[cfg(FALSE)]
 #[test]
 fn take_focus() {
@@ -706,94 +707,9 @@ fn participate_in_autofocus() {
     })
 }
 
-#[cfg(FALSE)]
-#[test]
-fn child_tracking() {
-    let [id_1, id_2, id_3, id_4] = widget_ids();
-
-    let widget = Split::columns(
-        SizedBox::empty().with_id(id_1),
-        SizedBox::empty().with_id(id_2),
-    )
-    .with_id(id_3)
-    .padding(5.0)
-    .with_id(id_4);
-
-    Harness::create_simple(true, widget, |harness| {
-        harness.send_initial_events();
-        let root = harness.get_state(id_4);
-        assert_eq!(root.children.entry_count(), 3);
-        assert!(root.children.may_contain(&id_1));
-        assert!(root.children.may_contain(&id_2));
-        assert!(root.children.may_contain(&id_3));
-
-        let split = harness.get_state(id_3);
-        assert!(split.children.may_contain(&id_1));
-        assert!(split.children.may_contain(&id_2));
-        assert_eq!(split.children.entry_count(), 2);
-    });
-}
-
-#[cfg(FALSE)]
-#[test]
-/// Test that all children are registered correctly after a child is replaced.
-fn register_after_adding_child() {
-    let [id_1, id_2, id_3, id_4, id_5, id_6, id_7] = widget_ids();
-
-    let replacer = ReplaceChild::new(Slider::new().with_id(id_1), move || {
-        Split::columns(Slider::new().with_id(id_2), Slider::new().with_id(id_3)).with_id(id_7)
-    })
-    .with_id(id_6);
-
-    let widget = Split::columns(Label::new("hi").with_id(id_4), replacer).with_id(id_5);
-
-    Harness::create_simple(0.0, widget, |harness| {
-        harness.send_initial_events();
-
-        assert!(harness.get_state(id_5).children.may_contain(&id_6));
-        assert!(harness.get_state(id_5).children.may_contain(&id_1));
-        assert!(harness.get_state(id_5).children.may_contain(&id_4));
-        assert_eq!(harness.get_state(id_5).children.entry_count(), 3);
-
-        harness.submit_command(REPLACE_CHILD);
-
-        assert!(harness.get_state(id_5).children.may_contain(&id_6));
-        assert!(harness.get_state(id_5).children.may_contain(&id_4));
-        assert!(harness.get_state(id_5).children.may_contain(&id_7));
-        assert!(harness.get_state(id_5).children.may_contain(&id_2));
-        assert!(harness.get_state(id_5).children.may_contain(&id_3));
-        assert_eq!(harness.get_state(id_5).children.entry_count(), 5);
-    })
-}
-
-#[cfg(FALSE)]
-#[test]
-/// Test that request_update actually causes the request.
-fn request_update() {
-    const REQUEST_UPDATE: Selector = Selector::new("druid-tests.request_update");
-    let updated: Rc<Cell<bool>> = Default::default();
-    let updated_clone = updated.clone();
-
-    let widget = ModularWidget::new(())
-        .event_fn(|_, ctx, event, _data, _env| {
-            if matches!(event, Event::Command(cmd) if cmd.is(REQUEST_UPDATE)) {
-                ctx.request_update();
-            }
-        })
-        .update_fn(move |_, _ctx, _old_data, _data, _env| {
-            updated_clone.set(true);
-        });
-    Harness::create_simple((), widget, |harness| {
-        harness.send_initial_events();
-        assert!(!updated.get());
-        harness.submit_command(REQUEST_UPDATE);
-        assert!(updated.get());
-    })
-}
-
-#[cfg(FALSE)]
-#[test]
 /// Ensure that notifications are delivered to ancestors, but not siblings.
+#[cfg(FALSE)]
+#[test]
 fn notifications() {
     const NOTIFICATION: Selector = Selector::new("druid-tests.some-notification");
 

@@ -402,7 +402,7 @@ impl<W: Widget + 'static> WidgetPod<W> {
     /// Convert a `WidgetPod` containing a widget of a specific concrete type
     /// into a dynamically boxed widget.
     pub fn boxed(self) -> WidgetPod<Box<dyn Widget>> {
-        WidgetPod::new(Box::new(self.inner))
+        WidgetPod::new_with_id(Box::new(self.inner), self.state.id)
     }
 }
 

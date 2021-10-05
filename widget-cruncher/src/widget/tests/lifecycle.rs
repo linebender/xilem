@@ -1,4 +1,6 @@
-use crate::testing::{Harness, Record, Recording, ReplaceChild, TestWidgetExt as _, REPLACE_CHILD};
+use crate::testing::{
+    widget_ids, Harness, Record, Recording, ReplaceChild, TestWidgetExt as _, REPLACE_CHILD,
+};
 use crate::widget::{Flex, Label, SizedBox};
 use crate::*;
 use test_env_log::test;
@@ -55,4 +57,71 @@ fn adding_child() {
         Record::L(LifeCycle::BuildFocusChain)
     ));
     assert!(record_new_child.is_empty());
+}
+
+#[test]
+fn child_tracking() {
+    let [id_1, id_2, id_3, id_4] = widget_ids();
+
+    let widget = SizedBox::new_with_id(
+        SizedBox::new_with_id(
+            Flex::row()
+                .with_child_id(SizedBox::empty(), id_1)
+                .with_child_id(SizedBox::empty(), id_2),
+            id_3,
+        ),
+        id_4,
+    );
+
+    let harness = Harness::create(widget);
+
+    let root_state = harness.get_widget(id_4).state();
+    assert_eq!(root_state.children.entry_count(), 3);
+    assert!(root_state.children.may_contain(&id_1));
+    assert!(root_state.children.may_contain(&id_2));
+    assert!(root_state.children.may_contain(&id_3));
+
+    let child_state = harness.get_widget(id_3).state();
+    assert!(child_state.children.may_contain(&id_1));
+    assert!(child_state.children.may_contain(&id_2));
+    assert_eq!(child_state.children.entry_count(), 2);
+}
+
+/// Test that all children are registered correctly after a child is replaced.
+#[test]
+fn register_after_adding_child() {
+    let [id_1, id_2, id_3, id_4, id_5, id_6, id_8] = widget_ids();
+
+    let replacer = ReplaceChild::new(Label::new("hello").with_id(id_1), move || {
+        SizedBox::new_with_id(
+            Flex::row()
+                .with_child_id(SizedBox::empty(), id_2)
+                .with_child_id(SizedBox::empty(), id_3),
+            id_4,
+        )
+    });
+
+    let widget = Flex::row()
+        .with_child_id(Label::new("hi"), id_8)
+        .with_child_id(replacer, id_6)
+        .with_id(id_5);
+
+    let mut harness = Harness::create(widget);
+
+    let root_state = harness.get_widget(id_5).state();
+    assert!(root_state.children.may_contain(&id_6));
+    assert!(root_state.children.may_contain(&id_1));
+    assert!(root_state.children.may_contain(&id_8));
+    // Label.with_id has two ids.
+    assert_eq!(root_state.children.entry_count(), 4);
+
+    harness.submit_command(REPLACE_CHILD);
+
+    let root_state = harness.get_widget(id_5).state();
+    assert!(root_state.children.may_contain(&id_6));
+    assert!(root_state.children.may_contain(&id_8));
+    assert!(root_state.children.may_contain(&id_4));
+    assert!(root_state.children.may_contain(&id_2));
+    assert!(root_state.children.may_contain(&id_3));
+    assert_eq!(root_state.children.entry_count(), 5);
 }

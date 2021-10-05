@@ -27,6 +27,7 @@ use std::collections::VecDeque;
 use std::rc::Rc;
 
 use crate::event::StatusChange;
+use crate::widget::SizedBox;
 use crate::*;
 
 pub type EventFn<S> = dyn FnMut(&mut S, &mut EventCtx, &Event, &Env);
@@ -110,6 +111,10 @@ pub trait TestWidgetExt: Widget + Sized + 'static {
             child: self,
             recording: recording.clone(),
         }
+    }
+
+    fn with_id(self, id: WidgetId) -> SizedBox {
+        SizedBox::new_with_id(self, id)
     }
 }
 

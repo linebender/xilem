@@ -16,7 +16,7 @@
 
 use crate::kurbo::{common::FloatExt, Vec2};
 use crate::widget::prelude::*;
-use crate::{Data, KeyOrValue, Point, Rect, WidgetPod};
+use crate::{Data, KeyOrValue, Point, Rect, WidgetId, WidgetPod};
 use smallvec::SmallVec;
 use tracing::{trace, trace_span, Span};
 
@@ -436,6 +436,12 @@ impl Flex {
         self
     }
 
+    // TODO - document
+    pub fn with_child_id(mut self, child: impl Widget + 'static, id: WidgetId) -> Self {
+        self.add_child_id(child, id);
+        self
+    }
+
     /// Builder-style method to add a flexible child to the container.
     ///
     /// This method is used when you need more control over the behaviour
@@ -525,6 +531,14 @@ impl Flex {
     pub fn add_child(&mut self, child: impl Widget + 'static) {
         let child = Child::Fixed {
             widget: WidgetPod::new(Box::new(child)),
+            alignment: None,
+        };
+        self.children.push(child);
+    }
+
+    pub fn add_child_id(&mut self, child: impl Widget + 'static, id: WidgetId) {
+        let child = Child::Fixed {
+            widget: WidgetPod::new_with_id(Box::new(child), id),
             alignment: None,
         };
         self.children.push(child);
