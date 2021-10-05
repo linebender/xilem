@@ -15,10 +15,11 @@
 //! Common widgets.
 
 mod button;
-//mod checkbox;
 mod flex;
-//mod click;
 mod label;
+mod sized_box;
+//mod checkbox;
+//mod click;
 //mod textbox;
 
 #[allow(clippy::module_inception)]
@@ -29,12 +30,13 @@ mod widget_state;
 #[doc(hidden)]
 pub use widget::{Widget, WidgetId};
 
-pub use button::Button;
 //pub use checkbox::Checkbox;
 //pub use click::Click;
+//pub use textbox::TextBox;
+pub use button::Button;
 pub use flex::{Axis, CrossAxisAlignment, Flex, FlexParams, MainAxisAlignment};
 pub use label::{Label, LineBreaking};
-//pub use textbox::TextBox;
+pub use sized_box::SizedBox;
 
 //#[doc(hidden)]
 //pub use widget_ext::WidgetExt;
