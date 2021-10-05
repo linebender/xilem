@@ -86,7 +86,7 @@ pub use command::{Command, Notification, Selector, SingleUse, Target};
 pub use contexts::{EventCtx, LayoutCtx, LifeCycleCtx, PaintCtx};
 pub use data::Data;
 pub use env::{Env, Key, KeyOrValue, Value, ValueType, ValueTypeError};
-pub use event::{Event, InternalEvent, InternalLifeCycle, LifeCycle};
+pub use event::{Event, InternalEvent, InternalLifeCycle, LifeCycle, StatusChange};
 pub use mouse::MouseEvent;
 pub use util::AsAny;
 pub use util::Handled;

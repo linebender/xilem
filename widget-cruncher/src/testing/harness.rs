@@ -95,6 +95,10 @@ impl Harness {
             window_size,
         };
 
+        // verify that all widgets are marked as having children_changed
+        // (this should always be true for a new widget)
+        harness.inspect_widgets(|widget| assert!(widget.state().children_changed));
+
         harness.process_event(Event::WindowConnected);
         harness.process_event(Event::WindowSize(window_size));
 

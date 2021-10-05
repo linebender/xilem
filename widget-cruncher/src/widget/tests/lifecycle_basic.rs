@@ -112,8 +112,6 @@ fn register_after_adding_child() {
     assert!(root_state.children.may_contain(&id_6));
     assert!(root_state.children.may_contain(&id_1));
     assert!(root_state.children.may_contain(&id_8));
-    // Label.with_id has two ids.
-    assert_eq!(root_state.children.entry_count(), 4);
 
     harness.submit_command(REPLACE_CHILD);
 
@@ -123,5 +121,4 @@ fn register_after_adding_child() {
     assert!(root_state.children.may_contain(&id_4));
     assert!(root_state.children.may_contain(&id_2));
     assert!(root_state.children.may_contain(&id_3));
-    assert_eq!(root_state.children.entry_count(), 5);
 }
