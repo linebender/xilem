@@ -24,8 +24,7 @@ use crate::piet::Piet;
 
 use crate::command as sys_cmd;
 use crate::{
-    Command, Env, Event, Handled, InternalEvent, KeyEvent, PlatformError, Selector, Target,
-    TimerToken, WindowId,
+    Command, Env, Event, Handled, InternalEvent, PlatformError, Selector, Target, WindowId,
 };
 
 use crate::app_root::AppRoot;
@@ -33,8 +32,8 @@ use crate::platform::window_description::{PendingWindow, WindowConfig, WindowDes
 
 use druid_shell::WindowBuilder;
 use druid_shell::{
-    text::InputHandler, Application, FileDialogToken, FileInfo, IdleToken, MouseEvent, Region,
-    Scale, TextFieldToken, WinHandler, WindowHandle,
+    text::InputHandler, Application, FileDialogToken, FileInfo, IdleToken, KeyEvent, MouseEvent,
+    Region, Scale, TextFieldToken, TimerToken, WinHandler, WindowHandle,
 };
 
 pub(crate) const RUN_COMMANDS_TOKEN: IdleToken = IdleToken::new(1);

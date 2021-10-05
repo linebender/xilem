@@ -34,6 +34,7 @@
 extern crate self as druid;
 pub use druid_derive::Lens;
 
+pub use druid_shell as shell;
 #[doc(inline)]
 pub use druid_shell::{kurbo, piet};
 
@@ -48,7 +49,6 @@ mod command;
 mod contexts;
 mod data;
 pub mod env;
-// TODO - rename to events.
 mod event;
 mod mouse;
 mod platform;
@@ -61,19 +61,8 @@ pub mod widget;
 pub use kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
 pub use piet::{Color, ImageBuf, LinearGradient, RadialGradient, RenderContext, UnitPoint};
 
-// these are the types from druid_shell that we expose; others we only use internally.
-#[cfg(feature = "image")]
-pub use druid_shell::image;
-pub use druid_shell::keyboard_types;
-pub use druid_shell::{
-    Application, Clipboard, ClipboardFormat, Code, Cursor, CursorDesc, Error as PlatformError,
-    FileInfo, FileSpec, FormatId, HotKey, KbKey, KeyEvent, Location, Modifiers, Monitor,
-    MouseButton, MouseButtons, RawMods, Region, Scalable, Scale, Screen, SysMods, TimerToken,
-    WindowHandle, WindowLevel, WindowState,
-};
-
-#[cfg(feature = "raw-win-handle")]
-pub use druid_shell::raw_window_handle::{HasRawWindowHandle, RawWindowHandle};
+pub use druid_shell::Error as PlatformError;
+pub use text::ArcStr;
 
 pub use app_launcher::AppLauncher;
 pub use app_root::WindowRoot;
@@ -91,21 +80,3 @@ pub use mouse::MouseEvent;
 pub use util::AsAny;
 pub use util::Handled;
 pub use widget::{AsWidgetPod, Widget, WidgetId, WidgetPod, WidgetState};
-
-#[deprecated(since = "0.8.0", note = "import from druid::text module instead")]
-pub use text::{ArcStr, FontDescriptor};
-
-/// The meaning (mapped value) of a keypress.
-///
-/// Note that in previous versions, the `KeyCode` field referred to the
-/// physical position of the key, rather than the mapped value. In most
-/// cases, applications should dispatch based on the value instead. This
-/// alias is provided to make that transition easy, but in any case make
-/// an explicit choice whether to use meaning or physical location and
-/// use the appropriate type.
-#[deprecated(since = "0.7.0", note = "Use KbKey instead")]
-pub type KeyCode = KbKey;
-
-#[deprecated(since = "0.7.0", note = "Use Modifiers instead")]
-/// See [`Modifiers`](struct.Modifiers.html).
-pub type KeyModifiers = Modifiers;

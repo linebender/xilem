@@ -16,8 +16,9 @@
 
 use std::ops::Range;
 
+use super::FontDescriptor;
 use crate::piet::{Color, FontFamily, FontStyle, FontWeight, TextAttribute as PietAttr};
-use crate::{Env, FontDescriptor, KeyOrValue};
+use crate::{Env, KeyOrValue};
 
 /// A clickable range of text with an associated [`Command`].
 #[derive(Debug, Clone)]

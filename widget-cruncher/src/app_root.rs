@@ -15,15 +15,16 @@ use crate::util::ExtendDrain;
 use crate::widget::{FocusChange, WidgetState};
 use crate::{
     ArcStr, AsWidgetPod, BoxConstraints, Command, Env, Event, EventCtx, Handled, InternalEvent,
-    InternalLifeCycle, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Target, TimerToken, Widget,
-    WidgetId, WidgetPod, WindowId,
+    InternalLifeCycle, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Target, Widget, WidgetId,
+    WidgetPod, WindowId,
 };
 
 use crate::platform::{DialogInfo, EXT_EVENT_IDLE_TOKEN};
 use crate::platform::{PendingWindow, WindowConfig, WindowSizePolicy};
 
 use druid_shell::{
-    text::InputHandler, Application, Cursor, FileDialogToken, Region, TextFieldToken, WindowHandle,
+    text::InputHandler, Application, Cursor, FileDialogToken, Region, TextFieldToken, TimerToken,
+    WindowHandle,
 };
 
 pub(crate) struct AppRoot {

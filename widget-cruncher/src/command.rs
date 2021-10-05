@@ -171,8 +171,10 @@ pub enum Target {
 pub use sys::*;
 
 mod sys {
-    use super::Selector;
-    use crate::{FileInfo, SingleUse, WidgetId, WindowConfig};
+    use super::{Selector, SingleUse};
+    use crate::platform::WindowConfig;
+    use crate::WidgetId;
+    use druid_shell::FileInfo;
     use std::any::Any;
 
     /// Quit the running application. This command is handled by the druid library.

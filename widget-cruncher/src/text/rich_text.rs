@@ -18,12 +18,13 @@ use std::ops::{Range, RangeBounds};
 use std::sync::Arc;
 
 use super::attribute::Link;
+use super::FontDescriptor;
 use super::{Attribute, AttributeSpans, TextStorage};
 use crate::piet::{
     util, Color, FontFamily, FontStyle, FontWeight, PietTextLayoutBuilder, TextLayoutBuilder,
     TextStorage as PietTextStorage,
 };
-use crate::{ArcStr, Data, Env, FontDescriptor, KeyOrValue};
+use crate::{ArcStr, Data, Env, KeyOrValue};
 
 /// Text with optional style spans.
 #[derive(Clone, Debug, Data)]

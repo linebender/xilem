@@ -16,14 +16,14 @@
 
 use smallvec::SmallVec;
 use std::ops::{Deref, DerefMut};
-
-use druid_shell::Cursor;
+use tracing::{trace, trace_span, Span};
 
 use crate::kurbo::Vec2;
+use crate::text::FontDescriptor;
 use crate::text::{TextAlignment, TextLayout};
 use crate::widget::prelude::*;
-use crate::{ArcStr, Color, Data, FontDescriptor, KeyOrValue, Point};
-use tracing::{trace, trace_span, Span};
+use crate::{ArcStr, Color, Data, KeyOrValue, Point};
+use druid_shell::Cursor;
 
 // added padding between the edges of the widget and the text.
 const LABEL_X_PADDING: f64 = 2.0;

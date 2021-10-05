@@ -17,12 +17,17 @@
 use std::path::Path;
 use std::sync::Arc;
 
-use crate::platform::PendingWindow;
-use crate::widget::WidgetState;
 //use crate::ext_event::ExtEventHost;
 use crate::command::CommandQueue;
 use crate::piet::{BitmapTarget, Device, Error, ImageFormat, Piet};
+use crate::platform::PendingWindow;
+use crate::widget::WidgetState;
 use crate::*;
+use druid_shell::{KeyEvent, Modifiers, MouseButton, MouseButtons};
+pub use druid_shell::{
+    RawMods, Region, Scalable, Scale, Screen, SysMods, TimerToken, WindowHandle, WindowLevel,
+    WindowState,
+};
 
 pub const HARNESS_DEFAULT_SIZE: Size = Size::new(400., 400.);
 

@@ -20,7 +20,7 @@ use std::sync::Arc;
 
 use crate::kurbo::{self, ParamCurve};
 use crate::piet;
-use druid_shell::Scale;
+use druid_shell::{Cursor, Scale};
 
 pub use druid_derive::Data;
 use piet::ImageBuf;
@@ -376,6 +376,12 @@ impl<T: Data> Data for std::ops::Bound<T> {
 
 impl Data for Scale {
     fn same(&self, other: &Self) -> bool {
+        self == other
+    }
+}
+
+impl Data for Cursor {
+    fn same(&self, other: &Cursor) -> bool {
         self == other
     }
 }

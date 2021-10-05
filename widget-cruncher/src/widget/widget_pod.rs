@@ -9,13 +9,11 @@ use crate::text::{TextFieldRegistration, TextLayout};
 use crate::util::ExtendDrain;
 use crate::widget::{CursorChange, FocusChange, WidgetState};
 use crate::{
-    ArcStr, BoxConstraints, Color, Command, Cursor, Env, Event, EventCtx, InternalEvent,
-    InternalLifeCycle, LayoutCtx, LifeCycle, LifeCycleCtx, Notification, PaintCtx, Region,
-    RenderContext, Target, TimerToken, Widget, WidgetId,
+    ArcStr, BoxConstraints, Color, Command, Env, Event, EventCtx, InternalEvent, InternalLifeCycle,
+    LayoutCtx, LifeCycle, LifeCycleCtx, Notification, PaintCtx, RenderContext, StatusChange,
+    Target, Widget, WidgetId,
 };
-
-// TODO
-use crate::event::StatusChange;
+use druid_shell::{Cursor, Region, TimerToken};
 
 /// A container for one widget in the hierarchy.
 ///

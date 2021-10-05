@@ -19,7 +19,8 @@
 use crate::piet::Color;
 use crate::piet::{FontFamily, FontStyle, FontWeight};
 
-use crate::{Env, FontDescriptor, Insets, Key};
+use crate::text::FontDescriptor;
+use crate::{Env, Insets, Key};
 
 pub const WINDOW_BACKGROUND_COLOR: Key<Color> =
     Key::new("org.linebender.druid.theme.window_background_color");

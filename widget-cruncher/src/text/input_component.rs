@@ -28,7 +28,8 @@ use super::{
 use crate::kurbo::{Line, Point, Rect, Vec2};
 use crate::piet::TextLayout as _;
 use crate::widget::prelude::*;
-use crate::{text, theme, Cursor, Env, Modifiers, Selector};
+use crate::{text, theme, Env, Selector};
+use druid_shell::{Cursor, Modifiers};
 
 /// A widget that accepts text input.
 ///
@@ -601,7 +602,9 @@ impl<T: TextStorage + EditableText> EditSession<T> {
             .and_then(|txt| txt.slice(self.selection.range()))
         {
             if !text.is_empty() {
-                crate::Application::global().clipboard().put_string(text);
+                druid_shell::Application::global()
+                    .clipboard()
+                    .put_string(text);
                 return true;
             }
         }

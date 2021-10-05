@@ -28,11 +28,10 @@ use crate::platform::WindowDesc;
 use crate::text::{ImeHandlerRef, TextFieldRegistration};
 use crate::widget::{CursorChange, FocusChange, WidgetState};
 use crate::{
-    Affine, Cursor, Env, Insets, Point, Rect, Size, Target, TimerToken, Vec2, Widget, WidgetId,
-    WidgetPod, WindowHandle, WindowId,
+    Affine, Env, Insets, Point, Rect, Size, Target, Vec2, Widget, WidgetId, WidgetPod, WindowId,
 };
 use druid_shell::text::Event as ImeInvalidation;
-use druid_shell::Region;
+use druid_shell::{Cursor, Region, TimerToken, WindowHandle};
 
 /// A macro for implementing methods on multiple contexts.
 ///

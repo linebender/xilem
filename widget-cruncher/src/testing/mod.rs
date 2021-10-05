@@ -31,8 +31,9 @@ mod layout_tests;
 #[cfg(test)]
 mod lifecycle_tests;
 
-use crate::*;
-use kurbo::Vec2;
+use crate::kurbo::{Point, Vec2};
+use crate::{MouseEvent, WidgetId};
+use druid_shell::{KeyEvent, Modifiers, MouseButton, MouseButtons};
 
 /// Helper function to construct a "move to this position" mouse event.
 pub fn move_mouse(p: impl Into<Point>) -> MouseEvent {

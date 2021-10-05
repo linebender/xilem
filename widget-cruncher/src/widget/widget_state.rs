@@ -8,10 +8,10 @@ use crate::text::{TextFieldRegistration, TextLayout};
 use crate::util::ExtendDrain;
 use crate::widget::{CursorChange, FocusChange};
 use crate::{
-    ArcStr, BoxConstraints, Color, Cursor, Env, Event, EventCtx, InternalEvent, InternalLifeCycle,
-    LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Region, RenderContext, TimerToken, Widget,
-    WidgetId,
+    ArcStr, BoxConstraints, Color, Env, Event, EventCtx, InternalEvent, InternalLifeCycle,
+    LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, RenderContext, Widget, WidgetId,
 };
+use druid_shell::{Cursor, Region, TimerToken};
 
 /// Generic state for all widgets in the hierarchy.
 ///

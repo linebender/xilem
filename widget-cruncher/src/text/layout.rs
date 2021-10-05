@@ -17,13 +17,14 @@
 use std::ops::Range;
 use std::rc::Rc;
 
+use super::FontDescriptor;
 use super::{Link, TextStorage};
 use crate::kurbo::{Line, Point, Rect, Size};
 use crate::piet::{
     Color, PietText, PietTextLayout, Text as _, TextAlignment, TextAttribute, TextLayout as _,
     TextLayoutBuilder as _,
 };
-use crate::{Env, FontDescriptor, KeyOrValue, PaintCtx, RenderContext};
+use crate::{Env, KeyOrValue, PaintCtx, RenderContext};
 
 /// A component for displaying text on screen.
 ///
