@@ -294,7 +294,7 @@ impl<W: Widget> WidgetPod<W> {
     pub(crate) fn mark_as_visited(&mut self) {
         #[cfg(debug_assertions)]
         {
-            self.state.was_visited = true;
+            self.state.needs_visit = false;
         }
     }
 
@@ -362,14 +362,14 @@ impl<W: Widget> WidgetPod<W> {
     ) -> Ret {
         #[cfg(debug_assertions)]
         for child in self.inner.children_mut() {
-            child.state_mut().was_visited = false;
+            child.state_mut().needs_visit = true;
         }
 
         let return_value = visit(self);
 
         #[cfg(debug_assertions)]
         for child in self.inner.children() {
-            if !child.state().was_visited {
+            if child.state().needs_visit {
                 debug_panic!(
                     "Error in '{}' #{}: child widget '{}' #{} not visited in method {}",
                     self.widget().short_type_name(),

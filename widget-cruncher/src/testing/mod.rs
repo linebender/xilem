@@ -20,7 +20,9 @@ mod harness;
 mod helper_widgets;
 
 pub use harness::{Harness, HARNESS_DEFAULT_SIZE};
-pub use helper_widgets::{ModularWidget, Record, Recorder, Recording, ReplaceChild, TestWidgetExt};
+pub use helper_widgets::{
+    ModularWidget, Record, Recorder, Recording, ReplaceChild, TestWidgetExt, REPLACE_CHILD,
+};
 
 #[cfg(test)]
 mod invalidation_tests;

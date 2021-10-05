@@ -220,6 +220,13 @@ impl Harness {
         self.process_event(Event::KeyUp(event.clone()));
     }
 
+    /// Send a command to a target.
+    pub fn submit_command(&mut self, command: impl Into<Command>) {
+        let command = command.into().default_to(self.mock_app.window.id.into());
+        let event = Event::Internal(InternalEvent::TargetedCommand(command));
+        self.process_event(event);
+    }
+
     // --- Getters ---
 
     pub fn window(&self) -> &WindowRoot {

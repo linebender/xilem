@@ -244,16 +244,13 @@ impl ReplaceChild {
 
 impl Widget for ReplaceChild {
     fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, env: &Env) {
-        // TODO
-        /*
         if let Event::Command(cmd) = event {
             if cmd.is(REPLACE_CHILD) {
-                self.child = WidgetPod::new((self.replacer)());
+                self.child = (self.replacer)();
                 ctx.children_changed();
                 return;
             }
         }
-        */
         self.child.on_event(ctx, event, env)
     }
 

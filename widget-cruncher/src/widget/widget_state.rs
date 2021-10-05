@@ -122,7 +122,7 @@ pub struct WidgetState {
     // Used in event/lifecycle/etc methods that are expected to be called recursively
     // on a widget's children, to make sure each child was visited.
     #[cfg(debug_assertions)]
-    pub(crate) was_visited: bool,
+    pub(crate) needs_visit: bool,
 }
 
 impl WidgetState {
@@ -159,7 +159,7 @@ impl WidgetState {
             is_explicitly_disabled_new: false,
             text_registrations: Vec::new(),
             update_focus_chain: false,
-            was_visited: false,
+            needs_visit: false,
         }
     }
 

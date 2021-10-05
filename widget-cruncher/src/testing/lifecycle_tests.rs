@@ -666,68 +666,6 @@ fn disable_tree() {
 
 #[cfg(FALSE)]
 #[test]
-fn simple_lifecyle() {
-    let record = Recording::default();
-    let widget = SizedBox::empty().record(&record);
-    Harness::create_simple(true, widget, |harness| {
-        harness.send_initial_events();
-        assert!(matches!(record.next(), Record::L(LifeCycle::WidgetAdded)));
-        assert!(matches!(
-            record.next(),
-            Record::L(LifeCycle::BuildFocusChain)
-        ));
-        assert!(matches!(record.next(), Record::E(Event::WindowConnected)));
-        assert!(matches!(record.next(), Record::E(Event::WindowSize(_))));
-        assert!(record.is_empty());
-    })
-}
-
-#[cfg(FALSE)]
-#[test]
-/// Test that lifecycle events are sent correctly to a child added during event
-/// handling
-fn adding_child_lifecycle() {
-    let record = Recording::default();
-    let record_new_child = Recording::default();
-    let record_new_child2 = record_new_child.clone();
-
-    let replacer = ReplaceChild::new(TextBox::new(), move || {
-        Split::columns(TextBox::new(), TextBox::new().record(&record_new_child2))
-    });
-
-    let widget = Split::columns(Label::new("hi").record(&record), replacer);
-
-    Harness::create_simple(String::new(), widget, |harness| {
-        harness.send_initial_events();
-
-        assert!(matches!(record.next(), Record::L(LifeCycle::WidgetAdded)));
-        assert!(matches!(
-            record.next(),
-            Record::L(LifeCycle::BuildFocusChain)
-        ));
-        assert!(matches!(record.next(), Record::E(Event::WindowConnected)));
-        assert!(record.is_empty());
-
-        assert!(record_new_child.is_empty());
-
-        harness.submit_command(REPLACE_CHILD);
-
-        assert!(matches!(record.next(), Record::E(Event::Command(_))));
-
-        assert!(matches!(
-            record_new_child.next(),
-            Record::L(LifeCycle::WidgetAdded)
-        ));
-        assert!(matches!(
-            record_new_child.next(),
-            Record::L(LifeCycle::BuildFocusChain)
-        ));
-        assert!(record_new_child.is_empty());
-    })
-}
-
-#[cfg(FALSE)]
-#[test]
 fn participate_in_autofocus() {
     let [id_1, id_2, id_3, id_4, id_5, id_6] = widget_ids();
 
