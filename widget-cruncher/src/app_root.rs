@@ -9,6 +9,7 @@ use crate::piet::{Color, Piet, RenderContext};
 
 use crate::command::CommandQueue;
 use crate::contexts::ContextState;
+use crate::ext_event::{ExtEventQueue, ExtEventSink};
 use crate::platform::RUN_COMMANDS_TOKEN;
 use crate::text::TextFieldRegistration;
 use crate::util::ExtendDrain;
@@ -30,6 +31,7 @@ use druid_shell::{
 pub(crate) struct AppRoot {
     pub app: Application,
     pub command_queue: CommandQueue,
+    pub ext_event_queue: ExtEventQueue,
     pub file_dialogs: HashMap<FileDialogToken, DialogInfo>,
     pub windows: Windows,
     /// The id of the most-recently-focused window that has a menu. On macOS, this
@@ -62,6 +64,7 @@ pub struct WindowRoot {
     pub(crate) last_anim: Option<Instant>,
     pub(crate) last_mouse_pos: Option<Point>,
     pub(crate) focus: Option<WidgetId>,
+    pub(crate) ext_event_sink: ExtEventSink,
     pub(crate) handle: WindowHandle,
     pub(crate) timers: HashMap<TimerToken, WidgetId>,
     pub(crate) transparent: bool,
@@ -72,9 +75,9 @@ pub struct WindowRoot {
 // ---
 
 impl Windows {
-    pub fn connect(&mut self, id: WindowId, handle: WindowHandle) {
+    pub fn connect(&mut self, id: WindowId, handle: WindowHandle, ext_event_sink: ExtEventSink) {
         if let Some(pending) = self.pending.remove(&id) {
-            let win = WindowRoot::new(id, handle, pending);
+            let win = WindowRoot::new(id, handle, ext_event_sink, pending);
             assert!(
                 self.active_windows.insert(id, win).is_none(),
                 "duplicate window"
@@ -99,7 +102,14 @@ impl AppRoot {
     }
 
     pub fn connect(&mut self, id: WindowId, handle: WindowHandle) {
-        self.windows.connect(id, handle);
+        self.windows
+            .connect(id, handle, self.ext_event_queue.make_sink());
+
+        // If the external event host has no handle, it cannot wake us
+        // when an event arrives.
+        if self.ext_event_queue.handle_window_id.is_none() {
+            self.set_ext_event_idle_handler(id);
+        }
     }
 
     /// Called after this window has been closed by the platform.
@@ -115,6 +125,32 @@ impl AppRoot {
                     self.app.quit();
                 }
             }
+        }
+
+        // if we are closing the window that is currently responsible for
+        // waking us when external events arrive, we want to pass that responsibility
+        // to another window.
+        if self.ext_event_queue.handle_window_id == Some(window_id) {
+            self.ext_event_queue.handle_window_id = None;
+            // find any other live window
+            let win_id = self.windows.active_windows.keys().find(|k| *k != &window_id);
+            if let Some(any_other_window) = win_id.cloned() {
+                self.set_ext_event_idle_handler(any_other_window);
+            }
+        }
+    }
+
+    /// Set the idle handle that will be used to wake us when external events arrive.
+    pub fn set_ext_event_idle_handler(&mut self, id: WindowId) {
+        if let Some(mut idle) = self
+            .windows
+            .active_windows.get_mut(&id)
+            .and_then(|win| win.handle.get_idle_handle())
+        {
+            if self.ext_event_queue.has_pending_items() {
+                idle.schedule_idle(EXT_EVENT_IDLE_TOKEN);
+            }
+            self.ext_event_queue.set_idle(idle, id);
         }
     }
 
@@ -308,7 +344,12 @@ impl AppRoot {
 // ---
 
 impl WindowRoot {
-    pub(crate) fn new(id: WindowId, handle: WindowHandle, pending: PendingWindow) -> WindowRoot {
+    pub(crate) fn new(
+        id: WindowId,
+        handle: WindowHandle,
+        ext_event_sink: ExtEventSink,
+        pending: PendingWindow,
+    ) -> WindowRoot {
         WindowRoot {
             id,
             root: WidgetPod::new(pending.root),
@@ -320,6 +361,7 @@ impl WindowRoot {
             last_anim: None,
             last_mouse_pos: None,
             focus: None,
+            ext_event_sink,
             handle,
             timers: HashMap::new(),
             ime_handlers: Vec::new(),
@@ -459,7 +501,13 @@ impl WindowRoot {
 
         let mut widget_state = WidgetState::new(self.root.id(), Some(self.size), "<root>");
         let is_handled = {
-            let mut global_state = ContextState::new(queue, &self.handle, self.id, self.focus);
+            let mut global_state = ContextState::new(
+                self.ext_event_sink.clone(),
+                queue,
+                &self.handle,
+                self.id,
+                self.focus,
+            );
             let mut notifications = VecDeque::new();
 
             let mut ctx = EventCtx {
@@ -526,7 +574,13 @@ impl WindowRoot {
         process_commands: bool,
     ) {
         let mut widget_state = WidgetState::new(self.root.id(), Some(self.size), "<root>");
-        let mut global_state = ContextState::new(queue, &self.handle, self.id, self.focus);
+        let mut global_state = ContextState::new(
+            self.ext_event_sink.clone(),
+            queue,
+            &self.handle,
+            self.id,
+            self.focus,
+        );
         let mut ctx = LifeCycleCtx {
             global_state: &mut global_state,
             widget_state: &mut widget_state,
@@ -605,7 +659,13 @@ impl WindowRoot {
 
     pub(crate) fn layout(&mut self, queue: &mut CommandQueue, env: &Env) {
         let mut widget_state = WidgetState::new(self.root.id(), Some(self.size), "<root>");
-        let mut global_state = ContextState::new(queue, &self.handle, self.id, self.focus);
+        let mut global_state = ContextState::new(
+            self.ext_event_sink.clone(),
+            queue,
+            &self.handle,
+            self.id,
+            self.focus,
+        );
         let mut layout_ctx = LayoutCtx {
             global_state: &mut global_state,
             widget_state: &mut widget_state,
@@ -643,7 +703,13 @@ impl WindowRoot {
 
     fn paint(&mut self, piet: &mut Piet, invalid: &Region, queue: &mut CommandQueue, env: &Env) {
         let widget_state = WidgetState::new(self.root.id(), Some(self.size), "<root>");
-        let mut global_state = ContextState::new(queue, &self.handle, self.id, self.focus);
+        let mut global_state = ContextState::new(
+            self.ext_event_sink.clone(),
+            queue,
+            &self.handle,
+            self.id,
+            self.focus,
+        );
         let mut ctx = PaintCtx {
             render_ctx: piet,
             global_state: &mut global_state,

@@ -1,3 +1,4 @@
+use crate::ext_event::{ExtEventQueue, ExtEventSink};
 use crate::platform::WindowDesc;
 use crate::platform::{AppHandler, AppState};
 use crate::Env;
@@ -7,6 +8,7 @@ use druid_shell::{Application, Error as PlatformError};
 /// Handles initial setup of an application, and starts the runloop.
 pub struct AppLauncher {
     windows: Vec<WindowDesc>,
+    ext_event_queue: ExtEventQueue,
 }
 
 impl AppLauncher {
@@ -14,6 +16,7 @@ impl AppLauncher {
     pub fn with_window(window: WindowDesc) -> Self {
         AppLauncher {
             windows: vec![window],
+            ext_event_queue: ExtEventQueue::new(),
         }
     }
 
@@ -53,6 +56,12 @@ impl AppLauncher {
         self
     }
 
+    /// Returns an [`ExtEventSink`] that can be moved between threads,
+    /// and can be used to submit commands back to the application.
+    pub fn get_external_handle(&self) -> ExtEventSink {
+        self.ext_event_queue.make_sink()
+    }
+
     /// Build the windows and start the runloop.
     ///
     /// Returns an error if a window cannot be instantiated. This is usually
@@ -60,7 +69,7 @@ impl AppLauncher {
     pub fn launch(mut self) -> Result<(), PlatformError> {
         let app = Application::new()?;
 
-        let mut state = AppState::new(app.clone(), Env::with_theme());
+        let mut state = AppState::new(app.clone(), self.ext_event_queue, Env::with_theme());
 
         for desc in self.windows {
             let window = desc.build_native(&mut state)?;

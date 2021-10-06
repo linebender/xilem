@@ -19,6 +19,7 @@ use std::sync::Arc;
 
 //use crate::ext_event::ExtEventHost;
 use crate::command::CommandQueue;
+use crate::ext_event::ExtEventQueue;
 use crate::piet::{BitmapTarget, Device, Error, ImageFormat, Piet};
 use crate::platform::PendingWindow;
 use crate::widget::WidgetState;
@@ -76,8 +77,16 @@ impl Harness {
         //let ext_host = ExtEventHost::default();
         //let ext_handle = ext_host.make_sink();
 
+        // FIXME
+        let event_queue = ExtEventQueue::new();
+
         let pending = PendingWindow::new(root);
-        let window = WindowRoot::new(WindowId::next(), Default::default(), pending);
+        let window = WindowRoot::new(
+            WindowId::next(),
+            Default::default(),
+            event_queue.make_sink(),
+            pending,
+        );
 
         let mouse_state = MouseEvent {
             pos: Point::ZERO,

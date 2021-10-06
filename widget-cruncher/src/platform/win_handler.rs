@@ -23,6 +23,7 @@ use crate::kurbo::Size;
 use crate::piet::Piet;
 
 use crate::command as sys_cmd;
+use crate::ext_event::{ExtEventQueue, ExtEventSink};
 use crate::{
     Command, Env, Event, Handled, InternalEvent, PlatformError, Selector, Target, WindowId,
 };
@@ -64,6 +65,7 @@ pub(crate) struct AppHandler {
     app_state: AppState,
 }
 
+// TODO - rename SharedAppState
 /// State shared by all windows in the UI.
 #[derive(Clone)]
 pub(crate) struct AppState {
@@ -87,10 +89,11 @@ impl AppHandler {
 }
 
 impl AppState {
-    pub(crate) fn new(app: Application, env: Env) -> Self {
+    pub(crate) fn new(app: Application, ext_event_queue: ExtEventQueue, env: Env) -> Self {
         let inner = Rc::new(RefCell::new(AppRoot {
             app,
             command_queue: VecDeque::new(),
+            ext_event_queue,
             file_dialogs: HashMap::new(),
             menu_window: None,
             env,
@@ -172,7 +175,7 @@ impl AppState {
                 self.inner.borrow_mut().invalidate_and_finalize();
             }
             EXT_EVENT_IDLE_TOKEN => {
-                //self.process_ext_events();
+                self.process_ext_events();
                 self.process_commands();
                 //self.inner.borrow_mut().do_update();
                 self.inner.borrow_mut().invalidate_and_finalize();
@@ -185,6 +188,16 @@ impl AppState {
         loop {
             let next_cmd = self.inner.borrow_mut().command_queue.pop_front();
             match next_cmd {
+                Some(cmd) => self.handle_cmd(cmd),
+                None => break,
+            }
+        }
+    }
+
+    fn process_ext_events(&mut self) {
+        loop {
+            let ext_cmd = self.inner.borrow_mut().ext_event_queue.recv();
+            match ext_cmd {
                 Some(cmd) => self.handle_cmd(cmd),
                 None => break,
             }
