@@ -464,8 +464,7 @@ impl<W: Widget> WidgetPod<W> {
     ///
     /// [`event`]: trait.Widget.html#tymethod.event
     pub fn on_event(&mut self, parent_ctx: &mut EventCtx, event: &Event, env: &Env) {
-        let _span = self.inner.make_trace_span();
-        let _span = _span.enter();
+        let _span = self.inner.make_trace_span().entered();
 
         // TODO - explain this
         self.mark_as_visited();
@@ -704,8 +703,7 @@ impl<W: Widget> WidgetPod<W> {
     ///
     /// [`LifeCycle`]: enum.LifeCycle.html
     pub fn lifecycle(&mut self, parent_ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
-        let _span = self.inner.make_trace_span();
-        let _span = _span.enter();
+        let _span = self.inner.make_trace_span().entered();
 
         // TODO - explain this
         self.mark_as_visited();
@@ -860,10 +858,8 @@ impl<W: Widget> WidgetPod<W> {
                 is_init: false,
             };
 
-            // We add a span so that inner logs are marked as being in a lifecycle pass
-            let _span = info_span!("on_status_change");
-            let _span = _span.enter();
-
+            // We add a span so that inner logs are marked as being in an on_status_change pass
+            let _span = info_span!("on_status_change").entered();
             self.inner.on_status_change(&mut inner_ctx, event, env);
         }
 
@@ -927,8 +923,7 @@ impl<W: Widget> WidgetPod<W> {
     ///
     /// [`layout`]: trait.Widget.html#tymethod.layout
     pub fn layout(&mut self, parent_ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
-        let _span = self.inner.make_trace_span();
-        let _span = _span.enter();
+        let _span = self.inner.make_trace_span().entered();
 
         // TODO - explain this
         self.mark_as_visited();
@@ -1059,8 +1054,7 @@ impl<W: Widget> WidgetPod<W> {
 
     /// Shared implementation that can skip drawing non-visible content.
     fn paint_impl(&mut self, parent_ctx: &mut PaintCtx, env: &Env, paint_if_not_visible: bool) {
-        let _span = self.inner.make_trace_span();
-        let _span = _span.enter();
+        let _span = self.inner.make_trace_span().entered();
 
         // TODO - explain this
         self.mark_as_visited();

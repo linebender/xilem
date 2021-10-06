@@ -55,7 +55,7 @@ image-all = ["image", "svg", "png", "jpeg", "jpeg_rayon", "gif", "bmp", "ico", "
 druid-shell = { version = "0.7.0", default-features = false, path = "../druid-shell" }
 druid-derive = { version = "0.4.0", path = "../druid-derive" }
 
-tracing = { version = "0.1.22" }
+tracing = "0.1.29"
 tracing-subscriber = { version = "0.2.15", features = ["fmt", "ansi"], default-features = false }
 fluent-bundle = "0.15.1"
 fluent-langneg = "0.13.0"

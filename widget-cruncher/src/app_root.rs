@@ -520,8 +520,7 @@ impl WindowRoot {
             };
 
             {
-                let _span = info_span!("event");
-                let _span = _span.enter();
+                let _span = info_span!("event").entered();
                 self.root.on_event(&mut ctx, &event, env);
             }
 
@@ -588,8 +587,7 @@ impl WindowRoot {
         };
 
         {
-            let _span = info_span!("lifecycle");
-            let _span = _span.enter();
+            let _span = info_span!("lifecycle").entered();
             self.root.lifecycle(&mut ctx, event, env);
         }
 
@@ -678,8 +676,7 @@ impl WindowRoot {
         };
 
         let content_size = {
-            let _span = info_span!("layout");
-            let _span = _span.enter();
+            let _span = info_span!("layout").entered();
             self.root.layout(&mut layout_ctx, &bc, env)
         };
 
