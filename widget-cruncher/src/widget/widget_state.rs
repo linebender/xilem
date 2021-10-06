@@ -100,9 +100,6 @@ pub struct WidgetState {
     /// Any descendant has requested an animation frame.
     pub(crate) request_anim: bool,
 
-    /// Any descendant has requested update.
-    pub(crate) request_update: bool,
-
     pub(crate) update_focus_chain: bool,
 
     pub(crate) focus_chain: Vec<WidgetId>,
@@ -152,7 +149,6 @@ impl WidgetState {
             has_active: false,
             has_focus: false,
             request_anim: false,
-            request_update: false,
             request_focus: None,
             focus_chain: Vec::new(),
             children: Bloom::new(),
@@ -215,7 +211,6 @@ impl WidgetState {
         self.has_active |= child_state.has_active;
         self.has_focus |= child_state.has_focus;
         self.children_changed |= child_state.children_changed;
-        self.request_update |= child_state.request_update;
         self.request_focus = child_state.request_focus.take().or(self.request_focus);
         self.timers.extend_drain(&mut child_state.timers);
         self.text_registrations

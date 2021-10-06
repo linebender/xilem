@@ -20,7 +20,7 @@ use tracing::{trace, trace_span, warn, Span};
 
 use crate::widget::prelude::*;
 use crate::widget::{WidgetId, WidgetPod};
-use crate::Data;
+use crate::{Data, Point};
 
 /// A widget with predefined size.
 ///
@@ -163,9 +163,14 @@ impl Widget for SizedBox {
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
         ctx.init();
         let child_bc = self.child_constraints(bc);
-        let size = match self.child.as_mut() {
-            Some(child) => child.layout(ctx, &child_bc, env),
-            None => bc.constrain((self.width.unwrap_or(0.0), self.height.unwrap_or(0.0))),
+
+        let size;
+        match self.child.as_mut() {
+            Some(child) => {
+                size = child.layout(ctx, &child_bc, env);
+                child.set_origin(ctx, env, Point::ORIGIN);
+            }
+            None => size = bc.constrain((self.width.unwrap_or(0.0), self.height.unwrap_or(0.0))),
         };
 
         trace!("Computed size: {}", size);

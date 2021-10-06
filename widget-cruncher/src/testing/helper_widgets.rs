@@ -292,7 +292,6 @@ impl Recording {
         self.0.borrow().is_empty()
     }
 
-    #[allow(dead_code)]
     pub fn len(&self) -> usize {
         self.0.borrow().len()
     }
@@ -308,13 +307,9 @@ impl Recording {
         self.0.borrow_mut().pop_front().unwrap_or(Record::None)
     }
 
-    /// Returns an iterator of events drained from the recording.
-    pub fn drain(&self) -> impl Iterator<Item = Record> {
-        self.0
-            .borrow_mut()
-            .drain(..)
-            .collect::<Vec<_>>()
-            .into_iter()
+    /// Returns a vec of events drained from the recording.
+    pub fn drain(&self) -> Vec<Record> {
+        self.0.borrow_mut().drain(..).collect::<Vec<_>>()
     }
 
     fn push(&self, event: Record) {

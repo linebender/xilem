@@ -3,6 +3,7 @@ use crate::testing::{
 };
 use crate::widget::{Flex, Label, SizedBox};
 use crate::*;
+use insta::assert_debug_snapshot;
 use test_env_log::test;
 
 #[test]
@@ -12,14 +13,8 @@ fn app_creation() {
 
     let _harness = Harness::create(widget);
 
-    assert!(matches!(record.next(), Record::L(LifeCycle::WidgetAdded)));
-    assert!(matches!(
-        record.next(),
-        Record::L(LifeCycle::BuildFocusChain)
-    ));
-    assert!(matches!(record.next(), Record::E(Event::WindowConnected)));
-    assert!(matches!(record.next(), Record::E(Event::WindowSize(_))));
-    assert!(record.is_empty());
+    let record = record.drain();
+    assert_debug_snapshot!(record);
 }
 
 /// Test that lifecycle events are sent correctly to a child added during event
@@ -48,15 +43,8 @@ fn adding_child() {
     harness.submit_command(REPLACE_CHILD);
     assert!(matches!(record.next(), Record::E(Event::Command(_))));
 
-    assert!(matches!(
-        dbg!(record_new_child.next()),
-        Record::L(LifeCycle::WidgetAdded)
-    ));
-    assert!(matches!(
-        record_new_child.next(),
-        Record::L(LifeCycle::BuildFocusChain)
-    ));
-    assert!(record_new_child.is_empty());
+    let record_new_child = record_new_child.drain();
+    assert_debug_snapshot!(record_new_child);
 }
 
 #[test]

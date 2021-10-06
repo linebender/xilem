@@ -292,7 +292,7 @@ impl<T: TextStorage + EditableText> Widget for TextComponent<T> {
                     .do_mouse_down(mouse.pos, mouse.mods, mouse.count);
                 self.borrow_mut()
                     .update_pending_invalidation(ImeInvalidation::SelectionChanged);
-                ctx.request_update();
+                ctx.request_layout();
                 ctx.request_paint();
             }
             Event::MouseMove(mouse) if self.can_write() => {
@@ -304,7 +304,7 @@ impl<T: TextStorage + EditableText> Widget for TextComponent<T> {
                         if self.borrow().selection() != pre_sel {
                             self.borrow_mut()
                                 .update_pending_invalidation(ImeInvalidation::SelectionChanged);
-                            ctx.request_update();
+                            ctx.request_layout();
                             ctx.request_paint();
                         }
                     }
@@ -354,7 +354,7 @@ impl<T: TextStorage + EditableText> Widget for TextComponent<T> {
                     self.borrow_mut().selection = selection;
                     ctx.request_paint();
                 }
-                ctx.request_update();
+                ctx.request_layout();
             }
             _ => (),
         }

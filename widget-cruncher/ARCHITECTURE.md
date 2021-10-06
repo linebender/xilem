@@ -1,8 +1,5 @@
 ## TODO REFACTOR
 
-- Re-read a ton of files
-
-- Check invariants better
 - Do some fuzzing
 - Centralize event displaying
 - Screenshots

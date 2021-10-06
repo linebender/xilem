@@ -127,6 +127,8 @@ impl Harness {
                 None => break,
             }
         }
+
+        self.mock_app.layout();
     }
 
     /// Create a Piet bitmap render context (an array of pixels), paint the

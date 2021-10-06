@@ -513,6 +513,8 @@ impl WindowRoot {
 
         self.post_event_processing(&mut widget_state, queue, env, false);
 
+        self.root.debug_validate(false);
+
         is_handled
     }
 

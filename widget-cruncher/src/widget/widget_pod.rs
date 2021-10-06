@@ -48,6 +48,8 @@ pub trait AsWidgetPod {
     fn children_mut(&mut self) -> SmallVec<[&mut dyn AsWidgetPod; 16]>;
     fn find_widget_by_id(&self, id: WidgetId) -> Option<&dyn AsWidgetPod>;
     fn find_widget_at_pos(&self, pos: Point) -> Option<&dyn AsWidgetPod>;
+
+    fn debug_validate(&self, after_layout: bool);
 }
 
 // ---
@@ -334,6 +336,57 @@ impl<W: Widget> WidgetPod<W> {
         false
     }
 
+    // can only be called after on_event and lifecycle
+    // checks that basic invariants are held
+    fn debug_validate(&self, after_layout: bool) {
+        if cfg!(not(debug_assertions)) {
+            return;
+        }
+
+        if self.state.is_new {
+            debug_panic!(
+                "Widget '{}' #{} is invalid: widget did not receive WidgetAdded",
+                self.widget().short_type_name(),
+                self.state().id.to_raw(),
+            );
+        }
+
+        if self.state.request_anim
+            || self.state.request_focus.is_some()
+            || self.state.children_changed
+            || !self.state.timers.is_empty()
+            || self.state.cursor.is_some()
+        {
+            debug_panic!(
+                "Widget '{}' #{} is invalid: widget state not cleared",
+                self.widget().short_type_name(),
+                self.state().id.to_raw(),
+            );
+        }
+
+        if after_layout && (self.state.needs_layout || self.state.needs_window_origin) {
+            debug_panic!(
+                "Widget '{}' #{} is invalid: widget layout state not cleared",
+                self.widget().short_type_name(),
+                self.state().id.to_raw(),
+            );
+        }
+
+        for child in self.inner.children() {
+            child.debug_validate(after_layout);
+
+            if !self.state.children.may_contain(&child.state().id) {
+                debug_panic!(
+                    "Widget '{}' #{} is invalid: child widget '{}' #{} not registered in children filter",
+                    self.widget().short_type_name(),
+                    self.state().id.to_raw(),
+                    child.widget().short_type_name(),
+                    child.state().id.to_raw(),
+                );
+            }
+        }
+    }
+
     fn recurse_pass<Ret>(
         &mut self,
         pass_name: &str,
@@ -417,16 +470,6 @@ impl<W: Widget> WidgetPod<W> {
         // TODO - explain this
         self.mark_as_visited();
         self.check_initialized("on_event");
-
-        // log if we seem not to be laid out when we should be
-        if self.state.is_expecting_set_origin_call && !event.should_propagate_to_hidden() {
-            warn!(
-                "{:?} received an event ({:?}) without having been laid out. \
-                This likely indicates a missed call to set_origin.",
-                parent_ctx.widget_id(),
-                event,
-            );
-        }
 
         if parent_ctx.is_handled {
             // If the event was already handled, we quit early.
@@ -902,6 +945,12 @@ impl<W: Widget> WidgetPod<W> {
             .map(|pos| pos - self.layout_rect().origin().to_vec2() + self.viewport_offset());
         let prev_size = self.state.size;
 
+        if cfg!(debug_assertions) {
+            for child in self.inner.children_mut() {
+                child.state_mut().is_expecting_set_origin_call = false;
+            }
+        }
+
         let new_size = self.call_widget_method_with_checks("layout", |widget_pod| {
             // widget_pod is a reborrow of `self`
 
@@ -914,6 +963,20 @@ impl<W: Widget> WidgetPod<W> {
 
             widget_pod.inner.layout(&mut inner_ctx, bc, env)
         });
+
+        if cfg!(debug_assertions) {
+            for child in self.inner.children() {
+                if child.state().is_expecting_set_origin_call {
+                    debug_panic!(
+                        "Error in '{}' #{}: missing call to set_origin method for child widget '{}' #{}. During layout pass, if a widget calls WidgetPod::layout() on its child, it then needs to call WidgetPod::set_origin() on the same child.",
+                        self.widget().short_type_name(),
+                        self.state().id.to_raw(),
+                        child.widget().short_type_name(),
+                        child.state().id.to_raw(),
+                    );
+                }
+            }
+        }
 
         parent_ctx.widget_state.merge_up(&mut self.state);
         self.state.size = new_size;
@@ -1095,6 +1158,10 @@ impl<W: Widget> AsWidgetPod for WidgetPod<W> {
 
     fn find_widget_at_pos(&self, pos: Point) -> Option<&dyn AsWidgetPod> {
         WidgetPod::find_widget_at_pos(self, pos)
+    }
+
+    fn debug_validate(&self, after_layout: bool) {
+        WidgetPod::debug_validate(self, after_layout)
     }
 }
 

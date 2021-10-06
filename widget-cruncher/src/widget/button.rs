@@ -15,7 +15,7 @@
 //! A button widget.
 
 use crate::widget::prelude::*;
-use crate::widget::{Label,WidgetPod};
+use crate::widget::{Label, WidgetPod};
 use crate::{theme, Affine, ArcStr, Insets, LinearGradient, UnitPoint};
 use smallvec::SmallVec;
 use tracing::{trace, trace_span, Span};

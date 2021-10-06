@@ -1,0 +1,21 @@
+---
+source: widget-cruncher/src/widget/tests/lifecycle_basic.rs
+expression: record_new_child
+
+---
+[
+    L(
+        WidgetAdded,
+    ),
+    L(
+        BuildFocusChain,
+    ),
+    Layout(
+        4.0W×18.0H,
+    ),
+    L(
+        Internal(
+            ParentWindowOrigin,
+        ),
+    ),
+]
