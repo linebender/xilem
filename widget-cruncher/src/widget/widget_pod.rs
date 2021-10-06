@@ -728,7 +728,7 @@ impl<W: Widget> WidgetPod<W> {
                         return;
                     } else {
                         if self.state.children_changed {
-                            // Separate "widget removed" case.
+                            // TODO - Separate "widget removed" case.
                             self.state.children.clear();
                         }
                         self.state.children_changed
