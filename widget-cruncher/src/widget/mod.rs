@@ -18,6 +18,7 @@ mod button;
 mod flex;
 mod label;
 mod sized_box;
+mod spinner;
 //mod checkbox;
 //mod click;
 //mod textbox;

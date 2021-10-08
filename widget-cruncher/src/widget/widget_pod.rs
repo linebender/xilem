@@ -611,6 +611,9 @@ impl<W: Widget> WidgetPod<W> {
                     false
                 }
             }
+            // TODO - switch anim frames to being about age / an absolute timestamp
+            // instead of time elapsed.
+            // (this will help in cases where we want to skip anim frames)
             Event::AnimFrame(_) => {
                 let r = self.state.request_anim;
                 self.state.request_anim = false;
