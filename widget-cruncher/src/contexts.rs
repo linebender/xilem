@@ -200,6 +200,18 @@ impl_context_method!(
             &mut self.global_state.text
         }
 
+        pub fn run_in_background(
+            &mut self,
+            background_task: impl FnOnce(ExtEventSink) + Send + 'static,
+        ) {
+            use std::{thread, time};
+
+            let ext_event_sink = self.global_state.ext_event_sink.clone();
+            thread::spawn(move || {
+                background_task(ext_event_sink);
+            });
+        }
+
         // TODO - document
         pub fn skip_child<W: Widget>(&self, child: &mut WidgetPod<W>) {
             child.mark_as_visited();
