@@ -13,6 +13,13 @@ use crate::{
 };
 use druid_shell::{Cursor, Region, TimerToken};
 
+// TODO - Make a note documenting this: the only way to get a &mut WidgetState should be in a pass.
+// A pass should reborrow the parent widget state (to avoid crossing wires) and call merge_up at
+// the end so that invalidations are always bubbled up.
+// Widgets with methods that require invalidation (eg Label::set_text) should take a
+// &mut WidgetState as a parameter. Because passes reborrow the parent WidgetState, the only
+// way to call such a method is during a pass on the given widget.
+
 /// Generic state for all widgets in the hierarchy.
 ///
 /// This struct contains the widget's layout rect, flags
