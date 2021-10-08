@@ -70,7 +70,8 @@ pub(crate) struct ContextState<'a> {
 /// [`request_paint`]: #method.request_paint
 pub struct EventCtx<'a, 'b> {
     pub(crate) global_state: &'a mut ContextState<'b>,
-    pub(crate) widget_state: &'a mut WidgetState,
+    // FIXME
+    pub widget_state: &'a mut WidgetState,
     pub(crate) is_init: bool,
     pub(crate) notifications: &'a mut VecDeque<Notification>,
     pub(crate) is_handled: bool,
@@ -204,6 +205,8 @@ impl_context_method!(
             &mut self,
             background_task: impl FnOnce(ExtEventSink) + Send + 'static,
         ) {
+            self.check_init("run_in_background");
+
             use std::{thread, time};
 
             let ext_event_sink = self.global_state.ext_event_sink.clone();

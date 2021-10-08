@@ -351,8 +351,7 @@ impl<W: Widget> WidgetPod<W> {
             );
         }
 
-        if self.state.request_anim
-            || self.state.request_focus.is_some()
+        if self.state.request_focus.is_some()
             || self.state.children_changed
             || !self.state.timers.is_empty()
             || self.state.cursor.is_some()
@@ -387,7 +386,7 @@ impl<W: Widget> WidgetPod<W> {
         }
     }
 
-    fn recurse_pass<Ret>(
+    pub fn recurse_pass<Ret>(
         &mut self,
         pass_name: &str,
         parent_state: &mut WidgetState,
@@ -408,6 +407,8 @@ impl<W: Widget> WidgetPod<W> {
         for child in self.inner.children_mut() {
             child.state_mut().needs_visit = true;
         }
+
+        // TODO - children_changed
 
         let return_value = visit(self);
 
@@ -1027,7 +1028,7 @@ impl<W: Widget> WidgetPod<W> {
             };
             widget_pod.inner.paint(&mut inner_ctx, env);
 
-            let debug_ids = inner_ctx.is_hot() && env.get(Env::DEBUG_WIDGET_ID);
+            let debug_ids = widget_pod.state.is_hot && env.get(Env::DEBUG_WIDGET_ID);
             if debug_ids {
                 // this also draws layout bounds
                 widget_pod.debug_paint_widget_ids(&mut inner_ctx, env);

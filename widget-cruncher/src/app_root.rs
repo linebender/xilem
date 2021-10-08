@@ -133,7 +133,11 @@ impl AppRoot {
         if self.ext_event_queue.handle_window_id == Some(window_id) {
             self.ext_event_queue.handle_window_id = None;
             // find any other live window
-            let win_id = self.windows.active_windows.keys().find(|k| *k != &window_id);
+            let win_id = self
+                .windows
+                .active_windows
+                .keys()
+                .find(|k| *k != &window_id);
             if let Some(any_other_window) = win_id.cloned() {
                 self.set_ext_event_idle_handler(any_other_window);
             }
@@ -144,7 +148,8 @@ impl AppRoot {
     pub fn set_ext_event_idle_handler(&mut self, id: WindowId) {
         if let Some(mut idle) = self
             .windows
-            .active_windows.get_mut(&id)
+            .active_windows
+            .get_mut(&id)
             .and_then(|win| win.handle.get_idle_handle())
         {
             if self.ext_event_queue.has_pending_items() {

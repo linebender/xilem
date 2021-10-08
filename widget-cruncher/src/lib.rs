@@ -50,7 +50,7 @@ mod contexts;
 mod data;
 pub mod env;
 mod event;
-mod ext_event;
+pub mod ext_event;
 mod mouse;
 mod platform;
 pub mod testing;

@@ -41,6 +41,7 @@ pub use button::Button;
 pub use flex::{Axis, CrossAxisAlignment, Flex, FlexParams, MainAxisAlignment};
 pub use label::{Label, LineBreaking};
 pub use sized_box::SizedBox;
+pub use spinner::Spinner;
 
 //#[doc(hidden)]
 //pub use widget_ext::WidgetExt;

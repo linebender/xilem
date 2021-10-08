@@ -288,6 +288,7 @@ impl Flex {
         };
         self.children.push(child);
         // TODO
+        widget_state.children_changed = true;
         widget_state.needs_layout = true;
     }
 
@@ -303,6 +304,7 @@ impl Flex {
         };
         self.children.push(child);
         // TODO
+        widget_state.children_changed = true;
         widget_state.needs_layout = true;
     }
 
@@ -353,6 +355,7 @@ impl Flex {
         };
         self.children.push(child);
         // TODO
+        widget_state.children_changed = true;
         widget_state.needs_layout = true;
     }
 
