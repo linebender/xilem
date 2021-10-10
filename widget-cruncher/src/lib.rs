@@ -53,6 +53,7 @@ mod event;
 pub mod ext_event;
 mod mouse;
 mod platform;
+pub mod promise;
 pub mod testing;
 pub mod text;
 pub mod theme;

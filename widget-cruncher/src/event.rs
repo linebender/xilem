@@ -21,6 +21,9 @@ use druid_shell::{Clipboard, KeyEvent, TimerToken};
 use crate::mouse::MouseEvent;
 use crate::{Command, Notification, WidgetId};
 
+// TODO
+use crate::promise::PromiseResult;
+
 /// An event, propagated downwards during event flow.
 ///
 /// With two exceptions ([`Event::Command`] and [`Event::Notification`], which
@@ -192,6 +195,8 @@ pub enum Event {
     /// [`EventCtx::set_handled`]: crate::EventCtx::set_handled
     Notification(Notification),
 
+    PromiseResult(PromiseResult),
+
     /// Sent to a widget when the platform may have mutated shared IME state.
     ///
     /// This is sent to a widget that has an attached IME session anytime the
@@ -230,6 +235,8 @@ pub enum InternalEvent {
 
     /// Used for routing timer events.
     RouteTimer(TimerToken, WidgetId),
+
+    RoutePromiseResult(PromiseResult, WidgetId),
 
     /// Route an IME change event.
     RouteImeStateChange(WidgetId),
@@ -433,6 +440,7 @@ impl Event {
             | Event::Timer(_)
             | Event::AnimFrame(_)
             | Event::Command(_)
+            | Event::PromiseResult(_)
             | Event::Notification(_)
             | Event::Internal(_) => true,
             Event::MouseDown(_)

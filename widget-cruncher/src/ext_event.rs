@@ -8,10 +8,15 @@ use std::sync::{Arc, Mutex};
 
 use crate::command::SelectorSymbol;
 use crate::platform::EXT_EVENT_IDLE_TOKEN;
+use crate::promise::PromiseResult;
+use crate::widget::WidgetId;
 use crate::{Command, Data, DruidHandler, Selector, Target, WindowId};
 use druid_shell::IdleHandle;
 
-pub(crate) type ExtCommand = (SelectorSymbol, Box<dyn Any + Send>, Target);
+pub(crate) enum ExtMessage {
+    Command(SelectorSymbol, Box<dyn Any + Send>, Target),
+    Promise(PromiseResult, WidgetId, WindowId),
+}
 
 /// A thing that can move into other threads and be used to submit commands back
 /// to the running application.
@@ -19,7 +24,7 @@ pub(crate) type ExtCommand = (SelectorSymbol, Box<dyn Any + Send>, Target);
 /// This API is preliminary, and may be changed or removed without warning.
 #[derive(Clone)]
 pub struct ExtEventSink {
-    queue: Arc<Mutex<VecDeque<ExtCommand>>>,
+    queue: Arc<Mutex<VecDeque<ExtMessage>>>,
     handle: Arc<Mutex<Option<IdleHandle>>>,
 }
 
@@ -28,7 +33,7 @@ pub struct ExtEventSink {
 #[derive(Default)]
 pub(crate) struct ExtEventQueue {
     /// A shared queue of items that have been sent to us.
-    queue: Arc<Mutex<VecDeque<ExtCommand>>>,
+    queue: Arc<Mutex<VecDeque<ExtMessage>>>,
     /// This doesn't exist when the app starts and it can go away if a window closes, so we keep a
     /// reference here and can update it when needed. Note that this reference is shared with all
     /// `ExtEventSink`s, so that we can update them too.
@@ -64,12 +69,8 @@ impl ExtEventQueue {
         !self.queue.lock().unwrap().is_empty()
     }
 
-    pub(crate) fn recv(&mut self) -> Option<Command> {
-        self.queue
-            .lock()
-            .unwrap()
-            .pop_front()
-            .map(|(selector, payload, target)| Command::from_ext(selector, payload, target))
+    pub(crate) fn recv(&mut self) -> Option<ExtMessage> {
+        self.queue.lock().unwrap().pop_front()
     }
 }
 
@@ -99,11 +100,26 @@ impl ExtEventSink {
         if let Some(handle) = self.handle.lock().unwrap().as_mut() {
             handle.schedule_idle(EXT_EVENT_IDLE_TOKEN);
         }
-        self.queue.lock().map_err(|_| ExtEventError)?.push_back((
-            selector.symbol(),
-            payload,
-            target,
-        ));
+        self.queue
+            .lock()
+            .map_err(|_| ExtEventError)?
+            .push_back(ExtMessage::Command(selector.symbol(), payload, target));
+        Ok(())
+    }
+
+    pub fn resolve_promise(
+        &self,
+        result: PromiseResult,
+        target_widget: WidgetId,
+        target_window: WindowId,
+    ) -> Result<(), ExtEventError> {
+        if let Some(handle) = self.handle.lock().unwrap().as_mut() {
+            handle.schedule_idle(EXT_EVENT_IDLE_TOKEN);
+        }
+        self.queue
+            .lock()
+            .map_err(|_| ExtEventError)?
+            .push_back(ExtMessage::Promise(result, target_widget, target_window));
         Ok(())
     }
 }

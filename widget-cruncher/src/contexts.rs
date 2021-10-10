@@ -27,6 +27,7 @@ use crate::env::KeyLike;
 use crate::ext_event::ExtEventSink;
 use crate::piet::{Piet, PietText, RenderContext};
 use crate::platform::WindowDesc;
+use crate::promise::{PromiseToken, PromiseTokenId};
 use crate::text::{ImeHandlerRef, TextFieldRegistration};
 use crate::widget::{CursorChange, FocusChange, WidgetState};
 use crate::{
@@ -34,8 +35,6 @@ use crate::{
 };
 use druid_shell::text::Event as ImeInvalidation;
 use druid_shell::{Cursor, Region, TimerToken, WindowHandle};
-
-// TODO - Add method `run_in_background()`
 
 /// A macro for implementing methods on multiple contexts.
 ///
@@ -213,6 +212,29 @@ impl_context_method!(
             thread::spawn(move || {
                 background_task(ext_event_sink);
             });
+        }
+
+        pub fn compute_in_background<T: Any + Send>(
+            &mut self,
+            background_task: impl Fn(ExtEventSink) -> T + Send + 'static,
+        ) -> PromiseToken<T> {
+            self.check_init("compute_in_background");
+
+            let token = PromiseToken::<T>::new();
+
+            use std::{thread, time};
+
+            let ext_event_sink = self.global_state.ext_event_sink.clone();
+            let widget_id = self.widget_state.id;
+            let window_id = self.global_state.window_id;
+            thread::spawn(move || {
+                let result = background_task(ext_event_sink.clone());
+                // TODO unwrap_or
+                let _ =
+                    ext_event_sink.resolve_promise(token.make_result(result), widget_id, window_id);
+            });
+
+            token
         }
 
         // TODO - document

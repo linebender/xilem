@@ -522,6 +522,14 @@ impl<W: Widget> WidgetPod<W> {
                         self.state.children.may_contain(widget_id)
                     }
                 }
+                InternalEvent::RoutePromiseResult(promise_result, widget_id) => {
+                    if *widget_id == self.id() {
+                        modified_event = Some(Event::PromiseResult(promise_result.clone()));
+                        true
+                    } else {
+                        self.state.children.may_contain(widget_id)
+                    }
+                }
                 InternalEvent::RouteImeStateChange(widget_id) => {
                     if *widget_id == self.id() {
                         modified_event = Some(Event::ImeStateChange);
@@ -628,6 +636,7 @@ impl<W: Widget> WidgetPod<W> {
             Event::ImeStateChange => true, // once delivered to the focus widget, recurse to the component?
             Event::Command(_) => true,
             Event::Notification(_) => false,
+            Event::PromiseResult(_) => false,
         };
 
         if call_inner {

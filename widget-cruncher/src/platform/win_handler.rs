@@ -23,7 +23,7 @@ use crate::kurbo::Size;
 use crate::piet::Piet;
 
 use crate::command as sys_cmd;
-use crate::ext_event::{ExtEventQueue, ExtEventSink};
+use crate::ext_event::{ExtEventQueue, ExtEventSink, ExtMessage};
 use crate::{
     Command, Env, Event, Handled, InternalEvent, PlatformError, Selector, Target, WindowId,
 };
@@ -198,7 +198,19 @@ impl AppState {
         loop {
             let ext_cmd = self.inner.borrow_mut().ext_event_queue.recv();
             match ext_cmd {
-                Some(cmd) => self.handle_cmd(cmd),
+                Some(ExtMessage::Command(selector, payload, target)) => {
+                    self.handle_cmd(Command::from_ext(selector, payload, target))
+                }
+                Some(ExtMessage::Promise(promise_result, widget_id, window_id)) => {
+                    // TODO
+                    self.inner.borrow_mut().do_window_event(
+                        window_id,
+                        Event::Internal(InternalEvent::RoutePromiseResult(
+                            promise_result,
+                            widget_id,
+                        )),
+                    );
+                }
                 None => break,
             }
         }
