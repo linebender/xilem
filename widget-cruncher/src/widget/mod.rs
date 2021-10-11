@@ -20,6 +20,7 @@ mod image;
 mod label;
 mod sized_box;
 mod spinner;
+mod web_image;
 //mod checkbox;
 //mod click;
 //mod textbox;
@@ -44,6 +45,7 @@ pub use image::Image;
 pub use label::{Label, LineBreaking};
 pub use sized_box::SizedBox;
 pub use spinner::Spinner;
+pub use web_image::WebImage;
 
 //#[doc(hidden)]
 //pub use widget_ext::WidgetExt;

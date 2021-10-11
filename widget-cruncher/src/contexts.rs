@@ -214,6 +214,7 @@ impl_context_method!(
             });
         }
 
+        // TODO - should take FnOnce.
         pub fn compute_in_background<T: Any + Send>(
             &mut self,
             background_task: impl Fn(ExtEventSink) -> T + Send + 'static,
