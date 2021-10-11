@@ -14,13 +14,13 @@
 
 //! A label widget.
 
-use smallvec::{SmallVec};
+use smallvec::SmallVec;
 use std::{thread, time};
 use tracing::{trace, trace_span, Span};
 
 use druid_shell::Cursor;
 use widget_cruncher::kurbo::Vec2;
-use widget_cruncher::promise::{PromiseToken};
+use widget_cruncher::promise::PromiseToken;
 use widget_cruncher::text::TextLayout;
 use widget_cruncher::widget::prelude::*;
 use widget_cruncher::{ArcStr, Color, KeyOrValue, Point};

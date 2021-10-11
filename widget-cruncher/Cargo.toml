@@ -20,7 +20,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 default-target = "x86_64-pc-windows-msvc"
 
 [features]
-default = ["gtk"]
+default = ["gtk", "image", "png", "jpeg"]
 gtk = ["druid-shell/gtk"]
 image = ["druid-shell/image"]
 svg = ["usvg"]
@@ -89,3 +89,7 @@ tracing-subscriber = { version = "0.2.15", features = ["env-filter"] }
 
 [target.'cfg(not(target_arch="wasm32"))'.dev-dependencies]
 open = "1.6"
+
+[[example]]
+name = "simple_image"
+required-features = ["image", "png"]
