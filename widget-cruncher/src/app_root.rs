@@ -522,6 +522,7 @@ impl WindowRoot {
                 notifications: &mut notifications,
                 is_handled: false,
                 is_root: true,
+                request_pan_to_child: None,
             };
 
             {

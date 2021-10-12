@@ -296,6 +296,8 @@ pub enum LifeCycle {
     /// [`focus_prev`]: crate::EventCtx::focus_prev
     BuildFocusChain,
 
+    RequestPanToChild(Rect),
+
     /// Internal druid lifecycle event.
     ///
     /// This should always be passed down to descendant [`WidgetPod`]s.
@@ -470,6 +472,7 @@ impl LifeCycle {
             LifeCycle::Internal(internal) => internal.should_propagate_to_hidden(),
             LifeCycle::WidgetAdded => true,
             LifeCycle::BuildFocusChain => false,
+            LifeCycle::RequestPanToChild(_) => false,
         }
     }
 }

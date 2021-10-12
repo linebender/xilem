@@ -75,6 +75,7 @@ pub struct EventCtx<'a, 'b> {
     pub(crate) notifications: &'a mut VecDeque<Notification>,
     pub(crate) is_handled: bool,
     pub(crate) is_root: bool,
+    pub(crate) request_pan_to_child: Option<Rect>,
 }
 
 /// A mutable context provided to the [`lifecycle`] method on widgets.
@@ -605,6 +606,10 @@ impl EventCtx<'_, '_> {
                 .with(SingleUse::new(Box::new(desc)))
                 .to(Target::Global),
         );
+    }
+
+    pub fn request_pan_to_this(&mut self) {
+        self.request_pan_to_child = Some(self.widget_state.layout_rect());
     }
 
     /// Set the "active" state of the widget.

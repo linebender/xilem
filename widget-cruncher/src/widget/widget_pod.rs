@@ -650,6 +650,7 @@ impl<W: Widget> WidgetPod<W> {
                     notifications: parent_ctx.notifications,
                     is_handled: false,
                     is_root: false,
+                    request_pan_to_child: None,
                 };
                 let inner_event = modified_event.as_ref().unwrap_or(event);
                 inner_ctx.widget_state.has_active = false;
@@ -659,6 +660,14 @@ impl<W: Widget> WidgetPod<W> {
                 inner_ctx.widget_state.has_active |= inner_ctx.widget_state.is_active;
                 parent_ctx.is_handled |= inner_ctx.is_handled;
 
+                // TODO - there's some dubious logic here
+                if let Some(target_rect) = inner_ctx.request_pan_to_child {
+                    widget_pod.pan_to_child(parent_ctx, env, target_rect);
+                    let new_rect = target_rect
+                        .with_origin(target_rect.origin() + widget_pod.state.origin.to_vec2());
+                    parent_ctx.request_pan_to_child = Some(new_rect);
+                }
+
                 // we try to handle the notifications that occured below us in the tree
                 widget_pod.process_notifications(parent_ctx, &mut notifications, env);
             });
@@ -667,6 +676,17 @@ impl<W: Widget> WidgetPod<W> {
         // Always merge even if not needed, because merging is idempotent and gives us simpler code.
         // Doing this conditionally only makes sense when there's a measurable performance boost.
         parent_ctx.widget_state.merge_up(&mut self.state);
+    }
+
+    fn pan_to_child(&mut self, parent_ctx: &mut EventCtx, env: &Env, rect: Rect) {
+        let mut inner_ctx = LifeCycleCtx {
+            global_state: parent_ctx.global_state,
+            widget_state: &mut self.state,
+            is_init: false,
+        };
+        let event = LifeCycle::RequestPanToChild(rect);
+
+        self.inner.lifecycle(&mut inner_ctx, &event, env);
     }
 
     /// Send notifications originating from this widget's children to this
@@ -688,6 +708,7 @@ impl<W: Widget> WidgetPod<W> {
             widget_state: &mut self.state,
             is_handled: false,
             is_root: false,
+            request_pan_to_child: None,
         };
 
         for notification in notifications.drain(..) {
@@ -849,6 +870,8 @@ impl<W: Widget> WidgetPod<W> {
                     false
                 }
             }
+            // This is called by children when going up the widget tree.
+            LifeCycle::RequestPanToChild(_) => false,
         };
 
         // widget_pod is a reborrow of `self`

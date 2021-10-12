@@ -15,6 +15,7 @@
 //! Common widgets.
 
 mod button;
+mod clip_box;
 mod flex;
 mod image;
 mod label;
@@ -40,6 +41,7 @@ pub use widget::{Widget, WidgetId};
 //pub use click::Click;
 //pub use textbox::TextBox;
 pub use button::Button;
+pub use clip_box::ClipBox;
 pub use flex::{Axis, CrossAxisAlignment, Flex, FlexParams, MainAxisAlignment};
 pub use image::Image;
 pub use label::{Label, LineBreaking};
