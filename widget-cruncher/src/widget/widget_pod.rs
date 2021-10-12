@@ -791,7 +791,7 @@ impl<W: Widget> WidgetPod<W> {
                 }
             },
             LifeCycle::WidgetAdded => {
-                if self.state.is_new {
+                if !self.state.is_new {
                     // TODO - better warning.
                     warn!("Already initialized.");
                 }
@@ -852,8 +852,8 @@ impl<W: Widget> WidgetPod<W> {
         };
 
         // widget_pod is a reborrow of `self`
-        self.call_widget_method_with_checks("lifecycle", |widget_pod| {
-            if call_inner {
+        if call_inner {
+            self.call_widget_method_with_checks("lifecycle", |widget_pod| {
                 let mut inner_ctx = LifeCycleCtx {
                     global_state: parent_ctx.global_state,
                     widget_state: &mut widget_pod.state,
@@ -861,8 +861,8 @@ impl<W: Widget> WidgetPod<W> {
                 };
 
                 widget_pod.inner.lifecycle(&mut inner_ctx, event, env);
-            }
-        });
+            });
+        }
 
         if let Some(event) = extra_event.as_ref() {
             let mut inner_ctx = LifeCycleCtx {
@@ -1018,6 +1018,8 @@ impl<W: Widget> WidgetPod<W> {
     /// [`Widget::paint`]: trait.Widget.html#tymethod.paint
     /// [`paint`]: #method.paint
     pub fn paint_raw(&mut self, ctx: &mut PaintCtx, env: &Env) {
+        self.mark_as_visited();
+
         // we need to do this before we borrow from self
         if env.get(Env::DEBUG_WIDGET_ID) {
             self.make_widget_id_layout_if_needed(self.state.id, ctx, env);

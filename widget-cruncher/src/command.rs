@@ -470,7 +470,7 @@ impl Notification {
     /// types but the same key are used.
     ///
     /// [`is`]: #method.is
-    pub fn get<T: Any>(&self, selector: Selector<T>) -> Option<&T> {
+    pub fn try_get<T: Any>(&self, selector: Selector<T>) -> Option<&T> {
         if self.symbol == selector.symbol() {
             Some(self.payload.downcast_ref().unwrap_or_else(|| {
                 panic!(
