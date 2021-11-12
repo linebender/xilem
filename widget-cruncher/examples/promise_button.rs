@@ -111,10 +111,12 @@ impl Widget for PromiseButton {
         }
     }
 
-    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange, _env: &Env) {
+    fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange, _env: &Env) {}
+
+    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, _env: &Env) {
         ctx.init();
         match event {
-            StatusChange::DisabledChanged(disabled) => {
+            LifeCycle::DisabledChanged(disabled) => {
                 let color = if *disabled {
                     KeyOrValue::Key(widget_cruncher::theme::DISABLED_TEXT_COLOR)
                 } else {
@@ -126,8 +128,6 @@ impl Widget for PromiseButton {
             _ => {}
         }
     }
-
-    fn lifecycle(&mut self, _ctx: &mut LifeCycleCtx, _event: &LifeCycle, _env: &Env) {}
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
         ctx.init();

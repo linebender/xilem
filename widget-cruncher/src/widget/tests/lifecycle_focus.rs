@@ -151,9 +151,7 @@ fn focus_updated_by_children_change() {
     );
 }
 
-// FIXME
 #[test]
-#[ignore]
 fn resign_focus_on_disable() {
     const CHANGE_DISABLED: Selector<bool> = Selector::new("druid-tests.change-disabled");
 
@@ -164,6 +162,7 @@ fn resign_focus_on_disable() {
                 if let Event::Command(cmd) = event {
                     if let Some(disabled) = cmd.try_get(CHANGE_DISABLED) {
                         ctx.set_disabled(*disabled);
+                        ctx.set_handled();
                         // TODO
                         //return;
                     }
@@ -174,50 +173,68 @@ fn resign_focus_on_disable() {
                 ctx.init();
                 child.lifecycle(ctx, event, env);
             })
+            .layout_fn(|child, ctx, bc, env| {
+                ctx.init();
+                let layout = child.layout(ctx, bc, env);
+                child.set_origin(ctx, env, Point::ORIGIN);
+                layout
+            })
             .children_fns(
                 |child| smallvec![child as &dyn AsWidgetPod],
                 |child| smallvec![child as &mut dyn AsWidgetPod],
             )
     }
 
-    let [id_0, id_1, id_2] = widget_ids();
+    let [group_0, group_1, sub_group, focus_1, focus_2] = widget_ids();
 
     let root = Flex::row()
-        .with_child(make_container_widget(
-            id_0,
-            make_container_widget(id_1, FocusTaker::new()),
-        ))
-        .with_child(make_container_widget(id_2, FocusTaker::new()));
+        .with_child_id(
+            make_container_widget(sub_group, make_container_widget(focus_1, FocusTaker::new())),
+            group_0,
+        )
+        .with_child_id(make_container_widget(focus_2, FocusTaker::new()), group_1);
 
     let mut harness = Harness::create(root);
-    assert_eq!(harness.window().focus_chain(), &[id_0, id_1, id_2]);
+
+    // Initial state -> Full focus chain, no focused widget
+    assert_eq!(harness.window().focus_chain(), &[focus_1, focus_2]);
     assert_eq!(harness.window().focus, None);
 
-    harness.submit_command(REQUEST_FOCUS.to(id_2));
-    assert_eq!(harness.window().focus_chain(), &[id_0, id_1, id_2]);
-    assert_eq!(harness.window().focus, Some(id_2));
+    // Request focus to 2 -> Full focus chain, 2 is focused
+    harness.submit_command(REQUEST_FOCUS.to(focus_2));
+    assert_eq!(harness.window().focus_chain(), &[focus_1, focus_2]);
+    assert_eq!(harness.window().focus, Some(focus_2));
 
-    harness.submit_command(CHANGE_DISABLED.with(true).to(id_0));
-    assert_eq!(harness.window().focus_chain(), &[id_2]);
-    assert_eq!(harness.window().focus, Some(id_2));
+    // Disable group 0 -> Remove 1 from focus chain, 2 is still focused
+    harness.submit_command(CHANGE_DISABLED.with(true).to(group_0));
+    assert_eq!(harness.window().focus_chain(), &[focus_2]);
+    assert_eq!(harness.window().focus, Some(focus_2));
 
-    harness.submit_command(CHANGE_DISABLED.with(true).to(id_2));
+    // TODO - check that focus doesn't change if requested from a disabled widget
+    //harness.submit_command(REQUEST_FOCUS.to(focus_1));
+
+    // Disable group 1 -> Remove 2 from focus chain, no focused widget
+    harness.submit_command(CHANGE_DISABLED.with(true).to(group_1));
     assert_eq!(harness.window().focus_chain(), &[]);
     assert_eq!(harness.window().focus, None);
 
-    harness.submit_command(CHANGE_DISABLED.with(false).to(id_0));
-    assert_eq!(harness.window().focus_chain(), &[id_0, id_1]);
+    // Enable group 0 -> Add 1 to focus chain, no focused widget
+    harness.submit_command(CHANGE_DISABLED.with(false).to(group_0));
+    assert_eq!(harness.window().focus_chain(), &[focus_1]);
     assert_eq!(harness.window().focus, None);
 
-    harness.submit_command(REQUEST_FOCUS.to(id_1));
-    assert_eq!(harness.window().focus_chain(), &[id_0, id_1]);
-    assert_eq!(harness.window().focus, Some(id_1));
+    // Request focus to 1 -> 1 is focused
+    harness.submit_command(REQUEST_FOCUS.to(focus_1));
+    assert_eq!(harness.window().focus_chain(), &[focus_1]);
+    assert_eq!(harness.window().focus, Some(focus_1));
 
-    harness.submit_command(CHANGE_DISABLED.with(false).to(id_2));
-    assert_eq!(harness.window().focus_chain(), &[id_0, id_1, id_2]);
-    assert_eq!(harness.window().focus, Some(id_1));
+    // Enable group 1 -> Full focus chain, 1 is still focused
+    harness.submit_command(CHANGE_DISABLED.with(false).to(group_1));
+    assert_eq!(harness.window().focus_chain(), &[focus_1, focus_2]);
+    assert_eq!(harness.window().focus, Some(focus_1));
 
-    harness.submit_command(CHANGE_DISABLED.with(true).to(id_0));
-    assert_eq!(harness.window().focus_chain(), &[id_2]);
+    // Disable group 0 -> Remove 1 from focus chain, no focused widget
+    harness.submit_command(CHANGE_DISABLED.with(true).to(group_0));
+    assert_eq!(harness.window().focus_chain(), &[focus_2]);
     assert_eq!(harness.window().focus, None);
 }

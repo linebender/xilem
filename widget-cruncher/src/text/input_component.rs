@@ -360,22 +360,7 @@ impl<T: TextStorage + EditableText> Widget for TextComponent<T> {
         }
     }
 
-    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange, env: &Env) {
-        match event {
-            StatusChange::DisabledChanged(disabled) => {
-                if self.can_write() {
-                    let color = if *disabled {
-                        env.get(theme::DISABLED_TEXT_COLOR)
-                    } else {
-                        env.get(theme::TEXT_COLOR)
-                    };
-                    self.borrow_mut().layout.set_text_color(color);
-                }
-                ctx.request_layout();
-            }
-            _ => (),
-        }
-    }
+    fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange, _env: &Env) {}
 
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
         match event {
@@ -385,6 +370,17 @@ impl<T: TextStorage + EditableText> Widget for TextComponent<T> {
                     "ime should never be locked at WidgetAdded"
                 );
                 self.borrow_mut().layout.rebuild_if_needed(ctx.text(), env);
+            }
+            LifeCycle::DisabledChanged(disabled) => {
+                if self.can_write() {
+                    let color = if *disabled {
+                        env.get(theme::DISABLED_TEXT_COLOR)
+                    } else {
+                        env.get(theme::TEXT_COLOR)
+                    };
+                    self.borrow_mut().layout.set_text_color(color);
+                }
+                ctx.request_layout();
             }
             //FIXME: this should happen in the parent too?
             LifeCycle::Internal(crate::InternalLifeCycle::ParentWindowOrigin)

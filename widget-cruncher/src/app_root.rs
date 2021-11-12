@@ -766,6 +766,10 @@ impl WindowRoot {
         if let Some(focus_req) = widget_state.request_focus.take() {
             let old = self.focus;
             let new = self.widget_for_focus_request(focus_req);
+
+            // TODO
+            // Skip change if requested widget is disabled
+
             // Only send RouteFocusChanged in case there's actual change
             if old != new {
                 let event = LifeCycle::Internal(InternalLifeCycle::RouteFocusChanged { old, new });

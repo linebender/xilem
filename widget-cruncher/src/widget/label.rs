@@ -243,10 +243,12 @@ impl Widget for Label {
         }
     }
 
-    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange, _env: &Env) {
+    fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange, _env: &Env) {}
+
+    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
         ctx.init();
         match event {
-            StatusChange::DisabledChanged(disabled) => {
+            LifeCycle::DisabledChanged(disabled) => {
                 let color = if *disabled {
                     KeyOrValue::Key(crate::theme::DISABLED_TEXT_COLOR)
                 } else {
@@ -258,8 +260,6 @@ impl Widget for Label {
             _ => {}
         }
     }
-
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, _env: &Env) {}
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
         ctx.init();

@@ -1,103 +1,22 @@
-#[cfg(FALSE)]
-#[test]
-fn simple_disable() {
-    const CHANGE_DISABLED: Selector<bool> = Selector::new("druid-tests.change-disabled");
+use crate::testing::{
+    widget_ids, Harness, ModularWidget, Record, Recording, ReplaceChild, TestWidgetExt as _,
+    REPLACE_CHILD,
+};
+use crate::widget::{Flex, Label, SizedBox};
+use crate::*;
+use smallvec::smallvec;
+use std::cell::Cell;
+use std::collections::HashMap;
+use std::rc::Rc;
+use test_env_log::test;
 
-    let test_widget_factory = |auto_focus: bool, id: WidgetId, state: Rc<Cell<Option<bool>>>| {
-        ModularWidget::new(state)
-            .lifecycle_fn(move |state, ctx, event, _, _| match event {
-                LifeCycle::BuildFocusChain => {
-                    if auto_focus {
-                        ctx.register_for_focus();
-                    }
-                }
-                LifeCycle::DisabledChanged(disabled) => {
-                    state.set(Some(*disabled));
-                }
-                _ => {}
-            })
-            .event_fn(|_, ctx, event, _, _| {
-                if let Event::Command(cmd) = event {
-                    if let Some(disabled) = cmd.try_get(CHANGE_DISABLED) {
-                        ctx.set_disabled(*disabled);
-                    }
-                }
-            })
-            .with_id(id)
-    };
+const CHANGE_DISABLED: Selector<bool> = Selector::new("druid-tests.change-disabled");
 
-    let disabled_0: Rc<Cell<Option<bool>>> = Default::default();
-    let disabled_1: Rc<Cell<Option<bool>>> = Default::default();
-    let disabled_2: Rc<Cell<Option<bool>>> = Default::default();
-    let disabled_3: Rc<Cell<Option<bool>>> = Default::default();
-
-    let check_states = |name: &str, desired: [Option<bool>; 4]| {
-        if desired[0] != disabled_0.get()
-            || desired[1] != disabled_1.get()
-            || desired[2] != disabled_2.get()
-            || desired[3] != disabled_3.get()
-        {
-            eprintln!(
-                "test \"{}\":\nexpected: {:?}\n got:      {:?}",
-                name,
-                desired,
-                [
-                    disabled_0.get(),
-                    disabled_1.get(),
-                    disabled_2.get(),
-                    disabled_3.get()
-                ]
-            );
-            panic!();
-        }
-    };
-
-    let id_0 = WidgetId::next();
-    let id_1 = WidgetId::next();
-    let id_2 = WidgetId::next();
-    let id_3 = WidgetId::next();
-
-    let root = Flex::row()
-        .with_child(test_widget_factory(true, id_0, disabled_0.clone()))
-        .with_child(test_widget_factory(true, id_1, disabled_1.clone()))
-        .with_child(test_widget_factory(true, id_2, disabled_2.clone()))
-        .with_child(test_widget_factory(true, id_3, disabled_3.clone()));
-
-    Harness::create_simple((), root, |harness| {
-        harness.send_initial_events();
-        check_states("send_initial_events", [None, None, None, None]);
-        assert_eq!(harness.window().focus_chain(), &[id_0, id_1, id_2, id_3]);
-        harness.submit_command(CHANGE_DISABLED.with(true).to(id_0));
-        check_states("Change 1", [Some(true), None, None, None]);
-        assert_eq!(harness.window().focus_chain(), &[id_1, id_2, id_3]);
-        harness.submit_command(CHANGE_DISABLED.with(true).to(id_2));
-        check_states("Change 2", [Some(true), None, Some(true), None]);
-        assert_eq!(harness.window().focus_chain(), &[id_1, id_3]);
-        harness.submit_command(CHANGE_DISABLED.with(true).to(id_3));
-        check_states("Change 3", [Some(true), None, Some(true), Some(true)]);
-        assert_eq!(harness.window().focus_chain(), &[id_1]);
-        harness.submit_command(CHANGE_DISABLED.with(false).to(id_2));
-        check_states("Change 4", [Some(true), None, Some(false), Some(true)]);
-        assert_eq!(harness.window().focus_chain(), &[id_1, id_2]);
-        harness.submit_command(CHANGE_DISABLED.with(true).to(id_2));
-        check_states("Change 5", [Some(true), None, Some(true), Some(true)]);
-        assert_eq!(harness.window().focus_chain(), &[id_1]);
-        //This is intended the widget should not receive an event!
-        harness.submit_command(CHANGE_DISABLED.with(false).to(id_1));
-        check_states("Change 6", [Some(true), None, Some(true), Some(true)]);
-        assert_eq!(harness.window().focus_chain(), &[id_1]);
-    })
-}
-
-#[cfg(FALSE)]
-#[test]
-fn disable_tree() {
-    const MULTI_CHANGE_DISABLED: Selector<HashMap<WidgetId, bool>> =
-        Selector::new("druid-tests.multi-change-disabled");
-
-    let leaf_factory = |state: Rc<Cell<Option<bool>>>| {
-        ModularWidget::new(state).lifecycle_fn(move |state, ctx, event, _, _| match event {
+fn make_focusable_widget(id: WidgetId, state: Rc<Cell<Option<bool>>>) -> impl Widget {
+    ModularWidget::new(state)
+        .lifecycle_fn(move |state, ctx, event, _| match event {
             LifeCycle::BuildFocusChain => {
+                ctx.init();
                 ctx.register_for_focus();
             }
             LifeCycle::DisabledChanged(disabled) => {
@@ -105,207 +24,172 @@ fn disable_tree() {
             }
             _ => {}
         })
-    };
+        .event_fn(|_, ctx, event, _| {
+            ctx.init();
+            if let Event::Command(cmd) = event {
+                if let Some(disabled) = cmd.try_get(CHANGE_DISABLED) {
+                    ctx.set_disabled(*disabled);
+                }
+            }
+        })
+        .with_id(id)
+}
 
-    let wrapper = |id: WidgetId, widget: Box<dyn Widget<()>>| {
-        ModularWidget::new(WidgetPod::new(widget))
-            .lifecycle_fn(|inner, ctx, event, data, env| {
-                inner.lifecycle(ctx, event, data, env);
+#[test]
+fn simple_disable() {
+    let disabled_event: Rc<Cell<Option<bool>>> = Default::default();
+    let id_0 = WidgetId::next();
+    let root = make_focusable_widget(id_0, disabled_event.clone());
+
+    let mut harness = Harness::create(root);
+
+    // Initial state: widget is enabled, no event received.
+    assert_eq!(disabled_event.get(), None);
+    assert!(!harness.get_widget(id_0).state().is_disabled());
+
+    // Widget is set to enabled, but was already enabled: no DisabledChanged received.
+    harness.submit_command(CHANGE_DISABLED.with(false).to(id_0));
+    assert_eq!(disabled_event.get(), None);
+    assert!(!harness.get_widget(id_0).state().is_disabled());
+
+    // Widget is set to disabled, a DisabledChanged is received.
+    harness.submit_command(CHANGE_DISABLED.with(true).to(id_0));
+    assert_eq!(disabled_event.get(), Some(true));
+    assert!(harness.get_widget(id_0).state().is_disabled());
+
+    disabled_event.set(None);
+    // Widget is set to disabled, but was already disabled: no DisabledChanged received.
+    harness.submit_command(CHANGE_DISABLED.with(true).to(id_0));
+    assert_eq!(disabled_event.get(), None);
+    assert!(harness.get_widget(id_0).state().is_disabled());
+
+    disabled_event.set(None);
+    // Widget is set to enabled, a DisabledChanged is received.
+    harness.submit_command(CHANGE_DISABLED.with(false).to(id_0));
+    assert_eq!(disabled_event.get(), Some(false));
+    assert!(!harness.get_widget(id_0).state().is_disabled());
+}
+
+#[test]
+fn disable_tree() {
+    fn make_parent_widget(id: WidgetId, child: impl Widget) -> impl Widget {
+        ModularWidget::new(WidgetPod::new(child))
+            .lifecycle_fn(|child, ctx, event, env| {
+                child.lifecycle(ctx, event, env);
             })
-            .event_fn(|inner, ctx, event, data, env| {
+            .event_fn(|child, ctx, event, env| {
+                ctx.init();
                 if let Event::Command(cmd) = event {
-                    if let Some(map) = cmd.try_get(MULTI_CHANGE_DISABLED) {
-                        if let Some(disabled) = map.get(&ctx.widget_id()) {
-                            ctx.set_disabled(*disabled);
-                            return;
-                        }
+                    if let Some(disabled) = cmd.try_get(CHANGE_DISABLED) {
+                        ctx.set_disabled(*disabled);
+                        ctx.set_handled();
+                        // TODO
+                        //return;
                     }
                 }
-                inner.event(ctx, event, data, env);
+                child.on_event(ctx, event, env);
             })
+            .layout_fn(|child, ctx, bc, env| {
+                ctx.init();
+                let layout = child.layout(ctx, bc, env);
+                child.set_origin(ctx, env, Point::ORIGIN);
+                layout
+            })
+            .children_fns(
+                |child| smallvec![child as &dyn AsWidgetPod],
+                |child| smallvec![child as &mut dyn AsWidgetPod],
+            )
             .with_id(id)
-    };
-
-    fn multi_update(states: &[(WidgetId, bool)]) -> Command {
-        let payload = states.iter().cloned().collect::<HashMap<_, _>>();
-        MULTI_CHANGE_DISABLED.with(payload).to(Target::Global)
     }
 
-    let disabled_0: Rc<Cell<Option<bool>>> = Default::default();
-    let disabled_1: Rc<Cell<Option<bool>>> = Default::default();
-    let disabled_2: Rc<Cell<Option<bool>>> = Default::default();
-    let disabled_3: Rc<Cell<Option<bool>>> = Default::default();
-    let disabled_4: Rc<Cell<Option<bool>>> = Default::default();
-    let disabled_5: Rc<Cell<Option<bool>>> = Default::default();
+    fn make_leaf_widget(id: WidgetId) -> impl Widget {
+        make_focusable_widget(id, Default::default())
+    }
 
-    let check_states = |name: &str, desired: [Option<bool>; 6]| {
-        if desired[0] != disabled_0.get()
-            || desired[1] != disabled_1.get()
-            || desired[2] != disabled_2.get()
-            || desired[3] != disabled_3.get()
-            || desired[4] != disabled_4.get()
-            || desired[5] != disabled_5.get()
-        {
-            eprintln!(
-                "test \"{}\":\nexpected: {:?}\n got:      {:?}",
-                name,
-                desired,
-                [
-                    disabled_0.get(),
-                    disabled_1.get(),
-                    disabled_2.get(),
-                    disabled_3.get(),
-                    disabled_4.get(),
-                    disabled_5.get()
-                ]
-            );
-            panic!();
-        }
-    };
+    fn get_disabled_states(harness: &Harness, ids: &[WidgetId]) -> Vec<bool> {
+        ids.iter()
+            .map(|id| harness.get_widget(*id).state().is_disabled())
+            .collect()
+    }
 
-    let outer_id = WidgetId::next();
-    let inner_id = WidgetId::next();
-    let single_id = WidgetId::next();
-    let root_id = WidgetId::next();
+    let [root_id, group_1_id, sub_group_1_id, group_2_id, leaf_1_id, leaf_2_id] = widget_ids();
 
-    let node0 = Flex::row()
-        .with_child(leaf_factory(disabled_0.clone()))
-        .with_child(leaf_factory(disabled_1.clone()))
-        .boxed();
+    // Our widget hierarchy is:
+    // - root
+    //  - group_1
+    //   - subgroup_1
+    //    - leaf_1
+    //  - group_2
+    //   - leaf_2
 
-    let node1 = leaf_factory(disabled_2.clone()).boxed();
+    let root = make_parent_widget(
+        root_id,
+        Flex::row()
+            .with_child(make_parent_widget(
+                group_1_id,
+                make_parent_widget(sub_group_1_id, make_leaf_widget(leaf_1_id)),
+            ))
+            .with_child(make_parent_widget(group_2_id, make_leaf_widget(leaf_2_id))),
+    );
 
-    let node2 = Flex::row()
-        .with_child(wrapper(outer_id, wrapper(inner_id, node0).boxed()))
-        .with_child(wrapper(single_id, node1))
-        .with_child(leaf_factory(disabled_3.clone()))
-        .with_child(leaf_factory(disabled_4.clone()))
-        .with_child(leaf_factory(disabled_5.clone()))
-        .boxed();
+    let mut harness = Harness::create(root);
 
-    let root = wrapper(root_id, node2);
+    // Initial state -> All widgets enabled
+    assert_eq!(
+        get_disabled_states(&harness, &[root_id, group_1_id, sub_group_1_id, group_2_id]),
+        [false, false, false, false]
+    );
+    assert_eq!(
+        get_disabled_states(&harness, &[leaf_1_id, leaf_2_id]),
+        [false, false]
+    );
+    assert_eq!(harness.window().focus_chain().len(), 2);
 
-    Harness::create_simple((), root, |harness| {
-        harness.send_initial_events();
-        check_states("Send initial events", [None, None, None, None, None, None]);
-        assert_eq!(harness.window().focus_chain().len(), 6);
+    // Disable root -> All widgets disabled
+    harness.submit_command(CHANGE_DISABLED.with(true).to(root_id));
+    assert_eq!(
+        get_disabled_states(&harness, &[root_id, group_1_id, sub_group_1_id, group_2_id]),
+        [true, true, true, true]
+    );
+    assert_eq!(
+        get_disabled_states(&harness, &[leaf_1_id, leaf_2_id]),
+        [true, true]
+    );
+    assert_eq!(harness.window().focus_chain().len(), 0);
 
-        harness.submit_command(multi_update(&[(root_id, true)]));
-        check_states(
-            "disable root (0)",
-            [
-                Some(true),
-                Some(true),
-                Some(true),
-                Some(true),
-                Some(true),
-                Some(true),
-            ],
-        );
-        assert_eq!(harness.window().focus_chain().len(), 0);
-        harness.submit_command(multi_update(&[(inner_id, true)]));
+    // Disable group_1 -> All widgets still disabled
+    harness.submit_command(CHANGE_DISABLED.with(true).to(group_1_id));
+    assert_eq!(
+        get_disabled_states(&harness, &[root_id, group_1_id, sub_group_1_id, group_2_id]),
+        [true, true, true, true]
+    );
+    assert_eq!(
+        get_disabled_states(&harness, &[leaf_1_id, leaf_2_id]),
+        [true, true]
+    );
+    assert_eq!(harness.window().focus_chain().len(), 0);
 
-        check_states(
-            "disable inner (1)",
-            [
-                Some(true),
-                Some(true),
-                Some(true),
-                Some(true),
-                Some(true),
-                Some(true),
-            ],
-        );
-        assert_eq!(harness.window().focus_chain().len(), 0);
+    // Enable group_2 -> No effect
+    harness.submit_command(CHANGE_DISABLED.with(false).to(group_2_id));
+    assert_eq!(
+        get_disabled_states(&harness, &[root_id, group_1_id, sub_group_1_id, group_2_id]),
+        [true, true, true, true]
+    );
+    assert_eq!(
+        get_disabled_states(&harness, &[leaf_1_id, leaf_2_id]),
+        [true, true]
+    );
+    assert_eq!(harness.window().focus_chain().len(), 0);
 
-        // Node 0 should not be affected
-        harness.submit_command(multi_update(&[(root_id, false)]));
-        check_states(
-            "enable root (2)",
-            [
-                Some(true),
-                Some(true),
-                Some(false),
-                Some(false),
-                Some(false),
-                Some(false),
-            ],
-        );
-        assert_eq!(harness.window().focus_chain().len(), 4);
-
-        // Changing inner and outer in different directions should not affect the leaves
-        harness.submit_command(multi_update(&[(inner_id, false), (outer_id, true)]));
-        check_states(
-            "change inner outer (3)",
-            [
-                Some(true),
-                Some(true),
-                Some(false),
-                Some(false),
-                Some(false),
-                Some(false),
-            ],
-        );
-        assert_eq!(harness.window().focus_chain().len(), 4);
-
-        // Changing inner and outer in different directions should not affect the leaves
-        harness.submit_command(multi_update(&[(inner_id, true), (outer_id, false)]));
-        check_states(
-            "change inner outer (4)",
-            [
-                Some(true),
-                Some(true),
-                Some(false),
-                Some(false),
-                Some(false),
-                Some(false),
-            ],
-        );
-        assert_eq!(harness.window().focus_chain().len(), 4);
-
-        // Changing two widgets on the same level
-        harness.submit_command(multi_update(&[(single_id, true), (inner_id, false)]));
-        check_states(
-            "change horizontal (5)",
-            [
-                Some(false),
-                Some(false),
-                Some(true),
-                Some(false),
-                Some(false),
-                Some(false),
-            ],
-        );
-        assert_eq!(harness.window().focus_chain().len(), 5);
-
-        // Disabling the root should disable all widgets
-        harness.submit_command(multi_update(&[(root_id, true)]));
-        check_states(
-            "disable root (6)",
-            [
-                Some(true),
-                Some(true),
-                Some(true),
-                Some(true),
-                Some(true),
-                Some(true),
-            ],
-        );
-        assert_eq!(harness.window().focus_chain().len(), 0);
-
-        // Enabling a widget in a disabled tree should not affect the enclosed widgets
-        harness.submit_command(multi_update(&[(single_id, false)]));
-        check_states(
-            "enable single (7)",
-            [
-                Some(true),
-                Some(true),
-                Some(true),
-                Some(true),
-                Some(true),
-                Some(true),
-            ],
-        );
-        assert_eq!(harness.window().focus_chain().len(), 0);
-    })
+    // Enable root -> Children of group_1 still disabled, all others enabled
+    harness.submit_command(CHANGE_DISABLED.with(false).to(root_id));
+    assert_eq!(
+        get_disabled_states(&harness, &[root_id, group_1_id, sub_group_1_id, group_2_id]),
+        [false, true, true, false]
+    );
+    assert_eq!(
+        get_disabled_states(&harness, &[leaf_1_id, leaf_2_id]),
+        [true, false]
+    );
+    assert_eq!(harness.window().focus_chain().len(), 1);
 }

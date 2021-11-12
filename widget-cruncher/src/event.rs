@@ -285,6 +285,17 @@ pub enum LifeCycle {
     /// [`LifeCycleCtx::register_for_focus`]: struct.LifeCycleCtx.html#method.register_for_focus
     WidgetAdded,
 
+    // TODO - Put in StatusChange
+    /// Called when the Disabled state of the widgets is changed.
+    ///
+    /// To check if a widget is disabled, see [`is_disabled`].
+    ///
+    /// To change a widget's disabled state, see [`set_disabled`].
+    ///
+    /// [`is_disabled`]: crate::EventCtx::is_disabled
+    /// [`set_disabled`]: crate::EventCtx::set_disabled
+    DisabledChanged(bool),
+
     /// This is called when the widget-tree changes and druid wants to rebuild the
     /// Focus-chain.
     ///
@@ -335,16 +346,6 @@ pub enum InternalLifeCycle {
 
 #[derive(Debug, Clone)]
 pub enum StatusChange {
-    /// Called when the Disabled state of the widgets is changed.
-    ///
-    /// To check if a widget is disabled, see [`is_disabled`].
-    ///
-    /// To change a widget's disabled state, see [`set_disabled`].
-    ///
-    /// [`is_disabled`]: crate::EventCtx::is_disabled
-    /// [`set_disabled`]: crate::EventCtx::set_disabled
-    DisabledChanged(bool),
-
     /// Called when the "hot" status changes.
     ///
     /// This will always be called _before_ the event that triggered it; that is,
@@ -471,6 +472,7 @@ impl LifeCycle {
         match self {
             LifeCycle::Internal(internal) => internal.should_propagate_to_hidden(),
             LifeCycle::WidgetAdded => true,
+            LifeCycle::DisabledChanged(_) => true,
             LifeCycle::BuildFocusChain => false,
             LifeCycle::RequestPanToChild(_) => false,
         }
@@ -500,7 +502,6 @@ impl InternalLifeCycle {
 impl StatusChange {
     pub fn should_propagate_to_hidden(&self) -> bool {
         match self {
-            StatusChange::DisabledChanged(_) => true,
             StatusChange::HotChanged(_) | StatusChange::FocusChanged(_) => false,
         }
     }
