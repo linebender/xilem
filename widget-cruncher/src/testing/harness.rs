@@ -212,7 +212,7 @@ impl Harness {
     ///
     /// Combines [`mouse_move`](Self::mouse_move), [`mouse_button_press`](Self::mouse_button_press), and [`mouse_button_release`](Self::mouse_button_release).
     pub fn mouse_click_on(&mut self, id: WidgetId) {
-        let widget_rect = self.get_widget(id).state().layout_rect();
+        let widget_rect = self.get_widget(id).state().window_layout_rect();
         let widget_center = widget_rect.center();
 
         self.mouse_move(widget_center);
@@ -224,7 +224,7 @@ impl Harness {
     pub fn mouse_move_to(&mut self, id: WidgetId) {
         // FIXME - handle case where the widget isn't visible
         // FIXME - assert that the widget correctly receives the event otherwise?
-        let widget_rect = self.get_widget(id).state().layout_rect();
+        let widget_rect = self.get_widget(id).state().window_layout_rect();
         let widget_center = widget_rect.center();
 
         self.mouse_move(widget_center);

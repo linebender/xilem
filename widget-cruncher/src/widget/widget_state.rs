@@ -266,6 +266,14 @@ impl WidgetState {
         Rect::from_origin_size(self.origin, self.size)
     }
 
+    // TODO - Document
+    // This is pretty ad-hoc so far. I need to figure out and document how
+    // window coordinates work, how this interacts with viewport, what are
+    // the invariants, etc..
+    pub fn window_layout_rect(&self) -> Rect {
+        Rect::from_origin_size(self.window_origin(), self.size)
+    }
+
     pub(crate) fn window_origin(&self) -> Point {
         self.parent_window_origin + self.origin.to_vec2() - self.viewport_offset
     }

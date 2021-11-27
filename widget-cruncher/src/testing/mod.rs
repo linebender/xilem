@@ -24,13 +24,6 @@ pub use helper_widgets::{
     ModularWidget, Record, Recorder, Recording, ReplaceChild, TestWidgetExt, REPLACE_CHILD,
 };
 
-#[cfg(test)]
-mod invalidation_tests;
-#[cfg(test)]
-mod layout_tests;
-#[cfg(test)]
-mod lifecycle_tests;
-
 use crate::kurbo::{Point, Vec2};
 use crate::{MouseEvent, WidgetId};
 use druid_shell::{KeyEvent, Modifiers, MouseButton, MouseButtons};

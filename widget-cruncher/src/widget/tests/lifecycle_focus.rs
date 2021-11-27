@@ -1,8 +1,7 @@
 use crate::testing::{
-    widget_ids, Harness, ModularWidget, Record, Recording, ReplaceChild, TestWidgetExt as _,
-    REPLACE_CHILD,
+    widget_ids, Harness, ModularWidget, ReplaceChild, TestWidgetExt as _, REPLACE_CHILD,
 };
-use crate::widget::{Flex, Label, SizedBox};
+use crate::widget::Flex;
 use crate::*;
 use smallvec::smallvec;
 use std::cell::Cell;
