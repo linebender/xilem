@@ -554,12 +554,6 @@ impl_context_method!(EventCtx<'_, '_>, LifeCycleCtx<'_, '_>, LayoutCtx<'_, '_>, 
         self.global_state
             .request_timer(&mut self.widget_state, deadline)
     }
-
-    /// get the `WidgetState` of the current widget.
-    pub fn widget_state(&mut self) -> &mut WidgetState {
-        self.check_init("widget_state");
-        self.widget_state
-    }
 });
 
 impl EventCtx<'_, '_> {

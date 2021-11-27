@@ -35,9 +35,6 @@ pub struct WidgetPod<W> {
 pub trait AsWidgetPod {
     fn state(&self) -> &WidgetState;
 
-    // FIXME - remove
-    fn state_mut(&mut self) -> &mut WidgetState;
-
     // Return a reference to the inner widget.
     fn widget(&self) -> &dyn Widget;
 
@@ -48,6 +45,8 @@ pub trait AsWidgetPod {
     fn children_mut(&mut self) -> SmallVec<[&mut dyn AsWidgetPod; 16]>;
     fn find_widget_by_id(&self, id: WidgetId) -> Option<&dyn AsWidgetPod>;
     fn find_widget_at_pos(&self, pos: Point) -> Option<&dyn AsWidgetPod>;
+
+    fn prepare_pass(&mut self);
 
     fn debug_validate(&self, after_layout: bool);
 }
@@ -406,7 +405,7 @@ impl<W: Widget> WidgetPod<W> {
     ) -> Ret {
         #[cfg(debug_assertions)]
         for child in self.inner.children_mut() {
-            child.state_mut().needs_visit = true;
+            child.prepare_pass();
         }
 
         // TODO - children_changed
@@ -982,12 +981,6 @@ impl<W: Widget> WidgetPod<W> {
             .map(|pos| pos - self.layout_rect().origin().to_vec2() + self.viewport_offset());
         let prev_size = self.state.size;
 
-        if cfg!(debug_assertions) {
-            for child in self.inner.children_mut() {
-                child.state_mut().is_expecting_set_origin_call = false;
-            }
-        }
-
         let new_size = self.call_widget_method_with_checks("layout", |widget_pod| {
             // widget_pod is a reborrow of `self`
 
@@ -1167,11 +1160,6 @@ impl<W: Widget> AsWidgetPod for WidgetPod<W> {
         &self.state
     }
 
-    // FIXME - remove
-    fn state_mut(&mut self) -> &mut WidgetState {
-        &mut self.state
-    }
-
     // Return a reference to the inner widget.
     fn widget(&self) -> &dyn Widget {
         &self.inner
@@ -1196,6 +1184,11 @@ impl<W: Widget> AsWidgetPod for WidgetPod<W> {
 
     fn find_widget_at_pos(&self, pos: Point) -> Option<&dyn AsWidgetPod> {
         WidgetPod::find_widget_at_pos(self, pos)
+    }
+
+    fn prepare_pass(&mut self) {
+        self.state.needs_visit = false;
+        self.state.is_expecting_set_origin_call = false;
     }
 
     fn debug_validate(&self, after_layout: bool) {
