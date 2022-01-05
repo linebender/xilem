@@ -30,6 +30,8 @@ mod web_image;
 mod widget;
 mod widget_pod;
 mod widget_state;
+// TODO - remove pub
+pub mod widget_view;
 
 #[cfg(test)]
 mod tests;

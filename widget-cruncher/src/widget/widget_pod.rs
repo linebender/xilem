@@ -24,11 +24,11 @@ use druid_shell::{Cursor, Region, TimerToken};
 /// `WidgetPod` will translate internal druid events to regular events,
 /// synthesize additional events of interest, and stop propagation when it makes sense.
 pub struct WidgetPod<W> {
-    state: WidgetState,
-    inner: W,
-    env: Option<Env>,
+    pub(crate) state: WidgetState,
+    pub(crate) inner: W,
+    pub(crate) env: Option<Env>,
     // stashed layout so we don't recompute this when debugging
-    debug_widget_text: TextLayout<ArcStr>,
+    pub(crate) debug_widget_text: TextLayout<ArcStr>,
 }
 
 // Trait used to abstract over WidgetPods of any widget type.

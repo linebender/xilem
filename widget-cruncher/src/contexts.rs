@@ -29,6 +29,7 @@ use crate::piet::{Piet, PietText, RenderContext};
 use crate::platform::WindowDesc;
 use crate::promise::{PromiseToken, PromiseTokenId};
 use crate::text::{ImeHandlerRef, TextFieldRegistration};
+use crate::widget::widget_view::WidgetView;
 use crate::widget::{CursorChange, FocusChange, WidgetState};
 use crate::{
     Affine, Env, Insets, Point, Rect, Size, Target, Vec2, Widget, WidgetId, WidgetPod, WindowId,
@@ -240,7 +241,7 @@ impl_context_method!(
         }
 
         // TODO - document
-        pub fn skip_child<W: Widget>(&self, child: &mut WidgetPod<W>) {
+        pub fn skip_child(&self, child: &mut WidgetPod<impl Widget>) {
             child.mark_as_visited();
         }
     }
@@ -428,7 +429,37 @@ impl_context_method!(EventCtx<'_, '_>, {
     }
 });
 
-// methods on event, update, and lifecycle
+// TODO - factorize
+
+impl<'a, 'b> EventCtx<'a, 'b> {
+    pub fn get_child_view<'c, Child: Widget>(
+        &mut self,
+        child: &'c mut WidgetPod<Child>,
+    ) -> WidgetView<'_, 'b, 'c, Child> {
+        WidgetView {
+            global_state: self.global_state,
+            parent_widget_state: self.widget_state,
+            widget_state: &mut child.state,
+            widget: &mut child.inner,
+        }
+    }
+}
+
+impl<'a, 'b> LifeCycleCtx<'a, 'b> {
+    pub fn get_child_view<'c, Child: Widget>(
+        &mut self,
+        child: &'c mut WidgetPod<Child>,
+    ) -> WidgetView<'_, 'b, 'c, Child> {
+        WidgetView {
+            global_state: self.global_state,
+            parent_widget_state: self.widget_state,
+            widget_state: &mut child.state,
+            widget: &mut child.inner,
+        }
+    }
+}
+
+// methods on event and lifecycle
 impl_context_method!(EventCtx<'_, '_>, LifeCycleCtx<'_, '_>, {
     /// Request a [`paint`] pass. This is equivalent to calling
     /// [`request_paint_rect`] for the widget's [`paint_rect`].
@@ -920,13 +951,17 @@ impl<'a> ContextState<'a> {
         }
     }
 
-    fn submit_command(&mut self, command: Command) {
+    pub(crate) fn submit_command(&mut self, command: Command) {
         trace!("submit_command");
         self.command_queue
             .push_back(command.default_to(self.window_id.into()));
     }
 
-    fn request_timer(&self, widget_state: &mut WidgetState, deadline: Duration) -> TimerToken {
+    pub(crate) fn request_timer(
+        &self,
+        widget_state: &mut WidgetState,
+        deadline: Duration,
+    ) -> TimerToken {
         trace!("request_timer deadline={:?}", deadline);
         let timer_token = self.window.request_timer(deadline);
         widget_state.add_timer(timer_token);
