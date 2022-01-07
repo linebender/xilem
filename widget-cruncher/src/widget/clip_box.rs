@@ -14,6 +14,7 @@
 
 use crate::kurbo::{Affine, Point, Rect, Size, Vec2};
 use crate::widget::prelude::*;
+use crate::widget::widget_view::WidgetView;
 use crate::widget::Axis;
 use crate::WidgetPod;
 use smallvec::{smallvec, SmallVec};
@@ -221,6 +222,17 @@ impl<W> ClipBox<W> {
     /// [`content_must_fill`]: ClipBox::content_must_fill
     pub fn set_content_must_fill(&mut self, must_fill: bool) {
         self.must_fill = must_fill;
+    }
+}
+
+impl<'a, 'b, W: Widget> WidgetView<'a, 'b, '_, ClipBox<W>> {
+    pub fn get_child_view(&mut self) -> WidgetView<'_, 'b, '_, W> {
+        WidgetView {
+            global_state: self.global_state,
+            parent_widget_state: self.widget_state,
+            widget_state: &mut self.widget.child.state,
+            widget: &mut self.widget.child.inner,
+        }
     }
 }
 

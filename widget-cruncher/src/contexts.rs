@@ -430,6 +430,7 @@ impl_context_method!(EventCtx<'_, '_>, {
 });
 
 // TODO - factorize
+// TODO - rename "create_view"
 
 impl<'a, 'b> EventCtx<'a, 'b> {
     pub fn get_child_view<'c, Child: Widget>(

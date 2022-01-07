@@ -16,6 +16,7 @@
 
 use crate::kurbo::{common::FloatExt, Vec2};
 use crate::widget::prelude::*;
+use crate::widget::widget_view::WidgetView;
 use crate::widget::WidgetState;
 use crate::{Data, KeyOrValue, Point, Rect, WidgetId, WidgetPod};
 use smallvec::SmallVec;
@@ -239,41 +240,37 @@ impl Flex {
         self.children.push(new_child);
         self
     }
+}
 
+// --- Mutate live Flex - WidgetView ---
+
+impl WidgetView<'_, '_, '_, Flex> {
     // --- Mutate live Flex ---
 
     /// Set the childrens' [`CrossAxisAlignment`].
     ///
     /// [`CrossAxisAlignment`]: enum.CrossAxisAlignment.html
-    pub fn set_cross_axis_alignment(
-        &mut self,
-        widget_state: &mut WidgetState,
-        alignment: CrossAxisAlignment,
-    ) {
-        self.cross_alignment = alignment;
+    pub fn set_cross_axis_alignment(&mut self, alignment: CrossAxisAlignment) {
+        self.widget.cross_alignment = alignment;
         // TODO
-        widget_state.needs_layout = true;
+        self.widget_state.needs_layout = true;
     }
 
     /// Set the childrens' [`MainAxisAlignment`].
     ///
     /// [`MainAxisAlignment`]: enum.MainAxisAlignment.html
-    pub fn set_main_axis_alignment(
-        &mut self,
-        widget_state: &mut WidgetState,
-        alignment: MainAxisAlignment,
-    ) {
-        self.main_alignment = alignment;
+    pub fn set_main_axis_alignment(&mut self, alignment: MainAxisAlignment) {
+        self.widget.main_alignment = alignment;
         // TODO
-        widget_state.needs_layout = true;
+        self.widget_state.needs_layout = true;
     }
 
     /// Set whether the container must expand to fill the available space on
     /// its main axis.
-    pub fn set_must_fill_main_axis(&mut self, widget_state: &mut WidgetState, fill: bool) {
-        self.fill_major_axis = fill;
+    pub fn set_must_fill_main_axis(&mut self, fill: bool) {
+        self.widget.fill_major_axis = fill;
         // TODO
-        widget_state.needs_layout = true;
+        self.widget_state.needs_layout = true;
     }
 
     /// Add a non-flex child widget.
@@ -281,31 +278,26 @@ impl Flex {
     /// See also [`with_child`].
     ///
     /// [`with_child`]: Flex::with_child
-    pub fn add_child(&mut self, widget_state: &mut WidgetState, child: impl Widget + 'static) {
+    pub fn add_child(&mut self, child: impl Widget + 'static) {
         let child = Child::Fixed {
             widget: WidgetPod::new(Box::new(child)),
             alignment: None,
         };
-        self.children.push(child);
+        self.widget.children.push(child);
         // TODO
-        widget_state.children_changed = true;
-        widget_state.needs_layout = true;
+        self.widget_state.children_changed = true;
+        self.widget_state.needs_layout = true;
     }
 
-    pub fn add_child_id(
-        &mut self,
-        widget_state: &mut WidgetState,
-        child: impl Widget + 'static,
-        id: WidgetId,
-    ) {
+    pub fn add_child_id(&mut self, child: impl Widget + 'static, id: WidgetId) {
         let child = Child::Fixed {
             widget: WidgetPod::new_with_id(Box::new(child), id),
             alignment: None,
         };
-        self.children.push(child);
+        self.widget.children.push(child);
         // TODO
-        widget_state.children_changed = true;
-        widget_state.needs_layout = true;
+        self.widget_state.children_changed = true;
+        self.widget_state.needs_layout = true;
     }
 
     /// Add a flexible child widget.
@@ -332,12 +324,7 @@ impl Flex {
     /// ```
     ///
     /// [`with_flex_child`]: Flex::with_flex_child
-    pub fn add_flex_child(
-        &mut self,
-        widget_state: &mut WidgetState,
-        child: impl Widget + 'static,
-        params: impl Into<FlexParams>,
-    ) {
+    pub fn add_flex_child(&mut self, child: impl Widget + 'static, params: impl Into<FlexParams>) {
         let params = params.into();
         let child = if params.flex > 0.0 {
             Child::Flex {
@@ -353,24 +340,24 @@ impl Flex {
                 alignment: None,
             }
         };
-        self.children.push(child);
+        self.widget.children.push(child);
         // TODO
-        widget_state.children_changed = true;
-        widget_state.needs_layout = true;
+        self.widget_state.children_changed = true;
+        self.widget_state.needs_layout = true;
     }
 
     /// Add a spacer widget with a standard size.
     ///
     /// The actual value of this spacer depends on whether this container is
     /// a row or column, as well as theme settings.
-    pub fn add_default_spacer(&mut self, widget_state: &mut WidgetState) {
-        let key = match self.direction {
+    pub fn add_default_spacer(&mut self) {
+        let key = match self.widget.direction {
             Axis::Vertical => crate::theme::WIDGET_PADDING_VERTICAL,
             Axis::Horizontal => crate::theme::WIDGET_PADDING_HORIZONTAL,
         };
-        self.add_spacer(widget_state, key);
+        self.add_spacer(key);
         // TODO
-        widget_state.needs_layout = true;
+        self.widget_state.needs_layout = true;
     }
 
     /// Add an empty spacer widget with the given size.
@@ -379,7 +366,7 @@ impl Flex {
     /// generally prefer to use [`add_default_spacer`].
     ///
     /// [`add_default_spacer`]: Flex::add_default_spacer
-    pub fn add_spacer(&mut self, widget_state: &mut WidgetState, len: impl Into<KeyOrValue<f64>>) {
+    pub fn add_spacer(&mut self, len: impl Into<KeyOrValue<f64>>) {
         let mut value = len.into();
         if let KeyOrValue::Concrete(ref mut len) = value {
             if *len < 0.0 {
@@ -389,13 +376,13 @@ impl Flex {
         }
 
         let new_child = Child::FixedSpacer(value, 0.0);
-        self.children.push(new_child);
+        self.widget.children.push(new_child);
         // TODO
-        widget_state.needs_layout = true;
+        self.widget_state.needs_layout = true;
     }
 
     /// Add an empty spacer widget with a specific `flex` factor.
-    pub fn add_flex_spacer(&mut self, widget_state: &mut WidgetState, flex: f64) {
+    pub fn add_flex_spacer(&mut self, flex: f64) {
         let flex = if flex >= 0.0 {
             flex
         } else {
@@ -403,14 +390,14 @@ impl Flex {
             0.0
         };
         let new_child = Child::FlexedSpacer(flex, 0.0);
-        self.children.push(new_child);
+        self.widget.children.push(new_child);
         // TODO
-        widget_state.needs_layout = true;
+        self.widget_state.needs_layout = true;
     }
 
-    pub fn clear(&mut self, widget_state: &mut WidgetState) {
-        self.children.clear();
-        widget_state.needs_layout = true;
+    pub fn clear(&mut self) {
+        self.widget.children.clear();
+        self.widget_state.needs_layout = true;
     }
 }
 
