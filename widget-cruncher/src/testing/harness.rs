@@ -14,11 +14,13 @@
 
 //! Tools and infrastructure for testing widgets.
 
+use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Arc;
 
 //use crate::ext_event::ExtEventHost;
 use crate::command::CommandQueue;
+use crate::debug_logger::DebugLogger;
 use crate::ext_event::ExtEventQueue;
 use crate::piet::{BitmapTarget, Device, Error, ImageFormat, Piet};
 use crate::platform::PendingWindow;
@@ -281,6 +283,12 @@ impl Harness {
         }
 
         inspect(&self.mock_app.window.root, &f);
+    }
+
+    // ex: harness.write_snapshot("test_log.json");
+    pub fn write_snapshot(&self, path: &str) {
+        let logger = DebugLogger::new(self.root_widget());
+        logger.write_to_file(path);
     }
 }
 

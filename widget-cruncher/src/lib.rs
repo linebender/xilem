@@ -59,6 +59,10 @@ pub mod text;
 pub mod theme;
 pub mod widget;
 
+// TODO
+pub mod debug_logger;
+pub mod debug_values;
+
 // Types from kurbo & piet that are required by public API.
 pub use kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
 pub use piet::{Color, ImageBuf, LinearGradient, RadialGradient, RenderContext, UnitPoint};

@@ -27,7 +27,9 @@ fn adding_child() {
 
     let replacer = ReplaceChild::new(Label::new(""), move || {
         Flex::row()
-            .with_child(Label::new(""))
+            .with_child(Label::new("hello"))
+            .with_child(Label::new("world"))
+            .with_child(Label::new("hi"))
             .with_child(Label::new("").record(&record_new_child2))
     });
 
