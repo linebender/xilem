@@ -9,7 +9,7 @@ use crate::AsWidgetPod;
 #[derive(Debug)]
 pub struct DebugLog {
     message: String,
-    //children: Vec<LogId>,
+    children: Vec<LogId>,
 }
 
 #[derive(Debug)]
@@ -22,9 +22,11 @@ pub struct DebugLogger {
     pub logs: HashMap<LogId, DebugLog>,
     pub root_logs: Vec<LogId>,
     pub snapshots: HashMap<LogId, Snapshot>,
-    //pub span_stack: Vec<LogId>,
+    pub span_stack: Vec<LogId>,
     pub log_id_counter: LogId,
 }
+
+// ---
 
 impl DebugLogger {
     pub fn new(root_widget: &dyn AsWidgetPod) -> Self {
@@ -37,6 +39,7 @@ impl DebugLogger {
             logs: HashMap::new(),
             root_logs: Vec::new(),
             snapshots: Default::default(),
+            span_stack: Vec::new(),
             log_id_counter: LogId(0),
         };
         new_self.push_log("initial value");
@@ -55,7 +58,7 @@ impl DebugLogger {
                     value: (*log).into(),
                     children: Default::default(),
                 };
-                //add_logs(&mut child, logs, &logs[log].children);
+                add_logs(&mut child, logs, &logs[log].children);
                 children.push(child);
             }
             tree.children = children.into();
@@ -87,9 +90,27 @@ impl DebugLogger {
             self.log_id_counter,
             DebugLog {
                 message: message.to_string(),
+                children: Vec::new(),
             },
         );
-        self.root_logs.push(self.log_id_counter);
+        if let Some(parent_id) = self.span_stack.last() {
+            self.logs
+                .get_mut(parent_id)
+                .unwrap()
+                .children
+                .push(self.log_id_counter);
+        } else {
+            self.root_logs.push(self.log_id_counter);
+        }
+    }
+
+    pub fn push_span(&mut self, message: &str) {
+        self.push_log(message);
+        self.span_stack.push(self.log_id_counter);
+    }
+
+    pub fn pop_span(&mut self) {
+        self.span_stack.pop();
     }
 
     fn push_snapshot(&mut self) {
@@ -104,6 +125,34 @@ impl DebugLogger {
                 selected_widget: 0,
             },
         );
+    }
+
+    pub fn update_widget_state(&mut self, widget: &dyn AsWidgetPod) {
+        let widget_id = widget.state().id.to_raw() as u32;
+        let layout_info = LayoutInfo {
+            layout_rect: widget.state().layout_rect(),
+            typename: widget.widget().short_type_name().into(),
+            children: widget
+                .children()
+                .into_iter()
+                .map(|child| child.state().id.to_raw() as u32)
+                .collect(),
+        };
+
+        self.widget_states
+            .insert(widget_id, Self::get_widget_state(widget));
+
+        // TODO
+        let mut widgets = (*self.layout_tree.widgets).clone();
+        widgets.insert(widget_id, layout_info);
+        self.layout_tree.widgets = widgets.into();
+
+        // TODO
+        //if widget.state().is_new || widget.state().children_changed {
+        for child in widget.children() {
+            self.update_widget_state(child);
+        }
+        //}
     }
 
     pub fn get_widget_state(widget: &dyn AsWidgetPod) -> StateTree {

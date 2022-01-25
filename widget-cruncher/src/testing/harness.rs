@@ -67,6 +67,7 @@ struct MockAppState {
     env: Env,
     window: WindowRoot,
     command_queue: CommandQueue,
+    debug_logger: DebugLogger,
 }
 
 #[allow(missing_docs)]
@@ -100,12 +101,14 @@ impl Harness {
             button: MouseButton::None,
             wheel_delta: Vec2::ZERO,
         };
+        let debug_logger = DebugLogger::new(&window.root);
 
         let mut harness = Harness {
             mock_app: MockAppState {
                 env: Env::with_theme(),
                 window,
                 command_queue: Default::default(),
+                debug_logger,
             },
             mouse_state,
             window_size,
@@ -285,10 +288,16 @@ impl Harness {
         inspect(&self.mock_app.window.root, &f);
     }
 
-    // ex: harness.write_snapshot("test_log.json");
-    pub fn write_snapshot(&self, path: &str) {
-        let logger = DebugLogger::new(self.root_widget());
-        logger.write_to_file(path);
+    pub fn push_log(&mut self, message: &str) {
+        self.mock_app
+            .debug_logger
+            .update_widget_state(&self.mock_app.window.root);
+        self.mock_app.debug_logger.push_log(message);
+    }
+
+    // ex: harness.write_debug_logs("test_log.json");
+    pub fn write_debug_logs(&mut self, path: &str) {
+        self.mock_app.debug_logger.write_to_file(path);
     }
 }
 
