@@ -62,19 +62,14 @@ Record spans, with:
 
 # TODO
 
-- Write introspection features
- - Debug tree
- - Layout tree (serializable)
- - AppState
- - Logs
-
 - Rewrite tests
  - Create coverage profile
  - Look at coverage of every file, write a list of target coverage
  - Add timers to harness
 
 - Write examples
- - To do List
+ - To-do List
+ - Fix blocking_function example
  - Rewrite Disney example
 
 - Trait-ify druid-shell
@@ -134,3 +129,36 @@ Record spans, with:
 - Use WidgetView everywhere
 - Switch to ECS
 - Port Panoramix
+
+
+## Tests to write
+
+- [ ] event
+- [ ] promise
+- [ ] utils
+- [ ] widget_pod
+ -> [ ] 'active' status
+ -> [ ] viewport_offset
+ -> [ ] paint_insets
+ -> [ ] debug_validate
+ -> [ ] check_initialized
+ -> [ ] check set_origin
+ -> [ ] MouseLeave
+ -> [ ] MouseMove hot status
+ -> [ ] pan_to_child
+ -> [ ] ParentWindowOrigin
+ -> [ ] debug_widget_test
+-> [ ] widget utils
+-> [ ] FillStrat
+-> [ ] Widgets
+ -> [ ] Button
+ -> [ ] Checkbox
+ -> [ ] Click
+ -> [ ] ClipBox
+ -> [ ] Flex
+ -> [ ] Image
+ -> [ ] Label
+ -> [ ] SizedBox
+ -> [ ] Spinner
+ -> [ ] TextBox
+-> [ ] text
