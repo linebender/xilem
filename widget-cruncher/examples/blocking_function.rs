@@ -61,14 +61,9 @@ impl Widget for MainWidget {
                         });
 
                         self.content.on_event(ctx, event, env);
-                        self.content.recurse_pass(
-                            "custom_pass",
-                            &mut ctx.widget_state,
-                            |flex, flex_state| {
-                                flex.clear(flex_state);
-                                flex.add_child(flex_state, Spinner::new());
-                            },
-                        );
+                        let mut flex_view = ctx.get_child_view(&mut self.content);
+                        flex_view.clear();
+                        flex_view.add_child(Spinner::new());
 
                         return;
                     }
@@ -78,14 +73,11 @@ impl Widget for MainWidget {
                 let value = *cmd.get(FINISH_SLOW_FUNCTION);
 
                 self.content.on_event(ctx, event, env);
-                self.content.recurse_pass(
-                    "custom_pass",
-                    &mut ctx.widget_state,
-                    |flex, flex_state| {
-                        flex.clear(flex_state);
-                        flex.add_child(flex_state, Label::new(format!("New value: {}", value)));
-                    },
-                );
+
+                let mut flex_view = ctx.get_child_view(&mut self.content);
+                flex_view.clear();
+                flex_view.add_child(Label::new(format!("New value: {}", value)));
+
                 self.loading = false;
                 self.value = value;
 
