@@ -14,8 +14,10 @@
 
 //! Tests related to propagation of invalid rects.
 
-use crate::testing::{move_mouse, widget_ids, Harness};
+use crate::kurbo::Rect;
+use crate::testing::{move_mouse, widget_ids, Harness, ModularWidget};
 use crate::widget::{Button, Flex};
+use crate::*;
 use test_env_log::test;
 
 #[test]
@@ -45,73 +47,4 @@ fn invalidate_union() {
     );
 }
 
-#[cfg(FALSE)]
-#[test]
-fn invalidate_scroll() {
-    const RECT: Rect = Rect {
-        x0: 30.,
-        y0: 40.,
-        x1: 40.,
-        y1: 50.,
-    };
-
-    struct Invalidator;
-
-    impl Widget for Invalidator {
-        fn on_event(&mut self, ctx: &mut EventCtx, _: &Event, _: &Env) {
-            ctx.request_paint_rect(RECT);
-        }
-
-        fn lifecycle(&mut self, _: &mut LifeCycleCtx, _: &LifeCycle, _: &Env) {}
-        fn layout(&mut self, _: &mut LayoutCtx, _: &BoxConstraints, _: &Env) -> Size {
-            Size::new(1000., 1000.)
-        }
-
-        fn paint(&mut self, ctx: &mut PaintCtx, _: &Env) {
-            use float_cmp::approx_eq;
-
-            assert_eq!(ctx.region().rects().len(), 1);
-            let rect = ctx.region().rects().first().unwrap();
-
-            approx_eq!(f64, rect.x0, RECT.x0);
-            approx_eq!(f64, rect.y0, RECT.y0);
-            approx_eq!(f64, rect.x1, RECT.x1);
-            approx_eq!(f64, rect.y1, RECT.y1);
-        }
-    }
-
-    let id = WidgetId::next();
-    let scroll_id = WidgetId::next();
-    let invalidator = IdentityWrapper::wrap(Invalidator, id);
-    let scroll = Scroll::new(invalidator).with_id(scroll_id);
-
-    let mut harness = Harness::create(scroll);
-
-    // Sending an event should cause RECT to get invalidated.
-    harness.event(Event::MouseMove(move_mouse((10., 10.))));
-    assert_eq!(harness.window().invalid().rects(), &[RECT]);
-
-    // This resets the invalid region, and our widget checks to make sure it sees the right
-    // invalid region in the paint function.
-    harness.paint_invalid();
-    assert!(harness.window().invalid().is_empty());
-
-    harness.event(Event::Wheel(scroll_mouse((10., 10.), (7.0, 9.0))));
-    // Scrolling invalidates the whole window.
-    assert_eq!(
-        harness.window().invalid().rects(),
-        &[Size::new(400., 400.).to_rect()]
-    );
-    harness.window_mut().invalid_mut().clear();
-
-    // After the scroll, the window should see the translated invalid regions...
-    harness.event(Event::MouseMove(move_mouse((10., 10.))));
-    assert_eq!(
-        harness.window().invalid().rects(),
-        &[RECT - Vec2::new(7.0, 9.0)]
-    );
-    // ...but in its paint callback, the widget will see the invalid region relative to itself.
-    harness.paint_invalid();
-}
-
-// TODO: Add a test with scrolling
+// TODO: Add a test with scrolling/viewport
