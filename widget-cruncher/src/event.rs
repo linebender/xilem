@@ -457,6 +457,36 @@ impl Event {
             | Event::Zoom(_) => false,
         }
     }
+
+    pub fn short_name(&self) -> &'static str {
+        match self {
+            Event::Internal(internal) => match internal {
+                InternalEvent::MouseLeave => "MouseLeave",
+                InternalEvent::TargetedCommand(_) => "TargetedCommand",
+                InternalEvent::RouteTimer(_, _) => "RouteTimer",
+                InternalEvent::RoutePromiseResult(_, _) => "RoutePromiseResult",
+                InternalEvent::RouteImeStateChange(_) => "RouteImeStateChange",
+            },
+            Event::WindowConnected => "WindowConnected",
+            Event::WindowCloseRequested => "WindowCloseRequested",
+            Event::WindowDisconnected => "WindowDisconnected",
+            Event::WindowSize(_) => "WindowSize",
+            Event::Timer(_) => "Timer",
+            Event::AnimFrame(_) => "AnimFrame",
+            Event::Command(_) => "Command",
+            Event::PromiseResult(_) => "PromiseResult",
+            Event::Notification(_) => "Notification",
+            Event::MouseDown(_) => "MouseDown",
+            Event::MouseUp(_) => "MouseUp",
+            Event::MouseMove(_) => "MouseMove",
+            Event::Wheel(_) => "Wheel",
+            Event::KeyDown(_) => "KeyDown",
+            Event::KeyUp(_) => "KeyUp",
+            Event::Paste(_) => "Paste",
+            Event::ImeStateChange => "ImeStateChange",
+            Event::Zoom(_) => "Zoom",
+        }
+    }
 }
 
 impl LifeCycle {
@@ -475,6 +505,21 @@ impl LifeCycle {
             LifeCycle::DisabledChanged(_) => true,
             LifeCycle::BuildFocusChain => false,
             LifeCycle::RequestPanToChild(_) => false,
+        }
+    }
+
+    pub fn short_name(&self) -> &str {
+        match self {
+            LifeCycle::Internal(internal) => match internal {
+                InternalLifeCycle::RouteWidgetAdded => "RouteWidgetAdded",
+                InternalLifeCycle::RouteFocusChanged { .. } => "RouteFocusChanged",
+                InternalLifeCycle::RouteDisabledChanged => "RouteDisabledChanged",
+                InternalLifeCycle::ParentWindowOrigin => "ParentWindowOrigin",
+            },
+            LifeCycle::WidgetAdded => "WidgetAdded",
+            LifeCycle::DisabledChanged(_) => "DisabledChanged",
+            LifeCycle::BuildFocusChain => "BuildFocusChain",
+            LifeCycle::RequestPanToChild(_) => "RequestPanToChild",
         }
     }
 }

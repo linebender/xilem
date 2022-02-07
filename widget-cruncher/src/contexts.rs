@@ -23,6 +23,7 @@ use std::time::Duration;
 use tracing::{error, trace, warn};
 
 use crate::command::{Command, CommandQueue, Notification, SingleUse};
+use crate::debug_logger::DebugLogger;
 use crate::env::KeyLike;
 use crate::ext_event::ExtEventSink;
 use crate::piet::{Piet, PietText, RenderContext};
@@ -54,6 +55,7 @@ macro_rules! impl_context_method {
 /// Static state that is shared between most contexts.
 pub(crate) struct ContextState<'a> {
     pub(crate) ext_event_sink: ExtEventSink,
+    pub(crate) debug_logger: &'a mut DebugLogger,
     pub(crate) command_queue: &'a mut CommandQueue,
     pub(crate) window_id: WindowId,
     pub(crate) window: &'a WindowHandle,
@@ -937,6 +939,7 @@ impl PaintCtx<'_, '_, '_> {
 impl<'a> ContextState<'a> {
     pub(crate) fn new(
         ext_event_sink: ExtEventSink,
+        debug_logger: &'a mut DebugLogger,
         command_queue: &'a mut CommandQueue,
         window: &'a WindowHandle,
         window_id: WindowId,
@@ -944,6 +947,7 @@ impl<'a> ContextState<'a> {
     ) -> Self {
         ContextState {
             ext_event_sink,
+            debug_logger,
             command_queue,
             window,
             window_id,

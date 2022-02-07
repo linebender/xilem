@@ -466,12 +466,18 @@ impl<W: Widget> WidgetPod<W> {
     /// [`event`]: trait.Widget.html#tymethod.event
     pub fn on_event(&mut self, parent_ctx: &mut EventCtx, event: &Event, env: &Env) {
         let _span = self.inner.make_trace_span().entered();
+        // TODO
+        parent_ctx
+            .global_state
+            .debug_logger
+            .push_span(self.inner.short_type_name());
 
         // TODO - explain this
         self.mark_as_visited();
         self.check_initialized("on_event");
 
         if parent_ctx.is_handled {
+            parent_ctx.global_state.debug_logger.pop_span();
             // If the event was already handled, we quit early.
             return;
         }
@@ -676,6 +682,17 @@ impl<W: Widget> WidgetPod<W> {
         // Always merge even if not needed, because merging is idempotent and gives us simpler code.
         // Doing this conditionally only makes sense when there's a measurable performance boost.
         parent_ctx.widget_state.merge_up(&mut self.state);
+
+        parent_ctx
+            .global_state
+            .debug_logger
+            .update_widget_state(self);
+        parent_ctx
+            .global_state
+            .debug_logger
+            .push_log(false, "updated state");
+
+        parent_ctx.global_state.debug_logger.pop_span();
     }
 
     fn pan_to_child(&mut self, parent_ctx: &mut EventCtx, env: &Env, rect: Rect) {
@@ -739,6 +756,12 @@ impl<W: Widget> WidgetPod<W> {
     pub fn lifecycle(&mut self, parent_ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
         let _span = self.inner.make_trace_span().entered();
 
+        // TODO
+        parent_ctx
+            .global_state
+            .debug_logger
+            .push_span(self.inner.short_type_name());
+
         // TODO - explain this
         self.mark_as_visited();
 
@@ -757,6 +780,15 @@ impl<W: Widget> WidgetPod<W> {
                     // we just pass this event down
                     if self.state.is_new {
                         self.lifecycle(parent_ctx, &LifeCycle::WidgetAdded, env);
+                        parent_ctx
+                            .global_state
+                            .debug_logger
+                            .update_widget_state(self);
+                        parent_ctx
+                            .global_state
+                            .debug_logger
+                            .push_log(false, "updated state");
+                        parent_ctx.global_state.debug_logger.pop_span();
                         return;
                     } else {
                         if self.state.children_changed {
@@ -953,6 +985,17 @@ impl<W: Widget> WidgetPod<W> {
         }
 
         parent_ctx.widget_state.merge_up(&mut self.state);
+
+        parent_ctx
+            .global_state
+            .debug_logger
+            .update_widget_state(self);
+        parent_ctx
+            .global_state
+            .debug_logger
+            .push_log(false, "updated state");
+
+        parent_ctx.global_state.debug_logger.pop_span();
     }
 
     // --- LAYOUT ---
@@ -965,6 +1008,12 @@ impl<W: Widget> WidgetPod<W> {
     /// [`layout`]: trait.Widget.html#tymethod.layout
     pub fn layout(&mut self, parent_ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
         let _span = self.inner.make_trace_span().entered();
+
+        // TODO
+        parent_ctx
+            .global_state
+            .debug_logger
+            .push_span(self.inner.short_type_name());
 
         // TODO - explain this
         self.mark_as_visited();
@@ -1011,6 +1060,17 @@ impl<W: Widget> WidgetPod<W> {
         parent_ctx.widget_state.merge_up(&mut self.state);
         self.state.size = new_size;
         self.log_layout_issues(new_size);
+
+        parent_ctx
+            .global_state
+            .debug_logger
+            .update_widget_state(self);
+        parent_ctx
+            .global_state
+            .debug_logger
+            .push_log(false, "updated state");
+
+        parent_ctx.global_state.debug_logger.pop_span();
 
         new_size
     }

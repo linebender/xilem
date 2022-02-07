@@ -27,6 +27,7 @@ pub enum Value {
 pub struct StateTree {
     pub name: String,
     pub value: Value,
+    pub folded_by_default: bool,
     #[serde(with = "serde_arc")]
     pub children: Arc<Vec<StateTree>>,
 }
@@ -40,9 +41,9 @@ pub struct LayoutInfo {
     pub children: HashSet<MyWidgetId>,
 }
 
-#[derive(Data, Clone, Debug, Deserialize, Serialize)]
+#[derive(Data, Clone, Default, Debug, Deserialize, Serialize)]
 pub struct LayoutTree {
-    pub root: MyWidgetId,
+    pub root: Option<MyWidgetId>,
     #[serde(with = "serde_arc")]
     pub widgets: Arc<HashMap<MyWidgetId, LayoutInfo>>,
 }
@@ -121,6 +122,7 @@ impl StateTree {
         StateTree {
             name: name.into(),
             value: value.into(),
+            folded_by_default: false,
             children: vec![].into(),
         }
     }

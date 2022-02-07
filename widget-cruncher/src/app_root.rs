@@ -4,6 +4,7 @@ use tracing::{error, info, info_span};
 // Automatically defaults to std::time::Instant on non Wasm platforms
 use instant::Instant;
 
+use crate::debug_logger::DebugLogger;
 use crate::kurbo::{Point, Size};
 use crate::piet::{Color, Piet, RenderContext};
 
@@ -30,6 +31,7 @@ use druid_shell::{
 
 pub(crate) struct AppRoot {
     pub app: Application,
+    pub debug_logger: DebugLogger,
     pub command_queue: CommandQueue,
     pub ext_event_queue: ExtEventQueue,
     pub file_dialogs: HashMap<FileDialogToken, DialogInfo>,
@@ -191,7 +193,7 @@ impl AppRoot {
 
     pub fn prepare_paint(&mut self, window_id: WindowId) {
         if let Some(win) = self.windows.active_windows.get_mut(&window_id) {
-            win.prepare_paint(&mut self.command_queue, &self.env);
+            win.prepare_paint(&mut self.debug_logger, &mut self.command_queue, &self.env);
         }
         //self.do_update();
         self.invalidate_and_finalize();
@@ -199,7 +201,13 @@ impl AppRoot {
 
     pub fn paint(&mut self, window_id: WindowId, piet: &mut Piet, invalid: &Region) {
         if let Some(win) = self.windows.active_windows.get_mut(&window_id) {
-            win.do_paint(piet, invalid, &mut self.command_queue, &self.env);
+            win.do_paint(
+                piet,
+                invalid,
+                &mut self.debug_logger,
+                &mut self.command_queue,
+                &self.env,
+            );
         }
     }
 
@@ -211,19 +219,26 @@ impl AppRoot {
                     return if cmd.is(crate::command::CLOSE_WINDOW) {
                         let handled = w.event(
                             Event::WindowCloseRequested,
+                            &mut self.debug_logger,
                             &mut self.command_queue,
                             &self.env,
                         );
                         if !handled.is_handled() {
                             w.event(
                                 Event::WindowDisconnected,
+                                &mut self.debug_logger,
                                 &mut self.command_queue,
                                 &self.env,
                             );
                         }
                         handled
                     } else {
-                        w.event(Event::Command(cmd), &mut self.command_queue, &self.env)
+                        w.event(
+                            Event::Command(cmd),
+                            &mut self.debug_logger,
+                            &mut self.command_queue,
+                            &self.env,
+                        )
                     };
                 }
             }
@@ -237,8 +252,13 @@ impl AppRoot {
                     .filter(|w| w.may_contain_widget(id))
                 {
                     let event = Event::Internal(InternalEvent::TargetedCommand(cmd.clone()));
-                    if w.event(event, &mut self.command_queue, &self.env)
-                        .is_handled()
+                    if w.event(
+                        event,
+                        &mut self.debug_logger,
+                        &mut self.command_queue,
+                        &self.env,
+                    )
+                    .is_handled()
                     {
                         return Handled::Yes;
                     }
@@ -247,8 +267,13 @@ impl AppRoot {
             Target::Global => {
                 for w in self.windows.active_windows.values_mut() {
                     let event = Event::Command(cmd.clone());
-                    if w.event(event, &mut self.command_queue, &self.env)
-                        .is_handled()
+                    if w.event(
+                        event,
+                        &mut self.debug_logger,
+                        &mut self.command_queue,
+                        &self.env,
+                    )
+                    .is_handled()
                     {
                         return Handled::Yes;
                     }
@@ -270,13 +295,19 @@ impl AppRoot {
         }
 
         if let Some(win) = self.windows.active_windows.get_mut(&source_id) {
-            win.event(event, &mut self.command_queue, &self.env)
+            win.event(
+                event,
+                &mut self.debug_logger,
+                &mut self.command_queue,
+                &self.env,
+            )
         } else {
             Handled::No
         }
     }
 
     pub fn do_update(&mut self) {
+        // FIXME
         /*
         // we send `update` to all windows, not just the active one:
         for window in self.windows.active_windows.values_mut() {
@@ -394,7 +425,8 @@ impl WindowRoot {
     fn post_event_processing(
         &mut self,
         widget_state: &mut WidgetState,
-        queue: &mut CommandQueue,
+        debug_logger: &mut DebugLogger,
+        command_queue: &mut CommandQueue,
         env: &Env,
         process_commands: bool,
     ) {
@@ -419,32 +451,37 @@ impl WindowRoot {
 
             self.lifecycle(
                 &LifeCycle::Internal(InternalLifeCycle::RouteWidgetAdded),
-                queue,
+                debug_logger,
+                command_queue,
                 env,
                 false,
             );
         }
 
+        if debug_logger.layout_tree.root.is_none() {
+            debug_logger.layout_tree.root = Some(self.root.id().to_raw() as u32);
+        }
+
         if self.root.state().needs_window_origin && !self.root.state().needs_layout {
             let event = LifeCycle::Internal(InternalLifeCycle::ParentWindowOrigin);
-            self.lifecycle(&event, queue, env, false);
+            self.lifecycle(&event, debug_logger, command_queue, env, false);
         }
 
         // Update the disabled state if necessary
         // Always do this before updating the focus-chain
         if self.root.state().tree_disabled_changed() {
             let event = LifeCycle::Internal(InternalLifeCycle::RouteDisabledChanged);
-            self.lifecycle(&event, queue, env, false);
+            self.lifecycle(&event, debug_logger, command_queue, env, false);
         }
 
         // Update the focus-chain if necessary
         // Always do this before sending focus change, since this event updates the focus chain.
         if self.root.state().update_focus_chain {
             let event = LifeCycle::BuildFocusChain;
-            self.lifecycle(&event, queue, env, false);
+            self.lifecycle(&event, debug_logger, command_queue, env, false);
         }
 
-        self.update_focus(widget_state, queue, env);
+        self.update_focus(widget_state, debug_logger, command_queue, env);
 
         // Add all the requested timers to the window's timers map.
         self.timers.extend_drain(&mut widget_state.timers);
@@ -461,7 +498,7 @@ impl WindowRoot {
         }
 
         // If there are any commands and they should be processed
-        if process_commands && !queue.is_empty() {
+        if process_commands && !command_queue.is_empty() {
             // Ask the handler to call us back on idle
             // so we can process them in a new event/update pass.
             if let Some(mut handle) = self.handle.get_idle_handle() {
@@ -473,7 +510,13 @@ impl WindowRoot {
         }
     }
 
-    pub(crate) fn event(&mut self, event: Event, queue: &mut CommandQueue, env: &Env) -> Handled {
+    pub(crate) fn event(
+        &mut self,
+        event: Event,
+        debug_logger: &mut DebugLogger,
+        command_queue: &mut CommandQueue,
+        env: &Env,
+    ) -> Handled {
         match &event {
             Event::WindowSize(size) => self.size = *size,
             Event::MouseDown(e) | Event::MouseUp(e) | Event::MouseMove(e) | Event::Wheel(e) => {
@@ -498,7 +541,8 @@ impl WindowRoot {
         if let Event::WindowConnected = event {
             self.lifecycle(
                 &LifeCycle::Internal(InternalLifeCycle::RouteWidgetAdded),
-                queue,
+                debug_logger,
+                command_queue,
                 env,
                 false,
             );
@@ -508,7 +552,8 @@ impl WindowRoot {
         let is_handled = {
             let mut global_state = ContextState::new(
                 self.ext_event_sink.clone(),
-                queue,
+                debug_logger,
+                command_queue,
                 &self.handle,
                 self.id,
                 self.focus,
@@ -526,8 +571,12 @@ impl WindowRoot {
             };
 
             {
+                ctx.global_state
+                    .debug_logger
+                    .push_important_span(&format!("EVENT {}", event.short_name()));
                 let _span = info_span!("event").entered();
                 self.root.on_event(&mut ctx, &event, env);
+                ctx.global_state.debug_logger.pop_span();
             }
 
             if !ctx.notifications.is_empty() {
@@ -561,10 +610,10 @@ impl WindowRoot {
         ) {
             // Because our initial size can be zero, the window system won't ask us to paint.
             // So layout ourselves and hopefully we resize
-            self.layout(queue, env);
+            self.layout(debug_logger, command_queue, env);
         }
 
-        self.post_event_processing(&mut widget_state, queue, env, false);
+        self.post_event_processing(&mut widget_state, debug_logger, command_queue, env, false);
 
         self.root.debug_validate(false);
 
@@ -574,14 +623,16 @@ impl WindowRoot {
     pub(crate) fn lifecycle(
         &mut self,
         event: &LifeCycle,
-        queue: &mut CommandQueue,
+        debug_logger: &mut DebugLogger,
+        command_queue: &mut CommandQueue,
         env: &Env,
         process_commands: bool,
     ) {
         let mut widget_state = WidgetState::new(self.root.id(), Some(self.size), "<root>");
         let mut global_state = ContextState::new(
             self.ext_event_sink.clone(),
-            queue,
+            debug_logger,
+            command_queue,
             &self.handle,
             self.id,
             self.focus,
@@ -593,11 +644,21 @@ impl WindowRoot {
         };
 
         {
+            ctx.global_state
+                .debug_logger
+                .push_important_span(&format!("LIFECYCLE {}", event.short_name()));
             let _span = info_span!("lifecycle").entered();
             self.root.lifecycle(&mut ctx, event, env);
+            ctx.global_state.debug_logger.pop_span();
         }
 
-        self.post_event_processing(&mut widget_state, queue, env, process_commands);
+        self.post_event_processing(
+            &mut widget_state,
+            debug_logger,
+            command_queue,
+            env,
+            process_commands,
+        );
     }
 
     pub(crate) fn invalidate_and_finalize(&mut self) {
@@ -622,7 +683,12 @@ impl WindowRoot {
     }
 
     /// Get ready for painting, by doing layout and sending an `AnimFrame` event.
-    pub(crate) fn prepare_paint(&mut self, queue: &mut CommandQueue, env: &Env) {
+    pub(crate) fn prepare_paint(
+        &mut self,
+        debug_logger: &mut DebugLogger,
+        command_queue: &mut CommandQueue,
+        env: &Env,
+    ) {
         let now = Instant::now();
         // TODO: this calculation uses wall-clock time of the paint call, which
         // potentially has jitter.
@@ -632,7 +698,12 @@ impl WindowRoot {
         let elapsed_ns = last.map(|t| now.duration_since(t).as_nanos()).unwrap_or(0) as u64;
 
         if self.wants_animation_frame() {
-            self.event(Event::AnimFrame(elapsed_ns), queue, env);
+            self.event(
+                Event::AnimFrame(elapsed_ns),
+                debug_logger,
+                command_queue,
+                env,
+            );
             self.last_anim = Some(now);
         }
     }
@@ -641,11 +712,12 @@ impl WindowRoot {
         &mut self,
         piet: &mut Piet,
         invalid: &Region,
-        queue: &mut CommandQueue,
+        debug_logger: &mut DebugLogger,
+        command_queue: &mut CommandQueue,
         env: &Env,
     ) {
         if self.root.state().needs_layout {
-            self.layout(queue, env);
+            self.layout(debug_logger, command_queue, env);
         }
 
         for &r in invalid.rects() {
@@ -658,14 +730,20 @@ impl WindowRoot {
                 },
             );
         }
-        self.paint(piet, invalid, queue, env);
+        self.paint(piet, invalid, debug_logger, command_queue, env);
     }
 
-    pub(crate) fn layout(&mut self, queue: &mut CommandQueue, env: &Env) {
+    pub(crate) fn layout(
+        &mut self,
+        debug_logger: &mut DebugLogger,
+        command_queue: &mut CommandQueue,
+        env: &Env,
+    ) {
         let mut widget_state = WidgetState::new(self.root.id(), Some(self.size), "<root>");
         let mut global_state = ContextState::new(
             self.ext_event_sink.clone(),
-            queue,
+            debug_logger,
+            command_queue,
             &self.handle,
             self.id,
             self.focus,
@@ -682,9 +760,14 @@ impl WindowRoot {
         };
 
         let content_size = {
+            layout_ctx
+                .global_state
+                .debug_logger
+                .push_important_span("LAYOUT");
             let _span = info_span!("layout").entered();
             self.root.layout(&mut layout_ctx, &bc, env)
         };
+        layout_ctx.global_state.debug_logger.pop_span();
 
         if let WindowSizePolicy::Content = self.size_policy {
             let insets = self.handle.content_insets();
@@ -697,18 +780,27 @@ impl WindowRoot {
         self.root.set_origin(&mut layout_ctx, env, Point::ORIGIN);
         self.lifecycle(
             &LifeCycle::Internal(InternalLifeCycle::ParentWindowOrigin),
-            queue,
+            debug_logger,
+            command_queue,
             env,
             false,
         );
-        self.post_event_processing(&mut widget_state, queue, env, true);
+        self.post_event_processing(&mut widget_state, debug_logger, command_queue, env, true);
     }
 
-    fn paint(&mut self, piet: &mut Piet, invalid: &Region, queue: &mut CommandQueue, env: &Env) {
+    fn paint(
+        &mut self,
+        piet: &mut Piet,
+        invalid: &Region,
+        debug_logger: &mut DebugLogger,
+        command_queue: &mut CommandQueue,
+        env: &Env,
+    ) {
         let widget_state = WidgetState::new(self.root.id(), Some(self.size), "<root>");
         let mut global_state = ContextState::new(
             self.ext_event_sink.clone(),
-            queue,
+            debug_logger,
+            command_queue,
             &self.handle,
             self.id,
             self.focus,
@@ -760,7 +852,8 @@ impl WindowRoot {
     fn update_focus(
         &mut self,
         widget_state: &mut WidgetState,
-        queue: &mut CommandQueue,
+        debug_logger: &mut DebugLogger,
+        command_queue: &mut CommandQueue,
         env: &Env,
     ) {
         if let Some(focus_req) = widget_state.request_focus.take() {
@@ -773,7 +866,7 @@ impl WindowRoot {
             // Only send RouteFocusChanged in case there's actual change
             if old != new {
                 let event = LifeCycle::Internal(InternalLifeCycle::RouteFocusChanged { old, new });
-                self.lifecycle(&event, queue, env, false);
+                self.lifecycle(&event, debug_logger, command_queue, env, false);
                 self.focus = new;
                 // check if the newly focused widget has an IME session, and
                 // notify the system if so.

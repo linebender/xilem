@@ -19,6 +19,7 @@ use std::cell::RefCell;
 use std::collections::{HashMap, VecDeque};
 use std::rc::Rc;
 
+use crate::debug_logger::DebugLogger;
 use crate::kurbo::Size;
 use crate::piet::Piet;
 
@@ -92,6 +93,7 @@ impl AppState {
     pub(crate) fn new(app: Application, ext_event_queue: ExtEventQueue, env: Env) -> Self {
         let inner = Rc::new(RefCell::new(AppRoot {
             app,
+            debug_logger: DebugLogger::new(),
             command_queue: VecDeque::new(),
             ext_event_queue,
             file_dialogs: HashMap::new(),

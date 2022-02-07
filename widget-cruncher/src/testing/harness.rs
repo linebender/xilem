@@ -101,7 +101,7 @@ impl Harness {
             button: MouseButton::None,
             wheel_delta: Vec2::ZERO,
         };
-        let debug_logger = DebugLogger::new(&window.root);
+        let debug_logger = DebugLogger::new();
 
         let mut harness = Harness {
             mock_app: MockAppState {
@@ -292,7 +292,7 @@ impl Harness {
         self.mock_app
             .debug_logger
             .update_widget_state(&self.mock_app.window.root);
-        self.mock_app.debug_logger.push_log(message);
+        self.mock_app.debug_logger.push_log(false, message);
     }
 
     // ex: harness.write_debug_logs("test_log.json");
@@ -303,20 +303,36 @@ impl Harness {
 
 impl MockAppState {
     fn event(&mut self, event: Event) {
-        self.window.event(event, &mut self.command_queue, &self.env);
+        self.window.event(
+            event,
+            &mut self.debug_logger,
+            &mut self.command_queue,
+            &self.env,
+        );
     }
 
     fn lifecycle(&mut self, event: LifeCycle) {
-        self.window
-            .lifecycle(&event, &mut self.command_queue, &self.env, false);
+        self.window.lifecycle(
+            &event,
+            &mut self.debug_logger,
+            &mut self.command_queue,
+            &self.env,
+            false,
+        );
     }
 
     fn layout(&mut self) {
-        self.window.layout(&mut self.command_queue, &self.env);
+        self.window
+            .layout(&mut self.debug_logger, &mut self.command_queue, &self.env);
     }
 
     fn paint_region(&mut self, piet: &mut Piet, invalid: &Region) {
-        self.window
-            .do_paint(piet, invalid, &mut self.command_queue, &self.env);
+        self.window.do_paint(
+            piet,
+            invalid,
+            &mut self.debug_logger,
+            &mut self.command_queue,
+            &self.env,
+        );
     }
 }

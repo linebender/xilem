@@ -8,6 +8,7 @@ use crate::AsWidgetPod;
 
 #[derive(Debug)]
 pub struct DebugLog {
+    important: bool,
     message: String,
     children: Vec<LogId>,
 }
@@ -29,11 +30,10 @@ pub struct DebugLogger {
 // ---
 
 impl DebugLogger {
-    pub fn new(root_widget: &dyn AsWidgetPod) -> Self {
-        let (layout_tree, widget_states) = Self::get_data(root_widget);
+    pub fn new() -> Self {
         let mut new_self = DebugLogger {
-            layout_tree,
-            widget_states,
+            layout_tree: Default::default(),
+            widget_states: Default::default(),
             global_state: Default::default(),
             event_state: Default::default(),
             logs: HashMap::new(),
@@ -42,7 +42,7 @@ impl DebugLogger {
             span_stack: Vec::new(),
             log_id_counter: LogId(0),
         };
-        new_self.push_log("initial value");
+        new_self.push_log(false, "initial value");
         new_self
     }
 
@@ -56,6 +56,7 @@ impl DebugLogger {
                 let mut child = StateTree {
                     name: logs[log].message.clone(),
                     value: (*log).into(),
+                    folded_by_default: logs[log].important,
                     children: Default::default(),
                 };
                 add_logs(&mut child, logs, &logs[log].children);
@@ -67,6 +68,7 @@ impl DebugLogger {
         let mut log_tree = StateTree {
             name: "Logs".to_string(),
             value: Value::Empty,
+            folded_by_default: false,
             children: Default::default(),
         };
         add_logs(&mut log_tree, &self.logs, &self.root_logs);
@@ -84,11 +86,12 @@ impl DebugLogger {
         writer.flush().unwrap();
     }
 
-    pub fn push_log(&mut self, message: &str) {
+    pub fn push_log(&mut self, important: bool, message: &str) {
         self.push_snapshot();
         self.logs.insert(
             self.log_id_counter,
             DebugLog {
+                important,
                 message: message.to_string(),
                 children: Vec::new(),
             },
@@ -105,7 +108,12 @@ impl DebugLogger {
     }
 
     pub fn push_span(&mut self, message: &str) {
-        self.push_log(message);
+        self.push_log(false, message);
+        self.span_stack.push(self.log_id_counter);
+    }
+
+    pub fn push_important_span(&mut self, message: &str) {
+        self.push_log(true, message);
         self.span_stack.push(self.log_id_counter);
     }
 
@@ -146,13 +154,6 @@ impl DebugLogger {
         let mut widgets = (*self.layout_tree.widgets).clone();
         widgets.insert(widget_id, layout_info);
         self.layout_tree.widgets = widgets.into();
-
-        // TODO
-        //if widget.state().is_new || widget.state().children_changed {
-        for child in widget.children() {
-            self.update_widget_state(child);
-        }
-        //}
     }
 
     pub fn get_widget_state(widget: &dyn AsWidgetPod) -> StateTree {
@@ -224,7 +225,7 @@ impl DebugLogger {
 
         (
             LayoutTree {
-                root: root_widget.state().id.to_raw() as u32,
+                root: Some(root_widget.state().id.to_raw() as u32),
                 widgets: Arc::new(widgets_map),
             },
             widget_states,
