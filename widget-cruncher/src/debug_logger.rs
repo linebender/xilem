@@ -15,6 +15,8 @@ pub struct DebugLog {
 
 #[derive(Debug)]
 pub struct DebugLogger {
+    pub activated: bool,
+
     pub layout_tree: LayoutTree,
     pub widget_states: HashMap<MyWidgetId, StateTree>,
     pub global_state: StateTree,
@@ -30,8 +32,9 @@ pub struct DebugLogger {
 // ---
 
 impl DebugLogger {
-    pub fn new() -> Self {
+    pub fn new(activated: bool) -> Self {
         let mut new_self = DebugLogger {
+            activated,
             layout_tree: Default::default(),
             widget_states: Default::default(),
             global_state: Default::default(),
@@ -87,6 +90,10 @@ impl DebugLogger {
     }
 
     pub fn push_log(&mut self, important: bool, message: &str) {
+        if !self.activated {
+            return;
+        }
+
         self.push_snapshot();
         self.logs.insert(
             self.log_id_counter,
@@ -108,20 +115,32 @@ impl DebugLogger {
     }
 
     pub fn push_span(&mut self, message: &str) {
+        if !self.activated {
+            return;
+        }
         self.push_log(false, message);
         self.span_stack.push(self.log_id_counter);
     }
 
     pub fn push_important_span(&mut self, message: &str) {
+        if !self.activated {
+            return;
+        }
         self.push_log(true, message);
         self.span_stack.push(self.log_id_counter);
     }
 
     pub fn pop_span(&mut self) {
+        if !self.activated {
+            return;
+        }
         self.span_stack.pop();
     }
 
     fn push_snapshot(&mut self) {
+        if !self.activated {
+            return;
+        }
         self.log_id_counter.0 += 1;
         self.snapshots.insert(
             self.log_id_counter,
@@ -136,6 +155,9 @@ impl DebugLogger {
     }
 
     pub fn update_widget_state(&mut self, widget: &dyn AsWidgetPod) {
+        if !self.activated {
+            return;
+        }
         let widget_id = widget.state().id.to_raw() as u32;
         let layout_info = LayoutInfo {
             layout_rect: widget.state().layout_rect(),

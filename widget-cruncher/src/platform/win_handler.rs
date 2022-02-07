@@ -93,7 +93,7 @@ impl AppState {
     pub(crate) fn new(app: Application, ext_event_queue: ExtEventQueue, env: Env) -> Self {
         let inner = Rc::new(RefCell::new(AppRoot {
             app,
-            debug_logger: DebugLogger::new(),
+            debug_logger: DebugLogger::new(false),
             command_queue: VecDeque::new(),
             ext_event_queue,
             file_dialogs: HashMap::new(),

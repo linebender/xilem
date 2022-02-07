@@ -101,14 +101,13 @@ impl Harness {
             button: MouseButton::None,
             wheel_delta: Vec2::ZERO,
         };
-        let debug_logger = DebugLogger::new();
 
         let mut harness = Harness {
             mock_app: MockAppState {
                 env: Env::with_theme(),
                 window,
                 command_queue: Default::default(),
-                debug_logger,
+                debug_logger: DebugLogger::new(true),
             },
             mouse_state,
             window_size,
