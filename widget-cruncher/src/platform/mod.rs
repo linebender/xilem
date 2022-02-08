@@ -1,6 +1,6 @@
-#![cfg(not(tarpaulin_include))]
-
+#[cfg(not(tarpaulin_include))]
 mod win_handler;
+#[cfg(not(tarpaulin_include))]
 mod window_description;
 
 pub(crate) use win_handler::{AppHandler, AppState, EXT_EVENT_IDLE_TOKEN, RUN_COMMANDS_TOKEN};

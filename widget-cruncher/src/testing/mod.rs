@@ -17,7 +17,9 @@
 #![cfg(not(tarpaulin_include))]
 #![allow(unused_imports)]
 
+#[cfg(not(tarpaulin_include))]
 mod harness;
+#[cfg(not(tarpaulin_include))]
 mod helper_widgets;
 
 pub use harness::{Harness, HARNESS_DEFAULT_SIZE};
