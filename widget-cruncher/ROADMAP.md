@@ -62,73 +62,73 @@ Record spans, with:
 
 # TODO
 
-- Rewrite tests
- - Create coverage profile
- - Look at coverage of every file, write a list of target coverage
- - Add timers to harness
+- [ ] Rewrite tests
+ - [X] Create coverage profile
+ - [X] Look at coverage of every file, write a list of target coverage
+ - [ ] Add timers to harness
 
-- Write examples
- - To-do List
- - Fix blocking_function example
- - Rewrite Disney example
+- [ ] Write examples
+ - [ ] To-do List
+ - [X] Fix blocking_function example
+ - [ ] Rewrite Disney example
 
-- Trait-ify druid-shell
- - ??? Start at the bottom?
+- [ ] Trait-ify druid-shell
+ - [ ] ??? Start at the bottom?
 
-- Add replay mode
- - Record platform events
- - Record timers
- - Add way to rr tests
+- [ ] Add replay mode
+ - [ ] Record platform events
+ - [ ] Record timers
+ - [ ] Add way to rr tests
 
-- Add fuzzing
- - Check Druid invariants
- - Create fuzzing suite
- - Test it with intentional bugs
+- [ ] Add fuzzing
+ - [ ] Check Druid invariants
+ - [ ] Create fuzzing suite
+ - [ ] Test it with intentional bugs
 
-- Add profiling
- - Add artinasal timings manager
- - Start in separate crate with artificial benchmarks
- - Add "median/worst FPS" log at the end of each run.
+- [ ] Add profiling
+ - [ ] Add artinasal timings manager
+ - [ ] Start in separate crate with artificial benchmarks
+ - [ ] Add "median/worst FPS" log at the end of each run.
 
-- Write benchmarks
- - Try to find ways to bust the framework's framerate
- - Huge list
- - Huge list with editable/focusable boxes
- - ???
+- [ ] Write benchmarks
+ - [ ] Try to find ways to bust the framework's framerate
+ - [ ] Huge list
+ - [ ] Huge list with editable/focusable boxes
+ - [ ] ???
 
-- Re-add Dialog
-- Re-add ExtEvent + AppDelegate
-- Refactor TextLayout
-- Rewrite License bits
-- Check ids are unique
-- Getter downcast
-- Rework set_origin
-- Use pretty assert
-- Rename ContextState to GlobalPassCtx
-- Sort WidgetState fields
-- Add WidgetTmpState
-- Extract WidgetState fields to WidgetTmpState + global state
-- Remove ExtendDrain
-- Drag 'n Drop
+- [ ] Re-add Dialog
+- [ ] Re-add ExtEvent + AppDelegate
+- [ ] Refactor TextLayout
+- [ ] Rewrite License bits
+- [ ] Check ids are unique
+- [ ] Getter downcast
+- [ ] Rework set_origin
+- [ ] Use pretty assert
+- [ ] Rename ContextState to GlobalPassCtx
+- [ ] Sort WidgetState fields
+- [ ] Add WidgetTmpState
+- [ ] Extract WidgetState fields to WidgetTmpState + global state
+- [ ] Remove ExtendDrain
+- [ ] Drag 'n Drop
 
-- Refactor ScrollComponent
- - Disambiguate concept of hidden/stashed widgets
- - Fix invalidation
+- [ ] Refactor ScrollComponent
+ - [ ] Disambiguate concept of hidden/stashed widgets
+ - [ ] Fix invalidation
 
-- Refactor Druid env
- - Remove Data trait
- - Make it so that required keys are known at launch time for better error messages.
- - Re-add Localization
+- [ ] Refactor Druid env
+ - [ ] Remove Data trait
+ - [ ] Make it so that required keys are known at launch time for better error messages.
+ - [ ] Re-add Localization
 
-- Refactor Command infrastructure
- - Broadcast (used multiple times)
- - Command (used once)
- - ???
- - Add on_command() trait method
+- [ ] Refactor Command infrastructure
+ - [ ] Broadcast (used multiple times)
+ - [ ] Command (used once)
+ - [ ] ???
+ - [ ] Add on_command() trait method
 
-- Use WidgetView everywhere
-- Switch to ECS
-- Port Panoramix
+- [ ] Use WidgetView everywhere
+- [ ] Switch to ECS
+- [ ] Port Panoramix
 
 
 ## Tests to write
