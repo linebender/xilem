@@ -66,13 +66,17 @@ unicode-segmentation = "1.6.0"
 xi-unicode = "0.3.0"
 fnv = "1.0.7"
 instant = { version = "0.1.6", features = ["wasm-bindgen"] }
+smallvec = "1.6.1"
 
 # Optional dependencies
 chrono = { version = "0.4.19", optional = true }
 im = { version = "15.0.0", optional = true }
 usvg = { version = "0.14.1", optional = true }
-smallvec = "1.6.1"
+
+# TODO - Probably should make reqwest optional, and check for alternatives
 reqwest = { version = "0.11.5", features = ["blocking"] }
+
+# TODO - make most of serde a dev dependency
 serde = "1.0.133"
 serde_json = "1.0.74"
 
