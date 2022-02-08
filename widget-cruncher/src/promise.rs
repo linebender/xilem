@@ -41,6 +41,7 @@ impl<T: Any + Send> PromiseToken<T> {
         Self::new()
     }
 
+    #[cfg(not(tarpaulin_include))]
     pub(crate) fn id(&self) -> PromiseTokenId {
         self.0
     }
@@ -54,6 +55,7 @@ impl<T: Any + Send> PromiseToken<T> {
 }
 
 impl PromiseResult {
+    #[cfg(not(tarpaulin_include))]
     pub(crate) fn token_id(&self) -> PromiseTokenId {
         self.token_id
     }
@@ -95,6 +97,7 @@ impl PromiseResult {
 
 impl<T> Copy for PromiseToken<T> {}
 
+#[cfg(not(tarpaulin_include))]
 impl<T> Clone for PromiseToken<T> {
     fn clone(&self) -> Self {
         PromiseToken(self.0, std::marker::PhantomData)
@@ -106,5 +109,56 @@ impl<T> std::fmt::Debug for PromiseToken<T> {
         f.debug_tuple("PromiseToken")
             .field(&self.0.to_raw())
             .finish()
+    }
+}
+
+// ---
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn debug_empty_token() {
+        let promise_token: PromiseToken<i32> = PromiseToken::empty();
+        println!("token: {:?}", promise_token);
+    }
+
+    #[test]
+    fn create_and_use_promise() {
+        let promise_token = PromiseToken::new();
+        let promise_result = promise_token.make_result(42);
+        assert!(promise_result.is(promise_token));
+        assert_eq!(promise_result.get(promise_token), 42);
+    }
+
+    #[test]
+    fn bad_promise() {
+        let promise_token_1: PromiseToken<i32> = PromiseToken::new();
+        let promise_token_2: PromiseToken<i32> = PromiseToken::new();
+
+        let promise_result = promise_token_1.make_result(42);
+        assert!(!promise_result.is(promise_token_2));
+        assert!(promise_result.try_get(promise_token_2).is_none());
+    }
+
+    #[should_panic]
+    #[test]
+    fn bad_promise_get() {
+        let promise_token_1: PromiseToken<i32> = PromiseToken::new();
+        let promise_token_2: PromiseToken<i32> = PromiseToken::new();
+
+        let promise_result = promise_token_1.make_result(42);
+        promise_result.get(promise_token_2);
+    }
+
+    #[should_panic]
+    #[test]
+    fn get_promise_twice() {
+        let promise_token = PromiseToken::new();
+        let promise_result = promise_token.make_result(42);
+
+        promise_result.get(promise_token);
+        promise_result.get(promise_token);
     }
 }

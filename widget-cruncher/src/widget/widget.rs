@@ -207,6 +207,7 @@ pub trait Widget: Any {
     }
 }
 
+#[cfg(not(tarpaulin_include))]
 impl WidgetId {
     /// Allocate a new, unique `WidgetId`.
     ///

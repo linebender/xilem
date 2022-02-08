@@ -133,22 +133,22 @@ Record spans, with:
 
 ## Tests to write
 
-- [ ] event
-- [ ] promise
-- [ ] utils
-- [ ] widget_pod
- -> [ ] 'active' status
+- [X] event
+- [X] promise
+- [X] utils
+- [X] widget_pod
+ -> [X] 'active' status
  -> [ ] viewport_offset
  -> [ ] paint_insets
- -> [ ] debug_validate
- -> [ ] check_initialized
- -> [ ] check set_origin
- -> [ ] MouseLeave
- -> [ ] MouseMove hot status
+ -> [X] debug_validate
+ -> [X] check_initialized
+ -> [X] check set_origin
+ -> [X] MouseLeave
+ -> [X] layout changes hot status
  -> [ ] pan_to_child
  -> [ ] ParentWindowOrigin
- -> [ ] debug_widget_test
--> [ ] widget utils
+ -> [ ] debug_widget_text
+-> [X] widget utils
 -> [ ] FillStrat
 -> [ ] Widgets
  -> [ ] Button

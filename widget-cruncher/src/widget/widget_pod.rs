@@ -1143,6 +1143,7 @@ impl<W: Widget> WidgetPod<W> {
         self.paint_impl(parent_ctx, env, false)
     }
 
+    // TODO - fix doc: paint rect, not layout rect
     /// Paint the widget, even if its layout rect is outside of the currently
     /// visible region.
     pub fn paint_always(&mut self, parent_ctx: &mut PaintCtx, env: &Env) {
@@ -1170,6 +1171,8 @@ impl<W: Widget> WidgetPod<W> {
             ctx.with_child_ctx(visible, |ctx| self.paint_raw(ctx, env));
         });
     }
+
+    // FIXME - Add snapshot test for debug_widget_text
 
     fn make_widget_id_layout_if_needed(&mut self, id: WidgetId, ctx: &mut PaintCtx, env: &Env) {
         if self.debug_widget_text.needs_rebuild() {
@@ -1247,7 +1250,7 @@ impl<W: Widget> AsWidgetPod for WidgetPod<W> {
     }
 
     fn prepare_pass(&mut self) {
-        self.state.needs_visit = false;
+        self.state.needs_visit = true;
         self.state.is_expecting_set_origin_call = false;
     }
 

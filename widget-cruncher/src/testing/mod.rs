@@ -14,6 +14,7 @@
 
 //! Additional unit tests that cross file or module boundaries.
 
+#![cfg(not(tarpaulin_include))]
 #![allow(unused_imports)]
 
 mod harness;

@@ -168,7 +168,7 @@ impl Harness {
                 self.window_size.height as usize,
                 1.0,
             )
-            .expect("failted to create bitmap_target");
+            .expect("failed to create bitmap_target");
 
         {
             let mut piet = RenderContextGuard(render_target.render_context());
@@ -212,6 +212,15 @@ impl Harness {
         self.process_event(Event::MouseUp(self.mouse_state.clone()));
     }
 
+    /// Send a Wheel event to the window
+    pub fn mouse_wheel(&mut self, wheel_delta: Vec2) {
+        self.mouse_state.button = MouseButton::None;
+        self.mouse_state.wheel_delta = wheel_delta;
+
+        self.process_event(Event::Wheel(self.mouse_state.clone()));
+        self.mouse_state.wheel_delta = Vec2::ZERO;
+    }
+
     /// Send events that lead to a given widget being clicked.
     ///
     /// Combines [`mouse_move`](Self::mouse_move), [`mouse_button_press`](Self::mouse_button_press), and [`mouse_button_release`](Self::mouse_button_release).
@@ -244,6 +253,7 @@ impl Harness {
         self.process_event(Event::KeyUp(event.clone()));
     }
 
+    // TODO - add doc alias "send_command"
     /// Send a command to a target.
     pub fn submit_command(&mut self, command: impl Into<Command>) {
         let command = command.into().default_to(self.mock_app.window.id.into());

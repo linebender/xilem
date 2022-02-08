@@ -1,3 +1,5 @@
+#![cfg(not(tarpaulin_include))]
+
 mod win_handler;
 mod window_description;
 

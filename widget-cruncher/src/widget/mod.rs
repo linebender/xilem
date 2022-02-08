@@ -121,6 +121,8 @@ impl Default for FillStrat {
     }
 }
 
+// TODO - Need to write tests for this, in a way that's relatively easy to visualize.
+
 impl FillStrat {
     /// Calculate an origin and scale for an image with a given `FillStrat`.
     ///

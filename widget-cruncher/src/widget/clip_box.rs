@@ -12,11 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#![cfg(not(tarpaulin_include))]
+
 use crate::kurbo::{Affine, Point, Rect, Size, Vec2};
 use crate::widget::prelude::*;
 use crate::widget::widget_view::WidgetView;
 use crate::widget::Axis;
 use crate::WidgetPod;
+use druid_shell::kurbo::Shape;
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace, trace_span, warn, Span};
 
@@ -122,6 +125,57 @@ impl Viewport {
         let delta_y = if y0.abs() > y1.abs() { y0 } else { y1 };
         let new_origin = self.view_origin + Vec2::new(delta_x, delta_y);
         self.pan_to(new_origin)
+    }
+}
+
+impl Viewport {
+    /// Transform the event for the contents of a scrolling container.
+    ///
+    /// the `force` flag is used to ensure an event is delivered even
+    /// if the cursor is out of the viewport, such as if the contents are active
+    /// or hot.
+    pub fn transform_event(&self, event: &Event, force: bool) -> Option<Event> {
+        let offset = self.view_origin.to_vec2();
+        let viewport_rect = self.content_size.to_rect();
+        match event {
+            Event::MouseDown(mouse_event) => {
+                if force || viewport_rect.winding(mouse_event.pos) != 0 {
+                    let mut mouse_event = mouse_event.clone();
+                    mouse_event.pos += offset;
+                    Some(Event::MouseDown(mouse_event))
+                } else {
+                    None
+                }
+            }
+            Event::MouseUp(mouse_event) => {
+                if force || viewport_rect.winding(mouse_event.pos) != 0 {
+                    let mut mouse_event = mouse_event.clone();
+                    mouse_event.pos += offset;
+                    Some(Event::MouseUp(mouse_event))
+                } else {
+                    None
+                }
+            }
+            Event::MouseMove(mouse_event) => {
+                if force || viewport_rect.winding(mouse_event.pos) != 0 {
+                    let mut mouse_event = mouse_event.clone();
+                    mouse_event.pos += offset;
+                    Some(Event::MouseMove(mouse_event))
+                } else {
+                    None
+                }
+            }
+            Event::Wheel(mouse_event) => {
+                if force || viewport_rect.winding(mouse_event.pos) != 0 {
+                    let mut mouse_event = mouse_event.clone();
+                    mouse_event.pos += offset;
+                    Some(Event::Wheel(mouse_event))
+                } else {
+                    None
+                }
+            }
+            _ => Some(event.clone()),
+        }
     }
 }
 
@@ -325,11 +379,8 @@ impl<W: Widget> ClipBox<W> {
 impl<W: Widget> Widget for ClipBox<W> {
     fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, env: &Env) {
         ctx.init();
-        let viewport = ctx.size().to_rect();
         let force_event = self.child.is_hot() || self.child.has_active();
-        if let Some(child_event) =
-            event.transform_scroll(self.viewport_origin().to_vec2(), viewport, force_event)
-        {
+        if let Some(child_event) = self.viewport().transform_event(&event, force_event) {
             self.child.on_event(ctx, &child_event, env);
         }
         ctx.skip_child(&mut self.child);

@@ -14,6 +14,8 @@
 
 //! Miscellaneous utility functions.
 
+#![cfg(not(tarpaulin_include))]
+
 use std::any::Any;
 use std::collections::HashMap;
 use std::hash::Hash;
@@ -56,6 +58,7 @@ pub trait ExtendDrain {
     fn extend_drain(&mut self, source: &mut Self);
 }
 
+#[cfg(not(tarpaulin_include))]
 impl<K, V> ExtendDrain for HashMap<K, V>
 where
     K: Eq + Hash + Copy,
