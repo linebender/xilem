@@ -52,6 +52,7 @@ macro_rules! impl_context_method {
     };
 }
 
+// TODO - rename lifetimes
 /// Static state that is shared between most contexts.
 pub(crate) struct ContextState<'a> {
     pub(crate) ext_event_sink: ExtEventSink,
@@ -436,9 +437,9 @@ impl_context_method!(EventCtx<'_, '_>, {
 
 impl<'a, 'b> EventCtx<'a, 'b> {
     pub fn get_child_view<'c, Child: Widget>(
-        &mut self,
+        &'c mut self,
         child: &'c mut WidgetPod<Child>,
-    ) -> WidgetView<'_, 'b, 'c, Child> {
+    ) -> WidgetView<'c, 'b, Child> {
         WidgetView {
             global_state: self.global_state,
             parent_widget_state: self.widget_state,
@@ -450,9 +451,9 @@ impl<'a, 'b> EventCtx<'a, 'b> {
 
 impl<'a, 'b> LifeCycleCtx<'a, 'b> {
     pub fn get_child_view<'c, Child: Widget>(
-        &mut self,
+        &'c mut self,
         child: &'c mut WidgetPod<Child>,
-    ) -> WidgetView<'_, 'b, 'c, Child> {
+    ) -> WidgetView<'c, 'b, Child> {
         WidgetView {
             global_state: self.global_state,
             parent_widget_state: self.widget_state,

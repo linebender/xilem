@@ -280,8 +280,8 @@ impl<W> ClipBox<W> {
     }
 }
 
-impl<'a, 'b, W: Widget> WidgetView<'a, 'b, '_, ClipBox<W>> {
-    pub fn get_child_view(&mut self) -> WidgetView<'_, 'b, '_, W> {
+impl<'a, 'b, W: Widget> WidgetView<'a, 'b, ClipBox<W>> {
+    pub fn get_child_view(&mut self) -> WidgetView<'_, 'b, W> {
         WidgetView {
             global_state: self.global_state,
             parent_widget_state: self.widget_state,

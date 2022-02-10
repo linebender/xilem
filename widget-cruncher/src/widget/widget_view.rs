@@ -15,15 +15,16 @@ use crate::{Widget, WidgetId, WidgetState};
 use druid_shell::text::Event as ImeInvalidation;
 use druid_shell::{Cursor, TimerToken, WindowHandle};
 
-pub struct WidgetView<'a, 'b, 'w, W: Widget> {
+// TODO - rename lifetimes
+pub struct WidgetView<'a, 'b, W: Widget> {
     pub(crate) global_state: &'a mut ContextState<'b>,
     // FIXME - pub
     pub parent_widget_state: &'a mut WidgetState,
-    pub widget_state: &'w mut WidgetState,
-    pub widget: &'w mut W,
+    pub widget_state: &'a mut WidgetState,
+    pub widget: &'a mut W,
 }
 
-impl<W: Widget> Drop for WidgetView<'_, '_, '_, W> {
+impl<W: Widget> Drop for WidgetView<'_, '_, W> {
     fn drop(&mut self) {
         self.parent_widget_state.merge_up(&mut self.widget_state);
     }
@@ -175,7 +176,7 @@ impl<'w> WidgetRef<'w, dyn Widget> {
 // -
 // -
 // methods on everyone
-impl<W: Widget> WidgetView<'_, '_, '_, W> {
+impl<W: Widget> WidgetView<'_, '_, W> {
     /// get the `WidgetId` of the current widget.
     pub fn widget_id(&self) -> WidgetId {
         self.widget_state.id
@@ -236,7 +237,7 @@ impl<W: Widget> WidgetView<'_, '_, '_, W> {
 }
 
 // methods on everyone but layoutctx
-impl<W: Widget> WidgetView<'_, '_, '_, W> {
+impl<W: Widget> WidgetView<'_, '_, W> {
     /// The layout size.
     ///
     /// This is the layout size as ultimately determined by the parent
@@ -356,7 +357,7 @@ impl<W: Widget> WidgetView<'_, '_, '_, W> {
     }
 }
 
-impl<W: Widget> WidgetView<'_, '_, '_, W> {
+impl<W: Widget> WidgetView<'_, '_, W> {
     /// Set the cursor icon.
     ///
     /// This setting will be retained until [`clear_cursor`] is called, but it will only take

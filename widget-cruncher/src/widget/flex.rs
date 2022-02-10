@@ -245,7 +245,7 @@ impl Flex {
 
 // --- Mutate live Flex - WidgetView ---
 
-impl WidgetView<'_, '_, '_, Flex> {
+impl WidgetView<'_, '_, Flex> {
     // --- Mutate live Flex ---
 
     /// Set the childrens' [`CrossAxisAlignment`].
