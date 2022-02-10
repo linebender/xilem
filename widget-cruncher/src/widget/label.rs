@@ -300,4 +300,24 @@ impl Widget for Label {
     fn make_trace_span(&self) -> Span {
         trace_span!("Label")
     }
+
+    fn get_debug_text(&self) -> Option<String> {
+        Some(self.current_text.to_string())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::testing::Harness;
+    use insta::assert_debug_snapshot;
+
+    #[test]
+    fn simple_label() {
+        let label = Label::new("Hello");
+
+        let mut harness = Harness::create(label);
+
+        assert_debug_snapshot!(harness.root_widget());
+    }
 }

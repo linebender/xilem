@@ -1,0 +1,6 @@
+---
+source: widget-cruncher/src/widget/label.rs
+expression: harness.root_widget()
+
+---
+Label<Hello>

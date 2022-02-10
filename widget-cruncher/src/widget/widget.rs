@@ -168,6 +168,10 @@ pub trait Widget: Any {
         trace_span!("Widget", r#type = self.short_type_name())
     }
 
+    fn get_debug_text(&self) -> Option<String> {
+        None
+    }
+
     // --- Auto-generated implementations ---
 
     // Returns direct child, not recursive child
@@ -273,6 +277,10 @@ impl Widget for Box<dyn Widget> {
 
     fn make_trace_span(&self) -> Span {
         self.deref().make_trace_span()
+    }
+
+    fn get_debug_text(&self) -> Option<String> {
+        self.deref().get_debug_text()
     }
 
     // TODO - add unit test

@@ -47,7 +47,31 @@ impl<'w, W: Widget + ?Sized> Clone for WidgetRef<'w, W> {
 
 impl<'w, W: Widget + ?Sized> Copy for WidgetRef<'w, W> {}
 
-// TODO - impl Debug for WidgetRef
+impl<'w, W: Widget + ?Sized> std::fmt::Debug for WidgetRef<'w, W> {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        let widget_name = self.widget.short_type_name();
+        let display_name = if let Some(debug_text) = self.widget.get_debug_text() {
+            format!("{widget_name}<{debug_text}>").into()
+        } else {
+            std::borrow::Cow::Borrowed(widget_name)
+        };
+
+        let children = self.widget.children();
+
+        if children.is_empty() {
+            f.write_str(&display_name)
+        } else {
+            let mut f_tuple = f.debug_tuple(&display_name);
+            for child in children {
+                f_tuple.field(&child);
+            }
+            f_tuple.finish()
+        }
+    }
+}
+
+// ---
+
 // TODO - Document
 impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
     pub fn new(widget_state: &'w WidgetState, widget: &'w W) -> Self {
