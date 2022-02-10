@@ -13,6 +13,7 @@
 // limitations under the License.
 
 use super::prelude::*;
+use crate::widget::widget_view::WidgetRef;
 use crate::AsAny;
 use crate::Point;
 use smallvec::SmallVec;
@@ -161,9 +162,7 @@ pub trait Widget: Any {
     /// [`RenderContext`]: trait.RenderContext.html
     fn paint(&mut self, ctx: &mut PaintCtx, env: &Env);
 
-    fn children(&self) -> SmallVec<[&dyn AsWidgetPod; 16]>;
-
-    fn children_mut(&mut self) -> SmallVec<[&mut dyn AsWidgetPod; 16]>;
+    fn children2(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]>;
 
     fn make_trace_span(&self) -> Span {
         trace_span!("Widget", r#type = self.short_type_name())
@@ -172,9 +171,9 @@ pub trait Widget: Any {
     // --- Auto-generated implementations ---
 
     // Returns direct child, not recursive child
-    fn get_child_at_pos(&self, pos: Point) -> Option<&dyn AsWidgetPod> {
+    fn get_child_at_pos(&self, pos: Point) -> Option<WidgetRef<'_, dyn Widget>> {
         // layout_rect() is in parent coordinate space
-        self.children()
+        self.children2()
             .into_iter()
             .find(|child| child.state().layout_rect().contains(pos))
     }
@@ -268,12 +267,8 @@ impl Widget for Box<dyn Widget> {
         self.deref().type_name()
     }
 
-    fn children(&self) -> SmallVec<[&dyn AsWidgetPod; 16]> {
-        self.deref().children()
-    }
-
-    fn children_mut(&mut self) -> SmallVec<[&mut dyn AsWidgetPod; 16]> {
-        self.deref_mut().children_mut()
+    fn children2(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
+        self.deref().children2()
     }
 
     fn make_trace_span(&self) -> Span {

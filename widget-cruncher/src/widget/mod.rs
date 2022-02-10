@@ -55,7 +55,7 @@ pub use web_image::WebImage;
 //pub use widget_ext::WidgetExt;
 //pub use widget_wrapper::WidgetWrapper;
 
-pub use widget_pod::{AsWidgetPod, WidgetPod};
+pub use widget_pod::WidgetPod;
 pub use widget_state::WidgetState;
 
 /// Methods by which a widget can attempt to change focus state.
@@ -163,7 +163,7 @@ pub mod prelude {
     pub use crate::event::StatusChange;
     #[doc(hidden)]
     pub use crate::{
-        AsWidgetPod, BoxConstraints, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx,
-        PaintCtx, RenderContext, Size, Widget, WidgetId,
+        BoxConstraints, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
+        RenderContext, Size, Widget, WidgetId,
     };
 }

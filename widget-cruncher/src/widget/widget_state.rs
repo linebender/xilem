@@ -1,6 +1,7 @@
 #![cfg(not(tarpaulin_include))]
 
 use std::collections::HashMap;
+use std::sync::atomic::{AtomicBool, Ordering};
 use tracing::{info_span, trace, warn};
 
 use crate::bloom::Bloom;
@@ -37,7 +38,6 @@ use druid_shell::{Cursor, Region, TimerToken};
 ///
 /// [`paint`]: trait.Widget.html#tymethod.paint
 /// [`WidgetPod`]: struct.WidgetPod.html
-#[derive(Clone)]
 pub struct WidgetState {
     pub(crate) id: WidgetId,
     /// The size of the child; this is the value returned by the child's layout
@@ -128,7 +128,7 @@ pub struct WidgetState {
     // Used in event/lifecycle/etc methods that are expected to be called recursively
     // on a widget's children, to make sure each child was visited.
     #[cfg(debug_assertions)]
-    pub(crate) needs_visit: bool,
+    pub(crate) needs_visit: AtomicBool,
 
     // TODO - document
     #[cfg(debug_assertions)]
@@ -169,9 +169,23 @@ impl WidgetState {
             text_registrations: Vec::new(),
             update_focus_chain: false,
             #[cfg(debug_assertions)]
-            needs_visit: false,
+            needs_visit: false.into(),
             #[cfg(debug_assertions)]
             widget_name,
+        }
+    }
+
+    pub(crate) fn mark_as_visited(&self, visited: bool) {
+        #[cfg(debug_assertions)]
+        {
+            self.needs_visit.store(visited, Ordering::SeqCst);
+        }
+    }
+
+    pub(crate) fn needs_visit(&self) -> bool {
+        #[cfg(debug_assertions)]
+        {
+            self.needs_visit.load(Ordering::SeqCst)
         }
     }
 

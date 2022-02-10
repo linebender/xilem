@@ -27,6 +27,7 @@ use std::collections::VecDeque;
 use std::rc::Rc;
 
 use crate::event::StatusChange;
+use crate::widget::widget_view::WidgetRef;
 use crate::widget::SizedBox;
 use crate::*;
 
@@ -35,8 +36,7 @@ pub type StatusChangeFn<S> = dyn FnMut(&mut S, &mut LifeCycleCtx, &StatusChange,
 pub type LifeCycleFn<S> = dyn FnMut(&mut S, &mut LifeCycleCtx, &LifeCycle, &Env);
 pub type LayoutFn<S> = dyn FnMut(&mut S, &mut LayoutCtx, &BoxConstraints, &Env) -> Size;
 pub type PaintFn<S> = dyn FnMut(&mut S, &mut PaintCtx, &Env);
-pub type ChildrenFn<S> = dyn Fn(&S) -> SmallVec<[&dyn AsWidgetPod; 16]>;
-pub type ChildrenMutFn<S> = dyn FnMut(&mut S) -> SmallVec<[&mut dyn AsWidgetPod; 16]>;
+pub type ChildrenFn<S> = dyn Fn(&S) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]>;
 
 pub const REPLACE_CHILD: Selector = Selector::new("druid-test.replace-child");
 
@@ -51,7 +51,6 @@ pub struct ModularWidget<S> {
     layout: Option<Box<LayoutFn<S>>>,
     paint: Option<Box<PaintFn<S>>>,
     children: Option<Box<ChildrenFn<S>>>,
-    children_mut: Option<Box<ChildrenMutFn<S>>>,
 }
 
 /// A widget that can replace its child on command
@@ -130,7 +129,6 @@ impl<S> ModularWidget<S> {
             layout: None,
             paint: None,
             children: None,
-            children_mut: None,
         }
     }
 
@@ -171,13 +169,11 @@ impl<S> ModularWidget<S> {
         self
     }
 
-    pub fn children_fns(
+    pub fn children_fn(
         mut self,
-        children: impl Fn(&S) -> SmallVec<[&dyn AsWidgetPod; 16]> + 'static,
-        children_mut: impl FnMut(&mut S) -> SmallVec<[&mut dyn AsWidgetPod; 16]> + 'static,
+        children: impl Fn(&S) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> + 'static,
     ) -> Self {
         self.children = Some(Box::new(children));
-        self.children_mut = Some(Box::new(children_mut));
         self
     }
 }
@@ -219,17 +215,9 @@ impl<S: 'static> Widget for ModularWidget<S> {
         }
     }
 
-    fn children(&self) -> SmallVec<[&dyn AsWidgetPod; 16]> {
+    fn children2(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
         if let Some(f) = self.children.as_ref() {
             f(&self.state)
-        } else {
-            SmallVec::new()
-        }
-    }
-
-    fn children_mut(&mut self) -> SmallVec<[&mut dyn AsWidgetPod; 16]> {
-        if let Some(f) = self.children_mut.as_mut() {
-            f(&mut self.state)
         } else {
             SmallVec::new()
         }
@@ -277,12 +265,8 @@ impl Widget for ReplaceChild {
         self.child.paint_raw(ctx, env)
     }
 
-    fn children(&self) -> SmallVec<[&dyn AsWidgetPod; 16]> {
-        self.child.widget().children()
-    }
-
-    fn children_mut(&mut self) -> SmallVec<[&mut dyn AsWidgetPod; 16]> {
-        self.child.widget_mut().children_mut()
+    fn children2(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
+        self.child.widget().children2()
     }
 }
 
@@ -344,11 +328,7 @@ impl<W: Widget> Widget for Recorder<W> {
         self.recording.push(Record::Paint)
     }
 
-    fn children(&self) -> SmallVec<[&dyn AsWidgetPod; 16]> {
-        self.child.children()
-    }
-
-    fn children_mut(&mut self) -> SmallVec<[&mut dyn AsWidgetPod; 16]> {
-        self.child.children_mut()
+    fn children2(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
+        self.child.children2()
     }
 }

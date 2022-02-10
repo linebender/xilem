@@ -1,3 +1,4 @@
+use smallvec::SmallVec;
 use std::any::Any;
 use std::time::Duration;
 use tracing::{trace, warn};
@@ -29,10 +30,150 @@ impl<W: Widget> Drop for WidgetView<'_, '_, '_, W> {
 }
 
 // ---
+pub struct WidgetRef<'w, W: Widget + ?Sized> {
+    pub widget_state: &'w WidgetState,
+    pub widget: &'w W,
+}
 
+impl<'w, W: Widget + ?Sized> Clone for WidgetRef<'w, W> {
+    fn clone(&self) -> Self {
+        Self {
+            widget_state: self.widget_state,
+            widget: self.widget,
+        }
+    }
+}
+
+impl<'w, W: Widget + ?Sized> Copy for WidgetRef<'w, W> {}
+
+// TODO - impl Debug for WidgetRef
+// TODO - Document
+impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
+    pub fn new(widget_state: &'w WidgetState, widget: &'w W) -> Self {
+        WidgetRef {
+            widget_state,
+            widget,
+        }
+    }
+
+    pub fn state(self) -> &'w WidgetState {
+        self.widget_state
+    }
+
+    pub fn widget(self) -> &'w W {
+        self.widget
+    }
+}
+
+impl<'w, W: Widget> WidgetRef<'w, W> {
+    // TODO - document
+    pub fn as_dyn(&self) -> WidgetRef<'w, dyn Widget> {
+        WidgetRef {
+            widget_state: self.widget_state,
+            widget: self.widget,
+        }
+    }
+}
+
+impl<'w> WidgetRef<'w, dyn Widget> {
+    pub fn children(&self) -> SmallVec<[WidgetRef<'w, dyn Widget>; 16]> {
+        self.widget.children2()
+    }
+
+    pub fn find_widget_by_id(&self, id: WidgetId) -> Option<WidgetRef<'w, dyn Widget>> {
+        if self.state().id == id {
+            Some(*self)
+        } else {
+            self.children()
+                .into_iter()
+                .find_map(|child| child.find_widget_by_id(id))
+        }
+    }
+
+    pub fn find_widget_at_pos(&self, pos: Point) -> Option<WidgetRef<'w, dyn Widget>> {
+        let mut pos = pos;
+        let mut innermost_widget: WidgetRef<'w, dyn Widget> = *self;
+
+        if !self.state().layout_rect().contains(pos) {
+            return None;
+        }
+
+        // FIXME - Handle hidden widgets (eg in scroll areas).
+        loop {
+            if let Some(child) = innermost_widget.widget().get_child_at_pos(pos) {
+                pos -= innermost_widget.state().layout_rect().origin().to_vec2();
+                innermost_widget = child;
+            } else {
+                return Some(innermost_widget);
+            }
+        }
+    }
+
+    // TODO - reorganize this part of the code
+    pub(crate) fn prepare_pass(&self) {
+        self.state().mark_as_visited(false);
+        //self.state.is_expecting_set_origin_call = false;
+    }
+
+    // can only be called after on_event and lifecycle
+    // checks that basic invariants are held
+    pub fn debug_validate(&self, after_layout: bool) {
+        if cfg!(not(debug_assertions)) {
+            return;
+        }
+
+        if self.state().is_new {
+            debug_panic!(
+                "Widget '{}' #{} is invalid: widget did not receive WidgetAdded",
+                self.widget().short_type_name(),
+                self.state().id.to_raw(),
+            );
+        }
+
+        if self.state().request_focus.is_some()
+            || self.state().children_changed
+            || !self.state().timers.is_empty()
+            || self.state().cursor.is_some()
+        {
+            debug_panic!(
+                "Widget '{}' #{} is invalid: widget state not cleared",
+                self.widget().short_type_name(),
+                self.state().id.to_raw(),
+            );
+        }
+
+        if after_layout && (self.state().needs_layout || self.state().needs_window_origin) {
+            debug_panic!(
+                "Widget '{}' #{} is invalid: widget layout state not cleared",
+                self.widget().short_type_name(),
+                self.state().id.to_raw(),
+            );
+        }
+
+        for child in self.widget.children2() {
+            child.debug_validate(after_layout);
+
+            if !self.state().children.may_contain(&child.state().id) {
+                debug_panic!(
+                    "Widget '{}' #{} is invalid: child widget '{}' #{} not registered in children filter",
+                    self.widget().short_type_name(),
+                    self.state().id.to_raw(),
+                    child.widget().short_type_name(),
+                    child.state().id.to_raw(),
+                );
+            }
+        }
+    }
+}
+
+// -
+// -
+// -
 // FIXME - This is a big ugly copy-paste.
 // Find way to factorize code with impl_context_method
-
+// -
+// -
+// -
 // methods on everyone
 impl<W: Widget> WidgetView<'_, '_, '_, W> {
     /// get the `WidgetId` of the current widget.

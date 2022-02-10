@@ -21,10 +21,7 @@ fn get_parent_widget<W: Widget>(child: W) -> ModularWidget<WidgetPod<W>> {
         .paint_fn(move |child, ctx, env| {
             child.paint(ctx, env);
         })
-        .children_fns(
-            |child| smallvec![child as &dyn AsWidgetPod],
-            |child| smallvec![child as &mut dyn AsWidgetPod],
-        )
+        .children_fn(|child| smallvec![child.as_dyn()])
 }
 
 // TODO - recurse command?
@@ -177,22 +174,13 @@ fn check_forget_children_changed() {
                 child.paint(ctx, env);
             }
         })
-        .children_fns(
-            |child| {
-                if let Some(child) = child {
-                    smallvec![child as &dyn AsWidgetPod]
-                } else {
-                    smallvec![]
-                }
-            },
-            |child| {
-                if let Some(child) = child {
-                    smallvec![child as &mut dyn AsWidgetPod]
-                } else {
-                    smallvec![]
-                }
-            },
-        );
+        .children_fn(|child| {
+            if let Some(child) = child {
+                smallvec![child.as_dyn()]
+            } else {
+                smallvec![]
+            }
+        });
 
     let mut harness = Harness::create(widget);
     harness.submit_command(ADD_CHILD);

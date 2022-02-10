@@ -85,4 +85,4 @@ pub use event::{Event, InternalEvent, InternalLifeCycle, LifeCycle, StatusChange
 pub use mouse::MouseEvent;
 pub use util::AsAny;
 pub use util::Handled;
-pub use widget::{AsWidgetPod, Widget, WidgetId, WidgetPod, WidgetState};
+pub use widget::{Widget, WidgetId, WidgetPod, WidgetState};

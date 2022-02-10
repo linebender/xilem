@@ -18,6 +18,7 @@
 use crate::kurbo::Rect;
 use crate::piet::{Image as _, ImageBuf, InterpolationMode, PietImage};
 use crate::widget::prelude::*;
+use crate::widget::widget_view::WidgetRef;
 use crate::widget::FillStrat;
 
 use smallvec::SmallVec;
@@ -190,11 +191,7 @@ impl Widget for Image {
         });
     }
 
-    fn children(&self) -> SmallVec<[&dyn AsWidgetPod; 16]> {
-        SmallVec::new()
-    }
-
-    fn children_mut(&mut self) -> SmallVec<[&mut dyn AsWidgetPod; 16]> {
+    fn children2(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
         SmallVec::new()
     }
 

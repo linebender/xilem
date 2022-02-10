@@ -14,9 +14,10 @@ use crate::ext_event::{ExtEventQueue, ExtEventSink};
 use crate::platform::RUN_COMMANDS_TOKEN;
 use crate::text::TextFieldRegistration;
 use crate::util::ExtendDrain;
+use crate::widget::widget_view::WidgetRef;
 use crate::widget::{FocusChange, WidgetState};
 use crate::{
-    ArcStr, AsWidgetPod, BoxConstraints, Command, Env, Event, EventCtx, Handled, InternalEvent,
+    ArcStr, BoxConstraints, Command, Env, Event, EventCtx, Handled, InternalEvent,
     InternalLifeCycle, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Target, Widget, WidgetId,
     WidgetPod, WindowId,
 };
@@ -615,7 +616,7 @@ impl WindowRoot {
 
         self.post_event_processing(&mut widget_state, debug_logger, command_queue, env, false);
 
-        self.root.debug_validate(false);
+        self.root.as_dyn().debug_validate(false);
 
         is_handled
     }
@@ -961,11 +962,11 @@ impl WindowRoot {
         })
     }
 
-    pub fn find_widget_by_id(&self, id: WidgetId) -> Option<&dyn AsWidgetPod> {
-        self.root.find_widget_by_id(id)
+    pub fn find_widget_by_id(&self, id: WidgetId) -> Option<WidgetRef<'_, dyn Widget>> {
+        self.root.as_dyn().find_widget_by_id(id)
     }
 
-    pub fn find_widget_at_pos(&self, pos: Point) -> Option<&dyn AsWidgetPod> {
-        self.root.find_widget_at_pos(pos)
+    pub fn find_widget_at_pos(&self, pos: Point) -> Option<WidgetRef<'_, dyn Widget>> {
+        self.root.as_dyn().find_widget_at_pos(pos)
     }
 }

@@ -11,6 +11,7 @@ use smallvec::{smallvec, SmallVec};
 use std::{thread, time};
 
 use widget_cruncher::widget::prelude::*;
+use widget_cruncher::widget::widget_view::WidgetRef;
 use widget_cruncher::widget::{Flex, Label, Spinner, WidgetPod};
 use widget_cruncher::{AppLauncher, Point, Selector, Target, WindowDesc};
 
@@ -104,12 +105,8 @@ impl Widget for MainWidget {
         self.content.paint(ctx, env);
     }
 
-    fn children(&self) -> SmallVec<[&dyn AsWidgetPod; 16]> {
-        smallvec![&self.content as &dyn AsWidgetPod]
-    }
-
-    fn children_mut(&mut self) -> SmallVec<[&mut dyn AsWidgetPod; 16]> {
-        smallvec![&mut self.content as &mut dyn AsWidgetPod]
+    fn children2(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
+        smallvec![self.content.as_dyn()]
     }
 }
 

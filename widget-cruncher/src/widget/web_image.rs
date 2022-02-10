@@ -7,7 +7,8 @@ use crate::promise::PromiseToken;
 use crate::text::FontDescriptor;
 use crate::text::{TextAlignment, TextLayout};
 use crate::widget::prelude::*;
-use crate::widget::{AsWidgetPod, FillStrat, Image, SizedBox, Spinner, WidgetId, WidgetPod};
+use crate::widget::widget_view::WidgetRef;
+use crate::widget::{FillStrat, Image, SizedBox, Spinner, WidgetId, WidgetPod};
 use crate::{ArcStr, Color, Data, ImageBuf, KeyOrValue, Point};
 
 use smallvec::{smallvec, SmallVec};
@@ -125,19 +126,11 @@ impl Widget for WebImage {
         }
     }
 
-    fn children(&self) -> SmallVec<[&dyn AsWidgetPod; 16]> {
+    fn children2(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
         if let Some(inner) = &self.inner {
-            smallvec![inner as &dyn AsWidgetPod]
+            smallvec![inner.as_dyn()]
         } else {
-            smallvec![&self.placeholder as &dyn AsWidgetPod]
-        }
-    }
-
-    fn children_mut(&mut self) -> SmallVec<[&mut dyn AsWidgetPod; 16]> {
-        if let Some(inner) = &mut self.inner {
-            smallvec![inner as &mut dyn AsWidgetPod]
-        } else {
-            smallvec![&mut self.placeholder as &mut dyn AsWidgetPod]
+            smallvec![self.placeholder.as_dyn()]
         }
     }
 

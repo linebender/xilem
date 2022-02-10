@@ -19,6 +19,7 @@ use std::f64::INFINITY;
 use tracing::{trace, trace_span, warn, Span};
 
 use crate::widget::prelude::*;
+use crate::widget::widget_view::WidgetRef;
 use crate::widget::{WidgetId, WidgetPod};
 use crate::{Data, Point};
 
@@ -192,17 +193,9 @@ impl Widget for SizedBox {
         }
     }
 
-    fn children(&self) -> SmallVec<[&dyn AsWidgetPod; 16]> {
+    fn children2(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
         if let Some(child) = &self.child {
-            smallvec![child as &dyn AsWidgetPod]
-        } else {
-            smallvec![]
-        }
-    }
-
-    fn children_mut(&mut self) -> SmallVec<[&mut dyn AsWidgetPod; 16]> {
-        if let Some(child) = &mut self.child {
-            smallvec![child as &mut dyn AsWidgetPod]
+            smallvec![child.as_dyn()]
         } else {
             smallvec![]
         }

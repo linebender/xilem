@@ -16,6 +16,7 @@
 
 use crate::kurbo::{common::FloatExt, Vec2};
 use crate::widget::prelude::*;
+use crate::widget::widget_view::WidgetRef;
 use crate::widget::widget_view::WidgetView;
 use crate::widget::WidgetState;
 use crate::{Data, KeyOrValue, Point, Rect, WidgetId, WidgetPod};
@@ -641,19 +642,11 @@ impl Widget for Flex {
         }
     }
 
-    fn children(&self) -> SmallVec<[&dyn AsWidgetPod; 16]> {
+    fn children2(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
         self.children
             .iter()
             .filter_map(|child| child.widget())
-            .map(|widget_pod| widget_pod as &dyn AsWidgetPod)
-            .collect()
-    }
-
-    fn children_mut(&mut self) -> SmallVec<[&mut dyn AsWidgetPod; 16]> {
-        self.children
-            .iter_mut()
-            .filter_map(|child| child.widget_mut())
-            .map(|widget_pod| widget_pod as &mut dyn AsWidgetPod)
+            .map(|widget_pod| widget_pod.as_dyn())
             .collect()
     }
 

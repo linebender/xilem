@@ -6,6 +6,7 @@ use smallvec::SmallVec;
 use std::f64::consts::PI;
 use tracing::{instrument, trace};
 
+use crate::widget::widget_view::WidgetRef;
 use druid::kurbo::Line;
 use druid::widget::prelude::*;
 use druid::{theme, Color, Data, KeyOrValue, Point, Vec2};
@@ -119,11 +120,7 @@ impl Widget for Spinner {
         }
     }
 
-    fn children(&self) -> SmallVec<[&dyn AsWidgetPod; 16]> {
-        SmallVec::new()
-    }
-
-    fn children_mut(&mut self) -> SmallVec<[&mut dyn AsWidgetPod; 16]> {
+    fn children2(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
         SmallVec::new()
     }
 }

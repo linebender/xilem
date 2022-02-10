@@ -16,6 +16,7 @@
 
 use crate::kurbo::{Affine, Point, Rect, Size, Vec2};
 use crate::widget::prelude::*;
+use crate::widget::widget_view::WidgetRef;
 use crate::widget::widget_view::WidgetView;
 use crate::widget::Axis;
 use crate::WidgetPod;
@@ -442,12 +443,8 @@ impl<W: Widget> Widget for ClipBox<W> {
         });
     }
 
-    fn children(&self) -> SmallVec<[&dyn AsWidgetPod; 16]> {
-        smallvec![&self.child as &dyn AsWidgetPod]
-    }
-
-    fn children_mut(&mut self) -> SmallVec<[&mut dyn AsWidgetPod; 16]> {
-        smallvec![&mut self.child as &mut dyn AsWidgetPod]
+    fn children2(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
+        smallvec![self.child.as_dyn()]
     }
 
     fn make_trace_span(&self) -> Span {

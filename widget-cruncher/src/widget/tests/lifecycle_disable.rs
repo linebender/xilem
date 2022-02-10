@@ -91,10 +91,7 @@ fn disable_tree() {
                 child.set_origin(ctx, env, Point::ORIGIN);
                 layout
             })
-            .children_fns(
-                |child| smallvec![child as &dyn AsWidgetPod],
-                |child| smallvec![child as &mut dyn AsWidgetPod],
-            )
+            .children_fn(|child| smallvec![child.as_dyn()])
             .with_id(id)
     }
 

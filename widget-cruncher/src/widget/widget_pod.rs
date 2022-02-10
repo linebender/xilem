@@ -7,6 +7,7 @@ use crate::contexts::ContextState;
 use crate::kurbo::{Affine, Insets, Point, Rect, Shape, Size, Vec2};
 use crate::text::{TextFieldRegistration, TextLayout};
 use crate::util::ExtendDrain;
+use crate::widget::widget_view::WidgetRef;
 use crate::widget::{CursorChange, FocusChange, WidgetState};
 use crate::{
     ArcStr, BoxConstraints, Color, Command, Env, Event, EventCtx, InternalEvent, InternalLifeCycle,
@@ -29,26 +30,6 @@ pub struct WidgetPod<W> {
     pub(crate) env: Option<Env>,
     // stashed layout so we don't recompute this when debugging
     pub(crate) debug_widget_text: TextLayout<ArcStr>,
-}
-
-// Trait used to abstract over WidgetPods of any widget type.
-pub trait AsWidgetPod {
-    fn state(&self) -> &WidgetState;
-
-    // Return a reference to the inner widget.
-    fn widget(&self) -> &dyn Widget;
-
-    // FIXME - remove
-    fn widget_mut(&mut self) -> &mut dyn Widget;
-
-    fn children(&self) -> SmallVec<[&dyn AsWidgetPod; 16]>;
-    fn children_mut(&mut self) -> SmallVec<[&mut dyn AsWidgetPod; 16]>;
-    fn find_widget_by_id(&self, id: WidgetId) -> Option<&dyn AsWidgetPod>;
-    fn find_widget_at_pos(&self, pos: Point) -> Option<&dyn AsWidgetPod>;
-
-    fn prepare_pass(&mut self);
-
-    fn debug_validate(&self, after_layout: bool);
 }
 
 // ---
@@ -91,6 +72,16 @@ impl<W: Widget> WidgetPod<W> {
     /// Return a mutable reference to the inner widget.
     pub fn widget_mut(&mut self) -> &mut W {
         &mut self.inner
+    }
+
+    // TODO - document
+    pub fn as_ref(&self) -> WidgetRef<'_, W> {
+        WidgetRef::new(&self.state, &self.inner)
+    }
+
+    // TODO - document
+    pub fn as_dyn(&self) -> WidgetRef<'_, dyn Widget> {
+        WidgetRef::new(&self.state, &self.inner)
     }
 
     /// Returns `true` if the widget has received [`LifeCycle::WidgetAdded`].
@@ -251,43 +242,10 @@ impl<W: Widget> WidgetPod<W> {
 }
 
 impl<W: Widget> WidgetPod<W> {
-    pub fn find_widget_by_id(&self, id: WidgetId) -> Option<&dyn AsWidgetPod> {
-        if self.id() == id {
-            Some(self)
-        } else {
-            self.children()
-                .into_iter()
-                .find_map(|child| child.find_widget_by_id(id))
-        }
-    }
-
-    pub fn find_widget_at_pos(&self, pos: Point) -> Option<&dyn AsWidgetPod> {
-        let mut pos = pos;
-        let mut innermost_widget: &dyn AsWidgetPod = self;
-
-        if !self.state.layout_rect().contains(pos) {
-            return None;
-        }
-
-        // FIXME - Handle hidden widgets (eg in scroll areas).
-        loop {
-            if let Some(child) = innermost_widget.widget().get_child_at_pos(pos) {
-                pos -= innermost_widget.state().layout_rect().origin().to_vec2();
-                innermost_widget = child;
-            } else {
-                return Some(innermost_widget);
-            }
-        }
-    }
-}
-
-impl<W: Widget> WidgetPod<W> {
+    // TODO - this is confusing
     #[inline(always)]
     pub(crate) fn mark_as_visited(&mut self) {
-        #[cfg(debug_assertions)]
-        {
-            self.state.needs_visit = false;
-        }
+        self.state.mark_as_visited(true);
     }
 
     /// Determines if the provided `mouse_pos` is inside `rect`
@@ -336,56 +294,6 @@ impl<W: Widget> WidgetPod<W> {
         false
     }
 
-    // can only be called after on_event and lifecycle
-    // checks that basic invariants are held
-    fn debug_validate(&self, after_layout: bool) {
-        if cfg!(not(debug_assertions)) {
-            return;
-        }
-
-        if self.state.is_new {
-            debug_panic!(
-                "Widget '{}' #{} is invalid: widget did not receive WidgetAdded",
-                self.widget().short_type_name(),
-                self.state().id.to_raw(),
-            );
-        }
-
-        if self.state.request_focus.is_some()
-            || self.state.children_changed
-            || !self.state.timers.is_empty()
-            || self.state.cursor.is_some()
-        {
-            debug_panic!(
-                "Widget '{}' #{} is invalid: widget state not cleared",
-                self.widget().short_type_name(),
-                self.state().id.to_raw(),
-            );
-        }
-
-        if after_layout && (self.state.needs_layout || self.state.needs_window_origin) {
-            debug_panic!(
-                "Widget '{}' #{} is invalid: widget layout state not cleared",
-                self.widget().short_type_name(),
-                self.state().id.to_raw(),
-            );
-        }
-
-        for child in self.inner.children() {
-            child.debug_validate(after_layout);
-
-            if !self.state.children.may_contain(&child.state().id) {
-                debug_panic!(
-                    "Widget '{}' #{} is invalid: child widget '{}' #{} not registered in children filter",
-                    self.widget().short_type_name(),
-                    self.state().id.to_raw(),
-                    child.widget().short_type_name(),
-                    child.state().id.to_raw(),
-                );
-            }
-        }
-    }
-
     pub fn recurse_pass<Ret>(
         &mut self,
         pass_name: &str,
@@ -404,7 +312,7 @@ impl<W: Widget> WidgetPod<W> {
         visit: impl FnOnce(&mut Self) -> Ret,
     ) -> Ret {
         #[cfg(debug_assertions)]
-        for child in self.inner.children_mut() {
+        for child in self.inner.children2() {
             child.prepare_pass();
         }
 
@@ -413,8 +321,8 @@ impl<W: Widget> WidgetPod<W> {
         let return_value = visit(self);
 
         #[cfg(debug_assertions)]
-        for child in self.inner.children() {
-            if child.state().needs_visit {
+        for child in self.inner.children2() {
+            if child.state().needs_visit() {
                 debug_panic!(
                     "Error in '{}' #{}: child widget '{}' #{} not visited in method {}",
                     self.widget().short_type_name(),
@@ -686,7 +594,7 @@ impl<W: Widget> WidgetPod<W> {
         parent_ctx
             .global_state
             .debug_logger
-            .update_widget_state(self);
+            .update_widget_state(self.as_dyn());
         parent_ctx
             .global_state
             .debug_logger
@@ -783,7 +691,7 @@ impl<W: Widget> WidgetPod<W> {
                         parent_ctx
                             .global_state
                             .debug_logger
-                            .update_widget_state(self);
+                            .update_widget_state(self.as_dyn());
                         parent_ctx
                             .global_state
                             .debug_logger
@@ -989,7 +897,7 @@ impl<W: Widget> WidgetPod<W> {
         parent_ctx
             .global_state
             .debug_logger
-            .update_widget_state(self);
+            .update_widget_state(self.as_dyn());
         parent_ctx
             .global_state
             .debug_logger
@@ -1044,7 +952,7 @@ impl<W: Widget> WidgetPod<W> {
         });
 
         if cfg!(debug_assertions) {
-            for child in self.inner.children() {
+            for child in self.inner.children2() {
                 if child.state().is_expecting_set_origin_call {
                     debug_panic!(
                         "Error in '{}' #{}: missing call to set_origin method for child widget '{}' #{}. During layout pass, if a widget calls WidgetPod::layout() on its child, it then needs to call WidgetPod::set_origin() on the same child.",
@@ -1064,7 +972,7 @@ impl<W: Widget> WidgetPod<W> {
         parent_ctx
             .global_state
             .debug_logger
-            .update_widget_state(self);
+            .update_widget_state(self.as_dyn());
         parent_ctx
             .global_state
             .debug_logger
@@ -1215,46 +1123,5 @@ impl<W: Widget> WidgetPod<W> {
         let id = self.id().to_raw();
         let color = env.get_debug_color(id);
         ctx.stroke(rect, &color, BORDER_WIDTH);
-    }
-}
-
-impl<W: Widget> AsWidgetPod for WidgetPod<W> {
-    fn state(&self) -> &WidgetState {
-        &self.state
-    }
-
-    // Return a reference to the inner widget.
-    fn widget(&self) -> &dyn Widget {
-        &self.inner
-    }
-
-    // FIXME - remove
-    fn widget_mut(&mut self) -> &mut dyn Widget {
-        &mut self.inner
-    }
-
-    fn children(&self) -> SmallVec<[&dyn AsWidgetPod; 16]> {
-        self.inner.children()
-    }
-
-    fn children_mut(&mut self) -> SmallVec<[&mut dyn AsWidgetPod; 16]> {
-        self.inner.children_mut()
-    }
-
-    fn find_widget_by_id(&self, id: WidgetId) -> Option<&dyn AsWidgetPod> {
-        WidgetPod::find_widget_by_id(self, id)
-    }
-
-    fn find_widget_at_pos(&self, pos: Point) -> Option<&dyn AsWidgetPod> {
-        WidgetPod::find_widget_at_pos(self, pos)
-    }
-
-    fn prepare_pass(&mut self) {
-        self.state.needs_visit = true;
-        self.state.is_expecting_set_origin_call = false;
-    }
-
-    fn debug_validate(&self, after_layout: bool) {
-        WidgetPod::debug_validate(self, after_layout)
     }
 }

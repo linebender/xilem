@@ -4,7 +4,8 @@ use std::sync::Arc;
 use crate::debug_values::{
     LayoutInfo, LayoutTree, LogId, MyWidgetId, Snapshot, StateTree, Timeline, Value,
 };
-use crate::AsWidgetPod;
+use crate::widget::widget_view::WidgetRef;
+use crate::Widget;
 
 #[derive(Debug)]
 pub struct DebugLog {
@@ -154,7 +155,7 @@ impl DebugLogger {
         );
     }
 
-    pub fn update_widget_state(&mut self, widget: &dyn AsWidgetPod) {
+    pub fn update_widget_state(&mut self, widget: WidgetRef<'_, dyn Widget>) {
         if !self.activated {
             return;
         }
@@ -178,7 +179,7 @@ impl DebugLogger {
         self.layout_tree.widgets = widgets.into();
     }
 
-    pub fn get_widget_state(widget: &dyn AsWidgetPod) -> StateTree {
+    pub fn get_widget_state(widget: WidgetRef<'_, dyn Widget>) -> StateTree {
         let mut state = StateTree::default();
         let w_state = widget.state();
 
@@ -218,11 +219,13 @@ impl DebugLogger {
         state
     }
 
-    pub fn get_data(root_widget: &dyn AsWidgetPod) -> (LayoutTree, HashMap<MyWidgetId, StateTree>) {
+    pub fn get_data(
+        root_widget: WidgetRef<'_, dyn Widget>,
+    ) -> (LayoutTree, HashMap<MyWidgetId, StateTree>) {
         fn add_to_tree(
             widgets_map: &mut HashMap<MyWidgetId, LayoutInfo>,
             widget_states: &mut HashMap<MyWidgetId, StateTree>,
-            widget: &dyn AsWidgetPod,
+            widget: WidgetRef<'_, dyn Widget>,
         ) {
             let mut layout_info = LayoutInfo {
                 layout_rect: widget.state().layout_rect(),

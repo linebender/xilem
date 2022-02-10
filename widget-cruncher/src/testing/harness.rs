@@ -24,6 +24,7 @@ use crate::debug_logger::DebugLogger;
 use crate::ext_event::ExtEventQueue;
 use crate::piet::{BitmapTarget, Device, Error, ImageFormat, Piet};
 use crate::platform::PendingWindow;
+use crate::widget::widget_view::WidgetRef;
 use crate::widget::WidgetState;
 use crate::*;
 use druid_shell::{KeyEvent, Modifiers, MouseButton, MouseButtons};
@@ -271,36 +272,39 @@ impl Harness {
         &mut self.mock_app.window
     }
 
-    pub fn root_widget(&self) -> &dyn AsWidgetPod {
-        &self.mock_app.window.root
+    pub fn root_widget(&self) -> WidgetRef<'_, dyn Widget> {
+        self.mock_app.window.root.as_dyn()
     }
 
-    pub fn get_widget(&self, id: WidgetId) -> &dyn AsWidgetPod {
+    pub fn get_widget(&self, id: WidgetId) -> WidgetRef<'_, dyn Widget> {
         self.mock_app
             .window
             .find_widget_by_id(id)
             .expect("could not find widget")
     }
 
-    pub fn try_get_widget(&self, id: WidgetId) -> Option<&dyn AsWidgetPod> {
+    pub fn try_get_widget(&self, id: WidgetId) -> Option<WidgetRef<'_, dyn Widget>> {
         self.mock_app.window.find_widget_by_id(id)
     }
 
-    pub fn inspect_widgets(&mut self, f: impl Fn(&dyn AsWidgetPod) + 'static) {
-        fn inspect(widget: &dyn AsWidgetPod, f: &(impl Fn(&dyn AsWidgetPod) + 'static)) {
+    pub fn inspect_widgets(&mut self, f: impl Fn(WidgetRef<'_, dyn Widget>) + 'static) {
+        fn inspect(
+            widget: WidgetRef<'_, dyn Widget>,
+            f: &(impl Fn(WidgetRef<'_, dyn Widget>) + 'static),
+        ) {
             f(widget);
-            for child in widget.widget().children() {
+            for child in widget.widget().children2() {
                 inspect(child, f);
             }
         }
 
-        inspect(&self.mock_app.window.root, &f);
+        inspect(self.mock_app.window.root.as_dyn(), &f);
     }
 
     pub fn push_log(&mut self, message: &str) {
         self.mock_app
             .debug_logger
-            .update_widget_state(&self.mock_app.window.root);
+            .update_widget_state(self.mock_app.window.root.as_dyn());
         self.mock_app.debug_logger.push_log(false, message);
     }
 

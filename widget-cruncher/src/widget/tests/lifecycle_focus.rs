@@ -178,10 +178,7 @@ fn resign_focus_on_disable() {
                 child.set_origin(ctx, env, Point::ORIGIN);
                 layout
             })
-            .children_fns(
-                |child| smallvec![child as &dyn AsWidgetPod],
-                |child| smallvec![child as &mut dyn AsWidgetPod],
-            )
+            .children_fn(|child| smallvec![child.as_dyn()])
     }
 
     let [group_0, group_1, sub_group, focus_1, focus_2] = widget_ids();

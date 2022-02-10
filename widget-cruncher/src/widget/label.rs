@@ -22,6 +22,7 @@ use crate::kurbo::Vec2;
 use crate::text::FontDescriptor;
 use crate::text::{TextAlignment, TextLayout};
 use crate::widget::prelude::*;
+use crate::widget::widget_view::WidgetRef;
 use crate::{ArcStr, Color, Data, KeyOrValue, Point};
 use druid_shell::Cursor;
 
@@ -292,11 +293,7 @@ impl Widget for Label {
         self.draw_at(ctx, origin)
     }
 
-    fn children(&self) -> SmallVec<[&dyn AsWidgetPod; 16]> {
-        SmallVec::new()
-    }
-
-    fn children_mut(&mut self) -> SmallVec<[&mut dyn AsWidgetPod; 16]> {
+    fn children2(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
         SmallVec::new()
     }
 

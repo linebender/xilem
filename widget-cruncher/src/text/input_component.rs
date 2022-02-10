@@ -28,6 +28,7 @@ use super::{
 use crate::kurbo::{Line, Point, Rect, Vec2};
 use crate::piet::TextLayout as _;
 use crate::widget::prelude::*;
+use crate::widget::widget_view::WidgetRef;
 use crate::{text, theme, Env, Selector};
 use druid_shell::{Cursor, Modifiers};
 
@@ -465,11 +466,7 @@ impl<T: TextStorage + EditableText> Widget for TextComponent<T> {
         self.borrow().layout.draw(ctx, text_offset.to_point());
     }
 
-    fn children(&self) -> SmallVec<[&dyn AsWidgetPod; 16]> {
-        SmallVec::new()
-    }
-
-    fn children_mut(&mut self) -> SmallVec<[&mut dyn AsWidgetPod; 16]> {
+    fn children2(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
         SmallVec::new()
     }
 

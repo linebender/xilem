@@ -23,6 +23,7 @@ use widget_cruncher::kurbo::Vec2;
 use widget_cruncher::promise::PromiseToken;
 use widget_cruncher::text::TextLayout;
 use widget_cruncher::widget::prelude::*;
+use widget_cruncher::widget::widget_view::WidgetRef;
 use widget_cruncher::{ArcStr, Color, KeyOrValue, Point};
 
 use widget_cruncher::{AppLauncher, WindowDesc};
@@ -160,11 +161,7 @@ impl Widget for PromiseButton {
         self.text_layout.draw(ctx, origin)
     }
 
-    fn children(&self) -> SmallVec<[&dyn AsWidgetPod; 16]> {
-        SmallVec::new()
-    }
-
-    fn children_mut(&mut self) -> SmallVec<[&mut dyn AsWidgetPod; 16]> {
+    fn children2(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
         SmallVec::new()
     }
 
