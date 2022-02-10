@@ -178,7 +178,8 @@ impl WidgetState {
     pub(crate) fn mark_as_visited(&self, visited: bool) {
         #[cfg(debug_assertions)]
         {
-            self.needs_visit.store(visited, Ordering::SeqCst);
+            // TODO - the "!visited" is annoying
+            self.needs_visit.store(!visited, Ordering::SeqCst);
         }
     }
 
