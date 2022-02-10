@@ -193,7 +193,7 @@ impl Widget for SizedBox {
         }
     }
 
-    fn children2(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
+    fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
         if let Some(child) = &self.child {
             smallvec![child.as_dyn()]
         } else {

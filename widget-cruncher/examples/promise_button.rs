@@ -161,7 +161,7 @@ impl Widget for PromiseButton {
         self.text_layout.draw(ctx, origin)
     }
 
-    fn children2(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
+    fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
         SmallVec::new()
     }
 

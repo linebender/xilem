@@ -466,7 +466,7 @@ impl<T: TextStorage + EditableText> Widget for TextComponent<T> {
         self.borrow().layout.draw(ctx, text_offset.to_point());
     }
 
-    fn children2(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
+    fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
         SmallVec::new()
     }
 

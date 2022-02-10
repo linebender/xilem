@@ -78,7 +78,7 @@ impl<'w, W: Widget> WidgetRef<'w, W> {
 
 impl<'w> WidgetRef<'w, dyn Widget> {
     pub fn children(&self) -> SmallVec<[WidgetRef<'w, dyn Widget>; 16]> {
-        self.widget.children2()
+        self.widget.children()
     }
 
     pub fn find_widget_by_id(&self, id: WidgetId) -> Option<WidgetRef<'w, dyn Widget>> {
@@ -151,7 +151,7 @@ impl<'w> WidgetRef<'w, dyn Widget> {
             );
         }
 
-        for child in self.widget.children2() {
+        for child in self.widget.children() {
             child.debug_validate(after_layout);
 
             if !self.state().children.may_contain(&child.state().id) {

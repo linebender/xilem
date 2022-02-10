@@ -126,7 +126,7 @@ impl Widget for WebImage {
         }
     }
 
-    fn children2(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
+    fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
         if let Some(inner) = &self.inner {
             smallvec![inner.as_dyn()]
         } else {

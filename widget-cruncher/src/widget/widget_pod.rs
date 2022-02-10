@@ -312,7 +312,7 @@ impl<W: Widget> WidgetPod<W> {
         visit: impl FnOnce(&mut Self) -> Ret,
     ) -> Ret {
         #[cfg(debug_assertions)]
-        for child in self.inner.children2() {
+        for child in self.inner.children() {
             child.prepare_pass();
         }
 
@@ -321,7 +321,7 @@ impl<W: Widget> WidgetPod<W> {
         let return_value = visit(self);
 
         #[cfg(debug_assertions)]
-        for child in self.inner.children2() {
+        for child in self.inner.children() {
             if child.state().needs_visit() {
                 debug_panic!(
                     "Error in '{}' #{}: child widget '{}' #{} not visited in method {}",
@@ -952,7 +952,7 @@ impl<W: Widget> WidgetPod<W> {
         });
 
         if cfg!(debug_assertions) {
-            for child in self.inner.children2() {
+            for child in self.inner.children() {
                 if child.state().is_expecting_set_origin_call {
                     debug_panic!(
                         "Error in '{}' #{}: missing call to set_origin method for child widget '{}' #{}. During layout pass, if a widget calls WidgetPod::layout() on its child, it then needs to call WidgetPod::set_origin() on the same child.",

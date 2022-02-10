@@ -293,7 +293,7 @@ impl Harness {
             f: &(impl Fn(WidgetRef<'_, dyn Widget>) + 'static),
         ) {
             f(widget);
-            for child in widget.widget().children2() {
+            for child in widget.widget().children() {
                 inspect(child, f);
             }
         }

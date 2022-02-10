@@ -642,7 +642,7 @@ impl Widget for Flex {
         }
     }
 
-    fn children2(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
+    fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
         self.children
             .iter()
             .filter_map(|child| child.widget())

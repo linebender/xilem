@@ -215,7 +215,7 @@ impl<S: 'static> Widget for ModularWidget<S> {
         }
     }
 
-    fn children2(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
+    fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
         if let Some(f) = self.children.as_ref() {
             f(&self.state)
         } else {
@@ -265,8 +265,8 @@ impl Widget for ReplaceChild {
         self.child.paint_raw(ctx, env)
     }
 
-    fn children2(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
-        self.child.widget().children2()
+    fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
+        self.child.widget().children()
     }
 }
 
@@ -328,7 +328,7 @@ impl<W: Widget> Widget for Recorder<W> {
         self.recording.push(Record::Paint)
     }
 
-    fn children2(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
-        self.child.children2()
+    fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
+        self.child.children()
     }
 }

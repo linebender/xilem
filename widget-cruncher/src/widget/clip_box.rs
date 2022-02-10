@@ -443,7 +443,7 @@ impl<W: Widget> Widget for ClipBox<W> {
         });
     }
 
-    fn children2(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
+    fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
         smallvec![self.child.as_dyn()]
     }
 
