@@ -14,6 +14,10 @@
 
 //! A label widget.
 
+// TODO
+// - set text
+// - set text attributes
+
 use smallvec::SmallVec;
 use std::ops::{Deref, DerefMut};
 use tracing::{trace, trace_span, Span};
@@ -319,5 +323,6 @@ mod tests {
         let mut harness = Harness::create(label);
 
         assert_debug_snapshot!(harness.root_widget());
+        harness.test_screenshot();
     }
 }

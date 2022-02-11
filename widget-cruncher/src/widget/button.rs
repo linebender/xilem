@@ -21,6 +21,10 @@ use crate::{theme, Affine, ArcStr, Insets, LinearGradient, UnitPoint};
 use smallvec::SmallVec;
 use tracing::{trace, trace_span, Span};
 
+// TODO
+// - Set label text
+// - Set label style
+
 // the minimum padding added to a button.
 // NOTE: these values are chosen to match the existing look of TextBox; these
 // should be reevaluated at some point.

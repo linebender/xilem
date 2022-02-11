@@ -14,14 +14,19 @@
 
 //! A checkbox widget.
 
-
 use crate::kurbo::{BezPath, Size};
 use crate::piet::{LineCap, LineJoin, LinearGradient, RenderContext, StrokeStyle, UnitPoint};
 use crate::theme;
 use crate::widget::{prelude::*, Label};
 use crate::ArcStr;
-use tracing::{trace, trace_span, Span};
 use smallvec::SmallVec;
+use tracing::{trace, trace_span, Span};
+
+// TODO
+// - Fix impl Widget
+// - Set checked
+// - Set label text
+// - Set label style
 
 /// A checkbox that toggles a `bool`.
 pub struct Checkbox {

@@ -14,6 +14,12 @@
 
 //! A widget with predefined size.
 
+// TODO
+// - get_child
+// - get_child_mut
+// - set_child
+// - remove_child
+
 use smallvec::{smallvec, SmallVec};
 use std::f64::INFINITY;
 use tracing::{trace, trace_span, warn, Span};
@@ -175,10 +181,10 @@ impl Widget for SizedBox {
         };
 
         trace!("Computed size: {}", size);
+
         if size.width.is_infinite() {
             warn!("SizedBox is returning an infinite width.");
         }
-
         if size.height.is_infinite() {
             warn!("SizedBox is returning an infinite height.");
         }

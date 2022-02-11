@@ -11,6 +11,7 @@ use druid::kurbo::Line;
 use druid::widget::prelude::*;
 use druid::{theme, Color, Data, KeyOrValue, Point, Vec2};
 
+// TODO - Set color
 /// An animated spinner widget for showing a loading state.
 ///
 /// To customize the spinner's size, you can place it inside a [`SizedBox`]

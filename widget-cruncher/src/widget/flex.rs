@@ -23,6 +23,10 @@ use crate::{Data, KeyOrValue, Point, Rect, WidgetId, WidgetPod};
 use smallvec::SmallVec;
 use tracing::{trace, trace_span, Span};
 
+// TODO
+// - Splice widgets
+// - Get child ref
+
 /// A container with either horizontal or vertical layout.
 ///
 /// This widget is the foundation of most layouts, and is highly configurable.
@@ -918,7 +922,7 @@ impl Child {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use test_env_log::test;
+    use test_log::test;
 
     #[test]
     #[allow(clippy::cognitive_complexity)]
