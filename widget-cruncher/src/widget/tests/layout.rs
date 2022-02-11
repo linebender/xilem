@@ -17,7 +17,7 @@
 #![allow(unused_imports)]
 
 use druid_shell::kurbo::{Insets, Size};
-use test_env_log::test;
+use test_log::test;
 
 use crate::testing::{widget_ids, Harness, ModularWidget, TestWidgetExt};
 use crate::widget::{Flex, SizedBox};

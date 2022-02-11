@@ -4,7 +4,7 @@ use crate::*;
 use smallvec::smallvec;
 use std::cell::Cell;
 use std::rc::Rc;
-use test_env_log::test;
+use test_log::test;
 
 fn get_parent_widget<W: Widget>(child: W) -> ModularWidget<WidgetPod<W>> {
     let child = WidgetPod::new(child);

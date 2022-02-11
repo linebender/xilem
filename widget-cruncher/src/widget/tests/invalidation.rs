@@ -18,7 +18,7 @@ use crate::kurbo::Rect;
 use crate::testing::{move_mouse, widget_ids, Harness, ModularWidget};
 use crate::widget::{Button, Flex};
 use crate::*;
-use test_env_log::test;
+use test_log::test;
 
 #[test]
 fn invalidate_union() {

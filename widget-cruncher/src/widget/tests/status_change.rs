@@ -10,7 +10,7 @@ use smallvec::smallvec;
 use std::cell::Cell;
 use std::collections::HashMap;
 use std::rc::Rc;
-use test_env_log::test;
+use test_log::test;
 
 fn is_hot(harness: &Harness, id: WidgetId) -> bool {
     harness.get_widget(id).state().is_hot

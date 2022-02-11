@@ -8,7 +8,7 @@ use smallvec::smallvec;
 use std::cell::Cell;
 use std::collections::HashMap;
 use std::rc::Rc;
-use test_env_log::test;
+use test_log::test;
 
 /// Ensure that notifications are delivered to ancestors, but not siblings.
 #[test]

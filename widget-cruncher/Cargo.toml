@@ -21,9 +21,8 @@ rustdoc-args = ["--cfg", "docsrs"]
 default-target = "x86_64-pc-windows-msvc"
 
 [features]
-default = ["gtk", "image", "png", "jpeg"]
+default = ["gtk", "png", "jpeg"]
 gtk = ["druid-shell/gtk"]
-image = ["druid-shell/image"]
 svg = ["usvg"]
 x11 = ["druid-shell/x11"]
 crochet = []
@@ -50,7 +49,7 @@ dxt = ["druid-shell/dxt"]
 hdr = ["druid-shell/hdr"]
 
 # Remember to update this when changing an image feature.
-image-all = ["image", "svg", "png", "jpeg", "jpeg_rayon", "gif", "bmp", "ico", "tiff", "webp", "pnm", "dds", "tga", "farbfeld", "dxt", "hdr"]
+image-all = ["svg", "png", "jpeg", "jpeg_rayon", "gif", "bmp", "ico", "tiff", "webp", "pnm", "dds", "tga", "farbfeld", "dxt", "hdr"]
 
 [dependencies]
 druid-shell = { version = "0.7.0", default-features = false, path = "../druid-shell" }
@@ -79,6 +78,7 @@ reqwest = { version = "0.11.5", features = ["blocking"] }
 # TODO - make most of serde a dev dependency
 serde = "1.0.133"
 serde_json = "1.0.74"
+image = "0.24.0"
 
 [target.'cfg(target_arch="wasm32")'.dependencies]
 tracing-wasm = { version = "0.2.0" }
@@ -91,8 +91,8 @@ float-cmp = { version = "0.8.0", features = ["std"], default-features = false }
 tempfile = "=3.1.0"
 piet-common = { version = "=0.5.0-pre1", features = ["png"] }
 pulldown-cmark = { version = "0.8", default-features = false }
-test-env-log = { version = "0.2.5", features = ["trace"], default-features = false }
-# test-env-log needs it
+test-log = { version = "0.2.8", features = ["trace"], default-features = false }
+# test-log needs it
 tracing-subscriber = { version = "0.2.15", features = ["env-filter"] }
 
 [target.'cfg(not(target_arch="wasm32"))'.dev-dependencies]

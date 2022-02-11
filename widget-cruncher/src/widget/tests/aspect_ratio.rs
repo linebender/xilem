@@ -1,6 +1,6 @@
 #![allow(unused_imports)]
 
-use test_env_log::test;
+use test_log::test;
 
 // TODO
 // Honestly, these tests are a pain in the ass to visualize

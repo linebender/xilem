@@ -6,7 +6,7 @@ use crate::*;
 use smallvec::smallvec;
 use std::cell::Cell;
 use std::rc::Rc;
-use test_env_log::test;
+use test_log::test;
 
 const REQUEST_FOCUS: Selector<()> = Selector::new("druid-tests.request-focus");
 

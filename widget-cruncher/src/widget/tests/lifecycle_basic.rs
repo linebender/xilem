@@ -4,7 +4,7 @@ use crate::testing::{
 use crate::widget::{Flex, Label, SizedBox};
 use crate::*;
 use insta::assert_debug_snapshot;
-use test_env_log::test;
+use test_log::test;
 
 #[test]
 fn app_creation() {
