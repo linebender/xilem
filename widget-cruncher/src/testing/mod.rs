@@ -21,6 +21,10 @@
 mod harness;
 #[cfg(not(tarpaulin_include))]
 mod helper_widgets;
+#[cfg(not(tarpaulin_include))]
+mod screenshots;
+#[cfg(not(tarpaulin_include))]
+mod snapshot_utils;
 
 pub use harness::{Harness, HARNESS_DEFAULT_SIZE};
 pub use helper_widgets::{

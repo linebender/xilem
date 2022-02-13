@@ -313,6 +313,7 @@ impl Widget for Label {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::assert_render_snapshot;
     use crate::testing::Harness;
     use insta::assert_debug_snapshot;
 
@@ -323,6 +324,6 @@ mod tests {
         let mut harness = Harness::create(label);
 
         assert_debug_snapshot!(harness.root_widget());
-        harness.test_screenshot();
+        assert_render_snapshot!(harness, "hello");
     }
 }

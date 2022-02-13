@@ -14,7 +14,9 @@
 
 //! Tools and infrastructure for testing widgets.
 
+use image::io::Reader as ImageReader;
 use std::collections::HashMap;
+use std::panic::Location;
 use std::path::Path;
 use std::sync::Arc;
 
@@ -32,6 +34,9 @@ pub use druid_shell::{
     RawMods, Region, Scalable, Scale, Screen, SysMods, TimerToken, WindowHandle, WindowLevel,
     WindowState,
 };
+
+use super::screenshots::{get_image_diff, get_rgba_image};
+use super::snapshot_utils::get_cargo_workspace;
 
 pub const HARNESS_DEFAULT_SIZE: Size = Size::new(400., 400.);
 
@@ -145,9 +150,7 @@ impl Harness {
         self.mock_app.layout();
     }
 
-    /// Create a Piet bitmap render context (an array of pixels), paint the
-    /// window and return the bitmap.
-    pub fn render(&mut self) -> Arc<[u8]> {
+    fn render_to(&mut self, render_target: &mut BitmapTarget) {
         /// A way to clean up resources when our render context goes out of
         /// scope, even during a panic.
         pub struct RenderContextGuard<'a>(Piet<'a>);
@@ -162,6 +165,15 @@ impl Harness {
             }
         }
 
+        let mut piet = RenderContextGuard(render_target.render_context());
+
+        let invalid = std::mem::replace(self.window_mut().invalid_mut(), Region::EMPTY);
+        self.mock_app.paint_region(&mut piet.0, &invalid);
+    }
+
+    /// Create a Piet bitmap render context (an array of pixels), paint the
+    /// window and return the bitmap.
+    pub fn render(&mut self) -> Arc<[u8]> {
         let mut device = Device::new().expect("harness failed to get device");
         let mut render_target = device
             .bitmap_target(
@@ -171,12 +183,7 @@ impl Harness {
             )
             .expect("failed to create bitmap_target");
 
-        {
-            let mut piet = RenderContextGuard(render_target.render_context());
-
-            let invalid = std::mem::replace(self.window_mut().invalid_mut(), Region::EMPTY);
-            self.mock_app.paint_region(&mut piet.0, &invalid);
-        }
+        self.render_to(&mut render_target);
 
         render_target
             .to_image_buf(ImageFormat::RgbaPremul)
@@ -300,6 +307,59 @@ impl Harness {
 
         inspect(self.mock_app.window.root.as_dyn(), &f);
     }
+
+    // --- Screenshots ---
+
+    pub fn check_render_snapshot(
+        &mut self,
+        manifest_dir: &str,
+        test_file_path: &str,
+        test_module_path: &str,
+        test_name: &str,
+    ) {
+        let mut device = Device::new().expect("harness failed to get device");
+        let mut render_target = device
+            .bitmap_target(
+                self.window_size.width as usize,
+                self.window_size.height as usize,
+                1.0,
+            )
+            .expect("failed to create bitmap_target");
+
+        self.render_to(&mut render_target);
+
+        let new_image = get_rgba_image(&mut render_target, self.window_size);
+
+        let workspace_path = get_cargo_workspace(manifest_dir);
+        let test_file_path_abs = workspace_path.join(test_file_path);
+        let folder_path = test_file_path_abs.parent().unwrap();
+
+        let screenshots_folder = folder_path.join("screenshots");
+        std::fs::create_dir_all(&screenshots_folder).unwrap();
+
+        let module_str = test_module_path.replace("::", "__");
+
+        let reference_path = screenshots_folder.join(format!("{module_str}__{test_name}.png"));
+        let new_path = screenshots_folder.join(format!("{module_str}__{test_name}.new.png"));
+        let diff_path = screenshots_folder.join(format!("{module_str}__{test_name}.diff.png"));
+
+        if let Ok(reference_file) = ImageReader::open(&reference_path) {
+            let ref_image = reference_file.decode().unwrap().to_rgba8();
+
+            if let Some(diff_image) = get_image_diff(&ref_image, &new_image) {
+                new_image.save(&new_path).unwrap();
+                diff_image.save(&diff_path).unwrap();
+                panic!("Images are different");
+            }
+        } else {
+            if !new_path.exists() {
+                new_image.save(&new_path).unwrap();
+            }
+            panic!("No reference file");
+        }
+    }
+
+    // --- Debug logger ---
 
     pub fn push_log(&mut self, message: &str) {
         self.mock_app
