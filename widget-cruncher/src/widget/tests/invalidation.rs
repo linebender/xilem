@@ -30,12 +30,15 @@ fn invalidate_union() {
 
     let mut harness = Harness::create(widget);
 
+    // This resets the invalid region.
+    let _ = harness.render();
+    assert!(harness.window().invalid().is_empty());
+
     let child1_rect = harness.get_widget(id_child_1).state().layout_rect();
     let child2_rect = harness.get_widget(id_child_2).state().layout_rect();
     harness.mouse_move_to(id_child_1);
     assert_eq!(harness.window().invalid().rects(), &[child1_rect]);
 
-    // This resets the invalid region.
     let _ = harness.render();
     assert!(harness.window().invalid().is_empty());
 

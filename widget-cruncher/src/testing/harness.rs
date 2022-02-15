@@ -147,7 +147,11 @@ impl Harness {
             }
         }
 
-        self.mock_app.layout();
+        // TODO - this might be too coarse
+        if self.root_widget().state().needs_layout {
+            self.mock_app.layout();
+            *self.window_mut().invalid_mut() = Region::from(self.window_size.to_rect());
+        }
     }
 
     fn render_to(&mut self, render_target: &mut BitmapTarget) {
@@ -347,14 +351,17 @@ impl Harness {
             let ref_image = reference_file.decode().unwrap().to_rgba8();
 
             if let Some(diff_image) = get_image_diff(&ref_image, &new_image) {
+                // Remove '<test_name>.new.png' '<test_name>.diff.png' files if they exist
+                let _ = std::fs::remove_file(&new_path);
+                let _ = std::fs::remove_file(&diff_path);
                 new_image.save(&new_path).unwrap();
                 diff_image.save(&diff_path).unwrap();
                 panic!("Images are different");
             }
         } else {
-            if !new_path.exists() {
-                new_image.save(&new_path).unwrap();
-            }
+            // Remove '<test_name>.new.png' file if it exists
+            let _ = std::fs::remove_file(&new_path);
+            new_image.save(&new_path).unwrap();
             panic!("No reference file");
         }
     }

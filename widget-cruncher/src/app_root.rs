@@ -664,6 +664,7 @@ impl WindowRoot {
 
     pub(crate) fn invalidate_and_finalize(&mut self) {
         if self.root.state().needs_layout {
+            // TODO - this might be too coarse
             self.handle.invalidate();
         } else {
             for rect in self.invalid.rects() {
