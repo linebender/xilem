@@ -30,6 +30,8 @@ use crate::widget::widget_view::WidgetRef;
 use crate::{ArcStr, Color, Data, KeyOrValue, Point};
 use druid_shell::Cursor;
 
+use super::widget_view::WidgetView;
+
 // added padding between the edges of the widget and the text.
 const LABEL_X_PADDING: f64 = 2.0;
 
@@ -81,13 +83,22 @@ impl Label {
         }
     }
 
+    pub fn with_text(mut self, new_text: impl Into<ArcStr>) -> Self {
+        self.text_layout.set_text(new_text.into());
+        self
+    }
+
     /// Builder-style method for setting the text color.
     ///
     /// The argument can be either a `Color` or a [`Key<Color>`].
     ///
     /// [`Key<Color>`]: ../struct.Key.html
     pub fn with_text_color(mut self, color: impl Into<KeyOrValue<Color>>) -> Self {
-        self.set_text_color(color);
+        let color = color.into();
+        if !self.disabled {
+            self.text_layout.set_text_color(color.clone());
+        }
+        self.default_text_color = color;
         self
     }
 
@@ -97,10 +108,12 @@ impl Label {
     ///
     /// [`Key<f64>`]: ../struct.Key.html
     pub fn with_text_size(mut self, size: impl Into<KeyOrValue<f64>>) -> Self {
-        self.set_text_size(size);
+        self.text_layout.set_text_size(size);
         self
     }
 
+    // FIXME - with_font cancels with_text_size
+    // TODO - write failing test for this case
     /// Builder-style method for setting the font.
     ///
     /// The argument can be a [`FontDescriptor`] or a [`Key<FontDescriptor>`]
@@ -110,7 +123,7 @@ impl Label {
     /// [`FontDescriptor`]: ../struct.FontDescriptor.html
     /// [`Key<FontDescriptor>`]: ../struct.Key.html
     pub fn with_font(mut self, font: impl Into<KeyOrValue<FontDescriptor>>) -> Self {
-        self.set_font(font);
+        self.text_layout.set_font(font);
         self
     }
 
@@ -118,7 +131,7 @@ impl Label {
     ///
     /// [`LineBreaking`]: enum.LineBreaking.html
     pub fn with_line_break_mode(mut self, mode: LineBreaking) -> Self {
-        self.set_line_break_mode(mode);
+        self.line_break_mode = mode;
         self
     }
 
@@ -126,7 +139,7 @@ impl Label {
     ///
     /// [`TextAlignment`]: enum.TextAlignment.html
     pub fn with_text_alignment(mut self, alignment: TextAlignment) -> Self {
-        self.set_text_alignment(alignment);
+        self.text_layout.set_text_alignment(alignment);
         self
     }
 
@@ -135,73 +148,10 @@ impl Label {
         self.current_text.clone()
     }
 
-    /// Set the text.
-    pub fn set_text(&mut self, new_text: impl Into<ArcStr>) {
-        self.text_layout.set_text(new_text.into());
-    }
-
-    /// Set the text color.
-    ///
-    /// The argument can be either a `Color` or a [`Key<Color>`].
-    ///
-    /// If you change this property, you are responsible for calling
-    /// [`request_layout`] to ensure the label is updated.
-    ///
-    /// [`request_layout`]: ../struct.EventCtx.html#method.request_layout
-    /// [`Key<Color>`]: ../struct.Key.html
-    pub fn set_text_color(&mut self, color: impl Into<KeyOrValue<Color>>) {
-        let color = color.into();
-        if !self.disabled {
-            self.text_layout.set_text_color(color.clone());
-        }
-        self.default_text_color = color;
-    }
-
-    /// Set the text size.
-    ///
-    /// The argument can be either an `f64` or a [`Key<f64>`].
-    ///
-    /// If you change this property, you are responsible for calling
-    /// [`request_layout`] to ensure the label is updated.
-    ///
-    /// [`request_layout`]: ../struct.EventCtx.html#method.request_layout
-    /// [`Key<f64>`]: ../struct.Key.html
-    pub fn set_text_size(&mut self, size: impl Into<KeyOrValue<f64>>) {
-        self.text_layout.set_text_size(size);
-    }
-
-    /// Set the font.
-    ///
-    /// The argument can be a [`FontDescriptor`] or a [`Key<FontDescriptor>`]
-    /// that refers to a font defined in the [`Env`].
-    ///
-    /// If you change this property, you are responsible for calling
-    /// [`request_layout`] to ensure the label is updated.
-    ///
-    /// [`request_layout`]: ../struct.EventCtx.html#method.request_layout
-    /// [`Env`]: ../struct.Env.html
-    /// [`FontDescriptor`]: ../struct.FontDescriptor.html
-    /// [`Key<FontDescriptor>`]: ../struct.Key.html
-    pub fn set_font(&mut self, font: impl Into<KeyOrValue<FontDescriptor>>) {
-        self.text_layout.set_font(font);
-    }
-
-    /// Set the [`LineBreaking`] behaviour.
-    ///
-    /// If you change this property, you are responsible for calling
-    /// [`request_layout`] to ensure the label is updated.
-    ///
-    /// [`request_layout`]: ../struct.EventCtx.html#method.request_layout
-    /// [`LineBreaking`]: enum.LineBreaking.html
-    pub fn set_line_break_mode(&mut self, mode: LineBreaking) {
-        self.line_break_mode = mode;
-    }
-
-    /// Set the [`TextAlignment`] for this layout.
-    ///
-    /// [`TextAlignment`]: enum.TextAlignment.html
-    pub fn set_text_alignment(&mut self, alignment: TextAlignment) {
-        self.text_layout.set_text_alignment(alignment);
+    /// Return the offset of the first baseline relative to the bottom of the widget.
+    pub fn baseline_offset(&self) -> f64 {
+        let text_metrics = self.text_layout.layout_metrics();
+        text_metrics.size.height - text_metrics.first_baseline
     }
 
     /// Draw this label's text at the provided `Point`, without internal padding.
@@ -212,11 +162,66 @@ impl Label {
     pub fn draw_at(&self, ctx: &mut PaintCtx, origin: impl Into<Point>) {
         self.text_layout.draw(ctx, origin)
     }
+}
 
-    /// Return the offset of the first baseline relative to the bottom of the widget.
-    pub fn baseline_offset(&self) -> f64 {
-        let text_metrics = self.text_layout.layout_metrics();
-        text_metrics.size.height - text_metrics.first_baseline
+impl WidgetView<'_, '_, Label> {
+    /// Set the text.
+    pub fn set_text(&mut self, new_text: impl Into<ArcStr>) {
+        self.widget.text_layout.set_text(new_text.into());
+        self.request_layout();
+    }
+
+    /// Set the text color.
+    ///
+    /// The argument can be either a `Color` or a [`Key<Color>`].
+    /// [`request_layout`]: ../struct.EventCtx.html#method.request_layout
+    /// [`Key<Color>`]: ../struct.Key.html
+    pub fn set_text_color(&mut self, color: impl Into<KeyOrValue<Color>>) {
+        let color = color.into();
+        if !self.widget.disabled {
+            self.widget.text_layout.set_text_color(color.clone());
+        }
+        self.widget.default_text_color = color;
+        self.request_layout();
+    }
+
+    /// Set the text size.
+    ///
+    /// The argument can be either an `f64` or a [`Key<f64>`].
+    ///
+    /// [`Key<f64>`]: ../struct.Key.html
+    pub fn set_text_size(&mut self, size: impl Into<KeyOrValue<f64>>) {
+        self.widget.text_layout.set_text_size(size);
+        self.request_layout();
+    }
+
+    /// Set the font.
+    ///
+    /// The argument can be a [`FontDescriptor`] or a [`Key<FontDescriptor>`]
+    /// that refers to a font defined in the [`Env`].
+    ///
+    /// [`Env`]: ../struct.Env.html
+    /// [`FontDescriptor`]: ../struct.FontDescriptor.html
+    /// [`Key<FontDescriptor>`]: ../struct.Key.html
+    pub fn set_font(&mut self, font: impl Into<KeyOrValue<FontDescriptor>>) {
+        self.widget.text_layout.set_font(font);
+        self.request_layout();
+    }
+
+    /// Set the [`LineBreaking`] behaviour.
+    ///
+    /// [`LineBreaking`]: enum.LineBreaking.html
+    pub fn set_line_break_mode(&mut self, mode: LineBreaking) {
+        self.widget.line_break_mode = mode;
+        self.request_layout();
+    }
+
+    /// Set the [`TextAlignment`] for this layout.
+    ///
+    /// [`TextAlignment`]: enum.TextAlignment.html
+    pub fn set_text_alignment(&mut self, alignment: TextAlignment) {
+        self.widget.text_layout.set_text_alignment(alignment);
+        self.request_layout();
     }
 }
 
@@ -315,7 +320,10 @@ mod tests {
     use super::*;
     use crate::assert_render_snapshot;
     use crate::testing::Harness;
+    use crate::theme::PRIMARY_LIGHT;
+    use crate::widget::{Flex, SizedBox};
     use insta::assert_debug_snapshot;
+    use piet_common::FontFamily;
 
     #[test]
     fn simple_label() {
@@ -325,5 +333,53 @@ mod tests {
 
         assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "hello");
+    }
+
+    #[test]
+    fn styled_label() {
+        let label = Label::new("The quick brown fox jumps over the lazy dog")
+            .with_text_color(PRIMARY_LIGHT)
+            .with_font(FontDescriptor::new(FontFamily::MONOSPACE))
+            .with_text_size(20.0)
+            .with_line_break_mode(LineBreaking::WordWrap)
+            .with_text_alignment(TextAlignment::Center);
+
+        let mut harness = Harness::create_with_size(label, Size::new(200.0, 200.0));
+
+        assert_render_snapshot!(harness, "styled_label");
+    }
+
+    #[test]
+    fn line_break_modes() {
+        let widget = Flex::column()
+            .with_flex_spacer(1.0)
+            .with_child(
+                SizedBox::new(
+                    Label::new("The quick brown fox jumps over the lazy dog")
+                        .with_line_break_mode(LineBreaking::WordWrap),
+                )
+                .width(200.0),
+            )
+            .with_spacer(20.0)
+            .with_child(
+                SizedBox::new(
+                    Label::new("The quick brown fox jumps over the lazy dog")
+                        .with_line_break_mode(LineBreaking::Clip),
+                )
+                .width(200.0),
+            )
+            .with_spacer(20.0)
+            .with_child(
+                SizedBox::new(
+                    Label::new("The quick brown fox jumps over the lazy dog")
+                        .with_line_break_mode(LineBreaking::Overflow),
+                )
+                .width(200.0),
+            )
+            .with_flex_spacer(1.0);
+
+        let mut harness = Harness::create(widget);
+
+        assert_render_snapshot!(harness, "line_break_modes");
     }
 }
