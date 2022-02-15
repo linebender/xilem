@@ -97,7 +97,7 @@ impl Viewport {
         ///
         /// if the value already falls between the two edges, return 0.0.
         fn closest_on_axis(val: f64, min: f64, max: f64) -> f64 {
-            assert!(min <= max);
+            debug_assert!(min <= max);
             if val > min && val < max {
                 0.0
             } else if val <= min {
