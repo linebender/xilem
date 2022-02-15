@@ -60,7 +60,16 @@ Record spans, with:
 
 
 
-# TODO
+# TODO - MVP
+
+- [ ] Add action queue
+- [ ] Add impl Deref for WidgetRef
+- [ ] Remove WidgetId::reserved, move WidgetId::new
+- [ ] Add downcast to WidgetRef and WidgetView
+- [ ] Add WidgetView::as_ref
+- [ ] Rework set_origin
+- [ ] Rename ContextState to GlobalPassCtx
+- [ ] Remove ExtendDrain
 
 - [ ] Rewrite tests
  - [X] Create coverage profile
@@ -71,6 +80,38 @@ Record spans, with:
  - [ ] To-do List
  - [X] Fix blocking_function example
  - [ ] Rewrite Disney example
+
+- [ ] Use WidgetView everywhere
+ - [ ] Button
+ - [ ] Checkbox
+ - [ ] Click
+ - [ ] ClipBox
+ - [ ] Flex
+ - [ ] Image
+ - [X] Label
+ - [ ] SizedBox
+ - [ ] Spinner
+ - [ ] TextBox
+
+- [ ] Refactor WidgetState
+ - [ ] Sort WidgetState fields
+ - [ ] Add WidgetTmpState
+ - [ ] Extract WidgetState fields to WidgetTmpState + global state
+
+- [ ] Refactor ScrollComponent
+ - [ ] Disambiguate concept of hidden/stashed widgets
+ - [ ] Fix invalidation
+
+- [ ] Re-add Dialog
+- [ ] Re-add ExtEvent + AppDelegate
+- [ ] Refactor TextLayout
+- [ ] Rewrite License bits
+- [ ] Port Panoramix
+
+
+# TODO - Long term
+
+- [ ] Move debug logger to use tracing infrastructure
 
 - [ ] Trait-ify druid-shell
  - [ ] ??? Start at the bottom?
@@ -96,40 +137,19 @@ Record spans, with:
  - [ ] Huge list with editable/focusable boxes
  - [ ] ???
 
-- [ ] Re-add Dialog
-- [ ] Re-add ExtEvent + AppDelegate
-- [ ] Refactor TextLayout
-- [ ] Rewrite License bits
-- [ ] Check ids are unique
-- [ ] Getter downcast
-- [ ] Rework set_origin
-- [ ] Use pretty assert
-- [ ] Rename ContextState to GlobalPassCtx
-- [ ] Sort WidgetState fields
-- [ ] Add WidgetTmpState
-- [ ] Extract WidgetState fields to WidgetTmpState + global state
-- [ ] Remove ExtendDrain
-- [ ] Drag 'n Drop
-
-- [ ] Refactor ScrollComponent
- - [ ] Disambiguate concept of hidden/stashed widgets
- - [ ] Fix invalidation
-
-- [ ] Refactor Druid env
- - [ ] Remove Data trait
- - [ ] Make it so that required keys are known at launch time for better error messages.
- - [ ] Re-add Localization
-
 - [ ] Refactor Command infrastructure
  - [ ] Broadcast (used multiple times)
  - [ ] Command (used once)
  - [ ] ???
  - [ ] Add on_command() trait method
 
-- [ ] Use WidgetView everywhere
-- [ ] Switch to ECS
-- [ ] Port Panoramix
+- [ ] Refactor Druid env
+ - [ ] Remove Data trait
+ - [ ] Make it so that required keys are known at launch time for better error messages.
+ - [ ] Re-add Localization
 
+- [ ] Switch to ECS
+- [ ] Drag 'n Drop
 
 ## Tests to write
 
@@ -148,6 +168,7 @@ Record spans, with:
  -> [ ] pan_to_child
  -> [ ] ParentWindowOrigin
  -> [ ] debug_widget_text
+ -> [ ] check for WidgetAdded
 -> [X] widget utils
 -> [ ] FillStrat
 -> [ ] Widgets
@@ -157,7 +178,7 @@ Record spans, with:
  -> [ ] ClipBox
  -> [ ] Flex
  -> [ ] Image
- -> [ ] Label
+ -> [X] Label
  -> [ ] SizedBox
  -> [ ] Spinner
  -> [ ] TextBox
