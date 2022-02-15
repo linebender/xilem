@@ -62,12 +62,10 @@ Record spans, with:
 
 # TODO - MVP
 
-- [ ] Add action queue
 - [ ] Add impl Deref for WidgetRef
 - [ ] Remove WidgetId::reserved, move WidgetId::new
 - [ ] Add downcast to WidgetRef and WidgetView
 - [ ] Add WidgetView::as_ref
-- [ ] Rework set_origin
 - [ ] Rename ContextState to GlobalPassCtx
 - [ ] Remove ExtendDrain
 
@@ -75,6 +73,9 @@ Record spans, with:
  - [X] Create coverage profile
  - [X] Look at coverage of every file, write a list of target coverage
  - [ ] Add timers to harness
+
+- [ ] Add action queue
+- [ ] Re-add ExtEvent + AppDelegate
 
 - [ ] Write examples
  - [ ] To-do List
@@ -98,20 +99,33 @@ Record spans, with:
  - [ ] Add WidgetTmpState
  - [ ] Extract WidgetState fields to WidgetTmpState + global state
 
-- [ ] Refactor ScrollComponent
+- [ ] Refactor ScrollComponent / paint_rect / paint_insets
+ - [ ] No paint_insets, set paint_rect automatically or manually
+ - [ ] Rework set_origin
+ - [ ] Check that paint_rect has children paint_rect
  - [ ] Disambiguate concept of hidden/stashed widgets
  - [ ] Fix invalidation
 
 - [ ] Re-add Dialog
-- [ ] Re-add ExtEvent + AppDelegate
 - [ ] Refactor TextLayout
-- [ ] Rewrite License bits
-- [ ] Port Panoramix
 
+- [ ] Rewrite License bits
+- [ ] Write ARCHITECTURE.md
+- [ ] Publish
 
 # TODO - Long term
 
+- [ ] Port Panoramix
+
 - [ ] Move debug logger to use tracing infrastructure
+
+- [ ] Refactor Mouse Events and hot status changes
+
+- [ ] Write analysis of different layout footguns
+ - Flex interacting with viewport
+ - Does Tennent's Correspondence principle apply to Wrappers in a Flex container?
+ - Difference in Harness(Button) vs Harness(Flex(Button))
+ - Flex alignment vs text alignment
 
 - [ ] Trait-ify druid-shell
  - [ ] ??? Start at the bottom?
