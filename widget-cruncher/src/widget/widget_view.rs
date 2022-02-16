@@ -1,5 +1,6 @@
 use smallvec::SmallVec;
 use std::any::Any;
+use std::ops::Deref;
 use std::time::Duration;
 use tracing::trace;
 
@@ -67,6 +68,14 @@ impl<'w, W: Widget + ?Sized> std::fmt::Debug for WidgetRef<'w, W> {
             }
             f_tuple.finish()
         }
+    }
+}
+
+impl<'w, W: Widget + ?Sized> Deref for WidgetRef<'w, W> {
+    type Target = W;
+
+    fn deref(&self) -> &Self::Target {
+        &self.widget
     }
 }
 

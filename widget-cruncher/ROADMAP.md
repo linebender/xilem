@@ -63,7 +63,7 @@ Record spans, with:
 # TODO - MVP
 
 - [X] Clean up imports
-- [ ] Add impl Deref for WidgetRef
+- [X] Add impl Deref for WidgetRef
 - [ ] Remove WidgetId::reserved, move WidgetId::new
 - [ ] Add downcast to WidgetRef and WidgetView
 - [ ] Add WidgetView::as_ref
