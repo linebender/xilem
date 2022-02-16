@@ -29,6 +29,7 @@ use crate::ext_event::ExtEventSink;
 use crate::piet::{Piet, PietText, RenderContext};
 use crate::platform::WindowDesc;
 use crate::promise::{PromiseToken, PromiseTokenId};
+use crate::testing::MockTimerQueue;
 use crate::text::{ImeHandlerRef, TextFieldRegistration};
 use crate::widget::widget_view::WidgetView;
 use crate::widget::{CursorChange, FocusChange, WidgetState};
@@ -58,6 +59,8 @@ pub(crate) struct ContextState<'a> {
     pub(crate) ext_event_sink: ExtEventSink,
     pub(crate) debug_logger: &'a mut DebugLogger,
     pub(crate) command_queue: &'a mut CommandQueue,
+    // Used in Harness for unit tests
+    pub(crate) mock_timer_queue: Option<&'a mut MockTimerQueue>,
     pub(crate) window_id: WindowId,
     pub(crate) window: &'a WindowHandle,
     pub(crate) text: PietText,
@@ -942,6 +945,7 @@ impl<'a> ContextState<'a> {
         ext_event_sink: ExtEventSink,
         debug_logger: &'a mut DebugLogger,
         command_queue: &'a mut CommandQueue,
+        mock_timer_queue: Option<&'a mut MockTimerQueue>,
         window: &'a WindowHandle,
         window_id: WindowId,
         focus_widget: Option<WidgetId>,
@@ -950,6 +954,7 @@ impl<'a> ContextState<'a> {
             ext_event_sink,
             debug_logger,
             command_queue,
+            mock_timer_queue,
             window,
             window_id,
             focus_widget,
@@ -964,12 +969,20 @@ impl<'a> ContextState<'a> {
     }
 
     pub(crate) fn request_timer(
-        &self,
+        &mut self,
         widget_state: &mut WidgetState,
-        deadline: Duration,
+        duration: Duration,
     ) -> TimerToken {
-        trace!("request_timer deadline={:?}", deadline);
-        let timer_token = self.window.request_timer(deadline);
+        trace!("request_timer duration={:?}", duration);
+
+        let timer_token = if let Some(timer_queue) = self.mock_timer_queue.as_mut() {
+            // Path taken in unit tests, because we don't want to use platform timers
+            timer_queue.add_timer(duration)
+        } else {
+            // Normal path
+            self.window.request_timer(duration)
+        };
+
         widget_state.add_timer(timer_token);
         timer_token
     }

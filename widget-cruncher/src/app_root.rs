@@ -12,6 +12,7 @@ use crate::command::CommandQueue;
 use crate::contexts::ContextState;
 use crate::ext_event::{ExtEventQueue, ExtEventSink};
 use crate::platform::RUN_COMMANDS_TOKEN;
+use crate::testing::MockTimerQueue;
 use crate::text::TextFieldRegistration;
 use crate::util::ExtendDrain;
 use crate::widget::widget_view::WidgetRef;
@@ -70,6 +71,8 @@ pub struct WindowRoot {
     pub(crate) ext_event_sink: ExtEventSink,
     pub(crate) handle: WindowHandle,
     pub(crate) timers: HashMap<TimerToken, WidgetId>,
+    // Used in unit tests
+    pub(crate) mock_timer_queue: Option<MockTimerQueue>,
     pub(crate) transparent: bool,
     pub(crate) ime_handlers: Vec<(TextFieldToken, TextFieldRegistration)>,
     pub(crate) ime_focus_change: Option<Option<TextFieldToken>>,
@@ -80,7 +83,7 @@ pub struct WindowRoot {
 impl Windows {
     pub fn connect(&mut self, id: WindowId, handle: WindowHandle, ext_event_sink: ExtEventSink) {
         if let Some(pending) = self.pending.remove(&id) {
-            let win = WindowRoot::new(id, handle, ext_event_sink, pending);
+            let win = WindowRoot::new(id, handle, ext_event_sink, pending, None);
             assert!(
                 self.active_windows.insert(id, win).is_none(),
                 "duplicate window"
@@ -386,6 +389,7 @@ impl WindowRoot {
         handle: WindowHandle,
         ext_event_sink: ExtEventSink,
         pending: PendingWindow,
+        mock_timer_queue: Option<MockTimerQueue>,
     ) -> WindowRoot {
         WindowRoot {
             id,
@@ -401,6 +405,7 @@ impl WindowRoot {
             ext_event_sink,
             handle,
             timers: HashMap::new(),
+            mock_timer_queue,
             ime_handlers: Vec::new(),
             ime_focus_change: None,
         }
@@ -555,6 +560,7 @@ impl WindowRoot {
                 self.ext_event_sink.clone(),
                 debug_logger,
                 command_queue,
+                self.mock_timer_queue.as_mut(),
                 &self.handle,
                 self.id,
                 self.focus,
@@ -634,6 +640,7 @@ impl WindowRoot {
             self.ext_event_sink.clone(),
             debug_logger,
             command_queue,
+            self.mock_timer_queue.as_mut(),
             &self.handle,
             self.id,
             self.focus,
@@ -746,6 +753,7 @@ impl WindowRoot {
             self.ext_event_sink.clone(),
             debug_logger,
             command_queue,
+            self.mock_timer_queue.as_mut(),
             &self.handle,
             self.id,
             self.focus,
@@ -803,6 +811,7 @@ impl WindowRoot {
             self.ext_event_sink.clone(),
             debug_logger,
             command_queue,
+            self.mock_timer_queue.as_mut(),
             &self.handle,
             self.id,
             self.focus,

@@ -15,6 +15,7 @@
 //! Tools and infrastructure for testing widgets.
 
 use image::io::Reader as ImageReader;
+use instant::Duration;
 use std::collections::HashMap;
 use std::panic::Location;
 use std::path::Path;
@@ -37,6 +38,7 @@ pub use druid_shell::{
 
 use super::screenshots::{get_image_diff, get_rgba_image};
 use super::snapshot_utils::get_cargo_workspace;
+use super::MockTimerQueue;
 
 pub const HARNESS_DEFAULT_SIZE: Size = Size::new(400., 400.);
 
@@ -95,6 +97,7 @@ impl Harness {
             Default::default(),
             event_queue.make_sink(),
             pending,
+            Some(MockTimerQueue::new()),
         );
 
         let mouse_state = MouseEvent {
@@ -271,6 +274,19 @@ impl Harness {
         let command = command.into().default_to(self.mock_app.window.id.into());
         let event = Event::Internal(InternalEvent::TargetedCommand(command));
         self.process_event(event);
+    }
+
+    pub fn move_timers_forward(&mut self, duration: Duration) {
+        let tokens = self
+            .mock_app
+            .window
+            .mock_timer_queue
+            .as_mut()
+            .unwrap()
+            .move_forward(duration);
+        for token in tokens {
+            self.process_event(Event::Timer(token));
+        }
     }
 
     // --- Getters ---

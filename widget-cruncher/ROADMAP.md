@@ -62,6 +62,7 @@ Record spans, with:
 
 # TODO - MVP
 
+- [ ] Clean up imports
 - [ ] Add impl Deref for WidgetRef
 - [ ] Remove WidgetId::reserved, move WidgetId::new
 - [ ] Add downcast to WidgetRef and WidgetView
@@ -69,10 +70,10 @@ Record spans, with:
 - [ ] Rename ContextState to GlobalPassCtx
 - [ ] Remove ExtendDrain
 
-- [ ] Rewrite tests
+- [X] Rewrite tests
  - [X] Create coverage profile
  - [X] Look at coverage of every file, write a list of target coverage
- - [ ] Add timers to harness
+ - [X] Add timers to harness
 
 - [ ] Add action queue
 - [ ] Re-add ExtEvent + AppDelegate
@@ -156,6 +157,7 @@ Record spans, with:
  - [ ] Command (used once)
  - [ ] ???
  - [ ] Add on_command() trait method
+ - [ ] Unify timers and promises
 
 - [ ] Refactor Druid env
  - [ ] Remove Data trait

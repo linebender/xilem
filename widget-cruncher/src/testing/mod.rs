@@ -22,6 +22,8 @@ mod harness;
 #[cfg(not(tarpaulin_include))]
 mod helper_widgets;
 #[cfg(not(tarpaulin_include))]
+mod mock_timer_queue;
+#[cfg(not(tarpaulin_include))]
 mod screenshots;
 #[cfg(not(tarpaulin_include))]
 mod snapshot_utils;
@@ -30,6 +32,7 @@ pub use harness::{Harness, HARNESS_DEFAULT_SIZE};
 pub use helper_widgets::{
     ModularWidget, Record, Recorder, Recording, ReplaceChild, TestWidgetExt, REPLACE_CHILD,
 };
+pub use mock_timer_queue::MockTimerQueue;
 
 use crate::kurbo::{Point, Vec2};
 use crate::{MouseEvent, WidgetId};
