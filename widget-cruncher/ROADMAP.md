@@ -64,7 +64,6 @@ Record spans, with:
 
 - [X] Clean up imports
 - [X] Add impl Deref for WidgetRef
-- [ ] Remove WidgetId::reserved, move WidgetId::new
 - [ ] Add downcast to WidgetRef and WidgetView
 - [ ] Add WidgetView::as_ref
 - [ ] Rename ContextState to GlobalPassCtx
@@ -165,6 +164,7 @@ Record spans, with:
  - [ ] Re-add Localization
 
 - [ ] Switch to ECS
+- [ ] Remove WidgetId::reserved, move WidgetId::new
 - [ ] Drag 'n Drop
 
 ## Tests to write

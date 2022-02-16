@@ -69,6 +69,7 @@ pub fn scroll_mouse(p: impl Into<Point>, delta: impl Into<Vec2>) -> MouseEvent {
 }
 
 pub fn widget_ids<const N: usize>() -> [WidgetId; N] {
+    // FIXME - use std::array::from_fn once it's stabilized
     let mut ids = [WidgetId::reserved(0); N];
 
     for id in &mut ids {
