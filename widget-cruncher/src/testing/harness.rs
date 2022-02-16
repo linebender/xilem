@@ -42,6 +42,8 @@ use super::MockTimerQueue;
 
 pub const HARNESS_DEFAULT_SIZE: Size = Size::new(400., 400.);
 
+// TODO - Rewrite this doc
+// - Explain timers
 /// A type that tries very hard to provide a comforting and safe environment
 /// for widgets who are trying to find their way.
 ///
@@ -60,8 +62,6 @@ pub const HARNESS_DEFAULT_SIZE: Size = Size::new(400., 400.);
 /// because paint is triggered by druid-shell, and there is no druid-shell here;
 ///
 /// if you want those functions run you will need to call them yourself.
-///
-/// Also, timers don't work.  ¯\_(ツ)_/¯
 pub struct Harness {
     mock_app: MockAppState,
     mouse_state: MouseEvent,
