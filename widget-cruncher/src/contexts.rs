@@ -24,17 +24,16 @@ use tracing::{error, trace, warn};
 
 use crate::command::{Command, CommandQueue, Notification, SingleUse};
 use crate::debug_logger::DebugLogger;
-use crate::env::KeyLike;
 use crate::ext_event::ExtEventSink;
 use crate::piet::{Piet, PietText, RenderContext};
 use crate::platform::WindowDesc;
-use crate::promise::{PromiseToken, PromiseTokenId};
+use crate::promise::PromiseToken;
 use crate::testing::MockTimerQueue;
 use crate::text::{ImeHandlerRef, TextFieldRegistration};
 use crate::widget::widget_view::WidgetView;
 use crate::widget::{CursorChange, FocusChange, WidgetState};
 use crate::{
-    Affine, Env, Insets, Point, Rect, Size, Target, Vec2, Widget, WidgetId, WidgetPod, WindowId,
+    Affine, Insets, Point, Rect, Size, Target, Vec2, Widget, WidgetId, WidgetPod, WindowId,
 };
 use druid_shell::text::Event as ImeInvalidation;
 use druid_shell::{Cursor, Region, TimerToken, WindowHandle};
@@ -214,7 +213,7 @@ impl_context_method!(
         ) {
             self.check_init("run_in_background");
 
-            use std::{thread, time};
+            use std::thread;
 
             let ext_event_sink = self.global_state.ext_event_sink.clone();
             thread::spawn(move || {
@@ -231,7 +230,7 @@ impl_context_method!(
 
             let token = PromiseToken::<T>::new();
 
-            use std::{thread, time};
+            use std::thread;
 
             let ext_event_sink = self.global_state.ext_event_sink.clone();
             let widget_id = self.widget_state.id;

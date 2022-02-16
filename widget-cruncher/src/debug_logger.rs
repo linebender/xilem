@@ -52,7 +52,7 @@ impl DebugLogger {
 
     pub fn write_to_file(&self, path: &str) {
         use std::fs::File;
-        use std::io::{BufReader, BufWriter, Write};
+        use std::io::{BufWriter, Write};
 
         fn add_logs(tree: &mut StateTree, logs: &HashMap<LogId, DebugLog>, log_ids: &[LogId]) {
             let mut children = Vec::new();

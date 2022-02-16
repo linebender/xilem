@@ -66,7 +66,7 @@ impl AppLauncher {
     ///
     /// Returns an error if a window cannot be instantiated. This is usually
     /// a fatal error.
-    pub fn launch(mut self) -> Result<(), PlatformError> {
+    pub fn launch(self) -> Result<(), PlatformError> {
         let app = Application::new()?;
 
         let mut state = AppState::new(app.clone(), self.ext_event_queue, Env::with_theme());

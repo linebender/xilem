@@ -24,7 +24,7 @@ use crate::kurbo::Size;
 use crate::piet::Piet;
 
 use crate::command as sys_cmd;
-use crate::ext_event::{ExtEventQueue, ExtEventSink, ExtMessage};
+use crate::ext_event::{ExtEventQueue, ExtMessage};
 use crate::{
     Command, Env, Event, Handled, InternalEvent, PlatformError, Selector, Target, WindowId,
 };
@@ -123,10 +123,6 @@ impl DruidHandler {
 }
 
 impl AppState {
-    pub(crate) fn env(&self) -> Env {
-        self.inner.borrow().env.clone()
-    }
-
     pub(crate) fn add_window(&self, id: WindowId, window: PendingWindow) {
         self.inner.borrow_mut().windows.add(id, window);
     }
@@ -225,6 +221,7 @@ impl AppState {
     /// the `window_id` will be `Some(_)`, otherwise (such as if no window
     /// is open but a menu exists, as on macOS) it will be `None`.
     fn handle_system_cmd(&mut self, cmd_id: u32, window_id: Option<WindowId>) {
+        #![allow(unused_variables)]
         todo!();
     }
 
@@ -402,8 +399,6 @@ impl AppState {
     ) -> Result<WindowHandle, PlatformError> {
         let mut builder = WindowBuilder::new(self.app());
         config.apply_to_builder(&mut builder);
-
-        let env = self.env();
 
         pending.size_policy = config.size_policy;
         builder.set_title(pending.title.to_string());

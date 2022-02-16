@@ -14,10 +14,8 @@
 
 //! Tests related to propagation of invalid rects.
 
-use crate::kurbo::Rect;
-use crate::testing::{move_mouse, widget_ids, Harness, ModularWidget};
+use crate::testing::{widget_ids, Harness};
 use crate::widget::{Button, Flex};
-use crate::*;
 use test_log::test;
 
 #[test]

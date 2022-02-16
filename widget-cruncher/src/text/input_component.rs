@@ -14,6 +14,12 @@
 
 //! A widget component that integrates with the platform text system.
 
+// TODO
+#![allow(unused_imports)]
+#![allow(unused_variables)]
+#![allow(unused_mut)]
+#![allow(dead_code)]
+
 use smallvec::SmallVec;
 use std::cell::{Cell, Ref, RefCell, RefMut};
 use std::ops::Range;

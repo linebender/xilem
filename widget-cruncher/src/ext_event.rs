@@ -10,7 +10,7 @@ use crate::command::SelectorSymbol;
 use crate::platform::EXT_EVENT_IDLE_TOKEN;
 use crate::promise::PromiseResult;
 use crate::widget::WidgetId;
-use crate::{Command, Data, DruidHandler, Selector, Target, WindowId};
+use crate::{Selector, Target, WindowId};
 use druid_shell::IdleHandle;
 
 pub(crate) enum ExtMessage {

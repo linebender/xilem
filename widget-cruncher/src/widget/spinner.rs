@@ -4,12 +4,12 @@
 
 use smallvec::SmallVec;
 use std::f64::consts::PI;
-use tracing::{instrument, trace};
+use tracing::trace;
 
 use crate::widget::widget_view::WidgetRef;
 use druid::kurbo::Line;
 use druid::widget::prelude::*;
-use druid::{theme, Color, Data, KeyOrValue, Point, Vec2};
+use druid::{theme, Color, KeyOrValue, Point, Vec2};
 
 // TODO - Set color
 /// An animated spinner widget for showing a loading state.
@@ -71,7 +71,7 @@ impl Widget for Spinner {
         }
     }
 
-    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange, env: &Env) {}
+    fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange, _env: &Env) {}
 
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, _env: &Env) {
         ctx.init();

@@ -2,18 +2,13 @@
 
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
-use tracing::{info_span, trace, warn};
 
 use crate::bloom::Bloom;
-use crate::contexts::ContextState;
-use crate::kurbo::{Affine, Insets, Point, Rect, Shape, Size, Vec2};
-use crate::text::{TextFieldRegistration, TextLayout};
-use crate::util::ExtendDrain;
+use crate::kurbo::{Insets, Point, Rect, Size, Vec2};
+use crate::text::TextFieldRegistration;
+use crate::util::ExtendDrain as _;
 use crate::widget::{CursorChange, FocusChange};
-use crate::{
-    ArcStr, BoxConstraints, Color, Env, Event, EventCtx, InternalEvent, InternalLifeCycle,
-    LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, RenderContext, Widget, WidgetId,
-};
+use crate::WidgetId;
 use druid_shell::{Cursor, Region, TimerToken};
 
 // TODO - Make a note documenting this: the only way to get a &mut WidgetState should be in a pass.

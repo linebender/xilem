@@ -1,20 +1,16 @@
-use smallvec::SmallVec;
-use std::collections::{HashMap, VecDeque};
+use std::collections::VecDeque;
 use tracing::{info_span, trace, warn};
 
-use crate::bloom::Bloom;
 use crate::contexts::ContextState;
 use crate::kurbo::{Affine, Insets, Point, Rect, Shape, Size, Vec2};
-use crate::text::{TextFieldRegistration, TextLayout};
-use crate::util::ExtendDrain;
+use crate::text::TextLayout;
 use crate::widget::widget_view::WidgetRef;
-use crate::widget::{CursorChange, FocusChange, WidgetState};
+use crate::widget::{FocusChange, WidgetState};
 use crate::{
-    ArcStr, BoxConstraints, Color, Command, Env, Event, EventCtx, InternalEvent, InternalLifeCycle,
+    ArcStr, BoxConstraints, Color, Env, Event, EventCtx, InternalEvent, InternalLifeCycle,
     LayoutCtx, LifeCycle, LifeCycleCtx, Notification, PaintCtx, RenderContext, StatusChange,
     Target, Widget, WidgetId,
 };
-use druid_shell::{Cursor, Region, TimerToken};
 
 /// A container for one widget in the hierarchy.
 ///
@@ -294,9 +290,10 @@ impl<W: Widget> WidgetPod<W> {
         false
     }
 
+    // FIXME - remove?
     pub fn recurse_pass<Ret>(
         &mut self,
-        pass_name: &str,
+        _pass_name: &str,
         parent_state: &mut WidgetState,
         visit: impl FnOnce(&mut W, &mut WidgetState) -> Ret,
     ) -> Ret {
@@ -936,7 +933,9 @@ impl<W: Widget> WidgetPod<W> {
         let inner_mouse_pos = parent_ctx
             .mouse_pos
             .map(|pos| pos - self.layout_rect().origin().to_vec2() + self.viewport_offset());
-        let prev_size = self.state.size;
+
+        // TODO - remove ?
+        let _prev_size = self.state.size;
 
         let new_size = self.call_widget_method_with_checks("layout", |widget_pod| {
             // widget_pod is a reborrow of `self`

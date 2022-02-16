@@ -42,7 +42,7 @@ impl MockTimerQueue {
         let token = TimerToken::next();
         let idx = self
             .queue
-            .binary_search_by_key(&deadline, |(d, t)| *d)
+            .binary_search_by_key(&deadline, |(d, _t)| *d)
             .unwrap_or_else(|x| x);
         self.queue.insert(idx, (deadline, token));
 
@@ -54,11 +54,11 @@ impl MockTimerQueue {
         self.current_time += duration;
         let idx = self
             .queue
-            .partition_point(|(deadline, token)| *deadline <= self.current_time);
+            .partition_point(|(deadline, _token)| *deadline <= self.current_time);
 
         self.queue
             .drain(0..idx)
-            .map(|(deadline, token)| token)
+            .map(|(_deadline, token)| token)
             .collect()
     }
 }

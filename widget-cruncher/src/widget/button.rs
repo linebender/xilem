@@ -17,7 +17,7 @@
 use crate::widget::prelude::*;
 use crate::widget::widget_view::WidgetRef;
 use crate::widget::{Label, WidgetPod};
-use crate::{theme, Affine, ArcStr, Insets, LinearGradient, UnitPoint};
+use crate::{theme, ArcStr, Insets, LinearGradient, UnitPoint};
 use smallvec::SmallVec;
 use tracing::{trace, trace_span, Span};
 
@@ -104,7 +104,7 @@ impl Widget for Button {
         }
     }
 
-    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange, _env: &Env) {
+    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, _event: &StatusChange, _env: &Env) {
         ctx.init();
         ctx.request_paint();
     }

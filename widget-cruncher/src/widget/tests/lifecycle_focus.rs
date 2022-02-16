@@ -19,7 +19,7 @@ impl FocusTaker {
 
     fn track(focused: Rc<Cell<bool>>) -> impl Widget {
         ModularWidget::new(focused)
-            .event_fn(|_is_focused, ctx, event, env| {
+            .event_fn(|_is_focused, ctx, event, _env| {
                 ctx.init();
                 if let Event::Command(cmd) = event {
                     if cmd.is(REQUEST_FOCUS) {
@@ -28,13 +28,13 @@ impl FocusTaker {
                     }
                 }
             })
-            .status_change_fn(|is_focused, ctx, event, env| {
+            .status_change_fn(|is_focused, ctx, event, _env| {
                 ctx.init();
                 if let StatusChange::FocusChanged(focus) = event {
                     is_focused.set(*focus);
                 }
             })
-            .lifecycle_fn(|_is_focused, ctx, event, env| {
+            .lifecycle_fn(|_is_focused, ctx, event, _env| {
                 ctx.init();
                 if let LifeCycle::BuildFocusChain = event {
                     ctx.register_for_focus();
@@ -54,7 +54,7 @@ fn build_focus_chain() {
         .with_child_id(FocusTaker::new(), id_3)
         .with_child_id(FocusTaker::new(), id_4);
 
-    let mut harness = Harness::create(widget);
+    let harness = Harness::create(widget);
 
     // verify that we start out with four widgets registered for focus
     assert_eq!(harness.window().focus_chain(), &[id_1, id_2, id_3, id_4]);

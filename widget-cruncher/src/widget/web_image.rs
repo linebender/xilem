@@ -2,17 +2,14 @@
 
 //! An image widget loaded from a URL.
 
-use crate::kurbo::Vec2;
 use crate::promise::PromiseToken;
-use crate::text::FontDescriptor;
-use crate::text::{TextAlignment, TextLayout};
 use crate::widget::prelude::*;
 use crate::widget::widget_view::WidgetRef;
-use crate::widget::{FillStrat, Image, SizedBox, Spinner, WidgetId, WidgetPod};
-use crate::{ArcStr, Color, Data, ImageBuf, KeyOrValue, Point};
+use crate::widget::{FillStrat, Image, SizedBox, Spinner, WidgetPod};
+use crate::{ImageBuf, Point};
 
 use smallvec::{smallvec, SmallVec};
-use tracing::{error, trace, trace_span, warn, Span};
+use tracing::{error, trace_span, Span};
 
 pub struct WebImage {
     url: String,
@@ -57,7 +54,7 @@ impl Widget for WebImage {
         }
     }
 
-    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange, _env: &Env) {}
+    fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange, _env: &Env) {}
 
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
         fn load_image(url: &str) -> Option<ImageBuf> {

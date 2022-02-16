@@ -16,7 +16,6 @@
 
 use std::sync::Arc;
 
-use crate::env::KeyLike;
 use crate::piet::{PietTextLayoutBuilder, TextStorage as PietTextStorage};
 use crate::{Data, Env};
 

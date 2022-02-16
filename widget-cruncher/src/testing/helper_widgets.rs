@@ -248,7 +248,7 @@ impl Widget for ReplaceChild {
         self.child.on_event(ctx, event, env)
     }
 
-    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange, env: &Env) {
+    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, _event: &StatusChange, _env: &Env) {
         ctx.init();
         ctx.request_layout();
     }

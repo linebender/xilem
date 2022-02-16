@@ -27,7 +27,7 @@ use tracing::{trace, trace_span, warn, Span};
 use crate::widget::prelude::*;
 use crate::widget::widget_view::WidgetRef;
 use crate::widget::{WidgetId, WidgetPod};
-use crate::{Data, Point};
+use crate::Point;
 
 /// A widget with predefined size.
 ///
@@ -144,7 +144,7 @@ impl SizedBox {
         )
     }
 
-    #[cfg(test)]
+    #[allow(dead_code)]
     pub(crate) fn width_and_height(&self) -> (Option<f64>, Option<f64>) {
         (self.width, self.height)
     }
@@ -158,7 +158,7 @@ impl Widget for SizedBox {
         }
     }
 
-    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange, env: &Env) {}
+    fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange, _env: &Env) {}
 
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
         ctx.init();

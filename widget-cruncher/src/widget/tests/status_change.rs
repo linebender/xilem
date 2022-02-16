@@ -1,15 +1,8 @@
-use crate::testing::{
-    widget_ids, Harness, ModularWidget, Record, Recording, ReplaceChild, TestWidgetExt as _,
-    REPLACE_CHILD,
-};
+use crate::testing::{widget_ids, Harness, ModularWidget, Record, Recording, TestWidgetExt as _};
 use crate::widget::{Button, Flex, Label, SizedBox};
 use crate::*;
 // TODO - change import
 use shell::MouseButton;
-use smallvec::smallvec;
-use std::cell::Cell;
-use std::collections::HashMap;
-use std::rc::Rc;
 use test_log::test;
 
 fn is_hot(harness: &Harness, id: WidgetId) -> bool {

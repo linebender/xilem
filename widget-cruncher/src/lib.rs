@@ -25,10 +25,6 @@
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/linebender/druid/screenshots/images/doc_logo.png"
 )]
-#![allow(unused_imports)]
-#![allow(unused_variables)]
-#![allow(unused_mut)]
-#![allow(dead_code)]
 
 // Allows to use macros from druid_derive in this crate
 extern crate self as druid;

@@ -170,7 +170,9 @@ pub enum Target {
 
 pub use sys::*;
 
-mod sys {
+// FIXME
+#[allow(dead_code)]
+pub mod sys {
     use super::{Selector, SingleUse};
     use crate::platform::WindowConfig;
     use crate::WidgetId;

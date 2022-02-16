@@ -18,7 +18,6 @@ use crate::kurbo::{common::FloatExt, Vec2};
 use crate::widget::prelude::*;
 use crate::widget::widget_view::WidgetRef;
 use crate::widget::widget_view::WidgetView;
-use crate::widget::WidgetState;
 use crate::{Data, KeyOrValue, Point, Rect, WidgetId, WidgetPod};
 use smallvec::SmallVec;
 use tracing::{trace, trace_span, Span};
@@ -205,7 +204,7 @@ impl Flex {
     ///
     /// The actual value of this spacer depends on whether this container is
     /// a row or column, as well as theme settings.
-    pub fn with_default_spacer(mut self) -> Self {
+    pub fn with_default_spacer(self) -> Self {
         let key = match self.direction {
             Axis::Vertical => crate::theme::WIDGET_PADDING_VERTICAL,
             Axis::Horizontal => crate::theme::WIDGET_PADDING_HORIZONTAL,
@@ -414,7 +413,7 @@ impl Widget for Flex {
         }
     }
 
-    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange, _env: &Env) {}
+    fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange, _env: &Env) {}
 
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
         ctx.init();

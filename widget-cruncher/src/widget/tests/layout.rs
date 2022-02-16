@@ -36,7 +36,9 @@ fn layout_simple() {
                 .with_flex_spacer(1.0),
         )
         .with_flex_spacer(1.0);
-    let mut harness = Harness::create(widget);
+
+    let harness = Harness::create(widget);
+
     let first_box_rect = harness.get_widget(id_1).state().layout_rect();
     let first_box_paint_rect = harness.get_widget(id_1).state().paint_rect();
 
@@ -66,17 +68,17 @@ fn layout_insets() {
 
     let parent_widget = SizedBox::new_with_id(child_widget, child_id).with_id(parent_id);
 
-    let mut harness = Harness::create(parent_widget);
+    let harness = Harness::create(parent_widget);
 
     let child_paint_rect = harness.get_widget(child_id).state().paint_rect();
-    let parent_paint_rect = harness.get_widget(parent_id).state().paint_rect();
+    let _parent_paint_rect = harness.get_widget(parent_id).state().paint_rect();
 
     assert_eq!(child_paint_rect.x0, 0.0);
     assert_eq!(child_paint_rect.y0, -20.0);
     assert_eq!(child_paint_rect.x1, BOX_WIDTH);
     assert_eq!(child_paint_rect.y1, BOX_WIDTH + 20.0);
 
-    // TODO - parent insets should be automatically computed
+    // FIXME - parent insets should be automatically computed
     //assert_eq!(parent_paint_rect.x0, 0.0);
     //assert_eq!(parent_paint_rect.y0, -20.0);
     //assert_eq!(parent_paint_rect.x1, BOX_WIDTH);

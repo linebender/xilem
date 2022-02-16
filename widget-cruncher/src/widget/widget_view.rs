@@ -1,7 +1,7 @@
 use smallvec::SmallVec;
 use std::any::Any;
 use std::time::Duration;
-use tracing::{trace, warn};
+use tracing::trace;
 
 use crate::command::Command;
 use crate::contexts::ContextState;
@@ -225,7 +225,7 @@ impl<W: Widget> WidgetView<'_, '_, W> {
         &mut self,
         background_task: impl FnOnce(ExtEventSink) + Send + 'static,
     ) {
-        use std::{thread, time};
+        use std::thread;
 
         let ext_event_sink = self.global_state.ext_event_sink.clone();
         thread::spawn(move || {
@@ -240,7 +240,7 @@ impl<W: Widget> WidgetView<'_, '_, W> {
     ) -> PromiseToken<T> {
         let token = PromiseToken::<T>::new();
 
-        use std::{thread, time};
+        use std::thread;
 
         let ext_event_sink = self.global_state.ext_event_sink.clone();
         let widget_id = self.widget_state.id;

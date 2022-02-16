@@ -1,13 +1,7 @@
-use crate::testing::{
-    widget_ids, Harness, ModularWidget, Record, Recording, ReplaceChild, TestWidgetExt as _,
-    REPLACE_CHILD,
-};
-use crate::widget::{Flex, Label, SizedBox};
+use crate::testing::{Harness, ModularWidget};
 use crate::*;
 use instant::Duration;
-use smallvec::smallvec;
 use std::cell::Cell;
-use std::collections::HashMap;
 use std::rc::Rc;
 use test_log::test;
 

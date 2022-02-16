@@ -397,6 +397,7 @@ impl Harness {
     }
 }
 
+#[allow(dead_code)]
 impl MockAppState {
     fn event(&mut self, event: Event) {
         self.window.event(

@@ -22,7 +22,7 @@ use crate::widget::widget_view::WidgetRef;
 use crate::widget::FillStrat;
 
 use smallvec::SmallVec;
-use tracing::{instrument, trace, trace_span, Span};
+use tracing::{trace, trace_span, Span};
 
 /// A widget that renders a bitmap Image.
 pub struct Image {
@@ -120,7 +120,7 @@ impl Image {
 impl Widget for Image {
     fn on_event(&mut self, _ctx: &mut EventCtx, _event: &Event, _env: &Env) {}
 
-    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange, env: &Env) {}
+    fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange, _env: &Env) {}
 
     fn lifecycle(&mut self, _ctx: &mut LifeCycleCtx, _event: &LifeCycle, _env: &Env) {}
 

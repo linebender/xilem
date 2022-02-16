@@ -1,3 +1,9 @@
+// FIXME
+#![allow(unused_imports)]
+#![allow(unused_variables)]
+#![allow(unused_mut)]
+#![allow(dead_code)]
+
 use std::collections::{HashMap, VecDeque};
 use tracing::{error, info, info_span};
 

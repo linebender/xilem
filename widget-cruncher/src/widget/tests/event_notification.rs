@@ -1,13 +1,6 @@
-use crate::testing::{
-    widget_ids, Harness, ModularWidget, Record, Recording, ReplaceChild, TestWidgetExt as _,
-    REPLACE_CHILD,
-};
-use crate::widget::{Flex, Label, SizedBox};
+use crate::testing::{Harness, ModularWidget, Record, Recording, TestWidgetExt as _};
+use crate::widget::{Flex, SizedBox};
 use crate::*;
-use smallvec::smallvec;
-use std::cell::Cell;
-use std::collections::HashMap;
-use std::rc::Rc;
 use test_log::test;
 
 /// Ensure that notifications are delivered to ancestors, but not siblings.
@@ -38,7 +31,7 @@ fn notifications() {
             .any(|ev| matches!(ev, Record::E(Event::Notification(_))))
     };
 
-    let mut harness = Harness::create(tree);
+    let _harness = Harness::create(tree);
 
     assert!(!saw_notification(&sibling_rec));
     assert!(saw_notification(&parent_rec));

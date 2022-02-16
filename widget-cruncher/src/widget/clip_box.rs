@@ -22,7 +22,7 @@ use crate::widget::Axis;
 use crate::WidgetPod;
 use druid_shell::kurbo::Shape;
 use smallvec::{smallvec, SmallVec};
-use tracing::{trace, trace_span, warn, Span};
+use tracing::{trace, trace_span, Span};
 
 /// Represents the size and position of a rectangular "viewport" into a larger area.
 #[derive(Clone, Copy, Default, Debug, PartialEq)]
@@ -387,7 +387,7 @@ impl<W: Widget> Widget for ClipBox<W> {
         ctx.skip_child(&mut self.child);
     }
 
-    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange, env: &Env) {}
+    fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange, _env: &Env) {}
 
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
         ctx.init();

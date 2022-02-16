@@ -44,7 +44,7 @@ pub fn get_image_diff(ref_image: &RgbaImage, new_image: &RgbaImage) -> Option<Rg
     let width = std::cmp::max(ref_image.width(), new_image.width());
     let height = std::cmp::max(ref_image.height(), new_image.height());
 
-    let mut diff_image = RgbaImage::from_fn(width, height, |x, y| {
+    let diff_image = RgbaImage::from_fn(width, height, |x, y| {
         let ref_pixel = if ref_image.in_bounds(x, y) {
             *ref_image.get_pixel(x, y)
         } else {

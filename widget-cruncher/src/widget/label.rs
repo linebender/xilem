@@ -19,7 +19,6 @@
 // - set text attributes
 
 use smallvec::SmallVec;
-use std::ops::{Deref, DerefMut};
 use tracing::{trace, trace_span, Span};
 
 use crate::kurbo::Vec2;
@@ -234,7 +233,7 @@ impl Widget for Label {
             Event::MouseUp(event) => {
                 // Account for the padding
                 let pos = event.pos - Vec2::new(LABEL_X_PADDING, 0.0);
-                if let Some(link) = self.text_layout.link_for_pos(pos) {
+                if let Some(_link) = self.text_layout.link_for_pos(pos) {
                     todo!();
                     //ctx.submit_command(link.command.clone());
                 }
@@ -255,7 +254,7 @@ impl Widget for Label {
 
     fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange, _env: &Env) {}
 
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
+    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, _env: &Env) {
         ctx.init();
         match event {
             LifeCycle::DisabledChanged(disabled) => {

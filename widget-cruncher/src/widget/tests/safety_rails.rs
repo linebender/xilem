@@ -1,9 +1,7 @@
-use crate::testing::{widget_ids, Harness, ModularWidget, TestWidgetExt as _};
+use crate::testing::{Harness, ModularWidget};
 use crate::widget::Flex;
 use crate::*;
 use smallvec::smallvec;
-use std::cell::Cell;
-use std::rc::Rc;
 use test_log::test;
 
 fn get_parent_widget<W: Widget>(child: W) -> ModularWidget<WidgetPod<W>> {
@@ -29,7 +27,7 @@ fn get_parent_widget<W: Widget>(child: W) -> ModularWidget<WidgetPod<W>> {
 #[should_panic(expected = "not visited in method event")]
 #[test]
 fn check_forget_to_recurse_event() {
-    let widget = get_parent_widget(Flex::row()).event_fn(move |_child, ctx, event, _| {
+    let widget = get_parent_widget(Flex::row()).event_fn(move |_child, _ctx, _event, _| {
         // We forget to call child.on_event();
     });
 
@@ -40,22 +38,22 @@ fn check_forget_to_recurse_event() {
 #[should_panic(expected = "not visited in method lifecycle")]
 #[test]
 fn check_forget_to_recurse_lifecycle() {
-    let widget = get_parent_widget(Flex::row()).lifecycle_fn(move |_child, ctx, event, _| {
+    let widget = get_parent_widget(Flex::row()).lifecycle_fn(move |_child, _ctx, _event, _| {
         // We forget to call child.lifecycle();
     });
 
-    let harness = Harness::create(widget);
+    let _harness = Harness::create(widget);
 }
 
 #[should_panic(expected = "not visited in method layout")]
 #[test]
 fn check_forget_to_recurse_layout() {
-    let widget = get_parent_widget(Flex::row()).layout_fn(move |child, ctx, _, _| {
+    let widget = get_parent_widget(Flex::row()).layout_fn(move |_child, _ctx, _, _| {
         // We forget to call child.layout();
         Size::ZERO
     });
 
-    let harness = Harness::create(widget);
+    let _harness = Harness::create(widget);
 }
 
 #[should_panic(expected = "missing call to set_origin method for child widget")]
@@ -66,13 +64,13 @@ fn check_forget_to_call_set_origin() {
         child.layout(ctx, bc, env)
     });
 
-    let harness = Harness::create(widget);
+    let _harness = Harness::create(widget);
 }
 
 #[should_panic(expected = "not visited in method paint")]
 #[test]
 fn check_forget_to_recurse_paint() {
-    let widget = get_parent_widget(Flex::row()).paint_fn(move |child, ctx, _| {
+    let widget = get_parent_widget(Flex::row()).paint_fn(move |_child, _ctx, _| {
         // We forget to call child.paint();
     });
 
