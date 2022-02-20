@@ -38,10 +38,11 @@ use crate::platform::{PendingWindow, WindowConfig, WindowSizePolicy};
 use crate::PlatformError;
 
 use druid_shell::{
-    text::InputHandler, Application, Cursor, FileDialogToken, Region, TextFieldToken, TimerToken,
-    WindowHandle,
+    text::InputHandler, Cursor, FileDialogToken, FileInfo, Region, TextFieldToken, TimerToken,
+    WindowBuilder,
 };
-use druid_shell::{FileInfo, WindowBuilder};
+// TODO - rename as AppHandle
+use druid_shell::{Application, WindowHandle};
 
 pub type ImeUpdateFn = dyn FnOnce(druid_shell::text::Event);
 
@@ -54,8 +55,7 @@ pub struct AppRoot {
 }
 
 struct AppRootInner {
-    // TODO - rename
-    pub app: Application,
+    pub app_handle: Application,
     pub debug_logger: DebugLogger,
     pub command_queue: CommandQueue,
     pub ext_event_queue: ExtEventQueue,
@@ -109,7 +109,7 @@ impl AppRoot {
         env: Env,
     ) -> Result<Self, PlatformError> {
         let inner = Rc::new(RefCell::new(AppRootInner {
-            app,
+            app_handle: app,
             debug_logger: DebugLogger::new(false),
             command_queue: VecDeque::new(),
             ext_event_queue,
@@ -387,7 +387,7 @@ impl AppRoot {
         use Target as T;
         match cmd.target() {
             // these are handled the same no matter where they come from
-            _ if cmd.is(sys_cmd::QUIT_APP) => self.inner().app.quit(),
+            _ if cmd.is(sys_cmd::QUIT_APP) => self.inner().app_handle.quit(),
             #[cfg(target_os = "macos")]
             _ if cmd.is(sys_cmd::HIDE_APPLICATION) => self.inner().hide_app(),
             #[cfg(target_os = "macos")]
@@ -447,7 +447,7 @@ impl AppRoot {
         let id = desc.id;
         let mut pending = desc.pending;
         let config = desc.config;
-        let mut builder = WindowBuilder::new(self.inner.borrow().app.clone());
+        let mut builder = WindowBuilder::new(self.inner.borrow().app_handle.clone());
         config.apply_to_builder(&mut builder);
 
         pending.size_policy = config.size_policy;

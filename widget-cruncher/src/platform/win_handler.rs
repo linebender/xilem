@@ -130,14 +130,17 @@ impl WinHandler for DruidWinHandler {
         // TODO: Do something with the scale
     }
 
+    // TODO - rename as select_menu
     fn command(&mut self, id: u32) {
         self.app_state.handle_system_cmd(id, Some(self.window_id));
     }
 
+    // TODO - rename as save_dialog_res
     fn save_as(&mut self, token: FileDialogToken, file_info: Option<FileInfo>) {
         self.app_state.handle_dialog_response(token, file_info);
     }
 
+    // TODO - rename as open_dialog_res
     fn open_file(&mut self, token: FileDialogToken, file_info: Option<FileInfo>) {
         self.app_state.handle_dialog_response(token, file_info);
     }
@@ -184,6 +187,7 @@ impl WinHandler for DruidWinHandler {
         self.app_state.handle_event(event, self.window_id);
     }
 
+    // rename to "timer_complete"
     fn timer(&mut self, token: TimerToken) {
         self.app_state
             .handle_event(Event::Timer(token), self.window_id);
