@@ -1,6 +1,7 @@
+use crate::app_root::AppRoot;
 use crate::ext_event::{ExtEventQueue, ExtEventSink};
+use crate::platform::DruidAppHandler;
 use crate::platform::WindowDesc;
-use crate::platform::{AppHandler, AppState};
 use crate::Env;
 
 use druid_shell::{Application, Error as PlatformError};
@@ -68,15 +69,14 @@ impl AppLauncher {
     /// a fatal error.
     pub fn launch(self) -> Result<(), PlatformError> {
         let app = Application::new()?;
+        let state = AppRoot::create(
+            app.clone(),
+            self.windows,
+            self.ext_event_queue,
+            Env::with_theme(),
+        )?;
+        let handler = DruidAppHandler::new(state);
 
-        let mut state = AppState::new(app.clone(), self.ext_event_queue, Env::with_theme());
-
-        for desc in self.windows {
-            let window = desc.build_native(&mut state)?;
-            window.show();
-        }
-
-        let handler = AppHandler::new(state);
         app.run(Some(Box::new(handler)));
         Ok(())
     }

@@ -69,7 +69,7 @@ pub use text::ArcStr;
 pub use app_launcher::AppLauncher;
 pub use app_root::WindowRoot;
 
-pub use platform::DruidHandler;
+pub use platform::DruidWinHandler;
 pub use platform::{WindowConfig, WindowDesc, WindowId, WindowSizePolicy};
 
 pub use box_constraints::BoxConstraints;

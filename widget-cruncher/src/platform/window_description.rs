@@ -1,12 +1,11 @@
 // TODO - remove methods, add public fields
 
 use crate::kurbo::{Point, Size};
-use crate::platform::win_handler::AppState;
 use crate::ArcStr;
 use crate::Widget;
 
 use druid_shell::WindowState;
-use druid_shell::{Counter, Error as PlatformError, WindowBuilder, WindowHandle, WindowLevel};
+use druid_shell::{Counter, WindowBuilder, WindowHandle, WindowLevel};
 
 /// A unique identifier for a window.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -191,11 +190,6 @@ impl WindowDesc {
     pub fn with_config(mut self, config: WindowConfig) -> Self {
         self.config = config;
         self
-    }
-
-    /// Attempt to create a platform window from this `WindowDesc`.
-    pub(crate) fn build_native(self, state: &mut AppState) -> Result<WindowHandle, PlatformError> {
-        state.build_native_window(self.id, self.pending, self.config)
     }
 }
 

@@ -4,7 +4,10 @@
 #![allow(unused_mut)]
 #![allow(dead_code)]
 
+use std::cell::{RefCell, RefMut};
 use std::collections::{HashMap, VecDeque};
+use std::ops::DerefMut;
+use std::rc::Rc;
 use tracing::{error, info, info_span};
 
 // Automatically defaults to std::time::Instant on non Wasm platforms
@@ -16,13 +19,14 @@ use crate::piet::{Color, Piet, RenderContext};
 
 use crate::command::CommandQueue;
 use crate::contexts::ContextState;
-use crate::ext_event::{ExtEventQueue, ExtEventSink};
+use crate::ext_event::{ExtEventQueue, ExtEventSink, ExtMessage};
 use crate::platform::RUN_COMMANDS_TOKEN;
 use crate::testing::MockTimerQueue;
 use crate::text::TextFieldRegistration;
 use crate::util::ExtendDrain;
 use crate::widget::widget_view::WidgetRef;
 use crate::widget::{FocusChange, WidgetState};
+use crate::{command as sys_cmd, DruidWinHandler, WindowDesc};
 use crate::{
     ArcStr, BoxConstraints, Command, Env, Event, EventCtx, Handled, InternalEvent,
     InternalLifeCycle, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Target, Widget, WidgetId,
@@ -31,37 +35,43 @@ use crate::{
 
 use crate::platform::{DialogInfo, EXT_EVENT_IDLE_TOKEN};
 use crate::platform::{PendingWindow, WindowConfig, WindowSizePolicy};
+use crate::PlatformError;
 
 use druid_shell::{
     text::InputHandler, Application, Cursor, FileDialogToken, Region, TextFieldToken, TimerToken,
     WindowHandle,
 };
+use druid_shell::{FileInfo, WindowBuilder};
 
-pub(crate) struct AppRoot {
+pub type ImeUpdateFn = dyn FnOnce(druid_shell::text::Event);
+
+// TODO - Explain and document re-entrancy and when locks should be used
+
+/// State shared by all windows in the UI.
+#[derive(Clone)]
+pub struct AppRoot {
+    inner: Rc<RefCell<AppRootInner>>,
+}
+
+struct AppRootInner {
+    // TODO - rename
     pub app: Application,
     pub debug_logger: DebugLogger,
     pub command_queue: CommandQueue,
     pub ext_event_queue: ExtEventQueue,
     pub file_dialogs: HashMap<FileDialogToken, DialogInfo>,
-    pub windows: Windows,
+    pub window_requests: VecDeque<WindowDesc>,
+    pub pending_windows: HashMap<WindowId, PendingWindow>,
+    pub active_windows: HashMap<WindowId, WindowRoot>,
     /// The id of the most-recently-focused window that has a menu. On macOS, this
     /// is the window that's currently in charge of the app menu.
     #[allow(unused)]
     pub menu_window: Option<WindowId>,
-    pub(crate) env: Env,
+    pub env: Env,
     pub ime_focus_change: Option<Box<dyn Fn()>>,
 }
 
-// TODO - remove
-/// All active windows.
-#[derive(Default)]
-pub struct Windows {
-    pub pending: HashMap<WindowId, PendingWindow>,
-    pub active_windows: HashMap<WindowId, WindowRoot>,
-}
-
-pub type ImeUpdateFn = dyn FnOnce(druid_shell::text::Event);
-
+// TODO - refactor out again
 /// Per-window state not owned by user code.
 pub struct WindowRoot {
     pub(crate) id: WindowId,
@@ -86,80 +96,387 @@ pub struct WindowRoot {
 
 // ---
 
-impl Windows {
-    pub fn connect(&mut self, id: WindowId, handle: WindowHandle, ext_event_sink: ExtEventSink) {
-        if let Some(pending) = self.pending.remove(&id) {
-            let win = WindowRoot::new(id, handle, ext_event_sink, pending, None);
-            assert!(
-                self.active_windows.insert(id, win).is_none(),
-                "duplicate window"
-            );
-        } else {
-            tracing::error!("no window for connecting handle {:?}", id);
-        }
-    }
-
-    pub fn add(&mut self, id: WindowId, win: PendingWindow) {
-        assert!(self.pending.insert(id, win).is_none(), "duplicate pending");
-    }
-
-    pub fn count(&self) -> usize {
-        self.active_windows.len() + self.pending.len()
-    }
-}
-
+// Public methods
+//
+// Each of these methods should handle post-event cleanup
+// (eg invalidation regions, opening new windows, etc)
 impl AppRoot {
-    pub fn append_command(&mut self, cmd: Command) {
-        self.command_queue.push_back(cmd);
+    // TODO - make pub
+    pub(crate) fn create(
+        app: Application,
+        windows: Vec<WindowDesc>,
+        ext_event_queue: ExtEventQueue,
+        env: Env,
+    ) -> Result<Self, PlatformError> {
+        let inner = Rc::new(RefCell::new(AppRootInner {
+            app,
+            debug_logger: DebugLogger::new(false),
+            command_queue: VecDeque::new(),
+            ext_event_queue,
+            file_dialogs: HashMap::new(),
+            menu_window: None,
+            env,
+            window_requests: VecDeque::new(),
+            pending_windows: Default::default(),
+            active_windows: Default::default(),
+            ime_focus_change: None,
+        }));
+        let mut app_root = AppRoot { inner };
+
+        for desc in windows {
+            let window = app_root.build_native_window(desc)?;
+            window.show();
+        }
+
+        Ok(app_root)
     }
 
-    pub fn connect(&mut self, id: WindowId, handle: WindowHandle) {
-        self.windows
-            .connect(id, handle, self.ext_event_queue.make_sink());
+    pub fn window_connected(&mut self, window_id: WindowId, handle: WindowHandle) {
+        {
+            let mut inner = self.inner.borrow_mut();
+            let inner = inner.deref_mut();
 
-        // If the external event host has no handle, it cannot wake us
-        // when an event arrives.
-        if self.ext_event_queue.handle_window_id.is_none() {
-            self.set_ext_event_idle_handler(id);
+            if let Some(pending) = inner.pending_windows.remove(&window_id) {
+                let win = WindowRoot::new(
+                    window_id,
+                    handle,
+                    inner.ext_event_queue.make_sink(),
+                    pending,
+                    None,
+                );
+                let existing = inner.active_windows.insert(window_id, win);
+                debug_assert!(existing.is_none(), "duplicate window");
+            } else {
+                tracing::error!("no window for connecting handle {:?}", window_id);
+            }
+
+            // If the external event host has no handle, it cannot wake us
+            // when an event arrives.
+            if inner.ext_event_queue.handle_window_id.is_none() {
+                inner.set_ext_event_idle_handler(window_id);
+            }
+
+            let event = Event::WindowConnected;
+            inner.do_window_event(window_id, event);
         }
+        self.process_commands();
+        self.inner().invalidate_paint_regions();
+        // TODO - IME?
+        self.process_window_requests();
     }
 
     /// Called after this window has been closed by the platform.
     ///
     /// We clean up resources.
-    pub fn remove_window(&mut self, window_id: WindowId) {
-        // when closing the last window:
-        if let Some(mut win) = self.windows.active_windows.remove(&window_id) {
-            if self.windows.active_windows.is_empty() {
-                // If there are even no pending windows, we quit the run loop.
-                if self.windows.count() == 0 {
-                    #[cfg(any(target_os = "windows", feature = "x11"))]
-                    self.app.quit();
-                }
-            }
+    pub fn window_removed(&mut self, window_id: WindowId) {
+        let mut inner = self.inner.borrow_mut();
+        inner.active_windows.remove(&window_id);
+
+        // If there are no active or pending windows, we quit the run loop.
+        if inner.active_windows.is_empty() && inner.pending_windows.is_empty() {
+            #[cfg(any(target_os = "windows", feature = "x11"))]
+            inner.app.quit();
         }
 
-        // if we are closing the window that is currently responsible for
-        // waking us when external events arrive, we want to pass that responsibility
-        // to another window.
-        if self.ext_event_queue.handle_window_id == Some(window_id) {
-            self.ext_event_queue.handle_window_id = None;
+        // If we are closing the window that is currently responsible
+        // for waking us when external events arrive, we want to pass
+        // that responsibility to another window.
+        if inner.ext_event_queue.handle_window_id == Some(window_id) {
+            inner.ext_event_queue.handle_window_id = None;
             // find any other live window
-            let win_id = self
-                .windows
-                .active_windows
-                .keys()
-                .find(|k| *k != &window_id);
+            let win_id = inner.active_windows.keys().next();
             if let Some(any_other_window) = win_id.cloned() {
-                self.set_ext_event_idle_handler(any_other_window);
+                inner.set_ext_event_idle_handler(any_other_window);
             }
         }
     }
 
+    pub fn window_got_focus(&mut self, _window_id: WindowId) {
+        // TODO - menu stuff
+    }
+
+    /// Send an event to the widget hierarchy.
+    ///
+    /// Returns `true` if the event produced an action.
+    ///
+    /// This is principally because in certain cases (such as keydown on Windows)
+    /// the OS needs to know if an event was handled.
+    pub fn handle_event(&mut self, event: Event, window_id: WindowId) -> Handled {
+        let result;
+        let ime_change;
+        {
+            if let Event::Command(command)
+            | Event::Internal(InternalEvent::TargetedCommand(command)) = event
+            {
+                self.do_cmd(command);
+                result = Handled::Yes;
+            } else {
+                result = self.inner().do_window_event(window_id, event);
+            };
+        }
+
+        self.process_commands();
+        self.inner().invalidate_paint_regions();
+
+        ime_change = self.inner().ime_focus_change.take();
+
+        // The ime_change callback may call WindowHandle methods which may be reentrant
+        // The RefCell should not be borrowed when calling (ime_change)()
+        if let Some(ime_change) = ime_change {
+            (ime_change)()
+        }
+
+        self.process_window_requests();
+
+        result
+    }
+
+    /// Handle a 'command' message from druid-shell. These map to  an item
+    /// in an application, window, or context (right-click) menu.
+    ///
+    /// If the menu is  associated with a window (the general case) then
+    /// the `window_id` will be `Some(_)`, otherwise (such as if no window
+    /// is open but a menu exists, as on macOS) it will be `None`.
+    pub fn handle_system_cmd(&mut self, cmd_id: u32, window_id: Option<WindowId>) {
+        #![allow(unused_variables)]
+        todo!();
+    }
+
+    // TODO - Promises
+    pub fn handle_dialog_response(&mut self, token: FileDialogToken, file_info: Option<FileInfo>) {
+        let dialog_info = self.inner().file_dialogs.remove(&token);
+        if let Some(dialog_info) = dialog_info {
+            let cmd = if let Some(info) = file_info {
+                dialog_info.accept_cmd.with(info).to(dialog_info.id)
+            } else {
+                dialog_info.cancel_cmd.to(dialog_info.id)
+            };
+            self.do_cmd(cmd);
+            self.process_commands();
+            self.inner().invalidate_paint_regions();
+        } else {
+            tracing::error!("unknown dialog token");
+        }
+    }
+
+    pub fn prepare_paint(&mut self, window_id: WindowId) {
+        {
+            let mut inner = self.inner.borrow_mut();
+            let inner = inner.deref_mut();
+            if let Some(win) = inner.active_windows.get_mut(&window_id) {
+                win.prepare_paint(
+                    &mut inner.debug_logger,
+                    &mut inner.command_queue,
+                    &inner.env,
+                );
+            }
+            inner.invalidate_paint_regions();
+        }
+        self.process_window_requests();
+    }
+
+    pub fn paint(&mut self, window_id: WindowId, piet: &mut Piet, invalid: &Region) {
+        let mut inner = self.inner.borrow_mut();
+        let inner = inner.deref_mut();
+        if let Some(win) = inner.active_windows.get_mut(&window_id) {
+            win.do_paint(
+                piet,
+                invalid,
+                &mut inner.debug_logger,
+                &mut inner.command_queue,
+                &inner.env,
+            );
+        }
+    }
+
+    pub fn run_commands(&mut self) {
+        self.process_commands();
+        self.inner().invalidate_paint_regions();
+        self.process_window_requests();
+    }
+
+    pub fn run_ext_events(&mut self) {
+        self.process_ext_events();
+        self.process_commands();
+        self.inner().invalidate_paint_regions();
+        self.process_window_requests();
+    }
+
+    pub fn ime_update_fn(
+        &self,
+        window_id: WindowId,
+        widget_id: WidgetId,
+    ) -> Option<Box<ImeUpdateFn>> {
+        let mut inner = self.inner.borrow_mut();
+        inner
+            .active_windows
+            .get(&window_id)
+            .and_then(|window| window.ime_invalidation_fn(widget_id))
+    }
+
+    pub fn get_ime_lock(
+        &mut self,
+        window_id: WindowId,
+        token: TextFieldToken,
+        mutable: bool,
+    ) -> Box<dyn InputHandler> {
+        let mut inner = self.inner.borrow_mut();
+        inner
+            .active_windows
+            .get_mut(&window_id)
+            .unwrap()
+            .get_ime_handler(token, mutable)
+    }
+
+    /// Returns a `WidgetId` if the lock was mutable; the widget should be updated.
+    pub fn release_ime_lock(
+        &mut self,
+        window_id: WindowId,
+        token: TextFieldToken,
+    ) -> Option<WidgetId> {
+        let mut inner = self.inner.borrow_mut();
+        inner
+            .active_windows
+            .get_mut(&window_id)
+            .unwrap()
+            .release_ime_lock(token)
+    }
+}
+
+// Internal functions
+impl AppRoot {
+    fn inner(&self) -> RefMut<'_, AppRootInner> {
+        self.inner.borrow_mut()
+    }
+
+    fn process_commands(&mut self) {
+        loop {
+            let next_cmd = self.inner().command_queue.pop_front();
+            match next_cmd {
+                Some(cmd) => self.do_cmd(cmd),
+                None => break,
+            }
+        }
+    }
+
+    fn process_ext_events(&mut self) {
+        loop {
+            let ext_cmd = self.inner().ext_event_queue.recv();
+            match ext_cmd {
+                Some(ExtMessage::Command(selector, payload, target)) => {
+                    self.do_cmd(Command::from_ext(selector, payload, target))
+                }
+                Some(ExtMessage::Promise(promise_result, widget_id, window_id)) => {
+                    // TODO
+                    self.inner().do_window_event(
+                        window_id,
+                        Event::Internal(InternalEvent::RoutePromiseResult(
+                            promise_result,
+                            widget_id,
+                        )),
+                    );
+                }
+                None => break,
+            }
+        }
+    }
+
+    /// Handle a command. Top level commands (e.g. for creating and destroying
+    /// windows) have their logic here; other commands are passed to the window.
+    fn do_cmd(&mut self, cmd: Command) {
+        use Target as T;
+        match cmd.target() {
+            // these are handled the same no matter where they come from
+            _ if cmd.is(sys_cmd::QUIT_APP) => self.inner().app.quit(),
+            #[cfg(target_os = "macos")]
+            _ if cmd.is(sys_cmd::HIDE_APPLICATION) => self.inner().hide_app(),
+            #[cfg(target_os = "macos")]
+            _ if cmd.is(sys_cmd::HIDE_OTHERS) => self.inner().hide_others(),
+            _ if cmd.is(sys_cmd::NEW_WINDOW) => {
+                self.inner().request_new_window(cmd);
+            }
+            _ if cmd.is(sys_cmd::CLOSE_ALL_WINDOWS) => self.inner().request_close_all_windows(),
+            //T::Window(id) if cmd.is(sys_cmd::INVALIDATE_IME) => self.inner().invalidate_ime(cmd, id),
+            // these should come from a window
+            // FIXME: we need to be able to open a file without a window handle
+            // TODO - uncomment
+            //T::Window(id) if cmd.is(sys_cmd::SHOW_OPEN_PANEL) => self.inner().show_open_panel(cmd, id),
+            //T::Window(id) if cmd.is(sys_cmd::SHOW_SAVE_PANEL) => self.inner().show_save_panel(cmd, id),
+            //T::Window(id) if cmd.is(sys_cmd::CONFIGURE_WINDOW) => self.inner().request_configure_window(cmd, id),
+            T::Window(id) if cmd.is(sys_cmd::CLOSE_WINDOW) => {
+                self.inner().request_close_window(id);
+            }
+            T::Window(id) if cmd.is(sys_cmd::SHOW_WINDOW) => self.inner().request_show_window(id),
+            //T::Window(id) if cmd.is(sys_cmd::PASTE) => self.inner().do_paste(id),
+            _ if cmd.is(sys_cmd::CLOSE_WINDOW) => {
+                tracing::warn!("CLOSE_WINDOW command must target a window.")
+            }
+            _ if cmd.is(sys_cmd::SHOW_WINDOW) => {
+                tracing::warn!("SHOW_WINDOW command must target a window.")
+            }
+            // TODO - uncomment
+            /*
+            _ if cmd.is(sys_cmd::SHOW_OPEN_PANEL) => {
+                tracing::warn!("SHOW_OPEN_PANEL command must target a window.")
+            }
+            */
+            _ => {
+                self.inner().dispatch_cmd(cmd);
+            }
+        }
+    }
+
+    // -- Handle "new window" requests --
+
+    fn process_window_requests(&mut self) {
+        let window_requests = std::mem::take(&mut self.inner.borrow_mut().window_requests);
+        for window_desc in window_requests.into_iter() {
+            match self.build_native_window(window_desc) {
+                Ok(window) => window.show(),
+                Err(err) => tracing::error!("failed to create window: '{err}'"),
+            };
+        }
+    }
+
+    // TODO - document why process_window_requests/build_native_window
+    fn build_native_window(
+        &mut self,
+        desc: WindowDesc,
+    ) -> Result<WindowHandle, crate::PlatformError> {
+        // TODO - change function args?
+        let id = desc.id;
+        let mut pending = desc.pending;
+        let config = desc.config;
+        let mut builder = WindowBuilder::new(self.inner.borrow().app.clone());
+        config.apply_to_builder(&mut builder);
+
+        pending.size_policy = config.size_policy;
+        builder.set_title(pending.title.to_string());
+
+        let handler = DruidWinHandler::new_shared(self.clone(), id);
+        builder.set_handler(Box::new(handler));
+
+        let existing = self.inner.borrow_mut().pending_windows.insert(id, pending);
+        assert!(existing.is_none(), "duplicate pending window");
+
+        builder.build()
+    }
+}
+
+impl AppRootInner {
+    /// invalidate any window handles that need it.
+    ///
+    /// This should always be called at the end of an event update cycle,
+    /// including for lifecycle events.
+    fn invalidate_paint_regions(&mut self) {
+        for win in self.active_windows.values_mut() {
+            win.invalidate_paint_region();
+        }
+    }
+
     /// Set the idle handle that will be used to wake us when external events arrive.
-    pub fn set_ext_event_idle_handler(&mut self, id: WindowId) {
+    fn set_ext_event_idle_handler(&mut self, id: WindowId) {
         if let Some(mut idle) = self
-            .windows
             .active_windows
             .get_mut(&id)
             .and_then(|win| win.handle.get_idle_handle())
@@ -171,99 +488,88 @@ impl AppRoot {
         }
     }
 
+    fn request_new_window(&mut self, cmd: Command) {
+        let desc = cmd.get(sys_cmd::NEW_WINDOW);
+        // The NEW_WINDOW command is private and only druid should be able to send it,
+        // so we can use .unwrap() here
+        let desc = *desc.take().unwrap().downcast::<WindowDesc>().unwrap();
+        self.window_requests.push_back(desc);
+    }
+
     /// triggered by a menu item or other command.
     ///
     /// This doesn't close the window; it calls the close method on the platform
     /// window handle; the platform should close the window, and then call
     /// our handlers `destroy()` method, at which point we can do our cleanup.
-    pub fn request_close_window(&mut self, window_id: WindowId) {
-        if let Some(win) = self.windows.active_windows.get_mut(&window_id) {
-            win.handle.close();
-        }
-    }
-
-    /// Requests the platform to close all windows.
-    pub fn request_close_all_windows(&mut self) {
-        for win in self.windows.active_windows.values_mut() {
-            win.handle.close();
-        }
-    }
-
-    pub fn show_window(&mut self, id: WindowId) {
-        if let Some(win) = self.windows.active_windows.get_mut(&id) {
-            win.handle.bring_to_front_and_focus();
-        }
-    }
-
-    pub fn configure_window(&mut self, config: &WindowConfig, id: WindowId) {
-        if let Some(win) = self.windows.active_windows.get_mut(&id) {
-            config.apply_to_handle(&mut win.handle);
-        }
-    }
-
-    pub fn prepare_paint(&mut self, window_id: WindowId) {
-        if let Some(win) = self.windows.active_windows.get_mut(&window_id) {
-            win.prepare_paint(&mut self.debug_logger, &mut self.command_queue, &self.env);
-        }
-        //self.do_update();
-        self.invalidate_and_finalize();
-    }
-
-    pub fn paint(&mut self, window_id: WindowId, piet: &mut Piet, invalid: &Region) {
-        if let Some(win) = self.windows.active_windows.get_mut(&window_id) {
-            win.do_paint(
-                piet,
-                invalid,
+    fn request_close_window(&mut self, window_id: WindowId) {
+        if let Some(window) = self.active_windows.get_mut(&window_id) {
+            let handled = window.event(
+                Event::WindowCloseRequested,
                 &mut self.debug_logger,
                 &mut self.command_queue,
                 &self.env,
             );
+            if !handled.is_handled() {
+                window.event(
+                    Event::WindowDisconnected,
+                    &mut self.debug_logger,
+                    &mut self.command_queue,
+                    &self.env,
+                );
+                window.handle.close();
+            }
+        } else {
+            tracing::warn!("Failed to close {window_id:?}: no active window with this id");
         }
     }
 
-    pub fn dispatch_cmd(&mut self, cmd: Command) -> Handled {
-        self.invalidate_and_finalize();
+    // TODO - same confirmation code as request_close_window?
+    /// Requests the platform to close all windows.
+    fn request_close_all_windows(&mut self) {
+        for win in self.active_windows.values_mut() {
+            win.handle.close();
+        }
+    }
+
+    fn request_show_window(&mut self, id: WindowId) {
+        if let Some(win) = self.active_windows.get_mut(&id) {
+            win.handle.bring_to_front_and_focus();
+        }
+    }
+
+    fn request_configure_window(&mut self, config: &WindowConfig, id: WindowId) {
+        if let Some(win) = self.active_windows.get_mut(&id) {
+            config.apply_to_handle(&mut win.handle);
+        }
+    }
+
+    fn do_window_event(&mut self, source_id: WindowId, event: Event) -> Handled {
+        if matches!(
+            event,
+            Event::Command(..) | Event::Internal(InternalEvent::TargetedCommand(..))
+        ) {
+            unreachable!("commands should be dispatched via dispatch_cmd");
+        }
+
+        if let Some(win) = self.active_windows.get_mut(&source_id) {
+            win.event(
+                event,
+                &mut self.debug_logger,
+                &mut self.command_queue,
+                &self.env,
+            )
+        } else {
+            Handled::No
+        }
+    }
+
+    fn dispatch_cmd(&mut self, cmd: Command) -> Handled {
+        self.invalidate_paint_regions();
         match cmd.target() {
-            Target::Window(id) => {
-                if let Some(w) = self.windows.active_windows.get_mut(&id) {
-                    return if cmd.is(crate::command::CLOSE_WINDOW) {
-                        let handled = w.event(
-                            Event::WindowCloseRequested,
-                            &mut self.debug_logger,
-                            &mut self.command_queue,
-                            &self.env,
-                        );
-                        if !handled.is_handled() {
-                            w.event(
-                                Event::WindowDisconnected,
-                                &mut self.debug_logger,
-                                &mut self.command_queue,
-                                &self.env,
-                            );
-                        }
-                        handled
-                    } else {
-                        w.event(
-                            Event::Command(cmd),
-                            &mut self.debug_logger,
-                            &mut self.command_queue,
-                            &self.env,
-                        )
-                    };
-                }
-            }
-            // in this case we send it to every window that might contain
-            // this widget, breaking if the event is handled.
-            Target::Widget(id) => {
-                for w in self
-                    .windows
-                    .active_windows
-                    .values_mut()
-                    .filter(|w| w.may_contain_widget(id))
-                {
-                    let event = Event::Internal(InternalEvent::TargetedCommand(cmd.clone()));
+            Target::Global => {
+                for w in self.active_windows.values_mut() {
                     if w.event(
-                        event,
+                        Event::Command(cmd.clone()),
                         &mut self.debug_logger,
                         &mut self.command_queue,
                         &self.env,
@@ -273,10 +579,27 @@ impl AppRoot {
                         return Handled::Yes;
                     }
                 }
+                return Handled::No;
             }
-            Target::Global => {
-                for w in self.windows.active_windows.values_mut() {
-                    let event = Event::Command(cmd.clone());
+            Target::Window(id) => {
+                if let Some(w) = self.active_windows.get_mut(&id) {
+                    return w.event(
+                        Event::Command(cmd),
+                        &mut self.debug_logger,
+                        &mut self.command_queue,
+                        &self.env,
+                    );
+                }
+            }
+            // in this case we send it to every window that might contain
+            // this widget, breaking if the event is handled.
+            Target::Widget(id) => {
+                for w in self
+                    .active_windows
+                    .values_mut()
+                    .filter(|w| w.may_contain_widget(id))
+                {
+                    let event = Event::Internal(InternalEvent::TargetedCommand(cmd.clone()));
                     if w.event(
                         event,
                         &mut self.debug_logger,
@@ -296,94 +619,65 @@ impl AppRoot {
         Handled::No
     }
 
-    pub fn do_window_event(&mut self, source_id: WindowId, event: Event) -> Handled {
-        if matches!(
-            event,
-            Event::Command(..) | Event::Internal(InternalEvent::TargetedCommand(..))
-        ) {
-            panic!("commands should be dispatched via dispatch_cmd");
-        }
-
-        if let Some(win) = self.windows.active_windows.get_mut(&source_id) {
-            win.event(
-                event,
-                &mut self.debug_logger,
-                &mut self.command_queue,
-                &self.env,
-            )
-        } else {
-            Handled::No
-        }
-    }
-
-    pub fn do_update(&mut self) {
-        // FIXME
-        /*
-        // we send `update` to all windows, not just the active one:
-        for window in self.windows.active_windows.values_mut() {
-            window.update( &self.env);
-            if let Some(focus_change) = window.ime_focus_change.take() {
-                // we need to call this outside of the borrow, so we create a
-                // closure that takes the correct window handle. yes, it feels
-                // weird.
-                let handle = window.handle.clone();
-                let f = Box::new(move || handle.set_focused_text_field(focus_change));
-                self.ime_focus_change = Some(f);
-            }
-        }
-        */
-        self.invalidate_and_finalize();
-    }
-
-    /// invalidate any window handles that need it.
-    ///
-    /// This should always be called at the end of an event update cycle,
-    /// including for lifecycle events.
-    pub fn invalidate_and_finalize(&mut self) {
-        for win in self.windows.active_windows.values_mut() {
-            win.invalidate_and_finalize();
-        }
-    }
-
-    pub fn ime_update_fn(
-        &self,
-        window_id: WindowId,
-        widget_id: WidgetId,
-    ) -> Option<Box<ImeUpdateFn>> {
-        self.windows
-            .active_windows
-            .get(&window_id)
-            .and_then(|window| window.ime_invalidation_fn(widget_id))
-    }
-
-    pub fn get_ime_lock(
-        &mut self,
-        window_id: WindowId,
-        token: TextFieldToken,
-        mutable: bool,
-    ) -> Box<dyn InputHandler> {
-        self.windows
+    #[cfg(FALSE)]
+    fn show_open_panel(&mut self, cmd: Command, window_id: WindowId) {
+        let options = cmd.get(sys_cmd::SHOW_OPEN_PANEL).to_owned();
+        let handle = self
+            .inner
+            .borrow_mut()
             .active_windows
             .get_mut(&window_id)
-            .unwrap()
-            .get_ime_handler(token, mutable)
+            .map(|w| w.handle.clone());
+
+        let accept_cmd = options.accept_cmd.unwrap_or(sys_cmd::OPEN_FILE);
+        let cancel_cmd = options.cancel_cmd.unwrap_or(sys_cmd::OPEN_PANEL_CANCELLED);
+        let token = handle.and_then(|mut handle| handle.open_file(options.opt));
+        if let Some(token) = token {
+            self.root().file_dialogs.insert(
+                token,
+                DialogInfo {
+                    id: window_id,
+                    accept_cmd,
+                    cancel_cmd,
+                },
+            );
+        }
     }
 
-    /// Returns a `WidgetId` if the lock was mutable; the widget should be updated.
-    pub fn release_ime_lock(
-        &mut self,
-        window_id: WindowId,
-        token: TextFieldToken,
-    ) -> Option<WidgetId> {
-        self.windows
+    #[cfg(FALSE)]
+    fn show_save_panel(&mut self, cmd: Command, window_id: WindowId) {
+        let options = cmd.get(sys_cmd::SHOW_SAVE_PANEL).to_owned();
+        let handle = self
+            .inner
+            .borrow_mut()
             .active_windows
             .get_mut(&window_id)
-            .unwrap()
-            .release_ime_lock(token)
+            .map(|w| w.handle.clone());
+        let accept_cmd = options.accept_cmd.unwrap_or(sys_cmd::SAVE_FILE_AS);
+        let cancel_cmd = options.cancel_cmd.unwrap_or(sys_cmd::SAVE_PANEL_CANCELLED);
+        let token = handle.and_then(|mut handle| handle.save_as(options.opt));
+        if let Some(token) = token {
+            self.root().file_dialogs.insert(
+                token,
+                DialogInfo {
+                    id: window_id,
+                    accept_cmd,
+                    cancel_cmd,
+                },
+            );
+        }
     }
 
-    pub fn window_got_focus(&mut self, _window_id: WindowId) {
-        // TODO
+    #[cfg(target_os = "macos")]
+    fn hide_app(&self) {
+        use druid_shell::platform::mac::ApplicationExt as _;
+        self.inner.borrow().app.hide()
+    }
+
+    #[cfg(target_os = "macos")]
+    fn hide_others(&mut self) {
+        use druid_shell::platform::mac::ApplicationExt as _;
+        self.inner.borrow().app.hide_others();
     }
 }
 
@@ -675,7 +969,7 @@ impl WindowRoot {
         );
     }
 
-    pub(crate) fn invalidate_and_finalize(&mut self) {
+    pub(crate) fn invalidate_paint_region(&mut self) {
         if self.root.state().needs_layout {
             // TODO - this might be too coarse
             self.handle.invalidate();
