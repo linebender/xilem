@@ -35,6 +35,8 @@ use druid_shell::{Cursor, Region, TimerToken};
 /// [`WidgetPod`]: struct.WidgetPod.html
 pub struct WidgetState {
     pub(crate) id: WidgetId,
+
+    // --- LAYOUT ---
     /// The size of the child; this is the value returned by the child's layout
     /// method.
     pub(crate) size: Size,
@@ -43,29 +45,28 @@ pub struct WidgetState {
     pub(crate) origin: Point,
     /// The origin of the parent in the window coordinate space;
     pub(crate) parent_window_origin: Point,
-    /// A flag used to track and debug missing calls to set_origin.
-    pub(crate) is_expecting_set_origin_call: bool,
     /// The insets applied to the layout rect to generate the paint rect.
     /// In general, these will be zero; the exception is for things like
     /// drop shadows or overflowing text.
     pub(crate) paint_insets: Insets,
-
     /// The offset of the baseline relative to the bottom of the widget.
     ///
     /// In general, this will be zero; the bottom of the widget will be considered
     /// the baseline. Widgets that contain text or controls that expect to be
     /// laid out alongside text can set this as appropriate.
     pub(crate) baseline_offset: f64,
-
-    // The region that needs to be repainted, relative to the widget's bounds.
-    pub(crate) invalid: Region,
-
     // The part of this widget that is visible on the screen is offset by this
     // much. This will be non-zero for widgets that are children of `Scroll`, or
     // similar, and it is used for propagating invalid regions.
     pub(crate) viewport_offset: Vec2,
 
+    // --- PASSES ---
+
     // TODO: consider using bitflags for the booleans.
+    // The region that needs to be repainted, relative to the widget's bounds.
+    pub(crate) invalid: Region,
+    /// A flag used to track and debug missing calls to set_origin.
+    pub(crate) is_expecting_set_origin_call: bool,
 
     // True until a WidgetAdded event is received.
     pub(crate) is_new: bool,
@@ -74,32 +75,14 @@ pub struct WidgetState {
     // LifeCycle::DisabledChanged or InternalLifeCycle::RouteDisabledChanged
     pub(crate) children_disabled_changed: bool,
 
-    // `true` if one of our ancestors is disabled (meaning we are also disabled).
-    pub(crate) ancestor_disabled: bool,
-
-    // `true` if this widget has been explicitly disabled.
-    // A widget can be disabled without being *explicitly* disabled if an ancestor is disabled.
-    pub(crate) is_explicitly_disabled: bool,
-
     // `true` if this widget has been explicitly disabled, but has not yet seen one of
     // LifeCycle::DisabledChanged or InternalLifeCycle::RouteDisabledChanged
     pub(crate) is_explicitly_disabled_new: bool,
-
-    pub(crate) is_hot: bool,
-
-    pub(crate) is_active: bool,
 
     pub(crate) needs_layout: bool,
 
     /// Because of some scrolling or something, `parent_window_origin` needs to be updated.
     pub(crate) needs_window_origin: bool,
-
-    /// Any descendant is active.
-    pub(crate) has_active: bool,
-
-    /// In the focused path, starting from window and ending at the focused widget.
-    /// Descendants of the focused widget are not in the focused path.
-    pub(crate) has_focus: bool,
 
     /// Any descendant has requested an animation frame.
     pub(crate) request_anim: bool,
@@ -108,6 +91,7 @@ pub struct WidgetState {
 
     pub(crate) focus_chain: Vec<WidgetId>,
     pub(crate) request_focus: Option<FocusChange>,
+
     pub(crate) children: Bloom<WidgetId>,
     pub(crate) children_changed: bool,
     /// Associate timers with widgets that requested them.
@@ -120,6 +104,26 @@ pub struct WidgetState {
 
     pub(crate) text_registrations: Vec<TextFieldRegistration>,
 
+    // --- STATUS ---
+    // `true` if one of our ancestors is disabled (meaning we are also disabled).
+    pub(crate) ancestor_disabled: bool,
+
+    // `true` if this widget has been explicitly disabled.
+    // A widget can be disabled without being *explicitly* disabled if an ancestor is disabled.
+    pub(crate) is_explicitly_disabled: bool,
+
+    pub(crate) is_hot: bool,
+
+    pub(crate) is_active: bool,
+
+    /// Any descendant is active.
+    pub(crate) has_active: bool,
+
+    /// In the focused path, starting from window and ending at the focused widget.
+    /// Descendants of the focused widget are not in the focused path.
+    pub(crate) has_focus: bool,
+
+    // --- DEBUG INFO ---
     // Used in event/lifecycle/etc methods that are expected to be called recursively
     // on a widget's children, to make sure each child was visited.
     #[cfg(debug_assertions)]
