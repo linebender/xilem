@@ -14,6 +14,7 @@
 
 //! A button widget.
 
+use crate::action::Action;
 use crate::widget::prelude::*;
 use crate::widget::widget_view::WidgetRef;
 use crate::widget::{Label, WidgetPod};
@@ -90,6 +91,7 @@ impl Widget for Button {
                     ctx.set_active(true);
                     ctx.request_paint();
                     trace!("Button {:?} pressed", ctx.widget_id());
+                    ctx.submit_action(Action::ButtonPressed);
                 }
             }
             Event::MouseUp(_) => {
@@ -194,5 +196,30 @@ impl Widget for Button {
 
     fn make_trace_span(&self) -> Span {
         trace_span!("Button")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::assert_render_snapshot;
+    use crate::testing::widget_ids;
+    use crate::testing::Harness;
+    use crate::testing::TestWidgetExt;
+    use insta::assert_debug_snapshot;
+
+    #[test]
+    fn simple_button() {
+        let [button_id] = widget_ids();
+        let widget = Button::new("Hello").with_id(button_id);
+
+        let mut harness = Harness::create(widget);
+
+        assert_debug_snapshot!(harness.root_widget());
+        assert_render_snapshot!(harness, "hello");
+
+        assert_eq!(harness.pop_action(), None);
+        harness.mouse_click_on(button_id);
+        assert_eq!(harness.pop_action(), Some(Action::ButtonPressed));
     }
 }

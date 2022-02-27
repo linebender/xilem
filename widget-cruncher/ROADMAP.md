@@ -7,6 +7,7 @@
 - [ ] Add WidgetAdded test
 - [ ] Rename ContextState to GlobalPassCtx
 - [ ] Remove ExtendDrain
+- [ ] Brainstorming names for AppDelegate, Action, ExtEvent
 
 - [X] Rewrite tests
  - [X] Create coverage profile

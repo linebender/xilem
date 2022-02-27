@@ -13,6 +13,7 @@ use tracing::{error, info, info_span};
 // Automatically defaults to std::time::Instant on non Wasm platforms
 use instant::Instant;
 
+use crate::action::ActionQueue;
 use crate::debug_logger::DebugLogger;
 use crate::kurbo::{Point, Size};
 use crate::piet::{Color, Piet, RenderContext};
@@ -46,6 +47,8 @@ use druid_shell::{Application, WindowHandle};
 
 pub type ImeUpdateFn = dyn FnOnce(druid_shell::text::Event);
 
+// TODO - Add AppRootEvent type
+
 // TODO - Explain and document re-entrancy and when locks should be used
 
 /// State shared by all windows in the UI.
@@ -58,6 +61,7 @@ struct AppRootInner {
     pub app_handle: Application,
     pub debug_logger: DebugLogger,
     pub command_queue: CommandQueue,
+    pub action_queue: ActionQueue,
     pub ext_event_queue: ExtEventQueue,
     pub file_dialogs: HashMap<FileDialogToken, DialogInfo>,
     pub window_requests: VecDeque<WindowDesc>,
@@ -112,6 +116,7 @@ impl AppRoot {
             app_handle: app,
             debug_logger: DebugLogger::new(false),
             command_queue: VecDeque::new(),
+            action_queue: VecDeque::new(),
             ext_event_queue,
             file_dialogs: HashMap::new(),
             menu_window: None,
@@ -159,7 +164,7 @@ impl AppRoot {
             let event = Event::WindowConnected;
             inner.do_window_event(window_id, event);
         }
-        self.process_commands();
+        self.process_commands_and_actions();
         self.inner().invalidate_paint_regions();
         // TODO - IME?
         self.process_window_requests();
@@ -215,7 +220,7 @@ impl AppRoot {
             };
         }
 
-        self.process_commands();
+        self.process_commands_and_actions();
         self.inner().invalidate_paint_regions();
 
         ime_change = self.inner().ime_focus_change.take();
@@ -231,10 +236,10 @@ impl AppRoot {
         result
     }
 
-    /// Handle a 'command' message from druid-shell. These map to  an item
+    /// Handle a 'command' message from druid-shell. These map to an item
     /// in an application, window, or context (right-click) menu.
     ///
-    /// If the menu is  associated with a window (the general case) then
+    /// If the menu is associated with a window (the general case) then
     /// the `window_id` will be `Some(_)`, otherwise (such as if no window
     /// is open but a menu exists, as on macOS) it will be `None`.
     pub fn handle_system_cmd(&mut self, cmd_id: u32, window_id: Option<WindowId>) {
@@ -252,7 +257,7 @@ impl AppRoot {
                 dialog_info.cancel_cmd.to(dialog_info.id)
             };
             self.do_cmd(cmd);
-            self.process_commands();
+            self.process_commands_and_actions();
             self.inner().invalidate_paint_regions();
         } else {
             tracing::error!("unknown dialog token");
@@ -267,6 +272,7 @@ impl AppRoot {
                 win.prepare_paint(
                     &mut inner.debug_logger,
                     &mut inner.command_queue,
+                    &mut inner.action_queue,
                     &inner.env,
                 );
             }
@@ -284,20 +290,21 @@ impl AppRoot {
                 invalid,
                 &mut inner.debug_logger,
                 &mut inner.command_queue,
+                &mut inner.action_queue,
                 &inner.env,
             );
         }
     }
 
     pub fn run_commands(&mut self) {
-        self.process_commands();
+        self.process_commands_and_actions();
         self.inner().invalidate_paint_regions();
         self.process_window_requests();
     }
 
     pub fn run_ext_events(&mut self) {
         self.process_ext_events();
-        self.process_commands();
+        self.process_commands_and_actions();
         self.inner().invalidate_paint_regions();
         self.process_window_requests();
     }
@@ -308,10 +315,8 @@ impl AppRoot {
         widget_id: WidgetId,
     ) -> Option<Box<ImeUpdateFn>> {
         let mut inner = self.inner.borrow_mut();
-        inner
-            .active_windows
-            .get(&window_id)
-            .and_then(|window| window.ime_invalidation_fn(widget_id))
+        let window = inner.active_windows.get(&window_id)?;
+        window.ime_invalidation_fn(widget_id)
     }
 
     pub fn get_ime_lock(
@@ -349,13 +354,23 @@ impl AppRoot {
         self.inner.borrow_mut()
     }
 
-    fn process_commands(&mut self) {
+    // TODO - rename?
+    fn process_commands_and_actions(&mut self) {
         loop {
             let next_cmd = self.inner().command_queue.pop_front();
-            match next_cmd {
-                Some(cmd) => self.do_cmd(cmd),
-                None => break,
+            if let Some(cmd) = next_cmd {
+                self.do_cmd(cmd);
+                continue;
             }
+
+            let next_action = self.inner().action_queue.pop_front();
+            if let Some(action) = next_action {
+                // TODO - send to delegate
+                continue;
+            }
+
+            // else - no more commands or actions
+            break;
         }
     }
 
@@ -507,6 +522,7 @@ impl AppRootInner {
                 Event::WindowCloseRequested,
                 &mut self.debug_logger,
                 &mut self.command_queue,
+                &mut self.action_queue,
                 &self.env,
             );
             if !handled.is_handled() {
@@ -514,6 +530,7 @@ impl AppRootInner {
                     Event::WindowDisconnected,
                     &mut self.debug_logger,
                     &mut self.command_queue,
+                    &mut self.action_queue,
                     &self.env,
                 );
                 window.handle.close();
@@ -556,6 +573,7 @@ impl AppRootInner {
                 event,
                 &mut self.debug_logger,
                 &mut self.command_queue,
+                &mut self.action_queue,
                 &self.env,
             )
         } else {
@@ -572,6 +590,7 @@ impl AppRootInner {
                         Event::Command(cmd.clone()),
                         &mut self.debug_logger,
                         &mut self.command_queue,
+                        &mut self.action_queue,
                         &self.env,
                     )
                     .is_handled()
@@ -587,6 +606,7 @@ impl AppRootInner {
                         Event::Command(cmd),
                         &mut self.debug_logger,
                         &mut self.command_queue,
+                        &mut self.action_queue,
                         &self.env,
                     );
                 }
@@ -604,6 +624,7 @@ impl AppRootInner {
                         event,
                         &mut self.debug_logger,
                         &mut self.command_queue,
+                        &mut self.action_queue,
                         &self.env,
                     )
                     .is_handled()
@@ -733,6 +754,7 @@ impl WindowRoot {
         widget_state: &mut WidgetState,
         debug_logger: &mut DebugLogger,
         command_queue: &mut CommandQueue,
+        action_queue: &mut ActionQueue,
         env: &Env,
         process_commands: bool,
     ) {
@@ -759,6 +781,7 @@ impl WindowRoot {
                 &LifeCycle::Internal(InternalLifeCycle::RouteWidgetAdded),
                 debug_logger,
                 command_queue,
+                action_queue,
                 env,
                 false,
             );
@@ -770,24 +793,45 @@ impl WindowRoot {
 
         if self.root.state().needs_window_origin && !self.root.state().needs_layout {
             let event = LifeCycle::Internal(InternalLifeCycle::ParentWindowOrigin);
-            self.lifecycle(&event, debug_logger, command_queue, env, false);
+            self.lifecycle(
+                &event,
+                debug_logger,
+                command_queue,
+                action_queue,
+                env,
+                false,
+            );
         }
 
         // Update the disabled state if necessary
         // Always do this before updating the focus-chain
         if self.root.state().tree_disabled_changed() {
             let event = LifeCycle::Internal(InternalLifeCycle::RouteDisabledChanged);
-            self.lifecycle(&event, debug_logger, command_queue, env, false);
+            self.lifecycle(
+                &event,
+                debug_logger,
+                command_queue,
+                action_queue,
+                env,
+                false,
+            );
         }
 
         // Update the focus-chain if necessary
         // Always do this before sending focus change, since this event updates the focus chain.
         if self.root.state().update_focus_chain {
             let event = LifeCycle::BuildFocusChain;
-            self.lifecycle(&event, debug_logger, command_queue, env, false);
+            self.lifecycle(
+                &event,
+                debug_logger,
+                command_queue,
+                action_queue,
+                env,
+                false,
+            );
         }
 
-        self.update_focus(widget_state, debug_logger, command_queue, env);
+        self.update_focus(widget_state, debug_logger, command_queue, action_queue, env);
 
         // Add all the requested timers to the window's timers map.
         self.timers.extend_drain(&mut widget_state.timers);
@@ -821,6 +865,7 @@ impl WindowRoot {
         event: Event,
         debug_logger: &mut DebugLogger,
         command_queue: &mut CommandQueue,
+        action_queue: &mut ActionQueue,
         env: &Env,
     ) -> Handled {
         match &event {
@@ -849,6 +894,7 @@ impl WindowRoot {
                 &LifeCycle::Internal(InternalLifeCycle::RouteWidgetAdded),
                 debug_logger,
                 command_queue,
+                action_queue,
                 env,
                 false,
             );
@@ -860,6 +906,7 @@ impl WindowRoot {
                 self.ext_event_sink.clone(),
                 debug_logger,
                 command_queue,
+                action_queue,
                 self.mock_timer_queue.as_mut(),
                 &self.handle,
                 self.id,
@@ -917,10 +964,17 @@ impl WindowRoot {
         ) {
             // Because our initial size can be zero, the window system won't ask us to paint.
             // So layout ourselves and hopefully we resize
-            self.layout(debug_logger, command_queue, env);
+            self.layout(debug_logger, command_queue, action_queue, env);
         }
 
-        self.post_event_processing(&mut widget_state, debug_logger, command_queue, env, false);
+        self.post_event_processing(
+            &mut widget_state,
+            debug_logger,
+            command_queue,
+            action_queue,
+            env,
+            false,
+        );
 
         self.root.as_dyn().debug_validate(false);
 
@@ -932,6 +986,7 @@ impl WindowRoot {
         event: &LifeCycle,
         debug_logger: &mut DebugLogger,
         command_queue: &mut CommandQueue,
+        action_queue: &mut ActionQueue,
         env: &Env,
         process_commands: bool,
     ) {
@@ -940,6 +995,7 @@ impl WindowRoot {
             self.ext_event_sink.clone(),
             debug_logger,
             command_queue,
+            action_queue,
             self.mock_timer_queue.as_mut(),
             &self.handle,
             self.id,
@@ -964,6 +1020,7 @@ impl WindowRoot {
             &mut widget_state,
             debug_logger,
             command_queue,
+            action_queue,
             env,
             process_commands,
         );
@@ -996,6 +1053,7 @@ impl WindowRoot {
         &mut self,
         debug_logger: &mut DebugLogger,
         command_queue: &mut CommandQueue,
+        action_queue: &mut ActionQueue,
         env: &Env,
     ) {
         let now = Instant::now();
@@ -1011,6 +1069,7 @@ impl WindowRoot {
                 Event::AnimFrame(elapsed_ns),
                 debug_logger,
                 command_queue,
+                action_queue,
                 env,
             );
             self.last_anim = Some(now);
@@ -1023,10 +1082,11 @@ impl WindowRoot {
         invalid: &Region,
         debug_logger: &mut DebugLogger,
         command_queue: &mut CommandQueue,
+        action_queue: &mut ActionQueue,
         env: &Env,
     ) {
         if self.root.state().needs_layout {
-            self.layout(debug_logger, command_queue, env);
+            self.layout(debug_logger, command_queue, action_queue, env);
         }
 
         for &r in invalid.rects() {
@@ -1039,13 +1099,21 @@ impl WindowRoot {
                 },
             );
         }
-        self.paint(piet, invalid, debug_logger, command_queue, env);
+        self.paint(
+            piet,
+            invalid,
+            debug_logger,
+            command_queue,
+            action_queue,
+            env,
+        );
     }
 
     pub(crate) fn layout(
         &mut self,
         debug_logger: &mut DebugLogger,
         command_queue: &mut CommandQueue,
+        action_queue: &mut ActionQueue,
         env: &Env,
     ) {
         let mut widget_state = WidgetState::new(self.root.id(), Some(self.size), "<root>");
@@ -1053,6 +1121,7 @@ impl WindowRoot {
             self.ext_event_sink.clone(),
             debug_logger,
             command_queue,
+            action_queue,
             self.mock_timer_queue.as_mut(),
             &self.handle,
             self.id,
@@ -1092,10 +1161,18 @@ impl WindowRoot {
             &LifeCycle::Internal(InternalLifeCycle::ParentWindowOrigin),
             debug_logger,
             command_queue,
+            action_queue,
             env,
             false,
         );
-        self.post_event_processing(&mut widget_state, debug_logger, command_queue, env, true);
+        self.post_event_processing(
+            &mut widget_state,
+            debug_logger,
+            command_queue,
+            action_queue,
+            env,
+            true,
+        );
     }
 
     fn paint(
@@ -1104,6 +1181,7 @@ impl WindowRoot {
         invalid: &Region,
         debug_logger: &mut DebugLogger,
         command_queue: &mut CommandQueue,
+        action_queue: &mut ActionQueue,
         env: &Env,
     ) {
         let widget_state = WidgetState::new(self.root.id(), Some(self.size), "<root>");
@@ -1111,6 +1189,7 @@ impl WindowRoot {
             self.ext_event_sink.clone(),
             debug_logger,
             command_queue,
+            action_queue,
             self.mock_timer_queue.as_mut(),
             &self.handle,
             self.id,
@@ -1165,6 +1244,7 @@ impl WindowRoot {
         widget_state: &mut WidgetState,
         debug_logger: &mut DebugLogger,
         command_queue: &mut CommandQueue,
+        action_queue: &mut ActionQueue,
         env: &Env,
     ) {
         if let Some(focus_req) = widget_state.request_focus.take() {
@@ -1177,7 +1257,14 @@ impl WindowRoot {
             // Only send RouteFocusChanged in case there's actual change
             if old != new {
                 let event = LifeCycle::Internal(InternalLifeCycle::RouteFocusChanged { old, new });
-                self.lifecycle(&event, debug_logger, command_queue, env, false);
+                self.lifecycle(
+                    &event,
+                    debug_logger,
+                    command_queue,
+                    action_queue,
+                    env,
+                    false,
+                );
                 self.focus = new;
                 // check if the newly focused widget has an IME session, and
                 // notify the system if so.

@@ -22,6 +22,7 @@ use std::time::Duration;
 
 use tracing::{error, trace, warn};
 
+use crate::action::{Action, ActionQueue};
 use crate::command::{Command, CommandQueue, Notification, SingleUse};
 use crate::debug_logger::DebugLogger;
 use crate::ext_event::ExtEventSink;
@@ -58,6 +59,7 @@ pub(crate) struct ContextState<'a> {
     pub(crate) ext_event_sink: ExtEventSink,
     pub(crate) debug_logger: &'a mut DebugLogger,
     pub(crate) command_queue: &'a mut CommandQueue,
+    pub(crate) action_queue: &'a mut ActionQueue,
     // Used in Harness for unit tests
     pub(crate) mock_timer_queue: Option<&'a mut MockTimerQueue>,
     pub(crate) window_id: WindowId,
@@ -205,44 +207,6 @@ impl_context_method!(
         pub fn text(&mut self) -> &mut PietText {
             self.check_init("text");
             &mut self.global_state.text
-        }
-
-        pub fn run_in_background(
-            &mut self,
-            background_task: impl FnOnce(ExtEventSink) + Send + 'static,
-        ) {
-            self.check_init("run_in_background");
-
-            use std::thread;
-
-            let ext_event_sink = self.global_state.ext_event_sink.clone();
-            thread::spawn(move || {
-                background_task(ext_event_sink);
-            });
-        }
-
-        // TODO - should take FnOnce.
-        pub fn compute_in_background<T: Any + Send>(
-            &mut self,
-            background_task: impl Fn(ExtEventSink) -> T + Send + 'static,
-        ) -> PromiseToken<T> {
-            self.check_init("compute_in_background");
-
-            let token = PromiseToken::<T>::new();
-
-            use std::thread;
-
-            let ext_event_sink = self.global_state.ext_event_sink.clone();
-            let widget_id = self.widget_state.id;
-            let window_id = self.global_state.window_id;
-            thread::spawn(move || {
-                let result = background_task(ext_event_sink.clone());
-                // TODO unwrap_or
-                let _ =
-                    ext_event_sink.resolve_promise(token.make_result(result), widget_id, window_id);
-            });
-
-            token
         }
 
         // TODO - document
@@ -579,6 +543,50 @@ impl_context_method!(EventCtx<'_, '_>, LifeCycleCtx<'_, '_>, LayoutCtx<'_, '_>, 
         self.check_init("submit_command");
         trace!("submit_command");
         self.global_state.submit_command(cmd.into())
+    }
+
+    // TODO document
+    pub fn submit_action(&mut self, action: Action) {
+        self.check_init("submit_action");
+        trace!("submit_command");
+        self.global_state.submit_action(action)
+    }
+
+    pub fn run_in_background(
+        &mut self,
+        background_task: impl FnOnce(ExtEventSink) + Send + 'static,
+    ) {
+        self.check_init("run_in_background");
+
+        use std::thread;
+
+        let ext_event_sink = self.global_state.ext_event_sink.clone();
+        thread::spawn(move || {
+            background_task(ext_event_sink);
+        });
+    }
+
+    // TODO - should take FnOnce.
+    pub fn compute_in_background<T: Any + Send>(
+        &mut self,
+        background_task: impl Fn(ExtEventSink) -> T + Send + 'static,
+    ) -> PromiseToken<T> {
+        self.check_init("compute_in_background");
+
+        let token = PromiseToken::<T>::new();
+
+        use std::thread;
+
+        let ext_event_sink = self.global_state.ext_event_sink.clone();
+        let widget_id = self.widget_state.id;
+        let window_id = self.global_state.window_id;
+        thread::spawn(move || {
+            let result = background_task(ext_event_sink.clone());
+            // TODO unwrap_or
+            let _ = ext_event_sink.resolve_promise(token.make_result(result), widget_id, window_id);
+        });
+
+        token
     }
 
     /// Request a timer event.
@@ -944,6 +952,7 @@ impl<'a> ContextState<'a> {
         ext_event_sink: ExtEventSink,
         debug_logger: &'a mut DebugLogger,
         command_queue: &'a mut CommandQueue,
+        action_queue: &'a mut ActionQueue,
         mock_timer_queue: Option<&'a mut MockTimerQueue>,
         window: &'a WindowHandle,
         window_id: WindowId,
@@ -953,6 +962,7 @@ impl<'a> ContextState<'a> {
             ext_event_sink,
             debug_logger,
             command_queue,
+            action_queue,
             mock_timer_queue,
             window,
             window_id,
@@ -965,6 +975,11 @@ impl<'a> ContextState<'a> {
         trace!("submit_command");
         self.command_queue
             .push_back(command.default_to(self.window_id.into()));
+    }
+
+    pub(crate) fn submit_action(&mut self, action: Action) {
+        trace!("submit_action");
+        self.action_queue.push_back(action);
     }
 
     pub(crate) fn request_timer(

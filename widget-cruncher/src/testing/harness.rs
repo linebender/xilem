@@ -16,11 +16,12 @@
 
 use image::io::Reader as ImageReader;
 use instant::Duration;
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 use std::panic::Location;
 use std::path::Path;
 use std::sync::Arc;
 
+use crate::action::{Action, ActionQueue};
 //use crate::ext_event::ExtEventHost;
 use crate::command::CommandQueue;
 use crate::debug_logger::DebugLogger;
@@ -63,7 +64,7 @@ pub const HARNESS_DEFAULT_SIZE: Size = Size::new(400., 400.);
 ///
 /// if you want those functions run you will need to call them yourself.
 pub struct Harness {
-    mock_app: MockAppState,
+    mock_app: MockAppRoot,
     mouse_state: MouseEvent,
     window_size: Size,
 }
@@ -71,10 +72,11 @@ pub struct Harness {
 // TODO - merge
 /// All of the state except for the `Piet` (render context). We need to pass
 /// that in to get around some lifetime issues.
-struct MockAppState {
+struct MockAppRoot {
     env: Env,
     window: WindowRoot,
     command_queue: CommandQueue,
+    action_queue: ActionQueue,
     debug_logger: DebugLogger,
 }
 
@@ -112,10 +114,11 @@ impl Harness {
         };
 
         let mut harness = Harness {
-            mock_app: MockAppState {
+            mock_app: MockAppRoot {
                 env: Env::with_theme(),
                 window,
-                command_queue: Default::default(),
+                command_queue: VecDeque::new(),
+                action_queue: VecDeque::new(),
                 debug_logger: DebugLogger::new(true),
             },
             mouse_state,
@@ -328,6 +331,10 @@ impl Harness {
         inspect(self.mock_app.window.root.as_dyn(), &f);
     }
 
+    pub fn pop_action(&mut self) -> Option<Action> {
+        self.mock_app.action_queue.pop_front()
+    }
+
     // --- Screenshots ---
 
     pub fn check_render_snapshot(
@@ -398,12 +405,13 @@ impl Harness {
 }
 
 #[allow(dead_code)]
-impl MockAppState {
+impl MockAppRoot {
     fn event(&mut self, event: Event) {
         self.window.event(
             event,
             &mut self.debug_logger,
             &mut self.command_queue,
+            &mut self.action_queue,
             &self.env,
         );
     }
@@ -413,14 +421,19 @@ impl MockAppState {
             &event,
             &mut self.debug_logger,
             &mut self.command_queue,
+            &mut self.action_queue,
             &self.env,
             false,
         );
     }
 
     fn layout(&mut self) {
-        self.window
-            .layout(&mut self.debug_logger, &mut self.command_queue, &self.env);
+        self.window.layout(
+            &mut self.debug_logger,
+            &mut self.command_queue,
+            &mut self.action_queue,
+            &self.env,
+        );
     }
 
     fn paint_region(&mut self, piet: &mut Piet, invalid: &Region) {
@@ -429,6 +442,7 @@ impl MockAppState {
             invalid,
             &mut self.debug_logger,
             &mut self.command_queue,
+            &mut self.action_queue,
             &self.env,
         );
     }
