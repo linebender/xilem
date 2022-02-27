@@ -1,71 +1,10 @@
-# Design stuff
-
-What referential are various values using?
-
-Flex algo
-- Does Tennent's Correspondence Principle apply to Wrappers in a Flex container?
-- Visualize how much "spring" each element has
-
-transform_scroll translates mouse events
-
-WidgetAdded and similar events are an anti-pattern. Constructors should stand on their own. (is it actually possible though?)
-
-
-
-Passes have access to
-- on_event
--> mut self, mut ContextState, WidgetState.<layout>, mut WidgetState.<passes>, mut WidgetState.<Status>, get_widget_view()
-- on_status_change
--> mut self, ContextState, WidgetState.<layout>, mut WidgetState.<passes>, WidgetState.<Status>
-- lifecycle
--> mut self, mut ContextState, WidgetState.<layout>, mut WidgetState.<passes>, mut WidgetState.<Status>, get_widget_view()
-- layout
--> self, mut ContextState, mut WidgetState.<layout>, WidgetState.<passes>, WidgetState.<Status>
-- paint
--> self, mut ContextState, mut WidgetState.<layout>, WidgetState.<passes>, WidgetState.<Status>
-- WidgetView
--> mut self, mut ContextState, WidgetState.<layout>, mut WidgetState.<passes>, mut WidgetState.<Status>, get_widget_view()
-
-Druid invariants
-- layout != <prev>.layout                       => request_layout() has been called
-- child.origin != <prev>.child.origin           => request_layout() has been called
-- <paint-calls> != <prev>.<paint-calls>         => request_paint() has been called
-- children() != <prev>.children()               => children_changed is set
-- !event.handled && hovered || self.has_focus   => recurse event
-- lifecycle                                     => recurse lifecycle
-- !is_hidden()                                  => recurse layout
-- !is_hidden() && is_visible()                  => recurse paint
-- is_focusable                                  => must be const
-- ids are unique
-
-
-
-
-# Profiling
-
-Record spans, with:
-- pass name
-- widget id
-- work type
-- useful/redundant/testing
-- include-recursed-time-in-total-time
-
--> percentage of work that is useful
--> what type of work
-
-
-# Trace handling
-
-- Isolate subgraph of trace during errors
-
-
-
 # TODO - MVP
 
 - [X] Clean up imports
 - [X] Add impl Deref for WidgetRef
 - [ ] Add downcast to WidgetRef and WidgetView
 - [ ] Add WidgetView::as_ref
+- [ ] Add WidgetAdded test
 - [ ] Rename ContextState to GlobalPassCtx
 - [ ] Remove ExtendDrain
 
@@ -199,3 +138,102 @@ Record spans, with:
  -> [ ] Spinner
  -> [ ] TextBox
 -> [ ] text
+
+
+# Design stuff
+
+What referential are various values using?
+
+transform_scroll translates mouse events
+
+
+## Flex stuff
+
+Flex algo
+- Does Tennent's Correspondence Principle apply to Wrappers in a Flex container?
+- Visualize how much "spring" each element has
+
+Difference between
+- Window(Button)
+- Window(Flex(Button))
+
+Flex alignment vs text alignment
+
+How does Flex interact with Viewport?
+-> use call context for debugging (wait, what does that mean again?)
+
+Make library of commonly desired layouts
+- Center object vertically
+- Horizontally
+- Side gutters
+- Document format
+
+
+## Passes
+
+Passes have access to
+- on_event
+-> mut self, mut ContextState, WidgetState.<layout>, mut WidgetState.<passes>, mut WidgetState.<Status>, get_widget_view()
+- on_status_change
+-> mut self, ContextState, WidgetState.<layout>, mut WidgetState.<passes>, WidgetState.<Status>
+- lifecycle
+-> mut self, mut ContextState, WidgetState.<layout>, mut WidgetState.<passes>, mut WidgetState.<Status>, get_widget_view()
+- layout
+-> self, mut ContextState, mut WidgetState.<layout>, WidgetState.<passes>, WidgetState.<Status>
+- paint
+-> self, mut ContextState, mut WidgetState.<layout>, WidgetState.<passes>, WidgetState.<Status>
+- WidgetView
+-> mut self, mut ContextState, WidgetState.<layout>, mut WidgetState.<passes>, mut WidgetState.<Status>, get_widget_view()
+
+WidgetAdded and similar events are an anti-pattern. Constructors should stand on their own. (is it actually possible though?)
+
+
+## Pointer status
+
+Default(Option(cursor))
+Active(Option(cursor))
+Disabled
+Hidden
+
+
+## Invariants
+
+Druid invariants
+- layout != <prev>.layout                       => request_layout() has been called
+- child.origin != <prev>.child.origin           => request_layout() has been called
+- <paint-calls> != <prev>.<paint-calls>         => request_paint() has been called
+- children() != <prev>.children()               => children_changed is set
+- !event.handled && hovered || self.has_focus   => recurse event
+- lifecycle                                     => recurse lifecycle
+- !is_hidden()                                  => recurse layout
+- !is_hidden() && is_visible()                  => recurse paint
+- is_focusable                                  => must be const
+- ids are unique
+
+
+## Profiling
+
+Record spans, with:
+- pass name
+- widget id
+- work type
+- useful/redundant/testing
+- include-recursed-time-in-total-time
+
+-> percentage of work that is useful
+-> what type of work
+
+
+## Debug info
+
+- Isolate subgraph of trace during errors
+
+Event debug info:
+- layout during event
+- tree of visited widgets
+- respective mouse pose
+
+Widget Debuggging
+- Need to see the layout tree at any given point
+- Need to see which subwidgets were not rendered and why
+- Need to see the properties of each widget *at render time* both graphically and in text form
