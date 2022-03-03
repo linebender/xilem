@@ -219,7 +219,11 @@ mod tests {
         assert_render_snapshot!(harness, "hello");
 
         assert_eq!(harness.pop_action(), None);
+
         harness.mouse_click_on(button_id);
-        assert_eq!(harness.pop_action(), Some(Action::ButtonPressed));
+        assert_eq!(
+            harness.pop_action(),
+            Some((Action::ButtonPressed, button_id))
+        );
     }
 }

@@ -1,5 +1,7 @@
 use std::collections::VecDeque;
 
+use crate::{WidgetId, WindowId};
+
 // TODO - Rename
 // TODO - Figure out what these actions should be
 
@@ -11,4 +13,4 @@ pub enum Action {
 }
 
 /// Our queue type
-pub(crate) type ActionQueue = VecDeque<Action>;
+pub(crate) type ActionQueue = VecDeque<(Action, WidgetId, WindowId)>;

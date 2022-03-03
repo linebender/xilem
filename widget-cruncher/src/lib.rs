@@ -38,6 +38,7 @@ pub use druid_shell::{kurbo, piet};
 mod util;
 
 pub mod action;
+pub mod app_delegate;
 pub mod app_launcher;
 pub mod app_root;
 mod bloom;

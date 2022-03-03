@@ -14,6 +14,7 @@ use tracing::{error, info, info_span};
 use instant::Instant;
 
 use crate::action::ActionQueue;
+use crate::app_delegate::{AppDelegate, DelegateCtx, NullDelegate};
 use crate::debug_logger::DebugLogger;
 use crate::kurbo::{Point, Size};
 use crate::piet::{Color, Piet, RenderContext};
@@ -51,6 +52,9 @@ pub type ImeUpdateFn = dyn FnOnce(druid_shell::text::Event);
 
 // TODO - Explain and document re-entrancy and when locks should be used
 
+// TODO - Delegate callbacks are shared between AppRoot and AppRootInner methods
+// This muddles what part of the code has the responsibility of maintaining invariants
+
 /// State shared by all windows in the UI.
 #[derive(Clone)]
 pub struct AppRoot {
@@ -60,6 +64,8 @@ pub struct AppRoot {
 struct AppRootInner {
     pub app_handle: Application,
     pub debug_logger: DebugLogger,
+    // TODO - Option?
+    pub app_delegate: Box<dyn AppDelegate>,
     pub command_queue: CommandQueue,
     pub action_queue: ActionQueue,
     pub ext_event_queue: ExtEventQueue,
@@ -109,12 +115,14 @@ impl AppRoot {
     pub(crate) fn create(
         app: Application,
         windows: Vec<WindowDesc>,
+        app_delegate: Option<Box<dyn AppDelegate>>,
         ext_event_queue: ExtEventQueue,
         env: Env,
     ) -> Result<Self, PlatformError> {
         let inner = Rc::new(RefCell::new(AppRootInner {
             app_handle: app,
             debug_logger: DebugLogger::new(false),
+            app_delegate: app_delegate.unwrap_or_else(|| Box::new(NullDelegate)),
             command_queue: VecDeque::new(),
             action_queue: VecDeque::new(),
             ext_event_queue,
@@ -161,6 +169,8 @@ impl AppRoot {
                 inner.set_ext_event_idle_handler(window_id);
             }
 
+            inner.with_delegate(|delegate, ctx, env| delegate.on_window_added(ctx, window_id, env));
+
             let event = Event::WindowConnected;
             inner.do_window_event(window_id, event);
         }
@@ -176,6 +186,8 @@ impl AppRoot {
     pub fn window_removed(&mut self, window_id: WindowId) {
         let mut inner = self.inner.borrow_mut();
         inner.active_windows.remove(&window_id);
+
+        inner.with_delegate(|delegate, ctx, env| delegate.on_window_removed(ctx, window_id, env));
 
         // If there are no active or pending windows, we quit the run loop.
         if inner.active_windows.is_empty() && inner.pending_windows.is_empty() {
@@ -399,6 +411,14 @@ impl AppRoot {
     /// Handle a command. Top level commands (e.g. for creating and destroying
     /// windows) have their logic here; other commands are passed to the window.
     fn do_cmd(&mut self, cmd: Command) {
+        if self
+            .inner()
+            .with_delegate(|delegate, ctx, env| delegate.on_command(ctx, &cmd, env))
+            == Handled::Yes
+        {
+            return;
+        }
+
         use Target as T;
         match cmd.target() {
             // these are handled the same no matter where they come from
@@ -479,6 +499,20 @@ impl AppRoot {
 }
 
 impl AppRootInner {
+    /// A helper fn for setting up the `DelegateCtx`. Takes a closure with
+    /// an arbitrary return type `R`, and returns `Some(R)` if an `AppDelegate`
+    /// is configured.
+    fn with_delegate<R>(
+        &mut self,
+        f: impl FnOnce(&mut dyn AppDelegate, &mut DelegateCtx, &Env) -> R,
+    ) -> R {
+        let mut ctx = DelegateCtx {
+            command_queue: &mut self.command_queue,
+            ext_event_queue: &mut self.ext_event_queue,
+        };
+        f(&mut *self.app_delegate, &mut ctx, &self.env)
+    }
+
     /// invalidate any window handles that need it.
     ///
     /// This should always be called at the end of an event update cycle,
@@ -568,6 +602,12 @@ impl AppRootInner {
             unreachable!("commands should be dispatched via dispatch_cmd");
         }
 
+        if self.with_delegate(|delegate, ctx, env| delegate.on_event(ctx, source_id, &event, env))
+            == Handled::Yes
+        {
+            return Handled::Yes;
+        }
+
         if let Some(win) = self.active_windows.get_mut(&source_id) {
             win.event(
                 event,
@@ -577,6 +617,7 @@ impl AppRootInner {
                 &self.env,
             )
         } else {
+            // TODO - error message?
             Handled::No
         }
     }
@@ -1357,6 +1398,10 @@ impl WindowRoot {
                     }
                 })
         })
+    }
+
+    pub fn root_widget(&self, window_id: WindowId) -> WidgetRef<dyn Widget> {
+        self.root.as_dyn()
     }
 
     pub fn find_widget_by_id(&self, id: WidgetId) -> Option<WidgetRef<'_, dyn Widget>> {

@@ -331,8 +331,9 @@ impl Harness {
         inspect(self.mock_app.window.root.as_dyn(), &f);
     }
 
-    pub fn pop_action(&mut self) -> Option<Action> {
-        self.mock_app.action_queue.pop_front()
+    pub fn pop_action(&mut self) -> Option<(Action, WidgetId)> {
+        let (action, widget_id, _) = self.mock_app.action_queue.pop_front()?;
+        Some((action, widget_id))
     }
 
     // --- Screenshots ---

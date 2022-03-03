@@ -549,7 +549,8 @@ impl_context_method!(EventCtx<'_, '_>, LifeCycleCtx<'_, '_>, LayoutCtx<'_, '_>, 
     pub fn submit_action(&mut self, action: Action) {
         self.check_init("submit_action");
         trace!("submit_command");
-        self.global_state.submit_action(action)
+        self.global_state
+            .submit_action(action, self.widget_state.id)
     }
 
     pub fn run_in_background(
@@ -977,9 +978,10 @@ impl<'a> ContextState<'a> {
             .push_back(command.default_to(self.window_id.into()));
     }
 
-    pub(crate) fn submit_action(&mut self, action: Action) {
+    pub(crate) fn submit_action(&mut self, action: Action, widget_id: WidgetId) {
         trace!("submit_action");
-        self.action_queue.push_back(action);
+        self.action_queue
+            .push_back((action, widget_id, self.window_id));
     }
 
     pub(crate) fn request_timer(

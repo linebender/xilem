@@ -1,3 +1,4 @@
+use crate::app_delegate::AppDelegate;
 use crate::app_root::AppRoot;
 use crate::ext_event::{ExtEventQueue, ExtEventSink};
 use crate::platform::DruidAppHandler;
@@ -9,6 +10,7 @@ use druid_shell::{Application, Error as PlatformError};
 /// Handles initial setup of an application, and starts the runloop.
 pub struct AppLauncher {
     windows: Vec<WindowDesc>,
+    app_delegate: Option<Box<dyn AppDelegate>>,
     ext_event_queue: ExtEventQueue,
 }
 
@@ -17,8 +19,17 @@ impl AppLauncher {
     pub fn with_window(window: WindowDesc) -> Self {
         AppLauncher {
             windows: vec![window],
+            app_delegate: None,
             ext_event_queue: ExtEventQueue::new(),
         }
+    }
+
+    /// Set the [`AppDelegate`].
+    ///
+    /// [`AppDelegate`]: trait.AppDelegate.html
+    pub fn delegate(mut self, delegate: impl AppDelegate + 'static) -> Self {
+        self.app_delegate = Some(Box::new(delegate));
+        self
     }
 
     /// Initialize a minimal tracing subscriber with DEBUG max level for printing logs out to
@@ -72,6 +83,7 @@ impl AppLauncher {
         let state = AppRoot::create(
             app.clone(),
             self.windows,
+            self.app_delegate,
             self.ext_event_queue,
             Env::with_theme(),
         )?;

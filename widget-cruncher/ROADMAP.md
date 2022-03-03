@@ -67,6 +67,10 @@
  - Difference in Harness(Button) vs Harness(Flex(Button))
  - Flex alignment vs text alignment
 
+- [ ] Refactor AppDelegate
+ - Ideally, should be a single function (?)
+ - Probably unify on_event, on_command, on_action
+
 - [ ] Trait-ify druid-shell
  - [ ] ??? Start at the bottom?
 
