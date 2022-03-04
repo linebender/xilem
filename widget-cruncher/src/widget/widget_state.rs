@@ -33,6 +33,7 @@ use druid_shell::{Cursor, Region, TimerToken};
 ///
 /// [`paint`]: trait.Widget.html#tymethod.paint
 /// [`WidgetPod`]: struct.WidgetPod.html
+#[derive(Clone, Debug)]
 pub struct WidgetState {
     pub(crate) id: WidgetId,
 
@@ -127,12 +128,16 @@ pub struct WidgetState {
     // Used in event/lifecycle/etc methods that are expected to be called recursively
     // on a widget's children, to make sure each child was visited.
     #[cfg(debug_assertions)]
-    pub(crate) needs_visit: AtomicBool,
+    pub(crate) needs_visit: VisitBool,
 
     // TODO - document
     #[cfg(debug_assertions)]
     pub(crate) widget_name: &'static str,
 }
+
+// FIXME - This is a hack to have a simple Clone impl for WidgetState
+#[derive(Debug)]
+pub(crate) struct VisitBool(pub AtomicBool);
 
 impl WidgetState {
     pub(crate) fn new(id: WidgetId, size: Option<Size>, widget_name: &'static str) -> WidgetState {
@@ -168,7 +173,7 @@ impl WidgetState {
             text_registrations: Vec::new(),
             update_focus_chain: false,
             #[cfg(debug_assertions)]
-            needs_visit: false.into(),
+            needs_visit: VisitBool(false.into()),
             #[cfg(debug_assertions)]
             widget_name,
         }
@@ -178,14 +183,14 @@ impl WidgetState {
         #[cfg(debug_assertions)]
         {
             // TODO - the "!visited" is annoying
-            self.needs_visit.store(!visited, Ordering::SeqCst);
+            self.needs_visit.0.store(!visited, Ordering::SeqCst);
         }
     }
 
     pub(crate) fn needs_visit(&self) -> bool {
         #[cfg(debug_assertions)]
         {
-            self.needs_visit.load(Ordering::SeqCst)
+            self.needs_visit.0.load(Ordering::SeqCst)
         }
     }
 
@@ -292,5 +297,11 @@ impl WidgetState {
 
     pub(crate) fn window_origin(&self) -> Point {
         self.parent_window_origin + self.origin.to_vec2() - self.viewport_offset
+    }
+}
+
+impl Clone for VisitBool {
+    fn clone(&self) -> Self {
+        VisitBool(self.0.load(Ordering::SeqCst).into())
     }
 }

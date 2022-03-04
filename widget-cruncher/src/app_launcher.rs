@@ -27,7 +27,7 @@ impl AppLauncher {
     /// Set the [`AppDelegate`].
     ///
     /// [`AppDelegate`]: trait.AppDelegate.html
-    pub fn delegate(mut self, delegate: impl AppDelegate + 'static) -> Self {
+    pub fn with_delegate(mut self, delegate: impl AppDelegate + 'static) -> Self {
         self.app_delegate = Some(Box::new(delegate));
         self
     }

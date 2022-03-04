@@ -13,24 +13,17 @@ use crate::{
 /// A context passed in to [`AppDelegate`] functions.
 ///
 /// [`AppDelegate`]: trait.AppDelegate.html
-pub struct DelegateCtx<'a> {
-    pub(crate) command_queue: &'a mut CommandQueue,
+pub struct DelegateCtx<'a, 'b> {
+    //pub(crate) command_queue: &'a mut CommandQueue,
     pub(crate) ext_event_queue: &'a ExtEventQueue,
-    //pub(crate) main_root_widget: Option<WidgetView<'a, 'b, dyn Widget>>,
+    // FIXME - Ideally, we'd like to get a hashmap of all root widgets,
+    // but that creates "aliasing mutable references" problems
+    pub(crate) main_root_widget: WidgetView<'a, 'b, dyn Widget>,
     //pub(crate) active_windows: &'a mut HashMap<WindowId, WindowRoot>,
 }
 
-impl<'a> DelegateCtx<'a> {
-    /// Submit a [`Command`] to be run after this event is handled.
-    ///
-    /// Commands are run in the order they are submitted; all commands
-    /// submitted during the handling of an event are executed before
-    /// the [`update()`] method is called.
-    ///
-    /// [`Target::Auto`] commands will be sent to every window (`Target::Global`).
-    ///
-    /// [`Command`]: struct.Command.html
-    /// [`update()`]: trait.Widget.html#tymethod.update
+impl<'a, 'b> DelegateCtx<'a, 'b> {
+    #[cfg(FALSE)]
     pub fn submit_command(&mut self, command: impl Into<Command>) {
         self.command_queue
             .push_back(command.into().default_to(Target::Global))
@@ -44,6 +37,7 @@ impl<'a> DelegateCtx<'a> {
         self.ext_event_queue.make_sink()
     }
 
+    #[cfg(FALSE)]
     pub fn new_window(&mut self, desc: WindowDesc) {
         trace!("new_window");
         self.submit_command(
@@ -53,34 +47,13 @@ impl<'a> DelegateCtx<'a> {
         );
     }
 
-    // TODO
-    #[cfg(FALSE)]
-    pub fn try_get_window(&self, window_id: WindowId) -> Option<&WindowRoot> {
-        self.active_windows.get(&window_id)
+    pub fn try_get_root<W: Widget>(&mut self) -> Option<WidgetView<'_, 'b, W>> {
+        self.main_root_widget.downcast()
     }
 
-    // TODO
-    #[cfg(FALSE)]
-    pub fn get_window(&self, window_id: WindowId) -> &WindowRoot {
-        self.active_windows
-            .get(&window_id)
-            .expect("could not find window")
-    }
-
-    // TODO
-    #[cfg(FALSE)]
-    pub fn get_widget_view<W: Widget>(&mut self, window_id: WindowId) -> WidgetView<'_, 'a, W> {
-        let mut window = self
-            .active_windows
-            .get_mut(&window_id)
-            .expect("could not find window");
-
-        WidgetView {
-            global_state: todo!(),
-            parent_widget_state: todo!(),
-            widget_state: todo!(),
-            widget: todo!(),
-        }
+    pub fn get_root<W: Widget>(&mut self) -> WidgetView<'_, 'b, W> {
+        // root_widgets.get_mut(&window_id).expect("could not find window")
+        self.main_root_widget.downcast().expect("wrong widget type")
     }
 }
 

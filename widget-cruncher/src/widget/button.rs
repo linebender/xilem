@@ -91,12 +91,11 @@ impl Widget for Button {
                     ctx.set_active(true);
                     ctx.request_paint();
                     trace!("Button {:?} pressed", ctx.widget_id());
-                    ctx.submit_action(Action::ButtonPressed);
                 }
             }
             Event::MouseUp(_) => {
                 if ctx.is_active() && !ctx.is_disabled() {
-                    println!("Hello!");
+                    ctx.submit_action(Action::ButtonPressed);
                     ctx.request_paint();
                     trace!("Button {:?} released", ctx.widget_id());
                 }

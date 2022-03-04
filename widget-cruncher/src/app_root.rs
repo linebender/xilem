@@ -26,7 +26,7 @@ use crate::platform::RUN_COMMANDS_TOKEN;
 use crate::testing::MockTimerQueue;
 use crate::text::TextFieldRegistration;
 use crate::util::ExtendDrain;
-use crate::widget::widget_view::WidgetRef;
+use crate::widget::widget_view::{WidgetRef, WidgetView};
 use crate::widget::{FocusChange, WidgetState};
 use crate::{command as sys_cmd, DruidWinHandler, WindowDesc};
 use crate::{
@@ -73,6 +73,8 @@ struct AppRootInner {
     pub window_requests: VecDeque<WindowDesc>,
     pub pending_windows: HashMap<WindowId, PendingWindow>,
     pub active_windows: HashMap<WindowId, WindowRoot>,
+    // FIXME - remove
+    pub main_window_id: WindowId,
     /// The id of the most-recently-focused window that has a menu. On macOS, this
     /// is the window that's currently in charge of the app menu.
     #[allow(unused)]
@@ -127,6 +129,8 @@ impl AppRoot {
             action_queue: VecDeque::new(),
             ext_event_queue,
             file_dialogs: HashMap::new(),
+            // FIXME - this is awful
+            main_window_id: windows.first().unwrap().id,
             menu_window: None,
             env,
             window_requests: VecDeque::new(),
@@ -168,12 +172,13 @@ impl AppRoot {
             if inner.ext_event_queue.handle_window_id.is_none() {
                 inner.set_ext_event_idle_handler(window_id);
             }
-
-            inner.with_delegate(|delegate, ctx, env| delegate.on_window_added(ctx, window_id, env));
-
-            let event = Event::WindowConnected;
-            inner.do_window_event(window_id, event);
         }
+
+        self.with_delegate(|delegate, ctx, env| delegate.on_window_added(ctx, window_id, env));
+
+        let event = Event::WindowConnected;
+        self.do_window_event(window_id, event);
+
         self.process_commands_and_actions();
         self.inner().invalidate_paint_regions();
         // TODO - IME?
@@ -184,10 +189,10 @@ impl AppRoot {
     ///
     /// We clean up resources.
     pub fn window_removed(&mut self, window_id: WindowId) {
+        self.with_delegate(|delegate, ctx, env| delegate.on_window_removed(ctx, window_id, env));
+
         let mut inner = self.inner.borrow_mut();
         inner.active_windows.remove(&window_id);
-
-        inner.with_delegate(|delegate, ctx, env| delegate.on_window_removed(ctx, window_id, env));
 
         // If there are no active or pending windows, we quit the run loop.
         if inner.active_windows.is_empty() && inner.pending_windows.is_empty() {
@@ -228,7 +233,7 @@ impl AppRoot {
                 self.do_cmd(command);
                 result = Handled::Yes;
             } else {
-                result = self.inner().do_window_event(window_id, event);
+                result = self.do_window_event(window_id, event);
             };
         }
 
@@ -376,8 +381,10 @@ impl AppRoot {
             }
 
             let next_action = self.inner().action_queue.pop_front();
-            if let Some(action) = next_action {
-                // TODO - send to delegate
+            if let Some((action, widget_id, window_id)) = next_action {
+                self.with_delegate(|delegate, ctx, env| {
+                    delegate.on_action(ctx, window_id, widget_id, action, env)
+                });
                 continue;
             }
 
@@ -395,7 +402,7 @@ impl AppRoot {
                 }
                 Some(ExtMessage::Promise(promise_result, widget_id, window_id)) => {
                     // TODO
-                    self.inner().do_window_event(
+                    self.do_window_event(
                         window_id,
                         Event::Internal(InternalEvent::RoutePromiseResult(
                             promise_result,
@@ -411,9 +418,7 @@ impl AppRoot {
     /// Handle a command. Top level commands (e.g. for creating and destroying
     /// windows) have their logic here; other commands are passed to the window.
     fn do_cmd(&mut self, cmd: Command) {
-        if self
-            .inner()
-            .with_delegate(|delegate, ctx, env| delegate.on_command(ctx, &cmd, env))
+        if self.with_delegate(|delegate, ctx, env| delegate.on_command(ctx, &cmd, env))
             == Handled::Yes
         {
             return;
@@ -461,6 +466,92 @@ impl AppRoot {
         }
     }
 
+    fn do_window_event(&mut self, source_id: WindowId, event: Event) -> Handled {
+        if matches!(
+            event,
+            Event::Command(..) | Event::Internal(InternalEvent::TargetedCommand(..))
+        ) {
+            unreachable!("commands should be dispatched via dispatch_cmd");
+        }
+
+        if self.with_delegate(|delegate, ctx, env| delegate.on_event(ctx, source_id, &event, env))
+            == Handled::Yes
+        {
+            return Handled::Yes;
+        }
+
+        let mut inner = self.inner.borrow_mut();
+        let inner = inner.deref_mut();
+
+        if let Some(win) = inner.active_windows.get_mut(&source_id) {
+            win.event(
+                event,
+                &mut inner.debug_logger,
+                &mut inner.command_queue,
+                &mut inner.action_queue,
+                &inner.env,
+            )
+        } else {
+            // TODO - error message?
+            Handled::No
+        }
+    }
+
+    /// A helper fn for setting up the `DelegateCtx`. Takes a closure with
+    /// an arbitrary return type `R`, and returns `Some(R)` if an `AppDelegate`
+    /// is configured.
+    fn with_delegate<R>(
+        &mut self,
+        f: impl FnOnce(&mut dyn AppDelegate, &mut DelegateCtx, &Env) -> R,
+    ) -> R {
+        let mut inner = self.inner.borrow_mut();
+        let inner = inner.deref_mut();
+
+        let mut window = inner.active_windows.get_mut(&inner.main_window_id).unwrap();
+        let mut fake_widget_state;
+        let res = {
+            let mut global_state = ContextState::new(
+                window.ext_event_sink.clone(),
+                &mut inner.debug_logger,
+                &mut inner.command_queue,
+                &mut inner.action_queue,
+                window.mock_timer_queue.as_mut(),
+                &window.handle,
+                inner.main_window_id,
+                window.focus,
+            );
+            fake_widget_state = window.root.state.clone();
+
+            let main_root_widget = WidgetView {
+                global_state: &mut global_state,
+                parent_widget_state: &mut fake_widget_state,
+                widget_state: &mut window.root.state,
+                widget: &mut *window.root.inner,
+            };
+
+            let mut ctx = DelegateCtx {
+                //command_queue: &mut inner.command_queue,
+                ext_event_queue: &mut inner.ext_event_queue,
+                main_root_widget,
+            };
+
+            f(&mut *inner.app_delegate, &mut ctx, &inner.env)
+        };
+
+        // TODO - handle cursor, timers and validation
+
+        window.post_event_processing(
+            &mut fake_widget_state,
+            &mut inner.debug_logger,
+            &mut inner.command_queue,
+            &mut inner.action_queue,
+            &inner.env,
+            false,
+        );
+
+        res
+    }
+
     // -- Handle "new window" requests --
 
     fn process_window_requests(&mut self) {
@@ -499,20 +590,6 @@ impl AppRoot {
 }
 
 impl AppRootInner {
-    /// A helper fn for setting up the `DelegateCtx`. Takes a closure with
-    /// an arbitrary return type `R`, and returns `Some(R)` if an `AppDelegate`
-    /// is configured.
-    fn with_delegate<R>(
-        &mut self,
-        f: impl FnOnce(&mut dyn AppDelegate, &mut DelegateCtx, &Env) -> R,
-    ) -> R {
-        let mut ctx = DelegateCtx {
-            command_queue: &mut self.command_queue,
-            ext_event_queue: &mut self.ext_event_queue,
-        };
-        f(&mut *self.app_delegate, &mut ctx, &self.env)
-    }
-
     /// invalidate any window handles that need it.
     ///
     /// This should always be called at the end of an event update cycle,
@@ -591,34 +668,6 @@ impl AppRootInner {
     fn request_configure_window(&mut self, config: &WindowConfig, id: WindowId) {
         if let Some(win) = self.active_windows.get_mut(&id) {
             config.apply_to_handle(&mut win.handle);
-        }
-    }
-
-    fn do_window_event(&mut self, source_id: WindowId, event: Event) -> Handled {
-        if matches!(
-            event,
-            Event::Command(..) | Event::Internal(InternalEvent::TargetedCommand(..))
-        ) {
-            unreachable!("commands should be dispatched via dispatch_cmd");
-        }
-
-        if self.with_delegate(|delegate, ctx, env| delegate.on_event(ctx, source_id, &event, env))
-            == Handled::Yes
-        {
-            return Handled::Yes;
-        }
-
-        if let Some(win) = self.active_windows.get_mut(&source_id) {
-            win.event(
-                event,
-                &mut self.debug_logger,
-                &mut self.command_queue,
-                &mut self.action_queue,
-                &self.env,
-            )
-        } else {
-            // TODO - error message?
-            Handled::No
         }
     }
 

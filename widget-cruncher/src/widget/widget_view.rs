@@ -213,7 +213,7 @@ impl<'w> WidgetRef<'w, dyn Widget> {
 // --- Ref logic ---
 
 impl<'a, 'b, W: Widget> WidgetView<'a, 'b, W> {
-    pub fn as_dyn(&'a mut self) -> WidgetView<'a, 'b, dyn Widget> {
+    pub fn as_dyn(&mut self) -> WidgetView<'_, 'b, dyn Widget> {
         WidgetView {
             global_state: self.global_state,
             parent_widget_state: self.parent_widget_state,
@@ -224,7 +224,7 @@ impl<'a, 'b, W: Widget> WidgetView<'a, 'b, W> {
 }
 
 impl<'a, 'b, W: Widget + ?Sized> WidgetView<'a, 'b, W> {
-    pub fn downcast<W2: Widget>(&'a mut self) -> Option<WidgetView<'a, 'b, W2>> {
+    pub fn downcast<W2: Widget>(&mut self) -> Option<WidgetView<'_, 'b, W2>> {
         Some(WidgetView {
             global_state: self.global_state,
             parent_widget_state: self.parent_widget_state,

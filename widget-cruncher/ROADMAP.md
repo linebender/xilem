@@ -2,7 +2,7 @@
 
 - [X] Clean up imports
 - [X] Add impl Deref for WidgetRef
-- [ ] Add downcast to WidgetRef and WidgetView
+- [X] Add downcast to WidgetRef and WidgetView
 - [ ] Add WidgetView::as_ref
 - [ ] Add WidgetAdded test
 - [ ] Rename ContextState to GlobalPassCtx
@@ -14,11 +14,11 @@
  - [X] Look at coverage of every file, write a list of target coverage
  - [X] Add timers to harness
 
-- [ ] Add action queue
-- [ ] Re-add ExtEvent + AppDelegate
+- [X] Add action queue
+- [X] Re-add ExtEvent + AppDelegate
 
 - [ ] Write examples
- - [ ] To-do List
+ - [X] To-do List
  - [X] Fix blocking_function example
  - [ ] Rewrite Disney example
 

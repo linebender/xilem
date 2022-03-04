@@ -1,14 +1,9 @@
-//! This is a very small example of how to setup a druid application.
-//! It does the almost bare minimum while still being useful.
-
-// On Windows platform, don't show a console when opening the app.
 #![windows_subsystem = "windows"]
 
-// TODO - rework imports
 use widget_cruncher::action::Action;
 use widget_cruncher::app_delegate::{AppDelegate, DelegateCtx};
-
 use widget_cruncher::widget::prelude::*;
+use widget_cruncher::widget::widget_view::WidgetView;
 use widget_cruncher::widget::{Button, Flex, Label};
 use widget_cruncher::{AppLauncher, WindowDesc, WindowId};
 
@@ -19,7 +14,7 @@ struct Delegate;
 impl AppDelegate for Delegate {
     fn on_action(
         &mut self,
-        _ctx: &mut DelegateCtx,
+        ctx: &mut DelegateCtx,
         _window_id: WindowId,
         _widget_id: WidgetId,
         action: Action,
@@ -27,17 +22,18 @@ impl AppDelegate for Delegate {
     ) {
         match action {
             Action::ButtonPressed => {
-                println!("Hello");
+                let mut flex: WidgetView<Flex> = ctx.get_root();
+                flex.add_child(Label::new("Hello"));
             }
-            _ => {}
+            Action::TextChanged(_) => todo!(),
         }
     }
 }
 
-pub fn main() {
+fn main() {
     // describe the main window
     let main_window = WindowDesc::new(build_root_widget())
-        .title("Hello World!")
+        .title("To-do list")
         .window_size((400.0, 400.0));
 
     // start the application. Here we pass in the application state.
@@ -49,14 +45,10 @@ pub fn main() {
 }
 
 fn build_root_widget() -> impl Widget {
-    let label = Label::new("Hello").with_text_size(32.0);
-
-    // a button that says "hello"
-    let button = Button::new("Say hello");
+    let button = Button::new("Add task");
 
     // arrange the two widgets vertically, with some padding
     Flex::column()
-        .with_child(label)
-        .with_spacer(VERTICAL_WIDGET_SPACING)
         .with_child(button)
+        .with_spacer(VERTICAL_WIDGET_SPACING)
 }
