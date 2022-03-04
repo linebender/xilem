@@ -17,7 +17,7 @@ use druid_shell::text::Event as ImeInvalidation;
 use druid_shell::{Cursor, TimerToken, WindowHandle};
 
 // TODO - rename lifetimes
-pub struct WidgetView<'a, 'b, W: Widget> {
+pub struct WidgetView<'a, 'b, W: Widget + ?Sized> {
     pub(crate) global_state: &'a mut ContextState<'b>,
     // FIXME - pub
     pub parent_widget_state: &'a mut WidgetState,
@@ -25,7 +25,7 @@ pub struct WidgetView<'a, 'b, W: Widget> {
     pub widget: &'a mut W,
 }
 
-impl<W: Widget> Drop for WidgetView<'_, '_, W> {
+impl<W: Widget + ?Sized> Drop for WidgetView<'_, '_, W> {
     fn drop(&mut self) {
         self.parent_widget_state.merge_up(&mut self.widget_state);
     }
@@ -106,6 +106,16 @@ impl<'w, W: Widget> WidgetRef<'w, W> {
             widget_state: self.widget_state,
             widget: self.widget,
         }
+    }
+}
+
+impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
+    // TODO - document
+    pub fn downcast<W2: Widget>(&self) -> Option<WidgetRef<'w, W2>> {
+        Some(WidgetRef {
+            widget_state: self.widget_state,
+            widget: self.widget.as_any().downcast_ref()?,
+        })
     }
 }
 
@@ -200,6 +210,30 @@ impl<'w> WidgetRef<'w, dyn Widget> {
     }
 }
 
+// --- Ref logic ---
+
+impl<'a, 'b, W: Widget> WidgetView<'a, 'b, W> {
+    pub fn as_dyn(&'a mut self) -> WidgetView<'a, 'b, dyn Widget> {
+        WidgetView {
+            global_state: self.global_state,
+            parent_widget_state: self.parent_widget_state,
+            widget_state: self.widget_state,
+            widget: self.widget,
+        }
+    }
+}
+
+impl<'a, 'b, W: Widget + ?Sized> WidgetView<'a, 'b, W> {
+    pub fn downcast<W2: Widget>(&'a mut self) -> Option<WidgetView<'a, 'b, W2>> {
+        Some(WidgetView {
+            global_state: self.global_state,
+            parent_widget_state: self.parent_widget_state,
+            widget_state: self.widget_state,
+            widget: self.widget.as_mut_any().downcast_mut()?,
+        })
+    }
+}
+
 // -
 // -
 // -
@@ -209,7 +243,7 @@ impl<'w> WidgetRef<'w, dyn Widget> {
 // -
 // -
 // methods on everyone
-impl<W: Widget> WidgetView<'_, '_, W> {
+impl<W: Widget + ?Sized> WidgetView<'_, '_, W> {
     /// get the `WidgetId` of the current widget.
     pub fn widget_id(&self) -> WidgetId {
         self.widget_state.id
@@ -270,7 +304,7 @@ impl<W: Widget> WidgetView<'_, '_, W> {
 }
 
 // methods on everyone but layoutctx
-impl<W: Widget> WidgetView<'_, '_, W> {
+impl<W: Widget + ?Sized> WidgetView<'_, '_, W> {
     /// The layout size.
     ///
     /// This is the layout size as ultimately determined by the parent
@@ -390,7 +424,7 @@ impl<W: Widget> WidgetView<'_, '_, W> {
     }
 }
 
-impl<W: Widget> WidgetView<'_, '_, W> {
+impl<W: Widget + ?Sized> WidgetView<'_, '_, W> {
     /// Set the cursor icon.
     ///
     /// This setting will be retained until [`clear_cursor`] is called, but it will only take
@@ -547,4 +581,26 @@ impl<W: Widget> WidgetView<'_, '_, W> {
         self.global_state
             .request_timer(&mut self.widget_state, deadline)
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use assert_matches::assert_matches;
+
+    use super::*;
+    use crate::widget::{Button, Label};
+    use crate::{Widget, WidgetPod};
+
+    #[test]
+    fn downcast_ref() {
+        let label = WidgetPod::new(Label::new("Hello"));
+        let dyn_widget: WidgetRef<dyn Widget> = label.as_dyn();
+
+        let label = dyn_widget.downcast::<Label>();
+        assert_matches!(label, Some(_));
+        let label = dyn_widget.downcast::<Button>();
+        assert_matches!(label, None);
+    }
+
+    // TODO - downcast_view
 }

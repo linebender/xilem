@@ -94,7 +94,7 @@ pub struct WidgetId(NonZeroU64);
 /// [`Data`]: trait.Data.html
 /// [`Env`]: struct.Env.html
 /// [`WidgetPod`]: struct.WidgetPod.html
-pub trait Widget: Any {
+pub trait Widget: AsAny {
     /// Handle an event.
     ///
     /// A number of different events (in the [`Event`] enum) are handled in this
@@ -202,6 +202,17 @@ pub trait Widget: Any {
             .unwrap_or(name)
     }
 
+    #[doc(hidden)]
+    fn as_any(&self) -> &dyn Any {
+        self.as_dyn_any()
+    }
+
+    #[doc(hidden)]
+    fn as_mut_any(&mut self) -> &mut dyn Any {
+        self.as_mut_dyn_any()
+    }
+
+    // FIXME - move to WidgetExt
     fn downcast<W: Widget>(&self) -> Option<&W>
     where
         Self: Sized,
@@ -288,6 +299,6 @@ impl Widget for Box<dyn Widget> {
     where
         Self: Sized,
     {
-        self.as_any().downcast_ref::<W>()
+        self.as_dyn_any().downcast_ref::<W>()
     }
 }
