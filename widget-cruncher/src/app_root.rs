@@ -839,7 +839,7 @@ impl WindowRoot {
         widget_id == self.root.id() || self.root.state().children.may_contain(&widget_id)
     }
 
-    fn post_event_processing(
+    pub(crate) fn post_event_processing(
         &mut self,
         widget_state: &mut WidgetState,
         debug_logger: &mut DebugLogger,

@@ -24,11 +24,12 @@ use std::sync::Arc;
 use crate::action::{Action, ActionQueue};
 //use crate::ext_event::ExtEventHost;
 use crate::command::CommandQueue;
+use crate::contexts::ContextState;
 use crate::debug_logger::DebugLogger;
 use crate::ext_event::ExtEventQueue;
 use crate::piet::{BitmapTarget, Device, Error, ImageFormat, Piet};
 use crate::platform::PendingWindow;
-use crate::widget::widget_view::WidgetRef;
+use crate::widget::widget_view::{WidgetRef, WidgetView};
 use crate::widget::WidgetState;
 use crate::*;
 use druid_shell::{KeyEvent, Modifiers, MouseButton, MouseButtons};
@@ -329,6 +330,50 @@ impl Harness {
         }
 
         inspect(self.mock_app.window.root.as_dyn(), &f);
+    }
+
+    pub fn edit_root_widget<R>(
+        &mut self,
+        f: impl Fn(WidgetView<'_, '_, dyn Widget>, &Env) -> R + 'static,
+    ) -> R {
+        // TODO - Move to MockAppRoot?
+        let window = &mut self.mock_app.window;
+        let mut fake_widget_state;
+        let res = {
+            let mut global_state = ContextState::new(
+                window.ext_event_sink.clone(),
+                &mut self.mock_app.debug_logger,
+                &mut self.mock_app.command_queue,
+                &mut self.mock_app.action_queue,
+                window.mock_timer_queue.as_mut(),
+                &window.handle,
+                window.id,
+                window.focus,
+            );
+            fake_widget_state = window.root.state.clone();
+
+            let root_widget = WidgetView {
+                global_state: &mut global_state,
+                parent_widget_state: &mut fake_widget_state,
+                widget_state: &mut window.root.state,
+                widget: &mut *window.root.inner,
+            };
+
+            f(root_widget, &self.mock_app.env)
+        };
+
+        // TODO - handle cursor, timers and validation
+
+        window.post_event_processing(
+            &mut fake_widget_state,
+            &mut self.mock_app.debug_logger,
+            &mut self.mock_app.command_queue,
+            &mut self.mock_app.action_queue,
+            &self.mock_app.env,
+            false,
+        );
+
+        res
     }
 
     pub fn pop_action(&mut self) -> Option<(Action, WidgetId)> {
