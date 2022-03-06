@@ -319,7 +319,7 @@ mod tests {
     use super::*;
     use crate::assert_render_snapshot;
     use crate::testing::Harness;
-    use crate::theme::PRIMARY_LIGHT;
+    use crate::theme::{PRIMARY_DARK, PRIMARY_LIGHT};
     use crate::widget::{Flex, SizedBox};
     use insta::assert_debug_snapshot;
     use piet_common::FontFamily;
@@ -380,5 +380,44 @@ mod tests {
         let mut harness = Harness::create(widget);
 
         assert_render_snapshot!(harness, "line_break_modes");
+    }
+
+    #[test]
+    fn edit_label() {
+        let image_1 = {
+            let label = Label::new("The quick brown fox jumps over the lazy dog")
+                .with_text_color(PRIMARY_LIGHT)
+                .with_font(FontDescriptor::new(FontFamily::MONOSPACE))
+                .with_text_size(20.0)
+                .with_line_break_mode(LineBreaking::WordWrap)
+                .with_text_alignment(TextAlignment::Center);
+
+            let mut harness = Harness::create_with_size(label, Size::new(50.0, 50.0));
+
+            harness.render()
+        };
+
+        let image_2 = {
+            let label = Label::new("Hello world")
+                .with_text_color(PRIMARY_DARK)
+                .with_text_size(40.0);
+
+            let mut harness = Harness::create_with_size(label, Size::new(50.0, 50.0));
+
+            harness.edit_root_widget(|mut label, _| {
+                let mut label = label.downcast::<Label>().unwrap();
+                label.set_text("The quick brown fox jumps over the lazy dog");
+                label.set_text_color(PRIMARY_LIGHT);
+                label.set_font(FontDescriptor::new(FontFamily::MONOSPACE));
+                label.set_text_size(20.0);
+                label.set_line_break_mode(LineBreaking::WordWrap);
+                label.set_text_alignment(TextAlignment::Center);
+            });
+
+            harness.render()
+        };
+
+        // We don't use assert_eq because we don't want rich assert
+        assert!(image_1 == image_2);
     }
 }
