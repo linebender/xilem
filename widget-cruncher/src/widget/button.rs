@@ -22,6 +22,8 @@ use crate::{theme, ArcStr, Insets, LinearGradient, UnitPoint};
 use smallvec::SmallVec;
 use tracing::{trace, trace_span, Span};
 
+use super::widget_view::WidgetView;
+
 // TODO
 // - Set label text
 // - Set label style
@@ -78,6 +80,22 @@ impl Button {
     pub fn from_label(label: Label) -> Button {
         Button {
             label: WidgetPod::new(label),
+        }
+    }
+}
+
+impl<'a, 'b> WidgetView<'a, 'b, Button> {
+    /// Set the text.
+    pub fn set_text(&mut self, new_text: impl Into<ArcStr>) {
+        self.get_label_view().set_text(new_text.into());
+    }
+
+    pub fn get_label_view(&mut self) -> WidgetView<'_, 'b, Label> {
+        WidgetView {
+            global_state: self.global_state,
+            parent_widget_state: self.widget_state,
+            widget_state: &mut self.widget.label.state,
+            widget: &mut self.widget.label.inner,
         }
     }
 }
@@ -205,6 +223,7 @@ mod tests {
     use crate::testing::widget_ids;
     use crate::testing::Harness;
     use crate::testing::TestWidgetExt;
+    use crate::theme::PRIMARY_LIGHT;
     use insta::assert_debug_snapshot;
 
     #[test]
@@ -224,5 +243,40 @@ mod tests {
             harness.pop_action(),
             Some((Action::ButtonPressed, button_id))
         );
+    }
+
+    #[test]
+    fn edit_button() {
+        let image_1 = {
+            let button = Button::from_label(
+                Label::new("The quick brown fox jumps over the lazy dog")
+                    .with_text_color(PRIMARY_LIGHT)
+                    .with_text_size(20.0),
+            );
+
+            let mut harness = Harness::create_with_size(button, Size::new(50.0, 50.0));
+
+            harness.render()
+        };
+
+        let image_2 = {
+            let button = Button::new("Hello world");
+
+            let mut harness = Harness::create_with_size(button, Size::new(50.0, 50.0));
+
+            harness.edit_root_widget(|mut button, _| {
+                let mut button = button.downcast::<Button>().unwrap();
+                button.set_text("The quick brown fox jumps over the lazy dog");
+
+                let mut label = button.get_label_view();
+                label.set_text_color(PRIMARY_LIGHT);
+                label.set_text_size(20.0);
+            });
+
+            harness.render()
+        };
+
+        // We don't use assert_eq because we don't want rich assert
+        assert!(image_1 == image_2);
     }
 }

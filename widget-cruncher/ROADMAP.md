@@ -23,7 +23,7 @@
  - [ ] Rewrite Disney example
 
 - [ ] Use WidgetView everywhere
- - [ ] Button
+ - [X] Button
  - [ ] Checkbox
  - [ ] Click
  - [ ] ClipBox
@@ -45,6 +45,10 @@
  - [ ] Check that paint_rect has children paint_rect
  - [ ] Disambiguate concept of hidden/stashed widgets
  - [ ] Fix invalidation
+
+- [ ] Fix WidgetView type
+ - [ ] Add `View` associated type to Widget
+ - [ ] Add impl DerefMut to WidgetView
 
 - [ ] Re-add Dialog
 - [ ] Refactor TextLayout
