@@ -10,6 +10,7 @@ use crate::{WidgetId, WindowId};
 pub enum Action {
     ButtonPressed,
     TextChanged(String),
+    CheckboxChecked(bool),
 }
 
 /// Our queue type

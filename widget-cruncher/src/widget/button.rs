@@ -24,10 +24,6 @@ use tracing::{trace, trace_span, Span};
 
 use super::widget_view::WidgetView;
 
-// TODO
-// - Set label text
-// - Set label style
-
 // the minimum padding added to a button.
 // NOTE: these values are chosen to match the existing look of TextBox; these
 // should be reevaluated at some point.
@@ -213,6 +209,10 @@ impl Widget for Button {
 
     fn make_trace_span(&self) -> Span {
         trace_span!("Button")
+    }
+
+    fn get_debug_text(&self) -> Option<String> {
+        Some(self.label.widget().text().to_string())
     }
 }
 

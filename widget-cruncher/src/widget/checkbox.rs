@@ -14,40 +14,62 @@
 
 //! A checkbox widget.
 
+use crate::action::Action;
 use crate::kurbo::{BezPath, Size};
 use crate::piet::{LineCap, LineJoin, LinearGradient, RenderContext, StrokeStyle, UnitPoint};
-use crate::theme;
+use crate::widget::widget_view::{WidgetRef, WidgetView};
 use crate::widget::{prelude::*, Label};
 use crate::ArcStr;
+use crate::{theme, WidgetPod};
+
 use smallvec::SmallVec;
 use tracing::{trace, trace_span, Span};
 
-// TODO
-// - Fix impl Widget
-// - Set checked
-// - Set label text
-// - Set label style
-
 /// A checkbox that toggles a `bool`.
 pub struct Checkbox {
-    child_label: Label<bool>,
+    checked: bool,
+    label: WidgetPod<Label>,
 }
 
 impl Checkbox {
     /// Create a new `Checkbox` with a text label.
-    pub fn new(text: impl Into<ArcStr>) -> Checkbox {
+    pub fn new(checked: bool, text: impl Into<ArcStr>) -> Checkbox {
         Checkbox {
-            child_label: Label::new(text),
+            checked,
+            label: WidgetPod::new(Label::new(text)),
         }
     }
 
-    /// Update the text label.
-    pub fn set_text(&mut self, label: impl Into<ArcStr>) {
-        self.child_label.set_text(label);
+    pub fn from_label(checked: bool, label: Label) -> Checkbox {
+        Checkbox {
+            checked,
+            label: WidgetPod::new(label),
+        }
     }
 }
 
-impl Widget<bool> for Checkbox {
+impl<'a, 'b> WidgetView<'a, 'b, Checkbox> {
+    pub fn set_checked(&mut self, checked: bool) {
+        self.widget.checked = checked;
+        self.request_paint();
+    }
+
+    /// Set the text.
+    pub fn set_text(&mut self, new_text: impl Into<ArcStr>) {
+        self.get_label_view().set_text(new_text.into());
+    }
+
+    pub fn get_label_view(&mut self) -> WidgetView<'_, 'b, Label> {
+        WidgetView {
+            global_state: self.global_state,
+            parent_widget_state: self.widget_state,
+            widget_state: &mut self.widget.label.state,
+            widget: &mut self.widget.label.inner,
+        }
+    }
+}
+
+impl Widget for Checkbox {
     fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, _env: &Env) {
         ctx.init();
         match event {
@@ -61,13 +83,9 @@ impl Widget<bool> for Checkbox {
             Event::MouseUp(_) => {
                 if ctx.is_active() && !ctx.is_disabled() {
                     if ctx.is_hot() {
-                        if *data {
-                            *data = false;
-                            trace!("Checkbox {:?} released - unchecked", ctx.widget_id());
-                        } else {
-                            *data = true;
-                            trace!("Checkbox {:?} released - checked", ctx.widget_id());
-                        }
+                        self.checked = !self.checked;
+                        ctx.submit_action(Action::CheckboxChecked(self.checked));
+                        trace!("Checkbox {:?} released", ctx.widget_id());
                     }
                     ctx.request_paint();
                 }
@@ -77,12 +95,13 @@ impl Widget<bool> for Checkbox {
         }
     }
 
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
+    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, _event: &StatusChange, _env: &Env) {
         ctx.init();
-        self.child_label.lifecycle(ctx, event, env);
-        if let LifeCycle::HotChanged(_) | LifeCycle::DisabledChanged(_) = event {
-            ctx.request_paint();
-        }
+        ctx.request_paint();
+    }
+
+    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
+        self.label.lifecycle(ctx, event, env);
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
@@ -90,14 +109,17 @@ impl Widget<bool> for Checkbox {
 
         let x_padding = env.get(theme::WIDGET_CONTROL_COMPONENT_PADDING);
         let check_size = env.get(theme::BASIC_WIDGET_HEIGHT);
-        let label_size = self.child_label.layout(ctx, bc, env);
+
+        let label_size = self.label.layout(ctx, bc, env);
+        self.label
+            .set_origin(ctx, env, (check_size + x_padding, 0.0).into());
 
         let desired_size = Size::new(
             check_size + x_padding + label_size.width,
             check_size.max(label_size.height),
         );
         let our_size = bc.constrain(desired_size);
-        let baseline = self.child_label.baseline_offset() + (our_size.height - label_size.height);
+        let baseline = self.label.baseline_offset() + (our_size.height - label_size.height);
         ctx.set_baseline_offset(baseline);
         trace!("Computed layout: size={}, baseline={}", our_size, baseline);
         our_size
@@ -105,11 +127,10 @@ impl Widget<bool> for Checkbox {
 
     fn paint(&mut self, ctx: &mut PaintCtx, env: &Env) {
         ctx.init();
-        let size = env.get(theme::BASIC_WIDGET_HEIGHT);
-        let x_padding = env.get(theme::WIDGET_CONTROL_COMPONENT_PADDING);
+        let check_size = env.get(theme::BASIC_WIDGET_HEIGHT);
         let border_width = 1.;
 
-        let rect = Size::new(size, size)
+        let rect = Size::new(check_size, check_size)
             .to_rect()
             .inset(-border_width / 2.)
             .to_rounded_rect(2.);
@@ -134,7 +155,7 @@ impl Widget<bool> for Checkbox {
 
         ctx.stroke(rect, &border_color, border_width);
 
-        if *data {
+        if self.checked {
             // Paint the checkmark
             let mut path = BezPath::new();
             path.move_to((4.0, 9.0));
@@ -155,18 +176,98 @@ impl Widget<bool> for Checkbox {
         }
 
         // Paint the text label
-        self.child_label.draw_at(ctx, (size + x_padding, 0.0));
+        self.label.paint(ctx, env);
+    }
+
+    fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
+        SmallVec::new()
     }
 
     fn make_trace_span(&self) -> Span {
         trace_span!("Checkbox")
     }
 
-    fn children(&self) -> SmallVec<[&dyn AsWidgetPod; 16]> {
-        SmallVec::new()
+    fn get_debug_text(&self) -> Option<String> {
+        Some(format!(
+            "[{}] {}",
+            if self.checked { "X" } else { " " },
+            self.label.widget().text()
+        ))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::assert_render_snapshot;
+    use crate::testing::widget_ids;
+    use crate::testing::Harness;
+    use crate::testing::TestWidgetExt;
+    use crate::theme::PRIMARY_LIGHT;
+    use insta::assert_debug_snapshot;
+
+    #[test]
+    fn simple_checkbox() {
+        let [checkbox_id] = widget_ids();
+        let widget = Checkbox::new(false, "Hello").with_id(checkbox_id);
+
+        let mut harness = Harness::create(widget);
+
+        assert_debug_snapshot!(harness.root_widget());
+        assert_render_snapshot!(harness, "hello_unchecked");
+
+        assert_eq!(harness.pop_action(), None);
+
+        harness.mouse_click_on(checkbox_id);
+        assert_eq!(
+            harness.pop_action(),
+            Some((Action::CheckboxChecked(true), checkbox_id))
+        );
+
+        assert_debug_snapshot!(harness.root_widget());
+        assert_render_snapshot!(harness, "hello_checked");
+
+        harness.mouse_click_on(checkbox_id);
+        assert_eq!(
+            harness.pop_action(),
+            Some((Action::CheckboxChecked(false), checkbox_id))
+        );
     }
 
-    fn children_mut(&mut self) -> SmallVec<[&mut dyn AsWidgetPod; 16]> {
-        SmallVec::new()
+    #[test]
+    fn edit_checkbox() {
+        let image_1 = {
+            let checkbox = Checkbox::from_label(
+                true,
+                Label::new("The quick brown fox jumps over the lazy dog")
+                    .with_text_color(PRIMARY_LIGHT)
+                    .with_text_size(20.0),
+            );
+
+            let mut harness = Harness::create_with_size(checkbox, Size::new(50.0, 50.0));
+
+            harness.render()
+        };
+
+        let image_2 = {
+            let checkbox = Checkbox::new(false, "Hello world");
+
+            let mut harness = Harness::create_with_size(checkbox, Size::new(50.0, 50.0));
+
+            harness.edit_root_widget(|mut checkbox, _| {
+                let mut checkbox = checkbox.downcast::<Checkbox>().unwrap();
+                checkbox.set_checked(true);
+                checkbox.set_text("The quick brown fox jumps over the lazy dog");
+
+                let mut label = checkbox.get_label_view();
+                label.set_text_color(PRIMARY_LIGHT);
+                label.set_text_size(20.0);
+            });
+
+            harness.render()
+        };
+
+        // We don't use assert_eq because we don't want rich assert
+        assert!(image_1 == image_2);
     }
 }

@@ -15,6 +15,7 @@
 //! Common widgets.
 
 mod button;
+mod checkbox;
 mod clip_box;
 mod flex;
 mod image;
@@ -22,7 +23,6 @@ mod label;
 mod sized_box;
 mod spinner;
 mod web_image;
-//mod checkbox;
 //mod click;
 //mod textbox;
 
@@ -39,7 +39,7 @@ mod tests;
 #[doc(hidden)]
 pub use widget::{Widget, WidgetId};
 
-//pub use checkbox::Checkbox;
+pub use checkbox::Checkbox;
 //pub use click::Click;
 //pub use textbox::TextBox;
 pub use self::image::Image;

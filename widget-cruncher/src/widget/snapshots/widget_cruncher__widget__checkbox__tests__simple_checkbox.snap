@@ -1,0 +1,9 @@
+---
+source: widget-cruncher/src/widget/checkbox.rs
+assertion_line: 199
+expression: harness.root_widget()
+
+---
+SizedBox(
+    Checkbox<[ ] Hello>,
+)

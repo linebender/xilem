@@ -24,7 +24,7 @@
 
 - [ ] Use WidgetView everywhere
  - [X] Button
- - [ ] Checkbox
+ - [X] Checkbox
  - [ ] Click
  - [ ] ClipBox
  - [ ] Flex
