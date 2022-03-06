@@ -23,7 +23,6 @@ mod label;
 mod sized_box;
 mod spinner;
 mod web_image;
-//mod click;
 //mod textbox;
 
 #[allow(clippy::module_inception)]
@@ -40,7 +39,6 @@ mod tests;
 pub use widget::{Widget, WidgetId};
 
 pub use checkbox::Checkbox;
-//pub use click::Click;
 //pub use textbox::TextBox;
 pub use self::image::Image;
 pub use button::Button;
