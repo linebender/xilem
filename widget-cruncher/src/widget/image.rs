@@ -18,7 +18,7 @@
 use crate::kurbo::Rect;
 use crate::piet::{Image as _, ImageBuf, InterpolationMode, PietImage};
 use crate::widget::prelude::*;
-use crate::widget::widget_view::WidgetRef;
+use crate::widget::widget_view::{WidgetRef, WidgetView};
 use crate::widget::FillStrat;
 
 use smallvec::SmallVec;
@@ -58,30 +58,14 @@ impl Image {
     #[inline]
     pub fn fill_mode(mut self, mode: FillStrat) -> Self {
         self.fill = mode;
-        // Invalidation not necessary
         self
-    }
-
-    /// Modify the widget's fill strategy.
-    #[inline]
-    pub fn set_fill_mode(&mut self, newfil: FillStrat) {
-        self.fill = newfil;
-        // Invalidation not necessary
     }
 
     /// Builder-style method for specifying the interpolation strategy.
     #[inline]
     pub fn interpolation_mode(mut self, interpolation: InterpolationMode) -> Self {
         self.interpolation = interpolation;
-        // Invalidation not necessary
         self
-    }
-
-    /// Modify the widget's interpolation mode.
-    #[inline]
-    pub fn set_interpolation_mode(&mut self, interpolation: InterpolationMode) {
-        self.interpolation = interpolation;
-        // Invalidation not necessary
     }
 
     /// Builder-style method for setting the area of the image that will be displayed.
@@ -90,8 +74,23 @@ impl Image {
     #[inline]
     pub fn clip_area(mut self, clip_area: Option<Rect>) -> Self {
         self.clip_area = clip_area;
-        // Invalidation not necessary
         self
+    }
+}
+
+impl<'a, 'b> WidgetView<'a, 'b, Image> {
+    /// Modify the widget's fill strategy.
+    #[inline]
+    pub fn set_fill_mode(&mut self, newfil: FillStrat) {
+        self.widget.fill = newfil;
+        self.request_paint();
+    }
+
+    /// Modify the widget's interpolation mode.
+    #[inline]
+    pub fn set_interpolation_mode(&mut self, interpolation: InterpolationMode) {
+        self.widget.interpolation = interpolation;
+        self.request_paint();
     }
 
     /// Set the area of the image that will be displayed.
@@ -99,21 +98,16 @@ impl Image {
     /// If `None`, then the whole image will be displayed.
     #[inline]
     pub fn set_clip_area(&mut self, clip_area: Option<Rect>) {
-        self.clip_area = clip_area;
-        // Invalidation not necessary
+        self.widget.clip_area = clip_area;
+        self.request_paint();
     }
 
     /// Set new `ImageBuf`.
     #[inline]
     pub fn set_image_data(&mut self, image_data: ImageBuf) {
-        self.image_data = image_data;
-        self.invalidate();
-    }
-
-    /// Invalidate the image cache, forcing it to be recreated.
-    #[inline]
-    fn invalidate(&mut self) {
-        self.paint_data = None;
+        self.widget.image_data = image_data;
+        self.widget.paint_data = None;
+        self.request_layout();
     }
 }
 
@@ -197,5 +191,124 @@ impl Widget for Image {
 
     fn make_trace_span(&self) -> Span {
         trace_span!("Image")
+    }
+}
+
+#[allow(unused)]
+// FIXME - remove cfg?
+#[cfg(not(target_arch = "wasm32"))]
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::assert_render_snapshot;
+    use crate::piet::ImageFormat;
+    use crate::testing::widget_ids;
+    use crate::testing::Harness;
+    use crate::testing::TestWidgetExt;
+    use crate::theme::PRIMARY_LIGHT;
+    use insta::assert_debug_snapshot;
+
+    /// Painting an empty image shouldn't crash.
+    #[test]
+    fn empty_paint() {
+        let image_data = ImageBuf::empty();
+
+        let image_widget =
+            Image::new(image_data).interpolation_mode(InterpolationMode::NearestNeighbor);
+
+        let mut harness = Harness::create(image_widget);
+        let _ = harness.render();
+    }
+
+    #[test]
+    fn tall_paint() {
+        let image_data = ImageBuf::from_raw(
+            vec![255, 255, 255, 0, 0, 0, 0, 0, 0, 255, 255, 255],
+            ImageFormat::Rgb,
+            2,
+            2,
+        );
+
+        let image_widget =
+            Image::new(image_data).interpolation_mode(InterpolationMode::NearestNeighbor);
+
+        let mut harness = Harness::create_with_size(image_widget, Size::new(40., 60.));
+        assert_render_snapshot!(harness, "tall_paint");
+    }
+
+    #[test]
+    fn edit_image_attributes() {
+        let image_data = ImageBuf::from_raw(
+            vec![
+                255, 255, 255, 244, 244, 244, 255, 255, 255, // row 0
+                0, 0, 0, 1, 1, 1, 0, 0, 0, // row 1
+                255, 255, 255, 244, 244, 244, 255, 255, 255, // row 2
+            ],
+            ImageFormat::Rgb,
+            3,
+            3,
+        );
+
+        let render_1 = {
+            let image_widget = Image::new(image_data.clone())
+                .fill_mode(FillStrat::Cover)
+                .interpolation_mode(InterpolationMode::NearestNeighbor)
+                .clip_area(Some(Rect::new(0.0, 0.0, 1.0, 1.0)));
+
+            let mut harness = Harness::create_with_size(image_widget, Size::new(40.0, 60.0));
+
+            harness.render()
+        };
+
+        let render_2 = {
+            let image_widget = Image::new(image_data.clone());
+
+            let mut harness = Harness::create_with_size(image_widget, Size::new(40.0, 60.0));
+
+            harness.edit_root_widget(|mut image, _| {
+                let mut image = image.downcast::<Image>().unwrap();
+                image.set_fill_mode(FillStrat::Cover);
+                image.set_interpolation_mode(InterpolationMode::NearestNeighbor);
+                image.set_clip_area(Some(Rect::new(0.0, 0.0, 1.0, 1.0)));
+            });
+
+            harness.render()
+        };
+
+        // TODO - write comparison function that creates rich diff
+        // and saves it in /tmp folder
+        // We don't use assert_eq because we don't want rich assert
+        assert!(render_1 == render_2);
+    }
+
+    #[test]
+    fn edit_image() {
+        let image_data = ImageBuf::from_raw(vec![255; 3 * 8 * 8], ImageFormat::Rgb, 8, 8);
+
+        let render_1 = {
+            let image_widget = Image::new(image_data.clone());
+
+            let mut harness = Harness::create_with_size(image_widget, Size::new(40.0, 60.0));
+
+            harness.render()
+        };
+
+        let render_2 = {
+            let other_image_data = ImageBuf::from_raw(vec![10; 3 * 8 * 8], ImageFormat::Rgb, 8, 8);
+            let image_widget = Image::new(other_image_data);
+
+            let mut harness = Harness::create_with_size(image_widget, Size::new(40.0, 60.0));
+
+            harness.edit_root_widget(|mut image, _| {
+                let mut image = image.downcast::<Image>().unwrap();
+                image.set_image_data(image_data);
+            });
+
+            harness.render()
+        };
+
+        // TODO - write comparison function
+        // We don't use assert_eq because we don't want rich assert
+        assert!(render_1 == render_2);
     }
 }

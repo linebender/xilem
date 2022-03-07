@@ -340,7 +340,7 @@ impl Harness {
 
     pub fn edit_root_widget<R>(
         &mut self,
-        f: impl Fn(WidgetView<'_, '_, dyn Widget>, &Env) -> R + 'static,
+        f: impl FnOnce(WidgetView<'_, '_, dyn Widget>, &Env) -> R,
     ) -> R {
         // TODO - Move to MockAppRoot?
         let window = &mut self.mock_app.window;

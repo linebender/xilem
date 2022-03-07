@@ -27,7 +27,7 @@
  - [X] Checkbox
  - [ ] ClipBox
  - [X] Flex
- - [ ] Image
+ - [X] Image
  - [X] Label
  - [ ] SizedBox
  - [ ] Spinner
@@ -135,12 +135,11 @@
 -> [X] widget utils
 -> [ ] FillStrat
 -> [ ] Widgets
- -> [ ] Button
- -> [ ] Checkbox
- -> [ ] Click
+ -> [X] Button
+ -> [X] Checkbox
  -> [ ] ClipBox
- -> [ ] Flex
- -> [ ] Image
+ -> [X] Flex
+ -> [X] Image
  -> [X] Label
  -> [ ] SizedBox
  -> [ ] Spinner
@@ -175,6 +174,8 @@ Make library of commonly desired layouts
 - Horizontally
 - Side gutters
 - Document format
+
+How do make easily-readable test of Flex, FillStrat layout?
 
 
 ## Passes
