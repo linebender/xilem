@@ -26,6 +26,7 @@ impl AppDelegate for Delegate {
                 flex.add_child(Label::new("Hello"));
             }
             Action::TextChanged(_) => todo!(),
+            _ => {}
         }
     }
 }

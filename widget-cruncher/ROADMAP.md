@@ -7,7 +7,7 @@
 - [ ] Add WidgetAdded test
 - [ ] Rename ContextState to GlobalPassCtx
 - [ ] Remove ExtendDrain
-- [ ] Brainstorming names for AppDelegate, Action, ExtEvent
+- [ ] Brainstorming names for AppDelegate, Harness methods, Action, ExtEvent
 
 - [X] Rewrite tests
  - [X] Create coverage profile
@@ -26,7 +26,7 @@
  - [X] Button
  - [X] Checkbox
  - [ ] ClipBox
- - [ ] Flex
+ - [X] Flex
  - [ ] Image
  - [X] Label
  - [ ] SizedBox

@@ -234,6 +234,18 @@ impl<'a, 'b, W: Widget + ?Sized> WidgetView<'a, 'b, W> {
     }
 }
 
+// TODO - remove
+impl<'a, 'b> WidgetView<'a, 'b, Box<dyn Widget>> {
+    pub fn downcast_box<W2: Widget>(&mut self) -> Option<WidgetView<'_, 'b, W2>> {
+        Some(WidgetView {
+            global_state: self.global_state,
+            parent_widget_state: self.parent_widget_state,
+            widget_state: self.widget_state,
+            widget: (&mut **self.widget).as_mut_any().downcast_mut()?,
+        })
+    }
+}
+
 // -
 // -
 // -

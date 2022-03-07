@@ -212,7 +212,7 @@ pub trait Widget: AsAny {
         self.as_mut_dyn_any()
     }
 
-    // FIXME - move to WidgetExt
+    // FIXME - move to WidgetExt or remove
     fn downcast<W: Widget>(&self) -> Option<&W>
     where
         Self: Sized,
@@ -257,6 +257,7 @@ impl WidgetId {
     }
 }
 
+// TODO - remove
 impl Widget for Box<dyn Widget> {
     fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, env: &Env) {
         self.deref_mut().on_event(ctx, event, env)

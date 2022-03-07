@@ -144,6 +144,11 @@ impl Harness {
     pub fn process_event(&mut self, event: Event) {
         self.mock_app.event(event);
 
+        self.post_event_stuff();
+    }
+
+    // TODO - rename
+    fn post_event_stuff(&mut self) {
         loop {
             let cmd = self.mock_app.command_queue.pop_front();
             match cmd {
@@ -178,6 +183,7 @@ impl Harness {
 
         let mut piet = RenderContextGuard(render_target.render_context());
 
+        // FIXME - this doesn't make sense given we might render to a fresh surface
         let invalid = std::mem::replace(self.window_mut().invalid_mut(), Region::EMPTY);
         self.mock_app.paint_region(&mut piet.0, &invalid);
     }
@@ -372,6 +378,7 @@ impl Harness {
             &self.mock_app.env,
             false,
         );
+        self.post_event_stuff();
 
         res
     }

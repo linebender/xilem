@@ -23,8 +23,7 @@ use smallvec::SmallVec;
 use tracing::{trace, trace_span, Span};
 
 // TODO
-// - Splice widgets
-// - Get child ref
+// - Factorize builder/setter code
 
 /// A container with either horizontal or vertical layout.
 ///
@@ -248,7 +247,7 @@ impl Flex {
 
 // --- Mutate live Flex - WidgetView ---
 
-impl WidgetView<'_, '_, Flex> {
+impl<'a, 'b> WidgetView<'a, 'b, Flex> {
     // --- Mutate live Flex ---
 
     /// Set the childrens' [`CrossAxisAlignment`].
@@ -397,6 +396,120 @@ impl WidgetView<'_, '_, Flex> {
         self.widget.children.push(new_child);
         // TODO
         self.widget_state.needs_layout = true;
+    }
+
+    /// Add a non-flex child widget.
+    ///
+    /// See also [`with_child`].
+    ///
+    /// [`with_child`]: Flex::with_child
+    pub fn insert_child(&mut self, idx: usize, child: impl Widget + 'static) {
+        let child = Child::Fixed {
+            widget: WidgetPod::new(Box::new(child)),
+            alignment: None,
+        };
+        self.widget.children.insert(idx, child);
+        // TODO
+        self.widget_state.children_changed = true;
+        self.widget_state.needs_layout = true;
+    }
+
+    pub fn insert_flex_child(
+        &mut self,
+        idx: usize,
+        child: impl Widget + 'static,
+        params: impl Into<FlexParams>,
+    ) {
+        let params = params.into();
+        let child = if params.flex > 0.0 {
+            Child::Flex {
+                widget: WidgetPod::new(Box::new(child)),
+                alignment: params.alignment,
+                flex: params.flex,
+            }
+        } else {
+            // TODO
+            tracing::warn!("Flex value should be > 0.0. To add a non-flex child use the add_child or with_child methods.\nSee the docs for more information: https://docs.rs/druid/0.7.0/druid/widget/struct.Flex.html");
+            Child::Fixed {
+                widget: WidgetPod::new(Box::new(child)),
+                alignment: None,
+            }
+        };
+        self.widget.children.insert(idx, child);
+        // TODO
+        self.widget_state.children_changed = true;
+        self.widget_state.needs_layout = true;
+    }
+
+    // TODO - remove
+    /// Add a spacer widget with a standard size.
+    ///
+    /// The actual value of this spacer depends on whether this container is
+    /// a row or column, as well as theme settings.
+    pub fn insert_default_spacer(&mut self, idx: usize) {
+        let key = match self.widget.direction {
+            Axis::Vertical => crate::theme::WIDGET_PADDING_VERTICAL,
+            Axis::Horizontal => crate::theme::WIDGET_PADDING_HORIZONTAL,
+        };
+        self.insert_spacer(idx, key);
+        // TODO
+        self.widget_state.needs_layout = true;
+    }
+
+    /// Add an empty spacer widget with the given size.
+    ///
+    /// If you are laying out standard controls in this container, you should
+    /// generally prefer to use [`add_default_spacer`].
+    ///
+    /// [`add_default_spacer`]: Flex::add_default_spacer
+    pub fn insert_spacer(&mut self, idx: usize, len: impl Into<KeyOrValue<f64>>) {
+        let mut value = len.into();
+        if let KeyOrValue::Concrete(ref mut len) = value {
+            if *len < 0.0 {
+                tracing::warn!("add_spacer called with negative length: {}", len);
+            }
+            *len = len.clamp(0.0, f64::MAX);
+        }
+
+        let new_child = Child::FixedSpacer(value, 0.0);
+        self.widget.children.insert(idx, new_child);
+        // TODO
+        self.widget_state.needs_layout = true;
+    }
+
+    /// Add an empty spacer widget with a specific `flex` factor.
+    pub fn insert_flex_spacer(&mut self, idx: usize, flex: f64) {
+        let flex = if flex >= 0.0 {
+            flex
+        } else {
+            debug_panic!("add_spacer called with negative length: {}", flex);
+            0.0
+        };
+        let new_child = Child::FlexedSpacer(flex, 0.0);
+        self.widget.children.insert(idx, new_child);
+        // TODO
+        self.widget_state.needs_layout = true;
+    }
+
+    pub fn remove_child(&mut self, idx: usize) {
+        self.widget.children.remove(idx);
+        self.widget_state.needs_layout = true;
+    }
+
+    // FIXME - Remove Box
+    pub fn get_child_view(&mut self, idx: usize) -> Option<WidgetView<'_, 'b, Box<dyn Widget>>> {
+        let child = match &mut self.widget.children[idx] {
+            Child::Fixed { widget, .. } | Child::Flex { widget, .. } => widget,
+            Child::FixedSpacer(..) => return None,
+            Child::FlexedSpacer(..) => return None,
+        };
+
+        Some(WidgetView {
+            global_state: self.global_state,
+            parent_widget_state: self.widget_state,
+            widget_state: &mut child.state,
+            widget: &mut child.inner,
+        })
     }
 
     pub fn clear(&mut self) {
@@ -921,6 +1034,9 @@ impl Child {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::assert_render_snapshot;
+    use crate::testing::Harness;
+    use crate::widget::Label;
     use test_log::test;
 
     #[test]
@@ -993,6 +1109,7 @@ mod tests {
         assert_eq!(vec(a, 39., 5), vec![4., 8., 7., 8., 8., 4.]);
     }
 
+    // TODO - fix this test
     #[test]
     #[should_panic]
     fn test_invalid_flex_params() {
@@ -1005,5 +1122,310 @@ mod tests {
 
         let params = FlexParams::new(-1.0, None);
         approx_eq!(f64, params.flex, 1.0, ulps = 2);
+    }
+
+    // TODO - Reduce copy-pasting?
+    #[test]
+    fn flex_row_cross_axis_snapshots() {
+        let widget = Flex::row()
+            .with_child(Label::new("hello"))
+            .with_flex_child(Label::new("world"), 1.0)
+            .with_child(Label::new("foo"))
+            .with_flex_child(
+                Label::new("bar"),
+                FlexParams::new(2.0, CrossAxisAlignment::Start),
+            );
+
+        let mut harness = Harness::create(widget);
+
+        harness.edit_root_widget(|mut flex, _| {
+            let mut flex = flex.downcast::<Flex>().unwrap();
+            flex.set_cross_axis_alignment(CrossAxisAlignment::Start);
+        });
+        assert_render_snapshot!(harness, "row_cross_axis_start");
+
+        harness.edit_root_widget(|mut flex, _| {
+            let mut flex = flex.downcast::<Flex>().unwrap();
+            flex.set_cross_axis_alignment(CrossAxisAlignment::Center);
+        });
+        assert_render_snapshot!(harness, "row_cross_axis_center");
+
+        harness.edit_root_widget(|mut flex, _| {
+            let mut flex = flex.downcast::<Flex>().unwrap();
+            flex.set_cross_axis_alignment(CrossAxisAlignment::End);
+        });
+        assert_render_snapshot!(harness, "row_cross_axis_end");
+
+        harness.edit_root_widget(|mut flex, _| {
+            let mut flex = flex.downcast::<Flex>().unwrap();
+            flex.set_cross_axis_alignment(CrossAxisAlignment::Baseline);
+        });
+        assert_render_snapshot!(harness, "row_cross_axis_baseline");
+
+        harness.edit_root_widget(|mut flex, _| {
+            let mut flex = flex.downcast::<Flex>().unwrap();
+            flex.set_cross_axis_alignment(CrossAxisAlignment::Fill);
+        });
+        assert_render_snapshot!(harness, "row_cross_axis_fill");
+    }
+
+    #[test]
+    fn flex_row_main_axis_snapshots() {
+        let widget = Flex::row()
+            .with_child(Label::new("hello"))
+            .with_flex_child(Label::new("world"), 1.0)
+            .with_child(Label::new("foo"))
+            .with_flex_child(
+                Label::new("bar"),
+                FlexParams::new(2.0, CrossAxisAlignment::Start),
+            );
+
+        let mut harness = Harness::create(widget);
+
+        // MAIN AXIS ALIGNMENT
+
+        harness.edit_root_widget(|mut flex, _| {
+            let mut flex = flex.downcast::<Flex>().unwrap();
+            flex.set_main_axis_alignment(MainAxisAlignment::Start);
+        });
+        assert_render_snapshot!(harness, "row_main_axis_start");
+
+        harness.edit_root_widget(|mut flex, _| {
+            let mut flex = flex.downcast::<Flex>().unwrap();
+            flex.set_main_axis_alignment(MainAxisAlignment::Center);
+        });
+        assert_render_snapshot!(harness, "row_main_axis_center");
+
+        harness.edit_root_widget(|mut flex, _| {
+            let mut flex = flex.downcast::<Flex>().unwrap();
+            flex.set_main_axis_alignment(MainAxisAlignment::End);
+        });
+        assert_render_snapshot!(harness, "row_main_axis_end");
+
+        harness.edit_root_widget(|mut flex, _| {
+            let mut flex = flex.downcast::<Flex>().unwrap();
+            flex.set_main_axis_alignment(MainAxisAlignment::SpaceBetween);
+        });
+        assert_render_snapshot!(harness, "row_main_axis_spaceBetween");
+
+        harness.edit_root_widget(|mut flex, _| {
+            let mut flex = flex.downcast::<Flex>().unwrap();
+            flex.set_main_axis_alignment(MainAxisAlignment::SpaceEvenly);
+        });
+        assert_render_snapshot!(harness, "row_main_axis_spaceEvenly");
+
+        harness.edit_root_widget(|mut flex, _| {
+            let mut flex = flex.downcast::<Flex>().unwrap();
+            flex.set_main_axis_alignment(MainAxisAlignment::SpaceAround);
+        });
+        assert_render_snapshot!(harness, "row_main_axis_spaceAround");
+
+        // FILL MAIN AXIS
+        // TODO - This doesn't seem to do anything?
+
+        harness.edit_root_widget(|mut flex, _| {
+            let mut flex = flex.downcast::<Flex>().unwrap();
+            flex.set_must_fill_main_axis(true);
+        });
+        assert_render_snapshot!(harness, "row_fill_main_axis");
+    }
+
+    #[test]
+    fn flex_col_cross_axis_snapshots() {
+        let widget = Flex::column()
+            .with_child(Label::new("hello"))
+            .with_flex_child(Label::new("world"), 1.0)
+            .with_child(Label::new("foo"))
+            .with_flex_child(
+                Label::new("bar"),
+                FlexParams::new(2.0, CrossAxisAlignment::Start),
+            );
+
+        let mut harness = Harness::create(widget);
+
+        harness.edit_root_widget(|mut flex, _| {
+            let mut flex = flex.downcast::<Flex>().unwrap();
+            flex.set_cross_axis_alignment(CrossAxisAlignment::Start);
+        });
+        assert_render_snapshot!(harness, "col_cross_axis_start");
+
+        harness.edit_root_widget(|mut flex, _| {
+            let mut flex = flex.downcast::<Flex>().unwrap();
+            flex.set_cross_axis_alignment(CrossAxisAlignment::Center);
+        });
+        assert_render_snapshot!(harness, "col_cross_axis_center");
+
+        harness.edit_root_widget(|mut flex, _| {
+            let mut flex = flex.downcast::<Flex>().unwrap();
+            flex.set_cross_axis_alignment(CrossAxisAlignment::End);
+        });
+        assert_render_snapshot!(harness, "col_cross_axis_end");
+
+        harness.edit_root_widget(|mut flex, _| {
+            let mut flex = flex.downcast::<Flex>().unwrap();
+            flex.set_cross_axis_alignment(CrossAxisAlignment::Baseline);
+        });
+        assert_render_snapshot!(harness, "col_cross_axis_baseline");
+
+        harness.edit_root_widget(|mut flex, _| {
+            let mut flex = flex.downcast::<Flex>().unwrap();
+            flex.set_cross_axis_alignment(CrossAxisAlignment::Fill);
+        });
+        assert_render_snapshot!(harness, "col_cross_axis_fill");
+    }
+
+    #[test]
+    fn flex_col_main_axis_snapshots() {
+        let widget = Flex::column()
+            .with_child(Label::new("hello"))
+            .with_flex_child(Label::new("world"), 1.0)
+            .with_child(Label::new("foo"))
+            .with_flex_child(
+                Label::new("bar"),
+                FlexParams::new(2.0, CrossAxisAlignment::Start),
+            );
+
+        let mut harness = Harness::create(widget);
+
+        // MAIN AXIS ALIGNMENT
+
+        harness.edit_root_widget(|mut flex, _| {
+            let mut flex = flex.downcast::<Flex>().unwrap();
+            flex.set_main_axis_alignment(MainAxisAlignment::Start);
+        });
+        assert_render_snapshot!(harness, "col_main_axis_start");
+
+        harness.edit_root_widget(|mut flex, _| {
+            let mut flex = flex.downcast::<Flex>().unwrap();
+            flex.set_main_axis_alignment(MainAxisAlignment::Center);
+        });
+        assert_render_snapshot!(harness, "col_main_axis_center");
+
+        harness.edit_root_widget(|mut flex, _| {
+            let mut flex = flex.downcast::<Flex>().unwrap();
+            flex.set_main_axis_alignment(MainAxisAlignment::End);
+        });
+        assert_render_snapshot!(harness, "col_main_axis_end");
+
+        harness.edit_root_widget(|mut flex, _| {
+            let mut flex = flex.downcast::<Flex>().unwrap();
+            flex.set_main_axis_alignment(MainAxisAlignment::SpaceBetween);
+        });
+        assert_render_snapshot!(harness, "col_main_axis_spaceBetween");
+
+        harness.edit_root_widget(|mut flex, _| {
+            let mut flex = flex.downcast::<Flex>().unwrap();
+            flex.set_main_axis_alignment(MainAxisAlignment::SpaceEvenly);
+        });
+        assert_render_snapshot!(harness, "col_main_axis_spaceEvenly");
+
+        harness.edit_root_widget(|mut flex, _| {
+            let mut flex = flex.downcast::<Flex>().unwrap();
+            flex.set_main_axis_alignment(MainAxisAlignment::SpaceAround);
+        });
+        assert_render_snapshot!(harness, "col_main_axis_spaceAround");
+
+        // FILL MAIN AXIS
+        // TODO - This doesn't seem to do anything?
+
+        harness.edit_root_widget(|mut flex, _| {
+            let mut flex = flex.downcast::<Flex>().unwrap();
+            flex.set_must_fill_main_axis(true);
+        });
+        assert_render_snapshot!(harness, "col_fill_main_axis");
+    }
+
+    #[test]
+    fn edit_flex_container() {
+        let image_1 = {
+            let widget = Flex::column()
+                .with_child(Label::new("a"))
+                .with_child(Label::new("b"))
+                .with_child(Label::new("c"))
+                .with_child(Label::new("d"));
+            // -> abcd
+
+            let mut harness = Harness::create(widget);
+
+            harness.edit_root_widget(|mut flex, _| {
+                let mut flex = flex.downcast::<Flex>().unwrap();
+
+                flex.remove_child(1);
+                // -> acd
+                flex.add_child(Label::new("x"));
+                // -> acdx
+                flex.add_flex_child(Label::new("y"), 2.0);
+                // -> acdxy
+                flex.add_default_spacer();
+                // -> acdxy_
+                flex.add_spacer(5.0);
+                // -> acdxy__
+                flex.add_flex_spacer(1.0);
+                // -> acdxy___
+                flex.insert_child(2, Label::new("i"));
+                // -> acidxy___
+                flex.insert_flex_child(2, Label::new("j"), 2.0);
+                // -> acjidxy___
+                flex.insert_default_spacer(2);
+                // -> ac_jidxy___
+                flex.insert_spacer(2, 5.0);
+                // -> ac__jidxy___
+                flex.insert_flex_spacer(2, 1.0);
+            });
+
+            harness.render()
+        };
+
+        let image_2 = {
+            let widget = Flex::column()
+                .with_child(Label::new("a"))
+                .with_child(Label::new("c"))
+                .with_flex_spacer(1.0)
+                .with_spacer(5.0)
+                .with_default_spacer()
+                .with_flex_child(Label::new("j"), 2.0)
+                .with_child(Label::new("i"))
+                .with_child(Label::new("d"))
+                .with_child(Label::new("x"))
+                .with_flex_child(Label::new("y"), 2.0)
+                .with_default_spacer()
+                .with_spacer(5.0)
+                .with_flex_spacer(1.0);
+
+            let mut harness = Harness::create(widget);
+            harness.render()
+        };
+
+        // We don't use assert_eq because we don't want rich assert
+        assert!(image_1 == image_2);
+    }
+
+    #[test]
+    fn get_flex_child_view() {
+        let widget = Flex::column()
+            .with_child(Label::new("hello"))
+            .with_child(Label::new("world"))
+            .with_spacer(1.0);
+
+        let mut harness = Harness::create(widget);
+        harness.edit_root_widget(|mut flex, _| {
+            let mut flex = flex.downcast::<Flex>().unwrap();
+
+            let mut child = flex.get_child_view(1).unwrap();
+            assert_eq!(
+                child
+                    .downcast_box::<Label>()
+                    .unwrap()
+                    .widget
+                    .text()
+                    .to_string(),
+                "world"
+            );
+            std::mem::drop(child);
+
+            assert!(flex.get_child_view(2).is_none());
+        });
+
+        // TODO - test out-of-bounds access?
     }
 }
