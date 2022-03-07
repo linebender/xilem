@@ -30,7 +30,7 @@
  - [X] Image
  - [X] Label
  - [ ] SizedBox
- - [ ] Spinner
+ - [X] Spinner
  - [ ] TextBox
 
 - [ ] Refactor WidgetState
@@ -142,7 +142,7 @@
  -> [X] Image
  -> [X] Label
  -> [ ] SizedBox
- -> [ ] Spinner
+ -> [X] Spinner
  -> [ ] TextBox
 -> [ ] text
 

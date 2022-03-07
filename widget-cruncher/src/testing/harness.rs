@@ -287,6 +287,7 @@ impl Harness {
     }
 
     pub fn move_timers_forward(&mut self, duration: Duration) {
+        // TODO - handle animations
         let tokens = self
             .mock_app
             .window

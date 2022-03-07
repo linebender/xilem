@@ -6,7 +6,7 @@ use smallvec::SmallVec;
 use std::f64::consts::PI;
 use tracing::trace;
 
-use crate::widget::widget_view::WidgetRef;
+use crate::widget::widget_view::{WidgetRef, WidgetView};
 use druid::kurbo::Line;
 use druid::widget::prelude::*;
 use druid::{theme, Color, KeyOrValue, Point, Vec2};
@@ -38,14 +38,17 @@ impl Spinner {
         self.color = color.into();
         self
     }
+}
 
+impl WidgetView<'_, '_, Spinner> {
     /// Set the spinner's color.
     ///
     /// The argument can be either a `Color` or a [`Key<Color>`].
     ///
     /// [`Key<Color>`]: ../struct.Key.html
     pub fn set_color(&mut self, color: impl Into<KeyOrValue<Color>>) {
-        self.color = color.into();
+        self.widget.color = color.into();
+        self.request_paint();
     }
 }
 
@@ -123,5 +126,51 @@ impl Widget for Spinner {
 
     fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
         SmallVec::new()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::assert_render_snapshot;
+    use crate::testing::Harness;
+    //use instant::Duration;
+
+    #[test]
+    fn simple_spinner() {
+        let spinner = Spinner::new();
+
+        let mut harness = Harness::create(spinner);
+        assert_render_snapshot!(harness, "spinner_init");
+
+        // TODO
+        //harness.move_timers_forward(Duration::from_millis(700));
+        //assert_render_snapshot!(harness, "spinner_700ms");
+    }
+
+    #[test]
+    fn edit_spinner() {
+        let image_1 = {
+            let spinner = Spinner::new().with_color(Color::PURPLE);
+
+            let mut harness = Harness::create_with_size(spinner, Size::new(30.0, 30.0));
+            harness.render()
+        };
+
+        let image_2 = {
+            let spinner = Spinner::new();
+
+            let mut harness = Harness::create_with_size(spinner, Size::new(30.0, 30.0));
+
+            harness.edit_root_widget(|mut spinner, _| {
+                let mut spinner = spinner.downcast::<Spinner>().unwrap();
+                spinner.set_color(Color::PURPLE);
+            });
+
+            harness.render()
+        };
+
+        // We don't use assert_eq because we don't want rich assert
+        assert!(image_1 == image_2);
     }
 }
