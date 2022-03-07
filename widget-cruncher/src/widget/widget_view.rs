@@ -5,7 +5,7 @@ use std::time::Duration;
 use tracing::trace;
 
 use crate::command::Command;
-use crate::contexts::ContextState;
+use crate::contexts::GlobalPassCtx;
 use crate::ext_event::ExtEventSink;
 use crate::kurbo::{Point, Rect, Size, Vec2};
 use crate::piet::PietText;
@@ -18,7 +18,7 @@ use druid_shell::{Cursor, TimerToken, WindowHandle};
 
 // TODO - rename lifetimes
 pub struct WidgetView<'a, 'b, W: Widget + ?Sized> {
-    pub(crate) global_state: &'a mut ContextState<'b>,
+    pub(crate) global_state: &'a mut GlobalPassCtx<'b>,
     // FIXME - pub
     pub parent_widget_state: &'a mut WidgetState,
     pub widget_state: &'a mut WidgetState,

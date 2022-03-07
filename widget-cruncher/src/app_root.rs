@@ -20,7 +20,7 @@ use crate::kurbo::{Point, Size};
 use crate::piet::{Color, Piet, RenderContext};
 
 use crate::command::CommandQueue;
-use crate::contexts::ContextState;
+use crate::contexts::GlobalPassCtx;
 use crate::ext_event::{ExtEventQueue, ExtEventSink, ExtMessage};
 use crate::platform::RUN_COMMANDS_TOKEN;
 use crate::testing::MockTimerQueue;
@@ -510,7 +510,7 @@ impl AppRoot {
         let mut window = inner.active_windows.get_mut(&inner.main_window_id).unwrap();
         let mut fake_widget_state;
         let res = {
-            let mut global_state = ContextState::new(
+            let mut global_state = GlobalPassCtx::new(
                 window.ext_event_sink.clone(),
                 &mut inner.debug_logger,
                 &mut inner.command_queue,
@@ -992,7 +992,7 @@ impl WindowRoot {
 
         let mut widget_state = WidgetState::new(self.root.id(), Some(self.size), "<root>");
         let is_handled = {
-            let mut global_state = ContextState::new(
+            let mut global_state = GlobalPassCtx::new(
                 self.ext_event_sink.clone(),
                 debug_logger,
                 command_queue,
@@ -1081,7 +1081,7 @@ impl WindowRoot {
         process_commands: bool,
     ) {
         let mut widget_state = WidgetState::new(self.root.id(), Some(self.size), "<root>");
-        let mut global_state = ContextState::new(
+        let mut global_state = GlobalPassCtx::new(
             self.ext_event_sink.clone(),
             debug_logger,
             command_queue,
@@ -1207,7 +1207,7 @@ impl WindowRoot {
         env: &Env,
     ) {
         let mut widget_state = WidgetState::new(self.root.id(), Some(self.size), "<root>");
-        let mut global_state = ContextState::new(
+        let mut global_state = GlobalPassCtx::new(
             self.ext_event_sink.clone(),
             debug_logger,
             command_queue,
@@ -1275,7 +1275,7 @@ impl WindowRoot {
         env: &Env,
     ) {
         let widget_state = WidgetState::new(self.root.id(), Some(self.size), "<root>");
-        let mut global_state = ContextState::new(
+        let mut global_state = GlobalPassCtx::new(
             self.ext_event_sink.clone(),
             debug_logger,
             command_queue,

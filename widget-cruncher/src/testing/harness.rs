@@ -24,7 +24,7 @@ use std::sync::Arc;
 use crate::action::{Action, ActionQueue};
 //use crate::ext_event::ExtEventHost;
 use crate::command::CommandQueue;
-use crate::contexts::ContextState;
+use crate::contexts::GlobalPassCtx;
 use crate::debug_logger::DebugLogger;
 use crate::ext_event::ExtEventQueue;
 use crate::piet::{BitmapTarget, Device, Error, ImageFormat, Piet};
@@ -347,7 +347,7 @@ impl Harness {
         let window = &mut self.mock_app.window;
         let mut fake_widget_state;
         let res = {
-            let mut global_state = ContextState::new(
+            let mut global_state = GlobalPassCtx::new(
                 window.ext_event_sink.clone(),
                 &mut self.mock_app.debug_logger,
                 &mut self.mock_app.command_queue,

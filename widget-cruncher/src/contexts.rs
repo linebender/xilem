@@ -53,9 +53,10 @@ macro_rules! impl_context_method {
     };
 }
 
+// TODO - remove second lifetime, only keep queues and Rc
 // TODO - rename lifetimes
 /// Static state that is shared between most contexts.
-pub(crate) struct ContextState<'a> {
+pub(crate) struct GlobalPassCtx<'a> {
     pub(crate) ext_event_sink: ExtEventSink,
     pub(crate) debug_logger: &'a mut DebugLogger,
     pub(crate) command_queue: &'a mut CommandQueue,
@@ -76,7 +77,7 @@ pub(crate) struct ContextState<'a> {
 ///
 /// [`request_paint`]: #method.request_paint
 pub struct EventCtx<'a, 'b> {
-    pub(crate) global_state: &'a mut ContextState<'b>,
+    pub(crate) global_state: &'a mut GlobalPassCtx<'b>,
     // FIXME
     pub widget_state: &'a mut WidgetState,
     pub(crate) is_init: bool,
@@ -96,7 +97,7 @@ pub struct EventCtx<'a, 'b> {
 /// [`register_child`]: #method.register_child
 /// [`LifeCycle::WidgetAdded`]: enum.LifeCycle.html#variant.WidgetAdded
 pub struct LifeCycleCtx<'a, 'b> {
-    pub(crate) global_state: &'a mut ContextState<'b>,
+    pub(crate) global_state: &'a mut GlobalPassCtx<'b>,
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) is_init: bool,
 }
@@ -107,7 +108,7 @@ pub struct LifeCycleCtx<'a, 'b> {
 /// creating text layout objects, which are likely to be useful
 /// during widget layout.
 pub struct LayoutCtx<'a, 'b> {
-    pub(crate) global_state: &'a mut ContextState<'b>,
+    pub(crate) global_state: &'a mut GlobalPassCtx<'b>,
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) is_init: bool,
     pub(crate) mouse_pos: Option<Point>,
@@ -126,7 +127,7 @@ pub(crate) struct ZOrderPaintOp {
 /// the [`RenderContext`] trait, which defines the basic available drawing
 /// commands.
 pub struct PaintCtx<'a, 'b, 'c> {
-    pub(crate) global_state: &'a mut ContextState<'b>,
+    pub(crate) global_state: &'a mut GlobalPassCtx<'b>,
     pub(crate) widget_state: &'a WidgetState,
     pub(crate) is_init: bool,
     /// The render context for actually painting.
@@ -948,7 +949,7 @@ impl PaintCtx<'_, '_, '_> {
     }
 }
 
-impl<'a> ContextState<'a> {
+impl<'a> GlobalPassCtx<'a> {
     pub(crate) fn new(
         ext_event_sink: ExtEventSink,
         debug_logger: &'a mut DebugLogger,
@@ -959,7 +960,7 @@ impl<'a> ContextState<'a> {
         window_id: WindowId,
         focus_widget: Option<WidgetId>,
     ) -> Self {
-        ContextState {
+        GlobalPassCtx {
             ext_event_sink,
             debug_logger,
             command_queue,

@@ -5,7 +5,7 @@
 - [X] Add downcast to WidgetRef and WidgetView
 - [ ] Add WidgetView::as_ref
 - [ ] Add WidgetAdded test
-- [ ] Rename ContextState to GlobalPassCtx
+- [X] Rename ContextState to GlobalPassCtx
 - [ ] Remove ExtendDrain
 - [ ] Brainstorming names for AppDelegate, Harness methods, Action, ExtEvent
 

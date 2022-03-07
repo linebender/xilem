@@ -1,7 +1,7 @@
 use std::collections::VecDeque;
 use tracing::{info_span, trace, warn};
 
-use crate::contexts::ContextState;
+use crate::contexts::GlobalPassCtx;
 use crate::kurbo::{Affine, Insets, Point, Rect, Shape, Size, Vec2};
 use crate::text::TextLayout;
 use crate::widget::widget_view::WidgetRef;
@@ -253,7 +253,7 @@ impl<W: Widget> WidgetPod<W> {
     fn update_hot_state(
         inner: &mut W,
         inner_state: &mut WidgetState,
-        global_state: &mut ContextState,
+        global_state: &mut GlobalPassCtx,
         rect: Rect,
         mouse_pos: Option<Point>,
         env: &Env,
