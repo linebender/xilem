@@ -1,0 +1,7 @@
+---
+source: widget-cruncher/src/widget/sized_box.rs
+assertion_line: 297
+expression: harness.root_widget()
+
+---
+SizedBox

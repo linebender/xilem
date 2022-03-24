@@ -25,7 +25,7 @@ use std::f64::INFINITY;
 use tracing::{trace, trace_span, warn, Span};
 
 use crate::widget::prelude::*;
-use crate::widget::widget_view::WidgetRef;
+use crate::widget::widget_view::{WidgetRef, WidgetView};
 use crate::widget::{WidgetId, WidgetPod};
 use crate::Point;
 
@@ -46,7 +46,7 @@ pub struct SizedBox {
 
 impl SizedBox {
     /// Construct container with child, and both width and height not set.
-    pub fn new(child: impl Widget + 'static) -> Self {
+    pub fn new(child: impl Widget) -> Self {
         Self {
             child: Some(WidgetPod::new(child).boxed()),
             width: None,
@@ -55,7 +55,7 @@ impl SizedBox {
     }
 
     /// Construct container with child, and both width and height not set.
-    pub fn new_with_id(child: impl Widget + 'static, id: WidgetId) -> Self {
+    pub fn new_with_id(child: impl Widget, id: WidgetId) -> Self {
         Self {
             child: Some(WidgetPod::new_with_id(child, id).boxed()),
             width: None,
@@ -118,7 +118,57 @@ impl SizedBox {
         self.height = Some(INFINITY);
         self
     }
+}
 
+impl<'a, 'b> WidgetView<'a, 'b, SizedBox> {
+    pub fn set_child(&mut self, child: impl Widget) {
+        self.widget.child = Some(WidgetPod::new(child).boxed());
+        self.children_changed();
+        self.request_layout();
+    }
+
+    pub fn remove_child(&mut self) {
+        self.widget.child = None;
+        self.children_changed();
+        self.request_layout();
+    }
+
+    /// Set container's width.
+    pub fn set_width(&mut self, width: f64) {
+        self.widget.width = Some(width);
+        self.request_layout();
+    }
+
+    /// Set container's height.
+    pub fn set_height(&mut self, height: f64) {
+        self.widget.height = Some(height);
+        self.request_layout();
+    }
+
+    /// Set container's width.
+    pub fn unset_width(&mut self) {
+        self.widget.width = None;
+        self.request_layout();
+    }
+
+    /// Set container's height.
+    pub fn unset_height(&mut self) {
+        self.widget.height = None;
+        self.request_layout();
+    }
+
+    pub fn get_child_view(&mut self) -> Option<WidgetView<'_, 'b, Box<dyn Widget>>> {
+        let child = self.widget.child.as_mut()?;
+        Some(WidgetView {
+            global_state: self.global_state,
+            parent_widget_state: self.widget_state,
+            widget_state: &mut child.state,
+            widget: &mut child.inner,
+        })
+    }
+}
+
+impl SizedBox {
     fn child_constraints(&self, bc: &BoxConstraints) -> BoxConstraints {
         // if we don't have a width/height, we don't change that axis.
         // if we have a width/height, we clamp it on that axis.
@@ -215,7 +265,10 @@ impl Widget for SizedBox {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::assert_render_snapshot;
+    use crate::testing::Harness;
     use crate::widget::Label;
+    use insta::assert_debug_snapshot;
     use test_log::test;
 
     #[test]
@@ -233,5 +286,37 @@ mod tests {
         let child_bc = expand.child_constraints(&bc);
         assert_eq!(child_bc.min(), Size::new(0., 200.,));
         assert_eq!(child_bc.max(), Size::new(400., 200.,));
+    }
+
+    // TODO - screenshot tests aren't super useful since the box is transparent
+
+    #[test]
+    fn empty_box() {
+        let widget = SizedBox::empty().width(40.0).height(40.0);
+
+        let mut harness = Harness::create(widget);
+
+        assert_debug_snapshot!(harness.root_widget());
+        assert_render_snapshot!(harness, "empty_box");
+    }
+
+    #[test]
+    fn label_box_no_size() {
+        let widget = SizedBox::new(Label::new("hello"));
+
+        let mut harness = Harness::create(widget);
+
+        assert_debug_snapshot!(harness.root_widget());
+        assert_render_snapshot!(harness, "label_box_no_size");
+    }
+
+    #[test]
+    fn label_box_with_size() {
+        let widget = SizedBox::new(Label::new("hello")).width(40.0).height(40.0);
+
+        let mut harness = Harness::create(widget);
+
+        assert_debug_snapshot!(harness.root_widget());
+        assert_render_snapshot!(harness, "label_box_no_size");
     }
 }

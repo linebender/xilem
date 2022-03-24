@@ -83,11 +83,11 @@ struct MockAppRoot {
 
 #[allow(missing_docs)]
 impl Harness {
-    pub fn create(root: impl Widget + 'static) -> Self {
+    pub fn create(root: impl Widget) -> Self {
         Self::create_with_size(root, HARNESS_DEFAULT_SIZE)
     }
 
-    pub fn create_with_size(root: impl Widget + 'static, window_size: Size) -> Self {
+    pub fn create_with_size(root: impl Widget, window_size: Size) -> Self {
         //let ext_host = ExtEventHost::default();
         //let ext_handle = ext_host.make_sink();
 

@@ -154,7 +154,7 @@ impl Flex {
     /// Builder-style variant of `add_child`.
     ///
     /// Convenient for assembling a group of widgets in a single expression.
-    pub fn with_child(mut self, child: impl Widget + 'static) -> Self {
+    pub fn with_child(mut self, child: impl Widget) -> Self {
         let child = Child::Fixed {
             widget: WidgetPod::new(Box::new(child)),
             alignment: None,
@@ -164,7 +164,7 @@ impl Flex {
     }
 
     // TODO - document
-    pub fn with_child_id(mut self, child: impl Widget + 'static, id: WidgetId) -> Self {
+    pub fn with_child_id(mut self, child: impl Widget, id: WidgetId) -> Self {
         let child = Child::Fixed {
             widget: WidgetPod::new_with_id(Box::new(child), id),
             alignment: None,
@@ -174,11 +174,7 @@ impl Flex {
     }
 
     /// Builder-style method to add a flexible child to the container.
-    pub fn with_flex_child(
-        mut self,
-        child: impl Widget + 'static,
-        params: impl Into<FlexParams>,
-    ) -> Self {
+    pub fn with_flex_child(mut self, child: impl Widget, params: impl Into<FlexParams>) -> Self {
         // TODO - dedup?
         let params = params.into();
         let child = if params.flex > 0.0 {
@@ -281,7 +277,7 @@ impl<'a, 'b> WidgetView<'a, 'b, Flex> {
     /// See also [`with_child`].
     ///
     /// [`with_child`]: Flex::with_child
-    pub fn add_child(&mut self, child: impl Widget + 'static) {
+    pub fn add_child(&mut self, child: impl Widget) {
         let child = Child::Fixed {
             widget: WidgetPod::new(Box::new(child)),
             alignment: None,
@@ -292,7 +288,7 @@ impl<'a, 'b> WidgetView<'a, 'b, Flex> {
         self.widget_state.needs_layout = true;
     }
 
-    pub fn add_child_id(&mut self, child: impl Widget + 'static, id: WidgetId) {
+    pub fn add_child_id(&mut self, child: impl Widget, id: WidgetId) {
         let child = Child::Fixed {
             widget: WidgetPod::new_with_id(Box::new(child), id),
             alignment: None,
@@ -327,7 +323,7 @@ impl<'a, 'b> WidgetView<'a, 'b, Flex> {
     /// ```
     ///
     /// [`with_flex_child`]: Flex::with_flex_child
-    pub fn add_flex_child(&mut self, child: impl Widget + 'static, params: impl Into<FlexParams>) {
+    pub fn add_flex_child(&mut self, child: impl Widget, params: impl Into<FlexParams>) {
         let params = params.into();
         let child = if params.flex > 0.0 {
             Child::Flex {
@@ -403,7 +399,7 @@ impl<'a, 'b> WidgetView<'a, 'b, Flex> {
     /// See also [`with_child`].
     ///
     /// [`with_child`]: Flex::with_child
-    pub fn insert_child(&mut self, idx: usize, child: impl Widget + 'static) {
+    pub fn insert_child(&mut self, idx: usize, child: impl Widget) {
         let child = Child::Fixed {
             widget: WidgetPod::new(Box::new(child)),
             alignment: None,
@@ -417,7 +413,7 @@ impl<'a, 'b> WidgetView<'a, 'b, Flex> {
     pub fn insert_flex_child(
         &mut self,
         idx: usize,
-        child: impl Widget + 'static,
+        child: impl Widget,
         params: impl Into<FlexParams>,
     ) {
         let params = params.into();

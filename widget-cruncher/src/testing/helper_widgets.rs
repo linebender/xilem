@@ -225,10 +225,7 @@ impl<S: 'static> Widget for ModularWidget<S> {
 }
 
 impl ReplaceChild {
-    pub fn new<W: Widget + 'static>(
-        child: impl Widget + 'static,
-        f: impl Fn() -> W + 'static,
-    ) -> Self {
+    pub fn new<W: Widget + 'static>(child: impl Widget, f: impl Fn() -> W + 'static) -> Self {
         let child = WidgetPod::new(child).boxed();
         let replacer = Box::new(move || WidgetPod::new(f()).boxed());
         ReplaceChild { child, replacer }
