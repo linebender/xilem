@@ -4,9 +4,8 @@
 - [X] Add impl Deref for WidgetRef
 - [X] Add downcast to WidgetRef and WidgetView
 - [ ] Add WidgetView::as_ref
-- [ ] Add WidgetAdded test
+- [X] Add WidgetAdded test
 - [X] Rename ContextState to GlobalPassCtx
-- [ ] Remove ExtendDrain
 - [ ] Brainstorming names for AppDelegate, Harness methods, Action, ExtEvent
 
 - [X] Rewrite tests
@@ -29,7 +28,7 @@
  - [X] Flex
  - [X] Image
  - [X] Label
- - [ ] SizedBox
+ - [X] SizedBox
  - [X] Spinner
  - [ ] TextBox
 
@@ -37,6 +36,7 @@
  - [ ] Sort WidgetState fields
  - [ ] Add WidgetTmpState
  - [ ] Extract WidgetState fields to WidgetTmpState + global state
+- [ ] Remove ExtendDrain
 
 - [ ] Refactor ScrollComponent / paint_rect / paint_insets
  - [ ] No paint_insets, set paint_rect automatically or manually
@@ -63,6 +63,8 @@
 - [ ] Move debug logger to use tracing infrastructure
 
 - [ ] Refactor Mouse Events and hot status changes
+
+- [ ] Remove `impl Widget for Box<dyn Widget>`
 
 - [ ] Write analysis of different layout footguns
  - Flex interacting with viewport

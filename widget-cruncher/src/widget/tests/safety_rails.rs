@@ -44,6 +44,21 @@ fn check_forget_to_recurse_lifecycle() {
     let _harness = Harness::create(widget);
 }
 
+#[should_panic(expected = "before receiving WidgetAdded.")]
+#[test]
+fn check_forget_to_recurse_widget_added() {
+    let widget = get_parent_widget(Flex::row()).lifecycle_fn(move |child, ctx, event, env| {
+        if let LifeCycle::WidgetAdded = event {
+            // We forget to call child.lifecycle();
+            ctx.skip_child(child);
+        } else {
+            child.lifecycle(ctx, event, env);
+        }
+    });
+
+    let _harness = Harness::create(widget);
+}
+
 #[should_panic(expected = "not visited in method layout")]
 #[test]
 fn check_forget_to_recurse_layout() {
