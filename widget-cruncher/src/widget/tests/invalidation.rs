@@ -16,7 +16,6 @@
 
 use crate::testing::{widget_ids, Harness};
 use crate::widget::{Button, Flex};
-use test_log::test;
 
 #[test]
 fn invalidate_union() {

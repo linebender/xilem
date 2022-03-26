@@ -269,7 +269,6 @@ mod tests {
     use crate::testing::Harness;
     use crate::widget::Label;
     use insta::assert_debug_snapshot;
-    use test_log::test;
 
     #[test]
     fn expand() {

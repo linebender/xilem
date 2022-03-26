@@ -1,7 +1,7 @@
 use crate::testing::{Harness, ModularWidget, Record, Recording, TestWidgetExt as _};
 use crate::widget::{Flex, SizedBox};
 use crate::*;
-use test_log::test;
+
 
 /// Ensure that notifications are delivered to ancestors, but not siblings.
 #[test]

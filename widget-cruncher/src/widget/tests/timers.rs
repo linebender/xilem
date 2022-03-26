@@ -3,7 +3,7 @@ use crate::*;
 use instant::Duration;
 use std::cell::Cell;
 use std::rc::Rc;
-use test_log::test;
+
 
 #[test]
 fn basic_timer() {

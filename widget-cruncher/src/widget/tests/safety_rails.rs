@@ -2,7 +2,6 @@ use crate::testing::{Harness, ModularWidget};
 use crate::widget::Flex;
 use crate::*;
 use smallvec::smallvec;
-use test_log::test;
 
 fn get_parent_widget<W: Widget>(child: W) -> ModularWidget<WidgetPod<W>> {
     let child = WidgetPod::new(child);

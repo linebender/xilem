@@ -4,7 +4,6 @@ use crate::*;
 use smallvec::smallvec;
 use std::cell::Cell;
 use std::rc::Rc;
-use test_log::test;
 
 const CHANGE_DISABLED: Selector<bool> = Selector::new("druid-tests.change-disabled");
 

@@ -3,7 +3,6 @@ use crate::widget::{Button, Flex, Label, SizedBox};
 use crate::*;
 // TODO - change import
 use shell::MouseButton;
-use test_log::test;
 
 fn is_hot(harness: &Harness, id: WidgetId) -> bool {
     harness.get_widget(id).state().is_hot
