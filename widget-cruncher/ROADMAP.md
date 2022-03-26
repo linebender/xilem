@@ -3,10 +3,10 @@
 - [X] Clean up imports
 - [X] Add impl Deref for WidgetRef
 - [X] Add downcast to WidgetRef and WidgetView
-- [ ] Add WidgetView::as_ref
 - [X] Add WidgetAdded test
 - [X] Rename ContextState to GlobalPassCtx
-- [ ] Brainstorming names for AppDelegate, Harness methods, Action, ExtEvent
+- [ ] Add WidgetView::as_ref
+- [ ] Brainstorm names for AppDelegate, Harness methods, Action, ExtEvent
 
 - [X] Rewrite tests
  - [X] Create coverage profile
@@ -16,20 +16,15 @@
 - [X] Add action queue
 - [X] Re-add ExtEvent + AppDelegate
 
-- [ ] Write examples
- - [X] To-do List
- - [X] Fix blocking_function example
- - [ ] Rewrite Disney example
-
 - [ ] Use WidgetView everywhere
  - [X] Button
  - [X] Checkbox
- - [ ] ClipBox
  - [X] Flex
  - [X] Image
  - [X] Label
  - [X] SizedBox
  - [X] Spinner
+ - [ ] ClipBox
  - [ ] TextBox
 
 - [ ] Refactor WidgetState
@@ -51,6 +46,12 @@
 
 - [ ] Re-add Dialog
 - [ ] Refactor TextLayout
+
+- [ ] Write examples
+ - [X] To-do List
+ - [X] Fix blocking_function example
+ - [ ] Rewrite Disney example
+ - [ ] Copy examples from druid
 
 - [ ] Rewrite License bits
 - [ ] Write ARCHITECTURE.md
