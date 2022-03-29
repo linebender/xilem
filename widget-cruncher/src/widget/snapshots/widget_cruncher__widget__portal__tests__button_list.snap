@@ -1,0 +1,52 @@
+---
+source: widget-cruncher/src/widget/portal.rs
+assertion_line: 183
+expression: harness.root_widget()
+
+---
+Portal(
+    Flex(
+        SizedBox(
+            Button<Item 1>,
+        ),
+        SizedBox(
+            Button<Item 2>,
+        ),
+        SizedBox(
+            Button<Item 3>,
+        ),
+        SizedBox(
+            Button<Item 4>,
+        ),
+        SizedBox(
+            Button<Item 5>,
+        ),
+        SizedBox(
+            Button<Item 6>,
+        ),
+        SizedBox(
+            Button<Item 7>,
+        ),
+        SizedBox(
+            Button<Item 8>,
+        ),
+        SizedBox(
+            Button<Item 9>,
+        ),
+        SizedBox(
+            Button<Item 10>,
+        ),
+        SizedBox(
+            Button<Item 11>,
+        ),
+        SizedBox(
+            Button<Item 12>,
+        ),
+        SizedBox(
+            Button<Item 13>,
+        ),
+        SizedBox(
+            Button<Item 14>,
+        ),
+    ),
+)

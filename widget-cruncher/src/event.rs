@@ -110,6 +110,7 @@ pub enum Event {
     /// [`set_cursor`]: struct.EventCtx.html#method.set_cursor
     MouseMove(MouseEvent),
 
+    // TODO - What about trackpad scrolling? Touchscreens?
     /// Called when the mouse wheel or trackpad is scrolled.
     Wheel(MouseEvent),
 

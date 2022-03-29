@@ -995,6 +995,7 @@ impl<W: Widget> WidgetPod<W> {
 
     // --- PAINT ---
 
+    // TODO - make non-pub?
     /// Paint a child widget.
     ///
     /// Generally called by container widgets as part of their [`Widget::paint`]
@@ -1050,6 +1051,7 @@ impl<W: Widget> WidgetPod<W> {
         self.paint_impl(parent_ctx, env, false)
     }
 
+    // TODO - remove
     // TODO - fix doc: paint rect, not layout rect
     /// Paint the widget, even if its layout rect is outside of the currently
     /// visible region.

@@ -24,7 +24,7 @@
  - [X] Label
  - [X] SizedBox
  - [X] Spinner
- - [ ] ClipBox
+ - [X] Portal
  - [ ] TextBox
 
 - [ ] Refactor WidgetState
@@ -124,30 +124,29 @@
 - [X] utils
 - [X] widget_pod
  -> [X] 'active' status
- -> [ ] viewport_offset
- -> [ ] paint_insets
  -> [X] debug_validate
  -> [X] check_initialized
  -> [X] check set_origin
  -> [X] MouseLeave
  -> [X] layout changes hot status
+ -> [ ] paint_insets
  -> [ ] pan_to_child
  -> [ ] ParentWindowOrigin
  -> [ ] debug_widget_text
- -> [ ] check for WidgetAdded
+ -> [x] check for WidgetAdded
 -> [X] widget utils
--> [ ] FillStrat
--> [ ] Widgets
+-> [X] Widgets
  -> [X] Button
  -> [X] Checkbox
- -> [ ] ClipBox
+ -> [X] Portal
  -> [X] Flex
  -> [X] Image
  -> [X] Label
- -> [ ] SizedBox
+ -> [X] SizedBox
  -> [X] Spinner
- -> [ ] TextBox
+-> [ ] FillStrat
 -> [ ] text
+ -> [ ] TextBox
 
 
 # Design stuff
@@ -167,7 +166,12 @@ Difference between
 - Window(Button)
 - Window(Flex(Button))
 
+- Flex(stuff)
+- Portal(Flex(stuff))
+
 Flex alignment vs text alignment
+
+Portal.must_fill, Portal.constrain_horizontal, Portan.constrain_vertical
 
 How does Flex interact with Viewport?
 -> use call context for debugging (wait, what does that mean again?)

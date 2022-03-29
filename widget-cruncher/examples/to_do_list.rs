@@ -4,7 +4,7 @@ use widget_cruncher::action::Action;
 use widget_cruncher::app_delegate::{AppDelegate, DelegateCtx};
 use widget_cruncher::widget::prelude::*;
 use widget_cruncher::widget::widget_view::WidgetView;
-use widget_cruncher::widget::{Button, Flex, Label};
+use widget_cruncher::widget::{Button, Flex, Label, Portal};
 use widget_cruncher::{AppLauncher, WindowDesc, WindowId};
 
 const VERTICAL_WIDGET_SPACING: f64 = 20.0;
@@ -22,7 +22,8 @@ impl AppDelegate for Delegate {
     ) {
         match action {
             Action::ButtonPressed => {
-                let mut flex: WidgetView<Flex> = ctx.get_root();
+                let mut root: WidgetView<Portal<Flex>> = ctx.get_root();
+                let mut flex = root.get_child_view();
                 flex.add_child(Label::new("Hello"));
             }
             Action::TextChanged(_) => todo!(),
@@ -49,7 +50,9 @@ fn build_root_widget() -> impl Widget {
     let button = Button::new("Add task");
 
     // arrange the two widgets vertically, with some padding
-    Flex::column()
-        .with_child(button)
-        .with_spacer(VERTICAL_WIDGET_SPACING)
+    Portal::new(
+        Flex::column()
+            .with_child(button)
+            .with_spacer(VERTICAL_WIDGET_SPACING),
+    )
 }
