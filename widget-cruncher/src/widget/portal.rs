@@ -4,15 +4,17 @@ use std::ops::Range;
 
 use crate::kurbo::{Affine, Point, Rect, Size, Vec2};
 use crate::widget::prelude::*;
+use crate::widget::scroll_bar::SCROLLBAR_MOVED;
 use crate::widget::widget_view::WidgetRef;
 use crate::widget::widget_view::WidgetView;
 use crate::widget::Axis;
+use crate::widget::ScrollBar;
 use crate::WidgetPod;
 use druid_shell::kurbo::Shape;
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace, trace_span, warn, Span};
 
-// TODO - rename ScrollPortal?
+// TODO - rename "Portal" to "ScrollPortal"?
 // Conceptually, a Portal is a Widget giving a restricted view of a child widget
 // Imagine a very large widget, and a rect that represents the part of the widget we see
 pub struct Portal<W: Widget> {
@@ -26,6 +28,10 @@ pub struct Portal<W: Widget> {
     constrain_horizontal: bool,
     constrain_vertical: bool,
     must_fill: bool,
+    scrollbar_horizontal: WidgetPod<ScrollBar>,
+    scrollbar_horizontal_visible: bool,
+    scrollbar_vertical: WidgetPod<ScrollBar>,
+    scrollbar_vertical_visible: bool,
 }
 
 impl<W: Widget> Portal<W> {
@@ -36,6 +42,11 @@ impl<W: Widget> Portal<W> {
             constrain_horizontal: false,
             constrain_vertical: false,
             must_fill: false,
+            // TODO - remove
+            scrollbar_horizontal: WidgetPod::new(ScrollBar::new(Axis::Horizontal, 1.0, 1.0)),
+            scrollbar_horizontal_visible: false,
+            scrollbar_vertical: WidgetPod::new(ScrollBar::new(Axis::Vertical, 1.0, 1.0)),
+            scrollbar_vertical_visible: false,
         }
     }
 
@@ -110,7 +121,7 @@ fn compute_pan_range(mut viewport: Range<f64>, target: Range<f64>) -> Range<f64>
 
 impl<W: Widget> Portal<W> {
     // TODO - rename
-    fn set_viewport_pos_raw(&mut self, content_size: Size, portal_size: Size, pos: Point) -> bool {
+    fn set_viewport_pos_raw(&mut self, portal_size: Size, content_size: Size, pos: Point) -> bool {
         let viewport_max_pos =
             (content_size - portal_size).clamp(Size::ZERO, Size::new(f64::INFINITY, f64::INFINITY));
         let pos = Point::new(
@@ -130,6 +141,26 @@ impl<W: Widget> Portal<W> {
 impl<'a, 'b, W: Widget> WidgetView<'a, 'b, Portal<W>> {
     pub fn get_child_view(&mut self) -> WidgetView<'_, 'b, W> {
         let child = &mut self.widget.child;
+        WidgetView {
+            global_state: self.global_state,
+            parent_widget_state: self.widget_state,
+            widget_state: &mut child.state,
+            widget: &mut child.inner,
+        }
+    }
+
+    pub fn get_horizontal_scrollbar_view(&mut self) -> WidgetView<'_, 'b, ScrollBar> {
+        let child = &mut self.widget.scrollbar_horizontal;
+        WidgetView {
+            global_state: self.global_state,
+            parent_widget_state: self.widget_state,
+            widget_state: &mut child.state,
+            widget: &mut child.inner,
+        }
+    }
+
+    pub fn get_vertical_scrollbar_view(&mut self) -> WidgetView<'_, 'b, ScrollBar> {
+        let child = &mut self.widget.scrollbar_vertical;
         WidgetView {
             global_state: self.global_state,
             parent_widget_state: self.widget_state,
@@ -171,13 +202,19 @@ impl<'a, 'b, W: Widget> WidgetView<'a, 'b, Portal<W>> {
     }
 
     pub fn set_viewport_pos(&mut self, position: Point) -> bool {
-        let pos_changed = self.widget.set_viewport_pos_raw(
-            self.widget.child.layout_rect().size(),
-            self.widget_state.layout_rect().size(),
-            position,
-        );
-        // TODO
-        if true || pos_changed {
+        let portal_size = self.widget_state.layout_rect().size();
+        let content_size = self.widget.child.layout_rect().size();
+
+        let pos_changed = self
+            .widget
+            .set_viewport_pos_raw(portal_size, content_size, position);
+        if pos_changed {
+            let progress_x = self.widget.viewport_pos.x / (content_size - portal_size).width;
+            self.get_horizontal_scrollbar_view()
+                .set_cursor_progress(progress_x);
+            let progress_y = self.widget.viewport_pos.y / (content_size - portal_size).height;
+            self.get_vertical_scrollbar_view()
+                .set_cursor_progress(progress_y);
             self.request_layout();
         }
         pos_changed
@@ -210,12 +247,38 @@ impl<W: Widget> Widget for Portal<W> {
     fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, env: &Env) {
         ctx.init();
 
-        // TODO - move to scroll widget
-        if let Event::Wheel(wheel_event) = event {
-            self.viewport_pos += wheel_event.wheel_delta;
+        let portal_size = ctx.size();
+        let content_size = self.child.layout_rect().size();
+
+        // TODO - handle Home/End keys, etc
+        match event {
+            Event::Wheel(wheel_event) => {
+                self.set_viewport_pos_raw(
+                    portal_size,
+                    content_size,
+                    self.viewport_pos + wheel_event.wheel_delta,
+                );
+                // TODO - horizontal scrolling?
+                ctx.get_child_view(&mut self.scrollbar_vertical)
+                    .set_cursor_progress(self.viewport_pos.y / (content_size - portal_size).height);
+            }
+            Event::Notification(notif) => {
+                if let Some((axis, progress)) = notif.try_get(SCROLLBAR_MOVED) {
+                    self.viewport_pos = axis
+                        .pack(
+                            progress * axis.major(content_size - portal_size),
+                            axis.minor_pos(self.viewport_pos),
+                        )
+                        .into();
+                    ctx.set_handled();
+                }
+            }
+            _ => (),
         }
 
         self.child.on_event(ctx, &event, env);
+        self.scrollbar_horizontal.on_event(ctx, &event, env);
+        self.scrollbar_vertical.on_event(ctx, &event, env);
         ctx.request_layout();
     }
 
@@ -225,6 +288,8 @@ impl<W: Widget> Widget for Portal<W> {
         ctx.init();
 
         self.child.lifecycle(ctx, event, env);
+        self.scrollbar_horizontal.lifecycle(ctx, event, env);
+        self.scrollbar_vertical.lifecycle(ctx, event, env);
 
         /*
         match event {
@@ -253,10 +318,41 @@ impl<W: Widget> Widget for Portal<W> {
 
         // TODO - document better
         // Recompute the portal offset for the new layout
-        self.set_viewport_pos_raw(content_size, portal_size, self.viewport_pos);
+        self.set_viewport_pos_raw(portal_size, content_size, self.viewport_pos);
+        // TODO - recompute portal progress
 
         self.child
             .set_origin(ctx, env, Point::new(0.0, -self.viewport_pos.y));
+
+        self.scrollbar_horizontal_visible =
+            !self.constrain_horizontal && portal_size.width < content_size.width;
+        self.scrollbar_vertical_visible =
+            !self.constrain_vertical && portal_size.height < content_size.height;
+
+        if self.scrollbar_horizontal_visible {
+            self.scrollbar_horizontal.widget_mut().portal_size = portal_size.width;
+            self.scrollbar_horizontal.widget_mut().content_size = content_size.width;
+            let scrollbar_size = self.scrollbar_horizontal.layout(ctx, &bc, env);
+            self.scrollbar_horizontal.set_origin(
+                ctx,
+                env,
+                Point::new(0.0, portal_size.height - scrollbar_size.height),
+            );
+        } else {
+            ctx.skip_child(&mut self.scrollbar_horizontal);
+        }
+        if self.scrollbar_vertical_visible {
+            self.scrollbar_vertical.widget_mut().portal_size = portal_size.height;
+            self.scrollbar_vertical.widget_mut().content_size = content_size.height;
+            let scrollbar_size = self.scrollbar_vertical.layout(ctx, &bc, env);
+            self.scrollbar_vertical.set_origin(
+                ctx,
+                env,
+                Point::new(portal_size.width - scrollbar_size.width, 0.0),
+            );
+        } else {
+            ctx.skip_child(&mut self.scrollbar_vertical);
+        }
 
         portal_size
     }
@@ -269,6 +365,17 @@ impl<W: Widget> Widget for Portal<W> {
         ctx.clip(clip_rect);
 
         self.child.paint(ctx, env);
+
+        if self.scrollbar_horizontal_visible {
+            self.scrollbar_horizontal.paint(ctx, env);
+        } else {
+            ctx.skip_child(&mut self.scrollbar_horizontal);
+        }
+        if self.scrollbar_vertical_visible {
+            self.scrollbar_vertical.paint(ctx, env);
+        } else {
+            ctx.skip_child(&mut self.scrollbar_vertical);
+        }
     }
 
     fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {

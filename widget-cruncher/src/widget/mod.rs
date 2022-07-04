@@ -14,6 +14,16 @@
 
 //! Common widgets.
 
+#[allow(clippy::module_inception)]
+mod widget;
+mod widget_pod;
+mod widget_state;
+// TODO - remove pub
+pub mod widget_view;
+
+#[cfg(test)]
+mod tests;
+
 mod button;
 mod checkbox;
 mod flex;
@@ -24,16 +34,7 @@ mod sized_box;
 mod spinner;
 mod web_image;
 //mod textbox;
-
-#[allow(clippy::module_inception)]
-mod widget;
-mod widget_pod;
-mod widget_state;
-// TODO - remove pub
-pub mod widget_view;
-
-#[cfg(test)]
-mod tests;
+mod scroll_bar;
 
 #[doc(hidden)]
 pub use widget::{Widget, WidgetId};
@@ -45,6 +46,7 @@ pub use button::Button;
 pub use flex::{Axis, CrossAxisAlignment, Flex, FlexParams, MainAxisAlignment};
 pub use label::{Label, LineBreaking};
 pub use portal::Portal;
+pub use scroll_bar::ScrollBar;
 pub use sized_box::SizedBox;
 pub use spinner::Spinner;
 pub use web_image::WebImage;

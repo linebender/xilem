@@ -779,16 +779,16 @@ impl Axis {
     }
 
     /// Extract from the argument the magnitude along this axis
-    pub fn major(self, coords: Size) -> f64 {
+    pub fn major(self, size: Size) -> f64 {
         match self {
-            Axis::Horizontal => coords.width,
-            Axis::Vertical => coords.height,
+            Axis::Horizontal => size.width,
+            Axis::Vertical => size.height,
         }
     }
 
     /// Extract from the argument the magnitude along the perpendicular axis
-    pub fn minor(self, coords: Size) -> f64 {
-        self.cross().major(coords)
+    pub fn minor(self, size: Size) -> f64 {
+        self.cross().major(size)
     }
 
     /// Extract the extent of the argument in this axis as a pair.
@@ -830,6 +830,7 @@ impl Axis {
         self.cross().major_vec(vec)
     }
 
+    // TODO - make_pos, make_size, make_rect
     /// Arrange the major and minor measurements with respect to this axis such that it forms
     /// an (x, y) pair.
     pub fn pack(self, major: f64, minor: f64) -> (f64, f64) {
@@ -1033,7 +1034,6 @@ mod tests {
     use crate::assert_render_snapshot;
     use crate::testing::Harness;
     use crate::widget::Label;
-    
 
     #[test]
     #[allow(clippy::cognitive_complexity)]
