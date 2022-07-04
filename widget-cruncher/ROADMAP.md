@@ -16,7 +16,7 @@
 - [X] Add action queue
 - [X] Re-add ExtEvent + AppDelegate
 
-- [ ] Use WidgetView everywhere
+- [X] Use WidgetView everywhere
  - [X] Button
  - [X] Checkbox
  - [X] Flex
@@ -25,7 +25,12 @@
  - [X] SizedBox
  - [X] Spinner
  - [X] Portal
- - [ ] TextBox
+
+- [ ] Implement TextBox
+ - [X] Implement Scroll
+ - [ ] Add text/IME to harness
+ - [ ] Port TextBox
+ - [ ] Write unit tests
 
 - [ ] Refactor WidgetState
  - [ ] Sort WidgetState fields
@@ -53,6 +58,7 @@
  - [ ] Rewrite Disney example
  - [ ] Copy examples from druid
 
+- [ ] Rename to Masonry
 - [ ] Rewrite License bits
 - [ ] Write ARCHITECTURE.md
 - [ ] Publish
@@ -155,6 +161,7 @@ What referential are various values using?
 
 transform_scroll translates mouse events
 
+General note: add hover detection *everywhere*. It's what makes the UI feel alive.
 
 ## Flex stuff
 
@@ -253,3 +260,7 @@ Widget Debuggging
 - Need to see the layout tree at any given point
 - Need to see which subwidgets were not rendered and why
 - Need to see the properties of each widget *at render time* both graphically and in text form
+
+## Resource handling
+
+See swift proposal https://github.com/apple/swift-evolution/blob/main/proposals/0271-package-manager-resources.md
