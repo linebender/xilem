@@ -623,32 +623,35 @@ impl<W: Widget> WidgetPod<W> {
         env: &Env,
     ) {
         let self_id = self.id();
-        let mut inner_ctx = EventCtx {
-            global_state: parent_ctx.global_state,
-            notifications: parent_ctx.notifications,
-            is_init: false,
-            widget_state: &mut self.state,
-            is_handled: false,
-            is_root: false,
-            request_pan_to_child: None,
-        };
 
         for notification in notifications.drain(..) {
             // skip notifications that were submitted by our child
             if notification.source() != self_id {
-                let event = Event::Notification(notification);
-                self.inner.on_event(&mut inner_ctx, &event, env);
-                if inner_ctx.is_handled {
-                    inner_ctx.is_handled = false;
-                } else if let Event::Notification(notification) = event {
-                    // we will try again with the next parent
-                    inner_ctx.notifications.push_back(notification);
-                } else {
-                    // could be unchecked but we avoid unsafe in druid :shrug:
-                    unreachable!()
-                }
+                self.call_widget_method_with_checks("event", |widget_pod| {
+                    let mut inner_ctx = EventCtx {
+                        global_state: parent_ctx.global_state,
+                        notifications: parent_ctx.notifications,
+                        is_init: false,
+                        widget_state: &mut widget_pod.state,
+                        is_handled: false,
+                        is_root: false,
+                        request_pan_to_child: None,
+                    };
+
+                    let event = Event::Notification(notification);
+                    widget_pod.inner.on_event(&mut inner_ctx, &event, env);
+                    if inner_ctx.is_handled {
+                        inner_ctx.is_handled = false;
+                    } else if let Event::Notification(notification) = event {
+                        // we will try again with the next parent
+                        inner_ctx.notifications.push_back(notification);
+                    } else {
+                        // could be unchecked but we avoid unsafe in druid :shrug:
+                        unreachable!()
+                    }
+                });
             } else {
-                inner_ctx.notifications.push_back(notification);
+                parent_ctx.notifications.push_back(notification);
             }
         }
     }
