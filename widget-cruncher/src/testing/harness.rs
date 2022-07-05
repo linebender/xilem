@@ -16,6 +16,7 @@
 
 use image::io::Reader as ImageReader;
 use instant::Duration;
+use shell::text::Selection;
 use std::collections::{HashMap, VecDeque};
 use std::panic::Location;
 use std::path::Path;
@@ -156,7 +157,7 @@ impl Harness {
                     .mock_app
                     .event(Event::Internal(InternalEvent::TargetedCommand(cmd))),
                 None => break,
-            }
+            };
         }
 
         // TODO - this might be too coarse
@@ -268,14 +269,38 @@ impl Harness {
         self.mouse_move(widget_center);
     }
 
-    // TODO - simulate IME
+    // TODO - Handle complicated IME
 
-    /// Send a KeyDown and a KeyUp event to the window.
-    pub fn keyboard_key(&mut self, key: &str) {
-        let event = KeyEvent::for_test(RawMods::None, key);
+    /// Simulate typing the given text.
+    ///
+    /// For every character in the input string (more specifically,
+    /// for every Unicode Scalar Value), this sends a KeyDown and a
+    /// KeyUp event to the window.
+    ///
+    /// Obviously this works better with ASCII text.
+    ///
+    /// IME mocking is a future feature.
+    pub fn keyboard_type_chars(&mut self, text: &str) {
+        // For each character
+        for c in text.split("").filter(|s| !s.is_empty()) {
+            let event = KeyEvent::for_test(RawMods::None, c);
 
-        self.process_event(Event::KeyDown(event.clone()));
-        self.process_event(Event::KeyUp(event.clone()));
+            if self.mock_app.event(Event::KeyDown(event.clone())) == Handled::No {
+                //
+                if let Some(mut input_handler) = self.mock_app.window.get_focused_ime_handler(true)
+                {
+                    // This is copy-pasted from druid-shell's simulate_input function
+                    let selection = input_handler.selection();
+                    input_handler.replace_range(selection.range(), &c);
+                    let new_caret_index = selection.min() + c.len();
+                    input_handler.set_selection(Selection::caret(new_caret_index));
+
+                    self.mock_app.window.release_focused_ime_handler();
+                }
+            }
+            self.mock_app.event(Event::KeyUp(event.clone()));
+        }
+        self.post_event_stuff();
     }
 
     // TODO - add doc alias "send_command"
@@ -460,14 +485,14 @@ impl Harness {
 
 #[allow(dead_code)]
 impl MockAppRoot {
-    fn event(&mut self, event: Event) {
+    fn event(&mut self, event: Event) -> Handled {
         self.window.event(
             event,
             &mut self.debug_logger,
             &mut self.command_queue,
             &mut self.action_queue,
             &self.env,
-        );
+        )
     }
 
     fn lifecycle(&mut self, event: LifeCycle) {

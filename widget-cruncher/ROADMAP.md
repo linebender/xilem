@@ -28,7 +28,7 @@
 
 - [ ] Implement TextBox
  - [X] Implement Scroll
- - [ ] Add text/IME to harness
+ - [X] Add text/IME to harness
  - [ ] Port TextBox
  - [ ] Write unit tests
 
@@ -118,6 +118,10 @@
  - [ ] Remove Data trait
  - [ ] Make it so that required keys are known at launch time for better error messages.
  - [ ] Re-add Localization
+
+- [ ] Improve how Harness mocks IME
+ - [ ] Handle in-place editing (eg Kanji input, I think?).
+ - [ ] Handle movement (eg ctrl+left).
 
 - [ ] Switch to ECS
 - [ ] Remove WidgetId::reserved, move WidgetId::new

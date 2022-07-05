@@ -1329,6 +1329,17 @@ impl WindowRoot {
             .unwrap()
     }
 
+    pub(crate) fn get_focused_ime_handler(
+        &mut self,
+        mutable: bool,
+    ) -> Option<Box<dyn InputHandler>> {
+        let focused_widget_id = self.focus?;
+        self.ime_handlers
+            .iter()
+            .find(|(_, reg)| reg.widget_id == focused_widget_id)
+            .and_then(|(_, reg)| reg.document.acquire(mutable))
+    }
+
     fn update_focus(
         &mut self,
         widget_state: &mut WidgetState,
@@ -1409,6 +1420,14 @@ impl WindowRoot {
         self.ime_handlers
             .iter()
             .find(|(token, _)| req_token == *token)
+            .and_then(|(_, reg)| reg.document.release().then(|| reg.widget_id))
+    }
+
+    pub(crate) fn release_focused_ime_handler(&mut self) -> Option<WidgetId> {
+        let focused_widget_id = self.focus?;
+        self.ime_handlers
+            .iter()
+            .find(|(_, reg)| reg.widget_id == focused_widget_id)
             .and_then(|(_, reg)| reg.document.release().then(|| reg.widget_id))
     }
 
