@@ -29,7 +29,7 @@
 - [ ] Implement TextBox
  - [X] Implement Scroll
  - [X] Add text/IME to harness
- - [ ] Port TextBox
+ - [X] Port TextBox
  - [ ] Write unit tests
 
 - [ ] Refactor WidgetState
@@ -48,6 +48,7 @@
 - [ ] Fix WidgetView type
  - [ ] Add `View` associated type to Widget
  - [ ] Add impl DerefMut to WidgetView
+ - [ ] Be able to create WidgetView from owned Widget
 
 - [ ] Re-add Dialog
 - [ ] Refactor TextLayout
@@ -72,6 +73,17 @@
 - [ ] Refactor Mouse Events and hot status changes
 
 - [ ] Remove `impl Widget for Box<dyn Widget>`
+
+- [ ] Remove Data trait
+
+- [ ] Refactor different passes
+ - [ ] Write a WidgetCtx trait
+ - [ ] Add a `WidgetPod::as_mut(ctx: &impl WidgetCtx)` method
+ - [ ] Handle reques_layout-in-layout corner case
+
+- [ ] Add dev shortcuts:
+ - [ ] To print Widget tree
+ - [ ] To print current focused/active Widget
 
 - [ ] Write analysis of different layout footguns
  - Flex interacting with viewport

@@ -47,6 +47,7 @@ use crate::{Env, KeyOrValue, PaintCtx, RenderContext};
 /// [`Env`]: struct.Env.html
 #[derive(Clone)]
 pub struct TextLayout<T> {
+    // TODO - remove Option
     text: Option<T>,
     font: KeyOrValue<FontDescriptor>,
     // when set, this will be used to override the size in he font descriptor.
@@ -200,6 +201,14 @@ impl<T: TextStorage> TextLayout<T> {
     /// [`TextStorage`]: trait.TextStorage.html
     pub fn text(&self) -> Option<&T> {
         self.text.as_ref()
+    }
+
+    pub fn text_len(&self) -> usize {
+        if let Some(text) = &self.text {
+            text.as_str().len()
+        } else {
+            0
+        }
     }
 
     /// Returns the inner Piet [`TextLayout`] type.

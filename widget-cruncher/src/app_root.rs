@@ -80,7 +80,6 @@ struct AppRootInner {
     #[allow(unused)]
     pub menu_window: Option<WindowId>,
     pub env: Env,
-    pub ime_focus_change: Option<Box<dyn Fn()>>,
 }
 
 // TODO - refactor out again
@@ -136,7 +135,6 @@ impl AppRoot {
             window_requests: VecDeque::new(),
             pending_windows: Default::default(),
             active_windows: Default::default(),
-            ime_focus_change: None,
         }));
         let mut app_root = AppRoot { inner };
 
@@ -181,7 +179,7 @@ impl AppRoot {
 
         self.process_commands_and_actions();
         self.inner().invalidate_paint_regions();
-        // TODO - IME?
+        self.process_ime_changes();
         self.process_window_requests();
     }
 
@@ -225,7 +223,6 @@ impl AppRoot {
     /// the OS needs to know if an event was handled.
     pub fn handle_event(&mut self, event: Event, window_id: WindowId) -> Handled {
         let result;
-        let ime_change;
         {
             if let Event::Command(command)
             | Event::Internal(InternalEvent::TargetedCommand(command)) = event
@@ -239,15 +236,7 @@ impl AppRoot {
 
         self.process_commands_and_actions();
         self.inner().invalidate_paint_regions();
-
-        ime_change = self.inner().ime_focus_change.take();
-
-        // The ime_change callback may call WindowHandle methods which may be reentrant
-        // The RefCell should not be borrowed when calling (ime_change)()
-        if let Some(ime_change) = ime_change {
-            (ime_change)()
-        }
-
+        self.process_ime_changes();
         self.process_window_requests();
 
         result
@@ -275,6 +264,7 @@ impl AppRoot {
             };
             self.do_cmd(cmd);
             self.process_commands_and_actions();
+            self.process_ime_changes();
             self.inner().invalidate_paint_regions();
         } else {
             tracing::error!("unknown dialog token");
@@ -316,6 +306,7 @@ impl AppRoot {
     pub fn run_commands(&mut self) {
         self.process_commands_and_actions();
         self.inner().invalidate_paint_regions();
+        self.process_ime_changes();
         self.process_window_requests();
     }
 
@@ -323,6 +314,7 @@ impl AppRoot {
         self.process_ext_events();
         self.process_commands_and_actions();
         self.inner().invalidate_paint_regions();
+        self.process_ime_changes();
         self.process_window_requests();
     }
 
@@ -412,6 +404,25 @@ impl AppRoot {
                 }
                 None => break,
             }
+        }
+    }
+
+    fn process_ime_changes(&mut self) {
+        let mut ime_focus_change_fns: Vec<Box<dyn Fn()>> = vec![];
+
+        for window in self.inner().active_windows.values_mut() {
+            if let Some(focus_change) = window.ime_focus_change.take() {
+                // The handle.set_focused_text_field method may call WindowHandle
+                // methods which may be reentrant (depending on the platform).
+                // So we clone the window handle and defer calling set_focused_text_field.
+                let handle = window.handle.clone();
+                let f = Box::new(move || handle.set_focused_text_field(focus_change));
+                ime_focus_change_fns.push(f);
+            }
+        }
+
+        for ime_focus_change_fn in ime_focus_change_fns {
+            (ime_focus_change_fn)()
         }
     }
 

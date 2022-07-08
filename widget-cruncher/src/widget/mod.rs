@@ -30,25 +30,25 @@ mod flex;
 mod image;
 mod label;
 mod portal;
+mod scroll_bar;
 mod sized_box;
 mod spinner;
+mod textbox;
 mod web_image;
-//mod textbox;
-mod scroll_bar;
 
 #[doc(hidden)]
 pub use widget::{Widget, WidgetId};
 
-pub use checkbox::Checkbox;
-//pub use textbox::TextBox;
 pub use self::image::Image;
 pub use button::Button;
+pub use checkbox::Checkbox;
 pub use flex::{Axis, CrossAxisAlignment, Flex, FlexParams, MainAxisAlignment};
 pub use label::{Label, LineBreaking};
 pub use portal::Portal;
 pub use scroll_bar::ScrollBar;
 pub use sized_box::SizedBox;
 pub use spinner::Spinner;
+pub use textbox::TextBox;
 pub use web_image::WebImage;
 
 //#[doc(hidden)]

@@ -54,6 +54,10 @@ impl<W: Widget> Portal<W> {
         self.viewport_pos
     }
 
+    pub fn child(&self) -> WidgetRef<'_, W> {
+        self.child.as_ref()
+    }
+
     // TODO - rewrite doc
     /// Builder-style method for deciding whether to constrain the child vertically.
     ///

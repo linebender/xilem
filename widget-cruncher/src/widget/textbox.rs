@@ -14,21 +14,24 @@
 
 //! A textbox widget.
 
-use std::time::Duration;
-use tracing::{trace, trace_span, Span};
-use smallvec::SmallVec;
+// TODO
+#![allow(dead_code)]
 
+use smallvec::{smallvec, SmallVec};
+use std::sync::Arc;
+use std::time::Duration;
+use tracing::{trace_span, Span};
 
 use crate::kurbo::Insets;
-use crate::piet::TextLayout as _;
-use crate::text::{
-    EditableText, ImeInvalidation, Selection, TextComponent, TextLayout, TextStorage,
-};
-use crate::widget::prelude::*;
-use crate::widget::{Padding, Scroll, WidgetWrapper};
+use crate::piet::{RenderContext as _, TextLayout as _};
+use crate::shell::{HotKey, KeyEvent, SysMods, TimerToken};
+use crate::text::TextAlignment;
+use crate::text::{ImeInvalidation, Selection, TextComponent, TextLayout};
+use crate::widget::widget_view::WidgetRef;
+use crate::widget::Portal;
 use crate::{
-    theme, ArcStr, Color, Command, FontDescriptor, HotKey, KeyEvent, KeyOrValue, Point, Rect,
-    SysMods, TextAlignment, TimerToken, Vec2,
+    theme, ArcStr, BoxConstraints, Command, Env, Event, EventCtx, LayoutCtx, LifeCycle,
+    LifeCycleCtx, PaintCtx, Point, Rect, Size, StatusChange, Vec2, Widget, WidgetPod,
 };
 
 const CURSOR_BLINK_DURATION: Duration = Duration::from_millis(500);
@@ -50,8 +53,10 @@ const SCROLL_TO_INSETS: Insets = Insets::uniform_xy(40.0, 0.0);
 /// [`ValueTextBox`]: super::ValueTextBox
 pub struct TextBox {
     placeholder_text: ArcStr,
-    placeholder_layout: TextLayout,
-    inner: Scroll<T, Padding<T, TextComponent>>,
+    placeholder_layout: TextLayout<ArcStr>,
+    // TODO - rename inner
+    // TODO - Add padding
+    inner: WidgetPod<Portal<TextComponent<Arc<String>>>>,
     scroll_to_selection_after_layout: bool,
     multiline: bool,
     /// true if a click event caused us to gain focus.
@@ -70,7 +75,7 @@ pub struct TextBox {
     text_pos: Point,
 }
 
-impl<T: EditableText + TextStorage> TextBox {
+impl TextBox {
     /// Create a new TextBox widget.
     pub fn new() -> Self {
         let placeholder_text = ArcStr::from("");
@@ -78,14 +83,12 @@ impl<T: EditableText + TextStorage> TextBox {
         placeholder_layout.set_text_color(theme::PLACEHOLDER_COLOR);
         placeholder_layout.set_text(placeholder_text.clone());
 
-        let mut scroll = Scroll::new(Padding::new(
-            theme::TEXTBOX_INSETS,
-            TextComponent::default(),
-        ))
-        .content_must_fill(true);
-        scroll.set_enabled_scrollbars(crate::scroll_component::ScrollbarsEnabled::None);
+        let text_component = TextComponent::new(Arc::new(String::new()));
+        let scroll = Portal::new(text_component).content_must_fill(true);
+        //TODO
+        //scroll.set_enabled_scrollbars(crate::scroll_component::ScrollbarsEnabled::None);
         Self {
-            inner: scroll,
+            inner: WidgetPod::new(scroll),
             scroll_to_selection_after_layout: false,
             placeholder_text: placeholder_text.into(),
             placeholder_layout,
@@ -101,14 +104,16 @@ impl<T: EditableText + TextStorage> TextBox {
     /// Create a new multi-line `TextBox`.
     pub fn multiline() -> Self {
         let mut this = TextBox::new();
-        this.inner
-            .set_enabled_scrollbars(crate::scroll_component::ScrollbarsEnabled::Both);
-        this.text_mut().borrow_mut().set_accepts_newlines(true);
-        this.inner.set_horizontal_scroll_enabled(false);
+        //TODO
+        //this.inner.set_enabled_scrollbars(crate::scroll_component::ScrollbarsEnabled::Both);
+        //this.text_mut().borrow_mut().set_accepts_newlines(true);
+        //this.inner.set_horizontal_scroll_enabled(false);
         this.multiline = true;
         this
     }
 
+    // TODO
+    #[cfg(FALSE)]
     /// If `true` (and this is a [`multiline`] text box) lines will be wrapped
     /// at the maximum layout width.
     ///
@@ -122,6 +127,8 @@ impl<T: EditableText + TextStorage> TextBox {
     }
 }
 
+// TODO
+#[cfg(FALSE)]
 impl TextBox {
     /// Builder-style method for setting the text size.
     ///
@@ -185,7 +192,7 @@ impl TextBox {
     ///
     /// [`Key<f64>`]: ../struct.Key.html
     pub fn set_text_size(&mut self, size: impl Into<KeyOrValue<f64>>) {
-        if !self.text().can_write() {
+        if !self.inner.as_ref().child().can_write() {
             tracing::warn!("set_text_size called with IME lock held.");
             return;
         }
@@ -207,7 +214,7 @@ impl TextBox {
     /// [`FontDescriptor`]: ../struct.FontDescriptor.html
     /// [`Key<FontDescriptor>`]: ../struct.Key.html
     pub fn set_font(&mut self, font: impl Into<KeyOrValue<FontDescriptor>>) {
-        if !self.text().can_write() {
+        if !self.inner.as_ref().child().can_write() {
             tracing::warn!("set_font called with IME lock held.");
             return;
         }
@@ -235,7 +242,7 @@ impl TextBox {
     /// [`TextAlignment`]: enum.TextAlignment.html
     /// [`multiline`]: #method.multiline
     pub fn set_text_alignment(&mut self, alignment: TextAlignment) {
-        if !self.text().can_write() {
+        if !self.inner.as_ref().child().can_write() {
             tracing::warn!("set_text_alignment called with IME lock held.");
             return;
         }
@@ -252,7 +259,7 @@ impl TextBox {
     /// [`request_layout`]: ../struct.EventCtx.html#method.request_layout
     /// [`Key<Color>`]: ../struct.Key.html
     pub fn set_text_color(&mut self, color: impl Into<KeyOrValue<Color>>) {
-        if !self.text().can_write() {
+        if !self.inner.as_ref().child().can_write() {
             tracing::warn!("set_text_color calld with IME lock held.");
             return;
         }
@@ -271,7 +278,7 @@ impl TextBox {
     }
 }
 
-impl<T: Data> TextBox {
+impl TextBox {
     /// Builder-style method to set the `TextBox`'s placeholder text.
     pub fn with_placeholder(mut self, placeholder: impl Into<ArcStr>) -> Self {
         self.set_placeholder(placeholder);
@@ -282,25 +289,13 @@ impl<T: Data> TextBox {
     pub fn set_placeholder(&mut self, placeholder: impl Into<ArcStr>) {
         self.placeholder_text = placeholder.into();
         self.placeholder_layout
-            .set_text(self.placeholder_text.display_text());
+            .set_text(self.placeholder_text.clone());
     }
 }
 
 impl TextBox {
-    /// An immutable reference to the inner [`TextComponent`].
-    ///
-    /// Using this correctly is difficult; please see the [`TextComponent`]
-    /// docs for more information.
-    pub fn text(&self) -> &TextComponent {
-        self.inner.child().wrapped()
-    }
-
-    /// A mutable reference to the inner [`TextComponent`].
-    ///
-    /// Using this correctly is difficult; please see the [`TextComponent`]
-    /// docs for more information.
-    pub fn text_mut(&mut self) -> &mut TextComponent {
-        self.inner.child_mut().wrapped_mut()
+    fn text_len(&self) -> usize {
+        self.inner.as_ref().child().borrow().layout.text_len()
     }
 
     fn reset_cursor_blink(&mut self, token: TimerToken) {
@@ -309,17 +304,20 @@ impl TextBox {
     }
 
     fn should_draw_cursor(&self) -> bool {
-        if cfg!(target_os = "macos") && self.text().can_read() {
-            self.cursor_on && self.text().borrow().selection().is_caret()
+        if cfg!(target_os = "macos") && self.inner.as_ref().child().can_read() {
+            self.cursor_on && self.inner.as_ref().child().borrow().selection().is_caret()
         } else {
             self.cursor_on
         }
     }
 }
 
-impl<T: TextStorage + EditableText> TextBox {
+impl TextBox {
     fn rect_for_selection_end(&self) -> Rect {
-        let text = self.text().borrow();
+        // TODO
+        let child = self.inner.as_ref();
+        let child = child.child();
+        let text = child.borrow();
         let layout = text.layout.layout().unwrap();
 
         let hit = layout.hit_test_text_position(text.selection().active);
@@ -331,6 +329,7 @@ impl<T: TextStorage + EditableText> TextBox {
         Rect::new(x, y0, x, y1)
     }
 
+    #[cfg(FALSE)]
     fn scroll_to_selection_end(&mut self) {
         let rect = self.rect_for_selection_end();
         let view_rect = self.inner.viewport_rect();
@@ -350,39 +349,49 @@ impl<T: TextStorage + EditableText> TextBox {
     ) -> Option<Command> {
         let our_id = ctx.widget_id();
         match key {
-            key if HotKey::new(SysMods::Cmd, "c").matches(key) => Some(crate::command::COPY.to(our_id)),
-            key if HotKey::new(SysMods::Cmd, "x").matches(key) => Some(crate::command::CUT.to(our_id)),
+            key if HotKey::new(SysMods::Cmd, "c").matches(key) => {
+                Some(crate::command::COPY.to(our_id))
+            }
+            key if HotKey::new(SysMods::Cmd, "x").matches(key) => {
+                Some(crate::command::CUT.to(our_id))
+            }
             // we have to send paste to the window, in order to get it converted into the `Paste`
             // event
             key if HotKey::new(SysMods::Cmd, "v").matches(key) => {
                 Some(crate::command::PASTE.to(ctx.window_id()))
             }
-            key if HotKey::new(SysMods::Cmd, "z").matches(key) => Some(crate::command::UNDO.to(our_id)),
+            key if HotKey::new(SysMods::Cmd, "z").matches(key) => {
+                Some(crate::command::UNDO.to(our_id))
+            }
             key if HotKey::new(SysMods::CmdShift, "Z").matches(key) && !cfg!(windows) => {
                 Some(crate::command::REDO.to(our_id))
             }
             key if HotKey::new(SysMods::Cmd, "y").matches(key) && cfg!(windows) => {
                 Some(crate::command::REDO.to(our_id))
             }
-            key if HotKey::new(SysMods::Cmd, "a").matches(key) => Some(crate::command::SELECT_ALL.to(our_id)),
+            key if HotKey::new(SysMods::Cmd, "a").matches(key) => {
+                Some(crate::command::SELECT_ALL.to(our_id))
+            }
             _ => None,
         }
     }
 }
 
-impl<T: TextStorage + EditableText> Widget for TextBox {
+impl Widget for TextBox {
     fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, env: &Env) {
         ctx.init();
 
         match event {
             Event::Notification(cmd) => match cmd {
                 cmd if cmd.is(TextComponent::SCROLL_TO) => {
-                    let after_edit = *cmd.get(TextComponent::SCROLL_TO).unwrap_or(&false);
+                    let after_edit = *cmd.try_get(TextComponent::SCROLL_TO).unwrap();
                     if after_edit {
                         ctx.request_layout();
                         self.scroll_to_selection_after_layout = true;
                     } else {
-                        self.scroll_to_selection_end();
+                        let selection_end = self.rect_for_selection_end();
+                        let mut child = ctx.get_child_view(&mut self.inner);
+                        child.pan_viewport_to(selection_end);
                     }
                     ctx.set_handled();
                     ctx.request_paint();
@@ -404,13 +413,13 @@ impl<T: TextStorage + EditableText> Widget for TextBox {
                 }
                 _ => (),
             },
-            Event::KeyDown(key) if !self.text().is_composing() => {
+            Event::KeyDown(key) if !self.inner.as_ref().child().is_composing() => {
                 if let Some(cmd) = self.fallback_do_builtin_command(ctx, key) {
                     ctx.submit_command(cmd);
                     ctx.set_handled();
                 }
             }
-            Event::MouseDown(mouse) if self.text().can_write() => {
+            Event::MouseDown(mouse) if self.inner.as_ref().child().can_write() => {
                 if !ctx.is_disabled() {
                     if !mouse.focus {
                         ctx.request_focus();
@@ -437,18 +446,20 @@ impl<T: TextStorage + EditableText> Widget for TextBox {
                 self.reset_cursor_blink(ctx.request_timer(CURSOR_BLINK_DURATION));
             }
             Event::Command(ref cmd)
-                if !self.text().is_composing()
+                if !self.inner.as_ref().child().is_composing()
                     && ctx.is_focused()
                     && cmd.is(crate::command::COPY) =>
             {
-                self.text().borrow().set_clipboard();
+                self.inner.as_ref().child().borrow().set_clipboard();
                 ctx.set_handled();
             }
             Event::Command(cmd)
-                if !self.text().is_composing()
+                if !self.inner.as_ref().child().is_composing()
                     && ctx.is_focused()
                     && cmd.is(crate::command::CUT) =>
             {
+                // TODO
+                #[cfg(FALSE)]
                 if self.text().borrow().set_clipboard() {
                     let inval = self.text_mut().borrow_mut().insert_text(data, "");
                     ctx.invalidate_text_input(inval);
@@ -456,10 +467,12 @@ impl<T: TextStorage + EditableText> Widget for TextBox {
                 ctx.set_handled();
             }
             Event::Command(cmd)
-                if !self.text().is_composing()
+                if !self.inner.as_ref().child().is_composing()
                     && ctx.is_focused()
                     && cmd.is(crate::command::SELECT_ALL) =>
             {
+                // TODO
+                #[cfg(FALSE)]
                 if let Some(inval) = self
                     .text_mut()
                     .borrow_mut()
@@ -469,13 +482,15 @@ impl<T: TextStorage + EditableText> Widget for TextBox {
                 }
                 ctx.set_handled();
             }
-            Event::Paste(ref item) if self.text().can_write() => {
+            Event::Paste(ref item) if self.inner.as_ref().child().can_write() => {
                 if let Some(string) = item.get_string() {
-                    let text = if self.multiline {
+                    let _text = if self.multiline {
                         &string
                     } else {
                         string.lines().next().unwrap_or("")
                     };
+                    // TODO
+                    #[cfg(FALSE)]
                     if !text.is_empty() {
                         let inval = self.text_mut().borrow_mut().insert_text(data, text);
                         ctx.invalidate_text_input(inval);
@@ -487,45 +502,67 @@ impl<T: TextStorage + EditableText> Widget for TextBox {
         self.inner.on_event(ctx, event, env)
     }
 
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
+    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange, _env: &Env) {
         ctx.init();
 
         match event {
-            LifeCycle::WidgetAdded => {
-                if matches!(event, LifeCycle::WidgetAdded) {
-                    self.placeholder_text.resolve(data, env);
-                }
-                ctx.register_text_input(self.text().input_handler());
-            }
-            LifeCycle::BuildFocusChain => {
-                //TODO: make this a configurable option? maybe?
-                ctx.register_for_focus();
-            }
-            LifeCycle::FocusChanged(true) => {
+            StatusChange::FocusChanged(true) => {
+                // TODO
+                #[cfg(FALSE)]
                 if self.text().can_write() && !self.multiline && !self.was_focused_from_click {
                     let selection = Selection::new(0, data.len());
                     let _ = self.text_mut().borrow_mut().set_selection(selection);
                     ctx.invalidate_text_input(ImeInvalidation::SelectionChanged);
                 }
-                self.text_mut().has_focus = true;
+
+                {
+                    let mut child = ctx.get_child_view(&mut self.inner);
+                    child.get_child_view().set_focused(true);
+                }
                 self.reset_cursor_blink(ctx.request_timer(CURSOR_BLINK_DURATION));
                 self.was_focused_from_click = false;
                 ctx.request_paint();
             }
-            LifeCycle::FocusChanged(false) => {
-                if self.text().can_write() && MAC_OR_LINUX && !self.multiline {
-                    let selection = self.text().borrow().selection();
+            StatusChange::FocusChanged(false) => {
+                if self.inner.as_ref().child().can_write() && MAC_OR_LINUX && !self.multiline {
+                    let selection = self.inner.as_ref().child().borrow().selection();
                     let selection = Selection::new(selection.active, selection.active);
-                    let _ = self.text_mut().borrow_mut().set_selection(selection);
+                    let _ = self
+                        .inner
+                        .as_ref()
+                        .child()
+                        .borrow_mut()
+                        .set_selection(selection);
                     ctx.invalidate_text_input(ImeInvalidation::SelectionChanged);
                 }
-                self.text_mut().has_focus = false;
-                if !self.multiline {
-                    self.inner.scroll_to(Rect::ZERO);
+
+                {
+                    let mut child = ctx.get_child_view(&mut self.inner);
+                    child.get_child_view().set_focused(false);
+                    if !self.multiline {
+                        // TODO - remove?
+                        child.pan_viewport_to(Rect::ZERO);
+                    }
                 }
+
                 self.cursor_timer = TimerToken::INVALID;
                 self.was_focused_from_click = false;
                 ctx.request_paint();
+            }
+            _ => (),
+        }
+    }
+
+    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
+        ctx.init();
+
+        match event {
+            LifeCycle::WidgetAdded => {
+                ctx.register_text_input(self.inner.as_ref().child().input_handler());
+            }
+            LifeCycle::BuildFocusChain => {
+                //TODO: make this a configurable option? maybe?
+                ctx.register_for_focus();
             }
             _ => (),
         }
@@ -535,46 +572,42 @@ impl<T: TextStorage + EditableText> Widget for TextBox {
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
         ctx.init();
 
-        if !self.text().can_write() {
+        if !self.inner.as_ref().child().can_write() {
             tracing::warn!("Widget::layout called with outstanding IME lock.");
         }
         let min_width = env.get(theme::WIDE_WIDGET_WIDTH);
-        let textbox_insets = env.get(theme::TEXTBOX_INSETS);
+        let _textbox_insets = env.get(theme::TEXTBOX_INSETS);
 
         self.placeholder_layout.rebuild_if_needed(ctx.text(), env);
         let min_size = bc.constrain((min_width, 0.0));
         let child_bc = BoxConstraints::new(min_size, bc.max());
 
-        let size = self.inner.layout(ctx, &child_bc, data, env);
+        let size = self.inner.layout(ctx, &child_bc, env);
+        self.inner.set_origin(ctx, env, Point::ZERO);
 
-        let text_metrics = if !self.text().can_read() || data.is_empty() {
+        let text_metrics = if !self.inner.as_ref().child().can_read() || self.text_len() == 0 {
             self.placeholder_layout.layout_metrics()
         } else {
-            self.text().borrow().layout.layout_metrics()
+            self.inner.as_ref().child().borrow().layout.layout_metrics()
         };
 
-        let layout_baseline = text_metrics.size.height - text_metrics.first_baseline;
-        let baseline_off = layout_baseline
-            - (self.inner.child_size().height - self.inner.viewport_rect().height())
-            + textbox_insets.y1;
+        let _layout_baseline = text_metrics.size.height - text_metrics.first_baseline;
+        let baseline_off = 0.0;
+        // = layout_baseline - (self.inner.child_size().height - self.inner.viewport_rect().height()) + textbox_insets.y1;
         ctx.set_baseline_offset(baseline_off);
         if self.scroll_to_selection_after_layout {
-            self.scroll_to_selection_end();
+            // TODO
+            //self.scroll_to_selection_end();
             self.scroll_to_selection_after_layout = false;
         }
 
-        trace!(
-            "Computed layout: size={}, baseline_offset={:?}",
-            size,
-            baseline_off
-        );
         size
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, env: &Env) {
         ctx.init();
 
-        if !self.text().can_read() {
+        if !self.inner.as_ref().child().can_read() {
             tracing::warn!("Widget::paint called with outstanding IME lock, skipping");
             return;
         }
@@ -600,12 +633,14 @@ impl<T: TextStorage + EditableText> Widget for TextBox {
 
         ctx.fill(clip_rect, &background_color);
 
-        if !data.is_empty() {
+        if self.text_len() != 0 {
             self.inner.paint(ctx, env);
         } else {
+            ctx.skip_child(&mut self.inner);
+
             let text_width = self.placeholder_layout.layout_metrics().size.width;
             let extra_width = (size.width - text_width - textbox_insets.x_value()).max(0.);
-            let alignment = self.text().borrow().text_alignment();
+            let alignment = self.inner.as_ref().child().borrow().text_alignment();
             // alignment is only used for single-line text boxes
             let x_offset = if self.multiline {
                 0.0
@@ -625,18 +660,20 @@ impl<T: TextStorage + EditableText> Widget for TextBox {
         if is_focused && self.should_draw_cursor() {
             // if there's no data, we always draw the cursor based on
             // our alignment.
-            let cursor_pos = self.text().borrow().selection().active;
+            let cursor_pos = self.inner.as_ref().child().borrow().selection().active;
             let cursor_line = self
-                .text()
+                .inner
+                .as_ref()
+                .child()
                 .borrow()
                 .cursor_line_for_text_position(cursor_pos);
 
             let padding_offset = Vec2::new(textbox_insets.x0, textbox_insets.y0);
 
-            let mut cursor = if data.is_empty() {
+            let mut cursor = if self.text_len() == 0 {
                 cursor_line + padding_offset
             } else {
-                cursor_line + padding_offset - self.inner.offset()
+                cursor_line + padding_offset - self.inner.as_ref().get_viewport_pos().to_vec2()
             };
 
             // Snap the cursor to the pixel grid so it stays sharp.
@@ -653,12 +690,8 @@ impl<T: TextStorage + EditableText> Widget for TextBox {
         ctx.stroke(clip_rect, &border_color, border_width);
     }
 
-    fn children(&self) -> SmallVec<[&dyn AsWidgetPod; 16]> {
-        SmallVec::new()
-    }
-
-    fn children_mut(&mut self) -> SmallVec<[&mut dyn AsWidgetPod; 16]> {
-        SmallVec::new()
+    fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
+        smallvec![self.inner.as_dyn()]
     }
 
     fn make_trace_span(&self) -> Span {
@@ -666,7 +699,7 @@ impl<T: TextStorage + EditableText> Widget for TextBox {
     }
 }
 
-impl<T: TextStorage + EditableText> Default for TextBox {
+impl Default for TextBox {
     fn default() -> Self {
         TextBox::new()
     }

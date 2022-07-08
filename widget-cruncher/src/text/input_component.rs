@@ -14,12 +14,6 @@
 
 //! A widget component that integrates with the platform text system.
 
-// TODO
-#![allow(unused_imports)]
-#![allow(unused_variables)]
-#![allow(unused_mut)]
-#![allow(dead_code)]
-
 use smallvec::SmallVec;
 use std::cell::{Cell, Ref, RefCell, RefMut};
 use std::ops::Range;
@@ -34,7 +28,7 @@ use super::{
 use crate::kurbo::{Line, Point, Rect, Vec2};
 use crate::piet::TextLayout as _;
 use crate::widget::prelude::*;
-use crate::widget::widget_view::WidgetRef;
+use crate::widget::widget_view::{WidgetRef, WidgetView};
 use crate::{text, theme, Env, Selector};
 use druid_shell::{Cursor, Modifiers};
 
@@ -273,28 +267,36 @@ impl<T: EditableText + TextStorage> TextComponent<T> {
     }
 }
 
+impl<T: TextStorage + EditableText> WidgetView<'_, '_, TextComponent<T>> {
+    pub fn set_text(&mut self, new_text: T) {
+        // TODO - use '==' instead
+        let needs_rebuild = self
+            .widget
+            .borrow()
+            .layout
+            .text()
+            .map(|old| !old.same(&new_text))
+            .unwrap_or(true);
+        if needs_rebuild {
+            self.widget.borrow_mut().layout.set_text(new_text.clone());
+            self.widget
+                .borrow_mut()
+                .update_pending_invalidation(ImeInvalidation::Reset);
+        }
+    }
+
+    pub fn set_focused(&mut self, focused: bool) {
+        self.widget.has_focus = focused;
+        self.request_paint();
+    }
+}
+
 impl<T: TextStorage + EditableText> Widget for TextComponent<T> {
-    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, env: &Env) {
+    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, _env: &Env) {
+        ctx.init();
         match event {
             Event::MouseDown(mouse) if self.can_write() && !ctx.is_disabled() => {
                 ctx.set_active(true);
-                // ensure data is up to date before a click
-                // TODO
-                let needs_rebuild = true;
-                /*
-                self
-                    .borrow()
-                    .layout
-                    .text()
-                    .map(|old| !old.same(data))
-                    .unwrap_or(true);
-                if needs_rebuild {
-                    self.borrow_mut().layout.set_text(data.clone());
-                    self.borrow_mut().layout.rebuild_if_needed(ctx.text(), env);
-                    self.borrow_mut()
-                        .update_pending_invalidation(ImeInvalidation::Reset);
-                }
-                */
                 self.borrow_mut()
                     .do_mouse_down(mouse.pos, mouse.mods, mouse.count);
                 self.borrow_mut()
@@ -329,14 +331,13 @@ impl<T: TextStorage + EditableText> Widget for TextComponent<T> {
                     self.can_write(),
                     "lock release should be cause of ImeStateChange event"
                 );
-                let scroll_to = self.borrow_mut().take_scroll_to();
-                let action = self.borrow_mut().take_external_action();
 
-                // TODO
-                /*
+                let scroll_to = self.borrow_mut().take_scroll_to();
                 if let Some(scroll_to) = scroll_to {
                     ctx.submit_notification(TextComponent::SCROLL_TO.with(scroll_to));
                 }
+
+                let action = self.borrow_mut().take_external_action();
                 if let Some(action) = action {
                     match action {
                         TextAction::Cancel => ctx.submit_notification(TextComponent::CANCEL),
@@ -350,13 +351,13 @@ impl<T: TextStorage + EditableText> Widget for TextComponent<T> {
                         _ => tracing::warn!("unexepcted external action '{:?}'", action),
                     };
                 }
-                */
+
                 let text = self.borrow_mut().take_external_text_change();
-                let selection = self.borrow_mut().take_external_selection_change();
                 if let Some(text) = text {
                     self.borrow_mut().layout.set_text(text.clone());
-                    //*data = text;
                 }
+
+                let selection = self.borrow_mut().take_external_selection_change();
                 if let Some(selection) = selection {
                     self.borrow_mut().selection = selection;
                     ctx.request_paint();
@@ -370,6 +371,7 @@ impl<T: TextStorage + EditableText> Widget for TextComponent<T> {
     fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange, _env: &Env) {}
 
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
+        ctx.init();
         match event {
             LifeCycle::WidgetAdded => {
                 assert!(
@@ -390,9 +392,7 @@ impl<T: TextStorage + EditableText> Widget for TextComponent<T> {
                 ctx.request_layout();
             }
             //FIXME: this should happen in the parent too?
-            LifeCycle::Internal(crate::InternalLifeCycle::ParentWindowOrigin)
-                if self.can_write() =>
-            {
+            LifeCycle::Internal(crate::InternalLifeCycle::ParentWindowOrigin) => {
                 if self.can_write() {
                     let prev_origin = self.borrow().origin;
                     let new_origin = ctx.window_origin();
@@ -407,6 +407,7 @@ impl<T: TextStorage + EditableText> Widget for TextComponent<T> {
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
+        ctx.init();
         if !self.can_write() {
             tracing::warn!("Text layout called with IME lock held.");
             return Size::ZERO;
@@ -433,6 +434,7 @@ impl<T: TextStorage + EditableText> Widget for TextComponent<T> {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, env: &Env) {
+        ctx.init();
         if !self.can_read() {
             tracing::warn!("Text paint called with IME lock held.");
         }
@@ -477,7 +479,7 @@ impl<T: TextStorage + EditableText> Widget for TextComponent<T> {
     }
 
     fn make_trace_span(&self) -> Span {
-        trace_span!("Button")
+        trace_span!("TextComponent")
     }
 }
 
@@ -907,9 +909,9 @@ impl<T: TextStorage + EditableText> InputHandler for EditSessionHandle<T> {
     }
 }
 
-impl<T> Default for TextComponent<T> {
-    fn default() -> Self {
-        let inner = EditSession {
+impl<T: TextStorage> TextComponent<T> {
+    pub fn new(text: T) -> Self {
+        let mut inner = EditSession {
             layout: TextLayout::new(),
             external_scroll_to: None,
             external_text_change: None,
@@ -927,6 +929,7 @@ impl<T> Default for TextComponent<T> {
             drag_granularity: DragGranularity::Grapheme,
             origin: Point::ZERO,
         };
+        inner.layout.set_text(text);
 
         TextComponent {
             edit_session: Arc::new(RefCell::new(inner)),
