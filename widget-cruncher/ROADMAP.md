@@ -5,8 +5,6 @@
 - [X] Add downcast to WidgetRef and WidgetView
 - [X] Add WidgetAdded test
 - [X] Rename ContextState to GlobalPassCtx
-- [ ] Add WidgetView::as_ref
-- [ ] Brainstorm names for AppDelegate, Harness methods, Action, ExtEvent
 
 - [X] Rewrite tests
  - [X] Create coverage profile
@@ -49,6 +47,7 @@
  - [ ] Add `View` associated type to Widget
  - [ ] Add impl DerefMut to WidgetView
  - [ ] Be able to create WidgetView from owned Widget
+ - [ ] Add WidgetRef methods to WidgetView
 
 - [ ] Re-add Dialog
 - [ ] Refactor TextLayout
@@ -65,6 +64,8 @@
 - [ ] Publish
 
 # TODO - Long term
+
+- [ ] Brainstorm names for AppDelegate, Harness methods, Action, ExtEvent
 
 - [ ] Port Panoramix
 
