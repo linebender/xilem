@@ -19,7 +19,6 @@ mod widget;
 mod widget_pod;
 mod widget_state;
 // TODO - remove pub
-#[path = "widget_view.rs"]
 pub mod widget_mut;
 
 #[cfg(test)]
