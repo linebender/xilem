@@ -11,7 +11,7 @@ use smallvec::{smallvec, SmallVec};
 use std::{thread, time};
 
 use widget_cruncher::widget::prelude::*;
-use widget_cruncher::widget::widget_view::WidgetRef;
+use widget_cruncher::widget::widget_mut::WidgetRef;
 use widget_cruncher::widget::{Flex, Label, Spinner, WidgetPod};
 use widget_cruncher::{AppLauncher, Point, Selector, Target, WindowDesc};
 

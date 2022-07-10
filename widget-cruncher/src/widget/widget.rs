@@ -13,7 +13,7 @@
 // limitations under the License.
 
 use super::prelude::*;
-use crate::widget::widget_view::WidgetRef;
+use crate::widget::widget_mut::WidgetRef;
 use crate::AsAny;
 use crate::Point;
 use smallvec::SmallVec;
@@ -95,6 +95,8 @@ pub struct WidgetId(NonZeroU64);
 /// [`Env`]: struct.Env.html
 /// [`WidgetPod`]: struct.WidgetPod.html
 pub trait Widget: AsAny {
+    //type MutRef: FromWidgetMut<W = Self>;
+
     /// Handle an event.
     ///
     /// A number of different events (in the [`Event`] enum) are handled in this

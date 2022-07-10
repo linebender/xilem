@@ -28,7 +28,7 @@ use super::{
 use crate::kurbo::{Line, Point, Rect, Vec2};
 use crate::piet::TextLayout as _;
 use crate::widget::prelude::*;
-use crate::widget::widget_view::{WidgetRef, WidgetView};
+use crate::widget::widget_mut::{WidgetMut, WidgetRef};
 use crate::{text, theme, Env, Selector};
 use druid_shell::{Cursor, Modifiers};
 
@@ -269,7 +269,7 @@ impl<T: EditableText + TextStorage> TextComponent<T> {
     }
 }
 
-impl<T: TextStorage + EditableText> WidgetView<'_, '_, TextComponent<T>> {
+impl<T: TextStorage + EditableText> WidgetMut<'_, '_, TextComponent<T>> {
     pub fn set_text(&mut self, new_text: impl Into<T>) {
         let new_text = new_text.into();
         // TODO - use '==' instead

@@ -16,8 +16,8 @@
 
 use crate::kurbo::{common::FloatExt, Vec2};
 use crate::widget::prelude::*;
-use crate::widget::widget_view::WidgetRef;
-use crate::widget::widget_view::WidgetView;
+use crate::widget::widget_mut::WidgetMut;
+use crate::widget::widget_mut::WidgetRef;
 use crate::{Data, KeyOrValue, Point, Rect, WidgetId, WidgetPod};
 use smallvec::SmallVec;
 use tracing::{trace, trace_span, Span};
@@ -241,9 +241,9 @@ impl Flex {
     }
 }
 
-// --- Mutate live Flex - WidgetView ---
+// --- Mutate live Flex - WidgetMut ---
 
-impl<'a, 'b> WidgetView<'a, 'b, Flex> {
+impl<'a, 'b> WidgetMut<'a, 'b, Flex> {
     // --- Mutate live Flex ---
 
     /// Set the childrens' [`CrossAxisAlignment`].
@@ -493,14 +493,14 @@ impl<'a, 'b> WidgetView<'a, 'b, Flex> {
     }
 
     // FIXME - Remove Box
-    pub fn get_child_view(&mut self, idx: usize) -> Option<WidgetView<'_, 'b, Box<dyn Widget>>> {
+    pub fn get_child_view(&mut self, idx: usize) -> Option<WidgetMut<'_, 'b, Box<dyn Widget>>> {
         let child = match &mut self.widget.children[idx] {
             Child::Fixed { widget, .. } | Child::Flex { widget, .. } => widget,
             Child::FixedSpacer(..) => return None,
             Child::FlexedSpacer(..) => return None,
         };
 
-        Some(WidgetView {
+        Some(WidgetMut {
             global_state: self.global_state,
             parent_widget_state: self.widget_state,
             widget_state: &mut child.state,

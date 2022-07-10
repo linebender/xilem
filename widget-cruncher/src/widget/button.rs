@@ -16,13 +16,13 @@
 
 use crate::action::Action;
 use crate::widget::prelude::*;
-use crate::widget::widget_view::WidgetRef;
+use crate::widget::widget_mut::WidgetRef;
 use crate::widget::{Label, WidgetPod};
 use crate::{theme, ArcStr, Insets, LinearGradient, UnitPoint};
 use smallvec::SmallVec;
 use tracing::{trace, trace_span, Span};
 
-use super::widget_view::WidgetView;
+use super::widget_mut::WidgetMut;
 
 // the minimum padding added to a button.
 // NOTE: these values are chosen to match the existing look of TextBox; these
@@ -80,14 +80,14 @@ impl Button {
     }
 }
 
-impl<'a, 'b> WidgetView<'a, 'b, Button> {
+impl<'a, 'b> WidgetMut<'a, 'b, Button> {
     /// Set the text.
     pub fn set_text(&mut self, new_text: impl Into<ArcStr>) {
         self.get_label_view().set_text(new_text.into());
     }
 
-    pub fn get_label_view(&mut self) -> WidgetView<'_, 'b, Label> {
-        WidgetView {
+    pub fn get_label_view(&mut self) -> WidgetMut<'_, 'b, Label> {
+        WidgetMut {
             global_state: self.global_state,
             parent_widget_state: self.widget_state,
             widget_state: &mut self.widget.label.state,

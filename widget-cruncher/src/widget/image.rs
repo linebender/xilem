@@ -18,7 +18,7 @@
 use crate::kurbo::Rect;
 use crate::piet::{Image as _, ImageBuf, InterpolationMode, PietImage};
 use crate::widget::prelude::*;
-use crate::widget::widget_view::{WidgetRef, WidgetView};
+use crate::widget::widget_mut::{WidgetMut, WidgetRef};
 use crate::widget::FillStrat;
 
 use smallvec::SmallVec;
@@ -78,7 +78,7 @@ impl Image {
     }
 }
 
-impl<'a, 'b> WidgetView<'a, 'b, Image> {
+impl<'a, 'b> WidgetMut<'a, 'b, Image> {
     /// Modify the widget's fill strategy.
     #[inline]
     pub fn set_fill_mode(&mut self, newfil: FillStrat) {

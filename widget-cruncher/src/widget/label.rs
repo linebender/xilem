@@ -25,11 +25,11 @@ use crate::kurbo::Vec2;
 use crate::text::FontDescriptor;
 use crate::text::{TextAlignment, TextLayout};
 use crate::widget::prelude::*;
-use crate::widget::widget_view::WidgetRef;
+use crate::widget::widget_mut::WidgetRef;
 use crate::{ArcStr, Color, Data, KeyOrValue, Point};
 use druid_shell::Cursor;
 
-use super::widget_view::WidgetView;
+use super::widget_mut::WidgetMut;
 
 // added padding between the edges of the widget and the text.
 const LABEL_X_PADDING: f64 = 2.0;
@@ -163,7 +163,7 @@ impl Label {
     }
 }
 
-impl WidgetView<'_, '_, Label> {
+impl WidgetMut<'_, '_, Label> {
     /// Set the text.
     pub fn set_text(&mut self, new_text: impl Into<ArcStr>) {
         self.widget.text_layout.set_text(new_text.into());

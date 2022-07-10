@@ -17,7 +17,7 @@
 use crate::action::Action;
 use crate::kurbo::{BezPath, Size};
 use crate::piet::{LineCap, LineJoin, LinearGradient, RenderContext, StrokeStyle, UnitPoint};
-use crate::widget::widget_view::{WidgetRef, WidgetView};
+use crate::widget::widget_mut::{WidgetMut, WidgetRef};
 use crate::widget::{prelude::*, Label};
 use crate::ArcStr;
 use crate::{theme, WidgetPod};
@@ -48,7 +48,7 @@ impl Checkbox {
     }
 }
 
-impl<'a, 'b> WidgetView<'a, 'b, Checkbox> {
+impl<'a, 'b> WidgetMut<'a, 'b, Checkbox> {
     pub fn set_checked(&mut self, checked: bool) {
         self.widget.checked = checked;
         self.request_paint();
@@ -59,8 +59,8 @@ impl<'a, 'b> WidgetView<'a, 'b, Checkbox> {
         self.get_label_view().set_text(new_text.into());
     }
 
-    pub fn get_label_view(&mut self) -> WidgetView<'_, 'b, Label> {
-        WidgetView {
+    pub fn get_label_view(&mut self) -> WidgetMut<'_, 'b, Label> {
+        WidgetMut {
             global_state: self.global_state,
             parent_widget_state: self.widget_state,
             widget_state: &mut self.widget.label.state,

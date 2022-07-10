@@ -5,8 +5,8 @@ use std::ops::Range;
 use crate::kurbo::{Affine, Point, Rect, Size, Vec2};
 use crate::widget::prelude::*;
 use crate::widget::scroll_bar::SCROLLBAR_MOVED;
-use crate::widget::widget_view::WidgetRef;
-use crate::widget::widget_view::WidgetView;
+use crate::widget::widget_mut::WidgetMut;
+use crate::widget::widget_mut::WidgetRef;
 use crate::widget::Axis;
 use crate::widget::ScrollBar;
 use crate::WidgetPod;
@@ -142,10 +142,10 @@ impl<W: Widget> Portal<W> {
     }
 }
 
-impl<'a, 'b, W: Widget> WidgetView<'a, 'b, Portal<W>> {
-    pub fn get_child_view(&mut self) -> WidgetView<'_, 'b, W> {
+impl<'a, 'b, W: Widget> WidgetMut<'a, 'b, Portal<W>> {
+    pub fn get_child_view(&mut self) -> WidgetMut<'_, 'b, W> {
         let child = &mut self.widget.child;
-        WidgetView {
+        WidgetMut {
             global_state: self.global_state,
             parent_widget_state: self.widget_state,
             widget_state: &mut child.state,
@@ -153,9 +153,9 @@ impl<'a, 'b, W: Widget> WidgetView<'a, 'b, Portal<W>> {
         }
     }
 
-    pub fn get_horizontal_scrollbar_view(&mut self) -> WidgetView<'_, 'b, ScrollBar> {
+    pub fn get_horizontal_scrollbar_view(&mut self) -> WidgetMut<'_, 'b, ScrollBar> {
         let child = &mut self.widget.scrollbar_horizontal;
-        WidgetView {
+        WidgetMut {
             global_state: self.global_state,
             parent_widget_state: self.widget_state,
             widget_state: &mut child.state,
@@ -163,9 +163,9 @@ impl<'a, 'b, W: Widget> WidgetView<'a, 'b, Portal<W>> {
         }
     }
 
-    pub fn get_vertical_scrollbar_view(&mut self) -> WidgetView<'_, 'b, ScrollBar> {
+    pub fn get_vertical_scrollbar_view(&mut self) -> WidgetMut<'_, 'b, ScrollBar> {
         let child = &mut self.widget.scrollbar_vertical;
-        WidgetView {
+        WidgetMut {
             global_state: self.global_state,
             parent_widget_state: self.widget_state,
             widget_state: &mut child.state,

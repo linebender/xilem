@@ -3,7 +3,7 @@
 use widget_cruncher::action::Action;
 use widget_cruncher::app_delegate::{AppDelegate, DelegateCtx};
 use widget_cruncher::widget::prelude::*;
-use widget_cruncher::widget::widget_view::WidgetView;
+use widget_cruncher::widget::widget_mut::WidgetMut;
 use widget_cruncher::widget::{Button, Flex, Label, Portal};
 use widget_cruncher::{AppLauncher, WindowDesc, WindowId};
 
@@ -22,7 +22,7 @@ impl AppDelegate for Delegate {
     ) {
         match action {
             Action::ButtonPressed => {
-                let mut root: WidgetView<Portal<Flex>> = ctx.get_root();
+                let mut root: WidgetMut<Portal<Flex>> = ctx.get_root();
                 let mut flex = root.get_child_view();
                 flex.add_child(Label::new("Hello"));
             }

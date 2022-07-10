@@ -27,7 +27,7 @@ use std::collections::VecDeque;
 use std::rc::Rc;
 
 use crate::event::StatusChange;
-use crate::widget::widget_view::WidgetRef;
+use crate::widget::widget_mut::WidgetRef;
 use crate::widget::SizedBox;
 use crate::*;
 

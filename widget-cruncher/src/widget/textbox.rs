@@ -25,8 +25,8 @@ use crate::piet::{RenderContext as _, TextLayout as _};
 use crate::shell::{HotKey, KeyEvent, SysMods, TimerToken};
 use crate::text::TextAlignment;
 use crate::text::{ImeInvalidation, Selection, TextComponent, TextLayout};
-use crate::widget::widget_view::WidgetRef;
-use crate::widget::widget_view::WidgetView;
+use crate::widget::widget_mut::WidgetMut;
+use crate::widget::widget_mut::WidgetRef;
 use crate::widget::Portal;
 use crate::{
     theme, ArcStr, BoxConstraints, Command, Env, Event, EventCtx, LayoutCtx, LifeCycle,
@@ -329,10 +329,10 @@ impl TextBox {
     }
 }
 
-impl<'a, 'b> WidgetView<'a, 'b, TextBox> {
-    pub fn get_child_view(&mut self) -> WidgetView<'_, 'b, Portal<TextComponent<Arc<String>>>> {
+impl<'a, 'b> WidgetMut<'a, 'b, TextBox> {
+    pub fn get_child_view(&mut self) -> WidgetMut<'_, 'b, Portal<TextComponent<Arc<String>>>> {
         let child = &mut self.widget.inner;
-        WidgetView {
+        WidgetMut {
             global_state: self.global_state,
             parent_widget_state: self.widget_state,
             widget_state: &mut child.state,

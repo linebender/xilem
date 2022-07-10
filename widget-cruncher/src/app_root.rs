@@ -26,7 +26,7 @@ use crate::platform::RUN_COMMANDS_TOKEN;
 use crate::testing::MockTimerQueue;
 use crate::text::TextFieldRegistration;
 use crate::util::ExtendDrain;
-use crate::widget::widget_view::{WidgetRef, WidgetView};
+use crate::widget::widget_mut::{WidgetMut, WidgetRef};
 use crate::widget::{FocusChange, WidgetState};
 use crate::{command as sys_cmd, DruidWinHandler, WindowDesc};
 use crate::{
@@ -533,7 +533,7 @@ impl AppRoot {
             );
             fake_widget_state = window.root.state.clone();
 
-            let main_root_widget = WidgetView {
+            let main_root_widget = WidgetMut {
                 global_state: &mut global_state,
                 parent_widget_state: &mut fake_widget_state,
                 widget_state: &mut window.root.state,

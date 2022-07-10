@@ -44,10 +44,14 @@
  - [ ] Fix invalidation
 
 - [ ] Fix WidgetView type
- - [ ] Add `View` associated type to Widget
- - [ ] Add impl DerefMut to WidgetView
- - [ ] Be able to create WidgetView from owned Widget
- - [ ] Add WidgetRef methods to WidgetView
+ - [ ] Rename WidgetView to WidgetMut
+ - [ ] Split WidgetRef into separate file
+ - [ ] Add WidgetRef methods to WidgetMut
+ - [ ] Merge WidgetMut and Ctx lifetimes
+ - [ ] Be able to create WidgetMut from owned Widget
+ - [ ] Add `View` associated type to Widget (behind GAT feature flag)
+ - [ ] Add impl DerefMut to WidgetMut
+ - [ ] Add dummy impls for non-GAT users
 
 - [ ] Re-add Dialog
 - [ ] Refactor TextLayout
@@ -76,6 +80,8 @@
 - [ ] Remove `impl Widget for Box<dyn Widget>`
 
 - [ ] Remove Data trait
+
+- [ ] Switch module file conventions (foobar/mod.rs -> foobar.rs)
 
 - [ ] Refactor different passes
  - [ ] Write a WidgetCtx trait

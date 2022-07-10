@@ -8,9 +8,9 @@ use std::ops::{Deref, DerefMut};
 use tracing::{trace_span, Span};
 
 use super::prelude::*;
-use super::widget_view::WidgetView;
+use super::widget_mut::WidgetMut;
 use super::Axis;
-use crate::widget::widget_view::WidgetRef;
+use crate::widget::widget_mut::WidgetRef;
 use crate::{theme, AsAny};
 use crate::{Point, Selector};
 
@@ -103,7 +103,7 @@ impl ScrollBar {
     }
 }
 
-impl WidgetView<'_, '_, ScrollBar> {
+impl WidgetMut<'_, '_, ScrollBar> {
     pub fn set_sizes(&mut self, portal_size: f64, content_size: f64) {
         self.widget.portal_size = portal_size;
         self.widget.content_size = content_size;

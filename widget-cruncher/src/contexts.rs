@@ -31,7 +31,7 @@ use crate::platform::WindowDesc;
 use crate::promise::PromiseToken;
 use crate::testing::MockTimerQueue;
 use crate::text::{ImeHandlerRef, TextFieldRegistration};
-use crate::widget::widget_view::WidgetView;
+use crate::widget::widget_mut::WidgetMut;
 use crate::widget::{CursorChange, FocusChange, WidgetState};
 use crate::{
     Affine, Insets, Point, Rect, Size, Target, Vec2, Widget, WidgetId, WidgetPod, WindowId,
@@ -406,8 +406,8 @@ impl<'a, 'b> EventCtx<'a, 'b> {
     pub fn get_child_view<'c, Child: Widget>(
         &'c mut self,
         child: &'c mut WidgetPod<Child>,
-    ) -> WidgetView<'c, 'b, Child> {
-        WidgetView {
+    ) -> WidgetMut<'c, 'b, Child> {
+        WidgetMut {
             global_state: self.global_state,
             parent_widget_state: self.widget_state,
             widget_state: &mut child.state,
@@ -420,8 +420,8 @@ impl<'a, 'b> LifeCycleCtx<'a, 'b> {
     pub fn get_child_view<'c, Child: Widget>(
         &'c mut self,
         child: &'c mut WidgetPod<Child>,
-    ) -> WidgetView<'c, 'b, Child> {
-        WidgetView {
+    ) -> WidgetMut<'c, 'b, Child> {
+        WidgetMut {
             global_state: self.global_state,
             parent_widget_state: self.widget_state,
             widget_state: &mut child.state,

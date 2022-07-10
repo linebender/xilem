@@ -17,7 +17,7 @@ use druid_shell::text::Event as ImeInvalidation;
 use druid_shell::{Cursor, TimerToken, WindowHandle};
 
 // TODO - rename lifetimes
-pub struct WidgetView<'a, 'b, W: Widget + ?Sized> {
+pub struct WidgetMut<'a, 'b, W: Widget + ?Sized> {
     pub(crate) global_state: &'a mut GlobalPassCtx<'b>,
     // FIXME - pub
     pub parent_widget_state: &'a mut WidgetState,
@@ -25,7 +25,7 @@ pub struct WidgetView<'a, 'b, W: Widget + ?Sized> {
     pub widget: &'a mut W,
 }
 
-impl<W: Widget + ?Sized> Drop for WidgetView<'_, '_, W> {
+impl<W: Widget + ?Sized> Drop for WidgetMut<'_, '_, W> {
     fn drop(&mut self) {
         self.parent_widget_state.merge_up(&mut self.widget_state);
     }
@@ -81,7 +81,7 @@ impl<'w, W: Widget + ?Sized> Deref for WidgetRef<'w, W> {
 
 // ---
 
-// TODO - Make sure WidgetRef and WidgetView have the same utility methods.
+// TODO - Make sure WidgetRef and WidgetMut have the same utility methods.
 // TODO - Document
 impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
     pub fn new(widget_state: &'w WidgetState, widget: &'w W) -> Self {
@@ -218,9 +218,9 @@ impl<'w> WidgetRef<'w, dyn Widget> {
 
 // --- Ref logic ---
 
-impl<'a, 'b, W: Widget> WidgetView<'a, 'b, W> {
-    pub fn as_dyn(&mut self) -> WidgetView<'_, 'b, dyn Widget> {
-        WidgetView {
+impl<'a, 'b, W: Widget> WidgetMut<'a, 'b, W> {
+    pub fn as_dyn(&mut self) -> WidgetMut<'_, 'b, dyn Widget> {
+        WidgetMut {
             global_state: self.global_state,
             parent_widget_state: self.parent_widget_state,
             widget_state: self.widget_state,
@@ -229,9 +229,9 @@ impl<'a, 'b, W: Widget> WidgetView<'a, 'b, W> {
     }
 }
 
-impl<'a, 'b, W: Widget + ?Sized> WidgetView<'a, 'b, W> {
-    pub fn downcast<W2: Widget>(&mut self) -> Option<WidgetView<'_, 'b, W2>> {
-        Some(WidgetView {
+impl<'a, 'b, W: Widget + ?Sized> WidgetMut<'a, 'b, W> {
+    pub fn downcast<W2: Widget>(&mut self) -> Option<WidgetMut<'_, 'b, W2>> {
+        Some(WidgetMut {
             global_state: self.global_state,
             parent_widget_state: self.parent_widget_state,
             widget_state: self.widget_state,
@@ -241,9 +241,9 @@ impl<'a, 'b, W: Widget + ?Sized> WidgetView<'a, 'b, W> {
 }
 
 // TODO - remove
-impl<'a, 'b> WidgetView<'a, 'b, Box<dyn Widget>> {
-    pub fn downcast_box<W2: Widget>(&mut self) -> Option<WidgetView<'_, 'b, W2>> {
-        Some(WidgetView {
+impl<'a, 'b> WidgetMut<'a, 'b, Box<dyn Widget>> {
+    pub fn downcast_box<W2: Widget>(&mut self) -> Option<WidgetMut<'_, 'b, W2>> {
+        Some(WidgetMut {
             global_state: self.global_state,
             parent_widget_state: self.parent_widget_state,
             widget_state: self.widget_state,
@@ -261,7 +261,7 @@ impl<'a, 'b> WidgetView<'a, 'b, Box<dyn Widget>> {
 // -
 // -
 // methods on everyone
-impl<W: Widget + ?Sized> WidgetView<'_, '_, W> {
+impl<W: Widget + ?Sized> WidgetMut<'_, '_, W> {
     /// get the `WidgetId` of the current widget.
     pub fn widget_id(&self) -> WidgetId {
         self.widget_state.id
@@ -322,7 +322,7 @@ impl<W: Widget + ?Sized> WidgetView<'_, '_, W> {
 }
 
 // methods on everyone but layoutctx
-impl<W: Widget + ?Sized> WidgetView<'_, '_, W> {
+impl<W: Widget + ?Sized> WidgetMut<'_, '_, W> {
     /// The layout size.
     ///
     /// This is the layout size as ultimately determined by the parent
@@ -442,7 +442,7 @@ impl<W: Widget + ?Sized> WidgetView<'_, '_, W> {
     }
 }
 
-impl<W: Widget + ?Sized> WidgetView<'_, '_, W> {
+impl<W: Widget + ?Sized> WidgetMut<'_, '_, W> {
     /// Set the cursor icon.
     ///
     /// This setting will be retained until [`clear_cursor`] is called, but it will only take

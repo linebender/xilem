@@ -6,7 +6,7 @@ use smallvec::SmallVec;
 use std::f64::consts::PI;
 use tracing::trace;
 
-use crate::widget::widget_view::{WidgetRef, WidgetView};
+use crate::widget::widget_mut::{WidgetMut, WidgetRef};
 use druid::kurbo::Line;
 use druid::widget::prelude::*;
 use druid::{theme, Color, KeyOrValue, Point, Vec2};
@@ -40,7 +40,7 @@ impl Spinner {
     }
 }
 
-impl WidgetView<'_, '_, Spinner> {
+impl WidgetMut<'_, '_, Spinner> {
     /// Set the spinner's color.
     ///
     /// The argument can be either a `Color` or a [`Key<Color>`].

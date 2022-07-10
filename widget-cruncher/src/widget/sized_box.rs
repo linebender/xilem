@@ -25,7 +25,7 @@ use std::f64::INFINITY;
 use tracing::{trace, trace_span, warn, Span};
 
 use crate::widget::prelude::*;
-use crate::widget::widget_view::{WidgetRef, WidgetView};
+use crate::widget::widget_mut::{WidgetMut, WidgetRef};
 use crate::widget::{WidgetId, WidgetPod};
 use crate::Point;
 
@@ -120,7 +120,7 @@ impl SizedBox {
     }
 }
 
-impl<'a, 'b> WidgetView<'a, 'b, SizedBox> {
+impl<'a, 'b> WidgetMut<'a, 'b, SizedBox> {
     pub fn set_child(&mut self, child: impl Widget) {
         self.widget.child = Some(WidgetPod::new(child).boxed());
         self.children_changed();
@@ -157,9 +157,9 @@ impl<'a, 'b> WidgetView<'a, 'b, SizedBox> {
         self.request_layout();
     }
 
-    pub fn get_child_view(&mut self) -> Option<WidgetView<'_, 'b, Box<dyn Widget>>> {
+    pub fn get_child_view(&mut self) -> Option<WidgetMut<'_, 'b, Box<dyn Widget>>> {
         let child = self.widget.child.as_mut()?;
-        Some(WidgetView {
+        Some(WidgetMut {
             global_state: self.global_state,
             parent_widget_state: self.widget_state,
             widget_state: &mut child.state,

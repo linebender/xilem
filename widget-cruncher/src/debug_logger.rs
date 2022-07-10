@@ -4,7 +4,7 @@ use std::sync::Arc;
 use crate::debug_values::{
     LayoutInfo, LayoutTree, LogId, MyWidgetId, Snapshot, StateTree, Timeline, Value,
 };
-use crate::widget::widget_view::WidgetRef;
+use crate::widget::widget_mut::WidgetRef;
 use crate::Widget;
 
 #[derive(Debug)]
