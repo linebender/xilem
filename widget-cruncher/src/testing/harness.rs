@@ -286,7 +286,6 @@ impl Harness {
             let event = KeyEvent::for_test(RawMods::None, c);
 
             if self.mock_app.event(Event::KeyDown(event.clone())) == Handled::No {
-                //
                 if let Some(mut input_handler) = self.mock_app.window.get_focused_ime_handler(true)
                 {
                     // This is copy-pasted from druid-shell's simulate_input function
@@ -295,7 +294,12 @@ impl Harness {
                     let new_caret_index = selection.min() + c.len();
                     input_handler.set_selection(Selection::caret(new_caret_index));
 
-                    self.mock_app.window.release_focused_ime_handler();
+                    let modified_widget = self.mock_app.window.release_focused_ime_handler();
+
+                    if let Some(widget_id) = modified_widget {
+                        let event = Event::Internal(InternalEvent::RouteImeStateChange(widget_id));
+                        self.mock_app.event(event);
+                    }
                 }
             }
             self.mock_app.event(Event::KeyUp(event.clone()));
@@ -348,6 +352,10 @@ impl Harness {
 
     pub fn try_get_widget(&self, id: WidgetId) -> Option<WidgetRef<'_, dyn Widget>> {
         self.mock_app.window.find_widget_by_id(id)
+    }
+
+    pub fn focused_widget(&self) -> Option<WidgetRef<'_, dyn Widget>> {
+        self.mock_app.window.focused_widget()
     }
 
     pub fn inspect_widgets(&mut self, f: impl Fn(WidgetRef<'_, dyn Widget>) + 'static) {

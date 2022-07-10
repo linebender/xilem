@@ -14,20 +14,19 @@
 
 //! A textbox widget.
 
-// TODO
-#![allow(dead_code)]
-
 use smallvec::{smallvec, SmallVec};
 use std::sync::Arc;
 use std::time::Duration;
 use tracing::{trace_span, Span};
 
+use crate::action::Action;
 use crate::kurbo::Insets;
 use crate::piet::{RenderContext as _, TextLayout as _};
 use crate::shell::{HotKey, KeyEvent, SysMods, TimerToken};
 use crate::text::TextAlignment;
 use crate::text::{ImeInvalidation, Selection, TextComponent, TextLayout};
 use crate::widget::widget_view::WidgetRef;
+use crate::widget::widget_view::WidgetView;
 use crate::widget::Portal;
 use crate::{
     theme, ArcStr, BoxConstraints, Command, Env, Event, EventCtx, LayoutCtx, LifeCycle,
@@ -37,6 +36,8 @@ use crate::{
 const CURSOR_BLINK_DURATION: Duration = Duration::from_millis(500);
 const MAC_OR_LINUX: bool = cfg!(any(target_os = "macos", target_os = "linux"));
 
+// TODO
+#[allow(dead_code)]
 /// When we scroll after editing or movement, we show a little extra of the document.
 const SCROLL_TO_INSETS: Insets = Insets::uniform_xy(40.0, 0.0);
 
@@ -72,18 +73,20 @@ pub struct TextBox {
     /// You can override this in a controller if you want to customize tab
     /// behaviour.
     pub handles_tab_notifications: bool,
+    // TODO
+    #[allow(dead_code)]
     text_pos: Point,
 }
 
 impl TextBox {
     /// Create a new TextBox widget.
-    pub fn new() -> Self {
+    pub fn new(initial_text: impl Into<String>) -> Self {
         let placeholder_text = ArcStr::from("");
         let mut placeholder_layout = TextLayout::new();
         placeholder_layout.set_text_color(theme::PLACEHOLDER_COLOR);
         placeholder_layout.set_text(placeholder_text.clone());
 
-        let text_component = TextComponent::new(Arc::new(String::new()));
+        let text_component = TextComponent::new(Arc::new(initial_text.into()));
         let scroll = Portal::new(text_component).content_must_fill(true);
         //TODO
         //scroll.set_enabled_scrollbars(crate::scroll_component::ScrollbarsEnabled::None);
@@ -102,8 +105,8 @@ impl TextBox {
     }
 
     /// Create a new multi-line `TextBox`.
-    pub fn multiline() -> Self {
-        let mut this = TextBox::new();
+    pub fn multiline(initial_text: impl Into<String>) -> Self {
+        let mut this = TextBox::new(initial_text);
         //TODO
         //this.inner.set_enabled_scrollbars(crate::scroll_component::ScrollbarsEnabled::Both);
         //this.text_mut().borrow_mut().set_accepts_newlines(true);
@@ -285,8 +288,9 @@ impl TextBox {
         self
     }
 
+    // TODO
     /// Set the `TextBox`'s placeholder text.
-    pub fn set_placeholder(&mut self, placeholder: impl Into<ArcStr>) {
+    fn set_placeholder(&mut self, placeholder: impl Into<ArcStr>) {
         self.placeholder_text = placeholder.into();
         self.placeholder_layout
             .set_text(self.placeholder_text.clone());
@@ -294,6 +298,19 @@ impl TextBox {
 }
 
 impl TextBox {
+    // TODO - Return &str
+    pub fn text(&self) -> String {
+        self.inner
+            .as_ref()
+            .child()
+            .borrow()
+            .layout
+            .text()
+            .map(|txt| txt.as_str())
+            .unwrap_or("")
+            .to_string()
+    }
+
     fn text_len(&self) -> usize {
         self.inner.as_ref().child().borrow().layout.text_len()
     }
@@ -309,6 +326,24 @@ impl TextBox {
         } else {
             self.cursor_on
         }
+    }
+}
+
+impl<'a, 'b> WidgetView<'a, 'b, TextBox> {
+    pub fn get_child_view(&mut self) -> WidgetView<'_, 'b, Portal<TextComponent<Arc<String>>>> {
+        let child = &mut self.widget.inner;
+        WidgetView {
+            global_state: self.global_state,
+            parent_widget_state: self.widget_state,
+            widget_state: &mut child.state,
+            widget: &mut child.inner,
+        }
+    }
+
+    pub fn set_text(&mut self, new_text: impl Into<String>) {
+        self.get_child_view()
+            .get_child_view()
+            .set_text(new_text.into());
     }
 }
 
@@ -411,6 +446,18 @@ impl Widget for TextBox {
                     ctx.request_paint();
                     ctx.set_handled();
                 }
+                cmd if cmd.is(TextComponent::TEXT_CHANGED) => {
+                    // TODO - remove clones
+                    let text = cmd.try_get(TextComponent::TEXT_CHANGED).unwrap();
+                    ctx.submit_action(Action::TextChanged(text.clone()));
+                    ctx.set_handled();
+                }
+                cmd if cmd.is(TextComponent::RETURN) => {
+                    // TODO - remove clones
+                    let text = cmd.try_get(TextComponent::RETURN).unwrap();
+                    ctx.submit_action(Action::TextEntered(text.clone()));
+                    ctx.set_handled();
+                }
                 _ => (),
             },
             Event::KeyDown(key) if !self.inner.as_ref().child().is_composing() => {
@@ -444,6 +491,7 @@ impl Widget for TextBox {
             }
             Event::ImeStateChange => {
                 self.reset_cursor_blink(ctx.request_timer(CURSOR_BLINK_DURATION));
+                // TODO - external_text_change.is_some()
             }
             Event::Command(ref cmd)
                 if !self.inner.as_ref().child().is_composing()
@@ -699,16 +747,100 @@ impl Widget for TextBox {
     }
 }
 
-impl Default for TextBox {
-    fn default() -> Self {
-        TextBox::new()
-    }
-}
-
 fn x_offset_for_extra_width(alignment: TextAlignment, extra_width: f64) -> f64 {
     match alignment {
         TextAlignment::Start | TextAlignment::Justified => 0.0,
         TextAlignment::End => extra_width,
         TextAlignment::Center => extra_width / 2.0,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::action::Action;
+    use crate::assert_render_snapshot;
+    use crate::testing::{widget_ids, Harness, TestWidgetExt as _};
+    use insta::assert_debug_snapshot;
+
+    #[test]
+    fn simple_textbox() {
+        let [textbox_id] = widget_ids();
+        let textbox = TextBox::new("Hello").with_id(textbox_id);
+
+        let mut harness = Harness::create(textbox);
+
+        assert_debug_snapshot!(harness.root_widget());
+        assert_render_snapshot!(harness, "hello");
+
+        assert_eq!(harness.pop_action(), None);
+
+        harness.mouse_click_on(textbox_id);
+        assert_eq!(harness.focused_widget().unwrap().widget_id(), textbox_id);
+        assert_eq!(harness.pop_action(), None);
+
+        harness.keyboard_type_chars("abc");
+        assert_eq!(
+            harness.pop_action(),
+            Some((Action::TextChanged("a".to_string()), textbox_id))
+        );
+        assert_eq!(
+            harness.pop_action(),
+            Some((Action::TextChanged("ab".to_string()), textbox_id))
+        );
+        assert_eq!(
+            harness.pop_action(),
+            Some((Action::TextChanged("abc".to_string()), textbox_id))
+        );
+
+        dbg!(harness.get_widget(textbox_id));
+        assert_eq!(
+            harness
+                .get_widget(textbox_id)
+                .downcast::<TextBox>()
+                .unwrap()
+                .text(),
+            "abc"
+        );
+    }
+
+    #[test]
+    fn simple_textbox_placeholder() {
+        let textbox = TextBox::new("").with_placeholder("placeholder text");
+
+        let mut harness = Harness::create(textbox);
+
+        assert_debug_snapshot!(harness.root_widget());
+        assert_render_snapshot!(harness, "placeholder");
+    }
+
+    // TODO - styled textbox
+
+    #[test]
+    fn edit_textbox() {
+        // TODO - do styles
+        let image_1 = {
+            let textbox = TextBox::new("The quick brown fox jumps over the lazy dog");
+
+            let mut harness = Harness::create_with_size(textbox, Size::new(50.0, 50.0));
+
+            harness.render()
+        };
+
+        let image_2 = {
+            let textbox = TextBox::new("Hello world");
+
+            let mut harness = Harness::create_with_size(textbox, Size::new(50.0, 50.0));
+
+            harness.edit_root_widget(|mut textbox, _| {
+                let mut textbox = textbox.downcast::<TextBox>().unwrap();
+                textbox.set_text("The quick brown fox jumps over the lazy dog");
+            });
+
+            harness.render()
+        };
+
+        // We don't use assert_eq because we don't want rich assert
+        assert!(image_1 == image_2);
     }
 }

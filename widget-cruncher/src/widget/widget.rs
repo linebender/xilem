@@ -211,14 +211,6 @@ pub trait Widget: AsAny {
     fn as_mut_any(&mut self) -> &mut dyn Any {
         self.as_mut_dyn_any()
     }
-
-    // FIXME - move to WidgetExt or remove
-    fn downcast<W: Widget>(&self) -> Option<&W>
-    where
-        Self: Sized,
-    {
-        (self as &dyn Any).downcast_ref::<W>()
-    }
 }
 
 #[cfg(not(tarpaulin_include))]
@@ -295,11 +287,11 @@ impl Widget for Box<dyn Widget> {
         self.deref().get_debug_text()
     }
 
-    // TODO - add unit test
-    fn downcast<W: Widget>(&self) -> Option<&W>
-    where
-        Self: Sized,
-    {
-        self.as_dyn_any().downcast_ref::<W>()
+    fn as_any(&self) -> &dyn Any {
+        self.deref().as_dyn_any()
+    }
+
+    fn as_mut_any(&mut self) -> &mut dyn Any {
+        self.deref_mut().as_mut_dyn_any()
     }
 }

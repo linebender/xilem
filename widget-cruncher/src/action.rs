@@ -11,6 +11,7 @@ use crate::{WidgetId, WindowId};
 pub enum Action {
     ButtonPressed,
     TextChanged(String),
+    TextEntered(String),
     CheckboxChecked(bool),
 }
 

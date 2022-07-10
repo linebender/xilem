@@ -1490,4 +1490,8 @@ impl WindowRoot {
     pub fn find_widget_at_pos(&self, pos: Point) -> Option<WidgetRef<'_, dyn Widget>> {
         self.root.as_dyn().find_widget_at_pos(pos)
     }
+
+    pub fn focused_widget(&self) -> Option<WidgetRef<'_, dyn Widget>> {
+        self.find_widget_by_id(self.focus?)
+    }
 }

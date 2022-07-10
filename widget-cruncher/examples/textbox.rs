@@ -50,7 +50,7 @@ pub fn main() {
 }
 
 fn build_root_widget() -> impl Widget {
-    let label = TextBox::new();
+    let label = TextBox::new("").with_placeholder("Some text");
 
     // a button that says "hello"
     let button = Button::new("Say hello");

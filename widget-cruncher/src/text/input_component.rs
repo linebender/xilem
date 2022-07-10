@@ -190,7 +190,9 @@ impl TextComponent<()> {
     /// A notification sent by the component when the user hits return.
     ///
     /// This is only sent when `send_notification_on_return` is `true`.
-    pub const RETURN: Selector = Selector::new("druid-builtin.textbox-return");
+    pub const RETURN: Selector<String> = Selector::new("druid-builtin.textbox-return");
+
+    pub const TEXT_CHANGED: Selector<String> = Selector::new("druid-builtin.textbox-changed");
 
     /// A notification sent when the user cancels editing.
     ///
@@ -268,7 +270,8 @@ impl<T: EditableText + TextStorage> TextComponent<T> {
 }
 
 impl<T: TextStorage + EditableText> WidgetView<'_, '_, TextComponent<T>> {
-    pub fn set_text(&mut self, new_text: T) {
+    pub fn set_text(&mut self, new_text: impl Into<T>) {
+        let new_text = new_text.into();
         // TODO - use '==' instead
         let needs_rebuild = self
             .widget
@@ -282,6 +285,7 @@ impl<T: TextStorage + EditableText> WidgetView<'_, '_, TextComponent<T>> {
             self.widget
                 .borrow_mut()
                 .update_pending_invalidation(ImeInvalidation::Reset);
+            self.request_layout();
         }
     }
 
@@ -337,12 +341,32 @@ impl<T: TextStorage + EditableText> Widget for TextComponent<T> {
                     ctx.submit_notification(TextComponent::SCROLL_TO.with(scroll_to));
                 }
 
+                let text = self.borrow_mut().take_external_text_change();
+                if let Some(text) = text {
+                    self.borrow_mut().layout.set_text(text.clone());
+                    let new_text = self
+                        .borrow()
+                        .layout
+                        .text()
+                        .map(|txt| txt.as_str())
+                        .unwrap_or("")
+                        .to_string();
+                    ctx.submit_notification(TextComponent::TEXT_CHANGED.with(new_text));
+                }
+
                 let action = self.borrow_mut().take_external_action();
                 if let Some(action) = action {
                     match action {
                         TextAction::Cancel => ctx.submit_notification(TextComponent::CANCEL),
                         TextAction::InsertNewLine { .. } => {
-                            ctx.submit_notification(TextComponent::RETURN)
+                            let text = self
+                                .borrow()
+                                .layout
+                                .text()
+                                .map(|txt| txt.as_str())
+                                .unwrap_or("")
+                                .to_string();
+                            ctx.submit_notification(TextComponent::RETURN.with(text));
                         }
                         TextAction::InsertTab { .. } => ctx.submit_notification(TextComponent::TAB),
                         TextAction::InsertBacktab => {
@@ -350,11 +374,6 @@ impl<T: TextStorage + EditableText> Widget for TextComponent<T> {
                         }
                         _ => tracing::warn!("unexepcted external action '{:?}'", action),
                     };
-                }
-
-                let text = self.borrow_mut().take_external_text_change();
-                if let Some(text) = text {
-                    self.borrow_mut().layout.set_text(text.clone());
                 }
 
                 let selection = self.borrow_mut().take_external_selection_change();

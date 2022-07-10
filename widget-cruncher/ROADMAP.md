@@ -26,11 +26,11 @@
  - [X] Spinner
  - [X] Portal
 
-- [ ] Implement TextBox
+- [X] Implement TextBox
  - [X] Implement Scroll
  - [X] Add text/IME to harness
  - [X] Port TextBox
- - [ ] Write unit tests
+ - [X] Write unit tests
 
 - [ ] Refactor WidgetState
  - [ ] Sort WidgetState fields

@@ -81,6 +81,7 @@ impl<'w, W: Widget + ?Sized> Deref for WidgetRef<'w, W> {
 
 // ---
 
+// TODO - Make sure WidgetRef and WidgetView have the same utility methods.
 // TODO - Document
 impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
     pub fn new(widget_state: &'w WidgetState, widget: &'w W) -> Self {
@@ -96,6 +97,11 @@ impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
 
     pub fn widget(self) -> &'w W {
         self.widget
+    }
+
+    /// get the `WidgetId` of the current widget.
+    pub fn widget_id(&self) -> WidgetId {
+        self.widget_state.id
     }
 }
 
@@ -600,6 +606,7 @@ mod tests {
     use assert_matches::assert_matches;
 
     use super::*;
+    use crate::testing::{widget_ids, Harness, TestWidgetExt as _};
     use crate::widget::{Button, Label};
     use crate::{Widget, WidgetPod};
 
@@ -612,6 +619,17 @@ mod tests {
         assert_matches!(label, Some(_));
         let label = dyn_widget.downcast::<Button>();
         assert_matches!(label, None);
+    }
+
+    #[test]
+    fn downcast_ref_in_harness() {
+        let [label_id] = widget_ids();
+        let label = Label::new("Hello").with_id(label_id);
+
+        let harness = Harness::create(label);
+
+        assert_matches!(harness.get_widget(label_id).downcast::<Label>(), Some(_));
+        assert_matches!(harness.get_widget(label_id).downcast::<Button>(), None);
     }
 
     // TODO - downcast_view
