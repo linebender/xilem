@@ -16,8 +16,8 @@
 
 use crate::kurbo::{common::FloatExt, Vec2};
 use crate::widget::prelude::*;
-use crate::widget::widget_mut::WidgetMut;
-use crate::widget::widget_mut::WidgetRef;
+use crate::widget::WidgetMut;
+use crate::widget::WidgetRef;
 use crate::{Data, KeyOrValue, Point, Rect, WidgetId, WidgetPod};
 use smallvec::SmallVec;
 use tracing::{trace, trace_span, Span};
@@ -1409,12 +1409,7 @@ mod tests {
 
             let mut child = flex.get_child_view(1).unwrap();
             assert_eq!(
-                child
-                    .downcast_box::<Label>()
-                    .unwrap()
-                    .widget
-                    .text()
-                    .to_string(),
+                child.downcast::<Label>().unwrap().widget.text().to_string(),
                 "world"
             );
             std::mem::drop(child);

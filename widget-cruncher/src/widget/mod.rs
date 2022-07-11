@@ -16,10 +16,10 @@
 
 #[allow(clippy::module_inception)]
 mod widget;
+mod widget_mut;
 mod widget_pod;
+mod widget_ref;
 mod widget_state;
-// TODO - remove pub
-pub mod widget_mut;
 
 #[cfg(test)]
 mod tests;
@@ -55,7 +55,9 @@ pub use web_image::WebImage;
 //pub use widget_ext::WidgetExt;
 //pub use widget_wrapper::WidgetWrapper;
 
+pub use widget_mut::WidgetMut;
 pub use widget_pod::WidgetPod;
+pub use widget_ref::WidgetRef;
 pub use widget_state::WidgetState;
 
 /// Methods by which a widget can attempt to change focus state.

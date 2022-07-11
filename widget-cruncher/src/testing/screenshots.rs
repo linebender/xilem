@@ -8,7 +8,7 @@ use crate::debug_logger::DebugLogger;
 use crate::ext_event::ExtEventQueue;
 use crate::piet::{BitmapTarget, Device, Error, ImageFormat, Piet};
 use crate::platform::PendingWindow;
-use crate::widget::widget_mut::WidgetRef;
+use crate::widget::WidgetRef;
 use crate::widget::WidgetState;
 use crate::*;
 use druid_shell::{KeyEvent, Modifiers, MouseButton, MouseButtons};

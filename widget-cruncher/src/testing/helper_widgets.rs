@@ -27,8 +27,8 @@ use std::collections::VecDeque;
 use std::rc::Rc;
 
 use crate::event::StatusChange;
-use crate::widget::widget_mut::WidgetRef;
 use crate::widget::SizedBox;
+use crate::widget::WidgetRef;
 use crate::*;
 
 pub type EventFn<S> = dyn FnMut(&mut S, &mut EventCtx, &Event, &Env);

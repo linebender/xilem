@@ -44,8 +44,8 @@
  - [ ] Fix invalidation
 
 - [ ] Fix WidgetView type
- - [ ] Rename WidgetView to WidgetMut
- - [ ] Split WidgetRef into separate file
+ - [X] Rename WidgetView to WidgetMut
+ - [X] Split WidgetRef into separate file
  - [ ] Add WidgetRef methods to WidgetMut
  - [ ] Merge WidgetMut and Ctx lifetimes
  - [ ] Be able to create WidgetMut from owned Widget

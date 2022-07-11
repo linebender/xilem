@@ -17,8 +17,8 @@
 use crate::action::Action;
 use crate::kurbo::{BezPath, Size};
 use crate::piet::{LineCap, LineJoin, LinearGradient, RenderContext, StrokeStyle, UnitPoint};
-use crate::widget::widget_mut::{WidgetMut, WidgetRef};
 use crate::widget::{prelude::*, Label};
+use crate::widget::{WidgetMut, WidgetRef};
 use crate::ArcStr;
 use crate::{theme, WidgetPod};
 

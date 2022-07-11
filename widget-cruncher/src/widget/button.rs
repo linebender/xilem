@@ -16,7 +16,7 @@
 
 use crate::action::Action;
 use crate::widget::prelude::*;
-use crate::widget::widget_mut::WidgetRef;
+use crate::widget::WidgetRef;
 use crate::widget::{Label, WidgetPod};
 use crate::{theme, ArcStr, Insets, LinearGradient, UnitPoint};
 use smallvec::SmallVec;

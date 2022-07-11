@@ -10,7 +10,7 @@ use tracing::{trace_span, Span};
 use super::prelude::*;
 use super::widget_mut::WidgetMut;
 use super::Axis;
-use crate::widget::widget_mut::WidgetRef;
+use crate::widget::WidgetRef;
 use crate::{theme, AsAny};
 use crate::{Point, Selector};
 

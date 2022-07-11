@@ -31,7 +31,7 @@ use crate::platform::WindowDesc;
 use crate::promise::PromiseToken;
 use crate::testing::MockTimerQueue;
 use crate::text::{ImeHandlerRef, TextFieldRegistration};
-use crate::widget::widget_mut::WidgetMut;
+use crate::widget::WidgetMut;
 use crate::widget::{CursorChange, FocusChange, WidgetState};
 use crate::{
     Affine, Insets, Point, Rect, Size, Target, Vec2, Widget, WidgetId, WidgetPod, WindowId,

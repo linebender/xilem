@@ -5,7 +5,7 @@ use tracing::trace;
 use crate::action::Action;
 use crate::command::{Command, CommandQueue};
 use crate::ext_event::{ExtEventQueue, ExtEventSink};
-use crate::widget::widget_mut::{WidgetMut, WidgetRef};
+use crate::widget::{WidgetMut, WidgetRef};
 use crate::{
     Env, Event, Handled, SingleUse, Target, Widget, WidgetId, WindowDesc, WindowId, WindowRoot,
 };

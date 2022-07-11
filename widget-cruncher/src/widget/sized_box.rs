@@ -25,8 +25,8 @@ use std::f64::INFINITY;
 use tracing::{trace, trace_span, warn, Span};
 
 use crate::widget::prelude::*;
-use crate::widget::widget_mut::{WidgetMut, WidgetRef};
 use crate::widget::{WidgetId, WidgetPod};
+use crate::widget::{WidgetMut, WidgetRef};
 use crate::Point;
 
 /// A widget with predefined size.

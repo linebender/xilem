@@ -25,7 +25,7 @@ use crate::kurbo::Vec2;
 use crate::text::FontDescriptor;
 use crate::text::{TextAlignment, TextLayout};
 use crate::widget::prelude::*;
-use crate::widget::widget_mut::WidgetRef;
+use crate::widget::WidgetRef;
 use crate::{ArcStr, Color, Data, KeyOrValue, Point};
 use druid_shell::Cursor;
 

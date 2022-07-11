@@ -26,8 +26,8 @@ use crate::platform::RUN_COMMANDS_TOKEN;
 use crate::testing::MockTimerQueue;
 use crate::text::TextFieldRegistration;
 use crate::util::ExtendDrain;
-use crate::widget::widget_mut::{WidgetMut, WidgetRef};
 use crate::widget::{FocusChange, WidgetState};
+use crate::widget::{WidgetMut, WidgetRef};
 use crate::{command as sys_cmd, DruidWinHandler, WindowDesc};
 use crate::{
     ArcStr, BoxConstraints, Command, Env, Event, EventCtx, Handled, InternalEvent,

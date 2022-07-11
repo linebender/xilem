@@ -28,7 +28,7 @@ use super::{
 use crate::kurbo::{Line, Point, Rect, Vec2};
 use crate::piet::TextLayout as _;
 use crate::widget::prelude::*;
-use crate::widget::widget_mut::{WidgetMut, WidgetRef};
+use crate::widget::{WidgetMut, WidgetRef};
 use crate::{text, theme, Env, Selector};
 use druid_shell::{Cursor, Modifiers};
 

@@ -6,7 +6,7 @@ use smallvec::SmallVec;
 use std::f64::consts::PI;
 use tracing::trace;
 
-use crate::widget::widget_mut::{WidgetMut, WidgetRef};
+use crate::widget::{WidgetMut, WidgetRef};
 use druid::kurbo::Line;
 use druid::widget::prelude::*;
 use druid::{theme, Color, KeyOrValue, Point, Vec2};

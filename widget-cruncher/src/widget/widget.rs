@@ -13,7 +13,7 @@
 // limitations under the License.
 
 use super::prelude::*;
-use crate::widget::widget_mut::WidgetRef;
+use crate::widget::WidgetRef;
 use crate::AsAny;
 use crate::Point;
 use smallvec::SmallVec;

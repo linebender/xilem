@@ -4,7 +4,7 @@
 
 use crate::promise::PromiseToken;
 use crate::widget::prelude::*;
-use crate::widget::widget_mut::WidgetRef;
+use crate::widget::WidgetRef;
 use crate::widget::{FillStrat, Image, SizedBox, Spinner, WidgetPod};
 use crate::{ImageBuf, Point};
 

@@ -18,8 +18,8 @@
 use crate::kurbo::Rect;
 use crate::piet::{Image as _, ImageBuf, InterpolationMode, PietImage};
 use crate::widget::prelude::*;
-use crate::widget::widget_mut::{WidgetMut, WidgetRef};
 use crate::widget::FillStrat;
+use crate::widget::{WidgetMut, WidgetRef};
 
 use smallvec::SmallVec;
 use tracing::{trace, trace_span, Span};

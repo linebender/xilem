@@ -4,7 +4,7 @@ use tracing::{info_span, trace, warn};
 use crate::contexts::GlobalPassCtx;
 use crate::kurbo::{Affine, Insets, Point, Rect, Shape, Size, Vec2};
 use crate::text::TextLayout;
-use crate::widget::widget_mut::WidgetRef;
+use crate::widget::WidgetRef;
 use crate::widget::{FocusChange, WidgetState};
 use crate::{
     ArcStr, BoxConstraints, Color, Env, Event, EventCtx, InternalEvent, InternalLifeCycle,
