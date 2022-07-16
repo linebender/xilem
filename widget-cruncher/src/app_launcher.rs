@@ -5,7 +5,7 @@ use crate::platform::DruidAppHandler;
 use crate::platform::WindowDesc;
 use crate::Env;
 
-use druid_shell::{Application, Error as PlatformError};
+use druid_shell::{Application as AppHandle, Error as PlatformError};
 
 /// Handles initial setup of an application, and starts the runloop.
 pub struct AppLauncher {
@@ -79,7 +79,7 @@ impl AppLauncher {
     /// Returns an error if a window cannot be instantiated. This is usually
     /// a fatal error.
     pub fn launch(self) -> Result<(), PlatformError> {
-        let app = Application::new()?;
+        let app = AppHandle::new()?;
         let state = AppRoot::create(
             app.clone(),
             self.windows,

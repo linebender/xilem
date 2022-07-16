@@ -42,8 +42,8 @@ use druid_shell::{
     text::InputHandler, Cursor, FileDialogToken, FileInfo, Region, TextFieldToken, TimerToken,
     WindowBuilder,
 };
-// TODO - rename as AppHandle
-use druid_shell::{Application, WindowHandle};
+// TODO - rename Application to AppHandle in druid-shell
+use druid_shell::{Application as AppHandle, WindowHandle};
 
 pub type ImeUpdateFn = dyn FnOnce(druid_shell::text::Event);
 
@@ -61,7 +61,7 @@ pub struct AppRoot {
 }
 
 struct AppRootInner {
-    pub app_handle: Application,
+    pub app_handle: AppHandle,
     pub debug_logger: DebugLogger,
     // TODO - Option?
     pub app_delegate: Box<dyn AppDelegate>,
@@ -113,7 +113,7 @@ pub struct WindowRoot {
 impl AppRoot {
     // TODO - make pub
     pub(crate) fn create(
-        app: Application,
+        app: AppHandle,
         windows: Vec<WindowDesc>,
         app_delegate: Option<Box<dyn AppDelegate>>,
         ext_event_queue: ExtEventQueue,
