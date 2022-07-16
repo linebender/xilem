@@ -23,7 +23,7 @@ use widget_cruncher::kurbo::Vec2;
 use widget_cruncher::promise::PromiseToken;
 use widget_cruncher::text::TextLayout;
 use widget_cruncher::widget::prelude::*;
-use widget_cruncher::widget::widget_mut::WidgetRef;
+use widget_cruncher::widget::WidgetRef;
 use widget_cruncher::{ArcStr, Color, KeyOrValue, Point};
 
 use widget_cruncher::{AppLauncher, WindowDesc};
