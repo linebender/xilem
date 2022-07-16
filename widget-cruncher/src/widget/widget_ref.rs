@@ -29,7 +29,7 @@ impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
     }
 
     /// get the `WidgetId` of the current widget.
-    pub fn widget_id(&self) -> WidgetId {
+    pub fn id(&self) -> WidgetId {
         self.widget_state.id
     }
 }

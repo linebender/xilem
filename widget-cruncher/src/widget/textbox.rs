@@ -776,7 +776,7 @@ mod tests {
         assert_eq!(harness.pop_action(), None);
 
         harness.mouse_click_on(textbox_id);
-        assert_eq!(harness.focused_widget().unwrap().widget_id(), textbox_id);
+        assert_eq!(harness.focused_widget().unwrap().id(), textbox_id);
         assert_eq!(harness.pop_action(), None);
 
         harness.keyboard_type_chars("abc");

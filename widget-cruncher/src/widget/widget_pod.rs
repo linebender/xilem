@@ -290,24 +290,40 @@ impl<W: Widget> WidgetPod<W> {
         false
     }
 
+    // TODO - document
+    // TODO - This method should take a 'can_skip: Fn(WidgetRef) -> bool'
+    // predicate and only panic if can_skip returns false.
     #[inline(always)]
     fn call_widget_method_with_checks<Ret>(
         &mut self,
         method_name: &str,
         visit: impl FnOnce(&mut Self) -> Ret,
     ) -> Ret {
-        #[cfg(debug_assertions)]
+        if cfg!(not(debug_assertions)) {
+            return visit(self);
+        }
+
         for child in self.inner.children() {
             child.prepare_pass();
         }
-
-        // TODO - children_changed
+        let children_ids: Vec<_> = self.inner.children().iter().map(|w| w.id()).collect();
 
         let return_value = visit(self);
 
+        let new_children_ids: Vec<_> = self.inner.children().iter().map(|w| w.id()).collect();
+        if children_ids != new_children_ids && !self.state.children_changed {
+            debug_panic!(
+                "Error in '{}' #{}: children changed in method {} but ctx.children_changed() wasn't called",
+                self.widget().short_type_name(),
+                self.state().id.to_raw(),
+                method_name,
+            )
+        }
+
         #[cfg(debug_assertions)]
         for child in self.inner.children() {
-            if child.state().needs_visit() {
+            // FIXME - use can_skip callback instead
+            if child.state().needs_visit() && !child.state().is_stashed {
                 debug_panic!(
                     "Error in '{}' #{}: child widget '{}' #{} not visited in method {}",
                     self.widget().short_type_name(),
@@ -348,6 +364,11 @@ impl<W: Widget + 'static> WidgetPod<W> {
 
 impl<W: Widget> WidgetPod<W> {
     /// --- ON_EVENT ---
+
+    // TODO - Some implicit invariants:
+    // - If a Widget gets a keyboard event or an ImeStateChange, then
+    // focus is on it, its child or its parent.
+    // - If a Widget has focus, then none of its parents is hidden
 
     /// Propagate an event.
     ///
@@ -453,7 +474,7 @@ impl<W: Widget> WidgetPod<W> {
                     Some(mouse_event.pos),
                     env,
                 );
-                if had_active || self.state.is_hot {
+                if (had_active || self.state.is_hot) && !self.state.is_stashed {
                     let mut mouse_event = mouse_event.clone();
                     mouse_event.pos -= rect.origin().to_vec2();
                     modified_event = Some(Event::MouseDown(mouse_event));
@@ -471,7 +492,7 @@ impl<W: Widget> WidgetPod<W> {
                     Some(mouse_event.pos),
                     env,
                 );
-                if had_active || self.state.is_hot {
+                if (had_active || self.state.is_hot) && !self.state.is_stashed {
                     let mut mouse_event = mouse_event.clone();
                     mouse_event.pos -= rect.origin().to_vec2();
                     modified_event = Some(Event::MouseUp(mouse_event));
@@ -492,7 +513,7 @@ impl<W: Widget> WidgetPod<W> {
                 // MouseMove is recursed even if the widget is not active and not hot,
                 // but was hot previously. This is to allow the widget to respond to the movement,
                 // e.g. drag functionality where the widget wants to follow the mouse.
-                if had_active || self.state.is_hot || hot_changed {
+                if (had_active || self.state.is_hot || hot_changed) && !self.state.is_stashed {
                     let mut mouse_event = mouse_event.clone();
                     mouse_event.pos -= rect.origin().to_vec2();
                     modified_event = Some(Event::MouseMove(mouse_event));
@@ -510,7 +531,7 @@ impl<W: Widget> WidgetPod<W> {
                     Some(mouse_event.pos),
                     env,
                 );
-                if had_active || self.state.is_hot {
+                if (had_active || self.state.is_hot) && !self.state.is_stashed {
                     let mut mouse_event = mouse_event.clone();
                     mouse_event.pos -= rect.origin().to_vec2();
                     modified_event = Some(Event::Wheel(mouse_event));
@@ -646,6 +667,9 @@ impl<W: Widget> WidgetPod<W> {
 
     // --- LIFECYCLE ---
 
+    // TODO - Some implicit invariants:
+    // - A widget only receives BuildFocusChain if none of its parents are hidden.
+
     /// Propagate a [`LifeCycle`] event.
     ///
     /// [`LifeCycle`]: enum.LifeCycle.html
@@ -750,6 +774,7 @@ impl<W: Widget> WidgetPod<W> {
                 InternalLifeCycle::ParentWindowOrigin => {
                     self.state.parent_window_origin = parent_ctx.widget_state.window_origin();
                     self.state.needs_window_origin = false;
+                    // TODO - self.state.is_hidden
                     true
                 }
             },
@@ -911,6 +936,15 @@ impl<W: Widget> WidgetPod<W> {
             .debug_logger
             .push_span(self.inner.short_type_name());
 
+        if self.state.is_stashed {
+            debug_panic!(
+                "Error in '{}' #{}: trying to compute layout of hidden widget.",
+                self.widget().short_type_name(),
+                self.state().id.to_raw(),
+            );
+            return Size::ZERO;
+        }
+
         // TODO - explain this
         self.mark_as_visited();
         self.check_initialized("layout");
@@ -1053,6 +1087,15 @@ impl<W: Widget> WidgetPod<W> {
     /// Shared implementation that can skip drawing non-visible content.
     fn paint_impl(&mut self, parent_ctx: &mut PaintCtx, env: &Env, paint_if_not_visible: bool) {
         let _span = self.inner.make_trace_span().entered();
+
+        if self.state.is_stashed {
+            debug_panic!(
+                "Error in '{}' #{}: trying to paint hidden widget.",
+                self.widget().short_type_name(),
+                self.state().id.to_raw(),
+            );
+            return;
+        }
 
         // TODO - explain this
         self.mark_as_visited();

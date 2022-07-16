@@ -351,6 +351,12 @@ impl_context_method!(
             self.check_init("is_disabled");
             self.widget_state.is_disabled()
         }
+
+        // FIXME - take stashed parents into account
+        pub fn is_stashed(&self) -> bool {
+            self.check_init("is_stashed");
+            self.widget_state.is_stashed
+        }
     }
 );
 
@@ -483,10 +489,7 @@ impl_context_method!(EventCtx<'_, '_>, LifeCycleCtx<'_, '_>, {
 
     /// Indicate that your children have changed.
     ///
-    /// Widgets must call this method after adding a new child, removing a child or changing which
-    /// children are hidden (see [`should_propagate_to_hidden`]).
-    ///
-    /// [`should_propagate_to_hidden`]: crate::Event::should_propagate_to_hidden
+    /// Widgets must call this method after adding a new child or removing a child.
     pub fn children_changed(&mut self) {
         self.check_init("children_changed");
         trace!("children_changed");
@@ -509,6 +512,13 @@ impl_context_method!(EventCtx<'_, '_>, LifeCycleCtx<'_, '_>, {
         // widget_state.children_disabled_changed is not set because we want to be able to delete
         // changes that happened during DisabledChanged.
         self.widget_state.is_explicitly_disabled_new = disabled;
+    }
+
+    // TODO - better document stashed widgets
+    pub fn set_stashed(&mut self, child: &mut WidgetPod<impl Widget>, stashed: bool) {
+        self.check_init("set_stashed");
+        child.state.is_stashed = stashed;
+        self.children_changed();
     }
 
     /// Indicate that text input state has changed.

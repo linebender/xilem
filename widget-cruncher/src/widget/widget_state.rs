@@ -120,6 +120,9 @@ pub struct WidgetState {
     /// Descendants of the focused widget are not in the focused path.
     pub(crate) has_focus: bool,
 
+    // TODO - document
+    pub(crate) is_stashed: bool,
+
     // --- DEBUG INFO ---
     // Used in event/lifecycle/etc methods that are expected to be called recursively
     // on a widget's children, to make sure each child was visited.
@@ -142,7 +145,7 @@ impl WidgetState {
             origin: Point::ORIGIN,
             parent_window_origin: Point::ORIGIN,
             size: size.unwrap_or_default(),
-            is_expecting_set_origin_call: true,
+            is_expecting_set_origin_call: false,
             paint_insets: Insets::ZERO,
             invalid: Region::EMPTY,
             viewport_offset: Vec2::ZERO,
@@ -167,6 +170,7 @@ impl WidgetState {
             is_explicitly_disabled_new: false,
             text_registrations: Vec::new(),
             update_focus_chain: false,
+            is_stashed: false,
             #[cfg(debug_assertions)]
             needs_visit: VisitBool(false.into()),
             #[cfg(debug_assertions)]

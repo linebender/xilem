@@ -36,7 +36,7 @@
  - [ ] No paint_insets, set paint_rect automatically or manually
  - [ ] Rework set_origin
  - [ ] Check that paint_rect has children paint_rect
- - [ ] Disambiguate concept of hidden/stashed widgets
+ - [X] Disambiguate concept of hidden/stashed widgets
  - [ ] Fix invalidation
 
 - [ ] Fix WidgetView type

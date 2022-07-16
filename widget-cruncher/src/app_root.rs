@@ -63,7 +63,6 @@ pub struct AppRoot {
 struct AppRootInner {
     pub app_handle: AppHandle,
     pub debug_logger: DebugLogger,
-    // TODO - Option?
     pub app_delegate: Box<dyn AppDelegate>,
     pub command_queue: CommandQueue,
     pub action_queue: ActionQueue,

@@ -144,13 +144,48 @@ fn allow_non_recurse_oob_paint() {
     harness.render();
 }
 
-// TODO - handle hidden items
+#[test]
+fn allow_non_recurse_cursor_stashed() {
+    let widget = get_parent_widget(Flex::row())
+        .event_fn(move |child, ctx, event, env| {
+            ctx.init();
+            ctx.set_stashed(child, true);
+
+            if !matches!(event, Event::MouseMove(_)) {
+                child.on_event(ctx, event, env);
+            }
+        })
+        .layout_fn(move |_child, _ctx, _bc, _env| {
+            return Size::ZERO;
+        });
+
+    let mut harness = Harness::create(widget);
+    harness.mouse_move(Point::new(5000.0, 5000.0));
+}
+
+#[test]
+fn allow_non_recurse_stashed_paint() {
+    let widget = get_parent_widget(Flex::row())
+        .event_fn(move |child, ctx, _event, _| {
+            ctx.init();
+            ctx.set_stashed(child, true);
+        })
+        .layout_fn(move |_child, _ctx, _bc, _env| {
+            return Size::ZERO;
+        })
+        .paint_fn(move |_child, _ctx, _env| {
+            // We don't call child.paint();
+        });
+
+    let mut harness = Harness::create_with_size(widget, Size::new(400.0, 400.0));
+    harness.render();
+}
+
 // NOTE - All checks should use viewport
 
 // ---
 
-// TODO - expect better error message
-#[should_panic]
+#[should_panic(expected = "children changed")]
 #[test]
 fn check_forget_children_changed() {
     pub const ADD_CHILD: Selector = Selector::new("druid-test.add-child");
@@ -196,4 +231,94 @@ fn check_forget_children_changed() {
 
     let mut harness = Harness::create(widget);
     harness.submit_command(ADD_CHILD);
+}
+
+// ---
+
+#[cfg(FALSE)]
+#[should_panic]
+#[test]
+fn check_recurse_event_twice() {
+    let widget = get_parent_widget(Flex::row()).event_fn(move |child, ctx, event, env| {
+        child.on_event(ctx, event, env);
+    });
+
+    let mut harness = Harness::create(widget);
+    harness.mouse_move(Point::ZERO);
+}
+
+#[cfg(FALSE)]
+#[should_panic]
+#[test]
+fn check_recurse_lifecycle_twice() {
+    let widget = get_parent_widget(Flex::row()).lifecycle_fn(move |child, ctx, event, env| {
+        child.lifecycle(ctx, event, env);
+    });
+
+    let _harness = Harness::create(widget);
+}
+
+#[cfg(FALSE)]
+#[should_panic]
+#[test]
+fn check_recurse_layout_twice() {
+    let widget = get_parent_widget(Flex::row()).layout_fn(move |child, ctx, bc, env| {
+        let size = child.layout(ctx, bc, env);
+        child.set_origin(ctx, env, Point::ZERO);
+        size
+    });
+
+    let _harness = Harness::create(widget);
+}
+
+#[cfg(FALSE)]
+#[should_panic]
+#[test]
+fn check_recurse_paint_twice() {
+    let widget = get_parent_widget(Flex::row()).paint_fn(move |child, ctx, env| {
+        child.paint(ctx, env);
+    });
+
+    let mut harness = Harness::create(widget);
+    harness.render();
+}
+
+// ---
+
+#[should_panic(expected = "trying to compute layout of stashed widget")]
+#[test]
+fn check_layout_stashed() {
+    let widget = get_parent_widget(Flex::row())
+        .event_fn(move |child, ctx, _event, _| {
+            ctx.init();
+            ctx.set_stashed(child, true);
+        })
+        .layout_fn(move |child, ctx, bc, env| {
+            let size = child.layout(ctx, bc, env);
+            child.set_origin(ctx, env, Point::ZERO);
+            size
+        });
+
+    let mut harness = Harness::create(widget);
+    harness.mouse_move(Point::ZERO);
+}
+
+#[should_panic(expected = "trying to paint stashed widget")]
+#[test]
+fn check_paint_stashed() {
+    let widget = get_parent_widget(Flex::row())
+        .event_fn(move |child, ctx, _event, _| {
+            ctx.init();
+            ctx.set_stashed(child, true);
+        })
+        .layout_fn(move |_child, _ctx, _bc, _env| {
+            return Size::ZERO;
+        })
+        .paint_fn(move |child, ctx, env| {
+            child.paint(ctx, env);
+        });
+
+    let mut harness = Harness::create(widget);
+    harness.mouse_move(Point::ZERO);
+    harness.render();
 }
