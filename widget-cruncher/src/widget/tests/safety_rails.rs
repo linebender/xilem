@@ -3,7 +3,7 @@ use crate::widget::Flex;
 use crate::*;
 use smallvec::smallvec;
 
-fn get_parent_widget<W: Widget>(child: W) -> ModularWidget<WidgetPod<W>> {
+fn make_parent_widget<W: Widget>(child: W) -> ModularWidget<WidgetPod<W>> {
     let child = WidgetPod::new(child);
     ModularWidget::new(child)
         .event_fn(move |child, ctx, event, env| {
@@ -26,7 +26,7 @@ fn get_parent_widget<W: Widget>(child: W) -> ModularWidget<WidgetPod<W>> {
 #[should_panic(expected = "not visited in method event")]
 #[test]
 fn check_forget_to_recurse_event() {
-    let widget = get_parent_widget(Flex::row()).event_fn(move |_child, _ctx, _event, _| {
+    let widget = make_parent_widget(Flex::row()).event_fn(|_child, _ctx, _event, _| {
         // We forget to call child.on_event();
     });
 
@@ -37,7 +37,7 @@ fn check_forget_to_recurse_event() {
 #[should_panic(expected = "not visited in method lifecycle")]
 #[test]
 fn check_forget_to_recurse_lifecycle() {
-    let widget = get_parent_widget(Flex::row()).lifecycle_fn(move |_child, _ctx, _event, _| {
+    let widget = make_parent_widget(Flex::row()).lifecycle_fn(|_child, _ctx, _event, _| {
         // We forget to call child.lifecycle();
     });
 
@@ -47,7 +47,7 @@ fn check_forget_to_recurse_lifecycle() {
 #[should_panic(expected = "before receiving WidgetAdded.")]
 #[test]
 fn check_forget_to_recurse_widget_added() {
-    let widget = get_parent_widget(Flex::row()).lifecycle_fn(move |child, ctx, event, env| {
+    let widget = make_parent_widget(Flex::row()).lifecycle_fn(|child, ctx, event, env| {
         if let LifeCycle::WidgetAdded = event {
             // We forget to call child.lifecycle();
             ctx.skip_child(child);
@@ -62,7 +62,7 @@ fn check_forget_to_recurse_widget_added() {
 #[should_panic(expected = "not visited in method layout")]
 #[test]
 fn check_forget_to_recurse_layout() {
-    let widget = get_parent_widget(Flex::row()).layout_fn(move |_child, _ctx, _, _| {
+    let widget = make_parent_widget(Flex::row()).layout_fn(|_child, _ctx, _, _| {
         // We forget to call child.layout();
         Size::ZERO
     });
@@ -73,7 +73,7 @@ fn check_forget_to_recurse_layout() {
 #[should_panic(expected = "missing call to set_origin method for child widget")]
 #[test]
 fn check_forget_to_call_set_origin() {
-    let widget = get_parent_widget(Flex::row()).layout_fn(move |child, ctx, bc, env| {
+    let widget = make_parent_widget(Flex::row()).layout_fn(|child, ctx, bc, env| {
         // We call child.layout(), but forget set_origin
         child.layout(ctx, bc, env)
     });
@@ -84,7 +84,7 @@ fn check_forget_to_call_set_origin() {
 #[should_panic(expected = "not visited in method paint")]
 #[test]
 fn check_forget_to_recurse_paint() {
-    let widget = get_parent_widget(Flex::row()).paint_fn(move |_child, _ctx, _| {
+    let widget = make_parent_widget(Flex::row()).paint_fn(|_child, _ctx, _| {
         // We forget to call child.paint();
     });
 
@@ -99,7 +99,7 @@ fn check_forget_to_recurse_paint() {
 #[cfg(FALSE)]
 #[test]
 fn allow_non_recurse_event_handled() {
-    let widget = get_parent_widget(Flex::row()).event_fn(move |_child, ctx, event, _| {
+    let widget = make_parent_widget(Flex::row()).event_fn(|_child, ctx, event, _| {
         // Event handled, we don't need to recurse
         ctx.set_handled();
     });
@@ -111,13 +111,13 @@ fn allow_non_recurse_event_handled() {
 #[cfg(FALSE)]
 #[test]
 fn allow_non_recurse_cursor_oob() {
-    let widget = get_parent_widget(Flex::row())
-        .event_fn(move |child, ctx, event, env| {
+    let widget = make_parent_widget(Flex::row())
+        .event_fn(|child, ctx, event, env| {
             if !matches!(event, Event::MouseMove(_)) {
                 child.on_event(ctx, event, env);
             }
         })
-        .layout_fn(move |child, ctx, bc, env| {
+        .layout_fn(|child, ctx, bc, env| {
             let _size = child.layout(ctx, bc, env);
             child.set_origin(ctx, env, Point::ZERO);
             Size::new(6000.0, 6000.0)
@@ -130,11 +130,11 @@ fn allow_non_recurse_cursor_oob() {
 #[cfg(FALSE)]
 #[test]
 fn allow_non_recurse_oob_paint() {
-    let widget = get_parent_widget(Flex::row())
-        .paint_fn(move |child, ctx, _| {
+    let widget = make_parent_widget(Flex::row())
+        .paint_fn(|child, ctx, _| {
             // We forget to call child.paint();
         })
-        .layout_fn(move |child, ctx, bc, env| {
+        .layout_fn(|child, ctx, bc, env| {
             let _size = child.layout(ctx, bc, env);
             child.set_origin(ctx, env, Point::new(500.0, 500.0));
             Size::new(600.0, 600.0)
@@ -146,8 +146,8 @@ fn allow_non_recurse_oob_paint() {
 
 #[test]
 fn allow_non_recurse_cursor_stashed() {
-    let widget = get_parent_widget(Flex::row())
-        .event_fn(move |child, ctx, event, env| {
+    let widget = make_parent_widget(Flex::row())
+        .event_fn(|child, ctx, event, env| {
             ctx.init();
             ctx.set_stashed(child, true);
 
@@ -155,7 +155,7 @@ fn allow_non_recurse_cursor_stashed() {
                 child.on_event(ctx, event, env);
             }
         })
-        .layout_fn(move |_child, _ctx, _bc, _env| {
+        .layout_fn(|_child, _ctx, _bc, _env| {
             return Size::ZERO;
         });
 
@@ -165,15 +165,15 @@ fn allow_non_recurse_cursor_stashed() {
 
 #[test]
 fn allow_non_recurse_stashed_paint() {
-    let widget = get_parent_widget(Flex::row())
-        .event_fn(move |child, ctx, _event, _| {
+    let widget = make_parent_widget(Flex::row())
+        .event_fn(|child, ctx, _event, _| {
             ctx.init();
             ctx.set_stashed(child, true);
         })
-        .layout_fn(move |_child, _ctx, _bc, _env| {
+        .layout_fn(|_child, _ctx, _bc, _env| {
             return Size::ZERO;
         })
-        .paint_fn(move |_child, _ctx, _env| {
+        .paint_fn(|_child, _ctx, _env| {
             // We don't call child.paint();
         });
 
@@ -192,7 +192,7 @@ fn check_forget_children_changed() {
 
     let child: Option<WidgetPod<Flex>> = None;
     let widget = ModularWidget::new(child)
-        .event_fn(move |child, ctx, event, env| {
+        .event_fn(|child, ctx, event, env| {
             if let Some(child) = child {
                 child.on_event(ctx, event, env);
             }
@@ -202,12 +202,12 @@ fn check_forget_children_changed() {
                 }
             }
         })
-        .lifecycle_fn(move |child, ctx, event, env| {
+        .lifecycle_fn(|child, ctx, event, env| {
             if let Some(child) = child {
                 child.lifecycle(ctx, event, env);
             }
         })
-        .layout_fn(move |child, ctx, bc, env| {
+        .layout_fn(|child, ctx, bc, env| {
             if let Some(child) = child {
                 let size = child.layout(ctx, bc, env);
                 child.set_origin(ctx, env, Point::ZERO);
@@ -216,7 +216,7 @@ fn check_forget_children_changed() {
                 Size::ZERO
             }
         })
-        .paint_fn(move |child, ctx, env| {
+        .paint_fn(|child, ctx, env| {
             if let Some(child) = child {
                 child.paint(ctx, env);
             }
@@ -239,7 +239,7 @@ fn check_forget_children_changed() {
 #[should_panic]
 #[test]
 fn check_recurse_event_twice() {
-    let widget = get_parent_widget(Flex::row()).event_fn(move |child, ctx, event, env| {
+    let widget = make_parent_widget(Flex::row()).event_fn(|child, ctx, event, env| {
         child.on_event(ctx, event, env);
     });
 
@@ -251,7 +251,7 @@ fn check_recurse_event_twice() {
 #[should_panic]
 #[test]
 fn check_recurse_lifecycle_twice() {
-    let widget = get_parent_widget(Flex::row()).lifecycle_fn(move |child, ctx, event, env| {
+    let widget = make_parent_widget(Flex::row()).lifecycle_fn(|child, ctx, event, env| {
         child.lifecycle(ctx, event, env);
     });
 
@@ -262,7 +262,7 @@ fn check_recurse_lifecycle_twice() {
 #[should_panic]
 #[test]
 fn check_recurse_layout_twice() {
-    let widget = get_parent_widget(Flex::row()).layout_fn(move |child, ctx, bc, env| {
+    let widget = make_parent_widget(Flex::row()).layout_fn(|child, ctx, bc, env| {
         let size = child.layout(ctx, bc, env);
         child.set_origin(ctx, env, Point::ZERO);
         size
@@ -275,7 +275,7 @@ fn check_recurse_layout_twice() {
 #[should_panic]
 #[test]
 fn check_recurse_paint_twice() {
-    let widget = get_parent_widget(Flex::row()).paint_fn(move |child, ctx, env| {
+    let widget = make_parent_widget(Flex::row()).paint_fn(|child, ctx, env| {
         child.paint(ctx, env);
     });
 
@@ -288,12 +288,12 @@ fn check_recurse_paint_twice() {
 #[should_panic(expected = "trying to compute layout of stashed widget")]
 #[test]
 fn check_layout_stashed() {
-    let widget = get_parent_widget(Flex::row())
-        .event_fn(move |child, ctx, _event, _| {
+    let widget = make_parent_widget(Flex::row())
+        .event_fn(|child, ctx, _event, _| {
             ctx.init();
             ctx.set_stashed(child, true);
         })
-        .layout_fn(move |child, ctx, bc, env| {
+        .layout_fn(|child, ctx, bc, env| {
             let size = child.layout(ctx, bc, env);
             child.set_origin(ctx, env, Point::ZERO);
             size
@@ -306,15 +306,15 @@ fn check_layout_stashed() {
 #[should_panic(expected = "trying to paint stashed widget")]
 #[test]
 fn check_paint_stashed() {
-    let widget = get_parent_widget(Flex::row())
-        .event_fn(move |child, ctx, _event, _| {
+    let widget = make_parent_widget(Flex::row())
+        .event_fn(|child, ctx, _event, _| {
             ctx.init();
             ctx.set_stashed(child, true);
         })
-        .layout_fn(move |_child, _ctx, _bc, _env| {
+        .layout_fn(|_child, _ctx, _bc, _env| {
             return Size::ZERO;
         })
-        .paint_fn(move |child, ctx, env| {
+        .paint_fn(|child, ctx, env| {
             child.paint(ctx, env);
         });
 
