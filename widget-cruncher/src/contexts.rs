@@ -81,8 +81,7 @@ pub(crate) struct GlobalPassCtx<'a> {
 /// [`request_paint`]: #method.request_paint
 pub struct EventCtx<'a, 'b> {
     pub(crate) global_state: &'a mut GlobalPassCtx<'b>,
-    // FIXME
-    pub widget_state: &'a mut WidgetState,
+    pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) is_init: bool,
     pub(crate) notifications: &'a mut VecDeque<Notification>,
     pub(crate) is_handled: bool,

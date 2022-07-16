@@ -290,18 +290,6 @@ impl<W: Widget> WidgetPod<W> {
         false
     }
 
-    // FIXME - remove?
-    pub fn recurse_pass<Ret>(
-        &mut self,
-        _pass_name: &str,
-        parent_state: &mut WidgetState,
-        visit: impl FnOnce(&mut W, &mut WidgetState) -> Ret,
-    ) -> Ret {
-        let res = visit(&mut self.inner, &mut self.state);
-        parent_state.merge_up(&mut self.state);
-        res
-    }
-
     #[inline(always)]
     fn call_widget_method_with_checks<Ret>(
         &mut self,
