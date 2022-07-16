@@ -5,6 +5,8 @@
 - [X] Add downcast to WidgetRef and WidgetView
 - [X] Add WidgetAdded test
 - [X] Rename ContextState to GlobalPassCtx
+- [X] Sort WidgetState fields
+- [X] Remove ExtendDrain
 
 - [X] Rewrite tests
  - [X] Create coverage profile
@@ -29,12 +31,6 @@
  - [X] Add text/IME to harness
  - [X] Port TextBox
  - [X] Write unit tests
-
-- [ ] Refactor WidgetState
- - [ ] Sort WidgetState fields
- - [ ] Add WidgetTmpState
- - [ ] Extract WidgetState fields to WidgetTmpState + global state
-- [ ] Remove ExtendDrain
 
 - [ ] Refactor ScrollComponent / paint_rect / paint_insets
  - [ ] No paint_insets, set paint_rect automatically or manually
@@ -91,6 +87,10 @@
 - [ ] Add dev shortcuts:
  - [ ] To print Widget tree
  - [ ] To print current focused/active Widget
+
+- [ ] Refactor WidgetState
+ - [ ] Add WidgetTmpState
+ - [ ] Extract WidgetState fields to WidgetTmpState + global state
 
 - [ ] Write analysis of different layout footguns
  - Flex interacting with viewport

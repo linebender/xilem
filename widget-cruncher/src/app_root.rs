@@ -25,7 +25,6 @@ use crate::ext_event::{ExtEventQueue, ExtEventSink, ExtMessage};
 use crate::platform::RUN_COMMANDS_TOKEN;
 use crate::testing::MockTimerQueue;
 use crate::text::TextFieldRegistration;
-use crate::util::ExtendDrain;
 use crate::widget::{FocusChange, WidgetState};
 use crate::widget::{WidgetMut, WidgetRef};
 use crate::{command as sys_cmd, DruidWinHandler, WindowDesc};
@@ -526,6 +525,7 @@ impl AppRoot {
                 &mut inner.debug_logger,
                 &mut inner.command_queue,
                 &mut inner.action_queue,
+                &mut window.timers,
                 window.mock_timer_queue.as_mut(),
                 &window.handle,
                 inner.main_window_id,
@@ -549,7 +549,7 @@ impl AppRoot {
             f(&mut *inner.app_delegate, &mut ctx, &inner.env)
         };
 
-        // TODO - handle cursor, timers and validation
+        // TODO - handle cursor and validation
 
         window.post_event_processing(
             &mut fake_widget_state,
@@ -833,6 +833,8 @@ impl WindowRoot {
         }
     }
 
+    // TODO - Add 'get_global_ctx() -> GlobalPassCtx' method
+
     /// `true` iff any child requested an animation frame since the last `AnimFrame` event.
     pub(crate) fn wants_animation_frame(&self) -> bool {
         self.root.state().request_anim
@@ -934,9 +936,6 @@ impl WindowRoot {
 
         self.update_focus(widget_state, debug_logger, command_queue, action_queue, env);
 
-        // Add all the requested timers to the window's timers map.
-        self.timers.extend_drain(&mut widget_state.timers);
-
         // If we need a new paint pass, make sure druid-shell knows it.
         if self.wants_animation_frame() {
             self.handle.request_anim_frame();
@@ -1008,6 +1007,7 @@ impl WindowRoot {
                 debug_logger,
                 command_queue,
                 action_queue,
+                &mut self.timers,
                 self.mock_timer_queue.as_mut(),
                 &self.handle,
                 self.id,
@@ -1097,6 +1097,7 @@ impl WindowRoot {
             debug_logger,
             command_queue,
             action_queue,
+            &mut self.timers,
             self.mock_timer_queue.as_mut(),
             &self.handle,
             self.id,
@@ -1223,6 +1224,7 @@ impl WindowRoot {
             debug_logger,
             command_queue,
             action_queue,
+            &mut self.timers,
             self.mock_timer_queue.as_mut(),
             &self.handle,
             self.id,
@@ -1291,6 +1293,7 @@ impl WindowRoot {
             debug_logger,
             command_queue,
             action_queue,
+            &mut self.timers,
             self.mock_timer_queue.as_mut(),
             &self.handle,
             self.id,

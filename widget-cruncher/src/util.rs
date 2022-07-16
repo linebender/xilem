@@ -17,9 +17,7 @@
 #![cfg(not(tarpaulin_include))]
 
 use std::any::Any;
-use std::collections::HashMap;
 use std::hash::Hash;
-use std::mem;
 
 /// Panic in debug and tracing::error in release mode.
 ///
@@ -44,42 +42,6 @@ macro_rules! debug_panic {
             tracing::error!($fmt, $($arg)*);
         }
     };
-}
-
-// ---
-
-/// Fast path for equal type extend + drain.
-pub trait ExtendDrain {
-    /// Extend the collection by draining the entries from `source`.
-    ///
-    /// This function may swap the underlying memory locations,
-    /// so keep that in mind if one of the collections has a large allocation
-    /// and it should keep that allocation.
-    fn extend_drain(&mut self, source: &mut Self);
-}
-
-#[cfg(not(tarpaulin_include))]
-impl<K, V> ExtendDrain for HashMap<K, V>
-where
-    K: Eq + Hash + Copy,
-    V: Copy,
-{
-    // Benchmarking this vs just extend+drain with a 10k entry map.
-    //
-    // running 2 tests
-    // test bench_extend       ... bench:       1,971 ns/iter (+/- 566)
-    // test bench_extend_drain ... bench:           0 ns/iter (+/- 0)
-    fn extend_drain(&mut self, source: &mut Self) {
-        if !source.is_empty() {
-            if self.is_empty() {
-                // If the target is empty we can just swap the pointers.
-                mem::swap(self, source);
-            } else {
-                // Otherwise we need to fall back to regular extend-drain.
-                self.extend(source.drain());
-            }
-        }
-    }
 }
 
 // ---

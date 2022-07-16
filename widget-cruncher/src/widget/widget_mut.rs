@@ -398,7 +398,7 @@ impl<W: Widget + ?Sized> WidgetMut<'_, '_, W> {
     pub fn request_timer(&mut self, deadline: Duration) -> TimerToken {
         trace!("request_timer deadline={:?}", deadline);
         self.global_state
-            .request_timer(&mut self.widget_state, deadline)
+            .request_timer(deadline, self.widget_state.id)
     }
 }
 

@@ -1,15 +1,13 @@
 #![cfg(not(tarpaulin_include))]
 
-use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use crate::bloom::Bloom;
 use crate::kurbo::{Insets, Point, Rect, Size, Vec2};
 use crate::text::TextFieldRegistration;
-use crate::util::ExtendDrain as _;
 use crate::widget::{CursorChange, FocusChange};
 use crate::WidgetId;
-use druid_shell::{Cursor, Region, TimerToken};
+use druid_shell::{Cursor, Region};
 
 // TODO - Make a note documenting this: the only way to get a &mut WidgetState should be in a pass.
 // A pass should reborrow the parent widget state (to avoid crossing wires) and call merge_up at
@@ -95,8 +93,6 @@ pub struct WidgetState {
 
     pub(crate) children: Bloom<WidgetId>,
     pub(crate) children_changed: bool,
-    /// Associate timers with widgets that requested them.
-    pub(crate) timers: HashMap<TimerToken, WidgetId>,
     /// The cursor that was set using one of the context methods.
     pub(crate) cursor_change: CursorChange,
     /// The result of merging up children cursors. This gets cleared when merging state up (unlike
@@ -166,7 +162,6 @@ impl WidgetState {
             focus_chain: Vec::new(),
             children: Bloom::new(),
             children_changed: false,
-            timers: HashMap::new(),
             cursor_change: CursorChange::Default,
             cursor: None,
             is_explicitly_disabled_new: false,
@@ -203,10 +198,6 @@ impl WidgetState {
             || self.is_explicitly_disabled != self.is_explicitly_disabled_new
     }
 
-    pub(crate) fn add_timer(&mut self, timer_token: TimerToken) {
-        self.timers.insert(timer_token, self.id);
-    }
-
     /// Update to incorporate state changes from a child.
     ///
     /// This will also clear some requests in the child state.
@@ -240,7 +231,6 @@ impl WidgetState {
         self.has_focus |= child_state.has_focus;
         self.children_changed |= child_state.children_changed;
         self.request_focus = child_state.request_focus.take().or(self.request_focus);
-        self.timers.extend_drain(&mut child_state.timers);
         self.text_registrations
             .append(&mut child_state.text_registrations);
         self.update_focus_chain |= child_state.update_focus_chain;

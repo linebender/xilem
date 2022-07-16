@@ -379,12 +379,14 @@ impl Harness {
         // TODO - Move to MockAppRoot?
         let window = &mut self.mock_app.window;
         let mut fake_widget_state;
+        let mut timers = HashMap::new();
         let res = {
             let mut global_state = GlobalPassCtx::new(
                 window.ext_event_sink.clone(),
                 &mut self.mock_app.debug_logger,
                 &mut self.mock_app.command_queue,
                 &mut self.mock_app.action_queue,
+                &mut timers,
                 window.mock_timer_queue.as_mut(),
                 &window.handle,
                 window.id,
@@ -402,7 +404,10 @@ impl Harness {
             f(root_widget, &self.mock_app.env)
         };
 
-        // TODO - handle cursor, timers and validation
+        // Timer creation should use mock_timer_queue instead
+        assert!(timers.is_empty());
+
+        // TODO - handle cursor and validation
 
         window.post_event_processing(
             &mut fake_widget_state,

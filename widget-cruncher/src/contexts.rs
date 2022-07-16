@@ -15,7 +15,7 @@
 //! The context types that are passed into various widget methods.
 
 use std::any::Any;
-use std::collections::VecDeque;
+use std::collections::{HashMap, VecDeque};
 use std::ops::{Deref, DerefMut};
 use std::rc::Rc;
 use std::time::Duration;
@@ -61,6 +61,9 @@ pub(crate) struct GlobalPassCtx<'a> {
     pub(crate) debug_logger: &'a mut DebugLogger,
     pub(crate) command_queue: &'a mut CommandQueue,
     pub(crate) action_queue: &'a mut ActionQueue,
+    // TODO - merge queues
+    // Associate timers with widgets that requested them.
+    pub(crate) timers: &'a mut HashMap<TimerToken, WidgetId>,
     // Used in Harness for unit tests
     pub(crate) mock_timer_queue: Option<&'a mut MockTimerQueue>,
     pub(crate) window_id: WindowId,
@@ -599,7 +602,7 @@ impl_context_method!(EventCtx<'_, '_>, LifeCycleCtx<'_, '_>, LayoutCtx<'_, '_>, 
         self.check_init("request_timer");
         trace!("request_timer deadline={:?}", deadline);
         self.global_state
-            .request_timer(&mut self.widget_state, deadline)
+            .request_timer(deadline, self.widget_state.id)
     }
 });
 
@@ -955,6 +958,7 @@ impl<'a> GlobalPassCtx<'a> {
         debug_logger: &'a mut DebugLogger,
         command_queue: &'a mut CommandQueue,
         action_queue: &'a mut ActionQueue,
+        timers: &'a mut HashMap<TimerToken, WidgetId>,
         mock_timer_queue: Option<&'a mut MockTimerQueue>,
         window: &'a WindowHandle,
         window_id: WindowId,
@@ -965,6 +969,7 @@ impl<'a> GlobalPassCtx<'a> {
             debug_logger,
             command_queue,
             action_queue,
+            timers,
             mock_timer_queue,
             window,
             window_id,
@@ -985,11 +990,7 @@ impl<'a> GlobalPassCtx<'a> {
             .push_back((action, widget_id, self.window_id));
     }
 
-    pub(crate) fn request_timer(
-        &mut self,
-        widget_state: &mut WidgetState,
-        duration: Duration,
-    ) -> TimerToken {
+    pub(crate) fn request_timer(&mut self, duration: Duration, widget_id: WidgetId) -> TimerToken {
         trace!("request_timer duration={:?}", duration);
 
         let timer_token = if let Some(timer_queue) = self.mock_timer_queue.as_mut() {
@@ -1000,7 +1001,7 @@ impl<'a> GlobalPassCtx<'a> {
             self.window.request_timer(duration)
         };
 
-        widget_state.add_timer(timer_token);
+        self.timers.insert(timer_token, widget_id);
         timer_token
     }
 }

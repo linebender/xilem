@@ -155,7 +155,6 @@ impl<'w> WidgetRef<'w, dyn Widget> {
 
         if self.state().request_focus.is_some()
             || self.state().children_changed
-            || !self.state().timers.is_empty()
             || self.state().cursor.is_some()
         {
             debug_panic!(
