@@ -34,7 +34,7 @@ use crate::text::{ImeHandlerRef, TextFieldRegistration};
 use crate::widget::WidgetMut;
 use crate::widget::{CursorChange, FocusChange, WidgetState};
 use crate::{
-    Affine, Insets, Point, Rect, Size, Target, Vec2, Widget, WidgetId, WidgetPod, WindowId,
+    Affine, Env, Insets, Point, Rect, Size, Target, Vec2, Widget, WidgetId, WidgetPod, WindowId,
 };
 use druid_shell::text::Event as ImeInvalidation;
 use druid_shell::{Cursor, Region, TimerToken, WindowHandle};
@@ -868,6 +868,33 @@ impl LayoutCtx<'_, '_> {
         self.check_init("set_baseline_offset");
         trace!("set_baseline_offset {}", baseline);
         self.widget_state.baseline_offset = baseline
+    }
+
+    /// Set the position of a child widget, in the paren't coordinate space. This
+    /// will also implicitly change "hot" status and affect the parent's display rect.
+    ///
+    /// Container widgets must call this method with each non-stashed child in their
+    /// layout method, after calling `child.layout(...)`.
+    pub fn place_child(&mut self, child: &mut WidgetPod<impl Widget>, origin: Point, env: &Env) {
+        child.state.origin = origin;
+        child.state.is_expecting_place_child_call = false;
+        let layout_rect = child.layout_rect();
+
+        self.widget_state.local_paint_rect =
+            self.widget_state.local_paint_rect.union(child.paint_rect());
+
+        // if the widget has moved, it may have moved under the mouse, in which
+        // case we need to handle that.
+        if WidgetPod::update_hot_state(
+            &mut child.inner,
+            &mut child.state,
+            self.global_state,
+            layout_rect,
+            self.mouse_pos,
+            env,
+        ) {
+            self.widget_state.merge_up(&mut child.state);
+        }
     }
 }
 

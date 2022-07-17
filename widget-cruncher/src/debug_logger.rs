@@ -191,8 +191,8 @@ impl DebugLogger {
 
         state.children = vec![
             StateTree::new(
-                "is_expecting_set_origin_call",
-                w_state.is_expecting_set_origin_call,
+                "is_expecting_place_child_call",
+                w_state.is_expecting_place_child_call,
             ),
             StateTree::new("is_new", w_state.is_new),
             StateTree::new(

@@ -225,8 +225,7 @@ impl Widget for SizedBox {
         match self.child.as_mut() {
             Some(child) => {
                 size = child.layout(ctx, &child_bc, env);
-                child.set_origin(ctx, env, Point::ORIGIN);
-                ctx.set_paint_insets(child.paint_insets());
+                ctx.place_child(child, Point::ORIGIN, env);
             }
             None => size = bc.constrain((self.width.unwrap_or(0.0), self.height.unwrap_or(0.0))),
         };

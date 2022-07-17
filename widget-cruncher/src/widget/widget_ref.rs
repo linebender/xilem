@@ -135,7 +135,6 @@ impl<'w> WidgetRef<'w, dyn Widget> {
     // TODO - reorganize this part of the code
     pub(crate) fn prepare_pass(&self) {
         self.state().mark_as_visited(false);
-        //self.state.is_expecting_set_origin_call = false;
     }
 
     // can only be called after on_event and lifecycle

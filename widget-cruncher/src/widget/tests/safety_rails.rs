@@ -1,5 +1,5 @@
 use crate::testing::{Harness, ModularWidget};
-use crate::widget::{Flex, Label};
+use crate::widget::Flex;
 use crate::*;
 use smallvec::smallvec;
 
@@ -12,7 +12,7 @@ fn make_parent_widget<W: Widget>(child: W) -> ModularWidget<WidgetPod<W>> {
         .lifecycle_fn(move |child, ctx, event, env| child.lifecycle(ctx, event, env))
         .layout_fn(move |child, ctx, bc, env| {
             let size = child.layout(ctx, bc, env);
-            child.set_origin(ctx, env, Point::ZERO);
+            ctx.place_child(child, Point::ZERO, env);
             size
         })
         .paint_fn(move |child, ctx, env| {
@@ -70,11 +70,11 @@ fn check_forget_to_recurse_layout() {
     let _harness = Harness::create(widget);
 }
 
-#[should_panic(expected = "missing call to set_origin method for child widget")]
+#[should_panic(expected = "missing call to place_child method for child widget")]
 #[test]
-fn check_forget_to_call_set_origin() {
+fn check_forget_to_call_place_child() {
     let widget = make_parent_widget(Flex::row()).layout_fn(|child, ctx, bc, env| {
-        // We call child.layout(), but forget set_origin
+        // We call child.layout(), but forget place_child
         child.layout(ctx, bc, env)
     });
 
@@ -119,7 +119,7 @@ fn allow_non_recurse_cursor_oob() {
         })
         .layout_fn(|child, ctx, bc, env| {
             let _size = child.layout(ctx, bc, env);
-            child.set_origin(ctx, env, Point::ZERO);
+            ctx.place_child(child, Point::ZERO, env);
             Size::new(6000.0, 6000.0)
         });
 
@@ -136,7 +136,7 @@ fn allow_non_recurse_oob_paint() {
         })
         .layout_fn(|child, ctx, bc, env| {
             let _size = child.layout(ctx, bc, env);
-            child.set_origin(ctx, env, Point::new(500.0, 500.0));
+            ctx.place_child(child, Point::new(500.0, 500.0), env);
             Size::new(600.0, 600.0)
         });
 
@@ -208,7 +208,7 @@ fn check_forget_children_changed() {
         .layout_fn(|child, ctx, bc, env| {
             if let Some(child) = child {
                 let size = child.layout(ctx, bc, env);
-                child.set_origin(ctx, env, Point::ZERO);
+                ctx.place_child(child, Point::ZERO, env);
                 size
             } else {
                 Size::ZERO
@@ -262,7 +262,7 @@ fn check_recurse_lifecycle_twice() {
 fn check_recurse_layout_twice() {
     let widget = make_parent_widget(Flex::row()).layout_fn(|child, ctx, bc, env| {
         let size = child.layout(ctx, bc, env);
-        child.set_origin(ctx, env, Point::ZERO);
+        ctx.place_child(child, Point::ZERO, env);
         size
     });
 
@@ -293,7 +293,7 @@ fn check_layout_stashed() {
         })
         .layout_fn(|child, ctx, bc, env| {
             let size = child.layout(ctx, bc, env);
-            child.set_origin(ctx, env, Point::ZERO);
+            ctx.place_child(child, Point::ZERO, env);
             size
         });
 
@@ -323,12 +323,15 @@ fn check_paint_stashed() {
 
 // ---
 
+// TODO - For now, paint_rect is automaticall computed, so there's no way this test fails.
+#[cfg(FALSE)]
 #[should_panic(expected = "doesn't contain paint_rect")]
 #[test]
 fn check_paint_rect_includes_children() {
+    use crate::widget::Label;
     let widget = make_parent_widget(Label::new("Hello world")).layout_fn(|child, ctx, bc, env| {
         let _size = child.layout(ctx, bc, env);
-        child.set_origin(ctx, env, Point::ZERO);
+        ctx.place_child(child, Point::ZERO, env);
         Size::ZERO
     });
 

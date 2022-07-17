@@ -7,7 +7,6 @@ use smallvec::smallvec;
 use std::cell::Cell;
 use std::rc::Rc;
 
-
 const REQUEST_FOCUS: Selector<()> = Selector::new("druid-tests.request-focus");
 
 struct FocusTaker;
@@ -175,7 +174,7 @@ fn resign_focus_on_disable() {
             .layout_fn(|child, ctx, bc, env| {
                 ctx.init();
                 let layout = child.layout(ctx, bc, env);
-                child.set_origin(ctx, env, Point::ORIGIN);
+                ctx.place_child(child, Point::ZERO, env);
                 layout
             })
             .children_fn(|child| smallvec![child.as_dyn()])

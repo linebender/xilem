@@ -631,7 +631,7 @@ impl Widget for TextBox {
         let child_bc = BoxConstraints::new(min_size, bc.max());
 
         let size = self.inner.layout(ctx, &child_bc, env);
-        self.inner.set_origin(ctx, env, Point::ZERO);
+        ctx.place_child(&mut self.inner, Point::ORIGIN, env);
 
         let text_metrics = if !self.inner.as_ref().child().can_read() || self.text_len() == 0 {
             self.placeholder_layout.layout_metrics()

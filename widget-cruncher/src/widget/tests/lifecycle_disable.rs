@@ -87,8 +87,7 @@ fn disable_tree() {
             .layout_fn(|child, ctx, my_bc, env| {
                 ctx.init();
                 let size = child.layout(ctx, my_bc, env);
-                child.set_origin(ctx, env, Point::ORIGIN);
-                ctx.set_paint_insets(child.paint_insets());
+                ctx.place_child(child, Point::ZERO, env);
                 size
             })
             .children_fn(|child| smallvec![child.as_dyn()])

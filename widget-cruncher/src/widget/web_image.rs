@@ -104,11 +104,11 @@ impl Widget for WebImage {
 
         if let Some(inner) = &mut self.inner {
             let layout = inner.layout(ctx, bc, env);
-            inner.set_origin(ctx, env, Point::ORIGIN);
+            ctx.place_child(inner, Point::ORIGIN, env);
             layout
         } else {
             let layout = self.placeholder.layout(ctx, bc, env);
-            self.placeholder.set_origin(ctx, env, Point::ORIGIN);
+            ctx.place_child(&mut self.placeholder, Point::ORIGIN, env);
             layout
         }
     }

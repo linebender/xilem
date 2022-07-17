@@ -638,7 +638,6 @@ impl Widget for Flex {
         let extra_height = minor - minor_dim.min(minor);
 
         let mut major = spacing.next().unwrap_or(0.);
-        let mut child_paint_rect = Rect::ZERO;
 
         for child in &mut self.children {
             match child {
@@ -674,8 +673,7 @@ impl Widget for Flex {
                     };
 
                     let child_pos: Point = self.direction.pack(major, child_minor_offset).into();
-                    widget.set_origin(ctx, env, child_pos);
-                    child_paint_rect = child_paint_rect.union(widget.paint_rect());
+                    ctx.place_child(widget, child_pos, env);
                     major += self.direction.major(child_size).expand();
                     major += spacing.next().unwrap_or(0.);
                 }
@@ -705,10 +703,6 @@ impl Widget for Flex {
         } else {
             bc.constrain(my_size)
         };
-
-        let my_bounds = Rect::ZERO.with_size(my_size);
-        let insets = child_paint_rect - my_bounds;
-        ctx.set_paint_insets(insets);
 
         let baseline_offset = match self.direction {
             Axis::Horizontal => max_below_baseline,

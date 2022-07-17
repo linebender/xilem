@@ -97,7 +97,7 @@ impl Widget for MainWidget {
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
         let content_size = self.content.layout(ctx, bc, env);
-        self.content.set_origin(ctx, env, Point::ORIGIN);
+        ctx.place_child(&mut self.content, Point::ORIGIN, env);
         content_size
     }
 

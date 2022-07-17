@@ -115,46 +115,15 @@ impl<W: Widget> WidgetPod<W> {
         self.state.id
     }
 
-    /// Set the origin of this widget, in the parent's coordinate space.
-    ///
-    /// A container widget should call the [`Widget::layout`] method on its children in
-    /// its own [`Widget::layout`] implementation, and then call `set_origin` to
-    /// position those children.
-    ///
-    /// The child will receive the [`LifeCycle::Size`] event informing them of the final [`Size`].
-    ///
-    /// [`Widget::layout`]: trait.Widget.html#tymethod.layout
-    /// [`Rect`]: struct.Rect.html
-    /// [`Size`]: struct.Size.html
-    /// [`LifeCycle::Size`]: enum.LifeCycle.html#variant.Size
-    pub fn set_origin(&mut self, ctx: &mut LayoutCtx, env: &Env, origin: Point) {
-        self.state.origin = origin;
-        self.state.is_expecting_set_origin_call = false;
-        let layout_rect = self.layout_rect();
-
-        // if the widget has moved, it may have moved under the mouse, in which
-        // case we need to handle that.
-        if WidgetPod::update_hot_state(
-            &mut self.inner,
-            &mut self.state,
-            ctx.global_state,
-            layout_rect,
-            ctx.mouse_pos,
-            env,
-        ) {
-            ctx.widget_state.merge_up(&mut self.state);
-        }
-    }
-
     /// Returns the layout [`Rect`].
     ///
     /// This will be a [`Rect`] with a [`Size`] determined by the child's [`layout`]
-    /// method, and the origin that was set by [`set_origin`].
+    /// method, and the origin that was set by [`place_child`].
     ///
     /// [`Rect`]: struct.Rect.html
     /// [`Size`]: struct.Size.html
     /// [`layout`]: trait.Widget.html#tymethod.layout
-    /// [`set_origin`]: WidgetPod::set_origin
+    /// [`place_child`]: LayoutCtx::place_child
     pub fn layout_rect(&self) -> Rect {
         self.state.layout_rect()
     }
@@ -219,13 +188,37 @@ impl<W: Widget> WidgetPod<W> {
         self.state.mark_as_visited(true);
     }
 
+    // Notes about hot state:
+    //
+    // Hot state (the thing that changes when your mouse hovers over a button) is annoying to implement, because it breaks the convenient abstraction of multiple static passes over the widget tree.
+    //
+    // Ideally, what you'd want is "first handle events, then update widget states, then compute layout, then paint", where each 'then' is an indestructible wall that only be crossed in one direction.
+    //
+    // Hot state breaks that abstraction, because a change in a widget's layout (eg a button gets bigger) can lead to a change in hot state.
+    //
+    // To give an extreme example: suppose you have a button which becomes very small when you hover over it (and forget all the reasons this would be terrible UX). How should its hot state be handled? When the mouse moves over the button, the hot state will get changed, and the button will become smaller. But becoming smaller make it so the mouse no longer hovers over the button, so the hot state will get changed again.
+    //
+    // Ideally, this is a UX trap I'd like to warn against; in any case, the fact that it's possible shows we have to account for cases where layout has an influence on previous stages.
+    //
+    // In actual druid code, that means:
+    // - `Widget::lifecycle` can be called within `Widget::layout`.
+    // - `Widget::set_position` can call `Widget::lifecycle` and thus needs to be passed context types, which gives the method a surprising prototype.
+    //
+    // We could have `set_position` set a `hot_state_needs_update` flag, but then we'd need to add in another UpdateHotState pass (probably as a variant to the Lifecycle enum).
+    //
+    // Another problem is that hot state handling is counter-intuitive for someone writing a Widget implementation. Developers who want to implement "This widget turns red when the mouse is over it" will usually assume they should use the MouseMove event or something similar; when what they actually need is a Lifecycle variant.
+    //
+    // Other things hot state is missing:
+    // - A concept of "cursor moved to inner widget" (though I think's that's not super useful outside the browser).
+    // - Multiple pointers handling.
+
     /// Determines if the provided `mouse_pos` is inside `rect`
     /// and if so updates the hot state and sends `LifeCycle::HotChanged`.
     ///
     /// Returns `true` if the hot state changed.
     ///
     /// The provided `child_state` should be merged up if this returns `true`.
-    fn update_hot_state(
+    pub(crate) fn update_hot_state(
         inner: &mut W,
         inner_state: &mut WidgetState,
         global_state: &mut GlobalPassCtx,
@@ -253,13 +246,15 @@ impl<W: Widget> WidgetPod<W> {
                 widget_state: inner_state,
                 is_init: false,
             };
-            // We add a span so that inner logs are marked as being in a lifecycle pass
-            info_span!("lifecycle")
-                .in_scope(|| inner.on_status_change(&mut inner_ctx, &hot_changed_event, env));
+
             // if hot changes and we're showing widget ids, always repaint
             if env.get(Env::DEBUG_WIDGET_ID) {
                 inner_ctx.request_paint();
             }
+
+            let _span = info_span!("on_status_change").entered();
+            inner.on_status_change(&mut inner_ctx, &hot_changed_event, env);
+
             return true;
         }
         false
@@ -926,7 +921,7 @@ impl<W: Widget> WidgetPod<W> {
 
         self.state.needs_layout = false;
         self.state.needs_window_origin = false;
-        self.state.is_expecting_set_origin_call = true;
+        self.state.is_expecting_place_child_call = true;
 
         bc.debug_check(self.inner.short_type_name());
 
@@ -936,6 +931,8 @@ impl<W: Widget> WidgetPod<W> {
 
         // TODO - remove ?
         let _prev_size = self.state.size;
+
+        self.state.local_paint_rect = Rect::ZERO;
 
         let new_size = self.call_widget_method_with_checks("layout", |widget_pod| {
             // widget_pod is a reborrow of `self`
@@ -950,11 +947,16 @@ impl<W: Widget> WidgetPod<W> {
             widget_pod.inner.layout(&mut inner_ctx, bc, env)
         });
 
+        self.state.local_paint_rect = self
+            .state
+            .local_paint_rect
+            .union(new_size.to_rect() + self.state.paint_insets);
+
         if cfg!(debug_assertions) {
             for child in self.inner.children() {
-                if child.state().is_expecting_set_origin_call {
+                if child.state().is_expecting_place_child_call {
                     debug_panic!(
-                        "Error in '{}' #{}: missing call to set_origin method for child widget '{}' #{}. During layout pass, if a widget calls WidgetPod::layout() on its child, it then needs to call WidgetPod::set_origin() on the same child.",
+                        "Error in '{}' #{}: missing call to place_child method for child widget '{}' #{}. During layout pass, if a widget calls WidgetPod::layout() on its child, it then needs to call LayoutCtx::place_child() on the same child.",
                         self.widget().short_type_name(),
                         self.state().id.to_raw(),
                         child.widget().short_type_name(),
@@ -962,16 +964,16 @@ impl<W: Widget> WidgetPod<W> {
                     );
                 }
 
-                // Note - we don't use paint_rect() because paint_rect() is in the
-                // parent's coordinate space.
-                let current_rect_local = new_size.to_rect() + self.state.paint_insets;
+                // TODO - This check might be redundant with the code updating local_paint_rect
                 let child_rect = child.state().paint_rect();
-                if !rect_contains(&current_rect_local, &child_rect) && !self.state.is_portal {
+                if !rect_contains(&self.state.local_paint_rect, &child_rect)
+                    && !self.state.is_portal
+                {
                     debug_panic!(
                         "Error in '{}' #{}: paint_rect {:?} doesn't contain paint_rect {:?} of child widget '{}' #{}",
                         self.widget().short_type_name(),
                         self.state().id.to_raw(),
-                        current_rect_local,
+                        self.state.local_paint_rect,
                         child_rect,
                         child.widget().short_type_name(),
                         child.state().id.to_raw(),

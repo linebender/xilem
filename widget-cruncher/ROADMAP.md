@@ -32,12 +32,10 @@
  - [X] Port TextBox
  - [X] Write unit tests
 
-- [ ] Refactor ScrollComponent / paint_rect / paint_insets
- - [ ] No paint_insets, set paint_rect automatically or manually
- - [ ] Rework set_origin
+- [X] Refactor ScrollComponent / paint_rect / paint_insets
+ - [X] Set paint_rect automatically
  - [X] Check that paint_rect has children paint_rect
  - [X] Disambiguate concept of hidden/stashed widgets
- - [ ] Fix invalidation
 
 - [ ] Fix WidgetView type
  - [X] Rename WidgetView to WidgetMut
@@ -91,6 +89,9 @@
 - [ ] Refactor WidgetState
  - [ ] Add WidgetTmpState
  - [ ] Extract WidgetState fields to WidgetTmpState + global state
+
+- [ ] Rework place_child
+- [ ] Fix invalidation when computing layout
 
 - [ ] Write analysis of different layout footguns
  - Flex interacting with viewport

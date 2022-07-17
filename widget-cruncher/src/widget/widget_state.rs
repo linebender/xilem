@@ -48,6 +48,9 @@ pub struct WidgetState {
     /// In general, these will be zero; the exception is for things like
     /// drop shadows or overflowing text.
     pub(crate) paint_insets: Insets,
+    // TODO - Document
+    // The computed paint rect, in local coordinates.
+    pub(crate) local_paint_rect: Rect,
     /// The offset of the baseline relative to the bottom of the widget.
     ///
     /// In general, this will be zero; the bottom of the widget will be considered
@@ -62,8 +65,8 @@ pub struct WidgetState {
     // TODO: consider using bitflags for the booleans.
     // The region that needs to be repainted, relative to the widget's bounds.
     pub(crate) invalid: Region,
-    /// A flag used to track and debug missing calls to set_origin.
-    pub(crate) is_expecting_set_origin_call: bool,
+    /// A flag used to track and debug missing calls to place_child.
+    pub(crate) is_expecting_place_child_call: bool,
 
     // True until a WidgetAdded event is received.
     pub(crate) is_new: bool,
@@ -143,8 +146,9 @@ impl WidgetState {
             origin: Point::ORIGIN,
             parent_window_origin: Point::ORIGIN,
             size: size.unwrap_or_default(),
-            is_expecting_set_origin_call: false,
+            is_expecting_place_child_call: false,
             paint_insets: Insets::ZERO,
+            local_paint_rect: Rect::ZERO,
             invalid: Region::EMPTY,
             is_portal: false,
             is_new: true,
@@ -207,7 +211,8 @@ impl WidgetState {
     /// This method is idempotent and can be called multiple times.
     pub(crate) fn merge_up(&mut self, child_state: &mut WidgetState) {
         // TODO - Ideally, we'd want to do this in global coordinates. The problem
-        // is that a parent could call set_origin until the last moment
+        // is that a parent could change this widget's coordinates through place_child
+        // later in the same pass
         let clip = self
             .layout_rect()
             .with_origin(Point::ORIGIN)
@@ -273,7 +278,7 @@ impl WidgetState {
     ///
     /// [`WidgetPod::paint_rect`]: struct.WidgetPod.html#method.paint_rect
     pub fn paint_rect(&self) -> Rect {
-        self.layout_rect() + self.paint_insets
+        self.local_paint_rect + self.origin.to_vec2()
     }
 
     /// The rectangle used when calculating layout with other widgets

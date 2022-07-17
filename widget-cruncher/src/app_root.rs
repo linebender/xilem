@@ -1258,7 +1258,7 @@ impl WindowRoot {
                 self.handle.set_size(full_size)
             }
         }
-        self.root.set_origin(&mut layout_ctx, env, Point::ORIGIN);
+        layout_ctx.place_child(&mut self.root, Point::ORIGIN, env);
         self.lifecycle(
             &LifeCycle::Internal(InternalLifeCycle::ParentWindowOrigin),
             debug_logger,
