@@ -938,7 +938,7 @@ impl<W: Widget> WidgetPod<W> {
 
         if self.state.is_stashed {
             debug_panic!(
-                "Error in '{}' #{}: trying to compute layout of hidden widget.",
+                "Error in '{}' #{}: trying to compute layout of stashed widget.",
                 self.widget().short_type_name(),
                 self.state().id.to_raw(),
             );
@@ -1090,7 +1090,7 @@ impl<W: Widget> WidgetPod<W> {
 
         if self.state.is_stashed {
             debug_panic!(
-                "Error in '{}' #{}: trying to paint hidden widget.",
+                "Error in '{}' #{}: trying to paint stashed widget.",
                 self.widget().short_type_name(),
                 self.state().id.to_raw(),
             );
