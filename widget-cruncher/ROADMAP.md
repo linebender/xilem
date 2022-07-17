@@ -40,8 +40,6 @@
 - [ ] Fix WidgetView type
  - [X] Rename WidgetView to WidgetMut
  - [X] Split WidgetRef into separate file
- - [ ] Add WidgetRef methods to WidgetMut
- - [ ] Merge WidgetMut and Ctx lifetimes
  - [ ] Be able to create WidgetMut from owned Widget
  - [ ] Add `View` associated type to Widget (behind GAT feature flag)
  - [ ] Add impl DerefMut to WidgetMut
@@ -142,6 +140,9 @@
 - [ ] Improve how Harness mocks IME
  - [ ] Handle in-place editing (eg Kanji input, I think?).
  - [ ] Handle movement (eg ctrl+left).
+
+- [ ] Merge WidgetMut and Ctx lifetimes
+ - Note: probably requires better language support for implicit lifetime bounds
 
 - [ ] Switch to ECS
 - [ ] Remove WidgetId::reserved, move WidgetId::new
