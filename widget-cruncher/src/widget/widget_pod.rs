@@ -2,7 +2,7 @@ use std::collections::VecDeque;
 use tracing::{info_span, trace, warn};
 
 use crate::contexts::GlobalPassCtx;
-use crate::kurbo::{Affine, Insets, Point, Rect, Shape, Size, Vec2};
+use crate::kurbo::{Affine, Insets, Point, Rect, Shape, Size};
 use crate::text::TextLayout;
 use crate::widget::WidgetRef;
 use crate::widget::{FocusChange, WidgetState};
@@ -157,31 +157,6 @@ impl<W: Widget> WidgetPod<W> {
     /// [`set_origin`]: WidgetPod::set_origin
     pub fn layout_rect(&self) -> Rect {
         self.state.layout_rect()
-    }
-
-    /// Set the viewport offset.
-    ///
-    /// This is relevant only for children of a scroll view (or similar). It must
-    /// be set by the parent widget whenever it modifies the position of its child
-    /// while painting it and propagating events. As a rule of thumb, you need this
-    /// if and only if you `Affine::translate` the paint context before painting
-    /// your child. For an example, see the implementation of [`Scroll`].
-    ///
-    /// [`Scroll`]: widget/struct.Scroll.html
-    pub fn set_viewport_offset(&mut self, offset: Vec2) {
-        if offset != self.state.viewport_offset {
-            self.state.needs_window_origin = true;
-        }
-        self.state.viewport_offset = offset;
-    }
-
-    /// The viewport offset.
-    ///
-    /// This will be the same value as set by [`set_viewport_offset`].
-    ///
-    /// [`set_viewport_offset`]: #method.viewport_offset
-    pub fn viewport_offset(&self) -> Vec2 {
-        self.state.viewport_offset
     }
 
     /// Get the widget's paint [`Rect`].
@@ -957,7 +932,7 @@ impl<W: Widget> WidgetPod<W> {
 
         let inner_mouse_pos = parent_ctx
             .mouse_pos
-            .map(|pos| pos - self.layout_rect().origin().to_vec2() + self.viewport_offset());
+            .map(|pos| pos - self.layout_rect().origin().to_vec2());
 
         // TODO - remove ?
         let _prev_size = self.state.size;
@@ -986,8 +961,33 @@ impl<W: Widget> WidgetPod<W> {
                         child.state().id.to_raw(),
                     );
                 }
+
+                // Note - we don't use paint_rect() because paint_rect() is in the
+                // parent's coordinate space.
+                let current_rect_local = new_size.to_rect() + self.state.paint_insets;
+                let child_rect = child.state().paint_rect();
+                if !rect_contains(&current_rect_local, &child_rect) && !self.state.is_portal {
+                    debug_panic!(
+                        "Error in '{}' #{}: paint_rect {:?} doesn't contain paint_rect {:?} of child widget '{}' #{}",
+                        self.widget().short_type_name(),
+                        self.state().id.to_raw(),
+                        current_rect_local,
+                        child_rect,
+                        child.widget().short_type_name(),
+                        child.state().id.to_raw(),
+                    );
+                }
             }
         }
+
+        // TODO - Figure out how to deal with the overflow problem, eg:
+        // What happens if a widget returns a size larger than the allowed constraints?
+        // Some possibilities are:
+        // - Always clip: might be expensive
+        // - Display it anyway: might lead to graphical bugs
+        // - Panic: too harsh?
+        // Also, we need to avoid spurious crashes when we initialize the app and the
+        // size is (0,0)
 
         parent_ctx.widget_state.merge_up(&mut self.state);
         self.state.size = new_size;
@@ -1159,4 +1159,13 @@ impl<W: Widget> WidgetPod<W> {
         let color = env.get_debug_color(id);
         ctx.stroke(rect, &color, BORDER_WIDTH);
     }
+}
+
+// TODO - negative rects?
+/// Returns `true` if all of `smaller` is within `larger`.
+fn rect_contains(larger: &Rect, smaller: &Rect) -> bool {
+    smaller.x0 >= larger.x0
+        && smaller.x1 <= larger.x1
+        && smaller.y0 >= larger.y0
+        && smaller.y1 <= larger.y1
 }

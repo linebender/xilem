@@ -823,6 +823,12 @@ impl LifeCycleCtx<'_, '_> {
         };
         self.widget_state.text_registrations.push(registration);
     }
+
+    // TODO - remove
+    pub fn register_as_portal(&mut self) {
+        self.check_init("register_text_input");
+        self.widget_state.is_portal = true;
+    }
 }
 
 impl LayoutCtx<'_, '_> {

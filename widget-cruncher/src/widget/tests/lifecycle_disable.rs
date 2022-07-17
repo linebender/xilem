@@ -84,11 +84,12 @@ fn disable_tree() {
                 }
                 child.on_event(ctx, event, env);
             })
-            .layout_fn(|child, ctx, bc, env| {
+            .layout_fn(|child, ctx, my_bc, env| {
                 ctx.init();
-                let layout = child.layout(ctx, bc, env);
+                let size = child.layout(ctx, my_bc, env);
                 child.set_origin(ctx, env, Point::ORIGIN);
-                layout
+                ctx.set_paint_insets(child.paint_insets());
+                size
             })
             .children_fn(|child| smallvec![child.as_dyn()])
             .with_id(id)

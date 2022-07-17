@@ -70,18 +70,17 @@ fn layout_insets() {
     let harness = Harness::create(parent_widget);
 
     let child_paint_rect = harness.get_widget(child_id).state().paint_rect();
-    let _parent_paint_rect = harness.get_widget(parent_id).state().paint_rect();
+    let parent_paint_rect = harness.get_widget(parent_id).state().paint_rect();
 
     assert_eq!(child_paint_rect.x0, 0.0);
     assert_eq!(child_paint_rect.y0, -20.0);
     assert_eq!(child_paint_rect.x1, BOX_WIDTH);
     assert_eq!(child_paint_rect.y1, BOX_WIDTH + 20.0);
 
-    // FIXME - parent insets should be automatically computed
-    //assert_eq!(parent_paint_rect.x0, 0.0);
-    //assert_eq!(parent_paint_rect.y0, -20.0);
-    //assert_eq!(parent_paint_rect.x1, BOX_WIDTH);
-    //assert_eq!(parent_paint_rect.y1, BOX_WIDTH + 20.0);
+    assert_eq!(parent_paint_rect.x0, 0.0);
+    assert_eq!(parent_paint_rect.y0, -20.0);
+    assert_eq!(parent_paint_rect.x1, BOX_WIDTH);
+    assert_eq!(parent_paint_rect.y1, BOX_WIDTH + 20.0);
 }
 
 // TODO - insets + flex

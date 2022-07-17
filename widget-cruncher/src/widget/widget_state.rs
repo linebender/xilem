@@ -3,7 +3,7 @@
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use crate::bloom::Bloom;
-use crate::kurbo::{Insets, Point, Rect, Size, Vec2};
+use crate::kurbo::{Insets, Point, Rect, Size};
 use crate::text::TextFieldRegistration;
 use crate::widget::{CursorChange, FocusChange};
 use crate::WidgetId;
@@ -54,10 +54,8 @@ pub struct WidgetState {
     /// the baseline. Widgets that contain text or controls that expect to be
     /// laid out alongside text can set this as appropriate.
     pub(crate) baseline_offset: f64,
-    // The part of this widget that is visible on the screen is offset by this
-    // much. This will be non-zero for widgets that are children of `Scroll`, or
-    // similar, and it is used for propagating invalid regions.
-    pub(crate) viewport_offset: Vec2,
+    // TODO - Document
+    pub(crate) is_portal: bool,
 
     // --- PASSES ---
 
@@ -148,7 +146,7 @@ impl WidgetState {
             is_expecting_set_origin_call: false,
             paint_insets: Insets::ZERO,
             invalid: Region::EMPTY,
-            viewport_offset: Vec2::ZERO,
+            is_portal: false,
             is_new: true,
             children_disabled_changed: false,
             ancestor_disabled: false,
@@ -208,15 +206,17 @@ impl WidgetState {
     ///
     /// This method is idempotent and can be called multiple times.
     pub(crate) fn merge_up(&mut self, child_state: &mut WidgetState) {
+        // TODO - Ideally, we'd want to do this in global coordinates. The problem
+        // is that a parent could call set_origin until the last moment
         let clip = self
             .layout_rect()
             .with_origin(Point::ORIGIN)
             .inset(self.paint_insets);
-        let offset = child_state.layout_rect().origin().to_vec2() - child_state.viewport_offset;
-        for &r in child_state.invalid.rects() {
-            let r = (r + offset).intersect(clip);
-            if r.area() != 0.0 {
-                self.invalid.add_rect(r);
+        let offset = child_state.layout_rect().origin().to_vec2();
+        for &rect in child_state.invalid.rects() {
+            let rect = (rect + offset).intersect(clip);
+            if rect.area() != 0.0 {
+                self.invalid.add_rect(rect);
             }
         }
         // Clearing the invalid rects here is less fragile than doing it while painting. The
@@ -290,7 +290,7 @@ impl WidgetState {
     }
 
     pub(crate) fn window_origin(&self) -> Point {
-        self.parent_window_origin + self.origin.to_vec2() - self.viewport_offset
+        self.parent_window_origin + self.origin.to_vec2()
     }
 }
 

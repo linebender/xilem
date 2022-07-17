@@ -291,16 +291,18 @@ impl<W: Widget> Widget for Portal<W> {
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
         ctx.init();
 
+        match event {
+            LifeCycle::WidgetAdded => {
+                ctx.register_as_portal();
+            }
+            //TODO
+            //LifeCycle::RequestPanToChild(target_rect) => {}
+            _ => {}
+        }
+
         self.child.lifecycle(ctx, event, env);
         self.scrollbar_horizontal.lifecycle(ctx, event, env);
         self.scrollbar_vertical.lifecycle(ctx, event, env);
-
-        /*
-        match event {
-            LifeCycle::RequestPanToChild(target_rect) => {}
-            _ => {}
-        }
-        */
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {

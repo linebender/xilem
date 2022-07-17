@@ -1,5 +1,5 @@
 use crate::testing::{Harness, ModularWidget};
-use crate::widget::Flex;
+use crate::widget::{Flex, Label};
 use crate::*;
 use smallvec::smallvec;
 
@@ -181,8 +181,6 @@ fn allow_non_recurse_stashed_paint() {
     harness.render();
 }
 
-// NOTE - All checks should use viewport
-
 // ---
 
 #[should_panic(expected = "children changed")]
@@ -317,6 +315,22 @@ fn check_paint_stashed() {
         .paint_fn(|child, ctx, env| {
             child.paint(ctx, env);
         });
+
+    let mut harness = Harness::create(widget);
+    harness.mouse_move(Point::ZERO);
+    harness.render();
+}
+
+// ---
+
+#[should_panic(expected = "doesn't contain paint_rect")]
+#[test]
+fn check_paint_rect_includes_children() {
+    let widget = make_parent_widget(Label::new("Hello world")).layout_fn(|child, ctx, bc, env| {
+        let _size = child.layout(ctx, bc, env);
+        child.set_origin(ctx, env, Point::ZERO);
+        Size::ZERO
+    });
 
     let mut harness = Harness::create(widget);
     harness.mouse_move(Point::ZERO);

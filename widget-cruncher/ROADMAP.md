@@ -35,7 +35,7 @@
 - [ ] Refactor ScrollComponent / paint_rect / paint_insets
  - [ ] No paint_insets, set paint_rect automatically or manually
  - [ ] Rework set_origin
- - [ ] Check that paint_rect has children paint_rect
+ - [X] Check that paint_rect has children paint_rect
  - [X] Disambiguate concept of hidden/stashed widgets
  - [ ] Fix invalidation
 
