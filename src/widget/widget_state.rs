@@ -188,11 +188,9 @@ impl WidgetState {
         }
     }
 
+    #[cfg(debug_assertions)]
     pub(crate) fn needs_visit(&self) -> bool {
-        #[cfg(debug_assertions)]
-        {
-            self.needs_visit.0.load(Ordering::SeqCst)
-        }
+        self.needs_visit.0.load(Ordering::SeqCst)
     }
 
     pub(crate) fn is_disabled(&self) -> bool {
