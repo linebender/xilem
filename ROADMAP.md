@@ -139,6 +139,9 @@
  - [ ] Make it so that required keys are known at launch time for better error messages.
  - [ ] Re-add Localization
 
+- [ ] Get better coverage on Github Actions
+ - Take inspiration from druid's Actions
+
 - [ ] Improve how Harness mocks IME
  - [ ] Handle in-place editing (eg Kanji input, I think?).
  - [ ] Handle movement (eg ctrl+left).
