@@ -1,6 +1,5 @@
-## Rust
+## Rust build files
 target/
-Cargo.lock
 
 ## Intellij Idea
 .idea/
@@ -30,3 +29,7 @@ ehthumbs_vista.db
 
 ## Linux
 *~
+
+# Visual snapshots
+**/screenshots/*.diff.png
+**/screenshots/*.new.png## Rust

@@ -1,0 +1,24 @@
+# This is the list of Druid authors for copyright purposes.
+#
+# This does not necessarily list everyone who has contributed code, since in
+# some cases, their employer may be the copyright holder.  To see the full list
+# of contributors, see the revision history in source control.
+Google LLC
+Raph Levien
+Hilmar Gústafsson
+Dmitry Borodin
+Kaiyin Zhong
+Kaur Kuut
+Leopold Luley
+Andrey Kabylin
+Robert Wittams
+Jaap Aarts
+Maximilian Köstler
+Bruno Dupuis
+Christopher Noel Hesse
+Marcin Zając
+Laura Gallo
+Tim Murison
+Manmeet Singh
+Simon Fell
+Nick Larsen
