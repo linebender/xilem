@@ -10,10 +10,10 @@
 use smallvec::{smallvec, SmallVec};
 use std::{thread, time};
 
-use widget_cruncher::widget::prelude::*;
-use widget_cruncher::widget::WidgetRef;
-use widget_cruncher::widget::{Flex, Label, Spinner, WidgetPod};
-use widget_cruncher::{AppLauncher, Point, Selector, Target, WindowDesc};
+use masonry::widget::prelude::*;
+use masonry::widget::WidgetRef;
+use masonry::widget::{Flex, Label, Spinner, WidgetPod};
+use masonry::{AppLauncher, Point, Selector, Target, WindowDesc};
 
 const FINISH_SLOW_FUNCTION: Selector<u32> = Selector::new("finish_slow_function");
 

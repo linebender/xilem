@@ -1,6 +1,5 @@
 ---
-source: widget-cruncher/src/widget/tests/lifecycle_basic.rs
-assertion_line: 49
+source: masonry/src/widget/tests/lifecycle_basic.rs
 expression: record_new_child
 
 ---

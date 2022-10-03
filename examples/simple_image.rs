@@ -7,8 +7,8 @@
 // On Windows platform, don't show a console when opening the app.
 #![windows_subsystem = "windows"]
 
-use widget_cruncher::widget::{FillStrat, Image};
-use widget_cruncher::{AppLauncher, ImageBuf, WindowDesc};
+use masonry::widget::{FillStrat, Image};
+use masonry::{AppLauncher, ImageBuf, WindowDesc};
 
 pub fn main() {
     let png_data = ImageBuf::from_data(include_bytes!("./assets/PicWithAlpha.png")).unwrap();

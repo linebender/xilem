@@ -1,6 +1,6 @@
 ---
-source: widget-cruncher/src/widget/sized_box.rs
-assertion_line: 318
+source: masonry/src/widget/sized_box.rs
+assertion_line: 308
 expression: harness.root_widget()
 
 ---

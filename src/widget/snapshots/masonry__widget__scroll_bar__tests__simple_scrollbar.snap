@@ -1,5 +1,5 @@
 ---
-source: widget-cruncher/src/widget/scroll_bar.rs
+source: masonry/src/widget/scroll_bar.rs
 assertion_line: 215
 expression: harness.root_widget()
 

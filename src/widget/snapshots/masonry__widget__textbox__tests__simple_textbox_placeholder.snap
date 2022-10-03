@@ -1,5 +1,5 @@
 ---
-source: widget-cruncher/src/widget/textbox.rs
+source: masonry/src/widget/textbox.rs
 assertion_line: 737
 expression: harness.root_widget()
 

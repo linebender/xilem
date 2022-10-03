@@ -227,7 +227,7 @@ impl PendingWindow {
         // This just makes our API slightly cleaner; callers don't need to explicitly box.
         PendingWindow {
             root: Box::new(root),
-            title: "widget_cruncher app".into(),
+            title: "masonry app".into(),
             transparent: false,
             size_policy: WindowSizePolicy::User,
         }

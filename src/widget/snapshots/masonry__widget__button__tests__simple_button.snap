@@ -1,5 +1,5 @@
 ---
-source: widget-cruncher/src/widget/button.rs
+source: masonry/src/widget/button.rs
 assertion_line: 236
 expression: harness.root_widget()
 

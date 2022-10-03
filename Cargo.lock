@@ -1644,6 +1644,42 @@ dependencies = [
 ]
 
 [[package]]
+name = "masonry"
+version = "0.0.1"
+dependencies = [
+ "assert_matches",
+ "chrono",
+ "console_error_panic_hook",
+ "druid-derive",
+ "druid-shell",
+ "float-cmp 0.8.0",
+ "fluent-bundle",
+ "fluent-langneg",
+ "fluent-syntax",
+ "fnv",
+ "im",
+ "image 0.24.4",
+ "insta",
+ "instant",
+ "once_cell",
+ "open",
+ "piet-common",
+ "pulldown-cmark",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "smallvec",
+ "tempfile",
+ "tracing",
+ "tracing-subscriber 0.2.25",
+ "tracing-wasm",
+ "unic-langid",
+ "unicode-segmentation",
+ "usvg",
+ "xi-unicode",
+]
+
+[[package]]
 name = "matches"
 version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3477,42 +3513,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d011071ae14a2f6671d0b74080ae0cd8ebf3a6f8c9589a2cd45f23126fe29724"
 dependencies = [
  "libc",
-]
-
-[[package]]
-name = "widget-cruncher"
-version = "0.7.0"
-dependencies = [
- "assert_matches",
- "chrono",
- "console_error_panic_hook",
- "druid-derive",
- "druid-shell",
- "float-cmp 0.8.0",
- "fluent-bundle",
- "fluent-langneg",
- "fluent-syntax",
- "fnv",
- "im",
- "image 0.24.4",
- "insta",
- "instant",
- "once_cell",
- "open",
- "piet-common",
- "pulldown-cmark",
- "reqwest",
- "serde",
- "serde_json",
- "smallvec",
- "tempfile",
- "tracing",
- "tracing-subscriber 0.2.25",
- "tracing-wasm",
- "unic-langid",
- "unicode-segmentation",
- "usvg",
- "xi-unicode",
 ]
 
 [[package]]

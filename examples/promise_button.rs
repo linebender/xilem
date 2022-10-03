@@ -19,14 +19,14 @@ use std::{thread, time};
 use tracing::{trace, trace_span, Span};
 
 use druid_shell::Cursor;
-use widget_cruncher::kurbo::Vec2;
-use widget_cruncher::promise::PromiseToken;
-use widget_cruncher::text::TextLayout;
-use widget_cruncher::widget::prelude::*;
-use widget_cruncher::widget::WidgetRef;
-use widget_cruncher::{ArcStr, Color, KeyOrValue, Point};
+use masonry::kurbo::Vec2;
+use masonry::promise::PromiseToken;
+use masonry::text::TextLayout;
+use masonry::widget::prelude::*;
+use masonry::widget::WidgetRef;
+use masonry::{ArcStr, Color, KeyOrValue, Point};
 
-use widget_cruncher::{AppLauncher, WindowDesc};
+use masonry::{AppLauncher, WindowDesc};
 
 // added padding between the edges of the widget and the text.
 const LABEL_X_PADDING: f64 = 2.0;
@@ -66,7 +66,7 @@ impl PromiseButton {
             text_layout,
             line_break_mode: LineBreaking::Overflow,
             promise_token: None,
-            default_text_color: widget_cruncher::theme::TEXT_COLOR.into(),
+            default_text_color: masonry::theme::TEXT_COLOR.into(),
         }
     }
 }
@@ -119,7 +119,7 @@ impl Widget for PromiseButton {
         match event {
             LifeCycle::DisabledChanged(disabled) => {
                 let color = if *disabled {
-                    KeyOrValue::Key(widget_cruncher::theme::DISABLED_TEXT_COLOR)
+                    KeyOrValue::Key(masonry::theme::DISABLED_TEXT_COLOR)
                 } else {
                     self.default_text_color.clone()
                 };

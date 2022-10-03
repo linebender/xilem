@@ -7,8 +7,8 @@
 // On Windows platform, don't show a console when opening the app.
 #![windows_subsystem = "windows"]
 
-use widget_cruncher::widget::WebImage;
-use widget_cruncher::{AppLauncher, WindowDesc};
+use masonry::widget::WebImage;
+use masonry::{AppLauncher, WindowDesc};
 
 pub fn main() {
     let image = WebImage::new(

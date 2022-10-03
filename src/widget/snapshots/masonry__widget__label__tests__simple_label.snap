@@ -1,5 +1,5 @@
 ---
-source: widget-cruncher/src/widget/label.rs
+source: masonry/src/widget/label.rs
 expression: harness.root_widget()
 
 ---

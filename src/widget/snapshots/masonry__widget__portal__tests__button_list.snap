@@ -1,5 +1,5 @@
 ---
-source: widget-cruncher/src/widget/portal.rs
+source: masonry/src/widget/portal.rs
 assertion_line: 183
 expression: harness.root_widget()
 

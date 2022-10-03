@@ -1,10 +1,10 @@
 #![windows_subsystem = "windows"]
 
-use widget_cruncher::action::Action;
-use widget_cruncher::app_delegate::{AppDelegate, DelegateCtx};
-use widget_cruncher::widget::prelude::*;
-use widget_cruncher::widget::{Button, Flex, Label, Portal, WidgetMut};
-use widget_cruncher::{AppLauncher, WindowDesc, WindowId};
+use masonry::action::Action;
+use masonry::app_delegate::{AppDelegate, DelegateCtx};
+use masonry::widget::prelude::*;
+use masonry::widget::{Button, Flex, Label, Portal, WidgetMut};
+use masonry::{AppLauncher, WindowDesc, WindowId};
 
 const VERTICAL_WIDGET_SPACING: f64 = 20.0;
 

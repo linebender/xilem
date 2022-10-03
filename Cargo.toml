@@ -1,8 +1,8 @@
 [package]
-name = "widget-cruncher"
-version = "0.7.0"
+name = "masonry"
+version = "0.0.1"
 license = "Apache-2.0"
-authors = ["Raph Levien <raph.levien@gmail.com>"]
+authors = ["Olivier FAURE <couteaubleu@gmail.com>"]
 description = "Data-oriented Rust UI design toolkit."
 repository = "https://github.com/linebender/druid"
 categories = ["gui"]

@@ -54,8 +54,8 @@
  - [ ] Rewrite Disney example
  - [ ] Copy examples from druid
 
-- [ ] Split off from Druid repo
-- [ ] Rename to Masonry
+- [X] Split off from Druid repo
+- [X] Rename to Masonry
 - [ ] Rewrite License bits
 - [ ] Write ARCHITECTURE.md
 - [ ] Write CONTRIBUTING.md
