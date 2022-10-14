@@ -626,7 +626,6 @@ impl<T: Data, const N: usize> Data for [T; N] {
 #[cfg(test)]
 mod test {
     use super::Data;
-    
 
     #[test]
     fn array_data() {

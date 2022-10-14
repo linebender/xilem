@@ -8,8 +8,9 @@ use std::ops::{Deref, DerefMut};
 use tracing::{trace_span, Span};
 
 use super::prelude::*;
-use super::widget_mut::WidgetMut;
 use super::Axis;
+use crate::contexts::WidgetCtx;
+use crate::widget::StoreInWidgetMut;
 use crate::widget::WidgetRef;
 use crate::{theme, AsAny};
 use crate::{Point, Selector};
@@ -34,6 +35,8 @@ pub struct ScrollBar {
     hovered: bool,
     grab_anchor: Option<f64>,
 }
+
+pub struct ScrollBarMut<'a, 'b>(WidgetCtx<'a, 'b>, &'a mut ScrollBar);
 
 pub const SCROLLBAR_MOVED: Selector<(Axis, f64)> = Selector::new("druid-builtin.scrollbar-moved");
 
@@ -103,22 +106,22 @@ impl ScrollBar {
     }
 }
 
-impl WidgetMut<'_, '_, ScrollBar> {
+impl ScrollBarMut<'_, '_> {
     pub fn set_sizes(&mut self, portal_size: f64, content_size: f64) {
-        self.widget.portal_size = portal_size;
-        self.widget.content_size = content_size;
-        self.request_paint();
+        self.1.portal_size = portal_size;
+        self.1.content_size = content_size;
+        self.0.request_paint();
     }
 
     pub fn set_content_size(&mut self, content_size: f64) {
         // TODO - cursor_progress
-        self.widget.content_size = content_size;
-        self.request_paint();
+        self.1.content_size = content_size;
+        self.0.request_paint();
     }
 
     pub fn set_cursor_progress(&mut self, cursor_progress: f64) {
-        self.widget.cursor_progress = cursor_progress;
-        self.request_paint();
+        self.1.cursor_progress = cursor_progress;
+        self.0.request_paint();
     }
 }
 
@@ -228,6 +231,23 @@ impl Widget for ScrollBar {
     }
 }
 
+impl StoreInWidgetMut for ScrollBar {
+    type Mut<'a, 'b: 'a> = ScrollBarMut<'a, 'b>;
+
+    fn get_widget_and_ctx<'s: 'r, 'a: 'r, 'b: 'a, 'r>(
+        widget_mut: &'s mut Self::Mut<'a, 'b>,
+    ) -> (&'r mut Self, &'r mut WidgetCtx<'a, 'b>) {
+        (widget_mut.1, &mut widget_mut.0)
+    }
+
+    fn from_widget_and_ctx<'a, 'b>(
+        widget: &'a mut Self,
+        ctx: WidgetCtx<'a, 'b>,
+    ) -> Self::Mut<'a, 'b> {
+        ScrollBarMut(ctx, widget)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -311,7 +331,7 @@ mod tests {
                 let mut button = button.downcast::<Button>().unwrap();
                 button.set_text("The quick brown fox jumps over the lazy dog");
 
-                let mut label = button.get_label_view();
+                let mut label = button.label_mut();
                 label.set_text_color(PRIMARY_LIGHT);
                 label.set_text_size(20.0);
             });

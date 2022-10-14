@@ -15,10 +15,11 @@
 //! A checkbox widget.
 
 use crate::action::Action;
+use crate::contexts::WidgetCtx;
 use crate::kurbo::{BezPath, Size};
 use crate::piet::{LineCap, LineJoin, LinearGradient, RenderContext, StrokeStyle, UnitPoint};
-use crate::widget::{prelude::*, Label};
-use crate::widget::{WidgetMut, WidgetRef};
+use crate::widget::prelude::*;
+use crate::widget::{Label, StoreInWidgetMut, WidgetMut, WidgetRef};
 use crate::ArcStr;
 use crate::{theme, WidgetPod};
 
@@ -30,6 +31,8 @@ pub struct Checkbox {
     checked: bool,
     label: WidgetPod<Label>,
 }
+
+pub struct CheckboxMut<'a, 'b>(WidgetCtx<'a, 'b>, &'a mut Checkbox);
 
 impl Checkbox {
     /// Create a new `Checkbox` with a text label.
@@ -48,24 +51,19 @@ impl Checkbox {
     }
 }
 
-impl<'a, 'b> WidgetMut<'a, 'b, Checkbox> {
+impl<'a, 'b> CheckboxMut<'a, 'b> {
     pub fn set_checked(&mut self, checked: bool) {
-        self.widget.checked = checked;
-        self.request_paint();
+        self.1.checked = checked;
+        self.0.request_paint();
     }
 
     /// Set the text.
     pub fn set_text(&mut self, new_text: impl Into<ArcStr>) {
-        self.get_label_view().set_text(new_text.into());
+        self.label_mut().set_text(new_text.into());
     }
 
-    pub fn get_label_view(&mut self) -> WidgetMut<'_, 'b, Label> {
-        WidgetMut {
-            global_state: self.global_state,
-            parent_widget_state: self.widget_state,
-            widget_state: &mut self.widget.label.state,
-            widget: &mut self.widget.label.inner,
-        }
+    pub fn label_mut(&mut self) -> WidgetMut<'_, 'b, Label> {
+        self.0.get_mut(&mut self.1.label)
     }
 }
 
@@ -195,6 +193,23 @@ impl Widget for Checkbox {
     }
 }
 
+impl StoreInWidgetMut for Checkbox {
+    type Mut<'a, 'b: 'a> = CheckboxMut<'a, 'b>;
+
+    fn get_widget_and_ctx<'s: 'r, 'a: 'r, 'b: 'a, 'r>(
+        widget_mut: &'s mut Self::Mut<'a, 'b>,
+    ) -> (&'r mut Self, &'r mut WidgetCtx<'a, 'b>) {
+        (widget_mut.1, &mut widget_mut.0)
+    }
+
+    fn from_widget_and_ctx<'a, 'b>(
+        widget: &'a mut Self,
+        ctx: WidgetCtx<'a, 'b>,
+    ) -> Self::Mut<'a, 'b> {
+        CheckboxMut(ctx, widget)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -258,7 +273,7 @@ mod tests {
                 checkbox.set_checked(true);
                 checkbox.set_text("The quick brown fox jumps over the lazy dog");
 
-                let mut label = checkbox.get_label_view();
+                let mut label = checkbox.label_mut();
                 label.set_text_color(PRIMARY_LIGHT);
                 label.set_text_size(20.0);
             });

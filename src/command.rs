@@ -582,7 +582,6 @@ impl std::fmt::Debug for Notification {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
 
     #[test]
     fn get_payload() {

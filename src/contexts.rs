@@ -31,8 +31,7 @@ use crate::platform::WindowDesc;
 use crate::promise::PromiseToken;
 use crate::testing::MockTimerQueue;
 use crate::text::{ImeHandlerRef, TextFieldRegistration};
-use crate::widget::WidgetMut;
-use crate::widget::{CursorChange, FocusChange, WidgetState};
+use crate::widget::{CursorChange, FocusChange, StoreInWidgetMut, WidgetMut, WidgetState};
 use crate::{
     Affine, Env, Insets, Point, Rect, Size, Target, Vec2, Widget, WidgetId, WidgetPod, WindowId,
 };
@@ -71,6 +70,14 @@ pub(crate) struct GlobalPassCtx<'a> {
     pub(crate) text: PietText,
     /// The id of the widget that currently has focus.
     pub(crate) focus_widget: Option<WidgetId>,
+}
+
+// TODO - Doc
+pub struct WidgetCtx<'a, 'b> {
+    pub(crate) global_state: &'a mut GlobalPassCtx<'b>,
+    pub(crate) widget_state: &'a mut WidgetState,
+    // FIXME - Useless field
+    pub(crate) is_init: bool,
 }
 
 /// A mutable context provided to event handling methods of widgets.
@@ -144,6 +151,7 @@ pub struct PaintCtx<'a, 'b, 'c> {
 
 // methods on everyone
 impl_context_method!(
+    WidgetCtx<'_, '_>,
     EventCtx<'_, '_>,
     LifeCycleCtx<'_, '_>,
     PaintCtx<'_, '_, '_>,
@@ -221,6 +229,7 @@ impl_context_method!(
 
 // methods on everyone but layoutctx
 impl_context_method!(
+    WidgetCtx<'_, '_>,
     EventCtx<'_, '_>,
     LifeCycleCtx<'_, '_>,
     PaintCtx<'_, '_, '_>,
@@ -407,39 +416,62 @@ impl_context_method!(EventCtx<'_, '_>, {
     }
 });
 
-// TODO - factorize
-// TODO - rename "create_view"
-
-impl<'a, 'b> EventCtx<'a, 'b> {
-    pub fn get_child_view<'c, Child: Widget>(
+impl<'a, 'b> WidgetCtx<'a, 'b> {
+    // FIXME - Assert that child's parent is self
+    pub fn get_mut<'c, Child: Widget + StoreInWidgetMut>(
         &'c mut self,
         child: &'c mut WidgetPod<Child>,
     ) -> WidgetMut<'c, 'b, Child> {
-        WidgetMut {
+        let child_ctx = WidgetCtx {
             global_state: self.global_state,
-            parent_widget_state: self.widget_state,
             widget_state: &mut child.state,
-            widget: &mut child.inner,
+            is_init: true,
+        };
+        WidgetMut {
+            parent_widget_state: self.widget_state,
+            inner: Child::from_widget_and_ctx(&mut child.inner, child_ctx),
+        }
+    }
+}
+
+impl<'a, 'b> EventCtx<'a, 'b> {
+    // FIXME - Assert that child's parent is self
+    pub fn get_mut<'c, Child: Widget + StoreInWidgetMut>(
+        &'c mut self,
+        child: &'c mut WidgetPod<Child>,
+    ) -> WidgetMut<'c, 'b, Child> {
+        let child_ctx = WidgetCtx {
+            global_state: self.global_state,
+            widget_state: &mut child.state,
+            is_init: true,
+        };
+        WidgetMut {
+            parent_widget_state: self.widget_state,
+            inner: Child::from_widget_and_ctx(&mut child.inner, child_ctx),
         }
     }
 }
 
 impl<'a, 'b> LifeCycleCtx<'a, 'b> {
-    pub fn get_child_view<'c, Child: Widget>(
+    // FIXME - Assert that child's parent is self
+    pub fn get_mut<'c, Child: Widget + StoreInWidgetMut>(
         &'c mut self,
         child: &'c mut WidgetPod<Child>,
     ) -> WidgetMut<'c, 'b, Child> {
-        WidgetMut {
+        let child_ctx = WidgetCtx {
             global_state: self.global_state,
-            parent_widget_state: self.widget_state,
             widget_state: &mut child.state,
-            widget: &mut child.inner,
+            is_init: true,
+        };
+        WidgetMut {
+            parent_widget_state: self.widget_state,
+            inner: Child::from_widget_and_ctx(&mut child.inner, child_ctx),
         }
     }
 }
 
 // methods on event and lifecycle
-impl_context_method!(EventCtx<'_, '_>, LifeCycleCtx<'_, '_>, {
+impl_context_method!(WidgetCtx<'_, '_>, EventCtx<'_, '_>, LifeCycleCtx<'_, '_>, {
     /// Request a [`paint`] pass. This is equivalent to calling
     /// [`request_paint_rect`] for the widget's [`paint_rect`].
     ///
@@ -540,80 +572,94 @@ impl_context_method!(EventCtx<'_, '_>, LifeCycleCtx<'_, '_>, {
 });
 
 // methods on everyone but paintctx
-impl_context_method!(EventCtx<'_, '_>, LifeCycleCtx<'_, '_>, LayoutCtx<'_, '_>, {
-    /// Submit a [`Command`] to be run after this event is handled.
-    ///
-    /// Commands are run in the order they are submitted; all commands
-    /// submitted during the handling of an event are executed before
-    /// the [`update`] method is called; events submitted during [`update`]
-    /// are handled after painting.
-    ///
-    /// [`Target::Auto`] commands will be sent to the window containing the widget.
-    ///
-    /// [`Command`]: struct.Command.html
-    /// [`update`]: trait.Widget.html#tymethod.update
-    pub fn submit_command(&mut self, cmd: impl Into<Command>) {
-        self.check_init("submit_command");
-        trace!("submit_command");
-        self.global_state.submit_command(cmd.into())
+impl_context_method!(
+    WidgetCtx<'_, '_>,
+    EventCtx<'_, '_>,
+    LifeCycleCtx<'_, '_>,
+    LayoutCtx<'_, '_>,
+    {
+        /// Submit a [`Command`] to be run after this event is handled.
+        ///
+        /// Commands are run in the order they are submitted; all commands
+        /// submitted during the handling of an event are executed before
+        /// the [`update`] method is called; events submitted during [`update`]
+        /// are handled after painting.
+        ///
+        /// [`Target::Auto`] commands will be sent to the window containing the widget.
+        ///
+        /// [`Command`]: struct.Command.html
+        /// [`update`]: trait.Widget.html#tymethod.update
+        pub fn submit_command(&mut self, cmd: impl Into<Command>) {
+            self.check_init("submit_command");
+            trace!("submit_command");
+            self.global_state.submit_command(cmd.into())
+        }
+
+        // TODO document
+        pub fn submit_action(&mut self, action: Action) {
+            self.check_init("submit_action");
+            trace!("submit_command");
+            self.global_state
+                .submit_action(action, self.widget_state.id)
+        }
+
+        pub fn run_in_background(
+            &mut self,
+            background_task: impl FnOnce(ExtEventSink) + Send + 'static,
+        ) {
+            self.check_init("run_in_background");
+
+            use std::thread;
+
+            let ext_event_sink = self.global_state.ext_event_sink.clone();
+            thread::spawn(move || {
+                background_task(ext_event_sink);
+            });
+        }
+
+        // TODO - should take FnOnce.
+        pub fn compute_in_background<T: Any + Send>(
+            &mut self,
+            background_task: impl Fn(ExtEventSink) -> T + Send + 'static,
+        ) -> PromiseToken<T> {
+            self.check_init("compute_in_background");
+
+            let token = PromiseToken::<T>::new();
+
+            use std::thread;
+
+            let ext_event_sink = self.global_state.ext_event_sink.clone();
+            let widget_id = self.widget_state.id;
+            let window_id = self.global_state.window_id;
+            thread::spawn(move || {
+                let result = background_task(ext_event_sink.clone());
+                // TODO unwrap_or
+                let _ =
+                    ext_event_sink.resolve_promise(token.make_result(result), widget_id, window_id);
+            });
+
+            token
+        }
+
+        /// Request a timer event.
+        ///
+        /// The return value is a token, which can be used to associate the
+        /// request with the event.
+        pub fn request_timer(&mut self, deadline: Duration) -> TimerToken {
+            self.check_init("request_timer");
+            trace!("request_timer deadline={:?}", deadline);
+            self.global_state
+                .request_timer(deadline, self.widget_state.id)
+        }
     }
+);
 
-    // TODO document
-    pub fn submit_action(&mut self, action: Action) {
-        self.check_init("submit_action");
-        trace!("submit_command");
-        self.global_state
-            .submit_action(action, self.widget_state.id)
+impl WidgetCtx<'_, '_> {
+    // WidgetCtx has no `init` error message.
+    fn method_name() -> &'static str {
+        unreachable!()
     }
-
-    pub fn run_in_background(
-        &mut self,
-        background_task: impl FnOnce(ExtEventSink) + Send + 'static,
-    ) {
-        self.check_init("run_in_background");
-
-        use std::thread;
-
-        let ext_event_sink = self.global_state.ext_event_sink.clone();
-        thread::spawn(move || {
-            background_task(ext_event_sink);
-        });
-    }
-
-    // TODO - should take FnOnce.
-    pub fn compute_in_background<T: Any + Send>(
-        &mut self,
-        background_task: impl Fn(ExtEventSink) -> T + Send + 'static,
-    ) -> PromiseToken<T> {
-        self.check_init("compute_in_background");
-
-        let token = PromiseToken::<T>::new();
-
-        use std::thread;
-
-        let ext_event_sink = self.global_state.ext_event_sink.clone();
-        let widget_id = self.widget_state.id;
-        let window_id = self.global_state.window_id;
-        thread::spawn(move || {
-            let result = background_task(ext_event_sink.clone());
-            // TODO unwrap_or
-            let _ = ext_event_sink.resolve_promise(token.make_result(result), widget_id, window_id);
-        });
-
-        token
-    }
-
-    /// Request a timer event.
-    ///
-    /// The return value is a token, which can be used to associate the
-    /// request with the event.
-    pub fn request_timer(&mut self, deadline: Duration) -> TimerToken {
-        self.check_init("request_timer");
-        trace!("request_timer deadline={:?}", deadline);
-        self.global_state
-            .request_timer(deadline, self.widget_state.id)
-    }
-});
+}
 
 impl EventCtx<'_, '_> {
     // Used in `init` error message.

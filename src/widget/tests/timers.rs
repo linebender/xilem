@@ -4,7 +4,6 @@ use instant::Duration;
 use std::cell::Cell;
 use std::rc::Rc;
 
-
 #[test]
 fn basic_timer() {
     let timer_handled: Rc<Cell<bool>> = Rc::new(false.into());

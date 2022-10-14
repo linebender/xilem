@@ -30,8 +30,7 @@ use crate::debug_logger::DebugLogger;
 use crate::ext_event::ExtEventQueue;
 use crate::piet::{BitmapTarget, Device, Error, ImageFormat, Piet};
 use crate::platform::PendingWindow;
-use crate::widget::WidgetState;
-use crate::widget::{WidgetMut, WidgetRef};
+use crate::widget::{StoreInWidgetMut, WidgetMut, WidgetRef, WidgetState};
 use crate::*;
 use druid_shell::{KeyEvent, Modifiers, MouseButton, MouseButtons};
 pub use druid_shell::{
@@ -374,7 +373,7 @@ impl Harness {
 
     pub fn edit_root_widget<R>(
         &mut self,
-        f: impl FnOnce(WidgetMut<'_, '_, dyn Widget>, &Env) -> R,
+        f: impl FnOnce(WidgetMut<'_, '_, Box<dyn Widget>>, &Env) -> R,
     ) -> R {
         // TODO - Move to MockAppRoot?
         let window = &mut self.mock_app.window;
@@ -395,10 +394,15 @@ impl Harness {
             fake_widget_state = window.root.state.clone();
 
             let root_widget = WidgetMut {
-                global_state: &mut global_state,
+                inner: Box::<dyn Widget>::from_widget_and_ctx(
+                    &mut window.root.inner,
+                    WidgetCtx {
+                        global_state: &mut global_state,
+                        widget_state: &mut window.root.state,
+                        is_init: true,
+                    },
+                ),
                 parent_widget_state: &mut fake_widget_state,
-                widget_state: &mut window.root.state,
-                widget: &mut *window.root.inner,
             };
 
             f(root_widget, &self.mock_app.env)

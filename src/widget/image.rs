@@ -15,11 +15,12 @@
 //! An Image widget.
 //! Please consider using SVG and the SVG widget as it scales much better.
 
+use crate::contexts::WidgetCtx;
 use crate::kurbo::Rect;
 use crate::piet::{Image as _, ImageBuf, InterpolationMode, PietImage};
 use crate::widget::prelude::*;
 use crate::widget::FillStrat;
-use crate::widget::{WidgetMut, WidgetRef};
+use crate::widget::{StoreInWidgetMut, WidgetRef};
 
 use smallvec::SmallVec;
 use tracing::{trace, trace_span, Span};
@@ -32,6 +33,8 @@ pub struct Image {
     interpolation: InterpolationMode,
     clip_area: Option<Rect>,
 }
+
+pub struct ImageMut<'a, 'b>(WidgetCtx<'a, 'b>, &'a mut Image);
 
 impl Image {
     /// Create an image drawing widget from an image buffer.
@@ -78,19 +81,19 @@ impl Image {
     }
 }
 
-impl<'a, 'b> WidgetMut<'a, 'b, Image> {
+impl<'a, 'b> ImageMut<'a, 'b> {
     /// Modify the widget's fill strategy.
     #[inline]
     pub fn set_fill_mode(&mut self, newfil: FillStrat) {
-        self.widget.fill = newfil;
-        self.request_paint();
+        self.1.fill = newfil;
+        self.0.request_paint();
     }
 
     /// Modify the widget's interpolation mode.
     #[inline]
     pub fn set_interpolation_mode(&mut self, interpolation: InterpolationMode) {
-        self.widget.interpolation = interpolation;
-        self.request_paint();
+        self.1.interpolation = interpolation;
+        self.0.request_paint();
     }
 
     /// Set the area of the image that will be displayed.
@@ -98,16 +101,16 @@ impl<'a, 'b> WidgetMut<'a, 'b, Image> {
     /// If `None`, then the whole image will be displayed.
     #[inline]
     pub fn set_clip_area(&mut self, clip_area: Option<Rect>) {
-        self.widget.clip_area = clip_area;
-        self.request_paint();
+        self.1.clip_area = clip_area;
+        self.0.request_paint();
     }
 
     /// Set new `ImageBuf`.
     #[inline]
     pub fn set_image_data(&mut self, image_data: ImageBuf) {
-        self.widget.image_data = image_data;
-        self.widget.paint_data = None;
-        self.request_layout();
+        self.1.image_data = image_data;
+        self.1.paint_data = None;
+        self.0.request_layout();
     }
 }
 
@@ -191,6 +194,23 @@ impl Widget for Image {
 
     fn make_trace_span(&self) -> Span {
         trace_span!("Image")
+    }
+}
+
+impl StoreInWidgetMut for Image {
+    type Mut<'a, 'b: 'a> = ImageMut<'a, 'b>;
+
+    fn get_widget_and_ctx<'s: 'r, 'a: 'r, 'b: 'a, 'r>(
+        widget_mut: &'s mut Self::Mut<'a, 'b>,
+    ) -> (&'r mut Self, &'r mut WidgetCtx<'a, 'b>) {
+        (widget_mut.1, &mut widget_mut.0)
+    }
+
+    fn from_widget_and_ctx<'a, 'b>(
+        widget: &'a mut Self,
+        ctx: WidgetCtx<'a, 'b>,
+    ) -> Self::Mut<'a, 'b> {
+        ImageMut(ctx, widget)
     }
 }
 

@@ -37,13 +37,15 @@
  - [X] Check that paint_rect has children paint_rect
  - [X] Disambiguate concept of hidden/stashed widgets
 
-- [ ] Fix WidgetView type
+- [X] Refactor different passes
+ - [X] Write a WidgetCtx trait
+ - [X] Add a `WidgetPod::as_mut(ctx: &impl WidgetCtx)` method
+
+- [X] Fix WidgetView type
  - [X] Rename WidgetView to WidgetMut
  - [X] Split WidgetRef into separate file
- - [ ] Be able to create WidgetMut from owned Widget
- - [ ] Add `View` associated type to Widget (behind GAT feature flag)
- - [ ] Add impl DerefMut to WidgetMut
- - [ ] Add dummy impls for non-GAT users
+ - [X] Create StoreInWidgetMut from (Widget, WidgetCtx)
+ - [ ] Create `declare_widget!()` macro to implement boilerplate.
 
 - [ ] Re-add Dialog
 - [ ] Refactor TextLayout
@@ -77,10 +79,7 @@
 
 - [ ] Switch module file conventions (foobar/mod.rs -> foobar.rs)
 
-- [ ] Refactor different passes
- - [ ] Write a WidgetCtx trait
- - [ ] Add a `WidgetPod::as_mut(ctx: &impl WidgetCtx)` method
- - [ ] Handle reques_layout-in-layout corner case
+- [ ] Handle reques_layout-in-layout corner case
 
 - [ ] Add dev shortcuts:
  - [ ] To print Widget tree

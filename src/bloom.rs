@@ -130,7 +130,6 @@ impl<T: ?Sized> Default for Bloom<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
 
     #[test]
     fn very_good_test() {

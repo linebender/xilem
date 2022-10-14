@@ -21,15 +21,14 @@
 use smallvec::SmallVec;
 use tracing::{trace, trace_span, Span};
 
+use crate::contexts::WidgetCtx;
 use crate::kurbo::Vec2;
 use crate::text::FontDescriptor;
 use crate::text::{TextAlignment, TextLayout};
 use crate::widget::prelude::*;
-use crate::widget::WidgetRef;
+use crate::widget::{StoreInWidgetMut, WidgetRef};
 use crate::{ArcStr, Color, Data, KeyOrValue, Point};
 use druid_shell::Cursor;
-
-use super::widget_mut::WidgetMut;
 
 // added padding between the edges of the widget and the text.
 const LABEL_X_PADDING: f64 = 2.0;
@@ -42,6 +41,9 @@ pub struct Label {
     disabled: bool,
     default_text_color: KeyOrValue<Color>,
 }
+
+// FIXME - remove pub(crate)
+pub struct LabelMut<'a, 'b>(WidgetCtx<'a, 'b>, pub(crate) &'a mut Label);
 
 /// Options for handling lines that are too wide for the label.
 #[derive(Debug, Clone, Copy, PartialEq, Data)]
@@ -163,11 +165,11 @@ impl Label {
     }
 }
 
-impl WidgetMut<'_, '_, Label> {
+impl LabelMut<'_, '_> {
     /// Set the text.
     pub fn set_text(&mut self, new_text: impl Into<ArcStr>) {
-        self.widget.text_layout.set_text(new_text.into());
-        self.request_layout();
+        self.1.text_layout.set_text(new_text.into());
+        self.0.request_layout();
     }
 
     /// Set the text color.
@@ -177,11 +179,11 @@ impl WidgetMut<'_, '_, Label> {
     /// [`Key<Color>`]: ../struct.Key.html
     pub fn set_text_color(&mut self, color: impl Into<KeyOrValue<Color>>) {
         let color = color.into();
-        if !self.widget.disabled {
-            self.widget.text_layout.set_text_color(color.clone());
+        if !self.1.disabled {
+            self.1.text_layout.set_text_color(color.clone());
         }
-        self.widget.default_text_color = color;
-        self.request_layout();
+        self.1.default_text_color = color;
+        self.0.request_layout();
     }
 
     /// Set the text size.
@@ -190,8 +192,8 @@ impl WidgetMut<'_, '_, Label> {
     ///
     /// [`Key<f64>`]: ../struct.Key.html
     pub fn set_text_size(&mut self, size: impl Into<KeyOrValue<f64>>) {
-        self.widget.text_layout.set_text_size(size);
-        self.request_layout();
+        self.1.text_layout.set_text_size(size);
+        self.0.request_layout();
     }
 
     /// Set the font.
@@ -203,24 +205,24 @@ impl WidgetMut<'_, '_, Label> {
     /// [`FontDescriptor`]: ../struct.FontDescriptor.html
     /// [`Key<FontDescriptor>`]: ../struct.Key.html
     pub fn set_font(&mut self, font: impl Into<KeyOrValue<FontDescriptor>>) {
-        self.widget.text_layout.set_font(font);
-        self.request_layout();
+        self.1.text_layout.set_font(font);
+        self.0.request_layout();
     }
 
     /// Set the [`LineBreaking`] behaviour.
     ///
     /// [`LineBreaking`]: enum.LineBreaking.html
     pub fn set_line_break_mode(&mut self, mode: LineBreaking) {
-        self.widget.line_break_mode = mode;
-        self.request_layout();
+        self.1.line_break_mode = mode;
+        self.0.request_layout();
     }
 
     /// Set the [`TextAlignment`] for this layout.
     ///
     /// [`TextAlignment`]: enum.TextAlignment.html
     pub fn set_text_alignment(&mut self, alignment: TextAlignment) {
-        self.widget.text_layout.set_text_alignment(alignment);
-        self.request_layout();
+        self.1.text_layout.set_text_alignment(alignment);
+        self.0.request_layout();
     }
 }
 
@@ -311,6 +313,23 @@ impl Widget for Label {
 
     fn get_debug_text(&self) -> Option<String> {
         Some(self.current_text.to_string())
+    }
+}
+
+impl StoreInWidgetMut for Label {
+    type Mut<'a, 'b: 'a> = LabelMut<'a, 'b>;
+
+    fn get_widget_and_ctx<'s: 'r, 'a: 'r, 'b: 'a, 'r>(
+        widget_mut: &'s mut Self::Mut<'a, 'b>,
+    ) -> (&'r mut Self, &'r mut WidgetCtx<'a, 'b>) {
+        (widget_mut.1, &mut widget_mut.0)
+    }
+
+    fn from_widget_and_ctx<'a, 'b>(
+        widget: &'a mut Self,
+        ctx: WidgetCtx<'a, 'b>,
+    ) -> Self::Mut<'a, 'b> {
+        LabelMut(ctx, widget)
     }
 }
 

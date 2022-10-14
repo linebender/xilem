@@ -369,7 +369,6 @@ pub fn len_utf8_from_first_byte(b: u8) -> usize {
 mod tests {
     use super::*;
     use crate::Data;
-    
 
     #[test]
     fn replace() {

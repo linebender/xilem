@@ -28,8 +28,9 @@ use super::{
 use crate::kurbo::{Line, Point, Rect, Vec2};
 use crate::piet::TextLayout as _;
 use crate::widget::prelude::*;
-use crate::widget::{WidgetMut, WidgetRef};
-use crate::{text, theme, Env, Selector};
+use crate::widget::StoreInWidgetMut;
+use crate::widget::WidgetRef;
+use crate::{text, theme, Env, Selector, WidgetCtx};
 use druid_shell::{Cursor, Modifiers};
 
 /// A widget that accepts text input.
@@ -69,6 +70,10 @@ pub struct TextComponent<T> {
     /// The parent should update this when handling [`LifeCycle::FocusChanged`].
     pub has_focus: bool,
 }
+pub struct TextComponentMut<'a, 'b, T: TextStorage + EditableText>(
+    WidgetCtx<'a, 'b>,
+    &'a mut TextComponent<T>,
+);
 
 /// Editable text state.
 ///
@@ -269,29 +274,29 @@ impl<T: EditableText + TextStorage> TextComponent<T> {
     }
 }
 
-impl<T: TextStorage + EditableText> WidgetMut<'_, '_, TextComponent<T>> {
+impl<T: TextStorage + EditableText> TextComponentMut<'_, '_, T> {
     pub fn set_text(&mut self, new_text: impl Into<T>) {
         let new_text = new_text.into();
         // TODO - use '==' instead
         let needs_rebuild = self
-            .widget
+            .1
             .borrow()
             .layout
             .text()
             .map(|old| !old.same(&new_text))
             .unwrap_or(true);
         if needs_rebuild {
-            self.widget.borrow_mut().layout.set_text(new_text.clone());
-            self.widget
+            self.1.borrow_mut().layout.set_text(new_text.clone());
+            self.1
                 .borrow_mut()
                 .update_pending_invalidation(ImeInvalidation::Reset);
-            self.request_layout();
+            self.0.request_layout();
         }
     }
 
     pub fn set_focused(&mut self, focused: bool) {
-        self.widget.has_focus = focused;
-        self.request_paint();
+        self.1.has_focus = focused;
+        self.0.request_paint();
     }
 }
 
@@ -499,6 +504,23 @@ impl<T: TextStorage + EditableText> Widget for TextComponent<T> {
 
     fn make_trace_span(&self) -> Span {
         trace_span!("TextComponent")
+    }
+}
+
+impl<T: TextStorage + EditableText> StoreInWidgetMut for TextComponent<T> {
+    type Mut<'a, 'b: 'a> = TextComponentMut<'a, 'b, T>;
+
+    fn get_widget_and_ctx<'s: 'r, 'a: 'r, 'b: 'a, 'r>(
+        widget_mut: &'s mut Self::Mut<'a, 'b>,
+    ) -> (&'r mut Self, &'r mut WidgetCtx<'a, 'b>) {
+        (widget_mut.1, &mut widget_mut.0)
+    }
+
+    fn from_widget_and_ctx<'a, 'b>(
+        widget: &'a mut Self,
+        ctx: WidgetCtx<'a, 'b>,
+    ) -> Self::Mut<'a, 'b> {
+        TextComponentMut(ctx, widget)
     }
 }
 

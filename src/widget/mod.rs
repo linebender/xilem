@@ -36,6 +36,7 @@ mod spinner;
 mod textbox;
 mod web_image;
 
+pub use widget::StoreInWidgetMut;
 #[doc(hidden)]
 pub use widget::{Widget, WidgetId};
 

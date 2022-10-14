@@ -19,19 +19,18 @@ use crate::debug_logger::DebugLogger;
 use crate::kurbo::{Point, Size};
 use crate::piet::{Color, Piet, RenderContext};
 
+use crate::command as sys_cmd;
 use crate::command::CommandQueue;
 use crate::contexts::GlobalPassCtx;
 use crate::ext_event::{ExtEventQueue, ExtEventSink, ExtMessage};
 use crate::platform::RUN_COMMANDS_TOKEN;
 use crate::testing::MockTimerQueue;
 use crate::text::TextFieldRegistration;
-use crate::widget::{FocusChange, WidgetState};
-use crate::widget::{WidgetMut, WidgetRef};
-use crate::{command as sys_cmd, DruidWinHandler, WindowDesc};
+use crate::widget::{FocusChange, StoreInWidgetMut, WidgetMut, WidgetRef, WidgetState};
 use crate::{
-    ArcStr, BoxConstraints, Command, Env, Event, EventCtx, Handled, InternalEvent,
-    InternalLifeCycle, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Target, Widget, WidgetId,
-    WidgetPod, WindowId,
+    ArcStr, BoxConstraints, Command, DruidWinHandler, Env, Event, EventCtx, Handled, InternalEvent,
+    InternalLifeCycle, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Target, Widget, WidgetCtx,
+    WidgetId, WidgetPod, WindowDesc, WindowId,
 };
 
 use crate::platform::{DialogInfo, EXT_EVENT_IDLE_TOKEN};
@@ -532,11 +531,14 @@ impl AppRoot {
             );
             fake_widget_state = window.root.state.clone();
 
-            let main_root_widget = WidgetMut {
+            let main_root_ctx = WidgetCtx {
                 global_state: &mut global_state,
-                parent_widget_state: &mut fake_widget_state,
                 widget_state: &mut window.root.state,
-                widget: &mut *window.root.inner,
+                is_init: true,
+            };
+            let main_root_widget = WidgetMut {
+                parent_widget_state: &mut fake_widget_state,
+                inner: Box::from_widget_and_ctx(&mut window.root.inner, main_root_ctx),
             };
 
             let mut ctx = DelegateCtx {

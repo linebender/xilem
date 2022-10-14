@@ -6,7 +6,8 @@ use smallvec::SmallVec;
 use std::f64::consts::PI;
 use tracing::trace;
 
-use crate::widget::{WidgetMut, WidgetRef};
+use crate::contexts::WidgetCtx;
+use crate::widget::WidgetRef;
 use druid::kurbo::Line;
 use druid::widget::prelude::*;
 use druid::{theme, Color, KeyOrValue, Point, Vec2};
@@ -22,6 +23,8 @@ pub struct Spinner {
     t: f64,
     color: KeyOrValue<Color>,
 }
+
+pub struct SpinnerMut<'a, 'b>(WidgetCtx<'a, 'b>, &'a mut Spinner);
 
 impl Spinner {
     /// Create a spinner widget
@@ -40,15 +43,15 @@ impl Spinner {
     }
 }
 
-impl WidgetMut<'_, '_, Spinner> {
+impl SpinnerMut<'_, '_> {
     /// Set the spinner's color.
     ///
     /// The argument can be either a `Color` or a [`Key<Color>`].
     ///
     /// [`Key<Color>`]: ../struct.Key.html
     pub fn set_color(&mut self, color: impl Into<KeyOrValue<Color>>) {
-        self.widget.color = color.into();
-        self.request_paint();
+        self.1.color = color.into();
+        self.0.request_paint();
     }
 }
 
@@ -126,6 +129,24 @@ impl Widget for Spinner {
 
     fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
         SmallVec::new()
+    }
+}
+
+use crate::widget::StoreInWidgetMut;
+impl StoreInWidgetMut for Spinner {
+    type Mut<'a, 'b: 'a> = SpinnerMut<'a, 'b>;
+
+    fn get_widget_and_ctx<'s: 'r, 'a: 'r, 'b: 'a, 'r>(
+        widget_mut: &'s mut Self::Mut<'a, 'b>,
+    ) -> (&'r mut Self, &'r mut WidgetCtx<'a, 'b>) {
+        (widget_mut.1, &mut widget_mut.0)
+    }
+
+    fn from_widget_and_ctx<'a, 'b>(
+        widget: &'a mut Self,
+        ctx: WidgetCtx<'a, 'b>,
+    ) -> Self::Mut<'a, 'b> {
+        SpinnerMut(ctx, widget)
     }
 }
 

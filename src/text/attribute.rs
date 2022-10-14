@@ -345,7 +345,6 @@ impl<T> Default for SpanSet<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
 
     #[test]
     fn smoke_test_spans() {

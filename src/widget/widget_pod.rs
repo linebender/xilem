@@ -65,8 +65,9 @@ impl<W: Widget> WidgetPod<W> {
         &self.inner
     }
 
+    // FIXME - Remove
     /// Return a mutable reference to the inner widget.
-    pub fn widget_mut(&mut self) -> &mut W {
+    pub(crate) fn widget_mut(&mut self) -> &mut W {
         &mut self.inner
     }
 

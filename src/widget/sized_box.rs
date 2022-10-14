@@ -14,19 +14,13 @@
 
 //! A widget with predefined size.
 
-// TODO
-// - get_child
-// - get_child_mut
-// - set_child
-// - remove_child
-
 use smallvec::{smallvec, SmallVec};
 use std::f64::INFINITY;
 use tracing::{trace, trace_span, warn, Span};
 
+use crate::contexts::WidgetCtx;
 use crate::widget::prelude::*;
-use crate::widget::{WidgetId, WidgetPod};
-use crate::widget::{WidgetMut, WidgetRef};
+use crate::widget::{StoreInWidgetMut, WidgetId, WidgetMut, WidgetPod, WidgetRef};
 use crate::Point;
 
 /// A widget with predefined size.
@@ -43,6 +37,8 @@ pub struct SizedBox {
     width: Option<f64>,
     height: Option<f64>,
 }
+
+pub struct SizedBoxMut<'a, 'b>(WidgetCtx<'a, 'b>, &'a mut SizedBox);
 
 impl SizedBox {
     /// Construct container with child, and both width and height not set.
@@ -118,53 +114,51 @@ impl SizedBox {
         self.height = Some(INFINITY);
         self
     }
+
+    // TODO - child()
 }
 
-impl<'a, 'b> WidgetMut<'a, 'b, SizedBox> {
+impl<'a, 'b> SizedBoxMut<'a, 'b> {
     pub fn set_child(&mut self, child: impl Widget) {
-        self.widget.child = Some(WidgetPod::new(child).boxed());
-        self.children_changed();
-        self.request_layout();
+        self.1.child = Some(WidgetPod::new(child).boxed());
+        self.0.children_changed();
+        self.0.request_layout();
     }
 
     pub fn remove_child(&mut self) {
-        self.widget.child = None;
-        self.children_changed();
-        self.request_layout();
+        self.1.child = None;
+        self.0.children_changed();
+        self.0.request_layout();
     }
 
     /// Set container's width.
     pub fn set_width(&mut self, width: f64) {
-        self.widget.width = Some(width);
-        self.request_layout();
+        self.1.width = Some(width);
+        self.0.request_layout();
     }
 
     /// Set container's height.
     pub fn set_height(&mut self, height: f64) {
-        self.widget.height = Some(height);
-        self.request_layout();
+        self.1.height = Some(height);
+        self.0.request_layout();
     }
 
     /// Set container's width.
     pub fn unset_width(&mut self) {
-        self.widget.width = None;
-        self.request_layout();
+        self.1.width = None;
+        self.0.request_layout();
     }
 
     /// Set container's height.
     pub fn unset_height(&mut self) {
-        self.widget.height = None;
-        self.request_layout();
+        self.1.height = None;
+        self.0.request_layout();
     }
 
-    pub fn get_child_view(&mut self) -> Option<WidgetMut<'_, 'b, Box<dyn Widget>>> {
-        let child = self.widget.child.as_mut()?;
-        Some(WidgetMut {
-            global_state: self.global_state,
-            parent_widget_state: self.widget_state,
-            widget_state: &mut child.state,
-            widget: &mut child.inner,
-        })
+    // TODO - Doc
+    pub fn child_mut(&mut self) -> Option<WidgetMut<'_, 'b, Box<dyn Widget>>> {
+        let child = self.1.child.as_mut()?;
+        Some(self.0.get_mut(child))
     }
 }
 
@@ -259,6 +253,23 @@ impl Widget for SizedBox {
 
     fn make_trace_span(&self) -> Span {
         trace_span!("SizedBox")
+    }
+}
+
+impl StoreInWidgetMut for SizedBox {
+    type Mut<'a, 'b: 'a> = SizedBoxMut<'a, 'b>;
+
+    fn get_widget_and_ctx<'s: 'r, 'a: 'r, 'b: 'a, 'r>(
+        widget_mut: &'s mut Self::Mut<'a, 'b>,
+    ) -> (&'r mut Self, &'r mut WidgetCtx<'a, 'b>) {
+        (widget_mut.1, &mut widget_mut.0)
+    }
+
+    fn from_widget_and_ctx<'a, 'b>(
+        widget: &'a mut Self,
+        ctx: WidgetCtx<'a, 'b>,
+    ) -> Self::Mut<'a, 'b> {
+        SizedBoxMut(ctx, widget)
     }
 }
 

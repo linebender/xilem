@@ -13,6 +13,7 @@
 // limitations under the License.
 
 use super::prelude::*;
+use crate::contexts::WidgetCtx;
 use crate::widget::WidgetRef;
 use crate::AsAny;
 use crate::Point;
@@ -95,8 +96,6 @@ pub struct WidgetId(NonZeroU64);
 /// [`Env`]: struct.Env.html
 /// [`WidgetPod`]: struct.WidgetPod.html
 pub trait Widget: AsAny {
-    //type MutRef: FromWidgetMut<W = Self>;
-
     /// Handle an event.
     ///
     /// A number of different events (in the [`Event`] enum) are handled in this
@@ -215,6 +214,33 @@ pub trait Widget: AsAny {
     }
 }
 
+// TODO - create simple macro, do stuff from macro.
+// TODO - require DerefMut
+pub trait StoreInWidgetMut: Widget {
+    type Mut<'a, 'b: 'a>;
+
+    fn from_widget_and_ctx<'a, 'b>(
+        widget: &'a mut Self,
+        ctx: WidgetCtx<'a, 'b>,
+    ) -> Self::Mut<'a, 'b>;
+
+    fn get_widget<'s: 'r, 'a: 'r, 'b: 'a, 'r>(
+        widget_mut: &'s mut Self::Mut<'a, 'b>,
+    ) -> &'r mut Self {
+        Self::get_widget_and_ctx(widget_mut).0
+    }
+
+    fn get_ctx<'s: 'r, 'a: 'r, 'b: 'a, 'r>(
+        widget_mut: &'s mut Self::Mut<'a, 'b>,
+    ) -> &'r mut WidgetCtx<'a, 'b> {
+        Self::get_widget_and_ctx(widget_mut).1
+    }
+
+    fn get_widget_and_ctx<'s: 'r, 'a: 'r, 'b: 'a, 'r>(
+        widget_mut: &'s mut Self::Mut<'a, 'b>,
+    ) -> (&'r mut Self, &'r mut WidgetCtx<'a, 'b>);
+}
+
 #[cfg(not(tarpaulin_include))]
 impl WidgetId {
     /// Allocate a new, unique `WidgetId`.
@@ -295,5 +321,24 @@ impl Widget for Box<dyn Widget> {
 
     fn as_mut_any(&mut self) -> &mut dyn Any {
         self.deref_mut().as_mut_dyn_any()
+    }
+}
+
+pub struct BoxWidgetMut<'a, 'b>(WidgetCtx<'a, 'b>, &'a mut Box<dyn Widget>);
+
+impl StoreInWidgetMut for Box<dyn Widget> {
+    type Mut<'a, 'b: 'a> = BoxWidgetMut<'a, 'b>;
+
+    fn get_widget_and_ctx<'s: 'r, 'a: 'r, 'b: 'a, 'r>(
+        widget_mut: &'s mut Self::Mut<'a, 'b>,
+    ) -> (&'r mut Self, &'r mut WidgetCtx<'a, 'b>) {
+        (widget_mut.1, &mut widget_mut.0)
+    }
+
+    fn from_widget_and_ctx<'a, 'b>(
+        widget: &'a mut Self,
+        ctx: WidgetCtx<'a, 'b>,
+    ) -> Self::Mut<'a, 'b> {
+        BoxWidgetMut(ctx, widget)
     }
 }

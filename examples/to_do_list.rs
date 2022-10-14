@@ -22,7 +22,7 @@ impl AppDelegate for Delegate {
         match action {
             Action::ButtonPressed => {
                 let mut root: WidgetMut<Portal<Flex>> = ctx.get_root();
-                let mut flex = root.get_child_view();
+                let mut flex = root.child_mut();
                 flex.add_child(Label::new("Hello"));
             }
             Action::TextChanged(_) => todo!(),

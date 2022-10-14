@@ -20,6 +20,7 @@ use std::time::Duration;
 use tracing::{trace_span, Span};
 
 use crate::action::Action;
+use crate::contexts::WidgetCtx;
 use crate::kurbo::Insets;
 use crate::piet::{RenderContext as _, TextLayout as _};
 use crate::shell::{HotKey, KeyEvent, SysMods, TimerToken};
@@ -77,6 +78,8 @@ pub struct TextBox {
     #[allow(dead_code)]
     text_pos: Point,
 }
+
+pub struct TextBoxMut<'a, 'b>(WidgetCtx<'a, 'b>, &'a mut TextBox);
 
 impl TextBox {
     /// Create a new TextBox widget.
@@ -329,21 +332,13 @@ impl TextBox {
     }
 }
 
-impl<'a, 'b> WidgetMut<'a, 'b, TextBox> {
-    pub fn get_child_view(&mut self) -> WidgetMut<'_, 'b, Portal<TextComponent<Arc<String>>>> {
-        let child = &mut self.widget.inner;
-        WidgetMut {
-            global_state: self.global_state,
-            parent_widget_state: self.widget_state,
-            widget_state: &mut child.state,
-            widget: &mut child.inner,
-        }
+impl<'a, 'b> TextBoxMut<'a, 'b> {
+    pub fn inner_mut(&mut self) -> WidgetMut<'_, 'b, Portal<TextComponent<Arc<String>>>> {
+        self.0.get_mut(&mut self.1.inner)
     }
 
     pub fn set_text(&mut self, new_text: impl Into<String>) {
-        self.get_child_view()
-            .get_child_view()
-            .set_text(new_text.into());
+        self.inner_mut().child_mut().set_text(new_text.into());
     }
 }
 
@@ -425,7 +420,7 @@ impl Widget for TextBox {
                         self.scroll_to_selection_after_layout = true;
                     } else {
                         let selection_end = self.rect_for_selection_end();
-                        let mut child = ctx.get_child_view(&mut self.inner);
+                        let mut child = ctx.get_mut(&mut self.inner);
                         child.pan_viewport_to(selection_end);
                     }
                     ctx.set_handled();
@@ -564,8 +559,8 @@ impl Widget for TextBox {
                 }
 
                 {
-                    let mut child = ctx.get_child_view(&mut self.inner);
-                    child.get_child_view().set_focused(true);
+                    let mut child = ctx.get_mut(&mut self.inner);
+                    child.child_mut().set_focused(true);
                 }
                 self.reset_cursor_blink(ctx.request_timer(CURSOR_BLINK_DURATION));
                 self.was_focused_from_click = false;
@@ -585,8 +580,8 @@ impl Widget for TextBox {
                 }
 
                 {
-                    let mut child = ctx.get_child_view(&mut self.inner);
-                    child.get_child_view().set_focused(false);
+                    let mut child = ctx.get_mut(&mut self.inner);
+                    child.child_mut().set_focused(false);
                     if !self.multiline {
                         // TODO - remove?
                         child.pan_viewport_to(Rect::ZERO);
@@ -752,6 +747,24 @@ fn x_offset_for_extra_width(alignment: TextAlignment, extra_width: f64) -> f64 {
         TextAlignment::Start | TextAlignment::Justified => 0.0,
         TextAlignment::End => extra_width,
         TextAlignment::Center => extra_width / 2.0,
+    }
+}
+
+use crate::widget::StoreInWidgetMut;
+impl StoreInWidgetMut for TextBox {
+    type Mut<'a, 'b: 'a> = TextBoxMut<'a, 'b>;
+
+    fn get_widget_and_ctx<'s: 'r, 'a: 'r, 'b: 'a, 'r>(
+        widget_mut: &'s mut Self::Mut<'a, 'b>,
+    ) -> (&'r mut Self, &'r mut WidgetCtx<'a, 'b>) {
+        (widget_mut.1, &mut widget_mut.0)
+    }
+
+    fn from_widget_and_ctx<'a, 'b>(
+        widget: &'a mut Self,
+        ctx: WidgetCtx<'a, 'b>,
+    ) -> Self::Mut<'a, 'b> {
+        TextBoxMut(ctx, widget)
     }
 }
 

@@ -2,11 +2,13 @@
 
 use std::ops::Range;
 
+use crate::contexts::WidgetCtx;
 use crate::kurbo::{Affine, Point, Rect, Size, Vec2};
 use crate::widget::prelude::*;
 use crate::widget::scroll_bar::SCROLLBAR_MOVED;
 use crate::widget::Axis;
 use crate::widget::ScrollBar;
+use crate::widget::StoreInWidgetMut;
 use crate::widget::WidgetMut;
 use crate::widget::WidgetRef;
 use crate::WidgetPod;
@@ -33,6 +35,8 @@ pub struct Portal<W: Widget> {
     scrollbar_vertical: WidgetPod<ScrollBar>,
     scrollbar_vertical_visible: bool,
 }
+
+pub struct PortalMut<'a, 'b, W: Widget>(WidgetCtx<'a, 'b>, &'a mut Portal<W>);
 
 impl<W: Widget> Portal<W> {
     pub fn new(child: W) -> Self {
@@ -142,35 +146,20 @@ impl<W: Widget> Portal<W> {
     }
 }
 
-impl<'a, 'b, W: Widget> WidgetMut<'a, 'b, Portal<W>> {
-    pub fn get_child_view(&mut self) -> WidgetMut<'_, 'b, W> {
-        let child = &mut self.widget.child;
-        WidgetMut {
-            global_state: self.global_state,
-            parent_widget_state: self.widget_state,
-            widget_state: &mut child.state,
-            widget: &mut child.inner,
-        }
+impl<'a, 'b, W: Widget> PortalMut<'a, 'b, W> {
+    pub fn child_mut(&mut self) -> WidgetMut<'_, 'b, W>
+    where
+        W: StoreInWidgetMut,
+    {
+        self.0.get_mut(&mut self.1.child)
     }
 
-    pub fn get_horizontal_scrollbar_view(&mut self) -> WidgetMut<'_, 'b, ScrollBar> {
-        let child = &mut self.widget.scrollbar_horizontal;
-        WidgetMut {
-            global_state: self.global_state,
-            parent_widget_state: self.widget_state,
-            widget_state: &mut child.state,
-            widget: &mut child.inner,
-        }
+    pub fn horizontal_scrollbar_mut(&mut self) -> WidgetMut<'_, 'b, ScrollBar> {
+        self.0.get_mut(&mut self.1.scrollbar_horizontal)
     }
 
-    pub fn get_vertical_scrollbar_view(&mut self) -> WidgetMut<'_, 'b, ScrollBar> {
-        let child = &mut self.widget.scrollbar_vertical;
-        WidgetMut {
-            global_state: self.global_state,
-            parent_widget_state: self.widget_state,
-            widget_state: &mut child.state,
-            widget: &mut child.inner,
-        }
+    pub fn vertical_scrollbar_mut(&mut self) -> WidgetMut<'_, 'b, ScrollBar> {
+        self.0.get_mut(&mut self.1.scrollbar_vertical)
     }
 
     // TODO - rewrite doc
@@ -180,8 +169,8 @@ impl<'a, 'b, W: Widget> WidgetMut<'a, 'b, Portal<W>> {
     ///
     /// [`constrain_vertical`]: struct.ClipBox.html#constrain_vertical
     pub fn set_constrain_horizontal(&mut self, constrain: bool) {
-        self.widget.constrain_horizontal = constrain;
-        self.request_layout();
+        self.1.constrain_horizontal = constrain;
+        self.0.request_layout();
     }
 
     /// Set whether to constrain the child vertically.
@@ -190,8 +179,8 @@ impl<'a, 'b, W: Widget> WidgetMut<'a, 'b, Portal<W>> {
     ///
     /// [`constrain_vertical`]: struct.ClipBox.html#constrain_vertical
     pub fn set_constrain_vertical(&mut self, constrain: bool) {
-        self.widget.constrain_vertical = constrain;
-        self.request_layout();
+        self.1.constrain_vertical = constrain;
+        self.0.request_layout();
     }
 
     /// Set whether the child's size must be greater than or equal the size of
@@ -201,36 +190,36 @@ impl<'a, 'b, W: Widget> WidgetMut<'a, 'b, Portal<W>> {
     ///
     /// [`content_must_fill`]: ClipBox::content_must_fill
     pub fn set_content_must_fill(&mut self, must_fill: bool) {
-        self.widget.must_fill = must_fill;
-        self.request_layout();
+        self.1.must_fill = must_fill;
+        self.0.request_layout();
     }
 
     pub fn set_viewport_pos(&mut self, position: Point) -> bool {
-        let portal_size = self.widget_state.layout_rect().size();
-        let content_size = self.widget.child.layout_rect().size();
+        let portal_size = self.0.widget_state.layout_rect().size();
+        let content_size = self.1.child.layout_rect().size();
 
         let pos_changed = self
-            .widget
+            .1
             .set_viewport_pos_raw(portal_size, content_size, position);
         if pos_changed {
-            let progress_x = self.widget.viewport_pos.x / (content_size - portal_size).width;
-            self.get_horizontal_scrollbar_view()
+            let progress_x = self.1.viewport_pos.x / (content_size - portal_size).width;
+            self.horizontal_scrollbar_mut()
                 .set_cursor_progress(progress_x);
-            let progress_y = self.widget.viewport_pos.y / (content_size - portal_size).height;
-            self.get_vertical_scrollbar_view()
+            let progress_y = self.1.viewport_pos.y / (content_size - portal_size).height;
+            self.vertical_scrollbar_mut()
                 .set_cursor_progress(progress_y);
-            self.request_layout();
+            self.0.request_layout();
         }
         pos_changed
     }
 
     pub fn pan_viewport_by(&mut self, translation: Vec2) -> bool {
-        self.set_viewport_pos(self.widget.viewport_pos + translation)
+        self.set_viewport_pos(self.1.viewport_pos + translation)
     }
 
     // Note - Rect is in child coordinates
     pub fn pan_viewport_to(&mut self, target: Rect) -> bool {
-        let viewport = Rect::from_origin_size(self.widget.viewport_pos, self.widget_state.size);
+        let viewport = Rect::from_origin_size(self.1.viewport_pos, self.0.widget_state.size);
 
         let new_pos_x = compute_pan_range(
             viewport.min_x()..viewport.max_x(),
@@ -263,7 +252,7 @@ impl<W: Widget> Widget for Portal<W> {
                     self.viewport_pos + wheel_event.wheel_delta,
                 );
                 // TODO - horizontal scrolling?
-                ctx.get_child_view(&mut self.scrollbar_vertical)
+                ctx.get_mut(&mut self.scrollbar_vertical)
                     .set_cursor_progress(self.viewport_pos.y / (content_size - portal_size).height);
             }
             Event::Notification(notif) => {
@@ -389,6 +378,23 @@ impl<W: Widget> Widget for Portal<W> {
 
     fn make_trace_span(&self) -> Span {
         trace_span!("Portal")
+    }
+}
+
+impl<W: Widget> StoreInWidgetMut for Portal<W> {
+    type Mut<'a, 'b: 'a> = PortalMut<'a, 'b, W>;
+
+    fn get_widget_and_ctx<'s: 'r, 'a: 'r, 'b: 'a, 'r>(
+        widget_mut: &'s mut Self::Mut<'a, 'b>,
+    ) -> (&'r mut Self, &'r mut WidgetCtx<'a, 'b>) {
+        (widget_mut.1, &mut widget_mut.0)
+    }
+
+    fn from_widget_and_ctx<'a, 'b>(
+        widget: &'a mut Self,
+        ctx: WidgetCtx<'a, 'b>,
+    ) -> Self::Mut<'a, 'b> {
+        PortalMut(ctx, widget)
     }
 }
 

@@ -62,9 +62,9 @@ impl Widget for MainWidget {
                         });
 
                         self.content.on_event(ctx, event, env);
-                        let mut flex_view = ctx.get_child_view(&mut self.content);
-                        flex_view.clear();
-                        flex_view.add_child(Spinner::new());
+                        let mut flex_mut = ctx.get_mut(&mut self.content);
+                        flex_mut.clear();
+                        flex_mut.add_child(Spinner::new());
 
                         return;
                     }
@@ -75,9 +75,9 @@ impl Widget for MainWidget {
 
                 self.content.on_event(ctx, event, env);
 
-                let mut flex_view = ctx.get_child_view(&mut self.content);
-                flex_view.clear();
-                flex_view.add_child(Label::new(format!("New value: {}", value)));
+                let mut flex_mut = ctx.get_mut(&mut self.content);
+                flex_mut.clear();
+                flex_mut.add_child(Label::new(format!("New value: {}", value)));
 
                 self.loading = false;
                 self.value = value;

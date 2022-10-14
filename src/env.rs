@@ -652,7 +652,6 @@ impl From<(f64, f64, f64, f64)> for KeyOrValue<Insets> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
 
     #[test]
     fn string_key_or_value() {

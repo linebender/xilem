@@ -14,6 +14,7 @@
 
 //! Fork of Druid
 
+#![feature(generic_associated_types)]
 #![deny(
     broken_intra_doc_links,
     unsafe_code,
@@ -77,7 +78,7 @@ pub use platform::{WindowConfig, WindowDesc, WindowId, WindowSizePolicy};
 
 pub use box_constraints::BoxConstraints;
 pub use command::{Command, Notification, Selector, SingleUse, Target};
-pub use contexts::{EventCtx, LayoutCtx, LifeCycleCtx, PaintCtx};
+pub use contexts::{EventCtx, LayoutCtx, LifeCycleCtx, PaintCtx, WidgetCtx};
 pub use data::Data;
 pub use env::{Env, Key, KeyOrValue, Value, ValueType, ValueTypeError};
 pub use event::{Event, InternalEvent, InternalLifeCycle, LifeCycle, StatusChange};

@@ -5,7 +5,7 @@ use tracing::trace;
 use crate::action::Action;
 use crate::command::{Command, CommandQueue};
 use crate::ext_event::{ExtEventQueue, ExtEventSink};
-use crate::widget::{WidgetMut, WidgetRef};
+use crate::widget::{StoreInWidgetMut, WidgetMut, WidgetRef};
 use crate::{
     Env, Event, Handled, SingleUse, Target, Widget, WidgetId, WindowDesc, WindowId, WindowRoot,
 };
@@ -18,7 +18,7 @@ pub struct DelegateCtx<'a, 'b> {
     pub(crate) ext_event_queue: &'a ExtEventQueue,
     // FIXME - Ideally, we'd like to get a hashmap of all root widgets,
     // but that creates "aliasing mutable references" problems
-    pub(crate) main_root_widget: WidgetMut<'a, 'b, dyn Widget>,
+    pub(crate) main_root_widget: WidgetMut<'a, 'b, Box<dyn Widget>>,
     //pub(crate) active_windows: &'a mut HashMap<WindowId, WindowRoot>,
 }
 
@@ -47,11 +47,11 @@ impl<'a, 'b> DelegateCtx<'a, 'b> {
         );
     }
 
-    pub fn try_get_root<W: Widget>(&mut self) -> Option<WidgetMut<'_, 'b, W>> {
+    pub fn try_get_root<W: Widget + StoreInWidgetMut>(&mut self) -> Option<WidgetMut<'_, 'b, W>> {
         self.main_root_widget.downcast()
     }
 
-    pub fn get_root<W: Widget>(&mut self) -> WidgetMut<'_, 'b, W> {
+    pub fn get_root<W: Widget + StoreInWidgetMut>(&mut self) -> WidgetMut<'_, 'b, W> {
         // root_widgets.get_mut(&window_id).expect("could not find window")
         self.main_root_widget.downcast().expect("wrong widget type")
     }

@@ -5,7 +5,6 @@ use crate::widget::{Flex, Label, SizedBox};
 use crate::*;
 use insta::assert_debug_snapshot;
 
-
 #[test]
 fn app_creation() {
     let record = Recording::default();
