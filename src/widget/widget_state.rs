@@ -2,12 +2,13 @@
 
 use std::sync::atomic::{AtomicBool, Ordering};
 
+use druid_shell::{Cursor, Region};
+
 use crate::bloom::Bloom;
 use crate::kurbo::{Insets, Point, Rect, Size};
 use crate::text::TextFieldRegistration;
 use crate::widget::{CursorChange, FocusChange};
 use crate::WidgetId;
-use druid_shell::{Cursor, Region};
 
 // TODO - Make a note documenting this: the only way to get a &mut WidgetState should be in a pass.
 // A pass should reborrow the parent widget state (to avoid crossing wires) and call merge_up at

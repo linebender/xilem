@@ -16,8 +16,9 @@
 
 //! The mousey bits
 
-use crate::kurbo::{Point, Vec2};
 use druid_shell::{Modifiers, MouseButton, MouseButtons};
+
+use crate::kurbo::{Point, Vec2};
 
 /// The state of the mouse for a click, mouse-up, move, or wheel event.
 ///

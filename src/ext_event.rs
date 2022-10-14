@@ -6,12 +6,13 @@ use std::any::Any;
 use std::collections::VecDeque;
 use std::sync::{Arc, Mutex};
 
+use druid_shell::IdleHandle;
+
 use crate::command::SelectorSymbol;
 use crate::platform::EXT_EVENT_IDLE_TOKEN;
 use crate::promise::PromiseResult;
 use crate::widget::WidgetId;
 use crate::{Selector, Target, WindowId};
-use druid_shell::IdleHandle;
 
 pub(crate) enum ExtMessage {
     Command(SelectorSymbol, Box<dyn Any + Send>, Target),

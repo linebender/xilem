@@ -33,11 +33,15 @@ mod movement;
 mod rich_text;
 mod storage;
 
-pub use crate::piet::{FontFamily, FontStyle, FontWeight, TextAlignment};
 pub use druid_shell::text::{
     Action as TextAction, Affinity, Direction, Event as ImeInvalidation, InputHandler, Movement,
     Selection, VerticalMovement, WritingDirection,
 };
+pub use input_component::{EditSession, TextComponent};
+pub use input_methods::ImeHandlerRef;
+pub(crate) use input_methods::TextFieldRegistration;
+pub use rich_text::{AttributesAdder, RichText, RichTextBuilder};
+pub use storage::{ArcStr, TextStorage};
 
 pub use self::attribute::{Attribute, AttributeSpans, Link};
 pub use self::backspace::offset_for_delete_backwards;
@@ -46,9 +50,4 @@ pub use self::font_descriptor::FontDescriptor;
 pub use self::format_priv::{Formatter, ParseFormatter, Validation, ValidationError};
 pub use self::layout::{LayoutMetrics, TextLayout};
 pub use self::movement::movement;
-pub use input_component::{EditSession, TextComponent};
-pub use input_methods::ImeHandlerRef;
-pub use rich_text::{AttributesAdder, RichText, RichTextBuilder};
-pub use storage::{ArcStr, TextStorage};
-
-pub(crate) use input_methods::TextFieldRegistration;
+pub use crate::piet::{FontFamily, FontStyle, FontWeight, TextAlignment};

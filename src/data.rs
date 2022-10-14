@@ -18,12 +18,12 @@ use std::ptr;
 use std::rc::Rc;
 use std::sync::Arc;
 
+pub use druid_derive::Data;
+use druid_shell::{Cursor, Scale};
+use piet::ImageBuf;
+
 use crate::kurbo::{self, ParamCurve};
 use crate::piet;
-use druid_shell::{Cursor, Scale};
-
-pub use druid_derive::Data;
-use piet::ImageBuf;
 
 /// A trait used to represent value types.
 ///

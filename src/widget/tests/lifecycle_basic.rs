@@ -1,9 +1,10 @@
+use insta::assert_debug_snapshot;
+
 use crate::testing::{
     widget_ids, Harness, Record, Recording, ReplaceChild, TestWidgetExt as _, REPLACE_CHILD,
 };
 use crate::widget::{Flex, Label, SizedBox};
 use crate::*;
-use insta::assert_debug_snapshot;
 
 #[test]
 fn app_creation() {

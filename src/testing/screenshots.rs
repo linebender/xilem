@@ -2,6 +2,14 @@ use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Arc;
 
+use druid_shell::{KeyEvent, Modifiers, MouseButton, MouseButtons};
+pub use druid_shell::{
+    RawMods, Region, Scalable, Scale, Screen, SysMods, TimerToken, WindowHandle, WindowLevel,
+    WindowState,
+};
+use image::io::Reader as ImageReader;
+use image::{GenericImageView as _, RgbaImage};
+
 //use crate::ext_event::ExtEventHost;
 use crate::command::CommandQueue;
 use crate::debug_logger::DebugLogger;
@@ -11,14 +19,6 @@ use crate::platform::PendingWindow;
 use crate::widget::WidgetRef;
 use crate::widget::WidgetState;
 use crate::*;
-use druid_shell::{KeyEvent, Modifiers, MouseButton, MouseButtons};
-pub use druid_shell::{
-    RawMods, Region, Scalable, Scale, Screen, SysMods, TimerToken, WindowHandle, WindowLevel,
-    WindowState,
-};
-
-use image::io::Reader as ImageReader;
-use image::{GenericImageView as _, RgbaImage};
 
 pub fn get_rgba_image(render_target: &mut BitmapTarget, window_size: Size) -> RgbaImage {
     let pixels = render_target

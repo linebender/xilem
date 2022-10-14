@@ -18,6 +18,7 @@
 // - set text
 // - set text attributes
 
+use druid_shell::Cursor;
 use smallvec::SmallVec;
 use tracing::{trace, trace_span, Span};
 
@@ -28,7 +29,6 @@ use crate::text::{TextAlignment, TextLayout};
 use crate::widget::prelude::*;
 use crate::widget::{StoreInWidgetMut, WidgetRef};
 use crate::{ArcStr, Color, Data, KeyOrValue, Point};
-use druid_shell::Cursor;
 
 // added padding between the edges of the widget and the text.
 const LABEL_X_PADDING: f64 = 2.0;
@@ -335,13 +335,14 @@ impl StoreInWidgetMut for Label {
 
 #[cfg(test)]
 mod tests {
+    use insta::assert_debug_snapshot;
+    use piet_common::FontFamily;
+
     use super::*;
     use crate::assert_render_snapshot;
     use crate::testing::Harness;
     use crate::theme::{PRIMARY_DARK, PRIMARY_LIGHT};
     use crate::widget::{Flex, SizedBox};
-    use insta::assert_debug_snapshot;
-    use piet_common::FontFamily;
 
     #[test]
     fn simple_label() {

@@ -14,13 +14,14 @@
 
 //! A button widget.
 
+use smallvec::SmallVec;
+use tracing::{trace, trace_span, Span};
+
 use crate::action::Action;
 use crate::contexts::WidgetCtx;
 use crate::widget::prelude::*;
 use crate::widget::{Label, StoreInWidgetMut, WidgetMut, WidgetPod, WidgetRef};
 use crate::{theme, ArcStr, Insets, LinearGradient, UnitPoint};
-use smallvec::SmallVec;
-use tracing::{trace, trace_span, Span};
 
 // the minimum padding added to a button.
 // NOTE: these values are chosen to match the existing look of TextBox; these
@@ -230,13 +231,14 @@ impl StoreInWidgetMut for Button {
 
 #[cfg(test)]
 mod tests {
+    use insta::assert_debug_snapshot;
+
     use super::*;
     use crate::assert_render_snapshot;
     use crate::testing::widget_ids;
     use crate::testing::Harness;
     use crate::testing::TestWidgetExt;
     use crate::theme::PRIMARY_LIGHT;
-    use insta::assert_debug_snapshot;
 
     #[test]
     fn simple_button() {

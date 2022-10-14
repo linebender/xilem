@@ -2,15 +2,16 @@
 
 //! An animated spinner widget.
 
-use smallvec::SmallVec;
 use std::f64::consts::PI;
+
+use druid::kurbo::Line;
+use druid::widget::prelude::*;
+use druid::{theme, Color, KeyOrValue, Point, Vec2};
+use smallvec::SmallVec;
 use tracing::trace;
 
 use crate::contexts::WidgetCtx;
 use crate::widget::WidgetRef;
-use druid::kurbo::Line;
-use druid::widget::prelude::*;
-use druid::{theme, Color, KeyOrValue, Point, Vec2};
 
 // TODO - Set color
 /// An animated spinner widget for showing a loading state.

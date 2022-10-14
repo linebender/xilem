@@ -7,7 +7,6 @@
 // TODO - rework imports
 use masonry::action::Action;
 use masonry::app_delegate::{AppDelegate, DelegateCtx};
-
 use masonry::widget::{prelude::*, TextBox};
 use masonry::widget::{Button, Flex};
 use masonry::{AppLauncher, WindowDesc, WindowId};

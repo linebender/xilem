@@ -7,13 +7,13 @@
 // On Windows platform, don't show a console when opening the app.
 #![windows_subsystem = "windows"]
 
-use smallvec::{smallvec, SmallVec};
 use std::{thread, time};
 
 use masonry::widget::prelude::*;
 use masonry::widget::WidgetRef;
 use masonry::widget::{Flex, Label, Spinner, WidgetPod};
 use masonry::{AppLauncher, Point, Selector, Target, WindowDesc};
+use smallvec::{smallvec, SmallVec};
 
 const FINISH_SLOW_FUNCTION: Selector<u32> = Selector::new("finish_slow_function");
 

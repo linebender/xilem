@@ -14,6 +14,9 @@
 
 //! A checkbox widget.
 
+use smallvec::SmallVec;
+use tracing::{trace, trace_span, Span};
+
 use crate::action::Action;
 use crate::contexts::WidgetCtx;
 use crate::kurbo::{BezPath, Size};
@@ -22,9 +25,6 @@ use crate::widget::prelude::*;
 use crate::widget::{Label, StoreInWidgetMut, WidgetMut, WidgetRef};
 use crate::ArcStr;
 use crate::{theme, WidgetPod};
-
-use smallvec::SmallVec;
-use tracing::{trace, trace_span, Span};
 
 /// A checkbox that toggles a `bool`.
 pub struct Checkbox {
@@ -212,13 +212,14 @@ impl StoreInWidgetMut for Checkbox {
 
 #[cfg(test)]
 mod tests {
+    use insta::assert_debug_snapshot;
+
     use super::*;
     use crate::assert_render_snapshot;
     use crate::testing::widget_ids;
     use crate::testing::Harness;
     use crate::testing::TestWidgetExt;
     use crate::theme::PRIMARY_LIGHT;
-    use insta::assert_debug_snapshot;
 
     #[test]
     fn simple_checkbox() {

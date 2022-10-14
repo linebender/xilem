@@ -2,6 +2,10 @@
 
 use std::ops::Range;
 
+use druid_shell::kurbo::Shape;
+use smallvec::{smallvec, SmallVec};
+use tracing::{trace, trace_span, warn, Span};
+
 use crate::contexts::WidgetCtx;
 use crate::kurbo::{Affine, Point, Rect, Size, Vec2};
 use crate::widget::prelude::*;
@@ -12,9 +16,6 @@ use crate::widget::StoreInWidgetMut;
 use crate::widget::WidgetMut;
 use crate::widget::WidgetRef;
 use crate::WidgetPod;
-use druid_shell::kurbo::Shape;
-use smallvec::{smallvec, SmallVec};
-use tracing::{trace, trace_span, warn, Span};
 
 // TODO - rename "Portal" to "ScrollPortal"?
 // Conceptually, a Portal is a Widget giving a restricted view of a child widget
@@ -400,13 +401,14 @@ impl<W: Widget> StoreInWidgetMut for Portal<W> {
 
 #[cfg(test)]
 mod tests {
+    use insta::assert_debug_snapshot;
+    use piet_common::FontFamily;
+
     use super::*;
     use crate::assert_render_snapshot;
     use crate::testing::{widget_ids, Harness};
     use crate::theme::{PRIMARY_DARK, PRIMARY_LIGHT};
     use crate::widget::{Button, Flex, SizedBox};
-    use insta::assert_debug_snapshot;
-    use piet_common::FontFamily;
 
     fn button(text: &str) -> impl Widget {
         SizedBox::new(Button::new(text)).width(70.0).height(40.0)

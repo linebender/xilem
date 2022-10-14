@@ -1,11 +1,11 @@
 // TODO - remove methods, add public fields
 
+use druid_shell::WindowState;
+use druid_shell::{Counter, WindowBuilder, WindowHandle, WindowLevel};
+
 use crate::kurbo::{Point, Size};
 use crate::ArcStr;
 use crate::Widget;
-
-use druid_shell::WindowState;
-use druid_shell::{Counter, WindowBuilder, WindowHandle, WindowLevel};
 
 /// A unique identifier for a window.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]

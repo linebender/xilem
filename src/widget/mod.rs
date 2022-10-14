@@ -36,11 +36,6 @@ mod spinner;
 mod textbox;
 mod web_image;
 
-pub use widget::StoreInWidgetMut;
-#[doc(hidden)]
-pub use widget::{Widget, WidgetId};
-
-pub use self::image::Image;
 pub use button::Button;
 pub use checkbox::Checkbox;
 pub use flex::{Axis, CrossAxisAlignment, Flex, FlexParams, MainAxisAlignment};
@@ -51,15 +46,18 @@ pub use sized_box::SizedBox;
 pub use spinner::Spinner;
 pub use textbox::TextBox;
 pub use web_image::WebImage;
-
+pub use widget::StoreInWidgetMut;
+#[doc(hidden)]
+pub use widget::{Widget, WidgetId};
 //#[doc(hidden)]
 //pub use widget_ext::WidgetExt;
 //pub use widget_wrapper::WidgetWrapper;
-
 pub use widget_mut::WidgetMut;
 pub use widget_pod::WidgetPod;
 pub use widget_ref::WidgetRef;
 pub use widget_state::WidgetState;
+
+pub use self::image::Image;
 
 /// Methods by which a widget can attempt to change focus state.
 #[derive(Debug, Clone, Copy)]

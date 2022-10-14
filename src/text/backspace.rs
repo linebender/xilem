@@ -14,9 +14,9 @@
 
 //! Calc start of a backspace delete interval
 
-use crate::text::{EditableText, EditableTextCursor, Selection};
-
 use xi_unicode::*;
+
+use crate::text::{EditableText, EditableTextCursor, Selection};
 
 #[allow(clippy::cognitive_complexity)]
 fn backspace_offset(text: &impl EditableText, start: usize) -> usize {

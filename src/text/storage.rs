@@ -16,10 +16,9 @@
 
 use std::sync::Arc;
 
+use super::attribute::Link;
 use crate::piet::{PietTextLayoutBuilder, TextStorage as PietTextStorage};
 use crate::{Data, Env};
-
-use super::attribute::Link;
 
 /// A type that represents text that can be displayed.
 pub trait TextStorage: PietTextStorage + Data {

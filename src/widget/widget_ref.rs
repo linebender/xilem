@@ -1,5 +1,6 @@
-use smallvec::SmallVec;
 use std::ops::Deref;
+
+use smallvec::SmallVec;
 
 use crate::kurbo::Point;
 use crate::{Widget, WidgetId, WidgetState};

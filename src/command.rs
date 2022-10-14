@@ -173,11 +173,13 @@ pub use sys::*;
 // FIXME
 #[allow(dead_code)]
 pub mod sys {
+    use std::any::Any;
+
+    use druid_shell::FileInfo;
+
     use super::{Selector, SingleUse};
     use crate::platform::WindowConfig;
     use crate::WidgetId;
-    use druid_shell::FileInfo;
-    use std::any::Any;
 
     /// Quit the running application. This command is handled by the druid library.
     pub const QUIT_APP: Selector = Selector::new("druid-builtin.quit-app");

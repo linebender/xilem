@@ -31,7 +31,6 @@
 // Allows to use macros from druid_derive in this crate
 extern crate self as druid;
 pub use druid_derive::Lens;
-
 pub use druid_shell as shell;
 #[doc(inline)]
 pub use druid_shell::{kurbo, piet};
@@ -64,25 +63,21 @@ pub mod debug_logger;
 pub mod debug_values;
 
 // Types from kurbo & piet that are required by public API.
-pub use kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
-pub use piet::{Color, ImageBuf, LinearGradient, RadialGradient, RenderContext, UnitPoint};
-
-pub use druid_shell::Error as PlatformError;
-pub use text::ArcStr;
-
 pub use app_launcher::AppLauncher;
 pub use app_root::WindowRoot;
-
-pub use platform::DruidWinHandler;
-pub use platform::{WindowConfig, WindowDesc, WindowId, WindowSizePolicy};
-
 pub use box_constraints::BoxConstraints;
 pub use command::{Command, Notification, Selector, SingleUse, Target};
 pub use contexts::{EventCtx, LayoutCtx, LifeCycleCtx, PaintCtx, WidgetCtx};
 pub use data::Data;
+pub use druid_shell::Error as PlatformError;
 pub use env::{Env, Key, KeyOrValue, Value, ValueType, ValueTypeError};
 pub use event::{Event, InternalEvent, InternalLifeCycle, LifeCycle, StatusChange};
+pub use kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
 pub use mouse::MouseEvent;
+pub use piet::{Color, ImageBuf, LinearGradient, RadialGradient, RenderContext, UnitPoint};
+pub use platform::DruidWinHandler;
+pub use platform::{WindowConfig, WindowDesc, WindowId, WindowSizePolicy};
+pub use text::ArcStr;
 pub use util::AsAny;
 pub use util::Handled;
 pub use widget::{Widget, WidgetId, WidgetPod, WidgetState};

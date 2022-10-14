@@ -21,10 +21,11 @@
 
 #![allow(missing_docs)]
 
-use smallvec::SmallVec;
 use std::cell::RefCell;
 use std::collections::VecDeque;
 use std::rc::Rc;
+
+use smallvec::SmallVec;
 
 use crate::event::StatusChange;
 use crate::widget::SizedBox;

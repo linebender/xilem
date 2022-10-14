@@ -14,15 +14,13 @@
 
 //! Events.
 
-use crate::kurbo::{Rect, Size};
-
 use druid_shell::{Clipboard, KeyEvent, TimerToken};
 
+use crate::kurbo::{Rect, Size};
 use crate::mouse::MouseEvent;
-use crate::{Command, Notification, WidgetId};
-
 // TODO
 use crate::promise::PromiseResult;
+use crate::{Command, Notification, WidgetId};
 
 /// An event, propagated downwards during event flow.
 ///

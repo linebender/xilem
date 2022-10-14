@@ -18,7 +18,6 @@
 
 use crate::piet::Color;
 use crate::piet::{FontFamily, FontStyle, FontWeight};
-
 use crate::text::FontDescriptor;
 use crate::{Env, Insets, Key};
 

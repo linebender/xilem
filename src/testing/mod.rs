@@ -28,6 +28,7 @@ mod screenshots;
 #[cfg(not(tarpaulin_include))]
 mod snapshot_utils;
 
+use druid_shell::{KeyEvent, Modifiers, MouseButton, MouseButtons};
 pub use harness::{Harness, HARNESS_DEFAULT_SIZE};
 pub use helper_widgets::{
     ModularWidget, Record, Recorder, Recording, ReplaceChild, TestWidgetExt, REPLACE_CHILD,
@@ -36,7 +37,6 @@ pub use mock_timer_queue::MockTimerQueue;
 
 use crate::kurbo::{Point, Vec2};
 use crate::{MouseEvent, WidgetId};
-use druid_shell::{KeyEvent, Modifiers, MouseButton, MouseButtons};
 
 /// Helper function to construct a "move to this position" mouse event.
 pub fn move_mouse(p: impl Into<Point>) -> MouseEvent {

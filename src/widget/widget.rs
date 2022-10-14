@@ -12,16 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::any::Any;
+use std::num::NonZeroU64;
+use std::ops::{Deref, DerefMut};
+
+use smallvec::SmallVec;
+use tracing::{trace_span, Span};
+
 use super::prelude::*;
 use crate::contexts::WidgetCtx;
 use crate::widget::WidgetRef;
 use crate::AsAny;
 use crate::Point;
-use smallvec::SmallVec;
-use std::any::Any;
-use std::num::NonZeroU64;
-use std::ops::{Deref, DerefMut};
-use tracing::{trace_span, Span};
 
 /// A unique identifier for a single [`Widget`].
 ///

@@ -1,10 +1,11 @@
 #![allow(unused)]
 
-use druid_shell::kurbo::Rect;
-use smallvec::SmallVec;
 use std::any::Any;
 use std::num::NonZeroU64;
 use std::ops::{Deref, DerefMut};
+
+use druid_shell::kurbo::Rect;
+use smallvec::SmallVec;
 use tracing::{trace_span, Span};
 
 use super::prelude::*;
@@ -250,14 +251,15 @@ impl StoreInWidgetMut for ScrollBar {
 
 #[cfg(test)]
 mod tests {
+    use druid_shell::MouseButton;
+    use insta::assert_debug_snapshot;
+
     use super::*;
     use crate::assert_render_snapshot;
     use crate::testing::widget_ids;
     use crate::testing::Harness;
     use crate::testing::TestWidgetExt;
     use crate::theme::PRIMARY_LIGHT;
-    use druid_shell::MouseButton;
-    use insta::assert_debug_snapshot;
 
     #[test]
     fn simple_scrollbar() {

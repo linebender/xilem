@@ -2,15 +2,15 @@
 
 //! An image widget loaded from a URL.
 
+use smallvec::{smallvec, SmallVec};
+use tracing::{error, trace_span, Span};
+
 use crate::contexts::WidgetCtx;
 use crate::promise::PromiseToken;
 use crate::widget::prelude::*;
 use crate::widget::WidgetRef;
 use crate::widget::{FillStrat, Image, SizedBox, Spinner, WidgetPod};
 use crate::{ImageBuf, Point};
-
-use smallvec::{smallvec, SmallVec};
-use tracing::{error, trace_span, Span};
 
 pub struct WebImage {
     url: String,

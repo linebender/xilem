@@ -14,9 +14,7 @@
 
 //! A label widget.
 
-use smallvec::SmallVec;
 use std::{thread, time};
-use tracing::{trace, trace_span, Span};
 
 use druid_shell::Cursor;
 use masonry::kurbo::Vec2;
@@ -24,9 +22,10 @@ use masonry::promise::PromiseToken;
 use masonry::text::TextLayout;
 use masonry::widget::prelude::*;
 use masonry::widget::WidgetRef;
-use masonry::{ArcStr, Color, KeyOrValue, Point};
-
 use masonry::{AppLauncher, WindowDesc};
+use masonry::{ArcStr, Color, KeyOrValue, Point};
+use smallvec::SmallVec;
+use tracing::{trace, trace_span, Span};
 
 // added padding between the edges of the widget and the text.
 const LABEL_X_PADDING: f64 = 2.0;

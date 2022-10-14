@@ -15,15 +15,15 @@
 //! An Image widget.
 //! Please consider using SVG and the SVG widget as it scales much better.
 
+use smallvec::SmallVec;
+use tracing::{trace, trace_span, Span};
+
 use crate::contexts::WidgetCtx;
 use crate::kurbo::Rect;
 use crate::piet::{Image as _, ImageBuf, InterpolationMode, PietImage};
 use crate::widget::prelude::*;
 use crate::widget::FillStrat;
 use crate::widget::{StoreInWidgetMut, WidgetRef};
-
-use smallvec::SmallVec;
-use tracing::{trace, trace_span, Span};
 
 /// A widget that renders a bitmap Image.
 pub struct Image {
@@ -219,6 +219,8 @@ impl StoreInWidgetMut for Image {
 #[cfg(not(target_arch = "wasm32"))]
 #[cfg(test)]
 mod tests {
+    use insta::assert_debug_snapshot;
+
     use super::*;
     use crate::assert_render_snapshot;
     use crate::piet::ImageFormat;
@@ -226,7 +228,6 @@ mod tests {
     use crate::testing::Harness;
     use crate::testing::TestWidgetExt;
     use crate::theme::PRIMARY_LIGHT;
-    use insta::assert_debug_snapshot;
 
     /// Painting an empty image shouldn't crash.
     #[test]

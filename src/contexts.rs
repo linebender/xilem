@@ -20,6 +20,8 @@ use std::ops::{Deref, DerefMut};
 use std::rc::Rc;
 use std::time::Duration;
 
+use druid_shell::text::Event as ImeInvalidation;
+use druid_shell::{Cursor, Region, TimerToken, WindowHandle};
 use tracing::{error, trace, warn};
 
 use crate::action::{Action, ActionQueue};
@@ -35,8 +37,6 @@ use crate::widget::{CursorChange, FocusChange, StoreInWidgetMut, WidgetMut, Widg
 use crate::{
     Affine, Env, Insets, Point, Rect, Size, Target, Vec2, Widget, WidgetId, WidgetPod, WindowId,
 };
-use druid_shell::text::Event as ImeInvalidation;
-use druid_shell::{Cursor, Region, TimerToken, WindowHandle};
 
 /// A macro for implementing methods on multiple contexts.
 ///

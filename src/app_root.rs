@@ -8,34 +8,6 @@ use std::cell::{RefCell, RefMut};
 use std::collections::{HashMap, VecDeque};
 use std::ops::DerefMut;
 use std::rc::Rc;
-use tracing::{error, info, info_span};
-
-// Automatically defaults to std::time::Instant on non Wasm platforms
-use instant::Instant;
-
-use crate::action::ActionQueue;
-use crate::app_delegate::{AppDelegate, DelegateCtx, NullDelegate};
-use crate::debug_logger::DebugLogger;
-use crate::kurbo::{Point, Size};
-use crate::piet::{Color, Piet, RenderContext};
-
-use crate::command as sys_cmd;
-use crate::command::CommandQueue;
-use crate::contexts::GlobalPassCtx;
-use crate::ext_event::{ExtEventQueue, ExtEventSink, ExtMessage};
-use crate::platform::RUN_COMMANDS_TOKEN;
-use crate::testing::MockTimerQueue;
-use crate::text::TextFieldRegistration;
-use crate::widget::{FocusChange, StoreInWidgetMut, WidgetMut, WidgetRef, WidgetState};
-use crate::{
-    ArcStr, BoxConstraints, Command, DruidWinHandler, Env, Event, EventCtx, Handled, InternalEvent,
-    InternalLifeCycle, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Target, Widget, WidgetCtx,
-    WidgetId, WidgetPod, WindowDesc, WindowId,
-};
-
-use crate::platform::{DialogInfo, EXT_EVENT_IDLE_TOKEN};
-use crate::platform::{PendingWindow, WindowConfig, WindowSizePolicy};
-use crate::PlatformError;
 
 use druid_shell::{
     text::InputHandler, Cursor, FileDialogToken, FileInfo, Region, TextFieldToken, TimerToken,
@@ -43,6 +15,31 @@ use druid_shell::{
 };
 // TODO - rename Application to AppHandle in druid-shell
 use druid_shell::{Application as AppHandle, WindowHandle};
+// Automatically defaults to std::time::Instant on non Wasm platforms
+use instant::Instant;
+use tracing::{error, info, info_span};
+
+use crate::action::ActionQueue;
+use crate::app_delegate::{AppDelegate, DelegateCtx, NullDelegate};
+use crate::command as sys_cmd;
+use crate::command::CommandQueue;
+use crate::contexts::GlobalPassCtx;
+use crate::debug_logger::DebugLogger;
+use crate::ext_event::{ExtEventQueue, ExtEventSink, ExtMessage};
+use crate::kurbo::{Point, Size};
+use crate::piet::{Color, Piet, RenderContext};
+use crate::platform::RUN_COMMANDS_TOKEN;
+use crate::platform::{DialogInfo, EXT_EVENT_IDLE_TOKEN};
+use crate::platform::{PendingWindow, WindowConfig, WindowSizePolicy};
+use crate::testing::MockTimerQueue;
+use crate::text::TextFieldRegistration;
+use crate::widget::{FocusChange, StoreInWidgetMut, WidgetMut, WidgetRef, WidgetState};
+use crate::PlatformError;
+use crate::{
+    ArcStr, BoxConstraints, Command, DruidWinHandler, Env, Event, EventCtx, Handled, InternalEvent,
+    InternalLifeCycle, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Target, Widget, WidgetCtx,
+    WidgetId, WidgetPod, WindowDesc, WindowId,
+};
 
 pub type ImeUpdateFn = dyn FnOnce(druid_shell::text::Event);
 

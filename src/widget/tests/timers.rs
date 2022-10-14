@@ -1,8 +1,10 @@
-use crate::testing::{Harness, ModularWidget};
-use crate::*;
-use instant::Duration;
 use std::cell::Cell;
 use std::rc::Rc;
+
+use instant::Duration;
+
+use crate::testing::{Harness, ModularWidget};
+use crate::*;
 
 #[test]
 fn basic_timer() {

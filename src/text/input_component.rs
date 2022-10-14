@@ -14,11 +14,12 @@
 
 //! A widget component that integrates with the platform text system.
 
-use smallvec::SmallVec;
 use std::cell::{Cell, Ref, RefCell, RefMut};
 use std::ops::Range;
 use std::sync::{Arc, Weak};
 
+use druid_shell::{Cursor, Modifiers};
+use smallvec::SmallVec;
 use tracing::{trace_span, Span};
 
 use super::{
@@ -31,7 +32,6 @@ use crate::widget::prelude::*;
 use crate::widget::StoreInWidgetMut;
 use crate::widget::WidgetRef;
 use crate::{text, theme, Env, Selector, WidgetCtx};
-use druid_shell::{Cursor, Modifiers};
 
 /// A widget that accepts text input.
 ///

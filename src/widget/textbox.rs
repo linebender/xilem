@@ -14,9 +14,10 @@
 
 //! A textbox widget.
 
-use smallvec::{smallvec, SmallVec};
 use std::sync::Arc;
 use std::time::Duration;
+
+use smallvec::{smallvec, SmallVec};
 use tracing::{trace_span, Span};
 
 use crate::action::Action;
@@ -770,11 +771,12 @@ impl StoreInWidgetMut for TextBox {
 
 #[cfg(test)]
 mod tests {
+    use insta::assert_debug_snapshot;
+
     use super::*;
     use crate::action::Action;
     use crate::assert_render_snapshot;
     use crate::testing::{widget_ids, Harness, TestWidgetExt as _};
-    use insta::assert_debug_snapshot;
 
     #[test]
     fn simple_textbox() {

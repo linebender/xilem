@@ -1,8 +1,9 @@
+// TODO - change import
+use shell::MouseButton;
+
 use crate::testing::{widget_ids, Harness, ModularWidget, Record, Recording, TestWidgetExt as _};
 use crate::widget::{Button, Flex, Label, SizedBox};
 use crate::*;
-// TODO - change import
-use shell::MouseButton;
 
 fn is_hot(harness: &Harness, id: WidgetId) -> bool {
     harness.get_widget(id).state().is_hot

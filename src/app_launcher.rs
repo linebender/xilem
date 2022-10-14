@@ -1,11 +1,11 @@
+use druid_shell::{Application as AppHandle, Error as PlatformError};
+
 use crate::app_delegate::AppDelegate;
 use crate::app_root::AppRoot;
 use crate::ext_event::{ExtEventQueue, ExtEventSink};
 use crate::platform::DruidAppHandler;
 use crate::platform::WindowDesc;
 use crate::Env;
-
-use druid_shell::{Application as AppHandle, Error as PlatformError};
 
 /// Handles initial setup of an application, and starts the runloop.
 pub struct AppLauncher {

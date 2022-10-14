@@ -3,6 +3,13 @@ use std::panic::Location;
 use std::path::Path;
 use std::sync::Arc;
 
+use druid_shell::{KeyEvent, Modifiers, MouseButton, MouseButtons};
+pub use druid_shell::{
+    RawMods, Region, Scalable, Scale, Screen, SysMods, TimerToken, WindowHandle, WindowLevel,
+    WindowState,
+};
+use instant::Duration;
+
 use crate::command::CommandQueue;
 use crate::debug_logger::DebugLogger;
 use crate::ext_event::ExtEventQueue;
@@ -11,12 +18,6 @@ use crate::platform::PendingWindow;
 use crate::widget::WidgetRef;
 use crate::widget::WidgetState;
 use crate::*;
-use druid_shell::{KeyEvent, Modifiers, MouseButton, MouseButtons};
-pub use druid_shell::{
-    RawMods, Region, Scalable, Scale, Screen, SysMods, TimerToken, WindowHandle, WindowLevel,
-    WindowState,
-};
-use instant::Duration;
 
 // TODO - Document
 // - Explain why mock timers are useful

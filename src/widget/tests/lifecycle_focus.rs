@@ -1,11 +1,13 @@
+use std::cell::Cell;
+use std::rc::Rc;
+
+use smallvec::smallvec;
+
 use crate::testing::{
     widget_ids, Harness, ModularWidget, ReplaceChild, TestWidgetExt as _, REPLACE_CHILD,
 };
 use crate::widget::Flex;
 use crate::*;
-use smallvec::smallvec;
-use std::cell::Cell;
-use std::rc::Rc;
 
 const REQUEST_FOCUS: Selector<()> = Selector::new("druid-tests.request-focus");
 

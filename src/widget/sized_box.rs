@@ -14,8 +14,9 @@
 
 //! A widget with predefined size.
 
-use smallvec::{smallvec, SmallVec};
 use std::f64::INFINITY;
+
+use smallvec::{smallvec, SmallVec};
 use tracing::{trace, trace_span, warn, Span};
 
 use crate::contexts::WidgetCtx;
@@ -275,11 +276,12 @@ impl StoreInWidgetMut for SizedBox {
 
 #[cfg(test)]
 mod tests {
+    use insta::assert_debug_snapshot;
+
     use super::*;
     use crate::assert_render_snapshot;
     use crate::testing::Harness;
     use crate::widget::Label;
-    use insta::assert_debug_snapshot;
 
     #[test]
     fn expand() {

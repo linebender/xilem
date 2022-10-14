@@ -2,10 +2,9 @@ use std::collections::{HashMap, HashSet};
 use std::fmt::Display;
 use std::sync::Arc;
 
-use serde::{Deserialize, Serialize};
-
 use druid::Data;
 use druid::Rect;
+use serde::{Deserialize, Serialize};
 
 pub type MyWidgetId = u32;
 
@@ -203,8 +202,9 @@ impl Data for Timeline {
 }
 
 mod serde_arc {
-    use serde::{Deserialize, Deserializer, Serialize, Serializer};
     use std::sync::Arc;
+
+    use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
     pub fn serialize<T: Serialize, S: Serializer>(
         value: &Arc<T>,

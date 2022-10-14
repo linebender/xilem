@@ -1,9 +1,11 @@
+use std::cell::Cell;
+use std::rc::Rc;
+
+use smallvec::smallvec;
+
 use crate::testing::{widget_ids, Harness, ModularWidget, TestWidgetExt as _};
 use crate::widget::Flex;
 use crate::*;
-use smallvec::smallvec;
-use std::cell::Cell;
-use std::rc::Rc;
 
 const CHANGE_DISABLED: Selector<bool> = Selector::new("druid-tests.change-disabled");
 

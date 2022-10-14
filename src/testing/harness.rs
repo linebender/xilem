@@ -14,14 +14,23 @@
 
 //! Tools and infrastructure for testing widgets.
 
-use image::io::Reader as ImageReader;
-use instant::Duration;
-use shell::text::Selection;
 use std::collections::{HashMap, VecDeque};
 use std::panic::Location;
 use std::path::Path;
 use std::sync::Arc;
 
+use druid_shell::{KeyEvent, Modifiers, MouseButton, MouseButtons};
+pub use druid_shell::{
+    RawMods, Region, Scalable, Scale, Screen, SysMods, TimerToken, WindowHandle, WindowLevel,
+    WindowState,
+};
+use image::io::Reader as ImageReader;
+use instant::Duration;
+use shell::text::Selection;
+
+use super::screenshots::{get_image_diff, get_rgba_image};
+use super::snapshot_utils::get_cargo_workspace;
+use super::MockTimerQueue;
 use crate::action::{Action, ActionQueue};
 //use crate::ext_event::ExtEventHost;
 use crate::command::CommandQueue;
@@ -32,15 +41,6 @@ use crate::piet::{BitmapTarget, Device, Error, ImageFormat, Piet};
 use crate::platform::PendingWindow;
 use crate::widget::{StoreInWidgetMut, WidgetMut, WidgetRef, WidgetState};
 use crate::*;
-use druid_shell::{KeyEvent, Modifiers, MouseButton, MouseButtons};
-pub use druid_shell::{
-    RawMods, Region, Scalable, Scale, Screen, SysMods, TimerToken, WindowHandle, WindowLevel,
-    WindowState,
-};
-
-use super::screenshots::{get_image_diff, get_rgba_image};
-use super::snapshot_utils::get_cargo_workspace;
-use super::MockTimerQueue;
 
 pub const HARNESS_DEFAULT_SIZE: Size = Size::new(400., 400.);
 

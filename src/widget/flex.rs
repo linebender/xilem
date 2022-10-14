@@ -14,13 +14,14 @@
 
 //! A widget that arranges its children in a one-dimensional array.
 
+use smallvec::SmallVec;
+use tracing::{trace, trace_span, Span};
+
 use crate::contexts::WidgetCtx;
 use crate::kurbo::{common::FloatExt, Vec2};
 use crate::widget::prelude::*;
 use crate::widget::{StoreInWidgetMut, WidgetMut, WidgetRef};
 use crate::{Data, KeyOrValue, Point, Rect, WidgetId, WidgetPod};
-use smallvec::SmallVec;
-use tracing::{trace, trace_span, Span};
 
 // TODO
 // - Factorize builder/setter code
