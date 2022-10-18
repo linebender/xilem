@@ -20,7 +20,7 @@ use tracing::{trace, trace_span, Span};
 use crate::action::Action;
 use crate::contexts::WidgetCtx;
 use crate::widget::prelude::*;
-use crate::widget::{Label, StoreInWidgetMut, WidgetMut, WidgetPod, WidgetRef};
+use crate::widget::{Label, WidgetMut, WidgetPod, WidgetRef};
 use crate::{theme, ArcStr, Insets, LinearGradient, UnitPoint};
 
 // the minimum padding added to a button.
@@ -33,7 +33,7 @@ pub struct Button {
     label: WidgetPod<Label>,
 }
 
-pub struct ButtonMut<'a, 'b>(WidgetCtx<'a, 'b>, &'a mut Button);
+crate::declare_widget!(ButtonMut, Button);
 
 impl Button {
     /// Create a new button with a text label.
@@ -209,23 +209,6 @@ impl Widget for Button {
 
     fn get_debug_text(&self) -> Option<String> {
         Some(self.label.widget().text().to_string())
-    }
-}
-
-impl StoreInWidgetMut for Button {
-    type Mut<'a, 'b: 'a> = ButtonMut<'a, 'b>;
-
-    fn get_widget_and_ctx<'s: 'r, 'a: 'r, 'b: 'a, 'r>(
-        widget_mut: &'s mut Self::Mut<'a, 'b>,
-    ) -> (&'r mut Self, &'r mut WidgetCtx<'a, 'b>) {
-        (widget_mut.1, &mut widget_mut.0)
-    }
-
-    fn from_widget_and_ctx<'a, 'b>(
-        widget: &'a mut Self,
-        ctx: WidgetCtx<'a, 'b>,
-    ) -> Self::Mut<'a, 'b> {
-        ButtonMut(ctx, widget)
     }
 }
 

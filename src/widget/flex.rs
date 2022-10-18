@@ -20,7 +20,7 @@ use tracing::{trace, trace_span, Span};
 use crate::contexts::WidgetCtx;
 use crate::kurbo::{common::FloatExt, Vec2};
 use crate::widget::prelude::*;
-use crate::widget::{StoreInWidgetMut, WidgetMut, WidgetRef};
+use crate::widget::{WidgetMut, WidgetRef};
 use crate::{Data, KeyOrValue, Point, Rect, WidgetId, WidgetPod};
 
 // TODO
@@ -37,7 +37,7 @@ pub struct Flex {
     children: Vec<Child>,
 }
 
-pub struct FlexMut<'a, 'b>(WidgetCtx<'a, 'b>, &'a mut Flex);
+crate::declare_widget!(FlexMut, Flex);
 
 /// Optional parameters for an item in a [`Flex`] container (row or column).
 ///
@@ -759,23 +759,6 @@ impl Widget for Flex {
     }
 }
 
-impl StoreInWidgetMut for Flex {
-    type Mut<'a, 'b: 'a> = FlexMut<'a, 'b>;
-
-    fn get_widget_and_ctx<'s: 'r, 'a: 'r, 'b: 'a, 'r>(
-        widget_mut: &'s mut Self::Mut<'a, 'b>,
-    ) -> (&'r mut Self, &'r mut WidgetCtx<'a, 'b>) {
-        (widget_mut.1, &mut widget_mut.0)
-    }
-
-    fn from_widget_and_ctx<'a, 'b>(
-        widget: &'a mut Self,
-        ctx: WidgetCtx<'a, 'b>,
-    ) -> Self::Mut<'a, 'b> {
-        FlexMut(ctx, widget)
-    }
-}
-
 // --- Others impls ---
 
 impl Axis {
@@ -1419,7 +1402,7 @@ mod tests {
             let mut child = flex.child_mut(1).unwrap();
             // TODO - Remove .1
             assert_eq!(
-                child.downcast::<Label>().unwrap().1.text().to_string(),
+                child.downcast::<Label>().unwrap().text().to_string(),
                 "world"
             );
             std::mem::drop(child);

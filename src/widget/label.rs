@@ -27,7 +27,7 @@ use crate::kurbo::Vec2;
 use crate::text::FontDescriptor;
 use crate::text::{TextAlignment, TextLayout};
 use crate::widget::prelude::*;
-use crate::widget::{StoreInWidgetMut, WidgetRef};
+use crate::widget::WidgetRef;
 use crate::{ArcStr, Color, Data, KeyOrValue, Point};
 
 // added padding between the edges of the widget and the text.
@@ -42,8 +42,7 @@ pub struct Label {
     default_text_color: KeyOrValue<Color>,
 }
 
-// FIXME - remove pub(crate)
-pub struct LabelMut<'a, 'b>(WidgetCtx<'a, 'b>, pub(crate) &'a mut Label);
+crate::declare_widget!(LabelMut, Label);
 
 /// Options for handling lines that are too wide for the label.
 #[derive(Debug, Clone, Copy, PartialEq, Data)]
@@ -313,23 +312,6 @@ impl Widget for Label {
 
     fn get_debug_text(&self) -> Option<String> {
         Some(self.current_text.to_string())
-    }
-}
-
-impl StoreInWidgetMut for Label {
-    type Mut<'a, 'b: 'a> = LabelMut<'a, 'b>;
-
-    fn get_widget_and_ctx<'s: 'r, 'a: 'r, 'b: 'a, 'r>(
-        widget_mut: &'s mut Self::Mut<'a, 'b>,
-    ) -> (&'r mut Self, &'r mut WidgetCtx<'a, 'b>) {
-        (widget_mut.1, &mut widget_mut.0)
-    }
-
-    fn from_widget_and_ctx<'a, 'b>(
-        widget: &'a mut Self,
-        ctx: WidgetCtx<'a, 'b>,
-    ) -> Self::Mut<'a, 'b> {
-        LabelMut(ctx, widget)
     }
 }
 

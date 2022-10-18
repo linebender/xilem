@@ -37,7 +37,7 @@ pub struct ScrollBar {
     grab_anchor: Option<f64>,
 }
 
-pub struct ScrollBarMut<'a, 'b>(WidgetCtx<'a, 'b>, &'a mut ScrollBar);
+crate::declare_widget!(ScrollBarMut, ScrollBar);
 
 pub const SCROLLBAR_MOVED: Selector<(Axis, f64)> = Selector::new("druid-builtin.scrollbar-moved");
 
@@ -229,23 +229,6 @@ impl Widget for ScrollBar {
 
     fn make_trace_span(&self) -> Span {
         trace_span!("ScrollBar")
-    }
-}
-
-impl StoreInWidgetMut for ScrollBar {
-    type Mut<'a, 'b: 'a> = ScrollBarMut<'a, 'b>;
-
-    fn get_widget_and_ctx<'s: 'r, 'a: 'r, 'b: 'a, 'r>(
-        widget_mut: &'s mut Self::Mut<'a, 'b>,
-    ) -> (&'r mut Self, &'r mut WidgetCtx<'a, 'b>) {
-        (widget_mut.1, &mut widget_mut.0)
-    }
-
-    fn from_widget_and_ctx<'a, 'b>(
-        widget: &'a mut Self,
-        ctx: WidgetCtx<'a, 'b>,
-    ) -> Self::Mut<'a, 'b> {
-        ScrollBarMut(ctx, widget)
     }
 }
 

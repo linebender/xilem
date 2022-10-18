@@ -19,7 +19,7 @@ pub struct WebImage {
     placeholder: WidgetPod<SizedBox>,
 }
 
-pub struct WebImageMut<'a, 'b>(WidgetCtx<'a, 'b>, &'a mut WebImage);
+crate::declare_widget!(WebImageMut, WebImage);
 
 impl WebImage {
     pub fn new(url: String) -> Self {
@@ -136,23 +136,5 @@ impl Widget for WebImage {
 
     fn make_trace_span(&self) -> Span {
         trace_span!("WebImage")
-    }
-}
-
-use crate::widget::StoreInWidgetMut;
-impl StoreInWidgetMut for WebImage {
-    type Mut<'a, 'b: 'a> = WebImageMut<'a, 'b>;
-
-    fn get_widget_and_ctx<'s: 'r, 'a: 'r, 'b: 'a, 'r>(
-        widget_mut: &'s mut Self::Mut<'a, 'b>,
-    ) -> (&'r mut Self, &'r mut WidgetCtx<'a, 'b>) {
-        (widget_mut.1, &mut widget_mut.0)
-    }
-
-    fn from_widget_and_ctx<'a, 'b>(
-        widget: &'a mut Self,
-        ctx: WidgetCtx<'a, 'b>,
-    ) -> Self::Mut<'a, 'b> {
-        WebImageMut(ctx, widget)
     }
 }

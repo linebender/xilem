@@ -29,7 +29,6 @@ use super::{
 use crate::kurbo::{Line, Point, Rect, Vec2};
 use crate::piet::TextLayout as _;
 use crate::widget::prelude::*;
-use crate::widget::StoreInWidgetMut;
 use crate::widget::WidgetRef;
 use crate::{text, theme, Env, Selector, WidgetCtx};
 
@@ -70,9 +69,10 @@ pub struct TextComponent<T> {
     /// The parent should update this when handling [`LifeCycle::FocusChanged`].
     pub has_focus: bool,
 }
-pub struct TextComponentMut<'a, 'b, T: TextStorage + EditableText>(
-    WidgetCtx<'a, 'b>,
-    &'a mut TextComponent<T>,
+
+crate::declare_widget!(
+    TextComponentMut,
+    TextComponent<T: (TextStorage + EditableText)>
 );
 
 /// Editable text state.
@@ -504,23 +504,6 @@ impl<T: TextStorage + EditableText> Widget for TextComponent<T> {
 
     fn make_trace_span(&self) -> Span {
         trace_span!("TextComponent")
-    }
-}
-
-impl<T: TextStorage + EditableText> StoreInWidgetMut for TextComponent<T> {
-    type Mut<'a, 'b: 'a> = TextComponentMut<'a, 'b, T>;
-
-    fn get_widget_and_ctx<'s: 'r, 'a: 'r, 'b: 'a, 'r>(
-        widget_mut: &'s mut Self::Mut<'a, 'b>,
-    ) -> (&'r mut Self, &'r mut WidgetCtx<'a, 'b>) {
-        (widget_mut.1, &mut widget_mut.0)
-    }
-
-    fn from_widget_and_ctx<'a, 'b>(
-        widget: &'a mut Self,
-        ctx: WidgetCtx<'a, 'b>,
-    ) -> Self::Mut<'a, 'b> {
-        TextComponentMut(ctx, widget)
     }
 }
 

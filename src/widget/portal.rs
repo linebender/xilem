@@ -37,7 +37,7 @@ pub struct Portal<W: Widget> {
     scrollbar_vertical_visible: bool,
 }
 
-pub struct PortalMut<'a, 'b, W: Widget>(WidgetCtx<'a, 'b>, &'a mut Portal<W>);
+crate::declare_widget!(PortalMut, Portal<W: (Widget)>);
 
 impl<W: Widget> Portal<W> {
     pub fn new(child: W) -> Self {
@@ -379,23 +379,6 @@ impl<W: Widget> Widget for Portal<W> {
 
     fn make_trace_span(&self) -> Span {
         trace_span!("Portal")
-    }
-}
-
-impl<W: Widget> StoreInWidgetMut for Portal<W> {
-    type Mut<'a, 'b: 'a> = PortalMut<'a, 'b, W>;
-
-    fn get_widget_and_ctx<'s: 'r, 'a: 'r, 'b: 'a, 'r>(
-        widget_mut: &'s mut Self::Mut<'a, 'b>,
-    ) -> (&'r mut Self, &'r mut WidgetCtx<'a, 'b>) {
-        (widget_mut.1, &mut widget_mut.0)
-    }
-
-    fn from_widget_and_ctx<'a, 'b>(
-        widget: &'a mut Self,
-        ctx: WidgetCtx<'a, 'b>,
-    ) -> Self::Mut<'a, 'b> {
-        PortalMut(ctx, widget)
     }
 }
 

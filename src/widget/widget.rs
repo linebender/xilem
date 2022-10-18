@@ -216,10 +216,8 @@ pub trait Widget: AsAny {
     }
 }
 
-// TODO - create simple macro, do stuff from macro.
-// TODO - require DerefMut
 pub trait StoreInWidgetMut: Widget {
-    type Mut<'a, 'b: 'a>;
+    type Mut<'a, 'b: 'a>: std::ops::Deref<Target = Self>;
 
     fn from_widget_and_ctx<'a, 'b>(
         widget: &'a mut Self,
@@ -241,6 +239,42 @@ pub trait StoreInWidgetMut: Widget {
     fn get_widget_and_ctx<'s: 'r, 'a: 'r, 'b: 'a, 'r>(
         widget_mut: &'s mut Self::Mut<'a, 'b>,
     ) -> (&'r mut Self, &'r mut WidgetCtx<'a, 'b>);
+}
+
+#[macro_export]
+macro_rules! declare_widget {
+    ($WidgetNameMut:ident, $WidgetName:ident) => {
+        crate::declare_widget!($WidgetNameMut, $WidgetName<>);
+    };
+
+    ($WidgetNameMut:ident, $WidgetName:ident<$($Arg:ident $(: ($($Bound:tt)*))?),*>) => {
+        pub struct $WidgetNameMut<'a, 'b, $($Arg $(: $($Bound)*)?),*>(WidgetCtx<'a, 'b>, &'a mut $WidgetName<$($Arg),*>);
+
+        impl<$($Arg $(: $($Bound)*)?),*> crate::widget::StoreInWidgetMut for $WidgetName<$($Arg),*> {
+            type Mut<'a, 'b: 'a> = $WidgetNameMut<'a, 'b, $($Arg),*>;
+
+            fn get_widget_and_ctx<'s: 'r, 'a: 'r, 'b: 'a, 'r>(
+                widget_mut: &'s mut Self::Mut<'a, 'b>,
+            ) -> (&'r mut Self, &'r mut WidgetCtx<'a, 'b>) {
+                (widget_mut.1, &mut widget_mut.0)
+            }
+
+            fn from_widget_and_ctx<'a, 'b>(
+                widget: &'a mut Self,
+                ctx: WidgetCtx<'a, 'b>,
+            ) -> Self::Mut<'a, 'b> {
+                $WidgetNameMut(ctx, widget)
+            }
+        }
+
+        impl<'a, 'b, $($Arg $(: $($Bound)*)?),*> ::std::ops::Deref for $WidgetNameMut<'a, 'b, $($Arg),*> {
+            type Target = $WidgetName<$($Arg),*>;
+
+            fn deref(&self) -> &Self::Target {
+                self.1
+            }
+        }
+    };
 }
 
 #[cfg(not(tarpaulin_include))]
@@ -326,21 +360,6 @@ impl Widget for Box<dyn Widget> {
     }
 }
 
-pub struct BoxWidgetMut<'a, 'b>(WidgetCtx<'a, 'b>, &'a mut Box<dyn Widget>);
-
-impl StoreInWidgetMut for Box<dyn Widget> {
-    type Mut<'a, 'b: 'a> = BoxWidgetMut<'a, 'b>;
-
-    fn get_widget_and_ctx<'s: 'r, 'a: 'r, 'b: 'a, 'r>(
-        widget_mut: &'s mut Self::Mut<'a, 'b>,
-    ) -> (&'r mut Self, &'r mut WidgetCtx<'a, 'b>) {
-        (widget_mut.1, &mut widget_mut.0)
-    }
-
-    fn from_widget_and_ctx<'a, 'b>(
-        widget: &'a mut Self,
-        ctx: WidgetCtx<'a, 'b>,
-    ) -> Self::Mut<'a, 'b> {
-        BoxWidgetMut(ctx, widget)
-    }
-}
+// We use alias type because macro doesn't accept braces except in some cases.
+type BoxWidget = Box<dyn Widget>;
+crate::declare_widget!(BoxWidgetMut, BoxWidget);

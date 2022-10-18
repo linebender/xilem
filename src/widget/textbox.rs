@@ -79,8 +79,7 @@ pub struct TextBox {
     #[allow(dead_code)]
     text_pos: Point,
 }
-
-pub struct TextBoxMut<'a, 'b>(WidgetCtx<'a, 'b>, &'a mut TextBox);
+crate::declare_widget!(TextBoxMut, TextBox);
 
 impl TextBox {
     /// Create a new TextBox widget.
@@ -748,24 +747,6 @@ fn x_offset_for_extra_width(alignment: TextAlignment, extra_width: f64) -> f64 {
         TextAlignment::Start | TextAlignment::Justified => 0.0,
         TextAlignment::End => extra_width,
         TextAlignment::Center => extra_width / 2.0,
-    }
-}
-
-use crate::widget::StoreInWidgetMut;
-impl StoreInWidgetMut for TextBox {
-    type Mut<'a, 'b: 'a> = TextBoxMut<'a, 'b>;
-
-    fn get_widget_and_ctx<'s: 'r, 'a: 'r, 'b: 'a, 'r>(
-        widget_mut: &'s mut Self::Mut<'a, 'b>,
-    ) -> (&'r mut Self, &'r mut WidgetCtx<'a, 'b>) {
-        (widget_mut.1, &mut widget_mut.0)
-    }
-
-    fn from_widget_and_ctx<'a, 'b>(
-        widget: &'a mut Self,
-        ctx: WidgetCtx<'a, 'b>,
-    ) -> Self::Mut<'a, 'b> {
-        TextBoxMut(ctx, widget)
     }
 }
 

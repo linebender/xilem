@@ -25,7 +25,7 @@ pub struct Spinner {
     color: KeyOrValue<Color>,
 }
 
-pub struct SpinnerMut<'a, 'b>(WidgetCtx<'a, 'b>, &'a mut Spinner);
+crate::declare_widget!(SpinnerMut, Spinner);
 
 impl Spinner {
     /// Create a spinner widget
@@ -130,24 +130,6 @@ impl Widget for Spinner {
 
     fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
         SmallVec::new()
-    }
-}
-
-use crate::widget::StoreInWidgetMut;
-impl StoreInWidgetMut for Spinner {
-    type Mut<'a, 'b: 'a> = SpinnerMut<'a, 'b>;
-
-    fn get_widget_and_ctx<'s: 'r, 'a: 'r, 'b: 'a, 'r>(
-        widget_mut: &'s mut Self::Mut<'a, 'b>,
-    ) -> (&'r mut Self, &'r mut WidgetCtx<'a, 'b>) {
-        (widget_mut.1, &mut widget_mut.0)
-    }
-
-    fn from_widget_and_ctx<'a, 'b>(
-        widget: &'a mut Self,
-        ctx: WidgetCtx<'a, 'b>,
-    ) -> Self::Mut<'a, 'b> {
-        SpinnerMut(ctx, widget)
     }
 }
 

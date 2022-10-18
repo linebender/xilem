@@ -22,7 +22,7 @@ use crate::contexts::WidgetCtx;
 use crate::kurbo::{BezPath, Size};
 use crate::piet::{LineCap, LineJoin, LinearGradient, RenderContext, StrokeStyle, UnitPoint};
 use crate::widget::prelude::*;
-use crate::widget::{Label, StoreInWidgetMut, WidgetMut, WidgetRef};
+use crate::widget::{Label, WidgetMut, WidgetRef};
 use crate::ArcStr;
 use crate::{theme, WidgetPod};
 
@@ -32,7 +32,7 @@ pub struct Checkbox {
     label: WidgetPod<Label>,
 }
 
-pub struct CheckboxMut<'a, 'b>(WidgetCtx<'a, 'b>, &'a mut Checkbox);
+crate::declare_widget!(CheckboxMut, Checkbox);
 
 impl Checkbox {
     /// Create a new `Checkbox` with a text label.
@@ -190,23 +190,6 @@ impl Widget for Checkbox {
             if self.checked { "X" } else { " " },
             self.label.widget().text()
         ))
-    }
-}
-
-impl StoreInWidgetMut for Checkbox {
-    type Mut<'a, 'b: 'a> = CheckboxMut<'a, 'b>;
-
-    fn get_widget_and_ctx<'s: 'r, 'a: 'r, 'b: 'a, 'r>(
-        widget_mut: &'s mut Self::Mut<'a, 'b>,
-    ) -> (&'r mut Self, &'r mut WidgetCtx<'a, 'b>) {
-        (widget_mut.1, &mut widget_mut.0)
-    }
-
-    fn from_widget_and_ctx<'a, 'b>(
-        widget: &'a mut Self,
-        ctx: WidgetCtx<'a, 'b>,
-    ) -> Self::Mut<'a, 'b> {
-        CheckboxMut(ctx, widget)
     }
 }
 

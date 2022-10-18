@@ -23,7 +23,7 @@ use crate::kurbo::Rect;
 use crate::piet::{Image as _, ImageBuf, InterpolationMode, PietImage};
 use crate::widget::prelude::*;
 use crate::widget::FillStrat;
-use crate::widget::{StoreInWidgetMut, WidgetRef};
+use crate::widget::WidgetRef;
 
 /// A widget that renders a bitmap Image.
 pub struct Image {
@@ -34,7 +34,7 @@ pub struct Image {
     clip_area: Option<Rect>,
 }
 
-pub struct ImageMut<'a, 'b>(WidgetCtx<'a, 'b>, &'a mut Image);
+crate::declare_widget!(ImageMut, Image);
 
 impl Image {
     /// Create an image drawing widget from an image buffer.
@@ -194,23 +194,6 @@ impl Widget for Image {
 
     fn make_trace_span(&self) -> Span {
         trace_span!("Image")
-    }
-}
-
-impl StoreInWidgetMut for Image {
-    type Mut<'a, 'b: 'a> = ImageMut<'a, 'b>;
-
-    fn get_widget_and_ctx<'s: 'r, 'a: 'r, 'b: 'a, 'r>(
-        widget_mut: &'s mut Self::Mut<'a, 'b>,
-    ) -> (&'r mut Self, &'r mut WidgetCtx<'a, 'b>) {
-        (widget_mut.1, &mut widget_mut.0)
-    }
-
-    fn from_widget_and_ctx<'a, 'b>(
-        widget: &'a mut Self,
-        ctx: WidgetCtx<'a, 'b>,
-    ) -> Self::Mut<'a, 'b> {
-        ImageMut(ctx, widget)
     }
 }
 

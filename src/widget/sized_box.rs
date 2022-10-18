@@ -21,7 +21,7 @@ use tracing::{trace, trace_span, warn, Span};
 
 use crate::contexts::WidgetCtx;
 use crate::widget::prelude::*;
-use crate::widget::{StoreInWidgetMut, WidgetId, WidgetMut, WidgetPod, WidgetRef};
+use crate::widget::{WidgetId, WidgetMut, WidgetPod, WidgetRef};
 use crate::Point;
 
 /// A widget with predefined size.
@@ -38,8 +38,7 @@ pub struct SizedBox {
     width: Option<f64>,
     height: Option<f64>,
 }
-
-pub struct SizedBoxMut<'a, 'b>(WidgetCtx<'a, 'b>, &'a mut SizedBox);
+crate::declare_widget!(SizedBoxMut, SizedBox);
 
 impl SizedBox {
     /// Construct container with child, and both width and height not set.
@@ -254,23 +253,6 @@ impl Widget for SizedBox {
 
     fn make_trace_span(&self) -> Span {
         trace_span!("SizedBox")
-    }
-}
-
-impl StoreInWidgetMut for SizedBox {
-    type Mut<'a, 'b: 'a> = SizedBoxMut<'a, 'b>;
-
-    fn get_widget_and_ctx<'s: 'r, 'a: 'r, 'b: 'a, 'r>(
-        widget_mut: &'s mut Self::Mut<'a, 'b>,
-    ) -> (&'r mut Self, &'r mut WidgetCtx<'a, 'b>) {
-        (widget_mut.1, &mut widget_mut.0)
-    }
-
-    fn from_widget_and_ctx<'a, 'b>(
-        widget: &'a mut Self,
-        ctx: WidgetCtx<'a, 'b>,
-    ) -> Self::Mut<'a, 'b> {
-        SizedBoxMut(ctx, widget)
     }
 }
 
