@@ -48,7 +48,6 @@
  - [ ] Create `declare_widget!()` macro to implement boilerplate.
 
 - [ ] Re-add Dialog
-- [ ] Refactor TextLayout
 
 - [ ] Write examples
  - [X] To-do List
@@ -58,12 +57,15 @@
 
 - [X] Split off from Druid repo
 - [X] Rename to Masonry
+- [ ] Write remaining tasks in Github
 - [ ] Rewrite License bits
 - [ ] Write ARCHITECTURE.md
 - [ ] Write CONTRIBUTING.md
 - [ ] Publish
 
 # TODO - Long term
+
+- [ ] Refactor TextLayout
 
 - [ ] Brainstorm names for AppDelegate, Harness methods, Action, ExtEvent
 
