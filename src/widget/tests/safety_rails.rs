@@ -187,7 +187,7 @@ fn allow_non_recurse_stashed_paint() {
 #[should_panic(expected = "children changed")]
 #[test]
 fn check_forget_children_changed() {
-    pub const ADD_CHILD: Selector = Selector::new("druid-test.add-child");
+    pub const ADD_CHILD: Selector = Selector::new("masonry-test.add-child");
 
     let child: Option<WidgetPod<Flex>> = None;
     let widget = ModularWidget::new(child)

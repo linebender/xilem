@@ -5,7 +5,7 @@ use crate::*;
 /// Ensure that notifications are delivered to ancestors, but not siblings.
 #[test]
 fn notifications() {
-    const NOTIFICATION: Selector = Selector::new("druid-tests.some-notification");
+    const NOTIFICATION: Selector = Selector::new("masonry-test.some-notification");
 
     let sender = ModularWidget::new(()).event_fn(|_, ctx, event, _| {
         if matches!(event, Event::WindowConnected) {

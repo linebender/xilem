@@ -39,7 +39,7 @@ pub type LayoutFn<S> = dyn FnMut(&mut S, &mut LayoutCtx, &BoxConstraints, &Env) 
 pub type PaintFn<S> = dyn FnMut(&mut S, &mut PaintCtx, &Env);
 pub type ChildrenFn<S> = dyn Fn(&S) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]>;
 
-pub const REPLACE_CHILD: Selector = Selector::new("druid-test.replace-child");
+pub const REPLACE_CHILD: Selector = Selector::new("masonry-test.replace-child");
 
 /// A widget that can be constructed from individual functions, builder-style.
 ///

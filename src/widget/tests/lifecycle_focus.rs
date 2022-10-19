@@ -9,7 +9,7 @@ use crate::testing::{
 use crate::widget::Flex;
 use crate::*;
 
-const REQUEST_FOCUS: Selector<()> = Selector::new("druid-tests.request-focus");
+const REQUEST_FOCUS: Selector<()> = Selector::new("masonry-test.request-focus");
 
 struct FocusTaker;
 
@@ -153,7 +153,7 @@ fn focus_updated_by_children_change() {
 
 #[test]
 fn resign_focus_on_disable() {
-    const CHANGE_DISABLED: Selector<bool> = Selector::new("druid-tests.change-disabled");
+    const CHANGE_DISABLED: Selector<bool> = Selector::new("masonry-test.change-disabled");
 
     fn make_container_widget(id: WidgetId, child: impl Widget) -> impl Widget {
         ModularWidget::new(WidgetPod::new_with_id(child, id))

@@ -136,7 +136,7 @@ fn update_hot_on_mouse_leave() {
 
 #[test]
 fn update_hot_from_layout() {
-    pub const COLLAPSE: Selector = Selector::new("druid-test.collapse");
+    pub const COLLAPSE: Selector = Selector::new("masonry-test.collapse");
     pub const BOX_SIZE: Size = Size::new(50.0, 50.0);
 
     let [collapsable_id, box_id] = widget_ids();

@@ -39,7 +39,7 @@ pub struct ScrollBar {
 
 crate::declare_widget!(ScrollBarMut, ScrollBar);
 
-pub const SCROLLBAR_MOVED: Selector<(Axis, f64)> = Selector::new("druid-builtin.scrollbar-moved");
+pub const SCROLLBAR_MOVED: Selector<(Axis, f64)> = Selector::new("masonry-builtin.scrollbar-moved");
 
 impl ScrollBar {
     pub fn new(axis: Axis, portal_size: f64, content_size: f64) -> Self {

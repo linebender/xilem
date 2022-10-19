@@ -7,7 +7,7 @@ use crate::testing::{widget_ids, Harness, ModularWidget, TestWidgetExt as _};
 use crate::widget::Flex;
 use crate::*;
 
-const CHANGE_DISABLED: Selector<bool> = Selector::new("druid-tests.change-disabled");
+const CHANGE_DISABLED: Selector<bool> = Selector::new("masonry-test.change-disabled");
 
 fn make_focusable_widget(id: WidgetId, state: Rc<Cell<Option<bool>>>) -> impl Widget {
     ModularWidget::new(state)

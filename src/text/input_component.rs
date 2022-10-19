@@ -190,19 +190,19 @@ impl TextComponent<()> {
     ///
     /// If the payload is true, this follows an edit, and the view will need
     /// layout before scrolling.
-    pub const SCROLL_TO: Selector<bool> = Selector::new("druid-builtin.textbox-scroll-to");
+    pub const SCROLL_TO: Selector<bool> = Selector::new("masonry-builtin.textbox-scroll-to");
 
     /// A notification sent by the component when the user hits return.
     ///
     /// This is only sent when `send_notification_on_return` is `true`.
-    pub const RETURN: Selector<String> = Selector::new("druid-builtin.textbox-return");
+    pub const RETURN: Selector<String> = Selector::new("masonry-builtin.textbox-return");
 
-    pub const TEXT_CHANGED: Selector<String> = Selector::new("druid-builtin.textbox-changed");
+    pub const TEXT_CHANGED: Selector<String> = Selector::new("masonry-builtin.textbox-changed");
 
     /// A notification sent when the user cancels editing.
     ///
     /// This is only sent when `send_notification_on_cancel` is `true`.
-    pub const CANCEL: Selector = Selector::new("druid-builtin.textbox-cancel");
+    pub const CANCEL: Selector = Selector::new("masonry-builtin.textbox-cancel");
 
     /// A notification sent by the component when the user presses the tab key.
     ///
@@ -210,7 +210,7 @@ impl TextComponent<()> {
     ///
     /// An ancestor can handle this event in order to do things like request
     /// a focus change.
-    pub const TAB: Selector = Selector::new("druid-builtin.textbox-tab");
+    pub const TAB: Selector = Selector::new("masonry-builtin.textbox-tab");
 
     /// A notification sent by the component when the user inserts a backtab.
     ///
@@ -218,7 +218,7 @@ impl TextComponent<()> {
     ///
     /// An ancestor can handle this event in order to do things like request
     /// a focus change.
-    pub const BACKTAB: Selector = Selector::new("druid-builtin.textbox-backtab");
+    pub const BACKTAB: Selector = Selector::new("masonry-builtin.textbox-backtab");
 }
 
 impl<T> TextComponent<T> {

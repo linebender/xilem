@@ -182,76 +182,78 @@ pub mod sys {
     use crate::WidgetId;
 
     /// Quit the running application. This command is handled by the druid library.
-    pub const QUIT_APP: Selector = Selector::new("druid-builtin.quit-app");
+    pub const QUIT_APP: Selector = Selector::new("masonry-builtin.quit-app");
 
     /// Hide the application. (mac only)
     #[cfg_attr(
         not(target_os = "macos"),
         deprecated = "HIDE_APPLICATION is only supported on macOS"
     )]
-    pub const HIDE_APPLICATION: Selector = Selector::new("druid-builtin.menu-hide-application");
+    pub const HIDE_APPLICATION: Selector = Selector::new("masonry-builtin.menu-hide-application");
 
     /// Hide all other applications. (mac only)
     #[cfg_attr(
         not(target_os = "macos"),
         deprecated = "HIDE_OTHERS is only supported on macOS"
     )]
-    pub const HIDE_OTHERS: Selector = Selector::new("druid-builtin.menu-hide-others");
+    pub const HIDE_OTHERS: Selector = Selector::new("masonry-builtin.menu-hide-others");
 
     /// The selector for a command to create a new window.
     pub(crate) const NEW_WINDOW: Selector<SingleUse<Box<dyn Any>>> =
-        Selector::new("druid-builtin.new-window");
+        Selector::new("masonry-builtin.new-window");
 
     /// The selector for a command to close a window.
     ///
     /// The command must target a specific window.
     /// When calling `submit_command` on a `Widget`s context, passing `None` as target
     /// will automatically target the window containing the widget.
-    pub const CLOSE_WINDOW: Selector = Selector::new("druid-builtin.close-window");
+    pub const CLOSE_WINDOW: Selector = Selector::new("masonry-builtin.close-window");
 
     /// Close all windows.
-    pub const CLOSE_ALL_WINDOWS: Selector = Selector::new("druid-builtin.close-all-windows");
+    pub const CLOSE_ALL_WINDOWS: Selector = Selector::new("masonry-builtin.close-all-windows");
 
     /// The selector for a command to bring a window to the front, and give it focus.
     ///
     /// The command must target a specific window.
     /// When calling `submit_command` on a `Widget`s context, passing `None` as target
     /// will automatically target the window containing the widget.
-    pub const SHOW_WINDOW: Selector = Selector::new("druid-builtin.show-window");
+    pub const SHOW_WINDOW: Selector = Selector::new("masonry-builtin.show-window");
 
     /// Apply the configuration payload to an existing window. The target should be a WindowId.
     pub const CONFIGURE_WINDOW: Selector<WindowConfig> =
-        Selector::new("druid-builtin.configure-window");
+        Selector::new("masonry-builtin.configure-window");
 
     /// Show the application preferences.
-    pub const SHOW_PREFERENCES: Selector = Selector::new("druid-builtin.menu-show-preferences");
+    pub const SHOW_PREFERENCES: Selector = Selector::new("masonry-builtin.menu-show-preferences");
 
     /// Show the application about window.
-    pub const SHOW_ABOUT: Selector = Selector::new("druid-builtin.menu-show-about");
+    pub const SHOW_ABOUT: Selector = Selector::new("masonry-builtin.menu-show-about");
 
     /// Show all applications.
-    pub const SHOW_ALL: Selector = Selector::new("druid-builtin.menu-show-all");
+    pub const SHOW_ALL: Selector = Selector::new("masonry-builtin.menu-show-all");
 
     /// Show the new file dialog.
-    pub const NEW_FILE: Selector = Selector::new("druid-builtin.menu-file-new");
+    pub const NEW_FILE: Selector = Selector::new("masonry-builtin.menu-file-new");
 
     /// Sent when the user cancels an open file panel.
-    pub const OPEN_PANEL_CANCELLED: Selector = Selector::new("druid-builtin.open-panel-cancelled");
+    pub const OPEN_PANEL_CANCELLED: Selector =
+        Selector::new("masonry-builtin.open-panel-cancelled");
 
     /// Open a path, must be handled by the application.
     ///
     /// [`FileInfo`]: ../struct.FileInfo.html
-    pub const OPEN_FILE: Selector<FileInfo> = Selector::new("druid-builtin.open-file-path");
+    pub const OPEN_FILE: Selector<FileInfo> = Selector::new("masonry-builtin.open-file-path");
 
     /// Sent when the user cancels a save file panel.
-    pub const SAVE_PANEL_CANCELLED: Selector = Selector::new("druid-builtin.save-panel-cancelled");
+    pub const SAVE_PANEL_CANCELLED: Selector =
+        Selector::new("masonry-builtin.save-panel-cancelled");
 
     /// Save the current path.
     ///
     /// The application should save its data, to a path that should be determined by the
     /// application. Usually, this will be the most recent path provided by a [`SAVE_FILE_AS`]
     /// or [`OPEN_FILE`] command.
-    pub const SAVE_FILE: Selector<()> = Selector::new("druid-builtin.save-file");
+    pub const SAVE_FILE: Selector<()> = Selector::new("masonry-builtin.save-file");
 
     /// Save to a given location.
     ///
@@ -261,38 +263,38 @@ pub mod sys {
     ///
     /// The path might be a file or a directory, so always check whether it matches your
     /// expectations.
-    pub const SAVE_FILE_AS: Selector<FileInfo> = Selector::new("druid-builtin.save-file-as");
+    pub const SAVE_FILE_AS: Selector<FileInfo> = Selector::new("masonry-builtin.save-file-as");
 
     /// Show the print-setup window.
-    pub const PRINT_SETUP: Selector = Selector::new("druid-builtin.menu-file-print-setup");
+    pub const PRINT_SETUP: Selector = Selector::new("masonry-builtin.menu-file-print-setup");
 
     /// Show the print dialog.
-    pub const PRINT: Selector = Selector::new("druid-builtin.menu-file-print");
+    pub const PRINT: Selector = Selector::new("masonry-builtin.menu-file-print");
 
     /// Show the print preview.
-    pub const PRINT_PREVIEW: Selector = Selector::new("druid-builtin.menu-file-print");
+    pub const PRINT_PREVIEW: Selector = Selector::new("masonry-builtin.menu-file-print");
 
     /// Cut the current selection.
-    pub const CUT: Selector = Selector::new("druid-builtin.menu-cut");
+    pub const CUT: Selector = Selector::new("masonry-builtin.menu-cut");
 
     /// Copy the current selection.
-    pub const COPY: Selector = Selector::new("druid-builtin.menu-copy");
+    pub const COPY: Selector = Selector::new("masonry-builtin.menu-copy");
 
     /// Paste.
-    pub const PASTE: Selector = Selector::new("druid-builtin.menu-paste");
+    pub const PASTE: Selector = Selector::new("masonry-builtin.menu-paste");
 
     /// Undo.
-    pub const UNDO: Selector = Selector::new("druid-builtin.menu-undo");
+    pub const UNDO: Selector = Selector::new("masonry-builtin.menu-undo");
 
     /// Redo.
-    pub const REDO: Selector = Selector::new("druid-builtin.menu-redo");
+    pub const REDO: Selector = Selector::new("masonry-builtin.menu-redo");
 
     /// Select all.
-    pub const SELECT_ALL: Selector = Selector::new("druid-builtin.menu-select-all");
+    pub const SELECT_ALL: Selector = Selector::new("masonry-builtin.menu-select-all");
 
     /// Text input state has changed, and we need to notify the platform.
     pub(crate) const INVALIDATE_IME: Selector<ImeInvalidation> =
-        Selector::new("druid-builtin.invalidate-ime");
+        Selector::new("masonry-builtin.invalidate-ime");
 
     /// A change that has occured to text state, and needs to be
     /// communicated to the platform.
