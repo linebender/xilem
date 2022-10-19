@@ -45,7 +45,7 @@
  - [X] Rename WidgetView to WidgetMut
  - [X] Split WidgetRef into separate file
  - [X] Create StoreInWidgetMut from (Widget, WidgetCtx)
- - [ ] Create `declare_widget!()` macro to implement boilerplate.
+ - [X] Create `declare_widget!()` macro to implement boilerplate.
 
 - [ ] Re-add Dialog
 
