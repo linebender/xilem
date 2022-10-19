@@ -1,7 +1,7 @@
 use std::ops::{Deref, DerefMut};
 
 use crate::widget::StoreInWidgetMut;
-use crate::{Widget, WidgetCtx, WidgetState};
+use crate::{Widget, WidgetCtx, WidgetId, WidgetState};
 
 // TODO - rename lifetimes
 pub struct WidgetMut<'a, 'b: 'a, W: Widget + StoreInWidgetMut> {
@@ -47,6 +47,15 @@ impl<'a, 'b, W: StoreInWidgetMut> WidgetMut<'a, 'b, W> {
             parent_widget_state: self.parent_widget_state,
             inner: W2::from_widget_and_ctx(widget, ctx),
         })
+    }
+
+    pub fn state(&mut self) -> &WidgetState {
+        &W::get_ctx(&mut self.inner).widget_state
+    }
+
+    /// get the `WidgetId` of the current widget.
+    pub fn id(&mut self) -> WidgetId {
+        W::get_ctx(&mut self.inner).widget_state.id
     }
 }
 

@@ -11,7 +11,6 @@ pub struct WidgetRef<'w, W: Widget + ?Sized> {
     pub widget: &'w W,
 }
 
-// TODO - Make sure WidgetRef and WidgetMut have the same utility methods.
 // TODO - Document
 impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
     pub fn new(widget_state: &'w WidgetState, widget: &'w W) -> Self {
