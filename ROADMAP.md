@@ -128,6 +128,15 @@
  - [ ] Huge list with editable/focusable boxes
  - [ ] ???
 
+- [ ] Druid-shell
+ - [ ] Rename WinHandler methods
+  - size -> resize
+  - scale -> rescale
+  - command -> select_menu
+  - save_as -> save_dialog_res
+  - open_file -> open_dialog_res
+  - timer  -> timer_complete
+
 - [ ] Refactor Command infrastructure
  - [ ] Broadcast (used multiple times)
  - [ ] Command (used once)

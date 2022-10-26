@@ -13,11 +13,12 @@ pub struct WindowId(u64);
 
 /// A description of a window to be instantiated.
 pub struct WindowDesc {
-    pub(crate) pending: PendingWindow,
+    pub(crate) root: Box<dyn Widget>,
+    pub(crate) title: ArcStr,
     pub(crate) config: WindowConfig,
     /// The `WindowId` that will be assigned to this window.
     ///
-    /// This can be used to track a window from when it is launched and when
+    /// This can be used to track a window from when it is launched to when
     /// it actually connects.
     pub id: WindowId,
 }
@@ -30,11 +31,12 @@ pub enum WindowSizePolicy {
     /// If you use this option, your root widget will be passed infinite constraints;
     /// you are responsible for ensuring that your content picks an appropriate size.
     Content,
-    /// Use the provided window size
+    /// Use the provided window size.
     User,
 }
 
-/// Window configuration that can be applied to a WindowBuilder, or to an existing WindowHandle.
+/// Window configuration that can be applied to a [WindowBuilder], or to an existing [WindowHandle].
+///
 /// It does not include anything related to app data.
 #[derive(Default, PartialEq)]
 pub struct WindowConfig {
@@ -47,42 +49,6 @@ pub struct WindowConfig {
     pub(crate) show_titlebar: Option<bool>,
     pub(crate) level: Option<WindowLevel>,
     pub(crate) state: Option<WindowState>,
-}
-
-impl std::fmt::Debug for WindowConfig {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("WindowConfig")
-            .field("size_policy", &self.size_policy)
-            .field("size", &self.size)
-            .field("min_size", &self.min_size)
-            .field("position", &self.position)
-            .field("resizable", &self.resizable)
-            .field("transparent", &self.transparent)
-            .field("show_titlebar", &self.show_titlebar)
-            .field(
-                "level",
-                match &self.level {
-                    Some(WindowLevel::AppWindow) => &"Some(AppWindow)",
-                    Some(WindowLevel::Tooltip(_)) => &"Some(ToolTip)",
-                    Some(WindowLevel::DropDown(_)) => &"Some(DropDown)",
-                    Some(WindowLevel::Modal(_)) => &"Some(Modal)",
-                    None => &"None",
-                },
-            )
-            .field("state", &self.state)
-            .finish()
-    }
-}
-
-/// The parts of a window, pending construction, that are dependent on top level app state
-/// or are not part of the druid shells windowing abstraction.
-/// This includes the boxed root widget, as well as other window properties such as the title.
-pub struct PendingWindow {
-    pub(crate) root: Box<dyn Widget>,
-    pub(crate) title: ArcStr,
-    pub(crate) transparent: bool,
-    pub(crate) size_policy: WindowSizePolicy, // This is copied over from the WindowConfig
-                                              // when the native window is constructed.
 }
 
 // ---
@@ -104,14 +70,16 @@ impl WindowDesc {
         W: Widget + 'static,
     {
         WindowDesc {
-            pending: PendingWindow::new(root),
+            root: Box::new(root),
+            // FIXME - add argument instead
+            title: "Masonry application".into(),
             config: WindowConfig::default(),
             id: WindowId::next(),
         }
     }
 
     pub fn title(mut self, title: impl Into<ArcStr>) -> Self {
-        self.pending = self.pending.title(title);
+        self.title = title.into();
         self
     }
 
@@ -183,11 +151,10 @@ impl WindowDesc {
     /// transparent.
     pub fn transparent(mut self, transparent: bool) -> Self {
         self.config = self.config.transparent(transparent);
-        self.pending = self.pending.transparent(transparent);
         self
     }
 
-    /// Sets the initial window position in [display points], relative to the origin
+    /// Set the initial window position in [display points], relative to the origin
     /// of the [virtual screen].
     ///
     /// [display points]: crate::Scale
@@ -197,7 +164,7 @@ impl WindowDesc {
         self
     }
 
-    /// Sets the [`WindowLevel`] of the window
+    /// Set the [`WindowLevel`] of the window
     ///
     /// [`WindowLevel`]: enum.WindowLevel.html
     pub fn set_level(mut self, level: WindowLevel) -> Self {
@@ -214,33 +181,6 @@ impl WindowDesc {
     /// Set the [`WindowConfig`] of window.
     pub fn with_config(mut self, config: WindowConfig) -> Self {
         self.config = config;
-        self
-    }
-}
-
-impl PendingWindow {
-    /// Create a pending window from any widget.
-    pub fn new<W>(root: W) -> PendingWindow
-    where
-        W: Widget + 'static,
-    {
-        // This just makes our API slightly cleaner; callers don't need to explicitly box.
-        PendingWindow {
-            root: Box::new(root),
-            title: "masonry app".into(),
-            transparent: false,
-            size_policy: WindowSizePolicy::User,
-        }
-    }
-
-    pub fn title(mut self, title: impl Into<ArcStr>) -> Self {
-        self.title = title.into();
-        self
-    }
-
-    /// Set wether the background should be transparent
-    pub fn transparent(mut self, transparent: bool) -> Self {
-        self.transparent = transparent;
         self
     }
 }
@@ -267,7 +207,7 @@ impl WindowConfig {
         self
     }
 
-    /// Set the window's initial drawing area size in [display points].
+    /// Set the window's initial drawing area size in [display points](druid_shell::Scale).
     ///
     /// You can pass in a tuple `(width, height)` or a [`Size`],
     /// e.g. to create a window with a drawing area 1000dp wide and 500dp high:
@@ -280,25 +220,19 @@ impl WindowConfig {
     ///
     /// This should be considered a request to the platform to set the size of the window.
     /// The platform might increase the size a tiny bit due to DPI.
-    ///
-    /// [`Size`]: struct.Size.html
-    /// [display points]: struct.Scale.html
     pub fn window_size(mut self, size: impl Into<Size>) -> Self {
         self.size = Some(size.into());
         self
     }
 
-    /// Set the window's minimum drawing area size in [display points].
+    /// Set the window's minimum drawing area size in [display points](druid_shell::Scale).
     ///
     /// The actual minimum window size in pixels will depend on the platform DPI settings.
     ///
     /// This should be considered a request to the platform to set the minimum size of the window.
     /// The platform might increase the size a tiny bit due to DPI.
     ///
-    /// To set the window's initial drawing area size use [`window_size`].
-    ///
-    /// [`window_size`]: #method.window_size
-    /// [display points]: struct.Scale.html
+    /// To set the window's initial drawing area size use [`window_size`](WindowConfig::window_size).
     pub fn with_min_size(mut self, size: impl Into<Size>) -> Self {
         self.min_size = Some(size.into());
         self
@@ -316,16 +250,15 @@ impl WindowConfig {
         self
     }
 
-    /// Sets the window position in virtual screen coordinates.
-    /// [`position`] Position in pixels.
+    /// Set the window position in virtual screen coordinates.
     ///
-    /// [`position`]: struct.Point.html
+    /// Position is in pixels.
     pub fn set_position(mut self, position: Point) -> Self {
         self.position = Some(position);
         self
     }
 
-    /// Sets the [`WindowLevel`] of the window
+    /// Set the [`WindowLevel`] of the window
     ///
     /// [`WindowLevel`]: enum.WindowLevel.html
     pub fn set_level(mut self, level: WindowLevel) -> Self {
@@ -333,7 +266,7 @@ impl WindowConfig {
         self
     }
 
-    /// Sets the [`WindowState`] of the window.
+    /// Set the [`WindowState`] of the window.
     ///
     /// [`WindowState`]: enum.WindowState.html
     pub fn set_window_state(mut self, state: WindowState) -> Self {
@@ -347,7 +280,7 @@ impl WindowConfig {
         self
     }
 
-    /// Apply this window configuration to the passed in WindowBuilder
+    /// Apply this window configuration to the given WindowBuilder
     pub fn apply_to_builder(&self, builder: &mut WindowBuilder) {
         if let Some(resizable) = self.resizable {
             builder.resizable(resizable);
@@ -384,7 +317,7 @@ impl WindowConfig {
         }
     }
 
-    /// Apply this window configuration to the passed in WindowHandle
+    /// Apply this window configuration to the given WindowHandle
     pub fn apply_to_handle(&self, win_handle: &mut WindowHandle) {
         if let Some(resizable) = self.resizable {
             win_handle.resizable(resizable);
@@ -411,5 +344,30 @@ impl WindowConfig {
         if let Some(state) = self.state {
             win_handle.set_window_state(state);
         }
+    }
+}
+
+impl std::fmt::Debug for WindowConfig {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("WindowConfig")
+            .field("size_policy", &self.size_policy)
+            .field("size", &self.size)
+            .field("min_size", &self.min_size)
+            .field("position", &self.position)
+            .field("resizable", &self.resizable)
+            .field("transparent", &self.transparent)
+            .field("show_titlebar", &self.show_titlebar)
+            .field(
+                "level",
+                match &self.level {
+                    Some(WindowLevel::AppWindow) => &"Some(AppWindow)",
+                    Some(WindowLevel::Tooltip(_)) => &"Some(ToolTip)",
+                    Some(WindowLevel::DropDown(_)) => &"Some(DropDown)",
+                    Some(WindowLevel::Modal(_)) => &"Some(Modal)",
+                    None => &"None",
+                },
+            )
+            .field("state", &self.state)
+            .finish()
     }
 }

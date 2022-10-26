@@ -3,7 +3,7 @@ use druid_shell::{Application as AppHandle, Error as PlatformError};
 use crate::app_delegate::AppDelegate;
 use crate::app_root::AppRoot;
 use crate::ext_event::{ExtEventQueue, ExtEventSink};
-use crate::platform::DruidAppHandler;
+use crate::platform::MasonryAppHandler;
 use crate::platform::WindowDesc;
 use crate::Env;
 
@@ -87,7 +87,7 @@ impl AppLauncher {
             self.ext_event_queue,
             Env::with_theme(),
         )?;
-        let handler = DruidAppHandler::new(state);
+        let handler = MasonryAppHandler::new(state);
 
         app.run(Some(Box::new(handler)));
         Ok(())

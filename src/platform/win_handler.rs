@@ -33,27 +33,31 @@ pub(crate) const RUN_COMMANDS_TOKEN: IdleToken = IdleToken::new(1);
 /// A token we are called back with if an external event was submitted.
 pub(crate) const EXT_EVENT_IDLE_TOKEN: IdleToken = IdleToken::new(2);
 
-/// The struct implements the druid-shell `WinHandler` trait.
+/// The top-level handler for a window's events.
 ///
-/// One `DruidHandler` exists per window.
+/// This struct implements the druid-shell `WinHandler` trait. One `MasonryWinHandler`
+/// exists per window.
 ///
-/// This is something of an internal detail and possibly we don't want to surface
-/// it publicly.
-pub struct DruidWinHandler {
+/// This is only an internal detail for now, but it might be exposed for unit tests in the future.
+pub struct MasonryWinHandler {
     /// The shared app state.
     pub(crate) app_state: AppRoot,
     /// The id for the current window.
-    window_id: WindowId,
+    pub(crate) window_id: WindowId,
 }
 
-/// The top level event handler.
+/// The top-level handler for window-less events.
 ///
-/// This corresponds to the `AppHandler` trait in druid-shell, which is only
-/// used to handle events that are not associated with a window.
+/// This struct implements the druid-shell `AppHandler` trait. One `MasonryAppHandler`
+/// exists per application.
 ///
-/// Currently, this means only menu items on macOS when no window is open.
-pub struct DruidAppHandler {
-    app_state: AppRoot,
+/// It handles events that are not associated with a window. Currently, this means only
+/// menu items on macOS when no window is open.
+///
+/// This is only an internal detail for now, but it might be exposed for unit tests in the future.
+pub struct MasonryAppHandler {
+    /// The shared app state.
+    pub(crate) app_state: AppRoot,
 }
 
 // TODO - Move to separate file
@@ -67,30 +71,35 @@ pub struct DialogInfo {
     pub cancel_cmd: Selector<()>,
 }
 
-impl DruidAppHandler {
+impl MasonryAppHandler {
     pub(crate) fn new(app_state: AppRoot) -> Self {
         Self { app_state }
     }
 }
 
-impl DruidWinHandler {
+impl MasonryWinHandler {
     /// Note: the root widget doesn't go in here, because it gets added to the
     /// app state.
-    pub(crate) fn new_shared(app_state: AppRoot, window_id: WindowId) -> DruidWinHandler {
-        DruidWinHandler {
+    pub(crate) fn new_shared(app_state: AppRoot, window_id: WindowId) -> MasonryWinHandler {
+        MasonryWinHandler {
             app_state,
             window_id,
         }
     }
 }
 
-impl AppHandler for DruidAppHandler {
+impl AppHandler for MasonryAppHandler {
     fn command(&mut self, id: u32) {
         self.app_state.handle_system_cmd(id, None)
     }
 }
 
-impl WinHandler for DruidWinHandler {
+// Every WinHandler method is triggered by some sort of platform event.
+//
+// The method implementations should be short (two lines at most, usually), and call
+// AppRoot methods directly. MasonryWinHandler methods should never break or check
+// invariants: that's AppRoot's job.
+impl WinHandler for MasonryWinHandler {
     fn connect(&mut self, handle: &WindowHandle) {
         self.app_state
             .window_connected(self.window_id, handle.clone());
@@ -117,28 +126,23 @@ impl WinHandler for DruidWinHandler {
         self.app_state.paint(self.window_id, piet, region);
     }
 
-    // TODO - rename to resize
     fn size(&mut self, size: Size) {
         let event = Event::WindowSize(size);
         self.app_state.handle_event(event, self.window_id);
     }
 
-    // TODO - rename to rescale
     fn scale(&mut self, _scale: Scale) {
         // TODO: Do something with the scale
     }
 
-    // TODO - rename as select_menu
     fn command(&mut self, id: u32) {
         self.app_state.handle_system_cmd(id, Some(self.window_id));
     }
 
-    // TODO - rename as save_dialog_res
     fn save_as(&mut self, token: FileDialogToken, file_info: Option<FileInfo>) {
         self.app_state.handle_dialog_response(token, file_info);
     }
 
-    // TODO - rename as open_dialog_res
     fn open_file(&mut self, token: FileDialogToken, file_info: Option<FileInfo>) {
         self.app_state.handle_dialog_response(token, file_info);
     }
@@ -185,7 +189,6 @@ impl WinHandler for DruidWinHandler {
         self.app_state.handle_event(event, self.window_id);
     }
 
-    // rename to "timer_complete"
     fn timer(&mut self, token: TimerToken) {
         self.app_state
             .handle_event(Event::Timer(token), self.window_id);

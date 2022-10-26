@@ -30,15 +30,15 @@ use crate::kurbo::{Point, Size};
 use crate::piet::{Color, Piet, RenderContext};
 use crate::platform::RUN_COMMANDS_TOKEN;
 use crate::platform::{DialogInfo, EXT_EVENT_IDLE_TOKEN};
-use crate::platform::{PendingWindow, WindowConfig, WindowSizePolicy};
+use crate::platform::{WindowConfig, WindowSizePolicy};
 use crate::testing::MockTimerQueue;
 use crate::text::TextFieldRegistration;
 use crate::widget::{FocusChange, StoreInWidgetMut, WidgetMut, WidgetRef, WidgetState};
 use crate::PlatformError;
 use crate::{
-    ArcStr, BoxConstraints, Command, DruidWinHandler, Env, Event, EventCtx, Handled, InternalEvent,
-    InternalLifeCycle, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Target, Widget, WidgetCtx,
-    WidgetId, WidgetPod, WindowDesc, WindowId,
+    ArcStr, BoxConstraints, Command, Env, Event, EventCtx, Handled, InternalEvent,
+    InternalLifeCycle, LayoutCtx, LifeCycle, LifeCycleCtx, MasonryWinHandler, PaintCtx, Target,
+    Widget, WidgetCtx, WidgetId, WidgetPod, WindowDesc, WindowId,
 };
 
 pub type ImeUpdateFn = dyn FnOnce(druid_shell::text::Event);
@@ -74,6 +74,15 @@ struct AppRootInner {
     #[allow(unused)]
     pub menu_window: Option<WindowId>,
     pub env: Env,
+}
+
+/// The parts of a window, pending construction, that are dependent on top level app state
+/// or are not part of the druid shell's windowing abstraction.
+struct PendingWindow {
+    root: Box<dyn Widget>,
+    title: ArcStr,
+    transparent: bool,
+    size_policy: WindowSizePolicy,
 }
 
 // TODO - refactor out again
@@ -150,7 +159,10 @@ impl AppRoot {
                     window_id,
                     handle,
                     inner.ext_event_queue.make_sink(),
-                    pending,
+                    pending.root,
+                    pending.title,
+                    pending.transparent,
+                    pending.size_policy,
                     None,
                 );
                 let existing = inner.active_windows.insert(window_id, win);
@@ -578,21 +590,27 @@ impl AppRoot {
         &mut self,
         desc: WindowDesc,
     ) -> Result<WindowHandle, crate::PlatformError> {
-        // TODO - change function args?
-        let id = desc.id;
-        let mut pending = desc.pending;
+        let root = desc.root;
+        let title = desc.title;
         let config = desc.config;
+        let id = desc.id;
+
         let mut builder = WindowBuilder::new(self.inner.borrow().app_handle.clone());
         config.apply_to_builder(&mut builder);
+        builder.set_title(title.to_string());
 
-        pending.size_policy = config.size_policy;
-        builder.set_title(pending.title.to_string());
-
-        let handler = DruidWinHandler::new_shared(self.clone(), id);
+        let handler = MasonryWinHandler::new_shared(self.clone(), id);
         builder.set_handler(Box::new(handler));
 
+        let pending = PendingWindow {
+            root,
+            title,
+            transparent: config.transparent.unwrap_or(false),
+            size_policy: config.size_policy,
+        };
+
         let existing = self.inner.borrow_mut().pending_windows.insert(id, pending);
-        assert!(existing.is_none(), "duplicate pending window");
+        assert!(existing.is_none(), "duplicate pending window {id:?}");
 
         builder.build()
     }
@@ -808,17 +826,20 @@ impl WindowRoot {
         id: WindowId,
         handle: WindowHandle,
         ext_event_sink: ExtEventSink,
-        pending: PendingWindow,
+        root: Box<dyn Widget>,
+        title: ArcStr,
+        transparent: bool,
+        size_policy: WindowSizePolicy,
         mock_timer_queue: Option<MockTimerQueue>,
     ) -> WindowRoot {
         WindowRoot {
             id,
-            root: WidgetPod::new(pending.root),
-            size_policy: pending.size_policy,
+            root: WidgetPod::new(root),
+            size_policy: size_policy,
             size: Size::ZERO,
             invalid: Region::EMPTY,
-            title: pending.title,
-            transparent: pending.transparent,
+            title,
+            transparent,
             last_anim: None,
             last_mouse_pos: None,
             focus: None,

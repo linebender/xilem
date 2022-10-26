@@ -38,7 +38,6 @@ use crate::contexts::GlobalPassCtx;
 use crate::debug_logger::DebugLogger;
 use crate::ext_event::ExtEventQueue;
 use crate::piet::{BitmapTarget, Device, Error, ImageFormat, Piet};
-use crate::platform::PendingWindow;
 use crate::widget::{StoreInWidgetMut, WidgetMut, WidgetRef, WidgetState};
 use crate::*;
 
@@ -94,12 +93,14 @@ impl Harness {
         // FIXME
         let event_queue = ExtEventQueue::new();
 
-        let pending = PendingWindow::new(root);
         let window = WindowRoot::new(
             WindowId::next(),
             Default::default(),
             event_queue.make_sink(),
-            pending,
+            Box::new(root),
+            "Masonry test app".into(),
+            false,
+            WindowSizePolicy::User,
             Some(MockTimerQueue::new()),
         );
 
