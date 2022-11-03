@@ -1,5 +1,3 @@
-// TODO - remove methods, add public fields
-
 use druid_shell::WindowState;
 use druid_shell::{Counter, WindowBuilder, WindowHandle, WindowLevel};
 
@@ -12,7 +10,17 @@ use crate::Widget;
 pub struct WindowId(u64);
 
 /// A description of a window to be instantiated.
-pub struct WindowDesc {
+///
+/// This object is paramaterized with builder-style methods, eg:
+///
+/// ```no_run
+/// #use masonry::WindowDescription;
+/// #let some_widget = todo!();
+/// let main_window = WindowDescription::new(some_widget)
+///     .title("My window")
+///     .window_size((400.0, 400.0));
+/// ```
+pub struct WindowDescription {
     pub(crate) root: Box<dyn Widget>,
     pub(crate) title: ArcStr,
     pub(crate) config: WindowConfig,
@@ -61,15 +69,13 @@ impl WindowId {
     }
 }
 
-impl WindowDesc {
-    /// Create a new `WindowDesc`, taking the root [`Widget`] for this window.
-    ///
-    /// [`Widget`]: trait.Widget.html
-    pub fn new<W>(root: W) -> WindowDesc
+impl WindowDescription {
+    /// Create a new `WindowDescription`, taking the root [`Widget`] for this window.
+    pub fn new<W>(root: W) -> WindowDescription
     where
         W: Widget + 'static,
     {
-        WindowDesc {
+        WindowDescription {
             root: Box::new(root),
             // FIXME - add argument instead
             title: "Masonry application".into(),
@@ -78,6 +84,7 @@ impl WindowDesc {
         }
     }
 
+    /// Set the window title
     pub fn title(mut self, title: impl Into<ArcStr>) -> Self {
         self.title = title.into();
         self
@@ -98,7 +105,7 @@ impl WindowDesc {
         self
     }
 
-    /// Set the window's initial drawing area size in [display points].
+    /// Set the window's initial drawing area size in [display points](druid_shell::Scale).
     ///
     /// You can pass in a tuple `(width, height)` or a [`Size`],
     /// e.g. to create a window with a drawing area 1000dp wide and 500dp high:
@@ -111,15 +118,12 @@ impl WindowDesc {
     ///
     /// This should be considered a request to the platform to set the size of the window.
     /// The platform might increase the size a tiny bit due to DPI.
-    ///
-    /// [`Size`]: struct.Size.html
-    /// [display points]: struct.Scale.html
     pub fn window_size(mut self, size: impl Into<Size>) -> Self {
         self.config.size = Some(size.into());
         self
     }
 
-    /// Set the window's minimum drawing area size in [display points].
+    /// Set the window's minimum drawing area size in [display points](druid_shell::Scale).
     ///
     /// The actual minimum window size in pixels will depend on the platform DPI settings.
     ///
@@ -127,28 +131,24 @@ impl WindowDesc {
     /// The platform might increase the size a tiny bit due to DPI.
     ///
     /// To set the window's initial drawing area size use [`window_size`].
-    ///
-    /// [`window_size`]: #method.window_size
-    /// [display points]: struct.Scale.html
-    pub fn with_min_size(mut self, size: impl Into<Size>) -> Self {
-        self.config = self.config.with_min_size(size);
+    pub fn min_size(mut self, size: impl Into<Size>) -> Self {
+        self.config = self.config.min_size(size);
         self
     }
 
-    /// Builder-style method to set whether this window can be resized.
+    /// Set whether this window can be resized.
     pub fn resizable(mut self, resizable: bool) -> Self {
         self.config = self.config.resizable(resizable);
         self
     }
 
-    /// Builder-style method to set whether this window's titlebar is visible.
+    /// Set whether this window's titlebar is visible.
     pub fn show_titlebar(mut self, show_titlebar: bool) -> Self {
         self.config = self.config.show_titlebar(show_titlebar);
         self
     }
 
-    /// Builder-style method to set whether this window's background should be
-    /// transparent.
+    /// Set whether this window's background should be transparent.
     pub fn transparent(mut self, transparent: bool) -> Self {
         self.config = self.config.transparent(transparent);
         self
@@ -157,6 +157,7 @@ impl WindowDesc {
     /// Set the initial window position in [display points], relative to the origin
     /// of the [virtual screen].
     ///
+    // TODO - links
     /// [display points]: crate::Scale
     /// [virtual screen]: crate::Screen
     pub fn set_position(mut self, position: impl Into<Point>) -> Self {
@@ -164,21 +165,19 @@ impl WindowDesc {
         self
     }
 
-    /// Set the [`WindowLevel`] of the window
-    ///
-    /// [`WindowLevel`]: enum.WindowLevel.html
+    /// Set the [`WindowLevel`] of the window.
     pub fn set_level(mut self, level: WindowLevel) -> Self {
         self.config = self.config.set_level(level);
         self
     }
 
-    /// Set initial state for the window.
+    /// Set initial [`WindowState`] of the window (eg minimized/maximized).
     pub fn set_window_state(mut self, state: WindowState) -> Self {
         self.config = self.config.set_window_state(state);
         self
     }
 
-    /// Set the [`WindowConfig`] of window.
+    /// Set the [`WindowConfig`] of the window.
     pub fn with_config(mut self, config: WindowConfig) -> Self {
         self.config = config;
         self
@@ -233,7 +232,7 @@ impl WindowConfig {
     /// The platform might increase the size a tiny bit due to DPI.
     ///
     /// To set the window's initial drawing area size use [`window_size`](WindowConfig::window_size).
-    pub fn with_min_size(mut self, size: impl Into<Size>) -> Self {
+    pub fn min_size(mut self, size: impl Into<Size>) -> Self {
         self.min_size = Some(size.into());
         self
     }

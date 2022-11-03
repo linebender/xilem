@@ -1,11 +1,11 @@
-#![allow(dead_code)]
+#![allow(missing_docs)]
 
 use std::any::Any;
 use std::num::NonZeroU64;
 use std::sync::{Arc, Mutex};
 
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
-pub struct PromiseTokenId(NonZeroU64);
+pub(crate) struct PromiseTokenId(NonZeroU64);
 
 pub struct PromiseToken<T = ()>(PromiseTokenId, std::marker::PhantomData<T>);
 
@@ -42,11 +42,6 @@ impl<T: Any + Send> PromiseToken<T> {
         Self::new()
     }
 
-    #[cfg(not(tarpaulin_include))]
-    pub(crate) fn id(&self) -> PromiseTokenId {
-        self.0
-    }
-
     pub fn make_result(&self, payload: T) -> PromiseResult {
         PromiseResult {
             token_id: self.0,
@@ -56,11 +51,6 @@ impl<T: Any + Send> PromiseToken<T> {
 }
 
 impl PromiseResult {
-    #[cfg(not(tarpaulin_include))]
-    pub(crate) fn token_id(&self) -> PromiseTokenId {
-        self.token_id
-    }
-
     pub(crate) fn get_payload(&self) -> Box<dyn Any + Send> {
         self.payload
             .lock()

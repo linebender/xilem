@@ -302,6 +302,7 @@ impl TextBox {
 
 impl TextBox {
     // TODO - Return &str
+    /// Return the box's current contents.
     pub fn text(&self) -> String {
         self.inner
             .as_ref()
@@ -757,14 +758,14 @@ mod tests {
     use super::*;
     use crate::action::Action;
     use crate::assert_render_snapshot;
-    use crate::testing::{widget_ids, Harness, TestWidgetExt as _};
+    use crate::testing::{widget_ids, TestHarness, TestWidgetExt as _};
 
     #[test]
     fn simple_textbox() {
         let [textbox_id] = widget_ids();
         let textbox = TextBox::new("Hello").with_id(textbox_id);
 
-        let mut harness = Harness::create(textbox);
+        let mut harness = TestHarness::create(textbox);
 
         assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "hello");
@@ -804,7 +805,7 @@ mod tests {
     fn simple_textbox_placeholder() {
         let textbox = TextBox::new("").with_placeholder("placeholder text");
 
-        let mut harness = Harness::create(textbox);
+        let mut harness = TestHarness::create(textbox);
 
         assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "placeholder");
@@ -818,7 +819,7 @@ mod tests {
         let image_1 = {
             let textbox = TextBox::new("The quick brown fox jumps over the lazy dog");
 
-            let mut harness = Harness::create_with_size(textbox, Size::new(50.0, 50.0));
+            let mut harness = TestHarness::create_with_size(textbox, Size::new(50.0, 50.0));
 
             harness.render()
         };
@@ -826,7 +827,7 @@ mod tests {
         let image_2 = {
             let textbox = TextBox::new("Hello world");
 
-            let mut harness = Harness::create_with_size(textbox, Size::new(50.0, 50.0));
+            let mut harness = TestHarness::create_with_size(textbox, Size::new(50.0, 50.0));
 
             harness.edit_root_widget(|mut textbox, _| {
                 let mut textbox = textbox.downcast::<TextBox>().unwrap();

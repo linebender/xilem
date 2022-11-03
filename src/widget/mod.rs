@@ -160,11 +160,11 @@ impl FillStrat {
 }
 
 // TODO - remove
+#[allow(missing_docs)]
 pub mod prelude {
-    pub use crate::event::StatusChange;
     #[doc(hidden)]
     pub use crate::{
         BoxConstraints, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
-        RenderContext, Size, Widget, WidgetId,
+        RenderContext, Size, StatusChange, Widget, WidgetId,
     };
 }

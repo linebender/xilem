@@ -82,12 +82,9 @@ impl ExtEventSink {
     /// instead you have to pass the [`Selector`] and the payload
     /// separately, and it will be turned into a [`Command`] when it is received.
     ///
-    /// The `payload` must implement `Any + Send`.
-    ///
-    /// If the [`Target::Auto`] is equivalent to [`Target::Global`].
+    /// For the **target** argument, [`Target::Auto`] is equivalent to [`Target::Global`].
     ///
     /// [`Command`]: struct.Command.html
-    /// [`Selector`]: struct.Selector.html
     /// [`Target::Auto`]: enum.Target.html#variant.Auto
     /// [`Target::Global`]: enum.Target.html#variant.Global
     pub fn submit_command<T: Any + Send>(
@@ -108,6 +105,7 @@ impl ExtEventSink {
         Ok(())
     }
 
+    #[allow(missing_docs)]
     pub fn resolve_promise(
         &self,
         result: PromiseResult,

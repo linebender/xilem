@@ -4,14 +4,17 @@
 
 use std::f64::consts::PI;
 
-use druid::kurbo::Line;
-use druid::widget::prelude::*;
-use druid::{theme, Color, KeyOrValue, Point, Vec2};
 use smallvec::SmallVec;
 use tracing::trace;
 
 use crate::contexts::WidgetCtx;
+use crate::kurbo::Line;
 use crate::widget::WidgetRef;
+use crate::{theme, Color, KeyOrValue, Point, Vec2};
+use crate::{
+    BoxConstraints, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
+    RenderContext, Size, StatusChange, Widget,
+};
 
 // TODO - Set color
 /// An animated spinner widget for showing a loading state.
@@ -137,14 +140,14 @@ impl Widget for Spinner {
 mod tests {
     use super::*;
     use crate::assert_render_snapshot;
-    use crate::testing::Harness;
+    use crate::testing::TestHarness;
     //use instant::Duration;
 
     #[test]
     fn simple_spinner() {
         let spinner = Spinner::new();
 
-        let mut harness = Harness::create(spinner);
+        let mut harness = TestHarness::create(spinner);
         assert_render_snapshot!(harness, "spinner_init");
 
         // TODO
@@ -157,14 +160,14 @@ mod tests {
         let image_1 = {
             let spinner = Spinner::new().with_color(Color::PURPLE);
 
-            let mut harness = Harness::create_with_size(spinner, Size::new(30.0, 30.0));
+            let mut harness = TestHarness::create_with_size(spinner, Size::new(30.0, 30.0));
             harness.render()
         };
 
         let image_2 = {
             let spinner = Spinner::new();
 
-            let mut harness = Harness::create_with_size(spinner, Size::new(30.0, 30.0));
+            let mut harness = TestHarness::create_with_size(spinner, Size::new(30.0, 30.0));
 
             harness.edit_root_widget(|mut spinner, _| {
                 let mut spinner = spinner.downcast::<Spinner>().unwrap();

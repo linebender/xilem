@@ -38,9 +38,10 @@ use crate::PlatformError;
 use crate::{
     ArcStr, BoxConstraints, Command, Env, Event, EventCtx, Handled, InternalEvent,
     InternalLifeCycle, LayoutCtx, LifeCycle, LifeCycleCtx, MasonryWinHandler, PaintCtx, Target,
-    Widget, WidgetCtx, WidgetId, WidgetPod, WindowDesc, WindowId,
+    Widget, WidgetCtx, WidgetId, WidgetPod, WindowDescription, WindowId,
 };
 
+/// The type of a function that will be called once an IME field is updated.
 pub type ImeUpdateFn = dyn FnOnce(druid_shell::text::Event);
 
 // TODO - Add AppRootEvent type
@@ -51,29 +52,31 @@ pub type ImeUpdateFn = dyn FnOnce(druid_shell::text::Event);
 // This muddles what part of the code has the responsibility of maintaining invariants
 
 /// State shared by all windows in the UI.
+///
+/// This is an internal object that shouldn't be manipulated directly by the user.
 #[derive(Clone)]
 pub struct AppRoot {
     inner: Rc<RefCell<AppRootInner>>,
 }
 
 struct AppRootInner {
-    pub app_handle: AppHandle,
-    pub debug_logger: DebugLogger,
-    pub app_delegate: Box<dyn AppDelegate>,
-    pub command_queue: CommandQueue,
-    pub action_queue: ActionQueue,
-    pub ext_event_queue: ExtEventQueue,
-    pub file_dialogs: HashMap<FileDialogToken, DialogInfo>,
-    pub window_requests: VecDeque<WindowDesc>,
-    pub pending_windows: HashMap<WindowId, PendingWindow>,
-    pub active_windows: HashMap<WindowId, WindowRoot>,
+    app_handle: AppHandle,
+    debug_logger: DebugLogger,
+    app_delegate: Box<dyn AppDelegate>,
+    command_queue: CommandQueue,
+    action_queue: ActionQueue,
+    ext_event_queue: ExtEventQueue,
+    file_dialogs: HashMap<FileDialogToken, DialogInfo>,
+    window_requests: VecDeque<WindowDescription>,
+    pending_windows: HashMap<WindowId, PendingWindow>,
+    active_windows: HashMap<WindowId, WindowRoot>,
     // FIXME - remove
-    pub main_window_id: WindowId,
+    main_window_id: WindowId,
     /// The id of the most-recently-focused window that has a menu. On macOS, this
     /// is the window that's currently in charge of the app menu.
     #[allow(unused)]
-    pub menu_window: Option<WindowId>,
-    pub env: Env,
+    menu_window: Option<WindowId>,
+    env: Env,
 }
 
 /// The parts of a window, pending construction, that are dependent on top level app state
@@ -87,6 +90,8 @@ struct PendingWindow {
 
 // TODO - refactor out again
 /// Per-window state not owned by user code.
+///
+/// This is an internal object that shouldn't be manipulated directly by the user.
 pub struct WindowRoot {
     pub(crate) id: WindowId,
     pub(crate) root: WidgetPod<Box<dyn Widget>>,
@@ -94,14 +99,14 @@ pub struct WindowRoot {
     size_policy: WindowSizePolicy,
     size: Size,
     invalid: Region,
-    // This will be `Some` whenever the most recently displayed frame was an animation frame.
+    // Is `Some` if the most recently displayed frame was an animation frame.
     pub(crate) last_anim: Option<Instant>,
     pub(crate) last_mouse_pos: Option<Point>,
     pub(crate) focus: Option<WidgetId>,
     pub(crate) ext_event_sink: ExtEventSink,
     pub(crate) handle: WindowHandle,
     pub(crate) timers: HashMap<TimerToken, WidgetId>,
-    // Used in unit tests
+    // Used in unit tests - see `src/testing/mock_timer_queue.rs`
     pub(crate) mock_timer_queue: Option<MockTimerQueue>,
     pub(crate) transparent: bool,
     pub(crate) ime_handlers: Vec<(TextFieldToken, TextFieldRegistration)>,
@@ -115,10 +120,10 @@ pub struct WindowRoot {
 // Each of these methods should handle post-event cleanup
 // (eg invalidation regions, opening new windows, etc)
 impl AppRoot {
-    // TODO - make pub
+    /// Create new application.
     pub(crate) fn create(
         app: AppHandle,
-        windows: Vec<WindowDesc>,
+        windows: Vec<WindowDescription>,
         app_delegate: Option<Box<dyn AppDelegate>>,
         ext_event_queue: ExtEventQueue,
         env: Env,
@@ -149,6 +154,10 @@ impl AppRoot {
         Ok(app_root)
     }
 
+    /// Notify the app that a window was added and is now running in the platform.
+    ///
+    /// This should be called by the platform after processing from
+    /// [`druid_shell::WindowBuilder`] finishes.
     pub fn window_connected(&mut self, window_id: WindowId, handle: WindowHandle) {
         {
             let mut inner = self.inner.borrow_mut();
@@ -189,9 +198,9 @@ impl AppRoot {
         self.process_window_requests();
     }
 
-    /// Called after this window has been closed by the platform.
+    /// Notify the app that a window has been closed by the platform.
     ///
-    /// We clean up resources.
+    /// AppRoot then cleans up resources.
     pub fn window_removed(&mut self, window_id: WindowId) {
         self.with_delegate(|delegate, ctx, env| delegate.on_window_removed(ctx, window_id, env));
 
@@ -217,13 +226,14 @@ impl AppRoot {
         }
     }
 
+    /// Notify the app that a window has acquired focus (eg the user clicked on it).
     pub fn window_got_focus(&mut self, _window_id: WindowId) {
         // TODO - menu stuff
     }
 
     /// Send an event to the widget hierarchy.
     ///
-    /// Returns `true` if the event produced an action.
+    /// Returns [`Handled::Yes`] if the event produced an action.
     ///
     /// This is principally because in certain cases (such as keydown on Windows)
     /// the OS needs to know if an event was handled.
@@ -260,6 +270,10 @@ impl AppRoot {
     }
 
     // TODO - Promises
+    /// Notify the app that the user has closed a given dialog popup.
+    ///
+    /// This gives the user both a token referring to the given dialog and
+    /// the [`FileInfo`] representing which file(s) the user chose.
     pub fn handle_dialog_response(&mut self, token: FileDialogToken, file_info: Option<FileInfo>) {
         let dialog_info = self.inner().file_dialogs.remove(&token);
         if let Some(dialog_info) = dialog_info {
@@ -277,6 +291,11 @@ impl AppRoot {
         }
     }
 
+    /// Run some computations before painting a given window.
+    ///
+    /// Must be called once per frame for each window.
+    ///
+    /// Currently, this computes layout and runs an animation frame.
     pub fn prepare_paint(&mut self, window_id: WindowId) {
         {
             let mut inner = self.inner.borrow_mut();
@@ -294,6 +313,10 @@ impl AppRoot {
         self.process_window_requests();
     }
 
+    /// Paint a given window's contents.
+    ///
+    /// Currently, this computes layout if needed and calls paint methods in the
+    /// widget hierarchy.
     pub fn paint(&mut self, window_id: WindowId, piet: &mut Piet, invalid: &Region) {
         let mut inner = self.inner.borrow_mut();
         let inner = inner.deref_mut();
@@ -309,6 +332,7 @@ impl AppRoot {
         }
     }
 
+    /// Run any leftover commands from previous events.
     pub fn run_commands(&mut self) {
         self.process_commands_and_actions();
         self.inner().invalidate_paint_regions();
@@ -316,6 +340,7 @@ impl AppRoot {
         self.process_window_requests();
     }
 
+    /// Run any events in the [`ExtEventQueue`], usually sent by a background thread.
     pub fn run_ext_events(&mut self) {
         self.process_ext_events();
         self.process_commands_and_actions();
@@ -324,6 +349,7 @@ impl AppRoot {
         self.process_window_requests();
     }
 
+    #[allow(missing_docs)]
     pub fn ime_update_fn(
         &self,
         window_id: WindowId,
@@ -334,6 +360,7 @@ impl AppRoot {
         window.ime_invalidation_fn(widget_id)
     }
 
+    #[allow(missing_docs)]
     pub fn get_ime_lock(
         &mut self,
         window_id: WindowId,
@@ -543,7 +570,6 @@ impl AppRoot {
             let main_root_ctx = WidgetCtx {
                 global_state: &mut global_state,
                 widget_state: &mut window.root.state,
-                is_init: true,
             };
             let main_root_widget = WidgetMut {
                 parent_widget_state: &mut fake_widget_state,
@@ -588,7 +614,7 @@ impl AppRoot {
     // TODO - document why process_window_requests/build_native_window
     fn build_native_window(
         &mut self,
-        desc: WindowDesc,
+        desc: WindowDescription,
     ) -> Result<WindowHandle, crate::PlatformError> {
         let root = desc.root;
         let title = desc.title;
@@ -645,7 +671,11 @@ impl AppRootInner {
         let desc = cmd.get(sys_cmd::NEW_WINDOW);
         // The NEW_WINDOW command is private and only druid should be able to send it,
         // so we can use .unwrap() here
-        let desc = *desc.take().unwrap().downcast::<WindowDesc>().unwrap();
+        let desc = *desc
+            .take()
+            .unwrap()
+            .downcast::<WindowDescription>()
+            .unwrap();
         self.window_requests.push_back(desc);
     }
 
@@ -1501,18 +1531,22 @@ impl WindowRoot {
         })
     }
 
+    /// Return the root widget.
     pub fn root_widget(&self, window_id: WindowId) -> WidgetRef<dyn Widget> {
         self.root.as_dyn()
     }
 
+    /// Try to return the widget with the given id.
     pub fn find_widget_by_id(&self, id: WidgetId) -> Option<WidgetRef<'_, dyn Widget>> {
         self.root.as_dyn().find_widget_by_id(id)
     }
 
+    /// Recursively find innermost widget at given position.
     pub fn find_widget_at_pos(&self, pos: Point) -> Option<WidgetRef<'_, dyn Widget>> {
         self.root.as_dyn().find_widget_at_pos(pos)
     }
 
+    /// Return the widget that receives keyboard events.
     pub fn focused_widget(&self) -> Option<WidgetRef<'_, dyn Widget>> {
         self.find_widget_by_id(self.focus?)
     }

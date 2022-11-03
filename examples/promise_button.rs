@@ -22,7 +22,7 @@ use masonry::promise::PromiseToken;
 use masonry::text::TextLayout;
 use masonry::widget::prelude::*;
 use masonry::widget::WidgetRef;
-use masonry::{AppLauncher, WindowDesc};
+use masonry::{AppLauncher, WindowDescription};
 use masonry::{ArcStr, Color, KeyOrValue, Point};
 use smallvec::SmallVec;
 use tracing::{trace, trace_span, Span};
@@ -172,7 +172,8 @@ impl Widget for PromiseButton {
 // ---
 
 fn main() {
-    let main_window = WindowDesc::new(PromiseButton::new("Hello")).title("Blocking functions");
+    let main_window =
+        WindowDescription::new(PromiseButton::new("Hello")).title("Blocking functions");
     AppLauncher::with_window(main_window)
         .log_to_console()
         .launch()

@@ -1,10 +1,9 @@
 #![windows_subsystem = "windows"]
 
-use masonry::action::Action;
-use masonry::app_delegate::{AppDelegate, DelegateCtx};
 use masonry::widget::prelude::*;
 use masonry::widget::{Button, Flex, Label, Portal, WidgetMut};
-use masonry::{AppLauncher, WindowDesc, WindowId};
+use masonry::Action;
+use masonry::{AppDelegate, AppLauncher, DelegateCtx, WindowDescription, WindowId};
 
 const VERTICAL_WIDGET_SPACING: f64 = 20.0;
 
@@ -33,7 +32,7 @@ impl AppDelegate for Delegate {
 
 fn main() {
     // describe the main window
-    let main_window = WindowDesc::new(build_root_widget())
+    let main_window = WindowDescription::new(build_root_widget())
         .title("To-do list")
         .window_size((400.0, 400.0));
 

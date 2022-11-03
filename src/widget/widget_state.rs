@@ -10,7 +10,7 @@ use crate::text::TextFieldRegistration;
 use crate::widget::{CursorChange, FocusChange};
 use crate::WidgetId;
 
-// TODO - Make a note documenting this: the only way to get a &mut WidgetState should be in a pass.
+// FIXME - Make a note documenting this: the only way to get a &mut WidgetState should be in a pass.
 // A pass should reborrow the parent widget state (to avoid crossing wires) and call merge_up at
 // the end so that invalidations are always bubbled up.
 // Widgets with methods that require invalidation (eg Label::set_text) should take a
@@ -273,22 +273,22 @@ impl WidgetState {
 
     /// The paint region for this widget.
     ///
-    /// For more information, see [`WidgetPod::paint_rect`].
-    ///
-    /// [`WidgetPod::paint_rect`]: struct.WidgetPod.html#method.paint_rect
+    /// For more information, see [`WidgetPod::paint_rect`](crate::WidgetPod::paint_rect).
     pub fn paint_rect(&self) -> Rect {
         self.local_paint_rect + self.origin.to_vec2()
     }
 
     /// The rectangle used when calculating layout with other widgets
+    ///
+    /// For more information, see [`WidgetPod::layout_rect`](crate::WidgetPod::layout_rect).
     pub fn layout_rect(&self) -> Rect {
         Rect::from_origin_size(self.origin, self.size)
     }
 
-    // TODO - Document
-    // This is pretty ad-hoc so far. I need to figure out and document how
-    // window coordinates work, how this interacts with viewport, what are
-    // the invariants, etc..
+    /// The [layout_rect](crate::WidgetPod::layout_rect) in window coordinates.
+    ///
+    /// This might not map to a visible area of the screen, eg if the widget is scrolled
+    /// away.
     pub fn window_layout_rect(&self) -> Rect {
         Rect::from_origin_size(self.window_origin(), self.size)
     }

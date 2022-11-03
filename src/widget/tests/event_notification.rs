@@ -1,4 +1,4 @@
-use crate::testing::{Harness, ModularWidget, Record, Recording, TestWidgetExt as _};
+use crate::testing::{ModularWidget, Record, Recording, TestHarness, TestWidgetExt as _};
 use crate::widget::{Flex, SizedBox};
 use crate::*;
 
@@ -30,7 +30,7 @@ fn notifications() {
             .any(|ev| matches!(ev, Record::E(Event::Notification(_))))
     };
 
-    let _harness = Harness::create(tree);
+    let _harness = TestHarness::create(tree);
 
     assert!(!saw_notification(&sibling_rec));
     assert!(saw_notification(&parent_rec));

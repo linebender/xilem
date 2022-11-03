@@ -12,7 +12,7 @@ use std::{thread, time};
 use masonry::widget::prelude::*;
 use masonry::widget::WidgetRef;
 use masonry::widget::{Flex, Label, Spinner, WidgetPod};
-use masonry::{AppLauncher, Point, Selector, Target, WindowDesc};
+use masonry::{AppLauncher, Point, Selector, Target, WindowDescription};
 use smallvec::{smallvec, SmallVec};
 
 const FINISH_SLOW_FUNCTION: Selector<u32> = Selector::new("finish_slow_function");
@@ -113,7 +113,7 @@ impl Widget for MainWidget {
 // ---
 
 fn main() {
-    let main_window = WindowDesc::new(MainWidget::new(0)).title("Blocking functions");
+    let main_window = WindowDescription::new(MainWidget::new(0)).title("Blocking functions");
     AppLauncher::with_window(main_window)
         .log_to_console()
         .launch()

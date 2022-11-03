@@ -14,7 +14,7 @@
 
 //! Tests related to propagation of invalid rects.
 
-use crate::testing::{widget_ids, Harness};
+use crate::testing::{widget_ids, TestHarness};
 use crate::widget::{Button, Flex};
 
 #[test]
@@ -25,7 +25,7 @@ fn invalidate_union() {
         .with_child_id(Button::new("hi"), id_child_1)
         .with_child_id(Button::new("there"), id_child_2);
 
-    let mut harness = Harness::create(widget);
+    let mut harness = TestHarness::create(widget);
 
     // This resets the invalid region.
     let _ = harness.render();

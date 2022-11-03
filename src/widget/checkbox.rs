@@ -21,12 +21,14 @@ use crate::action::Action;
 use crate::contexts::WidgetCtx;
 use crate::kurbo::{BezPath, Size};
 use crate::piet::{LineCap, LineJoin, LinearGradient, RenderContext, StrokeStyle, UnitPoint};
-use crate::widget::prelude::*;
 use crate::widget::{Label, WidgetMut, WidgetRef};
 use crate::ArcStr;
-use crate::{theme, WidgetPod};
+use crate::{
+    theme, BoxConstraints, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
+    StatusChange, Widget, WidgetPod,
+};
 
-/// A checkbox that toggles a `bool`.
+/// A checkbox that can be toggled.
 pub struct Checkbox {
     checked: bool,
     label: WidgetPod<Label>,
@@ -43,6 +45,7 @@ impl Checkbox {
         }
     }
 
+    /// Create a new `Checkbox` with the given label.
     pub fn from_label(checked: bool, label: Label) -> Checkbox {
         Checkbox {
             checked,
@@ -188,7 +191,7 @@ impl Widget for Checkbox {
         Some(format!(
             "[{}] {}",
             if self.checked { "X" } else { " " },
-            self.label.widget().text()
+            self.label.as_ref().text()
         ))
     }
 }
@@ -200,7 +203,7 @@ mod tests {
     use super::*;
     use crate::assert_render_snapshot;
     use crate::testing::widget_ids;
-    use crate::testing::Harness;
+    use crate::testing::TestHarness;
     use crate::testing::TestWidgetExt;
     use crate::theme::PRIMARY_LIGHT;
 
@@ -209,7 +212,7 @@ mod tests {
         let [checkbox_id] = widget_ids();
         let widget = Checkbox::new(false, "Hello").with_id(checkbox_id);
 
-        let mut harness = Harness::create(widget);
+        let mut harness = TestHarness::create(widget);
 
         assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "hello_unchecked");
@@ -242,7 +245,7 @@ mod tests {
                     .with_text_size(20.0),
             );
 
-            let mut harness = Harness::create_with_size(checkbox, Size::new(50.0, 50.0));
+            let mut harness = TestHarness::create_with_size(checkbox, Size::new(50.0, 50.0));
 
             harness.render()
         };
@@ -250,7 +253,7 @@ mod tests {
         let image_2 = {
             let checkbox = Checkbox::new(false, "Hello world");
 
-            let mut harness = Harness::create_with_size(checkbox, Size::new(50.0, 50.0));
+            let mut harness = TestHarness::create_with_size(checkbox, Size::new(50.0, 50.0));
 
             harness.edit_root_widget(|mut checkbox, _| {
                 let mut checkbox = checkbox.downcast::<Checkbox>().unwrap();

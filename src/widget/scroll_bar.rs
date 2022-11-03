@@ -1,19 +1,18 @@
+#![allow(missing_docs)]
 #![allow(unused)]
-
-use std::any::Any;
-use std::num::NonZeroU64;
-use std::ops::{Deref, DerefMut};
 
 use druid_shell::kurbo::Rect;
 use smallvec::SmallVec;
 use tracing::{trace_span, Span};
 
-use super::prelude::*;
 use super::Axis;
 use crate::contexts::WidgetCtx;
-use crate::widget::StoreInWidgetMut;
+use crate::theme;
 use crate::widget::WidgetRef;
-use crate::{theme, AsAny};
+use crate::{
+    BoxConstraints, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
+    RenderContext, Size, StatusChange, Widget,
+};
 use crate::{Point, Selector};
 
 // RULES
@@ -240,16 +239,15 @@ mod tests {
     use super::*;
     use crate::assert_render_snapshot;
     use crate::testing::widget_ids;
-    use crate::testing::Harness;
+    use crate::testing::TestHarness;
     use crate::testing::TestWidgetExt;
-    use crate::theme::PRIMARY_LIGHT;
 
     #[test]
     fn simple_scrollbar() {
         let [scrollbar_id] = widget_ids();
         let widget = ScrollBar::new(Axis::Vertical, 200.0, 600.0).with_id(scrollbar_id);
 
-        let mut harness = Harness::create_with_size(widget, Size::new(50.0, 200.0));
+        let mut harness = TestHarness::create_with_size(widget, Size::new(50.0, 200.0));
 
         assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "scrollbar_default");
@@ -276,7 +274,7 @@ mod tests {
         let [scrollbar_id] = widget_ids();
         let widget = ScrollBar::new(Axis::Horizontal, 200.0, 600.0).with_id(scrollbar_id);
 
-        let mut harness = Harness::create_with_size(widget, Size::new(200.0, 50.0));
+        let mut harness = TestHarness::create_with_size(widget, Size::new(200.0, 50.0));
 
         assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "scrollbar_horizontal");
@@ -302,7 +300,7 @@ mod tests {
                     .with_text_size(20.0),
             );
 
-            let mut harness = Harness::create_with_size(button, Size::new(50.0, 50.0));
+            let mut harness = TestHarness::create_with_size(button, Size::new(50.0, 50.0));
 
             harness.render()
         };
@@ -310,7 +308,7 @@ mod tests {
         let image_2 = {
             let button = Button::new("Hello world");
 
-            let mut harness = Harness::create_with_size(button, Size::new(50.0, 50.0));
+            let mut harness = TestHarness::create_with_size(button, Size::new(50.0, 50.0));
 
             harness.edit_root_widget(|mut button, _| {
                 let mut button = button.downcast::<Button>().unwrap();

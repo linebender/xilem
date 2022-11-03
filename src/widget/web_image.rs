@@ -2,14 +2,19 @@
 
 //! An image widget loaded from a URL.
 
+#![allow(missing_docs)]
+
 use smallvec::{smallvec, SmallVec};
 use tracing::{error, trace_span, Span};
 
 use crate::contexts::WidgetCtx;
 use crate::promise::PromiseToken;
-use crate::widget::prelude::*;
 use crate::widget::WidgetRef;
 use crate::widget::{FillStrat, Image, SizedBox, Spinner, WidgetPod};
+use crate::{
+    BoxConstraints, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Size,
+    StatusChange, Widget,
+};
 use crate::{ImageBuf, Point};
 
 pub struct WebImage {

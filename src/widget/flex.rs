@@ -19,9 +19,11 @@ use tracing::{trace, trace_span, Span};
 
 use crate::contexts::WidgetCtx;
 use crate::kurbo::{common::FloatExt, Vec2};
-use crate::widget::prelude::*;
 use crate::widget::{WidgetMut, WidgetRef};
-use crate::{Data, KeyOrValue, Point, Rect, WidgetId, WidgetPod};
+use crate::{
+    BoxConstraints, Data, Env, Event, EventCtx, KeyOrValue, LayoutCtx, LifeCycle, LifeCycleCtx,
+    PaintCtx, Point, Rect, RenderContext, Size, StatusChange, Widget, WidgetId, WidgetPod,
+};
 
 // TODO
 // - Factorize builder/setter code
@@ -166,7 +168,9 @@ impl Flex {
         self
     }
 
-    // TODO - document
+    /// Builder-style variant of `add_child`, that takes the id that the child will have.
+    ///
+    /// Useful for unit tests.
     pub fn with_child_id(mut self, child: impl Widget, id: WidgetId) -> Self {
         let child = Child::Fixed {
             widget: WidgetPod::new_with_id(Box::new(child), id),
@@ -1024,7 +1028,7 @@ impl Child {
 mod tests {
     use super::*;
     use crate::assert_render_snapshot;
-    use crate::testing::Harness;
+    use crate::testing::TestHarness;
     use crate::widget::Label;
 
     #[test]
@@ -1124,7 +1128,7 @@ mod tests {
                 FlexParams::new(2.0, CrossAxisAlignment::Start),
             );
 
-        let mut harness = Harness::create(widget);
+        let mut harness = TestHarness::create(widget);
 
         harness.edit_root_widget(|mut flex, _| {
             let mut flex = flex.downcast::<Flex>().unwrap();
@@ -1168,7 +1172,7 @@ mod tests {
                 FlexParams::new(2.0, CrossAxisAlignment::Start),
             );
 
-        let mut harness = Harness::create(widget);
+        let mut harness = TestHarness::create(widget);
 
         // MAIN AXIS ALIGNMENT
 
@@ -1229,7 +1233,7 @@ mod tests {
                 FlexParams::new(2.0, CrossAxisAlignment::Start),
             );
 
-        let mut harness = Harness::create(widget);
+        let mut harness = TestHarness::create(widget);
 
         harness.edit_root_widget(|mut flex, _| {
             let mut flex = flex.downcast::<Flex>().unwrap();
@@ -1273,7 +1277,7 @@ mod tests {
                 FlexParams::new(2.0, CrossAxisAlignment::Start),
             );
 
-        let mut harness = Harness::create(widget);
+        let mut harness = TestHarness::create(widget);
 
         // MAIN AXIS ALIGNMENT
 
@@ -1333,7 +1337,7 @@ mod tests {
                 .with_child(Label::new("d"));
             // -> abcd
 
-            let mut harness = Harness::create(widget);
+            let mut harness = TestHarness::create(widget);
 
             harness.edit_root_widget(|mut flex, _| {
                 let mut flex = flex.downcast::<Flex>().unwrap();
@@ -1380,7 +1384,7 @@ mod tests {
                 .with_spacer(5.0)
                 .with_flex_spacer(1.0);
 
-            let mut harness = Harness::create(widget);
+            let mut harness = TestHarness::create(widget);
             harness.render()
         };
 
@@ -1395,12 +1399,11 @@ mod tests {
             .with_child(Label::new("world"))
             .with_spacer(1.0);
 
-        let mut harness = Harness::create(widget);
+        let mut harness = TestHarness::create(widget);
         harness.edit_root_widget(|mut flex, _| {
             let mut flex = flex.downcast::<Flex>().unwrap();
 
             let mut child = flex.child_mut(1).unwrap();
-            // TODO - Remove .1
             assert_eq!(
                 child.downcast::<Label>().unwrap().text().to_string(),
                 "world"

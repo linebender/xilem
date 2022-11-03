@@ -8,7 +8,7 @@
 #![windows_subsystem = "windows"]
 
 use masonry::widget::WebImage;
-use masonry::{AppLauncher, WindowDesc};
+use masonry::{AppLauncher, WindowDescription};
 
 pub fn main() {
     let image = WebImage::new(
@@ -16,7 +16,7 @@ pub fn main() {
             .into(),
     );
 
-    let main_window = WindowDesc::new(image)
+    let main_window = WindowDescription::new(image)
         .window_size((650., 450.))
         .title("Flex Container Options");
 

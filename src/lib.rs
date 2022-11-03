@@ -20,7 +20,8 @@
     unsafe_code,
     clippy::trivially_copy_pass_by_ref
 )]
-//#![warn(missing_docs)]
+#![warn(missing_docs)]
+#![warn(unused_imports)]
 #![allow(clippy::new_ret_no_self, clippy::needless_doctest_main)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![cfg_attr(not(debug_assertions), allow(unused))]
@@ -38,10 +39,10 @@ pub use druid_shell::{kurbo, piet};
 #[macro_use]
 mod util;
 
-pub mod action;
-pub mod app_delegate;
-pub mod app_launcher;
-pub mod app_root;
+mod action;
+mod app_delegate;
+mod app_launcher;
+mod app_root;
 mod bloom;
 mod box_constraints;
 mod command;
@@ -62,7 +63,8 @@ pub mod widget;
 pub mod debug_logger;
 pub mod debug_values;
 
-// Types from kurbo & piet that are required by public API.
+pub use action::Action;
+pub use app_delegate::{AppDelegate, DelegateCtx};
 pub use app_launcher::AppLauncher;
 pub use app_root::WindowRoot;
 pub use box_constraints::BoxConstraints;
@@ -76,7 +78,7 @@ pub use kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
 pub use mouse::MouseEvent;
 pub use piet::{Color, ImageBuf, LinearGradient, RadialGradient, RenderContext, UnitPoint};
 pub use platform::MasonryWinHandler;
-pub use platform::{WindowConfig, WindowDesc, WindowId, WindowSizePolicy};
+pub use platform::{WindowConfig, WindowDescription, WindowId, WindowSizePolicy};
 pub use text::ArcStr;
 pub use util::AsAny;
 pub use util::Handled;

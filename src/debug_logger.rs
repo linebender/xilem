@@ -1,3 +1,5 @@
+#![allow(missing_docs)]
+
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -162,7 +164,7 @@ impl DebugLogger {
         let widget_id = widget.state().id.to_raw() as u32;
         let layout_info = LayoutInfo {
             layout_rect: widget.state().layout_rect(),
-            typename: widget.widget().short_type_name().into(),
+            typename: widget.deref().short_type_name().into(),
             children: widget
                 .children()
                 .into_iter()
@@ -229,7 +231,7 @@ impl DebugLogger {
         ) {
             let mut layout_info = LayoutInfo {
                 layout_rect: widget.state().layout_rect(),
-                typename: widget.widget().short_type_name().into(),
+                typename: widget.deref().short_type_name().into(),
                 children: Default::default(),
             };
 

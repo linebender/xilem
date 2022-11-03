@@ -28,9 +28,11 @@ use super::{
 };
 use crate::kurbo::{Line, Point, Rect, Vec2};
 use crate::piet::TextLayout as _;
-use crate::widget::prelude::*;
 use crate::widget::WidgetRef;
-use crate::{text, theme, Env, Selector, WidgetCtx};
+use crate::{
+    text, theme, BoxConstraints, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx,
+    PaintCtx, RenderContext, Selector, Size, StatusChange, Widget, WidgetCtx,
+};
 
 /// A widget that accepts text input.
 ///
@@ -197,6 +199,7 @@ impl TextComponent<()> {
     /// This is only sent when `send_notification_on_return` is `true`.
     pub const RETURN: Selector<String> = Selector::new("masonry-builtin.textbox-return");
 
+    /// A notification sent by the component when the user edits contents.
     pub const TEXT_CHANGED: Selector<String> = Selector::new("masonry-builtin.textbox-changed");
 
     /// A notification sent when the user cancels editing.
@@ -934,6 +937,7 @@ impl<T: TextStorage + EditableText> InputHandler for EditSessionHandle<T> {
 }
 
 impl<T: TextStorage> TextComponent<T> {
+    /// Create new `TextComponent`.
     pub fn new(text: T) -> Self {
         let mut inner = EditSession {
             layout: TextLayout::new(),

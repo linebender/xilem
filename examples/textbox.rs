@@ -5,11 +5,9 @@
 #![windows_subsystem = "windows"]
 
 // TODO - rework imports
-use masonry::action::Action;
-use masonry::app_delegate::{AppDelegate, DelegateCtx};
-use masonry::widget::{prelude::*, TextBox};
-use masonry::widget::{Button, Flex};
-use masonry::{AppLauncher, WindowDesc, WindowId};
+use masonry::widget::prelude::*;
+use masonry::widget::{Button, Flex, TextBox};
+use masonry::{Action, AppDelegate, AppLauncher, DelegateCtx, WindowDescription, WindowId};
 
 const VERTICAL_WIDGET_SPACING: f64 = 20.0;
 
@@ -36,7 +34,7 @@ impl AppDelegate for Delegate {
 
 pub fn main() {
     // describe the main window
-    let main_window = WindowDesc::new(build_root_widget())
+    let main_window = WindowDescription::new(build_root_widget())
         .title("Hello World!")
         .window_size((400.0, 400.0));
 

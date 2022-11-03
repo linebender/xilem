@@ -12,10 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Additional unit tests that cross file or module boundaries.
+//! Helper tools for writing unit tests.
 
 #![cfg(not(tarpaulin_include))]
-#![allow(unused_imports)]
 
 #[cfg(not(tarpaulin_include))]
 mod harness;
@@ -28,18 +27,18 @@ mod screenshots;
 #[cfg(not(tarpaulin_include))]
 mod snapshot_utils;
 
-use druid_shell::{KeyEvent, Modifiers, MouseButton, MouseButtons};
-pub use harness::{Harness, HARNESS_DEFAULT_SIZE};
+use druid_shell::{Modifiers, MouseButton, MouseButtons};
+pub use harness::{TestHarness, HARNESS_DEFAULT_SIZE};
 pub use helper_widgets::{
     ModularWidget, Record, Recorder, Recording, ReplaceChild, TestWidgetExt, REPLACE_CHILD,
 };
-pub use mock_timer_queue::MockTimerQueue;
+pub(crate) use mock_timer_queue::MockTimerQueue;
 
 use crate::kurbo::{Point, Vec2};
 use crate::{MouseEvent, WidgetId};
 
 /// Helper function to construct a "move to this position" mouse event.
-pub fn move_mouse(p: impl Into<Point>) -> MouseEvent {
+pub fn mouse_move(p: impl Into<Point>) -> MouseEvent {
     let pos = p.into();
     MouseEvent {
         pos,
@@ -54,7 +53,7 @@ pub fn move_mouse(p: impl Into<Point>) -> MouseEvent {
 }
 
 /// Helper function to construct a "scroll by n ticks" mouse event.
-pub fn scroll_mouse(p: impl Into<Point>, delta: impl Into<Vec2>) -> MouseEvent {
+pub fn mouse_scroll(p: impl Into<Point>, delta: impl Into<Vec2>) -> MouseEvent {
     let pos = p.into();
     MouseEvent {
         pos,
@@ -68,15 +67,9 @@ pub fn scroll_mouse(p: impl Into<Point>, delta: impl Into<Vec2>) -> MouseEvent {
     }
 }
 
+/// Convenience function to return an arrays of unique widget ids.
 pub fn widget_ids<const N: usize>() -> [WidgetId; N] {
-    // FIXME - use std::array::from_fn once it's stabilized
-    let mut ids = [WidgetId::reserved(0); N];
-
-    for id in &mut ids {
-        *id = WidgetId::next()
-    }
-
-    ids
+    std::array::from_fn(|_| WidgetId::next())
 }
 
 /// This function creates a temporary directory and returns a PathBuf to it.

@@ -3,7 +3,7 @@ use std::rc::Rc;
 
 use smallvec::smallvec;
 
-use crate::testing::{widget_ids, Harness, ModularWidget, TestWidgetExt as _};
+use crate::testing::{widget_ids, ModularWidget, TestHarness, TestWidgetExt as _};
 use crate::widget::Flex;
 use crate::*;
 
@@ -38,7 +38,7 @@ fn simple_disable() {
     let id_0 = WidgetId::next();
     let root = make_focusable_widget(id_0, disabled_event.clone());
 
-    let mut harness = Harness::create(root);
+    let mut harness = TestHarness::create(root);
 
     // Initial state: widget is enabled, no event received.
     assert_eq!(disabled_event.get(), None);
@@ -100,7 +100,7 @@ fn disable_tree() {
         make_focusable_widget(id, Default::default())
     }
 
-    fn get_disabled_states(harness: &Harness, ids: &[WidgetId]) -> Vec<bool> {
+    fn get_disabled_states(harness: &TestHarness, ids: &[WidgetId]) -> Vec<bool> {
         ids.iter()
             .map(|id| harness.get_widget(*id).state().is_disabled())
             .collect()
@@ -126,7 +126,7 @@ fn disable_tree() {
             .with_child(make_parent_widget(group_2_id, make_leaf_widget(leaf_2_id))),
     );
 
-    let mut harness = Harness::create(root);
+    let mut harness = TestHarness::create(root);
 
     // Initial state -> All widgets enabled
     assert_eq!(

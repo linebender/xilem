@@ -22,33 +22,32 @@ use crate::mouse::MouseEvent;
 use crate::promise::PromiseResult;
 use crate::{Command, Notification, WidgetId};
 
+// TODO
+// An important category is events plumbed from the platform windowing
+// system, which includes mouse and keyboard events, but also (in the
+// future) status changes such as window focus changes.
+
 /// An event, propagated downwards during event flow.
 ///
-/// With two exceptions ([`Event::Command`] and [`Event::Notification`], which
-/// have special considerations outlined in their own docs) each event
-/// corresponds to some user action or other message recieved from the platform.
+/// Events are things that happen that the UI can be expected to react to:
 ///
-/// Events are things that happen that can change the state of widgets.
-/// An important category is events plumbed from the platform windowing
-/// system, which includes mouse and keyboard events, but also (in the
-/// future) status changes such as window focus changes.
+/// - Conventional platform interactions (eg [`MouseEvent`], [`KeyEvent`]).
+/// - Messages sent from other widgets or background threads ([`Command`] and
+/// [`Notification`]).
+/// - Responses to requests send by the widget ([`Event::Timer`] and [`PromiseResult`]).
 ///
-/// Events can also be higher level concepts indicating state changes
-/// within the widget hierarchy, for example when a widget gains or loses
-/// focus or "hot" (also known as hover) status.
-///
-/// Events are a key part of what is called "event flow", which is
-/// basically the propagation of an event through the widget hierarchy
-/// through the [`event`] widget method. A container widget will
-/// generally pass the event to its children, mediated through the
-/// [`WidgetPod`] container, which is where most of the event flow logic
-/// is applied (especially the decision whether or not to propagate).
+/// Events are propagated through "event flow": they are passed down the
+/// widget tree through [`Widget::on_event`](crate::Widget::on_event) methods.
+/// Container widgets will generally pass each event to their children through
+/// [`WidgetPod::on_event`](crate::WidgetPod::on_event), which internally takes
+/// care of most of the event flow logic (in particular whether or not to recurse).
 ///
 /// This enum is expected to grow considerably, as there are many, many
 /// different kinds of events that are relevant in a GUI.
-///
-/// [`event`]: trait.Widget.html#tymethod.event
-/// [`WidgetPod`]: struct.WidgetPod.html
+// TODO - Add tutorial about event flow
+// TODO - Normalize variant decriptions
+// TODO - Migrate bulk of descriptions to other types
+#[non_exhaustive]
 #[derive(Debug, Clone)]
 pub enum Event {
     /// Sent to all widgets in a given window when that window is first instantiated.
@@ -58,18 +57,14 @@ pub enum Event {
     ///
     /// Widgets should handle this event if they need to do some addition setup
     /// when a window is first created.
-    ///
-    /// [`LifeCycle::WidgetAdded`]: enum.LifeCycle.html#variant.WidgetAdded
     WindowConnected,
 
     /// Sent to all widgets in a given window when the system requests to close the window.
     ///
-    /// If the event is handled (with [`set_handled`]), the window will not be closed.
+    /// If the event is handled (with [`EventCtx::set_handled`](crate::EventCtx::set_handled)), the window will not be closed.
     /// All widgets are given an opportunity to handle this event; your widget should not assume
     /// that the window *will* close just because this event is received; for instance, you should
     /// avoid destructive side effects such as cleaning up resources.
-    ///
-    /// [`set_handled`]: crate::EventCtx::set_handled
     WindowCloseRequested,
 
     /// Sent to all widgets in a given window when the system is going to close that window.
@@ -80,10 +75,8 @@ pub enum Event {
 
     /// Called on the root widget when the window size changes.
     ///
-    /// Discussion: it's not obvious this should be propagated to user
-    /// widgets. It *is* propagated through the RootWidget and handled
-    /// in the WindowPod, but after that it might be considered better
-    /// to just handle it in `layout`.
+    /// **Note:** it's not obvious this should be propagated to user
+    /// widgets. It might be better to just handle it in `layout`.
     WindowSize(Size),
 
     /// Called when a mouse button is pressed.
@@ -124,78 +117,7 @@ pub enum Event {
     /// Called when a paste command is received.
     Paste(Clipboard),
 
-    /// Called when the trackpad is pinched.
-    ///
-    /// The value is a delta.
-    Zoom(f64),
-
-    /// Called on a timer event.
-    ///
-    /// Request a timer event through [`EventCtx::request_timer()`]. That will
-    /// cause a timer event later.
-    ///
-    /// Note that timer events from other widgets may be delivered as well. Use
-    /// the token returned from the `request_timer()` call to filter events more
-    /// precisely.
-    ///
-    /// [`EventCtx::request_timer()`]: struct.EventCtx.html#method.request_timer
-    Timer(TimerToken),
-
-    /// Called at the beginning of a new animation frame.
-    ///
-    /// On the first frame when transitioning from idle to animating, `interval`
-    /// will be 0. (This logic is presently per-window but might change to
-    /// per-widget to make it more consistent). Otherwise it is in nanoseconds.
-    ///
-    /// The `paint` method will be called shortly after this event is finished.
-    /// As a result, you should try to avoid doing anything computationally
-    /// intensive in response to an `AnimFrame` event: it might make Druid miss
-    /// the monitor's refresh, causing lag or jerky animation.
-    AnimFrame(u64),
-
-    /// An event containing a [`Command`] to be handled by the widget.
-    ///
-    /// [`Command`]s are messages, optionally with attached data, that can
-    /// may be generated from a number of sources:
-    ///
-    /// - If your application uses  menus (either window or context menus)
-    /// then the [`MenuItem`]s in the menu will each correspond to a `Command`.
-    /// When the menu item is selected, that [`Command`] will be delivered to
-    /// the root widget of the appropriate window.
-    /// - If you are doing work in another thread (using an [`ExtEventSink`])
-    /// then [`Command`]s are the mechanism by which you communicate back to
-    /// the main thread.
-    /// - Widgets and other Druid components can send custom [`Command`]s at
-    /// runtime, via methods such as [`EventCtx::submit_command`].
-    ///
-    /// [`Command`]: struct.Command.html
-    /// [`Widget`]: trait.Widget.html
-    /// [`EventCtx::submit_command`]: struct.EventCtx.html#method.submit_command
-    /// [`ExtEventSink`]: crate::ExtEventSink
-    /// [`MenuItem`]: crate::MenuItem
-    Command(Command),
-
-    /// A [`Notification`] from one of this widget's descendants.
-    ///
-    /// While handling events, widgets can submit notifications to be
-    /// delivered to their ancestors immdiately after they return.
-    ///
-    /// If you handle a [`Notification`], you should call [`EventCtx::set_handled`]
-    /// to stop the notification from being delivered to further ancestors.
-    ///
-    /// ## Special considerations
-    ///
-    /// Notifications are slightly different from other events; they originate
-    /// inside Druid, and they are delivered as part of the handling of another
-    /// event. In this sense, they can sort of be thought of as an augmentation
-    /// of an event; they are a way for multiple widgets to coordinate the
-    /// handling of an event.
-    ///
-    /// [`EventCtx::set_handled`]: crate::EventCtx::set_handled
-    Notification(Notification),
-
-    PromiseResult(PromiseResult),
-
+    // TODO - Rename to "TextChange" or something similar?
     /// Sent to a widget when the platform may have mutated shared IME state.
     ///
     /// This is sent to a widget that has an attached IME session anytime the
@@ -205,6 +127,57 @@ pub enum Event {
     /// should check the shared state, perform invalidation, and update `Data`
     /// as necessary.
     ImeStateChange,
+
+    /// Called when the trackpad is pinched.
+    ///
+    /// The value is a delta.
+    Zoom(f64),
+
+    /// Called at the beginning of a new animation frame.
+    ///
+    /// On the first frame when transitioning from idle to animating, `interval`
+    /// will be 0. (This logic is presently per-window but might change to
+    /// per-widget to make it more consistent). Otherwise it is in nanoseconds.
+    ///
+    /// The `paint` method will be called shortly after this event is finished.
+    /// As a result, you should try to avoid doing anything computationally
+    /// intensive in response to an `AnimFrame` event: it might make the app miss
+    /// the monitor's refresh, causing lag or jerky animations.
+    AnimFrame(u64),
+
+    /// Called on a timer event.
+    ///
+    /// When the user creates a timer through
+    /// [`EventCtx::request_timer`](crate::EventCtx::request_timer),
+    /// a `Timer` event is sent when the time is up.
+    ///
+    /// Note that timer events from other widgets may be delivered as well. Use
+    /// the token returned from the `request_timer()` call to filter events more
+    /// precisely.
+    Timer(TimerToken),
+
+    /// Called when a promise returns.
+    ///
+    /// When the user creates a promise through
+    /// [`EventCtx::compute_in_background`](crate::EventCtx::compute_in_background),
+    /// a`PromiseResult` event is sent when the computation completes.
+    PromiseResult(PromiseResult),
+
+    /// An event containing a [`Command`] to be handled by the widget.
+    ///
+    /// Commands are messages, optionally with attached data, from other
+    /// widgets or other sources. See [`Command`] for details.
+    Command(Command),
+
+    /// A [`Notification`] from one of this widget's descendants.
+    ///
+    /// Notifications are messages, optionally with attached data, from child
+    /// widgets. See [`Notification`] for details.
+    ///
+    /// If you handle a [`Notification`], you should call
+    /// [`EventCtx::set_handled`](crate::EventCtx::set_handled)
+    /// to stop the notification from being delivered to further ancestors.
+    Notification(Notification),
 
     /// Internal druid event.
     ///
@@ -235,6 +208,7 @@ pub enum InternalEvent {
     /// Used for routing timer events.
     RouteTimer(TimerToken, WidgetId),
 
+    /// Used for routing promise results.
     RoutePromiseResult(PromiseResult, WidgetId),
 
     /// Route an IME change event.
@@ -243,20 +217,13 @@ pub enum InternalEvent {
 
 /// Application life cycle events.
 ///
-/// Unlike [`Event`]s, [`LifeCycle`] events are generated by Druid, and
+/// Unlike [`Event`]s, [`LifeCycle`] events are generated by Masonry, and
 /// may occur at different times during a given pass of the event loop. The
 /// [`LifeCycle::WidgetAdded`] event, for instance, may occur when the app
 /// first launches (during the handling of [`Event::WindowConnected`]) or it
-/// may occur during [`update`] cycle, if some widget has been added there.
-///
-/// Similarly the [`LifeCycle::Size`] method occurs during [`layout`], and
-/// [`LifeCycle::HotChanged`] can occur both during [`event`] (if the mouse
-/// moves over a widget) or during [`layout`], if a widget is resized and
-/// that moves it under the mouse.
-///
-/// [`event`]: crate::Widget::event
-/// [`update`]: crate::Widget::update
-/// [`layout`]: crate::Widget::layout
+/// may occur during an [`on_event`](crate::Widget::on_event) pass, if some
+/// widget has been added then.
+#[non_exhaustive]
 #[derive(Debug, Clone)]
 pub enum LifeCycle {
     /// Sent to a `Widget` when it is added to the widget tree. This should be
@@ -269,19 +236,11 @@ pub enum LifeCycle {
     ///
     /// ## Registering children
     ///
-    /// Container widgets (widgets which use [`WidgetPod`] to manage children)
-    /// must ensure that this event is forwarded to those children. The [`WidgetPod`]
-    /// itself will handle registering those children with the system; this is
-    /// required for things like correct routing of events.
-    ///
-    /// ## Participating in focus
-    ///
-    /// Widgets which wish to participate in automatic focus (using tab to change
-    /// focus) must handle this event and call [`LifeCycleCtx::register_for_focus`].
-    ///
-    /// [`LifeCycleCtx::register_child`]: struct.LifeCycleCtx.html#method.register_child
-    /// [`WidgetPod`]: struct.WidgetPod.html
-    /// [`LifeCycleCtx::register_for_focus`]: struct.LifeCycleCtx.html#method.register_for_focus
+    /// Container widgets (widgets which use [`WidgetPod`](crate::WidgetPod) to
+    /// manage children) must ensure that this event is forwarded to those children.
+    /// The [`WidgetPod`](crate::WidgetPod) itself will handle registering those
+    /// children with the system; this is required for things like correct routing
+    /// of events.
     WidgetAdded,
 
     // TODO - Put in StatusChange
@@ -295,10 +254,10 @@ pub enum LifeCycle {
     /// [`set_disabled`]: crate::EventCtx::set_disabled
     DisabledChanged(bool),
 
-    /// This is called when the widget-tree changes and druid wants to rebuild the
+    /// Called when the widget tree changes and druid wants to rebuild the
     /// Focus-chain.
     ///
-    /// It is the only place from witch [`register_for_focus`] should be called.
+    /// It is the only place from which [`register_for_focus`] should be called.
     /// By doing so the widget can get focused by other widgets using [`focus_next`] or [`focus_prev`].
     ///
     /// [`register_for_focus`]: crate::LifeCycleCtx::register_for_focus
@@ -306,6 +265,8 @@ pub enum LifeCycle {
     /// [`focus_prev`]: crate::EventCtx::focus_prev
     BuildFocusChain,
 
+    /// Called when a child widgets uses
+    /// [`EventCtx::request_pan_to_this`](crate::EventCtx::request_pan_to_this).
     RequestPanToChild(Rect),
 
     /// Internal druid lifecycle event.
@@ -343,14 +304,15 @@ pub enum InternalLifeCycle {
     ParentWindowOrigin,
 }
 
+/// Event indicating status changes within the widget hierarchy.
+#[non_exhaustive]
 #[derive(Debug, Clone)]
 pub enum StatusChange {
     /// Called when the "hot" status changes.
     ///
     /// This will always be called _before_ the event that triggered it; that is,
-
     /// when the mouse moves over a widget, that widget will receive
-    /// `LifeCycle::HotChanged` before it receives `Event::MouseMove`.
+    /// `StatusChange::HotChanged` before it receives `Event::MouseMove`.
     ///
     /// See [`is_hot`](struct.EventCtx.html#method.is_hot) for
     /// discussion about the hot status.
@@ -410,6 +372,9 @@ impl Event {
         }
     }
 
+    /// Short name, for debug logging.
+    ///
+    /// Essentially returns the enum variant name.
     pub fn short_name(&self) -> &'static str {
         match self {
             Event::Internal(internal) => match internal {
@@ -442,6 +407,7 @@ impl Event {
 }
 
 impl LifeCycle {
+    // TODO - link this to documentation of stashed widgets
     /// Whether this event should be sent to widgets which are currently not visible and not
     /// accessible.
     ///
@@ -460,6 +426,9 @@ impl LifeCycle {
         }
     }
 
+    /// Short name, for debug logging.
+    ///
+    /// Essentially returns the enum variant name.
     pub fn short_name(&self) -> &str {
         match self {
             LifeCycle::Internal(internal) => match internal {
@@ -491,15 +460,6 @@ impl InternalLifeCycle {
             | InternalLifeCycle::RouteFocusChanged { .. }
             | InternalLifeCycle::RouteDisabledChanged => true,
             InternalLifeCycle::ParentWindowOrigin => false,
-        }
-    }
-}
-
-// TODO - remove?
-impl StatusChange {
-    pub fn should_propagate_to_hidden(&self) -> bool {
-        match self {
-            StatusChange::HotChanged(_) | StatusChange::FocusChanged(_) => false,
         }
     }
 }

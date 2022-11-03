@@ -71,6 +71,8 @@
 
 - [ ] Port Panoramix
 
+- [ ] Add WidgetBuilder trait
+
 - [ ] Move debug logger to use tracing infrastructure
 
 - [ ] Refactor Mouse Events and hot status changes
@@ -79,7 +81,7 @@
 
 - [ ] Remove Data trait
 
-- [ ] Switch module file conventions (foobar/mod.rs -> foobar.rs)
+- [ ] Switch module file conventions (foobar/mod.rs -> _foobar.rs)
 
 - [ ] Handle reques_layout-in-layout corner case
 

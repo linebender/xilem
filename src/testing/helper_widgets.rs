@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Helper types for test writing.
+//! Helper widgets for writing tests.
 //!
 //! This includes tools for making throwaway widgets more easily.
 //!
-//! Note: Some of these types are undocumented. They're meant to help maintainers of Druid and
-//! people trying to build a framework on top of Druid (like crochet), not to be user-facing.
+//! Note: Some of these types are undocumented. They're meant to help maintainers of
+//! Masonry, not to be user-facing.
 
 #![allow(missing_docs)]
 

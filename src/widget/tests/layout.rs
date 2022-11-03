@@ -18,7 +18,7 @@
 
 use druid_shell::kurbo::{Insets, Size};
 
-use crate::testing::{widget_ids, Harness, ModularWidget, TestWidgetExt};
+use crate::testing::{widget_ids, ModularWidget, TestHarness, TestWidgetExt};
 use crate::widget::{Flex, SizedBox};
 
 #[test]
@@ -36,7 +36,7 @@ fn layout_simple() {
         )
         .with_flex_spacer(1.0);
 
-    let harness = Harness::create(widget);
+    let harness = TestHarness::create(widget);
 
     let first_box_rect = harness.get_widget(id_1).state().layout_rect();
     let first_box_paint_rect = harness.get_widget(id_1).state().paint_rect();
@@ -67,7 +67,7 @@ fn layout_insets() {
 
     let parent_widget = SizedBox::new_with_id(child_widget, child_id).with_id(parent_id);
 
-    let harness = Harness::create(parent_widget);
+    let harness = TestHarness::create(parent_widget);
 
     let child_paint_rect = harness.get_widget(child_id).state().paint_rect();
     let parent_paint_rect = harness.get_widget(parent_id).state().paint_rect();

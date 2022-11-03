@@ -51,14 +51,22 @@ pub struct Selector<T = ()>(SelectorSymbol, PhantomData<T>);
 /// wrapping it with [`SingleUse`] allows you to `take` the payload.
 /// The [`SingleUse`] docs give an example on how to do this.
 ///
-/// Generic payloads can be achieved with `Selector<Box<dyn Any>>`.
-/// In this case it could make sense to use utility functions to construct
-/// such commands in order to maintain as much static typing as possible.
-/// The [`EventCtx::new_window`] method is an example of this.
+/// ## Sources
 ///
-/// # Examples
+/// Commands can come from multiple sources:
+/// - Widgets can send custom commands via methods such as
+/// [`EventCtx::submit_command`](crate::EventCtx::submit_command).
+/// - If your application uses menus (either window or context menus)
+/// then each [`MenuItem`](crate::MenuItem) in the menu will hold a `Command`.
+/// When the menu item is selected, that `Command` will be delivered to
+/// the root widget of the appropriate window.
+/// - If you are doing work in a background thread, your main way of sending
+/// data back to the main thread is to use
+/// [`ExtEventSink::submit_command`](crate::ExtEventSink::submit_command).
+///
+/// ## Example
 /// ```
-/// use druid::{Command, Selector, Target};
+/// use masonry::{Command, Selector, Target};
 ///
 /// let selector = Selector::new("process_rows");
 /// let rows = vec![1, 3, 10, 12];
@@ -66,10 +74,7 @@ pub struct Selector<T = ()>(SelectorSymbol, PhantomData<T>);
 ///
 /// assert_eq!(command.get(selector), Some(&vec![1, 3, 10, 12]));
 /// ```
-///
-/// [`EventCtx::new_window`]: struct.EventCtx.html#method.new_window
-/// [`SingleUse`]: struct.SingleUse.html
-/// [`Selector`]: struct.Selector.html
+// TODO - The [`AppDelegate`](crate::AppDelegate) can send commands through[`DelegateCtx::submit_command`](crate::DelegateCtx::submit_command)
 #[derive(Debug, Clone)]
 pub struct Command {
     symbol: SelectorSymbol,
@@ -81,19 +86,19 @@ pub struct Command {
 ///
 /// In the course of handling an event, a [`Widget`] may change some internal
 /// state that is of interest to one of its ancestors. In this case, the widget
-/// may submit a [`Notification`].
+/// may submit a `Notification`.
 ///
-/// In practice, a [`Notification`] is very similar to a [`Command`]; the
+/// In practice, a `Notification` is very similar to a [`Command`]; the
 /// main distinction relates to delivery. [`Command`]s are delivered from the
 /// root of the tree down towards the target, and this delivery occurs after
-/// the originating event call has returned. [`Notification`]s are delivered *up*
+/// the originating event call has returned. `Notification`s are delivered *up*
 /// the tree, and this occurs *during* event handling; immediately after the
-/// child widget's [`event`] method returns, the notification will be delivered
+/// child widget's [`on_event`] method returns, the notification will be delivered
 /// to the child's parent, and then the parent's parent, until the notification
 /// is handled.
 ///
 /// [`Widget`]: crate::Widget
-/// [`event`]: crate::Widget::event
+/// [`on_event`]: crate::Widget::on_event
 #[derive(Clone)]
 pub struct Notification {
     symbol: SelectorSymbol,
@@ -125,9 +130,6 @@ pub struct Notification {
 /// // subsequent calls will return `None`
 /// assert!(payload.take().is_none());
 /// ```
-///
-/// [`Command`]: struct.Command.html
-
 // TODO replace
 pub struct SingleUse<T>(Mutex<Option<T>>);
 
@@ -135,8 +137,6 @@ pub struct SingleUse<T>(Mutex<Option<T>>);
 pub(crate) type CommandQueue = VecDeque<Command>;
 
 /// The target of a [`Command`].
-///
-/// [`Command`]: struct.Command.html
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Target {
     /// The target is the top-level application.

@@ -13,6 +13,8 @@ use crate::{
     Target, Widget, WidgetId,
 };
 
+// TODO - rewrite links in doc
+
 /// A container for one widget in the hierarchy.
 ///
 /// Generally, container widgets don't contain other widgets directly,
@@ -61,35 +63,30 @@ impl<W: Widget> WidgetPod<W> {
         &self.state
     }
 
+    // TODO - remove
     /// Return a reference to the inner widget.
     pub fn widget(&self) -> &W {
         &self.inner
     }
 
-    // FIXME - Remove
-    /// Return a mutable reference to the inner widget.
-    pub(crate) fn widget_mut(&mut self) -> &mut W {
-        &mut self.inner
-    }
-
-    // TODO - document
+    /// Return a [`WidgetRef`] to the inner widget.
     pub fn as_ref(&self) -> WidgetRef<'_, W> {
         WidgetRef::new(&self.state, &self.inner)
     }
 
-    // TODO - document
+    /// Return a type-erased [`WidgetRef`] to the inner widget.
     pub fn as_dyn(&self) -> WidgetRef<'_, dyn Widget> {
         WidgetRef::new(&self.state, &self.inner)
     }
 
-    /// Returns `true` if the widget has received [`LifeCycle::WidgetAdded`].
+    /// Return `true` if the widget has received [`LifeCycle::WidgetAdded`].
     ///
     /// [`LifeCycle::WidgetAdded`]: ./enum.LifeCycle.html#variant.WidgetAdded
     pub fn is_initialized(&self) -> bool {
         !self.state.is_new
     }
 
-    /// Returns `true` if widget or any descendent is focused
+    /// Return `true` if widget or any descendent is focused
     pub fn has_focus(&self) -> bool {
         self.state.has_focus
     }
@@ -99,7 +96,7 @@ impl<W: Widget> WidgetPod<W> {
         self.state.is_active
     }
 
-    /// Returns `true` if any descendant is active.
+    /// Return `true` if any descendant is active.
     pub fn has_active(&self) -> bool {
         self.state.has_active
     }
@@ -117,10 +114,12 @@ impl<W: Widget> WidgetPod<W> {
         self.state.id
     }
 
-    /// Returns the layout [`Rect`].
+    /// Return the layout rectangle.
     ///
     /// This will be a [`Rect`] with a [`Size`] determined by the child's [`layout`]
     /// method, and the origin that was set by [`place_child`].
+    ///
+    /// Two sibling widgets' layout rects will almost never intersect.
     ///
     /// [`Rect`]: struct.Rect.html
     /// [`Size`]: struct.Size.html
@@ -130,7 +129,7 @@ impl<W: Widget> WidgetPod<W> {
         self.state.layout_rect()
     }
 
-    /// Get the widget's paint [`Rect`].
+    /// Get the widget's paint rectangle.
     ///
     /// This is the [`Rect`] that widget has indicated it needs to paint in.
     /// This is the same as the [`layout_rect`] with the [`paint_insets`] applied;
@@ -181,6 +180,12 @@ impl<W: Widget> WidgetPod<W> {
     pub fn baseline_offset(&self) -> f64 {
         self.state.baseline_offset
     }
+
+    // FIXME - Remove
+    /// Return a mutable reference to the inner widget.
+    pub(crate) fn widget_mut(&mut self) -> &mut W {
+        &mut self.inner
+    }
 }
 
 impl<W: Widget> WidgetPod<W> {
@@ -217,7 +222,7 @@ impl<W: Widget> WidgetPod<W> {
     /// Determines if the provided `mouse_pos` is inside `rect`
     /// and if so updates the hot state and sends `LifeCycle::HotChanged`.
     ///
-    /// Returns `true` if the hot state changed.
+    /// Return `true` if the hot state changed.
     ///
     /// The provided `child_state` should be merged up if this returns `true`.
     pub(crate) fn update_hot_state(
@@ -276,7 +281,7 @@ impl<W: Widget> WidgetPod<W> {
         }
 
         for child in self.inner.children() {
-            child.prepare_pass();
+            child.state().mark_as_visited(false);
         }
         let children_ids: Vec<_> = self.inner.children().iter().map(|w| w.id()).collect();
 
@@ -286,7 +291,7 @@ impl<W: Widget> WidgetPod<W> {
         if children_ids != new_children_ids && !self.state.children_changed {
             debug_panic!(
                 "Error in '{}' #{}: children changed in method {} but ctx.children_changed() wasn't called",
-                self.widget().short_type_name(),
+                self.inner.short_type_name(),
                 self.state().id.to_raw(),
                 method_name,
             )
@@ -298,9 +303,9 @@ impl<W: Widget> WidgetPod<W> {
             if child.state().needs_visit() && !child.state().is_stashed {
                 debug_panic!(
                     "Error in '{}' #{}: child widget '{}' #{} not visited in method {}",
-                    self.widget().short_type_name(),
+                    self.inner.short_type_name(),
                     self.state().id.to_raw(),
-                    child.widget().short_type_name(),
+                    child.deref().short_type_name(),
                     child.state().id.to_raw(),
                     method_name,
                 )
@@ -911,7 +916,7 @@ impl<W: Widget> WidgetPod<W> {
         if self.state.is_stashed {
             debug_panic!(
                 "Error in '{}' #{}: trying to compute layout of stashed widget.",
-                self.widget().short_type_name(),
+                self.inner.short_type_name(),
                 self.state().id.to_raw(),
             );
             return Size::ZERO;
@@ -959,9 +964,9 @@ impl<W: Widget> WidgetPod<W> {
                 if child.state().is_expecting_place_child_call {
                     debug_panic!(
                         "Error in '{}' #{}: missing call to place_child method for child widget '{}' #{}. During layout pass, if a widget calls WidgetPod::layout() on its child, it then needs to call LayoutCtx::place_child() on the same child.",
-                        self.widget().short_type_name(),
+                        self.inner.short_type_name(),
                         self.state().id.to_raw(),
-                        child.widget().short_type_name(),
+                        child.deref().short_type_name(),
                         child.state().id.to_raw(),
                     );
                 }
@@ -973,11 +978,11 @@ impl<W: Widget> WidgetPod<W> {
                 {
                     debug_panic!(
                         "Error in '{}' #{}: paint_rect {:?} doesn't contain paint_rect {:?} of child widget '{}' #{}",
-                        self.widget().short_type_name(),
+                        self.inner.short_type_name(),
                         self.state().id.to_raw(),
                         self.state.local_paint_rect,
                         child_rect,
-                        child.widget().short_type_name(),
+                        child.deref().short_type_name(),
                         child.state().id.to_raw(),
                     );
                 }
@@ -1013,11 +1018,11 @@ impl<W: Widget> WidgetPod<W> {
 
     fn log_layout_issues(&self, size: Size) {
         if size.width.is_infinite() {
-            let name = self.widget().type_name();
+            let name = self.inner.type_name();
             warn!("Widget `{}` has an infinite width.", name);
         }
         if size.height.is_infinite() {
-            let name = self.widget().type_name();
+            let name = self.inner.type_name();
             warn!("Widget `{}` has an infinite height.", name);
         }
     }
@@ -1095,7 +1100,7 @@ impl<W: Widget> WidgetPod<W> {
         if self.state.is_stashed {
             debug_panic!(
                 "Error in '{}' #{}: trying to paint stashed widget.",
-                self.widget().short_type_name(),
+                self.inner.short_type_name(),
                 self.state().id.to_raw(),
             );
             return;
@@ -1166,7 +1171,7 @@ impl<W: Widget> WidgetPod<W> {
 }
 
 // TODO - negative rects?
-/// Returns `true` if all of `smaller` is within `larger`.
+/// Return `true` if all of `smaller` is within `larger`.
 fn rect_contains(larger: &Rect, smaller: &Rect) -> bool {
     smaller.x0 >= larger.x0
         && smaller.x1 <= larger.x1

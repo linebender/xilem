@@ -29,7 +29,7 @@ use crate::command::{Command, CommandQueue, Notification, SingleUse};
 use crate::debug_logger::DebugLogger;
 use crate::ext_event::ExtEventSink;
 use crate::piet::{Piet, PietText, RenderContext};
-use crate::platform::WindowDesc;
+use crate::platform::WindowDescription;
 use crate::promise::PromiseToken;
 use crate::testing::MockTimerQueue;
 use crate::text::{ImeHandlerRef, TextFieldRegistration};
@@ -63,7 +63,7 @@ pub(crate) struct GlobalPassCtx<'a> {
     // TODO - merge queues
     // Associate timers with widgets that requested them.
     pub(crate) timers: &'a mut HashMap<TimerToken, WidgetId>,
-    // Used in Harness for unit tests
+    // Used in Harness for unit tests - see `src/testing/mock_timer_queue.rs`
     pub(crate) mock_timer_queue: Option<&'a mut MockTimerQueue>,
     pub(crate) window_id: WindowId,
     pub(crate) window: &'a WindowHandle,
@@ -72,15 +72,20 @@ pub(crate) struct GlobalPassCtx<'a> {
     pub(crate) focus_widget: Option<WidgetId>,
 }
 
-// TODO - Doc
+/// A context provided to implementors of [`StoreInWidgetMut`](crate::StoreInWidgetMut).
+///
+/// When you declare a mutable reference type for your widget, methods of this type
+/// will have access to a `WidgetCtx`. If that method mutates the widget in a way that
+/// requires a later pass (for instance, if your widget has a `set_color` method),
+/// you will need to signal that change in the pass (eg `requrest_paint`).
+///
+// TODO add tutorial
 pub struct WidgetCtx<'a, 'b> {
     pub(crate) global_state: &'a mut GlobalPassCtx<'b>,
     pub(crate) widget_state: &'a mut WidgetState,
-    // FIXME - Useless field
-    pub(crate) is_init: bool,
 }
 
-/// A mutable context provided to event handling methods of widgets.
+/// A context provided to event handling methods of widgets.
 ///
 /// Widgets should call [`request_paint`] whenever an event causes a change
 /// in the widget's appearance, to schedule a repaint.
@@ -96,7 +101,7 @@ pub struct EventCtx<'a, 'b> {
     pub(crate) request_pan_to_child: Option<Rect>,
 }
 
-/// A mutable context provided to the [`lifecycle`] method on widgets.
+/// A context provided to the [`lifecycle`] method on widgets.
 ///
 /// Certain methods on this context are only meaningful during the handling of
 /// specific lifecycle events; for instance [`register_child`]
@@ -149,9 +154,8 @@ pub struct PaintCtx<'a, 'b, 'c> {
     pub(crate) depth: u32,
 }
 
-// methods on everyone
+// methods on everyone except WidgetCtx
 impl_context_method!(
-    WidgetCtx<'_, '_>,
     EventCtx<'_, '_>,
     LifeCycleCtx<'_, '_>,
     PaintCtx<'_, '_, '_>,
@@ -167,6 +171,18 @@ impl_context_method!(
                 .unwrap_or(name)
         }
 
+        /// Initialize the context.
+        ///
+        /// Must be called exactly once before any other method.
+        ///
+        /// The purpose of this method is to stop container widgets from accidentally
+        /// calling the widget methods of their children directly. Widgets should store
+        /// their children in [`WidgetPod`] and use its methods.
+        ///
+        /// ## Panics
+        ///
+        /// Panics if called twice. Other methods panics if called before this was
+        /// called.
         pub fn init(&mut self) {
             #[cfg(debug_assertions)]
             if self.is_init {
@@ -195,7 +211,16 @@ impl_context_method!(
                 )
             }
         }
+    }
+);
 
+impl_context_method!(
+    WidgetCtx<'_, '_>,
+    EventCtx<'_, '_>,
+    LifeCycleCtx<'_, '_>,
+    PaintCtx<'_, '_, '_>,
+    LayoutCtx<'_, '_>,
+    {
         /// get the `WidgetId` of the current widget.
         pub fn widget_id(&self) -> WidgetId {
             self.check_init("widget_id");
@@ -220,7 +245,14 @@ impl_context_method!(
             &mut self.global_state.text
         }
 
-        // TODO - document
+        /// Skip iterating over the given child.
+        ///
+        /// Normally, container widgets are supposed to iterate over each of their
+        /// child widgets in their methods. By default, the framework treats not
+        /// doing so as a mistake, and panics if debug assertions are on.
+        ///
+        /// This tells the framework that a child was deliberately skipped.
+        // TODO - see event flow tutorial
         pub fn skip_child(&self, child: &mut WidgetPod<impl Widget>) {
             child.mark_as_visited();
         }
@@ -361,6 +393,9 @@ impl_context_method!(
             self.widget_state.is_disabled()
         }
 
+        /// Check is widget is stashed.
+        ///
+        /// **Note:** Stashed widgets are a WIP feature
         // FIXME - take stashed parents into account
         pub fn is_stashed(&self) -> bool {
             self.check_init("is_stashed");
@@ -418,6 +453,7 @@ impl_context_method!(EventCtx<'_, '_>, {
 
 impl<'a, 'b> WidgetCtx<'a, 'b> {
     // FIXME - Assert that child's parent is self
+    /// Return a [`WidgetMut`] to a child widget.
     pub fn get_mut<'c, Child: Widget + StoreInWidgetMut>(
         &'c mut self,
         child: &'c mut WidgetPod<Child>,
@@ -425,7 +461,6 @@ impl<'a, 'b> WidgetCtx<'a, 'b> {
         let child_ctx = WidgetCtx {
             global_state: self.global_state,
             widget_state: &mut child.state,
-            is_init: true,
         };
         WidgetMut {
             parent_widget_state: self.widget_state,
@@ -435,6 +470,7 @@ impl<'a, 'b> WidgetCtx<'a, 'b> {
 }
 
 impl<'a, 'b> EventCtx<'a, 'b> {
+    /// Return a [`WidgetMut`] to a child widget.
     // FIXME - Assert that child's parent is self
     pub fn get_mut<'c, Child: Widget + StoreInWidgetMut>(
         &'c mut self,
@@ -443,7 +479,6 @@ impl<'a, 'b> EventCtx<'a, 'b> {
         let child_ctx = WidgetCtx {
             global_state: self.global_state,
             widget_state: &mut child.state,
-            is_init: true,
         };
         WidgetMut {
             parent_widget_state: self.widget_state,
@@ -453,6 +488,7 @@ impl<'a, 'b> EventCtx<'a, 'b> {
 }
 
 impl<'a, 'b> LifeCycleCtx<'a, 'b> {
+    /// Return a [`WidgetMut`] to a child widget.
     // FIXME - Assert that child's parent is self
     pub fn get_mut<'c, Child: Widget + StoreInWidgetMut>(
         &'c mut self,
@@ -461,7 +497,6 @@ impl<'a, 'b> LifeCycleCtx<'a, 'b> {
         let child_ctx = WidgetCtx {
             global_state: self.global_state,
             widget_state: &mut child.state,
-            is_init: true,
         };
         WidgetMut {
             parent_widget_state: self.widget_state,
@@ -546,7 +581,9 @@ impl_context_method!(WidgetCtx<'_, '_>, EventCtx<'_, '_>, LifeCycleCtx<'_, '_>, 
         self.widget_state.is_explicitly_disabled_new = disabled;
     }
 
-    // TODO - better document stashed widgets
+    /// Mark child widget as stashed.
+    ///
+    /// **Note:** Stashed widgets are a WIP feature
     pub fn set_stashed(&mut self, child: &mut WidgetPod<impl Widget>, stashed: bool) {
         self.check_init("set_stashed");
         child.state.is_stashed = stashed;
@@ -595,7 +632,9 @@ impl_context_method!(
             self.global_state.submit_command(cmd.into())
         }
 
-        // TODO document
+        /// Submit an [`Action`].
+        ///
+        /// Note: Actions are still a WIP feature.
         pub fn submit_action(&mut self, action: Action) {
             self.check_init("submit_action");
             trace!("submit_command");
@@ -603,6 +642,10 @@ impl_context_method!(
                 .submit_action(action, self.widget_state.id)
         }
 
+        /// Run the provided function in the background.
+        ///
+        /// The function takes an [`ExtEventSink`] which it can use to send
+        /// [`Command`]s back to the main thread.
         pub fn run_in_background(
             &mut self,
             background_task: impl FnOnce(ExtEventSink) + Send + 'static,
@@ -617,6 +660,13 @@ impl_context_method!(
             });
         }
 
+        /// Run the provided function in the background, and send its result once it's done.
+        ///
+        /// The function takes an [`ExtEventSink`] which it can use to send
+        /// [`Command`]s back to the main thread.
+        ///
+        /// Once the function returns, an [`Event::PromiseResult`](crate::Event::PromiseResult)
+        /// is emitted with the return value.
         // TODO - should take FnOnce.
         pub fn compute_in_background<T: Any + Send>(
             &mut self,
@@ -655,10 +705,9 @@ impl_context_method!(
 );
 
 impl WidgetCtx<'_, '_> {
-    // WidgetCtx has no `init` error message.
-    fn method_name() -> &'static str {
-        unreachable!()
-    }
+    // TODO - This might be annoying to learn
+    // WidgetCtx doesn't need to be initialized
+    fn check_init(&self, _method_name: &str) {}
 }
 
 impl EventCtx<'_, '_> {
@@ -697,7 +746,8 @@ impl EventCtx<'_, '_> {
         self.notifications.push_back(note);
     }
 
-    pub fn new_window(&mut self, desc: WindowDesc) {
+    /// Create a new window.
+    pub fn new_window(&mut self, desc: WindowDescription) {
         self.check_init("new_window");
         trace!("new_window");
         self.submit_command(
@@ -707,6 +757,7 @@ impl EventCtx<'_, '_> {
         );
     }
 
+    /// Send a signal to parent widgets to scroll this widget into view.
     pub fn request_pan_to_this(&mut self) {
         self.request_pan_to_child = Some(self.widget_state.layout_rect());
     }
@@ -871,8 +922,11 @@ impl LifeCycleCtx<'_, '_> {
     }
 
     // TODO - remove
+    /// Register this widget as a portal.
+    ///
+    /// This should only be used by scroll areas.
     pub fn register_as_portal(&mut self) {
-        self.check_init("register_text_input");
+        self.check_init("register_as_portal");
         self.widget_state.is_portal = true;
     }
 }

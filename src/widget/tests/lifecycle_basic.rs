@@ -1,7 +1,7 @@
 use insta::assert_debug_snapshot;
 
 use crate::testing::{
-    widget_ids, Harness, Record, Recording, ReplaceChild, TestWidgetExt as _, REPLACE_CHILD,
+    widget_ids, Record, Recording, ReplaceChild, TestHarness, TestWidgetExt as _, REPLACE_CHILD,
 };
 use crate::widget::{Flex, Label, SizedBox};
 use crate::*;
@@ -11,7 +11,7 @@ fn app_creation() {
     let record = Recording::default();
     let widget = SizedBox::empty().record(&record);
 
-    let _harness = Harness::create(widget);
+    let _harness = TestHarness::create(widget);
 
     let record = record.drain();
     assert_debug_snapshot!(record);
@@ -37,7 +37,7 @@ fn adding_child() {
         .with_child(Label::new("hi").record(&record))
         .with_child(replacer);
 
-    let mut harness = Harness::create(widget);
+    let mut harness = TestHarness::create(widget);
     record.clear();
 
     assert!(record_new_child.is_empty());
@@ -63,7 +63,7 @@ fn child_tracking() {
         id_4,
     );
 
-    let harness = Harness::create(widget);
+    let harness = TestHarness::create(widget);
 
     let root_state = harness.get_widget(id_4).state();
     assert_eq!(root_state.children.entry_count(), 3);
@@ -96,7 +96,7 @@ fn register_after_adding_child() {
         .with_child_id(replacer, id_6)
         .with_id(id_5);
 
-    let mut harness = Harness::create(widget);
+    let mut harness = TestHarness::create(widget);
 
     let root_state = harness.get_widget(id_5).state();
     assert!(root_state.children.may_contain(&id_6));

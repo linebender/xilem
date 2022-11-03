@@ -64,7 +64,7 @@ struct EnvImpl {
 /// # Examples
 ///
 /// ```
-///# use druid::{Key, Color, WindowDesc, AppLauncher, widget::Label};
+///# use druid::{Key, Color, WindowDescription, AppLauncher, widget::Label};
 /// const IMPORTANT_LABEL_COLOR: Key<Color> = Key::new("org.linebender.example.important-label-color");
 ///
 /// fn important_label() -> Label<()> {
@@ -72,7 +72,7 @@ struct EnvImpl {
 /// }
 ///
 /// fn main() {
-///     let main_window = WindowDesc::new(important_label());
+///     let main_window = WindowDescription::new(important_label());
 ///
 ///     AppLauncher::with_window(main_window)
 ///         .configure_env(|env, _state| {

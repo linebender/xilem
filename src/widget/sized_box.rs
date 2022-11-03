@@ -20,9 +20,12 @@ use smallvec::{smallvec, SmallVec};
 use tracing::{trace, trace_span, warn, Span};
 
 use crate::contexts::WidgetCtx;
-use crate::widget::prelude::*;
 use crate::widget::{WidgetId, WidgetMut, WidgetPod, WidgetRef};
 use crate::Point;
+use crate::{
+    BoxConstraints, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Size,
+    StatusChange, Widget,
+};
 
 /// A widget with predefined size.
 ///
@@ -262,7 +265,7 @@ mod tests {
 
     use super::*;
     use crate::assert_render_snapshot;
-    use crate::testing::Harness;
+    use crate::testing::TestHarness;
     use crate::widget::Label;
 
     #[test]
@@ -288,7 +291,7 @@ mod tests {
     fn empty_box() {
         let widget = SizedBox::empty().width(40.0).height(40.0);
 
-        let mut harness = Harness::create(widget);
+        let mut harness = TestHarness::create(widget);
 
         assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "empty_box");
@@ -298,7 +301,7 @@ mod tests {
     fn label_box_no_size() {
         let widget = SizedBox::new(Label::new("hello"));
 
-        let mut harness = Harness::create(widget);
+        let mut harness = TestHarness::create(widget);
 
         assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "label_box_no_size");
@@ -308,7 +311,7 @@ mod tests {
     fn label_box_with_size() {
         let widget = SizedBox::new(Label::new("hello")).width(40.0).height(40.0);
 
-        let mut harness = Harness::create(widget);
+        let mut harness = TestHarness::create(widget);
 
         assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "label_box_no_size");

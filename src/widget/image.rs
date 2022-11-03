@@ -21,9 +21,12 @@ use tracing::{trace, trace_span, Span};
 use crate::contexts::WidgetCtx;
 use crate::kurbo::Rect;
 use crate::piet::{Image as _, ImageBuf, InterpolationMode, PietImage};
-use crate::widget::prelude::*;
 use crate::widget::FillStrat;
 use crate::widget::WidgetRef;
+use crate::{
+    BoxConstraints, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
+    RenderContext, Size, StatusChange, Widget,
+};
 
 /// A widget that renders a bitmap Image.
 pub struct Image {
@@ -43,9 +46,6 @@ impl Image {
     /// and will be scaled bilinearly ([`InterpolationMode::Bilinear`])
     ///
     /// The underlying `ImageBuf` uses `Arc` for buffer data, making it cheap to clone.
-    ///
-    /// [`FillStrat::Fill`]: crate::widget::FillStrat::Fill
-    /// [`InterpolationMode::Bilinear`]: crate::piet::InterpolationMode::Bilinear
     #[inline]
     pub fn new(image_data: ImageBuf) -> Self {
         Image {
@@ -208,7 +208,7 @@ mod tests {
     use crate::assert_render_snapshot;
     use crate::piet::ImageFormat;
     use crate::testing::widget_ids;
-    use crate::testing::Harness;
+    use crate::testing::TestHarness;
     use crate::testing::TestWidgetExt;
     use crate::theme::PRIMARY_LIGHT;
 
@@ -220,7 +220,7 @@ mod tests {
         let image_widget =
             Image::new(image_data).interpolation_mode(InterpolationMode::NearestNeighbor);
 
-        let mut harness = Harness::create(image_widget);
+        let mut harness = TestHarness::create(image_widget);
         let _ = harness.render();
     }
 
@@ -236,7 +236,7 @@ mod tests {
         let image_widget =
             Image::new(image_data).interpolation_mode(InterpolationMode::NearestNeighbor);
 
-        let mut harness = Harness::create_with_size(image_widget, Size::new(40., 60.));
+        let mut harness = TestHarness::create_with_size(image_widget, Size::new(40., 60.));
         assert_render_snapshot!(harness, "tall_paint");
     }
 
@@ -259,7 +259,7 @@ mod tests {
                 .interpolation_mode(InterpolationMode::NearestNeighbor)
                 .clip_area(Some(Rect::new(0.0, 0.0, 1.0, 1.0)));
 
-            let mut harness = Harness::create_with_size(image_widget, Size::new(40.0, 60.0));
+            let mut harness = TestHarness::create_with_size(image_widget, Size::new(40.0, 60.0));
 
             harness.render()
         };
@@ -267,7 +267,7 @@ mod tests {
         let render_2 = {
             let image_widget = Image::new(image_data.clone());
 
-            let mut harness = Harness::create_with_size(image_widget, Size::new(40.0, 60.0));
+            let mut harness = TestHarness::create_with_size(image_widget, Size::new(40.0, 60.0));
 
             harness.edit_root_widget(|mut image, _| {
                 let mut image = image.downcast::<Image>().unwrap();
@@ -292,7 +292,7 @@ mod tests {
         let render_1 = {
             let image_widget = Image::new(image_data.clone());
 
-            let mut harness = Harness::create_with_size(image_widget, Size::new(40.0, 60.0));
+            let mut harness = TestHarness::create_with_size(image_widget, Size::new(40.0, 60.0));
 
             harness.render()
         };
@@ -301,7 +301,7 @@ mod tests {
             let other_image_data = ImageBuf::from_raw(vec![10; 3 * 8 * 8], ImageFormat::Rgb, 8, 8);
             let image_widget = Image::new(other_image_data);
 
-            let mut harness = Harness::create_with_size(image_widget, Size::new(40.0, 60.0));
+            let mut harness = TestHarness::create_with_size(image_widget, Size::new(40.0, 60.0));
 
             harness.edit_root_widget(|mut image, _| {
                 let mut image = image.downcast::<Image>().unwrap();

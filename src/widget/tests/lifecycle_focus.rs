@@ -4,7 +4,7 @@ use std::rc::Rc;
 use smallvec::smallvec;
 
 use crate::testing::{
-    widget_ids, Harness, ModularWidget, ReplaceChild, TestWidgetExt as _, REPLACE_CHILD,
+    widget_ids, ModularWidget, ReplaceChild, TestHarness, TestWidgetExt as _, REPLACE_CHILD,
 };
 use crate::widget::Flex;
 use crate::*;
@@ -55,7 +55,7 @@ fn build_focus_chain() {
         .with_child_id(FocusTaker::new(), id_3)
         .with_child_id(FocusTaker::new(), id_4);
 
-    let harness = Harness::create(widget);
+    let harness = TestHarness::create(widget);
 
     // verify that we start out with four widgets registered for focus
     assert_eq!(harness.window().focus_chain(), &[id_1, id_2, id_3, id_4]);
@@ -76,7 +76,7 @@ fn focus_status_change() {
         .with_child_id(FocusTaker::track(left_focus.clone()), id_1)
         .with_child_id(FocusTaker::track(right_focus.clone()), id_2);
 
-    let mut harness = Harness::create(widget);
+    let mut harness = TestHarness::create(widget);
 
     // nobody should have focus
     assert_eq!(left_focus.get(), false);
@@ -104,7 +104,7 @@ fn take_focus() {
         .with_child_id(FocusTaker::new(), id_3)
         .with_child_id(FocusTaker::new(), id_4);
 
-    let mut harness = Harness::create(widget);
+    let mut harness = TestHarness::create(widget);
 
     // nobody should have focus
     assert_eq!(harness.window().focus, None);
@@ -136,7 +136,7 @@ fn focus_updated_by_children_change() {
         .with_child_id(FocusTaker::new(), id_3)
         .with_child(replacer);
 
-    let mut harness = Harness::create(widget);
+    let mut harness = TestHarness::create(widget);
 
     // verify that we start out with four widgets registered for focus
     assert_eq!(harness.window().focus_chain(), &[id_1, id_2, id_3, id_4]);
@@ -191,7 +191,7 @@ fn resign_focus_on_disable() {
         )
         .with_child_id(make_container_widget(focus_2, FocusTaker::new()), group_1);
 
-    let mut harness = Harness::create(root);
+    let mut harness = TestHarness::create(root);
 
     // Initial state -> Full focus chain, no focused widget
     assert_eq!(harness.window().focus_chain(), &[focus_1, focus_2]);

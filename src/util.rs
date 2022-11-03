@@ -75,8 +75,13 @@ impl From<bool> for Handled {
 
 // ---
 
+/// Trait extending Any, implemented for all types that implement Any.
+///
+/// This is a band-aid to substitute for a lack of dyn trait upcasting.
 pub trait AsAny: Any {
+    /// Return self.
     fn as_dyn_any(&self) -> &dyn Any;
+    /// Return self.
     fn as_mut_dyn_any(&mut self) -> &mut dyn Any;
 }
 

@@ -26,13 +26,16 @@ use crate::contexts::WidgetCtx;
 use crate::kurbo::Vec2;
 use crate::text::FontDescriptor;
 use crate::text::{TextAlignment, TextLayout};
-use crate::widget::prelude::*;
 use crate::widget::WidgetRef;
-use crate::{ArcStr, Color, Data, KeyOrValue, Point};
+use crate::{
+    ArcStr, BoxConstraints, Color, Data, Env, Event, EventCtx, KeyOrValue, LayoutCtx, LifeCycle,
+    LifeCycleCtx, PaintCtx, Point, RenderContext, Size, StatusChange, Widget,
+};
 
 // added padding between the edges of the widget and the text.
 const LABEL_X_PADDING: f64 = 2.0;
 
+/// A widget displaying non-editable text.
 pub struct Label {
     current_text: ArcStr,
     text_layout: TextLayout<ArcStr>,
@@ -58,7 +61,7 @@ pub enum LineBreaking {
 // --- METHODS ---
 
 impl Label {
-    /// Create a new `Label`.
+    /// Create a new label.
     pub fn new(text: impl Into<ArcStr>) -> Self {
         let current_text = text.into();
         let mut text_layout = TextLayout::new();
@@ -73,6 +76,7 @@ impl Label {
         }
     }
 
+    /// Create a label with empty text.
     pub fn empty() -> Self {
         Self {
             current_text: "".into(),
@@ -83,6 +87,7 @@ impl Label {
         }
     }
 
+    /// Builder-style method for setting the text string.
     pub fn with_text(mut self, new_text: impl Into<ArcStr>) -> Self {
         self.text_layout.set_text(new_text.into());
         self
@@ -119,8 +124,6 @@ impl Label {
     /// The argument can be a [`FontDescriptor`] or a [`Key<FontDescriptor>`]
     /// that refers to a font defined in the [`Env`].
     ///
-    /// [`Env`]: ../struct.Env.html
-    /// [`FontDescriptor`]: ../struct.FontDescriptor.html
     /// [`Key<FontDescriptor>`]: ../struct.Key.html
     pub fn with_font(mut self, font: impl Into<KeyOrValue<FontDescriptor>>) -> Self {
         self.text_layout.set_font(font);
@@ -128,16 +131,12 @@ impl Label {
     }
 
     /// Builder-style method to set the [`LineBreaking`] behaviour.
-    ///
-    /// [`LineBreaking`]: enum.LineBreaking.html
     pub fn with_line_break_mode(mut self, mode: LineBreaking) -> Self {
         self.line_break_mode = mode;
         self
     }
 
     /// Builder-style method to set the [`TextAlignment`].
-    ///
-    /// [`TextAlignment`]: enum.TextAlignment.html
     pub fn with_text_alignment(mut self, alignment: TextAlignment) -> Self {
         self.text_layout.set_text_alignment(alignment);
         self
@@ -174,7 +173,6 @@ impl LabelMut<'_, '_> {
     /// Set the text color.
     ///
     /// The argument can be either a `Color` or a [`Key<Color>`].
-    /// [`request_layout`]: ../struct.EventCtx.html#method.request_layout
     /// [`Key<Color>`]: ../struct.Key.html
     pub fn set_text_color(&mut self, color: impl Into<KeyOrValue<Color>>) {
         let color = color.into();
@@ -200,8 +198,6 @@ impl LabelMut<'_, '_> {
     /// The argument can be a [`FontDescriptor`] or a [`Key<FontDescriptor>`]
     /// that refers to a font defined in the [`Env`].
     ///
-    /// [`Env`]: ../struct.Env.html
-    /// [`FontDescriptor`]: ../struct.FontDescriptor.html
     /// [`Key<FontDescriptor>`]: ../struct.Key.html
     pub fn set_font(&mut self, font: impl Into<KeyOrValue<FontDescriptor>>) {
         self.1.text_layout.set_font(font);
@@ -209,16 +205,12 @@ impl LabelMut<'_, '_> {
     }
 
     /// Set the [`LineBreaking`] behaviour.
-    ///
-    /// [`LineBreaking`]: enum.LineBreaking.html
     pub fn set_line_break_mode(&mut self, mode: LineBreaking) {
         self.1.line_break_mode = mode;
         self.0.request_layout();
     }
 
     /// Set the [`TextAlignment`] for this layout.
-    ///
-    /// [`TextAlignment`]: enum.TextAlignment.html
     pub fn set_text_alignment(&mut self, alignment: TextAlignment) {
         self.1.text_layout.set_text_alignment(alignment);
         self.0.request_layout();
@@ -322,7 +314,7 @@ mod tests {
 
     use super::*;
     use crate::assert_render_snapshot;
-    use crate::testing::Harness;
+    use crate::testing::TestHarness;
     use crate::theme::{PRIMARY_DARK, PRIMARY_LIGHT};
     use crate::widget::{Flex, SizedBox};
 
@@ -330,7 +322,7 @@ mod tests {
     fn simple_label() {
         let label = Label::new("Hello");
 
-        let mut harness = Harness::create(label);
+        let mut harness = TestHarness::create(label);
 
         assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "hello");
@@ -345,7 +337,7 @@ mod tests {
             .with_line_break_mode(LineBreaking::WordWrap)
             .with_text_alignment(TextAlignment::Center);
 
-        let mut harness = Harness::create_with_size(label, Size::new(200.0, 200.0));
+        let mut harness = TestHarness::create_with_size(label, Size::new(200.0, 200.0));
 
         assert_render_snapshot!(harness, "styled_label");
     }
@@ -379,7 +371,7 @@ mod tests {
             )
             .with_flex_spacer(1.0);
 
-        let mut harness = Harness::create(widget);
+        let mut harness = TestHarness::create(widget);
 
         assert_render_snapshot!(harness, "line_break_modes");
     }
@@ -394,7 +386,7 @@ mod tests {
                 .with_line_break_mode(LineBreaking::WordWrap)
                 .with_text_alignment(TextAlignment::Center);
 
-            let mut harness = Harness::create_with_size(label, Size::new(50.0, 50.0));
+            let mut harness = TestHarness::create_with_size(label, Size::new(50.0, 50.0));
 
             harness.render()
         };
@@ -404,7 +396,7 @@ mod tests {
                 .with_text_color(PRIMARY_DARK)
                 .with_text_size(40.0);
 
-            let mut harness = Harness::create_with_size(label, Size::new(50.0, 50.0));
+            let mut harness = TestHarness::create_with_size(label, Size::new(50.0, 50.0));
 
             harness.edit_root_widget(|mut label, _| {
                 let mut label = label.downcast::<Label>().unwrap();

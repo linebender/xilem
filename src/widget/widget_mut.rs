@@ -3,7 +3,26 @@ use std::ops::{Deref, DerefMut};
 use crate::widget::StoreInWidgetMut;
 use crate::{Widget, WidgetCtx, WidgetId, WidgetState};
 
-// TODO - rename lifetimes
+/// A mutable reference to a [`Widget`].
+///
+/// In Masonry, widgets can't be mutated directly. All mutations go through a `WidgetMut`
+/// wrapper. So, to change a label's text, you might call `WidgetMut<Label>::set_text()`.
+/// This helps Masonry make sure that internal metadata is propagated after every widget
+/// change.
+///
+/// You can create a `WidgetMut` from [`TestHarness`](crate::testing::TestHarness),
+/// [`EventCtx`](crate::EventCtx), [`LifeCycleCtx`](crate::LifeCycleCtx) or from a parent
+/// `WidgetMut` with [`WidgetCtx`](crate::WidgetCtx).
+///
+/// `WidgetMut` implements [`Deref`] with `W::Mut` as target.
+///
+/// ## Internals
+///
+/// `WidgetMut<W>` requires that W implement [`StoreInWidgetMut`]; it stores a `W::Mut`,
+/// which is a special type declared with the `declare_widget` macro. Methods to mutate
+/// the widget will be implemented in that `W::Mut` type, which `WidgetMut<W>` derefs to.
+///
+/// See [`declare_widget`](crate::declare_widget) for details.
 pub struct WidgetMut<'a, 'b: 'a, W: Widget + StoreInWidgetMut> {
     pub(crate) parent_widget_state: &'a mut WidgetState,
     pub(crate) inner: W::Mut<'a, 'b>,
@@ -32,28 +51,31 @@ impl<'a, 'b, W: StoreInWidgetMut> DerefMut for WidgetMut<'a, 'b, W> {
     }
 }
 
-impl<'a, 'b, W: StoreInWidgetMut> WidgetMut<'a, 'b, W> {
+impl<'a, 'b> WidgetMut<'a, 'b, Box<dyn Widget>> {
+    /// Attempt to downcast to `WidgetMut` of concrete Widget type.
     pub fn downcast<'s, W2: Widget + StoreInWidgetMut>(
         &'s mut self,
     ) -> Option<WidgetMut<'_, 'b, W2>> {
-        let (widget, ctx) = W::get_widget_and_ctx(&mut self.inner);
+        let (widget, ctx) = Box::<dyn Widget>::get_widget_and_ctx(&mut self.inner);
         let widget = widget.as_mut_any().downcast_mut()?;
         let ctx = WidgetCtx {
             global_state: ctx.global_state,
             widget_state: ctx.widget_state,
-            is_init: ctx.is_init,
         };
         Some(WidgetMut {
             parent_widget_state: self.parent_widget_state,
             inner: W2::from_widget_and_ctx(widget, ctx),
         })
     }
+}
 
+impl<W: StoreInWidgetMut> WidgetMut<'_, '_, W> {
+    /// Get the [`WidgetState`] of the current widget.
     pub fn state(&mut self) -> &WidgetState {
         &W::get_ctx(&mut self.inner).widget_state
     }
 
-    /// get the `WidgetId` of the current widget.
+    /// Get the [`WidgetId`] of the current widget.
     pub fn id(&mut self) -> WidgetId {
         W::get_ctx(&mut self.inner).widget_state.id
     }

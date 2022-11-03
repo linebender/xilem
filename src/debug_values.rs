@@ -1,3 +1,5 @@
+#![allow(missing_docs)]
+
 use std::collections::{HashMap, HashSet};
 use std::fmt::Display;
 use std::sync::Arc;

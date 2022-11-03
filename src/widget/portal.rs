@@ -1,14 +1,12 @@
-#![allow(unused)]
+#![allow(missing_docs)]
 
 use std::ops::Range;
 
-use druid_shell::kurbo::Shape;
 use smallvec::{smallvec, SmallVec};
-use tracing::{trace, trace_span, warn, Span};
+use tracing::{trace_span, Span};
 
 use crate::contexts::WidgetCtx;
-use crate::kurbo::{Affine, Point, Rect, Size, Vec2};
-use crate::widget::prelude::*;
+use crate::kurbo::{Point, Rect, Size, Vec2};
 use crate::widget::scroll_bar::SCROLLBAR_MOVED;
 use crate::widget::Axis;
 use crate::widget::ScrollBar;
@@ -16,6 +14,10 @@ use crate::widget::StoreInWidgetMut;
 use crate::widget::WidgetMut;
 use crate::widget::WidgetRef;
 use crate::WidgetPod;
+use crate::{
+    BoxConstraints, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
+    RenderContext, StatusChange, Widget,
+};
 
 // TODO - rename "Portal" to "ScrollPortal"?
 // Conceptually, a Portal is a Widget giving a restricted view of a child widget
@@ -112,8 +114,8 @@ fn compute_pan_range(mut viewport: Range<f64>, target: Range<f64>) -> Range<f64>
     }
 
     // we compute the length that we need to "fit" in our viewport
-    let mut target_width = f64::min(viewport.end - viewport.start, target.end - target.start);
-    let mut viewport_width = viewport.end - viewport.start;
+    let target_width = f64::min(viewport.end - viewport.start, target.end - target.start);
+    let viewport_width = viewport.end - viewport.start;
 
     // Because of the early returns, there are only two cases to consider: we need
     // to move the viewport "left" or "right"
@@ -385,12 +387,10 @@ impl<W: Widget> Widget for Portal<W> {
 #[cfg(test)]
 mod tests {
     use insta::assert_debug_snapshot;
-    use piet_common::FontFamily;
 
     use super::*;
     use crate::assert_render_snapshot;
-    use crate::testing::{widget_ids, Harness};
-    use crate::theme::{PRIMARY_DARK, PRIMARY_LIGHT};
+    use crate::testing::{widget_ids, TestHarness};
     use crate::widget::{Button, Flex, SizedBox};
 
     fn button(text: &str) -> impl Widget {
@@ -433,7 +433,7 @@ mod tests {
                 .with_spacer(10.0),
         );
 
-        let mut harness = Harness::create_with_size(widget, Size::new(400., 400.));
+        let mut harness = TestHarness::create_with_size(widget, Size::new(400., 400.));
 
         assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "button_list_no_scroll");

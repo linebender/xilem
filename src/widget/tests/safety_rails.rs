@@ -1,6 +1,6 @@
 use smallvec::smallvec;
 
-use crate::testing::{Harness, ModularWidget};
+use crate::testing::{ModularWidget, TestHarness};
 use crate::widget::Flex;
 use crate::*;
 
@@ -31,7 +31,7 @@ fn check_forget_to_recurse_event() {
         // We forget to call child.on_event();
     });
 
-    let mut harness = Harness::create(widget);
+    let mut harness = TestHarness::create(widget);
     harness.mouse_move(Point::ZERO);
 }
 
@@ -42,7 +42,7 @@ fn check_forget_to_recurse_lifecycle() {
         // We forget to call child.lifecycle();
     });
 
-    let _harness = Harness::create(widget);
+    let _harness = TestHarness::create(widget);
 }
 
 #[should_panic(expected = "before receiving WidgetAdded.")]
@@ -57,7 +57,7 @@ fn check_forget_to_recurse_widget_added() {
         }
     });
 
-    let _harness = Harness::create(widget);
+    let _harness = TestHarness::create(widget);
 }
 
 #[should_panic(expected = "not visited in method layout")]
@@ -68,7 +68,7 @@ fn check_forget_to_recurse_layout() {
         Size::ZERO
     });
 
-    let _harness = Harness::create(widget);
+    let _harness = TestHarness::create(widget);
 }
 
 #[should_panic(expected = "missing call to place_child method for child widget")]
@@ -79,7 +79,7 @@ fn check_forget_to_call_place_child() {
         child.layout(ctx, bc, env)
     });
 
-    let _harness = Harness::create(widget);
+    let _harness = TestHarness::create(widget);
 }
 
 #[should_panic(expected = "not visited in method paint")]
@@ -89,7 +89,7 @@ fn check_forget_to_recurse_paint() {
         // We forget to call child.paint();
     });
 
-    let mut harness = Harness::create(widget);
+    let mut harness = TestHarness::create(widget);
     harness.render();
 }
 
@@ -105,7 +105,7 @@ fn allow_non_recurse_event_handled() {
         ctx.set_handled();
     });
 
-    let mut harness = Harness::create(widget);
+    let mut harness = TestHarness::create(widget);
     harness.mouse_move(Point::ZERO);
 }
 
@@ -124,7 +124,7 @@ fn allow_non_recurse_cursor_oob() {
             Size::new(6000.0, 6000.0)
         });
 
-    let mut harness = Harness::create(widget);
+    let mut harness = TestHarness::create(widget);
     harness.mouse_move(Point::new(5000.0, 5000.0));
 }
 
@@ -141,7 +141,7 @@ fn allow_non_recurse_oob_paint() {
             Size::new(600.0, 600.0)
         });
 
-    let mut harness = Harness::create_with_size(widget, Size::new(400.0, 400.0));
+    let mut harness = TestHarness::create_with_size(widget, Size::new(400.0, 400.0));
     harness.render();
 }
 
@@ -160,7 +160,7 @@ fn allow_non_recurse_cursor_stashed() {
             return Size::ZERO;
         });
 
-    let mut harness = Harness::create(widget);
+    let mut harness = TestHarness::create(widget);
     harness.mouse_move(Point::new(5000.0, 5000.0));
 }
 
@@ -178,7 +178,7 @@ fn allow_non_recurse_stashed_paint() {
             // We don't call child.paint();
         });
 
-    let mut harness = Harness::create_with_size(widget, Size::new(400.0, 400.0));
+    let mut harness = TestHarness::create_with_size(widget, Size::new(400.0, 400.0));
     harness.render();
 }
 
@@ -228,7 +228,7 @@ fn check_forget_children_changed() {
             }
         });
 
-    let mut harness = Harness::create(widget);
+    let mut harness = TestHarness::create(widget);
     harness.submit_command(ADD_CHILD);
 }
 
@@ -242,7 +242,7 @@ fn check_recurse_event_twice() {
         child.on_event(ctx, event, env);
     });
 
-    let mut harness = Harness::create(widget);
+    let mut harness = TestHarness::create(widget);
     harness.mouse_move(Point::ZERO);
 }
 
@@ -254,7 +254,7 @@ fn check_recurse_lifecycle_twice() {
         child.lifecycle(ctx, event, env);
     });
 
-    let _harness = Harness::create(widget);
+    let _harness = TestHarness::create(widget);
 }
 
 #[cfg(FALSE)]
@@ -267,7 +267,7 @@ fn check_recurse_layout_twice() {
         size
     });
 
-    let _harness = Harness::create(widget);
+    let _harness = TestHarness::create(widget);
 }
 
 #[cfg(FALSE)]
@@ -278,7 +278,7 @@ fn check_recurse_paint_twice() {
         child.paint(ctx, env);
     });
 
-    let mut harness = Harness::create(widget);
+    let mut harness = TestHarness::create(widget);
     harness.render();
 }
 
@@ -298,7 +298,7 @@ fn check_layout_stashed() {
             size
         });
 
-    let mut harness = Harness::create(widget);
+    let mut harness = TestHarness::create(widget);
     harness.mouse_move(Point::ZERO);
 }
 
@@ -317,7 +317,7 @@ fn check_paint_stashed() {
             child.paint(ctx, env);
         });
 
-    let mut harness = Harness::create(widget);
+    let mut harness = TestHarness::create(widget);
     harness.mouse_move(Point::ZERO);
     harness.render();
 }
@@ -336,7 +336,7 @@ fn check_paint_rect_includes_children() {
         Size::ZERO
     });
 
-    let mut harness = Harness::create(widget);
+    let mut harness = TestHarness::create(widget);
     harness.mouse_move(Point::ZERO);
     harness.render();
 }

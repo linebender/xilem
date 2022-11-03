@@ -5,33 +5,22 @@ use smallvec::SmallVec;
 use crate::kurbo::Point;
 use crate::{Widget, WidgetId, WidgetState};
 
-// ---
+/// A rich reference to a [`Widget`].
+///
+/// Widgets in Masonry are bundled with additional metadata called [`WidgetState`].
+///
+/// A `WidgetRef` to a widget carries both a reference to the widget and to its `WidgetState`. It can [`Deref`] to the referenced widget.
+///
+/// This type is mostly used for debugging, to query a certain widget in the widget
+/// graph, get their layout, etc. It also implements [`std::fmt::Debug`] for convenience;
+/// printing it will display its widget subtree (as in, the referenced widget, and its
+/// children, and their children, etc).
+///
+/// This is only for shared access to widgets. For widget mutation, see [`WidgetMut`](crate::WidgetMut).
+
 pub struct WidgetRef<'w, W: Widget + ?Sized> {
-    pub widget_state: &'w WidgetState,
-    pub widget: &'w W,
-}
-
-// TODO - Document
-impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
-    pub fn new(widget_state: &'w WidgetState, widget: &'w W) -> Self {
-        WidgetRef {
-            widget_state,
-            widget,
-        }
-    }
-
-    pub fn state(self) -> &'w WidgetState {
-        self.widget_state
-    }
-
-    pub fn widget(self) -> &'w W {
-        self.widget
-    }
-
-    /// get the `WidgetId` of the current widget.
-    pub fn id(&self) -> WidgetId {
-        self.widget_state.id
-    }
+    widget_state: &'w WidgetState,
+    widget: &'w W,
 }
 
 // --- TRAIT IMPLS ---
@@ -74,22 +63,36 @@ impl<'w, W: Widget + ?Sized> Deref for WidgetRef<'w, W> {
     type Target = W;
 
     fn deref(&self) -> &Self::Target {
-        &self.widget
+        self.widget
     }
 }
 
-impl<'w, W: Widget> WidgetRef<'w, W> {
-    // TODO - document
-    pub fn as_dyn(&self) -> WidgetRef<'w, dyn Widget> {
-        WidgetRef {
-            widget_state: self.widget_state,
-            widget: self.widget,
-        }
-    }
-}
+// --- IMPLS ---
 
 impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
-    // TODO - document
+    pub(crate) fn new(widget_state: &'w WidgetState, widget: &'w W) -> Self {
+        WidgetRef {
+            widget_state,
+            widget,
+        }
+    }
+
+    /// Get the [`WidgetState`] of the current widget.
+    pub fn state(self) -> &'w WidgetState {
+        self.widget_state
+    }
+
+    /// Get the actual referenced `Widget`.
+    pub fn deref(self) -> &'w W {
+        self.widget
+    }
+
+    /// Get the [`WidgetId`] of the current widget.
+    pub fn id(&self) -> WidgetId {
+        self.widget_state.id
+    }
+
+    /// Attempt to downcast to `WidgetRef` of concrete Widget type.
     pub fn downcast<W2: Widget>(&self) -> Option<WidgetRef<'w, W2>> {
         Some(WidgetRef {
             widget_state: self.widget_state,
@@ -98,11 +101,23 @@ impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
     }
 }
 
+impl<'w, W: Widget> WidgetRef<'w, W> {
+    /// Return a type-erased `WidgetRef`.
+    pub fn as_dyn(&self) -> WidgetRef<'w, dyn Widget> {
+        WidgetRef {
+            widget_state: self.widget_state,
+            widget: self.widget,
+        }
+    }
+}
+
 impl<'w> WidgetRef<'w, dyn Widget> {
+    /// Return widget's children.
     pub fn children(&self) -> SmallVec<[WidgetRef<'w, dyn Widget>; 16]> {
         self.widget.children()
     }
 
+    /// Recursively find child widget with given id.
     pub fn find_widget_by_id(&self, id: WidgetId) -> Option<WidgetRef<'w, dyn Widget>> {
         if self.state().id == id {
             Some(*self)
@@ -113,6 +128,10 @@ impl<'w> WidgetRef<'w, dyn Widget> {
         }
     }
 
+    /// Recursively find innermost widget at given position.
+    ///
+    /// **pos** - the position in local coordinates (zero being the top-left of the
+    /// inner widget).
     pub fn find_widget_at_pos(&self, pos: Point) -> Option<WidgetRef<'w, dyn Widget>> {
         let mut pos = pos;
         let mut innermost_widget: WidgetRef<'w, dyn Widget> = *self;
@@ -121,9 +140,8 @@ impl<'w> WidgetRef<'w, dyn Widget> {
             return None;
         }
 
-        // FIXME - Handle hidden widgets (eg in scroll areas).
         loop {
-            if let Some(child) = innermost_widget.widget().get_child_at_pos(pos) {
+            if let Some(child) = innermost_widget.deref().get_child_at_pos(pos) {
                 pos -= innermost_widget.state().layout_rect().origin().to_vec2();
                 innermost_widget = child;
             } else {
@@ -132,13 +150,9 @@ impl<'w> WidgetRef<'w, dyn Widget> {
         }
     }
 
-    // TODO - reorganize this part of the code
-    pub(crate) fn prepare_pass(&self) {
-        self.state().mark_as_visited(false);
-    }
-
-    // can only be called after on_event and lifecycle
-    // checks that basic invariants are held
+    /// Recursively check that the Widget tree upholds various invariants.
+    ///
+    /// Can only be called after on_event and lifecycle.
     pub fn debug_validate(&self, after_layout: bool) {
         if cfg!(not(debug_assertions)) {
             return;
@@ -147,7 +161,7 @@ impl<'w> WidgetRef<'w, dyn Widget> {
         if self.state().is_new {
             debug_panic!(
                 "Widget '{}' #{} is invalid: widget did not receive WidgetAdded",
-                self.widget().short_type_name(),
+                self.deref().short_type_name(),
                 self.state().id.to_raw(),
             );
         }
@@ -158,7 +172,7 @@ impl<'w> WidgetRef<'w, dyn Widget> {
         {
             debug_panic!(
                 "Widget '{}' #{} is invalid: widget state not cleared",
-                self.widget().short_type_name(),
+                self.deref().short_type_name(),
                 self.state().id.to_raw(),
             );
         }
@@ -166,7 +180,7 @@ impl<'w> WidgetRef<'w, dyn Widget> {
         if after_layout && (self.state().needs_layout || self.state().needs_window_origin) {
             debug_panic!(
                 "Widget '{}' #{} is invalid: widget layout state not cleared",
-                self.widget().short_type_name(),
+                self.deref().short_type_name(),
                 self.state().id.to_raw(),
             );
         }
@@ -177,9 +191,9 @@ impl<'w> WidgetRef<'w, dyn Widget> {
             if !self.state().children.may_contain(&child.state().id) {
                 debug_panic!(
                     "Widget '{}' #{} is invalid: child widget '{}' #{} not registered in children filter",
-                    self.widget().short_type_name(),
+                    self.deref().short_type_name(),
                     self.state().id.to_raw(),
-                    child.widget().short_type_name(),
+                    child.deref().short_type_name(),
                     child.state().id.to_raw(),
                 );
             }
@@ -192,7 +206,7 @@ mod tests {
     use assert_matches::assert_matches;
 
     use super::*;
-    use crate::testing::{widget_ids, Harness, TestWidgetExt as _};
+    use crate::testing::{widget_ids, TestHarness, TestWidgetExt as _};
     use crate::widget::{Button, Label};
     use crate::{Widget, WidgetPod};
 
@@ -212,7 +226,7 @@ mod tests {
         let [label_id] = widget_ids();
         let label = Label::new("Hello").with_id(label_id);
 
-        let harness = Harness::create(label);
+        let harness = TestHarness::create(label);
 
         assert_matches!(harness.get_widget(label_id).downcast::<Label>(), Some(_));
         assert_matches!(harness.get_widget(label_id).downcast::<Button>(), None);

@@ -8,6 +8,10 @@ use crate::{WidgetId, WindowId};
 // TODO - TextCursor changed, ImeChanged, EnterKey, MouseEnter
 #[derive(Debug, PartialEq, Eq)]
 #[non_exhaustive]
+#[allow(missing_docs)]
+/// Events from UI elements.
+///
+/// Note: Actions are still a WIP feature.
 pub enum Action {
     ButtonPressed,
     TextChanged(String),

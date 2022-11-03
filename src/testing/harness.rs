@@ -15,8 +15,6 @@
 //! Tools and infrastructure for testing widgets.
 
 use std::collections::{HashMap, VecDeque};
-use std::panic::Location;
-use std::path::Path;
 use std::sync::Arc;
 
 use druid_shell::{KeyEvent, Modifiers, MouseButton, MouseButtons};
@@ -37,36 +35,117 @@ use crate::command::CommandQueue;
 use crate::contexts::GlobalPassCtx;
 use crate::debug_logger::DebugLogger;
 use crate::ext_event::ExtEventQueue;
-use crate::piet::{BitmapTarget, Device, Error, ImageFormat, Piet};
-use crate::widget::{StoreInWidgetMut, WidgetMut, WidgetRef, WidgetState};
+use crate::piet::{BitmapTarget, Device, ImageFormat, Piet};
+use crate::widget::{StoreInWidgetMut, WidgetMut, WidgetRef};
 use crate::*;
 
+/// Default screen size for tests.
 pub const HARNESS_DEFAULT_SIZE: Size = Size::new(400., 400.);
 
-// TODO - Rewrite this doc
-// - Explain timers
-/// A type that tries very hard to provide a comforting and safe environment
-/// for widgets who are trying to find their way.
+/// A safe headless environment to test widgets in.
 ///
-/// You create a `Harness` with some widget and its initial data; then you
-/// can send events to that widget and verify that expected conditions are met.
+/// `TestHarness` is a type that simulates an [`AppRoot`](crate::platform::AppRoot)
+/// with a single window.
 ///
-/// Harness tries to act like the normal druid environment; for instance, it will
-/// attempt to dispatch any `Command`s that are sent during event handling, and
-/// it will call `update` automatically after an event.
+/// ## Workflow
 ///
-/// That said, it _is_ missing a bunch of logic that would normally be handled
-/// in `AppState`: for instance it does not clear the `needs_inval` and
-/// `children_changed` flags on the window after an update.
+/// One of the main goals of masonry is to provide primitives that allow application
+/// developers to test their app in a convenient and intuitive way. The basic testing
+/// workflow is as follows:
 ///
-/// In addition, layout and paint **are not called automatically**. This is
-/// because paint is triggered by druid-shell, and there is no druid-shell here;
+/// - Create a harness with some widget.
+/// - Send events to the widget as if you were a user interacting with a window.
+/// (Lifecycle and layout passes are handled automatically.)
+/// - Check that the state of the widget graph matches what you expect.
 ///
-/// if you want those functions run you will need to call them yourself.
-pub struct Harness {
+/// You can do that last part in a few different ways. You can get a [`WidgetRef`] to
+/// a specific widget through methods like [`try_get_widget`]. [`WidgetRef`] implements
+/// `Debug`, so you can check the state of an entire tree with something like the `insta`
+/// crate.
+///
+/// You can also render the widget tree directly with the [`render`] method. Masonry also
+/// provides the [`assert_render_snapshot`] macro, which performs snapshot testing on the
+/// rendered widget tree automatically.
+///
+/// ## Fidelity
+///
+/// `TestHarness` tries to act like the normal masonry environment. For instance, it will dispatch every `Command` sent during event handling, handle lifecycle methods, etc.
+///
+/// The passage of time is simulated with the [`move_timers_forward`] methods. **(TODO -
+/// Doesn't move animations forward.)**
+///
+/// **(TODO - ExtEvents aren't handled.)**
+///
+/// **(TODO - Painting invalidation might not be accurate.)**
+///
+/// One minor difference is that layout is always calculated after every event, whereas
+/// in normal execution it is only calculated before paint. This might be create subtle
+/// differences in cases where timers are programmed to fire at the same time: in normal
+/// execution, they'll execute back-to-back; in the harness, they'll be separated with
+/// layout calls.
+///
+/// Also, paint only happens when the user explicitly calls rendering methods, whereas in
+/// a normal applications you could reasonably expect multiple paint calls between eg any
+/// two clicks.
+///
+/// ## Example
+///
+/// ```
+/// use insta::assert_debug_snapshot;
+///
+/// use masonry::Button;
+/// use masonry::assert_render_snapshot;
+/// use masonry::testing::widget_ids;
+/// use masonry::testing::TestHarness;
+/// use masonry::testing::TestWidgetExt;
+/// use masonry::theme::PRIMARY_LIGHT;
+///
+/// #[test]
+/// fn simple_button() {
+///     let [button_id] = widget_ids();
+///     let widget = Button::new("Hello").with_id(button_id);
+///
+///     let mut harness = TestHarness::create(widget);
+///
+///     assert_debug_snapshot!(harness.root_widget());
+///     assert_render_snapshot!(harness, "hello");
+///
+///     assert_eq!(harness.pop_action(), None);
+///
+///     harness.mouse_click_on(button_id);
+///     assert_eq!(
+///         harness.pop_action(),
+///         Some((Action::ButtonPressed, button_id))
+///     );
+/// }
+/// ```
+// TODO - Fix examples
+pub struct TestHarness {
     mock_app: MockAppRoot,
     mouse_state: MouseEvent,
     window_size: Size,
+}
+
+/// Assert a snapshot of a rendered frame of your app.
+///
+/// This macro takes a test harness and a name, renders the current state of the app,
+/// and stores the render as a PNG next to the text, in a `./screenshots/` folder.
+///
+/// If a screenshot already exists, the rendered value is compared against this screenshot.
+/// The assert passes if both are equal; otherwise, a diff file is created.
+///
+/// If a screeshot doesn't exist, the assert will fail; the new screenshot is stored as
+/// `./screenshots/<test_name>.new.png`, and must be renamed before the assert will pass.
+#[macro_export]
+macro_rules! assert_render_snapshot {
+    ($test_harness:expr, $name:expr) => {
+        $test_harness.check_render_snapshot(
+            env!("CARGO_MANIFEST_DIR"),
+            file!(),
+            module_path!(),
+            $name,
+        )
+    };
 }
 
 // TODO - merge
@@ -80,12 +159,15 @@ struct MockAppRoot {
     debug_logger: DebugLogger,
 }
 
-#[allow(missing_docs)]
-impl Harness {
+impl TestHarness {
+    /// Builds harness with given root widget.
+    ///
+    /// Window size will be [`HARNESS_DEFAULT_SIZE`].
     pub fn create(root: impl Widget) -> Self {
         Self::create_with_size(root, HARNESS_DEFAULT_SIZE)
     }
 
+    /// Builds harness with given root widget and window size.
     pub fn create_with_size(root: impl Widget, window_size: Size) -> Self {
         //let ext_host = ExtEventHost::default();
         //let ext_handle = ext_host.make_sink();
@@ -115,7 +197,7 @@ impl Harness {
             wheel_delta: Vec2::ZERO,
         };
 
-        let mut harness = Harness {
+        let mut harness = TestHarness {
             mock_app: MockAppRoot {
                 env: Env::with_theme(),
                 window,
@@ -145,11 +227,10 @@ impl Harness {
     pub fn process_event(&mut self, event: Event) {
         self.mock_app.event(event);
 
-        self.post_event_stuff();
+        self.process_state_after_event();
     }
 
-    // TODO - rename
-    fn post_event_stuff(&mut self) {
+    fn process_state_after_event(&mut self) {
         loop {
             let cmd = self.mock_app.command_queue.pop_front();
             match cmd {
@@ -279,7 +360,7 @@ impl Harness {
     ///
     /// Obviously this works better with ASCII text.
     ///
-    /// IME mocking is a future feature.
+    /// **(Note: IME mocking is a future feature)**
     pub fn keyboard_type_chars(&mut self, text: &str) {
         // For each character
         for c in text.split("").filter(|s| !s.is_empty()) {
@@ -304,10 +385,10 @@ impl Harness {
             }
             self.mock_app.event(Event::KeyUp(event.clone()));
         }
-        self.post_event_stuff();
+        self.process_state_after_event();
     }
 
-    // TODO - add doc alias "send_command"
+    #[doc(alias = "send_command")]
     /// Send a command to a target.
     pub fn submit_command(&mut self, command: impl Into<Command>) {
         let command = command.into().default_to(self.mock_app.window.id.into());
@@ -315,6 +396,13 @@ impl Harness {
         self.process_event(event);
     }
 
+    /// Simulate the passage of time.
+    ///
+    /// If you create any timer in a widget, this method is the only way to trigger
+    /// them in unit tests. The testing model assumes that everything else executes
+    /// instantly, and timers are never triggered "spontaneously".
+    ///
+    /// **(TODO - Doesn't move animations forward.)**
     pub fn move_timers_forward(&mut self, duration: Duration) {
         // TODO - handle animations
         let tokens = self
@@ -331,18 +419,26 @@ impl Harness {
 
     // --- Getters ---
 
+    /// Return the mocked window.
     pub fn window(&self) -> &WindowRoot {
         &self.mock_app.window
     }
 
+    /// Return the mocked window.
     pub fn window_mut(&mut self) -> &mut WindowRoot {
         &mut self.mock_app.window
     }
 
+    /// Return the root widget.
     pub fn root_widget(&self) -> WidgetRef<'_, dyn Widget> {
         self.mock_app.window.root.as_dyn()
     }
 
+    /// Return the widget with the given id.
+    ///
+    /// ## Panics
+    ///
+    /// Panics if no Widget with this id can be found.
     pub fn get_widget(&self, id: WidgetId) -> WidgetRef<'_, dyn Widget> {
         self.mock_app
             .window
@@ -350,21 +446,25 @@ impl Harness {
             .expect("could not find widget")
     }
 
+    /// Try to return the widget with the given id.
     pub fn try_get_widget(&self, id: WidgetId) -> Option<WidgetRef<'_, dyn Widget>> {
         self.mock_app.window.find_widget_by_id(id)
     }
 
+    // TODO - link to focus documentation.
+    /// Return the widget that receives keyboard events.
     pub fn focused_widget(&self) -> Option<WidgetRef<'_, dyn Widget>> {
         self.mock_app.window.focused_widget()
     }
 
+    /// Call the provided visitor on every widget in the widget tree.
     pub fn inspect_widgets(&mut self, f: impl Fn(WidgetRef<'_, dyn Widget>) + 'static) {
         fn inspect(
             widget: WidgetRef<'_, dyn Widget>,
             f: &(impl Fn(WidgetRef<'_, dyn Widget>) + 'static),
         ) {
             f(widget);
-            for child in widget.widget().children() {
+            for child in widget.deref().children() {
                 inspect(child, f);
             }
         }
@@ -372,6 +472,9 @@ impl Harness {
         inspect(self.mock_app.window.root.as_dyn(), &f);
     }
 
+    /// Get a [`WidgetMut`] to the root widget.
+    ///
+    /// Because of how WidgetMut works, it can only be passed to a user-provided callback.
     pub fn edit_root_widget<R>(
         &mut self,
         f: impl FnOnce(WidgetMut<'_, '_, Box<dyn Widget>>, &Env) -> R,
@@ -400,7 +503,6 @@ impl Harness {
                     WidgetCtx {
                         global_state: &mut global_state,
                         widget_state: &mut window.root.state,
-                        is_init: true,
                     },
                 ),
                 parent_widget_state: &mut fake_widget_state,
@@ -422,11 +524,14 @@ impl Harness {
             &self.mock_app.env,
             false,
         );
-        self.post_event_stuff();
+        self.process_state_after_event();
 
         res
     }
 
+    /// Pop next action from the queue
+    ///
+    /// Note: Actions are still a WIP feature.
     pub fn pop_action(&mut self) -> Option<(Action, WidgetId)> {
         let (action, widget_id, _) = self.mock_app.action_queue.pop_front()?;
         Some((action, widget_id))
@@ -434,6 +539,15 @@ impl Harness {
 
     // --- Screenshots ---
 
+    /// Method used by [`assert_render_snapshot`]. Use the macro instead.
+    ///
+    /// Renders the current Widget tree to a pixmap, and compares the pixmap against the
+    /// snapshot stored in `./screenshots/module_path__test_name.png`.
+    ///
+    /// * **manifest_dir:** directory where `Cargo.toml` can be found.
+    /// * **test_file_path:** file path the current test is in.
+    /// * **test_module_path:** import path of the module the current test is in.
+    /// * **test_name:** arbitrary name; second argument of assert_render_snapshot.
     pub fn check_render_snapshot(
         &mut self,
         manifest_dir: &str,
@@ -488,6 +602,8 @@ impl Harness {
 
     // --- Debug logger ---
 
+    // TODO - remove, see ROADMAP.md
+    #[allow(missing_docs)]
     pub fn push_log(&mut self, message: &str) {
         self.mock_app
             .debug_logger
@@ -496,6 +612,7 @@ impl Harness {
     }
 
     // ex: harness.write_debug_logs("test_log.json");
+    #[allow(missing_docs)]
     pub fn write_debug_logs(&mut self, path: &str) {
         self.mock_app.debug_logger.write_to_file(path);
     }

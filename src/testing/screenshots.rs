@@ -1,24 +1,15 @@
-use std::collections::HashMap;
-use std::path::Path;
-use std::sync::Arc;
+//! Helper functions for writing snapshot tests and comparing images.
 
-use druid_shell::{KeyEvent, Modifiers, MouseButton, MouseButtons};
 pub use druid_shell::{
     RawMods, Region, Scalable, Scale, Screen, SysMods, TimerToken, WindowHandle, WindowLevel,
     WindowState,
 };
-use image::io::Reader as ImageReader;
 use image::{GenericImageView as _, RgbaImage};
 
-use crate::command::CommandQueue;
-use crate::debug_logger::DebugLogger;
-use crate::ext_event::ExtEventQueue;
-use crate::piet::{BitmapTarget, Device, Error, ImageFormat, Piet};
-use crate::widget::WidgetRef;
-use crate::widget::WidgetState;
-use crate::*;
+use crate::piet::{BitmapTarget, ImageFormat};
+use crate::Size;
 
-pub fn get_rgba_image(render_target: &mut BitmapTarget, window_size: Size) -> RgbaImage {
+pub(crate) fn get_rgba_image(render_target: &mut BitmapTarget, window_size: Size) -> RgbaImage {
     let pixels = render_target
         .to_image_buf(ImageFormat::RgbaPremul)
         .unwrap()
@@ -32,7 +23,7 @@ pub fn get_rgba_image(render_target: &mut BitmapTarget, window_size: Size) -> Rg
     .unwrap()
 }
 
-pub fn get_image_diff(ref_image: &RgbaImage, new_image: &RgbaImage) -> Option<RgbaImage> {
+pub(crate) fn get_image_diff(ref_image: &RgbaImage, new_image: &RgbaImage) -> Option<RgbaImage> {
     let mut is_changed = false;
 
     if ref_image.width() != new_image.width() || ref_image.height() != new_image.height() {

@@ -4,19 +4,19 @@ use crate::app_delegate::AppDelegate;
 use crate::app_root::AppRoot;
 use crate::ext_event::{ExtEventQueue, ExtEventSink};
 use crate::platform::MasonryAppHandler;
-use crate::platform::WindowDesc;
+use crate::platform::WindowDescription;
 use crate::Env;
 
 /// Handles initial setup of an application, and starts the runloop.
 pub struct AppLauncher {
-    windows: Vec<WindowDesc>,
+    windows: Vec<WindowDescription>,
     app_delegate: Option<Box<dyn AppDelegate>>,
     ext_event_queue: ExtEventQueue,
 }
 
 impl AppLauncher {
     /// Create a new `AppLauncher` with the provided window.
-    pub fn with_window(window: WindowDesc) -> Self {
+    pub fn with_window(window: WindowDescription) -> Self {
         AppLauncher {
             windows: vec![window],
             app_delegate: None,

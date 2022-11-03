@@ -197,12 +197,11 @@ impl<T: TextStorage> TextLayout<T> {
     }
 
     /// Returns the [`TextStorage`] backing this layout, if it exists.
-    ///
-    /// [`TextStorage`]: trait.TextStorage.html
     pub fn text(&self) -> Option<&T> {
         self.text.as_ref()
     }
 
+    /// Returns the length of the [`TextStorage`] backing this layout, if it exists.
     pub fn text_len(&self) -> usize {
         if let Some(text) = &self.text {
             text.as_str().len()

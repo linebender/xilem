@@ -19,113 +19,77 @@ use std::ops::{Deref, DerefMut};
 use smallvec::SmallVec;
 use tracing::{trace_span, Span};
 
-use super::prelude::*;
 use crate::contexts::WidgetCtx;
+use crate::event::StatusChange;
 use crate::widget::WidgetRef;
-use crate::AsAny;
-use crate::Point;
+use crate::{
+    AsAny, BoxConstraints, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
+    Point, Size,
+};
 
 /// A unique identifier for a single [`Widget`].
 ///
-/// `WidgetId`s are generated automatically for all widgets that participate
-/// in layout. More specifically, each [`WidgetPod`] has a unique `WidgetId`.
+/// `WidgetId`s are generated automatically for all widgets in the widget tree.
+/// More specifically, each [`WidgetPod`](crate::WidgetPod) has a unique `WidgetId`.
 ///
 /// These ids are used internally to route events, and can be used to communicate
 /// between widgets, by submitting a command (as with [`EventCtx::submit_command`])
-/// and passing a `WidgetId` as the [`Target`].
+/// and passing a `WidgetId` as the [`Target`](crate::Target).
 ///
 /// A widget can retrieve its id via methods on the various contexts, such as
 /// [`LifeCycleCtx::widget_id`].
 ///
 /// ## Explicit `WidgetId`s.
 ///
-/// Sometimes, you may want to know a widget's id when constructing the widget.
-/// You can give a widget an _explicit_ id by wrapping it in an [`IdentityWrapper`]
-/// widget, or by using the [`WidgetExt::with_id`] convenience method.
+/// Sometimes, you may want to construct a widget, in a way that lets you know its id,
+/// so you can refer to the widget later. You can use [`WidgetPod::new_with_id`] to pass
+/// an id to the WidgetPod you're creating; various widgets which have methods to create
+/// children may have variants taking ids as parameters.
 ///
 /// If you set a `WidgetId` directly, you are resposible for ensuring that it
-/// is unique in time. That is: only one widget can exist with a given id at a
-/// given time.
-///
-/// [`Widget`]: trait.Widget.html
-/// [`EventCtx::submit_command`]: struct.EventCtx.html#method.submit_command
-/// [`Target`]: enum.Target.html
-/// [`WidgetPod`]: struct.WidgetPod.html
-/// [`LifeCycleCtx::widget_id`]: struct.LifeCycleCtx.html#method.widget_id
-/// [`WidgetExt::with_id`]: trait.WidgetExt.html#method.with_id
-/// [`IdentityWrapper`]: widget/struct.IdentityWrapper.html
-// this is NonZeroU64 because we regularly store Option<WidgetId>
+/// is unique. Two widgets must not be created with the same id.
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
 pub struct WidgetId(NonZeroU64);
 
+// TODO - Add tutorial: implementing a widget
 /// The trait implemented by all widgets.
 ///
-/// All appearance and behavior for a widget is encapsulated in an
-/// object that implements this trait.
+/// For details on how to implement this trait, see tutorial **(TODO)**
 ///
-/// The trait is parametrized by a type (`T`) for associated data.
-/// All trait methods are provided with access to this data, and
-/// in the case of [`event`] the reference is mutable, so that events
-/// can directly update the data.
+/// Whenever external events affect the given widget, methods `[on_event]`,
+/// `[on_status_change]` and `[on_lifecycle]` are called. Later on, when the
+/// widget is laid out and displayed, methods `[layout]` and `[paint]` are called.
 ///
-/// Whenever the application data changes, the framework traverses
-/// the widget hierarchy with an [`update`] method. The framework
-/// needs to know whether the data has actually changed or not, which
-/// is why `T` has a [`Data`] bound.
+/// These trait methods are provided with a corresponding context. The widget can
+/// request things and cause actions by calling methods on that context. In
+/// addition, these methods are provided with an environment ([`Env`]).
 ///
-/// All the trait methods are provided with a corresponding context.
-/// The widget can request things and cause actions by calling methods
-/// on that context.
+/// Widgets also have a `children()` method. Leaf widgets return an empty array,
+/// whereas container widgets return an array of [`WidgetRef`]. Container widgets
+/// have some validity invariants to maintain regarding their children. See TUTORIAL_2
+/// for details **(TODO)**.
 ///
-/// In addition, all trait methods are provided with an environment
-/// ([`Env`]).
-///
-/// Container widgets will generally not call `Widget` methods directly
-/// on their child widgets, but rather will own their widget wrapped in
-/// a [`WidgetPod`], and call the corresponding method on that. The
-/// `WidgetPod` contains state and logic for these traversals. On the
-/// other hand, particularly light-weight containers might contain their
-/// child `Widget` directly (when no layout or event flow logic is
-/// needed), and in those cases will call these methods.
-///
-/// As a general pattern, container widgets will call the corresponding
-/// `WidgetPod` method on all their children. The `WidgetPod` applies
-/// logic to determine whether to recurse, as needed.
-///
-/// [`event`]: #tymethod.event
-/// [`update`]: #tymethod.update
-/// [`Data`]: trait.Data.html
-/// [`Env`]: struct.Env.html
-/// [`WidgetPod`]: struct.WidgetPod.html
+/// Generally speaking, widgets aren't used directly. They are stored in
+/// [`WidgetPods`](crate::WidgetPod). Widget methods are called by WidgetPods, and the
+/// widget is mutated either during a method call (eg `on_event` or `lifecycle`) or
+/// through a [`WidgetMut`](crate::WidgetMut). See tutorials for detail.
 pub trait Widget: AsAny {
-    /// Handle an event.
+    /// Handle an event - usually user interaction.
     ///
     /// A number of different events (in the [`Event`] enum) are handled in this
     /// method call. A widget can handle these events in a number of ways:
     /// requesting things from the [`EventCtx`], mutating the data, or submitting
-    /// a [`Command`].
-    ///
-    /// [`Event`]: enum.Event.html
-    /// [`EventCtx`]: struct.EventCtx.html
-    /// [`Command`]: struct.Command.html
+    /// a [`Command`](crate::Command).
     fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, env: &Env);
 
+    #[allow(missing_docs)]
     fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange, env: &Env);
 
-    /// Handle a life cycle notification.
+    /// Handle a lifecycle notification.
     ///
     /// This method is called to notify your widget of certain special events,
     /// (available in the [`LifeCycle`] enum) that are generally related to
     /// changes in the widget graph or in the state of your specific widget.
-    ///
-    /// A widget is not expected to mutate the application state in response
-    /// to these events, but only to update its own internal state as required;
-    /// if a widget needs to mutate data, it can submit a [`Command`] that will
-    /// be executed at the next opportunity.
-    ///
-    /// [`LifeCycle`]: enum.LifeCycle.html
-    /// [`LifeCycleCtx`]: struct.LifeCycleCtx.html
-    /// [`Command`]: struct.Command.html
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env);
 
     /// Compute layout.
@@ -135,7 +99,7 @@ pub trait Widget: AsAny {
     ///
     /// A container widget will recursively call [`WidgetPod::layout`] on its
     /// child widgets, providing each of them an appropriate box constraint,
-    /// compute layout, then call [`set_origin`] on each of its children.
+    /// compute layout, then call [`LayoutCtx::place_child`] on each of its children.
     /// Finally, it should return the size of the container. The container
     /// can recurse in any order, which can be helpful to, for example, compute
     /// the size of non-flex widgets first, to determine the amount of space
@@ -145,39 +109,60 @@ pub trait Widget: AsAny {
     /// once, though there is nothing enforcing this.
     ///
     /// The layout strategy is strongly inspired by Flutter.
-    ///
-    /// [`WidgetPod::layout`]: struct.WidgetPod.html#method.layout
-    /// [`set_origin`]: struct.WidgetPod.html#method.set_origin
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size;
 
     /// Paint the widget appearance.
     ///
-    /// The [`PaintCtx`] derefs to something that implements the [`RenderContext`]
-    /// trait, which exposes various methods that the widget can use to paint
-    /// its appearance.
+    /// The [`PaintCtx`] derefs to something that implements the
+    /// [`piet::RenderContext`] trait, which exposes various methods that the widget
+    /// can use to paint its appearance.
     ///
     /// Container widgets can paint a background before recursing to their
     /// children, or annotations (for example, scrollbars) by painting
     /// afterwards. In addition, they can apply masks and transforms on
     /// the render context, which is especially useful for scrolling.
-    ///
-    /// [`PaintCtx`]: struct.PaintCtx.html
-    /// [`RenderContext`]: trait.RenderContext.html
     fn paint(&mut self, ctx: &mut PaintCtx, env: &Env);
 
+    /// Return references to this widget's children.
+    ///
+    /// Leaf widgets return an empty array. Container widgets return references to
+    /// their children.
+    ///
+    /// This methods has some validity invariants. A widget's children list must be
+    /// consistent. If children are added or removed, the parent widget should call
+    /// `children_changed` on one of the Ctx parameters. Container widgets are also
+    /// responsible for calling the main methods (on_event, lifecycle, layout, paint)
+    /// on their children.
     fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]>;
 
+    /// Return a span for tracing.
+    ///
+    /// As methods recurse through the widget tree, trace spans are added for each child
+    /// widget visited, and popped when control flow goes back to the parent. This method
+    /// returns a static span (that you can use to filter traces and logs).
     fn make_trace_span(&self) -> Span {
         trace_span!("Widget", r#type = self.short_type_name())
     }
 
+    /// Return a small string representing important info about this widget instance.
+    ///
+    /// When using [`WidgetRef`]'s [Debug](std::fmt::Debug) implementation, widgets
+    /// will be displayed as a tree of values. Widgets which return a non-null value in
+    /// `get_debug_text` will appear with that text next to their type name. This can
+    /// be eg a label's text, or whether a checkbox is checked.
     fn get_debug_text(&self) -> Option<String> {
         None
     }
 
     // --- Auto-generated implementations ---
 
-    // Returns direct child, not recursive child
+    /// Return which child, if any, has the given `pos` in its layout rect.
+    ///
+    /// The child return is a direct child, not eg a grand-child. The position is in
+    /// relative cordinates. (Eg `(0,0)` is the top-left corner of `self`).
+    ///
+    /// Has a default implementation, that can be overriden to search children more
+    /// efficiently.
     fn get_child_at_pos(&self, pos: Point) -> Option<WidgetRef<'_, dyn Widget>> {
         // layout_rect() is in parent coordinate space
         self.children()
@@ -185,16 +170,16 @@ pub trait Widget: AsAny {
             .find(|child| child.state().layout_rect().contains(pos))
     }
 
-    #[doc(hidden)]
     /// Get the (verbose) type name of the widget for debugging purposes.
     /// You should not override this method.
+    #[doc(hidden)]
     fn type_name(&self) -> &'static str {
         std::any::type_name::<Self>()
     }
 
-    #[doc(hidden)]
     /// Get the (abridged) type name of the widget for debugging purposes.
     /// You should not override this method.
+    #[doc(hidden)]
     fn short_type_name(&self) -> &'static str {
         let name = self.type_name();
         name.split('<')
@@ -205,19 +190,31 @@ pub trait Widget: AsAny {
             .unwrap_or(name)
     }
 
+    // FIXME
+    /// Cast as Any.
+    ///
+    /// Mainly intended to be overriden in `Box<dyn Widget>`.
     #[doc(hidden)]
     fn as_any(&self) -> &dyn Any {
         self.as_dyn_any()
     }
 
+    // FIXME
+    /// Cast as Any.
+    ///
+    /// Mainly intended to be overriden in `Box<dyn Widget>`.
     #[doc(hidden)]
     fn as_mut_any(&mut self) -> &mut dyn Any {
         self.as_mut_dyn_any()
     }
 }
 
+/// Trait that widgets must implement to be in [`WidgetMut`](crate::WidgetMut).
+///
+/// This trait should usually be implemented with [`declare_widget`].
+#[allow(missing_docs)]
 pub trait StoreInWidgetMut: Widget {
-    type Mut<'a, 'b: 'a>: std::ops::Deref<Target = Self>;
+    type Mut<'a, 'b: 'a>: Deref<Target = Self>;
 
     fn from_widget_and_ctx<'a, 'b>(
         widget: &'a mut Self,
@@ -241,6 +238,50 @@ pub trait StoreInWidgetMut: Widget {
     ) -> (&'r mut Self, &'r mut WidgetCtx<'a, 'b>);
 }
 
+/// Declare a mutable reference type for your widget.
+///
+/// The general syntax is:
+///
+/// ```
+/// declare_widget!(MyWidgetMut, MyWidget);
+/// ```
+///
+/// where `MyWidget` is the name of your widget, and `MyWidgetMut` is an arbitrary
+/// name (it can be exported for documentation purposes, but it's not going to be
+/// instanced directly).
+///
+/// The above macro call will produce something like this:
+///
+/// ```
+/// pub struct MyWidgetMut<'a, 'b>(WidgetCtx<'a, 'b>, &'a mut MyWidget);
+///
+/// impl StoreInWidgetMut for MyWidget {
+///     type Mut<'a, 'b> = MyWidgetMut;
+/// }
+/// ```
+///
+/// Because of `WidgetMut`'s [Deref] implementation, any methods implemented on
+/// `MyWidgetMut` will thus be usable from `WidgetMut<MyWidget>`.
+///
+/// **Note:** This is all a huge hack to compensate for the lack of
+/// [arbitrary self types](https://github.com/rust-lang/rust/issues/44874). What we
+/// would really want is for that feature to be stable.
+///
+/// ## Generic widgets
+///
+/// If a widget type has generic arguments, the syntax becomes:
+///
+/// ```
+/// declare_widget!(FoobarMut, Foobar<A, B, C>);
+/// ```
+///
+/// If these arguments have bounds, the syntax becomes:
+///
+/// ```
+/// declare_widget!(FoobarMut, Foobar<A: (SomeTrait), B: (SomeTrait + OtherTrait), C>);
+/// ```
+///
+/// Yes, that is extremely annoying. Sorry about that.
 #[macro_export]
 macro_rules! declare_widget {
     ($WidgetNameMut:ident, $WidgetName:ident) => {

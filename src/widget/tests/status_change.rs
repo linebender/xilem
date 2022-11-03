@@ -1,11 +1,13 @@
 // TODO - change import
 use shell::MouseButton;
 
-use crate::testing::{widget_ids, Harness, ModularWidget, Record, Recording, TestWidgetExt as _};
+use crate::testing::{
+    widget_ids, ModularWidget, Record, Recording, TestHarness, TestWidgetExt as _,
+};
 use crate::widget::{Button, Flex, Label, SizedBox};
 use crate::*;
 
-fn is_hot(harness: &Harness, id: WidgetId) -> bool {
+fn is_hot(harness: &TestHarness, id: WidgetId) -> bool {
     harness.get_widget(id).state().is_hot
 }
 
@@ -43,7 +45,7 @@ fn propagate_hot() {
         .record(&root_rec)
         .with_id(root);
 
-    let mut harness = Harness::create(widget);
+    let mut harness = TestHarness::create(widget);
 
     // we don't care about setup events, so discard them now.
     root_rec.clear();
@@ -122,7 +124,7 @@ fn update_hot_on_mouse_leave() {
 
     let widget = Label::new("hello").with_id(label_id).record(&label_rec);
 
-    let mut harness = Harness::create(widget);
+    let mut harness = TestHarness::create(widget);
 
     harness.mouse_move_to(label_id);
     assert!(is_hot(&harness, label_id));
@@ -175,7 +177,7 @@ fn update_hot_from_layout() {
         )
         .with_flex_spacer(1.0);
 
-    let mut harness = Harness::create(widget);
+    let mut harness = TestHarness::create(widget);
 
     harness.mouse_move_to(collapsable_id);
     assert!(is_hot(&harness, collapsable_id));
@@ -229,7 +231,7 @@ fn get_mouse_events_while_active() {
         .with_child_id(Button::new("hello").record(&button_rec), button)
         .with_id(root);
 
-    let mut harness = Harness::create(widget);
+    let mut harness = TestHarness::create(widget);
 
     // First we check that the default state is clear: nothing active, no event recorded
 

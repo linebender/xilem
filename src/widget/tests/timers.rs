@@ -3,7 +3,7 @@ use std::rc::Rc;
 
 use instant::Duration;
 
-use crate::testing::{Harness, ModularWidget};
+use crate::testing::{ModularWidget, TestHarness};
 use crate::*;
 
 #[test]
@@ -27,7 +27,7 @@ fn basic_timer() {
             }
         });
 
-    let mut harness = Harness::create(widget);
+    let mut harness = TestHarness::create(widget);
 
     assert_eq!(timer_handled.get(), false);
 

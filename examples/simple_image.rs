@@ -8,13 +8,13 @@
 #![windows_subsystem = "windows"]
 
 use masonry::widget::{FillStrat, Image};
-use masonry::{AppLauncher, ImageBuf, WindowDesc};
+use masonry::{AppLauncher, ImageBuf, WindowDescription};
 
 pub fn main() {
     let png_data = ImageBuf::from_data(include_bytes!("./assets/PicWithAlpha.png")).unwrap();
     let image = Image::new(png_data).fill_mode(FillStrat::Contain);
 
-    let main_window = WindowDesc::new(image)
+    let main_window = WindowDescription::new(image)
         .window_size((650., 450.))
         .title("Flex Container Options");
 

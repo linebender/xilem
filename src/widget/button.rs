@@ -19,9 +19,11 @@ use tracing::{trace, trace_span, Span};
 
 use crate::action::Action;
 use crate::contexts::WidgetCtx;
-use crate::widget::prelude::*;
 use crate::widget::{Label, WidgetMut, WidgetPod, WidgetRef};
-use crate::{theme, ArcStr, Insets, LinearGradient, UnitPoint};
+use crate::{
+    theme, ArcStr, BoxConstraints, Env, Event, EventCtx, Insets, LayoutCtx, LifeCycle,
+    LifeCycleCtx, LinearGradient, PaintCtx, RenderContext, Size, StatusChange, UnitPoint, Widget,
+};
 
 // the minimum padding added to a button.
 // NOTE: these values are chosen to match the existing look of TextBox; these
@@ -29,6 +31,8 @@ use crate::{theme, ArcStr, Insets, LinearGradient, UnitPoint};
 const LABEL_INSETS: Insets = Insets::uniform_xy(8., 2.);
 
 /// A button with a text label.
+///
+/// Emits [`Action::ButtonPressed`] when pressed.
 pub struct Button {
     label: WidgetPod<Label>,
 }
@@ -38,28 +42,18 @@ crate::declare_widget!(ButtonMut, Button);
 impl Button {
     /// Create a new button with a text label.
     ///
-    /// Use the [`.on_click`] method to provide a closure to be called when the
-    /// button is clicked.
-    ///
     /// # Examples
     ///
     /// ```
     /// use druid::widget::Button;
     ///
-    /// let button = Button::new("Increment").on_click(|_ctx, data: &mut u32, _env| {
-    ///     *data += 1;
-    /// });
+    /// let button = Button::new("Increment");
     /// ```
-    ///
-    /// [`.on_click`]: #method.on_click
     pub fn new(text: impl Into<ArcStr>) -> Button {
         Button::from_label(Label::new(text))
     }
 
     /// Create a new button with the provided [`Label`].
-    ///
-    /// Use the [`.on_click`] method to provide a closure to be called when the
-    /// button is clicked.
     ///
     /// # Examples
     ///
@@ -67,13 +61,9 @@ impl Button {
     /// use druid::Color;
     /// use druid::widget::{Button, Label};
     ///
-    /// let button = Button::from_label(Label::new("Increment").with_text_color(Color::grey(0.5))).on_click(|_ctx, data: &mut u32, _env| {
-    ///     *data += 1;
-    /// });
+    /// let label = Label::new("Increment").with_text_color(Color::grey(0.5));
+    /// let button = Button::from_label(label);
     /// ```
-    ///
-    /// [`Label`]: struct.Label.html
-    /// [`.on_click`]: #method.on_click
     pub fn from_label(label: Label) -> Button {
         Button {
             label: WidgetPod::new(label),
@@ -208,7 +198,7 @@ impl Widget for Button {
     }
 
     fn get_debug_text(&self) -> Option<String> {
-        Some(self.label.widget().text().to_string())
+        Some(self.label.as_ref().text().to_string())
     }
 }
 
@@ -219,7 +209,7 @@ mod tests {
     use super::*;
     use crate::assert_render_snapshot;
     use crate::testing::widget_ids;
-    use crate::testing::Harness;
+    use crate::testing::TestHarness;
     use crate::testing::TestWidgetExt;
     use crate::theme::PRIMARY_LIGHT;
 
@@ -228,7 +218,7 @@ mod tests {
         let [button_id] = widget_ids();
         let widget = Button::new("Hello").with_id(button_id);
 
-        let mut harness = Harness::create(widget);
+        let mut harness = TestHarness::create(widget);
 
         assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "hello");
@@ -251,7 +241,7 @@ mod tests {
                     .with_text_size(20.0),
             );
 
-            let mut harness = Harness::create_with_size(button, Size::new(50.0, 50.0));
+            let mut harness = TestHarness::create_with_size(button, Size::new(50.0, 50.0));
 
             harness.render()
         };
@@ -259,7 +249,7 @@ mod tests {
         let image_2 = {
             let button = Button::new("Hello world");
 
-            let mut harness = Harness::create_with_size(button, Size::new(50.0, 50.0));
+            let mut harness = TestHarness::create_with_size(button, Size::new(50.0, 50.0));
 
             harness.edit_root_widget(|mut button, _| {
                 let mut button = button.downcast::<Button>().unwrap();
