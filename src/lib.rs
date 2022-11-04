@@ -14,7 +14,6 @@
 
 //! Fork of Druid
 
-#![feature(generic_associated_types)]
 #![deny(
     broken_intra_doc_links,
     unsafe_code,
