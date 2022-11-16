@@ -19,11 +19,11 @@
 
 use std::ops::{Deref, DerefMut};
 
-use druid_shell::{
+use glazier::{
     kurbo::{Point, Size},
-    piet::{Piet, PietText, RenderContext},
     WindowHandle,
 };
+use parley::FontContext;
 
 use crate::event::Event;
 
@@ -35,7 +35,7 @@ use super::{
 // These contexts loosely follow Druid.
 pub struct CxState<'a> {
     window: &'a WindowHandle,
-    text: PietText,
+    font_cx: &'a mut FontContext,
     events: &'a mut Vec<Event>,
 }
 
@@ -66,17 +66,20 @@ pub struct AlignCx<'a> {
     pub(crate) origin: Point,
 }
 
-pub struct PaintCx<'a, 'b, 'c> {
+pub struct PaintCx<'a, 'b> {
     pub(crate) cx_state: &'a mut CxState<'b>,
     pub(crate) widget_state: &'a WidgetState,
-    pub(crate) piet: &'a mut Piet<'c>,
 }
 
 impl<'a> CxState<'a> {
-    pub fn new(window: &'a WindowHandle, events: &'a mut Vec<Event>) -> Self {
+    pub fn new(
+        window: &'a WindowHandle,
+        font_cx: &'a mut FontContext,
+        events: &'a mut Vec<Event>,
+    ) -> Self {
         CxState {
             window,
-            text: window.text(),
+            font_cx,
             events,
         }
     }
@@ -143,10 +146,6 @@ impl<'a, 'b> LayoutCx<'a, 'b> {
         }
     }
 
-    pub fn text(&mut self) -> &mut PietText {
-        &mut self.cx_state.text
-    }
-
     pub fn add_event(&mut self, event: Event) {
         self.cx_state.events.push(event);
     }
@@ -180,23 +179,12 @@ impl<'a> AlignCx<'a> {
     }
 }
 
-impl<'a, 'b, 'c> PaintCx<'a, 'b, 'c> {
-    pub(crate) fn new(
-        cx_state: &'a mut CxState<'b>,
-        widget_state: &'a mut WidgetState,
-        piet: &'a mut Piet<'c>,
-    ) -> Self {
+impl<'a, 'b> PaintCx<'a, 'b> {
+    pub(crate) fn new(cx_state: &'a mut CxState<'b>, widget_state: &'a mut WidgetState) -> Self {
         PaintCx {
             cx_state,
             widget_state,
-            piet,
         }
-    }
-
-    pub fn with_save(&mut self, f: impl FnOnce(&mut PaintCx)) {
-        self.piet.save().unwrap();
-        f(self);
-        self.piet.restore().unwrap();
     }
 
     pub fn is_hot(&self) -> bool {
@@ -210,18 +198,7 @@ impl<'a, 'b, 'c> PaintCx<'a, 'b, 'c> {
     pub fn size(&self) -> Size {
         self.widget_state.size
     }
-}
-
-impl<'c> Deref for PaintCx<'_, '_, 'c> {
-    type Target = Piet<'c>;
-
-    fn deref(&self) -> &Self::Target {
-        self.piet
-    }
-}
-
-impl<'c> DerefMut for PaintCx<'_, '_, 'c> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        self.piet
+    pub fn font_cx(&mut self) -> &mut FontContext {
+        self.cx_state.font_cx
     }
 }

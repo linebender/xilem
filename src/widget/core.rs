@@ -18,10 +18,7 @@
 //! widget system, particularly its core.rs.
 
 use bitflags::bitflags;
-use druid_shell::{
-    kurbo::{Affine, Point, Rect, Size},
-    piet::RenderContext,
-};
+use glazier::kurbo::{Affine, Point, Rect, Size};
 
 use crate::Widget;
 
@@ -32,7 +29,7 @@ use super::{
     },
     contexts::LifeCycleCx,
     AlignCx, AnyWidget, CxState, EventCx, LayoutCx, LifeCycle, PaintCx, PreparePaintCx, RawEvent,
-    UpdateCx,
+    Rendered, UpdateCx,
 };
 
 bitflags! {
@@ -301,7 +298,6 @@ impl Pod {
         let mut inner_cx = PaintCx {
             cx_state: cx.cx_state,
             widget_state: &mut self.state,
-            piet: cx.piet,
         };
         self.widget.paint(&mut inner_cx);
     }
@@ -310,12 +306,8 @@ impl Pod {
         self.widget.prepare_paint(cx, visible);
     }
 
-    pub fn paint(&mut self, cx: &mut PaintCx) {
-        cx.with_save(|cx| {
-            cx.piet
-                .transform(Affine::translate(self.state.origin.to_vec2()));
-            self.paint_raw(cx);
-        });
+    pub fn paint(&mut self, cx: &mut PaintCx) -> Rendered {
+        self.widget.paint(cx)
     }
 
     pub fn height_flexibility(&self) -> f64 {

@@ -1,4 +1,4 @@
-use druid_shell::{
+use glazier::{
     kurbo::{Point, Vec2},
     Modifiers, MouseButton, MouseButtons,
 };
@@ -44,9 +44,9 @@ pub enum LifeCycle {
     HotChanged(bool),
 }
 
-impl<'a> From<&'a druid_shell::MouseEvent> for MouseEvent {
-    fn from(src: &druid_shell::MouseEvent) -> MouseEvent {
-        let druid_shell::MouseEvent {
+impl<'a> From<&'a glazier::MouseEvent> for MouseEvent {
+    fn from(src: &glazier::MouseEvent) -> MouseEvent {
+        let glazier::MouseEvent {
             pos,
             buttons,
             mods,
