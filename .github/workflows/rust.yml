@@ -14,6 +14,11 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
+    - name: install libx11-dev
+      run: |
+        sudo apt update
+        sudo apt install libx11-dev libpango1.0-dev libxkbcommon-dev libxkbcommon-x11-dev
+      if: runner.os == 'Linux'
     - uses: actions/checkout@v3
     - uses: dtolnay/rust-toolchain@stable
     - name: Check
