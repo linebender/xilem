@@ -1,0 +1,25 @@
+name: Rust
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  check:
+    runs-on: windows-2019
+    
+    steps:
+    - name: install libx11-dev
+      run: |
+        sudo apt update
+        sudo apt install libx11-dev libpango1.0-dev libxkbcommon-dev libxkbcommon-x11-dev
+      if: runner.os == 'Linux'
+    - uses: actions/checkout@v3
+    - uses: dtolnay/rust-toolchain@stable
+    - name: Check
+      run: cargo check
