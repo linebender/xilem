@@ -12,18 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use glazier::{
-    kurbo::{Insets, Size},
-};
+use glazier::kurbo::{Insets, Size};
 use parley::Layout;
-use piet_scene::{Brush, Color, Affine, SceneFragment, SceneBuilder};
+use piet_scene::{Affine, Brush, Color, GradientStop, GradientStops, SceneBuilder, SceneFragment};
 
-use crate::{event::Event, id::IdPath, VertAlignment, text::ParleyBrush};
+use crate::{event::Event, id::IdPath, text::ParleyBrush, VertAlignment};
 
 use super::{
     align::{FirstBaseline, LastBaseline, SingleAlignment},
     contexts::LifeCycleCx,
-    AlignCx, EventCx, LayoutCx, LifeCycle, PaintCx, RawEvent, UpdateCx, Widget, Rendered, piet_scene_helpers,
+    piet_scene_helpers::{self, UnitPoint},
+    AlignCx, EventCx, LayoutCx, LifeCycle, PaintCx, RawEvent, Rendered, UpdateCx, Widget,
 };
 
 pub struct Button {
@@ -137,6 +136,31 @@ impl Widget for Button {
         } else {
             Color::rgb8(0x3a, 0x3a, 0x3a)
         };
+        let bg_stops = if is_active {
+            [
+                GradientStop {
+                    offset: 0.0,
+                    color: Color::rgb8(0x3a, 0x3a, 0x3a),
+                },
+                GradientStop {
+                    offset: 1.0,
+                    color: Color::rgb8(0xa1, 0xa1, 0xa1),
+                },
+            ][..]
+                .into()
+        } else {
+            [
+                GradientStop {
+                    offset: 0.0,
+                    color: Color::rgb8(0xa1, 0xa1, 0xa1),
+                },
+                GradientStop {
+                    offset: 1.0,
+                    color: Color::rgb8(0x3a, 0x3a, 0x3a),
+                },
+            ][..]
+                .into()
+        };
         /*
         let bg_gradient = if is_active {
             LinearGradient::new(
@@ -154,7 +178,19 @@ impl Widget for Button {
         */
         let mut fragment = SceneFragment::default();
         let mut builder = SceneBuilder::for_fragment(&mut fragment);
-        piet_scene_helpers::stroke(&mut builder, &rounded_rect, &Brush::Solid(border_color), 1.0);
+        piet_scene_helpers::stroke(
+            &mut builder,
+            &rounded_rect,
+            &Brush::Solid(border_color),
+            button_border_width,
+        );
+        piet_scene_helpers::fill_lin_gradient(
+            &mut builder,
+            &rounded_rect,
+            bg_stops,
+            UnitPoint::TOP,
+            UnitPoint::BOTTOM,
+        );
         //cx.fill(rounded_rect, &bg_gradient);
         if let Some(layout) = &self.layout {
             let size = Size::new(layout.width() as f64, layout.height() as f64);
