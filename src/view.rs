@@ -15,7 +15,7 @@
 // pub mod adapt;
 // pub mod any_view;
 // pub mod async_list;
-// pub mod button;
+pub mod button;
 // pub mod layout_observer;
 // pub mod list;
 // pub mod memoize;

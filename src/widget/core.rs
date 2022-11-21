@@ -274,6 +274,7 @@ impl Pod {
                 widget_state: &mut self.state,
             };
             let new_size = self.widget.layout(&mut child_cx, proposed_size);
+            println!("layout size = {:?}", new_size);
             self.state.proposed_size = proposed_size;
             self.state.size = new_size;
             self.state.flags.remove(PodFlags::REQUEST_LAYOUT);
@@ -307,7 +308,11 @@ impl Pod {
     }
 
     pub fn paint(&mut self, cx: &mut PaintCx) -> Rendered {
-        self.widget.paint(cx)
+        let mut inner_cx = PaintCx {
+            cx_state: cx.cx_state,
+            widget_state: &mut self.state,
+        };
+        self.widget.paint(&mut inner_cx)
     }
 
     pub fn height_flexibility(&self) -> f64 {

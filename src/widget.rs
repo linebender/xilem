@@ -13,11 +13,12 @@
 // limitations under the License.
 
 pub mod align;
-//pub mod button;
+pub mod button;
 mod contexts;
 mod core;
 //pub mod layout_observer;
 //pub mod list;
+pub mod piet_scene_helpers;
 mod raw_event;
 //pub mod scroll_view;
 pub mod text;

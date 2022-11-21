@@ -160,6 +160,10 @@ impl<'a, 'b> LayoutCx<'a, 'b> {
     pub fn max_size(&self) -> Size {
         self.widget_state.max_size
     }
+
+    pub fn font_cx(&mut self) -> &mut FontContext {
+        self.cx_state.font_cx
+    }
 }
 
 // This is laziness, should be a separate cx with invalidate methods
@@ -198,6 +202,7 @@ impl<'a, 'b> PaintCx<'a, 'b> {
     pub fn size(&self) -> Size {
         self.widget_state.size
     }
+
     pub fn font_cx(&mut self) -> &mut FontContext {
         self.cx_state.font_cx
     }

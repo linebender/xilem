@@ -11,7 +11,9 @@ mod widget;
 pub use app::App;
 pub use app_main::AppLauncher;
 pub use view::View;
+pub use view::button::button;
 pub use widget::Widget;
+pub use widget::align::VertAlignment;
 
 use glazier::kurbo::Size;
 use glazier::{

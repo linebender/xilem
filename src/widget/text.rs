@@ -13,6 +13,7 @@
 // limitations under the License.
 
 use glazier::kurbo::{Point, Size};
+use parley::Layout;
 use piet_scene::{Affine, Brush, Color, SceneBuilder, SceneFragment};
 
 use crate::text::ParleyBrush;
@@ -25,6 +26,7 @@ use super::{
 
 pub struct TextWidget {
     text: String,
+    layout: Option<Layout<ParleyBrush>>,
     is_wrapped: bool,
 }
 
@@ -33,6 +35,7 @@ impl TextWidget {
         TextWidget {
             text,
             is_wrapped: false,
+            layout: None,
         }
     }
 
@@ -60,6 +63,15 @@ impl Widget for TextWidget {
     }
 
     fn layout(&mut self, cx: &mut LayoutCx, proposed_size: Size) -> Size {
+        let mut lcx = parley::LayoutContext::new();
+        let mut layout_builder = lcx.ranged_builder(cx.font_cx(), &self.text, 1.0);
+        layout_builder.push_default(&parley::style::StyleProperty::Brush(ParleyBrush(
+            Brush::Solid(Color::rgb8(255, 255, 255)),
+        )));
+        let mut layout = layout_builder.build();
+        // Question for Chad: is this needed?
+        layout.break_all_lines(None, parley::layout::Alignment::Start);
+        self.layout = Some(layout);
         cx.widget_state.max_size
     }
 
@@ -68,16 +80,10 @@ impl Widget for TextWidget {
     fn paint(&mut self, cx: &mut PaintCx) -> Rendered {
         let mut fragment = SceneFragment::default();
         let mut builder = SceneBuilder::for_fragment(&mut fragment);
-        let mut lcx = parley::LayoutContext::new();
-        let mut layout_builder = lcx.ranged_builder(cx.font_cx(), "hello xilem", 1.0);
-        layout_builder.push_default(&parley::style::StyleProperty::Brush(ParleyBrush(
-            Brush::Solid(Color::rgb8(255, 255, 255)),
-        )));
-        let mut layout = layout_builder.build();
-        // Question for Chad: is this needed?
-        layout.break_all_lines(None, parley::layout::Alignment::Start);
-        let transform = Affine::translate(40.0, 40.0);
-        crate::text::render_text(&mut builder, transform, &layout);
+        if let Some(layout) = &self.layout {
+            let transform = Affine::translate(40.0, 40.0);
+            crate::text::render_text(&mut builder, transform, &layout);
+        }
         Rendered(fragment)
     }
 }
