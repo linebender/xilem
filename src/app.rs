@@ -173,6 +173,7 @@ where
     pub fn paint(&mut self) -> Rendered {
         loop {
             self.send_events();
+            // TODO: be more lazy re-rendering
             self.render();
             let root_pod = self.root_pod.as_mut().unwrap();
             let mut cx_state =
@@ -202,6 +203,7 @@ where
     }
 
     pub fn window_event(&mut self, event: RawEvent) {
+        self.ensure_root();
         let root_pod = self.root_pod.as_mut().unwrap();
         let mut cx_state = CxState::new(&self.window_handle, &mut self.font_cx, &mut self.events);
         let mut event_cx = EventCx::new(&mut cx_state, &mut self.root_state);
@@ -213,6 +215,13 @@ where
         if !self.events.is_empty() {
             let events = std::mem::take(&mut self.events);
             let _ = self.req_chan.blocking_send(AppReq::Events(events));
+        }
+    }
+
+    // Make sure the widget tree (root pod) is available
+    fn ensure_root(&mut self) {
+        if self.root_pod.is_none() {
+            self.render();
         }
     }
 
