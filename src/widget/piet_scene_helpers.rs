@@ -1,5 +1,5 @@
-use glazier::kurbo::{self, Affine, Point, Rect, Shape};
-use piet_scene::{Brush, BrushRef, ColorStopsSource, Fill, LinearGradient, SceneBuilder, Stroke};
+use glazier::kurbo::{self, Affine, Rect, Shape};
+use piet_scene::{BrushRef, ColorStopsSource, Fill, LinearGradient, SceneBuilder, Stroke};
 
 #[derive(Debug, Clone, Copy)]
 pub struct UnitPoint {

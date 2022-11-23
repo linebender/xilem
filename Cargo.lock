@@ -1005,7 +1005,7 @@ dependencies = [
  "instant",
  "js-sys",
  "keyboard-types",
- "kurbo 0.9.0",
+ "kurbo",
  "lazy_static",
  "log",
  "nix 0.25.0",
@@ -1246,15 +1246,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0b7668b7cff6a51fe61cdde64cd27c8a220786f399501b57ebe36f7d8112fd68"
 dependencies = [
  "bitflags",
-]
-
-[[package]]
-name = "kurbo"
-version = "0.8.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7a53776d271cfb873b17c618af0298445c88afc52837f3e948fa3fafd131f449"
-dependencies = [
- "arrayvec",
 ]
 
 [[package]]
@@ -1719,6 +1710,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "19b17cddbe7ec3f8bc800887bab5e717348c95ea2ca0b1bf0837fb964dc67099"
 
 [[package]]
+name = "peniko"
+version = "0.1.0"
+source = "git+https://github.com/linebender/peniko#b83821720aa51a3942be5d20c71525a1ae61ac0a"
+dependencies = [
+ "kurbo",
+ "smallvec",
+]
+
+[[package]]
 name = "percent-encoding"
 version = "2.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1737,11 +1737,10 @@ dependencies = [
 [[package]]
 name = "piet-gpu"
 version = "0.1.0"
-source = "git+https://github.com/linebender/piet-gpu#fd5c6dd3ac1746a25270aee49e4b06d6f291c269"
+source = "git+https://github.com/linebender/piet-gpu#018bb34e41afd6813a698705cd10d000ece8d814"
 dependencies = [
  "bytemuck",
  "clap",
- "kurbo 0.8.3",
  "ndk 0.3.0",
  "ndk-glue 0.3.0",
  "ndk-sys 0.2.2",
@@ -1759,7 +1758,7 @@ dependencies = [
 [[package]]
 name = "piet-gpu-derive"
 version = "0.0.0"
-source = "git+https://github.com/linebender/piet-gpu#fd5c6dd3ac1746a25270aee49e4b06d6f291c269"
+source = "git+https://github.com/linebender/piet-gpu#018bb34e41afd6813a698705cd10d000ece8d814"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1769,7 +1768,7 @@ dependencies = [
 [[package]]
 name = "piet-gpu-hal"
 version = "0.1.0"
-source = "git+https://github.com/linebender/piet-gpu#fd5c6dd3ac1746a25270aee49e4b06d6f291c269"
+source = "git+https://github.com/linebender/piet-gpu#018bb34e41afd6813a698705cd10d000ece8d814"
 dependencies = [
  "ash",
  "ash-window",
@@ -1790,7 +1789,7 @@ dependencies = [
 [[package]]
 name = "piet-gpu-types"
 version = "0.0.0"
-source = "git+https://github.com/linebender/piet-gpu#fd5c6dd3ac1746a25270aee49e4b06d6f291c269"
+source = "git+https://github.com/linebender/piet-gpu#018bb34e41afd6813a698705cd10d000ece8d814"
 dependencies = [
  "half",
  "piet-gpu-derive",
@@ -1799,11 +1798,11 @@ dependencies = [
 [[package]]
 name = "piet-scene"
 version = "0.1.0"
-source = "git+https://github.com/linebender/piet-gpu#fd5c6dd3ac1746a25270aee49e4b06d6f291c269"
+source = "git+https://github.com/linebender/piet-gpu#018bb34e41afd6813a698705cd10d000ece8d814"
 dependencies = [
  "bytemuck",
- "kurbo 0.8.3",
  "moscato",
+ "peniko",
  "smallvec",
 ]
 
