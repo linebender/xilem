@@ -22,7 +22,7 @@ use super::{
     align::{FirstBaseline, LastBaseline, SingleAlignment},
     contexts::LifeCycleCx,
     piet_scene_helpers::{self, UnitPoint},
-    AlignCx, EventCx, LayoutCx, LifeCycle, PaintCx, RawEvent, UpdateCx, Widget,
+    AlignCx, EventCx, LayoutCx, LifeCycle, PaintCx, RawEvent, UpdateCx, UpdateFlags, Widget,
 };
 
 pub struct Button {
@@ -40,9 +40,10 @@ impl Button {
         }
     }
 
-    pub fn set_label(&mut self, label: String) {
+    pub fn set_label(&mut self, label: String) -> UpdateFlags {
         self.label = label;
         self.layout = None;
+        UpdateFlags::REQUEST_LAYOUT | UpdateFlags::REQUEST_PAINT
     }
 }
 

@@ -49,6 +49,16 @@ bitflags! {
     }
 }
 
+bitflags! {
+    #[derive(Default)]
+    #[must_use]
+    pub struct UpdateFlags: u8 {
+        const REQUEST_UPDATE = 1;
+        const REQUEST_LAYOUT = 2;
+        const REQUEST_PAINT = 4;
+    }
+}
+
 /// A pod that contains a widget (in a container).
 pub struct Pod {
     pub(crate) state: WidgetState,
@@ -125,6 +135,11 @@ impl Pod {
 
     pub fn downcast_mut<T: 'static>(&mut self) -> Option<&mut T> {
         (*self.widget).as_any_mut().downcast_mut()
+    }
+
+    pub fn mark(&mut self, flags: UpdateFlags) {
+        self.state
+            .request(PodFlags::from_bits(flags.bits().into()).unwrap());
     }
 
     pub fn request_update(&mut self) {

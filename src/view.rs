@@ -35,7 +35,7 @@ use futures_task::{ArcWake, Waker};
 use crate::{
     event::EventResult,
     id::{Id, IdPath},
-    widget::Widget,
+    widget::{UpdateFlags, Widget},
 };
 
 /// A view object representing a node in the UI.
@@ -73,7 +73,7 @@ pub trait View<T, A = ()>: Send {
         id: &mut Id,
         state: &mut Self::State,
         element: &mut Self::Element,
-    ) -> bool;
+    ) -> UpdateFlags;
 
     /// Propagate an event.
     ///

@@ -33,7 +33,7 @@ use piet_scene::SceneBuilder;
 use self::contexts::LifeCycleCx;
 pub use self::contexts::{AlignCx, CxState, EventCx, LayoutCx, PaintCx, PreparePaintCx, UpdateCx};
 pub use self::core::Pod;
-pub(crate) use self::core::{PodFlags, WidgetState};
+pub(crate) use self::core::{PodFlags, UpdateFlags, WidgetState};
 pub use self::raw_event::{LifeCycle, RawEvent};
 
 use self::align::SingleAlignment;
