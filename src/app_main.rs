@@ -15,8 +15,9 @@
 use std::any::Any;
 
 use glazier::{
-    kurbo::Size, Application, Cursor, HotKey, IdleToken, Menu, MouseEvent, Region, Scalable,
-    SysMods, WinHandler, WindowBuilder, WindowHandle,
+    kurbo::{Affine, Size},
+    Application, Cursor, HotKey, IdleToken, Menu, MouseEvent, Region, Scalable, SysMods,
+    WinHandler, WindowBuilder, WindowHandle,
 };
 use parley::FontContext;
 use piet_scene::{Scene, SceneBuilder, SceneFragment};
@@ -205,9 +206,16 @@ where
             );
         }
         if let Some(pgpu_state) = self.pgpu_state.as_mut() {
+            let scale = self.handle.get_scale().unwrap_or_default();
+            let (scale_x, scale_y) = (scale.x(), scale.y());
+            let transform = if scale_x != 1.0 || scale_y != 1.0 {
+                Some(Affine::scale_non_uniform(scale_x, scale_y))
+            } else {
+                None
+            };
             if let Some(_timestamps) = pgpu_state.pre_render() {}
             let mut builder = SceneBuilder::for_scene(&mut self.scene);
-            builder.append(&fragment, None);
+            builder.append(&fragment, transform);
             //crate::test_scenes::render(&mut self.font_context, &mut self.scene, 0, self.counter);
             self.counter += 1;
             pgpu_state.render(&self.scene);
