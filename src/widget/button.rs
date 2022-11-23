@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use glazier::kurbo::{Insets, Size};
+use glazier::kurbo::{Affine, Insets, Size};
 use parley::Layout;
-use piet_scene::{Affine, Brush, Color, GradientStop, GradientStops, SceneBuilder, SceneFragment};
+use piet_scene::{Brush, Color, SceneBuilder, SceneFragment, Stroke};
 
 use crate::{event::Event, id::IdPath, text::ParleyBrush, VertAlignment};
 
@@ -137,29 +137,9 @@ impl Widget for Button {
             Color::rgb8(0x3a, 0x3a, 0x3a)
         };
         let bg_stops = if is_active {
-            [
-                GradientStop {
-                    offset: 0.0,
-                    color: Color::rgb8(0x3a, 0x3a, 0x3a),
-                },
-                GradientStop {
-                    offset: 1.0,
-                    color: Color::rgb8(0xa1, 0xa1, 0xa1),
-                },
-            ][..]
-                .into()
+            [Color::rgb8(0x3a, 0x3a, 0x3a), Color::rgb8(0xa1, 0xa1, 0xa1)]
         } else {
-            [
-                GradientStop {
-                    offset: 0.0,
-                    color: Color::rgb8(0xa1, 0xa1, 0xa1),
-                },
-                GradientStop {
-                    offset: 1.0,
-                    color: Color::rgb8(0x3a, 0x3a, 0x3a),
-                },
-            ][..]
-                .into()
+            [Color::rgb8(0xa1, 0xa1, 0xa1), Color::rgb8(0x3a, 0x3a, 0x3a)]
         };
         /*
         let bg_gradient = if is_active {
@@ -181,7 +161,7 @@ impl Widget for Button {
         piet_scene_helpers::stroke(
             &mut builder,
             &rounded_rect,
-            &Brush::Solid(border_color),
+            border_color,
             button_border_width,
         );
         piet_scene_helpers::fill_lin_gradient(
@@ -195,7 +175,7 @@ impl Widget for Button {
         if let Some(layout) = &self.layout {
             let size = Size::new(layout.width() as f64, layout.height() as f64);
             let offset = (cx.size().to_vec2() - size.to_vec2()) * 0.5;
-            let transform = Affine::translate(offset.x as f32, offset.y as f32);
+            let transform = Affine::translate(offset);
             crate::text::render_text(&mut builder, transform, &layout);
         }
         Rendered(fragment)

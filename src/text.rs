@@ -1,4 +1,5 @@
 use parley::Layout;
+use piet_scene::kurbo::Affine;
 use piet_scene::{
     glyph::{
         pinot::{types::Tag, FontRef},
@@ -7,18 +8,12 @@ use piet_scene::{
     *,
 };
 
-#[derive(Clone, Debug)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct ParleyBrush(pub Brush);
 
 impl Default for ParleyBrush {
     fn default() -> ParleyBrush {
         ParleyBrush(Brush::Solid(Color::rgb8(0, 0, 0)))
-    }
-}
-
-impl PartialEq<ParleyBrush> for ParleyBrush {
-    fn eq(&self, _other: &ParleyBrush) -> bool {
-        true // FIXME
     }
 }
 
@@ -44,7 +39,8 @@ pub fn render_text(builder: &mut SceneBuilder, transform: Affine, layout: &Layou
                 if let Some(fragment) = gp.get(glyph.id, Some(&style.brush.0)) {
                     let gx = x + glyph.x;
                     let gy = y - glyph.y;
-                    let xform = Affine::translate(gx, gy) * Affine::scale(1.0, -1.0);
+                    let xform = Affine::translate((gx as f64, gy as f64))
+                        * Affine::scale_non_uniform(1.0, -1.0);
                     builder.append(&fragment, Some(transform * xform));
                 }
                 x += glyph.advance;

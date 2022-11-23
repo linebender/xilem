@@ -1,8 +1,5 @@
-use glazier::kurbo::{self, Rect, Shape};
-use piet_scene::{
-    Affine, Brush, Cap, ExtendMode, Fill, GradientStops, Join, LinearGradient, PathElement, Point,
-    SceneBuilder, Stroke,
-};
+use glazier::kurbo::{self, Affine, Point, Rect, Shape};
+use piet_scene::{Brush, BrushRef, ColorStopsSource, Fill, LinearGradient, SceneBuilder, Stroke};
 
 #[derive(Debug, Clone, Copy)]
 pub struct UnitPoint {
@@ -10,24 +7,19 @@ pub struct UnitPoint {
     v: f64,
 }
 
-pub fn stroke(builder: &mut SceneBuilder, path: &impl Shape, brush: &Brush, stroke_width: f64) {
-    let style = Stroke {
-        width: stroke_width as f32,
-        join: Join::Round,
-        miter_limit: 1.0,
-        start_cap: Cap::Round,
-        end_cap: Cap::Round,
-        dash_pattern: [],
-        dash_offset: 0.0,
-        scale: false,
-    };
-    // TODO: figure out how to avoid allocation
-    // (Just removing the collect should work in theory, but running into a clone bound)
-    let elements = path
-        .path_elements(1e-3)
-        .map(PathElement::from_kurbo)
-        .collect::<Vec<_>>();
-    builder.stroke(&style, Affine::IDENTITY, brush, None, &elements)
+pub fn stroke<'b>(
+    builder: &mut SceneBuilder,
+    path: &impl Shape,
+    brush: impl Into<BrushRef<'b>>,
+    stroke_width: f64,
+) {
+    builder.stroke(
+        &Stroke::new(stroke_width as f32),
+        Affine::IDENTITY,
+        brush,
+        None,
+        path,
+    )
 }
 
 // Note: copied from piet
@@ -71,26 +63,11 @@ impl UnitPoint {
 pub fn fill_lin_gradient(
     builder: &mut SceneBuilder,
     path: &impl Shape,
-    stops: GradientStops,
+    stops: impl ColorStopsSource,
     start: UnitPoint,
     end: UnitPoint,
 ) {
     let rect = path.bounding_box();
-    let lin_grad = LinearGradient {
-        start: Point::from_kurbo(start.resolve(rect)),
-        end: Point::from_kurbo(end.resolve(rect)),
-        stops,
-        extend: ExtendMode::Pad,
-    };
-    let elements = path
-        .path_elements(1e-3)
-        .map(PathElement::from_kurbo)
-        .collect::<Vec<_>>();
-    builder.fill(
-        Fill::NonZero,
-        Affine::IDENTITY,
-        &Brush::LinearGradient(lin_grad),
-        None,
-        elements,
-    );
+    let brush = LinearGradient::new(start.resolve(rect), end.resolve(rect)).stops(stops);
+    builder.fill(Fill::NonZero, Affine::IDENTITY, &brush, None, path);
 }
