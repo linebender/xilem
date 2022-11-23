@@ -12,21 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use druid_shell::{
-    kurbo::{Point, Size},
-    piet::{Color, PietTextLayout, RenderContext, Text, TextLayout, TextLayoutBuilder},
-};
+use glazier::kurbo::{Point, Size};
+use parley::Layout;
+use piet_scene::{Affine, Brush, Color, SceneBuilder, SceneFragment};
+
+use crate::text::ParleyBrush;
 
 use super::{
     align::{FirstBaseline, LastBaseline, SingleAlignment, VertAlignment},
     contexts::LifeCycleCx,
-    AlignCx, EventCx, LayoutCx, LifeCycle, PaintCx, RawEvent, UpdateCx, Widget,
+    AlignCx, EventCx, LayoutCx, LifeCycle, PaintCx, RawEvent, Rendered, UpdateCx, Widget,
 };
 
 pub struct TextWidget {
     text: String,
-    color: Color,
-    layout: Option<PietTextLayout>,
+    layout: Option<Layout<ParleyBrush>>,
     is_wrapped: bool,
 }
 
@@ -34,15 +34,13 @@ impl TextWidget {
     pub fn new(text: String) -> TextWidget {
         TextWidget {
             text,
-            color: Color::WHITE,
-            layout: None,
             is_wrapped: false,
+            layout: None,
         }
     }
 
     pub fn set_text(&mut self, text: String) {
         self.text = text;
-        self.layout = None;
     }
 }
 
@@ -58,52 +56,34 @@ impl Widget for TextWidget {
     }
 
     fn measure(&mut self, cx: &mut LayoutCx) -> (Size, Size) {
-        let layout = cx
-            .text()
-            .new_text_layout(self.text.clone())
-            .text_color(self.color.clone())
-            .build()
-            .unwrap();
         let min_size = Size::ZERO;
-        let max_size = layout.size();
-        self.layout = Some(layout);
+        let max_size = Size::new(50.0, 50.0);
         self.is_wrapped = false;
         (min_size, max_size)
     }
 
     fn layout(&mut self, cx: &mut LayoutCx, proposed_size: Size) -> Size {
-        let needs_wrap = proposed_size.width < cx.widget_state.max_size.width;
-        if self.is_wrapped || needs_wrap {
-            let layout = cx
-                .text()
-                .new_text_layout(self.text.clone())
-                .max_width(proposed_size.width)
-                .text_color(self.color.clone())
-                .build()
-                .unwrap();
-            let size = layout.size();
-            self.layout = Some(layout);
-            self.is_wrapped = needs_wrap;
-            size
-        } else {
-            cx.widget_state.max_size
-        }
+        let mut lcx = parley::LayoutContext::new();
+        let mut layout_builder = lcx.ranged_builder(cx.font_cx(), &self.text, 1.0);
+        layout_builder.push_default(&parley::style::StyleProperty::Brush(ParleyBrush(
+            Brush::Solid(Color::rgb8(255, 255, 255)),
+        )));
+        let mut layout = layout_builder.build();
+        // Question for Chad: is this needed?
+        layout.break_all_lines(None, parley::layout::Alignment::Start);
+        self.layout = Some(layout);
+        cx.widget_state.max_size
     }
 
-    fn align(&self, cx: &mut AlignCx, alignment: SingleAlignment) {
-        if alignment.id() == FirstBaseline.id() {
-            if let Some(metric) = self.layout.as_ref().unwrap().line_metric(0) {
-                cx.aggregate(alignment, metric.baseline);
-            }
-        } else if alignment.id() == LastBaseline.id() {
-            let i = self.layout.as_ref().unwrap().line_count() - 1;
-            if let Some(metric) = self.layout.as_ref().unwrap().line_metric(i) {
-                cx.aggregate(alignment, metric.y_offset + metric.baseline);
-            }
-        }
-    }
+    fn align(&self, cx: &mut AlignCx, alignment: SingleAlignment) {}
 
-    fn paint(&mut self, cx: &mut PaintCx) {
-        cx.draw_text(self.layout.as_ref().unwrap(), Point::ZERO);
+    fn paint(&mut self, cx: &mut PaintCx) -> Rendered {
+        let mut fragment = SceneFragment::default();
+        let mut builder = SceneBuilder::for_fragment(&mut fragment);
+        if let Some(layout) = &self.layout {
+            let transform = Affine::translate(40.0, 40.0);
+            crate::text::render_text(&mut builder, transform, &layout);
+        }
+        Rendered(fragment)
     }
 }

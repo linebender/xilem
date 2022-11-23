@@ -14,10 +14,12 @@
 
 use std::any::Any;
 
-use druid_shell::{
-    kurbo::Size, Application, Cursor, HotKey, IdleToken, Menu, MouseEvent, Region, SysMods,
-    WinHandler, WindowBuilder, WindowHandle,
+use glazier::{
+    kurbo::Size, Application, Cursor, HotKey, IdleToken, Menu, MouseEvent, Region, Scalable,
+    SysMods, WinHandler, WindowBuilder, WindowHandle,
 };
+use parley::FontContext;
+use piet_scene::{Scene, SceneBuilder, SceneFragment};
 
 use crate::{app::App, widget::RawEvent, View, Widget};
 
@@ -35,6 +37,10 @@ where
 {
     handle: WindowHandle,
     app: App<T, V>,
+    pgpu_state: Option<crate::render::PgpuState>,
+    font_context: FontContext,
+    scene: Scene,
+    counter: u64,
 }
 
 const QUIT_MENU_ID: u32 = 0x100;
@@ -58,7 +64,7 @@ impl<T: Send + 'static, V: View<T> + 'static> AppLauncher<T, V> {
             QUIT_MENU_ID,
             "E&xit",
             Some(&HotKey::new(SysMods::Cmd, "q")),
-            true,
+            Some(true),
             false,
         );
         let mut menubar = Menu::new();
@@ -71,6 +77,7 @@ impl<T: Send + 'static, V: View<T> + 'static> AppLauncher<T, V> {
         builder.set_handler(Box::new(main_state));
         builder.set_title(self.title);
         builder.set_menu(menubar);
+        builder.set_size(Size::new(1024., 768.));
         let window = builder.build().unwrap();
         window.show();
         druid_app.run(None);
@@ -88,8 +95,17 @@ where
 
     fn prepare_paint(&mut self) {}
 
-    fn paint(&mut self, piet: &mut druid_shell::piet::Piet, _: &Region) {
-        self.app.paint(piet);
+    fn paint(&mut self, _: &Region) {
+        let rendered = self.app.paint();
+        self.render(rendered.0);
+        self.schedule_render();
+    }
+
+    // TODO: temporary hack
+    fn idle(&mut self, _: IdleToken) {
+        let rendered = self.app.paint();
+        self.render(rendered.0);
+        self.schedule_render();
     }
 
     fn command(&mut self, id: u32) {
@@ -135,11 +151,6 @@ where
         Application::global().quit()
     }
 
-    fn idle(&mut self, _token: IdleToken) {
-        // TODO: wire up invalidation through widget hierarchy
-        self.handle.invalidate();
-    }
-
     fn as_any(&mut self) -> &mut dyn Any {
         self
     }
@@ -153,7 +164,53 @@ where
         let state = MainState {
             handle: Default::default(),
             app,
+            font_context: FontContext::new(),
+            pgpu_state: None,
+            scene: Scene::default(),
+            counter: 0,
         };
         state
+    }
+
+    #[cfg(target_os = "macos")]
+    fn schedule_render(&self) {
+        self.handle
+            .get_idle_handle()
+            .unwrap()
+            .schedule_idle(IdleToken::new(0));
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    fn schedule_render(&self) {
+        self.handle.invalidate();
+    }
+
+    fn render(&mut self, fragment: SceneFragment) {
+        if self.pgpu_state.is_none() {
+            let handle = &self.handle;
+            let scale = handle.get_scale().unwrap();
+            let insets = handle.content_insets().to_px(scale);
+            let mut size = handle.get_size().to_px(scale);
+            size.width -= insets.x_value();
+            size.height -= insets.y_value();
+            println!("render size: {:?}", size);
+            self.pgpu_state = Some(
+                crate::render::PgpuState::new(
+                    handle,
+                    handle,
+                    size.width as usize,
+                    size.height as usize,
+                )
+                .unwrap(),
+            );
+        }
+        if let Some(pgpu_state) = self.pgpu_state.as_mut() {
+            if let Some(_timestamps) = pgpu_state.pre_render() {}
+            let mut builder = SceneBuilder::for_scene(&mut self.scene);
+            builder.append(&fragment, None);
+            //crate::test_scenes::render(&mut self.font_context, &mut self.scene, 0, self.counter);
+            self.counter += 1;
+            pgpu_state.render(&self.scene);
+        }
     }
 }

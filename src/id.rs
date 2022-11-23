@@ -23,7 +23,7 @@ pub type IdPath = Vec<Id>;
 impl Id {
     /// Allocate a new, unique `Id`.
     pub fn next() -> Id {
-        use druid_shell::Counter;
+        use glazier::Counter;
         static WIDGET_ID_COUNTER: Counter = Counter::new();
         Id(WIDGET_ID_COUNTER.next_nonzero())
     }

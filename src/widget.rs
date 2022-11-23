@@ -16,17 +16,18 @@ pub mod align;
 pub mod button;
 mod contexts;
 mod core;
-pub mod layout_observer;
-pub mod list;
+//pub mod layout_observer;
+//pub mod list;
+pub mod piet_scene_helpers;
 mod raw_event;
-pub mod scroll_view;
+//pub mod scroll_view;
 pub mod text;
-pub mod vstack;
+//pub mod vstack;
 
 use std::any::Any;
 use std::ops::{Deref, DerefMut};
 
-use druid_shell::kurbo::{Rect, Size};
+use glazier::kurbo::{Rect, Size};
 
 use self::contexts::LifeCycleCx;
 pub use self::contexts::{AlignCx, CxState, EventCx, LayoutCx, PaintCx, PreparePaintCx, UpdateCx};
@@ -78,8 +79,10 @@ pub trait Widget {
     #[allow(unused)]
     fn prepare_paint(&mut self, cx: &mut LayoutCx, visible: Rect) {}
 
-    fn paint(&mut self, cx: &mut PaintCx);
+    fn paint(&mut self, cx: &mut PaintCx) -> Rendered;
 }
+
+pub struct Rendered(pub(crate) piet_scene::SceneFragment);
 
 pub trait AnyWidget: Widget {
     fn as_any(&self) -> &dyn Any;
@@ -132,8 +135,8 @@ impl Widget for Box<dyn AnyWidget> {
         self.deref_mut().prepare_paint(cx, visible)
     }
 
-    fn paint(&mut self, cx: &mut PaintCx) {
-        self.deref_mut().paint(cx);
+    fn paint(&mut self, cx: &mut PaintCx) -> Rendered {
+        self.deref_mut().paint(cx)
     }
 }
 

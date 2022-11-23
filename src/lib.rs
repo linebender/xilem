@@ -1,40 +1,163 @@
-// Copyright 2022 The Druid Authors.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-//! Prototype implementation of Xilem architecture.
-//!
-//! This is a skeletal, proof-of-concept UI toolkit to prove out the Xilem
-//! architectural ideas.
-
 mod app;
 mod app_main;
 mod event;
 mod id;
+mod render;
+mod test_scenes;
+mod text;
 mod view;
-mod view_seq;
 mod widget;
 
 pub use app::App;
 pub use app_main::AppLauncher;
-pub use view::adapt::Adapt;
-pub use view::async_list::async_list;
 pub use view::button::button;
-pub use view::layout_observer::LayoutObserver;
-pub use view::list::list;
-pub use view::memoize::Memoize;
-pub use view::scroll_view::scroll_view;
-pub use view::vstack::v_stack;
 pub use view::View;
-pub use widget::align::{AlignmentAxis, AlignmentProxy, HorizAlignment, VertAlignment};
+pub use widget::align::VertAlignment;
 pub use widget::Widget;
+
+use glazier::kurbo::Size;
+use glazier::{
+    Application, Cursor, FileDialogToken, FileInfo, IdleToken, KeyEvent, MouseEvent, Region,
+    Scalable, TimerToken, WinHandler, WindowHandle,
+};
+use parley::FontContext;
+use piet_scene::Scene;
+use std::any::Any;
+
+pub struct WindowState {
+    handle: WindowHandle,
+    pgpu_state: Option<render::PgpuState>,
+    scene: Scene,
+    font_context: FontContext,
+    counter: u64,
+}
+
+impl WindowState {
+    pub fn new() -> Self {
+        Self {
+            handle: Default::default(),
+            pgpu_state: None,
+            scene: Default::default(),
+            font_context: FontContext::new(),
+            counter: 0,
+        }
+    }
+
+    #[cfg(target_os = "macos")]
+    fn schedule_render(&self) {
+        self.handle
+            .get_idle_handle()
+            .unwrap()
+            .schedule_idle(IdleToken::new(0));
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    fn schedule_render(&self) {
+        self.handle.invalidate();
+    }
+
+    fn render(&mut self) {
+        if self.pgpu_state.is_none() {
+            let handle = &self.handle;
+            let scale = handle.get_scale().unwrap();
+            let insets = handle.content_insets().to_px(scale);
+            let mut size = handle.get_size().to_px(scale);
+            size.width -= insets.x_value();
+            size.height -= insets.y_value();
+            println!("render size: {:?}", size);
+            self.pgpu_state = Some(
+                render::PgpuState::new(handle, handle, size.width as usize, size.height as usize)
+                    .unwrap(),
+            );
+        }
+        if let Some(pgpu_state) = self.pgpu_state.as_mut() {
+            if let Some(_timestamps) = pgpu_state.pre_render() {}
+            test_scenes::render(&mut self.font_context, &mut self.scene, 0, self.counter);
+            self.counter += 1;
+            pgpu_state.render(&self.scene);
+        }
+    }
+}
+
+impl WinHandler for WindowState {
+    fn connect(&mut self, handle: &WindowHandle) {
+        self.handle = handle.clone();
+        self.schedule_render();
+    }
+
+    fn prepare_paint(&mut self) {}
+
+    fn paint(&mut self, _: &Region) {
+        self.render();
+        self.schedule_render();
+    }
+
+    fn idle(&mut self, _: IdleToken) {
+        self.render();
+        self.schedule_render();
+    }
+
+    fn command(&mut self, _id: u32) {}
+
+    fn open_file(&mut self, _token: FileDialogToken, file_info: Option<FileInfo>) {
+        println!("open file result: {:?}", file_info);
+    }
+
+    fn save_as(&mut self, _token: FileDialogToken, file: Option<FileInfo>) {
+        println!("save file result: {:?}", file);
+    }
+
+    fn key_down(&mut self, event: KeyEvent) -> bool {
+        println!("keydown: {:?}", event);
+        false
+    }
+
+    fn key_up(&mut self, event: KeyEvent) {
+        println!("keyup: {:?}", event);
+    }
+
+    fn wheel(&mut self, event: &MouseEvent) {
+        println!("mouse_wheel {:?}", event);
+    }
+
+    fn mouse_move(&mut self, _event: &MouseEvent) {
+        self.handle.set_cursor(&Cursor::Arrow);
+        //println!("mouse_move {:?}", event);
+    }
+
+    fn mouse_down(&mut self, event: &MouseEvent) {
+        println!("mouse_down {:?}", event);
+    }
+
+    fn mouse_up(&mut self, event: &MouseEvent) {
+        println!("mouse_up {:?}", event);
+    }
+
+    fn timer(&mut self, id: TimerToken) {
+        println!("timer fired: {:?}", id);
+    }
+
+    fn size(&mut self, _size: Size) {
+        //self.size = size;
+    }
+
+    fn got_focus(&mut self) {
+        println!("Got focus");
+    }
+
+    fn lost_focus(&mut self) {
+        println!("Lost focus");
+    }
+
+    fn request_close(&mut self) {
+        self.handle.close();
+    }
+
+    fn destroy(&mut self) {
+        Application::global().quit()
+    }
+
+    fn as_any(&mut self) -> &mut dyn Any {
+        self
+    }
+}

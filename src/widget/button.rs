@@ -12,26 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use druid_shell::{
-    kurbo::{Insets, Size},
-    piet::{
-        Color, LinearGradient, PietTextLayout, RenderContext, Text, TextLayout, TextLayoutBuilder,
-        UnitPoint,
-    },
-};
+use glazier::kurbo::{Insets, Size};
+use parley::Layout;
+use piet_scene::{Affine, Brush, Color, GradientStop, GradientStops, SceneBuilder, SceneFragment};
 
-use crate::{event::Event, id::IdPath, VertAlignment};
+use crate::{event::Event, id::IdPath, text::ParleyBrush, VertAlignment};
 
 use super::{
     align::{FirstBaseline, LastBaseline, SingleAlignment},
     contexts::LifeCycleCx,
-    AlignCx, EventCx, LayoutCx, LifeCycle, PaintCx, RawEvent, UpdateCx, Widget,
+    piet_scene_helpers::{self, UnitPoint},
+    AlignCx, EventCx, LayoutCx, LifeCycle, PaintCx, RawEvent, Rendered, UpdateCx, Widget,
 };
 
 pub struct Button {
     id_path: IdPath,
     label: String,
-    layout: Option<PietTextLayout>,
+    layout: Option<Layout<ParleyBrush>>,
 }
 
 impl Button {
@@ -84,15 +81,18 @@ impl Widget for Button {
     fn measure(&mut self, cx: &mut LayoutCx) -> (Size, Size) {
         let padding = Size::new(LABEL_INSETS.x_value(), LABEL_INSETS.y_value());
         let min_height = 24.0;
-        let layout = cx
-            .text()
-            .new_text_layout(self.label.clone())
-            .text_color(Color::rgb8(0xf0, 0xf0, 0xea))
-            .build()
-            .unwrap();
+        let mut lcx = parley::LayoutContext::new();
+        let mut layout_builder = lcx.ranged_builder(cx.font_cx(), &self.label, 1.0);
+
+        layout_builder.push_default(&parley::style::StyleProperty::Brush(ParleyBrush(
+            Brush::Solid(Color::rgb8(0xf0, 0xf0, 0xea)),
+        )));
+        let mut layout = layout_builder.build();
+        // Question for Chad: is this needed?
+        layout.break_all_lines(None, parley::layout::Alignment::Start);
         let size = Size::new(
-            layout.size().width + padding.width,
-            (layout.size().height + padding.height).max(min_height),
+            layout.width() as f64 + padding.width,
+            (layout.height() as f64 + padding.height).max(min_height),
         );
         self.layout = Some(layout);
         (Size::new(10.0, min_height), size)
@@ -105,10 +105,13 @@ impl Widget for Button {
                 .clamp(cx.min_size().width, cx.max_size().width),
             cx.max_size().height,
         );
+        println!("size = {:?}", size);
         size
     }
 
     fn align(&self, cx: &mut AlignCx, alignment: SingleAlignment) {
+        // TODO: figure this out
+        /*
         if alignment.id() == FirstBaseline.id() || alignment.id() == LastBaseline.id() {
             let layout = self.layout.as_ref().unwrap();
             if let Some(metric) = layout.line_metric(0) {
@@ -116,9 +119,10 @@ impl Widget for Button {
                 cx.aggregate(alignment, value);
             }
         }
+        */
     }
 
-    fn paint(&mut self, cx: &mut PaintCx) {
+    fn paint(&mut self, cx: &mut PaintCx) -> Rendered {
         let is_hot = cx.is_hot();
         let is_active = cx.is_active();
         let button_border_width = 2.0;
@@ -132,6 +136,32 @@ impl Widget for Button {
         } else {
             Color::rgb8(0x3a, 0x3a, 0x3a)
         };
+        let bg_stops = if is_active {
+            [
+                GradientStop {
+                    offset: 0.0,
+                    color: Color::rgb8(0x3a, 0x3a, 0x3a),
+                },
+                GradientStop {
+                    offset: 1.0,
+                    color: Color::rgb8(0xa1, 0xa1, 0xa1),
+                },
+            ][..]
+                .into()
+        } else {
+            [
+                GradientStop {
+                    offset: 0.0,
+                    color: Color::rgb8(0xa1, 0xa1, 0xa1),
+                },
+                GradientStop {
+                    offset: 1.0,
+                    color: Color::rgb8(0x3a, 0x3a, 0x3a),
+                },
+            ][..]
+                .into()
+        };
+        /*
         let bg_gradient = if is_active {
             LinearGradient::new(
                 UnitPoint::TOP,
@@ -145,10 +175,29 @@ impl Widget for Button {
                 (Color::rgb8(0xa1, 0xa1, 0xa1), Color::rgb8(0x3a, 0x3a, 0x3a)),
             )
         };
-        cx.stroke(rounded_rect, &border_color, button_border_width);
-        cx.fill(rounded_rect, &bg_gradient);
-        let layout = self.layout.as_ref().unwrap();
-        let offset = (cx.size().to_vec2() - layout.size().to_vec2()) * 0.5;
-        cx.draw_text(layout, offset.to_point());
+        */
+        let mut fragment = SceneFragment::default();
+        let mut builder = SceneBuilder::for_fragment(&mut fragment);
+        piet_scene_helpers::stroke(
+            &mut builder,
+            &rounded_rect,
+            &Brush::Solid(border_color),
+            button_border_width,
+        );
+        piet_scene_helpers::fill_lin_gradient(
+            &mut builder,
+            &rounded_rect,
+            bg_stops,
+            UnitPoint::TOP,
+            UnitPoint::BOTTOM,
+        );
+        //cx.fill(rounded_rect, &bg_gradient);
+        if let Some(layout) = &self.layout {
+            let size = Size::new(layout.width() as f64, layout.height() as f64);
+            let offset = (cx.size().to_vec2() - size.to_vec2()) * 0.5;
+            let transform = Affine::translate(offset.x as f32, offset.y as f32);
+            crate::text::render_text(&mut builder, transform, &layout);
+        }
+        Rendered(fragment)
     }
 }

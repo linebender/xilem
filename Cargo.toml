@@ -1,16 +1,32 @@
 [package]
 name = "xilem"
 version = "0.1.0"
-license = "Apache-2.0"
-authors = ["Raph Levien <raph@google.com>"]
 edition = "2021"
 
-[dependencies]
-"druid-shell" = "0.7"
-bitflags = "1.3.2"
-futures-task = "0.3"
-tokio = { version = "1", features = ["full"] }
+# This is just a bin for now but will be a lib + examples soon
 
-[dev-dependencies]
-sha2 = "0.10"
-hex = "0.4.3"
+[features]
+default = ["x11"]
+
+gtk = ["glazier/gtk"]
+x11 = ["glazier/x11"]
+wayland = ["glazier/wayland"]
+
+[dependencies]
+glazier = { git = "https://github.com/linebender/glazier", default-features = false }
+piet-gpu-hal = { git = "https://github.com/linebender/piet-gpu" }
+piet-gpu = { git = "https://github.com/linebender/piet-gpu" }
+piet-scene = { git = "https://github.com/linebender/piet-gpu", features = ["kurbo"] }
+raw-window-handle = "0.5"
+png = "0.16.2"
+rand = "0.7.3"
+roxmltree = "0.13"
+swash = "0.1.4"
+bytemuck = { version = "1.7.2", features = ["derive"] }
+parley = { git = "https://github.com/dfrg/parley" }
+tokio = { version = "1.21", features = ["full"] }
+futures-task = "0.3"
+bitflags = "1.3.2"
+
+[patch."https://github.com/dfrg/fount"]
+fount = { git = "https://github.com/jneem/fount" }

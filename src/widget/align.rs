@@ -12,9 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use druid_shell::kurbo::Point;
+use glazier::kurbo::{Point, Size};
 
-use super::{contexts::LifeCycleCx, AlignCx, AnyWidget, EventCx, LifeCycle, Widget, WidgetState};
+use super::{
+    contexts::LifeCycleCx, AlignCx, AnyWidget, EventCx, LifeCycle, Rendered, Widget, WidgetState,
+};
 
 #[derive(Clone, Copy, PartialEq)]
 pub enum AlignmentMerge {
@@ -253,18 +255,11 @@ impl<F: Fn(AlignmentProxy) -> f64 + 'static> Widget for AlignmentGuide<F> {
         self.child.update(cx);
     }
 
-    fn measure(
-        &mut self,
-        cx: &mut super::LayoutCx,
-    ) -> (druid_shell::kurbo::Size, druid_shell::kurbo::Size) {
+    fn measure(&mut self, cx: &mut super::LayoutCx) -> (Size, Size) {
         self.child.measure(cx)
     }
 
-    fn layout(
-        &mut self,
-        cx: &mut super::LayoutCx,
-        proposed_size: druid_shell::kurbo::Size,
-    ) -> druid_shell::kurbo::Size {
+    fn layout(&mut self, cx: &mut super::LayoutCx, proposed_size: Size) -> Size {
         self.child.layout(cx, proposed_size)
     }
 
@@ -281,7 +276,7 @@ impl<F: Fn(AlignmentProxy) -> f64 + 'static> Widget for AlignmentGuide<F> {
         }
     }
 
-    fn paint(&mut self, cx: &mut super::PaintCx) {
-        self.child.paint(cx);
+    fn paint(&mut self, cx: &mut super::PaintCx) -> Rendered {
+        self.child.paint(cx)
     }
 }

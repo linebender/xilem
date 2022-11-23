@@ -16,14 +16,14 @@ use std::collections::HashSet;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-use druid_shell::kurbo::Size;
-use druid_shell::piet::{Color, Piet, RenderContext};
-use druid_shell::{IdleHandle, IdleToken, WindowHandle};
+use glazier::kurbo::Size;
+use glazier::{IdleHandle, IdleToken, WindowHandle};
+use parley::FontContext;
 use tokio::runtime::Runtime;
 
 use crate::event::{AsyncWake, EventResult};
 use crate::id::IdPath;
-use crate::widget::{CxState, EventCx, LayoutCx, PaintCx, Pod, UpdateCx, WidgetState};
+use crate::widget::{CxState, EventCx, LayoutCx, PaintCx, Pod, Rendered, UpdateCx, WidgetState};
 use crate::{
     event::Event,
     id::Id,
@@ -42,6 +42,7 @@ pub struct App<T, V: View<T>> {
     root_pod: Option<Pod>,
     size: Size,
     cx: Cx,
+    font_cx: FontContext,
     pub(crate) rt: Runtime,
 }
 
@@ -91,8 +92,6 @@ enum UiState {
 
 #[derive(Clone, Default)]
 pub struct WakeQueue(Arc<Mutex<Vec<IdPath>>>);
-
-const BG_COLOR: Color = Color::rgb8(0x27, 0x28, 0x22);
 
 impl<T: Send + 'static, V: View<T> + 'static> App<T, V>
 where
@@ -153,6 +152,7 @@ where
             root_state: Default::default(),
             size: Default::default(),
             cx,
+            font_cx: FontContext::new(),
             rt,
         }
     }
@@ -170,15 +170,14 @@ where
         self.size = size;
     }
 
-    pub fn paint(&mut self, piet: &mut Piet) {
-        let rect = self.size.to_rect();
-        piet.fill(rect, &BG_COLOR);
-
+    pub fn paint(&mut self) -> Rendered {
         loop {
             self.send_events();
+            // TODO: be more lazy re-rendering
             self.render();
             let root_pod = self.root_pod.as_mut().unwrap();
-            let mut cx_state = CxState::new(&self.window_handle, &mut self.events);
+            let mut cx_state =
+                CxState::new(&self.window_handle, &mut self.font_cx, &mut self.events);
             let mut update_cx = UpdateCx::new(&mut cx_state, &mut self.root_state);
             root_pod.update(&mut update_cx);
             let mut layout_cx = LayoutCx::new(&mut cx_state, &mut self.root_state);
@@ -198,15 +197,15 @@ where
                 // Rerun app logic, primarily for virtualized scrolling
                 continue;
             }
-            let mut paint_cx = PaintCx::new(&mut cx_state, &mut self.root_state, piet);
-            root_pod.paint(&mut paint_cx);
-            break;
+            let mut paint_cx = PaintCx::new(&mut cx_state, &mut self.root_state);
+            return root_pod.paint(&mut paint_cx);
         }
     }
 
     pub fn window_event(&mut self, event: RawEvent) {
+        self.ensure_root();
         let root_pod = self.root_pod.as_mut().unwrap();
-        let mut cx_state = CxState::new(&self.window_handle, &mut self.events);
+        let mut cx_state = CxState::new(&self.window_handle, &mut self.font_cx, &mut self.events);
         let mut event_cx = EventCx::new(&mut cx_state, &mut self.root_state);
         root_pod.event(&mut event_cx, &event);
         self.send_events();
@@ -216,6 +215,13 @@ where
         if !self.events.is_empty() {
             let events = std::mem::take(&mut self.events);
             let _ = self.req_chan.blocking_send(AppReq::Events(events));
+        }
+    }
+
+    // Make sure the widget tree (root pod) is available
+    fn ensure_root(&mut self) {
+        if self.root_pod.is_none() {
+            self.render();
         }
     }
 
@@ -325,7 +331,7 @@ where
                             self.ui_state = UiState::Delayed;
                         }
                     }
-                }
+                },
                 Ok(None) => break,
                 Err(_) => {
                     self.render().await;
