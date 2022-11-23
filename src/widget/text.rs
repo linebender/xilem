@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use glazier::kurbo::{Point, Size};
+use glazier::kurbo::{Affine, Point, Size};
 use parley::Layout;
-use piet_scene::{Affine, Brush, Color, SceneBuilder, SceneFragment};
+use piet_scene::{Brush, Color, SceneBuilder, SceneFragment};
 
 use crate::text::ParleyBrush;
 
@@ -81,7 +81,7 @@ impl Widget for TextWidget {
         let mut fragment = SceneFragment::default();
         let mut builder = SceneBuilder::for_fragment(&mut fragment);
         if let Some(layout) = &self.layout {
-            let transform = Affine::translate(40.0, 40.0);
+            let transform = Affine::translate((40.0, 40.0));
             crate::text::render_text(&mut builder, transform, &layout);
         }
         Rendered(fragment)

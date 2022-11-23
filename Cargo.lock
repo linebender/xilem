@@ -982,7 +982,7 @@ dependencies = [
 [[package]]
 name = "glazier"
 version = "0.7.0"
-source = "git+https://github.com/linebender/glazier#a100529e09250e321dd5247219a2a7952d38a7bc"
+source = "git+https://github.com/linebender/glazier#122e37a5fdf263ba61cf19bc8f74913b01634467"
 dependencies = [
  "anyhow",
  "ashpd",
@@ -1250,9 +1250,9 @@ dependencies = [
 
 [[package]]
 name = "kurbo"
-version = "0.8.3"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7a53776d271cfb873b17c618af0298445c88afc52837f3e948fa3fafd131f449"
+checksum = "e119590a03caff1f7a582e8ee8c2164ddcc975791701188132fd1d1b518d3871"
 dependencies = [
  "arrayvec",
 ]
@@ -1424,7 +1424,7 @@ checksum = "451422b7e4718271c8b5b3aadf5adedba43dc76312454b387e98fae0fc951aa0"
 dependencies = [
  "bitflags",
  "jni-sys",
- "ndk-sys 0.4.0",
+ "ndk-sys 0.4.1+23.1.7779620",
  "num_enum",
  "raw-window-handle 0.5.0",
  "thiserror",
@@ -1461,7 +1461,7 @@ dependencies = [
  "ndk 0.7.0",
  "ndk-context",
  "ndk-macro 0.3.0",
- "ndk-sys 0.4.0",
+ "ndk-sys 0.4.1+23.1.7779620",
  "once_cell",
  "parking_lot",
 ]
@@ -1500,9 +1500,9 @@ checksum = "e1bcdd74c20ad5d95aacd60ef9ba40fdf77f767051040541df557b7a9b2a2121"
 
 [[package]]
 name = "ndk-sys"
-version = "0.4.0"
+version = "0.4.1+23.1.7779620"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "21d83ec9c63ec5bf950200a8e508bdad6659972187b625469f58ef8c08e29046"
+checksum = "3cf2aae958bd232cac5069850591667ad422d263686d75b52a065f9badeee5a3"
 dependencies = [
  "jni-sys",
 ]
@@ -1710,6 +1710,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "19b17cddbe7ec3f8bc800887bab5e717348c95ea2ca0b1bf0837fb964dc67099"
 
 [[package]]
+name = "peniko"
+version = "0.1.0"
+source = "git+https://github.com/linebender/peniko#b83821720aa51a3942be5d20c71525a1ae61ac0a"
+dependencies = [
+ "kurbo",
+ "smallvec",
+]
+
+[[package]]
 name = "percent-encoding"
 version = "2.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1728,11 +1737,10 @@ dependencies = [
 [[package]]
 name = "piet-gpu"
 version = "0.1.0"
-source = "git+https://github.com/linebender/piet-gpu#0eb4429924e5068d3bbe157f5796c64ee0c5900f"
+source = "git+https://github.com/linebender/piet-gpu#018bb34e41afd6813a698705cd10d000ece8d814"
 dependencies = [
  "bytemuck",
  "clap",
- "kurbo",
  "ndk 0.3.0",
  "ndk-glue 0.3.0",
  "ndk-sys 0.2.2",
@@ -1750,7 +1758,7 @@ dependencies = [
 [[package]]
 name = "piet-gpu-derive"
 version = "0.0.0"
-source = "git+https://github.com/linebender/piet-gpu#0eb4429924e5068d3bbe157f5796c64ee0c5900f"
+source = "git+https://github.com/linebender/piet-gpu#018bb34e41afd6813a698705cd10d000ece8d814"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1760,7 +1768,7 @@ dependencies = [
 [[package]]
 name = "piet-gpu-hal"
 version = "0.1.0"
-source = "git+https://github.com/linebender/piet-gpu#0eb4429924e5068d3bbe157f5796c64ee0c5900f"
+source = "git+https://github.com/linebender/piet-gpu#018bb34e41afd6813a698705cd10d000ece8d814"
 dependencies = [
  "ash",
  "ash-window",
@@ -1781,7 +1789,7 @@ dependencies = [
 [[package]]
 name = "piet-gpu-types"
 version = "0.0.0"
-source = "git+https://github.com/linebender/piet-gpu#0eb4429924e5068d3bbe157f5796c64ee0c5900f"
+source = "git+https://github.com/linebender/piet-gpu#018bb34e41afd6813a698705cd10d000ece8d814"
 dependencies = [
  "half",
  "piet-gpu-derive",
@@ -1790,11 +1798,11 @@ dependencies = [
 [[package]]
 name = "piet-scene"
 version = "0.1.0"
-source = "git+https://github.com/linebender/piet-gpu#0eb4429924e5068d3bbe157f5796c64ee0c5900f"
+source = "git+https://github.com/linebender/piet-gpu#018bb34e41afd6813a698705cd10d000ece8d814"
 dependencies = [
  "bytemuck",
- "kurbo",
  "moscato",
+ "peniko",
  "smallvec",
 ]
 
