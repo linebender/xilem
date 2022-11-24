@@ -61,7 +61,7 @@ pub trait View<T, A = ()>: Send {
     type Element: Widget;
 
     /// Build the associated widget and initialize state.
-    fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element);
+    fn build(&self, cx: &mut Cx) -> (Self::State, Self::Element);
 
     /// Update the associated widget.
     ///
@@ -70,7 +70,6 @@ pub trait View<T, A = ()>: Send {
         &self,
         cx: &mut Cx,
         prev: &Self,
-        id: &mut Id,
         state: &mut Self::State,
         element: &mut Self::Element,
     ) -> bool;
@@ -92,7 +91,7 @@ pub trait View<T, A = ()>: Send {
 pub struct Cx {
     id_path: IdPath,
     req_chan: SyncSender<IdPath>,
-    pub(crate) pending_async: HashSet<Id>,
+    pub(crate) pending_async: HashSet<IdPath>,
 }
 
 struct MyWaker {
@@ -165,7 +164,7 @@ impl Cx {
     /// Rendering may be delayed when there are pending async futures, to avoid
     /// flashing, and continues when all futures complete, or a timeout, whichever
     /// is first.
-    pub fn add_pending_async(&mut self, id: Id) {
-        self.pending_async.insert(id);
+    pub fn add_pending_async(&mut self, id_path: IdPath) {
+        self.pending_async.insert(id_path);
     }
 }

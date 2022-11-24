@@ -23,16 +23,15 @@ impl<T, A> View<T, A> for String {
 
     type Element = crate::widget::text::TextWidget;
 
-    fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
-        let (id, element) = cx.with_new_id(|_| crate::widget::text::TextWidget::new(self.clone()));
-        (id, (), element)
+    fn build(&self, _cx: &mut Cx) -> (Self::State, Self::Element) {
+        let element = crate::widget::text::TextWidget::new(self.clone());
+        ((), element)
     }
 
     fn rebuild(
         &self,
         _cx: &mut Cx,
         prev: &Self,
-        _id: &mut crate::id::Id,
         _state: &mut Self::State,
         element: &mut Self::Element,
     ) -> bool {

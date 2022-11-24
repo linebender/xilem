@@ -45,17 +45,15 @@ impl<T, A> View<T, A> for Button<T, A> {
 
     type Element = crate::widget::button::Button;
 
-    fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
-        let (id, element) = cx
-            .with_new_id(|cx| crate::widget::button::Button::new(cx.id_path(), self.label.clone()));
-        (id, (), element)
+    fn build(&self, cx: &mut Cx) -> (Self::State, Self::Element) {
+        let element = crate::widget::button::Button::new(cx.id_path(), self.label.clone());
+        ((), element)
     }
 
     fn rebuild(
         &self,
         _cx: &mut Cx,
         prev: &Self,
-        _id: &mut crate::id::Id,
         _state: &mut Self::State,
         element: &mut Self::Element,
     ) -> bool {

@@ -15,7 +15,7 @@
 use std::num::NonZeroU64;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Hash)]
-/// A stable identifier for an element.
+/// A stable identifier for a view tree path segment.
 pub struct Id(NonZeroU64);
 
 pub type IdPath = Vec<Id>;

@@ -34,8 +34,7 @@ use crate::{
 pub struct App<T, V: View<T>> {
     req_chan: tokio::sync::mpsc::Sender<AppReq>,
     response_chan: tokio::sync::mpsc::Receiver<RenderResponse<V, V::State>>,
-    return_chan: tokio::sync::mpsc::Sender<(V, V::State, HashSet<Id>)>,
-    id: Option<Id>,
+    return_chan: tokio::sync::mpsc::Sender<(V, V::State, HashSet<IdPath>)>,
     events: Vec<Event>,
     window_handle: WindowHandle,
     root_state: WidgetState,
@@ -53,14 +52,14 @@ const RENDER_DELAY: Duration = Duration::from_millis(5);
 struct AppTask<T, V: View<T>, F: FnMut(&mut T) -> V> {
     req_chan: tokio::sync::mpsc::Receiver<AppReq>,
     response_chan: tokio::sync::mpsc::Sender<RenderResponse<V, V::State>>,
-    return_chan: tokio::sync::mpsc::Receiver<(V, V::State, HashSet<Id>)>,
+    return_chan: tokio::sync::mpsc::Receiver<(V, V::State, HashSet<IdPath>)>,
 
     data: T,
     app_logic: F,
     view: Option<V>,
     state: Option<V::State>,
     idle_handle: Option<IdleHandle>,
-    pending_async: HashSet<Id>,
+    pending_async: HashSet<IdPath>,
     ui_state: UiState,
 }
 
@@ -145,7 +144,6 @@ where
             req_chan: req_tx,
             response_chan: response_rx,
             return_chan: return_tx,
-            id: None,
             root_pod: None,
             events: Vec::new(),
             window_handle: Default::default(),
@@ -245,7 +243,6 @@ where
                     let changed = response.view.rebuild(
                         &mut self.cx,
                         response.prev.as_ref().unwrap(),
-                        self.id.as_mut().unwrap(),
                         &mut state,
                         element,
                     );
@@ -255,10 +252,9 @@ where
                     assert!(self.cx.is_empty(), "id path imbalance on rebuild");
                     state
                 } else {
-                    let (id, state, element) = response.view.build(&mut self.cx);
+                    let (state, element) = response.view.build(&mut self.cx);
                     assert!(self.cx.is_empty(), "id path imbalance on build");
                     self.root_pod = Some(Pod::new(element));
-                    self.id = Some(id);
                     state
                 };
             let pending = std::mem::take(&mut self.cx.pending_async);
@@ -290,9 +286,8 @@ where
                     AppReq::SetIdleHandle(handle) => self.idle_handle = Some(handle),
                     AppReq::Events(events) => {
                         for event in events {
-                            let id_path = &event.id_path[1..];
                             self.view.as_ref().unwrap().event(
-                                id_path,
+                                &event.id_path,
                                 self.state.as_mut().unwrap(),
                                 event.body,
                                 &mut self.data,
@@ -301,7 +296,7 @@ where
                     }
                     AppReq::Wake(id_path) => {
                         let result = self.view.as_ref().unwrap().event(
-                            &id_path[1..],
+                            &id_path,
                             self.state.as_mut().unwrap(),
                             Box::new(AsyncWake),
                             &mut self.data,
@@ -314,8 +309,7 @@ where
                                 }
                                 self.ui_state = UiState::WokeUI;
                             }
-                            let id = id_path.last().unwrap();
-                            self.pending_async.remove(&id);
+                            self.pending_async.remove(&id_path);
                             if self.pending_async.is_empty() && self.ui_state == UiState::Delayed {
                                 self.render().await;
                                 deadline = None;
