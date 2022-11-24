@@ -52,7 +52,7 @@ bitflags! {
 bitflags! {
     #[derive(Default)]
     #[must_use]
-    pub struct UpdateFlags: u8 {
+    pub struct ChangeFlags: u8 {
         const REQUEST_UPDATE = 1;
         const REQUEST_LAYOUT = 2;
         const REQUEST_PAINT = 4;
@@ -137,7 +137,7 @@ impl Pod {
         (*self.widget).as_any_mut().downcast_mut()
     }
 
-    pub fn mark(&mut self, flags: UpdateFlags) {
+    pub fn mark(&mut self, flags: ChangeFlags) {
         self.state
             .request(PodFlags::from_bits(flags.bits().into()).unwrap());
     }

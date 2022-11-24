@@ -14,7 +14,7 @@
 
 use std::any::Any;
 
-use crate::{event::EventResult, id::Id, widget::UpdateFlags};
+use crate::{event::EventResult, id::Id, widget::ChangeFlags};
 
 use super::{Cx, View};
 
@@ -58,11 +58,11 @@ impl<T, A> View<T, A> for Button<T, A> {
         _id: &mut crate::id::Id,
         _state: &mut Self::State,
         element: &mut Self::Element,
-    ) -> UpdateFlags {
+    ) -> ChangeFlags {
         if prev.label != self.label {
             element.set_label(self.label.clone())
         } else {
-            UpdateFlags::empty()
+            ChangeFlags::empty()
         }
     }
 
