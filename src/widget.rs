@@ -28,6 +28,7 @@ use std::any::Any;
 use std::ops::{Deref, DerefMut};
 
 use glazier::kurbo::{Rect, Size};
+use piet_scene::SceneBuilder;
 
 use self::contexts::LifeCycleCx;
 pub use self::contexts::{AlignCx, CxState, EventCx, LayoutCx, PaintCx, PreparePaintCx, UpdateCx};
@@ -79,10 +80,8 @@ pub trait Widget {
     #[allow(unused)]
     fn prepare_paint(&mut self, cx: &mut LayoutCx, visible: Rect) {}
 
-    fn paint(&mut self, cx: &mut PaintCx) -> Rendered;
+    fn paint(&mut self, cx: &mut PaintCx, builder: &mut SceneBuilder);
 }
-
-pub struct Rendered(pub(crate) piet_scene::SceneFragment);
 
 pub trait AnyWidget: Widget {
     fn as_any(&self) -> &dyn Any;
@@ -135,8 +134,8 @@ impl Widget for Box<dyn AnyWidget> {
         self.deref_mut().prepare_paint(cx, visible)
     }
 
-    fn paint(&mut self, cx: &mut PaintCx) -> Rendered {
-        self.deref_mut().paint(cx)
+    fn paint(&mut self, cx: &mut PaintCx, builder: &mut SceneBuilder) {
+        self.deref_mut().paint(cx, builder);
     }
 }
 

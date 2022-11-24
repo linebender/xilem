@@ -22,7 +22,7 @@ use super::{
     align::{FirstBaseline, LastBaseline, SingleAlignment},
     contexts::LifeCycleCx,
     piet_scene_helpers::{self, UnitPoint},
-    AlignCx, EventCx, LayoutCx, LifeCycle, PaintCx, RawEvent, Rendered, UpdateCx, Widget,
+    AlignCx, EventCx, LayoutCx, LifeCycle, PaintCx, RawEvent, UpdateCx, Widget,
 };
 
 pub struct Button {
@@ -122,7 +122,7 @@ impl Widget for Button {
         */
     }
 
-    fn paint(&mut self, cx: &mut PaintCx) -> Rendered {
+    fn paint(&mut self, cx: &mut PaintCx, builder: &mut SceneBuilder) {
         let is_hot = cx.is_hot();
         let is_active = cx.is_active();
         let button_border_width = 2.0;
@@ -156,16 +156,9 @@ impl Widget for Button {
             )
         };
         */
-        let mut fragment = SceneFragment::default();
-        let mut builder = SceneBuilder::for_fragment(&mut fragment);
-        piet_scene_helpers::stroke(
-            &mut builder,
-            &rounded_rect,
-            border_color,
-            button_border_width,
-        );
+        piet_scene_helpers::stroke(builder, &rounded_rect, border_color, button_border_width);
         piet_scene_helpers::fill_lin_gradient(
-            &mut builder,
+            builder,
             &rounded_rect,
             bg_stops,
             UnitPoint::TOP,
@@ -176,8 +169,7 @@ impl Widget for Button {
             let size = Size::new(layout.width() as f64, layout.height() as f64);
             let offset = (cx.size().to_vec2() - size.to_vec2()) * 0.5;
             let transform = Affine::translate(offset);
-            crate::text::render_text(&mut builder, transform, &layout);
+            crate::text::render_text(builder, transform, &layout);
         }
-        Rendered(fragment)
     }
 }

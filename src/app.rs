@@ -19,11 +19,12 @@ use std::time::Duration;
 use glazier::kurbo::Size;
 use glazier::{IdleHandle, IdleToken, WindowHandle};
 use parley::FontContext;
+use piet_scene::{SceneBuilder, SceneFragment};
 use tokio::runtime::Runtime;
 
 use crate::event::{AsyncWake, EventResult};
 use crate::id::IdPath;
-use crate::widget::{CxState, EventCx, LayoutCx, PaintCx, Pod, Rendered, UpdateCx, WidgetState};
+use crate::widget::{CxState, EventCx, LayoutCx, PaintCx, Pod, UpdateCx, WidgetState};
 use crate::{
     event::Event,
     id::Id,
@@ -170,7 +171,7 @@ where
         self.size = size;
     }
 
-    pub fn paint(&mut self) -> Rendered {
+    pub fn paint(&mut self) {
         loop {
             self.send_events();
             // TODO: be more lazy re-rendering
@@ -198,7 +199,8 @@ where
                 continue;
             }
             let mut paint_cx = PaintCx::new(&mut cx_state, &mut self.root_state);
-            return root_pod.paint(&mut paint_cx);
+            root_pod.paint(&mut paint_cx);
+            break;
         }
     }
 
@@ -270,6 +272,12 @@ where
         } else {
             false
         }
+    }
+}
+
+impl<T, V: View<T>> App<T, V> {
+    pub fn fragment(&self) -> &SceneFragment {
+        &self.root_pod.as_ref().unwrap().fragment
     }
 }
 
