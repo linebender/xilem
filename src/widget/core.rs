@@ -53,9 +53,9 @@ bitflags! {
     #[derive(Default)]
     #[must_use]
     pub struct ChangeFlags: u8 {
-        const REQUEST_UPDATE = 1;
-        const REQUEST_LAYOUT = 2;
-        const REQUEST_PAINT = 4;
+        const UPDATE = 1;
+        const LAYOUT = 2;
+        const PAINT = 4;
     }
 }
 

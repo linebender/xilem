@@ -43,7 +43,7 @@ impl Button {
     pub fn set_label(&mut self, label: String) -> ChangeFlags {
         self.label = label;
         self.layout = None;
-        ChangeFlags::REQUEST_LAYOUT | ChangeFlags::REQUEST_PAINT
+        ChangeFlags::LAYOUT | ChangeFlags::PAINT
     }
 }
 

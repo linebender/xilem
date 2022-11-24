@@ -41,7 +41,7 @@ impl TextWidget {
 
     pub fn set_text(&mut self, text: String) -> ChangeFlags {
         self.text = text;
-        ChangeFlags::REQUEST_LAYOUT | ChangeFlags::REQUEST_PAINT
+        ChangeFlags::LAYOUT | ChangeFlags::PAINT
     }
 }
 
