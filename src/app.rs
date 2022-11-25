@@ -277,7 +277,7 @@ where
 
 impl<T, V: View<T>> App<T, V> {
     pub fn fragment(&self) -> &SceneFragment {
-        &self.root_pod.as_ref().unwrap().fragment
+        self.root_pod.as_ref().unwrap().fragment()
     }
 }
 

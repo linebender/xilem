@@ -53,7 +53,7 @@ bitflags! {
 pub struct Pod {
     pub(crate) state: WidgetState,
     pub(crate) widget: Box<dyn AnyWidget>,
-    pub(crate) fragment: SceneFragment,
+    fragment: SceneFragment,
 }
 
 #[derive(Default, Debug)]
@@ -353,5 +353,13 @@ impl Pod {
             return true;
         }
         false
+    }
+
+    /// Get the rendered scene fragment for the widget.
+    ///
+    /// This is only valid after a `paint` call, but the fragment can be retained
+    /// (skipping further paint calls) if the appearance does not change.
+    pub fn fragment(&self) -> &SceneFragment {
+        &self.fragment
     }
 }
