@@ -14,9 +14,9 @@ wayland = ["glazier/wayland"]
 
 [dependencies]
 glazier = { git = "https://github.com/linebender/glazier", default-features = false }
-piet-gpu-hal = { git = "https://github.com/linebender/piet-gpu" }
-piet-gpu = { git = "https://github.com/linebender/piet-gpu" }
+piet-wgsl = { git = "https://github.com/linebender/piet-gpu" }
 piet-scene = { git = "https://github.com/linebender/piet-gpu" }
+wgpu = "0.14"
 raw-window-handle = "0.5"
 png = "0.16.2"
 rand = "0.7.3"
