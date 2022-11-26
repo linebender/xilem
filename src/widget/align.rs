@@ -13,10 +13,9 @@
 // limitations under the License.
 
 use glazier::kurbo::{Point, Size};
+use piet_scene::SceneBuilder;
 
-use super::{
-    contexts::LifeCycleCx, AlignCx, AnyWidget, EventCx, LifeCycle, Rendered, Widget, WidgetState,
-};
+use super::{contexts::LifeCycleCx, AlignCx, AnyWidget, EventCx, LifeCycle, Widget, WidgetState};
 
 #[derive(Clone, Copy, PartialEq)]
 pub enum AlignmentMerge {
@@ -276,7 +275,7 @@ impl<F: Fn(AlignmentProxy) -> f64 + 'static> Widget for AlignmentGuide<F> {
         }
     }
 
-    fn paint(&mut self, cx: &mut super::PaintCx) -> Rendered {
-        self.child.paint(cx)
+    fn paint(&mut self, cx: &mut super::PaintCx, builder: &mut SceneBuilder) {
+        self.child.paint(cx, builder);
     }
 }

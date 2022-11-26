@@ -97,15 +97,15 @@ where
     fn prepare_paint(&mut self) {}
 
     fn paint(&mut self, _: &Region) {
-        let rendered = self.app.paint();
-        self.render(rendered.0);
+        self.app.paint();
+        self.render();
         self.schedule_render();
     }
 
     // TODO: temporary hack
     fn idle(&mut self, _: IdleToken) {
-        let rendered = self.app.paint();
-        self.render(rendered.0);
+        self.app.paint();
+        self.render();
         self.schedule_render();
     }
 
@@ -160,6 +160,7 @@ where
 impl<T, V: View<T>> MainState<T, V>
 where
     V::Element: Widget,
+    T: Send,
 {
     fn new(app: App<T, V>) -> Self {
         let state = MainState {
@@ -186,7 +187,8 @@ where
         self.handle.invalidate();
     }
 
-    fn render(&mut self, fragment: SceneFragment) {
+    fn render(&mut self) {
+        let fragment = self.app.fragment();
         if self.pgpu_state.is_none() {
             let handle = &self.handle;
             let scale = handle.get_scale().unwrap();

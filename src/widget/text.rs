@@ -21,7 +21,7 @@ use crate::text::ParleyBrush;
 use super::{
     align::{FirstBaseline, LastBaseline, SingleAlignment, VertAlignment},
     contexts::LifeCycleCx,
-    AlignCx, EventCx, LayoutCx, LifeCycle, PaintCx, RawEvent, Rendered, UpdateCx, Widget,
+    AlignCx, EventCx, LayoutCx, LifeCycle, PaintCx, RawEvent, UpdateCx, Widget,
 };
 
 pub struct TextWidget {
@@ -77,13 +77,10 @@ impl Widget for TextWidget {
 
     fn align(&self, cx: &mut AlignCx, alignment: SingleAlignment) {}
 
-    fn paint(&mut self, cx: &mut PaintCx) -> Rendered {
-        let mut fragment = SceneFragment::default();
-        let mut builder = SceneBuilder::for_fragment(&mut fragment);
+    fn paint(&mut self, cx: &mut PaintCx, builder: &mut SceneBuilder) {
         if let Some(layout) = &self.layout {
             let transform = Affine::translate((40.0, 40.0));
-            crate::text::render_text(&mut builder, transform, &layout);
+            crate::text::render_text(builder, transform, &layout);
         }
-        Rendered(fragment)
     }
 }

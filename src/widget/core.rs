@@ -18,7 +18,8 @@
 //! widget system, particularly its core.rs.
 
 use bitflags::bitflags;
-use glazier::kurbo::{Affine, Point, Rect, Size};
+use glazier::kurbo::{Point, Rect, Size};
+use piet_scene::{SceneBuilder, SceneFragment};
 
 use crate::Widget;
 
@@ -29,7 +30,7 @@ use super::{
     },
     contexts::LifeCycleCx,
     AlignCx, AnyWidget, CxState, EventCx, LayoutCx, LifeCycle, PaintCx, PreparePaintCx, RawEvent,
-    Rendered, UpdateCx,
+    UpdateCx,
 };
 
 bitflags! {
@@ -52,6 +53,7 @@ bitflags! {
 pub struct Pod {
     pub(crate) state: WidgetState,
     pub(crate) widget: Box<dyn AnyWidget>,
+    fragment: SceneFragment,
 }
 
 #[derive(Default, Debug)]
@@ -116,6 +118,7 @@ impl Pod {
                 flags: PodFlags::INIT_FLAGS,
                 ..Default::default()
             },
+            fragment: SceneFragment::default(),
             widget,
         }
     }
@@ -295,24 +298,25 @@ impl Pod {
         self.widget.align(&mut child_cx, alignment);
     }
 
-    pub fn paint_raw(&mut self, cx: &mut PaintCx) {
+    pub fn paint_raw(&mut self, cx: &mut PaintCx, builder: &mut SceneBuilder) {
         let mut inner_cx = PaintCx {
             cx_state: cx.cx_state,
             widget_state: &mut self.state,
         };
-        self.widget.paint(&mut inner_cx);
+        self.widget.paint(&mut inner_cx, builder);
     }
 
     pub fn prepare_paint(&mut self, cx: &mut PreparePaintCx, visible: Rect) {
         self.widget.prepare_paint(cx, visible);
     }
 
-    pub fn paint(&mut self, cx: &mut PaintCx) -> Rendered {
+    pub fn paint(&mut self, cx: &mut PaintCx) {
         let mut inner_cx = PaintCx {
             cx_state: cx.cx_state,
             widget_state: &mut self.state,
         };
-        self.widget.paint(&mut inner_cx)
+        let mut builder = SceneBuilder::for_fragment(&mut self.fragment);
+        self.widget.paint(&mut inner_cx, &mut builder);
     }
 
     pub fn height_flexibility(&self) -> f64 {
@@ -349,5 +353,13 @@ impl Pod {
             return true;
         }
         false
+    }
+
+    /// Get the rendered scene fragment for the widget.
+    ///
+    /// This is only valid after a `paint` call, but the fragment can be retained
+    /// (skipping further paint calls) if the appearance does not change.
+    pub fn fragment(&self) -> &SceneFragment {
+        &self.fragment
     }
 }
