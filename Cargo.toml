@@ -14,9 +14,9 @@ wayland = ["glazier/wayland"]
 
 [dependencies]
 glazier = { git = "https://github.com/linebender/glazier", default-features = false }
-piet-gpu-hal = { git = "https://github.com/linebender/piet-gpu" }
-piet-gpu = { git = "https://github.com/linebender/piet-gpu" }
+piet-wgsl = { git = "https://github.com/linebender/piet-gpu" }
 piet-scene = { git = "https://github.com/linebender/piet-gpu" }
+wgpu = "0.14"
 raw-window-handle = "0.5"
 png = "0.16.2"
 rand = "0.7.3"
@@ -30,3 +30,8 @@ bitflags = "1.3.2"
 
 [patch."https://github.com/dfrg/fount"]
 fount = { git = "https://github.com/jneem/fount" }
+
+[patch.crates-io]
+# Required for metal support to work on wgpu
+# TODO: remove when wgpu is upgraded to 0.15
+naga = { git = "https://github.com/gfx-rs/naga", rev="ddcd5d3121150b2b1beee6e54e9125ff31aaa9a2" }

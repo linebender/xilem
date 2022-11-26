@@ -2,7 +2,6 @@ mod app;
 mod app_main;
 mod event;
 mod id;
-mod render;
 mod test_scenes;
 mod text;
 mod view;
@@ -26,7 +25,6 @@ use std::any::Any;
 
 pub struct WindowState {
     handle: WindowHandle,
-    pgpu_state: Option<render::PgpuState>,
     scene: Scene,
     font_context: FontContext,
     counter: u64,
@@ -36,7 +34,6 @@ impl WindowState {
     pub fn new() -> Self {
         Self {
             handle: Default::default(),
-            pgpu_state: None,
             scene: Default::default(),
             font_context: FontContext::new(),
             counter: 0,
@@ -56,27 +53,7 @@ impl WindowState {
         self.handle.invalidate();
     }
 
-    fn render(&mut self) {
-        if self.pgpu_state.is_none() {
-            let handle = &self.handle;
-            let scale = handle.get_scale().unwrap();
-            let insets = handle.content_insets().to_px(scale);
-            let mut size = handle.get_size().to_px(scale);
-            size.width -= insets.x_value();
-            size.height -= insets.y_value();
-            println!("render size: {:?}", size);
-            self.pgpu_state = Some(
-                render::PgpuState::new(handle, handle, size.width as usize, size.height as usize)
-                    .unwrap(),
-            );
-        }
-        if let Some(pgpu_state) = self.pgpu_state.as_mut() {
-            if let Some(_timestamps) = pgpu_state.pre_render() {}
-            test_scenes::render(&mut self.font_context, &mut self.scene, 0, self.counter);
-            self.counter += 1;
-            pgpu_state.render(&self.scene);
-        }
-    }
+    fn render(&mut self) {}
 }
 
 impl WinHandler for WindowState {

@@ -21,6 +21,10 @@ use glazier::{
 };
 use parley::FontContext;
 use piet_scene::{Scene, SceneBuilder, SceneFragment};
+use piet_wgsl::{
+    util::{RenderContext, RenderSurface},
+    Renderer,
+};
 
 use crate::{app::App, widget::RawEvent, View, Widget};
 
@@ -38,7 +42,9 @@ where
 {
     handle: WindowHandle,
     app: App<T, V>,
-    pgpu_state: Option<crate::render::PgpuState>,
+    render_cx: RenderContext,
+    surface: Option<RenderSurface>,
+    renderer: Renderer,
     font_context: FontContext,
     scene: Scene,
     counter: u64,
@@ -163,11 +169,17 @@ where
     T: Send,
 {
     fn new(app: App<T, V>) -> Self {
+        let render_cx = tokio::runtime::Handle::current()
+            .block_on(RenderContext::new())
+            .expect("failed to create render context");
+        let renderer = Renderer::new(&render_cx.device).expect("failed to create renderer");
         let state = MainState {
             handle: Default::default(),
             app,
+            render_cx,
+            surface: None,
+            renderer,
             font_context: FontContext::new(),
-            pgpu_state: None,
             scene: Scene::default(),
             counter: 0,
         };
@@ -189,38 +201,47 @@ where
 
     fn render(&mut self) {
         let fragment = self.app.fragment();
-        if self.pgpu_state.is_none() {
-            let handle = &self.handle;
-            let scale = handle.get_scale().unwrap();
-            let insets = handle.content_insets().to_px(scale);
-            let mut size = handle.get_size().to_px(scale);
-            size.width -= insets.x_value();
-            size.height -= insets.y_value();
+        let handle = &self.handle;
+        let scale = handle.get_scale().unwrap_or_default();
+        let insets = handle.content_insets().to_px(scale);
+        let mut size = handle.get_size().to_px(scale);
+        size.width -= insets.x_value();
+        size.height -= insets.y_value();
+        let width = size.width as u32;
+        let height = size.height as u32;
+        if self.surface.is_none() {
             println!("render size: {:?}", size);
-            self.pgpu_state = Some(
-                crate::render::PgpuState::new(
-                    handle,
-                    handle,
-                    size.width as usize,
-                    size.height as usize,
-                )
-                .unwrap(),
-            );
+            self.surface = Some(self.render_cx.create_surface(handle, width, height));
         }
-        if let Some(pgpu_state) = self.pgpu_state.as_mut() {
-            let scale = self.handle.get_scale().unwrap_or_default();
+        if let Some(surface) = self.surface.as_mut() {
+            if surface.config.width != width || surface.config.height != height {
+                self.render_cx.resize_surface(surface, width, height);
+            }
             let (scale_x, scale_y) = (scale.x(), scale.y());
             let transform = if scale_x != 1.0 || scale_y != 1.0 {
                 Some(Affine::scale_non_uniform(scale_x, scale_y))
             } else {
                 None
             };
-            if let Some(_timestamps) = pgpu_state.pre_render() {}
             let mut builder = SceneBuilder::for_scene(&mut self.scene);
             builder.append(&fragment, transform);
-            //crate::test_scenes::render(&mut self.font_context, &mut self.scene, 0, self.counter);
             self.counter += 1;
-            pgpu_state.render(&self.scene);
+            let surface_texture = surface
+                .surface
+                .get_current_texture()
+                .expect("failed to acquire next swapchain texture");
+            self.renderer
+                .render_to_surface(
+                    &self.render_cx.device,
+                    &self.render_cx.queue,
+                    &self.scene,
+                    &surface_texture,
+                    width,
+                    height,
+                )
+                .expect("failed to render to surface");
+            surface_texture.present();
+            self.render_cx.device.poll(wgpu::Maintain::Wait);
         }
     }
 }
