@@ -30,3 +30,8 @@ bitflags = "1.3.2"
 
 [patch."https://github.com/dfrg/fount"]
 fount = { git = "https://github.com/jneem/fount" }
+
+[patch.crates-io]
+# Required for metal support to work on wgpu
+# TODO: remove when wgpu is upgraded to 0.15
+naga = { git = "https://github.com/gfx-rs/naga", rev="ddcd5d3121150b2b1beee6e54e9125ff31aaa9a2" }
