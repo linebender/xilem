@@ -20,6 +20,7 @@ pub mod button;
 // pub mod list;
 // pub mod memoize;
 // pub mod scroll_view;
+pub mod style;
 pub mod text;
 // pub mod use_state;
 // pub mod vstack;
