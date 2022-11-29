@@ -10,10 +10,9 @@ mod widget;
 pub use app::App;
 pub use app_main::AppLauncher;
 pub use view::button::button;
+pub use view::style::{background, padding};
 pub use view::View;
 pub use widget::align::VertAlignment;
-pub use widget::compose_style::background::background;
-pub use widget::compose_style::padding::padding;
 pub use widget::Widget;
 
 use glazier::kurbo::Size;

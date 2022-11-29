@@ -1,10 +1,13 @@
 use piet_scene::Color;
 use xilem::{background, button, padding, App, AppLauncher, View};
 
-fn app_logic(_data: &mut ()) -> impl View<()> {
+fn app_logic(data: &mut f64) -> impl View<f64> {
     background(
         Color::RED,
-        padding(40., button("Click me", |_| println!("Clicked"))),
+        padding(
+            *data,
+            button(format!("Padding {data}px"), |data| *data += 1.),
+        ),
     )
 }
 
@@ -19,6 +22,6 @@ fn main() {
     window_handle.show();
     app.run(None);
     */
-    let app = App::new((), app_logic);
+    let app = App::new(10., app_logic);
     AppLauncher::new(app).run()
 }
