@@ -14,7 +14,7 @@
 
 use std::any::Any;
 
-use crate::{event::EventResult, id::Id};
+use crate::{event::EventResult, id::Id, widget::ChangeFlags};
 
 use super::{Cx, View};
 
@@ -35,12 +35,11 @@ impl<T, A> View<T, A> for String {
         _id: &mut crate::id::Id,
         _state: &mut Self::State,
         element: &mut Self::Element,
-    ) -> bool {
+    ) -> ChangeFlags {
         if prev != self {
-            element.set_text(self.clone());
-            true
+            element.set_text(self.clone())
         } else {
-            false
+            ChangeFlags::empty()
         }
     }
 

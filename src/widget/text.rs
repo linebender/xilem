@@ -21,7 +21,7 @@ use crate::text::ParleyBrush;
 use super::{
     align::{FirstBaseline, LastBaseline, SingleAlignment, VertAlignment},
     contexts::LifeCycleCx,
-    AlignCx, EventCx, LayoutCx, LifeCycle, PaintCx, RawEvent, UpdateCx, Widget,
+    AlignCx, ChangeFlags, EventCx, LayoutCx, LifeCycle, PaintCx, RawEvent, UpdateCx, Widget,
 };
 
 pub struct TextWidget {
@@ -39,8 +39,9 @@ impl TextWidget {
         }
     }
 
-    pub fn set_text(&mut self, text: String) {
+    pub fn set_text(&mut self, text: String) -> ChangeFlags {
         self.text = text;
+        ChangeFlags::LAYOUT | ChangeFlags::PAINT
     }
 }
 

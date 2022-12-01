@@ -244,16 +244,14 @@ where
             let state =
                 if let Some(element) = self.root_pod.as_mut().and_then(|pod| pod.downcast_mut()) {
                     let mut state = response.state.unwrap();
-                    let changed = response.view.rebuild(
+                    let changes = response.view.rebuild(
                         &mut self.cx,
                         response.prev.as_ref().unwrap(),
                         self.id.as_mut().unwrap(),
                         &mut state,
                         element,
                     );
-                    if changed {
-                        self.root_pod.as_mut().unwrap().request_update();
-                    }
+                    self.root_pod.as_mut().unwrap().mark(changes);
                     assert!(self.cx.is_empty(), "id path imbalance on rebuild");
                     state
                 } else {
