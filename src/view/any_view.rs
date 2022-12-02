@@ -16,7 +16,11 @@ use std::{
     ops::{Deref, DerefMut},
 };
 
-use crate::{event::EventResult, id::Id, widget::AnyWidget};
+use crate::{
+    event::EventResult,
+    id::Id,
+    widget::{AnyWidget, ChangeFlags},
+};
 
 use super::{Cx, View};
 
@@ -41,7 +45,7 @@ pub trait AnyView<T, A = ()> {
         id: &mut Id,
         state: &mut Box<dyn Any + Send>,
         element: &mut Box<dyn AnyWidget>,
-    ) -> bool;
+    ) -> ChangeFlags;
 
     fn dyn_event(
         &self,
@@ -73,25 +77,27 @@ where
         id: &mut Id,
         state: &mut Box<dyn Any + Send>,
         element: &mut Box<dyn AnyWidget>,
-    ) -> bool {
+    ) -> ChangeFlags {
         if let Some(prev) = prev.as_any().downcast_ref() {
             if let Some(state) = state.downcast_mut() {
                 if let Some(element) = element.deref_mut().as_any_mut().downcast_mut() {
                     self.rebuild(cx, prev, id, state, element)
                 } else {
                     println!("downcast of element failed in dyn_rebuild");
-                    false
+                    ChangeFlags::empty()
                 }
             } else {
                 println!("downcast of state failed in dyn_rebuild");
-                false
+                ChangeFlags::empty()
             }
         } else {
             let (new_id, new_state, new_element) = self.build(cx);
             *id = new_id;
             *state = Box::new(new_state);
             *element = Box::new(new_element);
-            true
+
+            // Everything about the new view could be different, so return all the flags
+            ChangeFlags::all()
         }
     }
 
@@ -127,7 +133,7 @@ impl<T, A> View<T, A> for Box<dyn AnyView<T, A> + Send> {
         id: &mut Id,
         state: &mut Self::State,
         element: &mut Self::Element,
-    ) -> bool {
+    ) -> ChangeFlags {
         self.deref()
             .dyn_rebuild(cx, prev.deref(), id, state, element)
     }
