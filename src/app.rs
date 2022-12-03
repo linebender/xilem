@@ -25,6 +25,7 @@ use tokio::runtime::Runtime;
 use crate::event::{AsyncWake, EventResult};
 use crate::id::IdPath;
 use crate::widget::{CxState, EventCx, LayoutCx, PaintCx, Pod, UpdateCx, WidgetState};
+use crate::AppLauncher;
 use crate::{
     event::Event,
     id::Id,
@@ -270,6 +271,16 @@ where
         } else {
             false
         }
+    }
+
+    /// Runs the app inside a window.
+    pub fn run_with_title(self, title: impl Into<String>) {
+        AppLauncher::new(self).title(title).run()
+    }
+
+    /// Runs the app inside a window.
+    pub fn run(self) {
+        AppLauncher::new(self).run()
     }
 }
 
