@@ -41,6 +41,5 @@ fn app_logic(data: &mut AppData) -> impl View<AppData> {
 }
 
 pub fn main() {
-    let app = App::new(AppData::default(), app_logic);
-    AppLauncher::new(app).run();
+    App::new(AppData::default(), app_logic).run()
 }
