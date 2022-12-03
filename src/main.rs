@@ -1,7 +1,18 @@
 use xilem::{button, App, AppLauncher, View};
 
-fn app_logic(_data: &mut ()) -> impl View<()> {
-    button("click me", |_| println!("clicked"))
+fn app_logic(data: &mut i32) -> impl View<i32> {
+    // here's some logic, deriving state for the view from our state
+    let label = if *data == 1 {
+        "clicked 1 time".to_string()
+    } else {
+        format!("clicked {data} times")
+    };
+
+    // The actual UI Code starts here
+    button(label, |data| {
+        println!("clicked");
+        *data += 1;
+    })
 }
 
 fn main() {
@@ -15,6 +26,7 @@ fn main() {
     window_handle.show();
     app.run(None);
     */
-    let app = App::new((), app_logic);
+    let app = App::new(0, app_logic);
     AppLauncher::new(app).run()
 }
+
