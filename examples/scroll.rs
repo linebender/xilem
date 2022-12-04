@@ -33,6 +33,5 @@ fn app_logic(_: &mut ()) -> impl View<()> {
 }
 
 fn main() {
-    let app = App::new((), app_logic);
-    AppLauncher::new(app).run();
+    App::new((), app_logic).run()
 }

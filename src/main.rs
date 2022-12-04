@@ -1,4 +1,4 @@
-use xilem::{button, App, AppLauncher, View};
+use xilem::{button, App, View};
 
 fn app_logic(_data: &mut ()) -> impl View<()> {
     button("click me", |_| println!("clicked"))
@@ -15,6 +15,5 @@ fn main() {
     window_handle.show();
     app.run(None);
     */
-    let app = App::new((), app_logic);
-    AppLauncher::new(app).run()
+    App::new((), app_logic).run()
 }
