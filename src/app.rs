@@ -274,11 +274,15 @@ where
     }
 
     /// Runs the app inside a window.
+    ///
+    /// This is a thin convinience wrapper around [AppLauncher](xilem::AppLauncher)
     pub fn run_with_title(self, title: impl Into<String>) {
         AppLauncher::new(self).title(title).run()
     }
 
     /// Runs the app inside a window.
+    ///
+    /// This is a thin convinience wrapper around [AppLauncher](xilem::AppLauncher)
     pub fn run(self) {
         AppLauncher::new(self).run()
     }
