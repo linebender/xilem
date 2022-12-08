@@ -224,6 +224,14 @@ impl Pod {
                     false
                 }
             }
+            RawEvent::MouseLeft() => {
+                Pod::set_hot_state(&mut self.widget, &mut self.state, cx.cx_state, rect, None);
+                if had_active || self.state.flags.contains(PodFlags::IS_HOT) {
+                    false
+                } else {
+                    true
+                }
+            }
         };
         if recurse {
             let mut inner_cx = EventCx {

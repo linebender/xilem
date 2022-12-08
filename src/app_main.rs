@@ -146,6 +146,11 @@ where
         self.handle.invalidate();
     }
 
+    fn mouse_leave(&mut self) {
+        self.app.window_event(RawEvent::MouseLeft());
+        self.handle.invalidate();
+    }
+
     fn size(&mut self, size: Size) {
         self.app.size(size);
     }
