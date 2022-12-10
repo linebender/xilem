@@ -225,11 +225,12 @@ impl Pod {
                 }
             }
             RawEvent::MouseLeft() => {
-                Pod::set_hot_state(&mut self.widget, &mut self.state, cx.cx_state, rect, None);
-                if had_active || self.state.flags.contains(PodFlags::IS_HOT) {
-                    false
-                } else {
+                let hot_changed =
+                    Pod::set_hot_state(&mut self.widget, &mut self.state, cx.cx_state, rect, None);
+                if had_active || hot_changed {
                     true
+                } else {
+                    false
                 }
             }
         };
