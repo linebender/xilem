@@ -23,6 +23,7 @@ pub enum RawEvent {
     MouseUp(MouseEvent),
     MouseMove(MouseEvent),
     MouseWheel(MouseEvent),
+    MouseLeft(),
 }
 
 #[derive(Debug, Clone)]
