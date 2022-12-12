@@ -18,7 +18,7 @@ use glazier::{
 // limitations under the License.
 
 #[derive(Debug, Clone)]
-pub enum RawEvent {
+pub enum Event {
     MouseDown(MouseEvent),
     MouseUp(MouseEvent),
     MouseMove(MouseEvent),
