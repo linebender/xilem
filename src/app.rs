@@ -22,14 +22,16 @@ use parley::FontContext;
 use piet_scene::{SceneBuilder, SceneFragment};
 use tokio::runtime::Runtime;
 
-use crate::event::{AsyncWake, EventResult};
+use crate::event::{AsyncWake, MessageResult};
 use crate::id::IdPath;
-use crate::widget::{CxState, EventCx, LayoutCx, PaintCx, Pod, UpdateCx, WidgetState};
+use crate::widget::{
+    BoxConstraints, CxState, EventCx, LayoutCx, PaintCx, Pod, UpdateCx, WidgetState,
+};
 use crate::{
-    event::Event,
+    event::Message,
     id::Id,
     view::{Cx, View},
-    widget::{RawEvent, Widget},
+    widget::{Event, Widget},
 };
 
 pub struct App<T, V: View<T>> {
@@ -37,7 +39,7 @@ pub struct App<T, V: View<T>> {
     response_chan: tokio::sync::mpsc::Receiver<RenderResponse<V, V::State>>,
     return_chan: tokio::sync::mpsc::Sender<(V, V::State, HashSet<Id>)>,
     id: Option<Id>,
-    events: Vec<Event>,
+    events: Vec<Message>,
     window_handle: WindowHandle,
     root_state: WidgetState,
     root_pod: Option<Pod>,
@@ -68,7 +70,7 @@ struct AppTask<T, V: View<T>, F: FnMut(&mut T) -> V> {
 /// A message sent from the main UI thread to the app task
 pub(crate) enum AppReq {
     SetIdleHandle(IdleHandle),
-    Events(Vec<Event>),
+    Events(Vec<Message>),
     Wake(IdPath),
     // Parameter indicates whether it should be delayed for async
     Render(bool),
@@ -182,9 +184,8 @@ where
             let mut update_cx = UpdateCx::new(&mut cx_state, &mut self.root_state);
             root_pod.update(&mut update_cx);
             let mut layout_cx = LayoutCx::new(&mut cx_state, &mut self.root_state);
-            root_pod.measure(&mut layout_cx);
-            let proposed_size = self.size;
-            root_pod.layout(&mut layout_cx, proposed_size);
+            let bc = BoxConstraints::tight(self.size);
+            root_pod.layout(&mut layout_cx, &bc);
             if cx_state.has_events() {
                 // Rerun app logic, primarily for LayoutObserver
                 // We might want some debugging here if the number of iterations
@@ -193,18 +194,13 @@ where
             }
             let mut layout_cx = LayoutCx::new(&mut cx_state, &mut self.root_state);
             let visible = root_pod.state.size.to_rect();
-            root_pod.prepare_paint(&mut layout_cx, visible);
-            if cx_state.has_events() {
-                // Rerun app logic, primarily for virtualized scrolling
-                continue;
-            }
             let mut paint_cx = PaintCx::new(&mut cx_state, &mut self.root_state);
             root_pod.paint(&mut paint_cx);
             break;
         }
     }
 
-    pub fn window_event(&mut self, event: RawEvent) {
+    pub fn window_event(&mut self, event: Event) {
         self.ensure_root();
         let root_pod = self.root_pod.as_mut().unwrap();
         let mut cx_state = CxState::new(&self.window_handle, &mut self.font_cx, &mut self.events);
@@ -312,7 +308,7 @@ where
                             Box::new(AsyncWake),
                             &mut self.data,
                         );
-                        if matches!(result, EventResult::RequestRebuild) {
+                        if matches!(result, MessageResult::RequestRebuild) {
                             // request re-render from UI thread
                             if self.ui_state == UiState::Start {
                                 if let Some(handle) = self.idle_handle.as_mut() {

@@ -17,7 +17,7 @@ use std::{
 };
 
 use crate::{
-    event::EventResult,
+    event::MessageResult,
     id::Id,
     widget::{AnyWidget, ChangeFlags},
 };
@@ -53,7 +53,7 @@ pub trait AnyView<T, A = ()> {
         state: &mut dyn Any,
         event: Box<dyn Any>,
         app_state: &mut T,
-    ) -> EventResult<A>;
+    ) -> MessageResult<A>;
 }
 
 impl<T, A, V: View<T, A> + 'static> AnyView<T, A> for V
@@ -107,7 +107,7 @@ where
         state: &mut dyn Any,
         event: Box<dyn Any>,
         app_state: &mut T,
-    ) -> EventResult<A> {
+    ) -> MessageResult<A> {
         if let Some(state) = state.downcast_mut() {
             self.event(id_path, state, event, app_state)
         } else {
@@ -144,7 +144,7 @@ impl<T, A> View<T, A> for Box<dyn AnyView<T, A> + Send> {
         state: &mut Self::State,
         event: Box<dyn Any>,
         app_state: &mut T,
-    ) -> EventResult<A> {
+    ) -> MessageResult<A> {
         self.deref()
             .dyn_event(id_path, state.deref_mut(), event, app_state)
     }

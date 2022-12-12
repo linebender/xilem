@@ -16,13 +16,12 @@ use glazier::kurbo::{Affine, Insets, Size};
 use parley::Layout;
 use piet_scene::{Brush, Color, SceneBuilder, SceneFragment, Stroke};
 
-use crate::{event::Event, id::IdPath, text::ParleyBrush, VertAlignment};
+use crate::{event::Message, id::IdPath, text::ParleyBrush};
 
 use super::{
-    align::{FirstBaseline, LastBaseline, SingleAlignment},
     contexts::LifeCycleCx,
     piet_scene_helpers::{self, UnitPoint},
-    AlignCx, ChangeFlags, EventCx, LayoutCx, LifeCycle, PaintCx, RawEvent, UpdateCx, Widget,
+    BoxConstraints, ChangeFlags, Event, EventCx, LayoutCx, LifeCycle, PaintCx, UpdateCx, Widget,
 };
 
 pub struct Button {
@@ -55,15 +54,15 @@ impl Widget for Button {
         cx.request_layout();
     }
 
-    fn event(&mut self, cx: &mut EventCx, event: &RawEvent) {
+    fn event(&mut self, cx: &mut EventCx, event: &Event) {
         match event {
-            RawEvent::MouseDown(_) => {
+            Event::MouseDown(_) => {
                 cx.set_active(true);
                 // TODO: request paint
             }
-            RawEvent::MouseUp(_) => {
+            Event::MouseUp(_) => {
                 if cx.is_hot() {
-                    cx.add_event(Event::new(self.id_path.clone(), ()));
+                    cx.add_event(Message::new(self.id_path.clone(), ()));
                 }
                 cx.set_active(false);
                 // TODO: request paint
@@ -79,7 +78,7 @@ impl Widget for Button {
         }
     }
 
-    fn measure(&mut self, cx: &mut LayoutCx) -> (Size, Size) {
+    fn layout(&mut self, cx: &mut LayoutCx, bc: &BoxConstraints) -> Size {
         let padding = Size::new(LABEL_INSETS.x_value(), LABEL_INSETS.y_value());
         let min_height = 24.0;
         let mut lcx = parley::LayoutContext::new();
@@ -96,31 +95,10 @@ impl Widget for Button {
             (layout.height() as f64 + padding.height).max(min_height),
         );
         self.layout = Some(layout);
-        (Size::new(10.0, min_height), size)
-    }
-
-    fn layout(&mut self, cx: &mut LayoutCx, proposed_size: Size) -> Size {
-        let size = Size::new(
-            proposed_size
-                .width
-                .clamp(cx.min_size().width, cx.max_size().width),
-            cx.max_size().height,
-        );
+        //(Size::new(10.0, min_height), size)
+        let size = bc.constrain(size);
         println!("size = {:?}", size);
         size
-    }
-
-    fn align(&self, cx: &mut AlignCx, alignment: SingleAlignment) {
-        // TODO: figure this out
-        /*
-        if alignment.id() == FirstBaseline.id() || alignment.id() == LastBaseline.id() {
-            let layout = self.layout.as_ref().unwrap();
-            if let Some(metric) = layout.line_metric(0) {
-                let value = 0.5 * (cx.size().height - layout.size().height) + metric.baseline;
-                cx.aggregate(alignment, value);
-            }
-        }
-        */
     }
 
     fn paint(&mut self, cx: &mut PaintCx, builder: &mut SceneBuilder) {

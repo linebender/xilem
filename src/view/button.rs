@@ -14,7 +14,7 @@
 
 use std::any::Any;
 
-use crate::{event::EventResult, id::Id, widget::ChangeFlags};
+use crate::{event::MessageResult, id::Id, widget::ChangeFlags};
 
 use super::{Cx, View};
 
@@ -72,7 +72,7 @@ impl<T, A> View<T, A> for Button<T, A> {
         _state: &mut Self::State,
         _event: Box<dyn Any>,
         app_state: &mut T,
-    ) -> EventResult<A> {
-        EventResult::Action((self.callback)(app_state))
+    ) -> MessageResult<A> {
+        MessageResult::Action((self.callback)(app_state))
     }
 }

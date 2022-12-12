@@ -25,18 +25,15 @@ use glazier::{
 };
 use parley::FontContext;
 
-use crate::event::Event;
+use crate::event::Message;
 
-use super::{
-    align::{AlignResult, AlignmentAxis, SingleAlignment},
-    PodFlags, WidgetState,
-};
+use super::{PodFlags, WidgetState};
 
 // These contexts loosely follow Druid.
 pub struct CxState<'a> {
     window: &'a WindowHandle,
     font_cx: &'a mut FontContext,
-    events: &'a mut Vec<Event>,
+    events: &'a mut Vec<Message>,
 }
 
 pub struct EventCx<'a, 'b> {
@@ -60,12 +57,6 @@ pub struct LayoutCx<'a, 'b> {
     pub(crate) widget_state: &'a mut WidgetState,
 }
 
-pub struct AlignCx<'a> {
-    pub(crate) widget_state: &'a WidgetState,
-    pub(crate) align_result: &'a mut AlignResult,
-    pub(crate) origin: Point,
-}
-
 pub struct PaintCx<'a, 'b> {
     pub(crate) cx_state: &'a mut CxState<'b>,
     pub(crate) widget_state: &'a WidgetState,
@@ -75,7 +66,7 @@ impl<'a> CxState<'a> {
     pub fn new(
         window: &'a WindowHandle,
         font_cx: &'a mut FontContext,
-        events: &'a mut Vec<Event>,
+        events: &'a mut Vec<Message>,
     ) -> Self {
         CxState {
             window,
@@ -98,7 +89,7 @@ impl<'a, 'b> EventCx<'a, 'b> {
         }
     }
 
-    pub fn add_event(&mut self, event: Event) {
+    pub fn add_event(&mut self, event: Message) {
         self.cx_state.events.push(event);
     }
 
@@ -146,40 +137,12 @@ impl<'a, 'b> LayoutCx<'a, 'b> {
         }
     }
 
-    pub fn add_event(&mut self, event: Event) {
+    pub fn add_event(&mut self, event: Message) {
         self.cx_state.events.push(event);
-    }
-
-    /// Access to minimum intrinsic size.
-    ///
-    /// Note: this shouldn't be called from prelayout.
-    pub fn min_size(&self) -> Size {
-        self.widget_state.min_size
-    }
-
-    pub fn max_size(&self) -> Size {
-        self.widget_state.max_size
     }
 
     pub fn font_cx(&mut self) -> &mut FontContext {
         self.cx_state.font_cx
-    }
-}
-
-// This is laziness, should be a separate cx with invalidate methods
-pub type PreparePaintCx<'a, 'b> = LayoutCx<'a, 'b>;
-
-impl<'a> AlignCx<'a> {
-    pub fn aggregate(&mut self, alignment: SingleAlignment, value: f64) {
-        let origin_value = match alignment.axis() {
-            AlignmentAxis::Horizontal => self.origin.x,
-            AlignmentAxis::Vertical => self.origin.y,
-        };
-        self.align_result.aggregate(alignment, value + origin_value);
-    }
-
-    pub fn size(&self) -> Size {
-        self.widget_state.size
     }
 }
 

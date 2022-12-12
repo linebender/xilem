@@ -14,7 +14,7 @@
 
 use std::any::Any;
 
-use crate::{event::EventResult, id::Id, widget::ChangeFlags};
+use crate::{event::MessageResult, id::Id, widget::ChangeFlags};
 
 use super::{Cx, View};
 
@@ -49,7 +49,7 @@ impl<T, A> View<T, A> for String {
         _state: &mut Self::State,
         _event: Box<dyn Any>,
         _app_state: &mut T,
-    ) -> EventResult<A> {
-        EventResult::Stale
+    ) -> MessageResult<A> {
+        MessageResult::Stale
     }
 }
