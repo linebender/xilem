@@ -1,10 +1,11 @@
 use parley::Layout;
-use piet_scene::kurbo::Affine;
-use piet_scene::{
+use vello::kurbo::Affine;
+use vello::{
     glyph::{
         pinot::{types::Tag, FontRef},
         GlyphContext,
     },
+    peniko::{Brush, Color},
     *,
 };
 

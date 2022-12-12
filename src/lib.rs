@@ -20,8 +20,8 @@ use glazier::{
     Scalable, TimerToken, WinHandler, WindowHandle,
 };
 use parley::FontContext;
-use piet_scene::Scene;
 use std::any::Any;
+use vello::Scene;
 
 pub struct WindowState {
     handle: WindowHandle,

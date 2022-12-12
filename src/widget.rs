@@ -28,7 +28,7 @@ use std::any::Any;
 use std::ops::{Deref, DerefMut};
 
 use glazier::kurbo::{Rect, Size};
-use piet_scene::SceneBuilder;
+use vello::SceneBuilder;
 
 use self::contexts::LifeCycleCx;
 pub use self::contexts::{AlignCx, CxState, EventCx, LayoutCx, PaintCx, PreparePaintCx, UpdateCx};

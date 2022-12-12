@@ -1595,30 +1595,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "piet-scene"
-version = "0.1.0"
-source = "git+https://github.com/linebender/piet-gpu#571822248c92a5e57761ef29391638c5ff942cd7"
-dependencies = [
- "bytemuck",
- "moscato",
- "peniko",
- "smallvec",
-]
-
-[[package]]
-name = "piet-wgsl"
-version = "0.1.0"
-source = "git+https://github.com/linebender/piet-gpu#571822248c92a5e57761ef29391638c5ff942cd7"
-dependencies = [
- "bytemuck",
- "futures-intrusive",
- "parking_lot",
- "piet-scene",
- "raw-window-handle",
- "wgpu",
-]
-
-[[package]]
 name = "pin-project-lite"
 version = "0.2.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2276,6 +2252,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f962df74c8c05a667b5ee8bcf162993134c104e96440b663c8daa176dc772d8c"
 
 [[package]]
+name = "vello"
+version = "0.1.0"
+source = "git+https://github.com/linebender/piet-gpu#3bc81afbf669f9e195dac34a03ecbd1d744ce087"
+dependencies = [
+ "bytemuck",
+ "futures-intrusive",
+ "moscato",
+ "parking_lot",
+ "peniko",
+ "raw-window-handle",
+ "smallvec",
+ "wgpu",
+]
+
+[[package]]
 name = "version-compare"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2712,14 +2703,13 @@ dependencies = [
  "futures-task",
  "glazier",
  "parley",
- "piet-scene",
- "piet-wgsl",
  "png",
  "rand 0.7.3",
  "raw-window-handle",
  "roxmltree",
  "swash 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "tokio",
+ "vello",
  "wgpu",
 ]
 
