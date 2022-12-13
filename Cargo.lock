@@ -2254,7 +2254,7 @@ checksum = "f962df74c8c05a667b5ee8bcf162993134c104e96440b663c8daa176dc772d8c"
 [[package]]
 name = "vello"
 version = "0.1.0"
-source = "git+https://github.com/linebender/piet-gpu#3bc81afbf669f9e195dac34a03ecbd1d744ce087"
+source = "git+https://github.com/linebender/vello#3bc81afbf669f9e195dac34a03ecbd1d744ce087"
 dependencies = [
  "bytemuck",
  "futures-intrusive",
