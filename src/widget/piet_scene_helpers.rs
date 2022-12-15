@@ -1,5 +1,6 @@
 use glazier::kurbo::{self, Affine, Rect, Shape};
-use piet_scene::{BrushRef, ColorStopsSource, Fill, LinearGradient, SceneBuilder, Stroke};
+use vello::peniko::{BrushRef, ColorStopsSource, Fill, LinearGradient, Stroke};
+use vello::SceneBuilder;
 
 #[derive(Debug, Clone, Copy)]
 pub struct UnitPoint {

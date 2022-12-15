@@ -19,7 +19,7 @@
 
 use bitflags::bitflags;
 use glazier::kurbo::{Point, Rect, Size};
-use piet_scene::{SceneBuilder, SceneFragment};
+use vello::{SceneBuilder, SceneFragment};
 
 use crate::Widget;
 

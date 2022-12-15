@@ -20,11 +20,11 @@ use glazier::{
     WinHandler, WindowBuilder, WindowHandle,
 };
 use parley::FontContext;
-use piet_scene::{Scene, SceneBuilder, SceneFragment};
-use piet_wgsl::{
+use vello::{
     util::{RenderContext, RenderSurface},
     Renderer,
 };
+use vello::{Scene, SceneBuilder, SceneFragment};
 
 use crate::{app::App, widget::Event, View, Widget};
 

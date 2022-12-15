@@ -15,7 +15,7 @@
 //! The fundamental druid types.
 
 use crate::widget::Axis;
-use piet_scene::kurbo::Size;
+use vello::kurbo::Size;
 
 /// Constraints for layout.
 ///
@@ -23,7 +23,7 @@ use piet_scene::kurbo::Size;
 /// and this struct is similar to the [Flutter BoxConstraints] class.
 ///
 /// At the moment, it represents simply a minimum and maximum size.
-/// A widget's [`layout`] method should choose an appropriate size that
+/// A widget's [`layout`] method should choose an:: appropriate size that
 /// meets these constraints.
 ///
 /// Further, a container widget should compute appropriate constraints

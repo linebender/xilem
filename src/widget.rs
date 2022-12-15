@@ -28,7 +28,7 @@ use std::any::Any;
 use std::ops::{Deref, DerefMut};
 
 use glazier::kurbo::{Rect, Size};
-use piet_scene::SceneBuilder;
+use vello::SceneBuilder;
 
 pub use self::box_constraints::BoxConstraints;
 use self::contexts::LifeCycleCx;

@@ -19,8 +19,8 @@ use std::time::Duration;
 use glazier::kurbo::Size;
 use glazier::{IdleHandle, IdleToken, WindowHandle};
 use parley::FontContext;
-use piet_scene::{SceneBuilder, SceneFragment};
 use tokio::runtime::Runtime;
+use vello::{SceneBuilder, SceneFragment};
 
 use crate::event::{AsyncWake, MessageResult};
 use crate::id::IdPath;
