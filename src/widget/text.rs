@@ -14,7 +14,10 @@
 
 use glazier::kurbo::{Affine, Point, Size};
 use parley::Layout;
-use piet_scene::{Brush, Color, SceneBuilder, SceneFragment};
+use vello::{
+    peniko::{Brush, Color},
+    SceneBuilder, SceneFragment,
+};
 
 use crate::text::ParleyBrush;
 

@@ -1,7 +1,8 @@
 use super::text::*;
 use parley::FontContext;
-use piet_scene::kurbo::{Affine, Rect};
-use piet_scene::*;
+use vello::kurbo::{Affine, Rect};
+use vello::peniko::*;
+use vello::{Scene, SceneBuilder};
 
 pub fn render(fcx: &mut FontContext, scene: &mut Scene, which: usize, arg: u64) {
     match which {

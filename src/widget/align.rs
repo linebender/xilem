@@ -13,7 +13,7 @@
 // limitations under the License.
 
 use glazier::kurbo::{Point, Size};
-use piet_scene::SceneBuilder;
+use vello::SceneBuilder;
 
 use super::{contexts::LifeCycleCx, AlignCx, AnyWidget, EventCx, LifeCycle, Widget, WidgetState};
 
