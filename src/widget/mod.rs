@@ -24,6 +24,7 @@ mod widget_state;
 #[cfg(test)]
 mod tests;
 
+mod align;
 mod button;
 mod checkbox;
 mod flex;
@@ -37,6 +38,7 @@ mod split;
 mod textbox;
 mod web_image;
 
+pub use align::Align;
 pub use button::Button;
 pub use checkbox::Checkbox;
 pub use flex::{Axis, CrossAxisAlignment, Flex, FlexParams, MainAxisAlignment};
