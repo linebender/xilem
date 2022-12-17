@@ -25,11 +25,8 @@ use crate::contexts::WidgetCtx;
 use crate::kurbo::Insets;
 use crate::piet::{RenderContext as _, TextLayout as _};
 use crate::shell::{HotKey, KeyEvent, SysMods, TimerToken};
-use crate::text::TextAlignment;
-use crate::text::{ImeInvalidation, Selection, TextComponent, TextLayout};
-use crate::widget::Portal;
-use crate::widget::WidgetMut;
-use crate::widget::WidgetRef;
+use crate::text::{ImeInvalidation, Selection, TextAlignment, TextComponent, TextLayout};
+use crate::widget::{Portal, WidgetMut, WidgetRef};
 use crate::{
     theme, ArcStr, BoxConstraints, Command, Env, Event, EventCtx, LayoutCtx, LifeCycle,
     LifeCycleCtx, PaintCtx, Point, Rect, Size, StatusChange, Vec2, Widget, WidgetPod,

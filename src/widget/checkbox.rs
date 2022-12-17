@@ -22,10 +22,9 @@ use crate::contexts::WidgetCtx;
 use crate::kurbo::{BezPath, Size};
 use crate::piet::{LineCap, LineJoin, LinearGradient, RenderContext, StrokeStyle, UnitPoint};
 use crate::widget::{Label, WidgetMut, WidgetRef};
-use crate::ArcStr;
 use crate::{
-    theme, BoxConstraints, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
-    StatusChange, Widget, WidgetPod,
+    theme, ArcStr, BoxConstraints, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx,
+    PaintCtx, StatusChange, Widget, WidgetPod,
 };
 
 /// A checkbox that can be toggled.
@@ -202,9 +201,7 @@ mod tests {
 
     use super::*;
     use crate::assert_render_snapshot;
-    use crate::testing::widget_ids;
-    use crate::testing::TestHarness;
-    use crate::testing::TestWidgetExt;
+    use crate::testing::{widget_ids, TestHarness, TestWidgetExt};
     use crate::theme::PRIMARY_LIGHT;
 
     #[test]

@@ -16,17 +16,16 @@
 
 use std::any::Any;
 
+use druid_shell::text::InputHandler;
 use druid_shell::{
-    text::InputHandler, FileDialogToken, FileInfo, IdleToken, KeyEvent, MouseEvent, Region, Scale,
-    TextFieldToken, TimerToken, WindowHandle,
+    AppHandler, FileDialogToken, FileInfo, IdleToken, KeyEvent, MouseEvent, Region, Scale,
+    TextFieldToken, TimerToken, WinHandler, WindowHandle,
 };
-use druid_shell::{AppHandler, WinHandler};
 
 use crate::app_root::AppRoot;
-use crate::command as sys_cmd;
 use crate::kurbo::Size;
 use crate::piet::Piet;
-use crate::{Event, InternalEvent, Selector, WindowId};
+use crate::{command as sys_cmd, Event, InternalEvent, Selector, WindowId};
 
 pub(crate) const RUN_COMMANDS_TOKEN: IdleToken = IdleToken::new(1);
 

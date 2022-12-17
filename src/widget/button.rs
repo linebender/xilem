@@ -208,9 +208,7 @@ mod tests {
 
     use super::*;
     use crate::assert_render_snapshot;
-    use crate::testing::widget_ids;
-    use crate::testing::TestHarness;
-    use crate::testing::TestWidgetExt;
+    use crate::testing::{widget_ids, TestHarness, TestWidgetExt};
     use crate::theme::PRIMARY_LIGHT;
 
     #[test]

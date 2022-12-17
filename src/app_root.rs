@@ -9,36 +9,35 @@ use std::collections::{HashMap, VecDeque};
 use std::ops::DerefMut;
 use std::rc::Rc;
 
-use druid_shell::{
-    text::InputHandler, Cursor, FileDialogToken, FileInfo, Region, TextFieldToken, TimerToken,
-    WindowBuilder,
-};
+use druid_shell::text::InputHandler;
 // TODO - rename Application to AppHandle in druid-shell
 use druid_shell::{Application as AppHandle, WindowHandle};
+use druid_shell::{
+    Cursor, FileDialogToken, FileInfo, Region, TextFieldToken, TimerToken, WindowBuilder,
+};
 // Automatically defaults to std::time::Instant on non Wasm platforms
 use instant::Instant;
 use tracing::{error, info, info_span};
 
 use crate::action::ActionQueue;
 use crate::app_delegate::{AppDelegate, DelegateCtx, NullDelegate};
-use crate::command as sys_cmd;
 use crate::command::CommandQueue;
 use crate::contexts::GlobalPassCtx;
 use crate::debug_logger::DebugLogger;
 use crate::ext_event::{ExtEventQueue, ExtEventSink, ExtMessage};
 use crate::kurbo::{Point, Size};
 use crate::piet::{Color, Piet, RenderContext};
-use crate::platform::RUN_COMMANDS_TOKEN;
-use crate::platform::{DialogInfo, EXT_EVENT_IDLE_TOKEN};
-use crate::platform::{WindowConfig, WindowSizePolicy};
+use crate::platform::{
+    DialogInfo, WindowConfig, WindowSizePolicy, EXT_EVENT_IDLE_TOKEN, RUN_COMMANDS_TOKEN,
+};
 use crate::testing::MockTimerQueue;
 use crate::text::TextFieldRegistration;
 use crate::widget::{FocusChange, StoreInWidgetMut, WidgetMut, WidgetRef, WidgetState};
-use crate::PlatformError;
 use crate::{
-    ArcStr, BoxConstraints, Command, Env, Event, EventCtx, Handled, InternalEvent,
-    InternalLifeCycle, LayoutCtx, LifeCycle, LifeCycleCtx, MasonryWinHandler, PaintCtx, Target,
-    Widget, WidgetCtx, WidgetId, WidgetPod, WindowDescription, WindowId,
+    command as sys_cmd, ArcStr, BoxConstraints, Command, Env, Event, EventCtx, Handled,
+    InternalEvent, InternalLifeCycle, LayoutCtx, LifeCycle, LifeCycleCtx, MasonryWinHandler,
+    PaintCtx, PlatformError, Target, Widget, WidgetCtx, WidgetId, WidgetPod, WindowDescription,
+    WindowId,
 };
 
 /// The type of a function that will be called once an IME field is updated.

@@ -3,8 +3,7 @@ use druid_shell::{Application as AppHandle, Error as PlatformError};
 use crate::app_delegate::AppDelegate;
 use crate::app_root::AppRoot;
 use crate::ext_event::{ExtEventQueue, ExtEventSink};
-use crate::platform::MasonryAppHandler;
-use crate::platform::WindowDescription;
+use crate::platform::{MasonryAppHandler, WindowDescription};
 use crate::Env;
 
 /// Handles initial setup of an application, and starts the runloop.

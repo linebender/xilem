@@ -18,8 +18,7 @@ use std::ops::{Range, RangeBounds};
 use std::sync::Arc;
 
 use super::attribute::Link;
-use super::FontDescriptor;
-use super::{Attribute, AttributeSpans, TextStorage};
+use super::{Attribute, AttributeSpans, FontDescriptor, TextStorage};
 use crate::piet::{
     util, Color, FontFamily, FontStyle, FontWeight, PietTextLayoutBuilder, TextLayoutBuilder,
     TextStorage as PietTextStorage,

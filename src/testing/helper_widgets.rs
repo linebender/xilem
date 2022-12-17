@@ -28,8 +28,7 @@ use std::rc::Rc;
 use smallvec::SmallVec;
 
 use crate::event::StatusChange;
-use crate::widget::SizedBox;
-use crate::widget::WidgetRef;
+use crate::widget::{SizedBox, WidgetRef};
 use crate::*;
 
 pub type EventFn<S> = dyn FnMut(&mut S, &mut EventCtx, &Event, &Env);

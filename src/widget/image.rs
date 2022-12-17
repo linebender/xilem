@@ -21,8 +21,7 @@ use tracing::{trace, trace_span, Span};
 use crate::contexts::WidgetCtx;
 use crate::kurbo::Rect;
 use crate::piet::{Image as _, ImageBuf, InterpolationMode, PietImage};
-use crate::widget::FillStrat;
-use crate::widget::WidgetRef;
+use crate::widget::{FillStrat, WidgetRef};
 use crate::{
     BoxConstraints, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
     RenderContext, Size, StatusChange, Widget,
@@ -207,9 +206,7 @@ mod tests {
     use super::*;
     use crate::assert_render_snapshot;
     use crate::piet::ImageFormat;
-    use crate::testing::widget_ids;
-    use crate::testing::TestHarness;
-    use crate::testing::TestWidgetExt;
+    use crate::testing::{widget_ids, TestHarness, TestWidgetExt};
     use crate::theme::PRIMARY_LIGHT;
 
     /// Painting an empty image shouldn't crash.

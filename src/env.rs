@@ -16,7 +16,8 @@
 
 use std::any::{self, Any};
 use std::borrow::Borrow;
-use std::collections::{hash_map::Entry, HashMap};
+use std::collections::hash_map::Entry;
+use std::collections::HashMap;
 use std::fmt::{Debug, Formatter};
 use std::marker::PhantomData;
 use std::ops::Deref;

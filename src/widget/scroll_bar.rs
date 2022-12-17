@@ -7,13 +7,11 @@ use tracing::{trace_span, Span};
 
 use super::Axis;
 use crate::contexts::WidgetCtx;
-use crate::theme;
 use crate::widget::WidgetRef;
 use crate::{
-    BoxConstraints, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
-    RenderContext, Size, StatusChange, Widget,
+    theme, BoxConstraints, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
+    Point, RenderContext, Selector, Size, StatusChange, Widget,
 };
-use crate::{Point, Selector};
 
 // RULES
 // -
@@ -238,9 +236,7 @@ mod tests {
 
     use super::*;
     use crate::assert_render_snapshot;
-    use crate::testing::widget_ids;
-    use crate::testing::TestHarness;
-    use crate::testing::TestWidgetExt;
+    use crate::testing::{widget_ids, TestHarness, TestWidgetExt};
 
     #[test]
     fn simple_scrollbar() {

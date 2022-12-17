@@ -21,10 +21,9 @@ use tracing::{trace, trace_span, warn, Span};
 
 use crate::contexts::WidgetCtx;
 use crate::widget::{WidgetId, WidgetMut, WidgetPod, WidgetRef};
-use crate::Point;
 use crate::{
-    BoxConstraints, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Size,
-    StatusChange, Widget,
+    BoxConstraints, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Point,
+    Size, StatusChange, Widget,
 };
 
 /// A widget with predefined size.

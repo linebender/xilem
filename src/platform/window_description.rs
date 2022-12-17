@@ -1,9 +1,7 @@
-use druid_shell::WindowState;
-use druid_shell::{Counter, WindowBuilder, WindowHandle, WindowLevel};
+use druid_shell::{Counter, WindowBuilder, WindowHandle, WindowLevel, WindowState};
 
 use crate::kurbo::{Point, Size};
-use crate::ArcStr;
-use crate::Widget;
+use crate::{ArcStr, Widget};
 
 /// A unique identifier for a window.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]

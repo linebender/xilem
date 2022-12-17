@@ -76,9 +76,9 @@ pub use event::{Event, InternalEvent, InternalLifeCycle, LifeCycle, StatusChange
 pub use kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
 pub use mouse::MouseEvent;
 pub use piet::{Color, ImageBuf, LinearGradient, RadialGradient, RenderContext, UnitPoint};
-pub use platform::MasonryWinHandler;
-pub use platform::{WindowConfig, WindowDescription, WindowId, WindowSizePolicy};
+pub use platform::{
+    MasonryWinHandler, WindowConfig, WindowDescription, WindowId, WindowSizePolicy,
+};
 pub use text::ArcStr;
-pub use util::AsAny;
-pub use util::Handled;
+pub use util::{AsAny, Handled};
 pub use widget::{Widget, WidgetId, WidgetPod, WidgetState};

@@ -10,10 +10,9 @@ use tracing::trace;
 use crate::contexts::WidgetCtx;
 use crate::kurbo::Line;
 use crate::widget::WidgetRef;
-use crate::{theme, Color, KeyOrValue, Point, Vec2};
 use crate::{
-    BoxConstraints, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
-    RenderContext, Size, StatusChange, Widget,
+    theme, BoxConstraints, Color, Env, Event, EventCtx, KeyOrValue, LayoutCtx, LifeCycle,
+    LifeCycleCtx, PaintCtx, Point, RenderContext, Size, StatusChange, Vec2, Widget,
 };
 
 // TODO - Set color

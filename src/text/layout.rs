@@ -17,8 +17,7 @@
 use std::ops::Range;
 use std::rc::Rc;
 
-use super::FontDescriptor;
-use super::{Link, TextStorage};
+use super::{FontDescriptor, Link, TextStorage};
 use crate::kurbo::{Line, Point, Rect, Size};
 use crate::piet::{
     Color, PietText, PietTextLayout, Text as _, TextAlignment, TextAttribute, TextLayout as _,

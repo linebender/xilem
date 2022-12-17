@@ -18,7 +18,8 @@ use smallvec::SmallVec;
 use tracing::{trace, trace_span, Span};
 
 use crate::contexts::WidgetCtx;
-use crate::kurbo::{common::FloatExt, Vec2};
+use crate::kurbo::common::FloatExt;
+use crate::kurbo::Vec2;
 use crate::widget::{WidgetMut, WidgetRef};
 use crate::{
     BoxConstraints, Data, Env, Event, EventCtx, KeyOrValue, LayoutCtx, LifeCycle, LifeCycleCtx,

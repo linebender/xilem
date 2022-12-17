@@ -8,15 +8,10 @@ use tracing::{trace_span, Span};
 use crate::contexts::WidgetCtx;
 use crate::kurbo::{Point, Rect, Size, Vec2};
 use crate::widget::scroll_bar::SCROLLBAR_MOVED;
-use crate::widget::Axis;
-use crate::widget::ScrollBar;
-use crate::widget::StoreInWidgetMut;
-use crate::widget::WidgetMut;
-use crate::widget::WidgetRef;
-use crate::WidgetPod;
+use crate::widget::{Axis, ScrollBar, StoreInWidgetMut, WidgetMut, WidgetRef};
 use crate::{
     BoxConstraints, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
-    RenderContext, StatusChange, Widget,
+    RenderContext, StatusChange, Widget, WidgetPod,
 };
 
 // TODO - rename "Portal" to "ScrollPortal"?

@@ -9,13 +9,11 @@ use tracing::{error, trace_span, Span};
 
 use crate::contexts::WidgetCtx;
 use crate::promise::PromiseToken;
-use crate::widget::WidgetRef;
-use crate::widget::{FillStrat, Image, SizedBox, Spinner, WidgetPod};
+use crate::widget::{FillStrat, Image, SizedBox, Spinner, WidgetPod, WidgetRef};
 use crate::{
-    BoxConstraints, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Size,
-    StatusChange, Widget,
+    BoxConstraints, Env, Event, EventCtx, ImageBuf, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
+    Point, Size, StatusChange, Widget,
 };
-use crate::{ImageBuf, Point};
 
 pub struct WebImage {
     url: String,

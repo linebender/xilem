@@ -4,8 +4,7 @@ use std::collections::{HashMap, HashSet};
 use std::fmt::Display;
 use std::sync::Arc;
 
-use druid::Data;
-use druid::Rect;
+use druid::{Data, Rect};
 use serde::{Deserialize, Serialize};
 
 pub type MyWidgetId = u32;

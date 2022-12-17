@@ -24,8 +24,7 @@ use tracing::{trace, trace_span, Span};
 
 use crate::contexts::WidgetCtx;
 use crate::kurbo::Vec2;
-use crate::text::FontDescriptor;
-use crate::text::{TextAlignment, TextLayout};
+use crate::text::{FontDescriptor, TextAlignment, TextLayout};
 use crate::widget::WidgetRef;
 use crate::{
     ArcStr, BoxConstraints, Color, Data, Env, Event, EventCtx, KeyOrValue, LayoutCtx, LifeCycle,
