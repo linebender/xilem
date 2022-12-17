@@ -81,4 +81,4 @@ pub use platform::{
 };
 pub use text::ArcStr;
 pub use util::{AsAny, Handled};
-pub use widget::{Widget, WidgetId, WidgetPod, WidgetState};
+pub use widget::{BackgroundBrush, Widget, WidgetId, WidgetPod, WidgetState};

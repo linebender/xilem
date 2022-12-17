@@ -23,6 +23,7 @@ use std::marker::PhantomData;
 use std::ops::Deref;
 use std::sync::Arc;
 
+use crate::kurbo::RoundedRectRadii;
 use crate::text::FontDescriptor;
 use crate::{ArcStr, Color, Data, Insets, Point, Rect, Size};
 
@@ -106,6 +107,7 @@ pub enum Value {
     UnsignedInt(u64),
     String(ArcStr),
     Font(FontDescriptor),
+    RoundedRectRadii(RoundedRectRadii),
     Other(Arc<dyn Any + Send + Sync>),
 }
 // ANCHOR_END: value_type
@@ -439,6 +441,7 @@ impl Value {
                 | (UnsignedInt(_), UnsignedInt(_))
                 | (String(_), String(_))
                 | (Font(_), Font(_))
+                | (RoundedRectRadii(_), RoundedRectRadii(_))
         )
     }
 }
@@ -456,6 +459,7 @@ impl Debug for Value {
             Value::UnsignedInt(x) => write!(f, "UnsignedInt {}", x),
             Value::String(s) => write!(f, "String {:?}", s),
             Value::Font(font) => write!(f, "Font {:?}", font),
+            Value::RoundedRectRadii(radius) => write!(f, "RoundedRectRadii {:?}", radius),
             Value::Other(other) => write!(f, "{:?}", other),
         }
     }
@@ -587,6 +591,7 @@ impl_value_type!(Size, Size);
 impl_value_type!(Insets, Insets);
 impl_value_type!(ArcStr, String);
 impl_value_type!(FontDescriptor, Font);
+impl_value_type!(RoundedRectRadii, RoundedRectRadii);
 
 impl<T: 'static + Send + Sync> From<Arc<T>> for Value {
     fn from(this: Arc<T>) -> Value {
@@ -647,6 +652,18 @@ impl From<(f64, f64)> for KeyOrValue<Insets> {
 impl From<(f64, f64, f64, f64)> for KeyOrValue<Insets> {
     fn from(src: (f64, f64, f64, f64)) -> KeyOrValue<Insets> {
         KeyOrValue::Concrete(src.into())
+    }
+}
+
+impl From<f64> for KeyOrValue<RoundedRectRadii> {
+    fn from(f: f64) -> KeyOrValue<RoundedRectRadii> {
+        KeyOrValue::Concrete(f.into())
+    }
+}
+
+impl From<(f64, f64, f64, f64)> for KeyOrValue<RoundedRectRadii> {
+    fn from(f: (f64, f64, f64, f64)) -> KeyOrValue<RoundedRectRadii> {
+        KeyOrValue::Concrete(f.into())
     }
 }
 

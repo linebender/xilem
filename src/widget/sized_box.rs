@@ -19,13 +19,35 @@ use std::f64::INFINITY;
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace, trace_span, warn, Span};
 
+use crate::kurbo::RoundedRectRadii;
+use crate::piet::{Color, FixedGradient, LinearGradient, PaintBrush, RadialGradient};
 use crate::widget::{WidgetId, WidgetMut, WidgetPod, WidgetRef};
 use crate::{
-    BoxConstraints, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Point,
-    Size, StatusChange, Widget,
+    BoxConstraints, Env, Event, EventCtx, Key, KeyOrValue, LayoutCtx, LifeCycle, LifeCycleCtx,
+    PaintCtx, Point, RenderContext, Size, StatusChange, Widget,
 };
 
+// FIXME - Improve all doc in this module ASAP.
+
+/// Something that can be used as the background for a widget.
+#[non_exhaustive]
+#[allow(missing_docs)]
+pub enum BackgroundBrush {
+    Color(KeyOrValue<Color>),
+    Linear(LinearGradient),
+    Radial(RadialGradient),
+    Fixed(FixedGradient),
+    PainterFn(Box<dyn FnMut(&mut PaintCtx, &Env)>),
+}
+
+/// Something that can be used as the border for a widget.
+struct BorderStyle {
+    width: KeyOrValue<f64>,
+    color: KeyOrValue<Color>,
+}
+
 // TODO - Have Widget type as generic argument
+// TODO - Add Padding
 
 /// A widget with predefined size.
 ///
@@ -40,6 +62,9 @@ pub struct SizedBox {
     child: Option<WidgetPod<Box<dyn Widget>>>,
     width: Option<f64>,
     height: Option<f64>,
+    background: Option<BackgroundBrush>,
+    border: Option<BorderStyle>,
+    corner_radius: KeyOrValue<RoundedRectRadii>,
 }
 crate::declare_widget!(SizedBoxMut, SizedBox);
 
@@ -50,6 +75,9 @@ impl SizedBox {
             child: Some(WidgetPod::new(child).boxed()),
             width: None,
             height: None,
+            background: None,
+            border: None,
+            corner_radius: RoundedRectRadii::from_single_radius(0.0).into(),
         }
     }
 
@@ -59,6 +87,9 @@ impl SizedBox {
             child: Some(WidgetPod::new_with_id(child, id).boxed()),
             width: None,
             height: None,
+            background: None,
+            border: None,
+            corner_radius: RoundedRectRadii::from_single_radius(0.0).into(),
         }
     }
 
@@ -73,6 +104,9 @@ impl SizedBox {
             child: None,
             width: None,
             height: None,
+            background: None,
+            border: None,
+            corner_radius: RoundedRectRadii::from_single_radius(0.0).into(),
         }
     }
 
@@ -118,6 +152,38 @@ impl SizedBox {
         self
     }
 
+    /// Builder-style method for setting the background for this widget.
+    ///
+    /// This can be passed anything which can be represented by a [`BackgroundBrush`];
+    /// notably, it can be any [`Color`], a [`Key<Color>`](Key) resolvable in the [`Env`],
+    /// any gradient, or a fully custom painter `FnMut`.
+    pub fn background(mut self, brush: impl Into<BackgroundBrush>) -> Self {
+        self.background = Some(brush.into());
+        self
+    }
+
+    /// Builder-style method for painting a border around the widget with a color and width.
+    ///
+    /// Arguments can be either concrete values, or a [`Key`] of the respective
+    /// type.
+    pub fn border(
+        mut self,
+        color: impl Into<KeyOrValue<Color>>,
+        width: impl Into<KeyOrValue<f64>>,
+    ) -> Self {
+        self.border = Some(BorderStyle {
+            color: color.into(),
+            width: width.into(),
+        });
+        self
+    }
+
+    /// Builder style method for rounding off corners of this container by setting a corner radius
+    pub fn rounded(mut self, radius: impl Into<KeyOrValue<RoundedRectRadii>>) -> Self {
+        self.corner_radius = radius.into();
+        self
+    }
+
     // TODO - child()
 }
 
@@ -156,6 +222,50 @@ impl<'a, 'b> SizedBoxMut<'a, 'b> {
     pub fn unset_height(&mut self) {
         self.1.height = None;
         self.0.request_layout();
+    }
+
+    /// Set the background for this widget.
+    ///
+    /// This can be passed anything which can be represented by a [`BackgroundBrush`];
+    /// notably, it can be any [`Color`], a [`Key<Color>`](Key) resolvable in the [`Env`],
+    /// any gradient, or a fully custom painter `FnMut`.
+    pub fn set_background(&mut self, brush: impl Into<BackgroundBrush>) {
+        self.1.background = Some(brush.into());
+        self.0.request_paint();
+    }
+
+    /// Clears background.
+    pub fn clear_background(&mut self) {
+        self.1.background = None;
+        self.0.request_paint();
+    }
+
+    /// Paint a border around the widget with a color and width.
+    ///
+    /// Arguments can be either concrete values, or a [`Key`] of the respective
+    /// type.
+    pub fn set_border(
+        &mut self,
+        color: impl Into<KeyOrValue<Color>>,
+        width: impl Into<KeyOrValue<f64>>,
+    ) {
+        self.1.border = Some(BorderStyle {
+            color: color.into(),
+            width: width.into(),
+        });
+        self.0.request_layout();
+    }
+
+    /// Clears border.
+    pub fn clear_border(&mut self) {
+        self.1.border = None;
+        self.0.request_layout();
+    }
+
+    /// Round off corners of this container by setting a corner radius
+    pub fn set_rounded(&mut self, radius: impl Into<KeyOrValue<RoundedRectRadii>>) {
+        self.1.corner_radius = radius.into();
+        self.0.request_paint();
     }
 
     // TODO - Doc
@@ -215,17 +325,32 @@ impl Widget for SizedBox {
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
+        // Shrink constraints by border offset
+        let border_width = match &self.border {
+            Some(border) => border.width.resolve(env),
+            None => 0.0,
+        };
+
         ctx.init();
         let child_bc = self.child_constraints(bc);
+        let child_bc = child_bc.shrink((2.0 * border_width, 2.0 * border_width));
+        let origin = Point::new(border_width, border_width);
 
-        let size;
+        let mut size;
         match self.child.as_mut() {
             Some(child) => {
                 size = child.layout(ctx, &child_bc, env);
-                ctx.place_child(child, Point::ORIGIN, env);
+                ctx.place_child(child, origin, env);
+                size = Size::new(
+                    size.width + 2.0 * border_width,
+                    size.height + 2.0 * border_width,
+                );
             }
             None => size = bc.constrain((self.width.unwrap_or(0.0), self.height.unwrap_or(0.0))),
         };
+
+        // TODO - figure out paint insets
+        // TODO - figure out baseline offset
 
         trace!("Computed size: {}", size);
 
@@ -241,6 +366,30 @@ impl Widget for SizedBox {
 
     fn paint(&mut self, ctx: &mut PaintCtx, env: &Env) {
         ctx.init();
+
+        let corner_radius = self.corner_radius.resolve(env);
+
+        if let Some(background) = self.background.as_mut() {
+            let panel = ctx.size().to_rounded_rect(corner_radius);
+
+            trace_span!("paint background").in_scope(|| {
+                ctx.with_save(|ctx| {
+                    ctx.clip(panel);
+                    background.paint(ctx, env);
+                });
+            });
+        }
+
+        if let Some(border) = &self.border {
+            let border_width = border.width.resolve(env);
+            let border_rect = ctx
+                .size()
+                .to_rect()
+                .inset(border_width / -2.0)
+                .to_rounded_rect(corner_radius);
+            ctx.stroke(border_rect, &border.color.resolve(env), border_width);
+        };
+
         if let Some(ref mut child) = self.child {
             child.paint(ctx, env);
         }
@@ -258,6 +407,71 @@ impl Widget for SizedBox {
         trace_span!("SizedBox")
     }
 }
+
+// --- BackgroundBrush ---
+
+impl BackgroundBrush {
+    /// Draw this brush into a provided [`PaintCtx`].
+    pub fn paint(&mut self, ctx: &mut PaintCtx, env: &Env) {
+        let bounds = ctx.size().to_rect();
+        match self {
+            Self::Color(color) => ctx.fill(bounds, &color.resolve(env)),
+            Self::Linear(grad) => ctx.fill(bounds, grad),
+            Self::Radial(grad) => ctx.fill(bounds, grad),
+            Self::Fixed(grad) => ctx.fill(bounds, grad),
+            Self::PainterFn(painter) => painter(ctx, env),
+        }
+    }
+}
+
+impl From<Color> for BackgroundBrush {
+    fn from(src: Color) -> BackgroundBrush {
+        BackgroundBrush::Color(src.into())
+    }
+}
+
+impl From<Key<Color>> for BackgroundBrush {
+    fn from(src: Key<Color>) -> BackgroundBrush {
+        BackgroundBrush::Color(src.into())
+    }
+}
+
+impl From<LinearGradient> for BackgroundBrush {
+    fn from(src: LinearGradient) -> BackgroundBrush {
+        BackgroundBrush::Linear(src)
+    }
+}
+
+impl From<RadialGradient> for BackgroundBrush {
+    fn from(src: RadialGradient) -> BackgroundBrush {
+        BackgroundBrush::Radial(src)
+    }
+}
+
+impl From<FixedGradient> for BackgroundBrush {
+    fn from(src: FixedGradient) -> BackgroundBrush {
+        BackgroundBrush::Fixed(src)
+    }
+}
+
+impl<Painter: FnMut(&mut PaintCtx, &Env) + 'static> From<Painter> for BackgroundBrush {
+    fn from(src: Painter) -> BackgroundBrush {
+        BackgroundBrush::PainterFn(Box::new(src))
+    }
+}
+
+impl From<PaintBrush> for BackgroundBrush {
+    fn from(src: PaintBrush) -> BackgroundBrush {
+        match src {
+            PaintBrush::Linear(grad) => BackgroundBrush::Linear(grad),
+            PaintBrush::Radial(grad) => BackgroundBrush::Radial(grad),
+            PaintBrush::Fixed(grad) => BackgroundBrush::Fixed(grad),
+            PaintBrush::Color(color) => BackgroundBrush::Color(color.into()),
+        }
+    }
+}
+
+// --- Tests ---
 
 #[cfg(test)]
 mod tests {
@@ -285,11 +499,13 @@ mod tests {
         assert_eq!(child_bc.max(), Size::new(400., 200.,));
     }
 
-    // TODO - screenshot tests aren't super useful since the box is transparent
-
     #[test]
     fn empty_box() {
-        let widget = SizedBox::empty().width(40.0).height(40.0);
+        let widget = SizedBox::empty()
+            .width(40.0)
+            .height(40.0)
+            .border(Color::BLUE, 5.0)
+            .rounded(5.0);
 
         let mut harness = TestHarness::create(widget);
 
@@ -299,7 +515,9 @@ mod tests {
 
     #[test]
     fn label_box_no_size() {
-        let widget = SizedBox::new(Label::new("hello"));
+        let widget = SizedBox::new(Label::new("hello"))
+            .border(Color::BLUE, 5.0)
+            .rounded(5.0);
 
         let mut harness = TestHarness::create(widget);
 
@@ -309,11 +527,17 @@ mod tests {
 
     #[test]
     fn label_box_with_size() {
-        let widget = SizedBox::new(Label::new("hello")).width(40.0).height(40.0);
+        let widget = SizedBox::new(Label::new("hello"))
+            .width(40.0)
+            .height(40.0)
+            .border(Color::BLUE, 5.0)
+            .rounded(5.0);
 
         let mut harness = TestHarness::create(widget);
 
         assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "label_box_no_size");
     }
+
+    // TODO - add screenshot tests for different brush types
 }

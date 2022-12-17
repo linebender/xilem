@@ -61,6 +61,8 @@ pub use widget_state::WidgetState;
 
 pub use self::image::Image;
 
+pub use sized_box::BackgroundBrush;
+
 /// Methods by which a widget can attempt to change focus state.
 #[derive(Debug, Clone, Copy)]
 pub(crate) enum FocusChange {
