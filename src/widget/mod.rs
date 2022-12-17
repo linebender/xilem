@@ -33,6 +33,7 @@ mod portal;
 mod scroll_bar;
 mod sized_box;
 mod spinner;
+mod split;
 mod textbox;
 mod web_image;
 
@@ -44,6 +45,7 @@ pub use portal::Portal;
 pub use scroll_bar::ScrollBar;
 pub use sized_box::SizedBox;
 pub use spinner::Spinner;
+pub use split::Split;
 pub use textbox::TextBox;
 pub use web_image::WebImage;
 pub use widget::StoreInWidgetMut;

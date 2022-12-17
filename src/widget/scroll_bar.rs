@@ -6,7 +6,6 @@ use smallvec::SmallVec;
 use tracing::{trace_span, Span};
 
 use super::Axis;
-use crate::contexts::WidgetCtx;
 use crate::widget::WidgetRef;
 use crate::{
     theme, BoxConstraints, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,

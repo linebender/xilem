@@ -7,7 +7,6 @@
 use smallvec::{smallvec, SmallVec};
 use tracing::{error, trace_span, Span};
 
-use crate::contexts::WidgetCtx;
 use crate::promise::PromiseToken;
 use crate::widget::{FillStrat, Image, SizedBox, Spinner, WidgetPod, WidgetRef};
 use crate::{

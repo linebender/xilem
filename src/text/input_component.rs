@@ -31,7 +31,7 @@ use crate::piet::TextLayout as _;
 use crate::widget::WidgetRef;
 use crate::{
     text, theme, BoxConstraints, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx,
-    PaintCtx, RenderContext, Selector, Size, StatusChange, Widget, WidgetCtx,
+    PaintCtx, RenderContext, Selector, Size, StatusChange, Widget,
 };
 
 /// A widget that accepts text input.

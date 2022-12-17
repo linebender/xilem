@@ -19,12 +19,11 @@ use std::ops::{Deref, DerefMut};
 use smallvec::SmallVec;
 use tracing::{trace_span, Span};
 
-use crate::contexts::WidgetCtx;
 use crate::event::StatusChange;
 use crate::widget::WidgetRef;
 use crate::{
     AsAny, BoxConstraints, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
-    Point, Size,
+    Point, Size, WidgetCtx,
 };
 
 /// A unique identifier for a single [`Widget`].
@@ -285,24 +284,27 @@ pub trait StoreInWidgetMut: Widget {
 #[macro_export]
 macro_rules! declare_widget {
     ($WidgetNameMut:ident, $WidgetName:ident) => {
-        crate::declare_widget!($WidgetNameMut, $WidgetName<>);
+        $crate::declare_widget!($WidgetNameMut, $WidgetName<>);
     };
 
     ($WidgetNameMut:ident, $WidgetName:ident<$($Arg:ident $(: ($($Bound:tt)*))?),*>) => {
-        pub struct $WidgetNameMut<'a, 'b, $($Arg $(: $($Bound)*)?),*>(WidgetCtx<'a, 'b>, &'a mut $WidgetName<$($Arg),*>);
+        pub struct $WidgetNameMut<'a, 'b, $($Arg $(: $($Bound)*)?),*>(
+            $crate::WidgetCtx<'a, 'b>,
+            &'a mut $WidgetName<$($Arg),*>
+        );
 
-        impl<$($Arg $(: $($Bound)*)?),*> crate::widget::StoreInWidgetMut for $WidgetName<$($Arg),*> {
+        impl<$($Arg $(: $($Bound)*)?),*> $crate::widget::StoreInWidgetMut for $WidgetName<$($Arg),*> {
             type Mut<'a, 'b: 'a> = $WidgetNameMut<'a, 'b, $($Arg),*>;
 
             fn get_widget_and_ctx<'s: 'r, 'a: 'r, 'b: 'a, 'r>(
                 widget_mut: &'s mut Self::Mut<'a, 'b>,
-            ) -> (&'r mut Self, &'r mut WidgetCtx<'a, 'b>) {
+            ) -> (&'r mut Self, &'r mut $crate::WidgetCtx<'a, 'b>) {
                 (widget_mut.1, &mut widget_mut.0)
             }
 
             fn from_widget_and_ctx<'a, 'b>(
                 widget: &'a mut Self,
-                ctx: WidgetCtx<'a, 'b>,
+                ctx: $crate::WidgetCtx<'a, 'b>,
             ) -> Self::Mut<'a, 'b> {
                 $WidgetNameMut(ctx, widget)
             }

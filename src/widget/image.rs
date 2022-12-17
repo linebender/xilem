@@ -18,7 +18,6 @@
 use smallvec::SmallVec;
 use tracing::{trace, trace_span, Span};
 
-use crate::contexts::WidgetCtx;
 use crate::kurbo::Rect;
 use crate::piet::{Image as _, ImageBuf, InterpolationMode, PietImage};
 use crate::widget::{FillStrat, WidgetRef};

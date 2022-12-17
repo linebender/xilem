@@ -21,7 +21,6 @@ use smallvec::{smallvec, SmallVec};
 use tracing::{trace_span, Span};
 
 use crate::action::Action;
-use crate::contexts::WidgetCtx;
 use crate::kurbo::Insets;
 use crate::piet::{RenderContext as _, TextLayout as _};
 use crate::shell::{HotKey, KeyEvent, SysMods, TimerToken};

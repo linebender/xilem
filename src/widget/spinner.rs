@@ -7,7 +7,6 @@ use std::f64::consts::PI;
 use smallvec::SmallVec;
 use tracing::trace;
 
-use crate::contexts::WidgetCtx;
 use crate::kurbo::Line;
 use crate::widget::WidgetRef;
 use crate::{

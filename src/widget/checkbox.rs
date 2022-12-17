@@ -18,7 +18,6 @@ use smallvec::SmallVec;
 use tracing::{trace, trace_span, Span};
 
 use crate::action::Action;
-use crate::contexts::WidgetCtx;
 use crate::kurbo::{BezPath, Size};
 use crate::piet::{LineCap, LineJoin, LinearGradient, RenderContext, StrokeStyle, UnitPoint};
 use crate::widget::{Label, WidgetMut, WidgetRef};

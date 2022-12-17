@@ -18,7 +18,6 @@ use smallvec::SmallVec;
 use tracing::{trace, trace_span, Span};
 
 use crate::action::Action;
-use crate::contexts::WidgetCtx;
 use crate::widget::{Label, WidgetMut, WidgetPod, WidgetRef};
 use crate::{
     theme, ArcStr, BoxConstraints, Env, Event, EventCtx, Insets, LayoutCtx, LifeCycle,

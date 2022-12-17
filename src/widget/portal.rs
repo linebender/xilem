@@ -5,7 +5,6 @@ use std::ops::Range;
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace_span, Span};
 
-use crate::contexts::WidgetCtx;
 use crate::kurbo::{Point, Rect, Size, Vec2};
 use crate::widget::scroll_bar::SCROLLBAR_MOVED;
 use crate::widget::{Axis, ScrollBar, StoreInWidgetMut, WidgetMut, WidgetRef};

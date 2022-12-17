@@ -22,7 +22,6 @@ use druid_shell::Cursor;
 use smallvec::SmallVec;
 use tracing::{trace, trace_span, Span};
 
-use crate::contexts::WidgetCtx;
 use crate::kurbo::Vec2;
 use crate::text::{FontDescriptor, TextAlignment, TextLayout};
 use crate::widget::WidgetRef;
