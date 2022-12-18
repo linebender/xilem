@@ -49,16 +49,17 @@
 
 - [ ] Re-add Dialog
 
-- [ ] Write examples
+- [X] Write examples
  - [X] To-do List
  - [X] Fix blocking_function example
- - [ ] Rewrite Disney example
- - [ ] Copy examples from druid
+ - [X] Copy examples from druid
+
+- [ ] Fix doc tests
 
 - [X] Split off from Druid repo
 - [X] Rename to Masonry
 - [ ] Write remaining tasks in Github
-- [ ] Rewrite License bits
+- [X] Rewrite License bits
 - [ ] Write ARCHITECTURE.md
 - [ ] Write CONTRIBUTING.md
 - [ ] Publish
@@ -88,6 +89,7 @@
 - [ ] Add dev shortcuts:
  - [ ] To print Widget tree
  - [ ] To print current focused/active Widget
+ - [ ] To display invalidation rect
 
 - [ ] Refactor WidgetState
  - [ ] Add WidgetTmpState
@@ -161,6 +163,10 @@
 - [ ] Merge WidgetMut and Ctx lifetimes
  - Note: probably requires better language support for implicit lifetime bounds
 
+- [ ] Add ability to select rectangular region, get a list of Widget in return or something.
+
+- [ ] Add "click all visible buttons" method to help test examples.
+
 - [ ] Switch to ECS
 - [ ] Remove WidgetId::reserved, move WidgetId::new
 - [ ] Drag 'n Drop
@@ -222,6 +228,13 @@ Flex alignment vs text alignment
 
 Portal.must_fill, Portal.constrain_horizontal, Portan.constrain_vertical
 
+In druid Spinner needs parent constraints to decide its size.
+Feels like that shouldn't be allowed.
+
+Use "*It's a Wonderful World* boardgame"-inspired pass order.
+
+See this thread: https://xi.zulipchat.com/#narrow/stream/147922-new-members/topic/Second.20book.20example.20doesn't.20work/
+
 How does Flex interact with Viewport?
 -> use call context for debugging (wait, what does that mean again?)
 
@@ -259,6 +272,8 @@ Default(Option(cursor))
 Active(Option(cursor))
 Disabled
 Hidden
+
+See https://xi.zulipchat.com/#narrow/stream/147926-druid/topic/.22hot.22.20in.20the.20presence.20of.20multiple.20pointers/near/254524486
 
 
 ## Invariants
