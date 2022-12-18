@@ -11,97 +11,80 @@ use crate::text::FontDescriptor;
 use crate::{Env, Insets, Key};
 
 pub const WINDOW_BACKGROUND_COLOR: Key<Color> =
-    Key::new("org.linebender.druid.theme.window_background_color");
+    Key::new("org.masonry.theme.window_background_color");
 
 #[deprecated(since = "0.8.0", note = "renamed to TEXT_COLOR")]
 pub const LABEL_COLOR: Key<Color> = TEXT_COLOR;
-pub const TEXT_COLOR: Key<Color> = Key::new("org.linebender.druid.theme.label_color");
-pub const DISABLED_TEXT_COLOR: Key<Color> =
-    Key::new("org.linebender.druid.theme.disabled_label_color");
-pub const PLACEHOLDER_COLOR: Key<Color> = Key::new("org.linebender.druid.theme.placeholder_color");
+pub const TEXT_COLOR: Key<Color> = Key::new("org.masonry.theme.label_color");
+pub const DISABLED_TEXT_COLOR: Key<Color> = Key::new("org.masonry.theme.disabled_label_color");
+pub const PLACEHOLDER_COLOR: Key<Color> = Key::new("org.masonry.theme.placeholder_color");
 
-pub const PRIMARY_LIGHT: Key<Color> = Key::new("org.linebender.druid.theme.primary_light");
-pub const PRIMARY_DARK: Key<Color> = Key::new("org.linebender.druid.theme.primary_dark");
-pub const PROGRESS_BAR_RADIUS: Key<f64> =
-    Key::new("org.linebender.druid.theme.progress_bar_radius");
-pub const BACKGROUND_LIGHT: Key<Color> = Key::new("org.linebender.druid.theme.background_light");
-pub const BACKGROUND_DARK: Key<Color> = Key::new("org.linebender.druid.theme.background_dark");
-pub const FOREGROUND_LIGHT: Key<Color> = Key::new("org.linebender.druid.theme.foreground_light");
-pub const FOREGROUND_DARK: Key<Color> = Key::new("org.linebender.druid.theme.foreground_dark");
+pub const PRIMARY_LIGHT: Key<Color> = Key::new("org.masonry.theme.primary_light");
+pub const PRIMARY_DARK: Key<Color> = Key::new("org.masonry.theme.primary_dark");
+pub const PROGRESS_BAR_RADIUS: Key<f64> = Key::new("org.masonry.theme.progress_bar_radius");
+pub const BACKGROUND_LIGHT: Key<Color> = Key::new("org.masonry.theme.background_light");
+pub const BACKGROUND_DARK: Key<Color> = Key::new("org.masonry.theme.background_dark");
+pub const FOREGROUND_LIGHT: Key<Color> = Key::new("org.masonry.theme.foreground_light");
+pub const FOREGROUND_DARK: Key<Color> = Key::new("org.masonry.theme.foreground_dark");
 pub const DISABLED_FOREGROUND_LIGHT: Key<Color> =
-    Key::new("org.linebender.druid.theme.disabled_foreground_light");
+    Key::new("org.masonry.theme.disabled_foreground_light");
 pub const DISABLED_FOREGROUND_DARK: Key<Color> =
-    Key::new("org.linebender.druid.theme.disabled_foreground_dark");
-pub const BUTTON_DARK: Key<Color> = Key::new("org.linebender.druid.theme.button_dark");
-pub const BUTTON_LIGHT: Key<Color> = Key::new("org.linebender.druid.theme.button_light");
-pub const DISABLED_BUTTON_DARK: Key<Color> =
-    Key::new("org.linebender.druid.theme.disabled_button_dark");
-pub const DISABLED_BUTTON_LIGHT: Key<Color> =
-    Key::new("org.linebender.druid.theme.disabled_button_light");
-pub const BUTTON_BORDER_RADIUS: Key<f64> = Key::new("org.linebender.druid.theme.button_radius");
-pub const BUTTON_BORDER_WIDTH: Key<f64> =
-    Key::new("org.linebender.druid.theme.button_border_width");
-pub const BORDER_DARK: Key<Color> = Key::new("org.linebender.druid.theme.border_dark");
-pub const BORDER_LIGHT: Key<Color> = Key::new("org.linebender.druid.theme.border_light");
+    Key::new("org.masonry.theme.disabled_foreground_dark");
+pub const BUTTON_DARK: Key<Color> = Key::new("org.masonry.theme.button_dark");
+pub const BUTTON_LIGHT: Key<Color> = Key::new("org.masonry.theme.button_light");
+pub const DISABLED_BUTTON_DARK: Key<Color> = Key::new("org.masonry.theme.disabled_button_dark");
+pub const DISABLED_BUTTON_LIGHT: Key<Color> = Key::new("org.masonry.theme.disabled_button_light");
+pub const BUTTON_BORDER_RADIUS: Key<f64> = Key::new("org.masonry.theme.button_radius");
+pub const BUTTON_BORDER_WIDTH: Key<f64> = Key::new("org.masonry.theme.button_border_width");
+pub const BORDER_DARK: Key<Color> = Key::new("org.masonry.theme.border_dark");
+pub const BORDER_LIGHT: Key<Color> = Key::new("org.masonry.theme.border_light");
 #[deprecated(since = "0.8.0", note = "use SELECTED_TEXT_BACKGROUND_COLOR instead")]
 pub const SELECTION_COLOR: Key<Color> = SELECTED_TEXT_BACKGROUND_COLOR;
 pub const SELECTED_TEXT_BACKGROUND_COLOR: Key<Color> =
-    Key::new("org.linebender.druid.theme.selection_color");
+    Key::new("org.masonry.theme.selection_color");
 pub const SELECTED_TEXT_INACTIVE_BACKGROUND_COLOR: Key<Color> =
-    Key::new("org.linebender.druid.theme.selection_color_inactive");
-pub const SELECTION_TEXT_COLOR: Key<Color> =
-    Key::new("org.linebender.druid.theme.selection_text_color");
-pub const CURSOR_COLOR: Key<Color> = Key::new("org.linebender.druid.theme.cursor_color");
+    Key::new("org.masonry.theme.selection_color_inactive");
+pub const SELECTION_TEXT_COLOR: Key<Color> = Key::new("org.masonry.theme.selection_text_color");
+pub const CURSOR_COLOR: Key<Color> = Key::new("org.masonry.theme.cursor_color");
 
-pub const TEXT_SIZE_NORMAL: Key<f64> = Key::new("org.linebender.druid.theme.text_size_normal");
-pub const TEXT_SIZE_LARGE: Key<f64> = Key::new("org.linebender.druid.theme.text_size_large");
-pub const BASIC_WIDGET_HEIGHT: Key<f64> =
-    Key::new("org.linebender.druid.theme.basic_widget_height");
+pub const TEXT_SIZE_NORMAL: Key<f64> = Key::new("org.masonry.theme.text_size_normal");
+pub const TEXT_SIZE_LARGE: Key<f64> = Key::new("org.masonry.theme.text_size_large");
+pub const BASIC_WIDGET_HEIGHT: Key<f64> = Key::new("org.masonry.theme.basic_widget_height");
 
 /// The default font for labels, buttons, text boxes, and other UI elements.
-pub const UI_FONT: Key<FontDescriptor> = Key::new("org.linebender.druid.theme.ui-font");
+pub const UI_FONT: Key<FontDescriptor> = Key::new("org.masonry.theme.ui-font");
 
 /// A bold version of the default UI font.
-pub const UI_FONT_BOLD: Key<FontDescriptor> = Key::new("org.linebender.druid.theme.ui-font-bold");
+pub const UI_FONT_BOLD: Key<FontDescriptor> = Key::new("org.masonry.theme.ui-font-bold");
 
 /// An Italic version of the default UI font.
-pub const UI_FONT_ITALIC: Key<FontDescriptor> =
-    Key::new("org.linebender.druid.theme.ui-font-italic");
+pub const UI_FONT_ITALIC: Key<FontDescriptor> = Key::new("org.masonry.theme.ui-font-italic");
 
 /// The default minimum width for a 'wide' widget; a textbox, slider, progress bar, etc.
-pub const WIDE_WIDGET_WIDTH: Key<f64> = Key::new("org.linebender.druid.theme.long-widget-width");
-pub const BORDERED_WIDGET_HEIGHT: Key<f64> =
-    Key::new("org.linebender.druid.theme.bordered_widget_height");
+pub const WIDE_WIDGET_WIDTH: Key<f64> = Key::new("org.masonry.theme.long-widget-width");
+pub const BORDERED_WIDGET_HEIGHT: Key<f64> = Key::new("org.masonry.theme.bordered_widget_height");
 
-pub const TEXTBOX_BORDER_RADIUS: Key<f64> =
-    Key::new("org.linebender.druid.theme.textbox_border_radius");
-pub const TEXTBOX_BORDER_WIDTH: Key<f64> =
-    Key::new("org.linebender.druid.theme.textbox_border_width");
-pub const TEXTBOX_INSETS: Key<Insets> = Key::new("org.linebender.druid.theme.textbox_insets");
+pub const TEXTBOX_BORDER_RADIUS: Key<f64> = Key::new("org.masonry.theme.textbox_border_radius");
+pub const TEXTBOX_BORDER_WIDTH: Key<f64> = Key::new("org.masonry.theme.textbox_border_width");
+pub const TEXTBOX_INSETS: Key<Insets> = Key::new("org.masonry.theme.textbox_insets");
 
 /// The default horizontal spacing between widgets.
-pub const WIDGET_PADDING_HORIZONTAL: Key<f64> =
-    Key::new("org.linebender.druid.theme.widget-padding-h");
+pub const WIDGET_PADDING_HORIZONTAL: Key<f64> = Key::new("org.masonry.theme.widget-padding-h");
 /// The default vertical spacing between widgets.
-pub const WIDGET_PADDING_VERTICAL: Key<f64> =
-    Key::new("org.linebender.druid.theme.widget-padding-v");
+pub const WIDGET_PADDING_VERTICAL: Key<f64> = Key::new("org.masonry.theme.widget-padding-v");
 /// The default internal (horizontal) padding for visually distinct components
 /// of a widget; for instance between a checkbox and its label.
 pub const WIDGET_CONTROL_COMPONENT_PADDING: Key<f64> =
-    Key::new("org.linebender.druid.theme.widget-padding-control-label");
+    Key::new("org.masonry.theme.widget-padding-control-label");
 
-pub const SCROLLBAR_COLOR: Key<Color> = Key::new("org.linebender.druid.theme.scrollbar_color");
-pub const SCROLLBAR_BORDER_COLOR: Key<Color> =
-    Key::new("org.linebender.druid.theme.scrollbar_border_color");
-pub const SCROLLBAR_MAX_OPACITY: Key<f64> =
-    Key::new("org.linebender.druid.theme.scrollbar_max_opacity");
-pub const SCROLLBAR_FADE_DELAY: Key<u64> =
-    Key::new("org.linebender.druid.theme.scrollbar_fade_time");
-pub const SCROLLBAR_WIDTH: Key<f64> = Key::new("org.linebender.druid.theme.scrollbar_width");
-pub const SCROLLBAR_PAD: Key<f64> = Key::new("org.linebender.druid.theme.scrollbar_pad");
-pub const SCROLLBAR_RADIUS: Key<f64> = Key::new("org.linebender.druid.theme.scrollbar_radius");
-pub const SCROLLBAR_EDGE_WIDTH: Key<f64> =
-    Key::new("org.linebender.druid.theme.scrollbar_edge_width");
+pub const SCROLLBAR_COLOR: Key<Color> = Key::new("org.masonry.theme.scrollbar_color");
+pub const SCROLLBAR_BORDER_COLOR: Key<Color> = Key::new("org.masonry.theme.scrollbar_border_color");
+pub const SCROLLBAR_MAX_OPACITY: Key<f64> = Key::new("org.masonry.theme.scrollbar_max_opacity");
+pub const SCROLLBAR_FADE_DELAY: Key<u64> = Key::new("org.masonry.theme.scrollbar_fade_time");
+pub const SCROLLBAR_WIDTH: Key<f64> = Key::new("org.masonry.theme.scrollbar_width");
+pub const SCROLLBAR_PAD: Key<f64> = Key::new("org.masonry.theme.scrollbar_pad");
+pub const SCROLLBAR_RADIUS: Key<f64> = Key::new("org.masonry.theme.scrollbar_radius");
+pub const SCROLLBAR_EDGE_WIDTH: Key<f64> = Key::new("org.masonry.theme.scrollbar_edge_width");
 /// Minimum length for any scrollbar to be when measured on that
 /// scrollbar's primary axis.
 pub const SCROLLBAR_MIN_SIZE: Key<f64> = Key::new("org.linebender.theme.scrollbar_min_size");

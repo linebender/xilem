@@ -183,7 +183,7 @@ impl Flex {
             }
         } else {
             // TODO
-            tracing::warn!("Flex value should be > 0.0. To add a non-flex child use the add_child or with_child methods.\nSee the docs for more information: https://docs.rs/druid/0.7.0/druid/widget/struct.Flex.html");
+            tracing::warn!("Flex value should be > 0.0. To add a non-flex child use the add_child or with_child methods.\nSee the docs for masonry::widget::Flex formore information");
             Child::Fixed {
                 widget: WidgetPod::new(Box::new(child)),
                 alignment: None,
@@ -308,7 +308,7 @@ impl<'a, 'b> FlexMut<'a, 'b> {
             }
         } else {
             // TODO
-            tracing::warn!("Flex value should be > 0.0. To add a non-flex child use the add_child or with_child methods.\nSee the docs for more information: https://docs.rs/druid/0.7.0/druid/widget/struct.Flex.html");
+            tracing::warn!("Flex value should be > 0.0. To add a non-flex child use the add_child or with_child methods.\nSee the docs for masonry::widget::Flex formore information");
             Child::Fixed {
                 widget: WidgetPod::new(Box::new(child)),
                 alignment: None,
@@ -400,7 +400,7 @@ impl<'a, 'b> FlexMut<'a, 'b> {
             }
         } else {
             // TODO
-            tracing::warn!("Flex value should be > 0.0. To add a non-flex child use the add_child or with_child methods.\nSee the docs for more information: https://docs.rs/druid/0.7.0/druid/widget/struct.Flex.html");
+            tracing::warn!("Flex value should be > 0.0. To add a non-flex child use the add_child or with_child methods.\nSee the docs for masonry::widget::Flex formore information");
             Child::Fixed {
                 widget: WidgetPod::new(Box::new(child)),
                 alignment: None,

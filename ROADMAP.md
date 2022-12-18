@@ -86,6 +86,8 @@
 
 - [ ] Handle reques_layout-in-layout corner case
 
+- [ ] Add logo
+
 - [ ] Add dev shortcuts:
  - [ ] To print Widget tree
  - [ ] To print current focused/active Widget
@@ -132,7 +134,7 @@
  - [ ] Huge list with editable/focusable boxes
  - [ ] ???
 
-- [ ] Druid-shell
+- [ ] druid-shell
  - [ ] Rename WinHandler methods
   - size -> resize
   - scale -> rescale

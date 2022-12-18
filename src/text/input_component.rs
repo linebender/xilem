@@ -32,7 +32,7 @@ use crate::{
 /// overview, see [`druid_shell::text`].
 ///
 /// This type manages an inner [`EditSession`] that is shared with the platform.
-/// Unlike other aspects of Druid, the platform interacts with this session, not
+/// Unlike other aspects of Masonry, the platform interacts with this session, not
 /// through discrete events.
 ///
 /// This is managed through a simple 'locking' mechanism; the platform asks for

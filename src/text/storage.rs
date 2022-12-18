@@ -24,7 +24,7 @@ pub trait TextStorage: PietTextStorage + Data {
     /// If this `TextStorage` object manages link attributes, it should implement this
     /// method and return any attached [`Link`]s.
     ///
-    /// Unlike other attributes, links are managed in Druid, not in [`piet`]; as such they
+    /// Unlike other attributes, links are managed in Masonry, not in [`piet`]; as such they
     /// require a separate API.
     ///
     /// [`Link`]: super::attribute::Link
@@ -36,7 +36,7 @@ pub trait TextStorage: PietTextStorage + Data {
 
 /// A reference counted string slice.
 ///
-/// This is a data-friendly way to represent strings in druid. Unlike `String`
+/// This is a data-friendly way to represent strings in Masonry. Unlike `String`
 /// it cannot be mutated, but unlike `String` it can be cheaply cloned.
 pub type ArcStr = Arc<str>;
 

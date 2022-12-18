@@ -1,4 +1,4 @@
--app-name = Druide
+-app-name = Masonry
 
 hello-counter = La valeur actuelle est { $count }
 

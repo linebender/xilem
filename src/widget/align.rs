@@ -33,7 +33,7 @@ impl Align {
     ///
     /// Note that the `align` parameter is specified as a `UnitPoint` in
     /// terms of left and right. This is inadequate for bidi-aware layout
-    /// and thus the API will change when druid gains bidi capability.
+    /// and thus the API will change when Masonry gains bidi capability.
     pub fn new(align: UnitPoint, child: impl Widget + 'static) -> Align {
         Align {
             align,

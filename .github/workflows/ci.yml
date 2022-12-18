@@ -130,7 +130,7 @@ jobs:
 
   doctest-stable:
     runs-on: macOS-latest
-    name: druid doctests
+    name: doctests
     steps:
       - uses: actions/checkout@v2
 

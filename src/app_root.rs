@@ -83,7 +83,7 @@ struct AppRootInner {
 }
 
 /// The parts of a window, pending construction, that are dependent on top level app state
-/// or are not part of the druid shell's windowing abstraction.
+/// or are not part of druid-shell's windowing abstraction.
 struct PendingWindow {
     root: Box<dyn Widget>,
     title: ArcStr,
@@ -672,7 +672,7 @@ impl AppRootInner {
 
     fn request_new_window(&mut self, cmd: Command) {
         let desc = cmd.get(sys_cmd::NEW_WINDOW);
-        // The NEW_WINDOW command is private and only druid should be able to send it,
+        // The NEW_WINDOW command is private and only masonry should be able to send it,
         // so we can use .unwrap() here
         let desc = *desc
             .take()

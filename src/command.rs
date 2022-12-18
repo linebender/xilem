@@ -163,7 +163,7 @@ mod sys {
     use crate::platform::WindowConfig;
     use crate::WidgetId;
 
-    /// Quit the running application. This command is handled by the druid library.
+    /// Quit the running application. This command is handled by the Masonry library.
     pub const QUIT_APP: Selector = Selector::new("masonry-builtin.quit-app");
 
     /// Hide the application. (mac only)
@@ -239,7 +239,7 @@ mod sys {
 
     /// Save to a given location.
     ///
-    /// This command is emitted by druid whenever a save file dialog successfully completes. The
+    /// This command is emitted by Masonry whenever a save file dialog successfully completes. The
     /// application should save its data to the path proved, and should store the path in order to
     /// handle [`SAVE_FILE`] commands in the future.
     ///
@@ -409,7 +409,7 @@ impl Command {
         if self.symbol == selector.symbol() {
             Some(self.payload.downcast_ref().unwrap_or_else(|| {
                 panic!(
-                    "The selector \"{}\" exists twice with different types. See druid::Command::get for more information",
+                    "The selector \"{}\" exists twice with different types. See the masonry::Command::get documentation for more information",
                     selector.symbol()
                 );
             }))
@@ -459,8 +459,7 @@ impl Notification {
         if self.symbol == selector.symbol() {
             Some(self.payload.downcast_ref().unwrap_or_else(|| {
                 panic!(
-                    "The selector \"{}\" exists twice with different types. \
-                    See druid::Command::get for more information",
+                    "The selector \"{}\" exists twice with different types. See the masonry::Command::try_get documentation for more information",
                     selector.symbol()
                 );
             }))

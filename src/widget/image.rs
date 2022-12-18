@@ -136,7 +136,7 @@ impl Widget for Image {
         let offset_matrix = self.fill.affine_to_fill(ctx.size(), self.image_data.size());
 
         // The ImageData's to_piet function does not clip to the image's size
-        // CairoRenderContext is very like druids but with some extra goodies like clip
+        // CairoRenderContext is very like Masonry's but with some extra goodies like clip
         if self.fill != FillStrat::Contain {
             let clip_rect = ctx.size().to_rect();
             ctx.clip(clip_rect);

@@ -169,7 +169,7 @@ pub enum Event {
     /// to stop the notification from being delivered to further ancestors.
     Notification(Notification),
 
-    /// Internal druid event.
+    /// Internal Masonry event.
     ///
     /// This should always be passed down to descendant [`WidgetPod`]s.
     ///
@@ -177,7 +177,7 @@ pub enum Event {
     Internal(InternalEvent),
 }
 
-/// Internal events used by druid inside [`WidgetPod`].
+/// Internal events used by Masonry inside [`WidgetPod`].
 ///
 /// These events are translated into regular [`Event`]s
 /// and should not be used directly.
@@ -244,7 +244,7 @@ pub enum LifeCycle {
     /// [`set_disabled`]: crate::EventCtx::set_disabled
     DisabledChanged(bool),
 
-    /// Called when the widget tree changes and druid wants to rebuild the
+    /// Called when the widget tree changes and Masonry wants to rebuild the
     /// Focus-chain.
     ///
     /// It is the only place from which [`register_for_focus`] should be called.
@@ -259,7 +259,7 @@ pub enum LifeCycle {
     /// [`EventCtx::request_pan_to_this`](crate::EventCtx::request_pan_to_this).
     RequestPanToChild(Rect),
 
-    /// Internal druid lifecycle event.
+    /// Internal Masonry lifecycle event.
     ///
     /// This should always be passed down to descendant [`WidgetPod`]s.
     ///
@@ -267,7 +267,7 @@ pub enum LifeCycle {
     Internal(InternalLifeCycle),
 }
 
-/// Internal lifecycle events used by druid inside [`WidgetPod`].
+/// Internal lifecycle events used by Masonry inside [`WidgetPod`].
 ///
 /// These events are translated into regular [`LifeCycle`] events
 /// and should not be used directly.

@@ -2,7 +2,7 @@
 // "as-is" basis without warranties of any kind. See the LICENSE file for
 // details.
 
-//! This is a very small example of how to setup a druid application.
+//! This is a very small example of how to setup a masonry application.
 //! It does the almost bare minimum while still being useful.
 
 // On Windows platform, don't show a console when opening the app.

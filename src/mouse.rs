@@ -12,7 +12,7 @@ use crate::kurbo::{Point, Vec2};
 
 /// The state of the mouse for a click, mouse-up, move, or wheel event.
 ///
-/// In `druid`, unlike in `druid_shell`, we treat the widget's coordinate
+/// In Masonry, unlike in `druid_shell`, we treat the widget's coordinate
 /// space and the window's coordinate space separately.
 ///
 /// Every mouse event can have a new position. There is no guarantee of

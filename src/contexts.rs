@@ -717,7 +717,7 @@ impl EventCtx<'_, '_> {
     ///
     /// ```
     /// # use masonry::{Event, EventCtx, Selector};
-    /// const IMPORTANT_EVENT: Selector<String> = Selector::new("druid-example.important-event");
+    /// const IMPORTANT_EVENT: Selector<String> = Selector::new("masonry-example.important-event");
     ///
     /// fn check_event(ctx: &mut EventCtx, event: &Event) {
     ///     if is_this_the_event_we_were_looking_for(event) {

@@ -24,7 +24,7 @@ use crate::{
 /// but rather contain a `WidgetPod`, which has additional state needed
 /// for layout and for the widget to participate in event flow.
 ///
-/// `WidgetPod` will translate internal druid events to regular events,
+/// `WidgetPod` will translate internal Masonry events to regular events,
 /// synthesize additional events of interest, and stop propagation when it makes sense.
 pub struct WidgetPod<W> {
     pub(crate) state: WidgetState,
@@ -210,7 +210,7 @@ impl<W: Widget> WidgetPod<W> {
     //
     // Ideally, this is a UX trap I'd like to warn against; in any case, the fact that it's possible shows we have to account for cases where layout has an influence on previous stages.
     //
-    // In actual druid code, that means:
+    // In actual Masonry code, that means:
     // - `Widget::lifecycle` can be called within `Widget::layout`.
     // - `Widget::set_position` can call `Widget::lifecycle` and thus needs to be passed context types, which gives the method a surprising prototype.
     //
@@ -635,7 +635,6 @@ impl<W: Widget> WidgetPod<W> {
                         // we will try again with the next parent
                         inner_ctx.notifications.push_back(notification);
                     } else {
-                        // could be unchecked but we avoid unsafe in druid :shrug:
                         unreachable!()
                     }
                 });
