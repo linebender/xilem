@@ -76,7 +76,6 @@ impl<T: 'static> Data for Key<T> {
 /// A dynamic type representing all values that can be stored in an environment.
 #[derive(Clone)]
 #[allow(missing_docs)]
-// ANCHOR: value_type
 pub enum Value {
     Point(Point),
     Size(Size),
@@ -111,8 +110,6 @@ impl Data for Value {
         }
     }
 }
-
-// ANCHOR_END: value_type
 
 /// Either a concrete `T` or a [`Key<T>`] that can be resolved in the [`Env`].
 ///
