@@ -20,7 +20,7 @@ use crate::{Widget, WidgetId, WidgetState};
 /// printing it will display its widget subtree (as in, the referenced widget, and its
 /// children, and their children, etc).
 ///
-/// This is only for shared access to widgets. For widget mutation, see [`WidgetMut`](crate::WidgetMut).
+/// This is only for shared access to widgets. For widget mutation, see [`WidgetMut`](crate::widget::WidgetMut).
 
 pub struct WidgetRef<'w, W: Widget + ?Sized> {
     widget_state: &'w WidgetState,

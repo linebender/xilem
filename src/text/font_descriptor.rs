@@ -11,7 +11,7 @@ use crate::Data;
 ///
 /// This is provided as a convenience; library consumers may wish to have
 /// a single type that represents a specific font face at a specific size.
-#[derive(Debug, Data, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct FontDescriptor {
     /// The font's [`FontFamily`](struct.FontFamily.html).
     pub family: FontFamily,
@@ -67,5 +67,14 @@ impl Default for FontDescriptor {
             style: Default::default(),
             size: crate::piet::util::DEFAULT_FONT_SIZE,
         }
+    }
+}
+
+impl Data for FontDescriptor {
+    fn same(&self, other: &Self) -> bool {
+        self.family == other.family
+            && self.size == other.size
+            && self.weight == other.weight
+            && self.style == other.style
     }
 }

@@ -8,95 +8,33 @@ use std::ptr;
 use std::rc::Rc;
 use std::sync::Arc;
 
-pub use druid_derive::Data;
 use druid_shell::{Cursor, Scale};
 use piet::ImageBuf;
 
 use crate::kurbo::{self, ParamCurve};
 use crate::piet;
 
-/// A trait used to represent value types.
+/// A trait used to represent cheap-to-compare value types.
 ///
-/// These should be cheap to compare and cheap to clone.
+/// **Note: This trait is mostly a leftover from Druid, and will
+/// likely be removed in a future version. Do not rely on it.**
 ///
-/// See <https://sinusoid.es/lager/model.html#id2> for a well-written
+/// These should be cheap to compare and cheap to clone. See
+/// <https://sinusoid.es/lager/model.html#id2> for a well-written
 /// explanation of value types (albeit within a C++ context).
 ///
-/// ## Derive macro
+/// ## No derive macro
 ///
-/// In general, you can use `derive` to generate a `Data` impl for your types.
-///
-/// ```
-/// # use std::sync::Arc;
-/// # use druid::Data;
-/// #[derive(Clone, Data)]
-/// enum Foo {
-///     Case1(i32, f32),
-///     Case2 { a: String, b: Arc<i32> }
-/// }
-/// ```
-///
-/// ### Derive macro attributes
-///
-/// There are a number of field attributes available for use with `derive(Data)`.
-///
-/// - **`#[data(ignore)]`**
-///
-/// Skip this field when computing `same`ness.
-///
-/// If the type you are implementing `Data` on contains some fields that are
-/// not relevant to the `Data` impl, you can ignore them with this attribute.
-///
-/// - **`#[data(same_fn = "path")]`**
-///
-/// Use a specific function to compute `same`ness.
-///
-/// By default, derived implementations of `Data` just call [`Data::same`]
-/// recursively on each field. With this attribute, you can specify a
-/// custom function that will be used instead.
-///
-/// This function must have a signature in the form, `fn<T>(&T, &T) -> bool`,
-/// where `T` is the type of the field.
+/// Unlike Druid, Masonry doesn't provide a derive macro for Data.
+/// Also, `druid_derive::Data` won't implement the Masonry version
+/// of this trait.
 ///
 /// ## Collection types
 ///
 /// `Data` is not implemented for `std` collection types, because comparing them
-/// can be expensive. To use collection types with druid, there are two easy options:
-/// either wrap the collection in an `Arc`, or build druid with the `im` feature,
-/// which adds `Data` implementations to the collections from the [`im` crate],
-/// a set of immutable data structures that fit nicely with druid.
-///
-/// If the `im` feature is used, the `im` crate is reexported from the root
-/// of the druid crate.
-///
-/// ### Example:
-///
-/// ```
-/// # use std::path::PathBuf;
-/// # use std::time::Instant;
-/// # use druid::Data;
-/// #[derive(Clone, Data)]
-/// struct PathEntry {
-///     // There's no Data impl for PathBuf, but no problem
-///     #[data(eq)]
-///     path: PathBuf,
-///     priority: usize,
-///     // This field is not part of our data model.
-///     #[data(ignore)]
-///     last_read: Instant,
-/// }
-/// ```
-///
-/// ## C-style enums
-///
-/// In the case of a "c-style" enum (one that only contains unit variants,
-/// that is where no variant has fields), the implementation that is generated
-/// checks for equality. Therefore, such types must also implement `PartialEq`.
-///
-/// [`Data::same`]: trait.Data.html#tymethod.same
-/// [`im` crate]: https://docs.rs/im
+/// can be expensive. The simplest way to use collections with this trait is to
+/// wrap the collection in an `Arc`.
 pub trait Data: Clone + 'static {
-    //// ANCHOR: same_fn
     /// Determine whether two values are the same.
     ///
     /// This is intended to always be a fast operation. If it returns
@@ -108,7 +46,6 @@ pub trait Data: Clone + 'static {
     /// `PartialEq`, for example two floating point NaN values should
     /// be considered equal when they have the same bit representation.
     fn same(&self, other: &Self) -> bool;
-    //// ANCHOR_END: same_fn
 }
 
 /// An impl of `Data` suitable for simple types.
@@ -164,7 +101,7 @@ impl_data_simple!(std::net::SocketAddrV6);
 impl_data_simple!(std::net::IpAddr);
 impl_data_simple!(std::net::SocketAddr);
 impl_data_simple!(std::ops::RangeFull);
-impl_data_simple!(druid::piet::InterpolationMode);
+impl_data_simple!(crate::piet::InterpolationMode);
 #[cfg(feature = "chrono")]
 impl_data_simple!(chrono::Duration);
 #[cfg(feature = "chrono")]
@@ -362,7 +299,7 @@ impl<T: Data> Data for std::ops::Bound<T> {
     }
 }
 
-// druid & deps impls
+// masonry & deps impls
 
 impl Data for Scale {
     fn same(&self, other: &Self) -> bool {

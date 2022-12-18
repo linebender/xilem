@@ -8,15 +8,15 @@ use std::collections::{HashMap, HashSet};
 use std::fmt::Display;
 use std::sync::Arc;
 
-use druid::{Data, Rect};
+use crate::{Data, Rect};
 use serde::{Deserialize, Serialize};
 
 pub type MyWidgetId = u32;
 
-#[derive(Data, Clone, Copy, Default, Debug, PartialEq, Eq, Hash, Deserialize, Serialize)]
+#[derive(Clone, Copy, Default, Debug, PartialEq, Eq, Hash, Deserialize, Serialize)]
 pub struct LogId(pub i32);
 
-#[derive(Data, Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
 pub enum Value {
     Empty,
     String(String),
@@ -27,7 +27,7 @@ pub enum Value {
     LogId(LogId),
 }
 
-#[derive(Data, Clone, Default, Debug, Deserialize, Serialize)]
+#[derive(Clone, Default, Debug, Deserialize, Serialize)]
 pub struct StateTree {
     pub name: String,
     pub value: Value,
@@ -45,7 +45,7 @@ pub struct LayoutInfo {
     pub children: HashSet<MyWidgetId>,
 }
 
-#[derive(Data, Clone, Default, Debug, Deserialize, Serialize)]
+#[derive(Clone, Default, Debug, Deserialize, Serialize)]
 pub struct LayoutTree {
     pub root: Option<MyWidgetId>,
     #[serde(with = "serde_arc")]
@@ -206,6 +206,33 @@ impl Data for Timeline {
     }
 }
 
+impl Data for LogId {
+    fn same(&self, other: &Self) -> bool {
+        self == other
+    }
+}
+
+impl Data for Value {
+    fn same(&self, other: &Self) -> bool {
+        self == other
+    }
+}
+
+impl Data for StateTree {
+    fn same(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.children, &other.children)
+            && self.name == other.name
+            && self.value == other.value
+            && self.folded_by_default == other.folded_by_default
+    }
+}
+
+impl Data for LayoutTree {
+    fn same(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.widgets, &other.widgets) && self.root == other.root
+    }
+}
+
 mod serde_arc {
     use std::sync::Arc;
 
@@ -227,7 +254,7 @@ mod serde_arc {
 }
 
 mod serde_rect {
-    use druid::Rect;
+    use crate::Rect;
     use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
     pub fn serialize<S: Serializer>(value: &Rect, serializer: S) -> Result<S::Ok, S::Error> {

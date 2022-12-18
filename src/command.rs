@@ -20,15 +20,13 @@ pub(crate) type SelectorSymbol = &'static str;
 ///
 /// This should be a unique string identifier.
 /// Having multiple selectors with the same identifier but different payload
-/// types is not allowed and can cause [`Command::try_get`] and [`get`] to panic.
+/// types is not allowed and can cause [`Command::try_get`] and [`Command::get`] to panic.
 ///
 /// The type parameter `T` specifies the command's payload type.
 /// See [`Command`] for more information.
 ///
-/// Certain `Selector`s are defined by druid, and have special meaning
-/// to the framework; these are listed in the [`druid::command`] module.
-///
-/// [`Command`]: struct.Command.html
+/// Certain `Selector`s are defined by masonry, and have special meaning
+/// to the framework; these are listed in the [`command`](crate::command) module.
 #[derive(Debug, PartialEq, Eq)]
 pub struct Selector<T = ()>(SelectorSymbol, PhantomData<T>);
 
@@ -46,13 +44,10 @@ pub struct Selector<T = ()>(SelectorSymbol, PhantomData<T>);
 /// Commands can come from multiple sources:
 /// - Widgets can send custom commands via methods such as
 /// [`EventCtx::submit_command`](crate::EventCtx::submit_command).
-/// - If your application uses menus (either window or context menus)
-/// then each [`MenuItem`](crate::MenuItem) in the menu will hold a `Command`.
-/// When the menu item is selected, that `Command` will be delivered to
-/// the root widget of the appropriate window.
 /// - If you are doing work in a background thread, your main way of sending
 /// data back to the main thread is to use
-/// [`ExtEventSink::submit_command`](crate::ExtEventSink::submit_command).
+/// [`ExtEventSink::submit_command`](crate::ext_event::ExtEventSink::submit_command).
+/// - In a future version, when MenuItems are implemented, they will work by sending commands when selected.
 ///
 /// ## Example
 /// ```
@@ -62,7 +57,7 @@ pub struct Selector<T = ()>(SelectorSymbol, PhantomData<T>);
 /// let rows = vec![1, 3, 10, 12];
 /// let command = selector.with(rows);
 ///
-/// assert_eq!(command.get(selector), Some(&vec![1, 3, 10, 12]));
+/// assert_eq!(command.get(selector), &vec![1, 3, 10, 12]);
 /// ```
 // TODO - The [`AppDelegate`](crate::AppDelegate) can send commands through[`DelegateCtx::submit_command`](crate::DelegateCtx::submit_command)
 #[derive(Debug, Clone)]
@@ -103,7 +98,7 @@ pub struct Notification {
 ///
 /// # Examples
 /// ```
-/// use druid::{Command, Selector, SingleUse, Target};
+/// use masonry::{Command, Selector, SingleUse, Target};
 ///
 /// struct CantClone(u8);
 ///
@@ -150,11 +145,8 @@ pub enum Target {
     ///
     /// How this behaves depends on the context used to submit the command.
     /// If the command is submitted within a `Widget` method, then it will be sent to the host
-    /// window for that widget. If it is from outside the application, via [`ExtEventSink`],
-    /// or from the root [`AppDelegate`] then it will be sent to [`Target::Global`] .
-    ///
-    /// [`ExtEventSink`]: crate::ExtEventSink
-    /// [`AppDelegate`]: crate::AppDelegate
+    /// window for that widget. If it is from outside the application, via [`ExtEventSink`](crate::ext_event::ExtEventSink),
+    /// or from the root [`AppDelegate`](crate::AppDelegate) then it will be sent to [`Target::Global`].
     Auto,
 }
 
@@ -162,7 +154,7 @@ pub use sys::*;
 
 // FIXME
 #[allow(dead_code)]
-pub mod sys {
+mod sys {
     use std::any::Any;
 
     use druid_shell::FileInfo;
@@ -428,8 +420,8 @@ impl Command {
 
     /// Returns a reference to this `Command`'s payload.
     ///
-    /// If the selector has already been checked with [`is`], then `get` can be used safely.
-    /// Otherwise you should use [`try_get`] instead.
+    /// If the selector has already been checked with [`is`](Self::is), then `get` can be used safely.
+    /// Otherwise you should use [`try_get`](Self::try_get) instead.
     ///
     /// # Panics
     ///
@@ -437,9 +429,6 @@ impl Command {
     ///
     /// Panics when the payload has a different type, than what the selector is supposed to carry.
     /// This can happen when two selectors with different types but the same key are used.
-    ///
-    /// [`is`]: #method.is
-    /// [`get`]: #method.get
     pub fn get<T: Any>(&self, selector: Selector<T>) -> &T {
         self.try_get(selector).unwrap_or_else(|| {
             panic!(

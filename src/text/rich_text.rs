@@ -16,7 +16,7 @@ use crate::piet::{
 use crate::{ArcStr, Data, Env, KeyOrValue};
 
 /// Text with optional style spans.
-#[derive(Clone, Debug, Data)]
+#[derive(Clone, Debug)]
 pub struct RichText {
     buffer: ArcStr,
     attrs: Arc<AttributeSpans>,
@@ -88,6 +88,14 @@ impl TextStorage for RichText {
     }
 }
 
+impl Data for RichText {
+    fn same(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.attrs, &other.attrs)
+            && Arc::ptr_eq(&self.links, &other.links)
+            && self.buffer == other.buffer
+    }
+}
+
 /// A builder for creating [`RichText`] objects.
 ///
 /// This builder allows you to construct a [`RichText`] object by building up a sequence
@@ -97,8 +105,9 @@ impl TextStorage for RichText {
 ///
 /// # Example
 /// ```
-/// # use druid::text::{Attribute, RichTextBuilder};
-/// # use druid::{FontWeight, Color};
+/// # use masonry::text::{Attribute, RichTextBuilder};
+/// # use masonry::Color;
+/// # use masonry::piet::FontWeight;
 /// let mut builder = RichTextBuilder::new();
 /// builder.push("Hello ");
 /// builder.push("World!").weight(FontWeight::BOLD);

@@ -84,7 +84,7 @@ use crate::{Affine, Data, Size};
 
 // These are based on https://api.flutter.dev/flutter/painting/BoxFit-class.html
 /// Strategies for inscribing a rectangle inside another rectangle.
-#[derive(Clone, Data, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq)]
 pub enum FillStrat {
     /// As large as posible without changing aspect ratio of image and all of image shown
     Contain,
@@ -115,6 +115,12 @@ impl CursorChange {
 impl Default for FillStrat {
     fn default() -> Self {
         FillStrat::Contain
+    }
+}
+
+impl Data for FillStrat {
+    fn same(&self, other: &Self) -> bool {
+        self == other
     }
 }
 

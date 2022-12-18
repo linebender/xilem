@@ -85,9 +85,8 @@ impl SizedBox {
 
     /// Construct container without child, and both width and height not set.
     ///
-    /// If the widget is unchanged, it will do nothing, which can be useful if you want to draw a
-    /// widget some of the time (for example, it is used to implement
-    /// [`Maybe`][crate::widget::Maybe]).
+    /// If the widget is unchanged, it will render nothing, which can be useful if you want to draw a
+    /// widget some of the time.
     #[doc(alias = "null")]
     pub fn empty() -> Self {
         Self {

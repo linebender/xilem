@@ -54,17 +54,15 @@ pub struct ReplaceChild {
 /// Make one like this:
 ///
 /// ```
-/// # use druid::widget::Label;
-/// # use druid::{WidgetExt, LifeCycle};
-/// use druid::tests::helpers::{Recording, Record, TestWidgetExt};
-/// use druid::tests::harness::Harness;
+/// # use masonry::widget::Label;
+/// # use masonry::LifeCycle;
+/// use masonry::testing::{Recording, Record, TestWidgetExt};
+/// use masonry::testing::TestHarness;
 /// let recording = Recording::default();
-/// let widget = Label::new("Hello").padding(4.0).record(&recording);
+/// let widget = Label::new("Hello").record(&recording);
 ///
-/// Harness::create_simple((), widget, |harness| {
-///     harness.send_initial_events();
-///     assert!(matches!(recording.next(), Record::L(LifeCycle::WidgetAdded)));
-/// })
+/// TestHarness::create(widget);
+/// assert!(matches!(recording.next(), Record::L(LifeCycle::WidgetAdded)));
 /// ```
 pub struct Recorder<W> {
     recording: Recording,

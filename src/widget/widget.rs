@@ -31,7 +31,7 @@ use crate::{
 /// ## Explicit `WidgetId`s.
 ///
 /// Sometimes, you may want to construct a widget, in a way that lets you know its id,
-/// so you can refer to the widget later. You can use [`WidgetPod::new_with_id`] to pass
+/// so you can refer to the widget later. You can use [`WidgetPod::new_with_id`](crate::WidgetPod::new_with_id) to pass
 /// an id to the WidgetPod you're creating; various widgets which have methods to create
 /// children may have variants taking ids as parameters.
 ///
@@ -61,7 +61,7 @@ pub struct WidgetId(NonZeroU64);
 /// Generally speaking, widgets aren't used directly. They are stored in
 /// [`WidgetPods`](crate::WidgetPod). Widget methods are called by WidgetPods, and the
 /// widget is mutated either during a method call (eg `on_event` or `lifecycle`) or
-/// through a [`WidgetMut`](crate::WidgetMut). See tutorials for detail.
+/// through a [`WidgetMut`](crate::widget::WidgetMut). See tutorials for detail.
 pub trait Widget: AsAny {
     /// Handle an event - usually user interaction.
     ///
@@ -86,7 +86,7 @@ pub trait Widget: AsAny {
     /// A leaf widget should determine its size (subject to the provided
     /// constraints) and return it.
     ///
-    /// A container widget will recursively call [`WidgetPod::layout`] on its
+    /// A container widget will recursively call [`WidgetPod::layout`](crate::WidgetPod::layout) on its
     /// child widgets, providing each of them an appropriate box constraint,
     /// compute layout, then call [`LayoutCtx::place_child`] on each of its children.
     /// Finally, it should return the size of the container. The container
@@ -103,7 +103,7 @@ pub trait Widget: AsAny {
     /// Paint the widget appearance.
     ///
     /// The [`PaintCtx`] derefs to something that implements the
-    /// [`piet::RenderContext`] trait, which exposes various methods that the widget
+    /// [`piet::RenderContext`](crate::piet::RenderContext) trait, which exposes various methods that the widget
     /// can use to paint its appearance.
     ///
     /// Container widgets can paint a background before recursing to their
@@ -198,9 +198,9 @@ pub trait Widget: AsAny {
     }
 }
 
-/// Trait that widgets must implement to be in [`WidgetMut`](crate::WidgetMut).
+/// Trait that widgets must implement to be in [`WidgetMut`](crate::widget::WidgetMut).
 ///
-/// This trait should usually be implemented with [`declare_widget`].
+/// This trait should usually be implemented with [`declare_widget`](crate::declare_widget).
 #[allow(missing_docs)]
 pub trait StoreInWidgetMut: Widget {
     type Mut<'a, 'b: 'a>: Deref<Target = Self>;
@@ -231,7 +231,7 @@ pub trait StoreInWidgetMut: Widget {
 ///
 /// The general syntax is:
 ///
-/// ```
+/// ```ignore
 /// declare_widget!(MyWidgetMut, MyWidget);
 /// ```
 ///
@@ -241,11 +241,11 @@ pub trait StoreInWidgetMut: Widget {
 ///
 /// The above macro call will produce something like this:
 ///
-/// ```
+/// ```ignore
 /// pub struct MyWidgetMut<'a, 'b>(WidgetCtx<'a, 'b>, &'a mut MyWidget);
 ///
 /// impl StoreInWidgetMut for MyWidget {
-///     type Mut<'a, 'b> = MyWidgetMut;
+///     type Mut<'a, 'b> = MyWidgetMut<'a, 'b>;
 /// }
 /// ```
 ///
@@ -260,13 +260,13 @@ pub trait StoreInWidgetMut: Widget {
 ///
 /// If a widget type has generic arguments, the syntax becomes:
 ///
-/// ```
+/// ```ignore
 /// declare_widget!(FoobarMut, Foobar<A, B, C>);
 /// ```
 ///
 /// If these arguments have bounds, the syntax becomes:
 ///
-/// ```
+/// ```ignore
 /// declare_widget!(FoobarMut, Foobar<A: (SomeTrait), B: (SomeTrait + OtherTrait), C>);
 /// ```
 ///

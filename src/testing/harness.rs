@@ -34,7 +34,7 @@ pub const HARNESS_DEFAULT_SIZE: Size = Size::new(400., 400.);
 
 /// A safe headless environment to test widgets in.
 ///
-/// `TestHarness` is a type that simulates an [`AppRoot`](crate::platform::AppRoot)
+/// `TestHarness` is a type that simulates an [`AppRoot`](crate::AppRoot)
 /// with a single window.
 ///
 /// ## Workflow
@@ -49,11 +49,11 @@ pub const HARNESS_DEFAULT_SIZE: Size = Size::new(400., 400.);
 /// - Check that the state of the widget graph matches what you expect.
 ///
 /// You can do that last part in a few different ways. You can get a [`WidgetRef`] to
-/// a specific widget through methods like [`try_get_widget`]. [`WidgetRef`] implements
+/// a specific widget through methods like [`try_get_widget`](Self::try_get_widget). [`WidgetRef`] implements
 /// `Debug`, so you can check the state of an entire tree with something like the `insta`
 /// crate.
 ///
-/// You can also render the widget tree directly with the [`render`] method. Masonry also
+/// You can also render the widget tree directly with the [`render`](Self::render) method. Masonry also
 /// provides the [`assert_render_snapshot`] macro, which performs snapshot testing on the
 /// rendered widget tree automatically.
 ///
@@ -61,7 +61,7 @@ pub const HARNESS_DEFAULT_SIZE: Size = Size::new(400., 400.);
 ///
 /// `TestHarness` tries to act like the normal masonry environment. For instance, it will dispatch every `Command` sent during event handling, handle lifecycle methods, etc.
 ///
-/// The passage of time is simulated with the [`move_timers_forward`] methods. **(TODO -
+/// The passage of time is simulated with the [`move_timers_forward`](Self::move_timers_forward) methods. **(TODO -
 /// Doesn't move animations forward.)**
 ///
 /// **(TODO - ExtEvents aren't handled.)**
@@ -83,7 +83,7 @@ pub const HARNESS_DEFAULT_SIZE: Size = Size::new(400., 400.);
 /// ```
 /// use insta::assert_debug_snapshot;
 ///
-/// use masonry::Button;
+/// use masonry::widget::Button;
 /// use masonry::assert_render_snapshot;
 /// use masonry::testing::widget_ids;
 /// use masonry::testing::TestHarness;

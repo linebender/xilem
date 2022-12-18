@@ -62,7 +62,7 @@ pub(crate) struct GlobalPassCtx<'a> {
     pub(crate) focus_widget: Option<WidgetId>,
 }
 
-/// A context provided to implementors of [`StoreInWidgetMut`](crate::StoreInWidgetMut).
+/// A context provided to implementors of [`StoreInWidgetMut`].
 ///
 /// When you declare a mutable reference type for your widget, methods of this type
 /// will have access to a `WidgetCtx`. If that method mutates the widget in a way that
@@ -716,7 +716,7 @@ impl EventCtx<'_, '_> {
     /// # Examples
     ///
     /// ```
-    /// # use druid::{Event, EventCtx, Selector};
+    /// # use masonry::{Event, EventCtx, Selector};
     /// const IMPORTANT_EVENT: Selector<String> = Selector::new("druid-example.important-event");
     ///
     /// fn check_event(ctx: &mut EventCtx, event: &Event) {
@@ -1042,7 +1042,7 @@ impl PaintCtx<'_, '_, '_> {
     /// # Examples
     ///
     /// ```
-    /// # use druid::{Env, PaintCtx, RenderContext, theme};
+    /// # use masonry::{Env, PaintCtx, RenderContext, theme};
     /// # struct T;
     /// # impl T {
     /// fn paint(&mut self, ctx: &mut PaintCtx, _data: &T, env: &Env) {

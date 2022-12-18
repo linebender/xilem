@@ -10,7 +10,8 @@ use super::FontDescriptor;
 use crate::piet::{Color, FontFamily, FontStyle, FontWeight, TextAttribute as PietAttr};
 use crate::{Env, KeyOrValue};
 
-/// A clickable range of text with an associated [`Command`].
+// TODO - Should also hold an associated Command, maybe.
+/// A clickable range of text
 #[derive(Debug, Clone)]
 pub struct Link {
     /// The range of text for the link.
@@ -57,9 +58,9 @@ struct Span<T> {
 ///
 /// # Examples
 ///
-/// ```
-/// use druid::text::Attribute;
-/// use druid::{theme, Color};
+/// ```no_run
+/// use masonry::text::Attribute;
+/// use masonry::{theme, Color};
 ///
 /// let font = Attribute::font_descriptor(theme::UI_FONT);
 /// let font_size = Attribute::size(32.0);

@@ -343,7 +343,7 @@ impl AppRoot {
         self.process_window_requests();
     }
 
-    /// Run any events in the [`ExtEventQueue`], usually sent by a background thread.
+    /// Run any events in the background event queue, usually sent by a background thread.
     pub fn run_ext_events(&mut self) {
         self.process_ext_events();
         self.process_commands_and_actions();

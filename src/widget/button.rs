@@ -34,7 +34,7 @@ impl Button {
     /// # Examples
     ///
     /// ```
-    /// use druid::widget::Button;
+    /// use masonry::widget::Button;
     ///
     /// let button = Button::new("Increment");
     /// ```
@@ -47,8 +47,8 @@ impl Button {
     /// # Examples
     ///
     /// ```
-    /// use druid::Color;
-    /// use druid::widget::{Button, Label};
+    /// use masonry::Color;
+    /// use masonry::widget::{Button, Label};
     ///
     /// let label = Label::new("Increment").with_text_color(Color::grey(0.5));
     /// let button = Button::from_label(label);

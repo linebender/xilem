@@ -34,9 +34,10 @@ crate::declare_widget!(FlexMut, Flex);
 /// Optional parameters for an item in a [`Flex`] container (row or column).
 ///
 /// Generally, when you would like to add a flexible child to a container,
-/// you can simply call [`with_flex_child`] or [`add_flex_child`], passing the
+/// you can simply call [`with_flex_child`](Flex::with_flex_child), passing the
 /// child and the desired flex factor as a `f64`, which has an impl of
 /// `Into<FlexParams>`.
+// FIXME - "with_flex_child or [`add_flex_child`](FlexMut::add_flex_child)"
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct FlexParams {
     flex: f64,
@@ -48,7 +49,7 @@ pub struct FlexParams {
 /// Most often used by widgets to describe
 /// the direction in which they grow as their number of children increases.
 /// Has some methods for manipulating geometry with respect to the axis.
-#[derive(Data, Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Axis {
     /// The x axis
     Horizontal,
@@ -60,7 +61,7 @@ pub enum Axis {
 ///
 /// If a widget is smaller than the container on the minor axis, this determines
 /// where it is positioned.
-#[derive(Debug, Clone, Copy, PartialEq, Data)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum CrossAxisAlignment {
     /// Top or leading.
     Start,
@@ -78,7 +79,7 @@ pub enum CrossAxisAlignment {
 ///
 /// If there is surplus space on the main axis after laying out children, this
 /// enum represents how children are laid out in this space.
-#[derive(Debug, Clone, Copy, PartialEq, Data)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum MainAxisAlignment {
     /// Top or leading.
     Start,
@@ -297,29 +298,6 @@ impl<'a, 'b> FlexMut<'a, 'b> {
     }
 
     /// Add a flexible child widget.
-    ///
-    /// This method is used when you need more control over the behaviour
-    /// of the widget you are adding. In the general case, this likely
-    /// means giving that child a 'flex factor', but it could also mean
-    /// giving the child a custom [`CrossAxisAlignment`], or a combination
-    /// of the two.
-    ///
-    /// This function takes a child widget and [`FlexParams`]; importantly
-    /// you can pass in a float as your [`FlexParams`] in most cases.
-    ///
-    /// For the builder-style varient, see [`with_flex_child`].
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use druid::widget::{Flex, FlexParams, Label, Slider, CrossAxisAlignment};
-    ///
-    /// let mut my_row = Flex::row();
-    /// my_row.add_flex_child(Slider::new(), 1.0);
-    /// my_row.add_flex_child(Slider::new(), FlexParams::new(1.0, CrossAxisAlignment::End));
-    /// ```
-    ///
-    /// [`with_flex_child`]: Flex::with_flex_child
     pub fn add_flex_child(&mut self, child: impl Widget, params: impl Into<FlexParams>) {
         let params = params.into();
         let child = if params.flex > 0.0 {
@@ -881,6 +859,24 @@ impl CrossAxisAlignment {
             CrossAxisAlignment::End => val,
             CrossAxisAlignment::Fill => 0.0,
         }
+    }
+}
+
+impl Data for Axis {
+    fn same(&self, other: &Self) -> bool {
+        self == other
+    }
+}
+
+impl Data for CrossAxisAlignment {
+    fn same(&self, other: &Self) -> bool {
+        self == other
+    }
+}
+
+impl Data for MainAxisAlignment {
+    fn same(&self, other: &Self) -> bool {
+        self == other
     }
 }
 

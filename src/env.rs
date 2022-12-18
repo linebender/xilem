@@ -52,38 +52,29 @@ struct EnvImpl {
 /// This lets you retrieve values of a given type. The parameter
 /// implements [`ValueType`]. For "expensive" types, this is a reference,
 /// so the type for a string is `Key<&str>`.
-///
-/// # Examples
-///
-/// ```
-///# use druid::{Key, Color, WindowDescription, AppLauncher, widget::Label};
-/// const IMPORTANT_LABEL_COLOR: Key<Color> = Key::new("org.linebender.example.important-label-color");
-///
-/// fn important_label() -> Label<()> {
-///     Label::new("Warning!").with_text_color(IMPORTANT_LABEL_COLOR)
-/// }
-///
-/// fn main() {
-///     let main_window = WindowDescription::new(important_label());
-///
-///     AppLauncher::with_window(main_window)
-///         .configure_env(|env, _state| {
-///             // The `Key` must be set before it is used.
-///             env.set(IMPORTANT_LABEL_COLOR, Color::rgb(1.0, 0.0, 0.0));
-///         });
-/// }
-/// ```
-///
-/// [`ValueType`]: trait.ValueType.html
-/// [`Env`]: struct.Env.html
-#[derive(Clone, Debug, PartialEq, Data)]
+#[derive(Debug, PartialEq)]
 pub struct Key<T> {
     key: &'static str,
     value_type: PhantomData<T>,
 }
 
+impl<T> Clone for Key<T> {
+    fn clone(&self) -> Self {
+        Self {
+            key: self.key.clone(),
+            value_type: self.value_type.clone(),
+        }
+    }
+}
+
+impl<T: 'static> Data for Key<T> {
+    fn same(&self, other: &Self) -> bool {
+        self.key == other.key
+    }
+}
+
 /// A dynamic type representing all values that can be stored in an environment.
-#[derive(Clone, Data)]
+#[derive(Clone)]
 #[allow(missing_docs)]
 // ANCHOR: value_type
 pub enum Value {
@@ -100,6 +91,27 @@ pub enum Value {
     RoundedRectRadii(RoundedRectRadii),
     Other(Arc<dyn Any + Send + Sync>),
 }
+
+impl Data for Value {
+    fn same(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::Point(l0), Self::Point(r0)) => l0 == r0,
+            (Self::Size(l0), Self::Size(r0)) => l0 == r0,
+            (Self::Rect(l0), Self::Rect(r0)) => l0 == r0,
+            (Self::Insets(l0), Self::Insets(r0)) => l0 == r0,
+            (Self::Color(l0), Self::Color(r0)) => l0 == r0,
+            (Self::Float(l0), Self::Float(r0)) => l0 == r0,
+            (Self::Bool(l0), Self::Bool(r0)) => l0 == r0,
+            (Self::UnsignedInt(l0), Self::UnsignedInt(r0)) => l0 == r0,
+            (Self::String(l0), Self::String(r0)) => l0 == r0,
+            (Self::Font(l0), Self::Font(r0)) => l0 == r0,
+            (Self::RoundedRectRadii(l0), Self::RoundedRectRadii(r0)) => l0 == r0,
+            (Self::Other(l0), Self::Other(r0)) => Arc::ptr_eq(&l0, &r0),
+            (_, _) => false,
+        }
+    }
+}
+
 // ANCHOR_END: value_type
 
 /// Either a concrete `T` or a [`Key<T>`] that can be resolved in the [`Env`].
@@ -195,7 +207,8 @@ impl Env {
     /// Set by the `debug_paint_layout()` method on [`WidgetExt`]'.
     ///
     /// [`WidgetExt`]: trait.WidgetExt.html
-    pub(crate) const DEBUG_PAINT: Key<bool> = Key::new("org.linebender.druid.built-in.debug-paint");
+    pub(crate) const DEBUG_PAINT: Key<bool> =
+        Key::new("org.linebender.masonry.built-in.debug-paint");
 
     /// State for whether or not to paint `WidgetId`s, for event debugging.
     ///
@@ -203,7 +216,7 @@ impl Env {
     ///
     /// [`WidgetExt`]: trait.WidgetExt.html
     pub(crate) const DEBUG_WIDGET_ID: Key<bool> =
-        Key::new("org.linebender.druid.built-in.debug-widget-id");
+        Key::new("org.linebender.masonry.built-in.debug-widget-id");
 
     /// A key used to tell widgets to print additional debug information.
     ///
@@ -216,17 +229,17 @@ impl Env {
     /// # Examples
     ///
     /// ```no_run
-    /// # use druid::Env;
+    /// # use masonry::Env;
     /// # let env = Env::empty();
     /// # let widget_id = 0;
-    /// # let my_rect = druid::Rect::ZERO;
+    /// # let my_rect = masonry::Rect::ZERO;
     /// if env.get(Env::DEBUG_WIDGET) {
     ///     eprintln!("widget {:?} bounds: {:?}", widget_id, my_rect);
     /// }
     /// ```
     ///
     /// [`WidgetExt::debug_widget`]: trait.WidgetExt.html#method.debug_widget
-    pub const DEBUG_WIDGET: Key<bool> = Key::new("org.linebender.druid.built-in.debug-widget");
+    pub const DEBUG_WIDGET: Key<bool> = Key::new("org.linebender.masonry.built-in.debug-widget");
 
     /// Gets a value from the environment, expecting it to be present.
     ///
@@ -366,8 +379,8 @@ impl<T> Key<T> {
     /// # Examples
     ///
     /// ```
-    /// use druid::Key;
-    /// use druid::piet::Color;
+    /// use masonry::Key;
+    /// use masonry::piet::Color;
     ///
     /// let float_key: Key<f64> = Key::new("org.linebender.example.a.very.good.float");
     /// let color_key: Key<Color> = Key::new("org.linebender.example.a.very.nice.color");
@@ -384,7 +397,7 @@ impl Key<()> {
     /// Create an untyped `Key` with the given string value.
     ///
     /// *WARNING:* This is not for general usage - it's only useful
-    /// for inspecting the contents of an [`Env`]  - this is expected to be
+    /// for inspecting the contents of an [`Env`] - this is expected to be
     /// used for debugging, loading, and manipulating themes.
     ///
     /// [`Env`]: struct.Env.html

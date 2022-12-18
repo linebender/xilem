@@ -58,7 +58,7 @@ pub struct TextComponent<T> {
     // the PaintCtx.
     /// A manual flag set by the parent to control drawing behaviour.
     ///
-    /// The parent should update this when handling [`LifeCycle::FocusChanged`].
+    /// The parent should update this when handling [`StatusChange::FocusChanged`].
     pub has_focus: bool,
 }
 

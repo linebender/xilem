@@ -36,7 +36,7 @@ pub struct Label {
 crate::declare_widget!(LabelMut, Label);
 
 /// Options for handling lines that are too wide for the label.
-#[derive(Debug, Clone, Copy, PartialEq, Data)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum LineBreaking {
     /// Lines are broken at word boundaries.
     WordWrap,
@@ -292,6 +292,12 @@ impl Widget for Label {
 
     fn get_debug_text(&self) -> Option<String> {
         Some(self.current_text.to_string())
+    }
+}
+
+impl Data for LineBreaking {
+    fn same(&self, other: &Self) -> bool {
+        self == other
     }
 }
 

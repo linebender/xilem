@@ -24,22 +24,14 @@ use crate::{
 const CURSOR_BLINK_DURATION: Duration = Duration::from_millis(500);
 const MAC_OR_LINUX: bool = cfg!(any(target_os = "macos", target_os = "linux"));
 
+// TODO - Implement formatters (TextBox where the text represents a value of some other type).
+
 // TODO
 #[allow(dead_code)]
 /// When we scroll after editing or movement, we show a little extra of the document.
 const SCROLL_TO_INSETS: Insets = Insets::uniform_xy(40.0, 0.0);
 
 /// A widget that allows user text input.
-///
-/// # Editing values
-///
-/// If the text you are editing represents a value of some other type, such
-/// as a number, you should use a [`ValueTextBox`] and an appropriate
-/// [`Formatter`]. You can create a [`ValueTextBox`] by passing the appropriate
-/// [`Formatter`] to [`TextBox::with_formatter`].
-///
-/// [`Formatter`]: crate::text::format::Formatter
-/// [`ValueTextBox`]: super::ValueTextBox
 pub struct TextBox {
     placeholder_text: ArcStr,
     placeholder_layout: TextLayout<ArcStr>,

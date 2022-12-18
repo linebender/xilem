@@ -16,8 +16,8 @@ pub struct WindowId(u64);
 /// This object is paramaterized with builder-style methods, eg:
 ///
 /// ```no_run
-/// #use masonry::WindowDescription;
-/// #let some_widget = todo!();
+/// # use masonry::WindowDescription;
+/// # let some_widget = masonry::widget::Label::new("hello");
 /// let main_window = WindowDescription::new(some_widget)
 ///     .title("My window")
 ///     .window_size((400.0, 400.0));
@@ -132,7 +132,7 @@ impl WindowDescription {
     /// This should be considered a request to the platform to set the minimum size of the window.
     /// The platform might increase the size a tiny bit due to DPI.
     ///
-    /// To set the window's initial drawing area size use [`window_size`].
+    /// To set the window's initial drawing area size use [`window_size`](Self::window_size).
     pub fn min_size(mut self, size: impl Into<Size>) -> Self {
         self.config = self.config.min_size(size);
         self
@@ -156,12 +156,8 @@ impl WindowDescription {
         self
     }
 
-    /// Set the initial window position in [display points], relative to the origin
-    /// of the [virtual screen].
-    ///
-    // TODO - links
-    /// [display points]: crate::Scale
-    /// [virtual screen]: crate::Screen
+    /// Set the initial window position in [display points](druid_shell::Scale), relative to the origin
+    /// of the [virtual screen](druid_shell::Screen).
     pub fn set_position(mut self, position: impl Into<Point>) -> Self {
         self.config = self.config.set_position(position.into());
         self

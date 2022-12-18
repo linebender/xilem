@@ -5,7 +5,7 @@
 //! Fork of Druid
 
 #![deny(
-    broken_intra_doc_links,
+    rustdoc::broken_intra_doc_links,
     unsafe_code,
     clippy::trivially_copy_pass_by_ref
 )]
@@ -18,9 +18,6 @@
     html_logo_url = "https://raw.githubusercontent.com/linebender/druid/screenshots/images/doc_logo.png"
 )]
 
-// Allows to use macros from druid_derive in this crate
-extern crate self as druid;
-pub use druid_derive::Lens;
 pub use druid_shell as shell;
 #[doc(inline)]
 pub use druid_shell::{kurbo, piet};
@@ -34,7 +31,7 @@ mod app_launcher;
 mod app_root;
 mod bloom;
 mod box_constraints;
-mod command;
+pub mod command;
 mod contexts;
 mod data;
 pub mod env;
@@ -55,7 +52,7 @@ pub mod debug_values;
 pub use action::Action;
 pub use app_delegate::{AppDelegate, DelegateCtx};
 pub use app_launcher::AppLauncher;
-pub use app_root::WindowRoot;
+pub use app_root::{AppRoot, WindowRoot};
 pub use box_constraints::BoxConstraints;
 pub use command::{Command, Notification, Selector, SingleUse, Target};
 pub use contexts::{EventCtx, LayoutCtx, LifeCycleCtx, PaintCtx, WidgetCtx};

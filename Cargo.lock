@@ -625,16 +625,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "druid-derive"
-version = "0.4.0"
-source = "git+https://github.com/linebender/druid?rev=7c08b326578aa2b25057f5f1af09f9a6b1f51da4#7c08b326578aa2b25057f5f1af09f9a6b1f51da4"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
 name = "druid-shell"
 version = "0.7.0"
 source = "git+https://github.com/linebender/druid?rev=7c08b326578aa2b25057f5f1af09f9a6b1f51da4#7c08b326578aa2b25057f5f1af09f9a6b1f51da4"
@@ -1650,7 +1640,6 @@ dependencies = [
  "assert_matches",
  "chrono",
  "console_error_panic_hook",
- "druid-derive",
  "druid-shell",
  "float-cmp 0.8.0",
  "fluent-bundle",
