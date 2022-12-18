@@ -1,3 +1,7 @@
+// This software is licensed under Apache License 2.0 and distributed on an
+// "as-is" basis without warranties of any kind. See the LICENSE file for
+// details.
+
 //! Helper functions for writing snapshot tests and comparing images.
 
 pub use druid_shell::{

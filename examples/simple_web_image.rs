@@ -1,4 +1,6 @@
-// Copyright 2020 The Druid Authors.
+// This software is licensed under Apache License 2.0 and distributed on an
+// "as-is" basis without warranties of any kind. See the LICENSE file for
+// details.
 
 //! This showcase demonstrates how to use the image widget and is
 //! propperties. You can change the parameters in the GUI to see how

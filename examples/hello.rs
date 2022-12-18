@@ -1,3 +1,7 @@
+// This software is licensed under Apache License 2.0 and distributed on an
+// "as-is" basis without warranties of any kind. See the LICENSE file for
+// details.
+
 //! This is a very small example of how to setup a druid application.
 //! It does the almost bare minimum while still being useful.
 

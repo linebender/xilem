@@ -1,4 +1,6 @@
-// Copyright 2019 The Druid Authors.
+// This software is licensed under Apache License 2.0 and distributed on an
+// "as-is" basis without warranties of any kind. See the LICENSE file for
+// details.
 
 //! An example of a blocking function running in another thread. We give
 //! the other thread some data and then we also pass some data back
