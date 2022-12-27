@@ -193,7 +193,7 @@ impl TestHarness {
                 window,
                 command_queue: VecDeque::new(),
                 action_queue: VecDeque::new(),
-                debug_logger: DebugLogger::new(true),
+                debug_logger: DebugLogger::new(false),
             },
             mouse_state,
             window_size,
