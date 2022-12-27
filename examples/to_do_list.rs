@@ -4,14 +4,16 @@
 
 #![windows_subsystem = "windows"]
 
-use masonry::widget::prelude::*;
+use masonry::widget::{prelude::*, TextBox};
 use masonry::widget::{Button, Flex, Label, Portal, WidgetMut};
 use masonry::Action;
 use masonry::{AppDelegate, AppLauncher, DelegateCtx, WindowDescription, WindowId};
 
 const VERTICAL_WIDGET_SPACING: f64 = 20.0;
 
-struct Delegate;
+struct Delegate {
+    next_task: String,
+}
 
 impl AppDelegate for Delegate {
     fn on_action(
@@ -26,35 +28,37 @@ impl AppDelegate for Delegate {
             Action::ButtonPressed => {
                 let mut root: WidgetMut<Portal<Flex>> = ctx.get_root();
                 let mut flex = root.child_mut();
-                flex.add_child(Label::new("Hello"));
+                flex.add_child(Label::new(self.next_task.clone()));
             }
-            Action::TextChanged(_) => todo!(),
+            Action::TextChanged(new_text) => {
+                self.next_task = new_text.clone();
+            }
             _ => {}
         }
     }
 }
 
 fn main() {
-    // describe the main window
-    let main_window = WindowDescription::new(build_root_widget())
+    // The main button with some space below, all inside a scrollable area.
+    let root_widget = Portal::new(
+        Flex::column()
+            .with_child(
+                Flex::row()
+                    .with_child(TextBox::new(""))
+                    .with_child(Button::new("Add task")),
+            )
+            .with_spacer(VERTICAL_WIDGET_SPACING),
+    );
+
+    let main_window = WindowDescription::new(root_widget)
         .title("To-do list")
         .window_size((400.0, 400.0));
 
-    // start the application. Here we pass in the application state.
     AppLauncher::with_window(main_window)
-        .with_delegate(Delegate)
+        .with_delegate(Delegate {
+            next_task: String::new(),
+        })
         .log_to_console()
         .launch()
         .expect("Failed to launch application");
-}
-
-fn build_root_widget() -> impl Widget {
-    let button = Button::new("Add task");
-
-    // arrange the two widgets vertically, with some padding
-    Portal::new(
-        Flex::column()
-            .with_child(button)
-            .with_spacer(VERTICAL_WIDGET_SPACING),
-    )
 }
