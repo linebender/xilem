@@ -24,8 +24,7 @@ pub struct PromiseButton {
     value: u32,
     text_layout: TextLayout<ArcStr>,
     line_break_mode: LineBreaking,
-    // TODO - PromiseToken dummy constructor?
-    promise_token: Option<PromiseToken<u32>>,
+    promise_token: PromiseToken<u32>,
 
     default_text_color: KeyOrValue<Color>,
 }
@@ -54,7 +53,7 @@ impl PromiseButton {
             value: 0,
             text_layout,
             line_break_mode: LineBreaking::Overflow,
-            promise_token: None,
+            promise_token: PromiseToken::empty(),
             default_text_color: masonry::theme::TEXT_COLOR.into(),
         }
     }
@@ -68,12 +67,11 @@ impl Widget for PromiseButton {
         match event {
             Event::MouseUp(_event) => {
                 let value = self.value;
-                let token = ctx.compute_in_background(move |_| {
+                self.promise_token = ctx.compute_in_background(move |_| {
                     // "sleep" stands in for a long computation, a download, etc.
                     thread::sleep(time::Duration::from_millis(2000));
                     value + 1
                 });
-                self.promise_token = Some(token);
                 self.text_layout.set_text("Loading ...".into());
                 ctx.request_layout();
             }
@@ -88,13 +86,11 @@ impl Widget for PromiseButton {
                 }
             }
             Event::PromiseResult(result) => {
-                if let Some(promise_token) = self.promise_token {
-                    if let Some(new_value) = result.try_get(promise_token) {
-                        self.text_layout
-                            .set_text(format!("New value: {}", new_value).into());
-                        self.value = new_value;
-                        ctx.request_layout();
-                    }
+                if let Some(new_value) = result.try_get(self.promise_token) {
+                    self.text_layout
+                        .set_text(format!("New value: {}", new_value).into());
+                    self.value = new_value;
+                    ctx.request_layout();
                 }
             }
             _ => {}

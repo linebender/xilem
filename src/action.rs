@@ -8,8 +8,7 @@ use std::sync::Arc;
 
 use crate::{WidgetId, WindowId};
 
-// TODO - Rename
-// TODO - Figure out what these actions should be
+// TODO - Refactor - See issue #1
 
 // TODO - TextCursor changed, ImeChanged, EnterKey, MouseEnter
 #[non_exhaustive]

@@ -15,9 +15,6 @@ use crate::{
     PaintCtx, Point, Rect, RenderContext, Size, StatusChange, Widget, WidgetId, WidgetPod,
 };
 
-// TODO
-// - Factorize builder/setter code
-
 /// A container with either horizontal or vertical layout.
 ///
 /// This widget is the foundation of most layouts, and is highly configurable.
@@ -183,7 +180,7 @@ impl Flex {
             }
         } else {
             // TODO
-            tracing::warn!("Flex value should be > 0.0. To add a non-flex child use the add_child or with_child methods.\nSee the docs for masonry::widget::Flex formore information");
+            tracing::warn!("Flex value should be > 0.0. To add a non-flex child use the add_child or with_child methods.\nSee the docs for masonry::widget::Flex for more information");
             Child::Fixed {
                 widget: WidgetPod::new(Box::new(child)),
                 alignment: None,
@@ -242,8 +239,6 @@ impl Flex {
 // --- Mutate live Flex - WidgetMut ---
 
 impl<'a, 'b> FlexMut<'a, 'b> {
-    // --- Mutate live Flex ---
-
     /// Set the childrens' [`CrossAxisAlignment`].
     ///
     /// [`CrossAxisAlignment`]: enum.CrossAxisAlignment.html
@@ -308,7 +303,7 @@ impl<'a, 'b> FlexMut<'a, 'b> {
             }
         } else {
             // TODO
-            tracing::warn!("Flex value should be > 0.0. To add a non-flex child use the add_child or with_child methods.\nSee the docs for masonry::widget::Flex formore information");
+            tracing::warn!("Flex value should be > 0.0. To add a non-flex child use the add_child or with_child methods.\nSee the docs for masonry::widget::Flex for more information");
             Child::Fixed {
                 widget: WidgetPod::new(Box::new(child)),
                 alignment: None,
@@ -400,7 +395,7 @@ impl<'a, 'b> FlexMut<'a, 'b> {
             }
         } else {
             // TODO
-            tracing::warn!("Flex value should be > 0.0. To add a non-flex child use the add_child or with_child methods.\nSee the docs for masonry::widget::Flex formore information");
+            tracing::warn!("Flex value should be > 0.0. To add a non-flex child use the add_child or with_child methods.\nSee the docs for masonry::widget::Flex for more information");
             Child::Fixed {
                 widget: WidgetPod::new(Box::new(child)),
                 alignment: None,

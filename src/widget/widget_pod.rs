@@ -345,7 +345,7 @@ impl<W: Widget + 'static> WidgetPod<W> {
 impl<W: Widget> WidgetPod<W> {
     /// --- ON_EVENT ---
 
-    // TODO - Some implicit invariants:
+    // TODO #5 - Some implicit invariants:
     // - If a Widget gets a keyboard event or an ImeStateChange, then
     // focus is on it, its child or its parent.
     // - If a Widget has focus, then none of its parents is hidden
@@ -360,7 +360,7 @@ impl<W: Widget> WidgetPod<W> {
     /// [`event`]: trait.Widget.html#tymethod.event
     pub fn on_event(&mut self, parent_ctx: &mut EventCtx, event: &Event, env: &Env) {
         let _span = self.inner.make_trace_span().entered();
-        // TODO
+        // TODO #11
         parent_ctx
             .global_state
             .debug_logger
@@ -646,7 +646,7 @@ impl<W: Widget> WidgetPod<W> {
 
     // --- LIFECYCLE ---
 
-    // TODO - Some implicit invariants:
+    // TODO #5 - Some implicit invariants:
     // - A widget only receives BuildFocusChain if none of its parents are hidden.
 
     /// Propagate a [`LifeCycle`] event.
@@ -655,7 +655,7 @@ impl<W: Widget> WidgetPod<W> {
     pub fn lifecycle(&mut self, parent_ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
         let _span = self.inner.make_trace_span().entered();
 
-        // TODO
+        // TODO #11
         parent_ctx
             .global_state
             .debug_logger
@@ -909,7 +909,7 @@ impl<W: Widget> WidgetPod<W> {
     pub fn layout(&mut self, parent_ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
         let _span = self.inner.make_trace_span().entered();
 
-        // TODO
+        // TODO #11
         parent_ctx
             .global_state
             .debug_logger
@@ -999,6 +999,7 @@ impl<W: Widget> WidgetPod<W> {
         // - Panic: too harsh?
         // Also, we need to avoid spurious crashes when we initialize the app and the
         // size is (0,0)
+        // See issue #4
 
         parent_ctx.widget_state.merge_up(&mut self.state);
         self.state.size = new_size;
@@ -1088,8 +1089,7 @@ impl<W: Widget> WidgetPod<W> {
     }
 
     // TODO - remove
-    // TODO - fix doc: paint rect, not layout rect
-    /// Paint the widget, even if its layout rect is outside of the currently
+    /// Paint the widget, even if its paint rect is outside of the currently
     /// visible region.
     pub fn paint_always(&mut self, parent_ctx: &mut PaintCtx, env: &Env) {
         self.paint_impl(parent_ctx, env, true)

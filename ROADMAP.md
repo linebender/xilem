@@ -70,9 +70,6 @@
 
 - [ ] Brainstorm names for AppDelegate, Harness methods, Action, ExtEvent
 
-- [ ] Port Panoramix
-
-- [ ] Add WidgetBuilder trait
 
 - [ ] Move debug logger to use tracing infrastructure
 
@@ -82,16 +79,10 @@
 
 - [ ] Remove Data trait
 
-- [ ] Switch module file conventions (foobar/mod.rs -> _foobar.rs)
 
 - [ ] Handle reques_layout-in-layout corner case
 
 - [ ] Add logo
-
-- [ ] Add dev shortcuts:
- - [ ] To print Widget tree
- - [ ] To print current focused/active Widget
- - [ ] To display invalidation rect
 
 - [ ] Refactor WidgetState
  - [ ] Add WidgetTmpState
@@ -110,13 +101,40 @@
  - Ideally, should be a single function (?)
  - Probably unify on_event, on_command, on_action
 
+- [ ] Port Panoramix
+- [ ] Add WidgetBuilder trait
+- [ ] Switch module file conventions (foobar/mod.rs -> _foobar.rs)
+- [ ] Add dev shortcuts:
+ - [ ] To print Widget tree
+ - [ ] To print current focused/active Widget
+ - [ ] To display invalidation rect
+
 - [ ] Trait-ify druid-shell
  - [ ] ??? Start at the bottom?
+
+- [ ] druid-shell
+ - [ ] Rename WinHandler methods
+  - size -> resize
+  - scale -> rescale
+  - command -> select_menu
+  - save_as -> save_dialog_res
+  - open_file -> open_dialog_res
+  - timer  -> timer_complete
 
 - [ ] Add replay mode
  - [ ] Record platform events
  - [ ] Record timers
  - [ ] Add way to rr tests
+
+- [ ] Add ability to select rectangular region, get a list of Widget in return or something.
+
+- [ ] Add "click all visible buttons" method to help test examples.
+
+- [ ] Switch to ECS
+- [ ] Remove WidgetId::reserved, move WidgetId::new
+- [ ] Drag 'n Drop
+
+
 
 - [ ] Add fuzzing
  - [ ] Check Druid invariants
@@ -133,15 +151,6 @@
  - [ ] Huge list
  - [ ] Huge list with editable/focusable boxes
  - [ ] ???
-
-- [ ] druid-shell
- - [ ] Rename WinHandler methods
-  - size -> resize
-  - scale -> rescale
-  - command -> select_menu
-  - save_as -> save_dialog_res
-  - open_file -> open_dialog_res
-  - timer  -> timer_complete
 
 - [ ] Refactor Command infrastructure
  - [ ] Broadcast (used multiple times)
@@ -164,14 +173,6 @@
 
 - [ ] Merge WidgetMut and Ctx lifetimes
  - Note: probably requires better language support for implicit lifetime bounds
-
-- [ ] Add ability to select rectangular region, get a list of Widget in return or something.
-
-- [ ] Add "click all visible buttons" method to help test examples.
-
-- [ ] Switch to ECS
-- [ ] Remove WidgetId::reserved, move WidgetId::new
-- [ ] Drag 'n Drop
 
 ## Tests to write
 

@@ -14,7 +14,8 @@ use std::ops::DerefMut;
 use std::rc::Rc;
 
 use druid_shell::text::InputHandler;
-// TODO - rename Application to AppHandle in druid-shell
+// TODO - rename Application to AppHandle in glazier
+// See https://github.com/linebender/glazier/issues/44
 use druid_shell::{Application as AppHandle, WindowHandle};
 use druid_shell::{
     Cursor, FileDialogToken, FileInfo, Region, TextFieldToken, TimerToken, WindowBuilder,
@@ -49,7 +50,7 @@ pub type ImeUpdateFn = dyn FnOnce(druid_shell::text::Event);
 
 // TODO - Add AppRootEvent type
 
-// TODO - Explain and document re-entrancy and when locks should be used
+// TODO - Explain and document re-entrancy and when locks should be used - See issue #16
 
 // TODO - Delegate callbacks are shared between AppRoot and AppRootInner methods
 // This muddles what part of the code has the responsibility of maintaining invariants

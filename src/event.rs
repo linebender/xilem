@@ -8,14 +8,9 @@ use druid_shell::{Clipboard, KeyEvent, TimerToken};
 
 use crate::kurbo::{Rect, Size};
 use crate::mouse::MouseEvent;
-// TODO
+// TODO - See issue #14
 use crate::promise::PromiseResult;
 use crate::{Command, Notification, WidgetId};
-
-// TODO
-// An important category is events plumbed from the platform windowing
-// system, which includes mouse and keyboard events, but also (in the
-// future) status changes such as window focus changes.
 
 /// An event, propagated downwards during event flow.
 ///
@@ -34,7 +29,7 @@ use crate::{Command, Notification, WidgetId};
 ///
 /// This enum is expected to grow considerably, as there are many, many
 /// different kinds of events that are relevant in a GUI.
-// TODO - Add tutorial about event flow
+// TODO - Add tutorial about event flow - See issue #5
 // TODO - Normalize variant decriptions
 // TODO - Migrate bulk of descriptions to other types
 #[non_exhaustive]
@@ -397,7 +392,7 @@ impl Event {
 }
 
 impl LifeCycle {
-    // TODO - link this to documentation of stashed widgets
+    // TODO - link this to documentation of stashed widgets - See issue #9
     /// Whether this event should be sent to widgets which are currently not visible and not
     /// accessible.
     ///

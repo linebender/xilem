@@ -50,6 +50,7 @@ image-all = ["svg", "png", "jpeg", "jpeg_rayon", "gif", "bmp", "ico", "tiff", "w
 [dependencies]
 druid-shell = { version = "0.7.0", default-features = false, git = "https://github.com/linebender/druid", rev = "7c08b326578aa2b25057f5f1af09f9a6b1f51da4" }
 
+# TODO - remove unused dependencies - See #10
 tracing = "0.1.29"
 tracing-subscriber = { version = "0.2.15", features = ["fmt", "ansi"], default-features = false }
 fluent-bundle = "0.15.1"
@@ -61,16 +62,14 @@ xi-unicode = "0.3.0"
 fnv = "1.0.7"
 instant = { version = "0.1.6", features = ["wasm-bindgen"] }
 smallvec = "1.6.1"
+reqwest = { version = "0.11.5", features = ["blocking"] }
 
 # Optional dependencies
 chrono = { version = "0.4.19", optional = true }
 im = { version = "15.0.0", optional = true }
 usvg = { version = "0.14.1", optional = true }
 
-# TODO - Probably should make reqwest optional, and check for alternatives
-reqwest = { version = "0.11.5", features = ["blocking"] }
-
-# TODO - make most of serde a dev dependency
+# TODO - make serde a dev dependency
 serde = { version = "1.0.133", features = ["derive"] }
 serde_json = "1.0.74"
 image = "0.24.0"

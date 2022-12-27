@@ -6,8 +6,8 @@
 
 // TODO - Improve the ergonomics of widget layout. The Align widget is a bandaid
 // that has several problem; in particular, the fact that Align will pass "loosened"
-// size constraints to its child means that "aligning" a widget may actually changed
-// its computed size.
+// size constraints to its child means that "aligning" a widget may actually change
+// its computed size. See issue #3.
 
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace, trace_span, Span};

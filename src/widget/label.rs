@@ -217,6 +217,7 @@ impl Widget for Label {
                 if let Some(_link) = self.text_layout.link_for_pos(pos) {
                     todo!();
                     //ctx.submit_command(link.command.clone());
+                    // See issue #21
                 }
             }
             Event::MouseMove(event) => {

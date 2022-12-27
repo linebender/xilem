@@ -40,7 +40,7 @@ impl<T: Any + Send> PromiseToken<T> {
         PromiseToken(promise_token_id, std::marker::PhantomData)
     }
 
-    // TODO - remove; make it possible to get token when constructin widget.
+    // TODO - remove; make it possible to get token when constructing widget.
     /// Returns a promise that will never be resolved.
     pub fn empty() -> PromiseToken<T> {
         Self::new()

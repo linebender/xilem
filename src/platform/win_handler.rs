@@ -137,7 +137,7 @@ impl WinHandler for MasonryWinHandler {
     }
 
     fn mouse_down(&mut self, event: &MouseEvent) {
-        // TODO: double-click detection (or is this done in druid-shell?)
+        // Note that double-click detection is done in druid-shell.
         let event = Event::MouseDown(event.clone().into());
         self.app_state.handle_event(event, self.window_id);
     }

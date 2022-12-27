@@ -40,7 +40,7 @@ use crate::{
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
 pub struct WidgetId(NonZeroU64);
 
-// TODO - Add tutorial: implementing a widget
+// TODO - Add tutorial: implementing a widget - See issue #5
 /// The trait implemented by all widgets.
 ///
 /// For details on how to implement this trait, see tutorial **(TODO)**

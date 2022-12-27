@@ -69,7 +69,7 @@ pub(crate) struct GlobalPassCtx<'a> {
 /// requires a later pass (for instance, if your widget has a `set_color` method),
 /// you will need to signal that change in the pass (eg `requrest_paint`).
 ///
-// TODO add tutorial
+// TODO add tutorial - See issue #5
 pub struct WidgetCtx<'a, 'b> {
     pub(crate) global_state: &'a mut GlobalPassCtx<'b>,
     pub(crate) widget_state: &'a mut WidgetState,
@@ -242,7 +242,7 @@ impl_context_method!(
         /// doing so as a mistake, and panics if debug assertions are on.
         ///
         /// This tells the framework that a child was deliberately skipped.
-        // TODO - see event flow tutorial
+        // TODO - see event flow tutorial - See issue #5
         pub fn skip_child(&self, child: &mut WidgetPod<impl Widget>) {
             child.mark_as_visited();
         }
@@ -657,10 +657,9 @@ impl_context_method!(
         ///
         /// Once the function returns, an [`Event::PromiseResult`](crate::Event::PromiseResult)
         /// is emitted with the return value.
-        // TODO - should take FnOnce.
         pub fn compute_in_background<T: Any + Send>(
             &mut self,
-            background_task: impl Fn(ExtEventSink) -> T + Send + 'static,
+            background_task: impl FnOnce(ExtEventSink) -> T + Send + 'static,
         ) -> PromiseToken<T> {
             self.check_init("compute_in_background");
 
@@ -881,7 +880,7 @@ impl LifeCycleCtx<'_, '_> {
     ///
     /// In general, you should not need to call this method; it is handled by
     /// the `WidgetPod`.
-    // TODO
+    // TODO - See issue #9
     pub(crate) fn register_child(&mut self, child_id: WidgetId) {
         trace!("register_child id={:?}", child_id);
         self.widget_state.children.add(&child_id);
@@ -911,7 +910,7 @@ impl LifeCycleCtx<'_, '_> {
         self.widget_state.text_registrations.push(registration);
     }
 
-    // TODO - remove
+    // TODO - remove - See issue #15
     /// Register this widget as a portal.
     ///
     /// This should only be used by scroll areas.

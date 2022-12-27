@@ -59,7 +59,7 @@ pub struct Selector<T = ()>(SelectorSymbol, PhantomData<T>);
 ///
 /// assert_eq!(command.get(selector), &vec![1, 3, 10, 12]);
 /// ```
-// TODO - The [`AppDelegate`](crate::AppDelegate) can send commands through[`DelegateCtx::submit_command`](crate::DelegateCtx::submit_command)
+// TODO - The [`AppDelegate`](crate::AppDelegate) can send commands through[`DelegateCtx::submit_command`](crate::DelegateCtx::submit_command) - See issue #17
 #[derive(Debug, Clone)]
 pub struct Command {
     symbol: SelectorSymbol,
@@ -115,7 +115,7 @@ pub struct Notification {
 /// // subsequent calls will return `None`
 /// assert!(payload.take().is_none());
 /// ```
-// TODO replace
+// TODO replace - See issue #1
 pub struct SingleUse<T>(Mutex<Option<T>>);
 
 /// Our queue type

@@ -22,6 +22,7 @@ pub struct DelegateCtx<'a, 'b> {
     pub(crate) ext_event_queue: &'a ExtEventQueue,
     // FIXME - Ideally, we'd like to get a hashmap of all root widgets,
     // but that creates "aliasing mutable references" problems
+    // See issue #17
     pub(crate) main_root_widget: WidgetMut<'a, 'b, Box<dyn Widget>>,
     //pub(crate) active_windows: &'a mut HashMap<WindowId, WindowRoot>,
 }
@@ -49,7 +50,7 @@ impl<'a, 'b> DelegateCtx<'a, 'b> {
         );
     }
 
-    // TODO - Use static typing to guarantee proper return type
+    // TODO - Use static typing to guarantee proper return type - See issue #17
     /// Try to return a [`WidgetMut`] to the root widget.
     ///
     /// Returns null if the returned type doesn't match the root widget type.
@@ -67,7 +68,6 @@ impl<'a, 'b> DelegateCtx<'a, 'b> {
     }
 }
 
-// TODO - remove all other methods, only keep on_event | on_command ?
 /// A type that provides hooks for handling top-level events.
 ///
 /// The `AppDelegate` is a trait that is allowed to handle and filter events before

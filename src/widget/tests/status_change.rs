@@ -2,8 +2,7 @@
 // "as-is" basis without warranties of any kind. See the LICENSE file for
 // details.
 
-// TODO - change import
-use shell::MouseButton;
+use druid_shell::MouseButton;
 
 use crate::testing::{
     widget_ids, ModularWidget, Record, Recording, TestHarness, TestWidgetExt as _,

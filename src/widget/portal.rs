@@ -17,6 +17,7 @@ use crate::{
     RenderContext, StatusChange, Widget, WidgetPod,
 };
 
+// TODO - refactor - see issue #15
 // TODO - rename "Portal" to "ScrollPortal"?
 // Conceptually, a Portal is a Widget giving a restricted view of a child widget
 // Imagine a very large widget, and a rect that represents the part of the widget we see

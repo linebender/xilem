@@ -5,7 +5,7 @@
 // On Windows platform, don't show a console when opening the app.
 #![windows_subsystem = "windows"]
 
-// TODO - rework imports
+// TODO - rework imports - See #14
 use masonry::widget::prelude::*;
 use masonry::widget::{Button, Flex, TextBox};
 use masonry::{Action, AppDelegate, AppLauncher, DelegateCtx, WindowDescription, WindowId};

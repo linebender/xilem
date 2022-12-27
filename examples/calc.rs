@@ -53,7 +53,6 @@ impl CalcState {
     }
 
     fn display(&mut self) {
-        // TODO: change hyphen-minus to actual minus
         self.value = self.operand.to_string();
     }
 

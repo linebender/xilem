@@ -14,7 +14,7 @@ use crate::text::TextFieldRegistration;
 use crate::widget::{CursorChange, FocusChange};
 use crate::WidgetId;
 
-// FIXME - Make a note documenting this: the only way to get a &mut WidgetState should be in a pass.
+// FIXME #5 - Make a note documenting this: the only way to get a &mut WidgetState should be in a pass.
 // A pass should reborrow the parent widget state (to avoid crossing wires) and call merge_up at
 // the end so that invalidations are always bubbled up.
 // Widgets with methods that require invalidation (eg Label::set_text) should take a
@@ -140,7 +140,7 @@ pub struct WidgetState {
     pub(crate) widget_name: &'static str,
 }
 
-// FIXME - This is a hack to have a simple Clone impl for WidgetState
+// This is a hack to have a simple Clone impl for WidgetState
 #[derive(Debug)]
 pub(crate) struct VisitBool(pub AtomicBool);
 

@@ -8,7 +8,7 @@
 // Repository: https://github.com/mitsuhiko/insta
 // File this is based on: https://github.com/mitsuhiko/insta/blob/660f2b00e3092de50d4f7a59f28336d8a9da50b7/src/env.rs
 
-// TODO - clean this all up
+// TODO - clean this all up - See #18
 
 use std::collections::BTreeMap;
 use std::env;

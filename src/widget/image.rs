@@ -266,7 +266,7 @@ mod tests {
         };
 
         // TODO - write comparison function that creates rich diff
-        // and saves it in /tmp folder
+        // and saves it in /tmp folder - See issue #18
         // We don't use assert_eq because we don't want rich assert
         assert!(render_1 == render_2);
     }
