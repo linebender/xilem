@@ -13,7 +13,6 @@ fn notifications() {
 
     let sender = ModularWidget::new(()).event_fn(|_, ctx, event, _| {
         if matches!(event, Event::WindowConnected) {
-            ctx.init();
             ctx.submit_notification(NOTIFICATION);
         }
     });

@@ -150,7 +150,6 @@ fn update_hot_from_layout() {
 
     let collapsable_box = ModularWidget::new(false)
         .event_fn(move |collapsed, ctx, event, _env| {
-            ctx.init();
             if let Event::Command(command) = event {
                 if command.is(COLLAPSE) {
                     *collapsed = true;

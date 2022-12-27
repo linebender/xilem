@@ -388,8 +388,6 @@ impl TextBox {
 
 impl Widget for TextBox {
     fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, env: &Env) {
-        ctx.init();
-
         match event {
             Event::Notification(cmd) => match cmd {
                 cmd if cmd.is(TextComponent::SCROLL_TO) => {
@@ -525,8 +523,6 @@ impl Widget for TextBox {
     }
 
     fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange, _env: &Env) {
-        ctx.init();
-
         match event {
             StatusChange::FocusChanged(true) => {
                 // TODO
@@ -576,8 +572,6 @@ impl Widget for TextBox {
     }
 
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
-        ctx.init();
-
         match event {
             LifeCycle::WidgetAdded => {
                 ctx.register_text_input(self.inner.as_ref().child().input_handler());
@@ -592,8 +586,6 @@ impl Widget for TextBox {
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
-        ctx.init();
-
         if !self.inner.as_ref().child().can_write() {
             tracing::warn!("Widget::layout called with outstanding IME lock.");
         }
@@ -627,8 +619,6 @@ impl Widget for TextBox {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, env: &Env) {
-        ctx.init();
-
         if !self.inner.as_ref().child().can_read() {
             tracing::warn!("Widget::paint called with outstanding IME lock, skipping");
             return;

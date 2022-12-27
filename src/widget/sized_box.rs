@@ -298,7 +298,6 @@ impl SizedBox {
 
 impl Widget for SizedBox {
     fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, env: &Env) {
-        ctx.init();
         if let Some(ref mut child) = self.child {
             child.on_event(ctx, event, env);
         }
@@ -307,7 +306,6 @@ impl Widget for SizedBox {
     fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange, _env: &Env) {}
 
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
-        ctx.init();
         if let Some(ref mut child) = self.child {
             child.lifecycle(ctx, event, env)
         }
@@ -320,7 +318,6 @@ impl Widget for SizedBox {
             None => 0.0,
         };
 
-        ctx.init();
         let child_bc = self.child_constraints(bc);
         let child_bc = child_bc.shrink((2.0 * border_width, 2.0 * border_width));
         let origin = Point::new(border_width, border_width);
@@ -354,8 +351,6 @@ impl Widget for SizedBox {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, env: &Env) {
-        ctx.init();
-
         let corner_radius = self.corner_radius.resolve(env);
 
         if let Some(background) = self.background.as_mut() {

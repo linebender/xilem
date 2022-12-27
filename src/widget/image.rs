@@ -109,9 +109,7 @@ impl Widget for Image {
 
     fn lifecycle(&mut self, _ctx: &mut LifeCycleCtx, _event: &LifeCycle, _env: &Env) {}
 
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, _env: &Env) -> Size {
-        ctx.init();
-
+    fn layout(&mut self, _ctx: &mut LayoutCtx, bc: &BoxConstraints, _env: &Env) -> Size {
         // If either the width or height is constrained calculate a value so that the image fits
         // in the size exactly. If it is unconstrained by both width and height take the size of
         // the image.
@@ -131,8 +129,6 @@ impl Widget for Image {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, _env: &Env) {
-        ctx.init();
-
         let offset_matrix = self.fill.affine_to_fill(ctx.size(), self.image_data.size());
 
         // The ImageData's to_piet function does not clip to the image's size

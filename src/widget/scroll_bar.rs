@@ -130,8 +130,6 @@ impl ScrollBarMut<'_, '_> {
 
 impl Widget for ScrollBar {
     fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, env: &Env) {
-        ctx.init();
-
         match event {
             Event::MouseDown(event) => {
                 ctx.set_active(true);
@@ -177,17 +175,11 @@ impl Widget for ScrollBar {
         }
     }
 
-    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange, env: &Env) {
-        ctx.init();
-    }
+    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange, env: &Env) {}
 
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
-        ctx.init();
-    }
+    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {}
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
-        ctx.init();
-
         // TODO - handle resize
 
         let scrollbar_width = env.get(theme::SCROLLBAR_WIDTH);
@@ -201,8 +193,6 @@ impl Widget for ScrollBar {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, env: &Env) {
-        ctx.init();
-
         let brush = ctx.render_ctx.solid_brush(env.get(theme::SCROLLBAR_COLOR));
         let border_brush = ctx
             .render_ctx

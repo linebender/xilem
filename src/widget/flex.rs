@@ -481,7 +481,6 @@ impl<'a, 'b> FlexMut<'a, 'b> {
 
 impl Widget for Flex {
     fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, env: &Env) {
-        ctx.init();
         for child in self.children.iter_mut().filter_map(|x| x.widget_mut()) {
             child.on_event(ctx, event, env);
         }
@@ -490,14 +489,12 @@ impl Widget for Flex {
     fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange, _env: &Env) {}
 
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
-        ctx.init();
         for child in self.children.iter_mut().filter_map(|x| x.widget_mut()) {
             child.lifecycle(ctx, event, env);
         }
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
-        ctx.init();
         // we loosen our constraints when passing to children.
         let loosened_bc = bc.loosen();
 
@@ -697,8 +694,6 @@ impl Widget for Flex {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, env: &Env) {
-        ctx.init();
-
         for child in self.children.iter_mut().filter_map(|x| x.widget_mut()) {
             child.paint(ctx, env);
         }

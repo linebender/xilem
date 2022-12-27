@@ -73,7 +73,6 @@ impl<'a, 'b> ButtonMut<'a, 'b> {
 
 impl Widget for Button {
     fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, _env: &Env) {
-        ctx.init();
         match event {
             Event::MouseDown(_) => {
                 if !ctx.is_disabled() {
@@ -95,18 +94,14 @@ impl Widget for Button {
     }
 
     fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, _event: &StatusChange, _env: &Env) {
-        ctx.init();
         ctx.request_paint();
     }
 
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
-        ctx.init();
         self.label.lifecycle(ctx, event, env)
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
-        ctx.init();
-
         let baseline = self.label.baseline_offset();
         ctx.set_baseline_offset(baseline + LABEL_INSETS.y1);
 
@@ -132,7 +127,6 @@ impl Widget for Button {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, env: &Env) {
-        ctx.init();
         let is_active = ctx.is_active() && !ctx.is_disabled();
         let is_hot = ctx.is_hot();
         let size = ctx.size();

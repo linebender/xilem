@@ -139,7 +139,6 @@ impl CalcButton {
 
 impl Widget for CalcButton {
     fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, env: &Env) {
-        ctx.init();
         match event {
             Event::MouseDown(_) => {
                 if !ctx.is_disabled() {
@@ -166,8 +165,6 @@ impl Widget for CalcButton {
     }
 
     fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange, _env: &Env) {
-        ctx.init();
-
         match event {
             StatusChange::HotChanged(true) => {
                 ctx.get_mut(&mut self.inner).set_border(Color::WHITE, 3.0);
@@ -187,8 +184,6 @@ impl Widget for CalcButton {
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
-        ctx.init();
-
         let size = self.inner.layout(ctx, bc, env);
         ctx.place_child(&mut self.inner, Point::ORIGIN, env);
 

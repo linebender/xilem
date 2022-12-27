@@ -1071,7 +1071,6 @@ impl WindowRoot {
             let mut ctx = EventCtx {
                 global_state: &mut global_state,
                 widget_state: &mut widget_state,
-                is_init: false,
                 notifications: &mut notifications,
                 is_handled: false,
                 is_root: true,
@@ -1159,7 +1158,6 @@ impl WindowRoot {
         let mut ctx = LifeCycleCtx {
             global_state: &mut global_state,
             widget_state: &mut widget_state,
-            is_init: false,
         };
 
         {
@@ -1286,7 +1284,6 @@ impl WindowRoot {
         let mut layout_ctx = LayoutCtx {
             global_state: &mut global_state,
             widget_state: &mut widget_state,
-            is_init: false,
             mouse_pos: self.last_mouse_pos,
         };
         let bc = match self.size_policy {
@@ -1356,7 +1353,6 @@ impl WindowRoot {
             render_ctx: piet,
             global_state: &mut global_state,
             widget_state: &widget_state,
-            is_init: false,
             z_ops: Vec::new(),
             region: invalid.clone(),
             depth: 0,

@@ -240,8 +240,6 @@ impl<'a, 'b, W: Widget> PortalMut<'a, 'b, W> {
 
 impl<W: Widget> Widget for Portal<W> {
     fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, env: &Env) {
-        ctx.init();
-
         let portal_size = ctx.size();
         let content_size = self.child.layout_rect().size();
 
@@ -280,8 +278,6 @@ impl<W: Widget> Widget for Portal<W> {
     fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange, _env: &Env) {}
 
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
-        ctx.init();
-
         match event {
             LifeCycle::WidgetAdded => {
                 ctx.register_as_portal();
@@ -297,8 +293,6 @@ impl<W: Widget> Widget for Portal<W> {
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
-        ctx.init();
-
         let min_child_size = if self.must_fill { bc.min() } else { Size::ZERO };
         let mut max_child_size = bc.max();
         if !self.constrain_horizontal {
@@ -354,8 +348,6 @@ impl<W: Widget> Widget for Portal<W> {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, env: &Env) {
-        ctx.init();
-
         // TODO - have ctx.clip also clip the invalidated region
         let clip_rect = ctx.size().to_rect();
         ctx.clip(clip_rect);

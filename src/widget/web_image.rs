@@ -40,7 +40,6 @@ impl WebImage {
 
 impl Widget for WebImage {
     fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, env: &Env) {
-        ctx.init();
         match event {
             Event::PromiseResult(result) => {
                 if let Some(image_buf) = result.try_get(self.image_promise) {
@@ -89,7 +88,6 @@ impl Widget for WebImage {
             Some(image_buf)
         }
 
-        ctx.init();
         match event {
             LifeCycle::WidgetAdded => {
                 let url = self.url.clone();
@@ -107,8 +105,6 @@ impl Widget for WebImage {
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
-        ctx.init();
-
         if let Some(inner) = &mut self.inner {
             let layout = inner.layout(ctx, bc, env);
             ctx.place_child(inner, Point::ORIGIN, env);
@@ -121,8 +117,6 @@ impl Widget for WebImage {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, env: &Env) {
-        ctx.init();
-
         if let Some(inner) = &mut self.inner {
             inner.paint(ctx, env)
         } else {

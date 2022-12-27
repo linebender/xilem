@@ -153,7 +153,6 @@ fn allow_non_recurse_oob_paint() {
 fn allow_non_recurse_cursor_stashed() {
     let widget = make_parent_widget(Flex::row())
         .event_fn(|child, ctx, event, env| {
-            ctx.init();
             ctx.set_stashed(child, true);
 
             if !matches!(event, Event::MouseMove(_)) {
@@ -172,7 +171,6 @@ fn allow_non_recurse_cursor_stashed() {
 fn allow_non_recurse_stashed_paint() {
     let widget = make_parent_widget(Flex::row())
         .event_fn(|child, ctx, _event, _| {
-            ctx.init();
             ctx.set_stashed(child, true);
         })
         .layout_fn(|_child, _ctx, _bc, _env| {
@@ -293,7 +291,6 @@ fn check_recurse_paint_twice() {
 fn check_layout_stashed() {
     let widget = make_parent_widget(Flex::row())
         .event_fn(|child, ctx, _event, _| {
-            ctx.init();
             ctx.set_stashed(child, true);
         })
         .layout_fn(|child, ctx, bc, env| {
@@ -311,7 +308,6 @@ fn check_layout_stashed() {
 fn check_paint_stashed() {
     let widget = make_parent_widget(Flex::row())
         .event_fn(|child, ctx, _event, _| {
-            ctx.init();
             ctx.set_stashed(child, true);
         })
         .layout_fn(|_child, _ctx, _bc, _env| {

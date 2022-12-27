@@ -254,7 +254,6 @@ impl<W: Widget> WidgetPod<W> {
             let mut inner_ctx = LifeCycleCtx {
                 global_state,
                 widget_state: inner_state,
-                is_init: false,
             };
 
             // if hot changes and we're showing widget ids, always repaint
@@ -546,7 +545,6 @@ impl<W: Widget> WidgetPod<W> {
                 let mut inner_ctx = EventCtx {
                     global_state: parent_ctx.global_state,
                     widget_state: &mut widget_pod.state,
-                    is_init: false,
                     notifications: &mut notifications,
                     is_handled: false,
                     is_root: false,
@@ -593,7 +591,6 @@ impl<W: Widget> WidgetPod<W> {
         let mut inner_ctx = LifeCycleCtx {
             global_state: parent_ctx.global_state,
             widget_state: &mut self.state,
-            is_init: false,
         };
         let event = LifeCycle::RequestPanToChild(rect);
 
@@ -620,7 +617,6 @@ impl<W: Widget> WidgetPod<W> {
                     let mut inner_ctx = EventCtx {
                         global_state: parent_ctx.global_state,
                         notifications: parent_ctx.notifications,
-                        is_init: false,
                         widget_state: &mut widget_pod.state,
                         is_handled: false,
                         is_root: false,
@@ -711,7 +707,6 @@ impl<W: Widget> WidgetPod<W> {
                             let mut inner_ctx = LifeCycleCtx {
                                 global_state: parent_ctx.global_state,
                                 widget_state: &mut widget_pod.state,
-                                is_init: false,
                             };
 
                             widget_pod.inner.lifecycle(
@@ -817,7 +812,6 @@ impl<W: Widget> WidgetPod<W> {
                 let mut inner_ctx = LifeCycleCtx {
                     global_state: parent_ctx.global_state,
                     widget_state: &mut widget_pod.state,
-                    is_init: false,
                 };
 
                 widget_pod.inner.lifecycle(&mut inner_ctx, event, env);
@@ -828,7 +822,6 @@ impl<W: Widget> WidgetPod<W> {
             let mut inner_ctx = LifeCycleCtx {
                 global_state: parent_ctx.global_state,
                 widget_state: &mut self.state,
-                is_init: false,
             };
 
             // We add a span so that inner logs are marked as being in an on_status_change pass
@@ -949,7 +942,6 @@ impl<W: Widget> WidgetPod<W> {
             let mut inner_ctx = LayoutCtx {
                 widget_state: &mut widget_pod.state,
                 global_state: parent_ctx.global_state,
-                is_init: false,
                 mouse_pos: inner_mouse_pos,
             };
 
@@ -1058,7 +1050,6 @@ impl<W: Widget> WidgetPod<W> {
             let mut inner_ctx = PaintCtx {
                 global_state: ctx.global_state,
                 widget_state: &widget_pod.state,
-                is_init: false,
                 render_ctx: ctx.render_ctx,
                 z_ops: Vec::new(),
                 region: ctx.region.clone(),

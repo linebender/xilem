@@ -361,7 +361,6 @@ impl<'a, 'b> SplitMut<'a, 'b> {
 
 impl Widget for Split {
     fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, env: &Env) {
-        ctx.init();
         if self.child1.is_active() {
             self.child1.on_event(ctx, event, env);
             if ctx.is_handled() {
@@ -456,8 +455,6 @@ impl Widget for Split {
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
-        ctx.init();
-
         match self.split_axis {
             Axis::Horizontal => {
                 if !bc.is_width_bounded() {
@@ -556,7 +553,6 @@ impl Widget for Split {
 
     fn paint(&mut self, ctx: &mut PaintCtx, env: &Env) {
         // TODO - Paint differently if the bar is draggable and hovered.
-        ctx.init();
         if self.solid {
             self.paint_solid_bar(ctx, env);
         } else {

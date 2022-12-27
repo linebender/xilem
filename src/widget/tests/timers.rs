@@ -17,13 +17,11 @@ fn basic_timer() {
     let widget = ModularWidget::new((None, timer_handled.clone()))
         .lifecycle_fn(move |state, ctx, event, _| match event {
             LifeCycle::WidgetAdded => {
-                ctx.init();
                 state.0 = Some(ctx.request_timer(Duration::from_secs(3)));
             }
             _ => {}
         })
-        .event_fn(|state, ctx, event, _| {
-            ctx.init();
+        .event_fn(|state, _ctx, event, _| {
             if let Event::Timer(token) = event {
                 if *token == state.0.unwrap() {
                     state.1.set(true);

@@ -49,7 +49,6 @@ fn layout_insets() {
     let [child_id, parent_id] = widget_ids();
 
     let child_widget = ModularWidget::new(()).layout_fn(|_, ctx, _, _| {
-        ctx.init();
         // this widget paints twenty points above below its layout bounds
         ctx.set_paint_insets(Insets::uniform_xy(0., 20.));
         Size::new(BOX_WIDTH, BOX_WIDTH)

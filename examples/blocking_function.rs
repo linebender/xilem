@@ -39,7 +39,6 @@ impl MainWidget {
 
 impl Widget for MainWidget {
     fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, env: &Env) {
-        ctx.init();
         match event {
             Event::MouseDown(_) => {
                 if !ctx.is_disabled() {

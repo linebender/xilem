@@ -209,7 +209,6 @@ impl LabelMut<'_, '_> {
 
 impl Widget for Label {
     fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, _env: &Env) {
-        ctx.init();
         match event {
             Event::MouseUp(event) => {
                 // Account for the padding
@@ -237,7 +236,6 @@ impl Widget for Label {
     fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange, _env: &Env) {}
 
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, _env: &Env) {
-        ctx.init();
         match event {
             LifeCycle::DisabledChanged(disabled) => {
                 let color = if *disabled {
@@ -253,7 +251,6 @@ impl Widget for Label {
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
-        ctx.init();
         let width = match self.line_break_mode {
             LineBreaking::WordWrap => bc.max().width - LABEL_X_PADDING * 2.0,
             _ => f64::INFINITY,
@@ -273,7 +270,6 @@ impl Widget for Label {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, _env: &Env) {
-        ctx.init();
         let origin = Point::new(LABEL_X_PADDING, 0.0);
         let label_size = ctx.size();
 

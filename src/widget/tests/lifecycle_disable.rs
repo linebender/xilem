@@ -17,7 +17,6 @@ fn make_focusable_widget(id: WidgetId, state: Rc<Cell<Option<bool>>>) -> impl Wi
     ModularWidget::new(state)
         .lifecycle_fn(move |state, ctx, event, _| match event {
             LifeCycle::BuildFocusChain => {
-                ctx.init();
                 ctx.register_for_focus();
             }
             LifeCycle::DisabledChanged(disabled) => {
@@ -26,7 +25,6 @@ fn make_focusable_widget(id: WidgetId, state: Rc<Cell<Option<bool>>>) -> impl Wi
             _ => {}
         })
         .event_fn(|_, ctx, event, _| {
-            ctx.init();
             if let Event::Command(cmd) = event {
                 if let Some(disabled) = cmd.try_get(CHANGE_DISABLED) {
                     ctx.set_disabled(*disabled);
@@ -79,7 +77,6 @@ fn disable_tree() {
                 child.lifecycle(ctx, event, env);
             })
             .event_fn(|child, ctx, event, env| {
-                ctx.init();
                 if let Event::Command(cmd) = event {
                     if let Some(disabled) = cmd.try_get(CHANGE_DISABLED) {
                         ctx.set_disabled(*disabled);
@@ -91,7 +88,6 @@ fn disable_tree() {
                 child.on_event(ctx, event, env);
             })
             .layout_fn(|child, ctx, my_bc, env| {
-                ctx.init();
                 let size = child.layout(ctx, my_bc, env);
                 ctx.place_child(child, Point::ZERO, env);
                 size

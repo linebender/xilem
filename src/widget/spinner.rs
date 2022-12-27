@@ -70,7 +70,6 @@ impl Default for Spinner {
 
 impl Widget for Spinner {
     fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, _env: &Env) {
-        ctx.init();
         if let Event::AnimFrame(interval) = event {
             self.t += (*interval as f64) * 1e-9;
             if self.t >= 1.0 {
@@ -84,15 +83,13 @@ impl Widget for Spinner {
     fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange, _env: &Env) {}
 
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, _env: &Env) {
-        ctx.init();
         if let LifeCycle::WidgetAdded = event {
             ctx.request_anim_frame();
             ctx.request_paint();
         }
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
-        ctx.init();
+    fn layout(&mut self, _ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
         let size = if bc.is_width_bounded() && bc.is_height_bounded() {
             bc.max()
         } else {
@@ -107,7 +104,6 @@ impl Widget for Spinner {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, env: &Env) {
-        ctx.init();
         let t = self.t;
         let (width, height) = (ctx.size().width, ctx.size().height);
         let center = Point::new(width / 2.0, height / 2.0);

@@ -60,7 +60,6 @@ impl<'a, 'b> CheckboxMut<'a, 'b> {
 
 impl Widget for Checkbox {
     fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, _env: &Env) {
-        ctx.init();
         match event {
             Event::MouseDown(_) => {
                 if !ctx.is_disabled() {
@@ -85,7 +84,6 @@ impl Widget for Checkbox {
     }
 
     fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, _event: &StatusChange, _env: &Env) {
-        ctx.init();
         ctx.request_paint();
     }
 
@@ -94,8 +92,6 @@ impl Widget for Checkbox {
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
-        ctx.init();
-
         let x_padding = env.get(theme::WIDGET_CONTROL_COMPONENT_PADDING);
         let check_size = env.get(theme::BASIC_WIDGET_HEIGHT);
 
@@ -114,7 +110,6 @@ impl Widget for Checkbox {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, env: &Env) {
-        ctx.init();
         let check_size = env.get(theme::BASIC_WIDGET_HEIGHT);
         let border_width = 1.;
 

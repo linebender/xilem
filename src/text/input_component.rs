@@ -295,7 +295,6 @@ impl<T: TextStorage + EditableText> TextComponentMut<'_, '_, T> {
 
 impl<T: TextStorage + EditableText> Widget for TextComponent<T> {
     fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, _env: &Env) {
-        ctx.init();
         match event {
             Event::MouseDown(mouse) if self.can_write() && !ctx.is_disabled() => {
                 ctx.set_active(true);
@@ -388,7 +387,6 @@ impl<T: TextStorage + EditableText> Widget for TextComponent<T> {
     fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange, _env: &Env) {}
 
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
-        ctx.init();
         match event {
             LifeCycle::WidgetAdded => {
                 assert!(
@@ -424,7 +422,6 @@ impl<T: TextStorage + EditableText> Widget for TextComponent<T> {
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
-        ctx.init();
         if !self.can_write() {
             tracing::warn!("Text layout called with IME lock held.");
             return Size::ZERO;
@@ -451,7 +448,6 @@ impl<T: TextStorage + EditableText> Widget for TextComponent<T> {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, env: &Env) {
-        ctx.init();
         if !self.can_read() {
             tracing::warn!("Text paint called with IME lock held.");
         }
