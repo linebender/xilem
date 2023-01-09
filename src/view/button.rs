@@ -14,7 +14,7 @@
 
 use std::any::Any;
 
-use crate::{event::EventResult, id::Id, widget::ChangeFlags};
+use crate::{event::EventResult, id::Id, widget::{ChangeFlags, button::ButtonStyle}};
 
 use super::{Cx, View};
 
@@ -47,7 +47,7 @@ impl<T, A> View<T, A> for Button<T, A> {
 
     fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
         let (id, element) = cx
-            .with_new_id(|cx| crate::widget::button::Button::new(cx.id_path(), self.label.clone()));
+            .with_new_id(|cx| crate::widget::button::Button::new(cx.id_path(), self.label.clone(), ButtonStyle::default()));
         (id, (), element)
     }
 

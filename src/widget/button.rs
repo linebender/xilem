@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use glazier::kurbo::{Affine, Insets, Size};
+use glazier::kurbo::{Affine, Insets, RoundedRect, Shape, Size};
 use parley::Layout;
 use vello::{
-    peniko::{Brush, Color, Stroke},
+    peniko::{Brush, BrushRef, Color},
     SceneBuilder, SceneFragment,
 };
 
@@ -28,18 +28,63 @@ use super::{
     AlignCx, ChangeFlags, EventCx, LayoutCx, LifeCycle, PaintCx, RawEvent, UpdateCx, Widget,
 };
 
+pub struct Stroke {
+    brush: Brush,
+    width: f64,
+}
+
+pub struct ButtonStyleState {
+    border_radius: f64,
+    stroke: Option<Stroke>,
+    background_color: Option<Color>,
+}
+
+pub struct ButtonStyle {
+    default: ButtonStyleState,
+    hot: ButtonStyleState,
+    active: ButtonStyleState,
+}
+
+impl Default for ButtonStyle {
+    fn default() -> Self {
+        let border_radius = 8.0;
+        Self {
+            default: ButtonStyleState {
+                border_radius,
+                stroke: Some(Stroke {
+                    brush: Brush::Solid(Color::rgb8(147, 143, 153).into()),
+                    width: 2.,
+                }),
+                background_color: None,
+            },
+            hot: ButtonStyleState {
+                border_radius,
+                stroke: None,
+                background_color: Some(Color::rgb8(208, 188, 255)),
+            },
+            active: ButtonStyleState {
+                border_radius,
+                stroke: None,
+                background_color: Some(Color::rgb8(56, 30, 114)),
+            },
+        }
+    }
+}
+
 pub struct Button {
     id_path: IdPath,
     label: String,
     layout: Option<Layout<ParleyBrush>>,
+    style: ButtonStyle,
 }
 
 impl Button {
-    pub fn new(id_path: &IdPath, label: String) -> Button {
+    pub fn new(id_path: &IdPath, label: String, style: ButtonStyle) -> Button {
         Button {
             id_path: id_path.clone(),
             label,
             layout: None,
+            style,
         }
     }
 
@@ -129,22 +174,26 @@ impl Widget for Button {
     fn paint(&mut self, cx: &mut PaintCx, builder: &mut SceneBuilder) {
         let is_hot = cx.is_hot();
         let is_active = cx.is_active();
-        let button_border_width = 2.0;
+
+        let style = if is_active {
+            &self.style.active
+        } else if is_hot {
+            &self.style.hot
+        } else {
+            &self.style.default
+        };
+
+        let button_border_width = style
+            .stroke
+            .as_ref()
+            .map(|stroke| stroke.width)
+            .unwrap_or(0.);
         let rounded_rect = cx
             .size()
             .to_rect()
             .inset(-0.5 * button_border_width)
-            .to_rounded_rect(4.0);
-        let border_color = if is_hot {
-            Color::rgb8(0xa1, 0xa1, 0xa1)
-        } else {
-            Color::rgb8(0x3a, 0x3a, 0x3a)
-        };
-        let bg_stops = if is_active {
-            [Color::rgb8(0x3a, 0x3a, 0x3a), Color::rgb8(0xa1, 0xa1, 0xa1)]
-        } else {
-            [Color::rgb8(0xa1, 0xa1, 0xa1), Color::rgb8(0x3a, 0x3a, 0x3a)]
-        };
+            .to_rounded_rect(style.border_radius);
+
         /*
         let bg_gradient = if is_active {
             LinearGradient::new(
@@ -160,7 +209,22 @@ impl Widget for Button {
             )
         };
         */
-        piet_scene_helpers::stroke(builder, &rounded_rect, border_color, button_border_width);
+
+        if let Some(stroke) = &style.stroke {
+            piet_scene_helpers::stroke(builder, &rounded_rect, &stroke.brush, button_border_width);
+        }
+
+        if let Some(bg) = &style.background_color {
+            piet_scene_helpers::fill_lin_gradient(
+                builder,
+                &rounded_rect,
+                [bg.clone(), bg.clone()],
+                UnitPoint::TOP,
+                UnitPoint::BOTTOM,
+            );
+        }
+
+        /*
         piet_scene_helpers::fill_lin_gradient(
             builder,
             &rounded_rect,
@@ -168,6 +232,7 @@ impl Widget for Button {
             UnitPoint::TOP,
             UnitPoint::BOTTOM,
         );
+         */
         //cx.fill(rounded_rect, &bg_gradient);
         if let Some(layout) = &self.layout {
             let size = Size::new(layout.width() as f64, layout.height() as f64);
