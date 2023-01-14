@@ -32,7 +32,7 @@ use vello::SceneBuilder;
 
 pub use self::box_constraints::BoxConstraints;
 use self::contexts::LifeCycleCx;
-pub use self::contexts::{CxState, EventCx, LayoutCx, PaintCx, UpdateCx};
+pub use self::contexts::{AccessCx, CxState, EventCx, LayoutCx, PaintCx, UpdateCx};
 pub use self::core::Pod;
 pub(crate) use self::core::{ChangeFlags, PodFlags, WidgetState};
 pub use self::raw_event::{Event, LifeCycle};
@@ -105,6 +105,9 @@ pub trait Widget {
     /// [`WidgetPod::layout`]: struct.WidgetPod.html#method.layout
     /// [`set_origin`]: struct.WidgetPod.html#method.set_origin
     fn layout(&mut self, cx: &mut LayoutCx, bc: &BoxConstraints) -> Size;
+
+    /// Update the accessibility tree.
+    fn accessibility(&mut self, cx: &mut AccessCx);
 
     /// Paint the widget appearance.
     ///
@@ -244,6 +247,10 @@ impl Widget for Box<dyn AnyWidget> {
 
     fn layout(&mut self, cx: &mut LayoutCx, bc: &BoxConstraints) -> Size {
         self.deref_mut().layout(cx, bc)
+    }
+
+    fn accessibility(&mut self, cx: &mut AccessCx) {
+        self.deref_mut().accessibility(cx);
     }
 
     fn paint(&mut self, cx: &mut PaintCx, builder: &mut SceneBuilder) {

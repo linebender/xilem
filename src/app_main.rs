@@ -127,7 +127,14 @@ where
     }
 
     fn accesskit_tree(&mut self) -> TreeUpdate {
-        TreeUpdate::default()
+        self.app.accesskit_connected = true;
+        self.app.accessibility()
+    }
+
+    fn accesskit_action(&mut self, request: accesskit::ActionRequest) {
+        self.app
+            .window_event(Event::TargetedAccessibilityAction(request));
+        self.handle.invalidate();
     }
 
     fn mouse_down(&mut self, event: &MouseEvent) {

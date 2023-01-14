@@ -32,4 +32,14 @@ impl Id {
     pub fn to_raw(self) -> u64 {
         self.0.into()
     }
+
+    pub fn to_nonzero_raw(self) -> NonZeroU64 {
+        self.0
+    }
+}
+
+impl From<Id> for accesskit::NodeId {
+    fn from(id: Id) -> accesskit::NodeId {
+        id.to_nonzero_raw().into()
+    }
 }

@@ -21,11 +21,11 @@ use bitflags::bitflags;
 use glazier::kurbo::{Point, Rect, Size};
 use vello::{SceneBuilder, SceneFragment};
 
-use crate::Widget;
+use crate::{id::Id, Widget};
 
 use super::{
-    contexts::LifeCycleCx, AnyWidget, BoxConstraints, CxState, Event, EventCx, LayoutCx, LifeCycle,
-    PaintCx, UpdateCx,
+    contexts::LifeCycleCx, AccessCx, AnyWidget, BoxConstraints, CxState, Event, EventCx, LayoutCx,
+    LifeCycle, PaintCx, UpdateCx,
 };
 
 bitflags! {
@@ -33,14 +33,22 @@ bitflags! {
     pub(crate) struct PodFlags: u32 {
         const REQUEST_UPDATE = 1;
         const REQUEST_LAYOUT = 2;
-        const REQUEST_PAINT = 4;
+        const REQUEST_ACCESSIBILITY = 4;
+        const REQUEST_PAINT = 8;
 
-        const IS_HOT = 8;
-        const IS_ACTIVE = 16;
-        const HAS_ACTIVE = 32;
+        const IS_HOT = 0x10;
+        const IS_ACTIVE = 0x20;
+        const HAS_ACTIVE = 0x40;
+        const HAS_ACCESSIBILITY = 0x80;
 
-        const UPWARD_FLAGS = Self::REQUEST_LAYOUT.bits | Self::REQUEST_PAINT.bits | Self::HAS_ACTIVE.bits;
-        const INIT_FLAGS = Self::REQUEST_UPDATE.bits | Self::REQUEST_LAYOUT.bits | Self::REQUEST_PAINT.bits;
+        const UPWARD_FLAGS = Self::REQUEST_LAYOUT.bits
+            | Self::REQUEST_PAINT.bits
+            | Self::HAS_ACTIVE.bits
+            | Self::HAS_ACCESSIBILITY.bits;
+        const INIT_FLAGS = Self::REQUEST_UPDATE.bits
+            | Self::REQUEST_LAYOUT.bits
+            | Self::REQUEST_ACCESSIBILITY.bits
+            | Self::REQUEST_PAINT.bits;
     }
 }
 
@@ -50,7 +58,8 @@ bitflags! {
     pub struct ChangeFlags: u8 {
         const UPDATE = 1;
         const LAYOUT = 2;
-        const PAINT = 4;
+        const ACCESSIBILITY = 4;
+        const PAINT = 8;
     }
 }
 
@@ -61,27 +70,49 @@ pub struct Pod {
     fragment: SceneFragment,
 }
 
-#[derive(Default, Debug)]
+#[derive(Debug)]
 pub(crate) struct WidgetState {
+    pub(crate) id: Id,
     pub(crate) flags: PodFlags,
+    /// The origin of the child in the parent's coordinate space.
     pub(crate) origin: Point,
+    /// The origin of the parent in the window coordinate space.
+    pub(crate) parent_window_origin: Point,
     /// The minimum intrinsic size of the widget.
     pub(crate) min_size: Size,
     /// The maximum intrinsic size of the widget.
     pub(crate) max_size: Size,
-    /// The size proposed by the widget's container.
-    pub(crate) proposed_size: Size,
     /// The size of the widget.
     pub(crate) size: Size,
 }
 
 impl WidgetState {
+    pub(crate) fn new() -> Self {
+        let id = Id::next();
+        WidgetState {
+            id,
+            flags: PodFlags::INIT_FLAGS,
+            origin: Default::default(),
+            parent_window_origin: Default::default(),
+            min_size: Default::default(),
+            max_size: Default::default(),
+            size: Default::default(),
+        }
+    }
+
     fn merge_up(&mut self, child_state: &mut WidgetState) {
         self.flags |= child_state.flags & PodFlags::UPWARD_FLAGS;
+        if child_state.flags.contains(PodFlags::REQUEST_ACCESSIBILITY) {
+            self.flags |= PodFlags::HAS_ACCESSIBILITY;
+        }
     }
 
     fn request(&mut self, flags: PodFlags) {
         self.flags |= flags
+    }
+
+    pub(crate) fn window_origin(&self) -> Point {
+        self.parent_window_origin + self.origin.to_vec2()
     }
 }
 
@@ -92,10 +123,7 @@ impl Pod {
 
     pub fn new_from_box(widget: Box<dyn AnyWidget>) -> Self {
         Pod {
-            state: WidgetState {
-                flags: PodFlags::INIT_FLAGS,
-                ..Default::default()
-            },
+            state: WidgetState::new(),
             fragment: SceneFragment::default(),
             widget,
         }
@@ -201,6 +229,14 @@ impl Pod {
                     false
                 }
             }
+            Event::TargetedAccessibilityAction(action) => {
+                println!("TODO: {:?}", action);
+                // TODO: here we always recurse, as we are currently lacking a
+                // mechanism to route events identified by widget id. We should
+                // either track the tree structure so we can reconstruct the id
+                // path, or use Bloom filters as in Druid.
+                true
+            }
         };
         if recurse {
             let mut inner_cx = EventCx {
@@ -260,6 +296,24 @@ impl Pod {
         self.state.size
     }
 
+    pub fn accessibility(&mut self, cx: &mut AccessCx) {
+        if self
+            .state
+            .flags
+            .intersects(PodFlags::REQUEST_ACCESSIBILITY | PodFlags::HAS_ACCESSIBILITY)
+        {
+            let mut child_cx = AccessCx {
+                cx_state: cx.cx_state,
+                widget_state: &mut self.state,
+                update: cx.update,
+            };
+            self.widget.accessibility(&mut child_cx);
+            self.state
+                .flags
+                .remove(PodFlags::REQUEST_ACCESSIBILITY | PodFlags::HAS_ACCESSIBILITY);
+        }
+    }
+
     pub fn paint_raw(&mut self, cx: &mut PaintCx, builder: &mut SceneBuilder) {
         let mut inner_cx = PaintCx {
             cx_state: cx.cx_state,
@@ -313,5 +367,10 @@ impl Pod {
     /// (skipping further paint calls) if the appearance does not change.
     pub fn fragment(&self) -> &SceneFragment {
         &self.fragment
+    }
+
+    /// Get the id of the widget in the pod.
+    pub fn id(&self) -> Id {
+        self.state.id
     }
 }

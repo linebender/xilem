@@ -11,13 +11,5 @@ pub use app::App;
 pub use app_main::AppLauncher;
 pub use view::button::button;
 pub use view::View;
+pub use widget::Pod;
 pub use widget::Widget;
-
-use glazier::kurbo::Size;
-use glazier::{
-    Application, Cursor, FileDialogToken, FileInfo, IdleToken, KeyEvent, MouseEvent, Region,
-    Scalable, TimerToken, WinHandler, WindowHandle,
-};
-use parley::FontContext;
-use std::any::Any;
-use vello::Scene;

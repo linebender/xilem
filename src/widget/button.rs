@@ -12,11 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::ops::Deref;
+
 use glazier::kurbo::{Affine, Insets, Size};
 use parley::Layout;
 use vello::{
-    peniko::{Brush, Color, Stroke},
-    SceneBuilder, SceneFragment,
+    peniko::{Brush, Color},
+    SceneBuilder,
 };
 
 use crate::{event::Message, id::IdPath, text::ParleyBrush};
@@ -24,7 +26,8 @@ use crate::{event::Message, id::IdPath, text::ParleyBrush};
 use super::{
     contexts::LifeCycleCx,
     piet_scene_helpers::{self, UnitPoint},
-    BoxConstraints, ChangeFlags, Event, EventCx, LayoutCx, LifeCycle, PaintCx, UpdateCx, Widget,
+    AccessCx, BoxConstraints, ChangeFlags, Event, EventCx, LayoutCx, LifeCycle, PaintCx, UpdateCx,
+    Widget,
 };
 
 pub struct Button {
@@ -70,6 +73,12 @@ impl Widget for Button {
                 cx.set_active(false);
                 // TODO: request paint
             }
+            Event::TargetedAccessibilityAction(request) => match request.action {
+                accesskit::Action::Default => {
+                    cx.add_event(Message::new(self.id_path.clone(), ()));
+                }
+                _ => (),
+            },
             _ => (),
         };
     }
@@ -104,6 +113,14 @@ impl Widget for Button {
         size
     }
 
+    fn accessibility(&mut self, cx: &mut AccessCx) {
+        let mut node = accesskit::Node::default();
+        node.role = accesskit::Role::Button;
+        node.name = Some(self.label.deref().into());
+        node.default_action_verb = Some(accesskit::DefaultActionVerb::Click);
+        cx.push_node(node);
+    }
+
     fn paint(&mut self, cx: &mut PaintCx, builder: &mut SceneBuilder) {
         let is_hot = cx.is_hot();
         let is_active = cx.is_active();
@@ -123,21 +140,6 @@ impl Widget for Button {
         } else {
             [Color::rgb8(0xa1, 0xa1, 0xa1), Color::rgb8(0x3a, 0x3a, 0x3a)]
         };
-        /*
-        let bg_gradient = if is_active {
-            LinearGradient::new(
-                UnitPoint::TOP,
-                UnitPoint::BOTTOM,
-                (Color::rgb8(0x3a, 0x3a, 0x3a), Color::rgb8(0xa1, 0xa1, 0xa1)),
-            )
-        } else {
-            LinearGradient::new(
-                UnitPoint::TOP,
-                UnitPoint::BOTTOM,
-                (Color::rgb8(0xa1, 0xa1, 0xa1), Color::rgb8(0x3a, 0x3a, 0x3a)),
-            )
-        };
-        */
         piet_scene_helpers::stroke(builder, &rounded_rect, border_color, button_border_width);
         piet_scene_helpers::fill_lin_gradient(
             builder,
@@ -146,7 +148,6 @@ impl Widget for Button {
             UnitPoint::TOP,
             UnitPoint::BOTTOM,
         );
-        //cx.fill(rounded_rect, &bg_gradient);
         if let Some(layout) = &self.layout {
             let size = Size::new(layout.width() as f64, layout.height() as f64);
             let offset = (cx.size().to_vec2() - size.to_vec2()) * 0.5;

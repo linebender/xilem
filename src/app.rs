@@ -16,6 +16,7 @@ use std::collections::HashSet;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
+use accesskit::TreeUpdate;
 use glazier::kurbo::Size;
 use glazier::{IdleHandle, IdleToken, WindowHandle};
 use parley::FontContext;
@@ -25,7 +26,7 @@ use vello::{SceneBuilder, SceneFragment};
 use crate::event::{AsyncWake, MessageResult};
 use crate::id::IdPath;
 use crate::widget::{
-    BoxConstraints, CxState, EventCx, LayoutCx, PaintCx, Pod, UpdateCx, WidgetState,
+    AccessCx, BoxConstraints, CxState, EventCx, LayoutCx, PaintCx, Pod, UpdateCx, WidgetState,
 };
 use crate::{
     event::Message,
@@ -47,6 +48,10 @@ pub struct App<T, V: View<T>> {
     cx: Cx,
     font_cx: FontContext,
     pub(crate) rt: Runtime,
+    // This is allocated an id for AccessKit, but as we get multi-window,
+    // there should be a real window object with id.
+    window_id: Id,
+    pub(crate) accesskit_connected: bool,
 }
 
 /// The standard delay for waiting for async futures.
@@ -152,11 +157,13 @@ where
             root_pod: None,
             events: Vec::new(),
             window_handle: Default::default(),
-            root_state: Default::default(),
+            root_state: WidgetState::new(),
             size: Default::default(),
             cx,
             font_cx: FontContext::new(),
             rt,
+            window_id: Id::next(),
+            accesskit_connected: false,
         }
     }
 
@@ -173,6 +180,39 @@ where
         self.size = size;
     }
 
+    pub fn accessibility(&mut self) -> TreeUpdate {
+        let mut update = TreeUpdate::default();
+        let root_pod = self.root_pod.as_mut().unwrap();
+        let mut window_node = accesskit::Node {
+            role: accesskit::Role::Window,
+            children: vec![root_pod.id().into()],
+            name: Some("xilem window".into()),
+            ..Default::default()
+        };
+        if let Ok(scale) = self.window_handle.get_scale() {
+            window_node.transform = Some(Box::new(accesskit::kurbo::Affine::scale_non_uniform(
+                scale.x(),
+                scale.y(),
+            )));
+        }
+        update
+            .nodes
+            .push((self.window_id.into(), Arc::new(window_node)));
+        update.tree = Some(accesskit::Tree::new(self.window_id.into()));
+        let mut cx_state = CxState::new(&self.window_handle, &mut self.font_cx, &mut self.events);
+        let mut access_cx = AccessCx {
+            cx_state: &mut cx_state,
+            widget_state: &mut &mut self.root_state,
+            update: &mut update,
+        };
+        root_pod.accessibility(&mut access_cx);
+        update
+    }
+
+    /// Run a paint cycle for the application.
+    ///
+    /// This is not just painting, but involves processing events, doing layout
+    /// if needed, updating the accessibility tree, and then actually painting.
     pub fn paint(&mut self) {
         loop {
             self.send_events();
@@ -192,8 +232,16 @@ where
                 // becomes extreme.
                 continue;
             }
-            let mut layout_cx = LayoutCx::new(&mut cx_state, &mut self.root_state);
-            let visible = root_pod.state.size.to_rect();
+            if self.accesskit_connected {
+                let update = self.accessibility();
+                // TODO: it would be cleaner to not use a closure here.
+                self.window_handle.update_accesskit_if_active(|| update);
+            }
+            // Borrow again to avoid multiple borrows.
+            // TODO: maybe make accessibility a method on CxState?
+            let root_pod = self.root_pod.as_mut().unwrap();
+            let mut cx_state =
+                CxState::new(&self.window_handle, &mut self.font_cx, &mut self.events);
             let mut paint_cx = PaintCx::new(&mut cx_state, &mut self.root_state);
             root_pod.paint(&mut paint_cx);
             break;
