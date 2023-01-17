@@ -44,7 +44,7 @@ where
     app: App<T, V>,
     render_cx: RenderContext,
     surface: Option<RenderSurface>,
-    renderer: Renderer,
+    renderer: Option<Renderer>,
     font_context: FontContext,
     scene: Scene,
     counter: u64,
@@ -174,16 +174,13 @@ where
     T: Send,
 {
     fn new(app: App<T, V>) -> Self {
-        let render_cx = tokio::runtime::Handle::current()
-            .block_on(RenderContext::new())
-            .expect("failed to create render context");
-        let renderer = Renderer::new(&render_cx.device).expect("failed to create renderer");
+        let render_cx = RenderContext::new().expect("failed to create render context");
         let state = MainState {
             handle: Default::default(),
             app,
             render_cx,
             surface: None,
-            renderer,
+            renderer: None,
             font_context: FontContext::new(),
             scene: Scene::default(),
             counter: 0,
@@ -216,7 +213,9 @@ where
         let height = size.height as u32;
         if self.surface.is_none() {
             println!("render size: {:?}", size);
-            self.surface = Some(self.render_cx.create_surface(handle, width, height));
+            let surface = tokio::runtime::Handle::current()
+                .block_on(self.render_cx.create_surface(handle, width, height));
+            self.surface = Some(surface);
         }
         if let Some(surface) = self.surface.as_mut() {
             if surface.config.width != width || surface.config.height != height {
@@ -235,18 +234,14 @@ where
                 .surface
                 .get_current_texture()
                 .expect("failed to acquire next swapchain texture");
+            let device = &self.render_cx.devices[surface.dev_id].device;
+            let queue = &self.render_cx.devices[surface.dev_id].queue;
             self.renderer
-                .render_to_surface(
-                    &self.render_cx.device,
-                    &self.render_cx.queue,
-                    &self.scene,
-                    &surface_texture,
-                    width,
-                    height,
-                )
+                .get_or_insert_with(|| Renderer::new(device).unwrap())
+                .render_to_surface(device, queue, &self.scene, &surface_texture, width, height)
                 .expect("failed to render to surface");
             surface_texture.present();
-            self.render_cx.device.poll(wgpu::Maintain::Wait);
+            device.poll(wgpu::Maintain::Wait);
         }
     }
 }
