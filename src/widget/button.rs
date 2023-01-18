@@ -75,7 +75,9 @@ impl Widget for Button {
             }
             Event::TargetedAccessibilityAction(request) => match request.action {
                 accesskit::Action::Default => {
-                    cx.add_event(Message::new(self.id_path.clone(), ()));
+                    if cx.is_accesskit_target(request.target) {
+                        cx.add_event(Message::new(self.id_path.clone(), ()));
+                    }
                 }
                 _ => (),
             },

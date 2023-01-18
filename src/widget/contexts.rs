@@ -118,6 +118,11 @@ impl<'a, 'b> EventCx<'a, 'b> {
     pub fn is_handled(&self) -> bool {
         self.is_handled
     }
+
+    /// Check whether this widget's id matches the given id.
+    pub fn is_accesskit_target(&self, id: accesskit::NodeId) -> bool {
+        accesskit::NodeId::from(self.widget_state.id) == id
+    }
 }
 
 impl<'a, 'b> LifeCycleCx<'a, 'b> {
