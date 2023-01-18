@@ -1,5 +1,5 @@
 use glazier::kurbo::{self, Affine, Rect, Shape};
-use vello::peniko::{BrushRef, ColorStopsSource, Fill, LinearGradient, Stroke};
+use vello::peniko::{BrushRef, ColorStopsSource, Fill, Gradient, Stroke};
 use vello::SceneBuilder;
 
 #[derive(Debug, Clone, Copy)]
@@ -69,6 +69,6 @@ pub fn fill_lin_gradient(
     end: UnitPoint,
 ) {
     let rect = path.bounding_box();
-    let brush = LinearGradient::new(start.resolve(rect), end.resolve(rect)).stops(stops);
+    let brush = Gradient::new_linear(start.resolve(rect), end.resolve(rect)).with_stops(stops);
     builder.fill(Fill::NonZero, Affine::IDENTITY, &brush, None, path);
 }
