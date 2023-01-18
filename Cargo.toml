@@ -13,7 +13,7 @@ x11 = ["glazier/x11"]
 wayland = ["glazier/wayland"]
 
 [dependencies]
-vello = { git = "https://github.com/linebender/vello" }
+vello = { git = "https://github.com/linebender/vello", rev = "f36e455" }
 wgpu = "0.14"
 raw-window-handle = "0.5"
 png = "0.16.2"
