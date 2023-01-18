@@ -13,7 +13,7 @@ pub fn render(fcx: &mut FontContext, scene: &mut Scene, which: usize, arg: u64) 
 fn basic_scene(fcx: &mut FontContext, scene: &mut Scene, arg: u64) {
     let transform = Affine::translate((400.0, 400.0)) * Affine::rotate(arg as f64 * 0.01);
     let mut builder = SceneBuilder::for_scene(scene);
-    let gradient = LinearGradient::new((0.0, 0.0), (0.0, 400.0)).stops([
+    let gradient = Gradient::new_linear((0.0, 0.0), (0.0, 400.0)).with_stops([
         Color::rgb8(128, 0, 0),
         Color::rgb8(0, 128, 0),
         Color::rgb8(0, 0, 128),

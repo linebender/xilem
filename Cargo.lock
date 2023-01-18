@@ -1579,7 +1579,7 @@ dependencies = [
 [[package]]
 name = "moscato"
 version = "0.1.2"
-source = "git+https://github.com/dfrg/pinot#59db153ff83420449a909dfaace18466bddbf814"
+source = "git+https://github.com/dfrg/pinot?rev=59db153#59db153ff83420449a909dfaace18466bddbf814"
 dependencies = [
  "pinot",
 ]
@@ -1828,7 +1828,7 @@ checksum = "19b17cddbe7ec3f8bc800887bab5e717348c95ea2ca0b1bf0837fb964dc67099"
 [[package]]
 name = "peniko"
 version = "0.1.0"
-source = "git+https://github.com/linebender/peniko#b83821720aa51a3942be5d20c71525a1ae61ac0a"
+source = "git+https://github.com/linebender/peniko?rev=8cb710f#8cb710ffcb0f04fa24648440f9b9fb038174a341"
 dependencies = [
  "kurbo 0.9.0",
  "smallvec",
@@ -2529,7 +2529,7 @@ checksum = "f962df74c8c05a667b5ee8bcf162993134c104e96440b663c8daa176dc772d8c"
 [[package]]
 name = "vello"
 version = "0.1.0"
-source = "git+https://github.com/linebender/vello#eec111c633942ef9c0f952ef564e0343e4c103be"
+source = "git+https://github.com/linebender/vello?rev=f36e455#f36e455a90d2acc201c6e50eb7000b91cfaaff75"
 dependencies = [
  "bytemuck",
  "futures-intrusive",
