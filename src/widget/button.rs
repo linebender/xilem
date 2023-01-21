@@ -68,7 +68,7 @@ impl Widget for Button {
             }
             Event::MouseUp(_) => {
                 if cx.is_hot() {
-                    cx.add_event(Message::new(self.id_path.clone(), ()));
+                    cx.add_message(Message::new(self.id_path.clone(), ()));
                 }
                 cx.set_active(false);
                 // TODO: request paint
@@ -76,7 +76,7 @@ impl Widget for Button {
             Event::TargetedAccessibilityAction(request) => match request.action {
                 accesskit::Action::Default => {
                     if cx.is_accesskit_target(request.target) {
-                        cx.add_event(Message::new(self.id_path.clone(), ()));
+                        cx.add_message(Message::new(self.id_path.clone(), ()));
                     }
                 }
                 _ => (),

@@ -78,10 +78,6 @@ pub(crate) struct WidgetState {
     pub(crate) origin: Point,
     /// The origin of the parent in the window coordinate space.
     pub(crate) parent_window_origin: Point,
-    /// The minimum intrinsic size of the widget.
-    pub(crate) min_size: Size,
-    /// The maximum intrinsic size of the widget.
-    pub(crate) max_size: Size,
     /// The size of the widget.
     pub(crate) size: Size,
 }
@@ -94,8 +90,6 @@ impl WidgetState {
             flags: PodFlags::INIT_FLAGS,
             origin: Default::default(),
             parent_window_origin: Default::default(),
-            min_size: Default::default(),
-            max_size: Default::default(),
             size: Default::default(),
         }
     }
@@ -329,10 +323,6 @@ impl Pod {
         };
         let mut builder = SceneBuilder::for_fragment(&mut self.fragment);
         self.widget.paint(&mut inner_cx, &mut builder);
-    }
-
-    pub fn height_flexibility(&self) -> f64 {
-        self.state.max_size.height - self.state.min_size.height
     }
 
     // Return true if hot state has changed

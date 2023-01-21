@@ -226,7 +226,7 @@ where
             let mut layout_cx = LayoutCx::new(&mut cx_state, &mut self.root_state);
             let bc = BoxConstraints::tight(self.size);
             root_pod.layout(&mut layout_cx, &bc);
-            if cx_state.has_events() {
+            if cx_state.has_messages() {
                 // Rerun app logic, primarily for LayoutObserver
                 // We might want some debugging here if the number of iterations
                 // becomes extreme.
@@ -341,7 +341,7 @@ where
                     AppReq::Events(events) => {
                         for event in events {
                             let id_path = &event.id_path[1..];
-                            self.view.as_ref().unwrap().event(
+                            self.view.as_ref().unwrap().message(
                                 id_path,
                                 self.state.as_mut().unwrap(),
                                 event.body,
@@ -350,7 +350,7 @@ where
                         }
                     }
                     AppReq::Wake(id_path) => {
-                        let result = self.view.as_ref().unwrap().event(
+                        let result = self.view.as_ref().unwrap().message(
                             &id_path[1..],
                             self.state.as_mut().unwrap(),
                             Box::new(AsyncWake),

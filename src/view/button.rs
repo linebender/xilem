@@ -66,11 +66,11 @@ impl<T, A> View<T, A> for Button<T, A> {
         }
     }
 
-    fn event(
+    fn message(
         &self,
         _id_path: &[crate::id::Id],
         _state: &mut Self::State,
-        _event: Box<dyn Any>,
+        _message: Box<dyn Any>,
         app_state: &mut T,
     ) -> MessageResult<A> {
         MessageResult::Action((self.callback)(app_state))

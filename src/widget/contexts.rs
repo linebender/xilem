@@ -37,7 +37,7 @@ use super::{PodFlags, WidgetState};
 pub struct CxState<'a> {
     window: &'a WindowHandle,
     font_cx: &'a mut FontContext,
-    events: &'a mut Vec<Message>,
+    messages: &'a mut Vec<Message>,
 }
 
 pub struct EventCx<'a, 'b> {
@@ -76,17 +76,17 @@ impl<'a> CxState<'a> {
     pub fn new(
         window: &'a WindowHandle,
         font_cx: &'a mut FontContext,
-        events: &'a mut Vec<Message>,
+        messages: &'a mut Vec<Message>,
     ) -> Self {
         CxState {
             window,
             font_cx,
-            events,
+            messages,
         }
     }
 
-    pub(crate) fn has_events(&self) -> bool {
-        !self.events.is_empty()
+    pub(crate) fn has_messages(&self) -> bool {
+        !self.messages.is_empty()
     }
 }
 
@@ -99,8 +99,8 @@ impl<'a, 'b> EventCx<'a, 'b> {
         }
     }
 
-    pub fn add_event(&mut self, event: Message) {
-        self.cx_state.events.push(event);
+    pub fn add_message(&mut self, message: Message) {
+        self.cx_state.messages.push(message);
     }
 
     pub fn set_active(&mut self, is_active: bool) {
@@ -155,8 +155,8 @@ impl<'a, 'b> LayoutCx<'a, 'b> {
         }
     }
 
-    pub fn add_event(&mut self, event: Message) {
-        self.cx_state.events.push(event);
+    pub fn add_message(&mut self, message: Message) {
+        self.cx_state.messages.push(message);
     }
 
     pub fn font_cx(&mut self) -> &mut FontContext {

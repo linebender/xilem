@@ -75,15 +75,15 @@ pub trait View<T, A = ()>: Send {
         element: &mut Self::Element,
     ) -> ChangeFlags;
 
-    /// Propagate an event.
+    /// Propagate a message.
     ///
-    /// Handle an event, propagating to children if needed. Here, `id_path` is a slice
+    /// Handle a message, propagating to children if needed. Here, `id_path` is a slice
     /// of ids beginning at a child of this view.
-    fn event(
+    fn message(
         &self,
         id_path: &[Id],
         state: &mut Self::State,
-        event: Box<dyn Any>,
+        message: Box<dyn Any>,
         app_state: &mut T,
     ) -> MessageResult<A>;
 }
