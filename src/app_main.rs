@@ -27,7 +27,7 @@ use vello::{
 };
 use vello::{Scene, SceneBuilder, SceneFragment};
 
-use crate::{app::App, widget::RawEvent, View, Widget};
+use crate::{app::App, widget::Event, View, Widget};
 
 // This is a bit of a hack just to get a window launched. The real version
 // would deal with multiple windows and have other ways to configure things.
@@ -127,32 +127,39 @@ where
     }
 
     fn accesskit_tree(&mut self) -> TreeUpdate {
-        TreeUpdate::default()
+        self.app.accesskit_connected = true;
+        self.app.accessibility()
+    }
+
+    fn accesskit_action(&mut self, request: accesskit::ActionRequest) {
+        self.app
+            .window_event(Event::TargetedAccessibilityAction(request));
+        self.handle.invalidate();
     }
 
     fn mouse_down(&mut self, event: &MouseEvent) {
-        self.app.window_event(RawEvent::MouseDown(event.into()));
+        self.app.window_event(Event::MouseDown(event.into()));
         self.handle.invalidate();
     }
 
     fn mouse_up(&mut self, event: &MouseEvent) {
-        self.app.window_event(RawEvent::MouseUp(event.into()));
+        self.app.window_event(Event::MouseUp(event.into()));
         self.handle.invalidate();
     }
 
     fn mouse_move(&mut self, event: &MouseEvent) {
-        self.app.window_event(RawEvent::MouseMove(event.into()));
+        self.app.window_event(Event::MouseMove(event.into()));
         self.handle.invalidate();
         self.handle.set_cursor(&Cursor::Arrow);
     }
 
     fn wheel(&mut self, event: &MouseEvent) {
-        self.app.window_event(RawEvent::MouseWheel(event.into()));
+        self.app.window_event(Event::MouseWheel(event.into()));
         self.handle.invalidate();
     }
 
     fn mouse_leave(&mut self) {
-        self.app.window_event(RawEvent::MouseLeft());
+        self.app.window_event(Event::MouseLeft());
         self.handle.invalidate();
     }
 

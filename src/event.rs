@@ -16,13 +16,13 @@ use std::any::Any;
 
 use crate::id::IdPath;
 
-pub struct Event {
+pub struct Message {
     pub id_path: IdPath,
     pub body: Box<dyn Any + Send>,
 }
 
 /// A result wrapper type for event handlers.
-pub enum EventResult<A> {
+pub enum MessageResult<A> {
     /// The event handler was invoked and returned an action.
     Action(A),
     /// The event handler received a change request that requests a rebuild.
@@ -40,21 +40,21 @@ pub enum EventResult<A> {
 
 pub struct AsyncWake;
 
-impl<A> EventResult<A> {
+impl<A> MessageResult<A> {
     #[allow(unused)]
-    pub fn map<B>(self, f: impl FnOnce(A) -> B) -> EventResult<B> {
+    pub fn map<B>(self, f: impl FnOnce(A) -> B) -> MessageResult<B> {
         match self {
-            EventResult::Action(a) => EventResult::Action(f(a)),
-            EventResult::RequestRebuild => EventResult::RequestRebuild,
-            EventResult::Stale => EventResult::Stale,
-            EventResult::Nop => EventResult::Nop,
+            MessageResult::Action(a) => MessageResult::Action(f(a)),
+            MessageResult::RequestRebuild => MessageResult::RequestRebuild,
+            MessageResult::Stale => MessageResult::Stale,
+            MessageResult::Nop => MessageResult::Nop,
         }
     }
 }
 
-impl Event {
-    pub fn new(id_path: IdPath, event: impl Any + Send) -> Event {
-        Event {
+impl Message {
+    pub fn new(id_path: IdPath, event: impl Any + Send) -> Message {
+        Message {
             id_path,
             body: Box::new(event),
         }

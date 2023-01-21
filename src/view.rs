@@ -20,7 +20,7 @@ pub mod button;
 // pub mod list;
 // pub mod memoize;
 // pub mod scroll_view;
-pub mod text;
+// pub mod text;
 // pub mod use_state;
 // pub mod vstack;
 
@@ -33,7 +33,7 @@ use std::{
 use futures_task::{ArcWake, Waker};
 
 use crate::{
-    event::EventResult,
+    event::MessageResult,
     id::{Id, IdPath},
     widget::{ChangeFlags, Widget},
 };
@@ -75,17 +75,17 @@ pub trait View<T, A = ()>: Send {
         element: &mut Self::Element,
     ) -> ChangeFlags;
 
-    /// Propagate an event.
+    /// Propagate a message.
     ///
-    /// Handle an event, propagating to children if needed. Here, `id_path` is a slice
+    /// Handle a message, propagating to children if needed. Here, `id_path` is a slice
     /// of ids beginning at a child of this view.
-    fn event(
+    fn message(
         &self,
         id_path: &[Id],
         state: &mut Self::State,
-        event: Box<dyn Any>,
+        message: Box<dyn Any>,
         app_state: &mut T,
-    ) -> EventResult<A>;
+    ) -> MessageResult<A>;
 }
 
 #[derive(Clone)]

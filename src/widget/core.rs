@@ -21,16 +21,11 @@ use bitflags::bitflags;
 use glazier::kurbo::{Point, Rect, Size};
 use vello::{SceneBuilder, SceneFragment};
 
-use crate::Widget;
+use crate::{id::Id, Widget};
 
 use super::{
-    align::{
-        AlignResult, AlignmentAxis, Bottom, Center, HorizAlignment, Leading, SingleAlignment, Top,
-        Trailing, VertAlignment,
-    },
-    contexts::LifeCycleCx,
-    AlignCx, AnyWidget, CxState, EventCx, LayoutCx, LifeCycle, PaintCx, PreparePaintCx, RawEvent,
-    UpdateCx,
+    contexts::LifeCycleCx, AccessCx, AnyWidget, BoxConstraints, CxState, Event, EventCx, LayoutCx,
+    LifeCycle, PaintCx, UpdateCx,
 };
 
 bitflags! {
@@ -38,14 +33,22 @@ bitflags! {
     pub(crate) struct PodFlags: u32 {
         const REQUEST_UPDATE = 1;
         const REQUEST_LAYOUT = 2;
-        const REQUEST_PAINT = 4;
+        const REQUEST_ACCESSIBILITY = 4;
+        const REQUEST_PAINT = 8;
 
-        const IS_HOT = 8;
-        const IS_ACTIVE = 16;
-        const HAS_ACTIVE = 32;
+        const IS_HOT = 0x10;
+        const IS_ACTIVE = 0x20;
+        const HAS_ACTIVE = 0x40;
+        const HAS_ACCESSIBILITY = 0x80;
 
-        const UPWARD_FLAGS = Self::REQUEST_LAYOUT.bits | Self::REQUEST_PAINT.bits | Self::HAS_ACTIVE.bits;
-        const INIT_FLAGS = Self::REQUEST_UPDATE.bits | Self::REQUEST_LAYOUT.bits | Self::REQUEST_PAINT.bits;
+        const UPWARD_FLAGS = Self::REQUEST_LAYOUT.bits
+            | Self::REQUEST_PAINT.bits
+            | Self::HAS_ACTIVE.bits
+            | Self::HAS_ACCESSIBILITY.bits;
+        const INIT_FLAGS = Self::REQUEST_UPDATE.bits
+            | Self::REQUEST_LAYOUT.bits
+            | Self::REQUEST_ACCESSIBILITY.bits
+            | Self::REQUEST_PAINT.bits;
     }
 }
 
@@ -55,7 +58,8 @@ bitflags! {
     pub struct ChangeFlags: u8 {
         const UPDATE = 1;
         const LAYOUT = 2;
-        const PAINT = 4;
+        const ACCESSIBILITY = 4;
+        const PAINT = 8;
     }
 }
 
@@ -66,54 +70,43 @@ pub struct Pod {
     fragment: SceneFragment,
 }
 
-#[derive(Default, Debug)]
+#[derive(Debug)]
 pub(crate) struct WidgetState {
+    pub(crate) id: Id,
     pub(crate) flags: PodFlags,
+    /// The origin of the child in the parent's coordinate space.
     pub(crate) origin: Point,
-    /// The minimum intrinsic size of the widget.
-    pub(crate) min_size: Size,
-    /// The maximum intrinsic size of the widget.
-    pub(crate) max_size: Size,
-    /// The size proposed by the widget's container.
-    pub(crate) proposed_size: Size,
+    /// The origin of the parent in the window coordinate space.
+    pub(crate) parent_window_origin: Point,
     /// The size of the widget.
     pub(crate) size: Size,
 }
 
 impl WidgetState {
+    pub(crate) fn new() -> Self {
+        let id = Id::next();
+        WidgetState {
+            id,
+            flags: PodFlags::INIT_FLAGS,
+            origin: Default::default(),
+            parent_window_origin: Default::default(),
+            size: Default::default(),
+        }
+    }
+
     fn merge_up(&mut self, child_state: &mut WidgetState) {
         self.flags |= child_state.flags & PodFlags::UPWARD_FLAGS;
+        if child_state.flags.contains(PodFlags::REQUEST_ACCESSIBILITY) {
+            self.flags |= PodFlags::HAS_ACCESSIBILITY;
+        }
     }
 
     fn request(&mut self, flags: PodFlags) {
         self.flags |= flags
     }
 
-    /// Get alignment value.
-    ///
-    /// The value is in the coordinate system of the parent widget.
-    pub(crate) fn get_alignment(&self, widget: &dyn AnyWidget, alignment: SingleAlignment) -> f64 {
-        if alignment.id() == Leading.id() || alignment.id() == Top.id() {
-            0.0
-        } else if alignment.id() == <Center as HorizAlignment>::id(&Center) {
-            match alignment.axis() {
-                AlignmentAxis::Horizontal => self.size.width * 0.5,
-                AlignmentAxis::Vertical => self.size.height * 0.5,
-            }
-        } else if alignment.id() == Trailing.id() {
-            self.size.width
-        } else if alignment.id() == Bottom.id() {
-            self.size.height
-        } else {
-            let mut align_result = AlignResult::default();
-            let mut align_cx = AlignCx {
-                widget_state: self,
-                align_result: &mut align_result,
-                origin: self.origin,
-            };
-            widget.align(&mut align_cx, alignment);
-            align_result.reap(alignment)
-        }
+    pub(crate) fn window_origin(&self) -> Point {
+        self.parent_window_origin + self.origin.to_vec2()
     }
 }
 
@@ -124,10 +117,7 @@ impl Pod {
 
     pub fn new_from_box(widget: Box<dyn AnyWidget>) -> Self {
         Pod {
-            state: WidgetState {
-                flags: PodFlags::INIT_FLAGS,
-                ..Default::default()
-            },
+            state: WidgetState::new(),
             fragment: SceneFragment::default(),
             widget,
         }
@@ -148,7 +138,7 @@ impl Pod {
 
     /// Propagate a platform event. As in Druid, a great deal of the event
     /// dispatching logic is in this function.
-    pub fn event(&mut self, cx: &mut EventCx, event: &RawEvent) {
+    pub fn event(&mut self, cx: &mut EventCx, event: &Event) {
         if cx.is_handled {
             return;
         }
@@ -156,7 +146,7 @@ impl Pod {
         let mut modified_event = None;
         let had_active = self.state.flags.contains(PodFlags::HAS_ACTIVE);
         let recurse = match event {
-            RawEvent::MouseDown(mouse_event) => {
+            Event::MouseDown(mouse_event) => {
                 Pod::set_hot_state(
                     &mut self.widget,
                     &mut self.state,
@@ -167,13 +157,13 @@ impl Pod {
                 if had_active || self.state.flags.contains(PodFlags::IS_HOT) {
                     let mut mouse_event = mouse_event.clone();
                     mouse_event.pos -= self.state.origin.to_vec2();
-                    modified_event = Some(RawEvent::MouseDown(mouse_event));
+                    modified_event = Some(Event::MouseDown(mouse_event));
                     true
                 } else {
                     false
                 }
             }
-            RawEvent::MouseUp(mouse_event) => {
+            Event::MouseUp(mouse_event) => {
                 Pod::set_hot_state(
                     &mut self.widget,
                     &mut self.state,
@@ -184,13 +174,13 @@ impl Pod {
                 if had_active || self.state.flags.contains(PodFlags::IS_HOT) {
                     let mut mouse_event = mouse_event.clone();
                     mouse_event.pos -= self.state.origin.to_vec2();
-                    modified_event = Some(RawEvent::MouseUp(mouse_event));
+                    modified_event = Some(Event::MouseUp(mouse_event));
                     true
                 } else {
                     false
                 }
             }
-            RawEvent::MouseMove(mouse_event) => {
+            Event::MouseMove(mouse_event) => {
                 let hot_changed = Pod::set_hot_state(
                     &mut self.widget,
                     &mut self.state,
@@ -201,13 +191,13 @@ impl Pod {
                 if had_active || self.state.flags.contains(PodFlags::IS_HOT) || hot_changed {
                     let mut mouse_event = mouse_event.clone();
                     mouse_event.pos -= self.state.origin.to_vec2();
-                    modified_event = Some(RawEvent::MouseMove(mouse_event));
+                    modified_event = Some(Event::MouseMove(mouse_event));
                     true
                 } else {
                     false
                 }
             }
-            RawEvent::MouseWheel(mouse_event) => {
+            Event::MouseWheel(mouse_event) => {
                 Pod::set_hot_state(
                     &mut self.widget,
                     &mut self.state,
@@ -218,13 +208,13 @@ impl Pod {
                 if had_active || self.state.flags.contains(PodFlags::IS_HOT) {
                     let mut mouse_event = mouse_event.clone();
                     mouse_event.pos -= self.state.origin.to_vec2();
-                    modified_event = Some(RawEvent::MouseWheel(mouse_event));
+                    modified_event = Some(Event::MouseWheel(mouse_event));
                     true
                 } else {
                     false
                 }
             }
-            RawEvent::MouseLeft() => {
+            Event::MouseLeft() => {
                 let hot_changed =
                     Pod::set_hot_state(&mut self.widget, &mut self.state, cx.cx_state, rect, None);
                 if had_active || hot_changed {
@@ -232,6 +222,14 @@ impl Pod {
                 } else {
                     false
                 }
+            }
+            Event::TargetedAccessibilityAction(action) => {
+                println!("TODO: {:?}", action);
+                // TODO: here we always recurse, as we are currently lacking a
+                // mechanism to route events identified by widget id. We should
+                // either track the tree structure so we can reconstruct the id
+                // path, or use Bloom filters as in Druid.
+                true
             }
         };
         if recurse {
@@ -278,48 +276,36 @@ impl Pod {
         }
     }
 
-    pub fn measure(&mut self, cx: &mut LayoutCx) -> (Size, Size) {
+    pub fn layout(&mut self, cx: &mut LayoutCx, bc: &BoxConstraints) -> Size {
         if self.state.flags.contains(PodFlags::REQUEST_LAYOUT) {
             let mut child_cx = LayoutCx {
                 cx_state: cx.cx_state,
                 widget_state: &mut self.state,
             };
-            let (min_size, max_size) = self.widget.measure(&mut child_cx);
-            self.state.min_size = min_size;
-            self.state.max_size = max_size;
-            // Don't remove REQUEST_LAYOUT here, that will be done in layout.
-        }
-        (self.state.min_size, self.state.max_size)
-    }
-
-    pub fn layout(&mut self, cx: &mut LayoutCx, proposed_size: Size) -> Size {
-        if self.state.flags.contains(PodFlags::REQUEST_LAYOUT)
-            || proposed_size != self.state.proposed_size
-        {
-            let mut child_cx = LayoutCx {
-                cx_state: cx.cx_state,
-                widget_state: &mut self.state,
-            };
-            let new_size = self.widget.layout(&mut child_cx, proposed_size);
+            let new_size = self.widget.layout(&mut child_cx, bc);
             println!("layout size = {:?}", new_size);
-            self.state.proposed_size = proposed_size;
             self.state.size = new_size;
             self.state.flags.remove(PodFlags::REQUEST_LAYOUT);
         }
         self.state.size
     }
 
-    /// Propagate alignment query to children.
-    ///
-    /// This call aggregates all instances of the alignment, so cost may be
-    /// proportional to the number of descendants.
-    pub fn align(&self, cx: &mut AlignCx, alignment: SingleAlignment) {
-        let mut child_cx = AlignCx {
-            widget_state: &self.state,
-            align_result: cx.align_result,
-            origin: cx.origin + self.state.origin.to_vec2(),
-        };
-        self.widget.align(&mut child_cx, alignment);
+    pub fn accessibility(&mut self, cx: &mut AccessCx) {
+        if self
+            .state
+            .flags
+            .intersects(PodFlags::REQUEST_ACCESSIBILITY | PodFlags::HAS_ACCESSIBILITY)
+        {
+            let mut child_cx = AccessCx {
+                cx_state: cx.cx_state,
+                widget_state: &mut self.state,
+                update: cx.update,
+            };
+            self.widget.accessibility(&mut child_cx);
+            self.state
+                .flags
+                .remove(PodFlags::REQUEST_ACCESSIBILITY | PodFlags::HAS_ACCESSIBILITY);
+        }
     }
 
     pub fn paint_raw(&mut self, cx: &mut PaintCx, builder: &mut SceneBuilder) {
@@ -330,10 +316,6 @@ impl Pod {
         self.widget.paint(&mut inner_cx, builder);
     }
 
-    pub fn prepare_paint(&mut self, cx: &mut PreparePaintCx, visible: Rect) {
-        self.widget.prepare_paint(cx, visible);
-    }
-
     pub fn paint(&mut self, cx: &mut PaintCx) {
         let mut inner_cx = PaintCx {
             cx_state: cx.cx_state,
@@ -341,16 +323,6 @@ impl Pod {
         };
         let mut builder = SceneBuilder::for_fragment(&mut self.fragment);
         self.widget.paint(&mut inner_cx, &mut builder);
-    }
-
-    pub fn height_flexibility(&self) -> f64 {
-        self.state.max_size.height - self.state.min_size.height
-    }
-
-    /// The returned value is in the coordinate space of the parent that
-    /// owns this pod.
-    pub fn get_alignment(&self, alignment: SingleAlignment) -> f64 {
-        self.state.get_alignment(&self.widget, alignment)
     }
 
     // Return true if hot state has changed
@@ -385,5 +357,10 @@ impl Pod {
     /// (skipping further paint calls) if the appearance does not change.
     pub fn fragment(&self) -> &SceneFragment {
         &self.fragment
+    }
+
+    /// Get the id of the widget in the pod.
+    pub fn id(&self) -> Id {
+        self.state.id
     }
 }

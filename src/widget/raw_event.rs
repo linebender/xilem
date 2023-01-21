@@ -1,8 +1,3 @@
-use glazier::{
-    kurbo::{Point, Vec2},
-    Modifiers, MouseButton, MouseButtons,
-};
-
 // Copyright 2022 The Druid Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,13 +12,24 @@ use glazier::{
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//! Handling of platform and integration events at the widget level.
+//!
+//! Note: arguably this module should be renamed, perhaps we should use
+//! "event" for this level and maybe "message" at the View level.
+
+use glazier::{
+    kurbo::{Point, Vec2},
+    Modifiers, MouseButton, MouseButtons,
+};
+
 #[derive(Debug, Clone)]
-pub enum RawEvent {
+pub enum Event {
     MouseDown(MouseEvent),
     MouseUp(MouseEvent),
     MouseMove(MouseEvent),
     MouseWheel(MouseEvent),
     MouseLeft(),
+    TargetedAccessibilityAction(accesskit::ActionRequest),
 }
 
 #[derive(Debug, Clone)]
