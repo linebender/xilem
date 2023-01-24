@@ -58,6 +58,7 @@ pub struct WindowConfig {
     pub(crate) transparent: Option<bool>,
     pub(crate) show_titlebar: Option<bool>,
     pub(crate) level: Option<WindowLevel>,
+    // TODO - Remove?
     pub(crate) state: Option<WindowState>,
 }
 
