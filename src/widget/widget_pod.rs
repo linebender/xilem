@@ -46,7 +46,6 @@ impl<W: Widget> WidgetPod<W> {
         Self::new_with_id(inner, WidgetId::next())
     }
 
-    // TODO - reorder args
     /// Create a new widget pod with fixed id.
     pub fn new_with_id(inner: W, id: WidgetId) -> WidgetPod<W> {
         let mut state = WidgetState::new(id, None, inner.short_type_name());
