@@ -59,7 +59,7 @@
 - [X] Write remaining tasks in Github
 - [X] Rewrite License bits
 - [ ] Write ARCHITECTURE.md
-- [ ] Write CONTRIBUTING.md
+- [X] Write CONTRIBUTING.md
 - [ ] Publish
 
 # TODO - Long term
