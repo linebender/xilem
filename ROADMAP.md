@@ -47,8 +47,6 @@
  - [X] Create StoreInWidgetMut from (Widget, WidgetCtx)
  - [X] Create `declare_widget!()` macro to implement boilerplate.
 
-- [ ] Re-add Dialog
-
 - [X] Write examples
  - [X] To-do List
  - [X] Fix blocking_function example
@@ -58,13 +56,17 @@
 
 - [X] Split off from Druid repo
 - [X] Rename to Masonry
-- [ ] Write remaining tasks in Github
+- [X] Write remaining tasks in Github
 - [X] Rewrite License bits
 - [ ] Write ARCHITECTURE.md
 - [ ] Write CONTRIBUTING.md
 - [ ] Publish
 
 # TODO - Long term
+
+- [ ] Re-add Dialog
+
+- [ ] Switch to using Vello and Glazier
 
 - [ ] Refactor TextLayout
 
@@ -80,9 +82,11 @@
 - [ ] Remove Data trait
 
 
-- [ ] Handle reques_layout-in-layout corner case
+- [ ] Handle request-layout-in-layout corner case
 
 - [ ] Add logo
+
+- [ ] Create project board
 
 - [ ] Refactor WidgetState
  - [ ] Add WidgetTmpState
