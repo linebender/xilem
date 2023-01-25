@@ -16,7 +16,7 @@ cargo add masonry
 
 ### Linux
 
-On Linux, Masonry requires gtk+3; see [GTK installation page].
+On Linux, Masonry requires gtk+3; see [GTK installation page](https://www.gtk.org/docs/installations/linux/).
 (On ubuntu-based distro, running `sudo apt-get install libgtk-3-dev` from the terminal will do the job.)
 
 ### OpenBSD
@@ -148,10 +148,20 @@ fn some_test_with_a_button() {
 
 ## Contributing
 
-Issues and PRs are welcome. See [help-wanted issues](https://github.com/PoignardAzur/masonry-rs/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22) if you don't know where to begin.
+Issues and PRs are welcome. See [`help-wanted` issues](https://github.com/PoignardAzur/masonry-rs/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22) if you don't know where to begin.
 
 ## Roadmap
 
-TODO
+The immediate next steps are:
 
-See [ROADMAP.md].
+- [ ] Remove Env type and Data trait (#8)
+- [ ] Re-add Dialog feature (#25)
+- [ ] Switch to using Vello and Glazier (#24)
+- [ ] Refactor TextLayout (#23)
+
+- [ ] Rework Widget trait (#26)
+
+- [ ] Port Panoramix to Masonry
+- [ ] Port Xilem to Masonry
+
+See [ROADMAP.md](./ROADMAP.md) and [the issues page](https://github.com/PoignardAzur/masonry-rs/issues) for more.

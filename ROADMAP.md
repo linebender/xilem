@@ -65,25 +65,27 @@
 - [X] Write README.md and doc root
 - [ ] Publish
 
+# TODO - Next steps
+
+- [ ] Remove Env type and Data trait (#8)
+- [ ] Re-add Dialog feature (#25)
+- [ ] Switch to using Vello and Glazier (#24)
+- [ ] Refactor TextLayout (#23)
+
+- [ ] Rework Widget trait (#26)
+
+- [ ] Port Panoramix to Masonry
+- [ ] Port Xilem to Masonry
+
 # TODO - Long term
 
-- [ ] Re-add Dialog
-
-- [ ] Switch to using Vello and Glazier
-
-- [ ] Refactor TextLayout
-
 - [ ] Brainstorm names for AppDelegate, Harness methods, Action, ExtEvent
-
 
 - [ ] Move debug logger to use tracing infrastructure
 
 - [ ] Refactor Mouse Events and hot status changes
 
 - [ ] Remove `impl Widget for Box<dyn Widget>`
-
-- [ ] Remove Data trait
-
 
 - [ ] Handle request-layout-in-layout corner case
 
@@ -108,7 +110,6 @@
  - Ideally, should be a single function (?)
  - Probably unify on_event, on_command, on_action
 
-- [ ] Port Panoramix
 - [ ] Add WidgetBuilder trait
 - [ ] Switch module file conventions (foobar/mod.rs -> _foobar.rs)
 - [ ] Add dev shortcuts:
@@ -116,10 +117,10 @@
  - [ ] To print current focused/active Widget
  - [ ] To display invalidation rect
 
-- [ ] Trait-ify druid-shell
+- [ ] Trait-ify Glazier
  - [ ] ??? Start at the bottom?
 
-- [ ] druid-shell
+- [ ] Glazier
  - [ ] Rename WinHandler methods
   - size -> resize
   - scale -> rescale
@@ -144,7 +145,7 @@
 
 
 - [ ] Add fuzzing
- - [ ] Check Druid invariants
+ - [ ] Check Masonry invariants
  - [ ] Create fuzzing suite
  - [ ] Test it with intentional bugs
 
@@ -166,7 +167,7 @@
  - [ ] Add on_command() trait method
  - [ ] Unify timers and promises
 
-- [ ] Refactor Druid env
+- [ ] Reintroduce Env type (?)
  - [ ] Remove Data trait
  - [ ] Make it so that required keys are known at launch time for better error messages.
  - [ ] Re-add Localization
