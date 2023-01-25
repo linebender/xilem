@@ -77,10 +77,8 @@ pub struct WidgetCtx<'a, 'b> {
 
 /// A context provided to event handling methods of widgets.
 ///
-/// Widgets should call [`request_paint`] whenever an event causes a change
+/// Widgets should call [`request_paint`](Self::request_paint) whenever an event causes a change
 /// in the widget's appearance, to schedule a repaint.
-///
-/// [`request_paint`]: #method.request_paint
 pub struct EventCtx<'a, 'b> {
     pub(crate) global_state: &'a mut GlobalPassCtx<'b>,
     pub(crate) widget_state: &'a mut WidgetState,
@@ -92,13 +90,7 @@ pub struct EventCtx<'a, 'b> {
 
 /// A context provided to the [`lifecycle`] method on widgets.
 ///
-/// Certain methods on this context are only meaningful during the handling of
-/// specific lifecycle events; for instance [`register_child`]
-/// should only be called while handling [`LifeCycle::WidgetAdded`].
-///
 /// [`lifecycle`]: trait.Widget.html#tymethod.lifecycle
-/// [`register_child`]: #method.register_child
-/// [`LifeCycle::WidgetAdded`]: enum.LifeCycle.html#variant.WidgetAdded
 pub struct LifeCycleCtx<'a, 'b> {
     pub(crate) global_state: &'a mut GlobalPassCtx<'b>,
     pub(crate) widget_state: &'a mut WidgetState,
@@ -245,13 +237,11 @@ impl_context_method!(
         /// The active status of a widget.
         ///
         /// Active status generally corresponds to a mouse button down. Widgets
-        /// with behavior similar to a button will call [`set_active`] on mouse
+        /// with behavior similar to a button will call [`set_active`](EventCtx::set_active) on mouse
         /// down and then up.
         ///
         /// When a widget is active, it gets mouse events even when the mouse
         /// is dragged away.
-        ///
-        /// [`set_active`]: struct.EventCtx.html#method.set_active
         pub fn is_active(&self) -> bool {
             self.widget_state.is_active
         }
@@ -282,9 +272,7 @@ impl_context_method!(
         /// The (tree) focus status of a widget.
         ///
         /// Returns `true` if either this specific widget or any one of its descendants is focused.
-        /// To check if only this specific widget is focused use [`is_focused`],
-        ///
-        /// [`is_focused`]: #method.is_focused
+        /// To check if only this specific widget is focused use [`is_focused`](Self::is_focused).
         pub fn has_focus(&self) -> bool {
             self.widget_state.has_focus
         }
@@ -417,10 +405,9 @@ impl<'a, 'b> LifeCycleCtx<'a, 'b> {
 // methods on event and lifecycle
 impl_context_method!(WidgetCtx<'_, '_>, EventCtx<'_, '_>, LifeCycleCtx<'_, '_>, {
     /// Request a [`paint`] pass. This is equivalent to calling
-    /// [`request_paint_rect`] for the widget's [`paint_rect`].
+    /// [`request_paint_rect`](Self::request_paint_rect) for the widget's [`paint_rect`].
     ///
     /// [`paint`]: trait.Widget.html#tymethod.paint
-    /// [`request_paint_rect`]: #method.request_paint_rect
     /// [`paint_rect`]: struct.WidgetPod.html#method.paint_rect
     pub fn request_paint(&mut self) {
         trace!("request_paint");
@@ -644,7 +631,7 @@ impl EventCtx<'_, '_> {
 
     /// Set the "active" state of the widget.
     ///
-    /// See [`EventCtx::is_active`](struct.EventCtx.html#method.is_active).
+    /// See [`EventCtx::is_active`](Self::is_active).
     pub fn set_active(&mut self, active: bool) {
         trace!("set_active({})", active);
         self.widget_state.is_active = active;
@@ -669,9 +656,7 @@ impl EventCtx<'_, '_> {
     /// from different widgets during a single event cycle means that the last
     /// widget that requests focus will override the previous requests.
     ///
-    /// See [`is_focused`] for more information about focus.
-    ///
-    /// [`is_focused`]: struct.EventCtx.html#method.is_focused
+    /// See [`is_focused`](Self::is_focused) for more information about focus.
     pub fn request_focus(&mut self) {
         trace!("request_focus");
         // We need to send the request even if we're currently focused,
@@ -684,9 +669,7 @@ impl EventCtx<'_, '_> {
 
     /// Transfer focus to the widget with the given `WidgetId`.
     ///
-    /// See [`is_focused`] for more information about focus.
-    ///
-    /// [`is_focused`]: struct.EventCtx.html#method.is_focused
+    /// See [`is_focused`](Self::is_focused) for more information about focus.
     pub fn set_focus(&mut self, target: WidgetId) {
         trace!("set_focus target={:?}", target);
         self.widget_state.request_focus = Some(FocusChange::Focus(target));
@@ -696,9 +679,7 @@ impl EventCtx<'_, '_> {
     ///
     /// This should only be called by a widget that currently has focus.
     ///
-    /// See [`is_focused`] for more information about focus.
-    ///
-    /// [`is_focused`]: struct.EventCtx.html#method.is_focused
+    /// See [`is_focused`](Self::is_focused) for more information about focus.
     pub fn focus_next(&mut self) {
         trace!("focus_next");
         if self.has_focus() {
@@ -715,9 +696,7 @@ impl EventCtx<'_, '_> {
     ///
     /// This should only be called by a widget that currently has focus.
     ///
-    /// See [`is_focused`] for more information about focus.
-    ///
-    /// [`is_focused`]: struct.EventCtx.html#method.is_focused
+    /// See [`is_focused`](Self::is_focused) for more information about focus.
     pub fn focus_prev(&mut self) {
         trace!("focus_prev");
         if self.has_focus() {
@@ -734,9 +713,7 @@ impl EventCtx<'_, '_> {
     ///
     /// This should only be called by a widget that currently has focus.
     ///
-    /// See [`is_focused`] for more information about focus.
-    ///
-    /// [`is_focused`]: struct.EventCtx.html#method.is_focused
+    /// See [`is_focused`](Self::is_focused) for more information about focus.
     pub fn resign_focus(&mut self) {
         trace!("resign_focus");
         if self.has_focus() {
@@ -768,10 +745,9 @@ impl LifeCycleCtx<'_, '_> {
     ///
     /// This should only be called in response to a [`LifeCycle::BuildFocusChain`] event.
     ///
-    /// See [`EventCtx::is_focused`] for more information about focus.
+    /// See [`EventCtx::is_focused`](Self::is_focused) for more information about focus.
     ///
     /// [`LifeCycle::BuildFocusChain`]: enum.Lifecycle.html#variant.BuildFocusChain
-    /// [`EventCtx::is_focused`]: struct.EventCtx.html#method.is_focused
     pub fn register_for_focus(&mut self) {
         trace!("register_for_focus");
         self.widget_state.focus_chain.push(self.widget_id());
@@ -858,13 +834,11 @@ impl LayoutCtx<'_, '_> {
 impl PaintCtx<'_, '_, '_> {
     /// The depth in the tree of the currently painting widget.
     ///
-    /// This may be used in combination with [`paint_with_z_index`] in order
+    /// This may be used in combination with [`paint_with_z_index`](Self::paint_with_z_index) in order
     /// to correctly order painting operations.
     ///
     /// The `depth` here may not be exact; it is only guaranteed that a child will
     /// have a greater depth than its parent.
-    ///
-    /// [`paint_with_z_index`]: #method.paint_with_z_index
     #[inline]
     pub fn depth(&self) -> u32 {
         self.depth

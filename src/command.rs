@@ -127,16 +127,12 @@ pub enum Target {
     /// The target is the top-level application.
     ///
     /// The `Command` will be delivered to all open windows, and all widgets
-    /// in each window. Delivery will stop if the event is [`handled`].
-    ///
-    /// [`handled`]: crate::EventCtx::set_handled
+    /// in each window. Delivery will stop if the event is [`handled`](crate::EventCtx::set_handled).
     Global,
     /// The target is a specific window.
     ///
     /// The `Command` will be delivered to all widgets in that window.
-    /// Delivery will stop if the event is [`handled`].
-    ///
-    /// [`handled`]: crate::EventCtx::set_handled
+    /// Delivery will stop if the event is [`handled`](crate::EventCtx::set_handled).
     Window(WindowId),
     /// The target is a specific widget.
     Widget(WidgetId),
@@ -380,9 +376,6 @@ impl Command {
     /// Returns the `Command`'s [`Target`].
     ///
     /// [`Command::to`] can be used to change the [`Target`].
-    ///
-    /// [`Command::to`]: #method.to
-    /// [`Target`]: enum.Target.html
     pub fn target(&self) -> Target {
         self.target
     }
@@ -396,15 +389,12 @@ impl Command {
     ///
     /// Returns `None` when `self.is(selector) == false`.
     ///
-    /// Alternatively you can check the selector with [`is`] and then use [`get`].
+    /// Alternatively you can check the selector with [`is`](Self::is) and then use [`get`](Self::get).
     ///
     /// # Panics
     ///
     /// Panics when the payload has a different type, than what the selector is supposed to carry.
     /// This can happen when two selectors with different types but the same key are used.
-    ///
-    /// [`is`]: #method.is
-    /// [`get`]: #method.get
     pub fn try_get<T: Any>(&self, selector: Selector<T>) -> Option<&T> {
         if self.symbol == selector.symbol() {
             Some(self.payload.downcast_ref().unwrap_or_else(|| {
@@ -453,8 +443,6 @@ impl Notification {
     /// Panics when the payload has a different type, than what the selector
     /// is supposed to carry. This can happen when two selectors with different
     /// types but the same key are used.
-    ///
-    /// [`is`]: #method.is
     pub fn try_get<T: Any>(&self, selector: Selector<T>) -> Option<&T> {
         if self.symbol == selector.symbol() {
             Some(self.payload.downcast_ref().unwrap_or_else(|| {

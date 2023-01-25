@@ -123,6 +123,9 @@ impl<W: Widget> WidgetPod<W> {
     ///
     /// Two sibling widgets' layout rects will almost never intersect.
     ///
+    /// This rect wil also be used to detect whether any given pointer event (eg clicks)
+    /// intersects with the rectangle.
+    ///
     /// [`Rect`]: struct.Rect.html
     /// [`Size`]: struct.Size.html
     /// [`layout`]: trait.Widget.html#tymethod.layout
