@@ -76,7 +76,7 @@ impl<'a, 'b> WidgetMut<'a, 'b, Box<dyn Widget>> {
 impl<W: StoreInWidgetMut> WidgetMut<'_, '_, W> {
     /// Get the [`WidgetState`] of the current widget.
     pub fn state(&mut self) -> &WidgetState {
-        &W::get_ctx(&mut self.inner).widget_state
+        W::get_ctx(&mut self.inner).widget_state
     }
 
     /// Get the [`WidgetId`] of the current widget.

@@ -361,7 +361,7 @@ impl TestHarness {
                 {
                     // This is copy-pasted from druid-shell's simulate_input function
                     let selection = input_handler.selection();
-                    input_handler.replace_range(selection.range(), &c);
+                    input_handler.replace_range(selection.range(), c);
                     let new_caret_index = selection.min() + c.len();
                     input_handler.set_selection(Selection::caret(new_caret_index));
 

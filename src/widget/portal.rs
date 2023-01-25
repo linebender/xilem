@@ -269,9 +269,9 @@ impl<W: Widget> Widget for Portal<W> {
             _ => (),
         }
 
-        self.child.on_event(ctx, &event, env);
-        self.scrollbar_horizontal.on_event(ctx, &event, env);
-        self.scrollbar_vertical.on_event(ctx, &event, env);
+        self.child.on_event(ctx, event, env);
+        self.scrollbar_horizontal.on_event(ctx, event, env);
+        self.scrollbar_vertical.on_event(ctx, event, env);
         ctx.request_layout();
     }
 
@@ -322,7 +322,7 @@ impl<W: Widget> Widget for Portal<W> {
         if self.scrollbar_horizontal_visible {
             self.scrollbar_horizontal.widget_mut().portal_size = portal_size.width;
             self.scrollbar_horizontal.widget_mut().content_size = content_size.width;
-            let scrollbar_size = self.scrollbar_horizontal.layout(ctx, &bc, env);
+            let scrollbar_size = self.scrollbar_horizontal.layout(ctx, bc, env);
             ctx.place_child(
                 &mut self.scrollbar_horizontal,
                 Point::new(0.0, portal_size.height - scrollbar_size.height),
@@ -334,7 +334,7 @@ impl<W: Widget> Widget for Portal<W> {
         if self.scrollbar_vertical_visible {
             self.scrollbar_vertical.widget_mut().portal_size = portal_size.height;
             self.scrollbar_vertical.widget_mut().content_size = content_size.height;
-            let scrollbar_size = self.scrollbar_vertical.layout(ctx, &bc, env);
+            let scrollbar_size = self.scrollbar_vertical.layout(ctx, bc, env);
             ctx.place_child(
                 &mut self.scrollbar_vertical,
                 Point::new(portal_size.width - scrollbar_size.width, 0.0),
