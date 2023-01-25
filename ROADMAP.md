@@ -58,7 +58,7 @@
 - [X] Rename to Masonry
 - [X] Write remaining tasks in Github
 - [X] Rewrite License bits
-- [ ] Write ARCHITECTURE.md
+- [X] Write ARCHITECTURE.md
 - [X] Write CONTRIBUTING.md
 - [ ] Publish
 

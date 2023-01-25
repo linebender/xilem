@@ -18,17 +18,41 @@ Masonry has some opinionated design goals:
 - **Provide reflection.** Masonry should help developers surface some of the inherent structure in GUI programs. It should provide tools out-of-the-box to get information about the widget tree, performance indicators, etc. It should also provide accessibility data out-of-the-box.
 
 
-## Module and file layout
+## Code layout
+
+### `src/platform/`
+
+Some platform-specific stuff, for interfacing with Glazier. Relatively empty.
+
+### `src/testing/`
+
+Contains the TestHarness type, various helper widgets for writing tests, and the snapshot testing code.
+
+### `src/text/`
+
+Contains text-handling code, for both displaying and editing text. Hasn't been maintained in a while, here be dragons.
+
+### `src/widget/`
+
+Contains widget-related items, including the Widget trait, and the WidgetRef, WidgetMut and WidgetPod types.
+
+Also includes a list of basic widgets, each defined in a single file.
+
+### `src/app_root.rs`
+
+The composition root of the framework. See **General architecture** section.
+
+### `src/debug_logger.rs`, `src/debug_values.rs`
+
+WIP logger to get record of widget passes. See issue #11.
+
+## Module organization principles
 
 (Some of these principles aren't actually applied in the codebase yet. See issue #14 on Github.)
 
-### Main directories
-
-TODO
-
 ### Module structure
 
-Virtually every module should be private. The only public modules should inline modules that gather public-facing re-exports.
+Virtually every module should be private. The only public modules should be inline module blocks that gather public-facing re-exports.
 
 Most items should be exported from the root module, with no other public-facing export. This makes documentation more readable; readers don't need to click on multiple modules to find the item they're looking for.
 
@@ -106,7 +130,11 @@ The general pass order is "For each user event, call on_event once, then lifecyc
 
 ### WidgetMut
 
-TODO
+In Masonry, widgets can't be mutated directly. All mutations go through a `WidgetMut` wrapper. So, to change a label's text, you might call `WidgetMut<Label>::set_text()`. This helps Masonry make sure that internal metadata is propagated after every widget change.
+
+Generally speaking, to create a WidgetMut, you need a reference to the parent context that will be updated when the WidgetMut is dropped. That can be the WidgetMut of a parent, or an EventCtx / LifecycleCtx, or the WindowRoot. In general, container widgets will have methods such that you can get a WidgetMut of a child from the WidgetMut of a parent.
+
+WidgetMut gives direct mutable access to the widget tree. This can be used by GUI frameworks in their update method, and it can be used in tests to make specific local modifications and test their result.
 
 
 ### Tests
@@ -120,7 +148,3 @@ Ideally, the harness should provide ways to emulate absolutely every features th
 (TODO - Some of that emulation support is not implemented yet. See issue #12.)
 
 Each widget has unit tests in its module; and major features have modules with dedicated unit test suites. Ideally, we would like to achieve complete coverage within the crate.
-
-#### Editing the widget tree
-
-TODO
