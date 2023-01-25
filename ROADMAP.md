@@ -52,7 +52,9 @@
  - [X] Fix blocking_function example
  - [X] Copy examples from druid
 
-- [ ] Fix doc tests
+- [X] Fix doc tests
+
+- [ ] Write Widget Inspector
 
 - [X] Split off from Druid repo
 - [X] Rename to Masonry
@@ -60,6 +62,7 @@
 - [X] Rewrite License bits
 - [X] Write ARCHITECTURE.md
 - [X] Write CONTRIBUTING.md
+- [X] Write README.md and doc root
 - [ ] Publish
 
 # TODO - Long term
