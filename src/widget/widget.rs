@@ -227,6 +227,7 @@ pub trait StoreInWidgetMut: Widget {
     ) -> (&'r mut Self, &'r mut WidgetCtx<'a, 'b>);
 }
 
+// TODO - Generate a struct instead. See #27.
 /// Declare a mutable reference type for your widget.
 ///
 /// The general syntax is:
