@@ -105,7 +105,6 @@ pub struct WakeQueue(Arc<Mutex<Vec<IdPath>>>);
 
 impl<T: Send + 'static, V: View<T> + 'static> App<T, V>
 where
-    V::Element: Widget + 'static,
     V::State: 'static,
 {
     /// Create a new app instance.
@@ -226,13 +225,13 @@ where
             let mut layout_cx = LayoutCx::new(&mut cx_state, &mut self.root_state);
             let bc = BoxConstraints::tight(self.size);
             root_pod.layout(&mut layout_cx, &bc);
+            root_pod.set_origin(&mut layout_cx, Point::ORIGIN);
             if cx_state.has_messages() {
                 // Rerun app logic, primarily for LayoutObserver
                 // We might want some debugging here if the number of iterations
                 // becomes extreme.
                 continue;
             }
-            root_pod.set_origin(&mut layout_cx, Point::ORIGIN);
 
             if self.accesskit_connected {
                 let update = self.accessibility();
@@ -288,7 +287,7 @@ where
         let _ = self.req_chan.blocking_send(AppReq::Render(delay));
         if let Some(response) = self.response_chan.blocking_recv() {
             let state =
-                if let Some(element) = self.root_pod.as_mut().and_then(|pod| pod.downcast_mut()) {
+                if let Some(element) = self.root_pod.as_mut() {
                     let mut state = response.state.unwrap();
                     let changes = response.view.rebuild(
                         &mut self.cx,
@@ -303,7 +302,7 @@ where
                 } else {
                     let (id, state, element) = response.view.build(&mut self.cx);
                     assert!(self.cx.is_empty(), "id path imbalance on build");
-                    self.root_pod = Some(Pod::new(element));
+                    self.root_pod = Some(element);
                     self.id = Some(id);
                     state
                 };
@@ -325,10 +324,7 @@ impl<T, V: View<T>> App<T, V> {
     }
 }
 
-impl<T, V: View<T>, F: FnMut(&mut T) -> V> AppTask<T, V, F>
-where
-    V::Element: Widget + 'static,
-{
+impl<T, V: View<T>, F: FnMut(&mut T) -> V> AppTask<T, V, F>  {
     async fn run(&mut self) {
         let mut deadline = None;
         loop {

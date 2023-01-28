@@ -16,7 +16,7 @@ use std::{
     ops::{Deref, DerefMut},
 };
 
-use crate::{event::MessageResult, id::Id, Pod, widget::{AnyWidget, ChangeFlags}};
+use crate::{event::MessageResult, id::Id, Pod, widget::ChangeFlags};
 
 use super::{Cx, View};
 
@@ -55,7 +55,6 @@ pub trait AnyView<T, A = ()> {
 impl<T, A, V: View<T, A> + 'static> AnyView<T, A> for V
 where
     V::State: 'static,
-    V::Element: AnyWidget + 'static,
 {
     fn as_any(&self) -> &dyn Any {
         self

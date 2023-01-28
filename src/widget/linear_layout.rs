@@ -14,14 +14,12 @@
 
 use vello::kurbo::{Point, Size};
 use vello::SceneBuilder;
-use druid_shell::kurbo::{Point, Size};
 use crate::geometry::Axis;
-use crate::widget::{AccessCx, BoxConstraints};
+use crate::widget::{AccessCx, BoxConstraints, Event};
 
 use super::{
-    align::{Center, SingleAlignment},
     contexts::LifeCycleCx,
-    EventCx, LayoutCx, LifeCycle, PaintCx, Pod, RawEvent, UpdateCx, Widget,
+    EventCx, LayoutCx, LifeCycle, PaintCx, Pod, UpdateCx, Widget,
 };
 
 pub struct LinearLayout {
@@ -42,7 +40,7 @@ impl LinearLayout {
 }
 
 impl Widget for LinearLayout {
-    fn event(&mut self, cx: &mut EventCx, event: &RawEvent) {
+    fn event(&mut self, cx: &mut EventCx, event: &Event) {
         for child in &mut self.children {
             child.event(cx, event);
         }
@@ -61,11 +59,11 @@ impl Widget for LinearLayout {
     }
 
     fn layout(&mut self, cx: &mut LayoutCx, bc: &BoxConstraints) -> Size {
-        let child_bc = self.axis.with_major(*bc, 0.0..f64::infinity());
+        let child_bc = self.axis.with_major(*bc, 0.0..f64::INFINITY);
         let child_count = self.children.len();
 
-        let mut major_used = 0.0;
-        let mut max_minor = 0.0;
+        let mut major_used: f64 = 0.0;
+        let mut max_minor: f64 = 0.0;
 
         for (index, child) in self.children.iter_mut().enumerate() {
             let size = child.layout(cx, &child_bc);

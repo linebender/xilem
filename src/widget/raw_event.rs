@@ -53,7 +53,8 @@ pub enum LifeCycle {
     ViewContextChanged(ViewContext),
 }
 
-struct ViewContext {
+#[derive(Debug)]
+pub struct ViewContext {
     window_origin: Point,
     clip: Rect,
     mouse_position: Option<Point>,

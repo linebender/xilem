@@ -35,7 +35,7 @@ use futures_task::{ArcWake, Waker};
 
 use crate::{event::MessageResult, id::{Id, IdPath}, Pod, widget::{ChangeFlags, Widget}};
 
-use sequence::ViewSequence;
+pub use sequence::ViewSequence;
 
 /// A view object representing a node in the UI.
 ///

@@ -114,17 +114,17 @@ impl Dim2 for Size {
     }
 
     fn x(self) -> Self::Scalar {
-        self.x
+        self.width
     }
 
     fn y(self) -> Self::Scalar {
-        self.y
+        self.height
     }
 }
 
-struct Span {
-    low: f64,
-    high: f64,
+pub struct Span {
+    pub low: f64,
+    pub high: f64,
 }
 
 impl Dim2 for Rect {

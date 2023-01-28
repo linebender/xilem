@@ -23,9 +23,10 @@ use vello::{SceneBuilder, SceneFragment};
 use vello::kurbo::Affine;
 
 use crate::{id::Id, Widget};
+use crate::widget::AnyWidget;
 
 use super::{
-    contexts::LifeCycleCx, AccessCx, AnyWidget, BoxConstraints, CxState, Event, EventCx, LayoutCx,
+    contexts::LifeCycleCx, AccessCx, BoxConstraints, CxState, Event, EventCx, LayoutCx,
     LifeCycle, PaintCx, UpdateCx,
 };
 
@@ -127,7 +128,7 @@ impl Pod {
         }
     }
 
-    pub fn downcast_mut<T: 'static>(&mut self) -> Option<&mut T> {
+    pub fn downcast_mut<'a, T: 'static>(&'a mut self) -> Option<&'a mut T> {
         (*self.widget).as_any_mut().downcast_mut()
     }
 
@@ -254,10 +255,15 @@ impl Pod {
     }
 
     pub fn lifecycle(&mut self, cx: &mut LifeCycleCx, event: &LifeCycle) {
+        let mut modified_event = None;
         let recurse = match event {
             LifeCycle::HotChanged(_) => false,
             LifeCycle::ViewContextChanged(view) => {
+                modified_event = Some(
+                    LifeCycle::ViewContextChanged(view.translate_to(self.state.origin)),
+                );
 
+                true
             }
         };
         let mut child_cx = LifeCycleCx {
@@ -265,7 +271,7 @@ impl Pod {
             widget_state: &mut self.state,
         };
         if recurse {
-            self.widget.lifecycle(&mut child_cx, event);
+            self.widget.lifecycle(&mut child_cx, modified_event.as_ref().unwrap_or(event));
             cx.widget_state.merge_up(&mut self.state);
         }
     }

@@ -224,6 +224,9 @@ impl_context_method!(
     EventCx<'_, '_>,
     UpdateCx<'_, '_>,
     LifeCycleCx<'_, '_>,
+    LayoutCx<'_, '_>,
+    AccessCx<'_, '_>,
+    PaintCx<'_, '_>,
     {
         pub fn is_hot(&self) -> bool {
             self.widget_state.flags.contains(PodFlags::IS_HOT)
@@ -254,7 +257,7 @@ impl_context_method!(
     }
 );
 
-// Methods on EventCx, UpdateCx, and LifeCycleCx
+// Methods on EventCx, UpdateCx, LifeCycleCx and LayoutCx
 impl_context_method!(
     EventCx<'_, '_>,
     UpdateCx<'_, '_>,
@@ -263,6 +266,23 @@ impl_context_method!(
     {
         pub fn request_paint(&mut self) {
             self.widget_state.flags |= PodFlags::REQUEST_PAINT;
+        }
+    }
+);
+
+// Methods on all contexts besides LayoutCx.
+//
+// These Methods return information about the widget
+impl_context_method!(
+    EventCx<'_, '_>,
+    UpdateCx<'_, '_>,
+    LifeCycleCx<'_, '_>,
+    LayoutCx<'_, '_>,
+    AccessCx<'_, '_>,
+    PaintCx<'_, '_>,
+    {
+        pub fn size(&self) -> Size {
+            self.widget_state.size
         }
     }
 );
