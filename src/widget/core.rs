@@ -20,6 +20,7 @@
 use bitflags::bitflags;
 use glazier::kurbo::{Point, Rect, Size};
 use vello::{SceneBuilder, SceneFragment};
+use vello::kurbo::Affine;
 
 use crate::{id::Id, Widget};
 
@@ -40,6 +41,9 @@ bitflags! {
         const IS_ACTIVE = 0x20;
         const HAS_ACTIVE = 0x40;
         const HAS_ACCESSIBILITY = 0x80;
+
+        const NEEDS_SET_ORIGIN = 0x100;
+
 
         const UPWARD_FLAGS = Self::REQUEST_LAYOUT.bits
             | Self::REQUEST_PAINT.bits
@@ -132,8 +136,8 @@ impl Pod {
             .request(PodFlags::from_bits(flags.bits().into()).unwrap());
     }
 
-    pub fn request_update(&mut self) {
-        self.state.request(PodFlags::REQUEST_UPDATE);
+    pub fn apply_child_flags(&mut self, changes: ChangeFlags) {
+        self.state.request(PodFlags::from_bits_truncate(changes.bits() as u32))
     }
 
     /// Propagate a platform event. As in Druid, a great deal of the event
@@ -252,6 +256,9 @@ impl Pod {
     pub fn lifecycle(&mut self, cx: &mut LifeCycleCx, event: &LifeCycle) {
         let recurse = match event {
             LifeCycle::HotChanged(_) => false,
+            LifeCycle::ViewContextChanged(view) => {
+
+            }
         };
         let mut child_cx = LifeCycleCx {
             cx_state: cx.cx_state,
@@ -277,16 +284,15 @@ impl Pod {
     }
 
     pub fn layout(&mut self, cx: &mut LayoutCx, bc: &BoxConstraints) -> Size {
-        if self.state.flags.contains(PodFlags::REQUEST_LAYOUT) {
-            let mut child_cx = LayoutCx {
-                cx_state: cx.cx_state,
-                widget_state: &mut self.state,
-            };
-            let new_size = self.widget.layout(&mut child_cx, bc);
-            println!("layout size = {:?}", new_size);
-            self.state.size = new_size;
-            self.state.flags.remove(PodFlags::REQUEST_LAYOUT);
-        }
+        let mut child_cx = LayoutCx {
+            cx_state: cx.cx_state,
+            widget_state: &mut self.state,
+        };
+        let new_size = self.widget.layout(&mut child_cx, bc);
+        println!("layout size = {:?}", new_size);
+        self.state.size = new_size;
+        self.state.flags.insert(PodFlags::NEEDS_SET_ORIGIN);
+        self.state.flags.remove(PodFlags::REQUEST_LAYOUT);
         self.state.size
     }
 
@@ -324,6 +330,21 @@ impl Pod {
         };
         let mut builder = SceneBuilder::for_fragment(&mut self.fragment);
         self.widget.paint(&mut inner_cx, &mut builder);
+    }
+
+    pub fn paint_into(&mut self, cx: &mut PaintCx, builder: &mut SceneBuilder) {
+        self.paint(cx);
+        let transform = Affine::translate(self.state.origin.to_vec2());
+        builder.append(&self.fragment, Some(transform));
+    }
+
+    pub fn set_origin(&mut self, cx: &mut LayoutCx, origin: Point) {
+        self.state.origin = origin;
+        // request paint is called on the parent instead of this widget, since its fragment does
+        //not change.
+        cx.request_paint();
+
+        //TODO: set the hot state & update parent_window_origin
     }
 
     // Return true if hot state has changed

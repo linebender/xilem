@@ -73,6 +73,20 @@ pub struct PaintCx<'a, 'b> {
     pub(crate) widget_state: &'a WidgetState,
 }
 
+/// A macro for implementing methods on multiple contexts.
+///
+/// There are a lot of methods defined on multiple contexts; this lets us only
+/// have to write them out once.
+macro_rules! impl_context_method {
+    ($ty:ty,  { $($method:item)+ } ) => {
+        impl $ty { $($method)+ }
+    };
+    ( $ty:ty, $($more:ty),+, { $($method:item)+ } ) => {
+        impl_context_method!($ty, { $($method)+ });
+        impl_context_method!($($more),+, { $($method)+ });
+    };
+}
+
 impl<'a> CxState<'a> {
     pub fn new(
         window: &'a WindowHandle,
@@ -100,16 +114,12 @@ impl<'a, 'b> EventCx<'a, 'b> {
         }
     }
 
-    pub fn add_message(&mut self, message: Message) {
-        self.cx_state.messages.push(message);
-    }
-
     pub fn set_active(&mut self, is_active: bool) {
         self.widget_state.flags.set(PodFlags::IS_ACTIVE, is_active);
     }
 
-    pub fn is_hot(&self) -> bool {
-        self.widget_state.flags.contains(PodFlags::IS_HOT)
+    pub fn request_update(&mut self) {
+        self.widget_state.flags.insert(PodFlags::REQUEST_UPDATE);
     }
 
     pub fn set_handled(&mut self, is_handled: bool) {
@@ -127,9 +137,7 @@ impl<'a, 'b> EventCx<'a, 'b> {
 }
 
 impl<'a, 'b> LifeCycleCx<'a, 'b> {
-    pub fn request_paint(&mut self) {
-        self.widget_state.flags |= PodFlags::REQUEST_PAINT;
-    }
+
 }
 
 impl<'a, 'b> UpdateCx<'a, 'b> {
@@ -139,13 +147,6 @@ impl<'a, 'b> UpdateCx<'a, 'b> {
             widget_state: root_state,
         }
     }
-
-    pub fn request_layout(&mut self) {
-        // If the layout changes, the accessibility tree needs to be updated to
-        // match. Alternatively, we could be lazy and request accessibility when
-        // the layout actually changes.
-        self.widget_state.flags |= PodFlags::REQUEST_LAYOUT | PodFlags::REQUEST_ACCESSIBILITY;
-    }
 }
 
 impl<'a, 'b> LayoutCx<'a, 'b> {
@@ -154,10 +155,6 @@ impl<'a, 'b> LayoutCx<'a, 'b> {
             cx_state,
             widget_state: root_state,
         }
-    }
-
-    pub fn add_message(&mut self, message: Message) {
-        self.cx_state.messages.push(message);
     }
 
     pub fn font_cx(&mut self) -> &mut FontContext {
@@ -215,19 +212,57 @@ impl<'a, 'b> PaintCx<'a, 'b> {
         }
     }
 
-    pub fn is_hot(&self) -> bool {
-        self.widget_state.flags.contains(PodFlags::IS_HOT)
-    }
-
-    pub fn is_active(&self) -> bool {
-        self.widget_state.flags.contains(PodFlags::IS_ACTIVE)
-    }
-
-    pub fn size(&self) -> Size {
-        self.widget_state.size
-    }
-
     pub fn font_cx(&mut self) -> &mut FontContext {
         self.cx_state.font_cx
     }
 }
+
+// Methods on all contexts.
+//
+// These Methods return information about the widget
+impl_context_method!(
+    EventCx<'_, '_>,
+    UpdateCx<'_, '_>,
+    LifeCycleCx<'_, '_>,
+    {
+        pub fn is_hot(&self) -> bool {
+            self.widget_state.flags.contains(PodFlags::IS_HOT)
+        }
+
+        pub fn is_active(&self) -> bool {
+            self.widget_state.flags.contains(PodFlags::IS_ACTIVE)
+        }
+    }
+);
+
+// Methods on EventCx, UpdateCx, and LifeCycleCx
+impl_context_method!(
+    EventCx<'_, '_>,
+    UpdateCx<'_, '_>,
+    LifeCycleCx<'_, '_>,
+    {
+        pub fn request_layout(&mut self) {
+            // If the layout changes, the accessibility tree needs to be updated to
+            // match. Alternatively, we could be lazy and request accessibility when
+            // the layout actually changes.
+            self.widget_state.flags |= PodFlags::REQUEST_LAYOUT | PodFlags::REQUEST_ACCESSIBILITY;
+        }
+
+        pub fn add_message(&mut self, message: Message) {
+            self.cx_state.messages.push(message);
+        }
+    }
+);
+
+// Methods on EventCx, UpdateCx, and LifeCycleCx
+impl_context_method!(
+    EventCx<'_, '_>,
+    UpdateCx<'_, '_>,
+    LifeCycleCx<'_, '_>,
+    LayoutCx<'_, '_>,
+    {
+        pub fn request_paint(&mut self) {
+            self.widget_state.flags |= PodFlags::REQUEST_PAINT;
+        }
+    }
+);

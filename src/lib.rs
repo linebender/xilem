@@ -6,6 +6,7 @@ mod test_scenes;
 mod text;
 mod view;
 mod widget;
+mod geometry;
 
 pub use app::App;
 pub use app_main::AppLauncher;

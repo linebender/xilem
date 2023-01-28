@@ -15,11 +15,16 @@
 use std::{any::Any, marker::PhantomData};
 
 use crate::{event::EventResult, id::Id, view_seq::ViewSequence, widget::WidgetTuple};
+use crate::event::MessageResult;
+use crate::geometry::Axis;
+use crate::view::sequence::ViewSequence;
+use crate::widget::ChangeFlags;
 
 use super::{Cx, View};
 
 pub struct VStack<T, A, VT: ViewSequence<T, A>> {
     children: VT,
+    spacing: f64,
     phantom: PhantomData<fn() -> (T, A)>,
 }
 
@@ -30,7 +35,12 @@ pub fn v_stack<T, A, VT: ViewSequence<T, A>>(children: VT) -> VStack<T, A, VT> {
 impl<T, A, VT: ViewSequence<T, A>> VStack<T, A, VT> {
     pub fn new(children: VT) -> Self {
         let phantom = Default::default();
-        VStack { children, phantom }
+        VStack { children, phantom, spacing: 0.0 }
+    }
+
+    pub fn with_spacing(mut self, spacing: f64) -> Self {
+        self.spacing = spacing;
+        self
     }
 }
 
@@ -40,11 +50,11 @@ where
 {
     type State = VT::State;
 
-    type Element = crate::widget::vstack::VStack;
+    type Element = crate::widget::linear_layout::LinearLayout;
 
     fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
         let (id, (state, elements)) = cx.with_new_id(|cx| self.children.build(cx));
-        let column = crate::widget::vstack::VStack::new(elements);
+        let column = crate::widget::linear_layout::LinearLayout::new(elements, self.spacing, Axis::Vertical);
         (id, state, column)
     }
 
@@ -55,20 +65,27 @@ where
         id: &mut Id,
         state: &mut Self::State,
         element: &mut Self::Element,
-    ) -> bool {
-        cx.with_id(*id, |cx| {
+    ) -> ChangeFlags {
+        let mut flags = cx.with_id(*id, |cx| {
             self.children
                 .rebuild(cx, &prev.children, state, element.children_mut())
-        })
+        });
+
+        if self.spacing != prev.spacing {
+            *element.spacing_mut() = self.spacing;
+            flags |= ChangeFlags::LAYOUT;
+        }
+
+        flags
     }
 
-    fn event(
+    fn message(
         &self,
         id_path: &[Id],
         state: &mut Self::State,
         event: Box<dyn Any>,
         app_state: &mut T,
-    ) -> EventResult<A> {
-        self.children.event(id_path, state, event, app_state)
+    ) -> MessageResult<A> {
+        self.children.message(id_path, state, event, app_state)
     }
 }

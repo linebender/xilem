@@ -22,6 +22,7 @@ use glazier::{IdleHandle, IdleToken, WindowHandle};
 use parley::FontContext;
 use tokio::runtime::Runtime;
 use vello::{SceneBuilder, SceneFragment};
+use vello::kurbo::Point;
 
 use crate::event::{AsyncWake, MessageResult};
 use crate::id::IdPath;
@@ -231,6 +232,8 @@ where
                 // becomes extreme.
                 continue;
             }
+            root_pod.set_origin(&mut layout_cx, Point::ORIGIN);
+
             if self.accesskit_connected {
                 let update = self.accessibility();
                 // TODO: it would be cleaner to not use a closure here.

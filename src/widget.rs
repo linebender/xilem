@@ -20,9 +20,9 @@ mod core;
 //pub mod list;
 pub mod piet_scene_helpers;
 mod raw_event;
+pub mod linear_layout;
 //pub mod scroll_view;
 //pub mod text;
-//pub mod vstack;
 
 use std::any::Any;
 use std::ops::{Deref, DerefMut};
@@ -195,19 +195,6 @@ pub trait Widget {
             Axis::Vertical => self.layout(ctx, bc).height,
         }
     }
-}
-
-/// An axis in visual space.
-///
-/// Most often used by widgets to describe
-/// the direction in which they grow as their number of children increases.
-/// Has some methods for manipulating geometry with respect to the axis.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Axis {
-    /// The x axis
-    Horizontal,
-    /// The y axis
-    Vertical,
 }
 
 pub trait AnyWidget: Widget {
