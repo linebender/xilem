@@ -30,7 +30,6 @@ pub struct LinearLayout {
 
 impl LinearLayout {
     pub fn new(children: Vec<Pod>, spacing: f64, axis: Axis) -> Self {
-        let spacing = 0.0;
         LinearLayout {
             children,
             spacing,
@@ -71,6 +70,8 @@ impl Widget for LinearLayout {
             major_used += self.axis.major(size);
             if index < child_count - 1 {
                 major_used += self.spacing;
+
+                println!("insert spacing {}", self.spacing);
             }
             max_minor = max_minor.max(self.axis.minor(size));
         }

@@ -21,14 +21,12 @@ use glazier::kurbo::Size;
 use glazier::{IdleHandle, IdleToken, WindowHandle};
 use parley::FontContext;
 use tokio::runtime::Runtime;
-use vello::{SceneBuilder, SceneFragment};
 use vello::kurbo::Point;
+use vello::SceneFragment;
 
 use crate::event::{AsyncWake, MessageResult};
 use crate::id::IdPath;
-use crate::widget::{
-    AccessCx, BoxConstraints, CxState, EventCx, LayoutCx, PaintCx, Pod, UpdateCx, WidgetState,
-};
+use crate::widget::{AccessCx, BoxConstraints, CxState, EventCx, LayoutCx, PaintCx, Pod, PodFlags, UpdateCx, WidgetState};
 use crate::{
     event::Message,
     id::Id,
@@ -46,6 +44,7 @@ pub struct App<T, V: View<T>> {
     root_state: WidgetState,
     root_pod: Option<Pod>,
     size: Size,
+    new_size: Size,
     cx: Cx,
     font_cx: FontContext,
     pub(crate) rt: Runtime,
@@ -160,6 +159,7 @@ where
             window_handle: Default::default(),
             root_state: WidgetState::new(),
             size: Default::default(),
+            new_size: Default::default(),
             cx,
             font_cx: FontContext::new(),
             rt,
@@ -179,7 +179,7 @@ where
     }
 
     pub fn size(&mut self, size: Size) {
-        self.size = size;
+        self.new_size = size;
     }
 
     pub fn accessibility(&mut self) -> TreeUpdate {
@@ -220,12 +220,17 @@ where
             let root_pod = self.root_pod.as_mut().unwrap();
             let mut cx_state =
                 CxState::new(&self.window_handle, &mut self.font_cx, &mut self.events);
-            let mut update_cx = UpdateCx::new(&mut cx_state, &mut self.root_state);
-            root_pod.update(&mut update_cx);
-            let mut layout_cx = LayoutCx::new(&mut cx_state, &mut self.root_state);
-            let bc = BoxConstraints::tight(self.size);
-            root_pod.layout(&mut layout_cx, &bc);
-            root_pod.set_origin(&mut layout_cx, Point::ORIGIN);
+            if root_pod.state.flags.contains(PodFlags::REQUEST_UPDATE) {
+                let mut update_cx = UpdateCx::new(&mut cx_state, &mut self.root_state);
+                root_pod.update(&mut update_cx);
+            }
+            if root_pod.state.flags.contains(PodFlags::REQUEST_LAYOUT) || self.size != self.new_size {
+                self.size = self.new_size;
+                let mut layout_cx = LayoutCx::new(&mut cx_state, &mut self.root_state);
+                let bc = BoxConstraints::tight(self.size);
+                root_pod.layout(&mut layout_cx, &bc);
+                root_pod.set_origin(&mut layout_cx, Point::ORIGIN);
+            }
             if cx_state.has_messages() {
                 // Rerun app logic, primarily for LayoutObserver
                 // We might want some debugging here if the number of iterations

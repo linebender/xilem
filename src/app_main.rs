@@ -217,7 +217,7 @@ where
         let width = size.width as u32;
         let height = size.height as u32;
         if self.surface.is_none() {
-            println!("render size: {:?}", size);
+            //println!("render size: {:?}", size);
             self.surface = Some(
                 tokio::runtime::Handle::current()
                     .block_on(self.render_cx.create_surface(handle, width, height)),

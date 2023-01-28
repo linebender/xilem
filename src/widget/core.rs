@@ -295,7 +295,7 @@ impl Pod {
             widget_state: &mut self.state,
         };
         let new_size = self.widget.layout(&mut child_cx, bc);
-        println!("layout size = {:?}", new_size);
+        //println!("layout size = {:?}", new_size);
         self.state.size = new_size;
         self.state.flags.insert(PodFlags::NEEDS_SET_ORIGIN);
         self.state.flags.remove(PodFlags::REQUEST_LAYOUT);
