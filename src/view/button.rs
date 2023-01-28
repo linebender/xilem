@@ -13,8 +13,9 @@
 // limitations under the License.
 
 use std::any::Any;
+use std::ops::Deref;
 
-use crate::{event::MessageResult, id::Id, widget::ChangeFlags};
+use crate::{event::MessageResult, id::Id, Pod, widget::ChangeFlags};
 
 use super::{Cx, View};
 
@@ -43,12 +44,10 @@ impl<T, A> Button<T, A> {
 impl<T, A> View<T, A> for Button<T, A> {
     type State = ();
 
-    type Element = crate::widget::button::Button;
-
-    fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
+    fn build(&self, cx: &mut Cx) -> (Id, Self::State, Pod) {
         let (id, element) = cx
             .with_new_id(|cx| crate::widget::button::Button::new(cx.id_path(), self.label.clone()));
-        (id, (), element)
+        (id, (), Pod::new(element))
     }
 
     fn rebuild(
@@ -57,8 +56,10 @@ impl<T, A> View<T, A> for Button<T, A> {
         prev: &Self,
         _id: &mut crate::id::Id,
         _state: &mut Self::State,
-        element: &mut Self::Element,
+        element: &mut Pod,
     ) -> ChangeFlags {
+        let element = element.downcast_mut::<crate::widget::button::Button>().unwrap();
+
         if prev.label != self.label {
             element.set_label(self.label.clone())
         } else {

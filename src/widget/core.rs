@@ -136,7 +136,7 @@ impl Pod {
             .request(PodFlags::from_bits(flags.bits().into()).unwrap());
     }
 
-    pub fn apply_child_flags(&mut self, changes: ChangeFlags) {
+    pub fn apply_flags(&mut self, changes: ChangeFlags) {
         self.state.request(PodFlags::from_bits_truncate(changes.bits() as u32))
     }
 

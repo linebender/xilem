@@ -14,11 +14,12 @@
 
 use std::{any::Any, marker::PhantomData};
 
-use crate::{event::EventResult, id::Id, view_seq::ViewSequence, widget::WidgetTuple};
+use crate::{event::EventResult, id::Id, Pod, view_seq::ViewSequence, widget::WidgetTuple};
 use crate::event::MessageResult;
 use crate::geometry::Axis;
 use crate::view::sequence::ViewSequence;
 use crate::widget::ChangeFlags;
+use crate::widget::linear_layout::LinearLayout;
 
 use super::{Cx, View};
 
@@ -50,12 +51,10 @@ where
 {
     type State = VT::State;
 
-    type Element = crate::widget::linear_layout::LinearLayout;
-
     fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
         let (id, (state, elements)) = cx.with_new_id(|cx| self.children.build(cx));
-        let column = crate::widget::linear_layout::LinearLayout::new(elements, self.spacing, Axis::Vertical);
-        (id, state, column)
+        let column = LinearLayout::new(elements, self.spacing, Axis::Vertical);
+        (id, state, Pod::new(column))
     }
 
     fn rebuild(
@@ -64,17 +63,20 @@ where
         prev: &Self,
         id: &mut Id,
         state: &mut Self::State,
-        element: &mut Self::Element,
+        element: &mut Pod,
     ) -> ChangeFlags {
+        let downcast = element.downcast_mut::<LinearLayout>().unwrap();
+
         let mut flags = cx.with_id(*id, |cx| {
             self.children
-                .rebuild(cx, &prev.children, state, element.children_mut())
+                .rebuild(cx, &prev.children, state, downcast.children_mut())
         });
 
         if self.spacing != prev.spacing {
             *element.spacing_mut() = self.spacing;
             flags |= ChangeFlags::LAYOUT;
         }
+        element.apply_flags(flags);
 
         flags
     }

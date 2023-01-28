@@ -76,7 +76,7 @@ macro_rules! impl_view_tuple {
             ) -> ChangeFlags {
                 let mut changed = ChangeFlags::empty();
                 $(
-                changed |= self.$i.rebuild(cx, &prev.$i, &mut state.$n[$i], &mut state.$i, els[$i].downcast_mut().unwrap());
+                changed |= self.$i.rebuild(cx, &prev.$i, &mut state.$n[$i], &mut state.$i, els[$i]);
                 )*
 
                 changed
