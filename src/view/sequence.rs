@@ -1,10 +1,12 @@
 use std::any::Any;
 use std::ops::Range;
-use crate::event::MessageResult;
+use either::Either;
+use crate::event::{EventResult, MessageResult};
 use crate::id::Id;
 use crate::View;
 use crate::view::Cx;
-use crate::widget::{ChangeFlags, Pod, Widget};
+use crate::view::sequence::Position::Last;
+use crate::widget::{ChangeFlags, Pod};
 
 /// A sequence on view nodes.
 ///
@@ -52,14 +54,15 @@ pub trait ViewSequence<T, A = ()>: Send {
 
 macro_rules! impl_view_tuple {
     ( $n: tt; $( $t:ident),* ; $( $i:tt ),* ) => {
-        impl<T, A, $( $t: View<T, A> ),* > ViewSequence<T, A> for ( $( $t, )* )
+        impl<T, M, A, $( $t: ViewEntry<T, M, A> ),* > ViewSequence<T, M, A> for ( $( $t, )* )
+            where $( <$t as View<T, A>>::Element: 'static ),*
         {
             type State = ( $( $t::State, )* [Id; $n]);
 
-            fn build(&self, cx: &mut Cx) -> (Self::State, Vec<Pod>) {
-                let b = ( $( self.$i.build(cx), )* );
+            fn build(&self, cx: &mut Cx) -> (Self::State, Vec<(Pod, M)>) {
+                let b = ( $( self.$i.view().build(cx), )* );
                 let state = ( $( b.$i.1, )* [ $( b.$i.0 ),* ]);
-                let els = vec![ $( b.$i.2),* ];
+                let els = vec![ $( (Pod::new(b.$i.2), ) ),* ];
                 (state, els)
             }
 
@@ -72,7 +75,7 @@ macro_rules! impl_view_tuple {
             ) -> ChangeFlags {
                 let mut changed = ChangeFlags::empty();
                 $(
-                changed |= self.$i.rebuild(cx, &prev.$i, &mut state.$n[$i], &mut state.$i, &mut els[$i]);
+                changed |= self.$i.rebuild(cx, &prev.$i, &mut state.$n[$i], &mut state.$i, els[$i].downcast_mut().unwrap());
                 )*
 
                 changed

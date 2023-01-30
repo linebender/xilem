@@ -16,7 +16,11 @@ use std::{
     ops::{Deref, DerefMut},
 };
 
-use crate::{event::MessageResult, id::Id, Pod, widget::ChangeFlags};
+use crate::{
+    event::MessageResult,
+    id::Id,
+    widget::{AnyWidget, ChangeFlags},
+};
 
 use super::{Cx, View};
 
@@ -32,7 +36,7 @@ use super::{Cx, View};
 pub trait AnyView<T, A = ()> {
     fn as_any(&self) -> &dyn Any;
 
-    fn dyn_build(&self, cx: &mut Cx) -> (Id, Box<dyn Any + Send>, Pod);
+    fn dyn_build(&self, cx: &mut Cx) -> (Id, Box<dyn Any + Send>, Box<dyn AnyWidget>);
 
     fn dyn_rebuild(
         &self,
@@ -40,7 +44,7 @@ pub trait AnyView<T, A = ()> {
         prev: &dyn AnyView<T, A>,
         id: &mut Id,
         state: &mut Box<dyn Any + Send>,
-        element: &mut Pod,
+        element: &mut Box<dyn AnyWidget>,
     ) -> ChangeFlags;
 
     fn dyn_message(
@@ -55,14 +59,15 @@ pub trait AnyView<T, A = ()> {
 impl<T, A, V: View<T, A> + 'static> AnyView<T, A> for V
 where
     V::State: 'static,
+    V::Element: AnyWidget + 'static,
 {
     fn as_any(&self) -> &dyn Any {
         self
     }
 
-    fn dyn_build(&self, cx: &mut Cx) -> (Id, Box<dyn Any + Send>, Pod) {
+    fn dyn_build(&self, cx: &mut Cx) -> (Id, Box<dyn Any + Send>, Box<dyn AnyWidget>) {
         let (id, state, element) = self.build(cx);
-        (id, Box::new(state), element)
+        (id, Box::new(state), Box::new(element))
     }
 
     fn dyn_rebuild(
@@ -71,11 +76,16 @@ where
         prev: &dyn AnyView<T, A>,
         id: &mut Id,
         state: &mut Box<dyn Any + Send>,
-        element: &mut Pod,
+        element: &mut Box<dyn AnyWidget>,
     ) -> ChangeFlags {
         if let Some(prev) = prev.as_any().downcast_ref() {
             if let Some(state) = state.downcast_mut() {
-                self.rebuild(cx, prev, id, state, element)
+                if let Some(element) = element.deref_mut().as_any_mut().downcast_mut() {
+                    self.rebuild(cx, prev, id, state, element)
+                } else {
+                    println!("downcast of element failed in dyn_rebuild");
+                    ChangeFlags::empty()
+                }
             } else {
                 println!("downcast of state failed in dyn_rebuild");
                 ChangeFlags::empty()
@@ -84,7 +94,7 @@ where
             let (new_id, new_state, new_element) = self.build(cx);
             *id = new_id;
             *state = Box::new(new_state);
-            *element = new_element;
+            *element = Box::new(new_element);
 
             // Everything about the new view could be different, so return all the flags
             ChangeFlags::all()
@@ -110,7 +120,9 @@ where
 impl<T, A> View<T, A> for Box<dyn AnyView<T, A> + Send> {
     type State = Box<dyn Any + Send>;
 
-    fn build(&self, cx: &mut Cx) -> (Id, Self::State, Pod) {
+    type Element = Box<dyn AnyWidget>;
+
+    fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
         self.deref().dyn_build(cx)
     }
 
@@ -120,7 +132,7 @@ impl<T, A> View<T, A> for Box<dyn AnyView<T, A> + Send> {
         prev: &Self,
         id: &mut Id,
         state: &mut Self::State,
-        element: &mut Pod,
+        element: &mut Self::Element,
     ) -> ChangeFlags {
         self.deref()
             .dyn_rebuild(cx, prev.deref(), id, state, element)

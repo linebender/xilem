@@ -33,8 +33,11 @@ use std::{
 
 use futures_task::{ArcWake, Waker};
 
-use crate::{event::MessageResult, id::{Id, IdPath}, Pod, widget::{ChangeFlags, Widget}};
-
+use crate::{
+    event::MessageResult,
+    id::{Id, IdPath},
+    widget::{ChangeFlags, Widget},
+};
 pub use sequence::ViewSequence;
 
 /// A view object representing a node in the UI.
@@ -56,8 +59,11 @@ pub trait View<T, A = ()>: Send {
     /// Associated state for the view.
     type State: Send;
 
+    /// The associated widget for the view.
+    type Element: Widget;
+
     /// Build the associated widget and initialize state.
-    fn build(&self, cx: &mut Cx) -> (Id, Self::State, Pod);
+    fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element);
 
     /// Update the associated widget.
     ///
@@ -68,7 +74,7 @@ pub trait View<T, A = ()>: Send {
         prev: &Self,
         id: &mut Id,
         state: &mut Self::State,
-        element: &mut Pod,
+        element: &mut Self::Element,
     ) -> ChangeFlags;
 
     /// Propagate a message.

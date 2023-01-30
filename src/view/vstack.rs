@@ -14,7 +14,7 @@
 
 use std::{any::Any, marker::PhantomData};
 
-use crate::{id::Id, Pod};
+use crate::{event::EventResult, id::Id, view_seq::ViewSequence, widget::WidgetTuple};
 use crate::event::MessageResult;
 use crate::geometry::Axis;
 use crate::view::sequence::ViewSequence;
@@ -45,13 +45,18 @@ impl<T, A, VT: ViewSequence<T, A>> VStack<T, A, VT> {
     }
 }
 
-impl<T, A, VT: ViewSequence<T, A>> View<T, A> for VStack<T, A, VT> {
+impl<T, A, VT: ViewSequence<T, A>> View<T, A> for VStack<T, A, VT>
+where
+    VT::Elements: WidgetTuple,
+{
     type State = VT::State;
 
-    fn build(&self, cx: &mut Cx) -> (Id, Self::State, Pod) {
+    type Element = crate::widget::linear_layout::LinearLayout;
+
+    fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
         let (id, (state, elements)) = cx.with_new_id(|cx| self.children.build(cx));
         let column = LinearLayout::new(elements, self.spacing, Axis::Vertical);
-        (id, state, Pod::new(column))
+        (id, state, column)
     }
 
     fn rebuild(
@@ -60,20 +65,17 @@ impl<T, A, VT: ViewSequence<T, A>> View<T, A> for VStack<T, A, VT> {
         prev: &Self,
         id: &mut Id,
         state: &mut Self::State,
-        element: &mut Pod,
+        element: &mut Self::Element,
     ) -> ChangeFlags {
-        let downcast = element.downcast_mut::<LinearLayout>().unwrap();
-
         let mut flags = cx.with_id(*id, |cx| {
             self.children
-                .rebuild(cx, &prev.children, state, &mut downcast.children)
+                .rebuild(cx, &prev.children, state, element.children_mut())
         });
 
         if self.spacing != prev.spacing {
-            downcast.spacing = self.spacing;
+            *element.spacing_mut() = self.spacing;
             flags |= ChangeFlags::LAYOUT;
         }
-        element.apply_flags(flags);
 
         flags
     }
