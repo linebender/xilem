@@ -137,10 +137,6 @@ impl Pod {
             .request(PodFlags::from_bits(flags.bits().into()).unwrap());
     }
 
-    pub fn apply_child_flags(&mut self, changes: ChangeFlags) {
-        self.state.request(PodFlags::from_bits_truncate(changes.bits() as u32))
-    }
-
     /// Propagate a platform event. As in Druid, a great deal of the event
     /// dispatching logic is in this function.
     pub fn event(&mut self, cx: &mut EventCx, event: &Event) {

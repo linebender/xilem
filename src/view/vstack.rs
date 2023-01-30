@@ -14,9 +14,9 @@
 
 use std::{any::Any, marker::PhantomData};
 
-use crate::{event::EventResult, id::Id, view_seq::ViewSequence, widget::WidgetTuple};
 use crate::event::MessageResult;
 use crate::geometry::Axis;
+use crate::id::Id;
 use crate::view::sequence::ViewSequence;
 use crate::widget::ChangeFlags;
 use crate::widget::linear_layout::LinearLayout;
@@ -45,13 +45,10 @@ impl<T, A, VT: ViewSequence<T, A>> VStack<T, A, VT> {
     }
 }
 
-impl<T, A, VT: ViewSequence<T, A>> View<T, A> for VStack<T, A, VT>
-where
-    VT::Elements: WidgetTuple,
-{
+impl<T, A, VT: ViewSequence<T, A>> View<T, A> for VStack<T, A, VT> {
     type State = VT::State;
 
-    type Element = crate::widget::linear_layout::LinearLayout;
+    type Element = LinearLayout;
 
     fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
         let (id, (state, elements)) = cx.with_new_id(|cx| self.children.build(cx));
@@ -69,11 +66,11 @@ where
     ) -> ChangeFlags {
         let mut flags = cx.with_id(*id, |cx| {
             self.children
-                .rebuild(cx, &prev.children, state, element.children_mut())
+                .rebuild(cx, &prev.children, state, &mut element.children)
         });
 
         if self.spacing != prev.spacing {
-            *element.spacing_mut() = self.spacing;
+            element.spacing = self.spacing;
             flags |= ChangeFlags::LAYOUT;
         }
 
