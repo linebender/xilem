@@ -54,8 +54,6 @@
 
 - [X] Fix doc tests
 
-- [ ] Write Widget Inspector
-
 - [X] Split off from Druid repo
 - [X] Rename to Masonry
 - [X] Write remaining tasks in Github
@@ -63,7 +61,7 @@
 - [X] Write ARCHITECTURE.md
 - [X] Write CONTRIBUTING.md
 - [X] Write README.md and doc root
-- [ ] Publish
+- [X] Publish
 
 # TODO - Next steps
 
@@ -73,6 +71,8 @@
 - [ ] Refactor TextLayout (#23)
 
 - [ ] Rework Widget trait (#26)
+
+- [ ] Write Widget Inspector
 
 - [ ] Port Panoramix to Masonry
 - [ ] Port Xilem to Masonry
