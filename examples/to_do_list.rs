@@ -4,10 +4,13 @@
 
 #![windows_subsystem = "windows"]
 
-use masonry::widget::{prelude::*, CrossAxisAlignment, SizedBox, TextBox};
-use masonry::widget::{Button, Flex, Label, Portal, WidgetMut};
-use masonry::{Action, Color};
-use masonry::{AppDelegate, AppLauncher, DelegateCtx, WindowDescription, WindowId};
+use masonry::widget::{
+    Button, CrossAxisAlignment, Flex, Label, Portal, SizedBox, TextBox, WidgetMut,
+};
+use masonry::{
+    Action, AppDelegate, AppLauncher, Color, DelegateCtx, Env, WidgetId, WindowDescription,
+    WindowId,
+};
 
 struct Delegate {
     next_task: String,
