@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use accesskit::Node;
 use vello::kurbo::Size;
 use vello::SceneBuilder;
 use crate::geometry::Axis;
@@ -83,6 +84,14 @@ impl Widget for LinearLayout {
         for child in &mut self.children {
             child.accessibility(cx);
         }
+
+        let mut node = accesskit::Node::default();
+        node.role = match self.axis {
+            Axis::Vertical => accesskit::Role::Column,
+            Axis::Horizontal => accesskit::Role::Row,
+        };
+        node.children = self.children.iter().map(|pod|pod.id().into()).collect();
+        cx.push_node(node);
     }
 
     fn paint(&mut self, cx: &mut PaintCx, builder: &mut SceneBuilder) {

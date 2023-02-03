@@ -43,7 +43,6 @@ bitflags! {
         const IS_HOT = 0x40;
         const IS_ACTIVE = 0x80;
         const HAS_ACTIVE = 0x100;
-        const HAS_ACCESSIBILITY = 0x200;
 
         const NEEDS_SET_ORIGIN = 0x400;
 
@@ -51,7 +50,7 @@ bitflags! {
         const UPWARD_FLAGS = Self::REQUEST_LAYOUT.bits
             | Self::REQUEST_PAINT.bits
             | Self::HAS_ACTIVE.bits
-            | Self::HAS_ACCESSIBILITY.bits
+            | Self::REQUEST_ACCESSIBILITY.bits
             | Self::TREE_CHANGED.bits
             | Self::VIEW_CONTEXT_CHANGED.bits;
         const INIT_FLAGS = Self::REQUEST_UPDATE.bits
@@ -72,7 +71,12 @@ bitflags! {
         const LAYOUT = 2;
         const ACCESSIBILITY = 4;
         const PAINT = 8;
-        const TREE = 0x10;
+        // When the tree changes we need to update everything.
+        const TREE = 0x10
+            | Self::UPDATE.bits
+            | Self::LAYOUT.bits
+            | Self::ACCESSIBILITY.bits
+            | Self::PAINT.bits;
     }
 }
 
@@ -112,9 +116,6 @@ impl WidgetState {
 
     fn merge_up(&mut self, child_state: &mut WidgetState) {
         self.flags |= child_state.flags & PodFlags::UPWARD_FLAGS;
-        if child_state.flags.contains(PodFlags::REQUEST_ACCESSIBILITY) {
-            self.flags |= PodFlags::HAS_ACCESSIBILITY;
-        }
         self.sub_tree = self.sub_tree.union(child_state.sub_tree);
     }
 
@@ -323,7 +324,7 @@ impl Pod {
         if self
             .state
             .flags
-            .intersects(PodFlags::REQUEST_ACCESSIBILITY | PodFlags::HAS_ACCESSIBILITY)
+            .contains(PodFlags::REQUEST_ACCESSIBILITY)
         {
             let mut child_cx = AccessCx {
                 cx_state: cx.cx_state,
@@ -334,7 +335,7 @@ impl Pod {
             self.widget.accessibility(&mut child_cx);
             self.state
                 .flags
-                .remove(PodFlags::REQUEST_ACCESSIBILITY | PodFlags::HAS_ACCESSIBILITY);
+                .remove(PodFlags::REQUEST_ACCESSIBILITY);
         }
     }
 

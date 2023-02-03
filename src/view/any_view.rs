@@ -102,7 +102,7 @@ where
             *element = Box::new(new_element);
 
             // Everything about the new view could be different, so return all the flags
-            ChangeFlags::all()
+            ChangeFlags::TREE
         } else {
             // This should never happen since calling rebuild with removed = true, happens with the
             // same view as prev.
