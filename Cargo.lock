@@ -3089,6 +3089,7 @@ dependencies = [
  "bitflags",
  "bytemuck",
  "env_logger 0.10.0",
+ "fnv",
  "futures-task",
  "glazier",
  "parley",

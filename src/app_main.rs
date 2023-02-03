@@ -25,7 +25,7 @@ use vello::{
     util::{RenderContext, RenderSurface},
     Renderer,
 };
-use vello::{Scene, SceneBuilder, SceneFragment};
+use vello::{Scene, SceneBuilder};
 
 use crate::{app::App, widget::Event, View, Widget};
 

@@ -36,6 +36,10 @@ impl Id {
     pub fn to_nonzero_raw(self) -> NonZeroU64 {
         self.0
     }
+
+    pub fn try_from_accesskit(id: accesskit::NodeId) -> Option<Self> {
+        id.0.try_into().ok().map(|id|Id(id))
+    }
 }
 
 impl From<Id> for accesskit::NodeId {

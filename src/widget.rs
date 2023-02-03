@@ -27,16 +27,15 @@ pub mod linear_layout;
 use std::any::Any;
 use std::ops::{Deref, DerefMut};
 
-use glazier::kurbo::{Rect, Size};
+use glazier::kurbo::Size;
 use vello::SceneBuilder;
 use crate::geometry::Axis;
 
 pub use self::box_constraints::BoxConstraints;
-use self::contexts::LifeCycleCx;
-pub use self::contexts::{AccessCx, CxState, EventCx, LayoutCx, PaintCx, UpdateCx};
+pub use self::contexts::{AccessCx, CxState, EventCx, LayoutCx, PaintCx, UpdateCx, LifeCycleCx};
 pub use self::core::Pod;
 pub(crate) use self::core::{ChangeFlags, PodFlags, WidgetState};
-pub use self::raw_event::{Event, LifeCycle};
+pub use self::raw_event::{Event, LifeCycle, ViewContext};
 
 /// A basic widget trait.
 pub trait Widget {

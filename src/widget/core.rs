@@ -22,7 +22,7 @@ use glazier::kurbo::{Point, Rect, Size};
 use vello::{SceneBuilder, SceneFragment};
 use vello::kurbo::Affine;
 
-use crate::{id::Id, Widget};
+use crate::{Bloom, id::Id, Widget};
 use crate::widget::AnyWidget;
 
 use super::{
@@ -37,23 +37,30 @@ bitflags! {
         const REQUEST_LAYOUT = 2;
         const REQUEST_ACCESSIBILITY = 4;
         const REQUEST_PAINT = 8;
+        const TREE_CHANGED = 0x10;
+        const VIEW_CONTEXT_CHANGED = 0x20;
 
-        const IS_HOT = 0x10;
-        const IS_ACTIVE = 0x20;
-        const HAS_ACTIVE = 0x40;
-        const HAS_ACCESSIBILITY = 0x80;
+        const IS_HOT = 0x40;
+        const IS_ACTIVE = 0x80;
+        const HAS_ACTIVE = 0x100;
+        const HAS_ACCESSIBILITY = 0x200;
 
-        const NEEDS_SET_ORIGIN = 0x100;
+        const NEEDS_SET_ORIGIN = 0x400;
 
 
         const UPWARD_FLAGS = Self::REQUEST_LAYOUT.bits
             | Self::REQUEST_PAINT.bits
             | Self::HAS_ACTIVE.bits
-            | Self::HAS_ACCESSIBILITY.bits;
+            | Self::HAS_ACCESSIBILITY.bits
+            | Self::TREE_CHANGED.bits
+            | Self::VIEW_CONTEXT_CHANGED.bits;
         const INIT_FLAGS = Self::REQUEST_UPDATE.bits
             | Self::REQUEST_LAYOUT.bits
             | Self::REQUEST_ACCESSIBILITY.bits
-            | Self::REQUEST_PAINT.bits;
+            | Self::REQUEST_PAINT.bits
+            | Self::TREE_CHANGED.bits; // For the newly added child of the changing container this flag is
+                                       // already set by the View::rebuild method, but its children
+                                       // (constructued with View::build) still need to set it them self's.
     }
 }
 
@@ -65,6 +72,7 @@ bitflags! {
         const LAYOUT = 2;
         const ACCESSIBILITY = 4;
         const PAINT = 8;
+        const TREE = 0x10;
     }
 }
 
@@ -85,6 +93,8 @@ pub(crate) struct WidgetState {
     pub(crate) parent_window_origin: Point,
     /// The size of the widget.
     pub(crate) size: Size,
+    /// A bloom filter containing this widgets is and the ones of its children.
+    pub(crate) sub_tree: Bloom<Id>,
 }
 
 impl WidgetState {
@@ -96,6 +106,7 @@ impl WidgetState {
             origin: Default::default(),
             parent_window_origin: Default::default(),
             size: Default::default(),
+            sub_tree: Default::default(),
         }
     }
 
@@ -104,6 +115,7 @@ impl WidgetState {
         if child_state.flags.contains(PodFlags::REQUEST_ACCESSIBILITY) {
             self.flags |= PodFlags::HAS_ACCESSIBILITY;
         }
+        self.sub_tree = self.sub_tree.union(child_state.sub_tree);
     }
 
     fn request(&mut self, flags: PodFlags) {
@@ -143,7 +155,6 @@ impl Pod {
         if cx.is_handled {
             return;
         }
-        let rect = Rect::from_origin_size(self.state.origin, self.state.size);
         let mut modified_event = None;
         let had_active = self.state.flags.contains(PodFlags::HAS_ACTIVE);
         let recurse = match event {
@@ -152,7 +163,6 @@ impl Pod {
                     &mut self.widget,
                     &mut self.state,
                     cx.cx_state,
-                    rect,
                     Some(mouse_event.pos),
                 );
                 if had_active || self.state.flags.contains(PodFlags::IS_HOT) {
@@ -169,7 +179,6 @@ impl Pod {
                     &mut self.widget,
                     &mut self.state,
                     cx.cx_state,
-                    rect,
                     Some(mouse_event.pos),
                 );
                 if had_active || self.state.flags.contains(PodFlags::IS_HOT) {
@@ -186,7 +195,6 @@ impl Pod {
                     &mut self.widget,
                     &mut self.state,
                     cx.cx_state,
-                    rect,
                     Some(mouse_event.pos),
                 );
                 if had_active || self.state.flags.contains(PodFlags::IS_HOT) || hot_changed {
@@ -203,7 +211,6 @@ impl Pod {
                     &mut self.widget,
                     &mut self.state,
                     cx.cx_state,
-                    rect,
                     Some(mouse_event.pos),
                 );
                 if had_active || self.state.flags.contains(PodFlags::IS_HOT) {
@@ -217,7 +224,7 @@ impl Pod {
             }
             Event::MouseLeft() => {
                 let hot_changed =
-                    Pod::set_hot_state(&mut self.widget, &mut self.state, cx.cx_state, rect, None);
+                    Pod::set_hot_state(&mut self.widget, &mut self.state, cx.cx_state, None);
                 if had_active || hot_changed {
                     true
                 } else {
@@ -226,11 +233,7 @@ impl Pod {
             }
             Event::TargetedAccessibilityAction(action) => {
                 println!("TODO: {:?}", action);
-                // TODO: here we always recurse, as we are currently lacking a
-                // mechanism to route events identified by widget id. We should
-                // either track the tree structure so we can reconstruct the id
-                // path, or use Bloom filters as in Druid.
-                true
+                self.state.sub_tree.may_contain(&Id::try_from_accesskit(action.target).unwrap())
             }
         };
         if recurse {
@@ -255,11 +258,29 @@ impl Pod {
         let recurse = match event {
             LifeCycle::HotChanged(_) => false,
             LifeCycle::ViewContextChanged(view) => {
+                self.state.parent_window_origin = view.window_origin;
+
+                Pod::set_hot_state(
+                    &mut self.widget,
+                    &mut self.state,
+                    &mut cx.cx_state,
+                    view.mouse_position,
+                );
                 modified_event = Some(
                     LifeCycle::ViewContextChanged(view.translate_to(self.state.origin)),
                 );
-
+                self.state.flags.remove(PodFlags::VIEW_CONTEXT_CHANGED);
                 true
+            }
+            LifeCycle::TreeUpdate => {
+                if self.state.flags.contains(PodFlags::TREE_CHANGED) {
+                    self.state.sub_tree.clear();
+                    self.state.sub_tree.add(&self.state.id);
+                    self.state.flags.remove(PodFlags::TREE_CHANGED);
+                    true
+                } else {
+                    false
+                }
             }
         };
         let mut child_cx = LifeCycleCx {
@@ -341,12 +362,14 @@ impl Pod {
     }
 
     pub fn set_origin(&mut self, cx: &mut LayoutCx, origin: Point) {
-        self.state.origin = origin;
-        // request paint is called on the parent instead of this widget, since its fragment does
-        //not change.
-        cx.request_paint();
+        if origin != self.state.origin {
+            self.state.origin = origin;
+            // request paint is called on the parent instead of this widget, since its fragment does
+            //not change.
+            cx.view_context_changed();
 
-        //TODO: set the hot state & update parent_window_origin
+            self.state.flags.insert(PodFlags::VIEW_CONTEXT_CHANGED);
+        }
     }
 
     // Return true if hot state has changed
@@ -354,9 +377,9 @@ impl Pod {
         widget: &mut dyn AnyWidget,
         widget_state: &mut WidgetState,
         cx_state: &mut CxState,
-        rect: Rect,
         mouse_pos: Option<Point>,
     ) -> bool {
+        let rect = Rect::from_origin_size(widget_state.origin, widget_state.size);
         let had_hot = widget_state.flags.contains(PodFlags::IS_HOT);
         let is_hot = match mouse_pos {
             Some(pos) => rect.contains(pos),

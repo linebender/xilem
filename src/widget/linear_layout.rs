@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use vello::kurbo::{Point, Size};
+use vello::kurbo::Size;
 use vello::SceneBuilder;
 use crate::geometry::Axis;
 use crate::widget::{AccessCx, BoxConstraints, Event};

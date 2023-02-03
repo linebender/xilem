@@ -17,14 +17,11 @@
 //! Note: the organization of this code roughly follows the existing Druid
 //! widget system, particularly its contexts.rs.
 
-use std::{
-    ops::{Deref, DerefMut},
-    sync::Arc,
-};
+use std::sync::Arc;
 
 use accesskit::TreeUpdate;
 use glazier::{
-    kurbo::{Point, Rect, Size},
+    kurbo::{Rect, Size},
     WindowHandle,
 };
 use parley::FontContext;
@@ -137,7 +134,12 @@ impl<'a, 'b> EventCx<'a, 'b> {
 }
 
 impl<'a, 'b> LifeCycleCx<'a, 'b> {
-
+    pub(crate) fn new(cx_state: &'a mut CxState<'b>, root_state: &'a mut WidgetState) -> Self {
+        LifeCycleCx {
+            cx_state,
+            widget_state: root_state,
+        }
+    }
 }
 
 impl<'a, 'b> UpdateCx<'a, 'b> {
@@ -266,6 +268,10 @@ impl_context_method!(
     {
         pub fn request_paint(&mut self) {
             self.widget_state.flags |= PodFlags::REQUEST_PAINT;
+        }
+
+        pub fn view_context_changed(&mut self) {
+            self.widget_state.flags |= PodFlags::VIEW_CONTEXT_CHANGED;
         }
     }
 );

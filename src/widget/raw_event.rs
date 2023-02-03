@@ -51,13 +51,14 @@ pub struct MouseEvent {
 pub enum LifeCycle {
     HotChanged(bool),
     ViewContextChanged(ViewContext),
+    TreeUpdate,
 }
 
 #[derive(Debug)]
 pub struct ViewContext {
-    window_origin: Point,
-    clip: Rect,
-    mouse_position: Option<Point>,
+    pub window_origin: Point,
+    pub clip: Rect,
+    pub mouse_position: Option<Point>,
 }
 
 impl<'a> From<&'a glazier::MouseEvent> for MouseEvent {

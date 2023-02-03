@@ -1,5 +1,4 @@
 use std::any::Any;
-use std::ops::Range;
 use crate::event::MessageResult;
 use crate::id::Id;
 use crate::View;

@@ -21,17 +21,17 @@ use glazier::kurbo::Size;
 use glazier::{IdleHandle, IdleToken, WindowHandle};
 use parley::FontContext;
 use tokio::runtime::Runtime;
-use vello::kurbo::Point;
+use vello::kurbo::{Point, Rect};
 use vello::SceneFragment;
 
 use crate::event::{AsyncWake, MessageResult};
 use crate::id::IdPath;
-use crate::widget::{AccessCx, BoxConstraints, CxState, EventCx, LayoutCx, PaintCx, Pod, PodFlags, UpdateCx, WidgetState};
+use crate::widget::{AccessCx, BoxConstraints, CxState, EventCx, LayoutCx, LifeCycle, LifeCycleCx, PaintCx, Pod, PodFlags, UpdateCx, ViewContext, WidgetState};
 use crate::{
     event::Message,
     id::Id,
     view::{Cx, View},
-    widget::{Event, Widget},
+    widget::Event,
 };
 
 pub struct App<T, V: View<T>> {
@@ -45,6 +45,7 @@ pub struct App<T, V: View<T>> {
     root_pod: Option<Pod>,
     size: Size,
     new_size: Size,
+    cursor_pos: Option<Point>,
     cx: Cx,
     font_cx: FontContext,
     pub(crate) rt: Runtime,
@@ -160,6 +161,7 @@ where
             root_state: WidgetState::new(),
             size: Default::default(),
             new_size: Default::default(),
+            cursor_pos: None,
             cx,
             font_cx: FontContext::new(),
             rt,
@@ -220,6 +222,10 @@ where
             let root_pod = self.root_pod.as_mut().unwrap();
             let mut cx_state =
                 CxState::new(&self.window_handle, &mut self.font_cx, &mut self.events);
+
+            let mut lifecycle_cx = LifeCycleCx::new(&mut cx_state, &mut self.root_state);
+            root_pod.lifecycle(&mut lifecycle_cx, &LifeCycle::TreeUpdate);
+
             if root_pod.state.flags.contains(PodFlags::REQUEST_UPDATE) {
                 let mut update_cx = UpdateCx::new(&mut cx_state, &mut self.root_state);
                 root_pod.update(&mut update_cx);
@@ -231,6 +237,16 @@ where
                 root_pod.layout(&mut layout_cx, &bc);
                 root_pod.set_origin(&mut layout_cx, Point::ORIGIN);
             }
+            if root_pod.state.flags.contains(PodFlags::VIEW_CONTEXT_CHANGED) {
+                let view_context = ViewContext {
+                    window_origin: Point::ORIGIN,
+                    clip: Rect::from_origin_size(Point::ORIGIN, root_pod.state.size),
+                    mouse_position: self.cursor_pos,
+                };
+                let mut lifecycle_cx = LifeCycleCx::new(&mut cx_state, &mut self.root_state);
+                root_pod.lifecycle(&mut lifecycle_cx, &LifeCycle::ViewContextChanged(view_context));
+            }
+
             if cx_state.has_messages() {
                 // Rerun app logic, primarily for LayoutObserver
                 // We might want some debugging here if the number of iterations
@@ -255,6 +271,16 @@ where
     }
 
     pub fn window_event(&mut self, event: Event) {
+        match &event {
+            Event::MouseUp(me) | Event::MouseMove(me) | Event::MouseDown(me) | Event::MouseWheel(me) => {
+                self.cursor_pos = Some(me.pos);
+            }
+            Event::MouseLeft() => {
+                self.cursor_pos = None;
+            }
+            _ => {}
+        }
+
         self.ensure_root();
         let root_pod = self.root_pod.as_mut().unwrap();
         let mut cx_state = CxState::new(&self.window_handle, &mut self.font_cx, &mut self.events);

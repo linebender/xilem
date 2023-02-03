@@ -7,6 +7,7 @@ mod text;
 mod view;
 mod widget;
 mod geometry;
+mod bloom;
 
 pub use app::App;
 pub use app_main::AppLauncher;
@@ -16,3 +17,4 @@ pub use widget::Pod;
 pub use widget::Widget;
 pub use view::vstack::v_stack;
 pub use view::ViewSequence;
+pub(crate) use bloom::Bloom;
