@@ -62,11 +62,12 @@ impl<T, A, VT: ViewSequence<T, A>> View<T, A> for VStack<T, A, VT> {
         prev: &Self,
         id: &mut Id,
         state: &mut Self::State,
+        removed: bool,
         element: &mut Self::Element,
     ) -> ChangeFlags {
         let mut flags = cx.with_id(*id, |cx| {
             self.children
-                .rebuild(cx, &prev.children, state, &mut element.children)
+                .rebuild(cx, &prev.children, state, removed, &mut element.children)
         });
 
         if self.spacing != prev.spacing {

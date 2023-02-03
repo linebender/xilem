@@ -44,6 +44,7 @@ pub trait AnyView<T, A = ()> {
         prev: &dyn AnyView<T, A>,
         id: &mut Id,
         state: &mut Box<dyn Any + Send>,
+        removed: bool,
         element: &mut Box<dyn AnyWidget>,
     ) -> ChangeFlags;
 
@@ -76,12 +77,13 @@ where
         prev: &dyn AnyView<T, A>,
         id: &mut Id,
         state: &mut Box<dyn Any + Send>,
+        removed: bool,
         element: &mut Box<dyn AnyWidget>,
     ) -> ChangeFlags {
         if let Some(prev) = prev.as_any().downcast_ref() {
             if let Some(state) = state.downcast_mut() {
                 if let Some(element) = element.deref_mut().as_any_mut().downcast_mut() {
-                    self.rebuild(cx, prev, id, state, element)
+                    self.rebuild(cx, prev, id, state, removed, element)
                 } else {
                     println!("downcast of element failed in dyn_rebuild");
                     ChangeFlags::empty()
@@ -90,7 +92,10 @@ where
                 println!("downcast of state failed in dyn_rebuild");
                 ChangeFlags::empty()
             }
-        } else {
+        } else if !removed {
+            // If this view is already removed we dont need to build a new widget.
+            let _ = prev.dyn_rebuild(cx, prev, id, state, true, element);
+
             let (new_id, new_state, new_element) = self.build(cx);
             *id = new_id;
             *state = Box::new(new_state);
@@ -98,6 +103,11 @@ where
 
             // Everything about the new view could be different, so return all the flags
             ChangeFlags::all()
+        } else {
+            // This should never happen since calling rebuild with removed = true, happens with the
+            // same view as prev.
+            // TODO: Should we enforce that?
+            ChangeFlags::empty()
         }
     }
 
@@ -132,10 +142,11 @@ impl<T, A> View<T, A> for Box<dyn AnyView<T, A> + Send> {
         prev: &Self,
         id: &mut Id,
         state: &mut Self::State,
+        removed: bool,
         element: &mut Self::Element,
     ) -> ChangeFlags {
         self.deref()
-            .dyn_rebuild(cx, prev.deref(), id, state, element)
+            .dyn_rebuild(cx, prev.deref(), id, state, removed, element)
     }
 
     fn message(

@@ -67,6 +67,9 @@ pub trait View<T, A = ()>: Send {
 
     /// Update the associated widget.
     ///
+    /// If removed is true this sequence and the associated widget are removed from the tree after this
+    /// call.
+    ///
     /// Returns `true` when anything has changed.
     fn rebuild(
         &self,
@@ -74,6 +77,7 @@ pub trait View<T, A = ()>: Send {
         prev: &Self,
         id: &mut Id,
         state: &mut Self::State,
+        removed: bool,
         element: &mut Self::Element,
     ) -> ChangeFlags;
 

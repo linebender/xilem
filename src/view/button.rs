@@ -57,6 +57,7 @@ impl<T, A> View<T, A> for Button<T, A> {
         prev: &Self,
         _id: &mut crate::id::Id,
         _state: &mut Self::State,
+        _removed: bool,
         element: &mut Self::Element,
     ) -> ChangeFlags {
         if prev.label != self.label {
