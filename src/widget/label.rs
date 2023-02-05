@@ -301,7 +301,7 @@ impl Data for LineBreaking {
 #[cfg(test)]
 mod tests {
     use insta::assert_debug_snapshot;
-    use piet_common::FontFamily;
+    use crate::piet::FontFamily;
 
     use super::*;
     use crate::assert_render_snapshot;
