@@ -1,6 +1,6 @@
 [package]
 name = "masonry"
-version = "0.1.1"
+version = "0.1.2"
 license = "Apache-2.0"
 authors = ["Olivier FAURE <couteaubleu@gmail.com>"]
 description = "Data-oriented Rust UI design toolkit."

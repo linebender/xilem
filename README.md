@@ -98,15 +98,6 @@ This simplicity makes Masonry somewhat painful if you want to use it to actually
 (Well, in theory. The first stress-test will be porting [Panoramix](https://github.com/PoignardAzur/panoramix), a React-style GUI in Rust, to Masonry.)
 
 
-## Widget Inspector
-
-Masonry provides a UI for inspecting the Widget tree, inspired by browser devtools. It's still rudimentary for now, the hope being to eventually provide best-in-class tools for debugging all of your UI.
-
-[TODO screenshot]
-
-In the current inspector, you can see the Widget hierarchy, move your mouse around on the screen and select the matching Widget in the hierarchy, and get (very basic) information about the widget.
-
-
 ## Unit tests
 
 Masonry is designed to make unit tests easy to write, as if the test function were a mouse-and-keyboard user. Tests look like this:
