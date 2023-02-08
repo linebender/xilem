@@ -89,6 +89,8 @@ Debian:
 
 ```sh
 sudo apt-get install libxkbcommon-x11-dev
+```
+
 [Html.lazy]: https://guide.elm-lang.org/optimization/lazy.html
 [Html map]: https://package.elm-lang.org/packages/elm/html/latest/Html#map
 [Rc::make_mut]: https://doc.rust-lang.org/std/rc/struct.Rc.html#method.make_mut
