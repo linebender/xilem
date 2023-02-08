@@ -72,9 +72,29 @@ By default, view nodes are strongly typed. The type of a container includes the 
 
 The type erasure of View nodes is not an easy trick, as the trait has two associated types and the `rebuild` method takes the previous view as a `&Self` typed parameter. Nonetheless, it is possible. (As far as I know, Olivier Faure was the first to demonstrate this technique, in [Panoramix], but I'm happy to be further enlightened)
 
+## Prerequisites
+
+### Linux
+
+In order to run Xilem on Linux, the development library [xkbcommon] needs to be installed.
+
+On Fedora this can be installed using:
+
+```sh
+sudo dnf install libxkbcommon-x11-devel.x86_64
+# i686 is a less common architecure, but if you have it, use libxkbcommon-x11-devel.i686 instead
+```
+
+Debian:
+
+```sh
+sudo apt-get install libxkbcommon-x11-dev
+```
+
 [Html.lazy]: https://guide.elm-lang.org/optimization/lazy.html
 [Html map]: https://package.elm-lang.org/packages/elm/html/latest/Html#map
 [Rc::make_mut]: https://doc.rust-lang.org/std/rc/struct.Rc.html#method.make_mut
 [AnyView]: https://developer.apple.com/documentation/swiftui/anyview
 [Panoramix]: https://github.com/PoignardAzur/panoramix
 [Xilem: an architecture for UI in Rust]: https://raphlinus.github.io/rust/gui/2022/05/07/ui-architecture.html
+[xkbcommon]: https://github.com/xkbcommon/libxkbcommon
