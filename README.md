@@ -76,7 +76,7 @@ The type erasure of View nodes is not an easy trick, as the trait has two associ
 
 ### Linux
 
-In order to run xilem on linux systems, the development library [xkbcommon] needs to be installed.
+In order to run Xilem on Linux, the development library [xkbcommon] needs to be installed.
 
 On Fedora this can be installed using:
 
@@ -85,7 +85,10 @@ sudo dnf install libxkbcommon-x11-devel.x86_64
 # i686 is a less common architecure, but if you have it, use libxkbcommon-x11-devel.i686 instead
 ```
 
+Debian:
 
+```sh
+sudo apt-get install libxkbcommon-x11-dev
 [Html.lazy]: https://guide.elm-lang.org/optimization/lazy.html
 [Html map]: https://package.elm-lang.org/packages/elm/html/latest/Html#map
 [Rc::make_mut]: https://doc.rust-lang.org/std/rc/struct.Rc.html#method.make_mut
