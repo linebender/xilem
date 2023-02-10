@@ -17,6 +17,7 @@
 //! //! Note: the organization of this code roughly follows the existing Druid
 //! widget system, particularly its core.rs.
 
+use std::ops::{BitOr, BitOrAssign};
 use bitflags::bitflags;
 use glazier::kurbo::{Point, Rect, Size};
 use vello::{SceneBuilder, SceneFragment};
@@ -39,10 +40,11 @@ bitflags! {
         const REQUEST_PAINT = 8;
         const TREE_CHANGED = 0x10;
         const VIEW_CONTEXT_CHANGED = 0x20;
+        const HAS_ACCESSIBILITY = 0x40;
 
-        const IS_HOT = 0x40;
-        const IS_ACTIVE = 0x80;
-        const HAS_ACTIVE = 0x100;
+        const IS_HOT = 0x80;
+        const IS_ACTIVE = 0x100;
+        const HAS_ACTIVE = 0x200;
 
         const NEEDS_SET_ORIGIN = 0x400;
 
@@ -50,33 +52,48 @@ bitflags! {
         const UPWARD_FLAGS = Self::REQUEST_LAYOUT.bits
             | Self::REQUEST_PAINT.bits
             | Self::HAS_ACTIVE.bits
-            | Self::REQUEST_ACCESSIBILITY.bits
+            | Self::HAS_ACCESSIBILITY.bits
             | Self::TREE_CHANGED.bits
             | Self::VIEW_CONTEXT_CHANGED.bits;
         const INIT_FLAGS = Self::REQUEST_UPDATE.bits
             | Self::REQUEST_LAYOUT.bits
             | Self::REQUEST_ACCESSIBILITY.bits
             | Self::REQUEST_PAINT.bits
-            | Self::TREE_CHANGED.bits; // For the newly added child of the changing container this flag is
-                                       // already set by the View::rebuild method, but its children
-                                       // (constructued with View::build) still need to set it them self's.
+            | Self::TREE_CHANGED.bits;
     }
 }
 
-bitflags! {
-    #[derive(Default)]
-    #[must_use]
-    pub struct ChangeFlags: u8 {
-        const UPDATE = 1;
-        const LAYOUT = 2;
-        const ACCESSIBILITY = 4;
-        const PAINT = 8;
-        // When the tree changes we need to update everything.
-        const TREE = 0x10
-            | Self::UPDATE.bits
-            | Self::LAYOUT.bits
-            | Self::ACCESSIBILITY.bits
-            | Self::PAINT.bits;
+#[derive(Default, Copy, Clone)]
+pub struct ChangeFlags(PodFlags);
+
+impl ChangeFlags {
+    pub const UPDATE: ChangeFlags = ChangeFlags(PodFlags::REQUEST_UPDATE);
+    pub const LAYOUT: ChangeFlags = ChangeFlags(PodFlags::REQUEST_LAYOUT);
+    pub const PAINT: ChangeFlags = ChangeFlags(PodFlags::REQUEST_PAINT);
+    pub const ACCESSIBILITY: ChangeFlags = ChangeFlags(
+              PodFlags::REQUEST_ACCESSIBILITY
+                  .union(PodFlags::HAS_ACCESSIBILITY)
+    );
+    pub const TREE: ChangeFlags = ChangeFlags(
+              PodFlags::REQUEST_PAINT
+                .union(PodFlags::REQUEST_LAYOUT)
+                .union(PodFlags::REQUEST_ACCESSIBILITY)
+                .union(PodFlags::HAS_ACCESSIBILITY)
+                .union(PodFlags::TREE_CHANGED)
+    );
+}
+
+impl BitOr for ChangeFlags {
+    type Output = Self;
+
+    fn bitor(self, rhs: Self) -> Self::Output {
+        Self(self.0 | rhs.0)
+    }
+}
+
+impl BitOrAssign for ChangeFlags {
+    fn bitor_assign(&mut self, rhs: Self) {
+        self.0 |= rhs.0;
     }
 }
 
@@ -98,6 +115,10 @@ pub(crate) struct WidgetState {
     /// The size of the widget.
     pub(crate) size: Size,
     /// A bloom filter containing this widgets is and the ones of its children.
+    // TODO: decide the final solution for this. This is probably going to be a global structure
+    //       tracking parent child relations in the tree:
+    //           parents: HashMap<Id, Id>,
+    //           children: HashMap<Id, Vec<Id>>,
     pub(crate) sub_tree: Bloom<Id>,
 }
 
@@ -114,8 +135,12 @@ impl WidgetState {
         }
     }
 
+    fn upwards_flags(&self) -> PodFlags {
+        self.flags & PodFlags::UPWARD_FLAGS
+    }
+
     fn merge_up(&mut self, child_state: &mut WidgetState) {
-        self.flags |= child_state.flags & PodFlags::UPWARD_FLAGS;
+        self.flags |= child_state.upwards_flags();
         self.sub_tree = self.sub_tree.union(child_state.sub_tree);
     }
 
@@ -145,9 +170,10 @@ impl Pod {
         (*self.widget).as_any_mut().downcast_mut()
     }
 
-    pub fn mark(&mut self, flags: ChangeFlags) {
-        self.state
-            .request(PodFlags::from_bits(flags.bits().into()).unwrap());
+    /// Sets the requested flags on this pod and returns the Flags the parent of this Pod should set.
+    pub fn mark(&mut self, flags: ChangeFlags) -> ChangeFlags {
+        self.state.request(flags.0);
+        ChangeFlags(self.state.upwards_flags())
     }
 
     /// Propagate a platform event. As in Druid, a great deal of the event
@@ -324,7 +350,7 @@ impl Pod {
         if self
             .state
             .flags
-            .contains(PodFlags::REQUEST_ACCESSIBILITY)
+            .contains(PodFlags::HAS_ACCESSIBILITY)
         {
             let mut child_cx = AccessCx {
                 cx_state: cx.cx_state,
@@ -335,7 +361,7 @@ impl Pod {
             self.widget.accessibility(&mut child_cx);
             self.state
                 .flags
-                .remove(PodFlags::REQUEST_ACCESSIBILITY);
+                .remove(PodFlags::REQUEST_ACCESSIBILITY | PodFlags::HAS_ACCESSIBILITY);
         }
     }
 
@@ -365,8 +391,8 @@ impl Pod {
     pub fn set_origin(&mut self, cx: &mut LayoutCx, origin: Point) {
         if origin != self.state.origin {
             self.state.origin = origin;
-            // request paint is called on the parent instead of this widget, since its fragment does
-            //not change.
+            // request paint is called on the parent instead of this widget, since this widget's
+            // fragment does not change.
             cx.view_context_changed();
 
             self.state.flags.insert(PodFlags::VIEW_CONTEXT_CHANGED);

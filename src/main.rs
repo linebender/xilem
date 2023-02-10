@@ -25,7 +25,7 @@ fn app_logic(data: &mut i32) -> impl View<i32> {
             }),
         ))
     ))
-
+        .with_spacing(20.0)
 }
 
 fn main() {

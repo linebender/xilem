@@ -70,11 +70,10 @@ macro_rules! impl_view_tuple {
                 state: &mut Self::State,
                 els: &mut Vec<Pod>,
             ) -> ChangeFlags {
-                let mut changed = ChangeFlags::empty();
+                let mut changed = ChangeFlags::default();
                 $({
                     let el_changed = self.$i.rebuild(cx, &prev.$i, &mut state.$n[$i], &mut state.$i, els[$i].downcast_mut().unwrap());
-                    els[$i].mark(el_changed);
-                    changed |= el_changed;
+                    changed |= els[$i].mark(el_changed);
                 })*
 
                 changed

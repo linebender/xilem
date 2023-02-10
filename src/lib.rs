@@ -15,6 +15,6 @@ pub use view::button::button;
 pub use view::View;
 pub use widget::Pod;
 pub use widget::Widget;
-pub use view::vstack::v_stack;
+pub use view::linear_layout::{v_stack, h_stack};
 pub use view::ViewSequence;
 pub(crate) use bloom::Bloom;

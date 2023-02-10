@@ -19,24 +19,29 @@ use crate::geometry::Axis;
 use crate::id::Id;
 use crate::view::sequence::ViewSequence;
 use crate::widget::ChangeFlags;
-use crate::widget::linear_layout::LinearLayout;
+use crate::widget::linear_layout;
 
 use super::{Cx, View};
 
-pub struct VStack<T, A, VT: ViewSequence<T, A>> {
+pub struct LinearLayout<T, A, VT: ViewSequence<T, A>> {
     children: VT,
     spacing: f64,
+    axis: Axis,
     phantom: PhantomData<fn() -> (T, A)>,
 }
 
-pub fn v_stack<T, A, VT: ViewSequence<T, A>>(children: VT) -> VStack<T, A, VT> {
-    VStack::new(children)
+pub fn v_stack<T, A, VT: ViewSequence<T, A>>(children: VT) -> LinearLayout<T, A, VT> {
+    LinearLayout::new(children, Axis::Vertical)
 }
 
-impl<T, A, VT: ViewSequence<T, A>> VStack<T, A, VT> {
-    pub fn new(children: VT) -> Self {
+pub fn h_stack<T, A, VT: ViewSequence<T, A>>(children: VT) -> LinearLayout<T, A, VT> {
+    LinearLayout::new(children, Axis::Horizontal)
+}
+
+impl<T, A, VT: ViewSequence<T, A>> LinearLayout<T, A, VT> {
+    pub fn new(children: VT, axis: Axis) -> Self {
         let phantom = Default::default();
-        VStack { children, phantom, spacing: 0.0 }
+        LinearLayout { children, phantom, spacing: 0.0, axis }
     }
 
     pub fn with_spacing(mut self, spacing: f64) -> Self {
@@ -45,14 +50,14 @@ impl<T, A, VT: ViewSequence<T, A>> VStack<T, A, VT> {
     }
 }
 
-impl<T, A, VT: ViewSequence<T, A>> View<T, A> for VStack<T, A, VT> {
+impl<T, A, VT: ViewSequence<T, A>> View<T, A> for LinearLayout<T, A, VT> {
     type State = VT::State;
 
-    type Element = LinearLayout;
+    type Element = linear_layout::LinearLayout;
 
     fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
         let (id, (state, elements)) = cx.with_new_id(|cx| self.children.build(cx));
-        let column = LinearLayout::new(elements, self.spacing, Axis::Vertical);
+        let column = linear_layout::LinearLayout::new(elements, self.spacing, self.axis);
         (id, state, column)
     }
 
@@ -69,8 +74,9 @@ impl<T, A, VT: ViewSequence<T, A>> View<T, A> for VStack<T, A, VT> {
                 .rebuild(cx, &prev.children, state, &mut element.children)
         });
 
-        if self.spacing != prev.spacing {
+        if self.spacing != prev.spacing || self.axis != prev.axis {
             element.spacing = self.spacing;
+            element.axis = self.axis;
             flags |= ChangeFlags::LAYOUT;
         }
 

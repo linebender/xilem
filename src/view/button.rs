@@ -62,7 +62,7 @@ impl<T, A> View<T, A> for Button<T, A> {
         if prev.label != self.label {
             element.set_label(self.label.clone())
         } else {
-            ChangeFlags::empty()
+            ChangeFlags::default()
         }
     }
 

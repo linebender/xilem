@@ -84,11 +84,11 @@ where
                     self.rebuild(cx, prev, id, state, element)
                 } else {
                     println!("downcast of element failed in dyn_rebuild");
-                    ChangeFlags::empty()
+                    ChangeFlags::default()
                 }
             } else {
                 println!("downcast of state failed in dyn_rebuild");
-                ChangeFlags::empty()
+                ChangeFlags::default()
             }
         } else {
             let (new_id, new_state, new_element) = self.build(cx);

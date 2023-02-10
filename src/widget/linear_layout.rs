@@ -85,13 +85,12 @@ impl Widget for LinearLayout {
             child.accessibility(cx);
         }
 
-        let mut node = accesskit::Node::default();
-        node.role = match self.axis {
-            Axis::Vertical => accesskit::Role::Column,
-            Axis::Horizontal => accesskit::Role::Row,
-        };
-        node.children = self.children.iter().map(|pod|pod.id().into()).collect();
-        cx.push_node(node);
+        if cx.requested() {
+            let mut node = accesskit::Node::default();
+            node.role = accesskit::Role::GenericContainer;
+            node.children = self.children.iter().map(|pod| pod.id().into()).collect();
+            cx.push_node(node);
+        }
     }
 
     fn paint(&mut self, cx: &mut PaintCx, builder: &mut SceneBuilder) {
