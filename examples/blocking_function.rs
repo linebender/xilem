@@ -78,7 +78,7 @@ impl Widget for MainWidget {
 
                 let mut flex_mut = ctx.get_mut(&mut self.content);
                 flex_mut.clear();
-                flex_mut.add_child(Label::new(format!("New value: {}", value)));
+                flex_mut.add_child(Label::new(format!("New value: {value}")));
 
                 self.loading = false;
                 self.value = value;

@@ -35,6 +35,7 @@ impl PromiseTokenId {
 }
 
 impl<T: Any + Send> PromiseToken<T> {
+    #[allow(clippy::new_without_default)]
     pub fn new() -> PromiseToken<T> {
         let promise_token_id = PromiseTokenId::next();
         PromiseToken(promise_token_id, std::marker::PhantomData)
@@ -116,7 +117,7 @@ mod tests {
     #[test]
     fn debug_empty_token() {
         let promise_token: PromiseToken<i32> = PromiseToken::empty();
-        println!("token: {:?}", promise_token);
+        dbg!(promise_token);
     }
 
     #[test]

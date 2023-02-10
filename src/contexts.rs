@@ -920,6 +920,7 @@ impl PaintCtx<'_, '_, '_> {
 }
 
 impl<'a> GlobalPassCtx<'a> {
+    #[allow(clippy::too_many_arguments)]
     pub(crate) fn new(
         ext_event_sink: ExtEventSink,
         debug_logger: &'a mut DebugLogger,

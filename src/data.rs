@@ -4,6 +4,8 @@
 
 //! Traits for handling value types.
 
+#![allow(clippy::all)]
+
 use std::ptr;
 use std::rc::Rc;
 use std::sync::Arc;

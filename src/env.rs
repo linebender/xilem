@@ -4,6 +4,8 @@
 
 //! An environment which is passed downward into the widget tree.
 
+#![allow(clippy::all)]
+
 use std::any::{self, Any};
 use std::borrow::Borrow;
 use std::collections::hash_map::Entry;

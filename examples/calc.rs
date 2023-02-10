@@ -143,7 +143,7 @@ impl Widget for CalcButton {
             Event::MouseDown(_) => {
                 if !ctx.is_disabled() {
                     ctx.get_mut(&mut self.inner)
-                        .set_background(self.active_color.clone());
+                        .set_background(self.active_color);
                     ctx.set_active(true);
                     ctx.request_paint();
                     trace!("CalcButton {:?} pressed", ctx.widget_id());
@@ -155,8 +155,7 @@ impl Widget for CalcButton {
                     ctx.request_paint();
                     trace!("CalcButton {:?} released", ctx.widget_id());
                 }
-                ctx.get_mut(&mut self.inner)
-                    .set_background(self.base_color.clone());
+                ctx.get_mut(&mut self.inner).set_background(self.base_color);
                 ctx.set_active(false);
             }
             _ => (),
@@ -254,7 +253,7 @@ fn digit_button(digit: u8) -> CalcButton {
     const LIGHT_GRAY: Color = Color::rgb8(0x71, 0x71, 0x71);
     CalcButton::new(
         SizedBox::new(Align::centered(
-            Label::new(format!("{}", digit)).with_text_size(24.),
+            Label::new(format!("{digit}")).with_text_size(24.),
         ))
         .background(GRAY)
         .expand(),

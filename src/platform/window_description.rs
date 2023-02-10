@@ -34,7 +34,7 @@ pub struct WindowDescription {
 }
 
 /// Defines how a windows size should be determined
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, Default, PartialEq)]
 pub enum WindowSizePolicy {
     /// Use the content of the window to determine the size.
     ///
@@ -42,6 +42,7 @@ pub enum WindowSizePolicy {
     /// you are responsible for ensuring that your content picks an appropriate size.
     Content,
     /// Use the provided window size.
+    #[default]
     User,
 }
 
@@ -180,12 +181,6 @@ impl WindowDescription {
     pub fn with_config(mut self, config: WindowConfig) -> Self {
         self.config = config;
         self
-    }
-}
-
-impl Default for WindowSizePolicy {
-    fn default() -> Self {
-        WindowSizePolicy::User
     }
 }
 

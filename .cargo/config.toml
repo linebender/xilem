@@ -1,0 +1,8 @@
+[target.'cfg(all())']
+rustflags = [
+    # Global lints/warnings.
+    # We do this here instead of in the crate root because we want to apply
+    # these to example and test targets as well.
+    "-Aclippy::single_match",
+    "-Aclippy::bool_assert_comparison",
+]

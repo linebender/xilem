@@ -159,9 +159,7 @@ fn allow_non_recurse_cursor_stashed() {
                 child.on_event(ctx, event, env);
             }
         })
-        .layout_fn(|_child, _ctx, _bc, _env| {
-            return Size::ZERO;
-        });
+        .layout_fn(|_child, _ctx, _bc, _env| Size::ZERO);
 
     let mut harness = TestHarness::create(widget);
     harness.mouse_move(Point::new(5000.0, 5000.0));
@@ -173,9 +171,7 @@ fn allow_non_recurse_stashed_paint() {
         .event_fn(|child, ctx, _event, _| {
             ctx.set_stashed(child, true);
         })
-        .layout_fn(|_child, _ctx, _bc, _env| {
-            return Size::ZERO;
-        })
+        .layout_fn(|_child, _ctx, _bc, _env| Size::ZERO)
         .paint_fn(|_child, _ctx, _env| {
             // We don't call child.paint();
         });
@@ -310,9 +306,7 @@ fn check_paint_stashed() {
         .event_fn(|child, ctx, _event, _| {
             ctx.set_stashed(child, true);
         })
-        .layout_fn(|_child, _ctx, _bc, _env| {
-            return Size::ZERO;
-        })
+        .layout_fn(|_child, _ctx, _bc, _env| Size::ZERO)
         .paint_fn(|child, ctx, env| {
             child.paint(ctx, env);
         });

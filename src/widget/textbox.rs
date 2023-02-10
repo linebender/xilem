@@ -74,7 +74,7 @@ impl TextBox {
         Self {
             inner: WidgetPod::new(scroll),
             scroll_to_selection_after_layout: false,
-            placeholder_text: placeholder_text.into(),
+            placeholder_text,
             placeholder_layout,
             multiline: false,
             was_focused_from_click: false,

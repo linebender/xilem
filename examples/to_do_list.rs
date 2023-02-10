@@ -28,7 +28,7 @@ impl AppDelegate for Delegate {
         match action {
             Action::ButtonPressed | Action::TextEntered(_) => {
                 let mut root: WidgetMut<Portal<Flex>> = ctx.get_root();
-                if self.next_task != "" {
+                if !self.next_task.is_empty() {
                     let mut flex = root.child_mut();
                     flex.child_mut(2)
                         .unwrap()
@@ -42,7 +42,7 @@ impl AppDelegate for Delegate {
                 }
             }
             Action::TextChanged(new_text) => {
-                self.next_task = new_text.clone();
+                self.next_task = new_text;
             }
             _ => {}
         }

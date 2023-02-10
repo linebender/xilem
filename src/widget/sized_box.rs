@@ -22,6 +22,7 @@ use crate::{
 /// Something that can be used as the background for a widget.
 #[non_exhaustive]
 #[allow(missing_docs)]
+#[allow(clippy::type_complexity)]
 pub enum BackgroundBrush {
     Color(KeyOrValue<Color>),
     Linear(LinearGradient),

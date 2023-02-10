@@ -28,7 +28,6 @@ impl FocusTaker {
                 if let Event::Command(cmd) = event {
                     if cmd.is(REQUEST_FOCUS) {
                         ctx.request_focus();
-                        return;
                     }
                 }
             })

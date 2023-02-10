@@ -27,11 +27,8 @@ impl AppDelegate for Delegate {
         action: Action,
         _env: &Env,
     ) {
-        match action {
-            Action::ButtonPressed => {
-                println!("Hello");
-            }
-            _ => {}
+        if let Action::ButtonPressed = action {
+            println!("Hello");
         }
     }
 }

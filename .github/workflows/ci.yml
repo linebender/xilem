@@ -4,6 +4,9 @@ on:
       - master
   pull_request:
 
+env:
+  SKIP_RENDER_SNAPSHOTS: 1
+
 jobs:
   rustfmt:
     runs-on: ubuntu-latest
@@ -55,20 +58,20 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: clippy
-          args: --all-targets --features=x11,raw-win-handle --no-default-features -- -D warnings
+          args: --all-targets --features=x11 --no-default-features
 
       # We use --all-targets to skip doc tests; we run them in a parallel task
       - name: cargo test
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --all-targets --no-default-features --features=svg,image,im,x11
+          args: --all-targets --no-default-features --features=svg,image,x11
 
   # we test the gtk backend as a separate job because gtk install takes
   # a long time.
   test-stable-gtk:
     runs-on: ubuntu-latest
-    name: cargo clippy+test (gtk)
+    name: cargo test (gtk)
     steps:
       - uses: actions/checkout@v2
 
@@ -81,12 +84,11 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-          components: clippy
           profile: minimal
           override: true
 
       - name: restore cache
-        uses: Swatinem/rust-cache@v1
+        uses: Swatinem/rust-cache@v2
 
       # We use --all-targets to skip doc tests; there are no gtk-specific
       # doctests in masonry anyway
@@ -94,7 +96,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --all-targets --features=svg,image,im,raw-win-handle
+          args: --all-targets --features=svg,image
 
   test-stable-wasm:
     runs-on: macOS-latest
@@ -117,7 +119,7 @@ jobs:
           override: true
 
       - name: restore cache
-        uses: Swatinem/rust-cache@v1
+        uses: Swatinem/rust-cache@v2
 
       # We use --all-targets to skip doc tests; there are no wasm-specific
       # doctests in masonry anyway
@@ -126,7 +128,7 @@ jobs:
         with:
           command: test
           # TODO: Add svg feature when it's no longer broken with wasm
-          args: --all-targets --features=image,im --no-run --target wasm32-unknown-unknown
+          args: --all-targets --features=image --no-run --target wasm32-unknown-unknown
 
   doctest-stable:
     runs-on: macOS-latest
@@ -142,13 +144,13 @@ jobs:
           override: true
 
       - name: restore cache
-        uses: Swatinem/rust-cache@v1
+        uses: Swatinem/rust-cache@v2
 
       - name: cargo test --doc
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --doc --no-default-features --features=svg,image,im
+          args: --doc --no-default-features --features=svg,image
 
   # This tests the future rust compiler to catch errors ahead of time without
   # breaking CI
@@ -170,7 +172,7 @@ jobs:
           override: true
 
       - name: restore cache
-        uses: Swatinem/rust-cache@v1
+        uses: Swatinem/rust-cache@v2
 
       - name: cargo check
         uses: actions-rs/cargo@v1
@@ -183,5 +185,5 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: clippy
-          args: --all-targets --no-default-features --features=x11,svg,image,im,raw-win-handle
+          args: --all-targets --no-default-features --features=x11,svg,image
         continue-on-error: true

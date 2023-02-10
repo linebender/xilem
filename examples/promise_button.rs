@@ -4,6 +4,8 @@
 
 //! A label widget.
 
+#![allow(clippy::single_match)]
+
 use std::{thread, time};
 
 use druid_shell::Cursor;
@@ -45,9 +47,8 @@ pub enum LineBreaking {
 impl PromiseButton {
     /// Create a new `PromiseButton`.
     pub fn new(text: impl Into<ArcStr>) -> Self {
-        let current_text = text.into();
         let mut text_layout = TextLayout::new();
-        text_layout.set_text(current_text.clone());
+        text_layout.set_text(text.into());
 
         Self {
             value: 0,
@@ -87,7 +88,7 @@ impl Widget for PromiseButton {
             Event::PromiseResult(result) => {
                 if let Some(new_value) = result.try_get(self.promise_token) {
                     self.text_layout
-                        .set_text(format!("New value: {}", new_value).into());
+                        .set_text(format!("New value: {new_value}").into());
                     self.value = new_value;
                     ctx.request_layout();
                 }

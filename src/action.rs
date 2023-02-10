@@ -28,16 +28,16 @@ pub enum Action {
 impl PartialEq for Action {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
+            (Self::ButtonPressed, Self::ButtonPressed) => true,
             (Self::TextChanged(l0), Self::TextChanged(r0)) => l0 == r0,
             (Self::TextEntered(l0), Self::TextEntered(r0)) => l0 == r0,
             (Self::CheckboxChecked(l0), Self::CheckboxChecked(r0)) => l0 == r0,
+            #[allow(clippy::vtable_address_comparisons)]
             (Self::Other(val_l), Self::Other(val_r)) => Arc::ptr_eq(val_l, val_r),
-            _ => core::mem::discriminant(self) == core::mem::discriminant(other),
+            _ => false,
         }
     }
 }
-
-impl Eq for Action {}
 
 impl std::fmt::Debug for Action {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

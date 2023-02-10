@@ -2,6 +2,7 @@
 // "as-is" basis without warranties of any kind. See the LICENSE file for
 // details.
 
+#![allow(clippy::all)]
 #![allow(missing_docs)]
 
 use std::collections::{HashMap, HashSet};

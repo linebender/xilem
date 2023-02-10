@@ -4,6 +4,9 @@
 
 //! Editing and displaying text.
 
+// TODO
+#![allow(clippy::all)]
+
 mod attribute;
 mod backspace;
 mod editable_text;

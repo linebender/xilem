@@ -247,7 +247,7 @@ mod tests {
         };
 
         let render_2 = {
-            let image_widget = Image::new(image_data.clone());
+            let image_widget = Image::new(image_data);
 
             let mut harness = TestHarness::create_with_size(image_widget, Size::new(40.0, 60.0));
 

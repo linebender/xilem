@@ -214,7 +214,7 @@ impl AppRoot {
         // If there are no active or pending windows, we quit the run loop.
         if inner.active_windows.is_empty() && inner.pending_windows.is_empty() {
             #[cfg(any(target_os = "windows", feature = "x11"))]
-            inner.app.quit();
+            inner.app_handle.quit();
         }
 
         // If we are closing the window that is currently responsible
@@ -856,6 +856,7 @@ impl AppRootInner {
 // ---
 
 impl WindowRoot {
+    #[allow(clippy::too_many_arguments)]
     pub(crate) fn new(
         id: WindowId,
         handle: WindowHandle,
@@ -869,7 +870,7 @@ impl WindowRoot {
         WindowRoot {
             id,
             root: WidgetPod::new(root),
-            size_policy: size_policy,
+            size_policy,
             size: Size::ZERO,
             invalid: Region::EMPTY,
             title,
@@ -1480,18 +1481,20 @@ impl WindowRoot {
     /// After a mutable lock is released, the widget needs to be notified so that
     /// it can update any internal state.
     pub(crate) fn release_ime_lock(&mut self, req_token: TextFieldToken) -> Option<WidgetId> {
-        self.ime_handlers
+        let (_, reg) = self
+            .ime_handlers
             .iter()
-            .find(|(token, _)| req_token == *token)
-            .and_then(|(_, reg)| reg.document.release().then(|| reg.widget_id))
+            .find(|(token, _)| req_token == *token)?;
+        reg.document.release().then_some(reg.widget_id)
     }
 
     pub(crate) fn release_focused_ime_handler(&mut self) -> Option<WidgetId> {
         let focused_widget_id = self.focus?;
-        self.ime_handlers
+        let (_, reg) = self
+            .ime_handlers
             .iter()
-            .find(|(_, reg)| reg.widget_id == focused_widget_id)
-            .and_then(|(_, reg)| reg.document.release().then(|| reg.widget_id))
+            .find(|(_, reg)| reg.widget_id == focused_widget_id)?;
+        reg.document.release().then_some(reg.widget_id)
     }
 
     fn widget_for_focus_request(&self, focus: FocusChange) -> Option<WidgetId> {

@@ -545,6 +545,14 @@ impl TestHarness {
         test_module_path: &str,
         test_name: &str,
     ) {
+        if option_env!("SKIP_RENDER_SNAPSHOTS").is_some() {
+            // FIXME - This is a terrible, awful hack.
+            // We need a way to skip render snapshots on CI and locally
+            // until we can make sure the snapshots render the same on
+            // different platforms.
+            return;
+        }
+
         let mut device = Device::new().expect("harness failed to get device");
         let mut render_target = device
             .bitmap_target(
@@ -571,7 +579,7 @@ impl TestHarness {
         let new_path = screenshots_folder.join(format!("{module_str}__{test_name}.new.png"));
         let diff_path = screenshots_folder.join(format!("{module_str}__{test_name}.diff.png"));
 
-        if let Ok(reference_file) = ImageReader::open(&reference_path) {
+        if let Ok(reference_file) = ImageReader::open(reference_path) {
             let ref_image = reference_file.decode().unwrap().to_rgba8();
 
             if let Some(diff_image) = get_image_diff(&ref_image, &new_image) {

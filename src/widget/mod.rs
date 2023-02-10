@@ -26,7 +26,6 @@ mod sized_box;
 mod spinner;
 mod split;
 mod textbox;
-mod web_image;
 
 pub use align::Align;
 pub use button::Button;
@@ -39,7 +38,6 @@ pub use sized_box::SizedBox;
 pub use spinner::Spinner;
 pub use split::Split;
 pub use textbox::TextBox;
-pub use web_image::WebImage;
 pub use widget::StoreInWidgetMut;
 #[doc(hidden)]
 pub use widget::{Widget, WidgetId};
@@ -84,9 +82,10 @@ use crate::{Affine, Data, Size};
 
 // These are based on https://api.flutter.dev/flutter/painting/BoxFit-class.html
 /// Strategies for inscribing a rectangle inside another rectangle.
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, Default, PartialEq)]
 pub enum FillStrat {
     /// As large as posible without changing aspect ratio of image and all of image shown
+    #[default]
     Contain,
     /// As large as posible with no dead space so that some of the image may be clipped
     Cover,
@@ -109,12 +108,6 @@ impl CursorChange {
             CursorChange::Set(c) | CursorChange::Override(c) => Some(c.clone()),
             CursorChange::Default => None,
         }
-    }
-}
-
-impl Default for FillStrat {
-    fn default() -> Self {
-        FillStrat::Contain
     }
 }
 
