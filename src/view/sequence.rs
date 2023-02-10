@@ -27,16 +27,12 @@ pub trait ViewSequence<T, A = ()>: Send {
 
     /// Update the associated widget.
     ///
-    /// If removed is true this sequence and the associated widget are removed from the tree after this
-    /// call.
-    ///
-    /// Returns the flags which should be propagated up the tree.
+    /// Returns `true` when anything has changed.
     fn rebuild(
         &self,
         cx: &mut Cx,
         prev: &Self,
         state: &mut Self::State,
-        removed: bool,
         element: &mut Vec<Pod>,
     ) -> ChangeFlags;
 
@@ -72,12 +68,11 @@ macro_rules! impl_view_tuple {
                 cx: &mut Cx,
                 prev: &Self,
                 state: &mut Self::State,
-                removed: bool,
                 els: &mut Vec<Pod>,
             ) -> ChangeFlags {
                 let mut changed = ChangeFlags::empty();
                 $({
-                    let el_changed = self.$i.rebuild(cx, &prev.$i, &mut state.$n[$i], &mut state.$i, removed, els[$i].downcast_mut().unwrap());
+                    let el_changed = self.$i.rebuild(cx, &prev.$i, &mut state.$n[$i], &mut state.$i, els[$i].downcast_mut().unwrap());
                     els[$i].mark(el_changed);
                     changed |= el_changed;
                 })*
