@@ -39,6 +39,6 @@ fn main() {
     window_handle.show();
     app.run(None);
     */
-    let app = App::new((), app_logic);
+    let app = App::new(0, app_logic);
     AppLauncher::new(app).run()
 }
