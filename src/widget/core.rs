@@ -34,19 +34,21 @@ use super::{
 bitflags! {
     #[derive(Default)]
     pub(crate) struct PodFlags: u32 {
-        const REQUEST_UPDATE = 1;
-        const REQUEST_LAYOUT = 2;
-        const REQUEST_ACCESSIBILITY = 4;
-        const REQUEST_PAINT = 8;
-        const TREE_CHANGED = 0x10;
-        const VIEW_CONTEXT_CHANGED = 0x20;
-        const HAS_ACCESSIBILITY = 0x40;
+        const REQUEST_UPDATE = ChangeFlags::UPDATE.bits as _;
+        const REQUEST_LAYOUT = ChangeFlags::LAYOUT.bits as _;
+        const REQUEST_ACCESSIBILITY = ChangeFlags::ACCESSIBILITY.bits as _;
+        const REQUEST_PAINT = ChangeFlags::PAINT.bits as _;
+        const TREE_CHANGED = ChangeFlags::TREE.bits as _;
+        const HAS_ACCESSIBILITY = ChangeFlags::HAS_ACCESSIBILITY.bits as _;
 
-        const IS_HOT = 0x80;
-        const IS_ACTIVE = 0x100;
-        const HAS_ACTIVE = 0x200;
+        // Everything else uses bitmasks greater than the max value of ChangeFlags: mask >= 0x100
+        const VIEW_CONTEXT_CHANGED = 0x100;
 
-        const NEEDS_SET_ORIGIN = 0x400;
+        const IS_HOT = 0x200;
+        const IS_ACTIVE = 0x400;
+        const HAS_ACTIVE = 0x800;
+
+        const NEEDS_SET_ORIGIN = 0x1000;
 
 
         const UPWARD_FLAGS = Self::REQUEST_LAYOUT.bits
@@ -63,37 +65,20 @@ bitflags! {
     }
 }
 
-#[derive(Default, Copy, Clone)]
-pub struct ChangeFlags(PodFlags);
-
-impl ChangeFlags {
-    pub const UPDATE: ChangeFlags = ChangeFlags(PodFlags::REQUEST_UPDATE);
-    pub const LAYOUT: ChangeFlags = ChangeFlags(PodFlags::REQUEST_LAYOUT);
-    pub const PAINT: ChangeFlags = ChangeFlags(PodFlags::REQUEST_PAINT);
-    pub const ACCESSIBILITY: ChangeFlags = ChangeFlags(
-              PodFlags::REQUEST_ACCESSIBILITY
-                  .union(PodFlags::HAS_ACCESSIBILITY)
-    );
-    pub const TREE: ChangeFlags = ChangeFlags(
-              PodFlags::REQUEST_PAINT
-                .union(PodFlags::REQUEST_LAYOUT)
-                .union(PodFlags::REQUEST_ACCESSIBILITY)
-                .union(PodFlags::HAS_ACCESSIBILITY)
-                .union(PodFlags::TREE_CHANGED)
-    );
-}
-
-impl BitOr for ChangeFlags {
-    type Output = Self;
-
-    fn bitor(self, rhs: Self) -> Self::Output {
-        Self(self.0 | rhs.0)
-    }
-}
-
-impl BitOrAssign for ChangeFlags {
-    fn bitor_assign(&mut self, rhs: Self) {
-        self.0 |= rhs.0;
+bitflags! {
+    #[derive(Default)]
+    pub struct ChangeFlags: u8 {
+        const UPDATE = 1;
+        const LAYOUT = 2;
+        const PAINT = 8;
+        const HAS_ACCESSIBILITY = 0x20;
+        const ACCESSIBILITY = 4
+            | Self::HAS_ACCESSIBILITY.bits;
+        const TREE = 0x10
+            | Self::LAYOUT.bits
+            | Self::PAINT.bits
+            | Self::ACCESSIBILITY.bits
+            | Self::HAS_ACCESSIBILITY.bits;
     }
 }
 
@@ -172,8 +157,8 @@ impl Pod {
 
     /// Sets the requested flags on this pod and returns the Flags the parent of this Pod should set.
     pub fn mark(&mut self, flags: ChangeFlags) -> ChangeFlags {
-        self.state.request(flags.0);
-        ChangeFlags(self.state.upwards_flags())
+        self.state.request(PodFlags::from_bits_truncate(flags.bits as _));
+        ChangeFlags::from_bits_truncate(self.state.upwards_flags().bits as _)
     }
 
     /// Propagate a platform event. As in Druid, a great deal of the event
