@@ -843,13 +843,13 @@ impl AppRootInner {
     #[cfg(target_os = "macos")]
     fn hide_app(&self) {
         use druid_shell::platform::mac::ApplicationExt as _;
-        self.inner.borrow().app.hide()
+        self.app_handle.hide();
     }
 
     #[cfg(target_os = "macos")]
     fn hide_others(&mut self) {
         use druid_shell::platform::mac::ApplicationExt as _;
-        self.inner.borrow().app.hide_others();
+        self.app_handle.hide_others();
     }
 }
 
