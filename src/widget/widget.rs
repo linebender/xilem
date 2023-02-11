@@ -279,10 +279,10 @@ macro_rules! declare_widget {
     };
 
     ($WidgetNameMut:ident, $WidgetName:ident<$($Arg:ident $(: ($($Bound:tt)*))?),*>) => {
-        pub struct $WidgetNameMut<'a, 'b, $($Arg $(: $($Bound)*)?),*>(
-            $crate::WidgetCtx<'a, 'b>,
-            &'a mut $WidgetName<$($Arg),*>
-        );
+        pub struct $WidgetNameMut<'a, 'b, $($Arg $(: $($Bound)*)?),*>{
+            ctx: $crate::WidgetCtx<'a, 'b>,
+            widget: &'a mut $WidgetName<$($Arg),*>
+        }
 
         impl<$($Arg $(: $($Bound)*)?),*> $crate::widget::StoreInWidgetMut for $WidgetName<$($Arg),*> {
             type Mut<'a, 'b: 'a> = $WidgetNameMut<'a, 'b, $($Arg),*>;
@@ -290,14 +290,14 @@ macro_rules! declare_widget {
             fn get_widget_and_ctx<'s: 'r, 'a: 'r, 'b: 'a, 'r>(
                 widget_mut: &'s mut Self::Mut<'a, 'b>,
             ) -> (&'r mut Self, &'r mut $crate::WidgetCtx<'a, 'b>) {
-                (widget_mut.1, &mut widget_mut.0)
+                (widget_mut.widget, &mut widget_mut.ctx)
             }
 
             fn from_widget_and_ctx<'a, 'b>(
                 widget: &'a mut Self,
                 ctx: $crate::WidgetCtx<'a, 'b>,
             ) -> Self::Mut<'a, 'b> {
-                $WidgetNameMut(ctx, widget)
+                $WidgetNameMut { ctx, widget }
             }
         }
 
@@ -305,7 +305,7 @@ macro_rules! declare_widget {
             type Target = $WidgetName<$($Arg),*>;
 
             fn deref(&self) -> &Self::Target {
-                self.1
+                self.widget
             }
         }
     };

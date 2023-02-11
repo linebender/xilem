@@ -243,26 +243,26 @@ impl<'a, 'b> FlexMut<'a, 'b> {
     ///
     /// [`CrossAxisAlignment`]: enum.CrossAxisAlignment.html
     pub fn set_cross_axis_alignment(&mut self, alignment: CrossAxisAlignment) {
-        self.1.cross_alignment = alignment;
+        self.widget.cross_alignment = alignment;
         // TODO
-        self.0.widget_state.needs_layout = true;
+        self.ctx.widget_state.needs_layout = true;
     }
 
     /// Set the childrens' [`MainAxisAlignment`].
     ///
     /// [`MainAxisAlignment`]: enum.MainAxisAlignment.html
     pub fn set_main_axis_alignment(&mut self, alignment: MainAxisAlignment) {
-        self.1.main_alignment = alignment;
+        self.widget.main_alignment = alignment;
         // TODO
-        self.0.widget_state.needs_layout = true;
+        self.ctx.widget_state.needs_layout = true;
     }
 
     /// Set whether the container must expand to fill the available space on
     /// its main axis.
     pub fn set_must_fill_main_axis(&mut self, fill: bool) {
-        self.1.fill_major_axis = fill;
+        self.widget.fill_major_axis = fill;
         // TODO
-        self.0.widget_state.needs_layout = true;
+        self.ctx.widget_state.needs_layout = true;
     }
 
     /// Add a non-flex child widget.
@@ -275,10 +275,10 @@ impl<'a, 'b> FlexMut<'a, 'b> {
             widget: WidgetPod::new(Box::new(child)),
             alignment: None,
         };
-        self.1.children.push(child);
+        self.widget.children.push(child);
         // TODO
-        self.0.widget_state.children_changed = true;
-        self.0.widget_state.needs_layout = true;
+        self.ctx.widget_state.children_changed = true;
+        self.ctx.widget_state.needs_layout = true;
     }
 
     pub fn add_child_id(&mut self, child: impl Widget, id: WidgetId) {
@@ -286,10 +286,10 @@ impl<'a, 'b> FlexMut<'a, 'b> {
             widget: WidgetPod::new_with_id(Box::new(child), id),
             alignment: None,
         };
-        self.1.children.push(child);
+        self.widget.children.push(child);
         // TODO
-        self.0.widget_state.children_changed = true;
-        self.0.widget_state.needs_layout = true;
+        self.ctx.widget_state.children_changed = true;
+        self.ctx.widget_state.needs_layout = true;
     }
 
     /// Add a flexible child widget.
@@ -309,10 +309,10 @@ impl<'a, 'b> FlexMut<'a, 'b> {
                 alignment: None,
             }
         };
-        self.1.children.push(child);
+        self.widget.children.push(child);
         // TODO
-        self.0.widget_state.children_changed = true;
-        self.0.widget_state.needs_layout = true;
+        self.ctx.widget_state.children_changed = true;
+        self.ctx.widget_state.needs_layout = true;
     }
 
     /// Add a spacer widget with a standard size.
@@ -320,13 +320,13 @@ impl<'a, 'b> FlexMut<'a, 'b> {
     /// The actual value of this spacer depends on whether this container is
     /// a row or column, as well as theme settings.
     pub fn add_default_spacer(&mut self) {
-        let key = match self.1.direction {
+        let key = match self.widget.direction {
             Axis::Vertical => crate::theme::WIDGET_PADDING_VERTICAL,
             Axis::Horizontal => crate::theme::WIDGET_PADDING_HORIZONTAL,
         };
         self.add_spacer(key);
         // TODO
-        self.0.widget_state.needs_layout = true;
+        self.ctx.widget_state.needs_layout = true;
     }
 
     /// Add an empty spacer widget with the given size.
@@ -345,9 +345,9 @@ impl<'a, 'b> FlexMut<'a, 'b> {
         }
 
         let new_child = Child::FixedSpacer(value, 0.0);
-        self.1.children.push(new_child);
+        self.widget.children.push(new_child);
         // TODO
-        self.0.widget_state.needs_layout = true;
+        self.ctx.widget_state.needs_layout = true;
     }
 
     /// Add an empty spacer widget with a specific `flex` factor.
@@ -359,9 +359,9 @@ impl<'a, 'b> FlexMut<'a, 'b> {
             0.0
         };
         let new_child = Child::FlexedSpacer(flex, 0.0);
-        self.1.children.push(new_child);
+        self.widget.children.push(new_child);
         // TODO
-        self.0.widget_state.needs_layout = true;
+        self.ctx.widget_state.needs_layout = true;
     }
 
     /// Add a non-flex child widget.
@@ -374,10 +374,10 @@ impl<'a, 'b> FlexMut<'a, 'b> {
             widget: WidgetPod::new(Box::new(child)),
             alignment: None,
         };
-        self.1.children.insert(idx, child);
+        self.widget.children.insert(idx, child);
         // TODO
-        self.0.widget_state.children_changed = true;
-        self.0.widget_state.needs_layout = true;
+        self.ctx.widget_state.children_changed = true;
+        self.ctx.widget_state.needs_layout = true;
     }
 
     pub fn insert_flex_child(
@@ -401,10 +401,10 @@ impl<'a, 'b> FlexMut<'a, 'b> {
                 alignment: None,
             }
         };
-        self.1.children.insert(idx, child);
+        self.widget.children.insert(idx, child);
         // TODO
-        self.0.widget_state.children_changed = true;
-        self.0.widget_state.needs_layout = true;
+        self.ctx.widget_state.children_changed = true;
+        self.ctx.widget_state.needs_layout = true;
     }
 
     // TODO - remove
@@ -413,13 +413,13 @@ impl<'a, 'b> FlexMut<'a, 'b> {
     /// The actual value of this spacer depends on whether this container is
     /// a row or column, as well as theme settings.
     pub fn insert_default_spacer(&mut self, idx: usize) {
-        let key = match self.1.direction {
+        let key = match self.widget.direction {
             Axis::Vertical => crate::theme::WIDGET_PADDING_VERTICAL,
             Axis::Horizontal => crate::theme::WIDGET_PADDING_HORIZONTAL,
         };
         self.insert_spacer(idx, key);
         // TODO
-        self.0.widget_state.needs_layout = true;
+        self.ctx.widget_state.needs_layout = true;
     }
 
     /// Add an empty spacer widget with the given size.
@@ -438,9 +438,9 @@ impl<'a, 'b> FlexMut<'a, 'b> {
         }
 
         let new_child = Child::FixedSpacer(value, 0.0);
-        self.1.children.insert(idx, new_child);
+        self.widget.children.insert(idx, new_child);
         // TODO
-        self.0.widget_state.needs_layout = true;
+        self.ctx.widget_state.needs_layout = true;
     }
 
     /// Add an empty spacer widget with a specific `flex` factor.
@@ -452,30 +452,30 @@ impl<'a, 'b> FlexMut<'a, 'b> {
             0.0
         };
         let new_child = Child::FlexedSpacer(flex, 0.0);
-        self.1.children.insert(idx, new_child);
+        self.widget.children.insert(idx, new_child);
         // TODO
-        self.0.widget_state.needs_layout = true;
+        self.ctx.widget_state.needs_layout = true;
     }
 
     pub fn remove_child(&mut self, idx: usize) {
-        self.1.children.remove(idx);
-        self.0.widget_state.needs_layout = true;
+        self.widget.children.remove(idx);
+        self.ctx.widget_state.needs_layout = true;
     }
 
     // FIXME - Remove Box
     pub fn child_mut(&mut self, idx: usize) -> Option<WidgetMut<'_, 'b, Box<dyn Widget>>> {
-        let child = match &mut self.1.children[idx] {
+        let child = match &mut self.widget.children[idx] {
             Child::Fixed { widget, .. } | Child::Flex { widget, .. } => widget,
             Child::FixedSpacer(..) => return None,
             Child::FlexedSpacer(..) => return None,
         };
 
-        Some(self.0.get_mut(child))
+        Some(self.ctx.get_mut(child))
     }
 
     pub fn clear(&mut self) {
-        self.1.children.clear();
-        self.0.widget_state.needs_layout = true;
+        self.widget.children.clear();
+        self.ctx.widget_state.needs_layout = true;
     }
 }
 

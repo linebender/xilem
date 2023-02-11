@@ -154,8 +154,8 @@ impl Label {
 impl LabelMut<'_, '_> {
     /// Set the text.
     pub fn set_text(&mut self, new_text: impl Into<ArcStr>) {
-        self.1.text_layout.set_text(new_text.into());
-        self.0.request_layout();
+        self.widget.text_layout.set_text(new_text.into());
+        self.ctx.request_layout();
     }
 
     /// Set the text color.
@@ -164,11 +164,11 @@ impl LabelMut<'_, '_> {
     /// [`Key<Color>`]: ../struct.Key.html
     pub fn set_text_color(&mut self, color: impl Into<KeyOrValue<Color>>) {
         let color = color.into();
-        if !self.1.disabled {
-            self.1.text_layout.set_text_color(color.clone());
+        if !self.widget.disabled {
+            self.widget.text_layout.set_text_color(color.clone());
         }
-        self.1.default_text_color = color;
-        self.0.request_layout();
+        self.widget.default_text_color = color;
+        self.ctx.request_layout();
     }
 
     /// Set the text size.
@@ -177,8 +177,8 @@ impl LabelMut<'_, '_> {
     ///
     /// [`Key<f64>`]: ../struct.Key.html
     pub fn set_text_size(&mut self, size: impl Into<KeyOrValue<f64>>) {
-        self.1.text_layout.set_text_size(size);
-        self.0.request_layout();
+        self.widget.text_layout.set_text_size(size);
+        self.ctx.request_layout();
     }
 
     /// Set the font.
@@ -188,20 +188,20 @@ impl LabelMut<'_, '_> {
     ///
     /// [`Key<FontDescriptor>`]: ../struct.Key.html
     pub fn set_font(&mut self, font: impl Into<KeyOrValue<FontDescriptor>>) {
-        self.1.text_layout.set_font(font);
-        self.0.request_layout();
+        self.widget.text_layout.set_font(font);
+        self.ctx.request_layout();
     }
 
     /// Set the [`LineBreaking`] behaviour.
     pub fn set_line_break_mode(&mut self, mode: LineBreaking) {
-        self.1.line_break_mode = mode;
-        self.0.request_layout();
+        self.widget.line_break_mode = mode;
+        self.ctx.request_layout();
     }
 
     /// Set the [`TextAlignment`] for this layout.
     pub fn set_text_alignment(&mut self, alignment: TextAlignment) {
-        self.1.text_layout.set_text_alignment(alignment);
-        self.0.request_layout();
+        self.widget.text_layout.set_text_alignment(alignment);
+        self.ctx.request_layout();
     }
 }
 

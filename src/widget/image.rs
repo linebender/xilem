@@ -73,15 +73,15 @@ impl<'a, 'b> ImageMut<'a, 'b> {
     /// Modify the widget's fill strategy.
     #[inline]
     pub fn set_fill_mode(&mut self, newfil: FillStrat) {
-        self.1.fill = newfil;
-        self.0.request_paint();
+        self.widget.fill = newfil;
+        self.ctx.request_paint();
     }
 
     /// Modify the widget's interpolation mode.
     #[inline]
     pub fn set_interpolation_mode(&mut self, interpolation: InterpolationMode) {
-        self.1.interpolation = interpolation;
-        self.0.request_paint();
+        self.widget.interpolation = interpolation;
+        self.ctx.request_paint();
     }
 
     /// Set the area of the image that will be displayed.
@@ -89,16 +89,16 @@ impl<'a, 'b> ImageMut<'a, 'b> {
     /// If `None`, then the whole image will be displayed.
     #[inline]
     pub fn set_clip_area(&mut self, clip_area: Option<Rect>) {
-        self.1.clip_area = clip_area;
-        self.0.request_paint();
+        self.widget.clip_area = clip_area;
+        self.ctx.request_paint();
     }
 
     /// Set new `ImageBuf`.
     #[inline]
     pub fn set_image_data(&mut self, image_data: ImageBuf) {
-        self.1.image_data = image_data;
-        self.1.paint_data = None;
-        self.0.request_layout();
+        self.widget.image_data = image_data;
+        self.widget.paint_data = None;
+        self.ctx.request_layout();
     }
 }
 

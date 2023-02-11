@@ -54,8 +54,8 @@ impl SpinnerMut<'_, '_> {
     ///
     /// [`Key<Color>`]: ../struct.Key.html
     pub fn set_color(&mut self, color: impl Into<KeyOrValue<Color>>) {
-        self.1.color = color.into();
-        self.0.request_paint();
+        self.widget.color = color.into();
+        self.ctx.request_paint();
     }
 }
 

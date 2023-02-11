@@ -67,7 +67,7 @@ impl<'a, 'b> ButtonMut<'a, 'b> {
     }
 
     pub fn label_mut(&mut self) -> WidgetMut<'_, 'b, Label> {
-        self.0.get_mut(&mut self.1.label)
+        self.ctx.get_mut(&mut self.widget.label)
     }
 }
 

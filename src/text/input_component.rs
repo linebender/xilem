@@ -272,24 +272,24 @@ impl<T: TextStorage + EditableText> TextComponentMut<'_, '_, T> {
         let new_text = new_text.into();
         // TODO - use '==' instead
         let needs_rebuild = self
-            .1
+            .widget
             .borrow()
             .layout
             .text()
             .map(|old| !old.same(&new_text))
             .unwrap_or(true);
         if needs_rebuild {
-            self.1.borrow_mut().layout.set_text(new_text.clone());
-            self.1
+            self.widget.borrow_mut().layout.set_text(new_text.clone());
+            self.widget
                 .borrow_mut()
                 .update_pending_invalidation(ImeInvalidation::Reset);
-            self.0.request_layout();
+            self.ctx.request_layout();
         }
     }
 
     pub fn set_focused(&mut self, focused: bool) {
-        self.1.has_focus = focused;
-        self.0.request_paint();
+        self.widget.has_focus = focused;
+        self.ctx.request_paint();
     }
 }
 
