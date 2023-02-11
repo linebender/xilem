@@ -72,8 +72,8 @@ impl<T: Send + 'static, V: View<T> + 'static> AppLauncher<T, V> {
             QUIT_MENU_ID,
             "E&xit",
             Some(&HotKey::new(SysMods::Cmd, "q")),
-            Some(true),
-            false,
+            Some(false),
+            true,
         );
         let mut menubar = Menu::new();
         menubar.add_dropdown(Menu::new(), "Application", true);
