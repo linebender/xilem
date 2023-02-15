@@ -32,7 +32,7 @@ accesskit = "0.9.0"
 
 [dependencies.glazier]
 git = "https://github.com/linebender/glazier"
-rev = "refs/pull/72/head" # TODO: Change this to a specific commit once glazier#72 is merged
+rev = "51eb418511790309b90b0d9838e4d91fc11d84d3"
 default-features = false
 features = ["accesskit"]
 

@@ -1051,7 +1051,7 @@ dependencies = [
 [[package]]
 name = "glazier"
 version = "0.7.0"
-source = "git+https://github.com/linebender/glazier?rev=refs/pull/72/head#334948100215b9b444540922fbe15e1d4eaeab9e"
+source = "git+https://github.com/linebender/glazier?rev=51eb418511790309b90b0d9838e4d91fc11d84d3#51eb418511790309b90b0d9838e4d91fc11d84d3"
 dependencies = [
  "accesskit",
  "accesskit_macos",
