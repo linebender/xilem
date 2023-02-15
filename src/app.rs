@@ -52,6 +52,7 @@ pub struct App<T, V: View<T>> {
     // there should be a real window object with id.
     window_id: Id,
     pub(crate) accesskit_connected: bool,
+    node_classes: accesskit::NodeClassSet,
 }
 
 /// The standard delay for waiting for async futures.
@@ -164,6 +165,7 @@ where
             rt,
             window_id: Id::next(),
             accesskit_connected: false,
+            node_classes: accesskit::NodeClassSet::new(),
         }
     }
 
@@ -183,27 +185,24 @@ where
     pub fn accessibility(&mut self) -> TreeUpdate {
         let mut update = TreeUpdate::default();
         let root_pod = self.root_pod.as_mut().unwrap();
-        let mut window_node = accesskit::Node {
-            role: accesskit::Role::Window,
-            children: vec![root_pod.id().into()],
-            name: Some("xilem window".into()),
-            ..Default::default()
-        };
+        let mut window_node_builder = accesskit::NodeBuilder::new(accesskit::Role::Window);
+        window_node_builder.set_name("xilem window");
+        window_node_builder.set_children(vec![root_pod.id().into()]);
         if let Ok(scale) = self.window_handle.get_scale() {
-            window_node.transform = Some(Box::new(accesskit::kurbo::Affine::scale_non_uniform(
+            window_node_builder.set_transform(Box::new(accesskit::Affine::scale_non_uniform(
                 scale.x(),
                 scale.y(),
             )));
         }
-        update
-            .nodes
-            .push((self.window_id.into(), Arc::new(window_node)));
+        let window_node = window_node_builder.build(&mut self.node_classes);
+        update.nodes.push((self.window_id.into(), window_node));
         update.tree = Some(accesskit::Tree::new(self.window_id.into()));
         let mut cx_state = CxState::new(&self.window_handle, &mut self.font_cx, &mut self.events);
         let mut access_cx = AccessCx {
             cx_state: &mut cx_state,
             widget_state: &mut &mut self.root_state,
             update: &mut update,
+            node_classes: &mut self.node_classes,
         };
         root_pod.accessibility(&mut access_cx);
         update

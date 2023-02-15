@@ -13,33 +13,29 @@ x11 = ["glazier/x11"]
 wayland = ["glazier/wayland"]
 
 [dependencies]
-vello = { git = "https://github.com/linebender/vello", rev = "f36e455" }
-wgpu = "0.14"
+vello = { git = "https://github.com/linebender/vello", rev = "5f59a2e8181a7d01f8753680676dd150b965728b" }
+wgpu = "0.15.0"
 raw-window-handle = "0.5"
 png = "0.16.2"
 rand = "0.7.3"
 roxmltree = "0.13"
 swash = "0.1.4"
 bytemuck = { version = "1.7.2", features = ["derive"] }
-parley = { git = "https://github.com/dfrg/parley" }
+parley = { git = "https://github.com/dfrg/parley", rev = "e4276b4d1001a050c07121f95ca255c771e9a641" }
 tokio = { version = "1.21", features = ["full"] }
 futures-task = "0.3"
 bitflags = "1.3.2"
 tracing = "0.1.37"
 test-log = "0.2.11"
 env_logger = "0.10.0"
-accesskit = "0.8.1"
+accesskit = "0.9.0"
 
 [dependencies.glazier]
 git = "https://github.com/linebender/glazier"
-rev = "bb48024"
+rev = "refs/pull/72/head" # TODO: Change this to a specific commit once glazier#72 is merged
 default-features = false
 features = ["accesskit"]
 
 [patch."https://github.com/dfrg/fount"]
-fount = { git = "https://github.com/jneem/fount", rev = "361c76f" }
+fount = { git = "https://github.com/jneem/fount", rev = "361c76fecf813ebc64d2634d3df7bfb6089c6414" }
 
-[patch.crates-io]
-# Required for metal support to work on wgpu
-# TODO: remove when wgpu is upgraded to 0.15
-naga = { git = "https://github.com/gfx-rs/naga", rev="ddcd5d3121150b2b1beee6e54e9125ff31aaa9a2" }

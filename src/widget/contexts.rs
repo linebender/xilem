@@ -65,6 +65,7 @@ pub struct AccessCx<'a, 'b> {
     pub(crate) cx_state: &'a mut CxState<'b>,
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) update: &'a mut TreeUpdate,
+    pub(crate) node_classes: &'a mut accesskit::NodeClassSet,
 }
 
 pub struct PaintCx<'a, 'b> {
@@ -165,9 +166,9 @@ impl<'a, 'b> LayoutCx<'a, 'b> {
 }
 
 // This function is unfortunate but works around kurbo versioning
-fn to_accesskit_rect(r: Rect) -> accesskit::kurbo::Rect {
+fn to_accesskit_rect(r: Rect) -> accesskit::Rect {
     println!("{:?}", r);
-    accesskit::kurbo::Rect::new(r.x0, r.y0, r.x1, r.y1)
+    accesskit::Rect::new(r.x0, r.y0, r.x1, r.y1)
 }
 
 impl<'a, 'b> AccessCx<'a, 'b> {
@@ -175,11 +176,12 @@ impl<'a, 'b> AccessCx<'a, 'b> {
     ///
     /// The id of the node pushed is obtained from the context. The
     /// bounds are set based on the layout bounds.
-    pub fn push_node(&mut self, mut node: accesskit::Node) {
-        node.bounds = Some(to_accesskit_rect(Rect::from_origin_size(
+    pub fn push_node(&mut self, mut builder: accesskit::NodeBuilder) {
+        builder.set_bounds(to_accesskit_rect(Rect::from_origin_size(
             self.widget_state.window_origin(),
             self.widget_state.size,
         )));
+        let node = builder.build(&mut self.node_classes);
         self.push_node_raw(node);
     }
 
@@ -189,7 +191,7 @@ impl<'a, 'b> AccessCx<'a, 'b> {
     /// to set bounds before calling.
     pub fn push_node_raw(&mut self, node: accesskit::Node) {
         let id = self.widget_state.id.into();
-        self.update.nodes.push((id, Arc::new(node)));
+        self.update.nodes.push((id, node));
     }
 
     /// Report whether accessibility was requested on this widget.
@@ -199,7 +201,9 @@ impl<'a, 'b> AccessCx<'a, 'b> {
     /// have seen a request. However, in many cases a container need not push
     /// a node for itself.
     pub fn is_requested(&self) -> bool {
-        self.widget_state.flags.contains(PodFlags::REQUEST_ACCESSIBILITY)
+        self.widget_state
+            .flags
+            .contains(PodFlags::REQUEST_ACCESSIBILITY)
     }
 }
 
