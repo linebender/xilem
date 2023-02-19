@@ -10,7 +10,6 @@ mod view;
 mod widget;
 mod geometry;
 mod bloom;
-mod menu;
 
 pub use app::App;
 pub use app_main::AppLauncher;
