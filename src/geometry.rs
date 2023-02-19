@@ -17,6 +17,8 @@ pub enum Axis {
 
 impl Axis {
     /// Returns the orthogonal axis.
+    ///
+    /// `v.cross().cross()` is always identical to `v`.
     pub fn cross(self) -> Self {
         match self {
             Axis::Horizontal => Axis::Vertical,
@@ -24,7 +26,7 @@ impl Axis {
         }
     }
 
-    ///
+    /// Returns the scalar of the value on this axis.
     pub fn major<T: Dim2>(self, value: T) -> T::Scalar {
         match self {
             Axis::Horizontal => value.x(),
@@ -32,10 +34,12 @@ impl Axis {
         }
     }
 
+    /// Returns the scalar of the value on the orthogonal axis.
     pub fn minor<T: Dim2>(self, value: T) -> T::Scalar {
         self.cross().major(value)
     }
 
+    /// Sets the scalar of the value on this axis and returns the new value.
     pub fn with_major<T: Dim2>(self, value: T, major: T::Scalar) -> T {
         match self {
             Axis::Horizontal => T::new(major, value.y()),
@@ -43,10 +47,25 @@ impl Axis {
         }
     }
 
+    /// Sets the scalar of the value on the orthogonal axis and returns the new value.
     pub fn with_minor<T: Dim2>(self, value: T, minor: T::Scalar) -> T {
         self.cross().with_major(value, minor)
     }
 
+    /// Updates the scalar of value on this axis.
+    pub fn set_major<T: Dim2>(self, value: &mut T, major: T::Scalar) {
+        *value = match self {
+            Axis::Horizontal => T::new(major, value.y()),
+            Axis::Vertical => T::new(value.x(), major),
+        };
+    }
+
+    /// Updates the scalar of value on the orthogonal axis.
+    pub fn set_minor<T: Dim2>(self, value: &mut T, major: T::Scalar) {
+        self.cross().set_major(value, major)
+    }
+
+    /// Maps the scalar of the value on this axis.
     pub fn map_major<T: Dim2 + Copy, F: FnOnce(T::Scalar) -> T::Scalar>(
         self,
         value: T,
@@ -58,6 +77,7 @@ impl Axis {
         }
     }
 
+    /// Maps the scalar of the value on the orthogonal axis.
     pub fn map_minor<T: Dim2 + Copy, F: FnOnce(T::Scalar) -> T::Scalar>(
         self,
         value: T,
@@ -66,6 +86,7 @@ impl Axis {
         self.cross().map_major(value, map)
     }
 
+    /// Returns a value created from the given scalars.
     pub fn pack<T: Dim2>(self, major: T::Scalar, minor: T::Scalar) -> T {
         match self {
             Axis::Horizontal => T::new(major, minor),
@@ -78,7 +99,7 @@ impl Axis {
 ///
 /// Types which implement this trait must consist of to identical sets of information, which can be
 /// represented as the associated type Scalar, and no additional data.
-pub trait Dim2 {
+pub trait Dim2: Copy {
     /// Scalar represents the value of each Axis of this type.
     /// The value does not have to be a single number.
     type Scalar;
