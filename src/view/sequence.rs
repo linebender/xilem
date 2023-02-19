@@ -1,9 +1,9 @@
-use std::any::Any;
 use crate::event::MessageResult;
 use crate::id::Id;
-use crate::View;
 use crate::view::Cx;
 use crate::widget::{ChangeFlags, Pod};
+use crate::View;
+use std::any::Any;
 
 /// A sequence on view nodes.
 ///

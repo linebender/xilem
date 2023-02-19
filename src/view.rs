@@ -90,7 +90,7 @@ pub trait View<T, A = ()>: Send {
     ) -> MessageResult<A>;
 }
 
-pub trait ViewMarker{}
+pub trait ViewMarker {}
 
 #[derive(Clone)]
 pub struct Cx {

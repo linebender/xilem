@@ -1,6 +1,6 @@
+use crate::widget::BoxConstraints;
 use std::ops::Range;
 use vello::kurbo::{Point, Rect, Size, Vec2};
-use crate::widget::BoxConstraints;
 
 /// An axis in visual space.
 ///
@@ -47,14 +47,22 @@ impl Axis {
         self.cross().with_major(value, minor)
     }
 
-    pub fn map_major<T: Dim2 + Copy, F: FnOnce(T::Scalar) -> T::Scalar>(self, value: T, map: F) -> T {
+    pub fn map_major<T: Dim2 + Copy, F: FnOnce(T::Scalar) -> T::Scalar>(
+        self,
+        value: T,
+        map: F,
+    ) -> T {
         match self {
             Axis::Horizontal => T::new(map(value.x()), value.y()),
             Axis::Vertical => T::new(value.x(), map(value.y())),
         }
     }
 
-    pub fn map_minor<T: Dim2 + Copy, F: FnOnce(T::Scalar) -> T::Scalar>(self, value: T, map: F) -> T {
+    pub fn map_minor<T: Dim2 + Copy, F: FnOnce(T::Scalar) -> T::Scalar>(
+        self,
+        value: T,
+        map: F,
+    ) -> T {
         self.cross().map_major(value, map)
     }
 
@@ -152,11 +160,17 @@ impl Dim2 for Rect {
     }
 
     fn x(self) -> Self::Scalar {
-        Span {low: self.x0, high: self.x1}
+        Span {
+            low: self.x0,
+            high: self.x1,
+        }
     }
 
     fn y(self) -> Self::Scalar {
-        Span {low: self.y0, high: self.y1}
+        Span {
+            low: self.y0,
+            high: self.y1,
+        }
     }
 }
 

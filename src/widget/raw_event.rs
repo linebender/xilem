@@ -90,8 +90,8 @@ impl ViewContext {
         let translate = new_origin.to_vec2();
         ViewContext {
             window_origin: self.window_origin + translate,
-            clip: self.clip -translate,
-            mouse_position: self.mouse_position.map(|p|p-translate)
+            clip: self.clip - translate,
+            mouse_position: self.mouse_position.map(|p| p - translate),
         }
     }
 }

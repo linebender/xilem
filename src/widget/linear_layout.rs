@@ -12,16 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use accesskit::Node;
-use vello::kurbo::Size;
-use vello::SceneBuilder;
 use crate::geometry::Axis;
 use crate::widget::{AccessCx, BoxConstraints, Event};
+use vello::kurbo::Size;
+use vello::SceneBuilder;
 
-use super::{
-    contexts::LifeCycleCx,
-    EventCx, LayoutCx, LifeCycle, PaintCx, Pod, UpdateCx, Widget,
-};
+use super::{contexts::LifeCycleCx, EventCx, LayoutCx, LifeCycle, PaintCx, Pod, UpdateCx, Widget};
 
 /// LinearLayout is a simple widget which does layout for a ViewSequence.
 ///

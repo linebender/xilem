@@ -1,4 +1,4 @@
-use xilem::{button, App, AppLauncher, View, v_stack, h_stack};
+use xilem::{button, h_stack, v_stack, App, AppLauncher, View};
 
 fn app_logic(data: &mut i32) -> impl View<i32> {
     // here's some logic, deriving state for the view from our state
@@ -23,9 +23,9 @@ fn app_logic(data: &mut i32) -> impl View<i32> {
                 println!("clicked reset");
                 *data = 0;
             }),
-        ))
+        )),
     ))
-        .with_spacing(20.0)
+    .with_spacing(20.0)
 }
 
 fn main() {

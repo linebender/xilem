@@ -26,7 +26,10 @@ use vello::SceneFragment;
 
 use crate::event::{AsyncWake, MessageResult};
 use crate::id::IdPath;
-use crate::widget::{AccessCx, BoxConstraints, CxState, EventCx, LayoutCx, LifeCycle, LifeCycleCx, PaintCx, Pod, PodFlags, UpdateCx, ViewContext, WidgetState};
+use crate::widget::{
+    AccessCx, BoxConstraints, CxState, EventCx, LayoutCx, LifeCycle, LifeCycleCx, PaintCx, Pod,
+    PodFlags, UpdateCx, ViewContext, WidgetState,
+};
 use crate::{
     event::Message,
     id::Id,
@@ -242,21 +245,29 @@ where
                 let mut update_cx = UpdateCx::new(&mut cx_state, &mut self.root_state);
                 root_pod.update(&mut update_cx);
             }
-            if root_pod.state.flags.contains(PodFlags::REQUEST_LAYOUT) || self.size != self.new_size {
+            if root_pod.state.flags.contains(PodFlags::REQUEST_LAYOUT) || self.size != self.new_size
+            {
                 self.size = self.new_size;
                 let mut layout_cx = LayoutCx::new(&mut cx_state, &mut self.root_state);
                 let bc = BoxConstraints::tight(self.size);
                 root_pod.layout(&mut layout_cx, &bc);
                 root_pod.set_origin(&mut layout_cx, Point::ORIGIN);
             }
-            if root_pod.state.flags.contains(PodFlags::VIEW_CONTEXT_CHANGED) {
+            if root_pod
+                .state
+                .flags
+                .contains(PodFlags::VIEW_CONTEXT_CHANGED)
+            {
                 let view_context = ViewContext {
                     window_origin: Point::ORIGIN,
                     clip: Rect::from_origin_size(Point::ORIGIN, root_pod.state.size),
                     mouse_position: self.cursor_pos,
                 };
                 let mut lifecycle_cx = LifeCycleCx::new(&mut cx_state, &mut self.root_state);
-                root_pod.lifecycle(&mut lifecycle_cx, &LifeCycle::ViewContextChanged(view_context));
+                root_pod.lifecycle(
+                    &mut lifecycle_cx,
+                    &LifeCycle::ViewContextChanged(view_context),
+                );
             }
 
             if cx_state.has_messages() {
@@ -284,7 +295,10 @@ where
 
     pub fn window_event(&mut self, event: Event) {
         match &event {
-            Event::MouseUp(me) | Event::MouseMove(me) | Event::MouseDown(me) | Event::MouseWheel(me) => {
+            Event::MouseUp(me)
+            | Event::MouseMove(me)
+            | Event::MouseDown(me)
+            | Event::MouseWheel(me) => {
                 self.cursor_pos = Some(me.pos);
             }
             Event::MouseLeft() => {
@@ -329,29 +343,28 @@ where
         self.cx.pending_async.clear();
         let _ = self.req_chan.blocking_send(AppReq::Render(delay));
         if let Some(response) = self.response_chan.blocking_recv() {
-            let state =
-                if let Some(element) = self.root_pod.as_mut() {
-                    let mut state = response.state.unwrap();
-                    let changes = response.view.rebuild(
-                        &mut self.cx,
-                        response.prev.as_ref().unwrap(),
-                        self.id.as_mut().unwrap(),
-                        &mut state,
-                        //TODO: fail more gracefully but make it explicit that this is a bug
-                        element
-                            .downcast_mut()
-                            .expect("the root widget changed its type, this should never happen!"),
-                    );
-                    self.root_pod.as_mut().unwrap().mark(changes);
-                    assert!(self.cx.is_empty(), "id path imbalance on rebuild");
-                    state
-                } else {
-                    let (id, state, element) = response.view.build(&mut self.cx);
-                    assert!(self.cx.is_empty(), "id path imbalance on build");
-                    self.root_pod = Some(Pod::new(element));
-                    self.id = Some(id);
-                    state
-                };
+            let state = if let Some(element) = self.root_pod.as_mut() {
+                let mut state = response.state.unwrap();
+                let changes = response.view.rebuild(
+                    &mut self.cx,
+                    response.prev.as_ref().unwrap(),
+                    self.id.as_mut().unwrap(),
+                    &mut state,
+                    //TODO: fail more gracefully but make it explicit that this is a bug
+                    element
+                        .downcast_mut()
+                        .expect("the root widget changed its type, this should never happen!"),
+                );
+                self.root_pod.as_mut().unwrap().mark(changes);
+                assert!(self.cx.is_empty(), "id path imbalance on rebuild");
+                state
+            } else {
+                let (id, state, element) = response.view.build(&mut self.cx);
+                assert!(self.cx.is_empty(), "id path imbalance on build");
+                self.root_pod = Some(Pod::new(element));
+                self.id = Some(id);
+                state
+            };
             let pending = std::mem::take(&mut self.cx.pending_async);
             let has_pending = !pending.is_empty();
             let _ = self
@@ -370,7 +383,7 @@ impl<T, V: View<T>> App<T, V> {
     }
 }
 
-impl<T, V: View<T>, F: FnMut(&mut T) -> V> AppTask<T, V, F>  {
+impl<T, V: View<T>, F: FnMut(&mut T) -> V> AppTask<T, V, F> {
     async fn run(&mut self) {
         let mut deadline = None;
         loop {

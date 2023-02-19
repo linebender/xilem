@@ -18,21 +18,21 @@ mod contexts;
 mod core;
 //pub mod layout_observer;
 //pub mod list;
+pub mod linear_layout;
 pub mod piet_scene_helpers;
 mod raw_event;
-pub mod linear_layout;
 //pub mod scroll_view;
 //pub mod text;
 
 use std::any::Any;
-use std::ops::{Deref, DerefMut};
+use std::ops::DerefMut;
 
+use crate::geometry::Axis;
 use glazier::kurbo::Size;
 use vello::SceneBuilder;
-use crate::geometry::Axis;
 
 pub use self::box_constraints::BoxConstraints;
-pub use self::contexts::{AccessCx, CxState, EventCx, LayoutCx, PaintCx, UpdateCx, LifeCycleCx};
+pub use self::contexts::{AccessCx, CxState, EventCx, LayoutCx, LifeCycleCx, PaintCx, UpdateCx};
 pub use self::core::Pod;
 pub(crate) use self::core::{ChangeFlags, PodFlags, WidgetState};
 pub use self::raw_event::{Event, LifeCycle, ViewContext};
@@ -196,7 +196,6 @@ pub trait Widget {
         }
     }
 }
-
 
 pub trait AnyWidget: Widget {
     fn as_any(&self) -> &dyn Any;

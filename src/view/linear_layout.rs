@@ -18,8 +18,8 @@ use crate::event::MessageResult;
 use crate::geometry::Axis;
 use crate::id::Id;
 use crate::view::sequence::ViewSequence;
-use crate::widget::ChangeFlags;
 use crate::widget::linear_layout;
+use crate::widget::ChangeFlags;
 
 use super::{Cx, View};
 
@@ -49,7 +49,12 @@ pub fn h_stack<T, A, VT: ViewSequence<T, A>>(children: VT) -> LinearLayout<T, A,
 impl<T, A, VT: ViewSequence<T, A>> LinearLayout<T, A, VT> {
     pub fn new(children: VT, axis: Axis) -> Self {
         let phantom = Default::default();
-        LinearLayout { children, phantom, spacing: 0.0, axis }
+        LinearLayout {
+            children,
+            phantom,
+            spacing: 0.0,
+            axis,
+        }
     }
 
     pub fn with_spacing(mut self, spacing: f64) -> Self {

@@ -210,7 +210,9 @@ impl<'a, 'b> AccessCx<'a, 'b> {
     /// If false is returned this node does not need create a new node. It still needs to call
     /// the accessibility method of all its children.
     pub fn requested(&self) -> bool {
-        self.widget_state.flags.contains(PodFlags::REQUEST_ACCESSIBILITY)
+        self.widget_state
+            .flags
+            .contains(PodFlags::REQUEST_ACCESSIBILITY)
     }
 }
 
@@ -249,23 +251,18 @@ impl_context_method!(
 );
 
 // Methods on EventCx, UpdateCx, and LifeCycleCx
-impl_context_method!(
-    EventCx<'_, '_>,
-    UpdateCx<'_, '_>,
-    LifeCycleCx<'_, '_>,
-    {
-        pub fn request_layout(&mut self) {
-            // If the layout changes, the accessibility tree needs to be updated to
-            // match. Alternatively, we could be lazy and request accessibility when
-            // the layout actually changes.
-            self.widget_state.flags |= PodFlags::REQUEST_LAYOUT | PodFlags::REQUEST_ACCESSIBILITY;
-        }
-
-        pub fn add_message(&mut self, message: Message) {
-            self.cx_state.messages.push(message);
-        }
+impl_context_method!(EventCx<'_, '_>, UpdateCx<'_, '_>, LifeCycleCx<'_, '_>, {
+    pub fn request_layout(&mut self) {
+        // If the layout changes, the accessibility tree needs to be updated to
+        // match. Alternatively, we could be lazy and request accessibility when
+        // the layout actually changes.
+        self.widget_state.flags |= PodFlags::REQUEST_LAYOUT | PodFlags::REQUEST_ACCESSIBILITY;
     }
-);
+
+    pub fn add_message(&mut self, message: Message) {
+        self.cx_state.messages.push(message);
+    }
+});
 
 // Methods on EventCx, UpdateCx, LifeCycleCx and LayoutCx
 impl_context_method!(

@@ -27,7 +27,7 @@ use vello::{
 };
 use vello::{Scene, SceneBuilder};
 
-use crate::{app::App, widget::Event, View, Widget};
+use crate::{app::App, widget::Event, View};
 
 // This is a bit of a hack just to get a window launched. The real version
 // would deal with multiple windows and have other ways to configure things.

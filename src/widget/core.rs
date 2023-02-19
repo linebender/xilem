@@ -17,18 +17,17 @@
 //! //! Note: the organization of this code roughly follows the existing Druid
 //! widget system, particularly its core.rs.
 
-use std::ops::{BitOr, BitOrAssign};
 use bitflags::bitflags;
 use glazier::kurbo::{Point, Rect, Size};
-use vello::{SceneBuilder, SceneFragment};
 use vello::kurbo::Affine;
+use vello::{SceneBuilder, SceneFragment};
 
-use crate::{Bloom, id::Id, Widget};
 use crate::widget::AnyWidget;
+use crate::{id::Id, Bloom, Widget};
 
 use super::{
-    contexts::LifeCycleCx, AccessCx, BoxConstraints, CxState, Event, EventCx, LayoutCx,
-    LifeCycle, PaintCx, UpdateCx,
+    contexts::LifeCycleCx, AccessCx, BoxConstraints, CxState, Event, EventCx, LayoutCx, LifeCycle,
+    PaintCx, UpdateCx,
 };
 
 bitflags! {
@@ -157,7 +156,8 @@ impl Pod {
 
     /// Sets the requested flags on this pod and returns the Flags the parent of this Pod should set.
     pub fn mark(&mut self, flags: ChangeFlags) -> ChangeFlags {
-        self.state.request(PodFlags::from_bits_truncate(flags.bits as _));
+        self.state
+            .request(PodFlags::from_bits_truncate(flags.bits as _));
         ChangeFlags::from_bits_truncate(self.state.upwards_flags().bits as _)
     }
 
@@ -245,7 +245,9 @@ impl Pod {
             }
             Event::TargetedAccessibilityAction(action) => {
                 println!("TODO: {:?}", action);
-                self.state.sub_tree.may_contain(&Id::try_from_accesskit(action.target).unwrap())
+                self.state
+                    .sub_tree
+                    .may_contain(&Id::try_from_accesskit(action.target).unwrap())
             }
         };
         if recurse {
@@ -278,9 +280,9 @@ impl Pod {
                     &mut cx.cx_state,
                     view.mouse_position,
                 );
-                modified_event = Some(
-                    LifeCycle::ViewContextChanged(view.translate_to(self.state.origin)),
-                );
+                modified_event = Some(LifeCycle::ViewContextChanged(
+                    view.translate_to(self.state.origin),
+                ));
                 self.state.flags.remove(PodFlags::VIEW_CONTEXT_CHANGED);
                 true
             }
@@ -300,7 +302,8 @@ impl Pod {
             widget_state: &mut self.state,
         };
         if recurse {
-            self.widget.lifecycle(&mut child_cx, modified_event.as_ref().unwrap_or(event));
+            self.widget
+                .lifecycle(&mut child_cx, modified_event.as_ref().unwrap_or(event));
             cx.widget_state.merge_up(&mut self.state);
         }
     }
@@ -332,11 +335,7 @@ impl Pod {
     }
 
     pub fn accessibility(&mut self, cx: &mut AccessCx) {
-        if self
-            .state
-            .flags
-            .contains(PodFlags::HAS_ACCESSIBILITY)
-        {
+        if self.state.flags.contains(PodFlags::HAS_ACCESSIBILITY) {
             let mut child_cx = AccessCx {
                 cx_state: cx.cx_state,
                 widget_state: &mut self.state,

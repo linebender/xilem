@@ -37,11 +37,6 @@ pub(crate) struct Bloom<T: ?Sized> {
 }
 
 impl<T: ?Sized + Hash> Bloom<T> {
-    /// Create a new filter.
-    pub fn new() -> Self {
-        Self::default()
-    }
-
     /// Returns the number of items that have been added to the filter.
     ///
     /// Does not count unique entries; this is just the number of times
