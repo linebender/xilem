@@ -23,6 +23,12 @@ use super::{
     EventCx, LayoutCx, LifeCycle, PaintCx, Pod, UpdateCx, Widget,
 };
 
+/// LinearLayout is a simple widget which does layout for a ViewSequence.
+///
+/// Each Element is positioned on the specified Axis starting at the beginning with the given spacing
+///
+/// This Widget is only temporary and is probably going to be replaced by something like Druid's Flex
+/// widget.
 pub struct LinearLayout {
     pub children: Vec<Pod>,
     pub spacing: f64,

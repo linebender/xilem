@@ -23,6 +23,12 @@ use crate::widget::linear_layout;
 
 use super::{Cx, View};
 
+/// LinearLayout is a simple view which does layout for the specified ViewSequence.
+///
+/// Each Element is positioned on the specified Axis starting at the beginning with the given spacing
+///
+/// This View is only temporary is probably going to be replaced by something like Druid's Flex
+/// widget.
 pub struct LinearLayout<T, A, VT: ViewSequence<T, A>> {
     children: VT,
     spacing: f64,
@@ -30,10 +36,12 @@ pub struct LinearLayout<T, A, VT: ViewSequence<T, A>> {
     phantom: PhantomData<fn() -> (T, A)>,
 }
 
+/// creates a vertical [`LinearLayout`].
 pub fn v_stack<T, A, VT: ViewSequence<T, A>>(children: VT) -> LinearLayout<T, A, VT> {
     LinearLayout::new(children, Axis::Vertical)
 }
 
+/// creates a horizontal [`LinearLayout`].
 pub fn h_stack<T, A, VT: ViewSequence<T, A>>(children: VT) -> LinearLayout<T, A, VT> {
     LinearLayout::new(children, Axis::Horizontal)
 }
@@ -69,9 +77,9 @@ impl<T, A, VT: ViewSequence<T, A>> View<T, A> for LinearLayout<T, A, VT> {
         state: &mut Self::State,
         element: &mut Self::Element,
     ) -> ChangeFlags {
-        let mut flags = cx.with_id(*id, |cx| {
+        let (mut flags, _) = cx.with_id(*id, |cx| {
             self.children
-                .rebuild(cx, &prev.children, state, &mut element.children)
+                .rebuild(cx, &prev.children, state, 0, &mut element.children)
         });
 
         if self.spacing != prev.spacing || self.axis != prev.axis {

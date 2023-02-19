@@ -16,6 +16,7 @@ pub enum Axis {
 }
 
 impl Axis {
+    /// Returns the orthogonal axis.
     pub fn cross(self) -> Self {
         match self {
             Axis::Horizontal => Axis::Vertical,
@@ -23,6 +24,7 @@ impl Axis {
         }
     }
 
+    ///
     pub fn major<T: Dim2>(self, value: T) -> T::Scalar {
         match self {
             Axis::Horizontal => value.x(),
@@ -64,13 +66,24 @@ impl Axis {
     }
 }
 
+/// Types implementing this Trait can be used with [`Axis`] to create axis independent algorithms.
+///
+/// Types which implement this trait must consist of to identical sets of information, which can be
+/// represented as the associated type Scalar, and no additional data.
 pub trait Dim2 {
+    /// Scalar represents the value of each Axis of this type.
+    /// The value does not have to be a single number.
     type Scalar;
 
+    /// Constructs this type from an X-Axis and a Y-Axis.
+    ///
+    /// Any value `v` of which the type implements Dim2 must be equal to `Dim2::new(v.x(), v.y()))`
     fn new(x: Self::Scalar, y: Self::Scalar) -> Self;
 
+    /// Returns the X-Axis of this type.
     fn x(self) -> Self::Scalar;
 
+    /// Returns the Y-Axis of this type.
     fn y(self) -> Self::Scalar;
 }
 
@@ -122,6 +135,10 @@ impl Dim2 for Size {
     }
 }
 
+/// A Span is a range of values on a given [`Axis`].
+///
+/// Its main use is to define [`Dim2`] for [`Rect`]. This in turn allows us to use Axis together
+/// with Rect.
 pub struct Span {
     pub low: f64,
     pub high: f64,
@@ -144,6 +161,7 @@ impl Dim2 for Rect {
 }
 
 impl Dim2 for BoxConstraints {
+    //TODO: Range has an Exclusive upper Bound, this is not consistent with BoxConstrains.
     type Scalar = Range<f64>;
 
     fn new(x: Self::Scalar, y: Self::Scalar) -> Self {

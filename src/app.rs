@@ -34,6 +34,10 @@ use crate::{
     widget::Event,
 };
 
+/// App is the native backend implementation of Xilem. It contains the code interacting with glazier
+/// and vello.
+///
+///
 pub struct App<T, V: View<T>> {
     req_chan: tokio::sync::mpsc::Sender<AppReq>,
     response_chan: tokio::sync::mpsc::Receiver<RenderResponse<V, V::State>>,
@@ -59,7 +63,10 @@ pub struct App<T, V: View<T>> {
 /// The standard delay for waiting for async futures.
 const RENDER_DELAY: Duration = Duration::from_millis(5);
 
-/// State that's kept in a separate task for running the app
+/// This is the view logic of Xilem.
+///
+/// It is independent of the way it interacts with the User (browser, native, terminal).
+/// It is created by [`App`] and kept in a separate task for running the app.
 struct AppTask<T, V: View<T>, F: FnMut(&mut T) -> V> {
     req_chan: tokio::sync::mpsc::Receiver<AppReq>,
     response_chan: tokio::sync::mpsc::Sender<RenderResponse<V, V::State>>,
@@ -74,7 +81,7 @@ struct AppTask<T, V: View<T>, F: FnMut(&mut T) -> V> {
     ui_state: UiState,
 }
 
-/// A message sent from the main UI thread to the app task
+/// A message sent from the main UI thread ([`App`]) to the [`AppTask`].
 pub(crate) enum AppReq {
     SetIdleHandle(IdleHandle),
     Events(Vec<Message>),
@@ -83,13 +90,18 @@ pub(crate) enum AppReq {
     Render(bool),
 }
 
-/// A response sent to a render request.
+/// A message sent from [`AppTask`] to [`App`] in response to a render request.
 struct RenderResponse<V, S> {
     prev: Option<V>,
     view: V,
     state: Option<S>,
 }
 
+/// The state of the  [`AppTask`].
+///
+/// While the [`App`] follows a strict order of UIEvents -> Render -> Paint (this is simplified)
+/// the [`AppTask`] can receive different requests at any time. This enum keeps track of the state
+/// the AppTask is in because of previous requests.
 #[derive(PartialEq)]
 enum UiState {
     /// Starting state, ready for events and render requests.
@@ -325,7 +337,10 @@ where
                         response.prev.as_ref().unwrap(),
                         self.id.as_mut().unwrap(),
                         &mut state,
-                        element.downcast_mut().unwrap(),
+                        //TODO: fail more gracefully but make it explicit that this is a bug
+                        element
+                            .downcast_mut()
+                            .expect("the root widget changed its type, this should never happen!"),
                     );
                     self.root_pod.as_mut().unwrap().mark(changes);
                     assert!(self.cx.is_empty(), "id path imbalance on rebuild");

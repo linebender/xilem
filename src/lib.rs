@@ -1,3 +1,5 @@
+extern crate core;
+
 mod app;
 mod app_main;
 mod event;
@@ -8,6 +10,7 @@ mod view;
 mod widget;
 mod geometry;
 mod bloom;
+mod menu;
 
 pub use app::App;
 pub use app_main::AppLauncher;

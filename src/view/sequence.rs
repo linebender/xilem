@@ -1,7 +1,7 @@
 use std::any::Any;
 use crate::event::MessageResult;
 use crate::id::Id;
-use crate::View;
+use crate::{View, Widget};
 use crate::view::Cx;
 use crate::widget::{ChangeFlags, Pod};
 
@@ -33,8 +33,9 @@ pub trait ViewSequence<T, A = ()>: Send {
         cx: &mut Cx,
         prev: &Self,
         state: &mut Self::State,
+        offset: usize,
         element: &mut Vec<Pod>,
-    ) -> ChangeFlags;
+    ) -> (ChangeFlags, usize);
 
     /// Propagate a message.
     ///
@@ -47,19 +48,107 @@ pub trait ViewSequence<T, A = ()>: Send {
         message: Box<dyn Any>,
         app_state: &mut T,
     ) -> MessageResult<A>;
+
+    /// Returns the current amount of widgets build by this sequence.
+    fn count(&self, state: &Self::State) -> usize;
+}
+
+impl<T, A, V: View<T, A>> ViewSequence<T, A> for V where V::Element: Widget + 'static {
+    type State = (<V as View<T, A>>::State, Id);
+
+    fn build(&self, cx: &mut Cx) -> (Self::State, Vec<Pod>) {
+        let (id, state, element) = <V as View<T, A>>::build(self, cx);
+        ((state, id), vec![Pod::new(element)])
+    }
+
+    fn rebuild(&self, cx: &mut Cx, prev: &Self, state: &mut Self::State, offset: usize, element: &mut Vec<Pod>) -> (ChangeFlags, usize) {
+        let downcast = element[offset].downcast_mut().unwrap();
+        let flags = <V as View<T, A>>::rebuild(self, cx, prev, &mut state.0, &mut state.1, downcast);
+        let flags = element[offset].mark(flags);
+        (flags, offset + 1)
+    }
+
+    fn message(&self, id_path: &[Id], state: &mut Self::State, message: Box<dyn Any>, app_state: &mut T) -> MessageResult<A> {
+        if let Some((first, rest_path)) = id_path.split_first() {
+            if first == state.0 {
+                return <V as View<T, A>>::message(self, rest_path, &mut state.1, message, app_state);
+            }
+        }
+        MessageResult::Stale(message)
+    }
+
+    fn count(&self, state: &Self::State) -> usize {
+        1
+    }
+}
+
+impl<T, A, VT: ViewSequence<T, A>> ViewSequence<T, A> for Option<VT> {
+    type State = Option<VT::State>;
+
+    fn build(&self, cx: &mut Cx) -> (Self::State, Vec<Pod>) {
+        match self {
+            None => (None, vec![]),
+            Some(vt) => {
+                let (state, elements) = vt.build();
+                (Some(state), elements)
+            }
+        }
+    }
+
+    fn rebuild(&self, cx: &mut Cx, prev: &Self, state: &mut Self::State, offset: usize, element: &mut Vec<Pod>) -> (ChangeFlags, usize) {
+        match (self, state, prev) {
+            (Some(this), Some(state), Some(prev)) => {
+                this.rebuild(cx, prev, state, offset, element)
+            }
+            (None, Some(state), Some(prev)) => {
+                let mut count = prev.count(&state);
+                while count > 0 {
+                    element.remove(offset);
+                }
+                *state = None;
+                (ChangeFlags::TREE, offset)
+            }
+            (Some(this), None, None) => {
+                let (state, mut elements) = this.build(cx);
+                let additional = elements.len();
+                *state = Some(state);
+                while !elements.is_empty() {
+                    element.insert(offset, elements.pop().unwrap());
+                }
+                (ChangeFlags::TREE, offset + additional)
+            }
+            (None, None, None) => (ChangeFlags::empty(), offset),
+            _ => panic!("non matching state and prev value"),
+        }
+    }
+
+    fn message(&self, id_path: &[Id], state: &mut Self::State, message: Box<dyn Any>, app_state: &mut T) -> MessageResult<A> {
+        match (self, state) {
+            (Some(vt), Some(state)) => vt.message(id_path, state, message, app_state),
+            (None, None) => MessageResult::Stale(message),
+            _ => panic!("non matching state and prev value"),
+        }
+    }
+
+    fn count(&self, state: &Self::State) -> usize {
+        match (self, state) {
+            (Some(vt), Some(state)) => vt.count(state),
+            (None, None) => 0,
+            _ => panic!("non matching state and prev value"),
+        }
+    }
 }
 
 macro_rules! impl_view_tuple {
-    ( $n: tt; $( $t:ident),* ; $( $i:tt ),* ) => {
-        impl<T, A, $( $t: View<T, A> ),* > ViewSequence<T, A> for ( $( $t, )* )
-            where $( <$t as View<T, A>>::Element: 'static ),*
-        {
-            type State = ( $( $t::State, )* [Id; $n]);
+    ( $( $t:ident),* ; $( $i:tt ),* ) => {
+        impl<T, A, $( $t: ViewSequence<T, A> ),* > ViewSequence<T, A> for ( $( $t, )* ) {
+            type State = ( $( $t::State, )*);
 
             fn build(&self, cx: &mut Cx) -> (Self::State, Vec<Pod>) {
                 let b = ( $( self.$i.build(cx), )* );
-                let state = ( $( b.$i.1, )* [ $( b.$i.0 ),* ]);
-                let els = vec![ $( Pod::new(b.$i.2) ),* ];
+                let state = ( $( b.$i.0, )*);
+                let mut els = vec![];
+                $( els.append(b.$i.1); )*
                 (state, els)
             }
 
@@ -68,15 +157,15 @@ macro_rules! impl_view_tuple {
                 cx: &mut Cx,
                 prev: &Self,
                 state: &mut Self::State,
+                offset: usize,
                 els: &mut Vec<Pod>,
-            ) -> ChangeFlags {
+            ) -> (ChangeFlags, usize) {
                 let mut changed = ChangeFlags::default();
-                $({
-                    let el_changed = self.$i.rebuild(cx, &prev.$i, &mut state.$n[$i], &mut state.$i, els[$i].downcast_mut().unwrap());
-                    changed |= els[$i].mark(el_changed);
-                })*
-
-                changed
+                $(
+                    let (el_changed, offset) = self.$i.rebuild(cx, &prev.$i, &mut state.$i, offset, els);
+                    changed |= el_changed;
+                )*
+                (changed, offset)
             }
 
             fn message(
@@ -86,35 +175,37 @@ macro_rules! impl_view_tuple {
                 message: Box<dyn Any>,
                 app_state: &mut T,
             ) -> MessageResult<A> {
-                let hd = id_path[0];
-                let tl = &id_path[1..];
+                MessageResult::Stale(message)
                 $(
-                if hd == state.$n[$i] {
-                    self.$i.message(tl, &mut state.$i, message, app_state)
-                } else )* {
-                    crate::event::MessageResult::Stale
-                }
+                    .or(|message|{
+                        self.$i.message(id_path, &mut state.$i, message, app_state)
+                    })
+                )*
+            }
+
+            fn count(&self, state: &Self::State) -> usize {
+                0
+                $(
+                    + self.$i.count(&state.$i)
+                )*
             }
         }
     }
 }
 
-impl_view_tuple!(1; V0; 0);
-impl_view_tuple!(2; V0, V1; 0, 1);
-impl_view_tuple!(3; V0, V1, V2; 0, 1, 2);
-impl_view_tuple!(4; V0, V1, V2, V3; 0, 1, 2, 3);
-impl_view_tuple!(5; V0, V1, V2, V3, V4; 0, 1, 2, 3, 4);
-impl_view_tuple!(6; V0, V1, V2, V3, V4, V5; 0, 1, 2, 3, 4, 5);
-impl_view_tuple!(7; V0, V1, V2, V3, V4, V5, V6; 0, 1, 2, 3, 4, 5, 6);
-impl_view_tuple!(8;
-    V0, V1, V2, V3, V4, V5, V6, V7;
+impl_view_tuple!(V0; 0);
+impl_view_tuple!(V0, V1; 0, 1);
+impl_view_tuple!(V0, V1, V2; 0, 1, 2);
+impl_view_tuple!(V0, V1, V2, V3; 0, 1, 2, 3);
+impl_view_tuple!(V0, V1, V2, V3, V4; 0, 1, 2, 3, 4);
+impl_view_tuple!(V0, V1, V2, V3, V4, V5; 0, 1, 2, 3, 4, 5);
+impl_view_tuple!(V0, V1, V2, V3, V4, V5, V6; 0, 1, 2, 3, 4, 5, 6);
+impl_view_tuple!(V0, V1, V2, V3, V4, V5, V6, V7;
     0, 1, 2, 3, 4, 5, 6, 7
 );
-impl_view_tuple!(9;
-    V0, V1, V2, V3, V4, V5, V6, V7, V8;
+impl_view_tuple!(V0, V1, V2, V3, V4, V5, V6, V7, V8;
     0, 1, 2, 3, 4, 5, 6, 7, 8
 );
-impl_view_tuple!(10;
-    V0, V1, V2, V3, V4, V5, V6, V7, V8, V9;
+impl_view_tuple!(V0, V1, V2, V3, V4, V5, V6, V7, V8, V9;
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9
 );
