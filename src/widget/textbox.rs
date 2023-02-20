@@ -11,7 +11,7 @@ use smallvec::{smallvec, SmallVec};
 use tracing::{trace_span, Span};
 
 use crate::action::Action;
-use crate::kurbo::Insets;
+use crate::kurbo::{Affine, Insets};
 use crate::piet::{RenderContext as _, TextLayout as _};
 use crate::shell::{HotKey, KeyEvent, SysMods, TimerToken};
 use crate::text::{ImeInvalidation, Selection, TextAlignment, TextComponent, TextLayout};
@@ -590,13 +590,13 @@ impl Widget for TextBox {
             tracing::warn!("Widget::layout called with outstanding IME lock.");
         }
         let min_width = env.get(theme::WIDE_WIDGET_WIDTH);
-        let _textbox_insets = env.get(theme::TEXTBOX_INSETS);
+        let textbox_insets = env.get(theme::TEXTBOX_INSETS);
 
         self.placeholder_layout.rebuild_if_needed(ctx.text(), env);
         let min_size = bc.constrain((min_width, 0.0));
         let child_bc = BoxConstraints::new(min_size, bc.max());
 
-        let size = self.inner.layout(ctx, &child_bc, env);
+        let mut size = self.inner.layout(ctx, &child_bc, env);
         ctx.place_child(&mut self.inner, Point::ORIGIN, env);
 
         let text_metrics = if !self.inner.as_ref().child().can_read() || self.text_len() == 0 {
@@ -615,6 +615,8 @@ impl Widget for TextBox {
             self.scroll_to_selection_after_layout = false;
         }
 
+        size.width += textbox_insets.x0 + textbox_insets.x1;
+        size.height += textbox_insets.y0 + textbox_insets.y1;
         size
     }
 
@@ -646,7 +648,11 @@ impl Widget for TextBox {
         ctx.fill(clip_rect, &background_color);
 
         if self.text_len() != 0 {
-            self.inner.paint(ctx, env);
+            let padding_offset = Vec2::new(textbox_insets.x0, textbox_insets.y0);
+            ctx.with_save(|ctx| {
+                ctx.transform(Affine::translate(padding_offset));
+                self.inner.paint(ctx, env);
+            })
         } else {
             ctx.skip_child(&mut self.inner);
 
