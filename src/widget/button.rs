@@ -116,11 +116,10 @@ impl Widget for Button {
     }
 
     fn accessibility(&mut self, cx: &mut AccessCx) {
-        let mut node = accesskit::Node::default();
-        node.role = accesskit::Role::Button;
-        node.name = Some(self.label.deref().into());
-        node.default_action_verb = Some(accesskit::DefaultActionVerb::Click);
-        cx.push_node(node);
+        let mut builder = accesskit::NodeBuilder::new(accesskit::Role::Button);
+        builder.set_name(self.label.deref());
+        builder.set_default_action_verb(accesskit::DefaultActionVerb::Click);
+        cx.push_node(builder);
     }
 
     fn paint(&mut self, cx: &mut PaintCx, builder: &mut SceneBuilder) {

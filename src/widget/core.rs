@@ -300,6 +300,7 @@ impl Pod {
                 cx_state: cx.cx_state,
                 widget_state: &mut self.state,
                 update: cx.update,
+                node_classes: cx.node_classes,
             };
             self.widget.accessibility(&mut child_cx);
             self.state
