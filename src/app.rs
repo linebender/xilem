@@ -289,7 +289,6 @@ where
             let mut cx_state =
                 CxState::new(&self.window_handle, &mut self.font_cx, &mut self.events);
             let mut paint_cx = PaintCx::new(&mut cx_state, &mut self.root_state);
-            println!("paint: root.requested_paint() = {}", root_pod.state.flags.contains(PodFlags::REQUEST_PAINT));
             root_pod.paint_impl(&mut paint_cx);
             break;
         }

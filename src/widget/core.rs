@@ -70,15 +70,10 @@ bitflags! {
     pub struct ChangeFlags: u8 {
         const UPDATE = 1;
         const LAYOUT = 2;
+        const ACCESSIBILITY = 4;
         const PAINT = 8;
+        const TREE = 0x10;
         const HAS_ACCESSIBILITY = 0x20;
-        const ACCESSIBILITY = 4
-            | Self::HAS_ACCESSIBILITY.bits;
-        const TREE = 0x10
-            | Self::LAYOUT.bits
-            | Self::PAINT.bits
-            | Self::ACCESSIBILITY.bits
-            | Self::HAS_ACCESSIBILITY.bits;
     }
 }
 

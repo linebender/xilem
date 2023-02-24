@@ -97,7 +97,7 @@ where
             *element = Box::new(new_element);
 
             // Everything about the new view could be different, so return all the flags
-            ChangeFlags::TREE
+            ChangeFlags::all()
         }
     }
 
