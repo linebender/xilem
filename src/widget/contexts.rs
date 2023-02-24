@@ -382,7 +382,7 @@ impl_context_method!(
         ///
         /// [`set_origin`]: Pod::set_origin
         pub fn window_origin(&self) -> Point {
-            self.widget_state.parent_window_origin + self.widget_state.origin
+            self.widget_state.parent_window_origin + self.widget_state.origin.to_vec2()
         }
     }
 );

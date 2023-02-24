@@ -51,7 +51,6 @@ bitflags! {
 
         const NEEDS_SET_ORIGIN = 0x1000;
 
-
         const UPWARD_FLAGS = Self::REQUEST_LAYOUT.bits
             | Self::REQUEST_PAINT.bits
             | Self::HAS_ACTIVE.bits
@@ -94,7 +93,7 @@ bitflags! {
 pub struct Pod {
     pub(crate) state: WidgetState,
     pub(crate) widget: Box<dyn AnyWidget>,
-    fragment: SceneFragment,
+    pub(crate) fragment: SceneFragment,
 }
 
 #[derive(Debug)]
@@ -128,9 +127,11 @@ impl WidgetState {
         }
     }
 
+    /// Returns the flags which should be passed to the parent of this Pod.
     fn upwards_flags(&self) -> PodFlags {
         self.flags & PodFlags::UPWARD_FLAGS
     }
+
 
     fn merge_up(&mut self, child_state: &mut WidgetState) {
         self.flags |= child_state.upwards_flags();
@@ -280,6 +281,9 @@ impl Pod {
             self.widget
                 .event(&mut inner_cx, modified_event.as_ref().unwrap_or(event));
             cx.is_handled |= inner_cx.is_handled;
+
+            // This clears the has_active state. Pod needs to clear this state since merge up can
+            // only set flags.
             self.state.flags.set(
                 PodFlags::HAS_ACTIVE,
                 self.state.flags.contains(PodFlags::IS_ACTIVE),
@@ -383,6 +387,7 @@ impl Pod {
         }
     }
 
+
     pub fn paint_raw(&mut self, cx: &mut PaintCx, builder: &mut SceneBuilder) {
         let mut inner_cx = PaintCx {
             cx_state: cx.cx_state,
@@ -391,22 +396,42 @@ impl Pod {
         self.widget.paint(&mut inner_cx, builder);
     }
 
-    pub fn paint(&mut self, cx: &mut PaintCx) {
+    pub(crate) fn paint_impl(&mut self, cx: &mut PaintCx) {
+        let needs_paint = self.state.flags.contains(PodFlags::REQUEST_PAINT);
+        self.state.flags.remove(PodFlags::REQUEST_PAINT);
+
         let mut inner_cx = PaintCx {
             cx_state: cx.cx_state,
             widget_state: &mut self.state,
         };
-        if self.state.flags.contains(PodFlags::REQUEST_PAINT) {
+
+        println!("try paint!");
+        if needs_paint {
+            println!("paint");
             let mut builder = SceneBuilder::for_fragment(&mut self.fragment);
             self.widget.paint(&mut inner_cx, &mut builder);
-            self.state.flags.remove(PodFlags::REQUEST_PAINT);
         }
     }
 
-    pub fn paint_into(&mut self, cx: &mut PaintCx, builder: &mut SceneBuilder) {
-        self.paint(cx);
+    /// The default paint method.
+    ///
+    /// It paints the this widget if neccessary and appends its SceneFragment to the provided
+    /// `SceneBuilder`.
+    pub fn paint(&mut self, cx: &mut PaintCx, builder: &mut SceneBuilder) {
+        self.paint_impl(cx);
         let transform = Affine::translate(self.state.origin.to_vec2());
         builder.append(&self.fragment, Some(transform));
+    }
+
+    /// Renders the widget and returns the created `SceneFragment`.
+    ///
+    /// The caller of this method is responsible for translating the Fragment and appending it to
+    /// its own SceneBuilder. This is useful for ClipBoxes and doing animations.
+    ///
+    /// For the default paint behaviour call [`paint`](Pod::paint).
+    pub fn paint_custom(&mut self, cx: &mut PaintCx) -> &SceneFragment {
+        self.paint_impl(cx);
+        &self.fragment
     }
 
     /// Set the origin of this widget, in the parent's coordinate space.
@@ -429,6 +454,7 @@ impl Pod {
             // request paint is called on the parent instead of this widget, since this widget's
             // fragment does not change.
             cx.view_context_changed();
+            cx.request_paint();
 
             self.state.flags.insert(PodFlags::VIEW_CONTEXT_CHANGED);
         }
@@ -458,14 +484,6 @@ impl Pod {
             return true;
         }
         false
-    }
-
-    /// Get the rendered scene fragment for the widget.
-    ///
-    /// This is only valid after a `paint` call, but the fragment can be retained
-    /// (skipping further paint calls) if the appearance does not change.
-    pub fn fragment(&self) -> &SceneFragment {
-        &self.fragment
     }
 
     /// Get the id of the widget in the pod.
@@ -511,18 +529,18 @@ impl Pod {
     ///
     /// [`set_active`]: EventCx::set_active
     pub fn is_active(&self) -> bool {
-        self.state.is_active
+        self.state.flags.contains(PodFlags::HAS_ACTIVE)
     }
 
     /// Returns `true` if any descendant is [`active`].
     ///
     /// [`active`]: Pod::is_active
     pub fn has_active(&self) -> bool {
-        self.state.has_active
+        self.state.flags.contains(PodFlags::HAS_ACTIVE)
     }
 
     /// This widget or any of its children have requested layout.
     pub fn layout_requested(&self) -> bool {
-        self.state.needs_layout
+        self.state.flags.contains(PodFlags::REQUEST_LAYOUT)
     }
 }

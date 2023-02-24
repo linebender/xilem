@@ -102,7 +102,8 @@ impl Widget for LinearLayout {
 
     fn paint(&mut self, cx: &mut PaintCx, builder: &mut SceneBuilder) {
         for child in &mut self.children {
-            child.paint_into(cx, builder);
+            println!("paint child!");
+            child.paint(cx, builder);
         }
     }
 }

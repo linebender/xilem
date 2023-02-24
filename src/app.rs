@@ -289,7 +289,8 @@ where
             let mut cx_state =
                 CxState::new(&self.window_handle, &mut self.font_cx, &mut self.events);
             let mut paint_cx = PaintCx::new(&mut cx_state, &mut self.root_state);
-            root_pod.paint(&mut paint_cx);
+            println!("paint: root.requested_paint() = {}", root_pod.state.flags.contains(PodFlags::REQUEST_PAINT));
+            root_pod.paint_impl(&mut paint_cx);
             break;
         }
     }
@@ -380,7 +381,7 @@ where
 
 impl<T, V: View<T>> App<T, V> {
     pub fn fragment(&self) -> &SceneFragment {
-        self.root_pod.as_ref().unwrap().fragment()
+        &self.root_pod.as_ref().unwrap().fragment
     }
 }
 

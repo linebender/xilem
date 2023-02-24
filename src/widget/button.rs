@@ -123,6 +123,7 @@ impl Widget for Button {
     }
 
     fn paint(&mut self, cx: &mut PaintCx, builder: &mut SceneBuilder) {
+        println!("paint button with text {}", self.label);
         let is_hot = cx.is_hot();
         let is_active = cx.is_active();
         let button_border_width = 2.0;
