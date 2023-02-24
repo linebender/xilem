@@ -14,6 +14,7 @@
 
 use crate::geometry::Axis;
 use crate::widget::{AccessCx, BoxConstraints, Event};
+use accesskit::NodeId;
 use vello::kurbo::Size;
 use vello::SceneBuilder;
 
@@ -88,10 +89,14 @@ impl Widget for LinearLayout {
         }
 
         if cx.requested() {
-            let mut node = accesskit::Node::default();
-            node.role = accesskit::Role::GenericContainer;
-            node.children = self.children.iter().map(|pod| pod.id().into()).collect();
-            cx.push_node(node);
+            let mut builder = accesskit::NodeBuilder::new(accesskit::Role::GenericContainer);
+            builder.set_children(
+                self.children
+                    .iter()
+                    .map(|pod| pod.id().into())
+                    .collect::<Vec<NodeId>>(),
+            );
+            cx.push_node(builder);
         }
     }
 

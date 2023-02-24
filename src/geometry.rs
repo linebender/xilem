@@ -95,7 +95,6 @@ impl Axis {
     }
 }
 
-
 /// Types implementing this Trait can be used with [`Axis`] to create axis independent algorithms.
 ///
 /// Types which implement this trait must consist of to identical sets of information, which can be
