@@ -67,6 +67,7 @@ bitflags! {
 
 bitflags! {
     #[derive(Default)]
+    #[must_use]
     pub struct ChangeFlags: u8 {
         const UPDATE = 1;
         const LAYOUT = 2;
