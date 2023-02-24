@@ -68,8 +68,9 @@ const RENDER_DELAY: Duration = Duration::from_millis(5);
 
 /// This is the view logic of Xilem.
 ///
-/// It is independent of the way it interacts with the User (browser, native, terminal).
-/// It is created by [`App`] and kept in a separate task for running the app.
+/// It contains no information about how to interact with the User (browser, native, terminal).
+/// It is created by [`App`] and kept in a separate task for updating the apps contents.
+/// The App can send [AppReq] to inform the the AppTask about an user interaction.
 struct AppTask<T, V: View<T>, F: FnMut(&mut T) -> V> {
     req_chan: tokio::sync::mpsc::Receiver<AppReq>,
     response_chan: tokio::sync::mpsc::Sender<RenderResponse<V, V::State>>,

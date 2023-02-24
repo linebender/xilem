@@ -33,6 +33,8 @@ use super::{
 bitflags! {
     #[derive(Default)]
     pub(crate) struct PodFlags: u32 {
+        // These values are set to the values of their pendants in ChangeFlags to allow transmuting
+        // between the two types.
         const REQUEST_UPDATE = ChangeFlags::UPDATE.bits as _;
         const REQUEST_LAYOUT = ChangeFlags::LAYOUT.bits as _;
         const REQUEST_ACCESSIBILITY = ChangeFlags::ACCESSIBILITY.bits as _;
@@ -81,7 +83,14 @@ bitflags! {
     }
 }
 
-/// A pod that contains a widget (in a container).
+/// A container for one widget in the hierarchy.
+///
+/// Generally, container widgets don't contain other widgets directly,
+/// but rather contain a `Pod`, which has additional state needed
+/// for layout and for the widget to participate in event flow.
+///
+/// `Pod` will translate internal Xilem events to regular events,
+/// synthesize additional events of interest, and stop propagation when it makes sense.
 pub struct Pod {
     pub(crate) state: WidgetState,
     pub(crate) widget: Box<dyn AnyWidget>,
@@ -138,10 +147,18 @@ impl WidgetState {
 }
 
 impl Pod {
+    /// Create a new pod.
+    ///
+    /// In a widget hierarchy, each widget is wrapped in a `Pod`
+    /// so it can participate in layout and event flow.
     pub fn new(widget: impl Widget + 'static) -> Self {
         Self::new_from_box(Box::new(widget))
     }
 
+    /// Create a new pod.
+    ///
+    /// In a widget hierarchy, each widget is wrapped in a `Pod`
+    /// so it can participate in layout and event flow.
     pub fn new_from_box(widget: Box<dyn AnyWidget>) -> Self {
         Pod {
             state: WidgetState::new(),
@@ -150,6 +167,7 @@ impl Pod {
         }
     }
 
+    /// Returns the wrapped widget.
     pub fn downcast_mut<'a, T: 'static>(&'a mut self) -> Option<&'a mut T> {
         (*self.widget).as_any_mut().downcast_mut()
     }
@@ -163,6 +181,9 @@ impl Pod {
 
     /// Propagate a platform event. As in Druid, a great deal of the event
     /// dispatching logic is in this function.
+    ///
+    /// This method calls [event](crate::widget::Widget::event) on the wrapped Widget if this event
+    /// is relevant to this widget.
     pub fn event(&mut self, cx: &mut EventCx, event: &Event) {
         if cx.is_handled {
             return;
@@ -267,6 +288,10 @@ impl Pod {
         }
     }
 
+    /// Propagate a lifecycle event.
+    ///
+    /// This method calls [lifecycle](crate::widget::Widget::lifecycle) on the wrapped Widget if
+    /// the lifecycle event is relevant to this widget.
     pub fn lifecycle(&mut self, cx: &mut LifeCycleCx, event: &LifeCycle) {
         let mut modified_event = None;
         let recurse = match event {
@@ -308,7 +333,10 @@ impl Pod {
         }
     }
 
-    /// Propagate an update cycle.
+    /// Propagate an update.
+    ///
+    /// This method calls [update](crate::widget::Widget::update) on the wrapped Widget if update
+    /// was request by this widget or any of its children.
     pub fn update(&mut self, cx: &mut UpdateCx) {
         if self.state.flags.contains(PodFlags::REQUEST_UPDATE) {
             let mut child_cx = UpdateCx {
@@ -321,6 +349,11 @@ impl Pod {
         }
     }
 
+    /// Propagate a layout request.
+    ///
+    /// This method calls [layout](crate::widget::Widget::layout) on the wrapped Widget. The container
+    /// widget is responsible for calling only the children which need a call to layout. These include
+    /// any Pod which has [layout_requested](Pod::layout_requested) set.
     pub fn layout(&mut self, cx: &mut LayoutCx, bc: &BoxConstraints) -> Size {
         let mut child_cx = LayoutCx {
             cx_state: cx.cx_state,
@@ -334,6 +367,7 @@ impl Pod {
         self.state.size
     }
 
+    ///
     pub fn accessibility(&mut self, cx: &mut AccessCx) {
         if self.state.flags.contains(PodFlags::HAS_ACCESSIBILITY) {
             let mut child_cx = AccessCx {
@@ -362,8 +396,11 @@ impl Pod {
             cx_state: cx.cx_state,
             widget_state: &mut self.state,
         };
-        let mut builder = SceneBuilder::for_fragment(&mut self.fragment);
-        self.widget.paint(&mut inner_cx, &mut builder);
+        if self.state.flags.contains(PodFlags::REQUEST_PAINT) {
+            let mut builder = SceneBuilder::for_fragment(&mut self.fragment);
+            self.widget.paint(&mut inner_cx, &mut builder);
+            self.state.flags.remove(PodFlags::REQUEST_PAINT);
+        }
     }
 
     pub fn paint_into(&mut self, cx: &mut PaintCx, builder: &mut SceneBuilder) {
@@ -372,6 +409,20 @@ impl Pod {
         builder.append(&self.fragment, Some(transform));
     }
 
+    /// Set the origin of this widget, in the parent's coordinate space.
+    ///
+    /// A container widget should call the [`Widget::layout`] method on its children in
+    /// its own [`Widget::layout`] implementation, and then call `set_origin` to
+    /// position those children.
+    ///
+    /// The changed origin won't be fully in effect until [`LifeCycle::ViewContextChanged`] has
+    /// finished propagating. Specifically methods that depend on the widget's origin in relation
+    /// to the window will return stale results during the period after calling `set_origin` but
+    /// before [`LifeCycle::ViewContextChanged`] has finished propagating.
+    ///
+    /// The widget container can also call `set_origin` from other context, but calling `set_origin`
+    /// after the widget received [`LifeCycle::ViewContextChanged`] and before the next event results
+    /// in an inconsistent state of the widget tree.
     pub fn set_origin(&mut self, cx: &mut LayoutCx, origin: Point) {
         if origin != self.state.origin {
             self.state.origin = origin;
@@ -420,5 +471,58 @@ impl Pod {
     /// Get the id of the widget in the pod.
     pub fn id(&self) -> Id {
         self.state.id
+    }
+
+    /// The "hot" (aka hover) status of a widget.
+    ///
+    /// A widget is "hot" when the mouse is hovered over it. Some Widgets (eg buttons)
+    /// will change their appearance when hot as a visual indication that they
+    /// will respond to mouse interaction.
+    ///
+    /// The hot status is automatically computed from the widget's layout rect. In a
+    /// container hierarchy, all widgets with layout rects containing the mouse position
+    /// have hot status. The hot status cannot be set manually.
+    ///
+    /// There is no special handling of the hot status for multi-pointer devices. (This is
+    /// likely to change in the future as [pointer events are planed](https://xi.zulipchat.com/#narrow/stream/351333-glazier/topic/Pointer.20Events)).
+    ///
+    /// Note: a widget can be hot while another is [`active`] (for example, when
+    /// clicking a button and dragging the cursor to another widget).
+    ///
+    /// [`active`]: Pod::is_active
+    pub fn is_hot(&self) -> bool {
+        self.state.flags.contains(PodFlags::IS_HOT)
+    }
+
+    /// The "active" (aka pressed) status of a widget.
+    ///
+    /// Active status generally corresponds to a mouse button down. Widgets
+    /// with behavior similar to a button will call [`set_active`] on mouse
+    /// down and then up.
+    ///
+    /// The active status can only be set manually. Xilem doesn't automatically
+    /// set it to `false` on mouse release or anything like that.
+    ///
+    /// There is no special handling of the active status for multi-pointer devices. (This is
+    /// likely to change in the future as [pointer events are planed](https://xi.zulipchat.com/#narrow/stream/351333-glazier/topic/Pointer.20Events)).
+    ///
+    /// When a widget is active, it gets mouse events even when the mouse
+    /// is dragged away.
+    ///
+    /// [`set_active`]: EventCx::set_active
+    pub fn is_active(&self) -> bool {
+        self.state.is_active
+    }
+
+    /// Returns `true` if any descendant is [`active`].
+    ///
+    /// [`active`]: Pod::is_active
+    pub fn has_active(&self) -> bool {
+        self.state.has_active
+    }
+
+    /// This widget or any of its children have requested layout.
+    pub fn layout_requested(&self) -> bool {
+        self.state.needs_layout
     }
 }
