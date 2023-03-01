@@ -15,6 +15,7 @@
 use std::any::Any;
 
 use crate::{event::MessageResult, id::Id, widget::ChangeFlags};
+use crate::view::ViewMarker;
 
 use super::{Cx, View};
 
@@ -39,6 +40,8 @@ impl<T, A> Button<T, A> {
         }
     }
 }
+
+impl<T, A> ViewMarker for Button<T, A> {}
 
 impl<T, A> View<T, A> for Button<T, A> {
     type State = ();

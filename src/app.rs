@@ -356,7 +356,7 @@ where
                         .downcast_mut()
                         .expect("the root widget changed its type, this should never happen!"),
                 );
-                self.root_pod.as_mut().unwrap().mark(changes);
+                let _ = self.root_pod.as_mut().unwrap().mark(changes);
                 assert!(self.cx.is_empty(), "id path imbalance on rebuild");
                 state
             } else {

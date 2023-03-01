@@ -21,6 +21,7 @@ use crate::{
     id::Id,
     widget::{AnyWidget, ChangeFlags},
 };
+use crate::view::ViewMarker;
 
 use super::{Cx, View};
 
@@ -116,6 +117,8 @@ where
         }
     }
 }
+
+impl<T, A> ViewMarker for Box<dyn AnyView<T, A> + Send> {}
 
 impl<T, A> View<T, A> for Box<dyn AnyView<T, A> + Send> {
     type State = Box<dyn Any + Send>;

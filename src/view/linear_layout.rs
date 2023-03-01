@@ -19,6 +19,7 @@ use crate::geometry::Axis;
 use crate::id::Id;
 use crate::view::sequence::ViewSequence;
 use crate::widget::{self, ChangeFlags};
+use crate::view::ViewMarker;
 
 use super::{Cx, View};
 
@@ -61,6 +62,8 @@ impl<T, A, VT: ViewSequence<T, A>> LinearLayout<T, A, VT> {
         self
     }
 }
+
+impl<T, A, VT: ViewSequence<T, A>> ViewMarker for LinearLayout<T, A, VT> {}
 
 impl<T, A, VT: ViewSequence<T, A>> View<T, A> for LinearLayout<T, A, VT> {
     type State = VT::State;
