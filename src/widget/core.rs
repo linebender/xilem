@@ -401,9 +401,7 @@ impl Pod {
             widget_state: &mut self.state,
         };
 
-        println!("try paint!");
         if needs_paint {
-            println!("paint");
             let mut builder = SceneBuilder::for_fragment(&mut self.fragment);
             self.widget.paint(&mut inner_cx, &mut builder);
         }
