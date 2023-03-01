@@ -21,7 +21,7 @@ rand = "0.7.3"
 roxmltree = "0.13"
 swash = "0.1.4"
 bytemuck = { version = "1.7.2", features = ["derive"] }
-parley = { git = "https://github.com/dfrg/parley", rev = "e4276b4d1001a050c07121f95ca255c771e9a641" }
+parley = { git = "https://github.com/dfrg/parley", rev = "a885c3c" }
 tokio = { version = "1.21", features = ["full"] }
 futures-task = "0.3"
 bitflags = "1.3.2"
@@ -35,7 +35,3 @@ git = "https://github.com/linebender/glazier"
 rev = "51eb418511790309b90b0d9838e4d91fc11d84d3"
 default-features = false
 features = ["accesskit"]
-
-[patch."https://github.com/dfrg/fount"]
-fount = { git = "https://github.com/jneem/fount", rev = "361c76fecf813ebc64d2634d3df7bfb6089c6414" }
-
