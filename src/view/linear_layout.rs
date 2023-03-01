@@ -81,9 +81,9 @@ impl<T, A, VT: ViewSequence<T, A>> View<T, A> for LinearLayout<T, A, VT> {
         state: &mut Self::State,
         element: &mut Self::Element,
     ) -> ChangeFlags {
-        let mut flags = cx.with_id(*id, |cx| {
+        let (mut flags, _) = cx.with_id(*id, |cx| {
             self.children
-                .rebuild(cx, &prev.children, state, &mut element.children)
+                .rebuild(cx, &prev.children, state, 0, &mut element.children)
         });
 
         if self.spacing != prev.spacing || self.axis != prev.axis {
