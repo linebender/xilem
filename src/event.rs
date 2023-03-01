@@ -45,7 +45,9 @@ impl<A> MessageResult<A> {
     pub fn map<B>(self, f: impl FnOnce(A) -> B) -> MessageResult<B> {
         match self {
             MessageResult::Action(a) => MessageResult::Action(f(a)),
-            _ => self
+            MessageResult::RequestRebuild => MessageResult::RequestRebuild,
+            MessageResult::Stale(event) => MessageResult::Stale(event),
+            MessageResult::Nop => MessageResult::Nop,
         }
     }
 

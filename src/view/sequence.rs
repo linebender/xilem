@@ -1,6 +1,6 @@
 use crate::event::MessageResult;
 use crate::id::Id;
-use crate::view::{Cx, View};
+use crate::view::{Cx, View, ViewMarker};
 use crate::widget::{ChangeFlags, Pod, Widget};
 use std::any::Any;
 
@@ -52,7 +52,8 @@ pub trait ViewSequence<T, A = ()>: Send {
     fn count(&self, state: &Self::State) -> usize;
 }
 
-impl<T, A, V: View<T, A>> ViewSequence<T, A> for V where V::Element: Widget + 'static {
+// ViewMarker is already a dependency of View but Rusts orphan rules dont work if we remove it here.
+impl<T, A, V: View<T, A> + ViewMarker> ViewSequence<T, A> for V where V::Element: Widget + 'static {
     type State = (<V as View<T, A>>::State, Id);
 
     fn build(&self, cx: &mut Cx) -> (Self::State, Vec<Pod>) {
@@ -62,15 +63,15 @@ impl<T, A, V: View<T, A>> ViewSequence<T, A> for V where V::Element: Widget + 's
 
     fn rebuild(&self, cx: &mut Cx, prev: &Self, state: &mut Self::State, offset: usize, element: &mut Vec<Pod>) -> (ChangeFlags, usize) {
         let downcast = element[offset].downcast_mut().unwrap();
-        let flags = <V as View<T, A>>::rebuild(self, cx, prev, &mut state.0, &mut state.1, downcast);
+        let flags = <V as View<T, A>>::rebuild(self, cx, prev, &mut state.1, &mut state.0, downcast);
         let flags = element[offset].mark(flags);
         (flags, offset + 1)
     }
 
     fn message(&self, id_path: &[Id], state: &mut Self::State, message: Box<dyn Any>, app_state: &mut T) -> MessageResult<A> {
         if let Some((first, rest_path)) = id_path.split_first() {
-            if first == state.0 {
-                return <V as View<T, A>>::message(self, rest_path, &mut state.1, message, app_state);
+            if first == &state.1 {
+                return <V as View<T, A>>::message(self, rest_path, &mut state.0, message, app_state);
             }
         }
         MessageResult::Stale(message)
@@ -88,19 +89,19 @@ impl<T, A, VT: ViewSequence<T, A>> ViewSequence<T, A> for Option<VT> {
         match self {
             None => (None, vec![]),
             Some(vt) => {
-                let (state, elements) = vt.build();
+                let (state, elements) = vt.build(cx);
                 (Some(state), elements)
             }
         }
     }
 
     fn rebuild(&self, cx: &mut Cx, prev: &Self, state: &mut Self::State, offset: usize, element: &mut Vec<Pod>) -> (ChangeFlags, usize) {
-        match (self, state, prev) {
+        match (self, &mut *state, prev) {
             (Some(this), Some(state), Some(prev)) => {
                 this.rebuild(cx, prev, state, offset, element)
             }
-            (None, Some(state), Some(prev)) => {
-                let mut count = prev.count(&state);
+            (None, Some(seq_state), Some(prev)) => {
+                let mut count = prev.count(&seq_state);
                 while count > 0 {
                     element.remove(offset);
                 }
@@ -108,9 +109,9 @@ impl<T, A, VT: ViewSequence<T, A>> ViewSequence<T, A> for Option<VT> {
                 (ChangeFlags::TREE, offset)
             }
             (Some(this), None, None) => {
-                let (state, mut elements) = this.build(cx);
+                let (seq_state, mut elements) = this.build(cx);
                 let additional = elements.len();
-                *state = Some(state);
+                *state = Some(seq_state);
                 while !elements.is_empty() {
                     element.insert(offset, elements.pop().unwrap());
                 }
@@ -144,10 +145,10 @@ macro_rules! impl_view_tuple {
             type State = ( $( $t::State, )*);
 
             fn build(&self, cx: &mut Cx) -> (Self::State, Vec<Pod>) {
-                let b = ( $( self.$i.build(cx), )* );
+                let mut b = ( $( self.$i.build(cx), )* );
                 let state = ( $( b.$i.0, )*);
                 let mut els = vec![];
-                $( els.append(b.$i.1); )*
+                $( els.append(&mut b.$i.1); )*
                 (state, els)
             }
 
