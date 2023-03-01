@@ -25,9 +25,9 @@ use vello::{
     util::{RenderContext, RenderSurface},
     Renderer,
 };
-use vello::{Scene, SceneBuilder, SceneFragment};
+use vello::{Scene, SceneBuilder};
 
-use crate::{app::App, widget::Event, View, Widget};
+use crate::{app::App, widget::Event, View};
 
 // This is a bit of a hack just to get a window launched. The real version
 // would deal with multiple windows and have other ways to configure things.
@@ -37,10 +37,7 @@ pub struct AppLauncher<T, V: View<T>> {
 }
 
 // The logic of this struct is mostly parallel to DruidHandler in win_handler.rs.
-struct MainState<T, V: View<T>>
-where
-    V::Element: Widget,
-{
+struct MainState<T, V: View<T>> {
     handle: WindowHandle,
     app: App<T, V>,
     render_cx: RenderContext,
@@ -92,10 +89,7 @@ impl<T: Send + 'static, V: View<T> + 'static> AppLauncher<T, V> {
     }
 }
 
-impl<T: Send + 'static, V: View<T> + 'static> WinHandler for MainState<T, V>
-where
-    V::Element: Widget,
-{
+impl<T: Send + 'static, V: View<T> + 'static> WinHandler for MainState<T, V> {
     fn connect(&mut self, handle: &WindowHandle) {
         self.handle = handle.clone();
         self.app.connect(handle.clone());
@@ -182,7 +176,6 @@ where
 
 impl<T, V: View<T>> MainState<T, V>
 where
-    V::Element: Widget,
     T: Send,
 {
     fn new(app: App<T, V>) -> Self {
@@ -224,7 +217,7 @@ where
         let width = size.width as u32;
         let height = size.height as u32;
         if self.surface.is_none() {
-            println!("render size: {:?}", size);
+            //println!("render size: {:?}", size);
             self.surface = Some(
                 tokio::runtime::Handle::current()
                     .block_on(self.render_cx.create_surface(handle, width, height)),

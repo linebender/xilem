@@ -21,6 +21,7 @@ use glazier::{
     kurbo::{Point, Vec2},
     Modifiers, MouseButton, MouseButtons,
 };
+use vello::kurbo::Rect;
 
 #[derive(Debug, Clone)]
 pub enum Event {
@@ -49,6 +50,15 @@ pub struct MouseEvent {
 #[derive(Debug)]
 pub enum LifeCycle {
     HotChanged(bool),
+    ViewContextChanged(ViewContext),
+    TreeUpdate,
+}
+
+#[derive(Debug)]
+pub struct ViewContext {
+    pub window_origin: Point,
+    pub clip: Rect,
+    pub mouse_position: Option<Point>,
 }
 
 impl<'a> From<&'a glazier::MouseEvent> for MouseEvent {
@@ -71,6 +81,17 @@ impl<'a> From<&'a glazier::MouseEvent> for MouseEvent {
             focus: *focus,
             button: *button,
             wheel_delta: *wheel_delta,
+        }
+    }
+}
+
+impl ViewContext {
+    pub fn translate_to(&self, new_origin: Point) -> ViewContext {
+        let translate = new_origin.to_vec2();
+        ViewContext {
+            window_origin: self.window_origin + translate,
+            clip: self.clip - translate,
+            mouse_position: self.mouse_position.map(|p| p - translate),
         }
     }
 }

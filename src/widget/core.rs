@@ -19,36 +19,49 @@
 
 use bitflags::bitflags;
 use glazier::kurbo::{Point, Rect, Size};
+use vello::kurbo::Affine;
 use vello::{SceneBuilder, SceneFragment};
 
-use crate::{id::Id, Widget};
+use crate::widget::AnyWidget;
+use crate::{id::Id, Bloom, Widget};
 
 use super::{
-    contexts::LifeCycleCx, AccessCx, AnyWidget, BoxConstraints, CxState, Event, EventCx, LayoutCx,
-    LifeCycle, PaintCx, UpdateCx,
+    contexts::LifeCycleCx, AccessCx, BoxConstraints, CxState, Event, EventCx, LayoutCx, LifeCycle,
+    PaintCx, UpdateCx,
 };
 
 bitflags! {
     #[derive(Default)]
     pub(crate) struct PodFlags: u32 {
-        const REQUEST_UPDATE = 1;
-        const REQUEST_LAYOUT = 2;
-        const REQUEST_ACCESSIBILITY = 4;
-        const REQUEST_PAINT = 8;
+        // These values are set to the values of their pendants in ChangeFlags to allow transmuting
+        // between the two types.
+        const REQUEST_UPDATE = ChangeFlags::UPDATE.bits as _;
+        const REQUEST_LAYOUT = ChangeFlags::LAYOUT.bits as _;
+        const REQUEST_ACCESSIBILITY = ChangeFlags::ACCESSIBILITY.bits as _;
+        const REQUEST_PAINT = ChangeFlags::PAINT.bits as _;
+        const TREE_CHANGED = ChangeFlags::TREE.bits as _;
+        const HAS_ACCESSIBILITY = ChangeFlags::HAS_ACCESSIBILITY.bits as _;
 
-        const IS_HOT = 0x10;
-        const IS_ACTIVE = 0x20;
-        const HAS_ACTIVE = 0x40;
-        const HAS_ACCESSIBILITY = 0x80;
+        // Everything else uses bitmasks greater than the max value of ChangeFlags: mask >= 0x100
+        const VIEW_CONTEXT_CHANGED = 0x100;
+
+        const IS_HOT = 0x200;
+        const IS_ACTIVE = 0x400;
+        const HAS_ACTIVE = 0x800;
+
+        const NEEDS_SET_ORIGIN = 0x1000;
 
         const UPWARD_FLAGS = Self::REQUEST_LAYOUT.bits
             | Self::REQUEST_PAINT.bits
             | Self::HAS_ACTIVE.bits
-            | Self::HAS_ACCESSIBILITY.bits;
+            | Self::HAS_ACCESSIBILITY.bits
+            | Self::TREE_CHANGED.bits
+            | Self::VIEW_CONTEXT_CHANGED.bits;
         const INIT_FLAGS = Self::REQUEST_UPDATE.bits
             | Self::REQUEST_LAYOUT.bits
             | Self::REQUEST_ACCESSIBILITY.bits
-            | Self::REQUEST_PAINT.bits;
+            | Self::REQUEST_PAINT.bits
+            | Self::TREE_CHANGED.bits;
     }
 }
 
@@ -60,14 +73,23 @@ bitflags! {
         const LAYOUT = 2;
         const ACCESSIBILITY = 4;
         const PAINT = 8;
+        const TREE = 0x10;
+        const HAS_ACCESSIBILITY = 0x20;
     }
 }
 
-/// A pod that contains a widget (in a container).
+/// A container for one widget in the hierarchy.
+///
+/// Generally, container widgets don't contain other widgets directly,
+/// but rather contain a `Pod`, which has additional state needed
+/// for layout and for the widget to participate in event flow.
+///
+/// `Pod` will translate internal Xilem events to regular events,
+/// synthesize additional events of interest, and stop propagation when it makes sense.
 pub struct Pod {
     pub(crate) state: WidgetState,
     pub(crate) widget: Box<dyn AnyWidget>,
-    fragment: SceneFragment,
+    pub(crate) fragment: SceneFragment,
 }
 
 #[derive(Debug)]
@@ -80,6 +102,12 @@ pub(crate) struct WidgetState {
     pub(crate) parent_window_origin: Point,
     /// The size of the widget.
     pub(crate) size: Size,
+    /// A bloom filter containing this widgets is and the ones of its children.
+    // TODO: decide the final solution for this. This is probably going to be a global structure
+    //       tracking parent child relations in the tree:
+    //           parents: HashMap<Id, Id>,
+    //           children: HashMap<Id, Vec<Id>>,
+    pub(crate) sub_tree: Bloom<Id>,
 }
 
 impl WidgetState {
@@ -91,14 +119,19 @@ impl WidgetState {
             origin: Default::default(),
             parent_window_origin: Default::default(),
             size: Default::default(),
+            sub_tree: Default::default(),
         }
     }
 
+    /// Returns the flags which should be passed to the parent of this Pod.
+    fn upwards_flags(&self) -> PodFlags {
+        self.flags & PodFlags::UPWARD_FLAGS
+    }
+
+
     fn merge_up(&mut self, child_state: &mut WidgetState) {
-        self.flags |= child_state.flags & PodFlags::UPWARD_FLAGS;
-        if child_state.flags.contains(PodFlags::REQUEST_ACCESSIBILITY) {
-            self.flags |= PodFlags::HAS_ACCESSIBILITY;
-        }
+        self.flags |= child_state.upwards_flags();
+        self.sub_tree = self.sub_tree.union(child_state.sub_tree);
     }
 
     fn request(&mut self, flags: PodFlags) {
@@ -111,10 +144,18 @@ impl WidgetState {
 }
 
 impl Pod {
+    /// Create a new pod.
+    ///
+    /// In a widget hierarchy, each widget is wrapped in a `Pod`
+    /// so it can participate in layout and event flow.
     pub fn new(widget: impl Widget + 'static) -> Self {
         Self::new_from_box(Box::new(widget))
     }
 
+    /// Create a new pod.
+    ///
+    /// In a widget hierarchy, each widget is wrapped in a `Pod`
+    /// so it can participate in layout and event flow.
     pub fn new_from_box(widget: Box<dyn AnyWidget>) -> Self {
         Pod {
             state: WidgetState::new(),
@@ -123,26 +164,27 @@ impl Pod {
         }
     }
 
-    pub fn downcast_mut<T: 'static>(&mut self) -> Option<&mut T> {
+    /// Returns the wrapped widget.
+    pub fn downcast_mut<'a, T: 'static>(&'a mut self) -> Option<&'a mut T> {
         (*self.widget).as_any_mut().downcast_mut()
     }
 
-    pub fn mark(&mut self, flags: ChangeFlags) {
+    /// Sets the requested flags on this pod and returns the Flags the parent of this Pod should set.
+    pub fn mark(&mut self, flags: ChangeFlags) -> ChangeFlags {
         self.state
-            .request(PodFlags::from_bits(flags.bits().into()).unwrap());
-    }
-
-    pub fn request_update(&mut self) {
-        self.state.request(PodFlags::REQUEST_UPDATE);
+            .request(PodFlags::from_bits_truncate(flags.bits as _));
+        ChangeFlags::from_bits_truncate(self.state.upwards_flags().bits as _)
     }
 
     /// Propagate a platform event. As in Druid, a great deal of the event
     /// dispatching logic is in this function.
+    ///
+    /// This method calls [event](crate::widget::Widget::event) on the wrapped Widget if this event
+    /// is relevant to this widget.
     pub fn event(&mut self, cx: &mut EventCx, event: &Event) {
         if cx.is_handled {
             return;
         }
-        let rect = Rect::from_origin_size(self.state.origin, self.state.size);
         let mut modified_event = None;
         let had_active = self.state.flags.contains(PodFlags::HAS_ACTIVE);
         let recurse = match event {
@@ -151,7 +193,6 @@ impl Pod {
                     &mut self.widget,
                     &mut self.state,
                     cx.cx_state,
-                    rect,
                     Some(mouse_event.pos),
                 );
                 if had_active || self.state.flags.contains(PodFlags::IS_HOT) {
@@ -168,7 +209,6 @@ impl Pod {
                     &mut self.widget,
                     &mut self.state,
                     cx.cx_state,
-                    rect,
                     Some(mouse_event.pos),
                 );
                 if had_active || self.state.flags.contains(PodFlags::IS_HOT) {
@@ -185,7 +225,6 @@ impl Pod {
                     &mut self.widget,
                     &mut self.state,
                     cx.cx_state,
-                    rect,
                     Some(mouse_event.pos),
                 );
                 if had_active || self.state.flags.contains(PodFlags::IS_HOT) || hot_changed {
@@ -202,7 +241,6 @@ impl Pod {
                     &mut self.widget,
                     &mut self.state,
                     cx.cx_state,
-                    rect,
                     Some(mouse_event.pos),
                 );
                 if had_active || self.state.flags.contains(PodFlags::IS_HOT) {
@@ -216,7 +254,7 @@ impl Pod {
             }
             Event::MouseLeft() => {
                 let hot_changed =
-                    Pod::set_hot_state(&mut self.widget, &mut self.state, cx.cx_state, rect, None);
+                    Pod::set_hot_state(&mut self.widget, &mut self.state, cx.cx_state, None);
                 if had_active || hot_changed {
                     true
                 } else {
@@ -225,11 +263,9 @@ impl Pod {
             }
             Event::TargetedAccessibilityAction(action) => {
                 println!("TODO: {:?}", action);
-                // TODO: here we always recurse, as we are currently lacking a
-                // mechanism to route events identified by widget id. We should
-                // either track the tree structure so we can reconstruct the id
-                // path, or use Bloom filters as in Druid.
-                true
+                self.state
+                    .sub_tree
+                    .may_contain(&Id::try_from_accesskit(action.target).unwrap())
             }
         };
         if recurse {
@@ -241,6 +277,9 @@ impl Pod {
             self.widget
                 .event(&mut inner_cx, modified_event.as_ref().unwrap_or(event));
             cx.is_handled |= inner_cx.is_handled;
+
+            // This clears the has_active state. Pod needs to clear this state since merge up can
+            // only set flags.
             self.state.flags.set(
                 PodFlags::HAS_ACTIVE,
                 self.state.flags.contains(PodFlags::IS_ACTIVE),
@@ -249,21 +288,55 @@ impl Pod {
         }
     }
 
+    /// Propagate a lifecycle event.
+    ///
+    /// This method calls [lifecycle](crate::widget::Widget::lifecycle) on the wrapped Widget if
+    /// the lifecycle event is relevant to this widget.
     pub fn lifecycle(&mut self, cx: &mut LifeCycleCx, event: &LifeCycle) {
+        let mut modified_event = None;
         let recurse = match event {
             LifeCycle::HotChanged(_) => false,
+            LifeCycle::ViewContextChanged(view) => {
+                self.state.parent_window_origin = view.window_origin;
+
+                Pod::set_hot_state(
+                    &mut self.widget,
+                    &mut self.state,
+                    &mut cx.cx_state,
+                    view.mouse_position,
+                );
+                modified_event = Some(LifeCycle::ViewContextChanged(
+                    view.translate_to(self.state.origin),
+                ));
+                self.state.flags.remove(PodFlags::VIEW_CONTEXT_CHANGED);
+                true
+            }
+            LifeCycle::TreeUpdate => {
+                if self.state.flags.contains(PodFlags::TREE_CHANGED) {
+                    self.state.sub_tree.clear();
+                    self.state.sub_tree.add(&self.state.id);
+                    self.state.flags.remove(PodFlags::TREE_CHANGED);
+                    true
+                } else {
+                    false
+                }
+            }
         };
         let mut child_cx = LifeCycleCx {
             cx_state: cx.cx_state,
             widget_state: &mut self.state,
         };
         if recurse {
-            self.widget.lifecycle(&mut child_cx, event);
+            self.widget
+                .lifecycle(&mut child_cx, modified_event.as_ref().unwrap_or(event));
             cx.widget_state.merge_up(&mut self.state);
         }
     }
 
-    /// Propagate an update cycle.
+    /// Propagate an update.
+    ///
+    /// This method calls [update](crate::widget::Widget::update) on the wrapped Widget if update
+    /// was request by this widget or any of its children.
     pub fn update(&mut self, cx: &mut UpdateCx) {
         if self.state.flags.contains(PodFlags::REQUEST_UPDATE) {
             let mut child_cx = UpdateCx {
@@ -276,26 +349,27 @@ impl Pod {
         }
     }
 
+    /// Propagate a layout request.
+    ///
+    /// This method calls [layout](crate::widget::Widget::layout) on the wrapped Widget. The container
+    /// widget is responsible for calling only the children which need a call to layout. These include
+    /// any Pod which has [layout_requested](Pod::layout_requested) set.
     pub fn layout(&mut self, cx: &mut LayoutCx, bc: &BoxConstraints) -> Size {
-        if self.state.flags.contains(PodFlags::REQUEST_LAYOUT) {
-            let mut child_cx = LayoutCx {
-                cx_state: cx.cx_state,
-                widget_state: &mut self.state,
-            };
-            let new_size = self.widget.layout(&mut child_cx, bc);
-            println!("layout size = {:?}", new_size);
-            self.state.size = new_size;
-            self.state.flags.remove(PodFlags::REQUEST_LAYOUT);
-        }
+        let mut child_cx = LayoutCx {
+            cx_state: cx.cx_state,
+            widget_state: &mut self.state,
+        };
+        let new_size = self.widget.layout(&mut child_cx, bc);
+        //println!("layout size = {:?}", new_size);
+        self.state.size = new_size;
+        self.state.flags.insert(PodFlags::NEEDS_SET_ORIGIN);
+        self.state.flags.remove(PodFlags::REQUEST_LAYOUT);
         self.state.size
     }
 
+    ///
     pub fn accessibility(&mut self, cx: &mut AccessCx) {
-        if self
-            .state
-            .flags
-            .intersects(PodFlags::REQUEST_ACCESSIBILITY | PodFlags::HAS_ACCESSIBILITY)
-        {
+        if self.state.flags.contains(PodFlags::HAS_ACCESSIBILITY) {
             let mut child_cx = AccessCx {
                 cx_state: cx.cx_state,
                 widget_state: &mut self.state,
@@ -309,6 +383,7 @@ impl Pod {
         }
     }
 
+
     pub fn paint_raw(&mut self, cx: &mut PaintCx, builder: &mut SceneBuilder) {
         let mut inner_cx = PaintCx {
             cx_state: cx.cx_state,
@@ -317,13 +392,66 @@ impl Pod {
         self.widget.paint(&mut inner_cx, builder);
     }
 
-    pub fn paint(&mut self, cx: &mut PaintCx) {
+    pub(crate) fn paint_impl(&mut self, cx: &mut PaintCx) {
+        let needs_paint = self.state.flags.contains(PodFlags::REQUEST_PAINT);
+        self.state.flags.remove(PodFlags::REQUEST_PAINT);
+
         let mut inner_cx = PaintCx {
             cx_state: cx.cx_state,
             widget_state: &mut self.state,
         };
-        let mut builder = SceneBuilder::for_fragment(&mut self.fragment);
-        self.widget.paint(&mut inner_cx, &mut builder);
+
+        if needs_paint {
+            let mut builder = SceneBuilder::for_fragment(&mut self.fragment);
+            self.widget.paint(&mut inner_cx, &mut builder);
+        }
+    }
+
+    /// The default paint method.
+    ///
+    /// It paints the this widget if neccessary and appends its SceneFragment to the provided
+    /// `SceneBuilder`.
+    pub fn paint(&mut self, cx: &mut PaintCx, builder: &mut SceneBuilder) {
+        self.paint_impl(cx);
+        let transform = Affine::translate(self.state.origin.to_vec2());
+        builder.append(&self.fragment, Some(transform));
+    }
+
+    /// Renders the widget and returns the created `SceneFragment`.
+    ///
+    /// The caller of this method is responsible for translating the Fragment and appending it to
+    /// its own SceneBuilder. This is useful for ClipBoxes and doing animations.
+    ///
+    /// For the default paint behaviour call [`paint`](Pod::paint).
+    pub fn paint_custom(&mut self, cx: &mut PaintCx) -> &SceneFragment {
+        self.paint_impl(cx);
+        &self.fragment
+    }
+
+    /// Set the origin of this widget, in the parent's coordinate space.
+    ///
+    /// A container widget should call the [`Widget::layout`] method on its children in
+    /// its own [`Widget::layout`] implementation, and then call `set_origin` to
+    /// position those children.
+    ///
+    /// The changed origin won't be fully in effect until [`LifeCycle::ViewContextChanged`] has
+    /// finished propagating. Specifically methods that depend on the widget's origin in relation
+    /// to the window will return stale results during the period after calling `set_origin` but
+    /// before [`LifeCycle::ViewContextChanged`] has finished propagating.
+    ///
+    /// The widget container can also call `set_origin` from other context, but calling `set_origin`
+    /// after the widget received [`LifeCycle::ViewContextChanged`] and before the next event results
+    /// in an inconsistent state of the widget tree.
+    pub fn set_origin(&mut self, cx: &mut LayoutCx, origin: Point) {
+        if origin != self.state.origin {
+            self.state.origin = origin;
+            // request paint is called on the parent instead of this widget, since this widget's
+            // fragment does not change.
+            cx.view_context_changed();
+            cx.request_paint();
+
+            self.state.flags.insert(PodFlags::VIEW_CONTEXT_CHANGED);
+        }
     }
 
     // Return true if hot state has changed
@@ -331,9 +459,9 @@ impl Pod {
         widget: &mut dyn AnyWidget,
         widget_state: &mut WidgetState,
         cx_state: &mut CxState,
-        rect: Rect,
         mouse_pos: Option<Point>,
     ) -> bool {
+        let rect = Rect::from_origin_size(widget_state.origin, widget_state.size);
         let had_hot = widget_state.flags.contains(PodFlags::IS_HOT);
         let is_hot = match mouse_pos {
             Some(pos) => rect.contains(pos),
@@ -352,16 +480,61 @@ impl Pod {
         false
     }
 
-    /// Get the rendered scene fragment for the widget.
-    ///
-    /// This is only valid after a `paint` call, but the fragment can be retained
-    /// (skipping further paint calls) if the appearance does not change.
-    pub fn fragment(&self) -> &SceneFragment {
-        &self.fragment
-    }
-
     /// Get the id of the widget in the pod.
     pub fn id(&self) -> Id {
         self.state.id
+    }
+
+    /// The "hot" (aka hover) status of a widget.
+    ///
+    /// A widget is "hot" when the mouse is hovered over it. Some Widgets (eg buttons)
+    /// will change their appearance when hot as a visual indication that they
+    /// will respond to mouse interaction.
+    ///
+    /// The hot status is automatically computed from the widget's layout rect. In a
+    /// container hierarchy, all widgets with layout rects containing the mouse position
+    /// have hot status. The hot status cannot be set manually.
+    ///
+    /// There is no special handling of the hot status for multi-pointer devices. (This is
+    /// likely to change in the future as [pointer events are planed](https://xi.zulipchat.com/#narrow/stream/351333-glazier/topic/Pointer.20Events)).
+    ///
+    /// Note: a widget can be hot while another is [`active`] (for example, when
+    /// clicking a button and dragging the cursor to another widget).
+    ///
+    /// [`active`]: Pod::is_active
+    pub fn is_hot(&self) -> bool {
+        self.state.flags.contains(PodFlags::IS_HOT)
+    }
+
+    /// The "active" (aka pressed) status of a widget.
+    ///
+    /// Active status generally corresponds to a mouse button down. Widgets
+    /// with behavior similar to a button will call [`set_active`] on mouse
+    /// down and then up.
+    ///
+    /// The active status can only be set manually. Xilem doesn't automatically
+    /// set it to `false` on mouse release or anything like that.
+    ///
+    /// There is no special handling of the active status for multi-pointer devices. (This is
+    /// likely to change in the future as [pointer events are planed](https://xi.zulipchat.com/#narrow/stream/351333-glazier/topic/Pointer.20Events)).
+    ///
+    /// When a widget is active, it gets mouse events even when the mouse
+    /// is dragged away.
+    ///
+    /// [`set_active`]: EventCx::set_active
+    pub fn is_active(&self) -> bool {
+        self.state.flags.contains(PodFlags::HAS_ACTIVE)
+    }
+
+    /// Returns `true` if any descendant is [`active`].
+    ///
+    /// [`active`]: Pod::is_active
+    pub fn has_active(&self) -> bool {
+        self.state.flags.contains(PodFlags::HAS_ACTIVE)
+    }
+
+    /// This widget or any of its children have requested layout.
+    pub fn layout_requested(&self) -> bool {
+        self.state.flags.contains(PodFlags::REQUEST_LAYOUT)
     }
 }

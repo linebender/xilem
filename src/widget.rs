@@ -18,24 +18,24 @@ mod contexts;
 mod core;
 //pub mod layout_observer;
 //pub mod list;
+pub mod linear_layout;
 pub mod piet_scene_helpers;
 mod raw_event;
 //pub mod scroll_view;
 //pub mod text;
-//pub mod vstack;
 
 use std::any::Any;
-use std::ops::{Deref, DerefMut};
+use std::ops::DerefMut;
 
-use glazier::kurbo::{Rect, Size};
+use crate::geometry::Axis;
+use glazier::kurbo::Size;
 use vello::SceneBuilder;
 
 pub use self::box_constraints::BoxConstraints;
-use self::contexts::LifeCycleCx;
-pub use self::contexts::{AccessCx, CxState, EventCx, LayoutCx, PaintCx, UpdateCx};
+pub use self::contexts::{AccessCx, CxState, EventCx, LayoutCx, LifeCycleCx, PaintCx, UpdateCx};
 pub use self::core::Pod;
 pub(crate) use self::core::{ChangeFlags, PodFlags, WidgetState};
-pub use self::raw_event::{Event, LifeCycle};
+pub use self::raw_event::{Event, LifeCycle, ViewContext};
 
 /// A basic widget trait.
 pub trait Widget {
@@ -197,19 +197,6 @@ pub trait Widget {
     }
 }
 
-/// An axis in visual space.
-///
-/// Most often used by widgets to describe
-/// the direction in which they grow as their number of children increases.
-/// Has some methods for manipulating geometry with respect to the axis.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Axis {
-    /// The x axis
-    Horizontal,
-    /// The y axis
-    Vertical,
-}
-
 pub trait AnyWidget: Widget {
     fn as_any(&self) -> &dyn Any;
 
@@ -257,42 +244,3 @@ impl Widget for Box<dyn AnyWidget> {
         self.deref_mut().paint(cx, builder);
     }
 }
-
-pub trait WidgetTuple {
-    fn length(&self) -> usize;
-
-    // Follows Panoramix; rethink to reduce allocation
-    // Maybe SmallVec?
-    fn widgets_mut(&mut self) -> Vec<&mut dyn AnyWidget>;
-}
-
-macro_rules! impl_widget_tuple {
-    ( $n: tt; $( $WidgetType:ident),* ; $( $index:tt ),* ) => {
-        impl< $( $WidgetType: AnyWidget ),* > WidgetTuple for ( $( $WidgetType, )* ) {
-            fn length(&self) -> usize {
-                $n
-            }
-
-            fn widgets_mut(&mut self) -> Vec<&mut dyn AnyWidget> {
-                let mut v: Vec<&mut dyn AnyWidget> = Vec::with_capacity(self.length());
-                $(
-                v.push(&mut self.$index);
-                )*
-                v
-            }
-
-        }
-    }
-}
-
-impl_widget_tuple!(1; W0; 0);
-impl_widget_tuple!(2; W0, W1; 0, 1);
-impl_widget_tuple!(3; W0, W1, W2; 0, 1, 2);
-impl_widget_tuple!(4; W0, W1, W2, W3; 0, 1, 2, 3);
-impl_widget_tuple!(5; W0, W1, W2, W3, W4; 0, 1, 2, 3, 4);
-impl_widget_tuple!(6; W0, W1, W2, W3, W4, W5; 0, 1, 2, 3, 4, 5);
-impl_widget_tuple!(7; W0, W1, W2, W3, W4, W5, W6; 0, 1, 2, 3, 4, 5, 6);
-impl_widget_tuple!(8;
-    W0, W1, W2, W3, W4, W5, W6, W7;
-    0, 1, 2, 3, 4, 5, 6, 7
-);

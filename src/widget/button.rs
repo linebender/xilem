@@ -111,7 +111,7 @@ impl Widget for Button {
         self.layout = Some(layout);
         //(Size::new(10.0, min_height), size)
         let size = bc.constrain(size);
-        println!("size = {:?}", size);
+        //println!("size = {:?}", size);
         size
     }
 

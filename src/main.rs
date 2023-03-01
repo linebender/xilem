@@ -1,4 +1,4 @@
-use xilem::{button, App, AppLauncher, View};
+use xilem::{button, h_stack, v_stack, App, AppLauncher, View};
 
 fn app_logic(data: &mut i32) -> impl View<i32> {
     // here's some logic, deriving state for the view from our state
@@ -9,10 +9,23 @@ fn app_logic(data: &mut i32) -> impl View<i32> {
     };
 
     // The actual UI Code starts here
-    button(label, |data| {
-        println!("clicked");
-        *data += 1;
-    })
+    v_stack((
+        button(label, |data| {
+            println!("clicked");
+            *data += 1;
+        }),
+        h_stack((
+            button("decrease", |data| {
+                println!("clicked decrease");
+                *data -= 1;
+            }),
+            button("reset", |data| {
+                println!("clicked reset");
+                *data = 0;
+            }),
+        )),
+    ))
+    .with_spacing(20.0)
 }
 
 fn main() {
@@ -29,4 +42,3 @@ fn main() {
     let app = App::new(0, app_logic);
     AppLauncher::new(app).run()
 }
-

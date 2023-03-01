@@ -21,20 +21,26 @@ use glazier::kurbo::Size;
 use glazier::{IdleHandle, IdleToken, WindowHandle};
 use parley::FontContext;
 use tokio::runtime::Runtime;
-use vello::{SceneBuilder, SceneFragment};
+use vello::kurbo::{Point, Rect};
+use vello::SceneFragment;
 
 use crate::event::{AsyncWake, MessageResult};
 use crate::id::IdPath;
 use crate::widget::{
-    AccessCx, BoxConstraints, CxState, EventCx, LayoutCx, PaintCx, Pod, UpdateCx, WidgetState,
+    AccessCx, BoxConstraints, CxState, EventCx, LayoutCx, LifeCycle, LifeCycleCx, PaintCx, Pod,
+    PodFlags, UpdateCx, ViewContext, WidgetState,
 };
 use crate::{
     event::Message,
     id::Id,
     view::{Cx, View},
-    widget::{Event, Widget},
+    widget::Event,
 };
 
+/// App is the native backend implementation of Xilem. It contains the code interacting with glazier
+/// and vello.
+///
+///
 pub struct App<T, V: View<T>> {
     req_chan: tokio::sync::mpsc::Sender<AppReq>,
     response_chan: tokio::sync::mpsc::Receiver<RenderResponse<V, V::State>>,
@@ -45,6 +51,8 @@ pub struct App<T, V: View<T>> {
     root_state: WidgetState,
     root_pod: Option<Pod>,
     size: Size,
+    new_size: Size,
+    cursor_pos: Option<Point>,
     cx: Cx,
     font_cx: FontContext,
     pub(crate) rt: Runtime,
@@ -58,7 +66,11 @@ pub struct App<T, V: View<T>> {
 /// The standard delay for waiting for async futures.
 const RENDER_DELAY: Duration = Duration::from_millis(5);
 
-/// State that's kept in a separate task for running the app
+/// This is the view logic of Xilem.
+///
+/// It contains no information about how to interact with the User (browser, native, terminal).
+/// It is created by [`App`] and kept in a separate task for updating the apps contents.
+/// The App can send [AppReq] to inform the the AppTask about an user interaction.
 struct AppTask<T, V: View<T>, F: FnMut(&mut T) -> V> {
     req_chan: tokio::sync::mpsc::Receiver<AppReq>,
     response_chan: tokio::sync::mpsc::Sender<RenderResponse<V, V::State>>,
@@ -73,7 +85,7 @@ struct AppTask<T, V: View<T>, F: FnMut(&mut T) -> V> {
     ui_state: UiState,
 }
 
-/// A message sent from the main UI thread to the app task
+/// A message sent from the main UI thread ([`App`]) to the [`AppTask`].
 pub(crate) enum AppReq {
     SetIdleHandle(IdleHandle),
     Events(Vec<Message>),
@@ -82,13 +94,18 @@ pub(crate) enum AppReq {
     Render(bool),
 }
 
-/// A response sent to a render request.
+/// A message sent from [`AppTask`] to [`App`] in response to a render request.
 struct RenderResponse<V, S> {
     prev: Option<V>,
     view: V,
     state: Option<S>,
 }
 
+/// The state of the  [`AppTask`].
+///
+/// While the [`App`] follows a strict order of UIEvents -> Render -> Paint (this is simplified)
+/// the [`AppTask`] can receive different requests at any time. This enum keeps track of the state
+/// the AppTask is in because of previous requests.
 #[derive(PartialEq)]
 enum UiState {
     /// Starting state, ready for events and render requests.
@@ -104,7 +121,6 @@ pub struct WakeQueue(Arc<Mutex<Vec<IdPath>>>);
 
 impl<T: Send + 'static, V: View<T> + 'static> App<T, V>
 where
-    V::Element: Widget + 'static,
     V::State: 'static,
 {
     /// Create a new app instance.
@@ -160,6 +176,8 @@ where
             window_handle: Default::default(),
             root_state: WidgetState::new(),
             size: Default::default(),
+            new_size: Default::default(),
+            cursor_pos: None,
             cx,
             font_cx: FontContext::new(),
             rt,
@@ -179,7 +197,7 @@ where
     }
 
     pub fn size(&mut self, size: Size) {
-        self.size = size;
+        self.new_size = size;
     }
 
     pub fn accessibility(&mut self) -> TreeUpdate {
@@ -220,17 +238,46 @@ where
             let root_pod = self.root_pod.as_mut().unwrap();
             let mut cx_state =
                 CxState::new(&self.window_handle, &mut self.font_cx, &mut self.events);
-            let mut update_cx = UpdateCx::new(&mut cx_state, &mut self.root_state);
-            root_pod.update(&mut update_cx);
-            let mut layout_cx = LayoutCx::new(&mut cx_state, &mut self.root_state);
-            let bc = BoxConstraints::tight(self.size);
-            root_pod.layout(&mut layout_cx, &bc);
+
+            let mut lifecycle_cx = LifeCycleCx::new(&mut cx_state, &mut self.root_state);
+            root_pod.lifecycle(&mut lifecycle_cx, &LifeCycle::TreeUpdate);
+
+            if root_pod.state.flags.contains(PodFlags::REQUEST_UPDATE) {
+                let mut update_cx = UpdateCx::new(&mut cx_state, &mut self.root_state);
+                root_pod.update(&mut update_cx);
+            }
+            if root_pod.state.flags.contains(PodFlags::REQUEST_LAYOUT) || self.size != self.new_size
+            {
+                self.size = self.new_size;
+                let mut layout_cx = LayoutCx::new(&mut cx_state, &mut self.root_state);
+                let bc = BoxConstraints::tight(self.size);
+                root_pod.layout(&mut layout_cx, &bc);
+                root_pod.set_origin(&mut layout_cx, Point::ORIGIN);
+            }
+            if root_pod
+                .state
+                .flags
+                .contains(PodFlags::VIEW_CONTEXT_CHANGED)
+            {
+                let view_context = ViewContext {
+                    window_origin: Point::ORIGIN,
+                    clip: Rect::from_origin_size(Point::ORIGIN, root_pod.state.size),
+                    mouse_position: self.cursor_pos,
+                };
+                let mut lifecycle_cx = LifeCycleCx::new(&mut cx_state, &mut self.root_state);
+                root_pod.lifecycle(
+                    &mut lifecycle_cx,
+                    &LifeCycle::ViewContextChanged(view_context),
+                );
+            }
+
             if cx_state.has_messages() {
                 // Rerun app logic, primarily for LayoutObserver
                 // We might want some debugging here if the number of iterations
                 // becomes extreme.
                 continue;
             }
+
             if self.accesskit_connected {
                 let update = self.accessibility();
                 // TODO: it would be cleaner to not use a closure here.
@@ -242,12 +289,25 @@ where
             let mut cx_state =
                 CxState::new(&self.window_handle, &mut self.font_cx, &mut self.events);
             let mut paint_cx = PaintCx::new(&mut cx_state, &mut self.root_state);
-            root_pod.paint(&mut paint_cx);
+            root_pod.paint_impl(&mut paint_cx);
             break;
         }
     }
 
     pub fn window_event(&mut self, event: Event) {
+        match &event {
+            Event::MouseUp(me)
+            | Event::MouseMove(me)
+            | Event::MouseDown(me)
+            | Event::MouseWheel(me) => {
+                self.cursor_pos = Some(me.pos);
+            }
+            Event::MouseLeft() => {
+                self.cursor_pos = None;
+            }
+            _ => {}
+        }
+
         self.ensure_root();
         let root_pod = self.root_pod.as_mut().unwrap();
         let mut cx_state = CxState::new(&self.window_handle, &mut self.font_cx, &mut self.events);
@@ -284,26 +344,28 @@ where
         self.cx.pending_async.clear();
         let _ = self.req_chan.blocking_send(AppReq::Render(delay));
         if let Some(response) = self.response_chan.blocking_recv() {
-            let state =
-                if let Some(element) = self.root_pod.as_mut().and_then(|pod| pod.downcast_mut()) {
-                    let mut state = response.state.unwrap();
-                    let changes = response.view.rebuild(
-                        &mut self.cx,
-                        response.prev.as_ref().unwrap(),
-                        self.id.as_mut().unwrap(),
-                        &mut state,
-                        element,
-                    );
-                    self.root_pod.as_mut().unwrap().mark(changes);
-                    assert!(self.cx.is_empty(), "id path imbalance on rebuild");
-                    state
-                } else {
-                    let (id, state, element) = response.view.build(&mut self.cx);
-                    assert!(self.cx.is_empty(), "id path imbalance on build");
-                    self.root_pod = Some(Pod::new(element));
-                    self.id = Some(id);
-                    state
-                };
+            let state = if let Some(element) = self.root_pod.as_mut() {
+                let mut state = response.state.unwrap();
+                let changes = response.view.rebuild(
+                    &mut self.cx,
+                    response.prev.as_ref().unwrap(),
+                    self.id.as_mut().unwrap(),
+                    &mut state,
+                    //TODO: fail more gracefully but make it explicit that this is a bug
+                    element
+                        .downcast_mut()
+                        .expect("the root widget changed its type, this should never happen!"),
+                );
+                self.root_pod.as_mut().unwrap().mark(changes);
+                assert!(self.cx.is_empty(), "id path imbalance on rebuild");
+                state
+            } else {
+                let (id, state, element) = response.view.build(&mut self.cx);
+                assert!(self.cx.is_empty(), "id path imbalance on build");
+                self.root_pod = Some(Pod::new(element));
+                self.id = Some(id);
+                state
+            };
             let pending = std::mem::take(&mut self.cx.pending_async);
             let has_pending = !pending.is_empty();
             let _ = self
@@ -318,14 +380,11 @@ where
 
 impl<T, V: View<T>> App<T, V> {
     pub fn fragment(&self) -> &SceneFragment {
-        self.root_pod.as_ref().unwrap().fragment()
+        &self.root_pod.as_ref().unwrap().fragment
     }
 }
 
-impl<T, V: View<T>, F: FnMut(&mut T) -> V> AppTask<T, V, F>
-where
-    V::Element: Widget + 'static,
-{
+impl<T, V: View<T>, F: FnMut(&mut T) -> V> AppTask<T, V, F> {
     async fn run(&mut self) {
         let mut deadline = None;
         loop {

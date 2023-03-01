@@ -22,7 +22,8 @@ pub mod button;
 // pub mod scroll_view;
 // pub mod text;
 // pub mod use_state;
-// pub mod vstack;
+pub mod linear_layout;
+mod sequence;
 
 use std::{
     any::Any,
@@ -37,6 +38,7 @@ use crate::{
     id::{Id, IdPath},
     widget::{ChangeFlags, Widget},
 };
+pub use sequence::ViewSequence;
 
 /// A view object representing a node in the UI.
 ///
@@ -87,6 +89,8 @@ pub trait View<T, A = ()>: Send {
         app_state: &mut T,
     ) -> MessageResult<A>;
 }
+
+pub trait ViewMarker {}
 
 #[derive(Clone)]
 pub struct Cx {

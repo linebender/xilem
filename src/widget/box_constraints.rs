@@ -14,7 +14,7 @@
 
 //! The fundamental druid types.
 
-use crate::widget::Axis;
+use crate::geometry::Axis;
 use vello::kurbo::Size;
 
 /// Constraints for layout.
