@@ -27,7 +27,7 @@ mod widget;
 
 pub use self::box_constraints::BoxConstraints;
 pub use self::contexts::{AccessCx, CxState, EventCx, LayoutCx, LifeCycleCx, PaintCx, UpdateCx};
-pub use self::core::Pod;
-pub(crate) use self::core::{ChangeFlags, PodFlags, WidgetState};
-pub use self::raw_event::{Event, LifeCycle, ViewContext};
+pub use self::core::{ChangeFlags, Pod};
+pub(crate) use self::core::{PodFlags, WidgetState};
+pub use self::raw_event::{Event, LifeCycle, MouseEvent, ViewContext};
 pub use widget::{AnyWidget, Widget};
