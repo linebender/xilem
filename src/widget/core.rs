@@ -128,7 +128,6 @@ impl WidgetState {
         self.flags & PodFlags::UPWARD_FLAGS
     }
 
-
     fn merge_up(&mut self, child_state: &mut WidgetState) {
         self.flags |= child_state.upwards_flags();
         self.sub_tree = self.sub_tree.union(child_state.sub_tree);
@@ -382,7 +381,6 @@ impl Pod {
                 .remove(PodFlags::REQUEST_ACCESSIBILITY | PodFlags::HAS_ACCESSIBILITY);
         }
     }
-
 
     pub fn paint_raw(&mut self, cx: &mut PaintCx, builder: &mut SceneBuilder) {
         let mut inner_cx = PaintCx {

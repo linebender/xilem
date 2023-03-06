@@ -8,8 +8,8 @@ mod geometry;
 mod id;
 mod test_scenes;
 mod text;
-mod view;
-mod widget;
+pub mod view;
+pub mod widget;
 
 pub use app::App;
 pub use app_main::AppLauncher;

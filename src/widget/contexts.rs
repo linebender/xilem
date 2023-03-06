@@ -17,14 +17,12 @@
 //! Note: the organization of this code roughly follows the existing Druid
 //! widget system, particularly its contexts.rs.
 
-use std::sync::Arc;
-
 use accesskit::TreeUpdate;
+use glazier::kurbo::Point;
 use glazier::{
     kurbo::{Rect, Size},
     WindowHandle,
 };
-use glazier::kurbo::Point;
 use parley::FontContext;
 
 use crate::event::Message;
@@ -340,10 +338,7 @@ impl_context_method!(
 // Methods on all contexts besides LayoutCx.
 //
 // These Methods return information about the widget
-impl_context_method!(
-    LayoutCx<'_, '_>,
-    PaintCx<'_, '_>,
-    {
+impl_context_method!(LayoutCx<'_, '_>, PaintCx<'_, '_>, {
     /// Returns a FontContext for creating TextLayouts.
     pub fn font_cx(&mut self) -> &mut FontContext {
         self.cx_state.font_cx
