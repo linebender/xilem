@@ -272,7 +272,7 @@ impl_context_method!(
         ///
         /// See [`is_hot`] for more details.
         ///
-        /// [`is_hot`]: Pod::is_hot
+        /// [`is_hot`]: super::Pod::is_hot
         pub fn is_hot(&self) -> bool {
             self.widget_state.flags.contains(PodFlags::IS_HOT)
         }
@@ -281,7 +281,7 @@ impl_context_method!(
         ///
         /// See [`is_active`] for more details.
         ///
-        /// [`is_active`]: Pod::is_active
+        /// [`is_active`]: super::Pod::is_active
         pub fn is_active(&self) -> bool {
             self.widget_state.flags.contains(PodFlags::IS_ACTIVE)
         }
@@ -320,7 +320,7 @@ impl_context_method!(
     {
         /// Requests a call to [`paint`] for this widget.
         ///
-        /// [`paint`]: Widget::paint
+        /// [`paint`]: super::Widget::paint
         pub fn request_paint(&mut self) {
             self.widget_state.flags |= PodFlags::REQUEST_PAINT;
         }
@@ -330,6 +330,8 @@ impl_context_method!(
         /// A [`LifeCycle::ViewContextChanged`] event will be scheduled.
         /// Widgets only have to call this method in case they are changing the z-order of
         /// overlapping children or change the clip region all other changes are tracked internally.
+        ///
+        /// [`LifeCycle::ViewContextChanged`]: super::LifeCycle::ViewContextChanged
         pub fn view_context_changed(&mut self) {
             self.widget_state.flags |= PodFlags::VIEW_CONTEXT_CHANGED;
         }
@@ -364,7 +366,7 @@ impl_context_method!(
         /// Generally it will be the same as the size returned by the child widget's
         /// [`layout`] method.
         ///
-        /// [`layout`]: Widget::layout
+        /// [`layout`]: super::Widget::layout
         pub fn size(&self) -> Size {
             self.widget_state.size
         }
@@ -375,7 +377,8 @@ impl_context_method!(
         /// This value changes after calling [`set_origin`] on the [`Pod`] of this Widget or any of
         /// its ancestors.
         ///
-        /// [`set_origin`]: Pod::set_origin
+        /// [`Pod`]: super::Pod
+        /// [`set_origin`]: super::Pod::set_origin
         pub fn window_origin(&self) -> Point {
             self.widget_state.parent_window_origin + self.widget_state.origin.to_vec2()
         }
