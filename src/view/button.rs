@@ -43,11 +43,11 @@ impl<T, A> Button<T, A> {
 impl<T, A> View<T, A> for Button<T, A> {
     type State = ();
 
-    type Element = crate::widget::button::Button;
+    type Element = crate::widget::Button;
 
     fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
-        let (id, element) = cx
-            .with_new_id(|cx| crate::widget::button::Button::new(cx.id_path(), self.label.clone()));
+        let (id, element) =
+            cx.with_new_id(|cx| crate::widget::Button::new(cx.id_path(), self.label.clone()));
         (id, (), element)
     }
 

@@ -18,8 +18,7 @@ use crate::event::MessageResult;
 use crate::geometry::Axis;
 use crate::id::Id;
 use crate::view::sequence::ViewSequence;
-use crate::widget::linear_layout;
-use crate::widget::ChangeFlags;
+use crate::widget::{self, ChangeFlags};
 
 use super::{Cx, View};
 
@@ -66,11 +65,11 @@ impl<T, A, VT: ViewSequence<T, A>> LinearLayout<T, A, VT> {
 impl<T, A, VT: ViewSequence<T, A>> View<T, A> for LinearLayout<T, A, VT> {
     type State = VT::State;
 
-    type Element = linear_layout::LinearLayout;
+    type Element = widget::LinearLayout;
 
     fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
         let (id, (state, elements)) = cx.with_new_id(|cx| self.children.build(cx));
-        let column = linear_layout::LinearLayout::new(elements, self.spacing, self.axis);
+        let column = widget::LinearLayout::new(elements, self.spacing, self.axis);
         (id, state, column)
     }
 

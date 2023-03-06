@@ -13,21 +13,23 @@
 // limitations under the License.
 
 mod box_constraints;
-pub mod button;
+mod button;
 mod contexts;
 mod core;
-//pub mod layout_observer;
-//pub mod list;
-pub mod linear_layout;
-pub mod piet_scene_helpers;
+//mod layout_observer;
+//mod list;
+mod linear_layout;
+mod piet_scene_helpers;
 mod raw_event;
-//pub mod scroll_view;
-//pub mod text;
+//mod scroll_view;
+//mod text;
 mod widget;
 
-pub use self::box_constraints::BoxConstraints;
-pub use self::contexts::{AccessCx, CxState, EventCx, LayoutCx, LifeCycleCx, PaintCx, UpdateCx};
 pub use self::core::{ChangeFlags, Pod};
 pub(crate) use self::core::{PodFlags, WidgetState};
-pub use self::raw_event::{Event, LifeCycle, MouseEvent, ViewContext};
+pub use box_constraints::BoxConstraints;
+pub use button::Button;
+pub use contexts::{AccessCx, CxState, EventCx, LayoutCx, LifeCycleCx, PaintCx, UpdateCx};
+pub use linear_layout::LinearLayout;
+pub use raw_event::{Event, LifeCycle, MouseEvent, ViewContext};
 pub use widget::{AnyWidget, Widget};

@@ -22,8 +22,8 @@ use glazier::kurbo::{Point, Rect, Size};
 use vello::kurbo::Affine;
 use vello::{SceneBuilder, SceneFragment};
 
-use crate::widget::AnyWidget;
-use crate::{id::Id, Bloom, Widget};
+use super::widget::{AnyWidget, Widget};
+use crate::{id::Id, Bloom};
 
 use super::{
     contexts::LifeCycleCx, AccessCx, BoxConstraints, CxState, Event, EventCx, LayoutCx, LifeCycle,
