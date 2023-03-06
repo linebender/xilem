@@ -56,22 +56,18 @@ impl Button {
 const LABEL_INSETS: Insets = Insets::uniform_xy(8., 2.);
 
 impl Widget for Button {
-    fn update(&mut self, cx: &mut UpdateCx) {
-        cx.request_layout();
-    }
-
     fn event(&mut self, cx: &mut EventCx, event: &Event) {
         match event {
             Event::MouseDown(_) => {
                 cx.set_active(true);
-                // TODO: request paint
+                cx.request_paint();
             }
             Event::MouseUp(_) => {
-                if cx.is_hot() {
+                if cx.is_hot() && cx.is_active() {
                     cx.add_message(Message::new(self.id_path.clone(), ()));
                 }
                 cx.set_active(false);
-                // TODO: request paint
+                cx.request_paint();
             }
             Event::TargetedAccessibilityAction(request) => match request.action {
                 accesskit::Action::Default => {
@@ -90,6 +86,10 @@ impl Widget for Button {
             LifeCycle::HotChanged(_) => cx.request_paint(),
             _ => (),
         }
+    }
+
+    fn update(&mut self, cx: &mut UpdateCx) {
+        cx.request_layout();
     }
 
     fn layout(&mut self, cx: &mut LayoutCx, bc: &BoxConstraints) -> Size {
