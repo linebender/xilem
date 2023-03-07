@@ -12,141 +12,100 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! A virtualized list of items.
-//!
-//! This is a hack for experimentation.
+use std::any::Any;
+use std::marker::PhantomData;
+use crate::{Id, MessageResult};
+use crate::view::{Cx, ViewSequence};
+use crate::widget::{ChangeFlags, Pod};
 
-use std::{any::Any, collections::BTreeMap, marker::PhantomData};
-
-use crate::{event::EventResult, id::Id, widget::Pod};
-
-use super::{Cx, View};
-
-pub struct List<T, A, V, F: Fn(usize) -> V> {
-    n_items: usize,
-    item_height: f64,
-    callback: F,
-    phantom: PhantomData<fn() -> (T, A)>,
+/// A simple view sequence which builds a dynamic amount of sub sequences.
+pub struct List<T, A, VT: ViewSequence<T, A>, F: Fn(usize) -> VT + Send> {
+    items: usize,
+    build: F,
+    phantom: PhantomData<fn() -> (T, A, VT)>,
 }
 
-pub struct ListState<T, A, V: View<T, A>> {
-    add_req: Vec<usize>,
-    remove_req: Vec<usize>,
-    items: BTreeMap<usize, ItemState<T, A, V>>,
+/// The state of a List sequence
+pub struct ListState<T, A, VT: ViewSequence<T, A>> {
+    views: Vec<(VT, VT::State)>,
+    element_count: usize,
 }
 
-struct ItemState<T, A, V: View<T, A>> {
-    id: Id,
-    view: V,
-    state: V::State,
+/// creates a new `List` sequence.
+pub fn list<T, A, VT: ViewSequence<T, A>, F: Fn(usize) -> VT + Send>(items: usize, build: F) -> List<T, A, VT, F> {
+    List {
+        items,
+        build,
+        phantom: PhantomData,
+    }
 }
 
-pub fn list<T, A, V, F: Fn(usize) -> V>(
-    n_items: usize,
-    item_height: f64,
-    callback: F,
-) -> List<T, A, V, F> {
-    List::new(n_items, item_height, callback)
-}
+impl<T, A, VT: ViewSequence<T, A>, F: Fn(usize) -> VT + Send> ViewSequence<T, A> for List<T, A, VT, F> {
+    type State = ListState<T, A, VT>;
 
-impl<T, A, V, F: Fn(usize) -> V> List<T, A, V, F> {
-    pub fn new(n_items: usize, item_height: f64, callback: F) -> Self {
-        List {
-            n_items,
-            item_height,
-            callback,
-            phantom: Default::default(),
+    fn build(&self, cx: &mut Cx) -> (Self::State, Vec<Pod>) {
+        let (views, elements) = (0..self.items).into_iter()
+            .map(|index|(self.build)(index))
+            .fold((vec![], vec![]), |(mut state, mut elements), vt|{
+                let (vt_state, mut vt_elements) = vt.build(cx);
+                state.push((vt, vt_state));
+                elements.append(&mut vt_elements);
+                (state, elements)
+            });
+
+        let element_count = elements.len();
+        (ListState {views, element_count}, elements)
+    }
+
+    fn rebuild(&self, cx: &mut Cx, prev: &Self, state: &mut Self::State, offset: usize, element: &mut Vec<Pod>) -> (ChangeFlags, usize) {
+        let prev_elements = element.len();
+        // Common length
+        let (mut flags, mut new_offset) = (0..(self.items.min(prev.items))).into_iter()
+            .zip(&mut state.views)
+            .fold((ChangeFlags::empty(), offset), |(flags, offset), (index, (prev, state))|{
+                let vt = (self.build)(index);
+                let (vt_flags, new_offset) = vt.rebuild(cx, prev, state, offset, element);
+                *prev = vt;
+                (flags | vt_flags, new_offset)
+            });
+
+        while element.len() > state.element_count {
+            // If this list shrinks, it removes the always the last views.
+            // offset is the first element after the rebuild elements
+            element.remove(new_offset);
         }
-    }
-}
 
-impl<T, A, V: View<T, A>, F: Fn(usize) -> V + Send> View<T, A> for List<T, A, V, F>
-where
-    V::Element: 'static,
-{
-    type State = ListState<T, A, V>;
-
-    type Element = crate::widget::list::List;
-
-    fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
-        let (id, element) = cx.with_new_id(|cx| {
-            crate::widget::list::List::new(cx.id_path().clone(), self.n_items, self.item_height)
-        });
-        let state = ListState {
-            add_req: Vec::new(),
-            remove_req: Vec::new(),
-            items: BTreeMap::new(),
-        };
-        (id, state, element)
-    }
-
-    fn rebuild(
-        &self,
-        cx: &mut Cx,
-        _prev: &Self,
-        id: &mut Id,
-        state: &mut Self::State,
-        element: &mut Self::Element,
-    ) -> bool {
-        // TODO: allow updating of n_items and item_height
-        let mut changed = !state.add_req.is_empty() || !state.remove_req.is_empty();
-        cx.with_id(*id, |cx| {
-            for (i, child_state) in &mut state.items {
-                let child_view = (self.callback)(*i);
-                let pod = element.child_mut(*i);
-                let child_element = pod.downcast_mut().unwrap();
-                let child_changed = child_view.rebuild(
-                    cx,
-                    &child_state.view,
-                    &mut child_state.id,
-                    &mut child_state.state,
-                    child_element,
-                );
-                if child_changed {
-                    pod.request_update();
-                }
-                changed |= child_changed;
-                child_state.view = child_view;
-            }
-            for i in state.add_req.drain(..) {
-                let child_view = (self.callback)(i);
-                let (child_id, child_state, child_element) = child_view.build(cx);
-                element.set_child(i, Pod::new(child_element));
-                state.items.insert(
-                    i,
-                    ItemState {
-                        id: child_id,
-                        view: child_view,
-                        state: child_state,
-                    },
-                );
-            }
-            for i in state.remove_req.drain(..) {
-                element.remove_child(i);
-                state.items.remove(&i);
-            }
-        });
-        changed
-    }
-
-    fn event(
-        &self,
-        id_path: &[Id],
-        state: &mut Self::State,
-        event: Box<dyn Any>,
-        app_state: &mut T,
-    ) -> EventResult<A> {
-        if let Some((id, tl)) = id_path.split_first() {
-            if let Some((_, s)) = state.items.iter_mut().find(|(_, s)| s.id == *id) {
-                s.view.event(tl, &mut s.state, event, app_state)
-            } else {
-                EventResult::Stale
-            }
-        } else {
-            let req: &crate::widget::list::ListChildRequest = event.downcast_ref().unwrap();
-            state.add_req.extend(&req.add);
-            state.remove_req.extend(&req.remove);
-            EventResult::RequestRebuild
+        while state.views.len() > self.items {
+            state.views.pop();
         }
+
+        while self.items > state.views.len() {
+            let vt = (self.build)(state.views.len());
+            let (vt_state, elements) = vt.build(cx);
+            state.views.push((vt, vt_state));
+            let count = elements.len();
+            new_offset = elements.into_iter().fold(new_offset, |new_offset, pod|{element.insert(new_offset, pod); new_offset + 1});
+        }
+
+        state.element_count = new_offset - offset;
+
+        // We only check if our length changes. If one of the sub sequences changes thier size they
+        // have to set ChangeFlags::all() them self's.
+        if self.items != prev.items {
+            flags |= ChangeFlags::all();
+        }
+
+        (flags, new_offset)
+    }
+
+    fn message(&self, id_path: &[Id], state: &mut Self::State, message: Box<dyn Any>, app_state: &mut T) -> MessageResult<A> {
+        state.views.iter_mut()
+            .fold(MessageResult::Stale(message), |result, (vt, vt_state)|{ result.or(|message|{
+                vt.message(id_path, vt_state, message, app_state)
+            })})
+    }
+
+    fn count(&self, state: &Self::State) -> usize {
+        state.element_count
     }
 }

@@ -106,7 +106,7 @@ impl<T, A, VT: ViewSequence<T, A>> ViewSequence<T, A> for Option<VT> {
                     element.remove(offset);
                 }
                 *state = None;
-                (ChangeFlags::TREE, offset)
+                (ChangeFlags::all(), offset)
             }
             (Some(this), None, None) => {
                 let (seq_state, mut elements) = this.build(cx);
@@ -115,7 +115,7 @@ impl<T, A, VT: ViewSequence<T, A>> ViewSequence<T, A> for Option<VT> {
                 while !elements.is_empty() {
                     element.insert(offset, elements.pop().unwrap());
                 }
-                (ChangeFlags::TREE, offset + additional)
+                (ChangeFlags::all(), offset + additional)
             }
             (None, None, None) => (ChangeFlags::empty(), offset),
             _ => panic!("non matching state and prev value"),
