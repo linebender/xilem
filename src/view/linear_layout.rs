@@ -18,8 +18,8 @@ use crate::event::MessageResult;
 use crate::geometry::Axis;
 use crate::id::Id;
 use crate::view::sequence::ViewSequence;
-use crate::widget::{self, ChangeFlags};
 use crate::view::ViewMarker;
+use crate::widget::{self, ChangeFlags};
 
 use super::{Cx, View};
 

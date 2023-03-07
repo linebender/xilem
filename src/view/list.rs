@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::any::Any;
-use std::marker::PhantomData;
-use crate::{Id, MessageResult};
 use crate::view::{Cx, ViewSequence};
 use crate::widget::{ChangeFlags, Pod};
+use crate::{Id, MessageResult};
+use std::any::Any;
+use std::marker::PhantomData;
 
 /// A simple view sequence which builds a dynamic amount of sub sequences.
 pub struct List<T, A, VT: ViewSequence<T, A>, F: Fn(usize) -> VT + Send> {
@@ -32,7 +32,10 @@ pub struct ListState<T, A, VT: ViewSequence<T, A>> {
 }
 
 /// creates a new `List` sequence.
-pub fn list<T, A, VT: ViewSequence<T, A>, F: Fn(usize) -> VT + Send>(items: usize, build: F) -> List<T, A, VT, F> {
+pub fn list<T, A, VT: ViewSequence<T, A>, F: Fn(usize) -> VT + Send>(
+    items: usize,
+    build: F,
+) -> List<T, A, VT, F> {
     List {
         items,
         build,
@@ -40,13 +43,16 @@ pub fn list<T, A, VT: ViewSequence<T, A>, F: Fn(usize) -> VT + Send>(items: usiz
     }
 }
 
-impl<T, A, VT: ViewSequence<T, A>, F: Fn(usize) -> VT + Send> ViewSequence<T, A> for List<T, A, VT, F> {
+impl<T, A, VT: ViewSequence<T, A>, F: Fn(usize) -> VT + Send> ViewSequence<T, A>
+    for List<T, A, VT, F>
+{
     type State = ListState<T, A, VT>;
 
     fn build(&self, cx: &mut Cx) -> (Self::State, Vec<Pod>) {
-        let (views, elements) = (0..self.items).into_iter()
-            .map(|index|(self.build)(index))
-            .fold((vec![], vec![]), |(mut state, mut elements), vt|{
+        let (views, elements) = (0..self.items)
+            .into_iter()
+            .map(|index| (self.build)(index))
+            .fold((vec![], vec![]), |(mut state, mut elements), vt| {
                 let (vt_state, mut vt_elements) = vt.build(cx);
                 state.push((vt, vt_state));
                 elements.append(&mut vt_elements);
@@ -54,20 +60,37 @@ impl<T, A, VT: ViewSequence<T, A>, F: Fn(usize) -> VT + Send> ViewSequence<T, A>
             });
 
         let element_count = elements.len();
-        (ListState {views, element_count}, elements)
+        (
+            ListState {
+                views,
+                element_count,
+            },
+            elements,
+        )
     }
 
-    fn rebuild(&self, cx: &mut Cx, prev: &Self, state: &mut Self::State, offset: usize, element: &mut Vec<Pod>) -> (ChangeFlags, usize) {
+    fn rebuild(
+        &self,
+        cx: &mut Cx,
+        prev: &Self,
+        state: &mut Self::State,
+        offset: usize,
+        element: &mut Vec<Pod>,
+    ) -> (ChangeFlags, usize) {
         let prev_elements = element.len();
         // Common length
-        let (mut flags, mut new_offset) = (0..(self.items.min(prev.items))).into_iter()
+        let (mut flags, mut new_offset) = (0..(self.items.min(prev.items)))
+            .into_iter()
             .zip(&mut state.views)
-            .fold((ChangeFlags::empty(), offset), |(flags, offset), (index, (prev, state))|{
-                let vt = (self.build)(index);
-                let (vt_flags, new_offset) = vt.rebuild(cx, prev, state, offset, element);
-                *prev = vt;
-                (flags | vt_flags, new_offset)
-            });
+            .fold(
+                (ChangeFlags::empty(), offset),
+                |(flags, offset), (index, (prev, state))| {
+                    let vt = (self.build)(index);
+                    let (vt_flags, new_offset) = vt.rebuild(cx, prev, state, offset, element);
+                    *prev = vt;
+                    (flags | vt_flags, new_offset)
+                },
+            );
 
         while element.len() > state.element_count {
             // If this list shrinks, it removes the always the last views.
@@ -84,7 +107,10 @@ impl<T, A, VT: ViewSequence<T, A>, F: Fn(usize) -> VT + Send> ViewSequence<T, A>
             let (vt_state, elements) = vt.build(cx);
             state.views.push((vt, vt_state));
             let count = elements.len();
-            new_offset = elements.into_iter().fold(new_offset, |new_offset, pod|{element.insert(new_offset, pod); new_offset + 1});
+            new_offset = elements.into_iter().fold(new_offset, |new_offset, pod| {
+                element.insert(new_offset, pod);
+                new_offset + 1
+            });
         }
 
         state.element_count = new_offset - offset;
@@ -98,11 +124,19 @@ impl<T, A, VT: ViewSequence<T, A>, F: Fn(usize) -> VT + Send> ViewSequence<T, A>
         (flags, new_offset)
     }
 
-    fn message(&self, id_path: &[Id], state: &mut Self::State, message: Box<dyn Any>, app_state: &mut T) -> MessageResult<A> {
-        state.views.iter_mut()
-            .fold(MessageResult::Stale(message), |result, (vt, vt_state)|{ result.or(|message|{
-                vt.message(id_path, vt_state, message, app_state)
-            })})
+    fn message(
+        &self,
+        id_path: &[Id],
+        state: &mut Self::State,
+        message: Box<dyn Any>,
+        app_state: &mut T,
+    ) -> MessageResult<A> {
+        state
+            .views
+            .iter_mut()
+            .fold(MessageResult::Stale(message), |result, (vt, vt_state)| {
+                result.or(|message| vt.message(id_path, vt_state, message, app_state))
+            })
     }
 
     fn count(&self, state: &Self::State) -> usize {

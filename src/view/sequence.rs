@@ -53,7 +53,10 @@ pub trait ViewSequence<T, A = ()>: Send {
 }
 
 // ViewMarker is already a dependency of View but Rusts orphan rules dont work if we remove it here.
-impl<T, A, V: View<T, A> + ViewMarker> ViewSequence<T, A> for V where V::Element: Widget + 'static {
+impl<T, A, V: View<T, A> + ViewMarker> ViewSequence<T, A> for V
+where
+    V::Element: Widget + 'static,
+{
     type State = (<V as View<T, A>>::State, Id);
 
     fn build(&self, cx: &mut Cx) -> (Self::State, Vec<Pod>) {
@@ -61,17 +64,37 @@ impl<T, A, V: View<T, A> + ViewMarker> ViewSequence<T, A> for V where V::Element
         ((state, id), vec![Pod::new(element)])
     }
 
-    fn rebuild(&self, cx: &mut Cx, prev: &Self, state: &mut Self::State, offset: usize, element: &mut Vec<Pod>) -> (ChangeFlags, usize) {
+    fn rebuild(
+        &self,
+        cx: &mut Cx,
+        prev: &Self,
+        state: &mut Self::State,
+        offset: usize,
+        element: &mut Vec<Pod>,
+    ) -> (ChangeFlags, usize) {
         let downcast = element[offset].downcast_mut().unwrap();
-        let flags = <V as View<T, A>>::rebuild(self, cx, prev, &mut state.1, &mut state.0, downcast);
+        let flags =
+            <V as View<T, A>>::rebuild(self, cx, prev, &mut state.1, &mut state.0, downcast);
         let flags = element[offset].mark(flags);
         (flags, offset + 1)
     }
 
-    fn message(&self, id_path: &[Id], state: &mut Self::State, message: Box<dyn Any>, app_state: &mut T) -> MessageResult<A> {
+    fn message(
+        &self,
+        id_path: &[Id],
+        state: &mut Self::State,
+        message: Box<dyn Any>,
+        app_state: &mut T,
+    ) -> MessageResult<A> {
         if let Some((first, rest_path)) = id_path.split_first() {
             if first == &state.1 {
-                return <V as View<T, A>>::message(self, rest_path, &mut state.0, message, app_state);
+                return <V as View<T, A>>::message(
+                    self,
+                    rest_path,
+                    &mut state.0,
+                    message,
+                    app_state,
+                );
             }
         }
         MessageResult::Stale(message)
@@ -95,11 +118,16 @@ impl<T, A, VT: ViewSequence<T, A>> ViewSequence<T, A> for Option<VT> {
         }
     }
 
-    fn rebuild(&self, cx: &mut Cx, prev: &Self, state: &mut Self::State, offset: usize, element: &mut Vec<Pod>) -> (ChangeFlags, usize) {
+    fn rebuild(
+        &self,
+        cx: &mut Cx,
+        prev: &Self,
+        state: &mut Self::State,
+        offset: usize,
+        element: &mut Vec<Pod>,
+    ) -> (ChangeFlags, usize) {
         match (self, &mut *state, prev) {
-            (Some(this), Some(state), Some(prev)) => {
-                this.rebuild(cx, prev, state, offset, element)
-            }
+            (Some(this), Some(state), Some(prev)) => this.rebuild(cx, prev, state, offset, element),
             (None, Some(seq_state), Some(prev)) => {
                 let mut count = prev.count(&seq_state);
                 while count > 0 {
@@ -122,7 +150,13 @@ impl<T, A, VT: ViewSequence<T, A>> ViewSequence<T, A> for Option<VT> {
         }
     }
 
-    fn message(&self, id_path: &[Id], state: &mut Self::State, message: Box<dyn Any>, app_state: &mut T) -> MessageResult<A> {
+    fn message(
+        &self,
+        id_path: &[Id],
+        state: &mut Self::State,
+        message: Box<dyn Any>,
+        app_state: &mut T,
+    ) -> MessageResult<A> {
         match (self, state) {
             (Some(vt), Some(state)) => vt.message(id_path, state, message, app_state),
             (None, None) => MessageResult::Stale(message),

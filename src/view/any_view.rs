@@ -16,12 +16,12 @@ use std::{
     ops::{Deref, DerefMut},
 };
 
+use crate::view::ViewMarker;
 use crate::{
     event::MessageResult,
     id::Id,
     widget::{AnyWidget, ChangeFlags},
 };
-use crate::view::ViewMarker;
 
 use super::{Cx, View};
 
