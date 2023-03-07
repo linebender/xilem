@@ -22,8 +22,8 @@ use glazier::kurbo::{Point, Rect, Size};
 use vello::kurbo::Affine;
 use vello::{SceneBuilder, SceneFragment};
 
-use crate::widget::AnyWidget;
-use crate::{id::Id, Bloom, Widget};
+use super::widget::{AnyWidget, Widget};
+use crate::{id::Id, Bloom};
 
 use super::{
     contexts::LifeCycleCx, AccessCx, BoxConstraints, CxState, Event, EventCx, LayoutCx, LifeCycle,
@@ -127,7 +127,6 @@ impl WidgetState {
     fn upwards_flags(&self) -> PodFlags {
         self.flags & PodFlags::UPWARD_FLAGS
     }
-
 
     fn merge_up(&mut self, child_state: &mut WidgetState) {
         self.flags |= child_state.upwards_flags();
@@ -382,7 +381,6 @@ impl Pod {
                 .remove(PodFlags::REQUEST_ACCESSIBILITY | PodFlags::HAS_ACCESSIBILITY);
         }
     }
-
 
     pub fn paint_raw(&mut self, cx: &mut PaintCx, builder: &mut SceneBuilder) {
         let mut inner_cx = PaintCx {

@@ -1,4 +1,5 @@
-use xilem::{button, h_stack, v_stack, App, AppLauncher, View};
+use xilem::view::{button, h_stack, v_stack};
+use xilem::{view::View, App, AppLauncher};
 
 fn app_logic(data: &mut i32) -> impl View<i32> {
     // here's some logic, deriving state for the view from our state

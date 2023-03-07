@@ -12,18 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-mod box_constraints;
-pub mod button;
-mod contexts;
-mod core;
-//pub mod layout_observer;
-//pub mod list;
-pub mod linear_layout;
-pub mod piet_scene_helpers;
-mod raw_event;
-//pub mod scroll_view;
-//pub mod text;
-
 use std::any::Any;
 use std::ops::DerefMut;
 
@@ -31,11 +19,9 @@ use crate::geometry::Axis;
 use glazier::kurbo::Size;
 use vello::SceneBuilder;
 
-pub use self::box_constraints::BoxConstraints;
-pub use self::contexts::{AccessCx, CxState, EventCx, LayoutCx, LifeCycleCx, PaintCx, UpdateCx};
-pub use self::core::Pod;
-pub(crate) use self::core::{ChangeFlags, PodFlags, WidgetState};
-pub use self::raw_event::{Event, LifeCycle, ViewContext};
+use super::box_constraints::BoxConstraints;
+use super::contexts::{AccessCx, EventCx, LayoutCx, LifeCycleCx, PaintCx, UpdateCx};
+use super::raw_event::{Event, LifeCycle};
 
 /// A basic widget trait.
 pub trait Widget {
