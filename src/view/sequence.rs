@@ -3,6 +3,7 @@ use crate::id::Id;
 use crate::view::{Cx, View, ViewMarker};
 use crate::widget::{ChangeFlags, Pod, Widget};
 use std::any::Any;
+use crate::VecSplice;
 
 /// A sequence on view nodes.
 ///
@@ -32,9 +33,8 @@ pub trait ViewSequence<T, A = ()>: Send {
         cx: &mut Cx,
         prev: &Self,
         state: &mut Self::State,
-        offset: usize,
-        element: &mut Vec<Pod>,
-    ) -> (ChangeFlags, usize);
+        element: &mut VecSplice<Pod>,
+    ) -> ChangeFlags;
 
     /// Propagate a message.
     ///
@@ -69,14 +69,14 @@ where
         cx: &mut Cx,
         prev: &Self,
         state: &mut Self::State,
-        offset: usize,
-        element: &mut Vec<Pod>,
-    ) -> (ChangeFlags, usize) {
-        let downcast = element[offset].downcast_mut().unwrap();
+        element: &mut VecSplice<Pod>,
+    ) -> ChangeFlags {
+        let el = element.mutate();
+        let downcast = el.downcast_mut().unwrap();
         let flags =
             <V as View<T, A>>::rebuild(self, cx, prev, &mut state.1, &mut state.0, downcast);
-        let flags = element[offset].mark(flags);
-        (flags, offset + 1)
+
+        el.mark(flags)
     }
 
     fn message(
@@ -123,29 +123,28 @@ impl<T, A, VT: ViewSequence<T, A>> ViewSequence<T, A> for Option<VT> {
         cx: &mut Cx,
         prev: &Self,
         state: &mut Self::State,
-        offset: usize,
-        element: &mut Vec<Pod>,
-    ) -> (ChangeFlags, usize) {
+        element: &mut VecSplice<Pod>,
+    ) -> ChangeFlags {
         match (self, &mut *state, prev) {
-            (Some(this), Some(state), Some(prev)) => this.rebuild(cx, prev, state, offset, element),
+            (Some(this), Some(state), Some(prev)) => this.rebuild(cx, prev, state, element),
             (None, Some(seq_state), Some(prev)) => {
                 let mut count = prev.count(&seq_state);
-                while count > 0 {
-                    element.remove(offset);
-                }
+                element.delete(count);
                 *state = None;
-                (ChangeFlags::all(), offset)
+
+                ChangeFlags::all()
             }
             (Some(this), None, None) => {
                 let (seq_state, mut elements) = this.build(cx);
-                let additional = elements.len();
+
                 *state = Some(seq_state);
-                while !elements.is_empty() {
-                    element.insert(offset, elements.pop().unwrap());
+                for el in elements {
+                    element.push(el);
                 }
-                (ChangeFlags::all(), offset + additional)
+
+                ChangeFlags::all()
             }
-            (None, None, None) => (ChangeFlags::empty(), offset),
+            (None, None, None) => ChangeFlags::empty(),
             _ => panic!("non matching state and prev value"),
         }
     }

@@ -14,7 +14,7 @@
 
 use crate::view::{Cx, ViewSequence};
 use crate::widget::{ChangeFlags, Pod};
-use crate::{Id, MessageResult};
+use crate::{Id, MessageResult, VecSplice};
 use std::any::Any;
 use std::marker::PhantomData;
 
@@ -28,7 +28,6 @@ pub struct List<T, A, VT: ViewSequence<T, A>, F: Fn(usize) -> VT + Send> {
 /// The state of a List sequence
 pub struct ListState<T, A, VT: ViewSequence<T, A>> {
     views: Vec<(VT, VT::State)>,
-    element_count: usize,
 }
 
 /// creates a new `List` sequence.
@@ -59,11 +58,9 @@ impl<T, A, VT: ViewSequence<T, A>, F: Fn(usize) -> VT + Send> ViewSequence<T, A>
                 (state, elements)
             });
 
-        let element_count = elements.len();
         (
             ListState {
                 views,
-                element_count,
             },
             elements,
         )
@@ -74,46 +71,36 @@ impl<T, A, VT: ViewSequence<T, A>, F: Fn(usize) -> VT + Send> ViewSequence<T, A>
         cx: &mut Cx,
         prev: &Self,
         state: &mut Self::State,
-        offset: usize,
-        element: &mut Vec<Pod>,
-    ) -> (ChangeFlags, usize) {
-        let prev_elements = element.len();
+        element: &mut VecSplice<Pod>,
+    ) -> ChangeFlags {
         // Common length
         let (mut flags, mut new_offset) = (0..(self.items.min(prev.items)))
             .into_iter()
             .zip(&mut state.views)
             .fold(
-                (ChangeFlags::empty(), offset),
-                |(flags, offset), (index, (prev, state))| {
+                ChangeFlags::empty(),
+                |flags, (index, (prev, state))| {
                     let vt = (self.build)(index);
-                    let (vt_flags, new_offset) = vt.rebuild(cx, prev, state, offset, element);
+                    let vt_flags = vt.rebuild(cx, prev, state, element);
                     *prev = vt;
-                    (flags | vt_flags, new_offset)
+                    flags | vt_flags
                 },
             );
 
-        while element.len() > state.element_count {
-            // If this list shrinks, it removes the always the last views.
-            // offset is the first element after the rebuild elements
-            element.remove(new_offset);
-        }
-
-        while state.views.len() > self.items {
-            state.views.pop();
+        if self.items < prev.items {
+            for (prev, state) in state.views.splice(self.items.., []) {
+                element.delete(prev.count(&state));
+            }
         }
 
         while self.items > state.views.len() {
             let vt = (self.build)(state.views.len());
             let (vt_state, elements) = vt.build(cx);
             state.views.push((vt, vt_state));
-            let count = elements.len();
-            new_offset = elements.into_iter().fold(new_offset, |new_offset, pod| {
-                element.insert(new_offset, pod);
-                new_offset + 1
-            });
+            for el in elements {
+                element.push(el);
+            }
         }
-
-        state.element_count = new_offset - offset;
 
         // We only check if our length changes. If one of the sub sequences changes thier size they
         // have to set ChangeFlags::all() them self's.
@@ -121,7 +108,7 @@ impl<T, A, VT: ViewSequence<T, A>, F: Fn(usize) -> VT + Send> ViewSequence<T, A>
             flags |= ChangeFlags::all();
         }
 
-        (flags, new_offset)
+        flags
     }
 
     fn message(
