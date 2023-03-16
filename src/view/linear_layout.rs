@@ -86,7 +86,8 @@ impl<T, A, VT: ViewSequence<T, A>> View<T, A> for LinearLayout<T, A, VT> {
         state: &mut Self::State,
         element: &mut Self::Element,
     ) -> ChangeFlags {
-        let mut splice = VecSplice::new(&mut element.children, &mut vec![]);
+        let mut scratch = vec![];
+        let mut splice = VecSplice::new(&mut element.children, &mut scratch);
 
         let mut flags = cx.with_id(*id, |cx| {
             self.children

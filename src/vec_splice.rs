@@ -33,11 +33,7 @@ impl<'a, 'b, T> VecSplice<'a, 'b, T> {
     }
 
     pub fn push(&mut self, value: T) {
-        if self.v.len() > self.ix {
-            let l = self.scratch.len();
-            self.scratch.extend(self.v.splice(self.ix.., []));
-            self.scratch[l..].reverse();
-        }
+        self.clear_tail();
         self.v.push(value);
         self.ix += 1;
     }
@@ -53,5 +49,20 @@ impl<'a, 'b, T> VecSplice<'a, 'b, T> {
 
     pub fn len(&self) -> usize {
         self.ix
+    }
+
+    pub fn as_vec<R, F: FnOnce(&mut Vec<T>) -> R>(&mut self, f: F) -> R {
+        self.clear_tail();
+        let ret = f(&mut self.v);
+        self.ix = self.v.len();
+        ret
+    }
+
+    fn clear_tail(&mut self) {
+        if self.v.len() > self.ix {
+            let l = self.scratch.len();
+            self.scratch.extend(self.v.splice(self.ix.., []));
+            self.scratch[l..].reverse();
+        }
     }
 }

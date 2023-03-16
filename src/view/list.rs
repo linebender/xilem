@@ -28,6 +28,7 @@ pub struct List<T, A, VT: ViewSequence<T, A>, F: Fn(usize) -> VT + Send> {
 /// The state of a List sequence
 pub struct ListState<T, A, VT: ViewSequence<T, A>> {
     views: Vec<(VT, VT::State)>,
+    element_count: usize,
 }
 
 /// creates a new `List` sequence.
@@ -47,23 +48,22 @@ impl<T, A, VT: ViewSequence<T, A>, F: Fn(usize) -> VT + Send> ViewSequence<T, A>
 {
     type State = ListState<T, A, VT>;
 
-    fn build(&self, cx: &mut Cx) -> (Self::State, Vec<Pod>) {
-        let (views, elements) = (0..self.items)
+    fn build(&self, cx: &mut Cx, elements: &mut Vec<Pod>) -> Self::State {
+        let leading = elements.len();
+
+        let views = (0..self.items)
             .into_iter()
             .map(|index| (self.build)(index))
-            .fold((vec![], vec![]), |(mut state, mut elements), vt| {
-                let (vt_state, mut vt_elements) = vt.build(cx);
+            .fold(vec![], |mut state, vt| {
+                let vt_state = vt.build(cx, elements);
                 state.push((vt, vt_state));
-                elements.append(&mut vt_elements);
-                (state, elements)
+                state
             });
 
-        (
-            ListState {
-                views,
-            },
-            elements,
-        )
+        ListState {
+            views,
+            element_count: elements.len() - leading
+        }
     }
 
     fn rebuild(
@@ -74,7 +74,9 @@ impl<T, A, VT: ViewSequence<T, A>, F: Fn(usize) -> VT + Send> ViewSequence<T, A>
         element: &mut VecSplice<Pod>,
     ) -> ChangeFlags {
         // Common length
-        let (mut flags, mut new_offset) = (0..(self.items.min(prev.items)))
+        let leading = element.len();
+
+        let mut flags = (0..(self.items.min(prev.items)))
             .into_iter()
             .zip(&mut state.views)
             .fold(
@@ -95,11 +97,8 @@ impl<T, A, VT: ViewSequence<T, A>, F: Fn(usize) -> VT + Send> ViewSequence<T, A>
 
         while self.items > state.views.len() {
             let vt = (self.build)(state.views.len());
-            let (vt_state, elements) = vt.build(cx);
+            let vt_state = element.as_vec(|vec|vt.build(cx, vec));
             state.views.push((vt, vt_state));
-            for el in elements {
-                element.push(el);
-            }
         }
 
         // We only check if our length changes. If one of the sub sequences changes thier size they
@@ -107,6 +106,8 @@ impl<T, A, VT: ViewSequence<T, A>, F: Fn(usize) -> VT + Send> ViewSequence<T, A>
         if self.items != prev.items {
             flags |= ChangeFlags::all();
         }
+
+        state.element_count = element.len() - leading;
 
         flags
     }

@@ -136,12 +136,8 @@ impl<T, A, VT: ViewSequence<T, A>> ViewSequence<T, A> for Option<VT> {
                 ChangeFlags::all()
             }
             (Some(this), None, None) => {
-                let (seq_state, mut elements) = this.build(cx);
-
+                let seq_state = element.as_vec(|vec|this.build(cx, vec));
                 *state = Some(seq_state);
-                for el in elements {
-                    element.push(el);
-                }
 
                 ChangeFlags::all()
             }
@@ -190,7 +186,7 @@ macro_rules! impl_view_tuple {
                 prev: &Self,
                 state: &mut Self::State,
                 els: &mut VecSplice<Pod>,
-            ) -> (ChangeFlags, usize) {
+            ) -> ChangeFlags {
                 let mut changed = ChangeFlags::default();
                 $(
                     let el_changed = self.$i.rebuild(cx, &prev.$i, &mut state.$i, els);
