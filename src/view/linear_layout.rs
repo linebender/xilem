@@ -17,6 +17,7 @@ use std::{any::Any, marker::PhantomData};
 use crate::event::MessageResult;
 use crate::geometry::Axis;
 use crate::id::Id;
+use crate::VecSplice;
 use crate::view::sequence::ViewSequence;
 use crate::view::ViewMarker;
 use crate::widget::{self, ChangeFlags};
@@ -71,7 +72,8 @@ impl<T, A, VT: ViewSequence<T, A>> View<T, A> for LinearLayout<T, A, VT> {
     type Element = widget::LinearLayout;
 
     fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
-        let (id, (state, elements)) = cx.with_new_id(|cx| self.children.build(cx));
+        let mut elements = vec![];
+        let (id, state) = cx.with_new_id(|cx| self.children.build(cx, &mut elements));
         let column = widget::LinearLayout::new(elements, self.spacing, self.axis);
         (id, state, column)
     }
@@ -84,9 +86,11 @@ impl<T, A, VT: ViewSequence<T, A>> View<T, A> for LinearLayout<T, A, VT> {
         state: &mut Self::State,
         element: &mut Self::Element,
     ) -> ChangeFlags {
-        let (mut flags, _) = cx.with_id(*id, |cx| {
+        let mut splice = VecSplice::new(&mut element.children, &mut vec![]);
+
+        let mut flags = cx.with_id(*id, |cx| {
             self.children
-                .rebuild(cx, &prev.children, state, 0, &mut element.children)
+                .rebuild(cx, &prev.children, state, &mut splice)
         });
 
         if self.spacing != prev.spacing || self.axis != prev.axis {

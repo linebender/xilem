@@ -23,7 +23,7 @@ pub trait ViewSequence<T, A = ()>: Send {
     type State: Send;
 
     /// Build the associated widgets and initialize all states.
-    fn build(&self, cx: &mut Cx) -> (Self::State, Vec<Pod>);
+    fn build(&self, cx: &mut Cx, elements: &mut Vec<Pod>) -> Self::State;
 
     /// Update the associated widget.
     ///
@@ -59,9 +59,10 @@ where
 {
     type State = (<V as View<T, A>>::State, Id);
 
-    fn build(&self, cx: &mut Cx) -> (Self::State, Vec<Pod>) {
+    fn build(&self, cx: &mut Cx, elements: &mut Vec<Pod>) -> Self::State {
         let (id, state, element) = <V as View<T, A>>::build(self, cx);
-        ((state, id), vec![Pod::new(element)])
+        elements.push(Pod::new(element));
+        (state, id)
     }
 
     fn rebuild(
@@ -100,7 +101,7 @@ where
         MessageResult::Stale(message)
     }
 
-    fn count(&self, state: &Self::State) -> usize {
+    fn count(&self, _state: &Self::State) -> usize {
         1
     }
 }
@@ -108,12 +109,12 @@ where
 impl<T, A, VT: ViewSequence<T, A>> ViewSequence<T, A> for Option<VT> {
     type State = Option<VT::State>;
 
-    fn build(&self, cx: &mut Cx) -> (Self::State, Vec<Pod>) {
+    fn build(&self, cx: &mut Cx, elements: &mut Vec<Pod>) -> Self::State {
         match self {
-            None => (None, vec![]),
+            None => None,
             Some(vt) => {
-                let (state, elements) = vt.build(cx);
-                (Some(state), elements)
+                let state = vt.build(cx, elements);
+                Some(state)
             }
         }
     }
@@ -177,12 +178,10 @@ macro_rules! impl_view_tuple {
         impl<T, A, $( $t: ViewSequence<T, A> ),* > ViewSequence<T, A> for ( $( $t, )* ) {
             type State = ( $( $t::State, )*);
 
-            fn build(&self, cx: &mut Cx) -> (Self::State, Vec<Pod>) {
-                let mut b = ( $( self.$i.build(cx), )* );
-                let state = ( $( b.$i.0, )*);
-                let mut els = vec![];
-                $( els.append(&mut b.$i.1); )*
-                (state, els)
+            fn build(&self, cx: &mut Cx, elements: &mut Vec<Pod>) -> Self::State {
+                let mut b = ( $( self.$i.build(cx, elements), )* );
+                let state = ( $( b.$i, )*);
+                state
             }
 
             fn rebuild(
@@ -190,15 +189,14 @@ macro_rules! impl_view_tuple {
                 cx: &mut Cx,
                 prev: &Self,
                 state: &mut Self::State,
-                offset: usize,
-                els: &mut Vec<Pod>,
+                els: &mut VecSplice<Pod>,
             ) -> (ChangeFlags, usize) {
                 let mut changed = ChangeFlags::default();
                 $(
-                    let (el_changed, offset) = self.$i.rebuild(cx, &prev.$i, &mut state.$i, offset, els);
+                    let el_changed = self.$i.rebuild(cx, &prev.$i, &mut state.$i, els);
                     changed |= el_changed;
                 )*
-                (changed, offset)
+                changed
             }
 
             fn message(
