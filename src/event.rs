@@ -35,7 +35,7 @@ pub enum MessageResult<A> {
     ///
     /// This is a normal outcome for async operation when the tree is changing
     /// dynamically, but otherwise indicates a logic error.
-    Stale,
+    Stale(Box<dyn Any>),
 }
 
 pub struct AsyncWake;
@@ -46,8 +46,15 @@ impl<A> MessageResult<A> {
         match self {
             MessageResult::Action(a) => MessageResult::Action(f(a)),
             MessageResult::RequestRebuild => MessageResult::RequestRebuild,
-            MessageResult::Stale => MessageResult::Stale,
+            MessageResult::Stale(event) => MessageResult::Stale(event),
             MessageResult::Nop => MessageResult::Nop,
+        }
+    }
+
+    pub fn or(self, f: impl FnOnce(Box<dyn Any>) -> Self) -> Self {
+        match self {
+            MessageResult::Stale(event) => f(event),
+            _ => self,
         }
     }
 }

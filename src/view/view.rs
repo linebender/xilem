@@ -41,7 +41,9 @@ use crate::{
 /// and also a type for actions which are passed up the tree in event
 /// propagation. During event handling, mutable access to the app state is
 /// given to view nodes, which in turn can make expose it to callbacks.
-pub trait View<T, A = ()>: Send {
+// We depend on ViewMarker to disallow any View implementations which dont implement ViewMarker.
+// Doing that would lead to pretty strange bugs.
+pub trait View<T, A = ()>: ViewMarker + Send {
     /// Associated state for the view.
     type State: Send;
 
@@ -76,6 +78,11 @@ pub trait View<T, A = ()>: Send {
     ) -> MessageResult<A>;
 }
 
+/// This trait marks a type a View.
+///
+/// This trait is a workaround for rusts orphan rules. It serves as a switch between default and
+/// custom `ViewSequence` implementation. You cant implement `ViewSequence` for types which also
+/// implement `ViewMarker`.
 pub trait ViewMarker {}
 
 #[derive(Clone)]

@@ -356,7 +356,7 @@ where
                         .downcast_mut()
                         .expect("the root widget changed its type, this should never happen!"),
                 );
-                self.root_pod.as_mut().unwrap().mark(changes);
+                let _ = self.root_pod.as_mut().unwrap().mark(changes);
                 assert!(self.cx.is_empty(), "id path imbalance on rebuild");
                 state
             } else {
@@ -408,13 +408,18 @@ impl<T, V: View<T>, F: FnMut(&mut T) -> V> AppTask<T, V, F> {
                         }
                     }
                     AppReq::Wake(id_path) => {
-                        let result = self.view.as_ref().unwrap().message(
-                            &id_path[1..],
-                            self.state.as_mut().unwrap(),
-                            Box::new(AsyncWake),
-                            &mut self.data,
-                        );
-                        if matches!(result, MessageResult::RequestRebuild) {
+                        let needs_rebuild;
+                        {
+                            let result = self.view.as_ref().unwrap().message(
+                                &id_path[1..],
+                                self.state.as_mut().unwrap(),
+                                Box::new(AsyncWake),
+                                &mut self.data,
+                            );
+                            needs_rebuild = matches!(result, MessageResult::RequestRebuild);
+                        }
+
+                        if needs_rebuild {
                             // request re-render from UI thread
                             if self.ui_state == UiState::Start {
                                 if let Some(handle) = self.idle_handle.as_mut() {

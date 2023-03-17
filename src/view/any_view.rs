@@ -16,6 +16,7 @@ use std::{
     ops::{Deref, DerefMut},
 };
 
+use crate::view::ViewMarker;
 use crate::{
     event::MessageResult,
     id::Id,
@@ -116,6 +117,8 @@ where
         }
     }
 }
+
+impl<T, A> ViewMarker for Box<dyn AnyView<T, A> + Send> {}
 
 impl<T, A> View<T, A> for Box<dyn AnyView<T, A> + Send> {
     type State = Box<dyn Any + Send>;
