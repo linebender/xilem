@@ -40,7 +40,7 @@ bitflags! {
         const REQUEST_ACCESSIBILITY = ChangeFlags::ACCESSIBILITY.bits as _;
         const REQUEST_PAINT = ChangeFlags::PAINT.bits as _;
         const TREE_CHANGED = ChangeFlags::TREE.bits as _;
-        const HAS_ACCESSIBILITY = ChangeFlags::HAS_ACCESSIBILITY.bits as _;
+        const DESCENDANT_REQUESTED_ACCESSIBILITY = ChangeFlags::DESCENDANT_REQUESTED_ACCESSIBILITY.bits as _;
 
         // Everything else uses bitmasks greater than the max value of ChangeFlags: mask >= 0x100
         const VIEW_CONTEXT_CHANGED = 0x100;
@@ -51,15 +51,17 @@ bitflags! {
 
         const NEEDS_SET_ORIGIN = 0x1000;
 
-        const UPWARD_FLAGS = Self::REQUEST_LAYOUT.bits
+        const UPWARD_FLAGS = Self::REQUEST_UPDATE.bits
+            | Self::REQUEST_LAYOUT.bits
             | Self::REQUEST_PAINT.bits
             | Self::HAS_ACTIVE.bits
-            | Self::HAS_ACCESSIBILITY.bits
+            | Self::DESCENDANT_REQUESTED_ACCESSIBILITY.bits
             | Self::TREE_CHANGED.bits
             | Self::VIEW_CONTEXT_CHANGED.bits;
         const INIT_FLAGS = Self::REQUEST_UPDATE.bits
             | Self::REQUEST_LAYOUT.bits
             | Self::REQUEST_ACCESSIBILITY.bits
+            | Self::DESCENDANT_REQUESTED_ACCESSIBILITY.bits
             | Self::REQUEST_PAINT.bits
             | Self::TREE_CHANGED.bits;
     }
@@ -74,7 +76,7 @@ bitflags! {
         const ACCESSIBILITY = 4;
         const PAINT = 8;
         const TREE = 0x10;
-        const HAS_ACCESSIBILITY = 0x20;
+        const DESCENDANT_REQUESTED_ACCESSIBILITY = 0x20;
     }
 }
 
@@ -130,6 +132,9 @@ impl WidgetState {
 
     fn merge_up(&mut self, child_state: &mut WidgetState) {
         self.flags |= child_state.upwards_flags();
+        if child_state.flags.contains(PodFlags::REQUEST_ACCESSIBILITY) {
+            self.flags |= PodFlags::DESCENDANT_REQUESTED_ACCESSIBILITY;
+        }
         self.sub_tree = self.sub_tree.union(child_state.sub_tree);
     }
 
@@ -172,7 +177,12 @@ impl Pod {
     pub fn mark(&mut self, flags: ChangeFlags) -> ChangeFlags {
         self.state
             .request(PodFlags::from_bits_truncate(flags.bits as _));
-        ChangeFlags::from_bits_truncate(self.state.upwards_flags().bits as _)
+        let mut flags_up =
+            flags & ChangeFlags::from_bits_truncate(PodFlags::UPWARD_FLAGS.bits as _);
+        if flags.contains(ChangeFlags::ACCESSIBILITY) {
+            flags_up |= ChangeFlags::DESCENDANT_REQUESTED_ACCESSIBILITY;
+        }
+        flags_up
     }
 
     /// Propagate a platform event. As in Druid, a great deal of the event
@@ -361,14 +371,22 @@ impl Pod {
         let new_size = self.widget.layout(&mut child_cx, bc);
         //println!("layout size = {:?}", new_size);
         self.state.size = new_size;
-        self.state.flags.insert(PodFlags::NEEDS_SET_ORIGIN);
+        // Note: here we're always doing requests for downstream processing, but if we
+        // make layout more incremental, we'll probably want to do this only if there
+        // is an actual layout change.
+        self.state
+            .flags
+            .insert(PodFlags::NEEDS_SET_ORIGIN | PodFlags::REQUEST_ACCESSIBILITY);
         self.state.flags.remove(PodFlags::REQUEST_LAYOUT);
+        cx.widget_state.merge_up(&mut self.state);
         self.state.size
     }
 
     ///
     pub fn accessibility(&mut self, cx: &mut AccessCx) {
-        if self.state.flags.contains(PodFlags::HAS_ACCESSIBILITY) {
+        if self.state.flags.intersects(
+            PodFlags::REQUEST_ACCESSIBILITY | PodFlags::DESCENDANT_REQUESTED_ACCESSIBILITY,
+        ) {
             let mut child_cx = AccessCx {
                 cx_state: cx.cx_state,
                 widget_state: &mut self.state,
@@ -376,9 +394,9 @@ impl Pod {
                 node_classes: cx.node_classes,
             };
             self.widget.accessibility(&mut child_cx);
-            self.state
-                .flags
-                .remove(PodFlags::REQUEST_ACCESSIBILITY | PodFlags::HAS_ACCESSIBILITY);
+            self.state.flags.remove(
+                PodFlags::REQUEST_ACCESSIBILITY | PodFlags::DESCENDANT_REQUESTED_ACCESSIBILITY,
+            );
         }
     }
 

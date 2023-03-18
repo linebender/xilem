@@ -8,9 +8,9 @@ mod geometry;
 mod id;
 mod test_scenes;
 mod text;
+mod vec_splice;
 pub mod view;
 pub mod widget;
-mod vec_splice;
 
 pub use app::App;
 pub use app_main::AppLauncher;

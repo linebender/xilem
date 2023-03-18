@@ -17,10 +17,10 @@ use std::{any::Any, marker::PhantomData};
 use crate::event::MessageResult;
 use crate::geometry::Axis;
 use crate::id::Id;
-use crate::VecSplice;
 use crate::view::sequence::ViewSequence;
 use crate::view::ViewMarker;
 use crate::widget::{self, ChangeFlags};
+use crate::VecSplice;
 
 use super::{Cx, View};
 

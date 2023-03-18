@@ -88,7 +88,7 @@ impl Widget for LinearLayout {
             child.accessibility(cx);
         }
 
-        if cx.requested() {
+        if cx.is_requested() {
             let mut builder = accesskit::NodeBuilder::new(accesskit::Role::GenericContainer);
             builder.set_children(
                 self.children
