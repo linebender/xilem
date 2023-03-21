@@ -1,13 +1,15 @@
-use xilem::view::{button, h_stack, v_stack};
-use xilem::{view::View, App, AppLauncher};
+use xilem::view::{button, h_stack, v_stack, View};
+use xilem::{App, AppLauncher};
+use xilem::widget::Pod;
 
-fn app_logic(data: &mut i32) -> impl View<i32> {
+fn app_logic(data: &mut i32) -> impl View<Pod, i32> {
     // here's some logic, deriving state for the view from our state
     let label = if *data == 1 {
         "clicked 1 time".to_string()
     } else {
         format!("clicked {data} times")
     };
+    println!("rebuild label {}", label);
 
     // The actual UI Code starts here
     v_stack((

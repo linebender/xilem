@@ -23,7 +23,7 @@ use vello::kurbo::Affine;
 use vello::{SceneBuilder, SceneFragment};
 
 use super::widget::{AnyWidget, Widget};
-use crate::{id::Id, Bloom};
+use crate::{id::Id, Bloom, Element};
 
 use super::{
     contexts::LifeCycleCx, AccessCx, BoxConstraints, CxState, Event, EventCx, LayoutCx, LifeCycle,
@@ -142,6 +142,26 @@ impl WidgetState {
     }
 }
 
+impl Element for Pod {
+    /// Returns the wrapped widget.
+    fn downcast_mut<T: 'static>(&mut self) -> Option<&mut T> {
+        (*self.widget).as_any_mut().downcast_mut()
+    }
+
+    /// Sets the requested flags on this pod and returns the Flags the parent of this Pod should set.
+    fn mark(&mut self, flags: ChangeFlags) -> ChangeFlags {
+        self.state
+            .request(PodFlags::from_bits_truncate(flags.bits as _));
+        ChangeFlags::from_bits_truncate(self.state.upwards_flags().bits as _)
+    }
+}
+
+impl<W: Widget + 'static> From<W> for Pod {
+    fn from(widget: W) -> Self {
+        Self::new(widget)
+    }
+}
+
 impl Pod {
     /// Create a new pod.
     ///
@@ -161,18 +181,6 @@ impl Pod {
             fragment: SceneFragment::default(),
             widget,
         }
-    }
-
-    /// Returns the wrapped widget.
-    pub fn downcast_mut<'a, T: 'static>(&'a mut self) -> Option<&'a mut T> {
-        (*self.widget).as_any_mut().downcast_mut()
-    }
-
-    /// Sets the requested flags on this pod and returns the Flags the parent of this Pod should set.
-    pub fn mark(&mut self, flags: ChangeFlags) -> ChangeFlags {
-        self.state
-            .request(PodFlags::from_bits_truncate(flags.bits as _));
-        ChangeFlags::from_bits_truncate(self.state.upwards_flags().bits as _)
     }
 
     /// Propagate a platform event. As in Druid, a great deal of the event

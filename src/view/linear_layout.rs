@@ -18,11 +18,11 @@ use crate::event::MessageResult;
 use crate::geometry::Axis;
 use crate::id::Id;
 use crate::VecSplice;
-use crate::view::sequence::ViewSequence;
-use crate::view::ViewMarker;
-use crate::widget::{self, ChangeFlags};
+use crate::view::typed_view::ViewMarker;
+use crate::view::view::ViewSequence;
+use crate::widget::{self, ChangeFlags, Pod};
 
-use super::{Cx, View};
+use super::{Cx, TypedView};
 
 /// LinearLayout is a simple view which does layout for the specified ViewSequence.
 ///
@@ -30,7 +30,7 @@ use super::{Cx, View};
 ///
 /// This View is only temporary is probably going to be replaced by something like Druid's Flex
 /// widget.
-pub struct LinearLayout<T, A, VT: ViewSequence<T, A>> {
+pub struct LinearLayout<T, A, VT> {
     children: VT,
     spacing: f64,
     axis: Axis,
@@ -38,16 +38,16 @@ pub struct LinearLayout<T, A, VT: ViewSequence<T, A>> {
 }
 
 /// creates a vertical [`LinearLayout`].
-pub fn v_stack<T, A, VT: ViewSequence<T, A>>(children: VT) -> LinearLayout<T, A, VT> {
+pub fn v_stack<T, A, VT: ViewSequence<Pod, T, A>>(children: VT) -> LinearLayout<T, A, VT> {
     LinearLayout::new(children, Axis::Vertical)
 }
 
 /// creates a horizontal [`LinearLayout`].
-pub fn h_stack<T, A, VT: ViewSequence<T, A>>(children: VT) -> LinearLayout<T, A, VT> {
+pub fn h_stack<T, A, VT: ViewSequence<Pod, T, A>>(children: VT) -> LinearLayout<T, A, VT> {
     LinearLayout::new(children, Axis::Horizontal)
 }
 
-impl<T, A, VT: ViewSequence<T, A>> LinearLayout<T, A, VT> {
+impl<T, A, VT: ViewSequence<Pod, T, A>> LinearLayout<T, A, VT> {
     pub fn new(children: VT, axis: Axis) -> Self {
         let phantom = Default::default();
         LinearLayout {
@@ -64,9 +64,9 @@ impl<T, A, VT: ViewSequence<T, A>> LinearLayout<T, A, VT> {
     }
 }
 
-impl<T, A, VT: ViewSequence<T, A>> ViewMarker for LinearLayout<T, A, VT> {}
+impl<T, A, VT> ViewMarker for LinearLayout<T, A, VT> {}
 
-impl<T, A, VT: ViewSequence<T, A>> View<T, A> for LinearLayout<T, A, VT> {
+impl<T, A, VT: ViewSequence<Pod, T, A>> TypedView<Pod, T, A> for LinearLayout<T, A, VT> {
     type State = VT::State;
 
     type Element = widget::LinearLayout;

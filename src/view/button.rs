@@ -14,10 +14,11 @@
 
 use std::any::Any;
 
-use crate::view::ViewMarker;
 use crate::{event::MessageResult, id::Id, widget::ChangeFlags};
+use crate::view::typed_view::ViewMarker;
+use crate::widget::Pod;
 
-use super::{Cx, View};
+use super::{Cx, TypedView};
 
 pub struct Button<T, A> {
     label: String,
@@ -43,7 +44,7 @@ impl<T, A> Button<T, A> {
 
 impl<T, A> ViewMarker for Button<T, A> {}
 
-impl<T, A> View<T, A> for Button<T, A> {
+impl<T, A> TypedView<Pod, T, A> for Button<T, A> {
     type State = ();
 
     type Element = crate::widget::Button;

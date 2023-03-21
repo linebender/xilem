@@ -27,17 +27,19 @@ use vello::{
 };
 use vello::{Scene, SceneBuilder};
 
-use crate::{app::App, view::View, widget::Event};
+use crate::{app::App, view::TypedView, widget::Event};
+use crate::view::View;
+use crate::widget::Pod;
 
 // This is a bit of a hack just to get a window launched. The real version
 // would deal with multiple windows and have other ways to configure things.
-pub struct AppLauncher<T, V: View<T>> {
+pub struct AppLauncher<T, V: View<Pod, T>> {
     title: String,
     app: App<T, V>,
 }
 
 // The logic of this struct is mostly parallel to DruidHandler in win_handler.rs.
-struct MainState<T, V: View<T>> {
+struct MainState<T, V: View<Pod, T>> {
     handle: WindowHandle,
     app: App<T, V>,
     render_cx: RenderContext,
@@ -50,7 +52,7 @@ struct MainState<T, V: View<T>> {
 
 const QUIT_MENU_ID: u32 = 0x100;
 
-impl<T: Send + 'static, V: View<T> + 'static> AppLauncher<T, V> {
+impl<T: Send + 'static, V: View<Pod, T> + 'static> AppLauncher<T, V> {
     pub fn new(app: App<T, V>) -> Self {
         AppLauncher {
             title: "Xilem app".into(),
@@ -89,7 +91,7 @@ impl<T: Send + 'static, V: View<T> + 'static> AppLauncher<T, V> {
     }
 }
 
-impl<T: Send + 'static, V: View<T> + 'static> WinHandler for MainState<T, V> {
+impl<T: Send + 'static, V: View<Pod, T> + 'static> WinHandler for MainState<T, V> {
     fn connect(&mut self, handle: &WindowHandle) {
         self.handle = handle.clone();
         self.app.connect(handle.clone());
@@ -174,7 +176,7 @@ impl<T: Send + 'static, V: View<T> + 'static> WinHandler for MainState<T, V> {
     }
 }
 
-impl<T, V: View<T>> MainState<T, V>
+impl<T, V: View<Pod, T>> MainState<T, V>
 where
     T: Send,
 {

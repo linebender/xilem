@@ -16,14 +16,12 @@ use std::{
     ops::{Deref, DerefMut},
 };
 
-use crate::view::ViewMarker;
-use crate::{
-    event::MessageResult,
-    id::Id,
-    widget::{AnyWidget, ChangeFlags},
-};
+use crate::view::{View, ViewSequence};
+use crate::{Element, event::MessageResult, id::Id, VecSplice, widget::{AnyWidget, ChangeFlags}};
 
-use super::{Cx, View};
+use super::{Cx, TypedView};
+
+pub trait AnyView<E, T, A = ()>: AnySequence<E, T, A> {}
 
 /// A trait enabling type erasure of views.
 ///
@@ -34,18 +32,17 @@ use super::{Cx, View};
 /// be well beyond the capability of Rust's type system. If type-erased
 /// views with other bounds are needed, the best approach is probably
 /// duplication of the code, probably with a macro.
-pub trait AnyView<T, A = ()> {
+pub trait AnySequence<E, T, A = ()> {
     fn as_any(&self) -> &dyn Any;
 
-    fn dyn_build(&self, cx: &mut Cx) -> (Id, Box<dyn Any + Send>, Box<dyn AnyWidget>);
+    fn dyn_build(&self, cx: &mut Cx, elements: &mut Vec<E>) -> Box<dyn Any + Send>;
 
     fn dyn_rebuild(
         &self,
         cx: &mut Cx,
-        prev: &dyn AnyView<T, A>,
-        id: &mut Id,
+        prev: &dyn AnySequence<E, T, A>,
         state: &mut Box<dyn Any + Send>,
-        element: &mut Box<dyn AnyWidget>,
+        element: &mut VecSplice<E>,
     ) -> ChangeFlags;
 
     fn dyn_message(
@@ -55,47 +52,44 @@ pub trait AnyView<T, A = ()> {
         message: Box<dyn Any>,
         app_state: &mut T,
     ) -> MessageResult<A>;
+
+    fn dyn_count(&self, state: &Box<dyn Any + Send>) -> usize;
 }
 
-impl<T, A, V: View<T, A> + 'static> AnyView<T, A> for V
+impl<E: Element, T, A, V: View<E, T, A> + 'static> AnyView<E, T, A> for V
+where
+    <V as ViewSequence<E, T, A>>::State: 'static,
+{}
+
+impl<E: Element, T, A, V: ViewSequence<E, T, A> + 'static> AnySequence<E, T, A> for V
 where
     V::State: 'static,
-    V::Element: AnyWidget + 'static,
 {
     fn as_any(&self) -> &dyn Any {
         self
     }
 
-    fn dyn_build(&self, cx: &mut Cx) -> (Id, Box<dyn Any + Send>, Box<dyn AnyWidget>) {
-        let (id, state, element) = self.build(cx);
-        (id, Box::new(state), Box::new(element))
+    fn dyn_build(&self, cx: &mut Cx, elements: &mut Vec<E>) -> Box<dyn Any + Send> {
+        Box::new(self.build(cx, elements))
     }
 
     fn dyn_rebuild(
         &self,
         cx: &mut Cx,
-        prev: &dyn AnyView<T, A>,
-        id: &mut Id,
+        prev: &dyn AnySequence<E, T, A>,
         state: &mut Box<dyn Any + Send>,
-        element: &mut Box<dyn AnyWidget>,
+        element: &mut VecSplice<E>,
     ) -> ChangeFlags {
         if let Some(prev) = prev.as_any().downcast_ref() {
             if let Some(state) = state.downcast_mut() {
-                if let Some(element) = element.deref_mut().as_any_mut().downcast_mut() {
-                    self.rebuild(cx, prev, id, state, element)
-                } else {
-                    println!("downcast of element failed in dyn_rebuild");
-                    ChangeFlags::default()
-                }
+                self.rebuild(cx, prev, state, element)
             } else {
                 println!("downcast of state failed in dyn_rebuild");
                 ChangeFlags::default()
             }
         } else {
-            let (new_id, new_state, new_element) = self.build(cx);
-            *id = new_id;
+            let new_state = element.as_vec(|vec|self.build(cx, vec));
             *state = Box::new(new_state);
-            *element = Box::new(new_element);
 
             // Everything about the new view could be different, so return all the flags
             ChangeFlags::all()
@@ -116,39 +110,52 @@ where
             panic!("downcast error in dyn_event");
         }
     }
+
+    fn dyn_count(&self, state: &Box<dyn Any + Send>) -> usize {
+        self.count(state.downcast_ref().unwrap())
+    }
 }
 
-impl<T, A> ViewMarker for Box<dyn AnyView<T, A> + Send> {}
-
-impl<T, A> View<T, A> for Box<dyn AnyView<T, A> + Send> {
+impl<E: Element, T: 'static, A: 'static> ViewSequence<E, T, A> for Box<dyn AnySequence<E, T, A> + Send> {
     type State = Box<dyn Any + Send>;
 
-    type Element = Box<dyn AnyWidget>;
-
-    fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
-        self.deref().dyn_build(cx)
+    fn build(&self, cx: &mut Cx, elements: &mut Vec<E>) -> Self::State {
+        self.dyn_build(cx, elements)
     }
 
-    fn rebuild(
-        &self,
-        cx: &mut Cx,
-        prev: &Self,
-        id: &mut Id,
-        state: &mut Self::State,
-        element: &mut Self::Element,
-    ) -> ChangeFlags {
-        self.deref()
-            .dyn_rebuild(cx, prev.deref(), id, state, element)
+    fn rebuild(&self, cx: &mut Cx, prev: &Self, state: &mut Self::State, element: &mut VecSplice<E>) -> ChangeFlags {
+        self.dyn_rebuild(cx, prev, state, element)
     }
 
-    fn message(
-        &self,
-        id_path: &[Id],
-        state: &mut Self::State,
-        message: Box<dyn Any>,
-        app_state: &mut T,
-    ) -> MessageResult<A> {
-        self.deref()
-            .dyn_message(id_path, state.deref_mut(), message, app_state)
+    fn message(&self, id_path: &[Id], state: &mut Self::State, message: Box<dyn Any>, app_state: &mut T) -> MessageResult<A> {
+        self.dyn_message(id_path, state, message, app_state)
+    }
+
+    fn count(&self, state: &Self::State) -> usize {
+        self.dyn_count(state)
+    }
+}
+
+
+
+impl<E: Element, T: 'static, A: 'static> View<E, T, A> for Box<dyn AnyView<E, T, A> + Send> {}
+
+impl<E: Element, T: 'static, A: 'static> ViewSequence<E, T, A> for Box<dyn AnyView<E, T, A> + Send> {
+    type State = Box<dyn Any + Send>;
+
+    fn build(&self, cx: &mut Cx, elements: &mut Vec<E>) -> Self::State {
+        self.dyn_build(cx, elements)
+    }
+
+    fn rebuild(&self, cx: &mut Cx, prev: &Self, state: &mut Self::State, element: &mut VecSplice<E>) -> ChangeFlags {
+        self.dyn_rebuild(cx, prev, state, element)
+    }
+
+    fn message(&self, id_path: &[Id], state: &mut Self::State, message: Box<dyn Any>, app_state: &mut T) -> MessageResult<A> {
+        self.dyn_message(id_path, state, message, app_state)
+    }
+
+    fn count(&self, state: &Self::State) -> usize {
+        self.dyn_count(state)
     }
 }

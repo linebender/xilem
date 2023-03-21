@@ -30,26 +30,22 @@ use crate::widget::{
     AccessCx, BoxConstraints, CxState, EventCx, LayoutCx, LifeCycle, LifeCycleCx, PaintCx, Pod,
     PodFlags, UpdateCx, ViewContext, WidgetState,
 };
-use crate::{
-    event::Message,
-    id::Id,
-    view::{Cx, View},
-    widget::Event,
-};
+use crate::{Element, event::Message, id::Id, VecSplice, widget::Event};
+use crate::view::{Cx, View};
 
 /// App is the native backend implementation of Xilem. It contains the code interacting with glazier
 /// and vello.
 ///
 ///
-pub struct App<T, V: View<T>> {
+pub struct App<T, V: View<Pod, T>> {
     req_chan: tokio::sync::mpsc::Sender<AppReq>,
     response_chan: tokio::sync::mpsc::Receiver<RenderResponse<V, V::State>>,
     return_chan: tokio::sync::mpsc::Sender<(V, V::State, HashSet<Id>)>,
-    id: Option<Id>,
     events: Vec<Message>,
     window_handle: WindowHandle,
     root_state: WidgetState,
-    root_pod: Option<Pod>,
+    //TODO: implement rebuild for single elements.
+    root_pod: Vec<Pod>,
     size: Size,
     new_size: Size,
     cursor_pos: Option<Point>,
@@ -71,7 +67,7 @@ const RENDER_DELAY: Duration = Duration::from_millis(5);
 /// It contains no information about how to interact with the User (browser, native, terminal).
 /// It is created by [`App`] and kept in a separate task for updating the apps contents.
 /// The App can send [AppReq] to inform the the AppTask about an user interaction.
-struct AppTask<T, V: View<T>, F: FnMut(&mut T) -> V> {
+struct AppTask<E: Element, T, V: View<E, T>, F: FnMut(&mut T) -> V> {
     req_chan: tokio::sync::mpsc::Receiver<AppReq>,
     response_chan: tokio::sync::mpsc::Sender<RenderResponse<V, V::State>>,
     return_chan: tokio::sync::mpsc::Receiver<(V, V::State, HashSet<Id>)>,
@@ -119,7 +115,7 @@ enum UiState {
 #[derive(Clone, Default)]
 pub struct WakeQueue(Arc<Mutex<Vec<IdPath>>>);
 
-impl<T: Send + 'static, V: View<T> + 'static> App<T, V>
+impl<T: Send + 'static, V: View<Pod, T> + 'static> App<T, V>
 where
     V::State: 'static,
 {
@@ -170,8 +166,7 @@ where
             req_chan: req_tx,
             response_chan: response_rx,
             return_chan: return_tx,
-            id: None,
-            root_pod: None,
+            root_pod: Vec::new(),
             events: Vec::new(),
             window_handle: Default::default(),
             root_state: WidgetState::new(),
@@ -202,7 +197,7 @@ where
 
     pub fn accessibility(&mut self) -> TreeUpdate {
         let mut update = TreeUpdate::default();
-        let root_pod = self.root_pod.as_mut().unwrap();
+        let root_pod = &mut self.root_pod[0];
         let mut window_node_builder = accesskit::NodeBuilder::new(accesskit::Role::Window);
         window_node_builder.set_name("xilem window");
         window_node_builder.set_children(vec![root_pod.id().into()]);
@@ -235,7 +230,7 @@ where
             self.send_events();
             // TODO: be more lazy re-rendering
             self.render();
-            let root_pod = self.root_pod.as_mut().unwrap();
+            let root_pod = &mut self.root_pod[0];
             let mut cx_state =
                 CxState::new(&self.window_handle, &mut self.font_cx, &mut self.events);
 
@@ -285,7 +280,7 @@ where
             }
             // Borrow again to avoid multiple borrows.
             // TODO: maybe make accessibility a method on CxState?
-            let root_pod = self.root_pod.as_mut().unwrap();
+            let root_pod = &mut self.root_pod[0];
             let mut cx_state =
                 CxState::new(&self.window_handle, &mut self.font_cx, &mut self.events);
             let mut paint_cx = PaintCx::new(&mut cx_state, &mut self.root_state);
@@ -309,7 +304,7 @@ where
         }
 
         self.ensure_root();
-        let root_pod = self.root_pod.as_mut().unwrap();
+        let root_pod = &mut self.root_pod[0];
         let mut cx_state = CxState::new(&self.window_handle, &mut self.font_cx, &mut self.events);
         let mut event_cx = EventCx::new(&mut cx_state, &mut self.root_state);
         root_pod.event(&mut event_cx, &event);
@@ -325,8 +320,12 @@ where
 
     // Make sure the widget tree (root pod) is available
     fn ensure_root(&mut self) {
-        if self.root_pod.is_none() {
+        if self.root_pod.is_empty() {
             self.render();
+            if self.root_pod.len() != 1 {
+                //TODO: fail more gracefully
+                panic!("Root view builds multiple elements");
+            }
         }
     }
 
@@ -344,26 +343,24 @@ where
         self.cx.pending_async.clear();
         let _ = self.req_chan.blocking_send(AppReq::Render(delay));
         if let Some(response) = self.response_chan.blocking_recv() {
-            let state = if let Some(element) = self.root_pod.as_mut() {
+            let state = if let Some(element) = self.root_pod.first_mut() {
                 let mut state = response.state.unwrap();
+                let mut scratch = Vec::new();
+                let mut splice = VecSplice::new(&mut self.root_pod, &mut scratch);
+
                 let changes = response.view.rebuild(
                     &mut self.cx,
                     response.prev.as_ref().unwrap(),
-                    self.id.as_mut().unwrap(),
                     &mut state,
                     //TODO: fail more gracefully but make it explicit that this is a bug
-                    element
-                        .downcast_mut()
-                        .expect("the root widget changed its type, this should never happen!"),
+                    &mut splice
                 );
-                let _ = self.root_pod.as_mut().unwrap().mark(changes);
+                let _ = self.root_pod.first_mut().unwrap().mark(changes);
                 assert!(self.cx.is_empty(), "id path imbalance on rebuild");
                 state
             } else {
-                let (id, state, element) = response.view.build(&mut self.cx);
+                let state = response.view.build(&mut self.cx, &mut self.root_pod);
                 assert!(self.cx.is_empty(), "id path imbalance on build");
-                self.root_pod = Some(Pod::new(element));
-                self.id = Some(id);
                 state
             };
             let pending = std::mem::take(&mut self.cx.pending_async);
@@ -378,13 +375,13 @@ where
     }
 }
 
-impl<T, V: View<T>> App<T, V> {
+impl<T, V: View<Pod, T>> App<T, V> {
     pub fn fragment(&self) -> &SceneFragment {
-        &self.root_pod.as_ref().unwrap().fragment
+        &self.root_pod.first().unwrap().fragment
     }
 }
 
-impl<T, V: View<T>, F: FnMut(&mut T) -> V> AppTask<T, V, F> {
+impl<E: Element, T, V: View<E, T>, F: FnMut(&mut T) -> V> AppTask<E, T, V, F> {
     async fn run(&mut self) {
         let mut deadline = None;
         loop {

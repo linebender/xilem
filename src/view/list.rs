@@ -14,28 +14,28 @@
 
 use crate::view::{Cx, ViewSequence};
 use crate::widget::{ChangeFlags, Pod};
-use crate::{Id, MessageResult, VecSplice};
+use crate::{Element, Id, MessageResult, VecSplice};
 use std::any::Any;
 use std::marker::PhantomData;
 
 /// A simple view sequence which builds a dynamic amount of sub sequences.
-pub struct List<T, A, VT: ViewSequence<T, A>, F: Fn(usize) -> VT + Send> {
+pub struct List<E: Element, T, A, VT: ViewSequence<E, T, A>, F: Fn(usize) -> VT + Send> {
     items: usize,
     build: F,
-    phantom: PhantomData<fn() -> (T, A, VT)>,
+    phantom: PhantomData<fn() -> (T, A, VT, E)>,
 }
 
 /// The state of a List sequence
-pub struct ListState<T, A, VT: ViewSequence<T, A>> {
+pub struct ListState<E: Element, T, A, VT: ViewSequence<E, T, A>> {
     views: Vec<(VT, VT::State)>,
     element_count: usize,
 }
 
 /// creates a new `List` sequence.
-pub fn list<T, A, VT: ViewSequence<T, A>, F: Fn(usize) -> VT + Send>(
+pub fn list<E: Element, T, A, VT: ViewSequence<E, T, A>, F: Fn(usize) -> VT + Send>(
     items: usize,
     build: F,
-) -> List<T, A, VT, F> {
+) -> List<E, T, A, VT, F> {
     List {
         items,
         build,
@@ -43,12 +43,12 @@ pub fn list<T, A, VT: ViewSequence<T, A>, F: Fn(usize) -> VT + Send>(
     }
 }
 
-impl<T, A, VT: ViewSequence<T, A>, F: Fn(usize) -> VT + Send> ViewSequence<T, A>
-    for List<T, A, VT, F>
+impl<E: Element, T, A, VT: ViewSequence<E, T, A>, F: Fn(usize) -> VT + Send> ViewSequence<E, T, A>
+    for List<E, T, A, VT, F>
 {
-    type State = ListState<T, A, VT>;
+    type State = ListState<E, T, A, VT>;
 
-    fn build(&self, cx: &mut Cx, elements: &mut Vec<Pod>) -> Self::State {
+    fn build(&self, cx: &mut Cx, elements: &mut Vec<E>) -> Self::State {
         let leading = elements.len();
 
         let views = (0..self.items)
@@ -71,7 +71,7 @@ impl<T, A, VT: ViewSequence<T, A>, F: Fn(usize) -> VT + Send> ViewSequence<T, A>
         cx: &mut Cx,
         prev: &Self,
         state: &mut Self::State,
-        element: &mut VecSplice<Pod>,
+        element: &mut VecSplice<E>,
     ) -> ChangeFlags {
         // Common length
         let leading = element.len();

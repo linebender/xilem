@@ -11,6 +11,7 @@ mod text;
 pub mod view;
 pub mod widget;
 mod vec_splice;
+mod element;
 
 pub use app::App;
 pub use app_main::AppLauncher;
@@ -19,3 +20,4 @@ pub use event::{Message, MessageResult};
 pub use geometry::Axis;
 pub use id::Id;
 pub use vec_splice::VecSplice;
+pub use element::Element;
