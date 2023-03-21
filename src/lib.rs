@@ -9,6 +9,7 @@ mod id;
 mod test_scenes;
 mod text;
 mod vec_splice;
+pub mod vg;
 pub mod view;
 pub mod widget;
 
