@@ -2,8 +2,8 @@ use crate::event::MessageResult;
 use crate::id::Id;
 use crate::view::{Cx, View, ViewMarker};
 use crate::widget::{ChangeFlags, Pod, Widget};
-use std::any::Any;
 use crate::VecSplice;
+use std::any::Any;
 
 /// A sequence on view nodes.
 ///
@@ -129,14 +129,14 @@ impl<T, A, VT: ViewSequence<T, A>> ViewSequence<T, A> for Option<VT> {
         match (self, &mut *state, prev) {
             (Some(this), Some(state), Some(prev)) => this.rebuild(cx, prev, state, element),
             (None, Some(seq_state), Some(prev)) => {
-                let mut count = prev.count(&seq_state);
+                let count = prev.count(&seq_state);
                 element.delete(count);
                 *state = None;
 
                 ChangeFlags::all()
             }
             (Some(this), None, None) => {
-                let seq_state = element.as_vec(|vec|this.build(cx, vec));
+                let seq_state = element.as_vec(|vec| this.build(cx, vec));
                 *state = Some(seq_state);
 
                 ChangeFlags::all()
@@ -175,7 +175,7 @@ macro_rules! impl_view_tuple {
             type State = ( $( $t::State, )*);
 
             fn build(&self, cx: &mut Cx, elements: &mut Vec<Pod>) -> Self::State {
-                let mut b = ( $( self.$i.build(cx, elements), )* );
+                let b = ( $( self.$i.build(cx, elements), )* );
                 let state = ( $( b.$i, )*);
                 state
             }

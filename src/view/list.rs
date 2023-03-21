@@ -62,7 +62,7 @@ impl<T, A, VT: ViewSequence<T, A>, F: Fn(usize) -> VT + Send> ViewSequence<T, A>
 
         ListState {
             views,
-            element_count: elements.len() - leading
+            element_count: elements.len() - leading,
         }
     }
 
@@ -79,15 +79,12 @@ impl<T, A, VT: ViewSequence<T, A>, F: Fn(usize) -> VT + Send> ViewSequence<T, A>
         let mut flags = (0..(self.items.min(prev.items)))
             .into_iter()
             .zip(&mut state.views)
-            .fold(
-                ChangeFlags::empty(),
-                |flags, (index, (prev, state))| {
-                    let vt = (self.build)(index);
-                    let vt_flags = vt.rebuild(cx, prev, state, element);
-                    *prev = vt;
-                    flags | vt_flags
-                },
-            );
+            .fold(ChangeFlags::empty(), |flags, (index, (prev, state))| {
+                let vt = (self.build)(index);
+                let vt_flags = vt.rebuild(cx, prev, state, element);
+                *prev = vt;
+                flags | vt_flags
+            });
 
         if self.items < prev.items {
             for (prev, state) in state.views.splice(self.items.., []) {
@@ -97,7 +94,7 @@ impl<T, A, VT: ViewSequence<T, A>, F: Fn(usize) -> VT + Send> ViewSequence<T, A>
 
         while self.items > state.views.len() {
             let vt = (self.build)(state.views.len());
-            let vt_state = element.as_vec(|vec|vt.build(cx, vec));
+            let vt_state = element.as_vec(|vec| vt.build(cx, vec));
             state.views.push((vt, vt_state));
         }
 
