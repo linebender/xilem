@@ -23,5 +23,5 @@ mod vec_splice;
 mod view;
 
 pub use id::{Id, IdPath};
-pub use message::{AsyncWake, Message, MessageResult};
+pub use message::{AsyncWake, MessageResult};
 pub use vec_splice::VecSplice;

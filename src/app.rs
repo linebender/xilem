@@ -23,17 +23,17 @@ use parley::FontContext;
 use tokio::runtime::Runtime;
 use vello::kurbo::{Point, Rect};
 use vello::SceneFragment;
-use xilem_core::{AsyncWake, Message, MessageResult};
+use xilem_core::{AsyncWake, MessageResult};
 
 use crate::widget::{
     AccessCx, BoxConstraints, CxState, EventCx, LayoutCx, LifeCycle, LifeCycleCx, PaintCx, Pod,
     PodFlags, UpdateCx, ViewContext, WidgetState,
 };
-use crate::IdPath;
 use crate::{
     view::{Cx, Id, View},
     widget::Event,
 };
+use crate::{IdPath, Message};
 
 /// App is the native backend implementation of Xilem. It contains the code interacting with glazier
 /// and vello.

@@ -3,21 +3,60 @@
 
 use std::any::Any;
 
-use crate::id::IdPath;
+#[macro_export]
+macro_rules! message {
+    () => {
+        pub struct Message {
+            pub id_path: xilem_core::IdPath,
+            pub body: Box<dyn std::any::Any>,
+        }
 
-pub struct Message {
-    pub id_path: IdPath,
-    pub body: Box<dyn Any + Send>,
+        impl Message {
+            pub fn new(id_path: xilem_core::IdPath, event: impl std::any::Any) -> Message {
+                Message {
+                    id_path,
+                    body: Box::new(event),
+                }
+            }
+        }
+    };
+
+    ($($bounds:tt)*) => {
+        pub struct Message {
+            pub id_path: xilem_core::IdPath,
+            pub body: Box<dyn std::any::Any + $($bounds)*>,
+        }
+
+        impl Message {
+            pub fn new(id_path: xilem_core::IdPath, event: impl std::any::Any + $($bounds)*) -> Message {
+                Message {
+                    id_path,
+                    body: Box::new(event),
+                }
+            }
+        }
+    };
 }
 
 /// A result wrapper type for event handlers.
 pub enum MessageResult<A> {
     /// The event handler was invoked and returned an action.
+    ///
+    /// Use this return type if your widgets should respond to events by passing
+    /// a value up the tree, rather than changing their internal state.
     Action(A),
     /// The event handler received a change request that requests a rebuild.
+    ///
+    /// Note: A rebuild will always occur if there was a state change. This return
+    /// type can be used to indicate that a full rebuild is necessary even if the
+    /// state remained the same. It is expected that this type won't be used very
+    /// often.
     #[allow(unused)]
     RequestRebuild,
     /// The event handler discarded the event.
+    ///
+    /// This is the variant that you **almost always want** when you're not returning
+    /// an action.
     #[allow(unused)]
     Nop,
     /// The event was addressed to an id path no longer in the tree.
@@ -25,6 +64,12 @@ pub enum MessageResult<A> {
     /// This is a normal outcome for async operation when the tree is changing
     /// dynamically, but otherwise indicates a logic error.
     Stale(Box<dyn Any>),
+}
+
+impl<A> Default for MessageResult<A> {
+    fn default() -> Self {
+        MessageResult::Nop
+    }
 }
 
 // TODO: does this belong in core?
@@ -44,15 +89,6 @@ impl<A> MessageResult<A> {
         match self {
             MessageResult::Stale(event) => f(event),
             _ => self,
-        }
-    }
-}
-
-impl Message {
-    pub fn new(id_path: IdPath, event: impl Any + Send) -> Message {
-        Message {
-            id_path,
-            body: Box::new(event),
         }
     }
 }
