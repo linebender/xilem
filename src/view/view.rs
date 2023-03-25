@@ -23,8 +23,26 @@ use futures_task::{ArcWake, Waker};
 use crate::{
     event::MessageResult,
     id::{Id, IdPath},
-    widget::{ChangeFlags, Widget},
+    widget::{ChangeFlags, Widget, AnyWidget},
 };
+
+pub trait TraitBound<W: ?Sized> {
+    fn boxed(self) -> Box<W>;
+
+    fn as_mut(&mut self) -> &mut W;
+}
+
+impl<W: Widget + 'static> TraitBound<WidgetBound> for W {
+    fn boxed(self) -> Box<dyn AnyWidget + 'static> {
+        Box::new(self)
+    }
+
+    fn as_mut(&mut self) -> &mut (dyn AnyWidget + 'static) {
+        self
+    }
+}
+
+pub type WidgetBound = dyn AnyWidget + 'static;
 
 /// A view object representing a node in the UI.
 ///
@@ -43,12 +61,12 @@ use crate::{
 /// given to view nodes, which in turn can make expose it to callbacks.
 // We depend on ViewMarker to disallow any View implementations which dont implement ViewMarker.
 // Doing that would lead to pretty strange bugs.
-pub trait View<T, A = ()>: ViewMarker + Send {
+pub trait GenericView<T, W: ?Sized, A = ()>: ViewMarker + Send {
     /// Associated state for the view.
     type State: Send;
 
     /// The associated widget for the view.
-    type Element: Widget;
+    type Element: TraitBound<W>;
 
     /// Build the associated widget and initialize state.
     fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element);
@@ -77,6 +95,10 @@ pub trait View<T, A = ()>: ViewMarker + Send {
         app_state: &mut T,
     ) -> MessageResult<A>;
 }
+
+pub trait View<T, A = ()>: GenericView<T, WidgetBound, A> {}
+
+impl<T, A, V: GenericView<T, WidgetBound, A>> View<T, A> for V {}
 
 /// This trait marks a type a View.
 ///

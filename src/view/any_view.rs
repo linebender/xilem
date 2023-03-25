@@ -23,7 +23,7 @@ use crate::{
     widget::{AnyWidget, ChangeFlags},
 };
 
-use super::{Cx, View};
+use super::{Cx, View, view::{GenericView, WidgetBound}};
 
 /// A trait enabling type erasure of views.
 ///
@@ -120,7 +120,7 @@ where
 
 impl<T, A> ViewMarker for Box<dyn AnyView<T, A> + Send> {}
 
-impl<T, A> View<T, A> for Box<dyn AnyView<T, A> + Send> {
+impl<T, A> GenericView<T, WidgetBound, A> for Box<dyn AnyView<T, A> + Send> {
     type State = Box<dyn Any + Send>;
 
     type Element = Box<dyn AnyWidget>;

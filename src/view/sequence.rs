@@ -5,6 +5,8 @@ use crate::widget::{ChangeFlags, Pod, Widget};
 use crate::VecSplice;
 use std::any::Any;
 
+use super::view::{GenericView, WidgetBound};
+
 /// A sequence on view nodes.
 ///
 /// This is one of the central traits for representing UI. Every view which has a collection of
@@ -57,10 +59,10 @@ impl<T, A, V: View<T, A> + ViewMarker> ViewSequence<T, A> for V
 where
     V::Element: Widget + 'static,
 {
-    type State = (<V as View<T, A>>::State, Id);
+    type State = (<V as GenericView<T, WidgetBound, A>>::State, Id);
 
     fn build(&self, cx: &mut Cx, elements: &mut Vec<Pod>) -> Self::State {
-        let (id, state, element) = <V as View<T, A>>::build(self, cx);
+        let (id, state, element) = <V as GenericView<T, WidgetBound, A>>::build(self, cx);
         elements.push(Pod::new(element));
         (state, id)
     }
@@ -75,7 +77,7 @@ where
         let el = element.mutate();
         let downcast = el.downcast_mut().unwrap();
         let flags =
-            <V as View<T, A>>::rebuild(self, cx, prev, &mut state.1, &mut state.0, downcast);
+            <V as GenericView<T, WidgetBound, A>>::rebuild(self, cx, prev, &mut state.1, &mut state.0, downcast);
 
         el.mark(flags)
     }
@@ -89,7 +91,7 @@ where
     ) -> MessageResult<A> {
         if let Some((first, rest_path)) = id_path.split_first() {
             if first == &state.1 {
-                return <V as View<T, A>>::message(
+                return <V as GenericView<T, WidgetBound, A>>::message(
                     self,
                     rest_path,
                     &mut state.0,

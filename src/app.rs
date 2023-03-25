@@ -33,7 +33,7 @@ use crate::widget::{
 use crate::{
     event::Message,
     id::Id,
-    view::{Cx, View},
+    view::{Cx, TraitBound, View},
     widget::Event,
 };
 
@@ -362,7 +362,7 @@ where
             } else {
                 let (id, state, element) = response.view.build(&mut self.cx);
                 assert!(self.cx.is_empty(), "id path imbalance on build");
-                self.root_pod = Some(Pod::new(element));
+                self.root_pod = Some(Pod::new_from_box(element.boxed()));
                 self.id = Some(id);
                 state
             };

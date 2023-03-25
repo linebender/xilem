@@ -22,6 +22,7 @@ use crate::view::ViewMarker;
 use crate::widget::{self, ChangeFlags};
 use crate::VecSplice;
 
+use super::view::{GenericView, WidgetBound};
 use super::{Cx, View};
 
 /// LinearLayout is a simple view which does layout for the specified ViewSequence.
@@ -66,7 +67,7 @@ impl<T, A, VT: ViewSequence<T, A>> LinearLayout<T, A, VT> {
 
 impl<T, A, VT: ViewSequence<T, A>> ViewMarker for LinearLayout<T, A, VT> {}
 
-impl<T, A, VT: ViewSequence<T, A>> View<T, A> for LinearLayout<T, A, VT> {
+impl<T, A, VT: ViewSequence<T, A>> GenericView<T, WidgetBound, A> for LinearLayout<T, A, VT> {
     type State = VT::State;
 
     type Element = widget::LinearLayout;
