@@ -1,7 +1,7 @@
 use crate::event::MessageResult;
 use crate::id::Id;
 use crate::view::{Cx, TraitBound, ViewMarker};
-use crate::widget::{ChangeFlags, Pod, Widget};
+use crate::widget::{ChangeFlags, Pod};
 use crate::VecSplice;
 use std::any::Any;
 
@@ -77,13 +77,13 @@ pub trait ViewSequence<T, W: ?Sized + TraitPod, A = ()>: Send {
 // ViewMarker is already a dependency of View but Rusts orphan rules dont work if we remove it here.
 impl<T, A, V: GenericView<T, W, A> + ViewMarker, W: ?Sized + TraitPod> ViewSequence<T, W, A> for V
 where
-    V::Element: Widget + 'static,
+    V::Element: TraitBound<W> + 'static,
 {
     type State = (V::State, Id);
 
     fn build(&self, cx: &mut Cx, elements: &mut Vec<W::Pod>) -> Self::State {
-        let (id, state, element) = <V as GenericView<T, W, A>>::build(self, cx);
-        elements.push(<W as TraitPod>::make_pod(element.boxed()));
+        let (id, state, element) = V::build(self, cx);
+        elements.push(TraitPod::make_pod(element.boxed()));
         (state, id)
     }
 
@@ -96,14 +96,7 @@ where
     ) -> ChangeFlags {
         let el = element.mutate();
         let downcast = el.downcast_mut().unwrap();
-        let flags = <V as GenericView<T, W, A>>::rebuild(
-            self,
-            cx,
-            prev,
-            &mut state.1,
-            &mut state.0,
-            downcast,
-        );
+        let flags = self.rebuild(cx, prev, &mut state.1, &mut state.0, downcast);
 
         el.mark(flags)
     }
@@ -117,13 +110,7 @@ where
     ) -> MessageResult<A> {
         if let Some((first, rest_path)) = id_path.split_first() {
             if first == &state.1 {
-                return <V as GenericView<T, W, A>>::message(
-                    self,
-                    rest_path,
-                    &mut state.0,
-                    message,
-                    app_state,
-                );
+                return self.message(rest_path, &mut state.0, message, app_state);
             }
         }
         MessageResult::Stale(message)

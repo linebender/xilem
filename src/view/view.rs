@@ -59,7 +59,7 @@ pub type WidgetBound = dyn AnyWidget + 'static;
 /// and also a type for actions which are passed up the tree in event
 /// propagation. During event handling, mutable access to the app state is
 /// given to view nodes, which in turn can make expose it to callbacks.
-// We depend on ViewMarker to disallow any View implementations which dont implement ViewMarker.
+// We depend on ViewMarker to disallow any View implementations which don't implement ViewMarker.
 // Doing that would lead to pretty strange bugs.
 pub trait GenericView<T, W: ?Sized, A = ()>: ViewMarker + Send {
     /// Associated state for the view.
@@ -103,7 +103,7 @@ impl<T, A, V: GenericView<T, WidgetBound, A>> View<T, A> for V {}
 /// This trait marks a type a View.
 ///
 /// This trait is a workaround for rusts orphan rules. It serves as a switch between default and
-/// custom `ViewSequence` implementation. You cant implement `ViewSequence` for types which also
+/// custom `ViewSequence` implementation. You can't implement `ViewSequence` for types which also
 /// implement `ViewMarker`.
 pub trait ViewMarker {}
 
