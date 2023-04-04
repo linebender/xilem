@@ -23,7 +23,7 @@ use futures_task::{ArcWake, Waker};
 use crate::{
     event::MessageResult,
     id::{Id, IdPath},
-    widget::{ChangeFlags, Widget, AnyWidget},
+    widget::{AnyWidget, ChangeFlags, Widget},
 };
 
 pub trait TraitBound<W: ?Sized> {

@@ -17,8 +17,7 @@ use std::any::Any;
 use crate::view::ViewMarker;
 use crate::{event::MessageResult, id::Id, widget::ChangeFlags};
 
-use super::view::{GenericView, WidgetBound};
-use super::{Cx, View};
+use super::{Cx, GenericView, WidgetBound};
 
 pub struct Button<T, A> {
     label: String,

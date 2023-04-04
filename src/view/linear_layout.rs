@@ -22,8 +22,7 @@ use crate::view::ViewMarker;
 use crate::widget::{self, ChangeFlags};
 use crate::VecSplice;
 
-use super::view::{GenericView, WidgetBound};
-use super::{Cx, View};
+use super::{Cx, GenericView, WidgetBound};
 
 /// LinearLayout is a simple view which does layout for the specified ViewSequence.
 ///
@@ -31,7 +30,7 @@ use super::{Cx, View};
 ///
 /// This View is only temporary is probably going to be replaced by something like Druid's Flex
 /// widget.
-pub struct LinearLayout<T, A, VT: ViewSequence<T, A>> {
+pub struct LinearLayout<T, A, VT: ViewSequence<T, WidgetBound, A>> {
     children: VT,
     spacing: f64,
     axis: Axis,
@@ -39,16 +38,16 @@ pub struct LinearLayout<T, A, VT: ViewSequence<T, A>> {
 }
 
 /// creates a vertical [`LinearLayout`].
-pub fn v_stack<T, A, VT: ViewSequence<T, A>>(children: VT) -> LinearLayout<T, A, VT> {
+pub fn v_stack<T, A, VT: ViewSequence<T, WidgetBound, A>>(children: VT) -> LinearLayout<T, A, VT> {
     LinearLayout::new(children, Axis::Vertical)
 }
 
 /// creates a horizontal [`LinearLayout`].
-pub fn h_stack<T, A, VT: ViewSequence<T, A>>(children: VT) -> LinearLayout<T, A, VT> {
+pub fn h_stack<T, A, VT: ViewSequence<T, WidgetBound, A>>(children: VT) -> LinearLayout<T, A, VT> {
     LinearLayout::new(children, Axis::Horizontal)
 }
 
-impl<T, A, VT: ViewSequence<T, A>> LinearLayout<T, A, VT> {
+impl<T, A, VT: ViewSequence<T, WidgetBound, A>> LinearLayout<T, A, VT> {
     pub fn new(children: VT, axis: Axis) -> Self {
         let phantom = Default::default();
         LinearLayout {
@@ -65,9 +64,11 @@ impl<T, A, VT: ViewSequence<T, A>> LinearLayout<T, A, VT> {
     }
 }
 
-impl<T, A, VT: ViewSequence<T, A>> ViewMarker for LinearLayout<T, A, VT> {}
+impl<T, A, VT: ViewSequence<T, WidgetBound, A>> ViewMarker for LinearLayout<T, A, VT> {}
 
-impl<T, A, VT: ViewSequence<T, A>> GenericView<T, WidgetBound, A> for LinearLayout<T, A, VT> {
+impl<T, A, VT: ViewSequence<T, WidgetBound, A>> GenericView<T, WidgetBound, A>
+    for LinearLayout<T, A, VT>
+{
     type State = VT::State;
 
     type Element = widget::LinearLayout;

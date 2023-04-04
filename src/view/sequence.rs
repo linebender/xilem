@@ -1,11 +1,31 @@
 use crate::event::MessageResult;
 use crate::id::Id;
-use crate::view::{Cx, View, ViewMarker};
+use crate::view::{Cx, TraitBound, ViewMarker};
 use crate::widget::{ChangeFlags, Pod, Widget};
 use crate::VecSplice;
 use std::any::Any;
 
 use super::view::{GenericView, WidgetBound};
+
+pub trait TraitPod {
+    type Pod: Element;
+
+    fn make_pod(w: Box<Self>) -> Self::Pod;
+}
+
+pub trait Element {
+    fn downcast_mut<T: 'static>(&mut self) -> Option<&mut T>;
+
+    fn mark(&mut self, flags: ChangeFlags) -> ChangeFlags;
+}
+
+impl TraitPod for WidgetBound {
+    type Pod = crate::widget::Pod;
+
+    fn make_pod(w: Box<Self>) -> Self::Pod {
+        Pod::new_from_box(w)
+    }
+}
 
 /// A sequence on view nodes.
 ///
@@ -20,12 +40,12 @@ use super::view::{GenericView, WidgetBound};
 /// and also a type for actions which are passed up the tree in event
 /// propagation. During event handling, mutable access to the app state is
 /// given to view nodes, which in turn can make expose it to callbacks.
-pub trait ViewSequence<T, A = ()>: Send {
+pub trait ViewSequence<T, W: ?Sized + TraitPod, A = ()>: Send {
     /// Associated states for the views.
     type State: Send;
 
     /// Build the associated widgets and initialize all states.
-    fn build(&self, cx: &mut Cx, elements: &mut Vec<Pod>) -> Self::State;
+    fn build(&self, cx: &mut Cx, elements: &mut Vec<W::Pod>) -> Self::State;
 
     /// Update the associated widget.
     ///
@@ -35,7 +55,7 @@ pub trait ViewSequence<T, A = ()>: Send {
         cx: &mut Cx,
         prev: &Self,
         state: &mut Self::State,
-        element: &mut VecSplice<Pod>,
+        element: &mut VecSplice<W::Pod>,
     ) -> ChangeFlags;
 
     /// Propagate a message.
@@ -55,15 +75,15 @@ pub trait ViewSequence<T, A = ()>: Send {
 }
 
 // ViewMarker is already a dependency of View but Rusts orphan rules dont work if we remove it here.
-impl<T, A, V: View<T, A> + ViewMarker> ViewSequence<T, A> for V
+impl<T, A, V: GenericView<T, W, A> + ViewMarker, W: ?Sized + TraitPod> ViewSequence<T, W, A> for V
 where
     V::Element: Widget + 'static,
 {
-    type State = (<V as GenericView<T, WidgetBound, A>>::State, Id);
+    type State = (V::State, Id);
 
-    fn build(&self, cx: &mut Cx, elements: &mut Vec<Pod>) -> Self::State {
-        let (id, state, element) = <V as GenericView<T, WidgetBound, A>>::build(self, cx);
-        elements.push(Pod::new(element));
+    fn build(&self, cx: &mut Cx, elements: &mut Vec<W::Pod>) -> Self::State {
+        let (id, state, element) = <V as GenericView<T, W, A>>::build(self, cx);
+        elements.push(<W as TraitPod>::make_pod(element.boxed()));
         (state, id)
     }
 
@@ -72,12 +92,18 @@ where
         cx: &mut Cx,
         prev: &Self,
         state: &mut Self::State,
-        element: &mut VecSplice<Pod>,
+        element: &mut VecSplice<W::Pod>,
     ) -> ChangeFlags {
         let el = element.mutate();
         let downcast = el.downcast_mut().unwrap();
-        let flags =
-            <V as GenericView<T, WidgetBound, A>>::rebuild(self, cx, prev, &mut state.1, &mut state.0, downcast);
+        let flags = <V as GenericView<T, W, A>>::rebuild(
+            self,
+            cx,
+            prev,
+            &mut state.1,
+            &mut state.0,
+            downcast,
+        );
 
         el.mark(flags)
     }
@@ -91,7 +117,7 @@ where
     ) -> MessageResult<A> {
         if let Some((first, rest_path)) = id_path.split_first() {
             if first == &state.1 {
-                return <V as GenericView<T, WidgetBound, A>>::message(
+                return <V as GenericView<T, W, A>>::message(
                     self,
                     rest_path,
                     &mut state.0,
@@ -108,10 +134,10 @@ where
     }
 }
 
-impl<T, A, VT: ViewSequence<T, A>> ViewSequence<T, A> for Option<VT> {
+impl<T, A, VT: ViewSequence<T, W, A>, W: ?Sized + TraitPod> ViewSequence<T, W, A> for Option<VT> {
     type State = Option<VT::State>;
 
-    fn build(&self, cx: &mut Cx, elements: &mut Vec<Pod>) -> Self::State {
+    fn build(&self, cx: &mut Cx, elements: &mut Vec<W::Pod>) -> Self::State {
         match self {
             None => None,
             Some(vt) => {
@@ -126,7 +152,7 @@ impl<T, A, VT: ViewSequence<T, A>> ViewSequence<T, A> for Option<VT> {
         cx: &mut Cx,
         prev: &Self,
         state: &mut Self::State,
-        element: &mut VecSplice<Pod>,
+        element: &mut VecSplice<W::Pod>,
     ) -> ChangeFlags {
         match (self, &mut *state, prev) {
             (Some(this), Some(state), Some(prev)) => this.rebuild(cx, prev, state, element),
@@ -173,10 +199,10 @@ impl<T, A, VT: ViewSequence<T, A>> ViewSequence<T, A> for Option<VT> {
 
 macro_rules! impl_view_tuple {
     ( $( $t:ident),* ; $( $i:tt ),* ) => {
-        impl<T, A, $( $t: ViewSequence<T, A> ),* > ViewSequence<T, A> for ( $( $t, )* ) {
+        impl<T, W: ?Sized + TraitPod, A, $( $t: ViewSequence<T, W, A> ),* > ViewSequence<T, W, A> for ( $( $t, )* ) {
             type State = ( $( $t::State, )*);
 
-            fn build(&self, cx: &mut Cx, elements: &mut Vec<Pod>) -> Self::State {
+            fn build(&self, cx: &mut Cx, elements: &mut Vec<W::Pod>) -> Self::State {
                 let b = ( $( self.$i.build(cx, elements), )* );
                 let state = ( $( b.$i, )*);
                 state
@@ -187,7 +213,7 @@ macro_rules! impl_view_tuple {
                 cx: &mut Cx,
                 prev: &Self,
                 state: &mut Self::State,
-                els: &mut VecSplice<Pod>,
+                els: &mut VecSplice<W::Pod>,
             ) -> ChangeFlags {
                 let mut changed = ChangeFlags::default();
                 $(

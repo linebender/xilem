@@ -18,21 +18,23 @@ use crate::{Id, MessageResult, VecSplice};
 use std::any::Any;
 use std::marker::PhantomData;
 
+use super::WidgetBound;
+
 /// A simple view sequence which builds a dynamic amount of sub sequences.
-pub struct List<T, A, VT: ViewSequence<T, A>, F: Fn(usize) -> VT + Send> {
+pub struct List<T, A, VT: ViewSequence<T, WidgetBound, A>, F: Fn(usize) -> VT + Send> {
     items: usize,
     build: F,
     phantom: PhantomData<fn() -> (T, A, VT)>,
 }
 
 /// The state of a List sequence
-pub struct ListState<T, A, VT: ViewSequence<T, A>> {
+pub struct ListState<T, A, VT: ViewSequence<T, WidgetBound, A>> {
     views: Vec<(VT, VT::State)>,
     element_count: usize,
 }
 
 /// creates a new `List` sequence.
-pub fn list<T, A, VT: ViewSequence<T, A>, F: Fn(usize) -> VT + Send>(
+pub fn list<T, A, VT: ViewSequence<T, WidgetBound, A>, F: Fn(usize) -> VT + Send>(
     items: usize,
     build: F,
 ) -> List<T, A, VT, F> {
@@ -43,8 +45,8 @@ pub fn list<T, A, VT: ViewSequence<T, A>, F: Fn(usize) -> VT + Send>(
     }
 }
 
-impl<T, A, VT: ViewSequence<T, A>, F: Fn(usize) -> VT + Send> ViewSequence<T, A>
-    for List<T, A, VT, F>
+impl<T, A, VT: ViewSequence<T, WidgetBound, A>, F: Fn(usize) -> VT + Send>
+    ViewSequence<T, WidgetBound, A> for List<T, A, VT, F>
 {
     type State = ListState<T, A, VT>;
 

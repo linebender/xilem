@@ -23,6 +23,7 @@ use vello::kurbo::Affine;
 use vello::{SceneBuilder, SceneFragment};
 
 use super::widget::{AnyWidget, Widget};
+use crate::view::Element;
 use crate::{id::Id, Bloom};
 
 use super::{
@@ -150,7 +151,7 @@ impl WidgetState {
         self.sub_tree = self.sub_tree.union(child_state.sub_tree);
     }
 
-    fn request(&mut self, flags: PodFlags) {
+    pub(crate) fn request(&mut self, flags: PodFlags) {
         self.flags |= flags
     }
 
@@ -187,7 +188,8 @@ impl Pod {
 
     /// Sets the requested flags on this pod and returns the ChangeFlags the owner of this Pod should set.
     pub fn mark(&mut self, flags: ChangeFlags) -> ChangeFlags {
-        self.state.request(PodFlags::from_bits_truncate(flags.bits as _));
+        self.state
+            .request(PodFlags::from_bits_truncate(flags.bits as _));
         flags.upwards()
     }
 
@@ -558,5 +560,19 @@ impl Pod {
     /// This widget or any of its children have requested layout.
     pub fn layout_requested(&self) -> bool {
         self.state.flags.contains(PodFlags::REQUEST_LAYOUT)
+    }
+}
+
+impl Element for Pod {
+    /// Returns the wrapped widget.
+    fn downcast_mut<T: 'static>(&mut self) -> Option<&mut T> {
+        (*self.widget).as_any_mut().downcast_mut()
+    }
+
+    /// Sets the requested flags on this pod and returns the Flags the parent of this Pod should set.
+    fn mark(&mut self, flags: ChangeFlags) -> ChangeFlags {
+        self.state
+            .request(PodFlags::from_bits_truncate(flags.bits as _));
+        flags.upwards()
     }
 }

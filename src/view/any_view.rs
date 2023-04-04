@@ -23,7 +23,10 @@ use crate::{
     widget::{AnyWidget, ChangeFlags},
 };
 
-use super::{Cx, View, view::{GenericView, WidgetBound}};
+use super::{
+    view::{GenericView, WidgetBound},
+    Cx, View,
+};
 
 /// A trait enabling type erasure of views.
 ///
