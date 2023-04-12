@@ -1,4 +1,4 @@
-use xilem::view::{button, h_stack, v_stack};
+use xilem::view::{button, h_stack, v_stack, AnyView, WidgetBound};
 use xilem::{view::View, App, AppLauncher};
 
 fn app_logic(data: &mut i32) -> impl View<i32> {
@@ -8,13 +8,14 @@ fn app_logic(data: &mut i32) -> impl View<i32> {
     } else {
         format!("clicked {data} times")
     };
+    let widget: Box<dyn AnyView<i32, WidgetBound> + Send> = Box::new(button(label, |data| {
+        println!("clicked");
+        *data += 1;
+    }));
 
     // The actual UI Code starts here
     v_stack((
-        button(label, |data| {
-            println!("clicked");
-            *data += 1;
-        }),
+        widget,
         h_stack((
             button("decrease", |data| {
                 println!("clicked decrease");

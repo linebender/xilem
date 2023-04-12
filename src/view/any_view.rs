@@ -37,7 +37,7 @@ use super::{
 /// be well beyond the capability of Rust's type system. If type-erased
 /// views with other bounds are needed, the best approach is probably
 /// duplication of the code, probably with a macro.
-pub trait AnyView<T, W, A = ()> {
+pub trait AnyView<T, W: ?Sized, A = ()> {
     fn as_any(&self) -> &dyn Any;
 
     fn dyn_build(&self, cx: &mut Cx) -> (Id, Box<dyn Any + Send>, Box<W>);
@@ -60,7 +60,7 @@ pub trait AnyView<T, W, A = ()> {
     ) -> MessageResult<A>;
 }
 
-impl<T, W, A, V: GenericView<T, W, A> + 'static> AnyView<T, W, A> for V
+impl<T, W: ?Sized, A, V: GenericView<T, W, A> + 'static> AnyView<T, W, A> for V
 where
     V::State: 'static,
     V::Element: TraitBound<W> + 'static,
@@ -122,9 +122,9 @@ where
     }
 }
 
-impl<T, W, A> ViewMarker for Box<dyn AnyView<T, W, A> + Send> {}
+impl<T, W: ?Sized, A> ViewMarker for Box<dyn AnyView<T, W, A> + Send> {}
 
-impl<T, W, A> GenericView<T, W, A> for Box<dyn AnyView<T, W, A> + Send>
+impl<T, W: ?Sized, A> GenericView<T, W, A> for Box<dyn AnyView<T, W, A> + Send>
     where Box<W>: TraitBound<W>
 {
     type State = Box<dyn Any + Send>;
