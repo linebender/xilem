@@ -32,4 +32,4 @@ pub use button::Button;
 pub use contexts::{AccessCx, CxState, EventCx, LayoutCx, LifeCycleCx, PaintCx, UpdateCx};
 pub use linear_layout::LinearLayout;
 pub use raw_event::{Event, LifeCycle, MouseEvent, ViewContext};
-pub use widget::{AnyWidget, Widget};
+pub use widget::{AsAny, AnyWidget, Widget};

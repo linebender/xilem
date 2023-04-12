@@ -183,6 +183,10 @@ pub trait Widget {
     }
 }
 
+pub trait AsAny {
+    fn as_any_mut(&mut self) -> &mut dyn Any;
+}
+
 pub trait AnyWidget: Widget {
     fn as_any(&self) -> &dyn Any;
 
@@ -228,5 +232,11 @@ impl Widget for Box<dyn AnyWidget> {
 
     fn paint(&mut self, cx: &mut PaintCx, builder: &mut SceneBuilder) {
         self.deref_mut().paint(cx, builder);
+    }
+}
+
+impl AsAny for Box<dyn AnyWidget> {
+    fn as_any_mut(&mut self) -> &mut dyn Any {
+        self.deref_mut().as_any_mut()
     }
 }

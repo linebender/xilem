@@ -16,16 +16,16 @@ use std::{
     ops::{Deref, DerefMut},
 };
 
-use crate::view::ViewMarker;
+use crate::{view::ViewMarker, widget::AsAny};
 use crate::{
     event::MessageResult,
     id::Id,
-    widget::{AnyWidget, ChangeFlags},
+    widget::ChangeFlags,
 };
 
 use super::{
-    view::{GenericView, WidgetBound},
-    Cx, View,
+    view::GenericView,
+    Cx, TraitBound,
 };
 
 /// A trait enabling type erasure of views.
@@ -37,18 +37,18 @@ use super::{
 /// be well beyond the capability of Rust's type system. If type-erased
 /// views with other bounds are needed, the best approach is probably
 /// duplication of the code, probably with a macro.
-pub trait AnyView<T, A = ()> {
+pub trait AnyView<T, W, A = ()> {
     fn as_any(&self) -> &dyn Any;
 
-    fn dyn_build(&self, cx: &mut Cx) -> (Id, Box<dyn Any + Send>, Box<dyn AnyWidget>);
+    fn dyn_build(&self, cx: &mut Cx) -> (Id, Box<dyn Any + Send>, Box<W>);
 
     fn dyn_rebuild(
         &self,
         cx: &mut Cx,
-        prev: &dyn AnyView<T, A>,
+        prev: &dyn AnyView<T, W, A>,
         id: &mut Id,
         state: &mut Box<dyn Any + Send>,
-        element: &mut Box<dyn AnyWidget>,
+        element: &mut Box<W>,
     ) -> ChangeFlags;
 
     fn dyn_message(
@@ -60,31 +60,32 @@ pub trait AnyView<T, A = ()> {
     ) -> MessageResult<A>;
 }
 
-impl<T, A, V: View<T, A> + 'static> AnyView<T, A> for V
+impl<T, W, A, V: GenericView<T, W, A> + 'static> AnyView<T, W, A> for V
 where
     V::State: 'static,
-    V::Element: AnyWidget + 'static,
+    V::Element: TraitBound<W> + 'static,
+    Box<W>: AsAny,
 {
     fn as_any(&self) -> &dyn Any {
         self
     }
 
-    fn dyn_build(&self, cx: &mut Cx) -> (Id, Box<dyn Any + Send>, Box<dyn AnyWidget>) {
+    fn dyn_build(&self, cx: &mut Cx) -> (Id, Box<dyn Any + Send>, Box<W>) {
         let (id, state, element) = self.build(cx);
-        (id, Box::new(state), Box::new(element))
+        (id, Box::new(state), element.boxed())
     }
 
     fn dyn_rebuild(
         &self,
         cx: &mut Cx,
-        prev: &dyn AnyView<T, A>,
+        prev: &dyn AnyView<T, W, A>,
         id: &mut Id,
         state: &mut Box<dyn Any + Send>,
-        element: &mut Box<dyn AnyWidget>,
+        element: &mut Box<W>,
     ) -> ChangeFlags {
         if let Some(prev) = prev.as_any().downcast_ref() {
             if let Some(state) = state.downcast_mut() {
-                if let Some(element) = element.deref_mut().as_any_mut().downcast_mut() {
+                if let Some(element) = element.as_any_mut().downcast_mut() {
                     self.rebuild(cx, prev, id, state, element)
                 } else {
                     println!("downcast of element failed in dyn_rebuild");
@@ -98,7 +99,7 @@ where
             let (new_id, new_state, new_element) = self.build(cx);
             *id = new_id;
             *state = Box::new(new_state);
-            *element = Box::new(new_element);
+            *element = new_element.boxed();
 
             // Everything about the new view could be different, so return all the flags
             ChangeFlags::all()
@@ -121,12 +122,14 @@ where
     }
 }
 
-impl<T, A> ViewMarker for Box<dyn AnyView<T, A> + Send> {}
+impl<T, W, A> ViewMarker for Box<dyn AnyView<T, W, A> + Send> {}
 
-impl<T, A> GenericView<T, WidgetBound, A> for Box<dyn AnyView<T, A> + Send> {
+impl<T, W, A> GenericView<T, W, A> for Box<dyn AnyView<T, W, A> + Send>
+    where Box<W>: TraitBound<W>
+{
     type State = Box<dyn Any + Send>;
 
-    type Element = Box<dyn AnyWidget>;
+    type Element = Box<W>;
 
     fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
         self.deref().dyn_build(cx)
