@@ -17,7 +17,7 @@ use std::{any::Any, marker::PhantomData};
 use crate::event::MessageResult;
 use crate::geometry::Axis;
 use crate::id::Id;
-use crate::view::sequence::ViewSequence;
+use crate::view::sequence::{SequencePosition, ViewSequence};
 use crate::view::ViewMarker;
 use crate::widget::{self, ChangeFlags};
 use crate::VecSplice;
@@ -29,12 +29,20 @@ use super::{Cx, View};
 /// Each Element is positioned on the specified Axis starting at the beginning with the given spacing
 ///
 /// This View is only temporary is probably going to be replaced by something like Druid's Flex
-/// widget.
+/// widget.prev
 pub struct LinearLayout<T, A, VT: ViewSequence<T, A>> {
     children: VT,
     spacing: f64,
     axis: Axis,
     phantom: PhantomData<fn() -> (T, A)>,
+}
+
+struct LinearLayoutState {
+    current_position: SequencePosition,
+}
+
+enum LoadItemsMessage {
+    
 }
 
 /// creates a vertical [`LinearLayout`].
@@ -67,7 +75,7 @@ impl<T, A, VT: ViewSequence<T, A>> LinearLayout<T, A, VT> {
 impl<T, A, VT: ViewSequence<T, A>> ViewMarker for LinearLayout<T, A, VT> {}
 
 impl<T, A, VT: ViewSequence<T, A>> View<T, A> for LinearLayout<T, A, VT> {
-    type State = VT::State;
+    type State = (VT::State, LinearLayoutState);
 
     type Element = widget::LinearLayout;
 
@@ -75,7 +83,8 @@ impl<T, A, VT: ViewSequence<T, A>> View<T, A> for LinearLayout<T, A, VT> {
         let mut elements = vec![];
         let (id, state) = cx.with_new_id(|cx| self.children.build(cx, &mut elements));
         let column = widget::LinearLayout::new(elements, self.spacing, self.axis);
-        (id, state, column)
+
+        (id, (state, LinearLayoutState { current_position: SequencePosition::Fraction(0.0), }, ), column)
     }
 
     fn rebuild(
@@ -89,10 +98,12 @@ impl<T, A, VT: ViewSequence<T, A>> View<T, A> for LinearLayout<T, A, VT> {
         let mut scratch = vec![];
         let mut splice = VecSplice::new(&mut element.children, &mut scratch);
 
-        let mut flags = cx.with_id(*id, |cx| {
+        let (mut flags, position) = cx.with_id(*id, |cx| {
             self.children
-                .rebuild(cx, &prev.children, state, &mut splice)
+                .rebuild(cx, &prev.children, &mut state.0, &mut splice)
         });
+
+        state.1.current_position = position;
 
         if self.spacing != prev.spacing || self.axis != prev.axis {
             element.spacing = self.spacing;
@@ -110,6 +121,6 @@ impl<T, A, VT: ViewSequence<T, A>> View<T, A> for LinearLayout<T, A, VT> {
         event: Box<dyn Any>,
         app_state: &mut T,
     ) -> MessageResult<A> {
-        self.children.message(id_path, state, event, app_state)
+        self.children.message(id_path, &mut state.0, event, app_state)
     }
 }
