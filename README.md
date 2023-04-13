@@ -80,11 +80,9 @@ Building and running Xilem on Linux and BSD  requires `pkg-config`, `clang`,
 and the development packages of `libxkbcommon`, `libxcb`, and `vulkan-loader`,
 to be installed.
 
-On Fedora this can be achieved using:
-
-To install these packages on Fedora, run
+Most distributions have `pkg-config` installed by default. To install the remaining packages on Fedora, run
 ```
-sudo dnf install clang libxkbcommon-x11-devel libxcb-devel pkg-config vulkan-loader-devel
+sudo dnf install clang libxkbcommon-x11-devel libxcb-devel vulkan-loader-devel
 ```
 To install them on Debian or Ubuntu, run
 ```
