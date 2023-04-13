@@ -120,19 +120,19 @@ impl<E: Element, T: 'static, A: 'static> ViewSequence<E, T, A> for Box<dyn AnySe
     type State = Box<dyn Any + Send>;
 
     fn build(&self, cx: &mut Cx, elements: &mut Vec<E>) -> Self::State {
-        self.dyn_build(cx, elements)
+        self.deref().dyn_build(cx, elements)
     }
 
     fn rebuild(&self, cx: &mut Cx, prev: &Self, state: &mut Self::State, element: &mut VecSplice<E>) -> ChangeFlags {
-        self.dyn_rebuild(cx, prev, state, element)
+        self.deref().dyn_rebuild(cx, prev, state, element)
     }
 
     fn message(&self, id_path: &[Id], state: &mut Self::State, message: Box<dyn Any>, app_state: &mut T) -> MessageResult<A> {
-        self.dyn_message(id_path, state, message, app_state)
+        self.deref().dyn_message(id_path, state, message, app_state)
     }
 
     fn count(&self, state: &Self::State) -> usize {
-        self.dyn_count(state)
+        self.deref().dyn_count(state)
     }
 }
 
@@ -144,15 +144,15 @@ impl<E: Element, T: 'static, A: 'static> ViewSequence<E, T, A> for Box<dyn AnyVi
     type State = Box<dyn Any + Send>;
 
     fn build(&self, cx: &mut Cx, elements: &mut Vec<E>) -> Self::State {
-        self.dyn_build(cx, elements)
+        self.deref().dyn_build(cx, elements)
     }
 
     fn rebuild(&self, cx: &mut Cx, prev: &Self, state: &mut Self::State, element: &mut VecSplice<E>) -> ChangeFlags {
-        self.dyn_rebuild(cx, prev, state, element)
+        self.deref().dyn_rebuild(cx, prev, state, element)
     }
 
     fn message(&self, id_path: &[Id], state: &mut Self::State, message: Box<dyn Any>, app_state: &mut T) -> MessageResult<A> {
-        self.dyn_message(id_path, state, message, app_state)
+        self.deref().dyn_message(id_path, state, message, app_state)
     }
 
     fn count(&self, state: &Self::State) -> usize {

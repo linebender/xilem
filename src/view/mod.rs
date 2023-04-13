@@ -28,7 +28,7 @@ mod view;
 mod typed_view;
 mod cx;
 
-pub use any_view::AnySequence;
+pub use any_view::{AnyView, AnySequence};
 pub use button::button;
 pub use linear_layout::{h_stack, v_stack, LinearLayout};
 pub use list::{list, List};
