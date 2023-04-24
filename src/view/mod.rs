@@ -27,7 +27,7 @@ mod list;
 mod sequence;
 mod view;
 
-pub use any_view::AnyView;
+pub use any_view::{AnyView, AsAnyMut};
 pub use button::button;
 pub use linear_layout::{h_stack, v_stack, LinearLayout};
 pub use list::{list, List};

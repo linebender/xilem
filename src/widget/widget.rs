@@ -16,6 +16,7 @@ use std::any::Any;
 use std::ops::DerefMut;
 
 use crate::geometry::Axis;
+use crate::view::AsAnyMut;
 use glazier::kurbo::Size;
 use vello::SceneBuilder;
 
@@ -183,10 +184,6 @@ pub trait Widget {
     }
 }
 
-pub trait AsAny {
-    fn as_any_mut(&mut self) -> &mut dyn Any;
-}
-
 pub trait AnyWidget: Widget {
     fn as_any(&self) -> &dyn Any;
 
@@ -235,7 +232,7 @@ impl Widget for Box<dyn AnyWidget> {
     }
 }
 
-impl AsAny for Box<dyn AnyWidget> {
+impl AsAnyMut for Box<dyn AnyWidget> {
     fn as_any_mut(&mut self) -> &mut dyn Any {
         self.deref_mut().as_any_mut()
     }

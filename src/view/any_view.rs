@@ -16,17 +16,15 @@ use std::{
     ops::{Deref, DerefMut},
 };
 
-use crate::{view::ViewMarker, widget::AsAny};
-use crate::{
-    event::MessageResult,
-    id::Id,
-    widget::ChangeFlags,
-};
+use crate::view::ViewMarker;
+use crate::{event::MessageResult, id::Id, widget::ChangeFlags};
 
-use super::{
-    view::GenericView,
-    Cx, TraitBound,
-};
+use super::{view::GenericView, Cx, TraitBound};
+
+/// A trait allowing access to dynamic typing.
+pub trait AsAnyMut {
+    fn as_any_mut(&mut self) -> &mut dyn Any;
+}
 
 /// A trait enabling type erasure of views.
 ///
@@ -64,7 +62,7 @@ impl<T, W: ?Sized, A, V: GenericView<T, W, A> + 'static> AnyView<T, W, A> for V
 where
     V::State: 'static,
     V::Element: TraitBound<W> + 'static,
-    Box<W>: AsAny,
+    Box<W>: AsAnyMut,
 {
     fn as_any(&self) -> &dyn Any {
         self
@@ -125,7 +123,8 @@ where
 impl<T, W: ?Sized, A> ViewMarker for Box<dyn AnyView<T, W, A> + Send> {}
 
 impl<T, W: ?Sized, A> GenericView<T, W, A> for Box<dyn AnyView<T, W, A> + Send>
-    where Box<W>: TraitBound<W>
+where
+    Box<W>: TraitBound<W>,
 {
     type State = Box<dyn Any + Send>;
 
