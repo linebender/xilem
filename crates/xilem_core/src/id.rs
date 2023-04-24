@@ -1,29 +1,23 @@
 // Copyright 2022 The Druid Authors.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
-use std::num::NonZeroU64;
+use std::{
+    num::NonZeroU64,
+    sync::atomic::{AtomicU64, Ordering},
+};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Hash)]
 /// A stable identifier for an element.
 pub struct Id(NonZeroU64);
 
+pub type IdPath = Vec<Id>;
+
 impl Id {
     /// Allocate a new, unique `Id`.
     pub fn next() -> Id {
-        use glazier::Counter;
-        static WIDGET_ID_COUNTER: Counter = Counter::new();
-        Id(WIDGET_ID_COUNTER.next_nonzero())
+        static ID_COUNTER: AtomicU64 = AtomicU64::new(1);
+        // Note: we can make the safety argument for the unchecked version.
+        Id(NonZeroU64::new(ID_COUNTER.fetch_add(1, Ordering::Relaxed)).unwrap())
     }
 
     #[allow(unused)]
@@ -35,6 +29,7 @@ impl Id {
         self.0
     }
 
+    /*
     /// Turns an `accesskit::NodeId` id into an `Id`.
     ///
     /// This method will only return `Some` for `accesskit::NodeId` values which were created from
@@ -45,10 +40,17 @@ impl Id {
     pub fn try_from_accesskit(id: accesskit::NodeId) -> Option<Self> {
         id.0.try_into().ok().map(|id| Id(id))
     }
+    */
 }
 
+// Discussion question: do we need AccessKit integration for id's at the view level, or is
+// that primarily a widget concern? If the former, then we should probably have a feature
+// that enables these conversions.
+
+/*
 impl From<Id> for accesskit::NodeId {
     fn from(id: Id) -> accesskit::NodeId {
         id.to_nonzero_raw().into()
     }
 }
+*/

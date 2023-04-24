@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::view::{Cx, ViewSequence};
+use crate::view::{Cx, VecSplice, ViewSequence};
 use crate::widget::{ChangeFlags, Pod};
-use crate::{Id, MessageResult, VecSplice};
+use crate::MessageResult;
 use std::any::Any;
 use std::marker::PhantomData;
 
@@ -111,7 +111,7 @@ impl<T, A, VT: ViewSequence<T, A>, F: Fn(usize) -> VT + Send> ViewSequence<T, A>
 
     fn message(
         &self,
-        id_path: &[Id],
+        id_path: &[xilem_core::Id],
         state: &mut Self::State,
         message: Box<dyn Any>,
         app_state: &mut T,

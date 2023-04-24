@@ -14,13 +14,10 @@
 
 use std::{any::Any, marker::PhantomData};
 
-use crate::event::MessageResult;
 use crate::geometry::Axis;
-use crate::id::Id;
-use crate::view::sequence::ViewSequence;
-use crate::view::ViewMarker;
+use crate::view::{Id, VecSplice, ViewMarker, ViewSequence};
 use crate::widget::{self, ChangeFlags};
-use crate::VecSplice;
+use crate::MessageResult;
 
 use super::{Cx, View};
 
