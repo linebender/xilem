@@ -39,7 +39,7 @@ impl TraitPod for WidgetBound {
 /// The `View` trait is parameterized by `T`, which is known as the "app state",
 /// and also a type for actions which are passed up the tree in event
 /// propagation. During event handling, mutable access to the app state is
-/// given to view nodes, which in turn can make expose it to callbacks.
+/// given to view nodes, which in turn can expose it to callbacks.
 pub trait ViewSequence<T, W: ?Sized + TraitPod, A = ()>: Send {
     /// Associated states for the views.
     type State: Send;

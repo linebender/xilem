@@ -76,19 +76,17 @@ The type erasure of View nodes is not an easy trick, as the trait has two associ
 
 ### Linux
 
-In order to run Xilem on Linux, the development library [xkbcommon] needs to be installed.
+Building and running Xilem on Linux and BSD  requires `pkg-config`, `clang`,
+and the development packages of `libxkbcommon`, `libxcb`, and `vulkan-loader`,
+to be installed.
 
-On Fedora this can be installed using:
-
-```sh
-sudo dnf install libxkbcommon-x11-devel.x86_64
-# i686 is a less common architecure, but if you have it, use libxkbcommon-x11-devel.i686 instead
+Most distributions have `pkg-config` installed by default. To install the remaining packages on Fedora, run
 ```
-
-Debian:
-
-```sh
-sudo apt-get install libxkbcommon-x11-dev
+sudo dnf install clang libxkbcommon-x11-devel libxcb-devel vulkan-loader-devel
+```
+To install them on Debian or Ubuntu, run
+```
+sudo apt-get install clang libxkbcommon-x11-dev pkg-config libvulkan-dev
 ```
 
 [Html.lazy]: https://guide.elm-lang.org/optimization/lazy.html
