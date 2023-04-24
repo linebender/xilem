@@ -25,7 +25,7 @@ use glazier::{
 };
 use parley::FontContext;
 
-use crate::event::Message;
+use xilem_core::Message;
 
 use super::{PodFlags, WidgetState};
 

@@ -15,8 +15,9 @@
 use std::any::Any;
 use std::ops::DerefMut;
 
+use xilem_core::AsAnyMut;
+
 use crate::geometry::Axis;
-use crate::view::AsAnyMut;
 use glazier::kurbo::Size;
 use vello::SceneBuilder;
 

@@ -14,15 +14,13 @@
 
 use std::{any::Any, marker::PhantomData};
 
-use crate::event::MessageResult;
-use crate::geometry::Axis;
-use crate::id::Id;
-use crate::view::sequence::ViewSequence;
-use crate::view::ViewMarker;
-use crate::widget::{self, ChangeFlags};
-use crate::VecSplice;
+use xilem_core::{
+    ChangeFlags, Cx, GenericView, Id, MessageResult, VecSplice, ViewMarker, ViewSequence,
+};
 
-use super::{Cx, GenericView, WidgetBound};
+use crate::geometry::Axis;
+
+use crate::view::widget_integration::WidgetBound;
 
 /// LinearLayout is a simple view which does layout for the specified ViewSequence.
 ///
@@ -71,12 +69,12 @@ impl<T, A, VT: ViewSequence<T, WidgetBound, A>> GenericView<T, WidgetBound, A>
 {
     type State = VT::State;
 
-    type Element = widget::LinearLayout;
+    type Element = crate::widget::LinearLayout;
 
     fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
         let mut elements = vec![];
         let (id, state) = cx.with_new_id(|cx| self.children.build(cx, &mut elements));
-        let column = widget::LinearLayout::new(elements, self.spacing, self.axis);
+        let column = crate::widget::LinearLayout::new(elements, self.spacing, self.axis);
         (id, state, column)
     }
 

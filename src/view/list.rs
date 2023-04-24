@@ -12,11 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::view::{Cx, ViewSequence};
-use crate::widget::{ChangeFlags, Pod};
-use crate::{Id, MessageResult, VecSplice};
+use crate::widget::Pod;
 use std::any::Any;
 use std::marker::PhantomData;
+use xilem_core::{ChangeFlags, Cx, Id, MessageResult, VecSplice, ViewSequence};
 
 use super::WidgetBound;
 

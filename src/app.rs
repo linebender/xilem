@@ -24,18 +24,13 @@ use tokio::runtime::Runtime;
 use vello::kurbo::{Point, Rect};
 use vello::SceneFragment;
 
-use crate::event::{AsyncWake, MessageResult};
-use crate::id::IdPath;
+use xilem_core::{AsyncWake, Cx, Id, IdPath, Message, MessageResult, TraitBound};
+
 use crate::widget::{
     AccessCx, BoxConstraints, CxState, EventCx, LayoutCx, LifeCycle, LifeCycleCx, PaintCx, Pod,
     PodFlags, UpdateCx, ViewContext, WidgetState,
 };
-use crate::{
-    event::Message,
-    id::Id,
-    view::{Cx, TraitBound, View},
-    widget::Event,
-};
+use crate::{view::View, widget::Event};
 
 /// App is the native backend implementation of Xilem. It contains the code interacting with glazier
 /// and vello.
@@ -58,7 +53,7 @@ pub struct App<T, V: View<T>> {
     pub(crate) rt: Runtime,
     // This is allocated an id for AccessKit, but as we get multi-window,
     // there should be a real window object with id.
-    window_id: Id,
+    window_id: crate::id::Id,
     pub(crate) accesskit_connected: bool,
     node_classes: accesskit::NodeClassSet,
 }
@@ -181,7 +176,7 @@ where
             cx,
             font_cx: FontContext::new(),
             rt,
-            window_id: Id::next(),
+            window_id: crate::id::Id::next(),
             accesskit_connected: false,
             node_classes: accesskit::NodeClassSet::new(),
         }

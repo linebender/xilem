@@ -25,7 +25,7 @@ mod raw_event;
 //mod text;
 mod widget;
 
-pub use self::core::{ChangeFlags, Pod};
+pub use self::core::Pod;
 pub(crate) use self::core::{PodFlags, WidgetState};
 pub use box_constraints::BoxConstraints;
 pub use button::Button;

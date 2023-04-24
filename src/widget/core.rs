@@ -23,8 +23,8 @@ use vello::kurbo::Affine;
 use vello::{SceneBuilder, SceneFragment};
 
 use super::widget::{AnyWidget, Widget};
-use crate::view::Element;
 use crate::{id::Id, Bloom};
+use xilem_core::{ChangeFlags, Element};
 
 use super::{
     contexts::LifeCycleCx, AccessCx, BoxConstraints, CxState, Event, EventCx, LayoutCx, LifeCycle,
@@ -36,12 +36,12 @@ bitflags! {
     pub(crate) struct PodFlags: u32 {
         // These values are set to the values of their pendants in ChangeFlags to allow transmuting
         // between the two types.
-        const REQUEST_UPDATE = ChangeFlags::UPDATE.bits as _;
-        const REQUEST_LAYOUT = ChangeFlags::LAYOUT.bits as _;
-        const REQUEST_ACCESSIBILITY = ChangeFlags::ACCESSIBILITY.bits as _;
-        const REQUEST_PAINT = ChangeFlags::PAINT.bits as _;
-        const TREE_CHANGED = ChangeFlags::TREE.bits as _;
-        const DESCENDANT_REQUESTED_ACCESSIBILITY = ChangeFlags::DESCENDANT_REQUESTED_ACCESSIBILITY.bits as _;
+        const REQUEST_UPDATE = ChangeFlags::UPDATE.bits() as _;
+        const REQUEST_LAYOUT = ChangeFlags::LAYOUT.bits() as _;
+        const REQUEST_ACCESSIBILITY = ChangeFlags::ACCESSIBILITY.bits() as _;
+        const REQUEST_PAINT = ChangeFlags::PAINT.bits() as _;
+        const TREE_CHANGED = ChangeFlags::TREE.bits() as _;
+        const DESCENDANT_REQUESTED_ACCESSIBILITY = ChangeFlags::DESCENDANT_REQUESTED_ACCESSIBILITY.bits() as _;
 
         // Everything else uses bitmasks greater than the max value of ChangeFlags: mask >= 0x100
         const VIEW_CONTEXT_CHANGED = 0x100;
@@ -65,19 +65,6 @@ bitflags! {
             | Self::DESCENDANT_REQUESTED_ACCESSIBILITY.bits
             | Self::REQUEST_PAINT.bits
             | Self::TREE_CHANGED.bits;
-    }
-}
-
-bitflags! {
-    #[derive(Default)]
-    #[must_use]
-    pub struct ChangeFlags: u8 {
-        const UPDATE = 1;
-        const LAYOUT = 2;
-        const ACCESSIBILITY = 4;
-        const PAINT = 8;
-        const TREE = 0x10;
-        const DESCENDANT_REQUESTED_ACCESSIBILITY = 0x20;
     }
 }
 
@@ -121,15 +108,6 @@ impl PodFlags {
             result |= PodFlags::DESCENDANT_REQUESTED_ACCESSIBILITY;
         }
         result
-    }
-}
-
-impl ChangeFlags {
-    pub(crate) fn upwards(self) -> Self {
-        // Note: this assumes PodFlags are a superset of ChangeFlags. This might
-        // not always be the case, for example on "structure changed."
-        let pod_flags = PodFlags::from_bits_truncate(self.bits as _);
-        ChangeFlags::from_bits_truncate(pod_flags.upwards().bits as _)
     }
 }
 
@@ -189,7 +167,7 @@ impl Pod {
     /// Sets the requested flags on this pod and returns the ChangeFlags the owner of this Pod should set.
     pub fn mark(&mut self, flags: ChangeFlags) -> ChangeFlags {
         self.state
-            .request(PodFlags::from_bits_truncate(flags.bits as _));
+            .request(PodFlags::from_bits_truncate(flags.bits() as _));
         flags.upwards()
     }
 
@@ -572,7 +550,7 @@ impl Element for Pod {
     /// Sets the requested flags on this pod and returns the Flags the parent of this Pod should set.
     fn mark(&mut self, flags: ChangeFlags) -> ChangeFlags {
         self.state
-            .request(PodFlags::from_bits_truncate(flags.bits as _));
+            .request(PodFlags::from_bits_truncate(flags.bits() as _));
         flags.upwards()
     }
 }

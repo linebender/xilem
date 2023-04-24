@@ -13,7 +13,6 @@
 // limitations under the License.
 
 // mod adapt;
-mod any_view;
 // mod async_list;
 mod button;
 // mod layout_observer;
@@ -24,12 +23,9 @@ mod button;
 // mod use_state;
 mod linear_layout;
 mod list;
-mod sequence;
-mod view;
+mod widget_integration;
 
-pub use any_view::{AnyView, AsAnyMut};
 pub use button::button;
 pub use linear_layout::{h_stack, v_stack, LinearLayout};
 pub use list::{list, List};
-pub use sequence::{Element, ViewSequence};
-pub use view::{Cx, GenericView, TraitBound, View, ViewMarker, WidgetBound};
+pub use widget_integration::{View, WidgetBound};

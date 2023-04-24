@@ -21,13 +21,14 @@ use vello::{
     SceneBuilder,
 };
 
-use crate::{event::Message, id::IdPath, text::ParleyBrush};
+use xilem_core::{ChangeFlags, IdPath, Message};
+
+use crate::text::ParleyBrush;
 
 use super::{
     contexts::LifeCycleCx,
     piet_scene_helpers::{self, UnitPoint},
-    AccessCx, BoxConstraints, ChangeFlags, Event, EventCx, LayoutCx, LifeCycle, PaintCx, UpdateCx,
-    Widget,
+    AccessCx, BoxConstraints, Event, EventCx, LayoutCx, LifeCycle, PaintCx, UpdateCx, Widget,
 };
 
 pub struct Button {
