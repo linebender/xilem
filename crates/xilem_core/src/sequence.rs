@@ -95,7 +95,7 @@ macro_rules! generate_viewsequence_trait {
         where
             V::Element: $bound + 'static,
         {
-            type State = (<V as $view<T, A>>::State, Id);
+            type State = (<V as $view<T, A>>::State, $crate::Id);
 
             fn build(&self, cx: &mut $cx, elements: &mut Vec<$pod>) -> Self::State {
                 let (id, state, element) = <V as $view<T, A>>::build(self, cx);

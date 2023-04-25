@@ -11,7 +11,7 @@ macro_rules! generate_anyview_trait {
             fn dyn_build(
                 &self,
                 cx: &mut $cx,
-            ) -> (Id, Box<dyn std::any::Any + Send>, Box<dyn $anywidget>);
+            ) -> ($crate::Id, Box<dyn std::any::Any + Send>, Box<dyn $anywidget>);
 
             fn dyn_rebuild(
                 &self,
@@ -42,17 +42,17 @@ macro_rules! generate_anyview_trait {
 
             fn dyn_build(
                 &self,
-                cx: &mut Cx,
-            ) -> (Id, Box<dyn std::any::Any + Send>, Box<dyn $anywidget>) {
+                cx: &mut $cx,
+            ) -> ($crate::Id, Box<dyn std::any::Any + Send>, Box<dyn $anywidget>) {
                 let (id, state, element) = self.build(cx);
                 (id, Box::new(state), Box::new(element))
             }
 
             fn dyn_rebuild(
                 &self,
-                cx: &mut Cx,
+                cx: &mut $cx,
                 prev: &dyn AnyView<T, A>,
-                id: &mut Id,
+                id: &mut $crate::Id,
                 state: &mut Box<dyn std::any::Any + Send>,
                 element: &mut Box<dyn $anywidget>,
             ) -> ChangeFlags {
@@ -83,7 +83,7 @@ macro_rules! generate_anyview_trait {
 
             fn dyn_message(
                 &self,
-                id_path: &[Id],
+                id_path: &[$crate::Id],
                 state: &mut dyn std::any::Any,
                 message: Box<dyn std::any::Any>,
                 app_state: &mut T,
@@ -102,16 +102,16 @@ macro_rules! generate_anyview_trait {
 
             type Element = Box<dyn $anywidget>;
 
-            fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
+            fn build(&self, cx: &mut $cx) -> ($crate::Id, Self::State, Self::Element) {
                 use std::ops::Deref;
                 self.deref().dyn_build(cx)
             }
 
             fn rebuild(
                 &self,
-                cx: &mut Cx,
+                cx: &mut $cx,
                 prev: &Self,
-                id: &mut Id,
+                id: &mut $crate::Id,
                 state: &mut Self::State,
                 element: &mut Self::Element,
             ) -> $changeflags {
@@ -122,7 +122,7 @@ macro_rules! generate_anyview_trait {
 
             fn message(
                 &self,
-                id_path: &[Id],
+                id_path: &[$crate::Id],
                 state: &mut Self::State,
                 message: Box<dyn std::any::Any>,
                 app_state: &mut T,
