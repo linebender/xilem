@@ -3,7 +3,7 @@
 
 #[macro_export]
 macro_rules! generate_anyview_trait {
-    ($viewtrait:ident, $cx:ty, $changeflags:ty, $anywidget:ident) => {
+    ($viewtrait:ident, $cx:ty, $changeflags:ty, $anywidget:ident $($ss:tt)*) => {
         /// A trait enabling type erasure of views.
         pub trait AnyView<T, A = ()> {
             fn as_any(&self) -> &dyn std::any::Any;
@@ -11,14 +11,14 @@ macro_rules! generate_anyview_trait {
             fn dyn_build(
                 &self,
                 cx: &mut $cx,
-            ) -> ($crate::Id, Box<dyn std::any::Any + Send>, Box<dyn $anywidget>);
+            ) -> ($crate::Id, Box<dyn std::any::Any $( $ss )* >, Box<dyn $anywidget>);
 
             fn dyn_rebuild(
                 &self,
                 cx: &mut $cx,
                 prev: &dyn AnyView<T, A>,
                 id: &mut $crate::Id,
-                state: &mut Box<dyn std::any::Any + Send>,
+                state: &mut Box<dyn std::any::Any $( $ss )* >,
                 element: &mut Box<dyn $anywidget>,
             ) -> $changeflags;
 
@@ -43,7 +43,7 @@ macro_rules! generate_anyview_trait {
             fn dyn_build(
                 &self,
                 cx: &mut $cx,
-            ) -> ($crate::Id, Box<dyn std::any::Any + Send>, Box<dyn $anywidget>) {
+            ) -> ($crate::Id, Box<dyn std::any::Any $( $ss )* >, Box<dyn $anywidget>) {
                 let (id, state, element) = self.build(cx);
                 (id, Box::new(state), Box::new(element))
             }
@@ -53,7 +53,7 @@ macro_rules! generate_anyview_trait {
                 cx: &mut $cx,
                 prev: &dyn AnyView<T, A>,
                 id: &mut $crate::Id,
-                state: &mut Box<dyn std::any::Any + Send>,
+                state: &mut Box<dyn std::any::Any $( $ss )* >,
                 element: &mut Box<dyn $anywidget>,
             ) -> ChangeFlags {
                 use std::ops::DerefMut;
@@ -97,8 +97,8 @@ macro_rules! generate_anyview_trait {
             }
         }
 
-        impl<T, A> $viewtrait<T, A> for Box<dyn AnyView<T, A> + Send> {
-            type State = Box<dyn std::any::Any + Send>;
+        impl<T, A> $viewtrait<T, A> for Box<dyn AnyView<T, A> $( $ss )* > {
+            type State = Box<dyn std::any::Any $( $ss )* >;
 
             type Element = Box<dyn $anywidget>;
 

@@ -3,7 +3,7 @@
 
 #[macro_export]
 macro_rules! generate_view_trait {
-    ($viewtrait:ident, $bound:ident, $cx:ty, $changeflags: ty) => {
+    ($viewtrait:ident, $bound:ident, $cx:ty, $changeflags: ty; $($ss:tt)*) => {
         /// A view object representing a node in the UI.
         ///
         /// This is a central trait for representing UI. An app will generate a tree of
@@ -21,9 +21,9 @@ macro_rules! generate_view_trait {
         /// and also a type for actions which are passed up the tree in event
         /// propagation. During event handling, mutable access to the app state is
         /// given to view nodes, which in turn can expose it to callbacks.
-        pub trait $viewtrait<T, A = ()>: Send {
+        pub trait $viewtrait<T, A = ()> $( $ss )* {
             /// Associated state for the view.
-            type State: Send;
+            type State $( $ss )*;
 
             /// The associated element for the view.
             type Element: $bound;

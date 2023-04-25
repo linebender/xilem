@@ -23,9 +23,9 @@ use xilem_core::{Id, IdPath};
 
 use crate::widget::{AnyWidget, ChangeFlags, Pod, Widget};
 
-xilem_core::generate_view_trait! {View, Widget, Cx, ChangeFlags}
-xilem_core::generate_viewsequence_trait! {ViewSequence, View, ViewMarker, Widget, Cx, ChangeFlags, Pod}
-xilem_core::generate_anyview_trait! {View, Cx, ChangeFlags, AnyWidget}
+xilem_core::generate_view_trait! {View, Widget, Cx, ChangeFlags; : Send}
+xilem_core::generate_viewsequence_trait! {ViewSequence, View, ViewMarker, Widget, Cx, ChangeFlags, Pod; : Send}
+xilem_core::generate_anyview_trait! {View, Cx, ChangeFlags, AnyWidget + Send}
 
 #[derive(Clone)]
 pub struct Cx {
