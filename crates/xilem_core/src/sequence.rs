@@ -213,6 +213,53 @@ macro_rules! generate_viewsequence_trait {
             }
         }
 
+        impl<T, A, VT: $viewseq<T, A>> $viewseq<T, A> for Vec<VT> {
+            type State = Vec<VT::State>;
+
+            fn build(&self, cx: &mut $cx, elements: &mut Vec<$pod>) -> Self::State {
+                self.iter().map(|child| child.build(cx, elements)).collect()
+            }
+
+            fn rebuild(
+                &self,
+                cx: &mut $cx,
+                prev: &Self,
+                state: &mut Self::State,
+                element: &mut $crate::VecSplice<$pod>,
+            ) -> $changeflags {
+                let mut changed = <$changeflags>::default();
+                for ((child, child_prev), child_state) in self.iter().zip(prev).zip(state) {
+                    let el_changed = child.rebuild(cx, child_prev, child_state, element);
+                    changed |= el_changed;
+                }
+                changed
+            }
+
+            fn count(&self, state: &Self::State) -> usize {
+                self.iter().zip(state).map(|(child, child_state)|
+                    child.count(child_state))
+                    .sum()
+            }
+
+            fn message(
+                &self,
+                id_path: &[$crate::Id],
+                state: &mut Self::State,
+                message: Box<dyn std::any::Any>,
+                app_state: &mut T,
+            ) -> $crate::MessageResult<A> {
+                let mut result = $crate::MessageResult::Stale(message);
+                for (child, child_state) in self.iter().zip(state) {
+                    if let $crate::MessageResult::Stale(message) = result {
+                        result = child.message(id_path, child_state, message, app_state);
+                    } else {
+                        break;
+                    }
+                }
+                result
+            }
+        }
+
         /// This trait marks a type a
         #[doc = concat!(stringify!($view), ".")]
         ///
