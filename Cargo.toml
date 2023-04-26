@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "crates/xilem_core",
+    "crates/xilemsvg",
 ]
 
 [package]

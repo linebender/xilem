@@ -1447,9 +1447,9 @@ dependencies = [
 
 [[package]]
 name = "kurbo"
-version = "0.9.0"
+version = "0.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e119590a03caff1f7a582e8ee8c2164ddcc975791701188132fd1d1b518d3871"
+checksum = "28a2d0c1781729f69dbea30f968608cadfaeb6582e5ce903a167a5216b53cd0f"
 dependencies = [
  "arrayvec",
 ]
@@ -3105,6 +3105,17 @@ dependencies = [
 [[package]]
 name = "xilem_core"
 version = "0.1.0"
+
+[[package]]
+name = "xilemsvg"
+version = "0.1.0"
+dependencies = [
+ "bitflags",
+ "kurbo",
+ "wasm-bindgen",
+ "web-sys",
+ "xilem_core",
+]
 
 [[package]]
 name = "xml-rs"
