@@ -63,21 +63,18 @@ macro_rules! generate_anyview_trait {
                             self.rebuild(cx, prev, id, state, element)
                         } else {
                             println!("downcast of element failed in dyn_rebuild");
-                            ChangeFlags::default()
+                            <$changeflags>::default()
                         }
                     } else {
                         println!("downcast of state failed in dyn_rebuild");
-                        ChangeFlags::default()
+                        <$changeflags>::default()
                     }
                 } else {
                     let (new_id, new_state, new_element) = self.build(cx);
                     *id = new_id;
                     *state = Box::new(new_state);
                     *element = Box::new(new_element);
-
-                    // Everything about the new view could be different, so return all the flags
-                    // TODO: this isn't right
-                    <$changeflags>::all()
+                    <$changeflags>::tree_structure()
                 }
             }
 
