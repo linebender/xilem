@@ -27,6 +27,12 @@ bitflags! {
     }
 }
 
+impl ChangeFlags {
+    pub fn tree_structure() -> Self {
+        ChangeFlags::STRUCTURE
+    }
+}
+
 impl Cx {
     pub fn new() -> Self {
         let window = web_sys::window().expect("no global `window` exists");

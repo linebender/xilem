@@ -177,13 +177,13 @@ macro_rules! generate_viewsequence_trait {
                         element.delete(count);
                         *state = None;
 
-                        <$changeflags>::all()
+                        <$changeflags>::tree_structure()
                     }
                     (Some(this), None, None) => {
                         let seq_state = element.as_vec(|vec| this.build(cx, vec));
                         *state = Some(seq_state);
 
-                        <$changeflags>::all()
+                        <$changeflags>::tree_structure()
                     }
                     (None, None, None) => <$changeflags>::empty(),
                     _ => panic!("non matching state and prev value"),
@@ -225,12 +225,32 @@ macro_rules! generate_viewsequence_trait {
                 cx: &mut $cx,
                 prev: &Self,
                 state: &mut Self::State,
-                element: &mut $crate::VecSplice<$pod>,
+                elements: &mut $crate::VecSplice<$pod>,
             ) -> $changeflags {
                 let mut changed = <$changeflags>::default();
-                for ((child, child_prev), child_state) in self.iter().zip(prev).zip(state) {
-                    let el_changed = child.rebuild(cx, child_prev, child_state, element);
+                for ((child, child_prev), child_state) in self.iter().zip(prev).zip(state.iter_mut()) {
+                    let el_changed = child.rebuild(cx, child_prev, child_state, elements);
                     changed |= el_changed;
+                }
+                let n = self.len();
+                if n < prev.len() {
+                    let n_delete = state
+                        .splice(n.., [])
+                        .enumerate()
+                        .map(|(i, state)| prev[n + i].count(&state))
+                        .sum();
+                    elements.delete(n_delete);
+                    changed |= <$changeflags>::tree_structure();
+                } else if n > prev.len() {
+                    let mut child_elements = vec![];
+                    for i in prev.len()..n {
+                        state.push(self[i].build(cx, &mut child_elements));
+                    }
+                    // Discussion question: should VecSplice get an extend method?
+                    for element in child_elements {
+                        elements.push(element);
+                    }
+                    changed |= <$changeflags>::tree_structure();
                 }
                 changed
             }
