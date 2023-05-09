@@ -1,4 +1,6 @@
-use xilem::view::{button, h_stack, v_stack};
+use xilem::view::{
+    button, fixed, flex, flex_spacer, h_stack, sizeable, spacer, v_flex, v_stack, MainAxisAlignment,
+};
 use xilem::{view::View, App, AppLauncher};
 
 fn app_logic(data: &mut i32) -> impl View<i32> {
@@ -10,12 +12,25 @@ fn app_logic(data: &mut i32) -> impl View<i32> {
     };
 
     // The actual UI Code starts here
-    v_stack((
-        button(label, |data| {
-            println!("clicked");
-            *data += 1;
-        }),
-        h_stack((
+    v_flex((
+        // flex(
+        //     sizeable(button(label, |data| {
+        //         println!("clicked");
+        //         *data += 1;
+        //     }))
+        //     .expand(),
+        //     1.0,
+        // ),
+        flex(
+            sizeable(button(label, |data| {
+                println!("clicked");
+                *data += 1;
+            }))
+            .expand_height(),
+            1.0,
+        ),
+        flex_spacer(1.0),
+        fixed(h_stack((
             button("decrease", |data| {
                 println!("clicked decrease");
                 *data -= 1;
@@ -24,9 +39,11 @@ fn app_logic(data: &mut i32) -> impl View<i32> {
                 println!("clicked reset");
                 *data = 0;
             }),
-        )),
+        ))),
     ))
-    .with_spacing(20.0)
+    .must_fill_main_axis(true)
+    .main_axis_alignment(MainAxisAlignment::SpaceAround)
+    // .with_spacing(20.0)
 }
 
 fn main() {
@@ -40,6 +57,21 @@ fn main() {
     window_handle.show();
     app.run(None);
     */
+
+    use tracing_subscriber::prelude::*;
+    let target_filter =
+        tracing_subscriber::filter::Targets::new().with_target("xilem", tracing::Level::TRACE);
+    // let level_filter = tracing_subscriber::filter::LevelFilter::DEBUG;
+    let fmt_layer = tracing_subscriber::fmt::layer()
+        // Display target (eg "my_crate::some_mod::submod") with logs
+        .with_target(true);
+
+    tracing_subscriber::registry()
+        // .with(level_filter)
+        .with(target_filter)
+        .with(fmt_layer)
+        .init();
+
     let app = App::new(0, app_logic);
     AppLauncher::new(app).run()
 }

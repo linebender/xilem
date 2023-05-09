@@ -22,14 +22,21 @@ mod button;
 // mod scroll_view;
 // mod text;
 // mod use_state;
+mod flex_layout;
 mod linear_layout;
 mod list;
 mod sequence;
+mod sizeable;
 mod view;
 
 pub use any_view::AnyView;
 pub use button::button;
+pub use flex_layout::{
+    fixed, flex, flex_spacer, h_flex, spacer, v_flex, CrossAxisAlignment, FlexLayout,
+    MainAxisAlignment,
+};
 pub use linear_layout::{h_stack, v_stack, LinearLayout};
 pub use list::{list, List};
 pub use sequence::ViewSequence;
+pub use sizeable::sizeable;
 pub use view::{Cx, View, ViewMarker};
