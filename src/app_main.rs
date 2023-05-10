@@ -22,8 +22,9 @@ use glazier::{
 };
 use parley::FontContext;
 use vello::{
+    peniko::Color,
     util::{RenderContext, RenderSurface},
-    Renderer,
+    RenderParams, Renderer, RendererOptions,
 };
 use vello::{Scene, SceneBuilder};
 
@@ -243,9 +244,17 @@ where
             let dev_id = surface.dev_id;
             let device = &self.render_cx.devices[dev_id].device;
             let queue = &self.render_cx.devices[dev_id].queue;
+            let renderer_options = RendererOptions {
+                surface_format: Some(surface.format),
+            };
+            let render_params = RenderParams {
+                base_color: Color::BLACK,
+                width,
+                height,
+            };
             self.renderer
-                .get_or_insert_with(|| Renderer::new(device).unwrap())
-                .render_to_surface(device, queue, &self.scene, &surface_texture, width, height)
+                .get_or_insert_with(|| Renderer::new(device, &renderer_options).unwrap())
+                .render_to_surface(device, queue, &self.scene, &surface_texture, &render_params)
                 .expect("failed to render to surface");
             surface_texture.present();
             device.poll(wgpu::Maintain::Wait);

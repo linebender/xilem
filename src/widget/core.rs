@@ -187,7 +187,8 @@ impl Pod {
 
     /// Sets the requested flags on this pod and returns the ChangeFlags the owner of this Pod should set.
     pub fn mark(&mut self, flags: ChangeFlags) -> ChangeFlags {
-        self.state.request(PodFlags::from_bits_truncate(flags.bits as _));
+        self.state
+            .request(PodFlags::from_bits_truncate(flags.bits as _));
         flags.upwards()
     }
 
