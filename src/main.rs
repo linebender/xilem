@@ -21,15 +21,10 @@ fn app_logic(data: &mut i32) -> impl View<i32> {
         //     .expand(),
         //     1.0,
         // ),
-        flex(
-            sizeable(button(label, |data| {
-                println!("clicked");
-                *data += 1;
-            }))
-            .expand_height(),
-            1.0,
-        ),
-        flex_spacer(1.0),
+        fixed(button(label.clone(), |data| {
+            println!("clicked");
+            *data += 1;
+        })),
         fixed(h_stack((
             button("decrease", |data| {
                 println!("clicked decrease");
@@ -42,8 +37,7 @@ fn app_logic(data: &mut i32) -> impl View<i32> {
         ))),
     ))
     .must_fill_main_axis(true)
-    .main_axis_alignment(MainAxisAlignment::SpaceAround)
-    // .with_spacing(20.0)
+    .main_axis_alignment(MainAxisAlignment::SpaceEvenly)
 }
 
 fn main() {

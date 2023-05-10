@@ -89,16 +89,63 @@ where
         self
     }
 
-    fn build(&self, cx: &mut Cx) -> ((V::State, Id), widget::flex_layout::Child) {
+    // fn build(&self, cx: &mut Cx) -> ((V::State, Id), widget::flex_layout::Child) {
+    //     let (id, state, widget) = self.view.build(cx);
+    //     let child = widget::flex_layout::Child {
+    //         widget: Pod::new(widget),
+    //         alignment: self.alignment,
+    //         flex: self.flex,
+    //     };
+    //     ((state, id), child)
+    // }
+
+    /// Build the associated widgets and initialize all states.
+    fn build(&self, cx: &mut Cx, children: &mut Vec<widget::flex_layout::Child>) -> (V::State, Id) {
         let (id, state, widget) = self.view.build(cx);
-        (
-            (state, id),
-            widget::flex_layout::Child {
-                widget: Pod::new(widget),
-                alignment: self.alignment,
-                flex: self.flex,
-            },
-        )
+        let child = widget::flex_layout::Child {
+            widget: Pod::new(widget),
+            alignment: self.alignment,
+            flex: self.flex,
+        };
+        children.push(child);
+        (state, id)
+    }
+
+    /// Update the associated widget.
+    ///
+    /// Returns `true` when anything has changed.
+    fn rebuild(
+        &self,
+        cx: &mut Cx,
+        prev: &Self,
+        state_id: &mut (V::State, Id),
+        element: &mut VecSplice<widget::flex_layout::Child>,
+    ) -> ChangeFlags {
+        let (state, id) = state_id;
+        let el = &mut element.mutate().widget;
+        let downcast = el.downcast_mut().unwrap();
+        let flags = self.view.rebuild(cx, &prev.view, id, state, downcast);
+        el.mark(flags)
+    }
+
+    /// Propagate a message.
+    ///
+    /// Handle a message, propagating to elements if needed. Here, `id_path` is a slice
+    /// of ids beginning at an element of this view_sequence.
+    fn message(
+        &self,
+        id_path: &[Id],
+        state_id: &mut (V::State, Id),
+        message: Box<dyn Any>,
+        app_state: &mut T,
+    ) -> MessageResult<A> {
+        let (state, id) = state_id;
+        if let Some((first, rest_path)) = id_path.split_first() {
+            if first == id {
+                return self.view.message(rest_path, state, message, app_state);
+            }
+        }
+        MessageResult::Stale(message)
     }
 }
 
@@ -225,11 +272,7 @@ macro_rules! impl_flex_tuple {
             type State = ( $( ($t::State, Id), )*);
 
             fn build(&self, cx: &mut Cx, children: &mut Vec<widget::flex_layout::Child>) -> Self::State {
-                ( $({
-                    let (state, child) = self.$i.build(cx);
-                    children.push(child);
-                    state
-                },)* )
+                ( $( self.$i.build(cx, children) ,)* )
             }
 
             fn rebuild(
@@ -241,12 +284,7 @@ macro_rules! impl_flex_tuple {
             ) -> ChangeFlags {
                 let mut changed = ChangeFlags::default();
                 $(
-                    let el = els.mutate();
-                    let downcast = el.widget.downcast_mut().unwrap();
-                    let el_changed =
-                        self.$i
-                            .view
-                            .rebuild(cx, &prev.$i.view, &mut state.$i .1, &mut state.$i .0, downcast);
+                    let el_changed = self.$i.rebuild(cx, &prev.$i, &mut state.$i, els);
                     changed |= el_changed;
                 )*
                 changed
@@ -261,18 +299,8 @@ macro_rules! impl_flex_tuple {
             ) -> MessageResult<A> {
                 MessageResult::Stale(message)
                 $(
-                    .or(|message| {
-                        id_path
-                            .split_first()
-                            .map_or(MessageResult::Nop, |(first, rest_path)| {
-                                if first == &state.$i .1 {
-                                    self.$i
-                                        .view
-                                        .message(rest_path, &mut state.$i .0, message, app_state)
-                                } else {
-                                    MessageResult::Nop
-                                }
-                            })
+                    .or(|message|{
+                        self.$i.message(id_path, &mut state.$i, message, app_state)
                     })
                 )*
             }
@@ -387,9 +415,23 @@ impl<T, A, VT: FlexItemSequence<T, A>> View<T, A> for FlexLayout<T, A, VT> {
     type Element = widget::flex_layout::FlexLayout;
 
     fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
+        let Self {
+            ref children,
+            axis,
+            cross_alignment,
+            main_alignment,
+            fill_major_axis,
+            phantom: _phantom,
+        } = *self;
         let mut elements = vec![];
-        let (id, state) = cx.with_new_id(|cx| self.children.build(cx, &mut elements));
-        let column = widget::flex_layout::FlexLayout::new(elements, self.axis);
+        let (id, state) = cx.with_new_id(|cx| children.build(cx, &mut elements));
+        let column = widget::flex_layout::FlexLayout::new(
+            elements,
+            axis,
+            cross_alignment,
+            main_alignment,
+            fill_major_axis,
+        );
         (id, state, column)
     }
 

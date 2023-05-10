@@ -126,22 +126,26 @@ where
     type Element = widget::Sizeable;
 
     fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
-        if let Some(child) = &self.child {
-            let (inner_id, state, widget) = child.build(cx);
-            let (id, element) = cx.with_new_id(|_| widget::Sizeable {
-                child: Some(Pod::new(widget)),
+        let (id, (state, element)) = cx.with_new_id(|cx| {
+            let (state, child) = self
+                .child
+                .as_ref()
+                .map(|child| {
+                    let (inner_id, state, widget) = child.build(cx);
+                    ((state, inner_id), Pod::new(widget))
+                })
+                .unzip();
+
+            let element = widget::Sizeable {
+                child,
                 width: self.width,
                 height: self.height,
-            });
-            (id, Some((state, inner_id)), element)
-        } else {
-            let (id, element) = cx.with_new_id(|_| widget::Sizeable {
-                child: None,
-                width: self.width,
-                height: self.height,
-            });
-            (id, None, element)
-        }
+                old_size: None,
+            };
+
+            (state, element)
+        });
+        (id, state, element)
     }
 
     fn rebuild(
@@ -179,11 +183,34 @@ where
 
     fn message(
         &self,
-        _id_path: &[Id],
-        _state: &mut Self::State,
-        _message: Box<dyn Any>,
-        _app_state: &mut T,
+        id_path: &[Id],
+        state: &mut Self::State,
+        message: Box<dyn Any>,
+        app_state: &mut T,
     ) -> MessageResult<A> {
-        MessageResult::Nop
+        // state
+        //     .as_mut()
+        //     .zip(self.child.as_ref())
+        //     .zip(id_path.split_first())
+        //     .and_then(|(((state, id), child), (first, rest_path))| {
+        //         (first == id).then(|| child.message(rest_path, state, message, app_state))
+        //     })
+        //     .unwrap_or(MessageResult::Nop)
+        if let Some((state, id)) = state {
+            id_path
+                .split_first()
+                .map_or(MessageResult::Nop, |(first, rest_path)| {
+                    if first == id {
+                        self.child
+                            .as_ref()
+                            .unwrap()
+                            .message(rest_path, state, message, app_state)
+                    } else {
+                        MessageResult::Nop
+                    }
+                })
+        } else {
+            MessageResult::Nop
+        }
     }
 }

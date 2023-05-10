@@ -9,7 +9,7 @@ use crate::{
 };
 
 use glazier::kurbo::{common::FloatExt, Rect, Size};
-use tracing::{instrument, trace};
+use tracing::{instrument, trace, warn};
 
 /// Panic in debug and tracing::error in release mode.
 ///
@@ -150,11 +150,11 @@ macro_rules! debug_panic {
 /// [`TextBox`]: super::TextBox
 /// [`SizedBox`]: super::SizedBox
 pub struct FlexLayout {
+    pub(crate) children: Vec<Child>,
     pub(crate) axis: Axis,
     pub(crate) cross_alignment: CrossAxisAlignment,
     pub(crate) main_alignment: MainAxisAlignment,
     pub(crate) fill_major_axis: bool,
-    pub(crate) children: Vec<Child>,
     old_bc: BoxConstraints,
 }
 
@@ -239,13 +239,19 @@ pub enum MainAxisAlignment {
 }
 
 impl FlexLayout {
-    pub(crate) fn new(elements: Vec<Child>, axis: Axis) -> FlexLayout {
+    pub(crate) fn new(
+        elements: Vec<Child>,
+        axis: Axis,
+        cross_alignment: CrossAxisAlignment,
+        main_alignment: MainAxisAlignment,
+        fill_major_axis: bool,
+    ) -> FlexLayout {
         FlexLayout {
-            axis,
-            cross_alignment: CrossAxisAlignment::Center,
-            main_alignment: MainAxisAlignment::Start,
-            fill_major_axis: false,
             children: elements,
+            axis,
+            cross_alignment,
+            main_alignment,
+            fill_major_axis,
             old_bc: BoxConstraints::tight(Size::ZERO),
         }
     }
@@ -305,11 +311,11 @@ impl Widget for FlexLayout {
                         let child_size = child.widget.layout(cx, &child_bc);
 
                         if child_size.width.is_infinite() {
-                            tracing::warn!("A non-Flex child has an infinite width.");
+                            warn!("A non-Flex child has an infinite width.");
                         }
 
                         if child_size.height.is_infinite() {
-                            tracing::warn!("A non-Flex child has an infinite height.");
+                            warn!("A non-Flex child has an infinite height.");
                         }
 
                         if old_size != child_size {
@@ -560,11 +566,7 @@ impl Widget for FlexLayout {
 
     fn paint(&mut self, cx: &mut PaintCx, builder: &mut vello::SceneBuilder) {
         for child in &mut self.children {
-            if child.flex.is_some() {
-                println!("paint flex child!");
-            } else {
-                println!("paint non-flex child!");
-            }
+            trace!(flex = child.flex, "paint child");
             child.widget.paint(cx, builder);
         }
     }

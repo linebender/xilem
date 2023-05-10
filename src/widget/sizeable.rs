@@ -28,6 +28,7 @@ pub struct Sizeable {
     pub(crate) child: Option<Pod>,
     pub(crate) width: Option<f64>,
     pub(crate) height: Option<f64>,
+    pub(crate) old_size: Option<Size>,
 }
 
 impl Sizeable {
@@ -72,9 +73,9 @@ impl Widget for Sizeable {
 
     fn update(&mut self, cx: &mut UpdateCx) {
         if let Some(child) = &mut self.child {
-            child.update(cx)
+            child.update(cx);
         } else {
-            cx.request_layout()
+            cx.request_layout();
         }
     }
 
@@ -100,6 +101,15 @@ impl Widget for Sizeable {
 
         if size.height.is_infinite() {
             warn!("SizedBox is returning an infinite height.");
+        }
+
+        if self.old_size != Some(size) {
+            cx.request_paint();
+            self.old_size = Some(size);
+        }
+
+        if let Some(child) = &mut self.child {
+            child.state.flags |= PodFlags::REQUEST_PAINT;
         }
 
         size
