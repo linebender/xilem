@@ -828,7 +828,7 @@ name = "fount"
 version = "0.1.0"
 source = "git+https://github.com/jneem/fount?rev=361c76fecf813ebc64d2634d3df7bfb6089c6414#361c76fecf813ebc64d2634d3df7bfb6089c6414"
 dependencies = [
- "swash 0.1.6 (git+https://github.com/dfrg/swash)",
+ "swash",
 ]
 
 [[package]]
@@ -1856,7 +1856,7 @@ version = "0.1.0"
 source = "git+https://github.com/dfrg/parley?rev=2371bf4b702ec91edee2d58ffb2d432539580e1e#2371bf4b702ec91edee2d58ffb2d432539580e1e"
 dependencies = [
  "fount",
- "swash 0.1.6 (git+https://github.com/dfrg/swash)",
+ "swash",
 ]
 
 [[package]]
@@ -2344,16 +2344,6 @@ name = "svg_fmt"
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8fb1df15f412ee2e9dfc1c504260fa695c1c3f10fe9f4a6ee2d2184d7d6450e2"
-
-[[package]]
-name = "swash"
-version = "0.1.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8bb18e5888a9b5f0a89ea3ebdf6883dc479347ca9183b6c51a8f9cf2041f23a0"
-dependencies = [
- "yazi",
- "zeno",
-]
 
 [[package]]
 name = "swash"
@@ -3210,7 +3200,6 @@ dependencies = [
  "rand 0.7.3",
  "raw-window-handle",
  "roxmltree",
- "swash 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "test-log",
  "tokio",
  "tracing",

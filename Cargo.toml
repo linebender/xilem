@@ -19,7 +19,6 @@ raw-window-handle = "0.5"
 png = "0.16.2"
 rand = "0.7.3"
 roxmltree = "0.13"
-swash = "0.1.4"
 bytemuck = { version = "1.7.2", features = ["derive"] }
 parley = { git = "https://github.com/dfrg/parley", rev = "2371bf4b702ec91edee2d58ffb2d432539580e1e" }
 tokio = { version = "1.21", features = ["full"] }
