@@ -14,29 +14,6 @@ use super::{sizeable::Sizeable, Cx, View};
 
 pub use crate::widget::flex_layout::{CrossAxisAlignment, MainAxisAlignment};
 
-// pub enum FlexChild<V, A, VT: ViewSequence<V, A>> {
-//     Fixed {
-//         view: VT,
-//         alignment: Option<CrossAxisAlignment>,
-//         phantom: PhantomData<(V, A)>,
-//     },
-//     Flex {
-//         view: VT,
-//         alignment: Option<CrossAxisAlignment>,
-//         flex: f64,
-//         phantom: PhantomData<(V, A)>,
-//     },
-// }
-
-// pub trait AsFlexItem<T, A>: Send {
-//     type State: Send;
-//     type View: View<T, A> + Send;
-
-//     fn item(&self) -> Either<&Self::View, Spacer>;
-//     fn alignment(&self) -> Option<CrossAxisAlignment>;
-//     fn flex(&self) -> Option<f64>;
-// }
-
 pub fn fixed<T, A, V: View<T, A> + Send>(view: V) -> FlexItem<T, A, V> {
     FlexItem {
         view,
@@ -89,16 +66,6 @@ where
         self
     }
 
-    // fn build(&self, cx: &mut Cx) -> ((V::State, Id), widget::flex_layout::Child) {
-    //     let (id, state, widget) = self.view.build(cx);
-    //     let child = widget::flex_layout::Child {
-    //         widget: Pod::new(widget),
-    //         alignment: self.alignment,
-    //         flex: self.flex,
-    //     };
-    //     ((state, id), child)
-    // }
-
     /// Build the associated widgets and initialize all states.
     fn build(&self, cx: &mut Cx, children: &mut Vec<widget::flex_layout::Child>) -> (V::State, Id) {
         let (id, state, widget) = self.view.build(cx);
@@ -149,68 +116,7 @@ where
     }
 }
 
-// #[derive(Debug, Clone, Copy)]
-// enum Spacer {
-//     Flex(f64),
-//     Fixed(f64),
-// }
-
-// impl<V, A, VT: View<V, A> + ViewMarker> AsFlexItem<V, A> for VT {
-//     type State = (VT::State, Id);
-//     type View = VT;
-
-//     fn item(&self) -> Either<&Self::View, Spacer> {
-//         Left(self)
-//     }
-
-//     fn alignment(&self) -> Option<CrossAxisAlignment> {
-//         None
-//     }
-
-//     fn flex(&self) -> Option<f64> {
-//         None
-//     }
-// }
-
-// impl<V: Send, A: Send, VT: View<V, A> + ViewMarker + Send> AsFlexItem<V, A> for FlexItem<V, A, VT> {
-//     type State = (VT::State, Id);
-//     type View = VT;
-
-//     fn item(&self) -> Either<&Self::View, Spacer> {
-//         Left(&self.view)
-//     }
-
-//     fn alignment(&self) -> Option<CrossAxisAlignment> {
-//         self.alignment
-//     }
-
-//     fn flex(&self) -> Option<f64> {
-//         Some(self.flex)
-//     }
-// }
-
-// impl<V, A> AsFlexItem<V, A> for Spacer {
-//     type State = ();
-//     type View = Spacer;
-
-//     fn item(&self) -> Either<&Self::View, Spacer> {
-//         Right(*self)
-//     }
-
-//     fn alignment(&self) -> Option<CrossAxisAlignment> {
-//         None
-//     }
-
-//     fn flex(&self) -> Option<f64> {
-//         if let Self::Flex(flex) = self {
-//             Some(*flex)
-//         } else {
-//             None
-//         }
-//     }
-// }
-
-/// A sequence on flex items.
+/// A sequence of flex items.
 ///
 /// This is one of the central traits for representing UI. Every view which has a collection of
 /// children uses an instance of this trait to specify them.
@@ -332,12 +238,85 @@ impl_flex_tuple!(V0, V1, V2, V3, V4, V5, V6, V7, V8, V9;
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9
 );
 
-/// FlexLayout is a simple view which does layout for the specified ViewSequence.
+/// A container with either horizontal or vertical layout.
 ///
-/// Each Element is positioned on the specified Axis starting at the beginning with the given spacing
+/// # Flex layout algorithm
 ///
-/// This View is only temporary is probably going to be replaced by something like Druid's Flex
-/// widget.
+/// Children of a `Flex` container can have an optional `flex` parameter.
+/// Layout occurs in several passes. First we measure (calling their [`layout`]
+/// method) our non-flex children, providing them with unbounded space on the
+/// main axis. Next, the remaining space is divided between the flex children
+/// according to their flex factor, and they are measured. Unlike a non-flex
+/// child, a child with a non-zero flex factor has a maximum allowed size
+/// on the main axis; non-flex children are allowed to choose their size first,
+/// and freely.
+///
+/// If you would like a child to be forced to use up all of the flex space
+/// passed to it, you can place it in a [`SizedBox`] set to `expand` in the
+/// appropriate axis. There are convenience methods for this available on
+/// [`WidgetExt`]: [`expand_width`] and [`expand_height`].
+///
+/// # Flex or non-flex?
+///
+/// When should your children be flexible? With other things being equal,
+/// a flexible child has lower layout priority than a non-flexible child.
+/// Imagine, for instance, we have a row that is 30dp wide, and we have
+/// two children, both of which want to be 20dp wide. If child #1 is non-flex
+/// and child #2 is flex, the first widget will take up its 20dp, and the second
+/// widget will be constrained to 10dp.
+///
+/// If, instead, both widgets are flex, they will each be given equal space,
+/// and both will end up taking up 15dp.
+///
+/// If both are non-flex they will both take up 20dp, and will overflow the
+/// container.
+///
+/// ```no_compile
+///  -------non-flex----- -flex-----
+/// |       child #1     | child #2 |
+///
+///
+///  ----flex------- ----flex-------
+/// |    child #1   |    child #2   |
+///
+/// ```
+///
+/// In general, if you are using widgets that are opinionated about their size
+/// (such as most control widgets, which are designed to lay out nicely together,
+/// or text widgets that are sized to fit their text) you should make them
+/// non-flexible.
+///
+/// If you are trying to divide space evenly, or if you want a particular item
+/// to have access to all left over space, then you should make it flexible.
+///
+/// **note**: by default, a widget will not necessarily use all the space that
+/// is available to it. For instance, the [`TextBox`] widget has a default
+/// width, and will choose this width if possible, even if more space is
+/// available to it. If you want to force a widget to use all available space,
+/// you should expand it, with [`expand_width`] or [`expand_height`].
+///
+///
+/// # Options
+///
+/// To experiment with these options, see the `flex` example in `druid/examples`.
+///
+/// - [`CrossAxisAlignment`] determines how children are positioned on the
+/// cross or 'minor' axis. The default is `CrossAxisAlignment::Center`.
+///
+/// - [`MainAxisAlignment`] determines how children are positioned on the main
+/// axis; this is only meaningful if the container has more space on the main
+/// axis than is taken up by its children.
+///
+/// - [`must_fill_main_axis`] determines whether the container is obliged to
+/// be maximally large on the major axis, as determined by its own constraints.
+/// If this is `true`, then the container must fill the available space on that
+/// axis; otherwise it may be smaller if its children are smaller.
+///
+/// Additional options can be set (or overridden) in the [`FlexParams`].
+///
+/// # Examples
+///
+/// TBA
 pub struct FlexLayout<T, A, VT: FlexItemSequence<T, A>> {
     children: VT,
     axis: Axis,
