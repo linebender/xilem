@@ -21,7 +21,7 @@ use vello::{
     SceneBuilder,
 };
 
-use crate::{event::Message, id::IdPath, text::ParleyBrush};
+use crate::{text::ParleyBrush, IdPath, Message};
 
 use super::{
     contexts::LifeCycleCx,

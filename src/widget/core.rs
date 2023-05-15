@@ -130,6 +130,11 @@ impl ChangeFlags {
         let pod_flags = PodFlags::from_bits_truncate(self.bits as _);
         ChangeFlags::from_bits_truncate(pod_flags.upwards().bits as _)
     }
+
+    // Change flags representing change of tree structure.
+    pub fn tree_structure() -> Self {
+        ChangeFlags::TREE
+    }
 }
 
 impl WidgetState {

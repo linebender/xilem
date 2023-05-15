@@ -1,3 +1,8 @@
+[workspace]
+members = [
+    "crates/xilem_core",
+]
+
 [package]
 name = "xilem"
 version = "0.1.0"
@@ -29,6 +34,7 @@ test-log = "0.2.11"
 env_logger = "0.10.0"
 accesskit = "0.9.0"
 fnv = "1.0.7"
+xilem_core = { version = "0.1", path = "crates/xilem_core" }
 
 [dependencies.glazier]
 git = "https://github.com/linebender/glazier"

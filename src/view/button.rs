@@ -15,7 +15,7 @@
 use std::any::Any;
 
 use crate::view::ViewMarker;
-use crate::{event::MessageResult, id::Id, widget::ChangeFlags};
+use crate::{view::Id, widget::ChangeFlags, MessageResult};
 
 use super::{Cx, View};
 
@@ -48,7 +48,7 @@ impl<T, A> View<T, A> for Button<T, A> {
 
     type Element = crate::widget::Button;
 
-    fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
+    fn build(&self, cx: &mut Cx) -> (crate::view::Id, Self::State, Self::Element) {
         let (id, element) =
             cx.with_new_id(|cx| crate::widget::Button::new(cx.id_path(), self.label.clone()));
         (id, (), element)
@@ -58,7 +58,7 @@ impl<T, A> View<T, A> for Button<T, A> {
         &self,
         _cx: &mut Cx,
         prev: &Self,
-        _id: &mut crate::id::Id,
+        _id: &mut Id,
         _state: &mut Self::State,
         element: &mut Self::Element,
     ) -> ChangeFlags {
@@ -71,7 +71,7 @@ impl<T, A> View<T, A> for Button<T, A> {
 
     fn message(
         &self,
-        _id_path: &[crate::id::Id],
+        _id_path: &[Id],
         _state: &mut Self::State,
         _message: Box<dyn Any>,
         app_state: &mut T,
