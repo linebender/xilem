@@ -112,6 +112,31 @@ pub(crate) struct WidgetState {
     pub(crate) sub_tree: Bloom<Id>,
 }
 
+impl PodFlags {
+    /// Flags to be propagated upwards.
+    pub(crate) fn upwards(self) -> Self {
+        let mut result = self & PodFlags::UPWARD_FLAGS;
+        if self.contains(PodFlags::REQUEST_ACCESSIBILITY) {
+            result |= PodFlags::DESCENDANT_REQUESTED_ACCESSIBILITY;
+        }
+        result
+    }
+}
+
+impl ChangeFlags {
+    pub(crate) fn upwards(self) -> Self {
+        // Note: this assumes PodFlags are a superset of ChangeFlags. This might
+        // not always be the case, for example on "structure changed."
+        let pod_flags = PodFlags::from_bits_truncate(self.bits as _);
+        ChangeFlags::from_bits_truncate(pod_flags.upwards().bits as _)
+    }
+
+    // Change flags representing change of tree structure.
+    pub fn tree_structure() -> Self {
+        ChangeFlags::TREE
+    }
+}
+
 impl WidgetState {
     pub(crate) fn new() -> Self {
         let id = Id::next();
@@ -125,16 +150,8 @@ impl WidgetState {
         }
     }
 
-    /// Returns the flags which should be passed to the parent of this Pod.
-    fn upwards_flags(&self) -> PodFlags {
-        self.flags & PodFlags::UPWARD_FLAGS
-    }
-
     fn merge_up(&mut self, child_state: &mut WidgetState) {
-        self.flags |= child_state.upwards_flags();
-        if child_state.flags.contains(PodFlags::REQUEST_ACCESSIBILITY) {
-            self.flags |= PodFlags::DESCENDANT_REQUESTED_ACCESSIBILITY;
-        }
+        self.flags |= child_state.flags.upwards();
         self.sub_tree = self.sub_tree.union(child_state.sub_tree);
     }
 
@@ -173,16 +190,11 @@ impl Pod {
         (*self.widget).as_any_mut().downcast_mut()
     }
 
-    /// Sets the requested flags on this pod and returns the Flags the parent of this Pod should set.
+    /// Sets the requested flags on this pod and returns the ChangeFlags the owner of this Pod should set.
     pub fn mark(&mut self, flags: ChangeFlags) -> ChangeFlags {
         self.state
             .request(PodFlags::from_bits_truncate(flags.bits as _));
-        let mut flags_up =
-            flags & ChangeFlags::from_bits_truncate(PodFlags::UPWARD_FLAGS.bits as _);
-        if flags.contains(ChangeFlags::ACCESSIBILITY) {
-            flags_up |= ChangeFlags::DESCENDANT_REQUESTED_ACCESSIBILITY;
-        }
-        flags_up
+        flags.upwards()
     }
 
     /// Propagate a platform event. As in Druid, a great deal of the event

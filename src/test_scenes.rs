@@ -41,5 +41,4 @@ fn basic_scene(fcx: &mut FontContext, scene: &mut Scene, arg: u64) {
     let mut layout = layout_builder.build();
     layout.break_all_lines(None, parley::layout::Alignment::Start);
     render_text(&mut builder, Affine::translate((100.0, 400.0)), &layout);
-    builder.finish();
 }

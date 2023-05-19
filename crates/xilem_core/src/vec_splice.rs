@@ -1,3 +1,6 @@
+// Copyright 2023 the Druid Authors.
+// SPDX-License-Identifier: Apache-2.0
+
 pub struct VecSplice<'a, 'b, T> {
     v: &'a mut Vec<T>,
     scratch: &'b mut Vec<T>,

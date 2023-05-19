@@ -1,3 +1,9 @@
+[workspace]
+members = [
+    "crates/xilem_core",
+    "crates/xilemsvg",
+]
+
 [package]
 name = "xilem"
 version = "0.1.0"
@@ -13,15 +19,14 @@ x11 = ["glazier/x11"]
 wayland = ["glazier/wayland"]
 
 [dependencies]
-vello = { git = "https://github.com/linebender/vello", rev = "5f59a2e8181a7d01f8753680676dd150b965728b" }
-wgpu = "0.15.0"
+vello = { git = "https://github.com/linebender/vello", rev = "006faab69fc519c9c7ed6002be740914efad9ffe" }
+wgpu = "0.16.0"
 raw-window-handle = "0.5"
 png = "0.16.2"
 rand = "0.7.3"
 roxmltree = "0.13"
-swash = "0.1.4"
 bytemuck = { version = "1.7.2", features = ["derive"] }
-parley = { git = "https://github.com/dfrg/parley", rev = "a885c3c" }
+parley = { git = "https://github.com/dfrg/parley", rev = "2371bf4b702ec91edee2d58ffb2d432539580e1e" }
 tokio = { version = "1.21", features = ["full"] }
 futures-task = "0.3"
 bitflags = "1.3.2"
@@ -30,6 +35,7 @@ test-log = "0.2.11"
 env_logger = "0.10.0"
 accesskit = "0.9.0"
 fnv = "1.0.7"
+xilem_core = { version = "0.1", path = "crates/xilem_core" }
 
 [dependencies.glazier]
 git = "https://github.com/linebender/glazier"

@@ -5,13 +5,15 @@ use std::{any::Any, marker::PhantomData};
 
 use vello::{SceneBuilder, SceneFragment};
 
+use xilem_core::Id;
+
 use crate::{
     view::{Cx, View, ViewMarker},
     widget::{
         AccessCx, BoxConstraints, ChangeFlags, Event, EventCx, LayoutCx, LifeCycle, LifeCycleCx,
         PaintCx, UpdateCx, Widget,
     },
-    Id, MessageResult,
+    MessageResult,
 };
 
 pub struct Vg<V> {
@@ -72,7 +74,6 @@ pub trait VgView<T, A = ()>: Send {
         app_state: &mut T,
     ) -> MessageResult<A>;
 }
-
 
 impl<T> ViewMarker for Vg<T> {}
 
@@ -144,4 +145,3 @@ impl VgPod {
         builder.append(&self.fragment, None);
     }
 }
-
