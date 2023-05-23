@@ -3,22 +3,23 @@
 
 use std::{any::Any, marker::PhantomData};
 
-use glazier::kurbo::{Affine, Circle};
-use vello::{
-    peniko::{Color, Fill},
-    SceneBuilder, SceneFragment,
-};
+use vello::{SceneBuilder, SceneFragment};
 
 use xilem_core::Id;
 
 use crate::{
     view::{Cx, View, ViewMarker},
     widget::{
-        AccessCx, AnyWidget, BoxConstraints, ChangeFlags, Event, EventCx, LayoutCx, LifeCycle,
-        LifeCycleCx, PaintCx, UpdateCx, Widget,
+        AccessCx, BoxConstraints, ChangeFlags, Event, EventCx, LayoutCx, LifeCycle, LifeCycleCx,
+        PaintCx, UpdateCx, Widget,
     },
     MessageResult,
 };
+
+mod group;
+mod kurbo_shape;
+mod pointer;
+pub use crate::vg::group::group;
 
 pub struct Vg<V, T> {
     root: V,
@@ -116,7 +117,9 @@ where
 }
 
 impl Widget for VgWidget {
-    fn event(&mut self, _cx: &mut EventCx, _event: &Event) {}
+    fn event(&mut self, _cx: &mut EventCx, event: &Event) {
+        println!("vg widget got event {:?}", event);
+    }
 
     fn lifecycle(&mut self, _cx: &mut LifeCycleCx, _event: &LifeCycle) {}
 
@@ -157,57 +160,8 @@ impl VgPod {
     }
 
     fn paint(&mut self, builder: &mut SceneBuilder) {
+        // TODO: this should be conditional on paint ChangeFlags
         self.paint_impl();
         builder.append(&self.fragment, None);
-    }
-}
-
-pub struct CircleNode {
-    circle: Circle,
-}
-
-impl VgNode for CircleNode {
-    fn paint(&mut self, builder: &mut SceneBuilder) {
-        // TODO: obviously we need a way to set this.
-        let color = Color::rgb8(0, 0, 255);
-        builder.fill(Fill::EvenOdd, Affine::IDENTITY, &color, None, &self.circle);
-    }
-}
-
-impl<T> VgView<T> for Circle {
-    type State = ();
-
-    type Element = CircleNode;
-
-    fn build(&self, _cx: &mut Cx) -> (Id, Self::State, Self::Element) {
-        let id = Id::next();
-        let element = CircleNode { circle: *self };
-        (id, (), element)
-    }
-
-    fn rebuild(
-        &self,
-        _cx: &mut Cx,
-        prev: &Self,
-        _id: &mut Id,
-        _state: &mut Self::State,
-        element: &mut Self::Element,
-    ) -> ChangeFlags {
-        let mut changed = ChangeFlags::default();
-        if self != prev {
-            element.circle = *self;
-            changed |= ChangeFlags::PAINT;
-        }
-        changed
-    }
-
-    fn message(
-        &self,
-        _id_path: &[Id],
-        _state: &mut Self::State,
-        message: Box<dyn Any>,
-        _app_state: &mut T,
-    ) -> MessageResult<()> {
-        MessageResult::Stale(message)
     }
 }
