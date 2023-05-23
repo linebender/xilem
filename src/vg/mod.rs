@@ -3,21 +3,26 @@
 
 use std::{any::Any, marker::PhantomData};
 
-use vello::{SceneBuilder, SceneFragment};
+use glazier::kurbo::{Affine, Circle};
+use vello::{
+    peniko::{Color, Fill},
+    SceneBuilder, SceneFragment,
+};
 
 use xilem_core::Id;
 
 use crate::{
     view::{Cx, View, ViewMarker},
     widget::{
-        AccessCx, BoxConstraints, ChangeFlags, Event, EventCx, LayoutCx, LifeCycle, LifeCycleCx,
-        PaintCx, UpdateCx, Widget,
+        AccessCx, AnyWidget, BoxConstraints, ChangeFlags, Event, EventCx, LayoutCx, LifeCycle,
+        LifeCycleCx, PaintCx, UpdateCx, Widget,
     },
     MessageResult,
 };
 
-pub struct Vg<V> {
+pub struct Vg<V, T> {
     root: V,
+    phantom: PhantomData<fn() -> T>,
 }
 
 pub struct VgWidget {
@@ -25,7 +30,9 @@ pub struct VgWidget {
 }
 
 pub struct VgPod {
-    node: Box<dyn VgNode>,
+    node: Box<dyn AnyVgNode>,
+    // We may want to expand these to include some of our own flags.
+    flags: ChangeFlags,
     fragment: SceneFragment,
 }
 
@@ -34,56 +41,55 @@ pub trait VgNode {
     fn paint(&mut self, builder: &mut SceneBuilder);
 }
 
-/// A view trait for vector graphics content.
-///
-/// This trait is generally parallel to the main View trait,
-/// but is specialized for vector graphics.
-///
-/// Potentially interesting future work: reduce cut'n'paste.
-pub trait VgView<T, A = ()>: Send {
-    /// Associated state for the view.
-    type State: Send;
-
-    /// The associated widget for the view.
-    type Element: VgNode;
-
-    /// Build the associated widget and initialize state.
-    fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element);
-
-    /// Update the associated widget.
-    ///
-    /// Returns `true` when anything has changed.
-    fn rebuild(
-        &self,
-        cx: &mut Cx,
-        prev: &Self,
-        id: &mut Id,
-        state: &mut Self::State,
-        element: &mut Self::Element,
-    ) -> ChangeFlags;
-
-    /// Propagate a message.
-    ///
-    /// Handle a message, propagating to children if needed. Here, `id_path` is a slice
-    /// of ids beginning at a child of this view.
-    fn message(
-        &self,
-        id_path: &[Id],
-        state: &mut Self::State,
-        message: Box<dyn Any>,
-        app_state: &mut T,
-    ) -> MessageResult<A>;
+pub trait AnyVgNode: VgNode {
+    fn as_any(&self) -> &dyn Any;
+    fn as_any_mut(&mut self) -> &mut dyn Any;
+    fn type_name(&self) -> &'static str;
 }
 
-impl<T> ViewMarker for Vg<T> {}
+pub fn vg<T, V: VgView<T>>(root: V) -> Vg<V, T> {
+    Vg {
+        root,
+        phantom: Default::default(),
+    }
+}
 
-impl<T: Send, V: VgView<T>> View<T> for Vg<V> {
+impl<N: VgNode + 'static> AnyVgNode for N {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn as_any_mut(&mut self) -> &mut dyn Any {
+        self
+    }
+
+    fn type_name(&self) -> &'static str {
+        std::any::type_name::<Self>()
+    }
+}
+
+xilem_core::generate_view_trait! {VgView, VgNode, Cx, ChangeFlags; : Send}
+xilem_core::generate_viewsequence_trait! {VgViewSequence, VgView, VgViewMarker, VgNode, Cx, ChangeFlags, VgPod; : Send}
+
+// Need to actually implement AnyVgWidget to make the following work:
+
+//xilem_core::generate_anyview_trait! {VgView, Cx, ChangeFlags, AnyVgWidget + Send}
+
+impl<T: Send, V: VgView<T>> ViewMarker for Vg<V, T> {}
+
+impl<T: Send, V: VgView<T>> View<T> for Vg<V, T>
+where
+    V::Element: 'static,
+{
     type State = V::State;
     type Element = VgWidget;
 
     fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
         let (id, state, element) = self.root.build(cx);
-        todo!()
+        let root = VgPod::new(element);
+        let widget = VgWidget { root };
+        // Discussion question: do we need our own id?
+        (id, state, widget)
     }
 
     fn rebuild(
@@ -94,7 +100,8 @@ impl<T: Send, V: VgView<T>> View<T> for Vg<V> {
         state: &mut Self::State,
         element: &mut Self::Element,
     ) -> ChangeFlags {
-        todo!()
+        let child_element = element.root.downcast_mut().unwrap();
+        self.root.rebuild(cx, &prev.root, id, state, child_element)
     }
 
     fn message(
@@ -104,37 +111,46 @@ impl<T: Send, V: VgView<T>> View<T> for Vg<V> {
         message: Box<dyn Any>,
         app_state: &mut T,
     ) -> MessageResult<()> {
-        todo!()
+        self.root.message(id_path, state, message, app_state)
     }
 }
 
 impl Widget for VgWidget {
-    fn event(&mut self, cx: &mut EventCx, event: &Event) {
-        todo!()
+    fn event(&mut self, _cx: &mut EventCx, _event: &Event) {}
+
+    fn lifecycle(&mut self, _cx: &mut LifeCycleCx, _event: &LifeCycle) {}
+
+    fn update(&mut self, _cx: &mut UpdateCx) {}
+
+    fn layout(&mut self, _cx: &mut LayoutCx, bc: &BoxConstraints) -> glazier::kurbo::Size {
+        bc.constrain((500.0, 500.0))
     }
 
-    fn lifecycle(&mut self, cx: &mut LifeCycleCx, event: &LifeCycle) {
-        todo!()
-    }
+    fn accessibility(&mut self, _cx: &mut AccessCx) {}
 
-    fn update(&mut self, cx: &mut UpdateCx) {
-        todo!()
-    }
-
-    fn layout(&mut self, cx: &mut LayoutCx, bc: &BoxConstraints) -> glazier::kurbo::Size {
-        todo!()
-    }
-
-    fn accessibility(&mut self, cx: &mut AccessCx) {
-        todo!()
-    }
-
-    fn paint(&mut self, cx: &mut PaintCx, builder: &mut vello::SceneBuilder) {
+    fn paint(&mut self, _cx: &mut PaintCx, builder: &mut vello::SceneBuilder) {
         self.root.paint(builder);
     }
 }
 
 impl VgPod {
+    fn new(node: impl VgNode + 'static) -> Self {
+        VgPod {
+            node: Box::new(node),
+            flags: ChangeFlags::default(),
+            fragment: SceneFragment::new(),
+        }
+    }
+
+    fn downcast_mut<T: 'static>(&mut self) -> Option<&mut T> {
+        (self.node).as_any_mut().downcast_mut()
+    }
+
+    fn mark(&mut self, flags: ChangeFlags) -> ChangeFlags {
+        self.flags |= flags;
+        flags.upwards()
+    }
+
     fn paint_impl(&mut self) {
         let mut builder = SceneBuilder::for_fragment(&mut self.fragment);
         self.node.paint(&mut builder);
@@ -143,5 +159,55 @@ impl VgPod {
     fn paint(&mut self, builder: &mut SceneBuilder) {
         self.paint_impl();
         builder.append(&self.fragment, None);
+    }
+}
+
+pub struct CircleNode {
+    circle: Circle,
+}
+
+impl VgNode for CircleNode {
+    fn paint(&mut self, builder: &mut SceneBuilder) {
+        // TODO: obviously we need a way to set this.
+        let color = Color::rgb8(0, 0, 255);
+        builder.fill(Fill::EvenOdd, Affine::IDENTITY, &color, None, &self.circle);
+    }
+}
+
+impl<T> VgView<T> for Circle {
+    type State = ();
+
+    type Element = CircleNode;
+
+    fn build(&self, _cx: &mut Cx) -> (Id, Self::State, Self::Element) {
+        let id = Id::next();
+        let element = CircleNode { circle: *self };
+        (id, (), element)
+    }
+
+    fn rebuild(
+        &self,
+        _cx: &mut Cx,
+        prev: &Self,
+        _id: &mut Id,
+        _state: &mut Self::State,
+        element: &mut Self::Element,
+    ) -> ChangeFlags {
+        let mut changed = ChangeFlags::default();
+        if self != prev {
+            element.circle = *self;
+            changed |= ChangeFlags::PAINT;
+        }
+        changed
+    }
+
+    fn message(
+        &self,
+        _id_path: &[Id],
+        _state: &mut Self::State,
+        message: Box<dyn Any>,
+        _app_state: &mut T,
+    ) -> MessageResult<()> {
+        MessageResult::Stale(message)
     }
 }

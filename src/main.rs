@@ -1,3 +1,5 @@
+use glazier::kurbo::Circle;
+use xilem::vg::vg;
 use xilem::view::{button, h_stack, v_stack};
 use xilem::{view::View, App, AppLauncher};
 
@@ -15,6 +17,7 @@ fn app_logic(data: &mut i32) -> impl View<i32> {
             println!("clicked");
             *data += 1;
         }),
+        vg(Circle::new((200.0, 200.0), 100.0)),
         h_stack((
             button("decrease", |data| {
                 println!("clicked decrease");
