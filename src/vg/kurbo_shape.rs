@@ -4,25 +4,26 @@
 use std::any::Any;
 
 use glazier::kurbo::{Affine, Circle};
-use vello::{
-    peniko::{Color, Fill},
-    SceneBuilder,
-};
+use vello::{peniko::Fill, SceneBuilder};
 use xilem_core::{Id, MessageResult};
 
 use crate::{view::Cx, widget::ChangeFlags};
 
-use super::{VgNode, VgView, VgViewMarker};
+use super::{VgNode, VgPaintCx, VgView, VgViewMarker};
 
 pub struct CircleNode {
     circle: Circle,
 }
 
 impl VgNode for CircleNode {
-    fn paint(&mut self, builder: &mut SceneBuilder) {
-        // TODO: obviously we need a way to set this.
-        let color = Color::rgb8(0, 0, 255);
-        builder.fill(Fill::EvenOdd, Affine::IDENTITY, &color, None, &self.circle);
+    fn paint(&mut self, cx: &VgPaintCx, builder: &mut SceneBuilder) {
+        builder.fill(
+            Fill::EvenOdd,
+            Affine::IDENTITY,
+            &cx.color,
+            None,
+            &self.circle,
+        );
     }
 }
 

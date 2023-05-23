@@ -6,7 +6,7 @@ use xilem_core::{Id, MessageResult, VecSplice};
 
 use crate::{view::Cx, widget::ChangeFlags};
 
-use super::{VgNode, VgPod, VgView, VgViewMarker, VgViewSequence};
+use super::{VgNode, VgPaintCx, VgPod, VgView, VgViewMarker, VgViewSequence};
 
 /// Vector graphics group view.
 ///
@@ -25,9 +25,9 @@ pub fn group<VS>(children: VS) -> Group<VS> {
 }
 
 impl VgNode for GroupNode {
-    fn paint(&mut self, builder: &mut SceneBuilder) {
+    fn paint(&mut self, cx: &VgPaintCx, builder: &mut SceneBuilder) {
         for child in &mut self.children {
-            child.paint(builder);
+            child.paint(cx, builder);
         }
     }
 }

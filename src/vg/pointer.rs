@@ -9,11 +9,11 @@
 
 use std::any::Any;
 
-use xilem_core::{Id, MessageResult, IdPath};
+use xilem_core::{Id, IdPath, MessageResult};
 
 use crate::{view::Cx, widget::ChangeFlags};
 
-use super::{VgView, VgViewMarker, VgPod};
+use super::{VgPod, VgView, VgViewMarker};
 
 pub struct Pointer<V, F> {
     child: V,

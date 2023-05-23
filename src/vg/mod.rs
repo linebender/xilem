@@ -3,7 +3,7 @@
 
 use std::{any::Any, marker::PhantomData};
 
-use vello::{SceneBuilder, SceneFragment};
+use vello::{peniko::Color, SceneBuilder, SceneFragment};
 
 use xilem_core::Id;
 
@@ -16,9 +16,11 @@ use crate::{
     MessageResult,
 };
 
+mod color;
 mod group;
 mod kurbo_shape;
 mod pointer;
+pub use crate::vg::color::color;
 pub use crate::vg::group::group;
 
 pub struct Vg<V, T> {
@@ -39,13 +41,17 @@ pub struct VgPod {
 
 pub trait VgNode {
     // TODO: do need context
-    fn paint(&mut self, builder: &mut SceneBuilder);
+    fn paint(&mut self, cx: &VgPaintCx, builder: &mut SceneBuilder);
 }
 
 pub trait AnyVgNode: VgNode {
     fn as_any(&self) -> &dyn Any;
     fn as_any_mut(&mut self) -> &mut dyn Any;
     fn type_name(&self) -> &'static str;
+}
+
+pub struct VgPaintCx {
+    color: Color,
 }
 
 pub fn vg<T, V: VgView<T>>(root: V) -> Vg<V, T> {
@@ -102,7 +108,10 @@ where
         element: &mut Self::Element,
     ) -> ChangeFlags {
         let child_element = element.root.downcast_mut().unwrap();
-        self.root.rebuild(cx, &prev.root, id, state, child_element)
+        let mut changed = self.root.rebuild(cx, &prev.root, id, state, child_element);
+        // TODO: be smart and fine grained
+        changed |= ChangeFlags::PAINT;
+        changed
     }
 
     fn message(
@@ -132,7 +141,10 @@ impl Widget for VgWidget {
     fn accessibility(&mut self, _cx: &mut AccessCx) {}
 
     fn paint(&mut self, _cx: &mut PaintCx, builder: &mut vello::SceneBuilder) {
-        self.root.paint(builder);
+        let cx = VgPaintCx {
+            color: Color::SLATE_BLUE,
+        };
+        self.root.paint(&cx, builder);
     }
 }
 
@@ -154,14 +166,14 @@ impl VgPod {
         flags.upwards()
     }
 
-    fn paint_impl(&mut self) {
+    fn paint_impl(&mut self, cx: &VgPaintCx) {
         let mut builder = SceneBuilder::for_fragment(&mut self.fragment);
-        self.node.paint(&mut builder);
+        self.node.paint(cx, &mut builder);
     }
 
-    fn paint(&mut self, builder: &mut SceneBuilder) {
+    fn paint(&mut self, cx: &VgPaintCx, builder: &mut SceneBuilder) {
         // TODO: this should be conditional on paint ChangeFlags
-        self.paint_impl();
+        self.paint_impl(cx);
         builder.append(&self.fragment, None);
     }
 }
