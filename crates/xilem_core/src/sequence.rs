@@ -5,7 +5,7 @@
 #[macro_export]
 macro_rules! impl_view_tuple {
     ( $viewseq:ident, $pod:ty, $cx:ty, $changeflags:ty, $( $t:ident),* ; $( $i:tt ),* ) => {
-        impl<T, A, $( $t: ViewSequence<T, A> ),* > ViewSequence<T, A> for ( $( $t, )* ) {
+        impl<T, A, $( $t: $viewseq<T, A> ),* > $viewseq<T, A> for ( $( $t, )* ) {
             type State = ( $( $t::State, )*);
 
             fn build(&self, cx: &mut $cx, elements: &mut Vec<$pod>) -> Self::State {
