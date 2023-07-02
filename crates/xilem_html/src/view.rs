@@ -63,19 +63,6 @@ impl DomNode for Box<dyn AnyNode> {
     }
 }
 
-struct Void;
-
-// Dummy implementation that should never be used.
-impl DomNode for Void {
-    fn into_pod(self) -> Pod {
-        unreachable!()
-    }
-
-    fn as_node_ref(&self) -> &web_sys::Node {
-        unreachable!()
-    }
-}
-
 /// A container that holds a DOM element.
 ///
 /// This implementation may be overkill (it's possibly enough that everything is
