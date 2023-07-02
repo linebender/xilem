@@ -10,19 +10,49 @@ macro_rules! events {
 
 macro_rules! event {
     ($ty_name:ident, $builder_name:ident, $name:literal, $web_sys_ty:ty) => {
-        pub struct $ty_name<V, F>(crate::OnEvent<$web_sys_ty, V, F>);
-
-        pub fn $builder_name<V, F>(child: V, callback: F) -> $ty_name<V, F> {
-            $ty_name(crate::on_event($name, child, callback))
-        }
-
-        impl<V, F> crate::view::ViewMarker for $ty_name<V, F> {}
-
-        impl<T, A, V, F> crate::view::View<T, A> for $ty_name<V, F>
+        pub struct $ty_name<T, A, V, F, OA>
         where
             V: crate::view::View<T, A>,
-            F: Fn(&mut T, &$crate::Event<$web_sys_ty, V::Element>) -> $crate::MessageResult<A>,
+            F: Fn(&mut T, &$crate::Event<$web_sys_ty, V::Element>) -> OA,
             V::Element: 'static,
+            OA: $crate::event::OptionalAction<A>,
+        {
+            inner: crate::OnEvent<$web_sys_ty, V, F>,
+            data: std::marker::PhantomData<T>,
+            action: std::marker::PhantomData<A>,
+            optional_action: std::marker::PhantomData<OA>,
+        }
+
+        pub fn $builder_name<T, A, V, F, OA>(child: V, callback: F) -> $ty_name<T, A, V, F, OA>
+        where
+            V: crate::view::View<T, A>,
+            F: Fn(&mut T, &$crate::Event<$web_sys_ty, V::Element>) -> OA,
+            V::Element: 'static,
+            OA: $crate::event::OptionalAction<A>,
+        {
+            $ty_name {
+                inner: crate::on_event($name, child, callback),
+                data: std::marker::PhantomData,
+                action: std::marker::PhantomData,
+                optional_action: std::marker::PhantomData,
+            }
+        }
+
+        impl<T, A, V, F, OA> crate::view::ViewMarker for $ty_name<T, A, V, F, OA>
+        where
+            V: crate::view::View<T, A>,
+            F: Fn(&mut T, &$crate::Event<$web_sys_ty, V::Element>) -> OA,
+            V::Element: 'static,
+            OA: $crate::event::OptionalAction<A>,
+        {
+        }
+
+        impl<T, A, V, F, OA> crate::view::View<T, A> for $ty_name<T, A, V, F, OA>
+        where
+            V: crate::view::View<T, A>,
+            F: Fn(&mut T, &$crate::Event<$web_sys_ty, V::Element>) -> OA,
+            V::Element: 'static,
+            OA: $crate::event::OptionalAction<A>,
         {
             type State = crate::event::OnEventState<V::State>;
             type Element = V::Element;
@@ -31,7 +61,7 @@ macro_rules! event {
                 &self,
                 cx: &mut crate::context::Cx,
             ) -> (xilem_core::Id, Self::State, Self::Element) {
-                self.0.build(cx)
+                self.inner.build(cx)
             }
 
             fn rebuild(
@@ -42,7 +72,7 @@ macro_rules! event {
                 state: &mut Self::State,
                 element: &mut Self::Element,
             ) -> crate::ChangeFlags {
-                self.0.rebuild(cx, &prev.0, id, state, element)
+                self.inner.rebuild(cx, &prev.inner, id, state, element)
             }
 
             fn message(
@@ -52,7 +82,7 @@ macro_rules! event {
                 message: Box<dyn std::any::Any>,
                 app_state: &mut T,
             ) -> xilem_core::MessageResult<A> {
-                self.0.message(id_path, state, message, app_state)
+                self.inner.message(id_path, state, message, app_state)
             }
         }
     };

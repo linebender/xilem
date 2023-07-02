@@ -37,12 +37,13 @@ impl<E, V, F> OnEvent<E, V, F> {
 
 impl<E, V, F> ViewMarker for OnEvent<E, V, F> {}
 
-impl<T, A, E, F, V> View<T, A> for OnEvent<E, V, F>
+impl<T, A, E, F, V, OA> View<T, A> for OnEvent<E, V, F>
 where
-    F: Fn(&mut T, &Event<E, V::Element>) -> MessageResult<A>,
+    F: Fn(&mut T, &Event<E, V::Element>) -> OA,
     V: View<T, A>,
     E: JsCast + 'static,
     V::Element: 'static,
+    OA: OptionalAction<A>,
 {
     type State = OnEventState<V::State>;
 
@@ -90,7 +91,10 @@ where
         app_state: &mut T,
     ) -> MessageResult<A> {
         if let Some(msg) = message.downcast_ref::<EventMsg<Event<E, V::Element>>>() {
-            (self.callback)(app_state, &msg.event)
+            match (self.callback)(app_state, &msg.event).action() {
+                Some(a) => MessageResult::Action(a),
+                None => MessageResult::Nop,
+            }
         } else {
             self.child
                 .message(id_path, &mut state.child_state, message, app_state)
@@ -141,5 +145,41 @@ impl<Evt, El> Deref for Event<Evt, El> {
     type Target = Evt;
     fn deref(&self) -> &Self::Target {
         &self.raw
+    }
+}
+
+/// Implement this trait for types you want to use as actions.
+///
+/// The trait exists because otherwise we couldn't provide versions
+/// of listeners that take `()`, `A` and `Option<A>`.
+pub trait Action {}
+
+/// Trait that allows callbacks to be polymorphic on return type
+/// (`Action`, `Option<Action>` or `()`)
+pub trait OptionalAction<A>: sealed::Sealed {
+    fn action(self) -> Option<A>;
+}
+mod sealed {
+    pub trait Sealed {}
+}
+
+impl sealed::Sealed for () {}
+impl<A> OptionalAction<A> for () {
+    fn action(self) -> Option<A> {
+        None
+    }
+}
+
+impl<A: Action> sealed::Sealed for A {}
+impl<A: Action> OptionalAction<A> for A {
+    fn action(self) -> Option<A> {
+        Some(self)
+    }
+}
+
+impl<A: Action> sealed::Sealed for Option<A> {}
+impl<A: Action> OptionalAction<A> for Option<A> {
+    fn action(self) -> Option<A> {
+        self
     }
 }

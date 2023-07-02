@@ -4,7 +4,9 @@
 //! Integration with xilem_core. This instantiates the View and related
 //! traits for DOM node generation.
 
-use std::{any::Any, ops::Deref};
+use std::{any::Any, borrow::Cow, ops::Deref};
+
+use xilem_core::{Id, MessageResult};
 
 use crate::{context::Cx, ChangeFlags};
 
@@ -98,3 +100,121 @@ impl Pod {
 xilem_core::generate_view_trait! {View, DomNode, Cx, ChangeFlags;}
 xilem_core::generate_viewsequence_trait! {ViewSequence, View, ViewMarker, DomNode, Cx, ChangeFlags, Pod;}
 xilem_core::generate_anyview_trait! {View, Cx, ChangeFlags, AnyNode}
+
+impl ViewMarker for &'static str {}
+impl<T, A> View<T, A> for &'static str {
+    type State = ();
+    type Element = web_sys::Text;
+
+    fn build(&self, _cx: &mut Cx) -> (Id, Self::State, Self::Element) {
+        let el = new_text(self);
+        let id = Id::next();
+        (id, (), el.into())
+    }
+
+    fn rebuild(
+        &self,
+        _cx: &mut Cx,
+        prev: &Self,
+        _id: &mut Id,
+        _state: &mut Self::State,
+        element: &mut Self::Element,
+    ) -> ChangeFlags {
+        let mut is_changed = ChangeFlags::empty();
+        if prev != self {
+            element.set_data(self);
+            is_changed |= ChangeFlags::OTHER_CHANGE;
+        }
+        is_changed
+    }
+
+    fn message(
+        &self,
+        _id_path: &[Id],
+        _state: &mut Self::State,
+        _message: Box<dyn std::any::Any>,
+        _app_state: &mut T,
+    ) -> MessageResult<A> {
+        MessageResult::Nop
+    }
+}
+
+impl ViewMarker for String {}
+impl<T, A> View<T, A> for String {
+    type State = ();
+    type Element = web_sys::Text;
+
+    fn build(&self, _cx: &mut Cx) -> (Id, Self::State, Self::Element) {
+        let el = new_text(self);
+        let id = Id::next();
+        (id, (), el.into())
+    }
+
+    fn rebuild(
+        &self,
+        _cx: &mut Cx,
+        prev: &Self,
+        _id: &mut Id,
+        _state: &mut Self::State,
+        element: &mut Self::Element,
+    ) -> ChangeFlags {
+        let mut is_changed = ChangeFlags::empty();
+        if prev != self {
+            element.set_data(self);
+            is_changed |= ChangeFlags::OTHER_CHANGE;
+        }
+        is_changed
+    }
+
+    fn message(
+        &self,
+        _id_path: &[Id],
+        _state: &mut Self::State,
+        _message: Box<dyn std::any::Any>,
+        _app_state: &mut T,
+    ) -> MessageResult<A> {
+        MessageResult::Nop
+    }
+}
+
+impl ViewMarker for Cow<'static, str> {}
+impl<T, A> View<T, A> for Cow<'static, str> {
+    type State = ();
+    type Element = web_sys::Text;
+
+    fn build(&self, _cx: &mut Cx) -> (Id, Self::State, Self::Element) {
+        let el = new_text(self);
+        let id = Id::next();
+        (id, (), el.into())
+    }
+
+    fn rebuild(
+        &self,
+        _cx: &mut Cx,
+        prev: &Self,
+        _id: &mut Id,
+        _state: &mut Self::State,
+        element: &mut Self::Element,
+    ) -> ChangeFlags {
+        let mut is_changed = ChangeFlags::empty();
+        if prev != self {
+            element.set_data(self);
+            is_changed |= ChangeFlags::OTHER_CHANGE;
+        }
+        is_changed
+    }
+
+    fn message(
+        &self,
+        _id_path: &[Id],
+        _state: &mut Self::State,
+        _message: Box<dyn std::any::Any>,
+        _app_state: &mut T,
+    ) -> MessageResult<A> {
+        MessageResult::Nop
+    }
+}
+
+fn new_text(text: &str) -> web_sys::Text {
+    web_sys::Text::new_with_data(text).unwrap()
+}

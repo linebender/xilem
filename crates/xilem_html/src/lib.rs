@@ -14,7 +14,6 @@ mod context;
 mod event;
 //mod div;
 mod element;
-mod text;
 mod view;
 #[cfg(feature = "typed")]
 mod view_ext;
@@ -29,8 +28,7 @@ pub use element::elements;
 pub use element::{element, Element, ElementState};
 #[cfg(feature = "typed")]
 pub use event::events;
-pub use event::{on_event, Event, OnEvent, OnEventState};
-pub use text::{text, Text};
+pub use event::{on_event, Action, Event, OnEvent, OnEventState, OptionalAction};
 pub use view::{Adapt, AdaptThunk, Pod, View, ViewMarker, ViewSequence};
 #[cfg(feature = "typed")]
 pub use view_ext::ViewExt;

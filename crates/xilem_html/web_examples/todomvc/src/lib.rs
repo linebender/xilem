@@ -6,7 +6,8 @@ use state::{AppState, Filter, Todo};
 
 use wasm_bindgen::{prelude::*, JsValue};
 use xilem_html::{
-    elements as el, get_element_by_id, text, Adapt, App, MessageResult, View, ViewExt, ViewMarker,
+    elements as el, events::on_click, get_element_by_id, Action, Adapt, App, Event, MessageResult,
+    View, ViewExt, ViewMarker,
 };
 
 // All of these actions arise from within a `Todo`, but we need access to the full state to reduce
@@ -16,6 +17,8 @@ enum TodoAction {
     CancelEditing,
     Destroy(u64),
 }
+
+impl Action for TodoAction {}
 
 fn todo_item(todo: &mut Todo, editing: bool) -> impl View<Todo, TodoAction> + ViewMarker {
     let mut class = String::new();
@@ -36,16 +39,12 @@ fn todo_item(todo: &mut Todo, editing: bool) -> impl View<Todo, TodoAction> + Vi
         el::div((
             input.on_click(|state: &mut Todo, _| {
                 state.completed = !state.completed;
-                MessageResult::RequestRebuild
             }),
-            el::label(text(todo.title.clone())).on_dblclick(|state: &mut Todo, _| {
-                MessageResult::Action(TodoAction::SetEditing(state.id))
-            }),
+            el::label(todo.title.clone())
+                .on_dblclick(|state: &mut Todo, _| TodoAction::SetEditing(state.id)),
             el::button(())
                 .attr("class", "destroy")
-                .on_click(|state: &mut Todo, _| {
-                    MessageResult::Action(TodoAction::Destroy(state.id))
-                }),
+                .on_click(|state: &mut Todo, _| TodoAction::Destroy(state.id)),
         ))
         .attr("class", "view"),
         el::input(())
@@ -55,18 +54,17 @@ fn todo_item(todo: &mut Todo, editing: bool) -> impl View<Todo, TodoAction> + Vi
                 let key = evt.key();
                 if key == "Enter" {
                     state.save_editing();
-                    MessageResult::Action(TodoAction::CancelEditing)
+                    Some(TodoAction::CancelEditing)
                 } else if key == "Escape" {
-                    MessageResult::Action(TodoAction::CancelEditing)
+                    Some(TodoAction::CancelEditing)
                 } else {
-                    MessageResult::Nop
+                    None
                 }
             })
             .on_input(|state: &mut Todo, evt| {
                 state.title_editing.clear();
                 state.title_editing.push_str(&evt.target().value());
                 evt.prevent_default();
-                MessageResult::Nop
             }),
     ))
     .attr("class", class)
@@ -80,12 +78,12 @@ fn footer_view(state: &mut AppState) -> impl View<AppState> + ViewMarker {
     };
 
     let clear_button = (state.todos.iter().filter(|todo| todo.completed).count() > 0).then(|| {
-        el::button(text("Clear completed"))
-            .attr("class", "clear-completed")
-            .on_click(|state: &mut AppState, _| {
+        on_click(
+            el::button("Clear completed").attr("class", "clear-completed"),
+            |state: &mut AppState, _| {
                 state.todos.retain(|todo| !todo.completed);
-                MessageResult::RequestRebuild
-            })
+            },
+        )
     });
 
     let filter_class = |filter| {
@@ -98,40 +96,37 @@ fn footer_view(state: &mut AppState) -> impl View<AppState> + ViewMarker {
 
     el::footer((
         el::span((
-            el::strong(text(state.todos.len().to_string())),
-            text(format!(" {} left", item_str)),
+            el::strong(state.todos.len().to_string()),
+            format!(" {} left", item_str),
         ))
         .attr("class", "todo-count"),
         el::ul((
-            el::li(
-                el::a(text("All"))
+            el::li(on_click(
+                el::a("All")
                     .attr("href", "#/")
-                    .attr("class", filter_class(Filter::All))
-                    .on_click(|state: &mut AppState, _| {
-                        state.filter = Filter::All;
-                        MessageResult::RequestRebuild
-                    }),
-            ),
-            text(" "),
-            el::li(
-                el::a(text("Active"))
+                    .attr("class", filter_class(Filter::All)),
+                |state: &mut AppState, _| {
+                    state.filter = Filter::All;
+                },
+            )),
+            " ",
+            el::li(on_click(
+                el::a("Active")
                     .attr("href", "#/active")
-                    .attr("class", filter_class(Filter::Active))
-                    .on_click(|state: &mut AppState, _| {
-                        state.filter = Filter::Active;
-                        MessageResult::RequestRebuild
-                    }),
-            ),
-            text(" "),
-            el::li(
-                el::a(text("Completed"))
+                    .attr("class", filter_class(Filter::Active)),
+                |state: &mut AppState, _| {
+                    state.filter = Filter::Active;
+                },
+            )),
+            " ",
+            el::li(on_click(
+                el::a("Completed")
                     .attr("href", "#/completed")
-                    .attr("class", filter_class(Filter::Completed))
-                    .on_click(|state: &mut AppState, _| {
-                        state.filter = Filter::Completed;
-                        MessageResult::RequestRebuild
-                    }),
-            ),
+                    .attr("class", filter_class(Filter::Completed)),
+                |state: &mut AppState, _| {
+                    state.filter = Filter::Completed;
+                },
+            )),
         ))
         .attr("class", "filters"),
         clear_button,
@@ -177,23 +172,26 @@ fn app_logic(state: &mut AppState) -> impl View<AppState> {
     let footer = (!state.todos.is_empty()).then(|| footer_view(state));
     el::div((
         el::header((
-            el::h1(text("TODOs")),
+            el::h1("TODOs"),
             el::input(())
                 .attr("class", "new-todo")
                 .attr("placeholder", "What needs to be done?")
                 .attr("value", state.new_todo.clone())
                 .attr("autofocus", "true")
-                .on_keydown(|state: &mut AppState, evt| {
+            .on_keydown(
+                |state: &mut AppState, evt| {
                     if evt.key() == "Enter" {
                         state.create_todo();
                     }
-                    MessageResult::RequestRebuild
-                })
-                .on_input(|state: &mut AppState, evt| {
+                },
+            )
+            .on_input(
+                |state: &mut AppState,
+                 evt: &Event<web_sys::InputEvent, web_sys::HtmlInputElement>| {
                     state.update_new_todo(&evt.target().value());
                     evt.prevent_default();
-                    MessageResult::RequestRebuild
-                }),
+                },
+            ),
         ))
         .attr("class", "header"),
         main,
