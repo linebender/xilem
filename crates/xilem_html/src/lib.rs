@@ -1,8 +1,7 @@
 // Copyright 2023 the Druid Authors.
 // SPDX-License-Identifier: Apache-2.0
 
-//! A test program to exercise using xilem_core to generate SVG nodes that
-//! render in a browser.
+//! A highly experimental web framework using the xilem architecture.
 //!
 //! Run using `trunk serve`.
 

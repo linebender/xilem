@@ -6,7 +6,8 @@ pub mod events;
 
 use std::{any::Any, marker::PhantomData, ops::Deref};
 
-use wasm_bindgen::{prelude::Closure, JsCast, UnwrapThrowExt};
+use gloo::events::EventListener;
+use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use xilem_core::{Id, MessageResult};
 
 use crate::{
@@ -50,18 +51,19 @@ where
     fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
         let (id, child_state, element) = self.child.build(cx);
         let thunk = cx.with_id(id, |cx| cx.message_thunk());
-        let closure = Closure::wrap(Box::new(move |event: web_sys::Event| {
-            let event = event.dyn_into::<E>().unwrap_throw();
-            let event: Event<E, V::Element> = Event::new(event);
-            thunk.push_message(EventMsg { event });
-        }) as Box<dyn FnMut(web_sys::Event)>);
-        element
-            .as_node_ref()
-            .add_event_listener_with_callback(self.event, closure.as_ref().unchecked_ref())
-            .unwrap_throw();
+        let listener = EventListener::new(
+            element.as_node_ref(),
+            self.event,
+            move |event: &web_sys::Event| {
+                let event = (*event).clone();
+                let event = event.dyn_into::<E>().unwrap_throw();
+                let event: Event<E, V::Element> = Event::new(event);
+                thunk.push_message(EventMsg { event });
+            },
+        );
         // TODO add `remove_listener_with_callback` to clean up listener?
         let state = OnEventState {
-            closure,
+            listener,
             child_state,
         };
         (id, state, element)
@@ -103,51 +105,12 @@ pub fn on_event<E, V, F>(name: &'static str, child: V, callback: F) -> OnEvent<E
 
 pub struct OnEventState<S> {
     #[allow(unused)]
-    closure: Closure<dyn FnMut(web_sys::Event)>,
+    listener: EventListener,
     child_state: S,
 }
 struct EventMsg<E> {
     event: E,
 }
-
-/*
-// on input
-pub fn on_input<T, A, F: Fn(&mut T, &web_sys::InputEvent) -> MessageResult<A>, V: View<T, A>>(
-    child: V,
-    callback: F,
-) -> OnEvent<web_sys::InputEvent, V, F> {
-    OnEvent::new("input", child, callback)
-}
-
-// on click
-pub fn on_click<T, A, F: Fn(&mut T, &web_sys::Event) -> MessageResult<A>, V: View<T, A>>(
-    child: V,
-    callback: F,
-) -> OnEvent<web_sys::Event, V, F> {
-    OnEvent::new("click", child, callback)
-}
-
-// on click
-pub fn on_dblclick<T, A, F: Fn(&mut T, &web_sys::Event) -> MessageResult<A>, V: View<T, A>>(
-    child: V,
-    callback: F,
-) -> OnEvent<web_sys::Event, V, F> {
-    OnEvent::new("dblclick", child, callback)
-}
-
-// on keydown
-pub fn on_keydown<
-    T,
-    A,
-    F: Fn(&mut T, &web_sys::KeyboardEvent) -> MessageResult<A>,
-    V: View<T, A>,
->(
-    child: V,
-    callback: F,
-) -> OnEvent<web_sys::KeyboardEvent, V, F> {
-    OnEvent::new("keydown", child, callback)
-}
-*/
 
 pub struct Event<Evt, El> {
     raw: Evt,
@@ -180,57 +143,3 @@ impl<Evt, El> Deref for Event<Evt, El> {
         &self.raw
     }
 }
-
-/*
-/// Types that can be created from a `web_sys::Event`.
-///
-/// Implementations may make the assumption that the event
-/// is a particular subtype (e.g. `InputEvent`) and panic
-/// when this is not the case (although it's preferred to use
-/// `throw_str` and friends).
-pub trait FromEvent: 'static {
-    /// Convert the given event into `self`, or panic.
-    fn from_event(event: &web_sys::Event) -> Self;
-}
-
-#[derive(Debug)]
-pub struct InputEvent {
-    pub data: Option<String>,
-    /// The value of `event.target.value`.
-    pub value: String,
-}
-
-impl FromEvent for InputEvent {
-    fn from_event(event: &web_sys::Event) -> Self {
-        let event: &web_sys::InputEvent = event.dyn_ref().unwrap_throw();
-        Self {
-            data: event.data(),
-            value: event
-                .target()
-                .unwrap_throw()
-                .dyn_into::<web_sys::HtmlInputElement>()
-                .unwrap_throw()
-                .value(),
-        }
-    }
-}
-
-pub struct Event {}
-
-impl FromEvent for Event {
-    fn from_event(_event: &web_sys::Event) -> Self {
-        Self {}
-    }
-}
-
-pub struct KeyboardEvent {
-    pub key: String,
-}
-
-impl FromEvent for KeyboardEvent {
-    fn from_event(event: &web_sys::Event) -> Self {
-        let event: &web_sys::KeyboardEvent = event.dyn_ref().unwrap();
-        Self { key: event.key() }
-    }
-}
-*/

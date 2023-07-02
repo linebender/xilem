@@ -75,6 +75,7 @@ wasm-bindgen = "0.2.87"
 kurbo = "0.9.1"
 xilem_core = { path = "../xilem_core" }
 log = "0.4.19"
+gloo = { version = "0.8.1", default-features = false, features = ["events"] }
 
 [dependencies.web-sys]
 version = "0.3.4"
