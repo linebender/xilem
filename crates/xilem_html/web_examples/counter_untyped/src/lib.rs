@@ -1,5 +1,5 @@
 use wasm_bindgen::{prelude::*, JsValue};
-use xilem_html::{document_body, element as el, on_event, App, Event, View, ViewMarker};
+use xilem_html::{document_body, element, on_event, App, Event, View, ViewMarker};
 
 #[derive(Default)]
 struct AppState {
@@ -24,7 +24,7 @@ where
 {
     on_event(
         "click",
-        el("button", label),
+        element("button", label),
         move |state: &mut AppState, evt: &Event<_, _>| {
             click_fn(state, evt);
         },
@@ -32,10 +32,10 @@ where
 }
 
 fn app_logic(state: &mut AppState) -> impl View<AppState> {
-    el::<web_sys::HtmlElement, _>(
+    element::<web_sys::HtmlElement, _>(
         "div",
         (
-            el::<web_sys::HtmlElement, _>("span", format!("clicked {} times", state.clicks)),
+            element::<web_sys::HtmlElement, _>("span", format!("clicked {} times", state.clicks)),
             btn("+1 click", |state, _| AppState::increment(state)),
             btn("-1 click", |state, _| AppState::decrement(state)),
             btn("reset clicks", |state, _| AppState::reset(state)),
