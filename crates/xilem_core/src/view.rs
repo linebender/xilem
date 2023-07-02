@@ -68,6 +68,59 @@ macro_rules! generate_view_trait {
             ) -> $crate::MessageResult<A>;
         }
 
+        /// A view that wraps a child view and modifies the state that callbacks have access to.
+        ///
+        /// # Examples
+        ///
+        /// Suppose you have an outer type that looks like
+        ///
+        /// ```
+        /// struct State {
+        ///     todos: Vec<Todo>
+        /// }
+        /// ```
+        ///
+        /// and an inner type/view that looks like
+        ///
+        /// ```ignore
+        /// struct Todo {
+        ///     label: String
+        /// }
+        ///
+        /// struct TodoView {
+        ///     label: String
+        /// }
+        ///
+        /// enum TodoAction {
+        ///     Delete
+        /// }
+        ///
+        /// impl View<Todo, TodoAction> for TodoView {
+        ///     // ...
+        /// }
+        /// ```
+        ///
+        /// then your top-level action (`()`) and state type (`State`) don't match `TodoView`'s.
+        /// You can use the `Adapt` view to mediate between them:
+        ///
+        /// ```ignore
+        /// state
+        ///     .todos
+        ///     .enumerate()
+        ///     .map(|(idx, todo)| {
+        ///         Adapt::new(
+        ///             move |data: &mut AppState, thunk| {
+        ///                 if let MessageResult::Action(action) = thunk.call(&mut data.todos[idx]) {
+        ///                     match action {
+        ///                         TodoAction::Delete => data.todos.remove(idx),
+        ///                     }
+        ///                 }
+        ///                 MessageResult::Nop
+        ///             },
+        ///             TodoView { label: todo.label }
+        ///         )
+        ///     })
+        /// ```
         pub struct Adapt<OutData, OutMsg, InData, InMsg, F: Fn(&mut OutData, AdaptThunk<InData, InMsg, V>) -> $crate::MessageResult<OutMsg>, V: View<InData, InMsg>> {
             f: F,
             child: V,

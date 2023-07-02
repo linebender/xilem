@@ -10,6 +10,7 @@ use crate::{
 };
 use xilem_core::{Id, MessageResult};
 
+/// The type responsible for running your app.
 pub struct App<T, V: View<T>, F: FnMut(&mut T) -> V>(Rc<RefCell<AppInner<T, V, F>>>);
 
 struct AppInner<T, V: View<T>, F: FnMut(&mut T) -> V> {
@@ -35,6 +36,7 @@ impl<T: 'static, V: View<T> + 'static, F: FnMut(&mut T) -> V + 'static> Clone fo
 }
 
 impl<T: 'static, V: View<T> + 'static, F: FnMut(&mut T) -> V + 'static> App<T, V, F> {
+    /// Create an instance of your app with the given logic and initial state.
     pub fn new(data: T, app_logic: F) -> Self {
         let inner = AppInner::new(data, app_logic);
         let app = App(Rc::new(RefCell::new(inner)));
@@ -42,6 +44,10 @@ impl<T: 'static, V: View<T> + 'static, F: FnMut(&mut T) -> V + 'static> App<T, V
         app
     }
 
+    /// Run the app.
+    ///
+    /// Because we don't want to block the render thread, we return immediately here. The app is
+    /// forgotten, and will continue to respond to events in the background.
     pub fn run(self, root: &web_sys::HtmlElement) {
         self.0.borrow_mut().ensure_app(root);
         // Latter may not be necessary, we have an rc loop.

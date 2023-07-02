@@ -1,4 +1,4 @@
-//! Macros to generate all the different html elements
+//! Types that wrap [`Element`][super::Element] and represent specific element types.
 //!
 macro_rules! elements {
     () => {};
@@ -10,8 +10,14 @@ macro_rules! elements {
 
 macro_rules! element {
     ($ty_name:ident, $builder_name:ident, $name:literal, $web_sys_ty:ty) => {
+        /// A view representing a
+        #[doc = concat!("`", $name, "`")]
+        /// element.
         pub struct $ty_name<ViewSeq>(crate::Element<$web_sys_ty, ViewSeq>);
 
+        /// Builder function for a
+        #[doc = concat!("`", $name, "`")]
+        /// view.
         pub fn $builder_name<ViewSeq>(children: ViewSeq) -> $ty_name<ViewSeq> {
             $ty_name(crate::element($name, children))
         }

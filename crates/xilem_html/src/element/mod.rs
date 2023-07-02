@@ -15,6 +15,8 @@ use xilem_core::{Id, MessageResult, VecSplice};
 pub mod elements;
 
 /// A view representing a HTML element.
+///
+/// If the element has no chilcdren, use the unit type (e.g. `let view = element("div", ())`).
 pub struct Element<El, Children = ()> {
     name: Cow<'static, str>,
     attributes: BTreeMap<Cow<'static, str>, Cow<'static, str>>,
@@ -46,7 +48,9 @@ pub struct ElementState<ViewSeqState> {
     child_elements: Vec<Pod>,
 }
 
-/// Create a new element
+/// Create a new element view
+///
+/// If the element has no chilcdren, use the unit type (e.g. `let view = element("div", ())`).
 pub fn element<E, ViewSeq>(
     name: impl Into<Cow<'static, str>>,
     children: ViewSeq,
@@ -71,10 +75,16 @@ impl<E, ViewSeq> Element<E, ViewSeq> {
         name: impl Into<Cow<'static, str>>,
         value: impl Into<Cow<'static, str>>,
     ) -> Self {
-        self.attributes.insert(name.into(), value.into());
+        self.set_attr(name, value);
         self
     }
 
+    /// Set an attribute on this element.
+    ///
+    /// # Panics
+    ///
+    /// If the name contains characters that are not valid in an attribute name,
+    /// then the `View::build`/`View::rebuild` functions will panic for this view.
     pub fn set_attr(
         &mut self,
         name: impl Into<Cow<'static, str>>,

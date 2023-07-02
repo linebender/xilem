@@ -10,6 +10,9 @@ macro_rules! events {
 
 macro_rules! event {
     ($ty_name:ident, $builder_name:ident, $name:literal, $web_sys_ty:ty) => {
+        /// A view that listens for the
+        #[doc = concat!("`", $name, "`")]
+        /// event.
         pub struct $ty_name<T, A, V, F, OA>
         where
             V: crate::view::View<T, A>,
@@ -23,6 +26,9 @@ macro_rules! event {
             optional_action: std::marker::PhantomData<OA>,
         }
 
+        /// Builder for the
+        #[doc = concat!("`", $name, "`")]
+        /// event listener.
         pub fn $builder_name<T, A, V, F, OA>(child: V, callback: F) -> $ty_name<T, A, V, F, OA>
         where
             V: crate::view::View<T, A>,
