@@ -4,7 +4,7 @@
 //! `use xilem_html::elements as el` or similar to the top of your file.
 use crate::{
     context::{ChangeFlags, Cx},
-    view::{DomElement, Pod, View, ViewMarker, ViewSequence},
+    view::{DomElement, DomNode, Pod, View, ViewMarker, ViewSequence},
 };
 
 use std::{borrow::Cow, cmp::Ordering, collections::BTreeMap, fmt, marker::PhantomData};
@@ -22,6 +22,12 @@ pub struct Element<El, Children = ()> {
     attributes: BTreeMap<Cow<'static, str>, Cow<'static, str>>,
     children: Children,
     ty: PhantomData<El>,
+}
+
+pub trait ElementTag {
+    type WebSysElement: JsCast + DomElement;
+
+    fn name() -> &'static str;
 }
 
 impl<E, ViewSeq> Element<E, ViewSeq> {
@@ -100,12 +106,12 @@ impl<T, A, El, Children> View<T, A> for Element<El, Children>
 where
     Children: ViewSequence<T, A>,
     // In addition, the `E` parameter is expected to be a child of `web_sys::Node`
-    El: JsCast + DomElement,
+    El: ElementTag,
 {
     type State = ElementState<Children::State>;
-    type Element = El;
+    type Element = El::WebSysElement;
 
-    fn build(&self, cx: &mut Cx) -> (Id, Self::State, El) {
+    fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
         let el = cx.create_html_element(&self.name);
         for (name, value) in &self.attributes {
             el.set_attribute(name, value).unwrap();
@@ -128,7 +134,7 @@ where
         prev: &Self,
         id: &mut Id,
         state: &mut Self::State,
-        element: &mut El,
+        element: &mut Self::Element,
     ) -> ChangeFlags {
         let mut changed = ChangeFlags::empty();
         // update tag name

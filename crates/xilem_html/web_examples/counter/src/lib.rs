@@ -43,7 +43,7 @@ impl AppState {
 fn btn<A, F>(
     label: &'static str,
     click_fn: F,
-) -> evt::OnClick<AppState, A, el::Button<&'static str>, F, ()>
+) -> evt::OnClick<AppState, A, xilem_html::Element<el::Button, &'static str>, F, ()>
 where
     F: Fn(&mut AppState, &Event<web_sys::MouseEvent, web_sys::HtmlButtonElement>),
 {
