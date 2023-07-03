@@ -3,7 +3,7 @@
 
 #[macro_export]
 macro_rules! generate_anyview_trait {
-    ($anyview:ident, $viewtrait:ident, $viewmarker:ty, $cx:ty, $changeflags:ty, $anywidget:ident $($ss:tt)*) => {
+    ($anyview:ident, $viewtrait:ident, $viewmarker:ty, $cx:ty, $changeflags:ty, $anywidget:ident, $boxedview:ident; $($ss:tt)*) => {
         /// A trait enabling type erasure of views.
         pub trait $anyview<T, A = ()> {
             fn as_any(&self) -> &dyn std::any::Any;
@@ -94,7 +94,11 @@ macro_rules! generate_anyview_trait {
             }
         }
 
-        impl<T, A> $viewtrait<T, A> for Box<dyn $anyview<T, A> $( $ss )* > {
+        pub type $boxedview<T, A = ()> = Box<dyn $anyview<T, A> $( $ss )* >;
+
+        impl<T, A> $viewmarker for $boxedview<T, A> {}
+
+        impl<T, A> $viewtrait<T, A> for $boxedview<T, A> {
             type State = Box<dyn std::any::Any $( $ss )* >;
 
             type Element = Box<dyn $anywidget>;
@@ -129,7 +133,5 @@ macro_rules! generate_anyview_trait {
                     .dyn_message(id_path, state.deref_mut(), message, app_state)
             }
         }
-
-        impl<T, A> $viewmarker for Box<dyn $anyview<T, A> $( $ss )*> {}
     };
 }
