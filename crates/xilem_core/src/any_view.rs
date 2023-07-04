@@ -3,9 +3,9 @@
 
 #[macro_export]
 macro_rules! generate_anyview_trait {
-    ($viewtrait:ident, $cx:ty, $changeflags:ty, $anywidget:ident $($ss:tt)*) => {
+    ($anyview:ident, $viewtrait:ident, $viewmarker:ty, $cx:ty, $changeflags:ty, $anywidget:ident, $boxedview:ident; $($ss:tt)*) => {
         /// A trait enabling type erasure of views.
-        pub trait AnyView<T, A = ()> {
+        pub trait $anyview<T, A = ()> {
             fn as_any(&self) -> &dyn std::any::Any;
 
             fn dyn_build(
@@ -16,7 +16,7 @@ macro_rules! generate_anyview_trait {
             fn dyn_rebuild(
                 &self,
                 cx: &mut $cx,
-                prev: &dyn AnyView<T, A>,
+                prev: &dyn $anyview<T, A>,
                 id: &mut $crate::Id,
                 state: &mut Box<dyn std::any::Any $( $ss )* >,
                 element: &mut Box<dyn $anywidget>,
@@ -31,7 +31,7 @@ macro_rules! generate_anyview_trait {
             ) -> $crate::MessageResult<A>;
         }
 
-        impl<T, A, V: $viewtrait<T, A> + 'static> AnyView<T, A> for V
+        impl<T, A, V: $viewtrait<T, A> + 'static> $anyview<T, A> for V
         where
             V::State: 'static,
             V::Element: $anywidget + 'static,
@@ -51,7 +51,7 @@ macro_rules! generate_anyview_trait {
             fn dyn_rebuild(
                 &self,
                 cx: &mut $cx,
-                prev: &dyn AnyView<T, A>,
+                prev: &dyn $anyview<T, A>,
                 id: &mut $crate::Id,
                 state: &mut Box<dyn std::any::Any $( $ss )* >,
                 element: &mut Box<dyn $anywidget>,
@@ -62,11 +62,11 @@ macro_rules! generate_anyview_trait {
                         if let Some(element) = element.deref_mut().as_any_mut().downcast_mut() {
                             self.rebuild(cx, prev, id, state, element)
                         } else {
-                            println!("downcast of element failed in dyn_rebuild");
+                            eprintln!("downcast of element failed in dyn_rebuild");
                             <$changeflags>::default()
                         }
                     } else {
-                        println!("downcast of state failed in dyn_rebuild");
+                        eprintln!("downcast of state failed in dyn_rebuild");
                         <$changeflags>::default()
                     }
                 } else {
@@ -94,7 +94,11 @@ macro_rules! generate_anyview_trait {
             }
         }
 
-        impl<T, A> $viewtrait<T, A> for Box<dyn AnyView<T, A> $( $ss )* > {
+        pub type $boxedview<T, A = ()> = Box<dyn $anyview<T, A> $( $ss )* >;
+
+        impl<T, A> $viewmarker for $boxedview<T, A> {}
+
+        impl<T, A> $viewtrait<T, A> for $boxedview<T, A> {
             type State = Box<dyn std::any::Any $( $ss )* >;
 
             type Element = Box<dyn $anywidget>;
