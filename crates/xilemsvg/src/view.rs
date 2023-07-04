@@ -74,4 +74,4 @@ impl Pod {
 
 xilem_core::generate_view_trait! {View, DomElement, Cx, ChangeFlags;}
 xilem_core::generate_viewsequence_trait! {ViewSequence, View, ViewMarker, DomElement, Cx, ChangeFlags, Pod;}
-xilem_core::generate_anyview_trait! {View, Cx, ChangeFlags, AnyElement}
+xilem_core::generate_anyview_trait! {AnyView, View, ViewMarker, Cx, ChangeFlags, AnyElement, BoxedView;}

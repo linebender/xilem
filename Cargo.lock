@@ -2347,8 +2347,8 @@ checksum = "8fb1df15f412ee2e9dfc1c504260fa695c1c3f10fe9f4a6ee2d2184d7d6450e2"
 
 [[package]]
 name = "swash"
-version = "0.1.8"
-source = "git+https://github.com/dfrg/swash#56ea551ac49e51580c466f03d6c75252a8c8e700"
+version = "0.1.6"
+source = "git+https://github.com/dfrg/swash#af0c735d64ea3ebb7dbeb770f044e4485329037e"
 dependencies = [
  "yazi",
  "zeno",
@@ -3237,9 +3237,9 @@ checksum = "4d25c75bf9ea12c4040a97f829154768bbbce366287e2dc044af160cd79a13fd"
 
 [[package]]
 name = "yazi"
-version = "0.1.6"
+version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c94451ac9513335b5e23d7a8a2b61a7102398b8cca5160829d313e84c9d98be1"
+checksum = "c03b3e19c937b5b9bd8e52b1c88f30cce5c0d33d676cf174866175bb794ff658"
 
 [[package]]
 name = "zbus"
