@@ -14,17 +14,20 @@
 
 use std::any::Any;
 
-use crate::{event::MessageResult, id::Id, widget::ChangeFlags};
+use xilem_core::{Id, MessageResult};
 
-use super::{Cx, View};
+use crate::widget::{ChangeFlags, TextWidget};
 
+use super::{Cx, View, ViewMarker};
+
+impl ViewMarker for String {}
 impl<T, A> View<T, A> for String {
     type State = ();
 
-    type Element = crate::widget::text::TextWidget;
+    type Element = TextWidget;
 
     fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
-        let (id, element) = cx.with_new_id(|_| crate::widget::text::TextWidget::new(self.clone()));
+        let (id, element) = cx.with_new_id(|_| TextWidget::new(self.clone()));
         (id, (), element)
     }
 
@@ -32,24 +35,61 @@ impl<T, A> View<T, A> for String {
         &self,
         _cx: &mut Cx,
         prev: &Self,
-        _id: &mut crate::id::Id,
+        _id: &mut Id,
         _state: &mut Self::State,
         element: &mut Self::Element,
     ) -> ChangeFlags {
+        let mut change_flags = ChangeFlags::empty();
         if prev != self {
-            element.set_text(self.clone())
-        } else {
-            ChangeFlags::empty()
+            change_flags |= element.set_text(self.clone());
         }
+        change_flags
     }
 
-    fn event(
+    fn message(
         &self,
-        _id_path: &[crate::id::Id],
+        _id_path: &[Id],
         _state: &mut Self::State,
         _event: Box<dyn Any>,
         _app_state: &mut T,
     ) -> MessageResult<A> {
-        MessageResult::Stale
+        MessageResult::Nop
+    }
+}
+
+impl ViewMarker for &'static str {}
+impl<T, A> View<T, A> for &'static str {
+    type State = ();
+
+    type Element = TextWidget;
+
+    fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
+        let (id, element) = cx.with_new_id(|_| TextWidget::new(self.to_string()));
+        (id, (), element)
+    }
+
+    fn rebuild(
+        &self,
+        _cx: &mut Cx,
+        prev: &Self,
+        _id: &mut Id,
+        _state: &mut Self::State,
+        element: &mut Self::Element,
+    ) -> ChangeFlags {
+        let mut change_flags = ChangeFlags::empty();
+        if prev != self {
+            change_flags |= element.set_text(self.to_string());
+        }
+        change_flags
+    }
+
+    fn message(
+        &self,
+        _id_path: &[Id],
+        _state: &mut Self::State,
+        _event: Box<dyn Any>,
+        _app_state: &mut T,
+    ) -> MessageResult<A> {
+        MessageResult::Nop
     }
 }

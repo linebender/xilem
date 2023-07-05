@@ -6,6 +6,7 @@ members = [
     "crates/xilem_html/web_examples/counter",
     "crates/xilem_html/web_examples/counter_untyped",
     "crates/xilem_html/web_examples/todomvc",
+    "examples/todomvc",
     ".",
 ]
 

@@ -22,9 +22,8 @@ use vello::{
 use crate::text::ParleyBrush;
 
 use super::{
-    align::{FirstBaseline, LastBaseline, SingleAlignment, VertAlignment},
-    contexts::LifeCycleCx,
-    AlignCx, ChangeFlags, EventCx, LayoutCx, LifeCycle, PaintCx, RawEvent, UpdateCx, Widget,
+    contexts::LifeCycleCx, BoxConstraints, ChangeFlags, Event, EventCx, LayoutCx, LifeCycle,
+    PaintCx, UpdateCx, Widget,
 };
 
 pub struct TextWidget {
@@ -49,7 +48,7 @@ impl TextWidget {
 }
 
 impl Widget for TextWidget {
-    fn event(&mut self, _cx: &mut EventCx, _event: &RawEvent) {}
+    fn event(&mut self, _cx: &mut EventCx, _event: &Event) {}
 
     fn lifecycle(&mut self, _cx: &mut LifeCycleCx, _event: &LifeCycle) {}
 
@@ -59,14 +58,7 @@ impl Widget for TextWidget {
         cx.request_layout();
     }
 
-    fn measure(&mut self, cx: &mut LayoutCx) -> (Size, Size) {
-        let min_size = Size::ZERO;
-        let max_size = Size::new(50.0, 50.0);
-        self.is_wrapped = false;
-        (min_size, max_size)
-    }
-
-    fn layout(&mut self, cx: &mut LayoutCx, proposed_size: Size) -> Size {
+    fn layout(&mut self, cx: &mut LayoutCx, _proposed_size: &BoxConstraints) -> Size {
         let mut lcx = parley::LayoutContext::new();
         let mut layout_builder = lcx.ranged_builder(cx.font_cx(), &self.text, 1.0);
         layout_builder.push_default(&parley::style::StyleProperty::Brush(ParleyBrush(
@@ -76,10 +68,10 @@ impl Widget for TextWidget {
         // Question for Chad: is this needed?
         layout.break_all_lines(None, parley::layout::Alignment::Start);
         self.layout = Some(layout);
-        cx.widget_state.max_size
+        cx.widget_state.size
     }
 
-    fn align(&self, cx: &mut AlignCx, alignment: SingleAlignment) {}
+    fn accessibility(&mut self, cx: &mut super::AccessCx) {}
 
     fn paint(&mut self, cx: &mut PaintCx, builder: &mut SceneBuilder) {
         if let Some(layout) = &self.layout {

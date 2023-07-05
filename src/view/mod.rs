@@ -17,7 +17,7 @@ mod button;
 // mod layout_observer;
 // mod list;
 // mod scroll_view;
-// mod text;
+mod text;
 // mod use_state;
 mod linear_layout;
 mod list;
