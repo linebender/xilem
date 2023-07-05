@@ -39,6 +39,7 @@ macro_rules! message {
 }
 
 /// A result wrapper type for event handlers.
+#[derive(Default)]
 pub enum MessageResult<A> {
     /// The event handler was invoked and returned an action.
     ///
@@ -58,18 +59,13 @@ pub enum MessageResult<A> {
     /// This is the variant that you **almost always want** when you're not returning
     /// an action.
     #[allow(unused)]
+    #[default]
     Nop,
     /// The event was addressed to an id path no longer in the tree.
     ///
     /// This is a normal outcome for async operation when the tree is changing
     /// dynamically, but otherwise indicates a logic error.
     Stale(Box<dyn Any>),
-}
-
-impl<A> Default for MessageResult<A> {
-    fn default() -> Self {
-        MessageResult::Nop
-    }
 }
 
 // TODO: does this belong in core?

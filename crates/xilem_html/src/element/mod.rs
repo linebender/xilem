@@ -25,6 +25,7 @@ pub struct Element<El, Children = ()> {
     name: Cow<'static, str>,
     attributes: BTreeMap<Cow<'static, str>, Cow<'static, str>>,
     children: Children,
+    #[allow(clippy::type_complexity)]
     after_update: Option<Box<dyn Fn(&El)>>,
 }
 
@@ -205,11 +206,11 @@ where
             }
         }
         // Only max 1 of these loops will run
-        while let Some((name, _)) = prev_attrs.next() {
+        for (name, _) in prev_attrs {
             remove_attribute(element, name);
             changed |= ChangeFlags::OTHER_CHANGE;
         }
-        while let Some((name, value)) = self_attrs.next() {
+        for (name, value) in self_attrs {
             set_attribute(element, name, value);
             changed |= ChangeFlags::OTHER_CHANGE;
         }

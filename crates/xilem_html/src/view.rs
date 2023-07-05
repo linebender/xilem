@@ -222,7 +222,7 @@ impl<T, A> View<T, A> for &'static str {
     fn build(&self, _cx: &mut Cx) -> (Id, Self::State, Self::Element) {
         let el = new_text(self);
         let id = Id::next();
-        (id, (), el.into())
+        (id, (), el)
     }
 
     fn rebuild(
@@ -260,7 +260,7 @@ impl<T, A> View<T, A> for String {
     fn build(&self, _cx: &mut Cx) -> (Id, Self::State, Self::Element) {
         let el = new_text(self);
         let id = Id::next();
-        (id, (), el.into())
+        (id, (), el)
     }
 
     fn rebuild(
@@ -298,7 +298,7 @@ impl<T, A> View<T, A> for Cow<'static, str> {
     fn build(&self, _cx: &mut Cx) -> (Id, Self::State, Self::Element) {
         let el = new_text(self);
         let id = Id::next();
-        (id, (), el.into())
+        (id, (), el)
     }
 
     fn rebuild(
