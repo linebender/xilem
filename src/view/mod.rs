@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// mod adapt;
 // mod async_list;
 mod button;
 // mod layout_observer;
@@ -29,4 +28,4 @@ pub use xilem_core::{Id, IdPath, VecSplice};
 pub use button::button;
 pub use linear_layout::{h_stack, v_stack, LinearLayout};
 pub use list::{list, List};
-pub use view::{Cx, View, ViewMarker, ViewSequence};
+pub use view::{Adapt, Cx, Memoize, View, ViewMarker, ViewSequence};

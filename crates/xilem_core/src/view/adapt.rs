@@ -1,5 +1,5 @@
 #[macro_export]
-macro_rules! impl_adapt_view {
+macro_rules! generate_adapt_view {
     ($viewtrait:ident, $cx:ty, $changeflags:ty) => {
         /// A view that wraps a child view and modifies the state that callbacks have access to.
         ///

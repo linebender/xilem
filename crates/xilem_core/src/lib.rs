@@ -17,7 +17,6 @@
 
 mod any_view;
 mod id;
-mod memoize;
 mod message;
 mod sequence;
 mod vec_splice;
