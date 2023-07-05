@@ -17,7 +17,6 @@
 mod button;
 // mod layout_observer;
 // mod list;
-// mod memoize;
 // mod scroll_view;
 // mod text;
 // mod use_state;
