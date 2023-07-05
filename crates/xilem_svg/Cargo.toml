@@ -1,0 +1,27 @@
+[package]
+name = "xilemsvg"
+version = "0.1.0"
+license = "Apache-2.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+bitflags = "1.3.2"
+wasm-bindgen = "0.2.84"
+kurbo = "0.9.1"
+xilem_core = { path = "../xilem_core" }
+
+[dependencies.web-sys]
+version = "0.3.4"
+features = [
+    'console',
+    'Document',
+    'Element',
+    'HtmlElement',
+    'Node',
+    'PointerEvent',
+    'SvgElement',
+    'Window',
+]

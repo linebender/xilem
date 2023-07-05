@@ -1,25 +1,39 @@
 // Copyright 2023 the Druid Authors.
 // SPDX-License-Identifier: Apache-2.0
 
+mod adapt;
+
+/// Create the `View` trait for a particular xilem context (e.g. html, native, ...).
+///
+/// Arguments are
+///
+///  - `$viewtrait` - The name of the view trait we want to generate.
+///  - `$bound` - A bound on all element types that will be used.
+///  - `$cx` - The name of text context type that will be passed to the `build`/`rebuild`
+///    methods, and be responsible for managing element creation & deletion.
+///  - `$changeflags` - The type that reports down/up the tree. Can be used to avoid
+///    doing work when we can prove nothing needs doing.
+///  - `$ss` - (optional) parent traits to this trait (e.g. `:Send`). Also applied to
+///    the state type requirements
 #[macro_export]
 macro_rules! generate_view_trait {
-    ($viewtrait:ident, $bound:ident, $cx:ty, $changeflags: ty; $($ss:tt)*) => {
+    ($viewtrait:ident, $bound:ident, $cx:ty, $changeflags:ty; $($ss:tt)*) => {
         /// A view object representing a node in the UI.
         ///
         /// This is a central trait for representing UI. An app will generate a tree of
         /// these objects (the view tree) as the primary interface for expressing UI.
         /// The view tree is transitory and is retained only long enough to dispatch
-        /// events and then serve as a reference for diffing for the next view tree.
+        /// messages and then serve as a reference for diffing for the next view tree.
         ///
         /// The framework will then run methods on these views to create the associated
-        /// state tree and element tree, as well as incremental updates and event
+        /// state tree and element tree, as well as incremental updates and message
         /// propagation.
         ///
         /// The
         #[doc = concat!("`", stringify!($viewtrait), "`")]
         // trait is parameterized by `T`, which is known as the "app state",
-        /// and also a type for actions which are passed up the tree in event
-        /// propagation. During event handling, mutable access to the app state is
+        /// and also a type for actions which are passed up the tree in message
+        /// propagation. During message handling, mutable access to the app state is
         /// given to view nodes, which in turn can expose it to callbacks.
         pub trait $viewtrait<T, A = ()> $( $ss )* {
             /// Associated state for the view.

@@ -10,7 +10,9 @@ mod text;
 pub mod view;
 pub mod widget;
 
-pub use xilem_core::{IdPath, Message, MessageResult};
+xilem_core::message!(Send);
+
+pub use xilem_core::{IdPath, MessageResult};
 
 pub use app::App;
 pub use app_main::AppLauncher;

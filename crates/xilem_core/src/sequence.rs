@@ -57,6 +57,9 @@ macro_rules! impl_view_tuple {
 #[macro_export]
 macro_rules! generate_viewsequence_trait {
     ($viewseq:ident, $view:ident, $viewmarker: ident, $bound:ident, $cx:ty, $changeflags:ty, $pod:ty; $( $ss:tt )* ) => {
+        /// This trait represents a (possibly empty) sequence of views.
+        ///
+        /// It is up to the parent view how to lay out and display them.
         pub trait $viewseq<T, A = ()> $( $ss )* {
             /// Associated states for the views.
             type State $( $ss )*;
@@ -283,8 +286,8 @@ macro_rules! generate_viewsequence_trait {
         /// This trait marks a type a
         #[doc = concat!(stringify!($view), ".")]
         ///
-        /// This trait is a workaround for Rust's orphan rules. It serves as a switch between default"]
-        /// and custom
+        /// This trait is a workaround for Rust's orphan rules. It serves as a switch between
+        /// default and custom
         #[doc = concat!("`", stringify!($viewseq), "`")]
         /// implementations. You can't implement
         #[doc = concat!("`", stringify!($viewseq), "`")]
@@ -292,6 +295,7 @@ macro_rules! generate_viewsequence_trait {
         #[doc = concat!("`", stringify!($viewmarker), "`.")]
         pub trait $viewmarker {}
 
+        $crate::impl_view_tuple!($viewseq, $pod, $cx, $changeflags, ;);
         $crate::impl_view_tuple!($viewseq, $pod, $cx, $changeflags,
             V0; 0);
         $crate::impl_view_tuple!($viewseq, $pod, $cx, $changeflags,

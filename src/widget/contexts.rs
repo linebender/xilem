@@ -24,9 +24,9 @@ use glazier::{
     WindowHandle,
 };
 use parley::FontContext;
-use xilem_core::Message;
 
 use super::{PodFlags, WidgetState};
+use crate::Message;
 
 // These contexts loosely follow Druid.
 

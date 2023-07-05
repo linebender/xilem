@@ -54,9 +54,13 @@ impl<'a, 'b, T> VecSplice<'a, 'b, T> {
         self.ix
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
     pub fn as_vec<R, F: FnOnce(&mut Vec<T>) -> R>(&mut self, f: F) -> R {
         self.clear_tail();
-        let ret = f(&mut self.v);
+        let ret = f(self.v);
         self.ix = self.v.len();
         ret
     }
