@@ -20,7 +20,7 @@ thread_local! {
 
 /// A view representing a HTML element.
 ///
-/// If the element has no chilcdren, use the unit type (e.g. `let view = element("div", ())`).
+/// If the element has no children, use the unit type (e.g. `let view = element("div", ())`).
 pub struct Element<El, Children = ()> {
     name: Cow<'static, str>,
     attributes: BTreeMap<Cow<'static, str>, Cow<'static, str>>,
@@ -54,7 +54,7 @@ pub struct ElementState<ViewSeqState> {
 
 /// Create a new element view
 ///
-/// If the element has no chilcdren, use the unit type (e.g. `let view = element("div", ())`).
+/// If the element has no children, use the unit type (e.g. `let view = element("div", ())`).
 pub fn element<El, ViewSeq>(
     name: impl Into<Cow<'static, str>>,
     children: ViewSeq,
@@ -215,7 +215,6 @@ where
         }
 
         // update children
-        // TODO avoid reallocation every render?
         SCRATCH.with(|scratch| {
             let mut scratch = scratch.borrow_mut();
             let mut splice = VecSplice::new(&mut state.child_elements, &mut *scratch);

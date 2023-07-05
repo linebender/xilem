@@ -1,6 +1,8 @@
 // Copyright 2023 the Druid Authors.
 // SPDX-License-Identifier: Apache-2.0
 
+mod adapt;
+
 /// Create the `View` trait for a particular xilem context (e.g. html, native, ...).
 ///
 /// Arguments are
@@ -67,137 +69,5 @@ macro_rules! generate_view_trait {
                 app_state: &mut T,
             ) -> $crate::MessageResult<A>;
         }
-
-        /// A view that wraps a child view and modifies the state that callbacks have access to.
-        ///
-        /// # Examples
-        ///
-        /// Suppose you have an outer type that looks like
-        ///
-        /// ```
-        /// struct State {
-        ///     todos: Vec<Todo>
-        /// }
-        /// ```
-        ///
-        /// and an inner type/view that looks like
-        ///
-        /// ```ignore
-        /// struct Todo {
-        ///     label: String
-        /// }
-        ///
-        /// struct TodoView {
-        ///     label: String
-        /// }
-        ///
-        /// enum TodoAction {
-        ///     Delete
-        /// }
-        ///
-        /// impl View<Todo, TodoAction> for TodoView {
-        ///     // ...
-        /// }
-        /// ```
-        ///
-        /// then your top-level action (`()`) and state type (`State`) don't match `TodoView`'s.
-        /// You can use the `Adapt` view to mediate between them:
-        ///
-        /// ```ignore
-        /// state
-        ///     .todos
-        ///     .enumerate()
-        ///     .map(|(idx, todo)| {
-        ///         Adapt::new(
-        ///             move |data: &mut AppState, thunk| {
-        ///                 if let MessageResult::Action(action) = thunk.call(&mut data.todos[idx]) {
-        ///                     match action {
-        ///                         TodoAction::Delete => data.todos.remove(idx),
-        ///                     }
-        ///                 }
-        ///                 MessageResult::Nop
-        ///             },
-        ///             TodoView { label: todo.label }
-        ///         )
-        ///     })
-        /// ```
-        pub struct Adapt<OutData, OutMsg, InData, InMsg, F: Fn(&mut OutData, AdaptThunk<InData, InMsg, V>) -> $crate::MessageResult<OutMsg>, V: View<InData, InMsg>> {
-            f: F,
-            child: V,
-            phantom: std::marker::PhantomData<fn() -> (OutData, OutMsg, InData, InMsg)>,
-        }
-
-        /// A "thunk" which dispatches an message to an adapt node's child.
-        ///
-        /// The closure passed to [`Adapt`][crate::Adapt] should call this thunk with the child's
-        /// app state.
-        pub struct AdaptThunk<'a, InData, InMsg, V: View<InData, InMsg>> {
-            child: &'a V,
-            state: &'a mut V::State,
-            id_path: &'a [$crate::Id],
-            message: Box<dyn std::any::Any>,
-        }
-
-        impl<OutData, OutMsg, InData, InMsg, F: Fn(&mut OutData, AdaptThunk<InData, InMsg, V>) -> $crate::MessageResult<OutMsg>, V: View<InData, InMsg>>
-            Adapt<OutData, OutMsg, InData, InMsg, F, V>
-        {
-            pub fn new(f: F, child: V) -> Self {
-                Adapt {
-                    f,
-                    child,
-                    phantom: Default::default(),
-                }
-            }
-        }
-
-        impl<'a, InData, InMsg, V: View<InData, InMsg>> AdaptThunk<'a, InData, InMsg, V> {
-            pub fn call(self, app_state: &mut InData) -> $crate::MessageResult<InMsg> {
-                self.child
-                    .message(self.id_path, self.state, self.message, app_state)
-            }
-        }
-
-        impl<OutData, OutMsg, InData, InMsg, F: Fn(&mut OutData, AdaptThunk<InData, InMsg, V>) -> $crate::MessageResult<OutMsg> + Send, V: View<InData, InMsg>>
-            View<OutData, OutMsg> for Adapt<OutData, OutMsg, InData, InMsg, F, V>
-        {
-            type State = V::State;
-
-            type Element = V::Element;
-
-            fn build(&self, cx: &mut Cx) -> ($crate::Id, Self::State, Self::Element) {
-                self.child.build(cx)
-            }
-
-            fn rebuild(
-                &self,
-                cx: &mut Cx,
-                prev: &Self,
-                id: &mut $crate::Id,
-                state: &mut Self::State,
-                element: &mut Self::Element,
-            ) -> $changeflags {
-                self.child.rebuild(cx, &prev.child, id, state, element)
-            }
-
-            fn message(
-                &self,
-                id_path: &[$crate::Id],
-                state: &mut Self::State,
-                message: Box<dyn std::any::Any>,
-                app_state: &mut OutData,
-            ) -> $crate::MessageResult<OutMsg> {
-                let thunk = AdaptThunk {
-                    child: &self.child,
-                    state,
-                    id_path,
-                    message,
-                };
-                (self.f)(app_state, thunk)
-            }
-        }
-
-        impl<OutData, OutMsg, InData, InMsg, F: Fn(&mut OutData, AdaptThunk<InData, InMsg, V>) -> $crate::MessageResult<OutMsg>, V: View<InData, InMsg>>
-        ViewMarker for Adapt<OutData, OutMsg, InData, InMsg, F, V> {}
-
     };
 }

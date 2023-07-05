@@ -88,7 +88,7 @@ impl Pod {
         node.into_pod()
     }
 
-    fn downcast_mut<'a, T: 'static>(&'a mut self) -> Option<&'a mut T> {
+    fn downcast_mut<T: 'static>(&mut self) -> Option<&mut T> {
         self.0.as_any_mut().downcast_mut()
     }
 
@@ -100,6 +100,7 @@ impl Pod {
 xilem_core::generate_view_trait! {View, DomNode, Cx, ChangeFlags;}
 xilem_core::generate_viewsequence_trait! {ViewSequence, View, ViewMarker, DomNode, Cx, ChangeFlags, Pod;}
 xilem_core::generate_anyview_trait! {View, Cx, ChangeFlags, AnyNode}
+xilem_core::impl_adapt_view! {View, Cx, ChangeFlags}
 
 /// This view container can switch between two views.
 ///

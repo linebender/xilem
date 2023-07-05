@@ -75,15 +75,10 @@ impl Todo {
     }
 }
 
-#[derive(Debug, PartialEq, Copy, Clone)]
+#[derive(Debug, Default, PartialEq, Copy, Clone)]
 pub enum Filter {
+    #[default]
     All,
     Active,
     Completed,
-}
-
-impl Default for Filter {
-    fn default() -> Self {
-        Self::All
-    }
 }
