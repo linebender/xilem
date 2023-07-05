@@ -6,8 +6,8 @@ use state::{AppState, Filter, Todo};
 
 use wasm_bindgen::{prelude::*, JsValue};
 use xilem_html::{
-    elements as el, events::on_click, get_element_by_id, Action, Adapt, App, Event, MessageResult,
-    View, ViewExt, ViewMarker,
+    elements as el, events::on_click, get_element_by_id, Action, Adapt, App, MessageResult, View,
+    ViewExt, ViewMarker,
 };
 
 // All of these actions arise from within a `Todo`, but we need access to the full state to reduce
@@ -170,28 +170,24 @@ fn app_logic(state: &mut AppState) -> impl View<AppState> {
     log::debug!("render: {state:?}");
     let main = (!state.todos.is_empty()).then(|| main_view(state));
     let footer = (!state.todos.is_empty()).then(|| footer_view(state));
+    let input = el::input(())
+        .attr("class", "new-todo")
+        .attr("placeholder", "What needs to be done?")
+        .attr("value", state.new_todo.clone())
+        .attr("autofocus", "true");
     el::div((
         el::header((
             el::h1("TODOs"),
-            el::input(())
-                .attr("class", "new-todo")
-                .attr("placeholder", "What needs to be done?")
-                .attr("value", state.new_todo.clone())
-                .attr("autofocus", "true")
-            .on_keydown(
-                |state: &mut AppState, evt| {
+            input
+                .on_keydown(|state: &mut AppState, evt| {
                     if evt.key() == "Enter" {
                         state.create_todo();
                     }
-                },
-            )
-            .on_input(
-                |state: &mut AppState,
-                 evt: &Event<web_sys::InputEvent, web_sys::HtmlInputElement>| {
+                })
+                .on_input(|state: &mut AppState, evt| {
                     state.update_new_todo(&evt.target().value());
                     evt.prevent_default();
-                },
-            ),
+                }),
         ))
         .attr("class", "header"),
         main,

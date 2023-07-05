@@ -11,6 +11,7 @@ pub struct AppState {
     pub todos: Vec<Todo>,
     pub filter: Filter,
     pub editing_id: Option<u64>,
+    pub focus_new_todo: bool,
 }
 
 impl AppState {
@@ -21,6 +22,7 @@ impl AppState {
         let title = self.new_todo.trim().to_string();
         self.new_todo.clear();
         self.todos.push(Todo::new(title));
+        self.focus_new_todo = true;
     }
 
     pub fn visible_todos(&mut self) -> impl Iterator<Item = (usize, &mut Todo)> {

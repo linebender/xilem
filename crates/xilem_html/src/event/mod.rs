@@ -60,8 +60,7 @@ where
             element.as_node_ref(),
             self.event,
             move |event: &web_sys::Event| {
-                let event = (*event).clone();
-                let event = event.dyn_into::<E>().unwrap_throw();
+                let event = (*event).clone().dyn_into::<E>().unwrap_throw();
                 let event: Event<E, V::Element> = Event::new(event);
                 thunk.push_message(EventMsg { event });
             },

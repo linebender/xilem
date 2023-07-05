@@ -7,12 +7,16 @@ use crate::{
     view::{DomElement, Pod, View, ViewMarker, ViewSequence},
 };
 
-use std::{borrow::Cow, cmp::Ordering, collections::BTreeMap, fmt, marker::PhantomData};
+use std::{borrow::Cow, cell::RefCell, cmp::Ordering, collections::BTreeMap, fmt};
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use xilem_core::{Id, MessageResult, VecSplice};
 
 #[cfg(feature = "typed")]
 pub mod elements;
+
+thread_local! {
+    static SCRATCH: RefCell<Vec<Pod>> = RefCell::new(Vec::new());
+}
 
 /// A view representing a HTML element.
 ///
@@ -21,13 +25,13 @@ pub struct Element<El, Children = ()> {
     name: Cow<'static, str>,
     attributes: BTreeMap<Cow<'static, str>, Cow<'static, str>>,
     children: Children,
-    ty: PhantomData<El>,
+    after_update: Option<Box<dyn Fn(&El)>>,
 }
 
-impl<E, ViewSeq> Element<E, ViewSeq> {
+impl<El, ViewSeq> Element<El, ViewSeq> {
     pub fn debug_as_el(&self) -> impl fmt::Debug + '_ {
-        struct DebugFmt<'a, E, VS>(&'a Element<E, VS>);
-        impl<'a, E, VS> fmt::Debug for DebugFmt<'a, E, VS> {
+        struct DebugFmt<'a, El, VS>(&'a Element<El, VS>);
+        impl<'a, El, VS> fmt::Debug for DebugFmt<'a, El, VS> {
             fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
                 write!(f, "<{}", self.0.name)?;
                 for (name, value) in &self.0.attributes {
@@ -51,19 +55,19 @@ pub struct ElementState<ViewSeqState> {
 /// Create a new element view
 ///
 /// If the element has no chilcdren, use the unit type (e.g. `let view = element("div", ())`).
-pub fn element<E, ViewSeq>(
+pub fn element<El, ViewSeq>(
     name: impl Into<Cow<'static, str>>,
     children: ViewSeq,
-) -> Element<E, ViewSeq> {
+) -> Element<El, ViewSeq> {
     Element {
         name: name.into(),
         attributes: BTreeMap::new(),
         children,
-        ty: PhantomData,
+        after_update: None,
     }
 }
 
-impl<E, ViewSeq> Element<E, ViewSeq> {
+impl<El, ViewSeq> Element<El, ViewSeq> {
     /// Set an attribute on this element.
     ///
     /// # Panics
@@ -92,6 +96,20 @@ impl<E, ViewSeq> Element<E, ViewSeq> {
     ) {
         self.attributes.insert(name.into(), value.into());
     }
+
+    /// Set a function to run after the new view tree has been created.
+    ///
+    /// This offers functionality similar to `ref` in React.
+    ///
+    /// # Rules for correct use
+    ///
+    /// It is important that the structure of the DOM tree is *not* modified using this function.
+    /// If the DOM tree is modified, then future reconciliation will have undefined and possibly
+    /// suprising results.
+    pub fn after_update(mut self, after_update: impl Fn(&El) + 'static) -> Self {
+        self.after_update = Some(Box::new(after_update));
+        self
+    }
 }
 
 impl<El, Children> ViewMarker for Element<El, Children> {}
@@ -99,27 +117,30 @@ impl<El, Children> ViewMarker for Element<El, Children> {}
 impl<T, A, El, Children> View<T, A> for Element<El, Children>
 where
     Children: ViewSequence<T, A>,
-    // In addition, the `E` parameter is expected to be a child of `web_sys::Node`
     El: JsCast + DomElement,
 {
     type State = ElementState<Children::State>;
     type Element = El;
 
-    fn build(&self, cx: &mut Cx) -> (Id, Self::State, El) {
+    fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
         let el = cx.create_html_element(&self.name);
         for (name, value) in &self.attributes {
-            el.set_attribute(name, value).unwrap();
+            el.set_attribute(name, value).unwrap_throw();
         }
         let mut child_elements = vec![];
         let (id, child_states) = cx.with_new_id(|cx| self.children.build(cx, &mut child_elements));
         for child in &child_elements {
-            el.append_child(child.0.as_node_ref()).unwrap();
+            el.append_child(child.0.as_node_ref()).unwrap_throw();
+        }
+        let el = el.dyn_into().unwrap_throw();
+        if let Some(after_update) = &self.after_update {
+            (after_update)(&el);
         }
         let state = ElementState {
             child_states,
             child_elements,
         };
-        (id, state, el.dyn_into().unwrap_throw())
+        (id, state, el)
     }
 
     fn rebuild(
@@ -128,7 +149,7 @@ where
         prev: &Self,
         id: &mut Id,
         state: &mut Self::State,
-        element: &mut El,
+        element: &mut Self::Element,
     ) -> ChangeFlags {
         let mut changed = ChangeFlags::empty();
         // update tag name
@@ -138,7 +159,7 @@ where
                 .as_element_ref()
                 .parent_element()
                 .expect_throw("this element was mounted and so should have a parent");
-            parent.remove_child(element.as_node_ref()).unwrap();
+            parent.remove_child(element.as_node_ref()).unwrap_throw();
             let new_element = cx.create_html_element(&self.name);
             // TODO could this be combined with child updates?
             while element.as_element_ref().child_element_count() > 0 {
@@ -195,23 +216,29 @@ where
 
         // update children
         // TODO avoid reallocation every render?
-        let mut scratch = vec![];
-        let mut splice = VecSplice::new(&mut state.child_elements, &mut scratch);
-        changed |= cx.with_id(*id, |cx| {
-            self.children
-                .rebuild(cx, &prev.children, &mut state.child_states, &mut splice)
+        SCRATCH.with(|scratch| {
+            let mut scratch = scratch.borrow_mut();
+            let mut splice = VecSplice::new(&mut state.child_elements, &mut *scratch);
+            changed |= cx.with_id(*id, |cx| {
+                self.children
+                    .rebuild(cx, &prev.children, &mut state.child_states, &mut splice)
+            });
         });
         if changed.contains(ChangeFlags::STRUCTURE) {
             // This is crude and will result in more DOM traffic than needed.
             // The right thing to do is diff the new state of the children id
             // vector against the old, and derive DOM mutations from that.
             while let Some(child) = element.first_child() {
-                element.remove_child(&child).unwrap();
+                element.remove_child(&child).unwrap_throw();
             }
             for child in &state.child_elements {
-                element.append_child(child.0.as_node_ref()).unwrap();
+                element.append_child(child.0.as_node_ref()).unwrap_throw();
             }
             changed.remove(ChangeFlags::STRUCTURE);
+        }
+        if let Some(after_update) = &self.after_update {
+            (after_update)(element.dyn_ref().unwrap_throw());
+            changed |= ChangeFlags::OTHER_CHANGE;
         }
         changed
     }

@@ -6,6 +6,7 @@
 
 use std::{any::Any, borrow::Cow, ops::Deref};
 
+use wasm_bindgen::throw_str;
 use xilem_core::{Id, MessageResult};
 
 use crate::{context::Cx, ChangeFlags};
@@ -99,6 +100,118 @@ impl Pod {
 xilem_core::generate_view_trait! {View, DomNode, Cx, ChangeFlags;}
 xilem_core::generate_viewsequence_trait! {ViewSequence, View, ViewMarker, DomNode, Cx, ChangeFlags, Pod;}
 xilem_core::generate_anyview_trait! {View, Cx, ChangeFlags, AnyNode}
+
+/// This view container can switch between two views.
+///
+/// It is a statically-typed alternative to the type-erased `AnyView`.
+pub enum Either<T1, T2> {
+    Left(T1),
+    Right(T2),
+}
+
+impl<E1, E2> AsRef<web_sys::Node> for Either<E1, E2>
+where
+    E1: AsRef<web_sys::Node>,
+    E2: AsRef<web_sys::Node>,
+{
+    fn as_ref(&self) -> &web_sys::Node {
+        match self {
+            Either::Left(view) => view.as_ref(),
+            Either::Right(view) => view.as_ref(),
+        }
+    }
+}
+
+impl<T, A, V1, V2> View<T, A> for Either<V1, V2>
+where
+    V1: View<T, A>,
+    V2: View<T, A>,
+    V1::Element: AsRef<web_sys::Node> + 'static,
+    V2::Element: AsRef<web_sys::Node> + 'static,
+{
+    type State = Either<V1::State, V2::State>;
+    type Element = Either<V1::Element, V2::Element>;
+
+    fn build(&self, cx: &mut Cx) -> (xilem_core::Id, Self::State, Self::Element) {
+        match self {
+            Either::Left(view) => {
+                let (id, state, el) = view.build(cx);
+                (id, Either::Left(state), Either::Left(el))
+            }
+            Either::Right(view) => {
+                let (id, state, el) = view.build(cx);
+                (id, Either::Right(state), Either::Right(el))
+            }
+        }
+    }
+
+    fn rebuild(
+        &self,
+        cx: &mut Cx,
+        prev: &Self,
+        id: &mut xilem_core::Id,
+        state: &mut Self::State,
+        element: &mut Self::Element,
+    ) -> ChangeFlags {
+        let mut change_flags = ChangeFlags::empty();
+        match (prev, self) {
+            (Either::Left(_), Either::Right(view)) => {
+                let (new_id, new_state, new_element) = view.build(cx);
+                *id = new_id;
+                *state = Either::Right(new_state);
+                *element = Either::Right(new_element);
+                change_flags |= ChangeFlags::STRUCTURE;
+            }
+            (Either::Right(_), Either::Left(view)) => {
+                let (new_id, new_state, new_element) = view.build(cx);
+                *id = new_id;
+                *state = Either::Left(new_state);
+                *element = Either::Left(new_element);
+                change_flags |= ChangeFlags::STRUCTURE;
+            }
+            (Either::Left(prev_view), Either::Left(view)) => {
+                let (Either::Left(state), Either::Left(element)) = (state, element) else {
+                    throw_str("invalid state/view in Either (unreachable)");
+                };
+                // Cannot do mutable casting, so take ownership of state.
+                change_flags |= view.rebuild(cx, prev_view, id, state, element);
+            }
+            (Either::Right(prev_view), Either::Right(view)) => {
+                let (Either::Right(state), Either::Right(element)) = (state, element) else {
+                    throw_str("invalid state/view in Either (unreachable)");
+                };
+                // Cannot do mutable casting, so take ownership of state.
+                change_flags |= view.rebuild(cx, prev_view, id, state, element);
+            }
+        }
+        change_flags
+    }
+
+    fn message(
+        &self,
+        id_path: &[xilem_core::Id],
+        state: &mut Self::State,
+        message: Box<dyn std::any::Any>,
+        app_state: &mut T,
+    ) -> xilem_core::MessageResult<A> {
+        match self {
+            Either::Left(view) => {
+                let Either::Left(state) = state else {
+                    throw_str("invalid state/view in Either (unreachable)");
+                };
+                view.message(id_path, state, message, app_state)
+            }
+            Either::Right(view) => {
+                let Either::Right(state) = state else {
+                    throw_str("invalid state/view in Either (unreachable)");
+                };
+                view.message(id_path, state, message, app_state)
+            }
+        }
+    }
+}
+
+// strings -> text nodes
 
 impl ViewMarker for &'static str {}
 impl<T, A> View<T, A> for &'static str {
