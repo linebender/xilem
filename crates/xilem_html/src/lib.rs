@@ -8,12 +8,10 @@
 use wasm_bindgen::JsCast;
 
 mod app;
-//mod button;
 mod class;
 mod context;
-mod event;
-//mod div;
 mod element;
+mod event;
 mod view;
 #[cfg(feature = "typed")]
 mod view_ext;
