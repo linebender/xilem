@@ -93,14 +93,16 @@ where
         message: Box<dyn Any>,
         app_state: &mut T,
     ) -> MessageResult<A> {
-        if let Some(msg) = message.downcast_ref::<EventMsg<Event<E, V::Element>>>() {
-            match (self.callback)(app_state, &msg.event).action() {
-                Some(a) => MessageResult::Action(a),
-                None => MessageResult::Nop,
+        match message.downcast_ref::<EventMsg<Event<E, V::Element>>>() {
+            Some(msg) if id_path.is_empty() => {
+                match (self.callback)(app_state, &msg.event).action() {
+                    Some(a) => MessageResult::Action(a),
+                    None => MessageResult::Nop,
+                }
             }
-        } else {
-            self.child
-                .message(id_path, &mut state.child_state, message, app_state)
+            _ => self
+                .child
+                .message(id_path, &mut state.child_state, message, app_state),
         }
     }
 }
