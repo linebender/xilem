@@ -244,8 +244,7 @@ impl<T> View<T> for BezPath {
             .document()
             .create_element_ns(Some("http://www.w3.org/2000/svg"), "path")
             .unwrap();
-        el.set_attribute("d", &self.to_svg())
-            .unwrap();
+        el.set_attribute("d", &self.to_svg()).unwrap();
         let id = Id::next();
         (id, (), el)
     }
@@ -260,9 +259,7 @@ impl<T> View<T> for BezPath {
     ) -> ChangeFlags {
         let mut is_changed = ChangeFlags::default();
         if self != prev {
-            element
-                .set_attribute("d", &self.to_svg())
-                .unwrap();
+            element.set_attribute("d", &self.to_svg()).unwrap();
             is_changed |= ChangeFlags::OTHER_CHANGE;
         }
         is_changed
