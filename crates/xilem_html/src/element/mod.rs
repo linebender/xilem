@@ -51,6 +51,7 @@ impl<El, ViewSeq> Element<El, ViewSeq> {
 pub struct ElementState<ViewSeqState> {
     child_states: ViewSeqState,
     child_elements: Vec<Pod>,
+    scratch: Vec<Pod>,
 }
 
 /// Create a new element view
@@ -140,6 +141,7 @@ where
         let state = ElementState {
             child_states,
             child_elements,
+            scratch: vec![],
         };
         (id, state, el)
     }
@@ -216,13 +218,10 @@ where
         }
 
         // update children
-        SCRATCH.with(|scratch| {
-            let mut scratch = scratch.borrow_mut();
-            let mut splice = VecSplice::new(&mut state.child_elements, &mut *scratch);
-            changed |= cx.with_id(*id, |cx| {
-                self.children
-                    .rebuild(cx, &prev.children, &mut state.child_states, &mut splice)
-            });
+        let mut splice = VecSplice::new(&mut state.child_elements, &mut state.scratch);
+        changed |= cx.with_id(*id, |cx| {
+            self.children
+                .rebuild(cx, &prev.children, &mut state.child_states, &mut splice)
         });
         if changed.contains(ChangeFlags::STRUCTURE) {
             // This is crude and will result in more DOM traffic than needed.
