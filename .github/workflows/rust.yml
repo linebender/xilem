@@ -11,8 +11,10 @@ env:
 
 jobs:
   check:
-    runs-on: windows-2019
-    
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macOS-latest, windows-2019, ubuntu-latest]
     steps:
     - name: install libx11-dev
       run: |
