@@ -7,16 +7,12 @@ use crate::{
     view::{DomElement, Pod, View, ViewMarker, ViewSequence},
 };
 
-use std::{borrow::Cow, cell::RefCell, cmp::Ordering, collections::BTreeMap, fmt};
+use std::{borrow::Cow, cmp::Ordering, collections::BTreeMap, fmt};
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use xilem_core::{Id, MessageResult, VecSplice};
 
 #[cfg(feature = "typed")]
 pub mod elements;
-
-thread_local! {
-    static SCRATCH: RefCell<Vec<Pod>> = RefCell::new(Vec::new());
-}
 
 /// A view representing a HTML element.
 ///
