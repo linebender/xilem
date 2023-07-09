@@ -7,16 +7,12 @@ use crate::{
     view::{DomElement, Pod, View, ViewMarker, ViewSequence},
 };
 
-use std::{borrow::Cow, cell::RefCell, cmp::Ordering, collections::BTreeMap, fmt};
+use std::{borrow::Cow, cmp::Ordering, collections::BTreeMap, fmt};
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use xilem_core::{Id, MessageResult, VecSplice};
 
 #[cfg(feature = "typed")]
 pub mod elements;
-
-thread_local! {
-    static SCRATCH: RefCell<Vec<Pod>> = RefCell::new(Vec::new());
-}
 
 /// A view representing a HTML element.
 ///
@@ -51,6 +47,7 @@ impl<El, ViewSeq> Element<El, ViewSeq> {
 pub struct ElementState<ViewSeqState> {
     child_states: ViewSeqState,
     child_elements: Vec<Pod>,
+    scratch: Vec<Pod>,
 }
 
 /// Create a new element view
@@ -140,6 +137,7 @@ where
         let state = ElementState {
             child_states,
             child_elements,
+            scratch: vec![],
         };
         (id, state, el)
     }
@@ -216,13 +214,10 @@ where
         }
 
         // update children
-        SCRATCH.with(|scratch| {
-            let mut scratch = scratch.borrow_mut();
-            let mut splice = VecSplice::new(&mut state.child_elements, &mut *scratch);
-            changed |= cx.with_id(*id, |cx| {
-                self.children
-                    .rebuild(cx, &prev.children, &mut state.child_states, &mut splice)
-            });
+        let mut splice = VecSplice::new(&mut state.child_elements, &mut state.scratch);
+        changed |= cx.with_id(*id, |cx| {
+            self.children
+                .rebuild(cx, &prev.children, &mut state.child_states, &mut splice)
         });
         if changed.contains(ChangeFlags::STRUCTURE) {
             // This is crude and will result in more DOM traffic than needed.
