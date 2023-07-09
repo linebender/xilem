@@ -1,13 +1,7 @@
 use serde::{Deserialize, Serialize};
-use std::sync::atomic::{AtomicU64, Ordering};
 use wasm_bindgen::UnwrapThrowExt;
 
 const KEY: &str = "todomvc_persist";
-
-fn next_id() -> u64 {
-    static ID_GEN: AtomicU64 = AtomicU64::new(1);
-    ID_GEN.fetch_add(1, Ordering::Relaxed)
-}
 
 #[derive(Default, Debug, Serialize, Deserialize)]
 pub struct AppState {
@@ -20,6 +14,7 @@ pub struct AppState {
     pub editing_id: Option<u64>,
     #[serde(skip)]
     pub focus_new_todo: bool,
+    next_id: u64,
 }
 
 impl AppState {
@@ -29,9 +24,15 @@ impl AppState {
         }
         let title = self.new_todo.trim().to_string();
         self.new_todo.clear();
-        self.todos.push(Todo::new(title));
+        let id = self.next_id();
+        self.todos.push(Todo::new(title, id));
         self.focus_new_todo = true;
         self.save();
+    }
+
+    fn next_id(&mut self) -> u64 {
+        self.next_id += 1;
+        self.next_id
     }
 
     /// Are all the todos complete?
@@ -109,10 +110,10 @@ pub struct Todo {
 }
 
 impl Todo {
-    pub fn new(title: String) -> Self {
+    pub fn new(title: String, id: u64) -> Self {
         let title_editing = title.clone();
         Self {
-            id: next_id(),
+            id,
             title,
             title_editing,
             completed: false,
