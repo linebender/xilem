@@ -1,16 +1,24 @@
+use serde::{Deserialize, Serialize};
 use std::sync::atomic::{AtomicU64, Ordering};
+use wasm_bindgen::UnwrapThrowExt;
+
+const KEY: &str = "todomvc_persist";
 
 fn next_id() -> u64 {
     static ID_GEN: AtomicU64 = AtomicU64::new(1);
     ID_GEN.fetch_add(1, Ordering::Relaxed)
 }
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Serialize, Deserialize)]
 pub struct AppState {
+    #[serde(skip)]
     pub new_todo: String,
     pub todos: Vec<Todo>,
+    #[serde(skip)]
     pub filter: Filter,
+    #[serde(skip)]
     pub editing_id: Option<u64>,
+    #[serde(skip)]
     pub focus_new_todo: bool,
 }
 
@@ -23,6 +31,7 @@ impl AppState {
         self.new_todo.clear();
         self.todos.push(Todo::new(title));
         self.focus_new_todo = true;
+        self.save();
     }
 
     /// Are all the todos complete?
@@ -42,6 +51,7 @@ impl AppState {
                 todo.completed = true;
             }
         }
+        self.save();
     }
 
     pub fn visible_todos(&mut self) -> impl Iterator<Item = (usize, &mut Todo)> {
@@ -67,12 +77,33 @@ impl AppState {
             self.editing_id = Some(id)
         }
     }
+
+    /// Load the current state from local_storage, or use the default.
+    pub fn load() -> Self {
+        let Some(raw) = storage().get_item(KEY).unwrap_throw() else {
+            return Default::default();
+        };
+        match serde_json::from_str(&raw) {
+            Ok(todos) => todos,
+            Err(e) => {
+                tracing::error!("couldn't load existing todos: {e}");
+                Default::default()
+            }
+        }
+    }
+
+    /// Save the current state to local_storage
+    pub fn save(&self) {
+        let raw = serde_json::to_string(self).unwrap_throw();
+        storage().set_item(KEY, &raw).unwrap_throw()
+    }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Todo {
     pub id: u64,
     pub title: String,
+    #[serde(skip)]
     pub title_editing: String,
     pub completed: bool,
 }
@@ -100,4 +131,12 @@ pub enum Filter {
     All,
     Active,
     Completed,
+}
+
+fn storage() -> web_sys::Storage {
+    web_sys::window()
+        .unwrap_throw()
+        .local_storage()
+        .unwrap_throw()
+        .unwrap_throw()
 }

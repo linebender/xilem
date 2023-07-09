@@ -14,6 +14,7 @@ use xilem_html::{
 // them.
 enum TodoAction {
     SetEditing(u64),
+    CommitEdit,
     CancelEditing,
     Destroy(u64),
 }
@@ -54,7 +55,7 @@ fn todo_item(todo: &mut Todo, editing: bool) -> impl View<Todo, TodoAction> + Vi
                 let key = evt.key();
                 if key == "Enter" {
                     state.save_editing();
-                    Some(TodoAction::CancelEditing)
+                    Some(TodoAction::CommitEdit)
                 } else if key == "Escape" {
                     Some(TodoAction::CancelEditing)
                 } else {
@@ -149,6 +150,10 @@ fn main_view(state: &mut AppState, should_display: bool) -> impl View<AppState> 
                     if let MessageResult::Action(action) = thunk.call(&mut data.todos[idx]) {
                         match action {
                             TodoAction::SetEditing(id) => data.start_editing(id),
+                            TodoAction::CommitEdit => {
+                                data.save();
+                                data.editing_id = None;
+                            }
                             TodoAction::CancelEditing => data.editing_id = None,
                             TodoAction::Destroy(id) => data.todos.retain(|todo| todo.id != id),
                         }
@@ -213,7 +218,7 @@ fn app_logic(state: &mut AppState) -> impl View<AppState> {
 pub fn run() -> Result<(), JsValue> {
     panic::set_hook(Box::new(console_error_panic_hook::hook));
     tracing_wasm::set_as_global_default();
-    App::new(AppState::default(), app_logic).run(&get_element_by_id("todoapp"));
+    App::new(AppState::load(), app_logic).run(&get_element_by_id("todoapp"));
 
     Ok(())
 }
