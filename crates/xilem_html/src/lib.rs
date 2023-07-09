@@ -20,7 +20,7 @@ pub use xilem_core::MessageResult;
 
 pub use app::App;
 pub use class::class;
-pub use context::ChangeFlags;
+pub use context::{ChangeFlags, Cx};
 #[cfg(feature = "typed")]
 pub use element::elements;
 pub use element::{element, Element, ElementState};
