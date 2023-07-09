@@ -40,6 +40,13 @@ pub trait ViewExt<T, A>: View<T, A> + Sized {
         self,
         f: F,
     ) -> e::OnKeyDown<T, A, Self, F, OA>;
+    fn on_blur<
+        OA: OptionalAction<A>,
+        F: Fn(&mut T, &Event<web_sys::FocusEvent, Self::Element>) -> OA,
+    >(
+        self,
+        f: F,
+    ) -> e::OnBlur<T, A, Self, F, OA>;
     /// Apply a CSS class to the child view.
     fn class(self, class: impl Into<Cow<'static, str>>) -> Class<Self> {
         crate::class::class(self, class)
@@ -82,5 +89,14 @@ impl<T, A, V: View<T, A>> ViewExt<T, A> for V {
         f: F,
     ) -> e::OnKeyDown<T, A, Self, F, OA> {
         crate::events::on_keydown(self, f)
+    }
+    fn on_blur<
+        OA: OptionalAction<A>,
+        F: Fn(&mut T, &Event<web_sys::FocusEvent, Self::Element>) -> OA,
+    >(
+        self,
+        f: F,
+    ) -> e::OnBlur<T, A, Self, F, OA> {
+        e::on_blur(self, f)
     }
 }

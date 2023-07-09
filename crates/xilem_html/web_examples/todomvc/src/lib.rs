@@ -65,12 +65,13 @@ fn todo_item(todo: &mut Todo, editing: bool) -> impl View<Todo, TodoAction> + Vi
                 state.title_editing.clear();
                 state.title_editing.push_str(&evt.target().value());
                 evt.prevent_default();
-            }),
+            })
+            .on_blur(|_, _| TodoAction::CancelEditing),
     ))
     .attr("class", class)
 }
 
-fn footer_view(state: &mut AppState) -> impl View<AppState> + ViewMarker {
+fn footer_view(state: &mut AppState, should_display: bool) -> impl View<AppState> + ViewMarker {
     let item_str = if state.todos.len() == 1 {
         "item"
     } else {
@@ -94,7 +95,7 @@ fn footer_view(state: &mut AppState) -> impl View<AppState> + ViewMarker {
         }
     };
 
-    el::footer((
+    let mut footer = el::footer((
         el::span((
             el::strong(state.todos.len().to_string()),
             format!(" {} left", item_str),
@@ -131,10 +132,14 @@ fn footer_view(state: &mut AppState) -> impl View<AppState> + ViewMarker {
         .attr("class", "filters"),
         clear_button,
     ))
-    .attr("class", "footer")
+    .attr("class", "footer");
+    if !should_display {
+        footer.set_attr("style", "display:none;");
+    }
+    footer
 }
 
-fn main_view(state: &mut AppState) -> impl View<AppState> + ViewMarker {
+fn main_view(state: &mut AppState, should_display: bool) -> impl View<AppState> + ViewMarker {
     let editing_id = state.editing_id;
     let todos: Vec<_> = state
         .visible_todos()
@@ -154,22 +159,30 @@ fn main_view(state: &mut AppState) -> impl View<AppState> + ViewMarker {
             )
         })
         .collect();
-    el::section((
-        el::input(())
-            .attr("id", "toggle-all")
-            .attr("class", "toggle-all")
-            .attr("type", "checkbox")
-            .attr("checked", "true"),
+    let mut toggle_all = el::input(())
+        .attr("id", "toggle-all")
+        .attr("class", "toggle-all")
+        .attr("type", "checkbox");
+    if state.are_all_complete() {
+        toggle_all.set_attr("checked", "true");
+    }
+    let mut section = el::section((
+        toggle_all.on_click(|state: &mut AppState, _| state.toggle_all_complete()),
         el::label(()).attr("for", "toggle-all"),
         el::ul(todos).attr("class", "todo-list"),
     ))
-    .attr("class", "main")
+    .attr("class", "main");
+    if !should_display {
+        section.set_attr("style", "display:none;");
+    }
+    section
 }
 
 fn app_logic(state: &mut AppState) -> impl View<AppState> {
-    log::debug!("render: {state:?}");
-    let main = (!state.todos.is_empty()).then(|| main_view(state));
-    let footer = (!state.todos.is_empty()).then(|| footer_view(state));
+    tracing::debug!("render: {state:?}");
+    let some_todos = !state.todos.is_empty();
+    let main = main_view(state, some_todos);
+    let footer = footer_view(state, some_todos);
     let input = el::input(())
         .attr("class", "new-todo")
         .attr("placeholder", "What needs to be done?")
@@ -199,7 +212,7 @@ fn app_logic(state: &mut AppState) -> impl View<AppState> {
 #[wasm_bindgen(start)]
 pub fn run() -> Result<(), JsValue> {
     panic::set_hook(Box::new(console_error_panic_hook::hook));
-    console_log::init_with_level(log::Level::Debug).unwrap();
+    tracing_wasm::set_as_global_default();
     App::new(AppState::default(), app_logic).run(&get_element_by_id("todoapp"));
 
     Ok(())

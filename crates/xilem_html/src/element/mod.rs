@@ -130,6 +130,13 @@ where
         for child in &child_elements {
             el.append_child(child.0.as_node_ref()).unwrap_throw();
         }
+
+        // Set the id used internally to the `data-debugid` attribute.
+        // This allows the user to see if an element has been re-created or only altered.
+        #[cfg(debug_assertions)]
+        el.set_attribute("data-debugid", &id.to_raw().to_string())
+            .unwrap_throw();
+
         let el = el.dyn_into().unwrap_throw();
         if let Some(after_update) = &self.after_update {
             (after_update)(&el);

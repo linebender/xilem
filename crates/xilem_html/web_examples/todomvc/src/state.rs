@@ -25,6 +25,25 @@ impl AppState {
         self.focus_new_todo = true;
     }
 
+    /// Are all the todos complete?
+    pub fn are_all_complete(&self) -> bool {
+        self.todos.iter().all(|todo| todo.completed)
+    }
+
+    /// If all TODOs are complete, then mark them all not complete,
+    /// else mark them all complete.
+    pub fn toggle_all_complete(&mut self) {
+        if self.are_all_complete() {
+            for todo in self.todos.iter_mut() {
+                todo.completed = false;
+            }
+        } else {
+            for todo in self.todos.iter_mut() {
+                todo.completed = true;
+            }
+        }
+    }
+
     pub fn visible_todos(&mut self) -> impl Iterator<Item = (usize, &mut Todo)> {
         self.todos
             .iter_mut()
