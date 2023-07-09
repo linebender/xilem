@@ -126,8 +126,8 @@ where
 
 impl<T, A, V1, V2> View<T, A> for Either<V1, V2>
 where
-    V1: View<T, A>,
-    V2: View<T, A>,
+    V1: View<T, A> + ViewMarker,
+    V2: View<T, A> + ViewMarker,
     V1::Element: AsRef<web_sys::Node> + 'static,
     V2::Element: AsRef<web_sys::Node> + 'static,
 {
@@ -208,6 +208,94 @@ where
                     throw_str("invalid state/view in Either (unreachable)");
                 };
                 view.message(id_path, state, message, app_state)
+            }
+        }
+    }
+}
+
+impl<T, A, V1, V2> ViewSequence<T, A> for Either<V1, V2>
+where
+    V1: ViewSequence<T, A>,
+    V2: ViewSequence<T, A>,
+{
+    type State = Either<V1::State, V2::State>;
+
+    fn build(&self, cx: &mut Cx, elements: &mut Vec<Pod>) -> Self::State {
+        match self {
+            Either::Left(view) => Either::Left(view.build(cx, elements)),
+            Either::Right(view) => Either::Right(view.build(cx, elements)),
+        }
+    }
+
+    fn rebuild(
+        &self,
+        cx: &mut Cx,
+        prev: &Self,
+        state: &mut Self::State,
+        element: &mut xilem_core::VecSplice<Pod>,
+    ) -> ChangeFlags {
+        match (prev, self) {
+            (Either::Left(_), Either::Right(view)) => {
+                let new_state = element.as_vec(|elements| view.build(cx, elements));
+                *state = Either::Right(new_state);
+                ChangeFlags::STRUCTURE
+            }
+            (Either::Right(_), Either::Left(view)) => {
+                let new_state = element.as_vec(|elements| view.build(cx, elements));
+                *state = Either::Left(new_state);
+                ChangeFlags::STRUCTURE
+            }
+            (Either::Left(prev_view), Either::Left(view)) => {
+                let Either::Left(state) = state else {
+                    throw_str("invalid state/view in Either (unreachable)");
+                };
+                view.rebuild(cx, prev_view, state, element)
+            }
+            (Either::Right(prev_view), Either::Right(view)) => {
+                let Either::Right(state) = state else {
+                    throw_str("invalid state/view in Either (unreachable)");
+                };
+                view.rebuild(cx, prev_view, state, element)
+            }
+        }
+    }
+
+    fn message(
+        &self,
+        id_path: &[xilem_core::Id],
+        state: &mut Self::State,
+        message: Box<dyn std::any::Any>,
+        app_state: &mut T,
+    ) -> MessageResult<A> {
+        match self {
+            Either::Left(view) => {
+                let Either::Left(state) = state else {
+                    throw_str("invalid state/view in Either (unreachable)");
+                };
+                view.message(id_path, state, message, app_state)
+            }
+            Either::Right(view) => {
+                let Either::Right(state) = state else {
+                    throw_str("invalid state/view in Either (unreachable)");
+                };
+                view.message(id_path, state, message, app_state)
+            }
+        }
+    }
+
+    fn count(&self, state: &Self::State) -> usize {
+        match self {
+            Either::Left(view) => {
+                let Either::Left(state) = state else {
+                    throw_str("invalid state/view in Either (unreachable)");
+                };
+                view.count(state)
+            }
+            Either::Right(view) => {
+                let Either::Right(state) = state else {
+                    throw_str("invalid state/view in Either (unreachable)");
+                };
+                view.count(state)
             }
         }
     }
