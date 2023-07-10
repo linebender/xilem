@@ -155,38 +155,36 @@ where
         state: &mut Self::State,
         element: &mut Self::Element,
     ) -> ChangeFlags {
-        let mut change_flags = ChangeFlags::empty();
         match (prev, self) {
             (Either::Left(_), Either::Right(view)) => {
                 let (new_id, new_state, new_element) = view.build(cx);
                 *id = new_id;
                 *state = Either::Right(new_state);
                 *element = Either::Right(new_element);
-                change_flags |= ChangeFlags::STRUCTURE;
+                ChangeFlags::STRUCTURE
             }
             (Either::Right(_), Either::Left(view)) => {
                 let (new_id, new_state, new_element) = view.build(cx);
                 *id = new_id;
                 *state = Either::Left(new_state);
                 *element = Either::Left(new_element);
-                change_flags |= ChangeFlags::STRUCTURE;
+                ChangeFlags::STRUCTURE
             }
             (Either::Left(prev_view), Either::Left(view)) => {
                 let (Either::Left(state), Either::Left(element)) = (state, element) else {
                     throw_str("invalid state/view in Either (unreachable)");
                 };
                 // Cannot do mutable casting, so take ownership of state.
-                change_flags |= view.rebuild(cx, prev_view, id, state, element);
+                view.rebuild(cx, prev_view, id, state, element)
             }
             (Either::Right(prev_view), Either::Right(view)) => {
                 let (Either::Right(state), Either::Right(element)) = (state, element) else {
                     throw_str("invalid state/view in Either (unreachable)");
                 };
                 // Cannot do mutable casting, so take ownership of state.
-                change_flags |= view.rebuild(cx, prev_view, id, state, element);
+                view.rebuild(cx, prev_view, id, state, element)
             }
         }
-        change_flags
     }
 
     fn message(
