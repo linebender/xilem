@@ -10,6 +10,7 @@ use wasm_bindgen::JsCast;
 mod app;
 mod class;
 mod context;
+mod diff;
 mod element;
 mod event;
 mod view;
@@ -23,11 +24,14 @@ pub use class::class;
 pub use context::{ChangeFlags, Cx};
 #[cfg(feature = "typed")]
 pub use element::elements;
-pub use element::{element, Element, ElementState};
+pub use element::{element, Element};
 #[cfg(feature = "typed")]
 pub use event::events;
-pub use event::{on_event, Action, Event, OnEvent, OnEventState, OptionalAction};
-pub use view::{Adapt, AdaptThunk, AnyView, Either, Pod, View, ViewMarker, ViewSequence};
+pub use event::{on_event, Action, Event, OnEvent, OptionalAction};
+pub use view::{
+    memoize, static_view, Adapt, AdaptThunk, AnyView, Either, Memoize, Pod, View, ViewMarker,
+    ViewSequence,
+};
 #[cfg(feature = "typed")]
 pub use view_ext::ViewExt;
 
@@ -51,10 +55,17 @@ pub fn document_body() -> web_sys::HtmlElement {
     document().body().expect("HTML document missing body")
 }
 
+/// Returns a handle to the element with the given ID.
+///
+/// # Panics
+///
+/// This function will panic if no element with the given ID exists.
+#[track_caller]
 pub fn get_element_by_id(id: &str) -> web_sys::HtmlElement {
-    document()
-        .get_element_by_id(id)
-        .unwrap()
-        .dyn_into()
-        .unwrap()
+    let el = match document().get_element_by_id(id) {
+        Some(el) => el,
+        None => panic!("no element exists with the ID `{id}`"),
+    };
+    el.dyn_into()
+        .expect("get_element_by_id could not cast `Element` into `HtmlElement`")
 }

@@ -3,16 +3,17 @@
 
 use std::{any::Any, borrow::Cow};
 
+use wasm_bindgen::UnwrapThrowExt;
 use xilem_core::{Id, MessageResult};
 
 use crate::{
     context::{ChangeFlags, Cx},
+    element::ElementState,
     view::{DomElement, View, ViewMarker},
 };
 
 pub struct Class<V> {
     child: V,
-    // This could reasonably be static Cow also, but keep things simple
     class: Cow<'static, str>,
 }
 
@@ -26,20 +27,24 @@ pub fn class<V>(child: V, class: impl Into<Cow<'static, str>>) -> Class<V> {
 impl<V> ViewMarker for Class<V> {}
 
 // TODO: make generic over A (probably requires Phantom)
-impl<T, V> View<T> for Class<V>
+impl<T, A, V, CS> View<T, A> for Class<V>
 where
-    V: View<T>,
+    V: View<T, A, State = ElementState<CS>>,
     V::Element: DomElement,
 {
-    type State = V::State;
+    type State = ElementState<CS>;
     type Element = V::Element;
 
     fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
-        let (id, child_state, element) = self.child.build(cx);
-        element
-            .as_element_ref()
-            .set_attribute("class", &self.class)
-            .unwrap();
+        let (id, mut child_state, element) = self.child.build(cx);
+        if self.class != "" {
+            element
+                .as_element_ref()
+                .class_list()
+                .add_1(&self.class)
+                .unwrap_throw();
+        }
+        child_state.init_class(self.class.to_string());
         (id, child_state, element)
     }
 
@@ -51,16 +56,9 @@ where
         state: &mut Self::State,
         element: &mut V::Element,
     ) -> ChangeFlags {
-        let prev_id = *id;
-        let mut changed = self.child.rebuild(cx, &prev.child, id, state, element);
-        if self.class != prev.class || prev_id != *id {
-            element
-                .as_element_ref()
-                .set_attribute("class", &self.class)
-                .unwrap();
-            changed.insert(ChangeFlags::OTHER_CHANGE);
-        }
-        changed
+        // TODO what if ID changed?
+        state.add_class(self.class.to_string());
+        self.child.rebuild(cx, &prev.child, id, state, element)
     }
 
     fn message(
@@ -69,7 +67,7 @@ where
         state: &mut Self::State,
         message: Box<dyn Any>,
         app_state: &mut T,
-    ) -> MessageResult<()> {
+    ) -> MessageResult<A> {
         self.child.message(id_path, state, message, app_state)
     }
 }

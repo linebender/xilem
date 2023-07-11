@@ -4,10 +4,15 @@
 //! `use xilem_html::elements as el` or similar to the top of your file.
 use crate::{
     context::{ChangeFlags, Cx},
+    diff::{diff_maps, diff_sets, Diff, DiffSet},
     view::{DomElement, Pod, View, ViewMarker, ViewSequence},
 };
 
-use std::{borrow::Cow, cmp::Ordering, collections::BTreeMap, fmt};
+use std::{
+    borrow::Cow,
+    collections::{BTreeMap, BTreeSet},
+    fmt, mem,
+};
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use xilem_core::{Id, MessageResult, VecSplice};
 
@@ -26,6 +31,7 @@ pub struct Element<El, Children = ()> {
 }
 
 impl<El, ViewSeq> Element<El, ViewSeq> {
+    /// Write out the current element as pseudo-html. For debugging purposes only.
     pub fn debug_as_el(&self) -> impl fmt::Debug + '_ {
         struct DebugFmt<'a, El, VS>(&'a Element<El, VS>);
         impl<'a, El, VS> fmt::Debug for DebugFmt<'a, El, VS> {
@@ -48,6 +54,28 @@ pub struct ElementState<ViewSeqState> {
     child_states: ViewSeqState,
     child_elements: Vec<Pod>,
     scratch: Vec<Pod>,
+    /// Used to collect classes applied by parents, then diff them and apply the diff to the class
+    /// list. TODO use interning.
+    pub(crate) class_accum: BTreeSet<String>,
+    pub(crate) class_accum_prev: BTreeSet<String>,
+}
+
+impl<VS> ElementState<VS> {
+    /// Skip the empty class as this would cause an exception
+    pub(crate) fn init_class(&mut self, class: String) {
+        if class == "" {
+            return;
+        }
+        self.class_accum_prev.insert(class);
+    }
+
+    /// Skip the empty class as this would cause an exception
+    pub(crate) fn add_class(&mut self, class: String) {
+        if class == "" {
+            return;
+        }
+        self.class_accum.insert(class);
+    }
 }
 
 /// Create a new element view
@@ -138,6 +166,8 @@ where
             child_states,
             child_elements,
             scratch: vec![],
+            class_accum: BTreeSet::new(),
+            class_accum_prev: BTreeSet::new(),
         };
         (id, state, el)
     }
@@ -152,6 +182,8 @@ where
     ) -> ChangeFlags {
         let mut changed = ChangeFlags::empty();
         // update tag name
+        // TODO we talked about removing the ability for views with the same type to have different
+        // names (const generics?)
         if prev.name != self.name {
             // recreate element
             let parent = element
@@ -173,44 +205,21 @@ where
         let element = element.as_element_ref();
 
         // update attributes
-        // TODO can I use VecSplice for this?
-        let mut prev_attrs = prev.attributes.iter().peekable();
-        let mut self_attrs = self.attributes.iter().peekable();
-        while let (Some((prev_name, prev_value)), Some((self_name, self_value))) =
-            (prev_attrs.peek(), self_attrs.peek())
-        {
-            match prev_name.cmp(self_name) {
-                Ordering::Less => {
-                    // attribute from prev is disappeared
-                    remove_attribute(element, prev_name);
+        for itm in diff_maps(&prev.attributes, &self.attributes) {
+            match itm {
+                Diff::Add(name, value) => {
+                    set_attribute(element, name, value);
                     changed |= ChangeFlags::OTHER_CHANGE;
-                    prev_attrs.next();
                 }
-                Ordering::Greater => {
-                    // new attribute has appeared
-                    set_attribute(element, self_name, self_value);
+                Diff::Remove(name) => {
+                    remove_attribute(element, name);
                     changed |= ChangeFlags::OTHER_CHANGE;
-                    self_attrs.next();
                 }
-                Ordering::Equal => {
-                    // attribute may has changed
-                    if prev_value != self_value {
-                        set_attribute(element, self_name, self_value);
-                        changed |= ChangeFlags::OTHER_CHANGE;
-                    }
-                    prev_attrs.next();
-                    self_attrs.next();
+                Diff::Change(name, new_value) => {
+                    set_attribute(element, name, new_value);
+                    changed |= ChangeFlags::OTHER_CHANGE;
                 }
             }
-        }
-        // Only max 1 of these loops will run
-        for (name, _) in prev_attrs {
-            remove_attribute(element, name);
-            changed |= ChangeFlags::OTHER_CHANGE;
-        }
-        for (name, value) in self_attrs {
-            set_attribute(element, name, value);
-            changed |= ChangeFlags::OTHER_CHANGE;
         }
 
         // update children
@@ -231,6 +240,24 @@ where
             }
             changed.remove(ChangeFlags::STRUCTURE);
         }
+
+        // Apply new classes
+        for itm in diff_sets(&state.class_accum_prev, &state.class_accum) {
+            match itm {
+                DiffSet::Add(key) => {
+                    add_class(element, key);
+                    changed |= ChangeFlags::OTHER_CHANGE;
+                }
+                DiffSet::Remove(key) => {
+                    remove_class(element, key);
+                    changed |= ChangeFlags::OTHER_CHANGE;
+                }
+            }
+        }
+        // reset accumulator
+        mem::swap(&mut state.class_accum_prev, &mut state.class_accum);
+        state.class_accum.clear();
+
         if let Some(after_update) = &self.after_update {
             (after_update)(element.dyn_ref().unwrap_throw());
             changed |= ChangeFlags::OTHER_CHANGE;
@@ -285,4 +312,12 @@ fn remove_attribute(element: &web_sys::Element, name: &str) {
 #[cfg(not(feature = "typed"))]
 fn remove_attribute(element: &web_sys::Element, name: &str) {
     element.remove_attribute(name).unwrap_throw();
+}
+
+fn add_class(element: &web_sys::Element, class: &str) {
+    element.class_list().add_1(class).unwrap();
+}
+
+fn remove_class(element: &web_sys::Element, class: &str) {
+    element.class_list().remove_1(class).unwrap();
 }
