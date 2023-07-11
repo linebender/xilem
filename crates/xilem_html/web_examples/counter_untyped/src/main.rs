@@ -1,4 +1,3 @@
-use wasm_bindgen::{prelude::*, JsValue};
 use xilem_html::{document_body, element, on_event, App, Event, View, ViewMarker};
 
 #[derive(Default)]
@@ -43,11 +42,8 @@ fn app_logic(state: &mut AppState) -> impl View<AppState> {
     )
 }
 
-// Called by our JS entry point to run the example
-#[wasm_bindgen(start)]
-pub fn run() -> Result<(), JsValue> {
+pub fn main() {
+    console_error_panic_hook::set_once();
     let app = App::new(AppState::default(), app_logic);
     app.run(&document_body());
-
-    Ok(())
 }
