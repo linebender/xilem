@@ -42,7 +42,7 @@ impl AppState {
     }
 
     pub fn start_editing(&mut self, id: u64) {
-        if let Some(ref mut todo) = self.todos.iter_mut().filter(|todo| todo.id == id).next() {
+        if let Some(ref mut todo) = self.todos.iter_mut().find(|todo| todo.id == id) {
             todo.title_editing.clear();
             todo.title_editing.push_str(&todo.title);
             self.editing_id = Some(id)
