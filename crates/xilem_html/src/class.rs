@@ -17,6 +17,7 @@ pub struct Class<V> {
     class: Cow<'static, str>,
 }
 
+/// Add a class to the child element. Adding the empty class is equivalent to not adding a class.
 pub fn class<V>(child: V, class: impl Into<Cow<'static, str>>) -> Class<V> {
     Class {
         child,
@@ -69,5 +70,17 @@ where
         app_state: &mut T,
     ) -> MessageResult<A> {
         self.child.message(id_path, state, message, app_state)
+    }
+}
+
+/// Helper to add a class only when `should_apply` is true.
+pub fn opt_class<V>(child: V, class: impl Into<Cow<'static, str>>, should_apply: bool) -> Class<V> {
+    Class {
+        child,
+        class: if should_apply {
+            class.into()
+        } else {
+            Cow::Borrowed("")
+        },
     }
 }
