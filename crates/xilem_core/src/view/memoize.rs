@@ -34,7 +34,7 @@ macro_rules! generate_memoize_view {
         impl<
                 T,
                 A,
-                D: PartialEq + Clone + Send + 'static,
+                D: PartialEq + Send + 'static,
                 V: $viewtrait<T, A>,
                 F: Fn(&D) -> V + Send,
             > $viewtrait<T, A> for $memoizeview<D, F>
