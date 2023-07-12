@@ -20,14 +20,14 @@ pub use xilem_core::MessageResult;
 
 pub use app::App;
 pub use class::class;
-pub use context::ChangeFlags;
+pub use context::{ChangeFlags, Cx};
 #[cfg(feature = "typed")]
 pub use element::elements;
 pub use element::{element, Element, ElementState};
 #[cfg(feature = "typed")]
 pub use event::events;
 pub use event::{on_event, Action, Event, OnEvent, OnEventState, OptionalAction};
-pub use view::{Adapt, AdaptThunk, Either, Pod, View, ViewMarker, ViewSequence};
+pub use view::{Adapt, AdaptThunk, AnyView, Either, Pod, View, ViewMarker, ViewSequence};
 #[cfg(feature = "typed")]
 pub use view_ext::ViewExt;
 

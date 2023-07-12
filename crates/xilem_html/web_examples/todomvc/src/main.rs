@@ -1,10 +1,7 @@
-use std::panic;
-
 mod state;
 
 use state::{AppState, Filter, Todo};
 
-use wasm_bindgen::{prelude::*, JsValue};
 use xilem_html::{
     elements as el, events::on_click, get_element_by_id, Action, Adapt, App, MessageResult, View,
     ViewExt, ViewMarker,
@@ -213,12 +210,8 @@ fn app_logic(state: &mut AppState) -> impl View<AppState> {
     ))
 }
 
-// Called by our JS entry point to run the example
-#[wasm_bindgen(start)]
-pub fn run() -> Result<(), JsValue> {
-    panic::set_hook(Box::new(console_error_panic_hook::hook));
+pub fn main() {
+    console_error_panic_hook::set_once();
     tracing_wasm::set_as_global_default();
     App::new(AppState::load(), app_logic).run(&get_element_by_id("todoapp"));
-
-    Ok(())
 }
