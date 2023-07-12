@@ -31,13 +31,8 @@ macro_rules! generate_memoize_view {
 
         impl<D, F> $viewmarker for $memoizeview<D, F> {}
 
-        impl<
-                T,
-                A,
-                D: PartialEq + Send + 'static,
-                V: $viewtrait<T, A>,
-                F: Fn(&D) -> V + Send,
-            > $viewtrait<T, A> for $memoizeview<D, F>
+        impl<T, A, D: PartialEq + Send + 'static, V: $viewtrait<T, A>, F: Fn(&D) -> V + Send>
+            $viewtrait<T, A> for $memoizeview<D, F>
         {
             type State = $memoizestate<T, A, V>;
 
