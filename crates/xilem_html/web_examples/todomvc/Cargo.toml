@@ -6,8 +6,10 @@ edition = "2021"
 
 [dependencies]
 console_error_panic_hook = "0.1.7"
-console_log = { version = "1.0.0", features = ["color"] }
-log = "0.4.19"
+serde = { version = "1.0.170", features = ["derive"] }
+serde_json = "1.0.100"
+tracing = "0.1.37"
+tracing-wasm = "0.2.1"
 wasm-bindgen = "0.2.87"
-web-sys = "0.3.64"
+web-sys = { version = "0.3.64", features = ["Storage", "Window"] }
 xilem_html = { path = "../.." }

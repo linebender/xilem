@@ -1,17 +1,20 @@
-use std::sync::atomic::{AtomicU64, Ordering};
+use serde::{Deserialize, Serialize};
+use wasm_bindgen::UnwrapThrowExt;
 
-fn next_id() -> u64 {
-    static ID_GEN: AtomicU64 = AtomicU64::new(1);
-    ID_GEN.fetch_add(1, Ordering::Relaxed)
-}
+const KEY: &str = "todomvc_persist";
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Serialize, Deserialize)]
 pub struct AppState {
+    #[serde(skip)]
     pub new_todo: String,
     pub todos: Vec<Todo>,
+    #[serde(skip)]
     pub filter: Filter,
+    #[serde(skip)]
     pub editing_id: Option<u64>,
+    #[serde(skip)]
     pub focus_new_todo: bool,
+    next_id: u64,
 }
 
 impl AppState {
@@ -21,8 +24,35 @@ impl AppState {
         }
         let title = self.new_todo.trim().to_string();
         self.new_todo.clear();
-        self.todos.push(Todo::new(title));
+        let id = self.next_id();
+        self.todos.push(Todo::new(title, id));
         self.focus_new_todo = true;
+        self.save();
+    }
+
+    fn next_id(&mut self) -> u64 {
+        self.next_id += 1;
+        self.next_id
+    }
+
+    /// Are all the todos complete?
+    pub fn are_all_complete(&self) -> bool {
+        self.todos.iter().all(|todo| todo.completed)
+    }
+
+    /// If all TODOs are complete, then mark them all not complete,
+    /// else mark them all complete.
+    pub fn toggle_all_complete(&mut self) {
+        if self.are_all_complete() {
+            for todo in self.todos.iter_mut() {
+                todo.completed = false;
+            }
+        } else {
+            for todo in self.todos.iter_mut() {
+                todo.completed = true;
+            }
+        }
+        self.save();
     }
 
     pub fn visible_todos(&mut self) -> impl Iterator<Item = (usize, &mut Todo)> {
@@ -48,21 +78,42 @@ impl AppState {
             self.editing_id = Some(id)
         }
     }
+
+    /// Load the current state from local_storage, or use the default.
+    pub fn load() -> Self {
+        let Some(raw) = storage().get_item(KEY).unwrap_throw() else {
+            return Default::default();
+        };
+        match serde_json::from_str(&raw) {
+            Ok(todos) => todos,
+            Err(e) => {
+                tracing::error!("couldn't load existing todos: {e}");
+                Default::default()
+            }
+        }
+    }
+
+    /// Save the current state to local_storage
+    pub fn save(&self) {
+        let raw = serde_json::to_string(self).unwrap_throw();
+        storage().set_item(KEY, &raw).unwrap_throw()
+    }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Todo {
     pub id: u64,
     pub title: String,
+    #[serde(skip)]
     pub title_editing: String,
     pub completed: bool,
 }
 
 impl Todo {
-    pub fn new(title: String) -> Self {
+    pub fn new(title: String, id: u64) -> Self {
         let title_editing = title.clone();
         Self {
-            id: next_id(),
+            id,
             title,
             title_editing,
             completed: false,
@@ -81,4 +132,12 @@ pub enum Filter {
     All,
     Active,
     Completed,
+}
+
+fn storage() -> web_sys::Storage {
+    web_sys::window()
+        .unwrap_throw()
+        .local_storage()
+        .unwrap_throw()
+        .unwrap_throw()
 }
