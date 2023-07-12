@@ -18,8 +18,7 @@
 //! widget system, particularly its core.rs.
 
 use bitflags::bitflags;
-use glazier::kurbo::{Point, Rect, Size};
-use vello::kurbo::Affine;
+use vello::kurbo::{Affine, Point, Rect, Size};
 use vello::{SceneBuilder, SceneFragment};
 
 use super::widget::{AnyWidget, Widget};

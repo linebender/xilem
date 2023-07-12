@@ -18,12 +18,9 @@
 //! widget system, particularly its contexts.rs.
 
 use accesskit::TreeUpdate;
-use glazier::kurbo::Point;
-use glazier::{
-    kurbo::{Rect, Size},
-    WindowHandle,
-};
+use glazier::WindowHandle;
 use parley::FontContext;
+use vello::kurbo::{Point, Rect, Size};
 
 use super::{PodFlags, WidgetState};
 use crate::Message;
