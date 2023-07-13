@@ -17,11 +17,10 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use accesskit::TreeUpdate;
-use glazier::kurbo::Size;
 use glazier::{IdleHandle, IdleToken, WindowHandle};
 use parley::FontContext;
 use tokio::runtime::Runtime;
-use vello::kurbo::{Point, Rect};
+use vello::kurbo::{Point, Rect, Size};
 use vello::SceneFragment;
 use xilem_core::{AsyncWake, MessageResult};
 

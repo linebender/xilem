@@ -14,9 +14,9 @@
 
 use std::ops::Deref;
 
-use glazier::kurbo::{Affine, Insets, Size};
 use parley::Layout;
 use vello::{
+    kurbo::{Affine, Insets, Size},
     peniko::{Brush, Color},
     SceneBuilder,
 };

@@ -16,12 +16,12 @@ use std::any::Any;
 
 use accesskit::TreeUpdate;
 use glazier::{
-    kurbo::{Affine, Size},
     Application, Cursor, HotKey, IdleToken, Menu, MouseEvent, Region, Scalable, SysMods,
     WinHandler, WindowBuilder, WindowHandle,
 };
 use parley::FontContext;
 use vello::{
+    kurbo::{Affine, Size},
     peniko::Color,
     util::{RenderContext, RenderSurface},
     RenderParams, Renderer, RendererOptions,

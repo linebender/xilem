@@ -17,11 +17,8 @@
 //! Note: arguably this module should be renamed, perhaps we should use
 //! "event" for this level and maybe "message" at the View level.
 
-use glazier::{
-    kurbo::{Point, Vec2},
-    Modifiers, MouseButton, MouseButtons,
-};
-use vello::kurbo::Rect;
+use glazier::{Modifiers, MouseButton, MouseButtons};
+use vello::kurbo::{Point, Rect, Vec2};
 
 #[derive(Debug, Clone)]
 pub enum Event {

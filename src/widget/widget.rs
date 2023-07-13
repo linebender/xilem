@@ -16,7 +16,7 @@ use std::any::Any;
 use std::ops::DerefMut;
 
 use crate::geometry::Axis;
-use glazier::kurbo::Size;
+use vello::kurbo::Size;
 use vello::SceneBuilder;
 
 use super::box_constraints::BoxConstraints;

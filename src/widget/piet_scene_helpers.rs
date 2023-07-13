@@ -1,4 +1,4 @@
-use glazier::kurbo::{self, Affine, Rect, Shape};
+use vello::kurbo::{self, Affine, Rect, Shape};
 use vello::peniko::{BrushRef, ColorStopsSource, Fill, Gradient, Stroke};
 use vello::SceneBuilder;
 

@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use glazier::kurbo::{Affine, Point, Size};
 use parley::Layout;
 use vello::{
+    kurbo::{Affine, Point, Size},
     peniko::{Brush, Color},
     SceneBuilder, SceneFragment,
 };
