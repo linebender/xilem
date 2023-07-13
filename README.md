@@ -1,10 +1,31 @@
-# An experimental Rust architecture for reactive UI
+<div align="center">
 
-Note: this README is a bit out of date. To understand more of what's going on, please read the blog post, [Xilem: an architecture for UI in Rust].
+# Xilem
+
+**An experimental Rust architecture for reactive UI**
+
+[![Xi Zulip](https://img.shields.io/badge/Xi%20Zulip-%23xilem-blue?logo=Zulip)](https://xi.zulipchat.com/#narrow/stream/354396-xilem)
+[![dependency status](https://deps.rs/repo/github/linebender/xilem/status.svg)](https://deps.rs/repo/github/linebender/xilem)
+[![Apache 2.0](https://img.shields.io/badge/license-Apache-blue.svg)](#license)
+[![Build Status](https://github.com/linebender/xilem/actions/workflows/rust.yml/badge.svg)](https://github.com/linebender/xilem/actions)
+<!-- [![Crates.io](https://img.shields.io/crates/v/xilem.svg)](https://crates.io/crates/xilem) -->
+<!-- [![Docs](https://docs.rs/xilem/badge.svg)](https://docs.rs/xilem) -->
+
+</div>
 
 This repo contains an experimental architecture, implemented with a toy UI. At a very high level, it combines ideas from Flutter, SwiftUI, and Elm. Like all of these, it uses lightweight view objects, diffing them to provide minimal updates to a retained UI. Like SwiftUI, it is strongly typed.
 
+## Community
+
+[![Xi Zulip](https://img.shields.io/badge/Xi%20Zulip-%23xilem-blue?logo=Zulip)](https://xi.zulipchat.com/#narrow/stream/354396-xilem)
+
+Discussion of Xilem development happens in the [Xi Zulip](https://xi.zulipchat.com/), specifically the [#xilem stream](https://xi.zulipchat.com/#narrow/stream/354396-xilem). All public content can be read without logging in
+
 ## Overall program flow
+
+> **Warning:**
+>
+> This README is a bit out of date. To understand more of what's going on, please read the blog post, [Xilem: an architecture for UI in Rust].
 
 Like Elm, the app logic contains *centralized state.* On each cycle (meaning, roughly, on each high-level UI interaction such as a button click), the framework calls a closure, giving it mutable access to the app state, and the return value is a *view tree.* This view tree is fairly short-lived; it is used to render the UI, possibly dispatch some events, and be used as a reference for *diffing* by the next cycle, at which point it is dropped.
 
@@ -88,6 +109,18 @@ To install them on Debian or Ubuntu, run
 ```
 sudo apt-get install clang libxkbcommon-x11-dev pkg-config libvulkan-dev
 ```
+## License
+
+Licensed under the Apache License, Version 2.0
+([LICENSE](LICENSE) or <http://www.apache.org/licenses/LICENSE-2.0>)
+
+## Contribution
+
+Contributions are welcome by pull request. The [Rust code of conduct] applies.
+
+Unless you explicitly state otherwise, any contribution intentionally submitted
+for inclusion in the work by you, as defined in the Apache-2.0 license, shall be
+licensed as above, without any additional terms or conditions.
 
 [Html.lazy]: https://guide.elm-lang.org/optimization/lazy.html
 [Html map]: https://package.elm-lang.org/packages/elm/html/latest/Html#map
@@ -96,3 +129,4 @@ sudo apt-get install clang libxkbcommon-x11-dev pkg-config libvulkan-dev
 [Panoramix]: https://github.com/PoignardAzur/panoramix
 [Xilem: an architecture for UI in Rust]: https://raphlinus.github.io/rust/gui/2022/05/07/ui-architecture.html
 [xkbcommon]: https://github.com/xkbcommon/libxkbcommon
+[rust code of conduct]: https://www.rust-lang.org/policies/code-of-conduct
