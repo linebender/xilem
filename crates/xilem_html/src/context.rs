@@ -21,7 +21,7 @@ pub struct MessageThunk {
 }
 
 bitflags! {
-    #[derive(Default)]
+    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
     pub struct ChangeFlags: u32 {
         const STRUCTURE = 1;
         const OTHER_CHANGE = 2;
