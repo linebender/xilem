@@ -65,7 +65,7 @@ macro_rules! element {
         where
             ViewSeq: crate::view::ViewSequence<T_, A_>,
         {
-            type State = crate::ElementState<ViewSeq::State>;
+            type State = super::ElementState<ViewSeq::State>;
             type Element = $web_sys_ty;
 
             fn build(

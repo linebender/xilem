@@ -12,6 +12,7 @@ macro_rules! generate_memoize_view {
      $staticviewfunction:ident,
      $memoizeviewfunction:ident
     ) => {
+        /// A view that wraps a child and only re-renders when its data changes
         pub struct $memoizeview<D, F> {
             data: D,
             child_cb: F,

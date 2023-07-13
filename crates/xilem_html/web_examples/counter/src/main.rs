@@ -1,5 +1,5 @@
 use xilem_html::{
-    document_body, elements as el,
+    class, document_body, elements as el,
     events::{self as evt},
     App, Event, View, ViewExt,
 };
@@ -51,7 +51,10 @@ where
 
 fn app_logic(state: &mut AppState) -> impl View<AppState> {
     el::div((
-        el::span(format!("clicked {} times", state.clicks)).attr("class", state.class),
+        class(
+            el::span(format!("clicked {} times", state.clicks)),
+            state.class,
+        ),
         el::br(()),
         btn("+1 click", |state, _| state.increment()),
         btn("-1 click", |state, _| state.decrement()),
