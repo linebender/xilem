@@ -211,7 +211,7 @@ impl<'a, 'b> AccessCx<'a, 'b> {
             self.widget_state.window_origin(),
             self.widget_state.size,
         )));
-        let node = builder.build(&mut self.node_classes);
+        let node = builder.build(self.node_classes);
         self.push_node_raw(node);
     }
 

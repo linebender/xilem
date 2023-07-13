@@ -216,7 +216,7 @@ where
         let mut cx_state = CxState::new(&self.window_handle, &mut self.font_cx, &mut self.events);
         let mut access_cx = AccessCx {
             cx_state: &mut cx_state,
-            widget_state: &mut &mut self.root_state,
+            widget_state: &mut self.root_state,
             update: &mut update,
             node_classes: &mut self.node_classes,
         };
@@ -426,7 +426,7 @@ impl<T, V: View<T>, F: FnMut(&mut T) -> V> AppTask<T, V, F> {
                                 self.ui_state = UiState::WokeUI;
                             }
                             let id = id_path.last().unwrap();
-                            self.pending_async.remove(&id);
+                            self.pending_async.remove(id);
                             if self.pending_async.is_empty() && self.ui_state == UiState::Delayed {
                                 self.render().await;
                                 deadline = None;

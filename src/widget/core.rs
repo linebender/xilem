@@ -186,7 +186,7 @@ impl Pod {
     }
 
     /// Returns the wrapped widget.
-    pub fn downcast_mut<'a, T: 'static>(&'a mut self) -> Option<&'a mut T> {
+    pub fn downcast_mut<T: 'static>(&mut self) -> Option<&mut T> {
         (*self.widget).as_any_mut().downcast_mut()
     }
 
@@ -276,11 +276,7 @@ impl Pod {
             Event::MouseLeft() => {
                 let hot_changed =
                     Pod::set_hot_state(&mut self.widget, &mut self.state, cx.cx_state, None);
-                if had_active || hot_changed {
-                    true
-                } else {
-                    false
-                }
+                had_active || hot_changed
             }
             Event::TargetedAccessibilityAction(action) => {
                 println!("TODO: {:?}", action);
@@ -323,7 +319,7 @@ impl Pod {
                 Pod::set_hot_state(
                     &mut self.widget,
                     &mut self.state,
-                    &mut cx.cx_state,
+                    cx.cx_state,
                     view.mouse_position,
                 );
                 modified_event = Some(LifeCycle::ViewContextChanged(

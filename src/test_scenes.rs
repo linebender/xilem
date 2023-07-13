@@ -4,10 +4,8 @@ use vello::kurbo::{Affine, Rect};
 use vello::peniko::*;
 use vello::{Scene, SceneBuilder};
 
-pub fn render(fcx: &mut FontContext, scene: &mut Scene, which: usize, arg: u64) {
-    match which {
-        _ => basic_scene(fcx, scene, arg),
-    }
+pub fn render(fcx: &mut FontContext, scene: &mut Scene, _which: usize, arg: u64) {
+    basic_scene(fcx, scene, arg);
 }
 
 fn basic_scene(fcx: &mut FontContext, scene: &mut Scene, arg: u64) {

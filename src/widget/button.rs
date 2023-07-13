@@ -69,22 +69,20 @@ impl Widget for Button {
                 cx.set_active(false);
                 cx.request_paint();
             }
-            Event::TargetedAccessibilityAction(request) => match request.action {
-                accesskit::Action::Default => {
-                    if cx.is_accesskit_target(request.target) {
-                        cx.add_message(Message::new(self.id_path.clone(), ()));
-                    }
+            Event::TargetedAccessibilityAction(request) => {
+                if request.action == accesskit::Action::Default
+                    && cx.is_accesskit_target(request.target)
+                {
+                    cx.add_message(Message::new(self.id_path.clone(), ()));
                 }
-                _ => (),
-            },
+            }
             _ => (),
         };
     }
 
     fn lifecycle(&mut self, cx: &mut LifeCycleCx, event: &LifeCycle) {
-        match event {
-            LifeCycle::HotChanged(_) => cx.request_paint(),
-            _ => (),
+        if let LifeCycle::HotChanged(_) = event {
+            cx.request_paint()
         }
     }
 
@@ -110,9 +108,7 @@ impl Widget for Button {
         );
         self.layout = Some(layout);
         //(Size::new(10.0, min_height), size)
-        let size = bc.constrain(size);
-        //println!("size = {:?}", size);
-        size
+        bc.constrain(size)
     }
 
     fn accessibility(&mut self, cx: &mut AccessCx) {
@@ -153,7 +149,7 @@ impl Widget for Button {
             let size = Size::new(layout.width() as f64, layout.height() as f64);
             let offset = (cx.size().to_vec2() - size.to_vec2()) * 0.5;
             let transform = Affine::translate(offset);
-            crate::text::render_text(builder, transform, &layout);
+            crate::text::render_text(builder, transform, layout);
         }
     }
 }
