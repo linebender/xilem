@@ -11,8 +11,10 @@ env:
 
 jobs:
   check:
-    runs-on: windows-2019
-    
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macOS-latest, windows-2019, ubuntu-latest]
     steps:
     - name: install libx11-dev
       run: |
@@ -20,6 +22,15 @@ jobs:
         sudo apt install libx11-dev libpango1.0-dev libxkbcommon-dev libxkbcommon-x11-dev
       if: runner.os == 'Linux'
     - uses: actions/checkout@v3
-    - uses: dtolnay/rust-toolchain@stable
+    - uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: stable
+        components: ${{ runner.os == 'Linux' && 'rustfmt' || '' }}
+    - name: restore cache
+      uses: Swatinem/rust-cache@v2
+    - name: cargo fmt
+      # We'll only run this on one platform.
+      run: cargo fmt --all -- --check
+      if: runner.os == 'Linux'
     - name: Check
       run: cargo check
