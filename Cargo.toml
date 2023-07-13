@@ -30,7 +30,7 @@ wgpu = "0.16.0"
 parley = { git = "https://github.com/dfrg/parley", rev = "2371bf4b702ec91edee2d58ffb2d432539580e1e" }
 tokio = { version = "1.21", features = ["full"] }
 futures-task = "0.3"
-bitflags = "1.3.2"
+bitflags = "2"
 tracing = "0.1.37"
 accesskit = "0.9.0"
 fnv = "1.0.7"

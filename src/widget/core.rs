@@ -30,16 +30,16 @@ use super::{
 };
 
 bitflags! {
-    #[derive(Default)]
+    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
     pub(crate) struct PodFlags: u32 {
         // These values are set to the values of their pendants in ChangeFlags to allow transmuting
         // between the two types.
-        const REQUEST_UPDATE = ChangeFlags::UPDATE.bits as _;
-        const REQUEST_LAYOUT = ChangeFlags::LAYOUT.bits as _;
-        const REQUEST_ACCESSIBILITY = ChangeFlags::ACCESSIBILITY.bits as _;
-        const REQUEST_PAINT = ChangeFlags::PAINT.bits as _;
-        const TREE_CHANGED = ChangeFlags::TREE.bits as _;
-        const DESCENDANT_REQUESTED_ACCESSIBILITY = ChangeFlags::DESCENDANT_REQUESTED_ACCESSIBILITY.bits as _;
+        const REQUEST_UPDATE = ChangeFlags::UPDATE.bits() as _;
+        const REQUEST_LAYOUT = ChangeFlags::LAYOUT.bits() as _;
+        const REQUEST_ACCESSIBILITY = ChangeFlags::ACCESSIBILITY.bits() as _;
+        const REQUEST_PAINT = ChangeFlags::PAINT.bits() as _;
+        const TREE_CHANGED = ChangeFlags::TREE.bits() as _;
+        const DESCENDANT_REQUESTED_ACCESSIBILITY = ChangeFlags::DESCENDANT_REQUESTED_ACCESSIBILITY.bits() as _;
 
         // Everything else uses bitmasks greater than the max value of ChangeFlags: mask >= 0x100
         const VIEW_CONTEXT_CHANGED = 0x100;
@@ -50,24 +50,24 @@ bitflags! {
 
         const NEEDS_SET_ORIGIN = 0x1000;
 
-        const UPWARD_FLAGS = Self::REQUEST_UPDATE.bits
-            | Self::REQUEST_LAYOUT.bits
-            | Self::REQUEST_PAINT.bits
-            | Self::HAS_ACTIVE.bits
-            | Self::DESCENDANT_REQUESTED_ACCESSIBILITY.bits
-            | Self::TREE_CHANGED.bits
-            | Self::VIEW_CONTEXT_CHANGED.bits;
-        const INIT_FLAGS = Self::REQUEST_UPDATE.bits
-            | Self::REQUEST_LAYOUT.bits
-            | Self::REQUEST_ACCESSIBILITY.bits
-            | Self::DESCENDANT_REQUESTED_ACCESSIBILITY.bits
-            | Self::REQUEST_PAINT.bits
-            | Self::TREE_CHANGED.bits;
+        const UPWARD_FLAGS = Self::REQUEST_UPDATE.bits()
+            | Self::REQUEST_LAYOUT.bits()
+            | Self::REQUEST_PAINT.bits()
+            | Self::HAS_ACTIVE.bits()
+            | Self::DESCENDANT_REQUESTED_ACCESSIBILITY.bits()
+            | Self::TREE_CHANGED.bits()
+            | Self::VIEW_CONTEXT_CHANGED.bits();
+        const INIT_FLAGS = Self::REQUEST_UPDATE.bits()
+            | Self::REQUEST_LAYOUT.bits()
+            | Self::REQUEST_ACCESSIBILITY.bits()
+            | Self::DESCENDANT_REQUESTED_ACCESSIBILITY.bits()
+            | Self::REQUEST_PAINT.bits()
+            | Self::TREE_CHANGED.bits();
     }
 }
 
 bitflags! {
-    #[derive(Default)]
+    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
     #[must_use]
     pub struct ChangeFlags: u8 {
         const UPDATE = 1;
@@ -126,8 +126,8 @@ impl ChangeFlags {
     pub(crate) fn upwards(self) -> Self {
         // Note: this assumes PodFlags are a superset of ChangeFlags. This might
         // not always be the case, for example on "structure changed."
-        let pod_flags = PodFlags::from_bits_truncate(self.bits as _);
-        ChangeFlags::from_bits_truncate(pod_flags.upwards().bits as _)
+        let pod_flags = PodFlags::from_bits_truncate(self.bits() as _);
+        ChangeFlags::from_bits_truncate(pod_flags.upwards().bits() as _)
     }
 
     // Change flags representing change of tree structure.
@@ -192,7 +192,7 @@ impl Pod {
     /// Sets the requested flags on this pod and returns the ChangeFlags the owner of this Pod should set.
     pub fn mark(&mut self, flags: ChangeFlags) -> ChangeFlags {
         self.state
-            .request(PodFlags::from_bits_truncate(flags.bits as _));
+            .request(PodFlags::from_bits_truncate(flags.bits() as _));
         flags.upwards()
     }
 
