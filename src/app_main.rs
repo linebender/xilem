@@ -181,7 +181,7 @@ where
 {
     fn new(app: App<T, V>) -> Self {
         let render_cx = RenderContext::new().unwrap();
-        let state = MainState {
+        MainState {
             handle: Default::default(),
             app,
             render_cx,
@@ -190,8 +190,7 @@ where
             font_context: FontContext::new(),
             scene: Scene::default(),
             counter: 0,
-        };
-        state
+        }
     }
 
     #[cfg(target_os = "macos")]
@@ -235,7 +234,7 @@ where
                 None
             };
             let mut builder = SceneBuilder::for_scene(&mut self.scene);
-            builder.append(&fragment, transform);
+            builder.append(fragment, transform);
             self.counter += 1;
             let surface_texture = surface
                 .surface

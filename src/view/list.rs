@@ -22,6 +22,7 @@ use std::marker::PhantomData;
 pub struct List<T, A, VT: ViewSequence<T, A>, F: Fn(usize) -> VT + Send> {
     items: usize,
     build: F,
+    #[allow(clippy::type_complexity)]
     phantom: PhantomData<fn() -> (T, A, VT)>,
 }
 
@@ -51,14 +52,14 @@ impl<T, A, VT: ViewSequence<T, A>, F: Fn(usize) -> VT + Send> ViewSequence<T, A>
     fn build(&self, cx: &mut Cx, elements: &mut Vec<Pod>) -> Self::State {
         let leading = elements.len();
 
-        let views = (0..self.items)
-            .into_iter()
-            .map(|index| (self.build)(index))
-            .fold(vec![], |mut state, vt| {
-                let vt_state = vt.build(cx, elements);
-                state.push((vt, vt_state));
-                state
-            });
+        let views =
+            (0..self.items)
+                .map(|index| (self.build)(index))
+                .fold(vec![], |mut state, vt| {
+                    let vt_state = vt.build(cx, elements);
+                    state.push((vt, vt_state));
+                    state
+                });
 
         ListState {
             views,
@@ -77,7 +78,6 @@ impl<T, A, VT: ViewSequence<T, A>, F: Fn(usize) -> VT + Send> ViewSequence<T, A>
         let leading = element.len();
 
         let mut flags = (0..(self.items.min(prev.items)))
-            .into_iter()
             .zip(&mut state.views)
             .fold(ChangeFlags::empty(), |flags, (index, (prev, state))| {
                 let vt = (self.build)(index);

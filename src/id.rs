@@ -43,7 +43,7 @@ impl Id {
     // TODO: Maybe we should not use AccessKit Ids at all in Widget implementation and do the
     //  mapping in the `App`.
     pub fn try_from_accesskit(id: accesskit::NodeId) -> Option<Self> {
-        id.0.try_into().ok().map(|id| Id(id))
+        id.0.try_into().ok().map(Id)
     }
 }
 
