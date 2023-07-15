@@ -10,6 +10,7 @@ use wasm_bindgen::JsCast;
 mod app;
 mod class;
 mod context;
+mod either;
 mod element;
 mod event;
 mod view;
@@ -21,6 +22,7 @@ pub use xilem_core::MessageResult;
 pub use app::App;
 pub use class::class;
 pub use context::{ChangeFlags, Cx};
+pub use either::Either;
 #[cfg(feature = "typed")]
 pub use element::elements;
 pub use element::{element, Element, ElementState};
@@ -28,7 +30,7 @@ pub use element::{element, Element, ElementState};
 pub use event::events;
 pub use event::{on_event, Action, Event, OnEvent, OnEventState, OptionalAction};
 pub use view::{
-    Adapt, AdaptState, AdaptThunk, AnyView, Either, Memoize, Pod, View, ViewMarker, ViewSequence,
+    Adapt, AdaptState, AdaptThunk, AnyView, Memoize, Pod, View, ViewMarker, ViewSequence,
 };
 #[cfg(feature = "typed")]
 pub use view_ext::ViewExt;
