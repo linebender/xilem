@@ -14,9 +14,11 @@
 
 use std::{any::Any, marker::PhantomData, sync::Arc};
 
-use crate::{event::EventResult, id::Id};
+use xilem_core::{Id, MessageResult};
 
-use super::{Cx, View};
+use crate::widget::ChangeFlags;
+
+use super::{Cx, View, ViewMarker};
 
 /// An implementation of the "use_state" pattern familiar in reactive UI.
 ///
@@ -30,6 +32,7 @@ use super::{Cx, View};
 pub struct UseState<T, A, S, V, FInit, F> {
     f_init: FInit,
     f: F,
+    #[allow(clippy::type_complexity)]
     phantom: PhantomData<fn() -> (T, A, S, V)>,
 }
 
@@ -46,6 +49,8 @@ impl<T, A, S, V, FInit: Fn() -> S, F: Fn(&mut S) -> V> UseState<T, A, S, V, FIni
         UseState { f_init, f, phantom }
     }
 }
+
+impl<T, A, S, V, FInit, F> ViewMarker for UseState<T, A, S, V, FInit, F> {}
 
 impl<T, A, S, V: View<(Arc<T>, S), A>, FInit: Fn() -> S, F: Fn(&mut S) -> V> View<Arc<T>, A>
     for UseState<T, A, S, V, FInit, F>
@@ -77,24 +82,24 @@ where
         id: &mut Id,
         state: &mut Self::State,
         element: &mut Self::Element,
-    ) -> bool {
+    ) -> ChangeFlags {
         let view = (self.f)(state.state.as_mut().unwrap());
-        let changed = view.rebuild(cx, &state.view, id, &mut state.view_state, element);
+        let changeflags = view.rebuild(cx, &state.view, id, &mut state.view_state, element);
         state.view = view;
-        changed
+        changeflags
     }
 
-    fn event(
+    fn message(
         &self,
         id_path: &[Id],
         state: &mut Self::State,
         event: Box<dyn Any>,
         app_state: &mut Arc<T>,
-    ) -> EventResult<A> {
+    ) -> MessageResult<A> {
         let mut local_state = (app_state.clone(), state.state.take().unwrap());
         let a = state
             .view
-            .event(id_path, &mut state.view_state, event, &mut local_state);
+            .message(id_path, &mut state.view_state, event, &mut local_state);
         let (local_app_state, my_state) = local_state;
         if !Arc::ptr_eq(app_state, &local_app_state) {
             *app_state = local_app_state
@@ -102,4 +107,13 @@ where
         state.state = Some(my_state);
         a
     }
+}
+
+pub fn use_state<T, A, S, V, FInit, F>(f_init: FInit, f: F) -> UseState<T, A, S, V, FInit, F>
+where
+    V: View<(Arc<T>, S), A>,
+    FInit: Fn() -> S,
+    F: Fn(&mut S) -> V,
+{
+    UseState::new(f_init, f)
 }
