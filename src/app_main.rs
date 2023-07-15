@@ -76,8 +76,8 @@ impl<T: Send + 'static, V: View<T> + 'static> AppLauncher<T, V> {
         let mut menubar = Menu::new();
         menubar.add_dropdown(Menu::new(), "Application", true);
         menubar.add_dropdown(file_menu, "&File", true);
-        let druid_app = Application::new().unwrap();
-        let mut builder = WindowBuilder::new(druid_app.clone());
+        let glazier_app = Application::new().unwrap();
+        let mut builder = WindowBuilder::new(glazier_app.clone());
         let _guard = self.app.rt.enter();
         let main_state = MainState::new(self.app);
         builder.set_handler(Box::new(main_state));
@@ -86,7 +86,7 @@ impl<T: Send + 'static, V: View<T> + 'static> AppLauncher<T, V> {
         builder.set_size(Size::new(1024., 768.));
         let window = builder.build().unwrap();
         window.show();
-        druid_app.run(None);
+        glazier_app.run(None);
     }
 }
 
