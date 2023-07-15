@@ -2,198 +2,224 @@ use wasm_bindgen::throw_str;
 
 use crate::{ChangeFlags, Cx, Pod, View, ViewMarker, ViewSequence};
 
-/// This view container can switch between two views.
-///
-/// It is a statically-typed alternative to the type-erased `AnyView`.
-pub enum Either<A, B> {
-    A(A),
-    B(B),
+macro_rules! either {
+    (
+        #[doc = $first_doc_line:literal]
+        $ident:ident { $( $vars:ident ),+ }
+    ) => {
+        #[doc = $first_doc_line]
+        ///
+        /// It is a statically-typed alternative to the type-erased `AnyView`.
+        pub enum $ident<$($vars),+> {
+            $($vars($vars),)+
+        }
+
+        impl<$($vars),+> AsRef<web_sys::Node> for $ident<$($vars),+>
+        where
+            $($vars: AsRef<web_sys::Node>,)+
+        {
+            fn as_ref(&self) -> &web_sys::Node {
+                match self {
+                    $( $ident::$vars(view) => view.as_ref(), )+
+                }
+            }
+        }
+
+        impl<VT, VA, $($vars),+> View<VT, VA> for $ident<$($vars),+>
+        where $(
+            $vars: View<VT, VA> + ViewMarker,
+            $vars::Element: AsRef<web_sys::Node> + 'static,
+        )+ {
+            type State = $ident<$($vars::State),+>;
+            type Element = $ident<$($vars::Element),+>;
+
+            fn build(&self, cx: &mut Cx) -> (xilem_core::Id, Self::State, Self::Element) {
+                match self {
+                    $(
+                        $ident::$vars(view) => {
+                            let (id, state, el) = view.build(cx);
+                            (id, $ident::$vars(state), $ident::$vars(el))
+                        }
+                    )+
+                }
+            }
+
+            fn rebuild(
+                &self,
+                cx: &mut Cx,
+                prev: &Self,
+                id: &mut xilem_core::Id,
+                state: &mut Self::State,
+                element: &mut Self::Element,
+            ) -> ChangeFlags {
+                match (prev, self) {
+                    $(
+                        // Variant is the same as before
+                        ($ident::$vars(prev_view), $ident::$vars(view)) => {
+                            let ($ident::$vars(state), $ident::$vars(element)) = (state, element)
+                            else {
+                                throw_str(concat!(
+                                    "invalid state/view in ", stringify!($ident), " (unreachable)",
+                                ));
+                            };
+                            // Cannot do mutable casting, so take ownership of state.
+                            view.rebuild(cx, prev_view, id, state, element)
+                        }
+                        // Variant has changed
+                        (_, $ident::$vars(view)) => {
+                            let (new_id, new_state, new_element) = view.build(cx);
+                            *id = new_id;
+                            *state = $ident::$vars(new_state);
+                            *element = $ident::$vars(new_element);
+                            ChangeFlags::STRUCTURE
+                        }
+                    )+
+                }
+            }
+
+            fn message(
+                &self,
+                id_path: &[xilem_core::Id],
+                state: &mut Self::State,
+                message: Box<dyn std::any::Any>,
+                app_state: &mut VT,
+            ) -> xilem_core::MessageResult<VA> {
+                match self {
+                    $(
+                        $ident::$vars(view) => {
+                            let $ident::$vars(state) = state else {
+                                throw_str(concat!(
+                                    "invalid state/view in", stringify!($ident), "(unreachable)",
+                                ));
+                            };
+                            view.message(id_path, state, message, app_state)
+                        }
+                    )+
+                }
+            }
+        }
+
+        impl<VT, VA, $($vars),+> ViewSequence<VT, VA> for $ident<$($vars),+>
+        where $(
+            $vars: ViewSequence<VT, VA>,
+        )+ {
+            type State = $ident<$($vars::State),+>;
+
+            fn build(&self, cx: &mut Cx, elements: &mut Vec<Pod>) -> Self::State {
+                match self {
+                    $(
+                        $ident::$vars(view_sequence) => {
+                            $ident::$vars(view_sequence.build(cx, elements))
+                        }
+                    )+
+                }
+            }
+
+            fn rebuild(
+                &self,
+                cx: &mut Cx,
+                prev: &Self,
+                state: &mut Self::State,
+                element: &mut xilem_core::VecSplice<Pod>,
+            ) -> ChangeFlags {
+                match (prev, self) {
+                    $(
+                        // Variant is the same as before
+                        ($ident::$vars(prev_view), $ident::$vars(view_sequence)) => {
+                            let $ident::$vars(state) = state else {
+                                throw_str(concat!(
+                                    "invalid state/view_sequence in ",
+                                    stringify!($ident),
+                                    " (unreachable)",
+                                ));
+                            };
+                            view_sequence.rebuild(cx, prev_view, state, element)
+                        }
+                        // Variant has changed
+                        (_, $ident::$vars(view_sequence)) => {
+                            let new_state =
+                                element.as_vec(|elements| view_sequence.build(cx, elements));
+                            *state = $ident::$vars(new_state);
+                            ChangeFlags::STRUCTURE
+                        }
+                    )+
+                }
+            }
+
+            fn message(
+                &self,
+                id_path: &[xilem_core::Id],
+                state: &mut Self::State,
+                message: Box<dyn std::any::Any>,
+                app_state: &mut VT,
+            ) -> xilem_core::MessageResult<VA> {
+                match self {
+                    $(
+                        $ident::$vars(view_sequence) => {
+                            let $ident::$vars(state) = state else {
+                                throw_str(concat!(
+                                    "invalid state/view_sequence in ",
+                                    stringify!($ident),
+                                    " (unreachable)",
+                                ));
+                            };
+                            view_sequence.message(id_path, state, message, app_state)
+                        }
+                    )+
+                }
+            }
+
+            fn count(&self, state: &Self::State) -> usize {
+                match self {
+                    $(
+                        $ident::$vars(view_sequence) => {
+                            let $ident::$vars(state) = state else {
+                                throw_str(concat!(
+                                    "invalid state/view_sequence in ",
+                                    stringify!($ident),
+                                    " (unreachable)",
+                                ));
+                            };
+                            view_sequence.count(state)
+                        }
+                    )+
+                }
+            }
+        }
+
+    };
 }
 
-impl<A, B> AsRef<web_sys::Node> for Either<A, B>
-where
-    A: AsRef<web_sys::Node>,
-    B: AsRef<web_sys::Node>,
-{
-    fn as_ref(&self) -> &web_sys::Node {
-        match self {
-            Either::A(view) => view.as_ref(),
-            Either::B(view) => view.as_ref(),
-        }
-    }
+either! {
+    /// This view container can switch between two views.
+    Either { A, B }
+}
+either! {
+    /// This view container can switch between three views.
+    Either3 { A, B, C }
 }
 
-impl<VT, VA, A, B> View<VT, VA> for Either<A, B>
-where
-    A: View<VT, VA> + ViewMarker,
-    B: View<VT, VA> + ViewMarker,
-    A::Element: AsRef<web_sys::Node> + 'static,
-    B::Element: AsRef<web_sys::Node> + 'static,
-{
-    type State = Either<A::State, B::State>;
-    type Element = Either<A::Element, B::Element>;
-
-    fn build(&self, cx: &mut Cx) -> (xilem_core::Id, Self::State, Self::Element) {
-        match self {
-            Either::A(view) => {
-                let (id, state, el) = view.build(cx);
-                (id, Either::A(state), Either::A(el))
-            }
-            Either::B(view) => {
-                let (id, state, el) = view.build(cx);
-                (id, Either::B(state), Either::B(el))
-            }
-        }
-    }
-
-    fn rebuild(
-        &self,
-        cx: &mut Cx,
-        prev: &Self,
-        id: &mut xilem_core::Id,
-        state: &mut Self::State,
-        element: &mut Self::Element,
-    ) -> ChangeFlags {
-        match (prev, self) {
-            (Either::A(_), Either::B(view)) => {
-                let (new_id, new_state, new_element) = view.build(cx);
-                *id = new_id;
-                *state = Either::B(new_state);
-                *element = Either::B(new_element);
-                ChangeFlags::STRUCTURE
-            }
-            (Either::B(_), Either::A(view)) => {
-                let (new_id, new_state, new_element) = view.build(cx);
-                *id = new_id;
-                *state = Either::A(new_state);
-                *element = Either::A(new_element);
-                ChangeFlags::STRUCTURE
-            }
-            (Either::A(prev_view), Either::A(view)) => {
-                let (Either::A(state), Either::A(element)) = (state, element) else {
-                    throw_str("invalid state/view in Either (unreachable)");
-                };
-                // Cannot do mutable casting, so take ownership of state.
-                view.rebuild(cx, prev_view, id, state, element)
-            }
-            (Either::B(prev_view), Either::B(view)) => {
-                let (Either::B(state), Either::B(element)) = (state, element) else {
-                    throw_str("invalid state/view in Either (unreachable)");
-                };
-                // Cannot do mutable casting, so take ownership of state.
-                view.rebuild(cx, prev_view, id, state, element)
-            }
-        }
-    }
-
-    fn message(
-        &self,
-        id_path: &[xilem_core::Id],
-        state: &mut Self::State,
-        message: Box<dyn std::any::Any>,
-        app_state: &mut VT,
-    ) -> xilem_core::MessageResult<VA> {
-        match self {
-            Either::A(view) => {
-                let Either::A(state) = state else {
-                    throw_str("invalid state/view in Either (unreachable)");
-                };
-                view.message(id_path, state, message, app_state)
-            }
-            Either::B(view) => {
-                let Either::B(state) = state else {
-                    throw_str("invalid state/view in Either (unreachable)");
-                };
-                view.message(id_path, state, message, app_state)
-            }
-        }
-    }
+either! {
+    /// This view container can switch between four views.
+    Either4 { A, B, C, D }
 }
 
-impl<VT, VA, A, B> ViewSequence<VT, VA> for Either<A, B>
-where
-    A: ViewSequence<VT, VA>,
-    B: ViewSequence<VT, VA>,
-{
-    type State = Either<A::State, B::State>;
+either! {
+    /// This view container can switch between five views.
+    Either5 { A, B, C, D, E }
+}
 
-    fn build(&self, cx: &mut Cx, elements: &mut Vec<Pod>) -> Self::State {
-        match self {
-            Either::A(view_sequence) => Either::A(view_sequence.build(cx, elements)),
-            Either::B(view_sequence) => Either::B(view_sequence.build(cx, elements)),
-        }
-    }
+either! {
+    /// This view container can switch between six views.
+    Either6 { A, B, C, D, E, F }
+}
 
-    fn rebuild(
-        &self,
-        cx: &mut Cx,
-        prev: &Self,
-        state: &mut Self::State,
-        element: &mut xilem_core::VecSplice<Pod>,
-    ) -> ChangeFlags {
-        match (prev, self) {
-            (Either::A(_), Either::B(view_sequence)) => {
-                let new_state = element.as_vec(|elements| view_sequence.build(cx, elements));
-                *state = Either::B(new_state);
-                ChangeFlags::STRUCTURE
-            }
-            (Either::B(_), Either::A(view_sequence)) => {
-                let new_state = element.as_vec(|elements| view_sequence.build(cx, elements));
-                *state = Either::A(new_state);
-                ChangeFlags::STRUCTURE
-            }
-            (Either::A(prev_view), Either::A(view_sequence)) => {
-                let Either::A(state) = state else {
-                    throw_str("invalid state/view_sequence in Either (unreachable)");
-                };
-                view_sequence.rebuild(cx, prev_view, state, element)
-            }
-            (Either::B(prev_view), Either::B(view_sequence)) => {
-                let Either::B(state) = state else {
-                    throw_str("invalid state/view_sequence in Either (unreachable)");
-                };
-                view_sequence.rebuild(cx, prev_view, state, element)
-            }
-        }
-    }
+either! {
+    /// This view container can switch between seven views.
+    Either7 { A, B, C, D, E, F, G }
+}
 
-    fn message(
-        &self,
-        id_path: &[xilem_core::Id],
-        state: &mut Self::State,
-        message: Box<dyn std::any::Any>,
-        app_state: &mut VT,
-    ) -> xilem_core::MessageResult<VA> {
-        match self {
-            Either::A(view_sequence) => {
-                let Either::A(state) = state else {
-                    throw_str("invalid state/view_sequence in Either (unreachable)");
-                };
-                view_sequence.message(id_path, state, message, app_state)
-            }
-            Either::B(view_sequence) => {
-                let Either::B(state) = state else {
-                    throw_str("invalid state/view_sequence in Either (unreachable)");
-                };
-                view_sequence.message(id_path, state, message, app_state)
-            }
-        }
-    }
-
-    fn count(&self, state: &Self::State) -> usize {
-        match self {
-            Either::A(view_sequence) => {
-                let Either::A(state) = state else {
-                    throw_str("invalid state/view_sequence in Either (unreachable)");
-                };
-                view_sequence.count(state)
-            }
-            Either::B(view_sequence) => {
-                let Either::B(state) = state else {
-                    throw_str("invalid state/view_sequence in Either (unreachable)");
-                };
-                view_sequence.count(state)
-            }
-        }
-    }
+either! {
+    /// This view container can switch between eight views.
+    Either8 { A, B, C, D, E, F, G, H }
 }

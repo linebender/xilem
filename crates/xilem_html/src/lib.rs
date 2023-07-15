@@ -22,7 +22,7 @@ pub use xilem_core::MessageResult;
 pub use app::App;
 pub use class::class;
 pub use context::{ChangeFlags, Cx};
-pub use either::Either;
+pub use either::{Either, Either3, Either4, Either5, Either6, Either7, Either8};
 #[cfg(feature = "typed")]
 pub use element::elements;
 pub use element::{element, Element, ElementState};
