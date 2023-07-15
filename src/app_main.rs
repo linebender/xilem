@@ -19,7 +19,6 @@ use glazier::{
     Application, Cursor, HotKey, IdleToken, Menu, MouseEvent, Region, Scalable, SysMods,
     WinHandler, WindowBuilder, WindowHandle,
 };
-use parley::FontContext;
 use vello::{
     kurbo::{Affine, Size},
     peniko::Color,
@@ -44,7 +43,6 @@ struct MainState<T, V: View<T>> {
     render_cx: RenderContext,
     surface: Option<RenderSurface>,
     renderer: Option<Renderer>,
-    font_context: FontContext,
     scene: Scene,
     counter: u64,
 }
@@ -187,7 +185,6 @@ where
             render_cx,
             surface: None,
             renderer: None,
-            font_context: FontContext::new(),
             scene: Scene::default(),
             counter: 0,
         }
