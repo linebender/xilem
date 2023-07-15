@@ -5,43 +5,43 @@ use crate::{ChangeFlags, Cx, Pod, View, ViewMarker, ViewSequence};
 /// This view container can switch between two views.
 ///
 /// It is a statically-typed alternative to the type-erased `AnyView`.
-pub enum Either<T1, T2> {
-    Left(T1),
-    Right(T2),
+pub enum Either<A, B> {
+    A(A),
+    B(B),
 }
 
-impl<E1, E2> AsRef<web_sys::Node> for Either<E1, E2>
+impl<A, B> AsRef<web_sys::Node> for Either<A, B>
 where
-    E1: AsRef<web_sys::Node>,
-    E2: AsRef<web_sys::Node>,
+    A: AsRef<web_sys::Node>,
+    B: AsRef<web_sys::Node>,
 {
     fn as_ref(&self) -> &web_sys::Node {
         match self {
-            Either::Left(view) => view.as_ref(),
-            Either::Right(view) => view.as_ref(),
+            Either::A(view) => view.as_ref(),
+            Either::B(view) => view.as_ref(),
         }
     }
 }
 
-impl<T, A, V1, V2> View<T, A> for Either<V1, V2>
+impl<VT, VA, A, B> View<VT, VA> for Either<A, B>
 where
-    V1: View<T, A> + ViewMarker,
-    V2: View<T, A> + ViewMarker,
-    V1::Element: AsRef<web_sys::Node> + 'static,
-    V2::Element: AsRef<web_sys::Node> + 'static,
+    A: View<VT, VA> + ViewMarker,
+    B: View<VT, VA> + ViewMarker,
+    A::Element: AsRef<web_sys::Node> + 'static,
+    B::Element: AsRef<web_sys::Node> + 'static,
 {
-    type State = Either<V1::State, V2::State>;
-    type Element = Either<V1::Element, V2::Element>;
+    type State = Either<A::State, B::State>;
+    type Element = Either<A::Element, B::Element>;
 
     fn build(&self, cx: &mut Cx) -> (xilem_core::Id, Self::State, Self::Element) {
         match self {
-            Either::Left(view) => {
+            Either::A(view) => {
                 let (id, state, el) = view.build(cx);
-                (id, Either::Left(state), Either::Left(el))
+                (id, Either::A(state), Either::A(el))
             }
-            Either::Right(view) => {
+            Either::B(view) => {
                 let (id, state, el) = view.build(cx);
-                (id, Either::Right(state), Either::Right(el))
+                (id, Either::B(state), Either::B(el))
             }
         }
     }
@@ -55,29 +55,29 @@ where
         element: &mut Self::Element,
     ) -> ChangeFlags {
         match (prev, self) {
-            (Either::Left(_), Either::Right(view)) => {
+            (Either::A(_), Either::B(view)) => {
                 let (new_id, new_state, new_element) = view.build(cx);
                 *id = new_id;
-                *state = Either::Right(new_state);
-                *element = Either::Right(new_element);
+                *state = Either::B(new_state);
+                *element = Either::B(new_element);
                 ChangeFlags::STRUCTURE
             }
-            (Either::Right(_), Either::Left(view)) => {
+            (Either::B(_), Either::A(view)) => {
                 let (new_id, new_state, new_element) = view.build(cx);
                 *id = new_id;
-                *state = Either::Left(new_state);
-                *element = Either::Left(new_element);
+                *state = Either::A(new_state);
+                *element = Either::A(new_element);
                 ChangeFlags::STRUCTURE
             }
-            (Either::Left(prev_view), Either::Left(view)) => {
-                let (Either::Left(state), Either::Left(element)) = (state, element) else {
+            (Either::A(prev_view), Either::A(view)) => {
+                let (Either::A(state), Either::A(element)) = (state, element) else {
                     throw_str("invalid state/view in Either (unreachable)");
                 };
                 // Cannot do mutable casting, so take ownership of state.
                 view.rebuild(cx, prev_view, id, state, element)
             }
-            (Either::Right(prev_view), Either::Right(view)) => {
-                let (Either::Right(state), Either::Right(element)) = (state, element) else {
+            (Either::B(prev_view), Either::B(view)) => {
+                let (Either::B(state), Either::B(element)) = (state, element) else {
                     throw_str("invalid state/view in Either (unreachable)");
                 };
                 // Cannot do mutable casting, so take ownership of state.
@@ -91,17 +91,17 @@ where
         id_path: &[xilem_core::Id],
         state: &mut Self::State,
         message: Box<dyn std::any::Any>,
-        app_state: &mut T,
-    ) -> xilem_core::MessageResult<A> {
+        app_state: &mut VT,
+    ) -> xilem_core::MessageResult<VA> {
         match self {
-            Either::Left(view) => {
-                let Either::Left(state) = state else {
+            Either::A(view) => {
+                let Either::A(state) = state else {
                     throw_str("invalid state/view in Either (unreachable)");
                 };
                 view.message(id_path, state, message, app_state)
             }
-            Either::Right(view) => {
-                let Either::Right(state) = state else {
+            Either::B(view) => {
+                let Either::B(state) = state else {
                     throw_str("invalid state/view in Either (unreachable)");
                 };
                 view.message(id_path, state, message, app_state)
@@ -110,17 +110,17 @@ where
     }
 }
 
-impl<T, A, V1, V2> ViewSequence<T, A> for Either<V1, V2>
+impl<VT, VA, A, B> ViewSequence<VT, VA> for Either<A, B>
 where
-    V1: ViewSequence<T, A>,
-    V2: ViewSequence<T, A>,
+    A: ViewSequence<VT, VA>,
+    B: ViewSequence<VT, VA>,
 {
-    type State = Either<V1::State, V2::State>;
+    type State = Either<A::State, B::State>;
 
     fn build(&self, cx: &mut Cx, elements: &mut Vec<Pod>) -> Self::State {
         match self {
-            Either::Left(view_sequence) => Either::Left(view_sequence.build(cx, elements)),
-            Either::Right(view_sequence) => Either::Right(view_sequence.build(cx, elements)),
+            Either::A(view_sequence) => Either::A(view_sequence.build(cx, elements)),
+            Either::B(view_sequence) => Either::B(view_sequence.build(cx, elements)),
         }
     }
 
@@ -132,24 +132,24 @@ where
         element: &mut xilem_core::VecSplice<Pod>,
     ) -> ChangeFlags {
         match (prev, self) {
-            (Either::Left(_), Either::Right(view_sequence)) => {
+            (Either::A(_), Either::B(view_sequence)) => {
                 let new_state = element.as_vec(|elements| view_sequence.build(cx, elements));
-                *state = Either::Right(new_state);
+                *state = Either::B(new_state);
                 ChangeFlags::STRUCTURE
             }
-            (Either::Right(_), Either::Left(view_sequence)) => {
+            (Either::B(_), Either::A(view_sequence)) => {
                 let new_state = element.as_vec(|elements| view_sequence.build(cx, elements));
-                *state = Either::Left(new_state);
+                *state = Either::A(new_state);
                 ChangeFlags::STRUCTURE
             }
-            (Either::Left(prev_view), Either::Left(view_sequence)) => {
-                let Either::Left(state) = state else {
+            (Either::A(prev_view), Either::A(view_sequence)) => {
+                let Either::A(state) = state else {
                     throw_str("invalid state/view_sequence in Either (unreachable)");
                 };
                 view_sequence.rebuild(cx, prev_view, state, element)
             }
-            (Either::Right(prev_view), Either::Right(view_sequence)) => {
-                let Either::Right(state) = state else {
+            (Either::B(prev_view), Either::B(view_sequence)) => {
+                let Either::B(state) = state else {
                     throw_str("invalid state/view_sequence in Either (unreachable)");
                 };
                 view_sequence.rebuild(cx, prev_view, state, element)
@@ -162,17 +162,17 @@ where
         id_path: &[xilem_core::Id],
         state: &mut Self::State,
         message: Box<dyn std::any::Any>,
-        app_state: &mut T,
-    ) -> xilem_core::MessageResult<A> {
+        app_state: &mut VT,
+    ) -> xilem_core::MessageResult<VA> {
         match self {
-            Either::Left(view_sequence) => {
-                let Either::Left(state) = state else {
+            Either::A(view_sequence) => {
+                let Either::A(state) = state else {
                     throw_str("invalid state/view_sequence in Either (unreachable)");
                 };
                 view_sequence.message(id_path, state, message, app_state)
             }
-            Either::Right(view_sequence) => {
-                let Either::Right(state) = state else {
+            Either::B(view_sequence) => {
+                let Either::B(state) = state else {
                     throw_str("invalid state/view_sequence in Either (unreachable)");
                 };
                 view_sequence.message(id_path, state, message, app_state)
@@ -182,14 +182,14 @@ where
 
     fn count(&self, state: &Self::State) -> usize {
         match self {
-            Either::Left(view_sequence) => {
-                let Either::Left(state) = state else {
+            Either::A(view_sequence) => {
+                let Either::A(state) = state else {
                     throw_str("invalid state/view_sequence in Either (unreachable)");
                 };
                 view_sequence.count(state)
             }
-            Either::Right(view_sequence) => {
-                let Either::Right(state) = state else {
+            Either::B(view_sequence) => {
+                let Either::B(state) = state else {
                     throw_str("invalid state/view_sequence in Either (unreachable)");
                 };
                 view_sequence.count(state)
