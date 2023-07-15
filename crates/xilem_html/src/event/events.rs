@@ -26,6 +26,24 @@ macro_rules! event {
             optional_action: std::marker::PhantomData<OA>,
         }
 
+        impl<T, A, V, F, OA> $ty_name<T, A, V, F, OA>
+        where
+            V: crate::view::View<T, A>,
+            F: Fn(&mut T, &$crate::Event<$web_sys_ty, V::Element>) -> OA,
+            V::Element: 'static,
+            OA: $crate::event::OptionalAction<A>,
+        {
+            /// Whether the event handler should be passive. (default = `true`)
+            ///
+            /// Passive event handlers can't prevent the browser's default action from
+            /// running (otherwise possible with `event.prevent_default()`), which
+            /// restricts what they can be used for, but reduces overhead.
+            pub fn passive(mut self, value: bool) -> Self {
+                self.inner.passive = value;
+                self
+            }
+        }
+
         /// Builder for the
         #[doc = concat!("`", $name, "`")]
         /// event listener.

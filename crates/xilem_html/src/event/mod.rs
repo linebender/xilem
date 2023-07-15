@@ -6,7 +6,7 @@ pub mod events;
 
 use std::{any::Any, marker::PhantomData, ops::Deref};
 
-use gloo::events::EventListener;
+use gloo::events::{EventListener, EventListenerOptions};
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use xilem_core::{Id, MessageResult};
 
@@ -24,6 +24,7 @@ pub struct OnEvent<E, V, F> {
     // please create a new view instead.
     event: &'static str,
     child: V,
+    passive: bool,
     callback: F,
     phantom_event_ty: PhantomData<E>,
 }
@@ -34,8 +35,19 @@ impl<E, V, F> OnEvent<E, V, F> {
             event,
             child,
             callback,
+            passive: true,
             phantom_event_ty: PhantomData,
         }
+    }
+
+    /// Whether the event handler should be passive. (default = `true`)
+    ///
+    /// Passive event handlers can't prevent the browser's default action from
+    /// running (otherwise possible with `event.prevent_default()`), which
+    /// restricts what they can be used for, but reduces overhead.
+    pub fn passive(mut self, value: bool) -> Self {
+        self.passive = value;
+        self
     }
 }
 
@@ -56,9 +68,13 @@ where
     fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
         let (id, child_state, element) = self.child.build(cx);
         let thunk = cx.with_id(id, |cx| cx.message_thunk());
-        let listener = EventListener::new(
+        let listener = EventListener::new_with_options(
             element.as_node_ref(),
             self.event,
+            EventListenerOptions {
+                passive: self.passive,
+                ..Default::default()
+            },
             move |event: &web_sys::Event| {
                 let event = (*event).clone().dyn_into::<E>().unwrap_throw();
                 let event: Event<E, V::Element> = Event::new(event);
