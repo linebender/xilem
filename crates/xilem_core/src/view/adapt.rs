@@ -59,8 +59,8 @@ macro_rules! generate_adapt_view {
             ParentA,
             ChildT,
             ChildA,
-            F: Fn(&mut ParentT, AdaptThunk<ChildT, ChildA, V>) -> $crate::MessageResult<ParentA>,
             V: $viewtrait<ChildT, ChildA>,
+            F: Fn(&mut ParentT, AdaptThunk<ChildT, ChildA, V>) -> $crate::MessageResult<ParentA>,
         > {
             f: F,
             child: V,
@@ -79,13 +79,13 @@ macro_rules! generate_adapt_view {
         }
 
         impl<
-                ParentT,
-                ParentA,
-                ChildT,
-                ChildA,
-                F: Fn(&mut ParentT, AdaptThunk<ChildT, ChildA, V>) -> $crate::MessageResult<ParentA>,
-                V: $viewtrait<ChildT, ChildA>,
-            > Adapt<ParentT, ParentA, ChildT, ChildA, F, V>
+            ParentT,
+            ParentA,
+            ChildT,
+            ChildA,
+            V: $viewtrait<ChildT, ChildA>,
+            F: Fn(&mut ParentT, AdaptThunk<ChildT, ChildA, V>) -> $crate::MessageResult<ParentA>,
+        > Adapt<ParentT, ParentA, ChildT, ChildA, V, F>
         {
             pub fn new(f: F, child: V) -> Self {
                 Adapt {
@@ -104,13 +104,13 @@ macro_rules! generate_adapt_view {
         }
 
         impl<
-                ParentT,
-                ParentA,
-                ChildT,
-                ChildA,
-                F: Fn(&mut ParentT, AdaptThunk<ChildT, ChildA, V>) -> $crate::MessageResult<ParentA> + Send,
-                V: $viewtrait<ChildT, ChildA>,
-            > $viewtrait<ParentT, ParentA> for Adapt<ParentT, ParentA, ChildT, ChildA, F, V>
+            ParentT,
+            ParentA,
+            ChildT,
+            ChildA,
+            V: $viewtrait<ChildT, ChildA>,
+            F: Fn(&mut ParentT, AdaptThunk<ChildT, ChildA, V>) -> $crate::MessageResult<ParentA> + Send,
+        > $viewtrait<ParentT, ParentA> for Adapt<ParentT, ParentA, ChildT, ChildA, V, F>
         {
             type State = V::State;
 
@@ -149,13 +149,13 @@ macro_rules! generate_adapt_view {
         }
 
         impl<
-                ParentT,
-                ParentA,
-                ChildT,
-                ChildA,
-                F: Fn(&mut ParentT, AdaptThunk<ChildT, ChildA, V>) -> $crate::MessageResult<ParentA>,
-                V: $viewtrait<ChildT, ChildA>,
-            > ViewMarker for Adapt<ParentT, ParentA, ChildT, ChildA, F, V>
+            ParentT,
+            ParentA,
+            ChildT,
+            ChildA,
+            V: $viewtrait<ChildT, ChildA>,
+            F: Fn(&mut ParentT, AdaptThunk<ChildT, ChildA, V>) -> $crate::MessageResult<ParentA>,
+        > ViewMarker for Adapt<ParentT, ParentA, ChildT, ChildA, V, F>
         {
         }
     };
