@@ -60,7 +60,8 @@ macro_rules! generate_adapt_view {
             ChildT,
             ChildA,
             V: $viewtrait<ChildT, ChildA>,
-            F: Fn(&mut ParentT, AdaptThunk<ChildT, ChildA, V>) -> $crate::MessageResult<ParentA>,
+            F: Fn(&mut ParentT, AdaptThunk<ChildT, ChildA, V>) -> $crate::MessageResult<ParentA> =
+                fn(&mut ParentT, AdaptThunk<ChildT, ChildA, V>) -> $crate::MessageResult<ParentA>,
         > {
             f: F,
             child: V,
