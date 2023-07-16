@@ -3,7 +3,7 @@
 
 use std::borrow::Cow;
 
-use crate::{class::Class, event::OptionalAction, events, view::View, Event};
+use crate::{class::Class, event::OptionalAction, events, view::View, Adapt, AdaptThunk, Event};
 
 /// A trait that makes it possible to attach event listeners and more to views
 /// in the continuation style.
@@ -60,6 +60,13 @@ pub trait ViewExt<T, A>: View<T, A> + Sized {
         f: F,
     ) -> events::OnBlur<T, A, Self, F, OA> {
         events::on_blur(self, f)
+    }
+
+    fn adapt<ParentT, ParentA, F>(self, f: F) -> Adapt<ParentT, ParentA, T, A, Self, F>
+    where
+        F: Fn(&mut ParentT, AdaptThunk<T, A, Self>) -> xilem_core::MessageResult<ParentA>,
+    {
+        Adapt::new(f, self)
     }
 
     /// Apply a CSS class to the child view.
