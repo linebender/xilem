@@ -160,3 +160,70 @@ macro_rules! generate_adapt_view {
         }
     };
 }
+
+#[macro_export]
+macro_rules! generate_adapt_state_view {
+    ($viewtrait:ident, $cx:ty, $changeflags:ty) => {
+        /// A view that wraps a child view and modifies the state that callbacks have access to.
+        pub struct AdaptState<
+            ParentT,
+            ChildT,
+            V,
+            F: Fn(&mut ParentT) -> &mut ChildT = fn(&mut ParentT) -> &mut ChildT,
+        > {
+            f: F,
+            child: V,
+            phantom: std::marker::PhantomData<fn() -> (ParentT, ChildT)>,
+        }
+
+        impl<ParentT, ChildT, V, F: Fn(&mut ParentT) -> &mut ChildT>
+            AdaptState<ParentT, ChildT, V, F>
+        {
+            pub fn new(f: F, child: V) -> Self {
+                Self {
+                    f,
+                    child,
+                    phantom: Default::default(),
+                }
+            }
+        }
+
+        impl<ParentT, ChildT, A, V: $viewtrait<ChildT, A>, F: Fn(&mut ParentT) -> &mut ChildT>
+            $viewtrait<ParentT, A> for AdaptState<ParentT, ChildT, V, F>
+        {
+            type State = V::State;
+            type Element = V::Element;
+
+            fn build(&self, cx: &mut $cx) -> ($crate::Id, Self::State, Self::Element) {
+                self.child.build(cx)
+            }
+
+            fn rebuild(
+                &self,
+                cx: &mut $cx,
+                prev: &Self,
+                id: &mut $crate::Id,
+                state: &mut Self::State,
+                element: &mut Self::Element,
+            ) -> $changeflags {
+                self.child.rebuild(cx, &prev.child, id, state, element)
+            }
+
+            fn message(
+                &self,
+                id_path: &[$crate::Id],
+                state: &mut Self::State,
+                message: Box<dyn std::any::Any>,
+                app_state: &mut ParentT,
+            ) -> $crate::MessageResult<A> {
+                self.child
+                    .message(id_path, state, message, (self.f)(app_state))
+            }
+        }
+
+        impl<ParentT, ChildT, V, F: Fn(&mut ParentT) -> &mut ChildT> ViewMarker
+            for AdaptState<ParentT, ChildT, V, F>
+        {
+        }
+    };
+}
