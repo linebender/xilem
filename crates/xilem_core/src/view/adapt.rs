@@ -176,7 +176,7 @@ macro_rules! generate_adapt_state_view {
             phantom: std::marker::PhantomData<fn() -> (ParentT, ChildT)>,
         }
 
-        impl<ParentT, ChildT, V, F: Fn(&mut ParentT) -> &mut ChildT>
+        impl<ParentT, ChildT, V, F: Fn(&mut ParentT) -> &mut ChildT + Send>
             AdaptState<ParentT, ChildT, V, F>
         {
             pub fn new(f: F, child: V) -> Self {
@@ -188,8 +188,13 @@ macro_rules! generate_adapt_state_view {
             }
         }
 
-        impl<ParentT, ChildT, A, V: $viewtrait<ChildT, A>, F: Fn(&mut ParentT) -> &mut ChildT>
-            $viewtrait<ParentT, A> for AdaptState<ParentT, ChildT, V, F>
+        impl<
+                ParentT,
+                ChildT,
+                A,
+                V: $viewtrait<ChildT, A>,
+                F: Fn(&mut ParentT) -> &mut ChildT + Send,
+            > $viewtrait<ParentT, A> for AdaptState<ParentT, ChildT, V, F>
         {
             type State = V::State;
             type Element = V::Element;
