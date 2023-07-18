@@ -64,6 +64,7 @@ fn todo_item(todo: &mut Todo, editing: bool) -> impl View<Todo, TodoAction> + Vi
                 state.title_editing.push_str(&evt.target().value());
                 evt.prevent_default();
             })
+            .passive(false)
             .on_blur(|_, _| TodoAction::CancelEditing),
     ))
     .attr("class", class)
@@ -202,7 +203,8 @@ fn app_logic(state: &mut AppState) -> impl View<AppState> {
                 .on_input(|state: &mut AppState, evt| {
                     state.update_new_todo(&evt.target().value());
                     evt.prevent_default();
-                }),
+                })
+                .passive(false),
         ))
         .attr("class", "header"),
         main,
