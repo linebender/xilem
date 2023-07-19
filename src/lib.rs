@@ -5,7 +5,6 @@ mod app_main;
 mod bloom;
 mod geometry;
 mod id;
-mod test_scenes;
 mod text;
 pub mod view;
 pub mod widget;
