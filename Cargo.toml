@@ -20,7 +20,6 @@ edition = "2021"
 [features]
 default = ["x11"]
 
-gtk = ["glazier/gtk"]
 x11 = ["glazier/x11"]
 wayland = ["glazier/wayland"]
 
