@@ -5,19 +5,20 @@
 macro_rules! generate_memoize_view {
     ($memoizeview:ident,
      $memoizestate:ident,
-     $viewtrait:ident,
+     $viewtrait:ident <$($tp:ident),*>,
      $viewmarker:ty,
      $cx:ty,
      $changeflags:ty,
      $staticviewfunction:ident,
-     $memoizeviewfunction:ident
+     $memoizeviewfunction:ident;
+     $($ss:tt)*
     ) => {
         pub struct $memoizeview<D, F> {
             data: D,
             child_cb: F,
         }
 
-        pub struct $memoizestate<T, A, V: $viewtrait<T, A>> {
+        pub struct $memoizestate<T, $( $tp, )* A, V: $viewtrait<T, $( $tp, )* A>> {
             view: V,
             view_state: V::State,
             dirty: bool,
@@ -34,13 +35,13 @@ macro_rules! generate_memoize_view {
 
         impl<D, F> $viewmarker for $memoizeview<D, F> {}
 
-        impl<T, A, D, V, F> $viewtrait<T, A> for $memoizeview<D, F>
+        impl<T, $( $tp, )* A, D, V, F> $viewtrait<T, $( $tp, )* A> for $memoizeview<D, F>
         where
-            D: PartialEq + Send + 'static,
-            V: $viewtrait<T, A>,
-            F: Fn(&D) -> V + Send,
+            D: PartialEq + 'static $( $ss )*,
+            V: $viewtrait<T, $( $tp, )* A>,
+            F: Fn(&D) -> V $( $ss )*,
         {
-            type State = $memoizestate<T, A, V>;
+            type State = $memoizestate<T, $( $tp, )* A, V>;
 
             type Element = V::Element;
 

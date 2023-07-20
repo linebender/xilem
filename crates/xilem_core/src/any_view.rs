@@ -3,9 +3,17 @@
 
 #[macro_export]
 macro_rules! generate_anyview_trait {
-    ($anyview:ident, $viewtrait:ident, $viewmarker:ty, $cx:ty, $changeflags:ty, $anywidget:ident, $boxedview:ident; $($ss:tt)*) => {
+    ($anyview:ident,
+     $viewtrait:ident <$($tp:ident),*>,
+     $viewmarker:ty,
+     $cx:ty,
+     $changeflags:ty,
+     $anywidget:ident,
+     $boxedview:ident;
+     $($ss:tt)*
+    ) => {
         /// A trait enabling type erasure of views.
-        pub trait $anyview<T, A = ()> {
+        pub trait $anyview<T, $( $tp, )* A = ()> {
             fn as_any(&self) -> &dyn std::any::Any;
 
             fn dyn_build(
@@ -16,7 +24,7 @@ macro_rules! generate_anyview_trait {
             fn dyn_rebuild(
                 &self,
                 cx: &mut $cx,
-                prev: &dyn $anyview<T, A>,
+                prev: &dyn $anyview<T, $( $tp, )* A>,
                 id: &mut $crate::Id,
                 state: &mut Box<dyn std::any::Any $( $ss )* >,
                 element: &mut Box<dyn $anywidget>,
@@ -31,7 +39,7 @@ macro_rules! generate_anyview_trait {
             ) -> $crate::MessageResult<A>;
         }
 
-        impl<T, A, V: $viewtrait<T, A> + 'static> $anyview<T, A> for V
+        impl<T, $( $tp, )* A, V: $viewtrait<T, $( $tp, )* A> + 'static> $anyview<T, $( $tp, )* A> for V
         where
             V::State: 'static,
             V::Element: $anywidget + 'static,
@@ -51,7 +59,7 @@ macro_rules! generate_anyview_trait {
             fn dyn_rebuild(
                 &self,
                 cx: &mut $cx,
-                prev: &dyn $anyview<T, A>,
+                prev: &dyn $anyview<T, $( $tp, )* A>,
                 id: &mut $crate::Id,
                 state: &mut Box<dyn std::any::Any $( $ss )* >,
                 element: &mut Box<dyn $anywidget>,
@@ -94,11 +102,11 @@ macro_rules! generate_anyview_trait {
             }
         }
 
-        pub type $boxedview<T, A = ()> = Box<dyn $anyview<T, A> $( $ss )* >;
+        pub type $boxedview<T, $( $tp, )* A = ()> = Box<dyn $anyview<T, $( $tp, )* A> $( $ss )* >;
 
-        impl<T, A> $viewmarker for $boxedview<T, A> {}
+        impl<T, $( $tp, )* A> $viewmarker for $boxedview<T, $( $tp, )* A> {}
 
-        impl<T, A> $viewtrait<T, A> for $boxedview<T, A> {
+        impl<T, $( $tp, )* A> $viewtrait<T, $( $tp, )* A> for $boxedview<T, $( $tp, )* A> {
             type State = Box<dyn std::any::Any $( $ss )* >;
 
             type Element = Box<dyn $anywidget>;

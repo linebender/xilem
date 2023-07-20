@@ -4,8 +4,8 @@
 #[doc(hidden)]
 #[macro_export]
 macro_rules! impl_view_tuple {
-    ( $viewseq:ident, $pod:ty, $cx:ty, $changeflags:ty, $( $t:ident),* ; $( $i:tt ),* ) => {
-        impl<T, A, $( $t: $viewseq<T, A> ),* > $viewseq<T, A> for ( $( $t, )* ) {
+    ( $viewseq:ident <$($tp:ident,)*>, $pod:ty, $cx:ty, $changeflags:ty, $( $t:ident <$($tp_:ident,)*>),* ; $( $i:tt ),* ) => {
+        impl<T, $( $tp, )* A, $( $t: $viewseq<T, $( $tp_, )* A> ),* > $viewseq<T, $( $tp, )* A> for ( $( $t, )* ) {
             type State = ( $( $t::State, )*);
 
             fn build(&self, cx: &mut $cx, elements: &mut Vec<$pod>) -> Self::State {
@@ -56,11 +56,11 @@ macro_rules! impl_view_tuple {
 
 #[macro_export]
 macro_rules! generate_viewsequence_trait {
-    ($viewseq:ident, $view:ident, $viewmarker: ident, $bound:ident, $cx:ty, $changeflags:ty, $pod:ty; $( $ss:tt )* ) => {
+    ($viewseq:ident, $view:ident <$($tp:ident),*>, $viewmarker: ident, $bound:ident, $cx:ty, $changeflags:ty, $pod:ty; $( $ss:tt )* ) => {
         /// This trait represents a (possibly empty) sequence of views.
         ///
         /// It is up to the parent view how to lay out and display them.
-        pub trait $viewseq<T, A = ()> $( $ss )* {
+        pub trait $viewseq<T, $( $tp, )* A = ()> $( $ss )* {
             /// Associated states for the views.
             type State $( $ss )*;
 
@@ -94,14 +94,14 @@ macro_rules! generate_viewsequence_trait {
             fn count(&self, state: &Self::State) -> usize;
         }
 
-        impl<T, A, V: $view<T, A> + $viewmarker> $viewseq<T, A> for V
+        impl<T, $( $tp, )* A, V: $view<T, $( $tp, )* A> + $viewmarker> $viewseq<T, $( $tp, )* A> for V
         where
             V::Element: $bound + 'static,
         {
-            type State = (<V as $view<T, A>>::State, $crate::Id);
+            type State = (<V as $view<T, $( $tp, )* A>>::State, $crate::Id);
 
             fn build(&self, cx: &mut $cx, elements: &mut Vec<$pod>) -> Self::State {
-                let (id, state, element) = <V as $view<T, A>>::build(self, cx);
+                let (id, state, element) = <V as $view<T, $( $tp, )* A>>::build(self, cx);
                 elements.push(<$pod>::new(element));
                 (state, id)
             }
@@ -115,7 +115,7 @@ macro_rules! generate_viewsequence_trait {
             ) -> $changeflags {
                 let el = element.mutate();
                 let downcast = el.downcast_mut().unwrap();
-                let flags = <V as $view<T, A>>::rebuild(
+                let flags = <V as $view<T, $( $tp, )* A>>::rebuild(
                     self,
                     cx,
                     prev,
@@ -136,7 +136,7 @@ macro_rules! generate_viewsequence_trait {
             ) -> $crate::MessageResult<A> {
                 if let Some((first, rest_path)) = id_path.split_first() {
                     if first == &state.1 {
-                        return <V as $view<T, A>>::message(
+                        return <V as $view<T, $( $tp, )* A>>::message(
                             self,
                             rest_path,
                             &mut state.0,
@@ -153,7 +153,7 @@ macro_rules! generate_viewsequence_trait {
             }
         }
 
-        impl<T, A, VT: $viewseq<T, A>> $viewseq<T, A> for Option<VT> {
+        impl<T, $( $tp, )* A, VT: $viewseq<T, $( $tp, )* A>> $viewseq<T, $( $tp, )* A> for Option<VT> {
             type State = Option<VT::State>;
 
             fn build(&self, cx: &mut $cx, elements: &mut Vec<$pod>) -> Self::State {
@@ -216,7 +216,7 @@ macro_rules! generate_viewsequence_trait {
             }
         }
 
-        impl<T, A, VT: $viewseq<T, A>> $viewseq<T, A> for Vec<VT> {
+        impl<T, $( $tp, )* A, VT: $viewseq<T, $( $tp, )* A>> $viewseq<T, $( $tp, )* A> for Vec<VT> {
             type State = Vec<VT::State>;
 
             fn build(&self, cx: &mut $cx, elements: &mut Vec<$pod>) -> Self::State {
@@ -295,26 +295,36 @@ macro_rules! generate_viewsequence_trait {
         #[doc = concat!("`", stringify!($viewmarker), "`.")]
         pub trait $viewmarker {}
 
-        $crate::impl_view_tuple!($viewseq, $pod, $cx, $changeflags, ;);
-        $crate::impl_view_tuple!($viewseq, $pod, $cx, $changeflags,
-            V0; 0);
-        $crate::impl_view_tuple!($viewseq, $pod, $cx, $changeflags,
-            V0, V1; 0, 1);
-        $crate::impl_view_tuple!($viewseq, $pod, $cx, $changeflags,
-            V0, V1, V2; 0, 1, 2);
-        $crate::impl_view_tuple!($viewseq, $pod, $cx, $changeflags,
-            V0, V1, V2, V3; 0, 1, 2, 3);
-        $crate::impl_view_tuple!($viewseq, $pod, $cx, $changeflags,
-            V0, V1, V2, V3, V4; 0, 1, 2, 3, 4);
-        $crate::impl_view_tuple!($viewseq, $pod, $cx, $changeflags,
-            V0, V1, V2, V3, V4, V5; 0, 1, 2, 3, 4, 5);
-        $crate::impl_view_tuple!($viewseq, $pod, $cx, $changeflags,
-            V0, V1, V2, V3, V4, V5, V6; 0, 1, 2, 3, 4, 5, 6);
-        $crate::impl_view_tuple!($viewseq, $pod, $cx, $changeflags,
-            V0, V1, V2, V3, V4, V5, V6, V7; 0, 1, 2, 3, 4, 5, 6, 7);
-        $crate::impl_view_tuple!($viewseq, $pod, $cx, $changeflags,
-            V0, V1, V2, V3, V4, V5, V6, V7, V8; 0, 1, 2, 3, 4, 5, 6, 7, 8);
-        $crate::impl_view_tuple!($viewseq, $pod, $cx, $changeflags,
-            V0, V1, V2, V3, V4, V5, V6, V7, V8, V9; 0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
+        $crate::impl_view_tuple!($viewseq <$($tp,)*>, $pod, $cx, $changeflags, ;);
+        $crate::impl_view_tuple!($viewseq <$($tp,)*>, $pod, $cx, $changeflags,
+            V0<$($tp,)*>;
+            0);
+        $crate::impl_view_tuple!($viewseq <$($tp,)*>, $pod, $cx, $changeflags,
+            V0<$($tp,)*>, V1<$( $tp, )*>;
+            0, 1);
+        $crate::impl_view_tuple!($viewseq <$($tp,)*>, $pod, $cx, $changeflags,
+            V0<$($tp,)*>, V1<$($tp,)*>, V2<$($tp,)*>;
+            0, 1, 2);
+        $crate::impl_view_tuple!($viewseq <$($tp,)*>, $pod, $cx, $changeflags,
+            V0<$($tp,)*>, V1<$($tp,)*>, V2<$($tp,)*>, V3<$($tp,)*>;
+            0, 1, 2, 3);
+        $crate::impl_view_tuple!($viewseq <$($tp,)*>, $pod, $cx, $changeflags,
+            V0<$($tp,)*>, V1<$($tp,)*>, V2<$($tp,)*>, V3<$($tp,)*>, V4<$($tp,)*>;
+            0, 1, 2, 3, 4);
+        $crate::impl_view_tuple!($viewseq <$($tp,)*>, $pod, $cx, $changeflags,
+            V0<$($tp,)*>, V1<$($tp,)*>, V2<$($tp,)*>, V3<$($tp,)*>, V4<$($tp,)*>, V5<$($tp,)*>;
+            0, 1, 2, 3, 4, 5);
+        $crate::impl_view_tuple!($viewseq <$($tp,)*>, $pod, $cx, $changeflags,
+            V0<$($tp,)*>, V1<$($tp,)*>, V2<$($tp,)*>, V3<$($tp,)*>, V4<$($tp,)*>, V5<$($tp,)*>, V6<$($tp,)*>;
+            0, 1, 2, 3, 4, 5, 6);
+        $crate::impl_view_tuple!($viewseq <$($tp,)*>, $pod, $cx, $changeflags,
+            V0<$($tp,)*>, V1<$($tp,)*>, V2<$($tp,)*>, V3<$($tp,)*>, V4<$($tp,)*>, V5<$($tp,)*>, V6<$($tp,)*>, V7<$($tp,)*>;
+            0, 1, 2, 3, 4, 5, 6, 7);
+        $crate::impl_view_tuple!($viewseq <$($tp,)*>, $pod, $cx, $changeflags,
+            V0<$($tp,)*>, V1<$($tp,)*>, V2<$($tp,)*>, V3<$($tp,)*>, V4<$($tp,)*>, V5<$($tp,)*>, V6<$($tp,)*>, V7<$($tp,)*>, V8<$($tp,)*>;
+            0, 1, 2, 3, 4, 5, 6, 7, 8);
+        $crate::impl_view_tuple!($viewseq <$($tp,)*>, $pod, $cx, $changeflags,
+            V0<$($tp,)*>, V1<$($tp,)*>, V2<$($tp,)*>, V3<$($tp,)*>, V4<$($tp,)*>, V5<$($tp,)*>, V6<$($tp,)*>, V7<$($tp,)*>, V8<$($tp,)*>, V9<$($tp,)*>;
+            0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
     };
 }
