@@ -109,6 +109,9 @@ where
     }
 }
 
+/// "Injects" additional local state into the provided view (which is returned by `f`)
+/// Requires that the parent state is of `Arc<T>`.
+/// The initial state is provided by `f_init` (when this view is first built)
 pub fn use_state<T, A, S, V, FInit, F>(f_init: FInit, f: F) -> UseState<T, A, S, V, FInit, F>
 where
     V: View<(Arc<T>, S), A>,
