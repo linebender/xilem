@@ -2,7 +2,7 @@ use wasm_bindgen::throw_str;
 
 use crate::{ChangeFlags, Cx, Pod, View, ViewMarker, ViewSequence};
 
-macro_rules! either {
+macro_rules! one_of {
     (
         #[doc = $first_doc_line:literal]
         $ident:ident { $( $vars:ident ),+ }
@@ -190,36 +190,36 @@ macro_rules! either {
     };
 }
 
-either! {
+one_of! {
     /// This view container can switch between two views.
-    Either { A, B }
+    OneOf2 { A, B }
 }
-either! {
+one_of! {
     /// This view container can switch between three views.
-    Either3 { A, B, C }
+    OneOf3 { A, B, C }
 }
 
-either! {
+one_of! {
     /// This view container can switch between four views.
-    Either4 { A, B, C, D }
+    OneOf4 { A, B, C, D }
 }
 
-either! {
+one_of! {
     /// This view container can switch between five views.
-    Either5 { A, B, C, D, E }
+    OneOf5 { A, B, C, D, E }
 }
 
-either! {
+one_of! {
     /// This view container can switch between six views.
-    Either6 { A, B, C, D, E, F }
+    OneOf6 { A, B, C, D, E, F }
 }
 
-either! {
+one_of! {
     /// This view container can switch between seven views.
-    Either7 { A, B, C, D, E, F, G }
+    OneOf7 { A, B, C, D, E, F, G }
 }
 
-either! {
+one_of! {
     /// This view container can switch between eight views.
-    Either8 { A, B, C, D, E, F, G, H }
+    OneOf8 { A, B, C, D, E, F, G, H }
 }
