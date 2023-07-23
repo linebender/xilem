@@ -28,7 +28,8 @@ pub use element::{element, Element, ElementState};
 pub use event::events;
 pub use event::{on_event, Action, Event, OnEvent, OnEventState, OptionalAction};
 pub use view::{
-    Adapt, AdaptState, AdaptThunk, AnyView, Either, Memoize, Pod, View, ViewMarker, ViewSequence,
+    memoize, s, Adapt, AdaptState, AdaptThunk, AnyView, Either, Memoize, Pod, View, ViewMarker,
+    ViewSequence,
 };
 #[cfg(feature = "typed")]
 pub use view_ext::ViewExt;
