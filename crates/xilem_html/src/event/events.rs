@@ -16,9 +16,7 @@ macro_rules! event {
         pub struct $ty_name<T, A, V, F, OA>
         where
             V: crate::view::View<T, A>,
-            F: Fn(&mut T, &$crate::Event<$web_sys_ty, V::Element>) -> OA,
             V::Element: 'static,
-            OA: $crate::event::OptionalAction<A>,
         {
             inner: crate::OnEvent<$web_sys_ty, V, F>,
             data: std::marker::PhantomData<T>,
