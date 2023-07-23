@@ -23,7 +23,10 @@ macro_rules! generate_memoize_view {
             dirty: bool,
         }
 
-        impl<D, V, F: Fn(&D) -> V> $memoizeview<D, F> {
+        impl<D, V, F> $memoizeview<D, F>
+        where
+            F: Fn(&D) -> V,
+        {
             pub fn new(data: D, child_cb: F) -> Self {
                 $memoizeview { data, child_cb }
             }
@@ -31,8 +34,11 @@ macro_rules! generate_memoize_view {
 
         impl<D, F> $viewmarker for $memoizeview<D, F> {}
 
-        impl<T, A, D: PartialEq + Send + 'static, V: $viewtrait<T, A>, F: Fn(&D) -> V + Send>
-            $viewtrait<T, A> for $memoizeview<D, F>
+        impl<T, A, D, V, F> $viewtrait<T, A> for $memoizeview<D, F>
+        where
+            D: PartialEq + Send + 'static,
+            V: $viewtrait<T, A>,
+            F: Fn(&D) -> V + Send,
         {
             type State = $memoizestate<T, A, V>;
 
@@ -85,14 +91,18 @@ macro_rules! generate_memoize_view {
         }
 
         /// A static view, all of the content of the `view` should be constant, as this function is only run once
-        pub fn $staticviewfunction<V, F: Fn() -> V + 'static>(
-            view: F,
-        ) -> $memoizeview<(), impl Fn(&()) -> V> {
+        pub fn $staticviewfunction<V, F>(view: F) -> $memoizeview<(), impl Fn(&()) -> V>
+        where
+            F: Fn() -> V + 'static,
+        {
             $memoizeview::new((), move |_: &()| view())
         }
 
         /// Memoize the view, until the `data` changes (in which case `view` is called again)
-        pub fn $memoizeviewfunction<D, V, F: Fn(&D) -> V>(data: D, view: F) -> $memoizeview<D, F> {
+        pub fn $memoizeviewfunction<D, V, F>(data: D, view: F) -> $memoizeview<D, F>
+        where
+            F: Fn(&D) -> V,
+        {
             $memoizeview::new(data, view)
         }
     };
