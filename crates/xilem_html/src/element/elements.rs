@@ -96,6 +96,17 @@ macro_rules! element {
                 self.0.message(id_path, state, message, app_state)
             }
         }
+
+        impl<ViewSeq> crate::set_attr::SetAttr for $ty_name<ViewSeq> {
+            #[deny(unconditional_recursion)]
+            fn set_attr(
+                &mut self,
+                name: impl Into<std::borrow::Cow<'static, str>>,
+                value: impl Into<std::borrow::Cow<'static, str>>,
+            ) {
+                self.0.set_attr(name, value);
+            }
+        }
     };
 }
 

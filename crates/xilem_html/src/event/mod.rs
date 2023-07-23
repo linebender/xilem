@@ -4,7 +4,7 @@
 #[cfg(feature = "typed")]
 pub mod events;
 
-use std::{any::Any, marker::PhantomData, ops::Deref};
+use std::{any::Any, borrow::Cow, marker::PhantomData, ops::Deref};
 
 use gloo::events::{EventListener, EventListenerOptions};
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
@@ -13,6 +13,7 @@ use xilem_core::{Id, MessageResult};
 use crate::{
     context::{ChangeFlags, Cx},
     view::{DomNode, View, ViewMarker},
+    SetAttr,
 };
 
 /// Wraps a [`View`] `V` and attaches an event listener.
@@ -120,6 +121,20 @@ where
                 .child
                 .message(id_path, &mut state.child_state, message, app_state),
         }
+    }
+}
+
+impl<E, V, F> SetAttr for OnEvent<E, V, F>
+where
+    V: SetAttr,
+{
+    #[deny(unconditional_recursion)]
+    fn set_attr(
+        &mut self,
+        name: impl Into<Cow<'static, str>>,
+        value: impl Into<Cow<'static, str>>,
+    ) {
+        self.child.set_attr(name, value);
     }
 }
 

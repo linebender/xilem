@@ -107,6 +107,21 @@ macro_rules! event {
                 self.inner.message(id_path, state, message, app_state)
             }
         }
+
+        impl<T, A, V, F, OA> crate::set_attr::SetAttr for $ty_name<T, A, V, F, OA>
+        where
+            V: crate::view::View<T, A> + crate::set_attr::SetAttr,
+            V::Element: 'static,
+        {
+            #[deny(unconditional_recursion)]
+            fn set_attr(
+                &mut self,
+                name: impl Into<std::borrow::Cow<'static, str>>,
+                value: impl Into<std::borrow::Cow<'static, str>>,
+            ) {
+                self.inner.set_attr(name, value);
+            }
+        }
     };
 }
 

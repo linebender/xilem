@@ -8,7 +8,7 @@ use std::{any::Any, borrow::Cow, ops::Deref};
 
 use xilem_core::{Id, MessageResult};
 
-use crate::{context::Cx, ChangeFlags};
+use crate::{context::Cx, ChangeFlags, SetAttr};
 
 mod sealed {
     pub trait Sealed {}
@@ -221,4 +221,31 @@ impl<T, A> View<T, A> for Cow<'static, str> {
 
 fn new_text(text: &str) -> web_sys::Text {
     web_sys::Text::new_with_data(text).unwrap()
+}
+
+impl<ParentT, ParentA, ChildT, ChildA, V, F> SetAttr
+    for Adapt<ParentT, ParentA, ChildT, ChildA, V, F>
+where
+    V: SetAttr,
+{
+    fn set_attr(
+        &mut self,
+        name: impl Into<Cow<'static, str>>,
+        value: impl Into<Cow<'static, str>>,
+    ) {
+        self.child.set_attr(name, value);
+    }
+}
+
+impl<ParentT, ChildT, V, F> SetAttr for AdaptState<ParentT, ChildT, V, F>
+where
+    V: SetAttr,
+{
+    fn set_attr(
+        &mut self,
+        name: impl Into<Cow<'static, str>>,
+        value: impl Into<Cow<'static, str>>,
+    ) {
+        self.child.set_attr(name, value);
+    }
 }

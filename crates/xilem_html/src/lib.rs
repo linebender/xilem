@@ -13,6 +13,7 @@ mod context;
 mod element;
 mod event;
 mod one_of;
+mod set_attr;
 mod view;
 #[cfg(feature = "typed")]
 mod view_ext;
@@ -29,6 +30,7 @@ pub use element::{element, Element, ElementState};
 pub use event::events;
 pub use event::{on_event, Action, Event, OnEvent, OnEventState, OptionalAction};
 pub use one_of::{OneOf2, OneOf3, OneOf4, OneOf5, OneOf6, OneOf7, OneOf8};
+pub use set_attr::SetAttr;
 pub use view::{
     Adapt, AdaptState, AdaptThunk, AnyView, Memoize, Pod, View, ViewMarker, ViewSequence,
 };

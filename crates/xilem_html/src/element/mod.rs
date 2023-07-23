@@ -5,6 +5,7 @@
 use crate::{
     context::{ChangeFlags, Cx},
     view::{DomElement, Pod, View, ViewMarker, ViewSequence},
+    SetAttr,
 };
 
 use std::{borrow::Cow, cmp::Ordering, collections::BTreeMap, fmt};
@@ -254,6 +255,17 @@ where
     ) -> MessageResult<A> {
         self.children
             .message(id_path, &mut state.child_states, message, app_state)
+    }
+}
+
+impl<El, ViewSeq> SetAttr for Element<El, ViewSeq> {
+    #[deny(unconditional_recursion)]
+    fn set_attr(
+        &mut self,
+        name: impl Into<Cow<'static, str>>,
+        value: impl Into<Cow<'static, str>>,
+    ) {
+        self.set_attr(name, value);
     }
 }
 
