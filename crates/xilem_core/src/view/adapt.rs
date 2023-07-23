@@ -59,9 +59,8 @@ macro_rules! generate_adapt_view {
             ParentA,
             ChildT,
             ChildA,
-            V: $viewtrait<ChildT, ChildA>,
-            F: Fn(&mut ParentT, AdaptThunk<ChildT, ChildA, V>) -> $crate::MessageResult<ParentA> =
-                fn(&mut ParentT, AdaptThunk<ChildT, ChildA, V>) -> $crate::MessageResult<ParentA>,
+            V,
+            F = fn(&mut ParentT, AdaptThunk<ChildT, ChildA, V>) -> $crate::MessageResult<ParentA>,
         > {
             f: F,
             child: V,
@@ -79,14 +78,10 @@ macro_rules! generate_adapt_view {
             message: Box<dyn std::any::Any>,
         }
 
-        impl<
-            ParentT,
-            ParentA,
-            ChildT,
-            ChildA,
+        impl<ParentT, ParentA, ChildT, ChildA, V, F> Adapt<ParentT, ParentA, ChildT, ChildA, V, F>
+        where
             V: $viewtrait<ChildT, ChildA>,
             F: Fn(&mut ParentT, AdaptThunk<ChildT, ChildA, V>) -> $crate::MessageResult<ParentA>,
-        > Adapt<ParentT, ParentA, ChildT, ChildA, V, F>
         {
             pub fn new(f: F, child: V) -> Self {
                 Adapt {
@@ -104,14 +99,12 @@ macro_rules! generate_adapt_view {
             }
         }
 
-        impl<
-            ParentT,
-            ParentA,
-            ChildT,
-            ChildA,
+        impl<ParentT, ParentA, ChildT, ChildA, V, F> $viewtrait<ParentT, ParentA>
+            for Adapt<ParentT, ParentA, ChildT, ChildA, V, F>
+        where
             V: $viewtrait<ChildT, ChildA>,
-            F: Fn(&mut ParentT, AdaptThunk<ChildT, ChildA, V>) -> $crate::MessageResult<ParentA> + Send,
-        > $viewtrait<ParentT, ParentA> for Adapt<ParentT, ParentA, ChildT, ChildA, V, F>
+            F: Fn(&mut ParentT, AdaptThunk<ChildT, ChildA, V>) -> $crate::MessageResult<ParentA>
+                + Send,
         {
             type State = V::State;
 
@@ -149,14 +142,11 @@ macro_rules! generate_adapt_view {
             }
         }
 
-        impl<
-            ParentT,
-            ParentA,
-            ChildT,
-            ChildA,
+        impl<ParentT, ParentA, ChildT, ChildA, V, F> ViewMarker
+            for Adapt<ParentT, ParentA, ChildT, ChildA, V, F>
+        where
             V: $viewtrait<ChildT, ChildA>,
             F: Fn(&mut ParentT, AdaptThunk<ChildT, ChildA, V>) -> $crate::MessageResult<ParentA>,
-        > ViewMarker for Adapt<ParentT, ParentA, ChildT, ChildA, V, F>
         {
         }
     };
@@ -166,19 +156,15 @@ macro_rules! generate_adapt_view {
 macro_rules! generate_adapt_state_view {
     ($viewtrait:ident, $cx:ty, $changeflags:ty) => {
         /// A view that wraps a child view and modifies the state that callbacks have access to.
-        pub struct AdaptState<
-            ParentT,
-            ChildT,
-            V,
-            F: Fn(&mut ParentT) -> &mut ChildT = fn(&mut ParentT) -> &mut ChildT,
-        > {
+        pub struct AdaptState<ParentT, ChildT, V, F = fn(&mut ParentT) -> &mut ChildT> {
             f: F,
             child: V,
             phantom: std::marker::PhantomData<fn() -> (ParentT, ChildT)>,
         }
 
-        impl<ParentT, ChildT, V, F: Fn(&mut ParentT) -> &mut ChildT + Send>
-            AdaptState<ParentT, ChildT, V, F>
+        impl<ParentT, ChildT, V, F> AdaptState<ParentT, ChildT, V, F>
+        where
+            F: Fn(&mut ParentT) -> &mut ChildT + Send,
         {
             pub fn new(f: F, child: V) -> Self {
                 Self {
@@ -189,13 +175,10 @@ macro_rules! generate_adapt_state_view {
             }
         }
 
-        impl<
-                ParentT,
-                ChildT,
-                A,
-                V: $viewtrait<ChildT, A>,
-                F: Fn(&mut ParentT) -> &mut ChildT + Send,
-            > $viewtrait<ParentT, A> for AdaptState<ParentT, ChildT, V, F>
+        impl<ParentT, ChildT, A, V, F> $viewtrait<ParentT, A> for AdaptState<ParentT, ChildT, V, F>
+        where
+            V: $viewtrait<ChildT, A>,
+            F: Fn(&mut ParentT) -> &mut ChildT + Send,
         {
             type State = V::State;
             type Element = V::Element;
@@ -227,8 +210,8 @@ macro_rules! generate_adapt_state_view {
             }
         }
 
-        impl<ParentT, ChildT, V, F: Fn(&mut ParentT) -> &mut ChildT> ViewMarker
-            for AdaptState<ParentT, ChildT, V, F>
+        impl<ParentT, ChildT, V, F> ViewMarker for AdaptState<ParentT, ChildT, V, F> where
+            F: Fn(&mut ParentT) -> &mut ChildT
         {
         }
     };
