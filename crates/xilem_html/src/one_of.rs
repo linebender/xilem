@@ -62,7 +62,6 @@ macro_rules! one_of {
                                     "invalid state/view in ", stringify!($ident), " (unreachable)",
                                 ));
                             };
-                            // Cannot do mutable casting, so take ownership of state.
                             view.rebuild(cx, prev_view, id, state, element)
                         }
                         // Variant has changed
