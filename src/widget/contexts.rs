@@ -29,6 +29,7 @@ use crate::Message;
 
 /// Static state that is shared between most contexts.
 pub struct CxState<'a> {
+    #[allow(unused)]
     window: &'a WindowHandle,
     font_cx: &'a mut FontContext,
     messages: &'a mut Vec<Message>,

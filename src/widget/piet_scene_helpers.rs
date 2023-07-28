@@ -24,6 +24,7 @@ pub fn stroke<'b>(
 }
 
 // Note: copied from piet
+#[allow(unused)]
 impl UnitPoint {
     /// `(0.0, 0.0)`
     pub const TOP_LEFT: UnitPoint = UnitPoint::new(0.0, 0.0);

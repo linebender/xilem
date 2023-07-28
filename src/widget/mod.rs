@@ -23,6 +23,7 @@ mod piet_scene_helpers;
 mod raw_event;
 //mod scroll_view;
 //mod text;
+#[allow(clippy::module_inception)]
 mod widget;
 
 pub use self::core::{ChangeFlags, Pod};

@@ -21,6 +21,7 @@ mod button;
 // mod use_state;
 mod linear_layout;
 mod list;
+#[allow(clippy::module_inception)]
 mod view;
 
 pub use xilem_core::{Id, IdPath, VecSplice};
