@@ -341,7 +341,7 @@ where
         self.cx.pending_async.clear();
         let _ = self.req_chan.blocking_send(AppReq::Render(delay));
         if let Some(response) = self.response_chan.blocking_recv() {
-            let state = if let Some(element) = self.root_pod.as_mut() {
+            let state = if let Some(root_pod) = self.root_pod.as_mut() {
                 let mut state = response.state.unwrap();
                 let changes = response.view.rebuild(
                     &mut self.cx,
@@ -349,17 +349,17 @@ where
                     self.id.as_mut().unwrap(),
                     &mut state,
                     //TODO: fail more gracefully but make it explicit that this is a bug
-                    element
+                    root_pod
                         .downcast_mut()
                         .expect("the root widget changed its type, this should never happen!"),
                 );
-                let _ = self.root_pod.as_mut().unwrap().mark(changes);
+                let _ = root_pod.mark(changes);
                 assert!(self.cx.is_empty(), "id path imbalance on rebuild");
                 state
             } else {
-                let (id, state, element) = response.view.build(&mut self.cx);
+                let (id, state, root_widget) = response.view.build(&mut self.cx);
                 assert!(self.cx.is_empty(), "id path imbalance on build");
-                self.root_pod = Some(Pod::new(element));
+                self.root_pod = Some(Pod::new(root_widget));
                 self.id = Some(id);
                 state
             };
