@@ -40,6 +40,7 @@ bitflags! {
         const REQUEST_PAINT = ChangeFlags::PAINT.bits() as _;
         const TREE_CHANGED = ChangeFlags::TREE.bits() as _;
         const DESCENDANT_REQUESTED_ACCESSIBILITY = ChangeFlags::DESCENDANT_REQUESTED_ACCESSIBILITY.bits() as _;
+        const DESCENDANT_TREE_CHANGED = ChangeFlags::DESCENDANT_TREE.bits() as _;
 
         // Everything else uses bitmasks greater than the max value of ChangeFlags: mask >= 0x100
         const VIEW_CONTEXT_CHANGED = 0x100;
@@ -55,14 +56,15 @@ bitflags! {
             | Self::REQUEST_PAINT.bits()
             | Self::HAS_ACTIVE.bits()
             | Self::DESCENDANT_REQUESTED_ACCESSIBILITY.bits()
-            | Self::TREE_CHANGED.bits()
+            | Self::DESCENDANT_TREE_CHANGED.bits()
             | Self::VIEW_CONTEXT_CHANGED.bits();
         const INIT_FLAGS = Self::REQUEST_UPDATE.bits()
             | Self::REQUEST_LAYOUT.bits()
             | Self::REQUEST_ACCESSIBILITY.bits()
             | Self::DESCENDANT_REQUESTED_ACCESSIBILITY.bits()
             | Self::REQUEST_PAINT.bits()
-            | Self::TREE_CHANGED.bits();
+            | Self::TREE_CHANGED.bits()
+            | Self::DESCENDANT_TREE_CHANGED.bits();
     }
 }
 
@@ -75,7 +77,8 @@ bitflags! {
         const ACCESSIBILITY = 4;
         const PAINT = 8;
         const TREE = 0x10;
-        const DESCENDANT_REQUESTED_ACCESSIBILITY = 0x20;
+        const DESCENDANT_TREE = 0x20;
+        const DESCENDANT_REQUESTED_ACCESSIBILITY = 0x40;
     }
 }
 
@@ -117,6 +120,9 @@ impl PodFlags {
         let mut result = self & PodFlags::UPWARD_FLAGS;
         if self.contains(PodFlags::REQUEST_ACCESSIBILITY) {
             result |= PodFlags::DESCENDANT_REQUESTED_ACCESSIBILITY;
+        }
+        if self.contains(PodFlags::TREE_CHANGED) {
+            result |= PodFlags::DESCENDANT_TREE_CHANGED;
         }
         result
     }
@@ -328,10 +334,16 @@ impl Pod {
                 true
             }
             LifeCycle::TreeUpdate => {
-                if self.state.flags.contains(PodFlags::TREE_CHANGED) {
+                if self
+                    .state
+                    .flags
+                    .intersects(PodFlags::TREE_CHANGED | PodFlags::DESCENDANT_TREE_CHANGED)
+                {
                     self.state.sub_tree.clear();
                     self.state.sub_tree.add(&self.state.id);
-                    self.state.flags.remove(PodFlags::TREE_CHANGED);
+                    self.state
+                        .flags
+                        .remove(PodFlags::TREE_CHANGED | PodFlags::DESCENDANT_TREE_CHANGED);
                     true
                 } else {
                     false
