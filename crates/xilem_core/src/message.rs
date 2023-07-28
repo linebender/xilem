@@ -5,22 +5,6 @@ use std::any::Any;
 
 #[macro_export]
 macro_rules! message {
-    () => {
-        pub struct Message {
-            pub id_path: xilem_core::IdPath,
-            pub body: Box<dyn std::any::Any>,
-        }
-
-        impl Message {
-            pub fn new(id_path: xilem_core::IdPath, event: impl std::any::Any) -> Message {
-                Message {
-                    id_path,
-                    body: Box::new(event),
-                }
-            }
-        }
-    };
-
     ($($bounds:tt)*) => {
         pub struct Message {
             pub id_path: xilem_core::IdPath,
