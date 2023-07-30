@@ -1,8 +1,9 @@
 [package]
 name = "counter_untyped"
 version = "0.1.0"
-license = "Apache-2.0"
-edition = "2021"
+publish = false
+license.workspace = true
+edition.workspace = true
 
 [dependencies]
 console_error_panic_hook = "0.1"
