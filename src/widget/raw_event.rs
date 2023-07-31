@@ -17,7 +17,7 @@
 //! Note: arguably this module should be renamed, perhaps we should use
 //! "event" for this level and maybe "message" at the View level.
 
-use glazier::{Modifiers, MouseButton, MouseButtons};
+use glazier::{Modifiers, PointerButton, PointerButtons, PointerType};
 use vello::kurbo::{Point, Rect, Vec2};
 
 #[derive(Debug, Clone)]
@@ -36,11 +36,11 @@ pub struct MouseEvent {
     pub pos: Point,
     /// The position of the mose in the window coordinate space.
     pub window_pos: Point,
-    pub buttons: MouseButtons,
+    pub buttons: PointerButtons,
     pub mods: Modifiers,
     pub count: u8,
     pub focus: bool,
-    pub button: MouseButton,
+    pub button: PointerButton,
     pub wheel_delta: Vec2,
 }
 
@@ -58,26 +58,21 @@ pub struct ViewContext {
     pub mouse_position: Option<Point>,
 }
 
-impl<'a> From<&'a glazier::MouseEvent> for MouseEvent {
-    fn from(src: &glazier::MouseEvent) -> MouseEvent {
-        let glazier::MouseEvent {
-            pos,
-            buttons,
-            mods,
-            count,
-            focus,
-            button,
-            wheel_delta,
-        } = src;
+impl<'a> From<&'a glazier::PointerEvent> for MouseEvent {
+    fn from(src: &glazier::PointerEvent) -> MouseEvent {
         MouseEvent {
-            pos: *pos,
-            window_pos: *pos,
-            buttons: *buttons,
-            mods: *mods,
-            count: *count,
-            focus: *focus,
-            button: *button,
-            wheel_delta: *wheel_delta,
+            pos: src.pos,
+            window_pos: src.pos,
+            buttons: src.buttons,
+            mods: src.modifiers,
+            count: src.count,
+            focus: src.focus,
+            button: src.button,
+            wheel_delta: if let PointerType::Mouse(ref info) = src.pointer_type {
+                info.wheel_delta
+            } else {
+                Vec2::ZERO
+            },
         }
     }
 }
