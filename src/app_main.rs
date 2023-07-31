@@ -16,7 +16,7 @@ use std::any::Any;
 
 use accesskit::TreeUpdate;
 use glazier::{
-    Application, Cursor, HotKey, IdleToken, Menu, MouseEvent, Region, Scalable, SysMods,
+    Application, Cursor, HotKey, IdleToken, Menu, PointerEvent, Region, Scalable, SysMods,
     WinHandler, WindowBuilder, WindowHandle,
 };
 use vello::{
@@ -63,6 +63,7 @@ impl<T: Send + 'static, V: View<T> + 'static> AppLauncher<T, V> {
     }
 
     pub fn run(self) {
+        let glazier_app = Application::new().unwrap();
         let mut file_menu = Menu::new();
         file_menu.add_item(
             QUIT_MENU_ID,
@@ -74,15 +75,15 @@ impl<T: Send + 'static, V: View<T> + 'static> AppLauncher<T, V> {
         let mut menubar = Menu::new();
         menubar.add_dropdown(Menu::new(), "Application", true);
         menubar.add_dropdown(file_menu, "&File", true);
-        let glazier_app = Application::new().unwrap();
-        let mut builder = WindowBuilder::new(glazier_app.clone());
         let _guard = self.app.rt.enter();
         let main_state = MainState::new(self.app);
-        builder.set_handler(Box::new(main_state));
-        builder.set_title(self.title);
-        builder.set_menu(menubar);
-        builder.set_size(Size::new(1024., 768.));
-        let window = builder.build().unwrap();
+        let window = WindowBuilder::new(glazier_app.clone())
+            .handler(Box::new(main_state))
+            .title(self.title)
+            .menu(menubar)
+            .size(Size::new(1024., 768.))
+            .build()
+            .unwrap();
         window.show();
         glazier_app.run(None);
     }
@@ -102,12 +103,7 @@ impl<T: Send + 'static, V: View<T> + 'static> WinHandler for MainState<T, V> {
         self.schedule_render();
     }
 
-    // TODO: temporary hack
-    fn idle(&mut self, _: IdleToken) {
-        self.app.paint();
-        self.render();
-        self.schedule_render();
-    }
+    fn idle(&mut self, _: IdleToken) {}
 
     fn command(&mut self, id: u32) {
         match id {
@@ -130,28 +126,28 @@ impl<T: Send + 'static, V: View<T> + 'static> WinHandler for MainState<T, V> {
         self.handle.invalidate();
     }
 
-    fn mouse_down(&mut self, event: &MouseEvent) {
+    fn pointer_down(&mut self, event: &PointerEvent) {
         self.app.window_event(Event::MouseDown(event.into()));
         self.handle.invalidate();
     }
 
-    fn mouse_up(&mut self, event: &MouseEvent) {
+    fn pointer_up(&mut self, event: &PointerEvent) {
         self.app.window_event(Event::MouseUp(event.into()));
         self.handle.invalidate();
     }
 
-    fn mouse_move(&mut self, event: &MouseEvent) {
+    fn pointer_move(&mut self, event: &PointerEvent) {
         self.app.window_event(Event::MouseMove(event.into()));
         self.handle.invalidate();
         self.handle.set_cursor(&Cursor::Arrow);
     }
 
-    fn wheel(&mut self, event: &MouseEvent) {
+    fn wheel(&mut self, event: &PointerEvent) {
         self.app.window_event(Event::MouseWheel(event.into()));
         self.handle.invalidate();
     }
 
-    fn mouse_leave(&mut self) {
+    fn pointer_leave(&mut self) {
         self.app.window_event(Event::MouseLeft());
         self.handle.invalidate();
     }
@@ -190,15 +186,6 @@ where
         }
     }
 
-    #[cfg(target_os = "macos")]
-    fn schedule_render(&self) {
-        self.handle
-            .get_idle_handle()
-            .unwrap()
-            .schedule_idle(IdleToken::new(0));
-    }
-
-    #[cfg(not(target_os = "macos"))]
     fn schedule_render(&self) {
         self.handle.invalidate();
     }

@@ -46,12 +46,12 @@ tokio = { version = "1.21", features = ["full"] }
 futures-task = "0.3"
 bitflags = "2"
 tracing = "0.1.37"
-accesskit = "0.9.0"
+accesskit = "0.11"
 fnv = "1.0.7"
 
 [dependencies.glazier]
 git = "https://github.com/linebender/glazier"
-rev = "51eb418511790309b90b0d9838e4d91fc11d84d3"
+rev = "19a01ba8a97f15bf499ac64e6ea9690d7390deb5"
 default-features = false
 features = ["accesskit"]
 
