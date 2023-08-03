@@ -1,7 +1,8 @@
 use xilem_html::{
     document_body, elements as el,
+    elements::Element,
     events::{self as evt},
-    App, Event, View, ViewExt,
+    App, Event, View, ViewExt, ViewMarker,
 };
 
 #[derive(Default)]
@@ -49,9 +50,12 @@ where
     el::button(label).on_click(click_fn)
 }
 
-fn app_logic(state: &mut AppState) -> impl View<AppState> {
-    el::div((
-        el::span(format!("clicked {} times", state.clicks)).attr("class", state.class),
+#[allow(clippy::needless_pass_by_ref_mut)]
+fn app_logic(state: &mut AppState) -> impl View<AppState> + ViewMarker {
+    // TODO remove
+    let classes: Vec<_> = (0..state.clicks).map(|i| format!("click-{i}")).collect();
+    let d = el::div((
+        el::span(format!("clicked {} times", state.clicks)).classes(state.class),
         el::br(()),
         btn("+1 click", |state, _| state.increment()),
         btn("-1 click", |state, _| state.decrement()),
@@ -61,6 +65,13 @@ fn app_logic(state: &mut AppState) -> impl View<AppState> {
         el::br(()),
         state.text.clone(),
     ))
+    .classes(classes);
+
+    if state.clicks > 10 {
+        d.attr("data-custom", format!("click-{}", state.clicks))
+    } else {
+        d
+    }
 }
 
 pub fn main() {

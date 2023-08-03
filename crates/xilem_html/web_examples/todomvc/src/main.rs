@@ -3,8 +3,9 @@ mod state;
 use state::{AppState, Filter, Todo};
 
 use xilem_html::{
-    elements as el, events::on_click, get_element_by_id, Action, Adapt, App, MessageResult, View,
-    ViewExt, ViewMarker,
+    elements::{self as el, Element},
+    events::on_click,
+    get_element_by_id, Action, Adapt, App, MessageResult, View, ViewExt, ViewMarker,
 };
 
 // All of these actions arise from within a `Todo`, but we need access to the full state to reduce
@@ -42,7 +43,8 @@ fn todo_item(todo: &mut Todo, editing: bool) -> impl View<Todo, TodoAction> + Vi
                 .attr("class", "destroy")
                 .on_click(|state: &mut Todo, _| TodoAction::Destroy(state.id)),
         ))
-        .attr("class", "view"),
+        .classes("view"),
+        // .attr("class", "view"),
         el::input(())
             .attr("value", todo.title_editing.clone())
             .attr("class", "edit")
