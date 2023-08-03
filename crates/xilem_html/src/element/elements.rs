@@ -244,6 +244,7 @@ elements!(
 );
 
 // TODO think about using serialized values instead of Box<dyn Any> for smaller compilation size (but likely worse performance)
+// TODO consider enum for common attribute types and Box<dyn Any> as fallback for more exotic cases
 type Attrs = BTreeMap<&'static str, Box<dyn Any>>;
 
 const UNTYPED_ATTRS: &str = "____untyped_attrs____";
@@ -358,17 +359,17 @@ fn add_class<C: IntoClass>(attrs: &mut Attrs, class: C) {
             }
         }
         std::collections::btree_map::Entry::Occupied(class_attr) => {
-            let class_attr = class_attr
+            class_attr
                 .into_mut()
                 .downcast_mut::<BTreeSet<String>>()
-                .unwrap();
-            for class in class.classes() {
-                class_attr.insert(class);
-            }
+                .unwrap()
+                .extend(class.classes());
         }
     };
 }
 
+// TODO currently untyped attributes are overwritten by typed ones,
+// if they're defined, maybe (some) can be merged nicely
 fn add_untyped_attr(attrs: &mut Attrs, key: String, value: String) {
     match attrs.entry(UNTYPED_ATTRS) {
         std::collections::btree_map::Entry::Vacant(entry) => {
@@ -409,7 +410,11 @@ macro_rules! impl_element {
                 add_untyped_attr(&mut self.attrs, key.into(), value.into());
             }
 
-            fn attr<K: Into<String>, V: Into<String>>(mut self, key: K, value: V) -> $ty_name<T, A, VS> {
+            fn attr<K: Into<String>, V: Into<String>>(
+                mut self,
+                key: K,
+                value: V,
+            ) -> $ty_name<T, A, VS> {
                 add_untyped_attr(&mut self.attrs, key.into(), value.into());
                 self
             }
