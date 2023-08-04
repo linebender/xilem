@@ -245,6 +245,7 @@ elements!(
 
 // TODO think about using serialized values instead of Box<dyn Any> for smaller compilation size (but likely worse performance)
 // TODO consider enum for common attribute types and Box<dyn Any> as fallback for more exotic cases
+// TODO consider Vec<(&'static str, Box<dyn Any>)> instead of BTreeMap (should likely be faster than BTreeMap for very few attributes (~ < 10-20 attributes))
 type Attrs = BTreeMap<&'static str, Box<dyn Any>>;
 
 const UNTYPED_ATTRS: &str = "____untyped_attrs____";
@@ -277,11 +278,11 @@ pub trait Node {
 ///
 /// I'm generally not sure yet, if it makes sense to do all of this via traits (there are advantages though, but it's (likely) not compilation size...)
 /// (thinking about AsRef<ParentClass> and AsMut<ParentClass>, and implementing all builder methods on the concrete type, similar as with wasm-bindgen)
-pub trait Element: Node {
+pub trait Element<T, A>: Node {
     // TODO rename to class (currently conflicts with `ViewExt`)
-    fn classes<T: IntoClass>(self, class: T) -> Self;
+    fn classes<C: IntoClass>(self, class: C) -> Self;
     // TODO rename to class (currently conflicts with `ViewExt`)
-    fn add_classes<T: IntoClass>(&mut self, class: T);
+    fn add_classes<C: IntoClass>(&mut self, class: C);
     // TODO should this be in its own trait? (it doesn't have much to do with the DOM Node interface)
     fn raw_attrs(&self) -> &Attrs;
     // TODO should this be in Node?
@@ -289,20 +290,20 @@ pub trait Element: Node {
     fn set_attr<K: Into<String>, V: Into<String>>(&mut self, key: K, value: V);
 }
 
-pub trait HtmlElement: Element {}
+pub trait HtmlElement<T, A>: Element<T, A> {}
 
-pub trait HtmlDivElement: HtmlElement {
+pub trait HtmlDivElement<T, A>: HtmlElement<T, A> {
     // TODO "align" attr
 }
 
-pub trait HtmlSpanElement: HtmlElement {}
+pub trait HtmlSpanElement<T, A>: HtmlElement<T, A> {}
 
-pub trait HtmlHeadingElement: HtmlElement {
+pub trait HtmlHeadingElement<T, A>: HtmlElement<T, A> {
     // TODO "align" attr
 }
 
 // not sure if an extra trait for this makes sense, but for consistency
-pub trait HtmlCanvasElement: HtmlElement + Sized {
+pub trait HtmlCanvasElement<T, A>: HtmlElement<T, A> {
     fn width(self, width: u32) -> Self;
     fn set_width(&mut self, width: u32);
 
@@ -392,7 +393,7 @@ macro_rules! impl_element {
     ($ty_name:ident, $name: ident) => {
         impl_node!($ty_name, $name);
 
-        impl<T, A, VS> Element for $ty_name<T, A, VS> {
+        impl<T, A, VS> Element<T, A> for $ty_name<T, A, VS> {
             fn classes<C: IntoClass>(mut self, class: C) -> $ty_name<T, A, VS> {
                 add_class(&mut self.attrs, class);
                 self
@@ -426,7 +427,7 @@ macro_rules! impl_html_element {
     ($ty_name:ident, $name: ident) => {
         impl_element!($ty_name, $name);
 
-        impl<T, A, VS> HtmlElement for $ty_name<T, A, VS> {}
+        impl<T, A, VS> HtmlElement<T, A> for $ty_name<T, A, VS> {}
     };
 }
 
@@ -437,7 +438,7 @@ macro_rules! generate_html_element_derivation {
     ($ty_name:ident, $name:ident, $dom_interface:ident, $body: tt) => {
         impl_html_element!($ty_name, $name);
 
-        impl<T, A, VS> $dom_interface for $ty_name<T, A, VS> $body
+        impl<T, A, VS> $dom_interface<T, A> for $ty_name<T, A, VS> $body
     };
 }
 
@@ -493,7 +494,7 @@ fn serialize_classes(classes: &BTreeSet<String>) -> String {
     })
 }
 
-fn impl_serialize_element_attrs<'a>(attrs: &'a Attrs, attr_map: &mut BTreeMap<&'a str, String>) {
+fn serialize_element_attrs<'a>(attrs: &'a Attrs, attr_map: &mut BTreeMap<&'a str, String>) {
     if let Some(untyped_attrs) = attrs
         .get(UNTYPED_ATTRS)
         .and_then(|attrs| attrs.downcast_ref::<BTreeMap<String, String>>())
@@ -503,40 +504,33 @@ fn impl_serialize_element_attrs<'a>(attrs: &'a Attrs, attr_map: &mut BTreeMap<&'
     serialize_attr(attrs, "class", attr_map, serialize_classes);
 }
 
-fn serialize_element_attrs<'a, T: Element>(
-    element: &'a T,
+fn serialize_html_canvas_element_attrs<'a>(
+    attrs: &'a Attrs,
     attr_map: &mut BTreeMap<&'a str, String>,
 ) {
-    impl_serialize_element_attrs(element.raw_attrs(), attr_map)
-}
-
-fn serialize_html_canvas_element_attrs<'a, T: HtmlCanvasElement>(
-    element: &'a T,
-    attr_map: &mut BTreeMap<&'a str, String>,
-) {
-    serialize_element_attrs(element, attr_map);
-    serialize_attr(element.raw_attrs(), "width", attr_map, u32::to_string);
-    serialize_attr(element.raw_attrs(), "height", attr_map, u32::to_string);
+    serialize_element_attrs(attrs, attr_map);
+    serialize_attr(attrs, "width", attr_map, u32::to_string);
+    serialize_attr(attrs, "height", attr_map, u32::to_string);
 }
 
 macro_rules! serialize_attrs {
-    ($element: expr, $attr_map: expr, Element) => {
-        serialize_element_attrs($element, $attr_map);
+    ($element_attrs: expr, $attr_map: expr, Element) => {
+        serialize_element_attrs($element_attrs, $attr_map);
     };
-    ($element: expr, $attr_map: expr, HtmlElement) => {
-        serialize_element_attrs($element, $attr_map);
+    ($element_attrs: expr, $attr_map: expr, HtmlElement) => {
+        serialize_element_attrs($element_attrs, $attr_map);
     };
-    ($element: expr, $attr_map: expr, HtmlDivElement) => {
-        serialize_element_attrs($element, $attr_map);
+    ($element_attrs: expr, $attr_map: expr, HtmlDivElement) => {
+        serialize_element_attrs($element_attrs, $attr_map);
     };
-    ($element: expr, $attr_map: expr, HtmlSpanElement) => {
-        serialize_element_attrs($element, $attr_map);
+    ($element_attrs: expr, $attr_map: expr, HtmlSpanElement) => {
+        serialize_element_attrs($element_attrs, $attr_map);
     };
-    ($element: expr, $attr_map: expr, HtmlHeadingElement) => {
-        serialize_element_attrs($element, $attr_map);
+    ($element_attrs: expr, $attr_map: expr, HtmlHeadingElement) => {
+        serialize_element_attrs($element_attrs, $attr_map);
     };
-    ($element: expr, $attr_map: expr, HtmlCanvasElement) => {
-        serialize_html_canvas_element_attrs($element, $attr_map);
+    ($element_attrs: expr, $attr_map: expr, HtmlCanvasElement) => {
+        serialize_html_canvas_element_attrs($element_attrs, $attr_map);
     };
 }
 
@@ -567,7 +561,7 @@ fn simple_diff_attr<'a, T, F>(
     };
 }
 
-fn impl_element_diff<'a>(
+fn element_diff<'a>(
     old: &Attrs,
     new: &'a Attrs,
     new_serialized_attrs: &mut BTreeMap<&'a str, String>,
@@ -599,19 +593,11 @@ fn impl_element_diff<'a>(
     simple_diff_attr(old, new, "class", new_serialized_attrs, serialize_classes);
 }
 
-/// returns whether attributes belonging to the Element interface are different (currently just `class`)
-// TODO include custom "untyped" attributes
 #[allow(unused)]
 #[inline(always)]
-fn element_diff<'a, T: Element>(old: &T, new: &'a T, diff_map: &mut BTreeMap<&'a str, String>) {
-    impl_element_diff(old.raw_attrs(), new.raw_attrs(), diff_map);
-}
-
-#[allow(unused)]
-#[inline(always)]
-pub fn html_element_diff<'a, T: HtmlElement>(
-    old: &T,
-    new: &'a T,
+pub fn html_element_diff<'a>(
+    old: &Attrs,
+    new: &'a Attrs,
     new_attrs: &mut BTreeMap<&'a str, String>,
 ) {
     element_diff(old, new, new_attrs)
@@ -620,14 +606,12 @@ pub fn html_element_diff<'a, T: HtmlElement>(
 /// returns whether attributes belonging to the HTMLCanvasElement interface are different
 #[allow(unused)]
 #[inline(always)]
-pub fn html_canvas_element_diff<'a, T: HtmlCanvasElement>(
-    old: &T,
-    new: &'a T,
+pub fn html_canvas_element_diff<'a>(
+    old: &Attrs,
+    new: &'a Attrs,
     new_serialized_attrs: &mut BTreeMap<&'a str, String>,
 ) {
-    // html_element_diff(old, new, new_serialized_attrs);
-    let old = old.raw_attrs();
-    let new = new.raw_attrs();
+    html_element_diff(old, new, new_serialized_attrs);
     simple_diff_attr(old, new, "width", new_serialized_attrs, u32::to_string);
     simple_diff_attr(old, new, "height", new_serialized_attrs, u32::to_string);
 }
@@ -744,7 +728,7 @@ macro_rules! define_html_elements {
                 let mut child_elements = vec![];
                 let (id, child_states) = cx.with_new_id(|cx| self.children.build(cx, &mut child_elements));
                 let mut attributes: BTreeMap<&'_ str, String> = BTreeMap::new();
-                serialize_attrs!(self, &mut attributes, $dom_interface);
+                serialize_attrs!(&self.attrs, &mut attributes, $dom_interface);
                 let el = create_element(self.node_name(), id, &mut attributes, &child_elements, cx)
                     .dyn_into()
                     .unwrap_throw();
@@ -770,7 +754,7 @@ macro_rules! define_html_elements {
 
                 let mut new_serialized_attrs = BTreeMap::new();
 
-                impl_rebuild_diff!(prev, self, &mut new_serialized_attrs, $dom_interface);
+                impl_rebuild_diff!(&prev.attrs, &self.attrs, &mut new_serialized_attrs, $dom_interface);
 
                 // TODO remove
                 web_sys::console::log_1(&format!("updated element: {}, diff_attrs: {:?}", self.node_name(), new_serialized_attrs).into());
