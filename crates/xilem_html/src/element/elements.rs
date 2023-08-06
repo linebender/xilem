@@ -15,19 +15,11 @@ use wasm_bindgen::JsCast;
 
 use crate::{event::EventMsg, Event, Pod};
 use wasm_bindgen::UnwrapThrowExt;
-use web_sys::console::log_1 as console_log;
 
 macro_rules! debug_warn {
     ($($arg:tt)*) => {{
         #[cfg(debug_assertions)]
         web_sys::console::warn_1(&format!($($arg)*).into());
-    }}
-}
-
-macro_rules! debug_log {
-    ($($arg:tt)*) => {{
-        #[cfg(debug_assertions)]
-        web_sys::console::log_1(&format!($($arg)*).into());
     }}
 }
 
@@ -263,16 +255,7 @@ elements!(
     (Template, template, web_sys::HtmlTemplateElement),
 );
 
-// TODO think about using serialized values instead of Box<dyn Any> for smaller compilation size (but likely worse performance)
-// TODO consider enum for common attribute types and Box<dyn Any> as fallback for more exotic cases
-// TODO consider Vec<(&'static str, Box<dyn Any>)> instead of BTreeMap (should likely be faster than BTreeMap for very few attributes (~ < 10-20 attributes))
-type Attrs = BTreeMap<&'static str, Box<dyn Any>>;
-
-type CowStr = Cow<'static, str>;
-
 pub struct VecMap<K, V>(Vec<(K, V)>);
-
-type AttrsNew = VecMap<CowStr, AttributeValue>;
 
 impl<K, V> Default for VecMap<K, V> {
     fn default() -> Self {
@@ -339,12 +322,6 @@ impl<K, V> VecMap<K, V> {
     }
 }
 
-impl AttrsNew {
-    fn insert_untyped(&mut self, name: impl Into<CowStr>, value: impl Into<CowStr>) {
-        self.insert(name.into(), AttributeValue::String(value.into()));
-    }
-}
-
 pub fn diff_tree_maps<'a, K: Ord, V: PartialEq>(
     prev: &'a BTreeMap<K, V>,
     next: &'a BTreeMap<K, V>,
@@ -404,12 +381,15 @@ pub enum Diff<K, V> {
     Change(K, V),
 }
 
+type CowStr = Cow<'static, str>;
+
 // TODO in the future it's likely there's an element that doesn't implement PartialEq,
 // but for now it's simpler for diffing, maybe also use some kind of serialization in that case
 #[derive(PartialEq, Debug)]
 pub enum AttributeValue {
     U32(u32),
     I32(i32),
+    F32(f32),
     F64(f64),
     String(CowStr),
     // for classes mostly
@@ -431,6 +411,7 @@ impl AttributeValue {
         match self {
             AttributeValue::U32(n) => n.to_string().into(),
             AttributeValue::I32(n) => n.to_string().into(),
+            AttributeValue::F32(n) => n.to_string().into(),
             AttributeValue::F64(n) => n.to_string().into(),
             AttributeValue::String(s) => s.clone(),
             // currently just concatenates strings with spaces in between,
@@ -451,27 +432,58 @@ impl AttributeValue {
     }
 }
 
-const UNTYPED_ATTRS: &str = "____untyped_attrs____";
-
-/// returns all attribute keys including untyped attributes
-fn attr_keys(attrs: &Attrs) -> impl Iterator<Item = &str> {
-    attrs.keys().copied().filter(|a| *a != UNTYPED_ATTRS).chain(
-        attrs
-            .get(UNTYPED_ATTRS)
-            .map(|untyped_attrs| {
-                untyped_attrs
-                    .downcast_ref::<BTreeMap<String, String>>()
-                    .unwrap()
-                    .keys()
-                    .map(|k| k.as_str())
-            })
-            .into_iter()
-            .flatten(),
-    )
+impl From<u32> for AttributeValue {
+    fn from(value: u32) -> Self {
+        AttributeValue::U32(value)
+    }
 }
 
-pub trait Node {
-    fn node_name(&self) -> &str;
+impl From<i32> for AttributeValue {
+    fn from(value: i32) -> Self {
+        AttributeValue::I32(value)
+    }
+}
+
+impl From<f32> for AttributeValue {
+    fn from(value: f32) -> Self {
+        AttributeValue::F32(value)
+    }
+}
+
+impl From<f64> for AttributeValue {
+    fn from(value: f64) -> Self {
+        AttributeValue::F64(value)
+    }
+}
+
+impl From<String> for AttributeValue {
+    fn from(value: String) -> Self {
+        AttributeValue::String(value.into())
+    }
+}
+
+impl From<CowStr> for AttributeValue {
+    fn from(value: CowStr) -> Self {
+        AttributeValue::String(value)
+    }
+}
+
+impl From<&'static str> for AttributeValue {
+    fn from(value: &'static str) -> Self {
+        AttributeValue::String(value.into())
+    }
+}
+
+type Attrs = VecMap<CowStr, AttributeValue>;
+
+impl Attrs {
+    fn insert_untyped(&mut self, name: impl Into<CowStr>, value: impl Into<CowStr>) {
+        self.insert(name.into(), AttributeValue::String(value.into()));
+    }
+
+    fn insert_attr(&mut self, name: impl Into<CowStr>, value: impl Into<AttributeValue>) {
+        self.insert(name.into(), value.into());
+    }
 }
 
 pub trait EventHandler<T, A = (), E = ()> {
@@ -533,289 +545,62 @@ impl<T, A, E: 'static, F: Fn(&mut T, E) -> A> EventHandler<T, A, E> for F {
     }
 }
 
-// TODO might be useful, but is currently not needed
-// // type erased event handler
-// trait AnyEventHandler<T, A, E> {
-//     fn as_any(&self) -> &dyn std::any::Any;
-
-//     fn dyn_build(&self, cx: &mut crate::context::Cx) -> (xilem_core::Id, Box<dyn Any>);
-
-//     // TODO should id be mutable like in View::rebuild?
-//     fn dyn_rebuild(
-//         &self,
-//         cx: &mut crate::context::Cx,
-//         prev: &dyn AnyEventHandler<T, A, E>,
-//         id: &mut xilem_core::Id,
-//         state: &mut Box<dyn Any>,
-//     ) -> crate::ChangeFlags;
-
-//     fn dyn_message(
-//         &self,
-//         id_path: &[xilem_core::Id],
-//         state: &mut dyn Any,
-//         message: Box<dyn std::any::Any>,
-//         app_state: &mut T,
-//     ) -> xilem_core::MessageResult<A>;
-// }
-
-// impl<T, A, E, EH> AnyEventHandler<T, A, E> for EH
-// where
-//     EH: EventHandler<T, A, E> + 'static,
-//     EH::State: 'static,
-// {
-//     fn as_any(&self) -> &dyn std::any::Any {
-//         self
-//     }
-
-//     fn dyn_build(&self, cx: &mut crate::context::Cx) -> (xilem_core::Id, Box<dyn std::any::Any>) {
-//         let (id, state) = self.build(cx);
-//         (id, Box::new(state))
-//     }
-
-//     fn dyn_rebuild(
-//         &self,
-//         cx: &mut crate::context::Cx,
-//         prev: &dyn AnyEventHandler<T, A, E>,
-//         id: &mut xilem_core::Id,
-//         state: &mut Box<dyn std::any::Any>,
-//     ) -> crate::ChangeFlags {
-//         if let Some(prev) = prev.as_any().downcast_ref() {
-//             if let Some(state) = state.downcast_mut() {
-//                 self.rebuild(cx, prev, id, state)
-//             } else {
-//                 // TODO warning
-//                 // eprintln!("downcast of state failed in dyn_rebuild");
-//                 crate::ChangeFlags::default()
-//             }
-//         } else {
-//             let (new_id, new_state) = self.build(cx);
-//             *id = new_id;
-//             *state = Box::new(new_state);
-//             crate::ChangeFlags::tree_structure()
-//         }
-//     }
-
-//     fn dyn_message(
-//         &self,
-//         id_path: &[xilem_core::Id],
-//         state: &mut dyn std::any::Any,
-//         message: Box<dyn std::any::Any>,
-//         app_state: &mut T,
-//     ) -> xilem_core::MessageResult<A> {
-//         if let Some(state) = state.downcast_mut() {
-//             self.message(id_path, state, message, app_state)
-//         } else {
-//             // TODO warning
-//             // panic!("downcast error in dyn_event");
-//             xilem_core::MessageResult::Stale(message)
-//         }
-//     }
-// }
-
-pub trait ElementNew<T, A>: Node + crate::view::View<T, A> {
-    // TODO rename to class (currently conflicts with `ViewExt`)
-    fn classes<C: IntoClassNew>(self, class: C) -> Self;
-    // TODO rename to class (currently conflicts with `ViewExt`)
-    fn add_classes<C: IntoClassNew>(&mut self, class: C);
-    // TODO should this be in its own trait? (it doesn't have much to do with the DOM Node interface)
-    fn raw_attrs(&self) -> &AttrsNew;
-    // TODO should this be in Node?
-    fn attr<K: Into<CowStr>, V: Into<CowStr>>(self, key: K, value: V) -> Self;
-    fn set_attr<K: Into<CowStr>, V: Into<CowStr>>(&mut self, key: K, value: V);
-
-    fn onclick<EH>(self, handler: EH) -> Self
-    where
-        T: 'static,
-        A: 'static,
-        EH: EventHandler<T, A, crate::Event<web_sys::MouseEvent, Self::Element>> + 'static;
-
-    fn onscroll<EH>(self, handler: EH) -> Self
-    where
-        T: 'static,
-        A: 'static,
-        EH: EventHandler<T, A, crate::Event<web_sys::Event, Self::Element>> + 'static;
+struct EventListener<T, A, E, El, EH> {
+    #[allow(clippy::complexity)]
+    phantom: PhantomData<fn() -> (T, A, E, El)>,
+    event: &'static str,
+    options: EventListenerOptions,
+    event_handler: EH,
 }
 
-type EventListenersState = Vec<(xilem_core::Id, Box<dyn Any>)>;
-
-pub struct MyElementState<ViewSeqState> {
-    children_states: ViewSeqState,
-    children_elements: Vec<Pod>,
-    event_listener_state: EventListenersState,
-    scratch: Vec<Pod>,
+struct EventListenerState<EHS> {
+    #[allow(unused)]
+    listener: gloo::events::EventListener,
+    handler_id: xilem_core::Id,
+    handler_state: EHS,
 }
 
-// TODO not sure how much it helps reducing the code size,
-// but the two attributes could be extracted into its own type, and the actual element type is just a single tuple struct wrapping this type,
-pub struct MyHtmlElement<T, A, VS> {
-    pub(crate) attrs: AttrsNew,
-    // TODO maybe there's a better dynamic trait for this (event handlers can contain different event types...)
-    // event_listeners: VecMap<Option<xilem_core::Id>, DynamicEventListener<T, A>>,
-    event_listeners: Vec<DynamicEventListener<T, A>>,
-    children: VS,
-    phantom: std::marker::PhantomData<fn() -> (T, A)>,
-}
-
-impl<T, A, VS> Node for MyHtmlElement<T, A, VS> {
-    fn node_name(&self) -> &str {
-        "address"
-    }
-}
-
-fn impl_build_element<T, A>(
-    cx: &mut crate::context::Cx,
-    id: xilem_core::Id,
-    node_name: &str,
-    attrs: &AttrsNew,
-    children: &Vec<Pod>,
-    event_listeners: &[DynamicEventListener<T, A>],
-) -> (web_sys::HtmlElement, EventListenersState) {
-    cx.with_id(id, |cx| {
-        let el = cx.create_html_element(node_name);
-
-        for (name, value) in attrs.iter() {
-            el.set_attribute(name, &value.as_cow()).unwrap_throw();
-        }
-
-        for child in children {
-            el.append_child(child.0.as_node_ref()).unwrap_throw();
-        }
-
-        let event_listener_state = event_listeners
-            .iter()
-            .map(|listener| listener.build(&el, cx))
-            .collect();
-
-        // Set the id used internally to the `data-debugid` attribute.
-        // This allows the user to see if an element has been re-created or only altered.
-        #[cfg(debug_assertions)]
-        el.set_attribute("data-debugid", &id.to_raw().to_string())
-            .unwrap_throw();
-
-        (el, event_listener_state)
-    })
-}
-
-#[allow(clippy::too_many_arguments)]
-fn impl_rebuild_element<T, A>(
-    cx: &mut crate::context::Cx,
-    attrs: &AttrsNew,
-    prev_attrs: &AttrsNew,
-    element: &web_sys::Element,
-    prev_event_listeners: &[DynamicEventListener<T, A>],
-    event_listeners: &[DynamicEventListener<T, A>],
-    event_listeners_state: &mut EventListenersState,
-    mut children_changed: crate::ChangeFlags,
-    children: &[Pod],
-) -> crate::ChangeFlags {
-    use crate::ChangeFlags;
-    let mut changed = ChangeFlags::empty();
-
-    // diff attributes
-    for itm in prev_attrs.diff(attrs) {
-        match itm {
-            Diff::Add(name, value) | Diff::Change(name, value) => {
-                set_attribute(element, name, &value.as_cow());
-                changed |= ChangeFlags::OTHER_CHANGE;
-            }
-            Diff::Remove(name) => {
-                remove_attribute(element, name);
-                changed |= ChangeFlags::OTHER_CHANGE;
-            }
-        }
-    }
-
-    if children_changed.contains(ChangeFlags::STRUCTURE) {
-        // This is crude and will result in more DOM traffic than needed.
-        // The right thing to do is diff the new state of the children id
-        // vector against the old, and derive DOM mutations from that.
-        while let Some(child) = element.first_child() {
-            element.remove_child(&child).unwrap_throw();
-        }
-        for child in children {
-            element.append_child(child.0.as_node_ref()).unwrap_throw();
-        }
-        children_changed.remove(ChangeFlags::STRUCTURE);
-    }
-
-    for ((listener, listener_prev), (listener_id, listener_state)) in event_listeners
-        .iter()
-        .zip(prev_event_listeners.iter())
-        .zip(event_listeners_state.iter_mut())
-    {
-        let listener_changed =
-            listener.rebuild(element, cx, listener_prev, listener_id, listener_state);
-        changed |= listener_changed;
-    }
-
-    let cur_listener_len = event_listeners.len();
-    let state_len = event_listeners_state.len();
-
-    #[allow(clippy::comparison_chain)]
-    if cur_listener_len < state_len {
-        event_listeners_state.truncate(cur_listener_len);
-        changed |= ChangeFlags::STRUCTURE;
-    } else if cur_listener_len > state_len {
-        for listener in &event_listeners[state_len..cur_listener_len] {
-            event_listeners_state.push(listener.build(element, cx));
-        }
-        changed |= ChangeFlags::STRUCTURE;
-    }
-    changed
-}
-
-fn impl_message_element<T, A>(
-    id_path: &[xilem_core::Id],
-    event_listeners: &[DynamicEventListener<T, A>],
-    event_listeners_state: &mut EventListenersState,
-    message: Box<dyn Any>,
-    app_state: &mut T,
-) -> xilem_core::MessageResult<A> {
-    if let Some((first, rest_path)) = id_path.split_first() {
-        if let Some((idx, (_, listener_state))) = event_listeners_state
-            .iter_mut()
-            .enumerate()
-            .find(|(_, (id, _))| id == first)
-        {
-            let listener = &event_listeners[idx];
-            return listener.message(rest_path, listener_state.as_mut(), message, app_state);
-        }
-    }
-    xilem_core::MessageResult::Stale(message)
-}
-
-impl<T, A, VS> crate::view::ViewMarker for MyHtmlElement<T, A, VS> {}
-
-impl<T, A, VS> crate::view::View<T, A> for MyHtmlElement<T, A, VS>
+impl<T, A, E, El, EH> EventListener<T, A, E, El, EH>
 where
-    VS: crate::view::ViewSequence<T, A>,
+    E: JsCast + 'static,
+    El: 'static,
+    EH: EventHandler<T, A, Event<E, El>>,
 {
-    type State = MyElementState<VS::State>;
-    type Element = web_sys::HtmlElement;
+    fn new(event: &'static str, event_handler: EH, options: EventListenerOptions) -> Self {
+        EventListener {
+            phantom: PhantomData,
+            event,
+            options,
+            event_handler,
+        }
+    }
 
-    fn build(&self, cx: &mut crate::context::Cx) -> (xilem_core::Id, Self::State, Self::Element) {
-        // TODO remove
-        debug_log!("new element built: {}", self.node_name());
+    fn build(
+        &self,
+        cx: &mut crate::context::Cx,
+        event_target: &web_sys::EventTarget,
+    ) -> (xilem_core::Id, EventListenerState<EH::State>) {
+        cx.with_new_id(|cx| {
+            let thunk = cx.message_thunk();
+            let listener = gloo::events::EventListener::new_with_options(
+                event_target,
+                self.event,
+                self.options,
+                move |event: &web_sys::Event| {
+                    let event = (*event).clone().dyn_into::<E>().unwrap_throw();
+                    let event: Event<E, El> = Event::new(event);
+                    thunk.push_message(EventMsg { event });
+                },
+            );
 
-        let mut children_elements = vec![];
-        let (id, children_states) =
-            cx.with_new_id(|cx| self.children.build(cx, &mut children_elements));
-        let (el, event_listener_state) = impl_build_element(
-            cx,
-            id,
-            self.node_name(),
-            &self.attrs,
-            &children_elements,
-            &self.event_listeners,
-        );
+            let (handler_id, handler_state) = self.event_handler.build(cx);
 
-        let state = MyElementState {
-            children_states,
-            children_elements,
-            event_listener_state,
-            scratch: vec![],
-        };
-        (id, state, el)
+            EventListenerState {
+                listener,
+                handler_id,
+                handler_state,
+            }
+        })
     }
 
     fn rebuild(
@@ -823,114 +608,50 @@ where
         cx: &mut crate::context::Cx,
         prev: &Self,
         id: &mut xilem_core::Id,
-        state: &mut Self::State,
-        element: &mut Self::Element,
+        state: &mut EventListenerState<EH::State>,
+        event_target: &web_sys::EventTarget,
     ) -> crate::ChangeFlags {
-        debug_assert!(prev.node_name() == self.node_name());
-
-        cx.with_id(*id, |cx| {
-            let mut splice =
-                xilem_core::VecSplice::new(&mut state.children_elements, &mut state.scratch);
-            let children_changed =
-                self.children
-                    .rebuild(cx, &prev.children, &mut state.children_states, &mut splice);
-            impl_rebuild_element(
+        if prev.event != self.event
+            || self.options.passive != prev.options.passive
+            || matches!(self.options.phase, EventListenerPhase::Bubble)
+                != matches!(prev.options.phase, EventListenerPhase::Bubble)
+        {
+            let (new_id, new_state) = self.build(cx, event_target);
+            *id = new_id;
+            *state = new_state;
+            crate::ChangeFlags::STRUCTURE
+        } else {
+            self.event_handler.rebuild(
                 cx,
-                &self.attrs,
-                &prev.attrs,
-                element,
-                &prev.event_listeners,
-                &self.event_listeners,
-                &mut state.event_listener_state,
-                children_changed,
-                &state.children_elements,
+                &prev.event_handler,
+                &mut state.handler_id,
+                &mut state.handler_state,
             )
-        })
+        }
     }
 
     fn message(
         &self,
         id_path: &[xilem_core::Id],
-        state: &mut Self::State,
+        state: &mut EventListenerState<EH::State>,
         message: Box<dyn std::any::Any>,
         app_state: &mut T,
     ) -> xilem_core::MessageResult<A> {
-        debug_assert!(state.event_listener_state.len() == self.event_listeners.len());
-        impl_message_element(
-            id_path,
-            &self.event_listeners,
-            &mut state.event_listener_state,
-            message,
-            app_state,
-        )
-        .or(|message| {
-            self.children
-                .message(id_path, &mut state.children_states, message, app_state)
-        })
-    }
-}
-
-/// Builder function for a my_element element view.
-pub fn my_element<T, A, VS>(children: VS) -> MyHtmlElement<T, A, VS>
-where
-    VS: crate::view::ViewSequence<T, A>,
-{
-    MyHtmlElement {
-        attrs: Default::default(),
-        children,
-        phantom: std::marker::PhantomData,
-        event_listeners: Default::default(),
-    }
-}
-
-impl<T, A, VS> ElementNew<T, A> for MyHtmlElement<T, A, VS>
-where
-    VS: crate::view::ViewSequence<T, A>,
-{
-    fn classes<C: IntoClassNew>(mut self, class: C) -> Self {
-        add_class_new(&mut self.attrs, class);
-        self
-    }
-
-    fn add_classes<C: IntoClassNew>(&mut self, class: C) {
-        add_class_new(&mut self.attrs, class);
-    }
-
-    fn raw_attrs(&self) -> &AttrsNew {
-        todo!()
-    }
-
-    fn attr<K: Into<CowStr>, V: Into<CowStr>>(mut self, key: K, value: V) -> Self {
-        self.attrs.insert_untyped(key, value);
-        self
-    }
-
-    fn set_attr<K: Into<CowStr>, V: Into<CowStr>>(&mut self, key: K, value: V) {
-        self.attrs.insert_untyped(key, value);
-    }
-
-    fn onclick<EH>(mut self, handler: EH) -> Self
-    where
-        T: 'static,
-        A: 'static,
-        EH: EventHandler<T, A, crate::Event<web_sys::MouseEvent, web_sys::HtmlElement>> + 'static, // V::Element, but this results in better docs
-    {
-        let listener = EventListener::new("click", handler, Default::default());
-        self.event_listeners
-            .push(DynamicEventListener::new(listener));
-        self
-    }
-
-    fn onscroll<EH>(mut self, handler: EH) -> Self
-    where
-        T: 'static,
-        A: 'static,
-        EH: EventHandler<T, A, crate::Event<web_sys::Event, web_sys::HtmlElement>> + 'static, // V::Element, but this results in better docs
-    {
-        let listener = EventListener::new("scroll", handler, Default::default());
-        self.event_listeners
-            .push(DynamicEventListener::new(listener));
-        self
+        if id_path.is_empty() {
+            return self
+                .event_handler
+                .message(&[], &mut state.handler_state, message, app_state);
+        } else if let Some((first, rest_path)) = id_path.split_first() {
+            if *first == state.handler_id {
+                return self.event_handler.message(
+                    rest_path,
+                    &mut state.handler_state,
+                    message,
+                    app_state,
+                );
+            }
+        }
+        xilem_core::MessageResult::Stale(message)
     }
 }
 
@@ -1057,114 +778,139 @@ impl<T, A> DynamicEventListener<T, A> {
     }
 }
 
-struct EventListener<T, A, E, El, EH> {
-    #[allow(clippy::complexity)]
-    phantom: PhantomData<fn() -> (T, A, E, El)>,
-    event: &'static str,
-    options: EventListenerOptions,
-    event_handler: EH,
+type EventListenersState = Vec<(xilem_core::Id, Box<dyn Any>)>;
+
+pub struct ElementState<ViewSeqState> {
+    children_states: ViewSeqState,
+    children_elements: Vec<Pod>,
+    event_listener_state: EventListenersState,
+    scratch: Vec<Pod>,
 }
 
-struct EventListenerState<EHS> {
-    #[allow(unused)]
-    listener: gloo::events::EventListener,
-    handler_id: xilem_core::Id,
-    handler_state: EHS,
+fn impl_build_element<T, A>(
+    cx: &mut crate::context::Cx,
+    id: xilem_core::Id,
+    node_name: &str,
+    attrs: &Attrs,
+    children: &Vec<Pod>,
+    event_listeners: &[DynamicEventListener<T, A>],
+) -> (web_sys::HtmlElement, EventListenersState) {
+    cx.with_id(id, |cx| {
+        let el = cx.create_html_element(node_name);
+
+        for (name, value) in attrs.iter() {
+            el.set_attribute(name, &value.as_cow()).unwrap_throw();
+        }
+
+        for child in children {
+            el.append_child(child.0.as_node_ref()).unwrap_throw();
+        }
+
+        let event_listener_state = event_listeners
+            .iter()
+            .map(|listener| listener.build(&el, cx))
+            .collect();
+
+        // Set the id used internally to the `data-debugid` attribute.
+        // This allows the user to see if an element has been re-created or only altered.
+        #[cfg(debug_assertions)]
+        el.set_attribute("data-debugid", &id.to_raw().to_string())
+            .unwrap_throw();
+
+        (el, event_listener_state)
+    })
 }
 
-impl<T, A, E, El, EH> EventListener<T, A, E, El, EH>
-where
-    E: JsCast + 'static,
-    El: 'static,
-    EH: EventHandler<T, A, Event<E, El>>,
-{
-    fn new(event: &'static str, event_handler: EH, options: EventListenerOptions) -> Self {
-        EventListener {
-            phantom: PhantomData,
-            event,
-            options,
-            event_handler,
+#[allow(clippy::too_many_arguments)]
+fn impl_rebuild_element<T, A>(
+    cx: &mut crate::context::Cx,
+    attrs: &Attrs,
+    prev_attrs: &Attrs,
+    element: &web_sys::Element,
+    prev_event_listeners: &[DynamicEventListener<T, A>],
+    event_listeners: &[DynamicEventListener<T, A>],
+    event_listeners_state: &mut EventListenersState,
+    mut children_changed: crate::ChangeFlags,
+    children: &[Pod],
+) -> crate::ChangeFlags {
+    use crate::ChangeFlags;
+    let mut changed = ChangeFlags::empty();
+
+    // diff attributes
+    for itm in prev_attrs.diff(attrs) {
+        match itm {
+            Diff::Add(name, value) | Diff::Change(name, value) => {
+                set_attribute(element, name, &value.as_cow());
+                changed |= ChangeFlags::OTHER_CHANGE;
+            }
+            Diff::Remove(name) => {
+                remove_attribute(element, name);
+                changed |= ChangeFlags::OTHER_CHANGE;
+            }
         }
     }
 
-    fn build(
-        &self,
-        cx: &mut crate::context::Cx,
-        event_target: &web_sys::EventTarget,
-    ) -> (xilem_core::Id, EventListenerState<EH::State>) {
-        cx.with_new_id(|cx| {
-            let thunk = cx.message_thunk();
-            let listener = gloo::events::EventListener::new_with_options(
-                event_target,
-                self.event,
-                self.options,
-                move |event: &web_sys::Event| {
-                    let event = (*event).clone().dyn_into::<E>().unwrap_throw();
-                    let event: Event<E, El> = Event::new(event);
-                    thunk.push_message(EventMsg { event });
-                },
-            );
-
-            let (handler_id, handler_state) = self.event_handler.build(cx);
-
-            EventListenerState {
-                listener,
-                handler_id,
-                handler_state,
-            }
-        })
+    if children_changed.contains(ChangeFlags::STRUCTURE) {
+        // This is crude and will result in more DOM traffic than needed.
+        // The right thing to do is diff the new state of the children id
+        // vector against the old, and derive DOM mutations from that.
+        while let Some(child) = element.first_child() {
+            element.remove_child(&child).unwrap_throw();
+        }
+        for child in children {
+            element.append_child(child.0.as_node_ref()).unwrap_throw();
+        }
+        children_changed.remove(ChangeFlags::STRUCTURE);
     }
 
-    fn rebuild(
-        &self,
-        cx: &mut crate::context::Cx,
-        prev: &Self,
-        id: &mut xilem_core::Id,
-        state: &mut EventListenerState<EH::State>,
-        event_target: &web_sys::EventTarget,
-    ) -> crate::ChangeFlags {
-        if prev.event != self.event
-            || self.options.passive != prev.options.passive
-            || matches!(self.options.phase, EventListenerPhase::Bubble)
-                != matches!(prev.options.phase, EventListenerPhase::Bubble)
+    for ((listener, listener_prev), (listener_id, listener_state)) in event_listeners
+        .iter()
+        .zip(prev_event_listeners.iter())
+        .zip(event_listeners_state.iter_mut())
+    {
+        let listener_changed =
+            listener.rebuild(element, cx, listener_prev, listener_id, listener_state);
+        changed |= listener_changed;
+    }
+
+    let cur_listener_len = event_listeners.len();
+    let state_len = event_listeners_state.len();
+
+    #[allow(clippy::comparison_chain)]
+    if cur_listener_len < state_len {
+        event_listeners_state.truncate(cur_listener_len);
+        changed |= ChangeFlags::STRUCTURE;
+    } else if cur_listener_len > state_len {
+        for listener in &event_listeners[state_len..cur_listener_len] {
+            event_listeners_state.push(listener.build(element, cx));
+        }
+        changed |= ChangeFlags::STRUCTURE;
+    }
+    changed | children_changed
+}
+
+fn impl_message_element<T, A>(
+    id_path: &[xilem_core::Id],
+    event_listeners: &[DynamicEventListener<T, A>],
+    event_listeners_state: &mut EventListenersState,
+    message: Box<dyn Any>,
+    app_state: &mut T,
+) -> xilem_core::MessageResult<A> {
+    if let Some((first, rest_path)) = id_path.split_first() {
+        if let Some((idx, (_, listener_state))) = event_listeners_state
+            .iter_mut()
+            .enumerate()
+            .find(|(_, (id, _))| id == first)
         {
-            let (new_id, new_state) = self.build(cx, event_target);
-            *id = new_id;
-            *state = new_state;
-            crate::ChangeFlags::STRUCTURE
-        } else {
-            self.event_handler.rebuild(
-                cx,
-                &prev.event_handler,
-                &mut state.handler_id,
-                &mut state.handler_state,
-            )
+            let listener = &event_listeners[idx];
+            return listener.message(rest_path, listener_state.as_mut(), message, app_state);
         }
     }
+    xilem_core::MessageResult::Stale(message)
+}
 
-    fn message(
-        &self,
-        id_path: &[xilem_core::Id],
-        state: &mut EventListenerState<EH::State>,
-        message: Box<dyn std::any::Any>,
-        app_state: &mut T,
-    ) -> xilem_core::MessageResult<A> {
-        if id_path.is_empty() {
-            return self
-                .event_handler
-                .message(&[], &mut state.handler_state, message, app_state);
-        } else if let Some((first, rest_path)) = id_path.split_first() {
-            if *first == state.handler_id {
-                return self.event_handler.message(
-                    rest_path,
-                    &mut state.handler_state,
-                    message,
-                    app_state,
-                );
-            }
-        }
-        xilem_core::MessageResult::Stale(message)
-    }
+pub trait Node {
+    fn node_name(&self) -> &str;
 }
 
 /// These traits should mirror the respective DOM interfaces
@@ -1174,16 +920,45 @@ where
 ///
 /// I'm generally not sure yet, if it makes sense to do all of this via traits (there are advantages though, but it's (likely) not compilation size...)
 /// (thinking about AsRef<ParentClass> and AsMut<ParentClass>, and implementing all builder methods on the concrete type, similar as with wasm-bindgen)
-pub trait Element<T, A>: Node {
+/// but on the other hand most of these methods should inline to the non-generic Attrs::insert_attr (or similar non-generic impls)
+pub trait Element<T, A>: Node + crate::view::View<T, A> {
     // TODO rename to class (currently conflicts with `ViewExt`)
+    // TODO should classes be additive? Currently they are.
     fn classes<C: IntoClass>(self, class: C) -> Self;
-    // TODO rename to class (currently conflicts with `ViewExt`)
-    fn add_classes<C: IntoClass>(&mut self, class: C);
+    fn add_class<C: IntoClass>(&mut self, class: C);
     // TODO should this be in its own trait? (it doesn't have much to do with the DOM Node interface)
     fn raw_attrs(&self) -> &Attrs;
     // TODO should this be in Node?
-    fn attr<K: Into<String>, V: Into<String>>(self, key: K, value: V) -> Self;
-    fn set_attr<K: Into<String>, V: Into<String>>(&mut self, key: K, value: V);
+    fn attr<K: Into<CowStr>, V: Into<CowStr>>(self, key: K, value: V) -> Self;
+    fn set_attr<K: Into<CowStr>, V: Into<CowStr>>(&mut self, key: K, value: V);
+
+    // TODO generate all this event listener boilerplate with macros
+    fn on_click<EH>(self, handler: EH) -> Self
+    where
+        T: 'static,
+        A: 'static,
+        EH: EventHandler<T, A, crate::Event<web_sys::MouseEvent, Self::Element>> + 'static;
+
+    fn on_click_with_options<EH>(self, handler: EH, options: EventListenerOptions) -> Self
+    where
+        T: 'static,
+        A: 'static,
+        EH: EventHandler<T, A, crate::Event<web_sys::MouseEvent, Self::Element>> + 'static;
+
+    fn on_scroll<EH>(self, handler: EH) -> Self
+    where
+        Self: Sized,
+        T: 'static,
+        A: 'static,
+        EH: EventHandler<T, A, crate::Event<web_sys::Event, Self::Element>> + 'static;
+
+    fn on_scroll_with_options<EH>(self, handler: EH, options: EventListenerOptions) -> Self
+    where
+        T: 'static,
+        A: 'static,
+        EH: EventHandler<T, A, crate::Event<web_sys::Event, Self::Element>> + 'static;
+
+    // TODO rest of all the methods allowed on an element
 }
 
 pub trait HtmlElement<T, A>: Element<T, A> {}
@@ -1207,62 +982,7 @@ pub trait HtmlCanvasElement<T, A>: HtmlElement<T, A> {
     fn set_height(&mut self, height: u32);
 }
 
-fn simple_attr_impl<T: 'static>(
-    attrs: &mut BTreeMap<&'static str, Box<dyn Any>>,
-    key: &'static str,
-    value: T,
-) {
-    match attrs.entry(key) {
-        std::collections::btree_map::Entry::Vacant(entry) => {
-            entry.insert(Box::new(value));
-        }
-        std::collections::btree_map::Entry::Occupied(class_attr) => {
-            *class_attr.into_mut().downcast_mut::<T>().unwrap() = value;
-        }
-    };
-}
-
-macro_rules! impl_simple_attr_new {
-    ($name:ident, $setter_name: ident, $internal_fn: ident, $ty: ty, $el: ident) => {
-        #[inline(always)]
-        fn $name(mut self, $name: $ty) -> $el<T, A, VS> {
-            $internal_fn(&mut self.attrs, stringify!($name), $name);
-            self
-        }
-
-        #[inline(always)]
-        fn $setter_name(&mut self, $name: $ty) {
-            $internal_fn(&mut self.attrs, stringify!($name), $name);
-        }
-    };
-}
-
-macro_rules! impl_simple_attr {
-    ($name:ident, $setter_name: ident, $ty: ty, $el: ident) => {
-        #[inline(always)]
-        fn $name(mut self, $name: $ty) -> $el<T, A, VS> {
-            simple_attr_impl(&mut self.attrs, stringify!($name), $name);
-            self
-        }
-
-        #[inline(always)]
-        fn $setter_name(&mut self, $name: $ty) {
-            simple_attr_impl(&mut self.attrs, stringify!($name), $name);
-        }
-    };
-}
-
-macro_rules! impl_node {
-    ($ty_name:ident, $name: ident) => {
-        impl<T, A, VS> Node for $ty_name<T, A, VS> {
-            fn node_name(&self) -> &str {
-                stringify!($name)
-            }
-        }
-    };
-}
-
-fn add_class_new<C: IntoClassNew>(attrs: &mut AttrsNew, class: C) {
+fn add_class<C: IntoClass>(attrs: &mut Attrs, class: C) {
     let mut classes = class.classes().peekable();
 
     if classes.peek().is_none() {
@@ -1297,37 +1017,17 @@ fn add_class_new<C: IntoClassNew>(attrs: &mut AttrsNew, class: C) {
     };
 }
 
-fn add_class<C: IntoClass>(attrs: &mut Attrs, class: C) {
-    match attrs.entry("class") {
-        std::collections::btree_map::Entry::Vacant(entry) => {
-            let classes = BTreeSet::from_iter(class.classes());
-            if !classes.is_empty() {
-                entry.insert(Box::new(classes));
-            }
+macro_rules! impl_simple_attr {
+    ($name:ident, $setter_name: ident, $ty: ty, $el: ident) => {
+        #[inline(always)]
+        fn $name(mut self, $name: $ty) -> $el<T, A, VS> {
+            self.attrs.insert_attr(stringify!($name), $name);
+            self
         }
-        std::collections::btree_map::Entry::Occupied(class_attr) => {
-            class_attr
-                .into_mut()
-                .downcast_mut::<BTreeSet<String>>()
-                .unwrap()
-                .extend(class.classes());
-        }
-    };
-}
 
-// TODO currently untyped attributes are overwritten by typed ones,
-// if they're defined, maybe (some) can be merged nicely
-fn add_untyped_attr(attrs: &mut Attrs, key: String, value: String) {
-    match attrs.entry(UNTYPED_ATTRS) {
-        std::collections::btree_map::Entry::Vacant(entry) => {
-            entry.insert(Box::new(BTreeMap::from([(key, value)])));
-        }
-        std::collections::btree_map::Entry::Occupied(attrs) => {
-            attrs
-                .into_mut()
-                .downcast_mut::<BTreeMap<String, String>>()
-                .unwrap()
-                .insert(key, value);
+        #[inline(always)]
+        fn $setter_name(&mut self, $name: $ty) {
+            self.attrs.insert_attr(stringify!($name), $name);
         }
     };
 }
@@ -1336,16 +1036,17 @@ fn add_untyped_attr(attrs: &mut Attrs, key: String, value: String) {
 // it might make sense to add an extra inner impl function if possible
 // (see below at `simple_attr_impl` for an example) to avoid big compilation code size
 macro_rules! impl_element {
-    ($ty_name:ident, $name: ident) => {
-        impl_node!($ty_name, $name);
-
-        impl<T, A, VS> Element<T, A> for $ty_name<T, A, VS> {
-            fn classes<C: IntoClass>(mut self, class: C) -> $ty_name<T, A, VS> {
+    ($ty_name:ident, $name: ident, $concrete_dom_interface: ident) => {
+        impl<T, A, VS> Element<T, A> for $ty_name<T, A, VS>
+        where
+            VS: crate::view::ViewSequence<T, A>,
+        {
+            fn classes<C: IntoClass>(mut self, class: C) -> Self {
                 add_class(&mut self.attrs, class);
                 self
             }
 
-            fn add_classes<C: IntoClass>(&mut self, class: C) {
+            fn add_class<C: IntoClass>(&mut self, class: C) {
                 add_class(&mut self.attrs, class);
             }
 
@@ -1353,293 +1054,135 @@ macro_rules! impl_element {
                 &self.attrs
             }
 
-            fn set_attr<K: Into<String>, V: Into<String>>(&mut self, key: K, value: V) {
-                add_untyped_attr(&mut self.attrs, key.into(), value.into());
-            }
-
-            fn attr<K: Into<String>, V: Into<String>>(
+            fn attr<K: Into<CowStr>, V: Into<CowStr>>(
                 mut self,
                 key: K,
                 value: V,
             ) -> $ty_name<T, A, VS> {
-                add_untyped_attr(&mut self.attrs, key.into(), value.into());
+                self.attrs.insert_untyped(key, value);
+                self
+            }
+
+            fn set_attr<K: Into<CowStr>, V: Into<CowStr>>(&mut self, key: K, value: V) {
+                self.attrs.insert_untyped(key, value);
+            }
+
+            fn on_click<EH>(self, handler: EH) -> $ty_name<T, A, VS>
+            where
+                T: 'static,
+                A: 'static,
+                EH: EventHandler<
+                        T,
+                        A,
+                        crate::Event<web_sys::MouseEvent, web_sys::$concrete_dom_interface>,
+                    > + 'static, // V::Element, but this results in better docs
+            {
+                self.on_click_with_options(handler, EventListenerOptions::default())
+            }
+
+            fn on_click_with_options<EH>(
+                mut self,
+                handler: EH,
+                options: EventListenerOptions,
+            ) -> $ty_name<T, A, VS>
+            where
+                T: 'static,
+                A: 'static,
+                EH: EventHandler<
+                        T,
+                        A,
+                        crate::Event<web_sys::MouseEvent, web_sys::$concrete_dom_interface>,
+                    > + 'static, // V::Element, but this results in better docs
+            {
+                let listener = EventListener::new("click", handler, options);
+                self.event_listeners
+                    .push(DynamicEventListener::new(listener));
+                self
+            }
+
+            fn on_scroll<EH>(self, handler: EH) -> $ty_name<T, A, VS>
+            where
+                T: 'static,
+                A: 'static,
+                EH: EventHandler<
+                        T,
+                        A,
+                        crate::Event<web_sys::Event, web_sys::$concrete_dom_interface>,
+                    > + 'static, // V::Element, but this results in better docs
+            {
+                self.on_scroll_with_options(handler, EventListenerOptions::default())
+            }
+
+            fn on_scroll_with_options<EH>(
+                mut self,
+                handler: EH,
+                options: EventListenerOptions,
+            ) -> $ty_name<T, A, VS>
+            where
+                T: 'static,
+                A: 'static,
+                EH: EventHandler<
+                        T,
+                        A,
+                        crate::Event<web_sys::Event, web_sys::$concrete_dom_interface>,
+                    > + 'static, // V::Element, but this results in better docs
+            {
+                let listener = EventListener::new("scroll", handler, options);
+                self.event_listeners
+                    .push(DynamicEventListener::new(listener));
                 self
             }
         }
     };
 }
 
-macro_rules! impl_html_element {
-    ($ty_name:ident, $name: ident) => {
-        impl_element!($ty_name, $name);
-
-        impl<T, A, VS> HtmlElement<T, A> for $ty_name<T, A, VS> {}
-    };
-}
-
-macro_rules! generate_html_element_derivation {
+macro_rules! generate_dom_interface_impl {
     ($ty_name:ident, $name:ident, $dom_interface:ident) => {
-        generate_html_element_derivation!($ty_name, $name, $dom_interface, {});
+        generate_dom_interface_impl!($ty_name, $name, $dom_interface, {});
     };
     ($ty_name:ident, $name:ident, $dom_interface:ident, $body: tt) => {
-        impl_html_element!($ty_name, $name);
-
-        impl<T, A, VS> $dom_interface<T, A> for $ty_name<T, A, VS> $body
+        impl<T, A, VS> $dom_interface<T, A> for $ty_name<T, A, VS>
+        where
+            VS: crate::view::ViewSequence<T, A>,
+        $body
     };
 }
 
 macro_rules! impl_html_dom_interface {
-    ($ty_name: ident, $name: ident, Element) => {
-        impl_element!($ty_name, $name);
+    ($ty_name: ident, $name: ident, Node) => {
+        impl<T, A, VS> Node for $ty_name<T, A, VS> {
+            fn node_name(&self) -> &str {
+                stringify!($name)
+            }
+        }
     };
-    ($ty_name: ident, $name: ident, HtmlElement) => {
-        impl_html_element!($ty_name, $name);
+    ($ty_name: ident, $name: ident, $concrete_dom_interface: ident, Element) => {
+        impl_html_dom_interface!($ty_name, $name, Node);
+        impl_element!($ty_name, $name, $concrete_dom_interface);
     };
-    ($ty_name: ident, $name: ident, HtmlDivElement) => {
-        generate_html_element_derivation!($ty_name, $name, HtmlDivElement);
+    ($ty_name: ident, $name: ident, $concrete_dom_interface: ident, HtmlElement) => {
+        impl_html_dom_interface!($ty_name, $name, $concrete_dom_interface, Element);
+        generate_dom_interface_impl!($ty_name, $name, HtmlElement);
     };
-    ($ty_name: ident, $name: ident, HtmlSpanElement) => {
-        generate_html_element_derivation!($ty_name, $name, HtmlSpanElement);
+    ($ty_name: ident, $name: ident, $concrete_dom_interface: ident, HtmlDivElement) => {
+        impl_html_dom_interface!($ty_name, $name, $concrete_dom_interface, HtmlElement);
+        generate_dom_interface_impl!($ty_name, $name, HtmlDivElement);
     };
-    ($ty_name: ident, $name: ident, HtmlHeadingElement) => {
-        generate_html_element_derivation!($ty_name, $name, HtmlHeadingElement);
+    ($ty_name: ident, $name: ident, $concrete_dom_interface: ident, HtmlSpanElement) => {
+        impl_html_dom_interface!($ty_name, $name, $concrete_dom_interface, HtmlElement);
+        generate_dom_interface_impl!($ty_name, $name, HtmlSpanElement);
     };
-    ($ty_name: ident, $name: ident, HtmlCanvasElement) => {
-        generate_html_element_derivation!($ty_name, $name, HtmlCanvasElement, {
+    ($ty_name: ident, $name: ident, $concrete_dom_interface: ident, HtmlHeadingElement) => {
+        impl_html_dom_interface!($ty_name, $name, $concrete_dom_interface, HtmlElement);
+        generate_dom_interface_impl!($ty_name, $name, HtmlHeadingElement);
+    };
+    ($ty_name: ident, $name: ident, $concrete_dom_interface: ident, HtmlCanvasElement) => {
+        impl_html_dom_interface!($ty_name, $name, $concrete_dom_interface, HtmlElement);
+        generate_dom_interface_impl!($ty_name, $name, HtmlCanvasElement, {
             impl_simple_attr!(width, set_width, u32, $ty_name);
             impl_simple_attr!(height, set_height, u32, $ty_name);
         });
     };
-}
-
-fn serialize_attr<'a, T, F>(
-    attrs: &Attrs,
-    key: &'a str,
-    attr_map: &mut BTreeMap<&'a str, String>,
-    serialize_fn: F,
-) where
-    T: PartialEq + 'static,
-    F: Fn(&T) -> String,
-{
-    if let Some(attr) = attrs.get(key) {
-        let attr = attr.downcast_ref::<T>().unwrap();
-        let serialized_attr = serialize_fn(attr);
-        attr_map.insert(key, serialized_attr);
-    }
-}
-
-fn serialize_classes(classes: &BTreeSet<String>) -> String {
-    classes.iter().fold(String::new(), |mut acc, s| {
-        if !acc.is_empty() {
-            acc += " ";
-        }
-        if !s.is_empty() {
-            acc += s;
-        }
-        acc
-    })
-}
-
-fn serialize_element_attrs<'a>(attrs: &'a Attrs, attr_map: &mut BTreeMap<&'a str, String>) {
-    if let Some(untyped_attrs) = attrs
-        .get(UNTYPED_ATTRS)
-        .and_then(|attrs| attrs.downcast_ref::<BTreeMap<String, String>>())
-    {
-        attr_map.extend(untyped_attrs.iter().map(|(k, v)| (k.as_str(), v.clone())));
-    }
-    serialize_attr(attrs, "class", attr_map, serialize_classes);
-}
-
-fn serialize_html_canvas_element_attrs<'a>(
-    attrs: &'a Attrs,
-    attr_map: &mut BTreeMap<&'a str, String>,
-) {
-    serialize_element_attrs(attrs, attr_map);
-    serialize_attr(attrs, "width", attr_map, u32::to_string);
-    serialize_attr(attrs, "height", attr_map, u32::to_string);
-}
-
-macro_rules! serialize_attrs {
-    ($element_attrs: expr, $attr_map: expr, Element) => {
-        serialize_element_attrs($element_attrs, $attr_map);
-    };
-    ($element_attrs: expr, $attr_map: expr, HtmlElement) => {
-        serialize_element_attrs($element_attrs, $attr_map);
-    };
-    ($element_attrs: expr, $attr_map: expr, HtmlDivElement) => {
-        serialize_element_attrs($element_attrs, $attr_map);
-    };
-    ($element_attrs: expr, $attr_map: expr, HtmlSpanElement) => {
-        serialize_element_attrs($element_attrs, $attr_map);
-    };
-    ($element_attrs: expr, $attr_map: expr, HtmlHeadingElement) => {
-        serialize_element_attrs($element_attrs, $attr_map);
-    };
-    ($element_attrs: expr, $attr_map: expr, HtmlCanvasElement) => {
-        serialize_html_canvas_element_attrs($element_attrs, $attr_map);
-    };
-}
-
-fn simple_diff_attr<'a, T, F>(
-    old_attrs: &Attrs,
-    new_attrs: &'a Attrs,
-    key: &'a str,
-    new_serialized_attrs: &mut BTreeMap<&'a str, String>,
-    serialize_fn: F,
-) where
-    T: PartialEq + 'static,
-    F: Fn(&T) -> String,
-{
-    match (old_attrs.get(key), new_attrs.get(key)) {
-        (_, None) => (),
-        (None, Some(new)) => {
-            let new = new.downcast_ref::<T>().unwrap();
-            let serialized_attr = serialize_fn(new);
-            new_serialized_attrs.insert(key, serialized_attr);
-        }
-        (Some(old), Some(new)) => {
-            let new = new.downcast_ref::<T>().unwrap();
-            if old.downcast_ref::<T>().unwrap() != new {
-                let serialized_attr = serialize_fn(new);
-                new_serialized_attrs.insert(key, serialized_attr);
-            }
-        }
-    };
-}
-
-fn element_diff<'a>(
-    old: &Attrs,
-    new: &'a Attrs,
-    new_serialized_attrs: &mut BTreeMap<&'a str, String>,
-) {
-    match (old.get(UNTYPED_ATTRS), new.get(UNTYPED_ATTRS)) {
-        (_, None) => (),
-        (None, Some(new)) => {
-            let new = new.downcast_ref::<BTreeMap<String, String>>().unwrap();
-            new_serialized_attrs.extend(new.iter().map(|(k, v)| (k.as_str(), v.clone())));
-        }
-        (Some(old), Some(new)) => {
-            let new = new.downcast_ref::<BTreeMap<String, String>>().unwrap();
-            let old = old.downcast_ref::<BTreeMap<String, String>>().unwrap();
-            // TODO there are likely faster ways to do this...
-            let new_untyped_attrs = new.iter().filter_map(|(new_name, new_value)| {
-                if let Some(old_value) = old.get(new_name) {
-                    if new_value == old_value {
-                        None
-                    } else {
-                        Some((new_name.as_str(), new_value.clone()))
-                    }
-                } else {
-                    Some((new_name.as_str(), new_value.clone()))
-                }
-            });
-            new_serialized_attrs.extend(new_untyped_attrs);
-        }
-    };
-    simple_diff_attr(old, new, "class", new_serialized_attrs, serialize_classes);
-}
-
-#[allow(unused)]
-#[inline(always)]
-pub fn html_element_diff<'a>(
-    old: &Attrs,
-    new: &'a Attrs,
-    new_attrs: &mut BTreeMap<&'a str, String>,
-) {
-    element_diff(old, new, new_attrs)
-}
-
-/// returns whether attributes belonging to the HTMLCanvasElement interface are different
-#[allow(unused)]
-#[inline(always)]
-pub fn html_canvas_element_diff<'a>(
-    old: &Attrs,
-    new: &'a Attrs,
-    new_serialized_attrs: &mut BTreeMap<&'a str, String>,
-) {
-    html_element_diff(old, new, new_serialized_attrs);
-    simple_diff_attr(old, new, "width", new_serialized_attrs, u32::to_string);
-    simple_diff_attr(old, new, "height", new_serialized_attrs, u32::to_string);
-}
-
-macro_rules! impl_rebuild_diff {
-    ($old: expr, $new: expr, $diff_map: expr, Element) => {
-        element_diff($old, $new, $diff_map);
-    };
-    ($old: expr, $new: expr, $diff_map: expr, HtmlElement) => {
-        html_element_diff($old, $new, $diff_map);
-    };
-    ($old: expr, $new: expr, $diff_map: expr, HtmlDivElement) => {
-        html_element_diff($old, $new, $diff_map);
-    };
-    ($old: expr, $new: expr, $diff_map: expr, HtmlSpanElement) => {
-        html_element_diff($old, $new, $diff_map);
-    };
-    ($old: expr, $new: expr, $diff_map: expr, HtmlHeadingElement) => {
-        html_element_diff($old, $new, $diff_map);
-    };
-    ($old: expr, $new: expr, $diff_map: expr, HtmlCanvasElement) => {
-        html_canvas_element_diff($old, $new, $diff_map);
-    };
-}
-
-fn create_element(
-    name: &str,
-    id: xilem_core::Id,
-    attributes: &mut BTreeMap<&str, String>,
-    children: &Vec<Pod>,
-    cx: &crate::context::Cx,
-) -> web_sys::HtmlElement {
-    let el = cx.create_html_element(name);
-
-    for (name, value) in attributes {
-        el.set_attribute(name, value).unwrap_throw();
-    }
-    // Set the id used internally to the `data-debugid` attribute.
-    // This allows the user to see if an element has been re-created or only altered.
-    #[cfg(debug_assertions)]
-    el.set_attribute("data-debugid", &id.to_raw().to_string())
-        .unwrap_throw();
-
-    for child in children {
-        el.append_child(child.0.as_node_ref()).unwrap_throw();
-    }
-    el
-}
-
-fn update_element(
-    element: &web_sys::Element,
-    prev_attrs: &Attrs,
-    new_attrs: &Attrs,
-    changed_attrs: &BTreeMap<&str, String>,
-    children_updated: bool,
-    children: &Vec<Pod>,
-) {
-    // TODO there's likely a faster way...
-    let removed_attrs = attr_keys(prev_attrs).filter(|prev_attr_name| {
-        !attr_keys(new_attrs).any(|new_attr_name| new_attr_name == *prev_attr_name)
-            && !changed_attrs.contains_key(*prev_attr_name)
-    });
-
-    for attr in removed_attrs {
-        remove_attribute(element, attr);
-    }
-
-    for (attr, value) in changed_attrs {
-        set_attribute(element, attr, value);
-    }
-
-    if children_updated {
-        // This is crude and will result in more DOM traffic than needed.
-        // The right thing to do is diff the new state of the children id
-        // vector against the old, and derive DOM mutations from that.
-        while let Some(child) = element.first_child() {
-            element.remove_child(&child).unwrap_throw();
-        }
-        for child in children {
-            element.append_child(child.0.as_node_ref()).unwrap_throw();
-        }
-    }
 }
 
 macro_rules! define_html_elements {
@@ -1649,7 +1192,7 @@ macro_rules! define_html_elements {
         // but the two attributes could be extracted into its own type, and the actual element type is just a single tuple struct wrapping this type,
         pub struct $ty_name<T, A, VS> {
             pub(crate) attrs: Attrs,
-            #[allow(unused)]
+            event_listeners: Vec<DynamicEventListener<T, A>>,
             children: VS,
             phantom: std::marker::PhantomData<fn() -> (T, A)>,
         }
@@ -1660,30 +1203,33 @@ macro_rules! define_html_elements {
         where
             VS: crate::view::ViewSequence<T, A>,
         {
-            type State = crate::ElementState<VS::State>;
+            type State = ElementState<VS::State>;
             type Element = web_sys::$dom_interface;
 
-            fn build(
-                &self,
-                cx: &mut crate::context::Cx,
-            ) -> (xilem_core::Id, Self::State, Self::Element) {
+            fn build(&self, cx: &mut crate::context::Cx) -> (xilem_core::Id, Self::State, Self::Element) {
                 // TODO remove
-                console_log(&format!("new element built: {}", self.node_name()).into());
-                use wasm_bindgen::UnwrapThrowExt;
+                // debug_log!("new element built: {}", self.node_name());
 
-                let mut child_elements = vec![];
-                let (id, child_states) = cx.with_new_id(|cx| self.children.build(cx, &mut child_elements));
-                let mut attributes: BTreeMap<&'_ str, String> = BTreeMap::new();
-                serialize_attrs!(&self.attrs, &mut attributes, $dom_interface);
-                let el = create_element(self.node_name(), id, &mut attributes, &child_elements, cx)
-                    .dyn_into()
-                    .unwrap_throw();
+                let mut children_elements = vec![];
+                let (id, children_states) =
+                    cx.with_new_id(|cx| self.children.build(cx, &mut children_elements));
+                let (el, event_listener_state) = impl_build_element(
+                    cx,
+                    id,
+                    self.node_name(),
+                    &self.attrs,
+                    &children_elements,
+                    &self.event_listeners,
+                );
 
-                let state = crate::ElementState {
-                    child_states,
-                    child_elements,
+                let state = ElementState {
+                    children_states,
+                    children_elements,
+                    event_listener_state,
                     scratch: vec![],
                 };
+                use wasm_bindgen::UnwrapThrowExt;
+                let el = el.dyn_into().unwrap_throw();
                 (id, state, el)
             }
 
@@ -1695,44 +1241,26 @@ macro_rules! define_html_elements {
                 state: &mut Self::State,
                 element: &mut Self::Element,
             ) -> crate::ChangeFlags {
-                use crate::ChangeFlags;
                 debug_assert!(prev.node_name() == self.node_name());
 
-                let mut new_serialized_attrs = BTreeMap::new();
-
-                impl_rebuild_diff!(&prev.attrs, &self.attrs, &mut new_serialized_attrs, $dom_interface);
-
-                // TODO remove
-                console_log(&format!("updated element: {}, diff_attrs: {:?}", self.node_name(), new_serialized_attrs).into());
-
-                let mut changed = if new_serialized_attrs.is_empty() {
-                    ChangeFlags::empty()
-                } else {
-                    ChangeFlags::OTHER_CHANGE
-                };
-
-                // update children
-                let mut splice = xilem_core::VecSplice::new(&mut state.child_elements, &mut state.scratch);
-                changed |= cx.with_id(*id, |cx| {
-                    self.children
-                        .rebuild(cx, &prev.children, &mut state.child_states, &mut splice)
-                });
-
-                let children_updated = changed.contains(ChangeFlags::STRUCTURE);
-                changed.remove(ChangeFlags::STRUCTURE);
-
-                let element = element.dyn_ref().unwrap_throw();
-
-                update_element(
-                    element,
-                    prev.raw_attrs(),
-                    self.raw_attrs(),
-                    &new_serialized_attrs,
-                    children_updated,
-                    &state.child_elements
-                );
-
-                changed
+                cx.with_id(*id, |cx| {
+                    let mut splice =
+                        xilem_core::VecSplice::new(&mut state.children_elements, &mut state.scratch);
+                    let children_changed =
+                        self.children
+                            .rebuild(cx, &prev.children, &mut state.children_states, &mut splice);
+                    impl_rebuild_element(
+                        cx,
+                        &self.attrs,
+                        &prev.attrs,
+                        element,
+                        &prev.event_listeners,
+                        &self.event_listeners,
+                        &mut state.event_listener_state,
+                        children_changed,
+                        &state.children_elements,
+                    )
+                })
             }
 
             fn message(
@@ -1742,8 +1270,18 @@ macro_rules! define_html_elements {
                 message: Box<dyn std::any::Any>,
                 app_state: &mut T,
             ) -> xilem_core::MessageResult<A> {
-                self.children
-                    .message(id_path, &mut state.child_states, message, app_state)
+                debug_assert!(state.event_listener_state.len() == self.event_listeners.len());
+                impl_message_element(
+                    id_path,
+                    &self.event_listeners,
+                    &mut state.event_listener_state,
+                    message,
+                    app_state,
+                )
+                .or(|message| {
+                    self.children
+                        .message(id_path, &mut state.children_states, message, app_state)
+                })
             }
         }
 
@@ -1758,11 +1296,12 @@ macro_rules! define_html_elements {
             $ty_name {
                 attrs: Default::default(),
                 children,
-                phantom: std::marker::PhantomData
+                phantom: std::marker::PhantomData,
+                event_listeners: Default::default(),
             }
         }
 
-        impl_html_dom_interface!($ty_name, $name, $dom_interface);
+        impl_html_dom_interface!($ty_name, $name, $dom_interface, $dom_interface);
         )*
     };
 }
@@ -1894,19 +1433,26 @@ define_html_elements!(
 
 // A few experiments for more flexible attributes (el.class<C: IntoClass>(class: C))
 pub trait IntoClass {
-    type ClassIter: Iterator<Item = String>;
+    type ClassIter: Iterator<Item = CowStr>;
     fn classes(self) -> Self::ClassIter;
 }
 
-impl IntoClass for &str {
-    type ClassIter = std::option::IntoIter<String>;
+impl IntoClass for &'static str {
+    type ClassIter = std::option::IntoIter<CowStr>;
     fn classes(self) -> Self::ClassIter {
         Some(self.into()).into_iter()
     }
 }
 
 impl IntoClass for String {
-    type ClassIter = std::option::IntoIter<String>;
+    type ClassIter = std::option::IntoIter<CowStr>;
+    fn classes(self) -> Self::ClassIter {
+        Some(self.into()).into_iter()
+    }
+}
+
+impl IntoClass for CowStr {
+    type ClassIter = std::option::IntoIter<CowStr>;
     fn classes(self) -> Self::ClassIter {
         Some(self).into_iter()
     }
@@ -1925,48 +1471,6 @@ impl<T: IntoClass> IntoClass for Vec<T> {
     type ClassIter = std::iter::FlatMap<std::vec::IntoIter<T>, T::ClassIter, fn(T) -> T::ClassIter>;
     fn classes(self) -> Self::ClassIter {
         self.into_iter().flat_map(IntoClass::classes)
-    }
-}
-
-pub trait IntoClassNew {
-    type ClassIter: Iterator<Item = CowStr>;
-    fn classes(self) -> Self::ClassIter;
-}
-
-impl IntoClassNew for &'static str {
-    type ClassIter = std::option::IntoIter<CowStr>;
-    fn classes(self) -> Self::ClassIter {
-        Some(self.into()).into_iter()
-    }
-}
-
-impl IntoClassNew for String {
-    type ClassIter = std::option::IntoIter<CowStr>;
-    fn classes(self) -> Self::ClassIter {
-        Some(self.into()).into_iter()
-    }
-}
-
-impl IntoClassNew for CowStr {
-    type ClassIter = std::option::IntoIter<CowStr>;
-    fn classes(self) -> Self::ClassIter {
-        Some(self).into_iter()
-    }
-}
-
-impl<T: IntoClassNew, const N: usize> IntoClassNew for [T; N] {
-    // we really need impl
-    type ClassIter =
-        std::iter::FlatMap<std::array::IntoIter<T, N>, T::ClassIter, fn(T) -> T::ClassIter>;
-    fn classes(self) -> Self::ClassIter {
-        self.into_iter().flat_map(IntoClassNew::classes)
-    }
-}
-
-impl<T: IntoClassNew> IntoClassNew for Vec<T> {
-    type ClassIter = std::iter::FlatMap<std::vec::IntoIter<T>, T::ClassIter, fn(T) -> T::ClassIter>;
-    fn classes(self) -> Self::ClassIter {
-        self.into_iter().flat_map(IntoClassNew::classes)
     }
 }
 
