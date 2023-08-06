@@ -477,10 +477,6 @@ impl From<&'static str> for AttributeValue {
 type Attrs = VecMap<CowStr, AttributeValue>;
 
 impl Attrs {
-    fn insert_untyped(&mut self, name: impl Into<CowStr>, value: impl Into<CowStr>) {
-        self.insert(name.into(), AttributeValue::String(value.into()));
-    }
-
     fn insert_attr(&mut self, name: impl Into<CowStr>, value: impl Into<AttributeValue>) {
         self.insert(name.into(), value.into());
     }
@@ -929,8 +925,8 @@ pub trait Element<T, A>: Node + crate::view::View<T, A> {
     // TODO should this be in its own trait? (it doesn't have much to do with the DOM Node interface)
     fn raw_attrs(&self) -> &Attrs;
     // TODO should this be in Node?
-    fn attr<K: Into<CowStr>, V: Into<CowStr>>(self, key: K, value: V) -> Self;
-    fn set_attr<K: Into<CowStr>, V: Into<CowStr>>(&mut self, key: K, value: V);
+    fn attr<K: Into<CowStr>, V: Into<AttributeValue>>(self, key: K, value: V) -> Self;
+    fn set_attr<K: Into<CowStr>, V: Into<AttributeValue>>(&mut self, key: K, value: V);
 
     // TODO generate all this event listener boilerplate with macros
     fn on_click<EH>(self, handler: EH) -> Self
@@ -1054,17 +1050,17 @@ macro_rules! impl_element {
                 &self.attrs
             }
 
-            fn attr<K: Into<CowStr>, V: Into<CowStr>>(
+            fn attr<K: Into<CowStr>, V: Into<AttributeValue>>(
                 mut self,
                 key: K,
                 value: V,
             ) -> $ty_name<T, A, VS> {
-                self.attrs.insert_untyped(key, value);
+                self.attrs.insert_attr(key, value);
                 self
             }
 
-            fn set_attr<K: Into<CowStr>, V: Into<CowStr>>(&mut self, key: K, value: V) {
-                self.attrs.insert_untyped(key, value);
+            fn set_attr<K: Into<CowStr>, V: Into<AttributeValue>>(&mut self, key: K, value: V) {
+                self.attrs.insert_attr(key, value);
             }
 
             fn on_click<EH>(self, handler: EH) -> $ty_name<T, A, VS>
