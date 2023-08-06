@@ -134,8 +134,9 @@ pub struct OnEventState<S> {
     listener: EventListener,
     child_state: S,
 }
-struct EventMsg<E> {
-    event: E,
+
+pub(crate) struct EventMsg<E> {
+    pub(crate) event: E,
 }
 
 /// Wraps a `web_sys::Event` and provides auto downcasting for both the event and its target.
@@ -145,7 +146,7 @@ pub struct Event<Evt, El> {
 }
 
 impl<Evt, El> Event<Evt, El> {
-    fn new(raw: Evt) -> Self {
+    pub(crate) fn new(raw: Evt) -> Self {
         Self {
             raw,
             el: PhantomData,
