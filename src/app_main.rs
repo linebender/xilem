@@ -217,7 +217,8 @@ where
             //println!("render size: {:?}", size);
             self.surface = Some(
                 tokio::runtime::Handle::current()
-                    .block_on(self.render_cx.create_surface(handle, width, height)),
+                    .block_on(self.render_cx.create_surface(handle, width, height))
+                    .unwrap(),
             );
         }
         if let Some(surface) = self.surface.as_mut() {
@@ -242,6 +243,7 @@ where
             let queue = &self.render_cx.devices[dev_id].queue;
             let renderer_options = RendererOptions {
                 surface_format: Some(surface.format),
+                timestamp_period: queue.get_timestamp_period(),
             };
             let render_params = RenderParams {
                 base_color: Color::BLACK,
