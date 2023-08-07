@@ -29,7 +29,9 @@ pub use element::elements;
 pub use element::{element, AttributeValue, Element, ElementState, IntoAttributeValue};
 #[cfg(feature = "typed")]
 pub use event::events;
-pub use event::{on_event, Action, Event, OnEvent, OnEventState, OptionalAction};
+pub use event::{
+    on_event, Action, Event, EventListenerOptions, OnEvent, OnEventState, OptionalAction,
+};
 pub use one_of::{OneOf2, OneOf3, OneOf4, OneOf5, OneOf6, OneOf7, OneOf8};
 pub use view::{
     memoize, s, Adapt, AdaptState, AdaptThunk, AnyView, Memoize, Pod, View, ViewMarker,

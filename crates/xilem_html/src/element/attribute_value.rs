@@ -1,4 +1,15 @@
+use std::collections::BTreeSet;
+
 type CowStr = std::borrow::Cow<'static, str>;
+
+// TODO not sure how useful an extra enum for attribute keys is (comparison is probably a little bit faster...)
+// #[derive(PartialEq, Eq)]
+// enum AttrKey {
+//     Width,
+//     Height,
+//     Class,
+//     Untyped(Box<Cow<'static, str>>),
+// }
 
 #[derive(PartialEq, Debug)]
 pub enum AttributeValue {
@@ -8,6 +19,7 @@ pub enum AttributeValue {
     F32(f32),
     F64(f64),
     String(CowStr),
+    Classes(BTreeSet<CowStr>),
 }
 
 impl AttributeValue {
@@ -19,6 +31,19 @@ impl AttributeValue {
             AttributeValue::F32(n) => n.to_string().into(),
             AttributeValue::F64(n) => n.to_string().into(),
             AttributeValue::String(s) => s.clone(),
+            // TODO maybe use Vec as backend (should probably be more performant for few classes, which seems to be the average case)
+            AttributeValue::Classes(set) => set
+                .iter()
+                .fold(String::new(), |mut acc, s| {
+                    if !acc.is_empty() {
+                        acc += " ";
+                    }
+                    if !s.is_empty() {
+                        acc += s;
+                    }
+                    acc
+                })
+                .into(),
         }
     }
 }

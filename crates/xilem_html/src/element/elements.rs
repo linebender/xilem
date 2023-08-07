@@ -1,19 +1,18 @@
 //! Types that wrap [`Element`][super::Element] and represent specific element types.
 //!
 
-use std::{
-    any::Any,
-    borrow::{Borrow, Cow},
-    cmp::Ordering,
-    collections::{BTreeMap, BTreeSet},
-    iter::Peekable,
-    marker::PhantomData,
-};
+use std::{any::Any, borrow::Cow, collections::BTreeSet, marker::PhantomData};
 
 use gloo::events::{EventListenerOptions, EventListenerPhase};
 use wasm_bindgen::JsCast;
 
-use crate::{event::EventMsg, Event, Pod};
+use super::{remove_attribute, set_attribute};
+use crate::{
+    diff::{diff_kv_iterables, Diff},
+    event::EventMsg,
+    vecmap::VecMap,
+    AttributeValue, Event, IntoAttributeValue, Pod,
+};
 use wasm_bindgen::UnwrapThrowExt;
 
 macro_rules! debug_warn {
@@ -23,466 +22,13 @@ macro_rules! debug_warn {
     }}
 }
 
-use super::{remove_attribute, set_attribute};
-macro_rules! elements {
-    () => {};
-    (($ty_name:ident, $name:ident, $web_sys_ty:ty), $($rest:tt)*) => {
-        element!($ty_name, $name, $web_sys_ty);
-        elements!($($rest)*);
-    };
-}
-
-macro_rules! element {
-    ($ty_name:ident, $name:ident, $web_sys_ty:ty) => {
-        /// A view representing a
-        #[doc = concat!("`", stringify!($name), "`")]
-        /// element.
-        pub struct $ty_name<ViewSeq>(crate::Element<$web_sys_ty, ViewSeq>);
-
-        /// Builder function for a
-        #[doc = concat!("`", stringify!($name), "`")]
-        /// view.
-        pub fn $name<ViewSeq>(children: ViewSeq) -> $ty_name<ViewSeq> {
-            $ty_name(crate::element(stringify!($name), children))
-        }
-
-        impl<ViewSeq> $ty_name<ViewSeq> {
-            /// Set an attribute on this element.
-            ///
-            /// # Panics
-            ///
-            /// If the name contains characters that are not valid in an attribute name,
-            /// then the `View::build`/`View::rebuild` functions will panic for this view.
-            pub fn attr(
-                mut self,
-                name: impl Into<std::borrow::Cow<'static, str>>,
-                value: impl crate::IntoAttributeValue,
-            ) -> Self {
-                self.0.set_attr(name, value);
-                self
-            }
-
-            /// Set an attribute on this element.
-            ///
-            /// # Panics
-            ///
-            /// If the name contains characters that are not valid in an attribute name,
-            /// then the `View::build`/`View::rebuild` functions will panic for this view.
-            pub fn set_attr(
-                &mut self,
-                name: impl Into<std::borrow::Cow<'static, str>>,
-                value: impl crate::IntoAttributeValue,
-            ) -> &mut Self {
-                self.0.set_attr(name, value);
-                self
-            }
-
-            pub fn remove_attr(&mut self, name: &str) -> &mut Self {
-                self.0.remove_attr(name);
-                self
-            }
-
-            pub fn after_update(mut self, after_update: impl Fn(&$web_sys_ty) + 'static) -> Self {
-                self.0 = self.0.after_update(after_update);
-                self
-            }
-        }
-
-        impl<ViewSeq> crate::view::ViewMarker for $ty_name<ViewSeq> {}
-
-        impl<T_, A_, ViewSeq> crate::view::View<T_, A_> for $ty_name<ViewSeq>
-        where
-            ViewSeq: crate::view::ViewSequence<T_, A_>,
-        {
-            type State = crate::ElementState<ViewSeq::State>;
-            type Element = $web_sys_ty;
-
-            fn build(
-                &self,
-                cx: &mut crate::context::Cx,
-            ) -> (xilem_core::Id, Self::State, Self::Element) {
-                self.0.build(cx)
-            }
-
-            fn rebuild(
-                &self,
-                cx: &mut crate::context::Cx,
-                prev: &Self,
-                id: &mut xilem_core::Id,
-                state: &mut Self::State,
-                element: &mut Self::Element,
-            ) -> crate::ChangeFlags {
-                self.0.rebuild(cx, &prev.0, id, state, element)
-            }
-
-            fn message(
-                &self,
-                id_path: &[xilem_core::Id],
-                state: &mut Self::State,
-                message: Box<dyn std::any::Any>,
-                app_state: &mut T_,
-            ) -> xilem_core::MessageResult<A_> {
-                self.0.message(id_path, state, message, app_state)
-            }
-        }
-    };
-}
-
-// void elements (those without children) are `area`, `base`, `br`, `col`,
-// `embed`, `hr`, `img`, `input`, `link`, `meta`, `source`, `track`, `wbr`
-elements!(
-    // the order is copied from
-    // https://developer.mozilla.org/en-US/docs/Web/HTML/Element
-    // DOM interfaces copied from https://html.spec.whatwg.org/multipage/grouping-content.html and friends
-
-    // content sectioning
-    // (Address, address, web_sys::HtmlElement),
-    // (Article, article, web_sys::HtmlElement),
-    // (Aside, aside, web_sys::HtmlElement),
-    // (Footer, footer, web_sys::HtmlElement),
-    // (Header, header, web_sys::HtmlElement),
-    // (H1, h1, web_sys::HtmlHeadingElement),
-    // (H2, h2, web_sys::HtmlHeadingElement),
-    // (H3, h3, web_sys::HtmlHeadingElement),
-    // (H4, h4, web_sys::HtmlHeadingElement),
-    // (H5, h5, web_sys::HtmlHeadingElement),
-    // (H6, h6, web_sys::HtmlHeadingElement),
-    // (Hgroup, hgroup, web_sys::HtmlElement),
-    // (Main, main, web_sys::HtmlElement),
-    // (Nav, nav, web_sys::HtmlElement),
-    // (Section, section, web_sys::HtmlElement),
-    // text content
-    (Blockquote, blockquote, web_sys::HtmlQuoteElement),
-    // (Dd, dd, web_sys::HtmlElement),
-    // (Div, div, web_sys::HtmlDivElement),
-    (Dl, dl, web_sys::HtmlDListElement),
-    // (Dt, dt, web_sys::HtmlElement),
-    // (Figcaption, figcaption, web_sys::HtmlElement),
-    // (Figure, figure, web_sys::HtmlElement),
-    (Hr, hr, web_sys::HtmlHrElement),
-    (Li, li, web_sys::HtmlLiElement),
-    (Menu, menu, web_sys::HtmlMenuElement),
-    (Ol, ol, web_sys::HtmlOListElement),
-    (P, p, web_sys::HtmlParagraphElement),
-    (Pre, pre, web_sys::HtmlPreElement),
-    (Ul, ul, web_sys::HtmlUListElement),
-    // inline text
-    (A, a, web_sys::HtmlAnchorElement),
-    // (Abbr, abbr, web_sys::HtmlElement),
-    // (B, b, web_sys::HtmlElement),
-    // (Bdi, bdi, web_sys::HtmlElement),
-    // (Bdo, bdo, web_sys::HtmlElement),
-    (Br, br, web_sys::HtmlBrElement),
-    // (Cite, cite, web_sys::HtmlElement),
-    // (Code, code, web_sys::HtmlElement),
-    (Data, data, web_sys::HtmlDataElement),
-    // (Dfn, dfn, web_sys::HtmlElement),
-    // (Em, em, web_sys::HtmlElement),
-    // (I, i, web_sys::HtmlElement),
-    // (Kbd, kbd, web_sys::HtmlElement),
-    // (Mark, mark, web_sys::HtmlElement),
-    (Q, q, web_sys::HtmlQuoteElement),
-    // (Rp, rp, web_sys::HtmlElement),
-    // (Rt, rt, web_sys::HtmlElement),
-    // (Ruby, ruby, web_sys::HtmlElement),
-    // (S, s, web_sys::HtmlElement),
-    // (Samp, samp, web_sys::HtmlElement),
-    // (Small, small, web_sys::HtmlElement),
-    // (Span, span, web_sys::HtmlSpanElement),
-    // (Strong, strong, web_sys::HtmlElement),
-    // (Sub, sub, web_sys::HtmlElement),
-    // (Sup, sup, web_sys::HtmlElement),
-    (Time, time, web_sys::HtmlTimeElement),
-    // (U, u, web_sys::HtmlElement),
-    // (Var, var, web_sys::HtmlElement),
-    // (Wbr, wbr, web_sys::HtmlElement),
-    // image and multimedia
-    (Area, area, web_sys::HtmlAreaElement),
-    (Audio, audio, web_sys::HtmlAudioElement),
-    (Img, img, web_sys::HtmlImageElement),
-    (Map, map, web_sys::HtmlMapElement),
-    (Track, track, web_sys::HtmlTrackElement),
-    (Video, video, web_sys::HtmlVideoElement),
-    // embedded content
-    (Embed, embed, web_sys::HtmlEmbedElement),
-    (Iframe, iframe, web_sys::HtmlIFrameElement),
-    (Object, object, web_sys::HtmlObjectElement),
-    (Picture, picture, web_sys::HtmlPictureElement),
-    // (Portal, portal, web_sys::HtmlElement),
-    (Source, source, web_sys::HtmlSourceElement),
-    // SVG and MathML (TODO, svg and mathml elements)
-    // (Svg, svg, web_sys::HtmlElement),
-    // (Math, math, web_sys::HtmlElement),
-    // scripting
-    // (Canvas, canvas, web_sys::HtmlCanvasElement),
-    // (Noscript, noscript, web_sys::HtmlElement),
-    (Script, script, web_sys::HtmlScriptElement),
-    // demarcating edits
-    (Del, del, web_sys::HtmlModElement),
-    (Ins, ins, web_sys::HtmlModElement),
-    // tables
-    (Caption, caption, web_sys::HtmlTableCaptionElement),
-    (Col, col, web_sys::HtmlTableColElement),
-    (Colgroup, colgroup, web_sys::HtmlTableColElement),
-    (Table, table, web_sys::HtmlTableSectionElement),
-    (Tbody, tbody, web_sys::HtmlTableSectionElement),
-    (Td, td, web_sys::HtmlTableCellElement),
-    (Tfoot, tfoot, web_sys::HtmlTableSectionElement),
-    (Th, th, web_sys::HtmlTableCellElement),
-    (Thead, thead, web_sys::HtmlTableSectionElement),
-    (Tr, tr, web_sys::HtmlTableRowElement),
-    // forms
-    (Button, button, web_sys::HtmlButtonElement),
-    (Datalist, datalist, web_sys::HtmlDataListElement),
-    (Fieldset, fieldset, web_sys::HtmlFieldSetElement),
-    (Form, form, web_sys::HtmlFormElement),
-    (Input, input, web_sys::HtmlInputElement),
-    (Label, label, web_sys::HtmlLabelElement),
-    (Legend, legend, web_sys::HtmlLegendElement),
-    (Meter, meter, web_sys::HtmlMeterElement),
-    (Optgroup, optgroup, web_sys::HtmlOptGroupElement),
-    (OptionElement, option, web_sys::HtmlOptionElement), // Avoid cluttering the namespace with `Option`
-    (Output, output, web_sys::HtmlOutputElement),
-    (Progress, progress, web_sys::HtmlProgressElement),
-    (Select, select, web_sys::HtmlSelectElement),
-    (Textarea, textarea, web_sys::HtmlTextAreaElement),
-    // interactive elements,
-    (Details, details, web_sys::HtmlDetailsElement),
-    (Dialog, dialog, web_sys::HtmlDialogElement),
-    // (Summary, summary, web_sys::HtmlElement),
-    // web components,
-    (Slot, slot, web_sys::HtmlSlotElement),
-    (Template, template, web_sys::HtmlTemplateElement),
-);
-
-pub struct VecMap<K, V>(Vec<(K, V)>);
-
-impl<K, V> Default for VecMap<K, V> {
-    fn default() -> Self {
-        Self(Vec::new())
-    }
-}
-
-/// Basically an ordered Map (similar as BTreeMap) with a Vec as backend for very few elements
-impl<K, V> VecMap<K, V> {
-    pub fn get<Q: ?Sized>(&self, key: &Q) -> Option<&V>
-    where
-        K: Borrow<Q> + PartialEq,
-        Q: PartialEq,
-    {
-        self.0
-            .iter()
-            .find_map(|(k, v)| if key.eq(k.borrow()) { Some(v) } else { None })
-    }
-
-    pub fn get_mut<Q: ?Sized>(&mut self, key: &Q) -> Option<&mut V>
-    where
-        K: Borrow<Q> + Ord,
-        Q: Ord,
-    {
-        self.0
-            .iter_mut()
-            .find_map(|(k, v)| if key.eq((*k).borrow()) { Some(v) } else { None })
-    }
-
-    pub fn keys(&self) -> impl Iterator<Item = &K> {
-        self.0.iter().map(|(name, _)| name)
-    }
-
-    pub fn iter(&self) -> impl Iterator<Item = (&K, &V)> {
-        self.0.iter().map(|(k, v)| (k, v))
-    }
-
-    pub fn diff<'a>(&'a self, other: &'a Self) -> impl Iterator<Item = Diff<&'a K, &'a V>> + 'a
-    where
-        K: Ord,
-        V: PartialEq,
-    {
-        DiffMapIterator {
-            prev: self.iter().peekable(),
-            next: other.iter().peekable(),
-        }
-    }
-
-    pub fn insert(&mut self, key: K, value: V) -> Option<V>
-    where
-        K: Ord,
-    {
-        match self.0.binary_search_by_key(&&key, |(n, _)| n) {
-            Ok(pos) => {
-                let mut val = (key, value);
-                std::mem::swap(&mut self.0[pos], &mut val);
-                Some(val.1)
-            }
-            Err(pos) => {
-                self.0.insert(pos, (key, value));
-                None
-            }
-        }
-    }
-}
-
-pub fn diff_tree_maps<'a, K: Ord, V: PartialEq>(
-    prev: &'a BTreeMap<K, V>,
-    next: &'a BTreeMap<K, V>,
-) -> impl Iterator<Item = Diff<&'a K, &'a V>> + 'a {
-    DiffMapIterator {
-        prev: prev.iter().peekable(),
-        next: next.iter().peekable(),
-    }
-}
-
-struct DiffMapIterator<'a, K: 'a, V: 'a, I: Iterator<Item = (&'a K, &'a V)>> {
-    prev: Peekable<I>,
-    next: Peekable<I>,
-}
-
-impl<'a, K: Ord + 'a, V: PartialEq, I: Iterator<Item = (&'a K, &'a V)>> Iterator
-    for DiffMapIterator<'a, K, V, I>
-{
-    type Item = Diff<&'a K, &'a V>;
-    fn next(&mut self) -> Option<Self::Item> {
-        loop {
-            match (self.prev.peek(), self.next.peek()) {
-                (Some(&(prev_k, prev_v)), Some(&(next_k, next_v))) => match prev_k.cmp(next_k) {
-                    Ordering::Less => {
-                        self.prev.next();
-                        return Some(Diff::Remove(prev_k));
-                    }
-                    Ordering::Greater => {
-                        self.next.next();
-                        return Some(Diff::Add(next_k, next_v));
-                    }
-                    Ordering::Equal => {
-                        self.prev.next();
-                        self.next.next();
-                        if prev_v != next_v {
-                            return Some(Diff::Change(next_k, next_v));
-                        }
-                    }
-                },
-                (Some(&(prev_k, _)), None) => {
-                    self.prev.next();
-                    return Some(Diff::Remove(prev_k));
-                }
-                (None, Some(&(next_k, next_v))) => {
-                    self.next.next();
-                    return Some(Diff::Add(next_k, next_v));
-                }
-                (None, None) => return None,
-            }
-        }
-    }
-}
-
-pub enum Diff<K, V> {
-    Add(K, V),
-    Remove(K),
-    Change(K, V),
-}
-
 type CowStr = Cow<'static, str>;
+type Attributes = VecMap<CowStr, AttributeValue>;
 
-// TODO in the future it's likely there's an element that doesn't implement PartialEq,
-// but for now it's simpler for diffing, maybe also use some kind of serialization in that case
-#[derive(PartialEq, Debug)]
-pub enum AttributeValue {
-    U32(u32),
-    I32(i32),
-    F32(f32),
-    F64(f64),
-    String(CowStr),
-    // for classes mostly
-    // TODO maybe use Vec as backend (should probably be more performant for few classes, which seems to be the average case)
-    StringBTreeSet(BTreeSet<CowStr>),
-}
-
-// TODO not sure how useful an extra enum for attribute keys is (comparison is probably a little bit faster...)
-// #[derive(PartialEq, Eq)]
-// enum AttrKey {
-//     Width,
-//     Height,
-//     Class,
-//     Untyped(Box<Cow<'static, str>>),
-// }
-
-impl AttributeValue {
-    fn as_cow(&self) -> CowStr {
-        match self {
-            AttributeValue::U32(n) => n.to_string().into(),
-            AttributeValue::I32(n) => n.to_string().into(),
-            AttributeValue::F32(n) => n.to_string().into(),
-            AttributeValue::F64(n) => n.to_string().into(),
-            AttributeValue::String(s) => s.clone(),
-            // currently just concatenates strings with spaces in between,
-            // this may change in the future (TODO separate enum tag for classes, and e.g. comma separated lists?)
-            AttributeValue::StringBTreeSet(bt) => bt
-                .iter()
-                .fold(String::new(), |mut acc, s| {
-                    if !acc.is_empty() {
-                        acc += " ";
-                    }
-                    if !s.is_empty() {
-                        acc += s;
-                    }
-                    acc
-                })
-                .into(),
-        }
-    }
-}
-
-impl From<u32> for AttributeValue {
-    fn from(value: u32) -> Self {
-        AttributeValue::U32(value)
-    }
-}
-
-impl From<i32> for AttributeValue {
-    fn from(value: i32) -> Self {
-        AttributeValue::I32(value)
-    }
-}
-
-impl From<f32> for AttributeValue {
-    fn from(value: f32) -> Self {
-        AttributeValue::F32(value)
-    }
-}
-
-impl From<f64> for AttributeValue {
-    fn from(value: f64) -> Self {
-        AttributeValue::F64(value)
-    }
-}
-
-impl From<String> for AttributeValue {
-    fn from(value: String) -> Self {
-        AttributeValue::String(value.into())
-    }
-}
-
-impl From<CowStr> for AttributeValue {
-    fn from(value: CowStr) -> Self {
-        AttributeValue::String(value)
-    }
-}
-
-impl From<&'static str> for AttributeValue {
-    fn from(value: &'static str) -> Self {
-        AttributeValue::String(value.into())
-    }
-}
-
-type Attrs = VecMap<CowStr, AttributeValue>;
-
-impl Attrs {
-    fn insert_attr(&mut self, name: impl Into<CowStr>, value: impl Into<AttributeValue>) {
-        self.insert(name.into(), value.into());
-    }
-}
-
-pub trait EventHandler<T, A = (), E = ()> {
+pub trait EventHandler<T, OA, A = (), E = ()>
+where
+    OA: crate::OptionalAction<A>,
+{
     type State;
     fn build(&self, cx: &mut crate::context::Cx) -> (xilem_core::Id, Self::State);
 
@@ -503,7 +49,9 @@ pub trait EventHandler<T, A = (), E = ()> {
     ) -> xilem_core::MessageResult<A>;
 }
 
-impl<T, A, E: 'static, F: Fn(&mut T, E) -> A> EventHandler<T, A, E> for F {
+impl<T, A, OA: crate::OptionalAction<A>, E: 'static, F: Fn(&mut T, E) -> OA>
+    EventHandler<T, OA, A, E> for F
+{
     type State = ();
 
     fn build(&self, _cx: &mut crate::Cx) -> (xilem_core::Id, Self::State) {
@@ -533,7 +81,10 @@ impl<T, A, E: 'static, F: Fn(&mut T, E) -> A> EventHandler<T, A, E> for F {
         }
         if event.downcast_ref::<EventMsg<E>>().is_some() {
             let event = *event.downcast::<EventMsg<E>>().unwrap();
-            crate::MessageResult::Action(self(app_state, event.event))
+            match self(app_state, event.event).action() {
+                Some(a) => crate::MessageResult::Action(a),
+                None => crate::MessageResult::Nop,
+            }
         } else {
             debug_warn!("downcasting event in event handler callback failed, discarding");
             crate::MessageResult::Stale(event)
@@ -541,9 +92,9 @@ impl<T, A, E: 'static, F: Fn(&mut T, E) -> A> EventHandler<T, A, E> for F {
     }
 }
 
-struct EventListener<T, A, E, El, EH> {
+pub struct EventListener<T, A, OA, E, El, EH> {
     #[allow(clippy::complexity)]
-    phantom: PhantomData<fn() -> (T, A, E, El)>,
+    phantom: PhantomData<fn() -> (T, OA, A, E, El)>,
     event: &'static str,
     options: EventListenerOptions,
     event_handler: EH,
@@ -556,11 +107,12 @@ struct EventListenerState<EHS> {
     handler_state: EHS,
 }
 
-impl<T, A, E, El, EH> EventListener<T, A, E, El, EH>
+impl<T, A, OA, E, El, EH> EventListener<T, A, OA, E, El, EH>
 where
     E: JsCast + 'static,
+    OA: crate::OptionalAction<A>,
     El: 'static,
-    EH: EventHandler<T, A, Event<E, El>>,
+    EH: EventHandler<T, OA, A, Event<E, El>>,
 {
     fn new(event: &'static str, event_handler: EH, options: EventListenerOptions) -> Self {
         EventListener {
@@ -682,18 +234,19 @@ struct DynamicEventListener<T, A> {
 }
 
 impl<T, A> DynamicEventListener<T, A> {
-    pub fn new<E, EL, EH>(listener: EventListener<T, A, E, EL, EH>) -> Self
+    pub fn new<OA, E, EL, EH>(listener: EventListener<T, A, OA, E, EL, EH>) -> Self
     where
         T: 'static,
         A: 'static,
         E: JsCast + 'static,
+        OA: crate::OptionalAction<A> + 'static,
         EL: 'static,
-        EH: EventHandler<T, A, Event<E, EL>> + 'static,
+        EH: EventHandler<T, OA, A, Event<E, EL>> + 'static,
     {
         let build: DynamicEventListenerBuildFn<T, A> = |self_, element, cx| {
             let (id, state) = self_
                 .listener
-                .downcast_ref::<EventListener<T, A, E, EL, EH>>()
+                .downcast_ref::<EventListener<T, A, OA, E, EL, EH>>()
                 .unwrap()
                 .build(cx, element);
             (id, Box::new(state))
@@ -703,7 +256,7 @@ impl<T, A> DynamicEventListener<T, A> {
             |self_, event_target, cx, prev, id, state| {
                 let listener = self_
                     .listener
-                    .downcast_ref::<EventListener<T, A, E, EL, EH>>()
+                    .downcast_ref::<EventListener<T, A, OA, E, EL, EH>>()
                     .unwrap();
                 if let Some(prev) = prev.listener.downcast_ref() {
                     if let Some(state) = state.downcast_mut() {
@@ -724,7 +277,7 @@ impl<T, A> DynamicEventListener<T, A> {
             |self_, id_path, state, message, app_state| {
                 let listener = self_
                     .listener
-                    .downcast_ref::<EventListener<T, A, E, EL, EH>>()
+                    .downcast_ref::<EventListener<T, A, OA, E, EL, EH>>()
                     .unwrap();
                 if let Some(state) = state.downcast_mut() {
                     listener.message(id_path, state, message, app_state)
@@ -787,7 +340,7 @@ fn impl_build_element<T, A>(
     cx: &mut crate::context::Cx,
     id: xilem_core::Id,
     node_name: &str,
-    attrs: &Attrs,
+    attrs: &Attributes,
     children: &Vec<Pod>,
     event_listeners: &[DynamicEventListener<T, A>],
 ) -> (web_sys::HtmlElement, EventListenersState) {
@@ -795,7 +348,7 @@ fn impl_build_element<T, A>(
         let el = cx.create_html_element(node_name);
 
         for (name, value) in attrs.iter() {
-            el.set_attribute(name, &value.as_cow()).unwrap_throw();
+            el.set_attribute(name, &value.serialize()).unwrap_throw();
         }
 
         for child in children {
@@ -820,8 +373,8 @@ fn impl_build_element<T, A>(
 #[allow(clippy::too_many_arguments)]
 fn impl_rebuild_element<T, A>(
     cx: &mut crate::context::Cx,
-    attrs: &Attrs,
-    prev_attrs: &Attrs,
+    attrs: &Attributes,
+    prev_attrs: &Attributes,
     element: &web_sys::Element,
     prev_event_listeners: &[DynamicEventListener<T, A>],
     event_listeners: &[DynamicEventListener<T, A>],
@@ -833,10 +386,10 @@ fn impl_rebuild_element<T, A>(
     let mut changed = ChangeFlags::empty();
 
     // diff attributes
-    for itm in prev_attrs.diff(attrs) {
+    for itm in diff_kv_iterables(prev_attrs, attrs) {
         match itm {
             Diff::Add(name, value) | Diff::Change(name, value) => {
-                set_attribute(element, name, &value.as_cow());
+                set_attribute(element, name, &value.serialize());
                 changed |= ChangeFlags::OTHER_CHANGE;
             }
             Diff::Remove(name) => {
@@ -909,121 +462,375 @@ pub trait Node {
     fn node_name(&self) -> &str;
 }
 
-/// These traits should mirror the respective DOM interfaces
-/// In this case https://dom.spec.whatwg.org/#interface-element
-/// Or rather a curated/opinionated subset that makes sense in xilem for each of these interfaces
-/// unfortunately with this (builder + generic type parameters in methods) pattern not trait-object-safe
-///
-/// I'm generally not sure yet, if it makes sense to do all of this via traits (there are advantages though, but it's (likely) not compilation size...)
-/// (thinking about AsRef<ParentClass> and AsMut<ParentClass>, and implementing all builder methods on the concrete type, similar as with wasm-bindgen)
-/// but on the other hand most of these methods should inline to the non-generic Attrs::insert_attr (or similar non-generic impls)
-pub trait Element<T, A>: Node + crate::view::View<T, A> {
-    // TODO rename to class (currently conflicts with `ViewExt`)
-    // TODO should classes be additive? Currently they are.
-    fn classes<C: IntoClass>(self, class: C) -> Self;
-    fn add_class<C: IntoClass>(&mut self, class: C);
-    // TODO should this be in its own trait? (it doesn't have much to do with the DOM Node interface)
-    fn raw_attrs(&self) -> &Attrs;
-    // TODO should this be in Node?
-    fn attr<K: Into<CowStr>, V: Into<AttributeValue>>(self, key: K, value: V) -> Self;
-    fn set_attr<K: Into<CowStr>, V: Into<AttributeValue>>(&mut self, key: K, value: V);
-
-    // TODO generate all this event listener boilerplate with macros
-    fn on_click<EH>(self, handler: EH) -> Self
-    where
-        T: 'static,
-        A: 'static,
-        EH: EventHandler<T, A, crate::Event<web_sys::MouseEvent, Self::Element>> + 'static;
-
-    fn on_click_with_options<EH>(self, handler: EH, options: EventListenerOptions) -> Self
-    where
-        T: 'static,
-        A: 'static,
-        EH: EventHandler<T, A, crate::Event<web_sys::MouseEvent, Self::Element>> + 'static;
-
-    fn on_scroll<EH>(self, handler: EH) -> Self
-    where
-        Self: Sized,
-        T: 'static,
-        A: 'static,
-        EH: EventHandler<T, A, crate::Event<web_sys::Event, Self::Element>> + 'static;
-
-    fn on_scroll_with_options<EH>(self, handler: EH, options: EventListenerOptions) -> Self
-    where
-        T: 'static,
-        A: 'static,
-        EH: EventHandler<T, A, crate::Event<web_sys::Event, Self::Element>> + 'static;
-
-    // TODO rest of all the methods allowed on an element
-}
-
-pub trait HtmlElement<T, A>: Element<T, A> {}
-
-pub trait HtmlDivElement<T, A>: HtmlElement<T, A> {
-    // TODO "align" attr
-}
-
-pub trait HtmlSpanElement<T, A>: HtmlElement<T, A> {}
-
-pub trait HtmlHeadingElement<T, A>: HtmlElement<T, A> {
-    // TODO "align" attr
-}
-
-// not sure if an extra trait for this makes sense, but for consistency
-pub trait HtmlCanvasElement<T, A>: HtmlElement<T, A> {
-    fn width(self, width: u32) -> Self;
-    fn set_width(&mut self, width: u32);
-
-    fn height(self, height: u32) -> Self;
-    fn set_height(&mut self, height: u32);
-}
-
-fn add_class<C: IntoClass>(attrs: &mut Attrs, class: C) {
-    let mut classes = class.classes().peekable();
-
-    if classes.peek().is_none() {
-        return;
-    }
-
-    match attrs.get_mut("class") {
-        Some(AttributeValue::StringBTreeSet(attr_value)) => {
-            attr_value.extend(classes);
-        }
-        // could be useful, in case untyped values are inserted here
-        Some(untyped_class) if matches!(untyped_class, AttributeValue::String(_)) => {
-            let mut classes = BTreeSet::from_iter(classes);
-            classes.insert(if let AttributeValue::String(s) = untyped_class {
-                s.clone()
-            } else {
-                unreachable!()
-            });
-            *untyped_class = AttributeValue::StringBTreeSet(classes);
-        }
-        Some(other) => {
-            // TODO warning
-            // panic!("A static attribute 'class' should always have either the type BTreeSet<CowStr> or String")
-            *other = AttributeValue::StringBTreeSet(BTreeSet::from_iter(classes));
-        }
-        None => {
-            attrs.insert(
-                "class".into(),
-                AttributeValue::StringBTreeSet(BTreeSet::from_iter(classes)),
-            );
-        }
-    };
-}
-
-macro_rules! impl_simple_attr {
-    ($name:ident, $setter_name: ident, $ty: ty, $el: ident) => {
+macro_rules! def_simple_attr {
+    ($name:ident, $setter_name: ident, $ty: ty) => {
         #[inline(always)]
-        fn $name(mut self, $name: $ty) -> $el<T, A, VS> {
-            self.attrs.insert_attr(stringify!($name), $name);
+        fn $name(mut self, $name: $ty) -> Self {
+            self.$setter_name($name);
             self
         }
 
         #[inline(always)]
         fn $setter_name(&mut self, $name: $ty) {
-            self.attrs.insert_attr(stringify!($name), $name);
+            let value = $name.into_attribute_value().unwrap();
+            self.attrs_mut().insert(stringify!($name).into(), value);
+        }
+    };
+}
+
+// TODO add also something like `set_on_click(&mut self)`?
+macro_rules! def_event_attr {
+    ($name: ident, $name_with_options: ident, $event: ty, $event_name: expr) => {
+        fn $name<EH, OA>(self, handler: EH) -> Self
+        where
+            T: 'static,
+            A: 'static,
+            Self::Element: 'static,
+            OA: crate::OptionalAction<A> + 'static,
+            EH: EventHandler<T, OA, A, crate::Event<$event, Self::Element>> + 'static,
+        {
+            self.$name_with_options(handler, EventListenerOptions::default())
+        }
+
+        fn $name_with_options<EH, OA>(mut self, handler: EH, options: EventListenerOptions) -> Self
+        where
+            T: 'static,
+            A: 'static,
+            Self::Element: 'static,
+            OA: crate::OptionalAction<A> + 'static,
+            EH: EventHandler<T, OA, A, crate::Event<$event, Self::Element>> + 'static,
+        {
+            self.add_event_listener(EventListener::new($event_name, handler, options));
+            self
+        }
+    };
+}
+
+/// These traits should mirror the respective DOM interfaces
+/// In this case https://dom.spec.whatwg.org/#interface-element
+/// Or rather a curated/opinionated subset that makes sense in xilem for each of these interfaces
+/// unfortunately with this (builder + generic type parameters in methods) pattern not trait-object-safe
+pub trait Element<T, A>: Node + crate::view::View<T, A> + Sized {
+    // The following three functions are the only ones that need to be implemented by each element.
+    // All other functions are implemented either in this trait or in the corresponding dom interface traits
+    /// Return the raw `&Attributes` of this element
+    fn attrs(&self) -> &Attributes;
+    /// Return the raw `&mut Attributes` of this element
+    fn attrs_mut(&mut self) -> &mut Attributes;
+
+    fn add_event_listener<E, OA, EH>(
+        &mut self,
+        listener: EventListener<T, A, OA, E, Self::Element, EH>,
+    ) where
+        T: 'static,
+        A: 'static,
+        E: JsCast + 'static,
+        OA: crate::OptionalAction<A> + 'static,
+        EH: EventHandler<T, OA, A, crate::Event<E, Self::Element>> + 'static;
+
+    fn on<E, OA, EH>(mut self, event: &'static str, handler: EH) -> Self
+    where
+        T: 'static,
+        A: 'static,
+        Self::Element: 'static,
+        E: JsCast + 'static,
+        OA: crate::OptionalAction<A> + 'static,
+        EH: EventHandler<T, OA, A, crate::Event<E, Self::Element>> + 'static,
+    {
+        self.add_event_listener(EventListener::new(event, handler, Default::default()));
+        self
+    }
+
+    fn class<C: IntoClass>(mut self, class: C) -> Self {
+        add_class(self.attrs_mut(), class);
+        self
+    }
+
+    fn add_class<C: IntoClass>(&mut self, class: C) {
+        add_class(self.attrs_mut(), class);
+    }
+
+    /// Set an attribute on this element.
+    ///
+    /// # Panics
+    ///
+    /// If the name contains characters that are not valid in an attribute name,
+    /// then the `View::build`/`View::rebuild` functions will panic for this view.
+    fn attr<K: Into<CowStr>, V: IntoAttributeValue>(mut self, key: K, value: V) -> Self {
+        self.set_attr(key, value);
+        self
+    }
+
+    /// Set an attribute on this element.
+    ///
+    /// # Panics
+    ///
+    /// If the name contains characters that are not valid in an attribute name,
+    /// then the `View::build`/`View::rebuild` functions will panic for this view.
+    fn set_attr<K: Into<CowStr>, V: IntoAttributeValue>(&mut self, key: K, value: V) {
+        let key = key.into();
+        if let Some(value) = value.into_attribute_value() {
+            self.attrs_mut().insert(key, value);
+        } else {
+            self.attrs_mut().remove(&key);
+        }
+    }
+
+    // Mouse events
+    def_event_attr!(
+        on_click,
+        on_click_with_options,
+        web_sys::MouseEvent,
+        "click"
+    );
+    def_event_attr!(
+        on_dblclick,
+        on_dblclick_with_options,
+        web_sys::MouseEvent,
+        "dblclick"
+    );
+    def_event_attr!(
+        on_auxclick,
+        on_auxclick_with_options,
+        web_sys::MouseEvent,
+        "auxclick"
+    );
+    def_event_attr!(
+        on_contextmenu,
+        on_contextmenu_with_options,
+        web_sys::MouseEvent,
+        "contextmenu"
+    );
+    def_event_attr!(
+        on_mousedown,
+        on_mousedown_with_options,
+        web_sys::MouseEvent,
+        "mousedown"
+    );
+    def_event_attr!(
+        on_mouseenter,
+        on_mouseenter_with_options,
+        web_sys::MouseEvent,
+        "mouseenter"
+    );
+    def_event_attr!(
+        on_mouseleave,
+        on_mouseleave_with_options,
+        web_sys::MouseEvent,
+        "mouseleave"
+    );
+    def_event_attr!(
+        on_mousemove,
+        on_mousemove_with_options,
+        web_sys::MouseEvent,
+        "mousemove"
+    );
+    def_event_attr!(
+        on_mouseout,
+        on_mouseout_with_options,
+        web_sys::MouseEvent,
+        "mouseout"
+    );
+    def_event_attr!(
+        on_mouseover,
+        on_mouseover_with_options,
+        web_sys::MouseEvent,
+        "mouseover"
+    );
+    def_event_attr!(
+        on_mouseup,
+        on_mouseup_with_options,
+        web_sys::MouseEvent,
+        "mouseup"
+    );
+
+    // Scroll events
+    def_event_attr!(on_scroll, on_scroll_with_options, web_sys::Event, "scroll");
+    def_event_attr!(
+        on_scrollend,
+        on_scrollend_with_options,
+        web_sys::Event,
+        "scrollend"
+    );
+
+    // Keyboard events
+    def_event_attr!(
+        on_keydown,
+        on_keydown_with_options,
+        web_sys::KeyboardEvent,
+        "keydown"
+    );
+    def_event_attr!(
+        on_keyup,
+        on_keyup_with_options,
+        web_sys::KeyboardEvent,
+        "keyup"
+    );
+
+    // Focus events
+    def_event_attr!(
+        on_focus,
+        on_focus_with_options,
+        web_sys::FocusEvent,
+        "focus"
+    );
+    def_event_attr!(
+        on_focusin,
+        on_focusin_with_options,
+        web_sys::FocusEvent,
+        "focusin"
+    );
+    def_event_attr!(
+        on_focusout,
+        on_focusout_with_options,
+        web_sys::FocusEvent,
+        "focusout"
+    );
+    def_event_attr!(on_blur, on_blur_with_options, web_sys::FocusEvent, "blur");
+
+    def_event_attr!(
+        on_input,
+        on_input_with_options,
+        web_sys::InputEvent,
+        "input"
+    );
+
+    // With an explicit Fn traitbound for the event-handler/callback, it's possible to workaround explicit necessary typing
+    // But this obviously restricts the event handler to this exact function type
+    fn on_touchstart<F, OA>(mut self, callback: F) -> Self
+    where
+        T: 'static,
+        A: 'static,
+        Self::Element: 'static,
+        OA: crate::OptionalAction<A> + 'static,
+        F: for<'a> Fn(&'a mut T, crate::Event<web_sys::TouchEvent, Self::Element>) -> OA + 'static,
+    {
+        self.add_event_listener(EventListener::new(
+            "touchstart",
+            callback,
+            Default::default(),
+        ));
+        self
+    }
+
+    // TODO rest of all the methods allowed on an element
+}
+
+macro_rules! dom_interface_trait_definitions {
+    ($($dom_interface:ident : $super_dom_interface: ident $body: tt),*) => {
+        $(pub trait $dom_interface<T, A>: $super_dom_interface<T, A> $body)*
+    };
+}
+
+// TODO all the typed attributes
+dom_interface_trait_definitions!(
+    HtmlAnchorElement : HtmlElement {},
+    HtmlAreaElement : HtmlElement {},
+    HtmlAudioElement : HtmlMediaElement {},
+    HtmlBaseElement : HtmlElement {},
+    HtmlBodyElement : HtmlElement {},
+    HtmlBrElement : HtmlElement {},
+    HtmlButtonElement : HtmlElement {},
+    HtmlCanvasElement : HtmlElement {
+        def_simple_attr!(width, set_width, u32);
+        def_simple_attr!(height, set_height, u32);
+    },
+    HtmlDataElement : HtmlElement {},
+    HtmlDataListElement : HtmlElement {},
+    HtmlDetailsElement : HtmlElement {},
+    HtmlDialogElement : HtmlElement {},
+    HtmlDirectoryElement : HtmlElement {},
+    HtmlDivElement : HtmlElement {},
+    HtmlDListElement : HtmlElement {},
+    HtmlElement : Element {},
+    HtmlUnknownElement : HtmlElement {},
+    HtmlEmbedElement : HtmlElement {},
+    HtmlFieldSetElement : HtmlElement {},
+    HtmlFontElement : HtmlElement {},
+    HtmlFormElement : HtmlElement {},
+    HtmlFrameElement : HtmlElement {},
+    HtmlFrameSetElement : HtmlElement {},
+    HtmlHeadElement : HtmlElement {},
+    HtmlHeadingElement : HtmlElement {},
+    HtmlHrElement : HtmlElement {},
+    HtmlHtmlElement : HtmlElement {},
+    HtmlIFrameElement : HtmlElement {},
+    HtmlImageElement : HtmlElement {},
+    HtmlInputElement : HtmlElement {},
+    HtmlLabelElement : HtmlElement {},
+    HtmlLegendElement : HtmlElement {},
+    HtmlLiElement : HtmlElement {},
+    HtmlLinkElement : HtmlElement {},
+    HtmlMapElement : HtmlElement {},
+    HtmlMediaElement : HtmlElement {},
+    HtmlMenuElement : HtmlElement {},
+    HtmlMenuItemElement : HtmlElement {},
+    HtmlMetaElement : HtmlElement {},
+    HtmlMeterElement : HtmlElement {},
+    HtmlModElement : HtmlElement {},
+    HtmlObjectElement : HtmlElement {},
+    HtmlOListElement : HtmlElement {},
+    HtmlOptGroupElement : HtmlElement {},
+    HtmlOptionElement : HtmlElement {},
+    HtmlOutputElement : HtmlElement {},
+    HtmlParagraphElement : HtmlElement {},
+    HtmlParamElement : HtmlElement {},
+    HtmlPictureElement : HtmlElement {},
+    HtmlPreElement : HtmlElement {},
+    HtmlProgressElement : HtmlElement {},
+    HtmlQuoteElement : HtmlElement {},
+    HtmlScriptElement : HtmlElement {},
+    HtmlSelectElement : HtmlElement {},
+    HtmlSlotElement : HtmlElement {},
+    HtmlSourceElement : HtmlElement {},
+    HtmlSpanElement : HtmlElement {},
+    HtmlStyleElement : HtmlElement {},
+    HtmlTableCaptionElement : HtmlElement {},
+    HtmlTableCellElement : HtmlElement {},
+    HtmlTableColElement : HtmlElement {},
+    HtmlTableElement : HtmlElement {},
+    HtmlTableRowElement : HtmlElement {},
+    HtmlTableSectionElement : HtmlElement {},
+    HtmlTemplateElement : HtmlElement {},
+    HtmlTimeElement : HtmlElement {},
+    HtmlTextAreaElement : HtmlElement {},
+    HtmlTitleElement : HtmlElement {},
+    HtmlTrackElement : HtmlElement {},
+    HtmlUListElement : HtmlElement {},
+    HtmlVideoElement : HtmlMediaElement {}
+);
+
+fn add_class<C: IntoClass>(attrs: &mut Attributes, class: C) {
+    let mut class = class.into_class().peekable();
+
+    if class.peek().is_none() {
+        return;
+    }
+
+    match attrs.get_mut("class") {
+        Some(AttributeValue::Classes(attr_value)) => {
+            attr_value.extend(class);
+        }
+        // could be useful, in case untyped values are inserted here
+        Some(untyped_class) if matches!(untyped_class, AttributeValue::String(_)) => {
+            let mut class = BTreeSet::from_iter(class);
+            class.insert(if let AttributeValue::String(s) = untyped_class {
+                s.clone()
+            } else {
+                unreachable!()
+            });
+            *untyped_class = AttributeValue::Classes(class);
+        }
+        Some(other) => {
+            // TODO warning
+            // panic!("A static attribute 'class' should always have either the type BTreeSet<CowStr> or String")
+            *other = AttributeValue::Classes(BTreeSet::from_iter(class));
+        }
+        None => {
+            attrs.insert(
+                "class".into(),
+                AttributeValue::Classes(BTreeSet::from_iter(class)),
+            );
         }
     };
 }
@@ -1033,100 +840,30 @@ macro_rules! impl_simple_attr {
 // (see below at `simple_attr_impl` for an example) to avoid big compilation code size
 macro_rules! impl_element {
     ($ty_name:ident, $name: ident, $concrete_dom_interface: ident) => {
-        impl<T, A, VS> Element<T, A> for $ty_name<T, A, VS>
+        impl<T_, A_, VS> Element<T_, A_> for $ty_name<T_, A_, VS>
         where
-            VS: crate::view::ViewSequence<T, A>,
+            VS: crate::view::ViewSequence<T_, A_>,
         {
-            fn classes<C: IntoClass>(mut self, class: C) -> Self {
-                add_class(&mut self.attrs, class);
-                self
-            }
-
-            fn add_class<C: IntoClass>(&mut self, class: C) {
-                add_class(&mut self.attrs, class);
-            }
-
-            fn raw_attrs(&self) -> &Attrs {
+            fn attrs(&self) -> &Attributes {
                 &self.attrs
             }
 
-            fn attr<K: Into<CowStr>, V: Into<AttributeValue>>(
-                mut self,
-                key: K,
-                value: V,
-            ) -> $ty_name<T, A, VS> {
-                self.attrs.insert_attr(key, value);
-                self
+            fn attrs_mut(&mut self) -> &mut Attributes {
+                &mut self.attrs
             }
 
-            fn set_attr<K: Into<CowStr>, V: Into<AttributeValue>>(&mut self, key: K, value: V) {
-                self.attrs.insert_attr(key, value);
-            }
-
-            fn on_click<EH>(self, handler: EH) -> $ty_name<T, A, VS>
-            where
-                T: 'static,
-                A: 'static,
-                EH: EventHandler<
-                        T,
-                        A,
-                        crate::Event<web_sys::MouseEvent, web_sys::$concrete_dom_interface>,
-                    > + 'static, // V::Element, but this results in better docs
+            fn add_event_listener<E, OA, EH>(
+                &mut self,
+                listener: EventListener<T_, A_, OA, E, Self::Element, EH>,
+            ) where
+                T_: 'static,
+                A_: 'static,
+                E: JsCast + 'static,
+                OA: crate::OptionalAction<A_> + 'static,
+                EH: EventHandler<T_, OA, A_, crate::Event<E, Self::Element>> + 'static,
             {
-                self.on_click_with_options(handler, EventListenerOptions::default())
-            }
-
-            fn on_click_with_options<EH>(
-                mut self,
-                handler: EH,
-                options: EventListenerOptions,
-            ) -> $ty_name<T, A, VS>
-            where
-                T: 'static,
-                A: 'static,
-                EH: EventHandler<
-                        T,
-                        A,
-                        crate::Event<web_sys::MouseEvent, web_sys::$concrete_dom_interface>,
-                    > + 'static, // V::Element, but this results in better docs
-            {
-                let listener = EventListener::new("click", handler, options);
                 self.event_listeners
                     .push(DynamicEventListener::new(listener));
-                self
-            }
-
-            fn on_scroll<EH>(self, handler: EH) -> $ty_name<T, A, VS>
-            where
-                T: 'static,
-                A: 'static,
-                EH: EventHandler<
-                        T,
-                        A,
-                        crate::Event<web_sys::Event, web_sys::$concrete_dom_interface>,
-                    > + 'static, // V::Element, but this results in better docs
-            {
-                self.on_scroll_with_options(handler, EventListenerOptions::default())
-            }
-
-            fn on_scroll_with_options<EH>(
-                mut self,
-                handler: EH,
-                options: EventListenerOptions,
-            ) -> $ty_name<T, A, VS>
-            where
-                T: 'static,
-                A: 'static,
-                EH: EventHandler<
-                        T,
-                        A,
-                        crate::Event<web_sys::Event, web_sys::$concrete_dom_interface>,
-                    > + 'static, // V::Element, but this results in better docs
-            {
-                let listener = EventListener::new("scroll", handler, options);
-                self.event_listeners
-                    .push(DynamicEventListener::new(listener));
-                self
             }
         }
     };
@@ -1137,16 +874,16 @@ macro_rules! generate_dom_interface_impl {
         generate_dom_interface_impl!($ty_name, $name, $dom_interface, {});
     };
     ($ty_name:ident, $name:ident, $dom_interface:ident, $body: tt) => {
-        impl<T, A, VS> $dom_interface<T, A> for $ty_name<T, A, VS>
+        impl<T_, A_, VS> $dom_interface<T_, A_> for $ty_name<T_, A_, VS>
         where
-            VS: crate::view::ViewSequence<T, A>,
+            VS: crate::view::ViewSequence<T_, A_>,
         $body
     };
 }
 
 macro_rules! impl_html_dom_interface {
     ($ty_name: ident, $name: ident, Node) => {
-        impl<T, A, VS> Node for $ty_name<T, A, VS> {
+        impl<T_, A_, VS> Node for $ty_name<T_, A_, VS> {
             fn node_name(&self) -> &str {
                 stringify!($name)
             }
@@ -1160,44 +897,42 @@ macro_rules! impl_html_dom_interface {
         impl_html_dom_interface!($ty_name, $name, $concrete_dom_interface, Element);
         generate_dom_interface_impl!($ty_name, $name, HtmlElement);
     };
-    ($ty_name: ident, $name: ident, $concrete_dom_interface: ident, HtmlDivElement) => {
-        impl_html_dom_interface!($ty_name, $name, $concrete_dom_interface, HtmlElement);
-        generate_dom_interface_impl!($ty_name, $name, HtmlDivElement);
-    };
-    ($ty_name: ident, $name: ident, $concrete_dom_interface: ident, HtmlSpanElement) => {
-        impl_html_dom_interface!($ty_name, $name, $concrete_dom_interface, HtmlElement);
-        generate_dom_interface_impl!($ty_name, $name, HtmlSpanElement);
-    };
-    ($ty_name: ident, $name: ident, $concrete_dom_interface: ident, HtmlHeadingElement) => {
-        impl_html_dom_interface!($ty_name, $name, $concrete_dom_interface, HtmlElement);
+    ($ty_name: ident, $name: ident, $concrete_dom_interface: ident, HtmlAudioElement) => {
+        impl_html_dom_interface!($ty_name, $name, $concrete_dom_interface, HtmlMediaElement);
         generate_dom_interface_impl!($ty_name, $name, HtmlHeadingElement);
     };
-    ($ty_name: ident, $name: ident, $concrete_dom_interface: ident, HtmlCanvasElement) => {
+    ($ty_name: ident, $name: ident, $concrete_dom_interface: ident, HtmlVideoElement) => {
+        impl_html_dom_interface!($ty_name, $name, $concrete_dom_interface, HtmlMediaElement);
+        generate_dom_interface_impl!($ty_name, $name, HtmlHeadingElement);
+    };
+    // TODO resolve parent interface correctly
+    // All remaining interfaces inherit directly from HtmlElement
+    ($ty_name: ident, $name: ident, $concrete_dom_interface: ident, $dom_interface: ident) => {
         impl_html_dom_interface!($ty_name, $name, $concrete_dom_interface, HtmlElement);
-        generate_dom_interface_impl!($ty_name, $name, HtmlCanvasElement, {
-            impl_simple_attr!(width, set_width, u32, $ty_name);
-            impl_simple_attr!(height, set_height, u32, $ty_name);
-        });
+        generate_dom_interface_impl!($ty_name, $name, $dom_interface);
     };
 }
 
+// TODO only use T_ A_ when necessary (e.g. for the `A` element)
+// TODO maybe it's possible to reduce even more in the impl function bodies and put into impl_functions
+//      (should improve compile times and probably wasm binary size)
 macro_rules! define_html_elements {
     ($(($ty_name:ident, $name:ident, $dom_interface:ident),)*) => {
         $(
         // TODO not sure how much it helps reducing the code size,
         // but the two attributes could be extracted into its own type, and the actual element type is just a single tuple struct wrapping this type,
-        pub struct $ty_name<T, A, VS> {
-            pub(crate) attrs: Attrs,
-            event_listeners: Vec<DynamicEventListener<T, A>>,
+        pub struct $ty_name<T_, A_, VS> {
+            pub(crate) attrs: Attributes,
+            event_listeners: Vec<DynamicEventListener<T_, A_>>,
             children: VS,
-            phantom: std::marker::PhantomData<fn() -> (T, A)>,
+            phantom: std::marker::PhantomData<fn() -> (T_, A_)>,
         }
 
-        impl<T, A, VS> crate::view::ViewMarker for $ty_name<T, A, VS> {}
+        impl<T_, A_, VS> crate::view::ViewMarker for $ty_name<T_, A_, VS> {}
 
-        impl<T, A, VS> crate::view::View<T, A> for $ty_name<T, A, VS>
+        impl<T_, A_, VS> crate::view::View<T_, A_> for $ty_name<T_, A_, VS>
         where
-            VS: crate::view::ViewSequence<T, A>,
+            VS: crate::view::ViewSequence<T_, A_>,
         {
             type State = ElementState<VS::State>;
             type Element = web_sys::$dom_interface;
@@ -1264,8 +999,8 @@ macro_rules! define_html_elements {
                 id_path: &[xilem_core::Id],
                 state: &mut Self::State,
                 message: Box<dyn std::any::Any>,
-                app_state: &mut T,
-            ) -> xilem_core::MessageResult<A> {
+                app_state: &mut T_,
+            ) -> xilem_core::MessageResult<A_> {
                 debug_assert!(state.event_listener_state.len() == self.event_listeners.len());
                 impl_message_element(
                     id_path,
@@ -1285,9 +1020,9 @@ macro_rules! define_html_elements {
         /// Builder function for a
         #[doc = concat!("`", stringify!($name), "`")]
         /// element view.
-        pub fn $name<T, A, VS>(children: VS) -> $ty_name<T, A, VS>
+        pub fn $name<T_, A_, VS>(children: VS) -> $ty_name<T_, A_, VS>
         where
-            VS: crate::view::ViewSequence<T, A>,
+            VS: crate::view::ViewSequence<T_, A_>,
         {
             $ty_name {
                 attrs: Default::default(),
@@ -1324,132 +1059,132 @@ define_html_elements!(
     (Nav, nav, HtmlElement),
     (Section, section, HtmlElement),
     // text content
-    // (Blockquote, blockquote, HtmlQuoteElement),
+    (Blockquote, blockquote, HtmlQuoteElement),
     (Dd, dd, HtmlElement),
     (Div, div, HtmlDivElement),
-    // (Dl, dl, HtmlDListElement),
+    (Dl, dl, HtmlDListElement),
     (Dt, dt, HtmlElement),
     (Figcaption, figcaption, HtmlElement),
     (Figure, figure, HtmlElement),
-    // (Hr, hr, HtmlHrElement),
-    // (Li, li, HtmlLiElement),
-    // (Menu, menu, HtmlMenuElement),
-    // (Ol, ol, HtmlOListElement),
-    // (P, p, HtmlParagraphElement),
-    // (Pre, pre, HtmlPreElement),
-    // (Ul, ul, HtmlUListElement),
+    (Hr, hr, HtmlHrElement),
+    (Li, li, HtmlLiElement),
+    (Menu, menu, HtmlMenuElement),
+    (Ol, ol, HtmlOListElement),
+    (P, p, HtmlParagraphElement),
+    (Pre, pre, HtmlPreElement),
+    (Ul, ul, HtmlUListElement),
     // inline text
-    // (A, a, HtmlAnchorElement),
+    (A, a, HtmlAnchorElement),
     (Abbr, abbr, HtmlElement),
     (B, b, HtmlElement),
     (Bdi, bdi, HtmlElement),
     (Bdo, bdo, HtmlElement),
-    // (Br, br, HtmlBrElement),
+    (Br, br, HtmlBrElement),
     (Cite, cite, HtmlElement),
     (Code, code, HtmlElement),
-    // (Data, data, HtmlDataElement),
+    (Data, data, HtmlDataElement),
     (Dfn, dfn, HtmlElement),
     (Em, em, HtmlElement),
     (I, i, HtmlElement),
     (Kbd, kbd, HtmlElement),
     (Mark, mark, HtmlElement),
-    // (Q, q, HtmlQuoteElement),
+    (Q, q, HtmlQuoteElement),
     (Rp, rp, HtmlElement),
     (Rt, rt, HtmlElement),
     (Ruby, ruby, HtmlElement),
     (S, s, HtmlElement),
     (Samp, samp, HtmlElement),
     (Small, small, HtmlElement),
-    (Span, span, HtmlSpanElement), // TODO HtmlSpanElement
+    (Span, span, HtmlSpanElement),
     (Strong, strong, HtmlElement),
     (Sub, sub, HtmlElement),
     (Sup, sup, HtmlElement),
-    // (Time, time, HtmlTimeElement),
+    (Time, time, HtmlTimeElement),
     (U, u, HtmlElement),
     (Var, var, HtmlElement),
     (Wbr, wbr, HtmlElement),
     // image and multimedia
-    // (Area, area, HtmlAreaElement),
-    // (Audio, audio, HtmlAudioElement),
-    // (Img, img, HtmlImageElement),
-    // (Map, map, HtmlMapElement),
-    // (Track, track, HtmlTrackElement),
-    // (Video, video, HtmlVideoElement),
+    (Area, area, HtmlAreaElement),
+    (Audio, audio, HtmlAudioElement),
+    (Img, img, HtmlImageElement),
+    (Map, map, HtmlMapElement),
+    (Track, track, HtmlTrackElement),
+    (Video, video, HtmlVideoElement),
     // embedded content
-    // (Embed, embed, HtmlEmbedElement),
-    // (Iframe, iframe, HtmlIFrameElement),
-    // (Object, object, HtmlObjectElement),
-    // (Picture, picture, HtmlPictureElement),
+    (Embed, embed, HtmlEmbedElement),
+    (Iframe, iframe, HtmlIFrameElement),
+    (Object, object, HtmlObjectElement),
+    (Picture, picture, HtmlPictureElement),
     (Portal, portal, HtmlElement),
-    // (Source, source, HtmlSourceElement),
+    (Source, source, HtmlSourceElement),
     // SVG and MathML (TODO, svg and mathml elements)
     (Svg, svg, HtmlElement),
     (Math, math, HtmlElement),
     // scripting
     (Canvas, canvas, HtmlCanvasElement),
     (Noscript, noscript, HtmlElement),
-    // (Script, script, HtmlScriptElement),
+    (Script, script, HtmlScriptElement),
     // demarcating edits
-    // (Del, del, HtmlModElement),
-    // (Ins, ins, HtmlModElement),
+    (Del, del, HtmlModElement),
+    (Ins, ins, HtmlModElement),
     // tables
-    // (Caption, caption, HtmlTableCaptionElement),
-    // (Col, col, HtmlTableColElement),
-    // (Colgroup, colgroup, HtmlTableColElement),
-    // (Table, table, HtmlTableSectionElement),
-    // (Tbody, tbody, HtmlTableSectionElement),
-    // (Td, td, HtmlTableCellElement),
-    // (Tfoot, tfoot, HtmlTableSectionElement),
-    // (Th, th, HtmlTableCellElement),
-    // (Thead, thead, HtmlTableSectionElement),
-    // (Tr, tr, HtmlTableRowElement),
+    (Caption, caption, HtmlTableCaptionElement),
+    (Col, col, HtmlTableColElement),
+    (Colgroup, colgroup, HtmlTableColElement),
+    (Table, table, HtmlTableSectionElement),
+    (Tbody, tbody, HtmlTableSectionElement),
+    (Td, td, HtmlTableCellElement),
+    (Tfoot, tfoot, HtmlTableSectionElement),
+    (Th, th, HtmlTableCellElement),
+    (Thead, thead, HtmlTableSectionElement),
+    (Tr, tr, HtmlTableRowElement),
     // forms
-    // (Button, button, HtmlButtonElement),
-    // (Datalist, datalist, HtmlDataListElement),
-    // (Fieldset, fieldset, HtmlFieldSetElement),
-    // (Form, form, HtmlFormElement),
-    // (Input, input, HtmlInputElement),
-    // (Label, label, HtmlLabelElement),
-    // (Legend, legend, HtmlLegendElement),
-    // (Meter, meter, HtmlMeterElement),
-    // (Optgroup, optgroup, HtmlOptGroupElement),
-    // (OptionElement, option, web_sys::HtmlOptionElement), // Avoid cluttering the namespace with `Option`
-    // (Output, output, HtmlOutputElement),
-    // (Progress, progress, HtmlProgressElement),
-    // (Select, select, HtmlSelectElement),
-    // (Textarea, textarea, HtmlTextAreaElement),
+    (Button, button, HtmlButtonElement),
+    (Datalist, datalist, HtmlDataListElement),
+    (Fieldset, fieldset, HtmlFieldSetElement),
+    (Form, form, HtmlFormElement),
+    (Input, input, HtmlInputElement),
+    (Label, label, HtmlLabelElement),
+    (Legend, legend, HtmlLegendElement),
+    (Meter, meter, HtmlMeterElement),
+    (Optgroup, optgroup, HtmlOptGroupElement),
+    (OptionElement, option, HtmlOptionElement), // Avoid cluttering the namespace with `Option`
+    (Output, output, HtmlOutputElement),
+    (Progress, progress, HtmlProgressElement),
+    (Select, select, HtmlSelectElement),
+    (Textarea, textarea, HtmlTextAreaElement),
     // interactive elements,
-    // (Details, details, HtmlDetailsElement),
-    // (Dialog, dialog, HtmlDialogElement),
+    (Details, details, HtmlDetailsElement),
+    (Dialog, dialog, HtmlDialogElement),
     (Summary, summary, HtmlElement),
     // web components,
-    // (Slot, slot, HtmlSlotElement),
-    // (Template, template, HtmlTemplateElement),
+    (Slot, slot, HtmlSlotElement),
+    (Template, template, HtmlTemplateElement),
 );
 
 // A few experiments for more flexible attributes (el.class<C: IntoClass>(class: C))
 pub trait IntoClass {
     type ClassIter: Iterator<Item = CowStr>;
-    fn classes(self) -> Self::ClassIter;
+    fn into_class(self) -> Self::ClassIter;
 }
 
 impl IntoClass for &'static str {
     type ClassIter = std::option::IntoIter<CowStr>;
-    fn classes(self) -> Self::ClassIter {
+    fn into_class(self) -> Self::ClassIter {
         Some(self.into()).into_iter()
     }
 }
 
 impl IntoClass for String {
     type ClassIter = std::option::IntoIter<CowStr>;
-    fn classes(self) -> Self::ClassIter {
+    fn into_class(self) -> Self::ClassIter {
         Some(self.into()).into_iter()
     }
 }
 
 impl IntoClass for CowStr {
     type ClassIter = std::option::IntoIter<CowStr>;
-    fn classes(self) -> Self::ClassIter {
+    fn into_class(self) -> Self::ClassIter {
         Some(self).into_iter()
     }
 }
@@ -1458,15 +1193,35 @@ impl<T: IntoClass, const N: usize> IntoClass for [T; N] {
     // we really need impl
     type ClassIter =
         std::iter::FlatMap<std::array::IntoIter<T, N>, T::ClassIter, fn(T) -> T::ClassIter>;
-    fn classes(self) -> Self::ClassIter {
-        self.into_iter().flat_map(IntoClass::classes)
+    fn into_class(self) -> Self::ClassIter {
+        self.into_iter().flat_map(IntoClass::into_class)
+    }
+}
+
+impl<'a> IntoClass for &'a [&'static str] {
+    // we really need impl
+    type ClassIter = std::iter::Map<
+        std::iter::Copied<std::slice::Iter<'a, &'static str>>,
+        fn(&'static str) -> CowStr,
+    >;
+    fn into_class(self) -> Self::ClassIter {
+        self.iter().copied().map(Cow::from)
+    }
+}
+
+impl<T: IntoClass> IntoClass for Option<T> {
+    // we really need impl
+    type ClassIter =
+        std::iter::FlatMap<std::option::IntoIter<T>, T::ClassIter, fn(T) -> T::ClassIter>;
+    fn into_class(self) -> Self::ClassIter {
+        self.into_iter().flat_map(IntoClass::into_class)
     }
 }
 
 impl<T: IntoClass> IntoClass for Vec<T> {
     type ClassIter = std::iter::FlatMap<std::vec::IntoIter<T>, T::ClassIter, fn(T) -> T::ClassIter>;
-    fn classes(self) -> Self::ClassIter {
-        self.into_iter().flat_map(IntoClass::classes)
+    fn into_class(self) -> Self::ClassIter {
+        self.into_iter().flat_map(IntoClass::into_class)
     }
 }
 
@@ -1483,7 +1238,7 @@ impl<T: IntoClass> IntoClass for Vec<T> {
 // but an alternative would be multiple class invocations with different types
 impl<A: IntoClass, B: IntoClass> IntoClass for (A, B) {
     type ClassIter = std::iter::Chain<A::ClassIter, B::ClassIter>;
-    fn classes(self) -> Self::ClassIter {
-        self.0.classes().chain(self.1.classes())
+    fn into_class(self) -> Self::ClassIter {
+        self.0.into_class().chain(self.1.into_class())
     }
 }

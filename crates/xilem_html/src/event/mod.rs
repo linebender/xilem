@@ -6,7 +6,8 @@ pub mod events;
 
 use std::{any::Any, marker::PhantomData, ops::Deref};
 
-use gloo::events::{EventListener, EventListenerOptions};
+use gloo::events::EventListener;
+pub use gloo::events::EventListenerOptions;
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use xilem_core::{Id, MessageResult};
 

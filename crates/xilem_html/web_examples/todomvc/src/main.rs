@@ -4,8 +4,8 @@ use state::{AppState, Filter, Todo};
 
 use xilem_html::{
     elements::{self as el, Element},
-    events::on_click,
-    get_element_by_id, Action, Adapt, App, MessageResult, View, ViewExt, ViewMarker,
+    get_element_by_id, Action, Adapt, App, Event, EventListenerOptions, MessageResult, View,
+    ViewMarker,
 };
 
 // All of these actions arise from within a `Todo`, but we need access to the full state to reduce
@@ -20,12 +20,12 @@ enum TodoAction {
 impl Action for TodoAction {}
 
 fn todo_item(todo: &mut Todo, editing: bool) -> impl View<Todo, TodoAction> + ViewMarker {
-    let mut class = String::new();
+    let mut classes = Vec::new();
     if todo.completed {
-        class.push_str(" completed");
+        classes.push("completed");
     }
     if editing {
-        class.push_str(" editing");
+        classes.push("editing");
     }
     let input = el::input(())
         .attr("class", "toggle")
@@ -43,12 +43,11 @@ fn todo_item(todo: &mut Todo, editing: bool) -> impl View<Todo, TodoAction> + Vi
                 .attr("class", "destroy")
                 .on_click(|state: &mut Todo, _| TodoAction::Destroy(state.id)),
         ))
-        .classes("view"),
-        // .attr("class", "view"),
+        .class("view"),
         el::input(())
             .attr("value", todo.title_editing.clone())
             .attr("class", "edit")
-            .on_keydown(|state: &mut Todo, evt| {
+            .on_keydown(|state: &mut Todo, evt: Event<web_sys::KeyboardEvent, _>| {
                 let key = evt.key();
                 if key == "Enter" {
                     state.save_editing();
@@ -59,15 +58,16 @@ fn todo_item(todo: &mut Todo, editing: bool) -> impl View<Todo, TodoAction> + Vi
                     None
                 }
             })
-            .on_input(|state: &mut Todo, evt| {
-                state.title_editing.clear();
-                state.title_editing.push_str(&evt.target().value());
-                evt.prevent_default();
-            })
-            .passive(false)
-            .on_blur(|_, _| TodoAction::CancelEditing),
+            // TODO is it possible with the EventHandler trait to eliminate the explicit typings for the event attribute (which is IMO quite an ergonomic regression)
+            .on_input(
+                |state: &mut Todo, evt: Event<web_sys::InputEvent, web_sys::HtmlInputElement>| {
+                    state.title_editing.clear();
+                    state.title_editing.push_str(&evt.target().value());
+                    evt.prevent_default();
+                },
+            ),
     ))
-    .attr("class", class)
+    .class(classes)
 }
 
 fn footer_view(state: &mut AppState, should_display: bool) -> impl View<AppState> + ViewMarker {
@@ -78,7 +78,7 @@ fn footer_view(state: &mut AppState, should_display: bool) -> impl View<AppState
     };
 
     let clear_button = (state.todos.iter().filter(|todo| todo.completed).count() > 0).then(|| {
-        on_click(
+        Element::on_click(
             el::button("Clear completed").attr("class", "clear-completed"),
             |state: &mut AppState, _| {
                 state.todos.retain(|todo| !todo.completed);
@@ -95,28 +95,28 @@ fn footer_view(state: &mut AppState, should_display: bool) -> impl View<AppState
         ))
         .attr("class", "todo-count"),
         el::ul((
-            el::li(on_click(
+            el::li(Element::on_click(
                 el::a("All")
                     .attr("href", "#/")
-                    .attr("class", filter_class(Filter::All)),
+                    .class(filter_class(Filter::All)),
                 |state: &mut AppState, _| {
                     state.filter = Filter::All;
                 },
             )),
             " ",
-            el::li(on_click(
+            el::li(Element::on_click(
                 el::a("Active")
                     .attr("href", "#/active")
-                    .attr("class", filter_class(Filter::Active)),
+                    .class(filter_class(Filter::Active)),
                 |state: &mut AppState, _| {
                     state.filter = Filter::Active;
                 },
             )),
             " ",
-            el::li(on_click(
+            el::li(Element::on_click(
                 el::a("Completed")
                     .attr("href", "#/completed")
-                    .attr("class", filter_class(Filter::Completed)),
+                    .class(filter_class(Filter::Completed)),
                 |state: &mut AppState, _| {
                     state.filter = Filter::Completed;
                 },
@@ -187,16 +187,15 @@ fn app_logic(state: &mut AppState) -> impl View<AppState> {
         el::header((
             el::h1("TODOs"),
             input
-                .on_keydown(|state: &mut AppState, evt| {
+                .on_keydown(|state: &mut AppState, evt: Event<web_sys::KeyboardEvent, _>| {
                     if evt.key() == "Enter" {
                         state.create_todo();
                     }
                 })
-                .on_input(|state: &mut AppState, evt| {
+                .on_input_with_options(|state: &mut AppState, evt: Event<web_sys::InputEvent, web_sys::HtmlInputElement>| {
                     state.update_new_todo(&evt.target().value());
                     evt.prevent_default();
-                })
-                .passive(false),
+                }, EventListenerOptions::enable_prevent_default())
         ))
         .attr("class", "header"),
         main,

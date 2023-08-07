@@ -32,7 +32,7 @@ typed = [
     "web-sys/HtmlTableSectionElement", "web-sys/HtmlTemplateElement", "web-sys/HtmlTextAreaElement",
     "web-sys/HtmlTimeElement", "web-sys/HtmlTrackElement", "web-sys/HtmlUListElement",
     "web-sys/HtmlVideoElement", "web-sys/InputEvent", "web-sys/KeyboardEvent", "web-sys/MouseEvent",
-    "web-sys/PointerEvent", "web-sys/WheelEvent",
+    "web-sys/PointerEvent", "web-sys/WheelEvent", "web-sys/TouchEvent",
 ]
 
 [dependencies]
