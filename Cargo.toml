@@ -39,8 +39,8 @@ wayland = ["glazier/wayland"]
 
 [dependencies]
 xilem_core.workspace = true
-vello = { git = "https://github.com/linebender/vello", rev = "006faab69fc519c9c7ed6002be740914efad9ffe" }
-wgpu = "0.16.0"
+vello = { git = "https://github.com/linebender/vello", rev = "3cb54627de0c1fc40af46429ae67458f07174713" }
+wgpu = "0.17.0"
 parley = { git = "https://github.com/dfrg/parley", rev = "2371bf4b702ec91edee2d58ffb2d432539580e1e" }
 tokio = { version = "1.21", features = ["full"] }
 futures-task = "0.3"
