@@ -743,7 +743,7 @@ dependencies = [
 [[package]]
 name = "fello"
 version = "0.1.0"
-source = "git+https://github.com/dfrg/fount?rev=dadbcf75695f035ca46766bfd60555d05bd421b1#dadbcf75695f035ca46766bfd60555d05bd421b1"
+source = "git+https://github.com/dfrg/fount?rev=0a7c809716aeb96795325a74c91c048cf4980d73#0a7c809716aeb96795325a74c91c048cf4980d73"
 dependencies = [
  "read-fonts",
 ]
@@ -756,9 +756,8 @@ checksum = "3f9eec918d3f24069decb9af1554cad7c880e2da24a9afd88aca000531ab82c1"
 
 [[package]]
 name = "font-types"
-version = "0.3.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6978d65d61022aa249fefdd914dc8215757f617f1a697c496ef6b42013366567"
+version = "0.3.0"
+source = "git+https://github.com/googlefonts/fontations?rev=91ebdfd91bec9ae4ec34f6a7d5f01736b1b2eb6e#91ebdfd91bec9ae4ec34f6a7d5f01736b1b2eb6e"
 
 [[package]]
 name = "foreign-types"
@@ -1773,9 +1772,8 @@ checksum = "f2ff9a1f06a88b01621b7ae906ef0211290d1c8a168a15542486a8f61c0833b9"
 
 [[package]]
 name = "read-fonts"
-version = "0.10.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "87d08214643b2df95b0b3955cd9f264bcfab22b73470b83df4992df523b4d6eb"
+version = "0.6.0"
+source = "git+https://github.com/googlefonts/fontations?rev=91ebdfd91bec9ae4ec34f6a7d5f01736b1b2eb6e#91ebdfd91bec9ae4ec34f6a7d5f01736b1b2eb6e"
 dependencies = [
  "font-types",
 ]
@@ -2337,7 +2335,7 @@ checksum = "f962df74c8c05a667b5ee8bcf162993134c104e96440b663c8daa176dc772d8c"
 [[package]]
 name = "vello"
 version = "0.0.1"
-source = "git+https://github.com/linebender/vello?rev=d2f190e486a57b6ab06c843756fe28f9038bd587#d2f190e486a57b6ab06c843756fe28f9038bd587"
+source = "git+https://github.com/linebender/vello?rev=3cb54627de0c1fc40af46429ae67458f07174713#3cb54627de0c1fc40af46429ae67458f07174713"
 dependencies = [
  "bytemuck",
  "fello",
@@ -2351,7 +2349,7 @@ dependencies = [
 [[package]]
 name = "vello_encoding"
 version = "0.1.0"
-source = "git+https://github.com/linebender/vello?rev=d2f190e486a57b6ab06c843756fe28f9038bd587#d2f190e486a57b6ab06c843756fe28f9038bd587"
+source = "git+https://github.com/linebender/vello?rev=3cb54627de0c1fc40af46429ae67458f07174713#3cb54627de0c1fc40af46429ae67458f07174713"
 dependencies = [
  "bytemuck",
  "fello",
