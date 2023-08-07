@@ -2337,7 +2337,7 @@ checksum = "f962df74c8c05a667b5ee8bcf162993134c104e96440b663c8daa176dc772d8c"
 [[package]]
 name = "vello"
 version = "0.0.1"
-source = "git+https://github.com/linebender/vello?rev=d2f190e486a57b6ab06c843756fe28f9038bd587#d2f190e486a57b6ab06c843756fe28f9038bd587"
+source = "git+https://github.com/linebender/vello?rev=9d7c4f00d8db420337706771a37937e9025e089c#9d7c4f00d8db420337706771a37937e9025e089c"
 dependencies = [
  "bytemuck",
  "fello",
@@ -2351,7 +2351,7 @@ dependencies = [
 [[package]]
 name = "vello_encoding"
 version = "0.1.0"
-source = "git+https://github.com/linebender/vello?rev=d2f190e486a57b6ab06c843756fe28f9038bd587#d2f190e486a57b6ab06c843756fe28f9038bd587"
+source = "git+https://github.com/linebender/vello?rev=9d7c4f00d8db420337706771a37937e9025e089c#9d7c4f00d8db420337706771a37937e9025e089c"
 dependencies = [
  "bytemuck",
  "fello",
