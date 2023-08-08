@@ -1,5 +1,6 @@
 use std::{cmp::Ordering, collections::BTreeMap, iter::Peekable};
 
+#[allow(unused)]
 pub fn diff_tree_maps<'a, K: Ord, V: PartialEq>(
     prev: &'a BTreeMap<K, V>,
     next: &'a BTreeMap<K, V>,
@@ -11,9 +12,9 @@ pub fn diff_tree_maps<'a, K: Ord, V: PartialEq>(
 }
 
 /// An iterator that compares two ordered maps (like a `BTreeMap`) and outputs a `Diff` for each added, removed or changed key/value pair)
-struct DiffMapIterator<'a, K: 'a, V: 'a, I: Iterator<Item = (&'a K, &'a V)>> {
-    prev: Peekable<I>,
-    next: Peekable<I>,
+pub(crate) struct DiffMapIterator<'a, K: 'a, V: 'a, I: Iterator<Item = (&'a K, &'a V)>> {
+    pub(crate) prev: Peekable<I>,
+    pub(crate) next: Peekable<I>,
 }
 
 impl<'a, K: Ord + 'a, V: PartialEq, I: Iterator<Item = (&'a K, &'a V)>> Iterator

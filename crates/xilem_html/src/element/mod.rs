@@ -4,11 +4,12 @@
 //! `use xilem_html::elements as el` or similar to the top of your file.
 use crate::{
     context::{ChangeFlags, Cx},
-    diff::{diff_tree_maps, Diff},
+    diff::Diff,
+    vecmap::VecMap,
     view::{DomElement, Pod, View, ViewMarker, ViewSequence},
 };
 
-use std::{borrow::Cow, collections::BTreeMap, fmt};
+use std::{borrow::Cow, fmt};
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use xilem_core::{Id, MessageResult, VecSplice};
 
@@ -20,7 +21,7 @@ pub mod elements;
 /// If the element has no children, use the unit type (e.g. `let view = element("div", ())`).
 pub struct Element<El, Children = ()> {
     name: Cow<'static, str>,
-    attributes: BTreeMap<Cow<'static, str>, Cow<'static, str>>,
+    attributes: VecMap<Cow<'static, str>, Cow<'static, str>>,
     children: Children,
     #[allow(clippy::type_complexity)]
     after_update: Option<Box<dyn Fn(&El)>>,
@@ -32,7 +33,7 @@ impl<El, ViewSeq> Element<El, ViewSeq> {
         impl<'a, El, VS> fmt::Debug for DebugFmt<'a, El, VS> {
             fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
                 write!(f, "<{}", self.0.name)?;
-                for (name, value) in &self.0.attributes {
+                for (name, value) in self.0.attributes.iter() {
                     write!(f, " {name}=\"{value}\"")?;
                 }
                 write!(f, ">")
@@ -60,7 +61,7 @@ pub fn element<El, ViewSeq>(
 ) -> Element<El, ViewSeq> {
     Element {
         name: name.into(),
-        attributes: BTreeMap::new(),
+        attributes: VecMap::default(),
         children,
         after_update: None,
     }
@@ -123,7 +124,7 @@ where
 
     fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
         let el = cx.create_html_element(&self.name);
-        for (name, value) in &self.attributes {
+        for (name, value) in self.attributes.iter() {
             el.set_attribute(name, value).unwrap_throw();
         }
         let mut child_elements = vec![];
@@ -181,7 +182,7 @@ where
         let element = element.as_element_ref();
 
         // update attributes
-        for itm in diff_tree_maps(&prev.attributes, &self.attributes) {
+        for itm in prev.attributes.diff(&self.attributes) {
             match itm {
                 Diff::Add(name, value) | Diff::Change(name, value) => {
                     set_attribute(element, name, value);
