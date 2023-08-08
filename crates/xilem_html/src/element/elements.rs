@@ -32,7 +32,7 @@ macro_rules! element {
             pub fn attr(
                 mut self,
                 name: impl Into<std::borrow::Cow<'static, str>>,
-                value: impl Into<std::borrow::Cow<'static, str>>,
+                value: impl Into<crate::AttributeValue>,
             ) -> Self {
                 self.0.set_attr(name, value);
                 self
@@ -47,7 +47,7 @@ macro_rules! element {
             pub fn set_attr(
                 &mut self,
                 name: impl Into<std::borrow::Cow<'static, str>>,
-                value: impl Into<std::borrow::Cow<'static, str>>,
+                value: impl Into<crate::AttributeValue>,
             ) -> &mut Self {
                 self.0.set_attr(name, value);
                 self

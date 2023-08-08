@@ -26,12 +26,10 @@ fn todo_item(todo: &mut Todo, editing: bool) -> impl View<Todo, TodoAction> + Vi
     if editing {
         class.push_str(" editing");
     }
-    let mut input = el::input(())
+    let input = el::input(())
         .attr("class", "toggle")
-        .attr("type", "checkbox");
-    if todo.completed {
-        input.set_attr("checked", "checked");
-    };
+        .attr("type", "checkbox")
+        .attr("checked", todo.completed);
 
     el::li((
         el::div((
@@ -86,13 +84,7 @@ fn footer_view(state: &mut AppState, should_display: bool) -> impl View<AppState
         )
     });
 
-    let filter_class = |filter| {
-        if state.filter == filter {
-            "selected"
-        } else {
-            ""
-        }
-    };
+    let filter_class = |filter| (state.filter == filter).then_some("selected");
 
     let mut footer = el::footer((
         el::span((
@@ -162,13 +154,11 @@ fn main_view(state: &mut AppState, should_display: bool) -> impl View<AppState> 
             )
         })
         .collect();
-    let mut toggle_all = el::input(())
+    let toggle_all = el::input(())
         .attr("id", "toggle-all")
         .attr("class", "toggle-all")
-        .attr("type", "checkbox");
-    if state.are_all_complete() {
-        toggle_all.set_attr("checked", "true");
-    }
+        .attr("type", "checkbox")
+        .attr("checked", state.are_all_complete());
     let mut section = el::section((
         toggle_all.on_click(|state: &mut AppState, _| state.toggle_all_complete()),
         el::label(()).attr("for", "toggle-all"),
@@ -190,7 +180,7 @@ fn app_logic(state: &mut AppState) -> impl View<AppState> {
         .attr("class", "new-todo")
         .attr("placeholder", "What needs to be done?")
         .attr("value", state.new_todo.clone())
-        .attr("autofocus", "true");
+        .attr("autofocus", true);
     el::div((
         el::header((
             el::h1("TODOs"),

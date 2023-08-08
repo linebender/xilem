@@ -5,7 +5,6 @@
 use crate::{
     context::{ChangeFlags, Cx},
     diff::{diff_kv_iterables, Diff},
-    vecmap::VecMap,
     view::{DomElement, Pod, View, ViewMarker, ViewSequence},
 };
 
@@ -13,15 +12,20 @@ use std::{borrow::Cow, fmt};
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use xilem_core::{Id, MessageResult, VecSplice};
 
+pub mod attributes;
 #[cfg(feature = "typed")]
 pub mod elements;
+
+pub use attributes::{AttributeValue, Attributes};
+
+type CowStr = Cow<'static, str>;
 
 /// A view representing a HTML element.
 ///
 /// If the element has no children, use the unit type (e.g. `let view = element("div", ())`).
 pub struct Element<El, Children = ()> {
-    name: Cow<'static, str>,
-    attributes: VecMap<Cow<'static, str>, Cow<'static, str>>,
+    name: CowStr,
+    attributes: Attributes,
     children: Children,
     #[allow(clippy::type_complexity)]
     after_update: Option<Box<dyn Fn(&El)>>,
@@ -34,7 +38,7 @@ impl<El, ViewSeq> Element<El, ViewSeq> {
             fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
                 write!(f, "<{}", self.0.name)?;
                 for (name, value) in &self.0.attributes {
-                    write!(f, " {name}=\"{value}\"")?;
+                    write!(f, " {name}=\"{}\"", value.serialize())?;
                 }
                 write!(f, ">")
             }
@@ -55,13 +59,10 @@ pub struct ElementState<ViewSeqState> {
 /// Create a new element view
 ///
 /// If the element has no children, use the unit type (e.g. `let view = element("div", ())`).
-pub fn element<El, ViewSeq>(
-    name: impl Into<Cow<'static, str>>,
-    children: ViewSeq,
-) -> Element<El, ViewSeq> {
+pub fn element<El, ViewSeq>(name: impl Into<CowStr>, children: ViewSeq) -> Element<El, ViewSeq> {
     Element {
         name: name.into(),
-        attributes: VecMap::default(),
+        attributes: Attributes::default(),
         children,
         after_update: None,
     }
@@ -74,11 +75,7 @@ impl<El, ViewSeq> Element<El, ViewSeq> {
     ///
     /// If the name contains characters that are not valid in an attribute name,
     /// then the `View::build`/`View::rebuild` functions will panic for this view.
-    pub fn attr(
-        mut self,
-        name: impl Into<Cow<'static, str>>,
-        value: impl Into<Cow<'static, str>>,
-    ) -> Self {
+    pub fn attr(mut self, name: impl Into<CowStr>, value: impl Into<AttributeValue>) -> Self {
         self.set_attr(name, value);
         self
     }
@@ -89,12 +86,8 @@ impl<El, ViewSeq> Element<El, ViewSeq> {
     ///
     /// If the name contains characters that are not valid in an attribute name,
     /// then the `View::build`/`View::rebuild` functions will panic for this view.
-    pub fn set_attr(
-        &mut self,
-        name: impl Into<Cow<'static, str>>,
-        value: impl Into<Cow<'static, str>>,
-    ) {
-        self.attributes.insert(name.into(), value.into());
+    pub fn set_attr(&mut self, name: impl Into<CowStr>, value: impl Into<AttributeValue>) {
+        self.attributes.insert(name, value);
     }
 
     /// Set a function to run after the new view tree has been created.
@@ -125,8 +118,9 @@ where
     fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
         let el = cx.create_html_element(&self.name);
         for (name, value) in &self.attributes {
-            el.set_attribute(name, value).unwrap_throw();
+            el.set_attribute(name, &value.serialize()).unwrap_throw();
         }
+
         let mut child_elements = vec![];
         let (id, child_states) = cx.with_new_id(|cx| self.children.build(cx, &mut child_elements));
         for child in &child_elements {
@@ -185,7 +179,7 @@ where
         for itm in diff_kv_iterables(&prev.attributes, &self.attributes) {
             match itm {
                 Diff::Add(name, value) | Diff::Change(name, value) => {
-                    set_attribute(element, name, value);
+                    set_attribute(element, name, &value.serialize());
                     changed |= ChangeFlags::OTHER_CHANGE;
                 }
                 Diff::Remove(name) => {
