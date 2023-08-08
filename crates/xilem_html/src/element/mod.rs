@@ -4,10 +4,11 @@
 //! `use xilem_html::elements as el` or similar to the top of your file.
 use crate::{
     context::{ChangeFlags, Cx},
+    diff::{diff_tree_maps, Diff},
     view::{DomElement, Pod, View, ViewMarker, ViewSequence},
 };
 
-use std::{borrow::Cow, cmp::Ordering, collections::BTreeMap, fmt};
+use std::{borrow::Cow, collections::BTreeMap, fmt};
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use xilem_core::{Id, MessageResult, VecSplice};
 
@@ -180,44 +181,17 @@ where
         let element = element.as_element_ref();
 
         // update attributes
-        // TODO can I use VecSplice for this?
-        let mut prev_attrs = prev.attributes.iter().peekable();
-        let mut self_attrs = self.attributes.iter().peekable();
-        while let (Some((prev_name, prev_value)), Some((self_name, self_value))) =
-            (prev_attrs.peek(), self_attrs.peek())
-        {
-            match prev_name.cmp(self_name) {
-                Ordering::Less => {
-                    // attribute from prev is disappeared
-                    remove_attribute(element, prev_name);
+        for itm in diff_tree_maps(&prev.attributes, &self.attributes) {
+            match itm {
+                Diff::Add(name, value) | Diff::Change(name, value) => {
+                    set_attribute(element, name, value);
                     changed |= ChangeFlags::OTHER_CHANGE;
-                    prev_attrs.next();
                 }
-                Ordering::Greater => {
-                    // new attribute has appeared
-                    set_attribute(element, self_name, self_value);
+                Diff::Remove(name) => {
+                    remove_attribute(element, name);
                     changed |= ChangeFlags::OTHER_CHANGE;
-                    self_attrs.next();
-                }
-                Ordering::Equal => {
-                    // attribute may has changed
-                    if prev_value != self_value {
-                        set_attribute(element, self_name, self_value);
-                        changed |= ChangeFlags::OTHER_CHANGE;
-                    }
-                    prev_attrs.next();
-                    self_attrs.next();
                 }
             }
-        }
-        // Only max 1 of these loops will run
-        for (name, _) in prev_attrs {
-            remove_attribute(element, name);
-            changed |= ChangeFlags::OTHER_CHANGE;
-        }
-        for (name, value) in self_attrs {
-            set_attribute(element, name, value);
-            changed |= ChangeFlags::OTHER_CHANGE;
         }
 
         // update children
