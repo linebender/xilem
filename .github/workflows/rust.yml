@@ -36,3 +36,5 @@ jobs:
       if: runner.os == 'Linux'
     - name: Cargo Clippy
       run: cargo clippy --workspace -- -D warnings
+    - name: Cargo Test
+      run: cargo test --no-fail-fast --workspace
