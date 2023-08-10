@@ -10,6 +10,7 @@ use wasm_bindgen::JsCast;
 mod app;
 mod class;
 mod context;
+mod diff;
 mod element;
 mod event;
 mod one_of;
