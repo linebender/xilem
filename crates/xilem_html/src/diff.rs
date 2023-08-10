@@ -59,3 +59,71 @@ pub enum Diff<K, V> {
     Remove(K),
     Change(K, V),
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    macro_rules! tree_map {
+        (@single $($x:tt)*) => (());
+        (@count $($rest:expr),*) => (<[()]>::len(&[$(tree_map!(@single $rest)),*]));
+
+        ($($key:expr => $value:expr,)+) => { tree_map!($($key => $value),+) };
+        ($($key:expr => $value:expr),*) => {{
+            let mut _map = ::std::collections::BTreeMap::new();
+            $(
+                let _ = _map.insert($key, $value);
+            )*
+            _map
+        }};
+    }
+
+    #[test]
+    fn maps_are_equal() {
+        let map = tree_map!("an-entry" => 1, "another-entry" => 42);
+        let map_same = tree_map!("another-entry" => 42, "an-entry" => 1);
+        assert!(diff_tree_maps(&map, &map_same).next().is_none());
+    }
+
+    #[test]
+    fn new_map_has_additions() {
+        let map = tree_map!("an-entry" => 1);
+        let map_new = tree_map!("an-entry" => 1, "another-entry" => 42);
+        let mut diff = diff_tree_maps(&map, &map_new);
+        assert!(matches!(
+            diff.next(),
+            Some(Diff::Add(&"another-entry", &42))
+        ));
+        assert!(diff.next().is_none());
+    }
+
+    #[test]
+    fn new_map_has_removal() {
+        let map = tree_map!("an-entry" => 1, "another-entry" => 42);
+        let map_new = tree_map!("an-entry" => 1);
+        let mut diff = diff_tree_maps(&map, &map_new);
+        assert!(matches!(diff.next(), Some(Diff::Remove(&"another-entry"))));
+        assert!(diff.next().is_none());
+    }
+
+    #[test]
+    fn new_map_has_removal_and_addition() {
+        let map = tree_map!("an-entry" => 1, "another-entry" => 42);
+        let map_new = tree_map!("an-entry" => 1, "other-entry" => 2);
+        let mut diff = diff_tree_maps(&map, &map_new);
+        assert!(matches!(diff.next(), Some(Diff::Remove(&"another-entry"))));
+        assert!(matches!(diff.next(), Some(Diff::Add(&"other-entry", &2))));
+        assert!(diff.next().is_none());
+    }
+
+    #[test]
+    fn new_map_changed() {
+        let map = tree_map!("an-entry" => 1, "another-entry" => 42);
+        let map_new = tree_map!("an-entry" => 2, "other-entry" => 2);
+        let mut diff = diff_tree_maps(&map, &map_new);
+        assert!(matches!(diff.next(), Some(Diff::Change(&"an-entry", 2))));
+        assert!(matches!(diff.next(), Some(Diff::Remove(&"another-entry"))));
+        assert!(matches!(diff.next(), Some(Diff::Add(&"other-entry", &2))));
+        assert!(diff.next().is_none());
+    }
+}
