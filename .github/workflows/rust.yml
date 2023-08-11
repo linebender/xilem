@@ -30,6 +30,8 @@ jobs:
         # components: ${{ runner.os == 'Linux' && 'rustfmt' || '' }}
     - name: Restore Cache
       uses: Swatinem/rust-cache@v2
+      with:
+        cache-all-crates: true
     - name: Cargo Format
       # We'll only run this on one platform.
       run: cargo fmt --all -- --check
