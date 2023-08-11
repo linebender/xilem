@@ -1,6 +1,6 @@
 use std::{borrow::Borrow, ops::Index};
 
-use crate::diff::{Diff, DiffMapIterator};
+use crate::diff::{diff_kv_iterables, Diff};
 
 /// Basically an ordered Map (similar as BTreeMap) with a Vec as backend for very few elements
 /// As it uses linear search instead of a tree traversal,
@@ -150,10 +150,7 @@ impl<K, V> VecMap<K, V> {
         K: Ord,
         V: PartialEq,
     {
-        DiffMapIterator {
-            prev: self.iter().peekable(),
-            next: other.iter().peekable(),
-        }
+        diff_kv_iterables(self.iter(), other.iter())
     }
 
     /// Inserts a key-value pair into the map.

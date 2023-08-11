@@ -1,20 +1,24 @@
-use std::{cmp::Ordering, collections::BTreeMap, iter::Peekable};
+use std::{cmp::Ordering, iter::Peekable};
 
-#[allow(unused)]
-pub fn diff_tree_maps<'a, K: Ord, V: PartialEq>(
-    prev: &'a BTreeMap<K, V>,
-    next: &'a BTreeMap<K, V>,
-) -> impl Iterator<Item = Diff<&'a K, &'a V>> + 'a {
+pub fn diff_kv_iterables<'a, II, K, V>(
+    prev: II,
+    next: II,
+) -> impl Iterator<Item = Diff<&'a K, &'a V>> + 'a
+where
+    K: Ord + 'a,
+    V: PartialEq + 'a,
+    II: IntoIterator<Item = (&'a K, &'a V)> + 'a,
+{
     DiffMapIterator {
-        prev: prev.iter().peekable(),
-        next: next.iter().peekable(),
+        prev: prev.into_iter().peekable(),
+        next: next.into_iter().peekable(),
     }
 }
 
 /// An iterator that compares two ordered maps (like a `BTreeMap`) and outputs a `Diff` for each added, removed or changed key/value pair)
-pub(crate) struct DiffMapIterator<'a, K: 'a, V: 'a, I: Iterator<Item = (&'a K, &'a V)>> {
-    pub(crate) prev: Peekable<I>,
-    pub(crate) next: Peekable<I>,
+struct DiffMapIterator<'a, K: 'a, V: 'a, I: Iterator<Item = (&'a K, &'a V)>> {
+    prev: Peekable<I>,
+    next: Peekable<I>,
 }
 
 impl<'a, K: Ord + 'a, V: PartialEq, I: Iterator<Item = (&'a K, &'a V)>> Iterator
@@ -83,14 +87,14 @@ mod tests {
     fn maps_are_equal() {
         let map = tree_map!("an-entry" => 1, "another-entry" => 42);
         let map_same = tree_map!("another-entry" => 42, "an-entry" => 1);
-        assert!(diff_tree_maps(&map, &map_same).next().is_none());
+        assert!(diff_kv_iterables(&map, &map_same).next().is_none());
     }
 
     #[test]
     fn new_map_has_additions() {
         let map = tree_map!("an-entry" => 1);
         let map_new = tree_map!("an-entry" => 1, "another-entry" => 42);
-        let mut diff = diff_tree_maps(&map, &map_new);
+        let mut diff = diff_kv_iterables(&map, &map_new);
         assert!(matches!(
             diff.next(),
             Some(Diff::Add(&"another-entry", &42))
@@ -102,7 +106,7 @@ mod tests {
     fn new_map_has_removal() {
         let map = tree_map!("an-entry" => 1, "another-entry" => 42);
         let map_new = tree_map!("an-entry" => 1);
-        let mut diff = diff_tree_maps(&map, &map_new);
+        let mut diff = diff_kv_iterables(&map, &map_new);
         assert!(matches!(diff.next(), Some(Diff::Remove(&"another-entry"))));
         assert!(diff.next().is_none());
     }
@@ -111,7 +115,7 @@ mod tests {
     fn new_map_has_removal_and_addition() {
         let map = tree_map!("an-entry" => 1, "another-entry" => 42);
         let map_new = tree_map!("an-entry" => 1, "other-entry" => 2);
-        let mut diff = diff_tree_maps(&map, &map_new);
+        let mut diff = diff_kv_iterables(&map, &map_new);
         assert!(matches!(diff.next(), Some(Diff::Remove(&"another-entry"))));
         assert!(matches!(diff.next(), Some(Diff::Add(&"other-entry", &2))));
         assert!(diff.next().is_none());
@@ -121,7 +125,7 @@ mod tests {
     fn new_map_changed() {
         let map = tree_map!("an-entry" => 1, "another-entry" => 42);
         let map_new = tree_map!("an-entry" => 2, "other-entry" => 2);
-        let mut diff = diff_tree_maps(&map, &map_new);
+        let mut diff = diff_kv_iterables(&map, &map_new);
         assert!(matches!(diff.next(), Some(Diff::Change(&"an-entry", 2))));
         assert!(matches!(diff.next(), Some(Diff::Remove(&"another-entry"))));
         assert!(matches!(diff.next(), Some(Diff::Add(&"other-entry", &2))));
