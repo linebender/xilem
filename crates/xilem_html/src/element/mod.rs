@@ -4,7 +4,7 @@
 //! `use xilem_html::elements as el` or similar to the top of your file.
 use crate::{
     context::{ChangeFlags, Cx},
-    diff::{Diff, diff_kv_iterables},
+    diff::{diff_kv_iterables, Diff},
     vecmap::VecMap,
     view::{DomElement, Pod, View, ViewMarker, ViewSequence},
 };
