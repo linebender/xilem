@@ -14,6 +14,7 @@ mod diff;
 mod element;
 mod event;
 mod one_of;
+mod vecmap;
 mod view;
 #[cfg(feature = "typed")]
 mod view_ext;

@@ -1,12 +1,44 @@
-use std::{cmp::Ordering, collections::BTreeMap, iter::Peekable};
+use std::{cmp::Ordering, iter::Peekable};
 
-pub fn diff_tree_maps<'a, K: Ord, V: PartialEq>(
-    prev: &'a BTreeMap<K, V>,
-    next: &'a BTreeMap<K, V>,
-) -> impl Iterator<Item = Diff<&'a K, &'a V>> + 'a {
+/// Computes the diff between two `Iterators` that have a key value mapping and are ordered by key (e.g. a BTreeMap)
+///
+/// # Examples
+///
+/// Basic usage:
+///
+/// ```ignore
+/// use std::collections::BTreeMap;
+/// use crate::diff::{Diff, diff_kv_iterables};
+///
+/// let mut old = BTreeMap::default();
+/// old.insert("c", 3);
+/// old.insert("b", 2);
+/// old.insert("a", 1);
+///
+/// let mut new = BTreeMap::default();
+/// new.insert("c", 4);
+/// new.insert("d", 2);
+/// new.insert("a", 1);
+///
+/// let mut diff = diff_kv_iterables(&old, &new);
+///
+/// assert!(matches!(diff.next(), Some(Diff::Remove(&"b"))));
+/// assert!(matches!(diff.next(), Some(Diff::Change(&"c", 4))));
+/// assert!(matches!(diff.next(), Some(Diff::Add(&"d", 2))));
+/// assert!(diff.next().is_none());
+/// ```
+pub fn diff_kv_iterables<'a, II, K, V>(
+    prev: II,
+    next: II,
+) -> impl Iterator<Item = Diff<&'a K, &'a V>> + 'a
+where
+    K: Ord + 'a,
+    V: PartialEq + 'a,
+    II: IntoIterator<Item = (&'a K, &'a V)> + 'a,
+{
     DiffMapIterator {
-        prev: prev.iter().peekable(),
-        next: next.iter().peekable(),
+        prev: prev.into_iter().peekable(),
+        next: next.into_iter().peekable(),
     }
 }
 
@@ -82,14 +114,14 @@ mod tests {
     fn maps_are_equal() {
         let map = tree_map!("an-entry" => 1, "another-entry" => 42);
         let map_same = tree_map!("another-entry" => 42, "an-entry" => 1);
-        assert!(diff_tree_maps(&map, &map_same).next().is_none());
+        assert!(diff_kv_iterables(&map, &map_same).next().is_none());
     }
 
     #[test]
     fn new_map_has_additions() {
         let map = tree_map!("an-entry" => 1);
         let map_new = tree_map!("an-entry" => 1, "another-entry" => 42);
-        let mut diff = diff_tree_maps(&map, &map_new);
+        let mut diff = diff_kv_iterables(&map, &map_new);
         assert!(matches!(
             diff.next(),
             Some(Diff::Add(&"another-entry", &42))
@@ -101,7 +133,7 @@ mod tests {
     fn new_map_has_removal() {
         let map = tree_map!("an-entry" => 1, "another-entry" => 42);
         let map_new = tree_map!("an-entry" => 1);
-        let mut diff = diff_tree_maps(&map, &map_new);
+        let mut diff = diff_kv_iterables(&map, &map_new);
         assert!(matches!(diff.next(), Some(Diff::Remove(&"another-entry"))));
         assert!(diff.next().is_none());
     }
@@ -110,7 +142,7 @@ mod tests {
     fn new_map_has_removal_and_addition() {
         let map = tree_map!("an-entry" => 1, "another-entry" => 42);
         let map_new = tree_map!("an-entry" => 1, "other-entry" => 2);
-        let mut diff = diff_tree_maps(&map, &map_new);
+        let mut diff = diff_kv_iterables(&map, &map_new);
         assert!(matches!(diff.next(), Some(Diff::Remove(&"another-entry"))));
         assert!(matches!(diff.next(), Some(Diff::Add(&"other-entry", &2))));
         assert!(diff.next().is_none());
@@ -120,7 +152,7 @@ mod tests {
     fn new_map_changed() {
         let map = tree_map!("an-entry" => 1, "another-entry" => 42);
         let map_new = tree_map!("an-entry" => 2, "other-entry" => 2);
-        let mut diff = diff_tree_maps(&map, &map_new);
+        let mut diff = diff_kv_iterables(&map, &map_new);
         assert!(matches!(diff.next(), Some(Diff::Change(&"an-entry", 2))));
         assert!(matches!(diff.next(), Some(Diff::Remove(&"another-entry"))));
         assert!(matches!(diff.next(), Some(Diff::Add(&"other-entry", &2))));
