@@ -1,5 +1,32 @@
 use std::{cmp::Ordering, iter::Peekable};
 
+/// Computes the diff between two `Iterators` that have a key value mapping and are ordered by key (e.g. a BTreeMap)
+///
+/// # Examples
+///
+/// Basic usage:
+///
+/// ```ignore
+/// use std::collections::BTreeMap;
+/// use crate::diff::{Diff, diff_kv_iterables};
+///
+/// let mut old = BTreeMap::default();
+/// old.insert("c", 3);
+/// old.insert("b", 2);
+/// old.insert("a", 1);
+///
+/// let mut new = BTreeMap::default();
+/// new.insert("c", 4);
+/// new.insert("d", 2);
+/// new.insert("a", 1);
+///
+/// let mut diff = diff_kv_iterables(&old, &new);
+///
+/// assert!(matches!(diff.next(), Some(Diff::Remove(&"b"))));
+/// assert!(matches!(diff.next(), Some(Diff::Change(&"c", 4))));
+/// assert!(matches!(diff.next(), Some(Diff::Add(&"d", 2))));
+/// assert!(diff.next().is_none());
+/// ```
 pub fn diff_kv_iterables<'a, II, K, V>(
     prev: II,
     next: II,

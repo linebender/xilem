@@ -4,7 +4,7 @@
 //! `use xilem_html::elements as el` or similar to the top of your file.
 use crate::{
     context::{ChangeFlags, Cx},
-    diff::Diff,
+    diff::{Diff, diff_kv_iterables},
     vecmap::VecMap,
     view::{DomElement, Pod, View, ViewMarker, ViewSequence},
 };
@@ -182,7 +182,7 @@ where
         let element = element.as_element_ref();
 
         // update attributes
-        for itm in prev.attributes.diff(&self.attributes) {
+        for itm in diff_kv_iterables(&prev.attributes, &self.attributes) {
             match itm {
                 Diff::Add(name, value) | Diff::Change(name, value) => {
                     set_attribute(element, name, value);

@@ -1,7 +1,5 @@
 use std::{borrow::Borrow, ops::Index};
 
-use crate::diff::{diff_kv_iterables, Diff};
-
 /// Basically an ordered Map (similar as BTreeMap) with a Vec as backend for very few elements
 /// As it uses linear search instead of a tree traversal,
 /// which seems to be faster for small `n` (currently roughly `n < ~20` for the use case of diffing html attributes)
@@ -110,42 +108,6 @@ impl<K, V> VecMap<K, V> {
     /// ```
     pub fn iter(&self) -> impl Iterator<Item = (&K, &V)> {
         self.0.iter().map(|(k, v)| (k, v))
-    }
-
-    /// Computes the diff between two `VecMap`s
-    /// `other` is the "newer" map,
-    /// i.e. when `other` contains an element that this map doesn't the diff iterator outputs Diff::Add
-    ///
-    /// # Examples
-    ///
-    /// Basic usage:
-    ///
-    /// ```ignore
-    /// # use crate::vecmap::VecMap;
-    /// # use crate::diff::Diff;
-    /// let mut old = VecMap::default();
-    /// old.insert("c", 3);
-    /// old.insert("b", 2);
-    /// old.insert("a", 1);
-    ///
-    /// let mut new = VecMap::default();
-    /// new.insert("c", 4);
-    /// new.insert("d", 2);
-    /// new.insert("a", 1);
-    ///
-    /// let mut diff = old.diff(&new);
-    ///
-    /// assert!(matches!(diff.next(), Some(Diff::Remove(&"b"))));
-    /// assert!(matches!(diff.next(), Some(Diff::Change(&"c", 4))));
-    /// assert!(matches!(diff.next(), Some(Diff::Add(&"d", 2))));
-    /// assert!(diff.next().is_none());
-    /// ```
-    pub fn diff<'a>(&'a self, other: &'a Self) -> impl Iterator<Item = Diff<&'a K, &'a V>>
-    where
-        K: Ord,
-        V: PartialEq,
-    {
-        diff_kv_iterables(self, other)
     }
 
     /// Inserts a key-value pair into the map.
@@ -322,26 +284,6 @@ mod tests {
         }
         let (first_key, first_value) = map.iter().next().unwrap();
         assert_eq!((*first_key, *first_value), (1, "a"));
-    }
-
-    #[test]
-    fn diff() {
-        let mut old = VecMap::default();
-        old.insert("c", 3);
-        old.insert("b", 2);
-        old.insert("a", 1);
-
-        let mut new = VecMap::default();
-        new.insert("c", 4);
-        new.insert("d", 2);
-        new.insert("a", 1);
-
-        let mut diff = old.diff(&new);
-
-        assert!(matches!(diff.next(), Some(Diff::Remove(&"b"))));
-        assert!(matches!(diff.next(), Some(Diff::Change(&"c", 4))));
-        assert!(matches!(diff.next(), Some(Diff::Add(&"d", 2))));
-        assert!(diff.next().is_none());
     }
 
     #[test]
