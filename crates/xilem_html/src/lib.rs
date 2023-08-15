@@ -10,11 +10,11 @@ use wasm_bindgen::JsCast;
 mod app;
 mod class;
 mod context;
-pub mod diff;
+mod diff;
 mod element;
 mod event;
 mod one_of;
-pub mod vecmap;
+mod vecmap;
 mod view;
 #[cfg(feature = "typed")]
 mod view_ext;

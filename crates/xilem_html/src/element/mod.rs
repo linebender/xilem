@@ -33,7 +33,7 @@ impl<El, ViewSeq> Element<El, ViewSeq> {
         impl<'a, El, VS> fmt::Debug for DebugFmt<'a, El, VS> {
             fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
                 write!(f, "<{}", self.0.name)?;
-                for (name, value) in self.0.attributes.iter() {
+                for (name, value) in &self.0.attributes {
                     write!(f, " {name}=\"{value}\"")?;
                 }
                 write!(f, ">")
@@ -124,7 +124,7 @@ where
 
     fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
         let el = cx.create_html_element(&self.name);
-        for (name, value) in self.attributes.iter() {
+        for (name, value) in &self.attributes {
             el.set_attribute(name, value).unwrap_throw();
         }
         let mut child_elements = vec![];

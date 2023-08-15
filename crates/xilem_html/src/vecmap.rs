@@ -23,9 +23,8 @@ impl<K, V> VecMap<K, V> {
     ///
     /// Basic usage:
     ///
-    /// ```
-    /// use xilem_html::vecmap::VecMap;
-    ///
+    /// ```ignore
+    /// # use crate::vecmap::VecMap;
     /// let mut map = VecMap::default();
     /// map.insert(1, "a");
     /// assert_eq!(map.get(&1), Some(&"a"));
@@ -50,9 +49,8 @@ impl<K, V> VecMap<K, V> {
     ///
     /// Basic usage:
     ///
-    /// ```
-    /// use xilem_html::vecmap::VecMap;
-    ///
+    /// ```ignore
+    /// # use crate::vecmap::VecMap;
     /// let mut map = VecMap::default();
     /// map.insert(1, "a");
     /// if let Some(x) = map.get_mut(&1) {
@@ -77,9 +75,8 @@ impl<K, V> VecMap<K, V> {
     ///
     /// Basic usage:
     ///
-    /// ```
-    /// use xilem_html::vecmap::VecMap;
-    ///
+    /// ```ignore
+    /// # use crate::vecmap::VecMap;
     /// let mut a = VecMap::default();
     /// a.insert(2, "b");
     /// a.insert(1, "a");
@@ -97,9 +94,8 @@ impl<K, V> VecMap<K, V> {
     ///
     /// Basic usage:
     ///
-    /// ```
-    /// use xilem_html::vecmap::VecMap;
-    ///
+    /// ```ignore
+    /// # use crate::vecmap::VecMap;
     /// let mut map = VecMap::default();
     /// map.insert(3, "c");
     /// map.insert(2, "b");
@@ -124,10 +120,9 @@ impl<K, V> VecMap<K, V> {
     ///
     /// Basic usage:
     ///
-    /// ```
-    /// use xilem_html::vecmap::VecMap;
-    /// use xilem_html::diff::Diff;
-    ///
+    /// ```ignore
+    /// # use crate::vecmap::VecMap;
+    /// # use crate::diff::Diff;
     /// let mut old = VecMap::default();
     /// old.insert("c", 3);
     /// old.insert("b", 2);
@@ -145,12 +140,12 @@ impl<K, V> VecMap<K, V> {
     /// assert!(matches!(diff.next(), Some(Diff::Add(&"d", 2))));
     /// assert!(diff.next().is_none());
     /// ```
-    pub fn diff<'a>(&'a self, other: &'a Self) -> impl Iterator<Item = Diff<&'a K, &'a V>> + 'a
+    pub fn diff<'a>(&'a self, other: &'a Self) -> impl Iterator<Item = Diff<&'a K, &'a V>>
     where
         K: Ord,
         V: PartialEq,
     {
-        diff_kv_iterables(self.iter(), other.iter())
+        diff_kv_iterables(self, other)
     }
 
     /// Inserts a key-value pair into the map.
@@ -165,9 +160,8 @@ impl<K, V> VecMap<K, V> {
     ///
     /// Basic usage:
     ///
-    /// ```
-    /// use xilem_html::vecmap::VecMap;
-    ///
+    /// ```ignore
+    /// # use crate::vecmap::VecMap;
     /// let mut map = VecMap::default();
     /// assert_eq!(map.insert(37, "a"), None);
     /// assert_eq!(map.is_empty(), false);
@@ -203,9 +197,8 @@ impl<K, V> VecMap<K, V> {
     ///
     /// Basic usage:
     ///
-    /// ```
-    /// use xilem_html::vecmap::VecMap;
-    ///
+    /// ```ignore
+    /// # use crate::vecmap::VecMap;
     /// let mut map = VecMap::default();
     /// map.insert(1, "a");
     /// assert_eq!(map.remove(&1), Some("a"));
@@ -229,9 +222,8 @@ impl<K, V> VecMap<K, V> {
     ///
     /// Basic usage:
     ///
-    /// ```
-    /// use xilem_html::vecmap::VecMap;
-    ///
+    /// ```ignore
+    /// # use crate::vecmap::VecMap;
     /// let mut a = VecMap::default();
     /// assert!(a.is_empty());
     /// a.insert(1, "a");
@@ -247,9 +239,8 @@ impl<K, V> VecMap<K, V> {
     ///
     /// Basic usage:
     ///
-    /// ```
-    /// use xilem_html::vecmap::VecMap;
-    ///
+    /// ```ignore
+    /// # use crate::vecmap::VecMap;
     /// let mut a = VecMap::default();
     /// assert_eq!(a.len(), 0);
     /// a.insert(1, "a");
@@ -275,5 +266,117 @@ where
     #[inline]
     fn index(&self, key: &Q) -> &V {
         self.get(key).expect("no entry found for key")
+    }
+}
+
+impl<'a, K, V> IntoIterator for &'a VecMap<K, V> {
+    type Item = (&'a K, &'a V);
+
+    type IntoIter = std::iter::Map<std::slice::Iter<'a, (K, V)>, fn(&'a (K, V)) -> (&'a K, &'a V)>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.iter().map(|(k, v)| (k, v))
+    }
+}
+
+// Basically all the doc tests from the rustdoc examples above, to avoid having to expose this module (pub)
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn get() {
+        let mut map = VecMap::default();
+        map.insert(1, "a");
+        assert_eq!(map.get(&1), Some(&"a"));
+        assert_eq!(map.get(&2), None);
+    }
+
+    #[test]
+    fn get_mut() {
+        let mut map = VecMap::default();
+        map.insert(1, "a");
+        if let Some(x) = map.get_mut(&1) {
+            *x = "b";
+        }
+        assert_eq!(map[&1], "b");
+    }
+
+    #[test]
+    fn keys() {
+        let mut a = VecMap::default();
+        a.insert(2, "b");
+        a.insert(1, "a");
+        let keys: Vec<_> = a.keys().cloned().collect();
+        assert_eq!(keys, [1, 2]);
+    }
+
+    #[test]
+    fn iter() {
+        let mut map = VecMap::default();
+        map.insert(3, "c");
+        map.insert(2, "b");
+        map.insert(1, "a");
+        for (key, value) in map.iter() {
+            println!("{key}: {value}");
+        }
+        let (first_key, first_value) = map.iter().next().unwrap();
+        assert_eq!((*first_key, *first_value), (1, "a"));
+    }
+
+    #[test]
+    fn diff() {
+        let mut old = VecMap::default();
+        old.insert("c", 3);
+        old.insert("b", 2);
+        old.insert("a", 1);
+
+        let mut new = VecMap::default();
+        new.insert("c", 4);
+        new.insert("d", 2);
+        new.insert("a", 1);
+
+        let mut diff = old.diff(&new);
+
+        assert!(matches!(diff.next(), Some(Diff::Remove(&"b"))));
+        assert!(matches!(diff.next(), Some(Diff::Change(&"c", 4))));
+        assert!(matches!(diff.next(), Some(Diff::Add(&"d", 2))));
+        assert!(diff.next().is_none());
+    }
+
+    #[test]
+    fn insert() {
+        let mut map = VecMap::default();
+
+        assert_eq!(map.insert(37, "a"), None);
+        assert!(!map.is_empty());
+
+        map.insert(37, "b");
+        assert_eq!(map.insert(37, "c"), Some("b"));
+        assert_eq!(map[&37], "c");
+    }
+
+    #[test]
+    fn remove() {
+        let mut map = VecMap::default();
+        map.insert(1, "a");
+        assert_eq!(map.remove(&1), Some("a"));
+        assert_eq!(map.remove(&1), None);
+    }
+
+    #[test]
+    fn is_empty() {
+        let mut a = VecMap::default();
+        assert!(a.is_empty());
+        a.insert(1, "a");
+        assert!(!a.is_empty());
+    }
+
+    #[test]
+    fn len() {
+        let mut a = VecMap::default();
+        assert_eq!(a.len(), 0);
+        a.insert(1, "a");
+        assert_eq!(a.len(), 1);
     }
 }
