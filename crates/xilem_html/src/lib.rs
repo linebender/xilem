@@ -26,7 +26,7 @@ pub use class::class;
 pub use context::{ChangeFlags, Cx};
 #[cfg(feature = "typed")]
 pub use element::elements;
-pub use element::{element, Element, ElementState};
+pub use element::{element, AttributeValue, Element, ElementState, IntoAttributeValue};
 #[cfg(feature = "typed")]
 pub use event::events;
 pub use event::{on_event, Action, Event, OnEvent, OnEventState, OptionalAction};
