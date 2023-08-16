@@ -3,6 +3,7 @@
 
 mod adapt;
 mod memoize;
+mod use_state;
 
 /// Create the `View` trait for a particular xilem context (e.g. html, native, ...).
 ///

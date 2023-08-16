@@ -29,4 +29,4 @@ pub use xilem_core::{Id, IdPath, VecSplice};
 pub use button::button;
 pub use linear_layout::{h_stack, v_stack, LinearLayout};
 pub use list::{list, List};
-pub use view::{Adapt, AdaptState, Cx, Memoize, View, ViewMarker, ViewSequence};
+pub use view::{use_state, Adapt, AdaptState, Cx, Memoize, View, ViewMarker, ViewSequence, UseState};
