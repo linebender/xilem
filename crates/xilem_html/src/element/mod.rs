@@ -5,6 +5,7 @@
 use crate::{
     context::{ChangeFlags, Cx},
     diff::{diff_kv_iterables, Diff},
+    vecmap::VecMap,
     view::{DomElement, Pod, View, ViewMarker, ViewSequence},
 };
 
@@ -12,11 +13,11 @@ use std::{borrow::Cow, fmt};
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use xilem_core::{Id, MessageResult, VecSplice};
 
-pub mod attributes;
+mod attribute_value;
 #[cfg(feature = "typed")]
 pub mod elements;
 
-pub use attributes::{AttributeValue, Attributes, IntoAttributeValue};
+pub use attribute_value::{AttributeValue, IntoAttributeValue};
 
 type CowStr = Cow<'static, str>;
 
@@ -25,7 +26,7 @@ type CowStr = Cow<'static, str>;
 /// If the element has no children, use the unit type (e.g. `let view = element("div", ())`).
 pub struct Element<El, Children = ()> {
     name: CowStr,
-    attributes: Attributes,
+    attributes: VecMap<CowStr, AttributeValue>,
     children: Children,
     #[allow(clippy::type_complexity)]
     after_update: Option<Box<dyn Fn(&El)>>,
@@ -62,7 +63,7 @@ pub struct ElementState<ViewSeqState> {
 pub fn element<El, ViewSeq>(name: impl Into<CowStr>, children: ViewSeq) -> Element<El, ViewSeq> {
     Element {
         name: name.into(),
-        attributes: Attributes::default(),
+        attributes: Default::default(),
         children,
         after_update: None,
     }
@@ -87,7 +88,12 @@ impl<El, ViewSeq> Element<El, ViewSeq> {
     /// If the name contains characters that are not valid in an attribute name,
     /// then the `View::build`/`View::rebuild` functions will panic for this view.
     pub fn set_attr(&mut self, name: impl Into<CowStr>, value: impl IntoAttributeValue) {
-        self.attributes.insert(name, value);
+        let name = name.into();
+        if let Some(value) = value.into_attribute_value() {
+            self.attributes.insert(name, value);
+        } else {
+            self.attributes.remove(&name);
+        }
     }
 
     /// Set a function to run after the new view tree has been created.

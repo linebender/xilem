@@ -1,8 +1,4 @@
-use std::borrow::Cow;
-
-use crate::vecmap::VecMap;
-
-type CowStr = Cow<'static, str>;
+type CowStr = std::borrow::Cow<'static, str>;
 
 #[derive(PartialEq, Debug)]
 pub enum AttributeValue {
@@ -92,35 +88,5 @@ impl IntoAttributeValue for CowStr {
 impl IntoAttributeValue for &'static str {
     fn into_attribute_value(self) -> Option<AttributeValue> {
         Some(AttributeValue::String(self.into()))
-    }
-}
-
-#[derive(Default)]
-pub struct Attributes(VecMap<CowStr, AttributeValue>);
-
-impl<'a> IntoIterator for &'a Attributes {
-    type Item = (&'a CowStr, &'a AttributeValue);
-
-    type IntoIter = <&'a VecMap<CowStr, AttributeValue> as std::iter::IntoIterator>::IntoIter;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.0.into_iter()
-    }
-}
-
-impl Attributes {
-    // TODO return the previous attribute as an Option?
-    pub fn insert(&mut self, name: impl Into<CowStr>, value: impl IntoAttributeValue) {
-        let value = value.into_attribute_value();
-        // This is a simple optimization in case this is the first attribute inserted to the map (saves an allocation for the Vec)
-        if let Some(value) = value.into_attribute_value() {
-            self.0.insert(name.into(), value);
-        } else {
-            self.0.remove(&name.into());
-        }
-    }
-
-    pub fn iter(&self) -> impl Iterator<Item = (&CowStr, &AttributeValue)> {
-        self.0.iter()
     }
 }
