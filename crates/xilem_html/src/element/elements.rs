@@ -53,6 +53,14 @@ macro_rules! element {
                 self
             }
 
+            pub fn remove_attr(
+                &mut self,
+                name: impl Into<std::borrow::Cow<'static, str>>,
+            ) -> &mut Self {
+                self.0.remove_attr(name);
+                self
+            }
+
             pub fn after_update(mut self, after_update: impl Fn(&$web_sys_ty) + 'static) -> Self {
                 self.0 = self.0.after_update(after_update);
                 self

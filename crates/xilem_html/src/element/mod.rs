@@ -96,6 +96,10 @@ impl<El, ViewSeq> Element<El, ViewSeq> {
         }
     }
 
+    pub fn remove_attr(&mut self, name: impl Into<CowStr>) {
+        self.attributes.remove(&name.into());
+    }
+
     /// Set a function to run after the new view tree has been created.
     ///
     /// This offers functionality similar to `ref` in React.
