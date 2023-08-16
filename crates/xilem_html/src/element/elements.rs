@@ -53,10 +53,7 @@ macro_rules! element {
                 self
             }
 
-            pub fn remove_attr(
-                &mut self,
-                name: impl Into<std::borrow::Cow<'static, str>>,
-            ) -> &mut Self {
+            pub fn remove_attr(&mut self, name: &str) -> &mut Self {
                 self.0.remove_attr(name);
                 self
             }

@@ -92,12 +92,12 @@ impl<El, ViewSeq> Element<El, ViewSeq> {
         if let Some(value) = value.into_attribute_value() {
             self.attributes.insert(name, value);
         } else {
-            self.attributes.remove(&name);
+            self.remove_attr(&name);
         }
     }
 
-    pub fn remove_attr(&mut self, name: impl Into<CowStr>) {
-        self.attributes.remove(&name.into());
+    pub fn remove_attr(&mut self, name: &str) {
+        self.attributes.remove(name);
     }
 
     /// Set a function to run after the new view tree has been created.
