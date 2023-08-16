@@ -6,7 +6,6 @@ type CowStr = Cow<'static, str>;
 
 #[derive(PartialEq, Debug)]
 pub enum AttributeValue {
-    Null,
     True, // for the boolean true, this serializes to an empty string (e.g. for <input checked>)
     I32(i32),
     U32(u32),
@@ -24,74 +23,75 @@ impl AttributeValue {
             AttributeValue::F32(n) => n.to_string().into(),
             AttributeValue::F64(n) => n.to_string().into(),
             AttributeValue::String(s) => s.clone(),
-            // AttributeValue::Null shouldn't be serialized within attribute serialization/diffing
-            // as null values should never show up in the attributes map, but for completeness it's serialized to an empty string
-            AttributeValue::Null => "".into(),
         }
     }
 }
 
-// A few convenient From implementations for less boilerplate when setting attributes
+pub trait IntoAttributeValue: Sized {
+    fn into_attribute_value(self) -> Option<AttributeValue>;
+}
 
-impl<T: Into<AttributeValue>> From<Option<T>> for AttributeValue {
-    fn from(value: Option<T>) -> Self {
-        if let Some(value) = value {
-            value.into()
+impl<T: IntoAttributeValue> IntoAttributeValue for Option<T> {
+    fn into_attribute_value(self) -> Option<AttributeValue> {
+        if let Some(value) = self {
+            T::into_attribute_value(value)
         } else {
-            AttributeValue::Null
+            None
         }
     }
 }
 
-impl From<bool> for AttributeValue {
-    fn from(value: bool) -> Self {
-        if value {
-            AttributeValue::True
-        } else {
-            AttributeValue::Null
-        }
+impl IntoAttributeValue for bool {
+    fn into_attribute_value(self) -> Option<AttributeValue> {
+        self.then_some(AttributeValue::True)
     }
 }
 
-impl From<u32> for AttributeValue {
-    fn from(value: u32) -> Self {
-        AttributeValue::U32(value)
+impl IntoAttributeValue for AttributeValue {
+    fn into_attribute_value(self) -> Option<AttributeValue> {
+        Some(self)
     }
 }
 
-impl From<i32> for AttributeValue {
-    fn from(value: i32) -> Self {
-        AttributeValue::I32(value)
+impl IntoAttributeValue for u32 {
+    fn into_attribute_value(self) -> Option<AttributeValue> {
+        Some(AttributeValue::U32(self))
     }
 }
 
-impl From<f32> for AttributeValue {
-    fn from(value: f32) -> Self {
-        AttributeValue::F32(value)
+impl IntoAttributeValue for i32 {
+    fn into_attribute_value(self) -> Option<AttributeValue> {
+        Some(AttributeValue::I32(self))
     }
 }
 
-impl From<f64> for AttributeValue {
-    fn from(value: f64) -> Self {
-        AttributeValue::F64(value)
+impl IntoAttributeValue for f32 {
+    fn into_attribute_value(self) -> Option<AttributeValue> {
+        Some(AttributeValue::F32(self))
     }
 }
 
-impl From<String> for AttributeValue {
-    fn from(value: String) -> Self {
-        AttributeValue::String(value.into())
+impl IntoAttributeValue for f64 {
+    fn into_attribute_value(self) -> Option<AttributeValue> {
+        Some(AttributeValue::F64(self))
     }
 }
 
-impl From<CowStr> for AttributeValue {
-    fn from(value: CowStr) -> Self {
-        AttributeValue::String(value)
+impl IntoAttributeValue for String {
+    fn into_attribute_value(self) -> Option<AttributeValue> {
+        Some(AttributeValue::String(self.into()))
     }
 }
 
-impl From<&'static str> for AttributeValue {
-    fn from(value: &'static str) -> Self {
-        AttributeValue::String(value.into())
+impl IntoAttributeValue for CowStr {
+    fn into_attribute_value(self) -> Option<AttributeValue> {
+        Some(AttributeValue::String(self))
+    }
+}
+
+impl IntoAttributeValue for &'static str {
+    fn into_attribute_value(self) -> Option<AttributeValue> {
+        Some(AttributeValue::String(self.into()))
     }
 }
 
@@ -110,13 +110,13 @@ impl<'a> IntoIterator for &'a Attributes {
 
 impl Attributes {
     // TODO return the previous attribute as an Option?
-    pub fn insert(&mut self, name: impl Into<CowStr>, value: impl Into<AttributeValue>) {
-        let value = value.into();
+    pub fn insert(&mut self, name: impl Into<CowStr>, value: impl IntoAttributeValue) {
+        let value = value.into_attribute_value();
         // This is a simple optimization in case this is the first attribute inserted to the map (saves an allocation for the Vec)
-        if matches!(value, AttributeValue::Null) {
-            self.0.remove(&name.into());
-        } else {
+        if let Some(value) = value.into_attribute_value() {
             self.0.insert(name.into(), value);
+        } else {
+            self.0.remove(&name.into());
         }
     }
 

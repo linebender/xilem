@@ -16,7 +16,7 @@ pub mod attributes;
 #[cfg(feature = "typed")]
 pub mod elements;
 
-pub use attributes::{AttributeValue, Attributes};
+pub use attributes::{AttributeValue, Attributes, IntoAttributeValue};
 
 type CowStr = Cow<'static, str>;
 
@@ -75,7 +75,7 @@ impl<El, ViewSeq> Element<El, ViewSeq> {
     ///
     /// If the name contains characters that are not valid in an attribute name,
     /// then the `View::build`/`View::rebuild` functions will panic for this view.
-    pub fn attr(mut self, name: impl Into<CowStr>, value: impl Into<AttributeValue>) -> Self {
+    pub fn attr(mut self, name: impl Into<CowStr>, value: impl IntoAttributeValue) -> Self {
         self.set_attr(name, value);
         self
     }
@@ -86,7 +86,7 @@ impl<El, ViewSeq> Element<El, ViewSeq> {
     ///
     /// If the name contains characters that are not valid in an attribute name,
     /// then the `View::build`/`View::rebuild` functions will panic for this view.
-    pub fn set_attr(&mut self, name: impl Into<CowStr>, value: impl Into<AttributeValue>) {
+    pub fn set_attr(&mut self, name: impl Into<CowStr>, value: impl IntoAttributeValue) {
         self.attributes.insert(name, value);
     }
 
