@@ -237,7 +237,7 @@ where
 }
 
 #[cfg(feature = "typed")]
-fn set_attribute(element: &web_sys::Element, name: &str, value: &str) {
+pub(crate) fn set_attribute(element: &web_sys::Element, name: &str, value: &str) {
     // we have to special-case `value` because setting the value using `set_attribute`
     // doesn't work after the value has been changed.
     if name == "value" {
@@ -252,12 +252,12 @@ fn set_attribute(element: &web_sys::Element, name: &str, value: &str) {
 }
 
 #[cfg(not(feature = "typed"))]
-fn set_attribute(element: &web_sys::Element, name: &str, value: &str) {
+pub(crate) fn set_attribute(element: &web_sys::Element, name: &str, value: &str) {
     element.set_attribute(name, value).unwrap_throw();
 }
 
 #[cfg(feature = "typed")]
-fn remove_attribute(element: &web_sys::Element, name: &str) {
+pub(crate) fn remove_attribute(element: &web_sys::Element, name: &str) {
     // we have to special-case `value` because setting the value using `set_attribute`
     // doesn't work after the value has been changed.
     if name == "checked" {
@@ -269,6 +269,6 @@ fn remove_attribute(element: &web_sys::Element, name: &str) {
 }
 
 #[cfg(not(feature = "typed"))]
-fn remove_attribute(element: &web_sys::Element, name: &str) {
+pub(crate) fn remove_attribute(element: &web_sys::Element, name: &str) {
     element.remove_attribute(name).unwrap_throw();
 }

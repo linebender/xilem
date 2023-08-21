@@ -38,6 +38,30 @@ impl<K, V> VecMap<K, V> {
             .find_map(|(k, v)| if key.eq(k.borrow()) { Some(v) } else { None })
     }
 
+    /// Returns `true` if the map contains a value for the specified key.
+    ///
+    /// The key may be any borrowed form of the map's key type, but the ordering
+    /// on the borrowed form *must* match the ordering on the key type.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```ignore
+    /// # use crate::vecmap::VecMap;
+    /// let mut map = VecMap::default();
+    /// map.insert(1, "a");
+    /// assert!(map.contains_key(&1));
+    /// assert!(!map.contains_key(&2));
+    /// ```
+    pub fn contains_key<Q: ?Sized>(&self, key: &Q) -> bool
+    where
+        K: Borrow<Q> + Ord,
+        Q: Ord,
+    {
+        self.get(key).is_some()
+    }
+
     /// Returns a mutable reference to the value corresponding to the key.
     ///
     /// The key may be any borrowed form of the map's key type, but the ordering
@@ -178,6 +202,10 @@ impl<K, V> VecMap<K, V> {
         }
     }
 
+    pub fn clear(&mut self) {
+        self.0.clear()
+    }
+
     /// Returns `true` if the map contains no elements.
     ///
     /// # Examples
@@ -252,6 +280,14 @@ mod tests {
         map.insert(1, "a");
         assert_eq!(map.get(&1), Some(&"a"));
         assert_eq!(map.get(&2), None);
+    }
+
+    #[test]
+    fn contains_key() {
+        let mut map = VecMap::default();
+        map.insert(1, "a");
+        assert!(map.contains_key(&1));
+        assert!(!map.contains_key(&2));
     }
 
     #[test]

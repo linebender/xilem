@@ -1,6 +1,6 @@
 type CowStr = std::borrow::Cow<'static, str>;
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Clone, Debug)]
 pub enum AttributeValue {
     True, // for the boolean true, this serializes to an empty string (e.g. for <input checked>)
     I32(i32),

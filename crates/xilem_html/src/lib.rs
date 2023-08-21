@@ -11,6 +11,7 @@ mod app;
 mod class;
 mod context;
 mod diff;
+pub mod dom;
 mod element;
 mod event;
 mod one_of;

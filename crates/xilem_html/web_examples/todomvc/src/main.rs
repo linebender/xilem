@@ -3,8 +3,9 @@ mod state;
 use state::{AppState, Filter, Todo};
 
 use xilem_html::{
-    elements as el, events::on_click, get_element_by_id, Action, Adapt, App, MessageResult, View,
-    ViewExt, ViewMarker,
+    dom::{elements as el, interfaces::Element},
+    events::on_click,
+    get_element_by_id, Action, Adapt, App, MessageResult, View, ViewExt, ViewMarker,
 };
 
 // All of these actions arise from within a `Todo`, but we need access to the full state to reduce
@@ -18,7 +19,7 @@ enum TodoAction {
 
 impl Action for TodoAction {}
 
-fn todo_item(todo: &mut Todo, editing: bool) -> impl View<Todo, TodoAction> + ViewMarker {
+fn todo_item(todo: &mut Todo, editing: bool) -> impl Element<Todo, TodoAction> {
     let mut class = String::new();
     if todo.completed {
         class.push_str(" completed");
@@ -68,7 +69,7 @@ fn todo_item(todo: &mut Todo, editing: bool) -> impl View<Todo, TodoAction> + Vi
     .attr("class", class)
 }
 
-fn footer_view(state: &mut AppState, should_display: bool) -> impl View<AppState> + ViewMarker {
+fn footer_view(state: &mut AppState, should_display: bool) -> impl Element<AppState> {
     let item_str = if state.todos.len() == 1 {
         "item"
     } else {
@@ -86,7 +87,7 @@ fn footer_view(state: &mut AppState, should_display: bool) -> impl View<AppState
 
     let filter_class = |filter| (state.filter == filter).then_some("selected");
 
-    let mut footer = el::footer((
+    el::footer((
         el::span((
             el::strong(state.todos.len().to_string()),
             format!(" {} left", item_str),
@@ -123,11 +124,8 @@ fn footer_view(state: &mut AppState, should_display: bool) -> impl View<AppState
         .attr("class", "filters"),
         clear_button,
     ))
-    .attr("class", "footer");
-    if !should_display {
-        footer.set_attr("style", "display:none;");
-    }
-    footer
+    .attr("class", "footer")
+    .attr("style", (!should_display).then_some("display:none;"))
 }
 
 fn main_view(state: &mut AppState, should_display: bool) -> impl View<AppState> + ViewMarker {
@@ -159,16 +157,14 @@ fn main_view(state: &mut AppState, should_display: bool) -> impl View<AppState> 
         .attr("class", "toggle-all")
         .attr("type", "checkbox")
         .attr("checked", state.are_all_complete());
-    let mut section = el::section((
+
+    el::section((
         toggle_all.on_click(|state: &mut AppState, _| state.toggle_all_complete()),
         el::label(()).attr("for", "toggle-all"),
         el::ul(todos).attr("class", "todo-list"),
     ))
-    .attr("class", "main");
-    if !should_display {
-        section.set_attr("style", "display:none;");
-    }
-    section
+    .attr("class", "main")
+    .attr("style", (!should_display).then_some("display:none;"))
 }
 
 fn app_logic(state: &mut AppState) -> impl View<AppState> {
