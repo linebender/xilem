@@ -8,34 +8,31 @@
 use wasm_bindgen::JsCast;
 
 mod app;
-mod class;
+mod attribute;
+mod attribute_value;
 mod context;
 mod diff;
-mod element;
-mod event;
+pub mod elements;
+pub mod events;
+pub mod interfaces;
 mod one_of;
+mod optional_action;
 mod vecmap;
 mod view;
-#[cfg(feature = "typed")]
 mod view_ext;
 
 pub use xilem_core::MessageResult;
 
 pub use app::App;
-pub use class::class;
+pub use attribute::Attr;
+pub use attribute_value::{AttributeValue, IntoAttributeValue};
 pub use context::{ChangeFlags, Cx};
-#[cfg(feature = "typed")]
-pub use element::elements;
-pub use element::{element, AttributeValue, Element, ElementState, IntoAttributeValue};
-#[cfg(feature = "typed")]
-pub use event::events;
-pub use event::{on_event, Action, Event, OnEvent, OnEventState, OptionalAction};
 pub use one_of::{OneOf2, OneOf3, OneOf4, OneOf5, OneOf6, OneOf7, OneOf8};
+pub use optional_action::{Action, OptionalAction};
 pub use view::{
-    memoize, s, Adapt, AdaptState, AdaptThunk, AnyView, Memoize, Pod, View, ViewMarker,
-    ViewSequence,
+    memoize, static_view, Adapt, AdaptState, AdaptThunk, AnyView, Memoize, MemoizeState, Pod, View,
+    ViewMarker, ViewSequence,
 };
-#[cfg(feature = "typed")]
 pub use view_ext::ViewExt;
 
 xilem_core::message!();
@@ -46,6 +43,10 @@ pub const HTML_NS: &str = "http://www.w3.org/1999/xhtml";
 pub const SVG_NS: &str = "http://www.w3.org/2000/svg";
 /// The MathML namespace: `http://www.w3.org/1998/Math/MathML`
 pub const MATHML_NS: &str = "http://www.w3.org/1998/Math/MathML";
+
+mod sealed {
+    pub trait Sealed {}
+}
 
 /// Helper to get the HTML document
 pub fn document() -> web_sys::Document {

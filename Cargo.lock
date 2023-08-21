@@ -593,7 +593,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "counter_untyped"
+name = "counter_custom_element"
 version = "0.1.0"
 dependencies = [
  "console_error_panic_hook",
