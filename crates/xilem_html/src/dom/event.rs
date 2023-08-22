@@ -6,8 +6,6 @@ use xilem_core::{Id, MessageResult};
 
 use crate::{view::DomNode, ChangeFlags, Cx, OptionalAction, View, ViewMarker};
 
-use super::elements::ElementState;
-
 /// Wraps a [`View`] `V` and attaches an event listener.
 ///
 /// The event type `E` contains both the [`web_sys::Event`] subclass for this event and the
@@ -42,27 +40,39 @@ where
     }
 }
 
+/// State for the `OnEvent` view.
+pub struct EventListenerState<S> {
+    #[allow(unused)]
+    listener: gloo::events::EventListener,
+    child_id: Id,
+    child_state: S,
+}
+
 impl<V, E, F> ViewMarker for EventListener<V, E, F> {}
 
-impl<T, A, E, F, V, ES, OA> View<T, A> for EventListener<V, E, F>
+impl<T, A, E, F, V, OA> View<T, A> for EventListener<V, E, F>
 where
     F: Fn(&mut T, E) -> OA,
-    V: View<T, A, State = ElementState<ES>>,
+    V: View<T, A>,
     E: JsCast + 'static,
     OA: OptionalAction<A>,
 {
-    type State = V::State;
+    type State = EventListenerState<V::State>;
 
     type Element = V::Element;
 
     fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
-        let (id, (mut state, element, listener)) = cx.with_new_id(|cx| {
+        let (id, (element, state)) = cx.with_new_id(|cx| {
             // id is already stored in element state
-            let (_id, state, element) = self.element.build(cx);
+            let (child_id, child_state, element) = self.element.build(cx);
             let listener = self.create_event_listener(element.as_node_ref(), cx);
-            (state, element, listener)
+            let state = EventListenerState {
+                child_state,
+                child_id,
+                listener,
+            };
+            (element, state)
         });
-        state.add_new_listener(id, listener);
         (id, state, element)
     }
 
@@ -75,15 +85,12 @@ where
         element: &mut Self::Element,
     ) -> ChangeFlags {
         cx.with_id(*id, |cx| {
-            let mut changed = self.element.rebuild(cx, &prev.element, id, state, element);
-            // TODO check equality of prev and current element
+            let mut changed =
+                self.element
+                    .rebuild(cx, &prev.element, id, &mut state.child_state, element);
+            // TODO check equality of prev and current element somehow
             if prev.event != self.event || changed.contains(ChangeFlags::STRUCTURE) {
-                let new_listener = self.create_event_listener(element.as_node_ref(), cx);
-                if let Some(listener) = state.get_listener(*id) {
-                    *listener = new_listener;
-                } else {
-                    state.add_new_listener(*id, new_listener);
-                }
+                state.listener = self.create_event_listener(element.as_node_ref(), cx);
                 changed |= ChangeFlags::OTHER_CHANGE;
             }
             changed
@@ -105,8 +112,9 @@ where
                     None => MessageResult::Nop,
                 }
             }
-            [element_id, rest_path @ ..] if *element_id == state.id => {
-                self.element.message(rest_path, state, message, app_state)
+            [element_id, rest_path @ ..] if *element_id == state.child_id => {
+                self.element
+                    .message(rest_path, &mut state.child_state, message, app_state)
             }
             _ => MessageResult::Stale(message),
         }

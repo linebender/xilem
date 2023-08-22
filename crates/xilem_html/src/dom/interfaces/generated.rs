@@ -1,9 +1,8 @@
 use wasm_bindgen::JsCast;
 
 use crate::{
-    dom::{attribute::Attr, elements::ElementState, event::EventListener, interfaces::Element},
-    view::DomElement,
-    OptionalAction, View,
+    dom::{attribute::Attr, event::EventListener, interfaces::Element},
+    OptionalAction,
 };
 
 macro_rules! dom_interface_trait_definitions {
@@ -11,17 +10,12 @@ macro_rules! dom_interface_trait_definitions {
         $(
             pub trait $dom_interface<T, A = ()>: $super_dom_interface<T, A> $body
 
-            impl<T, A, E: $dom_interface<T, A>, ES> $dom_interface<T, A> for Attr<E>
-            where
-                E: View<T, A, State = ElementState<ES>>,
-                E::Element: DomElement,
-            {
-            }
+            impl<T, A, E: $dom_interface<T, A>> $dom_interface<T, A> for Attr<E> { }
 
-            impl<T, A, E, ES, Ev, F, OA> $dom_interface<T, A> for EventListener<E, Ev, F>
+            impl<T, A, E, Ev, F, OA> $dom_interface<T, A> for EventListener<E, Ev, F>
             where
                 F: Fn(&mut T, Ev) -> OA,
-                E: View<T, A, State = ElementState<ES>> + $dom_interface<T, A>,
+                E: $dom_interface<T, A>,
                 Ev: JsCast + 'static,
                 OA: OptionalAction<A>,
             {

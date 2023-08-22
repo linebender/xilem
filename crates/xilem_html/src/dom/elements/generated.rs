@@ -72,7 +72,8 @@ macro_rules! define_html_element {
                 let el = cx.create_html_element(self.node_name());
 
                 let mut child_elements = vec![];
-                let (id, child_states) = cx.with_new_id(|cx| self.0.build(cx, &mut child_elements));
+                let (id, children_states) =
+                    cx.with_new_id(|cx| self.0.build(cx, &mut child_elements));
                 for child in &child_elements {
                     el.append_child(child.0.as_node_ref()).unwrap_throw();
                 }
@@ -85,13 +86,10 @@ macro_rules! define_html_element {
 
                 let el = el.dyn_into().unwrap_throw();
                 let state = ElementState {
-                    children_states: child_states,
+                    children_states,
                     child_elements,
                     scratch: vec![],
-                    listeners: vec![],
-                    new_attributes: Default::default(),
                     attributes: Default::default(),
-                    id,
                 };
                 (id, state, el)
             }
@@ -106,7 +104,7 @@ macro_rules! define_html_element {
             ) -> ChangeFlags {
                 let mut changed = ChangeFlags::empty();
 
-                state.apply_attribute_changes(element);
+                cx.apply_attribute_changes(element, &mut state.attributes);
 
                 // update children
                 let mut splice = VecSplice::new(&mut state.child_elements, &mut state.scratch);
@@ -146,23 +144,6 @@ macro_rules! define_html_element {
         /// element view.
         pub fn $name<$t, $a, $vs: ViewSequence<$t, $a>>(children: $vs) -> $ty_name<$t, $a, $vs> {
             $ty_name(children, PhantomData)
-        }
-
-        impl<$t, $a, $vs> $ty_name<$t, $a, $vs> {
-            pub fn attr<
-                AttrName: Into<std::borrow::Cow<'static, str>>,
-                AttrValue: crate::IntoAttributeValue,
-            >(
-                self,
-                name: AttrName,
-                value: AttrValue,
-            ) -> crate::dom::attribute::Attr<Self> {
-                crate::dom::attribute::Attr {
-                    element: self,
-                    name: name.into(),
-                    value: value.into_attribute_value(),
-                }
-            }
         }
 
         impl_html_dom_interface!($ty_name, $name, $t, $a, $vs, $dom_interface);
@@ -299,105 +280,3 @@ define_html_elements!(
     (Slot, slot, HtmlSlotElement),
     (Template, template, HtmlTemplateElement),
 );
-
-// For quicker iteration/experimentation, The code below should be 1:1 the code used above in the macro
-// ----------------------------------------------------------------------------------------------------
-
-// use crate::dom::interfaces::{Element, EventTarget, HtmlDivElement, HtmlElement, Node},
-
-// pub struct Div<T, A, VS>(VS, PhantomData<fn() -> (T, A)>);
-
-// impl<T, A, VS> ViewMarker for Div<T, A, VS> {}
-
-// impl<T, A, VS: ViewSequence<T, A>> View<T, A> for Div<T, A, VS> {
-//     type State = ElementState<VS::State>;
-
-//     type Element = web_sys::HtmlDivElement;
-
-//     fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
-//         let el = cx.create_html_element(self.node_name());
-
-//         let mut child_elements = vec![];
-//         let (id, child_states) = cx.with_new_id(|cx| self.0.build(cx, &mut child_elements));
-//         for child in &child_elements {
-//             el.append_child(child.0.as_node_ref()).unwrap_throw();
-//         }
-
-//         // Set the id used internally to the `data-debugid` attribute.
-//         // This allows the user to see if an element has been re-created or only altered.
-//         #[cfg(debug_assertions)]
-//         el.set_attribute("data-debugid", &id.to_raw().to_string())
-//             .unwrap_throw();
-
-//         let el = el.dyn_into().unwrap_throw();
-//         let state = ElementState {
-//             children_states: child_states,
-//             child_elements,
-//             scratch: vec![],
-//             listeners: vec![],
-//             new_attributes: Default::default(),
-//             attributes: Default::default(),
-//             id,
-//         };
-//         (id, state, el)
-//     }
-
-//     fn rebuild(
-//         &self,
-//         cx: &mut Cx,
-//         prev: &Self,
-//         id: &mut Id,
-//         state: &mut Self::State,
-//         element: &mut Self::Element,
-//     ) -> ChangeFlags {
-//         let mut changed = ChangeFlags::empty();
-
-//         state.apply_attribute_changes(element);
-
-//         // update children
-//         let mut splice = VecSplice::new(&mut state.child_elements, &mut state.scratch);
-//         changed |= cx.with_id(*id, |cx| {
-//             self.0
-//                 .rebuild(cx, &prev.0, &mut state.children_states, &mut splice)
-//         });
-//         if changed.contains(ChangeFlags::STRUCTURE) {
-//             // This is crude and will result in more DOM traffic than needed.
-//             // The right thing to do is diff the new state of the children id
-//             // vector against the old, and derive DOM mutations from that.
-//             while let Some(child) = element.first_child() {
-//                 element.remove_child(&child).unwrap_throw();
-//             }
-//             for child in &state.child_elements {
-//                 element.append_child(child.0.as_node_ref()).unwrap_throw();
-//             }
-//             changed.remove(ChangeFlags::STRUCTURE);
-//         }
-//         changed
-//     }
-
-//     fn message(
-//         &self,
-//         id_path: &[Id],
-//         state: &mut Self::State,
-//         message: Box<dyn std::any::Any>,
-//         app_state: &mut T,
-//     ) -> MessageResult<A> {
-//         self.0
-//             .message(id_path, &mut state.children_states, message, app_state)
-//     }
-// }
-
-// pub fn div<T, A, VS: ViewSequence<T, A>>(children: VS) -> Div<T, A, VS> {
-//     Div(children, PhantomData)
-// }
-
-// impl<T, A, VS> EventTarget for Div<T, A, VS> {}
-// impl<T, A, VS> Node for Div<T, A, VS> {
-//     fn node_name(&self) -> &str {
-//         "div"
-//     }
-// }
-// impl<T, A, VS> Element<T, A> for Div<T, A, VS> where VS: ViewSequence<T, A> {}
-
-// impl<T, A, VS> HtmlElement<T, A> for Div<T, A, VS> where VS: ViewSequence<T, A> {}
-// impl<T, A, VS> HtmlDivElement<T, A> for Div<T, A, VS> where VS: ViewSequence<T, A> {}

@@ -3,7 +3,10 @@ mod state;
 use state::{AppState, Filter, Todo};
 
 use xilem_html::{
-    dom::{elements as el, interfaces::Element},
+    dom::{
+        elements::{self as el},
+        interfaces::{Element, EventTarget},
+    },
     events::on_click,
     get_element_by_id, Action, Adapt, App, MessageResult, View, ViewExt, ViewMarker,
 };
@@ -30,13 +33,14 @@ fn todo_item(todo: &mut Todo, editing: bool) -> impl Element<Todo, TodoAction> {
     let input = el::input(())
         .attr("class", "toggle")
         .attr("type", "checkbox")
-        .attr("checked", todo.completed);
+        .attr("checked", todo.completed)
+        .on("click", |state: &mut Todo, _evt: web_sys::Event| {
+            state.completed = !state.completed;
+        });
 
     el::li((
         el::div((
-            input.on_click(|state: &mut Todo, _| {
-                state.completed = !state.completed;
-            }),
+            input,
             el::label(todo.title.clone())
                 .on_dblclick(|state: &mut Todo, _| TodoAction::SetEditing(state.id)),
             el::button(())

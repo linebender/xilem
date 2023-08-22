@@ -1,12 +1,11 @@
 use std::borrow::Cow;
 
+use wasm_bindgen::JsCast;
 use xilem_core::{Id, MessageResult};
 
-use crate::{
-    view::DomElement, AttributeValue, ChangeFlags, Cx, IntoAttributeValue, View, ViewMarker,
-};
+use crate::{view::DomNode, AttributeValue, ChangeFlags, Cx, View, ViewMarker};
 
-use super::elements::ElementState;
+use super::interfaces::Element;
 
 pub struct Attr<E> {
     pub(crate) element: E,
@@ -14,27 +13,9 @@ pub struct Attr<E> {
     pub(crate) value: Option<AttributeValue>,
 }
 
-impl<E> Attr<E> {
-    pub fn attr<K: Into<Cow<'static, str>>, V: IntoAttributeValue>(
-        self,
-        name: K,
-        value: V,
-    ) -> Attr<Self> {
-        Attr {
-            element: self,
-            name: name.into(),
-            value: value.into_attribute_value(),
-        }
-    }
-}
-
 impl<E> ViewMarker for Attr<E> {}
 
-impl<T, A, E, ES> View<T, A> for Attr<E>
-where
-    E: View<T, A, State = ElementState<ES>>,
-    E::Element: DomElement,
-{
+impl<T, A, E: Element<T, A>> View<T, A> for Attr<E> {
     type State = E::State;
     type Element = E::Element;
 
@@ -42,7 +23,10 @@ where
         let (id, state, element) = self.element.build(cx);
         if let Some(value) = &self.value {
             let _ = element
-                .as_element_ref()
+                .as_node_ref()
+                .dyn_ref::<web_sys::Element>()
+                // TODO remove the unwrap, make this safer...
+                .unwrap()
                 .set_attribute(&self.name, &value.serialize());
         }
         (id, state, element)
@@ -56,7 +40,7 @@ where
         state: &mut Self::State,
         element: &mut Self::Element,
     ) -> ChangeFlags {
-        state.add_new_attribute(&self.name, &self.value);
+        cx.add_new_attribute_to_current_element(&self.name, &self.value);
         self.element.rebuild(cx, &prev.element, id, state, element)
     }
 

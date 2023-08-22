@@ -18,7 +18,7 @@ mod sealed {
 // for a view element, rather than an associated type with a bound.
 /// This trait is implemented for types that implement `AsRef<web_sys::Node>`.
 /// It is an implementation detail.
-pub trait DomNode: sealed::Sealed {
+pub trait DomNode: sealed::Sealed + 'static {
     fn into_pod(self) -> Pod;
     fn as_node_ref(&self) -> &web_sys::Node;
 }

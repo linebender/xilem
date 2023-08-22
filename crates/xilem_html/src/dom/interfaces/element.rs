@@ -3,8 +3,7 @@ use std::borrow::Cow;
 use wasm_bindgen::JsCast;
 
 use crate::{
-    dom::{attribute::Attr, elements::ElementState, event::EventListener},
-    view::DomElement,
+    dom::{attribute::Attr, event::EventListener},
     IntoAttributeValue, OptionalAction, View, ViewMarker,
 };
 
@@ -38,17 +37,12 @@ where
     }
 }
 
-impl<T, A, E: Element<T, A>, ES> Element<T, A> for Attr<E>
-where
-    E: View<T, A, State = ElementState<ES>>,
-    E::Element: DomElement,
-{
-}
+impl<T, A, E: Element<T, A>> Element<T, A> for Attr<E> {}
 
-impl<T, A, E, ES, Ev, F, OA> Element<T, A> for EventListener<E, Ev, F>
+impl<T, A, E, Ev, F, OA> Element<T, A> for EventListener<E, Ev, F>
 where
     F: Fn(&mut T, Ev) -> OA,
-    E: View<T, A, State = ElementState<ES>> + Element<T, A>,
+    E: Element<T, A>,
     Ev: JsCast + 'static,
     OA: OptionalAction<A>,
 {

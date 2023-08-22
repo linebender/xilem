@@ -6,12 +6,22 @@ use web_sys::Document;
 
 use xilem_core::{Id, IdPath};
 
-use crate::{app::AppRunner, Message, HTML_NS, SVG_NS};
+use crate::{
+    app::AppRunner,
+    diff::{diff_kv_iterables, Diff},
+    element::{remove_attribute, set_attribute},
+    vecmap::VecMap,
+    AttributeValue, Message, HTML_NS, SVG_NS,
+};
+
+type CowStr = std::borrow::Cow<'static, str>;
 
 // Note: xilem has derive Clone here. Not sure.
 pub struct Cx {
     id_path: IdPath,
     document: Document,
+    // TODO There's likely a cleaner more robust way to propagate the attributes to an element
+    pub(crate) current_element_attributes: VecMap<CowStr, AttributeValue>,
     app_ref: Option<Box<dyn AppRunner>>,
 }
 
@@ -34,6 +44,7 @@ impl Cx {
             id_path: Vec::new(),
             document: crate::document(),
             app_ref: None,
+            current_element_attributes: Default::default(),
         }
     }
 
@@ -87,6 +98,46 @@ impl Cx {
 
     pub fn create_svg_element(&self, name: &str) -> web_sys::SvgElement {
         self.create_element(SVG_NS, name).unchecked_into()
+    }
+
+    // TODO Not sure how multiple attribute definitions with the same name should be handled (e.g. `e.attr("class", "a").attr("class", "b")`)
+    // Currently the outer most (in the example above "b") defines the attribute (when it isn't `None`, in that case the inner attr defines the value)
+    pub(crate) fn add_new_attribute_to_current_element(
+        &mut self,
+        name: &CowStr,
+        value: &Option<AttributeValue>,
+    ) {
+        if let Some(value) = value {
+            // could be slightly optimized via something like this: `new_attrs.entry(name).or_insert_with(|| value)`
+            if !self.current_element_attributes.contains_key(name) {
+                self.current_element_attributes
+                    .insert(name.clone(), value.clone());
+            }
+        }
+    }
+
+    pub(crate) fn apply_attribute_changes(
+        &mut self,
+        element: &web_sys::Element,
+        attributes: &mut VecMap<CowStr, AttributeValue>,
+    ) -> ChangeFlags {
+        let mut changed = ChangeFlags::empty();
+        // update attributes
+        for itm in diff_kv_iterables(&*attributes, &self.current_element_attributes) {
+            match itm {
+                Diff::Add(name, value) | Diff::Change(name, value) => {
+                    set_attribute(element, name, &value.serialize());
+                    changed |= ChangeFlags::OTHER_CHANGE;
+                }
+                Diff::Remove(name) => {
+                    remove_attribute(element, name);
+                    changed |= ChangeFlags::OTHER_CHANGE;
+                }
+            }
+        }
+        std::mem::swap(attributes, &mut self.current_element_attributes);
+        self.current_element_attributes.clear();
+        changed
     }
 
     pub fn message_thunk(&self) -> MessageThunk {
