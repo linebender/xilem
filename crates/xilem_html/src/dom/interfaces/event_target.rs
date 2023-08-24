@@ -1,44 +1,41 @@
-use std::{borrow::Cow, marker::PhantomData};
+use std::borrow::Cow;
 
 use gloo::events::EventListenerOptions;
+use wasm_bindgen::JsCast;
 
-use crate::dom::{attribute::Attr, event::EventListener};
+use crate::{
+    dom::{attribute::Attr, event::EventListener},
+    OptionalAction,
+};
 
 pub trait EventTarget {
-    fn on<T, EH, E, OA>(
+    fn on<T, A, E, EH, OA>(
         self,
         event: impl Into<Cow<'static, str>>,
         handler: EH,
     ) -> EventListener<Self, E, EH>
     where
+        E: JsCast + 'static,
+        OA: OptionalAction<A>,
         EH: Fn(&mut T, E) -> OA,
         Self: Sized,
     {
-        EventListener {
-            event: event.into(),
-            element: self,
-            event_handler_options: Default::default(),
-            handler,
-            phantom_event_ty: PhantomData,
-        }
+        EventListener::new(self, event, handler)
     }
-    fn on_with_options<T, EH, E, OA>(
+
+    fn on_with_options<T, A, E, EH, OA>(
         self,
         event: impl Into<Cow<'static, str>>,
         handler: EH,
         options: EventListenerOptions,
     ) -> EventListener<Self, E, EH>
     where
+        E: JsCast + 'static,
+        OA: OptionalAction<A>,
         EH: Fn(&mut T, E) -> OA,
         Self: Sized,
     {
-        EventListener {
-            event: event.into(),
-            element: self,
-            event_handler_options: options,
-            handler,
-            phantom_event_ty: PhantomData,
-        }
+        EventListener::new_with_options(self, event, handler, options)
     }
 }
 

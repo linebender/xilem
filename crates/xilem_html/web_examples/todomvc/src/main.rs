@@ -2,13 +2,15 @@ mod state;
 
 use state::{AppState, Filter, Todo};
 
+use wasm_bindgen::JsCast;
 use xilem_html::{
     dom::{
         elements::{self as el},
-        interfaces::{Element, EventTarget},
+        event::EventListenerOptions,
+        interfaces::{Element, HtmlButtonElement},
     },
     events::on_click,
-    get_element_by_id, Action, Adapt, App, MessageResult, View, ViewExt, ViewMarker,
+    get_element_by_id, Action, Adapt, App, MessageResult, View,
 };
 
 // All of these actions arise from within a `Todo`, but we need access to the full state to reduce
@@ -30,17 +32,16 @@ fn todo_item(todo: &mut Todo, editing: bool) -> impl Element<Todo, TodoAction> {
     if editing {
         class.push_str(" editing");
     }
-    let input = el::input(())
+
+    let checkbox = el::input(())
         .attr("class", "toggle")
         .attr("type", "checkbox")
         .attr("checked", todo.completed)
-        .on("click", |state: &mut Todo, _evt: web_sys::Event| {
-            state.completed = !state.completed;
-        });
+        .on_click(|state: &mut Todo, _| state.completed = !state.completed);
 
     el::li((
         el::div((
-            input,
+            checkbox,
             el::label(todo.title.clone())
                 .on_dblclick(|state: &mut Todo, _| TodoAction::SetEditing(state.id)),
             el::button(())
@@ -62,12 +63,20 @@ fn todo_item(todo: &mut Todo, editing: bool) -> impl Element<Todo, TodoAction> {
                     None
                 }
             })
-            .on_input(|state: &mut Todo, evt| {
-                state.title_editing.clear();
-                state.title_editing.push_str(&evt.target().value());
-                evt.prevent_default();
-            })
-            .passive(false)
+            .on_input_with_options(
+                |state: &mut Todo, evt| {
+                    // TODO is there a less boilerplate but safe way to get to the value of the element?
+                    let Some(target) = evt.target() else {
+                        return;
+                    };
+                    let Some(element) = target.dyn_ref::<web_sys::HtmlInputElement>() else {
+                        return;
+                    };
+                    evt.prevent_default();
+                    state.title_editing = element.value();
+                },
+                EventListenerOptions::enable_prevent_default(),
+            )
             .on_blur(|_, _| TodoAction::CancelEditing),
     ))
     .attr("class", class)
@@ -132,7 +141,7 @@ fn footer_view(state: &mut AppState, should_display: bool) -> impl Element<AppSt
     .attr("style", (!should_display).then_some("display:none;"))
 }
 
-fn main_view(state: &mut AppState, should_display: bool) -> impl View<AppState> + ViewMarker {
+fn main_view(state: &mut AppState, should_display: bool) -> impl Element<AppState> {
     let editing_id = state.editing_id;
     let todos: Vec<_> = state
         .visible_todos()
@@ -190,11 +199,20 @@ fn app_logic(state: &mut AppState) -> impl View<AppState> {
                         state.create_todo();
                     }
                 })
-                .on_input(|state: &mut AppState, evt| {
-                    state.update_new_todo(&evt.target().value());
-                    evt.prevent_default();
-                })
-                .passive(false),
+                .on_input_with_options(
+                    |state: &mut AppState, evt| {
+                        // TODO is there a less boilerplate but safe way to get to the value of the element?
+                        let Some(target) = evt.target() else {
+                            return;
+                        };
+                        let Some(element) = target.dyn_ref::<web_sys::HtmlInputElement>() else {
+                            return;
+                        };
+                        state.update_new_todo(&element.value());
+                        evt.prevent_default();
+                    },
+                    EventListenerOptions::enable_prevent_default(),
+                ),
         ))
         .attr("class", "header"),
         main,

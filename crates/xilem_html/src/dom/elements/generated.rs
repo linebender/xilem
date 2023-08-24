@@ -59,7 +59,7 @@ macro_rules! define_html_element {
         define_html_element!(($ty_name, $name, $dom_interface, T, A, VS));
     };
     (($ty_name:ident, $name:ident, $dom_interface:ident, $t:ident, $a: ident, $vs: ident)) => {
-        pub struct $ty_name<$t, $a, $vs>($vs, PhantomData<fn() -> ($t, $a)>);
+        pub struct $ty_name<$t, $a = (), $vs = ()>($vs, PhantomData<fn() -> ($t, $a)>);
 
         impl<$t, $a, $vs> ViewMarker for $ty_name<$t, $a, $vs> {}
 

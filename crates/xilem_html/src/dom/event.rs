@@ -1,6 +1,6 @@
 use std::{any::Any, borrow::Cow, marker::PhantomData};
 
-use gloo::events::EventListenerOptions;
+pub use gloo::events::EventListenerOptions;
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use xilem_core::{Id, MessageResult};
 
@@ -13,7 +13,7 @@ use crate::{view::DomNode, ChangeFlags, Cx, OptionalAction, View, ViewMarker};
 pub struct EventListener<V, E, F> {
     pub(crate) element: V,
     pub(crate) event: Cow<'static, str>,
-    pub(crate) event_handler_options: EventListenerOptions,
+    pub(crate) options: EventListenerOptions,
     pub(crate) handler: F,
     pub(crate) phantom_event_ty: PhantomData<E>,
 }
@@ -22,6 +22,31 @@ impl<V, E, F> EventListener<V, E, F>
 where
     E: JsCast + 'static,
 {
+    pub fn new(element: V, event: impl Into<Cow<'static, str>>, handler: F) -> Self {
+        EventListener {
+            element,
+            event: event.into(),
+            options: Default::default(),
+            handler,
+            phantom_event_ty: PhantomData,
+        }
+    }
+
+    pub fn new_with_options(
+        element: V,
+        event: impl Into<Cow<'static, str>>,
+        handler: F,
+        options: EventListenerOptions,
+    ) -> Self {
+        EventListener {
+            element,
+            event: event.into(),
+            options,
+            handler,
+            phantom_event_ty: PhantomData,
+        }
+    }
+
     fn create_event_listener(
         &self,
         target: &web_sys::EventTarget,
@@ -31,7 +56,7 @@ where
         gloo::events::EventListener::new_with_options(
             target,
             self.event.clone(),
-            self.event_handler_options,
+            self.options,
             move |event: &web_sys::Event| {
                 let event = (*event).clone().dyn_into::<E>().unwrap_throw();
                 thunk.push_message(event);

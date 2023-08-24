@@ -1,7 +1,10 @@
 use xilem_html::{
-    document_body, elements as el,
-    events::{self as evt},
-    App, Event, View, ViewExt,
+    document_body,
+    dom::{
+        elements as el,
+        interfaces::{Element, HtmlButtonElement},
+    },
+    App, View,
 };
 
 #[derive(Default)]
@@ -39,13 +42,10 @@ impl AppState {
 }
 
 /// You can create functions that generate views.
-fn btn<A, F>(
+fn btn<A>(
     label: &'static str,
-    click_fn: F,
-) -> evt::OnClick<AppState, A, el::Button<&'static str>, F, ()>
-where
-    F: Fn(&mut AppState, &Event<web_sys::MouseEvent, web_sys::HtmlButtonElement>),
-{
+    click_fn: impl Fn(&mut AppState, web_sys::MouseEvent),
+) -> impl HtmlButtonElement<AppState, A> {
     el::button(label).on_click(click_fn)
 }
 
