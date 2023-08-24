@@ -16,13 +16,14 @@ mod box_constraints;
 mod button;
 mod contexts;
 mod core;
+mod switch;
+// mod text;
 //mod layout_observer;
 //mod list;
 mod linear_layout;
 mod piet_scene_helpers;
 mod raw_event;
 //mod scroll_view;
-//mod text;
 #[allow(clippy::module_inception)]
 mod widget;
 
@@ -33,4 +34,5 @@ pub use button::Button;
 pub use contexts::{AccessCx, CxState, EventCx, LayoutCx, LifeCycleCx, PaintCx, UpdateCx};
 pub use linear_layout::LinearLayout;
 pub use raw_event::{Event, LifeCycle, MouseEvent, ViewContext};
+pub use switch::Switch;
 pub use widget::{AnyWidget, Widget};
