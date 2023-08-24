@@ -1,26 +1,11 @@
 use vello::kurbo::{self, Affine, Rect, Shape};
-use vello::peniko::{BrushRef, ColorStopsSource, Fill, Gradient, Stroke};
+use vello::peniko::{BrushRef, Color, ColorStopsSource, Fill, Gradient, Stroke};
 use vello::SceneBuilder;
 
 #[derive(Debug, Clone, Copy)]
 pub struct UnitPoint {
     u: f64,
     v: f64,
-}
-
-pub fn stroke<'b>(
-    builder: &mut SceneBuilder,
-    path: &impl Shape,
-    brush: impl Into<BrushRef<'b>>,
-    stroke_width: f64,
-) {
-    builder.stroke(
-        &Stroke::new(stroke_width as f32),
-        Affine::IDENTITY,
-        brush,
-        None,
-        path,
-    )
 }
 
 // Note: copied from piet
@@ -62,6 +47,21 @@ impl UnitPoint {
     }
 }
 
+pub fn stroke<'b>(
+    builder: &mut SceneBuilder,
+    path: &impl Shape,
+    brush: impl Into<BrushRef<'b>>,
+    stroke_width: f64,
+) {
+    builder.stroke(
+        &Stroke::new(stroke_width as f32),
+        Affine::IDENTITY,
+        brush,
+        None,
+        path,
+    )
+}
+
 pub fn fill_lin_gradient(
     builder: &mut SceneBuilder,
     path: &impl Shape,
@@ -72,4 +72,8 @@ pub fn fill_lin_gradient(
     let rect = path.bounding_box();
     let brush = Gradient::new_linear(start.resolve(rect), end.resolve(rect)).with_stops(stops);
     builder.fill(Fill::NonZero, Affine::IDENTITY, &brush, None, path);
+}
+
+pub fn fill_color(builder: &mut SceneBuilder, path: &impl Shape, color: Color) {
+    builder.fill(Fill::NonZero, Affine::IDENTITY, color, None, path)
 }
