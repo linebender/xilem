@@ -42,10 +42,10 @@ impl AppState {
 }
 
 /// You can create functions that generate views.
-fn btn<A>(
+fn btn(
     label: &'static str,
     click_fn: impl Fn(&mut AppState, web_sys::MouseEvent),
-) -> impl HtmlButtonElement<AppState, A> {
+) -> impl HtmlButtonElement<AppState> {
     el::button(label).on_click(click_fn)
 }
 

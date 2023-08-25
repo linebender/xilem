@@ -21,8 +21,8 @@ macro_rules! generate_dom_interface_impl {
 
 macro_rules! impl_html_dom_interface {
     ($ty_name: ident, $name: ident, $t: ident, $a:ident, $vs:ident, Node) => {
-        impl<$t, $a, $vs> crate::dom::interfaces::EventTarget for $ty_name<$t, $a, $vs> {}
-        impl<$t, $a, $vs> crate::dom::interfaces::Node for $ty_name<$t, $a, $vs> {
+        impl<$t, $a, $vs> crate::dom::interfaces::EventTarget<$t, $a> for $ty_name<$t, $a, $vs> {}
+        impl<$t, $a, $vs> crate::dom::interfaces::Node<$t, $a> for $ty_name<$t, $a, $vs> {
             fn node_name(&self) -> &str {
                 stringify!($name)
             }
@@ -44,7 +44,7 @@ macro_rules! impl_html_dom_interface {
         impl_html_dom_interface!($ty_name, $name, $t, $a, $vs, HtmlMediaElement);
         generate_dom_interface_impl!($ty_name, $name, $t, $a, $vs, HtmlVideoElement);
     };
-    // TODO resolve parent interface correctly
+    // TODO resolve super interface correctly
     // All remaining interfaces inherit directly from HtmlElement
     ($ty_name: ident, $name: ident, $t: ident, $a:ident, $vs:ident, $dom_interface: ident) => {
         impl_html_dom_interface!($ty_name, $name, $t, $a, $vs, HtmlElement);

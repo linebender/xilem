@@ -7,12 +7,11 @@ use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use xilem_core::{Id, MessageResult, VecSplice};
 
 use crate::{
-    vecmap::VecMap,
-    view::{DomElement, DomNode},
-    AttributeValue, ChangeFlags, Cx, Pod, View, ViewMarker, ViewSequence,
+    vecmap::VecMap, view::DomNode, AttributeValue, ChangeFlags, Cx, Pod, View, ViewMarker,
+    ViewSequence,
 };
 
-use super::interfaces::{Element, EventTarget, Node};
+use super::interfaces::{Element, EventTarget, HtmlElement, Node};
 
 type CowStr = std::borrow::Cow<'static, str>;
 
@@ -26,25 +25,39 @@ pub struct ElementState<ViewSeqState> {
     pub(crate) scratch: Vec<Pod>,
 }
 
-pub struct CustomElement<El, Children = ()> {
+pub struct CustomElement<T, A = (), Children = ()> {
     name: CowStr,
     children: Children,
-    phantom: PhantomData<fn() -> El>,
+    #[allow(clippy::type_complexity)]
+    phantom: PhantomData<fn() -> (T, A)>,
 }
 
-impl<El, Children> ViewMarker for CustomElement<El, Children> {}
+/// Builder function for a custom element view.
+pub fn custom_element<T, A, Children: ViewSequence<T, A>>(
+    name: impl Into<CowStr>,
+    children: Children,
+) -> CustomElement<T, A, Children> {
+    CustomElement {
+        name: name.into(),
+        children,
+        phantom: PhantomData,
+    }
+}
 
-impl<T, A, El, Children> View<T, A> for CustomElement<El, Children>
+impl<T, A, Children> ViewMarker for CustomElement<T, A, Children> {}
+
+impl<T, A, Children> View<T, A> for CustomElement<T, A, Children>
 where
     Children: ViewSequence<T, A>,
-    El: DomElement + JsCast,
 {
     type State = ElementState<Children::State>;
 
-    type Element = El;
+    // This is mostly intended for Autonomous custom elements,
+    // TODO: Custom builtin components need some special handling (`document.createElement("p", { is: "custom-component" })`)
+    type Element = web_sys::HtmlElement;
 
     fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
-        let el = cx.create_html_element(self.node_name());
+        let el = cx.create_html_element(&self.name);
 
         let mut child_elements = vec![];
         let (id, children_states) =
@@ -84,23 +97,19 @@ where
         if prev.name != self.name {
             // recreate element
             let parent = element
-                .as_element_ref()
                 .parent_element()
                 .expect_throw("this element was mounted and so should have a parent");
-            parent.remove_child(element.as_node_ref()).unwrap_throw();
-            let new_element = cx.create_html_element(&self.name);
+            parent.remove_child(element).unwrap_throw();
+            let new_element = cx.create_html_element(self.node_name());
             // TODO could this be combined with child updates?
-            while element.as_element_ref().child_element_count() > 0 {
+            while element.child_element_count() > 0 {
                 new_element
-                    .append_child(&element.as_element_ref().child_nodes().get(0).unwrap_throw())
+                    .append_child(&element.child_nodes().get(0).unwrap_throw())
                     .unwrap_throw();
             }
             *element = new_element.dyn_into().unwrap_throw();
             changed |= ChangeFlags::STRUCTURE;
         }
-
-
-        let element = element.as_element_ref();
 
         cx.apply_attribute_changes(element, &mut state.attributes);
 
@@ -137,15 +146,13 @@ where
     }
 }
 
-impl<El, Children> EventTarget for CustomElement<El, Children> {}
+impl<T, A, Children> EventTarget<T, A> for CustomElement<T, A, Children> {}
 
-impl<El, Children> Node for CustomElement<El, Children> {
+impl<T, A, Children> Node<T, A> for CustomElement<T, A, Children> {
     fn node_name(&self) -> &str {
         &self.name
     }
 }
 
-impl<T, A, El: DomElement + JsCast, Children: ViewSequence<T, A>> Element<T, A>
-    for CustomElement<El, Children>
-{
-}
+impl<T, A, Children: ViewSequence<T, A>> Element<T, A> for CustomElement<T, A, Children> {}
+impl<T, A, Children: ViewSequence<T, A>> HtmlElement<T, A> for CustomElement<T, A, Children> {}

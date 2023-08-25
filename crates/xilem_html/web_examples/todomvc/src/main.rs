@@ -7,10 +7,15 @@ use xilem_html::{
     dom::{
         elements::{self as el},
         event::EventListenerOptions,
-        interfaces::{Element, HtmlButtonElement},
+        interfaces::*,
     },
-    events::on_click,
-    get_element_by_id, Action, Adapt, App, MessageResult, View,
+    // events::on_click,
+    get_element_by_id,
+    Action,
+    Adapt,
+    App,
+    MessageResult,
+    View,
 };
 
 // All of these actions arise from within a `Todo`, but we need access to the full state to reduce
@@ -90,7 +95,7 @@ fn footer_view(state: &mut AppState, should_display: bool) -> impl Element<AppSt
     };
 
     let clear_button = (state.todos.iter().filter(|todo| todo.completed).count() > 0).then(|| {
-        on_click(
+        Element::on_click(
             el::button("Clear completed").attr("class", "clear-completed"),
             |state: &mut AppState, _| {
                 state.todos.retain(|todo| !todo.completed);
@@ -107,7 +112,7 @@ fn footer_view(state: &mut AppState, should_display: bool) -> impl Element<AppSt
         ))
         .attr("class", "todo-count"),
         el::ul((
-            el::li(on_click(
+            el::li(Element::on_click(
                 el::a("All")
                     .attr("href", "#/")
                     .attr("class", filter_class(Filter::All)),
@@ -116,7 +121,7 @@ fn footer_view(state: &mut AppState, should_display: bool) -> impl Element<AppSt
                 },
             )),
             " ",
-            el::li(on_click(
+            el::li(Element::on_click(
                 el::a("Active")
                     .attr("href", "#/active")
                     .attr("class", filter_class(Filter::Active)),
@@ -125,7 +130,7 @@ fn footer_view(state: &mut AppState, should_display: bool) -> impl Element<AppSt
                 },
             )),
             " ",
-            el::li(on_click(
+            el::li(Element::on_click(
                 el::a("Completed")
                     .attr("href", "#/completed")
                     .attr("class", filter_class(Filter::Completed)),

@@ -161,6 +161,7 @@ where
     /// Get the event target element.
     ///
     /// Because this type knows its child view's element type, we can downcast to this type here.
+    // TODO this is actually not safe, an event with the same name could bubble up to the element and this will throw an exception
     pub fn target(&self) -> El {
         let evt: &web_sys::Event = self.raw.as_ref();
         evt.target().unwrap_throw().dyn_into().unwrap_throw()

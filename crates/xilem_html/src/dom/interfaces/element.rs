@@ -4,7 +4,7 @@ use wasm_bindgen::JsCast;
 
 use crate::{
     dom::{attribute::Attr, event::EventListener},
-    IntoAttributeValue, OptionalAction, View, ViewMarker,
+    AttributeValue, IntoAttributeValue, OptionalAction, View, ViewMarker,
 };
 
 // TODO should the options be its own function `on_event_with_options`,
@@ -39,7 +39,8 @@ macro_rules! event_handler_mixin {
 }
 
 use super::Node;
-pub trait Element<T, A = ()>: Node + View<T, A> + ViewMarker
+// TODO should Node or even EventTarget have the super trait View instead?
+pub trait Element<T, A = ()>: Node<T, A> + View<T, A> + ViewMarker
 where
     Self: Sized,
 {
@@ -55,11 +56,11 @@ where
     ///
     /// If the name contains characters that are not valid in an attribute name,
     /// then the `View::build`/`View::rebuild` functions will panic for this view.
-    fn attr<K, V>(self, name: K, value: V) -> Attr<Self>
-    where
-        K: Into<Cow<'static, str>>,
-        V: IntoAttributeValue,
-    {
+    fn attr(
+        self,
+        name: impl Into<Cow<'static, str>>,
+        value: impl IntoAttributeValue,
+    ) -> Attr<Self> {
         Attr {
             element: self,
             name: name.into(),
@@ -67,11 +68,11 @@ where
         }
     }
 
-    fn class<V>(self, class: V) -> Attr<Self>
-    where
-        V: IntoAttributeValue,
-    {
-        self.attr("class", class)
+    // TODO should some methods extend some properties automatically,
+    // instead of overwriting the (possibly set) inner value
+    // or should there be (extra) "modifier" methods like `add_class` and/or `remove_class`
+    fn class(self, class: impl Into<Cow<'static, str>>) -> Attr<Self> {
+        self.attr("class", AttributeValue::String(class.into()))
     }
 
     // event list from

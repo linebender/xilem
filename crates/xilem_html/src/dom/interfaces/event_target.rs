@@ -8,8 +8,8 @@ use crate::{
     OptionalAction,
 };
 
-pub trait EventTarget {
-    fn on<T, A, E, EH, OA>(
+pub trait EventTarget<T, A> {
+    fn on<E, EH, OA>(
         self,
         event: impl Into<Cow<'static, str>>,
         handler: EH,
@@ -23,7 +23,7 @@ pub trait EventTarget {
         EventListener::new(self, event, handler)
     }
 
-    fn on_with_options<T, A, E, EH, OA>(
+    fn on_with_options<E, EH, OA>(
         self,
         event: impl Into<Cow<'static, str>>,
         handler: EH,
@@ -39,5 +39,5 @@ pub trait EventTarget {
     }
 }
 
-impl<E: EventTarget> EventTarget for Attr<E> {}
-impl<E: EventTarget, Ev, F> EventTarget for EventListener<E, Ev, F> {}
+impl<T, A, E: EventTarget<T, A>> EventTarget<T, A> for Attr<E> {}
+impl<T, A, E: EventTarget<T, A>, Ev, F> EventTarget<T, A> for EventListener<E, Ev, F> {}
