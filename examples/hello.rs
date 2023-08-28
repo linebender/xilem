@@ -1,4 +1,4 @@
-use xilem::view::{button, h_stack, switch, v_stack};
+use xilem::view::{button, h_stack, progress, switch, v_stack};
 use xilem::{view::View, App, AppLauncher};
 
 fn app_logic(data: &mut AppData) -> impl View<AppData> {
@@ -9,6 +9,7 @@ fn app_logic(data: &mut AppData) -> impl View<AppData> {
     } else {
         format!("clicked {count} times")
     };
+    let progress_val = data.count as f64 / 10.0;
 
     // The actual UI Code starts here
     v_stack((
@@ -28,8 +29,8 @@ fn app_logic(data: &mut AppData) -> impl View<AppData> {
             switch(data.is_on, |data: &mut AppData, value: bool| {
                 data.is_on = value
             }),
-            switch(data, |data: &mut AppData| &mut data.is_on),
         )),
+        progress(progress_val),
     ))
     .with_spacing(20.0)
 }
