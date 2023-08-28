@@ -14,6 +14,7 @@
 
 // mod async_list;
 mod button;
+mod progress_bar;
 mod switch;
 // mod text;
 // mod layout_observer;
@@ -30,5 +31,6 @@ pub use xilem_core::{Id, IdPath, VecSplice};
 pub use button::button;
 pub use linear_layout::{h_stack, v_stack, LinearLayout};
 pub use list::{list, List};
+pub use progress_bar::progress;
 pub use switch::switch;
 pub use view::{Adapt, AdaptState, Cx, Memoize, View, ViewMarker, ViewSequence};
