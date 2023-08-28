@@ -28,6 +28,7 @@ fn app_logic(data: &mut AppData) -> impl View<AppData> {
             switch(data.is_on, |data: &mut AppData, value: bool| {
                 data.is_on = value
             }),
+            switch(data, |data: &mut AppData| &mut data.is_on),
         )),
     ))
     .with_spacing(20.0)
