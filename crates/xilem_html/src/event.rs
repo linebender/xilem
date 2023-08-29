@@ -8,8 +8,7 @@ use crate::{view::DomNode, ChangeFlags, Cx, OptionalAction, View, ViewMarker};
 
 /// Wraps a [`View`] `V` and attaches an event listener.
 ///
-/// The event type `E` contains both the [`web_sys::Event`] subclass for this event and the
-/// [`web_sys::HtmlElement`] subclass that matches `V::Element`.
+/// The event type `E` should inherit from [`web_sys::Event`]
 pub struct EventListener<V, E, F> {
     pub(crate) element: V,
     pub(crate) event: Cow<'static, str>,

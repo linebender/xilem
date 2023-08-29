@@ -1,9 +1,6 @@
 use wasm_bindgen::JsCast;
 
-use crate::{
-    dom::{attribute::Attr, event::EventListener, interfaces::Element},
-    OptionalAction,
-};
+use crate::{event::EventListener, interfaces::Element, Attr, OptionalAction};
 
 macro_rules! dom_interface_trait_definitions {
     ($($dom_interface:ident : $super_dom_interface: ident $body: tt),*) => {

@@ -3,12 +3,13 @@ use std::borrow::Cow;
 use gloo::events::EventListenerOptions;
 use wasm_bindgen::JsCast;
 
-use crate::{
-    dom::{attribute::Attr, event::EventListener},
-    OptionalAction,
-};
+use crate::{attribute::Attr, event::EventListener, OptionalAction, View, ViewMarker};
 
-pub trait EventTarget<T, A> {
+use super::Element;
+
+// TODO should this have the super trait View or should Node be the one?
+// And/Or should the View::Element use EventTarget instead of Node (currently the trait `DomNode`)?
+pub trait EventTarget<T, A>: View<T, A> + ViewMarker {
     fn on<E, EH, OA>(
         self,
         event: impl Into<Cow<'static, str>>,
@@ -39,5 +40,12 @@ pub trait EventTarget<T, A> {
     }
 }
 
-impl<T, A, E: EventTarget<T, A>> EventTarget<T, A> for Attr<E> {}
-impl<T, A, E: EventTarget<T, A>, Ev, F> EventTarget<T, A> for EventListener<E, Ev, F> {}
+impl<T, A, E: Element<T, A>> EventTarget<T, A> for Attr<E> {}
+impl<T, A, E: EventTarget<T, A>, Ev, F, OA> EventTarget<T, A> for EventListener<E, Ev, F>
+where
+    F: Fn(&mut T, Ev) -> OA,
+    E: EventTarget<T, A>,
+    Ev: JsCast + 'static,
+    OA: OptionalAction<A>,
+{
+}

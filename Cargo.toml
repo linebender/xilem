@@ -4,7 +4,7 @@ members = [
     "crates/xilem_svg",
     "crates/xilem_html",
     "crates/xilem_html/web_examples/counter",
-    "crates/xilem_html/web_examples/counter_untyped",
+    "crates/xilem_html/web_examples/counter_custom_element",
     "crates/xilem_html/web_examples/todomvc",
 ]
 

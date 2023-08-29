@@ -1,4 +1,9 @@
-use xilem_html::{document_body, element, on_event, App, Event, View, ViewMarker};
+use xilem_html::{
+    document_body,
+    elements::custom_element,
+    interfaces::{EventTarget, HtmlElement},
+    App, View,
+};
 
 #[derive(Default)]
 struct AppState {
@@ -17,24 +22,20 @@ impl AppState {
     }
 }
 
-fn btn<F>(label: &'static str, click_fn: F) -> impl View<AppState> + ViewMarker
-where
-    F: Fn(&mut AppState, &Event<web_sys::Event, web_sys::HtmlButtonElement>),
-{
-    on_event(
-        "click",
-        element("button", label),
-        move |state: &mut AppState, evt: &Event<_, _>| {
-            click_fn(state, evt);
-        },
-    )
+fn btn(
+    label: &'static str,
+    click_fn: impl Fn(&mut AppState, web_sys::Event),
+) -> impl HtmlElement<AppState> {
+    custom_element("button", label).on("click", move |state: &mut AppState, evt| {
+        click_fn(state, evt);
+    })
 }
 
 fn app_logic(state: &mut AppState) -> impl View<AppState> {
-    element::<web_sys::HtmlElement, _>(
+    custom_element(
         "div",
         (
-            element::<web_sys::HtmlElement, _>("span", format!("clicked {} times", state.clicks)),
+            custom_element("span", format!("clicked {} times", state.clicks)),
             btn("+1 click", |state, _| AppState::increment(state)),
             btn("-1 click", |state, _| AppState::decrement(state)),
             btn("reset clicks", |state, _| AppState::reset(state)),

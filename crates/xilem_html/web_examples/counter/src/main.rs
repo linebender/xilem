@@ -1,9 +1,6 @@
 use xilem_html::{
-    document_body,
-    dom::{
-        elements as el,
-        interfaces::{Element, HtmlButtonElement},
-    },
+    document_body, elements as el,
+    interfaces::{Element, HtmlButtonElement},
     App, View,
 };
 

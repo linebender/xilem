@@ -34,18 +34,6 @@ impl<N: AsRef<web_sys::Node> + 'static> DomNode for N {
     }
 }
 
-/// This trait is implemented for types that implement `AsRef<web_sys::Element>`.
-/// It is an implementation detail.
-pub trait DomElement: DomNode {
-    fn as_element_ref(&self) -> &web_sys::Element;
-}
-
-impl<N: DomNode + AsRef<web_sys::Element>> DomElement for N {
-    fn as_element_ref(&self) -> &web_sys::Element {
-        self.as_ref()
-    }
-}
-
 /// A trait for types that can be type-erased and impl `AsRef<Node>`. It is an
 /// implementation detail.
 pub trait AnyNode: sealed::Sealed {

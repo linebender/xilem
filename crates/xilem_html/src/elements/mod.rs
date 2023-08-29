@@ -25,6 +25,8 @@ pub struct ElementState<ViewSeqState> {
     pub(crate) scratch: Vec<Pod>,
 }
 
+// TODO something like the `after_update` of the former `Element` view (likely as a wrapper view instead)
+
 pub struct CustomElement<T, A = (), Children = ()> {
     name: CowStr,
     children: Children,
@@ -146,9 +148,9 @@ where
     }
 }
 
-impl<T, A, Children> EventTarget<T, A> for CustomElement<T, A, Children> {}
+impl<T, A, Children: ViewSequence<T, A>> EventTarget<T, A> for CustomElement<T, A, Children> {}
 
-impl<T, A, Children> Node<T, A> for CustomElement<T, A, Children> {
+impl<T, A, Children: ViewSequence<T, A>> Node<T, A> for CustomElement<T, A, Children> {
     fn node_name(&self) -> &str {
         &self.name
     }

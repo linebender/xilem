@@ -10,31 +10,6 @@ edition.workspace = true
 homepage.workspace = true
 repository.workspace = true
 
-[features]
-default = ["typed"]
-typed = [
-    "web-sys/FocusEvent", "web-sys/HtmlAnchorElement", "web-sys/HtmlAreaElement",
-    "web-sys/HtmlAudioElement", "web-sys/HtmlBrElement", "web-sys/HtmlButtonElement",
-    "web-sys/HtmlCanvasElement", "web-sys/HtmlDataElement", "web-sys/HtmlDataListElement",
-    "web-sys/HtmlDetailsElement", "web-sys/HtmlDialogElement", "web-sys/HtmlDivElement",
-    "web-sys/HtmlDListElement", "web-sys/HtmlEmbedElement", "web-sys/HtmlFieldSetElement",
-    "web-sys/HtmlFormElement", "web-sys/HtmlHeadingElement", "web-sys/HtmlHrElement",
-    "web-sys/HtmlIFrameElement", "web-sys/HtmlImageElement", "web-sys/HtmlInputElement",
-    "web-sys/HtmlLabelElement", "web-sys/HtmlLegendElement", "web-sys/HtmlLiElement",
-    "web-sys/HtmlMapElement", "web-sys/HtmlMenuElement", "web-sys/HtmlMeterElement",
-    "web-sys/HtmlModElement", "web-sys/HtmlObjectElement", "web-sys/HtmlOListElement",
-    "web-sys/HtmlOptGroupElement", "web-sys/HtmlOptionElement", "web-sys/HtmlOutputElement",
-    "web-sys/HtmlParagraphElement", "web-sys/HtmlPictureElement", "web-sys/HtmlPreElement",
-    "web-sys/HtmlProgressElement", "web-sys/HtmlQuoteElement", "web-sys/HtmlScriptElement",
-    "web-sys/HtmlSelectElement", "web-sys/HtmlSlotElement", "web-sys/HtmlSourceElement",
-    "web-sys/HtmlSpanElement", "web-sys/HtmlTableElement", "web-sys/HtmlTableCellElement",
-    "web-sys/HtmlTableColElement", "web-sys/HtmlTableCaptionElement", "web-sys/HtmlTableRowElement",
-    "web-sys/HtmlTableSectionElement", "web-sys/HtmlTemplateElement", "web-sys/HtmlTextAreaElement",
-    "web-sys/HtmlTimeElement", "web-sys/HtmlTrackElement", "web-sys/HtmlUListElement",
-    "web-sys/HtmlVideoElement", "web-sys/InputEvent", "web-sys/KeyboardEvent", "web-sys/MouseEvent",
-    "web-sys/PointerEvent", "web-sys/WheelEvent",
-]
-
 [dependencies]
 xilem_core.workspace = true
 kurbo.workspace = true
@@ -43,6 +18,9 @@ wasm-bindgen = "0.2.87"
 log = "0.4.19"
 gloo = { version = "0.8.1", default-features = false, features = ["events", "utils"] }
 
+# TODO make all or most of the extra elements and events optional via a feature
+# I think that at least HtmlElement + SvgElement (and the parent dom interfaces) should be enabled by default
+# possibly all web_sys elements, but that needs careful benching/investigation etc.
 [dependencies.web-sys]
 version = "0.3.4"
 features = [
@@ -56,4 +34,64 @@ features = [
     "SvgElement",
     "Text",
     "Window",
+    "FocusEvent",
+    "HtmlAnchorElement",
+    "HtmlAreaElement",
+    "HtmlAudioElement",
+    "HtmlBrElement",
+    "HtmlButtonElement",
+    "HtmlCanvasElement",
+    "HtmlDataElement",
+    "HtmlDataListElement",
+    "HtmlDetailsElement",
+    "HtmlDialogElement",
+    "HtmlDivElement",
+    "HtmlDListElement",
+    "HtmlEmbedElement",
+    "HtmlFieldSetElement",
+    "HtmlFormElement",
+    "HtmlHeadingElement",
+    "HtmlHrElement",
+    "HtmlIFrameElement",
+    "HtmlImageElement",
+    "HtmlInputElement",
+    "HtmlLabelElement",
+    "HtmlLegendElement",
+    "HtmlLiElement",
+    "HtmlMapElement",
+    "HtmlMenuElement",
+    "HtmlMeterElement",
+    "HtmlModElement",
+    "HtmlObjectElement",
+    "HtmlOListElement",
+    "HtmlOptGroupElement",
+    "HtmlOptionElement",
+    "HtmlOutputElement",
+    "HtmlParagraphElement",
+    "HtmlPictureElement",
+    "HtmlPreElement",
+    "HtmlProgressElement",
+    "HtmlQuoteElement",
+    "HtmlScriptElement",
+    "HtmlSelectElement",
+    "HtmlSlotElement",
+    "HtmlSourceElement",
+    "HtmlSpanElement",
+    "HtmlTableElement",
+    "HtmlTableCellElement",
+    "HtmlTableColElement",
+    "HtmlTableCaptionElement",
+    "HtmlTableRowElement",
+    "HtmlTableSectionElement",
+    "HtmlTemplateElement",
+    "HtmlTextAreaElement",
+    "HtmlTimeElement",
+    "HtmlTrackElement",
+    "HtmlUListElement",
+    "HtmlVideoElement",
+    "InputEvent",
+    "KeyboardEvent",
+    "MouseEvent",
+    "PointerEvent",
+    "WheelEvent"
 ]

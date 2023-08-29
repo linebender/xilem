@@ -25,8 +25,10 @@ impl<T, A, E: Element<T, A>> View<T, A> for Attr<E> {
             let _ = element
                 .as_node_ref()
                 .dyn_ref::<web_sys::Element>()
-                // TODO remove the unwrap, make this safer...
-                .unwrap()
+                .expect(
+                    "The Attr view can only be used by Views,\
+                     whose element inherits from `web_sys::Element`",
+                )
                 .set_attribute(&self.name, &value.serialize());
         }
         (id, state, element)

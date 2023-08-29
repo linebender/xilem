@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use xilem_core::{Id, MessageResult, VecSplice};
 
-use crate::{dom::interfaces::Node, ChangeFlags, Cx, View, ViewMarker, ViewSequence};
+use crate::{interfaces::Node, ChangeFlags, Cx, View, ViewMarker, ViewSequence};
 
 use super::ElementState;
 
@@ -12,7 +12,7 @@ macro_rules! generate_dom_interface_impl {
         generate_dom_interface_impl!($ty_name, $name, $t, $a, $vs, $dom_interface, {});
     };
     ($ty_name:ident, $name:ident, $t:ident, $a:ident, $vs:ident, $dom_interface:ident, $body: tt) => {
-        impl<$t, $a, $vs> crate::dom::interfaces::$dom_interface<$t, $a> for $ty_name<$t, $a, $vs>
+        impl<$t, $a, $vs> crate::interfaces::$dom_interface<$t, $a> for $ty_name<$t, $a, $vs>
         where
             $vs: crate::view::ViewSequence<$t, $a>,
         $body
@@ -21,8 +21,13 @@ macro_rules! generate_dom_interface_impl {
 
 macro_rules! impl_html_dom_interface {
     ($ty_name: ident, $name: ident, $t: ident, $a:ident, $vs:ident, Node) => {
-        impl<$t, $a, $vs> crate::dom::interfaces::EventTarget<$t, $a> for $ty_name<$t, $a, $vs> {}
-        impl<$t, $a, $vs> crate::dom::interfaces::Node<$t, $a> for $ty_name<$t, $a, $vs> {
+        impl<$t, $a, $vs: ViewSequence<$t, $a>> crate::interfaces::EventTarget<$t, $a>
+            for $ty_name<$t, $a, $vs>
+        {
+        }
+        impl<$t, $a, $vs: ViewSequence<$t, $a>> crate::interfaces::Node<$t, $a>
+            for $ty_name<$t, $a, $vs>
+        {
             fn node_name(&self) -> &str {
                 stringify!($name)
             }

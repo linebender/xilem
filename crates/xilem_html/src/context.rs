@@ -1,7 +1,7 @@
 use std::any::Any;
 
 use bitflags::bitflags;
-use wasm_bindgen::JsCast;
+use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use web_sys::Document;
 
 use xilem_core::{Id, IdPath};
@@ -9,12 +9,36 @@ use xilem_core::{Id, IdPath};
 use crate::{
     app::AppRunner,
     diff::{diff_kv_iterables, Diff},
-    element::{remove_attribute, set_attribute},
     vecmap::VecMap,
     AttributeValue, Message, HTML_NS, SVG_NS,
 };
 
 type CowStr = std::borrow::Cow<'static, str>;
+
+fn set_attribute(element: &web_sys::Element, name: &str, value: &str) {
+    // we have to special-case `value` because setting the value using `set_attribute`
+    // doesn't work after the value has been changed.
+    if name == "value" {
+        let element: &web_sys::HtmlInputElement = element.dyn_ref().unwrap_throw();
+        element.set_value(value)
+    } else if name == "checked" {
+        let element: &web_sys::HtmlInputElement = element.dyn_ref().unwrap_throw();
+        element.set_checked(true)
+    } else {
+        element.set_attribute(name, value).unwrap_throw();
+    }
+}
+
+fn remove_attribute(element: &web_sys::Element, name: &str) {
+    // we have to special-case `value` because setting the value using `set_attribute`
+    // doesn't work after the value has been changed.
+    if name == "checked" {
+        let element: &web_sys::HtmlInputElement = element.dyn_ref().unwrap_throw();
+        element.set_checked(false)
+    } else {
+        element.remove_attribute(name).unwrap_throw();
+    }
+}
 
 // Note: xilem has derive Clone here. Not sure.
 pub struct Cx {

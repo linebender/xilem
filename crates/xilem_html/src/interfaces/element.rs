@@ -2,10 +2,7 @@ use std::borrow::Cow;
 
 use wasm_bindgen::JsCast;
 
-use crate::{
-    dom::{attribute::Attr, event::EventListener},
-    AttributeValue, IntoAttributeValue, OptionalAction, View, ViewMarker,
-};
+use crate::{Attr, AttributeValue, EventListener, IntoAttributeValue, OptionalAction};
 
 // TODO should the options be its own function `on_event_with_options`,
 // or should that be done via the builder pattern: `el.on_event().passive(false)`?
@@ -40,7 +37,7 @@ macro_rules! event_handler_mixin {
 
 use super::Node;
 // TODO should Node or even EventTarget have the super trait View instead?
-pub trait Element<T, A = ()>: Node<T, A> + View<T, A> + ViewMarker
+pub trait Element<T, A = ()>: Node<T, A>
 where
     Self: Sized,
 {

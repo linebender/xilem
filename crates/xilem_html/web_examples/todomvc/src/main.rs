@@ -4,18 +4,10 @@ use state::{AppState, Filter, Todo};
 
 use wasm_bindgen::JsCast;
 use xilem_html::{
-    dom::{
-        elements::{self as el},
-        event::EventListenerOptions,
-        interfaces::*,
-    },
-    // events::on_click,
+    elements::{self as el},
     get_element_by_id,
-    Action,
-    Adapt,
-    App,
-    MessageResult,
-    View,
+    interfaces::*,
+    Action, Adapt, App, EventListenerOptions, MessageResult, View,
 };
 
 // All of these actions arise from within a `Todo`, but we need access to the full state to reduce
