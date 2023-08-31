@@ -78,10 +78,15 @@ impl Widget for ProgressBar {
         fill_color(builder, &progress_background_rect, background_color);
         stroke(builder, &progress_background_rect, border_color, STROKE);
 
-        let progress_bar_rect =
-            Rect::from_origin_size((0., 0.), Size::new(self.value * cx.size().width, HEIGHT))
-                .inset(-STROKE / 2.)
-                .to_rounded_rect(HEIGHT / 2.);
-        fill_color(builder, &progress_bar_rect, bar_color);
+        println!("{:?}", self.value * cx.size());
+        let progress_width = self.value * cx.size().width;
+        if progress_width != 0. {
+            let progress_bar_rect =
+                Rect::from_origin_size((0., 0.), Size::new(progress_width, HEIGHT))
+                    .inset(-STROKE / 2.)
+                    .to_rounded_rect(HEIGHT / 2.);
+            fill_color(builder, &progress_bar_rect, bar_color);
+        }
+
     }
 }
