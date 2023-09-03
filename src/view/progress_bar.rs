@@ -72,6 +72,6 @@ impl<T: Send, A> View<T, A> for ProgressBar<T> {
         _message: Box<dyn Any>,
         _app_state: &mut T,
     ) -> MessageResult<A> {
-        MessageResult::Nop
+        MessageResult::Stale(())
     }
 }
