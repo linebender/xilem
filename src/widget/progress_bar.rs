@@ -65,7 +65,9 @@ impl Widget for ProgressBar {
 
     fn accessibility(&mut self, cx: &mut AccessCx) {
         let mut builder = accesskit::NodeBuilder::new(accesskit::Role::ProgressIndicator);
-        builder.set_default_action_verb(accesskit::DefaultActionVerb::Click);
+        builder.set_numeric_value(self.value  * 100.);
+        builder.set_max_numeric_value(100.);
+        builder.set_min_numeric_value(0.);
         cx.push_node(builder);
     }
 
