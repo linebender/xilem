@@ -1,0 +1,108 @@
+env:
+  # We aim to always test with the latest stable Rust toolchain, however we pin to a specific
+  # version like 1.70. Note that we only specify MAJOR.MINOR and not PATCH so that bugfixes still
+  # come automatically. If the version specified here is no longer the latest stable version,
+  # then please feel free to submit a PR that adjusts it along with the potential clippy fixes.
+  RUST_STABLE_VER: "1.72" # In quotes because otherwise 1.70 would be interpreted as 1.7
+
+# Rationale
+#
+# We don't run clippy with --all-targets because then even --lib and --bins are compiled with
+# dev dependencies enabled, which does not match how they would be compiled by users.
+# A dev dependency might enable a feature of a regular dependency that we need, but testing
+# with --all-targets would not catch that. Thus we split --lib & --bins into a separate step.
+
+name: CI
+
+on:
+  pull_request:
+  merge_group:
+
+jobs:
+  rustfmt:
+    runs-on: ubuntu-latest
+    name: cargo fmt
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: install stable toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ env.RUST_STABLE_VER }}
+          components: rustfmt
+
+      - name: cargo fmt
+        run: cargo fmt --all --check
+
+  test-stable:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    name: cargo clippy + test
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: install additional linux dependencies
+        run: |
+          sudo apt update
+          sudo apt install libwayland-dev libxkbcommon-x11-dev
+        if: contains(matrix.os, 'ubuntu')
+
+      - name: install stable toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ env.RUST_STABLE_VER }}
+          components: clippy
+
+      - name: restore cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: cargo clippy (no default features)
+        run: cargo clippy --workspace --lib --bins --no-default-features -- -D warnings
+        # No default features means no backend on Linux, so we won't run it
+        if: contains(matrix.os, 'ubuntu') == false
+
+      - name: cargo clippy (no default features) (auxiliary)
+        run: cargo clippy --workspace --tests --benches --examples --no-default-features -- -D warnings
+        # No default features means no backend on Linux, so we won't run it
+        if: contains(matrix.os, 'ubuntu') == false
+
+      - name: cargo clippy (default features)
+        run: cargo clippy --workspace --lib --bins -- -D warnings
+
+      - name: cargo clippy (default features) (auxiliary)
+        run: cargo clippy --workspace --tests --benches --examples -- -D warnings
+
+      - name: cargo clippy (all features)
+        run: cargo clippy --workspace --lib --bins --all-features -- -D warnings
+
+      - name: cargo clippy (all features) (auxiliary)
+        run: cargo clippy --workspace --tests --benches --examples --all-features -- -D warnings
+
+      - name: cargo test
+        run: cargo test --workspace --all-features
+
+  docs:
+    name: cargo doc
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: install additional linux dependencies
+        run: |
+          sudo apt update
+          sudo apt install libwayland-dev libxkbcommon-x11-dev
+        if: contains(matrix.os, 'ubuntu')
+
+      - name: install nightly toolchain
+        uses: dtolnay/rust-toolchain@nightly
+
+      - name: restore cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: cargo doc
+        run: cargo doc --workspace --all-features --no-deps --document-private-items -Zunstable-options -Zrustdoc-scrape-examples

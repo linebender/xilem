@@ -42,7 +42,7 @@ impl<T: ?Sized + Hash> Bloom<T> {
     /// Does not count unique entries; this is just the number of times
     /// `add()` was called since the filter was created or last `clear()`ed.
     // it feels wrong to call this 'len'?
-    #[cfg(test)]
+    #[allow(dead_code)]
     pub fn entry_count(&self) -> usize {
         self.entry_count
     }
