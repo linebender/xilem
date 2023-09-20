@@ -1,6 +1,6 @@
 use wasm_bindgen::JsCast;
 
-use crate::{event::EventListener, interfaces::Element, Attr, OptionalAction};
+use crate::{event::OnEvent, interfaces::Element, Attr, OptionalAction};
 
 macro_rules! dom_interface_trait_definitions {
     ($($dom_interface:ident : $super_dom_interface: ident $body: tt),*) => {
@@ -9,7 +9,7 @@ macro_rules! dom_interface_trait_definitions {
 
             impl<T, A, E: $dom_interface<T, A>> $dom_interface<T, A> for Attr<E> { }
 
-            impl<T, A, E, Ev, F, OA> $dom_interface<T, A> for EventListener<E, Ev, F>
+            impl<T, A, E, Ev, F, OA> $dom_interface<T, A> for OnEvent<E, Ev, F>
             where
                 F: Fn(&mut T, Ev) -> OA,
                 E: $dom_interface<T, A>,

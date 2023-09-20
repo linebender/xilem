@@ -1,6 +1,6 @@
 use wasm_bindgen::JsCast;
 
-use crate::{attribute::Attr, event::EventListener, OptionalAction};
+use crate::{attribute::Attr, event::OnEvent, OptionalAction};
 
 use super::{Element, EventTarget};
 
@@ -14,7 +14,7 @@ impl<T, A, E: Element<T, A>> Node<T, A> for Attr<E> {
     }
 }
 
-impl<T, A, E: Node<T, A>, Ev, F, OA> Node<T, A> for EventListener<E, Ev, F>
+impl<T, A, E: Node<T, A>, Ev, F, OA> Node<T, A> for OnEvent<E, Ev, F>
 where
     F: Fn(&mut T, Ev) -> OA,
     E: Node<T, A>,

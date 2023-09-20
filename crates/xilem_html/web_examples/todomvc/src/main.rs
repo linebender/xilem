@@ -7,7 +7,7 @@ use xilem_html::{
     elements::{self as el},
     get_element_by_id,
     interfaces::*,
-    Action, Adapt, App, EventListenerOptions, MessageResult, View,
+    Action, Adapt, App, MessageResult, View,
 };
 
 // All of these actions arise from within a `Todo`, but we need access to the full state to reduce
@@ -60,20 +60,17 @@ fn todo_item(todo: &mut Todo, editing: bool) -> impl Element<Todo, TodoAction> {
                     None
                 }
             })
-            .on_input_with_options(
-                |state: &mut Todo, evt| {
-                    // TODO is there a less boilerplate but safe way to get to the value of the element?
-                    let Some(target) = evt.target() else {
-                        return;
-                    };
-                    let Some(element) = target.dyn_ref::<web_sys::HtmlInputElement>() else {
-                        return;
-                    };
+            .on_input(|state: &mut Todo, evt| {
+                // TODO There could/should be further checks, if this is indeed the right event (same dom element)
+                if let Some(element) = evt
+                    .target()
+                    .and_then(|t| t.dyn_into::<web_sys::HtmlInputElement>().ok())
+                {
                     evt.prevent_default();
                     state.title_editing = element.value();
-                },
-                EventListenerOptions::enable_prevent_default(),
-            )
+                }
+            })
+            .passive(true)
             .on_blur(|_, _| TodoAction::CancelEditing),
     ))
     .attr("class", class)
@@ -196,20 +193,17 @@ fn app_logic(state: &mut AppState) -> impl View<AppState> {
                         state.create_todo();
                     }
                 })
-                .on_input_with_options(
-                    |state: &mut AppState, evt| {
-                        // TODO is there a less boilerplate but safe way to get to the value of the element?
-                        let Some(target) = evt.target() else {
-                            return;
-                        };
-                        let Some(element) = target.dyn_ref::<web_sys::HtmlInputElement>() else {
-                            return;
-                        };
+                .on_input(|state: &mut AppState, evt| {
+                    // TODO There could/should be further checks, if this is indeed the right event (same dom element)
+                    if let Some(element) = evt
+                        .target()
+                        .and_then(|t| t.dyn_into::<web_sys::HtmlInputElement>().ok())
+                    {
                         state.update_new_todo(&element.value());
                         evt.prevent_default();
-                    },
-                    EventListenerOptions::enable_prevent_default(),
-                ),
+                    }
+                })
+                .passive(false),
         ))
         .attr("class", "header"),
         main,

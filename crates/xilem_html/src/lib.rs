@@ -27,7 +27,7 @@ pub use app::App;
 pub use attribute::Attr;
 pub use attribute_value::{AttributeValue, IntoAttributeValue};
 pub use context::{ChangeFlags, Cx};
-pub use event::{EventListener, EventListenerOptions, EventListenerState};
+pub use event::{EventListenerOptions, EventListenerState, OnEvent};
 pub use one_of::{OneOf2, OneOf3, OneOf4, OneOf5, OneOf6, OneOf7, OneOf8};
 pub use optional_action::{Action, OptionalAction};
 pub use view::{
