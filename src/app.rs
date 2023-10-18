@@ -199,6 +199,7 @@ where
 
     pub fn accessibility(&mut self) -> TreeUpdate {
         let mut update = TreeUpdate::default();
+        self.ensure_root();
         let root_pod = self.root_pod.as_mut().unwrap();
         let mut window_node_builder = accesskit::NodeBuilder::new(accesskit::Role::Window);
         window_node_builder.set_name("xilem window");
