@@ -34,7 +34,11 @@ pub fn fill<T, V>(child: V, brush: impl Into<Brush>) -> Fill<T, V> {
     }
 }
 
-pub fn stroke<T, V>(child: V, brush: impl Into<Brush>, style: peniko::kurbo::Stroke) -> Stroke<T, V> {
+pub fn stroke<T, V>(
+    child: V,
+    brush: impl Into<Brush>,
+    style: peniko::kurbo::Stroke,
+) -> Stroke<T, V> {
     Stroke {
         child,
         brush: brush.into(),

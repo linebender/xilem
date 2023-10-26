@@ -6,8 +6,9 @@ use peniko::Brush;
 use crate::{
     class::Class,
     clicked::Clicked,
+    common_attrs::{Fill, Stroke},
     pointer::{Pointer, PointerMsg},
-    view::View, common_attrs::{Fill, Stroke},
+    view::View,
 };
 
 pub trait ViewExt<T>: View<T> + Sized {
