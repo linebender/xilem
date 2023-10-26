@@ -19,9 +19,9 @@ cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
 
 [dependencies]
 xilem_core.workspace = true
-kurbo.workspace = true
 bitflags = "2"
 wasm-bindgen = "0.2.84"
+peniko = { git = "https://github.com/linebender/peniko", rev = "629fc3325b016a8c98b1cd6204cb4ddf1c6b3daa" }
 
 [dependencies.web-sys]
 version = "0.3.4"

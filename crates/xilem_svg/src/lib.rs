@@ -6,6 +6,7 @@
 mod app;
 mod class;
 mod clicked;
+mod common_attrs;
 mod context;
 mod group;
 mod kurbo_shape;
@@ -13,7 +14,8 @@ mod pointer;
 mod view;
 mod view_ext;
 
-pub use kurbo;
+pub use peniko;
+pub use peniko::kurbo;
 
 pub use app::App;
 pub use context::Cx;

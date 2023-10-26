@@ -4,6 +4,7 @@
 use xilem_svg::{
     group,
     kurbo::{self, Rect},
+    peniko::Color,
     App, PointerMsg, View, ViewExt,
 };
 
@@ -56,7 +57,9 @@ fn app_logic(state: &mut AppState) -> impl View<AppState> {
         Rect::new(100.0, 100.0, 200.0, 200.0).clicked(|_| {
             web_sys::console::log_1(&"app logic clicked".into());
         }),
-        Rect::new(210.0, 100.0, 310.0, 200.0),
+        Rect::new(210.0, 100.0, 310.0, 200.0)
+            .fill(Color::LIGHT_GRAY)
+            .stroke(Color::BLUE, Default::default()),
         Rect::new(320.0, 100.0, 420.0, 200.0).class("red"),
         Rect::new(state.x, state.y, state.x + 100., state.y + 100.)
             .pointer(|s: &mut AppState, msg| s.grab.handle(&mut s.x, &mut s.y, &msg)),

@@ -3,7 +3,7 @@
 
 //! Implementation of the View trait for various kurbo shapes.
 
-use kurbo::{BezPath, Circle, Line, Rect};
+use peniko::kurbo::{BezPath, Circle, Line, Rect};
 use web_sys::Element;
 
 use xilem_core::{Id, MessageResult};
