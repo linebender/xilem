@@ -10,34 +10,8 @@ use xilem_core::{Id, MessageResult};
 
 use crate::{
     context::{ChangeFlags, Cx},
-    pointer::PointerMsg,
     view::{View, ViewMarker},
 };
-
-pub trait KurboShape: Sized {
-    fn class(self, class: impl Into<String>) -> crate::class::Class<Self> {
-        crate::class::class(self, class)
-    }
-
-    fn clicked<T, F: Fn(&mut T)>(self, f: F) -> crate::clicked::Clicked<Self, F>
-    where
-        Self: View<T>,
-    {
-        crate::clicked::clicked(self, f)
-    }
-
-    fn pointer<T, F: Fn(&mut T, PointerMsg)>(self, f: F) -> crate::pointer::Pointer<Self, F>
-    where
-        Self: View<T>,
-    {
-        crate::pointer::pointer(self, f)
-    }
-}
-
-impl KurboShape for Line {}
-impl KurboShape for Rect {}
-impl KurboShape for Circle {}
-impl KurboShape for BezPath {}
 
 impl ViewMarker for Line {}
 

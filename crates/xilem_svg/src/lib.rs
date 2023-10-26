@@ -18,9 +18,9 @@ pub use kurbo;
 pub use app::App;
 pub use context::Cx;
 pub use group::group;
-pub use kurbo_shape::KurboShape;
 pub use pointer::{PointerDetails, PointerMsg};
 pub use view::{AnyView, Memoize, View, ViewMarker, ViewSequence};
+pub use view_ext::ViewExt;
 
 pub use context::ChangeFlags;
 

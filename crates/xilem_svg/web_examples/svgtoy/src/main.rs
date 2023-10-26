@@ -4,7 +4,7 @@
 use xilem_svg::{
     group,
     kurbo::{self, Rect},
-    App, KurboShape, PointerMsg, View,
+    App, PointerMsg, View, ViewExt,
 };
 
 #[derive(Default)]

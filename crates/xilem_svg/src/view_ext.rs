@@ -9,17 +9,17 @@ use crate::{
 };
 
 pub trait ViewExt<T>: View<T> + Sized {
-    fn clicked<F: Fn(&mut T)>(self, f: F) -> Clicked<Self, F>;
-    fn pointer<F: Fn(&mut T, PointerMsg)>(self, f: F) -> Pointer<Self, F> {
+    fn clicked<F: Fn(&mut T)>(self, f: F) -> Clicked<T, Self, F>;
+    fn pointer<F: Fn(&mut T, PointerMsg)>(self, f: F) -> Pointer<T, Self, F> {
         crate::pointer::pointer(self, f)
     }
-    fn class(self, class: impl Into<String>) -> Class<Self> {
+    fn class(self, class: impl Into<String>) -> Class<T, Self> {
         crate::class::class(self, class)
     }
 }
 
 impl<T, V: View<T>> ViewExt<T> for V {
-    fn clicked<F: Fn(&mut T)>(self, f: F) -> Clicked<Self, F> {
+    fn clicked<F: Fn(&mut T)>(self, f: F) -> Clicked<T, Self, F> {
         crate::clicked::clicked(self, f)
     }
 }
