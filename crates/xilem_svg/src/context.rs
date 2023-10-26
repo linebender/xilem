@@ -93,6 +93,12 @@ impl Cx {
     }
 }
 
+impl Default for Cx {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl MessageThunk {
     pub fn push_message(&self, message_body: impl Any + Send + 'static) {
         let message = Message {
