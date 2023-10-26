@@ -32,6 +32,7 @@ pub struct PointerState<S> {
 }
 
 #[derive(Debug)]
+/// A message representing a pointer event.
 pub enum PointerMsg {
     Down(PointerDetails),
     Move(PointerDetails),
@@ -39,6 +40,7 @@ pub enum PointerMsg {
 }
 
 #[derive(Debug)]
+/// Details of a pointer event.
 pub struct PointerDetails {
     pub id: i32,
     pub button: i16,

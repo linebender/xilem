@@ -2095,6 +2095,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8fb1df15f412ee2e9dfc1c504260fa695c1c3f10fe9f4a6ee2d2184d7d6450e2"
 
 [[package]]
+name = "svgtoy"
+version = "0.1.0"
+dependencies = [
+ "console_error_panic_hook",
+ "wasm-bindgen",
+ "web-sys",
+ "xilem_svg",
+]
+
+[[package]]
 name = "swash"
 version = "0.1.8"
 source = "git+https://github.com/dfrg/swash#56ea551ac49e51580c466f03d6c75252a8c8e700"

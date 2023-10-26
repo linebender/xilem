@@ -17,9 +17,6 @@ default-target = "x86_64-pc-windows-msvc"
 # rustdoc-scrape-examples tracking issue https://github.com/rust-lang/rust/issues/88791
 cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
 
-[lib]
-crate-type = ["cdylib"]
-
 [dependencies]
 xilem_core.workspace = true
 kurbo.workspace = true
