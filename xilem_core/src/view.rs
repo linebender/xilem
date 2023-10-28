@@ -86,7 +86,7 @@ pub trait View<State, Action, Context: ViewPathTracker, Message = DynMessage>: '
     // fn debug_name?
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 /// An identifier used to differentiation between the direct children of a [View].
 ///
 /// These are [u64] backed identifiers, which will be added to the "view path" in

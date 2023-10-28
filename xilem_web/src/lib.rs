@@ -27,6 +27,7 @@ pub const SVG_NS: &str = "http://www.w3.org/2000/svg";
 /// The MathML namespace
 pub const MATHML_NS: &str = "http://www.w3.org/1998/Math/MathML";
 
+mod after_update;
 mod app;
 mod attribute;
 mod attribute_value;
@@ -48,6 +49,7 @@ pub mod elements;
 pub mod interfaces;
 pub mod svg;
 
+pub use after_update::AfterUpdate;
 pub use app::App;
 pub use attribute::{Attr, Attributes, ElementWithAttributes, WithAttributes};
 pub use attribute_value::{AttributeValue, IntoAttributeValue};

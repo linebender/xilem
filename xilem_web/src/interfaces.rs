@@ -14,6 +14,7 @@
 use std::borrow::Cow;
 
 use crate::{
+    after_update::AfterUpdate,
     attribute::{Attr, WithAttributes},
     class::{AsClassIter, Class, WithClasses},
     events,
@@ -77,6 +78,10 @@ pub trait Element<State, Action = ()>:
         value: impl IntoAttributeValue,
     ) -> Attr<Self, State, Action> {
         Attr::new(self, name.into(), value.into_attr_value())
+    }
+
+    fn after_update<F: Fn(&mut State, &Self::Element)>(self, callback: F) -> AfterUpdate<Self, F> {
+        AfterUpdate::new(self, callback)
     }
 
     /// Add a class to an [`Element`]

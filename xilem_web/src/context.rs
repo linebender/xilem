@@ -1,7 +1,7 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use std::rc::Rc;
+use std::{collections::BTreeMap, rc::Rc};
 
 use crate::{
     app::{AppMessage, AppRunner},
@@ -28,6 +28,7 @@ impl MessageThunk {
 #[derive(Default)]
 pub struct ViewCtx {
     id_path: Vec<ViewId>,
+    pub(crate) after_update: BTreeMap<ViewId, (bool, Vec<ViewId>)>,
     app_ref: Option<Box<dyn AppRunner>>,
 }
 
