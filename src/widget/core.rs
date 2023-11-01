@@ -185,6 +185,11 @@ impl Pod {
     }
 
     /// Returns the wrapped widget.
+    pub fn downcast_ref<T: 'static>(&self) -> Option<&T> {
+        (*self.widget).as_any().downcast_ref()
+    }
+
+    /// Returns the wrapped widget.
     pub fn downcast_mut<T: 'static>(&mut self) -> Option<&mut T> {
         (*self.widget).as_any_mut().downcast_mut()
     }
