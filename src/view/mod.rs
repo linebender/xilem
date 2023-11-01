@@ -32,3 +32,8 @@ pub use linear_layout::{h_stack, v_stack, LinearLayout};
 pub use list::{list, List};
 pub use switch::switch;
 pub use view::{Adapt, AdaptState, Cx, Memoize, View, ViewMarker, ViewSequence};
+
+#[cfg(feature = "taffy")]
+mod taffy_layout;
+#[cfg(feature = "taffy")]
+pub use taffy_layout::{div, flex_column, flex_row, grid, TaffyLayout};

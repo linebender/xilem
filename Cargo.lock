@@ -1168,6 +1168,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "grid"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1df00eed8d1f0db937f6be10e46e8072b0671accb504cf0f959c5c52c679f5b9"
+
+[[package]]
 name = "guillotiere"
 version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2155,6 +2161,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "taffy"
+version = "0.3.11"
+source = "git+https://github.com/DioxusLabs/taffy?rev=7781c70241f7f572130c13106f2a869a9cf80885#7781c70241f7f572130c13106f2a869a9cf80885"
+dependencies = [
+ "arrayvec",
+ "grid",
+ "num-traits",
+ "slotmap",
+]
+
+[[package]]
 name = "tempfile"
 version = "3.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3010,6 +3027,7 @@ dependencies = [
  "futures-task",
  "glazier",
  "parley",
+ "taffy",
  "test-log",
  "tokio",
  "tracing",
