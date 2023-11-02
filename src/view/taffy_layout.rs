@@ -14,6 +14,8 @@
 
 use std::{any::Any, marker::PhantomData};
 
+use vello::peniko::Color;
+
 use crate::view::{Id, VecSplice, ViewMarker, ViewSequence};
 use crate::widget::{self, ChangeFlags};
 use crate::MessageResult;
@@ -28,6 +30,7 @@ use super::{Cx, View};
 pub struct TaffyLayout<T, A, VT: ViewSequence<T, A>> {
     children: VT,
     style: taffy::Style,
+    background_color: Option<Color>,
     phantom: PhantomData<fn() -> (T, A)>,
 }
 
@@ -60,6 +63,7 @@ impl<T, A, VT: ViewSequence<T, A>> TaffyLayout<T, A, VT> {
                 display,
                 ..Default::default()
             },
+            background_color: None,
             phantom,
         }
     }
@@ -74,12 +78,18 @@ impl<T, A, VT: ViewSequence<T, A>> TaffyLayout<T, A, VT> {
                 flex_direction,
                 ..Default::default()
             },
+            background_color: None,
             phantom,
         }
     }
 
     pub fn with_style(mut self, style_modifier: impl FnOnce(&mut taffy::Style)) -> Self {
         style_modifier(&mut self.style);
+        self
+    }
+
+    pub fn with_background_color(mut self, color: impl Into<Color>) -> Self {
+        self.background_color = Some(color.into());
         self
     }
 }
@@ -94,7 +104,7 @@ impl<T, A, VT: ViewSequence<T, A>> View<T, A> for TaffyLayout<T, A, VT> {
     fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
         let mut elements = vec![];
         let (id, state) = cx.with_new_id(|cx| self.children.build(cx, &mut elements));
-        let column = widget::TaffyLayout::new(elements, self.style.clone());
+        let column = widget::TaffyLayout::new(elements, self.style.clone(), self.background_color);
         (id, state, column)
     }
 
@@ -114,10 +124,10 @@ impl<T, A, VT: ViewSequence<T, A>> View<T, A> for TaffyLayout<T, A, VT> {
                 .rebuild(cx, &prev.children, state, &mut splice)
         });
 
-        // if self.background_color != prev.background_color {
-        //     element.background_color = self.background_color;
-        //     flags |= ChangeFlags::PAINT
-        // }
+        if self.background_color != prev.background_color {
+            element.background_color = self.background_color;
+            flags |= ChangeFlags::PAINT
+        }
 
         if self.style != prev.style {
             element.style = self.style.clone();

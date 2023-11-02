@@ -15,7 +15,9 @@
 use crate::geometry::Axis;
 use crate::widget::{AccessCx, BoxConstraints, Event};
 use accesskit::NodeId;
+use glazier::kurbo::Affine;
 use vello::kurbo::{Point, Size};
+use vello::peniko::{Brush, Color, Fill};
 use vello::SceneBuilder;
 
 use super::{contexts::LifeCycleCx, EventCx, LayoutCx, LifeCycle, PaintCx, Pod, UpdateCx, Widget};
@@ -146,14 +148,16 @@ pub struct TaffyLayout {
     pub children: Vec<Pod>,
     pub cache: taffy::Cache,
     pub style: taffy::Style,
+    pub background_color: Option<Color>,
 }
 
 impl TaffyLayout {
-    pub fn new(children: Vec<Pod>, style: taffy::Style) -> Self {
+    pub fn new(children: Vec<Pod>, style: taffy::Style, background_color: Option<Color>) -> Self {
         TaffyLayout {
             children,
             cache: taffy::Cache::new(),
             style,
+            background_color,
         }
     }
 }
@@ -425,8 +429,16 @@ impl Widget for TaffyLayout {
     }
 
     fn paint(&mut self, cx: &mut PaintCx, builder: &mut SceneBuilder) {
+        if let Some(color) = self.background_color {
+            builder.fill(
+                Fill::NonZero,
+                Affine::IDENTITY,
+                &Brush::Solid(color),
+                None,
+                &cx.size().to_rect(),
+            );
+        }
         for child in &mut self.children {
-            println!("paint child!");
             child.paint(cx, builder);
         }
     }
