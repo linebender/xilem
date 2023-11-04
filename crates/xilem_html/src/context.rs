@@ -10,7 +10,7 @@ use crate::{
     app::AppRunner,
     diff::{diff_kv_iterables, Diff},
     vecmap::VecMap,
-    AttributeValue, Message, HTML_NS, SVG_NS,
+    AttributeValue, Message,
 };
 
 type CowStr = std::borrow::Cow<'static, str>;
@@ -110,18 +110,25 @@ impl Cx {
         &self.document
     }
 
-    pub fn create_element(&self, ns: &str, name: &str) -> web_sys::Element {
-        self.document
+    pub(crate) fn build_element(
+        &mut self,
+        ns: &str,
+        name: &str,
+    ) -> (web_sys::Element, VecMap<CowStr, AttributeValue>) {
+        let el = self
+            .document
             .create_element_ns(Some(ns), name)
-            .expect("could not create element")
+            .expect("could not create element");
+        let attributes = self.apply_attributes(&el);
+        (el, attributes)
     }
 
-    pub fn create_html_element(&self, name: &str) -> web_sys::HtmlElement {
-        self.create_element(HTML_NS, name).unchecked_into()
-    }
-
-    pub fn create_svg_element(&self, name: &str) -> web_sys::SvgElement {
-        self.create_element(SVG_NS, name).unchecked_into()
+    pub(crate) fn rebuild_element(
+        &mut self,
+        element: &web_sys::Element,
+        attributes: &mut VecMap<CowStr, AttributeValue>,
+    ) -> ChangeFlags {
+        self.apply_attribute_changes(element, attributes)
     }
 
     // TODO Not sure how multiple attribute definitions with the same name should be handled (e.g. `e.attr("class", "a").attr("class", "b")`)

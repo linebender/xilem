@@ -404,4 +404,8 @@ dom_interface_macro_and_trait_definitions!(
             HtmlUListElement { methods: {}, child_interfaces: {} },
         }
     },
+    SvgElement {
+        methods: {},
+        child_interfaces: {}
+    },
 );

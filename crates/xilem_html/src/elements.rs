@@ -5,7 +5,7 @@ use xilem_core::{Id, MessageResult, VecSplice};
 
 use crate::{
     interfaces::sealed::Sealed, vecmap::VecMap, view::DomNode, AttributeValue, ChangeFlags, Cx,
-    Pod, View, ViewMarker, ViewSequence,
+    Pod, View, ViewMarker, ViewSequence, HTML_NS, MATHML_NS, SVG_NS,
 };
 
 use super::interfaces::Element;
@@ -63,9 +63,7 @@ where
     type Element = web_sys::HtmlElement;
 
     fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
-        let el = cx.create_html_element(&self.name);
-
-        let attributes = cx.apply_attributes(&el);
+        let (el, attributes) = cx.build_element(HTML_NS, &self.name);
 
         let mut child_elements = vec![];
         let (id, children_states) =
@@ -108,7 +106,8 @@ where
                 .parent_element()
                 .expect_throw("this element was mounted and so should have a parent");
             parent.remove_child(element).unwrap_throw();
-            let new_element = cx.create_html_element(self.node_name());
+            let (new_element, attributes) = cx.build_element(HTML_NS, self.node_name());
+            state.attributes = attributes;
             // TODO could this be combined with child updates?
             while element.child_element_count() > 0 {
                 new_element
@@ -119,7 +118,7 @@ where
             changed |= ChangeFlags::STRUCTURE;
         }
 
-        changed |= cx.apply_attribute_changes(element, &mut state.attributes);
+        changed |= cx.rebuild_element(element, &mut state.attributes);
 
         // update children
         let mut splice = VecSplice::new(&mut state.child_elements, &mut state.scratch);
@@ -171,11 +170,11 @@ macro_rules! generate_dom_interface_impl {
 
 // TODO maybe it's possible to reduce even more in the impl function bodies and put into impl_functions
 //      (should improve compile times and probably wasm binary size)
-macro_rules! define_html_element {
-    (($ty_name:ident, $name:ident, $dom_interface:ident)) => {
-        define_html_element!(($ty_name, $name, $dom_interface, T, A, VS));
+macro_rules! define_element {
+    (($ns:expr, $ty_name:ident, $name:ident, $dom_interface:ident)) => {
+        define_element!(($ns, $ty_name, $name, $dom_interface, T, A, VS));
     };
-    (($ty_name:ident, $name:ident, $dom_interface:ident, $t:ident, $a: ident, $vs: ident)) => {
+    (($ns:expr, $ty_name:ident, $name:ident, $dom_interface:ident, $t:ident, $a: ident, $vs: ident)) => {
         pub struct $ty_name<$t, $a = (), $vs = ()>($vs, PhantomData<fn() -> ($t, $a)>);
 
         impl<$t, $a, $vs> ViewMarker for $ty_name<$t, $a, $vs> {}
@@ -186,9 +185,7 @@ macro_rules! define_html_element {
             type Element = web_sys::$dom_interface;
 
             fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
-                let el = cx.create_html_element(stringify!($name));
-
-                let attributes = cx.apply_attributes(&el);
+                let (el, attributes) = cx.build_element($ns, stringify!($name));
 
                 let mut child_elements = vec![];
                 let (id, children_states) =
@@ -275,7 +272,7 @@ macro_rules! define_html_element {
 
 macro_rules! define_elements {
     ($($element_def:tt,)*) => {
-        $(define_html_element!($element_def);)*
+        $(define_element!($element_def);)*
     };
 }
 
@@ -287,122 +284,122 @@ define_elements!(
     // TODO include document metadata elements?
 
     // content sectioning
-    (Address, address, HtmlElement),
-    (Article, article, HtmlElement),
-    (Aside, aside, HtmlElement),
-    (Footer, footer, HtmlElement),
-    (Header, header, HtmlElement),
-    (H1, h1, HtmlHeadingElement),
-    (H2, h2, HtmlHeadingElement),
-    (H3, h3, HtmlHeadingElement),
-    (H4, h4, HtmlHeadingElement),
-    (H5, h5, HtmlHeadingElement),
-    (H6, h6, HtmlHeadingElement),
-    (Hgroup, hgroup, HtmlElement),
-    (Main, main, HtmlElement),
-    (Nav, nav, HtmlElement),
-    (Section, section, HtmlElement),
+    (HTML_NS, Address, address, HtmlElement),
+    (HTML_NS, Article, article, HtmlElement),
+    (HTML_NS, Aside, aside, HtmlElement),
+    (HTML_NS, Footer, footer, HtmlElement),
+    (HTML_NS, Header, header, HtmlElement),
+    (HTML_NS, H1, h1, HtmlHeadingElement),
+    (HTML_NS, H2, h2, HtmlHeadingElement),
+    (HTML_NS, H3, h3, HtmlHeadingElement),
+    (HTML_NS, H4, h4, HtmlHeadingElement),
+    (HTML_NS, H5, h5, HtmlHeadingElement),
+    (HTML_NS, H6, h6, HtmlHeadingElement),
+    (HTML_NS, Hgroup, hgroup, HtmlElement),
+    (HTML_NS, Main, main, HtmlElement),
+    (HTML_NS, Nav, nav, HtmlElement),
+    (HTML_NS, Section, section, HtmlElement),
     // text content
-    (Blockquote, blockquote, HtmlQuoteElement),
-    (Dd, dd, HtmlElement),
-    (Div, div, HtmlDivElement),
-    (Dl, dl, HtmlDListElement),
-    (Dt, dt, HtmlElement),
-    (Figcaption, figcaption, HtmlElement),
-    (Figure, figure, HtmlElement),
-    (Hr, hr, HtmlHrElement),
-    (Li, li, HtmlLiElement),
-    (Link, link, HtmlLinkElement),
-    (Menu, menu, HtmlMenuElement),
-    (Ol, ol, HtmlOListElement),
-    (P, p, HtmlParagraphElement),
-    (Pre, pre, HtmlPreElement),
-    (Ul, ul, HtmlUListElement),
+    (HTML_NS, Blockquote, blockquote, HtmlQuoteElement),
+    (HTML_NS, Dd, dd, HtmlElement),
+    (HTML_NS, Div, div, HtmlDivElement),
+    (HTML_NS, Dl, dl, HtmlDListElement),
+    (HTML_NS, Dt, dt, HtmlElement),
+    (HTML_NS, Figcaption, figcaption, HtmlElement),
+    (HTML_NS, Figure, figure, HtmlElement),
+    (HTML_NS, Hr, hr, HtmlHrElement),
+    (HTML_NS, Li, li, HtmlLiElement),
+    (HTML_NS, Link, link, HtmlLinkElement),
+    (HTML_NS, Menu, menu, HtmlMenuElement),
+    (HTML_NS, Ol, ol, HtmlOListElement),
+    (HTML_NS, P, p, HtmlParagraphElement),
+    (HTML_NS, Pre, pre, HtmlPreElement),
+    (HTML_NS, Ul, ul, HtmlUListElement),
     // inline text
-    (A, a, HtmlAnchorElement, T, A_, VS),
-    (Abbr, abbr, HtmlElement),
-    (B, b, HtmlElement),
-    (Bdi, bdi, HtmlElement),
-    (Bdo, bdo, HtmlElement),
-    (Br, br, HtmlBrElement),
-    (Cite, cite, HtmlElement),
-    (Code, code, HtmlElement),
-    (Data, data, HtmlDataElement),
-    (Dfn, dfn, HtmlElement),
-    (Em, em, HtmlElement),
-    (I, i, HtmlElement),
-    (Kbd, kbd, HtmlElement),
-    (Mark, mark, HtmlElement),
-    (Q, q, HtmlQuoteElement),
-    (Rp, rp, HtmlElement),
-    (Rt, rt, HtmlElement),
-    (Ruby, ruby, HtmlElement),
-    (S, s, HtmlElement),
-    (Samp, samp, HtmlElement),
-    (Small, small, HtmlElement),
-    (Span, span, HtmlSpanElement),
-    (Strong, strong, HtmlElement),
-    (Sub, sub, HtmlElement),
-    (Sup, sup, HtmlElement),
-    (Time, time, HtmlTimeElement),
-    (U, u, HtmlElement),
-    (Var, var, HtmlElement),
-    (Wbr, wbr, HtmlElement),
+    (HTML_NS, A, a, HtmlAnchorElement, T, A_, VS),
+    (HTML_NS, Abbr, abbr, HtmlElement),
+    (HTML_NS, B, b, HtmlElement),
+    (HTML_NS, Bdi, bdi, HtmlElement),
+    (HTML_NS, Bdo, bdo, HtmlElement),
+    (HTML_NS, Br, br, HtmlBrElement),
+    (HTML_NS, Cite, cite, HtmlElement),
+    (HTML_NS, Code, code, HtmlElement),
+    (HTML_NS, Data, data, HtmlDataElement),
+    (HTML_NS, Dfn, dfn, HtmlElement),
+    (HTML_NS, Em, em, HtmlElement),
+    (HTML_NS, I, i, HtmlElement),
+    (HTML_NS, Kbd, kbd, HtmlElement),
+    (HTML_NS, Mark, mark, HtmlElement),
+    (HTML_NS, Q, q, HtmlQuoteElement),
+    (HTML_NS, Rp, rp, HtmlElement),
+    (HTML_NS, Rt, rt, HtmlElement),
+    (HTML_NS, Ruby, ruby, HtmlElement),
+    (HTML_NS, S, s, HtmlElement),
+    (HTML_NS, Samp, samp, HtmlElement),
+    (HTML_NS, Small, small, HtmlElement),
+    (HTML_NS, Span, span, HtmlSpanElement),
+    (HTML_NS, Strong, strong, HtmlElement),
+    (HTML_NS, Sub, sub, HtmlElement),
+    (HTML_NS, Sup, sup, HtmlElement),
+    (HTML_NS, Time, time, HtmlTimeElement),
+    (HTML_NS, U, u, HtmlElement),
+    (HTML_NS, Var, var, HtmlElement),
+    (HTML_NS, Wbr, wbr, HtmlElement),
     // image and multimedia
-    (Area, area, HtmlAreaElement),
-    (Audio, audio, HtmlAudioElement),
-    (Canvas, canvas, HtmlCanvasElement),
-    (Img, img, HtmlImageElement),
-    (Map, map, HtmlMapElement),
-    (Track, track, HtmlTrackElement),
-    (Video, video, HtmlVideoElement),
+    (HTML_NS, Area, area, HtmlAreaElement),
+    (HTML_NS, Audio, audio, HtmlAudioElement),
+    (HTML_NS, Canvas, canvas, HtmlCanvasElement),
+    (HTML_NS, Img, img, HtmlImageElement),
+    (HTML_NS, Map, map, HtmlMapElement),
+    (HTML_NS, Track, track, HtmlTrackElement),
+    (HTML_NS, Video, video, HtmlVideoElement),
     // embedded content
-    (Embed, embed, HtmlEmbedElement),
-    (Iframe, iframe, HtmlIFrameElement),
-    (Object, object, HtmlObjectElement),
-    (Picture, picture, HtmlPictureElement),
-    (Portal, portal, HtmlElement),
-    (Source, source, HtmlSourceElement),
-    // SVG and MathML (TODO, svg and mathml elements)
-    (Svg, svg, HtmlElement),
-    (Math, math, HtmlElement),
+    (HTML_NS, Embed, embed, HtmlEmbedElement),
+    (HTML_NS, Iframe, iframe, HtmlIFrameElement),
+    (HTML_NS, Object, object, HtmlObjectElement),
+    (HTML_NS, Picture, picture, HtmlPictureElement),
+    (HTML_NS, Portal, portal, HtmlElement),
+    (HTML_NS, Source, source, HtmlSourceElement),
     // scripting
-    (Noscript, noscript, HtmlElement),
-    (Script, script, HtmlScriptElement),
+    (HTML_NS, Noscript, noscript, HtmlElement),
+    (HTML_NS, Script, script, HtmlScriptElement),
     // demarcating edits
-    (Del, del, HtmlModElement),
-    (Ins, ins, HtmlModElement),
+    (HTML_NS, Del, del, HtmlModElement),
+    (HTML_NS, Ins, ins, HtmlModElement),
     // tables
-    (Caption, caption, HtmlTableCaptionElement),
-    (Col, col, HtmlTableColElement),
-    (Colgroup, colgroup, HtmlTableColElement),
-    (Table, table, HtmlTableElement),
-    (Tbody, tbody, HtmlTableSectionElement),
-    (Td, td, HtmlTableCellElement),
-    (Tfoot, tfoot, HtmlTableSectionElement),
-    (Th, th, HtmlTableCellElement),
-    (Thead, thead, HtmlTableSectionElement),
-    (Tr, tr, HtmlTableRowElement),
+    (HTML_NS, Caption, caption, HtmlTableCaptionElement),
+    (HTML_NS, Col, col, HtmlTableColElement),
+    (HTML_NS, Colgroup, colgroup, HtmlTableColElement),
+    (HTML_NS, Table, table, HtmlTableElement),
+    (HTML_NS, Tbody, tbody, HtmlTableSectionElement),
+    (HTML_NS, Td, td, HtmlTableCellElement),
+    (HTML_NS, Tfoot, tfoot, HtmlTableSectionElement),
+    (HTML_NS, Th, th, HtmlTableCellElement),
+    (HTML_NS, Thead, thead, HtmlTableSectionElement),
+    (HTML_NS, Tr, tr, HtmlTableRowElement),
     // forms
-    (Button, button, HtmlButtonElement),
-    (Datalist, datalist, HtmlDataListElement),
-    (Fieldset, fieldset, HtmlFieldSetElement),
-    (Form, form, HtmlFormElement),
-    (Input, input, HtmlInputElement),
-    (Label, label, HtmlLabelElement),
-    (Legend, legend, HtmlLegendElement),
-    (Meter, meter, HtmlMeterElement),
-    (Optgroup, optgroup, HtmlOptGroupElement),
-    (OptionElement, option, HtmlOptionElement), // Avoid cluttering the namespace with `Option`
-    (Output, output, HtmlOutputElement),
-    (Progress, progress, HtmlProgressElement),
-    (Select, select, HtmlSelectElement),
-    (Textarea, textarea, HtmlTextAreaElement),
+    (HTML_NS, Button, button, HtmlButtonElement),
+    (HTML_NS, Datalist, datalist, HtmlDataListElement),
+    (HTML_NS, Fieldset, fieldset, HtmlFieldSetElement),
+    (HTML_NS, Form, form, HtmlFormElement),
+    (HTML_NS, Input, input, HtmlInputElement),
+    (HTML_NS, Label, label, HtmlLabelElement),
+    (HTML_NS, Legend, legend, HtmlLegendElement),
+    (HTML_NS, Meter, meter, HtmlMeterElement),
+    (HTML_NS, Optgroup, optgroup, HtmlOptGroupElement),
+    (HTML_NS, OptionElement, option, HtmlOptionElement), // Avoid cluttering the namespace with `Option`
+    (HTML_NS, Output, output, HtmlOutputElement),
+    (HTML_NS, Progress, progress, HtmlProgressElement),
+    (HTML_NS, Select, select, HtmlSelectElement),
+    (HTML_NS, Textarea, textarea, HtmlTextAreaElement),
     // interactive elements,
-    (Details, details, HtmlDetailsElement),
-    (Dialog, dialog, HtmlDialogElement),
-    (Summary, summary, HtmlElement),
+    (HTML_NS, Details, details, HtmlDetailsElement),
+    (HTML_NS, Dialog, dialog, HtmlDialogElement),
+    (HTML_NS, Summary, summary, HtmlElement),
     // web components,
-    (Slot, slot, HtmlSlotElement),
-    (Template, template, HtmlTemplateElement),
+    (HTML_NS, Slot, slot, HtmlSlotElement),
+    (HTML_NS, Template, template, HtmlTemplateElement),
+    // SVG and MathML (TODO, svg and mathml elements)
+    (SVG_NS, Svg, svg, SvgElement),
+    (MATHML_NS, Math, math, Element),
 );
