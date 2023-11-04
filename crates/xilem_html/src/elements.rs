@@ -172,9 +172,18 @@ macro_rules! generate_dom_interface_impl {
 //      (should improve compile times and probably wasm binary size)
 macro_rules! define_element {
     (($ns:expr, $ty_name:ident, $name:ident, $dom_interface:ident)) => {
-        define_element!(($ns, $ty_name, $name, $dom_interface, T, A, VS));
+        define_element!((
+            $ns,
+            $ty_name,
+            $name,
+            $dom_interface,
+            stringify!($name),
+            T,
+            A,
+            VS
+        ));
     };
-    (($ns:expr, $ty_name:ident, $name:ident, $dom_interface:ident, $t:ident, $a: ident, $vs: ident)) => {
+    (($ns:expr, $ty_name:ident, $name:ident, $dom_interface:ident, $name_str:expr, $t:ident, $a: ident, $vs: ident)) => {
         pub struct $ty_name<$t, $a = (), $vs = ()>($vs, PhantomData<fn() -> ($t, $a)>);
 
         impl<$t, $a, $vs> ViewMarker for $ty_name<$t, $a, $vs> {}
@@ -185,7 +194,7 @@ macro_rules! define_element {
             type Element = web_sys::$dom_interface;
 
             fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
-                let (el, attributes) = cx.build_element($ns, stringify!($name));
+                let (el, attributes) = cx.build_element($ns, $name_str);
 
                 let mut child_elements = vec![];
                 let (id, children_states) =
@@ -256,7 +265,7 @@ macro_rules! define_element {
         }
 
         /// Builder function for a
-        #[doc = concat!("`", stringify!($name), "`")]
+        #[doc = concat!("`", $name_str, "`")]
         /// element view.
         pub fn $name<$t, $a, $vs: ViewSequence<$t, $a>>(children: $vs) -> $ty_name<$t, $a, $vs> {
             $ty_name(children, PhantomData)
@@ -316,7 +325,7 @@ define_elements!(
     (HTML_NS, Pre, pre, HtmlPreElement),
     (HTML_NS, Ul, ul, HtmlUListElement),
     // inline text
-    (HTML_NS, A, a, HtmlAnchorElement, T, A_, VS),
+    (HTML_NS, A, a, HtmlAnchorElement, "a", T, A_, VS),
     (HTML_NS, Abbr, abbr, HtmlElement),
     (HTML_NS, B, b, HtmlElement),
     (HTML_NS, Bdi, bdi, HtmlElement),
@@ -399,7 +408,45 @@ define_elements!(
     // web components,
     (HTML_NS, Slot, slot, HtmlSlotElement),
     (HTML_NS, Template, template, HtmlTemplateElement),
-    // SVG and MathML (TODO, svg and mathml elements)
-    (SVG_NS, Svg, svg, SvgElement),
     (MATHML_NS, Math, math, Element),
+    (MATHML_NS, Annotation, annotation, Element),
+    (
+        MATHML_NS,
+        AnnotationXml,
+        annotation_xml,
+        Element,
+        "annotation-xml",
+        T,
+        A,
+        VS
+    ),
+    (MATHML_NS, Maction, maction, Element),
+    (MATHML_NS, Merror, merror, Element),
+    (MATHML_NS, Mfrac, mfrac, Element),
+    (MATHML_NS, Mi, mi, Element),
+    (MATHML_NS, Mmultiscripts, mmultiscripts, Element),
+    (MATHML_NS, Mn, mn, Element),
+    (MATHML_NS, Mo, mo, Element),
+    (MATHML_NS, Mover, mover, Element),
+    (MATHML_NS, Mpadded, mpadded, Element),
+    (MATHML_NS, Mphantom, mphantom, Element),
+    (MATHML_NS, Mprescripts, mprescripts, Element),
+    (MATHML_NS, Mroot, mroot, Element),
+    (MATHML_NS, Mrow, mrow, Element),
+    (MATHML_NS, Ms, ms, Element),
+    (MATHML_NS, Mspace, mspace, Element),
+    (MATHML_NS, Msqrt, msqrt, Element),
+    (MATHML_NS, Mstyle, mstyle, Element),
+    (MATHML_NS, Msub, msub, Element),
+    (MATHML_NS, Msubsup, msubsup, Element),
+    (MATHML_NS, Msup, msup, Element),
+    (MATHML_NS, Mtable, mtable, Element),
+    (MATHML_NS, Mtd, mtd, Element),
+    (MATHML_NS, Mtext, mtext, Element),
+    (MATHML_NS, Mtr, mtr, Element),
+    (MATHML_NS, Munder, munder, Element),
+    (MATHML_NS, Munderover, munderover, Element),
+    (MATHML_NS, Semantics, semantics, Element),
+    // SVG (TODO all SVG elements and their interfaces)
+    (SVG_NS, Svg, svg, SvgElement),
 );
