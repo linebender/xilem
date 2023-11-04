@@ -4,8 +4,8 @@ use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use xilem_core::{Id, MessageResult, VecSplice};
 
 use crate::{
-    sealed::Sealed, vecmap::VecMap, view::DomNode, AttributeValue, ChangeFlags, Cx, Pod, View,
-    ViewMarker, ViewSequence,
+    interfaces::sealed::Sealed, vecmap::VecMap, view::DomNode, AttributeValue, ChangeFlags, Cx,
+    Pod, View, ViewMarker, ViewSequence,
 };
 
 use super::interfaces::{for_all_dom_interface_relatives, Element};

@@ -1,4 +1,4 @@
-use crate::{sealed::Sealed, View, ViewMarker};
+use crate::{View, ViewMarker};
 use std::borrow::Cow;
 
 use gloo::events::EventListenerOptions;
@@ -8,6 +8,10 @@ use crate::{
     events::{self, OnEvent},
     Attr, IntoAttributeValue, OptionalAction,
 };
+
+pub(crate) mod sealed {
+    pub trait Sealed {}
+}
 
 // TODO should the options be its own function `on_event_with_options`,
 // or should that be done via the builder pattern: `el.on_event().passive(false)`?
@@ -25,7 +29,7 @@ macro_rules! event_handler_mixin {
     };
 }
 
-pub trait Element<T, A = ()>: View<T, A> + ViewMarker + Sealed
+pub trait Element<T, A = ()>: View<T, A> + ViewMarker + sealed::Sealed
 where
     Self: Sized,
 {

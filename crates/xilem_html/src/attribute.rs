@@ -2,7 +2,7 @@ use std::borrow::Cow;
 
 use xilem_core::{Id, MessageResult};
 
-use crate::{sealed::Sealed, AttributeValue, ChangeFlags, Cx, View, ViewMarker};
+use crate::{interfaces::sealed::Sealed, AttributeValue, ChangeFlags, Cx, View, ViewMarker};
 
 use super::interfaces::{for_all_dom_interfaces, Element};
 

@@ -1,6 +1,5 @@
 use crate::{
-    interfaces::{for_all_dom_interfaces, Element},
-    sealed::Sealed,
+    interfaces::{for_all_dom_interfaces, sealed::Sealed, Element},
     view::DomNode,
     ChangeFlags, Cx, OptionalAction, View, ViewMarker,
 };

@@ -44,10 +44,6 @@ pub const SVG_NS: &str = "http://www.w3.org/2000/svg";
 /// The MathML namespace: `http://www.w3.org/1998/Math/MathML`
 pub const MATHML_NS: &str = "http://www.w3.org/1998/Math/MathML";
 
-mod sealed {
-    pub trait Sealed {}
-}
-
 /// Helper to get the HTML document
 pub fn document() -> web_sys::Document {
     let window = web_sys::window().expect("no global `window` exists");
