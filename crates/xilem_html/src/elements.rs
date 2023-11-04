@@ -161,21 +161,11 @@ impl<T, A, Children: ViewSequence<T, A>> crate::interfaces::HtmlElement<T, A>
 }
 
 macro_rules! generate_dom_interface_impl {
-    ($dom_interface:ident, $ty_name:ident, $name:ident, $t:ident, $a:ident, $vs:ident) => {
-        generate_dom_interface_impl!($dom_interface, $ty_name, $name, $t, $a, $vs, {});
-    };
-    // handle Element extra, since this isn't feature gated (enabled by default)
-    (Element, $ty_name:ident, $name:ident, $t:ident, $a:ident, $vs:ident, $body: tt) => {
-        impl<$t, $a, $vs> crate::interfaces::Element<$t, $a> for $ty_name<$t, $a, $vs>
-        where
-            $vs: crate::view::ViewSequence<$t, $a>,
-        $body
-    };
-    ($dom_interface:ident, $ty_name:ident, $name:ident, $t:ident, $a:ident, $vs:ident, $body: tt) => {
-        impl<$t, $a, $vs> crate::interfaces::$dom_interface<$t, $a> for $ty_name<$t, $a, $vs>
-        where
-            $vs: crate::view::ViewSequence<$t, $a>,
-        $body
+    ($dom_interface:ident, $ty_name:ident, $t:ident, $a:ident, $vs:ident) => {
+        impl<$t, $a, $vs> $crate::interfaces::$dom_interface<$t, $a> for $ty_name<$t, $a, $vs> where
+            $vs: $crate::view::ViewSequence<$t, $a>
+        {
+        }
     };
 }
 
@@ -279,7 +269,6 @@ macro_rules! define_html_element {
             $dom_interface,
             generate_dom_interface_impl,
             $ty_name,
-            $name,
             $t,
             $a,
             $vs
