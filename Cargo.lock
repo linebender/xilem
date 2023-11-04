@@ -2140,6 +2140,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "svgtoy_html"
+version = "0.1.0"
+dependencies = [
+ "console_error_panic_hook",
+ "wasm-bindgen",
+ "web-sys",
+ "xilem_html",
+]
+
+[[package]]
 name = "swash"
 version = "0.1.8"
 source = "git+https://github.com/dfrg/swash#56ea551ac49e51580c466f03d6c75252a8c8e700"
@@ -3059,6 +3069,7 @@ dependencies = [
  "kurbo 0.9.5",
  "log",
  "paste",
+ "peniko 0.1.0 (git+https://github.com/linebender/peniko?rev=629fc3325b016a8c98b1cd6204cb4ddf1c6b3daa)",
  "wasm-bindgen",
  "web-sys",
  "xilem_core",

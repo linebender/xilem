@@ -412,7 +412,12 @@ dom_interface_macro_and_trait_definitions!(
         }
     },
     SvgElement {
-        methods: {},
+        methods: {
+            // TODO consider stateful event views like this in general
+            fn pointer<F: Fn(&mut T, crate::svg::pointer::PointerMsg)>(self, f: F) -> crate::svg::pointer::Pointer<T, A, Self, F> {
+                crate::svg::pointer::pointer(self, f)
+            }
+        },
         child_interfaces: {
             SvgAnimationElement {
                 methods: {},
@@ -448,21 +453,74 @@ dom_interface_macro_and_trait_definitions!(
                     SvgDefsElement { methods: {}, child_interfaces: {} },
                     SvgForeignObjectElement { methods: {}, child_interfaces: {} },
                     SvgGeometryElement {
-                        methods: {},
+                        methods: {
+                            fn stroke(self, brush: impl Into<peniko::Brush>, style: peniko::kurbo::Stroke) -> crate::svg::common_attrs::Stroke<Self, T, A> {
+                                crate::svg::common_attrs::stroke(self, brush, style)
+                            }
+                        },
                         child_interfaces: {
-                            SvgCircleElement { methods: {}, child_interfaces: {} },
-                            SvgEllipseElement { methods: {}, child_interfaces: {} },
+                            SvgCircleElement {
+                                methods: {
+                                    fn fill(self, brush: impl Into<peniko::Brush>) -> crate::svg::common_attrs::Fill<Self, T, A> {
+                                        crate::svg::common_attrs::fill(self, brush)
+                                    }
+                                },
+                                child_interfaces: {}
+                            },
+                            SvgEllipseElement {
+                                methods: {
+                                    fn fill(self, brush: impl Into<peniko::Brush>) -> crate::svg::common_attrs::Fill<Self, T, A> {
+                                        crate::svg::common_attrs::fill(self, brush)
+                                    }
+                                },
+                                child_interfaces: {}
+                            },
                             SvgLineElement { methods: {}, child_interfaces: {} },
-                            SvgPathElement { methods: {}, child_interfaces: {} },
-                            SvgPolygonElement { methods: {}, child_interfaces: {} },
-                            SvgPolylineElement { methods: {}, child_interfaces: {} },
-                            SvgRectElement { methods: {}, child_interfaces: {} },
+                            SvgPathElement {
+                                methods: {
+                                    fn fill(self, brush: impl Into<peniko::Brush>) -> crate::svg::common_attrs::Fill<Self, T, A> {
+                                        crate::svg::common_attrs::fill(self, brush)
+                                    }
+                                },
+                                child_interfaces: {}
+                            },
+                            SvgPolygonElement {
+                                methods: {
+                                    fn fill(self, brush: impl Into<peniko::Brush>) -> crate::svg::common_attrs::Fill<Self, T, A> {
+                                        crate::svg::common_attrs::fill(self, brush)
+                                    }
+                                },
+                                child_interfaces: {}
+                            },
+                            SvgPolylineElement {
+                                methods: {
+                                    fn fill(self, brush: impl Into<peniko::Brush>) -> crate::svg::common_attrs::Fill<Self, T, A> {
+                                        crate::svg::common_attrs::fill(self, brush)
+                                    }
+                                },
+                                child_interfaces: {}
+                            },
+                            SvgRectElement {
+                                methods: {
+                                    fn fill(self, brush: impl Into<peniko::Brush>) -> crate::svg::common_attrs::Fill<Self, T, A> {
+                                        crate::svg::common_attrs::fill(self, brush)
+                                    }
+                                },
+                                child_interfaces: {}
+                            },
                         }
                     },
                     SvgImageElement { methods: {}, child_interfaces: {} },
                     SvgSwitchElement { methods: {}, child_interfaces: {} },
                     SvgTextContentElement {
-                        methods: {},
+                        methods: {
+                            fn fill(self, brush: impl Into<peniko::Brush>) -> crate::svg::common_attrs::Fill<Self, T, A> {
+                                crate::svg::common_attrs::fill(self, brush)
+                            }
+                            fn stroke(self, brush: impl Into<peniko::Brush>, style: peniko::kurbo::Stroke) -> crate::svg::common_attrs::Stroke<Self, T, A> {
+                                crate::svg::common_attrs::stroke(self, brush, style)
+                            }
+                        },
                         child_interfaces: {
                             SvgTextPathElement { methods: {}, child_interfaces: {} },
                             SvgTextPositioningElement {

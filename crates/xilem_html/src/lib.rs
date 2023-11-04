@@ -17,6 +17,7 @@ pub mod events;
 pub mod interfaces;
 mod one_of;
 mod optional_action;
+pub mod svg;
 mod vecmap;
 mod view;
 mod view_ext;

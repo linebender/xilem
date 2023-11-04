@@ -25,6 +25,7 @@ wasm-bindgen = "0.2.87"
 paste = "1"
 log = "0.4.19"
 gloo = { version = "0.8.1", default-features = false, features = ["events", "utils"] }
+peniko = { git = "https://github.com/linebender/peniko", rev = "629fc3325b016a8c98b1cd6204cb4ddf1c6b3daa" }
 
 [dependencies.web-sys]
 version = "0.3.4"
