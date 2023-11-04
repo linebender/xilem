@@ -195,7 +195,7 @@ for_all_dom_interfaces!(impl_dom_interface_for_event_listener);
 macro_rules! impl_dom_interface_for_event {
     ($dom_interface:ident, $event_ty:ident, $web_sys_ty: ident) => {
         impl<T, A, E, C, OA> $crate::interfaces::$dom_interface<T, A>
-            for $crate::events::$event_ty<E, C>
+            for $crate::events::$event_ty<T, A, E, C>
         where
             E: $crate::interfaces::$dom_interface<T, A>,
             OA: OptionalAction<A>,
@@ -210,18 +210,20 @@ macro_rules! event_definitions {
         $(
         for_all_dom_interfaces!(impl_dom_interface_for_event, $ty_name, $web_sys_ty);
 
-        pub struct $ty_name<ET, C> {
+        pub struct $ty_name<T, A, ET, C> {
             target: ET,
             callback: C,
             options: EventListenerOptions,
+            phantom: PhantomData<fn() -> (T, A)>,
         }
 
-        impl<ET, C> $ty_name<ET, C> {
+        impl<T, A, ET, C> $ty_name<T, A, ET, C> {
             pub fn new(target: ET, callback: C) -> Self {
                 Self {
                     target,
                     options: Default::default(),
                     callback,
+                    phantom: PhantomData,
                 }
             }
 
@@ -236,10 +238,10 @@ macro_rules! event_definitions {
             }
         }
 
-        impl<ET, C> ViewMarker for $ty_name<ET, C> {}
-        impl<ET, C> Sealed for $ty_name<ET, C> {}
+        impl<T, A, ET, C> ViewMarker for $ty_name<T, A, ET, C> {}
+        impl<T, A, ET, C> Sealed for $ty_name<T, A, ET, C> {}
 
-        impl<T, A, C, ET, OA> View<T, A> for $ty_name<ET, C>
+        impl<T, A, C, ET, OA> View<T, A> for $ty_name<T, A, ET, C>
         where
             OA: OptionalAction<A>,
             C: Fn(&mut T, web_sys::$web_sys_ty) -> OA,

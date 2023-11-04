@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::marker::PhantomData;
 
 use xilem_core::{Id, MessageResult};
 
@@ -6,16 +7,17 @@ use crate::{interfaces::sealed::Sealed, AttributeValue, ChangeFlags, Cx, View, V
 
 use super::interfaces::{for_all_dom_interfaces, Element};
 
-pub struct Attr<E> {
+pub struct Attr<T, A, E> {
     pub(crate) element: E,
     pub(crate) name: Cow<'static, str>,
     pub(crate) value: Option<AttributeValue>,
+    pub(crate) phantom: PhantomData<fn() -> (T, A)>,
 }
 
-impl<E> ViewMarker for Attr<E> {}
-impl<E> Sealed for Attr<E> {}
+impl<T, A, E> ViewMarker for Attr<T, A, E> {}
+impl<T, A, E> Sealed for Attr<T, A, E> {}
 
-impl<T, A, E: Element<T, A>> View<T, A> for Attr<E> {
+impl<T, A, E: Element<T, A>> View<T, A> for Attr<T, A, E> {
     type State = E::State;
     type Element = E::Element;
 
@@ -50,7 +52,7 @@ impl<T, A, E: Element<T, A>> View<T, A> for Attr<E> {
 macro_rules! impl_dom_interface_for_attr {
     ($dom_interface:ident) => {
         impl<T, A, E: $crate::interfaces::$dom_interface<T, A>>
-            $crate::interfaces::$dom_interface<T, A> for Attr<E>
+            $crate::interfaces::$dom_interface<T, A> for Attr<T, A, E>
         {
         }
     };

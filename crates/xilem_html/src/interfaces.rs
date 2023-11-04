@@ -18,7 +18,7 @@ pub(crate) mod sealed {
 macro_rules! event_handler_mixin {
     ($(($event_ty: ident, $fn_name:ident, $event:expr, $web_sys_event_type:ident),)*) => {
     $(
-        fn $fn_name<EH, OA>(self, handler: EH) -> events::$event_ty<Self, EH>
+        fn $fn_name<EH, OA>(self, handler: EH) -> events::$event_ty<T, A, Self, EH>
         where
             OA: OptionalAction<A>,
             EH: Fn(&mut T, web_sys::$web_sys_event_type) -> OA,
@@ -74,18 +74,19 @@ where
         self,
         name: impl Into<Cow<'static, str>>,
         value: impl IntoAttributeValue,
-    ) -> Attr<Self> {
+    ) -> Attr<T, A, Self> {
         Attr {
             element: self,
             name: name.into(),
             value: value.into_attribute_value(),
+            phantom: std::marker::PhantomData,
         }
     }
 
     // TODO should some methods extend some properties automatically,
     // instead of overwriting the (possibly set) inner value
     // or should there be (extra) "modifier" methods like `add_class` and/or `remove_class`
-    fn class(self, class: impl Into<Cow<'static, str>>) -> Attr<Self> {
+    fn class(self, class: impl Into<Cow<'static, str>>) -> Attr<T, A, Self> {
         self.attr("class", class.into())
     }
 
@@ -226,10 +227,10 @@ dom_interface_macro_and_trait_definitions!($,
     HtmlBrElement : HtmlElement {},
     HtmlButtonElement : HtmlElement {},
     HtmlCanvasElement : HtmlElement {
-        fn width(self, value: u32) -> Attr<Self> {
+        fn width(self, value: u32) -> Attr<T, A, Self> {
             self.attr("width", value)
         }
-        fn height(self, value: u32) -> Attr<Self> {
+        fn height(self, value: u32) -> Attr<T, A, Self> {
             self.attr("height", value)
         }
     },
@@ -295,10 +296,10 @@ dom_interface_macro_and_trait_definitions!($,
     HtmlTrackElement : HtmlElement {},
     HtmlUListElement : HtmlElement {},
     HtmlVideoElement : HtmlMediaElement {
-        fn width(self, value: u32) -> Attr<Self> {
+        fn width(self, value: u32) -> Attr<T, A, Self> {
             self.attr("width", value)
         }
-        fn height(self, value: u32) -> Attr<Self> {
+        fn height(self, value: u32) -> Attr<T, A, Self> {
             self.attr("height", value)
         }
     }
