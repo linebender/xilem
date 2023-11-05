@@ -14,7 +14,7 @@ pub struct Cx {
     app_ref: Option<Box<dyn AppRunner>>,
 }
 
-pub struct MessageThunk {
+pub(crate) struct MessageThunk {
     id_path: IdPath,
     app_ref: Box<dyn AppRunner>,
 }
@@ -82,7 +82,7 @@ impl Cx {
         &self.document
     }
 
-    pub fn message_thunk(&self) -> MessageThunk {
+    pub(crate) fn message_thunk(&self) -> MessageThunk {
         MessageThunk {
             id_path: self.id_path.clone(),
             app_ref: self.app_ref.as_ref().unwrap().clone_box(),
@@ -90,6 +90,12 @@ impl Cx {
     }
     pub(crate) fn set_runner(&mut self, runner: impl AppRunner + 'static) {
         self.app_ref = Some(Box::new(runner));
+    }
+}
+
+impl Default for Cx {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

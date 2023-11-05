@@ -6,6 +6,7 @@ members = [
     "crates/xilem_html/web_examples/counter_untyped",
     "crates/xilem_html/web_examples/todomvc",
     "crates/xilem_svg",
+    "crates/xilem_svg/web_examples/svgtoy",
 ]
 
 [workspace.package]

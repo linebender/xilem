@@ -1033,7 +1033,7 @@ dependencies = [
  "instant",
  "js-sys",
  "keyboard-types",
- "kurbo",
+ "kurbo 0.9.5",
  "lazy_static",
  "memchr",
  "nix 0.25.1",
@@ -1331,6 +1331,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bd85a5776cd9500c2e2059c8c76c3b01528566b7fcbaf8098b55a33fc298849b"
 dependencies = [
  "arrayvec",
+]
+
+[[package]]
+name = "kurbo"
+version = "0.10.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1618d4ebd923e97d67e7cd363d80aef35fe961005cbbbb3d2dad8bdd1bc63440"
+dependencies = [
+ "arrayvec",
+ "smallvec",
 ]
 
 [[package]]
@@ -1687,9 +1697,18 @@ checksum = "19b17cddbe7ec3f8bc800887bab5e717348c95ea2ca0b1bf0837fb964dc67099"
 [[package]]
 name = "peniko"
 version = "0.1.0"
+source = "git+https://github.com/linebender/peniko?rev=629fc3325b016a8c98b1cd6204cb4ddf1c6b3daa#629fc3325b016a8c98b1cd6204cb4ddf1c6b3daa"
+dependencies = [
+ "kurbo 0.10.4",
+ "smallvec",
+]
+
+[[package]]
+name = "peniko"
+version = "0.1.0"
 source = "git+https://github.com/linebender/peniko?rev=cafdac9a211a0fb2fec5656bd663d1ac770bcc81#cafdac9a211a0fb2fec5656bd663d1ac770bcc81"
 dependencies = [
- "kurbo",
+ "kurbo 0.9.5",
  "smallvec",
 ]
 
@@ -2095,6 +2114,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8fb1df15f412ee2e9dfc1c504260fa695c1c3f10fe9f4a6ee2d2184d7d6450e2"
 
 [[package]]
+name = "svgtoy"
+version = "0.1.0"
+dependencies = [
+ "console_error_panic_hook",
+ "wasm-bindgen",
+ "web-sys",
+ "xilem_svg",
+]
+
+[[package]]
 name = "swash"
 version = "0.1.8"
 source = "git+https://github.com/dfrg/swash#56ea551ac49e51580c466f03d6c75252a8c8e700"
@@ -2401,7 +2430,7 @@ dependencies = [
  "bytemuck",
  "fello",
  "futures-intrusive",
- "peniko",
+ "peniko 0.1.0 (git+https://github.com/linebender/peniko?rev=cafdac9a211a0fb2fec5656bd663d1ac770bcc81)",
  "raw-window-handle",
  "vello_encoding",
  "wgpu",
@@ -2415,7 +2444,7 @@ dependencies = [
  "bytemuck",
  "fello",
  "guillotiere",
- "peniko",
+ "peniko 0.1.0 (git+https://github.com/linebender/peniko?rev=cafdac9a211a0fb2fec5656bd663d1ac770bcc81)",
 ]
 
 [[package]]
@@ -2999,7 +3028,7 @@ version = "0.1.0"
 dependencies = [
  "bitflags 2.3.3",
  "gloo",
- "kurbo",
+ "kurbo 0.9.5",
  "log",
  "wasm-bindgen",
  "web-sys",
@@ -3011,7 +3040,7 @@ name = "xilem_svg"
 version = "0.1.0"
 dependencies = [
  "bitflags 2.3.3",
- "kurbo",
+ "peniko 0.1.0 (git+https://github.com/linebender/peniko?rev=629fc3325b016a8c98b1cd6204cb4ddf1c6b3daa)",
  "wasm-bindgen",
  "web-sys",
  "xilem_core",

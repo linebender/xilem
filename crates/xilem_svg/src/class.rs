@@ -1,7 +1,7 @@
 // Copyright 2023 the Druid Authors.
 // SPDX-License-Identifier: Apache-2.0
 
-use std::any::Any;
+use std::{any::Any, marker::PhantomData};
 
 use xilem_core::{Id, MessageResult};
 
@@ -10,23 +10,25 @@ use crate::{
     view::{DomElement, View, ViewMarker},
 };
 
-pub struct Class<V> {
+pub struct Class<T, V> {
     child: V,
     // This could reasonably be static Cow also, but keep things simple
     class: String,
+    phantom: PhantomData<T>,
 }
 
-pub fn class<V>(child: V, class: impl Into<String>) -> Class<V> {
+pub fn class<T, V>(child: V, class: impl Into<String>) -> Class<T, V> {
     Class {
         child,
         class: class.into(),
+        phantom: Default::default(),
     }
 }
 
-impl<V> ViewMarker for Class<V> {}
+impl<T, V> ViewMarker for Class<T, V> {}
 
 // TODO: make generic over A (probably requires Phantom)
-impl<T, V: View<T>> View<T> for Class<V> {
+impl<T, V: View<T>> View<T> for Class<T, V> {
     type State = V::State;
     type Element = V::Element;
 

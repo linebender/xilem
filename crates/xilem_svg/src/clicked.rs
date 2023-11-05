@@ -1,7 +1,7 @@
 // Copyright 2023 the Druid Authors.
 // SPDX-License-Identifier: Apache-2.0
 
-use std::any::Any;
+use std::{any::Any, marker::PhantomData};
 
 use wasm_bindgen::{prelude::Closure, JsCast};
 use web_sys::SvgElement;
@@ -13,9 +13,10 @@ use crate::{
     view::{DomElement, View, ViewMarker},
 };
 
-pub struct Clicked<V, F> {
+pub struct Clicked<T, V, F> {
     child: V,
     callback: F,
+    phantom: PhantomData<T>,
 }
 
 pub struct ClickedState<S> {
@@ -27,13 +28,17 @@ pub struct ClickedState<S> {
 
 struct ClickedMsg;
 
-pub fn clicked<T, F: Fn(&mut T), V: View<T>>(child: V, callback: F) -> Clicked<V, F> {
-    Clicked { child, callback }
+pub fn clicked<T, F: Fn(&mut T), V: View<T>>(child: V, callback: F) -> Clicked<T, V, F> {
+    Clicked {
+        child,
+        callback,
+        phantom: Default::default(),
+    }
 }
 
-impl<V, F> ViewMarker for Clicked<V, F> {}
+impl<T, V, F> ViewMarker for Clicked<T, V, F> {}
 
-impl<T, F: Fn(&mut T) + Send, V: View<T>> View<T> for Clicked<V, F> {
+impl<T, F: Fn(&mut T) + Send, V: View<T>> View<T> for Clicked<T, V, F> {
     type State = ClickedState<V::State>;
 
     type Element = V::Element;

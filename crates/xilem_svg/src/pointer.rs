@@ -3,7 +3,7 @@
 
 //! Interactivity with pointer events.
 
-use std::any::Any;
+use std::{any::Any, marker::PhantomData};
 
 use wasm_bindgen::{prelude::Closure, JsCast};
 use web_sys::PointerEvent;
@@ -15,9 +15,10 @@ use crate::{
     view::{DomElement, View, ViewMarker},
 };
 
-pub struct Pointer<V, F> {
+pub struct Pointer<T, V, F> {
     child: V,
     callback: F,
+    phantom: PhantomData<T>,
 }
 
 pub struct PointerState<S> {
@@ -32,6 +33,7 @@ pub struct PointerState<S> {
 }
 
 #[derive(Debug)]
+/// A message representing a pointer event.
 pub enum PointerMsg {
     Down(PointerDetails),
     Move(PointerDetails),
@@ -39,6 +41,7 @@ pub enum PointerMsg {
 }
 
 #[derive(Debug)]
+/// Details of a pointer event.
 pub struct PointerDetails {
     pub id: i32,
     pub button: i16,
@@ -57,13 +60,20 @@ impl PointerDetails {
     }
 }
 
-pub fn pointer<T, F: Fn(&mut T, PointerMsg), V: View<T>>(child: V, callback: F) -> Pointer<V, F> {
-    Pointer { child, callback }
+pub fn pointer<T, F: Fn(&mut T, PointerMsg), V: View<T>>(
+    child: V,
+    callback: F,
+) -> Pointer<T, V, F> {
+    Pointer {
+        child,
+        callback,
+        phantom: Default::default(),
+    }
 }
 
-impl<V, F> ViewMarker for Pointer<V, F> {}
+impl<T, V, F> ViewMarker for Pointer<T, V, F> {}
 
-impl<T, F: Fn(&mut T, PointerMsg) + Send, V: View<T>> View<T> for Pointer<V, F> {
+impl<T, F: Fn(&mut T, PointerMsg) + Send, V: View<T>> View<T> for Pointer<T, V, F> {
     type State = PointerState<V::State>;
     type Element = V::Element;
 
