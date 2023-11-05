@@ -13,14 +13,12 @@ use crate::{
 
 pub struct Fill<T, V> {
     child: V,
-    // This could reasonably be static Cow also, but keep things simple
     brush: Brush,
     phantom: PhantomData<T>,
 }
 
 pub struct Stroke<T, V> {
     child: V,
-    // This could reasonably be static Cow also, but keep things simple
     brush: Brush,
     style: peniko::kurbo::Stroke,
     phantom: PhantomData<T>,
@@ -140,7 +138,7 @@ impl<T, V: View<T>> View<T> for Stroke<T, V> {
         if self.brush != prev.brush || prev_id != *id {
             element
                 .as_element_ref()
-                .set_attribute("fill", &brush_to_string(&self.brush))
+                .set_attribute("stroke", &brush_to_string(&self.brush))
                 .unwrap();
             changed.insert(ChangeFlags::OTHER_CHANGE);
         }
