@@ -8,7 +8,7 @@ use crate::{
     Pod, View, ViewMarker, ViewSequence,
 };
 
-use super::interfaces::{for_all_dom_interface_relatives, Element};
+use super::interfaces::Element;
 
 type CowStr = std::borrow::Cow<'static, str>;
 
@@ -161,7 +161,7 @@ impl<T, A, Children: ViewSequence<T, A>> crate::interfaces::HtmlElement<T, A>
 }
 
 macro_rules! generate_dom_interface_impl {
-    ($dom_interface:ident, $ty_name:ident, $t:ident, $a:ident, $vs:ident) => {
+    ($dom_interface:ident, ($ty_name:ident, $t:ident, $a:ident, $vs:ident)) => {
         impl<$t, $a, $vs> $crate::interfaces::$dom_interface<$t, $a> for $ty_name<$t, $a, $vs> where
             $vs: $crate::view::ViewSequence<$t, $a>
         {
@@ -265,14 +265,11 @@ macro_rules! define_html_element {
             $ty_name(children, PhantomData)
         }
 
-        for_all_dom_interface_relatives!(
-            $dom_interface,
-            generate_dom_interface_impl,
-            $ty_name,
-            $t,
-            $a,
-            $vs
-        );
+        generate_dom_interface_impl!($dom_interface, ($ty_name, $t, $a, $vs));
+
+        paste::paste! {
+            $crate::interfaces::[<for_all_ $dom_interface:snake _ancestors>]!(generate_dom_interface_impl, ($ty_name, $t, $a, $vs));
+        }
     };
 }
 
@@ -286,6 +283,8 @@ define_elements!(
     // the order is copied from
     // https://developer.mozilla.org/en-US/docs/Web/HTML/Element
     // DOM interfaces copied from https://html.spec.whatwg.org/multipage/grouping-content.html and friends
+
+    // TODO include document metadata elements?
 
     // content sectioning
     (Address, address, HtmlElement),
@@ -313,6 +312,7 @@ define_elements!(
     (Figure, figure, HtmlElement),
     (Hr, hr, HtmlHrElement),
     (Li, li, HtmlLiElement),
+    (Link, link, HtmlLinkElement),
     (Menu, menu, HtmlMenuElement),
     (Ol, ol, HtmlOListElement),
     (P, p, HtmlParagraphElement),

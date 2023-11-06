@@ -5,7 +5,7 @@ use xilem_core::{Id, MessageResult};
 
 use crate::{interfaces::sealed::Sealed, AttributeValue, ChangeFlags, Cx, View, ViewMarker};
 
-use super::interfaces::{for_all_dom_interfaces, Element};
+use super::interfaces::Element;
 
 pub struct Attr<T, A, E> {
     pub(crate) element: E,
@@ -49,13 +49,4 @@ impl<T, A, E: Element<T, A>> View<T, A> for Attr<T, A, E> {
     }
 }
 
-macro_rules! impl_dom_interface_for_attr {
-    ($dom_interface:ident) => {
-        impl<T, A, E: $crate::interfaces::$dom_interface<T, A>>
-            $crate::interfaces::$dom_interface<T, A> for Attr<T, A, E>
-        {
-        }
-    };
-}
-
-for_all_dom_interfaces!(impl_dom_interface_for_attr);
+crate::interfaces::impl_dom_interfaces_for_ty!(Element, Attr);

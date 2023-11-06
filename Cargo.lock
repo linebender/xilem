@@ -3030,6 +3030,7 @@ dependencies = [
  "gloo",
  "kurbo 0.9.5",
  "log",
+ "paste",
  "wasm-bindgen",
  "web-sys",
  "xilem_core",

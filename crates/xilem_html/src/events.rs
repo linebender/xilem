@@ -1,5 +1,5 @@
 use crate::{
-    interfaces::{for_all_dom_interfaces, sealed::Sealed, Element},
+    interfaces::{sealed::Sealed, Element},
     view::DomNode,
     ChangeFlags, Cx, OptionalAction, View, ViewMarker,
 };
@@ -12,15 +12,16 @@ pub use gloo::events::EventListenerOptions;
 /// Wraps a [`View`] `V` and attaches an event listener.
 ///
 /// The event type `E` should inherit from [`web_sys::Event`]
-pub struct OnEvent<V, E, F> {
-    pub(crate) element: V,
+pub struct OnEvent<T, A, E, Ev, F> {
+    pub(crate) element: E,
     pub(crate) event: Cow<'static, str>,
     pub(crate) options: EventListenerOptions,
     pub(crate) handler: F,
-    pub(crate) phantom_event_ty: PhantomData<E>,
+    #[allow(clippy::type_complexity)]
+    pub(crate) phantom_event_ty: PhantomData<fn() -> (T, A, Ev)>,
 }
 
-impl<V, E, F> OnEvent<V, E, F>
+impl<T, A, V, E, F> OnEvent<T, A, V, E, F>
 where
     E: JsCast + 'static,
 {
@@ -60,7 +61,7 @@ where
     }
 }
 
-fn create_event_listener<E: JsCast + 'static>(
+fn create_event_listener<Ev: JsCast + 'static>(
     target: &web_sys::EventTarget,
     event: impl Into<Cow<'static, str>>,
     options: EventListenerOptions,
@@ -72,7 +73,7 @@ fn create_event_listener<E: JsCast + 'static>(
         event,
         options,
         move |event: &web_sys::Event| {
-            let event = (*event).clone().dyn_into::<E>().unwrap_throw();
+            let event = (*event).clone().dyn_into::<Ev>().unwrap_throw();
             thunk.push_message(event);
         },
     )
@@ -86,24 +87,24 @@ pub struct OnEventState<S> {
     child_state: S,
 }
 
-impl<V, E, F> ViewMarker for OnEvent<V, E, F> {}
-impl<V, E, F> Sealed for OnEvent<V, E, F> {}
+impl<T, A, E, Ev, F> ViewMarker for OnEvent<T, A, E, Ev, F> {}
+impl<T, A, E, Ev, F> Sealed for OnEvent<T, A, E, Ev, F> {}
 
-impl<T, A, E, F, V, OA> View<T, A> for OnEvent<V, E, F>
+impl<T, A, E, F, Ev, OA> View<T, A> for OnEvent<T, A, E, Ev, F>
 where
     OA: OptionalAction<A>,
-    F: Fn(&mut T, E) -> OA,
-    V: Element<T, A>,
-    E: JsCast + 'static,
+    F: Fn(&mut T, Ev) -> OA,
+    E: Element<T, A>,
+    Ev: JsCast + 'static,
 {
-    type State = OnEventState<V::State>;
+    type State = OnEventState<E::State>;
 
-    type Element = V::Element;
+    type Element = E::Element;
 
     fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
         let (id, (element, state)) = cx.with_new_id(|cx| {
             let (child_id, child_state, element) = self.element.build(cx);
-            let listener = create_event_listener::<E>(
+            let listener = create_event_listener::<Ev>(
                 element.as_node_ref(),
                 self.event.clone(),
                 self.options,
@@ -141,7 +142,7 @@ where
             }
             // TODO check equality of prev and current element somehow
             if prev.event != self.event || changed.contains(ChangeFlags::STRUCTURE) {
-                state.listener = create_event_listener::<E>(
+                state.listener = create_event_listener::<Ev>(
                     element.as_node_ref(),
                     self.event.clone(),
                     self.options,
@@ -161,8 +162,8 @@ where
         app_state: &mut T,
     ) -> MessageResult<A> {
         match id_path {
-            [] if message.downcast_ref::<E>().is_some() => {
-                let event = message.downcast::<E>().unwrap();
+            [] if message.downcast_ref::<Ev>().is_some() => {
+                let event = message.downcast::<Ev>().unwrap();
                 match (self.handler)(app_state, *event).action() {
                     Some(a) => MessageResult::Action(a),
                     None => MessageResult::Nop,
@@ -177,48 +178,41 @@ where
     }
 }
 
-macro_rules! impl_dom_interface_for_event_listener {
-    ($dom_interface:ident) => {
-        impl<T, A, E, Ev, F, OA> $crate::interfaces::$dom_interface<T, A> for OnEvent<E, Ev, F>
-        where
-            F: Fn(&mut T, Ev) -> OA,
-            E: $crate::interfaces::$dom_interface<T, A>,
-            Ev: JsCast + 'static,
-            OA: OptionalAction<A>,
-        {
-        }
-    };
-}
-
-for_all_dom_interfaces!(impl_dom_interface_for_event_listener);
-
-macro_rules! impl_dom_interface_for_event {
-    ($dom_interface:ident, $event_ty:ident, $web_sys_ty: ident) => {
-        impl<T, A, E, C, OA> $crate::interfaces::$dom_interface<T, A>
-            for $crate::events::$event_ty<T, A, E, C>
-        where
-            E: $crate::interfaces::$dom_interface<T, A>,
-            OA: OptionalAction<A>,
-            C: Fn(&mut T, web_sys::$web_sys_ty) -> OA,
-        {
-        }
-    };
-}
+crate::interfaces::impl_dom_interfaces_for_ty!(
+    Element,
+    OnEvent,
+    vars: <Ev, F, OA,>,
+    vars_on_ty: <Ev, F,>,
+    bounds: {
+        Ev: JsCast + 'static,
+        OA: OptionalAction<A>,
+        F: Fn(&mut T, Ev) -> OA,
+    }
+);
 
 macro_rules! event_definitions {
     ($(($ty_name:ident, $event_name:literal, $web_sys_ty:ident)),*) => {
         $(
-        for_all_dom_interfaces!(impl_dom_interface_for_event, $ty_name, $web_sys_ty);
+        $crate::interfaces::impl_dom_interfaces_for_ty!(
+            Element,
+            $ty_name,
+            vars: <C, OA,>,
+            vars_on_ty: <C,>,
+            bounds: {
+                OA: OptionalAction<A>,
+                C: Fn(&mut T, web_sys::$web_sys_ty ) -> OA,
+            }
+        );
 
-        pub struct $ty_name<T, A, ET, C> {
-            target: ET,
+        pub struct $ty_name<T, A, E, C> {
+            target: E,
             callback: C,
             options: EventListenerOptions,
             phantom: PhantomData<fn() -> (T, A)>,
         }
 
-        impl<T, A, ET, C> $ty_name<T, A, ET, C> {
-            pub fn new(target: ET, callback: C) -> Self {
+        impl<T, A, E, C> $ty_name<T, A, E, C> {
+            pub fn new(target: E, callback: C) -> Self {
                 Self {
                     target,
                     options: Default::default(),
@@ -238,18 +232,18 @@ macro_rules! event_definitions {
             }
         }
 
-        impl<T, A, ET, C> ViewMarker for $ty_name<T, A, ET, C> {}
-        impl<T, A, ET, C> Sealed for $ty_name<T, A, ET, C> {}
+        impl<T, A, E, C> ViewMarker for $ty_name<T, A, E, C> {}
+        impl<T, A, E, C> Sealed for $ty_name<T, A, E, C> {}
 
-        impl<T, A, C, ET, OA> View<T, A> for $ty_name<T, A, ET, C>
+        impl<T, A, E, C,OA> View<T, A> for $ty_name<T, A, E, C>
         where
             OA: OptionalAction<A>,
             C: Fn(&mut T, web_sys::$web_sys_ty) -> OA,
-            ET: Element<T, A>,
+            E: Element<T, A>,
         {
-            type State = OnEventState<ET::State>;
+            type State = OnEventState<E::State>;
 
-            type Element = ET::Element;
+            type Element = E::Element;
 
             fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
                 let (id, (element, state)) = cx.with_new_id(|cx| {
