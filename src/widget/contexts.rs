@@ -321,7 +321,7 @@ impl_context_method!(
         }
     }
 );
-// Methods on all contexts besides LayoutCx.
+// Methods on LayoutCx and PaintCx
 //
 // These Methods return information about the widget
 impl_context_method!(LayoutCx<'_, '_>, PaintCx<'_, '_>, {

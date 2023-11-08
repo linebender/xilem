@@ -12,19 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::any::Any;
-
-use crate::{event::MessageResult, id::Id, widget::ChangeFlags};
+use crate::view::{Id, ViewMarker};
+use crate::widget::ChangeFlags;
 
 use super::{Cx, View};
+
+impl ViewMarker for String {}
 
 impl<T, A> View<T, A> for String {
     type State = ();
 
-    type Element = crate::widget::text::TextWidget;
+    type Element = crate::widget::TextWidget;
 
-    fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
-        let (id, element) = cx.with_new_id(|_| crate::widget::text::TextWidget::new(self.clone()));
+    fn build(&self, cx: &mut Cx) -> (crate::view::Id, Self::State, Self::Element) {
+        let (id, element) = cx.with_new_id(|_| crate::widget::TextWidget::new(self.clone()));
         (id, (), element)
     }
 
@@ -32,7 +33,7 @@ impl<T, A> View<T, A> for String {
         &self,
         _cx: &mut Cx,
         prev: &Self,
-        _id: &mut crate::id::Id,
+        _id: &mut Id,
         _state: &mut Self::State,
         element: &mut Self::Element,
     ) -> ChangeFlags {
@@ -43,13 +44,13 @@ impl<T, A> View<T, A> for String {
         }
     }
 
-    fn event(
+    fn message(
         &self,
-        _id_path: &[crate::id::Id],
+        _id_path: &[xilem_core::Id],
         _state: &mut Self::State,
-        _event: Box<dyn Any>,
+        message: Box<dyn std::any::Any>,
         _app_state: &mut T,
-    ) -> MessageResult<A> {
-        MessageResult::Stale
+    ) -> xilem_core::MessageResult<A> {
+        xilem_core::MessageResult::Stale(message)
     }
 }
