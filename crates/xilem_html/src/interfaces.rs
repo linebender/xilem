@@ -260,6 +260,13 @@ macro_rules! dom_interface_macro_and_trait_definitions {
                 child_interfaces: {$($interface $interface_body,)*}
             }
         );
+        macro_rules! for_all_dom_interfaces {
+            ($mac:path, $extra_params:tt) => {
+                $mac!(Element, $extra_params);
+                $crate::interfaces::for_all_element_descendents!($mac, $extra_params);
+            };
+        }
+        pub(crate) use for_all_dom_interfaces;
     }
 }
 
@@ -409,3 +416,34 @@ dom_interface_macro_and_trait_definitions!(
         child_interfaces: {}
     },
 );
+
+// Core View implementations
+
+impl<ParentT, ParentA, ChildT, ChildA, V, F> sealed::Sealed
+    for crate::Adapt<ParentT, ParentA, ChildT, ChildA, V, F>
+{
+}
+impl<ParentT, ChildT, V, F> sealed::Sealed for crate::AdaptState<ParentT, ChildT, V, F> {}
+
+macro_rules! impl_dom_traits_for_adapt_views {
+    ($dom_interface:ident, ()) => {
+        impl<ParentT, ParentA, ChildT, ChildA, V, F> $dom_interface<ParentT, ParentA>
+            for crate::Adapt<ParentT, ParentA, ChildT, ChildA, V, F>
+        where
+            V: $dom_interface<ChildT, ChildA>,
+            F: Fn(
+                &mut ParentT,
+                crate::AdaptThunk<ChildT, ChildA, V>,
+            ) -> xilem_core::MessageResult<ParentA>,
+        {
+        }
+        impl<ParentT, ChildT, A, V, F> $dom_interface<ParentT, A>
+            for crate::AdaptState<ParentT, ChildT, V, F>
+        where
+            V: $dom_interface<ChildT, A>,
+            F: Fn(&mut ParentT) -> &mut ChildT,
+        {
+        }
+    };
+}
+for_all_dom_interfaces!(impl_dom_traits_for_adapt_views, ());
