@@ -1,8 +1,19 @@
 use wasm_bindgen::throw_str;
 
-use crate::{ChangeFlags, Cx, Pod, View, ViewMarker, ViewSequence};
+use crate::{
+    interfaces::for_all_element_descendents, ChangeFlags, Cx, Pod, View, ViewMarker, ViewSequence,
+};
 
-macro_rules! one_of {
+macro_rules! impl_dom_traits {
+    ($dom_interface:ident, ($ident:ident: $($vars:ident),+)) => {
+        impl<VT, VA, $($vars: $crate::interfaces::$dom_interface<VT, VA>),+> $crate::interfaces::$dom_interface<VT, VA> for $ident<$($vars),+>
+        where
+        $($vars: $crate::interfaces::$dom_interface<VT, VA>,)+
+        {}
+    };
+}
+
+macro_rules! one_of_view {
     (
         #[doc = $first_doc_line:literal]
         $ident:ident { $( $vars:ident ),+ }
@@ -14,22 +25,26 @@ macro_rules! one_of {
             $($vars($vars),)+
         }
 
+        impl<$($vars),+> crate::interfaces::sealed::Sealed for $ident<$($vars),+> {}
+        impl_dom_traits!(Element, ($ident: $($vars),+));
+        for_all_element_descendents!(impl_dom_traits, ($ident: $($vars),+));
+
         impl<$($vars),+> AsRef<web_sys::Node> for $ident<$($vars),+>
         where
-            $($vars: AsRef<web_sys::Node>,)+
+            $($vars: crate::view::DomNode,)+
         {
             fn as_ref(&self) -> &web_sys::Node {
                 match self {
-                    $( $ident::$vars(view) => view.as_ref(), )+
+                    $( $ident::$vars(view) => view.as_node_ref(), )+
                 }
             }
         }
+        impl<$($vars),+> ViewMarker for $ident<$($vars),+> {}
 
         impl<VT, VA, $($vars),+> View<VT, VA> for $ident<$($vars),+>
-        where $(
-            $vars: View<VT, VA> + ViewMarker,
-            $vars::Element: AsRef<web_sys::Node> + 'static,
-        )+ {
+        where
+            $($vars: View<VT, VA>,)+
+        {
             type State = $ident<$($vars::State),+>;
             type Element = $ident<$($vars::Element),+>;
 
@@ -97,7 +112,54 @@ macro_rules! one_of {
                 }
             }
         }
+    };
+}
 
+one_of_view! {
+    /// This view container can switch between two views.
+    OneOf2 { A, B }
+}
+one_of_view! {
+    /// This view container can switch between three views.
+    OneOf3 { A, B, C }
+}
+
+one_of_view! {
+    /// This view container can switch between four views.
+    OneOf4 { A, B, C, D }
+}
+
+one_of_view! {
+    /// This view container can switch between five views.
+    OneOf5 { A, B, C, D, E }
+}
+
+one_of_view! {
+    /// This view container can switch between six views.
+    OneOf6 { A, B, C, D, E, F }
+}
+
+one_of_view! {
+    /// This view container can switch between seven views.
+    OneOf7 { A, B, C, D, E, F, G }
+}
+
+one_of_view! {
+    /// This view container can switch between eight views.
+    OneOf8 { A, B, C, D, E, F, G, H }
+}
+
+macro_rules! one_of_sequence {
+    (
+        #[doc = $first_doc_line:literal]
+        $ident:ident { $( $vars:ident ),+ }
+    ) => {
+        #[doc = $first_doc_line]
+        ///
+        /// It is a statically-typed alternative to the type-erased `AnyView`.
+        pub enum $ident<$($vars),+> {
+            $($vars($vars),)+
+        }
         impl<VT, VA, $($vars),+> ViewSequence<VT, VA> for $ident<$($vars),+>
         where $(
             $vars: ViewSequence<VT, VA>,
@@ -185,40 +247,39 @@ macro_rules! one_of {
                 }
             }
         }
-
     };
 }
 
-one_of! {
-    /// This view container can switch between two views.
-    OneOf2 { A, B }
+one_of_sequence! {
+    /// This view sequence container can switch between two view sequences.
+    OneSeqOf2 { A, B }
 }
-one_of! {
-    /// This view container can switch between three views.
-    OneOf3 { A, B, C }
-}
-
-one_of! {
-    /// This view container can switch between four views.
-    OneOf4 { A, B, C, D }
+one_of_sequence! {
+    /// This view sequence container can switch between three view sequences.
+    OneSeqOf3 { A, B, C }
 }
 
-one_of! {
-    /// This view container can switch between five views.
-    OneOf5 { A, B, C, D, E }
+one_of_sequence! {
+    /// This view sequence container can switch between four view sequences.
+    OneSeqOf4 { A, B, C, D }
 }
 
-one_of! {
-    /// This view container can switch between six views.
-    OneOf6 { A, B, C, D, E, F }
+one_of_sequence! {
+    /// This view sequence container can switch between five view sequences.
+    OneSeqOf5 { A, B, C, D, E }
 }
 
-one_of! {
-    /// This view container can switch between seven views.
-    OneOf7 { A, B, C, D, E, F, G }
+one_of_sequence! {
+    /// This view sequence container can switch between six view sequences.
+    OneSeqOf6 { A, B, C, D, E, F }
 }
 
-one_of! {
-    /// This view container can switch between eight views.
-    OneOf8 { A, B, C, D, E, F, G, H }
+one_of_sequence! {
+    /// This view sequence container can switch between seven view sequences.
+    OneSeqOf7 { A, B, C, D, E, F, G }
+}
+
+one_of_sequence! {
+    /// This view sequence container can switch between eight view sequences.
+    OneSeqOf8 { A, B, C, D, E, F, G, H }
 }
