@@ -14,8 +14,9 @@
 
 use std::any::Any;
 
-use crate::view::ViewMarker;
-use crate::{view::Id, widget::ChangeFlags, MessageResult};
+use crate::view::{Id, ViewMarker};
+use crate::widget::ChangeFlags;
+use crate::MessageResult;
 
 use super::{Cx, View};
 
