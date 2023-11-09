@@ -13,6 +13,7 @@
 // limitations under the License.
 
 use parley::{FontContext, Layout};
+use std::borrow::Cow;
 use vello::{
     kurbo::{Affine, Size},
     peniko::{Brush, Color},
@@ -27,16 +28,16 @@ use super::{
 };
 
 pub struct TextWidget {
-    text: String,
+    text: Cow<'static, str>,
     layout: Option<Layout<ParleyBrush>>,
 }
 
 impl TextWidget {
-    pub fn new(text: String) -> TextWidget {
+    pub fn new(text: Cow<'static, str>) -> TextWidget {
         TextWidget { text, layout: None }
     }
 
-    pub fn set_text(&mut self, text: String) -> ChangeFlags {
+    pub fn set_text(&mut self, text: Cow<'static, str>) -> ChangeFlags {
         self.text = text;
         ChangeFlags::LAYOUT | ChangeFlags::PAINT
     }
