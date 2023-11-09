@@ -12,44 +12,82 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use parley::Layout;
+use parley::{FontContext, Layout};
+use std::borrow::Cow;
 use vello::{
-    kurbo::{Affine, Point, Size},
+    kurbo::{Affine, Size},
     peniko::{Brush, Color},
-    SceneBuilder, SceneFragment,
+    SceneBuilder,
 };
 
 use crate::text::ParleyBrush;
 
 use super::{
-    align::{FirstBaseline, LastBaseline, SingleAlignment, VertAlignment},
-    contexts::LifeCycleCx,
-    AlignCx, ChangeFlags, EventCx, LayoutCx, LifeCycle, PaintCx, RawEvent, UpdateCx, Widget,
+    contexts::LifeCycleCx, BoxConstraints, ChangeFlags, Event, EventCx, LayoutCx, LifeCycle,
+    PaintCx, UpdateCx, Widget,
 };
 
 pub struct TextWidget {
-    text: String,
+    text: Cow<'static, str>,
     layout: Option<Layout<ParleyBrush>>,
-    is_wrapped: bool,
 }
 
 impl TextWidget {
-    pub fn new(text: String) -> TextWidget {
-        TextWidget {
-            text,
-            is_wrapped: false,
-            layout: None,
-        }
+    pub fn new(text: Cow<'static, str>) -> TextWidget {
+        TextWidget { text, layout: None }
     }
 
-    pub fn set_text(&mut self, text: String) -> ChangeFlags {
+    pub fn set_text(&mut self, text: Cow<'static, str>) -> ChangeFlags {
         self.text = text;
         ChangeFlags::LAYOUT | ChangeFlags::PAINT
+    }
+
+    fn get_layout_mut(&mut self, font_cx: &mut FontContext) -> &mut Layout<ParleyBrush> {
+        // Ensure Parley layout is initialised
+        if self.layout.is_none() {
+            let mut lcx = parley::LayoutContext::new();
+            let mut layout_builder = lcx.ranged_builder(font_cx, &self.text, 1.0);
+            layout_builder.push_default(&parley::style::StyleProperty::Brush(ParleyBrush(
+                Brush::Solid(Color::rgb8(255, 255, 255)),
+            )));
+            self.layout = Some(layout_builder.build());
+        }
+
+        self.layout.as_mut().unwrap()
+    }
+
+    fn layout_text(&mut self, font_cx: &mut FontContext, bc: &BoxConstraints) -> Size {
+        // Compute max_advance from box constraints
+        let max_advance = if bc.max().width.is_finite() {
+            Some(bc.max().width as f32)
+        } else if bc.min().width.is_sign_negative() {
+            Some(0.0)
+        } else {
+            None
+        };
+
+        // Layout text
+        let layout = self.get_layout_mut(font_cx);
+        layout.break_all_lines(max_advance, parley::layout::Alignment::Start);
+
+        // // Debug print
+        // println!(
+        //     "max: {:?}. w: {}, h: {}",
+        //     max_advance,
+        //     layout.width(),
+        //     layout.height()
+        // );
+
+        // Return dimensions
+        Size {
+            width: layout.width() as f64,
+            height: layout.height() as f64,
+        }
     }
 }
 
 impl Widget for TextWidget {
-    fn event(&mut self, _cx: &mut EventCx, _event: &RawEvent) {}
+    fn event(&mut self, _cx: &mut EventCx, _event: &Event) {}
 
     fn lifecycle(&mut self, _cx: &mut LifeCycleCx, _event: &LifeCycle) {}
 
@@ -59,32 +97,33 @@ impl Widget for TextWidget {
         cx.request_layout();
     }
 
-    fn measure(&mut self, cx: &mut LayoutCx) -> (Size, Size) {
-        let min_size = Size::ZERO;
-        let max_size = Size::new(50.0, 50.0);
-        self.is_wrapped = false;
-        (min_size, max_size)
-    }
-
-    fn layout(&mut self, cx: &mut LayoutCx, proposed_size: Size) -> Size {
-        let mut lcx = parley::LayoutContext::new();
-        let mut layout_builder = lcx.ranged_builder(cx.font_cx(), &self.text, 1.0);
-        layout_builder.push_default(&parley::style::StyleProperty::Brush(ParleyBrush(
-            Brush::Solid(Color::rgb8(255, 255, 255)),
-        )));
-        let mut layout = layout_builder.build();
-        // Question for Chad: is this needed?
-        layout.break_all_lines(None, parley::layout::Alignment::Start);
-        self.layout = Some(layout);
-        cx.widget_state.max_size
-    }
-
-    fn align(&self, cx: &mut AlignCx, alignment: SingleAlignment) {}
-
-    fn paint(&mut self, cx: &mut PaintCx, builder: &mut SceneBuilder) {
-        if let Some(layout) = &self.layout {
-            let transform = Affine::translate((40.0, 40.0));
-            crate::text::render_text(builder, transform, &layout);
+    fn compute_max_intrinsic(
+        &mut self,
+        axis: crate::Axis,
+        cx: &mut LayoutCx,
+        bc: &super::BoxConstraints,
+    ) -> f64 {
+        let size = self.layout_text(cx.font_cx(), bc);
+        match axis {
+            crate::Axis::Horizontal => size.width,
+            crate::Axis::Vertical => size.height,
         }
+    }
+
+    fn layout(&mut self, cx: &mut LayoutCx, bc: &BoxConstraints) -> Size {
+        cx.request_paint();
+        self.layout_text(cx.font_cx(), bc)
+    }
+
+    fn paint(&mut self, _cx: &mut PaintCx, builder: &mut SceneBuilder) {
+        if let Some(layout) = &self.layout {
+            crate::text::render_text(builder, Affine::IDENTITY, layout);
+        }
+    }
+
+    fn accessibility(&mut self, cx: &mut super::AccessCx) {
+        let mut builder = accesskit::NodeBuilder::new(accesskit::Role::StaticText);
+        builder.set_value(self.text.clone());
+        cx.push_node(builder);
     }
 }

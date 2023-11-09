@@ -22,7 +22,7 @@ mod linear_layout;
 mod piet_scene_helpers;
 mod raw_event;
 //mod scroll_view;
-//mod text;
+mod text;
 #[allow(clippy::module_inception)]
 mod widget;
 
@@ -33,4 +33,5 @@ pub use button::Button;
 pub use contexts::{AccessCx, CxState, EventCx, LayoutCx, LifeCycleCx, PaintCx, UpdateCx};
 pub use linear_layout::LinearLayout;
 pub use raw_event::{Event, LifeCycle, MouseEvent, ViewContext};
+pub use text::TextWidget;
 pub use widget::{AnyWidget, Widget};
