@@ -16,7 +16,7 @@ fn app_logic(data: &mut i32) -> impl View<i32> {
             *data += 1;
         }),
         h_stack((
-            String::from("Buttons: "),
+            "Buttons: ",
             button("decrease", |data| {
                 println!("clicked decrease");
                 *data -= 1;
