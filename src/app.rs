@@ -250,7 +250,7 @@ where
                 let mut layout_cx = LayoutCx::new(&mut cx_state, &mut self.root_state);
                 let bc = BoxConstraints::tight(self.size);
                 root_pod.layout(&mut layout_cx, &bc);
-                root_pod.set_origin(&mut layout_cx, Point::ORIGIN);
+                root_pod.set_origin(layout_cx.widget_state, Point::ORIGIN);
             }
             if root_pod
                 .state

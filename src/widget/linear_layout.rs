@@ -70,7 +70,7 @@ impl Widget for LinearLayout {
 
         for (index, child) in self.children.iter_mut().enumerate() {
             let size = child.layout(cx, &child_bc);
-            child.set_origin(cx, self.axis.pack(major_used, 0.0));
+            child.set_origin(cx.widget_state, self.axis.pack(major_used, 0.0));
             major_used += self.axis.major(size);
             if index < child_count - 1 {
                 major_used += self.spacing;

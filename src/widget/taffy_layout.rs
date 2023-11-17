@@ -222,7 +222,7 @@ impl<'w, 'a, 'b> taffy::PartialLayoutTree for TaffyLayoutCtx<'w, 'a, 'b> {
 
     fn set_unrounded_layout(&mut self, node_id: taffy::NodeId, layout: &taffy::Layout) {
         self.widget.children[usize::from(node_id)].set_origin(
-            self.cx,
+            self.cx.widget_state,
             Point {
                 x: layout.location.x as f64,
                 y: layout.location.y as f64,

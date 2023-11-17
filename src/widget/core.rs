@@ -95,7 +95,7 @@ pub struct Pod {
 }
 
 #[derive(Debug)]
-pub(crate) struct WidgetState {
+pub struct WidgetState {
     pub(crate) id: Id,
     pub(crate) flags: PodFlags,
     /// The origin of the child in the parent's coordinate space.
@@ -486,16 +486,21 @@ impl Pod {
     /// The widget container can also call `set_origin` from other context, but calling `set_origin`
     /// after the widget received [`LifeCycle::ViewContextChanged`] and before the next event results
     /// in an inconsistent state of the widget tree.
-    pub fn set_origin(&mut self, cx: &mut LayoutCx, origin: Point) {
+    pub fn set_origin(&mut self, parent_state: &mut WidgetState, origin: Point) {
         if origin != self.state.origin {
             self.state.origin = origin;
             // request paint is called on the parent instead of this widget, since this widget's
             // fragment does not change.
-            cx.view_context_changed();
-            cx.request_paint();
+            parent_state.flags |= PodFlags::REQUEST_PAINT;
+            parent_state.flags |= PodFlags::VIEW_CONTEXT_CHANGED;
 
             self.state.flags.insert(PodFlags::VIEW_CONTEXT_CHANGED);
         }
+    }
+
+    /// Get the widgets size (as returned by the layout method)
+    pub fn get_size(&mut self) -> Size {
+        self.state.size
     }
 
     // Return true if hot state has changed
