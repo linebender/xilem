@@ -16,7 +16,7 @@
 mod button;
 // mod layout_observer;
 // mod list;
-// mod scroll_view;
+mod scroll_view;
 mod text;
 // mod use_state;
 mod linear_layout;
@@ -30,6 +30,7 @@ pub use xilem_core::{Id, IdPath, VecSplice};
 pub use button::button;
 pub use linear_layout::{h_stack, v_stack, LinearLayout};
 pub use list::{list, List};
+pub use scroll_view::{scroll_view, ScrollView};
 pub use switch::switch;
 pub use view::{Adapt, AdaptState, Cx, Memoize, View, ViewMarker, ViewSequence};
 

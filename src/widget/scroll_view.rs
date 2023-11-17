@@ -17,17 +17,14 @@
 //! There's a lot more functionality in the Druid version, including
 //! control over scrolling axes, ability to scroll to content, etc.
 
-use druid_shell::{
-    kurbo::{Affine, Point, Rect, Size, Vec2},
-    piet::RenderContext,
-};
+use crate::Axis;
+use vello::kurbo::{Affine, Point, Size};
+use vello::peniko::Mix;
+use vello::SceneBuilder;
 
-use crate::Widget;
+use super::{BoxConstraints, Widget};
 
-use super::{
-    contexts::LifeCycleCx, EventCx, LayoutCx, LifeCycle, PaintCx, Pod, PreparePaintCx, RawEvent,
-    UpdateCx,
-};
+use super::{contexts::LifeCycleCx, Event, EventCx, LayoutCx, LifeCycle, PaintCx, Pod, UpdateCx};
 
 pub struct ScrollView {
     child: Pod,
@@ -47,41 +44,26 @@ impl ScrollView {
     }
 }
 
+// TODO: scroll bars
 impl Widget for ScrollView {
-    fn event(&mut self, cx: &mut EventCx, event: &RawEvent) {
-        // TODO: scroll wheel + click-drag on scroll bars
-        let offset = Vec2::new(0.0, self.offset);
-        let child_event = match event {
-            RawEvent::MouseDown(mouse_event) => {
-                let mut mouse_event = mouse_event.clone();
-                mouse_event.pos += offset;
-                RawEvent::MouseDown(mouse_event)
-            }
-            RawEvent::MouseUp(mouse_event) => {
-                let mut mouse_event = mouse_event.clone();
-                mouse_event.pos += offset;
-                RawEvent::MouseUp(mouse_event)
-            }
-            RawEvent::MouseMove(mouse_event) => {
-                let mut mouse_event = mouse_event.clone();
-                mouse_event.pos += offset;
-                RawEvent::MouseMove(mouse_event)
-            }
-            RawEvent::MouseWheel(mouse_event) => {
-                let mut mouse_event = mouse_event.clone();
-                mouse_event.pos += offset;
-                RawEvent::MouseWheel(mouse_event)
-            }
-            _ => event.clone(),
-        };
-        self.child.event(cx, &child_event);
+    fn event(&mut self, cx: &mut EventCx, event: &Event) {
+        // Pass event through to child
+        self.child.event(cx, event);
+
+        // Handle scroll wheel events
         if !cx.is_handled() {
-            if let RawEvent::MouseWheel(mouse) = event {
-                let new_offset = (self.offset + mouse.wheel_delta.y).max(0.0);
+            if let Event::MouseWheel(mouse) = event {
+                let max_offset = (self.child.get_size().height - cx.size().height).max(0.0);
+                let new_offset = (self.offset + mouse.wheel_delta.y).max(0.0).min(max_offset);
                 if new_offset != self.offset {
                     self.offset = new_offset;
+                    let new_origin = Point {
+                        x: 0.0,
+                        y: -self.offset,
+                    };
+                    self.child.set_origin(cx.widget_state, new_origin);
                     cx.set_handled(true);
-                    // TODO: request paint
+                    cx.request_paint();
                 }
             }
         }
@@ -95,28 +77,77 @@ impl Widget for ScrollView {
         self.child.update(cx);
     }
 
-    fn measure(&mut self, cx: &mut LayoutCx) -> (Size, Size) {
-        let _ = self.child.measure(cx);
-        (Size::ZERO, Size::new(1e9, 1e9))
+    fn compute_max_intrinsic(&mut self, axis: Axis, cx: &mut LayoutCx, bc: &BoxConstraints) -> f64 {
+        match axis {
+            Axis::Horizontal => {
+                if bc.min().width.is_sign_negative() {
+                    0.0
+                } else {
+                    let length =
+                        self.child
+                            .compute_max_intrinsic(axis, cx, &bc.unbound_max_height());
+                    length.min(bc.max().width).max(bc.min().width)
+                }
+            }
+            Axis::Vertical => {
+                if bc.min().height.is_sign_negative() {
+                    0.0
+                } else {
+                    let length =
+                        self.child
+                            .compute_max_intrinsic(axis, cx, &bc.unbound_max_height());
+                    length.min(bc.max().height).max(bc.min().height)
+                }
+            }
+        }
     }
 
-    fn layout(&mut self, cx: &mut LayoutCx, proposed_size: Size) -> Size {
-        let child_proposed = Size::new(proposed_size.width, 1e9);
-        let child_size = self.child.layout(cx, child_proposed);
-        Size::new(child_size.width, proposed_size.height)
+    fn layout(&mut self, cx: &mut LayoutCx, bc: &BoxConstraints) -> Size {
+        cx.request_paint();
+
+        let cbc = BoxConstraints::new(
+            Size {
+                width: 0.0,
+                height: 0.0,
+            },
+            Size {
+                width: bc.max().width,
+                height: f64::INFINITY,
+            },
+        );
+        let child_size = self.child.layout(cx, &cbc);
+        let size = Size {
+            width: child_size.width.min(bc.max().width),
+            height: child_size.height.min(bc.max().height),
+        };
+
+        // Ensure that scroll offset is within bounds
+        let max_offset = (child_size.height - size.height).max(0.0);
+        if max_offset < self.offset {
+            self.offset = max_offset;
+            let new_origin = Point {
+                x: 0.0,
+                y: -self.offset,
+            };
+            self.child.set_origin(cx.widget_state, new_origin);
+        }
+
+        size
     }
 
-    fn prepare_paint(&mut self, cx: &mut PreparePaintCx, visible: Rect) {
-        let child_visible = visible + Vec2::new(0.0, self.offset);
-        self.child.prepare_paint(cx, child_visible);
+    fn paint(&mut self, cx: &mut PaintCx, builder: &mut SceneBuilder) {
+        builder.push_layer(Mix::Normal, 1.0, Affine::IDENTITY, &cx.size().to_rect());
+        self.child.paint(cx, builder);
+        builder.pop_layer();
     }
 
-    fn paint(&mut self, cx: &mut PaintCx) {
-        cx.with_save(|cx| {
-            let size = cx.size();
-            cx.clip(size.to_rect());
-            cx.transform(Affine::translate((0.0, -self.offset)));
-            self.child.paint_raw(cx);
-        });
+    fn accessibility(&mut self, cx: &mut super::AccessCx) {
+        self.child.accessibility(cx);
+
+        if cx.is_requested() {
+            let mut builder = accesskit::NodeBuilder::new(accesskit::Role::ScrollView);
+            builder.set_children(vec![self.child.id().into()]);
+            cx.push_node(builder);
+        }
     }
 }
