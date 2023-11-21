@@ -5,3 +5,4 @@ Cargo.lock
 
 .vscode
 .cspell
+*.code-workspace
