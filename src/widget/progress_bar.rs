@@ -59,7 +59,8 @@ impl Widget for ProgressBar {
         cx.request_paint();
     }
 
-    fn layout(&mut self, _cx: &mut LayoutCx, bc: &BoxConstraints) -> Size {
+    fn layout(&mut self, cx: &mut LayoutCx, bc: &BoxConstraints) -> Size {
+        cx.request_paint();
         bc.constrain(Size::new(WIDTH, HEIGHT))
     }
 
