@@ -285,6 +285,14 @@ impl Pod {
             }
         };
         if recurse {
+            // This clears the has_active state. Pod needs to clear this state since merge up can
+            // only set flags.
+            // This needs to happen before the `event` call, as that will also set our `HAS_ACTIVE`
+            // flag if any of our children were active
+            self.state.flags.set(
+                PodFlags::HAS_ACTIVE,
+                self.state.flags.contains(PodFlags::IS_ACTIVE),
+            );
             let mut inner_cx = EventCx {
                 cx_state: cx.cx_state,
                 widget_state: &mut self.state,
@@ -294,12 +302,6 @@ impl Pod {
                 .event(&mut inner_cx, modified_event.as_ref().unwrap_or(event));
             cx.is_handled |= inner_cx.is_handled;
 
-            // This clears the has_active state. Pod needs to clear this state since merge up can
-            // only set flags.
-            self.state.flags.set(
-                PodFlags::HAS_ACTIVE,
-                self.state.flags.contains(PodFlags::IS_ACTIVE),
-            );
             cx.widget_state.merge_up(&mut self.state);
         }
     }
