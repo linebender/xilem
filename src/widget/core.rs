@@ -547,6 +547,7 @@ impl Pod {
     /// is dragged away.
     ///
     /// [`set_active`]: EventCx::set_active
+    // TODO: Determine why this is the same as [Self::has_active]
     pub fn is_active(&self) -> bool {
         self.state.flags.contains(PodFlags::HAS_ACTIVE)
     }
