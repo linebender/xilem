@@ -1,33 +1,41 @@
-use xilem::view::{button, h_stack, v_stack};
+use xilem::view::{button, h_stack, switch, v_stack};
 use xilem::{view::View, App, AppLauncher};
 
-fn app_logic(data: &mut i32) -> impl View<i32> {
+fn app_logic(data: &mut AppData) -> impl View<AppData> {
     // here's some logic, deriving state for the view from our state
-    let label = if *data == 1 {
+    let count = data.count;
+    let label = if count == 1 {
         "clicked 1 time".to_string()
     } else {
-        format!("clicked {data} times")
+        format!("clicked {count} times")
     };
 
     // The actual UI Code starts here
     v_stack((
-        button(label, |data| {
+        button(label, |data: &mut AppData| {
             println!("clicked");
-            *data += 1;
+            data.count += 1;
         }),
         h_stack((
-            "Buttons: ",
-            button("decrease", |data| {
+            button("decrease", |data: &mut AppData| {
                 println!("clicked decrease");
-                *data -= 1;
+                data.count -= 1;
             }),
-            button("reset", |data| {
+            button("reset", |data: &mut AppData| {
                 println!("clicked reset");
-                *data = 0;
+                data.count = 0;
+            }),
+            switch(data.is_on, |data: &mut AppData, value: bool| {
+                data.is_on = value
             }),
         )),
     ))
     .with_spacing(20.0)
+}
+
+struct AppData {
+    count: i32,
+    is_on: bool,
 }
 
 fn main() {
@@ -41,6 +49,11 @@ fn main() {
     window_handle.show();
     app.run(None);
     */
-    let app = App::new(0, app_logic);
+    let data = AppData {
+        count: 0,
+        is_on: false,
+    };
+
+    let app = App::new(data, app_logic);
     AppLauncher::new(app).run()
 }
