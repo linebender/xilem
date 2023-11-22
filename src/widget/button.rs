@@ -108,6 +108,7 @@ impl Widget for Button {
         );
         self.layout = Some(layout);
         //(Size::new(10.0, min_height), size)
+        cx.request_paint();
         bc.constrain(size)
     }
 

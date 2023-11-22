@@ -1,5 +1,5 @@
 use vello::kurbo::{self, Affine, Rect, Shape};
-use vello::peniko::{BrushRef, ColorStopsSource, Fill, Gradient, Stroke};
+use vello::peniko::{BrushRef, Color, ColorStopsSource, Fill, Gradient, Stroke};
 use vello::SceneBuilder;
 
 #[derive(Debug, Clone, Copy)]
@@ -72,4 +72,8 @@ pub fn fill_lin_gradient(
     let rect = path.bounding_box();
     let brush = Gradient::new_linear(start.resolve(rect), end.resolve(rect)).with_stops(stops);
     builder.fill(Fill::NonZero, Affine::IDENTITY, &brush, None, path);
+}
+
+pub fn fill_color(builder: &mut SceneBuilder, path: &impl Shape, color: Color) {
+    builder.fill(Fill::NonZero, Affine::IDENTITY, color, None, path)
 }
