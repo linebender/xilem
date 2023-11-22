@@ -12,20 +12,20 @@ pub use gloo::events::EventListenerOptions;
 /// Wraps a [`View`] `V` and attaches an event listener.
 ///
 /// The event type `E` should inherit from [`web_sys::Event`]
-pub struct OnEvent<T, A, E, Ev, F> {
+pub struct OnEvent<E, T, A, Ev, C> {
     pub(crate) element: E,
     pub(crate) event: Cow<'static, str>,
     pub(crate) options: EventListenerOptions,
-    pub(crate) handler: F,
+    pub(crate) handler: C,
     #[allow(clippy::type_complexity)]
     pub(crate) phantom_event_ty: PhantomData<fn() -> (T, A, Ev)>,
 }
 
-impl<T, A, V, E, F> OnEvent<T, A, V, E, F>
+impl<E, T, A, Ev, C> OnEvent<E, T, A, Ev, C>
 where
-    E: JsCast + 'static,
+    Ev: JsCast + 'static,
 {
-    pub fn new(element: V, event: impl Into<Cow<'static, str>>, handler: F) -> Self {
+    pub fn new(element: E, event: impl Into<Cow<'static, str>>, handler: C) -> Self {
         OnEvent {
             element,
             event: event.into(),
@@ -36,9 +36,9 @@ where
     }
 
     pub fn new_with_options(
-        element: V,
+        element: E,
         event: impl Into<Cow<'static, str>>,
-        handler: F,
+        handler: C,
         options: EventListenerOptions,
     ) -> Self {
         OnEvent {
@@ -87,13 +87,13 @@ pub struct OnEventState<S> {
     child_state: S,
 }
 
-impl<T, A, E, Ev, F> ViewMarker for OnEvent<T, A, E, Ev, F> {}
-impl<T, A, E, Ev, F> Sealed for OnEvent<T, A, E, Ev, F> {}
+impl<E, T, A, Ev, C> ViewMarker for OnEvent<E, T, A, Ev, C> {}
+impl<E, T, A, Ev, C> Sealed for OnEvent<E, T, A, Ev, C> {}
 
-impl<T, A, E, F, Ev, OA> View<T, A> for OnEvent<T, A, E, Ev, F>
+impl<E, T, A, Ev, C, OA> View<T, A> for OnEvent<E, T, A, Ev, C>
 where
     OA: OptionalAction<A>,
-    F: Fn(&mut T, Ev) -> OA,
+    C: Fn(&mut T, Ev) -> OA,
     E: Element<T, A>,
     Ev: JsCast + 'static,
 {
@@ -181,12 +181,12 @@ where
 crate::interfaces::impl_dom_interfaces_for_ty!(
     Element,
     OnEvent,
-    vars: <Ev, F, OA,>,
-    vars_on_ty: <Ev, F,>,
+    vars: <Ev, C, OA,>,
+    vars_on_ty: <Ev, C,>,
     bounds: {
         Ev: JsCast + 'static,
         OA: OptionalAction<A>,
-        F: Fn(&mut T, Ev) -> OA,
+        C: Fn(&mut T, Ev) -> OA,
     }
 );
 
@@ -204,14 +204,14 @@ macro_rules! event_definitions {
             }
         );
 
-        pub struct $ty_name<T, A, E, C> {
+        pub struct $ty_name<E, T, A, C> {
             target: E,
             callback: C,
             options: EventListenerOptions,
             phantom: PhantomData<fn() -> (T, A)>,
         }
 
-        impl<T, A, E, C> $ty_name<T, A, E, C> {
+        impl<E, T, A, C> $ty_name<E, T, A, C> {
             pub fn new(target: E, callback: C) -> Self {
                 Self {
                     target,
@@ -232,10 +232,10 @@ macro_rules! event_definitions {
             }
         }
 
-        impl<T, A, E, C> ViewMarker for $ty_name<T, A, E, C> {}
-        impl<T, A, E, C> Sealed for $ty_name<T, A, E, C> {}
+        impl<E, T, A, C> ViewMarker for $ty_name<E, T, A, C> {}
+        impl<E, T, A, C> Sealed for $ty_name<E, T, A, C> {}
 
-        impl<T, A, E, C,OA> View<T, A> for $ty_name<T, A, E, C>
+        impl<E, T, A, C, OA> View<T, A> for $ty_name<E, T, A, C>
         where
             OA: OptionalAction<A>,
             C: Fn(&mut T, web_sys::$web_sys_ty) -> OA,

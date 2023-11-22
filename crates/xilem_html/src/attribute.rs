@@ -7,17 +7,17 @@ use crate::{interfaces::sealed::Sealed, AttributeValue, ChangeFlags, Cx, View, V
 
 use super::interfaces::Element;
 
-pub struct Attr<T, A, E> {
+pub struct Attr<E, T, A> {
     pub(crate) element: E,
     pub(crate) name: Cow<'static, str>,
     pub(crate) value: Option<AttributeValue>,
     pub(crate) phantom: PhantomData<fn() -> (T, A)>,
 }
 
-impl<T, A, E> ViewMarker for Attr<T, A, E> {}
-impl<T, A, E> Sealed for Attr<T, A, E> {}
+impl<E, T, A> ViewMarker for Attr<E, T, A> {}
+impl<E, T, A> Sealed for Attr<E, T, A> {}
 
-impl<T, A, E: Element<T, A>> View<T, A> for Attr<T, A, E> {
+impl<E: Element<T, A>, T, A> View<T, A> for Attr<E, T, A> {
     type State = E::State;
     type Element = E::Element;
 

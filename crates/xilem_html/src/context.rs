@@ -30,7 +30,7 @@ fn set_attribute(element: &web_sys::Element, name: &str, value: &str) {
 }
 
 fn remove_attribute(element: &web_sys::Element, name: &str) {
-    // we have to special-case `value` because setting the value using `set_attribute`
+    // we have to special-case `checked` because setting the value using `set_attribute`
     // doesn't work after the value has been changed.
     if name == "checked" {
         let element: &web_sys::HtmlInputElement = element.dyn_ref().unwrap_throw();

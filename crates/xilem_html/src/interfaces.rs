@@ -18,7 +18,7 @@ pub(crate) mod sealed {
 macro_rules! event_handler_mixin {
     ($(($event_ty: ident, $fn_name:ident, $event:expr, $web_sys_event_type:ident),)*) => {
     $(
-        fn $fn_name<EH, OA>(self, handler: EH) -> events::$event_ty<T, A, Self, EH>
+        fn $fn_name<EH, OA>(self, handler: EH) -> events::$event_ty<Self, T, A, EH>
         where
             OA: OptionalAction<A>,
             EH: Fn(&mut T, web_sys::$web_sys_event_type) -> OA,
@@ -37,7 +37,7 @@ where
         self,
         event: impl Into<Cow<'static, str>>,
         handler: EH,
-    ) -> OnEvent<T, A, Self, E, EH>
+    ) -> OnEvent<Self, T, A, E, EH>
     where
         E: JsCast + 'static,
         OA: OptionalAction<A>,
@@ -52,7 +52,7 @@ where
         event: impl Into<Cow<'static, str>>,
         handler: EH,
         options: EventListenerOptions,
-    ) -> OnEvent<T, A, Self, Ev, EH>
+    ) -> OnEvent<Self, T, A, Ev, EH>
     where
         Ev: JsCast + 'static,
         OA: OptionalAction<A>,
@@ -78,7 +78,7 @@ where
         self,
         name: impl Into<Cow<'static, str>>,
         value: impl IntoAttributeValue,
-    ) -> Attr<T, A, Self> {
+    ) -> Attr<Self, T, A> {
         Attr {
             element: self,
             name: name.into(),
@@ -90,7 +90,7 @@ where
     // TODO should some methods extend some properties automatically,
     // instead of overwriting the (possibly set) inner value
     // or should there be (extra) "modifier" methods like `add_class` and/or `remove_class`
-    fn class(self, class: impl Into<Cow<'static, str>>) -> Attr<T, A, Self> {
+    fn class(self, class: impl Into<Cow<'static, str>>) -> Attr<Self, T, A> {
         self.attr("class", class.into())
     }
 
@@ -275,7 +275,7 @@ macro_rules! impl_dom_interfaces_for_ty_helper {
         $crate::interfaces::impl_dom_interfaces_for_ty_helper!($dom_interface, ($ty, $dom_interface, <$($additional_generic_var,)*>, <$($additional_generic_var_on_ty,)*>, {$($additional_generic_bounds)*}));
     };
     ($dom_interface:ident, ($ty:ident, $bound_interface:ident, <$($additional_generic_var:ident,)*>, <$($additional_generic_var_on_ty:ident,)*>, {$($additional_generic_bounds:tt)*})) => {
-        impl<T, A, E, $($additional_generic_var,)*> $crate::interfaces::$dom_interface<T, A> for $ty<T, A, E, $($additional_generic_var_on_ty,)*>
+        impl<E, T, A, $($additional_generic_var,)*> $crate::interfaces::$dom_interface<T, A> for $ty<E, T, A, $($additional_generic_var_on_ty,)*>
         where
             E: $crate::interfaces::$bound_interface<T, A>,
             $($additional_generic_bounds)*
@@ -288,8 +288,8 @@ pub(crate) use impl_dom_interfaces_for_ty_helper;
 
 /// Implement DOM interface traits for the given type and all descendent DOM interfaces,
 /// such that every possible method defined on the underlying element is accessible via typing
-/// The requires the type of signature Type<T, A, E>, whereas T is the AppState type, A, is Action, and E is the underlying Element type that is composed
-/// It additionally accepts generic vars (vars: <vars>) that is added on the impl<T, A, E, <vars>>, and vars_on_ty (Type<T, A, E, <vars_on_ty>>) and additional generic typebounds
+/// The requires the type of signature Type<E, T, A>, whereas T is the AppState type, A, is Action, and E is the underlying Element type that is composed
+/// It additionally accepts generic vars (vars: <vars>) that is added on the impl<E, T, A, <vars>>, and vars_on_ty (Type<E, T, A, <vars_on_ty>>) and additional generic typebounds
 macro_rules! impl_dom_interfaces_for_ty {
     ($dom_interface:ident, $ty:ident) => {
         $crate::interfaces::impl_dom_interfaces_for_ty!($dom_interface, $ty, vars: <>, vars_on_ty: <>, bounds: {});
@@ -323,10 +323,10 @@ dom_interface_macro_and_trait_definitions!(
             HtmlButtonElement { methods: {}, child_interfaces: {} },
             HtmlCanvasElement {
                 methods: {
-                    fn width(self, value: u32) -> Attr<T, A, Self> {
+                    fn width(self, value: u32) -> Attr<Self, T, A> {
                         self.attr("width", value)
                     }
-                    fn height(self, value: u32) -> Attr<T, A, Self> {
+                    fn height(self, value: u32) -> Attr<Self, T, A> {
                         self.attr("height", value)
                     }
                 },
@@ -364,10 +364,10 @@ dom_interface_macro_and_trait_definitions!(
                     HtmlAudioElement { methods: {}, child_interfaces: {} },
                     HtmlVideoElement {
                         methods: {
-                            fn width(self, value: u32) -> Attr<T, A, Self> {
+                            fn width(self, value: u32) -> Attr<Self,T, A> {
                                 self.attr("width", value)
                             }
-                            fn height(self, value: u32) -> Attr<T, A, Self> {
+                            fn height(self, value: u32) -> Attr<Self, T, A> {
                                 self.attr("height", value)
                             }
                         },
