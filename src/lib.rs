@@ -5,7 +5,7 @@ mod app_main;
 mod bloom;
 mod geometry;
 mod id;
-mod text;
+pub mod text;
 pub mod view;
 pub mod widget;
 
@@ -17,3 +17,7 @@ pub use app::App;
 pub use app_main::AppLauncher;
 pub(crate) use bloom::Bloom;
 pub use geometry::Axis;
+
+pub use accesskit;
+pub use parley;
+pub use vello;
