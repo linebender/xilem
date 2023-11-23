@@ -19,7 +19,7 @@ mod core;
 //mod layout_observer;
 //mod list;
 mod linear_layout;
-mod piet_scene_helpers;
+pub mod piet_scene_helpers;
 mod raw_event;
 mod switch;
 //mod scroll_view;
