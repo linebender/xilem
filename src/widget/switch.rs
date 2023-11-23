@@ -33,6 +33,7 @@ pub struct Switch {
     is_on: bool,
     is_dragging: bool,
     knob_position: Point,
+    start_position: Point,
 }
 
 impl Switch {
@@ -46,6 +47,7 @@ impl Switch {
             } else {
                 Point::new(OFF_POS, KNOB_DIAMETER / 2. + SWITCH_PADDING)
             },
+            start_position: Point::ZERO,
         }
     }
 
@@ -66,9 +68,10 @@ const OFF_POS: f64 = KNOB_DIAMETER / 2.0 + SWITCH_PADDING;
 impl Widget for Switch {
     fn event(&mut self, cx: &mut EventCx, event: &Event) {
         match event {
-            Event::MouseDown(_) => {
+            Event::MouseDown(mouse) => {
                 cx.set_active(true);
                 cx.request_paint();
+                self.start_position.x = mouse.pos.x;
             }
             Event::MouseUp(_) => {
                 if self.is_dragging {
@@ -87,9 +90,14 @@ impl Widget for Switch {
             }
             Event::MouseMove(mouse) => {
                 if cx.is_active() {
-                    self.knob_position.x = mouse.pos.x.clamp(OFF_POS, ON_POS);
+                    let delta = mouse.pos.x - self.start_position.x;
+                    self.knob_position.x = if self.is_on {
+                        (ON_POS + delta).clamp(OFF_POS, ON_POS)
+                    } else {
+                        (OFF_POS + delta).clamp(OFF_POS, ON_POS)
+                    };
+
                     self.is_dragging = true;
-                    println!("Mouse Move{:?}", self.knob_position);
                 }
                 cx.request_paint();
             }
@@ -145,18 +153,29 @@ impl Widget for Switch {
         fill_color(builder, &background_rect, background_on_state);
 
         // Paint the Switch knob
-        println!("Paint: {:?}", self.knob_position);
-        let knob_color = if self.is_dragging || cx.is_hot() {
-            Color::SLATE_GRAY
-        } else {
-            Color::LIGHT_SLATE_GRAY
-        };
         let knob_border_color = Color::DIM_GRAY;
-        let mut knob_size = KNOB_DIAMETER / 2.0;
 
-        if cx.is_active() {
-            knob_size += 1.0;
-        }
+        let knob_color = if cx.is_hot() && !cx.is_active() {
+            let r = Color::SLATE_GRAY.r + 10;
+            let g = Color::SLATE_GRAY.g + 10;
+            let b = Color::SLATE_GRAY.b + 10;
+            Color { r, g, b, a: 255 }
+        } else if cx.is_active() {
+            let r = Color::SLATE_GRAY.r - 10;
+            let g = Color::SLATE_GRAY.g - 10;
+            let b = Color::SLATE_GRAY.b - 10;
+            Color { r, g, b, a: 255 }
+        } else {
+            Color::SLATE_GRAY
+        };
+
+        let knob_size = if cx.is_hot() && !cx.is_active() {
+            KNOB_DIAMETER / 2. + 1.
+        } else if cx.is_active() {
+            KNOB_DIAMETER / 2. - 1.
+        } else {
+            KNOB_DIAMETER / 2.
+        };
 
         let knob_circle = Circle::new(self.knob_position, knob_size);
         fill_color(builder, &knob_circle, knob_color);
