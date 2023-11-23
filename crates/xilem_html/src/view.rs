@@ -10,7 +10,7 @@ use xilem_core::{Id, MessageResult};
 
 use crate::{context::Cx, ChangeFlags};
 
-mod sealed {
+pub(crate) mod sealed {
     pub trait Sealed {}
 }
 
@@ -18,7 +18,7 @@ mod sealed {
 // for a view element, rather than an associated type with a bound.
 /// This trait is implemented for types that implement `AsRef<web_sys::Node>`.
 /// It is an implementation detail.
-pub trait DomNode: sealed::Sealed {
+pub trait DomNode: sealed::Sealed + 'static {
     fn into_pod(self) -> Pod;
     fn as_node_ref(&self) -> &web_sys::Node;
 }
@@ -30,18 +30,6 @@ impl<N: AsRef<web_sys::Node> + 'static> DomNode for N {
     }
 
     fn as_node_ref(&self) -> &web_sys::Node {
-        self.as_ref()
-    }
-}
-
-/// This trait is implemented for types that implement `AsRef<web_sys::Element>`.
-/// It is an implementation detail.
-pub trait DomElement: DomNode {
-    fn as_element_ref(&self) -> &web_sys::Element;
-}
-
-impl<N: DomNode + AsRef<web_sys::Element>> DomElement for N {
-    fn as_element_ref(&self) -> &web_sys::Element {
         self.as_ref()
     }
 }
@@ -99,7 +87,7 @@ impl Pod {
 xilem_core::generate_view_trait! {View, DomNode, Cx, ChangeFlags;}
 xilem_core::generate_viewsequence_trait! {ViewSequence, View, ViewMarker, DomNode, Cx, ChangeFlags, Pod;}
 xilem_core::generate_anyview_trait! {AnyView, View, ViewMarker, Cx, ChangeFlags, AnyNode, BoxedView;}
-xilem_core::generate_memoize_view! {Memoize, MemoizeState, View, ViewMarker, Cx, ChangeFlags, s, memoize;}
+xilem_core::generate_memoize_view! {Memoize, MemoizeState, View, ViewMarker, Cx, ChangeFlags, static_view, memoize;}
 xilem_core::generate_adapt_view! {View, Cx, ChangeFlags;}
 xilem_core::generate_adapt_state_view! {View, Cx, ChangeFlags;}
 

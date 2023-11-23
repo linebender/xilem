@@ -8,34 +8,34 @@
 use wasm_bindgen::JsCast;
 
 mod app;
-mod class;
+mod attribute;
+mod attribute_value;
 mod context;
 mod diff;
-mod element;
-mod event;
+pub mod elements;
+pub mod events;
+pub mod interfaces;
 mod one_of;
+mod optional_action;
 mod vecmap;
 mod view;
-#[cfg(feature = "typed")]
 mod view_ext;
 
 pub use xilem_core::MessageResult;
 
 pub use app::App;
-pub use class::class;
+pub use attribute::Attr;
+pub use attribute_value::{AttributeValue, IntoAttributeValue};
 pub use context::{ChangeFlags, Cx};
-#[cfg(feature = "typed")]
-pub use element::elements;
-pub use element::{element, AttributeValue, Element, ElementState, IntoAttributeValue};
-#[cfg(feature = "typed")]
-pub use event::events;
-pub use event::{on_event, Action, Event, OnEvent, OnEventState, OptionalAction};
-pub use one_of::{OneOf2, OneOf3, OneOf4, OneOf5, OneOf6, OneOf7, OneOf8};
-pub use view::{
-    memoize, s, Adapt, AdaptState, AdaptThunk, AnyView, Memoize, Pod, View, ViewMarker,
-    ViewSequence,
+pub use one_of::{
+    OneOf2, OneOf3, OneOf4, OneOf5, OneOf6, OneOf7, OneOf8, OneSeqOf2, OneSeqOf3, OneSeqOf4,
+    OneSeqOf5, OneSeqOf6, OneSeqOf7, OneSeqOf8,
 };
-#[cfg(feature = "typed")]
+pub use optional_action::{Action, OptionalAction};
+pub use view::{
+    memoize, static_view, Adapt, AdaptState, AdaptThunk, AnyView, Memoize, MemoizeState, Pod, View,
+    ViewMarker, ViewSequence,
+};
 pub use view_ext::ViewExt;
 
 xilem_core::message!();

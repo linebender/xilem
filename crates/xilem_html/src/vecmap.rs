@@ -38,6 +38,30 @@ impl<K, V> VecMap<K, V> {
             .find_map(|(k, v)| if key.eq(k.borrow()) { Some(v) } else { None })
     }
 
+    /// Returns `true` if the map contains a value for the specified key.
+    ///
+    /// The key may be any borrowed form of the map's key type, but the ordering
+    /// on the borrowed form *must* match the ordering on the key type.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```ignore
+    /// # use crate::vecmap::VecMap;
+    /// let mut map = VecMap::default();
+    /// map.insert(1, "a");
+    /// assert!(map.contains_key(&1));
+    /// assert!(!map.contains_key(&2));
+    /// ```
+    pub fn contains_key<Q: ?Sized>(&self, key: &Q) -> bool
+    where
+        K: Borrow<Q> + Ord,
+        Q: Ord,
+    {
+        self.get(key).is_some()
+    }
+
     /// Returns a mutable reference to the value corresponding to the key.
     ///
     /// The key may be any borrowed form of the map's key type, but the ordering
@@ -107,6 +131,7 @@ impl<K, V> VecMap<K, V> {
     /// assert_eq!((*first_key, *first_value), (1, "a"));
     /// ```
     pub fn iter(&self) -> impl Iterator<Item = (&K, &V)> {
+        #[allow(clippy::map_identity)]
         self.0.iter().map(|(k, v)| (k, v))
     }
 
@@ -176,6 +201,10 @@ impl<K, V> VecMap<K, V> {
             Ok(pos) => Some(self.0.remove(pos).1),
             Err(_) => None,
         }
+    }
+
+    pub fn clear(&mut self) {
+        self.0.clear()
     }
 
     /// Returns `true` if the map contains no elements.
@@ -252,6 +281,14 @@ mod tests {
         map.insert(1, "a");
         assert_eq!(map.get(&1), Some(&"a"));
         assert_eq!(map.get(&2), None);
+    }
+
+    #[test]
+    fn contains_key() {
+        let mut map = VecMap::default();
+        map.insert(1, "a");
+        assert!(map.contains_key(&1));
+        assert!(!map.contains_key(&2));
     }
 
     #[test]
