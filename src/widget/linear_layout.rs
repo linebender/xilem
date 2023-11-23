@@ -75,7 +75,7 @@ impl Widget for LinearLayout {
             if index < child_count - 1 {
                 major_used += self.spacing;
 
-                println!("insert spacing {}", self.spacing);
+                // println!("insert spacing {}", self.spacing);
             }
             max_minor = max_minor.max(self.axis.minor(size));
         }
@@ -102,7 +102,7 @@ impl Widget for LinearLayout {
 
     fn paint(&mut self, cx: &mut PaintCx, builder: &mut SceneBuilder) {
         for child in &mut self.children {
-            println!("paint child!");
+            // println!("paint child!");
             child.paint(cx, builder);
         }
     }
