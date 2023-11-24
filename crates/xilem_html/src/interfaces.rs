@@ -139,7 +139,7 @@ where
         (OnFocusIn, on_focusin, "focusin", FocusEvent),
         (OnFocusOut, on_focusout, "focusout", FocusEvent),
         (OnFormData, on_formdata, "formdata", Event),
-        (OnInput, on_input, "input", InputEvent),
+        (OnInput, on_input, "input", Event),
         (OnInvalid, on_invalid, "invalid", Event),
         (OnKeyDown, on_keydown, "keydown", KeyboardEvent),
         (OnKeyUp, on_keyup, "keyup", KeyboardEvent),
@@ -413,7 +413,106 @@ dom_interface_macro_and_trait_definitions!(
     },
     SvgElement {
         methods: {},
-        child_interfaces: {}
+        child_interfaces: {
+            SvgAnimationElement {
+                methods: {},
+                child_interfaces: {
+                    SvgAnimateElement { methods: {}, child_interfaces: {} },
+                    SvgAnimateMotionElement { methods: {}, child_interfaces: {} },
+                    SvgAnimateTransformElement { methods: {}, child_interfaces: {} },
+                    SvgSetElement { methods: {}, child_interfaces: {} },
+                }
+            },
+            SvgClipPathElement { methods: {}, child_interfaces: {} },
+            SvgComponentTransferFunctionElement {
+                methods: {},
+                child_interfaces: {
+                    SvgfeFuncAElement { methods: {}, child_interfaces: {} },
+                    SvgfeFuncBElement { methods: {}, child_interfaces: {} },
+                    SvgfeFuncGElement { methods: {}, child_interfaces: {} },
+                    SvgfeFuncRElement { methods: {}, child_interfaces: {} },
+                }
+            },
+            SvgDescElement { methods: {}, child_interfaces: {} },
+            SvgFilterElement { methods: {}, child_interfaces: {} },
+            SvgGradientElement {
+                methods: {},
+                child_interfaces: {
+                    SvgLinearGradientElement { methods: {}, child_interfaces: {} },
+                    SvgRadialGradientElement { methods: {}, child_interfaces: {} },
+                }
+            },
+            SvgGraphicsElement {
+                methods: {},
+                child_interfaces: {
+                    SvgDefsElement { methods: {}, child_interfaces: {} },
+                    SvgForeignObjectElement { methods: {}, child_interfaces: {} },
+                    SvgGeometryElement {
+                        methods: {},
+                        child_interfaces: {
+                            SvgCircleElement { methods: {}, child_interfaces: {} },
+                            SvgEllipseElement { methods: {}, child_interfaces: {} },
+                            SvgLineElement { methods: {}, child_interfaces: {} },
+                            SvgPathElement { methods: {}, child_interfaces: {} },
+                            SvgPolygonElement { methods: {}, child_interfaces: {} },
+                            SvgPolylineElement { methods: {}, child_interfaces: {} },
+                            SvgRectElement { methods: {}, child_interfaces: {} },
+                        }
+                    },
+                    SvgImageElement { methods: {}, child_interfaces: {} },
+                    SvgSwitchElement { methods: {}, child_interfaces: {} },
+                    SvgTextContentElement {
+                        methods: {},
+                        child_interfaces: {
+                            SvgTextPathElement { methods: {}, child_interfaces: {} },
+                            SvgTextPositioningElement {
+                                methods: {},
+                                child_interfaces: {
+                                    SvgTextElement { methods: {}, child_interfaces: {} },
+                                    SvgtSpanElement { methods: {}, child_interfaces: {} },
+                                }
+                            },
+                        }
+                    },
+                    SvgUseElement { methods: {}, child_interfaces: {} },
+                    SvgaElement { methods: {}, child_interfaces: {} },
+                    SvggElement { methods: {}, child_interfaces: {} },
+                    SvgsvgElement { methods: {}, child_interfaces: {} },
+                }
+            },
+            SvgMarkerElement { methods: {}, child_interfaces: {} },
+            SvgMaskElement { methods: {}, child_interfaces: {} },
+            SvgMetadataElement { methods: {}, child_interfaces: {} },
+            SvgPatternElement { methods: {}, child_interfaces: {} },
+            SvgScriptElement { methods: {}, child_interfaces: {} },
+            SvgStopElement { methods: {}, child_interfaces: {} },
+            SvgStyleElement { methods: {}, child_interfaces: {} },
+            SvgSymbolElement { methods: {}, child_interfaces: {} },
+            SvgTitleElement { methods: {}, child_interfaces: {} },
+            SvgViewElement { methods: {}, child_interfaces: {} },
+            SvgfeBlendElement { methods: {}, child_interfaces: {} },
+            SvgfeColorMatrixElement { methods: {}, child_interfaces: {} },
+            SvgfeComponentTransferElement { methods: {}, child_interfaces: {} },
+            SvgfeCompositeElement { methods: {}, child_interfaces: {} },
+            SvgfeConvolveMatrixElement { methods: {}, child_interfaces: {} },
+            SvgfeDiffuseLightingElement { methods: {}, child_interfaces: {} },
+            SvgfeDisplacementMapElement { methods: {}, child_interfaces: {} },
+            SvgfeDistantLightElement { methods: {}, child_interfaces: {} },
+            SvgfeDropShadowElement { methods: {}, child_interfaces: {} },
+            SvgfeFloodElement { methods: {}, child_interfaces: {} },
+            SvgfeGaussianBlurElement { methods: {}, child_interfaces: {} },
+            SvgfeImageElement { methods: {}, child_interfaces: {} },
+            SvgfeMergeElement { methods: {}, child_interfaces: {} },
+            SvgfeMergeNodeElement { methods: {}, child_interfaces: {} },
+            SvgfeMorphologyElement { methods: {}, child_interfaces: {} },
+            SvgfeOffsetElement { methods: {}, child_interfaces: {} },
+            SvgfePointLightElement { methods: {}, child_interfaces: {} },
+            SvgfeSpecularLightingElement { methods: {}, child_interfaces: {} },
+            SvgfeSpotLightElement { methods: {}, child_interfaces: {} },
+            SvgfeTileElement { methods: {}, child_interfaces: {} },
+            SvgfeTurbulenceElement { methods: {}, child_interfaces: {} },
+            SvgmPathElement { methods: {}, child_interfaces: {} },
+        }
     },
 );
 
