@@ -8,9 +8,8 @@ use xilem_web::{
     svg::{
         kurbo::{self, Rect},
         peniko::Color,
-        PointerMsg,
     },
-    App, View,
+    App, PointerMsg, View,
 };
 
 #[derive(Default)]

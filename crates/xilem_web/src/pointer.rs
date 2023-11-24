@@ -16,7 +16,7 @@ use crate::{
     view::{DomNode, View, ViewMarker},
 };
 
-pub struct Pointer<T, A, V, F> {
+pub struct Pointer<V, T, A, F> {
     child: V,
     callback: F,
     phantom: PhantomData<fn() -> (T, A)>,
@@ -64,7 +64,7 @@ impl PointerDetails {
 pub fn pointer<T, A, F: Fn(&mut T, PointerMsg), V: Element<T, A>>(
     child: V,
     callback: F,
-) -> Pointer<T, A, V, F> {
+) -> Pointer<V, T, A, F> {
     Pointer {
         child,
         callback,
@@ -72,11 +72,20 @@ pub fn pointer<T, A, F: Fn(&mut T, PointerMsg), V: Element<T, A>>(
     }
 }
 
-impl<T, A, V, F> ViewMarker for Pointer<T, A, V, F> {}
+crate::interfaces::impl_dom_interfaces_for_ty!(
+    Element,
+    Pointer,
+    vars: <F,>,
+    vars_on_ty: <F,>,
+    bounds: {
+        F: Fn(&mut T, PointerMsg) -> A,
+    }
+);
 
-impl<T, A, F: Fn(&mut T, PointerMsg) -> A + Send, V: View<T, A>> View<T, A>
-    for Pointer<T, A, V, F>
-{
+impl<V, T, A, F> ViewMarker for Pointer<V, T, A, F> {}
+impl<V, T, A, F> crate::interfaces::sealed::Sealed for Pointer<V, T, A, F> {}
+
+impl<T, A, F: Fn(&mut T, PointerMsg) -> A, V: View<T, A>> View<T, A> for Pointer<V, T, A, F> {
     type State = PointerState<V::State>;
     type Element = V::Element;
 

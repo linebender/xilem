@@ -7,16 +7,14 @@ use std::{any::Any, marker::PhantomData};
 use peniko::Brush;
 use xilem_core::{Id, MessageResult};
 
-use crate::interfaces::{
-    Element, SvgCircleElement, SvgElement, SvgEllipseElement, SvgGeometryElement,
-    SvgGraphicsElement, SvgLineElement, SvgPathElement, SvgPolygonElement, SvgPolylineElement,
-    SvgRectElement, SvgTextContentElement, SvgTextElement, SvgTextPathElement,
-    SvgTextPositioningElement, SvgtSpanElement,
-};
-use crate::IntoAttributeValue;
 use crate::{
-    context::{ChangeFlags, Cx},
-    view::{View, ViewMarker},
+    interfaces::{
+        Element, SvgCircleElement, SvgElement, SvgEllipseElement, SvgGeometryElement,
+        SvgGraphicsElement, SvgLineElement, SvgPathElement, SvgPolygonElement, SvgPolylineElement,
+        SvgRectElement, SvgTextContentElement, SvgTextElement, SvgTextPathElement,
+        SvgTextPositioningElement, SvgtSpanElement,
+    },
+    ChangeFlags, Cx, IntoAttributeValue, View, ViewMarker,
 };
 
 pub struct Fill<V, T, A = ()> {

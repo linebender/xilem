@@ -17,6 +17,7 @@ pub mod events;
 pub mod interfaces;
 mod one_of;
 mod optional_action;
+mod pointer;
 pub mod svg;
 mod vecmap;
 mod view;
@@ -33,6 +34,7 @@ pub use one_of::{
     OneSeqOf5, OneSeqOf6, OneSeqOf7, OneSeqOf8,
 };
 pub use optional_action::{Action, OptionalAction};
+pub use pointer::{Pointer, PointerDetails, PointerMsg};
 pub use view::{
     memoize, static_view, Adapt, AdaptState, AdaptThunk, AnyView, Memoize, MemoizeState, Pod, View,
     ViewMarker, ViewSequence,

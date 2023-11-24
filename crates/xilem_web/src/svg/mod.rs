@@ -1,7 +1,6 @@
 pub(crate) mod common_attrs;
 pub(crate) mod kurbo_shape;
-pub mod pointer;
 
+pub use common_attrs::{fill, stroke, Fill, Stroke};
 pub use peniko;
 pub use peniko::kurbo;
-pub use pointer::{PointerDetails, PointerMsg};

@@ -17,13 +17,13 @@ use crate::{
 };
 
 macro_rules! generate_dom_interface_impl {
-    ($dom_interface:ident, ($ty_name:ident, $t:ident, $a:ident)) => {
-        impl<$t, $a> $crate::interfaces::$dom_interface<$t, $a> for $ty_name {}
+    ($dom_interface:ident, ($ty_name:ident)) => {
+        impl<T, A> $crate::interfaces::$dom_interface<T, A> for $ty_name {}
     };
 }
 
-generate_dom_interface_impl!(SvgLineElement, (Line, T, A));
-crate::interfaces::for_all_svg_line_element_ancestors!(generate_dom_interface_impl, (Line, T, A));
+generate_dom_interface_impl!(SvgLineElement, (Line));
+crate::interfaces::for_all_svg_line_element_ancestors!(generate_dom_interface_impl, (Line));
 
 impl ViewMarker for Line {}
 impl Sealed for Line {}
@@ -68,8 +68,8 @@ impl<T, A> View<T, A> for Line {
     }
 }
 
-generate_dom_interface_impl!(SvgRectElement, (Rect, T, A));
-crate::interfaces::for_all_svg_rect_element_ancestors!(generate_dom_interface_impl, (Rect, T, A));
+generate_dom_interface_impl!(SvgRectElement, (Rect));
+crate::interfaces::for_all_svg_rect_element_ancestors!(generate_dom_interface_impl, (Rect));
 
 impl ViewMarker for Rect {}
 impl Sealed for Rect {}
@@ -128,11 +128,8 @@ impl<T, A> View<T, A> for Rect {
     }
 }
 
-generate_dom_interface_impl!(SvgCircleElement, (Circle, T, A));
-crate::interfaces::for_all_svg_circle_element_ancestors!(
-    generate_dom_interface_impl,
-    (Circle, T, A)
-);
+generate_dom_interface_impl!(SvgCircleElement, (Circle));
+crate::interfaces::for_all_svg_circle_element_ancestors!(generate_dom_interface_impl, (Circle));
 
 impl ViewMarker for Circle {}
 impl Sealed for Circle {}
@@ -187,11 +184,8 @@ impl<T, A> View<T, A> for Circle {
     }
 }
 
-generate_dom_interface_impl!(SvgPathElement, (BezPath, T, A));
-crate::interfaces::for_all_svg_path_element_ancestors!(
-    generate_dom_interface_impl,
-    (BezPath, T, A)
-);
+generate_dom_interface_impl!(SvgPathElement, (BezPath));
+crate::interfaces::for_all_svg_path_element_ancestors!(generate_dom_interface_impl, (BezPath));
 
 impl ViewMarker for BezPath {}
 impl Sealed for BezPath {}
