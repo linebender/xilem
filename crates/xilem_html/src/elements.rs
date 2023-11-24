@@ -183,7 +183,19 @@ macro_rules! define_element {
             VS
         ));
     };
-    (($ns:expr, $ty_name:ident, $name:ident, $dom_interface:ident, $name_str:expr, $t:ident, $a: ident, $vs: ident)) => {
+    (($ns:expr, $ty_name:ident, $name:ident, $dom_interface:ident, $tag_name: expr)) => {
+        define_element!((
+            $ns,
+            $ty_name,
+            $name,
+            $dom_interface,
+            $tag_name,
+            T,
+            A,
+            VS
+        ));
+    };
+    (($ns:expr, $ty_name:ident, $name:ident, $dom_interface:ident, $tag_name:expr, $t:ident, $a: ident, $vs: ident)) => {
         pub struct $ty_name<$t, $a = (), $vs = ()>($vs, PhantomData<fn() -> ($t, $a)>);
 
         impl<$t, $a, $vs> ViewMarker for $ty_name<$t, $a, $vs> {}
@@ -194,7 +206,7 @@ macro_rules! define_element {
             type Element = web_sys::$dom_interface;
 
             fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
-                let (el, attributes) = cx.build_element($ns, $name_str);
+                let (el, attributes) = cx.build_element($ns, $tag_name);
 
                 let mut child_elements = vec![];
                 let (id, children_states) =
@@ -265,7 +277,7 @@ macro_rules! define_element {
         }
 
         /// Builder function for a
-        #[doc = concat!("`", $name_str, "`")]
+        #[doc = concat!("`", $tag_name, "`")]
         /// element view.
         pub fn $name<$t, $a, $vs: ViewSequence<$t, $a>>(children: $vs) -> $ty_name<$t, $a, $vs> {
             $ty_name(children, PhantomData)
@@ -415,10 +427,7 @@ define_elements!(
         AnnotationXml,
         annotation_xml,
         Element,
-        "annotation-xml",
-        T,
-        A,
-        VS
+        "annotation-xml"
     ),
     (MATHML_NS, Maction, maction, Element),
     (MATHML_NS, Merror, merror, Element),
@@ -455,284 +464,134 @@ define_elements!(
         AnimateMotion,
         animate_motion,
         SvgAnimateMotionElement,
-        "animateMotion",
-        T,
-        A,
-        VS
+        "animateMotion"
     ),
     (
         SVG_NS,
         AnimateTransform,
         animate_transform,
         SvgAnimateTransformElement,
-        "animateTransform",
-        T,
-        A,
-        VS
+        "animateTransform"
     ),
     (SVG_NS, Circle, circle, SvgCircleElement),
-    (
-        SVG_NS,
-        ClipPath,
-        clip_path,
-        SvgClipPathElement,
-        "clipPath",
-        T,
-        A,
-        VS
-    ),
+    (SVG_NS, ClipPath, clip_path, SvgClipPathElement, "clipPath"),
     (SVG_NS, Defs, defs, SvgDefsElement),
     (SVG_NS, Desc, desc, SvgDescElement),
     (SVG_NS, Ellipse, ellipse, SvgEllipseElement),
-    (
-        SVG_NS,
-        FeBlend,
-        fe_blend,
-        SvgfeBlendElement,
-        "feBlend",
-        T,
-        A,
-        VS
-    ),
+    (SVG_NS, FeBlend, fe_blend, SvgfeBlendElement, "feBlend"),
     (
         SVG_NS,
         FeColorMatrix,
         fe_color_matrix,
         SvgfeColorMatrixElement,
-        "feColorMatrix",
-        T,
-        A,
-        VS
+        "feColorMatrix"
     ),
     (
         SVG_NS,
         FeComponentTransfer,
         fe_component_transfer,
         SvgfeComponentTransferElement,
-        "feComponentTransfer",
-        T,
-        A,
-        VS
+        "feComponentTransfer"
     ),
     (
         SVG_NS,
         FeComposite,
         fe_composite,
         SvgfeCompositeElement,
-        "feComposite",
-        T,
-        A,
-        VS
+        "feComposite"
     ),
     (
         SVG_NS,
         FeConvolveMatrix,
         fe_convolve_matrix,
         SvgfeConvolveMatrixElement,
-        "feConvolveMatrix",
-        T,
-        A,
-        VS
+        "feConvolveMatrix"
     ),
     (
         SVG_NS,
         FeDiffuseLighting,
         fe_diffuse_lighting,
         SvgfeDiffuseLightingElement,
-        "feDiffuseLighting",
-        T,
-        A,
-        VS
+        "feDiffuseLighting"
     ),
     (
         SVG_NS,
         FeDisplacementMap,
         fe_displacement_map,
         SvgfeDisplacementMapElement,
-        "feDisplacementMap",
-        T,
-        A,
-        VS
+        "feDisplacementMap"
     ),
     (
         SVG_NS,
         FeDistantLight,
         fe_distant_light,
         SvgfeDistantLightElement,
-        "feDistantLight",
-        T,
-        A,
-        VS
+        "feDistantLight"
     ),
     (
         SVG_NS,
         FeDropShadow,
         fe_drop_shadow,
         SvgfeDropShadowElement,
-        "feDropShadow",
-        T,
-        A,
-        VS
+        "feDropShadow"
     ),
-    (
-        SVG_NS,
-        FeFlood,
-        fe_flood,
-        SvgfeFloodElement,
-        "feFlood",
-        T,
-        A,
-        VS
-    ),
-    (
-        SVG_NS,
-        FeFuncA,
-        fe_func_a,
-        SvgfeFuncAElement,
-        "feFuncA",
-        T,
-        A,
-        VS
-    ),
-    (
-        SVG_NS,
-        FeFuncB,
-        fe_func_b,
-        SvgfeFuncBElement,
-        "feFuncB",
-        T,
-        A,
-        VS
-    ),
-    (
-        SVG_NS,
-        FeFuncG,
-        fe_func_g,
-        SvgfeFuncGElement,
-        "feFuncG",
-        T,
-        A,
-        VS
-    ),
-    (
-        SVG_NS,
-        FeFuncR,
-        fe_func_r,
-        SvgfeFuncRElement,
-        "feFuncR",
-        T,
-        A,
-        VS
-    ),
+    (SVG_NS, FeFlood, fe_flood, SvgfeFloodElement, "feFlood"),
+    (SVG_NS, FeFuncA, fe_func_a, SvgfeFuncAElement, "feFuncA"),
+    (SVG_NS, FeFuncB, fe_func_b, SvgfeFuncBElement, "feFuncB"),
+    (SVG_NS, FeFuncG, fe_func_g, SvgfeFuncGElement, "feFuncG"),
+    (SVG_NS, FeFuncR, fe_func_r, SvgfeFuncRElement, "feFuncR"),
     (
         SVG_NS,
         FeGaussianBlur,
         fe_gaussian_blur,
         SvgfeGaussianBlurElement,
-        "feGaussianBlur",
-        T,
-        A,
-        VS
+        "feGaussianBlur"
     ),
-    (
-        SVG_NS,
-        FeImage,
-        fe_image,
-        SvgfeImageElement,
-        "feImage",
-        T,
-        A,
-        VS
-    ),
-    (
-        SVG_NS,
-        FeMerge,
-        fe_merge,
-        SvgfeMergeElement,
-        "feMerge",
-        T,
-        A,
-        VS
-    ),
+    (SVG_NS, FeImage, fe_image, SvgfeImageElement, "feImage"),
+    (SVG_NS, FeMerge, fe_merge, SvgfeMergeElement, "feMerge"),
     (
         SVG_NS,
         FeMergeNode,
         fe_merge_node,
         SvgfeMergeNodeElement,
-        "feMergeNode",
-        T,
-        A,
-        VS
+        "feMergeNode"
     ),
     (
         SVG_NS,
         FeMorphology,
         fe_morphology,
         SvgfeMorphologyElement,
-        "feMorphology",
-        T,
-        A,
-        VS
+        "feMorphology"
     ),
-    (
-        SVG_NS,
-        FeOffset,
-        fe_offset,
-        SvgfeOffsetElement,
-        "feOffset",
-        T,
-        A,
-        VS
-    ),
+    (SVG_NS, FeOffset, fe_offset, SvgfeOffsetElement, "feOffset"),
     (
         SVG_NS,
         FePointLight,
         fe_point_light,
         SvgfePointLightElement,
-        "fePointLight",
-        T,
-        A,
-        VS
+        "fePointLight"
     ),
     (
         SVG_NS,
         FeSpecularLighting,
         fe_specular_lighting,
         SvgfeSpecularLightingElement,
-        "feSpecularLighting",
-        T,
-        A,
-        VS
+        "feSpecularLighting"
     ),
     (
         SVG_NS,
         FeSpotLight,
         fe_spot_light,
         SvgfeSpotLightElement,
-        "feSpotLight",
-        T,
-        A,
-        VS
+        "feSpotLight"
     ),
-    (
-        SVG_NS,
-        FeTile,
-        fe_tile,
-        SvgfeTileElement,
-        "feTile",
-        T,
-        A,
-        VS
-    ),
+    (SVG_NS, FeTile, fe_tile, SvgfeTileElement, "feTile"),
     (
         SVG_NS,
         FeTurbulence,
         fe_turbulence,
         SvgfeTurbulenceElement,
-        "feTurbulence",
-        T,
-        A,
-        VS
+        "feTurbulence"
     ),
     (SVG_NS, Filter, filter, SvgFilterElement),
     (
@@ -740,10 +599,7 @@ define_elements!(
         ForeignObject,
         foreign_object,
         SvgForeignObjectElement,
-        "foreignObject",
-        T,
-        A,
-        VS
+        "foreignObject"
     ),
     (SVG_NS, G, g, SvggElement),
     // (SVG_NS, Hatch, hatch, SvgHatchElement),
@@ -755,10 +611,7 @@ define_elements!(
         LinearGradient,
         linear_gradient,
         SvgLinearGradientElement,
-        "linearGradient",
-        T,
-        A,
-        VS
+        "linearGradient"
     ),
     (SVG_NS, Marker, marker, SvgMarkerElement),
     (SVG_NS, Mask, mask, SvgMaskElement),
@@ -773,10 +626,7 @@ define_elements!(
         RadialGradient,
         radial_gradient,
         SvgRadialGradientElement,
-        "radialGradient",
-        T,
-        A,
-        VS
+        "radialGradient"
     ),
     (SVG_NS, Rect, rect, SvgRectElement),
     (SVG_NS, ScriptSvg, script_svg, SvgScriptElement),
@@ -786,16 +636,7 @@ define_elements!(
     (SVG_NS, Switch, switch, SvgSwitchElement),
     (SVG_NS, Symbol, symbol, SvgSymbolElement),
     (SVG_NS, Text, text, SvgTextElement),
-    (
-        SVG_NS,
-        TextPath,
-        text_path,
-        SvgTextPathElement,
-        "textPath",
-        T,
-        A,
-        VS
-    ),
+    (SVG_NS, TextPath, text_path, SvgTextPathElement, "textPath"),
     (SVG_NS, Title, title, SvgTitleElement),
     (SVG_NS, Tspan, tspan, SvgtSpanElement),
     (SVG_NS, Use, use_, SvgUseElement),
