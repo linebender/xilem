@@ -1,5 +1,7 @@
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
-use xilem_html::{document_body, elements as el, interfaces::*, App};
+use xilem_html::{
+    document_body, elements::html, elements::mathml as ml, elements::svg, interfaces::*, App,
+};
 
 struct Triangle {
     a: u32,
@@ -22,8 +24,7 @@ fn label(
     dy: &'static str,
     anchor: &'static str,
 ) -> impl SvgTextElement<Triangle> {
-    let l = l.to_string();
-    el::text(l)
+    svg::text(l.to_string())
         .attr("x", x)
         .attr("y", y)
         .attr("dy", dy)
@@ -35,7 +36,7 @@ fn slider(
     value: u32,
     cb: fn(&mut Triangle, web_sys::Event),
 ) -> impl HtmlInputElement<Triangle> {
-    el::input(())
+    html::input(())
         .attr("type", "range")
         .attr("min", 1)
         .attr("max", max)
@@ -57,10 +58,10 @@ pub fn main() {
         let b_label_y = (y2 + y1) / 2;
         let c = ((t.a * t.a + t.b * t.b) as f32).sqrt();
 
-        el::div((
-            el::h1("Pythagorean theorem"),
-            el::svg((
-                el::polygon(())
+        html::div((
+            html::h1("Pythagorean theorem"),
+            svg::svg((
+                svg::polygon(())
                     .attr("points", format!("{x1},{y1} {x2},{y2} {x3},{y3}"))
                     .attr("style", "fill:crimson;stroke:green;stroke-width:1"),
                 label(t.a, a_label_x, y3, "1em", "middle"),
@@ -69,16 +70,16 @@ pub fn main() {
             ))
             .attr("width", 500)
             .attr("height", 200),
-            el::div((
+            html::div((
                 slider(300, t.a, |t, e| t.a = get_value(e)),
                 slider(150, t.b, |t, e| t.b = get_value(e)),
             )),
-            el::math(el::mrow((
-                el::msup((el::mi(format!("{}", t.a)), el::mn("2"))),
-                el::mo("+"),
-                el::msup((el::mi(format!("{}", t.b)), el::mn("2"))),
-                el::mo("="),
-                el::msup((el::mi(format!("{c}")), el::mn("2"))),
+            ml::math(ml::mrow((
+                ml::msup((ml::mi(format!("{}", t.a)), ml::mn("2"))),
+                ml::mo("+"),
+                ml::msup((ml::mi(format!("{}", t.b)), ml::mn("2"))),
+                ml::mo("="),
+                ml::msup((ml::mi(format!("{c}")), ml::mn("2"))),
             )))
             .attr("style", "width: 100%"),
         ))
