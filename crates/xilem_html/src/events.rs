@@ -340,7 +340,7 @@ event_definitions!(
     (OnFocusIn, "focusin", FocusEvent),
     (OnFocusOut, "focusout", FocusEvent),
     (OnFormData, "formdata", Event),
-    (OnInput, "input", InputEvent),
+    (OnInput, "input", Event),
     (OnInvalid, "invalid", Event),
     (OnKeyDown, "keydown", KeyboardEvent),
     (OnKeyUp, "keyup", KeyboardEvent),

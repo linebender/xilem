@@ -5,7 +5,7 @@ use xilem_core::{Id, MessageResult, VecSplice};
 
 use crate::{
     interfaces::sealed::Sealed, vecmap::VecMap, view::DomNode, AttributeValue, ChangeFlags, Cx,
-    Pod, View, ViewMarker, ViewSequence, HTML_NS, MATHML_NS, SVG_NS,
+    Pod, View, ViewMarker, ViewSequence, HTML_NS,
 };
 
 use super::interfaces::Element;
@@ -171,10 +171,29 @@ macro_rules! generate_dom_interface_impl {
 // TODO maybe it's possible to reduce even more in the impl function bodies and put into impl_functions
 //      (should improve compile times and probably wasm binary size)
 macro_rules! define_element {
-    (($ns:expr, $ty_name:ident, $name:ident, $dom_interface:ident)) => {
-        define_element!(($ns, $ty_name, $name, $dom_interface, T, A, VS));
+    ($ns:expr, ($ty_name:ident, $name:ident, $dom_interface:ident)) => {
+        define_element!($ns, (
+            $ty_name,
+            $name,
+            $dom_interface,
+            stringify!($name),
+            T,
+            A,
+            VS
+        ));
     };
-    (($ns:expr, $ty_name:ident, $name:ident, $dom_interface:ident, $t:ident, $a: ident, $vs: ident)) => {
+    ($ns:expr, ($ty_name:ident, $name:ident, $dom_interface:ident, $tag_name: expr)) => {
+        define_element!($ns, (
+            $ty_name,
+            $name,
+            $dom_interface,
+            $tag_name,
+            T,
+            A,
+            VS
+        ));
+    };
+    ($ns:expr, ($ty_name:ident, $name:ident, $dom_interface:ident, $tag_name:expr, $t:ident, $a: ident, $vs: ident)) => {
         pub struct $ty_name<$t, $a = (), $vs = ()>($vs, PhantomData<fn() -> ($t, $a)>);
 
         impl<$t, $a, $vs> ViewMarker for $ty_name<$t, $a, $vs> {}
@@ -185,7 +204,7 @@ macro_rules! define_element {
             type Element = web_sys::$dom_interface;
 
             fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
-                let (el, attributes) = cx.build_element($ns, stringify!($name));
+                let (el, attributes) = cx.build_element($ns, $tag_name);
 
                 let mut child_elements = vec![];
                 let (id, children_states) =
@@ -256,7 +275,7 @@ macro_rules! define_element {
         }
 
         /// Builder function for a
-        #[doc = concat!("`", stringify!($name), "`")]
+        #[doc = concat!("`", $tag_name, "`")]
         /// element view.
         pub fn $name<$t, $a, $vs: ViewSequence<$t, $a>>(children: $vs) -> $ty_name<$t, $a, $vs> {
             $ty_name(children, PhantomData)
@@ -271,135 +290,351 @@ macro_rules! define_element {
 }
 
 macro_rules! define_elements {
-    ($($element_def:tt,)*) => {
-        $(define_element!($element_def);)*
+    ($ns:ident, $($element_def:tt,)*) => {
+        use std::marker::PhantomData;
+        use wasm_bindgen::{JsCast, UnwrapThrowExt};
+        use xilem_core::{Id, MessageResult, VecSplice};
+        use super::ElementState;
+
+        use crate::{
+            interfaces::sealed::Sealed, view::DomNode,
+            ChangeFlags, Cx, View, ViewMarker, ViewSequence,
+        };
+
+        $(define_element!(crate::$ns, $element_def);)*
     };
 }
 
-define_elements!(
-    // the order is copied from
-    // https://developer.mozilla.org/en-US/docs/Web/HTML/Element
-    // DOM interfaces copied from https://html.spec.whatwg.org/multipage/grouping-content.html and friends
+pub mod html {
+    define_elements!(
+        // the order is copied from
+        // https://developer.mozilla.org/en-US/docs/Web/HTML/Element
+        // DOM interfaces copied from https://html.spec.whatwg.org/multipage/grouping-content.html and friends
 
-    // TODO include document metadata elements?
+        // TODO include document metadata elements?
+        HTML_NS,
+        // content sectioning
+        (Address, address, HtmlElement),
+        (Article, article, HtmlElement),
+        (Aside, aside, HtmlElement),
+        (Footer, footer, HtmlElement),
+        (Header, header, HtmlElement),
+        (H1, h1, HtmlHeadingElement),
+        (H2, h2, HtmlHeadingElement),
+        (H3, h3, HtmlHeadingElement),
+        (H4, h4, HtmlHeadingElement),
+        (H5, h5, HtmlHeadingElement),
+        (H6, h6, HtmlHeadingElement),
+        (Hgroup, hgroup, HtmlElement),
+        (Main, main, HtmlElement),
+        (Nav, nav, HtmlElement),
+        (Section, section, HtmlElement),
+        // text content
+        (Blockquote, blockquote, HtmlQuoteElement),
+        (Dd, dd, HtmlElement),
+        (Div, div, HtmlDivElement),
+        (Dl, dl, HtmlDListElement),
+        (Dt, dt, HtmlElement),
+        (Figcaption, figcaption, HtmlElement),
+        (Figure, figure, HtmlElement),
+        (Hr, hr, HtmlHrElement),
+        (Li, li, HtmlLiElement),
+        (Link, link, HtmlLinkElement),
+        (Menu, menu, HtmlMenuElement),
+        (Ol, ol, HtmlOListElement),
+        (P, p, HtmlParagraphElement),
+        (Pre, pre, HtmlPreElement),
+        (Ul, ul, HtmlUListElement),
+        // inline text
+        (A, a, HtmlAnchorElement, "a", T, A_, VS),
+        (Abbr, abbr, HtmlElement),
+        (B, b, HtmlElement),
+        (Bdi, bdi, HtmlElement),
+        (Bdo, bdo, HtmlElement),
+        (Br, br, HtmlBrElement),
+        (Cite, cite, HtmlElement),
+        (Code, code, HtmlElement),
+        (Data, data, HtmlDataElement),
+        (Dfn, dfn, HtmlElement),
+        (Em, em, HtmlElement),
+        (I, i, HtmlElement),
+        (Kbd, kbd, HtmlElement),
+        (Mark, mark, HtmlElement),
+        (Q, q, HtmlQuoteElement),
+        (Rp, rp, HtmlElement),
+        (Rt, rt, HtmlElement),
+        (Ruby, ruby, HtmlElement),
+        (S, s, HtmlElement),
+        (Samp, samp, HtmlElement),
+        (Small, small, HtmlElement),
+        (Span, span, HtmlSpanElement),
+        (Strong, strong, HtmlElement),
+        (Sub, sub, HtmlElement),
+        (Sup, sup, HtmlElement),
+        (Time, time, HtmlTimeElement),
+        (U, u, HtmlElement),
+        (Var, var, HtmlElement),
+        (Wbr, wbr, HtmlElement),
+        // image and multimedia
+        (Area, area, HtmlAreaElement),
+        (Audio, audio, HtmlAudioElement),
+        (Canvas, canvas, HtmlCanvasElement),
+        (Img, img, HtmlImageElement),
+        (Map, map, HtmlMapElement),
+        (Track, track, HtmlTrackElement),
+        (Video, video, HtmlVideoElement),
+        // embedded content
+        (Embed, embed, HtmlEmbedElement),
+        (Iframe, iframe, HtmlIFrameElement),
+        (Object, object, HtmlObjectElement),
+        (Picture, picture, HtmlPictureElement),
+        (Portal, portal, HtmlElement),
+        (Source, source, HtmlSourceElement),
+        // scripting
+        (Noscript, noscript, HtmlElement),
+        (Script, script, HtmlScriptElement),
+        // demarcating edits
+        (Del, del, HtmlModElement),
+        (Ins, ins, HtmlModElement),
+        // tables
+        (Caption, caption, HtmlTableCaptionElement),
+        (Col, col, HtmlTableColElement),
+        (Colgroup, colgroup, HtmlTableColElement),
+        (Table, table, HtmlTableElement),
+        (Tbody, tbody, HtmlTableSectionElement),
+        (Td, td, HtmlTableCellElement),
+        (Tfoot, tfoot, HtmlTableSectionElement),
+        (Th, th, HtmlTableCellElement),
+        (Thead, thead, HtmlTableSectionElement),
+        (Tr, tr, HtmlTableRowElement),
+        // forms
+        (Button, button, HtmlButtonElement),
+        (Datalist, datalist, HtmlDataListElement),
+        (Fieldset, fieldset, HtmlFieldSetElement),
+        (Form, form, HtmlFormElement),
+        (Input, input, HtmlInputElement),
+        (Label, label, HtmlLabelElement),
+        (Legend, legend, HtmlLegendElement),
+        (Meter, meter, HtmlMeterElement),
+        (Optgroup, optgroup, HtmlOptGroupElement),
+        (OptionElement, option, HtmlOptionElement), // Avoid cluttering the namespace with `Option`
+        (Output, output, HtmlOutputElement),
+        (Progress, progress, HtmlProgressElement),
+        (Select, select, HtmlSelectElement),
+        (Textarea, textarea, HtmlTextAreaElement),
+        // interactive elements,
+        (Details, details, HtmlDetailsElement),
+        (Dialog, dialog, HtmlDialogElement),
+        (Summary, summary, HtmlElement),
+        // web components,
+        (Slot, slot, HtmlSlotElement),
+        (Template, template, HtmlTemplateElement),
+    );
+}
 
-    // content sectioning
-    (HTML_NS, Address, address, HtmlElement),
-    (HTML_NS, Article, article, HtmlElement),
-    (HTML_NS, Aside, aside, HtmlElement),
-    (HTML_NS, Footer, footer, HtmlElement),
-    (HTML_NS, Header, header, HtmlElement),
-    (HTML_NS, H1, h1, HtmlHeadingElement),
-    (HTML_NS, H2, h2, HtmlHeadingElement),
-    (HTML_NS, H3, h3, HtmlHeadingElement),
-    (HTML_NS, H4, h4, HtmlHeadingElement),
-    (HTML_NS, H5, h5, HtmlHeadingElement),
-    (HTML_NS, H6, h6, HtmlHeadingElement),
-    (HTML_NS, Hgroup, hgroup, HtmlElement),
-    (HTML_NS, Main, main, HtmlElement),
-    (HTML_NS, Nav, nav, HtmlElement),
-    (HTML_NS, Section, section, HtmlElement),
-    // text content
-    (HTML_NS, Blockquote, blockquote, HtmlQuoteElement),
-    (HTML_NS, Dd, dd, HtmlElement),
-    (HTML_NS, Div, div, HtmlDivElement),
-    (HTML_NS, Dl, dl, HtmlDListElement),
-    (HTML_NS, Dt, dt, HtmlElement),
-    (HTML_NS, Figcaption, figcaption, HtmlElement),
-    (HTML_NS, Figure, figure, HtmlElement),
-    (HTML_NS, Hr, hr, HtmlHrElement),
-    (HTML_NS, Li, li, HtmlLiElement),
-    (HTML_NS, Link, link, HtmlLinkElement),
-    (HTML_NS, Menu, menu, HtmlMenuElement),
-    (HTML_NS, Ol, ol, HtmlOListElement),
-    (HTML_NS, P, p, HtmlParagraphElement),
-    (HTML_NS, Pre, pre, HtmlPreElement),
-    (HTML_NS, Ul, ul, HtmlUListElement),
-    // inline text
-    (HTML_NS, A, a, HtmlAnchorElement, T, A_, VS),
-    (HTML_NS, Abbr, abbr, HtmlElement),
-    (HTML_NS, B, b, HtmlElement),
-    (HTML_NS, Bdi, bdi, HtmlElement),
-    (HTML_NS, Bdo, bdo, HtmlElement),
-    (HTML_NS, Br, br, HtmlBrElement),
-    (HTML_NS, Cite, cite, HtmlElement),
-    (HTML_NS, Code, code, HtmlElement),
-    (HTML_NS, Data, data, HtmlDataElement),
-    (HTML_NS, Dfn, dfn, HtmlElement),
-    (HTML_NS, Em, em, HtmlElement),
-    (HTML_NS, I, i, HtmlElement),
-    (HTML_NS, Kbd, kbd, HtmlElement),
-    (HTML_NS, Mark, mark, HtmlElement),
-    (HTML_NS, Q, q, HtmlQuoteElement),
-    (HTML_NS, Rp, rp, HtmlElement),
-    (HTML_NS, Rt, rt, HtmlElement),
-    (HTML_NS, Ruby, ruby, HtmlElement),
-    (HTML_NS, S, s, HtmlElement),
-    (HTML_NS, Samp, samp, HtmlElement),
-    (HTML_NS, Small, small, HtmlElement),
-    (HTML_NS, Span, span, HtmlSpanElement),
-    (HTML_NS, Strong, strong, HtmlElement),
-    (HTML_NS, Sub, sub, HtmlElement),
-    (HTML_NS, Sup, sup, HtmlElement),
-    (HTML_NS, Time, time, HtmlTimeElement),
-    (HTML_NS, U, u, HtmlElement),
-    (HTML_NS, Var, var, HtmlElement),
-    (HTML_NS, Wbr, wbr, HtmlElement),
-    // image and multimedia
-    (HTML_NS, Area, area, HtmlAreaElement),
-    (HTML_NS, Audio, audio, HtmlAudioElement),
-    (HTML_NS, Canvas, canvas, HtmlCanvasElement),
-    (HTML_NS, Img, img, HtmlImageElement),
-    (HTML_NS, Map, map, HtmlMapElement),
-    (HTML_NS, Track, track, HtmlTrackElement),
-    (HTML_NS, Video, video, HtmlVideoElement),
-    // embedded content
-    (HTML_NS, Embed, embed, HtmlEmbedElement),
-    (HTML_NS, Iframe, iframe, HtmlIFrameElement),
-    (HTML_NS, Object, object, HtmlObjectElement),
-    (HTML_NS, Picture, picture, HtmlPictureElement),
-    (HTML_NS, Portal, portal, HtmlElement),
-    (HTML_NS, Source, source, HtmlSourceElement),
-    // scripting
-    (HTML_NS, Noscript, noscript, HtmlElement),
-    (HTML_NS, Script, script, HtmlScriptElement),
-    // demarcating edits
-    (HTML_NS, Del, del, HtmlModElement),
-    (HTML_NS, Ins, ins, HtmlModElement),
-    // tables
-    (HTML_NS, Caption, caption, HtmlTableCaptionElement),
-    (HTML_NS, Col, col, HtmlTableColElement),
-    (HTML_NS, Colgroup, colgroup, HtmlTableColElement),
-    (HTML_NS, Table, table, HtmlTableElement),
-    (HTML_NS, Tbody, tbody, HtmlTableSectionElement),
-    (HTML_NS, Td, td, HtmlTableCellElement),
-    (HTML_NS, Tfoot, tfoot, HtmlTableSectionElement),
-    (HTML_NS, Th, th, HtmlTableCellElement),
-    (HTML_NS, Thead, thead, HtmlTableSectionElement),
-    (HTML_NS, Tr, tr, HtmlTableRowElement),
-    // forms
-    (HTML_NS, Button, button, HtmlButtonElement),
-    (HTML_NS, Datalist, datalist, HtmlDataListElement),
-    (HTML_NS, Fieldset, fieldset, HtmlFieldSetElement),
-    (HTML_NS, Form, form, HtmlFormElement),
-    (HTML_NS, Input, input, HtmlInputElement),
-    (HTML_NS, Label, label, HtmlLabelElement),
-    (HTML_NS, Legend, legend, HtmlLegendElement),
-    (HTML_NS, Meter, meter, HtmlMeterElement),
-    (HTML_NS, Optgroup, optgroup, HtmlOptGroupElement),
-    (HTML_NS, OptionElement, option, HtmlOptionElement), // Avoid cluttering the namespace with `Option`
-    (HTML_NS, Output, output, HtmlOutputElement),
-    (HTML_NS, Progress, progress, HtmlProgressElement),
-    (HTML_NS, Select, select, HtmlSelectElement),
-    (HTML_NS, Textarea, textarea, HtmlTextAreaElement),
-    // interactive elements,
-    (HTML_NS, Details, details, HtmlDetailsElement),
-    (HTML_NS, Dialog, dialog, HtmlDialogElement),
-    (HTML_NS, Summary, summary, HtmlElement),
-    // web components,
-    (HTML_NS, Slot, slot, HtmlSlotElement),
-    (HTML_NS, Template, template, HtmlTemplateElement),
-    // SVG and MathML (TODO, svg and mathml elements)
-    (SVG_NS, Svg, svg, SvgElement),
-    (MATHML_NS, Math, math, Element),
-);
+pub mod mathml {
+    define_elements!(
+        MATHML_NS,
+        (Math, math, Element),
+        (Annotation, annotation, Element),
+        (AnnotationXml, annotation_xml, Element, "annotation-xml"),
+        (Maction, maction, Element),
+        (Merror, merror, Element),
+        (Mfrac, mfrac, Element),
+        (Mi, mi, Element),
+        (Mmultiscripts, mmultiscripts, Element),
+        (Mn, mn, Element),
+        (Mo, mo, Element),
+        (Mover, mover, Element),
+        (Mpadded, mpadded, Element),
+        (Mphantom, mphantom, Element),
+        (Mprescripts, mprescripts, Element),
+        (Mroot, mroot, Element),
+        (Mrow, mrow, Element),
+        (Ms, ms, Element),
+        (Mspace, mspace, Element),
+        (Msqrt, msqrt, Element),
+        (Mstyle, mstyle, Element),
+        (Msub, msub, Element),
+        (Msubsup, msubsup, Element),
+        (Msup, msup, Element),
+        (Mtable, mtable, Element),
+        (Mtd, mtd, Element),
+        (Mtext, mtext, Element),
+        (Mtr, mtr, Element),
+        (Munder, munder, Element),
+        (Munderover, munderover, Element),
+        (Semantics, semantics, Element),
+    );
+}
+
+pub mod svg {
+    define_elements!(
+        SVG_NS,
+        (Svg, svg, SvgsvgElement),
+        (A, a, SvgaElement, "a", T, A_, VS),
+        (Animate, animate, SvgAnimateElement),
+        (
+            AnimateMotion,
+            animate_motion,
+            SvgAnimateMotionElement,
+            "animateMotion"
+        ),
+        (
+            AnimateTransform,
+            animate_transform,
+            SvgAnimateTransformElement,
+            "animateTransform"
+        ),
+        (Circle, circle, SvgCircleElement),
+        (ClipPath, clip_path, SvgClipPathElement, "clipPath"),
+        (Defs, defs, SvgDefsElement),
+        (Desc, desc, SvgDescElement),
+        (Ellipse, ellipse, SvgEllipseElement),
+        (FeBlend, fe_blend, SvgfeBlendElement, "feBlend"),
+        (
+            FeColorMatrix,
+            fe_color_matrix,
+            SvgfeColorMatrixElement,
+            "feColorMatrix"
+        ),
+        (
+            FeComponentTransfer,
+            fe_component_transfer,
+            SvgfeComponentTransferElement,
+            "feComponentTransfer"
+        ),
+        (
+            FeComposite,
+            fe_composite,
+            SvgfeCompositeElement,
+            "feComposite"
+        ),
+        (
+            FeConvolveMatrix,
+            fe_convolve_matrix,
+            SvgfeConvolveMatrixElement,
+            "feConvolveMatrix"
+        ),
+        (
+            FeDiffuseLighting,
+            fe_diffuse_lighting,
+            SvgfeDiffuseLightingElement,
+            "feDiffuseLighting"
+        ),
+        (
+            FeDisplacementMap,
+            fe_displacement_map,
+            SvgfeDisplacementMapElement,
+            "feDisplacementMap"
+        ),
+        (
+            FeDistantLight,
+            fe_distant_light,
+            SvgfeDistantLightElement,
+            "feDistantLight"
+        ),
+        (
+            FeDropShadow,
+            fe_drop_shadow,
+            SvgfeDropShadowElement,
+            "feDropShadow"
+        ),
+        (FeFlood, fe_flood, SvgfeFloodElement, "feFlood"),
+        (FeFuncA, fe_func_a, SvgfeFuncAElement, "feFuncA"),
+        (FeFuncB, fe_func_b, SvgfeFuncBElement, "feFuncB"),
+        (FeFuncG, fe_func_g, SvgfeFuncGElement, "feFuncG"),
+        (FeFuncR, fe_func_r, SvgfeFuncRElement, "feFuncR"),
+        (
+            FeGaussianBlur,
+            fe_gaussian_blur,
+            SvgfeGaussianBlurElement,
+            "feGaussianBlur"
+        ),
+        (FeImage, fe_image, SvgfeImageElement, "feImage"),
+        (FeMerge, fe_merge, SvgfeMergeElement, "feMerge"),
+        (
+            FeMergeNode,
+            fe_merge_node,
+            SvgfeMergeNodeElement,
+            "feMergeNode"
+        ),
+        (
+            FeMorphology,
+            fe_morphology,
+            SvgfeMorphologyElement,
+            "feMorphology"
+        ),
+        (FeOffset, fe_offset, SvgfeOffsetElement, "feOffset"),
+        (
+            FePointLight,
+            fe_point_light,
+            SvgfePointLightElement,
+            "fePointLight"
+        ),
+        (
+            FeSpecularLighting,
+            fe_specular_lighting,
+            SvgfeSpecularLightingElement,
+            "feSpecularLighting"
+        ),
+        (
+            FeSpotLight,
+            fe_spot_light,
+            SvgfeSpotLightElement,
+            "feSpotLight"
+        ),
+        (FeTile, fe_tile, SvgfeTileElement, "feTile"),
+        (
+            FeTurbulence,
+            fe_turbulence,
+            SvgfeTurbulenceElement,
+            "feTurbulence"
+        ),
+        (Filter, filter, SvgFilterElement),
+        (
+            ForeignObject,
+            foreign_object,
+            SvgForeignObjectElement,
+            "foreignObject"
+        ),
+        (G, g, SvggElement),
+        // (Hatch, hatch, SvgHatchElement),
+        // (Hatchpath, hatchpath, SvgHatchpathElement),
+        (Image, image, SvgImageElement),
+        (Line, line, SvgLineElement),
+        (
+            LinearGradient,
+            linear_gradient,
+            SvgLinearGradientElement,
+            "linearGradient"
+        ),
+        (Marker, marker, SvgMarkerElement),
+        (Mask, mask, SvgMaskElement),
+        (Metadata, metadata, SvgMetadataElement),
+        (Mpath, mpath, SvgmPathElement),
+        (Path, path, SvgPathElement),
+        (Pattern, pattern, SvgPatternElement),
+        (Polygon, polygon, SvgPolygonElement),
+        (Polyline, polyline, SvgPolylineElement),
+        (
+            RadialGradient,
+            radial_gradient,
+            SvgRadialGradientElement,
+            "radialGradient"
+        ),
+        (Rect, rect, SvgRectElement),
+        (ScriptSvg, script_svg, SvgScriptElement),
+        (Set, set, SvgSetElement),
+        (Stop, stop, SvgStopElement),
+        (Style, style, SvgStyleElement),
+        (Switch, switch, SvgSwitchElement),
+        (Symbol, symbol, SvgSymbolElement),
+        (Text, text, SvgTextElement),
+        (TextPath, text_path, SvgTextPathElement, "textPath"),
+        (Title, title, SvgTitleElement),
+        (Tspan, tspan, SvgtSpanElement),
+        (Use, use_, SvgUseElement),
+        (SvgView, view, SvgViewElement),
+    );
+}
