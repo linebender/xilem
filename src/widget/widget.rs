@@ -222,6 +222,15 @@ impl Widget for Box<dyn AnyWidget> {
         self.deref_mut().layout(cx, bc)
     }
 
+    fn compute_max_intrinsic(
+        &mut self,
+        axis: Axis,
+        ctx: &mut LayoutCx,
+        bc: &BoxConstraints,
+    ) -> f64 {
+        self.deref_mut().compute_max_intrinsic(axis, ctx, bc)
+    }
+
     fn accessibility(&mut self, cx: &mut AccessCx) {
         self.deref_mut().accessibility(cx);
     }

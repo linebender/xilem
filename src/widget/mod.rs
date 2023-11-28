@@ -37,3 +37,8 @@ pub use raw_event::{Event, LifeCycle, MouseEvent, ViewContext};
 pub use switch::Switch;
 pub use text::TextWidget;
 pub use widget::{AnyWidget, Widget};
+
+#[cfg(feature = "taffy")]
+mod taffy_layout;
+#[cfg(feature = "taffy")]
+pub use taffy_layout::TaffyLayout;

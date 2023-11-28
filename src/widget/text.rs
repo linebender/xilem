@@ -39,6 +39,7 @@ impl TextWidget {
 
     pub fn set_text(&mut self, text: Cow<'static, str>) -> ChangeFlags {
         self.text = text;
+        self.layout = None;
         ChangeFlags::LAYOUT | ChangeFlags::PAINT
     }
 

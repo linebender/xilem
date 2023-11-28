@@ -22,6 +22,7 @@ use vello::kurbo::{Affine, Point, Rect, Size};
 use vello::{SceneBuilder, SceneFragment};
 
 use super::widget::{AnyWidget, Widget};
+use crate::Axis;
 use crate::{id::Id, Bloom};
 
 use super::{
@@ -182,6 +183,11 @@ impl Pod {
             fragment: SceneFragment::default(),
             widget,
         }
+    }
+
+    /// Returns the wrapped widget.
+    pub fn downcast_ref<T: 'static>(&self) -> Option<&T> {
+        (*self.widget).as_any().downcast_ref()
     }
 
     /// Returns the wrapped widget.
@@ -389,6 +395,19 @@ impl Pod {
         self.state.flags.remove(PodFlags::REQUEST_LAYOUT);
         cx.widget_state.merge_up(&mut self.state);
         self.state.size
+    }
+
+    pub fn compute_max_intrinsic(
+        &mut self,
+        axis: Axis,
+        cx: &mut LayoutCx,
+        bc: &BoxConstraints,
+    ) -> f64 {
+        let mut child_cx = LayoutCx {
+            cx_state: cx.cx_state,
+            widget_state: &mut self.state,
+        };
+        self.widget.compute_max_intrinsic(axis, &mut child_cx, bc)
     }
 
     ///
