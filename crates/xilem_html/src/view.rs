@@ -93,119 +93,106 @@ xilem_core::generate_adapt_state_view! {View, Cx, ChangeFlags;}
 
 // strings -> text nodes
 
-impl ViewMarker for &'static str {}
-impl<T, A> View<T, A> for &'static str {
-    type State = ();
-    type Element = web_sys::Text;
+macro_rules! impl_string_view {
+    ($ty:ty) => {
+        impl ViewMarker for $ty {}
+        impl<T, A> View<T, A> for $ty {
+            type State = ();
+            type Element = web_sys::Text;
 
-    fn build(&self, _cx: &mut Cx) -> (Id, Self::State, Self::Element) {
-        let el = new_text(self);
-        let id = Id::next();
-        (id, (), el)
-    }
+            fn build(&self, _cx: &mut Cx) -> (Id, Self::State, Self::Element) {
+                (Id::next(), (), new_text(self))
+            }
 
-    fn rebuild(
-        &self,
-        _cx: &mut Cx,
-        prev: &Self,
-        _id: &mut Id,
-        _state: &mut Self::State,
-        element: &mut Self::Element,
-    ) -> ChangeFlags {
-        let mut is_changed = ChangeFlags::empty();
-        if prev != self {
-            element.set_data(self);
-            is_changed |= ChangeFlags::OTHER_CHANGE;
+            fn rebuild(
+                &self,
+                _cx: &mut Cx,
+                prev: &Self,
+                _id: &mut Id,
+                _state: &mut Self::State,
+                element: &mut Self::Element,
+            ) -> ChangeFlags {
+                if prev != self {
+                    element.set_data(self);
+                    ChangeFlags::OTHER_CHANGE
+                } else {
+                    ChangeFlags::empty()
+                }
+            }
+
+            fn message(
+                &self,
+                _id_path: &[Id],
+                _state: &mut Self::State,
+                message: Box<dyn std::any::Any>,
+                _app_state: &mut T,
+            ) -> MessageResult<A> {
+                MessageResult::Stale(message)
+            }
         }
-        is_changed
-    }
-
-    fn message(
-        &self,
-        _id_path: &[Id],
-        _state: &mut Self::State,
-        _message: Box<dyn std::any::Any>,
-        _app_state: &mut T,
-    ) -> MessageResult<A> {
-        MessageResult::Nop
-    }
+    };
 }
 
-impl ViewMarker for String {}
-impl<T, A> View<T, A> for String {
-    type State = ();
-    type Element = web_sys::Text;
+impl_string_view!(String);
+impl_string_view!(&'static str);
+impl_string_view!(Cow<'static, str>);
 
-    fn build(&self, _cx: &mut Cx) -> (Id, Self::State, Self::Element) {
-        let el = new_text(self);
-        let id = Id::next();
-        (id, (), el)
-    }
+// Specialization would probably avoid manual implementation,
+// but it's probably a good idea to have more control than via a blanket impl
+macro_rules! impl_to_string_view {
+    ($ty:ty) => {
+        impl ViewMarker for $ty {}
+        impl<T, A> View<T, A> for $ty {
+            type State = ();
+            type Element = web_sys::Text;
 
-    fn rebuild(
-        &self,
-        _cx: &mut Cx,
-        prev: &Self,
-        _id: &mut Id,
-        _state: &mut Self::State,
-        element: &mut Self::Element,
-    ) -> ChangeFlags {
-        let mut is_changed = ChangeFlags::empty();
-        if prev != self {
-            element.set_data(self);
-            is_changed |= ChangeFlags::OTHER_CHANGE;
+            fn build(&self, _cx: &mut Cx) -> (Id, Self::State, Self::Element) {
+                (Id::next(), (), new_text(&self.to_string()))
+            }
+
+            fn rebuild(
+                &self,
+                _cx: &mut Cx,
+                prev: &Self,
+                _id: &mut Id,
+                _state: &mut Self::State,
+                element: &mut Self::Element,
+            ) -> ChangeFlags {
+                if prev != self {
+                    element.set_data(&self.to_string());
+                    ChangeFlags::OTHER_CHANGE
+                } else {
+                    ChangeFlags::empty()
+                }
+            }
+
+            fn message(
+                &self,
+                _id_path: &[Id],
+                _state: &mut Self::State,
+                message: Box<dyn std::any::Any>,
+                _app_state: &mut T,
+            ) -> MessageResult<A> {
+                MessageResult::Stale(message)
+            }
         }
-        is_changed
-    }
-
-    fn message(
-        &self,
-        _id_path: &[Id],
-        _state: &mut Self::State,
-        _message: Box<dyn std::any::Any>,
-        _app_state: &mut T,
-    ) -> MessageResult<A> {
-        MessageResult::Nop
-    }
+    };
 }
 
-impl ViewMarker for Cow<'static, str> {}
-impl<T, A> View<T, A> for Cow<'static, str> {
-    type State = ();
-    type Element = web_sys::Text;
-
-    fn build(&self, _cx: &mut Cx) -> (Id, Self::State, Self::Element) {
-        let el = new_text(self);
-        let id = Id::next();
-        (id, (), el)
-    }
-
-    fn rebuild(
-        &self,
-        _cx: &mut Cx,
-        prev: &Self,
-        _id: &mut Id,
-        _state: &mut Self::State,
-        element: &mut Self::Element,
-    ) -> ChangeFlags {
-        let mut is_changed = ChangeFlags::empty();
-        if prev != self {
-            element.set_data(self);
-            is_changed |= ChangeFlags::OTHER_CHANGE;
-        }
-        is_changed
-    }
-
-    fn message(
-        &self,
-        _id_path: &[Id],
-        _state: &mut Self::State,
-        _message: Box<dyn std::any::Any>,
-        _app_state: &mut T,
-    ) -> MessageResult<A> {
-        MessageResult::Nop
-    }
-}
+// Allow numbers to be used directly as a view
+impl_to_string_view!(f32);
+impl_to_string_view!(f64);
+impl_to_string_view!(i8);
+impl_to_string_view!(u8);
+impl_to_string_view!(i16);
+impl_to_string_view!(u16);
+impl_to_string_view!(i32);
+impl_to_string_view!(u32);
+impl_to_string_view!(i64);
+impl_to_string_view!(u64);
+impl_to_string_view!(u128);
+impl_to_string_view!(isize);
+impl_to_string_view!(usize);
 
 fn new_text(text: &str) -> web_sys::Text {
     web_sys::Text::new_with_data(text).unwrap()
