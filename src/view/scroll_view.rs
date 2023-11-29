@@ -74,10 +74,15 @@ where
         &self,
         id_path: &[Id],
         state: &mut Self::State,
-        event: Box<dyn Any>,
+        message: Box<dyn Any>,
         app_state: &mut T,
     ) -> MessageResult<A> {
-        let tl = &id_path[1..];
-        self.child.message(tl, &mut state.1, event, app_state)
+        match id_path {
+            [child_id, rest_path @ ..] if *child_id == state.0 => {
+                self.child
+                    .message(rest_path, &mut state.1, message, app_state)
+            }
+            _ => MessageResult::Stale(message),
+        }
     }
 }
