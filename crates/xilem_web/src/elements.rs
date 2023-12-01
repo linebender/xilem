@@ -5,7 +5,7 @@ use xilem_core::{Id, MessageResult, VecSplice};
 
 use crate::{
     interfaces::sealed::Sealed, vecmap::VecMap, view::DomNode, AttributeValue, ChangeFlags, Cx,
-    Pod, View, ViewMarker, ViewSequence, HTML_NS,
+    ElementsSplice, Pod, View, ViewMarker, ViewSequence, HTML_NS,
 };
 
 use super::interfaces::Element;
@@ -49,6 +49,89 @@ impl<T, A, Children> CustomElement<T, A, Children> {
     }
 }
 
+struct ChildrenSplice<'a, 'b, 'c> {
+    children: VecSplice<'a, 'b, Pod>,
+    child_idx: u32,
+    parent: &'c web_sys::Node,
+    node_list: Option<web_sys::NodeList>,
+    prev_element_count: usize,
+}
+
+impl<'a, 'b, 'c> ChildrenSplice<'a, 'b, 'c> {
+    fn new(
+        children: &'a mut Vec<Pod>,
+        scratch: &'b mut Vec<Pod>,
+        parent: &'c web_sys::Node,
+    ) -> Self {
+        let prev_element_count = children.len();
+        Self {
+            children: VecSplice::new(children, scratch),
+            child_idx: 0,
+            parent,
+            node_list: None,
+            prev_element_count,
+        }
+    }
+}
+
+impl<'a, 'b, 'c> ElementsSplice for ChildrenSplice<'a, 'b, 'c> {
+    fn push(&mut self, element: Pod) {
+        self.parent
+            .append_child(element.0.as_node_ref())
+            .unwrap_throw();
+        self.child_idx += 1;
+        self.children.push(element);
+    }
+
+    fn mutate(&mut self) -> &mut Pod {
+        self.children.mutate()
+    }
+
+    fn delete(&mut self, n: usize) {
+        // Optimization in case all elements are deleted at once
+        if n == self.prev_element_count {
+            self.parent.set_text_content(None);
+        } else {
+            // lazy NodeList access, in case it's not necessary at all, which is slightly faster when there's no need for the NodeList
+            let node_list = if let Some(node_list) = &self.node_list {
+                node_list
+            } else {
+                self.node_list = Some(self.parent.child_nodes());
+                self.node_list.as_ref().unwrap()
+            };
+            for _ in 0..n {
+                let child = node_list.get(self.child_idx).unwrap_throw();
+                self.parent.remove_child(&child).unwrap_throw();
+            }
+        }
+        self.children.delete(n);
+    }
+
+    fn len(&self) -> usize {
+        self.children.len()
+    }
+
+    fn mark(&mut self, mut changeflags: ChangeFlags) -> ChangeFlags {
+        if changeflags.contains(ChangeFlags::STRUCTURE) {
+            let node_list = if let Some(node_list) = &self.node_list {
+                node_list
+            } else {
+                self.node_list = Some(self.parent.child_nodes());
+                self.node_list.as_ref().unwrap()
+            };
+            let cur_child = self.children.peek_mut().unwrap_throw();
+            let old_child = node_list.get(self.child_idx).unwrap_throw();
+            self.parent
+                .replace_child(cur_child.0.as_node_ref(), &old_child)
+                .unwrap_throw();
+            // TODO do something else with the structure information?
+            changeflags.remove(ChangeFlags::STRUCTURE);
+        }
+        self.child_idx += 1;
+        changeflags
+    }
+}
+
 impl<T, A, Children> ViewMarker for CustomElement<T, A, Children> {}
 impl<T, A, Children> Sealed for CustomElement<T, A, Children> {}
 
@@ -66,12 +149,10 @@ where
         let (el, attributes) = cx.build_element(HTML_NS, &self.name);
 
         let mut child_elements = vec![];
-        let (id, children_states) =
-            cx.with_new_id(|cx| self.children.build(cx, &mut child_elements));
+        let mut scratch = vec![];
+        let mut splice = ChildrenSplice::new(&mut child_elements, &mut scratch, &el);
 
-        for child in &child_elements {
-            el.append_child(child.0.as_node_ref()).unwrap_throw();
-        }
+        let (id, children_states) = cx.with_new_id(|cx| self.children.build(cx, &mut splice));
 
         // Set the id used internally to the `data-debugid` attribute.
         // This allows the user to see if an element has been re-created or only altered.
@@ -83,7 +164,7 @@ where
         let state = ElementState {
             children_states,
             child_elements,
-            scratch: vec![],
+            scratch,
             attributes,
         };
         (id, state, el)
@@ -109,10 +190,8 @@ where
             let (new_element, attributes) = cx.build_element(HTML_NS, self.node_name());
             state.attributes = attributes;
             // TODO could this be combined with child updates?
-            while element.child_element_count() > 0 {
-                new_element
-                    .append_child(&element.child_nodes().get(0).unwrap_throw())
-                    .unwrap_throw();
+            while let Some(child) = element.child_nodes().get(0) {
+                new_element.append_child(&child).unwrap_throw();
             }
             *element = new_element.dyn_into().unwrap_throw();
             changed |= ChangeFlags::STRUCTURE;
@@ -121,23 +200,13 @@ where
         changed |= cx.rebuild_element(element, &mut state.attributes);
 
         // update children
-        let mut splice = VecSplice::new(&mut state.child_elements, &mut state.scratch);
+        let mut splice =
+            ChildrenSplice::new(&mut state.child_elements, &mut state.scratch, element);
         changed |= cx.with_id(*id, |cx| {
             self.children
                 .rebuild(cx, &prev.children, &mut state.children_states, &mut splice)
         });
-        if changed.contains(ChangeFlags::STRUCTURE) {
-            // This is crude and will result in more DOM traffic than needed.
-            // The right thing to do is diff the new state of the children id
-            // vector against the old, and derive DOM mutations from that.
-            while let Some(child) = element.first_child() {
-                element.remove_child(&child).unwrap_throw();
-            }
-            for child in &state.child_elements {
-                element.append_child(child.0.as_node_ref()).unwrap_throw();
-            }
-            changed.remove(ChangeFlags::STRUCTURE);
-        }
+        changed.remove(ChangeFlags::STRUCTURE);
         changed
     }
 
@@ -207,11 +276,10 @@ macro_rules! define_element {
                 let (el, attributes) = cx.build_element($ns, $tag_name);
 
                 let mut child_elements = vec![];
-                let (id, children_states) =
-                    cx.with_new_id(|cx| self.0.build(cx, &mut child_elements));
-                for child in &child_elements {
-                    el.append_child(child.0.as_node_ref()).unwrap_throw();
-                }
+                let mut scratch = vec![];
+                let mut splice = ChildrenSplice::new(&mut child_elements, &mut scratch, &el);
+
+                let (id, children_states) = cx.with_new_id(|cx| self.0.build(cx, &mut splice));
 
                 // Set the id used internally to the `data-debugid` attribute.
                 // This allows the user to see if an element has been re-created or only altered.
@@ -223,7 +291,7 @@ macro_rules! define_element {
                 let state = ElementState {
                     children_states,
                     child_elements,
-                    scratch: vec![],
+                    scratch,
                     attributes,
                 };
                 (id, state, el)
@@ -239,26 +307,14 @@ macro_rules! define_element {
             ) -> ChangeFlags {
                 let mut changed = ChangeFlags::empty();
 
-                changed |= cx.apply_attribute_changes(element, &mut state.attributes);
+                changed |= cx.rebuild_element(element, &mut state.attributes);
 
                 // update children
-                let mut splice = VecSplice::new(&mut state.child_elements, &mut state.scratch);
+                let mut splice = ChildrenSplice::new(&mut state.child_elements, &mut state.scratch, element);
                 changed |= cx.with_id(*id, |cx| {
-                    self.0
-                        .rebuild(cx, &prev.0, &mut state.children_states, &mut splice)
+                    self.0.rebuild(cx, &prev.0, &mut state.children_states, &mut splice)
                 });
-                if changed.contains(ChangeFlags::STRUCTURE) {
-                    // This is crude and will result in more DOM traffic than needed.
-                    // The right thing to do is diff the new state of the children id
-                    // vector against the old, and derive DOM mutations from that.
-                    while let Some(child) = element.first_child() {
-                        element.remove_child(&child).unwrap_throw();
-                    }
-                    for child in &state.child_elements {
-                        element.append_child(child.0.as_node_ref()).unwrap_throw();
-                    }
-                    changed.remove(ChangeFlags::STRUCTURE);
-                }
+                changed.remove(ChangeFlags::STRUCTURE); // this is handled by the ChildrenSplice already
                 changed
             }
 
@@ -293,11 +349,11 @@ macro_rules! define_elements {
     ($ns:ident, $($element_def:tt,)*) => {
         use std::marker::PhantomData;
         use wasm_bindgen::{JsCast, UnwrapThrowExt};
-        use xilem_core::{Id, MessageResult, VecSplice};
-        use super::ElementState;
+        use xilem_core::{Id, MessageResult};
+        use super::{ElementState, ChildrenSplice};
 
         use crate::{
-            interfaces::sealed::Sealed, view::DomNode,
+            interfaces::sealed::Sealed,
             ChangeFlags, Cx, View, ViewMarker, ViewSequence,
         };
 

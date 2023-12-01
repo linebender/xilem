@@ -70,7 +70,9 @@ impl<T, A, VT: ViewSequence<T, A>> View<T, A> for LinearLayout<T, A, VT> {
 
     fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
         let mut elements = vec![];
-        let (id, state) = cx.with_new_id(|cx| self.children.build(cx, &mut elements));
+        let mut scratch = vec![];
+        let mut splice = VecSplice::new(&mut elements, &mut scratch);
+        let (id, state) = cx.with_new_id(|cx| self.children.build(cx, &mut splice));
         let column = widget::LinearLayout::new(elements, self.spacing, self.axis);
         (id, state, column)
     }
