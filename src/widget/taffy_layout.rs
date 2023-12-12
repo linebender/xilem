@@ -310,6 +310,11 @@ impl Widget for TaffyLayout {
         );
         let node_id = taffy::NodeId::from(usize::MAX);
 
+        // Invalidate cache on child layout request.
+        if self.children.iter().any(|child| child.layout_requested()) {
+            self.cache.clear();
+        }
+
         // Check for cached layout. And return it if found.
         if let Some(cached_output) = self.cache.get(
             inputs.known_dimensions,
