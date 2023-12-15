@@ -2130,7 +2130,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8fb1df15f412ee2e9dfc1c504260fa695c1c3f10fe9f4a6ee2d2184d7d6450e2"
 
 [[package]]
-name = "svgtoy_html"
+name = "svgtoy"
 version = "0.1.0"
 dependencies = [
  "console_error_panic_hook",

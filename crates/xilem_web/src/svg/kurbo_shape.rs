@@ -33,10 +33,10 @@ impl<T, A> View<T, A> for Line {
     type Element = web_sys::Element;
 
     fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
-        cx.add_new_attribute_to_current_element(&"x1".into(), &self.p0.x.into_attribute_value());
-        cx.add_new_attribute_to_current_element(&"y1".into(), &self.p0.y.into_attribute_value());
-        cx.add_new_attribute_to_current_element(&"x2".into(), &self.p1.x.into_attribute_value());
-        cx.add_new_attribute_to_current_element(&"y2".into(), &self.p1.y.into_attribute_value());
+        cx.add_attr_to_element(&"x1".into(), &self.p0.x.into_attr_value());
+        cx.add_attr_to_element(&"y1".into(), &self.p0.y.into_attr_value());
+        cx.add_attr_to_element(&"x2".into(), &self.p1.x.into_attr_value());
+        cx.add_attr_to_element(&"y2".into(), &self.p1.y.into_attr_value());
         let (el, attributes) = cx.build_element(SVG_NS, "line");
         let id = Id::next();
         (id, attributes, el)
@@ -50,10 +50,10 @@ impl<T, A> View<T, A> for Line {
         attributes: &mut Self::State,
         element: &mut Self::Element,
     ) -> ChangeFlags {
-        cx.add_new_attribute_to_current_element(&"x1".into(), &self.p0.x.into_attribute_value());
-        cx.add_new_attribute_to_current_element(&"y1".into(), &self.p0.y.into_attribute_value());
-        cx.add_new_attribute_to_current_element(&"x2".into(), &self.p1.x.into_attribute_value());
-        cx.add_new_attribute_to_current_element(&"y2".into(), &self.p1.y.into_attribute_value());
+        cx.add_attr_to_element(&"x1".into(), &self.p0.x.into_attr_value());
+        cx.add_attr_to_element(&"y1".into(), &self.p0.y.into_attr_value());
+        cx.add_attr_to_element(&"x2".into(), &self.p1.x.into_attr_value());
+        cx.add_attr_to_element(&"y2".into(), &self.p1.y.into_attr_value());
         cx.rebuild_element(element, attributes)
     }
 
@@ -79,17 +79,11 @@ impl<T, A> View<T, A> for Rect {
     type Element = web_sys::Element;
 
     fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
-        cx.add_new_attribute_to_current_element(&"x".into(), &self.x0.into_attribute_value());
-        cx.add_new_attribute_to_current_element(&"y".into(), &self.y0.into_attribute_value());
+        cx.add_attr_to_element(&"x".into(), &self.x0.into_attr_value());
+        cx.add_attr_to_element(&"y".into(), &self.y0.into_attr_value());
         let size = self.size();
-        cx.add_new_attribute_to_current_element(
-            &"width".into(),
-            &size.width.into_attribute_value(),
-        );
-        cx.add_new_attribute_to_current_element(
-            &"height".into(),
-            &size.height.into_attribute_value(),
-        );
+        cx.add_attr_to_element(&"width".into(), &size.width.into_attr_value());
+        cx.add_attr_to_element(&"height".into(), &size.height.into_attr_value());
         let (el, attributes) = cx.build_element(SVG_NS, "rect");
         let id = Id::next();
         (id, attributes, el)
@@ -103,17 +97,11 @@ impl<T, A> View<T, A> for Rect {
         attributes: &mut Self::State,
         element: &mut Self::Element,
     ) -> ChangeFlags {
-        cx.add_new_attribute_to_current_element(&"x".into(), &self.x0.into_attribute_value());
-        cx.add_new_attribute_to_current_element(&"y".into(), &self.y0.into_attribute_value());
+        cx.add_attr_to_element(&"x".into(), &self.x0.into_attr_value());
+        cx.add_attr_to_element(&"y".into(), &self.y0.into_attr_value());
         let size = self.size();
-        cx.add_new_attribute_to_current_element(
-            &"width".into(),
-            &size.width.into_attribute_value(),
-        );
-        cx.add_new_attribute_to_current_element(
-            &"height".into(),
-            &size.height.into_attribute_value(),
-        );
+        cx.add_attr_to_element(&"width".into(), &size.width.into_attr_value());
+        cx.add_attr_to_element(&"height".into(), &size.height.into_attr_value());
         cx.rebuild_element(element, attributes)
     }
 
@@ -139,15 +127,9 @@ impl<T, A> View<T, A> for Circle {
     type Element = web_sys::Element;
 
     fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
-        cx.add_new_attribute_to_current_element(
-            &"cx".into(),
-            &self.center.x.into_attribute_value(),
-        );
-        cx.add_new_attribute_to_current_element(
-            &"cy".into(),
-            &self.center.y.into_attribute_value(),
-        );
-        cx.add_new_attribute_to_current_element(&"r".into(), &self.radius.into_attribute_value());
+        cx.add_attr_to_element(&"cx".into(), &self.center.x.into_attr_value());
+        cx.add_attr_to_element(&"cy".into(), &self.center.y.into_attr_value());
+        cx.add_attr_to_element(&"r".into(), &self.radius.into_attr_value());
         let (el, attributes) = cx.build_element(SVG_NS, "circle");
         let id = Id::next();
         (id, attributes, el)
@@ -161,15 +143,9 @@ impl<T, A> View<T, A> for Circle {
         attributes: &mut Self::State,
         element: &mut Self::Element,
     ) -> ChangeFlags {
-        cx.add_new_attribute_to_current_element(
-            &"cx".into(),
-            &self.center.x.into_attribute_value(),
-        );
-        cx.add_new_attribute_to_current_element(
-            &"cy".into(),
-            &self.center.y.into_attribute_value(),
-        );
-        cx.add_new_attribute_to_current_element(&"r".into(), &self.radius.into_attribute_value());
+        cx.add_attr_to_element(&"cx".into(), &self.center.x.into_attr_value());
+        cx.add_attr_to_element(&"cy".into(), &self.center.y.into_attr_value());
+        cx.add_attr_to_element(&"r".into(), &self.radius.into_attr_value());
         cx.rebuild_element(element, attributes)
     }
 
@@ -196,10 +172,7 @@ impl<T, A> View<T, A> for BezPath {
 
     fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
         let svg_repr = Cow::from(self.to_svg());
-        cx.add_new_attribute_to_current_element(
-            &"d".into(),
-            &svg_repr.clone().into_attribute_value(),
-        );
+        cx.add_attr_to_element(&"d".into(), &svg_repr.clone().into_attr_value());
         let (el, attributes) = cx.build_element(SVG_NS, "path");
         let id = Id::next();
         (id, (svg_repr, attributes), el)
@@ -217,10 +190,7 @@ impl<T, A> View<T, A> for BezPath {
         if self != prev {
             *svg_repr = Cow::from(self.to_svg());
         }
-        cx.add_new_attribute_to_current_element(
-            &"d".into(),
-            &svg_repr.clone().into_attribute_value(),
-        );
+        cx.add_attr_to_element(&"d".into(), &svg_repr.clone().into_attr_value());
         cx.rebuild_element(element, attributes)
     }
 

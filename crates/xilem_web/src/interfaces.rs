@@ -86,7 +86,7 @@ where
         Attr {
             element: self,
             name: name.into(),
-            value: value.into_attribute_value(),
+            value: value.into_attr_value(),
             phantom: std::marker::PhantomData,
         }
     }

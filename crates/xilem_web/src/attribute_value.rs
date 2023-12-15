@@ -24,13 +24,13 @@ impl AttributeValue {
 }
 
 pub trait IntoAttributeValue: Sized {
-    fn into_attribute_value(self) -> Option<AttributeValue>;
+    fn into_attr_value(self) -> Option<AttributeValue>;
 }
 
 impl<T: IntoAttributeValue> IntoAttributeValue for Option<T> {
-    fn into_attribute_value(self) -> Option<AttributeValue> {
+    fn into_attr_value(self) -> Option<AttributeValue> {
         if let Some(value) = self {
-            T::into_attribute_value(value)
+            T::into_attr_value(value)
         } else {
             None
         }
@@ -38,55 +38,55 @@ impl<T: IntoAttributeValue> IntoAttributeValue for Option<T> {
 }
 
 impl IntoAttributeValue for bool {
-    fn into_attribute_value(self) -> Option<AttributeValue> {
+    fn into_attr_value(self) -> Option<AttributeValue> {
         self.then_some(AttributeValue::True)
     }
 }
 
 impl IntoAttributeValue for AttributeValue {
-    fn into_attribute_value(self) -> Option<AttributeValue> {
+    fn into_attr_value(self) -> Option<AttributeValue> {
         Some(self)
     }
 }
 
 impl IntoAttributeValue for u32 {
-    fn into_attribute_value(self) -> Option<AttributeValue> {
+    fn into_attr_value(self) -> Option<AttributeValue> {
         Some(AttributeValue::U32(self))
     }
 }
 
 impl IntoAttributeValue for i32 {
-    fn into_attribute_value(self) -> Option<AttributeValue> {
+    fn into_attr_value(self) -> Option<AttributeValue> {
         Some(AttributeValue::I32(self))
     }
 }
 
 impl IntoAttributeValue for f32 {
-    fn into_attribute_value(self) -> Option<AttributeValue> {
+    fn into_attr_value(self) -> Option<AttributeValue> {
         Some(AttributeValue::F32(self))
     }
 }
 
 impl IntoAttributeValue for f64 {
-    fn into_attribute_value(self) -> Option<AttributeValue> {
+    fn into_attr_value(self) -> Option<AttributeValue> {
         Some(AttributeValue::F64(self))
     }
 }
 
 impl IntoAttributeValue for String {
-    fn into_attribute_value(self) -> Option<AttributeValue> {
+    fn into_attr_value(self) -> Option<AttributeValue> {
         Some(AttributeValue::String(self.into()))
     }
 }
 
 impl IntoAttributeValue for CowStr {
-    fn into_attribute_value(self) -> Option<AttributeValue> {
+    fn into_attr_value(self) -> Option<AttributeValue> {
         Some(AttributeValue::String(self))
     }
 }
 
 impl IntoAttributeValue for &'static str {
-    fn into_attribute_value(self) -> Option<AttributeValue> {
+    fn into_attr_value(self) -> Option<AttributeValue> {
         Some(AttributeValue::String(self.into()))
     }
 }

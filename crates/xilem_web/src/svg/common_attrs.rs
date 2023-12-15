@@ -94,10 +94,7 @@ impl<T, A, V: View<T, A>> View<T, A> for Fill<V, T, A> {
 
     fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
         let brush_svg_repr = Cow::from(brush_to_string(&self.brush));
-        cx.add_new_attribute_to_current_element(
-            &"fill".into(),
-            &brush_svg_repr.clone().into_attribute_value(),
-        );
+        cx.add_attr_to_element(&"fill".into(), &brush_svg_repr.clone().into_attr_value());
         let (id, child_state, element) = self.child.build(cx);
         (id, (brush_svg_repr, child_state), element)
     }
@@ -113,10 +110,7 @@ impl<T, A, V: View<T, A>> View<T, A> for Fill<V, T, A> {
         if self.brush != prev.brush {
             *brush_svg_repr = Cow::from(brush_to_string(&self.brush));
         }
-        cx.add_new_attribute_to_current_element(
-            &"fill".into(),
-            &brush_svg_repr.clone().into_attribute_value(),
-        );
+        cx.add_attr_to_element(&"fill".into(), &brush_svg_repr.clone().into_attr_value());
         self.child
             .rebuild(cx, &prev.child, id, child_state, element)
     }
@@ -161,14 +155,8 @@ impl<T, A, V: View<T, A>> View<T, A> for Stroke<V, T, A> {
 
     fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
         let brush_svg_repr = Cow::from(brush_to_string(&self.brush));
-        cx.add_new_attribute_to_current_element(
-            &"stroke".into(),
-            &brush_svg_repr.clone().into_attribute_value(),
-        );
-        cx.add_new_attribute_to_current_element(
-            &"stroke-width".into(),
-            &self.style.width.into_attribute_value(),
-        );
+        cx.add_attr_to_element(&"stroke".into(), &brush_svg_repr.clone().into_attr_value());
+        cx.add_attr_to_element(&"stroke-width".into(), &self.style.width.into_attr_value());
         let (id, child_state, element) = self.child.build(cx);
         (id, (brush_svg_repr, child_state), element)
     }
@@ -184,14 +172,8 @@ impl<T, A, V: View<T, A>> View<T, A> for Stroke<V, T, A> {
         if self.brush != prev.brush {
             *brush_svg_repr = Cow::from(brush_to_string(&self.brush));
         }
-        cx.add_new_attribute_to_current_element(
-            &"stroke".into(),
-            &brush_svg_repr.clone().into_attribute_value(),
-        );
-        cx.add_new_attribute_to_current_element(
-            &"stroke-width".into(),
-            &self.style.width.into_attribute_value(),
-        );
+        cx.add_attr_to_element(&"stroke".into(), &brush_svg_repr.clone().into_attr_value());
+        cx.add_attr_to_element(&"stroke-width".into(), &self.style.width.into_attr_value());
         self.child
             .rebuild(cx, &prev.child, id, child_state, element)
     }

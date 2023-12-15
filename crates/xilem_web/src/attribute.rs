@@ -22,7 +22,7 @@ impl<E: Element<T, A>, T, A> View<T, A> for Attr<E, T, A> {
     type Element = E::Element;
 
     fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
-        cx.add_new_attribute_to_current_element(&self.name, &self.value);
+        cx.add_attr_to_element(&self.name, &self.value);
         self.element.build(cx)
     }
 
@@ -34,7 +34,7 @@ impl<E: Element<T, A>, T, A> View<T, A> for Attr<E, T, A> {
         state: &mut Self::State,
         element: &mut Self::Element,
     ) -> ChangeFlags {
-        cx.add_new_attribute_to_current_element(&self.name, &self.value);
+        cx.add_attr_to_element(&self.name, &self.value);
         self.element.rebuild(cx, &prev.element, id, state, element)
     }
 

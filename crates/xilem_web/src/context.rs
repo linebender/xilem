@@ -133,11 +133,7 @@ impl Cx {
 
     // TODO Not sure how multiple attribute definitions with the same name should be handled (e.g. `e.attr("class", "a").attr("class", "b")`)
     // Currently the outer most (in the example above "b") defines the attribute (when it isn't `None`, in that case the inner attr defines the value)
-    pub(crate) fn add_new_attribute_to_current_element(
-        &mut self,
-        name: &CowStr,
-        value: &Option<AttributeValue>,
-    ) {
+    pub(crate) fn add_attr_to_element(&mut self, name: &CowStr, value: &Option<AttributeValue>) {
         if let Some(value) = value {
             // could be slightly optimized via something like this: `new_attrs.entry(name).or_insert_with(|| value)`
             if !self.current_element_attributes.contains_key(name) {
