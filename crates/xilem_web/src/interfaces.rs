@@ -533,7 +533,17 @@ dom_interface_macro_and_trait_definitions!(
                     },
                     SvgUseElement { methods: {}, child_interfaces: {} },
                     SvgaElement { methods: {}, child_interfaces: {} },
-                    SvggElement { methods: {}, child_interfaces: {} },
+                    SvggElement {
+                        methods: {
+                            fn fill(self, brush: impl Into<peniko::Brush>) -> crate::svg::Fill<Self, T, A> {
+                                crate::svg::fill(self, brush)
+                            }
+                            fn stroke(self, brush: impl Into<peniko::Brush>, style: peniko::kurbo::Stroke) -> crate::svg::Stroke<Self, T, A> {
+                                crate::svg::stroke(self, brush, style)
+                            }
+                        },
+                        child_interfaces: {}
+                    },
                     SvgsvgElement { methods: {}, child_interfaces: {} },
                 }
             },

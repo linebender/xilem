@@ -12,7 +12,7 @@ use crate::{
         Element, SvgCircleElement, SvgElement, SvgEllipseElement, SvgGeometryElement,
         SvgGraphicsElement, SvgLineElement, SvgPathElement, SvgPolygonElement, SvgPolylineElement,
         SvgRectElement, SvgTextContentElement, SvgTextElement, SvgTextPathElement,
-        SvgTextPositioningElement, SvgtSpanElement,
+        SvgTextPositioningElement, SvggElement, SvgtSpanElement,
     },
     ChangeFlags, Cx, IntoAttributeValue, View, ViewMarker,
 };
@@ -70,6 +70,7 @@ fn brush_to_string(brush: &Brush) -> String {
 impl<T, A, E: SvgGraphicsElement<T, A>> Element<T, A> for Fill<E, T, A> {}
 impl<T, A, E: SvgGraphicsElement<T, A>> SvgElement<T, A> for Fill<E, T, A> {}
 impl<T, A, E: SvgGraphicsElement<T, A>> SvgGraphicsElement<T, A> for Fill<E, T, A> {}
+impl<T, A, E: SvggElement<T, A>> SvggElement<T, A> for Fill<E, T, A> {}
 // descendants of SvgGeometryElement (with the exception of SvgLineElement)
 impl<T, A, E: SvgGeometryElement<T, A>> SvgGeometryElement<T, A> for Fill<E, T, A> {}
 impl<T, A, E: SvgCircleElement<T, A>> SvgCircleElement<T, A> for Fill<E, T, A> {}
@@ -130,6 +131,7 @@ impl<T, A, V: View<T, A>> View<T, A> for Fill<V, T, A> {
 impl<T, A, E: SvgGraphicsElement<T, A>> Element<T, A> for Stroke<E, T, A> {}
 impl<T, A, E: SvgGraphicsElement<T, A>> SvgElement<T, A> for Stroke<E, T, A> {}
 impl<T, A, E: SvgGraphicsElement<T, A>> SvgGraphicsElement<T, A> for Stroke<E, T, A> {}
+impl<T, A, E: SvggElement<T, A>> SvggElement<T, A> for Stroke<E, T, A> {}
 // descendants of SvgGeometryElement
 impl<T, A, E: SvgGeometryElement<T, A>> SvgGeometryElement<T, A> for Stroke<E, T, A> {}
 impl<T, A, E: SvgCircleElement<T, A>> SvgCircleElement<T, A> for Stroke<E, T, A> {}
