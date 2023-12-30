@@ -85,7 +85,7 @@ impl Pod {
 }
 
 xilem_core::generate_view_trait! {View, DomNode, Cx, ChangeFlags;}
-xilem_core::generate_viewsequence_trait! {ViewSequence, View, ViewMarker, DomNode, Cx, ChangeFlags, Pod;}
+xilem_core::generate_viewsequence_trait! {ViewSequence, AnyViewSequence, BoxedViewSequence, View, ViewMarker, DomNode, Cx, ChangeFlags, Pod;();()}
 xilem_core::generate_anyview_trait! {AnyView, View, ViewMarker, Cx, ChangeFlags, AnyNode, BoxedView;}
 xilem_core::generate_memoize_view! {Memoize, MemoizeState, View, ViewMarker, Cx, ChangeFlags, static_view, memoize;}
 xilem_core::generate_adapt_view! {View, Cx, ChangeFlags;}
