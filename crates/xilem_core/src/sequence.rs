@@ -56,7 +56,7 @@ macro_rules! impl_view_tuple {
 
 #[macro_export]
 macro_rules! generate_viewsequence_trait {
-    ($viewseq:ident, $view:ident, $viewmarker: ident, $bound:ident, $cx:ty, $changeflags:ty, $pod:ty; $( $ss:tt )* ) => {
+    ($viewseq:ident, $anyviewseq:ident, $boxedviewseq:ident, $view:ident, $viewmarker: ident, $bound:ident, $cx:ty, $changeflags:ty, $pod:ty; ($( $ss:tt )*); ($( $ss_bounds:tt )*) ) => {
         /// This trait represents a (possibly empty) sequence of views.
         ///
         /// It is up to the parent view how to lay out and display them.
@@ -75,7 +75,7 @@ macro_rules! generate_viewsequence_trait {
                 cx: &mut $cx,
                 prev: &Self,
                 state: &mut Self::State,
-                element: &mut $crate::VecSplice<$pod>,
+                elements: &mut $crate::VecSplice<$pod>,
             ) -> $changeflags;
 
             /// Propagate a message.
@@ -92,6 +92,140 @@ macro_rules! generate_viewsequence_trait {
 
             /// Returns the current amount of widgets built by this sequence.
             fn count(&self, state: &Self::State) -> usize;
+        }
+
+        /// A trait enabling type erasure of view sequences.
+        pub trait $anyviewseq<T, A = ()> $( $ss )* {
+            fn as_any(&self) -> &dyn std::any::Any;
+
+            /// Build the associated widgets and initialize all states.
+            fn dyn_build(&self, cx: &mut $cx, elements: &mut Vec<$pod>) -> Box<dyn std::any::Any $( $ss_bounds )* >;
+
+            /// Update the associated widget.
+            ///
+            /// Returns `true` when anything has changed.
+            fn dyn_rebuild(
+                &self,
+                cx: &mut $cx,
+                prev: &dyn $anyviewseq<T, A>,
+                state: &mut Box<dyn std::any::Any $( $ss_bounds )* >,
+                elements: &mut $crate::VecSplice<$pod>,
+            ) -> $changeflags;
+
+            /// Propagate a message.
+            ///
+            /// Handle a message, propagating to elements if needed. Here, `id_path` is a slice
+            /// of ids beginning at an element of this view_sequence.
+            fn dyn_message(
+                &self,
+                id_path: &[$crate::Id],
+                state: &mut dyn std::any::Any,
+                message: Box<dyn std::any::Any>,
+                app_state: &mut T,
+            ) -> $crate::MessageResult<A>;
+
+            /// Returns the current amount of widgets built by this sequence.
+            fn dyn_count(&self, state: &dyn std::any::Any) -> usize;
+        }
+
+
+        impl<T, A, VS: $viewseq<T, A> + 'static> $anyviewseq<T, A> for VS
+        where
+            VS::State: 'static,
+        {
+            fn as_any(&self) -> &dyn std::any::Any {
+                self
+            }
+
+            fn dyn_build(&self, cx: &mut $cx, elements: &mut Vec<$pod>) -> Box<dyn std::any::Any $( $ss_bounds )* > {
+                Box::new(self.build(cx, elements))
+            }
+
+            fn dyn_rebuild(
+                &self,
+                cx: &mut $cx,
+                prev: &dyn $anyviewseq<T, A>,
+                state: &mut Box<dyn std::any::Any $( $ss_bounds )* >,
+                elements: &mut $crate::VecSplice<$pod>,
+            ) -> $changeflags
+            {
+                use std::ops::DerefMut;
+                if let Some(prev) = prev.as_any().downcast_ref() {
+                    if let Some(state) = state.downcast_mut() {
+                        self.rebuild(cx, prev, state, elements)
+                    } else {
+                        eprintln!("downcast of state failed in dyn_rebuild");
+                        <$changeflags>::default()
+                    }
+                } else {
+                    let new_state = elements.as_vec(|vec| self.build(cx, vec));
+                    *state = Box::new(new_state);
+                    <$changeflags>::tree_structure()
+                }
+            }
+
+            fn dyn_message(
+                &self,
+                id_path: &[$crate::Id],
+                state: &mut dyn std::any::Any,
+                message: Box<dyn std::any::Any>,
+                app_state: &mut T,
+            ) -> $crate::MessageResult<A> {
+                if let Some(state) = state.downcast_mut() {
+                    self.message(id_path, state, message, app_state)
+                } else {
+                    // Possibly softer failure?
+                    panic!("downcast error in dyn_event");
+                }
+            }
+
+            fn dyn_count(&self, state: &dyn std::any::Any) -> usize {
+                if let Some(state) = state.downcast_ref() {
+                    self.count(state)
+                } else {
+                    // Possibly softer failure?
+                    panic!("downcast error in dyn_count");
+                }
+            }
+        }
+
+        pub type $boxedviewseq<T, A = ()> = Box<dyn $anyviewseq<T, A> $( $ss_bounds )* >;
+
+        impl<T, A> $viewseq<T, A> for $boxedviewseq<T, A> {
+            type State = Box<dyn std::any::Any $( $ss_bounds )* >;
+
+            fn build(&self, cx: &mut $cx, elements: &mut Vec<$pod>) -> Self::State {
+                use std::ops::Deref;
+                self.deref().dyn_build(cx, elements)
+            }
+
+            fn rebuild(
+                &self,
+                cx: &mut $cx,
+                prev: &Self,
+                state: &mut Self::State,
+                elements: &mut $crate::VecSplice<$pod>,
+            ) -> $changeflags {
+                use std::ops::Deref;
+                self.deref().dyn_rebuild(cx, prev.deref(), state, elements)
+            }
+
+            fn message(
+                &self,
+                id_path: &[$crate::Id],
+                state: &mut Self::State,
+                message: Box<dyn std::any::Any>,
+                app_state: &mut T,
+            ) -> $crate::MessageResult<A> {
+                use std::ops::{Deref, DerefMut};
+                self.deref()
+                    .dyn_message(id_path, state.deref_mut(), message, app_state)
+            }
+
+            fn count(&self, state: &Self::State) -> usize {
+                use std::ops::Deref;
+                self.deref().dyn_count(state.deref())
+            }
         }
 
         impl<T, A, V: $view<T, A> + $viewmarker> $viewseq<T, A> for V
@@ -111,9 +245,9 @@ macro_rules! generate_viewsequence_trait {
                 cx: &mut $cx,
                 prev: &Self,
                 state: &mut Self::State,
-                element: &mut $crate::VecSplice<$pod>,
+                elements: &mut $crate::VecSplice<$pod>,
             ) -> $changeflags {
-                let el = element.mutate();
+                let el = elements.mutate();
                 let downcast = el.downcast_mut().unwrap();
                 let flags = <V as $view<T, A>>::rebuild(
                     self,
@@ -171,19 +305,19 @@ macro_rules! generate_viewsequence_trait {
                 cx: &mut $cx,
                 prev: &Self,
                 state: &mut Self::State,
-                element: &mut $crate::VecSplice<$pod>,
+                elements: &mut $crate::VecSplice<$pod>,
             ) -> $changeflags {
                 match (self, &mut *state, prev) {
-                    (Some(this), Some(state), Some(prev)) => this.rebuild(cx, prev, state, element),
+                    (Some(this), Some(state), Some(prev)) => this.rebuild(cx, prev, state, elements),
                     (None, Some(seq_state), Some(prev)) => {
                         let count = prev.count(&seq_state);
-                        element.delete(count);
+                        elements.delete(count);
                         *state = None;
 
                         <$changeflags>::tree_structure()
                     }
                     (Some(this), None, None) => {
-                        let seq_state = element.as_vec(|vec| this.build(cx, vec));
+                        let seq_state = elements.as_vec(|vec| this.build(cx, vec));
                         *state = Some(seq_state);
 
                         <$changeflags>::tree_structure()
