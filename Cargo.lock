@@ -589,7 +589,7 @@ dependencies = [
  "console_error_panic_hook",
  "wasm-bindgen",
  "web-sys",
- "xilem_html",
+ "xilem_web",
 ]
 
 [[package]]
@@ -599,7 +599,7 @@ dependencies = [
  "console_error_panic_hook",
  "wasm-bindgen",
  "web-sys",
- "xilem_html",
+ "xilem_web",
 ]
 
 [[package]]
@@ -1437,7 +1437,7 @@ dependencies = [
  "console_error_panic_hook",
  "wasm-bindgen",
  "web-sys",
- "xilem_html",
+ "xilem_web",
 ]
 
 [[package]]
@@ -2136,7 +2136,7 @@ dependencies = [
  "console_error_panic_hook",
  "wasm-bindgen",
  "web-sys",
- "xilem_svg",
+ "xilem_web",
 ]
 
 [[package]]
@@ -2271,7 +2271,7 @@ dependencies = [
  "tracing-wasm",
  "wasm-bindgen",
  "web-sys",
- "xilem_html",
+ "xilem_web",
 ]
 
 [[package]]
@@ -3051,7 +3051,7 @@ name = "xilem_core"
 version = "0.1.0"
 
 [[package]]
-name = "xilem_html"
+name = "xilem_web"
 version = "0.1.0"
 dependencies = [
  "bitflags 2.3.3",
@@ -3059,16 +3059,6 @@ dependencies = [
  "kurbo 0.9.5",
  "log",
  "paste",
- "wasm-bindgen",
- "web-sys",
- "xilem_core",
-]
-
-[[package]]
-name = "xilem_svg"
-version = "0.1.0"
-dependencies = [
- "bitflags 2.3.3",
  "peniko 0.1.0 (git+https://github.com/linebender/peniko?rev=629fc3325b016a8c98b1cd6204cb4ddf1c6b3daa)",
  "wasm-bindgen",
  "web-sys",
