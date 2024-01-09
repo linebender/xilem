@@ -15,11 +15,12 @@
 use std::{any::Any, marker::PhantomData};
 
 use crate::geometry::Axis;
-use crate::view::{Id, VecSplice, ViewMarker, ViewSequence};
+use crate::view::{Id, ViewMarker, ViewSequence};
 use crate::widget::{self, ChangeFlags};
 use crate::MessageResult;
 
 use super::{Cx, View};
+use crate::widget::tree_structure::TreeTrackerSplice;
 
 /// LinearLayout is a simple view which does layout for the specified ViewSequence.
 ///
@@ -71,9 +72,10 @@ impl<T, A, VT: ViewSequence<T, A>> View<T, A> for LinearLayout<T, A, VT> {
     fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
         let mut elements = vec![];
         let mut scratch = vec![];
-        let mut splice = VecSplice::new(&mut elements, &mut scratch);
+        let mut tree_mutations = vec![];
+        let mut splice = TreeTrackerSplice::new(&mut elements, &mut scratch, &mut tree_mutations);
         let (id, state) = cx.with_new_id(|cx| self.children.build(cx, &mut splice));
-        let column = widget::LinearLayout::new(elements, self.spacing, self.axis);
+        let column = widget::LinearLayout::new(elements, tree_mutations, self.spacing, self.axis);
         (id, state, column)
     }
 
@@ -86,8 +88,11 @@ impl<T, A, VT: ViewSequence<T, A>> View<T, A> for LinearLayout<T, A, VT> {
         element: &mut Self::Element,
     ) -> ChangeFlags {
         let mut scratch = vec![];
-        let mut splice = VecSplice::new(&mut element.children, &mut scratch);
-
+        let mut splice = TreeTrackerSplice::new(
+            &mut element.children,
+            &mut scratch,
+            &mut element.tree_mutations,
+        );
         let mut flags = cx.with_id(*id, |cx| {
             self.children
                 .rebuild(cx, &prev.children, state, &mut splice)

@@ -25,8 +25,8 @@ use vello::SceneFragment;
 use xilem_core::{AsyncWake, MessageResult};
 
 use crate::widget::{
-    AccessCx, BoxConstraints, CxState, EventCx, LayoutCx, LifeCycle, LifeCycleCx, PaintCx, Pod,
-    PodFlags, UpdateCx, ViewContext, WidgetState,
+    tree_structure::TreeStructure, AccessCx, BoxConstraints, CxState, EventCx, LayoutCx, LifeCycle,
+    LifeCycleCx, PaintCx, Pod, PodFlags, UpdateCx, ViewContext, WidgetState,
 };
 use crate::{
     view::{Cx, Id, View},
@@ -45,6 +45,7 @@ pub struct App<T, V: View<T>> {
     id: Option<Id>,
     events: Vec<Message>,
     window_handle: WindowHandle,
+    tree_structure: TreeStructure,
     root_state: WidgetState,
     root_pod: Option<Pod>,
     size: Size,
@@ -181,6 +182,7 @@ where
             window_id: crate::id::Id::next(),
             accesskit_connected: false,
             node_classes: accesskit::NodeClassSet::new(),
+            tree_structure: Default::default(),
         }
     }
 
@@ -213,7 +215,12 @@ where
         let window_node = window_node_builder.build(&mut self.node_classes);
         update.nodes.push((self.window_id.into(), window_node));
         update.tree = Some(accesskit::Tree::new(self.window_id.into()));
-        let mut cx_state = CxState::new(&self.window_handle, &mut self.font_cx, &mut self.events);
+        let mut cx_state = CxState::new(
+            &self.window_handle,
+            &mut self.font_cx,
+            &mut self.tree_structure,
+            &mut self.events,
+        );
         let mut access_cx = AccessCx {
             cx_state: &mut cx_state,
             widget_state: &mut self.root_state,
@@ -234,8 +241,12 @@ where
             // TODO: be more lazy re-rendering
             self.render();
             let root_pod = self.root_pod.as_mut().unwrap();
-            let mut cx_state =
-                CxState::new(&self.window_handle, &mut self.font_cx, &mut self.events);
+            let mut cx_state = CxState::new(
+                &self.window_handle,
+                &mut self.font_cx,
+                &mut self.tree_structure,
+                &mut self.events,
+            );
 
             let mut lifecycle_cx = LifeCycleCx::new(&mut cx_state, &mut self.root_state);
             root_pod.lifecycle(&mut lifecycle_cx, &LifeCycle::TreeUpdate);
@@ -284,8 +295,12 @@ where
             // Borrow again to avoid multiple borrows.
             // TODO: maybe make accessibility a method on CxState?
             let root_pod = self.root_pod.as_mut().unwrap();
-            let mut cx_state =
-                CxState::new(&self.window_handle, &mut self.font_cx, &mut self.events);
+            let mut cx_state = CxState::new(
+                &self.window_handle,
+                &mut self.font_cx,
+                &mut self.tree_structure,
+                &mut self.events,
+            );
             let mut paint_cx = PaintCx::new(&mut cx_state, &mut self.root_state);
             root_pod.paint_impl(&mut paint_cx);
             break;
@@ -308,7 +323,12 @@ where
 
         self.ensure_root();
         let root_pod = self.root_pod.as_mut().unwrap();
-        let mut cx_state = CxState::new(&self.window_handle, &mut self.font_cx, &mut self.events);
+        let mut cx_state = CxState::new(
+            &self.window_handle,
+            &mut self.font_cx,
+            &mut self.tree_structure,
+            &mut self.events,
+        );
         let mut event_cx = EventCx::new(&mut cx_state, &mut self.root_state);
         root_pod.event(&mut event_cx, &event);
         self.send_events();

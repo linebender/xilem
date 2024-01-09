@@ -13,7 +13,7 @@
 // limitations under the License.
 
 use crate::geometry::Axis;
-use crate::widget::{AccessCx, BoxConstraints, Event};
+use crate::widget::{tree_structure, AccessCx, BoxConstraints, Event};
 use accesskit::NodeId;
 use glazier::kurbo::Affine;
 use vello::kurbo::{Point, Size};
@@ -146,18 +146,25 @@ mod convert {
 /// they can set styles to control how they placed, sized, and aligned.
 pub struct TaffyLayout {
     pub children: Vec<Pod>,
+    pub tree_mutations: Vec<tree_structure::SpliceMutation>,
     pub cache: taffy::Cache,
     pub style: taffy::Style,
     pub background_color: Option<Color>,
 }
 
 impl TaffyLayout {
-    pub fn new(children: Vec<Pod>, style: taffy::Style, background_color: Option<Color>) -> Self {
+    pub fn new(
+        children: Vec<Pod>,
+        tree_mutations: Vec<tree_structure::SpliceMutation>,
+        style: taffy::Style,
+        background_color: Option<Color>,
+    ) -> Self {
         TaffyLayout {
             children,
             cache: taffy::Cache::new(),
             style,
             background_color,
+            tree_mutations,
         }
     }
 }
@@ -287,6 +294,9 @@ impl Widget for TaffyLayout {
     }
 
     fn lifecycle(&mut self, cx: &mut LifeCycleCx, event: &LifeCycle) {
+        if let LifeCycle::TreeUpdate = event {
+            cx.apply_tree_splice_mutations(cx.widget_state.id, &self.tree_mutations);
+        }
         for child in &mut self.children {
             child.lifecycle(cx, event);
         }

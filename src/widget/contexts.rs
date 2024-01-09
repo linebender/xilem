@@ -22,8 +22,11 @@ use glazier::WindowHandle;
 use parley::FontContext;
 use vello::kurbo::{Point, Rect, Size};
 
-use super::{PodFlags, WidgetState};
-use crate::Message;
+use super::{
+    tree_structure::{SpliceMutation, TreeStructure},
+    PodFlags, WidgetState,
+};
+use crate::{id::Id, Message};
 
 // These contexts loosely follow Druid.
 
@@ -31,6 +34,7 @@ use crate::Message;
 pub struct CxState<'a> {
     #[allow(unused)]
     window: &'a WindowHandle,
+    tree_structure: &'a mut TreeStructure,
     font_cx: &'a mut FontContext,
     messages: &'a mut Vec<Message>,
 }
@@ -119,12 +123,14 @@ impl<'a> CxState<'a> {
     pub fn new(
         window: &'a WindowHandle,
         font_cx: &'a mut FontContext,
+        tree_structure: &'a mut TreeStructure,
         messages: &'a mut Vec<Message>,
     ) -> Self {
         CxState {
             window,
             font_cx,
             messages,
+            tree_structure,
         }
     }
 
@@ -172,6 +178,12 @@ impl<'a, 'b> LifeCycleCx<'a, 'b> {
             cx_state,
             widget_state: root_state,
         }
+    }
+
+    pub fn apply_tree_splice_mutations(&mut self, parent_id: Id, mutations: &[SpliceMutation]) {
+        self.cx_state
+            .tree_structure
+            .apply_splice_mutations(parent_id, mutations);
     }
 }
 
@@ -271,6 +283,11 @@ impl_context_method!(
         /// [`is_active`]: super::Pod::is_active
         pub fn is_active(&self) -> bool {
             self.widget_state.flags.contains(PodFlags::IS_ACTIVE)
+        }
+
+        /// Returns the pure structure (parent/children relations via ids) of the widget tree
+        pub fn tree_structure(&self) -> &TreeStructure {
+            self.cx_state.tree_structure
         }
     }
 );

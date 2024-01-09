@@ -22,8 +22,8 @@ use vello::kurbo::{Affine, Point, Rect, Size};
 use vello::{SceneBuilder, SceneFragment};
 
 use super::widget::{AnyWidget, Widget};
+use crate::id::Id;
 use crate::Axis;
-use crate::{id::Id, Bloom};
 
 use super::{
     contexts::LifeCycleCx, AccessCx, BoxConstraints, CxState, Event, EventCx, LayoutCx, LifeCycle,
@@ -104,12 +104,6 @@ pub(crate) struct WidgetState {
     pub(crate) parent_window_origin: Point,
     /// The size of the widget.
     pub(crate) size: Size,
-    /// A bloom filter containing this widgets is and the ones of its children.
-    // TODO: decide the final solution for this. This is probably going to be a global structure
-    //       tracking parent child relations in the tree:
-    //           parents: HashMap<Id, Id>,
-    //           children: HashMap<Id, Vec<Id>>,
-    pub(crate) sub_tree: Bloom<Id>,
 }
 
 impl PodFlags {
@@ -146,13 +140,11 @@ impl WidgetState {
             origin: Default::default(),
             parent_window_origin: Default::default(),
             size: Default::default(),
-            sub_tree: Default::default(),
         }
     }
 
     fn merge_up(&mut self, child_state: &mut WidgetState) {
         self.flags |= child_state.flags.upwards();
-        self.sub_tree = self.sub_tree.union(child_state.sub_tree);
     }
 
     fn request(&mut self, flags: PodFlags) {
@@ -285,9 +277,10 @@ impl Pod {
             }
             Event::TargetedAccessibilityAction(action) => {
                 // println!("TODO: {:?}", action);
-                self.state
-                    .sub_tree
-                    .may_contain(&Id::try_from_accesskit(action.target).unwrap())
+                cx.tree_structure().is_descendant_of(
+                    Id::try_from_accesskit(action.target).unwrap(),
+                    self.state.id,
+                )
             }
         };
         if recurse {
@@ -337,8 +330,6 @@ impl Pod {
             }
             LifeCycle::TreeUpdate => {
                 if self.state.flags.contains(PodFlags::TREE_CHANGED) {
-                    self.state.sub_tree.clear();
-                    self.state.sub_tree.add(&self.state.id);
                     self.state.flags.remove(PodFlags::TREE_CHANGED);
                     true
                 } else {
