@@ -1,93 +1,93 @@
 [package]
-name = "masonry"
-version = "0.1.2"
-license = "Apache-2.0"
 authors = ["Olivier FAURE <couteaubleu@gmail.com>"]
-description = "Data-oriented Rust UI design toolkit."
-repository = "https://github.com/PoignardAzur/masonry-rs"
 categories = ["gui"]
-readme = "README.md"
-keywords = ["gui", "ui", "toolkit"]
+description = "Data-oriented Rust UI design toolkit."
 edition = "2021"
+keywords = ["gui", "ui", "toolkit"]
+license = "Apache-2.0"
+name = "masonry"
+readme = "README.md"
+repository = "https://github.com/PoignardAzur/masonry-rs"
 rust-version = "1.65"
+version = "0.1.3"
 
 [package.metadata.docs.rs]
 # The "svg" and "image" features have doc clashes that cause undefined output in docs.
 # See https://github.com/rust-lang/cargo/issues/6313 for more information.
 # Once cargo doc becomes smart enough to handle multiple versions of the same crate,
 # the "svg" and "image" features should be enabled for the docs.rs output.
+default-target = "x86_64-pc-windows-msvc"
 features = ["im"]
 rustdoc-args = ["--cfg", "docsrs"]
-default-target = "x86_64-pc-windows-msvc"
 
 [features]
 default = ["gtk", "image", "png", "jpeg"]
 gtk = ["druid-shell/gtk"]
 image = ["druid-shell/image", "piet-common/image"]
+serde_deps = ["im/serde", "druid-shell/serde"]
 svg = ["usvg"]
 x11 = ["druid-shell/x11"]
-serde_deps = ["im/serde", "druid-shell/serde"]
 
 # passing on all the image features. AVIF is not supported because it does not
 # support decoding, and that's all we use `Image` for.
-png = ["druid-shell/image_png"]
+bmp = ["druid-shell/bmp"]
+dds = ["druid-shell/dds"]
+dxt = ["druid-shell/dxt"]
+farbfeld = ["druid-shell/farbfeld"]
+gif = ["druid-shell/gif"]
+hdr = ["druid-shell/hdr"]
+ico = ["druid-shell/ico"]
 jpeg = ["druid-shell/jpeg"]
 jpeg_rayon = ["druid-shell/jpeg_rayon"]
-gif = ["druid-shell/gif"]
-bmp = ["druid-shell/bmp"]
-ico = ["druid-shell/ico"]
+png = ["druid-shell/image_png"]
+pnm = ["druid-shell/pnm"]
+tga = ["druid-shell/tga"]
 tiff = ["druid-shell/tiff"]
 webp = ["druid-shell/webp"]
-pnm = ["druid-shell/pnm"]
-dds = ["druid-shell/dds"]
-tga = ["druid-shell/tga"]
-farbfeld = ["druid-shell/farbfeld"]
-dxt = ["druid-shell/dxt"]
-hdr = ["druid-shell/hdr"]
 
 # Remember to update this when changing an image feature.
 image-all = ["image", "svg", "png", "jpeg", "jpeg_rayon", "gif", "bmp", "ico", "tiff", "webp", "pnm", "dds", "tga", "farbfeld", "dxt", "hdr"]
 
 [dependencies]
-druid-shell = { version = "0.8.0", default-features = false }
+druid-shell = {version = "0.8.0", default-features = false}
 # We defer to the version imported by druid-shell
 piet-common = "*"
 
 # TODO - remove unused dependencies - See #10
-tracing = "0.1.29"
-tracing-subscriber = { version = "0.2.15", features = ["fmt", "ansi"], default-features = false }
 fluent-bundle = "0.15.1"
 fluent-langneg = "0.13.0"
 fluent-syntax = "0.11.0"
+fnv = "1.0.7"
+instant = {version = "0.1.6", features = ["wasm-bindgen"]}
+smallvec = "1.6.1"
+tracing = "0.1.29"
+tracing-subscriber = {version = "0.2.15", features = ["fmt", "ansi"], default-features = false}
 unic-langid = "0.9.0"
 unicode-segmentation = "1.6.0"
 xi-unicode = "0.3.0"
-fnv = "1.0.7"
-instant = { version = "0.1.6", features = ["wasm-bindgen"] }
-smallvec = "1.6.1"
 
 # Optional dependencies
-chrono = { version = "0.4.19", optional = true }
-im = { version = "15.0.0", optional = true }
-usvg = { version = "0.14.1", optional = true }
+chrono = {version = "0.4.19", optional = true}
+im = {version = "15.0.0", optional = true}
+usvg = {version = "0.14.1", optional = true}
 
 # TODO - make serde a dev dependency
-serde = { version = "1.0.133", features = ["derive"] }
-serde_json = "1.0.74"
 image = "0.24.0"
 once_cell = "1.9.0"
+serde = {version = "1.0.133", features = ["derive"]}
+serde_json = "1.0.74"
 
 [target.'cfg(target_arch="wasm32")'.dependencies]
-tracing-wasm = { version = "0.2.0" }
-console_error_panic_hook = { version = "0.1.6" }
+console_error_panic_hook = {version = "0.1.6"}
+tracing-wasm = {version = "0.2.0"}
 
 [dev-dependencies]
-insta = { version = "1.8.0" }
-float-cmp = { version = "0.8.0", features = ["std"], default-features = false }
+float-cmp = {version = "0.8.0", features = ["std"], default-features = false}
+insta = {version = "1.8.0"}
 # tempfile 3.2.0 broke wasm; I assume it will be yanked (Jan 12, 2021)
-tempfile = "=3.1.0"
-pulldown-cmark = { version = "0.8", default-features = false }
 assert_matches = "1.5.0"
+pulldown-cmark = {version = "0.8", default-features = false}
+tempfile = "=3.1.0"
 
 [target.'cfg(not(target_arch="wasm32"))'.dev-dependencies]
 open = "1.6"

@@ -1419,7 +1419,7 @@ dependencies = [
 
 [[package]]
 name = "masonry"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "assert_matches",
  "chrono",
