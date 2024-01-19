@@ -9,16 +9,18 @@ mod memoize;
 /// Arguments are
 ///
 ///  - `$viewtrait` - The name of the view trait we want to generate.
+///  - `$viewmarker` - The name of the viewmarker trait as a workaround for Rust's orphan rules,
+///     to allow views to be also viewsequences.
 ///  - `$bound` - A bound on all element types that will be used.
 ///  - `$cx` - The name of text context type that will be passed to the `build`/`rebuild`
 ///    methods, and be responsible for managing element creation & deletion.
 ///  - `$changeflags` - The type that reports down/up the tree. Can be used to avoid
 ///    doing work when we can prove nothing needs doing.
-///  - `$ss` - (optional) parent traits to this trait (e.g. `:Send`). Also applied to
-///    the state type requirements
+///  - `$super_bounds` - (optional) parent traits to this trait (e.g. `+ Send`).
+///  - `$state_bounds` - (optional) trait bounds for the associated type `State` (e.g. `: Send`).
 #[macro_export]
 macro_rules! generate_view_trait {
-    ($viewtrait:ident, $bound:ident, $cx:ty, $changeflags:ty; $($ss:tt)*) => {
+    ($viewtrait:ident, $viewmarker:ident, $bound:ident, $cx:ty, $changeflags:ty; ($($super_bounds:tt)*), ($($state_bounds:tt)*)) => {
         /// A view object representing a node in the UI.
         ///
         /// This is a central trait for representing UI. An app will generate a tree of
@@ -36,9 +38,9 @@ macro_rules! generate_view_trait {
         /// and also a type for actions which are passed up the tree in message
         /// propagation. During message handling, mutable access to the app state is
         /// given to view nodes, which in turn can expose it to callbacks.
-        pub trait $viewtrait<T, A = ()> $( $ss )* {
+        pub trait $viewtrait<T, A = ()>: $viewmarker $( $super_bounds )* {
             /// Associated state for the view.
-            type State $( $ss )*;
+            type State $( $state_bounds )*;
 
             /// The associated element for the view.
             type Element: $bound;

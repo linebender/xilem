@@ -1,4 +1,4 @@
-use crate::{Pointer, PointerMsg, View, ViewMarker};
+use crate::{Pointer, PointerMsg, View};
 use std::borrow::Cow;
 
 use gloo::events::EventListenerOptions;
@@ -29,7 +29,7 @@ macro_rules! event_handler_mixin {
     };
 }
 
-pub trait Element<T, A = ()>: View<T, A> + ViewMarker + sealed::Sealed
+pub trait Element<T, A = ()>: View<T, A> + sealed::Sealed
 where
     Self: Sized,
 {
