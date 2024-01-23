@@ -22,18 +22,18 @@ use super::{Cx, View};
 pub struct Switch<T, A> {
     is_on: bool,
     #[allow(clippy::type_complexity)]
-    callback: Box<dyn Fn(&mut T, bool) -> A + Send>,
+    callback: Box<dyn Fn(&mut T, bool) -> A + Send + Sync>,
 }
 
 pub fn switch<T, A>(
     is_on: bool,
-    clicked: impl Fn(&mut T, bool) -> A + Send + 'static,
+    clicked: impl Fn(&mut T, bool) -> A + Send + Sync + 'static,
 ) -> Switch<T, A> {
     Switch::new(is_on, clicked)
 }
 
 impl<T, A> Switch<T, A> {
-    pub fn new(is_on: bool, clicked: impl Fn(&mut T, bool) -> A + Send + 'static) -> Self {
+    pub fn new(is_on: bool, clicked: impl Fn(&mut T, bool) -> A + Send + Sync + 'static) -> Self {
         Switch {
             is_on,
             callback: Box::new(clicked),
