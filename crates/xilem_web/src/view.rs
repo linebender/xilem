@@ -90,8 +90,8 @@ xilem_core::generate_anyview_trait! {AnyView, View, ViewMarker, Cx, ChangeFlags,
 xilem_core::generate_memoize_view! {Memoize, MemoizeState, View, ViewMarker, Cx, ChangeFlags, static_view, memoize;}
 xilem_core::generate_adapt_view! {View, Cx, ChangeFlags;}
 xilem_core::generate_adapt_state_view! {View, Cx, ChangeFlags;}
-xilem_core::generate_rc_view!((std::rc::Rc), View, ViewMarker, Cx, ChangeFlags;);
-xilem_core::generate_rc_view!((std::sync::Arc), View, ViewMarker, Cx, ChangeFlags; + Sync);
+xilem_core::generate_rc_view! {(std::rc::Rc), View, ViewMarker, Cx, ChangeFlags; }
+xilem_core::generate_rc_view! {(std::sync::Arc), View, ViewMarker, Cx, ChangeFlags; + Sync}
 
 // strings -> text nodes
 
