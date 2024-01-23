@@ -4,9 +4,9 @@
 #[macro_export]
 macro_rules! generate_rc_view {
     ($($rc_ty:ident)::*, $viewtrait:ident, $viewmarker:ty, $cx:ty, $changeflags:ty; $($ss:tt)*) => {
-        impl<V> $viewmarker for $(::$rc_ty)*<V> {}
+        impl<V> $viewmarker for $($rc_ty)::*<V> {}
 
-        impl<T, A, V: $viewtrait<T, A> $( $ss )*> $viewtrait<T, A> for $(::$rc_ty)*<V> {
+        impl<T, A, V: $viewtrait<T, A> $( $ss )*> $viewtrait<T, A> for $($rc_ty)::*<V> {
             type State = V::State;
 
             type Element = V::Element;
@@ -23,7 +23,7 @@ macro_rules! generate_rc_view {
                 state: &mut Self::State,
                 element: &mut Self::Element,
             ) -> ChangeFlags {
-                if !$(::$rc_ty)*::ptr_eq(self, prev) {
+                if !$($rc_ty)::*::ptr_eq(self, prev) {
                     V::rebuild(self, cx, prev, id, state, element)
                 } else {
                     ChangeFlags::empty()
