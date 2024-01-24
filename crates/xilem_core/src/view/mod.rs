@@ -15,11 +15,11 @@ mod rc;
 ///    methods, and be responsible for managing element creation & deletion.
 ///  - `$changeflags` - The type that reports down/up the tree. Can be used to avoid
 ///    doing work when we can prove nothing needs doing.
-///  - `$super_bounds` - (optional) parent traits to this trait (e.g. `+ Send`).
-///  - `$state_bounds` - (optional) trait bounds for the associated type `State` (e.g. `: Send`).
+///  - `$super_bounds` - (optional) parent traits to this trait (e.g. `Send + Sync`).
+///  - `$state_bounds` - (optional) trait bounds for the associated type `State` (e.g. `Send`).
 #[macro_export]
 macro_rules! generate_view_trait {
-    ($viewtrait:ident, $bound:ident, $cx:ty, $changeflags:ty; ($($super_bounds:tt)*), ($($state_bounds:tt)*)) => {
+    ($viewtrait:ident, $bound:ident, $cx:ty, $changeflags:ty; $(($($super_bounds:tt)*))? $(,($($state_bounds:tt)*))?) => {
         /// A view object representing a node in the UI.
         ///
         /// This is a central trait for representing UI. An app will generate a tree of
@@ -37,9 +37,9 @@ macro_rules! generate_view_trait {
         /// and also a type for actions which are passed up the tree in message
         /// propagation. During message handling, mutable access to the app state is
         /// given to view nodes, which in turn can expose it to callbacks.
-        pub trait $viewtrait<T, A = ()> $( $super_bounds )* {
+        pub trait $viewtrait<T, A = ()>: $($( $super_bounds )*)? {
             /// Associated state for the view.
-            type State $( $state_bounds )*;
+            type State: $($( $state_bounds )*)?;
 
             /// The associated element for the view.
             type Element: $bound;
