@@ -56,13 +56,13 @@ macro_rules! impl_view_tuple {
 
 #[macro_export]
 macro_rules! generate_viewsequence_trait {
-    ($viewseq:ident, $view:ident, $viewmarker: ident, $bound:ident, $cx:ty, $changeflags:ty, $pod:ty; $( $ss:tt )* ) => {
+    ($viewseq:ident, $view:ident, $viewmarker: ident, $bound:ident, $cx:ty, $changeflags:ty, $pod:ty; ($($super_bounds:tt)*), ($($state_bounds:tt)*)) => {
         /// This trait represents a (possibly empty) sequence of views.
         ///
         /// It is up to the parent view how to lay out and display them.
-        pub trait $viewseq<T, A = ()> $( $ss )* {
+        pub trait $viewseq<T, A = ()> $( $super_bounds )* {
             /// Associated states for the views.
-            type State $( $ss )*;
+            type State $( $state_bounds )*;
 
             /// Build the associated widgets and initialize all states.
             fn build(&self, cx: &mut $cx, elements: &mut Vec<$pod>) -> Self::State;

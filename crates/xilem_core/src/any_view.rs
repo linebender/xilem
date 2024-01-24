@@ -3,7 +3,7 @@
 
 #[macro_export]
 macro_rules! generate_anyview_trait {
-    ($anyview:ident, $viewtrait:ident, $viewmarker:ty, $cx:ty, $changeflags:ty, $anywidget:ident, $boxedview:ident; $($ss:tt)*) => {
+    ($anyview:ident, $viewtrait:ident, $viewmarker:ty, $cx:ty, $changeflags:ty, $anywidget:ident, $boxedview:ident; ($($super_bounds:tt)*), ($($state_bounds:tt)*)) => {
         /// A trait enabling type erasure of views.
         pub trait $anyview<T, A = ()> {
             fn as_any(&self) -> &dyn std::any::Any;
@@ -11,14 +11,14 @@ macro_rules! generate_anyview_trait {
             fn dyn_build(
                 &self,
                 cx: &mut $cx,
-            ) -> ($crate::Id, Box<dyn std::any::Any $( $ss )* >, Box<dyn $anywidget>);
+            ) -> ($crate::Id, Box<dyn std::any::Any $( $state_bounds )* >, Box<dyn $anywidget>);
 
             fn dyn_rebuild(
                 &self,
                 cx: &mut $cx,
                 prev: &dyn $anyview<T, A>,
                 id: &mut $crate::Id,
-                state: &mut Box<dyn std::any::Any $( $ss )* >,
+                state: &mut Box<dyn std::any::Any $( $state_bounds )* >,
                 element: &mut Box<dyn $anywidget>,
             ) -> $changeflags;
 
@@ -43,7 +43,7 @@ macro_rules! generate_anyview_trait {
             fn dyn_build(
                 &self,
                 cx: &mut $cx,
-            ) -> ($crate::Id, Box<dyn std::any::Any $( $ss )* >, Box<dyn $anywidget>) {
+            ) -> ($crate::Id, Box<dyn std::any::Any $( $state_bounds )* >, Box<dyn $anywidget>) {
                 let (id, state, element) = self.build(cx);
                 (id, Box::new(state), Box::new(element))
             }
@@ -53,7 +53,7 @@ macro_rules! generate_anyview_trait {
                 cx: &mut $cx,
                 prev: &dyn $anyview<T, A>,
                 id: &mut $crate::Id,
-                state: &mut Box<dyn std::any::Any $( $ss )* >,
+                state: &mut Box<dyn std::any::Any $( $state_bounds )* >,
                 element: &mut Box<dyn $anywidget>,
             ) -> ChangeFlags {
                 use std::ops::DerefMut;
@@ -94,12 +94,12 @@ macro_rules! generate_anyview_trait {
             }
         }
 
-        pub type $boxedview<T, A = ()> = Box<dyn $anyview<T, A> $( $ss )* >;
+        pub type $boxedview<T, A = ()> = Box<dyn $anyview<T, A> $( $super_bounds )* >;
 
         impl<T, A> $viewmarker for $boxedview<T, A> {}
 
         impl<T, A> $viewtrait<T, A> for $boxedview<T, A> {
-            type State = Box<dyn std::any::Any $( $ss )* >;
+            type State = Box<dyn std::any::Any $( $state_bounds )* >;
 
             type Element = Box<dyn $anywidget>;
 
