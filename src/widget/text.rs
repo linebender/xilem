@@ -46,9 +46,9 @@ impl TextWidget {
         if self.layout.is_none() {
             let mut lcx = parley::LayoutContext::new();
             let mut layout_builder = lcx.ranged_builder(font_cx, &self.text, 1.0);
-            layout_builder.push_default(&parley::style::StyleProperty::Brush(
-                Brush::Solid(Color::rgb8(255, 255, 255)),
-            ));
+            layout_builder.push_default(&parley::style::StyleProperty::Brush(Brush::Solid(
+                Color::rgb8(255, 255, 255),
+            )));
             self.layout = Some(layout_builder.build());
         }
 
