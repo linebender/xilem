@@ -36,8 +36,8 @@ pub use one_of::{
 pub use optional_action::{Action, OptionalAction};
 pub use pointer::{Pointer, PointerDetails, PointerMsg};
 pub use view::{
-    memoize, static_view, Adapt, AdaptState, AdaptThunk, AnyView, BoxedView, Memoize, MemoizeState,
-    Pod, View, ViewMarker, ViewSequence,
+    memoize, static_view, Adapt, AdaptState, AdaptThunk, AnyView, Memoize, MemoizeState, Pod, View,
+    ViewMarker, ViewSequence,
 };
 pub use view_ext::ViewExt;
 

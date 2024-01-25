@@ -9,13 +9,12 @@ macro_rules! generate_anyview_trait {
         $viewmarker:ty,
         $cx:ty,
         $changeflags:ty,
-        $anywidget:ident,
-        $boxedview:ident;
+        $anywidget:ident;
         $(($($super_bounds:tt)*))?
         $(,($($state_bounds:tt)*))?
     ) => {
         /// A trait enabling type erasure of views.
-        pub trait $anyview<T, A = ()> {
+        pub trait $anyview<T, A = ()>: $($( $super_bounds )*)? {
             fn as_any(&self) -> &dyn std::any::Any;
 
             fn dyn_build(
@@ -105,11 +104,9 @@ macro_rules! generate_anyview_trait {
             }
         }
 
-        pub type $boxedview<T, A = ()> = Box<dyn $anyview<T, A> + $($( $super_bounds )*)? >;
+        impl<T, A> $viewmarker for Box<dyn $anyview<T, A>> {}
 
-        impl<T, A> $viewmarker for $boxedview<T, A> {}
-
-        impl<T, A> $viewtrait<T, A> for $boxedview<T, A> {
+        impl<T, A> $viewtrait<T, A> for Box<dyn $anyview<T, A>> {
             type State = Box<dyn std::any::Any + $($( $state_bounds )*)? >;
 
             type Element = Box<dyn $anywidget>;

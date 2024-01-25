@@ -1,5 +1,5 @@
 use std::sync::Arc;
-use xilem::view::{button, memoize, v_stack, BoxedView};
+use xilem::view::{button, memoize, v_stack, AnyView};
 use xilem::{view::View, App, AppLauncher};
 
 // There are currently two ways to do memoization
@@ -39,19 +39,18 @@ fn app_logic(state: &mut AppState) -> impl View<AppState> {
 
 struct AppState {
     count: i32,
-    // TODO Maybe support `impl View for Arc<dyn AnyView>` to avoid double indirection
-    count_view: Option<Arc<BoxedView<AppState>>>,
+    count_view: Option<Arc<dyn AnyView<AppState>>>,
 }
 
 impl AppState {
-    fn make_increase_button(&self) -> Arc<BoxedView<AppState>> {
-        Arc::new(Box::new(button(
+    fn make_increase_button(&self) -> Arc<dyn AnyView<AppState>> {
+        Arc::new(button(
             format!("current count is {}", self.count),
             |state: &mut AppState| {
                 state.count += 1;
                 state.count_view = None;
             },
-        )))
+        ))
     }
 }
 

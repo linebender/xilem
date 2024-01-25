@@ -32,8 +32,8 @@ pub use linear_layout::{h_stack, v_stack, LinearLayout};
 pub use list::{list, List};
 pub use switch::switch;
 pub use view::{
-    memoize, static_view, Adapt, AdaptState, AnyView, BoxedView, Cx, Memoize, MemoizeState, View,
-    ViewMarker, ViewSequence,
+    memoize, static_view, Adapt, AdaptState, AnyView, Cx, Memoize, MemoizeState, View, ViewMarker,
+    ViewSequence,
 };
 
 #[cfg(feature = "taffy")]
