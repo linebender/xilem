@@ -49,19 +49,19 @@ taffy = ["dep:taffy"]
 [dependencies]
 xilem_core.workspace = true
 taffy = { git = "https://github.com/DioxusLabs/taffy", rev = "7781c70241f7f572130c13106f2a869a9cf80885", optional = true }
-vello = { git = "https://github.com/linebender/vello", rev = "9d7c4f00d8db420337706771a37937e9025e089c" }
-wgpu = "0.17.0"
-parley = { git = "https://github.com/dfrg/parley", rev = "2371bf4b702ec91edee2d58ffb2d432539580e1e" }
-tokio = { version = "1.21", features = ["full"] }
+vello = { git = "https://github.com/linebender/vello", rev = "5fc234a3c296eac4c6858403d6b1891150d78866" }
+wgpu = "0.18.0"
+parley = { git = "https://github.com/dfrg/parley", rev = "432b35e4ea097fe4a21c1f4f63d2fd9e741ebf83" }
+tokio = { version = "1.35", features = ["full"] }
 futures-task = "0.3"
 bitflags = "2"
 tracing = "0.1.37"
-accesskit = "0.11"
+accesskit = "0.12"
 fnv = "1.0.7"
 
 [dependencies.glazier]
 git = "https://github.com/linebender/glazier"
-rev = "19a01ba8a97f15bf499ac64e6ea9690d7390deb5"
+rev = "ec7e0c5fafd5c106c4c67831bc829572958c671c"
 default-features = false
 features = ["accesskit"]
 

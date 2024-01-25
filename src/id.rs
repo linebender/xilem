@@ -49,6 +49,6 @@ impl Id {
 
 impl From<Id> for accesskit::NodeId {
     fn from(id: Id) -> accesskit::NodeId {
-        id.to_nonzero_raw().into()
+        accesskit::NodeId(id.to_nonzero_raw().into())
     }
 }

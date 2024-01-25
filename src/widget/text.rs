@@ -20,8 +20,6 @@ use vello::{
     SceneBuilder,
 };
 
-use crate::text::ParleyBrush;
-
 use super::{
     contexts::LifeCycleCx, BoxConstraints, ChangeFlags, Event, EventCx, LayoutCx, LifeCycle,
     PaintCx, UpdateCx, Widget,
@@ -29,7 +27,7 @@ use super::{
 
 pub struct TextWidget {
     text: Cow<'static, str>,
-    layout: Option<Layout<ParleyBrush>>,
+    layout: Option<Layout<Brush>>,
 }
 
 impl TextWidget {
@@ -43,14 +41,14 @@ impl TextWidget {
         ChangeFlags::LAYOUT | ChangeFlags::PAINT
     }
 
-    fn get_layout_mut(&mut self, font_cx: &mut FontContext) -> &mut Layout<ParleyBrush> {
+    fn get_layout_mut(&mut self, font_cx: &mut FontContext) -> &mut Layout<Brush> {
         // Ensure Parley layout is initialised
         if self.layout.is_none() {
             let mut lcx = parley::LayoutContext::new();
             let mut layout_builder = lcx.ranged_builder(font_cx, &self.text, 1.0);
-            layout_builder.push_default(&parley::style::StyleProperty::Brush(ParleyBrush(
+            layout_builder.push_default(&parley::style::StyleProperty::Brush(
                 Brush::Solid(Color::rgb8(255, 255, 255)),
-            )));
+            ));
             self.layout = Some(layout_builder.build());
         }
 

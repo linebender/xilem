@@ -1,5 +1,5 @@
-use vello::kurbo::{self, Affine, Rect, Shape};
-use vello::peniko::{BrushRef, Color, ColorStopsSource, Fill, Gradient, Stroke};
+use vello::kurbo::{self, Affine, Rect, Shape, Stroke};
+use vello::peniko::{BrushRef, Color, ColorStopsSource, Fill, Gradient};
 use vello::SceneBuilder;
 
 #[derive(Debug, Clone, Copy)]
@@ -15,7 +15,7 @@ pub fn stroke<'b>(
     stroke_width: f64,
 ) {
     builder.stroke(
-        &Stroke::new(stroke_width as f32),
+        &Stroke::new(stroke_width),
         Affine::IDENTITY,
         brush,
         None,

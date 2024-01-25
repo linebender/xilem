@@ -198,7 +198,11 @@ where
     }
 
     pub fn accessibility(&mut self) -> TreeUpdate {
-        let mut update = TreeUpdate::default();
+        let mut update = TreeUpdate {
+            nodes: vec![],
+            tree: None,
+            focus: accesskit::NodeId(0),
+        };
         self.ensure_root();
         let root_pod = self.root_pod.as_mut().unwrap();
         let mut window_node_builder = accesskit::NodeBuilder::new(accesskit::Role::Window);

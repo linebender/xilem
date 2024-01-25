@@ -23,7 +23,7 @@ use vello::{
     kurbo::{Affine, Size},
     peniko::Color,
     util::{RenderContext, RenderSurface},
-    RenderParams, Renderer, RendererOptions,
+    AaSupport, RenderParams, Renderer, RendererOptions,
 };
 use vello::{Scene, SceneBuilder};
 
@@ -230,15 +230,21 @@ where
             let queue = &self.render_cx.devices[dev_id].queue;
             let renderer_options = RendererOptions {
                 surface_format: Some(surface.format),
-                timestamp_period: queue.get_timestamp_period(),
+                use_cpu: false,
+                antialiasing_support: AaSupport {
+                    area: true,
+                    msaa8: false,
+                    msaa16: false,
+                },
             };
             let render_params = RenderParams {
                 base_color: Color::BLACK,
                 width,
                 height,
+                antialiasing_method: vello::AaConfig::Area,
             };
             self.renderer
-                .get_or_insert_with(|| Renderer::new(device, &renderer_options).unwrap())
+                .get_or_insert_with(|| Renderer::new(device, renderer_options).unwrap())
                 .render_to_surface(device, queue, &self.scene, &surface_texture, &render_params)
                 .expect("failed to render to surface");
             surface_texture.present();
