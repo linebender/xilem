@@ -12,9 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use glazier::kurbo::Circle;
 use vello::{
-    kurbo::{Point, Size},
+    kurbo::{Circle, Point, Size},
     peniko::Color,
     SceneBuilder,
 };
