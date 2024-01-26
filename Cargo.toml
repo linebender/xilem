@@ -49,9 +49,9 @@ taffy = ["dep:taffy"]
 [dependencies]
 xilem_core.workspace = true
 taffy = { git = "https://github.com/DioxusLabs/taffy", rev = "7781c70241f7f572130c13106f2a869a9cf80885", optional = true }
-vello = { git = "https://github.com/linebender/vello", rev = "5fc234a3c296eac4c6858403d6b1891150d78866" }
+vello = { git = "https://github.com/linebender/vello", rev = "944ce63d8ff40d01f3dbbb7be096feaf6c3657fa" }
 wgpu = "0.18.0"
-parley = { git = "https://github.com/dfrg/parley", rev = "432b35e4ea097fe4a21c1f4f63d2fd9e741ebf83" }
+parley = { git = "https://github.com/dfrg/parley", rev = "cf41c3ff25ae0c9c48e96b59bc4ee41571a279b9" }
 tokio = { version = "1.35", features = ["full"] }
 futures-task = "0.3"
 bitflags = "2"

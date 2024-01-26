@@ -1748,7 +1748,7 @@ dependencies = [
 [[package]]
 name = "parley"
 version = "0.0.1"
-source = "git+https://github.com/dfrg/parley?rev=432b35e4ea097fe4a21c1f4f63d2fd9e741ebf83#432b35e4ea097fe4a21c1f4f63d2fd9e741ebf83"
+source = "git+https://github.com/dfrg/parley?rev=cf41c3ff25ae0c9c48e96b59bc4ee41571a279b9#cf41c3ff25ae0c9c48e96b59bc4ee41571a279b9"
 dependencies = [
  "peniko 0.1.0 (git+https://github.com/linebender/peniko?rev=8717635681dedfab3e9f3741fcbc7f3318a82ff0)",
  "swash",
@@ -2543,7 +2543,7 @@ checksum = "f1bddf1187be692e79c5ffeab891132dfb0f236ed36a43c7ed39f1165ee20191"
 [[package]]
 name = "vello"
 version = "0.0.1"
-source = "git+https://github.com/linebender/vello?rev=5fc234a3c296eac4c6858403d6b1891150d78866#5fc234a3c296eac4c6858403d6b1891150d78866"
+source = "git+https://github.com/linebender/vello?rev=944ce63d8ff40d01f3dbbb7be096feaf6c3657fa#944ce63d8ff40d01f3dbbb7be096feaf6c3657fa"
 dependencies = [
  "bytemuck",
  "futures-intrusive",
@@ -2558,7 +2558,7 @@ dependencies = [
 [[package]]
 name = "vello_encoding"
 version = "0.1.0"
-source = "git+https://github.com/linebender/vello?rev=5fc234a3c296eac4c6858403d6b1891150d78866#5fc234a3c296eac4c6858403d6b1891150d78866"
+source = "git+https://github.com/linebender/vello?rev=944ce63d8ff40d01f3dbbb7be096feaf6c3657fa#944ce63d8ff40d01f3dbbb7be096feaf6c3657fa"
 dependencies = [
  "bytemuck",
  "guillotiere",
