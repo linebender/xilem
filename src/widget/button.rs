@@ -21,7 +21,7 @@ use vello::{
     SceneBuilder,
 };
 
-use crate::{text::ParleyBrush, IdPath, Message};
+use crate::{IdPath, Message};
 
 use super::{
     contexts::LifeCycleCx,
@@ -33,7 +33,7 @@ use super::{
 pub struct Button {
     id_path: IdPath,
     label: String,
-    layout: Option<Layout<ParleyBrush>>,
+    layout: Option<Layout<Brush>>,
 }
 
 impl Button {
@@ -96,8 +96,8 @@ impl Widget for Button {
         let mut lcx = parley::LayoutContext::new();
         let mut layout_builder = lcx.ranged_builder(cx.font_cx(), &self.label, 1.0);
 
-        layout_builder.push_default(&parley::style::StyleProperty::Brush(ParleyBrush(
-            Brush::Solid(Color::rgb8(0xf0, 0xf0, 0xea)),
+        layout_builder.push_default(&parley::style::StyleProperty::Brush(Brush::Solid(
+            Color::rgb8(0xf0, 0xf0, 0xea),
         )));
         let mut layout = layout_builder.build();
         // Question for Chad: is this needed?
