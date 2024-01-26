@@ -16,8 +16,8 @@ use std::any::Any;
 
 use accesskit::TreeUpdate;
 use glazier::{
-    Application, Cursor, HotKey, IdleToken, Menu, PointerEvent, Region, Scalable, SysMods,
-    WinHandler, WindowBuilder, WindowHandle,
+    Application, Cursor, IdleToken, PointerEvent, Region, Scalable, WinHandler, WindowBuilder,
+    WindowHandle,
 };
 use vello::{
     kurbo::{Affine, Size},
@@ -46,8 +46,6 @@ struct MainState<T, V: View<T>> {
     counter: u64,
 }
 
-const QUIT_MENU_ID: u32 = 0x100;
-
 impl<T: Send + 'static, V: View<T> + 'static> AppLauncher<T, V> {
     pub fn new(app: App<T, V>) -> Self {
         AppLauncher {
@@ -63,23 +61,11 @@ impl<T: Send + 'static, V: View<T> + 'static> AppLauncher<T, V> {
 
     pub fn run(self) {
         let glazier_app = Application::new().unwrap();
-        let mut file_menu = Menu::new();
-        file_menu.add_item(
-            QUIT_MENU_ID,
-            "E&xit",
-            Some(&HotKey::new(SysMods::Cmd, "q")),
-            Some(false),
-            true,
-        );
-        let mut menubar = Menu::new();
-        menubar.add_dropdown(Menu::new(), "Application", true);
-        menubar.add_dropdown(file_menu, "&File", true);
         let _guard = self.app.rt.enter();
         let main_state = MainState::new(self.app);
         let window = WindowBuilder::new(glazier_app.clone())
             .handler(Box::new(main_state))
             .title(self.title)
-            .menu(menubar)
             .size(Size::new(1024., 768.))
             .build()
             .unwrap();
@@ -106,10 +92,6 @@ impl<T: Send + 'static, V: View<T> + 'static> WinHandler for MainState<T, V> {
 
     fn command(&mut self, id: u32) {
         match id {
-            QUIT_MENU_ID => {
-                self.handle.close();
-                Application::global().quit()
-            }
             _ => println!("unexpected id {}", id),
         }
     }
