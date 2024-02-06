@@ -3299,6 +3299,7 @@ dependencies = [
  "fnv",
  "futures-task",
  "glazier",
+ "instant",
  "parley",
  "taffy",
  "test-log",

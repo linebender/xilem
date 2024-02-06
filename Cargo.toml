@@ -58,6 +58,7 @@ bitflags = "2"
 tracing = "0.1.37"
 accesskit = "0.12"
 fnv = "1.0.7"
+instant = { version = "0.1.6", features = ["wasm-bindgen"] }
 
 [dependencies.glazier]
 git = "https://github.com/linebender/glazier"

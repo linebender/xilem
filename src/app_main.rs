@@ -16,8 +16,8 @@ use std::any::Any;
 
 use accesskit::TreeUpdate;
 use glazier::{
-    Application, Cursor, IdleToken, PointerEvent, Region, Scalable, WinHandler, WindowBuilder,
-    WindowHandle,
+    Application, Cursor, IdleToken, PointerEvent, PointerType, Region, Scalable, WinHandler,
+    WindowBuilder, WindowHandle,
 };
 use vello::{
     kurbo::{Affine, Size},
@@ -26,7 +26,7 @@ use vello::{
     AaSupport, RenderParams, Renderer, RendererOptions, Scene,
 };
 
-use crate::{app::App, view::View, widget::Event};
+use crate::{app::App, view::View, widget::Event, widget::PointerCrusher};
 
 // This is a bit of a hack just to get a window launched. The real version
 // would deal with multiple windows and have other ways to configure things.
@@ -44,6 +44,7 @@ struct MainState<T, V: View<T>> {
     renderer: Option<Renderer>,
     scene: Scene,
     counter: u64,
+    main_pointer: PointerCrusher,
 }
 
 impl<T: Send + 'static, V: View<T> + 'static> AppLauncher<T, V> {
@@ -108,23 +109,34 @@ impl<T: Send + 'static, V: View<T> + 'static> WinHandler for MainState<T, V> {
     }
 
     fn pointer_down(&mut self, event: &PointerEvent) {
-        self.app.window_event(Event::MouseDown(event.into()));
+        self.main_pointer.mods(event.modifiers);
+        self.app
+            .window_event(Event::MouseDown(self.main_pointer.pressed(event.button)));
         self.handle.invalidate();
     }
 
     fn pointer_up(&mut self, event: &PointerEvent) {
-        self.app.window_event(Event::MouseUp(event.into()));
+        self.main_pointer.mods(event.modifiers);
+        self.app
+            .window_event(Event::MouseUp(self.main_pointer.released(event.button)));
         self.handle.invalidate();
     }
 
     fn pointer_move(&mut self, event: &PointerEvent) {
-        self.app.window_event(Event::MouseMove(event.into()));
+        self.main_pointer.mods(event.modifiers);
+        self.app
+            .window_event(Event::MouseMove(self.main_pointer.moved(event.pos)));
         self.handle.invalidate();
         self.handle.set_cursor(&Cursor::Arrow);
     }
 
     fn wheel(&mut self, event: &PointerEvent) {
-        self.app.window_event(Event::MouseWheel(event.into()));
+        self.main_pointer.mods(event.modifiers);
+        if let PointerType::Mouse(ref info) = event.pointer_type {
+            self.app
+                .window_event(Event::MouseWheel(self.main_pointer.wheel(info.wheel_delta)));
+        }
+
         self.handle.invalidate();
     }
 
@@ -164,6 +176,7 @@ where
             renderer: None,
             scene: Scene::default(),
             counter: 0,
+            main_pointer: PointerCrusher::new(),
         }
     }
 
