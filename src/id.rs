@@ -21,9 +21,12 @@ pub struct Id(NonZeroU64);
 impl Id {
     /// Allocate a new, unique `Id`.
     pub fn next() -> Id {
-        use glazier::Counter;
-        static WIDGET_ID_COUNTER: Counter = Counter::new();
-        Id(WIDGET_ID_COUNTER.next_nonzero())
+        use std::sync::atomic::{AtomicU64, Ordering};
+        static WIDGET_ID_COUNTER: AtomicU64 = AtomicU64::new(1);
+        Id(WIDGET_ID_COUNTER
+            .fetch_add(1, Ordering::Relaxed)
+            .try_into()
+            .unwrap())
     }
 
     #[allow(unused)]

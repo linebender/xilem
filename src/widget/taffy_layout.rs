@@ -15,10 +15,11 @@
 use crate::geometry::Axis;
 use crate::widget::{AccessCx, BoxConstraints, Event};
 use accesskit::NodeId;
-use glazier::kurbo::Affine;
-use vello::kurbo::{Point, Size};
-use vello::peniko::{Brush, Color, Fill};
-use vello::SceneBuilder;
+use vello::{
+    kurbo::{Affine, Point, Size},
+    peniko::{Brush, Color, Fill},
+    SceneBuilder,
+};
 
 use super::{contexts::LifeCycleCx, EventCx, LayoutCx, LifeCycle, PaintCx, Pod, UpdateCx, Widget};
 
