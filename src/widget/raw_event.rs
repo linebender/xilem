@@ -34,7 +34,7 @@ pub enum Event {
 pub struct MouseEvent {
     /// The position of the mouse in the coordinate space of the receiver.
     pub pos: Point,
-    /// The position of the mose in the window coordinate space.
+    /// The position of the mouse in the window coordinate space.
     pub window_pos: Point,
     pub buttons: PointerButtons,
     pub mods: Modifiers,

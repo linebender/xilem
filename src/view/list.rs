@@ -98,7 +98,7 @@ impl<T, A, VT: ViewSequence<T, A>, F: Fn(usize) -> VT + Send> ViewSequence<T, A>
             state.views.push((vt, vt_state));
         }
 
-        // We only check if our length changes. If one of the sub sequences changes thier size they
+        // We only check if our length changes. If one of the sub sequences changes their size they
         // have to set ChangeFlags::all() them self's.
         if self.items != prev.items {
             flags |= ChangeFlags::all();

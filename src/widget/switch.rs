@@ -138,7 +138,7 @@ impl Widget for Switch {
             self.knob_position.x = if self.is_on { ON_POS } else { OFF_POS }
         }
 
-        // Paint the Swith background
+        // Paint the Switch background
         // The on/off states have different colors
         // The transition between the two color is controlled by the knob position and calculated using the opacity
         let opacity = (self.knob_position.x - OFF_POS) / (ON_POS - OFF_POS);
