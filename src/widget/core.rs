@@ -453,7 +453,7 @@ impl Pod {
 
     /// The default paint method.
     ///
-    /// It paints the this widget if neccessary and appends its SceneFragment to the provided
+    /// It paints the this widget if necessary and appends its SceneFragment to the provided
     /// `SceneBuilder`.
     pub fn paint(&mut self, cx: &mut PaintCx, builder: &mut SceneBuilder) {
         self.paint_impl(cx);
