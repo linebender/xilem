@@ -23,7 +23,7 @@ use xilem_core::{Id, IdPath};
 
 use crate::widget::{AnyWidget, ChangeFlags, Pod, Widget};
 
-xilem_core::generate_view_trait! {View, ViewMarker, Widget, Cx, ChangeFlags; (Send), (Send)}
+xilem_core::generate_view_trait! {View, Widget, Cx, ChangeFlags; (ViewMarker + Send), (Send)}
 xilem_core::generate_viewsequence_trait! {ViewSequence, View, ViewMarker, Widget, Cx, ChangeFlags, Pod; : Send}
 xilem_core::generate_anyview_trait! {AnyView, View, ViewMarker, Cx, ChangeFlags, AnyWidget, BoxedView; + Send}
 xilem_core::generate_memoize_view! {Memoize, MemoizeState, View, ViewMarker, Cx, ChangeFlags, s, memoize; + Send}
