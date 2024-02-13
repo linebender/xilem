@@ -18,8 +18,10 @@
 //! widget system, particularly its core.rs.
 
 use bitflags::bitflags;
-use vello::kurbo::{Affine, Point, Rect, Size};
-use vello::{SceneBuilder, SceneFragment};
+use vello::{
+    kurbo::{Affine, Point, Rect, Size},
+    Scene,
+};
 
 use super::widget::{AnyWidget, Widget};
 use crate::Axis;
@@ -91,7 +93,7 @@ bitflags! {
 pub struct Pod {
     pub(crate) state: WidgetState,
     pub(crate) widget: Box<dyn AnyWidget>,
-    pub(crate) fragment: SceneFragment,
+    pub(crate) fragment: Scene,
 }
 
 #[derive(Debug)]
@@ -180,7 +182,7 @@ impl Pod {
     pub fn new_from_box(widget: Box<dyn AnyWidget>) -> Self {
         Pod {
             state: WidgetState::new(),
-            fragment: SceneFragment::default(),
+            fragment: Scene::default(),
             widget,
         }
     }
@@ -428,12 +430,12 @@ impl Pod {
         }
     }
 
-    pub fn paint_raw(&mut self, cx: &mut PaintCx, builder: &mut SceneBuilder) {
+    pub fn paint_raw(&mut self, cx: &mut PaintCx, scene: &mut Scene) {
         let mut inner_cx = PaintCx {
             cx_state: cx.cx_state,
             widget_state: &mut self.state,
         };
-        self.widget.paint(&mut inner_cx, builder);
+        self.widget.paint(&mut inner_cx, scene);
     }
 
     pub(crate) fn paint_impl(&mut self, cx: &mut PaintCx) {
@@ -446,28 +448,27 @@ impl Pod {
         };
 
         if needs_paint {
-            let mut builder = SceneBuilder::for_fragment(&mut self.fragment);
-            self.widget.paint(&mut inner_cx, &mut builder);
+            self.fragment.reset();
+            self.widget.paint(&mut inner_cx, &mut self.fragment);
         }
     }
 
     /// The default paint method.
     ///
-    /// It paints the this widget if necessary and appends its SceneFragment to the provided
-    /// `SceneBuilder`.
-    pub fn paint(&mut self, cx: &mut PaintCx, builder: &mut SceneBuilder) {
+    /// It paints the this widget if necessary and appends its `Scene` to the provided `Scene`.
+    pub fn paint(&mut self, cx: &mut PaintCx, scene: &mut Scene) {
         self.paint_impl(cx);
         let transform = Affine::translate(self.state.origin.to_vec2());
-        builder.append(&self.fragment, Some(transform));
+        scene.append(&self.fragment, Some(transform));
     }
 
-    /// Renders the widget and returns the created `SceneFragment`.
+    /// Renders the widget and returns the created `Scene`.
     ///
-    /// The caller of this method is responsible for translating the Fragment and appending it to
-    /// its own SceneBuilder. This is useful for ClipBoxes and doing animations.
+    /// The caller of this method is responsible for translating the fragment and appending it to
+    /// its own Scene. This is useful for ClipBoxes and doing animations.
     ///
     /// For the default paint behaviour call [`paint`](Pod::paint).
-    pub fn paint_custom(&mut self, cx: &mut PaintCx) -> &SceneFragment {
+    pub fn paint_custom(&mut self, cx: &mut PaintCx) -> &Scene {
         self.paint_impl(cx);
         &self.fragment
     }

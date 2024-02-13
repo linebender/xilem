@@ -49,7 +49,7 @@ taffy = ["dep:taffy"]
 [dependencies]
 xilem_core.workspace = true
 taffy = { git = "https://github.com/DioxusLabs/taffy", rev = "7781c70241f7f572130c13106f2a869a9cf80885", optional = true }
-vello = { git = "https://github.com/linebender/vello", rev = "944ce63d8ff40d01f3dbbb7be096feaf6c3657fa" }
+vello = { git = "https://github.com/linebender/vello", rev = "adb974a2feef73ca92998af5b727a56d4caac44b" }
 wgpu = "0.18.0"
 parley = { git = "https://github.com/dfrg/parley", rev = "cf41c3ff25ae0c9c48e96b59bc4ee41571a279b9" }
 tokio = { version = "1.35", features = ["full"] }

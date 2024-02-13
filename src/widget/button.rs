@@ -18,7 +18,7 @@ use parley::Layout;
 use vello::{
     kurbo::{Affine, Insets, Size},
     peniko::{Brush, Color},
-    SceneBuilder,
+    Scene,
 };
 
 use crate::{IdPath, Message};
@@ -119,7 +119,7 @@ impl Widget for Button {
         cx.push_node(builder);
     }
 
-    fn paint(&mut self, cx: &mut PaintCx, builder: &mut SceneBuilder) {
+    fn paint(&mut self, cx: &mut PaintCx, scene: &mut Scene) {
         let is_hot = cx.is_hot();
         let is_active = cx.is_active();
         let button_border_width = 2.0;
@@ -138,9 +138,9 @@ impl Widget for Button {
         } else {
             [Color::rgb8(0xa1, 0xa1, 0xa1), Color::rgb8(0x3a, 0x3a, 0x3a)]
         };
-        piet_scene_helpers::stroke(builder, &rounded_rect, border_color, button_border_width);
+        piet_scene_helpers::stroke(scene, &rounded_rect, border_color, button_border_width);
         piet_scene_helpers::fill_lin_gradient(
-            builder,
+            scene,
             &rounded_rect,
             bg_stops,
             UnitPoint::TOP,
@@ -150,7 +150,7 @@ impl Widget for Button {
             let size = Size::new(layout.width() as f64, layout.height() as f64);
             let offset = (cx.size().to_vec2() - size.to_vec2()) * 0.5;
             let transform = Affine::translate(offset);
-            crate::text::render_text(builder, transform, layout);
+            crate::text::render_text(scene, transform, layout);
         }
     }
 }

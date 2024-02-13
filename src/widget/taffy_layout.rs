@@ -18,7 +18,7 @@ use accesskit::NodeId;
 use vello::{
     kurbo::{Affine, Point, Size},
     peniko::{Brush, Color, Fill},
-    SceneBuilder,
+    Scene,
 };
 
 use super::{contexts::LifeCycleCx, EventCx, LayoutCx, LifeCycle, PaintCx, Pod, UpdateCx, Widget};
@@ -434,9 +434,9 @@ impl Widget for TaffyLayout {
         }
     }
 
-    fn paint(&mut self, cx: &mut PaintCx, builder: &mut SceneBuilder) {
+    fn paint(&mut self, cx: &mut PaintCx, scene: &mut Scene) {
         if let Some(color) = self.background_color {
-            builder.fill(
+            scene.fill(
                 Fill::NonZero,
                 Affine::IDENTITY,
                 &Brush::Solid(color),
@@ -445,7 +445,7 @@ impl Widget for TaffyLayout {
             );
         }
         for child in &mut self.children {
-            child.paint(cx, builder);
+            child.paint(cx, scene);
         }
     }
 }

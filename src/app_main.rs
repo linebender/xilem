@@ -23,9 +23,8 @@ use vello::{
     kurbo::{Affine, Size},
     peniko::Color,
     util::{RenderContext, RenderSurface},
-    AaSupport, RenderParams, Renderer, RendererOptions,
+    AaSupport, RenderParams, Renderer, RendererOptions, Scene,
 };
-use vello::{Scene, SceneBuilder};
 
 use crate::{app::App, view::View, widget::Event};
 
@@ -218,8 +217,8 @@ where
             } else {
                 None
             };
-            let mut builder = SceneBuilder::for_scene(&mut self.scene);
-            builder.append(fragment, transform);
+            self.scene.reset();
+            self.scene.append(fragment, transform);
             self.counter += 1;
             let surface_texture = surface
                 .surface
