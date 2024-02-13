@@ -1,6 +1,6 @@
 use vello::kurbo::{self, Affine, Rect, Shape, Stroke};
 use vello::peniko::{BrushRef, Color, ColorStopsSource, Fill, Gradient};
-use vello::SceneBuilder;
+use vello::Scene;
 
 #[derive(Debug, Clone, Copy)]
 pub struct UnitPoint {
@@ -9,12 +9,12 @@ pub struct UnitPoint {
 }
 
 pub fn stroke<'b>(
-    builder: &mut SceneBuilder,
+    scene: &mut Scene,
     path: &impl Shape,
     brush: impl Into<BrushRef<'b>>,
     stroke_width: f64,
 ) {
-    builder.stroke(
+    scene.stroke(
         &Stroke::new(stroke_width),
         Affine::IDENTITY,
         brush,
@@ -63,7 +63,7 @@ impl UnitPoint {
 }
 
 pub fn fill_lin_gradient(
-    builder: &mut SceneBuilder,
+    scene: &mut Scene,
     path: &impl Shape,
     stops: impl ColorStopsSource,
     start: UnitPoint,
@@ -71,9 +71,9 @@ pub fn fill_lin_gradient(
 ) {
     let rect = path.bounding_box();
     let brush = Gradient::new_linear(start.resolve(rect), end.resolve(rect)).with_stops(stops);
-    builder.fill(Fill::NonZero, Affine::IDENTITY, &brush, None, path);
+    scene.fill(Fill::NonZero, Affine::IDENTITY, &brush, None, path);
 }
 
-pub fn fill_color(builder: &mut SceneBuilder, path: &impl Shape, color: Color) {
-    builder.fill(Fill::NonZero, Affine::IDENTITY, color, None, path)
+pub fn fill_color(scene: &mut Scene, path: &impl Shape, color: Color) {
+    scene.fill(Fill::NonZero, Affine::IDENTITY, color, None, path)
 }

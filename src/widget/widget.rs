@@ -17,7 +17,7 @@ use std::ops::DerefMut;
 
 use crate::geometry::Axis;
 use vello::kurbo::Size;
-use vello::SceneBuilder;
+use vello::Scene;
 
 use super::box_constraints::BoxConstraints;
 use super::contexts::{AccessCx, EventCx, LayoutCx, LifeCycleCx, PaintCx, UpdateCx};
@@ -108,7 +108,7 @@ pub trait Widget {
     ///
     /// [`PaintCtx`]: struct.PaintCtx.html
     /// [`RenderContext`]: trait.RenderContext.html
-    fn paint(&mut self, cx: &mut PaintCx, builder: &mut SceneBuilder);
+    fn paint(&mut self, cx: &mut PaintCx, scene: &mut Scene);
 
     /*
     #[doc(hidden)]
@@ -235,7 +235,7 @@ impl Widget for Box<dyn AnyWidget> {
         self.deref_mut().accessibility(cx);
     }
 
-    fn paint(&mut self, cx: &mut PaintCx, builder: &mut SceneBuilder) {
-        self.deref_mut().paint(cx, builder);
+    fn paint(&mut self, cx: &mut PaintCx, scene: &mut Scene) {
+        self.deref_mut().paint(cx, scene);
     }
 }

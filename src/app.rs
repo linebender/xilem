@@ -21,7 +21,7 @@ use glazier::{IdleHandle, IdleToken, WindowHandle};
 use parley::FontContext;
 use tokio::runtime::Runtime;
 use vello::kurbo::{Point, Rect, Size};
-use vello::SceneFragment;
+use vello::Scene;
 use xilem_core::{AsyncWake, MessageResult};
 
 use crate::widget::{
@@ -381,7 +381,7 @@ where
 }
 
 impl<T, V: View<T>> App<T, V> {
-    pub fn fragment(&self) -> &SceneFragment {
+    pub fn fragment(&self) -> &Scene {
         &self.root_pod.as_ref().unwrap().fragment
     }
 }

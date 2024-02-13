@@ -15,7 +15,7 @@
 use vello::{
     kurbo::{Circle, Point, Size},
     peniko::Color,
-    SceneBuilder,
+    Scene,
 };
 
 use crate::{IdPath, Message};
@@ -131,7 +131,7 @@ impl Widget for Switch {
         cx.push_node(builder);
     }
 
-    fn paint(&mut self, cx: &mut PaintCx, builder: &mut SceneBuilder) {
+    fn paint(&mut self, cx: &mut PaintCx, scene: &mut Scene) {
         // Change the position of of the knob based on its state
         // If the knob is currently being dragged with the mouse use the position that was set in MouseMove
         if !self.is_dragging {
@@ -148,8 +148,8 @@ impl Widget for Switch {
 
         let background_rect = cx.size().to_rect().to_rounded_rect(SWITCH_HEIGHT / 2.);
 
-        fill_color(builder, &background_rect, background_off_state);
-        fill_color(builder, &background_rect, background_on_state);
+        fill_color(scene, &background_rect, background_off_state);
+        fill_color(scene, &background_rect, background_on_state);
 
         // Paint the Switch knob
         let knob_border_color = Color::DIM_GRAY;
@@ -177,7 +177,7 @@ impl Widget for Switch {
         };
 
         let knob_circle = Circle::new(self.knob_position, knob_size);
-        fill_color(builder, &knob_circle, knob_color);
-        stroke(builder, &knob_circle, knob_border_color, 2.0);
+        fill_color(scene, &knob_circle, knob_color);
+        stroke(scene, &knob_circle, knob_border_color, 2.0);
     }
 }

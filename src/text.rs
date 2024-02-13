@@ -2,10 +2,10 @@ use parley::Layout;
 use vello::{
     kurbo::Affine,
     peniko::{Brush, Fill},
-    SceneBuilder,
+    Scene,
 };
 
-pub fn render_text(builder: &mut SceneBuilder, transform: Affine, layout: &Layout<Brush>) {
+pub fn render_text(scene: &mut Scene, transform: Affine, layout: &Layout<Brush>) {
     for line in layout.lines() {
         for glyph_run in line.glyph_runs() {
             let mut x = glyph_run.offset();
@@ -20,7 +20,7 @@ pub fn render_text(builder: &mut SceneBuilder, transform: Affine, layout: &Layou
                 .iter()
                 .map(|coord| vello::skrifa::instance::NormalizedCoord::from_bits(*coord))
                 .collect::<Vec<_>>();
-            builder
+            scene
                 .draw_glyphs(&font)
                 .brush(&style.brush)
                 .transform(transform)

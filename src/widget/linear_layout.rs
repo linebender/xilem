@@ -16,7 +16,7 @@ use crate::geometry::Axis;
 use crate::widget::{AccessCx, BoxConstraints, Event};
 use accesskit::NodeId;
 use vello::kurbo::Size;
-use vello::SceneBuilder;
+use vello::Scene;
 
 use super::{contexts::LifeCycleCx, EventCx, LayoutCx, LifeCycle, PaintCx, Pod, UpdateCx, Widget};
 
@@ -100,10 +100,10 @@ impl Widget for LinearLayout {
         }
     }
 
-    fn paint(&mut self, cx: &mut PaintCx, builder: &mut SceneBuilder) {
+    fn paint(&mut self, cx: &mut PaintCx, scene: &mut Scene) {
         for child in &mut self.children {
             // println!("paint child!");
-            child.paint(cx, builder);
+            child.paint(cx, scene);
         }
     }
 }

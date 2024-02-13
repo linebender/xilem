@@ -17,7 +17,7 @@ use std::borrow::Cow;
 use vello::{
     kurbo::{Affine, Size},
     peniko::{Brush, Color},
-    SceneBuilder,
+    Scene,
 };
 
 use super::{
@@ -114,9 +114,9 @@ impl Widget for TextWidget {
         self.layout_text(cx.font_cx(), bc)
     }
 
-    fn paint(&mut self, _cx: &mut PaintCx, builder: &mut SceneBuilder) {
+    fn paint(&mut self, _cx: &mut PaintCx, scene: &mut Scene) {
         if let Some(layout) = &self.layout {
-            crate::text::render_text(builder, Affine::IDENTITY, layout);
+            crate::text::render_text(scene, Affine::IDENTITY, layout);
         }
     }
 
