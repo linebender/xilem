@@ -17,7 +17,7 @@ license = "Apache-2.0"
 
 [workspace.dependencies]
 xilem_core = { version = "0.1.0", path = "crates/xilem_core" }
-kurbo = "0.9.1"
+kurbo = "0.11.0"
 
 [package]
 name = "xilem"
@@ -49,9 +49,9 @@ taffy = ["dep:taffy"]
 [dependencies]
 xilem_core.workspace = true
 taffy = { version = "0.4.0", optional = true }
-vello = { git = "https://github.com/linebender/vello", rev = "adb974a2feef73ca92998af5b727a56d4caac44b" }
+vello = { git = "https://github.com/linebender/vello", rev = "b1bd9e361f2944b71cef0ea8a2c71dce5182d79b" }
 wgpu = "0.18.0"
-parley = { git = "https://github.com/dfrg/parley", rev = "cf41c3ff25ae0c9c48e96b59bc4ee41571a279b9" }
+parley = { git = "https://github.com/dfrg/parley", rev = "1940d1ae9f2a9b44b7c18967147ffa7d345fdafd" }
 tokio = { version = "1.35", features = ["full"] }
 futures-task = "0.3"
 bitflags = "2"
@@ -61,7 +61,7 @@ fnv = "1.0.7"
 
 [dependencies.glazier]
 git = "https://github.com/linebender/glazier"
-rev = "ec7e0c5fafd5c106c4c67831bc829572958c671c"
+rev = "8d2a4b2cafd5e6be49bfb4ac8d0bd26fe02f036e"
 default-features = false
 features = ["accesskit"]
 

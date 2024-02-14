@@ -1132,7 +1132,7 @@ dependencies = [
 [[package]]
 name = "glazier"
 version = "0.1.0"
-source = "git+https://github.com/linebender/glazier?rev=ec7e0c5fafd5c106c4c67831bc829572958c671c#ec7e0c5fafd5c106c4c67831bc829572958c671c"
+source = "git+https://github.com/linebender/glazier?rev=8d2a4b2cafd5e6be49bfb4ac8d0bd26fe02f036e#8d2a4b2cafd5e6be49bfb4ac8d0bd26fe02f036e"
 dependencies = [
  "accesskit",
  "accesskit_macos",
@@ -1149,7 +1149,7 @@ dependencies = [
  "instant",
  "js-sys",
  "keyboard-types",
- "kurbo 0.10.4",
+ "kurbo 0.11.0",
  "lazy_static",
  "memchr",
  "nix 0.25.1",
@@ -1464,18 +1464,19 @@ checksum = "e2db585e1d738fc771bf08a151420d3ed193d9d895a36df7f6f8a9456b911ddc"
 
 [[package]]
 name = "kurbo"
-version = "0.9.5"
+version = "0.10.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bd85a5776cd9500c2e2059c8c76c3b01528566b7fcbaf8098b55a33fc298849b"
+checksum = "1618d4ebd923e97d67e7cd363d80aef35fe961005cbbbb3d2dad8bdd1bc63440"
 dependencies = [
  "arrayvec",
+ "smallvec",
 ]
 
 [[package]]
 name = "kurbo"
-version = "0.10.4"
+version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1618d4ebd923e97d67e7cd363d80aef35fe961005cbbbb3d2dad8bdd1bc63440"
+checksum = "6e5aa9f0f96a938266bdb12928a67169e8d22c6a786fda8ed984b85e6ba93c3c"
 dependencies = [
  "arrayvec",
  "smallvec",
@@ -1847,9 +1848,9 @@ dependencies = [
 [[package]]
 name = "parley"
 version = "0.0.1"
-source = "git+https://github.com/dfrg/parley?rev=cf41c3ff25ae0c9c48e96b59bc4ee41571a279b9#cf41c3ff25ae0c9c48e96b59bc4ee41571a279b9"
+source = "git+https://github.com/dfrg/parley?rev=1940d1ae9f2a9b44b7c18967147ffa7d345fdafd#1940d1ae9f2a9b44b7c18967147ffa7d345fdafd"
 dependencies = [
- "peniko 0.1.0 (git+https://github.com/linebender/peniko?rev=8717635681dedfab3e9f3741fcbc7f3318a82ff0)",
+ "peniko 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "swash",
 ]
 
@@ -1868,16 +1869,17 @@ checksum = "19b17cddbe7ec3f8bc800887bab5e717348c95ea2ca0b1bf0837fb964dc67099"
 [[package]]
 name = "peniko"
 version = "0.1.0"
-source = "git+https://github.com/linebender/peniko?rev=629fc3325b016a8c98b1cd6204cb4ddf1c6b3daa#629fc3325b016a8c98b1cd6204cb4ddf1c6b3daa"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "caaf7fec601d640555d9a4cab7343eba1e1c7a5a71c9993ff63b4c26bc5d50c5"
 dependencies = [
- "kurbo 0.10.4",
+ "kurbo 0.11.0",
  "smallvec",
 ]
 
 [[package]]
 name = "peniko"
 version = "0.1.0"
-source = "git+https://github.com/linebender/peniko?rev=8717635681dedfab3e9f3741fcbc7f3318a82ff0#8717635681dedfab3e9f3741fcbc7f3318a82ff0"
+source = "git+https://github.com/linebender/peniko?rev=629fc3325b016a8c98b1cd6204cb4ddf1c6b3daa#629fc3325b016a8c98b1cd6204cb4ddf1c6b3daa"
 dependencies = [
  "kurbo 0.10.4",
  "smallvec",
@@ -2683,12 +2685,11 @@ checksum = "f1bddf1187be692e79c5ffeab891132dfb0f236ed36a43c7ed39f1165ee20191"
 [[package]]
 name = "vello"
 version = "0.0.1"
-source = "git+https://github.com/linebender/vello?rev=adb974a2feef73ca92998af5b727a56d4caac44b#adb974a2feef73ca92998af5b727a56d4caac44b"
+source = "git+https://github.com/linebender/vello?rev=b1bd9e361f2944b71cef0ea8a2c71dce5182d79b#b1bd9e361f2944b71cef0ea8a2c71dce5182d79b"
 dependencies = [
  "bytemuck",
  "futures-intrusive",
- "kurbo 0.10.4",
- "peniko 0.1.0 (git+https://github.com/linebender/peniko?rev=8717635681dedfab3e9f3741fcbc7f3318a82ff0)",
+ "peniko 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "raw-window-handle",
  "skrifa",
  "vello_encoding",
@@ -2698,11 +2699,11 @@ dependencies = [
 [[package]]
 name = "vello_encoding"
 version = "0.1.0"
-source = "git+https://github.com/linebender/vello?rev=adb974a2feef73ca92998af5b727a56d4caac44b#adb974a2feef73ca92998af5b727a56d4caac44b"
+source = "git+https://github.com/linebender/vello?rev=b1bd9e361f2944b71cef0ea8a2c71dce5182d79b#b1bd9e361f2944b71cef0ea8a2c71dce5182d79b"
 dependencies = [
  "bytemuck",
  "guillotiere",
- "peniko 0.1.0 (git+https://github.com/linebender/peniko?rev=8717635681dedfab3e9f3741fcbc7f3318a82ff0)",
+ "peniko 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "skrifa",
 ]
 
@@ -3318,7 +3319,7 @@ version = "0.1.0"
 dependencies = [
  "bitflags 2.4.2",
  "gloo",
- "kurbo 0.9.5",
+ "kurbo 0.11.0",
  "log",
  "paste",
  "peniko 0.1.0 (git+https://github.com/linebender/peniko?rev=629fc3325b016a8c98b1cd6204cb4ddf1c6b3daa)",
