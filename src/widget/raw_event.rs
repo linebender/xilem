@@ -112,7 +112,6 @@ impl PointerCrusher {
     pub fn released(&mut self, button: PointerButton) -> MouseEvent {
         self.e.wheel_delta = Vec2::ZERO;
         self.e.buttons.remove(button);
-        self.e.count = self.counter.count_for_click(self.e.pos);
         self.e.button = button;
         self.e.clone()
     }
