@@ -6,7 +6,7 @@ Issues and PRs are welcome. See [help-wanted issues](https://github.com/Poignard
 
 Issues don't have a specific format.
 
-If you submit one, please be polite, remember that masonry contributors are unpaid volunteers, and include detailed steps to reproduce any problem.
+If you submit one, please be polite, remember that most Masonry contributors are unpaid volunteers, and include detailed steps to reproduce any problem.
 
 
 ## Pull requests
