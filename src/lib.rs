@@ -18,6 +18,5 @@ pub use app_main::AppLauncher;
 pub(crate) use bloom::Bloom;
 pub use geometry::Axis;
 
-pub use accesskit;
 pub use parley;
 pub use vello;

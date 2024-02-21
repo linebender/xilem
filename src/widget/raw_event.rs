@@ -27,7 +27,6 @@ pub enum Event {
     MouseMove(MouseEvent),
     MouseWheel(MouseEvent),
     MouseLeft(),
-    TargetedAccessibilityAction(accesskit::ActionRequest),
 }
 
 #[derive(Debug, Clone)]

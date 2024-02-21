@@ -17,10 +17,8 @@
 //! Note: the organization of this code roughly follows the existing Druid
 //! widget system, particularly its contexts.rs.
 
-use accesskit::TreeUpdate;
-use glazier::WindowHandle;
 use parley::FontContext;
-use vello::kurbo::{Point, Rect, Size};
+use vello::kurbo::{Point, Size};
 
 use super::{PodFlags, WidgetState};
 use crate::Message;
@@ -30,7 +28,6 @@ use crate::Message;
 /// Static state that is shared between most contexts.
 pub struct CxState<'a> {
     #[allow(unused)]
-    window: &'a WindowHandle,
     font_cx: &'a mut FontContext,
     messages: &'a mut Vec<Message>,
 }
@@ -83,16 +80,6 @@ pub struct LayoutCx<'a, 'b> {
     pub(crate) widget_state: &'a mut WidgetState,
 }
 
-/// A context passed to [`accessibility`] methods of widgets.
-///
-/// [`accessibility`]: crate::widget::Widget::accessibility
-pub struct AccessCx<'a, 'b> {
-    pub(crate) cx_state: &'a mut CxState<'b>,
-    pub(crate) widget_state: &'a mut WidgetState,
-    pub(crate) update: &'a mut TreeUpdate,
-    pub(crate) node_classes: &'a mut accesskit::NodeClassSet,
-}
-
 /// A context passed to [`paint`] methods of widgets.
 ///
 /// [`paint`]: crate::widget::Widget::paint
@@ -116,16 +103,8 @@ macro_rules! impl_context_method {
 }
 
 impl<'a> CxState<'a> {
-    pub fn new(
-        window: &'a WindowHandle,
-        font_cx: &'a mut FontContext,
-        messages: &'a mut Vec<Message>,
-    ) -> Self {
-        CxState {
-            window,
-            font_cx,
-            messages,
-        }
+    pub fn new(font_cx: &'a mut FontContext, messages: &'a mut Vec<Message>) -> Self {
+        CxState { font_cx, messages }
     }
 
     pub(crate) fn has_messages(&self) -> bool {
@@ -159,11 +138,6 @@ impl<'a, 'b> EventCx<'a, 'b> {
     pub fn is_handled(&self) -> bool {
         self.is_handled
     }
-
-    /// Check whether this widget's id matches the given id.
-    pub fn is_accesskit_target(&self, id: accesskit::NodeId) -> bool {
-        accesskit::NodeId::from(self.widget_state.id) == id
-    }
 }
 
 impl<'a, 'b> LifeCycleCx<'a, 'b> {
@@ -193,48 +167,6 @@ impl<'a, 'b> LayoutCx<'a, 'b> {
     }
 }
 
-// This function is unfortunate but works around kurbo versioning
-fn to_accesskit_rect(r: Rect) -> accesskit::Rect {
-    println!("{:?}", r);
-    accesskit::Rect::new(r.x0, r.y0, r.x1, r.y1)
-}
-
-impl<'a, 'b> AccessCx<'a, 'b> {
-    /// Add a node to the tree update being built.
-    ///
-    /// The id of the node pushed is obtained from the context. The
-    /// bounds are set based on the layout bounds.
-    pub fn push_node(&mut self, mut builder: accesskit::NodeBuilder) {
-        builder.set_bounds(to_accesskit_rect(Rect::from_origin_size(
-            self.widget_state.window_origin(),
-            self.widget_state.size,
-        )));
-        let node = builder.build(self.node_classes);
-        self.push_node_raw(node);
-    }
-
-    /// Add a node to the tree update being built.
-    ///
-    /// Similar to `push_node` but it is the responsibility of the caller
-    /// to set bounds before calling.
-    pub fn push_node_raw(&mut self, node: accesskit::Node) {
-        let id = self.widget_state.id.into();
-        self.update.nodes.push((id, node));
-    }
-
-    /// Report whether accessibility was requested on this widget.
-    ///
-    /// This method is primarily intended for containers. The `accessibility`
-    /// method will be called on a widget when it or any of its descendants
-    /// have seen a request. However, in many cases a container need not push
-    /// a node for itself.
-    pub fn is_requested(&self) -> bool {
-        self.widget_state
-            .flags
-            .contains(PodFlags::REQUEST_ACCESSIBILITY)
-    }
-}
-
 impl<'a, 'b> PaintCx<'a, 'b> {
     pub(crate) fn new(cx_state: &'a mut CxState<'b>, widget_state: &'a mut WidgetState) -> Self {
         PaintCx {
@@ -252,7 +184,6 @@ impl_context_method!(
     UpdateCx<'_, '_>,
     LifeCycleCx<'_, '_>,
     LayoutCx<'_, '_>,
-    AccessCx<'_, '_>,
     PaintCx<'_, '_>,
     {
         /// Returns whether this widget is hot.
@@ -339,7 +270,6 @@ impl_context_method!(
     UpdateCx<'_, '_>,
     LifeCycleCx<'_, '_>,
     LayoutCx<'_, '_>,
-    AccessCx<'_, '_>,
     PaintCx<'_, '_>,
     {
         /// The layout size.

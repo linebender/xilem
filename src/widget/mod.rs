@@ -31,7 +31,7 @@ pub use self::core::{ChangeFlags, Pod};
 pub(crate) use self::core::{PodFlags, WidgetState};
 pub use box_constraints::BoxConstraints;
 pub use button::Button;
-pub use contexts::{AccessCx, CxState, EventCx, LayoutCx, LifeCycleCx, PaintCx, UpdateCx};
+pub use contexts::{CxState, EventCx, LayoutCx, LifeCycleCx, PaintCx, UpdateCx};
 pub use linear_layout::LinearLayout;
 pub use raw_event::{Event, LifeCycle, MouseEvent, PointerCrusher, ViewContext};
 pub use switch::Switch;

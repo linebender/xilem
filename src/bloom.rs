@@ -71,6 +71,7 @@ impl<T: ?Sized + Hash> Bloom<T> {
     /// This can return false positives, but never false negatives.
     /// Thus `true` means that the item may have been added - or not,
     /// while `false` means that the item has definitely not been added.
+    #[allow(unused)]
     pub fn may_contain(&self, item: &T) -> bool {
         let mask = self.make_bit_mask(item);
         self.bits & mask == mask
