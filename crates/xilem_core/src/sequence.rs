@@ -298,8 +298,9 @@ macro_rules! generate_viewsequence_trait {
                 elements: &mut $crate::VecSplice<$pod>,
             ) -> $changeflags {
                 self.iter()
-                    .enumerate()
-                    .map(|(i, vs)| vs.rebuild(cx, &prev[i], &mut state[i], elements))
+                    .zip(prev)
+                    .zip(state)
+                    .map(|((vs, prev), state)| vs.rebuild(cx, prev, state, elements))
                     .fold(ChangeFlags::empty(), |changes_acc, changes| {
                         changes_acc | changes
                     })
