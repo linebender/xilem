@@ -1,13 +1,5 @@
+use crate::id::Id;
 use std::collections::HashMap;
-
-use xilem_core::VecSplice;
-
-use crate::{
-    id::Id,
-    widget::{ChangeFlags, Pod},
-};
-
-use crate::view::ElementsSplice;
 
 /// The pure structure (parent/children relations via ids) of the widget tree.
 #[derive(Debug, Default, Clone)]
@@ -26,8 +18,7 @@ impl TreeStructure {
         self.children.get(&id).map(Vec::as_slice)
     }
 
-    pub fn is_descendant_of(&self, id: Id, ancestor: Id) -> bool {
-        let mut id = id;
+    pub fn is_descendant_of(&self, mut id: Id, ancestor: Id) -> bool {
         while let Some(parent) = self.parent(id).flatten() {
             if parent == ancestor {
                 return true;
@@ -86,106 +77,79 @@ impl TreeStructure {
         }
         self.children.get_mut(&parent_id).unwrap().drain(range);
     }
-
-    // TODO: currently if there are no children added/mutated the tree will not be mutated.
-    //       Should the parent be inserted if there aren't any children? Should this happen elsewhere?
-    pub(crate) fn apply_splice_mutations(&mut self, parent_id: Id, mutations: &[SpliceMutation]) {
-        let mut idx = 0;
-        for mutation in mutations {
-            match mutation {
-                SpliceMutation::Add(id) => {
-                    self.append_child(parent_id, *id);
-                    idx += 1;
-                }
-                SpliceMutation::Change(new_id) => {
-                    self.change_child(parent_id, idx, *new_id);
-                    idx += 1;
-                }
-                SpliceMutation::Delete(n) => {
-                    self.delete_children(parent_id, idx..(idx + n));
-                }
-                SpliceMutation::Skip(n) => {
-                    idx += n;
-                }
-            }
-        }
-    }
 }
 
-pub enum SpliceMutation {
-    Add(Id),
-    Change(Id),
-    Delete(usize),
-    Skip(usize),
-}
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-pub struct TreeTrackerSplice<'a, 'b, 'c> {
-    current_child_id: Option<Id>,
-    splice: VecSplice<'a, 'b, Pod>,
-    mutations: &'c mut Vec<SpliceMutation>,
-}
+    #[test]
+    fn mutates_simple_tree_structure() {
+        let mut tree_structure = TreeStructure::default();
 
-impl<'a, 'b, 'c> TreeTrackerSplice<'a, 'b, 'c> {
-    pub fn new(
-        elements: &'a mut Vec<Pod>,
-        scratch: &'b mut Vec<Pod>,
-        mutations: &'c mut Vec<SpliceMutation>,
-    ) -> Self {
-        mutations.clear();
-        Self {
-            splice: VecSplice::new(elements, scratch),
-            current_child_id: None,
-            mutations,
-        }
-    }
-}
+        let parent = Id::next();
+        let child1 = Id::next();
+        let child2 = Id::next();
+        let child3 = Id::next();
 
-impl<'a, 'b, 'c> ElementsSplice for TreeTrackerSplice<'a, 'b, 'c> {
-    fn push(&mut self, element: Pod) {
-        self.mutations.push(SpliceMutation::Add(element.id()));
-        self.splice.push(element);
-    }
+        // append children
+        tree_structure.append_child(parent, child1);
+        tree_structure.append_child(parent, child2);
+        tree_structure.append_child(parent, child3);
+        let children = tree_structure.children(Some(parent)).unwrap();
+        assert_eq!(children.len(), 3);
+        assert_eq!(children[0], child1);
+        assert_eq!(children[1], child2);
+        assert_eq!(children[2], child3);
+        assert_eq!(tree_structure.parent(child1), Some(Some(parent)));
+        assert_eq!(tree_structure.parent(child2), Some(Some(parent)));
+        assert_eq!(tree_structure.parent(child3), Some(Some(parent)));
 
-    fn mutate(&mut self) -> &mut Pod {
-        let pod = self.splice.mutate();
-        self.current_child_id = Some(pod.id());
-        pod
-    }
+        // change children
+        let child2_new = Id::next();
+        tree_structure.change_child(parent, 1, child2_new);
+        let children = tree_structure.children(Some(parent)).unwrap();
+        assert_eq!(children.len(), 3);
+        assert_eq!(children[0], child1);
+        assert_eq!(children[1], child2_new);
+        assert_eq!(children[2], child3);
+        assert_eq!(tree_structure.parent(child1), Some(Some(parent)));
+        assert_eq!(tree_structure.parent(child2), None);
+        assert_eq!(tree_structure.parent(child2_new), Some(Some(parent)));
+        assert_eq!(tree_structure.parent(child3), Some(Some(parent)));
 
-    fn mark(&mut self, changeflags: ChangeFlags) -> ChangeFlags {
-        let mut skip = || {
-            if let Some(SpliceMutation::Skip(count)) = self.mutations.last_mut() {
-                *count += 1;
-            } else {
-                self.mutations.push(SpliceMutation::Skip(1));
-            }
-        };
-        // TODO fine-grained tracking (check whether only this child and not its descendents have changed)
-        if !changeflags.is_empty() {
-            let old_id = self.current_child_id.take().unwrap();
-            let new_id = self.splice.peek().unwrap().id();
-            if old_id != new_id {
-                self.mutations.push(SpliceMutation::Change(new_id));
-            } else {
-                skip();
-            }
-        } else {
-            skip();
-        }
-
-        self.splice.mark(changeflags)
+        // delete children
+        tree_structure.delete_children(parent, 0..2);
+        let children = tree_structure.children(Some(parent)).unwrap();
+        assert_eq!(children.len(), 1);
+        assert_eq!(children[0], child3);
+        assert_eq!(tree_structure.parent(child1), None);
+        assert_eq!(tree_structure.parent(child2), None);
+        assert_eq!(tree_structure.parent(child2_new), None);
+        assert_eq!(tree_structure.parent(child3), Some(Some(parent)));
     }
 
-    fn delete(&mut self, n: usize) {
-        if let Some(SpliceMutation::Delete(count)) = self.mutations.last_mut() {
-            *count += n;
-        } else {
-            self.mutations.push(SpliceMutation::Delete(n));
-        }
-        self.splice.delete(n);
-    }
+    #[test]
+    fn is_descendant_of() {
+        let mut tree_structure = TreeStructure::default();
+        let parent = Id::next();
+        let child1 = Id::next();
+        let child2 = Id::next();
+        let child3 = Id::next();
+        tree_structure.append_child(parent, child1);
+        tree_structure.append_child(parent, child2);
+        tree_structure.append_child(parent, child3);
 
-    fn len(&self) -> usize {
-        self.splice.len()
+        let child3_child1 = Id::next();
+        let child3_child2 = Id::next();
+        tree_structure.append_child(child3, child3_child1);
+        tree_structure.append_child(child3, child3_child2);
+        let child3_child1_child1 = Id::next();
+        tree_structure.append_child(child3_child1, child3_child1_child1);
+        assert!(tree_structure.is_descendant_of(child3_child1_child1, child3_child1));
+        assert!(tree_structure.is_descendant_of(child3_child1_child1, child3));
+        assert!(tree_structure.is_descendant_of(child3_child1, parent));
+        assert!(!tree_structure.is_descendant_of(child3_child1, child2));
+        assert!(!tree_structure.is_descendant_of(parent, child3_child1));
     }
 }

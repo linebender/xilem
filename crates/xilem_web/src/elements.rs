@@ -19,6 +19,9 @@ pub struct ElementState<ViewSeqState> {
     pub(crate) children_states: ViewSeqState,
     pub(crate) attributes: VecMap<CowStr, AttributeValue>,
     pub(crate) child_elements: Vec<Pod>,
+    /// This is temporary cache for elements while updating/diffing,
+    /// after usage it shouldn't contain any elements,
+    /// and is mainly here to avoid unnecessary allocations
     pub(crate) scratch: Vec<Pod>,
 }
 
@@ -49,6 +52,7 @@ impl<T, A, Children> CustomElement<T, A, Children> {
     }
 }
 
+/// An `ElementsSplice` that does DOM updates in place
 struct ChildrenSplice<'a, 'b, 'c> {
     children: VecSplice<'a, 'b, Pod>,
     child_idx: u32,
@@ -75,7 +79,7 @@ impl<'a, 'b, 'c> ChildrenSplice<'a, 'b, 'c> {
 }
 
 impl<'a, 'b, 'c> ElementsSplice for ChildrenSplice<'a, 'b, 'c> {
-    fn push(&mut self, element: Pod) {
+    fn push(&mut self, element: Pod, _cx: &mut Cx) {
         self.parent
             .append_child(element.0.as_node_ref())
             .unwrap_throw();
@@ -83,11 +87,11 @@ impl<'a, 'b, 'c> ElementsSplice for ChildrenSplice<'a, 'b, 'c> {
         self.children.push(element);
     }
 
-    fn mutate(&mut self) -> &mut Pod {
+    fn mutate(&mut self, _cx: &mut Cx) -> &mut Pod {
         self.children.mutate()
     }
 
-    fn delete(&mut self, n: usize) {
+    fn delete(&mut self, n: usize, _cx: &mut Cx) {
         // Optimization in case all elements are deleted at once
         if n == self.prev_element_count {
             self.parent.set_text_content(None);
@@ -107,11 +111,11 @@ impl<'a, 'b, 'c> ElementsSplice for ChildrenSplice<'a, 'b, 'c> {
         self.children.delete(n);
     }
 
-    fn len(&self) -> usize {
+    fn len(&self, _cx: &mut Cx) -> usize {
         self.children.len()
     }
 
-    fn mark(&mut self, mut changeflags: ChangeFlags) -> ChangeFlags {
+    fn mark(&mut self, mut changeflags: ChangeFlags, _cx: &mut Cx) -> ChangeFlags {
         if changeflags.contains(ChangeFlags::STRUCTURE) {
             let node_list = if let Some(node_list) = &self.node_list {
                 node_list
@@ -153,6 +157,8 @@ where
         let mut splice = ChildrenSplice::new(&mut child_elements, &mut scratch, &el);
 
         let (id, children_states) = cx.with_new_id(|cx| self.children.build(cx, &mut splice));
+
+        debug_assert!(scratch.is_empty());
 
         // Set the id used internally to the `data-debugid` attribute.
         // This allows the user to see if an element has been re-created or only altered.
@@ -206,6 +212,7 @@ where
             self.children
                 .rebuild(cx, &prev.children, &mut state.children_states, &mut splice)
         });
+        debug_assert!(state.scratch.is_empty());
         changed.remove(ChangeFlags::STRUCTURE);
         changed
     }
@@ -280,6 +287,7 @@ macro_rules! define_element {
                 let mut splice = ChildrenSplice::new(&mut child_elements, &mut scratch, &el);
 
                 let (id, children_states) = cx.with_new_id(|cx| self.0.build(cx, &mut splice));
+                debug_assert!(scratch.is_empty());
 
                 // Set the id used internally to the `data-debugid` attribute.
                 // This allows the user to see if an element has been re-created or only altered.
@@ -314,6 +322,7 @@ macro_rules! define_element {
                 changed |= cx.with_id(*id, |cx| {
                     self.0.rebuild(cx, &prev.0, &mut state.children_states, &mut splice)
                 });
+                debug_assert!(state.scratch.is_empty());
                 changed.remove(ChangeFlags::STRUCTURE); // this is handled by the ChildrenSplice already
                 changed
             }

@@ -57,42 +57,48 @@ macro_rules! impl_view_tuple {
 macro_rules! generate_viewsequence_trait {
     ($viewseq:ident, $view:ident, $viewmarker: ident, $elements_splice: ident, $bound:ident, $cx:ty, $changeflags:ty, $pod:ty; $( $ss:tt )* ) => {
 
+        /// A temporary "splice" to add, update, delete and monitor elements in a sequence of elements.
+        /// It is mainly intended for view sequences
+        ///
+        /// Usually it's backed by a collection (e.g. `Vec`) that holds all the (existing) elements.
+        /// It sweeps over the element collection and does updates in place.
+        /// Internally it works by having a pointer/index to the current/old element (0 at the beginning),
+        /// and the pointer is incremented by basically all methods that mutate that sequence.
         pub trait $elements_splice {
-            /// Push new element to the collection
-            fn push(&mut self, element: $pod);
-            /// Mutate the next existing element, and add it to this collection
-            fn mutate(&mut self) -> &mut $pod;
-            // TODO this could also track view id changes (old_id, new_id)
-            /// Mark any changes done by `mutate` on the current element
-            fn mark(&mut self, changeflags: $changeflags) -> $changeflags;
-            /// Delete the next n existing elements
-            fn delete(&mut self, n: usize);
+            /// Insert a new element at the current index in the resulting collection (and increment the index by 1)
+            fn push(&mut self, element: $pod, cx: &mut $cx);
+            /// Mutate the next existing element, and add it to the resulting collection (and increment the index by 1)
+            fn mutate(&mut self, cx: &mut $cx) -> &mut $pod;
+            // TODO(#160) this could also track view id changes (old_id, new_id)
+            /// Mark any changes done by `mutate` on the current element (this doesn't change the index)
+            fn mark(&mut self, changeflags: $changeflags, cx: &mut $cx) -> $changeflags;
+            /// Delete the next n existing elements (this doesn't change the index)
+            fn delete(&mut self, n: usize, cx: &mut $cx);
             /// Current length of the elements collection
-            fn len(&self) -> usize;
-            // /// skip the next n existing elements
-            // fn skip(&mut self, n: usize);
+            fn len(&self, cx: &mut $cx) -> usize;
+            // TODO(#160) add a skip method when it is necessary (e.g. relevant for immutable ViewSequences like ropes)
         }
 
         impl<'a, 'b> $elements_splice for $crate::VecSplice<'a, 'b, $pod> {
-            fn push(&mut self, element: $pod) {
+            fn push(&mut self, element: $pod, _cx: &mut $cx) {
                 self.push(element);
             }
 
-            fn mutate(&mut self) -> &mut $pod
+            fn mutate(&mut self, _cx: &mut $cx) -> &mut $pod
             {
                 self.mutate()
             }
 
-            fn mark(&mut self, changeflags: $changeflags) -> $changeflags
+            fn mark(&mut self, changeflags: $changeflags, _cx: &mut $cx) -> $changeflags
             {
                 self.peek_mut().map(|pod| pod.mark(changeflags)).unwrap_or_default()
             }
 
-            fn delete(&mut self, n: usize) {
+            fn delete(&mut self, n: usize, _cx: &mut $cx) {
                 self.delete(n)
             }
 
-            fn len(&self) -> usize {
+            fn len(&self, _cx: &mut $cx) -> usize {
                 self.len()
             }
         }
@@ -104,6 +110,8 @@ macro_rules! generate_viewsequence_trait {
             /// Associated states for the views.
             type State $( $ss )*;
 
+            // To be able to monitor changes (e.g. tree-structure tracking) rather than just adding elements,
+            // this takes an element splice as well (when it could be just a `Vec` otherwise)
             /// Build the associated widgets and initialize all states.
             fn build(&self, cx: &mut $cx, elements: &mut dyn $elements_splice) -> Self::State;
 
@@ -142,7 +150,7 @@ macro_rules! generate_viewsequence_trait {
 
             fn build(&self, cx: &mut $cx, elements: &mut dyn $elements_splice) -> Self::State {
                 let (id, state, element) = <V as $view<T, A>>::build(self, cx);
-                elements.push(<$pod>::new(element));
+                elements.push(<$pod>::new(element), cx);
                 (state, id)
             }
 
@@ -153,7 +161,7 @@ macro_rules! generate_viewsequence_trait {
                 state: &mut Self::State,
                 elements: &mut dyn $elements_splice,
             ) -> $changeflags {
-                let el = elements.mutate();
+                let el = elements.mutate(cx);
                 let downcast = el.downcast_mut().unwrap();
                 let flags = <V as $view<T, A>>::rebuild(
                     self,
@@ -163,7 +171,7 @@ macro_rules! generate_viewsequence_trait {
                     &mut state.0,
                     downcast,
                 );
-                elements.mark(flags)
+                elements.mark(flags, cx)
             }
 
             fn message(
@@ -216,7 +224,7 @@ macro_rules! generate_viewsequence_trait {
                     (Some(this), Some(state), Some(prev)) => this.rebuild(cx, prev, state, elements),
                     (None, Some(seq_state), Some(prev)) => {
                         let count = prev.count(&seq_state);
-                        elements.delete(count);
+                        elements.delete(count, cx);
                         *state = None;
 
                         <$changeflags>::tree_structure()
@@ -280,7 +288,7 @@ macro_rules! generate_viewsequence_trait {
                         .enumerate()
                         .map(|(i, state)| prev[n + i].count(&state))
                         .sum();
-                    elements.delete(n_delete);
+                    elements.delete(n_delete, cx);
                     changed |= <$changeflags>::tree_structure();
                 } else if n > prev.len() {
                     for i in prev.len()..n {

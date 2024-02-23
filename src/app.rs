@@ -25,8 +25,8 @@ use vello::SceneFragment;
 use xilem_core::{AsyncWake, MessageResult};
 
 use crate::widget::{
-    tree_structure::TreeStructure, AccessCx, BoxConstraints, CxState, EventCx, LayoutCx, LifeCycle,
-    LifeCycleCx, PaintCx, Pod, PodFlags, UpdateCx, ViewContext, WidgetState,
+    AccessCx, BoxConstraints, CxState, EventCx, LayoutCx, LifeCycle, LifeCycleCx, PaintCx, Pod,
+    PodFlags, UpdateCx, ViewContext, WidgetState,
 };
 use crate::{
     view::{Cx, Id, View},
@@ -45,7 +45,6 @@ pub struct App<T, V: View<T>> {
     id: Option<Id>,
     events: Vec<Message>,
     window_handle: WindowHandle,
-    tree_structure: TreeStructure,
     root_state: WidgetState,
     root_pod: Option<Pod>,
     size: Size,
@@ -182,7 +181,6 @@ where
             window_id: crate::id::Id::next(),
             accesskit_connected: false,
             node_classes: accesskit::NodeClassSet::new(),
-            tree_structure: Default::default(),
         }
     }
 
@@ -218,7 +216,7 @@ where
         let mut cx_state = CxState::new(
             &self.window_handle,
             &mut self.font_cx,
-            &mut self.tree_structure,
+            &self.cx.tree_structure,
             &mut self.events,
         );
         let mut access_cx = AccessCx {
@@ -244,7 +242,7 @@ where
             let mut cx_state = CxState::new(
                 &self.window_handle,
                 &mut self.font_cx,
-                &mut self.tree_structure,
+                &self.cx.tree_structure,
                 &mut self.events,
             );
 
@@ -298,7 +296,7 @@ where
             let mut cx_state = CxState::new(
                 &self.window_handle,
                 &mut self.font_cx,
-                &mut self.tree_structure,
+                &self.cx.tree_structure,
                 &mut self.events,
             );
             let mut paint_cx = PaintCx::new(&mut cx_state, &mut self.root_state);
@@ -326,7 +324,7 @@ where
         let mut cx_state = CxState::new(
             &self.window_handle,
             &mut self.font_cx,
-            &mut self.tree_structure,
+            &self.cx.tree_structure,
             &mut self.events,
         );
         let mut event_cx = EventCx::new(&mut cx_state, &mut self.root_state);

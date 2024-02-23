@@ -21,7 +21,9 @@ use futures_task::{ArcWake, Waker};
 
 use xilem_core::{Id, IdPath};
 
-use crate::widget::{AnyWidget, ChangeFlags, Pod, Widget};
+use crate::widget::{tree_structure::TreeStructure, AnyWidget, ChangeFlags, Pod, Widget};
+
+use super::tree_structure_tracking::SpliceMutation;
 
 xilem_core::generate_view_trait! {View, Widget, Cx, ChangeFlags; : Send}
 xilem_core::generate_viewsequence_trait! {ViewSequence, View, ViewMarker, ElementsSplice, Widget, Cx, ChangeFlags, Pod; : Send}
@@ -34,6 +36,8 @@ xilem_core::generate_adapt_state_view! {View, Cx, ChangeFlags; + Send}
 pub struct Cx {
     id_path: IdPath,
     req_chan: SyncSender<IdPath>,
+    pub(crate) tree_structure: TreeStructure,
+    current_children_tree_structure_mutations: Vec<SpliceMutation>,
     pub(crate) pending_async: HashSet<Id>,
 }
 
@@ -55,6 +59,8 @@ impl Cx {
             id_path: Vec::new(),
             req_chan: req_chan.clone(),
             pending_async: HashSet::new(),
+            tree_structure: TreeStructure::default(),
+            current_children_tree_structure_mutations: Vec::new(),
         }
     }
 
@@ -109,5 +115,41 @@ impl Cx {
     /// is first.
     pub fn add_pending_async(&mut self, id: Id) {
         self.pending_async.insert(id);
+    }
+
+    /// Adds tree structure changes of the current element (and drains the mutations vec),
+    /// these should be applied when creating or changing a `Pod` of this element by calling
+    /// `cx.apply_children_tree_structure_mutations(pod.id())`
+    /// One needs to be careful with this, when recursively traversing the tree to avoid overwriting other mutations
+    pub fn mark_children_tree_structure_mutations(&mut self, mutations: &mut Vec<SpliceMutation>) {
+        self.current_children_tree_structure_mutations.clear();
+        self.current_children_tree_structure_mutations
+            .append(mutations);
+    }
+
+    // TODO(#160): Currently if there are no children added/mutated the tree will not be mutated.
+    //             Should the parent be inserted if there aren't any children? Should this happen elsewhere?
+    /// Applies children mutations of an internally recorded mutation log (via `Cx::mark_children_tree_structure_mutations`)
+    pub fn apply_children_tree_structure_mutations(&mut self, parent_id: crate::id::Id) {
+        let mut idx = 0;
+        for mutation in self.current_children_tree_structure_mutations.drain(..) {
+            match mutation {
+                SpliceMutation::Add(id) => {
+                    self.tree_structure.append_child(parent_id, id);
+                    idx += 1;
+                }
+                SpliceMutation::Change(new_id) => {
+                    self.tree_structure.change_child(parent_id, idx, new_id);
+                    idx += 1;
+                }
+                SpliceMutation::Delete(n) => {
+                    self.tree_structure
+                        .delete_children(parent_id, idx..(idx + n));
+                }
+                SpliceMutation::Skip(n) => {
+                    idx += n;
+                }
+            }
+        }
     }
 }

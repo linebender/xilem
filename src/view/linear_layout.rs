@@ -19,8 +19,7 @@ use crate::view::{Id, ViewMarker, ViewSequence};
 use crate::widget::{self, ChangeFlags};
 use crate::MessageResult;
 
-use super::{Cx, View};
-use crate::widget::tree_structure::TreeTrackerSplice;
+use super::{Cx, TreeStructureTrackingSplice, View};
 
 /// LinearLayout is a simple view which does layout for the specified ViewSequence.
 ///
@@ -73,9 +72,11 @@ impl<T, A, VT: ViewSequence<T, A>> View<T, A> for LinearLayout<T, A, VT> {
         let mut elements = vec![];
         let mut scratch = vec![];
         let mut tree_mutations = vec![];
-        let mut splice = TreeTrackerSplice::new(&mut elements, &mut scratch, &mut tree_mutations);
+        let mut splice =
+            TreeStructureTrackingSplice::new(&mut elements, &mut scratch, &mut tree_mutations);
         let (id, state) = cx.with_new_id(|cx| self.children.build(cx, &mut splice));
-        let column = widget::LinearLayout::new(elements, tree_mutations, self.spacing, self.axis);
+        cx.mark_children_tree_structure_mutations(&mut tree_mutations);
+        let column = widget::LinearLayout::new(elements, self.spacing, self.axis);
         (id, state, column)
     }
 
@@ -88,15 +89,17 @@ impl<T, A, VT: ViewSequence<T, A>> View<T, A> for LinearLayout<T, A, VT> {
         element: &mut Self::Element,
     ) -> ChangeFlags {
         let mut scratch = vec![];
-        let mut splice = TreeTrackerSplice::new(
+        let mut tree_mutations = vec![]; // TODO(#160) could save some allocations by using View::State (scratch too)
+        let mut splice = TreeStructureTrackingSplice::new(
             &mut element.children,
             &mut scratch,
-            &mut element.tree_mutations,
+            &mut tree_mutations,
         );
         let mut flags = cx.with_id(*id, |cx| {
             self.children
                 .rebuild(cx, &prev.children, state, &mut splice)
         });
+        cx.mark_children_tree_structure_mutations(&mut tree_mutations);
 
         if self.spacing != prev.spacing || self.axis != prev.axis {
             element.spacing = self.spacing;

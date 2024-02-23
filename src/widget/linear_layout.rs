@@ -13,7 +13,7 @@
 // limitations under the License.
 
 use crate::geometry::Axis;
-use crate::widget::{tree_structure, AccessCx, BoxConstraints, Event};
+use crate::widget::{AccessCx, BoxConstraints, Event};
 use accesskit::NodeId;
 use vello::kurbo::Size;
 use vello::SceneBuilder;
@@ -28,21 +28,14 @@ use super::{contexts::LifeCycleCx, EventCx, LayoutCx, LifeCycle, PaintCx, Pod, U
 /// widget.
 pub struct LinearLayout {
     pub children: Vec<Pod>,
-    pub tree_mutations: Vec<tree_structure::SpliceMutation>,
     pub spacing: f64,
     pub axis: Axis,
 }
 
 impl LinearLayout {
-    pub fn new(
-        children: Vec<Pod>,
-        tree_mutations: Vec<tree_structure::SpliceMutation>,
-        spacing: f64,
-        axis: Axis,
-    ) -> Self {
+    pub fn new(children: Vec<Pod>, spacing: f64, axis: Axis) -> Self {
         LinearLayout {
             children,
-            tree_mutations,
             spacing,
             axis,
         }
@@ -57,9 +50,6 @@ impl Widget for LinearLayout {
     }
 
     fn lifecycle(&mut self, cx: &mut LifeCycleCx, event: &LifeCycle) {
-        if let LifeCycle::TreeUpdate = event {
-            cx.apply_tree_splice_mutations(cx.widget_state.id, &self.tree_mutations);
-        }
         for child in &mut self.children {
             child.lifecycle(cx, event);
         }

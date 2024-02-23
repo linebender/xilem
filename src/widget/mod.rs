@@ -37,6 +37,7 @@ pub use linear_layout::LinearLayout;
 pub use raw_event::{Event, LifeCycle, MouseEvent, ViewContext};
 pub use switch::Switch;
 pub use text::TextWidget;
+pub use tree_structure::TreeStructure;
 pub use widget::{AnyWidget, Widget};
 
 #[cfg(feature = "taffy")]
