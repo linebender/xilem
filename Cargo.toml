@@ -56,14 +56,14 @@ tokio = { version = "1.35", features = ["full"] }
 futures-task = "0.3"
 bitflags = "2"
 tracing = "0.1.37"
-accesskit = "0.12"
 fnv = "1.0.7"
+instant = { version = "0.1.6", features = ["wasm-bindgen"] }
+winit = { version = "0.29", features = ["rwh_05"] }
 
 [dependencies.glazier]
 git = "https://github.com/linebender/glazier"
 rev = "8d2a4b2cafd5e6be49bfb4ac8d0bd26fe02f036e"
 default-features = false
-features = ["accesskit"]
 
 [dev-dependencies]
 env_logger = "0.10.0"

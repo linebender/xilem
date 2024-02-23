@@ -13,11 +13,8 @@
 // limitations under the License.
 
 use std::collections::HashSet;
-use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-use accesskit::TreeUpdate;
-use glazier::{IdleHandle, IdleToken, WindowHandle};
 use parley::FontContext;
 use tokio::runtime::Runtime;
 use vello::{
@@ -27,8 +24,8 @@ use vello::{
 use xilem_core::{AsyncWake, MessageResult};
 
 use crate::widget::{
-    AccessCx, BoxConstraints, CxState, EventCx, LayoutCx, LifeCycle, LifeCycleCx, PaintCx, Pod,
-    PodFlags, UpdateCx, ViewContext, WidgetState,
+    BoxConstraints, CxState, EventCx, LayoutCx, LifeCycle, LifeCycleCx, PaintCx, Pod, PodFlags,
+    UpdateCx, ViewContext, WidgetState,
 };
 use crate::{
     view::{Cx, Id, View},
@@ -46,7 +43,6 @@ pub struct App<T, V: View<T>> {
     return_chan: tokio::sync::mpsc::Sender<(V, V::State, HashSet<Id>)>,
     id: Option<Id>,
     events: Vec<Message>,
-    window_handle: WindowHandle,
     root_state: WidgetState,
     root_pod: Option<Pod>,
     size: Size,
@@ -55,11 +51,6 @@ pub struct App<T, V: View<T>> {
     cx: Cx,
     font_cx: FontContext,
     pub(crate) rt: Runtime,
-    // This is allocated an id for AccessKit, but as we get multi-window,
-    // there should be a real window object with id.
-    window_id: crate::id::Id,
-    pub(crate) accesskit_connected: bool,
-    node_classes: accesskit::NodeClassSet,
 }
 
 /// The standard delay for waiting for async futures.
@@ -79,14 +70,12 @@ struct AppTask<T, V: View<T>, F: FnMut(&mut T) -> V> {
     app_logic: F,
     view: Option<V>,
     state: Option<V::State>,
-    idle_handle: Option<IdleHandle>,
     pending_async: HashSet<Id>,
     ui_state: UiState,
 }
 
 /// A message sent from the main UI thread ([`App`]) to the [`AppTask`].
 pub(crate) enum AppReq {
-    SetIdleHandle(IdleHandle),
     Events(Vec<Message>),
     Wake(IdPath),
     // Parameter indicates whether it should be delayed for async
@@ -114,9 +103,6 @@ enum UiState {
     /// An async completion woke the UI thread.
     WokeUI,
 }
-
-#[derive(Clone, Default)]
-pub struct WakeQueue(Arc<Mutex<Vec<IdPath>>>);
 
 impl<T: Send + 'static, V: View<T> + 'static> App<T, V>
 where
@@ -159,7 +145,6 @@ where
                 app_logic,
                 view: None,
                 state: None,
-                idle_handle: None,
                 pending_async: HashSet::new(),
                 ui_state: UiState::Start,
             };
@@ -172,7 +157,6 @@ where
             id: None,
             root_pod: None,
             events: Vec::new(),
-            window_handle: Default::default(),
             root_state: WidgetState::new(),
             size: Default::default(),
             new_size: Default::default(),
@@ -180,54 +164,11 @@ where
             cx,
             font_cx: FontContext::new(),
             rt,
-            window_id: crate::id::Id::next(),
-            accesskit_connected: false,
-            node_classes: accesskit::NodeClassSet::new(),
-        }
-    }
-
-    pub fn connect(&mut self, window_handle: WindowHandle) {
-        self.window_handle = window_handle.clone();
-        if let Some(idle_handle) = window_handle.get_idle_handle() {
-            let _ = self
-                .req_chan
-                .blocking_send(AppReq::SetIdleHandle(idle_handle));
         }
     }
 
     pub fn size(&mut self, size: Size) {
         self.new_size = size;
-    }
-
-    pub fn accessibility(&mut self) -> TreeUpdate {
-        let mut update = TreeUpdate {
-            nodes: vec![],
-            tree: None,
-            focus: accesskit::NodeId(0),
-        };
-        self.ensure_root();
-        let root_pod = self.root_pod.as_mut().unwrap();
-        let mut window_node_builder = accesskit::NodeBuilder::new(accesskit::Role::Window);
-        window_node_builder.set_name("xilem window");
-        window_node_builder.set_children(vec![root_pod.id().into()]);
-        if let Ok(scale) = self.window_handle.get_scale() {
-            window_node_builder.set_transform(Box::new(accesskit::Affine::scale_non_uniform(
-                scale.x(),
-                scale.y(),
-            )));
-        }
-        let window_node = window_node_builder.build(&mut self.node_classes);
-        update.nodes.push((self.window_id.into(), window_node));
-        update.tree = Some(accesskit::Tree::new(self.window_id.into()));
-        let mut cx_state = CxState::new(&self.window_handle, &mut self.font_cx, &mut self.events);
-        let mut access_cx = AccessCx {
-            cx_state: &mut cx_state,
-            widget_state: &mut self.root_state,
-            update: &mut update,
-            node_classes: &mut self.node_classes,
-        };
-        root_pod.accessibility(&mut access_cx);
-        update
     }
 
     /// Run a paint cycle for the application.
@@ -240,8 +181,7 @@ where
             // TODO: be more lazy re-rendering
             self.render();
             let root_pod = self.root_pod.as_mut().unwrap();
-            let mut cx_state =
-                CxState::new(&self.window_handle, &mut self.font_cx, &mut self.events);
+            let mut cx_state = CxState::new(&mut self.font_cx, &mut self.events);
 
             let mut lifecycle_cx = LifeCycleCx::new(&mut cx_state, &mut self.root_state);
             root_pod.lifecycle(&mut lifecycle_cx, &LifeCycle::TreeUpdate);
@@ -282,16 +222,10 @@ where
                 continue;
             }
 
-            if self.accesskit_connected {
-                let update = self.accessibility();
-                // TODO: it would be cleaner to not use a closure here.
-                self.window_handle.update_accesskit_if_active(|| update);
-            }
             // Borrow again to avoid multiple borrows.
             // TODO: maybe make accessibility a method on CxState?
             let root_pod = self.root_pod.as_mut().unwrap();
-            let mut cx_state =
-                CxState::new(&self.window_handle, &mut self.font_cx, &mut self.events);
+            let mut cx_state = CxState::new(&mut self.font_cx, &mut self.events);
             let mut paint_cx = PaintCx::new(&mut cx_state, &mut self.root_state);
             root_pod.paint_impl(&mut paint_cx);
             break;
@@ -309,12 +243,11 @@ where
             Event::MouseLeft() => {
                 self.cursor_pos = None;
             }
-            _ => {}
         }
 
         self.ensure_root();
         let root_pod = self.root_pod.as_mut().unwrap();
-        let mut cx_state = CxState::new(&self.window_handle, &mut self.font_cx, &mut self.events);
+        let mut cx_state = CxState::new(&mut self.font_cx, &mut self.events);
         let mut event_cx = EventCx::new(&mut cx_state, &mut self.root_state);
         root_pod.event(&mut event_cx, &event);
         self.send_events();
@@ -399,7 +332,6 @@ impl<T, V: View<T>, F: FnMut(&mut T) -> V> AppTask<T, V, F> {
             };
             match req {
                 Ok(Some(req)) => match req {
-                    AppReq::SetIdleHandle(handle) => self.idle_handle = Some(handle),
                     AppReq::Events(events) => {
                         for event in events {
                             let id_path = &event.id_path[1..];
@@ -426,9 +358,6 @@ impl<T, V: View<T>, F: FnMut(&mut T) -> V> AppTask<T, V, F> {
                         if needs_rebuild {
                             // request re-render from UI thread
                             if self.ui_state == UiState::Start {
-                                if let Some(handle) = self.idle_handle.as_mut() {
-                                    handle.schedule_idle(IdleToken::new(42));
-                                }
                                 self.ui_state = UiState::WokeUI;
                             }
                             let id = id_path.last().unwrap();
