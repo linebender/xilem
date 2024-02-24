@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::{num::NonZeroUsize, sync::Arc};
+
 use glazier::{Modifiers, PointerButton};
 use vello::{
     kurbo::{Affine, Point, Size},
@@ -35,11 +37,11 @@ pub struct AppLauncher<T, V: View<T>> {
 }
 
 // The logic of this struct is mostly parallel to DruidHandler in win_handler.rs.
-struct MainState<T, V: View<T>> {
-    window: Window,
+struct MainState<'a, T, V: View<T>> {
+    window: Arc<Window>,
     app: App<T, V>,
     render_cx: RenderContext,
-    surface: Option<RenderSurface>,
+    surface: RenderSurface<'a>,
     renderer: Option<Renderer>,
     scene: Scene,
     counter: u64,
@@ -144,17 +146,22 @@ impl<T: Send + 'static, V: View<T> + 'static> AppLauncher<T, V> {
     }
 }
 
-impl<T, V: View<T> + 'static> MainState<T, V>
+impl<'a, T, V: View<T> + 'static> MainState<'a, T, V>
 where
     T: Send + 'static,
 {
     fn new(app: App<T, V>, window: Window) -> Self {
-        let render_cx = RenderContext::new().unwrap();
+        let mut render_cx = RenderContext::new().unwrap();
+        let size = window.inner_size();
+        let window = Arc::new(window);
+        let surface = tokio::runtime::Handle::current()
+            .block_on(render_cx.create_surface(window.clone(), size.width, size.height))
+            .unwrap();
         MainState {
             window,
             app,
             render_cx,
-            surface: None,
+            surface,
             renderer: None,
             scene: Scene::default(),
             counter: 0,
@@ -208,54 +215,49 @@ where
         let size = self.window.inner_size();
         let width = size.width;
         let height = size.height;
-        if self.surface.is_none() {
-            //println!("render size: {:?}", size);
-            self.surface = Some(
-                tokio::runtime::Handle::current()
-                    .block_on(self.render_cx.create_surface(&self.window, width, height))
-                    .unwrap(),
-            );
+
+        if self.surface.config.width != width || self.surface.config.height != height {
+            self.render_cx
+                .resize_surface(&mut self.surface, width, height);
         }
-        if let Some(surface) = self.surface.as_mut() {
-            if surface.config.width != width || surface.config.height != height {
-                self.render_cx.resize_surface(surface, width, height);
-            }
-            let transform = if scale != 1.0 {
-                Some(Affine::scale(scale))
-            } else {
-                None
-            };
-            self.scene.reset();
-            self.scene.append(fragment, transform);
-            self.counter += 1;
-            let surface_texture = surface
-                .surface
-                .get_current_texture()
-                .expect("failed to acquire next swapchain texture");
-            let dev_id = surface.dev_id;
-            let device = &self.render_cx.devices[dev_id].device;
-            let queue = &self.render_cx.devices[dev_id].queue;
-            let renderer_options = RendererOptions {
-                surface_format: Some(surface.format),
-                use_cpu: false,
-                antialiasing_support: AaSupport {
-                    area: true,
-                    msaa8: false,
-                    msaa16: false,
-                },
-            };
-            let render_params = RenderParams {
-                base_color: Color::BLACK,
-                width,
-                height,
-                antialiasing_method: vello::AaConfig::Area,
-            };
-            self.renderer
-                .get_or_insert_with(|| Renderer::new(device, renderer_options).unwrap())
-                .render_to_surface(device, queue, &self.scene, &surface_texture, &render_params)
-                .expect("failed to render to surface");
-            surface_texture.present();
-            device.poll(wgpu::Maintain::Wait);
-        }
+        let transform = if scale != 1.0 {
+            Some(Affine::scale(scale))
+        } else {
+            None
+        };
+        self.scene.reset();
+        self.scene.append(fragment, transform);
+        self.counter += 1;
+
+        let surface_texture = self
+            .surface
+            .surface
+            .get_current_texture()
+            .expect("failed to acquire next swapchain texture");
+        let dev_id = self.surface.dev_id;
+        let device = &self.render_cx.devices[dev_id].device;
+        let queue = &self.render_cx.devices[dev_id].queue;
+        let renderer_options = RendererOptions {
+            surface_format: Some(self.surface.format),
+            use_cpu: false,
+            antialiasing_support: AaSupport {
+                area: true,
+                msaa8: false,
+                msaa16: false,
+            },
+            num_init_threads: NonZeroUsize::new(1),
+        };
+        let render_params = RenderParams {
+            base_color: Color::BLACK,
+            width,
+            height,
+            antialiasing_method: vello::AaConfig::Area,
+        };
+        self.renderer
+            .get_or_insert_with(|| Renderer::new(device, renderer_options).unwrap())
+            .render_to_surface(device, queue, &self.scene, &surface_texture, &render_params)
+            .expect("failed to render to surface");
+        surface_texture.present();
+        device.poll(wgpu::Maintain::Wait);
     }
 }
