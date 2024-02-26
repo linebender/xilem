@@ -42,6 +42,9 @@ impl TreeStructure {
             .or_insert_with(|| vec![id]);
     }
 
+    /// # Panics
+    ///
+    /// When the `parent_id` doesn't exist in the structure or `idx` is out of bounds this will panic
     pub(crate) fn change_child(&mut self, parent_id: Id, idx: usize, new_id: Id) {
         let children = self
             .children
@@ -59,6 +62,9 @@ impl TreeStructure {
             .or_insert(parent_id);
     }
 
+    /// # Panics
+    ///
+    /// When the `parent_id` doesn't exist in the structure or `range` is out of bounds this will panic
     pub(crate) fn delete_children(&mut self, parent_id: Id, range: std::ops::Range<usize>) {
         let children = &self.children[&parent_id][range.clone()];
         for child in children {
