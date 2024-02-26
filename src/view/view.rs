@@ -23,8 +23,6 @@ use xilem_core::{Id, IdPath};
 
 use crate::widget::{tree_structure::TreeStructure, AnyWidget, ChangeFlags, Pod, Widget};
 
-use super::tree_structure_tracking::SpliceMutation;
-
 xilem_core::generate_view_trait! {View, Widget, Cx, ChangeFlags; : Send}
 xilem_core::generate_viewsequence_trait! {ViewSequence, View, ViewMarker, ElementsSplice, Widget, Cx, ChangeFlags, Pod; : Send}
 xilem_core::generate_anyview_trait! {AnyView, View, ViewMarker, Cx, ChangeFlags, AnyWidget, BoxedView; + Send}
@@ -35,9 +33,9 @@ xilem_core::generate_adapt_state_view! {View, Cx, ChangeFlags; + Send}
 #[derive(Clone)]
 pub struct Cx {
     id_path: IdPath,
+    element_id_path: Vec<crate::id::Id>, // Note that this is the widget id type.
     req_chan: SyncSender<IdPath>,
     pub(crate) tree_structure: TreeStructure,
-    current_children_tree_structure_mutations: Vec<SpliceMutation>,
     pub(crate) pending_async: HashSet<Id>,
 }
 
@@ -57,10 +55,10 @@ impl Cx {
     pub(crate) fn new(req_chan: &SyncSender<IdPath>) -> Self {
         Cx {
             id_path: Vec::new(),
+            element_id_path: Vec::new(),
             req_chan: req_chan.clone(),
             pending_async: HashSet::new(),
             tree_structure: TreeStructure::default(),
-            current_children_tree_structure_mutations: Vec::new(),
         }
     }
 
@@ -72,12 +70,24 @@ impl Cx {
         self.id_path.pop();
     }
 
-    pub fn is_empty(&self) -> bool {
+    pub fn id_path_is_empty(&self) -> bool {
         self.id_path.is_empty()
     }
 
     pub fn id_path(&self) -> &IdPath {
         &self.id_path
+    }
+
+    pub fn element_id_path_is_empty(&self) -> bool {
+        self.element_id_path.is_empty()
+    }
+
+    /// Return the element id of the current element/widget
+    pub fn element_id(&self) -> crate::id::Id {
+        *self
+            .element_id_path
+            .last()
+            .expect("element_id path imbalance, there should be an element id")
     }
 
     /// Run some logic with an id added to the id path.
@@ -101,6 +111,38 @@ impl Cx {
         (id, result)
     }
 
+    /// Run some logic within a new Pod context and return the newly created Pod,
+    ///
+    /// This logic is usually `View::build` to wrap the returned element into a Pod.
+    pub fn with_new_pod<S, E, F>(&mut self, f: F) -> (Id, S, Pod)
+    where
+        E: Widget + 'static,
+        F: FnOnce(&mut Cx) -> (Id, S, E),
+    {
+        let pod_id = crate::id::Id::next();
+        self.element_id_path.push(pod_id);
+        let (id, state, element) = f(self);
+        self.element_id_path.pop();
+        (id, state, Pod::new(element, pod_id))
+    }
+
+    /// Run some logic within the context of a given Pod,
+    ///
+    /// This logic is usually `View::rebuild`
+    pub fn with_pod<T, E, F>(&mut self, pod: &mut Pod, f: F) -> T
+    where
+        E: Widget + 'static,
+        F: FnOnce(&mut E, &mut Cx) -> T,
+    {
+        self.element_id_path.push(pod.id());
+        let element = pod
+            .downcast_mut()
+            .expect("Element type has changed, this should never happen!");
+        let result = f(element, self);
+        self.element_id_path.pop();
+        result
+    }
+
     pub fn waker(&self) -> Waker {
         futures_task::waker(Arc::new(MyWaker {
             id_path: self.id_path.clone(),
@@ -115,41 +157,5 @@ impl Cx {
     /// is first.
     pub fn add_pending_async(&mut self, id: Id) {
         self.pending_async.insert(id);
-    }
-
-    /// Adds tree structure changes of the current element (and drains the mutations vec),
-    /// these should be applied when creating or changing a `Pod` of this element by calling
-    /// `cx.apply_children_tree_structure_mutations(pod.id())`
-    /// One needs to be careful with this, when recursively traversing the tree to avoid overwriting other mutations
-    pub fn mark_children_tree_structure_mutations(&mut self, mutations: &mut Vec<SpliceMutation>) {
-        self.current_children_tree_structure_mutations.clear();
-        self.current_children_tree_structure_mutations
-            .append(mutations);
-    }
-
-    // TODO(#160): Currently if there are no children added/mutated the tree will not be mutated.
-    //             Should the parent be inserted if there aren't any children? Should this happen elsewhere?
-    /// Applies children mutations of an internally recorded mutation log (via `Cx::mark_children_tree_structure_mutations`)
-    pub fn apply_children_tree_structure_mutations(&mut self, parent_id: crate::id::Id) {
-        let mut idx = 0;
-        for mutation in self.current_children_tree_structure_mutations.drain(..) {
-            match mutation {
-                SpliceMutation::Add(id) => {
-                    self.tree_structure.append_child(parent_id, id);
-                    idx += 1;
-                }
-                SpliceMutation::Change(new_id) => {
-                    self.tree_structure.change_child(parent_id, idx, new_id);
-                    idx += 1;
-                }
-                SpliceMutation::Delete(n) => {
-                    self.tree_structure
-                        .delete_children(parent_id, idx..(idx + n));
-                }
-                SpliceMutation::Skip(n) => {
-                    idx += n;
-                }
-            }
-        }
     }
 }

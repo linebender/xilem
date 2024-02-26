@@ -132,8 +132,7 @@ impl ChangeFlags {
 }
 
 impl WidgetState {
-    pub(crate) fn new() -> Self {
-        let id = Id::next();
+    pub(crate) fn new(id: Id) -> Self {
         WidgetState {
             id,
             flags: PodFlags::INIT_FLAGS,
@@ -161,17 +160,17 @@ impl Pod {
     ///
     /// In a widget hierarchy, each widget is wrapped in a `Pod`
     /// so it can participate in layout and event flow.
-    pub fn new(widget: impl Widget + 'static) -> Self {
-        Self::new_from_box(Box::new(widget))
+    pub fn new(widget: impl Widget + 'static, id: Id) -> Self {
+        Self::new_from_box(Box::new(widget), id)
     }
 
     /// Create a new pod.
     ///
     /// In a widget hierarchy, each widget is wrapped in a `Pod`
     /// so it can participate in layout and event flow.
-    pub fn new_from_box(widget: Box<dyn AnyWidget>) -> Self {
+    pub fn new_from_box(widget: Box<dyn AnyWidget>, id: Id) -> Self {
         Pod {
-            state: WidgetState::new(),
+            state: WidgetState::new(id),
             fragment: SceneFragment::default(),
             widget,
         }

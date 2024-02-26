@@ -75,7 +75,7 @@ macro_rules! generate_viewsequence_trait {
             /// Delete the next n existing elements (this doesn't change the index)
             fn delete(&mut self, n: usize, cx: &mut $cx);
             /// Current length of the elements collection
-            fn len(&self, cx: &mut $cx) -> usize;
+            fn len(&self) -> usize;
             // TODO(#160) add a skip method when it is necessary (e.g. relevant for immutable ViewSequences like ropes)
         }
 
@@ -98,7 +98,7 @@ macro_rules! generate_viewsequence_trait {
                 self.delete(n)
             }
 
-            fn len(&self, _cx: &mut $cx) -> usize {
+            fn len(&self) -> usize {
                 self.len()
             }
         }
@@ -110,9 +110,10 @@ macro_rules! generate_viewsequence_trait {
             /// Associated states for the views.
             type State $( $ss )*;
 
-            // To be able to monitor changes (e.g. tree-structure tracking) rather than just adding elements,
-            // this takes an element splice as well (when it could be just a `Vec` otherwise)
             /// Build the associated widgets and initialize all states.
+            ///
+            /// To be able to monitor changes (e.g. tree-structure tracking) rather than just adding elements,
+            /// this takes an element splice as well (when it could be just a `Vec` otherwise)
             fn build(&self, cx: &mut $cx, elements: &mut dyn $elements_splice) -> Self::State;
 
             /// Update the associated widget.
@@ -149,8 +150,8 @@ macro_rules! generate_viewsequence_trait {
             type State = (<V as $view<T, A>>::State, $crate::Id);
 
             fn build(&self, cx: &mut $cx, elements: &mut dyn $elements_splice) -> Self::State {
-                let (id, state, element) = <V as $view<T, A>>::build(self, cx);
-                elements.push(<$pod>::new(element), cx);
+                let (id, state, pod) = cx.with_new_pod(|cx| <V as $view<T, A>>::build(self, cx));
+                elements.push(pod, cx);
                 (state, id)
             }
 
@@ -161,16 +162,17 @@ macro_rules! generate_viewsequence_trait {
                 state: &mut Self::State,
                 elements: &mut dyn $elements_splice,
             ) -> $changeflags {
-                let el = elements.mutate(cx);
-                let downcast = el.downcast_mut().unwrap();
-                let flags = <V as $view<T, A>>::rebuild(
-                    self,
-                    cx,
-                    prev,
-                    &mut state.1,
-                    &mut state.0,
-                    downcast,
-                );
+                let pod = elements.mutate(cx);
+                let flags = cx.with_pod(pod, |el, cx| {
+                    <V as $view<T, A>>::rebuild(
+                        self,
+                        cx,
+                        prev,
+                        &mut state.1,
+                        &mut state.0,
+                        el,
+                    )
+                });
                 elements.mark(flags, cx)
             }
 

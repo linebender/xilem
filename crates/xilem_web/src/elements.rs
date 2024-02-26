@@ -111,7 +111,7 @@ impl<'a, 'b, 'c> ElementsSplice for ChildrenSplice<'a, 'b, 'c> {
         self.children.delete(n);
     }
 
-    fn len(&self, _cx: &mut Cx) -> usize {
+    fn len(&self) -> usize {
         self.children.len()
     }
 
@@ -128,7 +128,7 @@ impl<'a, 'b, 'c> ElementsSplice for ChildrenSplice<'a, 'b, 'c> {
             self.parent
                 .replace_child(cur_child.0.as_node_ref(), &old_child)
                 .unwrap_throw();
-            // TODO do something else with the structure information?
+            // TODO(#160) do something else with the structure information?
             changeflags.remove(ChangeFlags::STRUCTURE);
         }
         self.child_idx += 1;

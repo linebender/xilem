@@ -71,11 +71,11 @@ impl DomNode for Box<dyn AnyNode> {
 pub struct Pod(pub Box<dyn AnyNode>);
 
 impl Pod {
-    fn new(node: impl DomNode) -> Self {
+    pub(crate) fn new(node: impl DomNode) -> Self {
         node.into_pod()
     }
 
-    fn downcast_mut<T: 'static>(&mut self) -> Option<&mut T> {
+    pub(crate) fn downcast_mut<T: 'static>(&mut self) -> Option<&mut T> {
         self.0.as_any_mut().downcast_mut()
     }
 

@@ -50,7 +50,7 @@ impl<T, A, VT: ViewSequence<T, A>, F: Fn(usize) -> VT + Send> ViewSequence<T, A>
     type State = ListState<T, A, VT>;
 
     fn build(&self, cx: &mut Cx, elements: &mut dyn ElementsSplice) -> Self::State {
-        let leading = elements.len(cx);
+        let leading = elements.len();
 
         let views =
             (0..self.items)
@@ -63,7 +63,7 @@ impl<T, A, VT: ViewSequence<T, A>, F: Fn(usize) -> VT + Send> ViewSequence<T, A>
 
         ListState {
             views,
-            element_count: elements.len(cx) - leading,
+            element_count: elements.len() - leading,
         }
     }
 
@@ -75,7 +75,7 @@ impl<T, A, VT: ViewSequence<T, A>, F: Fn(usize) -> VT + Send> ViewSequence<T, A>
         elements: &mut dyn ElementsSplice,
     ) -> ChangeFlags {
         // Common length
-        let leading = elements.len(cx);
+        let leading = elements.len();
 
         let mut flags = (0..(self.items.min(prev.items)))
             .zip(&mut state.views)
@@ -104,7 +104,7 @@ impl<T, A, VT: ViewSequence<T, A>, F: Fn(usize) -> VT + Send> ViewSequence<T, A>
             flags |= ChangeFlags::all();
         }
 
-        state.element_count = elements.len(cx) - leading;
+        state.element_count = elements.len() - leading;
 
         flags
     }

@@ -171,7 +171,7 @@ where
             root_pod: None,
             events: Vec::new(),
             window_handle: Default::default(),
-            root_state: WidgetState::new(),
+            root_state: WidgetState::new(crate::id::Id::next()),
             size: Default::default(),
             new_size: Default::default(),
             cursor_pos: None,
@@ -362,23 +362,30 @@ where
         if let Some(response) = self.response_chan.blocking_recv() {
             let state = if let Some(root_pod) = self.root_pod.as_mut() {
                 let mut state = response.state.unwrap();
-                let changes = response.view.rebuild(
-                    &mut self.cx,
-                    response.prev.as_ref().unwrap(),
-                    self.id.as_mut().unwrap(),
-                    &mut state,
-                    //TODO: fail more gracefully but make it explicit that this is a bug
-                    root_pod
-                        .downcast_mut()
-                        .expect("the root widget changed its type, this should never happen!"),
-                );
+                let changes = self.cx.with_pod(root_pod, |root_el, cx| {
+                    response.view.rebuild(
+                        cx,
+                        response.prev.as_ref().unwrap(),
+                        self.id.as_mut().unwrap(),
+                        &mut state,
+                        root_el,
+                    )
+                });
                 let _ = root_pod.mark(changes);
-                assert!(self.cx.is_empty(), "id path imbalance on rebuild");
+                assert!(self.cx.id_path_is_empty(), "id path imbalance on rebuild");
+                assert!(
+                    self.cx.element_id_path_is_empty(),
+                    "element id path imbalance on rebuild"
+                );
                 state
             } else {
-                let (id, state, root_widget) = response.view.build(&mut self.cx);
-                assert!(self.cx.is_empty(), "id path imbalance on build");
-                self.root_pod = Some(Pod::new(root_widget));
+                let (id, state, root_pod) = self.cx.with_new_pod(|cx| response.view.build(cx));
+                assert!(self.cx.id_path_is_empty(), "id path imbalance on build");
+                assert!(
+                    self.cx.element_id_path_is_empty(),
+                    "element id path imbalance on rebuild"
+                );
+                self.root_pod = Some(root_pod);
                 self.id = Some(id);
                 state
             };

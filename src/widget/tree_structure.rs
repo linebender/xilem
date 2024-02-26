@@ -4,22 +4,21 @@ use std::collections::HashMap;
 /// The pure structure (parent/children relations via ids) of the widget tree.
 #[derive(Debug, Default, Clone)]
 pub struct TreeStructure {
-    parent: HashMap<Id, Option<Id>>,
-    // TODO this is taken from the druid lasagna branch, is the Option here intentional, i.e. to track all parentless ids with None?
-    children: HashMap<Option<Id>, Vec<Id>>,
+    parent: HashMap<Id, Id>,
+    children: HashMap<Id, Vec<Id>>,
 }
 
 impl TreeStructure {
-    pub fn parent(&self, id: Id) -> Option<Option<Id>> {
+    pub fn parent(&self, id: Id) -> Option<Id> {
         self.parent.get(&id).copied()
     }
 
-    pub fn children(&self, id: Option<Id>) -> Option<&[Id]> {
+    pub fn children(&self, id: Id) -> Option<&[Id]> {
         self.children.get(&id).map(Vec::as_slice)
     }
 
     pub fn is_descendant_of(&self, mut id: Id, ancestor: Id) -> bool {
-        while let Some(parent) = self.parent(id).flatten() {
+        while let Some(parent) = self.parent(id) {
             if parent == ancestor {
                 return true;
             }
@@ -28,9 +27,7 @@ impl TreeStructure {
         false
     }
 
-    // TODO: Should any of the following methods return a Result or panic?
     pub(crate) fn append_child(&mut self, parent_id: Id, id: Id) {
-        let parent_id = Some(parent_id);
         self.parent
             .entry(id)
             .and_modify(|parent| {
@@ -46,31 +43,23 @@ impl TreeStructure {
     }
 
     pub(crate) fn change_child(&mut self, parent_id: Id, idx: usize, new_id: Id) {
-        let parent_id = Some(parent_id);
-        let mut old_id = None;
+        let children = self
+            .children
+            .get_mut(&parent_id)
+            .unwrap_or_else(|| panic!("{parent_id:?} doesn't have any child"));
+        let old_id = children[idx];
+        children[idx] = new_id;
 
-        self.children
-            .entry(parent_id)
-            .and_modify(|children| {
-                // TODO Result instead of panic when out of bounds?
-                old_id = Some(children[idx]);
-                children[idx] = new_id;
+        self.parent.remove(&old_id);
+        self.parent
+            .entry(new_id)
+            .and_modify(|parent| {
+                *parent = parent_id;
             })
-            .or_insert_with(|| vec![new_id]); // TODO this should not happen, Result/unwrap?
-
-        if let Some(old_id) = old_id {
-            self.parent.remove(&old_id);
-            self.parent
-                .entry(new_id)
-                .and_modify(|parent| {
-                    *parent = parent_id;
-                })
-                .or_insert(parent_id);
-        }
+            .or_insert(parent_id);
     }
 
     pub(crate) fn delete_children(&mut self, parent_id: Id, range: std::ops::Range<usize>) {
-        let parent_id = Some(parent_id);
         let children = &self.children[&parent_id][range.clone()];
         for child in children {
             self.parent.remove(child);
@@ -96,37 +85,30 @@ mod tests {
         tree_structure.append_child(parent, child1);
         tree_structure.append_child(parent, child2);
         tree_structure.append_child(parent, child3);
-        let children = tree_structure.children(Some(parent)).unwrap();
-        assert_eq!(children.len(), 3);
-        assert_eq!(children[0], child1);
-        assert_eq!(children[1], child2);
-        assert_eq!(children[2], child3);
-        assert_eq!(tree_structure.parent(child1), Some(Some(parent)));
-        assert_eq!(tree_structure.parent(child2), Some(Some(parent)));
-        assert_eq!(tree_structure.parent(child3), Some(Some(parent)));
+        let children = tree_structure.children(parent).unwrap();
+        assert_eq!(children, [child1, child2, child3]);
+        assert_eq!(tree_structure.parent(child1), Some(parent));
+        assert_eq!(tree_structure.parent(child2), Some(parent));
+        assert_eq!(tree_structure.parent(child3), Some(parent));
 
         // change children
         let child2_new = Id::next();
         tree_structure.change_child(parent, 1, child2_new);
-        let children = tree_structure.children(Some(parent)).unwrap();
-        assert_eq!(children.len(), 3);
-        assert_eq!(children[0], child1);
-        assert_eq!(children[1], child2_new);
-        assert_eq!(children[2], child3);
-        assert_eq!(tree_structure.parent(child1), Some(Some(parent)));
+        let children = tree_structure.children(parent).unwrap();
+        assert_eq!(children, [child1, child2_new, child3]);
+        assert_eq!(tree_structure.parent(child1), Some(parent));
         assert_eq!(tree_structure.parent(child2), None);
-        assert_eq!(tree_structure.parent(child2_new), Some(Some(parent)));
-        assert_eq!(tree_structure.parent(child3), Some(Some(parent)));
+        assert_eq!(tree_structure.parent(child2_new), Some(parent));
+        assert_eq!(tree_structure.parent(child3), Some(parent));
 
         // delete children
         tree_structure.delete_children(parent, 0..2);
-        let children = tree_structure.children(Some(parent)).unwrap();
-        assert_eq!(children.len(), 1);
-        assert_eq!(children[0], child3);
+        let children = tree_structure.children(parent).unwrap();
+        assert_eq!(children, [child3]);
         assert_eq!(tree_structure.parent(child1), None);
         assert_eq!(tree_structure.parent(child2), None);
         assert_eq!(tree_structure.parent(child2_new), None);
-        assert_eq!(tree_structure.parent(child3), Some(Some(parent)));
+        assert_eq!(tree_structure.parent(child3), Some(parent));
     }
 
     #[test]
