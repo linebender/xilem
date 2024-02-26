@@ -129,6 +129,10 @@ impl Cx {
     /// Run some logic within the context of a given Pod,
     ///
     /// This logic is usually `View::rebuild`
+    ///
+    /// # Panics
+    ///
+    /// When the element type `E` is not the same type as the inner `Widget` of the `Pod`.
     pub fn with_pod<T, E, F>(&mut self, pod: &mut Pod, f: F) -> T
     where
         E: Widget + 'static,
