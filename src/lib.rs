@@ -16,6 +16,5 @@ pub use app::App;
 pub use app_main::AppLauncher;
 pub use geometry::Axis;
 
-pub use accesskit;
 pub use parley;
 pub use vello;

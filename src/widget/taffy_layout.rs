@@ -12,20 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::geometry::Axis;
-use crate::widget::{AccessCx, BoxConstraints, Event};
-use accesskit::NodeId;
-use glazier::kurbo::Affine;
-use vello::kurbo::{Point, Size};
-use vello::peniko::{Brush, Color, Fill};
-use vello::SceneBuilder;
+use crate::{
+    geometry::Axis,
+    widget::{BoxConstraints, Event},
+};
+use vello::{
+    kurbo::{Affine, Point, Size},
+    peniko::{Brush, Color, Fill},
+    Scene,
+};
 
 use super::{contexts::LifeCycleCx, EventCx, LayoutCx, LifeCycle, PaintCx, Pod, UpdateCx, Widget};
-
-/// Type inference gets confused because we're just passing None for the measure function. So we give
-/// it a concrete type to work with (even though we never construct the inner type)
-type DummyMeasureFunction =
-    fn(taffy::Size<Option<f32>>, taffy::Size<taffy::AvailableSpace>) -> taffy::Size<f32>;
 
 /// Type conversions between Xilem types and their Taffy equivalents
 mod convert {
@@ -162,7 +159,7 @@ impl TaffyLayout {
     }
 }
 
-/// Iterator over the widget's children. Used in the implementation of `taffy::PartialLayoutTree`.
+/// Iterator over the widget's children. Used in the implementation of `taffy::TraversePartialTree`.
 struct ChildIter(std::ops::Range<usize>);
 impl Iterator for ChildIter {
     type Item = taffy::NodeId;
@@ -173,8 +170,8 @@ impl Iterator for ChildIter {
 }
 
 /// A this wrapper view over the widget (`TaffyLayout`) and the Xilem layout context (`LayoutCx`).
-/// Implementing `taffy::PartialLayoutTree` for this wrapper (rather than implementing directing on
-/// `TaffyLayout`) allows us to access the layout context during the layout process
+/// Implementing `taffy::TraversePartialTree` and `taffy::LayoutPartialTree` for this wrapper (rather
+/// than directly on `TaffyLayout`) allows us to access the layout context during the layout process
 struct TaffyLayoutCtx<'w, 'a, 'b> {
     /// A mutable reference to the widget
     widget: &'w mut TaffyLayout,
@@ -189,7 +186,7 @@ impl<'w, 'a, 'b> TaffyLayoutCtx<'w, 'a, 'b> {
     }
 }
 
-impl<'w, 'a, 'b> taffy::PartialLayoutTree for TaffyLayoutCtx<'w, 'a, 'b> {
+impl<'w, 'a, 'b> taffy::TraversePartialTree for TaffyLayoutCtx<'w, 'a, 'b> {
     type ChildIter<'c> = ChildIter where Self: 'c;
 
     fn child_ids(&self, _parent_node_id: taffy::NodeId) -> Self::ChildIter<'_> {
@@ -203,7 +200,9 @@ impl<'w, 'a, 'b> taffy::PartialLayoutTree for TaffyLayoutCtx<'w, 'a, 'b> {
     fn get_child_id(&self, _parent_node_id: taffy::NodeId, child_index: usize) -> taffy::NodeId {
         taffy::NodeId::from(child_index)
     }
+}
 
+impl<'w, 'a, 'b> taffy::LayoutPartialTree for TaffyLayoutCtx<'w, 'a, 'b> {
     fn get_style(&self, node_id: taffy::NodeId) -> &taffy::Style {
         let node_id = usize::from(node_id);
         if node_id == usize::MAX {
@@ -341,10 +340,7 @@ impl Widget for TaffyLayout {
             (taffy::Display::Grid, true) => {
                 taffy::compute_grid_layout(&mut layout_ctx, node_id, inputs)
             }
-            (_, false) => {
-                let measure_function: Option<DummyMeasureFunction> = None;
-                taffy::compute_leaf_layout(inputs, &self.style, measure_function)
-            }
+            (_, false) => taffy::compute_leaf_layout(inputs, &self.style, |_, _| taffy::Size::ZERO),
         };
 
         // Save output to cache
@@ -399,10 +395,7 @@ impl Widget for TaffyLayout {
             (taffy::Display::Grid, true) => {
                 taffy::compute_grid_layout(&mut layout_ctx, node_id, inputs)
             }
-            (_, false) => {
-                let measure_function: Option<DummyMeasureFunction> = None;
-                taffy::compute_leaf_layout(inputs, &self.style, measure_function)
-            }
+            (_, false) => taffy::compute_leaf_layout(inputs, &self.style, |_, _| taffy::Size::ZERO),
         };
 
         // Save output to cache
@@ -416,26 +409,9 @@ impl Widget for TaffyLayout {
         output.size.get_abs(taffy_axis) as f64
     }
 
-    fn accessibility(&mut self, cx: &mut AccessCx) {
-        for child in &mut self.children {
-            child.accessibility(cx);
-        }
-
-        if cx.is_requested() {
-            let mut builder = accesskit::NodeBuilder::new(accesskit::Role::GenericContainer);
-            builder.set_children(
-                self.children
-                    .iter()
-                    .map(|pod| pod.id().into())
-                    .collect::<Vec<NodeId>>(),
-            );
-            cx.push_node(builder);
-        }
-    }
-
-    fn paint(&mut self, cx: &mut PaintCx, builder: &mut SceneBuilder) {
+    fn paint(&mut self, cx: &mut PaintCx, scene: &mut Scene) {
         if let Some(color) = self.background_color {
-            builder.fill(
+            scene.fill(
                 Fill::NonZero,
                 Affine::IDENTITY,
                 &Brush::Solid(color),
@@ -444,7 +420,7 @@ impl Widget for TaffyLayout {
             );
         }
         for child in &mut self.children {
-            child.paint(cx, builder);
+            child.paint(cx, scene);
         }
     }
 }

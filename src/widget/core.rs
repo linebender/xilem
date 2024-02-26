@@ -18,16 +18,18 @@
 //! widget system, particularly its core.rs.
 
 use bitflags::bitflags;
-use vello::kurbo::{Affine, Point, Rect, Size};
-use vello::{SceneBuilder, SceneFragment};
+use vello::{
+    kurbo::{Affine, Point, Rect, Size},
+    Scene,
+};
 
 use super::widget::{AnyWidget, Widget};
 use crate::id::Id;
 use crate::Axis;
 
 use super::{
-    contexts::LifeCycleCx, AccessCx, BoxConstraints, CxState, Event, EventCx, LayoutCx, LifeCycle,
-    PaintCx, UpdateCx,
+    contexts::LifeCycleCx, BoxConstraints, CxState, Event, EventCx, LayoutCx, LifeCycle, PaintCx,
+    UpdateCx,
 };
 
 bitflags! {
@@ -91,7 +93,7 @@ bitflags! {
 pub struct Pod {
     pub(crate) state: WidgetState,
     pub(crate) widget: Box<dyn AnyWidget>,
-    pub(crate) fragment: SceneFragment,
+    pub(crate) fragment: Scene,
 }
 
 #[derive(Debug)]
@@ -149,10 +151,6 @@ impl WidgetState {
     fn request(&mut self, flags: PodFlags) {
         self.flags |= flags
     }
-
-    pub(crate) fn window_origin(&self) -> Point {
-        self.parent_window_origin + self.origin.to_vec2()
-    }
 }
 
 impl Pod {
@@ -171,7 +169,7 @@ impl Pod {
     pub fn new_from_box(widget: Box<dyn AnyWidget>, id: Id) -> Self {
         Pod {
             state: WidgetState::new(id),
-            fragment: SceneFragment::default(),
+            fragment: Scene::default(),
             widget,
         }
     }
@@ -273,13 +271,6 @@ impl Pod {
                 let hot_changed =
                     Pod::set_hot_state(&mut self.widget, &mut self.state, cx.cx_state, None);
                 had_active || hot_changed
-            }
-            Event::TargetedAccessibilityAction(action) => {
-                // println!("TODO: {:?}", action);
-                cx.tree_structure().is_descendant_of(
-                    Id::try_from_accesskit(action.target).unwrap(),
-                    self.state.id,
-                )
             }
         };
         if recurse {
@@ -400,30 +391,12 @@ impl Pod {
         self.widget.compute_max_intrinsic(axis, &mut child_cx, bc)
     }
 
-    ///
-    pub fn accessibility(&mut self, cx: &mut AccessCx) {
-        if self.state.flags.intersects(
-            PodFlags::REQUEST_ACCESSIBILITY | PodFlags::DESCENDANT_REQUESTED_ACCESSIBILITY,
-        ) {
-            let mut child_cx = AccessCx {
-                cx_state: cx.cx_state,
-                widget_state: &mut self.state,
-                update: cx.update,
-                node_classes: cx.node_classes,
-            };
-            self.widget.accessibility(&mut child_cx);
-            self.state.flags.remove(
-                PodFlags::REQUEST_ACCESSIBILITY | PodFlags::DESCENDANT_REQUESTED_ACCESSIBILITY,
-            );
-        }
-    }
-
-    pub fn paint_raw(&mut self, cx: &mut PaintCx, builder: &mut SceneBuilder) {
+    pub fn paint_raw(&mut self, cx: &mut PaintCx, scene: &mut Scene) {
         let mut inner_cx = PaintCx {
             cx_state: cx.cx_state,
             widget_state: &mut self.state,
         };
-        self.widget.paint(&mut inner_cx, builder);
+        self.widget.paint(&mut inner_cx, scene);
     }
 
     pub(crate) fn paint_impl(&mut self, cx: &mut PaintCx) {
@@ -436,28 +409,27 @@ impl Pod {
         };
 
         if needs_paint {
-            let mut builder = SceneBuilder::for_fragment(&mut self.fragment);
-            self.widget.paint(&mut inner_cx, &mut builder);
+            self.fragment.reset();
+            self.widget.paint(&mut inner_cx, &mut self.fragment);
         }
     }
 
     /// The default paint method.
     ///
-    /// It paints the this widget if neccessary and appends its SceneFragment to the provided
-    /// `SceneBuilder`.
-    pub fn paint(&mut self, cx: &mut PaintCx, builder: &mut SceneBuilder) {
+    /// It paints the this widget if necessary and appends its `Scene` to the provided `Scene`.
+    pub fn paint(&mut self, cx: &mut PaintCx, scene: &mut Scene) {
         self.paint_impl(cx);
         let transform = Affine::translate(self.state.origin.to_vec2());
-        builder.append(&self.fragment, Some(transform));
+        scene.append(&self.fragment, Some(transform));
     }
 
-    /// Renders the widget and returns the created `SceneFragment`.
+    /// Renders the widget and returns the created `Scene`.
     ///
-    /// The caller of this method is responsible for translating the Fragment and appending it to
-    /// its own SceneBuilder. This is useful for ClipBoxes and doing animations.
+    /// The caller of this method is responsible for translating the fragment and appending it to
+    /// its own Scene. This is useful for ClipBoxes and doing animations.
     ///
     /// For the default paint behaviour call [`paint`](Pod::paint).
-    pub fn paint_custom(&mut self, cx: &mut PaintCx) -> &SceneFragment {
+    pub fn paint_custom(&mut self, cx: &mut PaintCx) -> &Scene {
         self.paint_impl(cx);
         &self.fragment
     }
