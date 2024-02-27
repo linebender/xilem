@@ -20,7 +20,7 @@
 use parley::FontContext;
 use vello::kurbo::{Point, Size};
 
-use super::{PodFlags, WidgetState};
+use super::{tree_structure::TreeStructure, PodFlags, WidgetState};
 use crate::Message;
 
 // These contexts loosely follow Druid.
@@ -28,6 +28,7 @@ use crate::Message;
 /// Static state that is shared between most contexts.
 pub struct CxState<'a> {
     #[allow(unused)]
+    tree_structure: &'a TreeStructure,
     font_cx: &'a mut FontContext,
     messages: &'a mut Vec<Message>,
 }
@@ -103,8 +104,16 @@ macro_rules! impl_context_method {
 }
 
 impl<'a> CxState<'a> {
-    pub fn new(font_cx: &'a mut FontContext, messages: &'a mut Vec<Message>) -> Self {
-        CxState { font_cx, messages }
+    pub fn new(
+        font_cx: &'a mut FontContext,
+        tree_structure: &'a TreeStructure,
+        messages: &'a mut Vec<Message>,
+    ) -> Self {
+        CxState {
+            font_cx,
+            messages,
+            tree_structure,
+        }
     }
 
     pub(crate) fn has_messages(&self) -> bool {
@@ -202,6 +211,11 @@ impl_context_method!(
         /// [`is_active`]: super::Pod::is_active
         pub fn is_active(&self) -> bool {
             self.widget_state.flags.contains(PodFlags::IS_ACTIVE)
+        }
+
+        /// Returns the pure structure (parent/children relations via ids) of the widget tree
+        pub fn tree_structure(&self) -> &TreeStructure {
+            self.cx_state.tree_structure
         }
     }
 );

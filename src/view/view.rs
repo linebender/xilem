@@ -21,10 +21,10 @@ use futures_task::{ArcWake, Waker};
 
 use xilem_core::{Id, IdPath};
 
-use crate::widget::{AnyWidget, ChangeFlags, Pod, Widget};
+use crate::widget::{tree_structure::TreeStructure, AnyWidget, ChangeFlags, Pod, Widget};
 
 xilem_core::generate_view_trait! {View, Widget, Cx, ChangeFlags; : Send}
-xilem_core::generate_viewsequence_trait! {ViewSequence, View, ViewMarker, Widget, Cx, ChangeFlags, Pod; : Send}
+xilem_core::generate_viewsequence_trait! {ViewSequence, View, ViewMarker, ElementsSplice, Widget, Cx, ChangeFlags, Pod; : Send}
 xilem_core::generate_anyview_trait! {AnyView, View, ViewMarker, Cx, ChangeFlags, AnyWidget, BoxedView; + Send}
 xilem_core::generate_memoize_view! {Memoize, MemoizeState, View, ViewMarker, Cx, ChangeFlags, s, memoize; + Send}
 xilem_core::generate_adapt_view! {View, Cx, ChangeFlags; + Send}
@@ -33,7 +33,9 @@ xilem_core::generate_adapt_state_view! {View, Cx, ChangeFlags; + Send}
 #[derive(Clone)]
 pub struct Cx {
     id_path: IdPath,
+    element_id_path: Vec<crate::id::Id>, // Note that this is the widget id type.
     req_chan: SyncSender<IdPath>,
+    pub(crate) tree_structure: TreeStructure,
     pub(crate) pending_async: HashSet<Id>,
 }
 
@@ -53,8 +55,10 @@ impl Cx {
     pub(crate) fn new(req_chan: &SyncSender<IdPath>) -> Self {
         Cx {
             id_path: Vec::new(),
+            element_id_path: Vec::new(),
             req_chan: req_chan.clone(),
             pending_async: HashSet::new(),
+            tree_structure: TreeStructure::default(),
         }
     }
 
@@ -66,12 +70,24 @@ impl Cx {
         self.id_path.pop();
     }
 
-    pub fn is_empty(&self) -> bool {
+    pub fn id_path_is_empty(&self) -> bool {
         self.id_path.is_empty()
     }
 
     pub fn id_path(&self) -> &IdPath {
         &self.id_path
+    }
+
+    pub fn element_id_path_is_empty(&self) -> bool {
+        self.element_id_path.is_empty()
+    }
+
+    /// Return the element id of the current element/widget
+    pub fn element_id(&self) -> crate::id::Id {
+        *self
+            .element_id_path
+            .last()
+            .expect("element_id path imbalance, there should be an element id")
     }
 
     /// Run some logic with an id added to the id path.
@@ -93,6 +109,42 @@ impl Cx {
         let result = f(self);
         self.pop();
         (id, result)
+    }
+
+    /// Run some logic within a new Pod context and return the newly created Pod,
+    ///
+    /// This logic is usually `View::build` to wrap the returned element into a Pod.
+    pub fn with_new_pod<S, E, F>(&mut self, f: F) -> (Id, S, Pod)
+    where
+        E: Widget + 'static,
+        F: FnOnce(&mut Cx) -> (Id, S, E),
+    {
+        let pod_id = crate::id::Id::next();
+        self.element_id_path.push(pod_id);
+        let (id, state, element) = f(self);
+        self.element_id_path.pop();
+        (id, state, Pod::new(element, pod_id))
+    }
+
+    /// Run some logic within the context of a given Pod,
+    ///
+    /// This logic is usually `View::rebuild`
+    ///
+    /// # Panics
+    ///
+    /// When the element type `E` is not the same type as the inner `Widget` of the `Pod`.
+    pub fn with_pod<T, E, F>(&mut self, pod: &mut Pod, f: F) -> T
+    where
+        E: Widget + 'static,
+        F: FnOnce(&mut E, &mut Cx) -> T,
+    {
+        self.element_id_path.push(pod.id());
+        let element = pod
+            .downcast_mut()
+            .expect("Element type has changed, this should never happen!");
+        let result = f(element, self);
+        self.element_id_path.pop();
+        result
     }
 
     pub fn waker(&self) -> Waker {

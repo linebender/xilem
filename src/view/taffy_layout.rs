@@ -16,7 +16,7 @@ use std::{any::Any, marker::PhantomData};
 
 use vello::peniko::Color;
 
-use crate::view::{Id, VecSplice, ViewMarker, ViewSequence};
+use crate::view::{Id, TreeStructureSplice, ViewMarker, ViewSequence};
 use crate::widget::{self, ChangeFlags};
 use crate::MessageResult;
 
@@ -103,7 +103,9 @@ impl<T, A, VT: ViewSequence<T, A>> View<T, A> for TaffyLayout<T, A, VT> {
 
     fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
         let mut elements = vec![];
-        let (id, state) = cx.with_new_id(|cx| self.children.build(cx, &mut elements));
+        let mut scratch = vec![];
+        let mut splice = TreeStructureSplice::new(&mut elements, &mut scratch);
+        let (id, state) = cx.with_new_id(|cx| self.children.build(cx, &mut splice));
         let column = widget::TaffyLayout::new(elements, self.style.clone(), self.background_color);
         (id, state, column)
     }
@@ -117,8 +119,7 @@ impl<T, A, VT: ViewSequence<T, A>> View<T, A> for TaffyLayout<T, A, VT> {
         element: &mut Self::Element,
     ) -> ChangeFlags {
         let mut scratch = vec![];
-        let mut splice = VecSplice::new(&mut element.children, &mut scratch);
-
+        let mut splice = TreeStructureSplice::new(&mut element.children, &mut scratch);
         let mut flags = cx.with_id(*id, |cx| {
             self.children
                 .rebuild(cx, &prev.children, state, &mut splice)

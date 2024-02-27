@@ -4,11 +4,11 @@
 #[doc(hidden)]
 #[macro_export]
 macro_rules! impl_view_tuple {
-    ( $viewseq:ident, $pod:ty, $cx:ty, $changeflags:ty, $( $t:ident),* ; $( $i:tt ),* ) => {
+    ( $viewseq:ident, $elements_splice: ident, $pod:ty, $cx:ty, $changeflags:ty, $( $t:ident),* ; $( $i:tt ),* ) => {
         impl<T, A, $( $t: $viewseq<T, A> ),* > $viewseq<T, A> for ( $( $t, )* ) {
             type State = ( $( $t::State, )*);
 
-            fn build(&self, cx: &mut $cx, elements: &mut Vec<$pod>) -> Self::State {
+            fn build(&self, cx: &mut $cx, elements: &mut dyn $elements_splice) -> Self::State {
                 let b = ( $( self.$i.build(cx, elements), )* );
                 let state = ( $( b.$i, )*);
                 state
@@ -19,7 +19,7 @@ macro_rules! impl_view_tuple {
                 cx: &mut $cx,
                 prev: &Self,
                 state: &mut Self::State,
-                els: &mut $crate::VecSplice<$pod>,
+                els: &mut dyn $elements_splice,
             ) -> ChangeFlags {
                 let mut changed = <$changeflags>::default();
                 $(
@@ -53,10 +53,56 @@ macro_rules! impl_view_tuple {
         }
     }
 }
-
 #[macro_export]
 macro_rules! generate_viewsequence_trait {
-    ($viewseq:ident, $view:ident, $viewmarker: ident, $bound:ident, $cx:ty, $changeflags:ty, $pod:ty; $( $ss:tt )* ) => {
+    ($viewseq:ident, $view:ident, $viewmarker: ident, $elements_splice: ident, $bound:ident, $cx:ty, $changeflags:ty, $pod:ty; $( $ss:tt )* ) => {
+
+        /// A temporary "splice" to add, update, delete and monitor elements in a sequence of elements.
+        /// It is mainly intended for view sequences
+        ///
+        /// Usually it's backed by a collection (e.g. `Vec`) that holds all the (existing) elements.
+        /// It sweeps over the element collection and does updates in place.
+        /// Internally it works by having a pointer/index to the current/old element (0 at the beginning),
+        /// and the pointer is incremented by basically all methods that mutate that sequence.
+        pub trait $elements_splice {
+            /// Insert a new element at the current index in the resulting collection (and increment the index by 1)
+            fn push(&mut self, element: $pod, cx: &mut $cx);
+            /// Mutate the next existing element, and add it to the resulting collection (and increment the index by 1)
+            fn mutate(&mut self, cx: &mut $cx) -> &mut $pod;
+            // TODO(#160) this could also track view id changes (old_id, new_id)
+            /// Mark any changes done by `mutate` on the current element (this doesn't change the index)
+            fn mark(&mut self, changeflags: $changeflags, cx: &mut $cx) -> $changeflags;
+            /// Delete the next n existing elements (this doesn't change the index)
+            fn delete(&mut self, n: usize, cx: &mut $cx);
+            /// Current length of the elements collection
+            fn len(&self) -> usize;
+            // TODO(#160) add a skip method when it is necessary (e.g. relevant for immutable ViewSequences like ropes)
+        }
+
+        impl<'a, 'b> $elements_splice for $crate::VecSplice<'a, 'b, $pod> {
+            fn push(&mut self, element: $pod, _cx: &mut $cx) {
+                self.push(element);
+            }
+
+            fn mutate(&mut self, _cx: &mut $cx) -> &mut $pod
+            {
+                self.mutate()
+            }
+
+            fn mark(&mut self, changeflags: $changeflags, _cx: &mut $cx) -> $changeflags
+            {
+                self.peek_mut().map(|pod| pod.mark(changeflags)).unwrap_or_default()
+            }
+
+            fn delete(&mut self, n: usize, _cx: &mut $cx) {
+                self.delete(n)
+            }
+
+            fn len(&self) -> usize {
+                self.len()
+            }
+        }
+
         /// This trait represents a (possibly empty) sequence of views.
         ///
         /// It is up to the parent view how to lay out and display them.
@@ -65,7 +111,10 @@ macro_rules! generate_viewsequence_trait {
             type State $( $ss )*;
 
             /// Build the associated widgets and initialize all states.
-            fn build(&self, cx: &mut $cx, elements: &mut Vec<$pod>) -> Self::State;
+            ///
+            /// To be able to monitor changes (e.g. tree-structure tracking) rather than just adding elements,
+            /// this takes an element splice as well (when it could be just a `Vec` otherwise)
+            fn build(&self, cx: &mut $cx, elements: &mut dyn $elements_splice) -> Self::State;
 
             /// Update the associated widget.
             ///
@@ -75,7 +124,7 @@ macro_rules! generate_viewsequence_trait {
                 cx: &mut $cx,
                 prev: &Self,
                 state: &mut Self::State,
-                element: &mut $crate::VecSplice<$pod>,
+                elements: &mut dyn $elements_splice,
             ) -> $changeflags;
 
             /// Propagate a message.
@@ -100,9 +149,9 @@ macro_rules! generate_viewsequence_trait {
         {
             type State = (<V as $view<T, A>>::State, $crate::Id);
 
-            fn build(&self, cx: &mut $cx, elements: &mut Vec<$pod>) -> Self::State {
-                let (id, state, element) = <V as $view<T, A>>::build(self, cx);
-                elements.push(<$pod>::new(element));
+            fn build(&self, cx: &mut $cx, elements: &mut dyn $elements_splice) -> Self::State {
+                let (id, state, pod) = cx.with_new_pod(|cx| <V as $view<T, A>>::build(self, cx));
+                elements.push(pod, cx);
                 (state, id)
             }
 
@@ -111,20 +160,20 @@ macro_rules! generate_viewsequence_trait {
                 cx: &mut $cx,
                 prev: &Self,
                 state: &mut Self::State,
-                element: &mut $crate::VecSplice<$pod>,
+                elements: &mut dyn $elements_splice,
             ) -> $changeflags {
-                let el = element.mutate();
-                let downcast = el.downcast_mut().unwrap();
-                let flags = <V as $view<T, A>>::rebuild(
-                    self,
-                    cx,
-                    prev,
-                    &mut state.1,
-                    &mut state.0,
-                    downcast,
-                );
-
-                el.mark(flags)
+                let pod = elements.mutate(cx);
+                let flags = cx.with_pod(pod, |el, cx| {
+                    <V as $view<T, A>>::rebuild(
+                        self,
+                        cx,
+                        prev,
+                        &mut state.1,
+                        &mut state.0,
+                        el,
+                    )
+                });
+                elements.mark(flags, cx)
             }
 
             fn message(
@@ -156,7 +205,7 @@ macro_rules! generate_viewsequence_trait {
         impl<T, A, VT: $viewseq<T, A>> $viewseq<T, A> for Option<VT> {
             type State = Option<VT::State>;
 
-            fn build(&self, cx: &mut $cx, elements: &mut Vec<$pod>) -> Self::State {
+            fn build(&self, cx: &mut $cx, elements: &mut dyn $elements_splice) -> Self::State {
                 match self {
                     None => None,
                     Some(vt) => {
@@ -171,20 +220,19 @@ macro_rules! generate_viewsequence_trait {
                 cx: &mut $cx,
                 prev: &Self,
                 state: &mut Self::State,
-                element: &mut $crate::VecSplice<$pod>,
+                elements: &mut dyn $elements_splice,
             ) -> $changeflags {
                 match (self, &mut *state, prev) {
-                    (Some(this), Some(state), Some(prev)) => this.rebuild(cx, prev, state, element),
+                    (Some(this), Some(state), Some(prev)) => this.rebuild(cx, prev, state, elements),
                     (None, Some(seq_state), Some(prev)) => {
                         let count = prev.count(&seq_state);
-                        element.delete(count);
+                        elements.delete(count, cx);
                         *state = None;
 
                         <$changeflags>::tree_structure()
                     }
                     (Some(this), None, None) => {
-                        let seq_state = element.as_vec(|vec| this.build(cx, vec));
-                        *state = Some(seq_state);
+                        *state = Some(this.build(cx, elements));
 
                         <$changeflags>::tree_structure()
                     }
@@ -219,7 +267,7 @@ macro_rules! generate_viewsequence_trait {
         impl<T, A, VT: $viewseq<T, A>> $viewseq<T, A> for Vec<VT> {
             type State = Vec<VT::State>;
 
-            fn build(&self, cx: &mut $cx, elements: &mut Vec<$pod>) -> Self::State {
+            fn build(&self, cx: &mut $cx, elements: &mut dyn $elements_splice) -> Self::State {
                 self.iter().map(|child| child.build(cx, elements)).collect()
             }
 
@@ -228,7 +276,7 @@ macro_rules! generate_viewsequence_trait {
                 cx: &mut $cx,
                 prev: &Self,
                 state: &mut Self::State,
-                elements: &mut $crate::VecSplice<$pod>,
+                elements: &mut dyn $elements_splice,
             ) -> $changeflags {
                 let mut changed = <$changeflags>::default();
                 for ((child, child_prev), child_state) in self.iter().zip(prev).zip(state.iter_mut()) {
@@ -242,16 +290,11 @@ macro_rules! generate_viewsequence_trait {
                         .enumerate()
                         .map(|(i, state)| prev[n + i].count(&state))
                         .sum();
-                    elements.delete(n_delete);
+                    elements.delete(n_delete, cx);
                     changed |= <$changeflags>::tree_structure();
                 } else if n > prev.len() {
-                    let mut child_elements = vec![];
                     for i in prev.len()..n {
-                        state.push(self[i].build(cx, &mut child_elements));
-                    }
-                    // Discussion question: should VecSplice get an extend method?
-                    for element in child_elements {
-                        elements.push(element);
+                        state.push(self[i].build(cx, elements));
                     }
                     changed |= <$changeflags>::tree_structure();
                 }
@@ -295,26 +338,26 @@ macro_rules! generate_viewsequence_trait {
         #[doc = concat!("`", stringify!($viewmarker), "`.")]
         pub trait $viewmarker {}
 
-        $crate::impl_view_tuple!($viewseq, $pod, $cx, $changeflags, ;);
-        $crate::impl_view_tuple!($viewseq, $pod, $cx, $changeflags,
+        $crate::impl_view_tuple!($viewseq, $elements_splice, $pod, $cx, $changeflags, ;);
+        $crate::impl_view_tuple!($viewseq, $elements_splice, $pod, $cx, $changeflags,
             V0; 0);
-        $crate::impl_view_tuple!($viewseq, $pod, $cx, $changeflags,
+        $crate::impl_view_tuple!($viewseq, $elements_splice, $pod, $cx, $changeflags,
             V0, V1; 0, 1);
-        $crate::impl_view_tuple!($viewseq, $pod, $cx, $changeflags,
+        $crate::impl_view_tuple!($viewseq, $elements_splice, $pod, $cx, $changeflags,
             V0, V1, V2; 0, 1, 2);
-        $crate::impl_view_tuple!($viewseq, $pod, $cx, $changeflags,
+        $crate::impl_view_tuple!($viewseq, $elements_splice, $pod, $cx, $changeflags,
             V0, V1, V2, V3; 0, 1, 2, 3);
-        $crate::impl_view_tuple!($viewseq, $pod, $cx, $changeflags,
+        $crate::impl_view_tuple!($viewseq, $elements_splice, $pod, $cx, $changeflags,
             V0, V1, V2, V3, V4; 0, 1, 2, 3, 4);
-        $crate::impl_view_tuple!($viewseq, $pod, $cx, $changeflags,
+        $crate::impl_view_tuple!($viewseq, $elements_splice, $pod, $cx, $changeflags,
             V0, V1, V2, V3, V4, V5; 0, 1, 2, 3, 4, 5);
-        $crate::impl_view_tuple!($viewseq, $pod, $cx, $changeflags,
+        $crate::impl_view_tuple!($viewseq, $elements_splice, $pod, $cx, $changeflags,
             V0, V1, V2, V3, V4, V5, V6; 0, 1, 2, 3, 4, 5, 6);
-        $crate::impl_view_tuple!($viewseq, $pod, $cx, $changeflags,
+        $crate::impl_view_tuple!($viewseq, $elements_splice, $pod, $cx, $changeflags,
             V0, V1, V2, V3, V4, V5, V6, V7; 0, 1, 2, 3, 4, 5, 6, 7);
-        $crate::impl_view_tuple!($viewseq, $pod, $cx, $changeflags,
+        $crate::impl_view_tuple!($viewseq, $elements_splice, $pod, $cx, $changeflags,
             V0, V1, V2, V3, V4, V5, V6, V7, V8; 0, 1, 2, 3, 4, 5, 6, 7, 8);
-        $crate::impl_view_tuple!($viewseq, $pod, $cx, $changeflags,
+        $crate::impl_view_tuple!($viewseq, $elements_splice, $pod, $cx, $changeflags,
             V0, V1, V2, V3, V4, V5, V6, V7, V8, V9; 0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
     };
 }

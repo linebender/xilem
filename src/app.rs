@@ -157,7 +157,7 @@ where
             id: None,
             root_pod: None,
             events: Vec::new(),
-            root_state: WidgetState::new(),
+            root_state: WidgetState::new(crate::id::Id::next()),
             size: Default::default(),
             new_size: Default::default(),
             cursor_pos: None,
@@ -181,7 +181,8 @@ where
             // TODO: be more lazy re-rendering
             self.render();
             let root_pod = self.root_pod.as_mut().unwrap();
-            let mut cx_state = CxState::new(&mut self.font_cx, &mut self.events);
+            let mut cx_state =
+                CxState::new(&mut self.font_cx, &self.cx.tree_structure, &mut self.events);
 
             let mut lifecycle_cx = LifeCycleCx::new(&mut cx_state, &mut self.root_state);
             root_pod.lifecycle(&mut lifecycle_cx, &LifeCycle::TreeUpdate);
@@ -225,7 +226,8 @@ where
             // Borrow again to avoid multiple borrows.
             // TODO: maybe make accessibility a method on CxState?
             let root_pod = self.root_pod.as_mut().unwrap();
-            let mut cx_state = CxState::new(&mut self.font_cx, &mut self.events);
+            let mut cx_state =
+                CxState::new(&mut self.font_cx, &self.cx.tree_structure, &mut self.events);
             let mut paint_cx = PaintCx::new(&mut cx_state, &mut self.root_state);
             root_pod.paint_impl(&mut paint_cx);
             break;
@@ -247,7 +249,8 @@ where
 
         self.ensure_root();
         let root_pod = self.root_pod.as_mut().unwrap();
-        let mut cx_state = CxState::new(&mut self.font_cx, &mut self.events);
+        let mut cx_state =
+            CxState::new(&mut self.font_cx, &self.cx.tree_structure, &mut self.events);
         let mut event_cx = EventCx::new(&mut cx_state, &mut self.root_state);
         root_pod.event(&mut event_cx, &event);
         self.send_events();
@@ -283,23 +286,30 @@ where
         if let Some(response) = self.response_chan.blocking_recv() {
             let state = if let Some(root_pod) = self.root_pod.as_mut() {
                 let mut state = response.state.unwrap();
-                let changes = response.view.rebuild(
-                    &mut self.cx,
-                    response.prev.as_ref().unwrap(),
-                    self.id.as_mut().unwrap(),
-                    &mut state,
-                    //TODO: fail more gracefully but make it explicit that this is a bug
-                    root_pod
-                        .downcast_mut()
-                        .expect("the root widget changed its type, this should never happen!"),
-                );
+                let changes = self.cx.with_pod(root_pod, |root_el, cx| {
+                    response.view.rebuild(
+                        cx,
+                        response.prev.as_ref().unwrap(),
+                        self.id.as_mut().unwrap(),
+                        &mut state,
+                        root_el,
+                    )
+                });
                 let _ = root_pod.mark(changes);
-                assert!(self.cx.is_empty(), "id path imbalance on rebuild");
+                assert!(self.cx.id_path_is_empty(), "id path imbalance on rebuild");
+                assert!(
+                    self.cx.element_id_path_is_empty(),
+                    "element id path imbalance on rebuild"
+                );
                 state
             } else {
-                let (id, state, root_widget) = response.view.build(&mut self.cx);
-                assert!(self.cx.is_empty(), "id path imbalance on build");
-                self.root_pod = Some(Pod::new(root_widget));
+                let (id, state, root_pod) = self.cx.with_new_pod(|cx| response.view.build(cx));
+                assert!(self.cx.id_path_is_empty(), "id path imbalance on build");
+                assert!(
+                    self.cx.element_id_path_is_empty(),
+                    "element id path imbalance on rebuild"
+                );
+                self.root_pod = Some(root_pod);
                 self.id = Some(id);
                 state
             };

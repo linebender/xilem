@@ -24,8 +24,8 @@ use vello::{
 };
 
 use super::widget::{AnyWidget, Widget};
+use crate::id::Id;
 use crate::Axis;
-use crate::{id::Id, Bloom};
 
 use super::{
     contexts::LifeCycleCx, BoxConstraints, CxState, Event, EventCx, LayoutCx, LifeCycle, PaintCx,
@@ -106,12 +106,6 @@ pub(crate) struct WidgetState {
     pub(crate) parent_window_origin: Point,
     /// The size of the widget.
     pub(crate) size: Size,
-    /// A bloom filter containing this widgets is and the ones of its children.
-    // TODO: decide the final solution for this. This is probably going to be a global structure
-    //       tracking parent child relations in the tree:
-    //           parents: HashMap<Id, Id>,
-    //           children: HashMap<Id, Vec<Id>>,
-    pub(crate) sub_tree: Bloom<Id>,
 }
 
 impl PodFlags {
@@ -140,21 +134,18 @@ impl ChangeFlags {
 }
 
 impl WidgetState {
-    pub(crate) fn new() -> Self {
-        let id = Id::next();
+    pub(crate) fn new(id: Id) -> Self {
         WidgetState {
             id,
             flags: PodFlags::INIT_FLAGS,
             origin: Default::default(),
             parent_window_origin: Default::default(),
             size: Default::default(),
-            sub_tree: Default::default(),
         }
     }
 
     fn merge_up(&mut self, child_state: &mut WidgetState) {
         self.flags |= child_state.flags.upwards();
-        self.sub_tree = self.sub_tree.union(child_state.sub_tree);
     }
 
     fn request(&mut self, flags: PodFlags) {
@@ -167,17 +158,17 @@ impl Pod {
     ///
     /// In a widget hierarchy, each widget is wrapped in a `Pod`
     /// so it can participate in layout and event flow.
-    pub fn new(widget: impl Widget + 'static) -> Self {
-        Self::new_from_box(Box::new(widget))
+    pub fn new(widget: impl Widget + 'static, id: Id) -> Self {
+        Self::new_from_box(Box::new(widget), id)
     }
 
     /// Create a new pod.
     ///
     /// In a widget hierarchy, each widget is wrapped in a `Pod`
     /// so it can participate in layout and event flow.
-    pub fn new_from_box(widget: Box<dyn AnyWidget>) -> Self {
+    pub fn new_from_box(widget: Box<dyn AnyWidget>, id: Id) -> Self {
         Pod {
-            state: WidgetState::new(),
+            state: WidgetState::new(id),
             fragment: Scene::default(),
             widget,
         }
@@ -329,8 +320,6 @@ impl Pod {
             }
             LifeCycle::TreeUpdate => {
                 if self.state.flags.contains(PodFlags::TREE_CHANGED) {
-                    self.state.sub_tree.clear();
-                    self.state.sub_tree.add(&self.state.id);
                     self.state.flags.remove(PodFlags::TREE_CHANGED);
                     true
                 } else {
