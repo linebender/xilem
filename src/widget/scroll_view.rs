@@ -129,20 +129,14 @@ impl Widget for ScrollView {
         cx.request_paint();
 
         let cbc = BoxConstraints::new(
-            Size {
-                width: 0.0,
-                height: 0.0,
-            },
-            Size {
-                width: bc.max().width,
-                height: f64::INFINITY,
-            },
+            Size::new(0.0, 0.0),
+            Size::new(bc.max().width, f64::INFINITY),
         );
         let child_size = self.child.layout(cx, &cbc);
-        let size = Size {
-            width: child_size.width.min(bc.max().width),
-            height: child_size.height.min(bc.max().height),
-        };
+        let size = Size::new(
+            child_size.width.min(bc.max().width),
+            child_size.height.min(bc.max().height),
+        );
 
         // Ensure that scroll offset is within bounds
         let max_offset = (child_size.height - size.height).max(0.0);
