@@ -18,6 +18,7 @@
 //! control over scrolling axes, ability to scroll to content, etc.
 
 use crate::Axis;
+use crate::id::Id;
 use glazier::kurbo::Vec2;
 use vello::kurbo::{Affine, Size};
 use vello::peniko::Mix;
@@ -35,7 +36,7 @@ pub struct ScrollView {
 impl ScrollView {
     pub fn new(child: impl Widget + 'static) -> Self {
         ScrollView {
-            child: Pod::new(child),
+            child: Pod::new(child, Id::next()),
             offset: 0.0,
         }
     }
