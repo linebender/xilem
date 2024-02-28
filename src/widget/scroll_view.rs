@@ -153,14 +153,4 @@ impl Widget for ScrollView {
         builder.append(fragment, Some(Affine::translate((0.0, -self.offset))));
         builder.pop_layer();
     }
-
-    fn accessibility(&mut self, cx: &mut super::AccessCx) {
-        self.child.accessibility(cx);
-
-        if cx.is_requested() {
-            let mut builder = accesskit::NodeBuilder::new(accesskit::Role::ScrollView);
-            builder.set_children(vec![self.child.id().into()]);
-            cx.push_node(builder);
-        }
-    }
 }
