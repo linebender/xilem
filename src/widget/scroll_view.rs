@@ -22,7 +22,7 @@ use crate::id::Id;
 use glazier::kurbo::Vec2;
 use vello::kurbo::{Affine, Size};
 use vello::peniko::Mix;
-use vello::SceneBuilder;
+use vello::Scene;
 
 use super::{BoxConstraints, Widget};
 
@@ -148,10 +148,10 @@ impl Widget for ScrollView {
         size
     }
 
-    fn paint(&mut self, cx: &mut PaintCx, builder: &mut SceneBuilder) {
-        builder.push_layer(Mix::Normal, 1.0, Affine::IDENTITY, &cx.size().to_rect());
+    fn paint(&mut self, cx: &mut PaintCx, scene: &mut Scene) {
+        scene.push_layer(Mix::Normal, 1.0, Affine::IDENTITY, &cx.size().to_rect());
         let fragment = self.child.paint_custom(cx);
-        builder.append(fragment, Some(Affine::translate((0.0, -self.offset))));
-        builder.pop_layer();
+        scene.append(fragment, Some(Affine::translate((0.0, -self.offset))));
+        scene.pop_layer();
     }
 }
