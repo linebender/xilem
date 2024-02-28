@@ -81,7 +81,7 @@ impl Widget for ScrollView {
         // Handle scroll wheel events
         if !cx.is_handled() {
             if let Event::MouseWheel(mouse) = event {
-                let max_offset = (self.child.get_size().height - cx.size().height).max(0.0);
+                let max_offset = (self.child.size().height - cx.size().height).max(0.0);
                 let new_offset = (self.offset + mouse.wheel_delta.y).max(0.0).min(max_offset);
                 if new_offset != self.offset {
                     self.offset = new_offset;

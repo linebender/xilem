@@ -461,7 +461,7 @@ impl Pod {
     }
 
     /// Get the widget's size (as returned by the layout method)
-    pub fn get_size(&mut self) -> Size {
+    pub fn size(&mut self) -> Size {
         self.state.size
     }
 
