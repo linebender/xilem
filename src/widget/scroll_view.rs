@@ -17,8 +17,8 @@
 //! There's a lot more functionality in the Druid version, including
 //! control over scrolling axes, ability to scroll to content, etc.
 
-use crate::Axis;
 use crate::id::Id;
+use crate::Axis;
 use glazier::kurbo::Vec2;
 use vello::kurbo::{Affine, Size};
 use vello::peniko::Mix;
