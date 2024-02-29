@@ -16,9 +16,10 @@
 //!
 //! Note: arguably this module should be renamed, perhaps we should use
 //! "event" for this level and maybe "message" at the View level.
+use std::collections::HashSet;
 
-use glazier::{Modifiers, PointerButton, PointerButtons};
 use vello::kurbo::{Point, Rect, Vec2};
+use winit::event::{Modifiers, MouseButton};
 
 #[derive(Debug, Clone)]
 pub enum Event {
@@ -35,12 +36,18 @@ pub struct MouseEvent {
     pub pos: Point,
     /// The position of the mouse in the window coordinate space.
     pub window_pos: Point,
-    pub buttons: PointerButtons,
+    pub buttons: HashSet<MouseButton>,
     pub mods: Modifiers,
     pub count: u8,
     pub focus: bool,
-    pub button: PointerButton,
-    pub wheel_delta: Vec2,
+    pub button: Option<MouseButton>,
+    pub wheel_delta: Option<ScrollDelta>,
+}
+
+#[derive(Debug, Clone)]
+pub enum ScrollDelta {
+    Precise(Vec2),
+    Lines(isize, isize),
 }
 
 #[derive(Debug)]
@@ -62,12 +69,12 @@ impl Default for MouseEvent {
         MouseEvent {
             pos: Point::ZERO,
             window_pos: Point::ZERO,
-            buttons: PointerButtons::new(),
+            buttons: HashSet::<MouseButton>::new(),
             mods: Modifiers::default(),
             count: 0,
             focus: false,
-            button: PointerButton::None,
-            wheel_delta: Vec2::ZERO,
+            button: None,
+            wheel_delta: None,
         }
     }
 }
@@ -100,32 +107,32 @@ impl PointerCrusher {
         self.e.mods = mods;
     }
 
-    pub fn pressed(&mut self, button: PointerButton) -> MouseEvent {
-        self.e.wheel_delta = Vec2::ZERO;
+    pub fn pressed(&mut self, button: MouseButton) -> MouseEvent {
+        self.e.wheel_delta = None;
         self.e.buttons.insert(button);
         self.e.count = self.counter.count_for_click(self.e.pos);
-        self.e.button = button;
+        self.e.button = Some(button);
         self.e.clone()
     }
 
-    pub fn released(&mut self, button: PointerButton) -> MouseEvent {
-        self.e.wheel_delta = Vec2::ZERO;
-        self.e.buttons.remove(button);
-        self.e.button = button;
+    pub fn released(&mut self, button: MouseButton) -> MouseEvent {
+        self.e.wheel_delta = None;
+        self.e.buttons.remove(&button);
+        self.e.button = Some(button);
         self.e.clone()
     }
 
     pub fn moved(&mut self, pos: Point) -> MouseEvent {
-        self.e.wheel_delta = Vec2::ZERO;
-        self.e.button = PointerButton::None;
+        self.e.wheel_delta = None;
+        self.e.button = None;
         self.e.pos = pos;
         self.e.window_pos = pos;
         self.e.clone()
     }
 
-    pub fn wheel(&mut self, wheel_delta: Vec2) -> MouseEvent {
-        self.e.wheel_delta = wheel_delta;
-        self.e.button = PointerButton::None;
+    pub fn wheel(&mut self, wheel_delta: ScrollDelta) -> MouseEvent {
+        self.e.wheel_delta = Some(wheel_delta);
+        self.e.button = None;
         self.e.clone()
     }
 }
