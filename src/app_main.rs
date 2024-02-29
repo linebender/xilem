@@ -14,20 +14,24 @@
 
 use std::{num::NonZeroUsize, sync::Arc};
 
-use glazier::{Modifiers, PointerButton};
 use vello::{
-    kurbo::{Affine, Point, Size},
+    kurbo::{Affine, Point, Size, Vec2},
     peniko::Color,
     util::{RenderContext, RenderSurface},
     AaSupport, RenderParams, Renderer, RendererOptions, Scene,
 };
 use winit::{
-    event::WindowEvent,
+    dpi::PhysicalPosition,
+    event::{ElementState, Modifiers, MouseButton, MouseScrollDelta, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
     window::{Window, WindowBuilder},
 };
 
-use crate::{app::App, view::View, widget::Event, widget::PointerCrusher};
+use crate::{
+    app::App,
+    view::View,
+    widget::{Event, PointerCrusher, ScrollDelta},
+};
 
 // This is a bit of a hack just to get a window launched. The real version
 // would deal with multiple windows and have other ways to configure things.
@@ -75,72 +79,31 @@ impl<T: Send + 'static, V: View<T> + 'static> AppLauncher<T, V> {
         let mut main_state = MainState::new(self.app, window);
 
         event_loop
-            .run(move |event, elwt| match event {
-                winit::event::Event::WindowEvent {
-                    event: WindowEvent::CloseRequested,
-                    ..
-                } => elwt.exit(),
-                winit::event::Event::WindowEvent {
-                    event: WindowEvent::RedrawRequested,
-                    ..
-                } => main_state.paint(),
-                winit::event::Event::WindowEvent {
-                    event: WindowEvent::Resized(winit::dpi::PhysicalSize { width, height }),
-                    ..
-                } => main_state.size(Size {
-                    width: width.into(),
-                    height: height.into(),
-                }),
-                winit::event::Event::WindowEvent {
-                    event: WindowEvent::ModifiersChanged(modifiers),
-                    ..
-                } => {
-                    let mut m = Modifiers::empty();
-                    let ms = modifiers.state();
-                    if ms.contains(winit::keyboard::ModifiersState::SHIFT) {
-                        m |= Modifiers::SHIFT;
-                    }
-                    if ms.contains(winit::keyboard::ModifiersState::CONTROL) {
-                        m |= Modifiers::CONTROL;
-                    }
-                    if ms.contains(winit::keyboard::ModifiersState::SUPER) {
-                        m |= Modifiers::SUPER;
-                    }
-                    if ms.contains(winit::keyboard::ModifiersState::ALT) {
-                        m |= Modifiers::ALT;
-                    }
-                    main_state.mods(m);
-                }
-                winit::event::Event::WindowEvent {
-                    event:
+            .run(move |event, elwt| {
+                if let winit::event::Event::WindowEvent { event: e, .. } = event {
+                    match e {
+                        WindowEvent::CloseRequested => elwt.exit(),
+                        WindowEvent::RedrawRequested => main_state.paint(),
+                        WindowEvent::Resized(winit::dpi::PhysicalSize { width, height }) => {
+                            main_state.size(Size {
+                                width: width.into(),
+                                height: height.into(),
+                            });
+                        }
+                        WindowEvent::ModifiersChanged(modifiers) => main_state.mods(modifiers),
                         WindowEvent::CursorMoved {
                             position: winit::dpi::PhysicalPosition { x, y },
                             ..
+                        } => main_state.pointer_move(Point { x, y }),
+                        WindowEvent::CursorLeft { .. } => main_state.pointer_leave(),
+                        WindowEvent::MouseInput { state, button, .. } => match state {
+                            ElementState::Pressed => main_state.pointer_down(button),
+                            ElementState::Released => main_state.pointer_up(button),
                         },
-                    ..
-                } => main_state.pointer_move(Point { x, y }),
-                winit::event::Event::WindowEvent {
-                    event: WindowEvent::CursorLeft { .. },
-                    ..
-                } => main_state.pointer_leave(),
-                winit::event::Event::WindowEvent {
-                    event: WindowEvent::MouseInput { state, button, .. },
-                    ..
-                } => {
-                    let b = match button {
-                        winit::event::MouseButton::Left => PointerButton::Primary,
-                        winit::event::MouseButton::Right => PointerButton::Secondary,
-                        winit::event::MouseButton::Middle => PointerButton::Auxiliary,
-                        winit::event::MouseButton::Back => PointerButton::X1,
-                        winit::event::MouseButton::Forward => PointerButton::X2,
-                        winit::event::MouseButton::Other(_) => PointerButton::None,
-                    };
-                    match state {
-                        winit::event::ElementState::Pressed => main_state.pointer_down(b),
-                        winit::event::ElementState::Released => main_state.pointer_up(b),
+                        WindowEvent::MouseWheel { delta, .. } => main_state.pointer_wheel(delta),
+                        _ => (),
                     }
                 }
-                _ => (),
             })
             .unwrap();
     }
@@ -187,13 +150,13 @@ where
         self.window.request_redraw();
     }
 
-    fn pointer_down(&mut self, button: PointerButton) {
+    fn pointer_down(&mut self, button: MouseButton) {
         self.app
             .window_event(Event::MouseDown(self.main_pointer.pressed(button)));
         self.window.request_redraw();
     }
 
-    fn pointer_up(&mut self, button: PointerButton) {
+    fn pointer_up(&mut self, button: MouseButton) {
         self.app
             .window_event(Event::MouseUp(self.main_pointer.released(button)));
         self.window.request_redraw();
@@ -201,6 +164,19 @@ where
 
     fn pointer_leave(&mut self) {
         self.app.window_event(Event::MouseLeft());
+        self.window.request_redraw();
+    }
+
+    fn pointer_wheel(&mut self, delta: MouseScrollDelta) {
+        self.app
+            .window_event(Event::MouseWheel(self.main_pointer.wheel(match delta {
+                MouseScrollDelta::LineDelta(x, y) => {
+                    ScrollDelta::Lines(x.trunc() as isize, y.trunc() as isize)
+                }
+                MouseScrollDelta::PixelDelta(PhysicalPosition { x, y }) => {
+                    ScrollDelta::Precise(Vec2::new(x, y) * (1.0 / self.window.scale_factor()))
+                }
+            })));
         self.window.request_redraw();
     }
 

@@ -34,7 +34,7 @@ pub use box_constraints::BoxConstraints;
 pub use button::Button;
 pub use contexts::{CxState, EventCx, LayoutCx, LifeCycleCx, PaintCx, UpdateCx};
 pub use linear_layout::LinearLayout;
-pub use raw_event::{Event, LifeCycle, MouseEvent, PointerCrusher, ViewContext};
+pub use raw_event::{Event, LifeCycle, MouseEvent, PointerCrusher, ScrollDelta, ViewContext};
 pub use switch::Switch;
 pub use text::TextWidget;
 pub use tree_structure::TreeStructure;
