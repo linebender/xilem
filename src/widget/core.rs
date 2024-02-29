@@ -460,6 +460,11 @@ impl Pod {
         }
     }
 
+    /// Get the widget's size (as returned by the layout method)
+    pub fn size(&mut self) -> Size {
+        self.state.size
+    }
+
     // Return true if hot state has changed
     fn set_hot_state(
         widget: &mut dyn AnyWidget,

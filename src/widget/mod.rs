@@ -21,8 +21,8 @@ mod core;
 mod linear_layout;
 pub mod piet_scene_helpers;
 mod raw_event;
+mod scroll_view;
 mod switch;
-//mod scroll_view;
 mod text;
 pub mod tree_structure;
 #[allow(clippy::module_inception)]
@@ -35,6 +35,7 @@ pub use button::Button;
 pub use contexts::{CxState, EventCx, LayoutCx, LifeCycleCx, PaintCx, UpdateCx};
 pub use linear_layout::LinearLayout;
 pub use raw_event::{Event, LifeCycle, MouseEvent, PointerCrusher, ScrollDelta, ViewContext};
+pub use scroll_view::ScrollView;
 pub use switch::Switch;
 pub use text::TextWidget;
 pub use tree_structure::TreeStructure;
