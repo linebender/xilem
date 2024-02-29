@@ -19,14 +19,20 @@
 
 use crate::id::Id;
 use crate::Axis;
-use glazier::kurbo::Vec2;
-use vello::kurbo::{Affine, Size};
+use vello::kurbo::{Affine, Size, Vec2};
 use vello::peniko::Mix;
 use vello::Scene;
 
-use super::{BoxConstraints, Widget};
+use super::{BoxConstraints, ScrollDelta, Widget};
 
 use super::{contexts::LifeCycleCx, Event, EventCx, LayoutCx, LifeCycle, PaintCx, Pod, UpdateCx};
+
+// This number can be related to a platform detail, for example
+// on Windows there is SPI_GETWHEELSCROLLLINES
+// This number should also be configurable on a given scroll context.
+// When scroll gesture handling is hoisted up outside of the widget layer, as it ultimately must be,
+// this value will be abstracted away for most users.
+const LINE_HEIGHT: f64 = 53.0;
 
 pub struct ScrollView {
     child: Pod,
@@ -81,9 +87,14 @@ impl Widget for ScrollView {
 
         // Handle scroll wheel events
         if !cx.is_handled() {
-            if let Event::MouseWheel(mouse) = event {
+            if let Event::MouseWheel(mouse_event) = event {
                 let max_offset = (self.child.size().height - cx.size().height).max(0.0);
-                let new_offset = (self.offset + mouse.wheel_delta.y).max(0.0).min(max_offset);
+                let y_delta = match mouse_event.wheel_delta {
+                    Some(ScrollDelta::Precise(Vec2 { y, .. })) => y,
+                    Some(ScrollDelta::Lines(_, y)) => -y as f64 * LINE_HEIGHT,
+                    None => 0.0,
+                };
+                let new_offset = (self.offset + y_delta).max(0.0).min(max_offset);
                 if new_offset != self.offset {
                     self.offset = new_offset;
                     cx.set_handled(true);
