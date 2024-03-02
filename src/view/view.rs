@@ -147,6 +147,22 @@ impl Cx {
         result
     }
 
+    /// Same as `Cx::with_new_pod` but additionally it tracks the tree-structure,
+    /// i.e. It adds/appends a parent/child relation between the current element and the child pod
+    pub fn with_new_child_pod<S, E, F>(&mut self, f: F) -> (Id, S, Pod)
+    where
+        E: Widget + 'static,
+        F: FnOnce(&mut Cx) -> (Id, S, E),
+    {
+        let cur_pod_id = *self.element_id_path.last().expect(
+            "There's supposed to be at least one element id (the root),\
+             so this should never happen",
+        );
+        let (child_id, child_state, child_pod) = self.with_new_pod(|cx| f(cx));
+        self.tree_structure.append_child(cur_pod_id, child_pod.id());
+        (child_id, child_state, child_pod)
+    }
+
     pub fn waker(&self) -> Waker {
         futures_task::waker(Arc::new(MyWaker {
             id_path: self.id_path.clone(),
