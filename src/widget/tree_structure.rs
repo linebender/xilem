@@ -162,6 +162,7 @@ mod tests {
         assert_eq!(children, [child1]);
         assert_eq!(tree_structure.parent(child1), Some(parent));
         assert_eq!(tree_structure.parent.len(), 1);
+        assert_eq!(tree_structure.children.len(), 1);
     }
 
     #[test]
