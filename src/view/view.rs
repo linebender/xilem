@@ -153,7 +153,7 @@ impl Cx {
     /// # Panics
     ///
     /// When it's not within a `Pod` context (via `Cx::with_pod` or `Cx::with_new_pod`)
-    /// This should never happen, since the app root already inits `Pod` context
+    /// This should never happen, since the app root already inits a `Pod` context
     pub fn with_new_child_pod<S, E, F>(&mut self, f: F) -> (Id, S, Pod)
     where
         E: Widget + 'static,
@@ -174,7 +174,7 @@ impl Cx {
     /// # Panics
     ///
     /// When it's not within a `Pod` context (via `Cx::with_pod` or `Cx::with_new_pod`)
-    /// This should never happen, since the app root already inits `Pod` context
+    /// This should never happen, since the app root already inits a `Pod` context
     pub fn delete_descendants(&mut self) {
         let cur_pod_id = *self.element_id_path.last().expect(
             "There's supposed to be at least one element id (the root),\
