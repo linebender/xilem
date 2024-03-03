@@ -149,6 +149,11 @@ impl Cx {
 
     /// Same as `Cx::with_new_pod` but additionally it tracks the tree-structure,
     /// i.e. It adds/appends a parent/child relation between the current element and the child pod
+    ///
+    /// # Panics
+    ///
+    /// When it's not within a `Pod` context (via `Cx::with_pod` or `Cx::with_new_pod`)
+    /// This should never happen, since the app root already inits `Pod` context
     pub fn with_new_child_pod<S, E, F>(&mut self, f: F) -> (Id, S, Pod)
     where
         E: Widget + 'static,
@@ -161,6 +166,21 @@ impl Cx {
         let (child_id, child_state, child_pod) = self.with_new_pod(|cx| f(cx));
         self.tree_structure.append_child(cur_pod_id, child_pod.id());
         (child_id, child_state, child_pod)
+    }
+
+    /// Deletes all descendants of the current element
+    /// This currently means only the tree-structure
+    ///
+    /// # Panics
+    ///
+    /// When it's not within a `Pod` context (via `Cx::with_pod` or `Cx::with_new_pod`)
+    /// This should never happen, since the app root already inits `Pod` context
+    pub fn delete_descendants(&mut self) {
+        let cur_pod_id = *self.element_id_path.last().expect(
+            "There's supposed to be at least one element id (the root),\
+             so this should never happen",
+        );
+        self.tree_structure.delete_descendants(cur_pod_id, ..);
     }
 
     pub fn waker(&self) -> Waker {

@@ -70,6 +70,7 @@ macro_rules! generate_anyview_trait {
                         <$changeflags>::default()
                     }
                 } else {
+                    cx.delete_descendants();
                     let (new_id, new_state, new_element) = self.build(cx);
                     *id = new_id;
                     *state = Box::new(new_state);

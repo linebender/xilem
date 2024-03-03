@@ -1,5 +1,5 @@
 use crate::id::Id;
-use std::collections::HashMap;
+use std::{collections::HashMap, ops::RangeBounds};
 
 /// The pure structure (parent/children relations via ids) of the widget tree.
 #[derive(Debug, Default, Clone)]
@@ -62,15 +62,32 @@ impl TreeStructure {
             .or_insert(parent_id);
     }
 
-    /// # Panics
-    ///
-    /// When the `parent_id` doesn't exist in the structure or `range` is out of bounds this will panic
-    pub(crate) fn delete_children(&mut self, parent_id: Id, range: std::ops::Range<usize>) {
-        let children = &self.children[&parent_id][range.clone()];
-        for child in children {
-            self.parent.remove(child);
+    /// Deletes all children of `parent_id`, but not their descendants
+    pub(crate) fn delete_children(&mut self, parent_id: Id, range: impl RangeBounds<usize>) {
+        let Some(children) = self.children.get_mut(&parent_id) else {
+            return;
+        };
+        for child in children.drain(range) {
+            self.parent.remove(&child);
         }
-        self.children.get_mut(&parent_id).unwrap().drain(range);
+        if children.is_empty() {
+            self.children.remove(&parent_id);
+        }
+    }
+
+    /// Deletes all children of `parent_id` within the `range` and their descendants (recursively)
+    pub(crate) fn delete_descendants(&mut self, parent_id: Id, range: impl RangeBounds<usize>) {
+        let Some(children) = self.children.get_mut(&parent_id) else {
+            return;
+        };
+        let mut to_delete: Vec<Id> = children.drain(range).collect();
+
+        while let Some(id) = to_delete.pop() {
+            if let Some(child_ids) = self.children.remove(&id) {
+                to_delete.extend(child_ids);
+            }
+            self.parent.remove(&id);
+        }
     }
 }
 
@@ -115,6 +132,36 @@ mod tests {
         assert_eq!(tree_structure.parent(child2), None);
         assert_eq!(tree_structure.parent(child2_new), None);
         assert_eq!(tree_structure.parent(child3), Some(parent));
+
+        // delete all children
+        tree_structure.delete_children(parent, ..);
+        let children = tree_structure.children(parent);
+        assert_eq!(children, None);
+        assert_eq!(tree_structure.parent(child3), None);
+    }
+
+    #[test]
+    fn deletes_descendants() {
+        let mut tree_structure = TreeStructure::default();
+        let parent = Id::next();
+        let child1 = Id::next();
+        let child2 = Id::next();
+        let child3 = Id::next();
+        tree_structure.append_child(parent, child1);
+        tree_structure.append_child(parent, child2);
+        tree_structure.append_child(parent, child3);
+
+        let child3_child1 = Id::next();
+        let child3_child2 = Id::next();
+        tree_structure.append_child(child3, child3_child1);
+        tree_structure.append_child(child3, child3_child2);
+        let child3_child1_child1 = Id::next();
+        tree_structure.append_child(child3_child1, child3_child1_child1);
+        tree_structure.delete_descendants(parent, 1..);
+        let children = tree_structure.children(parent).unwrap();
+        assert_eq!(children, [child1]);
+        assert_eq!(tree_structure.parent(child1), Some(parent));
+        assert_eq!(tree_structure.parent.len(), 1);
     }
 
     #[test]
