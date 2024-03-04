@@ -94,7 +94,14 @@ impl Widget for ScrollView {
                     Some(ScrollDelta::Lines(_, y)) => -y as f64 * LINE_HEIGHT,
                     None => 0.0,
                 };
-                let new_offset = (self.offset + y_delta).max(0.0).min(max_offset);
+
+                #[cfg(not(target_os = "macos"))]
+                let direction = 1.0;
+
+                #[cfg(target_os = "macos")]
+                let direction = -1.0;
+
+                let new_offset = (self.offset + y_delta * direction).max(0.0).min(max_offset);
                 if new_offset != self.offset {
                     self.offset = new_offset;
                     cx.set_handled(true);
