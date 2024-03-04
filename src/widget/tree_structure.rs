@@ -62,19 +62,6 @@ impl TreeStructure {
             .or_insert(parent_id);
     }
 
-    /// Deletes all children of `parent_id`, but not their descendants
-    pub(crate) fn delete_children(&mut self, parent_id: Id, range: impl RangeBounds<usize>) {
-        let Some(children) = self.children.get_mut(&parent_id) else {
-            return;
-        };
-        for child in children.drain(range) {
-            self.parent.remove(&child);
-        }
-        if children.is_empty() {
-            self.children.remove(&parent_id);
-        }
-    }
-
     /// Deletes all children of `parent_id` within the `range` and their descendants (recursively)
     pub(crate) fn delete_descendants(&mut self, parent_id: Id, range: impl RangeBounds<usize>) {
         let Some(children) = self.children.get_mut(&parent_id) else {
@@ -87,6 +74,12 @@ impl TreeStructure {
                 to_delete.extend(child_ids);
             }
             self.parent.remove(&id);
+        }
+        let Some(children) = self.children.get_mut(&parent_id) else {
+            return;
+        };
+        if children.is_empty() {
+            self.children.remove(&parent_id);
         }
     }
 }
@@ -125,7 +118,7 @@ mod tests {
         assert_eq!(tree_structure.parent(child3), Some(parent));
 
         // delete children
-        tree_structure.delete_children(parent, 0..2);
+        tree_structure.delete_descendants(parent, 0..2);
         let children = tree_structure.children(parent).unwrap();
         assert_eq!(children, [child3]);
         assert_eq!(tree_structure.parent(child1), None);
@@ -134,7 +127,7 @@ mod tests {
         assert_eq!(tree_structure.parent(child3), Some(parent));
 
         // delete all children
-        tree_structure.delete_children(parent, ..);
+        tree_structure.delete_descendants(parent, ..);
         let children = tree_structure.children(parent);
         assert_eq!(children, None);
         assert_eq!(tree_structure.parent(child3), None);
