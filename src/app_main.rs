@@ -173,9 +173,9 @@ where
                 MouseScrollDelta::LineDelta(x, y) => {
                     ScrollDelta::Lines(-x.trunc() as isize, -y.trunc() as isize)
                 }
-                MouseScrollDelta::PixelDelta(PhysicalPosition { x, y }) => ScrollDelta::Precise(
-                    Vec2::new(-x, -y) * (1.0 / self.window.scale_factor()),
-                ),
+                MouseScrollDelta::PixelDelta(PhysicalPosition { x, y }) => {
+                    ScrollDelta::Precise(Vec2::new(-x, -y) * (1.0 / self.window.scale_factor()))
+                }
             })));
         self.window.request_redraw();
     }
