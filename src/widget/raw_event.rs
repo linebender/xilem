@@ -119,7 +119,9 @@ impl PointerCrusher {
         self.e.wheel_delta = None;
         self.e.buttons.remove(&button);
         self.e.button = Some(button);
-        self.e.clone()
+        let r = self.e.clone();
+        self.e.count = 0;
+        r
     }
 
     pub fn moved(&mut self, pos: Point) -> MouseEvent {
