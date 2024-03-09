@@ -19,6 +19,9 @@ license = "Apache-2.0"
 xilem_core = { version = "0.1.0", path = "crates/xilem_core" }
 kurbo = "0.11.0"
 
+[workspace.lints]
+clippy.semicolon_if_nothing_returned = "warn"
+
 [package]
 name = "xilem"
 version = "0.1.0"
@@ -38,6 +41,9 @@ rustdoc-args = ["--cfg", "docsrs"]
 default-target = "x86_64-pc-windows-msvc"
 # rustdoc-scrape-examples tracking issue https://github.com/rust-lang/rust/issues/88791
 cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
+
+[lints]
+workspace = true
 
 [features]
 default = ["x11", "taffy"]
