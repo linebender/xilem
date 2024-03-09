@@ -74,7 +74,7 @@ impl Widget for Switch {
             Event::MouseUp(_) => {
                 if self.is_dragging {
                     if self.is_on != (self.knob_position.x > SWITCH_WIDTH / 2.0) {
-                        cx.add_message(Message::new(self.id_path.clone(), ()))
+                        cx.add_message(Message::new(self.id_path.clone(), ()));
                     }
                 } else if cx.is_active() {
                     cx.add_message(Message::new(self.id_path.clone(), ()));

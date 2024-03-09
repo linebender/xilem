@@ -127,7 +127,7 @@ impl<T, A, VT: ViewSequence<T, A>> View<T, A> for TaffyLayout<T, A, VT> {
 
         if self.background_color != prev.background_color {
             element.background_color = self.background_color;
-            flags |= ChangeFlags::PAINT
+            flags |= ChangeFlags::PAINT;
         }
 
         if self.style != prev.style {
@@ -137,7 +137,7 @@ impl<T, A, VT: ViewSequence<T, A>> View<T, A> for TaffyLayout<T, A, VT> {
 
         // Clear layout cache if the layout ChangeFlag is set
         if flags.contains(ChangeFlags::LAYOUT) || flags.contains(ChangeFlags::TREE) {
-            element.cache.clear()
+            element.cache.clear();
         }
 
         flags

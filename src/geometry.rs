@@ -62,7 +62,7 @@ impl Axis {
 
     /// Updates the scalar of value on the orthogonal axis.
     pub fn set_minor<T: Dim2>(self, value: &mut T, major: T::Scalar) {
-        self.cross().set_major(value, major)
+        self.cross().set_major(value, major);
     }
 
     /// Maps the scalar of the value on this axis.

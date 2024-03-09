@@ -51,7 +51,7 @@ impl<T: 'static, V: View<T> + 'static, F: FnMut(&mut T) -> V + 'static> App<T, V
     pub fn run(self, root: &web_sys::HtmlElement) {
         self.0.borrow_mut().ensure_app(root);
         // Latter may not be necessary, we have an rc loop.
-        std::mem::forget(self)
+        std::mem::forget(self);
     }
 }
 

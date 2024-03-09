@@ -21,10 +21,10 @@ fn set_attribute(element: &web_sys::Element, name: &str, value: &str) {
     // doesn't work after the value has been changed.
     if name == "value" {
         let element: &web_sys::HtmlInputElement = element.dyn_ref().unwrap_throw();
-        element.set_value(value)
+        element.set_value(value);
     } else if name == "checked" {
         let element: &web_sys::HtmlInputElement = element.dyn_ref().unwrap_throw();
-        element.set_checked(true)
+        element.set_checked(true);
     } else {
         element.set_attribute(name, value).unwrap_throw();
     }
@@ -35,7 +35,7 @@ fn remove_attribute(element: &web_sys::Element, name: &str) {
     // doesn't work after the value has been changed.
     if name == "checked" {
         let element: &web_sys::HtmlInputElement = element.dyn_ref().unwrap_throw();
-        element.set_checked(false)
+        element.set_checked(false);
     } else {
         element.remove_attribute(name).unwrap_throw();
     }
