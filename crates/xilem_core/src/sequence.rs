@@ -173,7 +173,7 @@ macro_rules! generate_viewsequence_trait {
                         el,
                     )
                 });
-                elements.mark(flags, cx)
+                pod.mark(flags)
             }
 
             fn message(
