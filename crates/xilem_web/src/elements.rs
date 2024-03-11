@@ -123,7 +123,7 @@ impl<'a, 'b, 'c> ElementsSplice for ChildrenSplice<'a, 'b, 'c> {
                 self.node_list = Some(self.parent.child_nodes());
                 self.node_list.as_ref().unwrap()
             };
-            let cur_child = self.children.peek_mut().unwrap_throw();
+            let cur_child = self.children.last_mutated_mut().unwrap_throw();
             let old_child = node_list.get(self.child_idx).unwrap_throw();
             self.parent
                 .replace_child(cur_child.0.as_node_ref(), &old_child)

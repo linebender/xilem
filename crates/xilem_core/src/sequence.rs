@@ -91,7 +91,7 @@ macro_rules! generate_viewsequence_trait {
 
             fn mark(&mut self, changeflags: $changeflags, _cx: &mut $cx) -> $changeflags
             {
-                self.peek_mut().map(|pod| pod.mark(changeflags)).unwrap_or_default()
+                self.last_mutated_mut().map(|pod| pod.mark(changeflags)).unwrap_or_default()
             }
 
             fn delete(&mut self, n: usize, _cx: &mut $cx) {
