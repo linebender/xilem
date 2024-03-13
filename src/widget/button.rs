@@ -72,7 +72,7 @@ impl Widget for Button {
 
     fn lifecycle(&mut self, cx: &mut LifeCycleCx, event: &LifeCycle) {
         if let LifeCycle::HotChanged(_) = event {
-            cx.request_paint()
+            cx.request_paint();
         }
     }
 

@@ -149,7 +149,7 @@ impl WidgetState {
     }
 
     fn request(&mut self, flags: PodFlags) {
-        self.flags |= flags
+        self.flags |= flags;
     }
 }
 

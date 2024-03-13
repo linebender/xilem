@@ -126,5 +126,5 @@ fn app_logic(state: &mut AppState) -> impl View<AppState> {
 
 fn main() {
     let app = App::new(AppState::new(), app_logic);
-    AppLauncher::new(app).run()
+    AppLauncher::new(app).run();
 }

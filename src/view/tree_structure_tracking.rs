@@ -38,7 +38,7 @@ impl<'a, 'b> ElementsSplice for TreeStructureSplice<'a, 'b> {
     fn mark(&mut self, changeflags: ChangeFlags, cx: &mut Cx) -> ChangeFlags {
         if changeflags.contains(ChangeFlags::tree_structure()) {
             let current_id = self.current_child_id.take().unwrap();
-            let new_id = self.splice.peek().unwrap().id();
+            let new_id = self.splice.last_mutated().unwrap().id();
             if current_id != new_id {
                 cx.tree_structure
                     .change_child(cx.element_id(), self.splice.len() - 1, new_id);
