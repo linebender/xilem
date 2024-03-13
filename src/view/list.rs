@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::view::{Cx, VecSplice, ViewSequence};
-use crate::widget::{ChangeFlags, Pod};
+use crate::view::{Cx, ElementsSplice, ViewSequence};
+use crate::widget::ChangeFlags;
 use crate::MessageResult;
 use std::any::Any;
 use std::marker::PhantomData;
@@ -49,7 +49,7 @@ impl<T, A, VT: ViewSequence<T, A>, F: Fn(usize) -> VT + Send + Sync> ViewSequenc
 {
     type State = ListState<T, A, VT>;
 
-    fn build(&self, cx: &mut Cx, elements: &mut Vec<Pod>) -> Self::State {
+    fn build(&self, cx: &mut Cx, elements: &mut dyn ElementsSplice) -> Self::State {
         let leading = elements.len();
 
         let views =
@@ -72,39 +72,39 @@ impl<T, A, VT: ViewSequence<T, A>, F: Fn(usize) -> VT + Send + Sync> ViewSequenc
         cx: &mut Cx,
         prev: &Self,
         state: &mut Self::State,
-        element: &mut VecSplice<Pod>,
+        elements: &mut dyn ElementsSplice,
     ) -> ChangeFlags {
         // Common length
-        let leading = element.len();
+        let leading = elements.len();
 
         let mut flags = (0..(self.items.min(prev.items)))
             .zip(&mut state.views)
             .fold(ChangeFlags::empty(), |flags, (index, (prev, state))| {
                 let vt = (self.build)(index);
-                let vt_flags = vt.rebuild(cx, prev, state, element);
+                let vt_flags = vt.rebuild(cx, prev, state, elements);
                 *prev = vt;
                 flags | vt_flags
             });
 
         if self.items < prev.items {
             for (prev, state) in state.views.splice(self.items.., []) {
-                element.delete(prev.count(&state));
+                elements.delete(prev.count(&state), cx);
             }
         }
 
         while self.items > state.views.len() {
             let vt = (self.build)(state.views.len());
-            let vt_state = element.as_vec(|vec| vt.build(cx, vec));
+            let vt_state = vt.build(cx, elements);
             state.views.push((vt, vt_state));
         }
 
-        // We only check if our length changes. If one of the sub sequences changes thier size they
+        // We only check if our length changes. If one of the sub sequences changes their size they
         // have to set ChangeFlags::all() them self's.
         if self.items != prev.items {
             flags |= ChangeFlags::all();
         }
 
-        state.element_count = element.len() - leading;
+        state.element_count = elements.len() - leading;
 
         flags
     }

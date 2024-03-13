@@ -17,7 +17,10 @@ license = "Apache-2.0"
 
 [workspace.dependencies]
 xilem_core = { version = "0.1.0", path = "crates/xilem_core" }
-kurbo = "0.9.1"
+kurbo = "0.11.0"
+
+[workspace.lints]
+clippy.semicolon_if_nothing_returned = "warn"
 
 [package]
 name = "xilem"
@@ -39,32 +42,35 @@ default-target = "x86_64-pc-windows-msvc"
 # rustdoc-scrape-examples tracking issue https://github.com/rust-lang/rust/issues/88791
 cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
 
+[lints]
+workspace = true
+
 [features]
 default = ["x11", "taffy"]
 
-x11 = ["glazier/x11"]
-wayland = ["glazier/wayland"]
+x11 = ["winit/x11"]
+wayland = ["winit/wayland"]
 taffy = ["dep:taffy"]
 
 [dependencies]
 xilem_core.workspace = true
-taffy = { git = "https://github.com/DioxusLabs/taffy", rev = "7781c70241f7f572130c13106f2a869a9cf80885", optional = true }
-vello = { git = "https://github.com/linebender/vello", rev = "9d7c4f00d8db420337706771a37937e9025e089c" }
-wgpu = "0.17.0"
-parley = { git = "https://github.com/dfrg/parley", rev = "2371bf4b702ec91edee2d58ffb2d432539580e1e" }
-tokio = { version = "1.21", features = ["full"] }
+taffy = { version = "0.4.0", optional = true }
+vello = { git = "https://github.com/linebender/vello", rev = "6fa114c020f8656947e283bdf4bed96fe7a54c70" }
+# vello currently depends on wgpu 0.19.3, but a fix for a hang on NVIDIA Vk drivers will be postponed
+# until 0.20 because it depends on a breaking change to wgpu-hal. For now this is a working revision.
+wgpu = { git = "https://github.com/gfx-rs/wgpu.git", rev = "2d8d045453855f6594c42a6988692253da195323"}
+parley = { git = "https://github.com/dfrg/parley", rev = "1940d1ae9f2a9b44b7c18967147ffa7d345fdafd" }
+tokio = { version = "1.35", features = ["full"] }
 futures-task = "0.3"
 bitflags = "2"
 tracing = "0.1.37"
-accesskit = "0.11"
 fnv = "1.0.7"
-
-[dependencies.glazier]
-git = "https://github.com/linebender/glazier"
-rev = "19a01ba8a97f15bf499ac64e6ea9690d7390deb5"
-default-features = false
-features = ["accesskit"]
+instant = { version = "0.1.6", features = ["wasm-bindgen"] }
+winit = { version = "0.29", features = ["rwh_05"] }
 
 [dev-dependencies]
 env_logger = "0.10.0"
 test-log = "0.2.11"
+
+[patch.crates-io]
+wgpu = { git = "https://github.com/gfx-rs/wgpu.git", rev = "2d8d045453855f6594c42a6988692253da195323"}

@@ -12,11 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use glazier::kurbo::Circle;
 use vello::{
-    kurbo::{Point, Size},
+    kurbo::{Circle, Point, Size},
     peniko::Color,
-    SceneBuilder,
+    Scene,
 };
 
 use crate::{IdPath, Message};
@@ -24,8 +23,7 @@ use crate::{IdPath, Message};
 use super::{
     contexts::LifeCycleCx,
     piet_scene_helpers::{fill_color, stroke},
-    AccessCx, BoxConstraints, ChangeFlags, Event, EventCx, LayoutCx, LifeCycle, PaintCx, UpdateCx,
-    Widget,
+    BoxConstraints, ChangeFlags, Event, EventCx, LayoutCx, LifeCycle, PaintCx, UpdateCx, Widget,
 };
 
 pub struct Switch {
@@ -76,7 +74,7 @@ impl Widget for Switch {
             Event::MouseUp(_) => {
                 if self.is_dragging {
                     if self.is_on != (self.knob_position.x > SWITCH_WIDTH / 2.0) {
-                        cx.add_message(Message::new(self.id_path.clone(), ()))
+                        cx.add_message(Message::new(self.id_path.clone(), ()));
                     }
                 } else if cx.is_active() {
                     cx.add_message(Message::new(self.id_path.clone(), ()));
@@ -101,13 +99,6 @@ impl Widget for Switch {
                 }
                 cx.request_paint();
             }
-            Event::TargetedAccessibilityAction(request) => {
-                if request.action == accesskit::Action::Default
-                    && cx.is_accesskit_target(request.target)
-                {
-                    cx.add_message(Message::new(self.id_path.clone(), ()));
-                }
-            }
             _ => (),
         };
     }
@@ -126,20 +117,14 @@ impl Widget for Switch {
         Size::new(SWITCH_WIDTH, SWITCH_HEIGHT)
     }
 
-    fn accessibility(&mut self, cx: &mut AccessCx) {
-        let mut builder = accesskit::NodeBuilder::new(accesskit::Role::Switch);
-        builder.set_default_action_verb(accesskit::DefaultActionVerb::Click);
-        cx.push_node(builder);
-    }
-
-    fn paint(&mut self, cx: &mut PaintCx, builder: &mut SceneBuilder) {
+    fn paint(&mut self, cx: &mut PaintCx, scene: &mut Scene) {
         // Change the position of of the knob based on its state
         // If the knob is currently being dragged with the mouse use the position that was set in MouseMove
         if !self.is_dragging {
             self.knob_position.x = if self.is_on { ON_POS } else { OFF_POS }
         }
 
-        // Paint the Swith background
+        // Paint the Switch background
         // The on/off states have different colors
         // The transition between the two color is controlled by the knob position and calculated using the opacity
         let opacity = (self.knob_position.x - OFF_POS) / (ON_POS - OFF_POS);
@@ -149,8 +134,8 @@ impl Widget for Switch {
 
         let background_rect = cx.size().to_rect().to_rounded_rect(SWITCH_HEIGHT / 2.);
 
-        fill_color(builder, &background_rect, background_off_state);
-        fill_color(builder, &background_rect, background_on_state);
+        fill_color(scene, &background_rect, background_off_state);
+        fill_color(scene, &background_rect, background_on_state);
 
         // Paint the Switch knob
         let knob_border_color = Color::DIM_GRAY;
@@ -178,7 +163,7 @@ impl Widget for Switch {
         };
 
         let knob_circle = Circle::new(self.knob_position, knob_size);
-        fill_color(builder, &knob_circle, knob_color);
-        stroke(builder, &knob_circle, knob_border_color, 2.0);
+        fill_color(scene, &knob_circle, knob_color);
+        stroke(scene, &knob_circle, knob_border_color, 2.0);
     }
 }

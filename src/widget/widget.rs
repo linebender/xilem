@@ -16,11 +16,10 @@ use std::any::Any;
 use std::ops::DerefMut;
 
 use crate::geometry::Axis;
-use vello::kurbo::Size;
-use vello::SceneBuilder;
+use vello::{kurbo::Size, Scene};
 
 use super::box_constraints::BoxConstraints;
-use super::contexts::{AccessCx, EventCx, LayoutCx, LifeCycleCx, PaintCx, UpdateCx};
+use super::contexts::{EventCx, LayoutCx, LifeCycleCx, PaintCx, UpdateCx};
 use super::raw_event::{Event, LifeCycle};
 
 /// A basic widget trait.
@@ -92,9 +91,6 @@ pub trait Widget {
     /// [`set_origin`]: struct.WidgetPod.html#method.set_origin
     fn layout(&mut self, cx: &mut LayoutCx, bc: &BoxConstraints) -> Size;
 
-    /// Update the accessibility tree.
-    fn accessibility(&mut self, cx: &mut AccessCx);
-
     /// Paint the widget appearance.
     ///
     /// The [`PaintCtx`] derefs to something that implements the [`RenderContext`]
@@ -108,7 +104,7 @@ pub trait Widget {
     ///
     /// [`PaintCtx`]: struct.PaintCtx.html
     /// [`RenderContext`]: trait.RenderContext.html
-    fn paint(&mut self, cx: &mut PaintCx, builder: &mut SceneBuilder);
+    fn paint(&mut self, cx: &mut PaintCx, scene: &mut Scene);
 
     /*
     #[doc(hidden)]
@@ -231,11 +227,7 @@ impl Widget for Box<dyn AnyWidget> {
         self.deref_mut().compute_max_intrinsic(axis, ctx, bc)
     }
 
-    fn accessibility(&mut self, cx: &mut AccessCx) {
-        self.deref_mut().accessibility(cx);
-    }
-
-    fn paint(&mut self, cx: &mut PaintCx, builder: &mut SceneBuilder) {
-        self.deref_mut().paint(cx, builder);
+    fn paint(&mut self, cx: &mut PaintCx, scene: &mut Scene) {
+        self.deref_mut().paint(cx, scene);
     }
 }
