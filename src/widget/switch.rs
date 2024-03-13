@@ -23,8 +23,7 @@ use crate::{IdPath, Message};
 use super::{
     contexts::LifeCycleCx,
     piet_scene_helpers::{fill_color, stroke},
-    AccessCx, BoxConstraints, ChangeFlags, Event, EventCx, LayoutCx, LifeCycle, PaintCx, UpdateCx,
-    Widget,
+    BoxConstraints, ChangeFlags, Event, EventCx, LayoutCx, LifeCycle, PaintCx, UpdateCx, Widget,
 };
 
 pub struct Switch {
@@ -75,7 +74,7 @@ impl Widget for Switch {
             Event::MouseUp(_) => {
                 if self.is_dragging {
                     if self.is_on != (self.knob_position.x > SWITCH_WIDTH / 2.0) {
-                        cx.add_message(Message::new(self.id_path.clone(), ()))
+                        cx.add_message(Message::new(self.id_path.clone(), ()));
                     }
                 } else if cx.is_active() {
                     cx.add_message(Message::new(self.id_path.clone(), ()));
@@ -100,13 +99,6 @@ impl Widget for Switch {
                 }
                 cx.request_paint();
             }
-            Event::TargetedAccessibilityAction(request) => {
-                if request.action == accesskit::Action::Default
-                    && cx.is_accesskit_target(request.target)
-                {
-                    cx.add_message(Message::new(self.id_path.clone(), ()));
-                }
-            }
             _ => (),
         };
     }
@@ -123,12 +115,6 @@ impl Widget for Switch {
 
     fn layout(&mut self, _cx: &mut LayoutCx, _bc: &BoxConstraints) -> Size {
         Size::new(SWITCH_WIDTH, SWITCH_HEIGHT)
-    }
-
-    fn accessibility(&mut self, cx: &mut AccessCx) {
-        let mut builder = accesskit::NodeBuilder::new(accesskit::Role::Switch);
-        builder.set_default_action_verb(accesskit::DefaultActionVerb::Click);
-        cx.push_node(builder);
     }
 
     fn paint(&mut self, cx: &mut PaintCx, scene: &mut Scene) {

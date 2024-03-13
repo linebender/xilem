@@ -17,4 +17,7 @@ default-target = "x86_64-pc-windows-msvc"
 # rustdoc-scrape-examples tracking issue https://github.com/rust-lang/rust/issues/88791
 cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
 
+[lints]
+workspace = true
+
 [dependencies]

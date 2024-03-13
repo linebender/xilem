@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::geometry::Axis;
-use crate::widget::{AccessCx, BoxConstraints, Event};
-use accesskit::NodeId;
+use crate::{
+    geometry::Axis,
+    widget::{BoxConstraints, Event},
+};
 use vello::{
     kurbo::{Affine, Point, Size},
     peniko::{Brush, Color, Fill},
@@ -406,23 +407,6 @@ impl Widget for TaffyLayout {
         );
 
         output.size.get_abs(taffy_axis) as f64
-    }
-
-    fn accessibility(&mut self, cx: &mut AccessCx) {
-        for child in &mut self.children {
-            child.accessibility(cx);
-        }
-
-        if cx.is_requested() {
-            let mut builder = accesskit::NodeBuilder::new(accesskit::Role::GenericContainer);
-            builder.set_children(
-                self.children
-                    .iter()
-                    .map(|pod| pod.id().into())
-                    .collect::<Vec<NodeId>>(),
-            );
-            cx.push_node(builder);
-        }
     }
 
     fn paint(&mut self, cx: &mut PaintCx, scene: &mut Scene) {

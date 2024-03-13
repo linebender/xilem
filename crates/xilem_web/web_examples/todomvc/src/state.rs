@@ -75,7 +75,7 @@ impl AppState {
         if let Some(ref mut todo) = self.todos.iter_mut().find(|todo| todo.id == id) {
             todo.title_editing.clear();
             todo.title_editing.push_str(&todo.title);
-            self.editing_id = Some(id)
+            self.editing_id = Some(id);
         }
     }
 
@@ -96,7 +96,7 @@ impl AppState {
     /// Save the current state to local_storage
     pub fn save(&self) {
         let raw = serde_json::to_string(self).unwrap_throw();
-        storage().set_item(KEY, &raw).unwrap_throw()
+        storage().set_item(KEY, &raw).unwrap_throw();
     }
 }
 

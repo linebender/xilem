@@ -26,7 +26,7 @@ fn app_logic(data: &mut AppData) -> impl View<AppData> {
                 data.count = 0;
             }),
             switch(data.is_on, |data: &mut AppData, value: bool| {
-                data.is_on = value
+                data.is_on = value;
             }),
         )),
     ))
@@ -55,5 +55,5 @@ fn main() {
     };
 
     let app = App::new(data, app_logic);
-    AppLauncher::new(app).run()
+    AppLauncher::new(app).run();
 }
