@@ -119,10 +119,4 @@ impl Widget for TextWidget {
             crate::text::render_text(scene, Affine::IDENTITY, layout);
         }
     }
-
-    fn accessibility(&mut self, cx: &mut super::AccessCx) {
-        let mut builder = accesskit::NodeBuilder::new(accesskit::Role::StaticText);
-        builder.set_value(self.text.clone());
-        cx.push_node(builder);
-    }
 }

@@ -50,6 +50,22 @@ impl<'a, 'b, T> VecSplice<'a, 'b, T> {
         &mut self.v[ix]
     }
 
+    pub fn last_mutated(&self) -> Option<&T> {
+        if self.ix == 0 {
+            None
+        } else {
+            self.v.get(self.ix - 1)
+        }
+    }
+
+    pub fn last_mutated_mut(&mut self) -> Option<&mut T> {
+        if self.ix == 0 {
+            None
+        } else {
+            self.v.get_mut(self.ix - 1)
+        }
+    }
+
     pub fn len(&self) -> usize {
         self.ix
     }

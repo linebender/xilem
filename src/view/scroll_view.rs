@@ -14,9 +14,11 @@
 
 use std::{any::Any, marker::PhantomData};
 
-use crate::{event::EventResult, id::Id, View};
+use crate::{view::View, widget::ChangeFlags, MessageResult};
 
-use super::Cx;
+use xilem_core::Id;
+
+use super::{Cx, ViewMarker, ViewSequence};
 
 pub struct ScrollView<T, A, C> {
     child: C,
@@ -36,18 +38,20 @@ impl<T, A, C> ScrollView<T, A, C> {
     }
 }
 
+impl<T, A, VT: ViewSequence<T, A>> ViewMarker for ScrollView<T, A, VT> {}
+
 impl<T, A, C: View<T, A>> View<T, A> for ScrollView<T, A, C>
 where
     C::Element: 'static,
 {
     type State = (Id, C::State);
 
-    type Element = crate::widget::scroll_view::ScrollView;
+    type Element = crate::widget::ScrollView;
 
     fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
         let (id, (child_id, child_state, child_element)) =
             cx.with_new_id(|cx| self.child.build(cx));
-        let element = crate::widget::scroll_view::ScrollView::new(child_element);
+        let element = crate::widget::ScrollView::new(child_element);
         (id, (child_id, child_state), element)
     }
 
@@ -58,27 +62,27 @@ where
         id: &mut Id,
         state: &mut Self::State,
         element: &mut Self::Element,
-    ) -> bool {
+    ) -> ChangeFlags {
         cx.with_id(*id, |cx| {
             let child_element = element.child_mut().downcast_mut().unwrap();
-            let changed =
-                self.child
-                    .rebuild(cx, &prev.child, &mut state.0, &mut state.1, child_element);
-            if changed {
-                element.child_mut().request_update();
-            }
-            changed
+            self.child
+                .rebuild(cx, &prev.child, &mut state.0, &mut state.1, child_element)
         })
     }
 
-    fn event(
+    fn message(
         &self,
         id_path: &[Id],
         state: &mut Self::State,
-        event: Box<dyn Any>,
+        message: Box<dyn Any>,
         app_state: &mut T,
-    ) -> EventResult<A> {
-        let tl = &id_path[1..];
-        self.child.event(tl, &mut state.1, event, app_state)
+    ) -> MessageResult<A> {
+        match id_path {
+            [child_id, rest_path @ ..] if *child_id == state.0 => {
+                self.child
+                    .message(rest_path, &mut state.1, message, app_state)
+            }
+            _ => MessageResult::Stale(message),
+        }
     }
 }

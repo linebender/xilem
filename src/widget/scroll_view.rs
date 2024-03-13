@@ -17,17 +17,22 @@
 //! There's a lot more functionality in the Druid version, including
 //! control over scrolling axes, ability to scroll to content, etc.
 
-use druid_shell::{
-    kurbo::{Affine, Point, Rect, Size, Vec2},
-    piet::RenderContext,
-};
+use crate::id::Id;
+use crate::Axis;
+use vello::kurbo::{Affine, Size, Vec2};
+use vello::peniko::Mix;
+use vello::Scene;
 
-use crate::Widget;
+use super::{BoxConstraints, ScrollDelta, Widget};
 
-use super::{
-    contexts::LifeCycleCx, EventCx, LayoutCx, LifeCycle, PaintCx, Pod, PreparePaintCx, RawEvent,
-    UpdateCx,
-};
+use super::{contexts::LifeCycleCx, Event, EventCx, LayoutCx, LifeCycle, PaintCx, Pod, UpdateCx};
+
+// This number can be related to a platform detail, for example
+// on Windows there is SPI_GETWHEELSCROLLLINES
+// This number should also be configurable on a given scroll context.
+// When scroll gesture handling is hoisted up outside of the widget layer, as it ultimately must be,
+// this value will be abstracted away for most users.
+const LINE_HEIGHT: f64 = 53.0;
 
 pub struct ScrollView {
     child: Pod,
@@ -37,7 +42,7 @@ pub struct ScrollView {
 impl ScrollView {
     pub fn new(child: impl Widget + 'static) -> Self {
         ScrollView {
-            child: Pod::new(child),
+            child: Pod::new(child, Id::next()),
             offset: 0.0,
         }
     }
@@ -47,41 +52,53 @@ impl ScrollView {
     }
 }
 
+// TODO: scroll bars
 impl Widget for ScrollView {
-    fn event(&mut self, cx: &mut EventCx, event: &RawEvent) {
+    fn event(&mut self, cx: &mut EventCx, event: &Event) {
+        // Pass event through to child, adjusting the coordinates of mouse events
+        // by the scroll offset first.
         // TODO: scroll wheel + click-drag on scroll bars
         let offset = Vec2::new(0.0, self.offset);
         let child_event = match event {
-            RawEvent::MouseDown(mouse_event) => {
+            Event::MouseDown(mouse_event) => {
                 let mut mouse_event = mouse_event.clone();
                 mouse_event.pos += offset;
-                RawEvent::MouseDown(mouse_event)
+                Event::MouseDown(mouse_event)
             }
-            RawEvent::MouseUp(mouse_event) => {
+            Event::MouseUp(mouse_event) => {
                 let mut mouse_event = mouse_event.clone();
                 mouse_event.pos += offset;
-                RawEvent::MouseUp(mouse_event)
+                Event::MouseUp(mouse_event)
             }
-            RawEvent::MouseMove(mouse_event) => {
+            Event::MouseMove(mouse_event) => {
                 let mut mouse_event = mouse_event.clone();
                 mouse_event.pos += offset;
-                RawEvent::MouseMove(mouse_event)
+                Event::MouseMove(mouse_event)
             }
-            RawEvent::MouseWheel(mouse_event) => {
+            Event::MouseWheel(mouse_event) => {
                 let mut mouse_event = mouse_event.clone();
                 mouse_event.pos += offset;
-                RawEvent::MouseWheel(mouse_event)
+                Event::MouseWheel(mouse_event)
             }
             _ => event.clone(),
         };
+
         self.child.event(cx, &child_event);
+
+        // Handle scroll wheel events
         if !cx.is_handled() {
-            if let RawEvent::MouseWheel(mouse) = event {
-                let new_offset = (self.offset + mouse.wheel_delta.y).max(0.0);
+            if let Event::MouseWheel(mouse_event) = event {
+                let max_offset = (self.child.size().height - cx.size().height).max(0.0);
+                let y_delta = match mouse_event.wheel_delta {
+                    Some(ScrollDelta::Precise(Vec2 { y, .. })) => y,
+                    Some(ScrollDelta::Lines(_, y)) => -y as f64 * LINE_HEIGHT,
+                    None => 0.0,
+                };
+                let new_offset = (self.offset + y_delta).max(0.0).min(max_offset);
                 if new_offset != self.offset {
                     self.offset = new_offset;
                     cx.set_handled(true);
-                    // TODO: request paint
+                    cx.request_paint();
                 }
             }
         }
@@ -95,28 +112,57 @@ impl Widget for ScrollView {
         self.child.update(cx);
     }
 
-    fn measure(&mut self, cx: &mut LayoutCx) -> (Size, Size) {
-        let _ = self.child.measure(cx);
-        (Size::ZERO, Size::new(1e9, 1e9))
+    fn compute_max_intrinsic(&mut self, axis: Axis, cx: &mut LayoutCx, bc: &BoxConstraints) -> f64 {
+        match axis {
+            Axis::Horizontal => {
+                if bc.min().width.is_sign_negative() {
+                    0.0
+                } else {
+                    let length =
+                        self.child
+                            .compute_max_intrinsic(axis, cx, &bc.unbound_max_height());
+                    length.min(bc.max().width).max(bc.min().width)
+                }
+            }
+            Axis::Vertical => {
+                if bc.min().height.is_sign_negative() {
+                    0.0
+                } else {
+                    let length =
+                        self.child
+                            .compute_max_intrinsic(axis, cx, &bc.unbound_max_height());
+                    length.min(bc.max().height).max(bc.min().height)
+                }
+            }
+        }
     }
 
-    fn layout(&mut self, cx: &mut LayoutCx, proposed_size: Size) -> Size {
-        let child_proposed = Size::new(proposed_size.width, 1e9);
-        let child_size = self.child.layout(cx, child_proposed);
-        Size::new(child_size.width, proposed_size.height)
+    fn layout(&mut self, cx: &mut LayoutCx, bc: &BoxConstraints) -> Size {
+        cx.request_paint();
+
+        let cbc = BoxConstraints::new(
+            Size::new(0.0, 0.0),
+            Size::new(bc.max().width, f64::INFINITY),
+        );
+        let child_size = self.child.layout(cx, &cbc);
+        let size = Size::new(
+            child_size.width.min(bc.max().width),
+            child_size.height.min(bc.max().height),
+        );
+
+        // Ensure that scroll offset is within bounds
+        let max_offset = (child_size.height - size.height).max(0.0);
+        if max_offset < self.offset {
+            self.offset = max_offset;
+        }
+
+        size
     }
 
-    fn prepare_paint(&mut self, cx: &mut PreparePaintCx, visible: Rect) {
-        let child_visible = visible + Vec2::new(0.0, self.offset);
-        self.child.prepare_paint(cx, child_visible);
-    }
-
-    fn paint(&mut self, cx: &mut PaintCx) {
-        cx.with_save(|cx| {
-            let size = cx.size();
-            cx.clip(size.to_rect());
-            cx.transform(Affine::translate((0.0, -self.offset)));
-            self.child.paint_raw(cx);
-        });
+    fn paint(&mut self, cx: &mut PaintCx, scene: &mut Scene) {
+        scene.push_layer(Mix::Normal, 1.0, Affine::IDENTITY, &cx.size().to_rect());
+        let fragment = self.child.paint_custom(cx);
+        scene.append(fragment, Some(Affine::translate((0.0, -self.offset))));
+        scene.pop_layer();
     }
 }

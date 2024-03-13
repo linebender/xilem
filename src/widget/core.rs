@@ -24,12 +24,12 @@ use vello::{
 };
 
 use super::widget::{AnyWidget, Widget};
+use crate::id::Id;
 use crate::Axis;
-use crate::{id::Id, Bloom};
 
 use super::{
-    contexts::LifeCycleCx, AccessCx, BoxConstraints, CxState, Event, EventCx, LayoutCx, LifeCycle,
-    PaintCx, UpdateCx,
+    contexts::LifeCycleCx, BoxConstraints, CxState, Event, EventCx, LayoutCx, LifeCycle, PaintCx,
+    UpdateCx,
 };
 
 bitflags! {
@@ -106,12 +106,6 @@ pub(crate) struct WidgetState {
     pub(crate) parent_window_origin: Point,
     /// The size of the widget.
     pub(crate) size: Size,
-    /// A bloom filter containing this widgets is and the ones of its children.
-    // TODO: decide the final solution for this. This is probably going to be a global structure
-    //       tracking parent child relations in the tree:
-    //           parents: HashMap<Id, Id>,
-    //           children: HashMap<Id, Vec<Id>>,
-    pub(crate) sub_tree: Bloom<Id>,
 }
 
 impl PodFlags {
@@ -140,29 +134,22 @@ impl ChangeFlags {
 }
 
 impl WidgetState {
-    pub(crate) fn new() -> Self {
-        let id = Id::next();
+    pub(crate) fn new(id: Id) -> Self {
         WidgetState {
             id,
             flags: PodFlags::INIT_FLAGS,
             origin: Default::default(),
             parent_window_origin: Default::default(),
             size: Default::default(),
-            sub_tree: Default::default(),
         }
     }
 
     fn merge_up(&mut self, child_state: &mut WidgetState) {
         self.flags |= child_state.flags.upwards();
-        self.sub_tree = self.sub_tree.union(child_state.sub_tree);
     }
 
     fn request(&mut self, flags: PodFlags) {
-        self.flags |= flags
-    }
-
-    pub(crate) fn window_origin(&self) -> Point {
-        self.parent_window_origin + self.origin.to_vec2()
+        self.flags |= flags;
     }
 }
 
@@ -171,17 +158,17 @@ impl Pod {
     ///
     /// In a widget hierarchy, each widget is wrapped in a `Pod`
     /// so it can participate in layout and event flow.
-    pub fn new(widget: impl Widget + 'static) -> Self {
-        Self::new_from_box(Box::new(widget))
+    pub fn new(widget: impl Widget + 'static, id: Id) -> Self {
+        Self::new_from_box(Box::new(widget), id)
     }
 
     /// Create a new pod.
     ///
     /// In a widget hierarchy, each widget is wrapped in a `Pod`
     /// so it can participate in layout and event flow.
-    pub fn new_from_box(widget: Box<dyn AnyWidget>) -> Self {
+    pub fn new_from_box(widget: Box<dyn AnyWidget>, id: Id) -> Self {
         Pod {
-            state: WidgetState::new(),
+            state: WidgetState::new(id),
             fragment: Scene::default(),
             widget,
         }
@@ -285,12 +272,6 @@ impl Pod {
                     Pod::set_hot_state(&mut self.widget, &mut self.state, cx.cx_state, None);
                 had_active || hot_changed
             }
-            Event::TargetedAccessibilityAction(action) => {
-                // println!("TODO: {:?}", action);
-                self.state
-                    .sub_tree
-                    .may_contain(&Id::try_from_accesskit(action.target).unwrap())
-            }
         };
         if recurse {
             // This clears the has_active state. Pod needs to clear this state since merge up can
@@ -339,8 +320,6 @@ impl Pod {
             }
             LifeCycle::TreeUpdate => {
                 if self.state.flags.contains(PodFlags::TREE_CHANGED) {
-                    self.state.sub_tree.clear();
-                    self.state.sub_tree.add(&self.state.id);
                     self.state.flags.remove(PodFlags::TREE_CHANGED);
                     true
                 } else {
@@ -412,24 +391,6 @@ impl Pod {
         self.widget.compute_max_intrinsic(axis, &mut child_cx, bc)
     }
 
-    ///
-    pub fn accessibility(&mut self, cx: &mut AccessCx) {
-        if self.state.flags.intersects(
-            PodFlags::REQUEST_ACCESSIBILITY | PodFlags::DESCENDANT_REQUESTED_ACCESSIBILITY,
-        ) {
-            let mut child_cx = AccessCx {
-                cx_state: cx.cx_state,
-                widget_state: &mut self.state,
-                update: cx.update,
-                node_classes: cx.node_classes,
-            };
-            self.widget.accessibility(&mut child_cx);
-            self.state.flags.remove(
-                PodFlags::REQUEST_ACCESSIBILITY | PodFlags::DESCENDANT_REQUESTED_ACCESSIBILITY,
-            );
-        }
-    }
-
     pub fn paint_raw(&mut self, cx: &mut PaintCx, scene: &mut Scene) {
         let mut inner_cx = PaintCx {
             cx_state: cx.cx_state,
@@ -497,6 +458,11 @@ impl Pod {
 
             self.state.flags.insert(PodFlags::VIEW_CONTEXT_CHANGED);
         }
+    }
+
+    /// Get the widget's size (as returned by the layout method)
+    pub fn size(&mut self) -> Size {
+        self.state.size
     }
 
     // Return true if hot state has changed

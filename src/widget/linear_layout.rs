@@ -13,8 +13,7 @@
 // limitations under the License.
 
 use crate::geometry::Axis;
-use crate::widget::{AccessCx, BoxConstraints, Event};
-use accesskit::NodeId;
+use crate::widget::{BoxConstraints, Event};
 use vello::kurbo::Size;
 use vello::Scene;
 
@@ -81,23 +80,6 @@ impl Widget for LinearLayout {
         }
 
         self.axis.pack(major_used, max_minor)
-    }
-
-    fn accessibility(&mut self, cx: &mut AccessCx) {
-        for child in &mut self.children {
-            child.accessibility(cx);
-        }
-
-        if cx.is_requested() {
-            let mut builder = accesskit::NodeBuilder::new(accesskit::Role::GenericContainer);
-            builder.set_children(
-                self.children
-                    .iter()
-                    .map(|pod| pod.id().into())
-                    .collect::<Vec<NodeId>>(),
-            );
-            cx.push_node(builder);
-        }
     }
 
     fn paint(&mut self, cx: &mut PaintCx, scene: &mut Scene) {

@@ -204,7 +204,7 @@ impl<K, V> VecMap<K, V> {
     }
 
     pub fn clear(&mut self) {
-        self.0.clear()
+        self.0.clear();
     }
 
     /// Returns `true` if the map contains no elements.

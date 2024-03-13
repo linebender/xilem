@@ -15,11 +15,11 @@
 use std::{any::Any, marker::PhantomData};
 
 use crate::geometry::Axis;
-use crate::view::{Id, VecSplice, ViewMarker, ViewSequence};
+use crate::view::{Id, ViewMarker, ViewSequence};
 use crate::widget::{self, ChangeFlags};
 use crate::MessageResult;
 
-use super::{Cx, View};
+use super::{Cx, TreeStructureSplice, View};
 
 /// LinearLayout is a simple view which does layout for the specified ViewSequence.
 ///
@@ -70,7 +70,9 @@ impl<T, A, VT: ViewSequence<T, A>> View<T, A> for LinearLayout<T, A, VT> {
 
     fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
         let mut elements = vec![];
-        let (id, state) = cx.with_new_id(|cx| self.children.build(cx, &mut elements));
+        let mut scratch = vec![];
+        let mut splice = TreeStructureSplice::new(&mut elements, &mut scratch);
+        let (id, state) = cx.with_new_id(|cx| self.children.build(cx, &mut splice));
         let column = widget::LinearLayout::new(elements, self.spacing, self.axis);
         (id, state, column)
     }
@@ -83,9 +85,8 @@ impl<T, A, VT: ViewSequence<T, A>> View<T, A> for LinearLayout<T, A, VT> {
         state: &mut Self::State,
         element: &mut Self::Element,
     ) -> ChangeFlags {
-        let mut scratch = vec![];
-        let mut splice = VecSplice::new(&mut element.children, &mut scratch);
-
+        let mut scratch = vec![]; // TODO(#160) could save some allocations by using View::State
+        let mut splice = TreeStructureSplice::new(&mut element.children, &mut scratch);
         let mut flags = cx.with_id(*id, |cx| {
             self.children
                 .rebuild(cx, &prev.children, state, &mut splice)

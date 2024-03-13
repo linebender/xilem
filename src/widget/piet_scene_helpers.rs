@@ -22,7 +22,7 @@ pub fn stroke<'b>(
         brush,
         None,
         path,
-    )
+    );
 }
 
 // Note: copied from piet
@@ -77,5 +77,5 @@ pub fn fill_lin_gradient(
 }
 
 pub fn fill_color(scene: &mut Scene, path: &impl Shape, color: Color) {
-    scene.fill(Fill::NonZero, Affine::IDENTITY, color, None, path)
+    scene.fill(Fill::NonZero, Affine::IDENTITY, color, None, path);
 }
