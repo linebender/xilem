@@ -60,5 +60,5 @@ fn main() {
         count_view: None,
     };
 
-    AppLauncher::new(App::new(data, app_logic)).run()
+    AppLauncher::new(App::new(data, app_logic)).run();
 }
