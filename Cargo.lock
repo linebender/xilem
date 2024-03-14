@@ -559,8 +559,7 @@ checksum = "96a6ac251f4a2aca6b3f91340350eab87ae57c3f127ffeb585e92bd336717991"
 [[package]]
 name = "d3d12"
 version = "0.19.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3e3d747f100290a1ca24b752186f61f6637e1deffe3bf6320de6fcb29510a307"
+source = "git+https://github.com/gfx-rs/wgpu.git?rev=2d8d045453855f6594c42a6988692253da195323#2d8d045453855f6594c42a6988692253da195323"
 dependencies = [
  "bitflags 2.4.2",
  "libloading 0.8.3",
@@ -591,6 +590,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "330c60081dcc4c72131f8eb70510f1ac07223e5d4163db481a04a0befcffa412"
 dependencies = [
  "libloading 0.8.3",
+]
+
+[[package]]
+name = "document-features"
+version = "0.2.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ef5282ad69563b5fc40319526ba27e0e7363d552a896f0297d54f767717f9b95"
+dependencies = [
+ "litrs",
 ]
 
 [[package]]
@@ -1278,6 +1286,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f9d642685b028806386b2b6e75685faadd3eb65a85fff7df711ce18446a422da"
 
 [[package]]
+name = "litrs"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b4ce301924b7887e9d637144fdade93f9dfff9b60981d4ac161db09720d39aa5"
+
+[[package]]
 name = "lock_api"
 version = "0.4.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1373,10 +1387,10 @@ dependencies = [
 
 [[package]]
 name = "naga"
-version = "0.19.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "50e3524642f53d9af419ab5e8dd29d3ba155708267667c2f3f06c88c9e130843"
+version = "0.19.0"
+source = "git+https://github.com/gfx-rs/wgpu.git?rev=2d8d045453855f6594c42a6988692253da195323#2d8d045453855f6594c42a6988692253da195323"
 dependencies = [
+ "arrayvec",
  "bit-set",
  "bitflags 2.4.2",
  "codespan-reporting",
@@ -1562,7 +1576,7 @@ dependencies = [
 [[package]]
 name = "parley"
 version = "0.0.1"
-source = "git+https://github.com/dfrg/parley?branch=fontique#7b661a13bce6815517e7d91a739a36c1f7058d3b"
+source = "git+https://github.com/dfrg/parley?branch=fontique#b2f6860b13b97e0d0427debcc2253c3ea512cba1"
 dependencies = [
  "fontique",
  "peniko 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2568,13 +2582,13 @@ dependencies = [
 
 [[package]]
 name = "wgpu"
-version = "0.19.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a4b1213b52478a7631d6e387543ed8f642bc02c578ef4e3b49aca2a29a7df0cb"
+version = "0.19.0"
+source = "git+https://github.com/gfx-rs/wgpu.git?rev=2d8d045453855f6594c42a6988692253da195323#2d8d045453855f6594c42a6988692253da195323"
 dependencies = [
  "arrayvec",
  "cfg-if",
  "cfg_aliases",
+ "document-features",
  "js-sys",
  "log",
  "naga",
@@ -2593,15 +2607,15 @@ dependencies = [
 
 [[package]]
 name = "wgpu-core"
-version = "0.19.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f9f6b033c2f00ae0bc8ea872c5989777c60bc241aac4e58b24774faa8b391f78"
+version = "0.19.0"
+source = "git+https://github.com/gfx-rs/wgpu.git?rev=2d8d045453855f6594c42a6988692253da195323#2d8d045453855f6594c42a6988692253da195323"
 dependencies = [
  "arrayvec",
  "bit-vec",
  "bitflags 2.4.2",
  "cfg_aliases",
  "codespan-reporting",
+ "document-features",
  "indexmap",
  "log",
  "naga",
@@ -2619,9 +2633,8 @@ dependencies = [
 
 [[package]]
 name = "wgpu-hal"
-version = "0.19.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "49f972c280505ab52ffe17e94a7413d9d54b58af0114ab226b9fc4999a47082e"
+version = "0.19.0"
+source = "git+https://github.com/gfx-rs/wgpu.git?rev=2d8d045453855f6594c42a6988692253da195323#2d8d045453855f6594c42a6988692253da195323"
 dependencies = [
  "android_system_properties",
  "arrayvec",
@@ -2664,9 +2677,8 @@ dependencies = [
 
 [[package]]
 name = "wgpu-types"
-version = "0.19.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b671ff9fb03f78b46ff176494ee1ebe7d603393f42664be55b64dc8d53969805"
+version = "0.19.0"
+source = "git+https://github.com/gfx-rs/wgpu.git?rev=2d8d045453855f6594c42a6988692253da195323#2d8d045453855f6594c42a6988692253da195323"
 dependencies = [
  "bitflags 2.4.2",
  "js-sys",
