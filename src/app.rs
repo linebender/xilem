@@ -162,7 +162,7 @@ where
             new_size: Default::default(),
             cursor_pos: None,
             cx,
-            font_cx: FontContext::new(),
+            font_cx: FontContext::default(),
             rt,
         }
     }

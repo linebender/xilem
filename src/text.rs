@@ -13,7 +13,6 @@ pub fn render_text(scene: &mut Scene, transform: Affine, layout: &Layout<Brush>)
             let run = glyph_run.run();
             let font = run.font();
             let font_size = run.font_size();
-            let font = vello::peniko::Font::new(font.data().0.clone(), font.index());
             let style = glyph_run.style();
             let coords = run
                 .normalized_coords()
@@ -21,7 +20,7 @@ pub fn render_text(scene: &mut Scene, transform: Affine, layout: &Layout<Brush>)
                 .map(|coord| vello::skrifa::instance::NormalizedCoord::from_bits(*coord))
                 .collect::<Vec<_>>();
             scene
-                .draw_glyphs(&font)
+                .draw_glyphs(font)
                 .brush(&style.brush)
                 .transform(transform)
                 .font_size(font_size)

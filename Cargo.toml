@@ -58,8 +58,8 @@ taffy = { version = "0.4.0", optional = true }
 vello = { git = "https://github.com/linebender/vello", rev = "6fa114c020f8656947e283bdf4bed96fe7a54c70" }
 # vello currently depends on wgpu 0.19.3, but a fix for a hang on NVIDIA Vk drivers will be postponed
 # until 0.20 because it depends on a breaking change to wgpu-hal. For now this is a working revision.
-wgpu = { git = "https://github.com/gfx-rs/wgpu.git", rev = "2d8d045453855f6594c42a6988692253da195323"}
-parley = { git = "https://github.com/dfrg/parley", rev = "1940d1ae9f2a9b44b7c18967147ffa7d345fdafd" }
+wgpu = "0.19.3" #{ git = "https://github.com/gfx-rs/wgpu.git", rev = "2d8d045453855f6594c42a6988692253da195323"}
+parley = { git = "https://github.com/dfrg/parley", branch = "fontique" }
 tokio = { version = "1.35", features = ["full"] }
 futures-task = "0.3"
 bitflags = "2"
@@ -72,5 +72,5 @@ winit = { version = "0.29", features = ["rwh_05"] }
 env_logger = "0.10.0"
 test-log = "0.2.11"
 
-[patch.crates-io]
-wgpu = { git = "https://github.com/gfx-rs/wgpu.git", rev = "2d8d045453855f6594c42a6988692253da195323"}
+# [patch.crates-io]
+# wgpu = { git = "https://github.com/gfx-rs/wgpu.git", rev = "2d8d045453855f6594c42a6988692253da195323"}
