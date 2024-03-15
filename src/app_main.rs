@@ -171,10 +171,10 @@ where
         self.app
             .window_event(Event::MouseWheel(self.main_pointer.wheel(match delta {
                 MouseScrollDelta::LineDelta(x, y) => {
-                    ScrollDelta::Lines(-x.trunc() as isize, -y.trunc() as isize)
+                    ScrollDelta::Lines(x.trunc() as isize, y.trunc() as isize)
                 }
                 MouseScrollDelta::PixelDelta(PhysicalPosition { x, y }) => {
-                    ScrollDelta::Precise(Vec2::new(-x, -y) * (1.0 / self.window.scale_factor()))
+                    ScrollDelta::Precise(Vec2::new(x, y) * (1.0 / self.window.scale_factor()))
                 }
             })));
         self.window.request_redraw();
