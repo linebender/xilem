@@ -20,6 +20,7 @@ use vello::{
     util::{RenderContext, RenderSurface},
     AaSupport, RenderParams, Renderer, RendererOptions, Scene,
 };
+use wgpu::PresentMode;
 use winit::{
     dpi::PhysicalPosition,
     event::{ElementState, Modifiers, MouseButton, MouseScrollDelta, WindowEvent},
@@ -118,7 +119,12 @@ where
         let size = window.inner_size();
         let window = Arc::new(window);
         let surface = tokio::runtime::Handle::current()
-            .block_on(render_cx.create_surface(window.clone(), size.width, size.height))
+            .block_on(render_cx.create_surface(
+                window.clone(),
+                size.width,
+                size.height,
+                PresentMode::AutoVsync,
+            ))
             .unwrap();
         MainState {
             window,
