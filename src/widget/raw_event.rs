@@ -45,6 +45,11 @@ pub struct MouseEvent {
 }
 
 #[derive(Debug, Clone)]
+/// This comment is inherited from winit:
+/// > Positive values indicate that the content that is being scrolled should move
+/// > right and down (revealing more content left and up).
+///
+/// The choice to follow this has not been reasoned, but is based on expediance
 pub enum ScrollDelta {
     Precise(Vec2),
     Lines(isize, isize),

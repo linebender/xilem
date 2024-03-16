@@ -89,12 +89,14 @@ impl Widget for ScrollView {
         if !cx.is_handled() {
             if let Event::MouseWheel(mouse_event) = event {
                 let max_offset = (self.child.size().height - cx.size().height).max(0.0);
+                // A positive wheel_delta y means our content needs to "move" down (i.e. scroll up), which
+                // means the offset needs to *decrease*, because offset increases as you scroll further down
                 let y_delta = match mouse_event.wheel_delta {
-                    Some(ScrollDelta::Precise(Vec2 { y, .. })) => y,
+                    Some(ScrollDelta::Precise(Vec2 { y, .. })) => -y,
                     Some(ScrollDelta::Lines(_, y)) => -y as f64 * LINE_HEIGHT,
                     None => 0.0,
                 };
-                let new_offset = (self.offset + y_delta).max(0.0).min(max_offset);
+                let new_offset = (self.offset + y_delta).clamp(0.0, max_offset);
                 if new_offset != self.offset {
                     self.offset = new_offset;
                     cx.set_handled(true);
