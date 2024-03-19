@@ -119,6 +119,10 @@ impl Cx {
         (id, state, Pod::new(element))
     }
 
+    /// This currently does nothing, it's only here for compatibility with `AnyView`
+    /// In the future this may track the tree-structure as well as in `xilem`
+    pub fn delete_descendants(&mut self) {}
+
     /// Run some logic within the context of a given Pod,
     ///
     /// This logic is usually `View::rebuild`

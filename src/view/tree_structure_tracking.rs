@@ -51,7 +51,7 @@ impl<'a, 'b> ElementsSplice for TreeStructureSplice<'a, 'b> {
     fn delete(&mut self, n: usize, cx: &mut Cx) {
         let ix = self.splice.len();
         cx.tree_structure
-            .delete_children(cx.element_id(), ix..ix + n);
+            .delete_descendants(cx.element_id(), ix..ix + n);
         self.splice.delete(n);
     }
 

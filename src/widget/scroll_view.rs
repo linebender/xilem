@@ -17,7 +17,6 @@
 //! There's a lot more functionality in the Druid version, including
 //! control over scrolling axes, ability to scroll to content, etc.
 
-use crate::id::Id;
 use crate::Axis;
 use vello::kurbo::{Affine, Size, Vec2};
 use vello::peniko::Mix;
@@ -40,11 +39,8 @@ pub struct ScrollView {
 }
 
 impl ScrollView {
-    pub fn new(child: impl Widget + 'static) -> Self {
-        ScrollView {
-            child: Pod::new(child, Id::next()),
-            offset: 0.0,
-        }
+    pub fn new(child: Pod) -> Self {
+        ScrollView { child, offset: 0.0 }
     }
 
     pub fn child_mut(&mut self) -> &mut Pod {
