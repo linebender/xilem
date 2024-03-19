@@ -23,12 +23,13 @@ use xilem_core::{Id, IdPath};
 
 use crate::widget::{tree_structure::TreeStructure, AnyWidget, ChangeFlags, Pod, Widget};
 
-xilem_core::generate_view_trait! {View, Widget, Cx, ChangeFlags; : Send}
-xilem_core::generate_viewsequence_trait! {ViewSequence, View, ViewMarker, ElementsSplice, Widget, Cx, ChangeFlags, Pod; : Send}
-xilem_core::generate_anyview_trait! {AnyView, View, ViewMarker, Cx, ChangeFlags, AnyWidget, BoxedView; + Send}
-xilem_core::generate_memoize_view! {Memoize, MemoizeState, View, ViewMarker, Cx, ChangeFlags, s, memoize; + Send}
-xilem_core::generate_adapt_view! {View, Cx, ChangeFlags; + Send}
-xilem_core::generate_adapt_state_view! {View, Cx, ChangeFlags; + Send}
+xilem_core::generate_view_trait! {View, Widget, Cx, ChangeFlags; (Send + Sync), (Send)}
+xilem_core::generate_viewsequence_trait! {ViewSequence, View, ViewMarker, ElementsSplice, Widget, Cx, ChangeFlags, Pod; (Send + Sync), (Send)}
+xilem_core::generate_anyview_trait! {AnyView, View, ViewMarker, Cx, ChangeFlags, AnyWidget; (Send + Sync), (Send)}
+xilem_core::generate_memoize_view! {Memoize, MemoizeState, View, ViewMarker, Cx, ChangeFlags, static_view, memoize; + Send + Sync}
+xilem_core::generate_adapt_view! {View, Cx, ChangeFlags; + Send + Sync}
+xilem_core::generate_adapt_state_view! {View, Cx, ChangeFlags; + Send + Sync}
+xilem_core::generate_rc_view! {std::sync::Arc, View, ViewMarker, Cx, ChangeFlags, AnyView, AnyWidget; Send}
 
 #[derive(Clone)]
 pub struct Cx {

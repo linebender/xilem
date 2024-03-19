@@ -44,7 +44,7 @@ pub fn list<T, A, VT: ViewSequence<T, A>, F: Fn(usize) -> VT + Send>(
     }
 }
 
-impl<T, A, VT: ViewSequence<T, A>, F: Fn(usize) -> VT + Send> ViewSequence<T, A>
+impl<T, A, VT: ViewSequence<T, A>, F: Fn(usize) -> VT + Send + Sync> ViewSequence<T, A>
     for List<T, A, VT, F>
 {
     type State = ListState<T, A, VT>;

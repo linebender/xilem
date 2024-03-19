@@ -34,7 +34,10 @@ pub use list::{list, List};
 pub use scroll_view::{scroll_view, ScrollView};
 pub use switch::switch;
 pub use tree_structure_tracking::TreeStructureSplice;
-pub use view::{Adapt, AdaptState, Cx, ElementsSplice, Memoize, View, ViewMarker, ViewSequence};
+pub use view::{
+    memoize, static_view, Adapt, AdaptState, AnyView, Cx, ElementsSplice, Memoize, MemoizeState,
+    View, ViewMarker, ViewSequence,
+};
 
 #[cfg(feature = "taffy")]
 mod taffy_layout;

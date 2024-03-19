@@ -23,18 +23,21 @@ use super::{Cx, View};
 pub struct Button<T, A> {
     label: String,
     // consider not boxing
-    callback: Box<dyn Fn(&mut T) -> A + Send>,
+    callback: Box<dyn Fn(&mut T) -> A + Send + Sync>,
 }
 
 pub fn button<T, A>(
     label: impl Into<String>,
-    clicked: impl Fn(&mut T) -> A + Send + 'static,
+    clicked: impl Fn(&mut T) -> A + Send + Sync + 'static,
 ) -> Button<T, A> {
     Button::new(label, clicked)
 }
 
 impl<T, A> Button<T, A> {
-    pub fn new(label: impl Into<String>, clicked: impl Fn(&mut T) -> A + Send + 'static) -> Self {
+    pub fn new(
+        label: impl Into<String>,
+        clicked: impl Fn(&mut T) -> A + Send + Sync + 'static,
+    ) -> Self {
         Button {
             label: label.into(),
             callback: Box::new(clicked),
