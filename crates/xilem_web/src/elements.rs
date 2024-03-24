@@ -18,6 +18,8 @@ type CowStr = std::borrow::Cow<'static, str>;
 pub struct ElementState<ViewSeqState> {
     pub(crate) children_states: ViewSeqState,
     pub(crate) attributes: VecMap<CowStr, AttributeValue>,
+    pub(crate) classes: VecMap<CowStr, ()>,
+    pub(crate) styles: VecMap<CowStr, CowStr>,
     pub(crate) child_elements: Vec<Pod>,
     /// This is temporary cache for elements while updating/diffing,
     /// after usage it shouldn't contain any elements,
@@ -150,7 +152,7 @@ where
     type Element = web_sys::HtmlElement;
 
     fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
-        let (el, attributes) = cx.build_element(HTML_NS, &self.name);
+        let (el, attributes, classes, styles) = cx.build_element(HTML_NS, &self.name);
 
         let mut child_elements = vec![];
         let mut scratch = vec![];
@@ -172,6 +174,8 @@ where
             child_elements,
             scratch,
             attributes,
+            classes,
+            styles,
         };
         (id, state, el)
     }
@@ -193,8 +197,11 @@ where
                 .parent_element()
                 .expect_throw("this element was mounted and so should have a parent");
             parent.remove_child(element).unwrap_throw();
-            let (new_element, attributes) = cx.build_element(HTML_NS, self.node_name());
+            let (new_element, attributes, classes, styles) =
+                cx.build_element(HTML_NS, self.node_name());
             state.attributes = attributes;
+            state.classes = classes;
+            state.styles = styles;
             // TODO could this be combined with child updates?
             while let Some(child) = element.child_nodes().get(0) {
                 new_element.append_child(&child).unwrap_throw();
@@ -203,7 +210,12 @@ where
             changed |= ChangeFlags::STRUCTURE;
         }
 
-        changed |= cx.rebuild_element(element, &mut state.attributes);
+        changed |= cx.rebuild_element(
+            element,
+            &mut state.attributes,
+            &mut state.classes,
+            &mut state.styles,
+        );
 
         // update children
         let mut splice =
@@ -280,7 +292,7 @@ macro_rules! define_element {
             type Element = web_sys::$dom_interface;
 
             fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
-                let (el, attributes) = cx.build_element($ns, $tag_name);
+                let (el, attributes, classes, styles) = cx.build_element($ns, $tag_name);
 
                 let mut child_elements = vec![];
                 let mut scratch = vec![];
@@ -301,6 +313,8 @@ macro_rules! define_element {
                     child_elements,
                     scratch,
                     attributes,
+                    classes,
+                    styles,
                 };
                 (id, state, el)
             }
@@ -315,7 +329,7 @@ macro_rules! define_element {
             ) -> ChangeFlags {
                 let mut changed = ChangeFlags::empty();
 
-                changed |= cx.rebuild_element(element, &mut state.attributes);
+                changed |= cx.rebuild_element(element, &mut state.attributes, &mut state.classes, &mut state.styles);
 
                 // update children
                 let mut splice = ChildrenSplice::new(&mut state.child_elements, &mut state.scratch, element);

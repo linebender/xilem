@@ -19,16 +19,8 @@ enum TodoAction {
 impl Action for TodoAction {}
 
 fn todo_item(todo: &mut Todo, editing: bool) -> impl Element<Todo, TodoAction> {
-    let mut class = String::new();
-    if todo.completed {
-        class.push_str(" completed");
-    }
-    if editing {
-        class.push_str(" editing");
-    }
-
     let checkbox = el::input(())
-        .attr("class", "toggle")
+        .class("toggle")
         .attr("type", "checkbox")
         .attr("checked", todo.completed)
         .on_click(|state: &mut Todo, _| state.completed = !state.completed);
@@ -39,13 +31,13 @@ fn todo_item(todo: &mut Todo, editing: bool) -> impl Element<Todo, TodoAction> {
             el::label(todo.title.clone())
                 .on_dblclick(|state: &mut Todo, _| TodoAction::SetEditing(state.id)),
             el::button(())
-                .attr("class", "destroy")
+                .class("destroy")
                 .on_click(|state: &mut Todo, _| TodoAction::Destroy(state.id)),
         ))
-        .attr("class", "view"),
+        .class("view"),
         el::input(())
             .attr("value", todo.title_editing.clone())
-            .attr("class", "edit")
+            .class("edit")
             .on_keydown(|state: &mut Todo, evt| {
                 let key = evt.key();
                 if key == "Enter" {
@@ -70,7 +62,8 @@ fn todo_item(todo: &mut Todo, editing: bool) -> impl Element<Todo, TodoAction> {
             .passive(true)
             .on_blur(|_, _| TodoAction::CancelEditing),
     ))
-    .attr("class", class)
+    .class_opt(todo.completed.then_some("completed"))
+    .class_opt(editing.then_some("editing"))
 }
 
 fn footer_view(state: &mut AppState, should_display: bool) -> impl Element<AppState> {
@@ -82,7 +75,7 @@ fn footer_view(state: &mut AppState, should_display: bool) -> impl Element<AppSt
 
     let clear_button = (state.todos.iter().filter(|todo| todo.completed).count() > 0).then(|| {
         Element::on_click(
-            el::button("Clear completed").attr("class", "clear-completed"),
+            el::button("Clear completed").class("clear-completed"),
             |state: &mut AppState, _| {
                 state.todos.retain(|todo| !todo.completed);
             },
@@ -96,12 +89,12 @@ fn footer_view(state: &mut AppState, should_display: bool) -> impl Element<AppSt
             el::strong(state.todos.len().to_string()),
             format!(" {} left", item_str),
         ))
-        .attr("class", "todo-count"),
+        .class("todo-count"),
         el::ul((
             el::li(Element::on_click(
                 el::a("All")
                     .attr("href", "#/")
-                    .attr("class", filter_class(Filter::All)),
+                    .class_opt(filter_class(Filter::All)),
                 |state: &mut AppState, _| {
                     state.filter = Filter::All;
                 },
@@ -110,7 +103,7 @@ fn footer_view(state: &mut AppState, should_display: bool) -> impl Element<AppSt
             el::li(Element::on_click(
                 el::a("Active")
                     .attr("href", "#/active")
-                    .attr("class", filter_class(Filter::Active)),
+                    .class_opt(filter_class(Filter::Active)),
                 |state: &mut AppState, _| {
                     state.filter = Filter::Active;
                 },
@@ -119,17 +112,17 @@ fn footer_view(state: &mut AppState, should_display: bool) -> impl Element<AppSt
             el::li(Element::on_click(
                 el::a("Completed")
                     .attr("href", "#/completed")
-                    .attr("class", filter_class(Filter::Completed)),
+                    .class_opt(filter_class(Filter::Completed)),
                 |state: &mut AppState, _| {
                     state.filter = Filter::Completed;
                 },
             )),
         ))
-        .attr("class", "filters"),
+        .class("filters"),
         clear_button,
     ))
-    .attr("class", "footer")
-    .attr("style", (!should_display).then_some("display:none;"))
+    .class("footer")
+    .style_opt("display", (!should_display).then_some("none"))
 }
 
 fn main_view(state: &mut AppState, should_display: bool) -> impl Element<AppState> {
@@ -158,17 +151,17 @@ fn main_view(state: &mut AppState, should_display: bool) -> impl Element<AppStat
         .collect();
     let toggle_all = el::input(())
         .attr("id", "toggle-all")
-        .attr("class", "toggle-all")
+        .class("toggle-all")
         .attr("type", "checkbox")
         .attr("checked", state.are_all_complete());
 
     el::section((
         toggle_all.on_click(|state: &mut AppState, _| state.toggle_all_complete()),
         el::label(()).attr("for", "toggle-all"),
-        el::ul(todos).attr("class", "todo-list"),
+        el::ul(todos).class("todo-list"),
     ))
-    .attr("class", "main")
-    .attr("style", (!should_display).then_some("display:none;"))
+    .class("main")
+    .style_opt("display", (!should_display).then_some("none"))
 }
 
 fn app_logic(state: &mut AppState) -> impl View<AppState> {
@@ -177,7 +170,7 @@ fn app_logic(state: &mut AppState) -> impl View<AppState> {
     let main = main_view(state, some_todos);
     let footer = footer_view(state, some_todos);
     let input = el::input(())
-        .attr("class", "new-todo")
+        .class("new-todo")
         .attr("placeholder", "What needs to be done?")
         .attr("value", state.new_todo.clone())
         .attr("autofocus", true);
@@ -202,7 +195,7 @@ fn app_logic(state: &mut AppState) -> impl View<AppState> {
                 })
                 .passive(false),
         ))
-        .attr("class", "header"),
+        .class("header"),
         main,
         footer,
     ))

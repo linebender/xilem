@@ -1,5 +1,5 @@
-use crate::{Pointer, PointerMsg, View, ViewMarker};
-use std::borrow::Cow;
+use crate::{class::Class, style::Style, Pointer, PointerMsg, View, ViewMarker};
+use std::{borrow::Cow, marker::PhantomData};
 
 use gloo::events::EventListenerOptions;
 use wasm_bindgen::JsCast;
@@ -91,11 +91,45 @@ where
         }
     }
 
-    // TODO should some methods extend some properties automatically,
-    // instead of overwriting the (possibly set) inner value
-    // or should there be (extra) "modifier" methods like `add_class` and/or `remove_class`
-    fn class(self, class: impl Into<Cow<'static, str>>) -> Attr<Self, T, A> {
-        self.attr("class", class.into())
+    /// Add a class to the wrapped element.
+    ///
+    /// If multiple classes are added, all will be applied to the element.
+    fn class(self, class: impl Into<Cow<'static, str>>) -> Class<Self, T, A> {
+        self.class_opt(Some(class))
+    }
+
+    /// Add an optional class to the wrapped element.
+    ///
+    /// If multiple classes are added, all will be applied to the element.
+    fn class_opt(self, class: Option<impl Into<Cow<'static, str>>>) -> Class<Self, T, A> {
+        Class {
+            element: self,
+            class_name: class.map(Into::into),
+            phantom: PhantomData,
+        }
+    }
+
+    /// Set a style attribute
+    fn style(
+        self,
+        name: impl Into<Cow<'static, str>>,
+        value: impl Into<Cow<'static, str>>,
+    ) -> Style<Self, T, A> {
+        self.style_opt(name, Some(value))
+    }
+
+    /// Set a style attribute
+    fn style_opt(
+        self,
+        name: impl Into<Cow<'static, str>>,
+        value: Option<impl Into<Cow<'static, str>>>,
+    ) -> Style<Self, T, A> {
+        Style {
+            element: self,
+            name: name.into(),
+            value: value.map(Into::into),
+            phantom: PhantomData,
+        }
     }
 
     // event list from

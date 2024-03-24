@@ -8,7 +8,7 @@ use xilem_web::{
 #[derive(Default)]
 struct AppState {
     clicks: i32,
-    class: &'static str,
+    class: Option<&'static str>,
     text: String,
 }
 
@@ -23,10 +23,10 @@ impl AppState {
         self.clicks = 0;
     }
     fn change_class(&mut self) {
-        if self.class == "gray" {
-            self.class = "green";
+        if self.class == Some("gray") {
+            self.class = Some("green");
         } else {
-            self.class = "gray";
+            self.class = Some("gray");
         }
     }
 
@@ -49,7 +49,7 @@ fn btn(
 
 fn app_logic(state: &mut AppState) -> impl View<AppState> {
     el::div((
-        el::span(format!("clicked {} times", state.clicks)).attr("class", state.class),
+        el::span(format!("clicked {} times", state.clicks)).class_opt(state.class),
         el::br(()),
         btn("+1 click", |state, _| state.increment()),
         btn("-1 click", |state, _| state.decrement()),
