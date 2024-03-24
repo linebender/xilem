@@ -32,6 +32,7 @@ impl<T, A> View<T, A> for Line {
     type State = (
         VecMap<Cow<'static, str>, AttributeValue>,
         VecMap<Cow<'static, str>, ()>,
+        VecMap<Cow<'static, str>, Cow<'static, str>>,
     );
     type Element = web_sys::Element;
 
@@ -40,9 +41,9 @@ impl<T, A> View<T, A> for Line {
         cx.add_attr_to_element(&"y1".into(), &self.p0.y.into_attr_value());
         cx.add_attr_to_element(&"x2".into(), &self.p1.x.into_attr_value());
         cx.add_attr_to_element(&"y2".into(), &self.p1.y.into_attr_value());
-        let (el, attributes, classes) = cx.build_element(SVG_NS, "line");
+        let (el, attributes, classes, styles) = cx.build_element(SVG_NS, "line");
         let id = Id::next();
-        (id, (attributes, classes), el)
+        (id, (attributes, classes, styles), el)
     }
 
     fn rebuild(
@@ -50,14 +51,14 @@ impl<T, A> View<T, A> for Line {
         cx: &mut Cx,
         _prev: &Self,
         _id: &mut Id,
-        (attributes, classes): &mut Self::State,
+        (attributes, classes, styles): &mut Self::State,
         element: &mut Self::Element,
     ) -> ChangeFlags {
         cx.add_attr_to_element(&"x1".into(), &self.p0.x.into_attr_value());
         cx.add_attr_to_element(&"y1".into(), &self.p0.y.into_attr_value());
         cx.add_attr_to_element(&"x2".into(), &self.p1.x.into_attr_value());
         cx.add_attr_to_element(&"y2".into(), &self.p1.y.into_attr_value());
-        cx.rebuild_element(element, attributes, classes)
+        cx.rebuild_element(element, attributes, classes, styles)
     }
 
     fn message(
@@ -81,6 +82,7 @@ impl<T, A> View<T, A> for Rect {
     type State = (
         VecMap<Cow<'static, str>, AttributeValue>,
         VecMap<Cow<'static, str>, ()>,
+        VecMap<Cow<'static, str>, Cow<'static, str>>,
     );
     type Element = web_sys::Element;
 
@@ -90,9 +92,9 @@ impl<T, A> View<T, A> for Rect {
         let size = self.size();
         cx.add_attr_to_element(&"width".into(), &size.width.into_attr_value());
         cx.add_attr_to_element(&"height".into(), &size.height.into_attr_value());
-        let (el, attributes, classes) = cx.build_element(SVG_NS, "rect");
+        let (el, attributes, classes, styles) = cx.build_element(SVG_NS, "rect");
         let id = Id::next();
-        (id, (attributes, classes), el)
+        (id, (attributes, classes, styles), el)
     }
 
     fn rebuild(
@@ -100,7 +102,7 @@ impl<T, A> View<T, A> for Rect {
         cx: &mut Cx,
         _prev: &Self,
         _id: &mut Id,
-        (attributes, classes): &mut Self::State,
+        (attributes, classes, styles): &mut Self::State,
         element: &mut Self::Element,
     ) -> ChangeFlags {
         cx.add_attr_to_element(&"x".into(), &self.x0.into_attr_value());
@@ -108,7 +110,7 @@ impl<T, A> View<T, A> for Rect {
         let size = self.size();
         cx.add_attr_to_element(&"width".into(), &size.width.into_attr_value());
         cx.add_attr_to_element(&"height".into(), &size.height.into_attr_value());
-        cx.rebuild_element(element, attributes, classes)
+        cx.rebuild_element(element, attributes, classes, styles)
     }
 
     fn message(
@@ -132,6 +134,7 @@ impl<T, A> View<T, A> for Circle {
     type State = (
         VecMap<Cow<'static, str>, AttributeValue>,
         VecMap<Cow<'static, str>, ()>,
+        VecMap<Cow<'static, str>, Cow<'static, str>>,
     );
     type Element = web_sys::Element;
 
@@ -139,9 +142,9 @@ impl<T, A> View<T, A> for Circle {
         cx.add_attr_to_element(&"cx".into(), &self.center.x.into_attr_value());
         cx.add_attr_to_element(&"cy".into(), &self.center.y.into_attr_value());
         cx.add_attr_to_element(&"r".into(), &self.radius.into_attr_value());
-        let (el, attributes, classes) = cx.build_element(SVG_NS, "circle");
+        let (el, attributes, classes, styles) = cx.build_element(SVG_NS, "circle");
         let id = Id::next();
-        (id, (attributes, classes), el)
+        (id, (attributes, classes, styles), el)
     }
 
     fn rebuild(
@@ -149,13 +152,13 @@ impl<T, A> View<T, A> for Circle {
         cx: &mut Cx,
         _prev: &Self,
         _id: &mut Id,
-        (attributes, classes): &mut Self::State,
+        (attributes, classes, styles): &mut Self::State,
         element: &mut Self::Element,
     ) -> ChangeFlags {
         cx.add_attr_to_element(&"cx".into(), &self.center.x.into_attr_value());
         cx.add_attr_to_element(&"cy".into(), &self.center.y.into_attr_value());
         cx.add_attr_to_element(&"r".into(), &self.radius.into_attr_value());
-        cx.rebuild_element(element, attributes, classes)
+        cx.rebuild_element(element, attributes, classes, styles)
     }
 
     fn message(
@@ -180,15 +183,16 @@ impl<T, A> View<T, A> for BezPath {
         Cow<'static, str>,
         VecMap<Cow<'static, str>, AttributeValue>,
         VecMap<Cow<'static, str>, ()>,
+        VecMap<Cow<'static, str>, Cow<'static, str>>,
     );
     type Element = web_sys::Element;
 
     fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
         let svg_repr = Cow::from(self.to_svg());
         cx.add_attr_to_element(&"d".into(), &svg_repr.clone().into_attr_value());
-        let (el, attributes, classes) = cx.build_element(SVG_NS, "path");
+        let (el, attributes, classes, styles) = cx.build_element(SVG_NS, "path");
         let id = Id::next();
-        (id, (svg_repr, attributes, classes), el)
+        (id, (svg_repr, attributes, classes, styles), el)
     }
 
     fn rebuild(
@@ -196,7 +200,7 @@ impl<T, A> View<T, A> for BezPath {
         cx: &mut Cx,
         prev: &Self,
         _id: &mut Id,
-        (svg_repr, attributes, classes): &mut Self::State,
+        (svg_repr, attributes, classes, styles): &mut Self::State,
         element: &mut Self::Element,
     ) -> ChangeFlags {
         // slight optimization to avoid serialization/allocation
@@ -204,7 +208,7 @@ impl<T, A> View<T, A> for BezPath {
             *svg_repr = Cow::from(self.to_svg());
         }
         cx.add_attr_to_element(&"d".into(), &svg_repr.clone().into_attr_value());
-        cx.rebuild_element(element, attributes, classes)
+        cx.rebuild_element(element, attributes, classes, styles)
     }
 
     fn message(

@@ -2,7 +2,6 @@
 members = [
     "crates/xilem_core",
     "crates/xilem_web",
-    "crates/xilem_web/xilem_web_spec",
     "crates/xilem_web/web_examples/counter",
     "crates/xilem_web/web_examples/counter_custom_element",
     "crates/xilem_web/web_examples/todomvc",

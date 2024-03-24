@@ -19,6 +19,7 @@ pub mod interfaces;
 mod one_of;
 mod optional_action;
 mod pointer;
+mod style;
 pub mod svg;
 mod vecmap;
 mod view;

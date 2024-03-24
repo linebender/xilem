@@ -42,11 +42,41 @@ fn remove_attribute(element: &web_sys::Element, name: &str) {
 }
 
 fn set_class(element: &web_sys::Element, class_name: &str) {
+    #[cfg(debug_assertions)]
+    if class_name.is_empty() {
+        panic!("class names cannot be the empty string");
+    }
+    #[cfg(debug_assertions)]
+    if class_name.contains(' ') {
+        panic!("class names cannot contain the ascii space character");
+    }
     element.class_list().add_1(class_name).unwrap_throw()
 }
 
 fn remove_class(element: &web_sys::Element, class_name: &str) {
+    #[cfg(debug_assertions)]
+    if class_name.is_empty() {
+        panic!("class names cannot be the empty string");
+    }
+    #[cfg(debug_assertions)]
+    if class_name.contains(' ') {
+        panic!("class names cannot contain the ascii space character");
+    }
     element.class_list().remove_1(class_name).unwrap_throw()
+}
+
+fn set_style(element: &web_sys::Element, name: &str, value: &str) {
+    // styles will be ignored for non-html elements (e.g. SVG)
+    if let Some(el) = element.dyn_ref::<web_sys::HtmlElement>() {
+        el.style().set_property(name, value).unwrap_throw()
+    }
+}
+
+fn remove_style(element: &web_sys::Element, name: &str) {
+    // styles will be ignored for non-html elements (e.g. SVG)
+    if let Some(el) = element.dyn_ref::<web_sys::HtmlElement>() {
+        el.style().remove_property(name).unwrap_throw();
+    }
 }
 
 // Note: xilem has derive Clone here. Not sure.
@@ -56,6 +86,7 @@ pub struct Cx {
     // TODO There's likely a cleaner more robust way to propagate the attributes to an element
     pub(crate) current_element_attributes: VecMap<CowStr, AttributeValue>,
     pub(crate) current_element_classes: VecMap<CowStr, ()>,
+    pub(crate) current_element_styles: VecMap<CowStr, CowStr>,
     app_ref: Option<Box<dyn AppRunner>>,
 }
 
@@ -80,6 +111,7 @@ impl Cx {
             app_ref: None,
             current_element_attributes: Default::default(),
             current_element_classes: Default::default(),
+            current_element_styles: Default::default(),
         }
     }
 
@@ -159,6 +191,7 @@ impl Cx {
         web_sys::Element,
         VecMap<CowStr, AttributeValue>,
         VecMap<CowStr, ()>,
+        VecMap<CowStr, CowStr>,
     ) {
         let el = self
             .document
@@ -166,7 +199,8 @@ impl Cx {
             .expect("could not create element");
         let attributes = self.apply_attributes(&el);
         let classes = self.apply_classes(&el);
-        (el, attributes, classes)
+        let styles = self.apply_styles(&el);
+        (el, attributes, classes, styles)
     }
 
     pub(crate) fn rebuild_element(
@@ -174,14 +208,56 @@ impl Cx {
         element: &web_sys::Element,
         attributes: &mut VecMap<CowStr, AttributeValue>,
         classes: &mut VecMap<CowStr, ()>,
+        styles: &mut VecMap<CowStr, CowStr>,
     ) -> ChangeFlags {
         self.apply_attribute_changes(element, attributes)
             | self.apply_class_changes(element, classes)
+            | self.apply_style_changes(element, styles)
     }
 
     // TODO Not sure how multiple attribute definitions with the same name should be handled (e.g. `e.attr("class", "a").attr("class", "b")`)
     // Currently the outer most (in the example above "b") defines the attribute (when it isn't `None`, in that case the inner attr defines the value)
     pub(crate) fn add_attr_to_element(&mut self, name: &CowStr, value: &Option<AttributeValue>) {
+        // Special-case class so it works with the `class` method
+        if name == "class" {
+            if let Some(value) = value {
+                let value = value.serialize();
+                for class_name in value.split_ascii_whitespace() {
+                    if !class_name.is_empty()
+                        && !self.current_element_classes.contains_key(class_name)
+                    {
+                        self.current_element_classes
+                            .insert(class_name.to_string().into(), ());
+                    }
+                }
+            }
+            return;
+        }
+
+        // parse styles
+        if name == "style" {
+            if let Some(value) = value {
+                let value = value.serialize();
+                for pair in value.split(';') {
+                    let mut iter = pair.splitn(2, ':');
+                    let Some(name) = iter.next() else {
+                        continue;
+                    };
+                    let Some(value) = iter.next() else {
+                        continue;
+                    };
+                    if name.is_empty() || value.is_empty() {
+                        continue;
+                    }
+                    if !self.current_element_styles.contains_key(name) {
+                        self.current_element_styles
+                            .insert(name.to_string().into(), value.to_string().into());
+                    }
+                }
+            }
+            return;
+        }
+
         if let Some(value) = value {
             // could be slightly optimized via something like this: `new_attrs.entry(name).or_insert_with(|| value)`
             if !self.current_element_attributes.contains_key(name) {
@@ -195,6 +271,13 @@ impl Cx {
         // Don't strictly need this check but I assume its better for perf (might not be though)
         if !self.current_element_classes.contains_key(class_name) {
             self.current_element_classes.insert(class_name.clone(), ());
+        }
+    }
+
+    pub(crate) fn add_style_to_element(&mut self, name: &CowStr, value: &CowStr) {
+        if !self.current_element_styles.contains_key(name) {
+            self.current_element_styles
+                .insert(name.clone(), value.clone());
         }
     }
 
@@ -264,6 +347,39 @@ impl Cx {
         }
         std::mem::swap(classes, &mut self.current_element_classes);
         self.current_element_classes.clear();
+        changed
+    }
+
+    pub(crate) fn apply_styles(&mut self, element: &web_sys::Element) -> VecMap<CowStr, CowStr> {
+        let mut styles = VecMap::default();
+        std::mem::swap(&mut styles, &mut self.current_element_styles);
+        for (name, value) in styles.iter() {
+            set_style(element, name, value);
+        }
+        styles
+    }
+
+    pub(crate) fn apply_style_changes(
+        &mut self,
+        element: &web_sys::Element,
+        styles: &mut VecMap<CowStr, CowStr>,
+    ) -> ChangeFlags {
+        let mut changed = ChangeFlags::empty();
+        // update attributes
+        for itm in diff_kv_iterables(&*styles, &self.current_element_styles) {
+            match itm {
+                Diff::Add(name, value) | Diff::Change(name, value) => {
+                    set_style(element, name, value);
+                    changed |= ChangeFlags::OTHER_CHANGE;
+                }
+                Diff::Remove(name) => {
+                    remove_style(element, name);
+                    changed |= ChangeFlags::OTHER_CHANGE;
+                }
+            }
+        }
+        std::mem::swap(styles, &mut self.current_element_styles);
+        self.current_element_styles.clear();
         changed
     }
 

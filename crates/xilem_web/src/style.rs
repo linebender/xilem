@@ -1,29 +1,29 @@
-use std::{borrow::Cow, marker::PhantomData};
+use std::borrow::Cow;
+use std::marker::PhantomData;
 
 use xilem_core::{Id, MessageResult};
 
-use crate::{
-    interfaces::{sealed::Sealed, Element},
-    ChangeFlags, Cx, View, ViewMarker,
-};
+use crate::{interfaces::sealed::Sealed, ChangeFlags, Cx, View, ViewMarker};
 
-/// Applies a class to the underlying element.
-pub struct Class<E, T, A> {
+use super::interfaces::Element;
+
+pub struct Style<E, T, A> {
     pub(crate) element: E,
-    pub(crate) class_name: Option<Cow<'static, str>>,
+    pub(crate) name: Cow<'static, str>,
+    pub(crate) value: Option<Cow<'static, str>>,
     pub(crate) phantom: PhantomData<fn() -> (T, A)>,
 }
 
-impl<E, T, A> ViewMarker for Class<E, T, A> {}
-impl<E, T, A> Sealed for Class<E, T, A> {}
+impl<E, T, A> ViewMarker for Style<E, T, A> {}
+impl<E, T, A> Sealed for Style<E, T, A> {}
 
-impl<E: Element<T, A>, T, A> View<T, A> for Class<E, T, A> {
+impl<E: Element<T, A>, T, A> View<T, A> for Style<E, T, A> {
     type State = E::State;
     type Element = E::Element;
 
     fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
-        if let Some(class_name) = &self.class_name {
-            cx.add_class_to_element(class_name);
+        if let Some(value) = &self.value {
+            cx.add_style_to_element(&self.name, value);
         }
         self.element.build(cx)
     }
@@ -36,8 +36,8 @@ impl<E: Element<T, A>, T, A> View<T, A> for Class<E, T, A> {
         state: &mut Self::State,
         element: &mut Self::Element,
     ) -> ChangeFlags {
-        if let Some(class_name) = &self.class_name {
-            cx.add_class_to_element(class_name);
+        if let Some(value) = &self.value {
+            cx.add_style_to_element(&self.name, value);
         }
         self.element.rebuild(cx, &prev.element, id, state, element)
     }
@@ -53,4 +53,4 @@ impl<E: Element<T, A>, T, A> View<T, A> for Class<E, T, A> {
     }
 }
 
-crate::interfaces::impl_dom_interfaces_for_ty!(Element, Class);
+crate::interfaces::impl_dom_interfaces_for_ty!(Element, Style);
