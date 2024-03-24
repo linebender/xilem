@@ -35,6 +35,7 @@ version = "0.3.4"
 features = [
     "console",
     "Document",
+    "DomTokenList",
     "Element",
     "Event",
     "HtmlElement",

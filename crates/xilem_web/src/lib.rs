@@ -10,6 +10,7 @@ use wasm_bindgen::JsCast;
 mod app;
 mod attribute;
 mod attribute_value;
+mod class;
 mod context;
 mod diff;
 pub mod elements;

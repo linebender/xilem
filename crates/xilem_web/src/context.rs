@@ -41,12 +41,21 @@ fn remove_attribute(element: &web_sys::Element, name: &str) {
     }
 }
 
+fn set_class(element: &web_sys::Element, class_name: &str) {
+    element.class_list().add_1(class_name).unwrap_throw()
+}
+
+fn remove_class(element: &web_sys::Element, class_name: &str) {
+    element.class_list().remove_1(class_name).unwrap_throw()
+}
+
 // Note: xilem has derive Clone here. Not sure.
 pub struct Cx {
     id_path: IdPath,
     document: Document,
     // TODO There's likely a cleaner more robust way to propagate the attributes to an element
     pub(crate) current_element_attributes: VecMap<CowStr, AttributeValue>,
+    pub(crate) current_element_classes: VecMap<CowStr, ()>,
     app_ref: Option<Box<dyn AppRunner>>,
 }
 
@@ -70,6 +79,7 @@ impl Cx {
             document: crate::document(),
             app_ref: None,
             current_element_attributes: Default::default(),
+            current_element_classes: Default::default(),
         }
     }
 
@@ -145,21 +155,28 @@ impl Cx {
         &mut self,
         ns: &str,
         name: &str,
-    ) -> (web_sys::Element, VecMap<CowStr, AttributeValue>) {
+    ) -> (
+        web_sys::Element,
+        VecMap<CowStr, AttributeValue>,
+        VecMap<CowStr, ()>,
+    ) {
         let el = self
             .document
             .create_element_ns(Some(ns), name)
             .expect("could not create element");
         let attributes = self.apply_attributes(&el);
-        (el, attributes)
+        let classes = self.apply_classes(&el);
+        (el, attributes, classes)
     }
 
     pub(crate) fn rebuild_element(
         &mut self,
         element: &web_sys::Element,
         attributes: &mut VecMap<CowStr, AttributeValue>,
+        classes: &mut VecMap<CowStr, ()>,
     ) -> ChangeFlags {
         self.apply_attribute_changes(element, attributes)
+            | self.apply_class_changes(element, classes)
     }
 
     // TODO Not sure how multiple attribute definitions with the same name should be handled (e.g. `e.attr("class", "a").attr("class", "b")`)
@@ -171,6 +188,13 @@ impl Cx {
                 self.current_element_attributes
                     .insert(name.clone(), value.clone());
             }
+        }
+    }
+
+    pub(crate) fn add_class_to_element(&mut self, class_name: &CowStr) {
+        // Don't strictly need this check but I assume its better for perf (might not be though)
+        if !self.current_element_classes.contains_key(class_name) {
+            self.current_element_classes.insert(class_name.clone(), ());
         }
     }
 
@@ -207,6 +231,39 @@ impl Cx {
         }
         std::mem::swap(attributes, &mut self.current_element_attributes);
         self.current_element_attributes.clear();
+        changed
+    }
+
+    pub(crate) fn apply_classes(&mut self, element: &web_sys::Element) -> VecMap<CowStr, ()> {
+        let mut classes = VecMap::default();
+        std::mem::swap(&mut classes, &mut self.current_element_classes);
+        for (class_name, ()) in classes.iter() {
+            set_class(element, class_name);
+        }
+        classes
+    }
+
+    pub(crate) fn apply_class_changes(
+        &mut self,
+        element: &web_sys::Element,
+        classes: &mut VecMap<CowStr, ()>,
+    ) -> ChangeFlags {
+        let mut changed = ChangeFlags::empty();
+        // update attributes
+        for itm in diff_kv_iterables(&*classes, &self.current_element_classes) {
+            match itm {
+                Diff::Add(class_name, ()) | Diff::Change(class_name, ()) => {
+                    set_class(element, class_name);
+                    changed |= ChangeFlags::OTHER_CHANGE;
+                }
+                Diff::Remove(class_name) => {
+                    remove_class(element, class_name);
+                    changed |= ChangeFlags::OTHER_CHANGE;
+                }
+            }
+        }
+        std::mem::swap(classes, &mut self.current_element_classes);
+        self.current_element_classes.clear();
         changed
     }
 
