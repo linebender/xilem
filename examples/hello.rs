@@ -16,7 +16,7 @@ fn app_logic(data: &mut AppData) -> impl View<AppData> {
             println!("clicked");
             data.count += 1;
         }),
-        h_stack((
+        h_stack([
             button("decrease", |data: &mut AppData| {
                 println!("clicked decrease");
                 data.count -= 1;
@@ -25,10 +25,10 @@ fn app_logic(data: &mut AppData) -> impl View<AppData> {
                 println!("clicked reset");
                 data.count = 0;
             }),
-            switch(data.is_on, |data: &mut AppData, value: bool| {
-                data.is_on = value;
-            }),
-        )),
+        ]),
+        switch(data.is_on, |data: &mut AppData, value: bool| {
+            data.is_on = value;
+        }),
     ))
     .with_spacing(20.0)
 }

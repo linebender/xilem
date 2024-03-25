@@ -326,6 +326,52 @@ macro_rules! generate_viewsequence_trait {
             }
         }
 
+        impl<T, A, const N: usize, VT: $viewseq<T, A>> $viewseq<T, A> for [VT; N] {
+            type State = [VT::State; N];
+
+            fn build(&self, cx: &mut Cx, elements: &mut dyn $elements_splice) -> Self::State {
+                self.each_ref().map(|vs| vs.build(cx, elements))
+            }
+
+            fn rebuild(
+                &self,
+                cx: &mut $cx,
+                prev: &Self,
+                state: &mut Self::State,
+                elements: &mut dyn $elements_splice,
+            ) -> $changeflags {
+                self.iter()
+                    .zip(prev)
+                    .zip(state)
+                    .map(|((vs, prev), state)| vs.rebuild(cx, prev, state, elements))
+                    .fold(ChangeFlags::empty(), |changes_acc, changes| {
+                        changes_acc | changes
+                    })
+            }
+
+            fn message(
+                &self,
+                id_path: &[Id],
+                state: &mut Self::State,
+                message: Box<dyn std::any::Any>,
+                app_state: &mut T,
+            ) -> $crate::MessageResult<A> {
+                let mut result = $crate::MessageResult::Stale(message);
+                for (child, child_state) in self.iter().zip(state) {
+                    if let $crate::MessageResult::Stale(message) = result {
+                        result = child.message(id_path, child_state, message, app_state);
+                    } else {
+                        break;
+                    }
+                }
+                result
+            }
+
+            fn count(&self, _state: &Self::State) -> usize {
+                N
+            }
+        }
+
         /// This trait marks a type a
         #[doc = concat!(stringify!($view), ".")]
         ///
