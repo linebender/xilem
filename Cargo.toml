@@ -1,5 +1,6 @@
 [workspace]
 members = [
+    "crates/cuss",
     "crates/xilem_core",
     "crates/xilem_web",
     "crates/xilem_web/web_examples/counter",
