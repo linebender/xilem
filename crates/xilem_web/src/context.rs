@@ -42,26 +42,26 @@ fn remove_attribute(element: &web_sys::Element, name: &str) {
 }
 
 fn set_class(element: &web_sys::Element, class_name: &str) {
-    #[cfg(debug_assertions)]
-    if class_name.is_empty() {
-        panic!("class names cannot be the empty string");
-    }
-    #[cfg(debug_assertions)]
-    if class_name.contains(' ') {
-        panic!("class names cannot contain the ascii space character");
-    }
+    debug_assert!(
+        !class_name.is_empty(),
+        "class names cannot be the empty string"
+    );
+    debug_assert!(
+        !class_name.contains(' '),
+        "class names cannot contain the ascii space character"
+    );
     element.class_list().add_1(class_name).unwrap_throw()
 }
 
 fn remove_class(element: &web_sys::Element, class_name: &str) {
-    #[cfg(debug_assertions)]
-    if class_name.is_empty() {
-        panic!("class names cannot be the empty string");
-    }
-    #[cfg(debug_assertions)]
-    if class_name.contains(' ') {
-        panic!("class names cannot contain the ascii space character");
-    }
+    debug_assert!(
+        !class_name.is_empty(),
+        "class names cannot be the empty string"
+    );
+    debug_assert!(
+        !class_name.contains(' '),
+        "class names cannot contain the ascii space character"
+    );
     element.class_list().remove_1(class_name).unwrap_throw()
 }
 
@@ -218,45 +218,16 @@ impl Cx {
     // TODO Not sure how multiple attribute definitions with the same name should be handled (e.g. `e.attr("class", "a").attr("class", "b")`)
     // Currently the outer most (in the example above "b") defines the attribute (when it isn't `None`, in that case the inner attr defines the value)
     pub(crate) fn add_attr_to_element(&mut self, name: &CowStr, value: &Option<AttributeValue>) {
-        // Special-case class so it works with the `class` method
-        if name == "class" {
-            if let Some(value) = value {
-                let value = value.serialize();
-                for class_name in value.split_ascii_whitespace() {
-                    if !class_name.is_empty()
-                        && !self.current_element_classes.contains_key(class_name)
-                    {
-                        self.current_element_classes
-                            .insert(class_name.to_string().into(), ());
-                    }
-                }
-            }
-            return;
-        }
-
-        // parse styles
-        if name == "style" {
-            if let Some(value) = value {
-                let value = value.serialize();
-                for pair in value.split(';') {
-                    let mut iter = pair.splitn(2, ':');
-                    let Some(name) = iter.next() else {
-                        continue;
-                    };
-                    let Some(value) = iter.next() else {
-                        continue;
-                    };
-                    if name.is_empty() || value.is_empty() {
-                        continue;
-                    }
-                    if !self.current_element_styles.contains_key(name) {
-                        self.current_element_styles
-                            .insert(name.to_string().into(), value.to_string().into());
-                    }
-                }
-            }
-            return;
-        }
+        // Panic in dev if "class" is used as an attribute. In production the result is undefined.
+        debug_assert!(
+            name != "class",
+            "classes should be set using the `class` method"
+        );
+        // Panic in dev if "style" is used as an attribute. In production the result is undefined.
+        debug_assert!(
+            name != "style",
+            "styles should be set using the `style` method"
+        );
 
         if let Some(value) = value {
             // could be slightly optimized via something like this: `new_attrs.entry(name).or_insert_with(|| value)`
