@@ -33,7 +33,6 @@
 //!         _window_id: WindowId,
 //!         _widget_id: WidgetId,
 //!         action: Action,
-//!         _env: &Env,
 //!     ) {
 //!         match action {
 //!             Action::ButtonPressed => {
@@ -107,8 +106,6 @@ mod bloom;
 mod box_constraints;
 pub mod command;
 mod contexts;
-mod data;
-pub mod env;
 mod event;
 pub mod ext_event;
 mod mouse;
@@ -130,9 +127,7 @@ pub use app_root::{AppRoot, WindowRoot};
 pub use box_constraints::BoxConstraints;
 pub use command::{Command, Notification, Selector, SingleUse, Target};
 pub use contexts::{EventCtx, LayoutCtx, LifeCycleCtx, PaintCtx, WidgetCtx};
-pub use data::Data;
 pub use druid_shell::Error as PlatformError;
-pub use env::{Env, Key, KeyOrValue, Value, ValueType, ValueTypeError};
 pub use event::{Event, InternalEvent, InternalLifeCycle, LifeCycle, StatusChange};
 pub use kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
 pub use mouse::MouseEvent;

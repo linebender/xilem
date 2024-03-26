@@ -13,8 +13,8 @@ use crate::kurbo::RoundedRectRadii;
 use crate::piet::{Color, FixedGradient, LinearGradient, PaintBrush, RadialGradient};
 use crate::widget::{WidgetId, WidgetMut, WidgetPod, WidgetRef};
 use crate::{
-    BoxConstraints, Env, Event, EventCtx, Key, KeyOrValue, LayoutCtx, LifeCycle, LifeCycleCtx,
-    PaintCtx, Point, RenderContext, Size, StatusChange, Widget,
+    BoxConstraints, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Point,
+    RenderContext, Size, StatusChange, Widget,
 };
 
 // FIXME - Improve all doc in this module ASAP.
@@ -24,17 +24,17 @@ use crate::{
 #[allow(missing_docs)]
 #[allow(clippy::type_complexity)]
 pub enum BackgroundBrush {
-    Color(KeyOrValue<Color>),
+    Color(Color),
     Linear(LinearGradient),
     Radial(RadialGradient),
     Fixed(FixedGradient),
-    PainterFn(Box<dyn FnMut(&mut PaintCtx, &Env)>),
+    PainterFn(Box<dyn FnMut(&mut PaintCtx)>),
 }
 
 /// Something that can be used as the border for a widget.
 struct BorderStyle {
-    width: KeyOrValue<f64>,
-    color: KeyOrValue<Color>,
+    width: f64,
+    color: Color,
 }
 
 // TODO - Have Widget type as generic argument
@@ -55,7 +55,7 @@ pub struct SizedBox {
     height: Option<f64>,
     background: Option<BackgroundBrush>,
     border: Option<BorderStyle>,
-    corner_radius: KeyOrValue<RoundedRectRadii>,
+    corner_radius: RoundedRectRadii,
 }
 crate::declare_widget!(SizedBoxMut, SizedBox);
 
@@ -68,7 +68,7 @@ impl SizedBox {
             height: None,
             background: None,
             border: None,
-            corner_radius: RoundedRectRadii::from_single_radius(0.0).into(),
+            corner_radius: RoundedRectRadii::from_single_radius(0.0),
         }
     }
 
@@ -80,7 +80,7 @@ impl SizedBox {
             height: None,
             background: None,
             border: None,
-            corner_radius: RoundedRectRadii::from_single_radius(0.0).into(),
+            corner_radius: RoundedRectRadii::from_single_radius(0.0),
         }
     }
 
@@ -96,7 +96,7 @@ impl SizedBox {
             height: None,
             background: None,
             border: None,
-            corner_radius: RoundedRectRadii::from_single_radius(0.0).into(),
+            corner_radius: RoundedRectRadii::from_single_radius(0.0),
         }
     }
 
@@ -145,22 +145,14 @@ impl SizedBox {
     /// Builder-style method for setting the background for this widget.
     ///
     /// This can be passed anything which can be represented by a [`BackgroundBrush`];
-    /// notably, it can be any [`Color`], a [`Key<Color>`](Key) resolvable in the [`Env`],
-    /// any gradient, or a fully custom painter `FnMut`.
+    /// notably, it can be any [`Color`], any gradient, or a fully custom painter `FnMut`.
     pub fn background(mut self, brush: impl Into<BackgroundBrush>) -> Self {
         self.background = Some(brush.into());
         self
     }
 
     /// Builder-style method for painting a border around the widget with a color and width.
-    ///
-    /// Arguments can be either concrete values, or a [`Key`] of the respective
-    /// type.
-    pub fn border(
-        mut self,
-        color: impl Into<KeyOrValue<Color>>,
-        width: impl Into<KeyOrValue<f64>>,
-    ) -> Self {
+    pub fn border(mut self, color: impl Into<Color>, width: impl Into<f64>) -> Self {
         self.border = Some(BorderStyle {
             color: color.into(),
             width: width.into(),
@@ -169,7 +161,7 @@ impl SizedBox {
     }
 
     /// Builder style method for rounding off corners of this container by setting a corner radius
-    pub fn rounded(mut self, radius: impl Into<KeyOrValue<RoundedRectRadii>>) -> Self {
+    pub fn rounded(mut self, radius: impl Into<RoundedRectRadii>) -> Self {
         self.corner_radius = radius.into();
         self
     }
@@ -217,8 +209,7 @@ impl<'a, 'b> SizedBoxMut<'a, 'b> {
     /// Set the background for this widget.
     ///
     /// This can be passed anything which can be represented by a [`BackgroundBrush`];
-    /// notably, it can be any [`Color`], a [`Key<Color>`](Key) resolvable in the [`Env`],
-    /// any gradient, or a fully custom painter `FnMut`.
+    /// notably, it can be any [`Color`], any gradient, or a fully custom painter `FnMut`.
     pub fn set_background(&mut self, brush: impl Into<BackgroundBrush>) {
         self.widget.background = Some(brush.into());
         self.ctx.request_paint();
@@ -231,14 +222,7 @@ impl<'a, 'b> SizedBoxMut<'a, 'b> {
     }
 
     /// Paint a border around the widget with a color and width.
-    ///
-    /// Arguments can be either concrete values, or a [`Key`] of the respective
-    /// type.
-    pub fn set_border(
-        &mut self,
-        color: impl Into<KeyOrValue<Color>>,
-        width: impl Into<KeyOrValue<f64>>,
-    ) {
+    pub fn set_border(&mut self, color: impl Into<Color>, width: impl Into<f64>) {
         self.widget.border = Some(BorderStyle {
             color: color.into(),
             width: width.into(),
@@ -253,7 +237,7 @@ impl<'a, 'b> SizedBoxMut<'a, 'b> {
     }
 
     /// Round off corners of this container by setting a corner radius
-    pub fn set_rounded(&mut self, radius: impl Into<KeyOrValue<RoundedRectRadii>>) {
+    pub fn set_rounded(&mut self, radius: impl Into<RoundedRectRadii>) {
         self.widget.corner_radius = radius.into();
         self.ctx.request_paint();
     }
@@ -298,24 +282,24 @@ impl SizedBox {
 }
 
 impl Widget for SizedBox {
-    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, env: &Env) {
+    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event) {
         if let Some(ref mut child) = self.child {
-            child.on_event(ctx, event, env);
+            child.on_event(ctx, event);
         }
     }
 
-    fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange, _env: &Env) {}
+    fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange) {}
 
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
+    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
         if let Some(ref mut child) = self.child {
-            child.lifecycle(ctx, event, env)
+            child.lifecycle(ctx, event)
         }
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
+    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
         // Shrink constraints by border offset
         let border_width = match &self.border {
-            Some(border) => border.width.resolve(env),
+            Some(border) => border.width,
             None => 0.0,
         };
 
@@ -326,8 +310,8 @@ impl Widget for SizedBox {
         let mut size;
         match self.child.as_mut() {
             Some(child) => {
-                size = child.layout(ctx, &child_bc, env);
-                ctx.place_child(child, origin, env);
+                size = child.layout(ctx, &child_bc);
+                ctx.place_child(child, origin);
                 size = Size::new(
                     size.width + 2.0 * border_width,
                     size.height + 2.0 * border_width,
@@ -351,8 +335,8 @@ impl Widget for SizedBox {
         size
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, env: &Env) {
-        let corner_radius = self.corner_radius.resolve(env);
+    fn paint(&mut self, ctx: &mut PaintCtx) {
+        let corner_radius = self.corner_radius;
 
         if let Some(background) = self.background.as_mut() {
             let panel = ctx.size().to_rounded_rect(corner_radius);
@@ -360,23 +344,23 @@ impl Widget for SizedBox {
             trace_span!("paint background").in_scope(|| {
                 ctx.with_save(|ctx| {
                     ctx.clip(panel);
-                    background.paint(ctx, env);
+                    background.paint(ctx);
                 });
             });
         }
 
         if let Some(border) = &self.border {
-            let border_width = border.width.resolve(env);
+            let border_width = border.width;
             let border_rect = ctx
                 .size()
                 .to_rect()
                 .inset(border_width / -2.0)
                 .to_rounded_rect(corner_radius);
-            ctx.stroke(border_rect, &border.color.resolve(env), border_width);
+            ctx.stroke(border_rect, &border.color, border_width);
         };
 
         if let Some(ref mut child) = self.child {
-            child.paint(ctx, env);
+            child.paint(ctx);
         }
     }
 
@@ -397,27 +381,21 @@ impl Widget for SizedBox {
 
 impl BackgroundBrush {
     /// Draw this brush into a provided [`PaintCtx`].
-    pub fn paint(&mut self, ctx: &mut PaintCtx, env: &Env) {
+    pub fn paint(&mut self, ctx: &mut PaintCtx) {
         let bounds = ctx.size().to_rect();
         match self {
-            Self::Color(color) => ctx.fill(bounds, &color.resolve(env)),
+            Self::Color(color) => ctx.fill(bounds, color),
             Self::Linear(grad) => ctx.fill(bounds, grad),
             Self::Radial(grad) => ctx.fill(bounds, grad),
             Self::Fixed(grad) => ctx.fill(bounds, grad),
-            Self::PainterFn(painter) => painter(ctx, env),
+            Self::PainterFn(painter) => painter(ctx),
         }
     }
 }
 
 impl From<Color> for BackgroundBrush {
     fn from(src: Color) -> BackgroundBrush {
-        BackgroundBrush::Color(src.into())
-    }
-}
-
-impl From<Key<Color>> for BackgroundBrush {
-    fn from(src: Key<Color>) -> BackgroundBrush {
-        BackgroundBrush::Color(src.into())
+        BackgroundBrush::Color(src)
     }
 }
 
@@ -439,7 +417,7 @@ impl From<FixedGradient> for BackgroundBrush {
     }
 }
 
-impl<Painter: FnMut(&mut PaintCtx, &Env) + 'static> From<Painter> for BackgroundBrush {
+impl<Painter: FnMut(&mut PaintCtx) + 'static> From<Painter> for BackgroundBrush {
     fn from(src: Painter) -> BackgroundBrush {
         BackgroundBrush::PainterFn(Box::new(src))
     }
@@ -451,7 +429,7 @@ impl From<PaintBrush> for BackgroundBrush {
             PaintBrush::Linear(grad) => BackgroundBrush::Linear(grad),
             PaintBrush::Radial(grad) => BackgroundBrush::Radial(grad),
             PaintBrush::Fixed(grad) => BackgroundBrush::Fixed(grad),
-            PaintBrush::Color(color) => BackgroundBrush::Color(color.into()),
+            PaintBrush::Color(color) => BackgroundBrush::Color(color),
         }
     }
 }

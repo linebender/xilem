@@ -5,7 +5,6 @@
 //! Font attributes
 
 use crate::piet::{FontFamily, FontStyle, FontWeight};
-use crate::Data;
 
 /// A collection of attributes that describe a font.
 ///
@@ -67,14 +66,5 @@ impl Default for FontDescriptor {
             style: Default::default(),
             size: crate::piet::util::DEFAULT_FONT_SIZE,
         }
-    }
-}
-
-impl Data for FontDescriptor {
-    fn same(&self, other: &Self) -> bool {
-        self.family == other.family
-            && self.size == other.size
-            && self.weight == other.weight
-            && self.style == other.style
     }
 }

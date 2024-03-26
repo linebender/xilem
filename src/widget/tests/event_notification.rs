@@ -11,7 +11,7 @@ use crate::*;
 fn notifications() {
     const NOTIFICATION: Selector = Selector::new("masonry-test.some-notification");
 
-    let sender = ModularWidget::new(()).event_fn(|_, ctx, event, _| {
+    let sender = ModularWidget::new(()).event_fn(|_, ctx, event| {
         if matches!(event, Event::WindowConnected) {
             ctx.submit_notification(NOTIFICATION);
         }

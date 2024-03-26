@@ -25,7 +25,6 @@ impl AppDelegate for Delegate {
         _window_id: WindowId,
         _widget_id: WidgetId,
         action: Action,
-        _env: &Env,
     ) {
         if let Action::ButtonPressed = action {
             println!("Hello");

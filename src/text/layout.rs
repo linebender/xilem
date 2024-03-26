@@ -13,7 +13,7 @@ use crate::piet::{
     Color, PietText, PietTextLayout, Text as _, TextAlignment, TextAttribute, TextLayout as _,
     TextLayoutBuilder as _,
 };
-use crate::{Env, KeyOrValue, PaintCtx, RenderContext};
+use crate::{PaintCtx, RenderContext};
 
 /// A component for displaying text on screen.
 ///
@@ -33,17 +33,16 @@ use crate::{Env, KeyOrValue, PaintCtx, RenderContext};
 /// [`update`]: trait.Widget.html#tymethod.update
 /// [`needs_rebuild_after_update`]: #method.needs_rebuild_after_update
 /// [`rebuild_if_needed`]: #method.rebuild_if_needed
-/// [`Env`]: struct.Env.html
 #[derive(Clone)]
 pub struct TextLayout<T> {
     // TODO - remove Option
     text: Option<T>,
-    font: KeyOrValue<FontDescriptor>,
+    font: FontDescriptor,
     // when set, this will be used to override the size in he font descriptor.
     // This provides an easy way to change only the font size, while still
     // using a `FontDescriptor` in the `Env`.
-    text_size_override: Option<KeyOrValue<f64>>,
-    text_color: KeyOrValue<Color>,
+    text_size_override: Option<f64>,
+    text_color: Color,
     layout: Option<PietTextLayout>,
     wrap_width: f64,
     alignment: TextAlignment,
@@ -72,8 +71,8 @@ impl<T> TextLayout<T> {
     pub fn new() -> Self {
         TextLayout {
             text: None,
-            font: crate::theme::UI_FONT.into(),
-            text_color: crate::theme::TEXT_COLOR.into(),
+            font: crate::theme::UI_FONT,
+            text_color: crate::theme::TEXT_COLOR,
             text_size_override: None,
             layout: None,
             wrap_width: f64::INFINITY,
@@ -84,8 +83,7 @@ impl<T> TextLayout<T> {
     }
 
     /// Set the default text color for this layout.
-    pub fn set_text_color(&mut self, color: impl Into<KeyOrValue<Color>>) {
-        let color = color.into();
+    pub fn set_text_color(&mut self, color: Color) {
         if color != self.text_color {
             self.text_color = color;
             self.layout = None;
@@ -94,14 +92,10 @@ impl<T> TextLayout<T> {
 
     /// Set the default font.
     ///
-    /// The argument is a [`FontDescriptor`] or a [`Key<FontDescriptor>`] that
-    /// can be resolved from the [`Env`].
+    /// The argument is a [`FontDescriptor`].
     ///
     /// [`FontDescriptor`]: struct.FontDescriptor.html
-    /// [`Env`]: struct.Env.html
-    /// [`Key<FontDescriptor>`]: struct.Key.html
-    pub fn set_font(&mut self, font: impl Into<KeyOrValue<FontDescriptor>>) {
-        let font = font.into();
+    pub fn set_font(&mut self, font: FontDescriptor) {
         if font != self.font {
             self.font = font;
             self.layout = None;
@@ -115,8 +109,7 @@ impl<T> TextLayout<T> {
     ///
     /// [`set_font`]: #method.set_font.html
     /// [`FontDescriptor`]: struct.FontDescriptor.html
-    pub fn set_text_size(&mut self, size: impl Into<KeyOrValue<f64>>) {
-        let size = size.into();
+    pub fn set_text_size(&mut self, size: f64) {
         if Some(&size) != self.text_size_override.as_ref() {
             self.text_size_override = Some(size);
             self.layout = None;
@@ -178,7 +171,7 @@ impl<T: TextStorage> TextLayout<T> {
 
     /// Set the text to display.
     pub fn set_text(&mut self, text: T) {
-        if self.text.is_none() || !self.text.as_ref().unwrap().same(&text) {
+        if self.text.is_none() || !self.text.as_ref().unwrap().maybe_eq(&text) {
             self.text_is_rtl = crate::piet::util::first_strong_rtl(text.as_str());
             self.text = Some(text);
             self.layout = None;
@@ -343,12 +336,12 @@ impl<T: TextStorage> TextLayout<T> {
     /// as part of your widget's [`layout`] method.
     ///
     /// [`layout`]: trait.Widget.html#method.layout
-    pub fn rebuild_if_needed(&mut self, factory: &mut PietText, env: &Env) {
+    pub fn rebuild_if_needed(&mut self, factory: &mut PietText) {
         if let Some(text) = &self.text {
             if self.layout.is_none() {
-                let font = self.font.resolve(env);
-                let color = self.text_color.resolve(env);
-                let size_override = self.text_size_override.as_ref().map(|key| key.resolve(env));
+                let font = self.font.clone();
+                let color = self.text_color;
+                let size_override = self.text_size_override;
 
                 let descriptor = if let Some(size) = size_override {
                     font.with_size(size)
@@ -364,7 +357,7 @@ impl<T: TextStorage> TextLayout<T> {
                     .default_attribute(descriptor.weight)
                     .default_attribute(descriptor.style)
                     .default_attribute(TextAttribute::TextColor(color));
-                let layout = text.add_attributes(builder, env).build().unwrap();
+                let layout = text.add_attributes(builder).build().unwrap();
 
                 self.links = text
                     .links()

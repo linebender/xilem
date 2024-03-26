@@ -15,13 +15,13 @@ fn basic_timer() {
     let timer_handled: Rc<Cell<bool>> = Rc::new(false.into());
 
     let widget = ModularWidget::new((None, timer_handled.clone()))
-        .lifecycle_fn(move |state, ctx, event, _| match event {
+        .lifecycle_fn(move |state, ctx, event| match event {
             LifeCycle::WidgetAdded => {
                 state.0 = Some(ctx.request_timer(Duration::from_secs(3)));
             }
             _ => {}
         })
-        .event_fn(|state, _ctx, event, _| {
+        .event_fn(|state, _ctx, event| {
             if let Event::Timer(token) = event {
                 if *token == state.0.unwrap() {
                     state.1.set(true);

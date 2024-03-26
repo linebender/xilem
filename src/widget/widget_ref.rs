@@ -29,6 +29,7 @@ pub struct WidgetRef<'w, W: Widget + ?Sized> {
 
 // --- TRAIT IMPLS ---
 
+#[allow(clippy::non_canonical_clone_impl)]
 impl<'w, W: Widget + ?Sized> Clone for WidgetRef<'w, W> {
     fn clone(&self) -> Self {
         Self {

@@ -9,7 +9,7 @@ use std::collections::{HashMap, HashSet};
 use std::fmt::Display;
 use std::sync::Arc;
 
-use crate::{Data, Rect};
+use crate::Rect;
 use serde::{Deserialize, Serialize};
 
 pub type MyWidgetId = u32;
@@ -147,33 +147,6 @@ impl Snapshot {
     }
 }
 
-impl Data for Snapshot {
-    fn same(&self, other: &Self) -> bool {
-        if !(self.layout_tree.same(&other.layout_tree)
-            && self.global_state.same(&other.global_state)
-            && self.event_state.same(&other.event_state)
-            && self.selected_widget.same(&other.selected_widget))
-        {
-            return false;
-        }
-
-        if self.widget_states.len() != other.widget_states.len() {
-            return false;
-        }
-        for (key, value) in self.widget_states.iter() {
-            if let Some(other_value) = other.widget_states.get(key) {
-                if !value.same(other_value) {
-                    return false;
-                }
-            } else {
-                return false;
-            }
-        }
-
-        true
-    }
-}
-
 impl Timeline {
     pub fn get_selected_snapshot(&self) -> &Snapshot {
         self.snapshots.get(&self.selected_log).unwrap()
@@ -181,56 +154,6 @@ impl Timeline {
 
     pub fn get_selected_snapshot_mut(&mut self) -> &mut Snapshot {
         self.snapshots.get_mut(&mut self.selected_log).unwrap()
-    }
-}
-
-impl Data for Timeline {
-    fn same(&self, other: &Self) -> bool {
-        if !(self.logs.same(&other.logs) && self.selected_log.same(&other.selected_log)) {
-            return false;
-        }
-
-        if self.snapshots.len() != other.snapshots.len() {
-            return false;
-        }
-        for (key, value) in self.snapshots.iter() {
-            if let Some(other_value) = other.snapshots.get(key) {
-                if !value.same(other_value) {
-                    return false;
-                }
-            } else {
-                return false;
-            }
-        }
-
-        true
-    }
-}
-
-impl Data for LogId {
-    fn same(&self, other: &Self) -> bool {
-        self == other
-    }
-}
-
-impl Data for Value {
-    fn same(&self, other: &Self) -> bool {
-        self == other
-    }
-}
-
-impl Data for StateTree {
-    fn same(&self, other: &Self) -> bool {
-        Arc::ptr_eq(&self.children, &other.children)
-            && self.name == other.name
-            && self.value == other.value
-            && self.folded_by_default == other.folded_by_default
-    }
-}
-
-impl Data for LayoutTree {
-    fn same(&self, other: &Self) -> bool {
-        Arc::ptr_eq(&self.widgets, &other.widgets) && self.root == other.root
     }
 }
 

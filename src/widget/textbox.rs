@@ -17,8 +17,8 @@ use crate::shell::{HotKey, KeyEvent, SysMods, TimerToken};
 use crate::text::{ImeInvalidation, Selection, TextAlignment, TextComponent, TextLayout};
 use crate::widget::{Portal, WidgetMut, WidgetRef};
 use crate::{
-    theme, ArcStr, BoxConstraints, Command, Env, Event, EventCtx, LayoutCtx, LifeCycle,
-    LifeCycleCtx, PaintCtx, Point, Rect, Size, StatusChange, Vec2, Widget, WidgetPod,
+    theme, ArcStr, BoxConstraints, Command, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx,
+    PaintCtx, Point, Rect, Size, StatusChange, Vec2, Widget, WidgetPod,
 };
 
 const CURSOR_BLINK_DURATION: Duration = Duration::from_millis(500);
@@ -148,14 +148,7 @@ impl TextBox {
     }
 
     /// Builder-style method for setting the font.
-    ///
-    /// The argument can be a [`FontDescriptor`] or a [`Key<FontDescriptor>`]
-    /// that refers to a font defined in the [`Env`].
-    ///
-    /// [`Env`]: ../struct.Env.html
-    /// [`FontDescriptor`]: ../struct.FontDescriptor.html
-    /// [`Key<FontDescriptor>`]: ../struct.Key.html
-    pub fn with_font(mut self, font: impl Into<KeyOrValue<FontDescriptor>>) -> Self {
+    pub fn with_font(mut self, font: FontDescriptor) -> Self {
         self.set_font(font);
         self
     }
@@ -190,19 +183,11 @@ impl TextBox {
     }
 
     /// Set the font.
-    ///
-    /// The argument can be a [`FontDescriptor`] or a [`Key<FontDescriptor>`]
-    /// that refers to a font defined in the [`Env`].
-    ///
-    /// [`Env`]: ../struct.Env.html
-    /// [`FontDescriptor`]: ../struct.FontDescriptor.html
-    /// [`Key<FontDescriptor>`]: ../struct.Key.html
-    pub fn set_font(&mut self, font: impl Into<KeyOrValue<FontDescriptor>>) {
+    pub fn set_font(&mut self, font: FontDescriptor) {
         if !self.inner.as_ref().child().can_write() {
             tracing::warn!("set_font called with IME lock held.");
             return;
         }
-        let font = font.into();
         self.text_mut().borrow_mut().layout.set_font(font.clone());
         self.placeholder_layout.set_font(font);
     }
@@ -387,7 +372,7 @@ impl TextBox {
 }
 
 impl Widget for TextBox {
-    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, env: &Env) {
+    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event) {
         match event {
             Event::Notification(cmd) => match cmd {
                 cmd if cmd.is(TextComponent::SCROLL_TO) => {
@@ -519,10 +504,10 @@ impl Widget for TextBox {
             }
             _ => (),
         }
-        self.inner.on_event(ctx, event, env)
+        self.inner.on_event(ctx, event)
     }
 
-    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange, _env: &Env) {
+    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange) {
         match event {
             StatusChange::FocusChanged(true) => {
                 // TODO
@@ -571,7 +556,7 @@ impl Widget for TextBox {
         }
     }
 
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
+    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
         match event {
             LifeCycle::WidgetAdded => {
                 ctx.register_text_input(self.inner.as_ref().child().input_handler());
@@ -582,22 +567,22 @@ impl Widget for TextBox {
             }
             _ => (),
         }
-        self.inner.lifecycle(ctx, event, env);
+        self.inner.lifecycle(ctx, event);
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
+    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
         if !self.inner.as_ref().child().can_write() {
             tracing::warn!("Widget::layout called with outstanding IME lock.");
         }
-        let min_width = env.get(theme::WIDE_WIDGET_WIDTH);
-        let textbox_insets = env.get(theme::TEXTBOX_INSETS);
+        let min_width = theme::WIDE_WIDGET_WIDTH;
+        let textbox_insets = theme::TEXTBOX_INSETS;
 
-        self.placeholder_layout.rebuild_if_needed(ctx.text(), env);
+        self.placeholder_layout.rebuild_if_needed(ctx.text());
         let min_size = bc.constrain((min_width, 0.0));
         let child_bc = BoxConstraints::new(min_size, bc.max());
 
-        let mut size = self.inner.layout(ctx, &child_bc, env);
-        ctx.place_child(&mut self.inner, Point::ORIGIN, env);
+        let mut size = self.inner.layout(ctx, &child_bc);
+        ctx.place_child(&mut self.inner, Point::ORIGIN);
 
         let text_metrics = if !self.inner.as_ref().child().can_read() || self.text_len() == 0 {
             self.placeholder_layout.layout_metrics()
@@ -620,30 +605,30 @@ impl Widget for TextBox {
         size
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, env: &Env) {
+    fn paint(&mut self, ctx: &mut PaintCtx) {
         if !self.inner.as_ref().child().can_read() {
             tracing::warn!("Widget::paint called with outstanding IME lock, skipping");
             return;
         }
         let size = ctx.size();
-        let background_color = env.get(theme::BACKGROUND_LIGHT);
-        let cursor_color = env.get(theme::CURSOR_COLOR);
-        let border_width = env.get(theme::TEXTBOX_BORDER_WIDTH);
-        let textbox_insets = env.get(theme::TEXTBOX_INSETS);
+        let background_color = theme::BACKGROUND_LIGHT;
+        let cursor_color = theme::CURSOR_COLOR;
+        let border_width = theme::TEXTBOX_BORDER_WIDTH;
+        let textbox_insets = theme::TEXTBOX_INSETS;
 
         let is_focused = ctx.is_focused();
 
         let border_color = if is_focused {
-            env.get(theme::PRIMARY_LIGHT)
+            theme::PRIMARY_LIGHT
         } else {
-            env.get(theme::BORDER_DARK)
+            theme::BORDER_DARK
         };
 
         // Paint the background
         let clip_rect = size
             .to_rect()
             .inset(-border_width / 2.0)
-            .to_rounded_rect(env.get(theme::TEXTBOX_BORDER_RADIUS));
+            .to_rounded_rect(theme::TEXTBOX_BORDER_RADIUS);
 
         ctx.fill(clip_rect, &background_color);
 
@@ -651,7 +636,7 @@ impl Widget for TextBox {
             let padding_offset = Vec2::new(textbox_insets.x0, textbox_insets.y0);
             ctx.with_save(|ctx| {
                 ctx.transform(Affine::translate(padding_offset));
-                self.inner.paint(ctx, env);
+                self.inner.paint(ctx);
             })
         } else {
             ctx.skip_child(&mut self.inner);
@@ -803,7 +788,7 @@ mod tests {
 
             let mut harness = TestHarness::create_with_size(textbox, Size::new(50.0, 50.0));
 
-            harness.edit_root_widget(|mut textbox, _| {
+            harness.edit_root_widget(|mut textbox| {
                 let mut textbox = textbox.downcast::<TextBox>().unwrap();
                 textbox.set_text("The quick brown fox jumps over the lazy dog");
             });

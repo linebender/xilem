@@ -358,7 +358,6 @@ pub fn len_utf8_from_first_byte(b: u8) -> usize {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::Data;
 
     #[test]
     fn replace() {
@@ -518,6 +517,6 @@ mod tests {
         let a = Arc::new("hello".to_owned());
         let mut b = a.clone();
         b.edit(5..5, "");
-        assert!(a.same(&b));
+        assert!(Arc::ptr_eq(&a, &b));
     }
 }

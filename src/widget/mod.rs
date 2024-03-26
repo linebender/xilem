@@ -78,7 +78,7 @@ pub(crate) enum CursorChange {
     Override(druid_shell::Cursor),
 }
 
-use crate::{Affine, Data, Size};
+use crate::{Affine, Size};
 
 // These are based on https://api.flutter.dev/flutter/painting/BoxFit-class.html
 /// Strategies for inscribing a rectangle inside another rectangle.
@@ -108,12 +108,6 @@ impl CursorChange {
             CursorChange::Set(c) | CursorChange::Override(c) => Some(c.clone()),
             CursorChange::Default => None,
         }
-    }
-}
-
-impl Data for FillStrat {
-    fn same(&self, other: &Self) -> bool {
-        self == other
     }
 }
 
@@ -159,7 +153,7 @@ impl FillStrat {
 pub mod prelude {
     #[doc(hidden)]
     pub use crate::{
-        BoxConstraints, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
+        BoxConstraints, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
         RenderContext, Size, StatusChange, Widget, WidgetId,
     };
 }

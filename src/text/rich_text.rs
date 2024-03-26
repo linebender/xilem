@@ -13,7 +13,7 @@ use crate::piet::{
     util, Color, FontFamily, FontStyle, FontWeight, PietTextLayoutBuilder, TextLayoutBuilder,
     TextStorage as PietTextStorage,
 };
-use crate::{ArcStr, Data, Env, KeyOrValue};
+use crate::ArcStr;
 
 /// Text with optional style spans.
 #[derive(Clone, Debug)]
@@ -72,12 +72,8 @@ impl PietTextStorage for RichText {
 }
 
 impl TextStorage for RichText {
-    fn add_attributes(
-        &self,
-        mut builder: PietTextLayoutBuilder,
-        env: &Env,
-    ) -> PietTextLayoutBuilder {
-        for (range, attr) in self.attrs.to_piet_attrs(env) {
+    fn add_attributes(&self, mut builder: PietTextLayoutBuilder) -> PietTextLayoutBuilder {
+        for (range, attr) in self.attrs.to_piet_attrs() {
             builder = builder.range_attribute(range, attr);
         }
         builder
@@ -86,13 +82,11 @@ impl TextStorage for RichText {
     fn links(&self) -> &[Link] {
         &self.links
     }
-}
 
-impl Data for RichText {
-    fn same(&self, other: &Self) -> bool {
-        Arc::ptr_eq(&self.attrs, &other.attrs)
+    fn maybe_eq(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.buffer, &other.buffer)
+            && Arc::ptr_eq(&self.attrs, &other.attrs)
             && Arc::ptr_eq(&self.links, &other.links)
-            && self.buffer == other.buffer
     }
 }
 
@@ -192,13 +186,13 @@ impl AttributesAdder<'_> {
     }
 
     /// Add a font size attribute.
-    pub fn size(&mut self, size: impl Into<KeyOrValue<f64>>) -> &mut Self {
+    pub fn size(&mut self, size: impl Into<f64>) -> &mut Self {
         self.add_attr(Attribute::size(size));
         self
     }
 
     /// Add a forground color attribute.
-    pub fn text_color(&mut self, color: impl Into<KeyOrValue<Color>>) -> &mut Self {
+    pub fn text_color(&mut self, color: impl Into<Color>) -> &mut Self {
         self.add_attr(Attribute::text_color(color));
         self
     }
@@ -228,7 +222,7 @@ impl AttributesAdder<'_> {
     }
 
     /// Add a `FontDescriptor` attribute.
-    pub fn font_descriptor(&mut self, font: impl Into<KeyOrValue<FontDescriptor>>) -> &mut Self {
+    pub fn font_descriptor(&mut self, font: impl Into<FontDescriptor>) -> &mut Self {
         self.add_attr(Attribute::font_descriptor(font));
         self
     }

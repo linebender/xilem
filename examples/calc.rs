@@ -11,9 +11,8 @@ use std::sync::Arc;
 
 use masonry::widget::{Align, CrossAxisAlignment, Flex, Label, SizedBox, WidgetRef};
 use masonry::{
-    Action, AppDelegate, AppLauncher, BoxConstraints, Color, Env, Event, EventCtx, LayoutCtx,
-    LifeCycle, LifeCycleCtx, PaintCtx, Point, Size, StatusChange, Widget, WidgetPod,
-    WindowDescription,
+    Action, AppDelegate, AppLauncher, BoxConstraints, Color, Event, EventCtx, LayoutCtx, LifeCycle,
+    LifeCycleCtx, PaintCtx, Point, Size, StatusChange, Widget, WidgetPod, WindowDescription,
 };
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace, trace_span, Span};
@@ -138,7 +137,7 @@ impl CalcButton {
 }
 
 impl Widget for CalcButton {
-    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, env: &Env) {
+    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event) {
         match event {
             Event::MouseDown(_) => {
                 if !ctx.is_disabled() {
@@ -160,10 +159,10 @@ impl Widget for CalcButton {
             }
             _ => (),
         }
-        self.inner.on_event(ctx, event, env);
+        self.inner.on_event(ctx, event);
     }
 
-    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange, _env: &Env) {
+    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange) {
         match event {
             StatusChange::HotChanged(true) => {
                 ctx.get_mut(&mut self.inner).set_border(Color::WHITE, 3.0);
@@ -178,19 +177,19 @@ impl Widget for CalcButton {
         }
     }
 
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
-        self.inner.lifecycle(ctx, event, env)
+    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
+        self.inner.lifecycle(ctx, event)
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
-        let size = self.inner.layout(ctx, bc, env);
-        ctx.place_child(&mut self.inner, Point::ORIGIN, env);
+    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
+        let size = self.inner.layout(ctx, bc);
+        ctx.place_child(&mut self.inner, Point::ORIGIN);
 
         size
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, env: &Env) {
-        self.inner.paint(ctx, env);
+    fn paint(&mut self, ctx: &mut PaintCtx) {
+        self.inner.paint(ctx);
     }
 
     fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
@@ -209,7 +208,6 @@ impl AppDelegate for CalcState {
         _window_id: masonry::WindowId,
         _widget_id: masonry::WidgetId,
         action: Action,
-        _env: &Env,
     ) {
         match action {
             Action::Other(payload) => match payload.downcast_ref::<CalcAction>().unwrap() {

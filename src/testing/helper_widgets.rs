@@ -17,15 +17,14 @@ use std::rc::Rc;
 
 use smallvec::SmallVec;
 
-use crate::event::StatusChange;
 use crate::widget::{SizedBox, WidgetRef};
 use crate::*;
 
-pub type EventFn<S> = dyn FnMut(&mut S, &mut EventCtx, &Event, &Env);
-pub type StatusChangeFn<S> = dyn FnMut(&mut S, &mut LifeCycleCtx, &StatusChange, &Env);
-pub type LifeCycleFn<S> = dyn FnMut(&mut S, &mut LifeCycleCtx, &LifeCycle, &Env);
-pub type LayoutFn<S> = dyn FnMut(&mut S, &mut LayoutCtx, &BoxConstraints, &Env) -> Size;
-pub type PaintFn<S> = dyn FnMut(&mut S, &mut PaintCtx, &Env);
+pub type EventFn<S> = dyn FnMut(&mut S, &mut EventCtx, &Event);
+pub type StatusChangeFn<S> = dyn FnMut(&mut S, &mut LifeCycleCtx, &StatusChange);
+pub type LifeCycleFn<S> = dyn FnMut(&mut S, &mut LifeCycleCtx, &LifeCycle);
+pub type LayoutFn<S> = dyn FnMut(&mut S, &mut LayoutCtx, &BoxConstraints) -> Size;
+pub type PaintFn<S> = dyn FnMut(&mut S, &mut PaintCtx);
 pub type ChildrenFn<S> = dyn Fn(&S) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]>;
 
 pub const REPLACE_CHILD: Selector = Selector::new("masonry-test.replace-child");
@@ -120,17 +119,14 @@ impl<S> ModularWidget<S> {
         }
     }
 
-    pub fn event_fn(
-        mut self,
-        f: impl FnMut(&mut S, &mut EventCtx, &Event, &Env) + 'static,
-    ) -> Self {
+    pub fn event_fn(mut self, f: impl FnMut(&mut S, &mut EventCtx, &Event) + 'static) -> Self {
         self.on_event = Some(Box::new(f));
         self
     }
 
     pub fn status_change_fn(
         mut self,
-        f: impl FnMut(&mut S, &mut LifeCycleCtx, &StatusChange, &Env) + 'static,
+        f: impl FnMut(&mut S, &mut LifeCycleCtx, &StatusChange) + 'static,
     ) -> Self {
         self.on_status_change = Some(Box::new(f));
         self
@@ -138,7 +134,7 @@ impl<S> ModularWidget<S> {
 
     pub fn lifecycle_fn(
         mut self,
-        f: impl FnMut(&mut S, &mut LifeCycleCtx, &LifeCycle, &Env) + 'static,
+        f: impl FnMut(&mut S, &mut LifeCycleCtx, &LifeCycle) + 'static,
     ) -> Self {
         self.lifecycle = Some(Box::new(f));
         self
@@ -146,13 +142,13 @@ impl<S> ModularWidget<S> {
 
     pub fn layout_fn(
         mut self,
-        f: impl FnMut(&mut S, &mut LayoutCtx, &BoxConstraints, &Env) -> Size + 'static,
+        f: impl FnMut(&mut S, &mut LayoutCtx, &BoxConstraints) -> Size + 'static,
     ) -> Self {
         self.layout = Some(Box::new(f));
         self
     }
 
-    pub fn paint_fn(mut self, f: impl FnMut(&mut S, &mut PaintCtx, &Env) + 'static) -> Self {
+    pub fn paint_fn(mut self, f: impl FnMut(&mut S, &mut PaintCtx) + 'static) -> Self {
         self.paint = Some(Box::new(f));
         self
     }
@@ -167,25 +163,25 @@ impl<S> ModularWidget<S> {
 }
 
 impl<S: 'static> Widget for ModularWidget<S> {
-    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, env: &Env) {
+    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event) {
         if let Some(f) = self.on_event.as_mut() {
-            f(&mut self.state, ctx, event, env)
+            f(&mut self.state, ctx, event)
         }
     }
 
-    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange, env: &Env) {
+    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange) {
         if let Some(f) = self.on_status_change.as_mut() {
-            f(&mut self.state, ctx, event, env)
+            f(&mut self.state, ctx, event)
         }
     }
 
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
+    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
         if let Some(f) = self.lifecycle.as_mut() {
-            f(&mut self.state, ctx, event, env)
+            f(&mut self.state, ctx, event)
         }
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
+    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
         let ModularWidget {
             ref mut state,
             ref mut layout,
@@ -193,13 +189,13 @@ impl<S: 'static> Widget for ModularWidget<S> {
         } = self;
         layout
             .as_mut()
-            .map(|f| f(state, ctx, bc, env))
+            .map(|f| f(state, ctx, bc))
             .unwrap_or_else(|| Size::new(100., 100.))
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, env: &Env) {
+    fn paint(&mut self, ctx: &mut PaintCtx) {
         if let Some(f) = self.paint.as_mut() {
-            f(&mut self.state, ctx, env)
+            f(&mut self.state, ctx)
         }
     }
 
@@ -221,7 +217,7 @@ impl ReplaceChild {
 }
 
 impl Widget for ReplaceChild {
-    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, env: &Env) {
+    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event) {
         if let Event::Command(cmd) = event {
             if cmd.is(REPLACE_CHILD) {
                 self.child = (self.replacer)();
@@ -229,23 +225,23 @@ impl Widget for ReplaceChild {
                 return;
             }
         }
-        self.child.on_event(ctx, event, env)
+        self.child.on_event(ctx, event)
     }
 
-    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, _event: &StatusChange, _env: &Env) {
+    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, _event: &StatusChange) {
         ctx.request_layout();
     }
 
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
-        self.child.lifecycle(ctx, event, env)
+    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
+        self.child.lifecycle(ctx, event)
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
-        self.child.layout(ctx, bc, env)
+    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
+        self.child.layout(ctx, bc)
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, env: &Env) {
-        self.child.paint_raw(ctx, env)
+    fn paint(&mut self, ctx: &mut PaintCtx) {
+        self.child.paint_raw(ctx)
     }
 
     fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
@@ -285,29 +281,29 @@ impl Recording {
 }
 
 impl<W: Widget> Widget for Recorder<W> {
-    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, env: &Env) {
+    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event) {
         self.recording.push(Record::E(event.clone()));
-        self.child.on_event(ctx, event, env)
+        self.child.on_event(ctx, event)
     }
 
-    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange, env: &Env) {
+    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange) {
         self.recording.push(Record::SC(event.clone()));
-        self.child.on_status_change(ctx, event, env)
+        self.child.on_status_change(ctx, event)
     }
 
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
+    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
         self.recording.push(Record::L(event.clone()));
-        self.child.lifecycle(ctx, event, env)
+        self.child.lifecycle(ctx, event)
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
-        let size = self.child.layout(ctx, bc, env);
+    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
+        let size = self.child.layout(ctx, bc);
         self.recording.push(Record::Layout(size));
         size
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, env: &Env) {
-        self.child.paint(ctx, env);
+    fn paint(&mut self, ctx: &mut PaintCtx) {
+        self.child.paint(ctx);
         self.recording.push(Record::Paint)
     }
 

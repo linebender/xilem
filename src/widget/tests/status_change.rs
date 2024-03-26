@@ -149,7 +149,7 @@ fn update_hot_from_layout() {
     let box_rec = Recording::default();
 
     let collapsable_box = ModularWidget::new(false)
-        .event_fn(move |collapsed, ctx, event, _env| {
+        .event_fn(move |collapsed, ctx, event| {
             if let Event::Command(command) = event {
                 if command.is(COLLAPSE) {
                     *collapsed = true;
@@ -158,7 +158,7 @@ fn update_hot_from_layout() {
             }
         })
         .layout_fn(
-            move |collapsed, _ctx, _bc, _env| {
+            move |collapsed, _ctx, _bc| {
                 if *collapsed {
                     Size::ZERO
                 } else {

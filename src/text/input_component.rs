@@ -20,8 +20,8 @@ use crate::kurbo::{Line, Point, Rect, Vec2};
 use crate::piet::TextLayout as _;
 use crate::widget::WidgetRef;
 use crate::{
-    text, theme, BoxConstraints, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx,
-    PaintCtx, RenderContext, Selector, Size, StatusChange, Widget,
+    text, theme, BoxConstraints, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
+    RenderContext, Selector, Size, StatusChange, Widget,
 };
 
 /// A widget that accepts text input.
@@ -276,7 +276,7 @@ impl<T: TextStorage + EditableText> TextComponentMut<'_, '_, T> {
             .borrow()
             .layout
             .text()
-            .map(|old| !old.same(&new_text))
+            .map(|old| !old.maybe_eq(&new_text))
             .unwrap_or(true);
         if needs_rebuild {
             self.widget.borrow_mut().layout.set_text(new_text.clone());
@@ -294,7 +294,7 @@ impl<T: TextStorage + EditableText> TextComponentMut<'_, '_, T> {
 }
 
 impl<T: TextStorage + EditableText> Widget for TextComponent<T> {
-    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, _env: &Env) {
+    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event) {
         match event {
             Event::MouseDown(mouse) if self.can_write() && !ctx.is_disabled() => {
                 ctx.set_active(true);
@@ -384,23 +384,23 @@ impl<T: TextStorage + EditableText> Widget for TextComponent<T> {
         }
     }
 
-    fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange, _env: &Env) {}
+    fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange) {}
 
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
+    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
         match event {
             LifeCycle::WidgetAdded => {
                 assert!(
                     self.can_write(),
                     "ime should never be locked at WidgetAdded"
                 );
-                self.borrow_mut().layout.rebuild_if_needed(ctx.text(), env);
+                self.borrow_mut().layout.rebuild_if_needed(ctx.text());
             }
             LifeCycle::DisabledChanged(disabled) => {
                 if self.can_write() {
                     let color = if *disabled {
-                        env.get(theme::DISABLED_TEXT_COLOR)
+                        theme::DISABLED_TEXT_COLOR
                     } else {
-                        env.get(theme::TEXT_COLOR)
+                        theme::TEXT_COLOR
                     };
                     self.borrow_mut().layout.set_text_color(color);
                 }
@@ -421,14 +421,14 @@ impl<T: TextStorage + EditableText> Widget for TextComponent<T> {
         }
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
+    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
         if !self.can_write() {
             tracing::warn!("Text layout called with IME lock held.");
             return Size::ZERO;
         }
 
         self.borrow_mut().layout.set_wrap_width(bc.max().width);
-        self.borrow_mut().layout.rebuild_if_needed(ctx.text(), env);
+        self.borrow_mut().layout.rebuild_if_needed(ctx.text());
         let metrics = self.borrow().layout.layout_metrics();
         let width = if bc.max().width.is_infinite() || bc.max().width < f64::MAX {
             metrics.trailing_whitespace_width
@@ -447,18 +447,18 @@ impl<T: TextStorage + EditableText> Widget for TextComponent<T> {
         size
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, env: &Env) {
+    fn paint(&mut self, ctx: &mut PaintCtx) {
         if !self.can_read() {
             tracing::warn!("Text paint called with IME lock held.");
         }
 
         let selection_color = if self.has_focus {
-            env.get(theme::SELECTED_TEXT_BACKGROUND_COLOR)
+            theme::SELECTED_TEXT_BACKGROUND_COLOR
         } else {
-            env.get(theme::SELECTED_TEXT_INACTIVE_BACKGROUND_COLOR)
+            theme::SELECTED_TEXT_INACTIVE_BACKGROUND_COLOR
         };
 
-        let cursor_color = env.get(theme::CURSOR_COLOR);
+        let cursor_color = theme::CURSOR_COLOR;
         let text_offset = Vec2::new(self.borrow().alignment_offset, 0.0);
 
         let selection = self.borrow().selection();
@@ -914,7 +914,7 @@ impl<T: TextStorage + EditableText> InputHandler for EditSessionHandle<T> {
             .borrow()
             .layout
             .text()
-            .map(|old| !old.same(&self.text))
+            .map(|old| !old.maybe_eq(&self.text))
             .unwrap_or(true);
         if text_changed {
             self.inner.borrow_mut().external_text_change = Some(self.text.clone());

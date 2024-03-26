@@ -15,7 +15,7 @@ const CHANGE_DISABLED: Selector<bool> = Selector::new("masonry-test.change-disab
 
 fn make_focusable_widget(id: WidgetId, state: Rc<Cell<Option<bool>>>) -> impl Widget {
     ModularWidget::new(state)
-        .lifecycle_fn(move |state, ctx, event, _| match event {
+        .lifecycle_fn(move |state, ctx, event| match event {
             LifeCycle::BuildFocusChain => {
                 ctx.register_for_focus();
             }
@@ -24,7 +24,7 @@ fn make_focusable_widget(id: WidgetId, state: Rc<Cell<Option<bool>>>) -> impl Wi
             }
             _ => {}
         })
-        .event_fn(|_, ctx, event, _| {
+        .event_fn(|_, ctx, event| {
             if let Event::Command(cmd) = event {
                 if let Some(disabled) = cmd.try_get(CHANGE_DISABLED) {
                     ctx.set_disabled(*disabled);
@@ -73,10 +73,10 @@ fn simple_disable() {
 fn disable_tree() {
     fn make_parent_widget(id: WidgetId, child: impl Widget) -> impl Widget {
         ModularWidget::new(WidgetPod::new(child))
-            .lifecycle_fn(|child, ctx, event, env| {
-                child.lifecycle(ctx, event, env);
+            .lifecycle_fn(|child, ctx, event| {
+                child.lifecycle(ctx, event);
             })
-            .event_fn(|child, ctx, event, env| {
+            .event_fn(|child, ctx, event| {
                 if let Event::Command(cmd) = event {
                     if let Some(disabled) = cmd.try_get(CHANGE_DISABLED) {
                         ctx.set_disabled(*disabled);
@@ -85,11 +85,11 @@ fn disable_tree() {
                         //return;
                     }
                 }
-                child.on_event(ctx, event, env);
+                child.on_event(ctx, event);
             })
-            .layout_fn(|child, ctx, my_bc, env| {
-                let size = child.layout(ctx, my_bc, env);
-                ctx.place_child(child, Point::ZERO, env);
+            .layout_fn(|child, ctx, my_bc| {
+                let size = child.layout(ctx, my_bc);
+                ctx.place_child(child, Point::ZERO);
                 size
             })
             .children_fn(|child| smallvec![child.as_dyn()])

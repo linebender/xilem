@@ -14,7 +14,7 @@ use tracing::{trace, trace_span, Span};
 
 use crate::widget::{WidgetPod, WidgetRef};
 use crate::{
-    BoxConstraints, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Rect, Size,
+    BoxConstraints, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Rect, Size,
     StatusChange, UnitPoint, Widget,
 };
 
@@ -80,18 +80,18 @@ impl Align {
 }
 
 impl Widget for Align {
-    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, env: &Env) {
-        self.child.on_event(ctx, event, env)
+    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event) {
+        self.child.on_event(ctx, event)
     }
 
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
-        self.child.lifecycle(ctx, event, env)
+    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
+        self.child.lifecycle(ctx, event)
     }
 
-    fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange, _env: &Env) {}
+    fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange) {}
 
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
-        let size = self.child.layout(ctx, &bc.loosen(), env);
+    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
+        let size = self.child.layout(ctx, &bc.loosen());
 
         log_size_warnings(size);
 
@@ -117,7 +117,7 @@ impl Widget for Align {
             .align
             .resolve(Rect::new(0., 0., extra_width, extra_height))
             .expand();
-        ctx.place_child(&mut self.child, origin, env);
+        ctx.place_child(&mut self.child, origin);
 
         let my_insets = self.child.compute_parent_paint_insets(my_size);
         ctx.set_paint_insets(my_insets);
@@ -137,8 +137,8 @@ impl Widget for Align {
         my_size
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, env: &Env) {
-        self.child.paint(ctx, env);
+    fn paint(&mut self, ctx: &mut PaintCtx) {
+        self.child.paint(ctx);
     }
 
     fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {

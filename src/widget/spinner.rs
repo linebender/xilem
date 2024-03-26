@@ -12,8 +12,8 @@ use tracing::trace;
 use crate::kurbo::Line;
 use crate::widget::WidgetRef;
 use crate::{
-    theme, BoxConstraints, Color, Env, Event, EventCtx, KeyOrValue, LayoutCtx, LifeCycle,
-    LifeCycleCtx, PaintCtx, Point, RenderContext, Size, StatusChange, Vec2, Widget,
+    theme, BoxConstraints, Color, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
+    Point, RenderContext, Size, StatusChange, Vec2, Widget,
 };
 
 // TODO - Set color
@@ -25,7 +25,7 @@ use crate::{
 /// [`SizedBox`]: struct.SizedBox.html
 pub struct Spinner {
     t: f64,
-    color: KeyOrValue<Color>,
+    color: Color,
 }
 
 crate::declare_widget!(SpinnerMut, Spinner);
@@ -41,7 +41,7 @@ impl Spinner {
     /// The argument can be either a `Color` or a [`Key<Color>`].
     ///
     /// [`Key<Color>`]: ../struct.Key.html
-    pub fn with_color(mut self, color: impl Into<KeyOrValue<Color>>) -> Self {
+    pub fn with_color(mut self, color: impl Into<Color>) -> Self {
         self.color = color.into();
         self
     }
@@ -53,7 +53,7 @@ impl SpinnerMut<'_, '_> {
     /// The argument can be either a `Color` or a [`Key<Color>`].
     ///
     /// [`Key<Color>`]: ../struct.Key.html
-    pub fn set_color(&mut self, color: impl Into<KeyOrValue<Color>>) {
+    pub fn set_color(&mut self, color: impl Into<Color>) {
         self.widget.color = color.into();
         self.ctx.request_paint();
     }
@@ -63,13 +63,13 @@ impl Default for Spinner {
     fn default() -> Self {
         Spinner {
             t: 0.0,
-            color: theme::TEXT_COLOR.into(),
+            color: theme::TEXT_COLOR,
         }
     }
 }
 
 impl Widget for Spinner {
-    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, _env: &Env) {
+    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event) {
         if let Event::AnimFrame(interval) = event {
             self.t += (*interval as f64) * 1e-9;
             if self.t >= 1.0 {
@@ -80,22 +80,22 @@ impl Widget for Spinner {
         }
     }
 
-    fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange, _env: &Env) {}
+    fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange) {}
 
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, _env: &Env) {
+    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
         if let LifeCycle::WidgetAdded = event {
             ctx.request_anim_frame();
             ctx.request_paint();
         }
     }
 
-    fn layout(&mut self, _ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
+    fn layout(&mut self, _ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
         let size = if bc.is_width_bounded() && bc.is_height_bounded() {
             bc.max()
         } else {
             bc.constrain(Size::new(
-                env.get(theme::BASIC_WIDGET_HEIGHT),
-                env.get(theme::BASIC_WIDGET_HEIGHT),
+                theme::BASIC_WIDGET_HEIGHT,
+                theme::BASIC_WIDGET_HEIGHT,
             ))
         };
 
@@ -103,11 +103,11 @@ impl Widget for Spinner {
         size
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, env: &Env) {
+    fn paint(&mut self, ctx: &mut PaintCtx) {
         let t = self.t;
         let (width, height) = (ctx.size().width, ctx.size().height);
         let center = Point::new(width / 2.0, height / 2.0);
-        let (r, g, b, original_alpha) = Color::as_rgba(self.color.resolve(env));
+        let (r, g, b, original_alpha) = Color::as_rgba(self.color);
         let scale_factor = width.min(height) / 40.0;
 
         for step in 1..=12 {
@@ -165,7 +165,7 @@ mod tests {
 
             let mut harness = TestHarness::create_with_size(spinner, Size::new(30.0, 30.0));
 
-            harness.edit_root_widget(|mut spinner, _| {
+            harness.edit_root_widget(|mut spinner| {
                 let mut spinner = spinner.downcast::<Spinner>().unwrap();
                 spinner.set_color(Color::PURPLE);
             });

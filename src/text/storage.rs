@@ -8,14 +8,13 @@ use std::sync::Arc;
 
 use super::attribute::Link;
 use crate::piet::{PietTextLayoutBuilder, TextStorage as PietTextStorage};
-use crate::{Data, Env};
 
 /// A type that represents text that can be displayed.
-pub trait TextStorage: PietTextStorage + Data {
+pub trait TextStorage: PietTextStorage + Clone {
     /// If this TextStorage object manages style spans, it should implement
     /// this method and update the provided builder with its spans, as required.
     #[allow(unused_variables)]
-    fn add_attributes(&self, builder: PietTextLayoutBuilder, env: &Env) -> PietTextLayoutBuilder {
+    fn add_attributes(&self, builder: PietTextLayoutBuilder) -> PietTextLayoutBuilder {
         builder
     }
 
@@ -32,6 +31,11 @@ pub trait TextStorage: PietTextStorage + Data {
     fn links(&self) -> &[Link] {
         &[]
     }
+
+    /// Determines quickly whether two text objects have the same content.
+    ///
+    /// To allow for faster checks, this method is allowed to return false negatives.
+    fn maybe_eq(&self, other: &Self) -> bool;
 }
 
 /// A reference counted string slice.
@@ -40,8 +44,20 @@ pub trait TextStorage: PietTextStorage + Data {
 /// it cannot be mutated, but unlike `String` it can be cheaply cloned.
 pub type ArcStr = Arc<str>;
 
-impl TextStorage for ArcStr {}
+impl TextStorage for ArcStr {
+    fn maybe_eq(&self, other: &Self) -> bool {
+        self == other
+    }
+}
 
-impl TextStorage for String {}
+impl TextStorage for String {
+    fn maybe_eq(&self, other: &Self) -> bool {
+        self == other
+    }
+}
 
-impl TextStorage for Arc<String> {}
+impl TextStorage for Arc<String> {
+    fn maybe_eq(&self, other: &Self) -> bool {
+        self == other
+    }
+}

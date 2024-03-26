@@ -12,8 +12,8 @@ use crate::kurbo::{BezPath, Size};
 use crate::piet::{LineCap, LineJoin, LinearGradient, RenderContext, StrokeStyle, UnitPoint};
 use crate::widget::{Label, WidgetMut, WidgetRef};
 use crate::{
-    theme, ArcStr, BoxConstraints, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx,
-    PaintCtx, StatusChange, Widget, WidgetPod,
+    theme, ArcStr, BoxConstraints, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
+    StatusChange, Widget, WidgetPod,
 };
 
 /// A checkbox that can be toggled.
@@ -59,7 +59,7 @@ impl<'a, 'b> CheckboxMut<'a, 'b> {
 }
 
 impl Widget for Checkbox {
-    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, _env: &Env) {
+    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event) {
         match event {
             Event::MouseDown(_) => {
                 if !ctx.is_disabled() {
@@ -83,20 +83,20 @@ impl Widget for Checkbox {
         }
     }
 
-    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, _event: &StatusChange, _env: &Env) {
+    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, _event: &StatusChange) {
         ctx.request_paint();
     }
 
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
-        self.label.lifecycle(ctx, event, env);
+    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
+        self.label.lifecycle(ctx, event);
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
-        let x_padding = env.get(theme::WIDGET_CONTROL_COMPONENT_PADDING);
-        let check_size = env.get(theme::BASIC_WIDGET_HEIGHT);
+    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
+        let x_padding = theme::WIDGET_CONTROL_COMPONENT_PADDING;
+        let check_size = theme::BASIC_WIDGET_HEIGHT;
 
-        let label_size = self.label.layout(ctx, bc, env);
-        ctx.place_child(&mut self.label, (check_size + x_padding, 0.0).into(), env);
+        let label_size = self.label.layout(ctx, bc);
+        ctx.place_child(&mut self.label, (check_size + x_padding, 0.0).into());
 
         let desired_size = Size::new(
             check_size + x_padding + label_size.width,
@@ -109,8 +109,8 @@ impl Widget for Checkbox {
         our_size
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, env: &Env) {
-        let check_size = env.get(theme::BASIC_WIDGET_HEIGHT);
+    fn paint(&mut self, ctx: &mut PaintCtx) {
+        let check_size = theme::BASIC_WIDGET_HEIGHT;
         let border_width = 1.;
 
         let rect = Size::new(check_size, check_size)
@@ -122,18 +122,15 @@ impl Widget for Checkbox {
         let background_gradient = LinearGradient::new(
             UnitPoint::TOP,
             UnitPoint::BOTTOM,
-            (
-                env.get(theme::BACKGROUND_LIGHT),
-                env.get(theme::BACKGROUND_DARK),
-            ),
+            (theme::BACKGROUND_LIGHT, theme::BACKGROUND_DARK),
         );
 
         ctx.fill(rect, &background_gradient);
 
         let border_color = if ctx.is_hot() && !ctx.is_disabled() {
-            env.get(theme::BORDER_LIGHT)
+            theme::BORDER_LIGHT
         } else {
-            env.get(theme::BORDER_DARK)
+            theme::BORDER_DARK
         };
 
         ctx.stroke(rect, &border_color, border_width);
@@ -150,16 +147,16 @@ impl Widget for Checkbox {
                 .line_join(LineJoin::Round);
 
             let brush = if ctx.is_disabled() {
-                env.get(theme::DISABLED_TEXT_COLOR)
+                theme::DISABLED_TEXT_COLOR
             } else {
-                env.get(theme::TEXT_COLOR)
+                theme::TEXT_COLOR
             };
 
             ctx.stroke_styled(path, &brush, 2., &style);
         }
 
         // Paint the text label
-        self.label.paint(ctx, env);
+        self.label.paint(ctx);
     }
 
     fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
@@ -236,7 +233,7 @@ mod tests {
 
             let mut harness = TestHarness::create_with_size(checkbox, Size::new(50.0, 50.0));
 
-            harness.edit_root_widget(|mut checkbox, _| {
+            harness.edit_root_widget(|mut checkbox| {
                 let mut checkbox = checkbox.downcast::<Checkbox>().unwrap();
                 checkbox.set_checked(true);
                 checkbox.set_text("The quick brown fox jumps over the lazy dog");

@@ -21,7 +21,6 @@ impl AppDelegate for Delegate {
         _window_id: WindowId,
         _widget_id: WidgetId,
         action: Action,
-        _env: &Env,
     ) {
         match action {
             Action::ButtonPressed => {

@@ -12,8 +12,8 @@ use tracing::{trace_span, Span};
 use super::Axis;
 use crate::widget::WidgetRef;
 use crate::{
-    theme, BoxConstraints, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
-    Point, RenderContext, Selector, Size, StatusChange, Widget,
+    theme, BoxConstraints, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Point,
+    RenderContext, Selector, Size, StatusChange, Widget,
 };
 
 // RULES
@@ -129,12 +129,12 @@ impl ScrollBarMut<'_, '_> {
 // --- TRAIT IMPLS ---
 
 impl Widget for ScrollBar {
-    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, env: &Env) {
+    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event) {
         match event {
             Event::MouseDown(event) => {
                 ctx.set_active(true);
 
-                let cursor_min_length = env.get(theme::SCROLLBAR_MIN_SIZE);
+                let cursor_min_length = theme::SCROLLBAR_MIN_SIZE;
                 let cursor_rect = self.get_cursor_rect(ctx.size(), cursor_min_length);
 
                 if cursor_rect.contains(event.pos) {
@@ -153,7 +153,7 @@ impl Widget for ScrollBar {
             }
             Event::MouseMove(event) => {
                 if let Some(grab_anchor) = self.grab_anchor {
-                    let cursor_min_length = env.get(theme::SCROLLBAR_MIN_SIZE);
+                    let cursor_min_length = theme::SCROLLBAR_MIN_SIZE;
                     self.cursor_progress = self.progress_from_mouse_pos(
                         ctx.size(),
                         cursor_min_length,
@@ -175,15 +175,15 @@ impl Widget for ScrollBar {
         }
     }
 
-    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange, env: &Env) {}
+    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange) {}
 
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {}
+    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {}
 
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
+    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
         // TODO - handle resize
 
-        let scrollbar_width = env.get(theme::SCROLLBAR_WIDTH);
-        let cursor_padding = env.get(theme::SCROLLBAR_PAD);
+        let scrollbar_width = theme::SCROLLBAR_WIDTH;
+        let cursor_padding = theme::SCROLLBAR_PAD;
         self.axis
             .pack(
                 self.axis.major(bc.max()),
@@ -192,16 +192,14 @@ impl Widget for ScrollBar {
             .into()
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, env: &Env) {
-        let brush = ctx.render_ctx.solid_brush(env.get(theme::SCROLLBAR_COLOR));
-        let border_brush = ctx
-            .render_ctx
-            .solid_brush(env.get(theme::SCROLLBAR_BORDER_COLOR));
+    fn paint(&mut self, ctx: &mut PaintCtx) {
+        let brush = ctx.render_ctx.solid_brush(theme::SCROLLBAR_COLOR);
+        let border_brush = ctx.render_ctx.solid_brush(theme::SCROLLBAR_BORDER_COLOR);
 
-        let radius = env.get(theme::SCROLLBAR_RADIUS);
-        let edge_width = env.get(theme::SCROLLBAR_EDGE_WIDTH);
-        let cursor_padding = env.get(theme::SCROLLBAR_PAD);
-        let cursor_min_length = env.get(theme::SCROLLBAR_MIN_SIZE);
+        let radius = theme::SCROLLBAR_RADIUS;
+        let edge_width = theme::SCROLLBAR_EDGE_WIDTH;
+        let cursor_padding = theme::SCROLLBAR_PAD;
+        let cursor_min_length = theme::SCROLLBAR_MIN_SIZE;
 
         let (inset_x, inset_y) = self.axis.pack(0.0, cursor_padding);
         let cursor_rect = self

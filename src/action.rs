@@ -32,7 +32,8 @@ impl PartialEq for Action {
             (Self::TextChanged(l0), Self::TextChanged(r0)) => l0 == r0,
             (Self::TextEntered(l0), Self::TextEntered(r0)) => l0 == r0,
             (Self::CheckboxChecked(l0), Self::CheckboxChecked(r0)) => l0 == r0,
-            #[allow(clippy::vtable_address_comparisons)]
+            #[allow(ambiguous_wide_pointer_comparisons)]
+            // FIXME
             (Self::Other(val_l), Self::Other(val_r)) => Arc::ptr_eq(val_l, val_r),
             _ => false,
         }

@@ -15,7 +15,7 @@ use masonry::text::TextLayout;
 use masonry::widget::prelude::*;
 use masonry::widget::WidgetRef;
 use masonry::{AppLauncher, WindowDescription};
-use masonry::{ArcStr, Color, KeyOrValue, Point};
+use masonry::{ArcStr, Color, Point};
 use smallvec::SmallVec;
 use tracing::{trace, trace_span, Span};
 
@@ -28,7 +28,7 @@ pub struct PromiseButton {
     line_break_mode: LineBreaking,
     promise_token: PromiseToken<u32>,
 
-    default_text_color: KeyOrValue<Color>,
+    default_text_color: Color,
 }
 
 /// Options for handling lines that are too wide for the label.
@@ -55,7 +55,7 @@ impl PromiseButton {
             text_layout,
             line_break_mode: LineBreaking::Overflow,
             promise_token: PromiseToken::empty(),
-            default_text_color: masonry::theme::TEXT_COLOR.into(),
+            default_text_color: masonry::theme::TEXT_COLOR,
         }
     }
 }
@@ -63,7 +63,7 @@ impl PromiseButton {
 // --- TRAIT IMPLS ---
 
 impl Widget for PromiseButton {
-    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, _env: &Env) {
+    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event) {
         match event {
             Event::MouseUp(_event) => {
                 let value = self.value;
@@ -97,15 +97,15 @@ impl Widget for PromiseButton {
         }
     }
 
-    fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange, _env: &Env) {}
+    fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange) {}
 
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, _env: &Env) {
+    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
         match event {
             LifeCycle::DisabledChanged(disabled) => {
                 let color = if *disabled {
-                    KeyOrValue::Key(masonry::theme::DISABLED_TEXT_COLOR)
+                    masonry::theme::DISABLED_TEXT_COLOR
                 } else {
-                    self.default_text_color.clone()
+                    self.default_text_color
                 };
                 self.text_layout.set_text_color(color);
                 ctx.request_layout();
@@ -114,14 +114,14 @@ impl Widget for PromiseButton {
         }
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
+    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
         let width = match self.line_break_mode {
             LineBreaking::WordWrap => bc.max().width - LABEL_X_PADDING * 2.0,
             _ => f64::INFINITY,
         };
 
         self.text_layout.set_wrap_width(width);
-        self.text_layout.rebuild_if_needed(ctx.text(), env);
+        self.text_layout.rebuild_if_needed(ctx.text());
 
         let text_metrics = self.text_layout.layout_metrics();
         ctx.set_baseline_offset(text_metrics.size.height - text_metrics.first_baseline);
@@ -133,7 +133,7 @@ impl Widget for PromiseButton {
         size
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, _env: &Env) {
+    fn paint(&mut self, ctx: &mut PaintCtx) {
         let origin = Point::new(LABEL_X_PADDING, 0.0);
         let label_size = ctx.size();
 

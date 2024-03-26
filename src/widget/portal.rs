@@ -13,8 +13,8 @@ use crate::kurbo::{Point, Rect, Size, Vec2};
 use crate::widget::scroll_bar::SCROLLBAR_MOVED;
 use crate::widget::{Axis, ScrollBar, StoreInWidgetMut, WidgetMut, WidgetRef};
 use crate::{
-    BoxConstraints, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
-    RenderContext, StatusChange, Widget, WidgetPod,
+    BoxConstraints, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, RenderContext,
+    StatusChange, Widget, WidgetPod,
 };
 
 // TODO - refactor - see issue #15
@@ -239,7 +239,7 @@ impl<'a, 'b, W: Widget> PortalMut<'a, 'b, W> {
 }
 
 impl<W: Widget> Widget for Portal<W> {
-    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, env: &Env) {
+    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event) {
         let portal_size = ctx.size();
         let content_size = self.child.layout_rect().size();
 
@@ -269,15 +269,15 @@ impl<W: Widget> Widget for Portal<W> {
             _ => (),
         }
 
-        self.child.on_event(ctx, event, env);
-        self.scrollbar_horizontal.on_event(ctx, event, env);
-        self.scrollbar_vertical.on_event(ctx, event, env);
+        self.child.on_event(ctx, event);
+        self.scrollbar_horizontal.on_event(ctx, event);
+        self.scrollbar_vertical.on_event(ctx, event);
         ctx.request_layout();
     }
 
-    fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange, _env: &Env) {}
+    fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange) {}
 
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
+    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
         match event {
             LifeCycle::WidgetAdded => {
                 ctx.register_as_portal();
@@ -287,12 +287,12 @@ impl<W: Widget> Widget for Portal<W> {
             _ => {}
         }
 
-        self.child.lifecycle(ctx, event, env);
-        self.scrollbar_horizontal.lifecycle(ctx, event, env);
-        self.scrollbar_vertical.lifecycle(ctx, event, env);
+        self.child.lifecycle(ctx, event);
+        self.scrollbar_horizontal.lifecycle(ctx, event);
+        self.scrollbar_vertical.lifecycle(ctx, event);
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
+    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
         let min_child_size = if self.must_fill { bc.min() } else { Size::ZERO };
         let mut max_child_size = bc.max();
         if !self.constrain_horizontal {
@@ -304,7 +304,7 @@ impl<W: Widget> Widget for Portal<W> {
 
         let child_bc = BoxConstraints::new(min_child_size, max_child_size);
 
-        let content_size = self.child.layout(ctx, &child_bc, env);
+        let content_size = self.child.layout(ctx, &child_bc);
         let portal_size = bc.constrain(content_size);
 
         // TODO - document better
@@ -312,7 +312,7 @@ impl<W: Widget> Widget for Portal<W> {
         self.set_viewport_pos_raw(portal_size, content_size, self.viewport_pos);
         // TODO - recompute portal progress
 
-        ctx.place_child(&mut self.child, Point::new(0.0, -self.viewport_pos.y), env);
+        ctx.place_child(&mut self.child, Point::new(0.0, -self.viewport_pos.y));
 
         self.scrollbar_horizontal_visible =
             !self.constrain_horizontal && portal_size.width < content_size.width;
@@ -322,11 +322,10 @@ impl<W: Widget> Widget for Portal<W> {
         if self.scrollbar_horizontal_visible {
             self.scrollbar_horizontal.widget_mut().portal_size = portal_size.width;
             self.scrollbar_horizontal.widget_mut().content_size = content_size.width;
-            let scrollbar_size = self.scrollbar_horizontal.layout(ctx, bc, env);
+            let scrollbar_size = self.scrollbar_horizontal.layout(ctx, bc);
             ctx.place_child(
                 &mut self.scrollbar_horizontal,
                 Point::new(0.0, portal_size.height - scrollbar_size.height),
-                env,
             );
         } else {
             ctx.skip_child(&mut self.scrollbar_horizontal);
@@ -334,11 +333,10 @@ impl<W: Widget> Widget for Portal<W> {
         if self.scrollbar_vertical_visible {
             self.scrollbar_vertical.widget_mut().portal_size = portal_size.height;
             self.scrollbar_vertical.widget_mut().content_size = content_size.height;
-            let scrollbar_size = self.scrollbar_vertical.layout(ctx, bc, env);
+            let scrollbar_size = self.scrollbar_vertical.layout(ctx, bc);
             ctx.place_child(
                 &mut self.scrollbar_vertical,
                 Point::new(portal_size.width - scrollbar_size.width, 0.0),
-                env,
             );
         } else {
             ctx.skip_child(&mut self.scrollbar_vertical);
@@ -347,20 +345,20 @@ impl<W: Widget> Widget for Portal<W> {
         portal_size
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, env: &Env) {
+    fn paint(&mut self, ctx: &mut PaintCtx) {
         // TODO - have ctx.clip also clip the invalidated region
         let clip_rect = ctx.size().to_rect();
         ctx.clip(clip_rect);
 
-        self.child.paint(ctx, env);
+        self.child.paint(ctx);
 
         if self.scrollbar_horizontal_visible {
-            self.scrollbar_horizontal.paint(ctx, env);
+            self.scrollbar_horizontal.paint(ctx);
         } else {
             ctx.skip_child(&mut self.scrollbar_horizontal);
         }
         if self.scrollbar_vertical_visible {
-            self.scrollbar_vertical.paint(ctx, env);
+            self.scrollbar_vertical.paint(ctx);
         } else {
             ctx.skip_child(&mut self.scrollbar_vertical);
         }
@@ -429,7 +427,7 @@ mod tests {
         assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "button_list_no_scroll");
 
-        harness.edit_root_widget(|mut portal, _| {
+        harness.edit_root_widget(|mut portal| {
             let mut portal = portal.downcast::<Portal<Flex>>().unwrap();
             portal.set_viewport_pos(Point::new(0.0, 130.0))
         });
@@ -437,7 +435,7 @@ mod tests {
         assert_render_snapshot!(harness, "button_list_scrolled");
 
         let item_3_rect = harness.get_widget(item_3_id).state().layout_rect();
-        harness.edit_root_widget(|mut portal, _| {
+        harness.edit_root_widget(|mut portal| {
             let mut portal = portal.downcast::<Portal<Flex>>().unwrap();
             portal.pan_viewport_to(item_3_rect);
         });
@@ -445,7 +443,7 @@ mod tests {
         assert_render_snapshot!(harness, "button_list_scroll_to_item_3");
 
         let item_13_rect = harness.get_widget(item_13_id).state().layout_rect();
-        harness.edit_root_widget(|mut portal, _| {
+        harness.edit_root_widget(|mut portal| {
             let mut portal = portal.downcast::<Portal<Flex>>().unwrap();
             portal.pan_viewport_to(item_13_rect);
         });

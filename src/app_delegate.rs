@@ -12,8 +12,7 @@ use crate::command::{Command, CommandQueue};
 use crate::ext_event::{ExtEventQueue, ExtEventSink};
 use crate::widget::{StoreInWidgetMut, WidgetMut, WidgetRef};
 use crate::{
-    Env, Event, Handled, SingleUse, Target, Widget, WidgetId, WindowDescription, WindowId,
-    WindowRoot,
+    Event, Handled, SingleUse, Target, Widget, WidgetId, WindowDescription, WindowId, WindowRoot,
 };
 
 /// A context provided to [`AppDelegate`] methods.
@@ -77,13 +76,7 @@ pub trait AppDelegate {
     ///
     /// This function receives all non-command events, before they are passed down
     /// the tree. If it returns [`Handled::Yes`], events are short-circuited.
-    fn on_event(
-        &mut self,
-        ctx: &mut DelegateCtx,
-        window_id: WindowId,
-        event: &Event,
-        env: &Env,
-    ) -> Handled {
+    fn on_event(&mut self, ctx: &mut DelegateCtx, window_id: WindowId, event: &Event) -> Handled {
         #![allow(unused)]
         Handled::No
     }
@@ -92,7 +85,7 @@ pub trait AppDelegate {
     ///
     /// This function receives all command events, before they are passed down
     /// the tree. If it returns [`Handled::Yes`], commands are short-circuited.
-    fn on_command(&mut self, ctx: &mut DelegateCtx, cmd: &Command, env: &Env) -> Handled {
+    fn on_command(&mut self, ctx: &mut DelegateCtx, cmd: &Command) -> Handled {
         #![allow(unused)]
         Handled::No
     }
@@ -106,7 +99,6 @@ pub trait AppDelegate {
         window_id: WindowId,
         widget_id: WidgetId,
         action: Action,
-        env: &Env,
     ) {
         #![allow(unused)]
     }
@@ -115,14 +107,14 @@ pub trait AppDelegate {
     ///
     /// This function is called after a window has been added,
     /// allowing you to customize the window creation behavior of your app.
-    fn on_window_added(&mut self, ctx: &mut DelegateCtx, id: WindowId, env: &Env) {
+    fn on_window_added(&mut self, ctx: &mut DelegateCtx, id: WindowId) {
         #![allow(unused)]
     }
 
     /// The handler for window deletion events.
     ///
     /// This function is called after a window has been removed.
-    fn on_window_removed(&mut self, ctx: &mut DelegateCtx, id: WindowId, env: &Env) {
+    fn on_window_removed(&mut self, ctx: &mut DelegateCtx, id: WindowId) {
         #![allow(unused)]
     }
 }

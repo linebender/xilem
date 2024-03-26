@@ -12,8 +12,8 @@ use crate::kurbo::Line;
 use crate::widget::flex::Axis;
 use crate::widget::{WidgetPod, WidgetRef};
 use crate::{
-    theme, BoxConstraints, Color, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx,
-    PaintCtx, Point, Rect, RenderContext, Size, StatusChange, Widget,
+    theme, BoxConstraints, Color, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
+    Point, Rect, RenderContext, Size, StatusChange, Widget,
 };
 
 // TODO - Have child widget type as generic argument
@@ -226,15 +226,15 @@ impl Split {
     }
 
     /// Returns the color of the splitter bar.
-    fn bar_color(&self, env: &Env) -> Color {
+    fn bar_color(&self) -> Color {
         if self.draggable {
-            env.get(theme::BORDER_LIGHT)
+            theme::BORDER_LIGHT
         } else {
-            env.get(theme::BORDER_DARK)
+            theme::BORDER_DARK
         }
     }
 
-    fn paint_solid_bar(&mut self, ctx: &mut PaintCtx, env: &Env) {
+    fn paint_solid_bar(&mut self, ctx: &mut PaintCtx) {
         let size = ctx.size();
         let (edge1, edge2) = self.bar_edges(size);
         let padding = self.bar_padding();
@@ -248,11 +248,11 @@ impl Split {
                 Point::new(size.width, edge2 - padding.floor()),
             ),
         };
-        let splitter_color = self.bar_color(env);
+        let splitter_color = self.bar_color();
         ctx.fill(rect, &splitter_color);
     }
 
-    fn paint_stroked_bar(&mut self, ctx: &mut PaintCtx, env: &Env) {
+    fn paint_stroked_bar(&mut self, ctx: &mut PaintCtx) {
         let size = ctx.size();
         // Set the line width to a third of the splitter bar size,
         // because we'll paint two equal lines at the edges.
@@ -282,7 +282,7 @@ impl Split {
                 ),
             ),
         };
-        let splitter_color = self.bar_color(env);
+        let splitter_color = self.bar_color();
         ctx.stroke(line1, &splitter_color, line_width);
         ctx.stroke(line2, &splitter_color, line_width);
     }
@@ -360,15 +360,15 @@ impl<'a, 'b> SplitMut<'a, 'b> {
 }
 
 impl Widget for Split {
-    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, env: &Env) {
+    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event) {
         if self.child1.is_active() {
-            self.child1.on_event(ctx, event, env);
+            self.child1.on_event(ctx, event);
             if ctx.is_handled() {
                 return;
             }
         }
         if self.child2.is_active() {
-            self.child2.on_event(ctx, event, env);
+            self.child2.on_event(ctx, event);
             if ctx.is_handled() {
                 return;
             }
@@ -440,21 +440,21 @@ impl Widget for Split {
             }
         }
         if !self.child1.is_active() {
-            self.child1.on_event(ctx, event, env);
+            self.child1.on_event(ctx, event);
         }
         if !self.child2.is_active() {
-            self.child2.on_event(ctx, event, env);
+            self.child2.on_event(ctx, event);
         }
     }
 
-    fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange, _env: &Env) {}
+    fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange) {}
 
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
-        self.child1.lifecycle(ctx, event, env);
-        self.child2.lifecycle(ctx, event, env);
+    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
+        self.child1.lifecycle(ctx, event);
+        self.child2.lifecycle(ctx, event);
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
+    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
         match self.split_axis {
             Axis::Horizontal => {
                 if !bc.is_width_bounded() {
@@ -524,8 +524,8 @@ impl Widget for Split {
             }
         };
 
-        let child1_size = self.child1.layout(ctx, &child1_bc, env);
-        let child2_size = self.child2.layout(ctx, &child2_bc, env);
+        let child1_size = self.child1.layout(ctx, &child1_bc);
+        let child2_size = self.child2.layout(ctx, &child2_bc);
 
         // Top-left align for both children, out of laziness.
         // Reduce our unsplit direction to the larger of the two widgets
@@ -540,8 +540,8 @@ impl Widget for Split {
                 Point::new(0.0, child1_size.height + bar_area)
             }
         };
-        ctx.place_child(&mut self.child1, child1_pos, env);
-        ctx.place_child(&mut self.child2, child2_pos, env);
+        ctx.place_child(&mut self.child1, child1_pos);
+        ctx.place_child(&mut self.child2, child2_pos);
 
         let paint_rect = self.child1.paint_rect().union(self.child2.paint_rect());
         let insets = paint_rect - my_size.to_rect();
@@ -551,15 +551,15 @@ impl Widget for Split {
         my_size
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, env: &Env) {
+    fn paint(&mut self, ctx: &mut PaintCtx) {
         // TODO - Paint differently if the bar is draggable and hovered.
         if self.solid {
-            self.paint_solid_bar(ctx, env);
+            self.paint_solid_bar(ctx);
         } else {
-            self.paint_stroked_bar(ctx, env);
+            self.paint_stroked_bar(ctx);
         }
-        self.child1.paint(ctx, env);
-        self.child2.paint(ctx, env);
+        self.child1.paint(ctx);
+        self.child2.paint(ctx);
     }
 
     fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
@@ -631,7 +631,7 @@ mod tests {
 
             let mut harness = TestHarness::create_with_size(widget, Size::new(100.0, 100.0));
 
-            harness.edit_root_widget(|mut splitter, _| {
+            harness.edit_root_widget(|mut splitter| {
                 let mut splitter = splitter.downcast::<Split>().unwrap();
 
                 splitter.set_split_point(0.3);

@@ -4,10 +4,6 @@
 
 //! Helper functions for writing snapshot tests and comparing images.
 
-pub use druid_shell::{
-    RawMods, Region, Scalable, Scale, Screen, SysMods, TimerToken, WindowHandle, WindowLevel,
-    WindowState,
-};
 use image::{GenericImageView as _, RgbaImage};
 
 use crate::piet::{BitmapTarget, ImageFormat};

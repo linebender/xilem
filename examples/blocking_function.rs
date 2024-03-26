@@ -38,7 +38,7 @@ impl MainWidget {
 }
 
 impl Widget for MainWidget {
-    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, env: &Env) {
+    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event) {
         match event {
             Event::MouseDown(_) => {
                 if !ctx.is_disabled() {
@@ -62,7 +62,7 @@ impl Widget for MainWidget {
                                 .expect("command failed to submit");
                         });
 
-                        self.content.on_event(ctx, event, env);
+                        self.content.on_event(ctx, event);
                         let mut flex_mut = ctx.get_mut(&mut self.content);
                         flex_mut.clear();
                         flex_mut.add_child(Spinner::new());
@@ -74,7 +74,7 @@ impl Widget for MainWidget {
             Event::Command(cmd) if cmd.is(FINISH_SLOW_FUNCTION) => {
                 let value = *cmd.get(FINISH_SLOW_FUNCTION);
 
-                self.content.on_event(ctx, event, env);
+                self.content.on_event(ctx, event);
 
                 let mut flex_mut = ctx.get_mut(&mut self.content);
                 flex_mut.clear();
@@ -87,23 +87,23 @@ impl Widget for MainWidget {
             }
             _ => (),
         }
-        self.content.on_event(ctx, event, env);
+        self.content.on_event(ctx, event);
     }
 
-    fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange, _env: &Env) {}
+    fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange) {}
 
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
-        self.content.lifecycle(ctx, event, env);
+    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
+        self.content.lifecycle(ctx, event);
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
-        let content_size = self.content.layout(ctx, bc, env);
-        ctx.place_child(&mut self.content, Point::ORIGIN, env);
+    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
+        let content_size = self.content.layout(ctx, bc);
+        ctx.place_child(&mut self.content, Point::ORIGIN);
         content_size
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, env: &Env) {
-        self.content.paint(ctx, env);
+    fn paint(&mut self, ctx: &mut PaintCtx) {
+        self.content.paint(ctx);
     }
 
     fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {

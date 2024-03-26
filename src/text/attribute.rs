@@ -8,7 +8,6 @@ use std::ops::Range;
 
 use super::FontDescriptor;
 use crate::piet::{Color, FontFamily, FontStyle, FontWeight, TextAttribute as PietAttr};
-use crate::{Env, KeyOrValue};
 
 // TODO - Should also hold an associated Command, maybe.
 /// A clickable range of text
@@ -22,12 +21,12 @@ pub struct Link {
 #[derive(Debug, Clone, Default)]
 pub struct AttributeSpans {
     family: SpanSet<FontFamily>,
-    size: SpanSet<KeyOrValue<f64>>,
+    size: SpanSet<f64>,
     weight: SpanSet<FontWeight>,
-    fg_color: SpanSet<KeyOrValue<Color>>,
+    fg_color: SpanSet<Color>,
     style: SpanSet<FontStyle>,
     underline: SpanSet<bool>,
-    font_descriptor: SpanSet<KeyOrValue<FontDescriptor>>,
+    font_descriptor: SpanSet<FontDescriptor>,
 }
 
 /// A set of spans for a given attribute.
@@ -65,7 +64,7 @@ struct Span<T> {
 /// let font = Attribute::font_descriptor(theme::UI_FONT);
 /// let font_size = Attribute::size(32.0);
 /// let explicit_color = Attribute::text_color(Color::BLACK);
-/// let theme_color = Attribute::text_color(theme::SELECTION_COLOR);
+/// let theme_color = Attribute::text_color(theme::SELECTION_TEXT_COLOR);
 /// ```
 ///
 /// [`KeyOrValue`]: ../enum.KeyOrValue.html
@@ -77,11 +76,11 @@ pub enum Attribute {
     /// The font family.
     FontFamily(FontFamily),
     /// The font size, in points.
-    FontSize(KeyOrValue<f64>),
+    FontSize(f64),
     /// The [`FontWeight`](struct.FontWeight.html).
     Weight(FontWeight),
     /// The foreground color of the text.
-    TextColor(KeyOrValue<Color>),
+    TextColor(Color),
     /// The [`FontStyle`]; either regular or italic.
     ///
     /// [`FontStyle`]: enum.FontStyle.html
@@ -89,7 +88,7 @@ pub enum Attribute {
     /// Underline.
     Underline(bool),
     /// A [`FontDescriptor`](struct.FontDescriptor.html).
-    Descriptor(KeyOrValue<FontDescriptor>),
+    Descriptor(FontDescriptor),
 }
 
 impl Link {
@@ -123,14 +122,13 @@ impl AttributeSpans {
         }
     }
 
-    pub(crate) fn to_piet_attrs(&self, env: &Env) -> Vec<(Range<usize>, PietAttr)> {
+    pub(crate) fn to_piet_attrs(&self) -> Vec<(Range<usize>, PietAttr)> {
         let mut items = Vec::new();
         for Span { range, attr } in self.font_descriptor.iter() {
-            let font = attr.resolve(env);
-            items.push((range.clone(), PietAttr::FontFamily(font.family)));
-            items.push((range.clone(), PietAttr::FontSize(font.size)));
-            items.push((range.clone(), PietAttr::Weight(font.weight)));
-            items.push((range.clone(), PietAttr::Style(font.style)));
+            items.push((range.clone(), PietAttr::FontFamily(attr.family.clone())));
+            items.push((range.clone(), PietAttr::FontSize(attr.size)));
+            items.push((range.clone(), PietAttr::Weight(attr.weight)));
+            items.push((range.clone(), PietAttr::Style(attr.style)));
         }
 
         items.extend(
@@ -141,7 +139,7 @@ impl AttributeSpans {
         items.extend(
             self.size
                 .iter()
-                .map(|s| (s.range.clone(), PietAttr::FontSize(s.attr.resolve(env)))),
+                .map(|s| (s.range.clone(), PietAttr::FontSize(s.attr))),
         );
         items.extend(
             self.weight
@@ -151,7 +149,7 @@ impl AttributeSpans {
         items.extend(
             self.fg_color
                 .iter()
-                .map(|s| (s.range.clone(), PietAttr::TextColor(s.attr.resolve(env)))),
+                .map(|s| (s.range.clone(), PietAttr::TextColor(s.attr))),
         );
         items.extend(
             self.style
@@ -292,12 +290,12 @@ impl<T> Span<T> {
 
 impl Attribute {
     /// Create a new font size attribute.
-    pub fn size(size: impl Into<KeyOrValue<f64>>) -> Self {
+    pub fn size(size: impl Into<f64>) -> Self {
         Attribute::FontSize(size.into())
     }
 
     /// Create a new forground color attribute.
-    pub fn text_color(color: impl Into<KeyOrValue<Color>>) -> Self {
+    pub fn text_color(color: impl Into<Color>) -> Self {
         Attribute::TextColor(color.into())
     }
 
@@ -322,7 +320,7 @@ impl Attribute {
     }
 
     /// Create a new `FontDescriptor` attribute.
-    pub fn font_descriptor(font: impl Into<KeyOrValue<FontDescriptor>>) -> Self {
+    pub fn font_descriptor(font: impl Into<FontDescriptor>) -> Self {
         Attribute::Descriptor(font.into())
     }
 }

@@ -13,7 +13,7 @@ use masonry::piet::{FontFamily, ImageFormat, InterpolationMode, Text, TextLayout
 use masonry::text::{FontDescriptor, TextLayout};
 use masonry::widget::WidgetRef;
 use masonry::{
-    Affine, AppLauncher, BoxConstraints, Color, Env, Event, EventCtx, LayoutCtx, LifeCycle,
+    Affine, AppLauncher, BoxConstraints, Color, Event, EventCtx, LayoutCtx, LifeCycle,
     LifeCycleCtx, PaintCtx, Point, Rect, RenderContext, Size, StatusChange, Widget,
     WindowDescription,
 };
@@ -26,13 +26,13 @@ struct CustomWidget(String);
 // (and lifecycle) methods as well to make sure it works. Some things can be filtered,
 // but a general rule is to just pass it through unless you really know you don't want it.
 impl Widget for CustomWidget {
-    fn on_event(&mut self, _ctx: &mut EventCtx, _event: &Event, _env: &Env) {}
+    fn on_event(&mut self, _ctx: &mut EventCtx, _event: &Event) {}
 
-    fn lifecycle(&mut self, _ctx: &mut LifeCycleCtx, _event: &LifeCycle, _env: &Env) {}
+    fn lifecycle(&mut self, _ctx: &mut LifeCycleCtx, _event: &LifeCycle) {}
 
-    fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange, _env: &Env) {}
+    fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange) {}
 
-    fn layout(&mut self, _layout_ctx: &mut LayoutCtx, bc: &BoxConstraints, _env: &Env) -> Size {
+    fn layout(&mut self, _layout_ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
         // BoxConstraints are passed by the parent widget.
         // This method can return any Size within those constraints:
         // bc.constrain(my_size)
@@ -55,7 +55,7 @@ impl Widget for CustomWidget {
     // The paint method gets called last, after an event flow.
     // It goes event -> update -> layout -> paint, and each method can influence the next.
     // Basically, anything that changes the appearance of a widget causes a paint.
-    fn paint(&mut self, ctx: &mut PaintCtx, env: &Env) {
+    fn paint(&mut self, ctx: &mut PaintCtx) {
         // Clear the whole widget with the color of your choice
         // (ctx.size() returns the size of the layout rect we're painting in)
         // Note: ctx also has a `clear` method, but that clears the whole context,
@@ -99,7 +99,7 @@ impl Widget for CustomWidget {
         let mut layout = TextLayout::<String>::from_text(&self.0);
         layout.set_font(FontDescriptor::new(FontFamily::SERIF).with_size(24.0));
         layout.set_text_color(fill_color);
-        layout.rebuild_if_needed(ctx.text(), env);
+        layout.rebuild_if_needed(ctx.text());
 
         // Let's rotate our text slightly. First we save our current (default) context:
         ctx.with_save(|ctx| {

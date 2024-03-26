@@ -49,7 +49,6 @@ impl AppDelegate for Delegate {
         _window_id: WindowId,
         _widget_id: WidgetId,
         action: Action,
-        _env: &Env,
     ) {
         match action {
             Action::ButtonPressed => {
@@ -145,7 +144,7 @@ Issues and PRs are welcome. See [`help-wanted` issues](https://github.com/Poigna
 
 The immediate next steps are:
 
-- [ ] Remove Env type and Data trait (#8)
+- [X] Remove Env type and Data trait (#8)
 - [ ] Re-add Dialog feature (#25)
 - [ ] Switch to using Vello and Glazier (#24)
 - [ ] Refactor TextLayout (#23)

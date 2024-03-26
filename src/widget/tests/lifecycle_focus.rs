@@ -24,19 +24,19 @@ impl FocusTaker {
 
     fn track(focused: Rc<Cell<bool>>) -> impl Widget {
         ModularWidget::new(focused)
-            .event_fn(|_is_focused, ctx, event, _env| {
+            .event_fn(|_is_focused, ctx, event| {
                 if let Event::Command(cmd) = event {
                     if cmd.is(REQUEST_FOCUS) {
                         ctx.request_focus();
                     }
                 }
             })
-            .status_change_fn(|is_focused, _ctx, event, _env| {
+            .status_change_fn(|is_focused, _ctx, event| {
                 if let StatusChange::FocusChanged(focus) = event {
                     is_focused.set(*focus);
                 }
             })
-            .lifecycle_fn(|_is_focused, ctx, event, _env| {
+            .lifecycle_fn(|_is_focused, ctx, event| {
                 if let LifeCycle::BuildFocusChain = event {
                     ctx.register_for_focus();
                 }
@@ -157,7 +157,7 @@ fn resign_focus_on_disable() {
 
     fn make_container_widget(id: WidgetId, child: impl Widget) -> impl Widget {
         ModularWidget::new(WidgetPod::new_with_id(child, id))
-            .event_fn(|child, ctx, event, env| {
+            .event_fn(|child, ctx, event| {
                 if let Event::Command(cmd) = event {
                     if let Some(disabled) = cmd.try_get(CHANGE_DISABLED) {
                         ctx.set_disabled(*disabled);
@@ -166,14 +166,14 @@ fn resign_focus_on_disable() {
                         //return;
                     }
                 }
-                child.on_event(ctx, event, env);
+                child.on_event(ctx, event);
             })
-            .lifecycle_fn(|child, ctx, event, env| {
-                child.lifecycle(ctx, event, env);
+            .lifecycle_fn(|child, ctx, event| {
+                child.lifecycle(ctx, event);
             })
-            .layout_fn(|child, ctx, bc, env| {
-                let layout = child.layout(ctx, bc, env);
-                ctx.place_child(child, Point::ZERO, env);
+            .layout_fn(|child, ctx, bc| {
+                let layout = child.layout(ctx, bc);
+                ctx.place_child(child, Point::ZERO);
                 layout
             })
             .children_fn(|child| smallvec![child.as_dyn()])

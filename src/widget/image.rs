@@ -12,8 +12,8 @@ use crate::kurbo::Rect;
 use crate::piet::{Image as _, ImageBuf, InterpolationMode, PietImage};
 use crate::widget::{FillStrat, WidgetRef};
 use crate::{
-    BoxConstraints, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
-    RenderContext, Size, StatusChange, Widget,
+    BoxConstraints, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, RenderContext,
+    Size, StatusChange, Widget,
 };
 
 /// A widget that renders a bitmap Image.
@@ -103,13 +103,13 @@ impl<'a, 'b> ImageMut<'a, 'b> {
 }
 
 impl Widget for Image {
-    fn on_event(&mut self, _ctx: &mut EventCtx, _event: &Event, _env: &Env) {}
+    fn on_event(&mut self, _ctx: &mut EventCtx, _event: &Event) {}
 
-    fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange, _env: &Env) {}
+    fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange) {}
 
-    fn lifecycle(&mut self, _ctx: &mut LifeCycleCtx, _event: &LifeCycle, _env: &Env) {}
+    fn lifecycle(&mut self, _ctx: &mut LifeCycleCtx, _event: &LifeCycle) {}
 
-    fn layout(&mut self, _ctx: &mut LayoutCtx, bc: &BoxConstraints, _env: &Env) -> Size {
+    fn layout(&mut self, _ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
         // If either the width or height is constrained calculate a value so that the image fits
         // in the size exactly. If it is unconstrained by both width and height take the size of
         // the image.
@@ -128,7 +128,7 @@ impl Widget for Image {
         size
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, _env: &Env) {
+    fn paint(&mut self, ctx: &mut PaintCtx) {
         let offset_matrix = self.fill.affine_to_fill(ctx.size(), self.image_data.size());
 
         // The ImageData's to_piet function does not clip to the image's size
@@ -251,7 +251,7 @@ mod tests {
 
             let mut harness = TestHarness::create_with_size(image_widget, Size::new(40.0, 60.0));
 
-            harness.edit_root_widget(|mut image, _| {
+            harness.edit_root_widget(|mut image| {
                 let mut image = image.downcast::<Image>().unwrap();
                 image.set_fill_mode(FillStrat::Cover);
                 image.set_interpolation_mode(InterpolationMode::NearestNeighbor);
@@ -285,7 +285,7 @@ mod tests {
 
             let mut harness = TestHarness::create_with_size(image_widget, Size::new(40.0, 60.0));
 
-            harness.edit_root_widget(|mut image, _| {
+            harness.edit_root_widget(|mut image| {
                 let mut image = image.downcast::<Image>().unwrap();
                 image.set_image_data(image_data);
             });

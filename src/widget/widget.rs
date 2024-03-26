@@ -12,8 +12,8 @@ use tracing::{trace_span, Span};
 use crate::event::StatusChange;
 use crate::widget::WidgetRef;
 use crate::{
-    AsAny, BoxConstraints, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
-    Point, Size, WidgetCtx,
+    AsAny, BoxConstraints, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Point,
+    Size, WidgetCtx,
 };
 
 /// A unique identifier for a single [`Widget`].
@@ -50,8 +50,7 @@ pub struct WidgetId(NonZeroU64);
 /// widget is laid out and displayed, methods `[layout]` and `[paint]` are called.
 ///
 /// These trait methods are provided with a corresponding context. The widget can
-/// request things and cause actions by calling methods on that context. In
-/// addition, these methods are provided with an environment ([`Env`]).
+/// request things and cause actions by calling methods on that context.
 ///
 /// Widgets also have a `children()` method. Leaf widgets return an empty array,
 /// whereas container widgets return an array of [`WidgetRef`]. Container widgets
@@ -69,17 +68,17 @@ pub trait Widget: AsAny {
     /// method call. A widget can handle these events in a number of ways:
     /// requesting things from the [`EventCtx`], mutating the data, or submitting
     /// a [`Command`](crate::Command).
-    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, env: &Env);
+    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event);
 
     #[allow(missing_docs)]
-    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange, env: &Env);
+    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange);
 
     /// Handle a lifecycle notification.
     ///
     /// This method is called to notify your widget of certain special events,
     /// (available in the [`LifeCycle`] enum) that are generally related to
     /// changes in the widget graph or in the state of your specific widget.
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env);
+    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle);
 
     /// Compute layout.
     ///
@@ -98,7 +97,7 @@ pub trait Widget: AsAny {
     /// once, though there is nothing enforcing this.
     ///
     /// The layout strategy is strongly inspired by Flutter.
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size;
+    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size;
 
     /// Paint the widget appearance.
     ///
@@ -110,7 +109,7 @@ pub trait Widget: AsAny {
     /// children, or annotations (for example, scrollbars) by painting
     /// afterwards. In addition, they can apply masks and transforms on
     /// the render context, which is especially useful for scrolling.
-    fn paint(&mut self, ctx: &mut PaintCtx, env: &Env);
+    fn paint(&mut self, ctx: &mut PaintCtx);
 
     /// Return references to this widget's children.
     ///
@@ -349,24 +348,24 @@ impl WidgetId {
 
 // TODO - remove
 impl Widget for Box<dyn Widget> {
-    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event, env: &Env) {
-        self.deref_mut().on_event(ctx, event, env)
+    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event) {
+        self.deref_mut().on_event(ctx, event)
     }
 
-    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange, env: &Env) {
-        self.deref_mut().on_status_change(ctx, event, env)
+    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange) {
+        self.deref_mut().on_status_change(ctx, event)
     }
 
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, env: &Env) {
-        self.deref_mut().lifecycle(ctx, event, env);
+    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
+        self.deref_mut().lifecycle(ctx, event);
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, env: &Env) -> Size {
-        self.deref_mut().layout(ctx, bc, env)
+    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
+        self.deref_mut().layout(ctx, bc)
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, env: &Env) {
-        self.deref_mut().paint(ctx, env);
+    fn paint(&mut self, ctx: &mut PaintCtx) {
+        self.deref_mut().paint(ctx);
     }
 
     fn type_name(&self) -> &'static str {

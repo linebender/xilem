@@ -93,6 +93,7 @@ impl PromiseResult {
 
 impl<T> Copy for PromiseToken<T> {}
 
+#[allow(clippy::non_canonical_clone_impl)]
 #[cfg(not(tarpaulin_include))]
 impl<T> Clone for PromiseToken<T> {
     fn clone(&self) -> Self {

@@ -65,7 +65,7 @@
 
 # TODO - Next steps
 
-- [ ] Remove Env type and Data trait (#8)
+- [X] Remove Env type and Data trait (#8)
 - [ ] Re-add Dialog feature (#25)
 - [ ] Switch to using Vello and Glazier (#24)
 - [ ] Refactor TextLayout (#23)

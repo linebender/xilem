@@ -8,7 +8,6 @@ use crate::app_delegate::AppDelegate;
 use crate::app_root::AppRoot;
 use crate::ext_event::{ExtEventQueue, ExtEventSink};
 use crate::platform::{MasonryAppHandler, WindowDescription};
-use crate::Env;
 
 /// Handles initial setup of an application, and starts the runloop.
 pub struct AppLauncher {
@@ -88,7 +87,6 @@ impl AppLauncher {
             self.windows,
             self.app_delegate,
             self.ext_event_queue,
-            Env::with_theme(),
         )?;
         let handler = MasonryAppHandler::new(state);
 
