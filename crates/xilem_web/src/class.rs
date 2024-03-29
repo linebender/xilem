@@ -7,10 +7,72 @@ use crate::{
     ChangeFlags, Cx, View, ViewMarker,
 };
 
+/// A trait to make the class adding functions generic over collection type
+pub trait IntoClasses {
+    fn into_classes(self, classes: &mut Vec<Cow<'static, str>>);
+}
+
+impl IntoClasses for String {
+    fn into_classes(self, classes: &mut Vec<Cow<'static, str>>) {
+        classes.push(self.into());
+    }
+}
+
+impl IntoClasses for &'static str {
+    fn into_classes(self, classes: &mut Vec<Cow<'static, str>>) {
+        classes.push(self.into())
+    }
+}
+
+impl<T> IntoClasses for Option<T>
+where
+    T: IntoClasses,
+{
+    fn into_classes(self, classes: &mut Vec<Cow<'static, str>>) {
+        if let Some(t) = self {
+            t.into_classes(classes)
+        }
+    }
+}
+
+impl<T> IntoClasses for Vec<T>
+where
+    T: IntoClasses,
+{
+    fn into_classes(self, classes: &mut Vec<Cow<'static, str>>) {
+        for itm in self {
+            itm.into_classes(classes);
+        }
+    }
+}
+
+macro_rules! impl_tuple_intoclasses {
+    ($($name:ident : $type:ident),* $(,)?) => {
+        impl<$($type),*> IntoClasses for ($($type,)*)
+        where
+            $($type: IntoClasses),*
+        {
+            #[allow(unused_variables)]
+            fn into_classes(self, classes: &mut Vec<Cow<'static, str>>) {
+                let ($($name,)*) = self;
+                $(
+                    $name.into_classes(classes);
+                )*
+            }
+        }
+    };
+}
+
+impl_tuple_intoclasses!();
+impl_tuple_intoclasses!(t1: T1);
+impl_tuple_intoclasses!(t1: T1, t2: T2);
+impl_tuple_intoclasses!(t1: T1, t2: T2, t3: T3);
+impl_tuple_intoclasses!(t1: T1, t2: T2, t3: T3, t4: T4);
+
 /// Applies a class to the underlying element.
 pub struct Class<E, T, A> {
     pub(crate) element: E,
-    pub(crate) class_name: Option<Cow<'static, str>>,
+    pub(crate) class_names: Vec<Cow<'static, str>>,
     pub(crate) phantom: PhantomData<fn() -> (T, A)>,
 }
 
@@ -22,7 +84,7 @@ impl<E: Element<T, A>, T, A> View<T, A> for Class<E, T, A> {
     type Element = E::Element;
 
     fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
-        if let Some(class_name) = &self.class_name {
+        for class_name in &self.class_names {
             cx.add_class_to_element(class_name);
         }
         self.element.build(cx)
@@ -36,7 +98,7 @@ impl<E: Element<T, A>, T, A> View<T, A> for Class<E, T, A> {
         state: &mut Self::State,
         element: &mut Self::Element,
     ) -> ChangeFlags {
-        if let Some(class_name) = &self.class_name {
+        for class_name in &self.class_names {
             cx.add_class_to_element(class_name);
         }
         self.element.rebuild(cx, &prev.element, id, state, element)

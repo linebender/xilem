@@ -1,4 +1,8 @@
-use crate::{class::Class, style::Style, Pointer, PointerMsg, View, ViewMarker};
+use crate::{
+    class::{Class, IntoClasses},
+    style::{IntoStyles, Style},
+    Pointer, PointerMsg, View, ViewMarker,
+};
 use std::{borrow::Cow, marker::PhantomData};
 
 use gloo::events::EventListenerOptions;
@@ -91,43 +95,28 @@ where
         }
     }
 
-    /// Add a class to the wrapped element.
+    /// Add 0 or more classes to the wrapped element.
+    ///
+    /// Can pass a string, &'static str, Option, tuple, or vec
     ///
     /// If multiple classes are added, all will be applied to the element.
-    fn class(self, class: impl Into<Cow<'static, str>>) -> Class<Self, T, A> {
-        self.class_opt(Some(class))
-    }
-
-    /// Add an optional class to the wrapped element.
-    ///
-    /// If multiple classes are added, all will be applied to the element.
-    fn class_opt(self, class: Option<impl Into<Cow<'static, str>>>) -> Class<Self, T, A> {
+    fn class(self, class: impl IntoClasses) -> Class<Self, T, A> {
+        let mut class_names = vec![];
+        class.into_classes(&mut class_names);
         Class {
             element: self,
-            class_name: class.map(Into::into),
+            class_names,
             phantom: PhantomData,
         }
     }
 
     /// Set a style attribute
-    fn style(
-        self,
-        name: impl Into<Cow<'static, str>>,
-        value: impl Into<Cow<'static, str>>,
-    ) -> Style<Self, T, A> {
-        self.style_opt(name, Some(value))
-    }
-
-    /// Set a style attribute
-    fn style_opt(
-        self,
-        name: impl Into<Cow<'static, str>>,
-        value: Option<impl Into<Cow<'static, str>>>,
-    ) -> Style<Self, T, A> {
+    fn style(self, style: impl IntoStyles) -> Style<Self, T, A> {
+        let mut styles = vec![];
+        style.into_styles(&mut styles);
         Style {
             element: self,
-            name: name.into(),
-            value: value.map(Into::into),
+            styles,
             phantom: PhantomData,
         }
     }

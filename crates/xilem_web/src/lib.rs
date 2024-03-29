@@ -37,6 +37,7 @@ pub use one_of::{
 };
 pub use optional_action::{Action, OptionalAction};
 pub use pointer::{Pointer, PointerDetails, PointerMsg};
+pub use style::style;
 pub use view::{
     memoize, static_view, Adapt, AdaptState, AdaptThunk, AnyView, BoxedView, ElementsSplice,
     Memoize, MemoizeState, Pod, View, ViewMarker, ViewSequence,

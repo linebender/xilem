@@ -4,7 +4,8 @@ use state::{AppState, Filter, Todo};
 
 use wasm_bindgen::JsCast;
 use xilem_web::{
-    elements::html as el, get_element_by_id, interfaces::*, Action, Adapt, App, MessageResult, View,
+    elements::html as el, get_element_by_id, interfaces::*, style as s, Action, Adapt, App,
+    MessageResult, View,
 };
 
 // All of these actions arise from within a `Todo`, but we need access to the full state to reduce
@@ -62,8 +63,8 @@ fn todo_item(todo: &mut Todo, editing: bool) -> impl Element<Todo, TodoAction> {
             .passive(true)
             .on_blur(|_, _| TodoAction::CancelEditing),
     ))
-    .class_opt(todo.completed.then_some("completed"))
-    .class_opt(editing.then_some("editing"))
+    .class(todo.completed.then_some("completed"))
+    .class(editing.then_some("editing"))
 }
 
 fn footer_view(state: &mut AppState, should_display: bool) -> impl Element<AppState> {
@@ -94,7 +95,7 @@ fn footer_view(state: &mut AppState, should_display: bool) -> impl Element<AppSt
             el::li(Element::on_click(
                 el::a("All")
                     .attr("href", "#/")
-                    .class_opt(filter_class(Filter::All)),
+                    .class(filter_class(Filter::All)),
                 |state: &mut AppState, _| {
                     state.filter = Filter::All;
                 },
@@ -103,7 +104,7 @@ fn footer_view(state: &mut AppState, should_display: bool) -> impl Element<AppSt
             el::li(Element::on_click(
                 el::a("Active")
                     .attr("href", "#/active")
-                    .class_opt(filter_class(Filter::Active)),
+                    .class(filter_class(Filter::Active)),
                 |state: &mut AppState, _| {
                     state.filter = Filter::Active;
                 },
@@ -112,7 +113,7 @@ fn footer_view(state: &mut AppState, should_display: bool) -> impl Element<AppSt
             el::li(Element::on_click(
                 el::a("Completed")
                     .attr("href", "#/completed")
-                    .class_opt(filter_class(Filter::Completed)),
+                    .class(filter_class(Filter::Completed)),
                 |state: &mut AppState, _| {
                     state.filter = Filter::Completed;
                 },
@@ -122,7 +123,7 @@ fn footer_view(state: &mut AppState, should_display: bool) -> impl Element<AppSt
         clear_button,
     ))
     .class("footer")
-    .style_opt("display", (!should_display).then_some("none"))
+    .style((!should_display).then_some(s("display", "none")))
 }
 
 fn main_view(state: &mut AppState, should_display: bool) -> impl Element<AppState> {
@@ -161,7 +162,7 @@ fn main_view(state: &mut AppState, should_display: bool) -> impl Element<AppStat
         el::ul(todos).class("todo-list"),
     ))
     .class("main")
-    .style_opt("display", (!should_display).then_some("none"))
+    .style((!should_display).then_some(s("display", "none")))
 }
 
 fn app_logic(state: &mut AppState) -> impl View<AppState> {

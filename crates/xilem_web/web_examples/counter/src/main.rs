@@ -49,7 +49,7 @@ fn btn(
 
 fn app_logic(state: &mut AppState) -> impl View<AppState> {
     el::div((
-        el::span(format!("clicked {} times", state.clicks)).class_opt(state.class),
+        el::span(format!("clicked {} times", state.clicks)).class(state.class),
         el::br(()),
         btn("+1 click", |state, _| state.increment()),
         btn("-1 click", |state, _| state.decrement()),
