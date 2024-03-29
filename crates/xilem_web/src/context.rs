@@ -16,6 +16,131 @@ use crate::{
 
 type CowStr = std::borrow::Cow<'static, str>;
 
+#[derive(Debug, Default)]
+pub struct HtmlProps {
+    pub(crate) attributes: VecMap<CowStr, AttributeValue>,
+    pub(crate) classes: VecMap<CowStr, ()>,
+    pub(crate) styles: VecMap<CowStr, CowStr>,
+}
+
+impl HtmlProps {
+    fn apply(&mut self, el: &web_sys::Element) -> Self {
+        let attributes = self.apply_attributes(el);
+        let classes = self.apply_classes(el);
+        let styles = self.apply_styles(el);
+        Self {
+            attributes,
+            classes,
+            styles,
+        }
+    }
+
+    fn apply_attributes(&mut self, element: &web_sys::Element) -> VecMap<CowStr, AttributeValue> {
+        let mut attributes = VecMap::default();
+        std::mem::swap(&mut attributes, &mut self.attributes);
+        for (name, value) in attributes.iter() {
+            set_attribute(element, name, &value.serialize());
+        }
+        attributes
+    }
+
+    fn apply_classes(&mut self, element: &web_sys::Element) -> VecMap<CowStr, ()> {
+        let mut classes = VecMap::default();
+        std::mem::swap(&mut classes, &mut self.classes);
+        for (class_name, ()) in classes.iter() {
+            set_class(element, class_name);
+        }
+        classes
+    }
+
+    fn apply_styles(&mut self, element: &web_sys::Element) -> VecMap<CowStr, CowStr> {
+        let mut styles = VecMap::default();
+        std::mem::swap(&mut styles, &mut self.styles);
+        for (name, value) in styles.iter() {
+            set_style(element, name, value);
+        }
+        styles
+    }
+
+    fn apply_changes(&mut self, element: &web_sys::Element, props: &mut HtmlProps) -> ChangeFlags {
+        self.apply_attribute_changes(element, &mut props.attributes)
+            | self.apply_class_changes(element, &mut props.classes)
+            | self.apply_style_changes(element, &mut props.styles)
+    }
+
+    pub(crate) fn apply_attribute_changes(
+        &mut self,
+        element: &web_sys::Element,
+        attributes: &mut VecMap<CowStr, AttributeValue>,
+    ) -> ChangeFlags {
+        let mut changed = ChangeFlags::empty();
+        // update attributes
+        for itm in diff_kv_iterables(&*attributes, &self.attributes) {
+            match itm {
+                Diff::Add(name, value) | Diff::Change(name, value) => {
+                    set_attribute(element, name, &value.serialize());
+                    changed |= ChangeFlags::OTHER_CHANGE;
+                }
+                Diff::Remove(name) => {
+                    remove_attribute(element, name);
+                    changed |= ChangeFlags::OTHER_CHANGE;
+                }
+            }
+        }
+        std::mem::swap(attributes, &mut self.attributes);
+        self.attributes.clear();
+        changed
+    }
+
+    pub(crate) fn apply_class_changes(
+        &mut self,
+        element: &web_sys::Element,
+        classes: &mut VecMap<CowStr, ()>,
+    ) -> ChangeFlags {
+        let mut changed = ChangeFlags::empty();
+        // update attributes
+        for itm in diff_kv_iterables(&*classes, &self.classes) {
+            match itm {
+                Diff::Add(class_name, ()) | Diff::Change(class_name, ()) => {
+                    set_class(element, class_name);
+                    changed |= ChangeFlags::OTHER_CHANGE;
+                }
+                Diff::Remove(class_name) => {
+                    remove_class(element, class_name);
+                    changed |= ChangeFlags::OTHER_CHANGE;
+                }
+            }
+        }
+        std::mem::swap(classes, &mut self.classes);
+        self.classes.clear();
+        changed
+    }
+
+    pub(crate) fn apply_style_changes(
+        &mut self,
+        element: &web_sys::Element,
+        styles: &mut VecMap<CowStr, CowStr>,
+    ) -> ChangeFlags {
+        let mut changed = ChangeFlags::empty();
+        // update attributes
+        for itm in diff_kv_iterables(&*styles, &self.styles) {
+            match itm {
+                Diff::Add(name, value) | Diff::Change(name, value) => {
+                    set_style(element, name, value);
+                    changed |= ChangeFlags::OTHER_CHANGE;
+                }
+                Diff::Remove(name) => {
+                    remove_style(element, name);
+                    changed |= ChangeFlags::OTHER_CHANGE;
+                }
+            }
+        }
+        std::mem::swap(styles, &mut self.styles);
+        self.styles.clear();
+        changed
+    }
+}
+
 fn set_attribute(element: &web_sys::Element, name: &str, value: &str) {
     // we have to special-case `value` because setting the value using `set_attribute`
     // doesn't work after the value has been changed.
@@ -84,9 +209,7 @@ pub struct Cx {
     id_path: IdPath,
     document: Document,
     // TODO There's likely a cleaner more robust way to propagate the attributes to an element
-    pub(crate) current_element_attributes: VecMap<CowStr, AttributeValue>,
-    pub(crate) current_element_classes: VecMap<CowStr, ()>,
-    pub(crate) current_element_styles: VecMap<CowStr, CowStr>,
+    pub(crate) current_element_props: HtmlProps,
     app_ref: Option<Box<dyn AppRunner>>,
 }
 
@@ -109,9 +232,7 @@ impl Cx {
             id_path: Vec::new(),
             document: crate::document(),
             app_ref: None,
-            current_element_attributes: Default::default(),
-            current_element_classes: Default::default(),
-            current_element_styles: Default::default(),
+            current_element_props: Default::default(),
         }
     }
 
@@ -183,36 +304,21 @@ impl Cx {
         &self.document
     }
 
-    pub(crate) fn build_element(
-        &mut self,
-        ns: &str,
-        name: &str,
-    ) -> (
-        web_sys::Element,
-        VecMap<CowStr, AttributeValue>,
-        VecMap<CowStr, ()>,
-        VecMap<CowStr, CowStr>,
-    ) {
+    pub(crate) fn build_element(&mut self, ns: &str, name: &str) -> (web_sys::Element, HtmlProps) {
         let el = self
             .document
             .create_element_ns(Some(ns), name)
             .expect("could not create element");
-        let attributes = self.apply_attributes(&el);
-        let classes = self.apply_classes(&el);
-        let styles = self.apply_styles(&el);
-        (el, attributes, classes, styles)
+        let props = self.current_element_props.apply(&el);
+        (el, props)
     }
 
     pub(crate) fn rebuild_element(
         &mut self,
         element: &web_sys::Element,
-        attributes: &mut VecMap<CowStr, AttributeValue>,
-        classes: &mut VecMap<CowStr, ()>,
-        styles: &mut VecMap<CowStr, CowStr>,
+        props: &mut HtmlProps,
     ) -> ChangeFlags {
-        self.apply_attribute_changes(element, attributes)
-            | self.apply_class_changes(element, classes)
-            | self.apply_style_changes(element, styles)
+        self.current_element_props.apply_changes(element, props)
     }
 
     // TODO Not sure how multiple attribute definitions with the same name should be handled (e.g. `e.attr("class", "a").attr("class", "b")`)
@@ -231,8 +337,9 @@ impl Cx {
 
         if let Some(value) = value {
             // could be slightly optimized via something like this: `new_attrs.entry(name).or_insert_with(|| value)`
-            if !self.current_element_attributes.contains_key(name) {
-                self.current_element_attributes
+            if !self.current_element_props.attributes.contains_key(name) {
+                self.current_element_props
+                    .attributes
                     .insert(name.clone(), value.clone());
             }
         }
@@ -240,118 +347,19 @@ impl Cx {
 
     pub(crate) fn add_class_to_element(&mut self, class_name: &CowStr) {
         // Don't strictly need this check but I assume its better for perf (might not be though)
-        if !self.current_element_classes.contains_key(class_name) {
-            self.current_element_classes.insert(class_name.clone(), ());
+        if !self.current_element_props.classes.contains_key(class_name) {
+            self.current_element_props
+                .classes
+                .insert(class_name.clone(), ());
         }
     }
 
     pub(crate) fn add_style_to_element(&mut self, name: &CowStr, value: &CowStr) {
-        if !self.current_element_styles.contains_key(name) {
-            self.current_element_styles
+        if !self.current_element_props.styles.contains_key(name) {
+            self.current_element_props
+                .styles
                 .insert(name.clone(), value.clone());
         }
-    }
-
-    pub(crate) fn apply_attributes(
-        &mut self,
-        element: &web_sys::Element,
-    ) -> VecMap<CowStr, AttributeValue> {
-        let mut attributes = VecMap::default();
-        std::mem::swap(&mut attributes, &mut self.current_element_attributes);
-        for (name, value) in attributes.iter() {
-            set_attribute(element, name, &value.serialize());
-        }
-        attributes
-    }
-
-    pub(crate) fn apply_attribute_changes(
-        &mut self,
-        element: &web_sys::Element,
-        attributes: &mut VecMap<CowStr, AttributeValue>,
-    ) -> ChangeFlags {
-        let mut changed = ChangeFlags::empty();
-        // update attributes
-        for itm in diff_kv_iterables(&*attributes, &self.current_element_attributes) {
-            match itm {
-                Diff::Add(name, value) | Diff::Change(name, value) => {
-                    set_attribute(element, name, &value.serialize());
-                    changed |= ChangeFlags::OTHER_CHANGE;
-                }
-                Diff::Remove(name) => {
-                    remove_attribute(element, name);
-                    changed |= ChangeFlags::OTHER_CHANGE;
-                }
-            }
-        }
-        std::mem::swap(attributes, &mut self.current_element_attributes);
-        self.current_element_attributes.clear();
-        changed
-    }
-
-    pub(crate) fn apply_classes(&mut self, element: &web_sys::Element) -> VecMap<CowStr, ()> {
-        let mut classes = VecMap::default();
-        std::mem::swap(&mut classes, &mut self.current_element_classes);
-        for (class_name, ()) in classes.iter() {
-            set_class(element, class_name);
-        }
-        classes
-    }
-
-    pub(crate) fn apply_class_changes(
-        &mut self,
-        element: &web_sys::Element,
-        classes: &mut VecMap<CowStr, ()>,
-    ) -> ChangeFlags {
-        let mut changed = ChangeFlags::empty();
-        // update attributes
-        for itm in diff_kv_iterables(&*classes, &self.current_element_classes) {
-            match itm {
-                Diff::Add(class_name, ()) | Diff::Change(class_name, ()) => {
-                    set_class(element, class_name);
-                    changed |= ChangeFlags::OTHER_CHANGE;
-                }
-                Diff::Remove(class_name) => {
-                    remove_class(element, class_name);
-                    changed |= ChangeFlags::OTHER_CHANGE;
-                }
-            }
-        }
-        std::mem::swap(classes, &mut self.current_element_classes);
-        self.current_element_classes.clear();
-        changed
-    }
-
-    pub(crate) fn apply_styles(&mut self, element: &web_sys::Element) -> VecMap<CowStr, CowStr> {
-        let mut styles = VecMap::default();
-        std::mem::swap(&mut styles, &mut self.current_element_styles);
-        for (name, value) in styles.iter() {
-            set_style(element, name, value);
-        }
-        styles
-    }
-
-    pub(crate) fn apply_style_changes(
-        &mut self,
-        element: &web_sys::Element,
-        styles: &mut VecMap<CowStr, CowStr>,
-    ) -> ChangeFlags {
-        let mut changed = ChangeFlags::empty();
-        // update attributes
-        for itm in diff_kv_iterables(&*styles, &self.current_element_styles) {
-            match itm {
-                Diff::Add(name, value) | Diff::Change(name, value) => {
-                    set_style(element, name, value);
-                    changed |= ChangeFlags::OTHER_CHANGE;
-                }
-                Diff::Remove(name) => {
-                    remove_style(element, name);
-                    changed |= ChangeFlags::OTHER_CHANGE;
-                }
-            }
-        }
-        std::mem::swap(styles, &mut self.current_element_styles);
-        self.current_element_styles.clear();
-        changed
     }
 
     pub fn message_thunk(&self) -> MessageThunk {

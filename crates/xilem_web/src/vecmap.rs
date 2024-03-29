@@ -1,4 +1,4 @@
-use std::{borrow::Borrow, ops::Index};
+use std::{borrow::Borrow, fmt, ops::Index};
 
 /// Basically an ordered Map (similar as BTreeMap) with a Vec as backend for very few elements
 /// As it uses linear search instead of a tree traversal,
@@ -8,6 +8,12 @@ pub struct VecMap<K, V>(Vec<(K, V)>);
 impl<K, V> Default for VecMap<K, V> {
     fn default() -> Self {
         Self(Vec::new())
+    }
+}
+
+impl<K: fmt::Debug, V: fmt::Debug> fmt::Debug for VecMap<K, V> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_map().entries(self.iter()).finish()
     }
 }
 

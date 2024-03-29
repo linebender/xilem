@@ -9,11 +9,10 @@ use std::borrow::Cow;
 use xilem_core::{Id, MessageResult};
 
 use crate::{
-    context::{ChangeFlags, Cx},
+    context::{ChangeFlags, Cx, HtmlProps},
     interfaces::sealed::Sealed,
-    vecmap::VecMap,
     view::{View, ViewMarker},
-    AttributeValue, IntoAttributeValue, SVG_NS,
+    IntoAttributeValue, SVG_NS,
 };
 
 macro_rules! generate_dom_interface_impl {
@@ -29,11 +28,7 @@ impl ViewMarker for Line {}
 impl Sealed for Line {}
 
 impl<T, A> View<T, A> for Line {
-    type State = (
-        VecMap<Cow<'static, str>, AttributeValue>,
-        VecMap<Cow<'static, str>, ()>,
-        VecMap<Cow<'static, str>, Cow<'static, str>>,
-    );
+    type State = HtmlProps;
     type Element = web_sys::Element;
 
     fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
@@ -41,9 +36,9 @@ impl<T, A> View<T, A> for Line {
         cx.add_attr_to_element(&"y1".into(), &self.p0.y.into_attr_value());
         cx.add_attr_to_element(&"x2".into(), &self.p1.x.into_attr_value());
         cx.add_attr_to_element(&"y2".into(), &self.p1.y.into_attr_value());
-        let (el, attributes, classes, styles) = cx.build_element(SVG_NS, "line");
+        let (el, props) = cx.build_element(SVG_NS, "line");
         let id = Id::next();
-        (id, (attributes, classes, styles), el)
+        (id, props, el)
     }
 
     fn rebuild(
@@ -51,14 +46,14 @@ impl<T, A> View<T, A> for Line {
         cx: &mut Cx,
         _prev: &Self,
         _id: &mut Id,
-        (attributes, classes, styles): &mut Self::State,
+        props: &mut Self::State,
         element: &mut Self::Element,
     ) -> ChangeFlags {
         cx.add_attr_to_element(&"x1".into(), &self.p0.x.into_attr_value());
         cx.add_attr_to_element(&"y1".into(), &self.p0.y.into_attr_value());
         cx.add_attr_to_element(&"x2".into(), &self.p1.x.into_attr_value());
         cx.add_attr_to_element(&"y2".into(), &self.p1.y.into_attr_value());
-        cx.rebuild_element(element, attributes, classes, styles)
+        cx.rebuild_element(element, props)
     }
 
     fn message(
@@ -79,11 +74,7 @@ impl ViewMarker for Rect {}
 impl Sealed for Rect {}
 
 impl<T, A> View<T, A> for Rect {
-    type State = (
-        VecMap<Cow<'static, str>, AttributeValue>,
-        VecMap<Cow<'static, str>, ()>,
-        VecMap<Cow<'static, str>, Cow<'static, str>>,
-    );
+    type State = HtmlProps;
     type Element = web_sys::Element;
 
     fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
@@ -92,9 +83,9 @@ impl<T, A> View<T, A> for Rect {
         let size = self.size();
         cx.add_attr_to_element(&"width".into(), &size.width.into_attr_value());
         cx.add_attr_to_element(&"height".into(), &size.height.into_attr_value());
-        let (el, attributes, classes, styles) = cx.build_element(SVG_NS, "rect");
+        let (el, props) = cx.build_element(SVG_NS, "rect");
         let id = Id::next();
-        (id, (attributes, classes, styles), el)
+        (id, props, el)
     }
 
     fn rebuild(
@@ -102,7 +93,7 @@ impl<T, A> View<T, A> for Rect {
         cx: &mut Cx,
         _prev: &Self,
         _id: &mut Id,
-        (attributes, classes, styles): &mut Self::State,
+        props: &mut Self::State,
         element: &mut Self::Element,
     ) -> ChangeFlags {
         cx.add_attr_to_element(&"x".into(), &self.x0.into_attr_value());
@@ -110,7 +101,7 @@ impl<T, A> View<T, A> for Rect {
         let size = self.size();
         cx.add_attr_to_element(&"width".into(), &size.width.into_attr_value());
         cx.add_attr_to_element(&"height".into(), &size.height.into_attr_value());
-        cx.rebuild_element(element, attributes, classes, styles)
+        cx.rebuild_element(element, props)
     }
 
     fn message(
@@ -131,20 +122,16 @@ impl ViewMarker for Circle {}
 impl Sealed for Circle {}
 
 impl<T, A> View<T, A> for Circle {
-    type State = (
-        VecMap<Cow<'static, str>, AttributeValue>,
-        VecMap<Cow<'static, str>, ()>,
-        VecMap<Cow<'static, str>, Cow<'static, str>>,
-    );
+    type State = HtmlProps;
     type Element = web_sys::Element;
 
     fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
         cx.add_attr_to_element(&"cx".into(), &self.center.x.into_attr_value());
         cx.add_attr_to_element(&"cy".into(), &self.center.y.into_attr_value());
         cx.add_attr_to_element(&"r".into(), &self.radius.into_attr_value());
-        let (el, attributes, classes, styles) = cx.build_element(SVG_NS, "circle");
+        let (el, props) = cx.build_element(SVG_NS, "circle");
         let id = Id::next();
-        (id, (attributes, classes, styles), el)
+        (id, props, el)
     }
 
     fn rebuild(
@@ -152,13 +139,13 @@ impl<T, A> View<T, A> for Circle {
         cx: &mut Cx,
         _prev: &Self,
         _id: &mut Id,
-        (attributes, classes, styles): &mut Self::State,
+        props: &mut Self::State,
         element: &mut Self::Element,
     ) -> ChangeFlags {
         cx.add_attr_to_element(&"cx".into(), &self.center.x.into_attr_value());
         cx.add_attr_to_element(&"cy".into(), &self.center.y.into_attr_value());
         cx.add_attr_to_element(&"r".into(), &self.radius.into_attr_value());
-        cx.rebuild_element(element, attributes, classes, styles)
+        cx.rebuild_element(element, props)
     }
 
     fn message(
@@ -179,20 +166,15 @@ impl ViewMarker for BezPath {}
 impl Sealed for BezPath {}
 
 impl<T, A> View<T, A> for BezPath {
-    type State = (
-        Cow<'static, str>,
-        VecMap<Cow<'static, str>, AttributeValue>,
-        VecMap<Cow<'static, str>, ()>,
-        VecMap<Cow<'static, str>, Cow<'static, str>>,
-    );
+    type State = (Cow<'static, str>, HtmlProps);
     type Element = web_sys::Element;
 
     fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
         let svg_repr = Cow::from(self.to_svg());
         cx.add_attr_to_element(&"d".into(), &svg_repr.clone().into_attr_value());
-        let (el, attributes, classes, styles) = cx.build_element(SVG_NS, "path");
+        let (el, props) = cx.build_element(SVG_NS, "path");
         let id = Id::next();
-        (id, (svg_repr, attributes, classes, styles), el)
+        (id, (svg_repr, props), el)
     }
 
     fn rebuild(
@@ -200,7 +182,7 @@ impl<T, A> View<T, A> for BezPath {
         cx: &mut Cx,
         prev: &Self,
         _id: &mut Id,
-        (svg_repr, attributes, classes, styles): &mut Self::State,
+        (svg_repr, props): &mut Self::State,
         element: &mut Self::Element,
     ) -> ChangeFlags {
         // slight optimization to avoid serialization/allocation
@@ -208,7 +190,7 @@ impl<T, A> View<T, A> for BezPath {
             *svg_repr = Cow::from(self.to_svg());
         }
         cx.add_attr_to_element(&"d".into(), &svg_repr.clone().into_attr_value());
-        cx.rebuild_element(element, attributes, classes, styles)
+        cx.rebuild_element(element, props)
     }
 
     fn message(

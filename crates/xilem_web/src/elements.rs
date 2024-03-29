@@ -4,8 +4,8 @@ use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use xilem_core::{Id, MessageResult, VecSplice};
 
 use crate::{
-    interfaces::sealed::Sealed, vecmap::VecMap, view::DomNode, AttributeValue, ChangeFlags, Cx,
-    ElementsSplice, Pod, View, ViewMarker, ViewSequence, HTML_NS,
+    context::HtmlProps, interfaces::sealed::Sealed, view::DomNode, ChangeFlags, Cx, ElementsSplice,
+    Pod, View, ViewMarker, ViewSequence, HTML_NS,
 };
 
 use super::interfaces::Element;
@@ -17,9 +17,7 @@ type CowStr = std::borrow::Cow<'static, str>;
 /// Stores handles to the child elements and any child state, as well as attributes and event listeners
 pub struct ElementState<ViewSeqState> {
     pub(crate) children_states: ViewSeqState,
-    pub(crate) attributes: VecMap<CowStr, AttributeValue>,
-    pub(crate) classes: VecMap<CowStr, ()>,
-    pub(crate) styles: VecMap<CowStr, CowStr>,
+    pub(crate) props: HtmlProps,
     pub(crate) child_elements: Vec<Pod>,
     /// This is temporary cache for elements while updating/diffing,
     /// after usage it shouldn't contain any elements,
@@ -152,7 +150,7 @@ where
     type Element = web_sys::HtmlElement;
 
     fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
-        let (el, attributes, classes, styles) = cx.build_element(HTML_NS, &self.name);
+        let (el, props) = cx.build_element(HTML_NS, &self.name);
 
         let mut child_elements = vec![];
         let mut scratch = vec![];
@@ -173,9 +171,7 @@ where
             children_states,
             child_elements,
             scratch,
-            attributes,
-            classes,
-            styles,
+            props,
         };
         (id, state, el)
     }
@@ -197,11 +193,8 @@ where
                 .parent_element()
                 .expect_throw("this element was mounted and so should have a parent");
             parent.remove_child(element).unwrap_throw();
-            let (new_element, attributes, classes, styles) =
-                cx.build_element(HTML_NS, self.node_name());
-            state.attributes = attributes;
-            state.classes = classes;
-            state.styles = styles;
+            let (new_element, props) = cx.build_element(HTML_NS, self.node_name());
+            state.props = props;
             // TODO could this be combined with child updates?
             while let Some(child) = element.child_nodes().get(0) {
                 new_element.append_child(&child).unwrap_throw();
@@ -210,12 +203,7 @@ where
             changed |= ChangeFlags::STRUCTURE;
         }
 
-        changed |= cx.rebuild_element(
-            element,
-            &mut state.attributes,
-            &mut state.classes,
-            &mut state.styles,
-        );
+        changed |= cx.rebuild_element(element, &mut state.props);
 
         // update children
         let mut splice =
@@ -292,7 +280,7 @@ macro_rules! define_element {
             type Element = web_sys::$dom_interface;
 
             fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
-                let (el, attributes, classes, styles) = cx.build_element($ns, $tag_name);
+                let (el, props) = cx.build_element($ns, $tag_name);
 
                 let mut child_elements = vec![];
                 let mut scratch = vec![];
@@ -312,9 +300,7 @@ macro_rules! define_element {
                     children_states,
                     child_elements,
                     scratch,
-                    attributes,
-                    classes,
-                    styles,
+                    props,
                 };
                 (id, state, el)
             }
@@ -329,7 +315,7 @@ macro_rules! define_element {
             ) -> ChangeFlags {
                 let mut changed = ChangeFlags::empty();
 
-                changed |= cx.rebuild_element(element, &mut state.attributes, &mut state.classes, &mut state.styles);
+                changed |= cx.rebuild_element(element, &mut state.props);
 
                 // update children
                 let mut splice = ChildrenSplice::new(&mut state.child_elements, &mut state.scratch, element);
