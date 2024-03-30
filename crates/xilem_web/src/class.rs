@@ -20,7 +20,7 @@ impl IntoClasses for String {
 
 impl IntoClasses for &'static str {
     fn into_classes(self, classes: &mut Vec<Cow<'static, str>>) {
-        classes.push(self.into())
+        classes.push(self.into());
     }
 }
 
@@ -30,7 +30,7 @@ where
 {
     fn into_classes(self, classes: &mut Vec<Cow<'static, str>>) {
         if let Some(t) = self {
-            t.into_classes(classes)
+            t.into_classes(classes);
         }
     }
 }

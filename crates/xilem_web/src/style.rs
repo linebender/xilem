@@ -41,7 +41,7 @@ where
 {
     fn into_styles(self, styles: &mut Vec<(Cow<'static, str>, Cow<'static, str>)>) {
         if let Some(t) = self {
-            t.into_styles(styles)
+            t.into_styles(styles);
         }
     }
 }

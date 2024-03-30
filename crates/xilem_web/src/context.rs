@@ -175,7 +175,7 @@ fn set_class(element: &web_sys::Element, class_name: &str) {
         !class_name.contains(' '),
         "class names cannot contain the ascii space character"
     );
-    element.class_list().add_1(class_name).unwrap_throw()
+    element.class_list().add_1(class_name).unwrap_throw();
 }
 
 fn remove_class(element: &web_sys::Element, class_name: &str) {
@@ -187,13 +187,13 @@ fn remove_class(element: &web_sys::Element, class_name: &str) {
         !class_name.contains(' '),
         "class names cannot contain the ascii space character"
     );
-    element.class_list().remove_1(class_name).unwrap_throw()
+    element.class_list().remove_1(class_name).unwrap_throw();
 }
 
 fn set_style(element: &web_sys::Element, name: &str, value: &str) {
     // styles will be ignored for non-html elements (e.g. SVG)
     if let Some(el) = element.dyn_ref::<web_sys::HtmlElement>() {
-        el.style().set_property(name, value).unwrap_throw()
+        el.style().set_property(name, value).unwrap_throw();
     }
 }
 
