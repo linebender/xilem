@@ -10,6 +10,7 @@ use wasm_bindgen::JsCast;
 mod app;
 mod attribute;
 mod attribute_value;
+mod class;
 mod context;
 mod diff;
 pub mod elements;
@@ -18,6 +19,7 @@ pub mod interfaces;
 mod one_of;
 mod optional_action;
 mod pointer;
+mod style;
 pub mod svg;
 mod vecmap;
 mod view;
@@ -35,6 +37,7 @@ pub use one_of::{
 };
 pub use optional_action::{Action, OptionalAction};
 pub use pointer::{Pointer, PointerDetails, PointerMsg};
+pub use style::style;
 pub use view::{
     memoize, static_view, Adapt, AdaptState, AdaptThunk, AnyView, BoxedView, ElementsSplice,
     Memoize, MemoizeState, Pod, View, ViewMarker, ViewSequence,
