@@ -24,6 +24,12 @@ impl IntoClasses for &'static str {
     }
 }
 
+impl IntoClasses for Cow<'static, str> {
+    fn into_classes(self, classes: &mut Vec<Cow<'static, str>>) {
+        classes.push(self);
+    }
+}
+
 impl<T> IntoClasses for Option<T>
 where
     T: IntoClasses,
