@@ -198,8 +198,9 @@ fn set_style(element: &web_sys::Element, name: &str, value: &str) {
 }
 
 fn remove_style(element: &web_sys::Element, name: &str) {
-    // styles will be ignored for non-html elements (e.g. SVG)
     if let Some(el) = element.dyn_ref::<web_sys::HtmlElement>() {
+        el.style().remove_property(name).unwrap_throw();
+    } else if let Some(el) = element.dyn_ref::<web_sys::SvgElement>() {
         el.style().remove_property(name).unwrap_throw();
     }
 }
