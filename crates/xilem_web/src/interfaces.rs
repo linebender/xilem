@@ -110,17 +110,6 @@ where
         }
     }
 
-    /// Set a style attribute
-    fn style(self, style: impl IntoStyles) -> Style<Self, T, A> {
-        let mut styles = vec![];
-        style.into_styles(&mut styles);
-        Style {
-            element: self,
-            styles,
-            phantom: PhantomData,
-        }
-    }
-
     // event list from
     // https://html.spec.whatwg.org/multipage/webappapis.html#idl-definitions
     //
@@ -340,7 +329,18 @@ pub(crate) use impl_dom_interfaces_for_ty;
 
 dom_interface_macro_and_trait_definitions!(
     HtmlElement {
-        methods: {},
+        methods: {
+            /// Set a style attribute
+            fn style(self, style: impl IntoStyles) -> Style<Self, T, A> {
+                let mut styles = vec![];
+                style.into_styles(&mut styles);
+                Style {
+                    element: self,
+                    styles,
+                    phantom: PhantomData,
+                }
+            }
+        },
         child_interfaces: {
             HtmlAnchorElement { methods: {}, child_interfaces: {} },
             HtmlAreaElement { methods: {}, child_interfaces: {} },
@@ -439,7 +439,18 @@ dom_interface_macro_and_trait_definitions!(
         }
     },
     SvgElement {
-        methods: {},
+        methods: {
+            /// Set a style attribute
+            fn style(self, style: impl IntoStyles) -> Style<Self, T, A> {
+                let mut styles = vec![];
+                style.into_styles(&mut styles);
+                Style {
+                    element: self,
+                    styles,
+                    phantom: PhantomData,
+                }
+            }
+        },
         child_interfaces: {
             SvgAnimationElement {
                 methods: {},
