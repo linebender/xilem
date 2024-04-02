@@ -1554,7 +1554,7 @@ dependencies = [
 [[package]]
 name = "parley"
 version = "0.0.1"
-source = "git+https://github.com/dfrg/parley?rev=468f4455855c4f91817a370ab06dd90b04516668#468f4455855c4f91817a370ab06dd90b04516668"
+source = "git+https://github.com/dfrg/parley?rev=4e6109f2ff5847a72dc77971b6fa0942b8474d88#4e6109f2ff5847a72dc77971b6fa0942b8474d88"
 dependencies = [
  "anyhow",
  "bytemuck",

@@ -57,7 +57,7 @@ xilem_core.workspace = true
 taffy = { version = "0.4.0", optional = true }
 vello = "0.1.0"
 wgpu = "0.19.3"
-parley = { git = "https://github.com/dfrg/parley", rev = "468f4455855c4f91817a370ab06dd90b04516668" }
+parley = { git = "https://github.com/dfrg/parley", rev = "4e6109f2ff5847a72dc77971b6fa0942b8474d88" }
 tokio = { version = "1.35", features = ["full"] }
 futures-task = "0.3"
 bitflags = "2"
