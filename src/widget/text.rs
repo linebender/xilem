@@ -50,9 +50,6 @@ impl TextWidget {
             layout_builder.push_default(&style::StyleProperty::Brush(Brush::Solid(Color::rgb8(
                 255, 255, 255,
             ))));
-            layout_builder.push_default(&style::StyleProperty::FontStack(
-                style::FontStack::Source("fantasy"),
-            ));
             self.layout = Some(layout_builder.build());
         }
 

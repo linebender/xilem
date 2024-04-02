@@ -14,6 +14,10 @@ pub fn render_text(scene: &mut Scene, transform: Affine, layout: &Layout<Brush>)
             let font = run.font();
             let font_size = run.font_size();
             let style = glyph_run.style();
+            let synthesis = run.synthesis();
+            let glyph_xform = synthesis
+                .skew()
+                .map(|angle| Affine::skew(angle.to_radians().tan() as f64, 0.0));
             let coords = run
                 .normalized_coords()
                 .iter()
@@ -23,6 +27,7 @@ pub fn render_text(scene: &mut Scene, transform: Affine, layout: &Layout<Brush>)
                 .draw_glyphs(font)
                 .brush(&style.brush)
                 .transform(transform)
+                .glyph_transform(glyph_xform)
                 .font_size(font_size)
                 .normalized_coords(&coords)
                 .draw(
