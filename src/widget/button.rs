@@ -89,6 +89,9 @@ impl Widget for Button {
         layout_builder.push_default(&parley::style::StyleProperty::Brush(Brush::Solid(
             Color::rgb8(0xf0, 0xf0, 0xea),
         )));
+        layout_builder.push_default(&parley::style::StyleProperty::FontStack(
+            parley::style::FontStack::Source("system-ui"),
+        ));
         let mut layout = layout_builder.build();
         // Question for Chad: is this needed?
         layout.break_all_lines(None, parley::layout::Alignment::Start);

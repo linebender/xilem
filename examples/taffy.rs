@@ -82,7 +82,7 @@ fn app_logic(state: &mut AppState) -> impl View<AppState> {
                     .with_style(|s| s.padding = length(20.0)),
 
                 // Lorem Ipsum text
-                div(String::from("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."))
+                div(String::from("Lorem ipsum dolor sit amet, 汁投代経夫間費 consectetur adipiscing elit, sed უბიყუე do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."))
                     .with_background_color(Color::RED)
                     .with_style(|s| s.padding = length(20.0)),
 
