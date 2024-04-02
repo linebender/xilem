@@ -34,7 +34,9 @@ peniko = { git = "https://github.com/linebender/peniko", rev = "629fc3325b016a8c
 version = "0.3.4"
 features = [
     "console",
+    "CssStyleDeclaration",
     "Document",
+    "DomTokenList",
     "Element",
     "Event",
     "HtmlElement",
