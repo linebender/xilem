@@ -1,5 +1,5 @@
 use crate::{
-    interfaces::{sealed::Sealed, Element},
+    interfaces::{Element, ElementProps},
     view::DomNode,
     ChangeFlags, Cx, OptionalAction, View, ViewMarker,
 };
@@ -87,8 +87,31 @@ pub struct OnEventState<S> {
     child_state: S,
 }
 
+impl<S: ElementProps> ElementProps for OnEventState<S> {
+    fn set_attribute(
+        &mut self,
+        element: Option<&web_sys::Element>,
+        name: &Cow<'static, str>,
+        value: &Option<crate::AttributeValue>,
+    ) {
+        self.child_state.set_attribute(element, name, value);
+    }
+
+    fn set_class(&mut self, element: Option<&web_sys::Element>, class: Cow<'static, str>) {
+        self.child_state.set_class(element, class);
+    }
+
+    fn set_style(
+        &mut self,
+        element: Option<&web_sys::Element>,
+        key: Cow<'static, str>,
+        value: Cow<'static, str>,
+    ) {
+        self.child_state.set_style(element, key, value);
+    }
+}
+
 impl<E, T, A, Ev, C> ViewMarker for OnEvent<E, T, A, Ev, C> {}
-impl<E, T, A, Ev, C> Sealed for OnEvent<E, T, A, Ev, C> {}
 
 impl<E, T, A, Ev, C, OA> View<T, A> for OnEvent<E, T, A, Ev, C>
 where
@@ -233,7 +256,6 @@ macro_rules! event_definitions {
         }
 
         impl<E, T, A, C> ViewMarker for $ty_name<E, T, A, C> {}
-        impl<E, T, A, C> Sealed for $ty_name<E, T, A, C> {}
 
         impl<E, T, A, C, OA> View<T, A> for $ty_name<E, T, A, C>
         where

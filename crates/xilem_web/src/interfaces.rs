@@ -1,20 +1,50 @@
 use crate::{
     class::{Class, IntoClasses},
+    events::{self, OnEvent},
     style::{IntoStyles, Style},
-    Pointer, PointerMsg, View, ViewMarker,
+    Attr, AttributeValue, IntoAttributeValue, OptionalAction, Pointer, PointerMsg, View,
+    ViewMarker,
 };
 use std::{borrow::Cow, marker::PhantomData};
 
 use gloo::events::EventListenerOptions;
 use wasm_bindgen::JsCast;
 
-use crate::{
-    events::{self, OnEvent},
-    Attr, IntoAttributeValue, OptionalAction,
-};
+/// This trait is used in `View::State` to allow setting properties of a DOM element for various modifier types, such as `Class` or `Attr`
+/// For every view reconciliation the methods have to be called again.
+/// In `View::build` the properties are usually set while traversing up from the concrete element (see `Attr`), here they are set directly on the given element.
+/// In `View::rebuild` the properties set via the methods are accumulated until reaching the concrete element type,
+/// such as `crate::elements::html::Div` where they're diffed with the previous state (and resulting changes are propagated to the underlying DOM element)
+pub trait ElementProps {
+    /// Set an HTML attribute
+    /// This method is additive, i.e. if `value` is `None` the possibly previous set value is not removed, and it is a noop
+    ///
+    /// When `element` is `None` the `name`/`value` pair is scheduled for the next update/diffing process in the concrete element (in `<Element as View>::rebuild`).
+    /// When `element` is Some(_) it is set directly on the element this usually happens in `View::build` on the up-traversal (see `<Attr as View>::build`)
+    #[allow(clippy::ptr_arg)]
+    fn set_attribute(
+        &mut self,
+        element: Option<&web_sys::Element>,
+        name: &Cow<'static, str>,
+        value: &Option<AttributeValue>,
+    );
 
-pub(crate) mod sealed {
-    pub trait Sealed {}
+    /// Add a class
+    ///
+    /// When `element` is `None` the `class` is scheduled for the next update/diffing process in the concrete element (in `<Element as View>::rebuild`).
+    /// When `element` is Some(_) it is set directly on the element this usually happens in `View::build` on the up-traversal (see e.g. `<Class as View>::build`)
+    fn set_class(&mut self, element: Option<&web_sys::Element>, class: Cow<'static, str>);
+
+    /// Set an HTML/SVG style pair
+    ///
+    /// When `element` is `None` the `key`/`value` pair is scheduled for the next update/diffing process in the concrete element (in `<Element as View>::rebuild`).
+    /// When `element` is Some(_) it is set directly on the element this usually happens in `View::build` on the up-traversal (see `<Style as View>::build`)
+    fn set_style(
+        &mut self,
+        element: Option<&web_sys::Element>,
+        key: Cow<'static, str>,
+        value: Cow<'static, str>,
+    );
 }
 
 // TODO should the options be its own function `on_event_with_options`,
@@ -33,7 +63,8 @@ macro_rules! event_handler_mixin {
     };
 }
 
-pub trait Element<T, A = ()>: View<T, A> + ViewMarker + sealed::Sealed
+pub trait Element<T, A = ()>:
+    View<T, A, State: ElementProps, Element: AsRef<web_sys::Element>> + ViewMarker
 where
     Self: Sized,
 {
@@ -618,12 +649,6 @@ dom_interface_macro_and_trait_definitions!(
 );
 
 // Core View implementations
-
-impl<ParentT, ParentA, ChildT, ChildA, V, F> sealed::Sealed
-    for crate::Adapt<ParentT, ParentA, ChildT, ChildA, V, F>
-{
-}
-impl<ParentT, ChildT, V, F> sealed::Sealed for crate::AdaptState<ParentT, ChildT, V, F> {}
 
 macro_rules! impl_dom_traits_for_adapt_views {
     ($dom_interface:ident, ()) => {

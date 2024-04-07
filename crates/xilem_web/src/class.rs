@@ -3,7 +3,7 @@ use std::{borrow::Cow, marker::PhantomData};
 use xilem_core::{Id, MessageResult};
 
 use crate::{
-    interfaces::{sealed::Sealed, Element},
+    interfaces::{Element, ElementProps as _},
     ChangeFlags, Cx, View, ViewMarker,
 };
 
@@ -83,17 +83,17 @@ pub struct Class<E, T, A> {
 }
 
 impl<E, T, A> ViewMarker for Class<E, T, A> {}
-impl<E, T, A> Sealed for Class<E, T, A> {}
 
 impl<E: Element<T, A>, T, A> View<T, A> for Class<E, T, A> {
     type State = E::State;
     type Element = E::Element;
 
     fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
+        let (id, mut state, el) = self.element.build(cx);
         for class_name in &self.class_names {
-            cx.add_class_to_element(class_name);
+            state.set_class(Some(el.as_ref()), class_name.clone());
         }
-        self.element.build(cx)
+        (id, state, el)
     }
 
     fn rebuild(
@@ -105,7 +105,7 @@ impl<E: Element<T, A>, T, A> View<T, A> for Class<E, T, A> {
         element: &mut Self::Element,
     ) -> ChangeFlags {
         for class_name in &self.class_names {
-            cx.add_class_to_element(class_name);
+            state.set_class(None, class_name.clone());
         }
         self.element.rebuild(cx, &prev.element, id, state, element)
     }

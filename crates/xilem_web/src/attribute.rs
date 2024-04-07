@@ -3,9 +3,9 @@ use std::marker::PhantomData;
 
 use xilem_core::{Id, MessageResult};
 
-use crate::{interfaces::sealed::Sealed, AttributeValue, ChangeFlags, Cx, View, ViewMarker};
+use crate::{AttributeValue, ChangeFlags, Cx, View, ViewMarker};
 
-use super::interfaces::Element;
+use super::interfaces::{Element, ElementProps as _};
 
 pub struct Attr<E, T, A> {
     pub(crate) element: E,
@@ -15,15 +15,15 @@ pub struct Attr<E, T, A> {
 }
 
 impl<E, T, A> ViewMarker for Attr<E, T, A> {}
-impl<E, T, A> Sealed for Attr<E, T, A> {}
 
 impl<E: Element<T, A>, T, A> View<T, A> for Attr<E, T, A> {
     type State = E::State;
     type Element = E::Element;
 
     fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
-        cx.add_attr_to_element(&self.name, &self.value);
-        self.element.build(cx)
+        let (id, mut state, element) = self.element.build(cx);
+        state.set_attribute(Some(element.as_ref()), &self.name, &self.value);
+        (id, state, element)
     }
 
     fn rebuild(
@@ -34,7 +34,7 @@ impl<E: Element<T, A>, T, A> View<T, A> for Attr<E, T, A> {
         state: &mut Self::State,
         element: &mut Self::Element,
     ) -> ChangeFlags {
-        cx.add_attr_to_element(&self.name, &self.value);
+        state.set_attribute(None, &self.name, &self.value);
         self.element.rebuild(cx, &prev.element, id, state, element)
     }
 

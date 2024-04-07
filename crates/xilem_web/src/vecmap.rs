@@ -34,10 +34,10 @@ impl<K, V> VecMap<K, V> {
     /// assert_eq!(map.get(&1), Some(&"a"));
     /// assert_eq!(map.get(&2), None);
     /// ```
-    pub fn get<Q: ?Sized>(&self, key: &Q) -> Option<&V>
+    pub fn get<Q>(&self, key: &Q) -> Option<&V>
     where
         K: Borrow<Q> + PartialEq,
-        Q: PartialEq,
+        Q: PartialEq + ?Sized,
     {
         self.0
             .iter()
@@ -60,10 +60,10 @@ impl<K, V> VecMap<K, V> {
     /// assert!(map.contains_key(&1));
     /// assert!(!map.contains_key(&2));
     /// ```
-    pub fn contains_key<Q: ?Sized>(&self, key: &Q) -> bool
+    pub fn contains_key<Q>(&self, key: &Q) -> bool
     where
         K: Borrow<Q> + Ord,
-        Q: Ord,
+        Q: Ord + ?Sized,
     {
         self.get(key).is_some()
     }
@@ -87,10 +87,10 @@ impl<K, V> VecMap<K, V> {
     /// assert_eq!(map[&1], "b");
     /// ```
     // See `get` for implementation notes, this is basically a copy-paste with mut's added
-    pub fn get_mut<Q: ?Sized>(&mut self, key: &Q) -> Option<&mut V>
+    pub fn get_mut<Q>(&mut self, key: &Q) -> Option<&mut V>
     where
         K: Borrow<Q> + Ord,
-        Q: Ord,
+        Q: Ord + ?Sized,
     {
         self.0
             .iter_mut()
@@ -197,10 +197,10 @@ impl<K, V> VecMap<K, V> {
     /// assert_eq!(map.remove(&1), Some("a"));
     /// assert_eq!(map.remove(&1), None);
     /// ```
-    pub fn remove<Q: ?Sized>(&mut self, key: &Q) -> Option<V>
+    pub fn remove<Q>(&mut self, key: &Q) -> Option<V>
     where
         K: Borrow<Q> + Ord,
-        Q: Ord,
+        Q: Ord + ?Sized,
     {
         // TODO not sure whether just a simple find is better here? Probably needs more benching
         match self.0.binary_search_by_key(&key, |(k, _)| k.borrow()) {
@@ -276,6 +276,21 @@ impl<'a, K, V> IntoIterator for &'a VecMap<K, V> {
     }
 }
 
+macro_rules! vec_map {
+    [@single $($x:tt)*] => (());
+    [@count $($rest:expr),*] => (<[()]>::len(&[$(vec_map!(@single $rest)),*]));
+
+    [$($key:expr => $value:expr,)+] => { vec_map!($($key => $value),+) };
+    [$($key:expr => $value:expr),*] => {{
+        let mut _map = $crate::vecmap::VecMap::default();
+        $(
+            let _ = _map.insert($key, $value);
+        )*
+        _map
+    }};
+}
+pub(crate) use vec_map;
+
 // Basically all the doc tests from the rustdoc examples above, to avoid having to expose this module (pub)
 #[cfg(test)]
 mod tests {
@@ -283,24 +298,21 @@ mod tests {
 
     #[test]
     fn get() {
-        let mut map = VecMap::default();
-        map.insert(1, "a");
+        let map = vec_map![1 => "a"];
         assert_eq!(map.get(&1), Some(&"a"));
         assert_eq!(map.get(&2), None);
     }
 
     #[test]
     fn contains_key() {
-        let mut map = VecMap::default();
-        map.insert(1, "a");
+        let map = vec_map![1 => "a"];
         assert!(map.contains_key(&1));
         assert!(!map.contains_key(&2));
     }
 
     #[test]
     fn get_mut() {
-        let mut map = VecMap::default();
-        map.insert(1, "a");
+        let mut map = vec_map![1 => "a"];
         if let Some(x) = map.get_mut(&1) {
             *x = "b";
         }
@@ -309,19 +321,14 @@ mod tests {
 
     #[test]
     fn keys() {
-        let mut a = VecMap::default();
-        a.insert(2, "b");
-        a.insert(1, "a");
-        let keys: Vec<_> = a.keys().cloned().collect();
+        let map = vec_map![2 => "b", 1 => "a"];
+        let keys: Vec<_> = map.keys().cloned().collect();
         assert_eq!(keys, [1, 2]);
     }
 
     #[test]
     fn iter() {
-        let mut map = VecMap::default();
-        map.insert(3, "c");
-        map.insert(2, "b");
-        map.insert(1, "a");
+        let map = vec_map![3 => "c", 2 => "b", 1 => "a"];
         for (key, value) in map.iter() {
             println!("{key}: {value}");
         }

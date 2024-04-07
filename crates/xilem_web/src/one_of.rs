@@ -1,15 +1,19 @@
-use wasm_bindgen::throw_str;
-
 use crate::{
-    interfaces::for_all_element_descendents, ChangeFlags, Cx, ElementsSplice, View, ViewMarker,
-    ViewSequence,
+    interfaces::{for_all_element_descendents, ElementProps},
+    AttributeValue, ChangeFlags, Cx, ElementsSplice, View, ViewMarker, ViewSequence,
 };
+use std::borrow::Cow;
+use wasm_bindgen::throw_str;
 
 macro_rules! impl_dom_traits {
     ($dom_interface:ident, ($ident:ident: $($vars:ident),+)) => {
         impl<VT, VA, $($vars: $crate::interfaces::$dom_interface<VT, VA>),+> $crate::interfaces::$dom_interface<VT, VA> for $ident<$($vars),+>
         where
-        $($vars: $crate::interfaces::$dom_interface<VT, VA>,)+
+        $(
+            $vars: $crate::interfaces::$dom_interface<VT, VA>,
+            $vars::State: ElementProps,
+            $vars::Element: AsRef<web_sys::Element>,
+        )+
         {}
     };
 }
@@ -26,7 +30,6 @@ macro_rules! one_of_view {
             $($vars($vars),)+
         }
 
-        impl<$($vars),+> crate::interfaces::sealed::Sealed for $ident<$($vars),+> {}
         impl_dom_traits!(Element, ($ident: $($vars),+));
         for_all_element_descendents!(impl_dom_traits, ($ident: $($vars),+));
 
@@ -40,6 +43,64 @@ macro_rules! one_of_view {
                 }
             }
         }
+
+        impl<$($vars),+> AsRef<web_sys::Element> for $ident<$($vars),+>
+        where
+            $($vars: AsRef<web_sys::Element>,)+
+        {
+            fn as_ref(&self) -> &web_sys::Element {
+                match self {
+                    $( $ident::$vars(element) => element.as_ref(), )+
+                }
+            }
+        }
+
+        impl<$($vars),+> ElementProps for $ident<$($vars),+>
+        where
+            $($vars: ElementProps,)+
+         {
+            fn set_attribute(
+                &mut self,
+                element: Option<&web_sys::Element>,
+                name: &Cow<'static, str>,
+                value: &Option<AttributeValue>,
+            ) {
+                match self {
+                    $(
+                        $ident::$vars(state) => {
+                            state.set_attribute(element, name, value);
+                        }
+                    )+
+                }
+            }
+
+            fn set_class(&mut self, element: Option<&web_sys::Element>, class: Cow<'static, str>) {
+                match self {
+                    $(
+                        $ident::$vars(state) => {
+                            state.set_class(element, class);
+                        }
+                    )+
+                }
+            }
+
+            fn set_style(
+                &mut self,
+                element: Option<&web_sys::Element>,
+                key: Cow<'static, str>,
+                value: Cow<'static, str>,
+            ) {
+                match self {
+                    $(
+                        $ident::$vars(state) => {
+                            state.set_style(element, key, value);
+                        }
+                    )+
+                }
+            }
+
+       }
+
         impl<$($vars),+> ViewMarker for $ident<$($vars),+> {}
 
         impl<VT, VA, $($vars),+> View<VT, VA> for $ident<$($vars),+>

@@ -4,7 +4,7 @@ use std::{borrow::Cow, collections::HashMap};
 
 use xilem_core::{Id, MessageResult};
 
-use crate::{interfaces::sealed::Sealed, ChangeFlags, Cx, View, ViewMarker};
+use crate::{interfaces::ElementProps as _, ChangeFlags, Cx, View, ViewMarker};
 
 use super::interfaces::Element;
 
@@ -111,17 +111,17 @@ pub struct Style<E, T, A> {
 }
 
 impl<E, T, A> ViewMarker for Style<E, T, A> {}
-impl<E, T, A> Sealed for Style<E, T, A> {}
 
 impl<E: Element<T, A>, T, A> View<T, A> for Style<E, T, A> {
     type State = E::State;
     type Element = E::Element;
 
     fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
+        let (id, mut state, el) = self.element.build(cx);
         for (key, value) in &self.styles {
-            cx.add_style_to_element(key, value);
+            state.set_style(Some(el.as_ref()), key.clone(), value.clone());
         }
-        self.element.build(cx)
+        (id, state, el)
     }
 
     fn rebuild(
@@ -133,7 +133,7 @@ impl<E: Element<T, A>, T, A> View<T, A> for Style<E, T, A> {
         element: &mut Self::Element,
     ) -> ChangeFlags {
         for (key, value) in &self.styles {
-            cx.add_style_to_element(key, value);
+            state.set_style(None, key.clone(), value.clone());
         }
         self.element.rebuild(cx, &prev.element, id, state, element)
     }

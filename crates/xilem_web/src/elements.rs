@@ -4,25 +4,229 @@ use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use xilem_core::{Id, MessageResult, VecSplice};
 
 use crate::{
-    context::HtmlProps, interfaces::sealed::Sealed, view::DomNode, ChangeFlags, Cx, ElementsSplice,
-    Pod, View, ViewMarker, ViewSequence, HTML_NS,
+    diff::{diff_kv_iterables, Diff},
+    vecmap::VecMap,
+    view::DomNode,
+    AttributeValue, ChangeFlags, Cx, ElementsSplice, Pod, View, ViewMarker, ViewSequence, HTML_NS,
 };
 
 use super::interfaces::Element;
 
 type CowStr = std::borrow::Cow<'static, str>;
 
+#[derive(Debug, Default)]
+pub struct ElementProps {
+    pub(crate) attributes: VecMap<CowStr, AttributeValue>,
+    pub(crate) next_attributes: VecMap<CowStr, AttributeValue>,
+    pub(crate) classes: VecMap<CowStr, ()>,
+    pub(crate) next_classes: VecMap<CowStr, ()>,
+    pub(crate) styles: VecMap<CowStr, CowStr>,
+    pub(crate) next_styles: VecMap<CowStr, CowStr>,
+}
+
+impl ElementProps {
+    pub(crate) fn apply_changes(&mut self, element: &web_sys::Element) -> ChangeFlags {
+        self.apply_attribute_changes(element)
+            | self.apply_class_changes(element)
+            | self.apply_style_changes(element)
+    }
+
+    pub(crate) fn apply_attribute_changes(&mut self, element: &web_sys::Element) -> ChangeFlags {
+        let mut changed = ChangeFlags::empty();
+        // update attributes
+        for itm in diff_kv_iterables(&self.attributes, &self.next_attributes) {
+            match itm {
+                Diff::Add(name, value) | Diff::Change(name, value) => {
+                    set_attribute(element, name, &value.serialize());
+                    changed |= ChangeFlags::OTHER_CHANGE;
+                }
+                Diff::Remove(name) => {
+                    remove_attribute(element, name);
+                    changed |= ChangeFlags::OTHER_CHANGE;
+                }
+            }
+        }
+        std::mem::swap(&mut self.next_attributes, &mut self.attributes);
+        self.next_attributes.clear();
+        changed
+    }
+
+    pub(crate) fn apply_class_changes(&mut self, element: &web_sys::Element) -> ChangeFlags {
+        let mut changed = ChangeFlags::empty();
+        // update attributes
+        for itm in diff_kv_iterables(&self.classes, &self.next_classes) {
+            match itm {
+                Diff::Add(class_name, ()) | Diff::Change(class_name, ()) => {
+                    set_class(element, class_name);
+                    changed |= ChangeFlags::OTHER_CHANGE;
+                }
+                Diff::Remove(class_name) => {
+                    remove_class(element, class_name);
+                    changed |= ChangeFlags::OTHER_CHANGE;
+                }
+            }
+        }
+        std::mem::swap(&mut self.next_classes, &mut self.classes);
+        self.next_classes.clear();
+        changed
+    }
+
+    pub(crate) fn apply_style_changes(&mut self, element: &web_sys::Element) -> ChangeFlags {
+        let mut changed = ChangeFlags::empty();
+        // update attributes
+        for itm in diff_kv_iterables(&self.styles, &self.next_styles) {
+            match itm {
+                Diff::Add(name, value) | Diff::Change(name, value) => {
+                    set_style(element, name, value);
+                    changed |= ChangeFlags::OTHER_CHANGE;
+                }
+                Diff::Remove(name) => {
+                    remove_style(element, name);
+                    changed |= ChangeFlags::OTHER_CHANGE;
+                }
+            }
+        }
+        std::mem::swap(&mut self.next_styles, &mut self.styles);
+        self.next_styles.clear();
+        changed
+    }
+}
+
+impl crate::interfaces::ElementProps for ElementProps {
+    fn set_attribute(
+        &mut self,
+        element: Option<&web_sys::Element>,
+        name: &CowStr,
+        value: &Option<AttributeValue>,
+    ) {
+        if let Some(value) = value {
+            if let Some(element) = element {
+                set_attribute(element, name, &value.serialize());
+                self.attributes.insert(name.clone(), value.clone());
+            } else {
+                // Could be slightly optimized via something like this: `self.new_attributes.entry(name).or_insert_with(|| value)`
+                // (when it is implemented in `VecMap`)
+                if !self.next_attributes.contains_key(name) {
+                    self.next_attributes.insert(name.clone(), value.clone());
+                }
+            }
+        }
+    }
+
+    fn set_class(&mut self, element: Option<&web_sys::Element>, class: CowStr) {
+        if let Some(element) = element {
+            set_class(element, &class);
+            self.classes.insert(class, ());
+        } else {
+            self.next_classes.insert(class, ());
+        }
+    }
+
+    fn set_style(&mut self, element: Option<&web_sys::Element>, key: CowStr, value: CowStr) {
+        if let Some(element) = element {
+            set_style(element, &key, &value);
+            self.styles.insert(key, value);
+        } else {
+            self.next_styles.insert(key, value);
+        }
+    }
+}
+
 /// The state associated with a HTML element `View`.
 ///
 /// Stores handles to the child elements and any child state, as well as attributes and event listeners
 pub struct ElementState<ViewSeqState> {
     pub(crate) children_states: ViewSeqState,
-    pub(crate) props: HtmlProps,
+    pub(crate) props: ElementProps,
     pub(crate) child_elements: Vec<Pod>,
     /// This is temporary cache for elements while updating/diffing,
     /// after usage it shouldn't contain any elements,
     /// and is mainly here to avoid unnecessary allocations
     pub(crate) scratch: Vec<Pod>,
+}
+
+fn set_attribute(element: &web_sys::Element, name: &str, value: &str) {
+    // we have to special-case `value` because setting the value using `set_attribute`
+    // doesn't work after the value has been changed.
+    if name == "value" {
+        let element: &web_sys::HtmlInputElement = element.dyn_ref().unwrap_throw();
+        element.set_value(value);
+    } else if name == "checked" {
+        let element: &web_sys::HtmlInputElement = element.dyn_ref().unwrap_throw();
+        element.set_checked(true);
+    } else {
+        element.set_attribute(name, value).unwrap_throw();
+    }
+}
+
+fn remove_attribute(element: &web_sys::Element, name: &str) {
+    // we have to special-case `checked` because setting the value using `set_attribute`
+    // doesn't work after the value has been changed.
+    if name == "checked" {
+        let element: &web_sys::HtmlInputElement = element.dyn_ref().unwrap_throw();
+        element.set_checked(false);
+    } else {
+        element.remove_attribute(name).unwrap_throw();
+    }
+}
+
+fn set_class(element: &web_sys::Element, class_name: &str) {
+    debug_assert!(
+        !class_name.is_empty(),
+        "class names cannot be the empty string"
+    );
+    debug_assert!(
+        !class_name.contains(' '),
+        "class names cannot contain the ascii space character"
+    );
+    element.class_list().add_1(class_name).unwrap_throw();
+}
+
+fn remove_class(element: &web_sys::Element, class_name: &str) {
+    debug_assert!(
+        !class_name.is_empty(),
+        "class names cannot be the empty string"
+    );
+    debug_assert!(
+        !class_name.contains(' '),
+        "class names cannot contain the ascii space character"
+    );
+    element.class_list().remove_1(class_name).unwrap_throw();
+}
+
+fn set_style(element: &web_sys::Element, name: &str, value: &str) {
+    if let Some(el) = element.dyn_ref::<web_sys::HtmlElement>() {
+        el.style().set_property(name, value).unwrap_throw();
+    } else if let Some(el) = element.dyn_ref::<web_sys::SvgElement>() {
+        el.style().set_property(name, value).unwrap_throw();
+    }
+}
+
+fn remove_style(element: &web_sys::Element, name: &str) {
+    if let Some(el) = element.dyn_ref::<web_sys::HtmlElement>() {
+        el.style().remove_property(name).unwrap_throw();
+    } else if let Some(el) = element.dyn_ref::<web_sys::SvgElement>() {
+        el.style().remove_property(name).unwrap_throw();
+    }
+}
+
+impl<ViewSeqState> crate::interfaces::ElementProps for ElementState<ViewSeqState> {
+    fn set_attribute(
+        &mut self,
+        element: Option<&web_sys::Element>,
+        name: &CowStr,
+        value: &Option<AttributeValue>,
+    ) {
+        self.props.set_attribute(element, name, value);
+    }
+
+    fn set_class(&mut self, element: Option<&web_sys::Element>, class: CowStr) {
+        self.props.set_class(element, class);
+    }
+
+    fn set_style(&mut self, element: Option<&web_sys::Element>, key: CowStr, value: CowStr) {
+        self.props.set_style(element, key, value);
+    }
 }
 
 // TODO something like the `after_update` of the former `Element` view (likely as a wrapper view instead)
@@ -43,12 +247,6 @@ pub fn custom_element<T, A, Children: ViewSequence<T, A>>(
         name: name.into(),
         children,
         phantom: PhantomData,
-    }
-}
-
-impl<T, A, Children> CustomElement<T, A, Children> {
-    fn node_name(&self) -> &str {
-        &self.name
     }
 }
 
@@ -137,7 +335,6 @@ impl<'a, 'b, 'c> ElementsSplice for ChildrenSplice<'a, 'b, 'c> {
 }
 
 impl<T, A, Children> ViewMarker for CustomElement<T, A, Children> {}
-impl<T, A, Children> Sealed for CustomElement<T, A, Children> {}
 
 impl<T, A, Children> View<T, A> for CustomElement<T, A, Children>
 where
@@ -150,7 +347,10 @@ where
     type Element = web_sys::HtmlElement;
 
     fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
-        let (el, props) = cx.build_element(HTML_NS, &self.name);
+        let el = cx
+            .document()
+            .create_element_ns(Some(HTML_NS), &self.name)
+            .expect("Could not create element");
 
         let mut child_elements = vec![];
         let mut scratch = vec![];
@@ -167,11 +367,12 @@ where
             .unwrap_throw();
 
         let el = el.dyn_into().unwrap_throw();
+
         let state = ElementState {
             children_states,
             child_elements,
             scratch,
-            props,
+            props: Default::default(),
         };
         (id, state, el)
     }
@@ -193,8 +394,13 @@ where
                 .parent_element()
                 .expect_throw("this element was mounted and so should have a parent");
             parent.remove_child(element).unwrap_throw();
-            let (new_element, props) = cx.build_element(HTML_NS, self.node_name());
-            state.props = props;
+            let new_element = cx
+                .document()
+                .create_element_ns(Some(HTML_NS), &self.name)
+                .expect("Could not create element");
+            state.props.attributes = VecMap::default();
+            state.props.classes = VecMap::default();
+            state.props.styles = VecMap::default();
             // TODO could this be combined with child updates?
             while let Some(child) = element.child_nodes().get(0) {
                 new_element.append_child(&child).unwrap_throw();
@@ -203,7 +409,7 @@ where
             changed |= ChangeFlags::STRUCTURE;
         }
 
-        changed |= cx.rebuild_element(element, &mut state.props);
+        changed |= state.props.apply_changes(element);
 
         // update children
         let mut splice =
@@ -273,14 +479,16 @@ macro_rules! define_element {
         pub struct $ty_name<$t, $a = (), $vs = ()>($vs, PhantomData<fn() -> ($t, $a)>);
 
         impl<$t, $a, $vs> ViewMarker for $ty_name<$t, $a, $vs> {}
-        impl<$t, $a, $vs> Sealed for $ty_name<$t, $a, $vs> {}
 
         impl<$t, $a, $vs: ViewSequence<$t, $a>> View<$t, $a> for $ty_name<$t, $a, $vs> {
             type State = ElementState<$vs::State>;
             type Element = web_sys::$dom_interface;
 
             fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
-                let (el, props) = cx.build_element($ns, $tag_name);
+                let el = cx
+                    .document()
+                    .create_element_ns(Some($ns), $tag_name)
+                    .expect("Could not create element");
 
                 let mut child_elements = vec![];
                 let mut scratch = vec![];
@@ -300,7 +508,7 @@ macro_rules! define_element {
                     children_states,
                     child_elements,
                     scratch,
-                    props,
+                    props: Default::default(),
                 };
                 (id, state, el)
             }
@@ -315,7 +523,7 @@ macro_rules! define_element {
             ) -> ChangeFlags {
                 let mut changed = ChangeFlags::empty();
 
-                changed |= cx.rebuild_element(element, &mut state.props);
+                changed |= state.props.apply_changes(element);
 
                 // update children
                 let mut splice = ChildrenSplice::new(&mut state.child_elements, &mut state.scratch, element);
@@ -361,10 +569,7 @@ macro_rules! define_elements {
         use xilem_core::{Id, MessageResult};
         use super::{ElementState, ChildrenSplice};
 
-        use crate::{
-            interfaces::sealed::Sealed,
-            ChangeFlags, Cx, View, ViewMarker, ViewSequence,
-        };
+        use crate::{ChangeFlags, Cx, View, ViewMarker, ViewSequence};
 
         $(define_element!(crate::$ns, $element_def);)*
     };

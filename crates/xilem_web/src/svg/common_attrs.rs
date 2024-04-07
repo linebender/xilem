@@ -9,13 +9,14 @@ use xilem_core::{Id, MessageResult};
 
 use crate::{
     interfaces::{
-        Element, SvgCircleElement, SvgElement, SvgEllipseElement, SvgGeometryElement,
+        Element, ElementProps, SvgCircleElement, SvgElement, SvgEllipseElement, SvgGeometryElement,
         SvgGraphicsElement, SvgLineElement, SvgPathElement, SvgPolygonElement, SvgPolylineElement,
         SvgRectElement, SvgTextContentElement, SvgTextElement, SvgTextPathElement,
         SvgTextPositioningElement, SvggElement, SvgtSpanElement,
     },
-    ChangeFlags, Cx, IntoAttributeValue, View, ViewMarker,
+    ChangeFlags, Cx, View, ViewMarker,
 };
+use crate::{AttributeValue, IntoAttributeValue};
 
 pub struct Fill<V, T, A = ()> {
     child: V,
@@ -87,17 +88,52 @@ impl<T, A, E: SvgTextElement<T, A>> SvgTextElement<T, A> for Fill<E, T, A> {}
 impl<T, A, E: SvgtSpanElement<T, A>> SvgtSpanElement<T, A> for Fill<E, T, A> {}
 
 impl<T, A, V> ViewMarker for Fill<V, T, A> {}
-impl<T, A, V> crate::interfaces::sealed::Sealed for Fill<V, T, A> {}
 
-impl<T, A, V: View<T, A>> View<T, A> for Fill<V, T, A> {
-    type State = (Cow<'static, str>, V::State);
+pub struct FillStrokeState<S> {
+    brush_value: Option<AttributeValue>,
+    child_state: S,
+}
+
+impl<S: crate::interfaces::ElementProps> crate::interfaces::ElementProps for FillStrokeState<S> {
+    fn set_attribute(
+        &mut self,
+        element: Option<&web_sys::Element>,
+        name: &Cow<'static, str>,
+        value: &Option<AttributeValue>,
+    ) {
+        self.child_state.set_attribute(element, name, value);
+    }
+
+    fn set_class(&mut self, element: Option<&web_sys::Element>, class: Cow<'static, str>) {
+        self.child_state.set_class(element, class);
+    }
+
+    fn set_style(
+        &mut self,
+        element: Option<&web_sys::Element>,
+        key: Cow<'static, str>,
+        value: Cow<'static, str>,
+    ) {
+        self.child_state.set_style(element, key, value);
+    }
+}
+
+impl<T, A, V: Element<T, A>> View<T, A> for Fill<V, T, A> {
+    type State = FillStrokeState<V::State>;
     type Element = V::Element;
 
     fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
-        let brush_svg_repr = Cow::from(brush_to_string(&self.brush));
-        cx.add_attr_to_element(&"fill".into(), &brush_svg_repr.clone().into_attr_value());
-        let (id, child_state, element) = self.child.build(cx);
-        (id, (brush_svg_repr, child_state), element)
+        let (id, mut child_state, element) = self.child.build(cx);
+        let brush_value = brush_to_string(&self.brush).into_attr_value();
+        child_state.set_attribute(Some(element.as_ref()), &"fill".into(), &brush_value);
+        (
+            id,
+            FillStrokeState {
+                brush_value,
+                child_state,
+            },
+            element,
+        )
     }
 
     fn rebuild(
@@ -105,13 +141,16 @@ impl<T, A, V: View<T, A>> View<T, A> for Fill<V, T, A> {
         cx: &mut Cx,
         prev: &Self,
         id: &mut Id,
-        (brush_svg_repr, child_state): &mut Self::State,
+        FillStrokeState {
+            brush_value,
+            child_state,
+        }: &mut Self::State,
         element: &mut V::Element,
     ) -> ChangeFlags {
         if self.brush != prev.brush {
-            *brush_svg_repr = Cow::from(brush_to_string(&self.brush));
+            *brush_value = brush_to_string(&self.brush).into_attr_value();
         }
-        cx.add_attr_to_element(&"fill".into(), &brush_svg_repr.clone().into_attr_value());
+        child_state.set_attribute(None, &"fill".into(), brush_value);
         self.child
             .rebuild(cx, &prev.child, id, child_state, element)
     }
@@ -119,7 +158,7 @@ impl<T, A, V: View<T, A>> View<T, A> for Fill<V, T, A> {
     fn message(
         &self,
         id_path: &[Id],
-        (_, child_state): &mut Self::State,
+        FillStrokeState { child_state, .. }: &mut Self::State,
         message: Box<dyn Any>,
         app_state: &mut T,
     ) -> MessageResult<A> {
@@ -149,18 +188,29 @@ impl<T, A, E: SvgTextElement<T, A>> SvgTextElement<T, A> for Stroke<E, T, A> {}
 impl<T, A, E: SvgtSpanElement<T, A>> SvgtSpanElement<T, A> for Stroke<E, T, A> {}
 
 impl<T, A, V> ViewMarker for Stroke<V, T, A> {}
-impl<T, A, V> crate::interfaces::sealed::Sealed for Stroke<V, T, A> {}
 
-impl<T, A, V: View<T, A>> View<T, A> for Stroke<V, T, A> {
-    type State = (Cow<'static, str>, V::State);
+impl<T, A, V: Element<T, A>> View<T, A> for Stroke<V, T, A> {
+    type State = FillStrokeState<V::State>;
     type Element = V::Element;
 
     fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
-        let brush_svg_repr = Cow::from(brush_to_string(&self.brush));
-        cx.add_attr_to_element(&"stroke".into(), &brush_svg_repr.clone().into_attr_value());
-        cx.add_attr_to_element(&"stroke-width".into(), &self.style.width.into_attr_value());
-        let (id, child_state, element) = self.child.build(cx);
-        (id, (brush_svg_repr, child_state), element)
+        let (id, mut child_state, element) = self.child.build(cx);
+        let brush_value = brush_to_string(&self.brush).into_attr_value();
+        let stroke_width = self.style.width.into_attr_value();
+        child_state.set_attribute(Some(element.as_ref()), &"stroke".into(), &brush_value);
+        child_state.set_attribute(
+            Some(element.as_ref()),
+            &"stroke-width".into(),
+            &stroke_width,
+        );
+        (
+            id,
+            FillStrokeState {
+                brush_value,
+                child_state,
+            },
+            element,
+        )
     }
 
     fn rebuild(
@@ -168,14 +218,18 @@ impl<T, A, V: View<T, A>> View<T, A> for Stroke<V, T, A> {
         cx: &mut Cx,
         prev: &Self,
         id: &mut Id,
-        (brush_svg_repr, child_state): &mut Self::State,
+        FillStrokeState {
+            brush_value,
+            child_state,
+        }: &mut Self::State,
         element: &mut V::Element,
     ) -> ChangeFlags {
         if self.brush != prev.brush {
-            *brush_svg_repr = Cow::from(brush_to_string(&self.brush));
+            *brush_value = brush_to_string(&self.brush).into_attr_value();
         }
-        cx.add_attr_to_element(&"stroke".into(), &brush_svg_repr.clone().into_attr_value());
-        cx.add_attr_to_element(&"stroke-width".into(), &self.style.width.into_attr_value());
+        child_state.set_attribute(None, &"stroke".into(), brush_value);
+        let stroke_width = self.style.width.into_attr_value();
+        child_state.set_attribute(None, &"stroke-width".into(), &stroke_width);
         self.child
             .rebuild(cx, &prev.child, id, child_state, element)
     }
@@ -183,7 +237,7 @@ impl<T, A, V: View<T, A>> View<T, A> for Stroke<V, T, A> {
     fn message(
         &self,
         id_path: &[Id],
-        (_, child_state): &mut Self::State,
+        FillStrokeState { child_state, .. }: &mut Self::State,
         message: Box<dyn Any>,
         app_state: &mut T,
     ) -> MessageResult<A> {

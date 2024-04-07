@@ -3,7 +3,7 @@
 
 //! Interactivity with pointer events.
 
-use std::{any::Any, marker::PhantomData};
+use std::{any::Any, borrow::Cow, marker::PhantomData};
 
 use wasm_bindgen::{prelude::Closure, JsCast};
 use web_sys::PointerEvent;
@@ -12,7 +12,7 @@ use xilem_core::{Id, MessageResult};
 
 use crate::{
     context::{ChangeFlags, Cx},
-    interfaces::Element,
+    interfaces::{Element, ElementProps},
     view::{DomNode, View, ViewMarker},
 };
 
@@ -31,6 +31,30 @@ pub struct PointerState<S> {
     #[allow(unused)]
     up_closure: Closure<dyn FnMut(PointerEvent)>,
     child_state: S,
+}
+
+impl<S: ElementProps> ElementProps for PointerState<S> {
+    fn set_attribute(
+        &mut self,
+        element: Option<&web_sys::Element>,
+        name: &Cow<'static, str>,
+        value: &Option<crate::AttributeValue>,
+    ) {
+        self.child_state.set_attribute(element, name, value);
+    }
+
+    fn set_class(&mut self, element: Option<&web_sys::Element>, class: Cow<'static, str>) {
+        self.child_state.set_class(element, class);
+    }
+
+    fn set_style(
+        &mut self,
+        element: Option<&web_sys::Element>,
+        key: Cow<'static, str>,
+        value: Cow<'static, str>,
+    ) {
+        self.child_state.set_style(element, key, value);
+    }
 }
 
 #[derive(Debug)]
@@ -83,7 +107,6 @@ crate::interfaces::impl_dom_interfaces_for_ty!(
 );
 
 impl<V, T, A, F> ViewMarker for Pointer<V, T, A, F> {}
-impl<V, T, A, F> crate::interfaces::sealed::Sealed for Pointer<V, T, A, F> {}
 
 impl<T, A, F: Fn(&mut T, PointerMsg) -> A, V: View<T, A>> View<T, A> for Pointer<V, T, A, F> {
     type State = PointerState<V::State>;
