@@ -1189,16 +1189,6 @@ checksum = "e2db585e1d738fc771bf08a151420d3ed193d9d895a36df7f6f8a9456b911ddc"
 
 [[package]]
 name = "kurbo"
-version = "0.10.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1618d4ebd923e97d67e7cd363d80aef35fe961005cbbbb3d2dad8bdd1bc63440"
-dependencies = [
- "arrayvec",
- "smallvec",
-]
-
-[[package]]
-name = "kurbo"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6e5aa9f0f96a938266bdb12928a67169e8d22c6a786fda8ed984b85e6ba93c3c"
@@ -1568,7 +1558,7 @@ dependencies = [
  "icu_locid",
  "icu_properties",
  "memmap2 0.5.10",
- "peniko 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "peniko",
  "roxmltree",
  "skrifa 0.19.0",
  "smallvec",
@@ -1590,16 +1580,7 @@ version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "caaf7fec601d640555d9a4cab7343eba1e1c7a5a71c9993ff63b4c26bc5d50c5"
 dependencies = [
- "kurbo 0.11.0",
- "smallvec",
-]
-
-[[package]]
-name = "peniko"
-version = "0.1.0"
-source = "git+https://github.com/linebender/peniko?rev=629fc3325b016a8c98b1cd6204cb4ddf1c6b3daa#629fc3325b016a8c98b1cd6204cb4ddf1c6b3daa"
-dependencies = [
- "kurbo 0.10.4",
+ "kurbo",
  "smallvec",
 ]
 
@@ -2344,7 +2325,7 @@ checksum = "e9a4b96a2d6d6effa67868b4436560e3a767f71f0e043df007587c5d6b2e8b7a"
 dependencies = [
  "bytemuck",
  "futures-intrusive",
- "peniko 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "peniko",
  "raw-window-handle 0.6.0",
  "skrifa 0.15.5",
  "vello_encoding",
@@ -2359,7 +2340,7 @@ checksum = "0c5b6c6ec113c9b6ee1e1894ccef1b5559373aead718b7442811f2fefff7d423"
 dependencies = [
  "bytemuck",
  "guillotiere",
- "peniko 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "peniko",
  "skrifa 0.15.5",
 ]
 
@@ -3082,10 +3063,10 @@ version = "0.1.0"
 dependencies = [
  "bitflags 2.5.0",
  "gloo",
- "kurbo 0.11.0",
+ "kurbo",
  "log",
  "paste",
- "peniko 0.1.0 (git+https://github.com/linebender/peniko?rev=629fc3325b016a8c98b1cd6204cb4ddf1c6b3daa)",
+ "peniko",
  "wasm-bindgen",
  "web-sys",
  "xilem_core",
