@@ -93,7 +93,7 @@ mod convert {
 
     /// Convert`taffy::LayoutInput` to `xilem::BoxConstraints`
     pub(super) fn to_box_constraints(input: &taffy::LayoutInput) -> BoxConstraints {
-        /// Converts Taffy's known_dimension and available_spaceinto a min box constraint
+        /// Converts Taffy's `known_dimension` and `available_space` into a min box constraint
         fn to_min_constraint(
             known_dimension: Option<f32>,
             available_space: taffy::AvailableSpace,
@@ -105,7 +105,7 @@ mod convert {
             }) as f64
         }
 
-        /// Converts Taffy's known_dimension and available_spaceinto a min box constraint
+        /// Converts Taffy's `known_dimension` and `available_space` into a min box constraint
         fn to_max_constraint(
             known_dimension: Option<f32>,
             available_space: taffy::AvailableSpace,
@@ -136,10 +136,10 @@ mod convert {
     }
 }
 
-/// TaffyLayout is a container view which does layout for the specified ViewSequence.
+/// `TaffyLayout` is a container view which does layout for the specified `ViewSequence`.
 ///
 /// Children are positioned according to the Block, Flexbox or CSS Grid algorithm, depending
-/// on the display style set. If the children are themselves instances of TaffyLayout, then
+/// on the display style set. If the children are themselves instances of `TaffyLayout`, then
 /// they can set styles to control how they placed, sized, and aligned.
 pub struct TaffyLayout {
     pub children: Vec<Pod>,
