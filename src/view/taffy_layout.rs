@@ -22,10 +22,10 @@ use crate::MessageResult;
 
 use super::{Cx, View};
 
-/// TaffyLayout is a container view which does layout for the specified ViewSequence.
+/// `TaffyLayout` is a container view which does layout for the specified `ViewSequence`.
 ///
 /// Children are positioned according to the Block, Flexbox or CSS Grid algorithm, depending
-/// on the display style set. If the children are themselves instances of TaffyLayout, then
+/// on the display style set. If the children are themselves instances of `TaffyLayout`, then
 /// they can set styles to control how they placed, sized, and aligned.
 pub struct TaffyLayout<T, A, VT: ViewSequence<T, A>> {
     children: VT,
