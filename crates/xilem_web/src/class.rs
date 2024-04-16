@@ -52,6 +52,14 @@ where
     }
 }
 
+impl<T: IntoClasses, const N: usize> IntoClasses for [T; N] {
+    fn into_classes(self, classes: &mut Vec<Cow<'static, str>>) {
+        for itm in self {
+            itm.into_classes(classes);
+        }
+    }
+}
+
 macro_rules! impl_tuple_intoclasses {
     ($($name:ident : $type:ident),* $(,)?) => {
         impl<$($type),*> IntoClasses for ($($type,)*)
