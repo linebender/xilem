@@ -348,7 +348,6 @@ pub fn main() {
         .with_title("Simple Calculator")
         .with_resizable(true)
         .with_min_inner_size(window_size)
-        .with_max_inner_size(window_size)
         .build(&event_loop)
         .unwrap();
     let calc_state = CalcState {
