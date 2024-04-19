@@ -3,6 +3,7 @@
 // details.
 
 //! Simple handle for submitting external events.
+#![allow(unused)]
 
 use std::any::Any;
 use std::collections::VecDeque;
@@ -10,14 +11,13 @@ use std::sync::{Arc, Mutex};
 
 use druid_shell::IdleHandle;
 
-use crate::command::SelectorSymbol;
-use crate::platform::EXT_EVENT_IDLE_TOKEN;
 use crate::promise::PromiseResult;
 use crate::widget::WidgetId;
-use crate::{Selector, Target, WindowId};
+
+// FIXME - Remove
+pub struct WindowId;
 
 pub(crate) enum ExtMessage {
-    Command(SelectorSymbol, Box<dyn Any + Send>, Target),
     Promise(PromiseResult, WidgetId, WindowId),
 }
 
@@ -78,35 +78,6 @@ impl ExtEventQueue {
 }
 
 impl ExtEventSink {
-    /// Submit a [`Command`] to the running application.
-    ///
-    /// [`Command`] is not thread safe, so you cannot submit it directly;
-    /// instead you have to pass the [`Selector`] and the payload
-    /// separately, and it will be turned into a [`Command`] when it is received.
-    ///
-    /// For the **target** argument, [`Target::Auto`] is equivalent to [`Target::Global`].
-    ///
-    /// [`Command`]: struct.Command.html
-    /// [`Target::Auto`]: enum.Target.html#variant.Auto
-    /// [`Target::Global`]: enum.Target.html#variant.Global
-    pub fn submit_command<T: Any + Send>(
-        &self,
-        selector: Selector<T>,
-        payload: impl Into<Box<T>>,
-        target: impl Into<Target>,
-    ) -> Result<(), ExtEventError> {
-        let target = target.into();
-        let payload = payload.into();
-        if let Some(handle) = self.handle.lock().unwrap().as_mut() {
-            handle.schedule_idle(EXT_EVENT_IDLE_TOKEN);
-        }
-        self.queue
-            .lock()
-            .map_err(|_| ExtEventError)?
-            .push_back(ExtMessage::Command(selector.symbol(), payload, target));
-        Ok(())
-    }
-
     #[allow(missing_docs)]
     pub fn resolve_promise(
         &self,
@@ -115,7 +86,7 @@ impl ExtEventSink {
         target_window: WindowId,
     ) -> Result<(), ExtEventError> {
         if let Some(handle) = self.handle.lock().unwrap().as_mut() {
-            handle.schedule_idle(EXT_EVENT_IDLE_TOKEN);
+            todo!()
         }
         self.queue
             .lock()

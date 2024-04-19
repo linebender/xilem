@@ -3,17 +3,18 @@
 // details.
 
 #![allow(missing_docs)]
-#![allow(unused)]
 
-use druid_shell::kurbo::Rect;
 use smallvec::SmallVec;
 use tracing::{trace_span, Span};
+use vello::Scene;
 
 use super::Axis;
+use crate::kurbo::Rect;
+use crate::paint_scene_helpers::{fill_color, stroke};
 use crate::widget::WidgetRef;
 use crate::{
-    theme, BoxConstraints, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Point,
-    RenderContext, Selector, Size, StatusChange, Widget,
+    theme, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Point,
+    PointerEvent, Size, StatusChange, TextEvent, Widget,
 };
 
 // RULES
@@ -28,26 +29,27 @@ use crate::{
 // TODO - Fade scrollbars? Find out how Linux/MacOS/Windows do it
 // TODO - Rename cursor to oval/rect/bar/grabber/grabbybar
 // TODO - Rename progress to ???
+#[allow(dead_code)]
 pub struct ScrollBar {
     axis: Axis,
-    pub portal_size: f64,
-    pub content_size: f64,
-    cursor_progress: f64,
+    pub(crate) cursor_progress: f64,
+    pub(crate) moved: bool,
+    pub(crate) portal_size: f64,
+    pub(crate) content_size: f64,
     hovered: bool,
     grab_anchor: Option<f64>,
 }
 
 crate::declare_widget!(ScrollBarMut, ScrollBar);
 
-pub const SCROLLBAR_MOVED: Selector<(Axis, f64)> = Selector::new("masonry-builtin.scrollbar-moved");
-
 impl ScrollBar {
     pub fn new(axis: Axis, portal_size: f64, content_size: f64) -> Self {
         Self {
             axis,
+            cursor_progress: 0.0,
+            moved: false,
             portal_size,
             content_size,
-            cursor_progress: 0.0,
             hovered: false,
             grab_anchor: None,
         }
@@ -92,8 +94,6 @@ impl ScrollBar {
 
         let cursor_rect = self.get_cursor_rect(layout_size, min_length);
 
-        let mouse_pos_major = self.axis.major_pos(mouse_pos);
-
         // invariant: cursor_x == progress * (1 - size_ratio) * layout_width
         // invariant: cursor_x + anchor * cursor_width == mouse_x
 
@@ -107,7 +107,7 @@ impl ScrollBar {
     }
 }
 
-impl ScrollBarMut<'_, '_> {
+impl ScrollBarMut<'_> {
     pub fn set_sizes(&mut self, portal_size: f64, content_size: f64) {
         self.widget.portal_size = portal_size;
         self.widget.content_size = content_size;
@@ -129,44 +129,42 @@ impl ScrollBarMut<'_, '_> {
 // --- TRAIT IMPLS ---
 
 impl Widget for ScrollBar {
-    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event) {
+    fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
         match event {
-            Event::MouseDown(event) => {
+            PointerEvent::PointerDown(_, state) => {
                 ctx.set_active(true);
 
                 let cursor_min_length = theme::SCROLLBAR_MIN_SIZE;
                 let cursor_rect = self.get_cursor_rect(ctx.size(), cursor_min_length);
 
-                if cursor_rect.contains(event.pos) {
+                let mouse_pos = Point::new(state.position.x, state.position.y);
+                if cursor_rect.contains(mouse_pos) {
                     let (z0, z1) = self.axis.major_span(cursor_rect);
-                    let mouse_major = self.axis.major_pos(event.pos);
+                    let mouse_major = self.axis.major_pos(mouse_pos);
                     self.grab_anchor = Some((mouse_major - z0) / (z1 - z0));
                 } else {
                     self.cursor_progress =
-                        self.progress_from_mouse_pos(ctx.size(), cursor_min_length, 0.5, event.pos);
-                    ctx.submit_notification(
-                        SCROLLBAR_MOVED.with((self.axis, self.cursor_progress)),
-                    );
+                        self.progress_from_mouse_pos(ctx.size(), cursor_min_length, 0.5, mouse_pos);
+                    self.moved = true;
                     self.grab_anchor = Some(0.5);
                 };
                 ctx.request_paint();
             }
-            Event::MouseMove(event) => {
+            PointerEvent::PointerMove(state) => {
+                let mouse_pos = Point::new(state.position.x, state.position.y);
                 if let Some(grab_anchor) = self.grab_anchor {
                     let cursor_min_length = theme::SCROLLBAR_MIN_SIZE;
                     self.cursor_progress = self.progress_from_mouse_pos(
                         ctx.size(),
                         cursor_min_length,
                         grab_anchor,
-                        event.pos,
+                        mouse_pos,
                     );
-                    ctx.submit_notification(
-                        SCROLLBAR_MOVED.with((self.axis, self.cursor_progress)),
-                    );
+                    self.moved = true;
                 }
                 ctx.request_paint();
             }
-            Event::MouseUp(event) => {
+            PointerEvent::PointerUp(_, _) => {
                 self.grab_anchor = None;
                 ctx.set_active(false);
                 ctx.request_paint();
@@ -175,11 +173,13 @@ impl Widget for ScrollBar {
         }
     }
 
-    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange) {}
+    fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
 
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {}
+    fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange) {}
 
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
+    fn lifecycle(&mut self, _ctx: &mut LifeCycleCtx, _event: &LifeCycle) {}
+
+    fn layout(&mut self, _ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
         // TODO - handle resize
 
         let scrollbar_width = theme::SCROLLBAR_WIDTH;
@@ -192,10 +192,7 @@ impl Widget for ScrollBar {
             .into()
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx) {
-        let brush = ctx.render_ctx.solid_brush(theme::SCROLLBAR_COLOR);
-        let border_brush = ctx.render_ctx.solid_brush(theme::SCROLLBAR_BORDER_COLOR);
-
+    fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
         let radius = theme::SCROLLBAR_RADIUS;
         let edge_width = theme::SCROLLBAR_EDGE_WIDTH;
         let cursor_padding = theme::SCROLLBAR_PAD;
@@ -206,9 +203,14 @@ impl Widget for ScrollBar {
             .get_cursor_rect(ctx.size(), cursor_min_length)
             .inset((-inset_x, -inset_y))
             .to_rounded_rect(radius);
-        ctx.render_ctx.fill(cursor_rect, &brush);
-        ctx.render_ctx
-            .stroke(cursor_rect, &border_brush, edge_width);
+
+        fill_color(scene, &cursor_rect, theme::SCROLLBAR_COLOR);
+        stroke(
+            scene,
+            &cursor_rect,
+            theme::SCROLLBAR_BORDER_COLOR,
+            edge_width,
+        );
     }
 
     fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
@@ -222,8 +224,8 @@ impl Widget for ScrollBar {
 
 #[cfg(test)]
 mod tests {
-    use druid_shell::MouseButton;
     use insta::assert_debug_snapshot;
+    use winit::event::MouseButton;
 
     use super::*;
     use crate::assert_render_snapshot;

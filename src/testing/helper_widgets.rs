@@ -10,23 +10,28 @@
 //! Masonry, not to be user-facing.
 
 #![allow(missing_docs)]
+#![allow(unused)]
 
 use std::cell::RefCell;
 use std::collections::VecDeque;
 use std::rc::Rc;
 
 use smallvec::SmallVec;
+use vello::Scene;
 
+use crate::event::{PointerEvent, TextEvent};
 use crate::widget::{SizedBox, WidgetRef};
 use crate::*;
 
-pub type EventFn<S> = dyn FnMut(&mut S, &mut EventCtx, &Event);
+pub type PointerEventFn<S> = dyn FnMut(&mut S, &mut EventCtx, &PointerEvent);
+pub type TextEventFn<S> = dyn FnMut(&mut S, &mut EventCtx, &TextEvent);
 pub type StatusChangeFn<S> = dyn FnMut(&mut S, &mut LifeCycleCtx, &StatusChange);
 pub type LifeCycleFn<S> = dyn FnMut(&mut S, &mut LifeCycleCtx, &LifeCycle);
 pub type LayoutFn<S> = dyn FnMut(&mut S, &mut LayoutCtx, &BoxConstraints) -> Size;
-pub type PaintFn<S> = dyn FnMut(&mut S, &mut PaintCtx);
+pub type PaintFn<S> = dyn FnMut(&mut S, &mut PaintCtx, &mut Scene);
 pub type ChildrenFn<S> = dyn Fn(&S) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]>;
 
+#[cfg(FALSE)]
 pub const REPLACE_CHILD: Selector = Selector::new("masonry-test.replace-child");
 
 /// A widget that can be constructed from individual functions, builder-style.
@@ -34,7 +39,8 @@ pub const REPLACE_CHILD: Selector = Selector::new("masonry-test.replace-child");
 /// This widget is generic over its state, which is passed in at construction time.
 pub struct ModularWidget<S> {
     state: S,
-    on_event: Option<Box<EventFn<S>>>,
+    on_pointer_event: Option<Box<PointerEventFn<S>>>,
+    on_text_event: Option<Box<TextEventFn<S>>>,
     on_status_change: Option<Box<StatusChangeFn<S>>>,
     lifecycle: Option<Box<LifeCycleFn<S>>>,
     layout: Option<Box<LayoutFn<S>>>,
@@ -61,7 +67,7 @@ pub struct ReplaceChild {
 /// let widget = Label::new("Hello").record(&recording);
 ///
 /// TestHarness::create(widget);
-/// assert!(matches!(recording.next(), Record::L(LifeCycle::WidgetAdded)));
+/// assert!(matches!(recording.next().unwrap(), Record::L(LifeCycle::WidgetAdded)));
 /// ```
 pub struct Recorder<W> {
     recording: Recording,
@@ -77,17 +83,12 @@ pub struct Recording(Rc<RefCell<VecDeque<Record>>>);
 /// Each member of the enum corresponds to one of the methods on `Widget`.
 #[derive(Debug, Clone)]
 pub enum Record {
-    /// An `Event`.
-    E(Event),
+    PE(PointerEvent),
+    TE(TextEvent),
     SC(StatusChange),
-    /// A `LifeCycle` event.
     L(LifeCycle),
     Layout(Size),
     Paint,
-    // instead of always returning an Option<Record>, we have a none variant;
-    // this would be code smell elsewhere but here I think it makes the tests
-    // easier to read.
-    None,
 }
 
 /// like WidgetExt but just for this one thing
@@ -110,7 +111,8 @@ impl<S> ModularWidget<S> {
     pub fn new(state: S) -> Self {
         ModularWidget {
             state,
-            on_event: None,
+            on_pointer_event: None,
+            on_text_event: None,
             on_status_change: None,
             lifecycle: None,
             layout: None,
@@ -119,8 +121,19 @@ impl<S> ModularWidget<S> {
         }
     }
 
-    pub fn event_fn(mut self, f: impl FnMut(&mut S, &mut EventCtx, &Event) + 'static) -> Self {
-        self.on_event = Some(Box::new(f));
+    pub fn pointer_event_fn(
+        mut self,
+        f: impl FnMut(&mut S, &mut EventCtx, &PointerEvent) + 'static,
+    ) -> Self {
+        self.on_pointer_event = Some(Box::new(f));
+        self
+    }
+
+    pub fn text_event_fn(
+        mut self,
+        f: impl FnMut(&mut S, &mut EventCtx, &TextEvent) + 'static,
+    ) -> Self {
+        self.on_text_event = Some(Box::new(f));
         self
     }
 
@@ -148,7 +161,7 @@ impl<S> ModularWidget<S> {
         self
     }
 
-    pub fn paint_fn(mut self, f: impl FnMut(&mut S, &mut PaintCtx) + 'static) -> Self {
+    pub fn paint_fn(mut self, f: impl FnMut(&mut S, &mut PaintCtx, &mut Scene) + 'static) -> Self {
         self.paint = Some(Box::new(f));
         self
     }
@@ -163,8 +176,14 @@ impl<S> ModularWidget<S> {
 }
 
 impl<S: 'static> Widget for ModularWidget<S> {
-    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event) {
-        if let Some(f) = self.on_event.as_mut() {
+    fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &event::PointerEvent) {
+        if let Some(f) = self.on_pointer_event.as_mut() {
+            f(&mut self.state, ctx, event)
+        }
+    }
+
+    fn on_text_event(&mut self, ctx: &mut EventCtx, event: &event::TextEvent) {
+        if let Some(f) = self.on_text_event.as_mut() {
             f(&mut self.state, ctx, event)
         }
     }
@@ -193,9 +212,9 @@ impl<S: 'static> Widget for ModularWidget<S> {
             .unwrap_or_else(|| Size::new(100., 100.))
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx) {
+    fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
         if let Some(f) = self.paint.as_mut() {
-            f(&mut self.state, ctx)
+            f(&mut self.state, ctx, scene)
         }
     }
 
@@ -217,7 +236,9 @@ impl ReplaceChild {
 }
 
 impl Widget for ReplaceChild {
+    #[cfg(FALSE)]
     fn on_event(&mut self, ctx: &mut EventCtx, event: &Event) {
+        #[cfg(FALSE)]
         if let Event::Command(cmd) = event {
             if cmd.is(REPLACE_CHILD) {
                 self.child = (self.replacer)();
@@ -226,6 +247,14 @@ impl Widget for ReplaceChild {
             }
         }
         self.child.on_event(ctx, event)
+    }
+
+    fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &event::PointerEvent) {
+        todo!()
+    }
+
+    fn on_text_event(&mut self, ctx: &mut EventCtx, event: &event::TextEvent) {
+        todo!()
     }
 
     fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, _event: &StatusChange) {
@@ -240,8 +269,8 @@ impl Widget for ReplaceChild {
         self.child.layout(ctx, bc)
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx) {
-        self.child.paint_raw(ctx)
+    fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
+        self.child.paint(ctx, scene)
     }
 
     fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
@@ -266,8 +295,8 @@ impl Recording {
     /// Returns the next event in the recording, if one exists.
     ///
     /// This consumes the event.
-    pub fn next(&self) -> Record {
-        self.0.borrow_mut().pop_front().unwrap_or(Record::None)
+    pub fn next(&self) -> Option<Record> {
+        self.0.borrow_mut().pop_front()
     }
 
     /// Returns a vec of events drained from the recording.
@@ -281,9 +310,14 @@ impl Recording {
 }
 
 impl<W: Widget> Widget for Recorder<W> {
-    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event) {
-        self.recording.push(Record::E(event.clone()));
-        self.child.on_event(ctx, event)
+    fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &event::PointerEvent) {
+        self.recording.push(Record::PE(event.clone()));
+        self.child.on_pointer_event(ctx, event)
+    }
+
+    fn on_text_event(&mut self, ctx: &mut EventCtx, event: &event::TextEvent) {
+        self.recording.push(Record::TE(event.clone()));
+        self.child.on_text_event(ctx, event)
     }
 
     fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange) {
@@ -302,8 +336,8 @@ impl<W: Widget> Widget for Recorder<W> {
         size
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx) {
-        self.child.paint(ctx);
+    fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
+        self.child.paint(ctx, scene);
         self.recording.push(Record::Paint)
     }
 

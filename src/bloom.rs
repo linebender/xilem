@@ -7,6 +7,7 @@
 use std::hash::{Hash, Hasher};
 use std::marker::PhantomData;
 
+// TODO - Once the bloom filter goess away, remove the fnv dependency.
 use fnv::FnvHasher;
 
 const NUM_BITS: u64 = 64;
@@ -26,6 +27,7 @@ pub(crate) struct Bloom<T: ?Sized> {
     entry_count: usize,
 }
 
+#[allow(dead_code)]
 impl<T: ?Sized + Hash> Bloom<T> {
     /// Create a new filter.
     pub fn new() -> Self {

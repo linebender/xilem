@@ -2,11 +2,11 @@
 // "as-is" basis without warranties of any kind. See the LICENSE file for
 // details.
 
-use druid_shell::MouseButton;
+use assert_matches::assert_matches;
+use winit::event::MouseButton;
 
-use crate::testing::{
-    widget_ids, ModularWidget, Record, Recording, TestHarness, TestWidgetExt as _,
-};
+use crate::event::{PointerEvent, PointerState};
+use crate::testing::{widget_ids, Record, Recording, TestHarness, TestWidgetExt as _};
 use crate::widget::{Button, Flex, Label, SizedBox};
 use crate::*;
 
@@ -15,16 +15,13 @@ fn is_hot(harness: &TestHarness, id: WidgetId) -> bool {
 }
 
 fn next_hot_changed(recording: &Recording) -> Option<bool> {
-    loop {
-        let event = recording.next();
-        if let Record::SC(StatusChange::HotChanged(hot)) = event {
-            return Some(hot);
-        }
-
-        if let Record::None = event {
-            return None;
+    while let Some(event) = recording.next() {
+        match event {
+            Record::SC(StatusChange::HotChanged(hot)) => return Some(hot),
+            _ => {}
         }
     }
+    None
 }
 
 #[test]
@@ -65,6 +62,11 @@ fn propagate_hot() {
 
     harness.mouse_move_to(empty);
 
+    dbg!(harness.get_widget(empty).state().layout_rect());
+
+    eprintln!("root: {root:?}");
+    eprintln!("empty: {empty:?}");
+    eprintln!("pad: {pad:?}");
     assert!(is_hot(&harness, root));
     assert!(is_hot(&harness, empty));
     assert!(!is_hot(&harness, pad));
@@ -133,12 +135,14 @@ fn update_hot_on_mouse_leave() {
     assert!(is_hot(&harness, label_id));
 
     label_rec.clear();
-    harness.process_event(Event::Internal(InternalEvent::MouseLeave));
+    harness.process_pointer_event(PointerEvent::PointerLeave(PointerState::empty()));
 
     assert!(!is_hot(&harness, label_id));
     assert_eq!(next_hot_changed(&label_rec), Some(false));
 }
 
+// TODO - https://github.com/PoignardAzur/masonry-rs/issues/58
+#[cfg(FALSE)]
 #[test]
 fn update_hot_from_layout() {
     pub const COLLAPSE: Selector = Selector::new("masonry-test.collapse");
@@ -194,33 +198,17 @@ fn update_hot_from_layout() {
 }
 
 #[test]
-fn get_mouse_events_while_active() {
-    fn next_mouse_event(recording: &Recording) -> Option<Event> {
-        loop {
-            let event = recording.next();
-
+fn get_pointer_events_while_active() {
+    fn next_pointer_event(recording: &Recording) -> Option<PointerEvent> {
+        while let Some(event) = recording.next() {
             match event {
-                Record::E(event @ Event::MouseDown(_)) => {
+                Record::PE(event) => {
                     return Some(event);
-                }
-                Record::E(event @ Event::MouseMove(_)) => {
-                    return Some(event);
-                }
-                Record::E(event @ Event::MouseUp(_)) => {
-                    return Some(event);
-                }
-                Record::E(event @ Event::Wheel(_)) => {
-                    return Some(event);
-                }
-                Record::E(event @ Event::Zoom(_)) => {
-                    return Some(event);
-                }
-                Record::None => {
-                    return None;
                 }
                 _ => {}
             };
         }
+        None
     }
 
     let [button, root, empty, empty_2] = widget_ids();
@@ -241,22 +229,22 @@ fn get_mouse_events_while_active() {
     assert!(!harness.get_widget(empty).state().is_active);
     assert!(!harness.get_widget(root).state().has_active);
 
-    assert!(next_mouse_event(&button_rec).is_none());
+    assert_matches!(next_pointer_event(&button_rec), None);
 
     // We press the button
 
     harness.mouse_move_to(button);
     harness.mouse_button_press(MouseButton::Left);
 
-    assert!(matches!(
-        next_mouse_event(&button_rec).unwrap(),
-        Event::MouseMove(_)
-    ));
-    assert!(matches!(
-        next_mouse_event(&button_rec).unwrap(),
-        Event::MouseDown(_)
-    ));
-    assert!(next_mouse_event(&button_rec).is_none());
+    assert_matches!(
+        next_pointer_event(&button_rec),
+        Some(PointerEvent::PointerMove(_))
+    );
+    assert_matches!(
+        next_pointer_event(&button_rec),
+        Some(PointerEvent::PointerDown(_, _))
+    );
+    assert_matches!(next_pointer_event(&button_rec), None);
 
     assert!(harness.get_widget(button).state().is_active);
     assert!(!harness.get_widget(empty).state().is_active);
@@ -268,11 +256,11 @@ fn get_mouse_events_while_active() {
 
     harness.mouse_move_to(empty);
 
-    assert!(matches!(
-        next_mouse_event(&button_rec).unwrap(),
-        Event::MouseMove(_)
-    ));
-    assert!(next_mouse_event(&button_rec).is_none());
+    assert_matches!(
+        next_pointer_event(&button_rec),
+        Some(PointerEvent::PointerMove(_))
+    );
+    assert_matches!(next_pointer_event(&button_rec), None);
 
     assert!(harness.get_widget(button).state().is_active);
     assert!(!harness.get_widget(empty).state().is_active);
@@ -282,21 +270,21 @@ fn get_mouse_events_while_active() {
 
     harness.mouse_wheel(Vec2::ZERO);
 
-    assert!(matches!(
-        next_mouse_event(&button_rec).unwrap(),
-        Event::Wheel(_)
-    ));
-    assert!(next_mouse_event(&button_rec).is_none());
+    assert_matches!(
+        next_pointer_event(&button_rec),
+        Some(PointerEvent::MouseWheel(_, _))
+    );
+    assert_matches!(next_pointer_event(&button_rec), None);
 
     // We release the button
 
     harness.mouse_button_release(MouseButton::Left);
 
-    assert!(matches!(
-        next_mouse_event(&button_rec).unwrap(),
-        Event::MouseUp(_)
-    ));
-    assert!(next_mouse_event(&button_rec).is_none());
+    assert_matches!(
+        next_pointer_event(&button_rec),
+        Some(PointerEvent::PointerUp(_, _))
+    );
+    assert_matches!(next_pointer_event(&button_rec), None);
 
     assert!(!harness.get_widget(button).state().is_active);
     assert!(!harness.get_widget(empty).state().is_active);
@@ -304,5 +292,5 @@ fn get_mouse_events_while_active() {
 
     // We move the mouse again to check movements aren't captured anymore
     harness.mouse_move_to(empty_2);
-    assert!(next_mouse_event(&button_rec).is_none());
+    assert_matches!(next_pointer_event(&button_rec), None);
 }

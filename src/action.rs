@@ -3,10 +3,7 @@
 // details.
 
 use std::any::Any;
-use std::collections::VecDeque;
 use std::sync::Arc;
-
-use crate::{WidgetId, WindowId};
 
 // TODO - Refactor - See issue #1
 
@@ -51,6 +48,3 @@ impl std::fmt::Debug for Action {
         }
     }
 }
-
-/// Our queue type
-pub(crate) type ActionQueue = VecDeque<(Action, WidgetId, WindowId)>;

@@ -11,51 +11,14 @@ mod harness;
 #[cfg(not(tarpaulin_include))]
 mod helper_widgets;
 #[cfg(not(tarpaulin_include))]
-mod mock_timer_queue;
-#[cfg(not(tarpaulin_include))]
 mod screenshots;
 #[cfg(not(tarpaulin_include))]
 mod snapshot_utils;
 
-use druid_shell::{Modifiers, MouseButton, MouseButtons};
 pub use harness::{TestHarness, HARNESS_DEFAULT_SIZE};
-pub use helper_widgets::{
-    ModularWidget, Record, Recorder, Recording, ReplaceChild, TestWidgetExt, REPLACE_CHILD,
-};
-pub(crate) use mock_timer_queue::MockTimerQueue;
+pub use helper_widgets::{ModularWidget, Record, Recorder, Recording, ReplaceChild, TestWidgetExt};
 
-use crate::kurbo::{Point, Vec2};
-use crate::{MouseEvent, WidgetId};
-
-/// Helper function to construct a "move to this position" mouse event.
-pub fn mouse_move(p: impl Into<Point>) -> MouseEvent {
-    let pos = p.into();
-    MouseEvent {
-        pos,
-        window_pos: pos,
-        buttons: MouseButtons::default(),
-        mods: Modifiers::default(),
-        count: 0,
-        focus: false,
-        button: MouseButton::None,
-        wheel_delta: Vec2::ZERO,
-    }
-}
-
-/// Helper function to construct a "scroll by n ticks" mouse event.
-pub fn mouse_scroll(p: impl Into<Point>, delta: impl Into<Vec2>) -> MouseEvent {
-    let pos = p.into();
-    MouseEvent {
-        pos,
-        window_pos: pos,
-        buttons: MouseButtons::default(),
-        mods: Modifiers::default(),
-        count: 0,
-        focus: false,
-        button: MouseButton::None,
-        wheel_delta: delta.into(),
-    }
-}
+use crate::WidgetId;
 
 /// Convenience function to return an arrays of unique widget ids.
 pub fn widget_ids<const N: usize>() -> [WidgetId; N] {

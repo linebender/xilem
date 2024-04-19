@@ -6,11 +6,11 @@
 
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use druid_shell::{Cursor, Region};
+use winit::window::CursorIcon;
 
 use crate::bloom::Bloom;
 use crate::kurbo::{Insets, Point, Rect, Size};
-use crate::text::TextFieldRegistration;
+use crate::text_helpers::TextFieldRegistration;
 use crate::widget::{CursorChange, FocusChange};
 use crate::WidgetId;
 
@@ -68,8 +68,6 @@ pub struct WidgetState {
     // --- PASSES ---
 
     // TODO: consider using bitflags for the booleans.
-    // The region that needs to be repainted, relative to the widget's bounds.
-    pub(crate) invalid: Region,
     /// A flag used to track and debug missing calls to place_child.
     pub(crate) is_expecting_place_child_call: bool,
 
@@ -85,6 +83,7 @@ pub struct WidgetState {
     pub(crate) is_explicitly_disabled_new: bool,
 
     pub(crate) needs_layout: bool,
+    pub(crate) needs_paint: bool,
 
     /// Because of some scrolling or something, `parent_window_origin` needs to be updated.
     pub(crate) needs_window_origin: bool,
@@ -103,7 +102,8 @@ pub struct WidgetState {
     pub(crate) cursor_change: CursorChange,
     /// The result of merging up children cursors. This gets cleared when merging state up (unlike
     /// cursor_change, which is persistent).
-    pub(crate) cursor: Option<Cursor>,
+    // TODO - Remove and handle in WidgetRoot instead
+    pub(crate) cursor: Option<CursorIcon>,
 
     pub(crate) text_registrations: Vec<TextFieldRegistration>,
 
@@ -154,7 +154,6 @@ impl WidgetState {
             is_expecting_place_child_call: false,
             paint_insets: Insets::ZERO,
             local_paint_rect: Rect::ZERO,
-            invalid: Region::EMPTY,
             is_portal: false,
             is_new: true,
             children_disabled_changed: false,
@@ -163,6 +162,7 @@ impl WidgetState {
             baseline_offset: 0.0,
             is_hot: false,
             needs_layout: false,
+            needs_paint: false,
             needs_window_origin: false,
             is_active: false,
             has_active: false,
@@ -213,27 +213,8 @@ impl WidgetState {
     ///
     /// This method is idempotent and can be called multiple times.
     pub(crate) fn merge_up(&mut self, child_state: &mut WidgetState) {
-        // TODO - Ideally, we'd want to do this in global coordinates. The problem
-        // is that a parent could change this widget's coordinates through place_child
-        // later in the same pass
-        let clip = self
-            .layout_rect()
-            .with_origin(Point::ORIGIN)
-            .inset(self.paint_insets);
-        let offset = child_state.layout_rect().origin().to_vec2();
-        for &rect in child_state.invalid.rects() {
-            let rect = (rect + offset).intersect(clip);
-            if rect.area() != 0.0 {
-                self.invalid.add_rect(rect);
-            }
-        }
-        // Clearing the invalid rects here is less fragile than doing it while painting. The
-        // problem is that widgets (for example, Either) might choose not to paint certain
-        // invisible children, and we shouldn't allow these invisible children to accumulate
-        // invalid rects.
-        child_state.invalid.clear();
-
         self.needs_layout |= child_state.needs_layout;
+        self.needs_paint |= child_state.needs_paint;
         self.needs_window_origin |= child_state.needs_window_origin;
         self.request_anim |= child_state.request_anim;
         self.children_disabled_changed |= child_state.children_disabled_changed;
@@ -251,14 +232,14 @@ impl WidgetState {
         // things will be recalculated just from `cursor_change`.
         let child_cursor = child_state.take_cursor();
         if let CursorChange::Override(cursor) = &self.cursor_change {
-            self.cursor = Some(cursor.clone());
+            self.cursor = Some(*cursor);
         } else if child_state.has_active || child_state.is_hot {
             self.cursor = child_cursor;
         }
 
         if self.cursor.is_none() {
             if let CursorChange::Set(cursor) = &self.cursor_change {
-                self.cursor = Some(cursor.clone());
+                self.cursor = Some(*cursor);
             }
         }
     }
@@ -266,7 +247,7 @@ impl WidgetState {
     /// Because of how cursor merge logic works, we need to handle the leaf case;
     /// in that case there will be nothing in the `cursor` field (as merge_up
     /// is never called) and so we need to also check the `cursor_change` field.
-    fn take_cursor(&mut self) -> Option<Cursor> {
+    fn take_cursor(&mut self) -> Option<CursorIcon> {
         self.cursor.take().or_else(|| self.cursor_change.cursor())
     }
 

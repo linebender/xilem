@@ -5,15 +5,17 @@
 use std::any::Any;
 use std::num::NonZeroU64;
 use std::ops::{Deref, DerefMut};
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use smallvec::SmallVec;
 use tracing::{trace_span, Span};
+use vello::Scene;
 
 use crate::event::StatusChange;
+use crate::event::{PointerEvent, TextEvent};
 use crate::widget::WidgetRef;
 use crate::{
-    AsAny, BoxConstraints, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Point,
-    Size, WidgetCtx,
+    AsAny, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Point, Size,
 };
 
 /// A unique identifier for a single [`Widget`].
@@ -68,7 +70,8 @@ pub trait Widget: AsAny {
     /// method call. A widget can handle these events in a number of ways:
     /// requesting things from the [`EventCtx`], mutating the data, or submitting
     /// a [`Command`](crate::Command).
-    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event);
+    fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent);
+    fn on_text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent);
 
     #[allow(missing_docs)]
     fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange);
@@ -101,15 +104,11 @@ pub trait Widget: AsAny {
 
     /// Paint the widget appearance.
     ///
-    /// The [`PaintCtx`] derefs to something that implements the
-    /// [`piet::RenderContext`](crate::piet::RenderContext) trait, which exposes various methods that the widget
-    /// can use to paint its appearance.
-    ///
     /// Container widgets can paint a background before recursing to their
     /// children, or annotations (for example, scrollbars) by painting
     /// afterwards. In addition, they can apply masks and transforms on
     /// the render context, which is especially useful for scrolling.
-    fn paint(&mut self, ctx: &mut PaintCtx);
+    fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene);
 
     /// Return references to this widget's children.
     ///
@@ -202,28 +201,26 @@ pub trait Widget: AsAny {
 /// This trait should usually be implemented with [`declare_widget`](crate::declare_widget).
 #[allow(missing_docs)]
 pub trait StoreInWidgetMut: Widget {
-    type Mut<'a, 'b: 'a>: Deref<Target = Self>;
+    type Mut<'a>: Deref<Target = Self>;
 
-    fn from_widget_and_ctx<'a, 'b>(
+    fn from_widget_and_ctx<'a>(
         widget: &'a mut Self,
-        ctx: WidgetCtx<'a, 'b>,
-    ) -> Self::Mut<'a, 'b>;
+        ctx: crate::contexts::WidgetCtx<'a>,
+    ) -> Self::Mut<'a>;
 
-    fn get_widget<'s: 'r, 'a: 'r, 'b: 'a, 'r>(
-        widget_mut: &'s mut Self::Mut<'a, 'b>,
-    ) -> &'r mut Self {
+    fn get_widget<'s: 'r, 'a: 'r, 'r>(widget_mut: &'s mut Self::Mut<'a>) -> &'r mut Self {
         Self::get_widget_and_ctx(widget_mut).0
     }
 
-    fn get_ctx<'s: 'r, 'a: 'r, 'b: 'a, 'r>(
-        widget_mut: &'s mut Self::Mut<'a, 'b>,
-    ) -> &'r mut WidgetCtx<'a, 'b> {
+    fn get_ctx<'s: 'r, 'a: 'r, 'r>(
+        widget_mut: &'s mut Self::Mut<'a>,
+    ) -> &'r mut crate::contexts::WidgetCtx<'a> {
         Self::get_widget_and_ctx(widget_mut).1
     }
 
-    fn get_widget_and_ctx<'s: 'r, 'a: 'r, 'b: 'a, 'r>(
-        widget_mut: &'s mut Self::Mut<'a, 'b>,
-    ) -> (&'r mut Self, &'r mut WidgetCtx<'a, 'b>);
+    fn get_widget_and_ctx<'s: 'r, 'a: 'r, 'r>(
+        widget_mut: &'s mut Self::Mut<'a>,
+    ) -> (&'r mut Self, &'r mut crate::contexts::WidgetCtx<'a>);
 }
 
 // TODO - Generate a struct instead. See #27.
@@ -242,10 +239,10 @@ pub trait StoreInWidgetMut: Widget {
 /// The above macro call will produce something like this:
 ///
 /// ```ignore
-/// pub struct MyWidgetMut<'a, 'b>(WidgetCtx<'a, 'b>, &'a mut MyWidget);
+/// pub struct MyWidgetMut<'a>(WidgetCtx<'a>, &'a mut MyWidget);
 ///
 /// impl StoreInWidgetMut for MyWidget {
-///     type Mut<'a, 'b> = MyWidgetMut<'a, 'b>;
+///     type Mut<'a> = MyWidgetMut<'a>;
 /// }
 /// ```
 ///
@@ -278,29 +275,29 @@ macro_rules! declare_widget {
     };
 
     ($WidgetNameMut:ident, $WidgetName:ident<$($Arg:ident $(: ($($Bound:tt)*))?),*>) => {
-        pub struct $WidgetNameMut<'a, 'b, $($Arg $(: $($Bound)*)?),*>{
-            ctx: $crate::WidgetCtx<'a, 'b>,
+        pub struct $WidgetNameMut<'a, $($Arg $(: $($Bound)*)?),*>{
+            ctx: $crate::WidgetCtx<'a>,
             widget: &'a mut $WidgetName<$($Arg),*>
         }
 
         impl<$($Arg $(: $($Bound)*)?),*> $crate::widget::StoreInWidgetMut for $WidgetName<$($Arg),*> {
-            type Mut<'a, 'b: 'a> = $WidgetNameMut<'a, 'b, $($Arg),*>;
+            type Mut<'a> = $WidgetNameMut<'a, $($Arg),*>;
 
-            fn get_widget_and_ctx<'s: 'r, 'a: 'r, 'b: 'a, 'r>(
-                widget_mut: &'s mut Self::Mut<'a, 'b>,
-            ) -> (&'r mut Self, &'r mut $crate::WidgetCtx<'a, 'b>) {
+            fn get_widget_and_ctx<'s: 'r, 'a: 'r, 'r>(
+                widget_mut: &'s mut Self::Mut<'a>,
+            ) -> (&'r mut Self, &'r mut $crate::WidgetCtx<'a>) {
                 (widget_mut.widget, &mut widget_mut.ctx)
             }
 
-            fn from_widget_and_ctx<'a, 'b>(
+            fn from_widget_and_ctx<'a>(
                 widget: &'a mut Self,
-                ctx: $crate::WidgetCtx<'a, 'b>,
-            ) -> Self::Mut<'a, 'b> {
+                ctx: $crate::WidgetCtx<'a>,
+            ) -> Self::Mut<'a> {
                 $WidgetNameMut { ctx, widget }
             }
         }
 
-        impl<'a, 'b, $($Arg $(: $($Bound)*)?),*> ::std::ops::Deref for $WidgetNameMut<'a, 'b, $($Arg),*> {
+        impl<'a, $($Arg $(: $($Bound)*)?),*> ::std::ops::Deref for $WidgetNameMut<'a, $($Arg),*> {
             type Target = $WidgetName<$($Arg),*>;
 
             fn deref(&self) -> &Self::Target {
@@ -321,11 +318,12 @@ impl WidgetId {
     /// You must ensure that a given `WidgetId` is only ever used for one
     /// widget at a time.
     pub fn next() -> WidgetId {
-        use druid_shell::Counter;
-        static WIDGET_ID_COUNTER: Counter = Counter::new();
-        WidgetId(WIDGET_ID_COUNTER.next_nonzero())
+        static WIDGET_ID_COUNTER: AtomicU64 = AtomicU64::new(1);
+        let id = WIDGET_ID_COUNTER.fetch_add(1, Ordering::Relaxed);
+        WidgetId(id.try_into().unwrap())
     }
 
+    // TODO - Remove
     /// Create a reserved `WidgetId`, suitable for reuse.
     ///
     /// The caller is responsible for ensuring that this ID is in fact assigned
@@ -348,8 +346,12 @@ impl WidgetId {
 
 // TODO - remove
 impl Widget for Box<dyn Widget> {
-    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event) {
-        self.deref_mut().on_event(ctx, event)
+    fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
+        self.deref_mut().on_pointer_event(ctx, event)
+    }
+
+    fn on_text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent) {
+        self.deref_mut().on_text_event(ctx, event)
     }
 
     fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange) {
@@ -364,8 +366,8 @@ impl Widget for Box<dyn Widget> {
         self.deref_mut().layout(ctx, bc)
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx) {
-        self.deref_mut().paint(ctx);
+    fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
+        self.deref_mut().paint(ctx, scene);
     }
 
     fn type_name(&self) -> &'static str {

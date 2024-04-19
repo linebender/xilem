@@ -6,23 +6,6 @@
 
 use image::{GenericImageView as _, RgbaImage};
 
-use crate::piet::{BitmapTarget, ImageFormat};
-use crate::Size;
-
-pub(crate) fn get_rgba_image(render_target: &mut BitmapTarget, window_size: Size) -> RgbaImage {
-    let pixels = render_target
-        .to_image_buf(ImageFormat::RgbaPremul)
-        .unwrap()
-        .raw_pixels_shared();
-
-    RgbaImage::from_raw(
-        window_size.width as u32,
-        window_size.height as u32,
-        Vec::from(pixels.as_ref()),
-    )
-    .unwrap()
-}
-
 pub(crate) fn get_image_diff(ref_image: &RgbaImage, new_image: &RgbaImage) -> Option<RgbaImage> {
     let mut is_changed = false;
 

@@ -4,17 +4,18 @@
 
 //! A widget that arranges its children in a one-dimensional array.
 
-use piet_common::RenderContext;
+use kurbo::{Affine, Stroke};
 use smallvec::SmallVec;
 use tracing::{trace, trace_span, Span};
+use vello::Scene;
 
 use crate::kurbo::common::FloatExt;
 use crate::kurbo::Vec2;
 use crate::theme::get_debug_color;
 use crate::widget::{WidgetMut, WidgetRef};
 use crate::{
-    BoxConstraints, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Point, Rect,
-    Size, StatusChange, Widget, WidgetId, WidgetPod,
+    BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Point, PointerEvent,
+    Rect, Size, StatusChange, TextEvent, Widget, WidgetId, WidgetPod,
 };
 
 /// A container with either horizontal or vertical layout.
@@ -237,7 +238,7 @@ impl Flex {
 
 // --- Mutate live Flex - WidgetMut ---
 
-impl<'a, 'b> FlexMut<'a, 'b> {
+impl<'a> FlexMut<'a> {
     /// Set the childrens' [`CrossAxisAlignment`].
     ///
     /// [`CrossAxisAlignment`]: enum.CrossAxisAlignment.html
@@ -456,7 +457,7 @@ impl<'a, 'b> FlexMut<'a, 'b> {
     }
 
     // FIXME - Remove Box
-    pub fn child_mut(&mut self, idx: usize) -> Option<WidgetMut<'_, 'b, Box<dyn Widget>>> {
+    pub fn child_mut(&mut self, idx: usize) -> Option<WidgetMut<'_, Box<dyn Widget>>> {
         let child = match &mut self.widget.children[idx] {
             Child::Fixed { widget, .. } | Child::Flex { widget, .. } => widget,
             Child::FixedSpacer(..) => return None,
@@ -473,11 +474,13 @@ impl<'a, 'b> FlexMut<'a, 'b> {
 }
 
 impl Widget for Flex {
-    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event) {
+    fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
         for child in self.children.iter_mut().filter_map(|x| x.widget_mut()) {
-            child.on_event(ctx, event);
+            child.on_pointer_event(ctx, event);
         }
     }
+
+    fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
 
     fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange) {}
 
@@ -686,9 +689,9 @@ impl Widget for Flex {
         my_size
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx) {
+    fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
         for child in self.children.iter_mut().filter_map(|x| x.widget_mut()) {
-            child.paint(ctx);
+            child.paint(ctx, scene);
         }
 
         // paint the baseline if we're debugging layout
@@ -696,8 +699,9 @@ impl Widget for Flex {
             let color = get_debug_color(ctx.widget_id().to_raw());
             let my_baseline = ctx.size().height - ctx.widget_state.baseline_offset;
             let line = crate::kurbo::Line::new((0.0, my_baseline), (ctx.size().width, my_baseline));
-            let stroke_style = crate::piet::StrokeStyle::new().dash_pattern(&[4.0, 4.0]);
-            ctx.stroke_styled(line, &color, 1.0, &stroke_style);
+
+            let stroke_style = Stroke::new(1.0).with_dashes(0., [4.0, 4.0]);
+            scene.stroke(&stroke_style, Affine::IDENTITY, color, None, &line);
         }
     }
 

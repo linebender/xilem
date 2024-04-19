@@ -8,17 +8,29 @@
 // On Windows platform, don't show a console when opening the app.
 #![windows_subsystem = "windows"]
 
+use kurbo::Stroke;
+use masonry::app_driver::{AppDriver, DriverCtx};
+use masonry::event_loop_runner::EventLoopRunner;
 use masonry::kurbo::BezPath;
-use masonry::piet::{FontFamily, ImageFormat, InterpolationMode, Text, TextLayoutBuilder};
-use masonry::text::{FontDescriptor, TextLayout};
-use masonry::widget::WidgetRef;
+use masonry::widget::{FillStrat, WidgetRef};
 use masonry::{
-    Affine, AppLauncher, BoxConstraints, Color, Event, EventCtx, LayoutCtx, LifeCycle,
-    LifeCycleCtx, PaintCtx, Point, Rect, RenderContext, Size, StatusChange, Widget,
-    WindowDescription,
+    Action, Affine, BoxConstraints, Color, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
+    Point, PointerEvent, Rect, Size, StatusChange, TextEvent, Widget, WidgetId,
 };
+use parley::layout::Alignment;
+use parley::style::{FontFamily, FontStack, StyleProperty};
 use smallvec::SmallVec;
 use tracing::{trace_span, Span};
+use vello::peniko::{Brush, Fill, Format, Image};
+use vello::Scene;
+use winit::event_loop::EventLoop;
+use winit::window::WindowBuilder;
+
+struct Driver;
+
+impl AppDriver for Driver {
+    fn on_action(&mut self, _ctx: &mut DriverCtx<'_>, _widget_id: WidgetId, _action: Action) {}
+}
 
 struct CustomWidget(String);
 
@@ -26,7 +38,9 @@ struct CustomWidget(String);
 // (and lifecycle) methods as well to make sure it works. Some things can be filtered,
 // but a general rule is to just pass it through unless you really know you don't want it.
 impl Widget for CustomWidget {
-    fn on_event(&mut self, _ctx: &mut EventCtx, _event: &Event) {}
+    fn on_pointer_event(&mut self, _ctx: &mut EventCtx, _event: &PointerEvent) {}
+
+    fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
 
     fn lifecycle(&mut self, _ctx: &mut LifeCycleCtx, _event: &LifeCycle) {}
 
@@ -55,82 +69,61 @@ impl Widget for CustomWidget {
     // The paint method gets called last, after an event flow.
     // It goes event -> update -> layout -> paint, and each method can influence the next.
     // Basically, anything that changes the appearance of a widget causes a paint.
-    fn paint(&mut self, ctx: &mut PaintCtx) {
+    fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
         // Clear the whole widget with the color of your choice
         // (ctx.size() returns the size of the layout rect we're painting in)
         // Note: ctx also has a `clear` method, but that clears the whole context,
         // and we only want to clear this widget's area.
         let size = ctx.size();
         let rect = size.to_rect();
-        ctx.fill(rect, &Color::WHITE);
-
-        // We can paint with a Z index, this indicates that this code will be run
-        // after the rest of the painting. Painting with z-index is done in order,
-        // so first everything with z-index 1 is painted and then with z-index 2 etc.
-        // As you can see this(red) curve is drawn on top of the green curve
-        ctx.paint_with_z_index(1, move |ctx| {
-            let mut path = BezPath::new();
-            path.move_to((0.0, size.height));
-            path.quad_to((40.0, 50.0), (size.width, 0.0));
-            // Create a color
-            let stroke_color = Color::rgb8(128, 0, 0);
-            // Stroke the path with thickness 1.0
-            ctx.stroke(path, &stroke_color, 5.0);
-        });
+        scene.fill(Fill::NonZero, Affine::IDENTITY, Color::WHITE, None, &rect);
 
         // Create an arbitrary bezier path
         let mut path = BezPath::new();
         path.move_to(Point::ORIGIN);
-        path.quad_to((40.0, 50.0), (size.width, size.height));
+        path.quad_to((60.0, 120.0), (size.width, size.height));
         // Create a color
         let stroke_color = Color::rgb8(0, 128, 0);
         // Stroke the path with thickness 5.0
-        ctx.stroke(path, &stroke_color, 5.0);
+        scene.stroke(
+            &Stroke::new(5.0),
+            Affine::IDENTITY,
+            stroke_color,
+            None,
+            &path,
+        );
 
         // Rectangles: the path for practical people
         let rect = Rect::from_origin_size((10.0, 10.0), (100.0, 100.0));
         // Note the Color:rgba8 which includes an alpha channel (7F in this case)
         let fill_color = Color::rgba8(0x00, 0x00, 0x00, 0x7F);
-        ctx.fill(rect, &fill_color);
+        scene.fill(Fill::NonZero, Affine::IDENTITY, fill_color, None, &rect);
 
-        // Text is easy; in real use TextLayout should either be stored in the
-        // widget and reused, or a label child widget to manage it all.
-        // This is one way of doing it, you can also use a builder-style way.
-        let mut layout = TextLayout::<String>::from_text(&self.0);
-        layout.set_font(FontDescriptor::new(FontFamily::SERIF).with_size(24.0));
-        layout.set_text_color(fill_color);
-        layout.rebuild_if_needed(ctx.text());
+        // To render text, we first create a LayoutBuilder and set the text properties.
+        let mut lcx = parley::LayoutContext::new();
+        let mut text_layout_builder = lcx.ranged_builder(ctx.font_ctx(), &self.0, 1.0);
 
-        // Let's rotate our text slightly. First we save our current (default) context:
-        ctx.with_save(|ctx| {
-            // Now we can rotate the context (or set a clip path, for instance):
-            // This makes it so that anything drawn after this (in the closure) is
-            // transformed.
-            // The transformation is in radians, but be aware it transforms the canvas,
-            // not just the part you are drawing. So we draw at (80.0, 40.0) on the rotated
-            // canvas, this is NOT the same position as (80.0, 40.0) on the original canvas.
-            ctx.transform(Affine::rotate(std::f64::consts::FRAC_PI_4));
-            layout.draw(ctx, (80.0, 40.0));
-        });
-        // When we exit with_save, the original context's rotation is restored
+        text_layout_builder.push_default(&StyleProperty::FontStack(FontStack::Single(
+            FontFamily::Generic(parley::style::GenericFamily::Serif),
+        )));
+        text_layout_builder.push_default(&StyleProperty::FontSize(24.0));
+        text_layout_builder.push_default(&StyleProperty::Brush(Brush::Solid(fill_color)));
 
-        // This is the builder-style way of drawing text.
-        let text = ctx.text();
-        let layout = text
-            .new_text_layout(self.0.clone())
-            .font(FontFamily::SERIF, 24.0)
-            .text_color(Color::rgb8(128, 0, 0))
-            .build()
-            .unwrap();
-        ctx.draw_text(&layout, (100.0, 25.0));
+        let mut text_layout = text_layout_builder.build();
+        text_layout.break_all_lines(None, Alignment::Start);
+
+        // We can pass a transform matrix to rotate the text we render
+        masonry::text_helpers::render_text(
+            scene,
+            Affine::rotate(std::f64::consts::FRAC_PI_4).then_translate((80.0, 40.0).into()),
+            &text_layout,
+        );
 
         // Let's burn some CPU to make a (partially transparent) image buffer
         let image_data = make_image_data(256, 256);
-        let image = ctx
-            .make_image(256, 256, &image_data, ImageFormat::RgbaSeparate)
-            .unwrap();
-        // The image is automatically scaled to fit the rect you pass to draw_image
-        ctx.draw_image(&image, size.to_rect(), InterpolationMode::Bilinear);
+        let image_data = Image::new(image_data.into(), Format::Rgba8, 256, 256);
+        let transform = FillStrat::Fill.affine_to_fill(ctx.size(), size);
+        scene.draw_image(&image_data, transform);
     }
 
     fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
@@ -143,12 +136,15 @@ impl Widget for CustomWidget {
 }
 
 pub fn main() {
-    let my_string = "Masonry + Piet".to_string();
-    let window = WindowDescription::new(CustomWidget(my_string)).title("Fancy Colors");
-    AppLauncher::with_window(window)
-        .log_to_console()
-        .launch()
-        .expect("launch failed");
+    let my_string = "Masonry + Vello".to_string();
+    let event_loop = EventLoop::new().unwrap();
+    let window = WindowBuilder::new()
+        .with_title("Fancy colots")
+        .build(&event_loop)
+        .unwrap();
+
+    let runner = EventLoopRunner::new(CustomWidget(my_string), window, event_loop, Driver);
+    runner.run().unwrap();
 }
 
 fn make_image_data(width: usize, height: usize) -> Vec<u8> {

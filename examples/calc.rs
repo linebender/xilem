@@ -9,13 +9,21 @@
 
 use std::sync::Arc;
 
+use masonry::app_driver::{AppDriver, DriverCtx};
+use masonry::event_loop_runner::EventLoopRunner;
+use masonry::testing::TestHarness;
 use masonry::widget::{Align, CrossAxisAlignment, Flex, Label, SizedBox, WidgetRef};
 use masonry::{
-    Action, AppDelegate, AppLauncher, BoxConstraints, Color, Event, EventCtx, LayoutCtx, LifeCycle,
-    LifeCycleCtx, PaintCtx, Point, Size, StatusChange, Widget, WidgetPod, WindowDescription,
+    assert_render_snapshot, Action, BoxConstraints, Color, EventCtx, LayoutCtx, LifeCycle,
+    LifeCycleCtx, PaintCtx, Point, PointerEvent, Size, StatusChange, TextEvent, Widget, WidgetId,
+    WidgetPod,
 };
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace, trace_span, Span};
+use vello::Scene;
+use winit::dpi::LogicalSize;
+use winit::event_loop::EventLoop;
+use winit::window::WindowBuilder;
 
 #[derive(Clone)]
 struct CalcState {
@@ -137,9 +145,9 @@ impl CalcButton {
 }
 
 impl Widget for CalcButton {
-    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event) {
+    fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
         match event {
-            Event::MouseDown(_) => {
+            PointerEvent::PointerDown(_, _) => {
                 if !ctx.is_disabled() {
                     ctx.get_mut(&mut self.inner)
                         .set_background(self.active_color);
@@ -148,7 +156,7 @@ impl Widget for CalcButton {
                     trace!("CalcButton {:?} pressed", ctx.widget_id());
                 }
             }
-            Event::MouseUp(_) => {
+            PointerEvent::PointerUp(_, _) => {
                 if ctx.is_active() && !ctx.is_disabled() {
                     ctx.submit_action(Action::Other(Arc::new(self.action)));
                     ctx.request_paint();
@@ -159,7 +167,11 @@ impl Widget for CalcButton {
             }
             _ => (),
         }
-        self.inner.on_event(ctx, event);
+        self.inner.on_pointer_event(ctx, event);
+    }
+
+    fn on_text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent) {
+        self.inner.on_text_event(ctx, event);
     }
 
     fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange) {
@@ -188,8 +200,8 @@ impl Widget for CalcButton {
         size
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx) {
-        self.inner.paint(ctx);
+    fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
+        self.inner.paint(ctx, scene);
     }
 
     fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
@@ -201,14 +213,8 @@ impl Widget for CalcButton {
     }
 }
 
-impl AppDelegate for CalcState {
-    fn on_action(
-        &mut self,
-        ctx: &mut masonry::DelegateCtx,
-        _window_id: masonry::WindowId,
-        _widget_id: masonry::WidgetId,
-        action: Action,
-    ) {
+impl AppDriver for CalcState {
+    fn on_action(&mut self, ctx: &mut DriverCtx<'_>, _widget_id: WidgetId, action: Action) {
         match action {
             Action::Other(payload) => match payload.downcast_ref::<CalcAction>().unwrap() {
                 CalcAction::Digit(digit) => self.digit(*digit),
@@ -336,19 +342,22 @@ fn build_calc() -> impl Widget {
 }
 
 pub fn main() {
-    let window = WindowDescription::new(build_calc())
-        .window_size((223., 300.))
-        .resizable(true)
-        .title("Simple Calculator");
+    let event_loop = EventLoop::new().unwrap();
+    let window_size = LogicalSize::new(223., 300.);
+    let window = WindowBuilder::new()
+        .with_title("Simple Calculator")
+        .with_resizable(true)
+        .with_min_inner_size(window_size)
+        .with_max_inner_size(window_size)
+        .build(&event_loop)
+        .unwrap();
     let calc_state = CalcState {
         value: "0".to_string(),
         operand: 0.0,
         operator: 'C',
         in_num: false,
     };
-    AppLauncher::with_window(window)
-        .with_delegate(calc_state)
-        .log_to_console()
-        .launch()
-        .expect("Cannot start application");
+
+    let runner = EventLoopRunner::new(build_calc(), window, event_loop, calc_state);
+    runner.run().unwrap();
 }

@@ -4,16 +4,20 @@
 
 //! A widget which splits an area in two, with a settable ratio, and optional draggable resizing.
 
-use druid_shell::Cursor;
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace, trace_span, warn, Span};
+use vello::Scene;
+use winit::dpi::PhysicalPosition;
+use winit::event::MouseButton;
+use winit::window::CursorIcon;
 
 use crate::kurbo::Line;
+use crate::paint_scene_helpers::{fill_color, stroke};
 use crate::widget::flex::Axis;
 use crate::widget::{WidgetPod, WidgetRef};
 use crate::{
-    theme, BoxConstraints, Color, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
-    Point, Rect, RenderContext, Size, StatusChange, Widget,
+    theme, BoxConstraints, Color, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Point,
+    PointerEvent, Rect, Size, StatusChange, TextEvent, Widget,
 };
 
 // TODO - Have child widget type as generic argument
@@ -193,7 +197,7 @@ impl Split {
     }
 
     /// Returns true if the provided mouse position is inside the splitter bar area.
-    fn bar_hit_test(&self, size: Size, mouse_pos: Point) -> bool {
+    fn bar_hit_test(&self, size: Size, mouse_pos: PhysicalPosition<f64>) -> bool {
         let (edge1, edge2) = self.bar_edges(size);
         match self.split_axis {
             Axis::Horizontal => mouse_pos.x >= edge1 && mouse_pos.x <= edge2,
@@ -234,7 +238,7 @@ impl Split {
         }
     }
 
-    fn paint_solid_bar(&mut self, ctx: &mut PaintCtx) {
+    fn paint_solid_bar(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
         let size = ctx.size();
         let (edge1, edge2) = self.bar_edges(size);
         let padding = self.bar_padding();
@@ -249,10 +253,10 @@ impl Split {
             ),
         };
         let splitter_color = self.bar_color();
-        ctx.fill(rect, &splitter_color);
+        fill_color(scene, &rect, splitter_color);
     }
 
-    fn paint_stroked_bar(&mut self, ctx: &mut PaintCtx) {
+    fn paint_stroked_bar(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
         let size = ctx.size();
         // Set the line width to a third of the splitter bar size,
         // because we'll paint two equal lines at the edges.
@@ -283,14 +287,14 @@ impl Split {
             ),
         };
         let splitter_color = self.bar_color();
-        ctx.stroke(line1, &splitter_color, line_width);
-        ctx.stroke(line2, &splitter_color, line_width);
+        stroke(scene, &line1, splitter_color, line_width);
+        stroke(scene, &line2, splitter_color, line_width);
     }
 }
 
 // FIXME - Add unit tests for SplitMut
 
-impl<'a, 'b> SplitMut<'a, 'b> {
+impl<'a> SplitMut<'a> {
     /// Set the split point as a fraction of the split axis.
     ///
     /// The value must be between `0.0` and `1.0`, inclusive.
@@ -360,75 +364,63 @@ impl<'a, 'b> SplitMut<'a, 'b> {
 }
 
 impl Widget for Split {
-    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event) {
-        if self.child1.is_active() {
-            self.child1.on_event(ctx, event);
-            if ctx.is_handled() {
-                return;
-            }
-        }
-        if self.child2.is_active() {
-            self.child2.on_event(ctx, event);
-            if ctx.is_handled() {
-                return;
-            }
-        }
+    fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
         if self.draggable {
             match event {
-                Event::MouseDown(mouse) => {
-                    if mouse.button.is_left() && self.bar_hit_test(ctx.size(), mouse.pos) {
+                PointerEvent::PointerDown(MouseButton::Left, state) => {
+                    if self.bar_hit_test(ctx.size(), state.position) {
                         ctx.set_handled();
                         ctx.set_active(true);
                         // Save the delta between the mouse click position and the split point
                         self.click_offset = match self.split_axis {
-                            Axis::Horizontal => mouse.pos.x,
-                            Axis::Vertical => mouse.pos.y,
+                            Axis::Horizontal => state.position.x,
+                            Axis::Vertical => state.position.y,
                         } - self.bar_position(ctx.size());
                         // If not already hovering, force and change cursor appropriately
                         if !self.is_bar_hover {
                             self.is_bar_hover = true;
                             match self.split_axis {
-                                Axis::Horizontal => ctx.set_cursor(&Cursor::ResizeLeftRight),
-                                Axis::Vertical => ctx.set_cursor(&Cursor::ResizeUpDown),
+                                Axis::Horizontal => ctx.set_cursor(&CursorIcon::EwResize),
+                                Axis::Vertical => ctx.set_cursor(&CursorIcon::NsResize),
                             };
                         }
                     }
                 }
-                Event::MouseUp(mouse) => {
-                    if mouse.button.is_left() && ctx.is_active() {
+                PointerEvent::PointerUp(MouseButton::Left, state) => {
+                    if ctx.is_active() {
                         ctx.set_handled();
                         ctx.set_active(false);
                         // Dependending on where the mouse cursor is when the button is released,
                         // the cursor might or might not need to be changed
                         self.is_bar_hover =
-                            ctx.is_hot() && self.bar_hit_test(ctx.size(), mouse.pos);
+                            ctx.is_hot() && self.bar_hit_test(ctx.size(), state.position);
                         if !self.is_bar_hover {
                             ctx.clear_cursor()
                         }
                     }
                 }
-                Event::MouseMove(mouse) => {
+                PointerEvent::PointerMove(state) => {
                     if ctx.is_active() {
                         // If active, assume always hover/hot
                         let effective_pos = match self.split_axis {
                             Axis::Horizontal => {
-                                Point::new(mouse.pos.x - self.click_offset, mouse.pos.y)
+                                Point::new(state.position.x - self.click_offset, state.position.y)
                             }
                             Axis::Vertical => {
-                                Point::new(mouse.pos.x, mouse.pos.y - self.click_offset)
+                                Point::new(state.position.x, state.position.y - self.click_offset)
                             }
                         };
                         self.update_split_point(ctx.size(), effective_pos);
                         ctx.request_layout();
                     } else {
                         // If not active, set cursor when hovering state changes
-                        let hover = ctx.is_hot() && self.bar_hit_test(ctx.size(), mouse.pos);
-                        if hover != self.is_bar_hover {
+                        let hover = ctx.is_hot() && self.bar_hit_test(ctx.size(), state.position);
+                        if self.is_bar_hover != hover {
                             self.is_bar_hover = hover;
                             if hover {
                                 match self.split_axis {
-                                    Axis::Horizontal => ctx.set_cursor(&Cursor::ResizeLeftRight),
-                                    Axis::Vertical => ctx.set_cursor(&Cursor::ResizeUpDown),
+                                    Axis::Horizontal => ctx.set_cursor(&CursorIcon::EwResize),
+                                    Axis::Vertical => ctx.set_cursor(&CursorIcon::NsResize),
                                 };
                             } else {
                                 ctx.clear_cursor();
@@ -439,12 +431,18 @@ impl Widget for Split {
                 _ => {}
             }
         }
+
         if !self.child1.is_active() {
-            self.child1.on_event(ctx, event);
+            self.child1.on_pointer_event(ctx, event);
         }
         if !self.child2.is_active() {
-            self.child2.on_event(ctx, event);
+            self.child2.on_pointer_event(ctx, event);
         }
+    }
+
+    fn on_text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent) {
+        self.child1.on_text_event(ctx, event);
+        self.child2.on_text_event(ctx, event);
     }
 
     fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange) {}
@@ -551,15 +549,15 @@ impl Widget for Split {
         my_size
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx) {
+    fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
         // TODO - Paint differently if the bar is draggable and hovered.
         if self.solid {
-            self.paint_solid_bar(ctx);
+            self.paint_solid_bar(ctx, scene);
         } else {
-            self.paint_stroked_bar(ctx);
+            self.paint_stroked_bar(ctx, scene);
         }
-        self.child1.paint(ctx);
-        self.child2.paint(ctx);
+        self.child1.paint(ctx, scene);
+        self.child2.paint(ctx, scene);
     }
 
     fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {

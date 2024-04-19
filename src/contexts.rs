@@ -5,28 +5,19 @@
 //! The context types that are passed into various widget methods.
 
 use std::any::Any;
-use std::collections::{HashMap, VecDeque};
-use std::ops::{Deref, DerefMut};
-use std::rc::Rc;
 use std::time::Duration;
 
-use druid_shell::text::Event as ImeInvalidation;
-use druid_shell::{Cursor, Region, TimerToken, WindowHandle};
-use tracing::{error, trace, warn};
+use parley::FontContext;
+use tracing::{trace, warn};
+use winit::dpi::PhysicalPosition;
+use winit::window::CursorIcon;
 
-use crate::action::{Action, ActionQueue};
-use crate::command::{Command, CommandQueue, Notification, SingleUse};
-use crate::debug_logger::DebugLogger;
-use crate::ext_event::ExtEventSink;
-use crate::piet::{Piet, PietText, RenderContext};
-use crate::platform::WindowDescription;
+use crate::action::Action;
 use crate::promise::PromiseToken;
-use crate::testing::MockTimerQueue;
-use crate::text::{ImeHandlerRef, TextFieldRegistration};
+use crate::render_root::{RenderRootSignal, RenderRootState};
+use crate::text_helpers::{ImeChangeSignal, TextFieldRegistration};
 use crate::widget::{CursorChange, FocusChange, StoreInWidgetMut, WidgetMut, WidgetState};
-use crate::{
-    Affine, Insets, Point, Rect, Size, Target, Vec2, Widget, WidgetId, WidgetPod, WindowId,
-};
+use crate::{Insets, Point, Rect, Size, Widget, WidgetId, WidgetPod};
 
 /// A macro for implementing methods on multiple contexts.
 ///
@@ -42,26 +33,6 @@ macro_rules! impl_context_method {
     };
 }
 
-// TODO - remove second lifetime, only keep queues and Rc
-// TODO - rename lifetimes
-/// Static state that is shared between most contexts.
-pub(crate) struct GlobalPassCtx<'a> {
-    pub(crate) ext_event_sink: ExtEventSink,
-    pub(crate) debug_logger: &'a mut DebugLogger,
-    pub(crate) command_queue: &'a mut CommandQueue,
-    pub(crate) action_queue: &'a mut ActionQueue,
-    // TODO - merge queues
-    // Associate timers with widgets that requested them.
-    pub(crate) timers: &'a mut HashMap<TimerToken, WidgetId>,
-    // Used in Harness for unit tests - see `src/testing/mock_timer_queue.rs`
-    pub(crate) mock_timer_queue: Option<&'a mut MockTimerQueue>,
-    pub(crate) window_id: WindowId,
-    pub(crate) window: &'a WindowHandle,
-    pub(crate) text: PietText,
-    /// The id of the widget that currently has focus.
-    pub(crate) focus_widget: Option<WidgetId>,
-}
-
 /// A context provided to implementors of [`StoreInWidgetMut`].
 ///
 /// When you declare a mutable reference type for your widget, methods of this type
@@ -70,8 +41,8 @@ pub(crate) struct GlobalPassCtx<'a> {
 /// you will need to signal that change in the pass (eg `requrest_paint`).
 ///
 // TODO add tutorial - See issue #5
-pub struct WidgetCtx<'a, 'b> {
-    pub(crate) global_state: &'a mut GlobalPassCtx<'b>,
+pub struct WidgetCtx<'a> {
+    pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a mut WidgetState,
 }
 
@@ -79,20 +50,18 @@ pub struct WidgetCtx<'a, 'b> {
 ///
 /// Widgets should call [`request_paint`](Self::request_paint) whenever an event causes a change
 /// in the widget's appearance, to schedule a repaint.
-pub struct EventCtx<'a, 'b> {
-    pub(crate) global_state: &'a mut GlobalPassCtx<'b>,
+pub struct EventCtx<'a> {
+    pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a mut WidgetState,
-    pub(crate) notifications: &'a mut VecDeque<Notification>,
     pub(crate) is_handled: bool,
-    pub(crate) is_root: bool,
     pub(crate) request_pan_to_child: Option<Rect>,
 }
 
 /// A context provided to the [`lifecycle`] method on widgets.
 ///
 /// [`lifecycle`]: trait.Widget.html#tymethod.lifecycle
-pub struct LifeCycleCtx<'a, 'b> {
-    pub(crate) global_state: &'a mut GlobalPassCtx<'b>,
+pub struct LifeCycleCtx<'a> {
+    pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a mut WidgetState,
 }
 
@@ -101,65 +70,40 @@ pub struct LifeCycleCtx<'a, 'b> {
 /// As of now, the main service provided is access to a factory for
 /// creating text layout objects, which are likely to be useful
 /// during widget layout.
-pub struct LayoutCtx<'a, 'b> {
-    pub(crate) global_state: &'a mut GlobalPassCtx<'b>,
+pub struct LayoutCtx<'a> {
+    pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) mouse_pos: Option<Point>,
 }
 
-/// Z-order paint operations with transformations.
-pub(crate) struct ZOrderPaintOp {
-    pub z_index: u32,
-    pub paint_func: Box<dyn FnOnce(&mut PaintCtx) + 'static>,
-    pub transform: Affine,
-}
-
 /// A context passed to paint methods of widgets.
-///
-/// In addition to the API below, [`PaintCtx`] derefs to an implemention of
-/// the [`RenderContext`] trait, which defines the basic available drawing
-/// commands.
-pub struct PaintCtx<'a, 'b, 'c> {
-    pub(crate) global_state: &'a mut GlobalPassCtx<'b>,
+pub struct PaintCtx<'a> {
+    pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a WidgetState,
-    /// The render context for actually painting.
-    pub render_ctx: &'a mut Piet<'c>,
-    /// The z-order paint operations.
-    pub(crate) z_ops: Vec<ZOrderPaintOp>,
-    /// The currently visible region.
-    pub(crate) region: Region,
     /// The approximate depth in the tree at the time of painting.
     pub(crate) depth: u32,
     pub(crate) debug_paint: bool,
     pub(crate) debug_widget: bool,
-    pub(crate) debug_widget_id: bool,
 }
 
+pub struct WorkerCtx<'a> {
+    // TODO
+    #[allow(dead_code)]
+    pub(crate) global_state: &'a mut RenderRootState,
+}
+
+pub struct WorkerFn(pub Box<dyn FnOnce(WorkerCtx) + Send + 'static>);
+
 impl_context_method!(
-    WidgetCtx<'_, '_>,
-    EventCtx<'_, '_>,
-    LifeCycleCtx<'_, '_>,
-    PaintCtx<'_, '_, '_>,
-    LayoutCtx<'_, '_>,
+    WidgetCtx<'_>,
+    EventCtx<'_>,
+    LifeCycleCtx<'_>,
+    PaintCtx<'_>,
+    LayoutCtx<'_>,
     {
         /// get the `WidgetId` of the current widget.
         pub fn widget_id(&self) -> WidgetId {
             self.widget_state.id
-        }
-
-        /// Returns a reference to the current `WindowHandle`.
-        pub fn window(&self) -> &WindowHandle {
-            self.global_state.window
-        }
-
-        /// Get the `WindowId` of the current window.
-        pub fn window_id(&self) -> WindowId {
-            self.global_state.window_id
-        }
-
-        /// Get an object which can create text layouts.
-        pub fn text(&mut self) -> &mut PietText {
-            &mut self.global_state.text
         }
 
         /// Skip iterating over the given child.
@@ -178,10 +122,10 @@ impl_context_method!(
 
 // methods on everyone but layoutctx
 impl_context_method!(
-    WidgetCtx<'_, '_>,
-    EventCtx<'_, '_>,
-    LifeCycleCtx<'_, '_>,
-    PaintCtx<'_, '_, '_>,
+    WidgetCtx<'_>,
+    EventCtx<'_>,
+    LifeCycleCtx<'_>,
+    PaintCtx<'_>,
     {
         /// The layout size.
         ///
@@ -207,16 +151,6 @@ impl_context_method!(
         /// The returned point is relative to the content area; it excludes window chrome.
         pub fn to_window(&self, widget_point: Point) -> Point {
             self.window_origin() + widget_point.to_vec2()
-        }
-
-        /// Convert a point from the widget's coordinate space to the screen's.
-        /// See the [`Screen`] module
-        ///
-        /// [`Screen`]: druid_shell::Screen
-        pub fn to_screen(&self, widget_point: Point) -> Point {
-            let insets = self.window().content_insets();
-            let content_origin = self.window().get_position() + Vec2::new(insets.x0, insets.y0);
-            content_origin + self.to_window(widget_point).to_vec2()
         }
 
         /// The "hot" (aka hover) status of a widget.
@@ -269,7 +203,7 @@ impl_context_method!(
         /// [`LifeCycle::FocusChanged`]: enum.LifeCycle.html#variant.FocusChanged
         /// [`has_focus`]: #method.has_focus
         pub fn is_focused(&self) -> bool {
-            self.global_state.focus_widget == Some(self.widget_id())
+            self.global_state.focused_widget == Some(self.widget_id())
         }
 
         /// The (tree) focus status of a widget.
@@ -307,7 +241,7 @@ impl_context_method!(
     }
 );
 
-impl_context_method!(EventCtx<'_, '_>, {
+impl_context_method!(EventCtx<'_>, {
     /// Set the cursor icon.
     ///
     /// This setting will be retained until [`clear_cursor`] is called, but it will only take
@@ -319,9 +253,9 @@ impl_context_method!(EventCtx<'_, '_>, {
     /// [`override_cursor`]: EventCtx::override_cursor
     /// [`hot`]: EventCtx::is_hot
     /// [`active`]: EventCtx::is_active
-    pub fn set_cursor(&mut self, cursor: &Cursor) {
+    pub fn set_cursor(&mut self, cursor: &CursorIcon) {
         trace!("set_cursor {:?}", cursor);
-        self.widget_state.cursor_change = CursorChange::Set(cursor.clone());
+        self.widget_state.cursor_change = CursorChange::Set(*cursor);
     }
 
     /// Override the cursor icon.
@@ -334,9 +268,9 @@ impl_context_method!(EventCtx<'_, '_>, {
     /// [`set_cursor`]: EventCtx::override_cursor
     /// [`hot`]: EventCtx::is_hot
     /// [`active`]: EventCtx::is_active
-    pub fn override_cursor(&mut self, cursor: &Cursor) {
+    pub fn override_cursor(&mut self, cursor: &CursorIcon) {
         trace!("override_cursor {:?}", cursor);
-        self.widget_state.cursor_change = CursorChange::Override(cursor.clone());
+        self.widget_state.cursor_change = CursorChange::Override(*cursor);
     }
 
     /// Clear the cursor icon.
@@ -351,13 +285,13 @@ impl_context_method!(EventCtx<'_, '_>, {
     }
 });
 
-impl<'a, 'b> WidgetCtx<'a, 'b> {
+impl<'a> WidgetCtx<'a> {
     // FIXME - Assert that child's parent is self
     /// Return a [`WidgetMut`] to a child widget.
     pub fn get_mut<'c, Child: Widget + StoreInWidgetMut>(
         &'c mut self,
         child: &'c mut WidgetPod<Child>,
-    ) -> WidgetMut<'c, 'b, Child> {
+    ) -> WidgetMut<'c, Child> {
         let child_ctx = WidgetCtx {
             global_state: self.global_state,
             widget_state: &mut child.state,
@@ -369,13 +303,13 @@ impl<'a, 'b> WidgetCtx<'a, 'b> {
     }
 }
 
-impl<'a, 'b> EventCtx<'a, 'b> {
+impl<'a> EventCtx<'a> {
     /// Return a [`WidgetMut`] to a child widget.
     // FIXME - Assert that child's parent is self
     pub fn get_mut<'c, Child: Widget + StoreInWidgetMut>(
         &'c mut self,
         child: &'c mut WidgetPod<Child>,
-    ) -> WidgetMut<'c, 'b, Child> {
+    ) -> WidgetMut<'c, Child> {
         let child_ctx = WidgetCtx {
             global_state: self.global_state,
             widget_state: &mut child.state,
@@ -387,13 +321,13 @@ impl<'a, 'b> EventCtx<'a, 'b> {
     }
 }
 
-impl<'a, 'b> LifeCycleCtx<'a, 'b> {
+impl<'a> LifeCycleCtx<'a> {
     /// Return a [`WidgetMut`] to a child widget.
     // FIXME - Assert that child's parent is self
     pub fn get_mut<'c, Child: Widget + StoreInWidgetMut>(
         &'c mut self,
         child: &'c mut WidgetPod<Child>,
-    ) -> WidgetMut<'c, 'b, Child> {
+    ) -> WidgetMut<'c, Child> {
         let child_ctx = WidgetCtx {
             global_state: self.global_state,
             widget_state: &mut child.state,
@@ -406,26 +340,12 @@ impl<'a, 'b> LifeCycleCtx<'a, 'b> {
 }
 
 // methods on event and lifecycle
-impl_context_method!(WidgetCtx<'_, '_>, EventCtx<'_, '_>, LifeCycleCtx<'_, '_>, {
-    /// Request a [`paint`] pass. This is equivalent to calling
-    /// [`request_paint_rect`](Self::request_paint_rect) for the widget's [`paint_rect`].
-    ///
+impl_context_method!(WidgetCtx<'_>, EventCtx<'_>, LifeCycleCtx<'_>, {
+    /// Request a [`paint`] pass.
     /// [`paint`]: trait.Widget.html#tymethod.paint
-    /// [`paint_rect`]: struct.WidgetPod.html#method.paint_rect
     pub fn request_paint(&mut self) {
         trace!("request_paint");
-        self.widget_state.invalid.set_rect(
-            self.widget_state.paint_rect() - self.widget_state.layout_rect().origin().to_vec2(),
-        );
-    }
-
-    /// Request a [`paint`] pass for redrawing a rectangle, which is given
-    /// relative to our layout rectangle.
-    ///
-    /// [`paint`]: trait.Widget.html#tymethod.paint
-    pub fn request_paint_rect(&mut self, rect: Rect) {
-        trace!("request_paint_rect {}", rect);
-        self.widget_state.invalid.add_rect(rect);
+        self.widget_state.needs_paint = true;
     }
 
     /// Request a layout pass.
@@ -482,151 +402,75 @@ impl_context_method!(WidgetCtx<'_, '_>, EventCtx<'_, '_>, LifeCycleCtx<'_, '_>, 
         self.children_changed();
     }
 
+    #[allow(unused)]
     /// Indicate that text input state has changed.
     ///
     /// A widget that accepts text input should call this anytime input state
     /// (such as the text or the selection) changes as a result of a non text-input
     /// event.
-    pub fn invalidate_text_input(&mut self, event: ImeInvalidation) {
-        let payload = crate::command::ImeInvalidation {
-            widget: self.widget_id(),
-            event,
-        };
-        let cmd = crate::command::INVALIDATE_IME
-            .with(payload)
-            .to(Target::Window(self.window_id()));
-        self.submit_command(cmd);
+    pub fn invalidate_text_input(&mut self, event: ImeChangeSignal) {
+        todo!("invalidate_text_input");
     }
 });
 
 // methods on everyone but paintctx
 impl_context_method!(
-    WidgetCtx<'_, '_>,
-    EventCtx<'_, '_>,
-    LifeCycleCtx<'_, '_>,
-    LayoutCtx<'_, '_>,
+    WidgetCtx<'_>,
+    EventCtx<'_>,
+    LifeCycleCtx<'_>,
+    LayoutCtx<'_>,
     {
-        /// Submit a [`Command`] to be run after this event is handled.
-        ///
-        /// Commands are run in the order they are submitted; all commands
-        /// submitted during the handling of an event are executed before
-        /// the [`update`] method is called; events submitted during [`update`]
-        /// are handled after painting.
-        ///
-        /// [`Target::Auto`] commands will be sent to the window containing the widget.
-        ///
-        /// [`Command`]: struct.Command.html
-        /// [`update`]: trait.Widget.html#tymethod.update
-        pub fn submit_command(&mut self, cmd: impl Into<Command>) {
-            trace!("submit_command");
-            self.global_state.submit_command(cmd.into())
-        }
-
         /// Submit an [`Action`].
         ///
         /// Note: Actions are still a WIP feature.
         pub fn submit_action(&mut self, action: Action) {
-            trace!("submit_command");
+            trace!("submit_action");
             self.global_state
-                .submit_action(action, self.widget_state.id)
+                .signal_queue
+                .push_back(RenderRootSignal::Action(action, self.widget_state.id));
         }
 
         /// Run the provided function in the background.
         ///
-        /// The function takes an [`ExtEventSink`] which it can use to send
-        /// [`Command`]s back to the main thread.
+        /// The function takes a [`WorkerCtx`] which it can use to
+        /// communicate with the main thread.
         pub fn run_in_background(
             &mut self,
-            background_task: impl FnOnce(ExtEventSink) + Send + 'static,
+            _background_task: impl FnOnce(WorkerCtx) + Send + 'static,
         ) {
-            use std::thread;
-
-            let ext_event_sink = self.global_state.ext_event_sink.clone();
-            thread::spawn(move || {
-                background_task(ext_event_sink);
-            });
+            // TODO - Use RenderRootSignal::SpawnWorker
+            todo!("run_in_background");
         }
 
         /// Run the provided function in the background, and send its result once it's done.
         ///
-        /// The function takes an [`ExtEventSink`] which it can use to send
-        /// [`Command`]s back to the main thread.
+        /// The function takes a [`WorkerCtx`] which it can use to
+        /// communicate with the main thread.
         ///
         /// Once the function returns, an [`Event::PromiseResult`](crate::Event::PromiseResult)
         /// is emitted with the return value.
         pub fn compute_in_background<T: Any + Send>(
             &mut self,
-            background_task: impl FnOnce(ExtEventSink) -> T + Send + 'static,
+            _background_task: impl FnOnce(WorkerCtx) -> T + Send + 'static,
         ) -> PromiseToken<T> {
-            let token = PromiseToken::<T>::new();
-
-            use std::thread;
-
-            let ext_event_sink = self.global_state.ext_event_sink.clone();
-            let widget_id = self.widget_state.id;
-            let window_id = self.global_state.window_id;
-            thread::spawn(move || {
-                let result = background_task(ext_event_sink.clone());
-                // TODO unwrap_or
-                let _ =
-                    ext_event_sink.resolve_promise(token.make_result(result), widget_id, window_id);
-            });
-
-            token
+            // TODO - Use RenderRootSignal::SpawnWorker
+            todo!("compute_in_background");
         }
 
         /// Request a timer event.
         ///
         /// The return value is a token, which can be used to associate the
         /// request with the event.
-        pub fn request_timer(&mut self, deadline: Duration) -> TimerToken {
-            trace!("request_timer deadline={:?}", deadline);
-            self.global_state
-                .request_timer(deadline, self.widget_state.id)
+        pub fn request_timer(&mut self, _deadline: Duration) -> TimerToken {
+            todo!("request_timer");
         }
     }
 );
 
-impl EventCtx<'_, '_> {
-    /// Submit a [`Notification`].
-    ///
-    /// The provided argument can be a [`Selector`] or a [`Command`]; this lets
-    /// us work with the existing API for addding a payload to a [`Selector`].
-    ///
-    /// If the argument is a `Command`, the command's target will be ignored.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use masonry::{Event, EventCtx, Selector};
-    /// const IMPORTANT_EVENT: Selector<String> = Selector::new("masonry-example.important-event");
-    ///
-    /// fn check_event(ctx: &mut EventCtx, event: &Event) {
-    ///     if is_this_the_event_we_were_looking_for(event) {
-    ///         ctx.submit_notification(IMPORTANT_EVENT.with("That's the one".to_string()))
-    ///     }
-    /// }
-    ///
-    /// # fn is_this_the_event_we_were_looking_for(event: &Event) -> bool { true }
-    /// ```
-    ///
-    /// [`Selector`]: crate::Selector
-    pub fn submit_notification(&mut self, note: impl Into<Command>) {
-        trace!("submit_notification");
-        let note = note.into().into_notification(self.widget_state.id);
-        self.notifications.push_back(note);
-    }
+// FIXME - Remove
+pub struct TimerToken;
 
-    /// Create a new window.
-    pub fn new_window(&mut self, desc: WindowDescription) {
-        trace!("new_window");
-        self.submit_command(
-            crate::command::NEW_WINDOW
-                .with(SingleUse::new(Box::new(desc)))
-                .to(Target::Global),
-        );
-    }
-
+impl EventCtx<'_> {
     /// Send a signal to parent widgets to scroll this widget into view.
     pub fn request_pan_to_this(&mut self) {
         self.request_pan_to_child = Some(self.widget_state.layout_rect());
@@ -731,7 +575,7 @@ impl EventCtx<'_, '_> {
     }
 }
 
-impl LifeCycleCtx<'_, '_> {
+impl LifeCycleCtx<'_> {
     /// Registers a child widget.
     ///
     /// This should only be called in response to a `LifeCycle::WidgetAdded` event.
@@ -757,9 +601,8 @@ impl LifeCycleCtx<'_, '_> {
     }
 
     /// Register this widget as accepting text input.
-    pub fn register_text_input(&mut self, document: impl ImeHandlerRef + 'static) {
+    pub fn register_as_text_input(&mut self) {
         let registration = TextFieldRegistration {
-            document: Rc::new(document),
             widget_id: self.widget_id(),
         };
         self.widget_state.text_registrations.push(registration);
@@ -774,7 +617,7 @@ impl LifeCycleCtx<'_, '_> {
     }
 }
 
-impl LayoutCtx<'_, '_> {
+impl LayoutCtx<'_> {
     /// Set explicit paint [`Insets`] for this widget.
     ///
     /// You are not required to set explicit paint bounds unless you need
@@ -814,26 +657,33 @@ impl LayoutCtx<'_, '_> {
     pub fn place_child(&mut self, child: &mut WidgetPod<impl Widget>, origin: Point) {
         child.state.origin = origin;
         child.state.is_expecting_place_child_call = false;
-        let layout_rect = child.layout_rect();
 
         self.widget_state.local_paint_rect =
             self.widget_state.local_paint_rect.union(child.paint_rect());
 
+        let mouse_pos = self
+            .mouse_pos
+            .map(|pos| PhysicalPosition::new(pos.x, pos.y));
         // if the widget has moved, it may have moved under the mouse, in which
         // case we need to handle that.
         if WidgetPod::update_hot_state(
             &mut child.inner,
             &mut child.state,
             self.global_state,
-            layout_rect,
-            self.mouse_pos,
+            mouse_pos,
         ) {
             self.widget_state.merge_up(&mut child.state);
         }
     }
 }
 
-impl PaintCtx<'_, '_, '_> {
+impl_context_method!(LayoutCtx<'_>, PaintCtx<'_>, {
+    pub fn font_ctx(&mut self) -> &mut FontContext {
+        &mut self.global_state.font_context
+    }
+});
+
+impl PaintCtx<'_> {
     /// The depth in the tree of the currently painting widget.
     ///
     /// This may be used in combination with [`paint_with_z_index`](Self::paint_with_z_index) in order
@@ -844,151 +694,5 @@ impl PaintCtx<'_, '_, '_> {
     #[inline]
     pub fn depth(&self) -> u32 {
         self.depth
-    }
-
-    /// Returns the region that needs to be repainted.
-    #[inline]
-    pub fn region(&self) -> &Region {
-        &self.region
-    }
-
-    /// Creates a temporary `PaintCtx` with a new visible region, and calls
-    /// the provided function with that `PaintCtx`.
-    ///
-    /// This is used by containers to ensure that their children have the correct
-    /// visible region given their layout.
-    pub fn with_child_ctx(&mut self, region: impl Into<Region>, f: impl FnOnce(&mut PaintCtx)) {
-        let mut child_ctx = PaintCtx {
-            render_ctx: self.render_ctx,
-            global_state: self.global_state,
-            widget_state: self.widget_state,
-            z_ops: Vec::new(),
-            region: region.into(),
-            depth: self.depth + 1,
-            debug_paint: self.debug_paint,
-            debug_widget: self.debug_widget,
-            debug_widget_id: self.debug_widget_id,
-        };
-        f(&mut child_ctx);
-        self.z_ops.append(&mut child_ctx.z_ops);
-    }
-
-    /// Saves the current context, executes the closures, and restores the context.
-    ///
-    /// This is useful if you would like to transform or clip or otherwise
-    /// modify the drawing context but do not want that modification to
-    /// effect other widgets.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use masonry::{PaintCtx, RenderContext, theme};
-    /// # struct T;
-    /// # impl T {
-    /// fn paint(&mut self, ctx: &mut PaintCtx) {
-    ///     let clip_rect = ctx.size().to_rect().inset(5.0);
-    ///     ctx.with_save(|ctx| {
-    ///         ctx.clip(clip_rect);
-    ///         ctx.stroke(clip_rect, &theme::PRIMARY_DARK, 5.0);
-    ///     });
-    /// }
-    /// # }
-    /// ```
-    pub fn with_save(&mut self, f: impl FnOnce(&mut PaintCtx)) {
-        if let Err(e) = self.render_ctx.save() {
-            error!("Failed to save RenderContext: '{}'", e);
-            return;
-        }
-
-        f(self);
-
-        if let Err(e) = self.render_ctx.restore() {
-            error!("Failed to restore RenderContext: '{}'", e);
-        }
-    }
-
-    /// Allows to specify order for paint operations.
-    ///
-    /// Larger `z_index` indicate that an operation will be executed later.
-    pub fn paint_with_z_index(
-        &mut self,
-        z_index: u32,
-        paint_func: impl FnOnce(&mut PaintCtx) + 'static,
-    ) {
-        let current_transform = self.render_ctx.current_transform();
-        self.z_ops.push(ZOrderPaintOp {
-            z_index,
-            paint_func: Box::new(paint_func),
-            transform: current_transform,
-        })
-    }
-}
-
-impl<'a> GlobalPassCtx<'a> {
-    #[allow(clippy::too_many_arguments)]
-    pub(crate) fn new(
-        ext_event_sink: ExtEventSink,
-        debug_logger: &'a mut DebugLogger,
-        command_queue: &'a mut CommandQueue,
-        action_queue: &'a mut ActionQueue,
-        timers: &'a mut HashMap<TimerToken, WidgetId>,
-        mock_timer_queue: Option<&'a mut MockTimerQueue>,
-        window: &'a WindowHandle,
-        window_id: WindowId,
-        focus_widget: Option<WidgetId>,
-    ) -> Self {
-        GlobalPassCtx {
-            ext_event_sink,
-            debug_logger,
-            command_queue,
-            action_queue,
-            timers,
-            mock_timer_queue,
-            window,
-            window_id,
-            focus_widget,
-            text: window.text(),
-        }
-    }
-
-    pub(crate) fn submit_command(&mut self, command: Command) {
-        trace!("submit_command");
-        self.command_queue
-            .push_back(command.default_to(self.window_id.into()));
-    }
-
-    pub(crate) fn submit_action(&mut self, action: Action, widget_id: WidgetId) {
-        trace!("submit_action");
-        self.action_queue
-            .push_back((action, widget_id, self.window_id));
-    }
-
-    pub(crate) fn request_timer(&mut self, duration: Duration, widget_id: WidgetId) -> TimerToken {
-        trace!("request_timer duration={:?}", duration);
-
-        let timer_token = if let Some(timer_queue) = self.mock_timer_queue.as_mut() {
-            // Path taken in unit tests, because we don't want to use platform timers
-            timer_queue.add_timer(duration)
-        } else {
-            // Normal path
-            self.window.request_timer(duration)
-        };
-
-        self.timers.insert(timer_token, widget_id);
-        timer_token
-    }
-}
-
-impl<'c> Deref for PaintCtx<'_, '_, 'c> {
-    type Target = Piet<'c>;
-
-    fn deref(&self) -> &Self::Target {
-        self.render_ctx
-    }
-}
-
-impl<'c> DerefMut for PaintCtx<'_, '_, 'c> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        self.render_ctx
     }
 }

@@ -6,6 +6,7 @@
 
 use std::any::Any;
 use std::num::NonZeroU64;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
@@ -24,9 +25,9 @@ pub struct PromiseResult {
 
 impl PromiseTokenId {
     pub fn next() -> PromiseTokenId {
-        use druid_shell::Counter;
-        static WIDGET_ID_COUNTER: Counter = Counter::new();
-        PromiseTokenId(WIDGET_ID_COUNTER.next_nonzero())
+        static WIDGET_ID_COUNTER: AtomicU64 = AtomicU64::new(1);
+        let id = WIDGET_ID_COUNTER.fetch_add(1, Ordering::Relaxed);
+        PromiseTokenId(id.try_into().unwrap())
     }
 
     pub fn to_raw(self) -> u64 {

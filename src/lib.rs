@@ -12,9 +12,10 @@
 //!
 //! ## Example
 //!
+//! **(TODO: FIX THIS EXAMPLE)**
 //! The todo-list example looks like this:
 //!
-//! ```no_run
+//! ```ignore
 //! use masonry::widget::{prelude::*, TextBox};
 //! use masonry::widget::{Button, Flex, Label, Portal, WidgetMut};
 //! use masonry::Action;
@@ -91,50 +92,38 @@
 
 // TODO - Add logo
 
-pub use druid_shell as shell;
 #[doc(inline)]
-pub use druid_shell::{kurbo, piet};
+pub use kurbo;
 
 #[macro_use]
 mod util;
 
 mod action;
-mod app_delegate;
-mod app_launcher;
-mod app_root;
 mod bloom;
 mod box_constraints;
-pub mod command;
 mod contexts;
 mod event;
-pub mod ext_event;
-mod mouse;
-mod platform;
+pub mod paint_scene_helpers;
 pub mod promise;
+pub mod render_root;
 pub mod testing;
-pub mod text;
+pub mod text_helpers;
 pub mod theme;
 pub mod widget;
 
 // TODO
+pub mod app_driver;
 pub mod debug_logger;
 pub mod debug_values;
+pub mod event_loop_runner;
 
 pub use action::Action;
-pub use app_delegate::{AppDelegate, DelegateCtx};
-pub use app_launcher::AppLauncher;
-pub use app_root::{AppRoot, WindowRoot};
 pub use box_constraints::BoxConstraints;
-pub use command::{Command, Notification, Selector, SingleUse, Target};
 pub use contexts::{EventCtx, LayoutCtx, LifeCycleCtx, PaintCtx, WidgetCtx};
-pub use druid_shell::Error as PlatformError;
-pub use event::{Event, InternalEvent, InternalLifeCycle, LifeCycle, StatusChange};
+pub use event::{InternalLifeCycle, LifeCycle, PointerEvent, StatusChange, TextEvent, WindowTheme};
 pub use kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
-pub use mouse::MouseEvent;
-pub use piet::{Color, ImageBuf, LinearGradient, RadialGradient, RenderContext, UnitPoint};
-pub use platform::{
-    MasonryWinHandler, WindowConfig, WindowDescription, WindowId, WindowSizePolicy,
-};
-pub use text::ArcStr;
 pub use util::{AsAny, Handled};
+pub use vello::peniko::{Color, Gradient};
 pub use widget::{BackgroundBrush, Widget, WidgetId, WidgetPod, WidgetState};
+
+pub use text_helpers::ArcStr;

@@ -6,8 +6,8 @@
 
 #![allow(missing_docs)]
 
-use crate::piet::{Color, FontFamily, FontStyle, FontWeight};
-use crate::text::FontDescriptor;
+use vello::peniko::Color;
+
 use crate::Insets;
 
 // Colors are from https://sashat.me/2017/01/11/list-of-20-simple-distinct-colors/
@@ -28,14 +28,14 @@ pub const DISABLED_FOREGROUND_LIGHT: Color = Color::rgb8(0x89, 0x89, 0x89);
 pub const DISABLED_FOREGROUND_DARK: Color = Color::rgb8(0x6f, 0x6f, 0x6f);
 pub const BUTTON_DARK: Color = Color::BLACK;
 pub const BUTTON_LIGHT: Color = Color::rgb8(0x21, 0x21, 0x21);
-pub const DISABLED_BUTTON_DARK: Color = Color::grey8(0x28);
-pub const DISABLED_BUTTON_LIGHT: Color = Color::grey8(0x38);
+pub const DISABLED_BUTTON_DARK: Color = Color::rgb8(0x28, 0x28, 0x28);
+pub const DISABLED_BUTTON_LIGHT: Color = Color::rgb8(0x38, 0x38, 0x38);
 pub const BUTTON_BORDER_RADIUS: f64 = 4.;
 pub const BUTTON_BORDER_WIDTH: f64 = 2.;
 pub const BORDER_DARK: Color = Color::rgb8(0x3a, 0x3a, 0x3a);
 pub const BORDER_LIGHT: Color = Color::rgb8(0xa1, 0xa1, 0xa1);
 pub const SELECTED_TEXT_BACKGROUND_COLOR: Color = Color::rgb8(0x43, 0x70, 0xA8);
-pub const SELECTED_TEXT_INACTIVE_BACKGROUND_COLOR: Color = Color::grey8(0x74);
+pub const SELECTED_TEXT_INACTIVE_BACKGROUND_COLOR: Color = Color::rgb8(0x74, 0x74, 0x74);
 pub const SELECTION_TEXT_COLOR: Color = Color::rgb8(0x00, 0x00, 0x00);
 pub const CURSOR_COLOR: Color = Color::WHITE;
 pub const TEXT_SIZE_NORMAL: f64 = 15.0;
@@ -58,13 +58,6 @@ pub const SCROLLBAR_EDGE_WIDTH: f64 = 1.;
 pub const WIDGET_PADDING_VERTICAL: f64 = 10.0;
 pub const WIDGET_PADDING_HORIZONTAL: f64 = 8.0;
 pub const WIDGET_CONTROL_COMPONENT_PADDING: f64 = 4.0;
-pub const UI_FONT: FontDescriptor = FontDescriptor::new(FontFamily::SYSTEM_UI).with_size(15.0);
-pub const UI_FONT_BOLD: FontDescriptor = FontDescriptor::new(FontFamily::SYSTEM_UI)
-    .with_weight(FontWeight::BOLD)
-    .with_size(15.0);
-pub const UI_FONT_ITALIC: FontDescriptor = FontDescriptor::new(FontFamily::SYSTEM_UI)
-    .with_style(FontStyle::Italic)
-    .with_size(15.0);
 
 static DEBUG_COLOR: &[Color] = &[
     Color::rgb8(230, 25, 75),

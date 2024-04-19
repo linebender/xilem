@@ -1,7 +1,7 @@
 ---
-source: masonry/src/widget/tests/lifecycle_basic.rs
+source: src/widget/tests/lifecycle_basic.rs
+assertion_line: 23
 expression: record
-
 ---
 [
     L(
@@ -9,22 +9,6 @@ expression: record
     ),
     L(
         BuildFocusChain,
-    ),
-    E(
-        WindowConnected,
-    ),
-    Layout(
-        0.0W×0.0H,
-    ),
-    L(
-        Internal(
-            ParentWindowOrigin,
-        ),
-    ),
-    E(
-        WindowSize(
-            400.0W×400.0H,
-        ),
     ),
     Layout(
         400.0W×400.0H,

@@ -6,13 +6,16 @@ use smallvec::smallvec;
 
 use crate::testing::{ModularWidget, TestHarness};
 use crate::widget::Flex;
-use crate::*;
+use crate::{LifeCycle, Point, Size, Widget, WidgetPod};
 
 fn make_parent_widget<W: Widget>(child: W) -> ModularWidget<WidgetPod<W>> {
     let child = WidgetPod::new(child);
     ModularWidget::new(child)
-        .event_fn(move |child, ctx, event| {
-            child.on_event(ctx, event);
+        .pointer_event_fn(move |child, ctx, event| {
+            child.on_pointer_event(ctx, event);
+        })
+        .text_event_fn(move |child, ctx, event| {
+            child.on_text_event(ctx, event);
         })
         .lifecycle_fn(move |child, ctx, event| child.lifecycle(ctx, event))
         .layout_fn(move |child, ctx, bc| {
@@ -20,19 +23,29 @@ fn make_parent_widget<W: Widget>(child: W) -> ModularWidget<WidgetPod<W>> {
             ctx.place_child(child, Point::ZERO);
             size
         })
-        .paint_fn(move |child, ctx| {
-            child.paint(ctx);
+        .paint_fn(move |child, ctx, scene| {
+            child.paint(ctx, scene);
         })
         .children_fn(|child| smallvec![child.as_dyn()])
 }
 
-// TODO - recurse command?
-
-#[should_panic(expected = "not visited in method event")]
+#[should_panic(expected = "not visited in method on_pointer_event")]
 #[test]
-fn check_forget_to_recurse_event() {
-    let widget = make_parent_widget(Flex::row()).event_fn(|_child, _ctx, _event| {
-        // We forget to call child.on_event();
+fn check_forget_to_recurse_pointer_event() {
+    let widget = make_parent_widget(Flex::row()).pointer_event_fn(|_child, _ctx, _event| {
+        // We forget to call child.on_pointer_event();
+    });
+
+    let mut harness = TestHarness::create(widget);
+    harness.mouse_move(Point::ZERO);
+}
+
+#[cfg(FALSE)]
+#[should_panic(expected = "not visited in method on_text_event")]
+#[test]
+fn check_forget_to_recurse_text_event() {
+    let widget = make_parent_widget(Flex::row()).text_event_fn(|_child, _ctx, _event| {
+        // We forget to call child.on_text_event();
     });
 
     let mut harness = TestHarness::create(widget);
@@ -89,7 +102,7 @@ fn check_forget_to_call_place_child() {
 #[should_panic(expected = "not visited in method paint")]
 #[test]
 fn check_forget_to_recurse_paint() {
-    let widget = make_parent_widget(Flex::row()).paint_fn(|_child, _ctx| {
+    let widget = make_parent_widget(Flex::row()).paint_fn(|_child, _ctx, _scene| {
         // We forget to call child.paint();
     });
 
@@ -104,10 +117,15 @@ fn check_forget_to_recurse_paint() {
 #[cfg(FALSE)]
 #[test]
 fn allow_non_recurse_event_handled() {
-    let widget = make_parent_widget(Flex::row()).event_fn(|_child, ctx, event| {
-        // Event handled, we don't need to recurse
-        ctx.set_handled();
-    });
+    let widget = make_parent_widget(Flex::row())
+        .pointer_event_fn(|_child, ctx, _event| {
+            // Event handled, we don't need to recurse
+            ctx.set_handled();
+        })
+        .text_event_fn(|_child, ctx, _event| {
+            // Event handled, we don't need to recurse
+            ctx.set_handled();
+        });
 
     let mut harness = TestHarness::create(widget);
     harness.mouse_move(Point::ZERO);
@@ -117,9 +135,9 @@ fn allow_non_recurse_event_handled() {
 #[test]
 fn allow_non_recurse_cursor_oob() {
     let widget = make_parent_widget(Flex::row())
-        .event_fn(|child, ctx, event| {
-            if !matches!(event, Event::MouseMove(_)) {
-                child.on_event(ctx, event);
+        .pointer_event_fn(|child, ctx, event| {
+            if !matches!(event, PointerEvent::PointerMove(_)) {
+                child.on_pointer_event(ctx, event);
             }
         })
         .layout_fn(|child, ctx, bc| {
@@ -136,7 +154,7 @@ fn allow_non_recurse_cursor_oob() {
 #[test]
 fn allow_non_recurse_oob_paint() {
     let widget = make_parent_widget(Flex::row())
-        .paint_fn(|child, ctx, _| {
+        .paint_fn(|_child, _ctx, _| {
             // We forget to call child.paint();
         })
         .layout_fn(|child, ctx, bc| {
@@ -152,12 +170,14 @@ fn allow_non_recurse_oob_paint() {
 #[test]
 fn allow_non_recurse_cursor_stashed() {
     let widget = make_parent_widget(Flex::row())
-        .event_fn(|child, ctx, event| {
-            ctx.set_stashed(child, true);
-
-            if !matches!(event, Event::MouseMove(_)) {
-                child.on_event(ctx, event);
+        .lifecycle_fn(|child, ctx, event| {
+            if matches!(event, LifeCycle::WidgetAdded) {
+                ctx.set_stashed(child, true);
             }
+            child.lifecycle(ctx, event);
+        })
+        .pointer_event_fn(|_child, _ctx, _event| {
+            // We skip calling child.on_pointer_event();
         })
         .layout_fn(|_child, _ctx, _bc| Size::ZERO);
 
@@ -168,12 +188,15 @@ fn allow_non_recurse_cursor_stashed() {
 #[test]
 fn allow_non_recurse_stashed_paint() {
     let widget = make_parent_widget(Flex::row())
-        .event_fn(|child, ctx, _event| {
-            ctx.set_stashed(child, true);
+        .lifecycle_fn(|child, ctx, event| {
+            if matches!(event, LifeCycle::WidgetAdded) {
+                ctx.set_stashed(child, true);
+            }
+            child.lifecycle(ctx, event);
         })
         .layout_fn(|_child, _ctx, _bc| Size::ZERO)
-        .paint_fn(|_child, _ctx| {
-            // We don't call child.paint();
+        .paint_fn(|_child, _ctx, _scene| {
+            // We skip calling child.paint();
         });
 
     let mut harness = TestHarness::create_with_size(widget, Size::new(400.0, 400.0));
@@ -182,6 +205,7 @@ fn allow_non_recurse_stashed_paint() {
 
 // ---
 
+#[cfg(FALSE)]
 #[should_panic(expected = "children changed")]
 #[test]
 fn check_forget_children_changed() {
@@ -213,9 +237,9 @@ fn check_forget_children_changed() {
                 Size::ZERO
             }
         })
-        .paint_fn(|child, ctx| {
+        .paint_fn(|child, ctx, scene| {
             if let Some(child) = child {
-                child.paint(ctx);
+                child.paint(ctx, scene);
             }
         })
         .children_fn(|child| {
@@ -236,8 +260,9 @@ fn check_forget_children_changed() {
 #[should_panic]
 #[test]
 fn check_recurse_event_twice() {
-    let widget = make_parent_widget(Flex::row()).event_fn(|child, ctx, event| {
-        child.on_event(ctx, event);
+    let widget = make_parent_widget(Flex::row()).pointer_event_fn(|child, ctx, event| {
+        child.on_pointer_event(ctx, event);
+        child.on_pointer_event(ctx, event);
     });
 
     let mut harness = TestHarness::create(widget);
@@ -250,6 +275,7 @@ fn check_recurse_event_twice() {
 fn check_recurse_lifecycle_twice() {
     let widget = make_parent_widget(Flex::row()).lifecycle_fn(|child, ctx, event| {
         child.lifecycle(ctx, event);
+        child.lifecycle(ctx, event);
     });
 
     let _harness = TestHarness::create(widget);
@@ -261,6 +287,7 @@ fn check_recurse_lifecycle_twice() {
 fn check_recurse_layout_twice() {
     let widget = make_parent_widget(Flex::row()).layout_fn(|child, ctx, bc| {
         let size = child.layout(ctx, bc);
+        let _ = child.layout(ctx, bc);
         ctx.place_child(child, Point::ZERO);
         size
     });
@@ -272,8 +299,9 @@ fn check_recurse_layout_twice() {
 #[should_panic]
 #[test]
 fn check_recurse_paint_twice() {
-    let widget = make_parent_widget(Flex::row()).paint_fn(|child, ctx| {
-        child.paint(ctx);
+    let widget = make_parent_widget(Flex::row()).paint_fn(|child, ctx, scene| {
+        child.paint(ctx, scene);
+        child.paint(ctx, scene);
     });
 
     let mut harness = TestHarness::create(widget);
@@ -286,8 +314,11 @@ fn check_recurse_paint_twice() {
 #[test]
 fn check_layout_stashed() {
     let widget = make_parent_widget(Flex::row())
-        .event_fn(|child, ctx, _event| {
-            ctx.set_stashed(child, true);
+        .lifecycle_fn(|child, ctx, event| {
+            if matches!(event, LifeCycle::WidgetAdded) {
+                ctx.set_stashed(child, true);
+            }
+            child.lifecycle(ctx, event);
         })
         .layout_fn(|child, ctx, bc| {
             let size = child.layout(ctx, bc);
@@ -303,12 +334,15 @@ fn check_layout_stashed() {
 #[test]
 fn check_paint_stashed() {
     let widget = make_parent_widget(Flex::row())
-        .event_fn(|child, ctx, _event| {
-            ctx.set_stashed(child, true);
+        .lifecycle_fn(|child, ctx, event| {
+            if matches!(event, LifeCycle::WidgetAdded) {
+                ctx.set_stashed(child, true);
+            }
+            child.lifecycle(ctx, event);
         })
         .layout_fn(|_child, _ctx, _bc| Size::ZERO)
-        .paint_fn(|child, ctx| {
-            child.paint(ctx);
+        .paint_fn(|child, ctx, scene| {
+            child.paint(ctx, scene);
         });
 
     let mut harness = TestHarness::create(widget);

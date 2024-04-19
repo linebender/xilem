@@ -4,16 +4,18 @@
 
 //! A checkbox widget.
 
+use kurbo::{Affine, Stroke};
 use smallvec::SmallVec;
 use tracing::{trace, trace_span, Span};
+use vello::Scene;
 
 use crate::action::Action;
-use crate::kurbo::{BezPath, Size};
-use crate::piet::{LineCap, LineJoin, LinearGradient, RenderContext, StrokeStyle, UnitPoint};
+use crate::kurbo::{BezPath, Cap, Join, Size};
+use crate::paint_scene_helpers::{fill_lin_gradient, stroke, UnitPoint};
 use crate::widget::{Label, WidgetMut, WidgetRef};
 use crate::{
-    theme, ArcStr, BoxConstraints, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
-    StatusChange, Widget, WidgetPod,
+    theme, ArcStr, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
+    PointerEvent, StatusChange, TextEvent, Widget, WidgetPod,
 };
 
 /// A checkbox that can be toggled.
@@ -42,7 +44,7 @@ impl Checkbox {
     }
 }
 
-impl<'a, 'b> CheckboxMut<'a, 'b> {
+impl<'a> CheckboxMut<'a> {
     pub fn set_checked(&mut self, checked: bool) {
         self.widget.checked = checked;
         self.ctx.request_paint();
@@ -53,22 +55,22 @@ impl<'a, 'b> CheckboxMut<'a, 'b> {
         self.label_mut().set_text(new_text.into());
     }
 
-    pub fn label_mut(&mut self) -> WidgetMut<'_, 'b, Label> {
+    pub fn label_mut(&mut self) -> WidgetMut<'_, Label> {
         self.ctx.get_mut(&mut self.widget.label)
     }
 }
 
 impl Widget for Checkbox {
-    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event) {
+    fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
         match event {
-            Event::MouseDown(_) => {
+            PointerEvent::PointerDown(_, _) => {
                 if !ctx.is_disabled() {
                     ctx.set_active(true);
                     ctx.request_paint();
                     trace!("Checkbox {:?} pressed", ctx.widget_id());
                 }
             }
-            Event::MouseUp(_) => {
+            PointerEvent::PointerUp(_, _) => {
                 if ctx.is_active() && !ctx.is_disabled() {
                     if ctx.is_hot() {
                         self.checked = !self.checked;
@@ -82,6 +84,8 @@ impl Widget for Checkbox {
             _ => (),
         }
     }
+
+    fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
 
     fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, _event: &StatusChange) {
         ctx.request_paint();
@@ -109,7 +113,7 @@ impl Widget for Checkbox {
         our_size
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx) {
+    fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
         let check_size = theme::BASIC_WIDGET_HEIGHT;
         let border_width = 1.;
 
@@ -118,14 +122,13 @@ impl Widget for Checkbox {
             .inset(-border_width / 2.)
             .to_rounded_rect(2.);
 
-        //Paint the background
-        let background_gradient = LinearGradient::new(
+        fill_lin_gradient(
+            scene,
+            &rect,
+            [theme::BACKGROUND_LIGHT, theme::BACKGROUND_DARK],
             UnitPoint::TOP,
             UnitPoint::BOTTOM,
-            (theme::BACKGROUND_LIGHT, theme::BACKGROUND_DARK),
         );
-
-        ctx.fill(rect, &background_gradient);
 
         let border_color = if ctx.is_hot() && !ctx.is_disabled() {
             theme::BORDER_LIGHT
@@ -133,7 +136,7 @@ impl Widget for Checkbox {
             theme::BORDER_DARK
         };
 
-        ctx.stroke(rect, &border_color, border_width);
+        stroke(scene, &rect, border_color, border_width);
 
         if self.checked {
             // Paint the checkmark
@@ -142,9 +145,15 @@ impl Widget for Checkbox {
             path.line_to((8.0, 13.0));
             path.line_to((14.0, 5.0));
 
-            let style = StrokeStyle::new()
-                .line_cap(LineCap::Round)
-                .line_join(LineJoin::Round);
+            let style = Stroke {
+                width: 2.0,
+                join: Join::Round,
+                miter_limit: 10.0,
+                start_cap: Cap::Round,
+                end_cap: Cap::Round,
+                dash_pattern: Default::default(),
+                dash_offset: 0.0,
+            };
 
             let brush = if ctx.is_disabled() {
                 theme::DISABLED_TEXT_COLOR
@@ -152,11 +161,11 @@ impl Widget for Checkbox {
                 theme::TEXT_COLOR
             };
 
-            ctx.stroke_styled(path, &brush, 2., &style);
+            scene.stroke(&style, Affine::IDENTITY, brush, None, &path);
         }
 
         // Paint the text label
-        self.label.paint(ctx);
+        self.label.paint(ctx, scene);
     }
 
     fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {

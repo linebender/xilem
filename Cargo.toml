@@ -11,71 +11,28 @@ repository = "https://github.com/PoignardAzur/masonry-rs"
 rust-version = "1.65"
 version = "0.1.3"
 
-[package.metadata.docs.rs]
-# The "svg" and "image" features have doc clashes that cause undefined output in docs.
-# See https://github.com/rust-lang/cargo/issues/6313 for more information.
-# Once cargo doc becomes smart enough to handle multiple versions of the same crate,
-# the "svg" and "image" features should be enabled for the docs.rs output.
-default-target = "x86_64-pc-windows-msvc"
-features = ["im"]
-rustdoc-args = ["--cfg", "docsrs"]
+[profile.dev.package."*"]
+opt-level = 2
 
-[features]
-default = ["gtk", "image", "png", "jpeg"]
-gtk = ["druid-shell/gtk"]
-image = ["druid-shell/image", "piet-common/image"]
-serde_deps = ["im/serde", "druid-shell/serde"]
-svg = ["usvg"]
-x11 = ["druid-shell/x11"]
-
-# passing on all the image features. AVIF is not supported because it does not
-# support decoding, and that's all we use `Image` for.
-bmp = ["druid-shell/bmp"]
-dds = ["druid-shell/dds"]
-dxt = ["druid-shell/dxt"]
-farbfeld = ["druid-shell/farbfeld"]
-gif = ["druid-shell/gif"]
-hdr = ["druid-shell/hdr"]
-ico = ["druid-shell/ico"]
-jpeg = ["druid-shell/jpeg"]
-jpeg_rayon = ["druid-shell/jpeg_rayon"]
-png = ["druid-shell/image_png"]
-pnm = ["druid-shell/pnm"]
-tga = ["druid-shell/tga"]
-tiff = ["druid-shell/tiff"]
-webp = ["druid-shell/webp"]
-
-# Remember to update this when changing an image feature.
-image-all = ["image", "svg", "png", "jpeg", "jpeg_rayon", "gif", "bmp", "ico", "tiff", "webp", "pnm", "dds", "tga", "farbfeld", "dxt", "hdr"]
-
+# NOTE: Make sure to keep wgpu version in sync with the version badge in README.md
 [dependencies]
-druid-shell = {version = "0.8.0", default-features = false}
-# We defer to the version imported by druid-shell
-piet-common = "*"
-
-# TODO - remove unused dependencies - See #10
-fluent-bundle = "0.15.1"
-fluent-langneg = "0.13.0"
-fluent-syntax = "0.11.0"
 fnv = "1.0.7"
 instant = {version = "0.1.6", features = ["wasm-bindgen"]}
 smallvec = "1.6.1"
 tracing = "0.1.29"
 tracing-subscriber = {version = "0.2.15", features = ["fmt", "ansi"], default-features = false}
-unic-langid = "0.9.0"
-unicode-segmentation = "1.6.0"
-xi-unicode = "0.3.0"
-
-# Optional dependencies
-chrono = {version = "0.4.19", optional = true}
-im = {version = "15.0.0", optional = true}
-usvg = {version = "0.14.1", optional = true}
-
-# TODO - make serde a dev dependency
 image = "0.24.0"
 once_cell = "1.9.0"
 serde = {version = "1.0.133", features = ["derive"]}
 serde_json = "1.0.74"
+vello = { git = "https://github.com/linebender/vello/", rev = "b520a35addfa6bbb37d93491d2b8236528faf3b5" }
+kurbo = "0.11.0"
+futures-intrusive = "0.5.0"
+pollster = "0.3.0"
+parley = { git = "https://github.com/linebender/parley", rev = "4f05e183be9b388c6748d3c531c9ac332672fb86" }
+wgpu = { version = "0.19.3" }
+swash = "0.1.15"
+winit = "0.29.15"
 
 [target.'cfg(target_arch="wasm32")'.dependencies]
 console_error_panic_hook = {version = "0.1.6"}
@@ -84,14 +41,13 @@ tracing-wasm = {version = "0.2.0"}
 [dev-dependencies]
 float-cmp = {version = "0.8.0", features = ["std"], default-features = false}
 insta = {version = "1.8.0"}
-# tempfile 3.2.0 broke wasm; I assume it will be yanked (Jan 12, 2021)
 assert_matches = "1.5.0"
 pulldown-cmark = {version = "0.8", default-features = false}
-tempfile = "=3.1.0"
+tempfile = "3.10.1"
 
 [target.'cfg(not(target_arch="wasm32"))'.dev-dependencies]
 open = "1.6"
 
 [[example]]
 name = "simple_image"
-required-features = ["image", "png"]
+#required-features = ["image", "png"]

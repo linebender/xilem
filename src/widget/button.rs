@@ -6,12 +6,14 @@
 
 use smallvec::SmallVec;
 use tracing::{trace, trace_span, Span};
+use vello::Scene;
 
 use crate::action::Action;
+use crate::paint_scene_helpers::{fill_lin_gradient, stroke, UnitPoint};
 use crate::widget::{Label, WidgetMut, WidgetPod, WidgetRef};
 use crate::{
-    theme, ArcStr, BoxConstraints, Event, EventCtx, Insets, LayoutCtx, LifeCycle, LifeCycleCtx,
-    LinearGradient, PaintCtx, RenderContext, Size, StatusChange, UnitPoint, Widget,
+    theme, ArcStr, BoxConstraints, EventCtx, Insets, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
+    PointerEvent, Size, StatusChange, TextEvent, Widget,
 };
 
 // the minimum padding added to a button.
@@ -50,7 +52,7 @@ impl Button {
     /// use masonry::Color;
     /// use masonry::widget::{Button, Label};
     ///
-    /// let label = Label::new("Increment").with_text_color(Color::grey(0.5));
+    /// let label = Label::new("Increment").with_text_color(Color::rgb(0.5, 0.5, 0.5));
     /// let button = Button::from_label(label);
     /// ```
     pub fn from_label(label: Label) -> Button {
@@ -60,28 +62,28 @@ impl Button {
     }
 }
 
-impl<'a, 'b> ButtonMut<'a, 'b> {
+impl<'a> ButtonMut<'a> {
     /// Set the text.
     pub fn set_text(&mut self, new_text: impl Into<ArcStr>) {
         self.label_mut().set_text(new_text.into());
     }
 
-    pub fn label_mut(&mut self) -> WidgetMut<'_, 'b, Label> {
+    pub fn label_mut(&mut self) -> WidgetMut<'_, Label> {
         self.ctx.get_mut(&mut self.widget.label)
     }
 }
 
 impl Widget for Button {
-    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event) {
+    fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
         match event {
-            Event::MouseDown(_) => {
+            PointerEvent::PointerDown(_, _) => {
                 if !ctx.is_disabled() {
                     ctx.set_active(true);
                     ctx.request_paint();
                     trace!("Button {:?} pressed", ctx.widget_id());
                 }
             }
-            Event::MouseUp(_) => {
+            PointerEvent::PointerUp(_, _) => {
                 if ctx.is_active() && !ctx.is_disabled() {
                     ctx.submit_action(Action::ButtonPressed);
                     ctx.request_paint();
@@ -91,6 +93,11 @@ impl Widget for Button {
             }
             _ => (),
         }
+        self.label.on_pointer_event(ctx, event);
+    }
+
+    fn on_text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent) {
+        self.label.on_text_event(ctx, event);
     }
 
     fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, _event: &StatusChange) {
@@ -126,7 +133,7 @@ impl Widget for Button {
         button_size
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx) {
+    fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
         let is_active = ctx.is_active() && !ctx.is_disabled();
         let is_hot = ctx.is_hot();
         let size = ctx.size();
@@ -138,23 +145,11 @@ impl Widget for Button {
             .to_rounded_rect(theme::BUTTON_BORDER_RADIUS);
 
         let bg_gradient = if ctx.is_disabled() {
-            LinearGradient::new(
-                UnitPoint::TOP,
-                UnitPoint::BOTTOM,
-                (theme::DISABLED_BUTTON_LIGHT, theme::DISABLED_BUTTON_DARK),
-            )
+            [theme::DISABLED_BUTTON_LIGHT, theme::DISABLED_BUTTON_DARK]
         } else if is_active {
-            LinearGradient::new(
-                UnitPoint::TOP,
-                UnitPoint::BOTTOM,
-                (theme::BUTTON_DARK, theme::BUTTON_LIGHT),
-            )
+            [theme::BUTTON_DARK, theme::BUTTON_LIGHT]
         } else {
-            LinearGradient::new(
-                UnitPoint::TOP,
-                UnitPoint::BOTTOM,
-                (theme::BUTTON_LIGHT, theme::BUTTON_DARK),
-            )
+            [theme::BUTTON_LIGHT, theme::BUTTON_DARK]
         };
 
         let border_color = if is_hot && !ctx.is_disabled() {
@@ -163,10 +158,16 @@ impl Widget for Button {
             theme::BORDER_DARK
         };
 
-        ctx.stroke(rounded_rect, &border_color, stroke_width);
-        ctx.fill(rounded_rect, &bg_gradient);
+        stroke(scene, &rounded_rect, border_color, stroke_width);
+        fill_lin_gradient(
+            scene,
+            &rounded_rect,
+            bg_gradient,
+            UnitPoint::TOP,
+            UnitPoint::BOTTOM,
+        );
 
-        self.label.paint(ctx);
+        self.label.paint(ctx, scene);
     }
 
     fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {

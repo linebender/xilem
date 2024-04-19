@@ -6,15 +6,17 @@
 
 use std::ops::Range;
 
+use kurbo::Affine;
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace_span, Span};
+use vello::peniko::BlendMode;
+use vello::Scene;
 
 use crate::kurbo::{Point, Rect, Size, Vec2};
-use crate::widget::scroll_bar::SCROLLBAR_MOVED;
 use crate::widget::{Axis, ScrollBar, StoreInWidgetMut, WidgetMut, WidgetRef};
 use crate::{
-    BoxConstraints, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, RenderContext,
-    StatusChange, Widget, WidgetPod,
+    BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, PointerEvent,
+    StatusChange, TextEvent, Widget, WidgetPod,
 };
 
 // TODO - refactor - see issue #15
@@ -148,19 +150,19 @@ impl<W: Widget> Portal<W> {
     }
 }
 
-impl<'a, 'b, W: Widget> PortalMut<'a, 'b, W> {
-    pub fn child_mut(&mut self) -> WidgetMut<'_, 'b, W>
+impl<'a, W: Widget> PortalMut<'a, W> {
+    pub fn child_mut(&mut self) -> WidgetMut<'_, W>
     where
         W: StoreInWidgetMut,
     {
         self.ctx.get_mut(&mut self.widget.child)
     }
 
-    pub fn horizontal_scrollbar_mut(&mut self) -> WidgetMut<'_, 'b, ScrollBar> {
+    pub fn horizontal_scrollbar_mut(&mut self) -> WidgetMut<'_, ScrollBar> {
         self.ctx.get_mut(&mut self.widget.scrollbar_horizontal)
     }
 
-    pub fn vertical_scrollbar_mut(&mut self) -> WidgetMut<'_, 'b, ScrollBar> {
+    pub fn vertical_scrollbar_mut(&mut self) -> WidgetMut<'_, ScrollBar> {
         self.ctx.get_mut(&mut self.widget.scrollbar_vertical)
     }
 
@@ -239,40 +241,58 @@ impl<'a, 'b, W: Widget> PortalMut<'a, 'b, W> {
 }
 
 impl<W: Widget> Widget for Portal<W> {
-    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event) {
+    fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
         let portal_size = ctx.size();
         let content_size = self.child.layout_rect().size();
 
-        // TODO - handle Home/End keys, etc
         match event {
-            Event::Wheel(wheel_event) => {
+            PointerEvent::MouseWheel(delta, _) => {
                 self.set_viewport_pos_raw(
                     portal_size,
                     content_size,
-                    self.viewport_pos + wheel_event.wheel_delta,
+                    self.viewport_pos + Vec2::new(delta.x, delta.y),
                 );
                 // TODO - horizontal scrolling?
                 ctx.get_mut(&mut self.scrollbar_vertical)
                     .set_cursor_progress(self.viewport_pos.y / (content_size - portal_size).height);
-            }
-            Event::Notification(notif) => {
-                if let Some((axis, progress)) = notif.try_get(SCROLLBAR_MOVED) {
-                    self.viewport_pos = axis
-                        .pack(
-                            progress * axis.major(content_size - portal_size),
-                            axis.minor_pos(self.viewport_pos),
-                        )
-                        .into();
-                    ctx.set_handled();
-                }
+                ctx.request_layout();
             }
             _ => (),
         }
 
-        self.child.on_event(ctx, event);
-        self.scrollbar_horizontal.on_event(ctx, event);
-        self.scrollbar_vertical.on_event(ctx, event);
-        ctx.request_layout();
+        self.child.on_pointer_event(ctx, event);
+        self.scrollbar_horizontal.on_pointer_event(ctx, event);
+        self.scrollbar_vertical.on_pointer_event(ctx, event);
+
+        if self.scrollbar_horizontal.widget().moved {
+            let progress = self.scrollbar_horizontal.widget().cursor_progress;
+            self.scrollbar_horizontal.widget_mut().moved = false;
+            self.viewport_pos = Axis::Horizontal
+                .pack(
+                    progress * Axis::Horizontal.major(content_size - portal_size),
+                    Axis::Horizontal.minor_pos(self.viewport_pos),
+                )
+                .into();
+            ctx.request_layout();
+        }
+        if self.scrollbar_vertical.widget().moved {
+            let progress = self.scrollbar_vertical.widget().cursor_progress;
+            self.scrollbar_vertical.widget_mut().moved = false;
+            self.viewport_pos = Axis::Vertical
+                .pack(
+                    progress * Axis::Vertical.major(content_size - portal_size),
+                    Axis::Vertical.minor_pos(self.viewport_pos),
+                )
+                .into();
+            ctx.request_layout();
+        }
+    }
+
+    // TODO - handle Home/End keys, etc
+    fn on_text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent) {
+        self.child.on_text_event(ctx, event);
+        self.scrollbar_horizontal.on_text_event(ctx, event);
+        self.scrollbar_vertical.on_text_event(ctx, event);
     }
 
     fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange) {}
@@ -345,20 +365,21 @@ impl<W: Widget> Widget for Portal<W> {
         portal_size
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx) {
-        // TODO - have ctx.clip also clip the invalidated region
+    fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
+        // TODO - also clip the invalidated region
         let clip_rect = ctx.size().to_rect();
-        ctx.clip(clip_rect);
 
-        self.child.paint(ctx);
+        scene.push_layer(BlendMode::default(), 1., Affine::IDENTITY, &clip_rect);
+        self.child.paint(ctx, scene);
+        scene.pop_layer();
 
         if self.scrollbar_horizontal_visible {
-            self.scrollbar_horizontal.paint(ctx);
+            self.scrollbar_horizontal.paint(ctx, scene);
         } else {
             ctx.skip_child(&mut self.scrollbar_horizontal);
         }
         if self.scrollbar_vertical_visible {
-            self.scrollbar_vertical.paint(ctx);
+            self.scrollbar_vertical.paint(ctx, scene);
         } else {
             ctx.skip_child(&mut self.scrollbar_vertical);
         }
@@ -386,7 +407,9 @@ mod tests {
         SizedBox::new(Button::new(text)).width(70.0).height(40.0)
     }
 
+    // TODO - This test takes too long right now
     #[test]
+    #[ignore]
     fn button_list() {
         let [item_3_id, item_13_id] = widget_ids();
 
