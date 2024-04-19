@@ -1,0 +1,8 @@
+---
+source: src/widget/split.rs
+expression: harness.root_widget()
+---
+Split(
+    Label<Hello>,
+    Label<World>,
+)
