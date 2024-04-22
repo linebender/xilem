@@ -1,0 +1,21 @@
+---
+source: src/widget/tests/lifecycle_basic.rs
+assertion_line: 23
+expression: record
+---
+[
+    L(
+        WidgetAdded,
+    ),
+    L(
+        BuildFocusChain,
+    ),
+    Layout(
+        400.0W×400.0H,
+    ),
+    L(
+        Internal(
+            ParentWindowOrigin,
+        ),
+    ),
+]

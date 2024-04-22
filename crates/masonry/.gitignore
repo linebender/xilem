@@ -1,0 +1,35 @@
+## Rust build files
+target/
+
+## Intellij Idea
+.idea/
+
+## Visual Studio Code
+.vscode/
+
+## Sublime Text
+*.sublime-workspace
+*.sublime-project
+
+## Vim
+tags
+Session.vim
+Sessionx.vim
+
+## macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+## Windows
+Thumbs.db
+ehthumbs.db
+ehthumbs_vista.db
+*.lnk
+
+## Linux
+*~
+
+# Visual snapshots
+**/screenshots/*.diff.png
+**/screenshots/*.new.png## Rust

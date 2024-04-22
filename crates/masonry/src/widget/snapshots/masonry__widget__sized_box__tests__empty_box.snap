@@ -1,0 +1,7 @@
+---
+source: masonry/src/widget/sized_box.rs
+assertion_line: 298
+expression: harness.root_widget()
+
+---
+SizedBox
