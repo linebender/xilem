@@ -1,23 +1,24 @@
-use crate::id::Id;
 use std::collections::HashMap;
+
+use masonry::WidgetId;
 
 /// The pure structure (parent/children relations via ids) of the widget tree.
 #[derive(Debug, Default, Clone)]
 pub struct TreeStructure {
-    parent: HashMap<Id, Id>,
-    children: HashMap<Id, Vec<Id>>,
+    parent: HashMap<WidgetId, WidgetId>,
+    children: HashMap<WidgetId, Vec<WidgetId>>,
 }
 
 impl TreeStructure {
-    pub fn parent(&self, id: Id) -> Option<Id> {
+    pub fn parent(&self, id: WidgetId) -> Option<WidgetId> {
         self.parent.get(&id).copied()
     }
 
-    pub fn children(&self, id: Id) -> Option<&[Id]> {
+    pub fn children(&self, id: WidgetId) -> Option<&[WidgetId]> {
         self.children.get(&id).map(Vec::as_slice)
     }
 
-    pub fn is_descendant_of(&self, mut id: Id, ancestor: Id) -> bool {
+    pub fn is_descendant_of(&self, mut id: WidgetId, ancestor: WidgetId) -> bool {
         while let Some(parent) = self.parent(id) {
             if parent == ancestor {
                 return true;
@@ -27,7 +28,7 @@ impl TreeStructure {
         false
     }
 
-    pub(crate) fn append_child(&mut self, parent_id: Id, id: Id) {
+    pub(crate) fn append_child(&mut self, parent_id: WidgetId, id: WidgetId) {
         self.parent
             .entry(id)
             .and_modify(|parent| {
@@ -45,7 +46,7 @@ impl TreeStructure {
     /// # Panics
     ///
     /// When the `parent_id` doesn't exist in the structure or `idx` is out of bounds this will panic
-    pub(crate) fn change_child(&mut self, parent_id: Id, idx: usize, new_id: Id) {
+    pub(crate) fn change_child(&mut self, parent_id: WidgetId, idx: usize, new_id: WidgetId) {
         let children = self
             .children
             .get_mut(&parent_id)
@@ -65,7 +66,7 @@ impl TreeStructure {
     /// # Panics
     ///
     /// When the `parent_id` doesn't exist in the structure or `range` is out of bounds this will panic
-    pub(crate) fn delete_children(&mut self, parent_id: Id, range: std::ops::Range<usize>) {
+    pub(crate) fn delete_children(&mut self, parent_id: WidgetId, range: std::ops::Range<usize>) {
         let children = &self.children[&parent_id][range.clone()];
         for child in children {
             self.parent.remove(child);
@@ -82,10 +83,10 @@ mod tests {
     fn mutates_simple_tree_structure() {
         let mut tree_structure = TreeStructure::default();
 
-        let parent = Id::next();
-        let child1 = Id::next();
-        let child2 = Id::next();
-        let child3 = Id::next();
+        let parent = WidgetId::next();
+        let child1 = WidgetId::next();
+        let child2 = WidgetId::next();
+        let child3 = WidgetId::next();
 
         // append children
         tree_structure.append_child(parent, child1);
@@ -98,7 +99,7 @@ mod tests {
         assert_eq!(tree_structure.parent(child3), Some(parent));
 
         // change children
-        let child2_new = Id::next();
+        let child2_new = WidgetId::next();
         tree_structure.change_child(parent, 1, child2_new);
         let children = tree_structure.children(parent).unwrap();
         assert_eq!(children, [child1, child2_new, child3]);
@@ -120,19 +121,19 @@ mod tests {
     #[test]
     fn is_descendant_of() {
         let mut tree_structure = TreeStructure::default();
-        let parent = Id::next();
-        let child1 = Id::next();
-        let child2 = Id::next();
-        let child3 = Id::next();
+        let parent = WidgetId::next();
+        let child1 = WidgetId::next();
+        let child2 = WidgetId::next();
+        let child3 = WidgetId::next();
         tree_structure.append_child(parent, child1);
         tree_structure.append_child(parent, child2);
         tree_structure.append_child(parent, child3);
 
-        let child3_child1 = Id::next();
-        let child3_child2 = Id::next();
+        let child3_child1 = WidgetId::next();
+        let child3_child2 = WidgetId::next();
         tree_structure.append_child(child3, child3_child1);
         tree_structure.append_child(child3, child3_child2);
-        let child3_child1_child1 = Id::next();
+        let child3_child1_child1 = WidgetId::next();
         tree_structure.append_child(child3_child1, child3_child1_child1);
         assert!(tree_structure.is_descendant_of(child3_child1_child1, child3_child1));
         assert!(tree_structure.is_descendant_of(child3_child1_child1, child3));

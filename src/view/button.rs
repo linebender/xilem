@@ -14,11 +14,12 @@
 
 use std::any::Any;
 
-use crate::view::{Id, ViewMarker};
+use masonry::widget::WidgetMut;
+use masonry::WidgetId;
+
+use crate::view::{Cx, Id, View, ViewMarker};
 use crate::widget::ChangeFlags;
 use crate::MessageResult;
-
-use super::{Cx, View};
 
 pub struct Button<T, A> {
     label: String,
@@ -42,16 +43,32 @@ impl<T, A> Button<T, A> {
     }
 }
 
+/*
+0:(
+    1:(
+        A, B, C, D
+    ),
+    P [
+        2:(
+            3:(E, F),
+            4:(G),
+        )
+    ]
+)
+
+B -> Root,B -> 0,1,B
+E -> Root,P,E -> 0,2,3,E
+*/
+
 impl<T, A> ViewMarker for Button<T, A> {}
 
 impl<T, A> View<T, A> for Button<T, A> {
     type State = ();
 
-    type Element = crate::widget::Button;
+    type Element = masonry::widget::Button;
 
     fn build(&self, cx: &mut Cx) -> (crate::view::Id, Self::State, Self::Element) {
-        let (id, element) =
-            cx.with_new_id(|cx| crate::widget::Button::new(cx.id_path(), self.label.clone()));
+        let (id, element) = cx.with_new_id(|cx| masonry::widget::Button::new(self.label.clone()));
         (id, (), element)
     }
 
@@ -61,18 +78,17 @@ impl<T, A> View<T, A> for Button<T, A> {
         prev: &Self,
         _id: &mut Id,
         _state: &mut Self::State,
-        element: &mut Self::Element,
+        element: &mut WidgetMut<Self::Element>,
     ) -> ChangeFlags {
         if prev.label != self.label {
-            element.set_label(self.label.clone())
-        } else {
-            ChangeFlags::default()
+            element.set_text(self.label.clone());
         }
+        ChangeFlags::default()
     }
 
     fn message(
         &self,
-        _id_path: &[Id],
+        _id_path: &[WidgetId],
         _state: &mut Self::State,
         _message: Box<dyn Any>,
         app_state: &mut T,

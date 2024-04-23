@@ -480,7 +480,11 @@ impl Widget for Flex {
         }
     }
 
-    fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
+    fn on_text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent) {
+        for child in self.children.iter_mut().filter_map(|x| x.widget_mut()) {
+            child.on_text_event(ctx, event);
+        }
+    }
 
     fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange) {}
 

@@ -12,17 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::{
-    geometry::Axis,
-    widget::{BoxConstraints, Event},
+use masonry::{
+    declare_widget,
+    widget::{Axis, WidgetRef},
+    BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, PointerEvent,
+    StatusChange, TextEvent, Widget, WidgetPod,
 };
+use smallvec::SmallVec;
+use tracing::{trace_span, Span};
 use vello::{
     kurbo::{Affine, Point, Size},
     peniko::{Brush, Color, Fill},
     Scene,
 };
-
-use super::{contexts::LifeCycleCx, EventCx, LayoutCx, LifeCycle, PaintCx, Pod, UpdateCx, Widget};
 
 /// Type conversions between Xilem types and their Taffy equivalents
 mod convert {
@@ -142,14 +144,20 @@ mod convert {
 /// on the display style set. If the children are themselves instances of `TaffyLayout`, then
 /// they can set styles to control how they placed, sized, and aligned.
 pub struct TaffyLayout {
-    pub children: Vec<Pod>,
+    pub children: Vec<WidgetPod<Box<dyn Widget>>>,
     pub cache: taffy::Cache,
     pub style: taffy::Style,
     pub background_color: Option<Color>,
 }
 
+declare_widget!(TaffyLayoutMut, TaffyLayout);
+
 impl TaffyLayout {
-    pub fn new(children: Vec<Pod>, style: taffy::Style, background_color: Option<Color>) -> Self {
+    pub fn new(
+        children: Vec<WidgetPod<Box<dyn Widget>>>,
+        style: taffy::Style,
+        background_color: Option<Color>,
+    ) -> Self {
         TaffyLayout {
             children,
             cache: taffy::Cache::new(),
@@ -169,24 +177,24 @@ impl Iterator for ChildIter {
     }
 }
 
-/// A this wrapper view over the widget (`TaffyLayout`) and the Xilem layout context (`LayoutCx`).
+/// A this wrapper view over the widget (`TaffyLayout`) and the Xilem layout context (`LayoutCtx`).
 /// Implementing `taffy::TraversePartialTree` and `taffy::LayoutPartialTree` for this wrapper (rather
 /// than directly on `TaffyLayout`) allows us to access the layout context during the layout process
-struct TaffyLayoutCtx<'w, 'a, 'b> {
+struct TaffyLayoutCtx<'w, 'a> {
     /// A mutable reference to the widget
     widget: &'w mut TaffyLayout,
     /// A mutable reference to the layout context
-    cx: &'w mut LayoutCx<'a, 'b>,
+    cx: &'w mut LayoutCtx<'a>,
 }
 
-impl<'w, 'a, 'b> TaffyLayoutCtx<'w, 'a, 'b> {
+impl<'w, 'a> TaffyLayoutCtx<'w, 'a> {
     /// Create a new `TaffyLayoutCtx`
-    fn new(widget: &'w mut TaffyLayout, cx: &'w mut LayoutCx<'a, 'b>) -> Self {
+    fn new(widget: &'w mut TaffyLayout, cx: &'w mut LayoutCtx<'a>) -> Self {
         TaffyLayoutCtx { widget, cx }
     }
 }
 
-impl<'w, 'a, 'b> taffy::TraversePartialTree for TaffyLayoutCtx<'w, 'a, 'b> {
+impl<'w, 'a> taffy::TraversePartialTree for TaffyLayoutCtx<'w, 'a> {
     type ChildIter<'c> = ChildIter where Self: 'c;
 
     fn child_ids(&self, _parent_node_id: taffy::NodeId) -> Self::ChildIter<'_> {
@@ -202,7 +210,7 @@ impl<'w, 'a, 'b> taffy::TraversePartialTree for TaffyLayoutCtx<'w, 'a, 'b> {
     }
 }
 
-impl<'w, 'a, 'b> taffy::LayoutPartialTree for TaffyLayoutCtx<'w, 'a, 'b> {
+impl<'w, 'a> taffy::LayoutPartialTree for TaffyLayoutCtx<'w, 'a> {
     fn get_style(&self, node_id: taffy::NodeId) -> &taffy::Style {
         let node_id = usize::from(node_id);
         if node_id == usize::MAX {
@@ -279,25 +287,27 @@ impl<'w, 'a, 'b> taffy::LayoutPartialTree for TaffyLayoutCtx<'w, 'a, 'b> {
 }
 
 impl Widget for TaffyLayout {
-    fn event(&mut self, cx: &mut EventCx, event: &Event) {
+    fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
         for child in &mut self.children {
-            child.event(cx, event);
+            child.on_pointer_event(ctx, event);
         }
     }
 
-    fn lifecycle(&mut self, cx: &mut LifeCycleCx, event: &LifeCycle) {
+    fn on_text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent) {
         for child in &mut self.children {
-            child.lifecycle(cx, event);
+            child.on_text_event(ctx, event);
         }
     }
 
-    fn update(&mut self, cx: &mut UpdateCx) {
+    fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange) {}
+
+    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
         for child in &mut self.children {
-            child.update(cx);
+            child.lifecycle(ctx, event);
         }
     }
 
-    fn layout(&mut self, cx: &mut LayoutCx, bc: &BoxConstraints) -> Size {
+    fn layout(&mut self, cx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
         let display_mode = self.style.display;
         let has_children = !self.children.is_empty();
 
@@ -360,7 +370,14 @@ impl Widget for TaffyLayout {
         }
     }
 
-    fn compute_max_intrinsic(&mut self, axis: Axis, cx: &mut LayoutCx, bc: &BoxConstraints) -> f64 {
+    // TODO
+    #[cfg(FALSE)]
+    fn compute_max_intrinsic(
+        &mut self,
+        axis: Axis,
+        cx: &mut LayoutCtx,
+        bc: &BoxConstraints,
+    ) -> f64 {
         let display_mode = self.style.display;
         let has_children = !self.children.is_empty();
 
@@ -409,7 +426,7 @@ impl Widget for TaffyLayout {
         output.size.get_abs(taffy_axis) as f64
     }
 
-    fn paint(&mut self, cx: &mut PaintCx, scene: &mut Scene) {
+    fn paint(&mut self, cx: &mut PaintCtx, scene: &mut Scene) {
         if let Some(color) = self.background_color {
             scene.fill(
                 Fill::NonZero,
@@ -422,5 +439,16 @@ impl Widget for TaffyLayout {
         for child in &mut self.children {
             child.paint(cx, scene);
         }
+    }
+
+    fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
+        self.children
+            .iter()
+            .map(|widget_pod| widget_pod.as_dyn())
+            .collect()
+    }
+
+    fn make_trace_span(&self) -> Span {
+        trace_span!("Flex")
     }
 }

@@ -14,13 +14,13 @@
 
 use std::{any::Any, marker::PhantomData};
 
+use masonry::widget::WidgetMut;
+use masonry::WidgetId;
 use vello::peniko::Color;
 
-use crate::view::{Id, TreeStructureSplice, ViewMarker, ViewSequence};
+use crate::view::{Cx, Id, TreeStructureSplice, View, ViewMarker, ViewSequence};
 use crate::widget::{self, ChangeFlags};
 use crate::MessageResult;
-
-use super::{Cx, View};
 
 /// `TaffyLayout` is a container view which does layout for the specified `ViewSequence`.
 ///
@@ -116,7 +116,7 @@ impl<T, A, VT: ViewSequence<T, A>> View<T, A> for TaffyLayout<T, A, VT> {
         prev: &Self,
         id: &mut Id,
         state: &mut Self::State,
-        element: &mut Self::Element,
+        element: &mut WidgetMut<Self::Element>,
     ) -> ChangeFlags {
         let mut scratch = vec![];
         let mut splice = TreeStructureSplice::new(&mut element.children, &mut scratch);
@@ -145,7 +145,7 @@ impl<T, A, VT: ViewSequence<T, A>> View<T, A> for TaffyLayout<T, A, VT> {
 
     fn message(
         &self,
-        id_path: &[Id],
+        id_path: &[WidgetId],
         state: &mut Self::State,
         event: Box<dyn Any>,
         app_state: &mut T,

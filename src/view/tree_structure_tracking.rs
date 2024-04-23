@@ -1,36 +1,34 @@
-use crate::{
-    id::Id,
-    view::ElementsSplice,
-    widget::{ChangeFlags, Pod},
-};
+use crate::view::Cx;
+use crate::{view::ElementsSplice, widget::ChangeFlags};
+
+use masonry::widget::WidgetMut;
+use masonry::{Widget, WidgetId};
 use xilem_core::VecSplice;
 
-use super::Cx;
-
 /// An ElementsSplice that tracks the widget tree structure
-pub struct TreeStructureSplice<'a, 'b> {
-    current_child_id: Option<Id>,
-    splice: VecSplice<'a, 'b, Pod>,
+pub struct TreeStructureSplice<'a> {
+    current_child_id: Option<WidgetId>,
+    splice: &'a mut dyn ElementsSplice,
 }
 
-impl<'a, 'b> TreeStructureSplice<'a, 'b> {
-    pub fn new(elements: &'a mut Vec<Pod>, scratch: &'b mut Vec<Pod>) -> Self {
+impl<'a> TreeStructureSplice<'a> {
+    pub fn new(splice: &'a mut dyn ElementsSplice) -> Self {
         Self {
-            splice: VecSplice::new(elements, scratch),
             current_child_id: None,
+            splice,
         }
     }
 }
 
-impl<'a, 'b> ElementsSplice for TreeStructureSplice<'a, 'b> {
-    fn push(&mut self, element: Pod, cx: &mut Cx) {
+impl<'a> ElementsSplice for TreeStructureSplice<'a> {
+    fn push(&mut self, element: Box<dyn Widget>, cx: &mut Cx) {
         cx.tree_structure
             .append_child(cx.element_id(), element.id());
-        self.splice.push(element);
+        self.splice.push(element, cx);
     }
 
-    fn mutate(&mut self, _cx: &mut Cx) -> &mut Pod {
-        let pod = self.splice.mutate();
+    fn mutate(&mut self, cx: &mut Cx) -> &mut WidgetMut<'_, Box<dyn Widget>> {
+        let pod = self.splice.mutate(cx);
         self.current_child_id = Some(pod.id());
         pod
     }
@@ -38,7 +36,7 @@ impl<'a, 'b> ElementsSplice for TreeStructureSplice<'a, 'b> {
     fn mark(&mut self, changeflags: ChangeFlags, cx: &mut Cx) -> ChangeFlags {
         if changeflags.contains(ChangeFlags::tree_structure()) {
             let current_id = self.current_child_id.take().unwrap();
-            let new_id = self.splice.last_mutated().unwrap().id();
+            let new_id = self.splice.last_mutated(cx).unwrap().id();
             if current_id != new_id {
                 cx.tree_structure
                     .change_child(cx.element_id(), self.splice.len() - 1, new_id);
@@ -52,7 +50,7 @@ impl<'a, 'b> ElementsSplice for TreeStructureSplice<'a, 'b> {
         let ix = self.splice.len();
         cx.tree_structure
             .delete_children(cx.element_id(), ix..ix + n);
-        self.splice.delete(n);
+        self.splice.delete(n, cx);
     }
 
     fn len(&self) -> usize {

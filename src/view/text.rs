@@ -14,21 +14,22 @@
 
 use std::borrow::Cow;
 
-use crate::view::{Id, ViewMarker};
-use crate::widget::ChangeFlags;
+use masonry::widget::WidgetMut;
+use masonry::WidgetId;
 
-use super::{Cx, View};
+use crate::view::{Cx, Id, View, ViewMarker};
+use crate::widget::ChangeFlags;
 
 impl ViewMarker for String {}
 
 impl<T, A> View<T, A> for String {
     type State = ();
 
-    type Element = crate::widget::TextWidget;
+    type Element = masonry::widget::Label;
 
     fn build(&self, cx: &mut Cx) -> (crate::view::Id, Self::State, Self::Element) {
         let (id, element) =
-            cx.with_new_id(|_| crate::widget::TextWidget::new(Cow::from(self.clone())));
+            cx.with_new_id(|_| masonry::widget::Label::new(Cow::from(self.clone())));
         (id, (), element)
     }
 
@@ -38,18 +39,17 @@ impl<T, A> View<T, A> for String {
         prev: &Self,
         _id: &mut Id,
         _state: &mut Self::State,
-        element: &mut Self::Element,
+        element: &mut WidgetMut<Self::Element>,
     ) -> ChangeFlags {
         if prev != self {
-            element.set_text(Cow::from(self.clone()))
-        } else {
-            ChangeFlags::empty()
+            element.set_text(Cow::from(self.clone()));
         }
+        ChangeFlags::empty()
     }
 
     fn message(
         &self,
-        _id_path: &[xilem_core::Id],
+        _id_path: &[WidgetId],
         _state: &mut Self::State,
         message: Box<dyn std::any::Any>,
         _app_state: &mut T,
@@ -63,10 +63,10 @@ impl ViewMarker for &'static str {}
 impl<T, A> View<T, A> for &'static str {
     type State = ();
 
-    type Element = crate::widget::TextWidget;
+    type Element = masonry::widget::Label;
 
     fn build(&self, cx: &mut Cx) -> (crate::view::Id, Self::State, Self::Element) {
-        let (id, element) = cx.with_new_id(|_| crate::widget::TextWidget::new(Cow::from(*self)));
+        let (id, element) = cx.with_new_id(|_| masonry::widget::Label::new(Cow::from(*self)));
         (id, (), element)
     }
 
@@ -76,18 +76,17 @@ impl<T, A> View<T, A> for &'static str {
         prev: &Self,
         _id: &mut Id,
         _state: &mut Self::State,
-        element: &mut Self::Element,
+        element: &mut WidgetMut<Self::Element>,
     ) -> ChangeFlags {
         if prev != self {
-            element.set_text(Cow::from(*self))
-        } else {
-            ChangeFlags::empty()
+            element.set_text(Cow::from(*self));
         }
+        ChangeFlags::empty()
     }
 
     fn message(
         &self,
-        _id_path: &[xilem_core::Id],
+        _id_path: &[WidgetId],
         _state: &mut Self::State,
         message: Box<dyn std::any::Any>,
         _app_state: &mut T,
@@ -101,10 +100,10 @@ impl ViewMarker for Cow<'static, str> {}
 impl<T, A> View<T, A> for Cow<'static, str> {
     type State = ();
 
-    type Element = crate::widget::TextWidget;
+    type Element = masonry::widget::Label;
 
     fn build(&self, cx: &mut Cx) -> (crate::view::Id, Self::State, Self::Element) {
-        let (id, element) = cx.with_new_id(|_| crate::widget::TextWidget::new(self.clone()));
+        let (id, element) = cx.with_new_id(|_| masonry::widget::Label::new(self.clone()));
         (id, (), element)
     }
 
@@ -114,18 +113,17 @@ impl<T, A> View<T, A> for Cow<'static, str> {
         prev: &Self,
         _id: &mut Id,
         _state: &mut Self::State,
-        element: &mut Self::Element,
+        element: &mut WidgetMut<Self::Element>,
     ) -> ChangeFlags {
         if prev != self {
-            element.set_text(self.clone())
-        } else {
-            ChangeFlags::empty()
+            element.set_text(self.clone());
         }
+        ChangeFlags::empty()
     }
 
     fn message(
         &self,
-        _id_path: &[xilem_core::Id],
+        _id_path: &[WidgetId],
         _state: &mut Self::State,
         message: Box<dyn std::any::Any>,
         _app_state: &mut T,

@@ -14,10 +14,11 @@
 
 use std::any::Any;
 
-use crate::view::ViewMarker;
-use crate::{view::Id, widget::ChangeFlags, MessageResult};
+use crate::view::{Cx, Id, View, ViewMarker};
+use crate::{widget::ChangeFlags, MessageResult};
 
-use super::{Cx, View};
+use masonry::widget::WidgetMut;
+use masonry::WidgetId;
 
 pub struct Switch<T, A> {
     is_on: bool,
@@ -46,11 +47,10 @@ impl<T, A> ViewMarker for Switch<T, A> {}
 impl<T, A> View<T, A> for Switch<T, A> {
     type State = ();
 
-    type Element = crate::widget::Switch;
+    type Element = masonry::widget::Checkbox;
 
     fn build(&self, cx: &mut Cx) -> (crate::view::Id, Self::State, Self::Element) {
-        let (id, element) =
-            cx.with_new_id(|cx| crate::widget::Switch::new(cx.id_path(), self.is_on));
+        let (id, element) = cx.with_new_id(|cx| masonry::widget::Checkbox::new(self.is_on, ""));
         (id, (), element)
     }
 
@@ -60,18 +60,17 @@ impl<T, A> View<T, A> for Switch<T, A> {
         prev: &Self,
         _id: &mut Id,
         _state: &mut Self::State,
-        element: &mut Self::Element,
+        element: &mut WidgetMut<Self::Element>,
     ) -> ChangeFlags {
         if prev.is_on != self.is_on {
-            element.set_is_on(self.is_on)
-        } else {
-            ChangeFlags::default()
+            element.set_checked(self.is_on)
         }
+        ChangeFlags::default()
     }
 
     fn message(
         &self,
-        _id_path: &[Id],
+        _id_path: &[WidgetId],
         _state: &mut Self::State,
         _message: Box<dyn Any>,
         app_state: &mut T,

@@ -14,9 +14,11 @@
 
 use std::{any::Any, marker::PhantomData};
 
-use crate::{view::View, widget::ChangeFlags, MessageResult};
-
+use masonry::widget::WidgetMut;
+use masonry::WidgetId;
 use xilem_core::Id;
+
+use crate::{view::View, widget::ChangeFlags, MessageResult};
 
 use super::{Cx, ViewMarker, ViewSequence};
 
@@ -44,14 +46,14 @@ impl<T, A, C: View<T, A>> View<T, A> for ScrollView<T, A, C>
 where
     C::Element: 'static,
 {
-    type State = (Id, C::State);
+    type State = (WidgetId, C::State);
 
-    type Element = crate::widget::ScrollView;
+    type Element = masonry::widget::Portal<C::Element>;
 
     fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
         let (id, (child_id, child_state, child_element)) =
             cx.with_new_id(|cx| self.child.build(cx));
-        let element = crate::widget::ScrollView::new(child_element);
+        let element = masonry::widget::Portal::new(child_element);
         (id, (child_id, child_state), element)
     }
 
@@ -61,7 +63,7 @@ where
         prev: &Self,
         id: &mut Id,
         state: &mut Self::State,
-        element: &mut Self::Element,
+        element: &mut WidgetMut<Self::Element>,
     ) -> ChangeFlags {
         cx.with_id(*id, |cx| {
             let child_element = element.child_mut().downcast_mut().unwrap();
@@ -72,7 +74,7 @@ where
 
     fn message(
         &self,
-        id_path: &[Id],
+        id_path: &[WidgetId],
         state: &mut Self::State,
         message: Box<dyn Any>,
         app_state: &mut T,

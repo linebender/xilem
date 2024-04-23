@@ -12,11 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::any::Any;
+use std::marker::PhantomData;
+
+use masonry::WidgetId;
+
 use crate::view::{Cx, ElementsSplice, ViewSequence};
 use crate::widget::ChangeFlags;
 use crate::MessageResult;
-use std::any::Any;
-use std::marker::PhantomData;
 
 /// A simple view sequence which builds a dynamic amount of sub sequences.
 pub struct List<T, A, VT: ViewSequence<T, A>, F: Fn(usize) -> VT + Send> {
@@ -111,7 +114,7 @@ impl<T, A, VT: ViewSequence<T, A>, F: Fn(usize) -> VT + Send> ViewSequence<T, A>
 
     fn message(
         &self,
-        id_path: &[xilem_core::Id],
+        id_path: &[WidgetId],
         state: &mut Self::State,
         message: Box<dyn Any>,
         app_state: &mut T,

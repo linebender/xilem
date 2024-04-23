@@ -18,15 +18,17 @@ use std::num::NonZeroU64;
 /// A stable identifier for an element.
 pub struct Id(NonZeroU64);
 
-impl Id {
+impl WidgetId {
     /// Allocate a new, unique `Id`.
-    pub fn next() -> Id {
+    pub fn next() -> WidgetId {
         use std::sync::atomic::{AtomicU64, Ordering};
         static WIDGET_ID_COUNTER: AtomicU64 = AtomicU64::new(1);
-        Id(WIDGET_ID_COUNTER
-            .fetch_add(1, Ordering::Relaxed)
-            .try_into()
-            .unwrap())
+        WidgetId(
+            WIDGET_ID_COUNTER
+                .fetch_add(1, Ordering::Relaxed)
+                .try_into()
+                .unwrap(),
+        )
     }
 
     pub fn to_raw(self) -> u64 {

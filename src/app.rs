@@ -23,10 +23,7 @@ use vello::{
 };
 use xilem_core::{AsyncWake, MessageResult};
 
-use crate::widget::{
-    BoxConstraints, CxState, EventCx, LayoutCx, LifeCycle, LifeCycleCx, PaintCx, Pod, PodFlags,
-    UpdateCx, ViewContext, WidgetState,
-};
+use crate::widget::{BoxConstraints, LifeCycle, ViewContext};
 use crate::{
     view::{Cx, Id, View},
     widget::Event,
@@ -43,8 +40,8 @@ pub struct App<T, V: View<T>> {
     return_chan: tokio::sync::mpsc::Sender<(V, V::State, HashSet<Id>)>,
     id: Option<Id>,
     events: Vec<Message>,
-    root_state: WidgetState,
-    root_pod: Option<Pod>,
+    root_state: (),
+    root_pod: Option<()>,
     size: Size,
     new_size: Size,
     cursor_pos: Option<Point>,
@@ -157,7 +154,7 @@ where
             id: None,
             root_pod: None,
             events: Vec::new(),
-            root_state: WidgetState::new(crate::id::Id::next()),
+            root_state: todo!(),
             size: Default::default(),
             new_size: Default::default(),
             cursor_pos: None,
@@ -176,6 +173,7 @@ where
     /// This is not just painting, but involves processing events, doing layout
     /// if needed, updating the accessibility tree, and then actually painting.
     pub fn paint(&mut self) {
+        #[cfg(FALSE)]
         loop {
             self.send_events();
             // TODO: be more lazy re-rendering
@@ -249,10 +247,6 @@ where
 
         self.ensure_root();
         let root_pod = self.root_pod.as_mut().unwrap();
-        let mut cx_state =
-            CxState::new(&mut self.font_cx, &self.cx.tree_structure, &mut self.events);
-        let mut event_cx = EventCx::new(&mut cx_state, &mut self.root_state);
-        root_pod.event(&mut event_cx, &event);
         self.send_events();
     }
 
@@ -286,7 +280,7 @@ where
         if let Some(response) = self.response_chan.blocking_recv() {
             let state = if let Some(root_pod) = self.root_pod.as_mut() {
                 let mut state = response.state.unwrap();
-                let changes = self.cx.with_pod(root_pod, |root_el, cx| {
+                let changes = self.cx.with_widget(root_pod, |root_el, cx| {
                     response.view.rebuild(
                         cx,
                         response.prev.as_ref().unwrap(),
@@ -303,7 +297,7 @@ where
                 );
                 state
             } else {
-                let (id, state, root_pod) = self.cx.with_new_pod(|cx| response.view.build(cx));
+                let (id, state, root_pod) = self.cx.with_new_widget(|cx| response.view.build(cx));
                 assert!(self.cx.id_path_is_empty(), "id path imbalance on build");
                 assert!(
                     self.cx.element_id_path_is_empty(),
