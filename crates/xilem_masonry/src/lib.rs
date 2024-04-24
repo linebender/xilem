@@ -17,8 +17,12 @@ use winit::{
 };
 
 mod id;
+mod sequence;
+mod vec_splice;
 pub mod view;
-pub use id::Id;
+pub use id::ViewId;
+pub use sequence::{ElementSplice, ViewSequence};
+pub use vec_splice::VecSplice;
 
 pub struct Xilem<State, Logic, View>
 where
@@ -91,15 +95,19 @@ where
             let message_result =
                 self.current_view
                     .message(id_path.as_slice(), Box::new(action), &mut self.state);
-            let build = match message_result {
+            let rebuild = match message_result {
                 MessageResult::Action(()) => {
                     // It's not entirely clear what to do here
                     true
                 }
                 MessageResult::RequestRebuild => true,
                 MessageResult::Nop => false,
+                MessageResult::Stale(_) => {
+                    tracing::info!("Discarding message");
+                    false
+                }
             };
-            if build {
+            if rebuild {
                 let next_view = (self.logic)(&mut self.state);
                 let mut root = ctx.get_root::<RootWidget<View::Element>>();
                 let element = root.get_element();
@@ -179,12 +187,12 @@ where
         EventLoopRunner::new(self.root_widget, window, event_loop, self.driver).run()
     }
 }
-pub trait MasonryView<State, Action = ()> {
+pub trait MasonryView<State, Action = ()>: Send + 'static {
     type Element: Widget + StoreInWidgetMut;
     fn build(&self, cx: &mut ViewCx) -> WidgetPod<Self::Element>;
     fn message(
         &self,
-        id_path: &[Id],
+        id_path: &[ViewId],
         message: Box<dyn Any>,
         app_state: &mut State,
     ) -> MessageResult<Action>;
@@ -197,6 +205,7 @@ pub trait MasonryView<State, Action = ()> {
     ) -> ChangeFlags;
 }
 
+#[must_use]
 pub struct ChangeFlags {
     changed: bool,
 }
@@ -207,8 +216,8 @@ impl ChangeFlags {
 }
 
 pub struct ViewCx {
-    widget_map: HashMap<WidgetId, Vec<Id>>,
-    id_path: Vec<Id>,
+    widget_map: HashMap<WidgetId, Vec<ViewId>>,
+    id_path: Vec<ViewId>,
 }
 
 impl ViewCx {
@@ -223,7 +232,7 @@ impl ViewCx {
         value
     }
 
-    pub fn with_id<R>(&mut self, id: Id, f: impl FnOnce(&mut Self) -> R) -> R {
+    pub fn with_id<R>(&mut self, id: ViewId, f: impl FnOnce(&mut Self) -> R) -> R {
         self.id_path.push(id);
         let res = f(self);
         self.id_path.pop();
@@ -238,5 +247,5 @@ pub enum MessageResult<A> {
     RequestRebuild,
     #[default]
     Nop,
-    // Stale(Box<dyn Any>),
+    Stale(Box<dyn Any>),
 }

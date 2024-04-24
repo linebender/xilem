@@ -1,6 +1,6 @@
 use masonry::{widget::WidgetMut, ArcStr, WidgetPod};
 
-use crate::{ChangeFlags, Id, MasonryView, ViewCx};
+use crate::{ChangeFlags, MasonryView, ViewCx, ViewId};
 
 pub fn button<F, State, Action>(label: impl Into<ArcStr>, callback: F) -> Button<F>
 where
@@ -28,7 +28,7 @@ where
     }
     fn message(
         &self,
-        _id_path: &[Id],
+        _id_path: &[ViewId],
         // TODO: Ensure is masonry button pressed action?
         _message: Box<dyn std::any::Any>,
         app_state: &mut State,
