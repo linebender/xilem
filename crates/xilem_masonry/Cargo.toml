@@ -1,0 +1,19 @@
+[package]
+name = "xilem_masonry"
+version = "0.1.0"
+edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
+license.workspace = true
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+masonry.workspace = true
+winit.workspace = true
+tracing = "0.1.40"
+vello.workspace = true
+smallvec = "1.13.2"
+
+[lints]
+workspace = true

@@ -11,12 +11,10 @@ use std::sync::Arc;
 
 use masonry::app_driver::{AppDriver, DriverCtx};
 use masonry::event_loop_runner::EventLoopRunner;
-use masonry::testing::TestHarness;
 use masonry::widget::{Align, CrossAxisAlignment, Flex, Label, SizedBox, WidgetRef};
 use masonry::{
-    assert_render_snapshot, Action, BoxConstraints, Color, EventCtx, LayoutCtx, LifeCycle,
-    LifeCycleCtx, PaintCtx, Point, PointerEvent, Size, StatusChange, TextEvent, Widget, WidgetId,
-    WidgetPod,
+    Action, BoxConstraints, Color, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Point,
+    PointerEvent, Size, StatusChange, TextEvent, Widget, WidgetId, WidgetPod,
 };
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace, trace_span, Span};

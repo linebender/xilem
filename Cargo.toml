@@ -7,6 +7,8 @@ members = [
     "crates/xilem_web/web_examples/todomvc",
     "crates/xilem_web/web_examples/mathml_svg",
     "crates/xilem_web/web_examples/svgtoy",
+    "crates/masonry",
+    "crates/xilem_masonry",
 ]
 
 [workspace.package]
@@ -17,7 +19,10 @@ license = "Apache-2.0"
 
 [workspace.dependencies]
 xilem_core = { version = "0.1.0", path = "crates/xilem_core" }
+masonry = { version = "0.1.0", path = "crates/masonry" }
 kurbo = "0.11.0"
+winit = { version = "0.29", features = ["rwh_05"] }
+vello = { git = "https://github.com/linebender/vello/", rev = "b520a35addfa6bbb37d93491d2b8236528faf3b5" }
 
 [workspace.lints]
 clippy.semicolon_if_nothing_returned = "warn"
@@ -29,7 +34,7 @@ description = "A next-generation cross-platform Rust UI framework."
 keywords = ["gui", "ui", "native", "gpu", "performance"]
 categories = ["gui", "graphics", "internationalization", "accessibility"]
 exclude = ["/.github/"]
-publish = false # Until it's ready
+publish = false                                                           # Until it's ready
 license.workspace = true
 edition.workspace = true
 homepage.workspace = true
