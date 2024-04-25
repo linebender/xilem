@@ -219,3 +219,145 @@ impl<T, A, Marker, VT: ViewSequence<T, A, Marker>> ViewSequence<T, A, (WasASeque
         self.iter().map(ViewSequence::count).sum()
     }
 }
+
+impl<T, A> ViewSequence<T, A, ()> for () {
+    fn build(&self, _: &mut ViewCx, _: &mut dyn ElementSplice) {}
+
+    fn rebuild(
+        &self,
+        _cx: &mut ViewCx,
+        _prev: &Self,
+        _elements: &mut dyn ElementSplice,
+    ) -> ChangeFlags {
+        ChangeFlags::UNCHANGED
+    }
+
+    fn message(
+        &self,
+        id_path: &[ViewId],
+        message: Box<dyn std::any::Any>,
+        _app_state: &mut T,
+    ) -> MessageResult<A> {
+        tracing::warn!(?id_path, "Dispatched message to empty tuple");
+        MessageResult::Stale(message)
+    }
+
+    fn count(&self) -> usize {
+        0
+    }
+}
+
+impl<State, Action, M0, Seq0: ViewSequence<State, Action, M0>> ViewSequence<State, Action, (M0,)>
+    for (Seq0,)
+{
+    fn build(&self, cx: &mut ViewCx, elements: &mut dyn ElementSplice) {
+        self.0.build(cx, elements)
+    }
+
+    fn rebuild(
+        &self,
+        cx: &mut ViewCx,
+        prev: &Self,
+        elements: &mut dyn ElementSplice,
+    ) -> ChangeFlags {
+        self.0.rebuild(cx, &prev.0, elements)
+    }
+
+    fn message(
+        &self,
+        id_path: &[ViewId],
+        message: Box<dyn std::any::Any>,
+        app_state: &mut State,
+    ) -> MessageResult<Action> {
+        self.0.message(id_path, message, app_state)
+    }
+
+    fn count(&self) -> usize {
+        self.0.count()
+    }
+}
+
+const BASE_ID: NonZeroU64 = match NonZeroU64::new(1) {
+    Some(it) => it,
+    None => unreachable!(),
+};
+
+macro_rules! impl_view_tuple {
+    (
+        $($marker: ident, $seq: ident, $idx: tt);+
+    ) => {
+        impl<
+                State,
+                Action,
+                $(
+                    $marker,
+                    $seq: ViewSequence<State, Action, $marker>,
+                )+
+            > ViewSequence<State, Action, ($($marker,)+)> for ($($seq,)+)
+        {
+            fn build(&self, cx: &mut ViewCx, elements: &mut dyn ElementSplice) {
+                $(
+                    cx.with_id(ViewId::for_type::<$seq>(BASE_ID.saturating_add($idx)), |cx| {
+                        self.$idx.build(cx, elements);
+                    });
+                )+
+            }
+
+            fn rebuild(
+                &self,
+                cx: &mut ViewCx,
+                prev: &Self,
+                elements: &mut dyn ElementSplice,
+            ) -> ChangeFlags {
+                let mut flags = ChangeFlags::UNCHANGED;
+                $(
+                    cx.with_id(ViewId::for_type::<$seq>(BASE_ID.saturating_add($idx)), |cx| {
+                        flags.changed |= self.$idx.rebuild(cx, &prev.$idx, elements).changed;
+                    });
+                )+
+                flags
+            }
+
+            fn message(
+                &self,
+                id_path: &[ViewId],
+                message: Box<dyn std::any::Any>,
+                app_state: &mut State,
+            ) -> MessageResult<Action> {
+                let (start, rest) = id_path
+                    .split_first()
+                    .expect("Id path has elements for vector");
+                let index_plus_one = start.routing_id().get();
+                match index_plus_one - 1 {
+                    $(
+                        $idx => self.$idx.message(rest, message, app_state),
+                    )+
+                    // TODO: Should not panic? Is this a dynamic viewsequence thing?
+                    _ => unreachable!("Unexpected id path {start:?} in tuple"),
+                }
+            }
+
+            fn count(&self) -> usize {
+                // Is there a way to do this which avoids the `+0`?
+                $(self.$idx.count()+)+ 0
+            }
+        }
+    };
+}
+
+// We implement for tuples of length up to 15
+impl_view_tuple!(M0, Seq0, 0; M1, Seq1, 1);
+impl_view_tuple!(M0, Seq0, 0; M1, Seq1, 1; M2, Seq2, 2);
+impl_view_tuple!(M0, Seq0, 0; M1, Seq1, 1; M2, Seq2, 2; M3, Seq3, 3);
+impl_view_tuple!(M0, Seq0, 0; M1, Seq1, 1; M2, Seq2, 2; M3, Seq3, 3; M4, Seq4, 4);
+impl_view_tuple!(M0, Seq0, 0; M1, Seq1, 1; M2, Seq2, 2; M3, Seq3, 3; M4, Seq4, 4; M5, Seq5, 5);
+impl_view_tuple!(M0, Seq0, 0; M1, Seq1, 1; M2, Seq2, 2; M3, Seq3, 3; M4, Seq4, 4; M5, Seq5, 5; M6, Seq6, 6);
+impl_view_tuple!(M0, Seq0, 0; M1, Seq1, 1; M2, Seq2, 2; M3, Seq3, 3; M4, Seq4, 4; M5, Seq5, 5; M6, Seq6, 6; M7, Seq7, 7);
+impl_view_tuple!(M0, Seq0, 0; M1, Seq1, 1; M2, Seq2, 2; M3, Seq3, 3; M4, Seq4, 4; M5, Seq5, 5; M6, Seq6, 6; M7, Seq7, 7; M8, Seq8, 8);
+impl_view_tuple!(M0, Seq0, 0; M1, Seq1, 1; M2, Seq2, 2; M3, Seq3, 3; M4, Seq4, 4; M5, Seq5, 5; M6, Seq6, 6; M7, Seq7, 7; M8, Seq8, 8; M9, Seq9, 9);
+impl_view_tuple!(M0, Seq0, 0; M1, Seq1, 1; M2, Seq2, 2; M3, Seq3, 3; M4, Seq4, 4; M5, Seq5, 5; M6, Seq6, 6; M7, Seq7, 7; M8, Seq8, 8; M9, Seq9, 9; M10, Seq10, 10);
+impl_view_tuple!(M0, Seq0, 0; M1, Seq1, 1; M2, Seq2, 2; M3, Seq3, 3; M4, Seq4, 4; M5, Seq5, 5; M6, Seq6, 6; M7, Seq7, 7; M8, Seq8, 8; M9, Seq9, 9; M10, Seq10, 10; M11, Seq11, 11);
+impl_view_tuple!(M0, Seq0, 0; M1, Seq1, 1; M2, Seq2, 2; M3, Seq3, 3; M4, Seq4, 4; M5, Seq5, 5; M6, Seq6, 6; M7, Seq7, 7; M8, Seq8, 8; M9, Seq9, 9; M10, Seq10, 10; M11, Seq11, 11; M12, Seq12, 12);
+impl_view_tuple!(M0, Seq0, 0; M1, Seq1, 1; M2, Seq2, 2; M3, Seq3, 3; M4, Seq4, 4; M5, Seq5, 5; M6, Seq6, 6; M7, Seq7, 7; M8, Seq8, 8; M9, Seq9, 9; M10, Seq10, 10; M11, Seq11, 11; M12, Seq12, 12; M13, Seq13, 13);
+impl_view_tuple!(M0, Seq0, 0; M1, Seq1, 1; M2, Seq2, 2; M3, Seq3, 3; M4, Seq4, 4; M5, Seq5, 5; M6, Seq6, 6; M7, Seq7, 7; M8, Seq8, 8; M9, Seq9, 9; M10, Seq10, 10; M11, Seq11, 11; M12, Seq12, 12; M13, Seq13, 13; M14, Seq14, 14);
+impl_view_tuple!(M0, Seq0, 0; M1, Seq1, 1; M2, Seq2, 2; M3, Seq3, 3; M4, Seq4, 4; M5, Seq5, 5; M6, Seq6, 6; M7, Seq7, 7; M8, Seq8, 8; M9, Seq9, 9; M10, Seq10, 10; M11, Seq11, 11; M12, Seq12, 12; M13, Seq13, 13; M14, Seq14, 14; M15, Seq15, 15);
