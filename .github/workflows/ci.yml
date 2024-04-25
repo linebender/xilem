@@ -4,11 +4,11 @@ env:
   # come automatically. If the version specified here is no longer the latest stable version,
   # then please feel free to submit a PR that adjusts it along with the potential clippy fixes.
   RUST_STABLE_VER: "1.77" # In quotes because otherwise 1.70 would be interpreted as 1.7
-  # We do not run the masonry snapshot tests, because those require wgpu to be working 
-  # (and specific font stacks at the moment)
-  # We will fix this
-  # See https://github.com/linebender/vello/pull/439
+  # We do not run the masonry snapshot tests, because those require a specific font stack
   SKIP_RENDER_SNAPSHOTS: 1
+  # We do not run the masonry render tests, because those require Vello rendering to be working
+  # See https://github.com/linebender/vello/pull/439
+  SKIP_RENDER_TESTS: 1
 
 # Rationale
 #
