@@ -94,15 +94,15 @@ impl<'a, 'b, T> VecSplice<'a, 'b, T> {
 
 impl ElementSplice for VecSplice<'_, '_, masonry::WidgetPod<Box<dyn masonry::Widget>>> {
     fn push(&mut self, element: masonry::WidgetPod<Box<dyn masonry::Widget>>) {
-        self.push(element)
+        self.push(element);
     }
 
-    fn mutate<'a>(&'a mut self) -> WidgetMut<Box<dyn masonry::Widget>> {
+    fn mutate(&mut self) -> WidgetMut<Box<dyn masonry::Widget>> {
         unreachable!("VecSplice can only be used for `build`, not rebuild")
     }
 
     fn delete(&mut self, n: usize) {
-        self.delete(n)
+        self.delete(n);
     }
 
     fn len(&self) -> usize {

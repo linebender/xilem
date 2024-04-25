@@ -38,7 +38,7 @@ where
             "ViewSequence shouldn't leave splice in strange state"
         );
         for item in elements.drain(..) {
-            view = view.with_child_pod(item);
+            view = view.with_child_pod(item).with_default_spacer();
         }
         WidgetPod::new(view)
     }
@@ -75,7 +75,7 @@ impl ElementSplice for FlexSplice<'_> {
         self.ix += 1;
     }
 
-    fn mutate<'a>(&'a mut self) -> WidgetMut<'a, Box<dyn Widget>> {
+    fn mutate(&mut self) -> WidgetMut<Box<dyn Widget>> {
         #[cfg(debug_assertions)]
         let mut iterations = 0;
         #[cfg(debug_assertions)]
@@ -109,7 +109,7 @@ impl ElementSplice for FlexSplice<'_> {
                     deleted_count += 1;
                 }
             }
-            self.element.remove_child(self.ix)
+            self.element.remove_child(self.ix);
         }
     }
 

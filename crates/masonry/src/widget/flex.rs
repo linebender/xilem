@@ -237,6 +237,10 @@ impl Flex {
     pub fn len(&self) -> usize {
         self.children.len()
     }
+
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
 }
 
 // --- Mutate live Flex - WidgetMut ---

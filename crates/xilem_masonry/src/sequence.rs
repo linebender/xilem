@@ -4,12 +4,13 @@ use masonry::{widget::WidgetMut, Widget, WidgetPod};
 
 use crate::{ChangeFlags, MasonryView, MessageResult, ViewCx, ViewId};
 
+#[allow(clippy::len_without_is_empty)]
 pub trait ElementSplice {
     /// Insert a new element at the current index in the resulting collection (and increment the index by 1)
     fn push(&mut self, element: WidgetPod<Box<dyn Widget>>);
     /// Mutate the next existing element, and add it to the resulting collection (and increment the index by 1)
     // TODO: This should actually return `WidgetMut<dyn Widget>`, but that isn't supported in Masonry itself yet
-    fn mutate<'a>(&'a mut self) -> WidgetMut<Box<dyn Widget>>;
+    fn mutate(&mut self) -> WidgetMut<Box<dyn Widget>>;
     /// Delete the next n existing elements (this doesn't change the index)
     fn delete(&mut self, n: usize);
     /// Current length of the elements collection
@@ -91,7 +92,7 @@ impl<State, Action, View: MasonryView<State, Action>> ViewSequence<State, Action
         message: Box<dyn std::any::Any>,
         app_state: &mut State,
     ) -> MessageResult<Action> {
-        self.message(&id_path, message, app_state)
+        self.message(id_path, message, app_state)
     }
 
     fn count(&self) -> usize {
@@ -140,7 +141,7 @@ impl<State, Action, Marker, VT: ViewSequence<State, Action, Marker>>
         app_state: &mut State,
     ) -> MessageResult<Action> {
         if let Some(this) = self {
-            this.message(&id_path, message, app_state)
+            this.message(id_path, message, app_state)
         } else {
             MessageResult::Stale(message)
         }
@@ -163,7 +164,7 @@ impl<T, A, Marker, VT: ViewSequence<T, A, Marker>> ViewSequence<T, A, (WasASeque
             let i: u64 = i.try_into().unwrap();
             let id = NonZeroU64::new(i + 1).unwrap();
             cx.with_id(ViewId::for_type::<VT>(id), |cx| child.build(cx, elements));
-        })
+        });
     }
 
     fn rebuild(
@@ -187,6 +188,8 @@ impl<T, A, Marker, VT: ViewSequence<T, A, Marker>> ViewSequence<T, A, (WasASeque
             elements.delete(n_delete);
             changed.changed |= ChangeFlags::CHANGED.changed;
         } else if n > prev.len() {
+            // This suggestion from clippy is kind of bad, because we use the absolute index in the id
+            #[allow(clippy::needless_range_loop)]
             for ix in prev.len()..n {
                 let id_u64: u64 = ix.try_into().unwrap();
                 let id = NonZeroU64::new(id_u64 + 1).unwrap();

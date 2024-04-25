@@ -1,3 +1,4 @@
+#![allow(clippy::comparison_chain)]
 use std::{any::Any, collections::HashMap};
 
 use masonry::{
@@ -49,10 +50,10 @@ masonry::declare_widget!(RootWidgetMut, RootWidget<E: (Widget)>);
 
 impl<E: 'static + Widget> Widget for RootWidget<E> {
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
-        self.pod.on_pointer_event(ctx, event)
+        self.pod.on_pointer_event(ctx, event);
     }
     fn on_text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent) {
-        self.pod.on_text_event(ctx, event)
+        self.pod.on_text_event(ctx, event);
     }
 
     fn on_status_change(&mut self, _: &mut LifeCycleCtx, _: &StatusChange) {
@@ -60,7 +61,7 @@ impl<E: 'static + Widget> Widget for RootWidget<E> {
     }
 
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
-        self.pod.lifecycle(ctx, event)
+        self.pod.lifecycle(ctx, event);
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
@@ -70,7 +71,7 @@ impl<E: 'static + Widget> Widget for RootWidget<E> {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
-        self.pod.paint(ctx, scene)
+        self.pod.paint(ctx, scene);
     }
 
     fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
@@ -114,7 +115,8 @@ where
 
                 let changed = next_view.rebuild(&mut self.view_cx, &self.current_view, element);
                 if !changed.changed {
-                    tracing::debug!("TODO: Skip some work?")
+                    // Masonry manages all of this itself - ChangeFlags is probably not needed?
+                    tracing::debug!("TODO: Skip some work?");
                 }
                 self.current_view = next_view;
             }
@@ -216,6 +218,10 @@ impl ChangeFlags {
 }
 
 pub struct ViewCx {
+    /// The map from a widgets id to its position in the View tree.
+    ///
+    /// This includes only the widgets which might send actions
+    /// This is currently never cleaned up
     widget_map: HashMap<WidgetId, Vec<ViewId>>,
     id_path: Vec<ViewId>,
 }
