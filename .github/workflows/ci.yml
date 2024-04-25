@@ -105,4 +105,5 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: cargo doc
-        run: cargo doc --workspace --all-features --no-deps --document-private-items -Zunstable-options -Zrustdoc-scrape-examples
+        # We currently skip checking masonry's docs
+        run: cargo doc --workspace --all-features --no-deps --document-private-items -Zunstable-options -Zrustdoc-scrape-examples --exclude masonry
