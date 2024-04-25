@@ -1,7 +1,7 @@
 // Copyright 2023 the Druid Authors.
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::WidgetPod;
+use masonry::widget::WidgetMut;
 
 use crate::ElementSplice;
 
@@ -77,6 +77,13 @@ impl<'a, 'b, T> VecSplice<'a, 'b, T> {
         self.len() == 0
     }
 
+    pub fn as_vec<R, F: FnOnce(&mut Vec<T>) -> R>(&mut self, f: F) -> R {
+        self.clear_tail();
+        let ret = f(self.v);
+        self.ix = self.v.len();
+        ret
+    }
+
     fn clear_tail(&mut self) {
         if self.v.len() > self.ix {
             let removed = self.v.splice(self.ix.., []).rev();
@@ -90,8 +97,8 @@ impl ElementSplice for VecSplice<'_, '_, masonry::WidgetPod<Box<dyn masonry::Wid
         self.push(element)
     }
 
-    fn mutate<'a>(&'a mut self) -> &mut WidgetPod<Box<dyn masonry::Widget>> {
-        self.mutate()
+    fn mutate<'a>(&'a mut self) -> WidgetMut<Box<dyn masonry::Widget>> {
+        unreachable!("VecSplice can only be used for `build`, not rebuild")
     }
 
     fn delete(&mut self, n: usize) {

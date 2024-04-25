@@ -1,6 +1,7 @@
 // On Windows platform, don't show a console when opening the app.
 #![windows_subsystem = "windows"]
-use xilem_masonry::view::button;
+use masonry::ArcStr;
+use xilem_masonry::view::{button, flex};
 use xilem_masonry::{MasonryView, Xilem};
 
 fn app_logic(data: &mut AppData) -> impl MasonryView<AppData> {
@@ -14,9 +15,20 @@ fn app_logic(data: &mut AppData) -> impl MasonryView<AppData> {
 
     // The actual UI Code starts here
 
-    button(label, |data: &mut AppData| {
+    let mut sequence = vec![
+        the_button(label, 1),
+        the_button("Decrement".to_string(), -1),
+    ];
+    for x in 0..count {
+        sequence.push(the_button(format!("+{}", x), x));
+    }
+    flex(sequence)
+}
+
+fn the_button(label: impl Into<ArcStr>, count: i32) -> impl MasonryView<AppData> {
+    button(label, move |data: &mut AppData| {
         println!("clicked");
-        data.count += 1;
+        data.count += count;
     })
 }
 

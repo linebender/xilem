@@ -1,6 +1,6 @@
 use std::num::NonZeroU64;
 
-use masonry::{Widget, WidgetCtx, WidgetPod};
+use masonry::{widget::WidgetMut, Widget, WidgetPod};
 
 use crate::{ChangeFlags, MasonryView, MessageResult, ViewCx, ViewId};
 
@@ -8,10 +8,12 @@ pub trait ElementSplice {
     /// Insert a new element at the current index in the resulting collection (and increment the index by 1)
     fn push(&mut self, element: WidgetPod<Box<dyn Widget>>);
     /// Mutate the next existing element, and add it to the resulting collection (and increment the index by 1)
-    fn mutate<'a>(&'a mut self) -> &mut WidgetPod<Box<dyn Widget>>;
+    // TODO: This should actually return `WidgetMut<dyn Widget>`, but that isn't supported in Masonry itself yet
+    fn mutate<'a>(&'a mut self) -> WidgetMut<Box<dyn Widget>>;
     /// Delete the next n existing elements (this doesn't change the index)
     fn delete(&mut self, n: usize);
     /// Current length of the elements collection
+    // TODO: Is `len` needed?
     fn len(&self) -> usize;
 }
 
@@ -32,7 +34,6 @@ pub trait ViewSequence<State, Action, Marker>: Send + 'static {
         &self,
         cx: &mut ViewCx,
         prev: &Self,
-        widget_ctx: &mut WidgetCtx<'_>,
         elements: &mut dyn ElementSplice,
     ) -> ChangeFlags;
 
@@ -51,8 +52,14 @@ pub trait ViewSequence<State, Action, Marker>: Send + 'static {
     fn count(&self) -> usize;
 }
 
-struct WasAView;
-struct WasASequence;
+/// Workaround for trait ambiguity
+///
+/// These need to be public for type inference
+#[doc(hidden)]
+pub struct WasAView;
+#[doc(hidden)]
+/// See [`WasAView`]
+pub struct WasASequence;
 
 impl<State, Action, View: MasonryView<State, Action>> ViewSequence<State, Action, WasAView>
     for View
@@ -66,12 +73,10 @@ impl<State, Action, View: MasonryView<State, Action>> ViewSequence<State, Action
         &self,
         cx: &mut ViewCx,
         prev: &Self,
-        widget_ctx: &mut WidgetCtx<'_>,
         elements: &mut dyn ElementSplice,
     ) -> ChangeFlags {
-        let element = elements.mutate();
-        let mut mutable = widget_ctx.get_mut(element);
-        let downcast = mutable.downcast::<View::Element>();
+        let mut element = elements.mutate();
+        let downcast = element.downcast::<View::Element>();
 
         if let Some(element) = downcast {
             self.rebuild(cx, prev, element)
@@ -110,11 +115,10 @@ impl<State, Action, Marker, VT: ViewSequence<State, Action, Marker>>
         &self,
         cx: &mut ViewCx,
         prev: &Self,
-        widget_ctx: &mut WidgetCtx<'_>,
         elements: &mut dyn ElementSplice,
     ) -> ChangeFlags {
         match (self, prev) {
-            (Some(this), Some(prev)) => this.rebuild(cx, prev, widget_ctx, elements),
+            (Some(this), Some(prev)) => this.rebuild(cx, prev, elements),
             (None, Some(prev)) => {
                 let count = prev.count();
                 elements.delete(count);
@@ -166,7 +170,6 @@ impl<T, A, Marker, VT: ViewSequence<T, A, Marker>> ViewSequence<T, A, (WasASeque
         &self,
         cx: &mut ViewCx,
         prev: &Self,
-        widget_ctx: &mut WidgetCtx<'_>,
         elements: &mut dyn ElementSplice,
     ) -> ChangeFlags {
         let mut changed = ChangeFlags::UNCHANGED;
@@ -174,7 +177,7 @@ impl<T, A, Marker, VT: ViewSequence<T, A, Marker>> ViewSequence<T, A, (WasASeque
             let i: u64 = i.try_into().unwrap();
             let id = NonZeroU64::new(i + 1).unwrap();
             cx.with_id(ViewId::for_type::<VT>(id), |cx| {
-                let el_changed = child.rebuild(cx, child_prev, widget_ctx, elements);
+                let el_changed = child.rebuild(cx, child_prev, elements);
                 changed.changed |= el_changed.changed;
             });
         }
