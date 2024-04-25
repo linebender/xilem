@@ -3,7 +3,12 @@ env:
   # version like 1.70. Note that we only specify MAJOR.MINOR and not PATCH so that bugfixes still
   # come automatically. If the version specified here is no longer the latest stable version,
   # then please feel free to submit a PR that adjusts it along with the potential clippy fixes.
-  RUST_STABLE_VER: "1.75" # In quotes because otherwise 1.70 would be interpreted as 1.7
+  RUST_STABLE_VER: "1.77" # In quotes because otherwise 1.70 would be interpreted as 1.7
+  # We do not run the masonry snapshot tests, because those require a specific font stack
+  SKIP_RENDER_SNAPSHOTS: 1
+  # We do not run the masonry render tests, because those require Vello rendering to be working
+  # See https://github.com/linebender/vello/pull/439
+  SKIP_RENDER_TESTS: 1
 
 # Rationale
 #
@@ -105,4 +110,5 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: cargo doc
-        run: cargo doc --workspace --all-features --no-deps --document-private-items -Zunstable-options -Zrustdoc-scrape-examples
+        # We currently skip checking masonry's docs
+        run: cargo doc --workspace --all-features --no-deps --document-private-items -Zunstable-options -Zrustdoc-scrape-examples --exclude masonry

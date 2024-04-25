@@ -150,21 +150,20 @@ impl Flex {
     /// Builder-style variant of `add_child`.
     ///
     /// Convenient for assembling a group of widgets in a single expression.
-    pub fn with_child(mut self, child: impl Widget) -> Self {
-        let child = Child::Fixed {
-            widget: WidgetPod::new(Box::new(child)),
-            alignment: None,
-        };
-        self.children.push(child);
-        self
+    pub fn with_child(self, child: impl Widget) -> Self {
+        self.with_child_pod(WidgetPod::new(Box::new(child)))
     }
 
     /// Builder-style variant of `add_child`, that takes the id that the child will have.
     ///
     /// Useful for unit tests.
-    pub fn with_child_id(mut self, child: impl Widget, id: WidgetId) -> Self {
+    pub fn with_child_id(self, child: impl Widget, id: WidgetId) -> Self {
+        self.with_child_pod(WidgetPod::new_with_id(Box::new(child), id))
+    }
+
+    pub fn with_child_pod(mut self, widget: WidgetPod<Box<dyn Widget>>) -> Self {
         let child = Child::Fixed {
-            widget: WidgetPod::new_with_id(Box::new(child), id),
+            widget,
             alignment: None,
         };
         self.children.push(child);
@@ -233,6 +232,14 @@ impl Flex {
         let new_child = Child::FlexedSpacer(flex, 0.0);
         self.children.push(new_child);
         self
+    }
+
+    pub fn len(&self) -> usize {
+        self.children.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
     }
 }
 
@@ -367,8 +374,13 @@ impl<'a> FlexMut<'a> {
     ///
     /// [`with_child`]: Flex::with_child
     pub fn insert_child(&mut self, idx: usize, child: impl Widget) {
+        self.insert_child_pod(idx, WidgetPod::new(Box::new(child)))
+    }
+
+    /// Add a non-flex child widget.
+    pub fn insert_child_pod(&mut self, idx: usize, widget: WidgetPod<Box<dyn Widget>>) {
         let child = Child::Fixed {
-            widget: WidgetPod::new(Box::new(child)),
+            widget,
             alignment: None,
         };
         self.widget.children.insert(idx, child);

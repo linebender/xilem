@@ -7,7 +7,7 @@
 use std::num::NonZeroUsize;
 
 use image::io::Reader as ImageReader;
-use image::RgbaImage;
+use image::{Rgba, RgbaImage};
 use vello::util::RenderContext;
 use vello::{block_on_wgpu, RendererOptions};
 use wgpu::{
@@ -230,6 +230,10 @@ impl TestHarness {
     // TODO - Should be async?
     /// Create a bitmap (an array of pixels), paint the window and return the bitmap as an 8-bits-per-channel RGB image.
     pub fn render(&mut self) -> RgbaImage {
+        let scene = self.render_root.redraw();
+        if std::env::var("SKIP_RENDER_TESTS").is_ok_and(|it| !it.is_empty()) {
+            return RgbaImage::from_pixel(1, 1, Rgba([255, 255, 255, 255]));
+        }
         let mut context =
             RenderContext::new().expect("Got non-Send/Sync error from creating render context");
         let device_id =
@@ -249,8 +253,6 @@ impl TestHarness {
             },
         )
         .expect("Got non-Send/Sync error from creating renderer");
-
-        let scene = self.render_root.redraw();
 
         // TODO - fix window_size
         let (width, height) = (self.window_size.width, self.window_size.height);

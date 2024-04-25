@@ -27,7 +27,9 @@ impl AppDriver for Driver {
             Action::ButtonPressed => {
                 println!("Hello");
             }
-            _ => {}
+            action => {
+                eprintln!("Unexpected action {action:?}")
+            }
         }
     }
 }
