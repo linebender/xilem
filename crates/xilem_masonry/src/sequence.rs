@@ -106,6 +106,8 @@ impl<State, Action, Marker, VT: ViewSequence<State, Action, Marker>>
     fn build(&self, cx: &mut ViewCx, elements: &mut dyn ElementSplice) {
         match self {
             Some(this) => {
+                // TODO: Assign a generation based ViewId here
+                // This needs view state, I think
                 this.build(cx, elements);
             }
             None => (),
@@ -127,6 +129,7 @@ impl<State, Action, Marker, VT: ViewSequence<State, Action, Marker>>
                 ChangeFlags::CHANGED
             }
             (Some(this), None) => {
+                // TODO: Assign an increased generation ViewId here.
                 this.build(cx, elements);
                 ChangeFlags::CHANGED
             }
@@ -175,6 +178,7 @@ impl<T, A, Marker, VT: ViewSequence<T, A, Marker>> ViewSequence<T, A, (WasASeque
     ) -> ChangeFlags {
         let mut changed = ChangeFlags::UNCHANGED;
         for (i, (child, child_prev)) in self.iter().zip(prev).enumerate() {
+            // TODO: Do we want these ids to (also?) have a generational component?
             let i: u64 = i.try_into().unwrap();
             let id = NonZeroU64::new(i + 1).unwrap();
             cx.with_id(ViewId::for_type::<VT>(id), |cx| {

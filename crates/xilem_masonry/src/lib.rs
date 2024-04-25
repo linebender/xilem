@@ -17,9 +17,11 @@ use winit::{
     window::{Window, WindowBuilder},
 };
 
+mod any_view;
 mod id;
 mod sequence;
 mod vec_splice;
+pub use any_view::{AnyMasonryView, BoxedMasonryView};
 pub mod view;
 pub use id::ViewId;
 pub use sequence::{ElementSplice, ViewSequence};
@@ -192,12 +194,7 @@ where
 pub trait MasonryView<State, Action = ()>: Send + 'static {
     type Element: Widget + StoreInWidgetMut;
     fn build(&self, cx: &mut ViewCx) -> WidgetPod<Self::Element>;
-    fn message(
-        &self,
-        id_path: &[ViewId],
-        message: Box<dyn Any>,
-        app_state: &mut State,
-    ) -> MessageResult<Action>;
+
     fn rebuild(
         &self,
         _cx: &mut ViewCx,
@@ -205,6 +202,13 @@ pub trait MasonryView<State, Action = ()>: Send + 'static {
         // _id: &mut Id,
         element: WidgetMut<Self::Element>,
     ) -> ChangeFlags;
+
+    fn message(
+        &self,
+        id_path: &[ViewId],
+        message: Box<dyn Any>,
+        app_state: &mut State,
+    ) -> MessageResult<Action>;
 }
 
 #[must_use]
