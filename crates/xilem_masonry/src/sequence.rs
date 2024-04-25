@@ -251,7 +251,7 @@ impl<State, Action, M0, Seq0: ViewSequence<State, Action, M0>> ViewSequence<Stat
     for (Seq0,)
 {
     fn build(&self, cx: &mut ViewCx, elements: &mut dyn ElementSplice) {
-        self.0.build(cx, elements)
+        self.0.build(cx, elements);
     }
 
     fn rebuild(
@@ -284,6 +284,8 @@ const BASE_ID: NonZeroU64 = match NonZeroU64::new(1) {
 
 macro_rules! impl_view_tuple {
     (
+        // We could use the ${index} metavariable here once it's stable
+        // https://veykril.github.io/tlborm/decl-macros/minutiae/metavar-expr.html
         $($marker: ident, $seq: ident, $idx: tt);+
     ) => {
         impl<
@@ -326,7 +328,7 @@ macro_rules! impl_view_tuple {
             ) -> MessageResult<Action> {
                 let (start, rest) = id_path
                     .split_first()
-                    .expect("Id path has elements for vector");
+                    .expect("Id path has elements for tuple");
                 let index_plus_one = start.routing_id().get();
                 match index_plus_one - 1 {
                     $(
@@ -345,7 +347,7 @@ macro_rules! impl_view_tuple {
     };
 }
 
-// We implement for tuples of length up to 15
+// We implement for tuples of length up to 15. 0 and 1 are special cased to be more efficient
 impl_view_tuple!(M0, Seq0, 0; M1, Seq1, 1);
 impl_view_tuple!(M0, Seq0, 0; M1, Seq1, 1; M2, Seq2, 2);
 impl_view_tuple!(M0, Seq0, 0; M1, Seq1, 1; M2, Seq2, 2; M3, Seq3, 3);
