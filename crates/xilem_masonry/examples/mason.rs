@@ -40,5 +40,5 @@ fn main() {
     let data = AppData { count: 0 };
 
     let app = Xilem::new(data, app_logic);
-    app.run_windowed("First Example".into()).unwrap()
+    app.run_windowed("First Example".into()).unwrap();
 }
