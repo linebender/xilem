@@ -17,7 +17,7 @@ use crate::{ChangeFlags, MasonryView, MessageResult, ViewCx, ViewId};
 /// or used to implement conditional display and switching of views.
 ///
 /// Note that `Option` can also be used for conditionally displaying
-/// views when placed in a ViewSequence.
+/// views in a [`ViewSequence`](crate::ViewSequence).
 // TODO: Mention `Either` when we have implemented that?
 pub type BoxedMasonryView<T, A = ()> = Box<dyn AnyMasonryView<T, A>>;
 
@@ -118,14 +118,14 @@ impl<T, A, V: MasonryView<T, A> + 'static> AnyMasonryView<T, A> for V {
     }
 }
 
-/// A widget whose only child can be dynamically replaced
+/// A widget whose only child can be dynamically replaced.
 ///
-/// `WidgetPod<Box<dyn Widget>>` doesn't expose this possibility
+/// `WidgetPod<Box<dyn Widget>>` doesn't expose this possibility.
 pub struct DynWidget {
     inner: WidgetPod<Box<dyn Widget>>,
 }
 
-/// Forwards all events to the child widget
+/// Forward all events to the child widget.
 impl Widget for DynWidget {
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
         self.inner.on_pointer_event(ctx, event);
