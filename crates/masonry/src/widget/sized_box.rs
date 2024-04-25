@@ -4,8 +4,6 @@
 
 //! A widget with predefined size.
 
-use std::f64::INFINITY;
-
 use kurbo::Affine;
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace, trace_span, warn, Span};
@@ -122,8 +120,8 @@ impl SizedBox {
     /// [`expand_height`]: #method.expand_height
     /// [`expand_width`]: #method.expand_width
     pub fn expand(mut self) -> Self {
-        self.width = Some(INFINITY);
-        self.height = Some(INFINITY);
+        self.width = Some(f64::INFINITY);
+        self.height = Some(f64::INFINITY);
         self
     }
 
@@ -131,7 +129,7 @@ impl SizedBox {
     ///
     /// This will force the child to have maximum width.
     pub fn expand_width(mut self) -> Self {
-        self.width = Some(INFINITY);
+        self.width = Some(f64::INFINITY);
         self
     }
 
@@ -139,7 +137,7 @@ impl SizedBox {
     ///
     /// This will force the child to have maximum height.
     pub fn expand_height(mut self) -> Self {
-        self.height = Some(INFINITY);
+        self.height = Some(f64::INFINITY);
         self
     }
 

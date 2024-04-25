@@ -521,9 +521,7 @@ impl Widget for Flex {
                 Child::Fixed { widget, alignment } => {
                     any_use_baseline &= *alignment == Some(CrossAxisAlignment::Baseline);
 
-                    let child_bc =
-                        self.direction
-                            .constraints(&loosened_bc, 0.0, std::f64::INFINITY);
+                    let child_bc = self.direction.constraints(&loosened_bc, 0.0, f64::INFINITY);
                     let child_size = widget.layout(ctx, &child_bc);
                     let baseline_offset = widget.baseline_offset();
 
