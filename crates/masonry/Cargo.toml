@@ -8,7 +8,7 @@ license = "Apache-2.0"
 name = "masonry"
 readme = "README.md"
 repository = "https://github.com/PoignardAzur/masonry-rs"
-rust-version = "1.65"
+rust-version = "1.75"
 version = "0.1.3"
 
 [profile.dev.package."*"]
