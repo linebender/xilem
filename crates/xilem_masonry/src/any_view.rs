@@ -1,4 +1,4 @@
-use std::ops::Deref;
+use std::{num::NonZeroU64, ops::Deref};
 
 use masonry::{
     declare_widget,
@@ -75,9 +75,11 @@ impl<T, A, V: MasonryView<T, A> + 'static> AnyMasonryView<T, A> for V {
     }
 
     fn dyn_build(&self, cx: &mut ViewCx) -> WidgetPod<DynWidget> {
-        let element = self.build(cx);
+        let gen_1 = NonZeroU64::new(1).unwrap();
+        let element = cx.with_id(ViewId::for_type::<V>(gen_1), |cx| self.build(cx));
         WidgetPod::new(DynWidget {
             inner: element.boxed(),
+            generation: gen_1.checked_add(1).unwrap(),
         })
     }
 
@@ -91,10 +93,13 @@ impl<T, A, V: MasonryView<T, A> + 'static> AnyMasonryView<T, A> for V {
         // to an outdated view path to be caught and returned?
         // Should we store this generation in `element`? Seems plausible
         if let Some(prev) = prev.as_any().downcast_ref() {
+            let generation = element.generation();
             // If we were previously of this type, then do a normal rebuild
             element.downcast(|element| {
                 if let Some(element) = element {
-                    self.rebuild(cx, prev, element)
+                    cx.with_id(ViewId::for_type::<V>(generation), move |cx| {
+                        self.rebuild(cx, prev, element)
+                    })
                 } else {
                     eprintln!("downcast of element failed in dyn_rebuild");
                     ChangeFlags::UNCHANGED
@@ -102,7 +107,8 @@ impl<T, A, V: MasonryView<T, A> + 'static> AnyMasonryView<T, A> for V {
             })
         } else {
             // Otherwise, replace the element
-            let new_element = self.build(cx);
+            let next_gen = element.next_generation();
+            let new_element = cx.with_id(ViewId::for_type::<V>(next_gen), |cx| self.build(cx));
             element.replace_inner(new_element.boxed());
             ChangeFlags::CHANGED
         }
@@ -114,7 +120,8 @@ impl<T, A, V: MasonryView<T, A> + 'static> AnyMasonryView<T, A> for V {
         message: Box<dyn std::any::Any>,
         app_state: &mut T,
     ) -> MessageResult<A> {
-        self.message(id_path, message, app_state)
+        // TODO: Validate this id
+        self.message(id_path.split_first().unwrap().1, message, app_state)
     }
 }
 
@@ -123,6 +130,9 @@ impl<T, A, V: MasonryView<T, A> + 'static> AnyMasonryView<T, A> for V {
 /// `WidgetPod<Box<dyn Widget>>` doesn't expose this possibility.
 pub struct DynWidget {
     inner: WidgetPod<Box<dyn Widget>>,
+    // This might be a layer break?
+    /// The generation of the inner widget, increases whenever the contained widget is replaced
+    generation: NonZeroU64,
 }
 
 /// Forward all events to the child widget.
@@ -161,8 +171,19 @@ impl Widget for DynWidget {
 
 declare_widget!(DynWidgetMut, DynWidget);
 
+impl DynWidget {
+    pub fn generation(&self) -> NonZeroU64 {
+        self.generation
+    }
+
+    pub fn next_generation(&self) -> NonZeroU64 {
+        self.generation.checked_add(1).unwrap()
+    }
+}
+
 impl DynWidgetMut<'_> {
     pub(crate) fn replace_inner(&mut self, widget: WidgetPod<Box<dyn Widget>>) {
+        self.widget.generation = self.next_generation();
         self.widget.inner = widget;
         self.ctx.children_changed();
     }
