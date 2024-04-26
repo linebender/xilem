@@ -47,7 +47,8 @@ impl<T: 'static, A: 'static> MasonryView<T, A> for BoxedMasonryView<T, A> {
         prev: &Self,
         element: masonry::widget::WidgetMut<Self::Element>,
     ) -> ChangeFlags {
-        self.deref().dyn_rebuild(view_state, cx, prev.deref(), element)
+        self.deref()
+            .dyn_rebuild(view_state, cx, prev.deref(), element)
     }
 }
 
