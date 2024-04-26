@@ -32,14 +32,15 @@ where
     View: MasonryView<State>,
 {
     root_widget: RootWidget<View::Element>,
-    driver: MasonryDriver<State, Logic, View>,
+    driver: MasonryDriver<State, Logic, View, View::ViewState>,
 }
 
-pub struct MasonryDriver<State, Logic, View> {
+pub struct MasonryDriver<State, Logic, View, ViewState> {
     state: State,
     logic: Logic,
     current_view: View,
     view_cx: ViewCx,
+    view_state: ViewState,
 }
 
 // TODO: This is a hack to work around pod-racing
@@ -83,7 +84,7 @@ impl<E: 'static + Widget> Widget for RootWidget<E> {
     }
 }
 
-impl<State, Logic, View> AppDriver for MasonryDriver<State, Logic, View>
+impl<State, Logic, View> AppDriver for MasonryDriver<State, Logic, View, View::ViewState>
 where
     Logic: FnMut(&mut State) -> View,
     View: MasonryView<State>,
@@ -95,9 +96,12 @@ where
         action: masonry::Action,
     ) {
         if let Some(id_path) = self.view_cx.widget_map.get(&widget_id) {
-            let message_result =
-                self.current_view
-                    .message(id_path.as_slice(), Box::new(action), &mut self.state);
+            let message_result = self.current_view.message(
+                &mut self.view_state,
+                id_path.as_slice(),
+                Box::new(action),
+                &mut self.state,
+            );
             let rebuild = match message_result {
                 MessageResult::Action(()) => {
                     // It's not entirely clear what to do here
@@ -115,7 +119,12 @@ where
                 let mut root = ctx.get_root::<RootWidget<View::Element>>();
                 let element = root.get_element();
 
-                let changed = next_view.rebuild(&mut self.view_cx, &self.current_view, element);
+                let changed = next_view.rebuild(
+                    &mut self.view_state,
+                    &mut self.view_cx,
+                    &self.current_view,
+                    element,
+                );
                 if !changed.changed {
                     // Masonry manages all of this itself - ChangeFlags is probably not needed?
                     tracing::debug!("TODO: Skip some work?");
@@ -153,6 +162,7 @@ where
                 logic,
                 state,
                 view_cx,
+                view_state,
             },
             root_widget,
         }
@@ -198,14 +208,15 @@ pub trait MasonryView<State, Action = ()>: Send + 'static {
 
     fn rebuild(
         &self,
-        _cx: &mut ViewCx,
+        view_state: &mut Self::ViewState,
+        cx: &mut ViewCx,
         prev: &Self,
-        // _id: &mut Id,
         element: WidgetMut<Self::Element>,
     ) -> ChangeFlags;
 
     fn message(
         &self,
+        view_state: &mut Self::ViewState,
         id_path: &[ViewId],
         message: Box<dyn Any>,
         app_state: &mut State,

@@ -31,6 +31,7 @@ impl<T: 'static, A: 'static> MasonryView<T, A> for BoxedMasonryView<T, A> {
 
     fn rebuild(
         &self,
+        view_state: &mut Self::ViewState,
         cx: &mut ViewCx,
         prev: &Self,
         // _id: &mut Id,
@@ -41,6 +42,7 @@ impl<T: 'static, A: 'static> MasonryView<T, A> for BoxedMasonryView<T, A> {
 
     fn message(
         &self,
+        view_state: &mut Self::ViewState,
         id_path: &[ViewId],
         message: Box<dyn std::any::Any>,
         app_state: &mut T,
@@ -105,7 +107,7 @@ where
             element.downcast(|element| {
                 if let Some(element) = element {
                     cx.with_id(ViewId::for_type::<V>(generation), move |cx| {
-                        self.rebuild(cx, prev, element)
+                        self.rebuild(todo!("DJMcNab"), cx, prev, element)
                     })
                 } else {
                     eprintln!("downcast of element failed in dyn_rebuild");
@@ -129,7 +131,12 @@ where
         app_state: &mut T,
     ) -> MessageResult<A> {
         // TODO: Validate this id
-        self.message(id_path.split_first().unwrap().1, message, app_state)
+        self.message(
+            todo!("DJMcNab"),
+            id_path.split_first().unwrap().1,
+            message,
+            app_state,
+        )
     }
 }
 

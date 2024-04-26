@@ -25,7 +25,7 @@ where
     Seq: ViewSequence<State, Action, Marker>,
 {
     type Element = widget::Flex;
-    type ViewState = Seq::ViewState;
+    type ViewState = Seq::SeqState;
 
     fn build(
         &self,
@@ -49,22 +49,26 @@ where
 
     fn message(
         &self,
+        view_state: &mut Self::ViewState,
         id_path: &[crate::ViewId],
         message: Box<dyn std::any::Any>,
         app_state: &mut State,
     ) -> crate::MessageResult<Action> {
-        self.sequence.message(id_path, message, app_state)
+        self.sequence
+            .message(view_state, id_path, message, app_state)
     }
 
     fn rebuild(
         &self,
+        view_state: &mut Self::ViewState,
         cx: &mut crate::ViewCx,
         prev: &Self,
         // _id: &mut Id,
         element: widget::WidgetMut<Self::Element>,
     ) -> crate::ChangeFlags {
         let mut splice = FlexSplice { ix: 0, element };
-        self.sequence.rebuild(cx, &prev.sequence, &mut splice)
+        self.sequence
+            .rebuild(view_state, cx, &prev.sequence, &mut splice)
     }
 }
 

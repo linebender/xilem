@@ -31,6 +31,7 @@ where
     }
     fn message(
         &self,
+        _view_state: &mut Self::ViewState,
         _id_path: &[ViewId],
         // TODO: Ensure is masonry button pressed action?
         _message: Box<dyn std::any::Any>,
@@ -40,9 +41,9 @@ where
     }
     fn rebuild(
         &self,
+        _view_state: &mut Self::ViewState,
         _cx: &mut ViewCx,
         prev: &Self,
-        // _id: &mut Id,
         mut element: WidgetMut<Self::Element>,
     ) -> crate::ChangeFlags {
         if prev.label != self.label {
