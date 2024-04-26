@@ -34,10 +34,10 @@ impl<K, V> VecMap<K, V> {
     /// assert_eq!(map.get(&1), Some(&"a"));
     /// assert_eq!(map.get(&2), None);
     /// ```
-    pub fn get<Q: ?Sized>(&self, key: &Q) -> Option<&V>
+    pub fn get<Q>(&self, key: &Q) -> Option<&V>
     where
         K: Borrow<Q> + PartialEq,
-        Q: PartialEq,
+        Q: PartialEq + ?Sized,
     {
         self.0
             .iter()
@@ -60,10 +60,10 @@ impl<K, V> VecMap<K, V> {
     /// assert!(map.contains_key(&1));
     /// assert!(!map.contains_key(&2));
     /// ```
-    pub fn contains_key<Q: ?Sized>(&self, key: &Q) -> bool
+    pub fn contains_key<Q>(&self, key: &Q) -> bool
     where
         K: Borrow<Q> + Ord,
-        Q: Ord,
+        Q: Ord + ?Sized,
     {
         self.get(key).is_some()
     }
@@ -87,10 +87,10 @@ impl<K, V> VecMap<K, V> {
     /// assert_eq!(map[&1], "b");
     /// ```
     // See `get` for implementation notes, this is basically a copy-paste with mut's added
-    pub fn get_mut<Q: ?Sized>(&mut self, key: &Q) -> Option<&mut V>
+    pub fn get_mut<Q>(&mut self, key: &Q) -> Option<&mut V>
     where
         K: Borrow<Q> + Ord,
-        Q: Ord,
+        Q: Ord + ?Sized,
     {
         self.0
             .iter_mut()
@@ -197,10 +197,10 @@ impl<K, V> VecMap<K, V> {
     /// assert_eq!(map.remove(&1), Some("a"));
     /// assert_eq!(map.remove(&1), None);
     /// ```
-    pub fn remove<Q: ?Sized>(&mut self, key: &Q) -> Option<V>
+    pub fn remove<Q>(&mut self, key: &Q) -> Option<V>
     where
         K: Borrow<Q> + Ord,
-        Q: Ord,
+        Q: Ord + ?Sized,
     {
         // TODO not sure whether just a simple find is better here? Probably needs more benching
         match self.0.binary_search_by_key(&key, |(k, _)| k.borrow()) {
@@ -248,10 +248,10 @@ impl<K, V> VecMap<K, V> {
     }
 }
 
-impl<K, Q: ?Sized, V> Index<&Q> for VecMap<K, V>
+impl<K, Q, V> Index<&Q> for VecMap<K, V>
 where
     K: Borrow<Q> + Ord,
-    Q: Ord,
+    Q: Ord + ?Sized,
 {
     type Output = V;
 
