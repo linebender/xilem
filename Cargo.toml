@@ -22,7 +22,7 @@ xilem_core = { version = "0.1.0", path = "crates/xilem_core" }
 masonry = { version = "0.1.0", path = "crates/masonry" }
 kurbo = "0.11.0"
 winit = { version = "0.29", features = ["rwh_05"] }
-parley = { git = "https://github.com/linebender/parley", rev = "4e6109f2ff5847a72dc77971b6fa0942b8474d88" }
+parley = { git = "https://github.com/linebender/parley", rev = "3dd6f9b823b007724256ce19f78ad1f7ffe5d4cc" }
 vello = { git = "https://github.com/linebender/vello/", rev = "b520a35addfa6bbb37d93491d2b8236528faf3b5" }
 
 [workspace.lints]
