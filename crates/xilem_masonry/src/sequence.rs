@@ -212,14 +212,15 @@ impl<T, A, Marker, VT: ViewSequence<T, A, Marker>> ViewSequence<T, A, (WasASeque
 {
     type SeqState = VecViewState<VT::SeqState>;
     fn build(&self, cx: &mut ViewCx, elements: &mut dyn ElementSplice) -> Self::SeqState {
+        let generation = 0;
         let inner = self.iter().enumerate().map(|(i, child)| {
-            let id: u64 = i.try_into().unwrap();
+            let id = create_vector_view_id(i, generation);
 
             cx.with_id(ViewId::for_type::<VT>(id), |cx| child.build(cx, elements))
         });
-        let inner_with_generations = inner.map(|it| (it, 0)).collect();
+        let inner_with_generations = inner.map(|it| (it, generation)).collect();
         VecViewState {
-            global_generation: 0,
+            global_generation: generation,
             inner_with_generations,
         }
     }
@@ -232,16 +233,15 @@ impl<T, A, Marker, VT: ViewSequence<T, A, Marker>> ViewSequence<T, A, (WasASeque
         elements: &mut dyn ElementSplice,
     ) -> ChangeFlags {
         let mut changed = ChangeFlags::UNCHANGED;
-        for (i, ((child, child_prev), child_state)) in self
+        for (i, ((child, child_prev), (child_state, child_generation))) in self
             .iter()
             .zip(prev)
             .zip(&mut seq_state.inner_with_generations)
             .enumerate()
         {
-            // TODO: Correctly set the generational component
-            let id: u64 = i.try_into().unwrap();
+            let id = create_vector_view_id(i, *child_generation);
             cx.with_id(ViewId::for_type::<VT>(id), |cx| {
-                let el_changed = child.rebuild(&mut child_state.0, cx, child_prev, elements);
+                let el_changed = child.rebuild(child_state, cx, child_prev, elements);
                 changed.changed |= el_changed.changed;
             });
         }
@@ -252,13 +252,40 @@ impl<T, A, Marker, VT: ViewSequence<T, A, Marker>> ViewSequence<T, A, (WasASeque
             elements.delete(n_delete);
             changed.changed |= ChangeFlags::CHANGED.changed;
         } else if n > prev.len() {
+            // Overflow condition: u32 incrementing by up to 1 per rebuild. Plausible if unlikely to overflow
+            seq_state.global_generation = match seq_state.global_generation.checked_add(1) {
+                Some(new_generation) => new_generation,
+                None => {
+                    // TODO: Inform the error
+                    tracing::error!(
+                        sequence_type = std::any::type_name::<VT>(),
+                        issue_url = "https://github.com/linebender/xilem/issues",
+                        "Got overflowing generation in ViewSequence. Please open an issue if you see this situation. There are known solutions"
+                    );
+                    // The known solution mentioned in the above message is to use a different ViewId for the index and the generation
+                    // We believe this to be superfluous for the default use case, as even with 1000 rebuilds a second, each adding
+                    // to the same array, this would take 50 days of the application running continuously.
+                    // See also https://github.com/bevyengine/bevy/pull/9907, where they warn in their equivalent case
+                    // Note that we have a slightly different strategy to Bevy, where we use a global generation
+                    // This theoretically allows some of the memory in `seq_state` to be reclaimed, at the cost of making overflow
+                    // more likely here. Note that we don't actually reclaim this memory at the moment.
+
+                    // We use 0 to wrap around. It would require extremely unfortunate timing to get an async event
+                    // with the correct generation exactly u32::MAX generations late, so wrapping is the best option
+                    0
+                }
+            };
+            seq_state.inner_with_generations.reserve(n - prev.len());
             // This suggestion from clippy is kind of bad, because we use the absolute index in the id
             #[allow(clippy::needless_range_loop)]
             for ix in prev.len()..n {
-                let id: u64 = ix.try_into().unwrap();
-                cx.with_id(ViewId::for_type::<VT>(id), |cx| {
-                    self[ix].build(cx, elements);
+                let id = create_vector_view_id(ix, seq_state.global_generation);
+                let new_state = cx.with_id(ViewId::for_type::<VT>(id), |cx| {
+                    self[ix].build(cx, elements)
                 });
+                seq_state
+                    .inner_with_generations
+                    .push((new_state, seq_state.global_generation));
             }
             changed.changed |= ChangeFlags::CHANGED.changed;
         }
@@ -275,18 +302,35 @@ impl<T, A, Marker, VT: ViewSequence<T, A, Marker>> ViewSequence<T, A, (WasASeque
         let (start, rest) = id_path
             .split_first()
             .expect("Id path has elements for vector");
-        let index: usize = start.routing_id().try_into().unwrap();
-        self[index].message(
-            &mut seq_state.inner_with_generations[index].0,
-            rest,
-            message,
-            app_state,
-        )
+        let (index, generation) = view_id_to_index_generation(start.routing_id());
+        let (seq_state, stored_generation) = &mut seq_state.inner_with_generations[index];
+        if *stored_generation != generation {
+            return MessageResult::Stale(message);
+        }
+        self[index].message(seq_state, rest, message, app_state)
     }
 
     fn count(&self) -> usize {
         self.iter().map(ViewSequence::count).sum()
     }
+}
+
+/// Turns an index and a generation into a packed id, suitable for use in
+/// [`ViewId`]s
+fn create_vector_view_id(index: usize, generation: u32) -> u64 {
+    let id_low: u32 = index.try_into().expect(
+        "Can't have more than 4294967295 (u32::MAX-1) views in a single vector backed sequence",
+    );
+    let id_low: u64 = id_low.into();
+    let id_high: u64 = u64::from(generation) << 32;
+    id_high | id_low
+}
+
+/// Undoes [`create_vector_view_id`]
+fn view_id_to_index_generation(view_id: u64) -> (usize, u32) {
+    let id_low_ix = view_id as u32;
+    let id_high_gen = (view_id >> 32) as u32;
+    (id_low_ix as usize, id_high_gen)
 }
 
 impl<T, A> ViewSequence<T, A, ()> for () {
