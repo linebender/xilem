@@ -121,7 +121,7 @@ impl<W: Widget> WidgetPod<W> {
     ///
     /// Two sibling widgets' layout rects will almost never intersect.
     ///
-    /// This rect wil also be used to detect whether any given pointer event (eg clicks)
+    /// This rect will also be used to detect whether any given pointer event (eg clicks)
     /// intersects with the rectangle.
     ///
     /// [`Rect`]: struct.Rect.html
@@ -168,7 +168,7 @@ impl<W: Widget> WidgetPod<W> {
     ///
     /// This is a convenience method to be used from the [`layout`] method
     /// of a `Widget` that manages a child; it allows the parent to correctly
-    /// propogate a child's desired paint rect, if it extends beyond the bounds
+    /// propagate a child's desired paint rect, if it extends beyond the bounds
     /// of the parent's layout rect.
     ///
     /// [`layout`]: trait.Widget.html#tymethod.layout
@@ -219,7 +219,7 @@ impl<W: Widget> WidgetPod<W> {
     // Another problem is that hot state handling is counter-intuitive for someone writing a Widget implementation. Developers who want to implement "This widget turns red when the mouse is over it" will usually assume they should use the MouseMove event or something similar; when what they actually need is a Lifecycle variant.
     //
     // Other things hot state is missing:
-    // - A concept of "cursor moved to inner widget" (though I think's that's not super useful outside the browser).
+    // - A concept of "cursor moved to inner widget" (though I think that's not super useful outside the browser).
     // - Multiple pointers handling.
 
     /// Determines if the provided `mouse_pos` is inside `rect`
@@ -719,7 +719,7 @@ impl<W: Widget> WidgetPod<W> {
             LifeCycle::BuildFocusChain => {
                 self.state.update_focus_chain = false;
 
-                // had_focus is the old focus value. state.has_focus was repaced with parent_ctx.is_focused().
+                // had_focus is the old focus value. state.has_focus was replaced with parent_ctx.is_focused().
                 // Therefore if had_focus is true but state.has_focus is false then the widget which is
                 // currently focused is not part of the functional tree anymore
                 // (Lifecycle::BuildFocusChain.should_propagate_to_hidden() is false!) and should

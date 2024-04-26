@@ -148,11 +148,11 @@ fn update_hot_from_layout() {
     pub const COLLAPSE: Selector = Selector::new("masonry-test.collapse");
     pub const BOX_SIZE: Size = Size::new(50.0, 50.0);
 
-    let [collapsable_id, box_id] = widget_ids();
+    let [collapsible_id, box_id] = widget_ids();
 
     let box_rec = Recording::default();
 
-    let collapsable_box = ModularWidget::new(false)
+    let collapsible_box = ModularWidget::new(false)
         .event_fn(move |collapsed, ctx, event| {
             if let Event::Command(command) = event {
                 if command.is(COLLAPSE) {
@@ -174,7 +174,7 @@ fn update_hot_from_layout() {
     let widget = Flex::row()
         .with_child(
             Flex::column()
-                .with_child_id(collapsable_box, collapsable_id)
+                .with_child_id(collapsible_box, collapsible_id)
                 .with_child_id(
                     SizedBox::empty().height(50.0).width(50.0).record(&box_rec),
                     box_id,
@@ -185,13 +185,13 @@ fn update_hot_from_layout() {
 
     let mut harness = TestHarness::create(widget);
 
-    harness.mouse_move_to(collapsable_id);
-    assert!(is_hot(&harness, collapsable_id));
+    harness.mouse_move_to(collapsible_id);
+    assert!(is_hot(&harness, collapsible_id));
     assert!(!is_hot(&harness, box_id));
 
     box_rec.clear();
     harness.submit_command(COLLAPSE);
-    assert!(!is_hot(&harness, collapsable_id));
+    assert!(!is_hot(&harness, collapsible_id));
     assert!(is_hot(&harness, box_id));
 
     assert_eq!(next_hot_changed(&box_rec), Some(true));

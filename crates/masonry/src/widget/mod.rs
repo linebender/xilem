@@ -79,14 +79,14 @@ use crate::{Affine, Size};
 /// Strategies for inscribing a rectangle inside another rectangle.
 #[derive(Clone, Copy, Default, PartialEq)]
 pub enum FillStrat {
-    /// As large as posible without changing aspect ratio of image and all of image shown
+    /// As large as possible without changing aspect ratio of image and all of image shown
     #[default]
     Contain,
-    /// As large as posible with no dead space so that some of the image may be clipped
+    /// As large as possible with no dead space so that some of the image may be clipped
     Cover,
     /// Fill the widget with no dead space, aspect ratio of widget is used
     Fill,
-    /// Fill the hight with the images aspect ratio, some of the image may be clipped
+    /// Fill the height with the images aspect ratio, some of the image may be clipped
     FitHeight,
     /// Fill the width with the images aspect ratio, some of the image may be clipped
     FitWidth,

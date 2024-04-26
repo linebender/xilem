@@ -37,7 +37,7 @@ use crate::{
 /// an id to the WidgetPod you're creating; various widgets which have methods to create
 /// children may have variants taking ids as parameters.
 ///
-/// If you set a `WidgetId` directly, you are resposible for ensuring that it
+/// If you set a `WidgetId` directly, you are responsible for ensuring that it
 /// is unique. Two widgets must not be created with the same id.
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
 pub struct WidgetId(NonZeroU64);
@@ -146,9 +146,9 @@ pub trait Widget: AsAny {
     /// Return which child, if any, has the given `pos` in its layout rect.
     ///
     /// The child return is a direct child, not eg a grand-child. The position is in
-    /// relative cordinates. (Eg `(0,0)` is the top-left corner of `self`).
+    /// relative coordinates. (Eg `(0,0)` is the top-left corner of `self`).
     ///
-    /// Has a default implementation, that can be overriden to search children more
+    /// Has a default implementation, that can be overridden to search children more
     /// efficiently.
     fn get_child_at_pos(&self, pos: Point) -> Option<WidgetRef<'_, dyn Widget>> {
         // layout_rect() is in parent coordinate space
@@ -180,7 +180,7 @@ pub trait Widget: AsAny {
     // FIXME
     /// Cast as Any.
     ///
-    /// Mainly intended to be overriden in `Box<dyn Widget>`.
+    /// Mainly intended to be overridden in `Box<dyn Widget>`.
     #[doc(hidden)]
     fn as_any(&self) -> &dyn Any {
         self.as_dyn_any()
@@ -189,7 +189,7 @@ pub trait Widget: AsAny {
     // FIXME
     /// Cast as Any.
     ///
-    /// Mainly intended to be overriden in `Box<dyn Widget>`.
+    /// Mainly intended to be overridden in `Box<dyn Widget>`.
     #[doc(hidden)]
     fn as_mut_any(&mut self) -> &mut dyn Any {
         self.as_mut_dyn_any()

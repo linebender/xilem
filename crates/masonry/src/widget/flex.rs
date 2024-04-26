@@ -539,13 +539,13 @@ impl Widget for Flex {
                         max_above_baseline.max(child_size.height - baseline_offset);
                     max_below_baseline = max_below_baseline.max(baseline_offset);
                 }
-                Child::FixedSpacer(kv, calculated_siz) => {
-                    *calculated_siz = *kv;
-                    if *calculated_siz < 0.0 {
+                Child::FixedSpacer(kv, calculated_size) => {
+                    *calculated_size = *kv;
+                    if *calculated_size < 0.0 {
                         tracing::warn!("Length provided to fixed spacer was less than 0");
                     }
-                    *calculated_siz = calculated_siz.max(0.0);
-                    major_non_flex += *calculated_siz;
+                    *calculated_size = calculated_size.max(0.0);
+                    major_non_flex += *calculated_size;
                 }
                 Child::Flex { flex, .. } | Child::FlexedSpacer(flex, _) => flex_sum += *flex,
             }
