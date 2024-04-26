@@ -374,7 +374,7 @@ impl<'a> FlexMut<'a> {
     ///
     /// [`with_child`]: Flex::with_child
     pub fn insert_child(&mut self, idx: usize, child: impl Widget) {
-        self.insert_child_pod(idx, WidgetPod::new(Box::new(child)))
+        self.insert_child_pod(idx, WidgetPod::new(Box::new(child)));
     }
 
     /// Add a non-flex child widget.
@@ -653,7 +653,7 @@ impl Widget for Flex {
         }
 
         if flex_sum > 0.0 && total_major.is_infinite() {
-            tracing::warn!("A child of Flex is flex, but Flex is unbounded.")
+            tracing::warn!("A child of Flex is flex, but Flex is unbounded.");
         }
 
         if flex_sum > 0.0 {

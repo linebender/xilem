@@ -28,7 +28,7 @@ impl AppDriver for Driver {
                 println!("Hello");
             }
             action => {
-                eprintln!("Unexpected action {action:?}")
+                eprintln!("Unexpected action {action:?}");
             }
         }
     }

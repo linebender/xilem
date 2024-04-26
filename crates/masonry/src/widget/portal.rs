@@ -316,10 +316,10 @@ impl<W: Widget> Widget for Portal<W> {
         let min_child_size = if self.must_fill { bc.min() } else { Size::ZERO };
         let mut max_child_size = bc.max();
         if !self.constrain_horizontal {
-            max_child_size.width = f64::INFINITY
+            max_child_size.width = f64::INFINITY;
         };
         if !self.constrain_vertical {
-            max_child_size.height = f64::INFINITY
+            max_child_size.height = f64::INFINITY;
         };
 
         let child_bc = BoxConstraints::new(min_child_size, max_child_size);

@@ -188,7 +188,7 @@ impl Widget for CalcButton {
     }
 
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
-        self.inner.lifecycle(ctx, event)
+        self.inner.lifecycle(ctx, event);
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {

@@ -646,7 +646,7 @@ impl LayoutCtx<'_> {
     /// widget to the baseline.
     pub fn set_baseline_offset(&mut self, baseline: f64) {
         trace!("set_baseline_offset {}", baseline);
-        self.widget_state.baseline_offset = baseline
+        self.widget_state.baseline_offset = baseline;
     }
 
     /// Set the position of a child widget, in the paren't coordinate space. This

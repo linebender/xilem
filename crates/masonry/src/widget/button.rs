@@ -105,7 +105,7 @@ impl Widget for Button {
     }
 
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
-        self.label.lifecycle(ctx, event)
+        self.label.lifecycle(ctx, event);
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {

@@ -347,15 +347,15 @@ impl WidgetId {
 // TODO - remove
 impl Widget for Box<dyn Widget> {
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
-        self.deref_mut().on_pointer_event(ctx, event)
+        self.deref_mut().on_pointer_event(ctx, event);
     }
 
     fn on_text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent) {
-        self.deref_mut().on_text_event(ctx, event)
+        self.deref_mut().on_text_event(ctx, event);
     }
 
     fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange) {
-        self.deref_mut().on_status_change(ctx, event)
+        self.deref_mut().on_status_change(ctx, event);
     }
 
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {

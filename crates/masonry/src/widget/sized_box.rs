@@ -297,7 +297,7 @@ impl Widget for SizedBox {
 
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
         if let Some(ref mut child) = self.child {
-            child.lifecycle(ctx, event)
+            child.lifecycle(ctx, event);
         }
     }
 

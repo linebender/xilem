@@ -178,25 +178,25 @@ impl<S> ModularWidget<S> {
 impl<S: 'static> Widget for ModularWidget<S> {
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &event::PointerEvent) {
         if let Some(f) = self.on_pointer_event.as_mut() {
-            f(&mut self.state, ctx, event)
+            f(&mut self.state, ctx, event);
         }
     }
 
     fn on_text_event(&mut self, ctx: &mut EventCtx, event: &event::TextEvent) {
         if let Some(f) = self.on_text_event.as_mut() {
-            f(&mut self.state, ctx, event)
+            f(&mut self.state, ctx, event);
         }
     }
 
     fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange) {
         if let Some(f) = self.on_status_change.as_mut() {
-            f(&mut self.state, ctx, event)
+            f(&mut self.state, ctx, event);
         }
     }
 
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
         if let Some(f) = self.lifecycle.as_mut() {
-            f(&mut self.state, ctx, event)
+            f(&mut self.state, ctx, event);
         }
     }
 
@@ -214,7 +214,7 @@ impl<S: 'static> Widget for ModularWidget<S> {
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
         if let Some(f) = self.paint.as_mut() {
-            f(&mut self.state, ctx, scene)
+            f(&mut self.state, ctx, scene);
         }
     }
 
@@ -262,7 +262,7 @@ impl Widget for ReplaceChild {
     }
 
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
-        self.child.lifecycle(ctx, event)
+        self.child.lifecycle(ctx, event);
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
@@ -270,7 +270,7 @@ impl Widget for ReplaceChild {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
-        self.child.paint(ctx, scene)
+        self.child.paint(ctx, scene);
     }
 
     fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
@@ -289,7 +289,7 @@ impl Recording {
     }
 
     pub fn clear(&self) {
-        self.0.borrow_mut().clear()
+        self.0.borrow_mut().clear();
     }
 
     /// Returns the next event in the recording, if one exists.
@@ -305,29 +305,29 @@ impl Recording {
     }
 
     fn push(&self, event: Record) {
-        self.0.borrow_mut().push_back(event)
+        self.0.borrow_mut().push_back(event);
     }
 }
 
 impl<W: Widget> Widget for Recorder<W> {
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &event::PointerEvent) {
         self.recording.push(Record::PE(event.clone()));
-        self.child.on_pointer_event(ctx, event)
+        self.child.on_pointer_event(ctx, event);
     }
 
     fn on_text_event(&mut self, ctx: &mut EventCtx, event: &event::TextEvent) {
         self.recording.push(Record::TE(event.clone()));
-        self.child.on_text_event(ctx, event)
+        self.child.on_text_event(ctx, event);
     }
 
     fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange) {
         self.recording.push(Record::SC(event.clone()));
-        self.child.on_status_change(ctx, event)
+        self.child.on_status_change(ctx, event);
     }
 
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
         self.recording.push(Record::L(event.clone()));
-        self.child.lifecycle(ctx, event)
+        self.child.lifecycle(ctx, event);
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
@@ -338,7 +338,7 @@ impl<W: Widget> Widget for Recorder<W> {
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
         self.child.paint(ctx, scene);
-        self.recording.push(Record::Paint)
+        self.recording.push(Record::Paint);
     }
 
     fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {

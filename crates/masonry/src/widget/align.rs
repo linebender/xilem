@@ -83,15 +83,15 @@ impl Align {
 
 impl Widget for Align {
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
-        self.child.on_pointer_event(ctx, event)
+        self.child.on_pointer_event(ctx, event);
     }
 
     fn on_text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent) {
-        self.child.on_text_event(ctx, event)
+        self.child.on_text_event(ctx, event);
     }
 
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
-        self.child.lifecycle(ctx, event)
+        self.child.lifecycle(ctx, event);
     }
 
     fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange) {}

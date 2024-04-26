@@ -290,7 +290,7 @@ impl<W: Widget> WidgetPod<W> {
                 self.inner.short_type_name(),
                 self.state().id.to_raw(),
                 method_name,
-            )
+            );
         }
 
         #[cfg(debug_assertions)]
@@ -304,7 +304,7 @@ impl<W: Widget> WidgetPod<W> {
                     child.deref().short_type_name(),
                     child.state().id.to_raw(),
                     method_name,
-                )
+                );
             }
         }
 
