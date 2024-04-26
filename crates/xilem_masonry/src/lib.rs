@@ -145,9 +145,8 @@ where
             id_path: vec![],
             widget_map: HashMap::new(),
         };
-        let root_widget = RootWidget {
-            pod: first_view.build(&mut view_cx),
-        };
+        let (pod, view_state) = first_view.build(&mut view_cx);
+        let root_widget = RootWidget { pod };
         Xilem {
             driver: MasonryDriver {
                 current_view: first_view,
@@ -193,7 +192,9 @@ where
 }
 pub trait MasonryView<State, Action = ()>: Send + 'static {
     type Element: Widget + StoreInWidgetMut;
-    fn build(&self, cx: &mut ViewCx) -> WidgetPod<Self::Element>;
+    type ViewState;
+
+    fn build(&self, cx: &mut ViewCx) -> (WidgetPod<Self::Element>, Self::ViewState);
 
     fn rebuild(
         &self,
@@ -231,6 +232,13 @@ pub struct ViewCx {
 }
 
 impl ViewCx {
+    pub fn with_leaf_action_widget<E: Widget>(
+        &mut self,
+        f: impl FnOnce(&mut Self) -> WidgetPod<E>,
+    ) -> (WidgetPod<E>, ()) {
+        (self.with_action_widget(f), ())
+    }
+
     pub fn with_action_widget<E: Widget>(
         &mut self,
         f: impl FnOnce(&mut Self) -> WidgetPod<E>,

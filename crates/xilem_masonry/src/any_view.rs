@@ -1,4 +1,4 @@
-use std::{num::NonZeroU64, ops::Deref};
+use std::{any::Any, num::NonZeroU64, ops::Deref};
 
 use masonry::{
     declare_widget,
@@ -23,8 +23,9 @@ pub type BoxedMasonryView<T, A = ()> = Box<dyn AnyMasonryView<T, A>>;
 
 impl<T: 'static, A: 'static> MasonryView<T, A> for BoxedMasonryView<T, A> {
     type Element = DynWidget;
+    type ViewState = Box<dyn Any>;
 
-    fn build(&self, cx: &mut ViewCx) -> masonry::WidgetPod<Self::Element> {
+    fn build(&self, cx: &mut ViewCx) -> (masonry::WidgetPod<Self::Element>, Self::ViewState) {
         self.deref().dyn_build(cx)
     }
 
@@ -52,7 +53,7 @@ impl<T: 'static, A: 'static> MasonryView<T, A> for BoxedMasonryView<T, A> {
 pub trait AnyMasonryView<T, A = ()>: Send {
     fn as_any(&self) -> &dyn std::any::Any;
 
-    fn dyn_build(&self, cx: &mut ViewCx) -> WidgetPod<DynWidget>;
+    fn dyn_build(&self, cx: &mut ViewCx) -> (WidgetPod<DynWidget>, Box<dyn std::any::Any>);
 
     fn dyn_rebuild(
         &self,
@@ -69,18 +70,24 @@ pub trait AnyMasonryView<T, A = ()>: Send {
     ) -> MessageResult<A>;
 }
 
-impl<T, A, V: MasonryView<T, A> + 'static> AnyMasonryView<T, A> for V {
+impl<T, A, V: MasonryView<T, A> + 'static> AnyMasonryView<T, A> for V
+where
+    V::ViewState: Any,
+{
     fn as_any(&self) -> &dyn std::any::Any {
         self
     }
 
-    fn dyn_build(&self, cx: &mut ViewCx) -> WidgetPod<DynWidget> {
+    fn dyn_build(&self, cx: &mut ViewCx) -> (masonry::WidgetPod<DynWidget>, Box<dyn Any>) {
         let gen_1 = NonZeroU64::new(1).unwrap();
-        let element = cx.with_id(ViewId::for_type::<V>(gen_1), |cx| self.build(cx));
-        WidgetPod::new(DynWidget {
-            inner: element.boxed(),
-            generation: gen_1.checked_add(1).unwrap(),
-        })
+        let (element, view_state) = cx.with_id(ViewId::for_type::<V>(gen_1), |cx| self.build(cx));
+        (
+            WidgetPod::new(DynWidget {
+                inner: element.boxed(),
+                generation: gen_1.checked_add(1).unwrap(),
+            }),
+            Box::new(view_state),
+        )
     }
 
     fn dyn_rebuild(
@@ -108,7 +115,8 @@ impl<T, A, V: MasonryView<T, A> + 'static> AnyMasonryView<T, A> for V {
         } else {
             // Otherwise, replace the element
             let next_gen = element.next_generation();
-            let new_element = cx.with_id(ViewId::for_type::<V>(next_gen), |cx| self.build(cx));
+            let (new_element, view_state) =
+                cx.with_id(ViewId::for_type::<V>(next_gen), |cx| self.build(cx));
             element.replace_inner(new_element.boxed());
             ChangeFlags::CHANGED
         }

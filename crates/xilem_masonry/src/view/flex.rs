@@ -25,12 +25,16 @@ where
     Seq: ViewSequence<State, Action, Marker>,
 {
     type Element = widget::Flex;
+    type ViewState = Seq::ViewState;
 
-    fn build(&self, cx: &mut crate::ViewCx) -> masonry::WidgetPod<Self::Element> {
+    fn build(
+        &self,
+        cx: &mut crate::ViewCx,
+    ) -> (masonry::WidgetPod<Self::Element>, Self::ViewState) {
         let mut elements = Vec::new();
         let mut scratch = Vec::new();
         let mut splice = VecSplice::new(&mut elements, &mut scratch);
-        self.sequence.build(cx, &mut splice);
+        let seq_state = self.sequence.build(cx, &mut splice);
         let mut view = widget::Flex::column();
         debug_assert!(
             scratch.is_empty(),
@@ -40,7 +44,7 @@ where
         for item in elements.drain(..) {
             view = view.with_child_pod(item).with_default_spacer();
         }
-        WidgetPod::new(view)
+        (WidgetPod::new(view), seq_state)
     }
 
     fn message(

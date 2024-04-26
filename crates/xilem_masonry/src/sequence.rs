@@ -22,6 +22,7 @@ pub trait ElementSplice {
 ///
 /// It is up to the parent view how to lay out and display them.
 pub trait ViewSequence<State, Action, Marker>: Send + 'static {
+    type ViewState;
     /// Build the associated widgets and initialize all states.
     ///
     /// To be able to monitor changes (e.g. tree-structure tracking) rather than just adding elements,
@@ -65,8 +66,9 @@ pub struct WasASequence;
 impl<State, Action, View: MasonryView<State, Action>> ViewSequence<State, Action, WasAView>
     for View
 {
+    type ViewState = View::ViewState;
     fn build(&self, cx: &mut ViewCx, elements: &mut dyn ElementSplice) {
-        let element = self.build(cx);
+        let (element, view_state) = self.build(cx);
         elements.push(element.boxed());
     }
 
@@ -103,6 +105,7 @@ impl<State, Action, View: MasonryView<State, Action>> ViewSequence<State, Action
 impl<State, Action, Marker, VT: ViewSequence<State, Action, Marker>>
     ViewSequence<State, Action, (WasASequence, Marker)> for Option<VT>
 {
+    type ViewState = (Option<VT::ViewState>, u64);
     fn build(&self, cx: &mut ViewCx, elements: &mut dyn ElementSplice) {
         match self {
             Some(this) => {
@@ -162,6 +165,7 @@ impl<State, Action, Marker, VT: ViewSequence<State, Action, Marker>>
 impl<T, A, Marker, VT: ViewSequence<T, A, Marker>> ViewSequence<T, A, (WasASequence, Marker)>
     for Vec<VT>
 {
+    type ViewState = (Vec<VT::ViewState>, Vec<u32>);
     fn build(&self, cx: &mut ViewCx, elements: &mut dyn ElementSplice) {
         self.iter().enumerate().for_each(|(i, child)| {
             let i: u64 = i.try_into().unwrap();
@@ -225,6 +229,7 @@ impl<T, A, Marker, VT: ViewSequence<T, A, Marker>> ViewSequence<T, A, (WasASeque
 }
 
 impl<T, A> ViewSequence<T, A, ()> for () {
+    type ViewState = ();
     fn build(&self, _: &mut ViewCx, _: &mut dyn ElementSplice) {}
 
     fn rebuild(
@@ -254,6 +259,7 @@ impl<T, A> ViewSequence<T, A, ()> for () {
 impl<State, Action, M0, Seq0: ViewSequence<State, Action, M0>> ViewSequence<State, Action, (M0,)>
     for (Seq0,)
 {
+    type ViewState = Seq0::ViewState;
     fn build(&self, cx: &mut ViewCx, elements: &mut dyn ElementSplice) {
         self.0.build(cx, elements);
     }
@@ -301,6 +307,7 @@ macro_rules! impl_view_tuple {
                 )+
             > ViewSequence<State, Action, ($($marker,)+)> for ($($seq,)+)
         {
+            type ViewState = ($($seq::ViewState,)+);
             fn build(&self, cx: &mut ViewCx, elements: &mut dyn ElementSplice) {
                 $(
                     cx.with_id(ViewId::for_type::<$seq>(BASE_ID.saturating_add($idx)), |cx| {

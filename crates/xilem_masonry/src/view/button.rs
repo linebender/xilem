@@ -22,9 +22,12 @@ where
     F: Fn(&mut State) -> Action + Send + 'static,
 {
     type Element = masonry::widget::Button;
+    type ViewState = ();
 
-    fn build(&self, cx: &mut ViewCx) -> WidgetPod<Self::Element> {
-        cx.with_action_widget(|_| WidgetPod::new(masonry::widget::Button::new(self.label.clone())))
+    fn build(&self, cx: &mut ViewCx) -> (WidgetPod<Self::Element>, Self::ViewState) {
+        cx.with_leaf_action_widget(|_| {
+            WidgetPod::new(masonry::widget::Button::new(self.label.clone()))
+        })
     }
     fn message(
         &self,
