@@ -6,12 +6,12 @@
 use accesskit::Role;
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace, trace_span, warn, Span};
+use vello::kurbo::Line;
 use vello::Scene;
 use winit::dpi::LogicalPosition;
 use winit::event::MouseButton;
 use winit::window::CursorIcon;
 
-use crate::kurbo::Line;
 use crate::paint_scene_helpers::{fill_color, stroke};
 use crate::widget::flex::Axis;
 use crate::widget::{WidgetMut, WidgetPod, WidgetRef};

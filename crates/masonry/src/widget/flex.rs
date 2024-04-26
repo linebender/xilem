@@ -4,13 +4,11 @@
 //! A widget that arranges its children in a one-dimensional array.
 
 use accesskit::Role;
-use kurbo::{Affine, Stroke};
 use smallvec::SmallVec;
 use tracing::{trace, trace_span, Span};
+use vello::kurbo::{common::FloatExt, Affine, Line, Stroke, Vec2};
 use vello::Scene;
 
-use crate::kurbo::common::FloatExt;
-use crate::kurbo::Vec2;
 use crate::theme::get_debug_color;
 use crate::widget::{WidgetMut, WidgetRef};
 use crate::{
@@ -719,7 +717,7 @@ impl Widget for Flex {
         if ctx.debug_paint && ctx.widget_state.baseline_offset != 0.0 {
             let color = get_debug_color(ctx.widget_id().to_raw());
             let my_baseline = ctx.size().height - ctx.widget_state.baseline_offset;
-            let line = crate::kurbo::Line::new((0.0, my_baseline), (ctx.size().width, my_baseline));
+            let line = Line::new((0.0, my_baseline), (ctx.size().width, my_baseline));
 
             let stroke_style = Stroke::new(1.0).with_dashes(0., [4.0, 4.0]);
             scene.stroke(&stroke_style, Affine::IDENTITY, color, None, &line);

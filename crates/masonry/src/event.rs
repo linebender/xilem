@@ -3,13 +3,13 @@
 
 //! Events.
 
-use crate::kurbo::Rect;
 // TODO - See issue #14
 use crate::WidgetId;
 
 use std::{collections::HashSet, path::PathBuf};
 
 use accesskit::{Action, ActionData};
+use vello::kurbo::Rect;
 use winit::dpi::{LogicalPosition, PhysicalPosition, PhysicalSize};
 use winit::event::{Ime, KeyEvent, Modifiers, MouseButton};
 use winit::keyboard::ModifiersState;

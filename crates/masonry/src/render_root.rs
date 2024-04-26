@@ -6,9 +6,9 @@ use std::collections::VecDeque;
 use accesskit::{ActionRequest, NodeBuilder, Tree, TreeUpdate};
 // Automatically defaults to std::time::Instant on non Wasm platforms
 use instant::Instant;
-use kurbo::Affine;
 use parley::FontContext;
 use tracing::{debug, info_span, warn};
+use vello::kurbo::{self, Affine, Point};
 use vello::peniko::{Color, Fill};
 use vello::Scene;
 use winit::dpi::{LogicalPosition, LogicalSize, PhysicalSize};
@@ -18,7 +18,6 @@ use winit::window::CursorIcon;
 use crate::contexts::{EventCtx, LayoutCtx, LifeCycleCtx, PaintCtx, WidgetCtx, WorkerFn};
 use crate::debug_logger::DebugLogger;
 use crate::event::{PointerEvent, TextEvent, WindowEvent};
-use crate::kurbo::Point;
 use crate::widget::{WidgetMut, WidgetState};
 use crate::{
     AccessCtx, AccessEvent, Action, BoxConstraints, Handled, InternalLifeCycle, LifeCycle, Widget,

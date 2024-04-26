@@ -5,12 +5,12 @@
 
 use std::rc::Rc;
 
-use kurbo::{Affine, Line, Point, Rect, Size};
 use parley::context::RangedBuilder;
 use parley::fontique::{Style, Weight};
 use parley::layout::{Alignment, Cursor};
 use parley::style::{Brush as BrushTrait, FontFamily, FontStack, GenericFamily, StyleProperty};
 use parley::{FontContext, Layout, LayoutContext};
+use vello::kurbo::{Affine, Line, Point, Rect, Size};
 use vello::peniko::{self, Color, Gradient};
 use vello::Scene;
 
