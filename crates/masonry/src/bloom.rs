@@ -7,7 +7,7 @@
 use std::hash::{Hash, Hasher};
 use std::marker::PhantomData;
 
-// TODO - Once the bloom filter goess away, remove the fnv dependency.
+// TODO - Once the bloom filter goes away, remove the fnv dependency.
 use fnv::FnvHasher;
 
 const NUM_BITS: u64 = 64;

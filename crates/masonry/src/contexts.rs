@@ -38,7 +38,7 @@ macro_rules! impl_context_method {
 /// When you declare a mutable reference type for your widget, methods of this type
 /// will have access to a `WidgetCtx`. If that method mutates the widget in a way that
 /// requires a later pass (for instance, if your widget has a `set_color` method),
-/// you will need to signal that change in the pass (eg `requrest_paint`).
+/// you will need to signal that change in the pass (eg `request_paint`).
 ///
 // TODO add tutorial - See issue #5
 pub struct WidgetCtx<'a> {

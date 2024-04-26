@@ -352,7 +352,7 @@ fn check_paint_stashed() {
 
 // ---
 
-// TODO - For now, paint_rect is automaticall computed, so there's no way this test fails.
+// TODO - For now, paint_rect is automatically computed, so there's no way this test fails.
 #[cfg(FALSE)]
 #[should_panic(expected = "doesn't contain paint_rect")]
 #[test]

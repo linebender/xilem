@@ -132,7 +132,7 @@ pub struct TestHarness {
 /// If a screenshot already exists, the rendered value is compared against this screenshot.
 /// The assert passes if both are equal; otherwise, a diff file is created.
 ///
-/// If a screeshot doesn't exist, the assert will fail; the new screenshot is stored as
+/// If a screenshot doesn't exist, the assert will fail; the new screenshot is stored as
 /// `./screenshots/<test_name>.new.png`, and must be renamed before the assert will pass.
 #[macro_export]
 macro_rules! assert_render_snapshot {

@@ -324,7 +324,7 @@ Event debug info:
 - tree of visited widgets
 - respective mouse pose
 
-Widget Debuggging
+Widget Debugging
 - Need to see the layout tree at any given point
 - Need to see which subwidgets were not rendered and why
 - Need to see the properties of each widget *at render time* both graphically and in text form
