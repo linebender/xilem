@@ -395,7 +395,7 @@ impl Widget for Split {
                         self.is_bar_hover =
                             ctx.is_hot() && self.bar_hit_test(ctx.size(), state.position);
                         if !self.is_bar_hover {
-                            ctx.clear_cursor()
+                            ctx.clear_cursor();
                         }
                     }
                 }
@@ -456,12 +456,12 @@ impl Widget for Split {
         match self.split_axis {
             Axis::Horizontal => {
                 if !bc.is_width_bounded() {
-                    warn!("A Split widget was given an unbounded width to split.")
+                    warn!("A Split widget was given an unbounded width to split.");
                 }
             }
             Axis::Vertical => {
                 if !bc.is_height_bounded() {
-                    warn!("A Split widget was given an unbounded height to split.")
+                    warn!("A Split widget was given an unbounded height to split.");
                 }
             }
         }
