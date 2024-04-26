@@ -1,5 +1,3 @@
-use std::num::NonZeroU64;
-
 use masonry::{widget::WidgetMut, Widget, WidgetPod};
 
 use crate::{ChangeFlags, MasonryView, MessageResult, ViewCx, ViewId};
@@ -120,14 +118,20 @@ impl<State, Action, Marker, VT: ViewSequence<State, Action, Marker>>
 {
     type SeqState = OptionSeqState<VT::SeqState>;
     fn build(&self, cx: &mut ViewCx, elements: &mut dyn ElementSplice) -> Self::SeqState {
+        let generation = 0;
         match self {
-            Some(this) => OptionSeqState {
-                inner: Some(this.build(cx, elements)),
-                generation: 0,
-            },
+            Some(this) => {
+                let inner = cx.with_id(ViewId::for_type::<VT>(generation), |cx| {
+                    this.build(cx, elements)
+                });
+                OptionSeqState {
+                    inner: Some(inner),
+                    generation,
+                }
+            }
             None => OptionSeqState {
                 inner: None,
-                generation: 0,
+                generation,
             },
         }
     }
@@ -144,7 +148,10 @@ impl<State, Action, Marker, VT: ViewSequence<State, Action, Marker>>
         // (i.e. mixing up the state from different instances)
         debug_assert_eq!(prev.is_some(), seq_state.inner.is_some());
         match (self, prev.as_ref().zip(seq_state.inner.as_mut())) {
-            (Some(this), Some((prev, prev_state))) => this.rebuild(prev_state, cx, prev, elements),
+            (Some(this), Some((prev, prev_state))) => cx
+                .with_id(ViewId::for_type::<VT>(seq_state.generation), |cx| {
+                    this.rebuild(prev_state, cx, prev, elements)
+                }),
             (None, Some((prev, _))) => {
                 // Maybe replace with `prev.cleanup`?
                 let count = prev.count();
@@ -154,8 +161,11 @@ impl<State, Action, Marker, VT: ViewSequence<State, Action, Marker>>
                 ChangeFlags::CHANGED
             }
             (Some(this), None) => {
-                // TODO: Assign an increased generation ViewId here.
-                seq_state.inner = Some(this.build(cx, elements));
+                seq_state.generation += 1;
+                let new_state = cx.with_id(ViewId::for_type::<VT>(seq_state.generation), |cx| {
+                    Some(this.build(cx, elements))
+                });
+                seq_state.inner = new_state;
                 ChangeFlags::CHANGED
             }
             (None, None) => ChangeFlags::UNCHANGED,
@@ -169,9 +179,15 @@ impl<State, Action, Marker, VT: ViewSequence<State, Action, Marker>>
         message: Box<dyn std::any::Any>,
         app_state: &mut State,
     ) -> MessageResult<Action> {
+        let (start, rest) = id_path
+            .split_first()
+            .expect("Id path has elements for Option<ViewSequence>");
+        if start.routing_id() != seq_state.generation {
+            return MessageResult::Stale(message);
+        }
         debug_assert_eq!(self.is_some(), seq_state.inner.is_some());
         if let Some((this, seq_state)) = self.as_ref().zip(seq_state.inner.as_mut()) {
-            this.message(seq_state, id_path, message, app_state)
+            this.message(seq_state, rest, message, app_state)
         } else {
             MessageResult::Stale(message)
         }

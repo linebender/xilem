@@ -110,9 +110,6 @@ where
         prev: &dyn AnyMasonryView<T, A>,
         mut element: WidgetMut<DynWidget>,
     ) -> ChangeFlags {
-        // TODO: Does this need to have a custom view id to enable events sent
-        // to an outdated view path to be caught and returned?
-        // Should we store this generation in `element`? Seems plausible
         if let Some(prev) = prev.as_any().downcast_ref() {
             // If we were previously of this type, then do a normal rebuild
             element.downcast(|element| {
@@ -131,12 +128,11 @@ where
                 }
             })
         } else {
-            // Otherwise, replace the element
+            // Otherwise, replace the element.
 
             // Increase the generation, because the underlying widget has been swapped out.
-            // We increase this in the new
             // Overflow condition: Impossible to overflow, as u64 only ever incremented by 1
-            // and starting at 0
+            // and starting at 0.
             dyn_state.generation = dyn_state.generation.wrapping_add(1);
             let (new_element, view_state) = cx
                 .with_id(ViewId::for_type::<V>(dyn_state.generation), |cx| {
