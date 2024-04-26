@@ -38,7 +38,7 @@ fn toggleable(data: &mut AppData) -> impl MasonryView<AppData> {
             }),
         )))
     } else {
-        Box::new(button("Activate", |data: &mut AppData| data.active = false))
+        Box::new(button("Activate", |data: &mut AppData| data.active = true))
     };
     inner_view
 }
