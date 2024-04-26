@@ -5,7 +5,7 @@ use masonry::{
     Widget, WidgetPod,
 };
 
-use crate::{ElementSplice, MasonryView, VecSplice, ViewSequence};
+use crate::{ElementSplice, MasonryView, VecSplice, ViewId, ViewSequence};
 
 // TODO: Allow configuring flex properties. I think this actually needs its own view trait?
 pub fn flex<VT, Marker>(sequence: VT) -> Flex<VT, Marker> {
@@ -24,13 +24,17 @@ impl<State, Action, Marker: 'static, Seq> MasonryView<State, Action> for Flex<Se
 where
     Seq: ViewSequence<State, Action, Marker>,
 {
+    type State = Seq::State;
     type Element = widget::Flex;
 
-    fn build(&self, cx: &mut crate::ViewCx) -> masonry::WidgetPod<Self::Element> {
+    fn build(
+        &self,
+        cx: &mut crate::ViewCx,
+    ) -> (ViewId, Self::State, masonry::WidgetPod<Self::Element>) {
         let mut elements = Vec::new();
         let mut scratch = Vec::new();
         let mut splice = VecSplice::new(&mut elements, &mut scratch);
-        self.sequence.build(cx, &mut splice);
+        let seq_state = self.sequence.build(cx, &mut splice);
         let mut view = widget::Flex::column();
         debug_assert!(
             scratch.is_empty(),
@@ -40,27 +44,30 @@ where
         for item in elements.drain(..) {
             view = view.with_child_pod(item).with_default_spacer();
         }
-        WidgetPod::new(view)
+        (ViewId::next_with_type::<Self>(), seq_state, WidgetPod::new(view))
     }
 
     fn message(
         &self,
         id_path: &[crate::ViewId],
+        state: &mut Self::State,
         message: Box<dyn std::any::Any>,
         app_state: &mut State,
     ) -> crate::MessageResult<Action> {
-        self.sequence.message(id_path, message, app_state)
+        self.sequence.message(id_path, state, message, app_state)
     }
 
     fn rebuild(
         &self,
         cx: &mut crate::ViewCx,
         prev: &Self,
-        // _id: &mut Id,
+        _id: &mut ViewId,
+        state: &mut Self::State,
         element: widget::WidgetMut<Self::Element>,
     ) -> crate::ChangeFlags {
         let mut splice = FlexSplice { ix: 0, element };
-        self.sequence.rebuild(cx, &prev.sequence, &mut splice)
+        self.sequence
+            .rebuild(cx, &prev.sequence, state, &mut splice)
     }
 }
 
@@ -114,7 +121,6 @@ impl ElementSplice for FlexSplice<'_> {
     }
 
     fn len(&self) -> usize {
-        // This is not correct because of the spacer items. Is `len` actually needed?
-        self.element.len() - self.ix
+        self.ix
     }
 }

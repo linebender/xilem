@@ -27,18 +27,20 @@ pub use id::ViewId;
 pub use sequence::{ElementSplice, ViewSequence};
 pub use vec_splice::VecSplice;
 
-pub struct Xilem<State, Logic, View>
+pub struct Xilem<AppState, Logic, View>
 where
-    View: MasonryView<State>,
+    View: MasonryView<AppState>,
 {
     root_widget: RootWidget<View::Element>,
-    driver: MasonryDriver<State, Logic, View>,
+    driver: MasonryDriver<AppState, Logic, View>,
 }
 
-pub struct MasonryDriver<State, Logic, View> {
-    state: State,
+pub struct MasonryDriver<AppState, Logic, View: MasonryView<AppState, ()>> {
+    app_state: AppState,
+    view_state: View::State,
+    root_view_id: ViewId,
     logic: Logic,
-    current_view: View,
+    root_view: View,
     view_cx: ViewCx,
 }
 
@@ -83,10 +85,10 @@ impl<E: 'static + Widget> Widget for RootWidget<E> {
     }
 }
 
-impl<State, Logic, View> AppDriver for MasonryDriver<State, Logic, View>
+impl<AppState, Logic, View> AppDriver for MasonryDriver<AppState, Logic, View>
 where
-    Logic: FnMut(&mut State) -> View,
-    View: MasonryView<State>,
+    Logic: FnMut(&mut AppState) -> View,
+    View: MasonryView<AppState>,
 {
     fn on_action(
         &mut self,
@@ -95,9 +97,12 @@ where
         action: masonry::Action,
     ) {
         if let Some(id_path) = self.view_cx.widget_map.get(&widget_id) {
-            let message_result =
-                self.current_view
-                    .message(id_path.as_slice(), Box::new(action), &mut self.state);
+            let message_result = self.root_view.message(
+                id_path.as_slice(),
+                &mut self.view_state,
+                Box::new(action),
+                &mut self.app_state,
+            );
             let rebuild = match message_result {
                 MessageResult::Action(()) => {
                     // It's not entirely clear what to do here
@@ -111,19 +116,25 @@ where
                 }
             };
             if rebuild {
-                let next_view = (self.logic)(&mut self.state);
+                let next_view = (self.logic)(&mut self.app_state);
                 let mut root = ctx.get_root::<RootWidget<View::Element>>();
                 let element = root.get_element();
 
-                let changed = next_view.rebuild(&mut self.view_cx, &self.current_view, element);
+                let changed = next_view.rebuild(
+                    &mut self.view_cx,
+                    &self.root_view,
+                    &mut self.root_view_id,
+                    &mut self.view_state,
+                    element,
+                );
                 if !changed.changed {
                     // Masonry manages all of this itself - ChangeFlags is probably not needed?
                     tracing::debug!("TODO: Skip some work?");
                 }
-                self.current_view = next_view;
+                self.root_view = next_view;
             }
         } else {
-            eprintln!("Got action {action:?} for unknown widget. Did you forget to use `with_action_widget`?");
+            tracing::error!("Got action {action:?} for unknown widget. Did you forget to use `with_action_widget`?");
         }
     }
 }
@@ -134,25 +145,26 @@ impl<E: Widget + StoreInWidgetMut> RootWidgetMut<'_, E> {
     }
 }
 
-impl<State, Logic, View> Xilem<State, Logic, View>
+impl<AppState, Logic, View> Xilem<AppState, Logic, View>
 where
-    Logic: FnMut(&mut State) -> View,
-    View: MasonryView<State>,
+    Logic: FnMut(&mut AppState) -> View,
+    View: MasonryView<AppState>,
 {
-    pub fn new(mut state: State, mut logic: Logic) -> Self {
-        let first_view = logic(&mut state);
+    pub fn new(mut app_state: AppState, mut logic: Logic) -> Self {
+        let first_view = logic(&mut app_state);
         let mut view_cx = ViewCx {
             id_path: vec![],
             widget_map: HashMap::new(),
         };
-        let root_widget = RootWidget {
-            pod: first_view.build(&mut view_cx),
-        };
+        let (root_view_id, view_state, pod) = first_view.build(&mut view_cx);
+        let root_widget = RootWidget { pod };
         Xilem {
             driver: MasonryDriver {
-                current_view: first_view,
+                root_view: first_view,
+                root_view_id,
+                view_state,
                 logic,
-                state,
+                app_state,
                 view_cx,
             },
             root_widget,
@@ -162,7 +174,7 @@ where
     // TODO: Make windows a specific view
     pub fn run_windowed(self, window_title: String) -> Result<(), EventLoopError>
     where
-        State: 'static,
+        AppState: 'static,
         Logic: 'static,
         View: 'static,
     {
@@ -184,30 +196,35 @@ where
         event_loop: EventLoop<()>,
     ) -> Result<(), EventLoopError>
     where
-        State: 'static,
+        AppState: 'static,
         Logic: 'static,
         View: 'static,
     {
         EventLoopRunner::new(self.root_widget, window, event_loop, self.driver).run()
     }
 }
-pub trait MasonryView<State, Action = ()>: Send + 'static {
+pub trait MasonryView<AppState, Action = ()>: Send + 'static {
+    /// Associated state for the view.
+    type State;
+    /// The associated element for the view.
     type Element: Widget + StoreInWidgetMut;
-    fn build(&self, cx: &mut ViewCx) -> WidgetPod<Self::Element>;
+    fn build(&self, cx: &mut ViewCx) -> (ViewId, Self::State, WidgetPod<Self::Element>);
 
     fn rebuild(
         &self,
         _cx: &mut ViewCx,
         prev: &Self,
-        // _id: &mut Id,
+        id: &mut ViewId,
+        state: &mut Self::State,
         element: WidgetMut<Self::Element>,
     ) -> ChangeFlags;
 
     fn message(
         &self,
         id_path: &[ViewId],
+        state: &mut Self::State,
         message: Box<dyn Any>,
-        app_state: &mut State,
+        app_state: &mut AppState,
     ) -> MessageResult<Action>;
 }
 
@@ -231,22 +248,41 @@ pub struct ViewCx {
 }
 
 impl ViewCx {
-    pub fn with_action_widget<E: Widget>(
+    pub fn with_action_widget<V:'static, E: Widget>(
         &mut self,
         f: impl FnOnce(&mut Self) -> WidgetPod<E>,
-    ) -> WidgetPod<E> {
-        let value = f(self);
-        let id = value.id();
-        let path = self.id_path.clone();
-        self.widget_map.insert(id, path);
-        value
+    ) -> (ViewId, WidgetPod<E>) {
+        self.with_new_id::<V, _, _>(|cx| {
+            let value = f(cx);
+            let id = value.id();
+            let path = cx.id_path.clone();
+            cx.widget_map.insert(id, path);
+            value
+        })
     }
 
+    /// Run some logic with an id added to the id path.
+    ///
+    /// This is an ergonomic helper that ensures proper nesting of the id path.
     pub fn with_id<R>(&mut self, id: ViewId, f: impl FnOnce(&mut Self) -> R) -> R {
         self.id_path.push(id);
         let res = f(self);
         self.id_path.pop();
         res
+    }
+
+    /// Allocate a new id and run logic with the new id added to the id path.
+    ///
+    /// Also an ergonomic helper.
+    pub fn with_new_id<V: 'static, T, F: FnOnce(&mut ViewCx) -> T>(&mut self, f: F) -> (ViewId, T) {
+        // Note: Currently this requires an extra generic param `V` to be `'static`,
+        // which is not really necessary (only for debugging),
+        // so in case this causes issues, we can just not use that debugging information (i.e. `ViewId::next()`)
+        let id = ViewId::next_with_type::<V>();
+        self.id_path.push(id);
+        let result = f(self);
+        self.id_path.pop();
+        (id, result)
     }
 }
 
@@ -258,4 +294,22 @@ pub enum MessageResult<A> {
     #[default]
     Nop,
     Stale(Box<dyn Any>),
+}
+
+impl<A> MessageResult<A> {
+    pub fn map<B>(self, f: impl FnOnce(A) -> B) -> MessageResult<B> {
+        match self {
+            MessageResult::Action(a) => MessageResult::Action(f(a)),
+            MessageResult::RequestRebuild => MessageResult::RequestRebuild,
+            MessageResult::Stale(event) => MessageResult::Stale(event),
+            MessageResult::Nop => MessageResult::Nop,
+        }
+    }
+
+    pub fn or(self, f: impl FnOnce(Box<dyn Any>) -> Self) -> Self {
+        match self {
+            MessageResult::Stale(event) => f(event),
+            _ => self,
+        }
+    }
 }

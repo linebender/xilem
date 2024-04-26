@@ -17,29 +17,26 @@ pub struct Button<F> {
     callback: F,
 }
 
-impl<F, State, Action> MasonryView<State, Action> for Button<F>
+impl<F, AppState, Action> MasonryView<AppState, Action> for Button<F>
 where
-    F: Fn(&mut State) -> Action + Send + 'static,
+    F: Fn(&mut AppState) -> Action + Send + 'static,
 {
+    type State = ();
     type Element = masonry::widget::Button;
 
-    fn build(&self, cx: &mut ViewCx) -> WidgetPod<Self::Element> {
-        cx.with_action_widget(|_| WidgetPod::new(masonry::widget::Button::new(self.label.clone())))
+    fn build(&self, cx: &mut ViewCx) -> (ViewId, Self::State, WidgetPod<Self::Element>) {
+        let (id, element) = cx.with_action_widget::<Self, _>(|_| {
+            WidgetPod::new(masonry::widget::Button::new(self.label.clone()))
+        });
+        (id, (), element)
     }
-    fn message(
-        &self,
-        _id_path: &[ViewId],
-        // TODO: Ensure is masonry button pressed action?
-        _message: Box<dyn std::any::Any>,
-        app_state: &mut State,
-    ) -> crate::MessageResult<Action> {
-        crate::MessageResult::Action((self.callback)(app_state))
-    }
+
     fn rebuild(
         &self,
         _cx: &mut ViewCx,
         prev: &Self,
-        // _id: &mut Id,
+        _id: &mut ViewId,
+        (): &mut Self::State,
         mut element: WidgetMut<Self::Element>,
     ) -> crate::ChangeFlags {
         if prev.label != self.label {
@@ -48,5 +45,17 @@ where
         } else {
             ChangeFlags::UNCHANGED
         }
+    }
+
+    fn message(
+        &self,
+        id_path: &[ViewId],
+        (): &mut Self::State,
+        // TODO: Ensure is masonry button pressed action?
+        _message: Box<dyn std::any::Any>,
+        app_state: &mut AppState,
+    ) -> crate::MessageResult<Action> {
+        debug_assert!(id_path.is_empty());
+        crate::MessageResult::Action((self.callback)(app_state))
     }
 }
