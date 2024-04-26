@@ -1,4 +1,4 @@
-use std::{any::Any, num::NonZeroU64, ops::Deref};
+use std::{any::Any, ops::Deref};
 
 use masonry::{
     declare_widget,
@@ -23,10 +23,21 @@ pub type BoxedMasonryView<T, A = ()> = Box<dyn AnyMasonryView<T, A>>;
 
 impl<T: 'static, A: 'static> MasonryView<T, A> for BoxedMasonryView<T, A> {
     type Element = DynWidget;
-    type ViewState = Box<dyn Any>;
+    type ViewState = AnyViewState;
 
     fn build(&self, cx: &mut ViewCx) -> (masonry::WidgetPod<Self::Element>, Self::ViewState) {
         self.deref().dyn_build(cx)
+    }
+
+    fn message(
+        &self,
+        view_state: &mut Self::ViewState,
+        id_path: &[ViewId],
+        message: Box<dyn std::any::Any>,
+        app_state: &mut T,
+    ) -> crate::MessageResult<A> {
+        self.deref()
+            .dyn_message(view_state, id_path, message, app_state)
     }
 
     fn rebuild(
@@ -37,28 +48,24 @@ impl<T: 'static, A: 'static> MasonryView<T, A> for BoxedMasonryView<T, A> {
         // _id: &mut Id,
         element: masonry::widget::WidgetMut<Self::Element>,
     ) -> ChangeFlags {
-        self.deref().dyn_rebuild(cx, prev.deref(), element)
+        self.deref().dyn_rebuild(view_state, cx, prev.deref(), element)
     }
+}
 
-    fn message(
-        &self,
-        view_state: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: Box<dyn std::any::Any>,
-        app_state: &mut T,
-    ) -> crate::MessageResult<A> {
-        self.deref().dyn_message(id_path, message, app_state)
-    }
+pub struct AnyViewState {
+    inner_state: Box<dyn Any>,
+    generation: u64,
 }
 
 /// A trait enabling type erasure of views.
 pub trait AnyMasonryView<T, A = ()>: Send {
     fn as_any(&self) -> &dyn std::any::Any;
 
-    fn dyn_build(&self, cx: &mut ViewCx) -> (WidgetPod<DynWidget>, Box<dyn std::any::Any>);
+    fn dyn_build(&self, cx: &mut ViewCx) -> (WidgetPod<DynWidget>, AnyViewState);
 
     fn dyn_rebuild(
         &self,
+        dyn_state: &mut AnyViewState,
         cx: &mut ViewCx,
         prev: &dyn AnyMasonryView<T, A>,
         element: WidgetMut<DynWidget>,
@@ -66,6 +73,7 @@ pub trait AnyMasonryView<T, A = ()>: Send {
 
     fn dyn_message(
         &self,
+        dyn_state: &mut AnyViewState,
         id_path: &[ViewId],
         message: Box<dyn std::any::Any>,
         app_state: &mut T,
@@ -80,20 +88,24 @@ where
         self
     }
 
-    fn dyn_build(&self, cx: &mut ViewCx) -> (masonry::WidgetPod<DynWidget>, Box<dyn Any>) {
-        let gen_1 = NonZeroU64::new(1).unwrap();
-        let (element, view_state) = cx.with_id(ViewId::for_type::<V>(gen_1), |cx| self.build(cx));
+    fn dyn_build(&self, cx: &mut ViewCx) -> (masonry::WidgetPod<DynWidget>, AnyViewState) {
+        let generation = 0;
+        let (element, view_state) =
+            cx.with_id(ViewId::for_type::<V>(generation), |cx| self.build(cx));
         (
             WidgetPod::new(DynWidget {
                 inner: element.boxed(),
-                generation: gen_1.checked_add(1).unwrap(),
             }),
-            Box::new(view_state),
+            AnyViewState {
+                inner_state: Box::new(view_state),
+                generation,
+            },
         )
     }
 
     fn dyn_rebuild(
         &self,
+        dyn_state: &mut AnyViewState,
         cx: &mut ViewCx,
         prev: &dyn AnyMasonryView<T, A>,
         mut element: WidgetMut<DynWidget>,
@@ -102,13 +114,17 @@ where
         // to an outdated view path to be caught and returned?
         // Should we store this generation in `element`? Seems plausible
         if let Some(prev) = prev.as_any().downcast_ref() {
-            let generation = element.generation();
             // If we were previously of this type, then do a normal rebuild
             element.downcast(|element| {
                 if let Some(element) = element {
-                    cx.with_id(ViewId::for_type::<V>(generation), move |cx| {
-                        self.rebuild(todo!("DJMcNab"), cx, prev, element)
-                    })
+                    if let Some(state) = dyn_state.inner_state.downcast_mut() {
+                        cx.with_id(ViewId::for_type::<V>(dyn_state.generation), move |cx| {
+                            self.rebuild(state, cx, prev, element)
+                        })
+                    } else {
+                        tracing::error!("Unexpected element state type");
+                        ChangeFlags::UNCHANGED
+                    }
                 } else {
                     eprintln!("downcast of element failed in dyn_rebuild");
                     ChangeFlags::UNCHANGED
@@ -116,9 +132,17 @@ where
             })
         } else {
             // Otherwise, replace the element
-            let next_gen = element.next_generation();
-            let (new_element, view_state) =
-                cx.with_id(ViewId::for_type::<V>(next_gen), |cx| self.build(cx));
+
+            // Increase the generation, because the underlying widget has been swapped out.
+            // We increase this in the new
+            // Overflow condition: Impossible to overflow, as u64 only ever incremented by 1
+            // and starting at 0
+            dyn_state.generation = dyn_state.generation.wrapping_add(1);
+            let (new_element, view_state) = cx
+                .with_id(ViewId::for_type::<V>(dyn_state.generation), |cx| {
+                    self.build(cx)
+                });
+            dyn_state.inner_state = Box::new(view_state);
             element.replace_inner(new_element.boxed());
             ChangeFlags::CHANGED
         }
@@ -126,17 +150,23 @@ where
 
     fn dyn_message(
         &self,
+        dyn_state: &mut AnyViewState,
         id_path: &[ViewId],
         message: Box<dyn std::any::Any>,
         app_state: &mut T,
     ) -> MessageResult<A> {
-        // TODO: Validate this id
-        self.message(
-            todo!("DJMcNab"),
-            id_path.split_first().unwrap().1,
-            message,
-            app_state,
-        )
+        let (start, rest) = id_path
+            .split_first()
+            .expect("Id path has elements for AnyView");
+        if start.routing_id() != dyn_state.generation {
+            return MessageResult::Stale(message);
+        }
+        if let Some(view_state) = dyn_state.inner_state.downcast_mut() {
+            self.message(view_state, rest, message, app_state)
+        } else {
+            // Possibly softer failure?
+            panic!("downcast error in dyn_message");
+        }
     }
 }
 
@@ -145,9 +175,6 @@ where
 /// `WidgetPod<Box<dyn Widget>>` doesn't expose this possibility.
 pub struct DynWidget {
     inner: WidgetPod<Box<dyn Widget>>,
-    // This might be a layer break?
-    /// The generation of the inner widget, increases whenever the contained widget is replaced
-    generation: NonZeroU64,
 }
 
 /// Forward all events to the child widget.
@@ -186,19 +213,8 @@ impl Widget for DynWidget {
 
 declare_widget!(DynWidgetMut, DynWidget);
 
-impl DynWidget {
-    pub fn generation(&self) -> NonZeroU64 {
-        self.generation
-    }
-
-    pub fn next_generation(&self) -> NonZeroU64 {
-        self.generation.checked_add(1).unwrap()
-    }
-}
-
 impl DynWidgetMut<'_> {
     pub(crate) fn replace_inner(&mut self, widget: WidgetPod<Box<dyn Widget>>) {
-        self.widget.generation = self.next_generation();
         self.widget.inner = widget;
         self.ctx.children_changed();
     }

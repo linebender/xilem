@@ -28,6 +28,7 @@ pub trait ViewSequence<State, Action, Marker>: Send + 'static {
     ///
     /// To be able to monitor changes (e.g. tree-structure tracking) rather than just adding elements,
     /// this takes an element splice as well (when it could be just a `Vec` otherwise)
+    #[must_use]
     fn build(&self, cx: &mut ViewCx, elements: &mut dyn ElementSplice) -> Self::SeqState;
 
     /// Update the associated widget.
@@ -113,6 +114,7 @@ pub struct OptionSeqState<InnerState> {
     generation: u64,
 }
 
+// TODO(DJMcNab): Add the generation to the id path
 impl<State, Action, Marker, VT: ViewSequence<State, Action, Marker>>
     ViewSequence<State, Action, (WasASequence, Marker)> for Option<VT>
 {
@@ -137,17 +139,23 @@ impl<State, Action, Marker, VT: ViewSequence<State, Action, Marker>>
         prev: &Self,
         elements: &mut dyn ElementSplice,
     ) -> ChangeFlags {
-        match (self, prev) {
-            (Some(this), Some(prev)) => this.rebuild(todo!("DJMcNab"), cx, prev, elements),
-            (None, Some(prev)) => {
+        // If `prev` was `Some`, we set `seq_state` in reacting to it (and building the inner view)
+        // This could only fail if some malicious parent view was messing with our internal state
+        // (i.e. mixing up the state from different instances)
+        debug_assert_eq!(prev.is_some(), seq_state.inner.is_some());
+        match (self, prev.as_ref().zip(seq_state.inner.as_mut())) {
+            (Some(this), Some((prev, prev_state))) => this.rebuild(prev_state, cx, prev, elements),
+            (None, Some((prev, _))) => {
+                // Maybe replace with `prev.cleanup`?
                 let count = prev.count();
                 elements.delete(count);
+                seq_state.inner = None;
 
                 ChangeFlags::CHANGED
             }
             (Some(this), None) => {
                 // TODO: Assign an increased generation ViewId here.
-                this.build(cx, elements);
+                seq_state.inner = Some(this.build(cx, elements));
                 ChangeFlags::CHANGED
             }
             (None, None) => ChangeFlags::UNCHANGED,
@@ -161,8 +169,9 @@ impl<State, Action, Marker, VT: ViewSequence<State, Action, Marker>>
         message: Box<dyn std::any::Any>,
         app_state: &mut State,
     ) -> MessageResult<Action> {
-        if let Some(this) = self {
-            this.message(todo!("DJMcNab"), id_path, message, app_state)
+        debug_assert_eq!(self.is_some(), seq_state.inner.is_some());
+        if let Some((this, seq_state)) = self.as_ref().zip(seq_state.inner.as_mut()) {
+            this.message(seq_state, id_path, message, app_state)
         } else {
             MessageResult::Stale(message)
         }
@@ -188,8 +197,8 @@ impl<T, A, Marker, VT: ViewSequence<T, A, Marker>> ViewSequence<T, A, (WasASeque
     type SeqState = VecViewState<VT::SeqState>;
     fn build(&self, cx: &mut ViewCx, elements: &mut dyn ElementSplice) -> Self::SeqState {
         let inner = self.iter().enumerate().map(|(i, child)| {
-            let i: u64 = i.try_into().unwrap();
-            let id = NonZeroU64::new(i + 1).unwrap();
+            let id: u64 = i.try_into().unwrap();
+
             cx.with_id(ViewId::for_type::<VT>(id), |cx| child.build(cx, elements))
         });
         let inner_with_generations = inner.map(|it| (it, 0)).collect();
@@ -207,26 +216,30 @@ impl<T, A, Marker, VT: ViewSequence<T, A, Marker>> ViewSequence<T, A, (WasASeque
         elements: &mut dyn ElementSplice,
     ) -> ChangeFlags {
         let mut changed = ChangeFlags::UNCHANGED;
-        for (i, (child, child_prev)) in self.iter().zip(prev).enumerate() {
-            // TODO: Do we want these ids to (also?) have a generational component?
-            let i: u64 = i.try_into().unwrap();
-            let id = NonZeroU64::new(i + 1).unwrap();
+        for (i, ((child, child_prev), child_state)) in self
+            .iter()
+            .zip(prev)
+            .zip(&mut seq_state.inner_with_generations)
+            .enumerate()
+        {
+            // TODO: Correctly set the generational component
+            let id: u64 = i.try_into().unwrap();
             cx.with_id(ViewId::for_type::<VT>(id), |cx| {
-                let el_changed = child.rebuild(todo!("DJMcNab"), cx, child_prev, elements);
+                let el_changed = child.rebuild(&mut child_state.0, cx, child_prev, elements);
                 changed.changed |= el_changed.changed;
             });
         }
         let n = self.len();
         if n < prev.len() {
             let n_delete = prev[n..].iter().map(ViewSequence::count).sum();
+            seq_state.inner_with_generations.drain(n..);
             elements.delete(n_delete);
             changed.changed |= ChangeFlags::CHANGED.changed;
         } else if n > prev.len() {
             // This suggestion from clippy is kind of bad, because we use the absolute index in the id
             #[allow(clippy::needless_range_loop)]
             for ix in prev.len()..n {
-                let id_u64: u64 = ix.try_into().unwrap();
-                let id = NonZeroU64::new(id_u64 + 1).unwrap();
+                let id: u64 = ix.try_into().unwrap();
                 cx.with_id(ViewId::for_type::<VT>(id), |cx| {
                     self[ix].build(cx, elements);
                 });
@@ -246,9 +259,9 @@ impl<T, A, Marker, VT: ViewSequence<T, A, Marker>> ViewSequence<T, A, (WasASeque
         let (start, rest) = id_path
             .split_first()
             .expect("Id path has elements for vector");
-        let index_plus_one: usize = start.routing_id().get().try_into().unwrap();
-        self[index_plus_one - 1].message(
-            &mut seq_state.inner_with_generations[index_plus_one - 1].0,
+        let index: usize = start.routing_id().try_into().unwrap();
+        self[index].message(
+            &mut seq_state.inner_with_generations[index].0,
             rest,
             message,
             app_state,
@@ -323,11 +336,6 @@ impl<State, Action, M0, Seq0: ViewSequence<State, Action, M0>> ViewSequence<Stat
     }
 }
 
-const BASE_ID: NonZeroU64 = match NonZeroU64::new(1) {
-    Some(it) => it,
-    None => unreachable!(),
-};
-
 macro_rules! impl_view_tuple {
     (
         // We could use the ${index} metavariable here once it's stable
@@ -346,7 +354,7 @@ macro_rules! impl_view_tuple {
             type SeqState = ($($seq::SeqState,)+);
             fn build(&self, cx: &mut ViewCx, elements: &mut dyn ElementSplice) -> Self::SeqState {
                 ($(
-                    cx.with_id(ViewId::for_type::<$seq>(BASE_ID.saturating_add($idx)), |cx| {
+                    cx.with_id(ViewId::for_type::<$seq>($idx), |cx| {
                         self.$idx.build(cx, elements)
                     }),
                 )+)
@@ -361,7 +369,7 @@ macro_rules! impl_view_tuple {
             ) -> ChangeFlags {
                 let mut flags = ChangeFlags::UNCHANGED;
                 $(
-                    cx.with_id(ViewId::for_type::<$seq>(BASE_ID.saturating_add($idx)), |cx| {
+                    cx.with_id(ViewId::for_type::<$seq>($idx), |cx| {
                         flags.changed |= self.$idx.rebuild(&mut seq_state.$idx, cx, &prev.$idx, elements).changed;
                     });
                 )+
@@ -378,13 +386,13 @@ macro_rules! impl_view_tuple {
                 let (start, rest) = id_path
                     .split_first()
                     .expect("Id path has elements for tuple");
-                let index_plus_one = start.routing_id().get();
-                match index_plus_one - 1 {
+                match start.routing_id() {
                     $(
                         $idx => self.$idx.message(&mut seq_state.$idx, rest, message, app_state),
                     )+
-                    // TODO: Should not panic? Is this a dynamic viewsequence thing?
-                    _ => unreachable!("Unexpected id path {start:?} in tuple"),
+                    // If we have received a message, our parent is (mostly) certain that we requested it
+                    // The only time that wouldn't be the case is when a generational index has overflowed?
+                    _ => unreachable!("Unexpected id path {start:?} in tuple (wants to be routed via {rest:?})"),
                 }
             }
 
