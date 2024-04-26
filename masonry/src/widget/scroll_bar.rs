@@ -6,10 +6,10 @@
 use accesskit::Role;
 use smallvec::SmallVec;
 use tracing::{trace_span, Span};
+use vello::kurbo::Rect;
 use vello::Scene;
 
 use super::Axis;
-use crate::kurbo::Rect;
 use crate::paint_scene_helpers::{fill_color, stroke};
 use crate::widget::WidgetMut;
 use crate::{

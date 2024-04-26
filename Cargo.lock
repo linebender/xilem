@@ -1878,7 +1878,6 @@ dependencies = [
  "futures-intrusive",
  "image",
  "insta",
- "kurbo",
  "nv-flip",
  "once_cell",
  "parley",

@@ -4,13 +4,12 @@
 //! A checkbox widget.
 
 use accesskit::{DefaultActionVerb, Role, Toggled};
-use kurbo::{Affine, Stroke};
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace, trace_span, Span};
+use vello::kurbo::{Affine, BezPath, Cap, Join, Size, Stroke};
 use vello::Scene;
 
 use crate::action::Action;
-use crate::kurbo::{BezPath, Cap, Join, Size};
 use crate::paint_scene_helpers::{fill_lin_gradient, stroke, UnitPoint};
 use crate::text::TextStorage;
 use crate::widget::{Label, WidgetMut};

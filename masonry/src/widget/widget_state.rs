@@ -4,9 +4,9 @@
 #![cfg(not(tarpaulin_include))]
 
 use std::sync::atomic::{AtomicBool, Ordering};
+use vello::kurbo::{Insets, Point, Rect, Size};
 
 use crate::bloom::Bloom;
-use crate::kurbo::{Insets, Point, Rect, Size};
 use crate::text_helpers::TextFieldRegistration;
 use crate::{CursorIcon, WidgetId};
 

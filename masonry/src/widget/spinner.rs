@@ -6,12 +6,11 @@
 use std::f64::consts::PI;
 
 use accesskit::Role;
-use kurbo::{Affine, Cap, Stroke};
 use smallvec::SmallVec;
 use tracing::{trace, trace_span, Span};
+use vello::kurbo::{Affine, Cap, Line, Stroke};
 use vello::Scene;
 
-use crate::kurbo::Line;
 use crate::widget::WidgetMut;
 use crate::{
     theme, AccessCtx, AccessEvent, BoxConstraints, Color, EventCtx, LayoutCtx, LifeCycle,

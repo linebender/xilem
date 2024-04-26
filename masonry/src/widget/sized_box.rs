@@ -4,13 +4,12 @@
 //! A widget with predefined size.
 
 use accesskit::Role;
-use kurbo::Affine;
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace, trace_span, warn, Span};
+use vello::kurbo::{Affine, RoundedRectRadii};
 use vello::peniko::{BlendMode, Color, Fill, Gradient};
 use vello::Scene;
 
-use crate::kurbo::RoundedRectRadii;
 use crate::paint_scene_helpers::{fill_color, stroke};
 use crate::widget::{WidgetMut, WidgetPod};
 use crate::{

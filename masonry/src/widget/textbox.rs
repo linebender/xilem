@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use accesskit::Role;
-use kurbo::{Affine, Point, Size, Stroke};
 use parley::{
     layout::Alignment,
     style::{FontFamily, FontStack},
@@ -10,6 +9,7 @@ use parley::{
 use smallvec::SmallVec;
 use tracing::{trace, trace_span, Span};
 use vello::{
+    kurbo::{Affine, Point, Size, Stroke},
     peniko::{BlendMode, Color},
     Scene,
 };

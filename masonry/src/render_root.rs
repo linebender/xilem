@@ -4,10 +4,10 @@
 use std::collections::VecDeque;
 
 use accesskit::{ActionRequest, NodeBuilder, Tree, TreeUpdate};
-use kurbo::Affine;
 use parley::fontique::{self, Collection, CollectionOptions};
 use parley::{FontContext, LayoutContext};
 use tracing::{debug, info_span, warn};
+use vello::kurbo::{self, Affine, Point};
 use vello::peniko::{Color, Fill};
 use vello::Scene;
 
@@ -20,7 +20,6 @@ use crate::contexts::{LayoutCtx, LifeCycleCtx, PaintCtx};
 use crate::debug_logger::DebugLogger;
 use crate::dpi::{LogicalPosition, LogicalSize, PhysicalSize};
 use crate::event::{PointerEvent, TextEvent, WindowEvent};
-use crate::kurbo::Point;
 use crate::passes::event::{root_on_access_event, root_on_pointer_event, root_on_text_event};
 use crate::passes::mutate::{mutate_widget, run_mutate_pass};
 use crate::passes::update::run_update_pointer_pass;

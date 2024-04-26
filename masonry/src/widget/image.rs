@@ -5,9 +5,9 @@
 //! Please consider using SVG and the SVG widget as it scales much better.
 
 use accesskit::Role;
-use kurbo::Affine;
 use smallvec::SmallVec;
 use tracing::{trace, trace_span, Span};
+use vello::kurbo::Affine;
 use vello::peniko::{BlendMode, Image as ImageBuf};
 use vello::Scene;
 
