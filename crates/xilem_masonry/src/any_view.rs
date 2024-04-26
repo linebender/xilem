@@ -28,15 +28,6 @@ impl<T: 'static, A: 'static> MasonryView<T, A> for BoxedMasonryView<T, A> {
         self.deref().dyn_build(cx)
     }
 
-    fn message(
-        &self,
-        id_path: &[ViewId],
-        message: Box<dyn std::any::Any>,
-        app_state: &mut T,
-    ) -> crate::MessageResult<A> {
-        self.deref().dyn_message(id_path, message, app_state)
-    }
-
     fn rebuild(
         &self,
         cx: &mut ViewCx,
@@ -44,7 +35,16 @@ impl<T: 'static, A: 'static> MasonryView<T, A> for BoxedMasonryView<T, A> {
         // _id: &mut Id,
         element: masonry::widget::WidgetMut<Self::Element>,
     ) -> ChangeFlags {
-        self.deref().dyn_rebuild(cx, prev, element)
+        self.deref().dyn_rebuild(cx, prev.deref(), element)
+    }
+
+    fn message(
+        &self,
+        id_path: &[ViewId],
+        message: Box<dyn std::any::Any>,
+        app_state: &mut T,
+    ) -> crate::MessageResult<A> {
+        self.deref().dyn_message(id_path, message, app_state)
     }
 }
 
