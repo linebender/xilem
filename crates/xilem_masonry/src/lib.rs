@@ -8,6 +8,7 @@ use masonry::{
     BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Point, PointerEvent,
     Size, StatusChange, TextEvent, Widget, WidgetId, WidgetPod,
 };
+pub use masonry::{widget::Axis, Color, TextAlignment};
 use smallvec::SmallVec;
 use vello::Scene;
 use winit::{

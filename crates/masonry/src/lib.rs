@@ -122,6 +122,7 @@ pub use box_constraints::BoxConstraints;
 pub use contexts::{EventCtx, LayoutCtx, LifeCycleCtx, PaintCtx, WidgetCtx};
 pub use event::{InternalLifeCycle, LifeCycle, PointerEvent, StatusChange, TextEvent, WindowTheme};
 pub use kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
+pub use parley::layout::Alignment as TextAlignment;
 pub use util::{AsAny, Handled};
 pub use vello::peniko::{Color, Gradient};
 pub use widget::{BackgroundBrush, Widget, WidgetId, WidgetPod, WidgetState};

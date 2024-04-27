@@ -1,23 +1,32 @@
 use std::marker::PhantomData;
 
 use masonry::{
-    widget::{self, WidgetMut},
+    widget::{self, Axis, WidgetMut},
     Widget, WidgetPod,
 };
 
-use crate::{ElementSplice, MasonryView, VecSplice, ViewSequence};
+use crate::{ChangeFlags, ElementSplice, MasonryView, VecSplice, ViewSequence};
 
 // TODO: Allow configuring flex properties. I think this actually needs its own view trait?
 pub fn flex<VT, Marker>(sequence: VT) -> Flex<VT, Marker> {
     Flex {
         phantom: PhantomData,
         sequence,
+        axis: Axis::Vertical,
     }
 }
 
 pub struct Flex<VT, Marker> {
     sequence: VT,
+    axis: Axis,
     phantom: PhantomData<fn() -> Marker>,
+}
+
+impl<VT, Marker> Flex<VT, Marker> {
+    pub fn direction(mut self, axis: Axis) -> Self {
+        self.axis = axis;
+        self
+    }
 }
 
 impl<State, Action, Marker: 'static, Seq> MasonryView<State, Action> for Flex<Seq, Marker>
@@ -35,7 +44,7 @@ where
         let mut scratch = Vec::new();
         let mut splice = VecSplice::new(&mut elements, &mut scratch);
         let seq_state = self.sequence.build(cx, &mut splice);
-        let mut view = widget::Flex::column();
+        let mut view = widget::Flex::for_axis(self.axis);
         debug_assert!(
             scratch.is_empty(),
             // TODO: Not at all confident about this, but linear_layout makes this assumption
@@ -63,11 +72,19 @@ where
         view_state: &mut Self::ViewState,
         cx: &mut crate::ViewCx,
         prev: &Self,
-        element: widget::WidgetMut<Self::Element>,
-    ) -> crate::ChangeFlags {
+        mut element: widget::WidgetMut<Self::Element>,
+    ) -> ChangeFlags {
+        let mut changeflags = ChangeFlags::UNCHANGED;
+        if prev.axis != self.axis {
+            element.set_direction(self.axis);
+            changeflags.changed |= ChangeFlags::CHANGED.changed;
+        }
         let mut splice = FlexSplice { ix: 0, element };
-        self.sequence
+        changeflags.changed |= self
+            .sequence
             .rebuild(view_state, cx, &prev.sequence, &mut splice)
+            .changed;
+        changeflags
     }
 }
 
@@ -121,7 +138,6 @@ impl ElementSplice for FlexSplice<'_> {
     }
 
     fn len(&self) -> usize {
-        // This is not correct because of the spacer items. Is `len` actually needed?
-        self.element.len() - self.ix
+        self.ix
     }
 }
