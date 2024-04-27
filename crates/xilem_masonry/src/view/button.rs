@@ -1,6 +1,6 @@
 use masonry::{widget::WidgetMut, ArcStr, WidgetPod};
 
-use crate::{ChangeFlags, MasonryView, ViewCx, ViewId};
+use crate::{ChangeFlags, MasonryView, MessageResult, ViewCx, ViewId};
 
 pub fn button<F, State, Action>(label: impl Into<ArcStr>, callback: F) -> Button<F>
 where
@@ -29,16 +29,7 @@ where
             WidgetPod::new(masonry::widget::Button::new(self.label.clone()))
         })
     }
-    fn message(
-        &self,
-        _view_state: &mut Self::ViewState,
-        _id_path: &[ViewId],
-        // TODO: Ensure is masonry button pressed action?
-        _message: Box<dyn std::any::Any>,
-        app_state: &mut State,
-    ) -> crate::MessageResult<Action> {
-        crate::MessageResult::Action((self.callback)(app_state))
-    }
+
     fn rebuild(
         &self,
         _view_state: &mut Self::ViewState,
@@ -52,5 +43,23 @@ where
         } else {
             ChangeFlags::UNCHANGED
         }
+    }
+
+    fn message(
+        &self,
+        _view_state: &mut Self::ViewState,
+        id_path: &[ViewId],
+        message: Box<dyn std::any::Any>,
+        app_state: &mut State,
+    ) -> crate::MessageResult<Action> {
+        debug_assert!(
+            id_path.is_empty(),
+            "id path should be empty in Button::message"
+        );
+        if let Some(masonry::Action::ButtonPressed) = message.downcast_ref() {
+            return MessageResult::Action((self.callback)(app_state));
+        }
+        tracing::error!("Wrong message type in Button::message");
+        MessageResult::Stale(message)
     }
 }
