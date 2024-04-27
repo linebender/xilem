@@ -246,7 +246,7 @@ impl Flex {
 // --- Mutate live Flex - WidgetMut ---
 
 impl<'a> FlexMut<'a> {
-    /// Set the flex direction (see [`Axis`].
+    /// Set the flex direction (see [`Axis`]).
     ///
     /// [`Axis`]: enum.Axis.html
     pub fn set_direction(&mut self, direction: Axis) {

@@ -15,6 +15,12 @@ fn app_logic(data: &mut AppData) -> impl MasonryView<AppData> {
 
     // The actual UI Code starts here
 
+    let axis = if data.active {
+        Axis::Horizontal
+    } else {
+        Axis::Vertical
+    };
+
     let sequence = (0..count)
         .map(|x| button(format!("+{x}"), move |data: &mut AppData| data.count += x))
         .collect::<Vec<_>>();
@@ -33,7 +39,7 @@ fn app_logic(data: &mut AppData) -> impl MasonryView<AppData> {
         toggleable(data),
         button("Decrement", |data: &mut AppData| data.count -= 1),
         button("Reset", |data: &mut AppData| data.count = 0),
-        sequence,
+        flex(sequence).direction(axis),
     ))
 }
 
