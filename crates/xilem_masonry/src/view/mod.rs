@@ -6,3 +6,6 @@ pub use checkbox::*;
 
 mod flex;
 pub use flex::*;
+
+mod label;
+pub use label::*;

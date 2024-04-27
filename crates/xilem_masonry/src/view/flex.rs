@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 
 use masonry::{
-    widget::{self, WidgetMut},
+    widget::{self, Axis, WidgetMut},
     Widget, WidgetPod,
 };
 
@@ -12,12 +12,21 @@ pub fn flex<VT, Marker>(sequence: VT) -> Flex<VT, Marker> {
     Flex {
         phantom: PhantomData,
         sequence,
+        axis: Axis::Vertical,
     }
 }
 
 pub struct Flex<VT, Marker> {
     sequence: VT,
+    axis: Axis,
     phantom: PhantomData<fn() -> Marker>,
+}
+
+impl<VT, Marker> Flex<VT, Marker> {
+    pub fn direction(mut self, axis: Axis) -> Self {
+        self.axis = axis;
+        self
+    }
 }
 
 impl<State, Action, Marker: 'static, Seq> MasonryView<State, Action> for Flex<Seq, Marker>
@@ -35,7 +44,7 @@ where
         let mut scratch = Vec::new();
         let mut splice = VecSplice::new(&mut elements, &mut scratch);
         let seq_state = self.sequence.build(cx, &mut splice);
-        let mut view = widget::Flex::column();
+        let mut view = widget::Flex::for_axis(self.axis);
         debug_assert!(
             scratch.is_empty(),
             // TODO: Not at all confident about this, but linear_layout makes this assumption
@@ -121,7 +130,6 @@ impl ElementSplice for FlexSplice<'_> {
     }
 
     fn len(&self) -> usize {
-        // This is not correct because of the spacer items. Is `len` actually needed?
-        self.element.len() - self.ix
+        self.ix
     }
 }

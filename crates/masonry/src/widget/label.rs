@@ -109,6 +109,12 @@ impl Label {
         self
     }
 
+    /// Builder-style method to disable this label.
+    pub fn with_disabled(mut self, disabled: bool) -> Self {
+        self.disabled = disabled;
+        self
+    }
+
     /// Return the current value of the label's text.
     pub fn text(&self) -> ArcStr {
         self.current_text.clone()
@@ -178,6 +184,13 @@ impl LabelMut<'_> {
     /// Set the [`Alignment`] for this layout.
     pub fn set_text_alignment(&mut self, alignment: Alignment) {
         self.widget.alignment = alignment;
+        self.ctx.request_layout();
+    }
+
+    /// Set disabled
+    pub fn set_disabled(&mut self, disabled: bool) {
+        self.widget.disabled = disabled;
+        // TODO: only request_paint necessary?
         self.ctx.request_layout();
     }
 }
