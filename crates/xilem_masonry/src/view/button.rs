@@ -56,10 +56,19 @@ where
             id_path.is_empty(),
             "id path should be empty in Button::message"
         );
-        if let Some(masonry::Action::ButtonPressed) = message.downcast_ref() {
-            return MessageResult::Action((self.callback)(app_state));
+        match message.downcast::<masonry::Action>() {
+            Ok(action) => {
+                if let masonry::Action::ButtonPressed = *action {
+                    MessageResult::Action((self.callback)(app_state))
+                } else {
+                    tracing::error!("Wrong action type in Checkbox::message: {action:?}");
+                    MessageResult::Stale(action)
+                }
+            }
+            Err(message) => {
+                tracing::error!("Wrong message type in Checkbox::message");
+                MessageResult::Stale(message)
+            }
         }
-        tracing::error!("Wrong message type in Button::message");
-        MessageResult::Stale(message)
     }
 }
