@@ -5,7 +5,7 @@ use crate::{ChangeFlags, Color, MasonryView, MessageResult, TextAlignment, ViewC
 pub fn label(label: impl Into<ArcStr>) -> Label {
     Label {
         label: label.into(),
-        text_color: Color::default(),
+        text_color: Color::BLACK,
         alignment: TextAlignment::default(),
         disabled: false,
     }
@@ -87,6 +87,7 @@ impl<State, Action> MasonryView<State, Action> for Label {
         message: Box<dyn std::any::Any>,
         _app_state: &mut State,
     ) -> crate::MessageResult<Action> {
+        tracing::error!("Message arrived in Label::message, but Label doesn't consume any messages, this is a bug");
         MessageResult::Stale(message)
     }
 }

@@ -246,13 +246,20 @@ impl Flex {
 // --- Mutate live Flex - WidgetMut ---
 
 impl<'a> FlexMut<'a> {
+    /// Set the flex direction (see [`Axis`].
+    ///
+    /// [`Axis`]: enum.Axis.html
+    pub fn set_direction(&mut self, direction: Axis) {
+        self.widget.direction = direction;
+        self.ctx.request_layout();
+    }
+
     /// Set the childrens' [`CrossAxisAlignment`].
     ///
     /// [`CrossAxisAlignment`]: enum.CrossAxisAlignment.html
     pub fn set_cross_axis_alignment(&mut self, alignment: CrossAxisAlignment) {
         self.widget.cross_alignment = alignment;
-        // TODO
-        self.ctx.widget_state.needs_layout = true;
+        self.ctx.request_layout();
     }
 
     /// Set the childrens' [`MainAxisAlignment`].
@@ -260,16 +267,14 @@ impl<'a> FlexMut<'a> {
     /// [`MainAxisAlignment`]: enum.MainAxisAlignment.html
     pub fn set_main_axis_alignment(&mut self, alignment: MainAxisAlignment) {
         self.widget.main_alignment = alignment;
-        // TODO
-        self.ctx.widget_state.needs_layout = true;
+        self.ctx.request_layout();
     }
 
     /// Set whether the container must expand to fill the available space on
     /// its main axis.
     pub fn set_must_fill_main_axis(&mut self, fill: bool) {
         self.widget.fill_major_axis = fill;
-        // TODO
-        self.ctx.widget_state.needs_layout = true;
+        self.ctx.request_layout();
     }
 
     /// Add a non-flex child widget.
@@ -317,9 +322,7 @@ impl<'a> FlexMut<'a> {
             }
         };
         self.widget.children.push(child);
-        // TODO
-        self.ctx.widget_state.children_changed = true;
-        self.ctx.widget_state.needs_layout = true;
+        self.ctx.children_changed();
     }
 
     /// Add a spacer widget with a standard size.

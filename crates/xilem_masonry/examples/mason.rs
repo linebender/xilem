@@ -39,14 +39,17 @@ fn app_logic(data: &mut AppData) -> impl MasonryView<AppData> {
 
 fn toggleable(data: &mut AppData) -> impl MasonryView<AppData> {
     let inner_view: BoxedMasonryView<_, _> = if data.active {
-        Box::new(flex((
-            button("Deactivate", |data: &mut AppData| {
-                data.active = false;
-            }),
-            button("Unlimited Power", |data: &mut AppData| {
-                data.count = -1_000_000;
-            }),
-        )))
+        Box::new(
+            flex((
+                button("Deactivate", |data: &mut AppData| {
+                    data.active = false;
+                }),
+                button("Unlimited Power", |data: &mut AppData| {
+                    data.count = -1_000_000;
+                }),
+            ))
+            .direction(Axis::Horizontal),
+        )
     } else {
         Box::new(button("Activate", |data: &mut AppData| data.active = true))
     };
