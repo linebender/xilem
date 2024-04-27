@@ -2,31 +2,40 @@ use masonry::{widget::WidgetMut, ArcStr, WidgetPod};
 
 use crate::{ChangeFlags, MasonryView, MessageResult, ViewCx, ViewId};
 
-pub fn button<F, State, Action>(label: impl Into<ArcStr>, callback: F) -> Button<F>
+pub fn checkbox<F, State, Action>(
+    label: impl Into<ArcStr>,
+    checked: bool,
+    callback: F,
+) -> Checkbox<F>
 where
-    F: Fn(&mut State) -> Action + Send + 'static,
+    F: Fn(&mut State, bool) -> Action + Send + 'static,
 {
-    Button {
+    Checkbox {
         label: label.into(),
         callback,
+        checked,
     }
 }
 
-pub struct Button<F> {
+pub struct Checkbox<F> {
     label: ArcStr,
+    checked: bool,
     callback: F,
 }
 
-impl<F, State, Action> MasonryView<State, Action> for Button<F>
+impl<F, State, Action> MasonryView<State, Action> for Checkbox<F>
 where
-    F: Fn(&mut State) -> Action + Send + 'static,
+    F: Fn(&mut State, bool) -> Action + Send + 'static,
 {
-    type Element = masonry::widget::Button;
+    type Element = masonry::widget::Checkbox;
     type ViewState = ();
 
     fn build(&self, cx: &mut ViewCx) -> (WidgetPod<Self::Element>, Self::ViewState) {
         cx.with_leaf_action_widget(|_| {
-            WidgetPod::new(masonry::widget::Button::new(self.label.clone()))
+            WidgetPod::new(masonry::widget::Checkbox::new(
+                self.checked,
+                self.label.clone(),
+            ))
         })
     }
 
@@ -37,12 +46,16 @@ where
         prev: &Self,
         mut element: WidgetMut<Self::Element>,
     ) -> crate::ChangeFlags {
+        let mut changeflags = ChangeFlags::UNCHANGED;
         if prev.label != self.label {
             element.set_text(self.label.clone());
-            ChangeFlags::CHANGED
-        } else {
-            ChangeFlags::UNCHANGED
+            changeflags.changed |= ChangeFlags::CHANGED.changed;
         }
+        if prev.checked != self.checked {
+            element.set_checked(self.checked);
+            changeflags.changed |= ChangeFlags::CHANGED.changed;
+        }
+        changeflags
     }
 
     fn message(
@@ -51,15 +64,15 @@ where
         id_path: &[ViewId],
         message: Box<dyn std::any::Any>,
         app_state: &mut State,
-    ) -> crate::MessageResult<Action> {
+    ) -> MessageResult<Action> {
         debug_assert!(
             id_path.is_empty(),
-            "id path should be empty in Button::message"
+            "id path should be empty in Checkbox::message"
         );
         match message.downcast::<masonry::Action>() {
             Ok(action) => {
-                if let masonry::Action::ButtonPressed = *action {
-                    MessageResult::Action((self.callback)(app_state))
+                if let masonry::Action::CheckboxChecked(checked) = *action {
+                    MessageResult::Action((self.callback)(app_state, checked))
                 } else {
                     tracing::error!("Wrong action type in Checkbox::message: {action:?}");
                     MessageResult::Stale(action)
