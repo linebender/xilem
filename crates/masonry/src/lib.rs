@@ -82,11 +82,8 @@
 )]
 // #![warn(missing_docs)]
 #![warn(unused_imports)]
-#![allow(clippy::new_ret_no_self)]
-#![allow(clippy::needless_doctest_main)]
 #![allow(clippy::should_implement_trait)]
 #![allow(clippy::single_match)]
-#![allow(clippy::bool_assert_comparison)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![cfg_attr(not(debug_assertions), allow(unused))]
 
