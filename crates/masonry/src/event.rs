@@ -172,7 +172,9 @@ pub enum InternalLifeCycle {
     RouteDisabledChanged,
 
     /// The parents widget origin in window coordinate space has changed.
-    ParentWindowOrigin,
+    ParentWindowOrigin {
+        mouse_pos: Option<PhysicalPosition<f64>>,
+    },
 }
 
 /// Event indicating status changes within the widget hierarchy.
@@ -293,7 +295,7 @@ impl LifeCycle {
                 InternalLifeCycle::RouteWidgetAdded => "RouteWidgetAdded",
                 InternalLifeCycle::RouteFocusChanged { .. } => "RouteFocusChanged",
                 InternalLifeCycle::RouteDisabledChanged => "RouteDisabledChanged",
-                InternalLifeCycle::ParentWindowOrigin => "ParentWindowOrigin",
+                InternalLifeCycle::ParentWindowOrigin { .. } => "ParentWindowOrigin",
             },
             LifeCycle::WidgetAdded => "WidgetAdded",
             LifeCycle::AnimFrame(_) => "AnimFrame",
@@ -318,7 +320,7 @@ impl InternalLifeCycle {
             InternalLifeCycle::RouteWidgetAdded
             | InternalLifeCycle::RouteFocusChanged { .. }
             | InternalLifeCycle::RouteDisabledChanged => true,
-            InternalLifeCycle::ParentWindowOrigin => false,
+            InternalLifeCycle::ParentWindowOrigin { .. } => false,
         }
     }
 }

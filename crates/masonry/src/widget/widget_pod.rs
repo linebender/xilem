@@ -605,9 +605,16 @@ impl<W: Widget> WidgetPod<W> {
                         _ => false,
                     }
                 }
-                InternalLifeCycle::ParentWindowOrigin => {
+                InternalLifeCycle::ParentWindowOrigin { mouse_pos } => {
                     self.state.parent_window_origin = parent_ctx.widget_state.window_origin();
                     self.state.needs_window_origin = false;
+                    let mouse_pos = mouse_pos.map(|pos| PhysicalPosition::new(pos.x, pos.y));
+                    WidgetPod::update_hot_state(
+                        &mut self.inner,
+                        &mut self.state,
+                        parent_ctx.global_state,
+                        mouse_pos,
+                    );
                     // TODO - self.state.is_hidden
                     true
                 }
@@ -626,6 +633,7 @@ impl<W: Widget> WidgetPod<W> {
                 self.state.update_focus_chain = true;
                 self.state.needs_layout = true;
                 self.state.needs_paint = true;
+                self.state.needs_window_origin = true;
 
                 true
             }
@@ -784,7 +792,6 @@ impl<W: Widget> WidgetPod<W> {
         self.check_initialized("layout");
 
         self.state.needs_layout = false;
-        self.state.needs_window_origin = false;
         self.state.is_expecting_place_child_call = true;
         // TODO - Not everything that has been re-laid out needs to be repainted.
         self.state.needs_paint = true;
