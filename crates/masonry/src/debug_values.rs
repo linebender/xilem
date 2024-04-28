@@ -17,8 +17,9 @@ pub type MyWidgetId = u32;
 #[derive(Clone, Copy, Default, Debug, PartialEq, Eq, Hash, Deserialize, Serialize)]
 pub struct LogId(pub i32);
 
-#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, PartialEq, Deserialize, Serialize)]
 pub enum Value {
+    #[default]
     Empty,
     String(String),
     Bool(bool),
@@ -83,12 +84,6 @@ impl Display for Value {
             Value::Id(id) => write!(f, "{}", id),
             Value::LogId(_) => write!(f, "<snapshot>"),
         }
-    }
-}
-
-impl Default for Value {
-    fn default() -> Self {
-        Value::Empty
     }
 }
 
