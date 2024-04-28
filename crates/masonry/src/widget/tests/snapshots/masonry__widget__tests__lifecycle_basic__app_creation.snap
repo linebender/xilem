@@ -1,6 +1,5 @@
 ---
-source: src/widget/tests/lifecycle_basic.rs
-assertion_line: 23
+source: crates/masonry/src/widget/tests/lifecycle_basic.rs
 expression: record
 ---
 [
@@ -15,7 +14,9 @@ expression: record
     ),
     L(
         Internal(
-            ParentWindowOrigin,
+            ParentWindowOrigin {
+                mouse_pos: None,
+            },
         ),
     ),
 ]
