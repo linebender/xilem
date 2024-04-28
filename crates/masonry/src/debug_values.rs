@@ -137,7 +137,7 @@ impl Snapshot {
 
     pub fn get_selected_state_mut(&mut self) -> &mut StateTree {
         self.widget_states
-            .get_mut(&mut self.selected_widget)
+            .get_mut(&self.selected_widget)
             .unwrap_or(&mut self.global_state)
     }
 }
@@ -148,7 +148,7 @@ impl Timeline {
     }
 
     pub fn get_selected_snapshot_mut(&mut self) -> &mut Snapshot {
-        self.snapshots.get_mut(&mut self.selected_log).unwrap()
+        self.snapshots.get_mut(&self.selected_log).unwrap()
     }
 }
 
