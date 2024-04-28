@@ -335,7 +335,6 @@ impl RenderRoot {
         }
 
         layout_ctx.place_child(&mut self.root, Point::ORIGIN);
-        self.root_lifecycle(LifeCycle::Internal(InternalLifeCycle::ParentWindowOrigin));
         self.post_event_processing(&mut widget_state);
     }
 
@@ -389,7 +388,9 @@ impl RenderRoot {
         }
 
         if self.root.state().needs_window_origin && !self.root.state().needs_layout {
-            let event = LifeCycle::Internal(InternalLifeCycle::ParentWindowOrigin);
+            let event = LifeCycle::Internal(InternalLifeCycle::ParentWindowOrigin {
+                mouse_pos: self.last_mouse_pos,
+            });
             self.root_lifecycle(event);
         }
 
