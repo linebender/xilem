@@ -165,6 +165,7 @@ jobs:
     name: cargo test
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [windows-latest, macos-latest, ubuntu-latest]
         include:
@@ -172,7 +173,7 @@ jobs:
             # TODO: It should be possible to get WARP working here
             skip_gpu: '1'
           - os: macos-latest
-            skip_gpu: '1' # Unclear failure reason
+            skip_gpu: ''
           - os: ubuntu-latest
             skip_gpu: ''
     steps:
@@ -205,6 +206,12 @@ jobs:
         env:
           SKIP_RENDER_TESTS: ${{ matrix.skip_gpu }}
           SKIP_RENDER_SNAPSHOTS: ${{ matrix.skip_gpu }}
+      
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: masonry-snapshot-tests-${{ matrix.os }}
+          path: crates/masonry/src/widget/screenshots/
 
   test-stable-wasm:
     name: cargo test (wasm32)
