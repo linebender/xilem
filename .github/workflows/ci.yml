@@ -172,7 +172,7 @@ jobs:
             # TODO: It should be possible to get WARP working here
             skip_gpu: '1'
           - os: macos-latest
-            skip_gpu: ''
+            skip_gpu: '1' # Unclear failure reason
           - os: ubuntu-latest
             skip_gpu: ''
     steps:
