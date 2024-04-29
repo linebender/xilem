@@ -167,6 +167,14 @@ jobs:
     strategy:
       matrix:
         os: [windows-latest, macos-latest, ubuntu-latest]
+        include:
+          - os: windows-latest
+            # TODO: It should be possible to get WARP working here
+            skip_gpu: '1'
+          - os: macos-latest
+            skip_gpu: ''
+          - os: ubuntu-latest
+            skip_gpu: ''
     steps:
       - uses: actions/checkout@v4
 
@@ -194,6 +202,9 @@ jobs:
 
       - name: cargo test
         run: cargo test --workspace --locked --all-features
+        env:
+          SKIP_RENDER_TESTS: ${{ matrix.skip_gpu }}
+          SKIP_RENDER_SNAPSHOTS: ${{ matrix.skip_gpu }}
 
   test-stable-wasm:
     name: cargo test (wasm32)

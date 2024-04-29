@@ -528,7 +528,7 @@ impl TestHarness {
         test_module_path: &str,
         test_name: &str,
     ) {
-        if option_env!("SKIP_RENDER_SNAPSHOTS").is_some() {
+        if std::env::var("SKIP_RENDER_SNAPSHOTS").is_ok_and(|it| !it.is_empty()) {
             // FIXME - This is a terrible, awful hack.
             // We need a way to skip render snapshots on CI and locally
             // until we can make sure the snapshots render the same on
