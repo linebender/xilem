@@ -69,6 +69,7 @@ pub fn render_text(scene: &mut Scene, transform: Affine, layout: &Layout<Brush>)
             scene
                 .draw_glyphs(font)
                 .brush(&style.brush)
+                .hint(true)
                 .transform(transform)
                 .glyph_transform(glyph_xform)
                 .font_size(font_size)

@@ -144,8 +144,7 @@ impl Label {
 
         // TODO - Refactor. This code is mostly copy-pasted from Xilem's text widget
         // Not super elegant.
-        self.text_layout = Some(layout_builder.build());
-        self.text_layout.as_mut().unwrap()
+        self.text_layout.insert(layout_builder.build())
     }
 }
 

@@ -42,7 +42,13 @@ impl EventLoopRunner {
         Self {
             window: Arc::new(window),
             event_loop,
-            render_root: RenderRoot::new(root_widget, WindowSizePolicy::User),
+            render_root: RenderRoot::new(
+                root_widget,
+                render_root::RenderRootOptions {
+                    use_system_fonts: true,
+                    size_policy: WindowSizePolicy::User,
+                },
+            ),
             app_driver: Box::new(app_driver),
         }
     }
