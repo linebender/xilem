@@ -9,7 +9,7 @@ use masonry::{
 use smallvec::SmallVec;
 use vello::Scene;
 
-use crate::{ChangeFlags, MasonryView, MessageResult, ViewCx, ViewId};
+use crate::{ChangeFlags, MasonryView, MessageResult, View, ViewCx, ViewId};
 
 /// A view which can have any underlying view type.
 ///
@@ -21,11 +21,11 @@ use crate::{ChangeFlags, MasonryView, MessageResult, ViewCx, ViewId};
 // TODO: Mention `Either` when we have implemented that?
 pub type BoxedMasonryView<T, A = ()> = Box<dyn AnyMasonryView<T, A>>;
 
-impl<T: 'static, A: 'static> MasonryView<T, A> for BoxedMasonryView<T, A> {
-    type Element = DynWidget;
+impl<T: 'static, A: 'static> View<T, A> for BoxedMasonryView<T, A> {
+    type Element = WidgetPod<DynWidget>;
     type ViewState = AnyViewState;
 
-    fn build(&self, cx: &mut ViewCx) -> (masonry::WidgetPod<Self::Element>, Self::ViewState) {
+    fn build(&self, cx: &mut ViewCx) -> (Self::Element, Self::ViewState) {
         self.deref().dyn_build(cx)
     }
 
@@ -45,7 +45,7 @@ impl<T: 'static, A: 'static> MasonryView<T, A> for BoxedMasonryView<T, A> {
         view_state: &mut Self::ViewState,
         cx: &mut ViewCx,
         prev: &Self,
-        element: masonry::widget::WidgetMut<Self::Element>,
+        element: WidgetMut<DynWidget>,
     ) -> ChangeFlags {
         self.deref()
             .dyn_rebuild(view_state, cx, prev.deref(), element)

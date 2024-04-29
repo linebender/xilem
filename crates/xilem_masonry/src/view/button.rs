@@ -1,6 +1,6 @@
 use masonry::{widget::WidgetMut, ArcStr, WidgetPod};
 
-use crate::{ChangeFlags, MasonryView, MessageResult, ViewCx, ViewId};
+use crate::{ChangeFlags, MessageResult, View, ViewCx, ViewId};
 
 pub fn button<F, State, Action>(label: impl Into<ArcStr>, callback: F) -> Button<F>
 where
@@ -17,14 +17,14 @@ pub struct Button<F> {
     callback: F,
 }
 
-impl<F, State, Action> MasonryView<State, Action> for Button<F>
+impl<F, State, Action> View<State, Action> for Button<F>
 where
     F: Fn(&mut State) -> Action + Send + 'static,
 {
-    type Element = masonry::widget::Button;
+    type Element = WidgetPod<masonry::widget::Button>;
     type ViewState = ();
 
-    fn build(&self, cx: &mut ViewCx) -> (WidgetPod<Self::Element>, Self::ViewState) {
+    fn build(&self, cx: &mut ViewCx) -> (WidgetPod<masonry::widget::Button>, Self::ViewState) {
         cx.with_leaf_action_widget(|_| {
             WidgetPod::new(masonry::widget::Button::new(self.label.clone()))
         })
@@ -35,7 +35,7 @@ where
         _view_state: &mut Self::ViewState,
         _cx: &mut ViewCx,
         prev: &Self,
-        mut element: WidgetMut<Self::Element>,
+        mut element: WidgetMut<masonry::widget::Button>,
     ) -> crate::ChangeFlags {
         if prev.label != self.label {
             element.set_text(self.label.clone());

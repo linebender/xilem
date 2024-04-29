@@ -1,25 +1,22 @@
-use masonry::{widget::WidgetMut, Widget, WidgetPod};
+use masonry::{Widget, WidgetPod};
 
-use crate::{ChangeFlags, MasonryView, MessageResult, ViewCx, ViewId};
+use crate::{ChangeFlags, MessageResult, View, ViewCx, ViewElement, ViewId};
 
 #[allow(clippy::len_without_is_empty)]
-pub trait ElementSplice {
+pub trait ElementSplice<Element: ViewElement = WidgetPod<Box<dyn Widget>>> {
     /// Insert a new element at the current index in the resulting collection (and increment the index by 1)
-    fn push(&mut self, element: WidgetPod<Box<dyn Widget>>);
+    fn push(&mut self, element: Element);
     /// Mutate the next existing element, and add it to the resulting collection (and increment the index by 1)
     // TODO: This should actually return `WidgetMut<dyn Widget>`, but that isn't supported in Masonry itself yet
-    fn mutate(&mut self) -> WidgetMut<Box<dyn Widget>>;
+    fn mutate(&mut self) -> Element::Mut<'_>;
     /// Delete the next n existing elements (this doesn't change the index)
     fn delete(&mut self, n: usize);
-    /// Current length of the elements collection
-    // TODO: Is `len` needed?
-    fn len(&self) -> usize;
 }
 
 /// This trait represents a (possibly empty) sequence of views.
 ///
 /// It is up to the parent view how to lay out and display them.
-pub trait ViewSequence<State, Action, Marker>: Send + 'static {
+pub trait ViewSequence<State, Action, Marker, SpliceElement: ViewElement>: Send + 'static {
     type SeqState;
     // TODO: Rename to not overlap with MasonryView?
     /// Build the associated widgets and initialize all states.
@@ -27,7 +24,11 @@ pub trait ViewSequence<State, Action, Marker>: Send + 'static {
     /// To be able to monitor changes (e.g. tree-structure tracking) rather than just adding elements,
     /// this takes an element splice as well (when it could be just a `Vec` otherwise)
     #[must_use]
-    fn build(&self, cx: &mut ViewCx, elements: &mut dyn ElementSplice) -> Self::SeqState;
+    fn build(
+        &self,
+        cx: &mut ViewCx,
+        elements: &mut dyn ElementSplice<SpliceElement>,
+    ) -> Self::SeqState;
 
     /// Update the associated widget.
     ///
@@ -37,7 +38,7 @@ pub trait ViewSequence<State, Action, Marker>: Send + 'static {
         seq_state: &mut Self::SeqState,
         cx: &mut ViewCx,
         prev: &Self,
-        elements: &mut dyn ElementSplice,
+        elements: &mut dyn ElementSplice<SpliceElement>,
     ) -> ChangeFlags;
 
     /// Propagate a message.
@@ -65,13 +66,17 @@ pub struct WasAView;
 /// See [`WasAView`]
 pub struct WasASequence;
 
-impl<State, Action, View: MasonryView<State, Action>> ViewSequence<State, Action, WasAView>
-    for View
+impl<State, Action, V: View<State, Action>, Element: ViewElement>
+    ViewSequence<State, Action, WasAView, Element> for V
+where
+    Element: From<<V::Element as ViewElement>::Erased>,
+    for<'a> Element::Mut<'a>: Into<<<V::Element as ViewElement>::Erased as ViewElement>::Mut<'a>>,
+    <V as View<State, Action>>::Element: ViewElement,
 {
-    type SeqState = View::ViewState;
-    fn build(&self, cx: &mut ViewCx, elements: &mut dyn ElementSplice) -> Self::SeqState {
+    type SeqState = V::ViewState;
+    fn build(&self, cx: &mut ViewCx, elements: &mut dyn ElementSplice<Element>) -> Self::SeqState {
         let (element, view_state) = self.build(cx);
-        elements.push(element.boxed());
+        elements.push(element.erase().into());
         view_state
     }
 
@@ -80,16 +85,12 @@ impl<State, Action, View: MasonryView<State, Action>> ViewSequence<State, Action
         seq_state: &mut Self::SeqState,
         cx: &mut ViewCx,
         prev: &Self,
-        elements: &mut dyn ElementSplice,
+        elements: &mut dyn ElementSplice<Element>,
     ) -> ChangeFlags {
-        let mut element = elements.mutate();
-        let downcast = element.downcast::<View::Element>();
+        let mut element = elements.mutate().into();
+        let downcast = V::Element::downcast(&mut element);
 
-        if let Some(element) = downcast {
-            self.rebuild(seq_state, cx, prev, element)
-        } else {
-            unreachable!("Tree structure tracking got wrong element type")
-        }
+        self.rebuild(seq_state, cx, prev, downcast)
     }
 
     fn message(
@@ -113,11 +114,16 @@ pub struct OptionSeqState<InnerState> {
 }
 
 // TODO(DJMcNab): Add the generation to the id path
-impl<State, Action, Marker, VT: ViewSequence<State, Action, Marker>>
-    ViewSequence<State, Action, (WasASequence, Marker)> for Option<VT>
+impl<
+        State,
+        Action,
+        Marker,
+        Element: ViewElement,
+        VT: ViewSequence<State, Action, Marker, Element>,
+    > ViewSequence<State, Action, (WasASequence, Marker), Element> for Option<VT>
 {
     type SeqState = OptionSeqState<VT::SeqState>;
-    fn build(&self, cx: &mut ViewCx, elements: &mut dyn ElementSplice) -> Self::SeqState {
+    fn build(&self, cx: &mut ViewCx, elements: &mut dyn ElementSplice<Element>) -> Self::SeqState {
         let generation = 0;
         match self {
             Some(this) => {
@@ -141,7 +147,7 @@ impl<State, Action, Marker, VT: ViewSequence<State, Action, Marker>>
         seq_state: &mut Self::SeqState,
         cx: &mut ViewCx,
         prev: &Self,
-        elements: &mut dyn ElementSplice,
+        elements: &mut dyn ElementSplice<Element>,
     ) -> ChangeFlags {
         // If `prev` was `Some`, we set `seq_state` in reacting to it (and building the inner view)
         // This could only fail if some malicious parent view was messing with our internal state
@@ -207,11 +213,11 @@ pub struct VecViewState<InnerState> {
 }
 
 // TODO: We use raw indexing for this value. What would make it invalid?
-impl<T, A, Marker, VT: ViewSequence<T, A, Marker>> ViewSequence<T, A, (WasASequence, Marker)>
-    for Vec<VT>
+impl<T, A, Marker, VT: ViewSequence<T, A, Marker, Element>, Element: ViewElement>
+    ViewSequence<T, A, (WasASequence, Marker), Element> for Vec<VT>
 {
     type SeqState = VecViewState<VT::SeqState>;
-    fn build(&self, cx: &mut ViewCx, elements: &mut dyn ElementSplice) -> Self::SeqState {
+    fn build(&self, cx: &mut ViewCx, elements: &mut dyn ElementSplice<Element>) -> Self::SeqState {
         let generation = 0;
         let inner = self.iter().enumerate().map(|(i, child)| {
             let id = create_vector_view_id(i, generation);
@@ -230,7 +236,7 @@ impl<T, A, Marker, VT: ViewSequence<T, A, Marker>> ViewSequence<T, A, (WasASeque
         seq_state: &mut Self::SeqState,
         cx: &mut ViewCx,
         prev: &Self,
-        elements: &mut dyn ElementSplice,
+        elements: &mut dyn ElementSplice<Element>,
     ) -> ChangeFlags {
         let mut changed = ChangeFlags::UNCHANGED;
         for (i, ((child, child_prev), (child_state, child_generation))) in self
@@ -333,16 +339,16 @@ fn view_id_to_index_generation(view_id: u64) -> (usize, u32) {
     (id_low_ix as usize, id_high_gen)
 }
 
-impl<T, A> ViewSequence<T, A, ()> for () {
+impl<T, A, Element: ViewElement> ViewSequence<T, A, (), Element> for () {
     type SeqState = ();
-    fn build(&self, _: &mut ViewCx, _: &mut dyn ElementSplice) {}
+    fn build(&self, _: &mut ViewCx, _: &mut dyn ElementSplice<Element>) {}
 
     fn rebuild(
         &self,
         _seq_state: &mut Self::SeqState,
         _cx: &mut ViewCx,
         _prev: &Self,
-        _elements: &mut dyn ElementSplice,
+        _elements: &mut dyn ElementSplice<Element>,
     ) -> ChangeFlags {
         ChangeFlags::UNCHANGED
     }
@@ -363,11 +369,11 @@ impl<T, A> ViewSequence<T, A, ()> for () {
     }
 }
 
-impl<State, Action, M0, Seq0: ViewSequence<State, Action, M0>> ViewSequence<State, Action, (M0,)>
-    for (Seq0,)
+impl<State, Action, Element: ViewElement, M0, Seq0: ViewSequence<State, Action, M0, Element>>
+    ViewSequence<State, Action, (M0,), Element> for (Seq0,)
 {
     type SeqState = Seq0::SeqState;
-    fn build(&self, cx: &mut ViewCx, elements: &mut dyn ElementSplice) -> Self::SeqState {
+    fn build(&self, cx: &mut ViewCx, elements: &mut dyn ElementSplice<Element>) -> Self::SeqState {
         self.0.build(cx, elements)
     }
 
@@ -376,7 +382,7 @@ impl<State, Action, M0, Seq0: ViewSequence<State, Action, M0>> ViewSequence<Stat
         seq_state: &mut Self::SeqState,
         cx: &mut ViewCx,
         prev: &Self,
-        elements: &mut dyn ElementSplice,
+        elements: &mut dyn ElementSplice<Element>,
     ) -> ChangeFlags {
         self.0.rebuild(seq_state, cx, &prev.0, elements)
     }
@@ -405,14 +411,15 @@ macro_rules! impl_view_tuple {
         impl<
                 State,
                 Action,
+                Element: ViewElement,
                 $(
                     $marker,
-                    $seq: ViewSequence<State, Action, $marker>,
+                    $seq: ViewSequence<State, Action, $marker, Element>,
                 )+
-            > ViewSequence<State, Action, ($($marker,)+)> for ($($seq,)+)
+            > ViewSequence<State, Action, ($($marker,)+), Element> for ($($seq,)+)
         {
             type SeqState = ($($seq::SeqState,)+);
-            fn build(&self, cx: &mut ViewCx, elements: &mut dyn ElementSplice) -> Self::SeqState {
+            fn build(&self, cx: &mut ViewCx, elements: &mut dyn ElementSplice<Element>) -> Self::SeqState {
                 ($(
                     cx.with_id(ViewId::for_type::<$seq>($idx), |cx| {
                         self.$idx.build(cx, elements)
@@ -425,7 +432,7 @@ macro_rules! impl_view_tuple {
                 seq_state: &mut Self::SeqState,
                 cx: &mut ViewCx,
                 prev: &Self,
-                elements: &mut dyn ElementSplice,
+                elements: &mut dyn ElementSplice<Element>,
             ) -> ChangeFlags {
                 let mut flags = ChangeFlags::UNCHANGED;
                 $(

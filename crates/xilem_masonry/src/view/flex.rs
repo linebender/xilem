@@ -5,7 +5,7 @@ use masonry::{
     Widget, WidgetPod,
 };
 
-use crate::{ChangeFlags, ElementSplice, MasonryView, VecSplice, ViewSequence};
+use crate::{ChangeFlags, ElementSplice, VecSplice, View, ViewSequence};
 
 // TODO: Allow configuring flex properties. I think this actually needs its own view trait?
 pub fn flex<VT, Marker>(sequence: VT) -> Flex<VT, Marker> {
@@ -29,17 +29,14 @@ impl<VT, Marker> Flex<VT, Marker> {
     }
 }
 
-impl<State, Action, Marker: 'static, Seq> MasonryView<State, Action> for Flex<Seq, Marker>
+impl<State, Action, Marker: 'static, Seq> View<State, Action> for Flex<Seq, Marker>
 where
-    Seq: ViewSequence<State, Action, Marker>,
+    Seq: ViewSequence<State, Action, Marker, WidgetPod<Box<dyn Widget>>>,
 {
-    type Element = widget::Flex;
+    type Element = WidgetPod<widget::Flex>;
     type ViewState = Seq::SeqState;
 
-    fn build(
-        &self,
-        cx: &mut crate::ViewCx,
-    ) -> (masonry::WidgetPod<Self::Element>, Self::ViewState) {
+    fn build(&self, cx: &mut crate::ViewCx) -> (masonry::WidgetPod<widget::Flex>, Self::ViewState) {
         let mut elements = Vec::new();
         let mut scratch = Vec::new();
         let mut splice = VecSplice::new(&mut elements, &mut scratch);
@@ -72,7 +69,7 @@ where
         view_state: &mut Self::ViewState,
         cx: &mut crate::ViewCx,
         prev: &Self,
-        mut element: widget::WidgetMut<Self::Element>,
+        mut element: widget::WidgetMut<widget::Flex>,
     ) -> ChangeFlags {
         let mut changeflags = ChangeFlags::UNCHANGED;
         if prev.axis != self.axis {
@@ -135,9 +132,5 @@ impl ElementSplice for FlexSplice<'_> {
             }
             self.element.remove_child(self.ix);
         }
-    }
-
-    fn len(&self) -> usize {
-        self.ix
     }
 }

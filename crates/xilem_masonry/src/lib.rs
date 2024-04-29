@@ -28,12 +28,12 @@ pub use id::ViewId;
 pub use sequence::{ElementSplice, ViewSequence};
 pub use vec_splice::VecSplice;
 
-pub struct Xilem<State, Logic, View>
+pub struct Xilem<State, Logic, V>
 where
-    View: MasonryView<State>,
+    V: MasonryView<State>,
 {
-    root_widget: RootWidget<View::Element>,
-    driver: MasonryDriver<State, Logic, View, View::ViewState>,
+    root_widget: RootWidget<V::Widget>,
+    driver: MasonryDriver<State, Logic, V, V::ViewState>,
 }
 
 pub struct MasonryDriver<State, Logic, View, ViewState> {
@@ -117,7 +117,7 @@ where
             };
             if rebuild {
                 let next_view = (self.logic)(&mut self.state);
-                let mut root = ctx.get_root::<RootWidget<View::Element>>();
+                let mut root = ctx.get_root::<RootWidget<View::Widget>>();
                 let element = root.get_element();
 
                 let changed = next_view.rebuild(
@@ -201,18 +201,37 @@ where
         EventLoopRunner::new(self.root_widget, window, event_loop, self.driver).run()
     }
 }
-pub trait MasonryView<State, Action = ()>: Send + 'static {
-    type Element: Widget + StoreInWidgetMut;
+
+pub trait ViewElement {
+    type Mut<'a>;
+    type Erased: ViewElement;
+    fn erase(self) -> Self::Erased;
+    fn downcast<'r, 'm>(erased: &'r mut <Self::Erased as ViewElement>::Mut<'m>) -> Self::Mut<'r>;
+}
+
+impl<W: Widget + StoreInWidgetMut> ViewElement for WidgetPod<W> {
+    type Mut<'a> = WidgetMut<'a, W>;
+    type Erased = WidgetPod<Box<dyn Widget>>;
+    fn erase(self) -> Self::Erased {
+        self.boxed()
+    }
+    fn downcast<'r, 'm>(erased: &'r mut <Self::Erased as ViewElement>::Mut<'m>) -> Self::Mut<'r> {
+        erased.downcast().unwrap()
+    }
+}
+
+pub trait View<State, Action = ()>: Send + 'static {
+    type Element: ViewElement;
     type ViewState;
 
-    fn build(&self, cx: &mut ViewCx) -> (WidgetPod<Self::Element>, Self::ViewState);
+    fn build(&self, cx: &mut ViewCx) -> (Self::Element, Self::ViewState);
 
     fn rebuild(
         &self,
         view_state: &mut Self::ViewState,
         cx: &mut ViewCx,
         prev: &Self,
-        element: WidgetMut<Self::Element>,
+        element: <Self::Element as ViewElement>::Mut<'_>,
     ) -> ChangeFlags;
 
     fn message(
@@ -222,6 +241,22 @@ pub trait MasonryView<State, Action = ()>: Send + 'static {
         message: Box<dyn Any>,
         app_state: &mut State,
     ) -> MessageResult<Action>;
+}
+
+pub trait MasonryView<State, Action = ()>:
+    View<State, Action, Element = WidgetPod<Self::Widget>>
+{
+    type Widget: Widget + StoreInWidgetMut;
+}
+
+impl<
+        State,
+        Action,
+        V: View<State, Action, Element = WidgetPod<W>>,
+        W: Widget + StoreInWidgetMut,
+    > MasonryView<State, Action> for V
+{
+    type Widget = W;
 }
 
 #[must_use]

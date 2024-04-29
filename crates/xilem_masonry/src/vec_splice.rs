@@ -104,8 +104,4 @@ impl ElementSplice for VecSplice<'_, '_, masonry::WidgetPod<Box<dyn masonry::Wid
     fn delete(&mut self, n: usize) {
         self.delete(n);
     }
-
-    fn len(&self) -> usize {
-        self.len()
-    }
 }

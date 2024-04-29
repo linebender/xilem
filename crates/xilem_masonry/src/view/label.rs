@@ -1,6 +1,9 @@
-use masonry::{widget::WidgetMut, ArcStr, WidgetPod};
+use masonry::{
+    widget::{self, WidgetMut},
+    ArcStr, WidgetPod,
+};
 
-use crate::{ChangeFlags, Color, MasonryView, MessageResult, TextAlignment, ViewCx, ViewId};
+use crate::{ChangeFlags, Color, MessageResult, TextAlignment, View, ViewCx, ViewId};
 
 pub fn label(label: impl Into<ArcStr>) -> Label {
     Label {
@@ -36,14 +39,14 @@ impl Label {
     }
 }
 
-impl<State, Action> MasonryView<State, Action> for Label {
-    type Element = masonry::widget::Label;
+impl<State, Action> View<State, Action> for Label {
+    type Element = WidgetPod<widget::Label>;
     type ViewState = ();
 
-    fn build(&self, _cx: &mut ViewCx) -> (WidgetPod<Self::Element>, Self::ViewState) {
+    fn build(&self, _cx: &mut ViewCx) -> (WidgetPod<widget::Label>, Self::ViewState) {
         (
             WidgetPod::new(
-                masonry::widget::Label::new(self.label.clone())
+                widget::Label::new(self.label.clone())
                     .with_text_color(self.text_color)
                     .with_text_alignment(self.alignment)
                     .with_disabled(self.disabled),
@@ -57,7 +60,7 @@ impl<State, Action> MasonryView<State, Action> for Label {
         _view_state: &mut Self::ViewState,
         _cx: &mut ViewCx,
         prev: &Self,
-        mut element: WidgetMut<Self::Element>,
+        mut element: WidgetMut<widget::Label>,
     ) -> crate::ChangeFlags {
         let mut changeflags = ChangeFlags::UNCHANGED;
 

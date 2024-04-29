@@ -1,6 +1,6 @@
 use masonry::{widget::WidgetMut, ArcStr, WidgetPod};
 
-use crate::{ChangeFlags, MasonryView, MessageResult, ViewCx, ViewId};
+use crate::{ChangeFlags, MessageResult, View, ViewCx, ViewId};
 
 pub fn checkbox<F, State, Action>(
     label: impl Into<ArcStr>,
@@ -23,14 +23,14 @@ pub struct Checkbox<F> {
     callback: F,
 }
 
-impl<F, State, Action> MasonryView<State, Action> for Checkbox<F>
+impl<F, State, Action> View<State, Action> for Checkbox<F>
 where
     F: Fn(&mut State, bool) -> Action + Send + 'static,
 {
-    type Element = masonry::widget::Checkbox;
+    type Element = WidgetPod<masonry::widget::Checkbox>;
     type ViewState = ();
 
-    fn build(&self, cx: &mut ViewCx) -> (WidgetPod<Self::Element>, Self::ViewState) {
+    fn build(&self, cx: &mut ViewCx) -> (WidgetPod<masonry::widget::Checkbox>, Self::ViewState) {
         cx.with_leaf_action_widget(|_| {
             WidgetPod::new(masonry::widget::Checkbox::new(
                 self.checked,
@@ -44,7 +44,7 @@ where
         _view_state: &mut Self::ViewState,
         _cx: &mut ViewCx,
         prev: &Self,
-        mut element: WidgetMut<Self::Element>,
+        mut element: WidgetMut<masonry::widget::Checkbox>,
     ) -> crate::ChangeFlags {
         let mut changeflags = ChangeFlags::UNCHANGED;
         if prev.label != self.label {
