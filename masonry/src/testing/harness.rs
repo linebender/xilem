@@ -555,7 +555,7 @@ impl TestHarness {
         let new_path = screenshots_folder.join(format!("{module_str}__{test_name}.new.png"));
         let diff_path = screenshots_folder.join(format!("{module_str}__{test_name}.diff.png"));
 
-        if let Ok(reference_file) = ImageReader::open(&reference_path) {
+        if let Ok(reference_file) = ImageReader::open(reference_path) {
             let ref_image = reference_file.decode().unwrap().to_rgba8();
 
             if let Some(diff_image) = get_image_diff(&ref_image, &new_image) {
