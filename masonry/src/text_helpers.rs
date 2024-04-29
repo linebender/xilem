@@ -98,6 +98,7 @@ pub fn render_text(
             scratch_scene
                 .draw_glyphs(font)
                 .brush(text_brush)
+                .hint(true)
                 .transform(transform)
                 .glyph_transform(glyph_xform)
                 .font_size(font_size)

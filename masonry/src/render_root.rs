@@ -5,8 +5,6 @@ use std::collections::VecDeque;
 
 use accesskit::{ActionRequest, NodeBuilder, Tree, TreeUpdate};
 use kurbo::Affine;
-use parley::{FontContext, LayoutContext};
-use tracing::{debug, info_span, warn};
 use vello::peniko::{Color, Fill};
 use vello::Scene;
 use winit::keyboard::{KeyCode, PhysicalKey};
@@ -75,6 +73,12 @@ pub enum WindowSizePolicy {
     User,
 }
 
+pub struct RenderRootOptions {
+    pub use_system_fonts: bool,
+    pub size_policy: WindowSizePolicy,
+    pub scale_factor: f64,
+}
+
 // TODO - Handle custom cursors?
 // TODO - handling timers
 // TODO - Text fields
@@ -93,7 +97,14 @@ pub enum RenderRootSignal {
 }
 
 impl RenderRoot {
-    pub fn new(root_widget: impl Widget, size_policy: WindowSizePolicy, scale_factor: f64) -> Self {
+    pub fn new(
+        root_widget: impl Widget,
+        RenderRootOptions {
+            use_system_fonts,
+            size_policy,
+            scale_factor,
+        }: RenderRootOptions,
+    ) -> Self {
         let mut root = RenderRoot {
             root: WidgetPod::new(root_widget).boxed(),
             size_policy,
@@ -107,7 +118,13 @@ impl RenderRoot {
                 signal_queue: VecDeque::new(),
                 focused_widget: None,
                 next_focused_widget: None,
-                font_context: FontContext::default(),
+                font_context: FontContext {
+                    collection: Collection::new(CollectionOptions {
+                        system_fonts: use_system_fonts,
+                        ..Default::default()
+                    }),
+                    source_cache: Default::default(),
+                },
                 text_layout_context: LayoutContext::new(),
             },
             widget_arena: WidgetArena {
@@ -190,6 +207,20 @@ impl RenderRoot {
 
     pub fn handle_text_event(&mut self, event: TextEvent) -> Handled {
         self.root_on_text_event(event)
+    }
+
+    // TODO: Is this the right place for this?
+    pub fn add_test_font(
+        &mut self,
+        data: Vec<u8>,
+    ) -> Vec<(fontique::FamilyId, Vec<fontique::FontInfo>)> {
+        let families = self.state.font_context.collection.register_fonts(data);
+        // TODO: This code doesn't *seem* reasonable
+        self.state
+            .font_context
+            .collection
+            .append_fallbacks(*b"Latn", families.iter().map(|(family, _)| *family));
+        families
     }
 
     pub fn redraw(&mut self) -> (Scene, TreeUpdate) {
