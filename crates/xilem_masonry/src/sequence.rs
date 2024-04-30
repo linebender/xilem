@@ -66,17 +66,52 @@ pub struct WasAView;
 /// See [`WasAView`]
 pub struct WasASequence;
 
+/// Two types are `SequenceCompatible` if a View with element type `SourceElement` can be used
+/// as the items of a sequence with element type `Self`.
+///
+/// For example, there may be a view trait which supports metadata with a sensible default
+/// around a "child" view type, e.g. a widget with optional layout metadata.
+///
+/// If the child type is sequence compatible with the type with metadata, the child type can
+/// be used with automatic conversion into this type with metadata.
+///
+/// This trait also supports for more advanced cases, including where the parent view is be an
+/// enum which is only sometimes the child view (with element `SourceElement`).
+/// `Self::from_mut` will panic when called with items which don't contain items of `SourceElement`
+pub trait SequenceCompatible<SourceElement: ViewElement>: ViewElement {
+    /// Convert from the source element into the type used in the sequence
+    fn into_item(element: SourceElement) -> Self;
+    /// Convert from the mutable form into the immutable form
+    ///
+    /// This may panic *if* the reference doesn't come from an element returned from `Self`
+    fn from_mut<'a>(reference: Self::Mut<'a>) -> SourceElement::Mut<'a>;
+}
+
+impl<SourceElement: ViewElement, SequenceElement: ViewElement> SequenceCompatible<SourceElement>
+    for SequenceElement
+where
+    SequenceElement: From<SourceElement>,
+    for<'a> SourceElement::Mut<'a>: From<SequenceElement::Mut<'a>>,
+{
+    fn into_item(element: SourceElement) -> Self {
+        element.into()
+    }
+
+    fn from_mut<'a>(reference: Self::Mut<'a>) -> <SourceElement as ViewElement>::Mut<'a> {
+        reference.into()
+    }
+}
+
 impl<State, Action, V: View<State, Action>, Element: ViewElement>
     ViewSequence<State, Action, WasAView, Element> for V
 where
-    Element: From<<V::Element as ViewElement>::Erased>,
-    for<'a> Element::Mut<'a>: Into<<<V::Element as ViewElement>::Erased as ViewElement>::Mut<'a>>,
+    Element: SequenceCompatible<<V::Element as ViewElement>::Erased>,
     <V as View<State, Action>>::Element: ViewElement,
 {
     type SeqState = V::ViewState;
     fn build(&self, cx: &mut ViewCx, elements: &mut dyn ElementSplice<Element>) -> Self::SeqState {
         let (element, view_state) = self.build(cx);
-        elements.push(element.erase().into());
+        elements.push(Element::into_item(element.erase()));
         view_state
     }
 
@@ -87,8 +122,9 @@ where
         prev: &Self,
         elements: &mut dyn ElementSplice<Element>,
     ) -> ChangeFlags {
-        let mut element = elements.mutate().into();
-        let downcast = V::Element::downcast(&mut element);
+        let mut element = Element::from_mut(elements.mutate());
+        let element = <V::Element as ViewElement>::Erased::reborrow(&mut element);
+        let downcast = V::Element::downcast(element);
 
         self.rebuild(seq_state, cx, prev, downcast)
     }

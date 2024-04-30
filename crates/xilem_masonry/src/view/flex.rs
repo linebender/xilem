@@ -1,11 +1,14 @@
 use std::marker::PhantomData;
 
 use masonry::{
-    widget::{self, Axis, WidgetMut},
+    widget::{self, Axis, CrossAxisAlignment, WidgetMut},
     Widget, WidgetPod,
 };
 
-use crate::{ChangeFlags, ElementSplice, VecSplice, View, ViewSequence};
+use crate::{
+    sequence::SequenceCompatible, ChangeFlags, ElementSplice, VecSplice, View, ViewElement,
+    ViewSequence,
+};
 
 // TODO: Allow configuring flex properties. I think this actually needs its own view trait?
 pub fn flex<VT, Marker>(sequence: VT) -> Flex<VT, Marker> {
@@ -28,6 +31,47 @@ impl<VT, Marker> Flex<VT, Marker> {
         self
     }
 }
+
+pub enum FlexElement {
+    FlexSpacer(f64),
+    FixedSpace(f64),
+    FixedChild(WidgetPod<Box<dyn Widget>>, Option<CrossAxisAlignment>),
+    FlexChild(WidgetPod<Box<dyn Widget>>, Option<CrossAxisAlignment>, f64),
+}
+
+pub struct FlexElementMut<'a> {
+    parent: WidgetMut<'a, widget::Flex>,
+    ix: usize,
+}
+
+// impl ViewElement for FlexElement {
+//     type Mut<'a> = FlexElementMut<'a>;
+
+//     type Erased = Self;
+
+//     fn erase(self) -> Self::Erased {
+//         self
+//     }
+
+//     fn with_downcasted<'r, 'm, R>(
+//         erased: &'r mut <Self::Erased as ViewElement>::Mut<'m>,
+//         f: impl FnOnce(Self::Mut<'r>) -> R,
+//     ) -> R {
+//         f(*erased)
+//     }
+// }
+
+// impl SequenceCompatible<WidgetPod<Box<dyn Widget>>> for FlexElement {
+//     fn into_item(element: WidgetPod<Box<dyn Widget>>) -> Self {
+//         Self::FixedChild(element, None)
+//     }
+
+//     fn from_mut<'a>(
+//         mut reference: Self::Mut<'a>,
+//     ) -> <WidgetPod<Box<dyn Widget>> as ViewElement>::Mut<'a> {
+//         reference.parent.child_mut(reference.ix).unwrap()
+//     }
+// }
 
 impl<State, Action, Marker: 'static, Seq> View<State, Action> for Flex<Seq, Marker>
 where

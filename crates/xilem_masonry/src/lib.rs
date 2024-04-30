@@ -206,7 +206,8 @@ pub trait ViewElement {
     type Mut<'a>;
     type Erased: ViewElement;
     fn erase(self) -> Self::Erased;
-    fn downcast<'r, 'm>(erased: &'r mut <Self::Erased as ViewElement>::Mut<'m>) -> Self::Mut<'r>;
+    fn downcast<'m>(erased: <Self::Erased as ViewElement>::Mut<'m>) -> Self::Mut<'m>;
+    fn reborrow<'r, 'm>(reference_mut: &'r mut Self::Mut<'m>) -> Self::Mut<'r>;
 }
 
 impl<W: Widget + StoreInWidgetMut> ViewElement for WidgetPod<W> {
@@ -215,8 +216,11 @@ impl<W: Widget + StoreInWidgetMut> ViewElement for WidgetPod<W> {
     fn erase(self) -> Self::Erased {
         self.boxed()
     }
-    fn downcast<'r, 'm>(erased: &'r mut <Self::Erased as ViewElement>::Mut<'m>) -> Self::Mut<'r> {
-        erased.downcast().unwrap()
+    fn downcast<'m>(erased: <Self::Erased as ViewElement>::Mut<'m>) -> Self::Mut<'m> {
+        erased.downcast_owned().unwrap()
+    }
+    fn reborrow<'r, 'm>(reference_mut: &'r mut Self::Mut<'m>) -> Self::Mut<'r> {
+        reference_mut.reborrow()
     }
 }
 
