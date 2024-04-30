@@ -89,11 +89,8 @@
 
 // TODO - Add logo
 
-#[doc(inline)]
 pub use kurbo;
-#[doc(inline)]
 pub use parley;
-#[doc(inline)]
 pub use vello;
 
 #[macro_use]
