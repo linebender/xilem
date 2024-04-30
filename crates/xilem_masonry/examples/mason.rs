@@ -1,7 +1,7 @@
 // On Windows platform, don't show a console when opening the app.
 #![windows_subsystem = "windows"]
 
-use xilem_masonry::view::{button, checkbox, flex, label};
+use xilem_masonry::view::{button, checkbox, flex, label, FlexSpacer};
 use xilem_masonry::{Axis, BoxedMasonryView, Color, MasonryView, TextAlignment, Xilem};
 
 fn app_logic(data: &mut AppData) -> impl MasonryView<AppData> {
@@ -39,6 +39,7 @@ fn app_logic(data: &mut AppData) -> impl MasonryView<AppData> {
         toggleable(data),
         button("Decrement", |data: &mut AppData| data.count -= 1),
         button("Reset", |data: &mut AppData| data.count = 0),
+        FlexSpacer::Fixed((data.count * 3).into()),
         flex(sequence).direction(axis),
     ))
 }

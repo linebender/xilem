@@ -40,7 +40,7 @@ crate::declare_widget!(FlexMut, Flex);
 // FIXME - "with_flex_child or [`add_flex_child`](FlexMut::add_flex_child)"
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct FlexParams {
-    flex: f64,
+    flex: Option<f64>,
     alignment: Option<CrossAxisAlignment>,
 }
 
@@ -171,23 +171,20 @@ impl Flex {
     }
 
     /// Builder-style method to add a flexible child to the container.
-    pub fn with_flex_child(mut self, child: impl Widget, params: impl Into<FlexParams>) -> Self {
+    pub fn with_flex_child(self, child: impl Widget, params: impl Into<FlexParams>) -> Self {
+        self.with_flex_child_pod(WidgetPod::new(Box::new(child)), params)
+    }
+
+    /// Builder-style method to add a flexible child to the container.
+    pub fn with_flex_child_pod(
+        mut self,
+        widget: WidgetPod<Box<dyn Widget>>,
+        params: impl Into<FlexParams>,
+    ) -> Self {
         // TODO - dedup?
-        let params = params.into();
-        let child = if params.flex > 0.0 {
-            Child::Flex {
-                widget: WidgetPod::new(Box::new(child)),
-                alignment: params.alignment,
-                flex: params.flex,
-            }
-        } else {
-            // TODO
-            tracing::warn!("Flex value should be > 0.0. To add a non-flex child use the add_child or with_child methods.\nSee the docs for masonry::widget::Flex for more information");
-            Child::Fixed {
-                widget: WidgetPod::new(Box::new(child)),
-                alignment: None,
-            }
-        };
+        let params: FlexParams = params.into();
+
+        let child = new_flex_child(params, widget);
         self.children.push(child);
         self
     }
@@ -307,20 +304,8 @@ impl<'a> FlexMut<'a> {
     /// Add a flexible child widget.
     pub fn add_flex_child(&mut self, child: impl Widget, params: impl Into<FlexParams>) {
         let params = params.into();
-        let child = if params.flex > 0.0 {
-            Child::Flex {
-                widget: WidgetPod::new(Box::new(child)),
-                alignment: params.alignment,
-                flex: params.flex,
-            }
-        } else {
-            // TODO
-            tracing::warn!("Flex value should be > 0.0. To add a non-flex child use the add_child or with_child methods.\nSee the docs for masonry::widget::Flex for more information");
-            Child::Fixed {
-                widget: WidgetPod::new(Box::new(child)),
-                alignment: None,
-            }
-        };
+        let child = new_flex_child(params, WidgetPod::new(Box::new(child)));
+
         self.widget.children.push(child);
         self.ctx.children_changed();
     }
@@ -398,21 +383,16 @@ impl<'a> FlexMut<'a> {
         child: impl Widget,
         params: impl Into<FlexParams>,
     ) {
-        let params = params.into();
-        let child = if params.flex > 0.0 {
-            Child::Flex {
-                widget: WidgetPod::new(Box::new(child)),
-                alignment: params.alignment,
-                flex: params.flex,
-            }
-        } else {
-            // TODO
-            tracing::warn!("Flex value should be > 0.0. To add a non-flex child use the add_child or with_child methods.\nSee the docs for masonry::widget::Flex for more information");
-            Child::Fixed {
-                widget: WidgetPod::new(Box::new(child)),
-                alignment: None,
-            }
-        };
+        self.insert_flex_child_pod(idx, WidgetPod::new(Box::new(child)), params)
+    }
+
+    pub fn insert_flex_child_pod(
+        &mut self,
+        idx: usize,
+        child: WidgetPod<Box<dyn Widget>>,
+        params: impl Into<FlexParams>,
+    ) {
+        let child = new_flex_child(params.into(), child);
         self.widget.children.insert(idx, child);
         // TODO
         self.ctx.widget_state.children_changed = true;
@@ -482,9 +462,80 @@ impl<'a> FlexMut<'a> {
         Some(self.ctx.get_mut(child))
     }
 
+    pub fn update_child_flex_params(&mut self, idx: usize, params: impl Into<FlexParams>) {
+        let child = &mut self.widget.children[idx];
+        let child_val = std::mem::replace(child, Child::FixedSpacer(0.0, 0.0));
+        let widget = match child_val {
+            Child::Fixed { widget, .. } | Child::Flex { widget, .. } => widget,
+            _ => {
+                panic!("Can't update flex parameters of a spacer element");
+            }
+        };
+        let new_child = new_flex_child(params.into(), widget);
+        *child = new_child;
+        // TODO
+        self.ctx.widget_state.children_changed = true;
+        self.ctx.widget_state.needs_layout = true;
+    }
+
+    pub fn update_spacer_flex(&mut self, idx: usize, flex: f64) {
+        let child = &mut self.widget.children[idx];
+
+        match *child {
+            Child::FixedSpacer(_, _) | Child::FlexedSpacer(_, _) => {
+                *child = Child::FlexedSpacer(flex, 0.0);
+            }
+            _ => {
+                panic!("Can't update spacer parameters of a non-spacer element");
+            }
+        };
+        // TODO
+        self.ctx.widget_state.children_changed = true;
+        self.ctx.widget_state.needs_layout = true;
+    }
+
+    pub fn update_spacer_fixed(&mut self, idx: usize, len: f64) {
+        let child = &mut self.widget.children[idx];
+
+        match *child {
+            Child::FixedSpacer(_, _) | Child::FlexedSpacer(_, _) => {
+                *child = Child::FixedSpacer(len, 0.0);
+            }
+            _ => {
+                panic!("Can't update spacer parameters of a non-spacer element");
+            }
+        };
+        // TODO
+        self.ctx.widget_state.children_changed = true;
+        self.ctx.widget_state.needs_layout = true;
+    }
+
     pub fn clear(&mut self) {
         self.widget.children.clear();
         self.ctx.widget_state.needs_layout = true;
+    }
+}
+
+fn new_flex_child(params: FlexParams, widget: WidgetPod<Box<dyn Widget>>) -> Child {
+    if let Some(flex) = params.flex {
+        if flex.is_normal() && flex > 0.0 {
+            Child::Flex {
+                widget,
+                alignment: params.alignment,
+                flex,
+            }
+        } else {
+            tracing::warn!("Flex value should be > 0.0 (was {flex}). See the docs for masonry::widget::Flex for more information");
+            Child::Fixed {
+                widget,
+                alignment: params.alignment,
+            }
+        }
+    } else {
+        Child::Fixed {
+            widget,
+            alignment: params.alignment,
+        }
     }
 }
 
@@ -833,12 +884,17 @@ impl FlexParams {
     /// can pass an `f64` to any of the functions that take `FlexParams`.
     ///
     /// By default, the widget uses the alignment of its parent [`Flex`] container.
-    pub fn new(flex: f64, alignment: impl Into<Option<CrossAxisAlignment>>) -> Self {
-        if flex <= 0.0 {
-            debug_panic!("Flex value should be > 0.0. Flex given was: {}", flex);
-        }
-
-        let flex = flex.max(0.0);
+    pub fn new(
+        flex: impl Into<Option<f64>>,
+        alignment: impl Into<Option<CrossAxisAlignment>>,
+    ) -> Self {
+        let flex = match flex.into() {
+            Some(flex) if flex <= 0.0 => {
+                debug_panic!("Flex value should be > 0.0. Flex given was: {}", flex);
+                Some(0.0)
+            }
+            other => other,
+        };
 
         FlexParams {
             flex,
@@ -959,7 +1015,7 @@ impl Iterator for Spacing {
 
 impl From<f64> for FlexParams {
     fn from(flex: f64) -> FlexParams {
-        FlexParams::new(flex, None)
+        FlexParams::new(Some(flex), None)
     }
 }
 
@@ -1075,13 +1131,13 @@ mod tests {
     fn test_invalid_flex_params() {
         use float_cmp::approx_eq;
         let params = FlexParams::new(0.0, None);
-        approx_eq!(f64, params.flex, 1.0, ulps = 2);
+        approx_eq!(f64, params.flex.unwrap(), 1.0, ulps = 2);
 
         let params = FlexParams::new(-0.0, None);
-        approx_eq!(f64, params.flex, 1.0, ulps = 2);
+        approx_eq!(f64, params.flex.unwrap(), 1.0, ulps = 2);
 
         let params = FlexParams::new(-1.0, None);
-        approx_eq!(f64, params.flex, 1.0, ulps = 2);
+        approx_eq!(f64, params.flex.unwrap(), 1.0, ulps = 2);
     }
 
     // TODO - Reduce copy-pasting?
