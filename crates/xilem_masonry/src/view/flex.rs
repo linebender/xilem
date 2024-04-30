@@ -44,38 +44,47 @@ pub struct FlexElementMut<'a> {
     ix: usize,
 }
 
-// impl ViewElement for FlexElement {
-//     type Mut<'a> = FlexElementMut<'a>;
+impl ViewElement for FlexElement {
+    type Mut<'a> = FlexElementMut<'a>;
 
-//     type Erased = Self;
+    type Erased = Self;
 
-//     fn erase(self) -> Self::Erased {
-//         self
-//     }
+    fn erase(self) -> Self::Erased {
+        self
+    }
 
-//     fn with_downcasted<'r, 'm, R>(
-//         erased: &'r mut <Self::Erased as ViewElement>::Mut<'m>,
-//         f: impl FnOnce(Self::Mut<'r>) -> R,
-//     ) -> R {
-//         f(*erased)
-//     }
-// }
+    fn downcast<'m>(erased: <Self::Erased as ViewElement>::Mut<'m>) -> Self::Mut<'m> {
+        erased
+    }
 
-// impl SequenceCompatible<WidgetPod<Box<dyn Widget>>> for FlexElement {
-//     fn into_item(element: WidgetPod<Box<dyn Widget>>) -> Self {
-//         Self::FixedChild(element, None)
-//     }
+    fn reborrow<'r, 'm>(reference_mut: &'r mut Self::Mut<'m>) -> Self::Mut<'r> {
+        FlexElementMut {
+            parent: reference_mut.parent.reborrow(),
+            ix: reference_mut.ix,
+        }
+    }
+}
 
-//     fn from_mut<'a>(
-//         mut reference: Self::Mut<'a>,
-//     ) -> <WidgetPod<Box<dyn Widget>> as ViewElement>::Mut<'a> {
-//         reference.parent.child_mut(reference.ix).unwrap()
-//     }
-// }
+impl SequenceCompatible<WidgetPod<Box<dyn Widget>>> for FlexElement {
+    fn into_item(element: WidgetPod<Box<dyn Widget>>) -> Self {
+        Self::FixedChild(element, None)
+    }
+
+    fn access_mut<'a, R>(
+        mut reference: Self::Mut<'a>,
+        f: impl FnOnce(&mut <WidgetPod<Box<dyn Widget>> as ViewElement>::Mut<'_>) -> R,
+    ) -> R {
+        let mut child = reference
+            .parent
+            .child_mut(reference.ix)
+            .expect("be a child mut as precondition of this function");
+        f(&mut child)
+    }
+}
 
 impl<State, Action, Marker: 'static, Seq> View<State, Action> for Flex<Seq, Marker>
 where
-    Seq: ViewSequence<State, Action, Marker, WidgetPod<Box<dyn Widget>>>,
+    Seq: ViewSequence<State, Action, Marker, FlexElement>,
 {
     type Element = WidgetPod<widget::Flex>;
     type ViewState = Seq::SeqState;
@@ -92,20 +101,14 @@ where
             "ViewSequence shouldn't leave splice in strange state"
         );
         for item in elements.drain(..) {
-            view = view.with_child_pod(item).with_default_spacer();
+            view = match item {
+                FlexElement::FlexSpacer(_len) => todo!(),
+                FlexElement::FixedSpace(_len) => todo!(),
+                FlexElement::FixedChild(widget, _axis) => view.with_child_pod(widget),
+                FlexElement::FlexChild(widget, _axis, _len) => view.with_child_pod(widget),
+            }
         }
         (WidgetPod::new(view), seq_state)
-    }
-
-    fn message(
-        &self,
-        view_state: &mut Self::ViewState,
-        id_path: &[crate::ViewId],
-        message: Box<dyn std::any::Any>,
-        app_state: &mut State,
-    ) -> crate::MessageResult<Action> {
-        self.sequence
-            .message(view_state, id_path, message, app_state)
     }
 
     fn rebuild(
@@ -127,6 +130,17 @@ where
             .changed;
         changeflags
     }
+
+    fn message(
+        &self,
+        view_state: &mut Self::ViewState,
+        id_path: &[crate::ViewId],
+        message: Box<dyn std::any::Any>,
+        app_state: &mut State,
+    ) -> crate::MessageResult<Action> {
+        self.sequence
+            .message(view_state, id_path, message, app_state)
+    }
 }
 
 struct FlexSplice<'w> {
@@ -134,47 +148,35 @@ struct FlexSplice<'w> {
     element: WidgetMut<'w, widget::Flex>,
 }
 
-impl ElementSplice for FlexSplice<'_> {
-    fn push(&mut self, element: WidgetPod<Box<dyn masonry::Widget>>) {
-        self.element.insert_child_pod(self.ix, element);
+impl ElementSplice<FlexElement> for FlexSplice<'_> {
+    fn push(&mut self, element: FlexElement) {
+        match element {
+            FlexElement::FlexSpacer(_len) => todo!(),
+            FlexElement::FixedSpace(_len) => todo!(),
+            FlexElement::FixedChild(widget, _axis) => {
+                self.element.insert_child_pod(self.ix, widget);
+            }
+            FlexElement::FlexChild(widget, _axis, _len) => {
+                self.element.insert_child_pod(self.ix, widget);
+            }
+        }
         self.ix += 1;
     }
 
-    fn mutate(&mut self) -> WidgetMut<Box<dyn Widget>> {
-        #[cfg(debug_assertions)]
-        let mut iterations = 0;
-        #[cfg(debug_assertions)]
-        let max = self.element.len();
-        loop {
-            #[cfg(debug_assertions)]
-            {
-                if iterations > max {
-                    panic!("Got into infinite loop in FlexSplice::mutate");
-                }
-                iterations += 1;
-            }
-            let child = self.element.child_mut(self.ix);
-            if child.is_some() {
-                break;
-            }
-            self.ix += 1;
-        }
-        let child = self.element.child_mut(self.ix).unwrap();
+    fn mutate(&mut self) -> FlexElementMut {
+        let res = FlexElementMut {
+            parent: self.element.reborrow(),
+            ix: self.ix,
+        };
         self.ix += 1;
-        child
+        res
     }
 
     fn delete(&mut self, n: usize) {
         let mut deleted_count = 0;
         while deleted_count < n {
-            {
-                // TODO: use a drain/retain type method
-                let element = self.element.child_mut(self.ix);
-                if element.is_some() {
-                    deleted_count += 1;
-                }
-            }
             self.element.remove_child(self.ix);
+            deleted_count += 1;
         }
     }
 }

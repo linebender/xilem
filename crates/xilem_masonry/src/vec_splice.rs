@@ -1,9 +1,7 @@
 // Copyright 2023 the Druid Authors.
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::widget::WidgetMut;
-
-use crate::ElementSplice;
+use crate::{ElementSplice, ViewElement};
 
 pub struct VecSplice<'a, 'b, T> {
     v: &'a mut Vec<T>,
@@ -92,12 +90,12 @@ impl<'a, 'b, T> VecSplice<'a, 'b, T> {
     }
 }
 
-impl ElementSplice for VecSplice<'_, '_, masonry::WidgetPod<Box<dyn masonry::Widget>>> {
-    fn push(&mut self, element: masonry::WidgetPod<Box<dyn masonry::Widget>>) {
+impl<T: ViewElement> ElementSplice<T> for VecSplice<'_, '_, T> {
+    fn push(&mut self, element: T) {
         self.push(element);
     }
 
-    fn mutate(&mut self) -> WidgetMut<Box<dyn masonry::Widget>> {
+    fn mutate(&mut self) -> T::Mut<'_> {
         unreachable!("VecSplice can only be used for `build`, not rebuild")
     }
 

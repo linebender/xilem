@@ -1,3 +1,5 @@
+use std::ops::{Deref, DerefMut};
+
 use masonry::{Widget, WidgetPod};
 
 use crate::{ChangeFlags, MessageResult, View, ViewCx, ViewElement, ViewId};
@@ -84,7 +86,10 @@ pub trait SequenceCompatible<SourceElement: ViewElement>: ViewElement {
     /// Convert from the mutable form into the immutable form
     ///
     /// This may panic *if* the reference doesn't come from an element returned from `Self`
-    fn from_mut<'a>(reference: Self::Mut<'a>) -> SourceElement::Mut<'a>;
+    fn access_mut<'a, R>(
+        reference: Self::Mut<'a>,
+        f: impl FnOnce(&mut SourceElement::Mut<'_>) -> R,
+    ) -> R;
 }
 
 impl<SourceElement: ViewElement, SequenceElement: ViewElement> SequenceCompatible<SourceElement>
@@ -97,8 +102,28 @@ where
         element.into()
     }
 
-    fn from_mut<'a>(reference: Self::Mut<'a>) -> <SourceElement as ViewElement>::Mut<'a> {
-        reference.into()
+    fn access_mut<'a, R>(
+        reference: Self::Mut<'a>,
+        f: impl FnOnce(&mut <SourceElement as ViewElement>::Mut<'_>) -> R,
+    ) -> R {
+        let mut into = reference.into();
+        f(&mut into)
+    }
+}
+
+pub struct TrivialWrapper<T>(T);
+
+impl<T> DerefMut for TrivialWrapper<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+impl<T> Deref for TrivialWrapper<T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
 }
 
@@ -122,11 +147,12 @@ where
         prev: &Self,
         elements: &mut dyn ElementSplice<Element>,
     ) -> ChangeFlags {
-        let mut element = Element::from_mut(elements.mutate());
-        let element = <V::Element as ViewElement>::Erased::reborrow(&mut element);
-        let downcast = V::Element::downcast(element);
+        Element::access_mut(elements.mutate(), |element| {
+            let element = <V::Element as ViewElement>::Erased::reborrow(element);
+            let downcast = V::Element::downcast(element);
 
-        self.rebuild(seq_state, cx, prev, downcast)
+            self.rebuild(seq_state, cx, prev, downcast)
+        })
     }
 
     fn message(
