@@ -38,9 +38,6 @@ insta = { version = "1.8.0" }
 assert_matches = "1.5.0"
 tempfile = "3.10.1"
 
-[target.'cfg(not(target_arch="wasm32"))'.dev-dependencies]
-open = "1.6"
-
 [[example]]
 name = "simple_image"
 #required-features = ["image", "png"]
