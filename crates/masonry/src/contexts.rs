@@ -296,10 +296,10 @@ impl<'a> WidgetCtx<'a> {
             global_state: self.global_state,
             widget_state: &mut child.state,
         };
-        WidgetMut {
-            parent_widget_state: self.widget_state,
-            inner: Child::from_widget_and_ctx(&mut child.inner, child_ctx),
-        }
+        WidgetMut::new(
+            self.widget_state,
+            Child::from_widget_and_ctx(&mut child.inner, child_ctx),
+        )
     }
 }
 
@@ -314,10 +314,10 @@ impl<'a> EventCtx<'a> {
             global_state: self.global_state,
             widget_state: &mut child.state,
         };
-        WidgetMut {
-            parent_widget_state: self.widget_state,
-            inner: Child::from_widget_and_ctx(&mut child.inner, child_ctx),
-        }
+        WidgetMut::new(
+            self.widget_state,
+            Child::from_widget_and_ctx(&mut child.inner, child_ctx),
+        )
     }
 }
 
@@ -332,10 +332,10 @@ impl<'a> LifeCycleCtx<'a> {
             global_state: self.global_state,
             widget_state: &mut child.state,
         };
-        WidgetMut {
-            parent_widget_state: self.widget_state,
-            inner: Child::from_widget_and_ctx(&mut child.inner, child_ctx),
-        }
+        WidgetMut::new(
+            self.widget_state,
+            Child::from_widget_and_ctx(&mut child.inner, child_ctx),
+        )
     }
 }
 

@@ -186,16 +186,16 @@ impl RenderRoot {
     ) -> R {
         let mut fake_widget_state =
             WidgetState::new(self.root.id(), Some(self.get_kurbo_size()), "<root>");
-        let root_widget = WidgetMut {
-            inner: Box::<dyn Widget>::from_widget_and_ctx(
+        let root_widget = WidgetMut::new(
+            &mut fake_widget_state,
+            Box::<dyn Widget>::from_widget_and_ctx(
                 &mut self.root.inner,
                 WidgetCtx {
                     global_state: &mut self.state,
                     widget_state: &mut self.root.state,
                 },
             ),
-            parent_widget_state: &mut fake_widget_state,
-        };
+        );
 
         let res = f(root_widget);
         self.post_event_processing(&mut fake_widget_state);

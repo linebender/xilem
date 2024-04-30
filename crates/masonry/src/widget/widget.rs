@@ -16,6 +16,7 @@ use crate::event::{PointerEvent, TextEvent};
 use crate::widget::WidgetRef;
 use crate::{
     AsAny, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Point, Size,
+    WidgetCtx,
 };
 
 /// A unique identifier for a single [`Widget`].
@@ -208,6 +209,12 @@ pub trait StoreInWidgetMut: Widget {
         ctx: crate::contexts::WidgetCtx<'a>,
     ) -> Self::Mut<'a>;
 
+    fn into_widget_and_ctx<'a>(
+        widget_mut: Self::Mut<'a>,
+    ) -> (&'a mut Self, crate::contexts::WidgetCtx<'a>)
+    where
+        Self: Sized;
+
     fn get_widget<'s: 'r, 'a: 'r, 'r>(widget_mut: &'s mut Self::Mut<'a>) -> &'r mut Self {
         Self::get_widget_and_ctx(widget_mut).0
     }
@@ -221,6 +228,15 @@ pub trait StoreInWidgetMut: Widget {
     fn get_widget_and_ctx<'s: 'r, 'a: 'r, 'r>(
         widget_mut: &'s mut Self::Mut<'a>,
     ) -> (&'r mut Self, &'r mut crate::contexts::WidgetCtx<'a>);
+
+    fn reborrow<'r, 'a: 'r>(widget_mut: &'r mut Self::Mut<'a>) -> Self::Mut<'r> {
+        let (widget, ctx) = Self::get_widget_and_ctx(widget_mut);
+        let ctx = WidgetCtx {
+            global_state: ctx.global_state,
+            widget_state: ctx.widget_state,
+        };
+        Self::from_widget_and_ctx(widget, ctx)
+    }
 }
 
 // TODO - Generate a struct instead. See #27.
@@ -287,6 +303,12 @@ macro_rules! declare_widget {
                 widget_mut: &'s mut Self::Mut<'a>,
             ) -> (&'r mut Self, &'r mut $crate::WidgetCtx<'a>) {
                 (widget_mut.widget, &mut widget_mut.ctx)
+            }
+
+            fn into_widget_and_ctx<'a>(
+                widget_mut: Self::Mut<'a>,
+            ) -> (&'a mut Self, $crate::WidgetCtx<'a>)  where Self: Sized {
+                (widget_mut.widget, widget_mut.ctx)
             }
 
             fn from_widget_and_ctx<'a>(

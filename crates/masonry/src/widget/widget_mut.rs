@@ -2,6 +2,7 @@
 // "as-is" basis without warranties of any kind. See the LICENSE file for
 // details.
 
+use std::mem::ManuallyDrop;
 use std::ops::{Deref, DerefMut};
 
 use crate::contexts::WidgetCtx;
@@ -29,14 +30,48 @@ use crate::{Widget, WidgetId, WidgetState};
 ///
 /// See [`declare_widget`](crate::declare_widget) for details.
 pub struct WidgetMut<'a, W: Widget + StoreInWidgetMut> {
-    pub(crate) parent_widget_state: &'a mut WidgetState,
-    pub(crate) inner: W::Mut<'a>,
+    pub(crate) parent_widget_state: ManuallyDrop<&'a mut WidgetState>,
+    pub(crate) inner: ManuallyDrop<W::Mut<'a>>,
+    /// Whether this `WidgetMut` is the "root" `WidgetMut` of the reborrow tree, i.e.
+    /// whether we need to call merge_up in drop, or whether that will happen later
+    root: bool,
+}
+
+impl<'a, W: Widget + StoreInWidgetMut> WidgetMut<'a, W> {
+    pub(crate) fn new(parent_widget_state: &'a mut WidgetState, inner: W::Mut<'a>) -> Self {
+        Self {
+            parent_widget_state: ManuallyDrop::new(parent_widget_state),
+            inner: ManuallyDrop::new(inner),
+            root: true,
+        }
+    }
+
+    fn new_reborrowed(parent_widget_state: &'a mut WidgetState, inner: W::Mut<'a>) -> Self {
+        Self {
+            parent_widget_state: ManuallyDrop::new(parent_widget_state),
+            inner: ManuallyDrop::new(inner),
+            root: false,
+        }
+    }
+}
+
+impl<'a, W: StoreInWidgetMut> WidgetMut<'a, W> {
+    pub fn reborrow(&mut self) -> WidgetMut<'_, W> {
+        WidgetMut::new_reborrowed(&mut self.parent_widget_state, W::reborrow(&mut self.inner))
+    }
 }
 
 impl<W: StoreInWidgetMut> Drop for WidgetMut<'_, W> {
     fn drop(&mut self) {
-        self.parent_widget_state
-            .merge_up(W::get_ctx(&mut self.inner).widget_state);
+        if self.root {
+            self.parent_widget_state
+                .merge_up(W::get_ctx(&mut self.inner).widget_state);
+        }
+        #[allow(unsafe_code)]
+        unsafe {
+            // Safety: We never call this drop whilst self is in an invalid state
+            ManuallyDrop::drop(&mut self.inner)
+        }
     }
 }
 
@@ -65,10 +100,41 @@ impl<'a> WidgetMut<'a, Box<dyn Widget>> {
             global_state: ctx.global_state,
             widget_state: ctx.widget_state,
         };
-        Some(WidgetMut {
-            parent_widget_state: self.parent_widget_state,
-            inner: W2::from_widget_and_ctx(widget, ctx),
-        })
+        Some(WidgetMut::new_reborrowed(
+            &mut self.parent_widget_state,
+            W2::from_widget_and_ctx(widget, ctx),
+        ))
+    }
+
+    /// Attempt to downcast to `WidgetMut` of concrete Widget type.
+    pub fn downcast_owned<W2: Widget + StoreInWidgetMut>(mut self) -> Option<WidgetMut<'a, W2>> {
+        #![allow(unsafe_code)]
+        let root = self.root;
+        // Safety: We run no possible panicking code between the ManuallyDrop::take sand forgetting self
+        let parent_widget_state = unsafe { ManuallyDrop::take(&mut self.parent_widget_state) };
+        let widget_mut = unsafe { ManuallyDrop::take(&mut self.inner) };
+        // Logic: The merge_up is definitely called, either in the None
+        // arm below or in the destructor of the returned value
+        std::mem::forget(self);
+        let (widget, mut ctx) = Box::<dyn Widget>::into_widget_and_ctx(widget_mut);
+        match widget.as_mut_any().downcast_mut() {
+            Some(widget) => {
+                let ctx = WidgetCtx {
+                    global_state: ctx.global_state,
+                    widget_state: ctx.widget_state,
+                };
+                let mut widget_mut =
+                    WidgetMut::new(parent_widget_state, W2::from_widget_and_ctx(widget, ctx));
+                widget_mut.root = root;
+                Some(widget_mut)
+            }
+            None => {
+                if root {
+                    parent_widget_state.merge_up(&mut ctx.widget_state);
+                }
+                None
+            }
+        }
     }
 }
 
