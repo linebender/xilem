@@ -1,7 +1,7 @@
 // On Windows platform, don't show a console when opening the app.
 #![windows_subsystem = "windows"]
 
-use xilem_masonry::view::{button, checkbox, flex, label, FlexSpacer};
+use xilem_masonry::view::{button, checkbox, flex, flex_item, label, FlexSpacer};
 use xilem_masonry::{Axis, BoxedMasonryView, Color, MasonryView, TextAlignment, Xilem};
 
 fn app_logic(data: &mut AppData) -> impl MasonryView<AppData> {
@@ -48,12 +48,19 @@ fn toggleable(data: &mut AppData) -> impl MasonryView<AppData> {
     let inner_view: BoxedMasonryView<_, _> = if data.active {
         Box::new(
             flex((
-                button("Deactivate", |data: &mut AppData| {
-                    data.active = false;
-                }),
-                button("Unlimited Power", |data: &mut AppData| {
-                    data.count = -1_000_000;
-                }),
+                flex_item(
+                    button("Deactivate", |data: &mut AppData| {
+                        data.active = false;
+                    }),
+                    1.0,
+                ),
+                FlexSpacer::Flex(1.0),
+                flex_item(
+                    button("Unlimited Power", |data: &mut AppData| {
+                        data.count = -1_000_000;
+                    }),
+                    2.0,
+                ),
             ))
             .direction(Axis::Horizontal),
         )

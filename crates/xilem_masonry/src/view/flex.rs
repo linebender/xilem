@@ -1,13 +1,13 @@
 use std::marker::PhantomData;
 
 use masonry::{
-    widget::{self, Axis, CrossAxisAlignment, FlexParams, WidgetMut},
+    widget::{self, Axis, FlexParams, WidgetMut},
     Widget, WidgetPod,
 };
 
 use crate::{
-    sequence::SequenceCompatible, ChangeFlags, ElementSplice, VecSplice, View, ViewElement,
-    ViewSequence,
+    sequence::SequenceCompatible, ChangeFlags, ElementSplice, MasonryView, VecSplice, View,
+    ViewElement, ViewSequence,
 };
 
 // TODO: Allow configuring flex properties. I think this actually needs its own view trait?
@@ -16,6 +16,13 @@ pub fn flex<VT, Marker>(sequence: VT) -> Flex<VT, Marker> {
         phantom: PhantomData,
         sequence,
         axis: Axis::Vertical,
+    }
+}
+
+pub fn flex_item<V>(view: V, params: impl Into<FlexParams>) -> FlexWrapper<V> {
+    FlexWrapper {
+        params: params.into(),
+        view,
     }
 }
 
@@ -54,13 +61,7 @@ where
             view = match item {
                 FlexElement::FlexSpacer(flex) => view.with_flex_spacer(flex),
                 FlexElement::FixedSpacer(len) => view.with_spacer(len),
-                FlexElement::FixedChild(widget, alignment) => {
-                    view.with_flex_child_pod(widget, FlexParams::new(None, alignment))
-                }
-                FlexElement::FlexChild(widget, alignment, flex) => {
-                    view.with_flex_child_pod(widget, FlexParams::new(flex, alignment))
-                }
-                FlexElement::DefaultSpacer => view.with_default_spacer(),
+                FlexElement::Child(widget, params) => view.with_flex_child_pod(widget, params),
             }
         }
         (WidgetPod::new(view), seq_state)
@@ -99,20 +100,24 @@ where
 }
 
 pub enum FlexElement {
-    /// The default spacer
-    ///
-    /// TODO: This has trouble when the axis changes
-    DefaultSpacer,
+    // /// The default spacer
+    // ///
+    // /// TODO: This has trouble when the axis changes
+    // DefaultSpacer,
     FlexSpacer(f64),
     FixedSpacer(f64),
-    FixedChild(WidgetPod<Box<dyn Widget>>, Option<CrossAxisAlignment>),
-    FlexChild(WidgetPod<Box<dyn Widget>>, Option<CrossAxisAlignment>, f64),
+    Child(WidgetPod<Box<dyn Widget>>, FlexParams),
 }
 
 #[derive(Copy, Clone, PartialEq)]
 pub enum FlexSpacer {
     Fixed(f64),
     Flex(f64),
+}
+
+pub struct FlexWrapper<V> {
+    view: V,
+    params: FlexParams,
 }
 
 impl<State, Action> View<State, Action> for FlexSpacer {
@@ -157,6 +162,53 @@ impl<State, Action> View<State, Action> for FlexSpacer {
     }
 }
 
+impl<State, Action, V: MasonryView<State, Action>> View<State, Action> for FlexWrapper<V> {
+    type Element = FlexElement;
+
+    type ViewState = V::ViewState;
+
+    fn build(&self, cx: &mut crate::ViewCx) -> (Self::Element, Self::ViewState) {
+        let (inner, state) = self.view.build(cx);
+        (FlexElement::Child(inner.boxed(), self.params), state)
+    }
+
+    fn rebuild(
+        &self,
+        view_state: &mut Self::ViewState,
+        cx: &mut crate::ViewCx,
+        prev: &Self,
+        mut element: <Self::Element as ViewElement>::Mut<'_>,
+    ) -> ChangeFlags {
+        if self.params != prev.params {
+            element
+                .parent
+                .update_child_flex_params(element.ix, self.params);
+        }
+        let mut element = element
+            .parent
+            .child_mut(element.ix)
+            .expect("FlexWrapper always has a widget child");
+        self.view.rebuild(
+            view_state,
+            cx,
+            &prev.view,
+            element
+                .downcast()
+                .expect("Element should have correct element type"),
+        )
+    }
+
+    fn message(
+        &self,
+        view_state: &mut Self::ViewState,
+        id_path: &[crate::ViewId],
+        message: Box<dyn std::any::Any>,
+        app_state: &mut State,
+    ) -> crate::MessageResult<Action> {
+        self.view.message(view_state, id_path, message, app_state)
+    }
+}
+
 pub struct FlexElementMut<'a> {
     parent: WidgetMut<'a, widget::Flex>,
     ix: usize,
@@ -185,7 +237,7 @@ impl ViewElement for FlexElement {
 
 impl SequenceCompatible<WidgetPod<Box<dyn Widget>>> for FlexElement {
     fn into_item(element: WidgetPod<Box<dyn Widget>>) -> Self {
-        Self::FixedChild(element, None)
+        Self::Child(element, FlexParams::new(None, None))
     }
 
     fn access_mut<'a, R>(
@@ -210,12 +262,8 @@ impl ElementSplice<FlexElement> for FlexSplice<'_> {
         match element {
             FlexElement::FlexSpacer(flex) => self.element.insert_flex_spacer(self.ix, flex),
             FlexElement::FixedSpacer(len) => self.element.insert_spacer(self.ix, len),
-            FlexElement::DefaultSpacer => self.element.insert_default_spacer(self.ix),
-            FlexElement::FixedChild(widget, _axis) => {
-                self.element.insert_child_pod(self.ix, widget);
-            }
-            FlexElement::FlexChild(widget, _axis, _len) => {
-                self.element.insert_child_pod(self.ix, widget);
+            FlexElement::Child(widget, params) => {
+                self.element.insert_flex_child_pod(self.ix, widget, params);
             }
         }
         self.ix += 1;
