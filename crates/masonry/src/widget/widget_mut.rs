@@ -70,7 +70,7 @@ impl<W: StoreInWidgetMut> Drop for WidgetMut<'_, W> {
         #[allow(unsafe_code)]
         unsafe {
             // Safety: We never call this drop whilst self is in an invalid state
-            ManuallyDrop::drop(&mut self.inner)
+            ManuallyDrop::drop(&mut self.inner);
         }
     }
 }
@@ -116,7 +116,7 @@ impl<'a> WidgetMut<'a, Box<dyn Widget>> {
         // Logic: The merge_up is definitely called, either in the None
         // arm below or in the destructor of the returned value
         std::mem::forget(self);
-        let (widget, mut ctx) = Box::<dyn Widget>::into_widget_and_ctx(widget_mut);
+        let (widget, ctx) = Box::<dyn Widget>::into_widget_and_ctx(widget_mut);
         match widget.as_mut_any().downcast_mut() {
             Some(widget) => {
                 let ctx = WidgetCtx {
@@ -130,7 +130,7 @@ impl<'a> WidgetMut<'a, Box<dyn Widget>> {
             }
             None => {
                 if root {
-                    parent_widget_state.merge_up(&mut ctx.widget_state);
+                    parent_widget_state.merge_up(ctx.widget_state);
                 }
                 None
             }

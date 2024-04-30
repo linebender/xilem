@@ -86,8 +86,8 @@ pub trait SequenceCompatible<SourceElement: ViewElement>: ViewElement {
     /// Convert from the mutable form into the immutable form
     ///
     /// This may panic *if* the reference doesn't come from an element returned from `Self`
-    fn access_mut<'a, R>(
-        reference: Self::Mut<'a>,
+    fn access_mut<R>(
+        reference: Self::Mut<'_>,
         f: impl FnOnce(&mut SourceElement::Mut<'_>) -> R,
     ) -> R;
 }
@@ -102,8 +102,8 @@ where
         element.into()
     }
 
-    fn access_mut<'a, R>(
-        reference: Self::Mut<'a>,
+    fn access_mut<R>(
+        reference: Self::Mut<'_>,
         f: impl FnOnce(&mut <SourceElement as ViewElement>::Mut<'_>) -> R,
     ) -> R {
         let mut into = reference.into();

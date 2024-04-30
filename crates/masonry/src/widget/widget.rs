@@ -209,9 +209,9 @@ pub trait StoreInWidgetMut: Widget {
         ctx: crate::contexts::WidgetCtx<'a>,
     ) -> Self::Mut<'a>;
 
-    fn into_widget_and_ctx<'a>(
-        widget_mut: Self::Mut<'a>,
-    ) -> (&'a mut Self, crate::contexts::WidgetCtx<'a>)
+    fn into_widget_and_ctx(
+        widget_mut: Self::Mut<'_>,
+    ) -> (&'_ mut Self, crate::contexts::WidgetCtx<'_>)
     where
         Self: Sized;
 
@@ -305,9 +305,9 @@ macro_rules! declare_widget {
                 (widget_mut.widget, &mut widget_mut.ctx)
             }
 
-            fn into_widget_and_ctx<'a>(
-                widget_mut: Self::Mut<'a>,
-            ) -> (&'a mut Self, $crate::WidgetCtx<'a>)  where Self: Sized {
+            fn into_widget_and_ctx(
+                widget_mut: Self::Mut<'_>,
+            ) -> (&'_ mut Self, $crate::WidgetCtx<'_>)  where Self: Sized {
                 (widget_mut.widget, widget_mut.ctx)
             }
 

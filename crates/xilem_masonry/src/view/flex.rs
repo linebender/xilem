@@ -61,7 +61,7 @@ where
             view = match item {
                 FlexElement::FlexSpacer(flex) => view.with_flex_spacer(flex),
                 FlexElement::FixedSpacer(len) => view.with_spacer(len),
-                FlexElement::Child(widget, params) => view.with_flex_child_pod(widget, params),
+                FlexElement::Child(widget, params) => view.with_flex_child_pod(*widget, params),
             }
         }
         (WidgetPod::new(view), seq_state)
@@ -106,7 +106,8 @@ pub enum FlexElement {
     // DefaultSpacer,
     FlexSpacer(f64),
     FixedSpacer(f64),
-    Child(WidgetPod<Box<dyn Widget>>, FlexParams),
+    // Avoid making the enum massive for the spacer cases by boxing
+    Child(Box<WidgetPod<Box<dyn Widget>>>, FlexParams),
 }
 
 #[derive(Copy, Clone, PartialEq)]
@@ -169,7 +170,10 @@ impl<State, Action, V: MasonryView<State, Action>> View<State, Action> for FlexW
 
     fn build(&self, cx: &mut crate::ViewCx) -> (Self::Element, Self::ViewState) {
         let (inner, state) = self.view.build(cx);
-        (FlexElement::Child(inner.boxed(), self.params), state)
+        (
+            FlexElement::Child(Box::new(inner.boxed()), self.params),
+            state,
+        )
     }
 
     fn rebuild(
@@ -223,11 +227,11 @@ impl ViewElement for FlexElement {
         self
     }
 
-    fn downcast<'m>(erased: <Self::Erased as ViewElement>::Mut<'m>) -> Self::Mut<'m> {
+    fn downcast(erased: <Self::Erased as ViewElement>::Mut<'_>) -> Self::Mut<'_> {
         erased
     }
 
-    fn reborrow<'r, 'm>(reference_mut: &'r mut Self::Mut<'m>) -> Self::Mut<'r> {
+    fn reborrow<'r>(reference_mut: &'r mut Self::Mut<'_>) -> Self::Mut<'r> {
         FlexElementMut {
             parent: reference_mut.parent.reborrow(),
             ix: reference_mut.ix,
@@ -237,11 +241,11 @@ impl ViewElement for FlexElement {
 
 impl SequenceCompatible<WidgetPod<Box<dyn Widget>>> for FlexElement {
     fn into_item(element: WidgetPod<Box<dyn Widget>>) -> Self {
-        Self::Child(element, FlexParams::new(None, None))
+        Self::Child(Box::new(element), FlexParams::new(None, None))
     }
 
-    fn access_mut<'a, R>(
-        mut reference: Self::Mut<'a>,
+    fn access_mut<R>(
+        mut reference: Self::Mut<'_>,
         f: impl FnOnce(&mut <WidgetPod<Box<dyn Widget>> as ViewElement>::Mut<'_>) -> R,
     ) -> R {
         let mut child = reference
@@ -263,7 +267,7 @@ impl ElementSplice<FlexElement> for FlexSplice<'_> {
             FlexElement::FlexSpacer(flex) => self.element.insert_flex_spacer(self.ix, flex),
             FlexElement::FixedSpacer(len) => self.element.insert_spacer(self.ix, len),
             FlexElement::Child(widget, params) => {
-                self.element.insert_flex_child_pod(self.ix, widget, params);
+                self.element.insert_flex_child_pod(self.ix, *widget, params);
             }
         }
         self.ix += 1;

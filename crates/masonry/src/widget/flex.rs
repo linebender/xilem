@@ -383,7 +383,7 @@ impl<'a> FlexMut<'a> {
         child: impl Widget,
         params: impl Into<FlexParams>,
     ) {
-        self.insert_flex_child_pod(idx, WidgetPod::new(Box::new(child)), params)
+        self.insert_flex_child_pod(idx, WidgetPod::new(Box::new(child)), params);
     }
 
     pub fn insert_flex_child_pod(
