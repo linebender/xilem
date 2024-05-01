@@ -4,11 +4,6 @@ env:
   # come automatically. If the version specified here is no longer the latest stable version,
   # then please feel free to submit a PR that adjusts it along with the potential clippy fixes.
   RUST_STABLE_VER: "1.77" # In quotes because otherwise 1.70 would be interpreted as 1.7
-  # We do not run the masonry snapshot tests, because those require a specific font stack
-  SKIP_RENDER_SNAPSHOTS: 1
-  # We do not run the masonry render tests, because those require Vello rendering to be working
-  # See https://github.com/linebender/vello/pull/439
-  SKIP_RENDER_TESTS: 1
 
 # Rationale
 #
@@ -42,8 +37,17 @@ jobs:
   test-stable:
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [windows-latest, macos-latest, ubuntu-latest]
+        include:
+          - os: windows-latest
+            # TODO: It should be possible to get WARP working here
+            skip_gpu: '1'
+          - os: macos-latest
+            skip_gpu: ''
+          - os: ubuntu-latest
+            skip_gpu: ''
     name: cargo clippy + test
     steps:
       - uses: actions/checkout@v4
@@ -53,6 +57,16 @@ jobs:
           sudo apt update
           sudo apt install libwayland-dev libxkbcommon-x11-dev
         if: contains(matrix.os, 'ubuntu')
+
+        # Adapted from https://github.com/bevyengine/bevy/blob/b446374392adc70aceb92621b080d1a6cf7a7392/.github/workflows/validation-jobs.yml#L74-L79
+      - name: install xvfb, llvmpipe and lavapipe
+        if: contains(matrix.os, 'ubuntu')
+        # https://launchpad.net/~kisak/+archive/ubuntu/turtle
+        run: |
+          sudo apt-get update -y -qq
+          sudo add-apt-repository ppa:kisak/turtle -y
+          sudo apt-get update
+          sudo apt install -y xvfb libegl1-mesa libgl1-mesa-dri libxcb-xfixes0-dev mesa-vulkan-drivers
 
       - name: install stable toolchain
         uses: dtolnay/rust-toolchain@master
@@ -87,6 +101,15 @@ jobs:
 
       - name: cargo test
         run: cargo test --workspace --all-features
+        env:
+          SKIP_RENDER_TESTS: ${{ matrix.skip_gpu }}
+          SKIP_RENDER_SNAPSHOTS: ${{ matrix.skip_gpu }}
+      
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: masonry-snapshot-tests-${{ matrix.os }}
+          path: crates/masonry/src/widget/screenshots/
 
   docs:
     name: cargo doc

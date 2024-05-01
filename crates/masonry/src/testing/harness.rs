@@ -21,7 +21,7 @@ use super::screenshots::get_image_diff;
 use super::snapshot_utils::get_cargo_workspace;
 use crate::action::Action;
 use crate::event::{PointerEvent, PointerState, TextEvent, WindowEvent};
-use crate::render_root::{RenderRoot, RenderRootSignal, WindowSizePolicy};
+use crate::render_root::{RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy};
 use crate::widget::{WidgetMut, WidgetRef};
 use crate::{Color, Handled, Point, Size, Vec2, Widget, WidgetId};
 
@@ -175,11 +175,24 @@ impl TestHarness {
         let window_size = PhysicalSize::new(window_size.width as _, window_size.height as _);
 
         let mut harness = TestHarness {
-            render_root: RenderRoot::new(root_widget, WindowSizePolicy::User),
+            render_root: RenderRoot::new(
+                root_widget,
+                RenderRootOptions {
+                    use_system_fonts: false,
+                    size_policy: WindowSizePolicy::User,
+                },
+            ),
             mouse_state,
             window_size,
             background_color,
         };
+        const FONT_PATH: &str = concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/resources/fonts/roboto/Roboto-Regular.ttf"
+        );
+        harness
+            .render_root
+            .add_test_font(std::fs::read(FONT_PATH).unwrap());
         harness.process_window_event(WindowEvent::Resize(window_size));
 
         harness
@@ -503,7 +516,7 @@ impl TestHarness {
         test_module_path: &str,
         test_name: &str,
     ) {
-        if option_env!("SKIP_RENDER_SNAPSHOTS").is_some() {
+        if std::env::var("SKIP_RENDER_SNAPSHOTS").is_ok_and(|it| !it.is_empty()) {
             // FIXME - This is a terrible, awful hack.
             // We need a way to skip render snapshots on CI and locally
             // until we can make sure the snapshots render the same on
@@ -540,6 +553,10 @@ impl TestHarness {
                 new_image.save(&new_path).unwrap();
                 diff_image.save(&diff_path).unwrap();
                 panic!("Images are different");
+            } else {
+                // Remove the vestigal new and diff images
+                let _ = std::fs::remove_file(&new_path);
+                let _ = std::fs::remove_file(&diff_path);
             }
         } else {
             // Remove '<test_name>.new.png' file if it exists
