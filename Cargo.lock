@@ -89,12 +89,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "anyhow"
-version = "1.0.82"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f538837af36e6f6a9be0faa67f9a314f8119e4e4b5867c6ab40ed60360142519"
-
-[[package]]
 name = "arrayref"
 version = "0.3.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -670,15 +664,9 @@ checksum = "3f9eec918d3f24069decb9af1554cad7c880e2da24a9afd88aca000531ab82c1"
 
 [[package]]
 name = "font-types"
-version = "0.4.3"
+version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5b7f6040d337bd44434ab21fc6509154edf2cece88b23758d9d64654c4e7730b"
-
-[[package]]
-name = "font-types"
-version = "0.5.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bd6784a76a9c2b136ea3b8462391e9328252e938eb706eb44d752723b4c3a533"
+checksum = "bdf6aa1de86490d8e39e04589bd04eb5953cc2a5ef0c25e389e807f44fd24e41"
 dependencies = [
  "bytemuck",
 ]
@@ -696,12 +684,10 @@ dependencies = [
 [[package]]
 name = "fontique"
 version = "0.1.0"
-source = "git+https://github.com/linebender/parley?rev=9a519ba644eda13783a7326539dd0305dc206ba8#9a519ba644eda13783a7326539dd0305dc206ba8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "00db74e5e46a808cfa00b871c1dc526e33e7e151f205c6011defd9ba6df17d8a"
 dependencies = [
- "anyhow",
- "bytemuck",
  "core-foundation",
- "core-foundation-sys",
  "core-text",
  "dwrote",
  "fontconfig-cache-parser",
@@ -711,9 +697,8 @@ dependencies = [
  "memmap2",
  "peniko",
  "roxmltree",
- "skrifa 0.19.0",
+ "skrifa",
  "smallvec",
- "thiserror",
  "winapi",
  "wio",
 ]
@@ -936,9 +921,9 @@ dependencies = [
 
 [[package]]
 name = "hashbrown"
-version = "0.14.3"
+version = "0.14.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "290f1a1d9242c78d09ce40a5e87e7554ee637af1351968159f4952f028f75604"
+checksum = "e5274423e17b7c9fc20b6e7e208532f9b19825d82dfd615708b70edd83df41f1"
 dependencies = [
  "ahash",
  "allocator-api2",
@@ -1311,7 +1296,7 @@ dependencies = [
  "smallvec",
  "tempfile",
  "tracing",
- "vello 0.1.0 (git+https://github.com/linebender/vello/?rev=b520a35addfa6bbb37d93491d2b8236528faf3b5)",
+ "vello",
  "wgpu",
  "winit",
 ]
@@ -1610,11 +1595,12 @@ dependencies = [
 [[package]]
 name = "parley"
 version = "0.1.0"
-source = "git+https://github.com/linebender/parley?rev=9a519ba644eda13783a7326539dd0305dc206ba8#9a519ba644eda13783a7326539dd0305dc206ba8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "be05c1c99b0bd9272eb75f495d47090add32275015f428aefa370b41179379c3"
 dependencies = [
  "fontique",
  "peniko",
- "skrifa 0.19.0",
+ "skrifa",
  "swash",
 ]
 
@@ -1797,21 +1783,12 @@ dependencies = [
 
 [[package]]
 name = "read-fonts"
-version = "0.15.6"
+version = "0.19.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "17ea23eedb4d938031b6d4343222444608727a6aa68ec355e13588d9947ffe92"
-dependencies = [
- "font-types 0.4.3",
-]
-
-[[package]]
-name = "read-fonts"
-version = "0.19.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ea75b5ec052843434d263ef7a4c31cf86db5908c729694afb1ad3c884252a1b6"
+checksum = "af4749db2bd1c853db31a7ae5ee2fc6c30bbddce353ea8fedf673fed187c68c7"
 dependencies = [
  "bytemuck",
- "font-types 0.5.2",
+ "font-types",
 ]
 
 [[package]]
@@ -1831,12 +1808,9 @@ checksum = "19b30a45b0cd0bcca8037f3d0dc3421eaf95327a17cad11964fb8179b4fc4832"
 
 [[package]]
 name = "roxmltree"
-version = "0.18.1"
+version = "0.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "862340e351ce1b271a378ec53f304a5558f7db87f3769dc655a8f6ecbb68b302"
-dependencies = [
- "xmlparser",
-]
+checksum = "3cd14fd5e3b777a7422cca79358c57a8f6e3a703d9ac187448d0daf220c2407f"
 
 [[package]]
 name = "rustc-demangle"
@@ -1966,21 +1940,12 @@ checksum = "fa42c91313f1d05da9b26f267f931cf178d4aba455b4c4622dd7355eb80c6640"
 
 [[package]]
 name = "skrifa"
-version = "0.15.5"
+version = "0.19.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eff28ee3b66d43060ef9a327e0f18e4c1813f194120156b4d4524fac3ba8ce22"
-dependencies = [
- "read-fonts 0.15.6",
-]
-
-[[package]]
-name = "skrifa"
-version = "0.19.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b3f54c6ecbad34b55ea1779389e334fe0d260f2f0c80964a926ffb47918c26e9"
+checksum = "8dbed6a0c9addb84c2c8f66f35f504bb875b901e2a022419173e6ee2adfd0fb4"
 dependencies = [
  "bytemuck",
- "read-fonts 0.19.0",
+ "read-fonts",
 ]
 
 [[package]]
@@ -2109,7 +2074,7 @@ version = "0.1.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "06ec889a8e0a6fcb91041996c8f1f6be0fe1a09e94478785e07c32ce2bca2d2b"
 dependencies = [
- "read-fonts 0.19.0",
+ "read-fonts",
  "yazi",
  "zeno",
 ]
@@ -2404,21 +2369,6 @@ checksum = "f962df74c8c05a667b5ee8bcf162993134c104e96440b663c8daa176dc772d8c"
 [[package]]
 name = "vello"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e9a4b96a2d6d6effa67868b4436560e3a767f71f0e043df007587c5d6b2e8b7a"
-dependencies = [
- "bytemuck",
- "futures-intrusive",
- "peniko",
- "raw-window-handle",
- "skrifa 0.15.5",
- "vello_encoding 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "wgpu",
-]
-
-[[package]]
-name = "vello"
-version = "0.1.0"
 source = "git+https://github.com/linebender/vello/?rev=b520a35addfa6bbb37d93491d2b8236528faf3b5#b520a35addfa6bbb37d93491d2b8236528faf3b5"
 dependencies = [
  "bytemuck",
@@ -2426,21 +2376,9 @@ dependencies = [
  "log",
  "peniko",
  "raw-window-handle",
- "skrifa 0.19.0",
- "vello_encoding 0.1.0 (git+https://github.com/linebender/vello/?rev=b520a35addfa6bbb37d93491d2b8236528faf3b5)",
+ "skrifa",
+ "vello_encoding",
  "wgpu",
-]
-
-[[package]]
-name = "vello_encoding"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0c5b6c6ec113c9b6ee1e1894ccef1b5559373aead718b7442811f2fefff7d423"
-dependencies = [
- "bytemuck",
- "guillotiere",
- "peniko",
- "skrifa 0.15.5",
 ]
 
 [[package]]
@@ -2451,7 +2389,7 @@ dependencies = [
  "bytemuck",
  "guillotiere",
  "peniko",
- "skrifa 0.19.0",
+ "skrifa",
 ]
 
 [[package]]
@@ -3169,7 +3107,7 @@ dependencies = [
  "taffy",
  "tokio",
  "tracing",
- "vello 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "vello",
  "wgpu",
  "winit",
  "xilem_core",
@@ -3186,7 +3124,7 @@ dependencies = [
  "masonry",
  "smallvec",
  "tracing",
- "vello 0.1.0 (git+https://github.com/linebender/vello/?rev=b520a35addfa6bbb37d93491d2b8236528faf3b5)",
+ "vello",
  "winit",
 ]
 
@@ -3229,12 +3167,6 @@ name = "xml-rs"
 version = "0.8.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "791978798f0597cfc70478424c2b4fdc2b7a8024aaff78497ef00f24ef674193"
-
-[[package]]
-name = "xmlparser"
-version = "0.13.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "66fee0b777b0f5ac1c69bb06d361268faafa61cd4682ae064a171c16c433e9e4"
 
 [[package]]
 name = "yazi"
