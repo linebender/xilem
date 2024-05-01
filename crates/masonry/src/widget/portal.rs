@@ -13,7 +13,7 @@ use vello::peniko::BlendMode;
 use vello::Scene;
 
 use crate::kurbo::{Point, Rect, Size, Vec2};
-use crate::widget::{Axis, ScrollBar, StoreInWidgetMut, WidgetMut, WidgetRef};
+use crate::widget::{Axis, ScrollBar, WidgetMut, WidgetRef};
 use crate::{
     BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, PointerEvent,
     StatusChange, TextEvent, Widget, WidgetPod,
@@ -39,8 +39,6 @@ pub struct Portal<W: Widget> {
     scrollbar_vertical: WidgetPod<ScrollBar>,
     scrollbar_vertical_visible: bool,
 }
-
-crate::declare_widget!(PortalMut, Portal<W: (Widget)>);
 
 impl<W: Widget> Portal<W> {
     pub fn new(child: W) -> Self {
@@ -150,11 +148,8 @@ impl<W: Widget> Portal<W> {
     }
 }
 
-impl<'a, W: Widget> PortalMut<'a, W> {
-    pub fn child_mut(&mut self) -> WidgetMut<'_, W>
-    where
-        W: StoreInWidgetMut,
-    {
+impl<W: Widget> WidgetMut<'_, Portal<W>> {
+    pub fn child_mut(&mut self) -> WidgetMut<'_, W> {
         self.ctx.get_mut(&mut self.widget.child)
     }
 

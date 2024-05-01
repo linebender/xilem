@@ -14,7 +14,7 @@ use winit::window::CursorIcon;
 use crate::kurbo::Line;
 use crate::paint_scene_helpers::{fill_color, stroke};
 use crate::widget::flex::Axis;
-use crate::widget::{WidgetPod, WidgetRef};
+use crate::widget::{WidgetMut, WidgetPod, WidgetRef};
 use crate::{
     theme, BoxConstraints, Color, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Point,
     PointerEvent, Rect, Size, StatusChange, TextEvent, Widget,
@@ -44,7 +44,6 @@ pub struct Split {
     child1: WidgetPod<Box<dyn Widget>>,
     child2: WidgetPod<Box<dyn Widget>>,
 }
-crate::declare_widget!(SplitMut, Split);
 
 impl Split {
     /// Create a new split panel, with the specified axis being split in two.
@@ -294,7 +293,7 @@ impl Split {
 
 // FIXME - Add unit tests for SplitMut
 
-impl<'a> SplitMut<'a> {
+impl<'a> WidgetMut<'_, Split> {
     /// Set the split point as a fraction of the split axis.
     ///
     /// The value must be between `0.0` and `1.0`, inclusive.

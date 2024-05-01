@@ -56,7 +56,6 @@ pub struct SizedBox {
     border: Option<BorderStyle>,
     corner_radius: RoundedRectRadii,
 }
-crate::declare_widget!(SizedBoxMut, SizedBox);
 
 impl SizedBox {
     /// Construct container with child, and both width and height not set.
@@ -168,7 +167,7 @@ impl SizedBox {
     // TODO - child()
 }
 
-impl<'a> SizedBoxMut<'a> {
+impl<'a> WidgetMut<'_, SizedBox> {
     pub fn set_child(&mut self, child: impl Widget) {
         self.widget.child = Some(WidgetPod::new(child).boxed());
         self.ctx.children_changed();

@@ -14,7 +14,7 @@ use crate::contexts::{EventCtx, LayoutCtx, LifeCycleCtx, PaintCtx, WidgetCtx, Wo
 use crate::debug_logger::DebugLogger;
 use crate::event::{PointerEvent, TextEvent, WindowEvent};
 use crate::kurbo::Point;
-use crate::widget::{FocusChange, StoreInWidgetMut, WidgetMut, WidgetState};
+use crate::widget::{FocusChange, WidgetMut, WidgetState};
 use crate::{
     Action, BoxConstraints, Handled, InternalLifeCycle, LifeCycle, Widget, WidgetId, WidgetPod,
 };
@@ -187,14 +187,12 @@ impl RenderRoot {
         let mut fake_widget_state =
             WidgetState::new(self.root.id(), Some(self.get_kurbo_size()), "<root>");
         let root_widget = WidgetMut {
-            inner: Box::<dyn Widget>::from_widget_and_ctx(
-                &mut self.root.inner,
-                WidgetCtx {
-                    global_state: &mut self.state,
-                    widget_state: &mut self.root.state,
-                },
-            ),
-            parent_widget_state: &mut fake_widget_state,
+            ctx: WidgetCtx {
+                global_state: &mut self.state,
+                parent_widget_state: &mut fake_widget_state,
+                widget_state: &mut self.root.state,
+            },
+            widget: &mut self.root.inner,
         };
 
         let res = f(root_widget);

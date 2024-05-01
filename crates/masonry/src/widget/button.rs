@@ -28,8 +28,6 @@ pub struct Button {
     label: WidgetPod<Label>,
 }
 
-crate::declare_widget!(ButtonMut, Button);
-
 impl Button {
     /// Create a new button with a text label.
     ///
@@ -62,7 +60,7 @@ impl Button {
     }
 }
 
-impl<'a> ButtonMut<'a> {
+impl WidgetMut<'_, Button> {
     /// Set the text.
     pub fn set_text(&mut self, new_text: impl Into<ArcStr>) {
         self.label_mut().set_text(new_text.into());
