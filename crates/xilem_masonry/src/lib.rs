@@ -3,7 +3,7 @@ use std::{any::Any, collections::HashMap};
 
 use masonry::{
     app_driver::AppDriver,
-    event_loop_runner::EventLoopRunner,
+    event_loop_runner,
     widget::{StoreInWidgetMut, WidgetMut, WidgetRef},
     BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Point, PointerEvent,
     Size, StatusChange, TextEvent, Widget, WidgetId, WidgetPod,
@@ -11,12 +11,7 @@ use masonry::{
 pub use masonry::{widget::Axis, Color, TextAlignment};
 use smallvec::SmallVec;
 use vello::Scene;
-use winit::{
-    dpi::LogicalSize,
-    error::EventLoopError,
-    event_loop::EventLoop,
-    window::{Window, WindowBuilder},
-};
+use winit::{dpi::LogicalSize, error::EventLoopError, event_loop::EventLoop, window::Window};
 
 mod any_view;
 mod id;
@@ -178,11 +173,13 @@ where
     {
         let event_loop = EventLoop::new().unwrap();
         let window_size = LogicalSize::new(600., 800.);
-        let window = WindowBuilder::new()
-            .with_title(window_title)
-            .with_resizable(true)
-            .with_min_inner_size(window_size)
-            .build(&event_loop)
+        let window = event_loop
+            .create_window(
+                Window::default_attributes()
+                    .with_title(window_title)
+                    .with_resizable(true)
+                    .with_min_inner_size(window_size),
+            )
             .unwrap();
         self.run_windowed_in(window, event_loop)
     }
@@ -198,7 +195,8 @@ where
         Logic: 'static,
         View: 'static,
     {
-        EventLoopRunner::new(self.root_widget, window, event_loop, self.driver).run()
+        event_loop_runner::run(self.root_widget, window, event_loop, self.driver);
+        Ok(())
     }
 }
 pub trait MasonryView<State, Action = ()>: Send + 'static {
