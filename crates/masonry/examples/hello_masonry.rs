@@ -46,7 +46,7 @@ pub fn main() {
         )
         .unwrap();
 
-    masonry::event_loop_runner::run(build_root_widget(), window, event_loop, Driver)
+    masonry::event_loop_runner::run(build_root_widget(), window, event_loop, Driver);
 }
 
 fn build_root_widget() -> impl Widget {
