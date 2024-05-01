@@ -22,10 +22,11 @@ use vello::{
 };
 use wgpu::PresentMode;
 use winit::{
+    application::ApplicationHandler,
     dpi::PhysicalPosition,
     event::{ElementState, Modifiers, MouseButton, MouseScrollDelta, WindowEvent},
-    event_loop::{ControlFlow, EventLoop},
-    window::{Window, WindowBuilder},
+    event_loop::{ActiveEventLoop, ControlFlow, EventLoop},
+    window::{Window, WindowId},
 };
 
 use crate::{
@@ -70,50 +71,51 @@ impl<T: Send + 'static, V: View<T> + 'static> AppLauncher<T, V> {
         let event_loop = EventLoop::new().unwrap();
         event_loop.set_control_flow(ControlFlow::Wait);
         let _guard = self.app.rt.enter();
-        let window = WindowBuilder::new()
-            .with_inner_size(winit::dpi::LogicalSize {
-                width: 1024.,
-                height: 768.,
-            })
-            .build(&event_loop)
+        #[allow(deprecated)]
+        let window = event_loop
+            .create_window(
+                Window::default_attributes()
+                    .with_inner_size(winit::dpi::LogicalSize {
+                        width: 1024.,
+                        height: 768.,
+                    })
+                    .with_title(self.title),
+            )
             .unwrap();
         let mut main_state = MainState::new(self.app, window);
-
-        event_loop
-            .run(move |event, elwt| {
-                if let winit::event::Event::WindowEvent { event: e, .. } = event {
-                    match e {
-                        WindowEvent::CloseRequested => elwt.exit(),
-                        WindowEvent::RedrawRequested => main_state.paint(),
-                        WindowEvent::Resized(winit::dpi::PhysicalSize { width, height }) => {
-                            main_state.size(Size {
-                                width: width.into(),
-                                height: height.into(),
-                            });
-                        }
-                        WindowEvent::ModifiersChanged(modifiers) => main_state.mods(modifiers),
-                        WindowEvent::CursorMoved {
-                            position: winit::dpi::PhysicalPosition { x, y },
-                            ..
-                        } => main_state.pointer_move(Point { x, y }),
-                        WindowEvent::CursorLeft { .. } => main_state.pointer_leave(),
-                        WindowEvent::MouseInput { state, button, .. } => match state {
-                            ElementState::Pressed => main_state.pointer_down(button),
-                            ElementState::Released => main_state.pointer_up(button),
-                        },
-                        WindowEvent::MouseWheel { delta, .. } => main_state.pointer_wheel(delta),
-                        _ => (),
-                    }
-                }
-            })
-            .unwrap();
+        let _ = event_loop.run_app(&mut main_state);
     }
 }
 
-impl<'a, T, V: View<T> + 'static> MainState<'a, T, V>
-where
-    T: Send + 'static,
-{
+impl<T: Send + 'static, V: View<T> + 'static> ApplicationHandler for MainState<'_, T, V> {
+    fn resumed(&mut self, _event_loop: &ActiveEventLoop) {}
+    fn window_event(&mut self, event_loop: &ActiveEventLoop, _: WindowId, event: WindowEvent) {
+        match event {
+            WindowEvent::CloseRequested => event_loop.exit(),
+            WindowEvent::RedrawRequested => self.paint(),
+            WindowEvent::Resized(winit::dpi::PhysicalSize { width, height }) => {
+                self.size(Size {
+                    width: width.into(),
+                    height: height.into(),
+                });
+            }
+            WindowEvent::ModifiersChanged(modifiers) => self.mods(modifiers),
+            WindowEvent::CursorMoved {
+                position: winit::dpi::PhysicalPosition { x, y },
+                ..
+            } => self.pointer_move(Point { x, y }),
+            WindowEvent::CursorLeft { .. } => self.pointer_leave(),
+            WindowEvent::MouseInput { state, button, .. } => match state {
+                ElementState::Pressed => self.pointer_down(button),
+                ElementState::Released => self.pointer_up(button),
+            },
+            WindowEvent::MouseWheel { delta, .. } => self.pointer_wheel(delta),
+            _ => (),
+        }
+    }
+}
+
+impl<'a, T: Send + 'static, V: View<T> + 'static> MainState<'a, T, V> {
     fn new(app: App<T, V>, window: Window) -> Self {
         let mut render_cx = RenderContext::new().unwrap();
         let size = window.inner_size();
