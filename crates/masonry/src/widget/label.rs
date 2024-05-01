@@ -2,7 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use kurbo::{Affine, Point, Size};
-use parley::layout::Alignment;
+use parley::{
+    layout::Alignment,
+    style::{FontFamily, FontStack},
+};
 use smallvec::SmallVec;
 use tracing::trace;
 use vello::{
@@ -35,7 +38,7 @@ pub enum LineBreaking {
 }
 
 /// A widget displaying non-editable text.
-pub struct Label<T: TextStorage = ArcStr> {
+pub struct Label<T: TextStorage> {
     text_layout: TextLayout<T>,
     line_break_mode: LineBreaking,
     allow_disabled: bool,
@@ -66,6 +69,19 @@ impl<T: TextStorage> Label<T> {
 
     pub fn with_text_alignment(mut self, alignment: Alignment) -> Self {
         self.set_text_alignment(alignment);
+        self
+    }
+
+    pub fn with_font(mut self, font: FontStack<'static>) -> Self {
+        self.set_font(font);
+        self
+    }
+    pub fn with_font_family(self, font: FontFamily<'static>) -> Self {
+        self.with_font(FontStack::Single(font))
+    }
+
+    pub fn with_line_break_mode(mut self, line_break_mode: LineBreaking) -> Self {
+        self.line_break_mode = line_break_mode;
         self
     }
 }
@@ -106,17 +122,27 @@ impl<T: TextStorage> LabelMut<'_, T> {
     }
 
     pub fn set_text(&mut self, new_text: T) {
-        self.set_text_properties(|ctx| ctx.set_text(new_text));
+        self.set_text_properties(|layout| layout.set_text(new_text));
     }
 
-    pub fn set_color(&mut self, color: Color) {
-        self.set_text_properties(|ctx| ctx.set_color(color));
+    pub fn set_text_color(&mut self, color: Color) {
+        self.set_text_properties(|layout| layout.set_color(color));
     }
     pub fn set_text_size(&mut self, size: f32) {
-        self.set_text_properties(|ctx| ctx.set_text_size(size));
+        self.set_text_properties(|layout| layout.set_text_size(size));
     }
-    pub fn set_text_alignment(&mut self, alignment: Alignment) {
-        self.set_text_properties(|ctx| ctx.set_text_alignment(alignment));
+    pub fn set_alignment(&mut self, alignment: Alignment) {
+        self.set_text_properties(|layout| layout.set_text_alignment(alignment));
+    }
+    pub fn set_font(&mut self, font_stack: FontStack<'static>) {
+        self.set_text_properties(|layout| layout.set_font(font_stack));
+    }
+    pub fn set_font_family(&mut self, family: FontFamily<'static>) {
+        self.set_font(FontStack::Single(family))
+    }
+    pub fn set_line_break_mode(&mut self, line_break_mode: LineBreaking) {
+        self.widget.line_break_mode = line_break_mode;
+        self.ctx.request_paint();
     }
 }
 
@@ -230,5 +256,114 @@ impl<T: TextStorage> Widget for Label<T> {
 
     fn get_debug_text(&self) -> Option<String> {
         Some(self.text_layout.text().as_str().to_string())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use insta::assert_debug_snapshot;
+    use parley::style::GenericFamily;
+
+    use super::*;
+    use crate::assert_render_snapshot;
+    use crate::testing::TestHarness;
+    use crate::theme::{PRIMARY_DARK, PRIMARY_LIGHT};
+    use crate::widget::{Flex, SizedBox};
+
+    #[test]
+    fn simple_label() {
+        let label = Label::new("Hello");
+
+        let mut harness = TestHarness::create(label);
+
+        assert_debug_snapshot!(harness.root_widget());
+        assert_render_snapshot!(harness, "hello");
+    }
+
+    #[test]
+    fn styled_label() {
+        let label = Label::new("The quick brown fox jumps over the lazy dog")
+            .with_text_color(PRIMARY_LIGHT)
+            .with_font_family(FontFamily::Generic(GenericFamily::Monospace))
+            .with_text_size(20.0)
+            .with_line_break_mode(LineBreaking::WordWrap)
+            .with_text_alignment(Alignment::Middle);
+
+        let mut harness = TestHarness::create_with_size(label, Size::new(200.0, 200.0));
+
+        assert_render_snapshot!(harness, "styled_label");
+    }
+
+    #[test]
+    fn line_break_modes() {
+        let widget = Flex::column()
+            .with_flex_spacer(1.0)
+            .with_child(
+                SizedBox::new(
+                    Label::new("The quick brown fox jumps over the lazy dog")
+                        .with_line_break_mode(LineBreaking::WordWrap),
+                )
+                .width(200.0),
+            )
+            .with_spacer(20.0)
+            .with_child(
+                SizedBox::new(
+                    Label::new("The quick brown fox jumps over the lazy dog")
+                        .with_line_break_mode(LineBreaking::Clip),
+                )
+                .width(200.0),
+            )
+            .with_spacer(20.0)
+            .with_child(
+                SizedBox::new(
+                    Label::new("The quick brown fox jumps over the lazy dog")
+                        .with_line_break_mode(LineBreaking::Overflow),
+                )
+                .width(200.0),
+            )
+            .with_flex_spacer(1.0);
+
+        let mut harness = TestHarness::create(widget);
+
+        assert_render_snapshot!(harness, "line_break_modes");
+    }
+
+    #[test]
+    fn edit_label() {
+        let image_1 = {
+            let label = Label::new("The quick brown fox jumps over the lazy dog")
+                .with_text_color(PRIMARY_LIGHT)
+                .with_font_family(FontFamily::Generic(GenericFamily::Monospace))
+                .with_text_size(20.0)
+                .with_line_break_mode(LineBreaking::WordWrap)
+                .with_text_alignment(Alignment::Middle);
+
+            let mut harness = TestHarness::create_with_size(label, Size::new(50.0, 50.0));
+
+            harness.render()
+        };
+
+        let image_2 = {
+            let label = Label::new("Hello world")
+                .with_text_color(PRIMARY_DARK)
+                .with_text_size(40.0);
+
+            let mut harness = TestHarness::create_with_size(label, Size::new(50.0, 50.0));
+
+            harness.edit_root_widget(|mut label| {
+                let mut label = label.downcast::<Label<&'static str>>().unwrap();
+                label.set_text("The quick brown fox jumps over the lazy dog");
+                label.set_text_color(PRIMARY_LIGHT);
+                label.set_font_family(FontFamily::Generic(GenericFamily::Monospace));
+                label.set_text_size(20.0);
+                label.set_line_break_mode(LineBreaking::WordWrap);
+                label.set_alignment(Alignment::Middle);
+            });
+
+            harness.render()
+        };
+
+        // We don't use assert_eq because we don't want rich assert
+        assert!(image_1 == image_2);
     }
 }

@@ -40,7 +40,7 @@ impl Label {
 }
 
 impl<State, Action> MasonryView<State, Action> for Label {
-    type Element = masonry::widget::Label;
+    type Element = masonry::widget::Label<ArcStr>;
     type ViewState = ();
 
     fn build(&self, _cx: &mut ViewCx) -> (WidgetPod<Self::Element>, Self::ViewState) {
@@ -70,11 +70,11 @@ impl<State, Action> MasonryView<State, Action> for Label {
         //     changeflags.changed |= ChangeFlags::CHANGED.changed;
         // }
         if prev.text_color != self.text_color {
-            element.set_color(self.text_color);
+            element.set_text_color(self.text_color);
             changeflags.changed |= ChangeFlags::CHANGED.changed;
         }
         if prev.alignment != self.alignment {
-            element.set_text_alignment(self.alignment);
+            element.set_alignment(self.alignment);
             changeflags.changed |= ChangeFlags::CHANGED.changed;
         }
         changeflags

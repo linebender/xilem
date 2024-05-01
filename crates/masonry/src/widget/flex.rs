@@ -1370,7 +1370,12 @@ mod tests {
 
             let mut child = flex.child_mut(1).unwrap();
             assert_eq!(
-                child.downcast::<Label>().unwrap().widget.text().to_string(),
+                child
+                    .downcast::<Label<&'static str>>()
+                    .unwrap()
+                    .widget
+                    .text()
+                    .to_string(),
                 "world"
             );
             std::mem::drop(child);

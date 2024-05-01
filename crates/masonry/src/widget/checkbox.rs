@@ -246,7 +246,7 @@ mod tests {
                 checkbox.set_text("The quick brown fox jumps over the lazy dog");
 
                 let mut label = checkbox.label_mut();
-                label.set_color(PRIMARY_LIGHT);
+                label.set_text_color(PRIMARY_LIGHT);
                 label.set_text_size(20.0);
             });
 
