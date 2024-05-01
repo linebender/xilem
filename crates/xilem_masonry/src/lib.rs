@@ -173,6 +173,7 @@ where
     {
         let event_loop = EventLoop::new().unwrap();
         let window_size = LogicalSize::new(600., 800.);
+        #[allow(deprecated)]
         let window = event_loop
             .create_window(
                 Window::default_attributes()
