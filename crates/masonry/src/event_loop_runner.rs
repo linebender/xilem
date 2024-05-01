@@ -7,7 +7,6 @@ use vello::{peniko::Color, AaSupport, RenderParams, Renderer, RendererOptions, S
 use wgpu::PresentMode;
 use winit::application::ApplicationHandler;
 use winit::dpi::PhysicalPosition;
-use winit::error::EventLoopError;
 use winit::event::WindowEvent as WinitWindowEvent;
 use winit::event_loop::{ActiveEventLoop, EventLoop};
 use winit::window::{Window, WindowId};
