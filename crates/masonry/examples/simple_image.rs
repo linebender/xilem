@@ -10,13 +10,12 @@
 #![windows_subsystem = "windows"]
 
 use masonry::app_driver::{AppDriver, DriverCtx};
-use masonry::event_loop_runner::EventLoopRunner;
 use masonry::widget::{FillStrat, Image};
 use masonry::{Action, WidgetId};
 use vello::peniko::{Format, Image as ImageBuf};
 use winit::dpi::LogicalSize;
 use winit::event_loop::EventLoop;
-use winit::window::WindowBuilder;
+use winit::window::Window;
 
 struct Driver;
 
@@ -33,13 +32,15 @@ pub fn main() {
 
     let event_loop = EventLoop::new().unwrap();
     let window_size = LogicalSize::new(650.0, 450.0);
-    let window = WindowBuilder::new()
-        .with_title("Simple image example")
-        .with_min_inner_size(window_size)
-        .with_max_inner_size(window_size)
-        .build(&event_loop)
+    #[allow(deprecated)]
+    let window = event_loop
+        .create_window(
+            Window::default_attributes()
+                .with_title("Simple image example")
+                .with_min_inner_size(window_size)
+                .with_max_inner_size(window_size),
+        )
         .unwrap();
 
-    let runner = EventLoopRunner::new(image, window, event_loop, Driver);
-    runner.run().unwrap();
+    masonry::event_loop_runner::run(image, window, event_loop, Driver);
 }

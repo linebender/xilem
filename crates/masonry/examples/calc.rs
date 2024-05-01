@@ -10,7 +10,6 @@
 use std::sync::Arc;
 
 use masonry::app_driver::{AppDriver, DriverCtx};
-use masonry::event_loop_runner::EventLoopRunner;
 use masonry::widget::{Align, CrossAxisAlignment, Flex, Label, SizedBox, WidgetRef};
 use masonry::{
     Action, BoxConstraints, Color, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Point,
@@ -21,7 +20,7 @@ use tracing::{trace, trace_span, Span};
 use vello::Scene;
 use winit::dpi::LogicalSize;
 use winit::event_loop::EventLoop;
-use winit::window::WindowBuilder;
+use winit::window::Window;
 
 #[derive(Clone)]
 struct CalcState {
@@ -342,12 +341,17 @@ fn build_calc() -> impl Widget {
 pub fn main() {
     let event_loop = EventLoop::new().unwrap();
     let window_size = LogicalSize::new(223., 300.);
-    let window = WindowBuilder::new()
-        .with_title("Simple Calculator")
-        .with_resizable(true)
-        .with_min_inner_size(window_size)
-        .build(&event_loop)
+
+    #[allow(deprecated)]
+    let window = event_loop
+        .create_window(
+            Window::default_attributes()
+                .with_title("Simple Calculator")
+                .with_resizable(true)
+                .with_min_inner_size(window_size),
+        )
         .unwrap();
+
     let calc_state = CalcState {
         value: "0".to_string(),
         operand: 0.0,
@@ -355,6 +359,5 @@ pub fn main() {
         in_num: false,
     };
 
-    let runner = EventLoopRunner::new(build_calc(), window, event_loop, calc_state);
-    runner.run().unwrap();
+    masonry::event_loop_runner::run(build_calc(), window, event_loop, calc_state);
 }
