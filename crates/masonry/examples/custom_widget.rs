@@ -10,7 +10,6 @@
 
 use kurbo::Stroke;
 use masonry::app_driver::{AppDriver, DriverCtx};
-use masonry::event_loop_runner::EventLoopRunner;
 use masonry::kurbo::BezPath;
 use masonry::widget::{FillStrat, WidgetRef};
 use masonry::{
@@ -24,7 +23,7 @@ use tracing::{trace_span, Span};
 use vello::peniko::{Brush, Fill, Format, Image};
 use vello::Scene;
 use winit::event_loop::EventLoop;
-use winit::window::WindowBuilder;
+use winit::window::Window;
 
 struct Driver;
 
@@ -138,13 +137,12 @@ impl Widget for CustomWidget {
 pub fn main() {
     let my_string = "Masonry + Vello".to_string();
     let event_loop = EventLoop::new().unwrap();
-    let window = WindowBuilder::new()
-        .with_title("Fancy colots")
-        .build(&event_loop)
+    #[allow(deprecated)]
+    let window = event_loop
+        .create_window(Window::default_attributes().with_title("Fancy colots"))
         .unwrap();
 
-    let runner = EventLoopRunner::new(CustomWidget(my_string), window, event_loop, Driver);
-    runner.run().unwrap();
+    masonry::event_loop_runner::run(CustomWidget(my_string), window, event_loop, Driver);
 }
 
 fn make_image_data(width: usize, height: usize) -> Vec<u8> {

@@ -21,7 +21,7 @@ license = "Apache-2.0"
 xilem_core = { version = "0.1.0", path = "crates/xilem_core" }
 masonry = { version = "0.1.0", path = "crates/masonry" }
 kurbo = "0.11.0"
-winit = "0.29"
+winit = "0.30"
 parley = { git = "https://github.com/linebender/parley", rev = "9a519ba644eda13783a7326539dd0305dc206ba8" }
 vello = { git = "https://github.com/linebender/vello/", rev = "b520a35addfa6bbb37d93491d2b8236528faf3b5" }
 

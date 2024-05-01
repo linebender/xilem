@@ -9,13 +9,12 @@
 #![windows_subsystem = "windows"]
 
 use masonry::app_driver::{AppDriver, DriverCtx};
-use masonry::event_loop_runner::EventLoopRunner;
 use masonry::widget::prelude::*;
 use masonry::widget::{Button, Flex, Label};
 use masonry::Action;
 use winit::dpi::LogicalSize;
 use winit::event_loop::EventLoop;
-use winit::window::WindowBuilder;
+use winit::window::Window;
 
 const VERTICAL_WIDGET_SPACING: f64 = 20.0;
 
@@ -37,15 +36,17 @@ impl AppDriver for Driver {
 pub fn main() {
     let event_loop = EventLoop::new().unwrap();
     let window_size = LogicalSize::new(400.0, 400.0);
-    let window = WindowBuilder::new()
-        .with_title("Hello World!")
-        .with_resizable(true)
-        .with_min_inner_size(window_size)
-        .build(&event_loop)
+    #[allow(deprecated)]
+    let window = event_loop
+        .create_window(
+            Window::default_attributes()
+                .with_title("Hello World!")
+                .with_resizable(true)
+                .with_min_inner_size(window_size),
+        )
         .unwrap();
 
-    let runner = EventLoopRunner::new(build_root_widget(), window, event_loop, Driver);
-    runner.run().unwrap();
+    masonry::event_loop_runner::run(build_root_widget(), window, event_loop, Driver)
 }
 
 fn build_root_widget() -> impl Widget {
