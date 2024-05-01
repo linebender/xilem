@@ -224,7 +224,7 @@ impl AppDriver for CalcState {
             .unwrap()
             .downcast::<Label>()
             .unwrap()
-            .set_text(self.value.clone());
+            .set_text((&*self.value).into());
     }
 }
 

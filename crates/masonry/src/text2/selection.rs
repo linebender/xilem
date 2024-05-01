@@ -6,25 +6,21 @@
 
 use std::borrow::Cow;
 use std::ops::{Deref, Range};
-use std::sync::Arc;
 
 use unicode_segmentation::{GraphemeCursor, UnicodeSegmentation};
 
-/// An EditableText trait.
-pub trait EditableText: Sized {
-    // TODO: would be nice to have something like
-    // type Cursor: EditableTextCursor<Self>;
+use super::TextStorage;
+
+/// Text which can have internal selections
+pub trait Selectable: Sized + TextStorage {
+    type Cursor<'a>: EditableTextCursor
+    where
+        Self: 'a;
 
     /// Create a cursor with a reference to the text and a offset position.
     ///
     /// Returns None if the position isn't a codepoint boundary.
-    fn cursor(&self, position: usize) -> Option<StringCursor>;
-
-    /// Replace range with new text.
-    /// Can panic if supplied an invalid range.
-    // TODO: make this generic over Self
-    fn edit(&mut self, range: Range<usize>, new: impl Into<String>);
-
+    fn cursor(&self, position: usize) -> Option<Self::Cursor<'_>>;
     /// Get slice of text at range.
     fn slice(&self, range: Range<usize>) -> Option<Cow<str>>;
 
@@ -57,12 +53,47 @@ pub trait EditableText: Sized {
 
     /// Returns `true` if this text has 0 length.
     fn is_empty(&self) -> bool;
-
-    /// Construct an instance of this type from a `&str`.
-    fn from_str(s: &str) -> Self;
 }
 
-impl EditableText for String {
+/// A cursor with convenience functions for moving through EditableText.
+pub trait EditableTextCursor {
+    /// Set cursor position.
+    fn set(&mut self, position: usize);
+
+    /// Get cursor position.
+    fn pos(&self) -> usize;
+
+    /// Check if cursor position is at a codepoint boundary.
+    fn is_boundary(&self) -> bool;
+
+    /// Move cursor to previous codepoint boundary, if it exists.
+    /// Returns previous codepoint as usize offset.
+    fn prev(&mut self) -> Option<usize>;
+
+    /// Move cursor to next codepoint boundary, if it exists.
+    /// Returns current codepoint as usize offset.
+    fn next(&mut self) -> Option<usize>;
+
+    /// Get the next codepoint after the cursor position, without advancing
+    /// the cursor.
+    fn peek_next_codepoint(&self) -> Option<char>;
+
+    /// Return codepoint preceding cursor offset and move cursor backward.
+    fn prev_codepoint(&mut self) -> Option<char>;
+
+    /// Return codepoint at cursor offset and move cursor forward.
+    fn next_codepoint(&mut self) -> Option<char>;
+
+    /// Return current offset if it's a boundary, else next.
+    fn at_or_next(&mut self) -> Option<usize>;
+
+    /// Return current offset if it's a boundary, else previous.
+    fn at_or_prev(&mut self) -> Option<usize>;
+}
+
+impl<Str: Deref<Target = str> + TextStorage> Selectable for Str {
+    type Cursor<'a> = StringCursor<'a> where Self: 'a;
+
     fn cursor<'a>(&self, position: usize) -> Option<StringCursor> {
         let new_cursor = StringCursor {
             text: self,
@@ -76,16 +107,12 @@ impl EditableText for String {
         }
     }
 
-    fn edit(&mut self, range: Range<usize>, new: impl Into<String>) {
-        self.replace_range(range, &new.into());
-    }
-
     fn slice(&self, range: Range<usize>) -> Option<Cow<str>> {
         self.get(range).map(Cow::from)
     }
 
     fn len(&self) -> usize {
-        self.len()
+        self.deref().len()
     }
 
     fn prev_grapheme_offset(&self, from: usize) -> Option<usize> {
@@ -143,11 +170,7 @@ impl EditableText for String {
     }
 
     fn is_empty(&self) -> bool {
-        self.is_empty()
-    }
-
-    fn from_str(s: &str) -> Self {
-        s.to_string()
+        self.deref().is_empty()
     }
 
     fn preceding_line_break(&self, from: usize) -> usize {
@@ -177,98 +200,14 @@ impl EditableText for String {
     }
 }
 
-impl EditableText for Arc<String> {
-    fn cursor(&self, position: usize) -> Option<StringCursor> {
-        <String as EditableText>::cursor(self, position)
-    }
-    fn edit(&mut self, range: Range<usize>, new: impl Into<String>) {
-        let new = new.into();
-        if !range.is_empty() || !new.is_empty() {
-            Arc::make_mut(self).edit(range, new)
-        }
-    }
-    fn slice(&self, range: Range<usize>) -> Option<Cow<str>> {
-        Some(Cow::Borrowed(&self[range]))
-    }
-    fn len(&self) -> usize {
-        self.deref().len()
-    }
-    fn prev_word_offset(&self, offset: usize) -> Option<usize> {
-        self.deref().prev_word_offset(offset)
-    }
-    fn next_word_offset(&self, offset: usize) -> Option<usize> {
-        self.deref().next_word_offset(offset)
-    }
-    fn prev_grapheme_offset(&self, offset: usize) -> Option<usize> {
-        self.deref().prev_grapheme_offset(offset)
-    }
-    fn next_grapheme_offset(&self, offset: usize) -> Option<usize> {
-        self.deref().next_grapheme_offset(offset)
-    }
-    fn prev_codepoint_offset(&self, offset: usize) -> Option<usize> {
-        self.deref().prev_codepoint_offset(offset)
-    }
-    fn next_codepoint_offset(&self, offset: usize) -> Option<usize> {
-        self.deref().next_codepoint_offset(offset)
-    }
-    fn preceding_line_break(&self, offset: usize) -> usize {
-        self.deref().preceding_line_break(offset)
-    }
-    fn next_line_break(&self, offset: usize) -> usize {
-        self.deref().next_line_break(offset)
-    }
-    fn is_empty(&self) -> bool {
-        self.deref().is_empty()
-    }
-    fn from_str(s: &str) -> Self {
-        Arc::new(s.to_owned())
-    }
-}
-
-/// A cursor with convenience functions for moving through EditableText.
-pub trait EditableTextCursor {
-    /// Set cursor position.
-    fn set(&mut self, position: usize);
-
-    /// Get cursor position.
-    fn pos(&self) -> usize;
-
-    /// Check if cursor position is at a codepoint boundary.
-    fn is_boundary(&self) -> bool;
-
-    /// Move cursor to previous codepoint boundary, if it exists.
-    /// Returns previous codepoint as usize offset.
-    fn prev(&mut self) -> Option<usize>;
-
-    /// Move cursor to next codepoint boundary, if it exists.
-    /// Returns current codepoint as usize offset.
-    fn next(&mut self) -> Option<usize>;
-
-    /// Get the next codepoint after the cursor position, without advancing
-    /// the cursor.
-    fn peek_next_codepoint(&self) -> Option<char>;
-
-    /// Return codepoint preceding cursor offset and move cursor backward.
-    fn prev_codepoint(&mut self) -> Option<char>;
-
-    /// Return codepoint at cursor offset and move cursor forward.
-    fn next_codepoint(&mut self) -> Option<char>;
-
-    /// Return current offset if it's a boundary, else next.
-    fn at_or_next(&mut self) -> Option<usize>;
-
-    /// Return current offset if it's a boundary, else previous.
-    fn at_or_prev(&mut self) -> Option<usize>;
-}
-
-/// A cursor type that implements EditableTextCursor for String
+/// A cursor type that implements EditableTextCursor for string types
 #[derive(Debug)]
 pub struct StringCursor<'a> {
     text: &'a str,
     position: usize,
 }
 
-impl<'a> EditableTextCursor<&'a String> for StringCursor<'a> {
+impl<'a> EditableTextCursor for StringCursor<'a> {
     fn set(&mut self, position: usize) {
         self.position = position;
     }
@@ -358,13 +297,6 @@ pub fn len_utf8_from_first_byte(b: u8) -> usize {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn replace() {
-        let mut a = String::from("hello world");
-        a.edit(1..9, "era");
-        assert_eq!("herald", a);
-    }
 
     #[test]
     fn prev_codepoint_offset() {
@@ -510,13 +442,5 @@ mod tests {
         assert_eq!(b.len(), b.next_line_break(11));
         assert_eq!(b.len(), b.next_line_break(13));
         assert_eq!(b.len(), b.next_line_break(19));
-    }
-
-    #[test]
-    fn arcstring_empty_edit() {
-        let a = Arc::new("hello".to_owned());
-        let mut b = a.clone();
-        b.edit(5..5, "");
-        assert!(Arc::ptr_eq(&a, &b));
     }
 }

@@ -38,7 +38,7 @@ impl Button {
     /// let button = Button::new("Increment");
     /// ```
     pub fn new(text: impl Into<ArcStr>) -> Button {
-        Button::from_label(Label::new(text))
+        Button::from_label(Label::new(text.into()))
     }
 
     /// Create a new button with the provided [`Label`].
@@ -216,11 +216,10 @@ mod tests {
     #[test]
     fn edit_button() {
         let image_1 = {
-            let button = Button::from_label(
-                Label::new("The quick brown fox jumps over the lazy dog")
-                    .with_text_color(PRIMARY_LIGHT)
-                    .with_text_size(20.0),
-            );
+            let mut label = Label::new("The quick brown fox jumps over the lazy dog".into());
+            label.set_color(PRIMARY_LIGHT);
+            label.set_text_size(20.0);
+            let button = Button::from_label(label);
 
             let mut harness = TestHarness::create_with_size(button, Size::new(50.0, 50.0));
 
@@ -237,8 +236,10 @@ mod tests {
                 button.set_text("The quick brown fox jumps over the lazy dog");
 
                 let mut label = button.label_mut();
-                label.set_text_color(PRIMARY_LIGHT);
-                label.set_text_size(20.0);
+                label.set_text_properties(|props| {
+                    props.set_color(PRIMARY_LIGHT);
+                    props.set_text_size(20.0);
+                })
             });
 
             harness.render()

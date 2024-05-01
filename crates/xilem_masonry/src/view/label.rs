@@ -44,15 +44,12 @@ impl<State, Action> MasonryView<State, Action> for Label {
     type ViewState = ();
 
     fn build(&self, _cx: &mut ViewCx) -> (WidgetPod<Self::Element>, Self::ViewState) {
-        (
-            WidgetPod::new(
-                masonry::widget::Label::new(self.label.clone())
-                    .with_text_color(self.text_color)
-                    .with_text_alignment(self.alignment)
-                    .with_disabled(self.disabled),
-            ),
-            (),
-        )
+        let widget_pod = WidgetPod::new(
+            masonry::widget::Label::new(self.label.clone())
+                .with_text_color(self.text_color)
+                .with_text_alignment(self.alignment),
+        );
+        (widget_pod, ())
     }
 
     fn rebuild(
@@ -68,12 +65,12 @@ impl<State, Action> MasonryView<State, Action> for Label {
             element.set_text(self.label.clone());
             changeflags.changed |= ChangeFlags::CHANGED.changed;
         }
-        if prev.disabled != self.disabled {
-            element.set_disabled(self.disabled);
-            changeflags.changed |= ChangeFlags::CHANGED.changed;
-        }
+        // if prev.disabled != self.disabled {
+        //     element.set_disabled(self.disabled);
+        //     changeflags.changed |= ChangeFlags::CHANGED.changed;
+        // }
         if prev.text_color != self.text_color {
-            element.set_text_color(self.text_color);
+            element.set_color(self.text_color);
             changeflags.changed |= ChangeFlags::CHANGED.changed;
         }
         if prev.alignment != self.alignment {
