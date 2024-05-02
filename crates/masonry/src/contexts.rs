@@ -16,7 +16,7 @@ use crate::action::Action;
 use crate::promise::PromiseToken;
 use crate::render_root::{RenderRootSignal, RenderRootState};
 use crate::text_helpers::{ImeChangeSignal, TextFieldRegistration};
-use crate::widget::{CursorChange, FocusChange, WidgetMut, WidgetState};
+use crate::widget::{CursorChange, WidgetMut, WidgetState};
 use crate::{Insets, Point, Rect, Size, Widget, WidgetId, WidgetPod};
 
 /// A macro for implementing methods on multiple contexts.
@@ -515,7 +515,7 @@ impl EventCtx<'_> {
         // and we have no way of knowing that yet. We need to override that
         // to deliver on the "last focus request wins" promise.
         let id = self.widget_id();
-        self.widget_state.request_focus = Some(FocusChange::Focus(id));
+        self.global_state.next_focused_widget = Some(id);
     }
 
     /// Transfer focus to the widget with the given `WidgetId`.
@@ -523,41 +523,7 @@ impl EventCtx<'_> {
     /// See [`is_focused`](Self::is_focused) for more information about focus.
     pub fn set_focus(&mut self, target: WidgetId) {
         trace!("set_focus target={:?}", target);
-        self.widget_state.request_focus = Some(FocusChange::Focus(target));
-    }
-
-    /// Transfer focus to the next focusable widget.
-    ///
-    /// This should only be called by a widget that currently has focus.
-    ///
-    /// See [`is_focused`](Self::is_focused) for more information about focus.
-    pub fn focus_next(&mut self) {
-        trace!("focus_next");
-        if self.has_focus() {
-            self.widget_state.request_focus = Some(FocusChange::Next);
-        } else {
-            warn!(
-                "focus_next can only be called by the currently \
-                            focused widget or one of its ancestors."
-            );
-        }
-    }
-
-    /// Transfer focus to the previous focusable widget.
-    ///
-    /// This should only be called by a widget that currently has focus.
-    ///
-    /// See [`is_focused`](Self::is_focused) for more information about focus.
-    pub fn focus_prev(&mut self) {
-        trace!("focus_prev");
-        if self.has_focus() {
-            self.widget_state.request_focus = Some(FocusChange::Previous);
-        } else {
-            warn!(
-                "focus_prev can only be called by the currently \
-                            focused widget or one of its ancestors."
-            );
-        }
+        self.global_state.next_focused_widget = Some(target);
     }
 
     /// Give up focus.
@@ -568,7 +534,7 @@ impl EventCtx<'_> {
     pub fn resign_focus(&mut self) {
         trace!("resign_focus");
         if self.has_focus() {
-            self.widget_state.request_focus = Some(FocusChange::Resign);
+            self.global_state.next_focused_widget = None;
         } else {
             warn!(
                 "resign_focus can only be called by the currently focused widget \

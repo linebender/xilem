@@ -47,19 +47,6 @@ pub use sized_box::BackgroundBrush;
 pub use widget::{Widget, WidgetId};
 use winit::window::CursorIcon;
 
-/// Methods by which a widget can attempt to change focus state.
-#[derive(Debug, Clone, Copy)]
-pub(crate) enum FocusChange {
-    /// The focused widget is giving up focus.
-    Resign,
-    /// A specific widget wants focus
-    Focus(WidgetId),
-    /// Focus should pass to the next focusable widget
-    Next,
-    /// Focus should pass to the previous focusable widget
-    Previous,
-}
-
 /// The possible cursor states for a widget.
 #[derive(Clone, Debug)]
 pub(crate) enum CursorChange {

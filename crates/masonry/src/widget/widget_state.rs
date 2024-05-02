@@ -11,7 +11,7 @@ use winit::window::CursorIcon;
 use crate::bloom::Bloom;
 use crate::kurbo::{Insets, Point, Rect, Size};
 use crate::text_helpers::TextFieldRegistration;
-use crate::widget::{CursorChange, FocusChange};
+use crate::widget::CursorChange;
 use crate::WidgetId;
 
 // FIXME #5 - Make a note documenting this: the only way to get a &mut WidgetState should be in a pass.
@@ -94,7 +94,6 @@ pub struct WidgetState {
     pub(crate) update_focus_chain: bool,
 
     pub(crate) focus_chain: Vec<WidgetId>,
-    pub(crate) request_focus: Option<FocusChange>,
 
     pub(crate) children: Bloom<WidgetId>,
     pub(crate) children_changed: bool,
@@ -168,7 +167,6 @@ impl WidgetState {
             has_active: false,
             has_focus: false,
             request_anim: false,
-            request_focus: None,
             focus_chain: Vec::new(),
             children: Bloom::new(),
             children_changed: false,
@@ -223,7 +221,6 @@ impl WidgetState {
         self.has_active |= child_state.has_active;
         self.has_focus |= child_state.has_focus;
         self.children_changed |= child_state.children_changed;
-        self.request_focus = child_state.request_focus.take().or(self.request_focus);
         self.text_registrations
             .append(&mut child_state.text_registrations);
         self.update_focus_chain |= child_state.update_focus_chain;

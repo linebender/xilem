@@ -171,10 +171,7 @@ impl<'w> WidgetRef<'w, dyn Widget> {
             );
         }
 
-        if self.state().request_focus.is_some()
-            || self.state().children_changed
-            || self.state().cursor.is_some()
-        {
+        if self.state().children_changed || self.state().cursor.is_some() {
             debug_panic!(
                 "Widget '{}' #{} is invalid: widget state not cleared",
                 self.deref().short_type_name(),
