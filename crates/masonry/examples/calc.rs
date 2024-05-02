@@ -5,6 +5,7 @@
 
 // On Windows platform, don't show a console when opening the app.
 #![windows_subsystem = "windows"]
+#![allow(clippy::single_match)]
 
 use std::sync::Arc;
 
