@@ -7,7 +7,7 @@
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace, trace_span, warn, Span};
 use vello::Scene;
-use winit::dpi::PhysicalPosition;
+use winit::dpi::LogicalPosition;
 use winit::event::MouseButton;
 use winit::window::CursorIcon;
 
@@ -196,7 +196,7 @@ impl Split {
     }
 
     /// Returns true if the provided mouse position is inside the splitter bar area.
-    fn bar_hit_test(&self, size: Size, mouse_pos: PhysicalPosition<f64>) -> bool {
+    fn bar_hit_test(&self, size: Size, mouse_pos: LogicalPosition<f64>) -> bool {
         let (edge1, edge2) = self.bar_edges(size);
         match self.split_axis {
             Axis::Horizontal => mouse_pos.x >= edge1 && mouse_pos.x <= edge2,

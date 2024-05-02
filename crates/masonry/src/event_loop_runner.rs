@@ -3,10 +3,11 @@ use std::sync::Arc;
 
 use tracing::warn;
 use vello::util::{RenderContext, RenderSurface};
+use vello::kurbo::Affine;
 use vello::{peniko::Color, AaSupport, RenderParams, Renderer, RendererOptions, Scene};
 use wgpu::PresentMode;
 use winit::application::ApplicationHandler;
-use winit::dpi::PhysicalPosition;
+use winit::dpi::LogicalPosition;
 use winit::event::WindowEvent as WinitWindowEvent;
 use winit::event_loop::{ActiveEventLoop, EventLoop};
 use winit::window::{Window, WindowId};
@@ -42,11 +43,12 @@ pub fn run(
         PresentMode::AutoVsync,
     ))
     .unwrap();
+    let scale_factor = window.scale_factor();
     let mut main_state = MainState {
         window,
         render_cx,
         surface,
-        render_root: RenderRoot::new(root_widget, WindowSizePolicy::User),
+        render_root: RenderRoot::new(root_widget, WindowSizePolicy::User, scale_factor),
         renderer: None,
         pointer_state: PointerState::empty(),
         app_driver: Box::new(app_driver),
@@ -75,7 +77,8 @@ impl ApplicationHandler for MainState<'_> {
                     .handle_text_event(TextEvent::ModifierChange(modifiers.state()));
             }
             WinitWindowEvent::CursorMoved { position, .. } => {
-                self.pointer_state.position = position;
+                self.pointer_state.physical_position = position;
+                self.pointer_state.position = position.to_logical(self.window.scale_factor());
                 self.render_root
                     .handle_pointer_event(PointerEvent::PointerMove(self.pointer_state.clone()));
             }
@@ -101,10 +104,9 @@ impl ApplicationHandler for MainState<'_> {
             },
             WinitWindowEvent::MouseWheel { delta, .. } => {
                 let delta = match delta {
-                    winit::event::MouseScrollDelta::LineDelta(x, y) => (x as f64, y as f64),
-                    winit::event::MouseScrollDelta::PixelDelta(delta) => (delta.x, delta.y),
+                    winit::event::MouseScrollDelta::LineDelta(x, y) => LogicalPosition::new(x as f64, y as f64),
+                    winit::event::MouseScrollDelta::PixelDelta(delta) => delta.to_logical(self.window.scale_factor()),
                 };
-                let delta = PhysicalPosition::new(delta.0, delta.1);
                 self.render_root
                     .handle_pointer_event(PointerEvent::MouseWheel(
                         delta,
@@ -172,7 +174,7 @@ impl ApplicationHandler for MainState<'_> {
 
 impl MainState<'_> {
     fn render(&mut self, scene: Scene) {
-        //let scale = self.window.scale_factor();
+        let scale = self.window.scale_factor();
         let size = self.window.inner_size();
         let width = size.width;
         let height = size.height;
@@ -182,12 +184,14 @@ impl MainState<'_> {
                 .resize_surface(&mut self.surface, width, height);
         }
 
-        #[cfg(FALSE)]
-        let transform = if scale != 1.0 {
-            Some(Affine::scale(scale))
-        } else {
+        let transformed_scene = if scale == 1.0 {
             None
+        } else {
+            let mut new_scene = Scene::new();
+            new_scene.append(&scene, Some(Affine::scale(scale)));
+            Some(new_scene)
         };
+        let scene_ref = transformed_scene.as_ref().unwrap_or(&scene);
 
         let Ok(surface_texture) = self.surface.surface.get_current_texture() else {
             warn!("failed to acquire next swapchain texture");
@@ -214,7 +218,7 @@ impl MainState<'_> {
         };
         self.renderer
             .get_or_insert_with(|| Renderer::new(device, renderer_options).unwrap())
-            .render_to_surface(device, queue, &scene, &surface_texture, &render_params)
+            .render_to_surface(device, queue, scene_ref, &surface_texture, &render_params)
             .expect("failed to render to surface");
         surface_texture.present();
         device.poll(wgpu::Maintain::Wait);

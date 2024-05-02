@@ -7,7 +7,7 @@ use parley::FontContext;
 use tracing::{info_span, warn};
 use vello::peniko::{Color, Fill};
 use vello::Scene;
-use winit::dpi::{LogicalSize, PhysicalPosition, PhysicalSize};
+use winit::dpi::{LogicalPosition, LogicalSize, PhysicalSize};
 use winit::keyboard::{KeyCode, PhysicalKey};
 use winit::window::CursorIcon;
 
@@ -30,7 +30,7 @@ pub struct RenderRoot {
     pub(crate) scale_factor: f64,
     /// Is `Some` if the most recently displayed frame was an animation frame.
     pub(crate) last_anim: Option<Instant>,
-    pub(crate) last_mouse_pos: Option<PhysicalPosition<f64>>,
+    pub(crate) last_mouse_pos: Option<LogicalPosition<f64>>,
     pub(crate) cursor_icon: CursorIcon,
     pub(crate) state: RenderRootState,
 }
@@ -77,12 +77,12 @@ pub enum RenderRootSignal {
 }
 
 impl RenderRoot {
-    pub fn new(root_widget: impl Widget, size_policy: WindowSizePolicy) -> Self {
+    pub fn new(root_widget: impl Widget, size_policy: WindowSizePolicy, scale_factor: f64) -> Self {
         let mut root = RenderRoot {
             root: WidgetPod::new(root_widget).boxed(),
             size_policy,
             size: PhysicalSize::new(0, 0),
-            scale_factor: 1.0,
+            scale_factor,
             last_anim: None,
             last_mouse_pos: None,
             cursor_icon: CursorIcon::Default,

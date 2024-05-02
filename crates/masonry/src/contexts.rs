@@ -9,7 +9,7 @@ use std::time::Duration;
 
 use parley::FontContext;
 use tracing::{trace, warn};
-use winit::dpi::PhysicalPosition;
+use winit::dpi::LogicalPosition;
 use winit::window::CursorIcon;
 
 use crate::action::Action;
@@ -633,7 +633,7 @@ impl LayoutCtx<'_> {
 
         let mouse_pos = self
             .mouse_pos
-            .map(|pos| PhysicalPosition::new(pos.x, pos.y));
+            .map(|pos| LogicalPosition::new(pos.x, pos.y));
         // if the widget has moved, it may have moved under the mouse, in which
         // case we need to handle that.
         if WidgetPod::update_hot_state(

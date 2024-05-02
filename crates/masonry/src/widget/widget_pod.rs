@@ -4,7 +4,7 @@
 
 use tracing::{info_span, trace, warn};
 use vello::Scene;
-use winit::dpi::PhysicalPosition;
+use winit::dpi::LogicalPosition;
 
 use crate::event::{PointerEvent, TextEvent};
 use crate::kurbo::{Affine, Insets, Point, Rect, Shape, Size};
@@ -232,7 +232,7 @@ impl<W: Widget> WidgetPod<W> {
         inner: &mut W,
         inner_state: &mut WidgetState,
         global_state: &mut RenderRootState,
-        mouse_pos: Option<PhysicalPosition<f64>>,
+        mouse_pos: Option<LogicalPosition<f64>>,
     ) -> bool {
         let rect = inner_state.layout_rect() + inner_state.parent_window_origin.to_vec2();
         let had_hot = inner_state.is_hot;
@@ -608,7 +608,7 @@ impl<W: Widget> WidgetPod<W> {
                 InternalLifeCycle::ParentWindowOrigin { mouse_pos } => {
                     self.state.parent_window_origin = parent_ctx.widget_state.window_origin();
                     self.state.needs_window_origin = false;
-                    let mouse_pos = mouse_pos.map(|pos| PhysicalPosition::new(pos.x, pos.y));
+                    let mouse_pos = mouse_pos.map(|pos| LogicalPosition::new(pos.x, pos.y));
                     WidgetPod::update_hot_state(
                         &mut self.inner,
                         &mut self.state,

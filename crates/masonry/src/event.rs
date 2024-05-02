@@ -10,7 +10,7 @@ use crate::WidgetId;
 
 use std::{collections::HashSet, path::PathBuf};
 
-use winit::dpi::{PhysicalPosition, PhysicalSize};
+use winit::dpi::{LogicalPosition, PhysicalPosition, PhysicalSize};
 use winit::event::{Ime, KeyEvent, Modifiers, MouseButton};
 use winit::keyboard::ModifiersState;
 
@@ -40,7 +40,7 @@ pub enum PointerEvent {
     PointerMove(PointerState),
     PointerEnter(PointerState),
     PointerLeave(PointerState),
-    MouseWheel(PhysicalPosition<f64>, PointerState),
+    MouseWheel(LogicalPosition<f64>, PointerState),
     HoverFile(PathBuf, PointerState),
     DropFile(PathBuf, PointerState),
     HoverFileCancel(PointerState),
@@ -61,7 +61,8 @@ pub enum TextEvent {
 pub struct PointerState {
     // TODO
     // pub device_id: DeviceId,
-    pub position: PhysicalPosition<f64>,
+    pub physical_position: PhysicalPosition<f64>,
+    pub position: LogicalPosition<f64>,
     pub buttons: HashSet<MouseButton>,
     pub mods: Modifiers,
     pub count: u8,
@@ -173,7 +174,7 @@ pub enum InternalLifeCycle {
 
     /// The parents widget origin in window coordinate space has changed.
     ParentWindowOrigin {
-        mouse_pos: Option<PhysicalPosition<f64>>,
+        mouse_pos: Option<LogicalPosition<f64>>,
     },
 }
 
@@ -256,7 +257,8 @@ impl PointerState {
         let device_id = unsafe { DeviceId::dummy() };
 
         PointerState {
-            position: PhysicalPosition::new(0.0, 0.0),
+            physical_position: PhysicalPosition::new(0.0, 0.0),
+            position: LogicalPosition::new(0.0, 0.0),
             buttons: Default::default(),
             mods: Default::default(),
             count: 0,
