@@ -43,7 +43,6 @@ pub use widget_ref::WidgetRef;
 pub use widget_state::WidgetState;
 
 pub use sized_box::BackgroundBrush;
-pub use widget::StoreInWidgetMut;
 #[doc(hidden)]
 pub use widget::{Widget, WidgetId};
 use winit::window::CursorIcon;

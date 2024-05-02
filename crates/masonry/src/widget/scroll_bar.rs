@@ -11,7 +11,7 @@ use vello::Scene;
 use super::Axis;
 use crate::kurbo::Rect;
 use crate::paint_scene_helpers::{fill_color, stroke};
-use crate::widget::WidgetRef;
+use crate::widget::{WidgetMut, WidgetRef};
 use crate::{
     theme, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Point,
     PointerEvent, Size, StatusChange, TextEvent, Widget,
@@ -39,8 +39,6 @@ pub struct ScrollBar {
     hovered: bool,
     grab_anchor: Option<f64>,
 }
-
-crate::declare_widget!(ScrollBarMut, ScrollBar);
 
 impl ScrollBar {
     pub fn new(axis: Axis, portal_size: f64, content_size: f64) -> Self {
@@ -107,7 +105,7 @@ impl ScrollBar {
     }
 }
 
-impl ScrollBarMut<'_> {
+impl WidgetMut<'_, ScrollBar> {
     pub fn set_sizes(&mut self, portal_size: f64, content_size: f64) {
         self.widget.portal_size = portal_size;
         self.widget.content_size = content_size;

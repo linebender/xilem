@@ -29,8 +29,6 @@ pub struct Flex {
     children: Vec<Child>,
 }
 
-crate::declare_widget!(FlexMut, Flex);
-
 /// Optional parameters for an item in a [`Flex`] container (row or column).
 ///
 /// Generally, when you would like to add a flexible child to a container,
@@ -245,7 +243,7 @@ impl Flex {
 
 // --- Mutate live Flex - WidgetMut ---
 
-impl<'a> FlexMut<'a> {
+impl<'a> WidgetMut<'a, Flex> {
     /// Set the flex direction (see [`Axis`]).
     ///
     /// [`Axis`]: enum.Axis.html
@@ -1373,7 +1371,7 @@ mod tests {
 
             let mut child = flex.child_mut(1).unwrap();
             assert_eq!(
-                child.downcast::<Label>().unwrap().text().to_string(),
+                child.downcast::<Label>().unwrap().widget.text().to_string(),
                 "world"
             );
             std::mem::drop(child);

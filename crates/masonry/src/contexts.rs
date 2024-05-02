@@ -16,7 +16,7 @@ use crate::action::Action;
 use crate::promise::PromiseToken;
 use crate::render_root::{RenderRootSignal, RenderRootState};
 use crate::text_helpers::{ImeChangeSignal, TextFieldRegistration};
-use crate::widget::{CursorChange, FocusChange, StoreInWidgetMut, WidgetMut, WidgetState};
+use crate::widget::{CursorChange, FocusChange, WidgetMut, WidgetState};
 use crate::{Insets, Point, Rect, Size, Widget, WidgetId, WidgetPod};
 
 /// A macro for implementing methods on multiple contexts.
@@ -33,7 +33,7 @@ macro_rules! impl_context_method {
     };
 }
 
-/// A context provided to implementors of [`StoreInWidgetMut`].
+/// A context provided inside of [`WidgetMut`].
 ///
 /// When you declare a mutable reference type for your widget, methods of this type
 /// will have access to a `WidgetCtx`. If that method mutates the widget in a way that
@@ -43,6 +43,7 @@ macro_rules! impl_context_method {
 // TODO add tutorial - See issue #5
 pub struct WidgetCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
+    pub(crate) parent_widget_state: &'a mut WidgetState,
     pub(crate) widget_state: &'a mut WidgetState,
 }
 
@@ -288,17 +289,18 @@ impl_context_method!(EventCtx<'_>, {
 impl<'a> WidgetCtx<'a> {
     // FIXME - Assert that child's parent is self
     /// Return a [`WidgetMut`] to a child widget.
-    pub fn get_mut<'c, Child: Widget + StoreInWidgetMut>(
+    pub fn get_mut<'c, Child: Widget>(
         &'c mut self,
         child: &'c mut WidgetPod<Child>,
     ) -> WidgetMut<'c, Child> {
         let child_ctx = WidgetCtx {
             global_state: self.global_state,
+            parent_widget_state: self.widget_state,
             widget_state: &mut child.state,
         };
         WidgetMut {
-            parent_widget_state: self.widget_state,
-            inner: Child::from_widget_and_ctx(&mut child.inner, child_ctx),
+            ctx: child_ctx,
+            widget: &mut child.inner,
         }
     }
 }
@@ -306,17 +308,18 @@ impl<'a> WidgetCtx<'a> {
 impl<'a> EventCtx<'a> {
     /// Return a [`WidgetMut`] to a child widget.
     // FIXME - Assert that child's parent is self
-    pub fn get_mut<'c, Child: Widget + StoreInWidgetMut>(
+    pub fn get_mut<'c, Child: Widget>(
         &'c mut self,
         child: &'c mut WidgetPod<Child>,
     ) -> WidgetMut<'c, Child> {
         let child_ctx = WidgetCtx {
             global_state: self.global_state,
+            parent_widget_state: self.widget_state,
             widget_state: &mut child.state,
         };
         WidgetMut {
-            parent_widget_state: self.widget_state,
-            inner: Child::from_widget_and_ctx(&mut child.inner, child_ctx),
+            ctx: child_ctx,
+            widget: &mut child.inner,
         }
     }
 }
@@ -324,17 +327,18 @@ impl<'a> EventCtx<'a> {
 impl<'a> LifeCycleCtx<'a> {
     /// Return a [`WidgetMut`] to a child widget.
     // FIXME - Assert that child's parent is self
-    pub fn get_mut<'c, Child: Widget + StoreInWidgetMut>(
+    pub fn get_mut<'c, Child: Widget>(
         &'c mut self,
         child: &'c mut WidgetPod<Child>,
     ) -> WidgetMut<'c, Child> {
         let child_ctx = WidgetCtx {
             global_state: self.global_state,
+            parent_widget_state: self.widget_state,
             widget_state: &mut child.state,
         };
         WidgetMut {
-            parent_widget_state: self.widget_state,
-            inner: Child::from_widget_and_ctx(&mut child.inner, child_ctx),
+            ctx: child_ctx,
+            widget: &mut child.inner,
         }
     }
 }

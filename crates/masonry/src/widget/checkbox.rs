@@ -24,8 +24,6 @@ pub struct Checkbox {
     label: WidgetPod<Label>,
 }
 
-crate::declare_widget!(CheckboxMut, Checkbox);
-
 impl Checkbox {
     /// Create a new `Checkbox` with a text label.
     pub fn new(checked: bool, text: impl Into<ArcStr>) -> Checkbox {
@@ -44,7 +42,7 @@ impl Checkbox {
     }
 }
 
-impl<'a> CheckboxMut<'a> {
+impl WidgetMut<'_, Checkbox> {
     pub fn set_checked(&mut self, checked: bool) {
         self.widget.checked = checked;
         self.ctx.request_paint();

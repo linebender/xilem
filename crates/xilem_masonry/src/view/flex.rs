@@ -103,7 +103,7 @@ impl ElementSplice for FlexSplice<'_> {
         #[cfg(debug_assertions)]
         let mut iterations = 0;
         #[cfg(debug_assertions)]
-        let max = self.element.len();
+        let max = self.element.widget.len();
         loop {
             #[cfg(debug_assertions)]
             {

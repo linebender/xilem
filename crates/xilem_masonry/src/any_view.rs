@@ -1,8 +1,7 @@
 use std::{any::Any, ops::Deref};
 
+use masonry::widget::{WidgetMut, WidgetRef};
 use masonry::{
-    declare_widget,
-    widget::{StoreInWidgetMut, WidgetMut, WidgetRef},
     BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Point, PointerEvent,
     Size, StatusChange, TextEvent, Widget, WidgetPod,
 };
@@ -112,7 +111,7 @@ where
     ) -> ChangeFlags {
         if let Some(prev) = prev.as_any().downcast_ref() {
             // If we were previously of this type, then do a normal rebuild
-            element.downcast(|element| {
+            DynWidget::downcast(&mut element, |element| {
                 if let Some(element) = element {
                     if let Some(state) = dyn_state.inner_state.downcast_mut() {
                         cx.with_id(ViewId::for_type::<V>(dyn_state.generation), move |cx| {
@@ -139,7 +138,7 @@ where
                     self.build(cx)
                 });
             dyn_state.inner_state = Box::new(view_state);
-            element.replace_inner(new_element.boxed());
+            DynWidget::replace_inner(&mut element, new_element.boxed());
             ChangeFlags::CHANGED
         }
     }
@@ -173,6 +172,24 @@ pub struct DynWidget {
     inner: WidgetPod<Box<dyn Widget>>,
 }
 
+impl DynWidget {
+    pub(crate) fn replace_inner(
+        this: &mut WidgetMut<'_, Self>,
+        widget: WidgetPod<Box<dyn Widget>>,
+    ) {
+        this.widget.inner = widget;
+        this.ctx.children_changed();
+    }
+
+    pub(crate) fn downcast<W: Widget, R>(
+        this: &mut WidgetMut<'_, Self>,
+        f: impl FnOnce(Option<WidgetMut<'_, W>>) -> R,
+    ) -> R {
+        let mut get_mut = this.ctx.get_mut(&mut this.widget.inner);
+        f(get_mut.downcast())
+    }
+}
+
 /// Forward all events to the child widget.
 impl Widget for DynWidget {
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
@@ -204,22 +221,5 @@ impl Widget for DynWidget {
         let mut vec = SmallVec::new();
         vec.push(self.inner.as_dyn());
         vec
-    }
-}
-
-declare_widget!(DynWidgetMut, DynWidget);
-
-impl DynWidgetMut<'_> {
-    pub(crate) fn replace_inner(&mut self, widget: WidgetPod<Box<dyn Widget>>) {
-        self.widget.inner = widget;
-        self.ctx.children_changed();
-    }
-
-    pub(crate) fn downcast<W: Widget + StoreInWidgetMut, R>(
-        &mut self,
-        f: impl FnOnce(Option<WidgetMut<'_, W>>) -> R,
-    ) -> R {
-        let mut get_mut = self.ctx.get_mut(&mut self.widget.inner);
-        f(get_mut.downcast())
     }
 }

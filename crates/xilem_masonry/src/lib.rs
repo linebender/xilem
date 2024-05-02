@@ -4,7 +4,7 @@ use std::{any::Any, collections::HashMap};
 use masonry::{
     app_driver::AppDriver,
     event_loop_runner,
-    widget::{StoreInWidgetMut, WidgetMut, WidgetRef},
+    widget::{WidgetMut, WidgetRef},
     BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Point, PointerEvent,
     Size, StatusChange, TextEvent, Widget, WidgetId, WidgetPod,
 };
@@ -40,12 +40,9 @@ pub struct MasonryDriver<State, Logic, View, ViewState> {
 }
 
 // TODO: This is a hack to work around pod-racing
-// TODO: `declare_widget` *forces* this to be pub
-pub struct RootWidget<E> {
+pub(crate) struct RootWidget<E> {
     pub(crate) pod: WidgetPod<E>,
 }
-
-masonry::declare_widget!(RootWidgetMut, RootWidget<E: (Widget)>);
 
 impl<E: 'static + Widget> Widget for RootWidget<E> {
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
@@ -113,7 +110,7 @@ where
             if rebuild {
                 let next_view = (self.logic)(&mut self.state);
                 let mut root = ctx.get_root::<RootWidget<View::Element>>();
-                let element = root.get_element();
+                let element = RootWidget::get_element(&mut root);
 
                 let changed = next_view.rebuild(
                     &mut self.view_state,
@@ -133,9 +130,9 @@ where
     }
 }
 
-impl<E: Widget + StoreInWidgetMut> RootWidgetMut<'_, E> {
-    pub fn get_element(&mut self) -> WidgetMut<'_, E> {
-        self.ctx.get_mut(&mut self.widget.pod)
+impl<E: Widget> RootWidget<E> {
+    pub fn get_element<'a>(this: &'a mut WidgetMut<'_, Self>) -> WidgetMut<'a, E> {
+        this.ctx.get_mut(&mut this.widget.pod)
     }
 }
 
@@ -201,7 +198,7 @@ where
     }
 }
 pub trait MasonryView<State, Action = ()>: Send + 'static {
-    type Element: Widget + StoreInWidgetMut;
+    type Element: Widget;
     type ViewState;
 
     fn build(&self, cx: &mut ViewCx) -> (WidgetPod<Self::Element>, Self::ViewState);

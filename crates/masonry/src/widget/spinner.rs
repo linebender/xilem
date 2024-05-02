@@ -12,7 +12,7 @@ use tracing::trace;
 use vello::Scene;
 
 use crate::kurbo::Line;
-use crate::widget::WidgetRef;
+use crate::widget::{WidgetMut, WidgetRef};
 use crate::{
     theme, BoxConstraints, Color, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Point,
     PointerEvent, Size, StatusChange, TextEvent, Vec2, Widget,
@@ -29,8 +29,6 @@ pub struct Spinner {
     t: f64,
     color: Color,
 }
-
-crate::declare_widget!(SpinnerMut, Spinner);
 
 impl Spinner {
     /// Create a spinner widget
@@ -49,7 +47,7 @@ impl Spinner {
     }
 }
 
-impl SpinnerMut<'_> {
+impl WidgetMut<'_, Spinner> {
     /// Set the spinner's color.
     ///
     /// The argument can be either a `Color` or a [`Key<Color>`].

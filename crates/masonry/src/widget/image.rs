@@ -11,7 +11,7 @@ use tracing::{trace, trace_span, Span};
 use vello::peniko::{BlendMode, Image as ImageBuf};
 use vello::Scene;
 
-use crate::widget::{FillStrat, WidgetRef};
+use crate::widget::{FillStrat, WidgetMut, WidgetRef};
 use crate::{
     BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, PointerEvent, Size,
     StatusChange, TextEvent, Widget,
@@ -26,8 +26,6 @@ pub struct Image {
     image_data: ImageBuf,
     fill: FillStrat,
 }
-
-crate::declare_widget!(ImageMut, Image);
 
 impl Image {
     /// Create an image drawing widget from an image buffer.
@@ -50,7 +48,7 @@ impl Image {
     }
 }
 
-impl<'a> ImageMut<'a> {
+impl<'a> WidgetMut<'a, Image> {
     /// Modify the widget's fill strategy.
     #[inline]
     pub fn set_fill_mode(&mut self, newfil: FillStrat) {

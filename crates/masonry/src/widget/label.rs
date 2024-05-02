@@ -13,7 +13,7 @@ use tracing::{trace, trace_span, Span};
 use vello::peniko::{BlendMode, Brush};
 use vello::Scene;
 
-use crate::widget::WidgetRef;
+use crate::widget::{WidgetMut, WidgetRef};
 use crate::{
     ArcStr, BoxConstraints, Color, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
     PointerEvent, Size, StatusChange, TextEvent, Widget,
@@ -33,8 +33,6 @@ pub struct Label {
     text_color: Color,
     alignment: Alignment,
 }
-
-crate::declare_widget!(LabelMut, Label);
 
 /// Options for handling lines that are too wide for the label.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -149,7 +147,7 @@ impl Label {
     }
 }
 
-impl LabelMut<'_> {
+impl WidgetMut<'_, Label> {
     /// Set the text.
     pub fn set_text(&mut self, new_text: impl Into<ArcStr>) {
         self.widget.current_text = new_text.into();
