@@ -131,8 +131,15 @@ impl<T: Selectable> TextWithSelection<T> {
     pub fn draw(&mut self, scene: &mut Scene, point: impl Into<Point>) {
         if let Some(selection) = self.selection {
             self.cursor_line = Some(self.layout.cursor_line_for_text_position(selection.active));
-            let active_cursor = self.layout.cursor_for_text_position(selection.active);
-            let anchor_cursor = self.layout.cursor_for_text_position(selection.anchor);
+            let anchor_cursor_line = self.layout.cursor_line_for_text_position(selection.anchor);
+            // TODO: Highlight the areas which are selected
+            scene.stroke(
+                &Stroke::new(1.),
+                Affine::IDENTITY,
+                &Brush::Solid(Color::YELLOW),
+                None,
+                &anchor_cursor_line,
+            );
         } else {
             self.cursor_line = None;
         }
