@@ -76,6 +76,7 @@ impl ApplicationHandler for MainState<'_> {
                     .handle_window_event(WindowEvent::Resize(size));
             }
             WinitWindowEvent::ModifiersChanged(modifiers) => {
+                self.pointer_state.mods = modifiers;
                 self.render_root
                     .handle_text_event(TextEvent::ModifierChange(modifiers.state()));
             }
