@@ -1,3 +1,6 @@
+// Copyright 2023 the Xilem Authors
+// SPDX-License-Identifier: Apache-2.0
+
 use std::{cmp::Ordering, iter::Peekable};
 
 /// Computes the diff between two `Iterators` that have a key value mapping and are ordered by key (e.g. a BTreeMap)

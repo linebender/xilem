@@ -1,3 +1,6 @@
+// Copyright 2023 the Xilem Authors
+// SPDX-License-Identifier: Apache-2.0
+
 use std::{borrow::Borrow, fmt, ops::Index};
 
 /// Basically an ordered Map (similar as BTreeMap) with a Vec as backend for very few elements

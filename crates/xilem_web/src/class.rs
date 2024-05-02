@@ -1,3 +1,6 @@
+// Copyright 2024 the Xilem Authors
+// SPDX-License-Identifier: Apache-2.0
+
 use std::{borrow::Cow, marker::PhantomData};
 
 use xilem_core::{Id, MessageResult};

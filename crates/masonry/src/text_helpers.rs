@@ -1,3 +1,6 @@
+// Copyright 2020 the Xilem Authors and the Druid Authors
+// SPDX-License-Identifier: Apache-2.0
+
 //! Helper functions for working with text in Masonry.
 
 use parley::Layout;

@@ -1,5 +1,4 @@
 [package]
-authors = ["Olivier FAURE <couteaubleu@gmail.com>"]
 categories = ["gui"]
 description = "Data-oriented Rust UI design toolkit."
 edition = "2021"
@@ -7,7 +6,7 @@ keywords = ["gui", "ui", "toolkit"]
 license.workspace = true
 name = "masonry"
 readme = "README.md"
-repository = "https://github.com/PoignardAzur/masonry-rs"
+repository.workspace = true
 rust-version = "1.75"
 version = "0.1.3"
 

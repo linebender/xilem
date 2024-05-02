@@ -1,3 +1,6 @@
+// Copyright 2024 the Xilem Authors
+// SPDX-License-Identifier: Apache-2.0
+
 // On Windows platform, don't show a console when opening the app.
 #![windows_subsystem = "windows"]
 

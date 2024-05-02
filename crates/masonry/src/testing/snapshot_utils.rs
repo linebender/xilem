@@ -1,12 +1,7 @@
-// This software is licensed under Apache License 2.0 and distributed on an
-// "as-is" basis without warranties of any kind. See the LICENSE file for
-// details.
+// Copyright 2021 the Xilem Authors and Armin Ronacher
+// SPDX-License-Identifier: Apache-2.0
 
-// This particular file was shamelessly stolen from the Insta crate, which is
-// under the Apache License 2.0 as well.
-//
-// Repository: https://github.com/mitsuhiko/insta
-// File this is based on: https://github.com/mitsuhiko/insta/blob/660f2b00e3092de50d4f7a59f28336d8a9da50b7/src/env.rs
+// This is based on: https://github.com/mitsuhiko/insta/blob/660f2b00e3092de50d4f7a59f28336d8a9da50b7/src/env.rs
 
 // TODO - clean this all up - See #18
 

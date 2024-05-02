@@ -1,3 +1,6 @@
+// Copyright 2023 the Xilem Authors
+// SPDX-License-Identifier: Apache-2.0
+
 use masonry::{widget::WidgetMut, Widget, WidgetPod};
 
 use crate::{ChangeFlags, MasonryView, MessageResult, ViewCx, ViewId};

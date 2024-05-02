@@ -1,3 +1,6 @@
+// Copyright 2023 the Xilem Authors
+// SPDX-License-Identifier: Apache-2.0
+
 use xilem::{view::View, App, AppLauncher};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
