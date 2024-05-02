@@ -631,9 +631,7 @@ impl LayoutCtx<'_> {
         self.widget_state.local_paint_rect =
             self.widget_state.local_paint_rect.union(child.paint_rect());
 
-        let mouse_pos = self
-            .mouse_pos
-            .map(|pos| LogicalPosition::new(pos.x, pos.y));
+        let mouse_pos = self.mouse_pos.map(|pos| LogicalPosition::new(pos.x, pos.y));
         // if the widget has moved, it may have moved under the mouse, in which
         // case we need to handle that.
         if WidgetPod::update_hot_state(

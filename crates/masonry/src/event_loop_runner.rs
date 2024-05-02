@@ -2,8 +2,8 @@ use std::num::NonZeroUsize;
 use std::sync::Arc;
 
 use tracing::warn;
-use vello::util::{RenderContext, RenderSurface};
 use vello::kurbo::Affine;
+use vello::util::{RenderContext, RenderSurface};
 use vello::{peniko::Color, AaSupport, RenderParams, Renderer, RendererOptions, Scene};
 use wgpu::PresentMode;
 use winit::application::ApplicationHandler;
@@ -104,8 +104,12 @@ impl ApplicationHandler for MainState<'_> {
             },
             WinitWindowEvent::MouseWheel { delta, .. } => {
                 let delta = match delta {
-                    winit::event::MouseScrollDelta::LineDelta(x, y) => LogicalPosition::new(x as f64, y as f64),
-                    winit::event::MouseScrollDelta::PixelDelta(delta) => delta.to_logical(self.window.scale_factor()),
+                    winit::event::MouseScrollDelta::LineDelta(x, y) => {
+                        LogicalPosition::new(x as f64, y as f64)
+                    }
+                    winit::event::MouseScrollDelta::PixelDelta(delta) => {
+                        delta.to_logical(self.window.scale_factor())
+                    }
                 };
                 self.render_root
                     .handle_pointer_event(PointerEvent::MouseWheel(
