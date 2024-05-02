@@ -217,9 +217,9 @@ mod tests {
     #[test]
     fn edit_button() {
         let image_1 = {
-            let mut label = Label::new("The quick brown fox jumps over the lazy dog");
-            label.set_color(PRIMARY_LIGHT);
-            label.set_text_size(20.0);
+            let label = Label::new("The quick brown fox jumps over the lazy dog")
+                .with_text_color(PRIMARY_LIGHT)
+                .with_text_size(20.0);
             let button = Button::from_label(label);
 
             let mut harness = TestHarness::create_with_size(button, Size::new(50.0, 50.0));

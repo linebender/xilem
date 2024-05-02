@@ -42,7 +42,7 @@ impl<T: TextStorage> Checkbox<T> {
     }
 }
 
-impl<'a> CheckboxMut<'a> {
+impl<T: TextStorage> WidgetMut<'_, Checkbox<T>> {
     pub fn set_checked(&mut self, checked: bool) {
         self.widget.checked = checked;
         self.ctx.request_paint();

@@ -7,7 +7,6 @@ use vello::{
 };
 
 use crate::{
-    declare_widget,
     text2::{Selectable, TextWithSelection},
     widget::label::LABEL_X_PADDING,
     BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, PointerEvent,
@@ -37,8 +36,6 @@ impl<T: Selectable> Prose<T> {
         }
     }
 }
-
-declare_widget!(ProseMut, Prose<T: (Selectable)>);
 
 // TODO: Reduce code duplication with `Label` widget
 impl<T: Selectable> Widget for Prose<T> {

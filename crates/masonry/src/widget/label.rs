@@ -14,7 +14,6 @@ use vello::{
 };
 
 use crate::{
-    declare_widget,
     text2::{TextLayout, TextStorage},
     widget::WidgetRef,
     ArcStr, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, PointerEvent,
@@ -45,8 +44,6 @@ pub struct Label<T: TextStorage> {
     // disabled: bool,
 }
 
-declare_widget!(LabelMut, Label<T: (TextStorage)>);
-
 impl<T: TextStorage> Label<T> {
     /// Create a new label.
     pub fn new(text: T) -> Self {
@@ -57,23 +54,27 @@ impl<T: TextStorage> Label<T> {
         }
     }
 
+    pub fn text(&self) -> &T {
+        self.text_layout.text()
+    }
+
     pub fn with_text_color(mut self, color: Color) -> Self {
-        self.set_color(color);
+        self.text_layout.set_color(color);
         self
     }
 
     pub fn with_text_size(mut self, size: f32) -> Self {
-        self.set_text_size(size);
+        self.text_layout.set_text_size(size);
         self
     }
 
     pub fn with_text_alignment(mut self, alignment: Alignment) -> Self {
-        self.set_text_alignment(alignment);
+        self.text_layout.set_text_alignment(alignment);
         self
     }
 
     pub fn with_font(mut self, font: FontStack<'static>) -> Self {
-        self.set_font(font);
+        self.text_layout.set_font(font);
         self
     }
     pub fn with_font_family(self, font: FontFamily<'static>) -> Self {
@@ -93,24 +94,9 @@ impl Label<ArcStr> {
     }
 }
 
-// TODO: Is this the right API for this?
-// Mostly this just shortcuts adding helper methods for all of the items
-impl<T: TextStorage> Deref for Label<T> {
-    type Target = TextLayout<T>;
-    fn deref(&self) -> &Self::Target {
-        &self.text_layout
-    }
-}
-
-impl<T: TextStorage> DerefMut for Label<T> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.text_layout
-    }
-}
-
-impl<T: TextStorage> LabelMut<'_, T> {
+impl<T: TextStorage> WidgetMut<'_, Label<T>> {
     pub fn text(&self) -> &T {
-        self.text_layout.text()
+        self.widget.text_layout.text()
     }
 
     pub fn set_text_properties<R>(&mut self, f: impl FnOnce(&mut TextLayout<T>) -> R) -> R {
