@@ -82,11 +82,16 @@ impl Widget for Button {
                 }
             }
             PointerEvent::PointerUp(_, _) => {
-                if ctx.is_active() && !ctx.is_disabled() {
+                if ctx.is_active() && ctx.is_hot() && !ctx.is_disabled() {
                     ctx.submit_action(Action::ButtonPressed);
                     ctx.request_paint();
                     trace!("Button {:?} released", ctx.widget_id());
                 }
+                ctx.set_active(false);
+            }
+            PointerEvent::PointerLeave(_) => {
+                // If the screen was locked whilst holding down the mouse button, we don't get a `PointerUp`
+                // event, but should no longer be active
                 ctx.set_active(false);
             }
             _ => (),
