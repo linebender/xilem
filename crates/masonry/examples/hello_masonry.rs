@@ -12,7 +12,6 @@ use masonry::widget::prelude::*;
 use masonry::widget::{Button, Flex, Label};
 use masonry::Action;
 use winit::dpi::LogicalSize;
-use winit::event_loop::EventLoop;
 use winit::window::Window;
 
 const VERTICAL_WIDGET_SPACING: f64 = 20.0;
@@ -33,19 +32,13 @@ impl AppDriver for Driver {
 }
 
 pub fn main() {
-    let event_loop = EventLoop::with_user_event().build().unwrap();
     let window_size = LogicalSize::new(400.0, 400.0);
-    #[allow(deprecated)]
-    let window = event_loop
-        .create_window(
-            Window::default_attributes()
-                .with_title("Hello World!")
-                .with_resizable(true)
-                .with_min_inner_size(window_size),
-        )
-        .unwrap();
+    let window_attributes = Window::default_attributes()
+        .with_title("Hello World!")
+        .with_resizable(true)
+        .with_min_inner_size(window_size);
 
-    masonry::event_loop_runner::run(build_root_widget(), window, event_loop, Driver).unwrap();
+    masonry::event_loop_runner::run(window_attributes, build_root_widget(), Driver).unwrap();
 }
 
 fn build_root_widget() -> impl Widget {

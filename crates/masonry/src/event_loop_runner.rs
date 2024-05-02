@@ -16,7 +16,7 @@ use winit::dpi::LogicalPosition;
 use winit::error::EventLoopError;
 use winit::event::WindowEvent as WinitWindowEvent;
 use winit::event_loop::{ActiveEventLoop, EventLoop};
-use winit::window::{Window, WindowId};
+use winit::window::{Window, WindowAttributes, WindowId};
 
 use crate::app_driver::{AppDriver, DriverCtx};
 use crate::event::{PointerState, WindowEvent};
@@ -35,14 +35,31 @@ struct MainState<'a> {
 }
 
 pub fn run(
+    window_attributes: WindowAttributes,
     root_widget: impl Widget,
-    window: Window,
-    event_loop: EventLoop<accesskit_winit::Event>,
     app_driver: impl AppDriver + 'static,
 ) -> Result<(), EventLoopError> {
-    let event_loop_proxy = event_loop.create_proxy();
-    let accesskit_adapter = Adapter::with_event_loop_proxy(&window, event_loop_proxy);
+    let visible = window_attributes.visible;
+    let window_attributes = window_attributes.with_visible(false);
 
+    let event_loop = EventLoop::with_user_event().build()?;
+    #[allow(deprecated)]
+    let window = event_loop.create_window(window_attributes).unwrap();
+
+    let event_loop_proxy = event_loop.create_proxy();
+    let adapter = Adapter::with_event_loop_proxy(&window, event_loop_proxy);
+    window.set_visible(visible);
+
+    run_with(window, event_loop, adapter, root_widget, app_driver)
+}
+
+pub fn run_with(
+    window: Window,
+    event_loop: EventLoop<accesskit_winit::Event>,
+    accesskit_adapter: Adapter,
+    root_widget: impl Widget,
+    app_driver: impl AppDriver + 'static,
+) -> Result<(), EventLoopError> {
     let window = Arc::new(window);
     let mut render_cx = RenderContext::new().unwrap();
     let size = window.inner_size();
@@ -80,6 +97,8 @@ impl ApplicationHandler<accesskit_winit::Event> for MainState<'_> {
     }
 
     fn window_event(&mut self, event_loop: &ActiveEventLoop, _: WindowId, event: WinitWindowEvent) {
+        self.accesskit_adapter.process_event(&self.window, &event);
+
         match event {
             WinitWindowEvent::RedrawRequested => {
                 let scene = self.render_root.redraw();

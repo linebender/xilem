@@ -23,7 +23,6 @@ use smallvec::SmallVec;
 use tracing::{trace_span, Span};
 use vello::peniko::{Brush, Fill, Format, Image};
 use vello::Scene;
-use winit::event_loop::EventLoop;
 use winit::window::Window;
 
 struct Driver;
@@ -152,13 +151,9 @@ impl Widget for CustomWidget {
 
 pub fn main() {
     let my_string = "Masonry + Vello".to_string();
-    let event_loop = EventLoop::with_user_event().build().unwrap();
-    #[allow(deprecated)]
-    let window = event_loop
-        .create_window(Window::default_attributes().with_title("Fancy colors"))
-        .unwrap();
+    let window_attributes = Window::default_attributes().with_title("Fancy colors");
 
-    masonry::event_loop_runner::run(CustomWidget(my_string), window, event_loop, Driver).unwrap();
+    masonry::event_loop_runner::run(window_attributes, CustomWidget(my_string), Driver).unwrap();
 }
 
 fn make_image_data(width: usize, height: usize) -> Vec<u8> {

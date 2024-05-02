@@ -1008,7 +1008,7 @@ impl<W: Widget> WidgetPod<W> {
         let _span = self.inner.make_trace_span().entered();
 
         // TODO
-        if self.state.is_stashed {}
+        // if self.state.is_stashed {}
 
         // TODO - explain this
         self.mark_as_visited();

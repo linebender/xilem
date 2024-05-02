@@ -15,7 +15,11 @@ use masonry::{
 pub use masonry::{widget::Axis, Color, TextAlignment};
 use smallvec::SmallVec;
 use vello::Scene;
-use winit::{dpi::LogicalSize, error::EventLoopError, event_loop::EventLoop, window::Window};
+use winit::{
+    dpi::LogicalSize,
+    error::EventLoopError,
+    window::{Window, WindowAttributes},
+};
 
 mod any_view;
 mod id;
@@ -78,7 +82,7 @@ impl<E: 'static + Widget> Widget for RootWidget<E> {
     }
 
     fn accessibility_role(&self) -> Role {
-        Role::GenericContainer
+        Role::Window
     }
 
     fn accessibility(&mut self, ctx: &mut AccessCtx) {
@@ -183,32 +187,22 @@ where
         Logic: 'static,
         View: 'static,
     {
-        let event_loop = EventLoop::with_user_event().build().unwrap();
         let window_size = LogicalSize::new(600., 800.);
-        #[allow(deprecated)]
-        let window = event_loop
-            .create_window(
-                Window::default_attributes()
-                    .with_title(window_title)
-                    .with_resizable(true)
-                    .with_min_inner_size(window_size),
-            )
-            .unwrap();
-        self.run_windowed_in(window, event_loop)
+        let window_attributes = Window::default_attributes()
+            .with_title(window_title)
+            .with_resizable(true)
+            .with_min_inner_size(window_size);
+        self.run_windowed_in(window_attributes)
     }
 
     // TODO: Make windows into a custom view
-    pub fn run_windowed_in(
-        self,
-        window: Window,
-        event_loop: EventLoop<accesskit_winit::Event>,
-    ) -> Result<(), EventLoopError>
+    pub fn run_windowed_in(self, window_attributes: WindowAttributes) -> Result<(), EventLoopError>
     where
         State: 'static,
         Logic: 'static,
         View: 'static,
     {
-        event_loop_runner::run(self.root_widget, window, event_loop, self.driver)
+        event_loop_runner::run(window_attributes, self.root_widget, self.driver)
     }
 }
 pub trait MasonryView<State, Action = ()>: Send + 'static {

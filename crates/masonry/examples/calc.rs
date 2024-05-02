@@ -20,7 +20,6 @@ use smallvec::{smallvec, SmallVec};
 use tracing::{trace, trace_span, Span};
 use vello::Scene;
 use winit::dpi::LogicalSize;
-use winit::event_loop::EventLoop;
 use winit::window::Window;
 
 #[derive(Clone)]
@@ -370,18 +369,12 @@ fn build_calc() -> impl Widget {
 }
 
 pub fn main() {
-    let event_loop = EventLoop::with_user_event().build().unwrap();
     let window_size = LogicalSize::new(223., 300.);
 
-    #[allow(deprecated)]
-    let window = event_loop
-        .create_window(
-            Window::default_attributes()
-                .with_title("Simple Calculator")
-                .with_resizable(true)
-                .with_min_inner_size(window_size),
-        )
-        .unwrap();
+    let window_attributes = Window::default_attributes()
+        .with_title("Simple Calculator")
+        .with_resizable(true)
+        .with_min_inner_size(window_size);
 
     let calc_state = CalcState {
         value: "0".to_string(),
@@ -390,5 +383,5 @@ pub fn main() {
         in_num: false,
     };
 
-    masonry::event_loop_runner::run(build_calc(), window, event_loop, calc_state).unwrap();
+    masonry::event_loop_runner::run(window_attributes, build_calc(), calc_state).unwrap();
 }
