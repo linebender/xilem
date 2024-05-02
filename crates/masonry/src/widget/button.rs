@@ -89,6 +89,11 @@ impl Widget for Button {
                 }
                 ctx.set_active(false);
             }
+            PointerEvent::PointerLeave(_) => {
+                // If the screen was locked whilst holding down the mouse button, we don't get a `PointerUp`
+                // event, but should no longer be active
+                ctx.set_active(false);
+            }
             _ => (),
         }
         self.label.on_pointer_event(ctx, event);
