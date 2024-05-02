@@ -11,7 +11,7 @@ use crate::kurbo::{Affine, Insets, Point, Rect, Shape, Size};
 use crate::paint_scene_helpers::stroke;
 use crate::render_root::RenderRootState;
 use crate::theme::get_debug_color;
-use crate::widget::{FocusChange, WidgetRef, WidgetState};
+use crate::widget::{WidgetRef, WidgetState};
 use crate::{
     BoxConstraints, EventCtx, InternalLifeCycle, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
     StatusChange, Widget, WidgetId,
@@ -716,7 +716,7 @@ impl<W: Widget> WidgetPod<W> {
                 if self.state.is_disabled() && self.state.has_focus {
                     // This may gets overwritten. This is ok because it still ensures that a
                     // FocusChange is routed after we updated the focus-chain.
-                    self.state.request_focus = Some(FocusChange::Resign);
+                    parent_ctx.global_state.next_focused_widget = None;
                 }
 
                 // Delete changes of disabled state that happened during DisabledChanged to avoid
@@ -733,7 +733,8 @@ impl<W: Widget> WidgetPod<W> {
                 // (Lifecycle::BuildFocusChain.should_propagate_to_hidden() is false!) and should
                 // resign the focus.
                 if had_focus && !self.state.has_focus {
-                    self.state.request_focus = Some(FocusChange::Resign);
+                    // Not sure about this logic, might remove
+                    parent_ctx.global_state.next_focused_widget = None;
                 }
                 self.state.has_focus = had_focus;
 

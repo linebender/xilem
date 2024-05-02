@@ -8,13 +8,14 @@ use tracing::{info_span, warn};
 use vello::peniko::{Color, Fill};
 use vello::Scene;
 use winit::dpi::{LogicalSize, PhysicalPosition, PhysicalSize};
+use winit::keyboard::{KeyCode, PhysicalKey};
 use winit::window::CursorIcon;
 
 use crate::contexts::{EventCtx, LayoutCtx, LifeCycleCtx, PaintCtx, WidgetCtx, WorkerFn};
 use crate::debug_logger::DebugLogger;
 use crate::event::{PointerEvent, TextEvent, WindowEvent};
 use crate::kurbo::Point;
-use crate::widget::{FocusChange, WidgetMut, WidgetState};
+use crate::widget::{WidgetMut, WidgetState};
 use crate::{
     Action, BoxConstraints, Handled, InternalLifeCycle, LifeCycle, Widget, WidgetId, WidgetPod,
 };
@@ -38,6 +39,7 @@ pub(crate) struct RenderRootState {
     pub(crate) debug_logger: DebugLogger,
     pub(crate) signal_queue: VecDeque<RenderRootSignal>,
     pub(crate) focused_widget: Option<WidgetId>,
+    pub(crate) next_focused_widget: Option<WidgetId>,
     pub(crate) font_context: FontContext,
 }
 
@@ -88,6 +90,7 @@ impl RenderRoot {
                 debug_logger: DebugLogger::new(false),
                 signal_queue: VecDeque::new(),
                 focused_widget: None,
+                next_focused_widget: None,
                 font_context: FontContext::default(),
             },
         };
@@ -186,6 +189,7 @@ impl RenderRoot {
     ) -> R {
         let mut fake_widget_state =
             WidgetState::new(self.root.id(), Some(self.get_kurbo_size()), "<root>");
+        self.state.next_focused_widget = self.state.focused_widget;
         let root_widget = WidgetMut {
             ctx: WidgetCtx {
                 global_state: &mut self.state,
@@ -205,6 +209,7 @@ impl RenderRoot {
         let mut widget_state =
             WidgetState::new(self.root.id(), Some(self.get_kurbo_size()), "<root>");
 
+        self.state.next_focused_widget = self.state.focused_widget;
         let mut ctx = EventCtx {
             global_state: &mut self.state,
             widget_state: &mut widget_state,
@@ -249,6 +254,7 @@ impl RenderRoot {
         let mut widget_state =
             WidgetState::new(self.root.id(), Some(self.get_kurbo_size()), "<root>");
 
+        self.state.next_focused_widget = self.state.focused_widget;
         let mut ctx = EventCtx {
             global_state: &mut self.state,
             widget_state: &mut widget_state,
@@ -265,6 +271,17 @@ impl RenderRoot {
             ctx.global_state.debug_logger.pop_span();
             Handled::from(ctx.is_handled)
         };
+
+        // If event is tab we handle focus
+        if let TextEvent::KeyboardKey(key, mods) = event {
+            if handled == Handled::No && key.physical_key == PhysicalKey::Code(KeyCode::Tab) {
+                if !mods.shift_key() {
+                    self.state.next_focused_widget = self.widget_from_focus_chain(true);
+                } else {
+                    self.state.next_focused_widget = self.widget_from_focus_chain(false);
+                }
+            }
+        }
 
         self.post_event_processing(&mut widget_state);
         self.root.as_dyn().debug_validate(false);
@@ -406,7 +423,7 @@ impl RenderRoot {
             self.root_lifecycle(event);
         }
 
-        self.update_focus(widget_state);
+        self.update_focus();
 
         // If we need a new paint pass, make sure winit knows it.
         if self.wants_animation_frame() {
@@ -434,32 +451,21 @@ impl RenderRoot {
         self.root.state().request_anim
     }
 
-    fn update_focus(&mut self, widget_state: &mut WidgetState) {
-        if let Some(focus_req) = widget_state.request_focus.take() {
-            let old = self.state.focused_widget;
-            let new = self.widget_for_focus_request(focus_req);
+    fn update_focus(&mut self) {
+        let old = self.state.focused_widget;
+        let new = self.state.next_focused_widget;
 
-            // TODO
-            // Skip change if requested widget is disabled
+        // TODO
+        // Skip change if requested widget is disabled
 
-            // Only send RouteFocusChanged in case there's actual change
-            if old != new {
-                let event = LifeCycle::Internal(InternalLifeCycle::RouteFocusChanged { old, new });
-                self.root_lifecycle(event);
-                self.state.focused_widget = new;
+        // Only send RouteFocusChanged in case there's actual change
+        if old != new {
+            let event = LifeCycle::Internal(InternalLifeCycle::RouteFocusChanged { old, new });
+            self.root_lifecycle(event);
+            self.state.focused_widget = new;
 
-                // TODO - Handle IME
-                // Send TextFieldFocused(focused_widget) signal
-            }
-        }
-    }
-
-    fn widget_for_focus_request(&self, focus: FocusChange) -> Option<WidgetId> {
-        match focus {
-            FocusChange::Resign => None,
-            FocusChange::Focus(id) => Some(id),
-            FocusChange::Next => self.widget_from_focus_chain(true),
-            FocusChange::Previous => self.widget_from_focus_chain(false),
+            // TODO - Handle IME
+            // Send TextFieldFocused(focused_widget) signal
         }
     }
 
