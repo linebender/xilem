@@ -7,10 +7,14 @@
 use std::borrow::Cow;
 use std::ops::{Deref, DerefMut, Range};
 
-use kurbo::Point;
+use kurbo::{Affine, Line, Point, Stroke};
 use parley::FontContext;
 use unicode_segmentation::{GraphemeCursor, UnicodeSegmentation};
+use vello::peniko::{Brush, Color};
 use vello::Scene;
+use winit::event::MouseButton;
+
+use crate::event::PointerState;
 
 use super::{TextLayout, TextStorage};
 
@@ -19,8 +23,10 @@ pub struct TextWithSelection<T: Selectable> {
     /// The current selection within this widget
     // TODO: Allow multiple selections (i.e. by holding down control)
     pub selection: Option<Selection>,
-    pub needs_selection_update: bool,
+    needs_selection_update: bool,
+    selecting_with_mouse: bool,
     // TODO: Cache cursor line, selection boxes
+    cursor_line: Option<Line>,
 }
 
 impl<T: Selectable> TextWithSelection<T> {
@@ -29,11 +35,86 @@ impl<T: Selectable> TextWithSelection<T> {
             layout: TextLayout::new(text, text_size),
             selection: None,
             needs_selection_update: false,
+            selecting_with_mouse: false,
+            cursor_line: None,
         }
+    }
+
+    pub fn set_text(&mut self, text: T) {
+        self.selection = None;
+        self.needs_selection_update = true;
+        self.layout.set_text(text);
     }
 
     pub fn needs_rebuild(&self) -> bool {
         self.layout.needs_rebuild() || self.needs_selection_update
+    }
+
+    pub fn pointer_down(
+        &mut self,
+        origin: Point,
+        state: &PointerState,
+        button: MouseButton,
+    ) -> bool {
+        // TODO: work out which button is the primary button?
+        if button == MouseButton::Left {
+            self.selecting_with_mouse = true;
+            self.needs_selection_update = true;
+            // TODO: Much of this juggling seems unnecessary
+            let position = Point::new(state.position.x, state.position.y) - origin;
+            let position = self
+                .layout
+                .cursor_for_point(Point::new(position.x, position.y));
+            tracing::warn!("Got cursor point without getting affinity");
+            if state.mods.state().shift_key() {
+                if let Some(selection) = self.selection.as_mut() {
+                    selection.active = position.insert_point;
+                    selection.active_affinity = Affinity::Downstream;
+                    return true;
+                }
+            }
+            self.selection = Some(Selection::caret(
+                position.insert_point,
+                Affinity::Downstream,
+            ));
+
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn pointer_up(&mut self, _origin: Point, _state: &PointerState, button: MouseButton) {
+        if button == MouseButton::Left {
+            self.selecting_with_mouse = false;
+        }
+    }
+
+    pub fn pointer_move(&mut self, origin: Point, state: &PointerState) -> bool {
+        if self.selecting_with_mouse {
+            self.needs_selection_update = true;
+            let position = Point::new(state.position.x, state.position.y) - origin;
+            let position = self
+                .layout
+                .cursor_for_point(Point::new(position.x, position.y));
+            tracing::warn!("Got cursor point without getting affinity");
+            if let Some(selection) = self.selection.as_mut() {
+                selection.active = position.insert_point;
+                selection.active_affinity = Affinity::Downstream;
+            } else {
+                debug_panic!("No selection set whilst still dragging");
+            }
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Call when another widget becomes focused
+    pub fn focus_lost(&mut self) {
+        self.selection = None;
+        self.selecting_with_mouse = false;
+        self.needs_selection_update = true;
     }
 
     // Intentionally aliases the method on
@@ -42,10 +123,28 @@ impl<T: Selectable> TextWithSelection<T> {
             self.layout.rebuild(fcx);
             self.needs_selection_update = true;
         }
-        if self.needs_selection_update {}
+        if self.needs_selection_update {
+            self.needs_selection_update = false;
+        }
     }
 
     pub fn draw(&mut self, scene: &mut Scene, point: impl Into<Point>) {
+        if let Some(selection) = self.selection {
+            self.cursor_line = Some(self.layout.cursor_line_for_text_position(selection.active));
+            let active_cursor = self.layout.cursor_for_text_position(selection.active);
+            let anchor_cursor = self.layout.cursor_for_text_position(selection.anchor);
+        } else {
+            self.cursor_line = None;
+        }
+        if let Some(line) = self.cursor_line {
+            scene.stroke(
+                &Stroke::new(2.),
+                Affine::IDENTITY,
+                &Brush::Solid(Color::WHITE),
+                None,
+                &line,
+            );
+        }
         self.layout.draw(scene, point)
     }
 }

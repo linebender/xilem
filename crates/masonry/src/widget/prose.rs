@@ -114,25 +114,39 @@ impl<T: Selectable> WidgetMut<'_, Prose<T>> {
 
 impl<T: Selectable> Widget for Prose<T> {
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
+        let window_origin = ctx.widget_state.window_origin();
+        let inner_origin = Point::new(window_origin.x + LABEL_X_PADDING, window_origin.y);
         match event {
-            PointerEvent::PointerMove(_point) => {
+            PointerEvent::PointerDown(button, state) => {
                 if !ctx.is_disabled() {
+                    // TODO: Start tracking currently pressed link?
+                    let made_change = self.text_layout.pointer_down(inner_origin, state, *button);
+                    if made_change {
+                        ctx.request_layout();
+                        ctx.request_paint();
+                        ctx.request_focus();
+                        ctx.set_active(true);
+                    }
+                }
+            }
+            PointerEvent::PointerMove(state) => {
+                if !ctx.is_disabled() && ctx.is_active() {
                     // TODO: Set cursor if over link
-                    // TODO: Move selection if selecting
+                    if self.text_layout.pointer_move(inner_origin, state) {
+                        ctx.request_paint();
+                    }
                 }
             }
-            PointerEvent::PointerDown(_button, _state) => {
-                // TODO: Start tracking currently pressed link
-                if !ctx.is_disabled() {
-                    ctx.set_active(true);
-                }
-            }
-            PointerEvent::PointerUp(_button, _state) => {
+            PointerEvent::PointerUp(button, state) => {
                 // TODO: Follow link (if not now dragging ?)
-                if !ctx.is_disabled() {}
+                if !ctx.is_disabled() && ctx.is_active() {
+                    self.text_layout.pointer_up(inner_origin, state, *button);
+                }
                 ctx.set_active(false);
             }
-            PointerEvent::PointerLeave(_state) => {}
+            PointerEvent::PointerLeave(_state) => {
+                ctx.set_active(false);
+            }
             _ => {}
         }
     }
@@ -144,10 +158,12 @@ impl<T: Selectable> Widget for Prose<T> {
     }
 
     #[allow(missing_docs)]
-    fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, event: &StatusChange) {
+    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange) {
         match event {
             StatusChange::FocusChanged(false) => {
-                // TODO: Release focus
+                self.text_layout.focus_lost();
+                ctx.request_layout();
+                // TODO: Stop focusing on any links
             }
             StatusChange::FocusChanged(true) => {
                 // TODO: Focus on first link

@@ -356,11 +356,11 @@ impl<T: TextStorage> TextLayout<T> {
         let line = from_position.path.line(&self.layout).unwrap();
         let line_metrics = line.metrics();
 
-        let baseline = line_metrics.baseline - line_metrics.descent;
-        let p1 = (from_position.advance as f64, baseline as f64);
+        let baseline = line_metrics.baseline + line_metrics.descent;
+        let p1 = (from_position.offset as f64, baseline as f64);
         let p2 = (
-            from_position.advance as f64,
-            (baseline + line_metrics.size()) as f64,
+            from_position.offset as f64,
+            (baseline - line_metrics.size()) as f64,
         );
         Line::new(p1, p2)
     }
