@@ -5,6 +5,8 @@
 use crate::contexts::WidgetCtx;
 use crate::Widget;
 
+// TODO - Document extension trait workaround.
+// See https://xi.zulipchat.com/#narrow/stream/317477-masonry/topic/Thoughts.20on.20simplifying.20WidgetMut/near/436478885
 /// A mutable reference to a [`Widget`].
 ///
 /// In Masonry, widgets can't be mutated directly. All mutations go through a `WidgetMut`

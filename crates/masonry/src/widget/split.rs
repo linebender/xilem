@@ -293,7 +293,7 @@ impl Split {
 
 // FIXME - Add unit tests for SplitMut
 
-impl<'a> WidgetMut<'_, Split> {
+impl WidgetMut<'_, Split> {
     /// Set the split point as a fraction of the split axis.
     ///
     /// The value must be between `0.0` and `1.0`, inclusive.

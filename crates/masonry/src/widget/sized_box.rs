@@ -167,7 +167,7 @@ impl SizedBox {
     // TODO - child()
 }
 
-impl<'a> WidgetMut<'_, SizedBox> {
+impl WidgetMut<'_, SizedBox> {
     pub fn set_child(&mut self, child: impl Widget) {
         self.widget.child = Some(WidgetPod::new(child).boxed());
         self.ctx.children_changed();
