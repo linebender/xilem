@@ -3,6 +3,7 @@
 
 //! A checkbox widget.
 
+use accesskit::{DefaultActionVerb, Role, Toggled};
 use kurbo::{Affine, Stroke};
 use smallvec::SmallVec;
 use tracing::{trace, trace_span, Span};
@@ -14,8 +15,8 @@ use crate::paint_scene_helpers::{fill_lin_gradient, stroke, UnitPoint};
 use crate::text2::TextStorage;
 use crate::widget::{Label, WidgetMut, WidgetRef};
 use crate::{
-    theme, ArcStr, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
-    PointerEvent, StatusChange, TextEvent, Widget, WidgetPod,
+    theme, AccessCtx, ArcStr, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx,
+    PaintCtx, PointerEvent, StatusChange, TextEvent, Widget, WidgetPod,
 };
 
 /// A checkbox that can be toggled.
@@ -164,6 +165,26 @@ impl<T: TextStorage> Widget for Checkbox<T> {
 
         // Paint the text label
         self.label.paint(ctx, scene);
+    }
+
+    fn accessibility_role(&self) -> Role {
+        Role::CheckBox
+    }
+
+    fn accessibility(&mut self, ctx: &mut AccessCtx) {
+        let name = self.label.widget().text().as_str().to_string();
+        ctx.current_node().set_name(name);
+        if self.checked {
+            ctx.current_node().set_toggled(Toggled::True);
+            ctx.current_node()
+                .set_default_action_verb(DefaultActionVerb::Uncheck);
+        } else {
+            ctx.current_node().set_toggled(Toggled::False);
+            ctx.current_node()
+                .set_default_action_verb(DefaultActionVerb::Check);
+        }
+
+        ctx.skip_child(&mut self.label);
     }
 
     fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {

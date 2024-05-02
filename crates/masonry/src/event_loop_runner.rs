@@ -4,6 +4,7 @@
 use std::num::NonZeroUsize;
 use std::sync::Arc;
 
+use accesskit_winit::Adapter;
 use tracing::subscriber::SetGlobalDefaultError;
 use tracing::warn;
 use vello::kurbo::Affine;
@@ -30,14 +31,18 @@ struct MainState<'a> {
     renderer: Option<Renderer>,
     pointer_state: PointerState,
     app_driver: Box<dyn AppDriver>,
+    accesskit_adapter: Adapter,
 }
 
 pub fn run(
     root_widget: impl Widget,
     window: Window,
-    event_loop: EventLoop<()>,
+    event_loop: EventLoop<accesskit_winit::Event>,
     app_driver: impl AppDriver + 'static,
 ) -> Result<(), EventLoopError> {
+    let event_loop_proxy = event_loop.create_proxy();
+    let accesskit_adapter = Adapter::with_event_loop_proxy(&window, event_loop_proxy);
+
     let window = Arc::new(window);
     let mut render_cx = RenderContext::new().unwrap();
     let size = window.inner_size();
@@ -57,6 +62,7 @@ pub fn run(
         renderer: None,
         pointer_state: PointerState::empty(),
         app_driver: Box::new(app_driver),
+        accesskit_adapter,
     };
 
     // If there is no default tracing subscriber, we set our own. If one has
@@ -68,7 +74,7 @@ pub fn run(
     event_loop.run_app(&mut main_state)
 }
 
-impl ApplicationHandler for MainState<'_> {
+impl ApplicationHandler<accesskit_winit::Event> for MainState<'_> {
     fn resumed(&mut self, _event_loop: &ActiveEventLoop) {
         // FIXME: initialize window in this handler because initializing it before running the event loop is deprecated
     }
@@ -202,6 +208,18 @@ impl ApplicationHandler for MainState<'_> {
                     self.window.set_title(&title);
                 }
             }
+        }
+    }
+
+    fn user_event(&mut self, _event_loop: &ActiveEventLoop, event: accesskit_winit::Event) {
+        match event.window_event {
+            accesskit_winit::WindowEvent::InitialTreeRequested => {
+                let mut tree_update = self.render_root.init_access_tree();
+                tree_update.tree.as_mut().unwrap().app_name = Some(self.app_driver.app_name());
+                self.accesskit_adapter.update_if_active(|| tree_update);
+            }
+            accesskit_winit::WindowEvent::ActionRequested(_) => todo!(),
+            accesskit_winit::WindowEvent::AccessibilityDeactivated => {}
         }
     }
 }

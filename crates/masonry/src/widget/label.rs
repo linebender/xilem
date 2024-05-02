@@ -1,26 +1,23 @@
 // Copyright 2019 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
+//! A label widget.
+
+use accesskit::Role;
 use kurbo::{Affine, Point, Size};
-use parley::{
-    layout::Alignment,
-    style::{FontFamily, FontStack},
-};
+use parley::layout::Alignment;
+use parley::style::{FontFamily, FontStack};
 use smallvec::SmallVec;
 use tracing::trace;
-use vello::{
-    peniko::{BlendMode, Color},
-    Scene,
-};
+use vello::peniko::BlendMode;
+use vello::Scene;
 
+use crate::text2::{TextBrush, TextLayout, TextStorage};
+use crate::widget::{WidgetMut, WidgetRef};
 use crate::{
-    text2::{TextBrush, TextLayout, TextStorage},
-    widget::WidgetRef,
-    ArcStr, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, PointerEvent,
-    StatusChange, TextEvent, Widget,
+    AccessCtx, ArcStr, BoxConstraints, Color, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx,
+    PaintCtx, PointerEvent, StatusChange, TextEvent, Widget,
 };
-
-use super::WidgetMut;
 
 // added padding between the edges of the widget and the text.
 pub(super) const LABEL_X_PADDING: f64 = 2.0;
@@ -242,6 +239,15 @@ impl<T: TextStorage> Widget for Label<T> {
         if self.line_break_mode == LineBreaking::Clip {
             scene.pop_layer();
         }
+    }
+
+    fn accessibility_role(&self) -> Role {
+        Role::StaticText
+    }
+
+    fn accessibility(&mut self, ctx: &mut AccessCtx) {
+        ctx.current_node()
+            .set_name(self.text().as_str().to_string());
     }
 
     fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {

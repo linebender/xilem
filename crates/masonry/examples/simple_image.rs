@@ -19,6 +19,10 @@ use winit::window::Window;
 struct Driver;
 
 impl AppDriver for Driver {
+    fn app_name(&mut self) -> String {
+        "Simple Image".into()
+    }
+
     fn on_action(&mut self, _ctx: &mut DriverCtx<'_>, _widget_id: WidgetId, _action: Action) {}
 }
 
@@ -29,7 +33,7 @@ pub fn main() {
     let png_data = ImageBuf::new(image_data.to_vec().into(), Format::Rgba8, width, height);
     let image = Image::new(png_data).fill_mode(FillStrat::Contain);
 
-    let event_loop = EventLoop::new().unwrap();
+    let event_loop = EventLoop::with_user_event().build().unwrap();
     let window_size = LogicalSize::new(650.0, 450.0);
     #[allow(deprecated)]
     let window = event_loop

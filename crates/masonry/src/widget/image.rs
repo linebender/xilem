@@ -4,6 +4,7 @@
 //! An Image widget.
 //! Please consider using SVG and the SVG widget as it scales much better.
 
+use accesskit::Role;
 use kurbo::Affine;
 use smallvec::SmallVec;
 use tracing::{trace, trace_span, Span};
@@ -12,8 +13,8 @@ use vello::Scene;
 
 use crate::widget::{FillStrat, WidgetMut, WidgetRef};
 use crate::{
-    BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, PointerEvent, Size,
-    StatusChange, TextEvent, Widget,
+    AccessCtx, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
+    PointerEvent, Size, StatusChange, TextEvent, Widget,
 };
 
 // TODO - Resolve name collision between masonry::Image and peniko::Image
@@ -99,6 +100,14 @@ impl Widget for Image {
         scene.push_layer(BlendMode::default(), 1., Affine::IDENTITY, &clip_rect);
         scene.draw_image(&self.image_data, transform);
         scene.pop_layer();
+    }
+
+    fn accessibility_role(&self) -> Role {
+        Role::Image
+    }
+
+    fn accessibility(&mut self, _ctx: &mut AccessCtx) {
+        // TODO - Handle alt text and such.
     }
 
     fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {

@@ -7,13 +7,14 @@
 // On Windows platform, don't show a console when opening the app.
 #![windows_subsystem = "windows"]
 
+use accesskit::Role;
 use kurbo::Stroke;
 use masonry::app_driver::{AppDriver, DriverCtx};
 use masonry::kurbo::BezPath;
 use masonry::widget::{FillStrat, WidgetRef};
 use masonry::{
-    Action, Affine, BoxConstraints, Color, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
-    Point, PointerEvent, Rect, Size, StatusChange, TextEvent, Widget, WidgetId,
+    AccessCtx, Action, Affine, BoxConstraints, Color, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx,
+    PaintCtx, Point, PointerEvent, Rect, Size, StatusChange, TextEvent, Widget, WidgetId,
 };
 use parley::layout::Alignment;
 use parley::style::{FontFamily, FontStack, StyleProperty};
@@ -27,6 +28,10 @@ use winit::window::Window;
 struct Driver;
 
 impl AppDriver for Driver {
+    fn app_name(&mut self) -> String {
+        "Masonry + Vello".into()
+    }
+
     fn on_action(&mut self, _ctx: &mut DriverCtx<'_>, _widget_id: WidgetId, _action: Action) {}
 }
 
@@ -126,6 +131,17 @@ impl Widget for CustomWidget {
         scene.draw_image(&image_data, transform);
     }
 
+    fn accessibility_role(&self) -> Role {
+        Role::Canvas
+    }
+
+    fn accessibility(&mut self, ctx: &mut AccessCtx) {
+        let text = &self.0;
+        ctx.current_node().set_name(
+            format!("This is a demo of the Masonry Widget trait. Masonry has accessibility tree support. The demo shows colored shapes with the text '{text}'."),
+        );
+    }
+
     fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
         SmallVec::new()
     }
@@ -137,10 +153,10 @@ impl Widget for CustomWidget {
 
 pub fn main() {
     let my_string = "Masonry + Vello".to_string();
-    let event_loop = EventLoop::new().unwrap();
+    let event_loop = EventLoop::with_user_event().build().unwrap();
     #[allow(deprecated)]
     let window = event_loop
-        .create_window(Window::default_attributes().with_title("Fancy colots"))
+        .create_window(Window::default_attributes().with_title("Fancy colors"))
         .unwrap();
 
     masonry::event_loop_runner::run(CustomWidget(my_string), window, event_loop, Driver).unwrap();

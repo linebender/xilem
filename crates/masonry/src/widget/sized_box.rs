@@ -3,6 +3,7 @@
 
 //! A widget with predefined size.
 
+use accesskit::Role;
 use kurbo::Affine;
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace, trace_span, warn, Span};
@@ -13,8 +14,8 @@ use crate::kurbo::RoundedRectRadii;
 use crate::paint_scene_helpers::{fill_color, stroke};
 use crate::widget::{WidgetId, WidgetMut, WidgetPod, WidgetRef};
 use crate::{
-    BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Point, PointerEvent,
-    Size, StatusChange, TextEvent, Widget,
+    AccessCtx, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Point,
+    PointerEvent, Size, StatusChange, TextEvent, Widget,
 };
 
 // FIXME - Improve all doc in this module ASAP.
@@ -363,6 +364,16 @@ impl Widget for SizedBox {
 
         if let Some(ref mut child) = self.child {
             child.paint(ctx, scene);
+        }
+    }
+
+    fn accessibility_role(&self) -> Role {
+        Role::GenericContainer
+    }
+
+    fn accessibility(&mut self, ctx: &mut AccessCtx) {
+        if let Some(child) = self.child.as_mut() {
+            child.accessibility(ctx);
         }
     }
 

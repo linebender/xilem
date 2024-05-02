@@ -3,6 +3,7 @@
 
 //! A button widget.
 
+use accesskit::{DefaultActionVerb, Role};
 use smallvec::SmallVec;
 use tracing::{trace, trace_span, Span};
 use vello::Scene;
@@ -12,8 +13,8 @@ use crate::paint_scene_helpers::{fill_lin_gradient, stroke, UnitPoint};
 use crate::text2::TextStorage;
 use crate::widget::{Label, WidgetMut, WidgetPod, WidgetRef};
 use crate::{
-    theme, BoxConstraints, EventCtx, Insets, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
-    PointerEvent, Size, StatusChange, TextEvent, Widget,
+    theme, AccessCtx, BoxConstraints, EventCtx, Insets, LayoutCtx, LifeCycle, LifeCycleCtx,
+    PaintCtx, PointerEvent, Size, StatusChange, TextEvent, Widget,
 };
 
 // the minimum padding added to a button.
@@ -171,6 +172,19 @@ impl<T: TextStorage> Widget for Button<T> {
         );
 
         self.label.paint(ctx, scene);
+    }
+
+    fn accessibility_role(&self) -> Role {
+        Role::Button
+    }
+
+    fn accessibility(&mut self, ctx: &mut AccessCtx) {
+        let name = self.label.widget().text().as_str().to_string();
+        ctx.current_node().set_name(name);
+        ctx.current_node()
+            .set_default_action_verb(DefaultActionVerb::Click);
+
+        ctx.skip_child(&mut self.label);
     }
 
     fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {

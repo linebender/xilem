@@ -4,12 +4,13 @@
 #![allow(clippy::comparison_chain)]
 use std::{any::Any, collections::HashMap};
 
+use accesskit::Role;
 use masonry::{
     app_driver::AppDriver,
     event_loop_runner,
     widget::{WidgetMut, WidgetRef},
-    BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Point, PointerEvent,
-    Size, StatusChange, TextEvent, Widget, WidgetId, WidgetPod,
+    AccessCtx, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Point,
+    PointerEvent, Size, StatusChange, TextEvent, Widget, WidgetId, WidgetPod,
 };
 pub use masonry::{widget::Axis, Color, TextAlignment};
 use smallvec::SmallVec;
@@ -73,6 +74,14 @@ impl<E: 'static + Widget> Widget for RootWidget<E> {
         self.pod.paint(ctx, scene);
     }
 
+    fn accessibility_role(&self) -> Role {
+        Role::GenericContainer
+    }
+
+    fn accessibility(&mut self, ctx: &mut AccessCtx) {
+        self.pod.accessibility(ctx);
+    }
+
     fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
         let mut vec = SmallVec::new();
         vec.push(self.pod.as_dyn());
@@ -85,6 +94,11 @@ where
     Logic: FnMut(&mut State) -> View,
     View: MasonryView<State>,
 {
+    fn app_name(&mut self) -> String {
+        // FIXME
+        "Xilem App".into()
+    }
+
     fn on_action(
         &mut self,
         ctx: &mut masonry::app_driver::DriverCtx<'_>,
@@ -171,7 +185,7 @@ where
         Logic: 'static,
         View: 'static,
     {
-        let event_loop = EventLoop::new().unwrap();
+        let event_loop = EventLoop::with_user_event().build().unwrap();
         let window_size = LogicalSize::new(600., 800.);
         #[allow(deprecated)]
         let window = event_loop
@@ -189,7 +203,7 @@ where
     pub fn run_windowed_in(
         self,
         window: Window,
-        event_loop: EventLoop<()>,
+        event_loop: EventLoop<accesskit_winit::Event>,
     ) -> Result<(), EventLoopError>
     where
         State: 'static,

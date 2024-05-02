@@ -3,6 +3,7 @@
 
 use std::collections::VecDeque;
 
+use accesskit::{NodeBuilder, Tree, TreeUpdate};
 // Automatically defaults to std::time::Instant on non Wasm platforms
 use instant::Instant;
 use kurbo::Affine;
@@ -20,7 +21,8 @@ use crate::event::{PointerEvent, TextEvent, WindowEvent};
 use crate::kurbo::Point;
 use crate::widget::{WidgetMut, WidgetState};
 use crate::{
-    Action, BoxConstraints, Handled, InternalLifeCycle, LifeCycle, Widget, WidgetId, WidgetPod,
+    AccessCtx, Action, BoxConstraints, Handled, InternalLifeCycle, LifeCycle, Widget, WidgetId,
+    WidgetPod,
 };
 
 // TODO - Remove pub(crate)
@@ -384,6 +386,40 @@ impl RenderRoot {
         );
 
         scene
+    }
+
+    // TODO - Integrate in unit tests?
+    pub fn root_accessibility(&mut self) -> TreeUpdate {
+        let mut tree_update = TreeUpdate {
+            nodes: vec![],
+            tree: None,
+            focus: self.state.focused_widget.unwrap_or(self.root.id()).into(),
+        };
+        let mut widget_state =
+            WidgetState::new(self.root.id(), Some(self.get_kurbo_size()), "<root>");
+        let mut ctx = AccessCtx {
+            global_state: &mut self.state,
+            widget_state: &mut widget_state,
+            tree_update: &mut tree_update,
+            current_node: NodeBuilder::default(),
+        };
+
+        // TODO - tree_update.tree
+
+        self.root.accessibility(&mut ctx);
+
+        tree_update
+    }
+
+    pub fn init_access_tree(&mut self) -> TreeUpdate {
+        let mut tree_update = self.root_accessibility();
+        tree_update.tree = Some(Tree {
+            root: self.root.id().into(),
+            app_name: None,
+            toolkit_name: Some("Masonry".to_string()),
+            toolkit_version: Some(env!("CARGO_PKG_VERSION").to_string()),
+        });
+        tree_update
     }
 
     fn get_kurbo_size(&self) -> kurbo::Size {

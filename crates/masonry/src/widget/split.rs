@@ -3,6 +3,7 @@
 
 //! A widget which splits an area in two, with a settable ratio, and optional draggable resizing.
 
+use accesskit::Role;
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace, trace_span, warn, Span};
 use vello::Scene;
@@ -15,8 +16,8 @@ use crate::paint_scene_helpers::{fill_color, stroke};
 use crate::widget::flex::Axis;
 use crate::widget::{WidgetMut, WidgetPod, WidgetRef};
 use crate::{
-    theme, BoxConstraints, Color, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Point,
-    PointerEvent, Rect, Size, StatusChange, TextEvent, Widget,
+    theme, AccessCtx, BoxConstraints, Color, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx,
+    PaintCtx, Point, PointerEvent, Rect, Size, StatusChange, TextEvent, Widget,
 };
 
 // TODO - Have child widget type as generic argument
@@ -556,6 +557,15 @@ impl Widget for Split {
         }
         self.child1.paint(ctx, scene);
         self.child2.paint(ctx, scene);
+    }
+
+    fn accessibility_role(&self) -> Role {
+        Role::Splitter
+    }
+
+    fn accessibility(&mut self, ctx: &mut AccessCtx) {
+        self.child1.accessibility(ctx);
+        self.child2.accessibility(ctx);
     }
 
     fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {

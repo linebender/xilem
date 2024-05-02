@@ -8,10 +8,12 @@
 // size constraints to its child means that "aligning" a widget may actually change
 // its computed size. See issue #3.
 
+use accesskit::Role;
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace, trace_span, Span};
 use vello::Scene;
 
+use crate::contexts::AccessCtx;
 use crate::paint_scene_helpers::UnitPoint;
 use crate::widget::{WidgetPod, WidgetRef};
 use crate::{
@@ -144,6 +146,14 @@ impl Widget for Align {
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
         self.child.paint(ctx, scene);
+    }
+
+    fn accessibility_role(&self) -> Role {
+        Role::GenericContainer
+    }
+
+    fn accessibility(&mut self, ctx: &mut AccessCtx) {
+        self.child.accessibility(ctx);
     }
 
     fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {

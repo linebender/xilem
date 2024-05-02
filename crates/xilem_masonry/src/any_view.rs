@@ -3,10 +3,11 @@
 
 use std::{any::Any, ops::Deref};
 
+use accesskit::Role;
 use masonry::widget::{WidgetMut, WidgetRef};
 use masonry::{
-    BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Point, PointerEvent,
-    Size, StatusChange, TextEvent, Widget, WidgetPod,
+    AccessCtx, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Point,
+    PointerEvent, Size, StatusChange, TextEvent, Widget, WidgetPod,
 };
 use smallvec::SmallVec;
 use vello::Scene;
@@ -218,6 +219,14 @@ impl Widget for DynWidget {
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
         self.inner.paint(ctx, scene);
+    }
+
+    fn accessibility_role(&self) -> Role {
+        self.inner.widget().accessibility_role()
+    }
+
+    fn accessibility(&mut self, ctx: &mut AccessCtx) {
+        self.inner.accessibility(ctx);
     }
 
     fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {

@@ -8,11 +8,12 @@
 
 use std::sync::Arc;
 
+use accesskit::{DefaultActionVerb, Role};
 use masonry::app_driver::{AppDriver, DriverCtx};
 use masonry::widget::{Align, CrossAxisAlignment, Flex, Label, SizedBox, WidgetRef};
 use masonry::{
-    Action, BoxConstraints, Color, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Point,
-    PointerEvent, Size, StatusChange, TextEvent, Widget, WidgetId, WidgetPod,
+    AccessCtx, Action, BoxConstraints, Color, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx,
+    PaintCtx, Point, PointerEvent, Size, StatusChange, TextEvent, Widget, WidgetId, WidgetPod,
 };
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace, trace_span, Span};
@@ -200,6 +201,22 @@ impl Widget for CalcButton {
         self.inner.paint(ctx, scene);
     }
 
+    fn accessibility_role(&self) -> Role {
+        Role::Button
+    }
+
+    fn accessibility(&mut self, ctx: &mut AccessCtx) {
+        let name = match self.action {
+            CalcAction::Digit(digit) => digit.to_string(),
+            CalcAction::Op(op) => op.to_string(),
+        };
+        ctx.current_node().set_name(name);
+        ctx.current_node()
+            .set_default_action_verb(DefaultActionVerb::Click);
+
+        ctx.skip_child(&mut self.inner);
+    }
+
     fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
         smallvec![self.inner.as_dyn()]
     }
@@ -210,6 +227,10 @@ impl Widget for CalcButton {
 }
 
 impl AppDriver for CalcState {
+    fn app_name(&mut self) -> String {
+        "Simple Calculator".into()
+    }
+
     fn on_action(&mut self, ctx: &mut DriverCtx<'_>, _widget_id: WidgetId, action: Action) {
         match action {
             Action::Other(payload) => match payload.downcast_ref::<CalcAction>().unwrap() {
@@ -338,7 +359,7 @@ fn build_calc() -> impl Widget {
 }
 
 pub fn main() {
-    let event_loop = EventLoop::new().unwrap();
+    let event_loop = EventLoop::with_user_event().build().unwrap();
     let window_size = LogicalSize::new(223., 300.);
 
     #[allow(deprecated)]

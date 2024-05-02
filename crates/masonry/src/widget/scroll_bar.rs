@@ -3,6 +3,7 @@
 
 #![allow(missing_docs)]
 
+use accesskit::Role;
 use smallvec::SmallVec;
 use tracing::{trace_span, Span};
 use vello::Scene;
@@ -12,8 +13,8 @@ use crate::kurbo::Rect;
 use crate::paint_scene_helpers::{fill_color, stroke};
 use crate::widget::{WidgetMut, WidgetRef};
 use crate::{
-    theme, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Point,
-    PointerEvent, Size, StatusChange, TextEvent, Widget,
+    theme, AccessCtx, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
+    Point, PointerEvent, Size, StatusChange, TextEvent, Widget,
 };
 
 // RULES
@@ -208,6 +209,15 @@ impl Widget for ScrollBar {
             theme::SCROLLBAR_BORDER_COLOR,
             edge_width,
         );
+    }
+
+    fn accessibility_role(&self) -> Role {
+        Role::ScrollBar
+    }
+
+    fn accessibility(&mut self, _ctx: &mut AccessCtx) {
+        // TODO
+        // Use set_scroll_x/y_min/max?
     }
 
     fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {

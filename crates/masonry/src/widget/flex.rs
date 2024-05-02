@@ -3,6 +3,7 @@
 
 //! A widget that arranges its children in a one-dimensional array.
 
+use accesskit::Role;
 use kurbo::{Affine, Stroke};
 use smallvec::SmallVec;
 use tracing::{trace, trace_span, Span};
@@ -13,8 +14,8 @@ use crate::kurbo::Vec2;
 use crate::theme::get_debug_color;
 use crate::widget::{WidgetMut, WidgetRef};
 use crate::{
-    BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Point, PointerEvent,
-    Rect, Size, StatusChange, TextEvent, Widget, WidgetId, WidgetPod,
+    AccessCtx, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Point,
+    PointerEvent, Rect, Size, StatusChange, TextEvent, Widget, WidgetId, WidgetPod,
 };
 
 /// A container with either horizontal or vertical layout.
@@ -716,6 +717,16 @@ impl Widget for Flex {
 
             let stroke_style = Stroke::new(1.0).with_dashes(0., [4.0, 4.0]);
             scene.stroke(&stroke_style, Affine::IDENTITY, color, None, &line);
+        }
+    }
+
+    fn accessibility_role(&self) -> Role {
+        Role::GenericContainer
+    }
+
+    fn accessibility(&mut self, ctx: &mut AccessCtx) {
+        for child in self.children.iter_mut().filter_map(|x| x.widget_mut()) {
+            child.accessibility(ctx);
         }
     }
 

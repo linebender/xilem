@@ -15,6 +15,7 @@ use std::cell::RefCell;
 use std::collections::VecDeque;
 use std::rc::Rc;
 
+use accesskit::Role;
 use smallvec::SmallVec;
 use vello::Scene;
 
@@ -28,6 +29,8 @@ pub type StatusChangeFn<S> = dyn FnMut(&mut S, &mut LifeCycleCtx, &StatusChange)
 pub type LifeCycleFn<S> = dyn FnMut(&mut S, &mut LifeCycleCtx, &LifeCycle);
 pub type LayoutFn<S> = dyn FnMut(&mut S, &mut LayoutCtx, &BoxConstraints) -> Size;
 pub type PaintFn<S> = dyn FnMut(&mut S, &mut PaintCtx, &mut Scene);
+pub type RoleFn<S> = dyn Fn(&S) -> Role;
+pub type AccessFn<S> = dyn FnMut(&mut S, &mut AccessCtx);
 pub type ChildrenFn<S> = dyn Fn(&S) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]>;
 
 #[cfg(FALSE)]
@@ -44,6 +47,8 @@ pub struct ModularWidget<S> {
     lifecycle: Option<Box<LifeCycleFn<S>>>,
     layout: Option<Box<LayoutFn<S>>>,
     paint: Option<Box<PaintFn<S>>>,
+    role: Option<Box<RoleFn<S>>>,
+    access: Option<Box<AccessFn<S>>>,
     children: Option<Box<ChildrenFn<S>>>,
 }
 
@@ -88,6 +93,7 @@ pub enum Record {
     L(LifeCycle),
     Layout(Size),
     Paint,
+    Access,
 }
 
 /// like `WidgetExt` but just for this one thing
@@ -116,6 +122,8 @@ impl<S> ModularWidget<S> {
             lifecycle: None,
             layout: None,
             paint: None,
+            role: None,
+            access: None,
             children: None,
         }
     }
@@ -165,6 +173,16 @@ impl<S> ModularWidget<S> {
         self
     }
 
+    pub fn role_fn(mut self, f: impl Fn(&S) -> Role + 'static) -> Self {
+        self.role = Some(Box::new(f));
+        self
+    }
+
+    pub fn access_fn(mut self, f: impl FnMut(&mut S, &mut AccessCtx) + 'static) -> Self {
+        self.access = Some(Box::new(f));
+        self
+    }
+
     pub fn children_fn(
         mut self,
         children: impl Fn(&S) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> + 'static,
@@ -209,6 +227,18 @@ impl<S: 'static> Widget for ModularWidget<S> {
             .as_mut()
             .map(|f| f(state, ctx, bc))
             .unwrap_or_else(|| Size::new(100., 100.))
+    }
+
+    fn accessibility_role(&self) -> Role {
+        if let Some(f) = self.role.as_ref() {
+            f(&self.state)
+        } else {
+            Role::Unknown
+        }
+    }
+
+    fn accessibility(&mut self, ctx: &mut AccessCtx) {
+        todo!()
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
@@ -270,6 +300,14 @@ impl Widget for ReplaceChild {
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
         self.child.paint(ctx, scene);
+    }
+
+    fn accessibility_role(&self) -> Role {
+        Role::GenericContainer
+    }
+
+    fn accessibility(&mut self, ctx: &mut AccessCtx) {
+        self.child.accessibility(ctx);
     }
 
     fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
@@ -336,8 +374,17 @@ impl<W: Widget> Widget for Recorder<W> {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
-        self.child.paint(ctx, scene);
         self.recording.push(Record::Paint);
+        self.child.paint(ctx, scene);
+    }
+
+    fn accessibility_role(&self) -> Role {
+        self.child.accessibility_role()
+    }
+
+    fn accessibility(&mut self, ctx: &mut AccessCtx) {
+        self.recording.push(Record::Access);
+        self.child.accessibility(ctx);
     }
 
     fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {

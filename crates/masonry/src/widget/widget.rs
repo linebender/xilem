@@ -6,6 +6,7 @@ use std::num::NonZeroU64;
 use std::ops::{Deref, DerefMut};
 use std::sync::atomic::{AtomicU64, Ordering};
 
+use accesskit::Role;
 use smallvec::SmallVec;
 use tracing::{trace_span, Span};
 use vello::Scene;
@@ -14,7 +15,8 @@ use crate::event::StatusChange;
 use crate::event::{PointerEvent, TextEvent};
 use crate::widget::WidgetRef;
 use crate::{
-    AsAny, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Point, Size,
+    AccessCtx, AsAny, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
+    Point, Size,
 };
 
 /// A unique identifier for a single [`Widget`].
@@ -109,6 +111,10 @@ pub trait Widget: AsAny {
     /// afterwards. In addition, they can apply masks and transforms on
     /// the render context, which is especially useful for scrolling.
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene);
+
+    fn accessibility_role(&self) -> Role;
+
+    fn accessibility(&mut self, ctx: &mut AccessCtx);
 
     /// Return references to this widget's children.
     ///
@@ -228,8 +234,14 @@ impl WidgetId {
         WidgetId(unsafe { std::num::NonZeroU64::new_unchecked(id) })
     }
 
-    pub(crate) fn to_raw(self) -> u64 {
+    pub fn to_raw(self) -> u64 {
         self.0.into()
+    }
+}
+
+impl From<WidgetId> for accesskit::NodeId {
+    fn from(id: WidgetId) -> accesskit::NodeId {
+        accesskit::NodeId(id.0.into())
     }
 }
 
@@ -257,6 +269,14 @@ impl Widget for Box<dyn Widget> {
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
         self.deref_mut().paint(ctx, scene);
+    }
+
+    fn accessibility_role(&self) -> Role {
+        self.deref().accessibility_role()
+    }
+
+    fn accessibility(&mut self, ctx: &mut AccessCtx) {
+        self.deref_mut().accessibility(ctx);
     }
 
     fn type_name(&self) -> &'static str {

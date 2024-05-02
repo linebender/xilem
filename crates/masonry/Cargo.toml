@@ -37,6 +37,8 @@ unicode-segmentation = "1.11.0"
 # TODO: Is this still the most up-to-date crate for this?
 xi-unicode = "0.3.0"
 tracing-subscriber = "0.3.18"
+accesskit.workspace = true
+accesskit_winit.workspace = true
 
 [dev-dependencies]
 float-cmp = { version = "0.8.0", features = ["std"], default-features = false }

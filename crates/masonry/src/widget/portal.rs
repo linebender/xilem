@@ -5,6 +5,7 @@
 
 use std::ops::Range;
 
+use accesskit::Role;
 use kurbo::Affine;
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace_span, Span};
@@ -14,8 +15,8 @@ use vello::Scene;
 use crate::kurbo::{Point, Rect, Size, Vec2};
 use crate::widget::{Axis, ScrollBar, WidgetMut, WidgetRef};
 use crate::{
-    BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, PointerEvent,
-    StatusChange, TextEvent, Widget, WidgetPod,
+    AccessCtx, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
+    PointerEvent, StatusChange, TextEvent, Widget, WidgetPod,
 };
 
 // TODO - refactor - see issue #15
@@ -377,6 +378,31 @@ impl<W: Widget> Widget for Portal<W> {
         } else {
             ctx.skip_child(&mut self.scrollbar_vertical);
         }
+    }
+
+    fn accessibility_role(&self) -> Role {
+        Role::GenericContainer
+    }
+
+    fn accessibility(&mut self, ctx: &mut AccessCtx) {
+        // TODO - Double check this code
+        // Not sure about these values
+        if false {
+            ctx.current_node().set_scroll_x(self.viewport_pos.x);
+            ctx.current_node().set_scroll_y(self.viewport_pos.y);
+            ctx.current_node().set_scroll_x_min(0.0);
+            ctx.current_node()
+                .set_scroll_x_max(self.scrollbar_horizontal.widget().portal_size);
+            ctx.current_node().set_scroll_y_min(0.0);
+            ctx.current_node()
+                .set_scroll_y_max(self.scrollbar_vertical.widget().portal_size);
+        }
+
+        ctx.current_node().set_clips_children();
+
+        self.child.accessibility(ctx);
+        ctx.skip_child(&mut self.scrollbar_horizontal);
+        ctx.skip_child(&mut self.scrollbar_vertical);
     }
 
     fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {

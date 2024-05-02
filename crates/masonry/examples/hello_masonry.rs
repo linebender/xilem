@@ -20,6 +20,10 @@ const VERTICAL_WIDGET_SPACING: f64 = 20.0;
 struct Driver;
 
 impl AppDriver for Driver {
+    fn app_name(&mut self) -> String {
+        "Hello world".into()
+    }
+
     fn on_action(&mut self, _ctx: &mut DriverCtx<'_>, _widget_id: WidgetId, action: Action) {
         match action {
             Action::ButtonPressed => {
@@ -33,7 +37,7 @@ impl AppDriver for Driver {
 }
 
 pub fn main() {
-    let event_loop = EventLoop::new().unwrap();
+    let event_loop = EventLoop::with_user_event().build().unwrap();
     let window_size = LogicalSize::new(400.0, 400.0);
     #[allow(deprecated)]
     let window = event_loop

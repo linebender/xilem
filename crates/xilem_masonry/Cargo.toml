@@ -23,3 +23,5 @@ winit.workspace = true
 tracing.workspace = true
 vello.workspace = true
 smallvec.workspace = true
+accesskit.workspace = true
+accesskit_winit.workspace = true
