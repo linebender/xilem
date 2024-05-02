@@ -446,6 +446,8 @@ impl RenderRoot {
     }
 
     pub fn init_access_tree(&mut self) -> TreeUpdate {
+        self.root.state.needs_accessibility_update = true;
+        self.root.state.request_accessibility_update = true;
         let mut tree_update = self.root_accessibility();
         tree_update.tree = Some(Tree {
             root: self.root.id().into(),
