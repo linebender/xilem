@@ -15,7 +15,7 @@ use vello::{
 
 use crate::{
     declare_widget,
-    text2::{layout::TextLayout, TextStorage},
+    text2::{TextLayout, TextStorage},
     widget::WidgetRef,
     ArcStr, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, PointerEvent,
     StatusChange, TextEvent, Widget,
@@ -24,7 +24,7 @@ use crate::{
 use super::WidgetMut;
 
 // added padding between the edges of the widget and the text.
-const LABEL_X_PADDING: f64 = 2.0;
+pub(super) const LABEL_X_PADDING: f64 = 2.0;
 
 /// Options for handling lines that are too wide for the label.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -41,7 +41,7 @@ pub enum LineBreaking {
 pub struct Label<T: TextStorage> {
     text_layout: TextLayout<T>,
     line_break_mode: LineBreaking,
-    allow_disabled: bool,
+    show_disabled: bool,
     // disabled: bool,
 }
 
@@ -53,7 +53,7 @@ impl<T: TextStorage> Label<T> {
         Self {
             text_layout: TextLayout::new(text, crate::theme::TEXT_SIZE_NORMAL as f32),
             line_break_mode: LineBreaking::Overflow,
-            allow_disabled: true,
+            show_disabled: true,
         }
     }
 
@@ -182,13 +182,13 @@ impl<T: TextStorage> Widget for Label<T> {
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
         match event {
             LifeCycle::DisabledChanged(disabled) => {
-                if self.allow_disabled {
+                if self.show_disabled {
                     if *disabled {
-                        self.text_layout.set_overrid_brush(Some(Brush::Solid(
+                        self.text_layout.set_override_brush(Some(Brush::Solid(
                             crate::theme::DISABLED_TEXT_COLOR,
                         )))
                     } else {
-                        self.text_layout.set_overrid_brush(None)
+                        self.text_layout.set_override_brush(None)
                     }
                 }
                 // TODO: Parley seems to require a relayout when colours change

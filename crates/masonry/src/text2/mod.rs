@@ -8,10 +8,12 @@
 //! All of these have the same set of global styling options, and can contain rich text
 
 mod edit;
-pub mod layout;
+mod layout;
+// mod movement;
 mod selection;
 mod store;
 
 pub use layout::{LayoutMetrics, TextLayout};
+pub use selection::TextWithSelection;
 pub use selection::{len_utf8_from_first_byte, EditableTextCursor, Selectable, StringCursor};
 pub use store::{Link, TextStorage};

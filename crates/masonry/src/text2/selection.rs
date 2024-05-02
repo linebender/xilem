@@ -5,11 +5,221 @@
 //! Traits for text editing and a basic String implementation.
 
 use std::borrow::Cow;
-use std::ops::{Deref, Range};
+use std::ops::{Deref, DerefMut, Range};
 
 use unicode_segmentation::{GraphemeCursor, UnicodeSegmentation};
 
-use super::TextStorage;
+use super::{TextLayout, TextStorage};
+
+pub struct TextWithSelection<T: Selectable> {
+    pub layout: TextLayout<T>,
+    /// The current selection within this widget
+    // TODO: Allow multiple selections (i.e. by holding down control)
+    pub selection: Option<Selection>,
+    // TODO: Cache cursor line, selection boxes
+}
+
+impl<T: Selectable> TextWithSelection<T> {
+    pub fn new(text: T, text_size: f32) -> Self {
+        Self {
+            layout: TextLayout::new(text, text_size),
+            selection: None,
+        }
+    }
+}
+
+impl<T: Selectable> Deref for TextWithSelection<T> {
+    type Target = TextLayout<T>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.layout
+    }
+}
+
+// TODO: I don't think this is valid, as we have additional things we
+// need to synchronise the validity of
+impl<T: Selectable> DerefMut for TextWithSelection<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.layout
+    }
+}
+
+/// A range of selected text, or a caret.
+///
+/// A caret is the blinking vertical bar where text is to be inserted. We
+/// represent it as a selection with zero length, where `anchor == active`.
+/// Indices are always expressed in UTF-8 bytes, and must be between 0 and the
+/// document length, inclusive.
+///
+/// As an example, if the input caret is at the start of the document `hello
+/// world`, we would expect both `anchor` and `active` to be `0`. If the user
+/// holds shift and presses the right arrow key five times, we would expect the
+/// word `hello` to be selected, the `anchor` to still be `0`, and the `active`
+/// to now be `5`.
+#[derive(Clone, Copy, Debug, PartialEq)]
+#[non_exhaustive]
+pub struct Selection {
+    /// The 'anchor' end of the selection.
+    ///
+    /// This is the end of the selection that stays unchanged while holding
+    /// shift and pressing the arrow keys.
+    // TODO: Is usize the right type for these? Is it plausible to be dealing with a
+    // more than 4gb file on a 32 bit machine?
+    pub anchor: usize,
+    /// The 'active' end of the selection.
+    ///
+    /// This is the end of the selection that moves while holding shift and
+    /// pressing the arrow keys.
+    pub active: usize,
+    /// The affinity of the `active` side of the cursor
+    ///
+    /// The affinity of `anchor` is entirely based on the affinity of active:
+    /// 1) If `active` is Upstream
+    pub active_affinity: Affinity,
+    /// The saved horizontal position, during vertical movement.
+    ///
+    /// This should not be set by the IME; it will be tracked and handled by
+    /// the text field.
+    pub h_pos: Option<f32>,
+}
+
+#[allow(clippy::len_without_is_empty)]
+impl Selection {
+    /// Create a new `Selection` with the provided `anchor` and `active` positions.
+    ///
+    /// Both positions refer to UTF-8 byte indices in some text.
+    ///
+    /// If your selection is a caret, you can use [`Selection::caret`] instead.
+    pub fn new(anchor: usize, active: usize, active_affinity: Affinity) -> Selection {
+        Selection {
+            anchor,
+            active,
+            h_pos: None,
+            active_affinity,
+        }
+    }
+
+    /// Create a new caret (zero-length selection) at the provided UTF-8 byte index.
+    ///
+    /// `index` must be a grapheme cluster boundary.
+    pub fn caret(index: usize, affinity: Affinity) -> Selection {
+        Selection {
+            anchor: index,
+            active: index,
+            h_pos: None,
+            active_affinity: affinity,
+        }
+    }
+
+    /// Construct a new selection from this selection, with the provided h_pos.
+    ///
+    /// # Note
+    ///
+    /// `h_pos` is used to track the *pixel* location of the cursor when moving
+    /// vertically; lines may have available cursor positions at different
+    /// positions, and arrowing down and then back up should always result
+    /// in a cursor at the original starting location; doing this correctly
+    /// requires tracking this state.
+    ///
+    /// You *probably* don't need to use this, unless you are implementing a new
+    /// text field, or otherwise implementing vertical cursor motion, in which
+    /// case you will want to set this during vertical motion if it is not
+    /// already set.
+    pub fn with_h_pos(mut self, h_pos: Option<f32>) -> Self {
+        self.h_pos = h_pos;
+        self
+    }
+
+    /// Create a new selection that is guaranteed to be valid for the provided
+    /// text.
+    #[must_use = "constrained constructs a new Selection"]
+    pub fn constrained(mut self, s: &str) -> Self {
+        let s_len = s.len();
+        self.anchor = self.anchor.min(s_len);
+        self.active = self.active.min(s_len);
+        while !s.is_char_boundary(self.anchor) {
+            self.anchor += 1;
+        }
+        while !s.is_char_boundary(self.active) {
+            self.active += 1;
+        }
+        self
+    }
+
+    /// Return the position of the upstream end of the selection.
+    ///
+    /// This is end with the lesser byte index.
+    ///
+    /// Because of bidirectional text, this is not necessarily "left".
+    pub fn min(&self) -> usize {
+        usize::min(self.anchor, self.active)
+    }
+
+    /// Return the position of the downstream end of the selection.
+    ///
+    /// This is the end with the greater byte index.
+    ///
+    /// Because of bidirectional text, this is not necessarily "right".
+    pub fn max(&self) -> usize {
+        usize::max(self.anchor, self.active)
+    }
+
+    /// The sequential range of the document represented by this selection.
+    ///
+    /// This is the range that would be replaced if text were inserted at this
+    /// selection.
+    pub fn range(&self) -> Range<usize> {
+        self.min()..self.max()
+    }
+
+    /// The length, in bytes of the selected region.
+    ///
+    /// If the selection is a caret, this is `0`.
+    pub fn len(&self) -> usize {
+        if self.anchor > self.active {
+            self.anchor - self.active
+        } else {
+            self.active - self.anchor
+        }
+    }
+
+    /// Returns `true` if the selection's length is `0`.
+    pub fn is_caret(&self) -> bool {
+        self.len() == 0
+    }
+}
+
+/// Distinguishes between two visually distinct locations with the same byte
+/// index.
+///
+/// Sometimes, a byte location in a document has two visual locations. For
+/// example, the end of a soft-wrapped line and the start of the subsequent line
+/// have different visual locations (and we want to be able to place an input
+/// caret in either place!) but the same byte-wise location. This also shows up
+/// in bidirectional text contexts. Affinity allows us to disambiguate between
+/// these two visual locations.
+///
+/// Note that in scenarios where soft line breaks interact with bidi text, this gets
+/// more complicated.
+#[derive(Copy, Clone, Debug, Hash, PartialEq)]
+pub enum Affinity {
+    /// The position which has an apparent position "earlier" in the text.
+    /// For soft line breaks, this is the position at the end of the first line.
+    ///
+    /// For positions in-between bidi contexts, this is the position which is
+    /// related to the "outgoing" text section. E.g. for the string "abcDEF" (rendered `abcFED`),
+    /// with the cursor at "abc|DEF" with upstream affinity, the cursor would be rendered at the
+    /// position `abc|DEF`
+    Upstream,
+    /// The position which has a higher apparent position in the text.
+    /// For soft line breaks, this is the position at the beginning of the second line.
+    ///
+    /// For positions in-between bidi contexts, this is the position which is
+    /// related to the "incoming" text section. E.g. for the string "abcDEF" (rendered `abcFED`),
+    /// with the cursor at "abc|DEF" with downstream affinity, the cursor would be rendered at the
+    /// position `abcDEF|`
+    Downstream,
+}
 
 /// Text which can have internal selections
 pub trait Selectable: Sized + TextStorage {

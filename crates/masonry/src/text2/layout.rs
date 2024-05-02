@@ -130,7 +130,7 @@ impl<T> TextLayout<T> {
     ///
     /// See also [`set_text_color`][Self::set_text_color]
     /// for a convenience method when using a solid color.
-    pub fn set_overrid_brush(&mut self, override_brush: Option<Brush>) {
+    pub fn set_override_brush(&mut self, override_brush: Option<Brush>) {
         if override_brush != self.override_brush {
             self.override_brush = override_brush;
             self.invalidate();
@@ -312,11 +312,8 @@ impl<T: TextStorage> TextLayout<T> {
     pub fn cursor_for_text_position(&self, text_pos: usize) -> Cursor {
         self.assert_rebuilt("cursor_for_text_position");
 
-        Cursor::from_position(
-            &self.layout,
-            text_pos,
-            /* TODO handle affinity */ false,
-        )
+        // TODO: As a reminder, `is_leading``
+        Cursor::from_position(&self.layout, text_pos, false)
     }
 
     /// Given the utf-8 position of a character boundary in the underlying text,
@@ -351,6 +348,8 @@ impl<T: TextStorage> TextLayout<T> {
     /// return a `Line` suitable for drawing a vertical cursor at that boundary.
     ///
     /// This is not meaningful until [`Self::rebuild`] has been called.
+    // TODO: This is too simplistic. See https://raphlinus.github.io/text/2020/10/26/text-layout.html#shaping-cluster
+    // for example. This would break in a `fi` ligature
     pub fn cursor_line_for_text_position(&self, text_pos: usize) -> Line {
         let from_position = self.cursor_for_text_position(text_pos);
 
