@@ -1,8 +1,12 @@
 use kurbo::{Affine, Point, Size};
+use parley::{
+    layout::Alignment,
+    style::{FontFamily, FontStack},
+};
 use smallvec::SmallVec;
 use tracing::trace;
 use vello::{
-    peniko::{BlendMode, Brush},
+    peniko::{BlendMode, Brush, Color},
     Scene,
 };
 
@@ -13,7 +17,7 @@ use crate::{
     StatusChange, TextEvent, Widget,
 };
 
-use super::{LineBreaking, WidgetRef};
+use super::{LineBreaking, WidgetMut, WidgetRef};
 
 /// The prose widget is a widget which displays text which can be
 /// selected with keyboard and mouse, and which can be copied from,
@@ -28,29 +32,107 @@ pub struct Prose<T: Selectable> {
 }
 
 impl<T: Selectable> Prose<T> {
-    pub fn new(text: T, text_size: f32) -> Self {
+    pub fn new(text: T) -> Self {
         Prose {
-            text_layout: TextWithSelection::new(text, text_size),
-            line_break_mode: LineBreaking::Overflow,
+            text_layout: TextWithSelection::new(text, crate::theme::TEXT_SIZE_NORMAL as f32),
+            line_break_mode: LineBreaking::WordWrap,
             show_disabled: true,
         }
     }
+
+    // TODO: Can we reduce code duplication with `Label` widget somehow?
+    pub fn text(&self) -> &T {
+        self.text_layout.text()
+    }
+
+    pub fn with_text_color(mut self, color: Color) -> Self {
+        self.text_layout.set_color(color);
+        self
+    }
+
+    pub fn with_text_size(mut self, size: f32) -> Self {
+        self.text_layout.set_text_size(size);
+        self
+    }
+
+    pub fn with_text_alignment(mut self, alignment: Alignment) -> Self {
+        self.text_layout.set_text_alignment(alignment);
+        self
+    }
+
+    pub fn with_font(mut self, font: FontStack<'static>) -> Self {
+        self.text_layout.set_font(font);
+        self
+    }
+    pub fn with_font_family(self, font: FontFamily<'static>) -> Self {
+        self.with_font(FontStack::Single(font))
+    }
+
+    pub fn with_line_break_mode(mut self, line_break_mode: LineBreaking) -> Self {
+        self.line_break_mode = line_break_mode;
+        self
+    }
 }
 
-// TODO: Reduce code duplication with `Label` widget
+impl<T: Selectable> WidgetMut<'_, Prose<T>> {
+    pub fn text(&self) -> &T {
+        self.widget.text_layout.text()
+    }
+
+    pub fn set_text_properties<R>(&mut self, f: impl FnOnce(&mut TextWithSelection<T>) -> R) -> R {
+        let ret = f(&mut self.widget.text_layout);
+        if self.widget.text_layout.needs_rebuild() {
+            self.ctx.request_layout();
+        }
+        ret
+    }
+
+    pub fn set_text(&mut self, new_text: T) {
+        self.set_text_properties(|layout| layout.set_text(new_text));
+    }
+
+    pub fn set_text_color(&mut self, color: Color) {
+        self.set_text_properties(|layout| layout.set_color(color));
+    }
+    pub fn set_text_size(&mut self, size: f32) {
+        self.set_text_properties(|layout| layout.set_text_size(size));
+    }
+    pub fn set_alignment(&mut self, alignment: Alignment) {
+        self.set_text_properties(|layout| layout.set_text_alignment(alignment));
+    }
+    pub fn set_font(&mut self, font_stack: FontStack<'static>) {
+        self.set_text_properties(|layout| layout.set_font(font_stack));
+    }
+    pub fn set_font_family(&mut self, family: FontFamily<'static>) {
+        self.set_font(FontStack::Single(family))
+    }
+    pub fn set_line_break_mode(&mut self, line_break_mode: LineBreaking) {
+        self.widget.line_break_mode = line_break_mode;
+        self.ctx.request_paint();
+    }
+}
+
 impl<T: Selectable> Widget for Prose<T> {
-    fn on_pointer_event(&mut self, _ctx: &mut EventCtx, event: &PointerEvent) {
+    fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
         match event {
             PointerEvent::PointerMove(_point) => {
-                // TODO: Set cursor if over link
+                if !ctx.is_disabled() {
+                    // TODO: Set cursor if over link
+                    // TODO: Move selection if selecting
+                }
             }
             PointerEvent::PointerDown(_button, _state) => {
                 // TODO: Start tracking currently pressed link
-                // (i.e. don't press)
+                if !ctx.is_disabled() {
+                    ctx.set_active(true);
+                }
             }
             PointerEvent::PointerUp(_button, _state) => {
                 // TODO: Follow link (if not now dragging ?)
+                if !ctx.is_disabled() {}
+                ctx.set_active(false);
             }
+            PointerEvent::PointerLeave(_state) => {}
             _ => {}
         }
     }
@@ -64,7 +146,10 @@ impl<T: Selectable> Widget for Prose<T> {
     #[allow(missing_docs)]
     fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, event: &StatusChange) {
         match event {
-            StatusChange::FocusChanged(_) => {
+            StatusChange::FocusChanged(false) => {
+                // TODO: Release focus
+            }
+            StatusChange::FocusChanged(true) => {
                 // TODO: Focus on first link
             }
             _ => {}

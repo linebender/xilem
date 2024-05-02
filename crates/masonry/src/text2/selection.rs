@@ -7,7 +7,10 @@
 use std::borrow::Cow;
 use std::ops::{Deref, DerefMut, Range};
 
+use kurbo::Point;
+use parley::FontContext;
 use unicode_segmentation::{GraphemeCursor, UnicodeSegmentation};
+use vello::Scene;
 
 use super::{TextLayout, TextStorage};
 
@@ -16,6 +19,7 @@ pub struct TextWithSelection<T: Selectable> {
     /// The current selection within this widget
     // TODO: Allow multiple selections (i.e. by holding down control)
     pub selection: Option<Selection>,
+    pub needs_selection_update: bool,
     // TODO: Cache cursor line, selection boxes
 }
 
@@ -24,7 +28,25 @@ impl<T: Selectable> TextWithSelection<T> {
         Self {
             layout: TextLayout::new(text, text_size),
             selection: None,
+            needs_selection_update: false,
         }
+    }
+
+    pub fn needs_rebuild(&self) -> bool {
+        self.layout.needs_rebuild() || self.needs_selection_update
+    }
+
+    // Intentionally aliases the method on
+    pub fn rebuild(&mut self, fcx: &mut FontContext) {
+        if self.layout.needs_rebuild() {
+            self.layout.rebuild(fcx);
+            self.needs_selection_update = true;
+        }
+        if self.needs_selection_update {}
+    }
+
+    pub fn draw(&mut self, scene: &mut Scene, point: impl Into<Point>) {
+        self.layout.draw(scene, point)
     }
 }
 
@@ -36,8 +58,7 @@ impl<T: Selectable> Deref for TextWithSelection<T> {
     }
 }
 
-// TODO: I don't think this is valid, as we have additional things we
-// need to synchronise the validity of
+// TODO: Being able to call `Self::Target::rebuild` (and `draw`) isn't great.
 impl<T: Selectable> DerefMut for TextWithSelection<T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.layout

@@ -184,7 +184,7 @@ impl<T> TextLayout<T> {
 
     /// Set the width at which to wrap words.
     ///
-    /// You may pass `f64::INFINITY` to disable word wrapping
+    /// You may pass `None` to disable word wrapping
     /// (the default behaviour).
     pub fn set_max_advance(&mut self, max_advance: Option<f32>) {
         let max_advance = max_advance.map(|it| it.max(0.0));
@@ -193,7 +193,7 @@ impl<T> TextLayout<T> {
                 .max_advance
                 .zip(max_advance)
                 // 1e-4 is an arbitrary small-enough value that we don't care to rewrap
-                .map(|(old, new)| (old - new).abs() < 1e-4)
+                .map(|(old, new)| (old - new).abs() >= 1e-4)
                 .unwrap_or(false)
         {
             self.max_advance = max_advance;
