@@ -155,6 +155,7 @@ impl ApplicationHandler<accesskit_winit::Event> for MainState<'_> {
             }
             _ => (),
         }
+
         while let Some(signal) = self.render_root.pop_signal() {
             match signal {
                 render_root::RenderRootSignal::Action(action, widget_id) => {
@@ -209,16 +210,20 @@ impl ApplicationHandler<accesskit_winit::Event> for MainState<'_> {
                 }
             }
         }
+
+        self.accesskit_adapter
+            .update_if_active(|| self.render_root.init_access_tree());
     }
 
     fn user_event(&mut self, _event_loop: &ActiveEventLoop, event: accesskit_winit::Event) {
         match event.window_event {
             accesskit_winit::WindowEvent::InitialTreeRequested => {
-                let mut tree_update = self.render_root.init_access_tree();
-                tree_update.tree.as_mut().unwrap().app_name = Some(self.app_driver.app_name());
-                self.accesskit_adapter.update_if_active(|| tree_update);
+                self.accesskit_adapter
+                    .update_if_active(|| self.render_root.init_access_tree());
             }
-            accesskit_winit::WindowEvent::ActionRequested(_) => todo!(),
+            accesskit_winit::WindowEvent::ActionRequested(action_request) => {
+                self.render_root.root_on_access_event(action_request);
+            }
             accesskit_winit::WindowEvent::AccessibilityDeactivated => {}
         }
     }

@@ -15,8 +15,8 @@ use crate::paint_scene_helpers::{fill_lin_gradient, stroke, UnitPoint};
 use crate::text2::TextStorage;
 use crate::widget::{Label, WidgetMut, WidgetRef};
 use crate::{
-    theme, AccessCtx, ArcStr, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx,
-    PaintCtx, PointerEvent, StatusChange, TextEvent, Widget, WidgetPod,
+    theme, AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, LayoutCtx, LifeCycle,
+    LifeCycleCtx, PaintCtx, PointerEvent, StatusChange, TextEvent, Widget, WidgetPod,
 };
 
 /// A checkbox that can be toggled.
@@ -85,6 +85,19 @@ impl<T: TextStorage> Widget for Checkbox<T> {
     }
 
     fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
+
+    fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {
+        if event.target == ctx.widget_id() {
+            match event.action {
+                accesskit::Action::Default => {
+                    self.checked = !self.checked;
+                    ctx.submit_action(Action::CheckboxChecked(self.checked));
+                    ctx.request_paint();
+                }
+                _ => {}
+            }
+        }
+    }
 
     fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, _event: &StatusChange) {
         ctx.request_paint();
@@ -172,8 +185,9 @@ impl<T: TextStorage> Widget for Checkbox<T> {
     }
 
     fn accessibility(&mut self, ctx: &mut AccessCtx) {
-        let name = self.label.widget().text().as_str().to_string();
-        ctx.current_node().set_name(name);
+        let _name = self.label.widget().text().as_str().to_string();
+        // We may want to add a name if it doesn't interfere with the child label
+        // ctx.current_node().set_name(name);
         if self.checked {
             ctx.current_node().set_toggled(Toggled::True);
             ctx.current_node()
@@ -184,7 +198,7 @@ impl<T: TextStorage> Widget for Checkbox<T> {
                 .set_default_action_verb(DefaultActionVerb::Check);
         }
 
-        ctx.skip_child(&mut self.label);
+        self.label.accessibility(ctx);
     }
 
     fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {

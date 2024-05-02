@@ -13,8 +13,9 @@ use masonry::app_driver::{AppDriver, DriverCtx};
 use masonry::kurbo::BezPath;
 use masonry::widget::{FillStrat, WidgetRef};
 use masonry::{
-    AccessCtx, Action, Affine, BoxConstraints, Color, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx,
-    PaintCtx, Point, PointerEvent, Rect, Size, StatusChange, TextEvent, Widget, WidgetId,
+    AccessCtx, AccessEvent, Action, Affine, BoxConstraints, Color, EventCtx, LayoutCtx, LifeCycle,
+    LifeCycleCtx, PaintCtx, Point, PointerEvent, Rect, Size, StatusChange, TextEvent, Widget,
+    WidgetId,
 };
 use parley::layout::Alignment;
 use parley::style::{FontFamily, FontStack, StyleProperty};
@@ -28,10 +29,6 @@ use winit::window::Window;
 struct Driver;
 
 impl AppDriver for Driver {
-    fn app_name(&mut self) -> String {
-        "Masonry + Vello".into()
-    }
-
     fn on_action(&mut self, _ctx: &mut DriverCtx<'_>, _widget_id: WidgetId, _action: Action) {}
 }
 
@@ -44,6 +41,8 @@ impl Widget for CustomWidget {
     fn on_pointer_event(&mut self, _ctx: &mut EventCtx, _event: &PointerEvent) {}
 
     fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
+
+    fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {}
 
     fn lifecycle(&mut self, _ctx: &mut LifeCycleCtx, _event: &LifeCycle) {}
 

@@ -19,10 +19,6 @@ use winit::window::Window;
 struct Driver;
 
 impl AppDriver for Driver {
-    fn app_name(&mut self) -> String {
-        "Simple Image".into()
-    }
-
     fn on_action(&mut self, _ctx: &mut DriverCtx<'_>, _widget_id: WidgetId, _action: Action) {}
 }
 

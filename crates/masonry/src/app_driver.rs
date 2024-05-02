@@ -12,8 +12,6 @@ pub struct DriverCtx<'a> {
 }
 
 pub trait AppDriver {
-    fn app_name(&mut self) -> String;
-
     fn on_action(&mut self, ctx: &mut DriverCtx<'_>, widget_id: WidgetId, action: Action);
 }
 

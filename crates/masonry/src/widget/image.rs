@@ -13,7 +13,7 @@ use vello::Scene;
 
 use crate::widget::{FillStrat, WidgetMut, WidgetRef};
 use crate::{
-    AccessCtx, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
+    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
     PointerEvent, Size, StatusChange, TextEvent, Widget,
 };
 
@@ -68,6 +68,8 @@ impl Widget for Image {
     fn on_pointer_event(&mut self, _ctx: &mut EventCtx, _event: &PointerEvent) {}
 
     fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
+
+    fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {}
 
     fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange) {}
 

@@ -20,10 +20,6 @@ const VERTICAL_WIDGET_SPACING: f64 = 20.0;
 struct Driver;
 
 impl AppDriver for Driver {
-    fn app_name(&mut self) -> String {
-        "Hello world".into()
-    }
-
     fn on_action(&mut self, _ctx: &mut DriverCtx<'_>, _widget_id: WidgetId, action: Action) {
         match action {
             Action::ButtonPressed => {

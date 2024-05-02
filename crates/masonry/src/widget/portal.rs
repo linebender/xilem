@@ -15,7 +15,7 @@ use vello::Scene;
 use crate::kurbo::{Point, Rect, Size, Vec2};
 use crate::widget::{Axis, ScrollBar, WidgetMut, WidgetRef};
 use crate::{
-    AccessCtx, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
+    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
     PointerEvent, StatusChange, TextEvent, Widget, WidgetPod,
 };
 
@@ -290,6 +290,14 @@ impl<W: Widget> Widget for Portal<W> {
         self.scrollbar_vertical.on_text_event(ctx, event);
     }
 
+    fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {
+        // TODO - Handle scroll-related events?
+
+        self.child.on_access_event(ctx, event);
+        self.scrollbar_horizontal.on_access_event(ctx, event);
+        self.scrollbar_vertical.on_access_event(ctx, event);
+    }
+
     fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange) {}
 
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
@@ -401,8 +409,8 @@ impl<W: Widget> Widget for Portal<W> {
         ctx.current_node().set_clips_children();
 
         self.child.accessibility(ctx);
-        ctx.skip_child(&mut self.scrollbar_horizontal);
-        ctx.skip_child(&mut self.scrollbar_vertical);
+        self.scrollbar_horizontal.accessibility(ctx);
+        self.scrollbar_vertical.accessibility(ctx);
     }
 
     fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {

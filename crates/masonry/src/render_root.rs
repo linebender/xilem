@@ -3,7 +3,7 @@
 
 use std::collections::VecDeque;
 
-use accesskit::{NodeBuilder, Tree, TreeUpdate};
+use accesskit::{ActionRequest, NodeBuilder, Tree, TreeUpdate};
 // Automatically defaults to std::time::Instant on non Wasm platforms
 use instant::Instant;
 use kurbo::Affine;
@@ -21,8 +21,8 @@ use crate::event::{PointerEvent, TextEvent, WindowEvent};
 use crate::kurbo::Point;
 use crate::widget::{WidgetMut, WidgetState};
 use crate::{
-    AccessCtx, Action, BoxConstraints, Handled, InternalLifeCycle, LifeCycle, Widget, WidgetId,
-    WidgetPod,
+    AccessCtx, AccessEvent, Action, BoxConstraints, Handled, InternalLifeCycle, LifeCycle, Widget,
+    WidgetId, WidgetPod,
 };
 
 // TODO - Remove pub(crate)
@@ -232,7 +232,7 @@ impl RenderRoot {
             ctx.global_state
                 .debug_logger
                 .push_important_span(&format!("¨POINTER_EVENT {}", event.short_name()));
-            let _span = info_span!("event").entered();
+            let _span = info_span!("pointer_event").entered();
             self.root.on_pointer_event(&mut ctx, &event);
             ctx.global_state.debug_logger.pop_span();
             Handled::from(ctx.is_handled)
@@ -271,7 +271,7 @@ impl RenderRoot {
             ctx.global_state
                 .debug_logger
                 .push_important_span(&format!("TEXT_EVENT {}", event.short_name()));
-            let _span = info_span!("event").entered();
+            let _span = info_span!("text_event").entered();
             self.root.on_text_event(&mut ctx, &event);
             ctx.global_state.debug_logger.pop_span();
             Handled::from(ctx.is_handled)
@@ -292,6 +292,40 @@ impl RenderRoot {
         self.root.as_dyn().debug_validate(false);
 
         handled
+    }
+
+    pub fn root_on_access_event(&mut self, event: ActionRequest) {
+        let mut widget_state =
+            WidgetState::new(self.root.id(), Some(self.get_kurbo_size()), "<root>");
+
+        let mut ctx = EventCtx {
+            global_state: &mut self.state,
+            widget_state: &mut widget_state,
+            is_handled: false,
+            request_pan_to_child: None,
+        };
+
+        let Ok(id) = event.target.0.try_into() else {
+            warn!("Received ActionRequest with id 0. This shouldn't be possible.");
+            return;
+        };
+        let event = AccessEvent {
+            target: WidgetId(id),
+            action: event.action,
+            data: event.data,
+        };
+
+        {
+            ctx.global_state
+                .debug_logger
+                .push_important_span(&format!("ACCESSS_EVENT {}", event.short_name()));
+            let _span = info_span!("access_event").entered();
+            self.root.on_access_event(&mut ctx, &event);
+            ctx.global_state.debug_logger.pop_span();
+        }
+
+        self.post_event_processing(&mut widget_state);
+        self.root.as_dyn().debug_validate(false);
     }
 
     fn root_lifecycle(&mut self, event: LifeCycle) {

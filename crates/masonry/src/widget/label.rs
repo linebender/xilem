@@ -15,8 +15,8 @@ use vello::Scene;
 use crate::text2::{TextBrush, TextLayout, TextStorage};
 use crate::widget::{WidgetMut, WidgetRef};
 use crate::{
-    AccessCtx, ArcStr, BoxConstraints, Color, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx,
-    PaintCtx, PointerEvent, StatusChange, TextEvent, Widget,
+    AccessCtx, AccessEvent, ArcStr, BoxConstraints, Color, EventCtx, LayoutCtx, LifeCycle,
+    LifeCycleCtx, PaintCtx, PointerEvent, StatusChange, TextEvent, Widget,
 };
 
 // added padding between the edges of the widget and the text.
@@ -160,6 +160,8 @@ impl<T: TextStorage> Widget for Label<T> {
         // TODO: This sure looks like each link needs its own widget, although I guess the challenge there is
         // that the bounding boxes can go e.g. across line boundaries?
     }
+
+    fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {}
 
     #[allow(missing_docs)]
     fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, event: &StatusChange) {

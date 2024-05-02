@@ -13,8 +13,8 @@ use crate::kurbo::Rect;
 use crate::paint_scene_helpers::{fill_color, stroke};
 use crate::widget::{WidgetMut, WidgetRef};
 use crate::{
-    theme, AccessCtx, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
-    Point, PointerEvent, Size, StatusChange, TextEvent, Widget,
+    theme, AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx,
+    PaintCtx, Point, PointerEvent, Size, StatusChange, TextEvent, Widget,
 };
 
 // RULES
@@ -172,6 +172,10 @@ impl Widget for ScrollBar {
     }
 
     fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
+
+    fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {
+        // TODO - Handle scroll-related events?
+    }
 
     fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange) {}
 

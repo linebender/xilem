@@ -6,7 +6,7 @@ use tracing::{info_span, trace, warn};
 use vello::Scene;
 use winit::dpi::LogicalPosition;
 
-use crate::event::{PointerEvent, TextEvent};
+use crate::event::{AccessEvent, PointerEvent, TextEvent};
 use crate::kurbo::{Affine, Insets, Point, Rect, Shape, Size};
 use crate::paint_scene_helpers::stroke;
 use crate::render_root::RenderRootState;
@@ -498,6 +498,59 @@ impl<W: Widget> WidgetPod<W> {
         self.inner.lifecycle(&mut inner_ctx, &event);
     }
 
+    pub fn on_access_event(&mut self, parent_ctx: &mut EventCtx, event: &AccessEvent) {
+        let _span = self.inner.make_trace_span().entered();
+        // TODO #11
+        parent_ctx
+            .global_state
+            .debug_logger
+            .push_span(self.inner.short_type_name());
+
+        // TODO - explain this
+        self.mark_as_visited();
+        self.check_initialized("on_text_event");
+
+        if parent_ctx.is_handled {
+            parent_ctx.global_state.debug_logger.pop_span();
+            // If the event was already handled, we quit early.
+            return;
+        }
+
+        if self.state.children.may_contain(&event.target) {
+            self.call_widget_method_with_checks("on_access_event", |widget_pod| {
+                // widget_pod is a reborrow of `self`
+                let mut inner_ctx = EventCtx {
+                    global_state: parent_ctx.global_state,
+                    widget_state: &mut widget_pod.state,
+                    is_handled: false,
+                    request_pan_to_child: None,
+                };
+
+                widget_pod.inner.on_access_event(&mut inner_ctx, event);
+
+                inner_ctx.widget_state.has_active |= inner_ctx.widget_state.is_active;
+                parent_ctx.is_handled |= inner_ctx.is_handled;
+
+                // TODO - request_pan_to_child
+            });
+        }
+
+        // Always merge even if not needed, because merging is idempotent and gives us simpler code.
+        // Doing this conditionally only makes sense when there's a measurable performance boost.
+        parent_ctx.widget_state.merge_up(&mut self.state);
+
+        parent_ctx
+            .global_state
+            .debug_logger
+            .update_widget_state(self.as_dyn());
+        parent_ctx
+            .global_state
+            .debug_logger
+            .push_log(false, "updated state");
+
+        parent_ctx.global_state.debug_logger.pop_span();
+    }
+
     // --- LIFECYCLE ---
 
     // TODO #5 - Some implicit invariants:
@@ -794,6 +847,8 @@ impl<W: Widget> WidgetPod<W> {
         self.state.is_expecting_place_child_call = true;
         // TODO - Not everything that has been re-laid out needs to be repainted.
         self.state.needs_paint = true;
+        self.state.request_accessibility_update = false;
+        self.state.needs_accessibility_update = false;
 
         bc.debug_check(self.inner.short_type_name());
 

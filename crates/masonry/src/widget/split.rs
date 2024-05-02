@@ -16,8 +16,8 @@ use crate::paint_scene_helpers::{fill_color, stroke};
 use crate::widget::flex::Axis;
 use crate::widget::{WidgetMut, WidgetPod, WidgetRef};
 use crate::{
-    theme, AccessCtx, BoxConstraints, Color, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx,
-    PaintCtx, Point, PointerEvent, Rect, Size, StatusChange, TextEvent, Widget,
+    theme, AccessCtx, AccessEvent, BoxConstraints, Color, EventCtx, LayoutCtx, LifeCycle,
+    LifeCycleCtx, PaintCtx, Point, PointerEvent, Rect, Size, StatusChange, TextEvent, Widget,
 };
 
 // TODO - Have child widget type as generic argument
@@ -442,6 +442,11 @@ impl Widget for Split {
     fn on_text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent) {
         self.child1.on_text_event(ctx, event);
         self.child2.on_text_event(ctx, event);
+    }
+
+    fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {
+        self.child1.on_access_event(ctx, event);
+        self.child2.on_access_event(ctx, event);
     }
 
     fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange) {}

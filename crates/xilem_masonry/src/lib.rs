@@ -9,8 +9,8 @@ use masonry::{
     app_driver::AppDriver,
     event_loop_runner,
     widget::{WidgetMut, WidgetRef},
-    AccessCtx, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Point,
-    PointerEvent, Size, StatusChange, TextEvent, Widget, WidgetId, WidgetPod,
+    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
+    Point, PointerEvent, Size, StatusChange, TextEvent, Widget, WidgetId, WidgetPod,
 };
 pub use masonry::{widget::Axis, Color, TextAlignment};
 use smallvec::SmallVec;
@@ -55,6 +55,9 @@ impl<E: 'static + Widget> Widget for RootWidget<E> {
     fn on_text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent) {
         self.pod.on_text_event(ctx, event);
     }
+    fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {
+        self.pod.on_access_event(ctx, event);
+    }
 
     fn on_status_change(&mut self, _: &mut LifeCycleCtx, _: &StatusChange) {
         // Intentionally do nothing?
@@ -94,11 +97,6 @@ where
     Logic: FnMut(&mut State) -> View,
     View: MasonryView<State>,
 {
-    fn app_name(&mut self) -> String {
-        // FIXME
-        "Xilem App".into()
-    }
-
     fn on_action(
         &mut self,
         ctx: &mut masonry::app_driver::DriverCtx<'_>,

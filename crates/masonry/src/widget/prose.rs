@@ -14,7 +14,7 @@ use vello::{peniko::BlendMode, Scene};
 use crate::{
     text2::{Selectable, TextBrush, TextWithSelection},
     widget::label::LABEL_X_PADDING,
-    AccessCtx, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
+    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
     PointerEvent, StatusChange, TextEvent, Widget,
 };
 
@@ -174,6 +174,10 @@ impl<T: Selectable> Widget for Prose<T> {
             ctx.request_layout();
             ctx.request_paint();
         }
+    }
+
+    fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {
+        // TODO - Handle accesskit::Action::SetTextSelection
     }
 
     #[allow(missing_docs)]

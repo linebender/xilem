@@ -16,7 +16,7 @@ use vello::{
 
 use crate::{
     text2::{EditableText, TextBrush, TextEditor, TextWithSelection},
-    AccessCtx, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
+    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
     PointerEvent, StatusChange, TextEvent, Widget,
 };
 
@@ -180,6 +180,12 @@ impl<T: EditableText> Widget for Textbox<T> {
         }
     }
 
+    fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {
+        // TODO - Handle accesskit::Action::SetTextSelection
+        // TODO - Handle accesskit::Action::ReplaceSelectedText
+        // TODO - Handle accesskit::Action::SetValue
+    }
+
     #[allow(missing_docs)]
     fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange) {
         match event {
@@ -279,9 +285,8 @@ impl<T: EditableText> Widget for Textbox<T> {
         Role::TextInput
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx) {
-        ctx.current_node()
-            .set_name(self.text().as_str().to_string());
+    fn accessibility(&mut self, _ctx: &mut AccessCtx) {
+        // TODO
     }
 
     fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {

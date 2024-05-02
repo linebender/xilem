@@ -16,6 +16,7 @@ use std::collections::VecDeque;
 use std::rc::Rc;
 
 use accesskit::Role;
+use accesskit_winit::Event;
 use smallvec::SmallVec;
 use vello::Scene;
 
@@ -25,6 +26,7 @@ use crate::*;
 
 pub type PointerEventFn<S> = dyn FnMut(&mut S, &mut EventCtx, &PointerEvent);
 pub type TextEventFn<S> = dyn FnMut(&mut S, &mut EventCtx, &TextEvent);
+pub type AccessEventFn<S> = dyn FnMut(&mut S, &mut EventCtx, &AccessEvent);
 pub type StatusChangeFn<S> = dyn FnMut(&mut S, &mut LifeCycleCtx, &StatusChange);
 pub type LifeCycleFn<S> = dyn FnMut(&mut S, &mut LifeCycleCtx, &LifeCycle);
 pub type LayoutFn<S> = dyn FnMut(&mut S, &mut LayoutCtx, &BoxConstraints) -> Size;
@@ -43,6 +45,7 @@ pub struct ModularWidget<S> {
     state: S,
     on_pointer_event: Option<Box<PointerEventFn<S>>>,
     on_text_event: Option<Box<TextEventFn<S>>>,
+    on_access_event: Option<Box<AccessEventFn<S>>>,
     on_status_change: Option<Box<StatusChangeFn<S>>>,
     lifecycle: Option<Box<LifeCycleFn<S>>>,
     layout: Option<Box<LayoutFn<S>>>,
@@ -89,6 +92,7 @@ pub struct Recording(Rc<RefCell<VecDeque<Record>>>);
 pub enum Record {
     PE(PointerEvent),
     TE(TextEvent),
+    AE(AccessEvent),
     SC(StatusChange),
     L(LifeCycle),
     Layout(Size),
@@ -118,6 +122,7 @@ impl<S> ModularWidget<S> {
             state,
             on_pointer_event: None,
             on_text_event: None,
+            on_access_event: None,
             on_status_change: None,
             lifecycle: None,
             layout: None,
@@ -141,6 +146,14 @@ impl<S> ModularWidget<S> {
         f: impl FnMut(&mut S, &mut EventCtx, &TextEvent) + 'static,
     ) -> Self {
         self.on_text_event = Some(Box::new(f));
+        self
+    }
+
+    pub fn access_event_fn(
+        mut self,
+        f: impl FnMut(&mut S, &mut EventCtx, &AccessEvent) + 'static,
+    ) -> Self {
+        self.on_access_event = Some(Box::new(f));
         self
     }
 
@@ -201,6 +214,12 @@ impl<S: 'static> Widget for ModularWidget<S> {
 
     fn on_text_event(&mut self, ctx: &mut EventCtx, event: &event::TextEvent) {
         if let Some(f) = self.on_text_event.as_mut() {
+            f(&mut self.state, ctx, event);
+        }
+    }
+
+    fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {
+        if let Some(f) = self.on_access_event.as_mut() {
             f(&mut self.state, ctx, event);
         }
     }
@@ -286,6 +305,10 @@ impl Widget for ReplaceChild {
         todo!()
     }
 
+    fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {
+        todo!()
+    }
+
     fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, _event: &StatusChange) {
         ctx.request_layout();
     }
@@ -355,6 +378,11 @@ impl<W: Widget> Widget for Recorder<W> {
     fn on_text_event(&mut self, ctx: &mut EventCtx, event: &event::TextEvent) {
         self.recording.push(Record::TE(event.clone()));
         self.child.on_text_event(ctx, event);
+    }
+
+    fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {
+        self.recording.push(Record::AE(event.clone()));
+        self.child.on_access_event(ctx, event);
     }
 
     fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange) {

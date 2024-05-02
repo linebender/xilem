@@ -6,8 +6,8 @@ use std::{any::Any, ops::Deref};
 use accesskit::Role;
 use masonry::widget::{WidgetMut, WidgetRef};
 use masonry::{
-    AccessCtx, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Point,
-    PointerEvent, Size, StatusChange, TextEvent, Widget, WidgetPod,
+    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
+    Point, PointerEvent, Size, StatusChange, TextEvent, Widget, WidgetPod,
 };
 use smallvec::SmallVec;
 use vello::Scene;
@@ -201,6 +201,9 @@ impl Widget for DynWidget {
     }
     fn on_text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent) {
         self.inner.on_text_event(ctx, event);
+    }
+    fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {
+        self.inner.on_access_event(ctx, event);
     }
 
     fn on_status_change(&mut self, _: &mut LifeCycleCtx, _: &StatusChange) {

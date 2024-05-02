@@ -11,8 +11,7 @@ use smallvec::SmallVec;
 use tracing::{trace_span, Span};
 use vello::Scene;
 
-use crate::event::StatusChange;
-use crate::event::{PointerEvent, TextEvent};
+use crate::event::{AccessEvent, PointerEvent, StatusChange, TextEvent};
 use crate::widget::WidgetRef;
 use crate::{
     AccessCtx, AsAny, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
@@ -41,7 +40,7 @@ use crate::{
 /// If you set a `WidgetId` directly, you are responsible for ensuring that it
 /// is unique. Two widgets must not be created with the same id.
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
-pub struct WidgetId(NonZeroU64);
+pub struct WidgetId(pub(crate) NonZeroU64);
 
 // TODO - Add tutorial: implementing a widget - See issue #5
 /// The trait implemented by all widgets.
@@ -74,6 +73,9 @@ pub trait Widget: AsAny {
     /// a [`Command`](crate::Command).
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent);
     fn on_text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent);
+
+    /// Handle an event from the platform's accessibility API.
+    fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent);
 
     #[allow(missing_docs)]
     fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange);
@@ -253,6 +255,10 @@ impl Widget for Box<dyn Widget> {
 
     fn on_text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent) {
         self.deref_mut().on_text_event(ctx, event);
+    }
+
+    fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {
+        self.deref_mut().on_access_event(ctx, event);
     }
 
     fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange) {

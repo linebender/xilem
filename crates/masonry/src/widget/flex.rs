@@ -14,8 +14,8 @@ use crate::kurbo::Vec2;
 use crate::theme::get_debug_color;
 use crate::widget::{WidgetMut, WidgetRef};
 use crate::{
-    AccessCtx, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Point,
-    PointerEvent, Rect, Size, StatusChange, TextEvent, Widget, WidgetId, WidgetPod,
+    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
+    Point, PointerEvent, Rect, Size, StatusChange, TextEvent, Widget, WidgetId, WidgetPod,
 };
 
 /// A container with either horizontal or vertical layout.
@@ -496,6 +496,12 @@ impl Widget for Flex {
     fn on_text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent) {
         for child in self.children.iter_mut().filter_map(|x| x.widget_mut()) {
             child.on_text_event(ctx, event);
+        }
+    }
+
+    fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {
+        for child in self.children.iter_mut().filter_map(|x| x.widget_mut()) {
+            child.on_access_event(ctx, event);
         }
     }
 

@@ -13,8 +13,8 @@ use crate::paint_scene_helpers::{fill_lin_gradient, stroke, UnitPoint};
 use crate::text2::TextStorage;
 use crate::widget::{Label, WidgetMut, WidgetPod, WidgetRef};
 use crate::{
-    theme, AccessCtx, BoxConstraints, EventCtx, Insets, LayoutCtx, LifeCycle, LifeCycleCtx,
-    PaintCtx, PointerEvent, Size, StatusChange, TextEvent, Widget,
+    theme, AccessCtx, AccessEvent, BoxConstraints, EventCtx, Insets, LayoutCtx, LifeCycle,
+    LifeCycleCtx, PaintCtx, PointerEvent, Size, StatusChange, TextEvent, Widget,
 };
 
 // the minimum padding added to a button.
@@ -104,6 +104,19 @@ impl<T: TextStorage> Widget for Button<T> {
         self.label.on_text_event(ctx, event);
     }
 
+    fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {
+        if event.target == ctx.widget_id() {
+            match event.action {
+                accesskit::Action::Default => {
+                    ctx.submit_action(Action::ButtonPressed);
+                    ctx.request_paint();
+                }
+                _ => {}
+            }
+        }
+        ctx.skip_child(&mut self.label);
+    }
+
     fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, _event: &StatusChange) {
         ctx.request_paint();
     }
@@ -179,12 +192,13 @@ impl<T: TextStorage> Widget for Button<T> {
     }
 
     fn accessibility(&mut self, ctx: &mut AccessCtx) {
-        let name = self.label.widget().text().as_str().to_string();
-        ctx.current_node().set_name(name);
+        let _name = self.label.widget().text().as_str().to_string();
+        // We may want to add a name if it doesn't interfere with the child label
+        // ctx.current_node().set_name(name);
         ctx.current_node()
             .set_default_action_verb(DefaultActionVerb::Click);
 
-        ctx.skip_child(&mut self.label);
+        self.label.accessibility(ctx);
     }
 
     fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
