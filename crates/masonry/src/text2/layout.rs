@@ -336,7 +336,11 @@ impl<T: TextStorage> TextLayout<T> {
     pub fn cursor_for_text_position(&self, text_pos: usize) -> Cursor {
         self.assert_rebuilt("cursor_for_text_position");
 
-        // TODO: As a reminder, `is_leading``
+        // TODO: As a reminder, `is_leading` is not very useful to us; we don't know this ahead of time
+        // We're going to need to do quite a bit of remedial work on these
+        // e.g. to handle a inside a ligature made of multiple (unicode) grapheme clusters
+        // https://raphlinus.github.io/text/2020/10/26/text-layout.html#shaping-cluster
+        // But we're choosing to defer this work
         Cursor::from_position(&self.layout, text_pos, true)
     }
 

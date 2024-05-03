@@ -13,7 +13,7 @@ use crate::ArcStr;
 use super::layout::TextBrush;
 
 #[derive(Copy, Clone)]
-// TODO(DJMcNab)
+// TODO: Implement links
 pub struct Link;
 
 /// Text which can be displayed.

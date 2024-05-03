@@ -137,12 +137,15 @@ impl<T: Selectable> Widget for Prose<T> {
                 }
             }
             PointerEvent::PointerMove(state) => {
-                if !ctx.is_disabled() && ctx.is_active() {
+                if !ctx.is_disabled() {
                     // TODO: Set cursor if over link
-                    if self.text_layout.pointer_move(inner_origin, state) {
-                        // We might have changed text colours, so we need to re-request a layout
-                        ctx.request_layout();
-                        ctx.request_paint();
+                    ctx.set_cursor(&winit::window::CursorIcon::Text);
+                    if ctx.is_active() {
+                        if self.text_layout.pointer_move(inner_origin, state) {
+                            // We might have changed text colours, so we need to re-request a layout
+                            ctx.request_layout();
+                            ctx.request_paint();
+                        }
                     }
                 }
             }

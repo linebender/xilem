@@ -115,7 +115,6 @@ pub struct OptionSeqState<InnerState> {
     generation: u64,
 }
 
-// TODO(DJMcNab): Add the generation to the id path
 impl<State, Action, Marker, VT: ViewSequence<State, Action, Marker>>
     ViewSequence<State, Action, (WasASequence, Marker)> for Option<VT>
 {
