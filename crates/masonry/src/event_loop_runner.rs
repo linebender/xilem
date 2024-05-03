@@ -76,8 +76,26 @@ impl ApplicationHandler for MainState<'_> {
                     .handle_window_event(WindowEvent::Resize(size));
             }
             WinitWindowEvent::ModifiersChanged(modifiers) => {
+                self.pointer_state.mods = modifiers;
                 self.render_root
                     .handle_text_event(TextEvent::ModifierChange(modifiers.state()));
+            }
+            WinitWindowEvent::KeyboardInput {
+                device_id: _,
+                event,
+                is_synthetic: _,
+            } => {
+                self.render_root.handle_text_event(TextEvent::KeyboardKey(
+                    event,
+                    self.pointer_state.mods.state(),
+                ));
+            }
+            WinitWindowEvent::Ime(ime) => {
+                self.render_root.handle_text_event(TextEvent::Ime(ime));
+            }
+            WinitWindowEvent::Focused(new_focus) => {
+                self.render_root
+                    .handle_text_event(TextEvent::FocusChange(new_focus));
             }
             WinitWindowEvent::CursorMoved { position, .. } => {
                 self.pointer_state.physical_position = position;

@@ -3,14 +3,11 @@
 
 //! Helper functions for working with text in Masonry.
 
+use kurbo::Rect;
 use parley::Layout;
-use vello::{
-    kurbo::Affine,
-    peniko::{Brush, Fill},
-    Scene,
-};
+use vello::{kurbo::Affine, peniko::Fill, Scene};
 
-use crate::WidgetId;
+use crate::{text2::TextBrush, WidgetId};
 
 /// A reference counted string slice.
 ///
@@ -51,8 +48,15 @@ pub enum ImeChangeSignal {
 }
 
 /// A function that renders laid out glyphs to a [Scene].
-pub fn render_text(scene: &mut Scene, transform: Affine, layout: &Layout<Brush>) {
+pub fn render_text(
+    scene: &mut Scene,
+    scratch_scene: &mut Scene,
+    transform: Affine,
+    layout: &Layout<TextBrush>,
+) {
+    scratch_scene.reset();
     for line in layout.lines() {
+        let metrics = &line.metrics();
         for glyph_run in line.glyph_runs() {
             let mut x = glyph_run.offset();
             let y = glyph_run.baseline();
@@ -69,9 +73,31 @@ pub fn render_text(scene: &mut Scene, transform: Affine, layout: &Layout<Brush>)
                 .iter()
                 .map(|coord| vello::skrifa::instance::NormalizedCoord::from_bits(*coord))
                 .collect::<Vec<_>>();
-            scene
+            let text_brush = match &style.brush {
+                TextBrush::Normal(text_brush) => text_brush,
+                TextBrush::Highlight { text, fill } => {
+                    scene.fill(
+                        Fill::EvenOdd,
+                        transform,
+                        fill,
+                        None,
+                        &Rect::from_origin_size(
+                            (
+                                glyph_run.offset() as f64,
+                                // The y coordinate is on the baseline. We want to draw from the top of the line
+                                // (Note that we are in a y-down coordinate system)
+                                (y - metrics.ascent - metrics.leading) as f64,
+                            ),
+                            (glyph_run.advance() as f64, metrics.size() as f64),
+                        ),
+                    );
+
+                    text
+                }
+            };
+            scratch_scene
                 .draw_glyphs(font)
-                .brush(&style.brush)
+                .brush(text_brush)
                 .transform(transform)
                 .glyph_transform(glyph_xform)
                 .font_size(font_size)
@@ -90,5 +116,6 @@ pub fn render_text(scene: &mut Scene, transform: Affine, layout: &Layout<Brush>)
                     }),
                 );
         }
+        scene.append(scratch_scene, None);
     }
 }

@@ -11,6 +11,7 @@ use vello::Scene;
 use crate::action::Action;
 use crate::kurbo::{BezPath, Cap, Join, Size};
 use crate::paint_scene_helpers::{fill_lin_gradient, stroke, UnitPoint};
+use crate::text2::TextStorage;
 use crate::widget::{Label, WidgetMut, WidgetRef};
 use crate::{
     theme, ArcStr, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
@@ -18,14 +19,14 @@ use crate::{
 };
 
 /// A checkbox that can be toggled.
-pub struct Checkbox {
+pub struct Checkbox<T: TextStorage = ArcStr> {
     checked: bool,
-    label: WidgetPod<Label>,
+    label: WidgetPod<Label<T>>,
 }
 
-impl Checkbox {
+impl<T: TextStorage> Checkbox<T> {
     /// Create a new `Checkbox` with a text label.
-    pub fn new(checked: bool, text: impl Into<ArcStr>) -> Checkbox {
+    pub fn new(checked: bool, text: T) -> Checkbox<T> {
         Checkbox {
             checked,
             label: WidgetPod::new(Label::new(text)),
@@ -33,7 +34,7 @@ impl Checkbox {
     }
 
     /// Create a new `Checkbox` with the given label.
-    pub fn from_label(checked: bool, label: Label) -> Checkbox {
+    pub fn from_label(checked: bool, label: Label<T>) -> Checkbox<T> {
         Checkbox {
             checked,
             label: WidgetPod::new(label),
@@ -41,23 +42,23 @@ impl Checkbox {
     }
 }
 
-impl WidgetMut<'_, Checkbox> {
+impl<T: TextStorage> WidgetMut<'_, Checkbox<T>> {
     pub fn set_checked(&mut self, checked: bool) {
         self.widget.checked = checked;
         self.ctx.request_paint();
     }
 
     /// Set the text.
-    pub fn set_text(&mut self, new_text: impl Into<ArcStr>) {
-        self.label_mut().set_text(new_text.into());
+    pub fn set_text(&mut self, new_text: T) {
+        self.label_mut().set_text(new_text);
     }
 
-    pub fn label_mut(&mut self) -> WidgetMut<'_, Label> {
+    pub fn label_mut(&mut self) -> WidgetMut<'_, Label<T>> {
         self.ctx.get_mut(&mut self.widget.label)
     }
 }
 
-impl Widget for Checkbox {
+impl<T: TextStorage> Widget for Checkbox<T> {
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
         match event {
             PointerEvent::PointerDown(_, _) => {
@@ -177,7 +178,7 @@ impl Widget for Checkbox {
         Some(format!(
             "[{}] {}",
             if self.checked { "X" } else { " " },
-            self.label.as_ref().text()
+            self.label.as_ref().text().as_str()
         ))
     }
 }
@@ -225,7 +226,7 @@ mod tests {
             let checkbox = Checkbox::from_label(
                 true,
                 Label::new("The quick brown fox jumps over the lazy dog")
-                    .with_text_color(PRIMARY_LIGHT)
+                    .with_text_brush(PRIMARY_LIGHT)
                     .with_text_size(20.0),
             );
 
@@ -240,12 +241,12 @@ mod tests {
             let mut harness = TestHarness::create_with_size(checkbox, Size::new(50.0, 50.0));
 
             harness.edit_root_widget(|mut checkbox| {
-                let mut checkbox = checkbox.downcast::<Checkbox>().unwrap();
+                let mut checkbox = checkbox.downcast::<Checkbox<&'static str>>().unwrap();
                 checkbox.set_checked(true);
                 checkbox.set_text("The quick brown fox jumps over the lazy dog");
 
                 let mut label = checkbox.label_mut();
-                label.set_text_color(PRIMARY_LIGHT);
+                label.set_text_brush(PRIMARY_LIGHT);
                 label.set_text_size(20.0);
             });
 

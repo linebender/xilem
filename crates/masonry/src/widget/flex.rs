@@ -492,7 +492,11 @@ impl Widget for Flex {
         }
     }
 
-    fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
+    fn on_text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent) {
+        for child in self.children.iter_mut().filter_map(|x| x.widget_mut()) {
+            child.on_text_event(ctx, event);
+        }
+    }
 
     fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange) {}
 
@@ -1370,7 +1374,12 @@ mod tests {
 
             let mut child = flex.child_mut(1).unwrap();
             assert_eq!(
-                child.downcast::<Label>().unwrap().widget.text().to_string(),
+                child
+                    .downcast::<Label<&'static str>>()
+                    .unwrap()
+                    .widget
+                    .text()
+                    .to_string(),
                 "world"
             );
             std::mem::drop(child);

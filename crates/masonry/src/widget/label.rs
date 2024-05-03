@@ -1,37 +1,29 @@
 // Copyright 2019 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-//! A label widget.
-
-use kurbo::Affine;
-use parley::layout::Alignment;
-use parley::style::{FontFamily, FontStack, GenericFamily, StyleProperty};
-use parley::{FontContext, Layout};
+use kurbo::{Affine, Point, Size};
+use parley::{
+    layout::Alignment,
+    style::{FontFamily, FontStack},
+};
 use smallvec::SmallVec;
-use tracing::{trace, trace_span, Span};
-use vello::peniko::{BlendMode, Brush};
-use vello::Scene;
-
-use crate::widget::{WidgetMut, WidgetRef};
-use crate::{
-    ArcStr, BoxConstraints, Color, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
-    PointerEvent, Size, StatusChange, TextEvent, Widget,
+use tracing::trace;
+use vello::{
+    peniko::{BlendMode, Color},
+    Scene,
 };
 
-// added padding between the edges of the widget and the text.
-const LABEL_X_PADDING: f64 = 2.0;
+use crate::{
+    text2::{TextBrush, TextLayout, TextStorage},
+    widget::WidgetRef,
+    ArcStr, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, PointerEvent,
+    StatusChange, TextEvent, Widget,
+};
 
-/// A widget displaying non-editable text.
-pub struct Label {
-    current_text: ArcStr,
-    text_layout: Option<Layout<Brush>>,
-    text_size: f32,
-    font_family: FontFamily<'static>,
-    line_break_mode: LineBreaking,
-    disabled: bool,
-    text_color: Color,
-    alignment: Alignment,
-}
+use super::WidgetMut;
+
+// added padding between the edges of the widget and the text.
+pub(super) const LABEL_X_PADDING: f64 = 2.0;
 
 /// Options for handling lines that are too wide for the label.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -44,168 +36,162 @@ pub enum LineBreaking {
     Overflow,
 }
 
-// --- METHODS ---
+/// A widget displaying non-editable text.
+pub struct Label<T: TextStorage> {
+    text_layout: TextLayout<T>,
+    line_break_mode: LineBreaking,
+    show_disabled: bool,
+    brush: TextBrush,
+    // disabled: bool,
+}
 
-impl Label {
+impl<T: TextStorage> Label<T> {
     /// Create a new label.
-    pub fn new(text: impl Into<ArcStr>) -> Self {
-        let current_text = text.into();
+    pub fn new(text: T) -> Self {
         Self {
-            current_text,
-            text_layout: None,
-            text_color: crate::theme::TEXT_COLOR,
-            text_size: crate::theme::TEXT_SIZE_NORMAL as f32,
-            font_family: FontFamily::Generic(GenericFamily::SystemUi),
+            text_layout: TextLayout::new(text, crate::theme::TEXT_SIZE_NORMAL as f32),
             line_break_mode: LineBreaking::Overflow,
-            disabled: false,
-            alignment: Alignment::Start,
+            show_disabled: true,
+            brush: crate::theme::TEXT_COLOR.into(),
         }
     }
 
+    pub fn text(&self) -> &T {
+        self.text_layout.text()
+    }
+
+    #[doc(alias = "with_text_color")]
+    pub fn with_text_brush(mut self, color: Color) -> Self {
+        self.text_layout.set_brush(color);
+        self
+    }
+
+    pub fn with_text_size(mut self, size: f32) -> Self {
+        self.text_layout.set_text_size(size);
+        self
+    }
+
+    pub fn with_text_alignment(mut self, alignment: Alignment) -> Self {
+        self.text_layout.set_text_alignment(alignment);
+        self
+    }
+
+    pub fn with_font(mut self, font: FontStack<'static>) -> Self {
+        self.text_layout.set_font(font);
+        self
+    }
+    pub fn with_font_family(self, font: FontFamily<'static>) -> Self {
+        self.with_font(FontStack::Single(font))
+    }
+
+    pub fn with_line_break_mode(mut self, line_break_mode: LineBreaking) -> Self {
+        self.line_break_mode = line_break_mode;
+        self
+    }
+}
+
+impl Label<ArcStr> {
     /// Create a label with empty text.
     pub fn empty() -> Self {
-        Self::new("")
-    }
-
-    // TODO - Rename methods
-    /// Builder-style method for setting the text string.
-    pub fn with_text(mut self, new_text: impl Into<ArcStr>) -> Self {
-        self.current_text = new_text.into();
-        // TODO - Rethink how layout caching works during the builder phase
-        self.text_layout = None;
-        self
-    }
-
-    /// Builder-style method for setting the text color.
-    pub fn with_text_color(mut self, color: impl Into<Color>) -> Self {
-        self.text_color = color.into();
-        self
-    }
-
-    /// Builder-style method for setting the text size.
-    pub fn with_text_size(mut self, size: impl Into<f32>) -> Self {
-        self.text_size = size.into();
-        self
-    }
-
-    /// Builder-style method for setting the font.
-    pub fn with_font_family(mut self, font_family: impl Into<FontFamily<'static>>) -> Self {
-        self.font_family = font_family.into();
-        self
-    }
-
-    /// Builder-style method to set the [`LineBreaking`] behaviour.
-    pub fn with_line_break_mode(mut self, mode: LineBreaking) -> Self {
-        self.line_break_mode = mode;
-        self
-    }
-
-    /// Builder-style method to set the [`Alignment`].
-    pub fn with_text_alignment(mut self, alignment: Alignment) -> Self {
-        self.alignment = alignment;
-        self
-    }
-
-    /// Builder-style method to disable this label.
-    pub fn with_disabled(mut self, disabled: bool) -> Self {
-        self.disabled = disabled;
-        self
-    }
-
-    /// Return the current value of the label's text.
-    pub fn text(&self) -> ArcStr {
-        self.current_text.clone()
-    }
-
-    #[cfg(FALSE)]
-    /// Return the offset of the first baseline relative to the bottom of the widget.
-    pub fn baseline_offset(&self) -> f64 {
-        let text_metrics = self.text_layout.layout_metrics();
-        text_metrics.size.height - text_metrics.first_baseline
-    }
-
-    fn get_layout_mut(&mut self, font_cx: &mut FontContext) -> &mut Layout<Brush> {
-        let color = if self.disabled {
-            crate::theme::DISABLED_TEXT_COLOR
-        } else {
-            self.text_color
-        };
-        let mut lcx = parley::LayoutContext::new();
-        let mut layout_builder = lcx.ranged_builder(font_cx, &self.current_text, 1.0);
-
-        layout_builder.push_default(&StyleProperty::FontStack(FontStack::Single(
-            self.font_family,
-        )));
-        layout_builder.push_default(&StyleProperty::FontSize(self.text_size));
-        layout_builder.push_default(&StyleProperty::Brush(Brush::Solid(color)));
-
-        // TODO - Refactor. This code is mostly copy-pasted from Xilem's text widget
-        // Not super elegant.
-        self.text_layout = Some(layout_builder.build());
-        self.text_layout.as_mut().unwrap()
+        Self::new("".into())
     }
 }
 
-impl WidgetMut<'_, Label> {
-    /// Set the text.
-    pub fn set_text(&mut self, new_text: impl Into<ArcStr>) {
-        self.widget.current_text = new_text.into();
-        self.widget.text_layout = None;
-        self.ctx.request_layout();
+impl<T: TextStorage> WidgetMut<'_, Label<T>> {
+    pub fn text(&self) -> &T {
+        self.widget.text_layout.text()
     }
 
-    /// Set the text color.
-    pub fn set_text_color(&mut self, color: impl Into<Color>) {
-        self.widget.text_color = color.into();
-        self.ctx.request_layout();
+    pub fn set_text_properties<R>(&mut self, f: impl FnOnce(&mut TextLayout<T>) -> R) -> R {
+        let ret = f(&mut self.widget.text_layout);
+        if self.widget.text_layout.needs_rebuild() {
+            self.ctx.request_layout();
+        }
+        ret
     }
 
-    /// Set the text size.
-    pub fn set_text_size(&mut self, size: impl Into<f32>) {
-        self.widget.text_size = size.into();
-        self.ctx.request_layout();
+    pub fn set_text(&mut self, new_text: T) {
+        self.set_text_properties(|layout| layout.set_text(new_text));
     }
 
-    /// Set the font.
-    pub fn set_font_family(&mut self, font_family: impl Into<FontFamily<'static>>) {
-        self.widget.font_family = font_family.into();
-        self.ctx.request_layout();
+    #[doc(alias = "set_text_color")]
+    pub fn set_text_brush(&mut self, brush: impl Into<TextBrush>) {
+        let brush = brush.into();
+        self.widget.brush = brush;
+        if !self.ctx.is_disabled() {
+            let brush = self.widget.brush.clone();
+            self.set_text_properties(|layout| layout.set_brush(brush));
+        }
     }
-
-    /// Set the [`LineBreaking`] behaviour.
-    pub fn set_line_break_mode(&mut self, mode: LineBreaking) {
-        self.widget.line_break_mode = mode;
-        self.ctx.request_layout();
+    pub fn set_text_size(&mut self, size: f32) {
+        self.set_text_properties(|layout| layout.set_text_size(size));
     }
-
-    /// Set the [`Alignment`] for this layout.
-    pub fn set_text_alignment(&mut self, alignment: Alignment) {
-        self.widget.alignment = alignment;
-        self.ctx.request_layout();
+    pub fn set_alignment(&mut self, alignment: Alignment) {
+        self.set_text_properties(|layout| layout.set_text_alignment(alignment));
     }
-
-    /// Set disabled
-    pub fn set_disabled(&mut self, disabled: bool) {
-        self.widget.disabled = disabled;
-        // TODO: only request_paint necessary?
-        self.ctx.request_layout();
+    pub fn set_font(&mut self, font_stack: FontStack<'static>) {
+        self.set_text_properties(|layout| layout.set_font(font_stack));
+    }
+    pub fn set_font_family(&mut self, family: FontFamily<'static>) {
+        self.set_font(FontStack::Single(family));
+    }
+    pub fn set_line_break_mode(&mut self, line_break_mode: LineBreaking) {
+        self.widget.line_break_mode = line_break_mode;
+        self.ctx.request_paint();
     }
 }
 
-// --- TRAIT IMPLS ---
+impl<T: TextStorage> Widget for Label<T> {
+    fn on_pointer_event(&mut self, _ctx: &mut EventCtx, event: &PointerEvent) {
+        match event {
+            PointerEvent::PointerMove(_point) => {
+                // TODO: Set cursor if over link
+            }
+            PointerEvent::PointerDown(_button, _state) => {
+                // TODO: Start tracking currently pressed link
+                // (i.e. don't press)
+            }
+            PointerEvent::PointerUp(_button, _state) => {
+                // TODO: Follow link (if not now dragging ?)
+            }
+            _ => {}
+        }
+    }
 
-impl Widget for Label {
-    fn on_pointer_event(&mut self, _ctx: &mut EventCtx, _event: &PointerEvent) {}
+    fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {
+        // If focused on a link and enter pressed, follow it?
+        // TODO: This sure looks like each link needs its own widget, although I guess the challenge there is
+        // that the bounding boxes can go e.g. across line boundaries?
+    }
 
-    fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
-
-    fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange) {}
+    #[allow(missing_docs)]
+    fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, event: &StatusChange) {
+        match event {
+            StatusChange::FocusChanged(_) => {
+                // TODO: Focus on first link
+            }
+            _ => {}
+        }
+    }
 
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
         match event {
-            LifeCycle::DisabledChanged(_) => {
-                // TODO - only request paint
+            LifeCycle::DisabledChanged(disabled) => {
+                if self.show_disabled {
+                    if *disabled {
+                        self.text_layout
+                            .set_brush(crate::theme::DISABLED_TEXT_COLOR);
+                    } else {
+                        self.text_layout.set_brush(self.brush.clone());
+                    }
+                }
+                // TODO: Parley seems to require a relayout when colours change
                 ctx.request_layout();
+            }
+            LifeCycle::BuildFocusChain => {
+                if !self.text_layout.text().links().is_empty() {
+                    tracing::warn!("Links present in text, but not yet integrated");
+                }
             }
             _ => {}
         }
@@ -222,18 +208,17 @@ impl Widget for Label {
         } else {
             None
         };
-
-        // TODO - Handle baseline
-
-        // Lay text out
-        let alignment = self.alignment;
-        let layout = self.get_layout_mut(ctx.font_ctx());
-        layout.break_all_lines(max_advance, alignment);
-        let size = Size {
-            width: layout.width() as f64 + 2. * LABEL_X_PADDING,
-            height: layout.height() as f64,
+        self.text_layout.set_max_advance(max_advance);
+        if self.text_layout.needs_rebuild() {
+            self.text_layout.rebuild(ctx.font_ctx());
+        }
+        // We ignore trailing whitespace for a label
+        let text_size = self.text_layout.size();
+        let label_size = Size {
+            height: text_size.height,
+            width: text_size.width + 2. * LABEL_X_PADDING,
         };
-        let size = bc.constrain(size);
+        let size = bc.constrain(label_size);
         trace!(
             "Computed layout: max={:?}. w={}, h={}",
             max_advance,
@@ -244,21 +229,18 @@ impl Widget for Label {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
-        if let Some(text_layout) = &self.text_layout {
-            if self.line_break_mode == LineBreaking::Clip {
-                let clip_rect = ctx.size().to_rect();
-                scene.push_layer(BlendMode::default(), 1., Affine::IDENTITY, &clip_rect);
-            }
+        if self.text_layout.needs_rebuild() {
+            debug_panic!("Called Label paint before layout");
+        }
+        if self.line_break_mode == LineBreaking::Clip {
+            let clip_rect = ctx.size().to_rect();
+            scene.push_layer(BlendMode::default(), 1., Affine::IDENTITY, &clip_rect);
+        }
+        self.text_layout
+            .draw(scene, Point::new(LABEL_X_PADDING, 0.0));
 
-            crate::text_helpers::render_text(
-                scene,
-                Affine::translate((LABEL_X_PADDING, 0.)),
-                text_layout,
-            );
-
-            if self.line_break_mode == LineBreaking::Clip {
-                scene.pop_layer();
-            }
+        if self.line_break_mode == LineBreaking::Clip {
+            scene.pop_layer();
         }
     }
 
@@ -266,19 +248,15 @@ impl Widget for Label {
         SmallVec::new()
     }
 
-    fn make_trace_span(&self) -> Span {
-        trace_span!("Label")
-    }
-
     fn get_debug_text(&self) -> Option<String> {
-        Some(self.current_text.to_string())
+        Some(self.text_layout.text().as_str().to_string())
     }
 }
 
-// TODO - reenable tests
 #[cfg(test)]
 mod tests {
     use insta::assert_debug_snapshot;
+    use parley::style::GenericFamily;
 
     use super::*;
     use crate::assert_render_snapshot;
@@ -299,7 +277,7 @@ mod tests {
     #[test]
     fn styled_label() {
         let label = Label::new("The quick brown fox jumps over the lazy dog")
-            .with_text_color(PRIMARY_LIGHT)
+            .with_text_brush(PRIMARY_LIGHT)
             .with_font_family(FontFamily::Generic(GenericFamily::Monospace))
             .with_text_size(20.0)
             .with_line_break_mode(LineBreaking::WordWrap)
@@ -348,7 +326,7 @@ mod tests {
     fn edit_label() {
         let image_1 = {
             let label = Label::new("The quick brown fox jumps over the lazy dog")
-                .with_text_color(PRIMARY_LIGHT)
+                .with_text_brush(PRIMARY_LIGHT)
                 .with_font_family(FontFamily::Generic(GenericFamily::Monospace))
                 .with_text_size(20.0)
                 .with_line_break_mode(LineBreaking::WordWrap)
@@ -361,19 +339,19 @@ mod tests {
 
         let image_2 = {
             let label = Label::new("Hello world")
-                .with_text_color(PRIMARY_DARK)
+                .with_text_brush(PRIMARY_DARK)
                 .with_text_size(40.0);
 
             let mut harness = TestHarness::create_with_size(label, Size::new(50.0, 50.0));
 
             harness.edit_root_widget(|mut label| {
-                let mut label = label.downcast::<Label>().unwrap();
+                let mut label = label.downcast::<Label<&'static str>>().unwrap();
                 label.set_text("The quick brown fox jumps over the lazy dog");
-                label.set_text_color(PRIMARY_LIGHT);
+                label.set_text_brush(PRIMARY_LIGHT);
                 label.set_font_family(FontFamily::Generic(GenericFamily::Monospace));
                 label.set_text_size(20.0);
                 label.set_line_break_mode(LineBreaking::WordWrap);
-                label.set_text_alignment(Alignment::Middle);
+                label.set_alignment(Alignment::Middle);
             });
 
             harness.render()

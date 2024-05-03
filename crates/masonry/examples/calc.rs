@@ -222,9 +222,9 @@ impl AppDriver for CalcState {
         ctx.get_root::<Flex>()
             .child_mut(1)
             .unwrap()
-            .downcast::<Label>()
+            .downcast::<Label<String>>()
             .unwrap()
-            .set_text(self.value.clone());
+            .set_text((&*self.value).into());
     }
 }
 

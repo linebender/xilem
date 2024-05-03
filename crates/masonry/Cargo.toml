@@ -30,6 +30,9 @@ pollster = "0.3.0"
 parley.workspace = true
 wgpu = { version = "0.19.3" }
 winit.workspace = true
+unicode-segmentation = "1.11.0"
+# TODO: Is this still the most up-to-date crate for this?
+xi-unicode = "0.3.0"
 
 [dev-dependencies]
 float-cmp = { version = "0.8.0", features = ["std"], default-features = false }

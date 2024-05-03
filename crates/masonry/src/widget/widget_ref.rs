@@ -216,9 +216,9 @@ mod tests {
         let label = WidgetPod::new(Label::new("Hello"));
         let dyn_widget: WidgetRef<dyn Widget> = label.as_dyn();
 
-        let label = dyn_widget.downcast::<Label>();
+        let label = dyn_widget.downcast::<Label<&'static str>>();
         assert_matches!(label, Some(_));
-        let label = dyn_widget.downcast::<Button>();
+        let label = dyn_widget.downcast::<Button<&'static str>>();
         assert_matches!(label, None);
     }
 
@@ -229,7 +229,17 @@ mod tests {
 
         let harness = TestHarness::create(label);
 
-        assert_matches!(harness.get_widget(label_id).downcast::<Label>(), Some(_));
-        assert_matches!(harness.get_widget(label_id).downcast::<Button>(), None);
+        assert_matches!(
+            harness
+                .get_widget(label_id)
+                .downcast::<Label<&'static str>>(),
+            Some(_)
+        );
+        assert_matches!(
+            harness
+                .get_widget(label_id)
+                .downcast::<Button<&'static str>>(),
+            None
+        );
     }
 }

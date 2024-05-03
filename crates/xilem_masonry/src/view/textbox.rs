@@ -1,30 +1,30 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::{widget::WidgetMut, ArcStr, WidgetPod};
+use masonry::{text2::TextBrush, widget::WidgetMut, WidgetPod};
 
 use crate::{ChangeFlags, Color, MasonryView, MessageResult, TextAlignment, ViewCx, ViewId};
 
-pub fn label(label: impl Into<ArcStr>) -> Label {
-    Label {
-        label: label.into(),
-        text_color: Color::BLACK,
+pub fn textbox() -> Textbox {
+    // TODO: Allow setting a placeholder
+    Textbox {
+        text_brush: Color::WHITE.into(),
         alignment: TextAlignment::default(),
         disabled: false,
     }
 }
 
-pub struct Label {
-    label: ArcStr,
-    text_color: Color,
+pub struct Textbox {
+    text_brush: TextBrush,
     alignment: TextAlignment,
     disabled: bool,
     // TODO: add more attributes of `masonry::widget::Label`
 }
 
-impl Label {
-    pub fn color(mut self, color: Color) -> Self {
-        self.text_color = color;
+impl Textbox {
+    #[doc(alias = "color")]
+    pub fn brush(mut self, color: impl Into<TextBrush>) -> Self {
+        self.text_brush = color.into();
         self
     }
 
@@ -39,14 +39,14 @@ impl Label {
     }
 }
 
-impl<State, Action> MasonryView<State, Action> for Label {
-    type Element = masonry::widget::Label<ArcStr>;
+impl<State, Action> MasonryView<State, Action> for Textbox {
+    type Element = masonry::widget::Textbox<String>;
     type ViewState = ();
 
     fn build(&self, _cx: &mut ViewCx) -> (WidgetPod<Self::Element>, Self::ViewState) {
         let widget_pod = WidgetPod::new(
-            masonry::widget::Label::new(self.label.clone())
-                .with_text_brush(self.text_color)
+            masonry::widget::Textbox::new(String::new())
+                .with_text_brush(self.text_brush.clone())
                 .with_text_alignment(self.alignment),
         );
         (widget_pod, ())
@@ -61,16 +61,12 @@ impl<State, Action> MasonryView<State, Action> for Label {
     ) -> crate::ChangeFlags {
         let mut changeflags = ChangeFlags::UNCHANGED;
 
-        if prev.label != self.label {
-            element.set_text(self.label.clone());
-            changeflags.changed |= ChangeFlags::CHANGED.changed;
-        }
         // if prev.disabled != self.disabled {
         //     element.set_disabled(self.disabled);
         //     changeflags.changed |= ChangeFlags::CHANGED.changed;
         // }
-        if prev.text_color != self.text_color {
-            element.set_text_brush(self.text_color);
+        if prev.text_brush != self.text_brush {
+            element.set_text_brush(self.text_brush.clone());
             changeflags.changed |= ChangeFlags::CHANGED.changed;
         }
         if prev.alignment != self.alignment {

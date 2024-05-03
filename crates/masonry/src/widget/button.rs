@@ -9,9 +9,10 @@ use vello::Scene;
 
 use crate::action::Action;
 use crate::paint_scene_helpers::{fill_lin_gradient, stroke, UnitPoint};
+use crate::text2::TextStorage;
 use crate::widget::{Label, WidgetMut, WidgetPod, WidgetRef};
 use crate::{
-    theme, ArcStr, BoxConstraints, EventCtx, Insets, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
+    theme, BoxConstraints, EventCtx, Insets, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
     PointerEvent, Size, StatusChange, TextEvent, Widget,
 };
 
@@ -23,11 +24,11 @@ const LABEL_INSETS: Insets = Insets::uniform_xy(8., 2.);
 /// A button with a text label.
 ///
 /// Emits [`Action::ButtonPressed`] when pressed.
-pub struct Button {
-    label: WidgetPod<Label>,
+pub struct Button<T: TextStorage> {
+    label: WidgetPod<Label<T>>,
 }
 
-impl Button {
+impl<T: TextStorage> Button<T> {
     /// Create a new button with a text label.
     ///
     /// # Examples
@@ -37,7 +38,7 @@ impl Button {
     ///
     /// let button = Button::new("Increment");
     /// ```
-    pub fn new(text: impl Into<ArcStr>) -> Button {
+    pub fn new(text: T) -> Button<T> {
         Button::from_label(Label::new(text))
     }
 
@@ -49,28 +50,28 @@ impl Button {
     /// use masonry::Color;
     /// use masonry::widget::{Button, Label};
     ///
-    /// let label = Label::new("Increment").with_text_color(Color::rgb(0.5, 0.5, 0.5));
+    /// let label = Label::new("Increment").with_text_brush(Color::rgb(0.5, 0.5, 0.5));
     /// let button = Button::from_label(label);
     /// ```
-    pub fn from_label(label: Label) -> Button {
+    pub fn from_label(label: Label<T>) -> Button<T> {
         Button {
             label: WidgetPod::new(label),
         }
     }
 }
 
-impl WidgetMut<'_, Button> {
+impl<T: TextStorage> WidgetMut<'_, Button<T>> {
     /// Set the text.
-    pub fn set_text(&mut self, new_text: impl Into<ArcStr>) {
-        self.label_mut().set_text(new_text.into());
+    pub fn set_text(&mut self, new_text: T) {
+        self.label_mut().set_text(new_text);
     }
 
-    pub fn label_mut(&mut self) -> WidgetMut<'_, Label> {
+    pub fn label_mut(&mut self) -> WidgetMut<'_, Label<T>> {
         self.ctx.get_mut(&mut self.widget.label)
     }
 }
 
-impl Widget for Button {
+impl<T: TextStorage> Widget for Button<T> {
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
         match event {
             PointerEvent::PointerDown(_, _) => {
@@ -181,7 +182,7 @@ impl Widget for Button {
     }
 
     fn get_debug_text(&self) -> Option<String> {
-        Some(self.label.as_ref().text().to_string())
+        Some(self.label.as_ref().text().as_str().to_string())
     }
 }
 
@@ -216,11 +217,10 @@ mod tests {
     #[test]
     fn edit_button() {
         let image_1 = {
-            let button = Button::from_label(
-                Label::new("The quick brown fox jumps over the lazy dog")
-                    .with_text_color(PRIMARY_LIGHT)
-                    .with_text_size(20.0),
-            );
+            let label = Label::new("The quick brown fox jumps over the lazy dog")
+                .with_text_brush(PRIMARY_LIGHT)
+                .with_text_size(20.0);
+            let button = Button::from_label(label);
 
             let mut harness = TestHarness::create_with_size(button, Size::new(50.0, 50.0));
 
@@ -233,12 +233,14 @@ mod tests {
             let mut harness = TestHarness::create_with_size(button, Size::new(50.0, 50.0));
 
             harness.edit_root_widget(|mut button| {
-                let mut button = button.downcast::<Button>().unwrap();
+                let mut button = button.downcast::<Button<&'static str>>().unwrap();
                 button.set_text("The quick brown fox jumps over the lazy dog");
 
                 let mut label = button.label_mut();
-                label.set_text_color(PRIMARY_LIGHT);
-                label.set_text_size(20.0);
+                label.set_text_properties(|props| {
+                    props.set_brush(PRIMARY_LIGHT);
+                    props.set_text_size(20.0);
+                });
             });
 
             harness.render()

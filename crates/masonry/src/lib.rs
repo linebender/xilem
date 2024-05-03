@@ -104,6 +104,7 @@ pub mod paint_scene_helpers;
 pub mod promise;
 pub mod render_root;
 pub mod testing;
+// mod text;
 pub mod text_helpers;
 pub mod theme;
 pub mod widget;
@@ -113,6 +114,7 @@ pub mod app_driver;
 pub mod debug_logger;
 pub mod debug_values;
 pub mod event_loop_runner;
+pub mod text2;
 
 pub use action::Action;
 pub use box_constraints::BoxConstraints;

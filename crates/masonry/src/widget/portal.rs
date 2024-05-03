@@ -397,7 +397,7 @@ mod tests {
     use crate::testing::{widget_ids, TestHarness};
     use crate::widget::{Button, Flex, SizedBox};
 
-    fn button(text: &str) -> impl Widget {
+    fn button(text: &'static str) -> impl Widget {
         SizedBox::new(Button::new(text)).width(70.0).height(40.0)
     }
 
