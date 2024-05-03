@@ -12,7 +12,6 @@ use vello::{
 use wgpu::PresentMode;
 use winit::{
     application::ApplicationHandler,
-    dpi::PhysicalPosition,
     event::{ElementState, Modifiers, MouseButton, MouseScrollDelta, WindowEvent},
     event_loop::{ActiveEventLoop, ControlFlow, EventLoop},
     window::{Window, WindowId},
@@ -170,8 +169,9 @@ impl<'a, T: Send + 'static, V: View<T> + 'static> MainState<'a, T, V> {
                 MouseScrollDelta::LineDelta(x, y) => {
                     ScrollDelta::Lines(x.trunc() as isize, y.trunc() as isize)
                 }
-                MouseScrollDelta::PixelDelta(PhysicalPosition { x, y }) => {
-                    ScrollDelta::Precise(Vec2::new(x, y) * (1.0 / self.window.scale_factor()))
+                MouseScrollDelta::PixelDelta(position) => {
+                    let logical_pos = position.to_logical(self.window.scale_factor());
+                    ScrollDelta::Precise(Vec2::new(logical_pos.x, logical_pos.y))
                 }
             })));
         self.window.request_redraw();

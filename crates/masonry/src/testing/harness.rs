@@ -13,7 +13,7 @@ use wgpu::{
     BufferDescriptor, BufferUsages, CommandEncoderDescriptor, Extent3d, ImageCopyBuffer,
     TextureDescriptor, TextureFormat, TextureUsages,
 };
-use winit::dpi::{PhysicalPosition, PhysicalSize};
+use winit::dpi::{LogicalPosition, PhysicalPosition, PhysicalSize};
 use winit::event::{Ime, MouseButton};
 
 use super::screenshots::get_image_diff;
@@ -174,7 +174,7 @@ impl TestHarness {
         let window_size = PhysicalSize::new(window_size.width as _, window_size.height as _);
 
         let mut harness = TestHarness {
-            render_root: RenderRoot::new(root_widget, WindowSizePolicy::User),
+            render_root: RenderRoot::new(root_widget, WindowSizePolicy::User, 1.0),
             mouse_state,
             window_size,
             background_color,
@@ -332,7 +332,10 @@ impl TestHarness {
         // FIXME - Account for scaling
         let pos = pos.into();
         let pos = PhysicalPosition::new(pos.x, pos.y);
-        self.mouse_state.position = dbg!(pos);
+        self.mouse_state.physical_position = dbg!(pos);
+        // TODO: may want to support testing with non-unity scale factors.
+        let scale_factor = 1.0;
+        self.mouse_state.position = pos.to_logical(scale_factor);
 
         self.process_pointer_event(PointerEvent::PointerMove(self.mouse_state.clone()));
     }
@@ -351,7 +354,7 @@ impl TestHarness {
 
     /// Send a Wheel event to the window
     pub fn mouse_wheel(&mut self, wheel_delta: Vec2) {
-        let pixel_delta = PhysicalPosition::new(wheel_delta.x, wheel_delta.y);
+        let pixel_delta = LogicalPosition::new(wheel_delta.x, wheel_delta.y);
         self.process_pointer_event(PointerEvent::MouseWheel(
             pixel_delta,
             self.mouse_state.clone(),
