@@ -41,5 +41,5 @@ pub fn main() {
         )
         .unwrap();
 
-    masonry::event_loop_runner::run(image, window, event_loop, Driver);
+    masonry::event_loop_runner::run(image, window, event_loop, Driver).unwrap();
 }
