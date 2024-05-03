@@ -5,15 +5,13 @@ description = "Common core of the Xilem Rust UI framework."
 keywords = ["xilem", "ui", "reactive", "performance"]
 categories = ["gui"]
 publish = false # Until it's ready
-license.workspace = true
 edition.workspace = true
-homepage.workspace = true
+license.workspace = true
 repository.workspace = true
+homepage.workspace = true
 
 [package.metadata.docs.rs]
 all-features = true
-rustdoc-args = ["--cfg", "docsrs"]
-default-target = "x86_64-pc-windows-msvc"
 # rustdoc-scrape-examples tracking issue https://github.com/rust-lang/rust/issues/88791
 cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
 
