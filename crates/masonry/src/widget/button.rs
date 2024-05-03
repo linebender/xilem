@@ -86,7 +86,7 @@ impl Widget for Button {
                     ctx.request_paint();
                     trace!("Button {:?} released", ctx.widget_id());
                 }
-                if ctx.is_active() && !ctx.is_hot() && !ctx.is_disabled() {
+                if ctx.is_active() && !ctx.is_hot() {
                     ctx.request_paint();
                 }
                 ctx.set_active(false);
