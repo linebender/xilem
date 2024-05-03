@@ -449,7 +449,7 @@ impl RenderRoot {
                 app_name: None,
                 toolkit_name: Some("Masonry".to_string()),
                 toolkit_version: Some(env!("CARGO_PKG_VERSION").to_string()),
-            });    
+            });
         }
 
         tree_update
