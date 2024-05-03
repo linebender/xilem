@@ -83,12 +83,9 @@ impl Widget for Button {
             PointerEvent::PointerUp(_, _) => {
                 if ctx.is_active() && ctx.is_hot() && !ctx.is_disabled() {
                     ctx.submit_action(Action::ButtonPressed);
-                    ctx.request_paint();
                     trace!("Button {:?} released", ctx.widget_id());
                 }
-                if ctx.is_active() && !ctx.is_hot() {
-                    ctx.request_paint();
-                }
+                ctx.request_paint();
                 ctx.set_active(false);
             }
             PointerEvent::PointerLeave(_) => {
