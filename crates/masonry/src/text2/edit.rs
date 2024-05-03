@@ -1,3 +1,6 @@
+// Copyright 2018 the Xilem Authors and the Druid Authors
+// SPDX-License-Identifier: Apache-2.0
+
 use std::ops::{Deref, DerefMut, Range};
 
 use kurbo::Point;

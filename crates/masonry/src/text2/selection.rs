@@ -1,6 +1,5 @@
-// This software is licensed under Apache License 2.0 and distributed on an
-// "as-is" basis without warranties of any kind. See the LICENSE file for
-// details.
+// Copyright 2018 the Xilem Authors and the Druid Authors and the Glazier Authors
+// SPDX-License-Identifier: Apache-2.0
 
 //! Traits for text editing and a basic String implementation.
 

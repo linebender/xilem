@@ -1,3 +1,6 @@
+// Copyright 2018 the Xilem Authors and the Druid Authors
+// SPDX-License-Identifier: Apache-2.0
+
 use std::ops::{Bound, Range, RangeBounds};
 
 /// Resolves a `RangeBounds` into a range in the range 0..len.

@@ -1,3 +1,6 @@
+// Copyright 2018 the Xilem Authors and the Druid Authors
+// SPDX-License-Identifier: Apache-2.0
+
 //! Support for text display and rendering
 //!
 //! There are three kinds of text commonly needed:
