@@ -23,7 +23,6 @@ use vello::{
 use wgpu::PresentMode;
 use winit::{
     application::ApplicationHandler,
-    dpi::PhysicalPosition,
     event::{ElementState, Modifiers, MouseButton, MouseScrollDelta, WindowEvent},
     event_loop::{ActiveEventLoop, ControlFlow, EventLoop},
     window::{Window, WindowId},
