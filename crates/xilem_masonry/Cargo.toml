@@ -1,19 +1,25 @@
 [package]
-name = "xilem_masonry"
+name = "xilem"
 version = "0.1.0"
+description = "A next-generation cross-platform Rust UI framework."
+keywords = ["gui", "ui", "native", "gpu", "performance"]
+categories = ["gui", "graphics", "internationalization", "accessibility"]
 edition.workspace = true
-homepage.workspace = true
-repository.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[package.metadata.docs.rs]
+all-features = true
+# rustdoc-scrape-examples tracking issue https://github.com/rust-lang/rust/issues/88791
+cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
+
+[lints]
+workspace = true
 
 [dependencies]
 masonry.workspace = true
 winit.workspace = true
-tracing = "0.1.40"
+tracing.workspace = true
 vello.workspace = true
-smallvec = "1.13.2"
-
-[lints]
-workspace = true
+smallvec.workspace = true

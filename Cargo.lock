@@ -1285,7 +1285,7 @@ dependencies = [
 
 [[package]]
 name = "masonry"
-version = "0.1.3"
+version = "0.2.0"
 dependencies = [
  "assert_matches",
  "float-cmp",
@@ -3142,6 +3142,17 @@ checksum = "a67300977d3dc3f8034dae89778f502b6ba20b269527b3223ba59c0cf393bb8a"
 name = "xilem"
 version = "0.1.0"
 dependencies = [
+ "masonry",
+ "smallvec",
+ "tracing",
+ "vello",
+ "winit",
+]
+
+[[package]]
+name = "xilem_classic"
+version = "0.1.0"
+dependencies = [
  "bitflags 2.5.0",
  "fnv",
  "futures-task",
@@ -3159,17 +3170,6 @@ dependencies = [
 [[package]]
 name = "xilem_core"
 version = "0.1.0"
-
-[[package]]
-name = "xilem_masonry"
-version = "0.1.0"
-dependencies = [
- "masonry",
- "smallvec",
- "tracing",
- "vello",
- "winit",
-]
 
 [[package]]
 name = "xilem_web"

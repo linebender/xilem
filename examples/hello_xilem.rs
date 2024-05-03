@@ -1,8 +1,8 @@
 // Copyright 2022 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use xilem::view::{button, h_stack, switch, v_stack};
-use xilem::{view::View, App, AppLauncher};
+use xilem_classic::view::{button, h_stack, switch, v_stack};
+use xilem_classic::{view::View, App, AppLauncher};
 
 fn app_logic(data: &mut AppData) -> impl View<AppData> {
     // here's some logic, deriving state for the view from our state

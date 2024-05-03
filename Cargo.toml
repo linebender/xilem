@@ -13,38 +13,43 @@ members = [
 
 [workspace.package]
 edition = "2021"
-homepage = "https://xilem.dev/"
-repository = "https://github.com/linebender/xilem"
 license = "Apache-2.0"
-
-[workspace.dependencies]
-xilem_core = { version = "0.1.0", path = "crates/xilem_core" }
-masonry = { version = "0.1.0", path = "crates/masonry" }
-kurbo = "0.11.0"
-winit = "0.30"
-parley = "0.1.0"
-vello = "0.1.0"
+repository = "https://github.com/linebender/xilem"
+homepage = "https://xilem.dev/"
 
 [workspace.lints]
 clippy.semicolon_if_nothing_returned = "warn"
 
+[workspace.dependencies]
+xilem_core = { version = "0.1.0", path = "crates/xilem_core" }
+masonry = { version = "0.2.0", path = "crates/masonry" }
+vello = "0.1.0"
+wgpu = "0.19.3"
+kurbo = "0.11.0"
+parley = "0.1.0"
+peniko = "0.1.0"
+winit = "0.30.0"
+tracing = "0.1.40"
+smallvec = "1.13.2"
+fnv = "1.0.7"
+instant = "0.1.6"
+bitflags = "2.0.0"
+
 [package]
-name = "xilem"
+name = "xilem_classic"
 version = "0.1.0"
 description = "A next-generation cross-platform Rust UI framework."
 keywords = ["gui", "ui", "native", "gpu", "performance"]
 categories = ["gui", "graphics", "internationalization", "accessibility"]
 exclude = ["/.github/"]
-publish = false                                                           # Until it's ready
-license.workspace = true
+publish = false # Classic Xilem is not for publishing
 edition.workspace = true
-homepage.workspace = true
+license.workspace = true
 repository.workspace = true
+homepage.workspace = true
 
 [package.metadata.docs.rs]
 all-features = true
-rustdoc-args = ["--cfg", "docsrs"]
-default-target = "x86_64-pc-windows-msvc"
 # rustdoc-scrape-examples tracking issue https://github.com/rust-lang/rust/issues/88791
 cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
 
@@ -60,14 +65,14 @@ taffy = ["dep:taffy"]
 
 [dependencies]
 xilem_core.workspace = true
-taffy = { version = "0.4.0", optional = true }
 vello.workspace = true
-wgpu = "0.19.3"
+wgpu.workspace = true
 parley.workspace = true
-tokio = { version = "1.35", features = ["full"] }
-futures-task = "0.3"
-bitflags = "2"
-tracing = "0.1.37"
-fnv = "1.0.7"
-instant = { version = "0.1.6", features = ["wasm-bindgen"] }
 winit.workspace = true
+bitflags.workspace = true
+tracing.workspace = true
+fnv.workspace = true
+instant = { workspace = true, features = ["wasm-bindgen"] }
+tokio = { version = "1.35", features = ["full"] }
+taffy = { version = "0.4.0", optional = true }
+futures-task = "0.3"

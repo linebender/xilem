@@ -1,7 +1,7 @@
 // Copyright 2023 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use xilem::{view::View, App, AppLauncher};
+use xilem_classic::{view::View, App, AppLauncher};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 struct AppState {
@@ -24,7 +24,7 @@ fn app_logic(state: &mut AppState) -> impl View<AppState> {
     use taffy::style::{AlignItems, FlexWrap, JustifyContent};
     use taffy::style_helpers::length;
     use vello::peniko::Color;
-    use xilem::view::{button, div, flex_column, flex_row, scroll_view};
+    use xilem_classic::view::{button, div, flex_column, flex_row, scroll_view};
 
     const COLORS: [Color; 4] = [
         Color::LIGHT_GREEN,
