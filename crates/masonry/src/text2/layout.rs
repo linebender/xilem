@@ -7,6 +7,7 @@
 use std::rc::Rc;
 
 use kurbo::{Affine, Line, Point, Rect, Size};
+use parley::context::RangedBuilder;
 use parley::fontique::{Style, Weight};
 use parley::layout::{Alignment, Cursor};
 use parley::style::{Brush as BrushTrait, FontFamily, FontStack, GenericFamily, StyleProperty};
@@ -336,7 +337,7 @@ impl<T: TextStorage> TextLayout<T> {
         self.assert_rebuilt("cursor_for_text_position");
 
         // TODO: As a reminder, `is_leading``
-        Cursor::from_position(&self.layout, text_pos, false)
+        Cursor::from_position(&self.layout, text_pos, true)
     }
 
     /// Given the utf-8 position of a character boundary in the underlying text,
@@ -414,6 +415,19 @@ impl<T: TextStorage> TextLayout<T> {
     /// A simple way to ensure this is correct is to always call this method
     /// as part of your widget's [`layout`][crate::Widget::layout] method.
     pub fn rebuild(&mut self, fcx: &mut FontContext) {
+        self.rebuild_with_attributes(fcx, |builder| builder);
+    }
+
+    /// Rebuild the inner layout as needed, adding attributes to the underlying layout.
+    ///
+    /// See [`Self::rebuild`] for more information
+    pub fn rebuild_with_attributes(
+        &mut self,
+        fcx: &mut FontContext,
+        attributes: impl for<'b> FnOnce(
+            RangedBuilder<'b, TextBrush, &'b str>,
+        ) -> RangedBuilder<'b, TextBrush, &'b str>,
+    ) {
         if self.needs_layout {
             self.needs_layout = false;
 
@@ -427,9 +441,9 @@ impl<T: TextStorage> TextLayout<T> {
             builder.push_default(&StyleProperty::FontStyle(self.style));
             // For more advanced features (e.g. variable font axes), these can be set in add_attributes
 
-            self.text
-                .add_attributes(builder)
-                .build_into(&mut self.layout);
+            let builder = self.text.add_attributes(builder);
+            let mut builder = attributes(builder);
+            builder.build_into(&mut self.layout);
 
             self.needs_line_breaks = true;
         }

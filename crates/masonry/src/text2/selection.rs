@@ -16,13 +16,14 @@ use winit::event::MouseButton;
 
 use crate::event::PointerState;
 
-use super::{TextLayout, TextStorage};
+use super::{TextBrush, TextLayout, TextStorage};
 
 pub struct TextWithSelection<T: Selectable> {
     pub layout: TextLayout<T>,
     /// The current selection within this widget
     // TODO: Allow multiple selections (i.e. by holding down control)
     pub selection: Option<Selection>,
+    highlight_brush: TextBrush,
     needs_selection_update: bool,
     selecting_with_mouse: bool,
     // TODO: Cache cursor line, selection boxes
@@ -37,6 +38,10 @@ impl<T: Selectable> TextWithSelection<T> {
             needs_selection_update: false,
             selecting_with_mouse: false,
             cursor_line: None,
+            highlight_brush: TextBrush::Highlight {
+                text: Color::WHITE.into(),
+                fill: Color::LIGHT_BLUE.into(),
+            },
         }
     }
 
@@ -119,11 +124,22 @@ impl<T: Selectable> TextWithSelection<T> {
 
     // Intentionally aliases the method on
     pub fn rebuild(&mut self, fcx: &mut FontContext) {
-        if self.layout.needs_rebuild() {
-            self.layout.rebuild(fcx);
-            self.needs_selection_update = true;
-        }
-        if self.needs_selection_update {
+        // In theory, we could be clever here and only rebuild the layout if the
+        // selected range was previously or currently non-zero size (i.e. there is a selected range)
+        if self.needs_selection_update || self.layout.needs_rebuild() {
+            self.layout.invalidate();
+            self.layout.rebuild_with_attributes(fcx, |mut builder| {
+                if let Some(selection) = self.selection {
+                    let range = selection.min()..selection.max();
+                    if !range.is_empty() {
+                        builder.push(
+                            &parley::style::StyleProperty::Brush(self.highlight_brush.clone()),
+                            range,
+                        );
+                    }
+                }
+                builder
+            });
             self.needs_selection_update = false;
         }
     }
@@ -131,15 +147,6 @@ impl<T: Selectable> TextWithSelection<T> {
     pub fn draw(&mut self, scene: &mut Scene, point: impl Into<Point>) {
         if let Some(selection) = self.selection {
             self.cursor_line = Some(self.layout.cursor_line_for_text_position(selection.active));
-            let anchor_cursor_line = self.layout.cursor_line_for_text_position(selection.anchor);
-            // TODO: Highlight the areas which are selected
-            scene.stroke(
-                &Stroke::new(1.),
-                Affine::IDENTITY,
-                &Brush::Solid(Color::YELLOW),
-                None,
-                &anchor_cursor_line,
-            );
         } else {
             self.cursor_line = None;
         }
