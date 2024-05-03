@@ -23,7 +23,7 @@ masonry = { version = "0.1.0", path = "crates/masonry" }
 kurbo = "0.11.0"
 winit = "0.30"
 parley = "0.1.0"
-vello = { git = "https://github.com/linebender/vello/", rev = "b520a35addfa6bbb37d93491d2b8236528faf3b5" }
+vello = "0.1.0"
 
 [workspace.lints]
 clippy.semicolon_if_nothing_returned = "warn"
