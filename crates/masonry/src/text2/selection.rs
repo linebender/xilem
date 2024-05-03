@@ -303,7 +303,7 @@ impl Selection {
         }
     }
 
-    /// Construct a new selection from this selection, with the provided h_pos.
+    /// Construct a new selection from this selection, with the provided `h_pos`.
     ///
     /// # Note
     ///
@@ -462,7 +462,7 @@ pub trait Selectable: Sized + TextStorage {
     fn is_empty(&self) -> bool;
 }
 
-/// A cursor with convenience functions for moving through EditableText.
+/// A cursor with convenience functions for moving through `EditableText`.
 pub trait EditableTextCursor {
     /// Set cursor position.
     fn set(&mut self, position: usize);
@@ -607,7 +607,7 @@ impl<Str: Deref<Target = str> + TextStorage> Selectable for Str {
     }
 }
 
-/// A cursor type that implements EditableTextCursor for string types
+/// A cursor type that implements `EditableTextCursor` for string types
 #[derive(Debug)]
 pub struct StringCursor<'a> {
     text: &'a str,

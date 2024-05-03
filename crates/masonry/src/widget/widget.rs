@@ -33,7 +33,7 @@ use crate::{
 ///
 /// Sometimes, you may want to construct a widget, in a way that lets you know its id,
 /// so you can refer to the widget later. You can use [`WidgetPod::new_with_id`](crate::WidgetPod::new_with_id) to pass
-/// an id to the WidgetPod you're creating; various widgets which have methods to create
+/// an id to the `WidgetPod` you're creating; various widgets which have methods to create
 /// children may have variants taking ids as parameters.
 ///
 /// If you set a `WidgetId` directly, you are responsible for ensuring that it
@@ -46,14 +46,15 @@ pub struct WidgetId(NonZeroU64);
 ///
 /// For details on how to implement this trait, see tutorial **(TODO)**
 ///
-/// Whenever external events affect the given widget, methods `[on_event]`,
-/// `[on_status_change]` and `[on_lifecycle]` are called. Later on, when the
-/// widget is laid out and displayed, methods `[layout]` and `[paint]` are called.
+/// Whenever external events affect the given widget, methods [`on_event`],
+/// [`on_status_change`](Self::on_status_change) and [`lifecycle`](Self::lifecycle)
+/// are called. Later on, when the widget is laid out and displayed, methods
+/// [`layout`](Self::layout) and [`paint`](Self::paint) are called.
 ///
 /// These trait methods are provided with a corresponding context. The widget can
 /// request things and cause actions by calling methods on that context.
 ///
-/// Widgets also have a `children()` method. Leaf widgets return an empty array,
+/// Widgets also have a [`children`](Self::children) method. Leaf widgets return an empty array,
 /// whereas container widgets return an array of [`WidgetRef`]. Container widgets
 /// have some validity invariants to maintain regarding their children. See TUTORIAL_2
 /// for details **(TODO)**.
@@ -61,7 +62,7 @@ pub struct WidgetId(NonZeroU64);
 /// Generally speaking, widgets aren't used directly. They are stored in
 /// [`WidgetPods`](crate::WidgetPod). Widget methods are called by WidgetPods, and the
 /// widget is mutated either during a method call (eg `on_event` or `lifecycle`) or
-/// through a [`WidgetMut`](crate::widget::WidgetMut). See tutorials for detail.
+/// through a [`WidgetMut`](crate::widget::WidgetMut). See tutorials for details.
 pub trait Widget: AsAny {
     /// Handle an event - usually user interaction.
     ///
@@ -132,7 +133,7 @@ pub trait Widget: AsAny {
 
     /// Return a small string representing important info about this widget instance.
     ///
-    /// When using [`WidgetRef`]'s [Debug](std::fmt::Debug) implementation, widgets
+    /// When using [`WidgetRef`]'s [`Debug`](std::fmt::Debug) implementation, widgets
     /// will be displayed as a tree of values. Widgets which return a non-null value in
     /// `get_debug_text` will appear with that text next to their type name. This can
     /// be eg a label's text, or whether a checkbox is checked.
@@ -177,7 +178,7 @@ pub trait Widget: AsAny {
     }
 
     // FIXME
-    /// Cast as Any.
+    /// Cast as `Any`.
     ///
     /// Mainly intended to be overridden in `Box<dyn Widget>`.
     #[doc(hidden)]
@@ -186,7 +187,7 @@ pub trait Widget: AsAny {
     }
 
     // FIXME
-    /// Cast as Any.
+    /// Cast as `Any`.
     ///
     /// Mainly intended to be overridden in `Box<dyn Widget>`.
     #[doc(hidden)]

@@ -144,7 +144,7 @@ pub enum LifeCycle {
     ///
     /// This should always be passed down to descendant [`WidgetPod`]s.
     ///
-    /// [`WidgetPod`]: struct.WidgetPod.html
+    /// [`WidgetPod`]: crate::WidgetPod
     Internal(InternalLifeCycle),
 }
 
@@ -153,8 +153,7 @@ pub enum LifeCycle {
 /// These events are translated into regular [`LifeCycle`] events
 /// and should not be used directly.
 ///
-/// [`WidgetPod`]: struct.WidgetPod.html
-/// [`LifeCycle`]: enum.LifeCycle.html
+/// [`WidgetPod`]: crate::WidgetPod
 #[derive(Debug, Clone)]
 pub enum InternalLifeCycle {
     /// Used to route the `WidgetAdded` event to the required widgets.
@@ -187,7 +186,7 @@ pub enum StatusChange {
     /// when the mouse moves over a widget, that widget will receive
     /// `StatusChange::HotChanged` before it receives `Event::MouseMove`.
     ///
-    /// See [`is_hot`](struct.EventCtx.html#method.is_hot) for
+    /// See [`is_hot`](crate::EventCtx::is_hot) for
     /// discussion about the hot status.
     HotChanged(bool),
 
@@ -199,7 +198,7 @@ pub enum StatusChange {
     ///
     /// See [`EventCtx::is_focused`] for more information about focus.
     ///
-    /// [`EventCtx::is_focused`]: struct.EventCtx.html#method.is_focused
+    /// [`EventCtx::is_focused`]: crate::EventCtx::is_focused
     FocusChanged(bool),
 }
 

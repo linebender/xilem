@@ -33,8 +33,8 @@ use crate::WidgetId;
 /// that, widgets will generally not interact with it directly,
 /// but it is an important part of the [`WidgetPod`] struct.
 ///
-/// [`paint`]: trait.Widget.html#tymethod.paint
-/// [`WidgetPod`]: struct.WidgetPod.html
+/// [`paint`]: crate::Widget::paint
+/// [`WidgetPod`]: crate::WidgetPod
 #[derive(Clone, Debug)]
 pub struct WidgetState {
     pub(crate) id: WidgetId,
@@ -67,7 +67,7 @@ pub struct WidgetState {
     // --- PASSES ---
 
     // TODO: consider using bitflags for the booleans.
-    /// A flag used to track and debug missing calls to place_child.
+    /// A flag used to track and debug missing calls to `place_child`.
     pub(crate) is_expecting_place_child_call: bool,
 
     // True until a WidgetAdded event is received.
@@ -99,7 +99,7 @@ pub struct WidgetState {
     /// The cursor that was set using one of the context methods.
     pub(crate) cursor_change: CursorChange,
     /// The result of merging up children cursors. This gets cleared when merging state up (unlike
-    /// cursor_change, which is persistent).
+    /// `cursor_change`, which is persistent).
     // TODO - Remove and handle in WidgetRoot instead
     pub(crate) cursor: Option<CursorIcon>,
 
@@ -241,7 +241,7 @@ impl WidgetState {
     }
 
     /// Because of how cursor merge logic works, we need to handle the leaf case;
-    /// in that case there will be nothing in the `cursor` field (as merge_up
+    /// in that case there will be nothing in the `cursor` field (as `merge_up`
     /// is never called) and so we need to also check the `cursor_change` field.
     fn take_cursor(&mut self) -> Option<CursorIcon> {
         self.cursor.take().or_else(|| self.cursor_change.cursor())
@@ -266,7 +266,7 @@ impl WidgetState {
         Rect::from_origin_size(self.origin, self.size)
     }
 
-    /// The [layout_rect](crate::WidgetPod::layout_rect) in window coordinates.
+    /// The [`layout_rect`](crate::WidgetPod::layout_rect) in window coordinates.
     ///
     /// This might not map to a visible area of the screen, eg if the widget is scrolled
     /// away.

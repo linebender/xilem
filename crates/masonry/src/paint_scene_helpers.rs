@@ -53,7 +53,7 @@ impl UnitPoint {
     /// `(1.0, 1.0)`
     pub const BOTTOM_RIGHT: UnitPoint = UnitPoint::new(1.0, 1.0);
 
-    /// Create a new UnitPoint.
+    /// Create a new `UnitPoint`.
     ///
     /// The `u` and `v` coordinates describe the point, with (0.0, 0.0) being
     /// the top-left, and (1.0, 1.0) being the bottom-right.
