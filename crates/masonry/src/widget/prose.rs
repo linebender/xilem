@@ -111,7 +111,7 @@ impl<T: Selectable> WidgetMut<'_, Prose<T>> {
         self.set_text_properties(|layout| layout.set_font(font_stack));
     }
     pub fn set_font_family(&mut self, family: FontFamily<'static>) {
-        self.set_font(FontStack::Single(family))
+        self.set_font(FontStack::Single(family));
     }
     pub fn set_line_break_mode(&mut self, line_break_mode: LineBreaking) {
         self.widget.line_break_mode = line_break_mode;
@@ -140,12 +140,10 @@ impl<T: Selectable> Widget for Prose<T> {
                 if !ctx.is_disabled() {
                     // TODO: Set cursor if over link
                     ctx.set_cursor(&winit::window::CursorIcon::Text);
-                    if ctx.is_active() {
-                        if self.text_layout.pointer_move(inner_origin, state) {
-                            // We might have changed text colours, so we need to re-request a layout
-                            ctx.request_layout();
-                            ctx.request_paint();
-                        }
+                    if ctx.is_active() && self.text_layout.pointer_move(inner_origin, state) {
+                        // We might have changed text colours, so we need to re-request a layout
+                        ctx.request_layout();
+                        ctx.request_paint();
                     }
                 }
             }
@@ -195,7 +193,7 @@ impl<T: Selectable> Widget for Prose<T> {
                 if self.show_disabled {
                     if *disabled {
                         self.text_layout
-                            .set_brush(crate::theme::DISABLED_TEXT_COLOR)
+                            .set_brush(crate::theme::DISABLED_TEXT_COLOR);
                     } else {
                         self.text_layout.set_brush(self.brush.clone());
                     }
@@ -205,7 +203,7 @@ impl<T: Selectable> Widget for Prose<T> {
             }
             LifeCycle::BuildFocusChain => {
                 if !self.text_layout.text().links().is_empty() {
-                    tracing::warn!("Links present in text, but not yet integrated")
+                    tracing::warn!("Links present in text, but not yet integrated");
                 }
             }
             _ => {}

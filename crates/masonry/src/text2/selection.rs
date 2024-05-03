@@ -218,7 +218,7 @@ impl<T: Selectable> TextWithSelection<T> {
                 &line,
             );
         }
-        self.layout.draw(scene, point)
+        self.layout.draw(scene, point);
     }
 }
 

@@ -116,6 +116,6 @@ pub fn render_text(
                     }),
                 );
         }
-        scene.append(&scratch_scene, None);
+        scene.append(scratch_scene, None);
     }
 }

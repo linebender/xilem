@@ -133,7 +133,7 @@ impl<T: TextStorage> WidgetMut<'_, Label<T>> {
         self.set_text_properties(|layout| layout.set_font(font_stack));
     }
     pub fn set_font_family(&mut self, family: FontFamily<'static>) {
-        self.set_font(FontStack::Single(family))
+        self.set_font(FontStack::Single(family));
     }
     pub fn set_line_break_mode(&mut self, line_break_mode: LineBreaking) {
         self.widget.line_break_mode = line_break_mode;
@@ -180,7 +180,7 @@ impl<T: TextStorage> Widget for Label<T> {
                 if self.show_disabled {
                     if *disabled {
                         self.text_layout
-                            .set_brush(crate::theme::DISABLED_TEXT_COLOR)
+                            .set_brush(crate::theme::DISABLED_TEXT_COLOR);
                     } else {
                         self.text_layout.set_brush(self.brush.clone());
                     }
@@ -190,7 +190,7 @@ impl<T: TextStorage> Widget for Label<T> {
             }
             LifeCycle::BuildFocusChain => {
                 if !self.text_layout.text().links().is_empty() {
-                    tracing::warn!("Links present in text, but not yet integrated")
+                    tracing::warn!("Links present in text, but not yet integrated");
                 }
             }
             _ => {}

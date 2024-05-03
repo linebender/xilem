@@ -50,7 +50,7 @@ impl<T: TextStorage> Button<T> {
     /// use masonry::Color;
     /// use masonry::widget::{Button, Label};
     ///
-    /// let label = Label::new("Increment").with_text_color(Color::rgb(0.5, 0.5, 0.5));
+    /// let label = Label::new("Increment").with_text_brush(Color::rgb(0.5, 0.5, 0.5));
     /// let button = Button::from_label(label);
     /// ```
     pub fn from_label(label: Label<T>) -> Button<T> {
@@ -240,7 +240,7 @@ mod tests {
                 label.set_text_properties(|props| {
                     props.set_brush(PRIMARY_LIGHT);
                     props.set_text_size(20.0);
-                })
+                });
             });
 
             harness.render()
