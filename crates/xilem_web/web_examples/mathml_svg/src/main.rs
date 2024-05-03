@@ -1,3 +1,6 @@
+// Copyright 2023 the Xilem Authors
+// SPDX-License-Identifier: Apache-2.0
+
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use xilem_web::{
     document_body, elements::html, elements::mathml as ml, elements::svg, interfaces::*, App,

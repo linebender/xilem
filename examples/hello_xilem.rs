@@ -1,3 +1,6 @@
+// Copyright 2022 the Xilem Authors and the Druid Authors
+// SPDX-License-Identifier: Apache-2.0
+
 use xilem::view::{button, h_stack, switch, v_stack};
 use xilem::{view::View, App, AppLauncher};
 

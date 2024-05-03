@@ -1,3 +1,6 @@
+// Copyright 2022 the Xilem Authors
+// SPDX-License-Identifier: Apache-2.0
+
 use vello::{
     kurbo::{self, Affine, Rect, Shape, Stroke},
     peniko::{BrushRef, Color, ColorStopsSource, Fill, Gradient},

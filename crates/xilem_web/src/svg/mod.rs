@@ -1,3 +1,6 @@
+// Copyright 2023 the Xilem Authors
+// SPDX-License-Identifier: Apache-2.0
+
 pub(crate) mod common_attrs;
 pub(crate) mod kurbo_shape;
 

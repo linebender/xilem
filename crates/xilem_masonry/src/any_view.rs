@@ -1,3 +1,6 @@
+// Copyright 2024 the Xilem Authors
+// SPDX-License-Identifier: Apache-2.0
+
 use std::{any::Any, ops::Deref};
 
 use masonry::widget::{WidgetMut, WidgetRef};

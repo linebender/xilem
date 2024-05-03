@@ -1,4 +1,4 @@
-// Copyright 2023 the Druid Authors.
+// Copyright 2023 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
 use xilem_web::{

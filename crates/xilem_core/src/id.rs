@@ -1,4 +1,4 @@
-// Copyright 2022 The Druid Authors.
+// Copyright 2022 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
 use std::{

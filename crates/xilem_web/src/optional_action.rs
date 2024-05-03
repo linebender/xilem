@@ -1,3 +1,6 @@
+// Copyright 2023 the Xilem Authors
+// SPDX-License-Identifier: Apache-2.0
+
 /// Implement this trait for types you want to use as actions.
 ///
 /// The trait exists because otherwise we couldn't provide versions

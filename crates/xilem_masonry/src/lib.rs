@@ -1,3 +1,6 @@
+// Copyright 2024 the Xilem Authors
+// SPDX-License-Identifier: Apache-2.0
+
 #![allow(clippy::comparison_chain)]
 use std::{any::Any, collections::HashMap};
 

@@ -1,3 +1,6 @@
+// Copyright 2022 the Xilem Authors
+// SPDX-License-Identifier: Apache-2.0
+
 extern crate core;
 
 mod app;

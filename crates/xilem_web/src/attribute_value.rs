@@ -1,3 +1,6 @@
+// Copyright 2023 the Xilem Authors
+// SPDX-License-Identifier: Apache-2.0
+
 type CowStr = std::borrow::Cow<'static, str>;
 
 #[derive(PartialEq, Clone, Debug, PartialOrd)]

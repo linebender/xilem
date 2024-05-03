@@ -1,3 +1,6 @@
+// Copyright 2022 the Xilem Authors and the Druid Authors
+// SPDX-License-Identifier: Apache-2.0
+
 use crate::widget::BoxConstraints;
 use std::ops::Range;
 use vello::kurbo::{Point, Rect, Size, Vec2};
