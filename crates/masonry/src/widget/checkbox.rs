@@ -226,7 +226,7 @@ mod tests {
             let checkbox = Checkbox::from_label(
                 true,
                 Label::new("The quick brown fox jumps over the lazy dog")
-                    .with_text_color(PRIMARY_LIGHT)
+                    .with_text_brush(PRIMARY_LIGHT)
                     .with_text_size(20.0),
             );
 
@@ -246,7 +246,7 @@ mod tests {
                 checkbox.set_text("The quick brown fox jumps over the lazy dog");
 
                 let mut label = checkbox.label_mut();
-                label.set_text_color(PRIMARY_LIGHT);
+                label.set_text_brush(PRIMARY_LIGHT);
                 label.set_text_size(20.0);
             });
 

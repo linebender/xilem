@@ -1,11 +1,11 @@
-use masonry::{widget::WidgetMut, ArcStr, WidgetPod};
+use masonry::{text2::TextBrush, widget::WidgetMut, ArcStr, WidgetPod};
 
 use crate::{ChangeFlags, Color, MasonryView, MessageResult, TextAlignment, ViewCx, ViewId};
 
 pub fn prose(label: impl Into<ArcStr>) -> Prose {
     Prose {
         label: label.into(),
-        text_color: Color::WHITE,
+        text_brush: Color::WHITE.into(),
         alignment: TextAlignment::default(),
         disabled: false,
     }
@@ -13,15 +13,16 @@ pub fn prose(label: impl Into<ArcStr>) -> Prose {
 
 pub struct Prose {
     label: ArcStr,
-    text_color: Color,
+    text_brush: TextBrush,
     alignment: TextAlignment,
     disabled: bool,
     // TODO: add more attributes of `masonry::widget::Label`
 }
 
 impl Prose {
-    pub fn color(mut self, color: Color) -> Self {
-        self.text_color = color;
+    #[doc(alias = "color")]
+    pub fn brush(mut self, color: impl Into<TextBrush>) -> Self {
+        self.text_brush = color.into();
         self
     }
 
@@ -43,7 +44,7 @@ impl<State, Action> MasonryView<State, Action> for Prose {
     fn build(&self, _cx: &mut ViewCx) -> (WidgetPod<Self::Element>, Self::ViewState) {
         let widget_pod = WidgetPod::new(
             masonry::widget::Prose::new(self.label.clone())
-                .with_text_color(self.text_color)
+                .with_text_brush(self.text_brush.clone())
                 .with_text_alignment(self.alignment),
         );
         (widget_pod, ())
@@ -66,8 +67,8 @@ impl<State, Action> MasonryView<State, Action> for Prose {
         //     element.set_disabled(self.disabled);
         //     changeflags.changed |= ChangeFlags::CHANGED.changed;
         // }
-        if prev.text_color != self.text_color {
-            element.set_text_color(self.text_color);
+        if prev.text_brush != self.text_brush {
+            element.set_text_brush(self.text_brush.clone());
             changeflags.changed |= ChangeFlags::CHANGED.changed;
         }
         if prev.alignment != self.alignment {

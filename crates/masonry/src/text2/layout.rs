@@ -9,9 +9,9 @@ use std::rc::Rc;
 use kurbo::{Affine, Line, Point, Rect, Size};
 use parley::fontique::{Style, Weight};
 use parley::layout::{Alignment, Cursor};
-use parley::style::{FontFamily, FontStack, GenericFamily, StyleProperty};
+use parley::style::{Brush as BrushTrait, FontFamily, FontStack, GenericFamily, StyleProperty};
 use parley::{FontContext, Layout, LayoutContext};
-use vello::peniko::{Brush, Color};
+use vello::peniko::{self, Color, Gradient};
 use vello::Scene;
 
 use super::{Link, TextStorage};
@@ -42,9 +42,7 @@ pub struct TextLayout<T> {
     // TODO: Find a way to let this use borrowed data
     scale: f32,
 
-    brush: Brush,
-    /// A brush used for handling disabled state without losing intentional state
-    override_brush: Option<Brush>,
+    brush: TextBrush,
     font: FontStack<'static>,
     text_size: f32,
     weight: Weight,
@@ -57,8 +55,47 @@ pub struct TextLayout<T> {
 
     needs_layout: bool,
     needs_line_breaks: bool,
-    layout: Layout<Brush>,
-    layout_context: LayoutContext<Brush>,
+    layout: Layout<TextBrush>,
+    layout_context: LayoutContext<TextBrush>,
+    scratch_scene: Scene,
+}
+
+/// A custom brush for `Parley`, enabling using Parley to pass-through
+/// which glyphs are selected/highlighted
+#[derive(Clone, Debug, PartialEq)]
+pub enum TextBrush {
+    Normal(peniko::Brush),
+    Highlight {
+        text: peniko::Brush,
+        fill: peniko::Brush,
+    },
+}
+
+impl BrushTrait for TextBrush {}
+
+impl From<peniko::Brush> for TextBrush {
+    fn from(value: peniko::Brush) -> Self {
+        Self::Normal(value)
+    }
+}
+
+impl From<Gradient> for TextBrush {
+    fn from(value: Gradient) -> Self {
+        Self::Normal(value.into())
+    }
+}
+
+impl From<Color> for TextBrush {
+    fn from(value: Color) -> Self {
+        Self::Normal(value.into())
+    }
+}
+
+// Parley requires their Brush implementations to implement Default
+impl Default for TextBrush {
+    fn default() -> Self {
+        Self::Normal(Default::default())
+    }
 }
 
 /// Metrics describing the layout text.
@@ -80,8 +117,7 @@ impl<T> TextLayout<T> {
             text,
             scale: 1.0,
 
-            brush: Brush::Solid(crate::theme::TEXT_COLOR),
-            override_brush: None,
+            brush: crate::theme::TEXT_COLOR.into(),
             font: FontStack::Single(FontFamily::Generic(GenericFamily::SansSerif)),
             text_size,
             weight: Weight::NORMAL,
@@ -96,6 +132,7 @@ impl<T> TextLayout<T> {
             needs_line_breaks: true,
             layout: Layout::new(),
             layout_context: LayoutContext::new(),
+            scratch_scene: Scene::new(),
         }
     }
 
@@ -117,29 +154,15 @@ impl<T> TextLayout<T> {
 
     /// Set the default brush used for the layout.
     ///
-    /// See also [`set_text_color`][Self::set_text_color]
-    /// for a convenience method when using a solid color.
-    pub fn set_brush(&mut self, brush: Brush) {
+    /// This is the non-layout impacting styling (primarily colour)
+    /// used when displaying the text
+    #[doc(alias = "set_color")]
+    pub fn set_brush(&mut self, brush: impl Into<TextBrush>) {
+        let brush = brush.into();
         if brush != self.brush {
             self.brush = brush;
             self.invalidate();
         }
-    }
-
-    /// Set the default brush used for the layout.
-    ///
-    /// See also [`set_text_color`][Self::set_text_color]
-    /// for a convenience method when using a solid color.
-    pub fn set_override_brush(&mut self, override_brush: Option<Brush>) {
-        if override_brush != self.override_brush {
-            self.override_brush = override_brush;
-            self.invalidate();
-        }
-    }
-
-    /// Set the default text color for this layout.
-    pub fn set_color(&mut self, color: Color) {
-        self.set_brush(Brush::Solid(color))
     }
 
     /// Set the default font stack.
@@ -255,7 +278,7 @@ impl<T: TextStorage> TextLayout<T> {
     }
 
     /// Returns the inner Parley [`Layout`] value.
-    pub fn layout(&self) -> &Layout<Brush> {
+    pub fn layout(&self) -> &Layout<TextBrush> {
         self.assert_rebuilt("layout");
         &self.layout
     }
@@ -428,11 +451,16 @@ impl<T: TextStorage> TextLayout<T> {
     ///
     /// You must call [`Self::rebuild`] at some point before you first
     /// call this method.
-    pub fn draw(&self, scene: &mut Scene, point: impl Into<Point>) {
+    pub fn draw(&mut self, scene: &mut Scene, point: impl Into<Point>) {
         self.assert_rebuilt("draw");
         // TODO: This translation doesn't seem great
         let p: Point = point.into();
-        crate::text_helpers::render_text(scene, Affine::translate((p.x, p.y)), &self.layout);
+        crate::text_helpers::render_text(
+            scene,
+            &mut self.scratch_scene,
+            Affine::translate((p.x, p.y)),
+            &self.layout,
+        );
     }
 }
 

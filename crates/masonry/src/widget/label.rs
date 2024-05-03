@@ -9,12 +9,12 @@ use parley::{
 use smallvec::SmallVec;
 use tracing::trace;
 use vello::{
-    peniko::{BlendMode, Brush, Color},
+    peniko::{BlendMode, Color},
     Scene,
 };
 
 use crate::{
-    text2::{TextLayout, TextStorage},
+    text2::{TextBrush, TextLayout, TextStorage},
     widget::WidgetRef,
     ArcStr, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, PointerEvent,
     StatusChange, TextEvent, Widget,
@@ -41,6 +41,7 @@ pub struct Label<T: TextStorage> {
     text_layout: TextLayout<T>,
     line_break_mode: LineBreaking,
     show_disabled: bool,
+    brush: TextBrush,
     // disabled: bool,
 }
 
@@ -51,6 +52,7 @@ impl<T: TextStorage> Label<T> {
             text_layout: TextLayout::new(text, crate::theme::TEXT_SIZE_NORMAL as f32),
             line_break_mode: LineBreaking::Overflow,
             show_disabled: true,
+            brush: crate::theme::TEXT_COLOR.into(),
         }
     }
 
@@ -58,8 +60,9 @@ impl<T: TextStorage> Label<T> {
         self.text_layout.text()
     }
 
-    pub fn with_text_color(mut self, color: Color) -> Self {
-        self.text_layout.set_color(color);
+    #[doc(alias = "with_text_color")]
+    pub fn with_text_brush(mut self, color: Color) -> Self {
+        self.text_layout.set_brush(color);
         self
     }
 
@@ -111,8 +114,14 @@ impl<T: TextStorage> WidgetMut<'_, Label<T>> {
         self.set_text_properties(|layout| layout.set_text(new_text));
     }
 
-    pub fn set_text_color(&mut self, color: Color) {
-        self.set_text_properties(|layout| layout.set_color(color));
+    #[doc(alias = "set_text_color")]
+    pub fn set_text_brush(&mut self, brush: impl Into<TextBrush>) {
+        let brush = brush.into();
+        self.widget.brush = brush;
+        if !self.ctx.is_disabled() {
+            let brush = self.widget.brush.clone();
+            self.set_text_properties(|layout| layout.set_brush(brush));
+        }
     }
     pub fn set_text_size(&mut self, size: f32) {
         self.set_text_properties(|layout| layout.set_text_size(size));
@@ -170,11 +179,10 @@ impl<T: TextStorage> Widget for Label<T> {
             LifeCycle::DisabledChanged(disabled) => {
                 if self.show_disabled {
                     if *disabled {
-                        self.text_layout.set_override_brush(Some(Brush::Solid(
-                            crate::theme::DISABLED_TEXT_COLOR,
-                        )))
+                        self.text_layout
+                            .set_brush(crate::theme::DISABLED_TEXT_COLOR)
                     } else {
-                        self.text_layout.set_override_brush(None)
+                        self.text_layout.set_brush(self.brush.clone());
                     }
                 }
                 // TODO: Parley seems to require a relayout when colours change
@@ -269,7 +277,7 @@ mod tests {
     #[test]
     fn styled_label() {
         let label = Label::new("The quick brown fox jumps over the lazy dog")
-            .with_text_color(PRIMARY_LIGHT)
+            .with_text_brush(PRIMARY_LIGHT)
             .with_font_family(FontFamily::Generic(GenericFamily::Monospace))
             .with_text_size(20.0)
             .with_line_break_mode(LineBreaking::WordWrap)
@@ -318,7 +326,7 @@ mod tests {
     fn edit_label() {
         let image_1 = {
             let label = Label::new("The quick brown fox jumps over the lazy dog")
-                .with_text_color(PRIMARY_LIGHT)
+                .with_text_brush(PRIMARY_LIGHT)
                 .with_font_family(FontFamily::Generic(GenericFamily::Monospace))
                 .with_text_size(20.0)
                 .with_line_break_mode(LineBreaking::WordWrap)
@@ -331,7 +339,7 @@ mod tests {
 
         let image_2 = {
             let label = Label::new("Hello world")
-                .with_text_color(PRIMARY_DARK)
+                .with_text_brush(PRIMARY_DARK)
                 .with_text_size(40.0);
 
             let mut harness = TestHarness::create_with_size(label, Size::new(50.0, 50.0));
@@ -339,7 +347,7 @@ mod tests {
             harness.edit_root_widget(|mut label| {
                 let mut label = label.downcast::<Label<&'static str>>().unwrap();
                 label.set_text("The quick brown fox jumps over the lazy dog");
-                label.set_text_color(PRIMARY_LIGHT);
+                label.set_text_brush(PRIMARY_LIGHT);
                 label.set_font_family(FontFamily::Generic(GenericFamily::Monospace));
                 label.set_text_size(20.0);
                 label.set_line_break_mode(LineBreaking::WordWrap);

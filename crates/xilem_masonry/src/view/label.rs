@@ -46,7 +46,7 @@ impl<State, Action> MasonryView<State, Action> for Label {
     fn build(&self, _cx: &mut ViewCx) -> (WidgetPod<Self::Element>, Self::ViewState) {
         let widget_pod = WidgetPod::new(
             masonry::widget::Label::new(self.label.clone())
-                .with_text_color(self.text_color)
+                .with_text_brush(self.text_color)
                 .with_text_alignment(self.alignment),
         );
         (widget_pod, ())
@@ -70,7 +70,7 @@ impl<State, Action> MasonryView<State, Action> for Label {
         //     changeflags.changed |= ChangeFlags::CHANGED.changed;
         // }
         if prev.text_color != self.text_color {
-            element.set_text_color(self.text_color);
+            element.set_text_brush(self.text_color);
             changeflags.changed |= ChangeFlags::CHANGED.changed;
         }
         if prev.alignment != self.alignment {

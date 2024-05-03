@@ -13,7 +13,7 @@ mod layout;
 mod selection;
 mod store;
 
-pub use layout::{LayoutMetrics, TextLayout};
+pub use layout::{LayoutMetrics, TextBrush, TextLayout};
 pub use selection::TextWithSelection;
 pub use selection::{len_utf8_from_first_byte, EditableTextCursor, Selectable, StringCursor};
 pub use store::{Link, TextStorage};

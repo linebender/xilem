@@ -157,6 +157,7 @@ impl RenderRoot {
         // TODO - if root widget's request_anim is still set by the
         // time this is called, emit a warning
         if self.root.state().needs_layout {
+            dbg!("Needs layout");
             self.root_layout();
         }
         if self.root.state().needs_layout {

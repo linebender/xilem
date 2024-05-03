@@ -5,13 +5,10 @@ use parley::{
 };
 use smallvec::SmallVec;
 use tracing::trace;
-use vello::{
-    peniko::{BlendMode, Brush, Color},
-    Scene,
-};
+use vello::{peniko::BlendMode, Scene};
 
 use crate::{
-    text2::{Selectable, TextWithSelection},
+    text2::{Selectable, TextBrush, TextWithSelection},
     widget::label::LABEL_X_PADDING,
     BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, PointerEvent,
     StatusChange, TextEvent, Widget,
@@ -29,6 +26,7 @@ pub struct Prose<T: Selectable> {
     text_layout: TextWithSelection<T>,
     line_break_mode: LineBreaking,
     show_disabled: bool,
+    brush: TextBrush,
 }
 
 impl<T: Selectable> Prose<T> {
@@ -37,6 +35,7 @@ impl<T: Selectable> Prose<T> {
             text_layout: TextWithSelection::new(text, crate::theme::TEXT_SIZE_NORMAL as f32),
             line_break_mode: LineBreaking::WordWrap,
             show_disabled: true,
+            brush: crate::theme::TEXT_COLOR.into(),
         }
     }
 
@@ -45,8 +44,10 @@ impl<T: Selectable> Prose<T> {
         self.text_layout.text()
     }
 
-    pub fn with_text_color(mut self, color: Color) -> Self {
-        self.text_layout.set_color(color);
+    #[doc(alias = "with_text_color")]
+    pub fn with_text_brush(mut self, brush: impl Into<TextBrush>) -> Self {
+        self.brush = brush.into();
+        self.text_layout.set_brush(self.brush.clone());
         self
     }
 
@@ -91,8 +92,14 @@ impl<T: Selectable> WidgetMut<'_, Prose<T>> {
         self.set_text_properties(|layout| layout.set_text(new_text));
     }
 
-    pub fn set_text_color(&mut self, color: Color) {
-        self.set_text_properties(|layout| layout.set_color(color));
+    #[doc(alias = "set_text_color")]
+    pub fn set_text_brush(&mut self, brush: impl Into<TextBrush>) {
+        let brush = brush.into();
+        self.widget.brush = brush;
+        if !self.ctx.is_disabled() {
+            let brush = self.widget.brush.clone();
+            self.set_text_properties(|layout| layout.set_brush(brush));
+        }
     }
     pub fn set_text_size(&mut self, size: f32) {
         self.set_text_properties(|layout| layout.set_text_size(size));
@@ -133,6 +140,8 @@ impl<T: Selectable> Widget for Prose<T> {
                 if !ctx.is_disabled() && ctx.is_active() {
                     // TODO: Set cursor if over link
                     if self.text_layout.pointer_move(inner_origin, state) {
+                        // We might have changed text colours, so we need to re-request a layout
+                        ctx.request_layout();
                         ctx.request_paint();
                     }
                 }
@@ -177,11 +186,10 @@ impl<T: Selectable> Widget for Prose<T> {
             LifeCycle::DisabledChanged(disabled) => {
                 if self.show_disabled {
                     if *disabled {
-                        self.text_layout.set_override_brush(Some(Brush::Solid(
-                            crate::theme::DISABLED_TEXT_COLOR,
-                        )))
+                        self.text_layout
+                            .set_brush(crate::theme::DISABLED_TEXT_COLOR)
                     } else {
-                        self.text_layout.set_override_brush(None)
+                        self.text_layout.set_brush(self.brush.clone());
                     }
                 }
                 // TODO: Parley seems to require a relayout when colours change
@@ -249,6 +257,6 @@ impl<T: Selectable> Widget for Prose<T> {
     }
 
     fn get_debug_text(&self) -> Option<String> {
-        Some(self.text_layout.text().as_str().to_string())
+        Some(self.text_layout.text().as_str().chars().take(100).collect())
     }
 }

@@ -772,6 +772,11 @@ impl<W: Widget> WidgetPod<W> {
     pub fn layout(&mut self, parent_ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
         let _span = self.inner.make_trace_span().entered();
 
+        eprintln!(
+            "Laying out {:?} {:?}",
+            self.id(),
+            self.widget().get_debug_text()
+        );
         // TODO #11
         parent_ctx
             .global_state

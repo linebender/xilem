@@ -218,7 +218,7 @@ mod tests {
     fn edit_button() {
         let image_1 = {
             let label = Label::new("The quick brown fox jumps over the lazy dog")
-                .with_text_color(PRIMARY_LIGHT)
+                .with_text_brush(PRIMARY_LIGHT)
                 .with_text_size(20.0);
             let button = Button::from_label(label);
 
@@ -238,7 +238,7 @@ mod tests {
 
                 let mut label = button.label_mut();
                 label.set_text_properties(|props| {
-                    props.set_color(PRIMARY_LIGHT);
+                    props.set_brush(PRIMARY_LIGHT);
                     props.set_text_size(20.0);
                 })
             });

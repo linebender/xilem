@@ -7,9 +7,10 @@
 use std::{ops::Deref, sync::Arc};
 
 use parley::context::RangedBuilder;
-use vello::peniko::Brush;
 
 use crate::ArcStr;
+
+use super::layout::TextBrush;
 
 #[derive(Copy, Clone)]
 // TODO(DJMcNab)
@@ -26,8 +27,8 @@ pub trait TextStorage: 'static {
     #[allow(unused_variables)]
     fn add_attributes<'b>(
         &self,
-        builder: RangedBuilder<'b, Brush, &'b str>,
-    ) -> RangedBuilder<'b, Brush, &'b str> {
+        builder: RangedBuilder<'b, TextBrush, &'b str>,
+    ) -> RangedBuilder<'b, TextBrush, &'b str> {
         builder
     }
 

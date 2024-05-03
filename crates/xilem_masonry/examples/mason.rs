@@ -4,6 +4,7 @@
 // On Windows platform, don't show a console when opening the app.
 #![windows_subsystem = "windows"]
 
+use masonry::text2::TextBrush;
 use xilem_masonry::view::{button, checkbox, flex, label, prose};
 use xilem_masonry::{Axis, BoxedMasonryView, Color, MasonryView, TextAlignment, Xilem};
 
@@ -32,22 +33,27 @@ fn app_logic(data: &mut AppData) -> impl MasonryView<AppData> {
         .map(|x| button(format!("+{x}"), move |data: &mut AppData| data.count += x))
         .collect::<Vec<_>>();
     flex((
-        flex((
-            label("Label")
-                .color(Color::REBECCA_PURPLE)
-                .alignment(TextAlignment::Start),
-            label("Disabled label").disabled(),
-        ))
-        .direction(Axis::Horizontal),
-        prose(LOREM).alignment(TextAlignment::Middle),
-        button(button_label, |data: &mut AppData| data.count += 1),
-        checkbox("Check me", data.active, |data: &mut AppData, checked| {
-            data.active = checked;
-        }),
-        toggleable(data),
-        button("Decrement", |data: &mut AppData| data.count -= 1),
-        button("Reset", |data: &mut AppData| data.count = 0),
-        flex(sequence).direction(axis),
+        // flex((
+        //     label("Label")
+        //         .color(Color::REBECCA_PURPLE)
+        //         .alignment(TextAlignment::Start),
+        //     label("Disabled label").disabled(),
+        // ))
+        // .direction(Axis::Horizontal),
+        prose(LOREM)
+            .alignment(TextAlignment::Middle)
+            .brush(TextBrush::Highlight {
+                text: masonry::theme::TEXT_COLOR.into(),
+                fill: masonry::theme::PLACEHOLDER_COLOR.into(),
+            }),
+        // button(button_label, |data: &mut AppData| data.count += 1),
+        // checkbox("Check me", data.active, |data: &mut AppData, checked| {
+        //     data.active = checked;
+        // }),
+        // toggleable(data),
+        // button("Decrement", |data: &mut AppData| data.count -= 1),
+        // button("Reset", |data: &mut AppData| data.count = 0),
+        // flex(sequence).direction(axis),
     ))
 }
 
