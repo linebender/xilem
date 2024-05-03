@@ -92,6 +92,7 @@ pub struct AccessCtx<'a> {
     pub(crate) widget_state: &'a WidgetState,
     pub(crate) tree_update: &'a mut TreeUpdate,
     pub(crate) current_node: NodeBuilder,
+    pub(crate) rebuild_all: bool,
 }
 
 pub struct WorkerCtx<'a> {

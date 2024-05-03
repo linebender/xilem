@@ -1015,8 +1015,9 @@ impl<W: Widget> WidgetPod<W> {
         self.check_initialized("accessibility");
 
         // If this widget or a child has requested an accessibility update,
+        // or if AccessKit has requested a full rebuild,
         // we call the accessibility method on this widget.
-        if self.state.request_accessibility_update {
+        if parent_ctx.rebuild_all || self.state.request_accessibility_update {
             trace!(
                 "Building accessibility node for widget '{}' #{}",
                 self.inner.short_type_name(),
@@ -1030,6 +1031,7 @@ impl<W: Widget> WidgetPod<W> {
                     widget_state: &mut widget_pod.state,
                     tree_update: parent_ctx.tree_update,
                     current_node,
+                    rebuild_all: parent_ctx.rebuild_all,
                 };
                 widget_pod.inner.accessibility(&mut inner_ctx);
 

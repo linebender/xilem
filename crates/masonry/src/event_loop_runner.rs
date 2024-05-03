@@ -231,14 +231,16 @@ impl ApplicationHandler<accesskit_winit::Event> for MainState<'_> {
         }
 
         self.accesskit_adapter
-            .update_if_active(|| self.render_root.init_access_tree());
+            .update_if_active(|| self.render_root.root_accessibility(false));
     }
 
     fn user_event(&mut self, _event_loop: &ActiveEventLoop, event: accesskit_winit::Event) {
         match event.window_event {
+            // Note that this event can be called at any time, even multiple times if
+            // the user restarts their screen reader.
             accesskit_winit::WindowEvent::InitialTreeRequested => {
                 self.accesskit_adapter
-                    .update_if_active(|| self.render_root.init_access_tree());
+                    .update_if_active(|| self.render_root.root_accessibility(true));
             }
             accesskit_winit::WindowEvent::ActionRequested(action_request) => {
                 self.render_root.root_on_access_event(action_request);

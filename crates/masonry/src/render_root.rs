@@ -423,7 +423,7 @@ impl RenderRoot {
     }
 
     // TODO - Integrate in unit tests?
-    pub fn root_accessibility(&mut self) -> TreeUpdate {
+    pub fn root_accessibility(&mut self, rebuild_all: bool) -> TreeUpdate {
         let mut tree_update = TreeUpdate {
             nodes: vec![],
             tree: None,
@@ -436,25 +436,22 @@ impl RenderRoot {
             widget_state: &mut widget_state,
             tree_update: &mut tree_update,
             current_node: NodeBuilder::default(),
+            rebuild_all,
         };
 
         // TODO - tree_update.tree
 
         self.root.accessibility(&mut ctx);
 
-        tree_update
-    }
+        if rebuild_all {
+            tree_update.tree = Some(Tree {
+                root: self.root.id().into(),
+                app_name: None,
+                toolkit_name: Some("Masonry".to_string()),
+                toolkit_version: Some(env!("CARGO_PKG_VERSION").to_string()),
+            });    
+        }
 
-    pub fn init_access_tree(&mut self) -> TreeUpdate {
-        self.root.state.needs_accessibility_update = true;
-        self.root.state.request_accessibility_update = true;
-        let mut tree_update = self.root_accessibility();
-        tree_update.tree = Some(Tree {
-            root: self.root.id().into(),
-            app_name: None,
-            toolkit_name: Some("Masonry".to_string()),
-            toolkit_version: Some(env!("CARGO_PKG_VERSION").to_string()),
-        });
         tree_update
     }
 
