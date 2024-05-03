@@ -464,8 +464,8 @@ impl RenderRoot {
         // Only send RouteFocusChanged in case there's actual change
         if old != new {
             let event = LifeCycle::Internal(InternalLifeCycle::RouteFocusChanged { old, new });
-            self.root_lifecycle(event);
             self.state.focused_widget = new;
+            self.root_lifecycle(event);
 
             // TODO - Handle IME
             // Send TextFieldFocused(focused_widget) signal
