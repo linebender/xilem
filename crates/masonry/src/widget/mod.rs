@@ -25,6 +25,7 @@ mod scroll_bar;
 mod sized_box;
 mod spinner;
 mod split;
+mod textbox;
 
 pub use self::image::Image;
 pub use align::Align;
@@ -38,6 +39,7 @@ pub use scroll_bar::ScrollBar;
 pub use sized_box::SizedBox;
 pub use spinner::Spinner;
 pub use split::Split;
+pub use textbox::Textbox;
 pub use widget_mut::WidgetMut;
 pub use widget_pod::WidgetPod;
 pub use widget_ref::WidgetRef;

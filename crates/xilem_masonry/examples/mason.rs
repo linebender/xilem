@@ -4,7 +4,7 @@
 // On Windows platform, don't show a console when opening the app.
 #![windows_subsystem = "windows"]
 
-use xilem_masonry::view::{button, checkbox, flex, label, prose};
+use xilem_masonry::view::{button, checkbox, flex, label, prose, textbox};
 use xilem_masonry::{Axis, BoxedMasonryView, Color, MasonryView, TextAlignment, Xilem};
 
 const LOREM: &str = r"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi cursus mi sed euismod euismod. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Nullam placerat efficitur tellus at semper. Morbi ac risus magna. Donec ut cursus ex. Etiam quis posuere tellus. Mauris posuere dui et turpis mollis, vitae luctus tellus consectetur. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur eu facilisis nisl.
@@ -39,6 +39,7 @@ fn app_logic(data: &mut AppData) -> impl MasonryView<AppData> {
             label("Disabled label").disabled(),
         ))
         .direction(Axis::Horizontal),
+        textbox(),
         prose(LOREM).alignment(TextAlignment::Middle),
         button(button_label, |data: &mut AppData| data.count += 1),
         checkbox("Check me", data.active, |data: &mut AppData, checked| {

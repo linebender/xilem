@@ -163,10 +163,15 @@ impl<T: Selectable> Widget for Prose<T> {
         }
     }
 
-    fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {
+    fn on_text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent) {
         // If focused on a link and enter pressed, follow it?
-        // TODO: This sure looks like each link needs its own widget, although I guess the challenge there is
-        // that the bounding boxes can go e.g. across line boundaries?
+        let result = self.text_layout.text_event(event);
+        if result.is_handled() {
+            ctx.set_handled();
+            // TODO: only some handlers need this repaint
+            ctx.request_layout();
+            ctx.request_paint();
+        }
     }
 
     #[allow(missing_docs)]

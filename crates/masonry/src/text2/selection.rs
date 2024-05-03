@@ -13,8 +13,11 @@ use unicode_segmentation::{GraphemeCursor, UnicodeSegmentation};
 use vello::peniko::{Brush, Color};
 use vello::Scene;
 use winit::event::MouseButton;
+use winit::keyboard::NamedKey;
+use winit::platform::modifier_supplement::KeyEventExtModifierSupplement;
 
 use crate::event::PointerState;
+use crate::{Handled, TextEvent};
 
 use super::{TextBrush, TextLayout, TextStorage};
 
@@ -115,6 +118,60 @@ impl<T: Selectable> TextWithSelection<T> {
         }
     }
 
+    pub fn text_event(&mut self, event: &TextEvent) -> Handled {
+        match event {
+            TextEvent::KeyboardKey(key, mods) if key.state.is_pressed() => {
+                match key.key_without_modifiers() {
+                    winit::keyboard::Key::Named(NamedKey::ArrowLeft) if mods.shift_key() => {
+                        // TODO: Expand selection
+                        Handled::Yes
+                    }
+                    winit::keyboard::Key::Named(_) => Handled::No,
+                    winit::keyboard::Key::Character(chr) => match &*chr {
+                        "a" if mods.control_key() || /* macOS, yes this is a hack */ mods.super_key() =>
+                        {
+                            self.selection =
+                                Some(Selection::new(0, self.text().len(), Affinity::Downstream));
+                            self.needs_selection_update = true;
+                            Handled::Yes
+                        }
+                        "c" if mods.control_key() || mods.super_key() => {
+                            match &self.selection {
+                                Some(selection) => {
+                                    // TODO: We know this is not the fullest model of copy-paste, and that we should work with the inner text
+                                    // e.g. to put HTML code if supported by the rich text kind
+                                    if let Some(text) =
+                                        self.text().slice(selection.min()..selection.max())
+                                    {
+                                        println!(r#"Copying "{text}""#);
+                                    } else {
+                                        debug_panic!("Had invalid selection");
+                                    }
+                                }
+                                None => debug_panic!("Got text input event whilst not focused"),
+                            }
+                            Handled::Yes
+                        }
+                        _ => Handled::No,
+                    },
+                    winit::keyboard::Key::Unidentified(_) => todo!(),
+                    winit::keyboard::Key::Dead(_) => todo!(),
+                }
+            }
+            TextEvent::KeyboardKey(_, _) => Handled::No,
+            TextEvent::Ime(_) => Handled::No,
+            TextEvent::ModifierChange(_) => {
+                // TODO: What does it mean to "handle" this change?
+                Handled::No
+            }
+            TextEvent::FocusChange(_) => {
+                // TODO: What does it mean to "handle" this change
+                // TODO: Set our highlighting colour to a lighter blue if window unfocused
+                Handled::No
+            }
+        }
+    }
+
     /// Call when another widget becomes focused
     pub fn focus_lost(&mut self) {
         self.selection = None;
@@ -145,15 +202,17 @@ impl<T: Selectable> TextWithSelection<T> {
     }
 
     pub fn draw(&mut self, scene: &mut Scene, point: impl Into<Point>) {
+        // TODO: Calculate the location for this in layout lazily?
         if let Some(selection) = self.selection {
             self.cursor_line = Some(self.layout.cursor_line_for_text_position(selection.active));
         } else {
             self.cursor_line = None;
         }
+        let point: Point = point.into();
         if let Some(line) = self.cursor_line {
             scene.stroke(
                 &Stroke::new(2.),
-                Affine::IDENTITY,
+                Affine::translate((point.x, point.y)),
                 &Brush::Solid(Color::WHITE),
                 None,
                 &line,
@@ -335,6 +394,11 @@ impl Selection {
 ///
 /// Note that in scenarios where soft line breaks interact with bidi text, this gets
 /// more complicated.
+///
+/// This also has an impact on rich text editing.
+/// For example, if the cursor is in a region like `a|1`, where `a` is bold and `1` is not.
+/// When editing, if we came from the start of the string, we should assume that the next
+/// character will be bold, from the right italic.
 #[derive(Copy, Clone, Debug, Hash, PartialEq)]
 pub enum Affinity {
     /// The position which has an apparent position "earlier" in the text.

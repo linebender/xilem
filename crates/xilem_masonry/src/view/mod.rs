@@ -15,3 +15,6 @@ pub use label::*;
 
 mod prose;
 pub use prose::*;
+
+mod textbox;
+pub use textbox::*;

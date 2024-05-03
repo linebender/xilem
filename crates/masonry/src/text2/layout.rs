@@ -321,6 +321,10 @@ impl<T: TextStorage> TextLayout<T> {
     /// This is not meaningful until [`Self::rebuild`] has been called.
     pub fn cursor_for_point(&self, point: Point) -> Cursor {
         self.assert_rebuilt("text_position_for_point");
+
+        // TODO: This is a mostly good first pass, but doesn't handle cursor positions in
+        // grapheme clusters within a parley cluster.
+        // We can also try
         Cursor::from_point(&self.layout, point.x as f32, point.y as f32)
     }
 
@@ -341,6 +345,7 @@ impl<T: TextStorage> TextLayout<T> {
         // e.g. to handle a inside a ligature made of multiple (unicode) grapheme clusters
         // https://raphlinus.github.io/text/2020/10/26/text-layout.html#shaping-cluster
         // But we're choosing to defer this work
+        // This also needs to handle affinity.
         Cursor::from_position(&self.layout, text_pos, true)
     }
 
