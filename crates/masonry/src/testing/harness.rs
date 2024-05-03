@@ -20,6 +20,7 @@ use super::screenshots::get_image_diff;
 use super::snapshot_utils::get_cargo_workspace;
 use crate::action::Action;
 use crate::event::{PointerEvent, PointerState, TextEvent, WindowEvent};
+use crate::event_loop_runner::try_init_tracing;
 use crate::render_root::{RenderRoot, RenderRootSignal, WindowSizePolicy};
 use crate::widget::{WidgetMut, WidgetRef};
 use crate::{Color, Handled, Point, Size, Vec2, Widget, WidgetId};
@@ -172,6 +173,13 @@ impl TestHarness {
     ) -> Self {
         let mouse_state = PointerState::empty();
         let window_size = PhysicalSize::new(window_size.width as _, window_size.height as _);
+
+        // If there is no default tracing subscriber, we set our own. If one has
+        // already been set, we get an error which we swallow.
+        // Having a default subscriber is helpful for tests; swallowing errors means
+        // we don't panic if the user has already set one, or a test creates multiple
+        // harnesses.
+        let _ = try_init_tracing();
 
         let mut harness = TestHarness {
             render_root: RenderRoot::new(root_widget, WindowSizePolicy::User, 1.0),

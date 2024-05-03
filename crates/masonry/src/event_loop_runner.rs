@@ -4,6 +4,7 @@
 use std::num::NonZeroUsize;
 use std::sync::Arc;
 
+use tracing::subscriber::SetGlobalDefaultError;
 use tracing::warn;
 use vello::kurbo::Affine;
 use vello::util::{RenderContext, RenderSurface};
@@ -11,6 +12,7 @@ use vello::{peniko::Color, AaSupport, RenderParams, Renderer, RendererOptions, S
 use wgpu::PresentMode;
 use winit::application::ApplicationHandler;
 use winit::dpi::LogicalPosition;
+use winit::error::EventLoopError;
 use winit::event::WindowEvent as WinitWindowEvent;
 use winit::event_loop::{ActiveEventLoop, EventLoop};
 use winit::window::{Window, WindowId};
@@ -35,7 +37,7 @@ pub fn run(
     window: Window,
     event_loop: EventLoop<()>,
     app_driver: impl AppDriver + 'static,
-) {
+) -> Result<(), EventLoopError> {
     let window = Arc::new(window);
     let mut render_cx = RenderContext::new().unwrap();
     let size = window.inner_size();
@@ -57,13 +59,20 @@ pub fn run(
         app_driver: Box::new(app_driver),
     };
 
-    let _ = event_loop.run_app(&mut main_state);
+    // If there is no default tracing subscriber, we set our own. If one has
+    // already been set, we get an error which we swallow.
+    // By now, we're about to take control of the event loop. The user is unlikely
+    // to try to set their own subscriber once the event loop has started.
+    let _ = try_init_tracing();
+
+    event_loop.run_app(&mut main_state)
 }
 
 impl ApplicationHandler for MainState<'_> {
     fn resumed(&mut self, _event_loop: &ActiveEventLoop) {
         // FIXME: initialize window in this handler because initializing it before running the event loop is deprecated
     }
+
     fn window_event(&mut self, event_loop: &ActiveEventLoop, _: WindowId, event: WinitWindowEvent) {
         match event {
             WinitWindowEvent::RedrawRequested => {
@@ -247,5 +256,47 @@ impl MainState<'_> {
             .expect("failed to render to surface");
         surface_texture.present();
         device.poll(wgpu::Maintain::Wait);
+    }
+}
+
+pub(crate) fn try_init_tracing() -> Result<(), SetGlobalDefaultError> {
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        use tracing_subscriber::filter::LevelFilter;
+        use tracing_subscriber::prelude::*;
+        let filter_layer = if cfg!(debug_assertions) {
+            LevelFilter::DEBUG
+        } else {
+            LevelFilter::INFO
+        };
+        let fmt_layer = tracing_subscriber::fmt::layer()
+            // Display target (eg "my_crate::some_mod::submod") with logs
+            .with_target(true);
+
+        let registry = tracing_subscriber::registry()
+            .with(filter_layer)
+            .with(fmt_layer);
+        tracing::dispatcher::set_global_default(registry.into())
+    }
+
+    // Note - tracing-wasm might not work in headless Node.js. Probably doesn't matter anyway,
+    // because this is a GUI framework, so wasm targets will virtually always be browsers.
+    #[cfg(target_arch = "wasm32")]
+    {
+        // Ignored if the panic hook is already set
+        console_error_panic_hook::set_once();
+
+        let max_level = if cfg!(debug_assertions) {
+            tracing::Level::DEBUG
+        } else {
+            tracing::Level::INFO
+        };
+        let config = tracing_wasm::WASMLayerConfigBuilder::new()
+            .set_max_level(max_level)
+            .build();
+
+        tracing::subscriber::set_global_default(
+            Registry::default().with(tracing_wasm::WASMLayer::new(config)),
+        )
     }
 }

@@ -358,5 +358,5 @@ pub fn main() {
         in_num: false,
     };
 
-    masonry::event_loop_runner::run(build_calc(), window, event_loop, calc_state);
+    masonry::event_loop_runner::run(build_calc(), window, event_loop, calc_state).unwrap();
 }

@@ -196,8 +196,7 @@ where
         Logic: 'static,
         View: 'static,
     {
-        event_loop_runner::run(self.root_widget, window, event_loop, self.driver);
-        Ok(())
+        event_loop_runner::run(self.root_widget, window, event_loop, self.driver)
     }
 }
 pub trait MasonryView<State, Action = ()>: Send + 'static {

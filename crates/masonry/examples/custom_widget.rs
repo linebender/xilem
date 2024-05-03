@@ -143,7 +143,7 @@ pub fn main() {
         .create_window(Window::default_attributes().with_title("Fancy colots"))
         .unwrap();
 
-    masonry::event_loop_runner::run(CustomWidget(my_string), window, event_loop, Driver);
+    masonry::event_loop_runner::run(CustomWidget(my_string), window, event_loop, Driver).unwrap();
 }
 
 fn make_image_data(width: usize, height: usize) -> Vec<u8> {
