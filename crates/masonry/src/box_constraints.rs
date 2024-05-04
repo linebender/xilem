@@ -18,9 +18,9 @@ use crate::kurbo::Size;
 /// The constraints are always [rounded away from zero] to integers
 /// to enable pixel perfect layout.
 ///
-/// [`layout`]: trait.Widget.html#tymethod.layout
+/// [`layout`]: crate::widget::Widget::layout
 /// [Flutter BoxConstraints]: https://api.flutter.dev/flutter/rendering/BoxConstraints-class.html
-/// [rounded away from zero]: struct.Size.html#method.expand
+/// [rounded away from zero]: Size::expand
 #[derive(Clone, Copy, Debug)]
 pub struct BoxConstraints {
     min: Size,
@@ -43,7 +43,7 @@ impl BoxConstraints {
     /// The given sizes are also [rounded away from zero],
     /// so that the layout is aligned to integers.
     ///
-    /// [rounded away from zero]: struct.Size.html#method.expand
+    /// [rounded away from zero]: Size::expand
     pub fn new(min: Size, max: Size) -> BoxConstraints {
         BoxConstraints {
             min: min.expand(),
@@ -58,7 +58,7 @@ impl BoxConstraints {
     /// The given size is also [rounded away from zero],
     /// so that the layout is aligned to integers.
     ///
-    /// [rounded away from zero]: struct.Size.html#method.expand
+    /// [rounded away from zero]: Size::expand
     pub fn tight(size: Size) -> BoxConstraints {
         let size = size.expand();
         BoxConstraints {
@@ -82,7 +82,7 @@ impl BoxConstraints {
     /// The given size is also [rounded away from zero],
     /// so that the layout is aligned to integers.
     ///
-    /// [rounded away from zero]: struct.Size.html#method.expand
+    /// [rounded away from zero]: Size::expand
     pub fn constrain(&self, size: impl Into<Size>) -> Size {
         size.into().expand().clamp(self.min, self.max)
     }
@@ -109,7 +109,7 @@ impl BoxConstraints {
 
     /// Check to see if these constraints are legit.
     ///
-    /// In Debug mode, logs a warning if BoxConstraints are invalid.
+    /// In Debug mode, logs a warning if `BoxConstraints` are invalid.
     pub fn debug_check(&self, name: &str) {
         if cfg!(not(debug_assertions)) {
             return;
@@ -140,7 +140,7 @@ impl BoxConstraints {
     /// The given size is also [rounded away from zero],
     /// so that the layout is aligned to integers.
     ///
-    /// [rounded away from zero]: struct.Size.html#method.expand
+    /// [rounded away from zero]: Size::expand
     pub fn shrink(&self, diff: impl Into<Size>) -> BoxConstraints {
         let diff = diff.into().expand();
         let min = Size::new(

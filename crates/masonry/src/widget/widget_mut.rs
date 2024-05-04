@@ -17,12 +17,12 @@ use crate::Widget;
 /// [`EventCtx`](crate::EventCtx), [`LifeCycleCtx`](crate::LifeCycleCtx) or from a parent
 /// `WidgetMut` with [`WidgetCtx`](crate::WidgetCtx).
 ///
-/// `WidgetMut` implements [`Deref`] with `W::Mut` as target.
+/// `WidgetMut` implements [`Deref`](std::ops::Deref) with `W::Mut` as target.
 ///
-/// ## WidgetMut as a Receiver
+/// ## `WidgetMut` as a Receiver
 ///
-/// Once the Receiver trait is stabilized, WidgetMut will implement it so that custom
-/// widgets in downstream crates can use WidgetMut as the receiver for inherent methods.
+/// Once the Receiver trait is stabilized, `WidgetMut` will implement it so that custom
+/// widgets in downstream crates can use `WidgetMut` as the receiver for inherent methods.
 pub struct WidgetMut<'a, W: Widget> {
     pub ctx: WidgetCtx<'a>,
     pub widget: &'a mut W,

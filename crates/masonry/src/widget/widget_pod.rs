@@ -102,8 +102,7 @@ impl<W: Widget> WidgetPod<W> {
 
     /// Query the "hot" state of the widget.
     ///
-    /// See [`EventCtx::is_hot`](struct.EventCtx.html#method.is_hot) for
-    /// additional information.
+    /// See [`EventCtx::is_hot`] for additional information.
     pub fn is_hot(&self) -> bool {
         self.state.is_hot
     }
@@ -123,8 +122,6 @@ impl<W: Widget> WidgetPod<W> {
     /// This rect will also be used to detect whether any given pointer event (eg clicks)
     /// intersects with the rectangle.
     ///
-    /// [`Rect`]: struct.Rect.html
-    /// [`Size`]: struct.Size.html
     /// [`layout`]: trait.Widget.html#tymethod.layout
     /// [`place_child`]: LayoutCtx::place_child
     pub fn layout_rect(&self) -> Rect {
@@ -137,9 +134,8 @@ impl<W: Widget> WidgetPod<W> {
     /// This is the same as the [`layout_rect`] with the [`paint_insets`] applied;
     /// in the general case it is the same as the [`layout_rect`].
     ///
-    /// [`layout_rect`]: #method.layout_rect
-    /// [`Rect`]: struct.Rect.html
-    /// [`paint_insets`]: #method.paint_insets
+    /// [`layout_rect`]: Self::layout_rect
+    /// [`paint_insets`]: Self::paint_insets
     pub fn paint_rect(&self) -> Rect {
         self.state.paint_rect()
     }

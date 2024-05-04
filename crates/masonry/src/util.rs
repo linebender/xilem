@@ -8,7 +8,7 @@
 use std::any::Any;
 use std::hash::Hash;
 
-/// Panic in debug and tracing::error in release mode.
+/// Panic in debug and `tracing::error` in release mode.
 ///
 /// This macro is in some way a combination of `panic` and `debug_assert`,
 /// but it will log the provided message instead of ignoring it in release builds.

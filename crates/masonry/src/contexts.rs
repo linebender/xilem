@@ -344,8 +344,7 @@ impl<'a> LifeCycleCtx<'a> {
 
 // methods on event and lifecycle
 impl_context_method!(WidgetCtx<'_>, EventCtx<'_>, LifeCycleCtx<'_>, {
-    /// Request a [`paint`] pass.
-    /// [`paint`]: trait.Widget.html#tymethod.paint
+    /// Request a [`paint`](crate::Widget::paint) pass.
     pub fn request_paint(&mut self) {
         trace!("request_paint");
         self.widget_state.needs_paint = true;
@@ -360,7 +359,7 @@ impl_context_method!(WidgetCtx<'_>, EventCtx<'_>, LifeCycleCtx<'_>, {
     /// (such as if it would like to change the layout of children in
     /// response to some event) it must call this method.
     ///
-    /// [`layout`]: trait.Widget.html#tymethod.layout
+    /// [`layout`]: crate::Widget::layout
     pub fn request_layout(&mut self) {
         trace!("request_layout");
         self.widget_state.needs_layout = true;

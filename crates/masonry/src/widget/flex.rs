@@ -206,7 +206,7 @@ impl Flex {
     /// If you are laying out standard controls in this container, you should
     /// generally prefer to use [`add_default_spacer`].
     ///
-    /// [`add_default_spacer`]: #method.add_default_spacer
+    /// [`add_default_spacer`]: WidgetMut::add_default_spacer
     pub fn with_spacer(mut self, mut len: f64) -> Self {
         if len < 0.0 {
             tracing::warn!("add_spacer called with negative length: {}", len);
@@ -341,7 +341,7 @@ impl<'a> WidgetMut<'a, Flex> {
     /// If you are laying out standard controls in this container, you should
     /// generally prefer to use [`add_default_spacer`].
     ///
-    /// [`add_default_spacer`]: Flex::add_default_spacer
+    /// [`add_default_spacer`]: Self::add_default_spacer
     pub fn add_spacer(&mut self, mut len: f64) {
         if len < 0.0 {
             tracing::warn!("add_spacer called with negative length: {}", len);
@@ -436,7 +436,7 @@ impl<'a> WidgetMut<'a, Flex> {
     /// If you are laying out standard controls in this container, you should
     /// generally prefer to use [`add_default_spacer`].
     ///
-    /// [`add_default_spacer`]: Flex::add_default_spacer
+    /// [`add_default_spacer`]: Self::add_default_spacer
     pub fn insert_spacer(&mut self, idx: usize, mut len: f64) {
         if len < 0.0 {
             tracing::warn!("add_spacer called with negative length: {}", len);

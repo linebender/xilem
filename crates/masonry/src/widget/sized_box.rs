@@ -44,7 +44,7 @@ struct BorderStyle {
 /// (assuming values are permitted by this widget's parent). If either the width or height is not
 /// set, this widget will size itself to match the child's size in that dimension.
 ///
-/// If not given a child, SizedBox will try to size itself as close to the specified height
+/// If not given a child, `SizedBox` will try to size itself as close to the specified height
 /// and width as possible given the parent's constraints. If height or width is not set,
 /// it will be treated as zero.
 pub struct SizedBox {

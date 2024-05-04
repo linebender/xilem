@@ -18,7 +18,7 @@ pub struct Link;
 /// Text which can be displayed.
 pub trait TextStorage: 'static {
     fn as_str(&self) -> &str;
-    /// If this TextStorage object manages style spans, it should implement
+    /// If this `TextStorage` object manages style spans, it should implement
     /// this method and update the provided builder with its spans, as required.
     ///
     /// This takes `&self`, as we needed to call `Self::as_str` to get the value stored in

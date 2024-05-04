@@ -90,7 +90,7 @@ pub enum Record {
     Paint,
 }
 
-/// like WidgetExt but just for this one thing
+/// like `WidgetExt` but just for this one thing
 pub trait TestWidgetExt: Widget + Sized + 'static {
     fn record(self, recording: &Recording) -> Recorder<Self> {
         Recorder {

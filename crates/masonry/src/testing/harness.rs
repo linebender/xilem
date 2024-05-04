@@ -471,7 +471,7 @@ impl TestHarness {
 
     /// Get a [`WidgetMut`] to the root widget.
     ///
-    /// Because of how WidgetMut works, it can only be passed to a user-provided callback.
+    /// Because of how `WidgetMut` works, it can only be passed to a user-provided callback.
     pub fn edit_root_widget<R>(
         &mut self,
         f: impl FnOnce(WidgetMut<'_, Box<dyn Widget>>) -> R,
