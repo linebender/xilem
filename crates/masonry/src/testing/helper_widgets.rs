@@ -257,7 +257,9 @@ impl<S: 'static> Widget for ModularWidget<S> {
     }
 
     fn accessibility(&mut self, ctx: &mut AccessCtx) {
-        todo!()
+        if let Some(f) = self.access.as_mut() {
+            f(&mut self.state, ctx);
+        }
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {

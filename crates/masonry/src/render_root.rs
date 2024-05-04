@@ -38,6 +38,9 @@ pub struct RenderRoot {
     pub(crate) last_mouse_pos: Option<LogicalPosition<f64>>,
     pub(crate) cursor_icon: CursorIcon,
     pub(crate) state: RenderRootState,
+    // TODO - Add "access_tree_active" to detect when you don't need to update the
+    // access tree
+    pub(crate) rebuild_access_tree: bool,
 }
 
 pub(crate) struct RenderRootState {
@@ -98,6 +101,7 @@ impl RenderRoot {
                 next_focused_widget: None,
                 font_context: FontContext::default(),
             },
+            rebuild_access_tree: true,
         };
 
         // We send WidgetAdded to all widgets right away
@@ -113,10 +117,15 @@ impl RenderRoot {
 
     pub fn handle_window_event(&mut self, event: WindowEvent) -> Handled {
         match event {
-            WindowEvent::Rescale(_scale) => {
-                // TODO - Handle dpi scaling
-                // For now we're assuming the scale factor is always 1.0
-                Handled::No
+            WindowEvent::Rescale(scale_factor) => {
+                self.scale_factor = scale_factor;
+                // TODO - What we'd really like is to request a repaint and an accessibility
+                // pass for every single widget.
+                self.root.state.needs_layout = true;
+                self.state
+                    .signal_queue
+                    .push_back(RenderRootSignal::RequestRedraw);
+                Handled::Yes
             }
             WindowEvent::Resize(size) => {
                 self.size = size;
@@ -124,7 +133,7 @@ impl RenderRoot {
                 self.state
                     .signal_queue
                     .push_back(RenderRootSignal::RequestRedraw);
-                Handled::No
+                Handled::Yes
             }
             WindowEvent::AnimFrame => {
                 let now = Instant::now();
@@ -141,6 +150,13 @@ impl RenderRoot {
                 }
                 Handled::Yes
             }
+            WindowEvent::RebuildAccessTree => {
+                self.rebuild_access_tree = true;
+                self.state
+                    .signal_queue
+                    .push_back(RenderRootSignal::RequestRedraw);
+                Handled::Yes
+            }
         }
     }
 
@@ -152,7 +168,7 @@ impl RenderRoot {
         self.root_on_text_event(event)
     }
 
-    pub fn redraw(&mut self) -> Scene {
+    pub fn redraw(&mut self) -> (Scene, TreeUpdate) {
         // TODO - Xilem's reconciliation logic will have to be called
         // by the function that calls this
 
@@ -169,7 +185,7 @@ impl RenderRoot {
         }
 
         // TODO - Improve caching of scenes.
-        self.root_paint()
+        (self.root_paint(), self.root_accessibility())
     }
 
     pub fn pop_signal(&mut self) -> Option<RenderRootSignal> {
@@ -436,7 +452,7 @@ impl RenderRoot {
     }
 
     // TODO - Integrate in unit tests?
-    pub fn root_accessibility(&mut self, rebuild_all: bool) -> TreeUpdate {
+    fn root_accessibility(&mut self) -> TreeUpdate {
         let mut tree_update = TreeUpdate {
             nodes: vec![],
             tree: None,
@@ -449,16 +465,17 @@ impl RenderRoot {
             widget_state: &mut widget_state,
             tree_update: &mut tree_update,
             current_node: NodeBuilder::default(),
-            rebuild_all,
+            rebuild_all: self.rebuild_access_tree,
+            scale_factor: self.scale_factor,
         };
 
-        // TODO - tree_update.tree
         {
             let _span = info_span!("accessibility").entered();
-            if rebuild_all {
+            if self.rebuild_access_tree {
                 debug!("Running ACCESSIBILITY pass with rebuild_all");
             }
             self.root.accessibility(&mut ctx);
+            self.rebuild_access_tree = false;
         }
 
         if true {

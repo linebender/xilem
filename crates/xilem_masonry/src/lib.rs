@@ -4,17 +4,13 @@
 #![allow(clippy::comparison_chain)]
 use std::{any::Any, collections::HashMap};
 
-use accesskit::Role;
 use masonry::{
     app_driver::AppDriver,
     event_loop_runner,
-    widget::{WidgetMut, WidgetRef},
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
-    Point, PointerEvent, Size, StatusChange, TextEvent, Widget, WidgetId, WidgetPod,
+    widget::{RootWidget, WidgetMut},
+    Widget, WidgetId, WidgetPod,
 };
 pub use masonry::{widget::Axis, Color, TextAlignment};
-use smallvec::SmallVec;
-use vello::Scene;
 use winit::{
     dpi::LogicalSize,
     error::EventLoopError,
@@ -45,55 +41,6 @@ pub struct MasonryDriver<State, Logic, View, ViewState> {
     current_view: View,
     view_cx: ViewCx,
     view_state: ViewState,
-}
-
-// TODO: This is a hack to work around pod-racing
-pub(crate) struct RootWidget<E> {
-    pub(crate) pod: WidgetPod<E>,
-}
-
-impl<E: 'static + Widget> Widget for RootWidget<E> {
-    fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
-        self.pod.on_pointer_event(ctx, event);
-    }
-    fn on_text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent) {
-        self.pod.on_text_event(ctx, event);
-    }
-    fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {
-        self.pod.on_access_event(ctx, event);
-    }
-
-    fn on_status_change(&mut self, _: &mut LifeCycleCtx, _: &StatusChange) {
-        // Intentionally do nothing?
-    }
-
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
-        self.pod.lifecycle(ctx, event);
-    }
-
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
-        let size = self.pod.layout(ctx, bc);
-        ctx.place_child(&mut self.pod, Point::ORIGIN);
-        size
-    }
-
-    fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
-        self.pod.paint(ctx, scene);
-    }
-
-    fn accessibility_role(&self) -> Role {
-        Role::Window
-    }
-
-    fn accessibility(&mut self, ctx: &mut AccessCtx) {
-        self.pod.accessibility(ctx);
-    }
-
-    fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
-        let mut vec = SmallVec::new();
-        vec.push(self.pod.as_dyn());
-        vec
-    }
 }
 
 impl<State, Logic, View> AppDriver for MasonryDriver<State, Logic, View, View::ViewState>
@@ -129,13 +76,12 @@ where
             if rebuild {
                 let next_view = (self.logic)(&mut self.state);
                 let mut root = ctx.get_root::<RootWidget<View::Element>>();
-                let element = RootWidget::get_element(&mut root);
 
                 let changed = next_view.rebuild(
                     &mut self.view_state,
                     &mut self.view_cx,
                     &self.current_view,
-                    element,
+                    root.get_element(),
                 );
                 if !changed.changed {
                     // Masonry manages all of this itself - ChangeFlags is probably not needed?
@@ -146,12 +92,6 @@ where
         } else {
             eprintln!("Got action {action:?} for unknown widget. Did you forget to use `with_action_widget`?");
         }
-    }
-}
-
-impl<E: Widget> RootWidget<E> {
-    pub fn get_element<'a>(this: &'a mut WidgetMut<'_, Self>) -> WidgetMut<'a, E> {
-        this.ctx.get_mut(&mut this.widget.pod)
     }
 }
 
@@ -167,7 +107,7 @@ where
             widget_map: HashMap::new(),
         };
         let (pod, view_state) = first_view.build(&mut view_cx);
-        let root_widget = RootWidget { pod };
+        let root_widget = RootWidget::from_pod(pod);
         Xilem {
             driver: MasonryDriver {
                 current_view: first_view,

@@ -9,7 +9,7 @@
 #![windows_subsystem = "windows"]
 
 use masonry::app_driver::{AppDriver, DriverCtx};
-use masonry::widget::{FillStrat, Image};
+use masonry::widget::{FillStrat, Image, RootWidget};
 use masonry::{Action, WidgetId};
 use vello::peniko::{Format, Image as ImageBuf};
 use winit::dpi::LogicalSize;
@@ -34,5 +34,5 @@ pub fn main() {
         .with_min_inner_size(window_size)
         .with_max_inner_size(window_size);
 
-    masonry::event_loop_runner::run(window_attributes, image, Driver).unwrap();
+    masonry::event_loop_runner::run(window_attributes, RootWidget::new(image), Driver).unwrap();
 }

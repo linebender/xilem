@@ -237,7 +237,7 @@ impl TestHarness {
     // TODO - Should be async?
     /// Create a bitmap (an array of pixels), paint the window and return the bitmap as an 8-bits-per-channel RGB image.
     pub fn render(&mut self) -> RgbaImage {
-        let scene = self.render_root.redraw();
+        let (scene, _tree_update) = self.render_root.redraw();
         if std::env::var("SKIP_RENDER_TESTS").is_ok_and(|it| !it.is_empty()) {
             return RgbaImage::from_pixel(1, 1, Rgba([255, 255, 255, 255]));
         }

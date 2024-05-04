@@ -36,7 +36,7 @@ impl<W: Widget> Drop for WidgetMut<'_, W> {
 
 impl<'a> WidgetMut<'a, Box<dyn Widget>> {
     /// Attempt to downcast to `WidgetMut` of concrete Widget type.
-    pub fn downcast<W2: Widget>(&mut self) -> Option<WidgetMut<'_, W2>> {
+    pub fn try_downcast<W2: Widget>(&mut self) -> Option<WidgetMut<'_, W2>> {
         let ctx = WidgetCtx {
             global_state: self.ctx.global_state,
             parent_widget_state: self.ctx.parent_widget_state,
@@ -46,6 +46,31 @@ impl<'a> WidgetMut<'a, Box<dyn Widget>> {
             ctx,
             widget: self.widget.as_mut_any().downcast_mut()?,
         })
+    }
+
+    /// Downcasts to `WidgetMut` of concrete Widget type.
+    ///
+    /// ## Panics
+    ///
+    /// Panics if the downcast fails, with an error message that shows the
+    /// discrepancy between the expected and actual types.
+    pub fn downcast<W2: Widget>(&mut self) -> WidgetMut<'_, W2> {
+        let ctx = WidgetCtx {
+            global_state: self.ctx.global_state,
+            parent_widget_state: self.ctx.parent_widget_state,
+            widget_state: self.ctx.widget_state,
+        };
+        let w1_name = self.widget.type_name();
+        match self.widget.as_mut_any().downcast_mut() {
+            Some(widget) => WidgetMut { ctx, widget },
+            None => {
+                panic!(
+                    "failed to downcast widget: expected widget of type `{}`, found `{}`",
+                    std::any::type_name::<W2>(),
+                    w1_name,
+                );
+            }
+        }
     }
 }
 

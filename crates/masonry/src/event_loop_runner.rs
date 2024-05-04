@@ -101,8 +101,9 @@ impl ApplicationHandler<accesskit_winit::Event> for MainState<'_> {
 
         match event {
             WinitWindowEvent::RedrawRequested => {
-                let scene = self.render_root.redraw();
+                let (scene, tree_update) = self.render_root.redraw();
                 self.render(scene);
+                self.accesskit_adapter.update_if_active(|| tree_update);
             }
             WinitWindowEvent::CloseRequested => event_loop.exit(),
             WinitWindowEvent::Resized(size) => {
@@ -175,6 +176,80 @@ impl ApplicationHandler<accesskit_winit::Event> for MainState<'_> {
             _ => (),
         }
 
+        self.handle_signals(event_loop);
+    }
+
+    fn user_event(&mut self, event_loop: &ActiveEventLoop, event: accesskit_winit::Event) {
+        match event.window_event {
+            // Note that this event can be called at any time, even multiple times if
+            // the user restarts their screen reader.
+            accesskit_winit::WindowEvent::InitialTreeRequested => {
+                self.render_root
+                    .handle_window_event(WindowEvent::RebuildAccessTree);
+            }
+            accesskit_winit::WindowEvent::ActionRequested(action_request) => {
+                self.render_root.root_on_access_event(action_request);
+            }
+            accesskit_winit::WindowEvent::AccessibilityDeactivated => {}
+        }
+
+        self.handle_signals(event_loop);
+    }
+}
+
+impl MainState<'_> {
+    fn render(&mut self, scene: Scene) {
+        let scale = self.window.scale_factor();
+        let size = self.window.inner_size();
+        let width = size.width;
+        let height = size.height;
+
+        if self.surface.config.width != width || self.surface.config.height != height {
+            self.render_cx
+                .resize_surface(&mut self.surface, width, height);
+        }
+
+        let transformed_scene = if scale == 1.0 {
+            None
+        } else {
+            let mut new_scene = Scene::new();
+            new_scene.append(&scene, Some(Affine::scale(scale)));
+            Some(new_scene)
+        };
+        let scene_ref = transformed_scene.as_ref().unwrap_or(&scene);
+
+        let Ok(surface_texture) = self.surface.surface.get_current_texture() else {
+            warn!("failed to acquire next swapchain texture");
+            return;
+        };
+        let dev_id = self.surface.dev_id;
+        let device = &self.render_cx.devices[dev_id].device;
+        let queue = &self.render_cx.devices[dev_id].queue;
+        let renderer_options = RendererOptions {
+            surface_format: Some(self.surface.format),
+            use_cpu: false,
+            antialiasing_support: AaSupport {
+                area: true,
+                msaa8: false,
+                msaa16: false,
+            },
+            num_init_threads: NonZeroUsize::new(1),
+        };
+        let render_params = RenderParams {
+            base_color: Color::BLACK,
+            width,
+            height,
+            antialiasing_method: vello::AaConfig::Area,
+        };
+        self.renderer
+            .get_or_insert_with(|| Renderer::new(device, renderer_options).unwrap())
+            .render_to_surface(device, queue, scene_ref, &surface_texture, &render_params)
+            .expect("failed to render to surface");
+        surface_texture.present();
+        device.poll(wgpu::Maintain::Wait);
+    }
+
+    fn handle_signals(&mut self, _event_loop: &ActiveEventLoop) {
         while let Some(signal) = self.render_root.pop_signal() {
             match signal {
                 render_root::RenderRootSignal::Action(action, widget_id) => {
@@ -230,77 +305,6 @@ impl ApplicationHandler<accesskit_winit::Event> for MainState<'_> {
                 }
             }
         }
-
-        self.accesskit_adapter
-            .update_if_active(|| self.render_root.root_accessibility(false));
-    }
-
-    fn user_event(&mut self, _event_loop: &ActiveEventLoop, event: accesskit_winit::Event) {
-        match event.window_event {
-            // Note that this event can be called at any time, even multiple times if
-            // the user restarts their screen reader.
-            accesskit_winit::WindowEvent::InitialTreeRequested => {
-                self.accesskit_adapter
-                    .update_if_active(|| self.render_root.root_accessibility(true));
-            }
-            accesskit_winit::WindowEvent::ActionRequested(action_request) => {
-                self.render_root.root_on_access_event(action_request);
-            }
-            accesskit_winit::WindowEvent::AccessibilityDeactivated => {}
-        }
-    }
-}
-
-impl MainState<'_> {
-    fn render(&mut self, scene: Scene) {
-        let scale = self.window.scale_factor();
-        let size = self.window.inner_size();
-        let width = size.width;
-        let height = size.height;
-
-        if self.surface.config.width != width || self.surface.config.height != height {
-            self.render_cx
-                .resize_surface(&mut self.surface, width, height);
-        }
-
-        let transformed_scene = if scale == 1.0 {
-            None
-        } else {
-            let mut new_scene = Scene::new();
-            new_scene.append(&scene, Some(Affine::scale(scale)));
-            Some(new_scene)
-        };
-        let scene_ref = transformed_scene.as_ref().unwrap_or(&scene);
-
-        let Ok(surface_texture) = self.surface.surface.get_current_texture() else {
-            warn!("failed to acquire next swapchain texture");
-            return;
-        };
-        let dev_id = self.surface.dev_id;
-        let device = &self.render_cx.devices[dev_id].device;
-        let queue = &self.render_cx.devices[dev_id].queue;
-        let renderer_options = RendererOptions {
-            surface_format: Some(self.surface.format),
-            use_cpu: false,
-            antialiasing_support: AaSupport {
-                area: true,
-                msaa8: false,
-                msaa16: false,
-            },
-            num_init_threads: NonZeroUsize::new(1),
-        };
-        let render_params = RenderParams {
-            base_color: Color::BLACK,
-            width,
-            height,
-            antialiasing_method: vello::AaConfig::Area,
-        };
-        self.renderer
-            .get_or_insert_with(|| Renderer::new(device, renderer_options).unwrap())
-            .render_to_surface(device, queue, scene_ref, &surface_texture, &render_params)
-            .expect("failed to render to surface");
-        surface_texture.present();
-        device.poll(wgpu::Maintain::Wait);
     }
 }
 

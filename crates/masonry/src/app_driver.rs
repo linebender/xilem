@@ -18,6 +18,6 @@ pub trait AppDriver {
 impl<'a> DriverCtx<'a> {
     /// Return a [`WidgetMut`] to the root widget.
     pub fn get_root<W: Widget>(&mut self) -> WidgetMut<'_, W> {
-        self.main_root_widget.downcast().expect("wrong widget type")
+        self.main_root_widget.downcast()
     }
 }

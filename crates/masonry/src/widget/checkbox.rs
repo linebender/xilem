@@ -280,7 +280,7 @@ mod tests {
             let mut harness = TestHarness::create_with_size(checkbox, Size::new(50.0, 50.0));
 
             harness.edit_root_widget(|mut checkbox| {
-                let mut checkbox = checkbox.downcast::<Checkbox<&'static str>>().unwrap();
+                let mut checkbox = checkbox.downcast::<Checkbox<&'static str>>();
                 checkbox.set_checked(true);
                 checkbox.set_text("The quick brown fox jumps over the lazy dog");
 

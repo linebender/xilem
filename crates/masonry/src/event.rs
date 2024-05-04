@@ -27,6 +27,7 @@ pub enum WindowEvent {
     Rescale(f64),
     Resize(PhysicalSize<u32>),
     AnimFrame,
+    RebuildAccessTree,
 }
 
 // TODO - How can RenderRoot express "I started a drag-and-drop op"?
@@ -269,7 +270,8 @@ impl TextEvent {
         match self {
             TextEvent::KeyboardKey(event, _) => event.repeat,
             TextEvent::Ime(_) => false,
-            TextEvent::ModifierChange(_) => false,
+            // Basically every mouse click/scroll event seems to produce a modifier change event.
+            TextEvent::ModifierChange(_) => true,
             TextEvent::FocusChange(_) => false,
         }
     }

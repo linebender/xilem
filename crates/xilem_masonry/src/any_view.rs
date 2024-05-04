@@ -190,7 +190,7 @@ impl DynWidget {
         f: impl FnOnce(Option<WidgetMut<'_, W>>) -> R,
     ) -> R {
         let mut get_mut = this.ctx.get_mut(&mut this.widget.inner);
-        f(get_mut.downcast())
+        f(get_mut.try_downcast())
     }
 }
 

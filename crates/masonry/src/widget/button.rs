@@ -261,7 +261,7 @@ mod tests {
             let mut harness = TestHarness::create_with_size(button, Size::new(50.0, 50.0));
 
             harness.edit_root_widget(|mut button| {
-                let mut button = button.downcast::<Button<&'static str>>().unwrap();
+                let mut button = button.downcast::<Button<&'static str>>();
                 button.set_text("The quick brown fox jumps over the lazy dog");
 
                 let mut label = button.label_mut();

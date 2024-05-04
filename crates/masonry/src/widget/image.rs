@@ -181,7 +181,7 @@ mod tests {
             let mut harness = TestHarness::create_with_size(image_widget, Size::new(40.0, 60.0));
 
             harness.edit_root_widget(|mut image| {
-                let mut image = image.downcast::<Image>().unwrap();
+                let mut image = image.downcast::<Image>();
                 image.set_image_data(image_data);
             });
 
