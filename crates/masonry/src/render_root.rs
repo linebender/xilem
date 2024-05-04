@@ -113,10 +113,15 @@ impl RenderRoot {
 
     pub fn handle_window_event(&mut self, event: WindowEvent) -> Handled {
         match event {
-            WindowEvent::Rescale(_scale) => {
-                // TODO - Handle dpi scaling
-                // For now we're assuming the scale factor is always 1.0
-                Handled::No
+            WindowEvent::Rescale(scale_factor) => {
+                self.scale_factor = scale_factor;
+                // TODO - What we'd really like is to request a repaint and an accessibility
+                // pass for every single widget.
+                self.root.state.needs_layout = true;
+                self.state
+                    .signal_queue
+                    .push_back(RenderRootSignal::RequestRedraw);
+                Handled::Yes
             }
             WindowEvent::Resize(size) => {
                 self.size = size;
@@ -124,7 +129,7 @@ impl RenderRoot {
                 self.state
                     .signal_queue
                     .push_back(RenderRootSignal::RequestRedraw);
-                Handled::No
+                Handled::Yes
             }
             WindowEvent::AnimFrame => {
                 let now = Instant::now();
@@ -437,6 +442,10 @@ impl RenderRoot {
 
     // TODO - Integrate in unit tests?
     pub fn root_accessibility(&mut self, rebuild_all: bool) -> TreeUpdate {
+        if self.root.state().needs_layout {
+            self.root_layout();
+        }
+
         let mut tree_update = TreeUpdate {
             nodes: vec![],
             tree: None,
@@ -450,6 +459,7 @@ impl RenderRoot {
             tree_update: &mut tree_update,
             current_node: NodeBuilder::default(),
             rebuild_all,
+            scale_factor: self.scale_factor,
         };
 
         // TODO - tree_update.tree

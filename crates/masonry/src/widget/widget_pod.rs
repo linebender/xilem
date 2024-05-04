@@ -847,8 +847,8 @@ impl<W: Widget> WidgetPod<W> {
         self.state.is_expecting_place_child_call = true;
         // TODO - Not everything that has been re-laid out needs to be repainted.
         self.state.needs_paint = true;
-        self.state.request_accessibility_update = false;
-        self.state.needs_accessibility_update = false;
+        self.state.request_accessibility_update = true;
+        self.state.needs_accessibility_update = true;
 
         bc.debug_check(self.inner.short_type_name());
 
@@ -1025,17 +1025,24 @@ impl<W: Widget> WidgetPod<W> {
             );
 
             self.call_widget_method_with_checks("accessibility", |widget_pod| {
-                let current_node = widget_pod.build_access_node();
+                let current_node = widget_pod.build_access_node(parent_ctx.scale_factor);
                 let mut inner_ctx = AccessCtx {
                     global_state: parent_ctx.global_state,
                     widget_state: &mut widget_pod.state,
                     tree_update: parent_ctx.tree_update,
                     current_node,
                     rebuild_all: parent_ctx.rebuild_all,
+                    scale_factor: parent_ctx.scale_factor,
                 };
                 widget_pod.inner.accessibility(&mut inner_ctx);
 
-                let id = inner_ctx.widget_state.id.into();
+                let id: NodeId = inner_ctx.widget_state.id.into();
+                trace!(
+                    "Built node #{} with role={:?}, default_action={:?}",
+                    id.0,
+                    inner_ctx.current_node.role(),
+                    inner_ctx.current_node.default_action_verb(),
+                );
                 inner_ctx
                     .tree_update
                     .nodes
@@ -1047,9 +1054,12 @@ impl<W: Widget> WidgetPod<W> {
         self.state.needs_accessibility_update = false;
     }
 
-    fn build_access_node(&mut self) -> NodeBuilder {
+    fn build_access_node(&mut self, scale_factor: f64) -> NodeBuilder {
         let mut node = NodeBuilder::new(self.inner.accessibility_role());
-        node.set_bounds(to_accesskit_rect(self.state.window_layout_rect()));
+        node.set_bounds(to_accesskit_rect(
+            self.state.window_layout_rect(),
+            scale_factor,
+        ));
 
         node.set_children(
             self.inner
@@ -1073,8 +1083,9 @@ impl<W: Widget> WidgetPod<W> {
     }
 }
 
-fn to_accesskit_rect(r: Rect) -> accesskit::Rect {
-    accesskit::Rect::new(r.x0, r.y0, r.x1, r.y1)
+fn to_accesskit_rect(r: Rect, scale_factor: f64) -> accesskit::Rect {
+    let s = scale_factor;
+    accesskit::Rect::new(s * r.x0, s * r.y0, s * r.x1, s * r.y1)
 }
 
 // TODO - negative rects?

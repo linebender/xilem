@@ -93,6 +93,7 @@ pub struct AccessCtx<'a> {
     pub(crate) tree_update: &'a mut TreeUpdate,
     pub(crate) current_node: NodeBuilder,
     pub(crate) rebuild_all: bool,
+    pub(crate) scale_factor: f64,
 }
 
 pub struct WorkerCtx<'a> {

@@ -269,7 +269,8 @@ impl TextEvent {
         match self {
             TextEvent::KeyboardKey(event, _) => event.repeat,
             TextEvent::Ime(_) => false,
-            TextEvent::ModifierChange(_) => false,
+            // Basically every mouse click/scroll event seems to produce a modifier change event.
+            TextEvent::ModifierChange(_) => true,
             TextEvent::FocusChange(_) => false,
         }
     }
