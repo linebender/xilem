@@ -170,7 +170,7 @@ impl<T: EditableText> Widget for Textbox<T> {
     }
 
     fn on_text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent) {
-        let result = self.editor.text_event(event);
+        let result = self.editor.text_event(ctx, event);
         // If focused on a link and enter pressed, follow it?
         if result.is_handled() {
             ctx.set_handled();

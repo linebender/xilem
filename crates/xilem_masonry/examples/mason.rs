@@ -39,7 +39,12 @@ fn app_logic(data: &mut AppData) -> impl MasonryView<AppData> {
             label("Disabled label").disabled(),
         ))
         .direction(Axis::Horizontal),
-        textbox(),
+        textbox(
+            data.textbox_contents.clone(),
+            |data: &mut AppData, new_value| {
+                data.textbox_contents = new_value;
+            },
+        ),
         prose(LOREM).alignment(TextAlignment::Middle),
         button(button_label, |data: &mut AppData| data.count += 1),
         checkbox("Check me", data.active, |data: &mut AppData, checked| {
@@ -72,12 +77,14 @@ fn toggleable(data: &mut AppData) -> impl MasonryView<AppData> {
 }
 
 struct AppData {
+    textbox_contents: String,
     count: i32,
     active: bool,
 }
 
 fn main() {
     let data = AppData {
+        textbox_contents: "".into(),
         count: 0,
         active: false,
     };

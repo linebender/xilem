@@ -11,7 +11,7 @@ use winit::{
     keyboard::{Key, NamedKey},
 };
 
-use crate::{event::PointerState, Handled, TextEvent};
+use crate::{event::PointerState, Action, EventCtx, Handled, TextEvent};
 
 use super::{
     selection::{Affinity, Selection},
@@ -86,7 +86,7 @@ impl<T: EditableText> TextEditor<T> {
         self.selection.pointer_down(origin, state, button)
     }
 
-    pub fn text_event(&mut self, event: &TextEvent) -> Handled {
+    pub fn text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent) -> Handled {
         let inner_handled = self.selection.text_event(event);
         if inner_handled.is_handled() {
             return inner_handled;
@@ -111,11 +111,18 @@ impl<T: EditableText> TextEditor<T> {
                                     // We have just added this character, so we are "affined" with it
                                     Affinity::Downstream,
                                 ));
+                                let contents = self.text().as_str().to_string();
+                                ctx.submit_action(Action::TextChanged(contents));
                                 Handled::Yes
                             } else {
                                 debug_panic!("Got text input event whilst not focused");
                                 Handled::No
                             }
+                        }
+                        Key::Named(NamedKey::Enter) => {
+                            let contents = self.text().as_str().to_string();
+                            ctx.submit_action(Action::TextEntered(contents));
+                            Handled::Yes
                         }
                         Key::Named(_) => Handled::No,
                         Key::Character(c) => {
@@ -128,6 +135,8 @@ impl<T: EditableText> TextEditor<T> {
                                     // We have just added this character, so we are "affined" with it
                                     Affinity::Downstream,
                                 ));
+                                let contents = self.text().as_str().to_string();
+                                ctx.submit_action(Action::TextChanged(contents));
                                 Handled::Yes
                             } else {
                                 debug_panic!("Got text input event whilst not focused");
