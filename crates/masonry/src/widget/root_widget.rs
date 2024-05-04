@@ -1,4 +1,4 @@
-// Copyright 2024 the Masonry Authors
+// Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
 use accesskit::Role;
