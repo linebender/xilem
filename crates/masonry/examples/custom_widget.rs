@@ -11,7 +11,7 @@ use accesskit::Role;
 use kurbo::Stroke;
 use masonry::app_driver::{AppDriver, DriverCtx};
 use masonry::kurbo::BezPath;
-use masonry::widget::{FillStrat, WidgetRef};
+use masonry::widget::{FillStrat, RootWidget, WidgetRef};
 use masonry::{
     AccessCtx, AccessEvent, Action, Affine, BoxConstraints, Color, EventCtx, LayoutCtx, LifeCycle,
     LifeCycleCtx, PaintCtx, Point, PointerEvent, Rect, Size, StatusChange, TextEvent, Widget,
@@ -130,7 +130,7 @@ impl Widget for CustomWidget {
     }
 
     fn accessibility_role(&self) -> Role {
-        Role::Canvas
+        Role::Window
     }
 
     fn accessibility(&mut self, ctx: &mut AccessCtx) {
@@ -153,7 +153,12 @@ pub fn main() {
     let my_string = "Masonry + Vello".to_string();
     let window_attributes = Window::default_attributes().with_title("Fancy colors");
 
-    masonry::event_loop_runner::run(window_attributes, CustomWidget(my_string), Driver).unwrap();
+    masonry::event_loop_runner::run(
+        window_attributes,
+        RootWidget::new(CustomWidget(my_string)),
+        Driver,
+    )
+    .unwrap();
 }
 
 fn make_image_data(width: usize, height: usize) -> Vec<u8> {

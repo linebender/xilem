@@ -11,7 +11,7 @@ use std::sync::Arc;
 
 use accesskit::{DefaultActionVerb, Role};
 use masonry::app_driver::{AppDriver, DriverCtx};
-use masonry::widget::{Align, CrossAxisAlignment, Flex, Label, SizedBox, WidgetRef};
+use masonry::widget::{Align, CrossAxisAlignment, Flex, Label, RootWidget, SizedBox, WidgetRef};
 use masonry::{
     AccessCtx, AccessEvent, Action, BoxConstraints, Color, EventCtx, LayoutCtx, LifeCycle,
     LifeCycleCtx, PaintCtx, Point, PointerEvent, Size, StatusChange, TextEvent, Widget, WidgetId,
@@ -384,5 +384,6 @@ pub fn main() {
         in_num: false,
     };
 
-    masonry::event_loop_runner::run(window_attributes, build_calc(), calc_state).unwrap();
+    masonry::event_loop_runner::run(window_attributes, RootWidget::new(build_calc()), calc_state)
+        .unwrap();
 }

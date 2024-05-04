@@ -8,7 +8,7 @@
 #![windows_subsystem = "windows"]
 
 use masonry::app_driver::{AppDriver, DriverCtx};
-use masonry::widget::prelude::*;
+use masonry::widget::{prelude::*, RootWidget};
 use masonry::widget::{Button, Flex, Label};
 use masonry::Action;
 use winit::dpi::LogicalSize;
@@ -38,7 +38,12 @@ pub fn main() {
         .with_resizable(true)
         .with_min_inner_size(window_size);
 
-    masonry::event_loop_runner::run(window_attributes, build_root_widget(), Driver).unwrap();
+    masonry::event_loop_runner::run(
+        window_attributes,
+        RootWidget::new(build_root_widget()),
+        Driver,
+    )
+    .unwrap();
 }
 
 fn build_root_widget() -> impl Widget {
