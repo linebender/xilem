@@ -4,7 +4,7 @@
 //! A button widget.
 
 use accesskit::{DefaultActionVerb, Role};
-use smallvec::SmallVec;
+use smallvec::{smallvec, SmallVec};
 use tracing::{trace, trace_span, Span};
 use vello::Scene;
 
@@ -114,7 +114,7 @@ impl<T: TextStorage> Widget for Button<T> {
                 _ => {}
             }
         }
-        ctx.skip_child(&mut self.label);
+        self.label.on_access_event(ctx, event);
     }
 
     fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, _event: &StatusChange) {
@@ -202,7 +202,7 @@ impl<T: TextStorage> Widget for Button<T> {
     }
 
     fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
-        SmallVec::new()
+        smallvec![self.label.as_dyn()]
     }
 
     fn make_trace_span(&self) -> Span {
