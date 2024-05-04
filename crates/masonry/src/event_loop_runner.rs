@@ -6,7 +6,7 @@ use std::sync::Arc;
 
 use accesskit_winit::Adapter;
 use tracing::subscriber::SetGlobalDefaultError;
-use tracing::warn;
+use tracing::{debug, warn};
 use vello::kurbo::Affine;
 use vello::util::{RenderContext, RenderSurface};
 use vello::{peniko::Color, AaSupport, RenderParams, Renderer, RendererOptions, Scene};
@@ -179,6 +179,7 @@ impl ApplicationHandler<accesskit_winit::Event> for MainState<'_> {
             match signal {
                 render_root::RenderRootSignal::Action(action, widget_id) => {
                     self.render_root.edit_root_widget(|root| {
+                        debug!("Action {:?} on widget {:?}", action, widget_id);
                         let mut driver_ctx = DriverCtx {
                             main_root_widget: root,
                         };
@@ -308,17 +309,23 @@ pub(crate) fn try_init_tracing() -> Result<(), SetGlobalDefaultError> {
     {
         use tracing_subscriber::filter::LevelFilter;
         use tracing_subscriber::prelude::*;
-        let filter_layer = if cfg!(debug_assertions) {
+        use tracing_subscriber::EnvFilter;
+
+        let default_level = if cfg!(debug_assertions) {
             LevelFilter::DEBUG
         } else {
             LevelFilter::INFO
         };
+        let env_filter = EnvFilter::builder()
+            .with_default_directive(default_level.into())
+            .with_env_var("RUST_LOG")
+            .from_env_lossy();
         let fmt_layer = tracing_subscriber::fmt::layer()
             // Display target (eg "my_crate::some_mod::submod") with logs
             .with_target(true);
 
         let registry = tracing_subscriber::registry()
-            .with(filter_layer)
+            .with(env_filter)
             .with(fmt_layer);
         tracing::dispatcher::set_global_default(registry.into())
     }

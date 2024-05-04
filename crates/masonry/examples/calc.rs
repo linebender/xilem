@@ -312,7 +312,7 @@ fn flex_row(
 }
 
 fn build_calc() -> impl Widget {
-    let display = Label::new("").with_text_size(32.0);
+    let display = Label::new(String::new()).with_text_size(32.0);
     Flex::column()
         .with_flex_spacer(0.2)
         .with_child(display)

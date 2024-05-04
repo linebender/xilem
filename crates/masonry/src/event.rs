@@ -239,6 +239,20 @@ impl PointerEvent {
             PointerEvent::HoverFileCancel(_) => "HoverFileCancel",
         }
     }
+
+    pub fn is_high_density(&self) -> bool {
+        match self {
+            PointerEvent::PointerDown(_, _) => false,
+            PointerEvent::PointerUp(_, _) => false,
+            PointerEvent::PointerMove(_) => true,
+            PointerEvent::PointerEnter(_) => false,
+            PointerEvent::PointerLeave(_) => false,
+            PointerEvent::MouseWheel(_, _) => true,
+            PointerEvent::HoverFile(_, _) => true,
+            PointerEvent::DropFile(_, _) => false,
+            PointerEvent::HoverFileCancel(_) => false,
+        }
+    }
 }
 
 impl TextEvent {
@@ -248,6 +262,15 @@ impl TextEvent {
             TextEvent::Ime(_) => "Ime",
             TextEvent::ModifierChange(_) => "ModifierChange",
             TextEvent::FocusChange(_) => "FocusChange",
+        }
+    }
+
+    pub fn is_high_density(&self) -> bool {
+        match self {
+            TextEvent::KeyboardKey(event, _) => event.repeat,
+            TextEvent::Ime(_) => false,
+            TextEvent::ModifierChange(_) => false,
+            TextEvent::FocusChange(_) => false,
         }
     }
 }

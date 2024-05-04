@@ -8,7 +8,7 @@ use accesskit::{ActionRequest, NodeBuilder, Tree, TreeUpdate};
 use instant::Instant;
 use kurbo::Affine;
 use parley::FontContext;
-use tracing::{info_span, warn};
+use tracing::{debug, info_span, warn};
 use vello::peniko::{Color, Fill};
 use vello::Scene;
 use winit::dpi::{LogicalPosition, LogicalSize, PhysicalSize};
@@ -204,7 +204,10 @@ impl RenderRoot {
             widget: &mut self.root.inner,
         };
 
-        let res = f(root_widget);
+        let res = {
+            let _span = info_span!("edit_root_widget").entered();
+            f(root_widget)
+        };
         self.post_event_processing(&mut fake_widget_state);
 
         res
@@ -231,8 +234,11 @@ impl RenderRoot {
         let handled = {
             ctx.global_state
                 .debug_logger
-                .push_important_span(&format!("¨POINTER_EVENT {}", event.short_name()));
+                .push_important_span(&format!("POINTER_EVENT {}", event.short_name()));
             let _span = info_span!("pointer_event").entered();
+            if !event.is_high_density() {
+                debug!("Running ON_POINTER_EVENT pass with {}", event.short_name());
+            }
             self.root.on_pointer_event(&mut ctx, &event);
             ctx.global_state.debug_logger.pop_span();
             Handled::from(ctx.is_handled)
@@ -272,6 +278,9 @@ impl RenderRoot {
                 .debug_logger
                 .push_important_span(&format!("TEXT_EVENT {}", event.short_name()));
             let _span = info_span!("text_event").entered();
+            if !event.is_high_density() {
+                debug!("Running ON_TEXT_EVENT pass with {}", event.short_name());
+            }
             self.root.on_text_event(&mut ctx, &event);
             ctx.global_state.debug_logger.pop_span();
             Handled::from(ctx.is_handled)
@@ -320,6 +329,7 @@ impl RenderRoot {
                 .debug_logger
                 .push_important_span(&format!("ACCESSS_EVENT {}", event.short_name()));
             let _span = info_span!("access_event").entered();
+            debug!("Running ON_ACCESS_EVENT pass with {}", event.short_name());
             self.root.on_access_event(&mut ctx, &event);
             ctx.global_state.debug_logger.pop_span();
         }
@@ -405,7 +415,10 @@ impl RenderRoot {
         };
 
         let mut scene = Scene::new();
-        self.root.paint(&mut ctx, &mut scene);
+        {
+            let _span = info_span!("paint").entered();
+            self.root.paint(&mut ctx, &mut scene);
+        }
 
         // FIXME - This is a workaround to Vello panicking when given an
         // empty scene
@@ -440,10 +453,15 @@ impl RenderRoot {
         };
 
         // TODO - tree_update.tree
+        {
+            let _span = info_span!("accessibility").entered();
+            if rebuild_all {
+                debug!("Running ACCESSIBILITY pass with rebuild_all");
+            }
+            self.root.accessibility(&mut ctx);
+        }
 
-        self.root.accessibility(&mut ctx);
-
-        if rebuild_all {
+        if true {
             tree_update.tree = Some(Tree {
                 root: self.root.id().into(),
                 app_name: None,
