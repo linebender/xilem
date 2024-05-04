@@ -101,23 +101,24 @@ impl<T: EditableText> TextEditor<T> {
                             Handled::No
                         }
                         Key::Named(NamedKey::Space) => {
-                            if let Some(selection) = self.selection.selection {
-                                // TODO: We know this is not the fullest model of copy-paste, and that we should work with the inner text
-                                // e.g. to put HTML code if supported by the rich text kind
-                                let c = ' ';
-                                self.text_mut().edit(selection.range(), c);
-                                self.selection.selection = Some(Selection::caret(
-                                    selection.min() + c.len_utf8(),
-                                    // We have just added this character, so we are "affined" with it
-                                    Affinity::Downstream,
-                                ));
-                                let contents = self.text().as_str().to_string();
-                                ctx.submit_action(Action::TextChanged(contents));
-                                Handled::Yes
-                            } else {
-                                debug_panic!("Got text input event whilst not focused");
-                                Handled::No
-                            }
+                            let selection = self.selection.selection.unwrap_or(Selection {
+                                anchor: 0,
+                                active: 0,
+                                active_affinity: Affinity::Downstream,
+                                h_pos: None,
+                            });
+                            // TODO: We know this is not the fullest model of copy-paste, and that we should work with the inner text
+                            // e.g. to put HTML code if supported by the rich text kind
+                            let c = ' ';
+                            self.text_mut().edit(selection.range(), c);
+                            self.selection.selection = Some(Selection::caret(
+                                selection.min() + c.len_utf8(),
+                                // We have just added this character, so we are "affined" with it
+                                Affinity::Downstream,
+                            ));
+                            let contents = self.text().as_str().to_string();
+                            ctx.submit_action(Action::TextChanged(contents));
+                            Handled::Yes
                         }
                         Key::Named(NamedKey::Enter) => {
                             let contents = self.text().as_str().to_string();
@@ -126,22 +127,23 @@ impl<T: EditableText> TextEditor<T> {
                         }
                         Key::Named(_) => Handled::No,
                         Key::Character(c) => {
-                            if let Some(selection) = self.selection.selection {
-                                // TODO: We know this is not the fullest model of copy-paste, and that we should work with the inner text
-                                // e.g. to put HTML code if supported by the rich text kind
-                                self.text_mut().edit(selection.range(), &**c);
-                                self.selection.selection = Some(Selection::caret(
-                                    selection.min() + c.len(),
-                                    // We have just added this character, so we are "affined" with it
-                                    Affinity::Downstream,
-                                ));
-                                let contents = self.text().as_str().to_string();
-                                ctx.submit_action(Action::TextChanged(contents));
-                                Handled::Yes
-                            } else {
-                                debug_panic!("Got text input event whilst not focused");
-                                Handled::No
-                            }
+                            let selection = self.selection.selection.unwrap_or(Selection {
+                                anchor: 0,
+                                active: 0,
+                                active_affinity: Affinity::Downstream,
+                                h_pos: None,
+                            });
+                            // TODO: We know this is not the fullest model of copy-paste, and that we should work with the inner text
+                            // e.g. to put HTML code if supported by the rich text kind
+                            self.text_mut().edit(selection.range(), &**c);
+                            self.selection.selection = Some(Selection::caret(
+                                selection.min() + c.len(),
+                                // We have just added this character, so we are "affined" with it
+                                Affinity::Downstream,
+                            ));
+                            let contents = self.text().as_str().to_string();
+                            ctx.submit_action(Action::TextChanged(contents));
+                            Handled::Yes
                         }
                         Key::Unidentified(_) => Handled::No,
                         Key::Dead(d) => {

@@ -99,6 +99,7 @@ struct FlexSplice<'w> {
 impl ElementSplice for FlexSplice<'_> {
     fn push(&mut self, element: WidgetPod<Box<dyn masonry::Widget>>) {
         self.element.insert_child_pod(self.ix, element);
+        self.element.insert_default_spacer(self.ix);
         self.ix += 1;
     }
 

@@ -64,13 +64,14 @@ impl<State: 'static, Action: 'static> MasonryView<State, Action> for Textbox<Sta
     type Element = masonry::widget::Textbox<String>;
     type ViewState = ();
 
-    fn build(&self, _cx: &mut ViewCx) -> (WidgetPod<Self::Element>, Self::ViewState) {
-        let widget_pod = WidgetPod::new(
-            masonry::widget::Textbox::new(String::new())
-                .with_text_brush(self.text_brush.clone())
-                .with_text_alignment(self.alignment),
-        );
-        (widget_pod, ())
+    fn build(&self, cx: &mut ViewCx) -> (WidgetPod<Self::Element>, Self::ViewState) {
+        cx.with_leaf_action_widget(|_| {
+            WidgetPod::new(
+                masonry::widget::Textbox::new(self.contents.clone())
+                    .with_text_brush(self.text_brush.clone())
+                    .with_text_alignment(self.alignment),
+            )
+        })
     }
 
     fn rebuild(
@@ -82,7 +83,7 @@ impl<State: 'static, Action: 'static> MasonryView<State, Action> for Textbox<Sta
     ) -> crate::ChangeFlags {
         let mut changeflags = ChangeFlags::UNCHANGED;
 
-        if prev.contents != self.contents {
+        if &self.contents != element.text().as_str() {
             element.set_text(self.contents.clone());
             changeflags.changed |= ChangeFlags::CHANGED.changed;
         }

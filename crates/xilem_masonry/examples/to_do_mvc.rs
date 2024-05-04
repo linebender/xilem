@@ -4,8 +4,8 @@
 // On Windows platform, don't show a console when opening the app.
 #![windows_subsystem = "windows"]
 
-use xilem::view::{button, checkbox, flex, label, prose, textbox};
-use xilem::{Axis, BoxedMasonryView, Color, MasonryView, TextAlignment, Xilem};
+use xilem::view::{button, checkbox, flex, textbox};
+use xilem::{Axis, MasonryView, Xilem};
 
 struct Task {
     description: String,
@@ -33,10 +33,12 @@ fn app_logic(task_list: &mut TaskList) -> impl MasonryView<TaskList> {
     let input_box = textbox(
         task_list.next_task.clone(),
         |task_list: &mut TaskList, new_value| {
-            task_list.add_task();
+            task_list.next_task = new_value;
         },
     )
-    .on_enter(|task_list: &mut TaskList, _| {});
+    .on_enter(|task_list: &mut TaskList, _| {
+        task_list.add_task();
+    });
     let first_line = flex((
         input_box,
         button("Add task".to_string(), |task_list: &mut TaskList| {
