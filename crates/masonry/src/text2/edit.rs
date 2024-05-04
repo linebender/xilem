@@ -107,8 +107,6 @@ impl<T: EditableText> TextEditor<T> {
                                 active_affinity: Affinity::Downstream,
                                 h_pos: None,
                             });
-                            // TODO: We know this is not the fullest model of copy-paste, and that we should work with the inner text
-                            // e.g. to put HTML code if supported by the rich text kind
                             let c = ' ';
                             self.text_mut().edit(selection.range(), c);
                             self.selection.selection = Some(Selection::caret(
@@ -133,8 +131,6 @@ impl<T: EditableText> TextEditor<T> {
                                 active_affinity: Affinity::Downstream,
                                 h_pos: None,
                             });
-                            // TODO: We know this is not the fullest model of copy-paste, and that we should work with the inner text
-                            // e.g. to put HTML code if supported by the rich text kind
                             self.text_mut().edit(selection.range(), &**c);
                             self.selection.selection = Some(Selection::caret(
                                 selection.min() + c.len(),
