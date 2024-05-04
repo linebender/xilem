@@ -479,7 +479,7 @@ mod tests {
         assert_render_snapshot!(harness, "button_list_no_scroll");
 
         harness.edit_root_widget(|mut portal| {
-            let mut portal = portal.downcast::<Portal<Flex>>().unwrap();
+            let mut portal = portal.downcast::<Portal<Flex>>();
             portal.set_viewport_pos(Point::new(0.0, 130.0))
         });
 
@@ -487,7 +487,7 @@ mod tests {
 
         let item_3_rect = harness.get_widget(item_3_id).state().layout_rect();
         harness.edit_root_widget(|mut portal| {
-            let mut portal = portal.downcast::<Portal<Flex>>().unwrap();
+            let mut portal = portal.downcast::<Portal<Flex>>();
             portal.pan_viewport_to(item_3_rect);
         });
 
@@ -495,7 +495,7 @@ mod tests {
 
         let item_13_rect = harness.get_widget(item_13_id).state().layout_rect();
         harness.edit_root_widget(|mut portal| {
-            let mut portal = portal.downcast::<Portal<Flex>>().unwrap();
+            let mut portal = portal.downcast::<Portal<Flex>>();
             portal.pan_viewport_to(item_13_rect);
         });
 

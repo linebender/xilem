@@ -186,7 +186,7 @@ mod tests {
             let mut harness = TestHarness::create_with_size(spinner, Size::new(30.0, 30.0));
 
             harness.edit_root_widget(|mut spinner| {
-                let mut spinner = spinner.downcast::<Spinner>().unwrap();
+                let mut spinner = spinner.downcast::<Spinner>();
                 spinner.set_color(Color::PURPLE);
             });
 

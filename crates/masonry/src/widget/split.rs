@@ -643,7 +643,7 @@ mod tests {
             let mut harness = TestHarness::create_with_size(widget, Size::new(100.0, 100.0));
 
             harness.edit_root_widget(|mut splitter| {
-                let mut splitter = splitter.downcast::<Split>().unwrap();
+                let mut splitter = splitter.downcast::<Split>();
 
                 splitter.set_split_point(0.3);
                 splitter.set_min_size(40.0, 10.0);

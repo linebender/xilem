@@ -86,7 +86,7 @@ impl<State, Action, View: MasonryView<State, Action>> ViewSequence<State, Action
         elements: &mut dyn ElementSplice,
     ) -> ChangeFlags {
         let mut element = elements.mutate();
-        let downcast = element.downcast::<View::Element>();
+        let downcast = element.try_downcast::<View::Element>();
 
         if let Some(element) = downcast {
             self.rebuild(seq_state, cx, prev, element)

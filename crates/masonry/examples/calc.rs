@@ -251,11 +251,11 @@ impl AppDriver for CalcState {
             _ => unreachable!(),
         }
 
-        ctx.get_root::<Flex>()
+        ctx.get_root::<RootWidget<Flex>>()
+            .get_element()
             .child_mut(1)
             .unwrap()
             .downcast::<Label<String>>()
-            .unwrap()
             .set_text((&*self.value).into());
     }
 }

@@ -353,7 +353,7 @@ mod tests {
             let mut harness = TestHarness::create_with_size(label, Size::new(50.0, 50.0));
 
             harness.edit_root_widget(|mut label| {
-                let mut label = label.downcast::<Label<&'static str>>().unwrap();
+                let mut label = label.downcast::<Label<&'static str>>();
                 label.set_text("The quick brown fox jumps over the lazy dog");
                 label.set_text_brush(PRIMARY_LIGHT);
                 label.set_font_family(FontFamily::Generic(GenericFamily::Monospace));
