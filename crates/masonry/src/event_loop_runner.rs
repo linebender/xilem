@@ -192,6 +192,7 @@ impl ApplicationHandler<accesskit_winit::Event> for MainState<'_> {
             }
             accesskit_winit::WindowEvent::AccessibilityDeactivated => {}
         }
+
         self.handle_signals(event_loop);
     }
 }

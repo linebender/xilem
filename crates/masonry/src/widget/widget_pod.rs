@@ -516,7 +516,7 @@ impl<W: Widget> WidgetPod<W> {
             return;
         }
 
-        if self.state.children.may_contain(&event.target) {
+        if self.id() == event.target || self.state.children.may_contain(&event.target) {
             self.call_widget_method_with_checks("on_access_event", |widget_pod| {
                 // widget_pod is a reborrow of `self`
                 let mut inner_ctx = EventCtx {
