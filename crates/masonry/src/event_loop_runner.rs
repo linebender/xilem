@@ -307,22 +307,35 @@ impl MainState<'_> {
 pub(crate) fn try_init_tracing() -> Result<(), SetGlobalDefaultError> {
     #[cfg(not(target_arch = "wasm32"))]
     {
+        use time::macros::format_description;
         use tracing_subscriber::filter::LevelFilter;
+        use tracing_subscriber::fmt::time::UtcTime;
         use tracing_subscriber::prelude::*;
         use tracing_subscriber::EnvFilter;
 
+        // Default level is DEBUG in --dev, INFO in --release
+        // DEBUG should print a few logs per low-density event.
+        // INFO should only print logs for noteworthy things.
         let default_level = if cfg!(debug_assertions) {
             LevelFilter::DEBUG
         } else {
             LevelFilter::INFO
         };
+        // Use EnvFilter to allow the user to override the log level without recompiling.
+        // TODO - Print error message if the env var is incorrectly formatted.
         let env_filter = EnvFilter::builder()
             .with_default_directive(default_level.into())
             .with_env_var("RUST_LOG")
             .from_env_lossy();
+        // This format is more concise than even the 'Compact' default:
+        // - We print the time without the date (GUI apps usually run for very short periods).
+        // - We print the time with seconds precision (we really don't need microseconds=.
+        // - We don't print the target
         let fmt_layer = tracing_subscriber::fmt::layer()
-            // Display target (eg "my_crate::some_mod::submod") with logs
-            .with_target(true);
+            .with_timer(UtcTime::new(format_description!(
+                "[hour]:[minute]:[second]"
+            )))
+            .with_target(false);
 
         let registry = tracing_subscriber::registry()
             .with(env_filter)
