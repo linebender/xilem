@@ -225,7 +225,7 @@ impl Widget for DynWidget {
     }
 
     fn accessibility_role(&self) -> Role {
-        self.inner.widget().accessibility_role()
+        Role::GenericContainer
     }
 
     fn accessibility(&mut self, ctx: &mut AccessCtx) {
