@@ -9,6 +9,8 @@ use crate::{ChangeFlags, Color, MasonryView, MessageResult, TextAlignment, ViewC
 // is that if the user forgets to hook up the modify the state's contents in the callback,
 // the textbox will always be reset to the initial state. This will be very annoying for the user.
 
+type Callback<State, Action> = Box<dyn Fn(&mut State, String) -> Action + Send + 'static>;
+
 pub fn textbox<F, State, Action>(contents: String, on_changed: F) -> Textbox<State, Action>
 where
     F: Fn(&mut State, String) -> Action + Send + 'static,
@@ -26,8 +28,8 @@ where
 
 pub struct Textbox<State, Action> {
     contents: String,
-    on_changed: Box<dyn Fn(&mut State, String) -> Action + Send + 'static>,
-    on_enter: Option<Box<dyn Fn(&mut State, String) -> Action + Send + 'static>>,
+    on_changed: Callback<State, Action>,
+    on_enter: Option<Callback<State, Action>>,
     text_brush: TextBrush,
     alignment: TextAlignment,
     disabled: bool,
@@ -83,7 +85,7 @@ impl<State: 'static, Action: 'static> MasonryView<State, Action> for Textbox<Sta
     ) -> crate::ChangeFlags {
         let mut changeflags = ChangeFlags::UNCHANGED;
 
-        if &self.contents != element.text().as_str() {
+        if self.contents != element.text().as_str() {
             element.set_text(self.contents.clone());
             changeflags.changed |= ChangeFlags::CHANGED.changed;
         }
