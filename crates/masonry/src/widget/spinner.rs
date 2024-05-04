@@ -5,6 +5,7 @@
 
 use std::f64::consts::PI;
 
+use accesskit::Role;
 use kurbo::{Affine, Cap, Stroke};
 use smallvec::SmallVec;
 use tracing::trace;
@@ -13,8 +14,8 @@ use vello::Scene;
 use crate::kurbo::Line;
 use crate::widget::{WidgetMut, WidgetRef};
 use crate::{
-    theme, BoxConstraints, Color, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Point,
-    PointerEvent, Size, StatusChange, TextEvent, Vec2, Widget,
+    theme, AccessCtx, AccessEvent, BoxConstraints, Color, EventCtx, LayoutCtx, LifeCycle,
+    LifeCycleCtx, PaintCtx, Point, PointerEvent, Size, StatusChange, TextEvent, Vec2, Widget,
 };
 
 // TODO - Set color
@@ -71,6 +72,8 @@ impl Widget for Spinner {
     fn on_pointer_event(&mut self, _ctx: &mut EventCtx, _event: &PointerEvent) {}
 
     fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
+
+    fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {}
 
     fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange) {}
 
@@ -135,6 +138,14 @@ impl Widget for Spinner {
             );
         }
     }
+
+    fn accessibility_role(&self) -> Role {
+        // Don't like to use that role, but I'm not seing
+        // anything that matches in accesskit::Role
+        Role::Unknown
+    }
+
+    fn accessibility(&mut self, _ctx: &mut AccessCtx) {}
 
     fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
         SmallVec::new()

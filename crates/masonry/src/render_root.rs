@@ -3,11 +3,12 @@
 
 use std::collections::VecDeque;
 
+use accesskit::{ActionRequest, NodeBuilder, Tree, TreeUpdate};
 // Automatically defaults to std::time::Instant on non Wasm platforms
 use instant::Instant;
 use kurbo::Affine;
 use parley::FontContext;
-use tracing::{info_span, warn};
+use tracing::{debug, info_span, warn};
 use vello::peniko::{Color, Fill};
 use vello::Scene;
 use winit::dpi::{LogicalPosition, LogicalSize, PhysicalSize};
@@ -20,7 +21,8 @@ use crate::event::{PointerEvent, TextEvent, WindowEvent};
 use crate::kurbo::Point;
 use crate::widget::{WidgetMut, WidgetState};
 use crate::{
-    Action, BoxConstraints, Handled, InternalLifeCycle, LifeCycle, Widget, WidgetId, WidgetPod,
+    AccessCtx, AccessEvent, Action, BoxConstraints, Handled, InternalLifeCycle, LifeCycle, Widget,
+    WidgetId, WidgetPod,
 };
 
 // TODO - Remove pub(crate)
@@ -202,7 +204,10 @@ impl RenderRoot {
             widget: &mut self.root.inner,
         };
 
-        let res = f(root_widget);
+        let res = {
+            let _span = info_span!("edit_root_widget").entered();
+            f(root_widget)
+        };
         self.post_event_processing(&mut fake_widget_state);
 
         res
@@ -229,8 +234,11 @@ impl RenderRoot {
         let handled = {
             ctx.global_state
                 .debug_logger
-                .push_important_span(&format!("¨POINTER_EVENT {}", event.short_name()));
-            let _span = info_span!("event").entered();
+                .push_important_span(&format!("POINTER_EVENT {}", event.short_name()));
+            let _span = info_span!("pointer_event").entered();
+            if !event.is_high_density() {
+                debug!("Running ON_POINTER_EVENT pass with {}", event.short_name());
+            }
             self.root.on_pointer_event(&mut ctx, &event);
             ctx.global_state.debug_logger.pop_span();
             Handled::from(ctx.is_handled)
@@ -269,7 +277,10 @@ impl RenderRoot {
             ctx.global_state
                 .debug_logger
                 .push_important_span(&format!("TEXT_EVENT {}", event.short_name()));
-            let _span = info_span!("event").entered();
+            let _span = info_span!("text_event").entered();
+            if !event.is_high_density() {
+                debug!("Running ON_TEXT_EVENT pass with {}", event.short_name());
+            }
             self.root.on_text_event(&mut ctx, &event);
             ctx.global_state.debug_logger.pop_span();
             Handled::from(ctx.is_handled)
@@ -290,6 +301,41 @@ impl RenderRoot {
         self.root.as_dyn().debug_validate(false);
 
         handled
+    }
+
+    pub fn root_on_access_event(&mut self, event: ActionRequest) {
+        let mut widget_state =
+            WidgetState::new(self.root.id(), Some(self.get_kurbo_size()), "<root>");
+
+        let mut ctx = EventCtx {
+            global_state: &mut self.state,
+            widget_state: &mut widget_state,
+            is_handled: false,
+            request_pan_to_child: None,
+        };
+
+        let Ok(id) = event.target.0.try_into() else {
+            warn!("Received ActionRequest with id 0. This shouldn't be possible.");
+            return;
+        };
+        let event = AccessEvent {
+            target: WidgetId(id),
+            action: event.action,
+            data: event.data,
+        };
+
+        {
+            ctx.global_state
+                .debug_logger
+                .push_important_span(&format!("ACCESSS_EVENT {}", event.short_name()));
+            let _span = info_span!("access_event").entered();
+            debug!("Running ON_ACCESS_EVENT pass with {}", event.short_name());
+            self.root.on_access_event(&mut ctx, &event);
+            ctx.global_state.debug_logger.pop_span();
+        }
+
+        self.post_event_processing(&mut widget_state);
+        self.root.as_dyn().debug_validate(false);
     }
 
     fn root_lifecycle(&mut self, event: LifeCycle) {
@@ -369,7 +415,10 @@ impl RenderRoot {
         };
 
         let mut scene = Scene::new();
-        self.root.paint(&mut ctx, &mut scene);
+        {
+            let _span = info_span!("paint").entered();
+            self.root.paint(&mut ctx, &mut scene);
+        }
 
         // FIXME - This is a workaround to Vello panicking when given an
         // empty scene
@@ -384,6 +433,44 @@ impl RenderRoot {
         );
 
         scene
+    }
+
+    // TODO - Integrate in unit tests?
+    pub fn root_accessibility(&mut self, rebuild_all: bool) -> TreeUpdate {
+        let mut tree_update = TreeUpdate {
+            nodes: vec![],
+            tree: None,
+            focus: self.state.focused_widget.unwrap_or(self.root.id()).into(),
+        };
+        let mut widget_state =
+            WidgetState::new(self.root.id(), Some(self.get_kurbo_size()), "<root>");
+        let mut ctx = AccessCtx {
+            global_state: &mut self.state,
+            widget_state: &mut widget_state,
+            tree_update: &mut tree_update,
+            current_node: NodeBuilder::default(),
+            rebuild_all,
+        };
+
+        // TODO - tree_update.tree
+        {
+            let _span = info_span!("accessibility").entered();
+            if rebuild_all {
+                debug!("Running ACCESSIBILITY pass with rebuild_all");
+            }
+            self.root.accessibility(&mut ctx);
+        }
+
+        if true {
+            tree_update.tree = Some(Tree {
+                root: self.root.id().into(),
+                app_name: None,
+                toolkit_name: Some("Masonry".to_string()),
+                toolkit_version: Some(env!("CARGO_PKG_VERSION").to_string()),
+            });
+        }
+
+        tree_update
     }
 
     fn get_kurbo_size(&self) -> kurbo::Size {

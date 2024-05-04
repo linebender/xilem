@@ -1,6 +1,7 @@
 // Copyright 2018 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use accesskit::Role;
 use kurbo::{Affine, Point, Size, Stroke};
 use parley::{
     layout::Alignment,
@@ -15,8 +16,8 @@ use vello::{
 
 use crate::{
     text2::{EditableText, TextBrush, TextEditor, TextWithSelection},
-    BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, PointerEvent,
-    StatusChange, TextEvent, Widget,
+    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
+    PointerEvent, StatusChange, TextEvent, Widget,
 };
 
 use super::{LineBreaking, WidgetMut, WidgetRef};
@@ -179,6 +180,12 @@ impl<T: EditableText> Widget for Textbox<T> {
         }
     }
 
+    fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {
+        // TODO - Handle accesskit::Action::SetTextSelection
+        // TODO - Handle accesskit::Action::ReplaceSelectedText
+        // TODO - Handle accesskit::Action::SetValue
+    }
+
     #[allow(missing_docs)]
     fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange) {
         match event {
@@ -272,6 +279,14 @@ impl<T: EditableText> Widget for Textbox<T> {
         if self.line_break_mode == LineBreaking::Clip {
             scene.pop_layer();
         }
+    }
+
+    fn accessibility_role(&self) -> Role {
+        Role::TextInput
+    }
+
+    fn accessibility(&mut self, _ctx: &mut AccessCtx) {
+        // TODO
     }
 
     fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {

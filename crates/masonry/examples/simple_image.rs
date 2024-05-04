@@ -13,7 +13,6 @@ use masonry::widget::{FillStrat, Image};
 use masonry::{Action, WidgetId};
 use vello::peniko::{Format, Image as ImageBuf};
 use winit::dpi::LogicalSize;
-use winit::event_loop::EventLoop;
 use winit::window::Window;
 
 struct Driver;
@@ -29,17 +28,11 @@ pub fn main() {
     let png_data = ImageBuf::new(image_data.to_vec().into(), Format::Rgba8, width, height);
     let image = Image::new(png_data).fill_mode(FillStrat::Contain);
 
-    let event_loop = EventLoop::new().unwrap();
     let window_size = LogicalSize::new(650.0, 450.0);
-    #[allow(deprecated)]
-    let window = event_loop
-        .create_window(
-            Window::default_attributes()
-                .with_title("Simple image example")
-                .with_min_inner_size(window_size)
-                .with_max_inner_size(window_size),
-        )
-        .unwrap();
+    let window_attributes = Window::default_attributes()
+        .with_title("Simple image example")
+        .with_min_inner_size(window_size)
+        .with_max_inner_size(window_size);
 
-    masonry::event_loop_runner::run(image, window, event_loop, Driver).unwrap();
+    masonry::event_loop_runner::run(window_attributes, image, Driver).unwrap();
 }

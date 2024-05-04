@@ -7,13 +7,15 @@
 // On Windows platform, don't show a console when opening the app.
 #![windows_subsystem = "windows"]
 
+use accesskit::Role;
 use kurbo::Stroke;
 use masonry::app_driver::{AppDriver, DriverCtx};
 use masonry::kurbo::BezPath;
 use masonry::widget::{FillStrat, WidgetRef};
 use masonry::{
-    Action, Affine, BoxConstraints, Color, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
-    Point, PointerEvent, Rect, Size, StatusChange, TextEvent, Widget, WidgetId,
+    AccessCtx, AccessEvent, Action, Affine, BoxConstraints, Color, EventCtx, LayoutCtx, LifeCycle,
+    LifeCycleCtx, PaintCtx, Point, PointerEvent, Rect, Size, StatusChange, TextEvent, Widget,
+    WidgetId,
 };
 use parley::layout::Alignment;
 use parley::style::{FontFamily, FontStack, StyleProperty};
@@ -21,7 +23,6 @@ use smallvec::SmallVec;
 use tracing::{trace_span, Span};
 use vello::peniko::{Brush, Fill, Format, Image};
 use vello::Scene;
-use winit::event_loop::EventLoop;
 use winit::window::Window;
 
 struct Driver;
@@ -39,6 +40,8 @@ impl Widget for CustomWidget {
     fn on_pointer_event(&mut self, _ctx: &mut EventCtx, _event: &PointerEvent) {}
 
     fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
+
+    fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {}
 
     fn lifecycle(&mut self, _ctx: &mut LifeCycleCtx, _event: &LifeCycle) {}
 
@@ -126,6 +129,17 @@ impl Widget for CustomWidget {
         scene.draw_image(&image_data, transform);
     }
 
+    fn accessibility_role(&self) -> Role {
+        Role::Canvas
+    }
+
+    fn accessibility(&mut self, ctx: &mut AccessCtx) {
+        let text = &self.0;
+        ctx.current_node().set_name(
+            format!("This is a demo of the Masonry Widget trait. Masonry has accessibility tree support. The demo shows colored shapes with the text '{text}'."),
+        );
+    }
+
     fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
         SmallVec::new()
     }
@@ -137,13 +151,9 @@ impl Widget for CustomWidget {
 
 pub fn main() {
     let my_string = "Masonry + Vello".to_string();
-    let event_loop = EventLoop::new().unwrap();
-    #[allow(deprecated)]
-    let window = event_loop
-        .create_window(Window::default_attributes().with_title("Fancy colots"))
-        .unwrap();
+    let window_attributes = Window::default_attributes().with_title("Fancy colors");
 
-    masonry::event_loop_runner::run(CustomWidget(my_string), window, event_loop, Driver).unwrap();
+    masonry::event_loop_runner::run(window_attributes, CustomWidget(my_string), Driver).unwrap();
 }
 
 fn make_image_data(width: usize, height: usize) -> Vec<u8> {

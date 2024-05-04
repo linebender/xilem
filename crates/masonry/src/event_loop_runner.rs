@@ -4,8 +4,9 @@
 use std::num::NonZeroUsize;
 use std::sync::Arc;
 
+use accesskit_winit::Adapter;
 use tracing::subscriber::SetGlobalDefaultError;
-use tracing::warn;
+use tracing::{debug, warn};
 use vello::kurbo::Affine;
 use vello::util::{RenderContext, RenderSurface};
 use vello::{peniko::Color, AaSupport, RenderParams, Renderer, RendererOptions, Scene};
@@ -15,7 +16,7 @@ use winit::dpi::LogicalPosition;
 use winit::error::EventLoopError;
 use winit::event::WindowEvent as WinitWindowEvent;
 use winit::event_loop::{ActiveEventLoop, EventLoop};
-use winit::window::{Window, WindowId};
+use winit::window::{Window, WindowAttributes, WindowId};
 
 use crate::app_driver::{AppDriver, DriverCtx};
 use crate::event::{PointerState, WindowEvent};
@@ -30,12 +31,33 @@ struct MainState<'a> {
     renderer: Option<Renderer>,
     pointer_state: PointerState,
     app_driver: Box<dyn AppDriver>,
+    accesskit_adapter: Adapter,
 }
 
 pub fn run(
+    window_attributes: WindowAttributes,
     root_widget: impl Widget,
+    app_driver: impl AppDriver + 'static,
+) -> Result<(), EventLoopError> {
+    let visible = window_attributes.visible;
+    let window_attributes = window_attributes.with_visible(false);
+
+    let event_loop = EventLoop::with_user_event().build()?;
+    #[allow(deprecated)]
+    let window = event_loop.create_window(window_attributes).unwrap();
+
+    let event_loop_proxy = event_loop.create_proxy();
+    let adapter = Adapter::with_event_loop_proxy(&window, event_loop_proxy);
+    window.set_visible(visible);
+
+    run_with(window, event_loop, adapter, root_widget, app_driver)
+}
+
+pub fn run_with(
     window: Window,
-    event_loop: EventLoop<()>,
+    event_loop: EventLoop<accesskit_winit::Event>,
+    accesskit_adapter: Adapter,
+    root_widget: impl Widget,
     app_driver: impl AppDriver + 'static,
 ) -> Result<(), EventLoopError> {
     let window = Arc::new(window);
@@ -57,6 +79,7 @@ pub fn run(
         renderer: None,
         pointer_state: PointerState::empty(),
         app_driver: Box::new(app_driver),
+        accesskit_adapter,
     };
 
     // If there is no default tracing subscriber, we set our own. If one has
@@ -68,12 +91,14 @@ pub fn run(
     event_loop.run_app(&mut main_state)
 }
 
-impl ApplicationHandler for MainState<'_> {
+impl ApplicationHandler<accesskit_winit::Event> for MainState<'_> {
     fn resumed(&mut self, _event_loop: &ActiveEventLoop) {
         // FIXME: initialize window in this handler because initializing it before running the event loop is deprecated
     }
 
     fn window_event(&mut self, event_loop: &ActiveEventLoop, _: WindowId, event: WinitWindowEvent) {
+        self.accesskit_adapter.process_event(&self.window, &event);
+
         match event {
             WinitWindowEvent::RedrawRequested => {
                 let scene = self.render_root.redraw();
@@ -149,10 +174,12 @@ impl ApplicationHandler for MainState<'_> {
             }
             _ => (),
         }
+
         while let Some(signal) = self.render_root.pop_signal() {
             match signal {
                 render_root::RenderRootSignal::Action(action, widget_id) => {
                     self.render_root.edit_root_widget(|root| {
+                        debug!("Action {:?} on widget {:?}", action, widget_id);
                         let mut driver_ctx = DriverCtx {
                             main_root_widget: root,
                         };
@@ -202,6 +229,24 @@ impl ApplicationHandler for MainState<'_> {
                     self.window.set_title(&title);
                 }
             }
+        }
+
+        self.accesskit_adapter
+            .update_if_active(|| self.render_root.root_accessibility(false));
+    }
+
+    fn user_event(&mut self, _event_loop: &ActiveEventLoop, event: accesskit_winit::Event) {
+        match event.window_event {
+            // Note that this event can be called at any time, even multiple times if
+            // the user restarts their screen reader.
+            accesskit_winit::WindowEvent::InitialTreeRequested => {
+                self.accesskit_adapter
+                    .update_if_active(|| self.render_root.root_accessibility(true));
+            }
+            accesskit_winit::WindowEvent::ActionRequested(action_request) => {
+                self.render_root.root_on_access_event(action_request);
+            }
+            accesskit_winit::WindowEvent::AccessibilityDeactivated => {}
         }
     }
 }
@@ -264,17 +309,23 @@ pub(crate) fn try_init_tracing() -> Result<(), SetGlobalDefaultError> {
     {
         use tracing_subscriber::filter::LevelFilter;
         use tracing_subscriber::prelude::*;
-        let filter_layer = if cfg!(debug_assertions) {
+        use tracing_subscriber::EnvFilter;
+
+        let default_level = if cfg!(debug_assertions) {
             LevelFilter::DEBUG
         } else {
             LevelFilter::INFO
         };
+        let env_filter = EnvFilter::builder()
+            .with_default_directive(default_level.into())
+            .with_env_var("RUST_LOG")
+            .from_env_lossy();
         let fmt_layer = tracing_subscriber::fmt::layer()
             // Display target (eg "my_crate::some_mod::submod") with logs
             .with_target(true);
 
         let registry = tracing_subscriber::registry()
-            .with(filter_layer)
+            .with(env_filter)
             .with(fmt_layer);
         tracing::dispatcher::set_global_default(registry.into())
     }

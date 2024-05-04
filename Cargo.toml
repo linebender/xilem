@@ -34,6 +34,8 @@ smallvec = "1.13.2"
 fnv = "1.0.7"
 instant = "0.1.6"
 bitflags = "2.0.0"
+accesskit = "0.14.0"
+accesskit_winit = "0.20.0"
 
 [package]
 name = "xilem_classic"

@@ -9,6 +9,7 @@ use crate::WidgetId;
 
 use std::{collections::HashSet, path::PathBuf};
 
+use accesskit::{Action, ActionData};
 use winit::dpi::{LogicalPosition, PhysicalPosition, PhysicalSize};
 use winit::event::{Ime, KeyEvent, Modifiers, MouseButton};
 use winit::keyboard::ModifiersState;
@@ -54,6 +55,14 @@ pub enum TextEvent {
     ModifierChange(ModifiersState),
     // TODO - Document difference with Lifecycle focus change
     FocusChange(bool),
+}
+
+#[derive(Debug, Clone)]
+pub struct AccessEvent {
+    // TODO - Split out widget id from AccessEvent
+    pub target: WidgetId,
+    pub action: Action,
+    pub data: Option<ActionData>,
 }
 
 #[derive(Debug, Clone)]
@@ -230,6 +239,20 @@ impl PointerEvent {
             PointerEvent::HoverFileCancel(_) => "HoverFileCancel",
         }
     }
+
+    pub fn is_high_density(&self) -> bool {
+        match self {
+            PointerEvent::PointerDown(_, _) => false,
+            PointerEvent::PointerUp(_, _) => false,
+            PointerEvent::PointerMove(_) => true,
+            PointerEvent::PointerEnter(_) => false,
+            PointerEvent::PointerLeave(_) => false,
+            PointerEvent::MouseWheel(_, _) => true,
+            PointerEvent::HoverFile(_, _) => true,
+            PointerEvent::DropFile(_, _) => false,
+            PointerEvent::HoverFileCancel(_) => false,
+        }
+    }
 }
 
 impl TextEvent {
@@ -239,6 +262,48 @@ impl TextEvent {
             TextEvent::Ime(_) => "Ime",
             TextEvent::ModifierChange(_) => "ModifierChange",
             TextEvent::FocusChange(_) => "FocusChange",
+        }
+    }
+
+    pub fn is_high_density(&self) -> bool {
+        match self {
+            TextEvent::KeyboardKey(event, _) => event.repeat,
+            TextEvent::Ime(_) => false,
+            TextEvent::ModifierChange(_) => false,
+            TextEvent::FocusChange(_) => false,
+        }
+    }
+}
+
+impl AccessEvent {
+    pub fn short_name(&self) -> &'static str {
+        match self.action {
+            accesskit::Action::Default => "Default",
+            accesskit::Action::Focus => "Focus",
+            accesskit::Action::Blur => "Blur",
+            accesskit::Action::Collapse => "Collapse",
+            accesskit::Action::Expand => "Expand",
+            accesskit::Action::CustomAction => "CustomAction",
+            accesskit::Action::Decrement => "Decrement",
+            accesskit::Action::Increment => "Increment",
+            accesskit::Action::HideTooltip => "HideTooltip",
+            accesskit::Action::ShowTooltip => "ShowTooltip",
+            accesskit::Action::ReplaceSelectedText => "ReplaceSelectedText",
+            accesskit::Action::ScrollBackward => "ScrollBackward",
+            accesskit::Action::ScrollDown => "ScrollDown",
+            accesskit::Action::ScrollForward => "ScrollForward",
+            accesskit::Action::ScrollLeft => "ScrollLeft",
+            accesskit::Action::ScrollRight => "ScrollRight",
+            accesskit::Action::ScrollUp => "ScrollUp",
+            accesskit::Action::ScrollIntoView => "ScrollIntoView",
+            accesskit::Action::ScrollToPoint => "ScrollToPoint",
+            accesskit::Action::SetScrollOffset => "SetScrollOffset",
+            accesskit::Action::SetTextSelection => "SetTextSelection",
+            accesskit::Action::SetSequentialFocusNavigationStartingPoint => {
+                "SetSequentialFocusNavigationStartingPoint"
+            }
+            accesskit::Action::SetValue => "SetValue",
+            accesskit::Action::ShowContextMenu => "ShowContextMenu",
         }
     }
 }

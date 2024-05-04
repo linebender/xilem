@@ -1,19 +1,20 @@
 // Copyright 2018 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use accesskit::{NodeBuilder, NodeId};
 use tracing::{info_span, trace, warn};
 use vello::Scene;
 use winit::dpi::LogicalPosition;
 
-use crate::event::{PointerEvent, TextEvent};
+use crate::event::{AccessEvent, PointerEvent, TextEvent};
 use crate::kurbo::{Affine, Insets, Point, Rect, Shape, Size};
 use crate::paint_scene_helpers::stroke;
 use crate::render_root::RenderRootState;
 use crate::theme::get_debug_color;
 use crate::widget::{WidgetRef, WidgetState};
 use crate::{
-    BoxConstraints, EventCtx, InternalLifeCycle, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
-    StatusChange, Widget, WidgetId,
+    AccessCtx, BoxConstraints, EventCtx, InternalLifeCycle, LayoutCtx, LifeCycle, LifeCycleCtx,
+    PaintCtx, StatusChange, Widget, WidgetId,
 };
 
 // TODO - rewrite links in doc
@@ -497,6 +498,59 @@ impl<W: Widget> WidgetPod<W> {
         self.inner.lifecycle(&mut inner_ctx, &event);
     }
 
+    pub fn on_access_event(&mut self, parent_ctx: &mut EventCtx, event: &AccessEvent) {
+        let _span = self.inner.make_trace_span().entered();
+        // TODO #11
+        parent_ctx
+            .global_state
+            .debug_logger
+            .push_span(self.inner.short_type_name());
+
+        // TODO - explain this
+        self.mark_as_visited();
+        self.check_initialized("on_text_event");
+
+        if parent_ctx.is_handled {
+            parent_ctx.global_state.debug_logger.pop_span();
+            // If the event was already handled, we quit early.
+            return;
+        }
+
+        if self.state.children.may_contain(&event.target) {
+            self.call_widget_method_with_checks("on_access_event", |widget_pod| {
+                // widget_pod is a reborrow of `self`
+                let mut inner_ctx = EventCtx {
+                    global_state: parent_ctx.global_state,
+                    widget_state: &mut widget_pod.state,
+                    is_handled: false,
+                    request_pan_to_child: None,
+                };
+
+                widget_pod.inner.on_access_event(&mut inner_ctx, event);
+
+                inner_ctx.widget_state.has_active |= inner_ctx.widget_state.is_active;
+                parent_ctx.is_handled |= inner_ctx.is_handled;
+
+                // TODO - request_pan_to_child
+            });
+        }
+
+        // Always merge even if not needed, because merging is idempotent and gives us simpler code.
+        // Doing this conditionally only makes sense when there's a measurable performance boost.
+        parent_ctx.widget_state.merge_up(&mut self.state);
+
+        parent_ctx
+            .global_state
+            .debug_logger
+            .update_widget_state(self.as_dyn());
+        parent_ctx
+            .global_state
+            .debug_logger
+            .push_log(false, "updated state");
+
+        parent_ctx.global_state.debug_logger.pop_span();
+    }
+
     // --- LIFECYCLE ---
 
     // TODO #5 - Some implicit invariants:
@@ -629,6 +683,8 @@ impl<W: Widget> WidgetPod<W> {
                 self.state.needs_layout = true;
                 self.state.needs_paint = true;
                 self.state.needs_window_origin = true;
+                self.state.needs_accessibility_update = true;
+                self.state.request_accessibility_update = true;
 
                 true
             }
@@ -791,6 +847,8 @@ impl<W: Widget> WidgetPod<W> {
         self.state.is_expecting_place_child_call = true;
         // TODO - Not everything that has been re-laid out needs to be repainted.
         self.state.needs_paint = true;
+        self.state.request_accessibility_update = false;
+        self.state.needs_accessibility_update = false;
 
         bc.debug_check(self.inner.short_type_name());
 
@@ -945,6 +1003,78 @@ impl<W: Widget> WidgetPod<W> {
         let scene = &mut self.fragment;
         stroke(scene, &rect, color, BORDER_WIDTH);
     }
+
+    pub fn accessibility(&mut self, parent_ctx: &mut AccessCtx) {
+        let _span = self.inner.make_trace_span().entered();
+
+        // TODO
+        // if self.state.is_stashed {}
+
+        // TODO - explain this
+        self.mark_as_visited();
+        self.check_initialized("accessibility");
+
+        // If this widget or a child has requested an accessibility update,
+        // or if AccessKit has requested a full rebuild,
+        // we call the accessibility method on this widget.
+        if parent_ctx.rebuild_all || self.state.request_accessibility_update {
+            trace!(
+                "Building accessibility node for widget '{}' #{}",
+                self.inner.short_type_name(),
+                self.state.id.to_raw()
+            );
+
+            self.call_widget_method_with_checks("accessibility", |widget_pod| {
+                let current_node = widget_pod.build_access_node();
+                let mut inner_ctx = AccessCtx {
+                    global_state: parent_ctx.global_state,
+                    widget_state: &mut widget_pod.state,
+                    tree_update: parent_ctx.tree_update,
+                    current_node,
+                    rebuild_all: parent_ctx.rebuild_all,
+                };
+                widget_pod.inner.accessibility(&mut inner_ctx);
+
+                let id = inner_ctx.widget_state.id.into();
+                inner_ctx
+                    .tree_update
+                    .nodes
+                    .push((id, inner_ctx.current_node.build()));
+            });
+        }
+
+        self.state.request_accessibility_update = false;
+        self.state.needs_accessibility_update = false;
+    }
+
+    fn build_access_node(&mut self) -> NodeBuilder {
+        let mut node = NodeBuilder::new(self.inner.accessibility_role());
+        node.set_bounds(to_accesskit_rect(self.state.window_layout_rect()));
+
+        node.set_children(
+            self.inner
+                .children()
+                .iter()
+                .map(|pod| pod.id().into())
+                .collect::<Vec<NodeId>>(),
+        );
+
+        if self.state.is_hot {
+            node.set_hovered();
+        }
+        if self.state.is_disabled() {
+            node.set_disabled();
+        }
+        if self.state.is_stashed {
+            node.set_hidden();
+        }
+
+        node
+    }
+}
+
+fn to_accesskit_rect(r: Rect) -> accesskit::Rect {
+    accesskit::Rect::new(r.x0, r.y0, r.x1, r.y1)
 }
 
 // TODO - negative rects?

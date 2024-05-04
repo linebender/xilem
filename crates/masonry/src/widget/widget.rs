@@ -6,15 +6,16 @@ use std::num::NonZeroU64;
 use std::ops::{Deref, DerefMut};
 use std::sync::atomic::{AtomicU64, Ordering};
 
+use accesskit::Role;
 use smallvec::SmallVec;
 use tracing::{trace_span, Span};
 use vello::Scene;
 
-use crate::event::StatusChange;
-use crate::event::{PointerEvent, TextEvent};
+use crate::event::{AccessEvent, PointerEvent, StatusChange, TextEvent};
 use crate::widget::WidgetRef;
 use crate::{
-    AsAny, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Point, Size,
+    AccessCtx, AsAny, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
+    Point, Size,
 };
 
 /// A unique identifier for a single [`Widget`].
@@ -39,7 +40,7 @@ use crate::{
 /// If you set a `WidgetId` directly, you are responsible for ensuring that it
 /// is unique. Two widgets must not be created with the same id.
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
-pub struct WidgetId(NonZeroU64);
+pub struct WidgetId(pub(crate) NonZeroU64);
 
 // TODO - Add tutorial: implementing a widget - See issue #5
 /// The trait implemented by all widgets.
@@ -72,6 +73,9 @@ pub trait Widget: AsAny {
     /// a [`Command`](crate::Command).
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent);
     fn on_text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent);
+
+    /// Handle an event from the platform's accessibility API.
+    fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent);
 
     #[allow(missing_docs)]
     fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange);
@@ -109,6 +113,10 @@ pub trait Widget: AsAny {
     /// afterwards. In addition, they can apply masks and transforms on
     /// the render context, which is especially useful for scrolling.
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene);
+
+    fn accessibility_role(&self) -> Role;
+
+    fn accessibility(&mut self, ctx: &mut AccessCtx);
 
     /// Return references to this widget's children.
     ///
@@ -228,8 +236,14 @@ impl WidgetId {
         WidgetId(unsafe { std::num::NonZeroU64::new_unchecked(id) })
     }
 
-    pub(crate) fn to_raw(self) -> u64 {
+    pub fn to_raw(self) -> u64 {
         self.0.into()
+    }
+}
+
+impl From<WidgetId> for accesskit::NodeId {
+    fn from(id: WidgetId) -> accesskit::NodeId {
+        accesskit::NodeId(id.0.into())
     }
 }
 
@@ -241,6 +255,10 @@ impl Widget for Box<dyn Widget> {
 
     fn on_text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent) {
         self.deref_mut().on_text_event(ctx, event);
+    }
+
+    fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {
+        self.deref_mut().on_access_event(ctx, event);
     }
 
     fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange) {
@@ -257,6 +275,14 @@ impl Widget for Box<dyn Widget> {
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
         self.deref_mut().paint(ctx, scene);
+    }
+
+    fn accessibility_role(&self) -> Role {
+        self.deref().accessibility_role()
+    }
+
+    fn accessibility(&mut self, ctx: &mut AccessCtx) {
+        self.deref_mut().accessibility(ctx);
     }
 
     fn type_name(&self) -> &'static str {

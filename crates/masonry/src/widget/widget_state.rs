@@ -83,12 +83,16 @@ pub struct WidgetState {
 
     pub(crate) needs_layout: bool,
     pub(crate) needs_paint: bool,
+    pub(crate) needs_accessibility_update: bool,
 
     /// Because of some scrolling or something, `parent_window_origin` needs to be updated.
     pub(crate) needs_window_origin: bool,
 
     /// Any descendant has requested an animation frame.
     pub(crate) request_anim: bool,
+
+    /// Any descendant has requested an accessibility update.
+    pub(crate) request_accessibility_update: bool,
 
     pub(crate) update_focus_chain: bool,
 
@@ -161,11 +165,13 @@ impl WidgetState {
             is_hot: false,
             needs_layout: false,
             needs_paint: false,
+            needs_accessibility_update: false,
             needs_window_origin: false,
             is_active: false,
             has_active: false,
             has_focus: false,
             request_anim: false,
+            request_accessibility_update: false,
             focus_chain: Vec::new(),
             children: Bloom::new(),
             children_changed: false,
@@ -214,6 +220,7 @@ impl WidgetState {
         self.needs_paint |= child_state.needs_paint;
         self.needs_window_origin |= child_state.needs_window_origin;
         self.request_anim |= child_state.request_anim;
+        self.request_accessibility_update |= child_state.request_accessibility_update;
         self.children_disabled_changed |= child_state.children_disabled_changed;
         self.children_disabled_changed |=
             child_state.is_explicitly_disabled_new != child_state.is_explicitly_disabled;

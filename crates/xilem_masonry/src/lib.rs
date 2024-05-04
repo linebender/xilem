@@ -4,17 +4,22 @@
 #![allow(clippy::comparison_chain)]
 use std::{any::Any, collections::HashMap};
 
+use accesskit::Role;
 use masonry::{
     app_driver::AppDriver,
     event_loop_runner,
     widget::{WidgetMut, WidgetRef},
-    BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Point, PointerEvent,
-    Size, StatusChange, TextEvent, Widget, WidgetId, WidgetPod,
+    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
+    Point, PointerEvent, Size, StatusChange, TextEvent, Widget, WidgetId, WidgetPod,
 };
 pub use masonry::{widget::Axis, Color, TextAlignment};
 use smallvec::SmallVec;
 use vello::Scene;
-use winit::{dpi::LogicalSize, error::EventLoopError, event_loop::EventLoop, window::Window};
+use winit::{
+    dpi::LogicalSize,
+    error::EventLoopError,
+    window::{Window, WindowAttributes},
+};
 
 mod any_view;
 mod id;
@@ -54,6 +59,9 @@ impl<E: 'static + Widget> Widget for RootWidget<E> {
     fn on_text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent) {
         self.pod.on_text_event(ctx, event);
     }
+    fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {
+        self.pod.on_access_event(ctx, event);
+    }
 
     fn on_status_change(&mut self, _: &mut LifeCycleCtx, _: &StatusChange) {
         // Intentionally do nothing?
@@ -71,6 +79,14 @@ impl<E: 'static + Widget> Widget for RootWidget<E> {
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
         self.pod.paint(ctx, scene);
+    }
+
+    fn accessibility_role(&self) -> Role {
+        Role::Window
+    }
+
+    fn accessibility(&mut self, ctx: &mut AccessCtx) {
+        self.pod.accessibility(ctx);
     }
 
     fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
@@ -171,32 +187,22 @@ where
         Logic: 'static,
         View: 'static,
     {
-        let event_loop = EventLoop::new().unwrap();
         let window_size = LogicalSize::new(600., 800.);
-        #[allow(deprecated)]
-        let window = event_loop
-            .create_window(
-                Window::default_attributes()
-                    .with_title(window_title)
-                    .with_resizable(true)
-                    .with_min_inner_size(window_size),
-            )
-            .unwrap();
-        self.run_windowed_in(window, event_loop)
+        let window_attributes = Window::default_attributes()
+            .with_title(window_title)
+            .with_resizable(true)
+            .with_min_inner_size(window_size);
+        self.run_windowed_in(window_attributes)
     }
 
     // TODO: Make windows into a custom view
-    pub fn run_windowed_in(
-        self,
-        window: Window,
-        event_loop: EventLoop<()>,
-    ) -> Result<(), EventLoopError>
+    pub fn run_windowed_in(self, window_attributes: WindowAttributes) -> Result<(), EventLoopError>
     where
         State: 'static,
         Logic: 'static,
         View: 'static,
     {
-        event_loop_runner::run(self.root_widget, window, event_loop, self.driver)
+        event_loop_runner::run(window_attributes, self.root_widget, self.driver)
     }
 }
 pub trait MasonryView<State, Action = ()>: Send + 'static {

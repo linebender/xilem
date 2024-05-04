@@ -6,6 +6,7 @@
 use std::any::Any;
 use std::time::Duration;
 
+use accesskit::{NodeBuilder, TreeUpdate};
 use parley::FontContext;
 use tracing::{trace, warn};
 use winit::dpi::LogicalPosition;
@@ -86,6 +87,14 @@ pub struct PaintCtx<'a> {
     pub(crate) debug_widget: bool,
 }
 
+pub struct AccessCtx<'a> {
+    pub(crate) global_state: &'a mut RenderRootState,
+    pub(crate) widget_state: &'a WidgetState,
+    pub(crate) tree_update: &'a mut TreeUpdate,
+    pub(crate) current_node: NodeBuilder,
+    pub(crate) rebuild_all: bool,
+}
+
 pub struct WorkerCtx<'a> {
     // TODO
     #[allow(dead_code)]
@@ -100,6 +109,7 @@ impl_context_method!(
     LifeCycleCtx<'_>,
     PaintCtx<'_>,
     LayoutCtx<'_>,
+    AccessCtx<'_>,
     {
         /// get the `WidgetId` of the current widget.
         pub fn widget_id(&self) -> WidgetId {
@@ -363,6 +373,12 @@ impl_context_method!(WidgetCtx<'_>, EventCtx<'_>, LifeCycleCtx<'_>, {
     pub fn request_layout(&mut self) {
         trace!("request_layout");
         self.widget_state.needs_layout = true;
+    }
+
+    pub fn request_accessibility_update(&mut self) {
+        trace!("request_accessibility_update");
+        self.widget_state.needs_accessibility_update = true;
+        self.widget_state.request_accessibility_update = true;
     }
 
     /// Request an animation frame.
@@ -660,5 +676,21 @@ impl PaintCtx<'_> {
     #[inline]
     pub fn depth(&self) -> u32 {
         self.depth
+    }
+}
+
+impl AccessCtx<'_> {
+    pub fn current_node(&mut self) -> &mut NodeBuilder {
+        &mut self.current_node
+    }
+
+    /// Report whether accessibility was requested on this widget.
+    ///
+    /// This method is primarily intended for containers. The `accessibility`
+    /// method will be called on a widget when it or any of its descendants
+    /// have seen a request. However, in many cases a container need not push
+    /// a node for itself.
+    pub fn is_requested(&self) -> bool {
+        self.widget_state.needs_accessibility_update
     }
 }
