@@ -27,6 +27,7 @@ pub enum WindowEvent {
     Rescale(f64),
     Resize(PhysicalSize<u32>),
     AnimFrame,
+    RebuildAccessTree,
 }
 
 // TODO - How can RenderRoot express "I started a drag-and-drop op"?
