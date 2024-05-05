@@ -63,7 +63,7 @@ impl<State, Action> Textbox<State, Action> {
 }
 
 impl<State: 'static, Action: 'static> MasonryView<State, Action> for Textbox<State, Action> {
-    type Element = masonry::widget::Textbox<String>;
+    type Element = masonry::widget::Textbox;
     type ViewState = ();
 
     fn build(&self, cx: &mut ViewCx) -> (WidgetPod<Self::Element>, Self::ViewState) {
@@ -89,9 +89,9 @@ impl<State: 'static, Action: 'static> MasonryView<State, Action> for Textbox<Sta
         // instead, we compare directly to the element's text. This is to handle
         // cases like "Previous data says contents is 'fooba', user presses 'r',
         // now data and contents are both 'foobar' but previous data is 'fooba'"
-        // withou calling `set_text`.
-        if self.contents != element.text().as_str() {
-            element.set_text(self.contents.clone());
+        // without calling `set_text`.
+        if self.contents != element.text() {
+            element.reset_text(self.contents.clone());
             changeflags.changed |= ChangeFlags::CHANGED.changed;
         }
 

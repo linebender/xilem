@@ -1392,7 +1392,7 @@ mod tests {
             let mut child = flex.child_mut(1).unwrap();
             assert_eq!(
                 child
-                    .try_downcast::<Label<&'static str>>()
+                    .try_downcast::<Label>()
                     .unwrap()
                     .widget
                     .text()

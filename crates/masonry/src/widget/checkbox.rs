@@ -20,14 +20,14 @@ use crate::{
 };
 
 /// A checkbox that can be toggled.
-pub struct Checkbox<T: TextStorage = ArcStr> {
+pub struct Checkbox {
     checked: bool,
-    label: WidgetPod<Label<T>>,
+    label: WidgetPod<Label>,
 }
 
-impl<T: TextStorage> Checkbox<T> {
+impl Checkbox {
     /// Create a new `Checkbox` with a text label.
-    pub fn new(checked: bool, text: T) -> Checkbox<T> {
+    pub fn new(checked: bool, text: impl Into<ArcStr>) -> Checkbox {
         Checkbox {
             checked,
             label: WidgetPod::new(Label::new(text)),
@@ -35,7 +35,7 @@ impl<T: TextStorage> Checkbox<T> {
     }
 
     /// Create a new `Checkbox` with the given label.
-    pub fn from_label(checked: bool, label: Label<T>) -> Checkbox<T> {
+    pub fn from_label(checked: bool, label: Label) -> Checkbox {
         Checkbox {
             checked,
             label: WidgetPod::new(label),
@@ -43,23 +43,25 @@ impl<T: TextStorage> Checkbox<T> {
     }
 }
 
-impl<T: TextStorage> WidgetMut<'_, Checkbox<T>> {
+impl WidgetMut<'_, Checkbox> {
     pub fn set_checked(&mut self, checked: bool) {
         self.widget.checked = checked;
         self.ctx.request_paint();
     }
 
     /// Set the text.
-    pub fn set_text(&mut self, new_text: T) {
+    ///
+    /// We enforce this to be an `ArcStr` to make the allocation explicit.
+    pub fn set_text(&mut self, new_text: ArcStr) {
         self.label_mut().set_text(new_text);
     }
 
-    pub fn label_mut(&mut self) -> WidgetMut<'_, Label<T>> {
+    pub fn label_mut(&mut self) -> WidgetMut<'_, Label> {
         self.ctx.get_mut(&mut self.widget.label)
     }
 }
 
-impl<T: TextStorage> Widget for Checkbox<T> {
+impl Widget for Checkbox {
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
         match event {
             PointerEvent::PointerDown(_, _) => {
@@ -280,9 +282,9 @@ mod tests {
             let mut harness = TestHarness::create_with_size(checkbox, Size::new(50.0, 50.0));
 
             harness.edit_root_widget(|mut checkbox| {
-                let mut checkbox = checkbox.downcast::<Checkbox<&'static str>>();
+                let mut checkbox = checkbox.downcast::<Checkbox>();
                 checkbox.set_checked(true);
-                checkbox.set_text("The quick brown fox jumps over the lazy dog");
+                checkbox.set_text(ArcStr::from("The quick brown fox jumps over the lazy dog"));
 
                 let mut label = checkbox.label_mut();
                 label.set_text_brush(PRIMARY_LIGHT);

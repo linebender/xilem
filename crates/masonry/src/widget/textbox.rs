@@ -15,7 +15,7 @@ use vello::{
 };
 
 use crate::{
-    text2::{EditableText, TextBrush, TextEditor, TextWithSelection},
+    text2::{TextBrush, TextEditor, TextStorage, TextWithSelection},
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
     PointerEvent, StatusChange, TextEvent, Widget,
 };
@@ -27,17 +27,22 @@ const TEXTBOX_PADDING: f64 = 4.0;
 /// The textbox widget is a widget which shows text which can be edited by the user
 ///
 /// For immutable text [`Prose`](super::Prose) should be preferred
-pub struct Textbox<T: EditableText> {
-    editor: TextEditor<T>,
+// TODO: RichTextBox 👀
+pub struct Textbox {
+    // We hardcode the underlying storage type as `String`.
+    // We might change this to a rope based structure at some point.
+    // If you need a text box which uses a different text type, you should
+    // create a custom widget
+    editor: TextEditor<String>,
     line_break_mode: LineBreaking,
     show_disabled: bool,
     brush: TextBrush,
 }
 
-impl<T: EditableText> Textbox<T> {
-    pub fn new(text: T) -> Self {
+impl Textbox {
+    pub fn new(initial_text: impl Into<String>) -> Self {
         Textbox {
-            editor: TextEditor::new(text, crate::theme::TEXT_SIZE_NORMAL as f32),
+            editor: TextEditor::new(initial_text.into(), crate::theme::TEXT_SIZE_NORMAL as f32),
             line_break_mode: LineBreaking::WordWrap,
             show_disabled: true,
             brush: crate::theme::TEXT_COLOR.into(),
@@ -45,7 +50,7 @@ impl<T: EditableText> Textbox<T> {
     }
 
     // TODO: Can we reduce code duplication with `Label` widget somehow?
-    pub fn text(&self) -> &T {
+    pub fn text(&self) -> &str {
         self.editor.text()
     }
 
@@ -80,12 +85,15 @@ impl<T: EditableText> Textbox<T> {
     }
 }
 
-impl<T: EditableText> WidgetMut<'_, Textbox<T>> {
-    pub fn text(&self) -> &T {
+impl WidgetMut<'_, Textbox> {
+    pub fn text(&self) -> &str {
         self.widget.editor.text()
     }
 
-    pub fn set_text_properties<R>(&mut self, f: impl FnOnce(&mut TextWithSelection<T>) -> R) -> R {
+    pub fn set_text_properties<R>(
+        &mut self,
+        f: impl FnOnce(&mut TextWithSelection<String>) -> R,
+    ) -> R {
         let ret = f(&mut self.widget.editor);
         if self.widget.editor.needs_rebuild() {
             self.ctx.request_layout();
@@ -93,10 +101,19 @@ impl<T: EditableText> WidgetMut<'_, Textbox<T>> {
         ret
     }
 
-    pub fn set_text(&mut self, new_text: T) {
-        // FIXME - Right now doing this resets the caret to the start of the text
-        // It's not clear whether this is the right behaviour, or if there even
-        // is one.
+    /// Reset the contents of the text box.
+    ///
+    /// This is likely to be disruptive if the user is focused on this widget,
+    /// and so should be avoided if possible.
+    // FIXME - it's not clear whether this is the right behaviour, or if there even
+    // is one.
+    // TODO: Create a method which sets the text and the cursor selection to be used if focused?
+    pub fn reset_text(&mut self, new_text: String) {
+        if self.ctx.is_focused() {
+            tracing::warn!(
+                "Called reset_text on a focused `Textbox`. This will lose the user's current selection and cursor"
+            );
+        }
         self.set_text_properties(|layout| layout.set_text(new_text));
     }
 
@@ -127,7 +144,7 @@ impl<T: EditableText> WidgetMut<'_, Textbox<T>> {
     }
 }
 
-impl<T: EditableText> Widget for Textbox<T> {
+impl Widget for Textbox {
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
         let window_origin = ctx.widget_state.window_origin();
         let inner_origin = Point::new(
@@ -218,6 +235,7 @@ impl<T: EditableText> Widget for Textbox<T> {
                 ctx.request_layout();
             }
             LifeCycle::BuildFocusChain => {
+                // TODO: This will always be empty
                 if !self.editor.text().links().is_empty() {
                     tracing::warn!("Links present in text, but not yet integrated");
                 }

@@ -34,26 +34,29 @@ pub enum LineBreaking {
 }
 
 /// A widget displaying non-editable text.
-pub struct Label<T: TextStorage> {
-    text_layout: TextLayout<T>,
+pub struct Label {
+    // We hardcode the underlying storage type as `ArcStr` for `Label`
+    // More advanced use cases will almost certainly need a custom widget, anyway
+    // (Rich text is not yet fully integrated, and so the architecture by which a label
+    // has rich text properties specified still needs to be designed)
+    text_layout: TextLayout<ArcStr>,
     line_break_mode: LineBreaking,
     show_disabled: bool,
     brush: TextBrush,
-    // disabled: bool,
 }
 
-impl<T: TextStorage> Label<T> {
+impl Label {
     /// Create a new label.
-    pub fn new(text: T) -> Self {
+    pub fn new(text: impl Into<ArcStr>) -> Self {
         Self {
-            text_layout: TextLayout::new(text, crate::theme::TEXT_SIZE_NORMAL as f32),
+            text_layout: TextLayout::new(text.into(), crate::theme::TEXT_SIZE_NORMAL as f32),
             line_break_mode: LineBreaking::Overflow,
             show_disabled: true,
             brush: crate::theme::TEXT_COLOR.into(),
         }
     }
 
-    pub fn text(&self) -> &T {
+    pub fn text(&self) -> &ArcStr {
         self.text_layout.text()
     }
 
@@ -85,21 +88,19 @@ impl<T: TextStorage> Label<T> {
         self.line_break_mode = line_break_mode;
         self
     }
-}
 
-impl Label<ArcStr> {
     /// Create a label with empty text.
     pub fn empty() -> Self {
-        Self::new("".into())
+        Self::new("")
     }
 }
 
-impl<T: TextStorage> WidgetMut<'_, Label<T>> {
-    pub fn text(&self) -> &T {
+impl WidgetMut<'_, Label> {
+    pub fn text(&self) -> &ArcStr {
         self.widget.text_layout.text()
     }
 
-    pub fn set_text_properties<R>(&mut self, f: impl FnOnce(&mut TextLayout<T>) -> R) -> R {
+    pub fn set_text_properties<R>(&mut self, f: impl FnOnce(&mut TextLayout<ArcStr>) -> R) -> R {
         let ret = f(&mut self.widget.text_layout);
         if self.widget.text_layout.needs_rebuild() {
             self.ctx.request_layout();
@@ -107,7 +108,8 @@ impl<T: TextStorage> WidgetMut<'_, Label<T>> {
         ret
     }
 
-    pub fn set_text(&mut self, new_text: T) {
+    pub fn set_text(&mut self, new_text: impl Into<ArcStr>) {
+        let new_text = new_text.into();
         self.set_text_properties(|layout| layout.set_text(new_text));
     }
 
@@ -138,7 +140,7 @@ impl<T: TextStorage> WidgetMut<'_, Label<T>> {
     }
 }
 
-impl<T: TextStorage> Widget for Label<T> {
+impl Widget for Label {
     fn on_pointer_event(&mut self, _ctx: &mut EventCtx, event: &PointerEvent) {
         match event {
             PointerEvent::PointerMove(_point) => {
@@ -353,7 +355,7 @@ mod tests {
             let mut harness = TestHarness::create_with_size(label, Size::new(50.0, 50.0));
 
             harness.edit_root_widget(|mut label| {
-                let mut label = label.downcast::<Label<&'static str>>();
+                let mut label = label.downcast::<Label>();
                 label.set_text("The quick brown fox jumps over the lazy dog");
                 label.set_text_brush(PRIMARY_LIGHT);
                 label.set_font_family(FontFamily::Generic(GenericFamily::Monospace));

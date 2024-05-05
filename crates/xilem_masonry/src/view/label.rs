@@ -40,7 +40,7 @@ impl Label {
 }
 
 impl<State, Action> MasonryView<State, Action> for Label {
-    type Element = masonry::widget::Label<ArcStr>;
+    type Element = masonry::widget::Label;
     type ViewState = ();
 
     fn build(&self, _cx: &mut ViewCx) -> (WidgetPod<Self::Element>, Self::ViewState) {
