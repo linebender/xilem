@@ -1,6 +1,8 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+mod arc;
+
 mod button;
 pub use button::*;
 
@@ -12,6 +14,9 @@ pub use flex::*;
 
 mod label;
 pub use label::*;
+
+mod memoize;
+pub use memoize::*;
 
 mod prose;
 pub use prose::*;

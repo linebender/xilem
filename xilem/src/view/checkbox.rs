@@ -28,7 +28,7 @@ pub struct Checkbox<F> {
 
 impl<F, State, Action> MasonryView<State, Action> for Checkbox<F>
 where
-    F: Fn(&mut State, bool) -> Action + Send + 'static,
+    F: Fn(&mut State, bool) -> Action + Send + Sync + 'static,
 {
     type Element = masonry::widget::Checkbox;
     type ViewState = ();

@@ -146,7 +146,7 @@ where
         event_loop_runner::run(window_attributes, self.root_widget, self.driver)
     }
 }
-pub trait MasonryView<State, Action = ()>: Send + 'static {
+pub trait MasonryView<State, Action = ()>: Send + Sync + 'static {
     type Element: Widget;
     type ViewState;
 
