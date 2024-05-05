@@ -43,6 +43,7 @@ impl Checkbox {
     }
 }
 
+// --- MARK: WIDGETMUT ---
 impl WidgetMut<'_, Checkbox> {
     pub fn set_checked(&mut self, checked: bool) {
         self.widget.checked = checked;
@@ -61,6 +62,7 @@ impl WidgetMut<'_, Checkbox> {
     }
 }
 
+// --- MARK: IMPL WIDGET ---
 impl Widget for Checkbox {
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
         match event {
@@ -224,6 +226,7 @@ impl Widget for Checkbox {
     }
 }
 
+// --- MARK: TESTS ---
 #[cfg(test)]
 mod tests {
     use insta::assert_debug_snapshot;

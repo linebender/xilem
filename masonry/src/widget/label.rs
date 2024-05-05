@@ -45,6 +45,7 @@ pub struct Label {
     brush: TextBrush,
 }
 
+// --- MARK: BUILDERS ---
 impl Label {
     /// Create a new label.
     pub fn new(text: impl Into<ArcStr>) -> Self {
@@ -95,6 +96,7 @@ impl Label {
     }
 }
 
+// --- MARK: WIDGETMUT ---
 impl WidgetMut<'_, Label> {
     pub fn text(&self) -> &ArcStr {
         self.widget.text_layout.text()
@@ -140,6 +142,7 @@ impl WidgetMut<'_, Label> {
     }
 }
 
+// --- MARK: IMPL WIDGET ---
 impl Widget for Label {
     fn on_pointer_event(&mut self, _ctx: &mut EventCtx, event: &PointerEvent) {
         match event {
@@ -263,6 +266,7 @@ impl Widget for Label {
     }
 }
 
+// --- MARK: TESTS ---
 #[cfg(test)]
 mod tests {
     use insta::assert_debug_snapshot;

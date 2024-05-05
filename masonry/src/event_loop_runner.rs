@@ -60,6 +60,7 @@ pub type EventLoop = winit::event_loop::EventLoop<accesskit_winit::Event>;
 /// This *will* be changed to allow custom event types, but is implemented this way for expedience
 pub type EventLoopBuilder = winit::event_loop::EventLoopBuilder<accesskit_winit::Event>;
 
+// --- MARK: RUN ---
 pub fn run(
     // Clearly, this API needs to be refactored, so we don't mind forcing this to be passed in here directly
     // This is passed in mostly to allow configuring the Android app
@@ -184,6 +185,7 @@ impl ApplicationHandler<accesskit_winit::Event> for MainState<'_> {
         }
     }
 
+    // --- MARK: WINDOW_EVENT ---
     fn window_event(&mut self, event_loop: &ActiveEventLoop, _: WindowId, event: WinitWindowEvent) {
         let WindowState::Rendering {
             window,
@@ -330,6 +332,7 @@ impl ApplicationHandler<accesskit_winit::Event> for MainState<'_> {
         self.handle_signals(event_loop);
     }
 
+    // --- MARK: USER_EVENT ---
     fn user_event(&mut self, event_loop: &ActiveEventLoop, event: accesskit_winit::Event) {
         match event.window_event {
             // Note that this event can be called at any time, even multiple times if
@@ -349,6 +352,7 @@ impl ApplicationHandler<accesskit_winit::Event> for MainState<'_> {
 }
 
 impl MainState<'_> {
+    // --- MARK: RENDER ---
     fn render(&mut self, scene: Scene) {
         let WindowState::Rendering {
             window, surface, ..
@@ -406,6 +410,7 @@ impl MainState<'_> {
         device.poll(wgpu::Maintain::Wait);
     }
 
+    // --- MARK: SIGNALS ---
     fn handle_signals(&mut self, _event_loop: &ActiveEventLoop) {
         let WindowState::Rendering { window, .. } = &mut self.window else {
             tracing::warn!("Tried to handle a signal whilst suspended or before window created");
@@ -469,6 +474,7 @@ impl MainState<'_> {
     }
 }
 
+// --- MARK: TRACING ---
 pub(crate) fn try_init_tracing() -> Result<(), SetGlobalDefaultError> {
     #[cfg(not(target_arch = "wasm32"))]
     {

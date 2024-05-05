@@ -48,6 +48,7 @@ pub struct Textbox {
     brush: TextBrush,
 }
 
+// --- MARK: BUILDERS ---
 impl Textbox {
     pub fn new(initial_text: impl Into<String>) -> Self {
         Textbox {
@@ -94,6 +95,7 @@ impl Textbox {
     }
 }
 
+// --- MARK: WIDGETMUT ---
 impl WidgetMut<'_, Textbox> {
     pub fn text(&self) -> &str {
         self.widget.editor.text()
@@ -154,6 +156,7 @@ impl WidgetMut<'_, Textbox> {
     }
 }
 
+// --- MARK: IMPL WIDGET ---
 impl Widget for Textbox {
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
         let window_origin = ctx.widget_state.window_origin();

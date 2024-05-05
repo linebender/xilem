@@ -29,6 +29,7 @@ pub struct Button {
     label: WidgetPod<Label>,
 }
 
+// --- MARK: BUILDERS ---
 impl Button {
     /// Create a new button with a text label.
     ///
@@ -61,6 +62,7 @@ impl Button {
     }
 }
 
+// --- MARK: WIDGETMUT ---
 impl WidgetMut<'_, Button> {
     /// Set the text.
     pub fn set_text(&mut self, new_text: impl Into<ArcStr>) {
@@ -72,6 +74,7 @@ impl WidgetMut<'_, Button> {
     }
 }
 
+// --- MARK: IMPL WIDGET ---
 impl Widget for Button {
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
         match event {
@@ -214,6 +217,7 @@ impl Widget for Button {
     }
 }
 
+// --- MARK: TESTS ---
 #[cfg(test)]
 mod tests {
     use insta::assert_debug_snapshot;
