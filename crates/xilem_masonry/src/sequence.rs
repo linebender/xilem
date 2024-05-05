@@ -89,7 +89,7 @@ impl<State, Action, View: MasonryView<State, Action>> ViewSequence<State, Action
         let downcast = element.try_downcast::<View::Element>();
 
         if let Some(element) = downcast {
-            self.rebuild(seq_state, cx, prev, element)
+            self.rebuild(seq_state, cx, prev, element);
         } else {
             unreachable!("Tree structure tracking got wrong element type")
         }
@@ -152,7 +152,7 @@ impl<State, Action, Marker, VT: ViewSequence<State, Action, Marker>>
         match (self, prev.as_ref().zip(seq_state.inner.as_mut())) {
             (Some(this), Some((prev, prev_state))) => cx
                 .with_id(ViewId::for_type::<VT>(seq_state.generation), |cx| {
-                    this.rebuild(prev_state, cx, prev, elements)
+                    this.rebuild(prev_state, cx, prev, elements);
                 }),
             (None, Some((prev, _))) => {
                 // Maybe replace with `prev.cleanup`?
@@ -375,7 +375,7 @@ impl<State, Action, M0, Seq0: ViewSequence<State, Action, M0>> ViewSequence<Stat
         prev: &Self,
         elements: &mut dyn ElementSplice,
     ) {
-        self.0.rebuild(seq_state, cx, &prev.0, elements)
+        self.0.rebuild(seq_state, cx, &prev.0, elements);
     }
 
     fn message(

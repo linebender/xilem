@@ -51,7 +51,7 @@ impl<T: 'static, A: 'static> MasonryView<T, A> for BoxedMasonryView<T, A> {
         element: masonry::widget::WidgetMut<Self::Element>,
     ) {
         self.deref()
-            .dyn_rebuild(view_state, cx, prev.deref(), element)
+            .dyn_rebuild(view_state, cx, prev.deref(), element);
     }
 }
 
@@ -119,7 +119,7 @@ where
                 if let Some(element) = element {
                     if let Some(state) = dyn_state.inner_state.downcast_mut() {
                         cx.with_id(ViewId::for_type::<V>(dyn_state.generation), move |cx| {
-                            self.rebuild(state, cx, prev, element)
+                            self.rebuild(state, cx, prev, element);
                         });
                     } else {
                         tracing::error!("Unexpected element state type");
@@ -127,7 +127,7 @@ where
                 } else {
                     eprintln!("downcast of element failed in dyn_rebuild");
                 }
-            })
+            });
         } else {
             // Otherwise, replace the element.
 
