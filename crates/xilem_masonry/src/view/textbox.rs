@@ -85,10 +85,16 @@ impl<State: 'static, Action: 'static> MasonryView<State, Action> for Textbox<Sta
     ) -> crate::ChangeFlags {
         let mut changeflags = ChangeFlags::UNCHANGED;
 
+        // Unlike the other properties, we don't compare to the previous value;
+        // instead, we compare directly to the element's text. This is to handle
+        // cases like "Previous data says contents is 'fooba', user presses 'r',
+        // now data and contents are both 'foobar' but previous data is 'fooba'"
+        // withou calling `set_text`.
         if self.contents != element.text().as_str() {
             element.set_text(self.contents.clone());
             changeflags.changed |= ChangeFlags::CHANGED.changed;
         }
+
         // if prev.disabled != self.disabled {
         //     element.set_disabled(self.disabled);
         //     changeflags.changed |= ChangeFlags::CHANGED.changed;
