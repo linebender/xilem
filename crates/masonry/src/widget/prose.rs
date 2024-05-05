@@ -12,10 +12,10 @@ use tracing::trace;
 use vello::{peniko::BlendMode, Scene};
 
 use crate::{
-    text2::{Selectable, TextBrush, TextWithSelection},
+    text2::{TextBrush, TextStorage, TextWithSelection},
     widget::label::LABEL_X_PADDING,
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
-    PointerEvent, StatusChange, TextEvent, Widget,
+    AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx,
+    PaintCtx, PointerEvent, StatusChange, TextEvent, Widget,
 };
 
 use super::{LineBreaking, WidgetMut, WidgetRef};
@@ -26,17 +26,18 @@ use super::{LineBreaking, WidgetMut, WidgetRef};
 ///
 /// This should be preferred over [`Label`](super::Label) for most
 /// immutable text, other than that within
-pub struct Prose<T: Selectable> {
-    text_layout: TextWithSelection<T>,
+pub struct Prose {
+    // See `Label` for discussion of the choice of text type
+    text_layout: TextWithSelection<ArcStr>,
     line_break_mode: LineBreaking,
     show_disabled: bool,
     brush: TextBrush,
 }
 
-impl<T: Selectable> Prose<T> {
-    pub fn new(text: T) -> Self {
+impl Prose {
+    pub fn new(text: impl Into<ArcStr>) -> Self {
         Prose {
-            text_layout: TextWithSelection::new(text, crate::theme::TEXT_SIZE_NORMAL as f32),
+            text_layout: TextWithSelection::new(text.into(), crate::theme::TEXT_SIZE_NORMAL as f32),
             line_break_mode: LineBreaking::WordWrap,
             show_disabled: true,
             brush: crate::theme::TEXT_COLOR.into(),
@@ -44,7 +45,7 @@ impl<T: Selectable> Prose<T> {
     }
 
     // TODO: Can we reduce code duplication with `Label` widget somehow?
-    pub fn text(&self) -> &T {
+    pub fn text(&self) -> &ArcStr {
         self.text_layout.text()
     }
 
@@ -79,12 +80,15 @@ impl<T: Selectable> Prose<T> {
     }
 }
 
-impl<T: Selectable> WidgetMut<'_, Prose<T>> {
-    pub fn text(&self) -> &T {
+impl WidgetMut<'_, Prose> {
+    pub fn text(&self) -> &ArcStr {
         self.widget.text_layout.text()
     }
 
-    pub fn set_text_properties<R>(&mut self, f: impl FnOnce(&mut TextWithSelection<T>) -> R) -> R {
+    pub fn set_text_properties<R>(
+        &mut self,
+        f: impl FnOnce(&mut TextWithSelection<ArcStr>) -> R,
+    ) -> R {
         let ret = f(&mut self.widget.text_layout);
         if self.widget.text_layout.needs_rebuild() {
             self.ctx.request_layout();
@@ -92,7 +96,15 @@ impl<T: Selectable> WidgetMut<'_, Prose<T>> {
         ret
     }
 
-    pub fn set_text(&mut self, new_text: T) {
+    /// Change the text. If the user currently has a selection in the box, this will delete that selection.
+    ///
+    /// We enforce this to be an `ArcStr` to make the allocation explicit.
+    pub fn set_text(&mut self, new_text: ArcStr) {
+        if self.ctx.is_focused() {
+            tracing::info!(
+                "Called reset_text on a focused `Prose`. This will lose the user's current selection"
+            );
+        }
         self.set_text_properties(|layout| layout.set_text(new_text));
     }
 
@@ -123,7 +135,7 @@ impl<T: Selectable> WidgetMut<'_, Prose<T>> {
     }
 }
 
-impl<T: Selectable> Widget for Prose<T> {
+impl Widget for Prose {
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
         let window_origin = ctx.widget_state.window_origin();
         let inner_origin = Point::new(window_origin.x + LABEL_X_PADDING, window_origin.y);
@@ -210,6 +222,7 @@ impl<T: Selectable> Widget for Prose<T> {
                 ctx.request_layout();
             }
             LifeCycle::BuildFocusChain => {
+                // TODO: This is *definitely* empty
                 if !self.text_layout.text().links().is_empty() {
                     tracing::warn!("Links present in text, but not yet integrated");
                 }

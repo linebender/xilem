@@ -41,7 +41,7 @@ impl Prose {
 }
 
 impl<State, Action> MasonryView<State, Action> for Prose {
-    type Element = masonry::widget::Prose<ArcStr>;
+    type Element = masonry::widget::Prose;
     type ViewState = ();
 
     fn build(&self, _cx: &mut ViewCx) -> (WidgetPod<Self::Element>, Self::ViewState) {

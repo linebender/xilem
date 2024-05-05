@@ -255,8 +255,8 @@ impl AppDriver for CalcState {
             .get_element()
             .child_mut(1)
             .unwrap()
-            .downcast::<Label<String>>()
-            .set_text((&*self.value).into());
+            .downcast::<Label>()
+            .set_text(&*self.value);
     }
 }
 

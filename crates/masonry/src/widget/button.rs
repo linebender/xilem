@@ -13,7 +13,7 @@ use crate::paint_scene_helpers::{fill_lin_gradient, stroke, UnitPoint};
 use crate::text2::TextStorage;
 use crate::widget::{Label, WidgetMut, WidgetPod, WidgetRef};
 use crate::{
-    theme, AccessCtx, AccessEvent, BoxConstraints, EventCtx, Insets, LayoutCtx, LifeCycle,
+    theme, AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, Insets, LayoutCtx, LifeCycle,
     LifeCycleCtx, PaintCtx, PointerEvent, Size, StatusChange, TextEvent, Widget,
 };
 
@@ -25,11 +25,11 @@ const LABEL_INSETS: Insets = Insets::uniform_xy(8., 2.);
 /// A button with a text label.
 ///
 /// Emits [`Action::ButtonPressed`] when pressed.
-pub struct Button<T: TextStorage> {
-    label: WidgetPod<Label<T>>,
+pub struct Button {
+    label: WidgetPod<Label>,
 }
 
-impl<T: TextStorage> Button<T> {
+impl Button {
     /// Create a new button with a text label.
     ///
     /// # Examples
@@ -39,7 +39,7 @@ impl<T: TextStorage> Button<T> {
     ///
     /// let button = Button::new("Increment");
     /// ```
-    pub fn new(text: T) -> Button<T> {
+    pub fn new(text: impl Into<ArcStr>) -> Button {
         Button::from_label(Label::new(text))
     }
 
@@ -54,25 +54,25 @@ impl<T: TextStorage> Button<T> {
     /// let label = Label::new("Increment").with_text_brush(Color::rgb(0.5, 0.5, 0.5));
     /// let button = Button::from_label(label);
     /// ```
-    pub fn from_label(label: Label<T>) -> Button<T> {
+    pub fn from_label(label: Label) -> Button {
         Button {
             label: WidgetPod::new(label),
         }
     }
 }
 
-impl<T: TextStorage> WidgetMut<'_, Button<T>> {
+impl WidgetMut<'_, Button> {
     /// Set the text.
-    pub fn set_text(&mut self, new_text: T) {
+    pub fn set_text(&mut self, new_text: impl Into<ArcStr>) {
         self.label_mut().set_text(new_text);
     }
 
-    pub fn label_mut(&mut self) -> WidgetMut<'_, Label<T>> {
+    pub fn label_mut(&mut self) -> WidgetMut<'_, Label> {
         self.ctx.get_mut(&mut self.widget.label)
     }
 }
 
-impl<T: TextStorage> Widget for Button<T> {
+impl Widget for Button {
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
         match event {
             PointerEvent::PointerDown(_, _) => {
@@ -261,7 +261,7 @@ mod tests {
             let mut harness = TestHarness::create_with_size(button, Size::new(50.0, 50.0));
 
             harness.edit_root_widget(|mut button| {
-                let mut button = button.downcast::<Button<&'static str>>();
+                let mut button = button.downcast::<Button>();
                 button.set_text("The quick brown fox jumps over the lazy dog");
 
                 let mut label = button.label_mut();

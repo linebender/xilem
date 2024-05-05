@@ -24,7 +24,7 @@ impl<F, State, Action> MasonryView<State, Action> for Button<F>
 where
     F: Fn(&mut State) -> Action + Send + 'static,
 {
-    type Element = masonry::widget::Button<ArcStr>;
+    type Element = masonry::widget::Button;
     type ViewState = ();
 
     fn build(&self, cx: &mut ViewCx) -> (WidgetPod<Self::Element>, Self::ViewState) {
