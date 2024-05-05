@@ -150,10 +150,11 @@ impl<State, Action, Marker, VT: ViewSequence<State, Action, Marker>>
         // (i.e. mixing up the state from different instances)
         debug_assert_eq!(prev.is_some(), seq_state.inner.is_some());
         match (self, prev.as_ref().zip(seq_state.inner.as_mut())) {
-            (Some(this), Some((prev, prev_state))) => cx
-                .with_id(ViewId::for_type::<VT>(seq_state.generation), |cx| {
+            (Some(this), Some((prev, prev_state))) => {
+                cx.with_id(ViewId::for_type::<VT>(seq_state.generation), |cx| {
                     this.rebuild(prev_state, cx, prev, elements);
-                }),
+                })
+            }
             (None, Some((prev, _))) => {
                 // Maybe replace with `prev.cleanup`?
                 let count = prev.count();
