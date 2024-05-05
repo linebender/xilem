@@ -153,7 +153,7 @@ impl<State, Action, Marker, VT: ViewSequence<State, Action, Marker>>
             (Some(this), Some((prev, prev_state))) => {
                 cx.with_id(ViewId::for_type::<VT>(seq_state.generation), |cx| {
                     this.rebuild(prev_state, cx, prev, elements);
-                })
+                });
             }
             (None, Some((prev, _))) => {
                 // Maybe replace with `prev.cleanup`?
