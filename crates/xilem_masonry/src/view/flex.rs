@@ -100,7 +100,7 @@ impl ElementSplice for FlexSplice<'_> {
     fn push(&mut self, element: WidgetPod<Box<dyn masonry::Widget>>) {
         self.element.insert_child_pod(self.ix, element);
         self.element.insert_default_spacer(self.ix);
-        self.ix += 1;
+        self.ix += 2;
     }
 
     fn mutate(&mut self) -> WidgetMut<Box<dyn Widget>> {
@@ -142,6 +142,6 @@ impl ElementSplice for FlexSplice<'_> {
     }
 
     fn len(&self) -> usize {
-        self.ix
+        self.ix / 2
     }
 }
