@@ -22,7 +22,8 @@ use crate::{
 
 use super::{LineBreaking, WidgetMut, WidgetRef};
 
-const TEXTBOX_PADDING: f64 = 4.0;
+const TEXTBOX_PADDING: f64 = 3.0;
+const TEXTBOX_MARGIN: f64 = 8.0;
 
 /// The textbox widget is a widget which shows text which can be edited by the user
 ///
@@ -148,7 +149,7 @@ impl Widget for Textbox {
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
         let window_origin = ctx.widget_state.window_origin();
         let inner_origin = Point::new(
-            window_origin.x + TEXTBOX_PADDING,
+            window_origin.x + TEXTBOX_PADDING + TEXTBOX_MARGIN,
             window_origin.y + TEXTBOX_PADDING,
         );
         match event {
@@ -265,7 +266,7 @@ impl Widget for Textbox {
         let label_size = Size {
             height: text_size.height + 2. * TEXTBOX_PADDING,
             // TODO: Better heuristic here?
-            width: bc.max().width - 20.,
+            width: bc.max().width - 2. * TEXTBOX_MARGIN,
         };
         let size = bc.constrain(label_size);
         trace!(
