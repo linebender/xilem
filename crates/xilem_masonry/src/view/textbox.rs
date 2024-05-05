@@ -5,23 +5,38 @@ use masonry::{text2::TextBrush, widget::WidgetMut, WidgetPod};
 
 use crate::{ChangeFlags, Color, MasonryView, MessageResult, TextAlignment, ViewCx, ViewId};
 
-pub fn textbox() -> Textbox {
+// FIXME - A major problem of the current approach (always setting the textbox contents)
+// is that if the user forgets to hook up the modify the state's contents in the callback,
+// the textbox will always be reset to the initial state. This will be very annoying for the user.
+
+type Callback<State, Action> = Box<dyn Fn(&mut State, String) -> Action + Send + 'static>;
+
+pub fn textbox<F, State, Action>(contents: String, on_changed: F) -> Textbox<State, Action>
+where
+    F: Fn(&mut State, String) -> Action + Send + 'static,
+{
     // TODO: Allow setting a placeholder
     Textbox {
+        contents,
+        on_changed: Box::new(on_changed),
+        on_enter: None,
         text_brush: Color::WHITE.into(),
         alignment: TextAlignment::default(),
         disabled: false,
     }
 }
 
-pub struct Textbox {
+pub struct Textbox<State, Action> {
+    contents: String,
+    on_changed: Callback<State, Action>,
+    on_enter: Option<Callback<State, Action>>,
     text_brush: TextBrush,
     alignment: TextAlignment,
     disabled: bool,
     // TODO: add more attributes of `masonry::widget::Label`
 }
 
-impl Textbox {
+impl<State, Action> Textbox<State, Action> {
     #[doc(alias = "color")]
     pub fn brush(mut self, color: impl Into<TextBrush>) -> Self {
         self.text_brush = color.into();
@@ -37,19 +52,28 @@ impl Textbox {
         self.disabled = true;
         self
     }
+
+    pub fn on_enter<F>(mut self, on_enter: F) -> Self
+    where
+        F: Fn(&mut State, String) -> Action + Send + 'static,
+    {
+        self.on_enter = Some(Box::new(on_enter));
+        self
+    }
 }
 
-impl<State, Action> MasonryView<State, Action> for Textbox {
+impl<State: 'static, Action: 'static> MasonryView<State, Action> for Textbox<State, Action> {
     type Element = masonry::widget::Textbox<String>;
     type ViewState = ();
 
-    fn build(&self, _cx: &mut ViewCx) -> (WidgetPod<Self::Element>, Self::ViewState) {
-        let widget_pod = WidgetPod::new(
-            masonry::widget::Textbox::new(String::new())
-                .with_text_brush(self.text_brush.clone())
-                .with_text_alignment(self.alignment),
-        );
-        (widget_pod, ())
+    fn build(&self, cx: &mut ViewCx) -> (WidgetPod<Self::Element>, Self::ViewState) {
+        cx.with_leaf_action_widget(|_| {
+            WidgetPod::new(
+                masonry::widget::Textbox::new(self.contents.clone())
+                    .with_text_brush(self.text_brush.clone())
+                    .with_text_alignment(self.alignment),
+            )
+        })
     }
 
     fn rebuild(
@@ -60,6 +84,16 @@ impl<State, Action> MasonryView<State, Action> for Textbox {
         mut element: WidgetMut<Self::Element>,
     ) -> crate::ChangeFlags {
         let mut changeflags = ChangeFlags::UNCHANGED;
+
+        // Unlike the other properties, we don't compare to the previous value;
+        // instead, we compare directly to the element's text. This is to handle
+        // cases like "Previous data says contents is 'fooba', user presses 'r',
+        // now data and contents are both 'foobar' but previous data is 'fooba'"
+        // withou calling `set_text`.
+        if self.contents != element.text().as_str() {
+            element.set_text(self.contents.clone());
+            changeflags.changed |= ChangeFlags::CHANGED.changed;
+        }
 
         // if prev.disabled != self.disabled {
         //     element.set_disabled(self.disabled);
@@ -79,11 +113,35 @@ impl<State, Action> MasonryView<State, Action> for Textbox {
     fn message(
         &self,
         _view_state: &mut Self::ViewState,
-        _id_path: &[ViewId],
+        id_path: &[ViewId],
         message: Box<dyn std::any::Any>,
-        _app_state: &mut State,
+        app_state: &mut State,
     ) -> crate::MessageResult<Action> {
-        tracing::error!("Message arrived in Label::message, but Label doesn't consume any messages, this is a bug");
-        MessageResult::Stale(message)
+        debug_assert!(
+            id_path.is_empty(),
+            "id path should be empty in Textbox::message"
+        );
+        match message.downcast::<masonry::Action>() {
+            Ok(action) => match *action {
+                masonry::Action::TextChanged(text) => {
+                    MessageResult::Action((self.on_changed)(app_state, text))
+                }
+                masonry::Action::TextEntered(text) if self.on_enter.is_some() => {
+                    MessageResult::Action((self.on_enter.as_ref().unwrap())(app_state, text))
+                }
+                masonry::Action::TextEntered(_) => {
+                    tracing::error!("Textbox::message: on_enter is not set");
+                    MessageResult::Stale(action)
+                }
+                _ => {
+                    tracing::error!("Wrong action type in Textbox::message: {action:?}");
+                    MessageResult::Stale(action)
+                }
+            },
+            Err(message) => {
+                tracing::error!("Wrong message type in Textbox::message");
+                MessageResult::Stale(message)
+            }
+        }
     }
 }

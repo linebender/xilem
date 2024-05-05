@@ -135,19 +135,19 @@ impl<T: Selectable> TextWithSelection<T> {
                             Handled::Yes
                         }
                         "c" if mods.control_key() || mods.super_key() => {
-                            match &self.selection {
-                                Some(selection) => {
-                                    // TODO: We know this is not the fullest model of copy-paste, and that we should work with the inner text
-                                    // e.g. to put HTML code if supported by the rich text kind
-                                    if let Some(text) =
-                                        self.text().slice(selection.min()..selection.max())
-                                    {
-                                        println!(r#"Copying "{text}""#);
-                                    } else {
-                                        debug_panic!("Had invalid selection");
-                                    }
-                                }
-                                None => debug_panic!("Got text input event whilst not focused"),
+                            let selection = self.selection.unwrap_or(Selection {
+                                anchor: 0,
+                                active: 0,
+                                active_affinity: Affinity::Downstream,
+                                h_pos: None,
+                            });
+                            // TODO: We know this is not the fullest model of copy-paste, and that we should work with the inner text
+                            // e.g. to put HTML code if supported by the rich text kind
+                            if let Some(text) = self.text().slice(selection.min()..selection.max())
+                            {
+                                println!(r#"Copying "{text}""#);
+                            } else {
+                                debug_panic!("Had invalid selection");
                             }
                             Handled::Yes
                         }

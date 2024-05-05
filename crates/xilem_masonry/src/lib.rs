@@ -85,7 +85,7 @@ where
                 );
                 if !changed.changed {
                     // Masonry manages all of this itself - ChangeFlags is probably not needed?
-                    tracing::debug!("TODO: Skip some work?");
+                    tracing::debug!("Nothing changed as result of action");
                 }
                 self.current_view = next_view;
             }

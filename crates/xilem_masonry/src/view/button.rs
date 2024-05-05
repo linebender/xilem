@@ -64,12 +64,12 @@ where
                 if let masonry::Action::ButtonPressed = *action {
                     MessageResult::Action((self.callback)(app_state))
                 } else {
-                    tracing::error!("Wrong action type in Checkbox::message: {action:?}");
+                    tracing::error!("Wrong action type in Button::message: {action:?}");
                     MessageResult::Stale(action)
                 }
             }
             Err(message) => {
-                tracing::error!("Wrong message type in Checkbox::message");
+                tracing::error!("Wrong message type in Button::message");
                 MessageResult::Stale(message)
             }
         }
