@@ -1,8 +1,34 @@
-## Rust
+# Rust
 target/
-# We're a library, so ignore Cargo.lock
-Cargo.lock
 
-.vscode
-.cspell
+# Intellij Idea
+.idea/
+
+# Visual Studio Code
+.vscode/
+
+# Sublime Text
+*.sublime-workspace
+*.sublime-project
+
+# Vim
+tags
+Session.vim
+Sessionx.vim
+
+# macOS
 .DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+ehthumbs_vista.db
+*.lnk
+
+# Linux
+*~
+
+# Other
+.cspell
