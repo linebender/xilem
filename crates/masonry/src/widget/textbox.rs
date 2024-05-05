@@ -94,6 +94,9 @@ impl<T: EditableText> WidgetMut<'_, Textbox<T>> {
     }
 
     pub fn set_text(&mut self, new_text: T) {
+        // FIXME - Right now doing this resets the caret to the start of the text
+        // It's not clear whether this is the right behaviour, or if there even
+        // is one.
         self.set_text_properties(|layout| layout.set_text(new_text));
     }
 
