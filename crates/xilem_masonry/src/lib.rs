@@ -77,13 +77,14 @@ where
                 let next_view = (self.logic)(&mut self.state);
                 let mut root = ctx.get_root::<RootWidget<View::Element>>();
 
+                self.view_cx.view_tree_changed = false;
                 next_view.rebuild(
                     &mut self.view_state,
                     &mut self.view_cx,
                     &self.current_view,
                     root.get_element(),
                 );
-                if !self.view_cx.view_tree_changed {
+                if cfg!(debug_assertions) && !self.view_cx.view_tree_changed {
                     tracing::debug!("Nothing changed as result of action");
                 }
                 self.current_view = next_view;
@@ -180,7 +181,9 @@ pub struct ViewCx {
 
 impl ViewCx {
     pub fn mark_changed(&mut self) {
-        self.view_tree_changed = true;
+        if cfg!(debug_assertions) {
+            self.view_tree_changed = true;
+        }
     }
 
     pub fn with_leaf_action_widget<E: Widget>(
