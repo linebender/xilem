@@ -3,7 +3,7 @@
 
 use masonry::{widget::WidgetMut, Widget, WidgetPod};
 
-use crate::{ChangeFlags, MasonryView, MessageResult, ViewCx, ViewId};
+use crate::{MasonryView, MessageResult, ViewCx, ViewId};
 
 #[allow(clippy::len_without_is_empty)]
 pub trait ElementSplice {
@@ -41,7 +41,7 @@ pub trait ViewSequence<State, Action, Marker>: Send + 'static {
         cx: &mut ViewCx,
         prev: &Self,
         elements: &mut dyn ElementSplice,
-    ) -> ChangeFlags;
+    );
 
     /// Propagate a message.
     ///
@@ -84,12 +84,12 @@ impl<State, Action, View: MasonryView<State, Action>> ViewSequence<State, Action
         cx: &mut ViewCx,
         prev: &Self,
         elements: &mut dyn ElementSplice,
-    ) -> ChangeFlags {
+    ) {
         let mut element = elements.mutate();
         let downcast = element.try_downcast::<View::Element>();
 
         if let Some(element) = downcast {
-            self.rebuild(seq_state, cx, prev, element)
+            self.rebuild(seq_state, cx, prev, element);
         } else {
             unreachable!("Tree structure tracking got wrong element type")
         }
@@ -144,23 +144,23 @@ impl<State, Action, Marker, VT: ViewSequence<State, Action, Marker>>
         cx: &mut ViewCx,
         prev: &Self,
         elements: &mut dyn ElementSplice,
-    ) -> ChangeFlags {
+    ) {
         // If `prev` was `Some`, we set `seq_state` in reacting to it (and building the inner view)
         // This could only fail if some malicious parent view was messing with our internal state
         // (i.e. mixing up the state from different instances)
         debug_assert_eq!(prev.is_some(), seq_state.inner.is_some());
         match (self, prev.as_ref().zip(seq_state.inner.as_mut())) {
-            (Some(this), Some((prev, prev_state))) => cx
-                .with_id(ViewId::for_type::<VT>(seq_state.generation), |cx| {
-                    this.rebuild(prev_state, cx, prev, elements)
-                }),
+            (Some(this), Some((prev, prev_state))) => {
+                cx.with_id(ViewId::for_type::<VT>(seq_state.generation), |cx| {
+                    this.rebuild(prev_state, cx, prev, elements);
+                });
+            }
             (None, Some((prev, _))) => {
                 // Maybe replace with `prev.cleanup`?
                 let count = prev.count();
                 elements.delete(count);
                 seq_state.inner = None;
-
-                ChangeFlags::CHANGED
+                cx.mark_changed();
             }
             (Some(this), None) => {
                 seq_state.generation += 1;
@@ -168,9 +168,9 @@ impl<State, Action, Marker, VT: ViewSequence<State, Action, Marker>>
                     Some(this.build(cx, elements))
                 });
                 seq_state.inner = new_state;
-                ChangeFlags::CHANGED
+                cx.mark_changed();
             }
-            (None, None) => ChangeFlags::UNCHANGED,
+            (None, None) => (),
         }
     }
 
@@ -233,8 +233,7 @@ impl<T, A, Marker, VT: ViewSequence<T, A, Marker>> ViewSequence<T, A, (WasASeque
         cx: &mut ViewCx,
         prev: &Self,
         elements: &mut dyn ElementSplice,
-    ) -> ChangeFlags {
-        let mut changed = ChangeFlags::UNCHANGED;
+    ) {
         for (i, ((child, child_prev), (child_state, child_generation))) in self
             .iter()
             .zip(prev)
@@ -243,8 +242,7 @@ impl<T, A, Marker, VT: ViewSequence<T, A, Marker>> ViewSequence<T, A, (WasASeque
         {
             let id = create_vector_view_id(i, *child_generation);
             cx.with_id(ViewId::for_type::<VT>(id), |cx| {
-                let el_changed = child.rebuild(child_state, cx, child_prev, elements);
-                changed.changed |= el_changed.changed;
+                child.rebuild(child_state, cx, child_prev, elements);
             });
         }
         let n = self.len();
@@ -252,7 +250,7 @@ impl<T, A, Marker, VT: ViewSequence<T, A, Marker>> ViewSequence<T, A, (WasASeque
             let n_delete = prev[n..].iter().map(ViewSequence::count).sum();
             seq_state.inner_with_generations.drain(n..);
             elements.delete(n_delete);
-            changed.changed |= ChangeFlags::CHANGED.changed;
+            cx.mark_changed();
         } else if n > prev.len() {
             // Overflow condition: u32 incrementing by up to 1 per rebuild. Plausible if unlikely to overflow
             seq_state.global_generation = match seq_state.global_generation.checked_add(1) {
@@ -289,9 +287,8 @@ impl<T, A, Marker, VT: ViewSequence<T, A, Marker>> ViewSequence<T, A, (WasASeque
                     .inner_with_generations
                     .push((new_state, seq_state.global_generation));
             }
-            changed.changed |= ChangeFlags::CHANGED.changed;
+            cx.mark_changed();
         }
-        changed
     }
 
     fn message(
@@ -345,8 +342,7 @@ impl<T, A> ViewSequence<T, A, ()> for () {
         _cx: &mut ViewCx,
         _prev: &Self,
         _elements: &mut dyn ElementSplice,
-    ) -> ChangeFlags {
-        ChangeFlags::UNCHANGED
+    ) {
     }
 
     fn message(
@@ -379,8 +375,8 @@ impl<State, Action, M0, Seq0: ViewSequence<State, Action, M0>> ViewSequence<Stat
         cx: &mut ViewCx,
         prev: &Self,
         elements: &mut dyn ElementSplice,
-    ) -> ChangeFlags {
-        self.0.rebuild(seq_state, cx, &prev.0, elements)
+    ) {
+        self.0.rebuild(seq_state, cx, &prev.0, elements);
     }
 
     fn message(
@@ -428,14 +424,12 @@ macro_rules! impl_view_tuple {
                 cx: &mut ViewCx,
                 prev: &Self,
                 elements: &mut dyn ElementSplice,
-            ) -> ChangeFlags {
-                let mut flags = ChangeFlags::UNCHANGED;
+            ) {
                 $(
                     cx.with_id(ViewId::for_type::<$seq>($idx), |cx| {
-                        flags.changed |= self.$idx.rebuild(&mut seq_state.$idx, cx, &prev.$idx, elements).changed;
+                        self.$idx.rebuild(&mut seq_state.$idx, cx, &prev.$idx, elements);
                     });
                 )+
-                flags
             }
 
             fn message(

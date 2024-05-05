@@ -8,7 +8,7 @@ use masonry::{
     Widget, WidgetPod,
 };
 
-use crate::{ChangeFlags, ElementSplice, MasonryView, VecSplice, ViewSequence};
+use crate::{ElementSplice, MasonryView, VecSplice, ViewSequence};
 
 // TODO: Allow configuring flex properties. I think this actually needs its own view trait?
 pub fn flex<VT, Marker>(sequence: VT) -> Flex<VT, Marker> {
@@ -76,18 +76,14 @@ where
         cx: &mut crate::ViewCx,
         prev: &Self,
         mut element: widget::WidgetMut<Self::Element>,
-    ) -> ChangeFlags {
-        let mut changeflags = ChangeFlags::UNCHANGED;
+    ) {
         if prev.axis != self.axis {
             element.set_direction(self.axis);
-            changeflags.changed |= ChangeFlags::CHANGED.changed;
+            cx.mark_changed();
         }
         let mut splice = FlexSplice { ix: 0, element };
-        changeflags.changed |= self
-            .sequence
-            .rebuild(view_state, cx, &prev.sequence, &mut splice)
-            .changed;
-        changeflags
+        self.sequence
+            .rebuild(view_state, cx, &prev.sequence, &mut splice);
     }
 }
 

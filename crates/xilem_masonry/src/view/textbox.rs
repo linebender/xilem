@@ -3,7 +3,7 @@
 
 use masonry::{text2::TextBrush, widget::WidgetMut, WidgetPod};
 
-use crate::{ChangeFlags, Color, MasonryView, MessageResult, TextAlignment, ViewCx, ViewId};
+use crate::{Color, MasonryView, MessageResult, TextAlignment, ViewCx, ViewId};
 
 // FIXME - A major problem of the current approach (always setting the textbox contents)
 // is that if the user forgets to hook up the modify the state's contents in the callback,
@@ -79,12 +79,10 @@ impl<State: 'static, Action: 'static> MasonryView<State, Action> for Textbox<Sta
     fn rebuild(
         &self,
         _view_state: &mut Self::ViewState,
-        _cx: &mut ViewCx,
+        cx: &mut ViewCx,
         prev: &Self,
         mut element: WidgetMut<Self::Element>,
-    ) -> crate::ChangeFlags {
-        let mut changeflags = ChangeFlags::UNCHANGED;
-
+    ) {
         // Unlike the other properties, we don't compare to the previous value;
         // instead, we compare directly to the element's text. This is to handle
         // cases like "Previous data says contents is 'fooba', user presses 'r',
@@ -92,22 +90,21 @@ impl<State: 'static, Action: 'static> MasonryView<State, Action> for Textbox<Sta
         // without calling `set_text`.
         if self.contents != element.text() {
             element.reset_text(self.contents.clone());
-            changeflags.changed |= ChangeFlags::CHANGED.changed;
+            cx.mark_changed();
         }
 
         // if prev.disabled != self.disabled {
         //     element.set_disabled(self.disabled);
-        //     changeflags.changed |= ChangeFlags::CHANGED.changed;
+        //     cx.mark_changed();
         // }
         if prev.text_brush != self.text_brush {
             element.set_text_brush(self.text_brush.clone());
-            changeflags.changed |= ChangeFlags::CHANGED.changed;
+            cx.mark_changed();
         }
         if prev.alignment != self.alignment {
             element.set_alignment(self.alignment);
-            changeflags.changed |= ChangeFlags::CHANGED.changed;
+            cx.mark_changed();
         }
-        changeflags
     }
 
     fn message(

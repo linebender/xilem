@@ -77,14 +77,14 @@ where
                 let next_view = (self.logic)(&mut self.state);
                 let mut root = ctx.get_root::<RootWidget<View::Element>>();
 
-                let changed = next_view.rebuild(
+                self.view_cx.view_tree_changed = false;
+                next_view.rebuild(
                     &mut self.view_state,
                     &mut self.view_cx,
                     &self.current_view,
                     root.get_element(),
                 );
-                if !changed.changed {
-                    // Masonry manages all of this itself - ChangeFlags is probably not needed?
+                if cfg!(debug_assertions) && !self.view_cx.view_tree_changed {
                     tracing::debug!("Nothing changed as result of action");
                 }
                 self.current_view = next_view;
@@ -105,6 +105,7 @@ where
         let mut view_cx = ViewCx {
             id_path: vec![],
             widget_map: HashMap::new(),
+            view_tree_changed: false,
         };
         let (pod, view_state) = first_view.build(&mut view_cx);
         let root_widget = RootWidget::from_pod(pod);
@@ -157,7 +158,7 @@ pub trait MasonryView<State, Action = ()>: Send + 'static {
         cx: &mut ViewCx,
         prev: &Self,
         element: WidgetMut<Self::Element>,
-    ) -> ChangeFlags;
+    );
 
     fn message(
         &self,
@@ -168,16 +169,6 @@ pub trait MasonryView<State, Action = ()>: Send + 'static {
     ) -> MessageResult<Action>;
 }
 
-#[must_use]
-pub struct ChangeFlags {
-    changed: bool,
-}
-
-impl ChangeFlags {
-    const CHANGED: Self = ChangeFlags { changed: true };
-    const UNCHANGED: Self = ChangeFlags { changed: false };
-}
-
 pub struct ViewCx {
     /// The map from a widgets id to its position in the View tree.
     ///
@@ -185,9 +176,16 @@ pub struct ViewCx {
     /// This is currently never cleaned up
     widget_map: HashMap<WidgetId, Vec<ViewId>>,
     id_path: Vec<ViewId>,
+    view_tree_changed: bool,
 }
 
 impl ViewCx {
+    pub fn mark_changed(&mut self) {
+        if cfg!(debug_assertions) {
+            self.view_tree_changed = true;
+        }
+    }
+
     pub fn with_leaf_action_widget<E: Widget>(
         &mut self,
         f: impl FnOnce(&mut Self) -> WidgetPod<E>,
