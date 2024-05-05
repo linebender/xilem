@@ -1,3 +1,6 @@
+// Copyright 2024 the Xilem Authors
+// SPDX-License-Identifier: Apache-2.0
+
 use std::sync::Arc;
 use xilem::view::{button, flex, memoize};
 use xilem::{AnyMasonryView, MasonryView, Xilem};
