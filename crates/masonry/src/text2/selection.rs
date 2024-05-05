@@ -121,8 +121,39 @@ impl<T: Selectable> TextWithSelection<T> {
         match event {
             TextEvent::KeyboardKey(key, mods) if key.state.is_pressed() => {
                 match key.key_without_modifiers() {
-                    winit::keyboard::Key::Named(NamedKey::ArrowLeft) if mods.shift_key() => {
-                        // TODO: Expand selection
+                    winit::keyboard::Key::Named(NamedKey::ArrowLeft) => {
+                        if mods.shift_key() {
+                        } else {
+                            let t = self.text();
+                            if let Some(selection) = self.selection {
+                                if mods.control_key() {
+                                    if let Some(o) = t.prev_word_offset(selection.active) {
+                                        self.selection =
+                                            Some(Selection::caret(o, Affinity::Downstream));
+                                    }
+                                } else if let Some(o) = t.prev_grapheme_offset(selection.active) {
+                                    self.selection =
+                                        Some(Selection::caret(o, Affinity::Downstream));
+                                };
+                            }
+                        }
+                        Handled::Yes
+                    }
+                    winit::keyboard::Key::Named(NamedKey::ArrowRight) => {
+                        if mods.shift_key() {
+                        } else {
+                            let t = self.text();
+                            if let Some(selection) = self.selection {
+                                if mods.control_key() {
+                                    if let Some(o) = t.next_word_offset(selection.active) {
+                                        self.selection =
+                                            Some(Selection::caret(o, Affinity::Upstream));
+                                    }
+                                } else if let Some(o) = t.next_grapheme_offset(selection.active) {
+                                    self.selection = Some(Selection::caret(o, Affinity::Upstream));
+                                };
+                            }
+                        }
                         Handled::Yes
                     }
                     winit::keyboard::Key::Named(_) => Handled::No,
@@ -558,7 +589,7 @@ impl<Str: Deref<Target = str> + TextStorage> Selectable for Str {
             }
             offset -= prev_grapheme.len();
         }
-        None
+        Some(0)
     }
 
     fn next_word_offset(&self, from: usize) -> Option<usize> {
