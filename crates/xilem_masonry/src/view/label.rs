@@ -3,7 +3,7 @@
 
 use masonry::{widget::WidgetMut, ArcStr, WidgetPod};
 
-use crate::{ChangeFlags, Color, MasonryView, MessageResult, TextAlignment, ViewCx, ViewId};
+use crate::{Color, MasonryView, MessageResult, TextAlignment, ViewCx, ViewId};
 
 pub fn label(label: impl Into<ArcStr>) -> Label {
     Label {
@@ -55,29 +55,26 @@ impl<State, Action> MasonryView<State, Action> for Label {
     fn rebuild(
         &self,
         _view_state: &mut Self::ViewState,
-        _cx: &mut ViewCx,
+        cx: &mut ViewCx,
         prev: &Self,
         mut element: WidgetMut<Self::Element>,
-    ) -> crate::ChangeFlags {
-        let mut changeflags = ChangeFlags::UNCHANGED;
-
+    ) {
         if prev.label != self.label {
             element.set_text(self.label.clone());
-            changeflags.changed |= ChangeFlags::CHANGED.changed;
+            cx.mark_changed();
         }
         // if prev.disabled != self.disabled {
         //     element.set_disabled(self.disabled);
-        //     changeflags.changed |= ChangeFlags::CHANGED.changed;
+        //     cx.mark_changed();
         // }
         if prev.text_color != self.text_color {
             element.set_text_brush(self.text_color);
-            changeflags.changed |= ChangeFlags::CHANGED.changed;
+            cx.mark_changed();
         }
         if prev.alignment != self.alignment {
             element.set_alignment(self.alignment);
-            changeflags.changed |= ChangeFlags::CHANGED.changed;
+            cx.mark_changed();
         }
-        changeflags
     }
 
     fn message(

@@ -12,7 +12,7 @@ use masonry::{
 use smallvec::SmallVec;
 use vello::Scene;
 
-use crate::{ChangeFlags, MasonryView, MessageResult, ViewCx, ViewId};
+use crate::{MasonryView, MessageResult, ViewCx, ViewId};
 
 /// A view which can have any underlying view type.
 ///
@@ -49,7 +49,7 @@ impl<T: 'static, A: 'static> MasonryView<T, A> for BoxedMasonryView<T, A> {
         cx: &mut ViewCx,
         prev: &Self,
         element: masonry::widget::WidgetMut<Self::Element>,
-    ) -> ChangeFlags {
+    ) {
         self.deref()
             .dyn_rebuild(view_state, cx, prev.deref(), element)
     }
@@ -72,7 +72,7 @@ pub trait AnyMasonryView<T, A = ()>: Send {
         cx: &mut ViewCx,
         prev: &dyn AnyMasonryView<T, A>,
         element: WidgetMut<DynWidget>,
-    ) -> ChangeFlags;
+    );
 
     fn dyn_message(
         &self,
@@ -112,7 +112,7 @@ where
         cx: &mut ViewCx,
         prev: &dyn AnyMasonryView<T, A>,
         mut element: WidgetMut<DynWidget>,
-    ) -> ChangeFlags {
+    ) {
         if let Some(prev) = prev.as_any().downcast_ref() {
             // If we were previously of this type, then do a normal rebuild
             DynWidget::downcast(&mut element, |element| {
@@ -120,14 +120,12 @@ where
                     if let Some(state) = dyn_state.inner_state.downcast_mut() {
                         cx.with_id(ViewId::for_type::<V>(dyn_state.generation), move |cx| {
                             self.rebuild(state, cx, prev, element)
-                        })
+                        });
                     } else {
                         tracing::error!("Unexpected element state type");
-                        ChangeFlags::UNCHANGED
                     }
                 } else {
                     eprintln!("downcast of element failed in dyn_rebuild");
-                    ChangeFlags::UNCHANGED
                 }
             })
         } else {
@@ -143,7 +141,7 @@ where
                 });
             dyn_state.inner_state = Box::new(view_state);
             DynWidget::replace_inner(&mut element, new_element.boxed());
-            ChangeFlags::CHANGED
+            cx.mark_changed();
         }
     }
 

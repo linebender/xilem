@@ -3,7 +3,7 @@
 
 use masonry::{widget::WidgetMut, ArcStr, WidgetPod};
 
-use crate::{ChangeFlags, MasonryView, MessageResult, ViewCx, ViewId};
+use crate::{MasonryView, MessageResult, ViewCx, ViewId};
 
 pub fn checkbox<F, State, Action>(
     label: impl Into<ArcStr>,
@@ -45,20 +45,18 @@ where
     fn rebuild(
         &self,
         _view_state: &mut Self::ViewState,
-        _cx: &mut ViewCx,
+        cx: &mut ViewCx,
         prev: &Self,
         mut element: WidgetMut<Self::Element>,
-    ) -> crate::ChangeFlags {
-        let mut changeflags = ChangeFlags::UNCHANGED;
+    ) {
         if prev.label != self.label {
             element.set_text(self.label.clone());
-            changeflags.changed |= ChangeFlags::CHANGED.changed;
+            cx.mark_changed();
         }
         if prev.checked != self.checked {
             element.set_checked(self.checked);
-            changeflags.changed |= ChangeFlags::CHANGED.changed;
+            cx.mark_changed();
         }
-        changeflags
     }
 
     fn message(

@@ -3,7 +3,7 @@
 
 use masonry::{widget::WidgetMut, ArcStr, WidgetPod};
 
-use crate::{ChangeFlags, MasonryView, MessageResult, ViewCx, ViewId};
+use crate::{MasonryView, MessageResult, ViewCx, ViewId};
 
 pub fn button<F, State, Action>(label: impl Into<ArcStr>, callback: F) -> Button<F>
 where
@@ -36,15 +36,13 @@ where
     fn rebuild(
         &self,
         _view_state: &mut Self::ViewState,
-        _cx: &mut ViewCx,
+        cx: &mut ViewCx,
         prev: &Self,
         mut element: WidgetMut<Self::Element>,
-    ) -> crate::ChangeFlags {
+    ) {
         if prev.label != self.label {
             element.set_text(self.label.clone());
-            ChangeFlags::CHANGED
-        } else {
-            ChangeFlags::UNCHANGED
+            cx.mark_changed();
         }
     }
 
