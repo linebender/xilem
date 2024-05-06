@@ -28,6 +28,9 @@ Xilem's reactive layer is built on top of a wide array of foundational Rust UI p
 * Accessibility is provided by [AccessKit].
 * Window handling is provided by [winit].
 
+Xilem can currently be considered to be in an alpha state.
+Lots of things need improvements.
+
 ## Community
 
 Discussion of Xilem development happens in the [Linebender Zulip](https://xi.zulipchat.com/), specifically the [#xilem stream](https://xi.zulipchat.com/#narrow/stream/354396-xilem).
