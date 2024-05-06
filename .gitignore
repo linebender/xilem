@@ -1,8 +1,2 @@
-## Rust
-target/
-# We're a library, so ignore Cargo.lock
-Cargo.lock
-
-.vscode
-.cspell
+/target
 .DS_Store
