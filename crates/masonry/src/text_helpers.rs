@@ -146,7 +146,7 @@ pub fn render_text(
                     underline_brush,
                     None,
                     &line,
-                )
+                );
             }
             if let Some(strikethrough) = &style.strikethrough {
                 let strikethrough_brush = match &strikethrough.brush {
@@ -179,7 +179,7 @@ pub fn render_text(
                     strikethrough_brush,
                     None,
                     &line,
-                )
+                );
             }
         }
     }
