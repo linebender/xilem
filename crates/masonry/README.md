@@ -14,7 +14,7 @@
 
 </div>
 
-Masonry gives you a platform to create windows (using [winit] as a backend) each with a tree of widgets.
+Masonry gives you a platform to create a window (using [winit] as a backend) with a tree of widgets.
 It also gives you tools to inspect that widget tree at runtime, write unit tests on it, and generally have an easier time debugging and maintaining your app.
 
 The framework is not opinionated about what your user-facing abstraction will be: you can implement immediate-mode GUI, the Elm architecture, functional reactive GUI, etc, on top of Masonry.
