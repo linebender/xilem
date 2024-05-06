@@ -21,7 +21,7 @@ Like SwiftUI, it is strongly typed.
 For more details on Xilem's reactive architecture see [Xilem: an architecture for UI in Rust].
 
 Xilem's reactive layer is built on top of a wide array of foundational Rust UI projects, e.g.:
-* Widgets are provided by [Masonry], which is a fork of [Druid].
+* Widgets are provided by [Masonry], which is a fork of the now discontinued [Druid] UI toolkit.
 * Rendering is provided by [Vello], a high performance GPU compute-centric 2D renderer.
 * GPU compute infrastructure is provided by [wgpu].
 * Text support is provided by [Parley], [Fontique], [Swash], and [Skrifa]. 
