@@ -22,6 +22,9 @@ See [Xilem] as an example of reactive UI built on top of Masonry.
 
 Masonry was originally a fork of [Druid] that emerged from discussions with Druid authors Raph Levien and Colin Rofls about what it would look like to turn Druid into a foundational library.
 
+Masonry can currently be considered in an alpha state.
+Lots of things need improvements, e.g. text input is janky and snapshot testing is not consistent across platforms.
+
 ## Community
 
 Discussion of Masonry development happens in the [Linebender Zulip](https://xi.zulipchat.com/), specifically the [#masonry stream](https://xi.zulipchat.com/#narrow/stream/317477-masonry).
