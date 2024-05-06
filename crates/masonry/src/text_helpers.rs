@@ -148,6 +148,39 @@ pub fn render_text(
                     &line,
                 )
             }
+            if let Some(strikethrough) = &style.strikethrough {
+                let strikethrough_brush = match &strikethrough.brush {
+                    TextBrush::Normal(text) => text,
+                    // It doesn't make sense for an underline to have a highlight colour, so we
+                    // just use the text colour for the colour
+                    TextBrush::Highlight { text, .. } => text,
+                };
+                let run_metrics = glyph_run.run().metrics();
+                let offset = match strikethrough.offset {
+                    Some(offset) => offset,
+                    None => run_metrics.strikethrough_offset,
+                };
+                let width = match strikethrough.size {
+                    Some(size) => size,
+                    None => run_metrics.strikethrough_size,
+                };
+                // The `offset` is the distance from the baseline to the *top* of the strikethrough
+                // so we move the line down by half the width
+                // Remember that we are using a y-down coordinate system
+                let y = glyph_run.baseline() - offset + width / 2.;
+
+                let line = Line::new(
+                    (glyph_run.offset() as f64, y as f64),
+                    ((glyph_run.offset() + glyph_run.advance()) as f64, y as f64),
+                );
+                scratch_scene.stroke(
+                    &Stroke::new(width.into()),
+                    transform,
+                    strikethrough_brush,
+                    None,
+                    &line,
+                )
+            }
         }
     }
     scene.append(scratch_scene, None);
