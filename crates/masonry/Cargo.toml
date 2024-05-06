@@ -8,6 +8,7 @@ edition.workspace = true
 license.workspace = true
 repository.workspace = true
 homepage.workspace = true
+exclude = ["/doc/", ".gitignore"]
 
 [package.metadata.docs.rs]
 all-features = true

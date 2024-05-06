@@ -1,157 +1,44 @@
-## Masonry
+<div align="center">
 
-Masonry is a framework that aims to provide the foundation for Rust GUI libraries.
+# Masonry
 
-Masonry gives you a platform to create windows (using [Glazier](https://github.com/linebender/glazier) as a backend) each with a tree of widgets. It also gives you tools to inspect that widget tree at runtime, write unit tests on it, and generally have an easier time debugging and maintaining your app.
+**Foundational framework for Rust GUI libraries**
+
+[![Latest published version.](https://img.shields.io/crates/v/masonry.svg)](https://crates.io/crates/masonry)
+[![Documentation build status.](https://img.shields.io/docsrs/masonry.svg)](https://docs.rs/masonry)
+[![Apache 2.0 license.](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](#license)
+
+[![Linebender Zulip chat.](https://img.shields.io/badge/Linebender-%23masonry-blue?logo=Zulip)](https://xi.zulipchat.com/#narrow/stream/317477-masonry)
+[![GitHub Actions CI status.](https://img.shields.io/github/actions/workflow/status/linebender/xilem/ci.yml?logo=github&label=CI)](https://github.com/linebender/xilem/actions)
+[![Dependency staleness status.](https://deps.rs/crate/masonry/latest/status.svg)](https://deps.rs/crate/masonry)
+
+</div>
+
+Masonry gives you a platform to create a window (using [winit] as a backend) with a tree of widgets.
+It also gives you tools to inspect that widget tree at runtime, write unit tests on it, and generally have an easier time debugging and maintaining your app.
 
 The framework is not opinionated about what your user-facing abstraction will be: you can implement immediate-mode GUI, the Elm architecture, functional reactive GUI, etc, on top of Masonry.
+See [Xilem] as an example of reactive UI built on top of Masonry.
 
-This project was originally a fork of [Druid](https://github.com/linebender/druid) that emerged from discussions I had with Raph Levien and Colin Rofls about what it would look like to turn Druid into a foundational library.
+Masonry was originally a fork of [Druid] that emerged from discussions with Druid authors Raph Levien and Colin Rofls about what it would look like to turn Druid into a foundational library.
 
-## Installing
+Masonry can currently be considered to be in an alpha state.
+Lots of things need improvements, e.g. text input is janky and snapshot testing is not consistent across platforms.
 
-```sh
-cargo add masonry
-```
+## Community
 
-### Linux
+Discussion of Masonry development happens in the [Linebender Zulip](https://xi.zulipchat.com/), specifically the [#masonry stream](https://xi.zulipchat.com/#narrow/stream/317477-masonry).
+All public content can be read without logging in.
 
-On Linux, Masonry requires gtk+3; see [GTK installation page](https://www.gtk.org/docs/installations/linux/).
-(On ubuntu-based distro, running `sudo apt-get install libgtk-3-dev` from the terminal will do the job.)
+Contributions are welcome by pull request. The [Rust code of conduct] applies.
 
-### OpenBSD
+Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in the work by you, as defined in the Apache 2.0 license, shall be licensed as noted in the [License](#license) section, without any additional terms or conditions.
 
-On OpenBSD, Masonry requires gtk+3; install from packages:
-```sh
-pkg_add gtk+3
-```
+## License
 
-## Example
+Licensed under the Apache License, Version 2.0 ([LICENSE](LICENSE) or <http://www.apache.org/licenses/LICENSE-2.0>)
 
-The todo-list example looks like this:
-
-```rust
-use masonry::widget::{prelude::*, TextBox};
-use masonry::widget::{Button, Flex, Label, Portal, WidgetMut};
-use masonry::Action;
-use masonry::{AppDelegate, AppLauncher, DelegateCtx, WindowDescription, WindowId};
-
-const VERTICAL_WIDGET_SPACING: f64 = 20.0;
-
-struct Delegate {
-    next_task: String,
-}
-
-impl AppDelegate for Delegate {
-    fn on_action(
-        &mut self,
-        ctx: &mut DelegateCtx,
-        _window_id: WindowId,
-        _widget_id: WidgetId,
-        action: Action,
-    ) {
-        match action {
-            Action::ButtonPressed => {
-                let mut root: WidgetMut<Portal<Flex>> = ctx.get_root();
-                let mut flex = root.child_mut();
-                flex.add_child(Label::new(self.next_task.clone()));
-            }
-            Action::TextChanged(new_text) => {
-                self.next_task = new_text.clone();
-            }
-            _ => {}
-        }
-    }
-}
-
-fn main() {
-    // The main button with some space below, all inside a scrollable area.
-    let root_widget = Portal::new(
-        Flex::column()
-            .with_child(
-                Flex::row()
-                    .with_child(TextBox::new(""))
-                    .with_child(Button::new("Add task")),
-            )
-            .with_spacer(VERTICAL_WIDGET_SPACING),
-    );
-
-    let main_window = WindowDescription::new(root_widget)
-        .title("To-do list")
-        .window_size((400.0, 400.0));
-
-    AppLauncher::with_window(main_window)
-        .with_delegate(Delegate {
-            next_task: String::new(),
-        })
-        .log_to_console()
-        .launch()
-        .expect("Failed to launch application");
-}
-```
-
-As you can see, compared to crates like Druid or Iced, Masonry takes a fairly low-level approach to GUI: there is no complex reconciliation logic or dataflow going on behind the scenes; if you want to add a widget to the flex container, you call `flex.add_child(your_widget)`.
-
-This simplicity makes Masonry somewhat painful if you want to use it to actually build GUI applications. The hope is that, by being low-level and straightforward, developers can easily build GUI frameworks on top of it.
-
-(Well, in theory. The first stress-test will be porting [Panoramix](https://github.com/PoignardAzur/panoramix), a React-style GUI in Rust, to Masonry.)
-
-
-## Unit tests
-
-Masonry is designed to make unit tests easy to write, as if the test function were a mouse-and-keyboard user. Tests look like this:
-
-```rust
-#[test]
-fn some_test_with_a_button() {
-    let [button_id] = widget_ids();
-    let widget = Button::new("Hello").with_id(button_id);
-
-    let mut harness = TestHarness::create(widget);
-
-    // Make a snapshot test of the visual contents of the window
-    assert_render_snapshot!(harness, "hello");
-
-    harness.edit_root_widget(|mut button, _| {
-        let mut button = button.downcast::<Button>().unwrap();
-        button.set_text("World");
-    });
-
-    // Make new snapshot test now that the window has changed
-    assert_render_snapshot!(harness, "world");
-
-    // References to widget automatically implement Debug, and
-    // will print their part of the widget hierarchy.
-    println!("Window contents: {:?}", harness.root_widget());
-
-    // You can also use insta to snapshot-test the widget hierarchy
-    assert_debug_snapshot!(harness.root_widget());
-
-    // Clicking on a button will produce a "ButtonPressed" action.
-    harness.mouse_click_on(button_id);
-    assert_eq!(
-        harness.pop_action(),
-        Some((Action::ButtonPressed, button_id))
-    );
-}
-```
-
-## Contributing
-
-Issues and PRs are welcome. See [`help-wanted` issues](https://github.com/PoignardAzur/masonry-rs/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22) if you don't know where to begin.
-
-## Roadmap
-
-The immediate next steps are:
-
-- [X] Remove Env type and Data trait (#8)
-- [ ] Re-add Dialog feature (#25)
-- [ ] Switch to using Vello and Glazier (#24)
-- [ ] Refactor TextLayout (#23)
-
-- [ ] Rework Widget trait (#26)
-
-- [ ] Port [Panoramix](https://github.com/PoignardAzur/panoramix) to Masonry
-- [ ] Port [Xilem](https://github.com/linebender/xilem) to Masonry
-
-See [ROADMAP.md](./ROADMAP.md) and [the issues page](https://github.com/PoignardAzur/masonry-rs/issues) for more.
+[Xilem]: https://crates.io/crates/xilem
+[Druid]: https://crates.io/crates/druid
+[winit]: https://crates.io/crates/winit
+[Rust code of conduct]: https://www.rust-lang.org/policies/code-of-conduct
