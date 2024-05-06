@@ -640,7 +640,10 @@ impl LayoutCtx<'_> {
     /// Container widgets must call this method with each non-stashed child in their
     /// layout method, after calling `child.layout(...)`.
     pub fn place_child(&mut self, child: &mut WidgetPod<impl Widget>, origin: Point) {
-        child.state.origin = origin;
+        if origin != child.state.origin {
+            child.state.origin = origin;
+            child.state.needs_window_origin = true;
+        }
         child.state.is_expecting_place_child_call = false;
 
         self.widget_state.local_paint_rect =
