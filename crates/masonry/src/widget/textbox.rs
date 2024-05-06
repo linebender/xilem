@@ -26,7 +26,8 @@ const TEXTBOX_PADDING: f64 = 3.0;
 /// HACK: A "margin" which is placed around the outside of all textboxes, ensuring that
 /// they do not fill the entire width of the window
 ///
-/// In theory, this should be proper margin/padding the parent widget.
+/// In theory, this should be proper margin/padding in the parent widget, but that hasn't been
+/// designed.
 const TEXTBOX_MARGIN: f64 = 8.0;
 
 /// The textbox widget is a widget which shows text which can be edited by the user
@@ -254,7 +255,7 @@ impl Widget for Textbox {
         let max_advance = if self.line_break_mode != LineBreaking::WordWrap {
             None
         } else if bc.max().width.is_finite() {
-            Some(bc.max().width as f32 - 2. * TEXTBOX_PADDING as f32 - 2. * TEXTBOX_MARGIN as f32)
+            Some((bc.max().width - 2. * TEXTBOX_PADDING - 2. * TEXTBOX_MARGIN) as f32)
         } else if bc.min().width.is_sign_negative() {
             Some(0.0)
         } else {
