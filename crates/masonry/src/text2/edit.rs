@@ -54,7 +54,6 @@ impl EditableText for String {
 pub struct TextEditor<T: EditableText> {
     inner: TextWithSelection<T>,
     /// The range of the preedit region in the text
-    /// This is currently unused
     preedit_range: Option<Range<usize>>,
 }
 
