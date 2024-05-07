@@ -129,9 +129,11 @@ impl<T: Selectable> TextWithSelection<T> {
                                     let offset = t.prev_word_offset(selection.active).unwrap_or(0);
                                     self.selection =
                                         Some(Selection::caret(offset, Affinity::Downstream));
-                                } else if let Some(o) = t.prev_grapheme_offset(selection.active) {
+                                } else {
+                                    let offset =
+                                        t.prev_grapheme_offset(selection.active).unwrap_or(0);
                                     self.selection =
-                                        Some(Selection::caret(o, Affinity::Downstream));
+                                        Some(Selection::caret(offset, Affinity::Downstream));
                                 };
                             }
                         }
