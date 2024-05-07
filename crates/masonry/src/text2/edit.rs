@@ -205,7 +205,7 @@ impl<T: EditableText> TextEditor<T> {
                                     Some(Selection::caret(offset, Affinity::Upstream));
 
                                 let contents = self.text().as_str().to_string();
-                                ctx.submit_action(Action::TextEntered(contents));
+                                ctx.submit_action(Action::TextChanged(contents));
                                 Handled::Yes
                             } else {
                                 Handled::No
@@ -227,7 +227,7 @@ impl<T: EditableText> TextEditor<T> {
                                         Some(Selection::caret(selection.min(), Affinity::Upstream));
                                 }
                                 let contents = self.text().as_str().to_string();
-                                ctx.submit_action(Action::TextEntered(contents));
+                                ctx.submit_action(Action::TextChanged(contents));
                                 Handled::Yes
                             } else {
                                 Handled::No
@@ -250,6 +250,8 @@ impl<T: EditableText> TextEditor<T> {
                         ));
                     }
                     self.preedit_range = None;
+                    let contents = self.text().as_str().to_string();
+                    ctx.submit_action(Action::TextChanged(contents));
                     Handled::Yes
                 }
                 Ime::Preedit(preedit_string, preedit_sel) => {
@@ -281,7 +283,6 @@ impl<T: EditableText> TextEditor<T> {
                             Some(Selection::caret(np.start, Affinity::Upstream))
                         };
                     }
-                    ctx.submit_action(Action::TextChanged(self.text().as_str().to_string()));
                     Handled::Yes
                 }
                 Ime::Enabled => {
@@ -292,7 +293,6 @@ impl<T: EditableText> TextEditor<T> {
                                 .unwrap_or(Selection::caret(0, Affinity::Upstream)),
                         );
                         self.preedit_range = None;
-                        ctx.submit_action(Action::TextChanged(self.text().as_str().to_string()));
                     }
                     Handled::Yes
                 }
@@ -305,7 +305,6 @@ impl<T: EditableText> TextEditor<T> {
                             self.selection =
                                 Some(Selection::caret(preedit.start, Affinity::Upstream));
                         }
-                        ctx.submit_action(Action::TextChanged(self.text().as_str().to_string()));
                     }
                     Handled::Yes
                 }
