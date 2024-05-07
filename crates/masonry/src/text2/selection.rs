@@ -84,7 +84,6 @@ impl<T: Selectable> TextWithSelection<T> {
                 position.insert_point,
                 Affinity::Downstream,
             ));
-
             true
         } else {
             false
@@ -127,10 +126,9 @@ impl<T: Selectable> TextWithSelection<T> {
                             let t = self.text();
                             if let Some(selection) = self.selection {
                                 if mods.control_key() {
-                                    if let Some(o) = t.prev_word_offset(selection.active) {
-                                        self.selection =
-                                            Some(Selection::caret(o, Affinity::Downstream));
-                                    }
+                                    let offset = t.prev_word_offset(selection.active).unwrap_or(0);
+                                    self.selection =
+                                        Some(Selection::caret(offset, Affinity::Downstream));
                                 } else if let Some(o) = t.prev_grapheme_offset(selection.active) {
                                     self.selection =
                                         Some(Selection::caret(o, Affinity::Downstream));
@@ -589,7 +587,7 @@ impl<Str: Deref<Target = str> + TextStorage> Selectable for Str {
             }
             offset -= prev_grapheme.len();
         }
-        Some(0)
+        None
     }
 
     fn next_word_offset(&self, from: usize) -> Option<usize> {

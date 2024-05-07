@@ -106,12 +106,12 @@ impl<T: EditableText> TextEditor<T> {
                                     self.text_mut().edit(selection.range(), "");
                                     self.with.selection =
                                         Some(Selection::caret(selection.min(), Affinity::Upstream));
-                                } else if let Some(o) =
+                                } else if let Some(offset) =
                                     self.text().prev_grapheme_offset(selection.active)
                                 {
-                                    self.text_mut().edit(o..selection.active, "");
+                                    self.text_mut().edit(offset..selection.active, "");
                                     self.with.selection =
-                                        Some(Selection::caret(o, selection.active_affinity));
+                                        Some(Selection::caret(offset, selection.active_affinity));
                                 }
                                 Handled::Yes
                             } else {
@@ -126,10 +126,10 @@ impl<T: EditableText> TextEditor<T> {
                                         selection.min(),
                                         Affinity::Downstream,
                                     ));
-                                } else if let Some(o) =
+                                } else if let Some(offset) =
                                     self.text().next_grapheme_offset(selection.active)
                                 {
-                                    self.text_mut().edit(selection.min()..o, "");
+                                    self.text_mut().edit(selection.min()..offset, "");
                                     self.with.selection = Some(Selection::caret(
                                         selection.min(),
                                         selection.active_affinity,
@@ -197,13 +197,13 @@ impl<T: EditableText> TextEditor<T> {
                                     self.text_mut().edit(selection.range(), "");
                                     self.with.selection =
                                         Some(Selection::caret(selection.min(), Affinity::Upstream));
-                                } else if let Some(o) =
-                                    self.text().prev_word_offset(selection.active)
-                                {
-                                    self.text_mut().edit(o..selection.active, "");
-                                    self.with.selection =
-                                        Some(Selection::caret(o, Affinity::Upstream));
                                 }
+                                let offset =
+                                    self.text().prev_word_offset(selection.active).unwrap_or(0);
+                                self.text_mut().edit(offset..selection.active, "");
+                                self.with.selection =
+                                    Some(Selection::caret(offset, Affinity::Upstream));
+
                                 let contents = self.text().as_str().to_string();
                                 ctx.submit_action(Action::TextEntered(contents));
                                 Handled::Yes
@@ -219,10 +219,10 @@ impl<T: EditableText> TextEditor<T> {
                                         selection.min(),
                                         Affinity::Downstream,
                                     ));
-                                } else if let Some(o) =
+                                } else if let Some(offset) =
                                     self.text().next_word_offset(selection.active)
                                 {
-                                    self.text_mut().edit(selection.active..o, "");
+                                    self.text_mut().edit(selection.active..offset, "");
                                     self.with.selection =
                                         Some(Selection::caret(selection.min(), Affinity::Upstream));
                                 }
