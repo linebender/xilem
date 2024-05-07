@@ -22,7 +22,13 @@ use crate::{
 
 use super::{LineBreaking, WidgetMut, WidgetRef};
 
-const TEXTBOX_PADDING: f64 = 4.0;
+const TEXTBOX_PADDING: f64 = 3.0;
+/// HACK: A "margin" which is placed around the outside of all textboxes, ensuring that
+/// they do not fill the entire width of the window
+///
+/// In theory, this should be proper margin/padding in the parent widget, but that hasn't been
+/// designed.
+const TEXTBOX_MARGIN: f64 = 8.0;
 
 /// The textbox widget is a widget which shows text which can be edited by the user
 ///
@@ -148,7 +154,7 @@ impl Widget for Textbox {
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
         let window_origin = ctx.widget_state.window_origin();
         let inner_origin = Point::new(
-            window_origin.x + TEXTBOX_PADDING,
+            window_origin.x + TEXTBOX_PADDING + TEXTBOX_MARGIN,
             window_origin.y + TEXTBOX_PADDING,
         );
         match event {
@@ -249,8 +255,7 @@ impl Widget for Textbox {
         let max_advance = if self.line_break_mode != LineBreaking::WordWrap {
             None
         } else if bc.max().width.is_finite() {
-            // TODO: Does Prose have different needs here?
-            Some(bc.max().width as f32 - 2. * TEXTBOX_PADDING as f32)
+            Some((bc.max().width - 2. * TEXTBOX_PADDING - 2. * TEXTBOX_MARGIN) as f32)
         } else if bc.min().width.is_sign_negative() {
             Some(0.0)
         } else {
@@ -265,7 +270,7 @@ impl Widget for Textbox {
         let label_size = Size {
             height: text_size.height + 2. * TEXTBOX_PADDING,
             // TODO: Better heuristic here?
-            width: bc.max().width - 20.,
+            width: bc.max().width - 2. * TEXTBOX_MARGIN,
         };
         let size = bc.constrain(label_size);
         trace!(
