@@ -7,6 +7,7 @@ use std::borrow::Cow;
 use std::ops::{Deref, DerefMut, Range};
 
 use kurbo::{Affine, Line, Point, Stroke};
+use parley::context::RangedBuilder;
 use parley::FontContext;
 use unicode_segmentation::{GraphemeCursor, UnicodeSegmentation};
 use vello::peniko::{Brush, Color};
@@ -210,15 +211,21 @@ impl<T: Selectable> TextWithSelection<T> {
         self.needs_selection_update = true;
     }
 
-    // Intentionally aliases the method on
-    pub fn rebuild(&mut self, fcx: &mut FontContext) {
+    // Intentionally aliases the method on `TextLayout`
+    pub fn rebuild_with_attributes(
+        &mut self,
+        fcx: &mut FontContext,
+        attributes: impl for<'b> FnOnce(
+            RangedBuilder<'b, TextBrush, &'b str>,
+        ) -> RangedBuilder<'b, TextBrush, &'b str>,
+    ) {
         // In theory, we could be clever here and only rebuild the layout if the
         // selected range was previously or currently non-zero size (i.e. there is a selected range)
         if self.needs_selection_update || self.layout.needs_rebuild() {
             self.layout.invalidate();
             self.layout.rebuild_with_attributes(fcx, |mut builder| {
                 if let Some(selection) = self.selection {
-                    let range = selection.min()..selection.max();
+                    let range = selection.range();
                     if !range.is_empty() {
                         builder.push(
                             &parley::style::StyleProperty::Brush(self.highlight_brush.clone()),
@@ -226,10 +233,14 @@ impl<T: Selectable> TextWithSelection<T> {
                         );
                     }
                 }
-                builder
+                attributes(builder)
             });
             self.needs_selection_update = false;
         }
+    }
+
+    pub fn rebuild(&mut self, fcx: &mut FontContext) {
+        self.rebuild_with_attributes(fcx, |builder| builder);
     }
 
     pub fn draw(&mut self, scene: &mut Scene, point: impl Into<Point>) {
