@@ -52,7 +52,7 @@ impl EditableText for String {
 
 /// A region of text which can support editing operations
 pub struct TextEditor<T: EditableText> {
-    with: TextWithSelection<T>,
+    inner: TextWithSelection<T>,
     /// The range of the preedit region in the text
     /// This is currently unused
     preedit_range: Option<Range<usize>>,
@@ -61,7 +61,7 @@ pub struct TextEditor<T: EditableText> {
 impl<T: EditableText> TextEditor<T> {
     pub fn new(text: T, text_size: f32) -> Self {
         Self {
-            with: TextWithSelection::new(text, text_size),
+            inner: TextWithSelection::new(text, text_size),
             preedit_range: None,
         }
     }
@@ -72,11 +72,11 @@ impl<T: EditableText> TextEditor<T> {
 
     pub fn rebuild(&mut self, fcx: &mut FontContext) {
         // TODO: Add the pre-edit range as an underlined region in the text attributes
-        self.with.rebuild(fcx);
+        self.inner.rebuild(fcx);
     }
 
     pub fn draw(&mut self, scene: &mut Scene, point: impl Into<Point>) {
-        self.with.draw(scene, point);
+        self.inner.draw(scene, point);
     }
 
     pub fn pointer_down(
@@ -87,11 +87,11 @@ impl<T: EditableText> TextEditor<T> {
     ) -> bool {
         // TODO: If we have a selection and we're hovering over it,
         // implement (optional?) click and drag
-        self.with.pointer_down(origin, state, button)
+        self.inner.pointer_down(origin, state, button)
     }
 
     pub fn text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent) -> Handled {
-        let inner_handled = self.with.text_event(event);
+        let inner_handled = self.inner.text_event(event);
         if inner_handled.is_handled() {
             return inner_handled;
         }
@@ -101,10 +101,10 @@ impl<T: EditableText> TextEditor<T> {
                 if !(mods.control_key() || mods.alt_key() || mods.super_key()) {
                     match &event.logical_key {
                         Key::Named(NamedKey::Backspace) => {
-                            if let Some(selection) = self.with.selection {
+                            if let Some(selection) = self.inner.selection {
                                 if !selection.is_caret() {
                                     self.text_mut().edit(selection.range(), "");
-                                    self.with.selection =
+                                    self.inner.selection =
                                         Some(Selection::caret(selection.min(), Affinity::Upstream));
                                 }
                                 // TODO: more specific behavior may sometimes be warranted here
@@ -116,7 +116,7 @@ impl<T: EditableText> TextEditor<T> {
                                     .prev_grapheme_offset(selection.active)
                                     .unwrap_or(0);
                                 self.text_mut().edit(offset..selection.active, "");
-                                self.with.selection =
+                                self.inner.selection =
                                     Some(Selection::caret(offset, selection.active_affinity));
                                 Handled::Yes
                             } else {
@@ -124,10 +124,10 @@ impl<T: EditableText> TextEditor<T> {
                             }
                         }
                         Key::Named(NamedKey::Delete) => {
-                            if let Some(selection) = self.with.selection {
+                            if let Some(selection) = self.inner.selection {
                                 if !selection.is_caret() {
                                     self.text_mut().edit(selection.range(), "");
-                                    self.with.selection = Some(Selection::caret(
+                                    self.inner.selection = Some(Selection::caret(
                                         selection.min(),
                                         Affinity::Downstream,
                                     ));
@@ -135,7 +135,7 @@ impl<T: EditableText> TextEditor<T> {
                                     self.text().next_grapheme_offset(selection.active)
                                 {
                                     self.text_mut().edit(selection.min()..offset, "");
-                                    self.with.selection = Some(Selection::caret(
+                                    self.inner.selection = Some(Selection::caret(
                                         selection.min(),
                                         selection.active_affinity,
                                     ));
@@ -146,7 +146,7 @@ impl<T: EditableText> TextEditor<T> {
                             }
                         }
                         Key::Named(NamedKey::Space) => {
-                            let selection = self.with.selection.unwrap_or(Selection {
+                            let selection = self.inner.selection.unwrap_or(Selection {
                                 anchor: 0,
                                 active: 0,
                                 active_affinity: Affinity::Downstream,
@@ -154,7 +154,7 @@ impl<T: EditableText> TextEditor<T> {
                             });
                             let c = ' ';
                             self.text_mut().edit(selection.range(), c);
-                            self.with.selection = Some(Selection::caret(
+                            self.inner.selection = Some(Selection::caret(
                                 selection.min() + c.len_utf8(),
                                 // We have just added this character, so we are "affined" with it
                                 Affinity::Downstream,
@@ -170,14 +170,14 @@ impl<T: EditableText> TextEditor<T> {
                         }
                         Key::Named(_) => Handled::No,
                         Key::Character(c) => {
-                            let selection = self.with.selection.unwrap_or(Selection {
+                            let selection = self.inner.selection.unwrap_or(Selection {
                                 anchor: 0,
                                 active: 0,
                                 active_affinity: Affinity::Downstream,
                                 h_pos: None,
                             });
                             self.text_mut().edit(selection.range(), &**c);
-                            self.with.selection = Some(Selection::caret(
+                            self.inner.selection = Some(Selection::caret(
                                 selection.min() + c.len(),
                                 // We have just added this character, so we are "affined" with it
                                 Affinity::Downstream,
@@ -197,16 +197,16 @@ impl<T: EditableText> TextEditor<T> {
                 {
                     match &event.logical_key {
                         Key::Named(NamedKey::Backspace) => {
-                            if let Some(selection) = self.with.selection {
+                            if let Some(selection) = self.inner.selection {
                                 if !selection.is_caret() {
                                     self.text_mut().edit(selection.range(), "");
-                                    self.with.selection =
+                                    self.inner.selection =
                                         Some(Selection::caret(selection.min(), Affinity::Upstream));
                                 }
                                 let offset =
                                     self.text().prev_word_offset(selection.active).unwrap_or(0);
                                 self.text_mut().edit(offset..selection.active, "");
-                                self.with.selection =
+                                self.inner.selection =
                                     Some(Selection::caret(offset, Affinity::Upstream));
 
                                 let contents = self.text().as_str().to_string();
@@ -217,10 +217,10 @@ impl<T: EditableText> TextEditor<T> {
                             }
                         }
                         Key::Named(NamedKey::Delete) => {
-                            if let Some(selection) = self.with.selection {
+                            if let Some(selection) = self.inner.selection {
                                 if !selection.is_caret() {
                                     self.text_mut().edit(selection.range(), "");
-                                    self.with.selection = Some(Selection::caret(
+                                    self.inner.selection = Some(Selection::caret(
                                         selection.min(),
                                         Affinity::Downstream,
                                     ));
@@ -228,7 +228,7 @@ impl<T: EditableText> TextEditor<T> {
                                     self.text().next_word_offset(selection.active)
                                 {
                                     self.text_mut().edit(selection.active..offset, "");
-                                    self.with.selection =
+                                    self.inner.selection =
                                         Some(Selection::caret(selection.min(), Affinity::Upstream));
                                 }
                                 let contents = self.text().as_str().to_string();
@@ -328,14 +328,14 @@ impl<T: EditableText> Deref for TextEditor<T> {
     type Target = TextWithSelection<T>;
 
     fn deref(&self) -> &Self::Target {
-        &self.with
+        &self.inner
     }
 }
 
 // TODO: Being able to call `Self::Target::rebuild` (and `draw`) isn't great.
 impl<T: EditableText> DerefMut for TextEditor<T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.with
+        &mut self.inner
     }
 }
 
