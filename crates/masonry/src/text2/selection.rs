@@ -139,6 +139,7 @@ impl<T: Selectable> TextWithSelection<T> {
                     }
                     winit::keyboard::Key::Named(NamedKey::ArrowRight) => {
                         if mods.shift_key() {
+                            // TODO: Expand selection
                         } else {
                             let t = self.text();
                             if let Some(selection) = self.selection {
