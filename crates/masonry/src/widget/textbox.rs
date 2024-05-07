@@ -120,6 +120,7 @@ impl WidgetMut<'_, Textbox> {
                 "Called reset_text on a focused `Textbox`. This will lose the user's current selection and cursor"
             );
         }
+        self.widget.editor.reset_preedit();
         self.set_text_properties(|layout| layout.set_text(new_text));
     }
 

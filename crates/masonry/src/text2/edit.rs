@@ -66,6 +66,10 @@ impl<T: EditableText> TextEditor<T> {
         }
     }
 
+    pub fn reset_preedit(&mut self) {
+        self.preedit_range = None;
+    }
+
     pub fn rebuild(&mut self, fcx: &mut FontContext) {
         // TODO: Add the pre-edit range as an underlined region in the text attributes
         self.with.rebuild(fcx);
@@ -200,6 +204,8 @@ impl<T: EditableText> TextEditor<T> {
                                     self.with.selection =
                                         Some(Selection::caret(o, Affinity::Upstream));
                                 }
+                                let contents = self.text().as_str().to_string();
+                                ctx.submit_action(Action::TextEntered(contents));
                                 Handled::Yes
                             } else {
                                 Handled::No
@@ -220,6 +226,8 @@ impl<T: EditableText> TextEditor<T> {
                                     self.with.selection =
                                         Some(Selection::caret(selection.min(), Affinity::Upstream));
                                 }
+                                let contents = self.text().as_str().to_string();
+                                ctx.submit_action(Action::TextEntered(contents));
                                 Handled::Yes
                             } else {
                                 Handled::No
@@ -249,34 +257,43 @@ impl<T: EditableText> TextEditor<T> {
                         self.text_mut().edit(preedit.clone(), preedit_string);
                         let np = preedit.start..(preedit.start + preedit_string.len());
                         self.preedit_range = Some(np.clone());
-                        if let Some(pec) = preedit_sel {
-                            self.selection = Some(Selection::new(
+                        self.selection = if let Some(pec) = preedit_sel {
+                            Some(Selection::new(
                                 np.start + pec.0,
                                 np.start + pec.1,
                                 Affinity::Upstream,
-                            ));
+                            ))
                         } else {
-                            self.selection = Some(Selection::caret(np.end, Affinity::Upstream));
-                        }
+                            Some(Selection::caret(np.end, Affinity::Upstream))
+                        };
                     } else {
                         let sr = self.selection.map(|x| x.range()).unwrap_or(0..0);
                         self.text_mut().edit(sr.clone(), preedit_string);
                         let np = sr.start..(sr.start + preedit_string.len());
                         self.preedit_range = Some(np.clone());
-                        if let Some(pec) = preedit_sel {
-                            self.selection = Some(Selection::new(
+                        self.selection = if let Some(pec) = preedit_sel {
+                            Some(Selection::new(
                                 np.start + pec.0,
                                 np.start + pec.1,
                                 Affinity::Upstream,
-                            ));
+                            ))
                         } else {
-                            self.selection = Some(Selection::caret(np.end, Affinity::Upstream));
-                        }
+                            Some(Selection::caret(np.start, Affinity::Upstream))
+                        };
                     }
+                    ctx.submit_action(Action::TextChanged(self.text().as_str().to_string()));
                     Handled::Yes
                 }
                 Ime::Enabled => {
-                    self.preedit_range = None;
+                    if let Some(preedit) = self.preedit_range.clone() {
+                        self.text_mut().edit(preedit.clone(), "");
+                        self.selection = Some(
+                            self.selection
+                                .unwrap_or(Selection::caret(0, Affinity::Upstream)),
+                        );
+                        self.preedit_range = None;
+                        ctx.submit_action(Action::TextChanged(self.text().as_str().to_string()));
+                    }
                     Handled::Yes
                 }
                 Ime::Disabled => {
@@ -288,6 +305,7 @@ impl<T: EditableText> TextEditor<T> {
                             self.selection =
                                 Some(Selection::caret(preedit.start, Affinity::Upstream));
                         }
+                        ctx.submit_action(Action::TextChanged(self.text().as_str().to_string()));
                     }
                     Handled::Yes
                 }
