@@ -106,18 +106,19 @@ impl<T: EditableText> TextEditor<T> {
                                     self.text_mut().edit(selection.range(), "");
                                     self.inner.selection =
                                         Some(Selection::caret(selection.min(), Affinity::Upstream));
+                                } else {
+                                    // TODO: more specific behavior may sometimes be warranted here
+                                    //       because whole EGCs are more coarse than what people expect
+                                    //       to be able to delete individual indic grapheme cluster
+                                    //       components among other things.
+                                    let offset = self
+                                        .text()
+                                        .prev_grapheme_offset(selection.active)
+                                        .unwrap_or(0);
+                                    self.text_mut().edit(offset..selection.active, "");
+                                    self.inner.selection =
+                                        Some(Selection::caret(offset, selection.active_affinity));
                                 }
-                                // TODO: more specific behavior may sometimes be warranted here
-                                //       because whole EGCs are more coarse than what people expect
-                                //       to be able to delete individual indic grapheme cluster
-                                //       components among other things.
-                                let offset = self
-                                    .text()
-                                    .prev_grapheme_offset(selection.active)
-                                    .unwrap_or(0);
-                                self.text_mut().edit(offset..selection.active, "");
-                                self.inner.selection =
-                                    Some(Selection::caret(offset, selection.active_affinity));
                                 Handled::Yes
                             } else {
                                 Handled::No
