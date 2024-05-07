@@ -295,6 +295,7 @@ impl<T: EditableText> TextEditor<T> {
                     Handled::Yes
                 }
                 Ime::Enabled => {
+                    // Generally this shouldn't happen, but I can't prove it won't.
                     if let Some(preedit) = self.preedit_range.clone() {
                         self.text_mut().edit(preedit.clone(), "");
                         self.selection = Some(
