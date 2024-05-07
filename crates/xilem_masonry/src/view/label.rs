@@ -8,7 +8,7 @@ use crate::{Color, MasonryView, MessageResult, TextAlignment, ViewCx, ViewId};
 pub fn label(label: impl Into<ArcStr>) -> Label {
     Label {
         label: label.into(),
-        text_color: Color::BLACK,
+        text_color: Color::WHITE,
         alignment: TextAlignment::default(),
         disabled: false,
     }
