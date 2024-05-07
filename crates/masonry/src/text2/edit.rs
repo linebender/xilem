@@ -247,7 +247,11 @@ impl<T: EditableText> TextEditor<T> {
             TextEvent::KeyboardKey(_, _) => Handled::No,
             TextEvent::Ime(ime) => match ime {
                 Ime::Commit(text) => {
-                    if let Some(preedit) = self.preedit_range.clone() {
+                    if let Some(preedit) = self
+                        .preedit_range
+                        .clone()
+                        .or_else(|| self.selection.map(|x| x.range()))
+                    {
                         self.text_mut().edit(preedit.clone(), text);
                         self.selection = Some(Selection::caret(
                             preedit.start + text.len(),
