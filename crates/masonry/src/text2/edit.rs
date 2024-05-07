@@ -71,7 +71,16 @@ impl<T: EditableText> TextEditor<T> {
 
     pub fn rebuild(&mut self, fcx: &mut FontContext) {
         // TODO: Add the pre-edit range as an underlined region in the text attributes
-        self.inner.rebuild(fcx);
+
+        self.inner.rebuild_with_attributes(fcx, |mut builder| {
+            if let Some(range) = self.preedit_range.as_ref() {
+                builder.push(
+                    &parley::style::StyleProperty::Underline(true),
+                    range.clone(),
+                );
+            }
+            builder
+        });
     }
 
     pub fn draw(&mut self, scene: &mut Scene, point: impl Into<Point>) {
