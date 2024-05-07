@@ -24,7 +24,7 @@ clippy.semicolon_if_nothing_returned = "warn"
 xilem_core = { version = "0.1.0", path = "crates/xilem_core" }
 masonry = { version = "0.2.0", path = "crates/masonry" }
 vello = "0.1.0"
-wgpu = "0.19.3"
+wgpu = "0.19.4"
 kurbo = "0.11.0"
 parley = "0.1.0"
 peniko = "0.1.0"
@@ -33,8 +33,8 @@ tracing = "0.1.40"
 smallvec = "1.13.2"
 fnv = "1.0.7"
 image = { version = "0.25.1", default-features = false }
-instant = "0.1.6"
-bitflags = "2.0.0"
+instant = "0.1.12"
+bitflags = "2.5.0"
 accesskit = "0.14.0"
 accesskit_winit = "0.20.0"
 
@@ -76,6 +76,6 @@ bitflags.workspace = true
 tracing.workspace = true
 fnv.workspace = true
 instant = { workspace = true, features = ["wasm-bindgen"] }
-tokio = { version = "1.35", features = ["full"] }
-taffy = { version = "0.4.0", optional = true }
+tokio = { version = "1.37", features = ["full"] }
+taffy = { version = "0.4.3", optional = true }
 futures-task = "0.3"
