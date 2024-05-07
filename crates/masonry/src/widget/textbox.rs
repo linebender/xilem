@@ -24,7 +24,10 @@ use super::{LineBreaking, WidgetMut, WidgetRef};
 
 const TEXTBOX_PADDING: f64 = 3.0;
 /// HACK: A "margin" which is placed around the outside of all textboxes, ensuring that
-/// they do not fill the entire width of the window
+/// they do not fill the entire width of the window.
+///
+/// This is added by making the width of the textbox be (twice) this amount less than
+/// the space available, which is absolutely horrible.
 ///
 /// In theory, this should be proper margin/padding in the parent widget, but that hasn't been
 /// designed.
@@ -155,7 +158,7 @@ impl Widget for Textbox {
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
         let window_origin = ctx.widget_state.window_origin();
         let inner_origin = Point::new(
-            window_origin.x + TEXTBOX_PADDING + TEXTBOX_MARGIN,
+            window_origin.x + TEXTBOX_PADDING,
             window_origin.y + TEXTBOX_PADDING,
         );
         match event {
