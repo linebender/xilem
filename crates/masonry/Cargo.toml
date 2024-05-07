@@ -43,7 +43,7 @@ accesskit_winit.workspace = true
 time = { version = "0.3.36", features = ["macros", "formatting"] }
 
 [dev-dependencies]
-float-cmp = { version = "0.8.0", features = ["std"], default-features = false }
+float-cmp = { version = "0.9.0", features = ["std"], default-features = false }
 insta = { version = "1.8.0" }
 assert_matches = "1.5.0"
 tempfile = "3.10.1"
