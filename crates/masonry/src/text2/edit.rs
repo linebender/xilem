@@ -7,7 +7,7 @@ use kurbo::Point;
 use parley::FontContext;
 use vello::Scene;
 use winit::{
-    event::MouseButton,
+    event::{Ime, MouseButton},
     keyboard::{Key, NamedKey},
 };
 
@@ -52,27 +52,30 @@ impl EditableText for String {
 
 /// A region of text which can support editing operations
 pub struct TextEditor<T: EditableText> {
-    selection: TextWithSelection<T>,
+    inner: TextWithSelection<T>,
     /// The range of the preedit region in the text
-    /// This is currently unused
-    _preedit_range: Option<Range<usize>>,
+    preedit_range: Option<Range<usize>>,
 }
 
 impl<T: EditableText> TextEditor<T> {
     pub fn new(text: T, text_size: f32) -> Self {
         Self {
-            selection: TextWithSelection::new(text, text_size),
-            _preedit_range: None,
+            inner: TextWithSelection::new(text, text_size),
+            preedit_range: None,
         }
+    }
+
+    pub fn reset_preedit(&mut self) {
+        self.preedit_range = None;
     }
 
     pub fn rebuild(&mut self, fcx: &mut FontContext) {
         // TODO: Add the pre-edit range as an underlined region in the text attributes
-        self.selection.rebuild(fcx);
+        self.inner.rebuild(fcx);
     }
 
     pub fn draw(&mut self, scene: &mut Scene, point: impl Into<Point>) {
-        self.selection.draw(scene, point);
+        self.inner.draw(scene, point);
     }
 
     pub fn pointer_down(
@@ -83,11 +86,11 @@ impl<T: EditableText> TextEditor<T> {
     ) -> bool {
         // TODO: If we have a selection and we're hovering over it,
         // implement (optional?) click and drag
-        self.selection.pointer_down(origin, state, button)
+        self.inner.pointer_down(origin, state, button)
     }
 
     pub fn text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent) -> Handled {
-        let inner_handled = self.selection.text_event(event);
+        let inner_handled = self.inner.text_event(event);
         if inner_handled.is_handled() {
             return inner_handled;
         }
@@ -97,11 +100,53 @@ impl<T: EditableText> TextEditor<T> {
                 if !(mods.control_key() || mods.alt_key() || mods.super_key()) {
                     match &event.logical_key {
                         Key::Named(NamedKey::Backspace) => {
-                            eprintln!("Got backspace, not yet handled");
-                            Handled::No
+                            if let Some(selection) = self.inner.selection {
+                                if !selection.is_caret() {
+                                    self.text_mut().edit(selection.range(), "");
+                                    self.inner.selection =
+                                        Some(Selection::caret(selection.min(), Affinity::Upstream));
+                                } else {
+                                    // TODO: more specific behavior may sometimes be warranted here
+                                    //       because whole EGCs are more coarse than what people expect
+                                    //       to be able to delete individual indic grapheme cluster
+                                    //       components among other things.
+                                    let offset = self
+                                        .text()
+                                        .prev_grapheme_offset(selection.active)
+                                        .unwrap_or(0);
+                                    self.text_mut().edit(offset..selection.active, "");
+                                    self.inner.selection =
+                                        Some(Selection::caret(offset, selection.active_affinity));
+                                }
+                                Handled::Yes
+                            } else {
+                                Handled::No
+                            }
+                        }
+                        Key::Named(NamedKey::Delete) => {
+                            if let Some(selection) = self.inner.selection {
+                                if !selection.is_caret() {
+                                    self.text_mut().edit(selection.range(), "");
+                                    self.inner.selection = Some(Selection::caret(
+                                        selection.min(),
+                                        Affinity::Downstream,
+                                    ));
+                                } else if let Some(offset) =
+                                    self.text().next_grapheme_offset(selection.active)
+                                {
+                                    self.text_mut().edit(selection.min()..offset, "");
+                                    self.inner.selection = Some(Selection::caret(
+                                        selection.min(),
+                                        selection.active_affinity,
+                                    ));
+                                }
+                                Handled::Yes
+                            } else {
+                                Handled::No
+                            }
                         }
                         Key::Named(NamedKey::Space) => {
-                            let selection = self.selection.selection.unwrap_or(Selection {
+                            let selection = self.inner.selection.unwrap_or(Selection {
                                 anchor: 0,
                                 active: 0,
                                 active_affinity: Affinity::Downstream,
@@ -109,7 +154,7 @@ impl<T: EditableText> TextEditor<T> {
                             });
                             let c = ' ';
                             self.text_mut().edit(selection.range(), c);
-                            self.selection.selection = Some(Selection::caret(
+                            self.inner.selection = Some(Selection::caret(
                                 selection.min() + c.len_utf8(),
                                 // We have just added this character, so we are "affined" with it
                                 Affinity::Downstream,
@@ -125,14 +170,14 @@ impl<T: EditableText> TextEditor<T> {
                         }
                         Key::Named(_) => Handled::No,
                         Key::Character(c) => {
-                            let selection = self.selection.selection.unwrap_or(Selection {
+                            let selection = self.inner.selection.unwrap_or(Selection {
                                 anchor: 0,
                                 active: 0,
                                 active_affinity: Affinity::Downstream,
                                 h_pos: None,
                             });
                             self.text_mut().edit(selection.range(), &**c);
-                            self.selection.selection = Some(Selection::caret(
+                            self.inner.selection = Some(Selection::caret(
                                 selection.min() + c.len(),
                                 // We have just added this character, so we are "affined" with it
                                 Affinity::Downstream,
@@ -147,17 +192,133 @@ impl<T: EditableText> TextEditor<T> {
                             Handled::No
                         }
                     }
+                } else if mods.control_key() || mods.super_key()
+                // TODO: do things differently on mac, rather than capturing both super and control.
+                {
+                    match &event.logical_key {
+                        Key::Named(NamedKey::Backspace) => {
+                            if let Some(selection) = self.inner.selection {
+                                if !selection.is_caret() {
+                                    self.text_mut().edit(selection.range(), "");
+                                    self.inner.selection =
+                                        Some(Selection::caret(selection.min(), Affinity::Upstream));
+                                }
+                                let offset =
+                                    self.text().prev_word_offset(selection.active).unwrap_or(0);
+                                self.text_mut().edit(offset..selection.active, "");
+                                self.inner.selection =
+                                    Some(Selection::caret(offset, Affinity::Upstream));
+
+                                let contents = self.text().as_str().to_string();
+                                ctx.submit_action(Action::TextChanged(contents));
+                                Handled::Yes
+                            } else {
+                                Handled::No
+                            }
+                        }
+                        Key::Named(NamedKey::Delete) => {
+                            if let Some(selection) = self.inner.selection {
+                                if !selection.is_caret() {
+                                    self.text_mut().edit(selection.range(), "");
+                                    self.inner.selection = Some(Selection::caret(
+                                        selection.min(),
+                                        Affinity::Downstream,
+                                    ));
+                                } else if let Some(offset) =
+                                    self.text().next_word_offset(selection.active)
+                                {
+                                    self.text_mut().edit(selection.active..offset, "");
+                                    self.inner.selection =
+                                        Some(Selection::caret(selection.min(), Affinity::Upstream));
+                                }
+                                let contents = self.text().as_str().to_string();
+                                ctx.submit_action(Action::TextChanged(contents));
+                                Handled::Yes
+                            } else {
+                                Handled::No
+                            }
+                        }
+                        _ => Handled::No,
+                    }
                 } else {
                     Handled::No
                 }
             }
             TextEvent::KeyboardKey(_, _) => Handled::No,
-            TextEvent::Ime(_) => {
-                eprintln!(
-                    "Got IME event in Textbox. We are planning on supporting this, but do not yet"
-                );
-                Handled::No
-            }
+            TextEvent::Ime(ime) => match ime {
+                Ime::Commit(text) => {
+                    if let Some(preedit) = self
+                        .preedit_range
+                        .clone()
+                        .or_else(|| self.selection.map(|x| x.range()))
+                    {
+                        self.text_mut().edit(preedit.clone(), text);
+                        self.selection = Some(Selection::caret(
+                            preedit.start + text.len(),
+                            Affinity::Upstream,
+                        ));
+                    }
+                    self.preedit_range = None;
+                    let contents = self.text().as_str().to_string();
+                    ctx.submit_action(Action::TextChanged(contents));
+                    Handled::Yes
+                }
+                Ime::Preedit(preedit_string, preedit_sel) => {
+                    if let Some(preedit) = self.preedit_range.clone() {
+                        self.text_mut().edit(preedit.clone(), preedit_string);
+                        let np = preedit.start..(preedit.start + preedit_string.len());
+                        self.preedit_range = Some(np.clone());
+                        self.selection = if let Some(pec) = preedit_sel {
+                            Some(Selection::new(
+                                np.start + pec.0,
+                                np.start + pec.1,
+                                Affinity::Upstream,
+                            ))
+                        } else {
+                            Some(Selection::caret(np.end, Affinity::Upstream))
+                        };
+                    } else {
+                        let sr = self.selection.map(|x| x.range()).unwrap_or(0..0);
+                        self.text_mut().edit(sr.clone(), preedit_string);
+                        let np = sr.start..(sr.start + preedit_string.len());
+                        self.preedit_range = Some(np.clone());
+                        self.selection = if let Some(pec) = preedit_sel {
+                            Some(Selection::new(
+                                np.start + pec.0,
+                                np.start + pec.1,
+                                Affinity::Upstream,
+                            ))
+                        } else {
+                            Some(Selection::caret(np.start, Affinity::Upstream))
+                        };
+                    }
+                    Handled::Yes
+                }
+                Ime::Enabled => {
+                    // Generally this shouldn't happen, but I can't prove it won't.
+                    if let Some(preedit) = self.preedit_range.clone() {
+                        self.text_mut().edit(preedit.clone(), "");
+                        self.selection = Some(
+                            self.selection
+                                .unwrap_or(Selection::caret(0, Affinity::Upstream)),
+                        );
+                        self.preedit_range = None;
+                    }
+                    Handled::Yes
+                }
+                Ime::Disabled => {
+                    if let Some(preedit) = self.preedit_range.clone() {
+                        self.text_mut().edit(preedit.clone(), "");
+                        self.preedit_range = None;
+                        let sm = self.selection.map(|x| x.min()).unwrap_or(0);
+                        if preedit.contains(&sm) {
+                            self.selection =
+                                Some(Selection::caret(preedit.start, Affinity::Upstream));
+                        }
+                    }
+                    Handled::Yes
+                }
+            },
             TextEvent::ModifierChange(_) => Handled::No,
             TextEvent::FocusChange(_) => Handled::No,
         }
@@ -168,14 +329,14 @@ impl<T: EditableText> Deref for TextEditor<T> {
     type Target = TextWithSelection<T>;
 
     fn deref(&self) -> &Self::Target {
-        &self.selection
+        &self.inner
     }
 }
 
 // TODO: Being able to call `Self::Target::rebuild` (and `draw`) isn't great.
 impl<T: EditableText> DerefMut for TextEditor<T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.selection
+        &mut self.inner
     }
 }
 

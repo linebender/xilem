@@ -49,6 +49,8 @@ pub fn run(
     let event_loop_proxy = event_loop.create_proxy();
     let adapter = Adapter::with_event_loop_proxy(&window, event_loop_proxy);
     window.set_visible(visible);
+    // TODO: Use signals or some other mechanism to do fine grained ime enable
+    window.set_ime_allowed(true);
 
     run_with(window, event_loop, adapter, root_widget, app_driver)
 }
