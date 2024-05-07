@@ -193,7 +193,7 @@ impl<T: EditableText> TextEditor<T> {
                         }
                     }
                 } else if mods.control_key() || mods.super_key()
-                /* Apple's fault */
+                // TODO: do things differently on mac, rather than capturing both super and control.
                 {
                     match &event.logical_key {
                         Key::Named(NamedKey::Backspace) => {
