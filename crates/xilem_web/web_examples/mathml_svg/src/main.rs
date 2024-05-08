@@ -3,7 +3,8 @@
 
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use xilem_web::{
-    document_body, elements::html, elements::mathml as ml, elements::svg, interfaces::*, App,
+    document_body, elements::html, elements::mathml as ml, elements::svg, interfaces::*,
+    style as s, App,
 };
 
 struct Triangle {
@@ -66,7 +67,11 @@ pub fn main() {
             svg::svg((
                 svg::polygon(())
                     .attr("points", format!("{x1},{y1} {x2},{y2} {x3},{y3}"))
-                    .attr("style", "fill:crimson;stroke:green;stroke-width:1"),
+                    .style([
+                        s("fill", "crimson"),
+                        s("stroke", "green"),
+                        s("stroke-width", "1"),
+                    ]),
                 label(t.a, a_label_x, y3, "1em", "middle"),
                 label(t.b, x1, b_label_y, "0.5em", "start"),
                 label(c, a_label_x, b_label_y, "0em", "end"),
@@ -83,8 +88,7 @@ pub fn main() {
                 ml::msup((ml::mi(format!("{}", t.b)), ml::mn("2"))),
                 ml::mo("="),
                 ml::msup((ml::mi(format!("{c}")), ml::mn("2"))),
-            )))
-            .attr("style", "width: 100%"),
+            ))),
         ))
     })
     .run(&document_body());
