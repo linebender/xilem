@@ -20,7 +20,6 @@ workspace = true
 
 [dependencies]
 xilem_core.workspace = true
-kurbo.workspace = true
 peniko.workspace = true
 bitflags.workspace = true
 wasm-bindgen = "0.2.92"
