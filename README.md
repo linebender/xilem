@@ -8,8 +8,8 @@
 [![dependency status](https://deps.rs/repo/github/linebender/xilem/status.svg)](https://deps.rs/repo/github/linebender/xilem)
 [![Apache 2.0](https://img.shields.io/badge/license-Apache-blue.svg)](#license)
 [![Build Status](https://github.com/linebender/xilem/actions/workflows/ci.yml/badge.svg)](https://github.com/linebender/xilem/actions)
-<!-- [![Crates.io](https://img.shields.io/crates/v/xilem.svg)](https://crates.io/crates/xilem) -->
-<!-- [![Docs](https://docs.rs/xilem/badge.svg)](https://docs.rs/xilem) -->
+[![Crates.io](https://img.shields.io/crates/v/xilem.svg)](https://crates.io/crates/xilem)
+[![Docs](https://docs.rs/xilem/badge.svg)](https://docs.rs/xilem)
 
 </div>
 
