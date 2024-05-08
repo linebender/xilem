@@ -4,6 +4,8 @@
 
 **An experimental Rust architecture for reactive UI**
 
+[![Crate](https://img.shields.io/crates/v/xilem?style=flat-square)](https://crates.io/crates/xilem)
+[![Documentation](https://img.shields.io/badge/docs-latest-blue.svg?style=flat-square)](https://docs.rs/xilem)
 [![Xi Zulip](https://img.shields.io/badge/Xi%20Zulip-%23xilem-blue?logo=Zulip)](https://xi.zulipchat.com/#narrow/stream/354396-xilem)
 [![dependency status](https://deps.rs/repo/github/linebender/xilem/status.svg)](https://deps.rs/repo/github/linebender/xilem)
 [![Apache 2.0](https://img.shields.io/badge/license-Apache-blue.svg)](#license)
