@@ -343,7 +343,7 @@ impl RenderRoot {
         {
             ctx.global_state
                 .debug_logger
-                .push_important_span(&format!("ACCESSS_EVENT {}", event.short_name()));
+                .push_important_span(&format!("ACCESS_EVENT {}", event.short_name()));
             let _span = info_span!("access_event").entered();
             debug!("Running ON_ACCESS_EVENT pass with {}", event.short_name());
             self.root.on_access_event(&mut ctx, &event);

@@ -193,7 +193,7 @@ impl AttributesAdder<'_> {
         self
     }
 
-    /// Add a forground color attribute.
+    /// Add a foreground color attribute.
     pub fn text_color(&mut self, color: impl Into<Color>) -> &mut Self {
         self.add_attr(Attribute::text_color(color));
         self
