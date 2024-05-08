@@ -78,4 +78,4 @@ fnv.workspace = true
 instant = { workspace = true, features = ["wasm-bindgen"] }
 tokio = { version = "1.37", features = ["full"] }
 taffy = { version = "0.4.3", optional = true }
-futures-task = "0.3"
+futures-task = "0.3.30"
