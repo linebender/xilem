@@ -42,7 +42,7 @@ use crate::text;
 /// after checking these methods the inner session can be accessed via
 /// [`TextComponent::borrow`] and [`TextComponent::borrow_mut`].
 ///
-/// Sementically, this functions like a `RefCell`; attempting to borrow while
+/// Semantically, this functions like a `RefCell`; attempting to borrow while
 /// a lock is held will result in a panic.
 #[derive(Debug, Clone)]
 pub struct TextComponent<T> {
@@ -285,7 +285,7 @@ impl<T: TextStorage + EditableText> TextComponentMut<'_, T> {
 //                         Action::InsertBacktab => {
 //                             ctx.submit_notification(TextComponent::BACKTAB)
 //                         }
-//                         _ => tracing::warn!("unexepcted external action '{:?}'", action),
+//                         _ => tracing::warn!("unexpected external action '{:?}'", action),
 //                     };
 //                 }
 
@@ -422,7 +422,7 @@ impl<T> EditSession<T> {
     ///
     /// If the new selection is different from the current selection, this
     /// will return an ime event that the controlling widget should use to
-    /// invalidte the platform's IME state, by passing it to
+    /// invalidate the platform's IME state, by passing it to
     /// [`EventCtx::invalidate_text_input`].
     #[must_use]
     pub fn set_selection(&mut self, selection: Selection) /* -> Option<ImeInvalidation> */

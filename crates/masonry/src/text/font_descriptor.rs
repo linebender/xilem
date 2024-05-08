@@ -37,13 +37,13 @@ impl FontDescriptor {
         }
     }
 
-    /// Buider-style method to set the descriptor's font size.
+    /// Builder-style method to set the descriptor's font size.
     pub const fn with_size(mut self, size: f32) -> Self {
         self.size = size;
         self
     }
 
-    /// Buider-style method to set the descriptor's [`FontWeight`].
+    /// Builder-style method to set the descriptor's [`FontWeight`].
     ///
     /// [`FontWeight`]: struct.FontWeight.html
     pub const fn with_weight(mut self, weight: Weight) -> Self {
@@ -51,7 +51,7 @@ impl FontDescriptor {
         self
     }
 
-    /// Buider-style method to set the descriptor's [`FontStyle`].
+    /// Builder-style method to set the descriptor's [`FontStyle`].
     ///
     /// [`FontStyle`]: enum.FontStyle.html
     pub const fn with_style(mut self, style: Style) -> Self {

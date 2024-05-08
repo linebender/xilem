@@ -234,7 +234,7 @@ impl<T: Clone> SpanSet<T> {
     ///
     /// `new_len` is the length of the inserted text.
     //TODO: we could be smarter here about just extending the existing spans
-    //as requred for insertions in the interior of a span.
+    //as required for insertions in the interior of a span.
     //TODO: this isn't currently used; it should be used if we use spans with
     //some editable type.
     // the branches are much more readable without sharing code
@@ -302,7 +302,7 @@ impl Attribute {
         Attribute::FontSize(size.into())
     }
 
-    /// Create a new forground color attribute.
+    /// Create a new foreground color attribute.
     pub fn text_color(color: impl Into<Color>) -> Self {
         Attribute::TextColor(color.into())
     }
