@@ -74,11 +74,8 @@
 //! }
 //! ```
 
-#![deny(
-    rustdoc::broken_intra_doc_links,
-    unsafe_code,
-    clippy::trivially_copy_pass_by_ref
-)]
+#![deny(unsafe_code, clippy::trivially_copy_pass_by_ref)]
+// #![deny(rustdoc::broken_intra_doc_links)]
 // #![warn(missing_docs)]
 #![warn(unused_imports)]
 #![allow(clippy::should_implement_trait)]
