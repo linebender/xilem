@@ -60,6 +60,14 @@ where
     }
 }
 
+impl<T: IntoStyles, const N: usize> IntoStyles for [T; N] {
+    fn into_styles(self, styles: &mut Vec<(Cow<'static, str>, Cow<'static, str>)>) {
+        for itm in self {
+            itm.into_styles(styles);
+        }
+    }
+}
+
 impl<T1, T2, S> IntoStyles for HashMap<T1, T2, S>
 where
     T1: Into<Cow<'static, str>>,
