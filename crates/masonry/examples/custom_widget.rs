@@ -8,9 +8,7 @@
 #![windows_subsystem = "windows"]
 
 use accesskit::Role;
-use kurbo::Stroke;
 use masonry::app_driver::{AppDriver, DriverCtx};
-use masonry::kurbo::BezPath;
 use masonry::widget::{FillStrat, RootWidget, WidgetRef};
 use masonry::{
     AccessCtx, AccessEvent, Action, Affine, BoxConstraints, Color, EventCtx, LayoutCtx, LifeCycle,
@@ -21,6 +19,7 @@ use parley::layout::Alignment;
 use parley::style::{FontFamily, FontStack, StyleProperty};
 use smallvec::SmallVec;
 use tracing::{trace_span, Span};
+use vello::kurbo::{BezPath, Stroke};
 use vello::peniko::{Brush, Fill, Format, Image};
 use vello::Scene;
 use winit::window::Window;

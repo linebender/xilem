@@ -26,7 +26,6 @@ xilem_core = { version = "0.1.0", path = "crates/xilem_core" }
 masonry = { version = "0.2.0", path = "crates/masonry" }
 vello = "0.1.0"
 wgpu = "0.19.4"
-kurbo = "0.11.0"
 parley = "0.1.0"
 peniko = "0.1.0"
 winit = "0.30.0"

@@ -4,8 +4,8 @@
 use std::ops::Deref;
 
 use smallvec::SmallVec;
+use vello::kurbo::Point;
 
-use crate::kurbo::Point;
 use crate::{Widget, WidgetId, WidgetState};
 
 /// A rich reference to a [`Widget`].

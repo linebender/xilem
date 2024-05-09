@@ -1728,7 +1728,6 @@ dependencies = [
  "image",
  "insta",
  "instant",
- "kurbo",
  "once_cell",
  "parley",
  "pollster",

@@ -3,11 +3,11 @@
 
 use accesskit::{NodeBuilder, NodeId};
 use tracing::{info_span, trace, warn};
+use vello::kurbo::{Affine, Insets, Point, Rect, Shape, Size};
 use vello::Scene;
 use winit::dpi::LogicalPosition;
 
 use crate::event::{AccessEvent, PointerEvent, TextEvent};
-use crate::kurbo::{Affine, Insets, Point, Rect, Shape, Size};
 use crate::paint_scene_helpers::stroke;
 use crate::render_root::RenderRootState;
 use crate::theme::get_debug_color;

@@ -2,9 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use accesskit::Role;
-use kurbo::Point;
 use smallvec::SmallVec;
-use vello::Scene;
+use vello::{kurbo::Point, Scene};
 
 use crate::widget::{WidgetMut, WidgetPod, WidgetRef};
 use crate::{

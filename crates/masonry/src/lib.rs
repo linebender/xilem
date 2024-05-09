@@ -85,9 +85,9 @@
 
 // TODO - Add logo
 
-pub use kurbo;
 pub use parley;
 pub use vello;
+pub use vello::kurbo;
 
 #[macro_use]
 mod util;
@@ -119,9 +119,9 @@ pub use contexts::{AccessCtx, EventCtx, LayoutCtx, LifeCycleCtx, PaintCtx, Widge
 pub use event::{
     AccessEvent, InternalLifeCycle, LifeCycle, PointerEvent, StatusChange, TextEvent, WindowTheme,
 };
-pub use kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
 pub use parley::layout::Alignment as TextAlignment;
 pub use util::{AsAny, Handled};
+pub use vello::kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
 pub use vello::peniko::{Color, Gradient};
 pub use widget::{BackgroundBrush, Widget, WidgetId, WidgetPod, WidgetState};
 
