@@ -271,12 +271,11 @@ impl<T: EditableText> TextEditor<T> {
                     if let Some(preedit) = self.preedit_range.clone() {
                         self.text_mut().edit(preedit.clone(), preedit_string);
                         let np = preedit.start..(preedit.start + preedit_string.len());
-                        if preedit_string.is_empty() {
-                            self.preedit_range = None;
+                        self.preedit_range = if preedit_string.is_empty() {
+                            None
                         } else {
-                            self.preedit_range = Some(np.clone());
-                        }
-
+                            Some(np.clone())
+                        };
                         self.selection = if let Some(pec) = preedit_sel {
                             Some(Selection::new(
                                 np.start + pec.0,
@@ -290,11 +289,11 @@ impl<T: EditableText> TextEditor<T> {
                         let sr = self.selection.map(|x| x.range()).unwrap_or(0..0);
                         self.text_mut().edit(sr.clone(), preedit_string);
                         let np = sr.start..(sr.start + preedit_string.len());
-                        if preedit_string.is_empty() {
-                            self.preedit_range = None;
+                        self.preedit_range = if preedit_string.is_empty() {
+                            None
                         } else {
-                            self.preedit_range = Some(np.clone());
-                        }
+                            Some(np.clone())
+                        };
                         self.selection = if let Some(pec) = preedit_sel {
                             Some(Selection::new(
                                 np.start + pec.0,
