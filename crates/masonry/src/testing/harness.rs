@@ -33,6 +33,11 @@ pub const HARNESS_DEFAULT_SIZE: Size = Size::new(400., 400.);
 /// Default background color for tests.
 pub const HARNESS_DEFAULT_BACKGROUND_COLOR: Color = Color::rgb8(0x29, 0x29, 0x29);
 
+fn check_env_enabled(key: &'static str) -> bool {
+    let val = std::env::var_os(key);
+    val.is_some_and(|it| !it.is_empty())
+}
+
 /// A safe headless environment to test widgets in.
 ///
 /// `TestHarness` is a type that simulates an [`AppRoot`](crate::AppRoot)
@@ -238,7 +243,7 @@ impl TestHarness {
     /// Create a bitmap (an array of pixels), paint the window and return the bitmap as an 8-bits-per-channel RGB image.
     pub fn render(&mut self) -> RgbaImage {
         let (scene, _tree_update) = self.render_root.redraw();
-        if std::env::var("SKIP_RENDER_TESTS").is_ok_and(|it| !it.is_empty()) {
+        if !check_env_enabled("ENABLE_RENDER_TESTS") {
             return RgbaImage::from_pixel(1, 1, Rgba([255, 255, 255, 255]));
         }
         let mut context =
@@ -513,7 +518,7 @@ impl TestHarness {
         test_module_path: &str,
         test_name: &str,
     ) {
-        if option_env!("SKIP_RENDER_SNAPSHOTS").is_some() {
+        if !check_env_enabled("ENABLE_RENDER_SNAPSHOTS") {
             // FIXME - This is a terrible, awful hack.
             // We need a way to skip render snapshots on CI and locally
             // until we can make sure the snapshots render the same on
