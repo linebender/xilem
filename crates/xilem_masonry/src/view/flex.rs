@@ -4,7 +4,7 @@
 use std::marker::PhantomData;
 
 use masonry::{
-    widget::{self, Axis, WidgetMut},
+    widget::{self, Axis, CrossAxisAlignment, MainAxisAlignment, WidgetMut},
     Widget, WidgetPod,
 };
 
@@ -16,18 +16,38 @@ pub fn flex<VT, Marker>(sequence: VT) -> Flex<VT, Marker> {
         phantom: PhantomData,
         sequence,
         axis: Axis::Vertical,
+        cross_axis_alignment: CrossAxisAlignment::Center,
+        main_axis_alignment: MainAxisAlignment::Start,
+        fill_major_axis: false,
     }
 }
 
 pub struct Flex<VT, Marker> {
     sequence: VT,
     axis: Axis,
+    cross_axis_alignment: CrossAxisAlignment,
+    main_axis_alignment: MainAxisAlignment,
+    fill_major_axis: bool,
     phantom: PhantomData<fn() -> Marker>,
 }
 
 impl<VT, Marker> Flex<VT, Marker> {
     pub fn direction(mut self, axis: Axis) -> Self {
         self.axis = axis;
+        self
+    }
+    pub fn cross_axis_alignment(mut self, axis: CrossAxisAlignment) -> Self {
+        self.cross_axis_alignment = axis;
+        self
+    }
+
+    pub fn main_axis_alignment(mut self, axis: MainAxisAlignment) -> Self {
+        self.main_axis_alignment = axis;
+        self
+    }
+
+    pub fn must_fill_major_axis(mut self, fill_major_axis: bool) -> Self {
+        self.fill_major_axis = fill_major_axis;
         self
     }
 }
@@ -47,7 +67,10 @@ where
         let mut scratch = Vec::new();
         let mut splice = VecSplice::new(&mut elements, &mut scratch);
         let seq_state = self.sequence.build(cx, &mut splice);
-        let mut view = widget::Flex::for_axis(self.axis);
+        let mut view = widget::Flex::for_axis(self.axis)
+            .cross_axis_alignment(self.cross_axis_alignment)
+            .must_fill_main_axis(self.fill_major_axis)
+            .main_axis_alignment(self.main_axis_alignment);
         debug_assert!(
             scratch.is_empty(),
             // TODO: Not at all confident about this, but linear_layout makes this assumption
@@ -79,6 +102,18 @@ where
     ) {
         if prev.axis != self.axis {
             element.set_direction(self.axis);
+            cx.mark_changed();
+        }
+        if prev.cross_axis_alignment != self.cross_axis_alignment {
+            element.set_cross_axis_alignment(self.cross_axis_alignment);
+            cx.mark_changed();
+        }
+        if prev.main_axis_alignment != self.main_axis_alignment {
+            element.set_main_axis_alignment(self.main_axis_alignment);
+            cx.mark_changed();
+        }
+        if prev.fill_major_axis != self.fill_major_axis {
+            element.set_must_fill_main_axis(self.fill_major_axis);
             cx.mark_changed();
         }
         let mut splice = FlexSplice { ix: 0, element };
