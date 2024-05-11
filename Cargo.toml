@@ -1,15 +1,15 @@
 [workspace]
 resolver = "2"
 members = [
-    "crates/xilem_core",
-    "crates/xilem_web",
-    "crates/xilem_web/web_examples/counter",
-    "crates/xilem_web/web_examples/counter_custom_element",
-    "crates/xilem_web/web_examples/todomvc",
-    "crates/xilem_web/web_examples/mathml_svg",
-    "crates/xilem_web/web_examples/svgtoy",
-    "crates/masonry",
-    "crates/xilem_masonry",
+    "xilem_core",
+    "xilem_web",
+    "xilem_web/web_examples/counter",
+    "xilem_web/web_examples/counter_custom_element",
+    "xilem_web/web_examples/todomvc",
+    "xilem_web/web_examples/mathml_svg",
+    "xilem_web/web_examples/svgtoy",
+    "masonry",
+    "xilem",
 ]
 
 [workspace.package]
@@ -22,8 +22,8 @@ homepage = "https://xilem.dev/"
 clippy.semicolon_if_nothing_returned = "warn"
 
 [workspace.dependencies]
-xilem_core = { version = "0.1.0", path = "crates/xilem_core" }
-masonry = { version = "0.2.0", path = "crates/masonry" }
+xilem_core = { version = "0.1.0", path = "xilem_core" }
+masonry = { version = "0.2.0", path = "masonry" }
 vello = "0.1.0"
 wgpu = "0.19.4"
 kurbo = "0.11.0"
