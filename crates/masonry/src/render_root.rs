@@ -12,6 +12,7 @@ use tracing::{debug, info_span, warn};
 use vello::peniko::{Color, Fill};
 use vello::Scene;
 use winit::dpi::{LogicalPosition, LogicalSize, PhysicalSize};
+use winit::event::MouseButton;
 use winit::keyboard::{KeyCode, PhysicalKey};
 use winit::window::CursorIcon;
 
@@ -41,6 +42,8 @@ pub struct RenderRoot {
     // TODO - Add "access_tree_active" to detect when you don't need to update the
     // access tree
     pub(crate) rebuild_access_tree: bool,
+    pub(crate) inspector_is_on: bool,
+    pub(crate) selected_widget: Option<WidgetId>,
 }
 
 pub(crate) struct RenderRootState {
@@ -102,6 +105,8 @@ impl RenderRoot {
                 font_context: FontContext::default(),
             },
             rebuild_access_tree: true,
+            inspector_is_on: false,
+            selected_widget: None,
         };
 
         // We send WidgetAdded to all widgets right away
@@ -230,6 +235,10 @@ impl RenderRoot {
     }
 
     fn root_on_pointer_event(&mut self, event: PointerEvent) -> Handled {
+        if self.inspector_is_on {
+            return self.inspector_handle_event(event);
+        }
+
         let mut widget_state =
             WidgetState::new(self.root.id(), Some(self.get_kurbo_size()), "<root>");
 
@@ -310,6 +319,13 @@ impl RenderRoot {
                 } else {
                     self.state.next_focused_widget = self.widget_from_focus_chain(false);
                 }
+            }
+
+            if handled == Handled::No && key.physical_key == PhysicalKey::Code(KeyCode::F1) {
+                self.inspector_is_on = !self.inspector_is_on;
+                self.state
+                    .signal_queue
+                    .push_back(RenderRootSignal::RequestRedraw);
             }
         }
 
@@ -447,6 +463,19 @@ impl RenderRoot {
             None,
             &empty_path,
         );
+
+        if let Some(id) = self.selected_widget {
+            if let Some(widget) = self.root.as_dyn().find_widget_by_id(id) {
+                let rect = widget.state().window_layout_rect();
+                scene.fill(
+                    Fill::NonZero,
+                    Affine::IDENTITY,
+                    Color::rgba8(60, 60, 255, 128),
+                    None,
+                    &rect,
+                );
+            }
+        }
 
         scene
     }
@@ -607,6 +636,42 @@ impl RenderRoot {
     // TODO - Store in RenderRootState
     pub(crate) fn focus_chain(&self) -> &[WidgetId] {
         &self.root.state().focus_chain
+    }
+
+    fn inspector_handle_event(&mut self, event: PointerEvent) -> Handled {
+        match event {
+            PointerEvent::PointerDown(MouseButton::Left, state) => {
+                let pos = Point::new(state.position.x, state.position.y);
+                let selected_widget = self.root.as_dyn().find_widget_at_pos(pos);
+                if let Some(widget) = selected_widget {
+                    println!(
+                        "Widget '{}' #{} info: {:#?}",
+                        widget.short_type_name(),
+                        widget.state().id.to_raw(),
+                        widget.state()
+                    );
+                }
+                self.inspector_is_on = false;
+                self.selected_widget = None;
+                Handled::Yes
+            }
+            PointerEvent::PointerMove(state) => {
+                let pos = Point::new(state.position.x, state.position.y);
+                let selected_widget = self.root.as_dyn().find_widget_at_pos(pos);
+                if let Some(widget) = selected_widget {
+                    self.state
+                        .signal_queue
+                        .push_back(RenderRootSignal::RequestRedraw);
+                    self.selected_widget = Some(widget.state().id);
+                }
+                Handled::Yes
+            }
+            PointerEvent::PointerLeave(_) => {
+                self.selected_widget = None;
+                Handled::Yes
+            }
+            _ => Handled::No,
+        }
     }
 }
 
