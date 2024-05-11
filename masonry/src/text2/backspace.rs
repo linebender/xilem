@@ -5,12 +5,10 @@
 
 use xi_unicode::*;
 
-use crate::text::editable_text::EditableTextCursor;
-
-use super::{editable_text::EditableText, shell_text::Selection};
+use super::{EditableTextCursor, Selectable};
 
 #[allow(clippy::cognitive_complexity)]
-fn backspace_offset(text: &impl EditableText, start: usize) -> usize {
+fn backspace_offset(text: &impl Selectable, start: usize) -> usize {
     #[derive(PartialEq)]
     enum State {
         Start,
@@ -188,10 +186,6 @@ fn backspace_offset(text: &impl EditableText, start: usize) -> usize {
 /// This involves complicated logic to handle various special cases that
 /// are unique to backspace.
 #[allow(clippy::trivially_copy_pass_by_ref)]
-pub fn offset_for_delete_backwards(region: &Selection, text: &impl EditableText) -> usize {
-    if !region.is_caret() {
-        region.min()
-    } else {
-        backspace_offset(text, region.active)
-    }
+pub fn offset_for_delete_backwards(caret_position: usize, text: &impl Selectable) -> usize {
+    backspace_offset(text, caret_position)
 }

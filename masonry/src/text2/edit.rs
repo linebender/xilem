@@ -14,6 +14,7 @@ use winit::{
 use crate::{event::PointerState, Action, EventCtx, Handled, TextEvent};
 
 use super::{
+    offset_for_delete_backwards,
     selection::{Affinity, Selection},
     Selectable, TextWithSelection,
 };
@@ -119,10 +120,9 @@ impl<T: EditableText> TextEditor<T> {
                                     //       because whole EGCs are more coarse than what people expect
                                     //       to be able to delete individual indic grapheme cluster
                                     //       components among other things.
-                                    let offset = self
-                                        .text()
-                                        .prev_grapheme_offset(selection.active)
-                                        .unwrap_or(0);
+                                    let text = self.text_mut();
+                                    let offset =
+                                        offset_for_delete_backwards(selection.active, text);
                                     self.text_mut().edit(offset..selection.active, "");
                                     self.inner.selection =
                                         Some(Selection::caret(offset, selection.active_affinity));
