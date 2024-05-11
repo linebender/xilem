@@ -256,18 +256,13 @@ impl<T: EditableText> TextEditor<T> {
             TextEvent::KeyboardKey(_, _) => Handled::No,
             TextEvent::Ime(ime) => match ime {
                 Ime::Commit(text) => {
-                    if let Some(preedit) = self
-                        .preedit_range
-                        .clone()
-                        .or_else(|| self.selection.map(|x| x.range()))
-                    {
-                        self.text_mut().edit(preedit.clone(), text);
+                    if let Some(selection_range) = self.selection.map(|x| x.range()) {
+                        self.text_mut().edit(selection_range.clone(), text);
                         self.selection = Some(Selection::caret(
-                            preedit.start + text.len(),
+                            selection_range.start + text.len(),
                             Affinity::Upstream,
                         ));
                     }
-                    self.preedit_range = None;
                     let contents = self.text().as_str().to_string();
                     ctx.submit_action(Action::TextChanged(contents));
                     Handled::Yes
@@ -276,7 +271,11 @@ impl<T: EditableText> TextEditor<T> {
                     if let Some(preedit) = self.preedit_range.clone() {
                         self.text_mut().edit(preedit.clone(), preedit_string);
                         let np = preedit.start..(preedit.start + preedit_string.len());
-                        self.preedit_range = Some(np.clone());
+                        self.preedit_range = if preedit_string.is_empty() {
+                            None
+                        } else {
+                            Some(np.clone())
+                        };
                         self.selection = if let Some(pec) = preedit_sel {
                             Some(Selection::new(
                                 np.start + pec.0,
@@ -290,7 +289,11 @@ impl<T: EditableText> TextEditor<T> {
                         let sr = self.selection.map(|x| x.range()).unwrap_or(0..0);
                         self.text_mut().edit(sr.clone(), preedit_string);
                         let np = sr.start..(sr.start + preedit_string.len());
-                        self.preedit_range = Some(np.clone());
+                        self.preedit_range = if preedit_string.is_empty() {
+                            None
+                        } else {
+                            Some(np.clone())
+                        };
                         self.selection = if let Some(pec) = preedit_sel {
                             Some(Selection::new(
                                 np.start + pec.0,
