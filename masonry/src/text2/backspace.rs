@@ -67,9 +67,9 @@ fn backspace_offset(text: &impl Selectable, start: usize) -> usize {
             State::OddNumberedRis => {
                 if code_point.is_regional_indicator_symbol() {
                     delete_code_point_count += 1;
-                    state = State::EvenNumberedRis
+                    state = State::EvenNumberedRis;
                 } else {
-                    state = State::Finished
+                    state = State::Finished;
                 }
             }
             State::EvenNumberedRis => {
