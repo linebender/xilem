@@ -13,7 +13,6 @@ use vello::peniko::{Color, Fill};
 use vello::Scene;
 use winit::dpi::{LogicalPosition, LogicalSize, PhysicalSize};
 use winit::keyboard::{KeyCode, PhysicalKey};
-use winit::window::CursorIcon;
 
 use crate::contexts::{EventCtx, LayoutCtx, LifeCycleCtx, PaintCtx, WidgetCtx, WorkerFn};
 use crate::debug_logger::DebugLogger;
@@ -21,8 +20,8 @@ use crate::event::{PointerEvent, TextEvent, WindowEvent};
 use crate::kurbo::Point;
 use crate::widget::{WidgetMut, WidgetState};
 use crate::{
-    AccessCtx, AccessEvent, Action, BoxConstraints, Handled, InternalLifeCycle, LifeCycle, Widget,
-    WidgetId, WidgetPod,
+    AccessCtx, AccessEvent, Action, BoxConstraints, CursorIcon, Handled, InternalLifeCycle,
+    LifeCycle, Widget, WidgetId, WidgetPod,
 };
 
 // TODO - Remove pub(crate)

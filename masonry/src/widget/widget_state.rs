@@ -5,13 +5,11 @@
 
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use winit::window::CursorIcon;
-
 use crate::bloom::Bloom;
 use crate::kurbo::{Insets, Point, Rect, Size};
 use crate::text_helpers::TextFieldRegistration;
 use crate::widget::CursorChange;
-use crate::WidgetId;
+use crate::{CursorIcon, WidgetId};
 
 // FIXME #5 - Make a note documenting this: the only way to get a &mut WidgetState should be in a pass.
 // A pass should reborrow the parent widget state (to avoid crossing wires) and call merge_up at

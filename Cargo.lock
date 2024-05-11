@@ -1722,6 +1722,7 @@ dependencies = [
  "accesskit",
  "accesskit_winit",
  "assert_matches",
+ "cursor-icon",
  "float-cmp",
  "fnv",
  "futures-intrusive",
