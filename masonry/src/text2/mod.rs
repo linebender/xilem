@@ -25,3 +25,6 @@ pub use selection::{
 
 mod edit;
 pub use edit::{EditableText, TextEditor};
+
+mod backspace;
+pub use backspace::offset_for_delete_backwards;
