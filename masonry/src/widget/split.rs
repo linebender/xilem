@@ -9,15 +9,15 @@ use tracing::{trace, trace_span, warn, Span};
 use vello::Scene;
 use winit::dpi::LogicalPosition;
 use winit::event::MouseButton;
-use winit::window::CursorIcon;
 
 use crate::kurbo::Line;
 use crate::paint_scene_helpers::{fill_color, stroke};
 use crate::widget::flex::Axis;
 use crate::widget::{WidgetMut, WidgetPod, WidgetRef};
 use crate::{
-    theme, AccessCtx, AccessEvent, BoxConstraints, Color, EventCtx, LayoutCtx, LifeCycle,
-    LifeCycleCtx, PaintCtx, Point, PointerEvent, Rect, Size, StatusChange, TextEvent, Widget,
+    theme, AccessCtx, AccessEvent, BoxConstraints, Color, CursorIcon, EventCtx, LayoutCtx,
+    LifeCycle, LifeCycleCtx, PaintCtx, Point, PointerEvent, Rect, Size, StatusChange, TextEvent,
+    Widget,
 };
 
 // TODO - Have child widget type as generic argument

@@ -10,14 +10,13 @@ use accesskit::{NodeBuilder, TreeUpdate};
 use parley::FontContext;
 use tracing::{trace, warn};
 use winit::dpi::LogicalPosition;
-use winit::window::CursorIcon;
 
 use crate::action::Action;
 use crate::promise::PromiseToken;
 use crate::render_root::{RenderRootSignal, RenderRootState};
 use crate::text_helpers::{ImeChangeSignal, TextFieldRegistration};
 use crate::widget::{CursorChange, WidgetMut, WidgetState};
-use crate::{Insets, Point, Rect, Size, Widget, WidgetId, WidgetPod};
+use crate::{CursorIcon, Insets, Point, Rect, Size, Widget, WidgetId, WidgetPod};
 
 /// A macro for implementing methods on multiple contexts.
 ///

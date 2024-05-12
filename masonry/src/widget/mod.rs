@@ -28,6 +28,8 @@ mod spinner;
 mod split;
 mod textbox;
 
+use crate::CursorIcon;
+
 pub use self::image::Image;
 pub use align::Align;
 pub use button::Button;
@@ -50,7 +52,6 @@ pub use widget_state::WidgetState;
 pub use sized_box::BackgroundBrush;
 #[doc(hidden)]
 pub use widget::{Widget, WidgetId};
-use winit::window::CursorIcon;
 
 /// The possible cursor states for a widget.
 #[derive(Clone, Debug)]
