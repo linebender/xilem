@@ -105,13 +105,11 @@ fn backspace_offset(text: &impl Selectable, start: usize) -> usize {
                 if is_variation_selector(code_point) {
                     last_seen_vs_code_point_count = 1;
                     state = State::BeforeVsAndEmojiModifier;
+                } else if code_point.is_emoji_modifier_base() {
+                    delete_code_point_count += 1;
+                    state = State::BeforeEmoji;
                 } else {
-                    if code_point.is_emoji_modifier_base() {
-                        delete_code_point_count += 1;
-                        state = State::BeforeEmoji;
-                    } else {
-                        state = State::Finished;
-                    }
+                    state = State::Finished;
                 }
             }
             State::BeforeVsAndEmojiModifier => {
