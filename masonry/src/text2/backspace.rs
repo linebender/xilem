@@ -7,6 +7,8 @@ use xi_unicode::*;
 
 use super::{EditableTextCursor, Selectable};
 
+/// Logic adapted from Android. See code links in for updates
+/// https://github.com/xi-editor/xi-editor/pull/837
 #[allow(clippy::cognitive_complexity)]
 fn backspace_offset(text: &impl Selectable, start: usize) -> usize {
     #[derive(PartialEq)]
@@ -104,8 +106,10 @@ fn backspace_offset(text: &impl Selectable, start: usize) -> usize {
                 } else {
                     if code_point.is_emoji_modifier_base() {
                         delete_code_point_count += 1;
+                        state = State::BeforeEmoji;
+                    } else {
+                        state = State::Finished;
                     }
-                    state = State::Finished;
                 }
             }
             State::BeforeVsAndEmojiModifier => {
@@ -290,10 +294,16 @@ mod tests {
         );
         // 👨‍❤️‍💋‍👨
 
-        // Emoji modifier can be appended to the first emoji.
+        // Emoji modifier can be appended to each emoji.
 
         assert_delete_backwards("\u{1F469}\u{1F3FB}\u{200D}\u{1F4BC}", "");
         // 👩🏻‍💼
+
+        assert_delete_backwards(
+            "\u{1F468}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FB}",
+            "",
+        );
+        // 👨🏿‍❤️‍👨🏻
 
         // End with ZERO WIDTH JOINER
         assert_delete_backwards_seq(&["\u{1F441}\u{200D}", "\u{1F441}", ""]); // 👁‍
