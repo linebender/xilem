@@ -22,7 +22,16 @@ impl<D, V, F> Memoize<D, F>
 where
     F: Fn(&D) -> V,
 {
+    const ASSERT_CONTEXTLESS_FN: () = {
+        assert!(
+            std::mem::size_of::<F>() == 0,
+            "The callback is not allowed to be a function pointer or a closure capturing context"
+        );
+    };
+
     pub fn new(data: D, child_cb: F) -> Self {
+        #[allow(clippy::let_unit_value)]
+        let _ = Self::ASSERT_CONTEXTLESS_FN;
         Memoize { data, child_cb }
     }
 }
@@ -38,10 +47,6 @@ where
     type Element = V::Element;
 
     fn build(&self, cx: &mut ViewCx) -> (WidgetPod<Self::Element>, Self::ViewState) {
-        assert!(
-            std::mem::size_of::<F>() == 0,
-            "The callback is not allowed to be a function pointer or a closure capturing context"
-        );
         let view = (self.child_cb)(&self.data);
         let (element, view_state) = view.build(cx);
         let memoize_state = MemoizeState {
@@ -88,10 +93,6 @@ pub fn static_view<V, F>(view: F) -> Memoize<(), impl Fn(&()) -> V>
 where
     F: Fn() -> V + Send + 'static,
 {
-    assert!(
-        std::mem::size_of::<F>() == 0,
-        "The callback is not allowed to be a function pointer or a closure capturing context"
-    );
     Memoize::new((), move |_: &()| view())
 }
 
