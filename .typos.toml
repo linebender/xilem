@@ -1,0 +1,15 @@
+[default]
+extend-ignore-re = [
+    "Lorem ipsum [a-zA-Z .,]*",
+]
+
+[default.extend-identifiers]
+FillStrat = "FillStrat" # short for strategy
+
+[default.extend-words]
+seeked = "seeked" # FIXME?
+
+[files]
+extend-exclude = [
+    "masonry/resources/i18n"
+]

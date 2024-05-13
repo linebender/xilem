@@ -120,3 +120,10 @@ jobs:
       - name: cargo doc
         # We currently skip checking masonry's docs
         run: cargo doc --workspace --all-features --no-deps --document-private-items -Zunstable-options -Zrustdoc-scrape-examples --exclude masonry
+
+  typos:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: crate-ci/typos@v1.21.0
