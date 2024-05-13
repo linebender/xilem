@@ -1,7 +1,6 @@
 # See https://rust-lang.github.io/rustfmt for more information
 
-# Git can handle translation with Windows newlines, but if you have
-# configured git correctly, which is not the default on windows
+# Ensure lines end with \n even if the git configuration core.autocrlf is not set to true
 newline_style = "Unix"
 
 # `Foobar { foo, bar }` is more readable than `Foo { foo: foo, bar: bar }`
