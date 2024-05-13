@@ -25,7 +25,13 @@ where
     const ASSERT_CONTEXTLESS_FN: () = {
         assert!(
             std::mem::size_of::<F>() == 0,
-            "The callback is not allowed to be a function pointer or a closure capturing context"
+            "
+It's not possible to use function pointers or captured context in closures,
+as this potentially messes up the logic of memoize or produces unwanted effects.
+
+For example a different kind of view could be instantiated with a different callback, while the old one is still memoized, but it's not updated then.
+It's not possible in Rust currently to check whether the (content of the) callback has changed with the `Fn` trait, which would make this otherwise possible.
+"
         );
     };
 
