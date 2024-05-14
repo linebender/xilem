@@ -1,0 +1,17 @@
+# See https://rust-lang.github.io/rustfmt for more information
+
+# Ensure lines end with \n even if the git configuration core.autocrlf is not set to true
+newline_style = "Unix"
+
+# `Foobar { foo, bar }` is more readable than `Foo { foo: foo, bar: bar }`
+use_field_init_shorthand = true
+
+# Forces let else blocks to always be their own line(s)
+single_line_let_else_max_width = 0
+
+# Subjectively, this combo improves readability on imports. The full prefix is always
+# visible right after `use`, and different types of imports are grouped together in
+# a predictable way (first std, then other crates, then local imports).
+# (These options are still unstable and thus commented out)
+# imports_granularity = "Module"
+# group_imports = "StdExternalCrate"
