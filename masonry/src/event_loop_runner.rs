@@ -120,7 +120,7 @@ impl ApplicationHandler<accesskit_winit::Event> for MainState<'_> {
             WinitWindowEvent::KeyboardInput {
                 device_id: _,
                 event,
-                is_synthetic: _,
+                is_synthetic: false, // TODO: Introduce an escape hatch for synthetic keys
             } => {
                 self.render_root.handle_text_event(TextEvent::KeyboardKey(
                     event,
