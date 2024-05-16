@@ -1,13 +1,22 @@
+# See the configuration reference at
+# https://github.com/crate-ci/typos/blob/master/docs/reference.md
+
 [default]
 extend-ignore-re = [
     "Lorem ipsum [a-zA-Z .,]*",
 ]
 
+# Corrections take the form of a key/value pair. The key is the incorrect word
+# and the value is the correct word. If the key and value are the same, the
+# word is treated as always correct. If the value is an empty string, the word
+# is treated as always incorrect.
+
 [default.extend-identifiers]
 FillStrat = "FillStrat" # short for strategy
 
+# Case insensitive
 [default.extend-words]
-seeked = "seeked" # FIXME?
+seeked = "seeked" # Part of the HTML standard
 
 [files]
 extend-exclude = [
