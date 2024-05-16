@@ -3,7 +3,12 @@
 
 [default]
 extend-ignore-re = [
+    # Matches lorem ipsum text.
+    # In general, regexes are only matched until the end of a line by typos,
+    # and the repeated matcher at the end of both of these also ensures that
+    # matching ends at quotes or symbols commonly used to terminate comments.
     "Lorem ipsum [a-zA-Z .,]*",
+    "Phasellus in viverra dolor [a-zA-Z .,]*",
 ]
 
 # Corrections take the form of a key/value pair. The key is the incorrect word
