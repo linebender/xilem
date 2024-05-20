@@ -3853,6 +3853,10 @@ name = "xilem_core"
 version = "0.1.0"
 
 [[package]]
+name = "xilem_core2"
+version = "0.1.0"
+
+[[package]]
 name = "xilem_web"
 version = "0.1.0"
 dependencies = [
