@@ -22,7 +22,7 @@ pub struct Button<F> {
 
 impl<F, State, Action> MasonryView<State, Action> for Button<F>
 where
-    F: Fn(&mut State) -> Action + Send + 'static,
+    F: Fn(&mut State) -> Action + Send + Sync + 'static,
 {
     type Element = masonry::widget::Button;
     type ViewState = ();

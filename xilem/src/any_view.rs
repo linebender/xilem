@@ -1,7 +1,7 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use std::{any::Any, ops::Deref};
+use std::{any::Any, ops::Deref, sync::Arc};
 
 use accesskit::Role;
 use masonry::widget::{WidgetMut, WidgetRef};
@@ -22,9 +22,11 @@ use crate::{MasonryView, MessageResult, ViewCx, ViewId};
 /// Note that `Option` can also be used for conditionally displaying
 /// views in a [`ViewSequence`](crate::ViewSequence).
 // TODO: Mention `Either` when we have implemented that?
-pub type BoxedMasonryView<T, A = ()> = Box<dyn AnyMasonryView<T, A>>;
+pub type BoxedMasonryView<State, Action = ()> = Box<dyn AnyMasonryView<State, Action>>;
 
-impl<T: 'static, A: 'static> MasonryView<T, A> for BoxedMasonryView<T, A> {
+impl<State: 'static, Action: 'static> MasonryView<State, Action>
+    for BoxedMasonryView<State, Action>
+{
     type Element = DynWidget;
     type ViewState = AnyViewState;
 
@@ -36,9 +38,9 @@ impl<T: 'static, A: 'static> MasonryView<T, A> for BoxedMasonryView<T, A> {
         &self,
         view_state: &mut Self::ViewState,
         id_path: &[ViewId],
-        message: Box<dyn std::any::Any>,
-        app_state: &mut T,
-    ) -> crate::MessageResult<A> {
+        message: Box<dyn Any>,
+        app_state: &mut State,
+    ) -> crate::MessageResult<Action> {
         self.deref()
             .dyn_message(view_state, id_path, message, app_state)
     }
@@ -60,9 +62,45 @@ pub struct AnyViewState {
     generation: u64,
 }
 
+impl<State: 'static, Action: 'static> MasonryView<State, Action>
+    for Arc<dyn AnyMasonryView<State, Action>>
+{
+    type ViewState = AnyViewState;
+
+    type Element = DynWidget;
+
+    fn build(&self, cx: &mut ViewCx) -> (masonry::WidgetPod<Self::Element>, Self::ViewState) {
+        self.deref().dyn_build(cx)
+    }
+
+    fn rebuild(
+        &self,
+        view_state: &mut Self::ViewState,
+        cx: &mut ViewCx,
+        prev: &Self,
+        element: WidgetMut<Self::Element>,
+    ) {
+        if !Arc::ptr_eq(self, prev) {
+            self.deref()
+                .dyn_rebuild(view_state, cx, prev.deref(), element);
+        }
+    }
+
+    fn message(
+        &self,
+        view_state: &mut Self::ViewState,
+        id_path: &[ViewId],
+        message: Box<dyn Any>,
+        app_state: &mut State,
+    ) -> MessageResult<Action> {
+        self.deref()
+            .dyn_message(view_state, id_path, message, app_state)
+    }
+}
+
 /// A trait enabling type erasure of views.
-pub trait AnyMasonryView<T, A = ()>: Send {
-    fn as_any(&self) -> &dyn std::any::Any;
+pub trait AnyMasonryView<State, Action = ()>: Send + Sync {
+    fn as_any(&self) -> &dyn Any;
 
     fn dyn_build(&self, cx: &mut ViewCx) -> (WidgetPod<DynWidget>, AnyViewState);
 
@@ -70,7 +108,7 @@ pub trait AnyMasonryView<T, A = ()>: Send {
         &self,
         dyn_state: &mut AnyViewState,
         cx: &mut ViewCx,
-        prev: &dyn AnyMasonryView<T, A>,
+        prev: &dyn AnyMasonryView<State, Action>,
         element: WidgetMut<DynWidget>,
     );
 
@@ -78,16 +116,16 @@ pub trait AnyMasonryView<T, A = ()>: Send {
         &self,
         dyn_state: &mut AnyViewState,
         id_path: &[ViewId],
-        message: Box<dyn std::any::Any>,
-        app_state: &mut T,
-    ) -> MessageResult<A>;
+        message: Box<dyn Any>,
+        app_state: &mut State,
+    ) -> MessageResult<Action>;
 }
 
-impl<T, A, V: MasonryView<T, A> + 'static> AnyMasonryView<T, A> for V
+impl<State, Action, V: MasonryView<State, Action> + 'static> AnyMasonryView<State, Action> for V
 where
     V::ViewState: Any,
 {
-    fn as_any(&self) -> &dyn std::any::Any {
+    fn as_any(&self) -> &dyn Any {
         self
     }
 
@@ -110,7 +148,7 @@ where
         &self,
         dyn_state: &mut AnyViewState,
         cx: &mut ViewCx,
-        prev: &dyn AnyMasonryView<T, A>,
+        prev: &dyn AnyMasonryView<State, Action>,
         mut element: WidgetMut<DynWidget>,
     ) {
         if let Some(prev) = prev.as_any().downcast_ref() {
@@ -149,9 +187,9 @@ where
         &self,
         dyn_state: &mut AnyViewState,
         id_path: &[ViewId],
-        message: Box<dyn std::any::Any>,
-        app_state: &mut T,
-    ) -> MessageResult<A> {
+        message: Box<dyn Any>,
+        app_state: &mut State,
+    ) -> MessageResult<Action> {
         let (start, rest) = id_path
             .split_first()
             .expect("Id path has elements for AnyView");

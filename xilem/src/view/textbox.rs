@@ -9,11 +9,11 @@ use crate::{Color, MasonryView, MessageResult, TextAlignment, ViewCx, ViewId};
 // is that if the user forgets to hook up the modify the state's contents in the callback,
 // the textbox will always be reset to the initial state. This will be very annoying for the user.
 
-type Callback<State, Action> = Box<dyn Fn(&mut State, String) -> Action + Send + 'static>;
+type Callback<State, Action> = Box<dyn Fn(&mut State, String) -> Action + Send + Sync + 'static>;
 
 pub fn textbox<F, State, Action>(contents: String, on_changed: F) -> Textbox<State, Action>
 where
-    F: Fn(&mut State, String) -> Action + Send + 'static,
+    F: Fn(&mut State, String) -> Action + Send + Sync + 'static,
 {
     // TODO: Allow setting a placeholder
     Textbox {
@@ -55,7 +55,7 @@ impl<State, Action> Textbox<State, Action> {
 
     pub fn on_enter<F>(mut self, on_enter: F) -> Self
     where
-        F: Fn(&mut State, String) -> Action + Send + 'static,
+        F: Fn(&mut State, String) -> Action + Send + Sync + 'static,
     {
         self.on_enter = Some(Box::new(on_enter));
         self

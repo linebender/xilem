@@ -52,7 +52,7 @@ impl<VT, Marker> Flex<VT, Marker> {
     }
 }
 
-impl<State, Action, Marker: 'static, Seq> MasonryView<State, Action> for Flex<Seq, Marker>
+impl<State, Action, Marker: 'static, Seq: Sync> MasonryView<State, Action> for Flex<Seq, Marker>
 where
     Seq: ViewSequence<State, Action, Marker>,
 {
