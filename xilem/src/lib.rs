@@ -122,12 +122,7 @@ where
     }
 
     // TODO: Make windows a specific view
-    pub fn run_windowed(self, window_title: String) -> Result<(), EventLoopError>
-    where
-        State: 'static,
-        Logic: 'static,
-        View: 'static,
-    {
+    pub fn run_windowed(self, window_title: String) -> Result<(), EventLoopError> {
         let window_size = LogicalSize::new(600., 800.);
         let window_attributes = Window::default_attributes()
             .with_title(window_title)
@@ -137,12 +132,10 @@ where
     }
 
     // TODO: Make windows into a custom view
-    pub fn run_windowed_in(self, window_attributes: WindowAttributes) -> Result<(), EventLoopError>
-    where
-        State: 'static,
-        Logic: 'static,
-        View: 'static,
-    {
+    pub fn run_windowed_in(
+        self,
+        window_attributes: WindowAttributes,
+    ) -> Result<(), EventLoopError> {
         event_loop_runner::run(window_attributes, self.root_widget, self.driver)
     }
 }

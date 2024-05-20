@@ -23,21 +23,21 @@ use crate::event::{PointerState, WindowEvent};
 use crate::render_root::{self, RenderRoot, WindowSizePolicy};
 use crate::{PointerEvent, TextEvent, Widget};
 
-struct MainState<'a> {
+struct MainState<'a, A: AppDriver> {
     window: Arc<Window>,
     render_cx: RenderContext,
     surface: RenderSurface<'a>,
     render_root: RenderRoot,
     renderer: Option<Renderer>,
     pointer_state: PointerState,
-    app_driver: Box<dyn AppDriver>,
+    app_driver: A,
     accesskit_adapter: Adapter,
 }
 
 pub fn run(
     window_attributes: WindowAttributes,
     root_widget: impl Widget,
-    app_driver: impl AppDriver + 'static,
+    app_driver: impl AppDriver,
 ) -> Result<(), EventLoopError> {
     let visible = window_attributes.visible;
     let window_attributes = window_attributes.with_visible(false);
@@ -60,7 +60,7 @@ pub fn run_with(
     event_loop: EventLoop<accesskit_winit::Event>,
     accesskit_adapter: Adapter,
     root_widget: impl Widget,
-    app_driver: impl AppDriver + 'static,
+    app_driver: impl AppDriver,
 ) -> Result<(), EventLoopError> {
     let window = Arc::new(window);
     let mut render_cx = RenderContext::new().unwrap();
@@ -80,7 +80,7 @@ pub fn run_with(
         render_root: RenderRoot::new(root_widget, WindowSizePolicy::User, scale_factor),
         renderer: None,
         pointer_state: PointerState::empty(),
-        app_driver: Box::new(app_driver),
+        app_driver,
         accesskit_adapter,
     };
 
@@ -93,7 +93,7 @@ pub fn run_with(
     event_loop.run_app(&mut main_state)
 }
 
-impl ApplicationHandler<accesskit_winit::Event> for MainState<'_> {
+impl<A: AppDriver> ApplicationHandler<accesskit_winit::Event> for MainState<'_, A> {
     fn resumed(&mut self, _event_loop: &ActiveEventLoop) {
         // FIXME: initialize window in this handler because initializing it before running the event loop is deprecated
     }
@@ -199,7 +199,7 @@ impl ApplicationHandler<accesskit_winit::Event> for MainState<'_> {
     }
 }
 
-impl MainState<'_> {
+impl<A: AppDriver> MainState<'_, A> {
     fn render(&mut self, scene: Scene) {
         let scale = self.window.scale_factor();
         let size = self.window.inner_size();
