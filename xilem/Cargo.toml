@@ -14,6 +14,16 @@ all-features = true
 # rustdoc-scrape-examples tracking issue https://github.com/rust-lang/rust/issues/88791
 cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
 
+[[example]]
+name = "mason"
+
+[[example]]
+# A custom example target which uses the same `mason.rs` file but for android
+name = "mason_android"
+path = "examples/mason.rs"
+# cdylib is required for cargo-apk
+crate-type = ["cdylib"]
+
 [lints]
 workspace = true
 
@@ -25,3 +35,6 @@ vello.workspace = true
 smallvec.workspace = true
 accesskit.workspace = true
 accesskit_winit.workspace = true
+
+[target.'cfg(target_os = "android")'.dev-dependencies]
+winit = { features = ["android-native-activity"], workspace = true }

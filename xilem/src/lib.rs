@@ -27,6 +27,8 @@ pub use id::ViewId;
 pub use sequence::{ElementSplice, ViewSequence};
 pub use vec_splice::VecSplice;
 
+pub use masonry::event_loop_runner::{EventLoop, EventLoopBuilder};
+
 pub struct Xilem<State, Logic, View>
 where
     View: MasonryView<State>,
@@ -122,7 +124,13 @@ where
     }
 
     // TODO: Make windows a specific view
-    pub fn run_windowed(self, window_title: String) -> Result<(), EventLoopError>
+    pub fn run_windowed(
+        self,
+        // We pass in the event loop builder to allow
+        // This might need to be generic over the event type?
+        event_loop: EventLoopBuilder,
+        window_title: String,
+    ) -> Result<(), EventLoopError>
     where
         State: 'static,
         Logic: 'static,
@@ -133,17 +141,21 @@ where
             .with_title(window_title)
             .with_resizable(true)
             .with_min_inner_size(window_size);
-        self.run_windowed_in(window_attributes)
+        self.run_windowed_in(event_loop, window_attributes)
     }
 
     // TODO: Make windows into a custom view
-    pub fn run_windowed_in(self, window_attributes: WindowAttributes) -> Result<(), EventLoopError>
+    pub fn run_windowed_in(
+        self,
+        event_loop: EventLoopBuilder,
+        window_attributes: WindowAttributes,
+    ) -> Result<(), EventLoopError>
     where
         State: 'static,
         Logic: 'static,
         View: 'static,
     {
-        event_loop_runner::run(window_attributes, self.root_widget, self.driver)
+        event_loop_runner::run(event_loop, window_attributes, self.root_widget, self.driver)
     }
 }
 pub trait MasonryView<State, Action = ()>: Send + Sync + 'static {

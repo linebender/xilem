@@ -384,6 +384,11 @@ pub fn main() {
         in_num: false,
     };
 
-    masonry::event_loop_runner::run(window_attributes, RootWidget::new(build_calc()), calc_state)
-        .unwrap();
+    masonry::event_loop_runner::run(
+        masonry::event_loop_runner::EventLoop::with_user_event(),
+        window_attributes,
+        RootWidget::new(build_calc()),
+        calc_state,
+    )
+    .unwrap();
 }

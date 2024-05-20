@@ -34,5 +34,11 @@ pub fn main() {
         .with_min_inner_size(window_size)
         .with_max_inner_size(window_size);
 
-    masonry::event_loop_runner::run(window_attributes, RootWidget::new(image), Driver).unwrap();
+    masonry::event_loop_runner::run(
+        masonry::event_loop_runner::EventLoop::with_user_event(),
+        window_attributes,
+        RootWidget::new(image),
+        Driver,
+    )
+    .unwrap();
 }

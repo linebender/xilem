@@ -39,6 +39,7 @@ pub fn main() {
         .with_min_inner_size(window_size);
 
     masonry::event_loop_runner::run(
+        masonry::event_loop_runner::EventLoop::with_user_event(),
         window_attributes,
         RootWidget::new(build_root_widget()),
         Driver,

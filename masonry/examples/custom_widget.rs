@@ -154,6 +154,7 @@ pub fn main() {
     let window_attributes = Window::default_attributes().with_title("Fancy colors");
 
     masonry::event_loop_runner::run(
+        masonry::event_loop_runner::EventLoop::with_user_event(),
         window_attributes,
         RootWidget::new(CustomWidget(my_string)),
         Driver,

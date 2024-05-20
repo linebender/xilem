@@ -5,7 +5,7 @@ use masonry::widget::{CrossAxisAlignment, MainAxisAlignment};
 use winit::error::EventLoopError;
 use xilem::{
     view::{button, flex, label},
-    MasonryView, Xilem,
+    EventLoop, MasonryView, Xilem,
 };
 
 fn app_logic(data: &mut i32) -> impl MasonryView<i32> {
@@ -25,6 +25,6 @@ fn app_logic(data: &mut i32) -> impl MasonryView<i32> {
 
 fn main() -> Result<(), EventLoopError> {
     let app = Xilem::new(0, app_logic);
-    app.run_windowed("Centered Flex".into())?;
+    app.run_windowed(EventLoop::with_user_event(), "Centered Flex".into())?;
     Ok(())
 }

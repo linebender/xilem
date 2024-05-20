@@ -14,7 +14,6 @@ use vello::peniko::{Brush, Color};
 use vello::Scene;
 use winit::event::MouseButton;
 use winit::keyboard::NamedKey;
-use winit::platform::modifier_supplement::KeyEventExtModifierSupplement;
 
 use crate::event::PointerState;
 use crate::{Handled, TextEvent};
@@ -120,7 +119,7 @@ impl<T: Selectable> TextWithSelection<T> {
     pub fn text_event(&mut self, event: &TextEvent) -> Handled {
         match event {
             TextEvent::KeyboardKey(key, mods) if key.state.is_pressed() => {
-                match key.key_without_modifiers() {
+                match shortcut_key(key) {
                     winit::keyboard::Key::Named(NamedKey::ArrowLeft) => {
                         if mods.shift_key() {
                         } else {
@@ -262,6 +261,21 @@ impl<T: Selectable> TextWithSelection<T> {
         }
         self.layout.draw(scene, point);
     }
+}
+
+/// Get the key which should be used for shortcuts from the underlying event
+///
+/// `key_without_modifiers` is only available on some platforms
+fn shortcut_key(key: &winit::event::KeyEvent) -> winit::keyboard::Key {
+    #[cfg(not(target_os = "android"))]
+    {
+        use winit::platform::modifier_supplement::KeyEventExtModifierSupplement;
+        key.key_without_modifiers()
+    }
+    #[cfg(target_os = "android")]
+    // We think it will be rare that users are using a physical keyboard with Android,
+    // and so we don't really need to worry *too much* about the text selection shortcuts
+    key.logical_key.clone()
 }
 
 impl<T: Selectable> Deref for TextWithSelection<T> {

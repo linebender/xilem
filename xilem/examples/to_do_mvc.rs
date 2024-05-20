@@ -5,7 +5,7 @@
 #![windows_subsystem = "windows"]
 
 use xilem::view::{button, checkbox, flex, textbox};
-use xilem::{Axis, MasonryView, Xilem};
+use xilem::{Axis, EventLoop, MasonryView, Xilem};
 
 struct Task {
     description: String,
@@ -89,5 +89,6 @@ fn main() {
     };
 
     let app = Xilem::new(data, app_logic);
-    app.run_windowed("First Example".into()).unwrap();
+    app.run_windowed(EventLoop::with_user_event(), "First Example".into())
+        .unwrap();
 }
