@@ -10,3 +10,8 @@ homepage.workspace = true
 
 [lints]
 workspace = true
+
+[package.metadata.docs.rs]
+default-target = "x86_64-unknown-linux-gnu"
+# xilem_core is entirely platform-agnostic
+targets = []
