@@ -29,7 +29,15 @@
 
 The following feature flags are available:
 
-* `...` (enabled by default):
+* `alloc` (enabled by default): Use the [`alloc`][] crate
+
+## no_std support
+
+Xilem Core supports running with `#![no_std]`, but does require an allocator to be available.
+This is because message dispatching uses an open set of messages, which means that `Box<dyn Message>` (a thin wrapper around `Box<dyn Any>` with `Debug` support) must be used.
+
+It is plausible that a version of the `View` trait could be created which does not require this boxing (such as by using a closed set of messages), but that is not provided by this library.
+If you wish to use Xilem Core in environments where an allocator is not available, feel free to bring this up on [Zulip](#community).
 
 <!-- MSRV will go here once we settle on that for this repository -->
 
@@ -54,3 +62,4 @@ Contributions are welcome by pull request. The [Rust code of conduct][] applies.
 [rust code of conduct]: https://www.rust-lang.org/policies/code-of-conduct
 
 [LICENSE]: LICENSE
+[`alloc`]: https://doc.rust-lang.org/stable/alloc/

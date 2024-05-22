@@ -1,3 +1,6 @@
+// Copyright 2024 the Xilem Authors
+// SPDX-License-Identifier: Apache-2.0
+
 //! The types which can be used as elements in a [`View`](crate::View)
 
 /// A type which can be used as the `Element` associated type for a [`View`](crate::View).
@@ -11,7 +14,10 @@
 ///
 /// In most cases, there will be a corresponding implementation of [`SuperElement<Self>`] for
 /// some other type.
-/// This is the generic form of this type, which is used for the implementation of [`AnyView`].
+/// This will be the generic form of this type, which is used for the implementation of [`AnyView`].
+///
+/// [`AnyView`](crate::AnyView)
+// TODO: Rename so that it doesn't conflict with the type parameter names
 pub trait Element {
     type Mut<'a>;
     /// Perform a reborrowing access to the reference type, which allows re-using the reference
@@ -79,3 +85,12 @@ where
         f: impl FnOnce(Child::Mut<'_>) -> R,
     ) -> (Self::Mut<'a>, R);
 }
+
+// TODO: What do we want to do here? This impl seems nice, but is it necessary?
+// It lets you trivially have sequences of types with a heterogenous element type,
+// but how common are those in practice?
+// It conflicts with the xilem_masonry dynamic implementation (assuming that `Box<dyn Widget>: Widget` holds)
+// impl<E: Element> SuperElement<E> for E {
+//     fn upcast(child: E) -> Self { child }
+//     fn downcast<'a>(refm: Self::Mut<'a>) -> <E as Element>::Mut<'a> { refm }
+// }

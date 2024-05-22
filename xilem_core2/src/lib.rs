@@ -1,12 +1,17 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
+
 #![no_std]
 // TODO: Point at documentation for this pattern of README include
 #![doc = concat!(
 " 
 <!-- This license link is in a .rustdoc-hidden section, but we may as well give the correct link -->
 [LICENSE]: https://github.com/linebender/xilem/blob/main/xilem_core/LICENSE
+
 <!-- intra-doc-links go here -->
+<!-- TODO: If the alloc feature is disabled, this link doesn't resolve -->
+[`alloc`]: alloc
+
 <style>
 .rustdoc-hidden { display: none; }
 </style>
@@ -19,27 +24,19 @@
 
 extern crate alloc;
 
-use alloc::boxed::Box;
-
 mod element;
-
-use core::any::Any;
-
 pub use element::{Element, SuperElement};
 
-// Needed:
-// 1) View trait
-// 2) ViewSequence trait
-// 3) AnyView trait
-//
-// View trait has an element type
-// AnyView trait is implemented for any sequence which can
-// ViewSequence trait
+mod id;
+pub use id::ViewId;
 
-/* /// Types which can route a message view to a child [`View`].
-// TODO: This trait needs to be different for desktop hot reloading
-pub trait ViewMessage<State, Action> {}
- */
+mod any_view;
+pub use any_view::AnyView;
+
+mod message;
+pub use message::{DynMessage, Message};
+
+mod model;
 
 /// A lightweight, short-lived representation of the state of a retained
 /// structure, usually a user interface node.
@@ -58,104 +55,104 @@ pub trait ViewMessage<State, Action> {}
 ///
 /// The `View` trait is parameterized by `State`, which is known as the "app state",
 /// and also a type for actions which are passed up the tree in message
-/// propagation. During message handling, mutable access to the app state is
-/// given to view nodes, which will in turn often expose it to callbacks.
-// TODO: What is the `Action` type actually used for
-pub trait View<State, Action = ()> {
+/// propagation.
+/// During message handling, mutable access to the app state is given to view nodes,
+/// which will in turn generally expose it to callbacks.
+///
+/// It is also
+///
+/// ## Alloc
+///
+/// In order to support the open-ended [`DynMessage`] type, this trait requires an
+/// allocator to be available.
+/// It is possible (hopefully in a backwards compatible way) to add a generic
+/// defaulted parameter for the message type in future.
+pub trait View<State, Action, Context: ViewPathTracker>: 'static {
     /// The element type which this view operates on.
     type Element: Element;
-    /// The state needed for this view to route messages to
-    /// the correct child view.
+    /// The state needed for this view to route messages to the correct child view.
+    type ViewState;
+
+    /// Create the corresponding Element value.
+    fn build(&self, ctx: &mut Context) -> (Self::Element, Self::ViewState);
+
+    /// Update `element` based on the difference between `self` and `prev`.
+    fn rebuild(
+        &self,
+        prev: &Self,
+        view_state: &mut Self::ViewState,
+        ctx: &mut Context,
+        element: <Self::Element as Element>::Mut<'_>,
+    );
+
+    /// Handle `element` being removed from the tree.
+    ///
+    /// The main use-case of this method is to:
+    /// 1) Cancel any async task
+    /// 2) Clean up any book-keeping set-up in `build` and `rebuild`
+    fn teardown(
+        &self,
+        view_state: &mut Self::ViewState,
+        ctx: &mut Context,
+        element: <Self::Element as Element>::Mut<'_>,
+    );
+
+    /// Route `message` to `id_path`, if that is still a valid path.
+    fn message(
+        &self,
+        view_state: &mut Self::ViewState,
+        id_path: &[ViewId],
+        message: DynMessage,
+        app_state: &mut State,
+    ) -> MessageResult<Action>;
+}
+
+/// The possible outcomes from a [`View::message`]
+#[derive(Default)]
+pub enum MessageResult<Action> {
+    /// An action for a parent message handler to use
+    ///
+    /// This allows for sub-sections of your app to use an elm-like architecture
+    Action(Action),
+    /// This event had no impact on the app state, or the impact it did have
+    /// does not require the element tree to be recreated.
+    RequestRebuild,
+    #[default]
+    /// This event had no impact on the app state, or the impact it did have
+    /// does not require the element tree to be recreated.
+    Nop,
+    /// The view this message was being routed to no longer exists.
+    Stale(DynMessage),
+}
+
+/// A tracker for view paths, used in [`View::build`] and [`View::rebuild`].
+/// These paths are used for routing messages in [`View::message`].
+///
+/// Each `View` is expected to be implemented for one logical context type,
+/// and this context may be used to store auxiliary data.
+/// For example, this context could be used to store a mapping from the
+/// id of widget to view path, to enable event routing.
+pub trait ViewPathTracker {
+    /// Add `id` to the end of current view path
+    fn push_id(&mut self, id: ViewId);
+    /// Remove the most recently `push`ed id from the current view path
+    fn pop_id(&mut self);
+
+    /// The path to the current view in the view tree
+    fn view_path(&mut self) -> &[ViewId];
+
+    /// Run `f` in a context with `id` pushed to the current view path
+    fn with_id<R>(&mut self, id: ViewId, f: impl FnOnce(&mut Self) -> R) -> R {
+        self.push_id(id);
+        let res = f(self);
+        self.pop_id();
+        res
+    }
+}
+
+/* /// Types which can route a message view to a child [`View`].
+// TODO: This trait needs to exist for desktop hot reloading
+pub trait ViewMessage<State, Action> {
     type ViewState;
 }
-// TODO: What do we want to do here? This impl seems nice, but is it necessary?
-// It lets you trivially have sequences of types with a heterogenous element type,
-// but how common are those in practice?
-// It conflicts with the xilem_masonry dynamic implementation (assuming that `Box<dyn Widget>: Widget` holds)
-// impl<E: Element> SuperElement<E> for E {
-//     fn upcast(child: E) -> Self { child }
-//     fn downcast<'a>(refm: Self::Mut<'a>) -> <E as Element>::Mut<'a> { refm }
-// }
-
-/// A view which can have any view type where the [`View::Element`] is compatible with
-/// `Element`.
-///
-/// This is primarily used for type erasure of views.
-/// This is useful for a view which can be either of two view types, in addition to
-// TODO: Mention `Either` when we have implemented that?
-pub trait AnyView<State, Action, Element> {}
-
-impl<State, Action, DynamicElement, V> AnyView<State, Action, DynamicElement> for V
-where
-    DynamicElement: SuperElement<V::Element>,
-    V: View<State, Action>,
-{
-}
-
-// Model version of Masonry
-
-pub trait Widget: 'static + Any {
-    fn as_mut_any(&mut self) -> &mut dyn Any;
-}
-pub struct WidgetPod<W: Widget> {
-    widget: W,
-}
-pub struct WidgetMut<'a, W: Widget> {
-    value: &'a mut W,
-}
-impl Widget for Box<dyn Widget> {
-    fn as_mut_any(&mut self) -> &mut dyn Any {
-        self
-    }
-}
-
-// Model version of xilem_masonry (`xilem`)
-
-// Hmm, this implementation can't exist in `xilem` if `xilem_core` is a different crate
-// due to the orphan rules...
-impl<W: Widget> Element for WidgetPod<W> {
-    type Mut<'a> = WidgetMut<'a, W>;
-
-    fn with_reborrow_val<'o, R: 'static>(
-        this: Self::Mut<'o>,
-        f: impl FnOnce(Self::Mut<'_>) -> R,
-    ) -> (Self::Mut<'o>, R) {
-        let value = WidgetMut { value: this.value };
-        let ret = f(value);
-        (this, ret)
-    }
-}
-
-impl View<(), ()> for Button {
-    type Element = WidgetPod<ButtonWidget>;
-    type ViewState = ();
-}
-
-pub struct Button {}
-
-pub struct ButtonWidget {}
-impl Widget for ButtonWidget {
-    fn as_mut_any(&mut self) -> &mut dyn Any {
-        self
-    }
-}
-
-impl<W: Widget> SuperElement<WidgetPod<W>> for WidgetPod<Box<dyn Widget>> {
-    fn upcast(child: WidgetPod<W>) -> Self {
-        WidgetPod {
-            widget: Box::new(child.widget),
-        }
-    }
-    fn with_downcast_val<'a, R>(
-        this: Self::Mut<'a>,
-        f: impl FnOnce(<WidgetPod<W> as Element>::Mut<'_>) -> R,
-    ) -> (Self::Mut<'a>, R) {
-        let value = WidgetMut {
-            value: this.value.as_mut_any().downcast_mut().expect(
-                "this widget should have been created from a child widget of type `W` in `Self::upcast`",
-            ),
-        };
-        let ret = f(value);
-        (this, ret)
-    }
-}
+*/

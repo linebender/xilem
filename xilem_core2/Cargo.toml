@@ -13,5 +13,5 @@ workspace = true
 
 [package.metadata.docs.rs]
 default-target = "x86_64-unknown-linux-gnu"
-# xilem_core is entirely platform-agnostic
+# xilem_core is entirely platform-agnostic, so only display docs for one platform
 targets = []
