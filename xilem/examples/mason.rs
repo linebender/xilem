@@ -5,7 +5,9 @@
 #![windows_subsystem = "windows"]
 
 use xilem::view::{button, checkbox, flex, label, prose, textbox};
-use xilem::{Axis, BoxedMasonryView, Color, MasonryView, TextAlignment, Xilem};
+use xilem::{
+    Axis, BoxedMasonryView, Color, EventLoop, EventLoopBuilder, MasonryView, TextAlignment, Xilem,
+};
 
 const LOREM: &str = r"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi cursus mi sed euismod euismod. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Nullam placerat efficitur tellus at semper. Morbi ac risus magna. Donec ut cursus ex. Etiam quis posuere tellus. Mauris posuere dui et turpis mollis, vitae luctus tellus consectetur. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur eu facilisis nisl.
 
@@ -82,7 +84,7 @@ struct AppData {
     active: bool,
 }
 
-fn main() {
+fn run(event_loop: EventLoopBuilder) {
     let data = AppData {
         textbox_contents: "".into(),
         count: 0,
@@ -90,5 +92,39 @@ fn main() {
     };
 
     let app = Xilem::new(data, app_logic);
-    app.run_windowed("First Example".into()).unwrap();
+    app.run_windowed(event_loop, "First Example".into())
+        .unwrap();
+}
+
+#[cfg(not(target_os = "android"))]
+#[allow(dead_code)]
+// This is treated as dead code by the Android version of the example, but is actually live
+// This hackery is required because Cargo doesn't care to support this use case, of one
+// example which works across Android and desktop
+fn main() {
+    run(EventLoop::with_user_event());
+}
+
+// Boilerplate code for android: Identical across all applications
+
+#[cfg(target_os = "android")]
+use winit::platform::android::activity::AndroidApp;
+
+#[cfg(target_os = "android")]
+#[no_mangle]
+fn android_main(app: AndroidApp) {
+    use winit::platform::android::EventLoopBuilderExtAndroid;
+
+    let mut event_loop = EventLoop::with_user_event();
+    event_loop.with_android_app(app);
+
+    run(event_loop);
+}
+
+// TODO: This is a hack because of how we handle our examples in Cargo.toml
+// Ideally, we change Cargo to be more sensible here?
+#[cfg(target_os = "android")]
+#[allow(dead_code)]
+fn main() {
+    unreachable!()
 }

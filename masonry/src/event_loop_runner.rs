@@ -15,7 +15,7 @@ use winit::application::ApplicationHandler;
 use winit::dpi::LogicalPosition;
 use winit::error::EventLoopError;
 use winit::event::WindowEvent as WinitWindowEvent;
-use winit::event_loop::{ActiveEventLoop, EventLoop};
+use winit::event_loop::{ActiveEventLoop, EventLoopProxy};
 use winit::window::{Window, WindowAttributes, WindowId};
 
 use crate::app_driver::{AppDriver, DriverCtx};
@@ -23,65 +23,75 @@ use crate::event::{PointerState, WindowEvent};
 use crate::render_root::{self, RenderRoot, WindowSizePolicy};
 use crate::{PointerEvent, TextEvent, Widget};
 
-struct MainState<'a> {
-    window: Arc<Window>,
-    render_cx: RenderContext,
-    surface: RenderSurface<'a>,
-    render_root: RenderRoot,
-    renderer: Option<Renderer>,
-    pointer_state: PointerState,
-    app_driver: Box<dyn AppDriver>,
-    accesskit_adapter: Adapter,
+pub enum WindowState<'a> {
+    Uninitialized(WindowAttributes),
+    Rendering {
+        window: Arc<Window>,
+        surface: RenderSurface<'a>,
+        accesskit_adapter: Adapter,
+    },
+    Suspended {
+        window: Arc<Window>,
+        accesskit_adapter: Adapter,
+    },
 }
 
+struct MainState<'a> {
+    render_cx: RenderContext,
+    render_root: RenderRoot,
+    pointer_state: PointerState,
+    app_driver: Box<dyn AppDriver>,
+    renderer: Option<Renderer>,
+    // TODO: Winit doesn't seem to let us create these proxies from within the loop
+    // The reasons for this are unclear
+    proxy: EventLoopProxy<accesskit_winit::Event>,
+
+    // Per-Window state
+    // In future, this will support multiple windows
+    window: WindowState<'a>,
+}
+
+/// The type of the event loop used by Masonry.
+///
+/// This *will* be changed to allow custom event types, but is implemented this way for expedience
+pub type EventLoop = winit::event_loop::EventLoop<accesskit_winit::Event>;
+/// The type of the event loop builder used by Masonry.
+///
+/// This *will* be changed to allow custom event types, but is implemented this way for expedience
+pub type EventLoopBuilder = winit::event_loop::EventLoopBuilder<accesskit_winit::Event>;
+
 pub fn run(
+    // Clearly, this API needs to be refactored, so we don't mind forcing this to be passed in here directly
+    // This is passed in mostly to allow configuring the Android app
+    mut loop_builder: EventLoopBuilder,
+    // In future, we intend to support multiple windows. At the moment though, we only support one
     window_attributes: WindowAttributes,
     root_widget: impl Widget,
     app_driver: impl AppDriver + 'static,
 ) -> Result<(), EventLoopError> {
-    let visible = window_attributes.visible;
-    let window_attributes = window_attributes.with_visible(false);
+    let event_loop = loop_builder.build()?;
 
-    let event_loop = EventLoop::with_user_event().build()?;
-    #[allow(deprecated)]
-    let window = event_loop.create_window(window_attributes).unwrap();
-
-    let event_loop_proxy = event_loop.create_proxy();
-    let adapter = Adapter::with_event_loop_proxy(&window, event_loop_proxy);
-    window.set_visible(visible);
-    // TODO: Use signals or some other mechanism to do fine grained ime enable
-    window.set_ime_allowed(true);
-
-    run_with(window, event_loop, adapter, root_widget, app_driver)
+    run_with(window_attributes, event_loop, root_widget, app_driver)
 }
 
 pub fn run_with(
-    window: Window,
-    event_loop: EventLoop<accesskit_winit::Event>,
-    accesskit_adapter: Adapter,
+    window: WindowAttributes,
+    event_loop: EventLoop,
     root_widget: impl Widget,
     app_driver: impl AppDriver + 'static,
 ) -> Result<(), EventLoopError> {
-    let window = Arc::new(window);
-    let mut render_cx = RenderContext::new().unwrap();
-    let size = window.inner_size();
-    let surface = pollster::block_on(render_cx.create_surface(
-        window.clone(),
-        size.width,
-        size.height,
-        PresentMode::AutoVsync,
-    ))
-    .unwrap();
-    let scale_factor = window.scale_factor();
+    let render_cx = RenderContext::new().unwrap();
+    // TODO: We can't know this scale factor until later?
+    let scale_factor = 1.0;
     let mut main_state = MainState {
-        window,
         render_cx,
-        surface,
         render_root: RenderRoot::new(root_widget, WindowSizePolicy::User, scale_factor),
         renderer: None,
         pointer_state: PointerState::empty(),
         app_driver: Box::new(app_driver),
-        accesskit_adapter,
+        proxy: event_loop.create_proxy(),
+
+        window: WindowState::Uninitialized(window),
     };
 
     // If there is no default tracing subscriber, we set our own. If one has
@@ -94,18 +104,117 @@ pub fn run_with(
 }
 
 impl ApplicationHandler<accesskit_winit::Event> for MainState<'_> {
-    fn resumed(&mut self, _event_loop: &ActiveEventLoop) {
-        // FIXME: initialize window in this handler because initializing it before running the event loop is deprecated
+    fn resumed(&mut self, event_loop: &ActiveEventLoop) {
+        match std::mem::replace(
+            &mut self.window,
+            // TODO: Is there a better default value which could be used?
+            WindowState::Uninitialized(WindowAttributes::default()),
+        ) {
+            WindowState::Uninitialized(attributes) => {
+                let visible = attributes.visible;
+                let attributes = attributes.with_visible(false);
+
+                let window = event_loop.create_window(attributes).unwrap();
+
+                let adapter = Adapter::with_event_loop_proxy(&window, self.proxy.clone());
+                window.set_visible(visible);
+                // TODO: Use signals or some other mechanism to do fine grained ime enable
+                window.set_ime_allowed(true);
+                let window = Arc::new(window);
+                let size = window.inner_size();
+                let surface = pollster::block_on(self.render_cx.create_surface(
+                    window.clone(),
+                    size.width,
+                    size.height,
+                    PresentMode::AutoVsync,
+                ))
+                .unwrap();
+                let scale_factor = window.scale_factor();
+                self.window = WindowState::Rendering {
+                    window,
+                    surface,
+                    accesskit_adapter: adapter,
+                };
+                self.render_root
+                    .handle_window_event(WindowEvent::Rescale(scale_factor));
+            }
+            WindowState::Suspended {
+                window,
+                accesskit_adapter,
+            } => {
+                let size = window.inner_size();
+                let surface = pollster::block_on(self.render_cx.create_surface(
+                    window.clone(),
+                    size.width,
+                    size.height,
+                    PresentMode::AutoVsync,
+                ))
+                .unwrap();
+                self.window = WindowState::Rendering {
+                    window,
+                    surface,
+                    accesskit_adapter,
+                }
+            }
+            _ => {
+                // We have received a redundant resumed event. That's allowed by winit
+            }
+        }
+    }
+    fn suspended(&mut self, _event_loop: &ActiveEventLoop) {
+        match std::mem::replace(
+            &mut self.window,
+            // TODO: Is there a better default value which could be used?
+            WindowState::Uninitialized(WindowAttributes::default()),
+        ) {
+            WindowState::Rendering {
+                window,
+                surface,
+                accesskit_adapter,
+            } => {
+                drop(surface);
+                self.window = WindowState::Suspended {
+                    window,
+                    accesskit_adapter,
+                };
+            }
+            _ => {
+                // We have received a redundant resumed event. That's allowed by winit
+            }
+        }
     }
 
     fn window_event(&mut self, event_loop: &ActiveEventLoop, _: WindowId, event: WinitWindowEvent) {
-        self.accesskit_adapter.process_event(&self.window, &event);
+        let WindowState::Rendering {
+            window,
+            accesskit_adapter,
+            ..
+        } = &mut self.window
+        else {
+            tracing::warn!(
+                ?event,
+                "Got window event whilst suspended or before window created"
+            );
+            return;
+        };
+        accesskit_adapter.process_event(window, &event);
 
         match event {
+            WinitWindowEvent::ScaleFactorChanged { scale_factor, .. } => {
+                self.render_root
+                    .handle_window_event(WindowEvent::Rescale(scale_factor));
+            }
             WinitWindowEvent::RedrawRequested => {
                 let (scene, tree_update) = self.render_root.redraw();
                 self.render(scene);
-                self.accesskit_adapter.update_if_active(|| tree_update);
+                let WindowState::Rendering {
+                    accesskit_adapter, ..
+                } = &mut self.window
+                else {
+                    debug_panic!("Suspended inside event");
+                    return;
+                };
+                accesskit_adapter.update_if_active(|| tree_update);
             }
             WinitWindowEvent::CloseRequested => event_loop.exit(),
             WinitWindowEvent::Resized(size) => {
@@ -136,7 +245,7 @@ impl ApplicationHandler<accesskit_winit::Event> for MainState<'_> {
             }
             WinitWindowEvent::CursorMoved { position, .. } => {
                 self.pointer_state.physical_position = position;
-                self.pointer_state.position = position.to_logical(self.window.scale_factor());
+                self.pointer_state.position = position.to_logical(window.scale_factor());
                 self.render_root
                     .handle_pointer_event(PointerEvent::PointerMove(self.pointer_state.clone()));
             }
@@ -166,7 +275,7 @@ impl ApplicationHandler<accesskit_winit::Event> for MainState<'_> {
                         LogicalPosition::new(x as f64, y as f64)
                     }
                     winit::event::MouseScrollDelta::PixelDelta(delta) => {
-                        delta.to_logical(self.window.scale_factor())
+                        delta.to_logical(window.scale_factor())
                     }
                 };
                 self.render_root
@@ -201,14 +310,20 @@ impl ApplicationHandler<accesskit_winit::Event> for MainState<'_> {
 
 impl MainState<'_> {
     fn render(&mut self, scene: Scene) {
-        let scale = self.window.scale_factor();
-        let size = self.window.inner_size();
+        let WindowState::Rendering {
+            window, surface, ..
+        } = &mut self.window
+        else {
+            tracing::warn!("Tried to render whilst suspended or before window created");
+            return;
+        };
+        let scale = window.scale_factor();
+        let size = window.inner_size();
         let width = size.width;
         let height = size.height;
 
-        if self.surface.config.width != width || self.surface.config.height != height {
-            self.render_cx
-                .resize_surface(&mut self.surface, width, height);
+        if surface.config.width != width || surface.config.height != height {
+            self.render_cx.resize_surface(surface, width, height);
         }
 
         let transformed_scene = if scale == 1.0 {
@@ -220,15 +335,15 @@ impl MainState<'_> {
         };
         let scene_ref = transformed_scene.as_ref().unwrap_or(&scene);
 
-        let Ok(surface_texture) = self.surface.surface.get_current_texture() else {
+        let Ok(surface_texture) = surface.surface.get_current_texture() else {
             warn!("failed to acquire next swapchain texture");
             return;
         };
-        let dev_id = self.surface.dev_id;
+        let dev_id = surface.dev_id;
         let device = &self.render_cx.devices[dev_id].device;
         let queue = &self.render_cx.devices[dev_id].queue;
         let renderer_options = RendererOptions {
-            surface_format: Some(self.surface.format),
+            surface_format: Some(surface.format),
             use_cpu: false,
             antialiasing_support: AaSupport {
                 area: true,
@@ -252,6 +367,10 @@ impl MainState<'_> {
     }
 
     fn handle_signals(&mut self, _event_loop: &ActiveEventLoop) {
+        let WindowState::Rendering { window, .. } = &mut self.window else {
+            tracing::warn!("Tried to handle a signal whilst suspended or before window created");
+            return;
+        };
         while let Some(signal) = self.render_root.pop_signal() {
             match signal {
                 render_root::RenderRootSignal::Action(action, widget_id) => {
@@ -283,27 +402,27 @@ impl MainState<'_> {
                     // TODO
                 }
                 render_root::RenderRootSignal::RequestRedraw => {
-                    self.window.request_redraw();
+                    window.request_redraw();
                 }
                 render_root::RenderRootSignal::RequestAnimFrame => {
                     // TODO
-                    self.window.request_redraw();
+                    window.request_redraw();
                 }
                 render_root::RenderRootSignal::SpawnWorker(_worker_fn) => {
                     // TODO
                 }
                 render_root::RenderRootSignal::TakeFocus => {
-                    self.window.focus_window();
+                    window.focus_window();
                 }
                 render_root::RenderRootSignal::SetCursor(cursor) => {
-                    self.window.set_cursor(cursor);
+                    window.set_cursor(cursor);
                 }
                 render_root::RenderRootSignal::SetSize(size) => {
                     // TODO - Handle return value?
-                    let _ = self.window.request_inner_size(size);
+                    let _ = window.request_inner_size(size);
                 }
                 render_root::RenderRootSignal::SetTitle(title) => {
-                    self.window.set_title(&title);
+                    window.set_title(&title);
                 }
             }
         }
