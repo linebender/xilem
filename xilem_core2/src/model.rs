@@ -5,9 +5,9 @@
 
 use core::any::Any;
 
-use alloc::boxed::Box;
+use alloc::{boxed::Box, vec::Vec};
 
-use crate::{Element, SuperElement, View};
+use crate::{Element, SuperElement, View, ViewId, ViewPathTracker};
 
 pub trait Widget: 'static + Any {
     fn as_mut_any(&mut self) -> &mut dyn Any;
@@ -43,9 +43,47 @@ impl<W: Widget> Element for WidgetPod<W> {
     }
 }
 
-impl View<(), ()> for Button {
+impl<State, Action> View<State, Action, ViewCtx> for Button {
     type Element = WidgetPod<ButtonWidget>;
     type ViewState = ();
+
+    fn build(&self, _ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+        (
+            WidgetPod {
+                widget: ButtonWidget {},
+            },
+            (),
+        )
+    }
+
+    fn rebuild(
+        &self,
+        _prev: &Self,
+        _view_state: &mut Self::ViewState,
+        _ctx: &mut ViewCtx,
+        _element: <Self::Element as Element>::Mut<'_>,
+    ) {
+        // Nothing to do
+    }
+
+    fn teardown(
+        &self,
+        _view_state: &mut Self::ViewState,
+        _ctx: &mut ViewCtx,
+        _element: <Self::Element as Element>::Mut<'_>,
+    ) {
+        // Nothing to do
+    }
+
+    fn message(
+        &self,
+        _view_state: &mut Self::ViewState,
+        _id_path: &[ViewId],
+        _message: crate::DynMessage,
+        _app_state: &mut State,
+    ) -> crate::MessageResult<Action> {
+        crate::MessageResult::Nop
+    }
 }
 
 pub struct Button {}
@@ -75,4 +113,49 @@ impl<W: Widget> SuperElement<WidgetPod<W>> for WidgetPod<Box<dyn Widget>> {
         let ret = f(value);
         (this, ret)
     }
+    fn replace_inner<'a>(this: Self::Mut<'a>, child: WidgetPod<W>) -> Self::Mut<'a> {
+        *this.value = Box::new(child.widget);
+        this
+    }
+}
+
+pub struct ViewCtx {
+    path: Vec<ViewId>,
+}
+
+impl ViewPathTracker for ViewCtx {
+    fn push_id(&mut self, id: ViewId) {
+        self.path.push(id);
+    }
+
+    fn pop_id(&mut self) {
+        self.path.pop();
+    }
+
+    fn view_path(&mut self) -> &[ViewId] {
+        &self.path
+    }
+}
+
+pub trait MasonryView<State, Action = ()>:
+    View<State, Action, ViewCtx, Element = WidgetPod<Self::Widget>> + Send + Sync
+{
+    type Widget: Widget + Send + Sync;
+}
+
+impl<V, State, Action, W> MasonryView<State, Action> for V
+where
+    V: View<State, Action, ViewCtx, Element = WidgetPod<W>> + Send + Sync,
+    W: Widget + Send + Sync,
+{
+    type Widget = W;
+}
+
+pub fn app_logic(v: &mut u32) -> impl MasonryView<u32> {
+    Button {}
+}
+
+pub fn my_test() {
+    let view = app_logic(&mut 10);
+    view.build(todo!());
 }

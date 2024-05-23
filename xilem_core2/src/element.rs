@@ -61,6 +61,9 @@ where
 {
     /// Convert from the child to this element type.
     fn upcast(child: Child) -> Self;
+
+    /// Replace the inner value of this reference entirely
+    fn replace_inner<'a>(this: Self::Mut<'a>, child: Child) -> Self::Mut<'a>;
     /// Perform a reborrowing downcast to the child reference type.
     ///
     /// This may panic if `this` is not the reference form of a value created by

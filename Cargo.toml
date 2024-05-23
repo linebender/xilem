@@ -9,7 +9,8 @@ members = [
     "xilem_web/web_examples/mathml_svg",
     "xilem_web/web_examples/svgtoy",
     "masonry",
-    "xilem", "xilem_core2",
+    "xilem",
+    "xilem_core2",
 ]
 
 [workspace.package]
