@@ -1,3 +1,6 @@
+// Copyright 2024 the Xilem Authors
+// SPDX-License-Identifier: Apache-2.0
+
 use core::ops::Deref;
 
 use alloc::{boxed::Box, sync::Arc};
