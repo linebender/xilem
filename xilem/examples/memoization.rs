@@ -3,7 +3,7 @@
 
 use std::sync::Arc;
 use xilem::view::{button, flex, memoize};
-use xilem::{AnyMasonryView, MasonryView, Xilem};
+use xilem::{AnyMasonryView, EventLoop, MasonryView, Xilem};
 
 // There are currently two ways to do memoization
 
@@ -66,5 +66,6 @@ fn main() {
     };
 
     let app = Xilem::new(data, app_logic);
-    app.run_windowed("Memoization".into()).unwrap();
+    app.run_windowed(EventLoop::with_user_event(), "Memoization".into())
+        .unwrap();
 }
