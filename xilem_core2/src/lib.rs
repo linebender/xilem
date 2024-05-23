@@ -28,16 +28,11 @@ extern crate alloc;
 mod element;
 pub use element::{Element, SuperElement};
 
-mod id;
-pub use id::ViewId;
-
 mod any_view;
 pub use any_view::AnyView;
 
 mod message;
 pub use message::{DynMessage, Message, MessageResult};
 
-mod model;
-
 mod view;
-pub use view::{View, ViewPathTracker};
+pub use view::{View, ViewId, ViewPathTracker};

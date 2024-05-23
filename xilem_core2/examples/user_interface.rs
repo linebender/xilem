@@ -5,10 +5,22 @@
 
 use core::any::Any;
 
-use alloc::{boxed::Box, vec::Vec};
+use xilem_core2::{
+    DynMessage, Element, MessageResult, SuperElement, View, ViewId, ViewPathTracker,
+};
 
-use crate::{Element, SuperElement, View, ViewId, ViewPathTracker};
+pub fn app_logic(_: &mut u32) -> impl WidgetView<u32> {
+    Button {}
+}
 
+pub fn main() {
+    let view = app_logic(&mut 10);
+    let mut ctx = ViewCtx { path: vec![] };
+    let (_widget_tree, _state) = view.build(&mut ctx);
+    // TODO: dbg!(widget_tree);
+}
+
+// Toy version of Masonry
 pub trait Widget: 'static + Any {
     fn as_mut_any(&mut self) -> &mut dyn Any;
 }
@@ -26,7 +38,7 @@ impl Widget for Box<dyn Widget> {
 
 // Model version of xilem_masonry (`xilem`)
 
-// Hmm, this implementation can't exist in `xilem` if `xilem_core` is a different crate
+// Hmm, this implementation can't exist in `xilem` if `xilem_core` and/or `masonry` are a different crate
 // due to the orphan rules...
 impl<W: Widget> Element for WidgetPod<W> {
     type Mut<'a> = WidgetMut<'a, W>;
@@ -79,10 +91,10 @@ impl<State, Action> View<State, Action, ViewCtx> for Button {
         &self,
         _view_state: &mut Self::ViewState,
         _id_path: &[ViewId],
-        _message: crate::DynMessage,
+        _message: DynMessage,
         _app_state: &mut State,
-    ) -> crate::MessageResult<Action> {
-        crate::MessageResult::Nop
+    ) -> MessageResult<Action> {
+        MessageResult::Nop
     }
 }
 
@@ -137,25 +149,16 @@ impl ViewPathTracker for ViewCtx {
     }
 }
 
-pub trait MasonryView<State, Action = ()>:
+pub trait WidgetView<State, Action = ()>:
     View<State, Action, ViewCtx, Element = WidgetPod<Self::Widget>> + Send + Sync
 {
     type Widget: Widget + Send + Sync;
 }
 
-impl<V, State, Action, W> MasonryView<State, Action> for V
+impl<V, State, Action, W> WidgetView<State, Action> for V
 where
     V: View<State, Action, ViewCtx, Element = WidgetPod<W>> + Send + Sync,
     W: Widget + Send + Sync,
 {
     type Widget = W;
-}
-
-pub fn app_logic(v: &mut u32) -> impl MasonryView<u32> {
-    Button {}
-}
-
-pub fn my_test() {
-    let view = app_logic(&mut 10);
-    view.build(todo!());
 }

@@ -5,7 +5,7 @@ use core::ops::Deref;
 
 use alloc::{boxed::Box, sync::Arc};
 
-use crate::{message::MessageResult, DynMessage, Element, ViewId};
+use crate::{message::MessageResult, DynMessage, Element};
 
 /// A lightweight, short-lived representation of the state of a retained
 /// structure, usually a user interface node.
@@ -78,6 +78,21 @@ pub trait View<State, Action, Context: ViewPathTracker>: 'static {
     // fn debug_name?
 }
 
+#[derive(Copy, Clone, Debug)]
+/// An identifier for a subtree in a view hierarchy.
+// TODO: also provide debugging information to give e.g. a useful stack trace?
+pub struct ViewId(u64);
+
+impl ViewId {
+    pub fn new(raw: u64) -> Self {
+        Self(raw)
+    }
+
+    pub fn routing_id(self) -> u64 {
+        self.0
+    }
+}
+
 /// A tracker for view paths, used in [`View::build`] and [`View::rebuild`].
 /// These paths are used for routing messages in [`View::message`].
 ///
@@ -103,7 +118,7 @@ pub trait ViewPathTracker {
     }
 }
 
-impl<State, Action, Context: ViewPathTracker, V: View<State, Action, Context>>
+impl<State, Action, Context: ViewPathTracker, V: View<State, Action, Context> + ?Sized>
     View<State, Action, Context> for Box<V>
 {
     type Element = V::Element;
@@ -142,7 +157,7 @@ impl<State, Action, Context: ViewPathTracker, V: View<State, Action, Context>>
 }
 
 /// An implementation of [`View`] which only runs rebuild if the states are different
-impl<State, Action, Context: ViewPathTracker, V: View<State, Action, Context>>
+impl<State, Action, Context: ViewPathTracker, V: View<State, Action, Context> + ?Sized>
     View<State, Action, Context> for Arc<V>
 {
     type Element = V::Element;
