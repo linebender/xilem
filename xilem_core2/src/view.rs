@@ -74,6 +74,8 @@ pub trait View<State, Action, Context: ViewPathTracker>: 'static {
         message: DynMessage,
         app_state: &mut State,
     ) -> MessageResult<Action>;
+
+    // fn debug_name?
 }
 
 /// A tracker for view paths, used in [`View::build`] and [`View::rebuild`].

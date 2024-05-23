@@ -6,6 +6,8 @@ use core::{any::Any, fmt::Debug};
 use alloc::boxed::Box;
 
 /// The possible outcomes from a [`View::message`]
+///
+/// [`View::message`]: crate::View::message
 #[derive(Default)]
 pub enum MessageResult<Action> {
     /// An action for a parent message handler to use
