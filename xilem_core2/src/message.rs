@@ -1,6 +1,8 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+//! Message routing and type erasure primitives.
+
 use core::{any::Any, fmt::Debug};
 
 use alloc::boxed::Box;

@@ -1,11 +1,13 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+//! The primary view trait and associated trivial implementations.
+
 use core::ops::Deref;
 
 use alloc::{boxed::Box, sync::Arc};
 
-use crate::{message::MessageResult, DynMessage, Element};
+use crate::{message::MessageResult, DynMessage, ViewElement};
 
 /// A lightweight, short-lived representation of the state of a retained
 /// structure, usually a user interface node.
@@ -38,7 +40,7 @@ use crate::{message::MessageResult, DynMessage, Element};
 /// defaulted parameter for the message type in future.
 pub trait View<State, Action, Context: ViewPathTracker>: 'static {
     /// The element type which this view operates on.
-    type Element: Element;
+    type Element: ViewElement;
     /// The state needed for this view to route messages to the correct child view.
     type ViewState;
 
@@ -51,7 +53,7 @@ pub trait View<State, Action, Context: ViewPathTracker>: 'static {
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: <Self::Element as Element>::Mut<'_>,
+        element: <Self::Element as ViewElement>::Mut<'_>,
     );
 
     /// Handle `element` being removed from the tree.
@@ -63,7 +65,7 @@ pub trait View<State, Action, Context: ViewPathTracker>: 'static {
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: <Self::Element as Element>::Mut<'_>,
+        element: <Self::Element as ViewElement>::Mut<'_>,
     );
 
     /// Route `message` to `id_path`, if that is still a valid path.
@@ -132,7 +134,7 @@ impl<State, Action, Context: ViewPathTracker, V: View<State, Action, Context> + 
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: <Self::Element as Element>::Mut<'_>,
+        element: <Self::Element as ViewElement>::Mut<'_>,
     ) {
         self.deref().rebuild(prev, view_state, ctx, element)
     }
@@ -140,7 +142,7 @@ impl<State, Action, Context: ViewPathTracker, V: View<State, Action, Context> + 
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: <Self::Element as Element>::Mut<'_>,
+        element: <Self::Element as ViewElement>::Mut<'_>,
     ) {
         self.deref().teardown(view_state, ctx, element)
     }
@@ -171,7 +173,7 @@ impl<State, Action, Context: ViewPathTracker, V: View<State, Action, Context> + 
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: <Self::Element as Element>::Mut<'_>,
+        element: <Self::Element as ViewElement>::Mut<'_>,
     ) {
         if !Arc::ptr_eq(self, prev) {
             self.deref().rebuild(prev, view_state, ctx, element)
@@ -181,7 +183,7 @@ impl<State, Action, Context: ViewPathTracker, V: View<State, Action, Context> + 
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: <Self::Element as Element>::Mut<'_>,
+        element: <Self::Element as ViewElement>::Mut<'_>,
     ) {
         self.deref().teardown(view_state, ctx, element)
     }

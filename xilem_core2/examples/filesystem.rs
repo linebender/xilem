@@ -1,6 +1,6 @@
 use std::{io::stdin, path::PathBuf};
 
-use xilem_core2::{AnyView, Element, SuperElement, View, ViewId, ViewPathTracker};
+use xilem_core2::{AnyView, ViewElement, SuperElement, View, ViewId, ViewPathTracker};
 
 #[derive(Debug)]
 enum State {
@@ -105,7 +105,7 @@ impl SuperElement<FsPath> for FsPath {
 
     fn with_downcast_val<'a, R>(
         this: Self::Mut<'a>,
-        f: impl FnOnce(<FsPath as Element>::Mut<'_>) -> R,
+        f: impl FnOnce(<FsPath as ViewElement>::Mut<'_>) -> R,
     ) -> (Self::Mut<'a>, R) {
         let ret = f(this);
         (this, ret)
@@ -131,7 +131,7 @@ impl From<PathBuf> for FsPath {
     }
 }
 
-impl Element for FsPath {
+impl ViewElement for FsPath {
     // TODO: This data is pretty redundant
     type Mut<'a> = &'a mut PathBuf;
 
@@ -161,7 +161,7 @@ impl<State, Action> View<State, Action, ViewCtx> for File {
         prev: &Self,
         _view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: <Self::Element as xilem_core2::Element>::Mut<'_>,
+        element: <Self::Element as xilem_core2::ViewElement>::Mut<'_>,
     ) {
         if prev.name != self.name {
             let new_path = ctx.current_folder_path.join(&*self.name);
@@ -177,7 +177,7 @@ impl<State, Action> View<State, Action, ViewCtx> for File {
         &self,
         _view_state: &mut Self::ViewState,
         _ctx: &mut ViewCtx,
-        element: <Self::Element as xilem_core2::Element>::Mut<'_>,
+        element: <Self::Element as xilem_core2::ViewElement>::Mut<'_>,
     ) {
         let _ = std::fs::remove_file(&element);
     }

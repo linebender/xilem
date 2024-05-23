@@ -6,7 +6,7 @@
 use core::any::Any;
 
 use xilem_core2::{
-    DynMessage, Element, MessageResult, SuperElement, View, ViewId, ViewPathTracker,
+    DynMessage, ViewElement, MessageResult, SuperElement, View, ViewId, ViewPathTracker,
 };
 
 pub fn app_logic(_: &mut u32) -> impl WidgetView<u32> {
@@ -40,7 +40,7 @@ impl Widget for Box<dyn Widget> {
 
 // Hmm, this implementation can't exist in `xilem` if `xilem_core` and/or `masonry` are a different crate
 // due to the orphan rules...
-impl<W: Widget> Element for WidgetPod<W> {
+impl<W: Widget> ViewElement for WidgetPod<W> {
     type Mut<'a> = WidgetMut<'a, W>;
 
     /// This implementation will perform `merge_up` multiple times, but that's
@@ -73,7 +73,7 @@ impl<State, Action> View<State, Action, ViewCtx> for Button {
         _prev: &Self,
         _view_state: &mut Self::ViewState,
         _ctx: &mut ViewCtx,
-        _element: <Self::Element as Element>::Mut<'_>,
+        _element: <Self::Element as ViewElement>::Mut<'_>,
     ) {
         // Nothing to do
     }
@@ -82,7 +82,7 @@ impl<State, Action> View<State, Action, ViewCtx> for Button {
         &self,
         _view_state: &mut Self::ViewState,
         _ctx: &mut ViewCtx,
-        _element: <Self::Element as Element>::Mut<'_>,
+        _element: <Self::Element as ViewElement>::Mut<'_>,
     ) {
         // Nothing to do
     }
@@ -115,7 +115,7 @@ impl<W: Widget> SuperElement<WidgetPod<W>> for WidgetPod<Box<dyn Widget>> {
     }
     fn with_downcast_val<'a, R>(
         this: Self::Mut<'a>,
-        f: impl FnOnce(<WidgetPod<W> as Element>::Mut<'_>) -> R,
+        f: impl FnOnce(<WidgetPod<W> as ViewElement>::Mut<'_>) -> R,
     ) -> (Self::Mut<'a>, R) {
         let value = WidgetMut {
         value: this.value.as_mut_any().downcast_mut().expect(

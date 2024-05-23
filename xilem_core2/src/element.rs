@@ -19,7 +19,13 @@
 /// [`AnyView`]: crate::AnyView
 ///
 // TODO: Rename so that it doesn't conflict with the type parameter names
-pub trait Element {
+pub trait ViewElement {
+    /// The reference form of this `Element` for editing.
+    ///
+    /// This is provided to [`View::rebuild`](crate::View::rebuild) and
+    /// [`View::teardown`](crate::View::teardown).
+    /// This enables greater flexibility in the use of the traits, such as
+    /// for reference types which contain access to parent state.
     type Mut<'a>;
     /// Perform a reborrowing access to the reference type, which allows re-using the reference
     /// even if it gets passed to another function.
@@ -56,9 +62,9 @@ pub trait Element {
 ///    This will primarily be used in [`ViewSequence`] implementations.
 ///
 /// [`AnyView`]: crate::AnyView
-pub trait SuperElement<Child>: Element
+pub trait SuperElement<Child>: ViewElement
 where
-    Child: Element,
+    Child: ViewElement,
 {
     /// Convert from the child to this element type.
     fn upcast(child: Child) -> Self;

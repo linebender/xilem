@@ -1,6 +1,8 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+//! Support for a type erased [`View`].
+
 use core::any::Any;
 
 use alloc::boxed::Box;
@@ -21,7 +23,7 @@ use crate::{DynMessage, MessageResult, SuperElement, View, ViewId, ViewPathTrack
 ///
 /// Libraries using `xilem_core` are expected to have a type alias for their own `AnyView`, which specifies
 /// the `Context` and `Element` types.
-pub trait AnyView<State, Action, Context, Element: crate::Element> {
+pub trait AnyView<State, Action, Context, Element: crate::ViewElement> {
     fn as_any(&self) -> &dyn Any;
 
     fn dyn_build(&self, ctx: &mut Context) -> (Element, AnyViewState);
@@ -79,7 +81,7 @@ where
         dyn_state: &mut AnyViewState,
         ctx: &mut Context,
         prev: &dyn AnyView<State, Action, Context, DynamicElement>,
-        mut element: <DynamicElement as crate::Element>::Mut<'_>,
+        mut element: <DynamicElement as crate::ViewElement>::Mut<'_>,
     ) {
         if let Some(prev) = prev.as_any().downcast_ref() {
             // If we were previously of this type, then do a normal rebuild
@@ -120,7 +122,7 @@ where
         &self,
         dyn_state: &mut AnyViewState,
         ctx: &mut Context,
-        element: <DynamicElement as crate::Element>::Mut<'_>,
+        element: <DynamicElement as crate::ViewElement>::Mut<'_>,
     ) {
         let state = dyn_state
             .inner_state
@@ -169,7 +171,7 @@ impl<State: 'static, Action: 'static, Context, Element> View<State, Action, Cont
     for dyn AnyView<State, Action, Context, Element>
 where
     // Element must be `static` so it can be downcasted
-    Element: crate::Element + 'static,
+    Element: crate::ViewElement + 'static,
     Context: crate::ViewPathTracker + 'static,
 {
     type Element = Element;
@@ -185,7 +187,7 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: <Self::Element as crate::Element>::Mut<'_>,
+        element: <Self::Element as crate::ViewElement>::Mut<'_>,
     ) {
         self.dyn_rebuild(view_state, ctx, prev, element)
     }
@@ -194,7 +196,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: <Self::Element as crate::Element>::Mut<'_>,
+        element: <Self::Element as crate::ViewElement>::Mut<'_>,
     ) {
         self.dyn_teardown(view_state, ctx, element);
     }

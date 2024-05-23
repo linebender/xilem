@@ -2,7 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #![no_std]
-// TODO: Point at documentation for this pattern of README include
+// TODO: Point at documentation for this pattern of README include.
+// It has some neat advantages but is quite esoteric
 #![doc = concat!(
 " 
 <!-- This license link is in a .rustdoc-hidden section, but we may as well give the correct link -->
@@ -25,14 +26,17 @@
 
 extern crate alloc;
 
-mod element;
-pub use element::{Element, SuperElement};
-
-mod any_view;
-pub use any_view::AnyView;
+mod view;
+pub use view::{View, ViewId, ViewPathTracker};
 
 mod message;
 pub use message::{DynMessage, Message, MessageResult};
 
-mod view;
-pub use view::{View, ViewId, ViewPathTracker};
+mod element;
+pub use element::{SuperElement, ViewElement};
+
+mod any_view;
+pub use any_view::AnyView;
+
+mod sequence;
+pub use sequence::{ElementSplice, ViewSequence};
