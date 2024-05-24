@@ -5,7 +5,7 @@
 #![windows_subsystem = "windows"]
 
 use xilem::{
-    view::{button, flex},
+    view::{button, flex, textbox},
     AnyWidgetView, EventLoop, EventLoopBuilder, WidgetView, Xilem,
 };
 
@@ -19,15 +19,33 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> {
     };
     let x: AnyWidgetView<AppData> =
         Box::new(button(button_label, |data: &mut AppData| data.count += 1));
-    flex((x, button("test", |_| {})))
+
+    flex((
+        // This is an awful hack to work around camera notches
+        button("spacer_for_android", |_| {}),
+        button("spacer_for_android", |_| {}),
+        button(&*data.textbox_contents, |_| {}),
+        textbox(
+            data.textbox_contents.clone(),
+            |data: &mut AppData, new_value| {
+                data.textbox_contents = new_value;
+            },
+        ),
+        x,
+        button("test", |_| {}),
+    ))
 }
 
 struct AppData {
+    textbox_contents: String,
     count: i32,
 }
 
 fn run(event_loop: EventLoopBuilder) {
-    let data = AppData { count: 0 };
+    let data = AppData {
+        count: 0,
+        textbox_contents: "Not quite a placeholder".into(),
+    };
 
     let app = Xilem::new(data, app_logic);
     app.run_windowed(event_loop, "First Example".into())

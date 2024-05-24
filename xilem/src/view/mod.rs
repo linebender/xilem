@@ -19,5 +19,5 @@ pub use flex::*;
 // mod prose;
 // pub use prose::*;
 
-// mod textbox;
-// pub use textbox::*;
+mod textbox;
+pub use textbox::*;
