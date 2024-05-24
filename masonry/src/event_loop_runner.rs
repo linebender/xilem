@@ -284,6 +284,46 @@ impl ApplicationHandler<accesskit_winit::Event> for MainState<'_> {
                         self.pointer_state.clone(),
                     ));
             }
+            WinitWindowEvent::Touch(winit::event::Touch {
+                location, phase, ..
+            }) => {
+                // FIXME: This is naïve and should be refined for actual use.
+                //        It will also interact with gesture discrimination.
+                self.pointer_state.physical_position = location;
+                self.pointer_state.position = location.to_logical(window.scale_factor());
+                match phase {
+                    winit::event::TouchPhase::Started => {
+                        self.render_root
+                            .handle_pointer_event(PointerEvent::PointerMove(
+                                self.pointer_state.clone(),
+                            ));
+                        self.render_root
+                            .handle_pointer_event(PointerEvent::PointerDown(
+                                winit::event::MouseButton::Left,
+                                self.pointer_state.clone(),
+                            ));
+                    }
+                    winit::event::TouchPhase::Ended => {
+                        self.render_root
+                            .handle_pointer_event(PointerEvent::PointerUp(
+                                winit::event::MouseButton::Left,
+                                self.pointer_state.clone(),
+                            ));
+                    }
+                    winit::event::TouchPhase::Moved => {
+                        self.render_root
+                            .handle_pointer_event(PointerEvent::PointerMove(
+                                self.pointer_state.clone(),
+                            ));
+                    }
+                    winit::event::TouchPhase::Cancelled => {
+                        self.render_root
+                            .handle_pointer_event(PointerEvent::PointerLeave(
+                                self.pointer_state.clone(),
+                            ));
+                    }
+                }
+            }
             _ => (),
         }
 
