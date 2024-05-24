@@ -1,8 +1,9 @@
-use std::{io::stdin, marker::PhantomData, path::PathBuf};
+// Copyright 2024 the Xilem Authors
+// SPDX-License-Identifier: Apache-2.0
 
-use xilem_core2::{
-    AnyView, SuperElement, View, ViewElement, ViewId, ViewPathTracker, ViewSequence,
-};
+use std::{io::stdin, path::PathBuf};
+
+use xilem_core2::{AnyView, SuperElement, View, ViewElement, ViewId, ViewPathTracker};
 
 #[derive(Debug)]
 enum State {
@@ -114,11 +115,12 @@ impl SuperElement<FsPath> for FsPath {
     }
 }
 
-struct Folder<Marker, Seq: ViewSequence<(), (), ViewCtx, FsPath, Marker>> {
-    name: String,
-    seq: Seq,
-    phantom: PhantomData<fn() -> Marker>,
-}
+// Folder is meant to showcase ViewSequence, but isn't currently wired up
+// struct Folder<Marker, Seq: ViewSequence<(), (), ViewCtx, FsPath, Marker>> {
+//     name: String,
+//     seq: Seq,
+//     phantom: PhantomData<fn() -> Marker>,
+// }
 
 #[derive(Clone)]
 struct File {
