@@ -80,7 +80,7 @@ fn main() {
             }
         };
         let new_view = app_logic(&mut state);
-        root_ctx.current_folder_path = path.clone();
+        root_ctx.current_folder_path.clone_from(&path);
         new_view.rebuild(&previous, &mut initial_state, &mut root_ctx, &mut element.0);
         previous = new_view;
     }
@@ -100,15 +100,15 @@ impl SuperElement<FsPath> for FsPath {
         child
     }
 
-    fn replace_inner<'a>(this: Self::Mut<'a>, child: FsPath) -> Self::Mut<'a> {
+    fn replace_inner(this: Self::Mut<'_>, child: FsPath) -> Self::Mut<'_> {
         *this = child.0;
         this
     }
 
-    fn with_downcast_val<'a, R>(
-        this: Self::Mut<'a>,
+    fn with_downcast_val<R>(
+        this: Self::Mut<'_>,
         f: impl FnOnce(<FsPath as ViewElement>::Mut<'_>) -> R,
-    ) -> (Self::Mut<'a>, R) {
+    ) -> (Self::Mut<'_>, R) {
         let ret = f(this);
         (this, ret)
     }
@@ -138,10 +138,10 @@ impl ViewElement for FsPath {
     // TODO: This data is pretty redundant
     type Mut<'a> = &'a mut PathBuf;
 
-    fn with_reborrow_val<'o, R: 'static>(
-        this: Self::Mut<'o>,
+    fn with_reborrow_val<R: 'static>(
+        this: Self::Mut<'_>,
         f: impl FnOnce(Self::Mut<'_>) -> R,
-    ) -> (Self::Mut<'o>, R) {
+    ) -> (Self::Mut<'_>, R) {
         let ret = f(&mut *this);
         (this, ret)
     }
@@ -171,7 +171,7 @@ impl<State, Action> View<State, Action, ViewCtx> for File {
             let _ = std::fs::rename(&element, &new_path);
             *element = new_path;
         }
-        if &self.contents != &prev.contents {
+        if self.contents != prev.contents {
             let _ = std::fs::write(element, self.contents.as_bytes());
         }
     }
@@ -182,7 +182,7 @@ impl<State, Action> View<State, Action, ViewCtx> for File {
         _ctx: &mut ViewCtx,
         element: <Self::Element as xilem_core2::ViewElement>::Mut<'_>,
     ) {
-        let _ = std::fs::remove_file(&element);
+        let _ = std::fs::remove_file(element);
     }
 
     fn message(

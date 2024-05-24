@@ -32,10 +32,10 @@ pub trait ViewElement {
     ///
     /// This is the more general form of [`with_reborrow`](ViewElement::with_reborrow).
     /// See its documentation for more details.
-    fn with_reborrow_val<'o, R: 'static>(
-        this: Self::Mut<'o>,
+    fn with_reborrow_val<R: 'static>(
+        this: Self::Mut<'_>,
         f: impl FnOnce(Self::Mut<'_>) -> R,
-    ) -> (Self::Mut<'o>, R);
+    ) -> (Self::Mut<'_>, R);
 
     /// Perform a reborrowing access to the reference type, which allows re-using the reference
     /// even if it gets passed to another function.
@@ -48,7 +48,7 @@ pub trait ViewElement {
     /// Unfortunately, it isn't possible to abstract over reborrowing without a closure or equivalent.
     ///
     /// [#49601](https://github.com/rust-lang/rust/issues/49601)
-    fn with_reborrow<'o>(this: Self::Mut<'o>, f: impl FnOnce(Self::Mut<'_>)) -> Self::Mut<'o> {
+    fn with_reborrow(this: Self::Mut<'_>, f: impl FnOnce(Self::Mut<'_>)) -> Self::Mut<'_> {
         let (this, ()) = Self::with_reborrow_val(this, f);
         this
     }
@@ -71,7 +71,7 @@ where
     fn upcast(child: Child) -> Self;
 
     /// Replace the inner value of this reference entirely
-    fn replace_inner<'a>(this: Self::Mut<'a>, child: Child) -> Self::Mut<'a>;
+    fn replace_inner(this: Self::Mut<'_>, child: Child) -> Self::Mut<'_>;
     /// Perform a reborrowing downcast to the child reference type.
     ///
     /// This may panic if `this` is not the reference form of a value created by
@@ -81,7 +81,7 @@ where
     /// You can safely use this methods in contexts where it is known that the
     ///
     /// If you need to return a value, see [`with_downcast_val`](SuperElement::with_downcast_val).
-    fn with_downcast<'a>(this: Self::Mut<'a>, f: impl FnOnce(Child::Mut<'_>)) -> Self::Mut<'a> {
+    fn with_downcast(this: Self::Mut<'_>, f: impl FnOnce(Child::Mut<'_>)) -> Self::Mut<'_> {
         let (this, ()) = Self::with_downcast_val(this, f);
         this
     }
@@ -91,10 +91,10 @@ where
     /// `Self::upcast`.
     ///
     /// If you don't need to return a value, see [`with_downcast`](SuperElement::with_downcast).
-    fn with_downcast_val<'a, R>(
-        this: Self::Mut<'a>,
+    fn with_downcast_val<R>(
+        this: Self::Mut<'_>,
         f: impl FnOnce(Child::Mut<'_>) -> R,
-    ) -> (Self::Mut<'a>, R);
+    ) -> (Self::Mut<'_>, R);
 }
 
 // TODO: What do we want to do here? This impl seems nice, but is it necessary?

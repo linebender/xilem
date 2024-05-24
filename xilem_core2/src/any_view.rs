@@ -104,7 +104,7 @@ where
                     .downcast_mut()
                     .expect("build or rebuild always set the correct corresponding state type");
                 ctx.with_id(ViewId::new(dyn_state.generation), |ctx| {
-                    self.teardown(state, ctx, element)
+                    self.teardown(state, ctx, element);
                 });
             });
 
@@ -132,7 +132,7 @@ where
         // We only need to teardown the inner value - there's no other state to cleanup in this widget
         DynamicElement::with_downcast(element, |element| {
             ctx.with_id(ViewId::new(dyn_state.generation), |ctx| {
-                self.teardown(state, ctx, element)
+                self.teardown(state, ctx, element);
             });
         });
     }
@@ -189,7 +189,7 @@ where
         ctx: &mut Context,
         element: <Self::Element as crate::ViewElement>::Mut<'_>,
     ) {
-        self.dyn_rebuild(view_state, ctx, prev, element)
+        self.dyn_rebuild(view_state, ctx, prev, element);
     }
 
     fn teardown(

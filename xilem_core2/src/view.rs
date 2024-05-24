@@ -136,7 +136,7 @@ impl<State, Action, Context: ViewPathTracker, V: View<State, Action, Context> + 
         ctx: &mut Context,
         element: <Self::Element as ViewElement>::Mut<'_>,
     ) {
-        self.deref().rebuild(prev, view_state, ctx, element)
+        self.deref().rebuild(prev, view_state, ctx, element);
     }
     fn teardown(
         &self,
@@ -144,7 +144,7 @@ impl<State, Action, Context: ViewPathTracker, V: View<State, Action, Context> + 
         ctx: &mut Context,
         element: <Self::Element as ViewElement>::Mut<'_>,
     ) {
-        self.deref().teardown(view_state, ctx, element)
+        self.deref().teardown(view_state, ctx, element);
     }
     fn message(
         &self,
@@ -176,7 +176,7 @@ impl<State, Action, Context: ViewPathTracker, V: View<State, Action, Context> + 
         element: <Self::Element as ViewElement>::Mut<'_>,
     ) {
         if !Arc::ptr_eq(self, prev) {
-            self.deref().rebuild(prev, view_state, ctx, element)
+            self.deref().rebuild(prev, view_state, ctx, element);
         }
     }
     fn teardown(
@@ -185,7 +185,7 @@ impl<State, Action, Context: ViewPathTracker, V: View<State, Action, Context> + 
         ctx: &mut Context,
         element: <Self::Element as ViewElement>::Mut<'_>,
     ) {
-        self.deref().teardown(view_state, ctx, element)
+        self.deref().teardown(view_state, ctx, element);
     }
     fn message(
         &self,

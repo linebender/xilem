@@ -6,7 +6,7 @@
 use core::any::Any;
 
 use xilem_core2::{
-    DynMessage, ViewElement, MessageResult, SuperElement, View, ViewId, ViewPathTracker,
+    DynMessage, MessageResult, SuperElement, View, ViewElement, ViewId, ViewPathTracker,
 };
 
 pub fn app_logic(_: &mut u32) -> impl WidgetView<u32> {
@@ -45,10 +45,10 @@ impl<W: Widget> ViewElement for WidgetPod<W> {
 
     /// This implementation will perform `merge_up` multiple times, but that's
     /// already true for downcasting anyway, so merge_up is already idempotent
-    fn with_reborrow_val<'o, R: 'static>(
-        this: Self::Mut<'o>,
+    fn with_reborrow_val<R: 'static>(
+        this: Self::Mut<'_>,
         f: impl FnOnce(Self::Mut<'_>) -> R,
-    ) -> (Self::Mut<'o>, R) {
+    ) -> (Self::Mut<'_>, R) {
         let value = WidgetMut { value: this.value };
         let ret = f(value);
         (this, ret)
@@ -113,10 +113,10 @@ impl<W: Widget> SuperElement<WidgetPod<W>> for WidgetPod<Box<dyn Widget>> {
             widget: Box::new(child.widget),
         }
     }
-    fn with_downcast_val<'a, R>(
-        this: Self::Mut<'a>,
+    fn with_downcast_val<R>(
+        this: Self::Mut<'_>,
         f: impl FnOnce(<WidgetPod<W> as ViewElement>::Mut<'_>) -> R,
-    ) -> (Self::Mut<'a>, R) {
+    ) -> (Self::Mut<'_>, R) {
         let value = WidgetMut {
         value: this.value.as_mut_any().downcast_mut().expect(
             "this widget should have been created from a child widget of type `W` in `Self::upcast`",
@@ -125,7 +125,7 @@ impl<W: Widget> SuperElement<WidgetPod<W>> for WidgetPod<Box<dyn Widget>> {
         let ret = f(value);
         (this, ret)
     }
-    fn replace_inner<'a>(this: Self::Mut<'a>, child: WidgetPod<W>) -> Self::Mut<'a> {
+    fn replace_inner(this: Self::Mut<'_>, child: WidgetPod<W>) -> Self::Mut<'_> {
         *this.value = Box::new(child.widget);
         this
     }

@@ -216,7 +216,7 @@ where
             (Some(seq), Some((prev, inner_state))) => {
                 // Perform a normal rebuild
                 ctx.with_id(ViewId::new(seq_state.generation), |ctx| {
-                    seq.seq_rebuild(prev, inner_state, ctx, elements)
+                    seq.seq_rebuild(prev, inner_state, ctx, elements);
                 });
             }
             (Some(seq), None) => {
@@ -230,7 +230,7 @@ where
             (None, Some((prev, inner_state))) => {
                 // Run teardown with the old path
                 ctx.with_id(ViewId::new(seq_state.generation), |ctx| {
-                    prev.seq_teardown(inner_state, ctx, elements)
+                    prev.seq_teardown(inner_state, ctx, elements);
                 });
                 // The sequence has just been destroyed, teardown the old view
                 // We increment the generation only on the falling edge by convention
@@ -255,7 +255,7 @@ where
         assert_eq!(self.is_some(), seq_state.inner.is_some());
         if let Some((seq, inner_state)) = self.as_ref().zip(seq_state.inner.as_mut()) {
             ctx.with_id(ViewId::new(seq_state.generation), |ctx| {
-                seq.seq_teardown(inner_state, ctx, elements)
+                seq.seq_teardown(inner_state, ctx, elements);
             });
         }
     }
@@ -341,8 +341,7 @@ where
         ctx: &mut Context,
         elements: &mut impl ElementSplice<Element>,
     ) -> Self::SeqState {
-        let mut generations = Vec::with_capacity(self.len());
-        generations.resize(self.len(), 0);
+        let generations = alloc::vec![0; self.len()];
         let inner_states = self
             .iter()
             .enumerate()
@@ -380,6 +379,7 @@ where
             });
         }
         let n = self.len();
+        #[allow(clippy::comparison_chain)]
         if n < prev.len() {
             let to_teardown = prev[n..].iter();
             // Keep the generations
@@ -427,7 +427,7 @@ where
             .enumerate()
         {
             let id = create_generational_view_id(index, *generation);
-            ctx.with_id(id, |ctx| seq.seq_teardown(state, ctx, elements))
+            ctx.with_id(id, |ctx| seq.seq_teardown(state, ctx, elements));
         }
     }
 
@@ -514,7 +514,7 @@ where
         ctx: &mut Context,
         elements: &mut impl ElementSplice<Element>,
     ) {
-        self.0.seq_rebuild(&prev.0, seq_state, ctx, elements)
+        self.0.seq_rebuild(&prev.0, seq_state, ctx, elements);
     }
 
     fn seq_teardown(
@@ -523,7 +523,7 @@ where
         ctx: &mut Context,
         elements: &mut impl ElementSplice<Element>,
     ) {
-        self.0.seq_teardown(seq_state, ctx, elements)
+        self.0.seq_teardown(seq_state, ctx, elements);
     }
 
     fn seq_message(
