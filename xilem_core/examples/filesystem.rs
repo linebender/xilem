@@ -3,7 +3,7 @@
 
 use std::{io::stdin, path::PathBuf};
 
-use xilem_core2::{AnyView, SuperElement, View, ViewElement, ViewId, ViewPathTracker};
+use xilem_core::{AnyView, SuperElement, View, ViewElement, ViewId, ViewPathTracker};
 
 #[derive(Debug)]
 enum State {
@@ -166,7 +166,7 @@ impl<State, Action> View<State, Action, ViewCtx> for File {
         prev: &Self,
         _view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: <Self::Element as xilem_core2::ViewElement>::Mut<'_>,
+        element: <Self::Element as xilem_core::ViewElement>::Mut<'_>,
     ) {
         if prev.name != self.name {
             let new_path = ctx.current_folder_path.join(&*self.name);
@@ -182,7 +182,7 @@ impl<State, Action> View<State, Action, ViewCtx> for File {
         &self,
         _view_state: &mut Self::ViewState,
         _ctx: &mut ViewCtx,
-        element: <Self::Element as xilem_core2::ViewElement>::Mut<'_>,
+        element: <Self::Element as xilem_core::ViewElement>::Mut<'_>,
     ) {
         let _ = std::fs::remove_file(element);
     }
@@ -191,9 +191,9 @@ impl<State, Action> View<State, Action, ViewCtx> for File {
         &self,
         _view_state: &mut Self::ViewState,
         _id_path: &[ViewId],
-        _message: xilem_core2::DynMessage,
+        _message: xilem_core::DynMessage,
         _app_state: &mut State,
-    ) -> xilem_core2::MessageResult<Action> {
+    ) -> xilem_core::MessageResult<Action> {
         unreachable!()
     }
 }

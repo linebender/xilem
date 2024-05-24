@@ -5,7 +5,7 @@
 
 use core::any::Any;
 
-use xilem_core2::{
+use xilem_core::{
     DynMessage, MessageResult, SuperElement, View, ViewElement, ViewId, ViewPathTracker,
 };
 

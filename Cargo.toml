@@ -1,16 +1,17 @@
 [workspace]
 resolver = "2"
 members = [
-    "xilem_web_core",
+    "xilem",
+    "xilem_core",
+    "masonry",
+
     "xilem_web",
+    "xilem_web_core",
     "xilem_web/web_examples/counter",
     "xilem_web/web_examples/counter_custom_element",
     "xilem_web/web_examples/todomvc",
     "xilem_web/web_examples/mathml_svg",
     "xilem_web/web_examples/svgtoy",
-    "masonry",
-    "xilem",
-    "xilem_core2",
 ]
 
 [workspace.package]

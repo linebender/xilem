@@ -3849,7 +3849,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "xilem_core2"
+name = "xilem_core"
 version = "0.1.0"
 
 [[package]]
