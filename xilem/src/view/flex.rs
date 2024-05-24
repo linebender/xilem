@@ -107,7 +107,7 @@ where
         };
         self.sequence
             .seq_rebuild(&prev.sequence, view_state, ctx, &mut splice);
-        debug_assert!(splice.scratch.into_inner().is_empty())
+        debug_assert!(splice.scratch.into_inner().is_empty());
     }
 
     fn teardown(
@@ -123,7 +123,7 @@ where
             scratch: AppendVec::default(),
         };
         self.sequence.seq_teardown(view_state, ctx, &mut splice);
-        debug_assert!(splice.scratch.into_inner().is_empty())
+        debug_assert!(splice.scratch.into_inner().is_empty());
     }
 
     fn message(

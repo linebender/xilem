@@ -53,7 +53,7 @@ where
         ctx: &mut ViewCtx,
         element: <Self::Element as xilem_core::ViewElement>::Mut<'_>,
     ) {
-        ctx.teardown_leaf(element)
+        ctx.teardown_leaf(element);
     }
 
     fn message(
