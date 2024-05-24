@@ -43,7 +43,7 @@ impl Widget for Box<dyn Widget> {
 impl<W: Widget> ViewElement for WidgetPod<W> {
     type Mut<'a> = WidgetMut<'a, W>;
 
-    /// This implementation will perform `merge_up` multiple times, but that's
+    /* /// This implementation will perform `merge_up` multiple times, but that's
     /// already true for downcasting anyway, so merge_up is already idempotent
     fn with_reborrow_val<R: 'static>(
         this: Self::Mut<'_>,
@@ -52,7 +52,7 @@ impl<W: Widget> ViewElement for WidgetPod<W> {
         let value = WidgetMut { value: this.value };
         let ret = f(value);
         (this, ret)
-    }
+    } */
 }
 
 impl<State, Action> View<State, Action, ViewCtx> for Button {

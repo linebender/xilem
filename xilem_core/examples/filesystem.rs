@@ -140,13 +140,13 @@ impl ViewElement for FsPath {
     // TODO: This data is pretty redundant
     type Mut<'a> = &'a mut PathBuf;
 
-    fn with_reborrow_val<R: 'static>(
+    /* fn with_reborrow_val<R: 'static>(
         this: Self::Mut<'_>,
         f: impl FnOnce(Self::Mut<'_>) -> R,
     ) -> (Self::Mut<'_>, R) {
         let ret = f(&mut *this);
         (this, ret)
-    }
+    } */
 }
 
 impl<State, Action> View<State, Action, ViewCtx> for File {

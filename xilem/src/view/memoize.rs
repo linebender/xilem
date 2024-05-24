@@ -5,7 +5,7 @@ use std::any::Any;
 
 use masonry::{widget::WidgetMut, WidgetPod};
 
-use crate::{MasonryView, MessageResult, ViewCx, ViewId};
+use crate::{MasonryView, MessageResult, ViewCtx, ViewId};
 
 pub struct Memoize<D, F> {
     data: D,
@@ -52,7 +52,7 @@ where
 
     type Element = V::Element;
 
-    fn build(&self, cx: &mut ViewCx) -> (WidgetPod<Self::Element>, Self::ViewState) {
+    fn build(&self, cx: &mut ViewCtx) -> (WidgetPod<Self::Element>, Self::ViewState) {
         let view = (self.child_cb)(&self.data);
         let (element, view_state) = view.build(cx);
         let memoize_state = MemoizeState {
@@ -66,7 +66,7 @@ where
     fn rebuild(
         &self,
         view_state: &mut Self::ViewState,
-        cx: &mut ViewCx,
+        cx: &mut ViewCtx,
         prev: &Self,
         element: WidgetMut<Self::Element>,
     ) {

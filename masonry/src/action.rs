@@ -18,7 +18,7 @@ pub enum Action {
     TextEntered(String),
     CheckboxChecked(bool),
     // FIXME - This is a huge hack
-    Other(Arc<dyn Any>),
+    Other(Arc<dyn Any + Send + Sync>),
 }
 
 impl PartialEq for Action {

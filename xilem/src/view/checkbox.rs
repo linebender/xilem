@@ -3,7 +3,7 @@
 
 use masonry::{widget::WidgetMut, ArcStr, WidgetPod};
 
-use crate::{MasonryView, MessageResult, ViewCx, ViewId};
+use crate::{MasonryView, MessageResult, ViewCtx, ViewId};
 
 pub fn checkbox<F, State, Action>(
     label: impl Into<ArcStr>,
@@ -33,7 +33,7 @@ where
     type Element = masonry::widget::Checkbox;
     type ViewState = ();
 
-    fn build(&self, cx: &mut ViewCx) -> (WidgetPod<Self::Element>, Self::ViewState) {
+    fn build(&self, cx: &mut ViewCtx) -> (WidgetPod<Self::Element>, Self::ViewState) {
         cx.with_leaf_action_widget(|_| {
             WidgetPod::new(masonry::widget::Checkbox::new(
                 self.checked,
@@ -45,7 +45,7 @@ where
     fn rebuild(
         &self,
         _view_state: &mut Self::ViewState,
-        cx: &mut ViewCx,
+        cx: &mut ViewCtx,
         prev: &Self,
         mut element: WidgetMut<Self::Element>,
     ) {

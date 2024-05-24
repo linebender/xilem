@@ -1,8 +1,6 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use std::{any::Any, ops::Deref, sync::Arc};
-
 use accesskit::Role;
 use masonry::widget::{WidgetMut, WidgetRef};
 use masonry::{
@@ -11,8 +9,9 @@ use masonry::{
 };
 use smallvec::SmallVec;
 use vello::Scene;
+use xilem_core::{AnyView, SuperElement};
 
-use crate::{MasonryView, MessageResult, ViewCx, ViewId};
+use crate::{Pod, ViewCtx};
 
 /// A view which can have any underlying view type.
 ///
@@ -22,186 +21,39 @@ use crate::{MasonryView, MessageResult, ViewCx, ViewId};
 /// Note that `Option` can also be used for conditionally displaying
 /// views in a [`ViewSequence`](crate::ViewSequence).
 // TODO: Mention `Either` when we have implemented that?
-pub type BoxedMasonryView<State, Action = ()> = Box<dyn AnyMasonryView<State, Action>>;
+pub type DynWidgetView<State, Action = ()> = Box<dyn AnyView<State, Action, ViewCtx, DynWidget>>;
 
-impl<State: 'static, Action: 'static> MasonryView<State, Action>
-    for BoxedMasonryView<State, Action>
-{
-    type Element = DynWidget;
-    type ViewState = AnyViewState;
-
-    fn build(&self, cx: &mut ViewCx) -> (masonry::WidgetPod<Self::Element>, Self::ViewState) {
-        self.deref().dyn_build(cx)
+impl<W: Widget> SuperElement<Pod<W>> for Pod<Box<dyn Widget>> {
+    fn upcast(child: Pod<W>) -> Self {
+        child.inner.boxed().into()
     }
 
-    fn message(
-        &self,
-        view_state: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: Box<dyn Any>,
-        app_state: &mut State,
-    ) -> crate::MessageResult<Action> {
-        self.deref()
-            .dyn_message(view_state, id_path, message, app_state)
+    fn replace_inner(this: Self::Mut<'_>, child: Pod<W>) -> Self::Mut<'_> {
+        todo!()
     }
 
-    fn rebuild(
-        &self,
-        view_state: &mut Self::ViewState,
-        cx: &mut ViewCx,
-        prev: &Self,
-        element: masonry::widget::WidgetMut<Self::Element>,
-    ) {
-        self.deref()
-            .dyn_rebuild(view_state, cx, prev.deref(), element);
+    fn with_downcast_val<R>(
+        this: Self::Mut<'_>,
+        f: impl FnOnce(<Pod<W> as xilem_core::ViewElement>::Mut<'_>) -> R,
+    ) -> (Self::Mut<'_>, R) {
+        todo!()
     }
 }
 
-pub struct AnyViewState {
-    inner_state: Box<dyn Any>,
-    generation: u64,
-}
-
-impl<State: 'static, Action: 'static> MasonryView<State, Action>
-    for Arc<dyn AnyMasonryView<State, Action>>
-{
-    type ViewState = AnyViewState;
-
-    type Element = DynWidget;
-
-    fn build(&self, cx: &mut ViewCx) -> (masonry::WidgetPod<Self::Element>, Self::ViewState) {
-        self.deref().dyn_build(cx)
+impl<W: Widget> SuperElement<Pod<W>> for Pod<DynWidget> {
+    fn upcast(child: Pod<W>) -> Self {
+        todo!()
     }
 
-    fn rebuild(
-        &self,
-        view_state: &mut Self::ViewState,
-        cx: &mut ViewCx,
-        prev: &Self,
-        element: WidgetMut<Self::Element>,
-    ) {
-        if !Arc::ptr_eq(self, prev) {
-            self.deref()
-                .dyn_rebuild(view_state, cx, prev.deref(), element);
-        }
+    fn replace_inner(this: Self::Mut<'_>, child: Pod<W>) -> Self::Mut<'_> {
+        todo!()
     }
 
-    fn message(
-        &self,
-        view_state: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: Box<dyn Any>,
-        app_state: &mut State,
-    ) -> MessageResult<Action> {
-        self.deref()
-            .dyn_message(view_state, id_path, message, app_state)
-    }
-}
-
-/// A trait enabling type erasure of views.
-pub trait AnyMasonryView<State, Action = ()>: Send + Sync {
-    fn as_any(&self) -> &dyn Any;
-
-    fn dyn_build(&self, cx: &mut ViewCx) -> (WidgetPod<DynWidget>, AnyViewState);
-
-    fn dyn_rebuild(
-        &self,
-        dyn_state: &mut AnyViewState,
-        cx: &mut ViewCx,
-        prev: &dyn AnyMasonryView<State, Action>,
-        element: WidgetMut<DynWidget>,
-    );
-
-    fn dyn_message(
-        &self,
-        dyn_state: &mut AnyViewState,
-        id_path: &[ViewId],
-        message: Box<dyn Any>,
-        app_state: &mut State,
-    ) -> MessageResult<Action>;
-}
-
-impl<State, Action, V: MasonryView<State, Action> + 'static> AnyMasonryView<State, Action> for V
-where
-    V::ViewState: Any,
-{
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn dyn_build(&self, cx: &mut ViewCx) -> (masonry::WidgetPod<DynWidget>, AnyViewState) {
-        let generation = 0;
-        let (element, view_state) =
-            cx.with_id(ViewId::for_type::<V>(generation), |cx| self.build(cx));
-        (
-            WidgetPod::new(DynWidget {
-                inner: element.boxed(),
-            }),
-            AnyViewState {
-                inner_state: Box::new(view_state),
-                generation,
-            },
-        )
-    }
-
-    fn dyn_rebuild(
-        &self,
-        dyn_state: &mut AnyViewState,
-        cx: &mut ViewCx,
-        prev: &dyn AnyMasonryView<State, Action>,
-        mut element: WidgetMut<DynWidget>,
-    ) {
-        if let Some(prev) = prev.as_any().downcast_ref() {
-            // If we were previously of this type, then do a normal rebuild
-            DynWidget::downcast(&mut element, |element| {
-                if let Some(element) = element {
-                    if let Some(state) = dyn_state.inner_state.downcast_mut() {
-                        cx.with_id(ViewId::for_type::<V>(dyn_state.generation), move |cx| {
-                            self.rebuild(state, cx, prev, element);
-                        });
-                    } else {
-                        tracing::error!("Unexpected element state type");
-                    }
-                } else {
-                    eprintln!("downcast of element failed in dyn_rebuild");
-                }
-            });
-        } else {
-            // Otherwise, replace the element.
-
-            // Increase the generation, because the underlying widget has been swapped out.
-            // Overflow condition: Impossible to overflow, as u64 only ever incremented by 1
-            // and starting at 0.
-            dyn_state.generation = dyn_state.generation.wrapping_add(1);
-            let (new_element, view_state) = cx
-                .with_id(ViewId::for_type::<V>(dyn_state.generation), |cx| {
-                    self.build(cx)
-                });
-            dyn_state.inner_state = Box::new(view_state);
-            DynWidget::replace_inner(&mut element, new_element.boxed());
-            cx.mark_changed();
-        }
-    }
-
-    fn dyn_message(
-        &self,
-        dyn_state: &mut AnyViewState,
-        id_path: &[ViewId],
-        message: Box<dyn Any>,
-        app_state: &mut State,
-    ) -> MessageResult<Action> {
-        let (start, rest) = id_path
-            .split_first()
-            .expect("Id path has elements for AnyView");
-        if start.routing_id() != dyn_state.generation {
-            return MessageResult::Stale(message);
-        }
-        if let Some(view_state) = dyn_state.inner_state.downcast_mut() {
-            self.message(view_state, rest, message, app_state)
-        } else {
-            // Possibly softer failure?
-            panic!("downcast error in dyn_message");
-        }
+    fn with_downcast_val<R>(
+        this: Self::Mut<'_>,
+        f: impl FnOnce(<Pod<W> as xilem_core::ViewElement>::Mut<'_>) -> R,
+    ) -> (Self::Mut<'_>, R) {
+        todo!()
     }
 }
 

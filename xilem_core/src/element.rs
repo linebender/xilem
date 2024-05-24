@@ -27,7 +27,7 @@ pub trait ViewElement {
     /// This enables greater flexibility in the use of the traits, such as
     /// for reference types which contain access to parent state.
     type Mut<'a>;
-    /// Perform a reborrowing access to the reference type, which allows re-using the reference
+    /* /// Perform a reborrowing access to the reference type, which allows re-using the reference
     /// even if it gets passed to another function.
     ///
     /// This is the more general form of [`with_reborrow`](ViewElement::with_reborrow).
@@ -51,7 +51,7 @@ pub trait ViewElement {
     fn with_reborrow(this: Self::Mut<'_>, f: impl FnOnce(Self::Mut<'_>)) -> Self::Mut<'_> {
         let (this, ()) = Self::with_reborrow_val(this, f);
         this
-    }
+    } */
 }
 
 /// This element type is a superset of `Child`.

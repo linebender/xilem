@@ -3,7 +3,7 @@
 
 use masonry::{widget::WidgetMut, ArcStr, WidgetPod};
 
-use crate::{Color, MasonryView, MessageResult, TextAlignment, ViewCx, ViewId};
+use crate::{Color, MasonryView, MessageResult, TextAlignment, ViewCtx, ViewId};
 
 pub fn label(label: impl Into<ArcStr>) -> Label {
     Label {
@@ -43,7 +43,7 @@ impl<State, Action> MasonryView<State, Action> for Label {
     type Element = masonry::widget::Label;
     type ViewState = ();
 
-    fn build(&self, _cx: &mut ViewCx) -> (WidgetPod<Self::Element>, Self::ViewState) {
+    fn build(&self, _cx: &mut ViewCtx) -> (WidgetPod<Self::Element>, Self::ViewState) {
         let widget_pod = WidgetPod::new(
             masonry::widget::Label::new(self.label.clone())
                 .with_text_brush(self.text_color)
@@ -55,7 +55,7 @@ impl<State, Action> MasonryView<State, Action> for Label {
     fn rebuild(
         &self,
         _view_state: &mut Self::ViewState,
-        cx: &mut ViewCx,
+        cx: &mut ViewCtx,
         prev: &Self,
         mut element: WidgetMut<Self::Element>,
     ) {

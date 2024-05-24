@@ -4,6 +4,7 @@
 //! Message routing and type erasure primitives.
 
 use core::{any::Any, fmt::Debug};
+use std::ops::Deref;
 
 use alloc::boxed::Box;
 
@@ -71,7 +72,7 @@ impl dyn Message {
     /// In most cases, this can be safely unwrapped, as each [`View`](crate::View) will
     /// only receive messages of a single type
     pub fn downcast<T: Message>(self: Box<Self>) -> Result<Box<T>, Box<Self>> {
-        if self.as_any().is::<T>() {
+        if self.deref().as_any().is::<T>() {
             Ok(self
                 .into_any()
                 .downcast::<T>()

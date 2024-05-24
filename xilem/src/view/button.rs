@@ -1,9 +1,10 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::{widget::WidgetMut, ArcStr, WidgetPod};
+use crate::{core::View, Pod};
+use masonry::{widget, ArcStr, WidgetPod};
 
-use crate::{MasonryView, MessageResult, ViewCx, ViewId};
+use crate::{MessageResult, ViewCtx, ViewId};
 
 pub fn button<F, State, Action>(label: impl Into<ArcStr>, callback: F) -> Button<F>
 where
@@ -20,39 +21,48 @@ pub struct Button<F> {
     callback: F,
 }
 
-impl<F, State, Action> MasonryView<State, Action> for Button<F>
+impl<F, State, Action> View<State, Action, ViewCtx> for Button<F>
 where
     F: Fn(&mut State) -> Action + Send + Sync + 'static,
 {
-    type Element = masonry::widget::Button;
+    type Element = Pod<widget::Button>;
     type ViewState = ();
 
-    fn build(&self, cx: &mut ViewCx) -> (WidgetPod<Self::Element>, Self::ViewState) {
-        cx.with_leaf_action_widget(|_| {
-            WidgetPod::new(masonry::widget::Button::new(self.label.clone()))
+    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+        ctx.with_leaf_action_widget(|_| {
+            Pod::from(WidgetPod::new(widget::Button::new(self.label.clone())))
         })
     }
 
     fn rebuild(
         &self,
-        _view_state: &mut Self::ViewState,
-        cx: &mut ViewCx,
         prev: &Self,
-        mut element: WidgetMut<Self::Element>,
+        _: &mut Self::ViewState,
+        ctx: &mut ViewCtx,
+        mut element: <Self::Element as xilem_core::ViewElement>::Mut<'_>,
     ) {
         if prev.label != self.label {
             element.set_text(self.label.clone());
-            cx.mark_changed();
+            ctx.mark_changed();
         }
+    }
+
+    fn teardown(
+        &self,
+        _: &mut Self::ViewState,
+        ctx: &mut ViewCtx,
+        element: <Self::Element as xilem_core::ViewElement>::Mut<'_>,
+    ) {
+        ctx.teardown_leaf(element)
     }
 
     fn message(
         &self,
-        _view_state: &mut Self::ViewState,
+        _: &mut Self::ViewState,
         id_path: &[ViewId],
-        message: Box<dyn std::any::Any>,
+        message: xilem_core::DynMessage,
         app_state: &mut State,
-    ) -> crate::MessageResult<Action> {
+    ) -> MessageResult<Action> {
         debug_assert!(
             id_path.is_empty(),
             "id path should be empty in Button::message"
@@ -67,7 +77,7 @@ where
                 }
             }
             Err(message) => {
-                tracing::error!("Wrong message type in Button::message");
+                tracing::error!("Wrong message type in Button::message: {message:?}");
                 MessageResult::Stale(message)
             }
         }

@@ -30,6 +30,7 @@ rust.unexpected_cfgs = { level = "warn", check-cfg = ['cfg(FALSE)', 'cfg(tarpaul
 [workspace.dependencies]
 xilem_web_core = { version = "0.1.0", path = "xilem_web/xilem_web_core" }
 masonry = { version = "0.2.0", path = "masonry" }
+xilem_core = { version = "0.1.0", path = "xilem_core" }
 vello = "0.1.0"
 wgpu = "0.19.4"
 kurbo = "0.11.0"

@@ -28,6 +28,7 @@ crate-type = ["cdylib"]
 workspace = true
 
 [dependencies]
+xilem_core.workspace = true
 masonry.workspace = true
 winit.workspace = true
 tracing.workspace = true

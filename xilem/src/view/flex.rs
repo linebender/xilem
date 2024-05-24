@@ -7,8 +7,9 @@ use masonry::{
     widget::{self, Axis, CrossAxisAlignment, MainAxisAlignment, WidgetMut},
     Widget, WidgetPod,
 };
+use xilem_core::ViewSequence;
 
-use crate::{ElementSplice, MasonryView, VecSplice, ViewSequence};
+use crate::{MasonryView, Pod, ViewCtx};
 
 // TODO: Allow configuring flex properties. I think this actually needs its own view trait?
 pub fn flex<VT, Marker>(sequence: VT) -> Flex<VT, Marker> {
@@ -54,14 +55,14 @@ impl<VT, Marker> Flex<VT, Marker> {
 
 impl<State, Action, Marker: 'static, Seq: Sync> MasonryView<State, Action> for Flex<Seq, Marker>
 where
-    Seq: ViewSequence<State, Action, Marker>,
+    Seq: ViewSequence<State, Action, ViewCtx, Pod<Box<dyn Widget>>, Marker>,
 {
     type Element = widget::Flex;
     type ViewState = Seq::SeqState;
 
     fn build(
         &self,
-        cx: &mut crate::ViewCx,
+        cx: &mut crate::ViewCtx,
     ) -> (masonry::WidgetPod<Self::Element>, Self::ViewState) {
         let mut elements = Vec::new();
         let mut scratch = Vec::new();
@@ -96,7 +97,7 @@ where
     fn rebuild(
         &self,
         view_state: &mut Self::ViewState,
-        cx: &mut crate::ViewCx,
+        cx: &mut crate::ViewCtx,
         prev: &Self,
         mut element: widget::WidgetMut<Self::Element>,
     ) {

@@ -3,7 +3,7 @@
 
 use masonry::{text2::TextBrush, widget::WidgetMut, ArcStr, WidgetPod};
 
-use crate::{Color, MasonryView, MessageResult, TextAlignment, ViewCx, ViewId};
+use crate::{Color, MasonryView, MessageResult, TextAlignment, ViewCtx, ViewId};
 
 pub fn prose(label: impl Into<ArcStr>) -> Prose {
     Prose {
@@ -44,7 +44,7 @@ impl<State, Action> MasonryView<State, Action> for Prose {
     type Element = masonry::widget::Prose;
     type ViewState = ();
 
-    fn build(&self, _cx: &mut ViewCx) -> (WidgetPod<Self::Element>, Self::ViewState) {
+    fn build(&self, _cx: &mut ViewCtx) -> (WidgetPod<Self::Element>, Self::ViewState) {
         let widget_pod = WidgetPod::new(
             masonry::widget::Prose::new(self.label.clone())
                 .with_text_brush(self.text_brush.clone())
@@ -56,7 +56,7 @@ impl<State, Action> MasonryView<State, Action> for Prose {
     fn rebuild(
         &self,
         _view_state: &mut Self::ViewState,
-        cx: &mut ViewCx,
+        cx: &mut ViewCtx,
         prev: &Self,
         mut element: WidgetMut<Self::Element>,
     ) {
