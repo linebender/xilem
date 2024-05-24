@@ -30,8 +30,6 @@ use crate::{message::MessageResult, DynMessage, ViewElement};
 /// During message handling, mutable access to the app state is given to view nodes,
 /// which will in turn generally expose it to callbacks.
 ///
-/// It is also
-///
 /// ## Alloc
 ///
 /// In order to support the open-ended [`DynMessage`] type, this trait requires an
@@ -63,6 +61,8 @@ pub trait View<State, Action, Context: ViewPathTracker>: 'static {
     /// - Clean up any book-keeping set-up in `build` and `rebuild`
     fn teardown(
         &self,
+        // TODO: Should this take ownership of the `ViewState`
+        // We have chosen not to because it makes swapping versions more awkward
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
         element: <Self::Element as ViewElement>::Mut<'_>,

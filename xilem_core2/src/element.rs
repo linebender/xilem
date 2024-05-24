@@ -30,7 +30,7 @@ pub trait ViewElement {
     /// Perform a reborrowing access to the reference type, which allows re-using the reference
     /// even if it gets passed to another function.
     ///
-    /// This is the more general form of [`with_reborrow`](Element::with_reborrow).
+    /// This is the more general form of [`with_reborrow`](ViewElement::with_reborrow).
     /// See its documentation for more details.
     fn with_reborrow_val<'o, R: 'static>(
         this: Self::Mut<'o>,
@@ -62,6 +62,7 @@ pub trait ViewElement {
 ///    This will primarily be used in [`ViewSequence`] implementations.
 ///
 /// [`AnyView`]: crate::AnyView
+/// [`ViewSequence`]: crate::ViewSequence
 pub trait SuperElement<Child>: ViewElement
 where
     Child: ViewElement,

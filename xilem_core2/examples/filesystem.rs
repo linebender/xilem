@@ -1,6 +1,8 @@
-use std::{io::stdin, path::PathBuf};
+use std::{io::stdin, marker::PhantomData, path::PathBuf};
 
-use xilem_core2::{AnyView, ViewElement, SuperElement, View, ViewId, ViewPathTracker};
+use xilem_core2::{
+    AnyView, SuperElement, View, ViewElement, ViewId, ViewPathTracker, ViewSequence,
+};
 
 #[derive(Debug)]
 enum State {
@@ -112,9 +114,10 @@ impl SuperElement<FsPath> for FsPath {
     }
 }
 
-struct Folder<Seq: View<(), (), ViewCtx>> {
+struct Folder<Marker, Seq: ViewSequence<(), (), ViewCtx, FsPath, Marker>> {
     name: String,
     seq: Seq,
+    phantom: PhantomData<fn() -> Marker>,
 }
 
 #[derive(Clone)]
