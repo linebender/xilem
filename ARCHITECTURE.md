@@ -83,7 +83,7 @@ The associated Elements of the `View` trait are either DOM nodes for `xilem_web`
 Contains the `View` trait, and other general implementations. Is also contains the `Message`, `MessageResult`, `Id` types and the tree-structrure tracking.
 
 ### `xilem_web/
-An implemenation of Xilem running on the DOM.
+An implementation of Xilem running on the DOM.
 
 ### `xilem_web_core`
 A historical version of `xilem_core` used in `xilem_web`
