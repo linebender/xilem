@@ -1,7 +1,7 @@
 [workspace]
 resolver = "2"
 members = [
-    "xilem_core",
+    "xilem_web_core",
     "xilem_web",
     "xilem_web/web_examples/counter",
     "xilem_web/web_examples/counter_custom_element",
@@ -27,7 +27,7 @@ clippy.assigning_clones = "allow"
 rust.unexpected_cfgs = { level = "warn", check-cfg = ['cfg(FALSE)', 'cfg(tarpaulin_include)'] }
 
 [workspace.dependencies]
-xilem_core = { version = "0.1.0", path = "xilem_core" }
+xilem_web_core = { version = "0.1.0", path = "xilem_web_core" }
 masonry = { version = "0.2.0", path = "masonry" }
 vello = "0.1.0"
 wgpu = "0.19.4"

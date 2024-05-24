@@ -25,6 +25,8 @@ mod vecmap;
 mod view;
 mod view_ext;
 
+extern crate xilem_web_core as xilem_core;
+
 pub use xilem_core::MessageResult;
 
 pub use app::App;

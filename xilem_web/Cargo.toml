@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "HTML DOM frontend for the Xilem Rust UI framework."
 keywords = ["xilem", "html", "dom", "web", "ui"]
 categories = ["gui", "web-programming"]
-publish = false # Until it's ready
+publish = false                                                    # Until it's ready
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
@@ -19,7 +19,7 @@ cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
 workspace = true
 
 [dependencies]
-xilem_core.workspace = true
+xilem_web_core = { workspace = true }
 peniko.workspace = true
 bitflags.workspace = true
 wasm-bindgen = "0.2.92"

@@ -45,7 +45,7 @@ Your main interaction with the framework is through the `app_logic()`. Like Elm,
 ```rust
 struct AppData {
     count: u32,
-}f
+}
 
 fn app_logic(data: &mut AppData) -> impl View<AppData, (), Element = impl Widget> {
     let count = data.count
@@ -79,13 +79,15 @@ The associated Elements of the `View` trait are either DOM nodes for `xilem_web`
 ### Framework Layer (`masonry`)
 
 ## Code Organisation
-### `crates/xilem_core`
-Contains the `View` trait, `Adapt`, `Memoize`, and `AnyView` view implementations. Is also contains the `Message`, `MessageResult`, `Id` types and the tree-structrure tracking.
+### `xilem_core`
+Contains the `View` trait, and other general implementations. Is also contains the `Message`, `MessageResult`, `Id` types and the tree-structrure tracking.
 
-### `crates/xilem_masonry/view`
-Contains the view implementations for Xilem native.
+### `xilem_web/
+An implemenation of Xilem running on the DOM.
 
-### `crates/xilem_web/
+### `xilem_web_core`
+A historical version of `xilem_core` used in `xilem_web`
 
-### `crates/masonry/
+
+### `masonry/
 See `ARCHITECTURE.md` file located under `crates/masonry/doc`
