@@ -39,4 +39,4 @@ mod any_view;
 pub use any_view::AnyView;
 
 mod sequence;
-pub use sequence::{ElementSplice, ViewSequence};
+pub use sequence::{AppendVec, ElementSplice, ViewSequence};

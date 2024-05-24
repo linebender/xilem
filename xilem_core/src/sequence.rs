@@ -7,6 +7,37 @@ use alloc::vec::Vec;
 
 use crate::{DynMessage, MessageResult, SuperElement, View, ViewElement, ViewId, ViewPathTracker};
 
+/// An append only `Vec`.
+pub struct AppendVec<T> {
+    inner: Vec<T>,
+}
+
+impl<T> AppendVec<T> {
+    pub fn into_inner(self) -> Vec<T> {
+        self.inner
+    }
+    pub fn push(&mut self, item: T) {
+        self.inner.push(item);
+    }
+    pub fn drain(&mut self) -> impl Iterator<Item = T> + '_ {
+        self.inner.drain(..)
+    }
+}
+
+impl<T> From<Vec<T>> for AppendVec<T> {
+    fn from(inner: Vec<T>) -> Self {
+        Self { inner }
+    }
+}
+
+impl<T> Default for AppendVec<T> {
+    fn default() -> Self {
+        Self {
+            inner: Default::default(),
+        }
+    }
+}
+
 /// Views for ordered sequences of elements.
 ///
 /// Generally, a container view will internally contain a `ViewSequence`.
@@ -34,11 +65,7 @@ pub trait ViewSequence<State, Action, Context: ViewPathTracker, Element: ViewEle
 
     /// Build the associated widgets into `elements` and initialize all states.
     #[must_use]
-    fn seq_build(
-        &self,
-        ctx: &mut Context,
-        elements: &mut impl ElementSplice<Element>,
-    ) -> Self::SeqState;
+    fn seq_build(&self, ctx: &mut Context, elements: &mut AppendVec<Element>) -> Self::SeqState;
 
     /// Update the associated widgets.
     fn seq_rebuild(
@@ -73,6 +100,7 @@ pub trait ViewSequence<State, Action, Context: ViewPathTracker, Element: ViewEle
 /// A temporary "splice" to add, update and delete in an (ordered) sequence of elements.
 /// It is mainly intended for view sequences.
 pub trait ElementSplice<Element: ViewElement> {
+    fn with_scratch<R>(&mut self, f: impl FnOnce(&mut AppendVec<Element>) -> R) -> R;
     /// Insert a new element at the current index in the resulting collection.
     fn push(&mut self, element: Element);
     /// Mutate the next existing element.
@@ -97,11 +125,7 @@ where
 {
     type SeqState = V::ViewState;
 
-    fn seq_build(
-        &self,
-        ctx: &mut Context,
-        elements: &mut impl ElementSplice<Element>,
-    ) -> Self::SeqState {
+    fn seq_build(&self, ctx: &mut Context, elements: &mut AppendVec<Element>) -> Self::SeqState {
         let (element, view_state) = self.build(ctx);
         elements.push(Element::upcast(element));
         view_state
@@ -175,11 +199,7 @@ where
     type SeqState = OptionSeqState<Seq::SeqState>;
 
     #[doc(hidden)]
-    fn seq_build(
-        &self,
-        ctx: &mut Context,
-        elements: &mut impl ElementSplice<Element>,
-    ) -> Self::SeqState {
+    fn seq_build(&self, ctx: &mut Context, elements: &mut AppendVec<Element>) -> Self::SeqState {
         let generation = 0;
         match self {
             Some(seq) => {
@@ -223,7 +243,7 @@ where
                 // The sequence is newly re-added, build the inner sequence
                 // We don't increment the generation here, as that was already done in the below case
                 let inner_state = ctx.with_id(ViewId::new(seq_state.generation), |ctx| {
-                    seq.seq_build(ctx, elements)
+                    elements.with_scratch(|elements| seq.seq_build(ctx, elements))
                 });
                 seq_state.inner = Some(inner_state);
             }
@@ -336,11 +356,7 @@ where
     type SeqState = VecViewState<Seq::SeqState>;
 
     #[doc(hidden)]
-    fn seq_build(
-        &self,
-        ctx: &mut Context,
-        elements: &mut impl ElementSplice<Element>,
-    ) -> Self::SeqState {
+    fn seq_build(&self, ctx: &mut Context, elements: &mut AppendVec<Element>) -> Self::SeqState {
         let generations = alloc::vec![0; self.len()];
         let inner_states = self
             .iter()
@@ -399,17 +415,18 @@ where
         } else if n > prev.len() {
             // If needed, create new generations
             seq_state.generations.resize(n, 0);
-
-            seq_state.inner_states.extend(
-                self[n..]
-                    .iter()
-                    .zip(&seq_state.generations[n..])
-                    .enumerate()
-                    .map(|(index, (seq, generation))| {
-                        let id = create_generational_view_id(index + n, *generation);
-                        ctx.with_id(id, |ctx| seq.seq_build(ctx, elements))
-                    }),
-            );
+            elements.with_scratch(|elements| {
+                seq_state.inner_states.extend(
+                    self[n..]
+                        .iter()
+                        .zip(&seq_state.generations[n..])
+                        .enumerate()
+                        .map(|(index, (seq, generation))| {
+                            let id = create_generational_view_id(index + n, *generation);
+                            ctx.with_id(id, |ctx| seq.seq_build(ctx, elements))
+                        }),
+                );
+            });
         }
     }
 
@@ -460,7 +477,7 @@ where
 {
     type SeqState = ();
 
-    fn seq_build(&self, _: &mut Context, _: &mut impl ElementSplice<Element>) -> Self::SeqState {}
+    fn seq_build(&self, _: &mut Context, _: &mut AppendVec<Element>) -> Self::SeqState {}
 
     fn seq_rebuild(
         &self,
@@ -499,11 +516,7 @@ where
 {
     type SeqState = Seq::SeqState;
 
-    fn seq_build(
-        &self,
-        ctx: &mut Context,
-        elements: &mut impl ElementSplice<Element>,
-    ) -> Self::SeqState {
+    fn seq_build(&self, ctx: &mut Context, elements: &mut AppendVec<Element>) -> Self::SeqState {
         self.0.seq_build(ctx, elements)
     }
 
@@ -560,7 +573,7 @@ macro_rules! impl_view_tuple {
             fn seq_build(
                 &self,
                 ctx: &mut Context,
-                elements: &mut impl ElementSplice<Element>,
+                elements: &mut AppendVec<Element>,
             ) -> Self::SeqState {
                 ($(
                     ctx.with_id(ViewId::new($idx), |ctx| {

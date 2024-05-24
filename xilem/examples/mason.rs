@@ -4,7 +4,10 @@
 // On Windows platform, don't show a console when opening the app.
 #![windows_subsystem = "windows"]
 
-use xilem::{view::button, AnyWidgetView, EventLoop, EventLoopBuilder, WidgetView, Xilem};
+use xilem::{
+    view::{button, flex},
+    AnyWidgetView, EventLoop, EventLoopBuilder, WidgetView, Xilem,
+};
 
 fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> {
     // here's some logic, deriving state for the view from our state
@@ -16,7 +19,7 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> {
     };
     let x: AnyWidgetView<AppData> =
         Box::new(button(button_label, |data: &mut AppData| data.count += 1));
-    x
+    flex((x, button("test", |_| {})))
 }
 
 struct AppData {

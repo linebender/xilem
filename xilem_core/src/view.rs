@@ -59,10 +59,10 @@ pub trait View<State, Action, Context: ViewPathTracker>: 'static {
     /// The main use-cases of this method are to:
     /// - Cancel any async tasks
     /// - Clean up any book-keeping set-up in `build` and `rebuild`
+    // TODO: Should this take ownership of the `ViewState`
+    // We have chosen not to because it makes swapping versions more awkward
     fn teardown(
         &self,
-        // TODO: Should this take ownership of the `ViewState`
-        // We have chosen not to because it makes swapping versions more awkward
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
         element: <Self::Element as ViewElement>::Mut<'_>,
