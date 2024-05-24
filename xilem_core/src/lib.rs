@@ -33,7 +33,7 @@ mod message;
 pub use message::{DynMessage, Message, MessageResult};
 
 mod element;
-pub use element::{SuperElement, ViewElement};
+pub use element::{AnyElement, SuperElement, ViewElement};
 
 mod any_view;
 pub use any_view::AnyView;

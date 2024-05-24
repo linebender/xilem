@@ -3,7 +3,7 @@
 
 use std::{io::stdin, path::PathBuf};
 
-use xilem_core::{AnyView, SuperElement, View, ViewElement, ViewId, ViewPathTracker};
+use xilem_core::{AnyElement, AnyView, SuperElement, View, ViewElement, ViewId, ViewPathTracker};
 
 #[derive(Debug)]
 enum State {
@@ -101,17 +101,19 @@ impl SuperElement<FsPath> for FsPath {
         child
     }
 
-    fn replace_inner(this: Self::Mut<'_>, child: FsPath) -> Self::Mut<'_> {
-        *this = child.0;
-        this
-    }
-
     fn with_downcast_val<R>(
         this: Self::Mut<'_>,
         f: impl FnOnce(<FsPath as ViewElement>::Mut<'_>) -> R,
     ) -> (Self::Mut<'_>, R) {
         let ret = f(this);
         (this, ret)
+    }
+}
+
+impl AnyElement<FsPath> for FsPath {
+    fn replace_inner(this: Self::Mut<'_>, child: FsPath) -> Self::Mut<'_> {
+        *this = child.0;
+        this
     }
 }
 

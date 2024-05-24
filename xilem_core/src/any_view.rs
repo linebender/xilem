@@ -7,7 +7,7 @@ use core::any::Any;
 
 use alloc::boxed::Box;
 
-use crate::{DynMessage, MessageResult, SuperElement, View, ViewId, ViewPathTracker};
+use crate::{AnyElement, DynMessage, MessageResult, View, ViewId, ViewPathTracker};
 
 /// A view which can have any view type where the [`View::Element`] is compatible with
 /// `Element`.
@@ -55,7 +55,7 @@ pub trait AnyView<State, Action, Context, Element: crate::ViewElement> {
 impl<State, Action, Context, DynamicElement, V> AnyView<State, Action, Context, DynamicElement>
     for V
 where
-    DynamicElement: SuperElement<V::Element>,
+    DynamicElement: AnyElement<V::Element>,
     Context: ViewPathTracker,
     V: View<State, Action, Context> + 'static,
     V::ViewState: 'static,
@@ -169,6 +169,142 @@ pub struct AnyViewState {
 
 impl<State: 'static, Action: 'static, Context, Element> View<State, Action, Context>
     for dyn AnyView<State, Action, Context, Element>
+where
+    // Element must be `static` so it can be downcasted
+    Element: crate::ViewElement + 'static,
+    Context: crate::ViewPathTracker + 'static,
+{
+    type Element = Element;
+
+    type ViewState = AnyViewState;
+
+    fn build(&self, ctx: &mut Context) -> (Self::Element, Self::ViewState) {
+        self.dyn_build(ctx)
+    }
+
+    fn rebuild(
+        &self,
+        prev: &Self,
+        view_state: &mut Self::ViewState,
+        ctx: &mut Context,
+        element: <Self::Element as crate::ViewElement>::Mut<'_>,
+    ) {
+        self.dyn_rebuild(view_state, ctx, prev, element);
+    }
+
+    fn teardown(
+        &self,
+        view_state: &mut Self::ViewState,
+        ctx: &mut Context,
+        element: <Self::Element as crate::ViewElement>::Mut<'_>,
+    ) {
+        self.dyn_teardown(view_state, ctx, element);
+    }
+
+    fn message(
+        &self,
+        view_state: &mut Self::ViewState,
+        id_path: &[crate::ViewId],
+        message: crate::DynMessage,
+        app_state: &mut State,
+    ) -> crate::MessageResult<Action> {
+        self.dyn_message(view_state, id_path, message, app_state)
+    }
+}
+
+// TODO: IWBN if we could avoid this
+impl<State: 'static, Action: 'static, Context, Element> View<State, Action, Context>
+    for dyn AnyView<State, Action, Context, Element> + Send
+where
+    // Element must be `static` so it can be downcasted
+    Element: crate::ViewElement + 'static,
+    Context: crate::ViewPathTracker + 'static,
+{
+    type Element = Element;
+
+    type ViewState = AnyViewState;
+
+    fn build(&self, ctx: &mut Context) -> (Self::Element, Self::ViewState) {
+        self.dyn_build(ctx)
+    }
+
+    fn rebuild(
+        &self,
+        prev: &Self,
+        view_state: &mut Self::ViewState,
+        ctx: &mut Context,
+        element: <Self::Element as crate::ViewElement>::Mut<'_>,
+    ) {
+        self.dyn_rebuild(view_state, ctx, prev, element);
+    }
+
+    fn teardown(
+        &self,
+        view_state: &mut Self::ViewState,
+        ctx: &mut Context,
+        element: <Self::Element as crate::ViewElement>::Mut<'_>,
+    ) {
+        self.dyn_teardown(view_state, ctx, element);
+    }
+
+    fn message(
+        &self,
+        view_state: &mut Self::ViewState,
+        id_path: &[crate::ViewId],
+        message: crate::DynMessage,
+        app_state: &mut State,
+    ) -> crate::MessageResult<Action> {
+        self.dyn_message(view_state, id_path, message, app_state)
+    }
+}
+
+impl<State: 'static, Action: 'static, Context, Element> View<State, Action, Context>
+    for dyn AnyView<State, Action, Context, Element> + Send + Sync
+where
+    // Element must be `static` so it can be downcasted
+    Element: crate::ViewElement + 'static,
+    Context: crate::ViewPathTracker + 'static,
+{
+    type Element = Element;
+
+    type ViewState = AnyViewState;
+
+    fn build(&self, ctx: &mut Context) -> (Self::Element, Self::ViewState) {
+        self.dyn_build(ctx)
+    }
+
+    fn rebuild(
+        &self,
+        prev: &Self,
+        view_state: &mut Self::ViewState,
+        ctx: &mut Context,
+        element: <Self::Element as crate::ViewElement>::Mut<'_>,
+    ) {
+        self.dyn_rebuild(view_state, ctx, prev, element);
+    }
+
+    fn teardown(
+        &self,
+        view_state: &mut Self::ViewState,
+        ctx: &mut Context,
+        element: <Self::Element as crate::ViewElement>::Mut<'_>,
+    ) {
+        self.dyn_teardown(view_state, ctx, element);
+    }
+
+    fn message(
+        &self,
+        view_state: &mut Self::ViewState,
+        id_path: &[crate::ViewId],
+        message: crate::DynMessage,
+        app_state: &mut State,
+    ) -> crate::MessageResult<Action> {
+        self.dyn_message(view_state, id_path, message, app_state)
+    }
+}
+
+impl<State: 'static, Action: 'static, Context, Element> View<State, Action, Context>
+    for dyn AnyView<State, Action, Context, Element> + Sync
 where
     // Element must be `static` so it can be downcasted
     Element: crate::ViewElement + 'static,

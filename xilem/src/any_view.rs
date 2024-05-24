@@ -9,7 +9,7 @@ use masonry::{
 };
 use smallvec::SmallVec;
 use vello::Scene;
-use xilem_core::{AnyView, SuperElement};
+use xilem_core::{AnyElement, AnyView, SuperElement};
 
 use crate::{Pod, ViewCtx};
 
@@ -21,39 +21,50 @@ use crate::{Pod, ViewCtx};
 /// Note that `Option` can also be used for conditionally displaying
 /// views in a [`ViewSequence`](crate::ViewSequence).
 // TODO: Mention `Either` when we have implemented that?
-pub type DynWidgetView<State, Action = ()> = Box<dyn AnyView<State, Action, ViewCtx, DynWidget>>;
+pub type AnyWidgetView<State, Action = ()> =
+    Box<dyn AnyView<State, Action, ViewCtx, Pod<DynWidget>> + Send + Sync>;
 
 impl<W: Widget> SuperElement<Pod<W>> for Pod<Box<dyn Widget>> {
     fn upcast(child: Pod<W>) -> Self {
         child.inner.boxed().into()
     }
 
-    fn replace_inner(this: Self::Mut<'_>, child: Pod<W>) -> Self::Mut<'_> {
-        todo!()
-    }
-
     fn with_downcast_val<R>(
-        this: Self::Mut<'_>,
+        mut this: Self::Mut<'_>,
         f: impl FnOnce(<Pod<W> as xilem_core::ViewElement>::Mut<'_>) -> R,
     ) -> (Self::Mut<'_>, R) {
-        todo!()
+        let downcast = this.downcast();
+        let ret = f(downcast);
+        (this, ret)
     }
 }
 
 impl<W: Widget> SuperElement<Pod<W>> for Pod<DynWidget> {
     fn upcast(child: Pod<W>) -> Self {
-        todo!()
-    }
-
-    fn replace_inner(this: Self::Mut<'_>, child: Pod<W>) -> Self::Mut<'_> {
-        todo!()
+        WidgetPod::new(DynWidget {
+            inner: child.inner.boxed(),
+        })
+        .into()
     }
 
     fn with_downcast_val<R>(
-        this: Self::Mut<'_>,
+        mut this: Self::Mut<'_>,
         f: impl FnOnce(<Pod<W> as xilem_core::ViewElement>::Mut<'_>) -> R,
     ) -> (Self::Mut<'_>, R) {
-        todo!()
+        let ret = {
+            let mut child = this.ctx.get_mut(&mut this.widget.inner);
+            let downcast = child.downcast();
+            f(downcast)
+        };
+
+        (this, ret)
+    }
+}
+
+impl<W: Widget> AnyElement<Pod<W>> for Pod<DynWidget> {
+    fn replace_inner(mut this: Self::Mut<'_>, child: Pod<W>) -> Self::Mut<'_> {
+        DynWidget::replace_inner(&mut this, child.inner.boxed());
+        this
     }
 }
 
@@ -71,14 +82,6 @@ impl DynWidget {
     ) {
         this.widget.inner = widget;
         this.ctx.children_changed();
-    }
-
-    pub(crate) fn downcast<W: Widget, R>(
-        this: &mut WidgetMut<'_, Self>,
-        f: impl FnOnce(Option<WidgetMut<'_, W>>) -> R,
-    ) -> R {
-        let mut get_mut = this.ctx.get_mut(&mut this.widget.inner);
-        f(get_mut.try_downcast())
     }
 }
 

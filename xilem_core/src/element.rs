@@ -70,8 +70,6 @@ where
     /// Convert from the child to this element type.
     fn upcast(child: Child) -> Self;
 
-    /// Replace the inner value of this reference entirely
-    fn replace_inner(this: Self::Mut<'_>, child: Child) -> Self::Mut<'_>;
     /// Perform a reborrowing downcast to the child reference type.
     ///
     /// This may panic if `this` is not the reference form of a value created by
@@ -97,6 +95,14 @@ where
     ) -> (Self::Mut<'_>, R);
 }
 
+/// An element which can be used for an [`AnyView`]
+pub trait AnyElement<Child>: SuperElement<Child>
+where
+    Child: ViewElement,
+{
+    /// Replace the inner value of this reference entirely
+    fn replace_inner(this: Self::Mut<'_>, child: Child) -> Self::Mut<'_>;
+}
 // TODO: What do we want to do here? This impl seems nice, but is it necessary?
 // It lets you trivially have sequences of types with a heterogenous element type,
 // but how common are those in practice?

@@ -125,10 +125,6 @@ impl<W: Widget> SuperElement<WidgetPod<W>> for WidgetPod<Box<dyn Widget>> {
         let ret = f(value);
         (this, ret)
     }
-    fn replace_inner(this: Self::Mut<'_>, child: WidgetPod<W>) -> Self::Mut<'_> {
-        *this.value = Box::new(child.widget);
-        this
-    }
 }
 
 pub struct ViewCtx {
