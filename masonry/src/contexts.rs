@@ -680,6 +680,14 @@ impl PaintCtx<'_> {
     pub fn depth(&self) -> u32 {
         self.depth
     }
+
+    // signal may be useful elsewhere, but is currently only used on PaintCtx
+    /// Submit a [`RenderRootSignal`]
+    ///
+    /// Note: May be removed in future, and replaced with more specific methods.
+    pub fn signal(&mut self, s: RenderRootSignal) {
+        self.global_state.signal_queue.push_back(s);
+    }
 }
 
 impl AccessCtx<'_> {

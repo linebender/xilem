@@ -68,12 +68,9 @@ pub enum WindowSizePolicy {
 // TODO - Text fields
 pub enum RenderRootSignal {
     Action(Action, WidgetId),
-    TextFieldAdded,
-    TextFieldRemoved,
-    TextFieldFocused,
-    ImeStarted,
-    ImeMoved,
-    ImeInvalidated,
+    StartIme,
+    EndIme,
+    ImeMoved(LogicalPosition<f64>, LogicalSize<f64>),
     RequestRedraw,
     RequestAnimFrame,
     SpawnWorker(WorkerFn),
@@ -570,8 +567,12 @@ impl RenderRoot {
             self.state.focused_widget = new;
             self.root_lifecycle(event);
 
-            // TODO - Handle IME
-            // Send TextFieldFocused(focused_widget) signal
+            // TODO: discriminate between text focus, and non-text focus.
+            self.state.signal_queue.push_back(if new.is_some() {
+                RenderRootSignal::StartIme
+            } else {
+                RenderRootSignal::EndIme
+            });
         }
     }
 
