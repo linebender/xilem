@@ -4,20 +4,20 @@
 mod button;
 pub use button::*;
 
-// mod checkbox;
-// pub use checkbox::*;
+mod checkbox;
+pub use checkbox::*;
 
 mod flex;
 pub use flex::*;
 
-// mod label;
-// pub use label::*;
+mod label;
+pub use label::*;
 
 // mod memoize;
 // pub use memoize::*;
 
-// mod prose;
-// pub use prose::*;
+mod prose;
+pub use prose::*;
 
 mod textbox;
 pub use textbox::*;

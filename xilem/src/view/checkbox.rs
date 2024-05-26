@@ -1,9 +1,12 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::{widget::WidgetMut, ArcStr, WidgetPod};
+use masonry::{
+    widget::{self, WidgetMut},
+    ArcStr, WidgetPod,
+};
 
-use crate::{MasonryView, MessageResult, ViewCtx, ViewId};
+use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
 
 pub fn checkbox<F, State, Action>(
     label: impl Into<ArcStr>,
@@ -26,28 +29,29 @@ pub struct Checkbox<F> {
     callback: F,
 }
 
-impl<F, State, Action> MasonryView<State, Action> for Checkbox<F>
+impl<F, State, Action> View<State, Action, ViewCtx> for Checkbox<F>
 where
     F: Fn(&mut State, bool) -> Action + Send + Sync + 'static,
 {
-    type Element = masonry::widget::Checkbox;
+    type Element = Pod<widget::Checkbox>;
     type ViewState = ();
 
-    fn build(&self, cx: &mut ViewCtx) -> (WidgetPod<Self::Element>, Self::ViewState) {
+    fn build(&self, cx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         cx.with_leaf_action_widget(|_| {
             WidgetPod::new(masonry::widget::Checkbox::new(
                 self.checked,
                 self.label.clone(),
             ))
+            .into()
         })
     }
 
     fn rebuild(
         &self,
-        _view_state: &mut Self::ViewState,
-        cx: &mut ViewCtx,
         prev: &Self,
-        mut element: WidgetMut<Self::Element>,
+        (): &mut Self::ViewState,
+        cx: &mut ViewCtx,
+        mut element: WidgetMut<'_, widget::Checkbox>,
     ) {
         if prev.label != self.label {
             element.set_text(self.label.clone());
@@ -59,11 +63,20 @@ where
         }
     }
 
+    fn teardown(
+        &self,
+        (): &mut Self::ViewState,
+        ctx: &mut ViewCtx,
+        element: WidgetMut<'_, widget::Checkbox>,
+    ) {
+        ctx.teardown_leaf(element);
+    }
+
     fn message(
         &self,
-        _view_state: &mut Self::ViewState,
+        (): &mut Self::ViewState,
         id_path: &[ViewId],
-        message: Box<dyn std::any::Any>,
+        message: xilem_core::DynMessage,
         app_state: &mut State,
     ) -> MessageResult<Action> {
         debug_assert!(

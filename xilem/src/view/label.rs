@@ -1,9 +1,12 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::{widget::WidgetMut, ArcStr, WidgetPod};
+use masonry::{
+    widget::{self, WidgetMut},
+    ArcStr, WidgetPod,
+};
 
-use crate::{Color, MasonryView, MessageResult, TextAlignment, ViewCtx, ViewId};
+use crate::{Color, MessageResult, Pod, TextAlignment, View, ViewCtx, ViewId};
 
 pub fn label(label: impl Into<ArcStr>) -> Label {
     Label {
@@ -39,25 +42,25 @@ impl Label {
     }
 }
 
-impl<State, Action> MasonryView<State, Action> for Label {
-    type Element = masonry::widget::Label;
+impl<State, Action> View<State, Action, ViewCtx> for Label {
+    type Element = Pod<widget::Label>;
     type ViewState = ();
 
-    fn build(&self, _cx: &mut ViewCtx) -> (WidgetPod<Self::Element>, Self::ViewState) {
+    fn build(&self, _cx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let widget_pod = WidgetPod::new(
-            masonry::widget::Label::new(self.label.clone())
+            widget::Label::new(self.label.clone())
                 .with_text_brush(self.text_color)
                 .with_text_alignment(self.alignment),
         );
-        (widget_pod, ())
+        (widget_pod.into(), ())
     }
 
     fn rebuild(
         &self,
-        _view_state: &mut Self::ViewState,
-        cx: &mut ViewCtx,
         prev: &Self,
-        mut element: WidgetMut<Self::Element>,
+        (): &mut Self::ViewState,
+        cx: &mut ViewCtx,
+        mut element: WidgetMut<'_, widget::Label>,
     ) {
         if prev.label != self.label {
             element.set_text(self.label.clone());
@@ -77,11 +80,14 @@ impl<State, Action> MasonryView<State, Action> for Label {
         }
     }
 
+    fn teardown(&self, (): &mut Self::ViewState, _: &mut ViewCtx, _: WidgetMut<'_, widget::Label>) {
+    }
+
     fn message(
         &self,
-        _view_state: &mut Self::ViewState,
+        (): &mut Self::ViewState,
         _id_path: &[ViewId],
-        message: Box<dyn std::any::Any>,
+        message: xilem_core::DynMessage,
         _app_state: &mut State,
     ) -> crate::MessageResult<Action> {
         tracing::error!("Message arrived in Label::message, but Label doesn't consume any messages, this is a bug");

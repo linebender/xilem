@@ -36,12 +36,14 @@ pub trait AnyView<State, Action, Context, Element: crate::ViewElement> {
         element: Element::Mut<'_>,
     );
 
-    fn dyn_teardown(
+    /// Returns `Element::Mut<'el>` so that the element can be
+    /// returned and replaced in `dyn_rebuild`, if needed
+    fn dyn_teardown<'el>(
         &self,
         dyn_state: &mut AnyViewState,
         ctx: &mut Context,
-        element: Element::Mut<'_>,
-    );
+        element: Element::Mut<'el>,
+    ) -> Element::Mut<'el>;
 
     fn dyn_message(
         &self,
@@ -96,17 +98,8 @@ where
                 });
             });
         } else {
-            // Otherwise, replace the element.
-
-            element = DynamicElement::with_downcast(element, |element| {
-                let state = dyn_state
-                    .inner_state
-                    .downcast_mut()
-                    .expect("build or rebuild always set the correct corresponding state type");
-                ctx.with_id(ViewId::new(dyn_state.generation), |ctx| {
-                    self.teardown(state, ctx, element);
-                });
-            });
+            // Otherwise, teardown the old element, then replace the value
+            element = prev.dyn_teardown(dyn_state, ctx, element);
 
             // Increase the generation, because the underlying widget has been swapped out.
             // Overflow condition: Impossible to overflow, as u64 only ever incremented by 1
@@ -118,12 +111,12 @@ where
             DynamicElement::replace_inner(element, new_element);
         }
     }
-    fn dyn_teardown(
+    fn dyn_teardown<'el>(
         &self,
         dyn_state: &mut AnyViewState,
         ctx: &mut Context,
-        element: <DynamicElement as crate::ViewElement>::Mut<'_>,
-    ) {
+        element: <DynamicElement as crate::ViewElement>::Mut<'el>,
+    ) -> <DynamicElement as crate::ViewElement>::Mut<'el> {
         let state = dyn_state
             .inner_state
             .downcast_mut()
@@ -134,7 +127,7 @@ where
             ctx.with_id(ViewId::new(dyn_state.generation), |ctx| {
                 self.teardown(state, ctx, element);
             });
-        });
+        })
     }
 
     fn dyn_message(
