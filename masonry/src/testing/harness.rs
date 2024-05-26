@@ -46,7 +46,7 @@ pub const HARNESS_DEFAULT_BACKGROUND_COLOR: Color = Color::rgb8(0x29, 0x29, 0x29
 ///
 /// - Create a harness with some widget.
 /// - Send events to the widget as if you were a user interacting with a window.
-/// (Lifecycle and layout passes are handled automatically.)
+///   (Lifecycle and layout passes are handled automatically.)
 /// - Check that the state of the widget graph matches what you expect.
 ///
 /// You can do that last part in a few different ways. You can get a [`WidgetRef`] to
