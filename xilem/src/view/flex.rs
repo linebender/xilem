@@ -80,7 +80,7 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: <Self::Element as xilem_core::ViewElement>::Mut<'_>,
+        mut element: WidgetMut<widget::Flex>,
     ) {
         if prev.axis != self.axis {
             element.set_direction(self.axis);

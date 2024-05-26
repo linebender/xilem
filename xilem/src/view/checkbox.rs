@@ -36,8 +36,8 @@ where
     type Element = Pod<widget::Checkbox>;
     type ViewState = ();
 
-    fn build(&self, cx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        cx.with_leaf_action_widget(|_| {
+    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+        ctx.with_leaf_action_widget(|_| {
             WidgetPod::new(masonry::widget::Checkbox::new(
                 self.checked,
                 self.label.clone(),
@@ -50,16 +50,16 @@ where
         &self,
         prev: &Self,
         (): &mut Self::ViewState,
-        cx: &mut ViewCtx,
+        ctx: &mut ViewCtx,
         mut element: WidgetMut<'_, widget::Checkbox>,
     ) {
         if prev.label != self.label {
             element.set_text(self.label.clone());
-            cx.mark_changed();
+            ctx.mark_changed();
         }
         if prev.checked != self.checked {
             element.set_checked(self.checked);
-            cx.mark_changed();
+            ctx.mark_changed();
         }
     }
 

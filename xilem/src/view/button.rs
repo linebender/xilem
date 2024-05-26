@@ -2,7 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::{core::View, Pod};
-use masonry::{widget, ArcStr, WidgetPod};
+use masonry::{
+    widget::{self, WidgetMut},
+    ArcStr, WidgetPod,
+};
 
 use crate::{MessageResult, ViewCtx, ViewId};
 
@@ -39,7 +42,7 @@ where
         prev: &Self,
         _: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: <Self::Element as xilem_core::ViewElement>::Mut<'_>,
+        mut element: WidgetMut<widget::Button>,
     ) {
         if prev.label != self.label {
             element.set_text(self.label.clone());

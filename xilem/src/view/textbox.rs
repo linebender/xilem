@@ -1,7 +1,11 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::{text2::TextBrush, widget, WidgetPod};
+use masonry::{
+    text2::TextBrush,
+    widget::{self, WidgetMut},
+    WidgetPod,
+};
 use xilem_core::View;
 
 use crate::{Color, MessageResult, Pod, TextAlignment, ViewCtx, ViewId};
@@ -83,7 +87,7 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<S
         prev: &Self,
         _: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: <Self::Element as xilem_core::ViewElement>::Mut<'_>,
+        mut element: WidgetMut<widget::Textbox>,
     ) {
         // Unlike the other properties, we don't compare to the previous value;
         // instead, we compare directly to the element's text. This is to handle

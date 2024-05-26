@@ -48,7 +48,7 @@ impl<State, Action> View<State, Action, ViewCtx> for Prose {
     type Element = Pod<widget::Prose>;
     type ViewState = ();
 
-    fn build(&self, _cx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+    fn build(&self, _ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let widget_pod = WidgetPod::new(
             widget::Prose::new(self.label.clone())
                 .with_text_brush(self.text_brush.clone())
@@ -61,20 +61,20 @@ impl<State, Action> View<State, Action, ViewCtx> for Prose {
         &self,
         prev: &Self,
         (): &mut Self::ViewState,
-        cx: &mut ViewCtx,
+        ctx: &mut ViewCtx,
         mut element: WidgetMut<'_, widget::Prose>,
     ) {
         if prev.label != self.label {
             element.set_text(self.label.clone());
-            cx.mark_changed();
+            ctx.mark_changed();
         }
         if prev.text_brush != self.text_brush {
             element.set_text_brush(self.text_brush.clone());
-            cx.mark_changed();
+            ctx.mark_changed();
         }
         if prev.alignment != self.alignment {
             element.set_alignment(self.alignment);
-            cx.mark_changed();
+            ctx.mark_changed();
         }
     }
 

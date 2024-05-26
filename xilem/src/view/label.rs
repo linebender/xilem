@@ -46,7 +46,7 @@ impl<State, Action> View<State, Action, ViewCtx> for Label {
     type Element = Pod<widget::Label>;
     type ViewState = ();
 
-    fn build(&self, _cx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+    fn build(&self, _ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let widget_pod = WidgetPod::new(
             widget::Label::new(self.label.clone())
                 .with_text_brush(self.text_color)
@@ -59,24 +59,24 @@ impl<State, Action> View<State, Action, ViewCtx> for Label {
         &self,
         prev: &Self,
         (): &mut Self::ViewState,
-        cx: &mut ViewCtx,
+        ctx: &mut ViewCtx,
         mut element: WidgetMut<'_, widget::Label>,
     ) {
         if prev.label != self.label {
             element.set_text(self.label.clone());
-            cx.mark_changed();
+            ctx.mark_changed();
         }
         // if prev.disabled != self.disabled {
         //     element.set_disabled(self.disabled);
-        //     cx.mark_changed();
+        //     ctx.mark_changed();
         // }
         if prev.text_color != self.text_color {
             element.set_text_brush(self.text_color);
-            cx.mark_changed();
+            ctx.mark_changed();
         }
         if prev.alignment != self.alignment {
             element.set_alignment(self.alignment);
-            cx.mark_changed();
+            ctx.mark_changed();
         }
     }
 
