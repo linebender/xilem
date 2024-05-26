@@ -395,8 +395,9 @@ where
             });
         }
         let n = self.len();
+        let prev_n = prev.len();
         #[allow(clippy::comparison_chain)]
-        if n < prev.len() {
+        if n < prev_n {
             let to_teardown = prev[n..].iter();
             // Keep the generations
             let generations = seq_state.generations[n..].iter_mut();
@@ -412,17 +413,17 @@ where
                 // We increment the generation on the "falling edge" by convention
                 *generation += 1;
             }
-        } else if n > prev.len() {
+        } else if n > prev_n {
             // If needed, create new generations
             seq_state.generations.resize(n, 0);
             elements.with_scratch(|elements| {
                 seq_state.inner_states.extend(
-                    self[n..]
+                    self[prev_n..]
                         .iter()
-                        .zip(&seq_state.generations[n..])
+                        .zip(&seq_state.generations[prev_n..])
                         .enumerate()
                         .map(|(index, (seq, generation))| {
-                            let id = create_generational_view_id(index + n, *generation);
+                            let id = create_generational_view_id(index + prev_n, *generation);
                             ctx.with_id(id, |ctx| seq.seq_build(ctx, elements))
                         }),
                 );

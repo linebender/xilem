@@ -147,14 +147,15 @@ struct FlexSplice<'w> {
 impl ElementSplice<Pod<Box<dyn Widget>>> for FlexSplice<'_> {
     fn push(&mut self, element: Pod<Box<dyn masonry::Widget>>) {
         self.element.insert_child_pod(self.ix, element.inner);
-        self.element.insert_default_spacer(self.ix);
+        // Insert a spacer after the child
+        self.element.insert_default_spacer(self.ix + 1);
         self.ix += 2;
     }
     fn with_scratch<R>(&mut self, f: impl FnOnce(&mut AppendVec<Pod<Box<dyn Widget>>>) -> R) -> R {
         let ret = f(&mut self.scratch);
         for element in self.scratch.drain() {
             self.element.insert_child_pod(self.ix, element.inner);
-            self.element.insert_default_spacer(self.ix);
+            self.element.insert_default_spacer(self.ix + 1);
             self.ix += 2;
         }
         ret
