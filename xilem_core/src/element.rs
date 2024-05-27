@@ -7,10 +7,12 @@
 ///
 /// It is expected that most libraries using `xilem_core` will have a generic
 /// implementation of this trait for their widget type.
-/// Additionally, this may also be implemented for additional types.
-/// In Xilem (the user interface library)
+/// Additionally, this may also be implemented for other types, depending on the
+/// needs of the specific parent view.
+/// In Xilem (the user interface library), this is also used for types containing the
+/// flex properties of their child views, and window properties.
 ///
-/// This does require the reference type to be reborrowable.
+// /// This does require the reference type to be reborrowable.
 ///
 /// In most cases, there will be a corresponding implementation of [`SuperElement<Self>`] for
 /// some other type.
@@ -104,7 +106,7 @@ where
     fn replace_inner(this: Self::Mut<'_>, child: Child) -> Self::Mut<'_>;
 }
 // TODO: What do we want to do here? This impl seems nice, but is it necessary?
-// It lets you trivially have sequences of types with a heterogenous element type,
+// It lets you trivially have sequences of types with a homogeneous element type,
 // but how common are those in practice?
 // It conflicts with the xilem_masonry dynamic implementation (assuming that `Box<dyn Widget>: Widget` holds)
 // impl<E: Element> SuperElement<E> for E {
