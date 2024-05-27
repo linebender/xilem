@@ -59,7 +59,7 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> {
 }
 
 fn toggleable(data: &mut AppData) -> impl WidgetView<AppData> {
-    let inner_view: AnyWidgetView<_, _> = if data.active {
+    let inner_view: Box<AnyWidgetView<_>> = if data.active {
         Box::new(
             flex((
                 button("Deactivate", |data: &mut AppData| {

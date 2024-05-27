@@ -13,11 +13,10 @@ pub use flex::*;
 mod label;
 pub use label::*;
 
-// mod memoize;
-// pub use memoize::*;
-
 mod prose;
 pub use prose::*;
 
 mod textbox;
 pub use textbox::*;
+
+pub use xilem_core::memoize;

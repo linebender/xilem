@@ -29,6 +29,9 @@ extern crate alloc;
 mod view;
 pub use view::{View, ViewId, ViewPathTracker};
 
+mod views;
+pub use views::{memoize, Memoize};
+
 mod message;
 pub use message::{DynMessage, Message, MessageResult};
 
