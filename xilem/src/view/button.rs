@@ -33,7 +33,7 @@ where
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         ctx.with_leaf_action_widget(|_| {
-            Pod::from(WidgetPod::new(widget::Button::new(self.label.clone())))
+            WidgetPod::new(widget::Button::new(self.label.clone())).into()
         })
     }
 

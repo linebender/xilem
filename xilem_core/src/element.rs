@@ -95,7 +95,7 @@ where
     ) -> (Self::Mut<'_>, R);
 }
 
-/// An element which can be used for an [`AnyView`]
+/// An element which can be used for an [`AnyView`](crate::AnyView) containing `Child`.
 pub trait AnyElement<Child>: SuperElement<Child>
 where
     Child: ViewElement,
