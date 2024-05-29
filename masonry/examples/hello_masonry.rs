@@ -8,10 +8,10 @@
 #![windows_subsystem = "windows"]
 
 use masonry::app_driver::{AppDriver, DriverCtx};
+use masonry::dpi::LogicalSize;
 use masonry::widget::{prelude::*, RootWidget};
 use masonry::widget::{Button, Flex, Label};
 use masonry::Action;
-use winit::dpi::LogicalSize;
 use winit::window::Window;
 
 const VERTICAL_WIDGET_SPACING: f64 = 20.0;

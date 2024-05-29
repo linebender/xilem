@@ -13,12 +13,12 @@ use wgpu::{
     BufferDescriptor, BufferUsages, CommandEncoderDescriptor, Extent3d, ImageCopyBuffer,
     TextureDescriptor, TextureFormat, TextureUsages,
 };
-use winit::dpi::{LogicalPosition, PhysicalPosition, PhysicalSize};
 use winit::event::{Ime, MouseButton};
 
 use super::screenshots::get_image_diff;
 use super::snapshot_utils::get_cargo_workspace;
 use crate::action::Action;
+use crate::dpi::{LogicalPosition, PhysicalPosition, PhysicalSize};
 use crate::event::{PointerEvent, PointerState, TextEvent, WindowEvent};
 use crate::event_loop_runner::try_init_tracing;
 use crate::render_root::{RenderRoot, RenderRootSignal, WindowSizePolicy};

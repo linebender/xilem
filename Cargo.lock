@@ -1723,6 +1723,7 @@ dependencies = [
  "accesskit_winit",
  "assert_matches",
  "cursor-icon",
+ "dpi",
  "float-cmp",
  "fnv",
  "futures-intrusive",

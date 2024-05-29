@@ -7,9 +7,9 @@ use accesskit::Role;
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace, trace_span, warn, Span};
 use vello::Scene;
-use winit::dpi::LogicalPosition;
 use winit::event::MouseButton;
 
+use crate::dpi::LogicalPosition;
 use crate::kurbo::Line;
 use crate::paint_scene_helpers::{fill_color, stroke};
 use crate::widget::flex::Axis;

@@ -86,6 +86,7 @@
 // TODO - Add logo
 
 pub use cursor_icon::{CursorIcon, ParseError as CursorIconParseError};
+pub use dpi;
 pub use kurbo;
 pub use parley;
 pub use vello;

@@ -4,8 +4,8 @@
 use accesskit::{NodeBuilder, NodeId};
 use tracing::{info_span, trace, warn};
 use vello::Scene;
-use winit::dpi::LogicalPosition;
 
+use crate::dpi::LogicalPosition;
 use crate::event::{AccessEvent, PointerEvent, TextEvent};
 use crate::kurbo::{Affine, Insets, Point, Rect, Shape, Size};
 use crate::paint_scene_helpers::stroke;
