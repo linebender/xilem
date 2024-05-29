@@ -3,6 +3,7 @@
 
 //! Events.
 
+use crate::dpi::{LogicalPosition, PhysicalPosition, PhysicalSize};
 use crate::kurbo::Rect;
 // TODO - See issue #14
 use crate::WidgetId;
@@ -10,7 +11,6 @@ use crate::WidgetId;
 use std::{collections::HashSet, path::PathBuf};
 
 use accesskit::{Action, ActionData};
-use winit::dpi::{LogicalPosition, PhysicalPosition, PhysicalSize};
 use winit::event::{Ime, KeyEvent, Modifiers, MouseButton};
 use winit::keyboard::ModifiersState;
 

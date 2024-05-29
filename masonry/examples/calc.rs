@@ -11,6 +11,7 @@ use std::sync::Arc;
 
 use accesskit::{DefaultActionVerb, Role};
 use masonry::app_driver::{AppDriver, DriverCtx};
+use masonry::dpi::LogicalSize;
 use masonry::widget::{Align, CrossAxisAlignment, Flex, Label, RootWidget, SizedBox, WidgetRef};
 use masonry::{
     AccessCtx, AccessEvent, Action, BoxConstraints, Color, EventCtx, LayoutCtx, LifeCycle,
@@ -20,7 +21,6 @@ use masonry::{
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace, trace_span, Span};
 use vello::Scene;
-use winit::dpi::LogicalSize;
 use winit::window::Window;
 
 #[derive(Clone)]

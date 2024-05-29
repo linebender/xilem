@@ -9,10 +9,10 @@
 #![windows_subsystem = "windows"]
 
 use masonry::app_driver::{AppDriver, DriverCtx};
+use masonry::dpi::LogicalSize;
 use masonry::widget::{FillStrat, Image, RootWidget};
 use masonry::{Action, WidgetId};
 use vello::peniko::{Format, Image as ImageBuf};
-use winit::dpi::LogicalSize;
 use winit::window::Window;
 
 struct Driver;

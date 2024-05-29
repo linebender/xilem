@@ -9,9 +9,9 @@ use std::time::Duration;
 use accesskit::{NodeBuilder, TreeUpdate};
 use parley::FontContext;
 use tracing::{trace, warn};
-use winit::dpi::LogicalPosition;
 
 use crate::action::Action;
+use crate::dpi::LogicalPosition;
 use crate::promise::PromiseToken;
 use crate::render_root::{RenderRootSignal, RenderRootState};
 use crate::text_helpers::{ImeChangeSignal, TextFieldRegistration};

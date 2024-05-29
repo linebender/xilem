@@ -12,13 +12,13 @@ use vello::util::{RenderContext, RenderSurface};
 use vello::{peniko::Color, AaSupport, RenderParams, Renderer, RendererOptions, Scene};
 use wgpu::PresentMode;
 use winit::application::ApplicationHandler;
-use winit::dpi::LogicalPosition;
 use winit::error::EventLoopError;
 use winit::event::WindowEvent as WinitWindowEvent;
 use winit::event_loop::{ActiveEventLoop, EventLoopProxy};
 use winit::window::{Window, WindowAttributes, WindowId};
 
 use crate::app_driver::{AppDriver, DriverCtx};
+use crate::dpi::LogicalPosition;
 use crate::event::{PointerState, WindowEvent};
 use crate::render_root::{self, RenderRoot, WindowSizePolicy};
 use crate::{PointerEvent, TextEvent, Widget};

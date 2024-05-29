@@ -6,13 +6,13 @@ use std::{any::Any, collections::HashMap};
 
 use masonry::{
     app_driver::AppDriver,
+    dpi::LogicalSize,
     event_loop_runner,
     widget::{RootWidget, WidgetMut},
     Widget, WidgetId, WidgetPod,
 };
 pub use masonry::{widget::Axis, Color, TextAlignment};
 use winit::{
-    dpi::LogicalSize,
     error::EventLoopError,
     window::{Window, WindowAttributes},
 };
@@ -27,6 +27,7 @@ pub use id::ViewId;
 pub use sequence::{ElementSplice, ViewSequence};
 pub use vec_splice::VecSplice;
 
+pub use masonry::dpi;
 pub use masonry::event_loop_runner::{EventLoop, EventLoopBuilder};
 
 pub struct Xilem<State, Logic, View>

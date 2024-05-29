@@ -11,11 +11,11 @@ use parley::FontContext;
 use tracing::{debug, info_span, warn};
 use vello::peniko::{Color, Fill};
 use vello::Scene;
-use winit::dpi::{LogicalPosition, LogicalSize, PhysicalSize};
 use winit::keyboard::{KeyCode, PhysicalKey};
 
 use crate::contexts::{EventCtx, LayoutCtx, LifeCycleCtx, PaintCtx, WidgetCtx, WorkerFn};
 use crate::debug_logger::DebugLogger;
+use crate::dpi::{LogicalPosition, LogicalSize, PhysicalSize};
 use crate::event::{PointerEvent, TextEvent, WindowEvent};
 use crate::kurbo::Point;
 use crate::widget::{WidgetMut, WidgetState};

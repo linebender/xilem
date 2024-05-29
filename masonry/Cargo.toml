@@ -42,6 +42,7 @@ accesskit.workspace = true
 accesskit_winit.workspace = true
 time = { version = "0.3.36", features = ["macros", "formatting"] }
 cursor-icon = "1.1.0"
+dpi.workspace = true
 
 [dev-dependencies]
 float-cmp = { version = "0.9.0", features = ["std"], default-features = false }
