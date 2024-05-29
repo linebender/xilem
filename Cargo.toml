@@ -20,6 +20,7 @@ homepage = "https://xilem.dev/"
 
 [workspace.lints]
 clippy.semicolon_if_nothing_returned = "warn"
+rust.unexpected_cfgs = { level = "warn", check-cfg = ['cfg(FALSE)', 'cfg(tarpaulin_include)'] }
 
 [workspace.dependencies]
 xilem_core = { version = "0.1.0", path = "xilem_core" }
