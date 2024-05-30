@@ -44,7 +44,7 @@ These are all just vanilla data structures. The next step is diffing or reconcil
 
 The closures are the interesting part. When they're run, they take a mutable reference to the app data.
 
-## Components
+### Components
 
 A major goal is to support React-like components, where modules that build UI for some fragment of the overall app state are composed together. 
 
@@ -65,7 +65,7 @@ fn app_logic(data: &mut AppData) -> impl View<AppData, (), Element = impl Widget
 
 This adapt node is very similar to a lens (quite familiar to existing Druid users), and is also very similar to the [Html.map] node in Elm. Note that in this case the data presented to the child component to render, and the mutable app state available in callbacks is the same, but that is not necessarily the case.
 
-## Memoization
+### Memoization
 
 In the simplest case, the app builds the entire view tree, which is diffed against the previous tree, only to find that most of it hasn't changed.
 
@@ -87,7 +87,7 @@ The combination of memoization with pointer equality and an adapt node that call
 
 I anticipate it will also be possible to do dirty tracking manually - the app logic can set a dirty flag when a subtree needs re-rendering.
 
-## Optional type erasure
+### Optional type erasure
 
 By default, view nodes are strongly typed. The type of a container includes the types of its children (through the `ViewTuple` trait), so for a large tree the type can become quite large. In addition, such types don't make for easy dynamic reconfiguration of the UI. SwiftUI has exactly this issue, and provides [AnyView] as the solution. Ours is more or less identical.
 
@@ -108,6 +108,21 @@ To install them on Debian or Ubuntu, run
 ```sh
 sudo apt-get install pkg-config clang libwayland-dev libxkbcommon-x11-dev libvulkan-dev
 ```
+
+## Project structure
+
+This diagram gives an idea what the Xilem project is built on:
+
+![docs/assets/xilem-layers.svg]
+
+On a very coarse level, Xilem is built directly on top of xilem_core and Masonry, both of which are crates in this repository.
+
+Then Masonry is built on top of:
+
+- **winit** for window creation.
+- **Vello and wgpu** for 2D graphics.
+- **Parley** for [the text stack](https://github.com/linebender/parley#the-Parley-text-stack).
+- **AccessKit** for plugging into accessibility APIs.
 
 ## License
 
