@@ -655,12 +655,11 @@ impl<W: Widget> WidgetPod<W> {
                 InternalLifeCycle::ParentWindowOrigin { mouse_pos } => {
                     self.state.parent_window_origin = parent_ctx.widget_state.window_origin();
                     self.state.needs_window_origin = false;
-                    let mouse_pos = mouse_pos.map(|pos| LogicalPosition::new(pos.x, pos.y));
                     WidgetPod::update_hot_state(
                         &mut self.inner,
                         &mut self.state,
                         parent_ctx.global_state,
-                        mouse_pos,
+                        *mouse_pos,
                     );
                     // TODO - self.state.is_hidden
                     true
