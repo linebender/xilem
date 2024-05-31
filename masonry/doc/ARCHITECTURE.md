@@ -166,3 +166,20 @@ The GlobalPassCtx types stores two timer handlers: **timers** and **mock_timer_q
 When a widget calls `request_timer` in a normal running app, a normal timer is requested from the platform. When a widget calls `request_timer` from a simulated app inside a TestHarness, mock_timer_queue is used instead.
 
 All this means you can have timer-based tests without *actually* having to sleep for the duration of the timer.
+
+
+## VS Code markers
+
+Masonry uses VS Code markers to help users browse code with the minimap:
+
+https://code.visualstudio.com/docs/getstarted/userinterface#_minimap
+
+These markers look like this:
+
+```rust
+// --- MARK: MARKER NAME ---
+```
+
+By convention, we write them in all caps with three dashes. Markers don't need to follow strict naming conventions, but their names should be a shorthand for the area of the code they're in. Names should be short enough not to overflow the VS Code minimap.
+
+Small files shouldn't have markers, except for files following a general template (widget implementations, view implementations). Generally files should have between 50 and 200 lines between markers. If a file has any markers, it should have enough split the file into distinct regions.

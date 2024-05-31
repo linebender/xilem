@@ -114,6 +114,7 @@ impl RenderRoot {
         root
     }
 
+    // --- MARK: WINDOW_EVENT ---
     pub fn handle_window_event(&mut self, event: WindowEvent) -> Handled {
         match event {
             WindowEvent::Rescale(scale_factor) => {
@@ -159,6 +160,7 @@ impl RenderRoot {
         }
     }
 
+    // --- MARK: PUB FUNCTIONS---
     pub fn handle_pointer_event(&mut self, event: PointerEvent) -> Handled {
         self.root_on_pointer_event(event)
     }
@@ -203,6 +205,7 @@ impl RenderRoot {
         self.cursor_icon
     }
 
+    // --- MARK: EDIT ROOT---
     pub fn edit_root_widget<R>(
         &mut self,
         f: impl FnOnce(WidgetMut<'_, Box<dyn Widget>>) -> R,
@@ -228,6 +231,7 @@ impl RenderRoot {
         res
     }
 
+    // --- MARK: POINTER_EVENT  ---
     fn root_on_pointer_event(&mut self, event: PointerEvent) -> Handled {
         let mut widget_state =
             WidgetState::new(self.root.id(), Some(self.get_kurbo_size()), "<root>");
@@ -276,6 +280,7 @@ impl RenderRoot {
         handled
     }
 
+    // --- MARK: TEXT_EVENT---
     fn root_on_text_event(&mut self, event: TextEvent) -> Handled {
         let mut widget_state =
             WidgetState::new(self.root.id(), Some(self.get_kurbo_size()), "<root>");
@@ -318,6 +323,7 @@ impl RenderRoot {
         handled
     }
 
+    // --- MARK: ACCESS_EVENT ---
     pub fn root_on_access_event(&mut self, event: ActionRequest) {
         let mut widget_state =
             WidgetState::new(self.root.id(), Some(self.get_kurbo_size()), "<root>");
@@ -353,6 +359,7 @@ impl RenderRoot {
         self.root.as_dyn().debug_validate(false);
     }
 
+    // --- MARK: LIFECYCLE ---
     fn root_lifecycle(&mut self, event: LifeCycle) {
         let mut widget_state =
             WidgetState::new(self.root.id(), Some(self.get_kurbo_size()), "<root>");
@@ -376,6 +383,7 @@ impl RenderRoot {
         self.post_event_processing(&mut widget_state);
     }
 
+    // --- MARK: LAYOUT ---
     pub(crate) fn root_layout(&mut self) {
         let mut widget_state =
             WidgetState::new(self.root.id(), Some(self.get_kurbo_size()), "<root>");
@@ -417,6 +425,7 @@ impl RenderRoot {
         self.post_event_processing(&mut widget_state);
     }
 
+    // --- MARK: PAINT ---
     fn root_paint(&mut self) -> Scene {
         // TODO - Handle Xilem's VIEW_CONTEXT_CHANGED
 
@@ -450,6 +459,7 @@ impl RenderRoot {
         scene
     }
 
+    // --- MARK: ACCESSIBILITY ---
     // TODO - Integrate in unit tests?
     fn root_accessibility(&mut self) -> TreeUpdate {
         let mut tree_update = TreeUpdate {
@@ -494,6 +504,7 @@ impl RenderRoot {
         kurbo::Size::new(size.width, size.height)
     }
 
+    // --- MARK: POST-EVENT ---
     fn post_event_processing(&mut self, widget_state: &mut WidgetState) {
         // If children are changed during the handling of an event,
         // we need to send RouteWidgetAdded now, so that they are ready for update/layout.

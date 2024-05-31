@@ -31,6 +31,7 @@ pub struct Align {
     height_factor: Option<f64>,
 }
 
+// --- MARK: BUILDERS ---
 impl Align {
     /// Create widget with alignment.
     ///
@@ -82,6 +83,7 @@ impl Align {
     }
 }
 
+// --- MARK: IMPL WIDGET ---
 impl Widget for Align {
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
         self.child.on_pointer_event(ctx, event);
@@ -179,6 +181,8 @@ fn log_size_warnings(size: Size) {
     }
 }
 
+// --- MARK: TESTS ---
+// --- MARK: TESTS ---
 #[cfg(test)]
 mod tests {
     use insta::assert_debug_snapshot;

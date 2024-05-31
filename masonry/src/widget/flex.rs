@@ -93,8 +93,7 @@ pub enum MainAxisAlignment {
     SpaceAround,
 }
 
-// --- Flex impl ---
-
+// --- MARK: IMPL FLEX ---
 impl Flex {
     /// Create a new Flex oriented along the provided axis.
     pub fn for_axis(axis: Axis) -> Self {
@@ -241,8 +240,7 @@ impl Flex {
     }
 }
 
-// --- Mutate live Flex - WidgetMut ---
-
+// --- MARK: WIDGETMUT---
 impl<'a> WidgetMut<'a, Flex> {
     /// Set the flex direction (see [`Axis`]).
     ///
@@ -486,6 +484,7 @@ impl<'a> WidgetMut<'a, Flex> {
     }
 }
 
+// --- MARK: IMPL WIDGET---
 impl Widget for Flex {
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
         for child in self.children.iter_mut().filter_map(|x| x.widget_mut()) {
@@ -749,8 +748,7 @@ impl Widget for Flex {
     }
 }
 
-// --- Others impls ---
-
+// --- MARK: OTHER IMPLS---
 impl Axis {
     /// Get the axis perpendicular to this one.
     pub fn cross(self) -> Axis {
@@ -1010,6 +1008,7 @@ impl Child {
     }
 }
 
+// --- MARK: TESTS ---
 #[cfg(test)]
 mod tests {
     use super::*;

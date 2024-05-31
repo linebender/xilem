@@ -57,6 +57,7 @@ pub struct SizedBox {
     corner_radius: RoundedRectRadii,
 }
 
+// --- MARK: BUILDERS ---
 impl SizedBox {
     /// Construct container with child, and both width and height not set.
     pub fn new(child: impl Widget) -> Self {
@@ -167,6 +168,7 @@ impl SizedBox {
     // TODO - child()
 }
 
+// --- MARK: WIDGETMUT ---
 impl WidgetMut<'_, SizedBox> {
     pub fn set_child(&mut self, child: impl Widget) {
         self.widget.child = Some(WidgetPod::new(child).boxed());
@@ -247,6 +249,7 @@ impl WidgetMut<'_, SizedBox> {
     }
 }
 
+// --- MARK: INTERNALS ---
 impl SizedBox {
     fn child_constraints(&self, bc: &BoxConstraints) -> BoxConstraints {
         // if we don't have a width/height, we don't change that axis.
@@ -279,6 +282,7 @@ impl SizedBox {
     }
 }
 
+// --- MARK: IMPL WIDGET ---
 impl Widget for SizedBox {
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
         if let Some(ref mut child) = self.child {
@@ -432,6 +436,7 @@ impl<Painter: FnMut(&mut PaintCtx) + 'static> From<Painter> for BackgroundBrush 
 
 // --- Tests ---
 
+// --- MARK: TESTS ---
 #[cfg(test)]
 mod tests {
     use insta::assert_debug_snapshot;

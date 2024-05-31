@@ -33,8 +33,7 @@ pub struct WidgetPod<W> {
     pub(crate) fragment: Scene,
 }
 
-// ---
-
+// --- MARK: GETTERS ---
 impl<W: Widget> WidgetPod<W> {
     /// Create a new widget pod.
     ///
@@ -187,6 +186,17 @@ impl<W: Widget> WidgetPod<W> {
     }
 }
 
+impl<W: Widget + 'static> WidgetPod<W> {
+    /// Box the contained widget.
+    ///
+    /// Convert a `WidgetPod` containing a widget of a specific concrete type
+    /// into a dynamically boxed widget.
+    pub fn boxed(self) -> WidgetPod<Box<dyn Widget>> {
+        WidgetPod::new_with_id(Box::new(self.inner), self.state.id)
+    }
+}
+
+// --- MARK: INTERNALS ---
 impl<W: Widget> WidgetPod<W> {
     // TODO - this is confusing
     #[inline(always)]
@@ -319,20 +329,8 @@ impl<W: Widget> WidgetPod<W> {
     }
 }
 
-impl<W: Widget + 'static> WidgetPod<W> {
-    /// Box the contained widget.
-    ///
-    /// Convert a `WidgetPod` containing a widget of a specific concrete type
-    /// into a dynamically boxed widget.
-    pub fn boxed(self) -> WidgetPod<Box<dyn Widget>> {
-        WidgetPod::new_with_id(Box::new(self.inner), self.state.id)
-    }
-}
-
-// --- TRAIT IMPLS ---
-
 impl<W: Widget> WidgetPod<W> {
-    /// --- ON_EVENT ---
+    /// --- MARK: ON_XXX_EVENT ---
 
     // TODO #5 - Some implicit invariants:
     // - If a Widget gets a keyboard event or an ImeStateChange, then
@@ -551,7 +549,7 @@ impl<W: Widget> WidgetPod<W> {
         parent_ctx.global_state.debug_logger.pop_span();
     }
 
-    // --- LIFECYCLE ---
+    // --- MARK: LIFECYCLE ---
 
     // TODO #5 - Some implicit invariants:
     // - A widget only receives BuildFocusChain if none of its parents are hidden.
@@ -813,7 +811,7 @@ impl<W: Widget> WidgetPod<W> {
         parent_ctx.global_state.debug_logger.pop_span();
     }
 
-    // --- LAYOUT ---
+    // --- MARK: LAYOUT ---
 
     /// Compute layout of a widget.
     ///
@@ -940,7 +938,7 @@ impl<W: Widget> WidgetPod<W> {
         }
     }
 
-    // --- PAINT ---
+    // --- MARK: PAINT ---
 
     /// Paint the widget, translating it by the origin of its layout rectangle.
     ///
@@ -1004,6 +1002,7 @@ impl<W: Widget> WidgetPod<W> {
         stroke(scene, &rect, color, BORDER_WIDTH);
     }
 
+    // --- MARK: ACCESSIBILITY ---
     pub fn accessibility(&mut self, parent_ctx: &mut AccessCtx) {
         let _span = self.inner.make_trace_span().entered();
 

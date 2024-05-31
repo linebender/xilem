@@ -34,6 +34,7 @@ pub struct Prose {
     brush: TextBrush,
 }
 
+// --- MARK: BUILDERS ---
 impl Prose {
     pub fn new(text: impl Into<ArcStr>) -> Self {
         Prose {
@@ -80,6 +81,7 @@ impl Prose {
     }
 }
 
+// --- MARK: WIDGETMUT ---
 impl WidgetMut<'_, Prose> {
     pub fn text(&self) -> &ArcStr {
         self.widget.text_layout.text()
@@ -135,6 +137,7 @@ impl WidgetMut<'_, Prose> {
     }
 }
 
+// --- MARK: IMPL WIDGET ---
 impl Widget for Prose {
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
         let window_origin = ctx.widget_state.window_origin();

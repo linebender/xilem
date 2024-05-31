@@ -40,6 +40,7 @@ pub struct ScrollBar {
     grab_anchor: Option<f64>,
 }
 
+// --- MARK: BUILDERS ---
 impl ScrollBar {
     pub fn new(axis: Axis, portal_size: f64, content_size: f64) -> Self {
         Self {
@@ -105,6 +106,7 @@ impl ScrollBar {
     }
 }
 
+// --- MARK: WIDGETMUT ---
 impl WidgetMut<'_, ScrollBar> {
     pub fn set_sizes(&mut self, portal_size: f64, content_size: f64) {
         self.widget.portal_size = portal_size;
@@ -124,8 +126,7 @@ impl WidgetMut<'_, ScrollBar> {
     }
 }
 
-// --- TRAIT IMPLS ---
-
+// --- MARK: IMPL WIDGET ---
 impl Widget for ScrollBar {
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
         match event {
@@ -233,6 +234,7 @@ impl Widget for ScrollBar {
     }
 }
 
+// --- MARK: TESTS ---
 #[cfg(test)]
 mod tests {
     use insta::assert_debug_snapshot;

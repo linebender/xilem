@@ -45,6 +45,7 @@ pub struct Split {
     child2: WidgetPod<Box<dyn Widget>>,
 }
 
+// --- MARK: BUILDERS ---
 impl Split {
     /// Create a new split panel, with the specified axis being split in two.
     ///
@@ -145,7 +146,10 @@ impl Split {
         self.solid = solid;
         self
     }
+}
 
+// --- MARK: INTERNALS ---
+impl Split {
     /// Returns the size of the splitter bar area.
     #[inline]
     fn bar_area(&self) -> f64 {
@@ -291,8 +295,9 @@ impl Split {
     }
 }
 
-// FIXME - Add unit tests for SplitMut
+// FIXME - Add unit tests for WidgetMut<Split>
 
+// --- MARK: WIDGETMUT ---
 impl WidgetMut<'_, Split> {
     /// Set the split point as a fraction of the split axis.
     ///
@@ -362,6 +367,7 @@ impl WidgetMut<'_, Split> {
     }
 }
 
+// --- MARK: IMPL WIDGET ---
 impl Widget for Split {
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
         if self.draggable {
@@ -582,6 +588,7 @@ impl Widget for Split {
     }
 }
 
+// --- MARK: TESTS ---
 #[cfg(test)]
 mod tests {
     use insta::assert_debug_snapshot;
