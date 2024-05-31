@@ -157,7 +157,7 @@ mod tests {
     use super::*;
     use crate::assert_render_snapshot;
     use crate::testing::TestHarness;
-    //use instant::Duration;
+    //use {std::time,web_time}::Duration;
 
     #[test]
     fn simple_spinner() {

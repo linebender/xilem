@@ -27,7 +27,6 @@ winit.workspace = true
 smallvec.workspace = true
 tracing.workspace = true
 fnv.workspace = true
-instant = { workspace = true, features = ["wasm-bindgen"] }
 image.workspace = true
 once_cell = "1.19.0"
 serde = { version = "1.0.200", features = ["derive"] }
@@ -43,6 +42,9 @@ accesskit_winit.workspace = true
 time = { version = "0.3.36", features = ["macros", "formatting"] }
 cursor-icon = "1.1.0"
 dpi.workspace = true
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+web-time.workspace = true
 
 [dev-dependencies]
 float-cmp = { version = "0.9.0", features = ["std"], default-features = false }
