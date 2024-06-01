@@ -8,7 +8,12 @@ use crate::{Action, Widget, WidgetId};
 
 pub struct DriverCtx<'a> {
     // TODO
-    pub(crate) main_root_widget: WidgetMut<'a, Box<dyn Widget>>,
+    // This is exposed publicly for now to let people drive
+    // masonry on their own, but this is not expected to be
+    // stable or even supported. This is for short term
+    // expedience only while better solutions are devised.
+    #[doc(hidden)]
+    pub main_root_widget: WidgetMut<'a, Box<dyn Widget>>,
 }
 
 pub trait AppDriver {
