@@ -1,10 +1,8 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::{
-    widget::{self, WidgetMut},
-    ArcStr,
-};
+use masonry::{widget, ArcStr};
+use xilem_core::Mut;
 
 use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
 
@@ -45,13 +43,13 @@ where
         })
     }
 
-    fn rebuild(
+    fn rebuild<'el>(
         &self,
         prev: &Self,
         (): &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: WidgetMut<'_, widget::Checkbox>,
-    ) {
+        mut element: Mut<'el, Pod<widget::Checkbox>>,
+    ) -> Mut<'el, Pod<widget::Checkbox>> {
         if prev.label != self.label {
             element.set_text(self.label.clone());
             ctx.mark_changed();
@@ -60,13 +58,14 @@ where
             element.set_checked(self.checked);
             ctx.mark_changed();
         }
+        element
     }
 
     fn teardown(
         &self,
         (): &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: WidgetMut<'_, widget::Checkbox>,
+        element: Mut<'_, Pod<widget::Checkbox>>,
     ) {
         ctx.teardown_leaf(element);
     }

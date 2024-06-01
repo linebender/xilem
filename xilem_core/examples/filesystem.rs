@@ -3,7 +3,9 @@
 
 use std::{io::stdin, path::PathBuf};
 
-use xilem_core::{AnyElement, AnyView, SuperElement, View, ViewElement, ViewId, ViewPathTracker};
+use xilem_core::{
+    AnyElement, AnyView, Mut, SuperElement, View, ViewElement, ViewId, ViewPathTracker,
+};
 
 #[derive(Debug)]
 enum State {
@@ -103,7 +105,7 @@ impl SuperElement<FsPath> for FsPath {
 
     fn with_downcast_val<R>(
         this: Self::Mut<'_>,
-        f: impl FnOnce(<FsPath as ViewElement>::Mut<'_>) -> R,
+        f: impl FnOnce(Mut<'_, FsPath>) -> R,
     ) -> (Self::Mut<'_>, R) {
         let ret = f(this);
         (this, ret)
@@ -155,28 +157,29 @@ impl<State, Action> View<State, Action, ViewCtx> for File {
         (path.into(), ())
     }
 
-    fn rebuild(
+    fn rebuild<'el>(
         &self,
         prev: &Self,
         _view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: <Self::Element as xilem_core::ViewElement>::Mut<'_>,
-    ) {
+        element: Mut<'el, FsPath>,
+    ) -> Mut<'el, FsPath> {
         if prev.name != self.name {
             let new_path = ctx.current_folder_path.join(&*self.name);
             let _ = std::fs::rename(&element, &new_path);
             *element = new_path;
         }
         if self.contents != prev.contents {
-            let _ = std::fs::write(element, self.contents.as_bytes());
+            let _ = std::fs::write(&element, self.contents.as_bytes());
         }
+        element
     }
 
     fn teardown(
         &self,
         _view_state: &mut Self::ViewState,
         _ctx: &mut ViewCtx,
-        element: <Self::Element as xilem_core::ViewElement>::Mut<'_>,
+        element: Mut<'_, Self::Element>,
     ) {
         let _ = std::fs::remove_file(element);
     }

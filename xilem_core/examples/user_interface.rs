@@ -6,7 +6,7 @@
 use core::any::Any;
 
 use xilem_core::{
-    DynMessage, MessageResult, SuperElement, View, ViewElement, ViewId, ViewPathTracker,
+    DynMessage, MessageResult, Mut, SuperElement, View, ViewElement, ViewId, ViewPathTracker,
 };
 
 pub fn app_logic(_: &mut u32) -> impl WidgetView<u32> {
@@ -57,21 +57,22 @@ impl<State, Action> View<State, Action, ViewCtx> for Button {
         )
     }
 
-    fn rebuild(
+    fn rebuild<'el>(
         &self,
         _prev: &Self,
         _view_state: &mut Self::ViewState,
         _ctx: &mut ViewCtx,
-        _element: <Self::Element as ViewElement>::Mut<'_>,
-    ) {
+        element: Mut<'el, WidgetPod<ButtonWidget>>,
+    ) -> Mut<'el, WidgetPod<ButtonWidget>> {
         // Nothing to do
+        element
     }
 
     fn teardown(
         &self,
         _view_state: &mut Self::ViewState,
         _ctx: &mut ViewCtx,
-        _element: <Self::Element as ViewElement>::Mut<'_>,
+        _element: Mut<'_, WidgetPod<ButtonWidget>>,
     ) {
         // Nothing to do
     }

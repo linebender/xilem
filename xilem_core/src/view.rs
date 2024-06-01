@@ -7,7 +7,7 @@ use core::ops::Deref;
 
 use alloc::{boxed::Box, sync::Arc};
 
-use crate::{message::MessageResult, DynMessage, ViewElement};
+use crate::{message::MessageResult, DynMessage, Mut, ViewElement};
 
 /// A lightweight, short-lived representation of the state of a retained
 /// structure, usually a user interface node.
@@ -50,13 +50,13 @@ pub trait View<State, Action, Context: ViewPathTracker>: 'static {
     fn build(&self, ctx: &mut Context) -> (Self::Element, Self::ViewState);
 
     /// Update `element` based on the difference between `self` and `prev`.
-    fn rebuild(
+    fn rebuild<'el>(
         &self,
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: <Self::Element as ViewElement>::Mut<'_>,
-    );
+        element: Mut<'el, Self::Element>,
+    ) -> Mut<'el, Self::Element>;
 
     /// Handle `element` being removed from the tree.
     ///
@@ -69,7 +69,7 @@ pub trait View<State, Action, Context: ViewPathTracker>: 'static {
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: <Self::Element as ViewElement>::Mut<'_>,
+        element: Mut<'_, Self::Element>,
     );
 
     /// Route `message` to `id_path`, if that is still a valid path.
@@ -133,23 +133,26 @@ impl<State, Action, Context: ViewPathTracker, V: View<State, Action, Context> + 
     fn build(&self, ctx: &mut Context) -> (Self::Element, Self::ViewState) {
         self.deref().build(ctx)
     }
-    fn rebuild(
+
+    fn rebuild<'el>(
         &self,
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: <Self::Element as ViewElement>::Mut<'_>,
-    ) {
-        self.deref().rebuild(prev, view_state, ctx, element);
+        element: Mut<'el, Self::Element>,
+    ) -> Mut<'el, Self::Element> {
+        self.deref().rebuild(prev, view_state, ctx, element)
     }
+
     fn teardown(
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: <Self::Element as ViewElement>::Mut<'_>,
+        element: Mut<'_, Self::Element>,
     ) {
         self.deref().teardown(view_state, ctx, element);
     }
+
     fn message(
         &self,
         view_state: &mut Self::ViewState,
@@ -172,25 +175,30 @@ impl<State, Action, Context: ViewPathTracker, V: View<State, Action, Context> + 
     fn build(&self, ctx: &mut Context) -> (Self::Element, Self::ViewState) {
         self.deref().build(ctx)
     }
-    fn rebuild(
+
+    fn rebuild<'el>(
         &self,
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: <Self::Element as ViewElement>::Mut<'_>,
-    ) {
+        element: Mut<'el, Self::Element>,
+    ) -> Mut<'el, Self::Element> {
         if !Arc::ptr_eq(self, prev) {
-            self.deref().rebuild(prev, view_state, ctx, element);
+            self.deref().rebuild(prev, view_state, ctx, element)
+        } else {
+            element
         }
     }
+
     fn teardown(
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: <Self::Element as ViewElement>::Mut<'_>,
+        element: Mut<'_, Self::Element>,
     ) {
         self.deref().teardown(view_state, ctx, element);
     }
+
     fn message(
         &self,
         view_state: &mut Self::ViewState,

@@ -1,11 +1,8 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::{
-    text2::TextBrush,
-    widget::{self, WidgetMut},
-};
-use xilem_core::View;
+use masonry::{text2::TextBrush, widget};
+use xilem_core::{Mut, View};
 
 use crate::{Color, MessageResult, Pod, TextAlignment, ViewCtx, ViewId};
 
@@ -80,13 +77,13 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<S
         })
     }
 
-    fn rebuild(
+    fn rebuild<'el>(
         &self,
         prev: &Self,
         _: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: WidgetMut<widget::Textbox>,
-    ) {
+        mut element: Mut<'el, Pod<widget::Textbox>>,
+    ) -> Mut<'el, Pod<widget::Textbox>> {
         // Unlike the other properties, we don't compare to the previous value;
         // instead, we compare directly to the element's text. This is to handle
         // cases like "Previous data says contents is 'fooba', user presses 'r',
@@ -107,13 +104,14 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<S
             element.set_alignment(self.alignment);
             ctx.mark_changed();
         }
+        element
     }
 
     fn teardown(
         &self,
         _: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: <Self::Element as xilem_core::ViewElement>::Mut<'_>,
+        element: Mut<'_, Pod<widget::Textbox>>,
     ) {
         ctx.teardown_leaf(element);
     }

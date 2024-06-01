@@ -7,7 +7,7 @@ use masonry::{
     widget::{self, Axis, CrossAxisAlignment, MainAxisAlignment, WidgetMut},
     Widget,
 };
-use xilem_core::{AppendVec, ElementSplice, View, ViewSequence};
+use xilem_core::{AppendVec, ElementSplice, Mut, View, ViewSequence};
 
 use crate::{Pod, ViewCtx};
 
@@ -75,13 +75,13 @@ where
         (Pod::new(widget), seq_state)
     }
 
-    fn rebuild(
+    fn rebuild<'el>(
         &self,
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: WidgetMut<widget::Flex>,
-    ) {
+        mut element: Mut<'el, Pod<widget::Flex>>,
+    ) -> Mut<'el, Pod<widget::Flex>> {
         if prev.axis != self.axis {
             element.set_direction(self.axis);
             ctx.mark_changed();
@@ -102,24 +102,25 @@ where
         let mut splice = FlexSplice {
             // Skip the initial spacer which is always present
             ix: 1,
-            element,
+            element: &mut element,
             scratch: AppendVec::default(),
         };
         self.sequence
             .seq_rebuild(&prev.sequence, view_state, ctx, &mut splice);
         debug_assert!(splice.scratch.into_inner().is_empty());
+        element
     }
 
     fn teardown(
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: <Self::Element as xilem_core::ViewElement>::Mut<'_>,
+        mut element: Mut<'_, Pod<widget::Flex>>,
     ) {
         let mut splice = FlexSplice {
             // Skip the initial spacer which is always present
             ix: 1,
-            element,
+            element: &mut element,
             scratch: AppendVec::default(),
         };
         self.sequence.seq_teardown(view_state, ctx, &mut splice);
@@ -138,13 +139,13 @@ where
     }
 }
 
-struct FlexSplice<'w> {
+struct FlexSplice<'f, 'w> {
     ix: usize,
-    element: WidgetMut<'w, widget::Flex>,
+    element: &'f mut WidgetMut<'w, widget::Flex>,
     scratch: AppendVec<Pod<Box<dyn Widget>>>,
 }
 
-impl ElementSplice<Pod<Box<dyn Widget>>> for FlexSplice<'_> {
+impl<'f> ElementSplice<Pod<Box<dyn Widget>>> for FlexSplice<'f, '_> {
     fn insert(&mut self, element: Pod<Box<dyn masonry::Widget>>) {
         self.element.insert_child_pod(self.ix, element.inner);
         // Insert a spacer after the child
