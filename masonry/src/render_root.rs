@@ -4,14 +4,17 @@
 use std::collections::VecDeque;
 
 use accesskit::{ActionRequest, NodeBuilder, Tree, TreeUpdate};
-// Automatically defaults to std::time::Instant on non Wasm platforms
-use instant::Instant;
 use kurbo::Affine;
 use parley::FontContext;
 use tracing::{debug, info_span, warn};
 use vello::peniko::{Color, Fill};
 use vello::Scene;
 use winit::keyboard::{KeyCode, PhysicalKey};
+
+#[cfg(not(target_arch = "wasm32"))]
+use std::time::Instant;
+#[cfg(target_arch = "wasm32")]
+use web_time::Instant;
 
 use crate::contexts::{EventCtx, LayoutCtx, LifeCycleCtx, PaintCtx, WidgetCtx, WorkerFn};
 use crate::debug_logger::DebugLogger;

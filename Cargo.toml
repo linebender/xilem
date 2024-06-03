@@ -36,7 +36,7 @@ smallvec = "1.13.2"
 dpi = "0.1.1"
 fnv = "1.0.7"
 image = { version = "0.25.1", default-features = false }
-instant = "0.1.12"
+web-time = "1.1.0"
 bitflags = "2.5.0"
 accesskit = "0.14.0"
 accesskit_winit = "0.20.0"
