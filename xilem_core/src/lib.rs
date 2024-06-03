@@ -13,6 +13,7 @@
 <!-- TODO: If the alloc feature is disabled, this link doesn't resolve -->
 [`alloc`]: alloc
 [`View`]: crate::View
+[`memoize`]: memoize
 
 <style>
 .rustdoc-hidden { display: none; }

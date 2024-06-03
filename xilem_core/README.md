@@ -23,6 +23,22 @@
 
 </div>
 
+Xilem Core provides primitives which are used by [Xilem][] (a cross-platform GUI toolkit). <!-- and Xilem Web (a web frontend framework) -->
+If you are using Xilem, [its documentation][xilem docs] will probably be more helpful for you. <!-- TODO: In the long-term, we probably also need a book? -->
+
+Xilem apps will interact with some of the functions from this crate, in particular [`memoize`][].
+Xilem apps which use custom widgets (and therefore must implement custom views), will implement the [`View`][] trait.
+
+If you wish to implement the Xilem pattern in a different domain (such as for a terminal user interface), this crate can be used to do so.
+
+## Hot reloading
+
+Xilem Core does not currently include infrastructure to enable hot reloading, but this is planned.
+The current proposal would split the application into two processes:
+
+ - The app process, which contains the app state and create the views, which would be extremely lightweight and can be recompiled and restarted quickly.
+ - The display process, which contains the widgets and would be long-lived, updating to match the new state of the view tree provided by the app process.
+
 ## Quickstart
 
 ## no_std support
@@ -47,7 +63,7 @@ Contributions are welcome by pull request. The [Rust code of conduct][] applies.
 
 ## License
 
-* Licensed under the Apache License, Version 2.0
+- Licensed under the Apache License, Version 2.0
   ([LICENSE] or <http://www.apache.org/licenses/LICENSE-2.0>)
 
 </div>
@@ -55,3 +71,7 @@ Contributions are welcome by pull request. The [Rust code of conduct][] applies.
 [rust code of conduct]: https://www.rust-lang.org/policies/code-of-conduct
 
 [LICENSE]: LICENSE
+[Xilem]: https://crates.io/crates/xilem
+[xilem docs]: https://docs.rs/xilem/latest/xilem/
+[`memoize`]: https://docs.rs/xilem_core/latest/xilem_core/views/memoize/fn.memoize.html
+[`View`]: https://docs.rs/xilem_core/latest/xilem_core/view/trait.View.html
