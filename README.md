@@ -21,7 +21,29 @@ This repo contains an experimental architecture, implemented with a toy UI. At a
 
 Discussion of Xilem development happens in the [Xi Zulip](https://xi.zulipchat.com/), specifically the [#xilem stream](https://xi.zulipchat.com/#narrow/stream/354396-xilem). All public content can be read without logging in
 
-## Overall program flow
+## Project structure
+
+This diagram gives an idea what the Xilem project is built on:
+
+![docs/assets/xilem-layers.svg]
+
+On a very coarse level, Xilem is built directly on top of xilem_core and Masonry, both of which are crates in this repository.
+
+Then Masonry is built on top of:
+
+- **winit** for window creation.
+- **Vello and wgpu** for 2D graphics.
+- **Parley** for [the text stack](https://github.com/linebender/parley#the-Parley-text-stack).
+- **AccessKit** for plugging into accessibility APIs.
+
+## Architecture
+
+See [ARCHITECTURE.md](./ARCHITECTURE.md) for details.
+
+<!--- TODO: This needs a serious refactor.
+This section should not be in the main README. -->
+
+### Overall program flow
 
 > **Warning:**
 >
@@ -69,21 +91,8 @@ This adapt node is very similar to a lens (quite familiar to existing Druid user
 
 In the simplest case, the app builds the entire view tree, which is diffed against the previous tree, only to find that most of it hasn't changed.
 
-When a subtree is a pure function of some data, as is the case for the button above, it makes sense to *memoize.* The data is compared to the previous version, and only when it's changed is the view tree build. The signature of the memoize node is nearly identical to [Html.lazy] in Elm:
-
-```rust
-fn app_logic(data: &mut AppData) -> impl View<AppData, (), Element = impl Widget> {
-    Memoize::new(data.count, |count| {
-        Button::new(format!("count: {}", count), |data: &mut AppData| {
-            data.count += 1
-        })
-    }),
-}
-```
-
-The current code uses a `PartialEq` bound, but in practice I think it might be much more useful to use pointer equality on `Rc` and `Arc`.
-
-The combination of memoization with pointer equality and an adapt node that calls [Rc::make_mut] on the parent type is actually a powerful form of change tracking, similar in scope to Adapton, self-adjusting computation, or the types of binding objects used in SwiftUI. If a piece of data is rendered in two different places, it automatically propagates the change to both of those, without having to do any explicit management of the dependency graph.
+When a subtree is a pure function of some data, as is the case for the button above, it makes sense to *memoize.* The data is compared to the previous version, and only when it's changed is the view tree build. The signature of the memoize node is nearly identical to [Html.lazy] in Elm:hide the underlying type/implementation details?
+With the concrete type it e.g. also hastype is actually a powerful form of change tracking, similar in scope to Adapton, self-adjusting computation, or the types of binding objects used in SwiftUI. If a piece of data is rendered in two different places, it automatically propagates the change to both of those, without having to do any explicit management of the dependency graph.
 
 I anticipate it will also be possible to do dirty tracking manually - the app logic can set a dirty flag when a subtree needs re-rendering.
 
@@ -108,21 +117,6 @@ To install them on Debian or Ubuntu, run
 ```sh
 sudo apt-get install pkg-config clang libwayland-dev libxkbcommon-x11-dev libvulkan-dev
 ```
-
-## Project structure
-
-This diagram gives an idea what the Xilem project is built on:
-
-![docs/assets/xilem-layers.svg]
-
-On a very coarse level, Xilem is built directly on top of xilem_core and Masonry, both of which are crates in this repository.
-
-Then Masonry is built on top of:
-
-- **winit** for window creation.
-- **Vello and wgpu** for 2D graphics.
-- **Parley** for [the text stack](https://github.com/linebender/parley#the-Parley-text-stack).
-- **AccessKit** for plugging into accessibility APIs.
 
 ## License
 
