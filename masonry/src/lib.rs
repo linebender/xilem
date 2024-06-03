@@ -3,7 +3,7 @@
 
 //! A framework that aims to provide the foundation for Rust GUI libraries.
 //!
-//! Masonry gives you a platform to create windows (using Glazier as a backend) each with a tree of widgets. It also gives you tools to inspect that widget tree at runtime, write unit tests on it, and generally have an easier time debugging and maintaining your app.
+//! Masonry gives you a platform to create windows (using [winit] as a backend) each with a tree of widgets. It also gives you tools to inspect that widget tree at runtime, write unit tests on it, and generally have an easier time debugging and maintaining your app.
 //!
 //! The framework is not opinionated about what your user-facing abstraction will be: you can implement immediate-mode GUI, the Elm architecture, functional reactive GUI, etc, on top of Masonry.
 //!
@@ -11,32 +11,27 @@
 //!
 //! ## Example
 //!
-//! **(TODO: FIX THIS EXAMPLE)**
-//! The todo-list example looks like this:
+//! The to-do-list example looks like this:
 //!
-//! ```ignore
-//! use masonry::widget::{prelude::*, TextBox};
-//! use masonry::widget::{Button, Flex, Label, Portal, WidgetMut};
-//! use masonry::Action;
-//! use masonry::{AppDelegate, AppLauncher, DelegateCtx, WindowDescription, WindowId};
+//! ```
+//! use masonry::app_driver::{AppDriver, DriverCtx};
+//! use masonry::dpi::LogicalSize;
+//! use masonry::widget::{Button, Flex, Label, Portal, RootWidget, Textbox, WidgetMut};
+//! use masonry::{Action, WidgetId};
+//! use winit::window::Window;
 //!
 //! const VERTICAL_WIDGET_SPACING: f64 = 20.0;
 //!
-//! struct Delegate {
+//! struct Driver {
 //!     next_task: String,
 //! }
 //!
-//! impl AppDelegate for Delegate {
-//!     fn on_action(
-//!         &mut self,
-//!         ctx: &mut DelegateCtx,
-//!         _window_id: WindowId,
-//!         _widget_id: WidgetId,
-//!         action: Action,
-//!     ) {
+//! impl AppDriver for Driver {
+//!     fn on_action(&mut self, ctx: &mut DriverCtx<'_>, _widget_id: WidgetId, action: Action) {
 //!         match action {
 //!             Action::ButtonPressed => {
-//!                 let mut root: WidgetMut<Portal<Flex>> = ctx.get_root();
+//!                 let mut root: WidgetMut<RootWidget<Portal<Flex>>> = ctx.get_root();
+//!                 let mut root = root.get_element();
 //!                 let mut flex = root.child_mut();
 //!                 flex.add_child(Label::new(self.next_task.clone()));
 //!             }
@@ -49,30 +44,36 @@
 //! }
 //!
 //! fn main() {
-//!     // The main button with some space below, all inside a scrollable area.
-//!     let root_widget = Portal::new(
+//!     let main_widget = Portal::new(
 //!         Flex::column()
 //!             .with_child(
 //!                 Flex::row()
-//!                     .with_child(TextBox::new(""))
+//!                     .with_flex_child(Textbox::new(""), 1.0)
 //!                     .with_child(Button::new("Add task")),
 //!             )
 //!             .with_spacer(VERTICAL_WIDGET_SPACING),
 //!     );
 //!
-//!     let main_window = WindowDescription::new(root_widget)
-//!         .title("To-do list")
-//!         .window_size((400.0, 400.0));
+//!     let window_size = LogicalSize::new(400.0, 400.0);
+//!     let window_attributes = Window::default_attributes()
+//!         .with_title("To-do list")
+//!         .with_resizable(true)
+//!         .with_min_inner_size(window_size);
 //!
-//!     AppLauncher::with_window(main_window)
-//!         .with_delegate(Delegate {
+//!     # return;
+//!     masonry::event_loop_runner::run(
+//!         masonry::event_loop_runner::EventLoop::with_user_event(),
+//!         window_attributes,
+//!         RootWidget::new(main_widget),
+//!         Driver {
 //!             next_task: String::new(),
-//!         })
-//!         .log_to_console()
-//!         .launch()
-//!         .expect("Failed to launch application");
+//!         },
+//!     )
+//!     .unwrap();
 //! }
 //! ```
+//!
+//! [winit]: https://crates.io/crates/winit
 
 #![deny(unsafe_code, clippy::trivially_copy_pass_by_ref)]
 // #![deny(rustdoc::broken_intra_doc_links)]

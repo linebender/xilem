@@ -9,9 +9,8 @@
 
 use masonry::app_driver::{AppDriver, DriverCtx};
 use masonry::dpi::LogicalSize;
-use masonry::widget::{prelude::*, RootWidget};
-use masonry::widget::{Button, Flex, Label};
-use masonry::Action;
+use masonry::widget::{Button, Flex, Label, RootWidget};
+use masonry::{Action, WidgetId};
 use winit::window::Window;
 
 const VERTICAL_WIDGET_SPACING: f64 = 20.0;
@@ -32,6 +31,15 @@ impl AppDriver for Driver {
 }
 
 pub fn main() {
+    let label = Label::new("Hello").with_text_size(32.0);
+    let button = Button::new("Say hello");
+
+    // Arrange the two widgets vertically, with some padding
+    let main_widget = Flex::column()
+        .with_child(label)
+        .with_spacer(VERTICAL_WIDGET_SPACING)
+        .with_child(button);
+
     let window_size = LogicalSize::new(400.0, 400.0);
     let window_attributes = Window::default_attributes()
         .with_title("Hello World!")
@@ -41,21 +49,8 @@ pub fn main() {
     masonry::event_loop_runner::run(
         masonry::event_loop_runner::EventLoop::with_user_event(),
         window_attributes,
-        RootWidget::new(build_root_widget()),
+        RootWidget::new(main_widget),
         Driver,
     )
     .unwrap();
-}
-
-fn build_root_widget() -> impl Widget {
-    let label = Label::new("Hello").with_text_size(32.0);
-
-    // a button that says "hello"
-    let button = Button::new("Say hello");
-
-    // arrange the two widgets vertically, with some padding
-    Flex::column()
-        .with_child(label)
-        .with_spacer(VERTICAL_WIDGET_SPACING)
-        .with_child(button)
 }

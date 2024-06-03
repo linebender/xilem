@@ -848,6 +848,7 @@ impl<W: Widget> WidgetPod<W> {
         self.state.needs_accessibility_update = true;
 
         bc.debug_check(self.inner.short_type_name());
+        trace!("Computing layout with constraints {:?}", bc);
 
         self.state.local_paint_rect = Rect::ZERO;
 

@@ -8,7 +8,7 @@ use parley::{
     style::{FontFamily, FontStack},
 };
 use smallvec::SmallVec;
-use tracing::trace;
+use tracing::{trace, trace_span, Span};
 use vello::{
     peniko::{BlendMode, Color},
     Scene,
@@ -324,6 +324,10 @@ impl Widget for Textbox {
 
     fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
         SmallVec::new()
+    }
+
+    fn make_trace_span(&self) -> Span {
+        trace_span!("Textbox")
     }
 
     fn get_debug_text(&self) -> Option<String> {
