@@ -1,9 +1,14 @@
 [package]
 name = "xilem_core"
 version = "0.1.0"
+description = "Common core of the Xilem Rust UI framework."
+keywords = ["xilem", "ui", "reactive", "performance"]
+categories = ["gui"]
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
+
+publish = false # We'll publish this alongside Xilem 0.2
 
 [dependencies]
 

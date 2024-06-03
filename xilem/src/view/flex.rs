@@ -145,7 +145,7 @@ struct FlexSplice<'w> {
 }
 
 impl ElementSplice<Pod<Box<dyn Widget>>> for FlexSplice<'_> {
-    fn push(&mut self, element: Pod<Box<dyn masonry::Widget>>) {
+    fn insert(&mut self, element: Pod<Box<dyn masonry::Widget>>) {
         self.element.insert_child_pod(self.ix, element.inner);
         // Insert a spacer after the child
         self.element.insert_default_spacer(self.ix + 1);

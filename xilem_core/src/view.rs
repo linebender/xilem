@@ -39,7 +39,11 @@ use crate::{message::MessageResult, DynMessage, ViewElement};
 pub trait View<State, Action, Context: ViewPathTracker>: 'static {
     /// The element type which this view operates on.
     type Element: ViewElement;
-    /// The state needed for this view to route messages to the correct child view.
+    /// State that is used over the lifetime of the retained representation of the view.
+    ///
+    /// This often means routing information for messages to child views or view sequences,
+    /// to avoid sending outdated views.
+    /// This is also used in [`memoize`](crate::memoize) to store the previously constructed view.
     type ViewState;
 
     /// Create the corresponding Element value.

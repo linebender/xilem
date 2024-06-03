@@ -12,8 +12,6 @@
 /// In Xilem (the user interface library), this is also used for types containing the
 /// flex properties of their child views, and window properties.
 ///
-// /// This does require the reference type to be reborrowable.
-///
 /// In most cases, there will be a corresponding implementation of [`SuperElement<Self>`] for
 /// some other type.
 /// This will be the generic form of this type, which is used for the implementation of [`AnyView`].
@@ -29,31 +27,6 @@ pub trait ViewElement {
     /// This enables greater flexibility in the use of the traits, such as
     /// for reference types which contain access to parent state.
     type Mut<'a>;
-    /* /// Perform a reborrowing access to the reference type, which allows re-using the reference
-    /// even if it gets passed to another function.
-    ///
-    /// This is the more general form of [`with_reborrow`](ViewElement::with_reborrow).
-    /// See its documentation for more details.
-    fn with_reborrow_val<R: 'static>(
-        this: Self::Mut<'_>,
-        f: impl FnOnce(Self::Mut<'_>) -> R,
-    ) -> (Self::Mut<'_>, R);
-
-    /// Perform a reborrowing access to the reference type, which allows re-using the reference
-    /// even if it gets passed to another function.
-    ///
-    /// The closure accepts a second parameter of type `&()` because of rustc issue [#49601].
-    /// In this case, the diagnostic is probably incorrect.
-    /// When calling this function, you can safely ignore this parameter (i.e. `|element, _| {...}`).
-    ///
-    /// If you need to get a return value from the .
-    /// Unfortunately, it isn't possible to abstract over reborrowing without a closure or equivalent.
-    ///
-    /// [#49601](https://github.com/rust-lang/rust/issues/49601)
-    fn with_reborrow(this: Self::Mut<'_>, f: impl FnOnce(Self::Mut<'_>)) -> Self::Mut<'_> {
-        let (this, ()) = Self::with_reborrow_val(this, f);
-        this
-    } */
 }
 
 /// This element type is a superset of `Child`.
@@ -105,11 +78,3 @@ where
     /// Replace the inner value of this reference entirely
     fn replace_inner(this: Self::Mut<'_>, child: Child) -> Self::Mut<'_>;
 }
-// TODO: What do we want to do here? This impl seems nice, but is it necessary?
-// It lets you trivially have sequences of types with a homogeneous element type,
-// but how common are those in practice?
-// It conflicts with the xilem_masonry dynamic implementation (assuming that `Box<dyn Widget>: Widget` holds)
-// impl<E: Element> SuperElement<E> for E {
-//     fn upcast(child: E) -> Self { child }
-//     fn downcast<'a>(refm: Self::Mut<'a>) -> <E as Element>::Mut<'a> { refm }
-// }

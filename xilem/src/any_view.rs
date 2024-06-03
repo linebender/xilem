@@ -24,21 +24,6 @@ use crate::{Pod, ViewCtx};
 pub type AnyWidgetView<State, Action = ()> =
     dyn AnyView<State, Action, ViewCtx, Pod<DynWidget>> + Send + Sync;
 
-impl<W: Widget> SuperElement<Pod<W>> for Pod<Box<dyn Widget>> {
-    fn upcast(child: Pod<W>) -> Self {
-        child.inner.boxed().into()
-    }
-
-    fn with_downcast_val<R>(
-        mut this: Self::Mut<'_>,
-        f: impl FnOnce(<Pod<W> as xilem_core::ViewElement>::Mut<'_>) -> R,
-    ) -> (Self::Mut<'_>, R) {
-        let downcast = this.downcast();
-        let ret = f(downcast);
-        (this, ret)
-    }
-}
-
 impl<W: Widget> SuperElement<Pod<W>> for Pod<DynWidget> {
     fn upcast(child: Pod<W>) -> Self {
         WidgetPod::new(DynWidget {

@@ -22,8 +22,7 @@ use winit::{
     error::EventLoopError,
     window::{Window, WindowAttributes},
 };
-
-use xilem_core::{MessageResult, View, ViewElement, ViewId, ViewPathTracker};
+use xilem_core::{MessageResult, SuperElement, View, ViewElement, ViewId, ViewPathTracker};
 
 pub use masonry::dpi;
 pub use masonry::event_loop_runner::{EventLoop, EventLoopBuilder};
@@ -116,6 +115,21 @@ impl<W: Widget> From<WidgetPod<W>> for Pod<W> {
 
 impl<W: Widget> ViewElement for Pod<W> {
     type Mut<'a> = WidgetMut<'a, W>;
+}
+
+impl<W: Widget> SuperElement<Pod<W>> for Pod<Box<dyn Widget>> {
+    fn upcast(child: Pod<W>) -> Self {
+        child.inner.boxed().into()
+    }
+
+    fn with_downcast_val<R>(
+        mut this: Self::Mut<'_>,
+        f: impl FnOnce(<Pod<W> as xilem_core::ViewElement>::Mut<'_>) -> R,
+    ) -> (Self::Mut<'_>, R) {
+        let downcast = this.downcast();
+        let ret = f(downcast);
+        (this, ret)
+    }
 }
 
 pub trait WidgetView<State, Action = ()>:

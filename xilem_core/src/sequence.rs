@@ -3,6 +3,7 @@
 
 //! Support for sequences of views with a shared element type.
 
+use alloc::vec::Drain;
 use alloc::vec::Vec;
 
 use crate::{DynMessage, MessageResult, SuperElement, View, ViewElement, ViewId, ViewPathTracker};
@@ -19,7 +20,7 @@ impl<T> AppendVec<T> {
     pub fn push(&mut self, item: T) {
         self.inner.push(item);
     }
-    pub fn drain(&mut self) -> impl Iterator<Item = T> + '_ {
+    pub fn drain(&mut self) -> Drain<'_, T> {
         self.inner.drain(..)
     }
 }
@@ -61,6 +62,12 @@ impl<T> Default for AppendVec<T> {
 pub trait ViewSequence<State, Action, Context: ViewPathTracker, Element: ViewElement, Marker>:
     'static
 {
+    /// The associated state of this sequence. The main purposes of this are:
+    /// - To store generations and other data needed to avoiding routing stale messages
+    ///   to incorrect views.
+    /// - To pass on the state of child sequences, or a child View's [ViewState].
+    ///
+    /// [ViewState]: View::ViewState
     type SeqState;
 
     /// Build the associated widgets into `elements` and initialize all states.
@@ -100,9 +107,13 @@ pub trait ViewSequence<State, Action, Context: ViewPathTracker, Element: ViewEle
 /// A temporary "splice" to add, update and delete in an (ordered) sequence of elements.
 /// It is mainly intended for view sequences.
 pub trait ElementSplice<Element: ViewElement> {
+    /// Run a function with access to the associated [`AppendVec`].
+    ///
+    /// Each element [pushed](AppendVec::push) to the provided vector will be logically
+    /// [inserted](ElementSplice::insert) into `self`.
     fn with_scratch<R>(&mut self, f: impl FnOnce(&mut AppendVec<Element>) -> R) -> R;
     /// Insert a new element at the current index in the resulting collection.
-    fn push(&mut self, element: Element);
+    fn insert(&mut self, element: Element);
     /// Mutate the next existing element.
     fn mutate<R>(&mut self, f: impl FnOnce(Element::Mut<'_>) -> R) -> R;
     /// Don't make any changes to the next n existing elements.
@@ -339,7 +350,7 @@ fn view_id_to_index_generation(view_id: ViewId) -> (usize, u32) {
     (id_low_ix as usize, id_high_gen)
 }
 
-/// The implementation for an `Option` of a `ViewSequence`.
+/// The implementation for an `Vec` of a `ViewSequence`.
 ///
 /// Will mark messages which were sent to any index as stale if
 /// that index has been unused in the meantime.

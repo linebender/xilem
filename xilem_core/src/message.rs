@@ -3,8 +3,7 @@
 
 //! Message routing and type erasure primitives.
 
-use core::{any::Any, fmt::Debug};
-use std::ops::Deref;
+use core::{any::Any, fmt::Debug, ops::Deref};
 
 use alloc::boxed::Box;
 
@@ -17,8 +16,7 @@ pub enum MessageResult<Action> {
     ///
     /// This allows for sub-sections of your app to use an elm-like architecture
     Action(Action),
-    /// This event had no impact on the app state, or the impact it did have
-    /// does not require the element tree to be recreated.
+    // TODO: What does this mean?
     RequestRebuild,
     #[default]
     /// This event had no impact on the app state, or the impact it did have
@@ -47,7 +45,7 @@ pub type DynMessage = Box<dyn Message>;
 // for allocation.
 pub trait Message: 'static + Send {
     fn into_any(self: Box<Self>) -> Box<dyn Any + Send>;
-    fn as_any(&self) -> &dyn Any;
+    fn as_any(&self) -> &(dyn Any + Send);
     fn dyn_debug(&self) -> &dyn Debug;
 }
 
@@ -58,7 +56,7 @@ where
     fn into_any(self: Box<Self>) -> Box<dyn Any + Send> {
         self
     }
-    fn as_any(&self) -> &dyn Any {
+    fn as_any(&self) -> &(dyn Any + Send) {
         self
     }
     fn dyn_debug(&self) -> &dyn Debug {

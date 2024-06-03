@@ -24,7 +24,7 @@ where
 {
     const ASSERT_CONTEXTLESS_FN: () = {
         assert!(
-            std::mem::size_of::<F>() == 0,
+            core::mem::size_of::<F>() == 0,
             "
 It's not possible to use function pointers or captured context in closures,
 as this potentially messes up the logic of memoize or produces unwanted effects.
@@ -71,7 +71,7 @@ where
         cx: &mut Context,
         element: <Self::Element as ViewElement>::Mut<'_>,
     ) {
-        if std::mem::take(&mut view_state.dirty) || prev.data != self.data {
+        if core::mem::take(&mut view_state.dirty) || prev.data != self.data {
             let view = (self.child_cb)(&self.data);
             view.rebuild(&view_state.view, &mut view_state.view_state, cx, element);
             view_state.view = view;
