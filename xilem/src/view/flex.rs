@@ -5,7 +5,7 @@ use std::marker::PhantomData;
 
 use masonry::{
     widget::{self, Axis, CrossAxisAlignment, MainAxisAlignment, WidgetMut},
-    Widget, WidgetPod,
+    Widget,
 };
 use xilem_core::{AppendVec, ElementSplice, View, ViewSequence};
 
@@ -72,7 +72,7 @@ where
         for item in elements.into_inner() {
             widget = widget.with_child_pod(item.inner).with_default_spacer();
         }
-        (WidgetPod::new(widget).into(), seq_state)
+        (Pod::new(widget), seq_state)
     }
 
     fn rebuild(

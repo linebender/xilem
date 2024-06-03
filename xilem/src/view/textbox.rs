@@ -4,7 +4,6 @@
 use masonry::{
     text2::TextBrush,
     widget::{self, WidgetMut},
-    WidgetPod,
 };
 use xilem_core::View;
 
@@ -73,12 +72,11 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<S
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         ctx.with_leaf_action_widget(|_| {
-            WidgetPod::new(
+            Pod::new(
                 masonry::widget::Textbox::new(self.contents.clone())
                     .with_text_brush(self.text_brush.clone())
                     .with_text_alignment(self.alignment),
             )
-            .into()
         })
     }
 

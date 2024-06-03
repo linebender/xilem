@@ -3,7 +3,7 @@
 
 use masonry::{
     widget::{self, WidgetMut},
-    ArcStr, WidgetPod,
+    ArcStr,
 };
 
 use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
@@ -38,11 +38,10 @@ where
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         ctx.with_leaf_action_widget(|_| {
-            WidgetPod::new(masonry::widget::Checkbox::new(
+            Pod::new(masonry::widget::Checkbox::new(
                 self.checked,
                 self.label.clone(),
             ))
-            .into()
         })
     }
 

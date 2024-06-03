@@ -94,11 +94,18 @@ where
     }
 }
 
-/// A container for a [Masonry](masonry) widget to be used with xilem.
+/// A container for a [Masonry](masonry) widget to be used with Xilem.
 ///
 /// Equivalent to [`WidgetPod<W>`], but in the [`xilem`](crate) crate to work around the orphan rule.
 pub struct Pod<W: Widget> {
     pub inner: WidgetPod<W>,
+}
+
+impl<W: Widget> Pod<W> {
+    /// Create a new `Pod` for `inner`.
+    pub fn new(inner: W) -> Self {
+        Self::from(WidgetPod::new(inner))
+    }
 }
 
 impl<W: Widget> From<WidgetPod<W>> for Pod<W> {

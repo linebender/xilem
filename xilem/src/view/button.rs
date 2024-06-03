@@ -4,7 +4,7 @@
 use crate::{core::View, Pod};
 use masonry::{
     widget::{self, WidgetMut},
-    ArcStr, WidgetPod,
+    ArcStr,
 };
 
 use crate::{MessageResult, ViewCtx, ViewId};
@@ -32,9 +32,7 @@ where
     type ViewState = ();
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        ctx.with_leaf_action_widget(|_| {
-            WidgetPod::new(widget::Button::new(self.label.clone())).into()
-        })
+        ctx.with_leaf_action_widget(|_| Pod::new(widget::Button::new(self.label.clone())))
     }
 
     fn rebuild(
