@@ -25,7 +25,7 @@ Discussion of Xilem development happens in the [Xi Zulip](https://xi.zulipchat.c
 
 This diagram gives an idea what the Xilem project is built on:
 
-![docs/assets/xilem-layers.svg]
+![Xilem project layers](docs/assets/xilem-layers.svg)
 
 On a very coarse level, Xilem is built directly on top of xilem_core and Masonry, both of which are crates in this repository.
 
