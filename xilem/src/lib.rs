@@ -11,21 +11,24 @@ use masonry::{
     widget::{RootWidget, WidgetMut},
     Widget, WidgetId, WidgetPod,
 };
-pub use masonry::{widget::Axis, Color, TextAlignment};
-
-mod any_view;
-pub use any_view::AnyWidgetView;
-mod driver;
-pub mod view;
-
 use winit::{
     error::EventLoopError,
     window::{Window, WindowAttributes},
 };
 use xilem_core::{MessageResult, SuperElement, View, ViewElement, ViewId, ViewPathTracker};
 
-pub use masonry::dpi;
-pub use masonry::event_loop_runner::{EventLoop, EventLoopBuilder};
+pub use masonry::{
+    dpi,
+    event_loop_runner::{EventLoop, EventLoopBuilder},
+    widget::Axis,
+    Color, TextAlignment,
+};
+pub use xilem_core as core;
+
+mod any_view;
+pub use any_view::AnyWidgetView;
+mod driver;
+pub mod view;
 
 pub struct Xilem<State, Logic, View>
 where
