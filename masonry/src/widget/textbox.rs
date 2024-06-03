@@ -13,6 +13,7 @@ use vello::{
     peniko::{BlendMode, Color},
     Scene,
 };
+use winit::dpi::{LogicalPosition, LogicalSize};
 
 use crate::{
     text2::{TextBrush, TextEditor, TextStorage, TextWithSelection},
@@ -301,7 +302,8 @@ impl Widget for Textbox {
         self.editor
             .draw(scene, Point::new(TEXTBOX_PADDING, TEXTBOX_PADDING));
 
-        let outline_rect = ctx.size().to_rect().inset(1.0);
+        let size = ctx.size();
+        let outline_rect = size.to_rect().inset(1.0);
         scene.stroke(
             &Stroke::new(1.0),
             Affine::IDENTITY,
@@ -311,6 +313,19 @@ impl Widget for Textbox {
         );
         if self.line_break_mode == LineBreaking::Clip {
             scene.pop_layer();
+        }
+        let origin = ctx.widget_state.window_origin();
+        if ctx.widget_state.has_focus {
+            ctx.signal(crate::render_root::RenderRootSignal::ImeMoved(
+                LogicalPosition {
+                    x: origin.x,
+                    y: origin.y + size.height,
+                },
+                LogicalSize {
+                    width: size.width,
+                    height: size.height,
+                },
+            ));
         }
     }
 

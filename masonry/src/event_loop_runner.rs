@@ -119,8 +119,6 @@ impl ApplicationHandler<accesskit_winit::Event> for MainState<'_> {
 
                 let adapter = Adapter::with_event_loop_proxy(&window, self.proxy.clone());
                 window.set_visible(visible);
-                // TODO: Use signals or some other mechanism to do fine grained ime enable
-                window.set_ime_allowed(true);
                 let window = Arc::new(window);
                 let size = window.inner_size();
                 let surface = pollster::block_on(self.render_cx.create_surface(
@@ -428,23 +426,14 @@ impl MainState<'_> {
                             .on_action(&mut driver_ctx, widget_id, action);
                     });
                 }
-                render_root::RenderRootSignal::TextFieldAdded => {
-                    // TODO
+                render_root::RenderRootSignal::StartIme => {
+                    window.set_ime_allowed(true);
                 }
-                render_root::RenderRootSignal::TextFieldRemoved => {
-                    // TODO
+                render_root::RenderRootSignal::EndIme => {
+                    window.set_ime_allowed(false);
                 }
-                render_root::RenderRootSignal::TextFieldFocused => {
-                    // TODO
-                }
-                render_root::RenderRootSignal::ImeStarted => {
-                    // TODO
-                }
-                render_root::RenderRootSignal::ImeMoved => {
-                    // TODO
-                }
-                render_root::RenderRootSignal::ImeInvalidated => {
-                    // TODO
+                render_root::RenderRootSignal::ImeMoved(position, size) => {
+                    window.set_ime_cursor_area(position, size);
                 }
                 render_root::RenderRootSignal::RequestRedraw => {
                     window.request_redraw();
