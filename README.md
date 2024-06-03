@@ -91,8 +91,21 @@ This adapt node is very similar to a lens (quite familiar to existing Druid user
 
 In the simplest case, the app builds the entire view tree, which is diffed against the previous tree, only to find that most of it hasn't changed.
 
-When a subtree is a pure function of some data, as is the case for the button above, it makes sense to *memoize.* The data is compared to the previous version, and only when it's changed is the view tree build. The signature of the memoize node is nearly identical to [Html.lazy] in Elm:hide the underlying type/implementation details?
-With the concrete type it e.g. also hastype is actually a powerful form of change tracking, similar in scope to Adapton, self-adjusting computation, or the types of binding objects used in SwiftUI. If a piece of data is rendered in two different places, it automatically propagates the change to both of those, without having to do any explicit management of the dependency graph.
+When a subtree is a pure function of some data, as is the case for the button above, it makes sense to *memoize.* The data is compared to the previous version, and only when it's changed is the view tree build. The signature of the memoize node is nearly identical to [Html.lazy] in Elm:
+
+```rust
+fn app_logic(data: &mut AppData) -> impl View<AppData, (), Element = impl Widget> {
+    Memoize::new(data.count, |count| {
+        Button::new(format!("count: {}", count), |data: &mut AppData| {
+            data.count += 1
+        })
+    }),
+}
+```
+
+The current code uses a `PartialEq` bound, but in practice I think it might be much more useful to use pointer equality on `Rc` and `Arc`.
+
+The combination of memoization with pointer equality and an adapt node that calls [Rc::make_mut] on the parent type is actually a powerful form of change tracking, similar in scope to Adapton, self-adjusting computation, or the types of binding objects used in SwiftUI. If a piece of data is rendered in two different places, it automatically propagates the change to both of those, without having to do any explicit management of the dependency graph.
 
 I anticipate it will also be possible to do dirty tracking manually - the app logic can set a dirty flag when a subtree needs re-rendering.
 
