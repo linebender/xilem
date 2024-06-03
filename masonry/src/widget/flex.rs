@@ -122,16 +122,12 @@ impl Flex {
     }
 
     /// Builder-style method for specifying the childrens' [`CrossAxisAlignment`].
-    ///
-    /// [`CrossAxisAlignment`]: enum.CrossAxisAlignment.html
     pub fn cross_axis_alignment(mut self, alignment: CrossAxisAlignment) -> Self {
         self.cross_alignment = alignment;
         self
     }
 
     /// Builder-style method for specifying the childrens' [`MainAxisAlignment`].
-    ///
-    /// [`MainAxisAlignment`]: enum.MainAxisAlignment.html
     pub fn main_axis_alignment(mut self, alignment: MainAxisAlignment) -> Self {
         self.main_alignment = alignment;
         self
@@ -243,24 +239,18 @@ impl Flex {
 // --- MARK: WIDGETMUT---
 impl<'a> WidgetMut<'a, Flex> {
     /// Set the flex direction (see [`Axis`]).
-    ///
-    /// [`Axis`]: enum.Axis.html
     pub fn set_direction(&mut self, direction: Axis) {
         self.widget.direction = direction;
         self.ctx.request_layout();
     }
 
     /// Set the childrens' [`CrossAxisAlignment`].
-    ///
-    /// [`CrossAxisAlignment`]: enum.CrossAxisAlignment.html
     pub fn set_cross_axis_alignment(&mut self, alignment: CrossAxisAlignment) {
         self.widget.cross_alignment = alignment;
         self.ctx.request_layout();
     }
 
     /// Set the childrens' [`MainAxisAlignment`].
-    ///
-    /// [`MainAxisAlignment`]: enum.MainAxisAlignment.html
     pub fn set_main_axis_alignment(&mut self, alignment: MainAxisAlignment) {
         self.widget.main_alignment = alignment;
         self.ctx.request_layout();

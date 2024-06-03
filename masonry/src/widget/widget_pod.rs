@@ -79,8 +79,6 @@ impl<W: Widget> WidgetPod<W> {
     }
 
     /// Return `true` if the widget has received [`LifeCycle::WidgetAdded`].
-    ///
-    /// [`LifeCycle::WidgetAdded`]: ./enum.LifeCycle.html#variant.WidgetAdded
     pub fn is_initialized(&self) -> bool {
         !self.state.is_new
     }
@@ -122,7 +120,7 @@ impl<W: Widget> WidgetPod<W> {
     /// This rect will also be used to detect whether any given pointer event (eg clicks)
     /// intersects with the rectangle.
     ///
-    /// [`layout`]: trait.Widget.html#tymethod.layout
+    /// [`layout`]: Widget::layout
     /// [`place_child`]: LayoutCtx::place_child
     pub fn layout_rect(&self) -> Rect {
         self.state.layout_rect()
@@ -151,9 +149,8 @@ impl<W: Widget> WidgetPod<W> {
     /// A widget can set its insets by calling [`set_paint_insets`] during its
     /// [`layout`] method.
     ///
-    /// [`Insets`]: struct.Insets.html
-    /// [`set_paint_insets`]: struct.LayoutCtx.html#method.set_paint_insets
-    /// [`layout`]: trait.Widget.html#tymethod.layout
+    /// [`set_paint_insets`]: LayoutCtx::set_paint_insets
+    /// [`layout`]: Widget::layout
     pub fn paint_insets(&self) -> Insets {
         self.state.paint_insets
     }
@@ -166,8 +163,7 @@ impl<W: Widget> WidgetPod<W> {
     /// propagate a child's desired paint rect, if it extends beyond the bounds
     /// of the parent's layout rect.
     ///
-    /// [`layout`]: trait.Widget.html#tymethod.layout
-    /// [`Insets`]: struct.Insets.html
+    /// [`layout`]: Widget::layout
     pub fn compute_parent_paint_insets(&self, parent_size: Size) -> Insets {
         let parent_bounds = Rect::ZERO.with_size(parent_size);
         let union_pant_rect = self.paint_rect().union(parent_bounds);
@@ -555,8 +551,6 @@ impl<W: Widget> WidgetPod<W> {
     // - A widget only receives BuildFocusChain if none of its parents are hidden.
 
     /// Propagate a [`LifeCycle`] event.
-    ///
-    /// [`LifeCycle`]: enum.LifeCycle.html
     pub fn lifecycle(&mut self, parent_ctx: &mut LifeCycleCtx, event: &LifeCycle) {
         let _span = self.inner.make_trace_span().entered();
 
@@ -817,7 +811,7 @@ impl<W: Widget> WidgetPod<W> {
     /// Generally called by container widgets as part of their [`layout`]
     /// method.
     ///
-    /// [`layout`]: trait.Widget.html#tymethod.layout
+    /// [`layout`]: Widget::layout
     pub fn layout(&mut self, parent_ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
         let _span = self.inner.make_trace_span().entered();
 

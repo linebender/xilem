@@ -117,8 +117,8 @@ impl SizedBox {
     /// space. If you only care about expanding in one of width or height, use
     /// [`expand_width`] or [`expand_height`] instead.
     ///
-    /// [`expand_height`]: #method.expand_height
-    /// [`expand_width`]: #method.expand_width
+    /// [`expand_height`]: Self::expand_height
+    /// [`expand_width`]: Self::expand_width
     pub fn expand(mut self) -> Self {
         self.width = Some(f64::INFINITY);
         self.height = Some(f64::INFINITY);
