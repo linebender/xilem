@@ -361,7 +361,7 @@ impl MainState<'_> {
             tracing::warn!("Tried to render whilst suspended or before window created");
             return;
         };
-        let scale = window.scale_factor();
+        let scale_factor = window.scale_factor();
         let size = window.inner_size();
         let width = size.width;
         let height = size.height;
@@ -370,11 +370,11 @@ impl MainState<'_> {
             self.render_cx.resize_surface(surface, width, height);
         }
 
-        let transformed_scene = if scale == 1.0 {
+        let transformed_scene = if scale_factor == 1.0 {
             None
         } else {
             let mut new_scene = Scene::new();
-            new_scene.append(&scene, Some(Affine::scale(scale)));
+            new_scene.append(&scene, Some(Affine::scale(scale_factor)));
             Some(new_scene)
         };
         let scene_ref = transformed_scene.as_ref().unwrap_or(&scene);
