@@ -59,7 +59,7 @@ pub struct EventCtx<'a> {
 
 /// A context provided to the [`lifecycle`] method on widgets.
 ///
-/// [`lifecycle`]: trait.Widget.html#tymethod.lifecycle
+/// [`lifecycle`]: Widget::lifecycle
 pub struct LifeCycleCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a mut WidgetState,
@@ -145,7 +145,7 @@ impl_context_method!(
         /// Generally it will be the same as the size returned by the child widget's
         /// [`layout`] method.
         ///
-        /// [`layout`]: trait.Widget.html#tymethod.layout
+        /// [`layout`]: Widget::layout
         pub fn size(&self) -> Size {
             self.widget_state.size()
         }
@@ -203,15 +203,15 @@ impl_context_method!(
         /// A widget can request focus using the [`request_focus`] method.
         /// It's also possible to register for automatic focus via [`register_for_focus`].
         ///
-        /// If a widget gains or loses focus it will get a [`LifeCycle::FocusChanged`] event.
+        /// If a widget gains or loses focus it will get a [`StatusChange::FocusChanged`] event.
         ///
         /// Only one widget at a time is focused. However due to the way events are routed,
         /// all ancestors of that widget will also receive keyboard events.
         ///
-        /// [`request_focus`]: struct.EventCtx.html#method.request_focus
-        /// [`register_for_focus`]: struct.LifeCycleCtx.html#method.register_for_focus
-        /// [`LifeCycle::FocusChanged`]: enum.LifeCycle.html#variant.FocusChanged
-        /// [`has_focus`]: #method.has_focus
+        /// [`request_focus`]: EventCtx::request_focus
+        /// [`register_for_focus`]: LifeCycleCtx::register_for_focus
+        /// [`StatusChange::FocusChanged`]: crate::StatusChange::FocusChanged
+        /// [`has_focus`]: Self::has_focus
         pub fn is_focused(&self) -> bool {
             self.global_state.focused_widget == Some(self.widget_id())
         }
@@ -404,7 +404,7 @@ impl_context_method!(WidgetCtx<'_>, EventCtx<'_>, LifeCycleCtx<'_>, {
     ///
     /// Calling this method during [`LifeCycle::DisabledChanged`] has no effect.
     ///
-    /// [`LifeCycle::DisabledChanged`]: struct.LifeCycle.html#variant.DisabledChanged
+    /// [`LifeCycle::DisabledChanged`]: crate::LifeCycle::DisabledChanged
     /// [`is_disabled`]: EventCtx::is_disabled
     pub fn set_disabled(&mut self, disabled: bool) {
         // widget_state.children_disabled_changed is not set because we want to be able to delete
@@ -578,7 +578,7 @@ impl LifeCycleCtx<'_> {
     ///
     /// See [`EventCtx::is_focused`](Self::is_focused) for more information about focus.
     ///
-    /// [`LifeCycle::BuildFocusChain`]: enum.Lifecycle.html#variant.BuildFocusChain
+    /// [`LifeCycle::BuildFocusChain`]: crate::LifeCycle::BuildFocusChain
     pub fn register_for_focus(&mut self) {
         trace!("register_for_focus");
         self.widget_state.focus_chain.push(self.widget_id());
@@ -611,8 +611,7 @@ impl LayoutCtx<'_> {
     ///
     /// For more information, see [`WidgetPod::paint_insets`].
     ///
-    /// [`Insets`]: struct.Insets.html
-    /// [`WidgetPod::paint_insets`]: struct.WidgetPod.html#method.paint_insets
+    /// [`WidgetPod::paint_insets`]: crate::widget::WidgetPod::paint_insets
     pub fn set_paint_insets(&mut self, insets: impl Into<Insets>) {
         let insets = insets.into();
         trace!("set_paint_insets {:?}", insets);
