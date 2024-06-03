@@ -4,6 +4,7 @@
 use accesskit::Role;
 use kurbo::Point;
 use smallvec::SmallVec;
+use tracing::{trace_span, Span};
 use vello::Scene;
 
 use crate::widget::{WidgetMut, WidgetPod, WidgetRef};
@@ -76,5 +77,9 @@ impl<W: Widget> Widget for RootWidget<W> {
         let mut vec = SmallVec::new();
         vec.push(self.pod.as_dyn());
         vec
+    }
+
+    fn make_trace_span(&self) -> Span {
+        trace_span!("RootWidget")
     }
 }

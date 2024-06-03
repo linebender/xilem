@@ -8,7 +8,7 @@ use kurbo::{Affine, Point, Size};
 use parley::layout::Alignment;
 use parley::style::{FontFamily, FontStack};
 use smallvec::SmallVec;
-use tracing::trace;
+use tracing::{trace, trace_span, Span};
 use vello::peniko::BlendMode;
 use vello::Scene;
 
@@ -259,6 +259,10 @@ impl Widget for Label {
 
     fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
         SmallVec::new()
+    }
+
+    fn make_trace_span(&self) -> Span {
+        trace_span!("Label")
     }
 
     fn get_debug_text(&self) -> Option<String> {

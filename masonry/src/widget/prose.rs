@@ -8,7 +8,7 @@ use parley::{
     style::{FontFamily, FontStack},
 };
 use smallvec::SmallVec;
-use tracing::trace;
+use tracing::{trace, trace_span, Span};
 use vello::{peniko::BlendMode, Scene};
 
 use crate::{
@@ -293,6 +293,10 @@ impl Widget for Prose {
 
     fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
         SmallVec::new()
+    }
+
+    fn make_trace_span(&self) -> Span {
+        trace_span!("Prose")
     }
 
     fn get_debug_text(&self) -> Option<String> {

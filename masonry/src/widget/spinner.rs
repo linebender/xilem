@@ -8,7 +8,7 @@ use std::f64::consts::PI;
 use accesskit::Role;
 use kurbo::{Affine, Cap, Stroke};
 use smallvec::SmallVec;
-use tracing::trace;
+use tracing::{trace, trace_span, Span};
 use vello::Scene;
 
 use crate::kurbo::Line;
@@ -152,6 +152,10 @@ impl Widget for Spinner {
 
     fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
         SmallVec::new()
+    }
+
+    fn make_trace_span(&self) -> Span {
+        trace_span!("Spinner")
     }
 }
 

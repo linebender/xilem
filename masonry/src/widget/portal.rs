@@ -319,14 +319,9 @@ impl<W: Widget> Widget for Portal<W> {
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
+        // TODO - How Portal handles BoxConstraints is due for a rework
         let min_child_size = if self.must_fill { bc.min() } else { Size::ZERO };
-        let mut max_child_size = bc.max();
-        if !self.constrain_horizontal {
-            max_child_size.width = f64::INFINITY;
-        };
-        if !self.constrain_vertical {
-            max_child_size.height = f64::INFINITY;
-        };
+        let max_child_size = bc.max();
 
         let child_bc = BoxConstraints::new(min_child_size, max_child_size);
 
@@ -410,6 +405,10 @@ impl<W: Widget> Widget for Portal<W> {
         }
 
         ctx.current_node().set_clips_children();
+        ctx.current_node()
+            .push_child(self.scrollbar_horizontal.id().into());
+        ctx.current_node()
+            .push_child(self.scrollbar_vertical.id().into());
 
         self.child.accessibility(ctx);
         self.scrollbar_horizontal.accessibility(ctx);

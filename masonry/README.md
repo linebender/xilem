@@ -20,10 +20,73 @@ It also gives you tools to inspect that widget tree at runtime, write unit tests
 The framework is not opinionated about what your user-facing abstraction will be: you can implement immediate-mode GUI, the Elm architecture, functional reactive GUI, etc, on top of Masonry.
 See [Xilem] as an example of reactive UI built on top of Masonry.
 
-Masonry was originally a fork of [Druid] that emerged from discussions with Druid authors Raph Levien and Colin Rofls about what it would look like to turn Druid into a foundational library.
+Masonry was originally a fork of [Druid] that emerged from discussions within the Linebender community about what it would look like to turn Druid into a foundational library.
 
 Masonry can currently be considered to be in an alpha state.
 Lots of things need improvements, e.g. text input is janky and snapshot testing is not consistent across platforms.
+
+## Example
+
+The to-do-list example looks like this:
+
+```rust
+use masonry::app_driver::{AppDriver, DriverCtx};
+use masonry::dpi::LogicalSize;
+use masonry::widget::{Button, Flex, Label, Portal, RootWidget, Textbox, WidgetMut};
+use masonry::{Action, WidgetId};
+use winit::window::Window;
+
+const VERTICAL_WIDGET_SPACING: f64 = 20.0;
+
+struct Driver {
+    next_task: String,
+}
+
+impl AppDriver for Driver {
+    fn on_action(&mut self, ctx: &mut DriverCtx<'_>, _widget_id: WidgetId, action: Action) {
+        match action {
+            Action::ButtonPressed => {
+                let mut root: WidgetMut<RootWidget<Portal<Flex>>> = ctx.get_root();
+                let mut root = root.get_element();
+                let mut flex = root.child_mut();
+                flex.add_child(Label::new(self.next_task.clone()));
+            }
+            Action::TextChanged(new_text) => {
+                self.next_task = new_text.clone();
+            }
+            _ => {}
+        }
+    }
+}
+
+fn main() {
+    let main_widget = Portal::new(
+        Flex::column()
+            .with_child(
+                Flex::row()
+                    .with_flex_child(Textbox::new(""), 1.0)
+                    .with_child(Button::new("Add task")),
+            )
+            .with_spacer(VERTICAL_WIDGET_SPACING),
+    );
+
+    let window_size = LogicalSize::new(400.0, 400.0);
+    let window_attributes = Window::default_attributes()
+        .with_title("To-do list")
+        .with_resizable(true)
+        .with_min_inner_size(window_size);
+
+    masonry::event_loop_runner::run(
+        masonry::event_loop_runner::EventLoop::with_user_event(),
+        window_attributes,
+        RootWidget::new(main_widget),
+        Driver {
+            next_task: String::new(),
+        },
+    )
+    .unwrap();
+}
+```
 
 ## Community
 
