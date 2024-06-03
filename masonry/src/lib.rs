@@ -7,7 +7,7 @@
 //!
 //! The framework is not opinionated about what your user-facing abstraction will be: you can implement immediate-mode GUI, the Elm architecture, functional reactive GUI, etc, on top of Masonry.
 //!
-//! This project was originally was originally a fork of Druid that emerged from discussions I had with Raph Levien and Colin Rofls about what it would look like to turn Druid into a foundational library.
+//! Masonry was originally a fork of [Druid] that emerged from discussions within the Linebender community about what it would look like to turn Druid into a foundational library.
 //!
 //! ## Example
 //!
@@ -74,6 +74,7 @@
 //! ```
 //!
 //! [winit]: https://crates.io/crates/winit
+//! [Druid]: https://crates.io/crates/druid
 
 #![deny(unsafe_code, clippy::trivially_copy_pass_by_ref)]
 // #![deny(rustdoc::broken_intra_doc_links)]

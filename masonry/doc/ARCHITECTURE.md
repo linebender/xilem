@@ -1,5 +1,7 @@
 # ARCHITECTURE
 
+**Note - The crate was migrated from the `PoignardAzur/masonry` repository and ported to work with winit. A lot of stuff was changed during that port and all the documentation wasn't updated. some of this might be outdated.**
+
 Masonry is a framework that aims to provide the foundation for Rust GUI libraries.
 
 Developers trying to write immediate-mode GUIs, Elm-architecture GUIs, functional reactive GUIs, etc, can import Masonry and get a platform to create windows (using Glazier as a backend) each with a tree of widgets. Each widget has to implement the Widget trait that Masonry provides.
@@ -20,17 +22,17 @@ Masonry has some opinionated design goals:
 
 ## Code layout
 
-### `src/platform/`
-
-Some platform-specific stuff, for interfacing with Glazier. Relatively empty.
-
 ### `src/testing/`
 
 Contains the TestHarness type, various helper widgets for writing tests, and the snapshot testing code.
 
+### `src/text2/`
+
+Contains text-handling code, for both displaying and editing text. Has been overhauled during the port to winit, but still in rough shape. Here be dragons.
+
 ### `src/text/`
 
-Contains text-handling code, for both displaying and editing text. Hasn't been maintained in a while, here be dragons.
+Dead code, should probably be cleaned up.
 
 ### `src/widget/`
 
@@ -38,13 +40,13 @@ Contains widget-related items, including the Widget trait, and the WidgetRef, Wi
 
 Also includes a list of basic widgets, each defined in a single file.
 
-### `src/app_root.rs`
+### `src/render_root.rs`
 
 The composition root of the framework. See **General architecture** section.
 
 ### `src/debug_logger.rs`, `src/debug_values.rs`
 
-WIP logger to get record of widget passes. See issue #11.
+WIP logger to get record of widget passes. See issue #11 in masonry repo.
 
 ## Module organization principles
 
@@ -79,42 +81,22 @@ Masonry should have no prelude. Examples and documentation should deliberately h
 
 ### Platform handlers
 
-The composition root of Masonry is **AppRoot** and indirectly **AppRootInner** and **WindowRoot**. They are used by **MasonryWinHandler** and **MasonryAppHandler**. AppRoot, AppRootInner, and WindowRoot are in `src/app_root.rs`, MasonryWinHandler and MasonryAppHandler are in `src/platform/win_handler.rs`.
+The composition roots of Masonry are:
 
-In more detail:
+- **RenderRoot**
+- The **AppDriver** trait.
+- The **run_with** function in `event_loop_runner.rs`.
 
-- **AppRootInner** is the real composition root. There is only a single one for any Masonry program. It calls WindowRoot methods in response to various events.
-- **AppRoot** is the publicly exported root. It only owns a`Rc<RefCell<AppRootInner>>` and its methods mostly just do locking and call AppRootInner methods.
-- Each window open by Glazier owns a **MasonryWinHandler**, which implements `glazier::WinHandler`. Each MasonryWinHandler holds an AppRoot.
-- The global application managed by Glazier owns a **MasonryAppHandler** which implements `glazier::AppHandler`. That MasonryAppHandler holds an AppRoot. These types are almost exclusively used in MacOS apps.
-- AppRootInner owns a collection of **WindowRoot**. Each of them stores the Masonry data (widget tree, event data, other metadata) of a single window.
-
-To summarize, an application with N open windows will have:
-
-- N instances of MasonryWinHandler.
-- 1 instance of MasonryAppHandler.
-- N + 1 instances of AppRoot, which are shared references to...
-- 1 instance of AppRootInner, which stores a vec of...
-- N instances of WindowRoot.
-
-Additionally, each WindowRoot also stores a **WindowHandle**, which is a lightweight reference to the data structure created by Glazier to represent the window's platform-specific data (eg resource descriptors, rendering surface, etc).
+TODO - Explain in more detail.
 
 The high-level control flow of a Masonry app's render loop is usually:
 
-- The platform library (windows, x11, gtk, etc) runs some callbacks written in Glazier in response to user interactions, timers, or other events.
+- The platform library (windows, macos, x11, etc) runs some callbacks written in Winit in response to user interactions, timers, or other events.
 - The callbacks call MasonryWinHandler methods.
 - Each method calls a single AppRoot method.
 - That method calls some AppRootInner method.
 - AppRootInner does a bunch of bookkeeping and calls WindowRoot methods.
 - WindowRoot does a bunch of bookkeeping and calls the root WidgetPod's on_event/lifecycle/layout/paint methods.
-
-#### WindowConfig vs WindowDescription vs WindowBuilder
-
-WindowConfig, WindowDescription, and WindowBuilder have similar names and similar roles, so it might be a bit hard to tell them apart. A quick primer:
-
-- **WindowConfig** includes a bunch of window-specific metadata. Things like the window size, whether it's maximized, etc. That is used when creating the window, and also to update it.
-- **WindowDescription** is WindowConfig plus some Masonry-specific data, such as a WidgetPod of the root widget. It's only used when creating a new window.
-- **WindowBuilder** is a type exported by Glazier. When creating a new window, you first instantiate a WindowBuilder and give it config options as well as a type-erased instance of the MasonryWinHandler that will get events for that window.
 
 
 ### Widget hierarchy and passes
@@ -127,7 +109,7 @@ Currently, container Widgets are encouraged to call pass methods on each of thei
 
 The current passes are:
 
-- **on_event:** Handles UX-related events, eg user interactions, timers, and IME updates. Widgets can declare these events as "handled" which has a bunch of semantic implications.
+- **on_xxx_event:** Handles UX-related events, eg user interactions, timers, and IME updates. Widgets can declare these events as "handled" which has a bunch of semantic implications. Right now this pass is split between "cursor events" (eg mouse stuff) and "text events" (eg IME, keyboard stuff).
 - **on_status_change:** TODO.
 - **lifecycle:** Handles internal events, eg when the widget is marked as "disabled".
 - **layout:** Given size constraints, return the widget's size. Container widgets first call their children's layout method, then set the position and layout date of each child.

@@ -68,9 +68,8 @@ pub trait Widget: AsAny {
     /// Handle an event - usually user interaction.
     ///
     /// A number of different events (in the [`Event`] enum) are handled in this
-    /// method call. A widget can handle these events in a number of ways:
-    /// requesting things from the [`EventCtx`], mutating the data, or submitting
-    /// a [`Command`](crate::Command).
+    /// method call. A widget can handle these events in a number of ways, such as
+    /// requesting things from the [`EventCtx`] or mutating the data.
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent);
     fn on_text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent);
 
