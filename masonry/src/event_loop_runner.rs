@@ -259,6 +259,10 @@ impl ApplicationHandler<accesskit_winit::Event> for MainState<'_> {
                 self.render_root
                     .handle_text_event(TextEvent::FocusChange(new_focus));
             }
+            WinitWindowEvent::CursorEntered { .. } => {
+                self.render_root
+                    .handle_pointer_event(PointerEvent::PointerEnter(self.pointer_state.clone()));
+            }
             WinitWindowEvent::CursorMoved { position, .. } => {
                 self.pointer_state.physical_position = position;
                 self.pointer_state.position = position.to_logical(window.scale_factor());
