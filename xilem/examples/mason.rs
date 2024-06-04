@@ -37,7 +37,8 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> {
             label("Label")
                 .color(Color::REBECCA_PURPLE)
                 .alignment(TextAlignment::Start),
-            // label("Disabled label").disabled(), TODO masonry doesn't allow setting disabled manually anymore?
+            // TODO masonry doesn't allow setting disabled manually anymore?
+            // label("Disabled label").disabled(),
         ))
         .direction(Axis::Horizontal),
         textbox(
