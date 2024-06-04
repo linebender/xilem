@@ -13,13 +13,13 @@ use wgpu::{
     BufferDescriptor, BufferUsages, CommandEncoderDescriptor, Extent3d, ImageCopyBuffer,
     TextureDescriptor, TextureFormat, TextureUsages,
 };
-use winit::event::{Ime, MouseButton};
+use winit::event::Ime;
 
 use super::screenshots::get_image_diff;
 use super::snapshot_utils::get_cargo_workspace;
 use crate::action::Action;
 use crate::dpi::{LogicalPosition, PhysicalPosition, PhysicalSize};
-use crate::event::{PointerEvent, PointerState, TextEvent, WindowEvent};
+use crate::event::{PointerButton, PointerEvent, PointerState, TextEvent, WindowEvent};
 use crate::event_loop_runner::try_init_tracing;
 use crate::render_root::{RenderRoot, RenderRootSignal, WindowSizePolicy};
 use crate::widget::{WidgetMut, WidgetRef};
@@ -351,13 +351,13 @@ impl TestHarness {
     }
 
     /// Send a MouseDown event to the window.
-    pub fn mouse_button_press(&mut self, button: MouseButton) {
+    pub fn mouse_button_press(&mut self, button: PointerButton) {
         self.mouse_state.buttons.insert(button);
         self.process_pointer_event(PointerEvent::PointerDown(button, self.mouse_state.clone()));
     }
 
     /// Send a MouseUp event to the window.
-    pub fn mouse_button_release(&mut self, button: MouseButton) {
+    pub fn mouse_button_release(&mut self, button: PointerButton) {
         self.mouse_state.buttons.remove(&button);
         self.process_pointer_event(PointerEvent::PointerUp(button, self.mouse_state.clone()));
     }
@@ -379,8 +379,8 @@ impl TestHarness {
         let widget_center = widget_rect.center();
 
         self.mouse_move(widget_center);
-        self.mouse_button_press(MouseButton::Left);
-        self.mouse_button_release(MouseButton::Left);
+        self.mouse_button_press(PointerButton::Primary);
+        self.mouse_button_release(PointerButton::Primary);
     }
 
     /// Use [`mouse_move`](Self::mouse_move) to set the internal mouse pos to the center of the given widget.

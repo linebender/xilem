@@ -7,9 +7,9 @@ use accesskit::Role;
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace, trace_span, warn, Span};
 use vello::Scene;
-use winit::event::MouseButton;
 
 use crate::dpi::LogicalPosition;
+use crate::event::PointerButton;
 use crate::kurbo::Line;
 use crate::paint_scene_helpers::{fill_color, stroke};
 use crate::widget::flex::Axis;
@@ -372,7 +372,7 @@ impl Widget for Split {
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
         if self.draggable {
             match event {
-                PointerEvent::PointerDown(MouseButton::Left, state) => {
+                PointerEvent::PointerDown(PointerButton::Primary, state) => {
                     if self.bar_hit_test(ctx.size(), state.position) {
                         ctx.set_handled();
                         ctx.set_active(true);
@@ -391,7 +391,7 @@ impl Widget for Split {
                         }
                     }
                 }
-                PointerEvent::PointerUp(MouseButton::Left, state) => {
+                PointerEvent::PointerUp(PointerButton::Primary, state) => {
                     if ctx.is_active() {
                         ctx.set_handled();
                         ctx.set_active(false);

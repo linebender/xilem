@@ -13,15 +13,31 @@ use vello::{peniko::Color, AaSupport, RenderParams, Renderer, RendererOptions, S
 use wgpu::PresentMode;
 use winit::application::ApplicationHandler;
 use winit::error::EventLoopError;
-use winit::event::WindowEvent as WinitWindowEvent;
+use winit::event::{MouseButton as WinitMouseButton, WindowEvent as WinitWindowEvent};
 use winit::event_loop::{ActiveEventLoop, EventLoopProxy};
 use winit::window::{Window, WindowAttributes, WindowId};
 
 use crate::app_driver::{AppDriver, DriverCtx};
 use crate::dpi::LogicalPosition;
-use crate::event::{PointerState, WindowEvent};
+use crate::event::{PointerButton, PointerState, WindowEvent};
 use crate::render_root::{self, RenderRoot, WindowSizePolicy};
 use crate::{PointerEvent, TextEvent, Widget};
+
+impl From<WinitMouseButton> for PointerButton {
+    fn from(button: WinitMouseButton) -> Self {
+        match button {
+            WinitMouseButton::Left => PointerButton::Primary,
+            WinitMouseButton::Right => PointerButton::Secondary,
+            WinitMouseButton::Middle => PointerButton::Auxiliary,
+            WinitMouseButton::Back => PointerButton::X1,
+            WinitMouseButton::Forward => PointerButton::X2,
+            WinitMouseButton::Other(other) => {
+                warn!("Got winit MouseButton::Other({other}) which is not yet fully supported.");
+                PointerButton::Other
+            }
+        }
+    }
+}
 
 pub enum WindowState<'a> {
     Uninitialized(WindowAttributes),
@@ -257,14 +273,14 @@ impl ApplicationHandler<accesskit_winit::Event> for MainState<'_> {
                 winit::event::ElementState::Pressed => {
                     self.render_root
                         .handle_pointer_event(PointerEvent::PointerDown(
-                            button,
+                            button.into(),
                             self.pointer_state.clone(),
                         ));
                 }
                 winit::event::ElementState::Released => {
                     self.render_root
                         .handle_pointer_event(PointerEvent::PointerUp(
-                            button,
+                            button.into(),
                             self.pointer_state.clone(),
                         ));
                 }
@@ -299,14 +315,14 @@ impl ApplicationHandler<accesskit_winit::Event> for MainState<'_> {
                             ));
                         self.render_root
                             .handle_pointer_event(PointerEvent::PointerDown(
-                                winit::event::MouseButton::Left,
+                                PointerButton::Primary,
                                 self.pointer_state.clone(),
                             ));
                     }
                     winit::event::TouchPhase::Ended => {
                         self.render_root
                             .handle_pointer_event(PointerEvent::PointerUp(
-                                winit::event::MouseButton::Left,
+                                PointerButton::Primary,
                                 self.pointer_state.clone(),
                             ));
                     }

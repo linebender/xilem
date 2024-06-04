@@ -12,10 +12,9 @@ use parley::FontContext;
 use unicode_segmentation::{GraphemeCursor, UnicodeSegmentation};
 use vello::peniko::{Brush, Color};
 use vello::Scene;
-use winit::event::MouseButton;
 use winit::keyboard::NamedKey;
 
-use crate::event::PointerState;
+use crate::event::{PointerButton, PointerState};
 use crate::{Handled, TextEvent};
 
 use super::{TextBrush, TextLayout, TextStorage};
@@ -61,10 +60,10 @@ impl<T: Selectable> TextWithSelection<T> {
         &mut self,
         origin: Point,
         state: &PointerState,
-        button: MouseButton,
+        button: PointerButton,
     ) -> bool {
         // TODO: work out which button is the primary button?
-        if button == MouseButton::Left {
+        if button == PointerButton::Primary {
             self.selecting_with_mouse = true;
             self.needs_selection_update = true;
             // TODO: Much of this juggling seems unnecessary
@@ -90,8 +89,8 @@ impl<T: Selectable> TextWithSelection<T> {
         }
     }
 
-    pub fn pointer_up(&mut self, _origin: Point, _state: &PointerState, button: MouseButton) {
-        if button == MouseButton::Left {
+    pub fn pointer_up(&mut self, _origin: Point, _state: &PointerState, button: PointerButton) {
+        if button == PointerButton::Primary {
             self.selecting_with_mouse = false;
         }
     }
