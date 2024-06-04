@@ -2,9 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use assert_matches::assert_matches;
-use winit::event::MouseButton;
 
-use crate::event::{PointerEvent, PointerState};
+use crate::event::{PointerButton, PointerEvent, PointerState};
 use crate::testing::{widget_ids, Record, Recording, TestHarness, TestWidgetExt as _};
 use crate::widget::{Button, Flex, Label, SizedBox};
 use crate::*;
@@ -233,7 +232,7 @@ fn get_pointer_events_while_active() {
     // We press the button
 
     harness.mouse_move_to(button);
-    harness.mouse_button_press(MouseButton::Left);
+    harness.mouse_button_press(PointerButton::Primary);
 
     assert_matches!(
         next_pointer_event(&button_rec),
@@ -277,7 +276,7 @@ fn get_pointer_events_while_active() {
 
     // We release the button
 
-    harness.mouse_button_release(MouseButton::Left);
+    harness.mouse_button_release(PointerButton::Primary);
 
     assert_matches!(
         next_pointer_event(&button_rec),

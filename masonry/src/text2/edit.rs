@@ -7,11 +7,14 @@ use kurbo::Point;
 use parley::FontContext;
 use vello::Scene;
 use winit::{
-    event::{Ime, MouseButton},
+    event::Ime,
     keyboard::{Key, NamedKey},
 };
 
-use crate::{event::PointerState, Action, EventCtx, Handled, TextEvent};
+use crate::{
+    event::{PointerButton, PointerState},
+    Action, EventCtx, Handled, TextEvent,
+};
 
 use super::{
     offset_for_delete_backwards,
@@ -92,7 +95,7 @@ impl<T: EditableText> TextEditor<T> {
         &mut self,
         origin: Point,
         state: &PointerState,
-        button: MouseButton,
+        button: PointerButton,
     ) -> bool {
         // TODO: If we have a selection and we're hovering over it,
         // implement (optional?) click and drag

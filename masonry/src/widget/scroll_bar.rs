@@ -238,10 +238,10 @@ impl Widget for ScrollBar {
 #[cfg(test)]
 mod tests {
     use insta::assert_debug_snapshot;
-    use winit::event::MouseButton;
 
     use super::*;
     use crate::assert_render_snapshot;
+    use crate::event::PointerButton;
     use crate::testing::{widget_ids, TestHarness, TestWidgetExt};
 
     #[test]
@@ -262,7 +262,7 @@ mod tests {
 
         assert_render_snapshot!(harness, "scrollbar_middle");
 
-        harness.mouse_button_press(MouseButton::Left);
+        harness.mouse_button_press(PointerButton::Primary);
         harness.mouse_move(Point::new(30.0, 150.0));
 
         assert_render_snapshot!(harness, "scrollbar_down");
