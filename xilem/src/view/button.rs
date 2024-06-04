@@ -38,8 +38,8 @@ where
         prev: &Self,
         _: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: Mut<'el, Pod<widget::Button>>,
-    ) -> Mut<'el, Pod<widget::Button>> {
+        mut element: Mut<'el, Self::Element>,
+    ) -> Mut<'el, Self::Element> {
         if prev.label != self.label {
             element.set_text(self.label.clone());
             ctx.mark_changed();
@@ -51,7 +51,7 @@ where
         &self,
         _: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<'_, Pod<widget::Button>>,
+        element: Mut<'_, Self::Element>,
     ) {
         ctx.teardown_leaf(element);
     }

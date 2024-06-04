@@ -80,8 +80,8 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: Mut<'el, Pod<widget::Flex>>,
-    ) -> Mut<'el, Pod<widget::Flex>> {
+        mut element: Mut<'el, Self::Element>,
+    ) -> Mut<'el, Self::Element> {
         if prev.axis != self.axis {
             element.set_direction(self.axis);
             ctx.mark_changed();
@@ -115,7 +115,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: Mut<'_, Pod<widget::Flex>>,
+        mut element: Mut<'_, Self::Element>,
     ) {
         let mut splice = FlexSplice {
             // Skip the initial spacer which is always present

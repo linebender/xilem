@@ -162,8 +162,8 @@ impl<State, Action> View<State, Action, ViewCtx> for File {
         prev: &Self,
         _view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<'el, FsPath>,
-    ) -> Mut<'el, FsPath> {
+        element: Mut<'el, Self::Element>,
+    ) -> Mut<'el, Self::Element> {
         if prev.name != self.name {
             let new_path = ctx.current_folder_path.join(&*self.name);
             let _ = std::fs::rename(&element, &new_path);

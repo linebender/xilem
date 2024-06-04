@@ -100,8 +100,8 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut TestCx,
-        element: Mut<'el, TestElement>,
-    ) -> Mut<'el, TestElement> {
+        element: Mut<'el, Self::Element>,
+    ) -> Mut<'el, Self::Element> {
         let mut elements = SeqTracker {
             inner: element.children.as_mut().unwrap(),
             ix: 0,
@@ -116,7 +116,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut TestCx,
-        element: Mut<'_, TestElement>,
+        element: Mut<'_, Self::Element>,
     ) {
         let mut elements = SeqTracker {
             inner: element.children.as_mut().unwrap(),
@@ -159,8 +159,8 @@ impl<const N: u32> View<(), Action, TestCx> for OperationView<N> {
         prev: &Self,
         _: &mut Self::ViewState,
         ctx: &mut TestCx,
-        element: Mut<'el, TestElement>,
-    ) -> Mut<'el, TestElement> {
+        element: Mut<'el, Self::Element>,
+    ) -> Mut<'el, Self::Element> {
         assert_eq!(&*element.view_path, ctx.view_path());
         element.operations.push(Operation::Rebuild {
             from: prev.0,
@@ -169,7 +169,7 @@ impl<const N: u32> View<(), Action, TestCx> for OperationView<N> {
         element
     }
 
-    fn teardown(&self, _: &mut Self::ViewState, ctx: &mut TestCx, element: Mut<'_, TestElement>) {
+    fn teardown(&self, _: &mut Self::ViewState, ctx: &mut TestCx, element: Mut<'_, Self::Element>) {
         assert_eq!(&*element.view_path, ctx.view_path());
         element.operations.push(Operation::Teardown(self.0));
     }

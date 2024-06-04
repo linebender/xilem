@@ -58,8 +58,8 @@ impl<State, Action> View<State, Action, ViewCtx> for Label {
         prev: &Self,
         (): &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: Mut<'el, Pod<widget::Label>>,
-    ) -> Mut<'el, Pod<widget::Label>> {
+        mut element: Mut<'el, Self::Element>,
+    ) -> Mut<'el, Self::Element> {
         if prev.label != self.label {
             element.set_text(self.label.clone());
             ctx.mark_changed();
@@ -79,7 +79,7 @@ impl<State, Action> View<State, Action, ViewCtx> for Label {
         element
     }
 
-    fn teardown(&self, (): &mut Self::ViewState, _: &mut ViewCtx, _: Mut<'_, Pod<widget::Label>>) {}
+    fn teardown(&self, (): &mut Self::ViewState, _: &mut ViewCtx, _: Mut<'_, Self::Element>) {}
 
     fn message(
         &self,

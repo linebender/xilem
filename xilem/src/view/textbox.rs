@@ -82,8 +82,8 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<S
         prev: &Self,
         _: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: Mut<'el, Pod<widget::Textbox>>,
-    ) -> Mut<'el, Pod<widget::Textbox>> {
+        mut element: Mut<'el, Self::Element>,
+    ) -> Mut<'el, Self::Element> {
         // Unlike the other properties, we don't compare to the previous value;
         // instead, we compare directly to the element's text. This is to handle
         // cases like "Previous data says contents is 'fooba', user presses 'r',
@@ -111,7 +111,7 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<S
         &self,
         _: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<'_, Pod<widget::Textbox>>,
+        element: Mut<'_, Self::Element>,
     ) {
         ctx.teardown_leaf(element);
     }

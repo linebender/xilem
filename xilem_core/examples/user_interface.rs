@@ -62,8 +62,8 @@ impl<State, Action> View<State, Action, ViewCtx> for Button {
         _prev: &Self,
         _view_state: &mut Self::ViewState,
         _ctx: &mut ViewCtx,
-        element: Mut<'el, WidgetPod<ButtonWidget>>,
-    ) -> Mut<'el, WidgetPod<ButtonWidget>> {
+        element: Mut<'el, Self::Element>,
+    ) -> Mut<'el, Self::Element> {
         // Nothing to do
         element
     }
@@ -72,7 +72,7 @@ impl<State, Action> View<State, Action, ViewCtx> for Button {
         &self,
         _view_state: &mut Self::ViewState,
         _ctx: &mut ViewCtx,
-        _element: Mut<'_, WidgetPod<ButtonWidget>>,
+        _element: Mut<'_, Self::Element>,
     ) {
         // Nothing to do
     }

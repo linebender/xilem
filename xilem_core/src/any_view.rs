@@ -83,8 +83,8 @@ where
         dyn_state: &mut AnyViewState,
         ctx: &mut Context,
         prev: &dyn AnyView<State, Action, Context, DynamicElement>,
-        mut element: Mut<'el, DynamicElement>,
-    ) -> Mut<'el, DynamicElement> {
+        mut element: DynamicElement::Mut<'el>,
+    ) -> DynamicElement::Mut<'el> {
         if let Some(prev) = prev.as_any().downcast_ref() {
             // If we were previously of this type, then do a normal rebuild
             DynamicElement::with_downcast(element, |element| {
@@ -115,8 +115,8 @@ where
         &self,
         dyn_state: &mut AnyViewState,
         ctx: &mut Context,
-        element: Mut<'el, DynamicElement>,
-    ) -> Mut<'el, DynamicElement> {
+        element: DynamicElement::Mut<'el>,
+    ) -> DynamicElement::Mut<'el> {
         let state = dyn_state
             .inner_state
             .downcast_mut()
@@ -180,8 +180,8 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<'el, Element>,
-    ) -> Mut<'el, Element> {
+        element: Mut<'el, Self::Element>,
+    ) -> Mut<'el, Self::Element> {
         self.dyn_rebuild(view_state, ctx, prev, element)
     }
 
@@ -189,7 +189,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<'_, Element>,
+        element: Mut<'_, Self::Element>,
     ) {
         self.dyn_teardown(view_state, ctx, element);
     }
@@ -226,8 +226,8 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<'el, Element>,
-    ) -> Mut<'el, Element> {
+        element: Mut<'el, Self::Element>,
+    ) -> Mut<'el, Self::Element> {
         self.dyn_rebuild(view_state, ctx, prev, element)
     }
 
@@ -235,7 +235,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<'_, Element>,
+        element: Mut<'_, Self::Element>,
     ) {
         self.dyn_teardown(view_state, ctx, element);
     }
@@ -271,8 +271,8 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<'el, Element>,
-    ) -> Mut<'el, Element> {
+        element: Mut<'el, Self::Element>,
+    ) -> Mut<'el, Self::Element> {
         self.dyn_rebuild(view_state, ctx, prev, element)
     }
 
@@ -280,7 +280,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<'_, Element>,
+        element: Mut<'_, Self::Element>,
     ) {
         self.dyn_teardown(view_state, ctx, element);
     }
@@ -316,8 +316,8 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<'el, Element>,
-    ) -> Mut<'el, Element> {
+        element: Mut<'el, Self::Element>,
+    ) -> Mut<'el, Self::Element> {
         self.dyn_rebuild(view_state, ctx, prev, element)
     }
 
@@ -325,7 +325,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<'_, Element>,
+        element: Mut<'_, Self::Element>,
     ) {
         self.dyn_teardown(view_state, ctx, element);
     }
