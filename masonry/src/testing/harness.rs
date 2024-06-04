@@ -369,7 +369,7 @@ impl TestHarness {
 
     /// Send a [`PointerUp`](PointerEvent::PointerUp) event to the window.
     pub fn mouse_button_release(&mut self, button: PointerButton) {
-        self.mouse_state.buttons.remove(&button);
+        self.mouse_state.buttons.remove(button);
         self.process_pointer_event(PointerEvent::PointerUp(button, self.mouse_state.clone()));
     }
 

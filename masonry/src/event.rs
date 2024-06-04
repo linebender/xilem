@@ -8,7 +8,7 @@ use crate::kurbo::Rect;
 // TODO - See issue https://github.com/linebender/xilem/issues/367
 use crate::WidgetId;
 
-use std::{collections::HashSet, path::PathBuf};
+use std::path::PathBuf;
 
 use winit::event::{Force, Ime, KeyEvent, Modifiers};
 use winit::keyboard::ModifiersState;
@@ -47,6 +47,137 @@ pub enum PointerButton {
     X2,
     /// Other mouse button. This isn't fleshed out yet.
     Other,
+}
+
+/// A set of [`PointerButton`]s.
+#[derive(PartialEq, Eq, Clone, Copy, Default)]
+pub struct PointerButtons(u8);
+
+fn button_bit(button: PointerButton) -> u8 {
+    match button {
+        PointerButton::None => 0,
+        PointerButton::Primary => 0b1,
+        PointerButton::Secondary => 0b10,
+        PointerButton::Auxiliary => 0b100,
+        PointerButton::X1 => 0b1000,
+        PointerButton::X2 => 0b10000,
+        // TODO: When we properly do `Other`, this changes
+        PointerButton::Other => 0b100000,
+    }
+}
+
+impl PointerButtons {
+    /// Create a new empty set.
+    #[inline]
+    pub fn new() -> PointerButtons {
+        PointerButtons(0)
+    }
+
+    /// Add the `button` to the set.
+    #[inline]
+    pub fn insert(&mut self, button: PointerButton) {
+        self.0 |= button_bit(button);
+    }
+
+    /// Remove the `button` from the set.
+    #[inline]
+    pub fn remove(&mut self, button: PointerButton) {
+        self.0 &= !button_bit(button);
+    }
+
+    /// Returns `true` if the `button` is in the set.
+    #[inline]
+    pub fn contains(self, button: PointerButton) -> bool {
+        (self.0 & button_bit(button)) != 0
+    }
+
+    /// Returns `true` if the set is empty.
+    #[inline]
+    pub fn is_empty(self) -> bool {
+        self.0 == 0
+    }
+
+    /// Returns `true` if all the `buttons` are in the set.
+    #[inline]
+    pub fn contains_all(self, buttons: PointerButtons) -> bool {
+        self.0 & buttons.0 == buttons.0
+    }
+
+    /// Adds all the `buttons` to the set.
+    pub fn extend(&mut self, buttons: PointerButtons) {
+        self.0 |= buttons.0;
+    }
+
+    /// Clear the set.
+    #[inline]
+    pub fn clear(&mut self) {
+        self.0 = 0;
+    }
+
+    /// Count the number of pressed buttons in the set.
+    #[inline]
+    pub fn count(self) -> u32 {
+        self.0.count_ones()
+    }
+}
+
+impl std::fmt::Debug for PointerButtons {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        let mut tuple = f.debug_tuple("PointerButtons");
+        if self.contains(PointerButton::Primary) {
+            tuple.field(&"Primary");
+        }
+        if self.contains(PointerButton::Secondary) {
+            tuple.field(&"Secondary");
+        }
+        if self.contains(PointerButton::Auxiliary) {
+            tuple.field(&"Auxiliary");
+        }
+        if self.contains(PointerButton::X1) {
+            tuple.field(&"X1");
+        }
+        if self.contains(PointerButton::X2) {
+            tuple.field(&"X2");
+        }
+        if self.contains(PointerButton::Other) {
+            tuple.field(&"Other");
+        }
+        tuple.finish()
+    }
+}
+
+impl std::fmt::Binary for PointerButtons {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        std::fmt::Binary::fmt(&self.0, f)
+    }
+}
+
+impl std::ops::BitOr for PointerButton {
+    type Output = PointerButtons;
+
+    fn bitor(self, rhs: Self) -> Self::Output {
+        PointerButtons(button_bit(self) | button_bit(rhs))
+    }
+}
+
+impl std::ops::BitOr<PointerButton> for PointerButtons {
+    type Output = Self;
+
+    fn bitor(self, rhs: PointerButton) -> Self {
+        Self(self.0 | button_bit(rhs))
+    }
+}
+
+impl std::ops::BitOrAssign<PointerButton> for PointerButtons {
+    fn bitor_assign(&mut self, rhs: PointerButton) {
+        self.0 |= button_bit(rhs);
+    }
+}
+
+impl From<PointerButton> for PointerButtons {
+    fn from(button: PointerButton) -> Self {
+        Self(button_bit(button))
+    }
 }
 
 // TODO - How can RenderRoot express "I started a drag-and-drop op"?
@@ -91,7 +222,7 @@ pub struct PointerState {
     // pub device_id: DeviceId,
     pub physical_position: PhysicalPosition<f64>,
     pub position: LogicalPosition<f64>,
-    pub buttons: HashSet<PointerButton>,
+    pub buttons: PointerButtons,
     pub mods: Modifiers,
     pub count: u8,
     pub focus: bool,
