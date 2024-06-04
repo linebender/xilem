@@ -7,13 +7,13 @@
 //!
 //! This is an integration test so that it can use the infrastructure in [`common`].
 
-mod common;
 use std::sync::Arc;
-
-use common::*;
 use xilem_core::{MessageResult, View};
 
-pub fn record_ops(id: u32) -> OperationView<0> {
+mod common;
+use common::*;
+
+fn record_ops(id: u32) -> OperationView<0> {
     OperationView(id)
 }
 

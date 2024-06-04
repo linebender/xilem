@@ -9,6 +9,7 @@ use alloc::vec::Vec;
 use crate::{DynMessage, MessageResult, SuperElement, View, ViewElement, ViewId, ViewPathTracker};
 
 /// An append only `Vec`.
+#[derive(Debug)]
 pub struct AppendVec<T> {
     inner: Vec<T>,
 }
