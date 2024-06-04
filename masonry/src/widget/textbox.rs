@@ -13,9 +13,9 @@ use vello::{
     peniko::{BlendMode, Color},
     Scene,
 };
-use winit::dpi::{LogicalPosition, LogicalSize};
 
 use crate::{
+    dpi::{LogicalPosition, LogicalSize},
     text2::{TextBrush, TextEditor, TextStorage, TextWithSelection},
     AccessCtx, AccessEvent, BoxConstraints, CursorIcon, EventCtx, LayoutCtx, LifeCycle,
     LifeCycleCtx, PaintCtx, PointerEvent, StatusChange, TextEvent, Widget,
