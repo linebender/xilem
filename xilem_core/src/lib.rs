@@ -44,3 +44,7 @@ pub use any_view::AnyView;
 
 mod sequence;
 pub use sequence::{AppendVec, ElementSplice, ViewSequence};
+
+/// This alias is syntax sugar to avoid the elaborate expansion of
+/// `<Self::Element as ViewElement>::Mut<'el>` in the View trait when implementing it (e.g. via rust-analyzer)
+pub type Mut<'el, E> = <E as ViewElement>::Mut<'el>;

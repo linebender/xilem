@@ -95,13 +95,13 @@ where
         )
     }
 
-    fn rebuild(
+    fn rebuild<'el>(
         &self,
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut TestCx,
-        element: <Self::Element as ViewElement>::Mut<'_>,
-    ) {
+        element: Mut<'el, Self::Element>,
+    ) -> Mut<'el, Self::Element> {
         let mut elements = SeqTracker {
             inner: element.children.as_mut().unwrap(),
             ix: 0,
@@ -109,13 +109,14 @@ where
         };
         self.seq
             .seq_rebuild(&prev.seq, &mut view_state.0, ctx, &mut elements);
+        element
     }
 
     fn teardown(
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut TestCx,
-        element: <Self::Element as ViewElement>::Mut<'_>,
+        element: Mut<'_, Self::Element>,
     ) {
         let mut elements = SeqTracker {
             inner: element.children.as_mut().unwrap(),
@@ -153,26 +154,22 @@ impl<const N: u32> View<(), Action, TestCx> for OperationView<N> {
         )
     }
 
-    fn rebuild(
+    fn rebuild<'el>(
         &self,
         prev: &Self,
         _: &mut Self::ViewState,
         ctx: &mut TestCx,
-        element: <Self::Element as ViewElement>::Mut<'_>,
-    ) {
+        element: Mut<'el, Self::Element>,
+    ) -> Mut<'el, Self::Element> {
         assert_eq!(&*element.view_path, ctx.view_path());
         element.operations.push(Operation::Rebuild {
             from: prev.0,
             to: self.0,
         });
+        element
     }
 
-    fn teardown(
-        &self,
-        _: &mut Self::ViewState,
-        ctx: &mut TestCx,
-        element: <Self::Element as ViewElement>::Mut<'_>,
-    ) {
+    fn teardown(&self, _: &mut Self::ViewState, ctx: &mut TestCx, element: Mut<'_, Self::Element>) {
         assert_eq!(&*element.view_path, ctx.view_path());
         element.operations.push(Operation::Teardown(self.0));
     }
@@ -199,7 +196,7 @@ impl SuperElement<TestElement> for TestElement {
 
     fn with_downcast_val<R>(
         this: Self::Mut<'_>,
-        f: impl FnOnce(<TestElement as ViewElement>::Mut<'_>) -> R,
+        f: impl FnOnce(Mut<'_, TestElement>) -> R,
     ) -> (Self::Mut<'_>, R) {
         let ret = f(this);
         (this, ret)
@@ -257,7 +254,7 @@ impl<'a> ElementSplice<TestElement> for SeqTracker<'a> {
     fn insert(&mut self, element: TestElement) {
         self.inner.active.push(element);
     }
-    fn mutate<R>(&mut self, f: impl FnOnce(<TestElement as ViewElement>::Mut<'_>) -> R) -> R {
+    fn mutate<R>(&mut self, f: impl FnOnce(Mut<'_, TestElement>) -> R) -> R {
         let ix = self.ix;
         self.ix += 1;
         f(&mut self.inner.active[ix])
@@ -265,7 +262,7 @@ impl<'a> ElementSplice<TestElement> for SeqTracker<'a> {
     fn skip(&mut self, n: usize) {
         self.ix += n;
     }
-    fn delete<R>(&mut self, f: impl FnOnce(<TestElement as ViewElement>::Mut<'_>) -> R) -> R {
+    fn delete<R>(&mut self, f: impl FnOnce(Mut<'_, TestElement>) -> R) -> R {
         let ret = f(&mut self.inner.active[self.ix]);
         let val = self.inner.active.remove(self.ix);
         self.inner.deleted.push((self.ix, val));

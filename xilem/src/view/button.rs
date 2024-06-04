@@ -2,10 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::{core::View, Pod};
-use masonry::{
-    widget::{self, WidgetMut},
-    ArcStr,
-};
+use masonry::{widget, ArcStr};
+use xilem_core::Mut;
 
 use crate::{MessageResult, ViewCtx, ViewId};
 
@@ -35,24 +33,25 @@ where
         ctx.with_leaf_action_widget(|_| Pod::new(widget::Button::new(self.label.clone())))
     }
 
-    fn rebuild(
+    fn rebuild<'el>(
         &self,
         prev: &Self,
         _: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: WidgetMut<widget::Button>,
-    ) {
+        mut element: Mut<'el, Self::Element>,
+    ) -> Mut<'el, Self::Element> {
         if prev.label != self.label {
             element.set_text(self.label.clone());
             ctx.mark_changed();
         }
+        element
     }
 
     fn teardown(
         &self,
         _: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: <Self::Element as xilem_core::ViewElement>::Mut<'_>,
+        element: Mut<'_, Self::Element>,
     ) {
         ctx.teardown_leaf(element);
     }

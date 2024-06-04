@@ -1,10 +1,8 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::{
-    widget::{self, WidgetMut},
-    ArcStr,
-};
+use masonry::{widget, ArcStr};
+use xilem_core::Mut;
 
 use crate::{Color, MessageResult, Pod, TextAlignment, View, ViewCtx, ViewId};
 
@@ -55,13 +53,13 @@ impl<State, Action> View<State, Action, ViewCtx> for Label {
         (widget_pod, ())
     }
 
-    fn rebuild(
+    fn rebuild<'el>(
         &self,
         prev: &Self,
         (): &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: WidgetMut<'_, widget::Label>,
-    ) {
+        mut element: Mut<'el, Self::Element>,
+    ) -> Mut<'el, Self::Element> {
         if prev.label != self.label {
             element.set_text(self.label.clone());
             ctx.mark_changed();
@@ -78,10 +76,10 @@ impl<State, Action> View<State, Action, ViewCtx> for Label {
             element.set_alignment(self.alignment);
             ctx.mark_changed();
         }
+        element
     }
 
-    fn teardown(&self, (): &mut Self::ViewState, _: &mut ViewCtx, _: WidgetMut<'_, widget::Label>) {
-    }
+    fn teardown(&self, (): &mut Self::ViewState, _: &mut ViewCtx, _: Mut<'_, Self::Element>) {}
 
     fn message(
         &self,

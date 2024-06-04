@@ -1,7 +1,7 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{DynMessage, MessageResult, View, ViewElement, ViewId, ViewPathTracker};
+use crate::{DynMessage, MessageResult, Mut, View, ViewId, ViewPathTracker};
 
 pub struct Memoize<D, F> {
     data: D,
@@ -64,17 +64,20 @@ where
         (element, memoize_state)
     }
 
-    fn rebuild(
+    fn rebuild<'el>(
         &self,
         prev: &Self,
         view_state: &mut Self::ViewState,
         cx: &mut Context,
-        element: <Self::Element as ViewElement>::Mut<'_>,
-    ) {
+        element: Mut<'el, Self::Element>,
+    ) -> Mut<'el, Self::Element> {
         if core::mem::take(&mut view_state.dirty) || prev.data != self.data {
             let view = (self.child_cb)(&self.data);
-            view.rebuild(&view_state.view, &mut view_state.view_state, cx, element);
+            let el = view.rebuild(&view_state.view, &mut view_state.view_state, cx, element);
             view_state.view = view;
+            el
+        } else {
+            element
         }
     }
 
@@ -99,7 +102,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: <Self::Element as crate::ViewElement>::Mut<'_>,
+        element: Mut<'_, Self::Element>,
     ) {
         view_state
             .view
