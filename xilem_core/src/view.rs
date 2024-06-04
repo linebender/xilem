@@ -53,7 +53,7 @@ pub trait View<State, Action, Context: ViewPathTracker>: 'static {
     ///
     /// This returns `element`, to allow parent views to modify the element after this `rebuild` has
     /// completed. This returning is needed as some reference types do not allow reborrowing,
-    /// without unweildly boilerplate.
+    /// without unwieldy boilerplate.
     fn rebuild<'el>(
         &self,
         prev: &Self,
