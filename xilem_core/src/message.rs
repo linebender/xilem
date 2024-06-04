@@ -90,8 +90,53 @@ impl Debug for dyn Message {
 
 /* /// Types which can route a message to a child [`View`].
 // TODO: This trait needs to exist for desktop hot reloading
-// This would be a supertrait
+// This would be a supertrait of View
 pub trait ViewMessage<State, Action> {
     type ViewState;
 }
 */
+
+#[cfg(test)]
+mod tests {
+    use core::fmt::Debug;
+
+    use alloc::boxed::Box;
+
+    use crate::DynMessage;
+
+    pub struct MyMessage(String);
+
+    impl Debug for MyMessage {
+        fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+            f.write_str("A present message")
+        }
+    }
+
+    #[derive(Debug)]
+    pub struct NotMyMessage;
+
+    #[test]
+    /// Downcasting a message to the correct type should work
+    fn message_downcast() {
+        let message: DynMessage = Box::new(MyMessage("test".to_string()));
+        let result: Box<MyMessage> = message.downcast().unwrap();
+        assert_eq!(&result.0, "test");
+    }
+    #[test]
+    /// Downcasting a message to the wrong type shouldn't panic
+    fn message_downcast_wrong_type() {
+        let message: DynMessage = Box::new(MyMessage("test".to_string()));
+        let message = message.downcast::<NotMyMessage>().unwrap_err();
+        let result: Box<MyMessage> = message.downcast().unwrap();
+        assert_eq!(&result.0, "test");
+    }
+
+    #[test]
+    /// DynMessage's debug should pass through the debug implementation of
+    fn message_debug() {
+        let message: DynMessage = Box::new(MyMessage("".to_string()));
+        let debug_result = format!("{message:?}");
+        // Note that we
+        assert!(debug_result.contains("A present message"));
+    }
+}

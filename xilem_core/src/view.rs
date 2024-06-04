@@ -84,7 +84,7 @@ pub trait View<State, Action, Context: ViewPathTracker>: 'static {
     // fn debug_name?
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 /// An identifier for a subtree in a view hierarchy.
 // TODO: also provide debugging information to give e.g. a useful stack trace?
 pub struct ViewId(u64);

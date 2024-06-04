@@ -1,7 +1,7 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-#![no_std]
+#![cfg_attr(not(test), no_std)]
 // TODO: Point at documentation for this pattern of README include.
 // It has some neat advantages but is quite esoteric
 #![doc = concat!(
