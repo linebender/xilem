@@ -3,6 +3,9 @@
 
 //! Support for sequences of views with a shared element type.
 
+use core::sync::atomic::AtomicBool;
+use core::sync::atomic::Ordering;
+
 use alloc::vec::Drain;
 use alloc::vec::Vec;
 
@@ -267,6 +270,7 @@ where
                 // The sequence has just been destroyed, teardown the old view
                 // We increment the generation only on the falling edge by convention
                 // This choice has no impact on functionality
+                seq_state.inner = None;
 
                 // Overflow handling: u64 starts at 0, incremented by 1 always.
                 // Can never realistically overflow, scale is too large.
@@ -423,7 +427,32 @@ where
                     old_seq.seq_teardown(&mut inner_state, ctx, elements);
                 });
                 // We increment the generation on the "falling edge" by convention
-                *generation += 1;
+                *generation = generation.checked_add(1).unwrap_or_else(|| {
+                    static SHOULD_WARN: AtomicBool = AtomicBool::new(true);
+                    // We only want to warn about this once
+                    // because e.g. if every item in a vector hits
+                    // this at the same time, we don't want to repeat it too many times
+                    if SHOULD_WARN.swap(false, Ordering::Relaxed) {
+                        tracing::warn!(
+                            inner_type = core::any::type_name::<Seq>(),
+                            issue_url = "https://github.com/linebender/xilem/issues",
+                            "Got overflowing generation in ViewSequence from `Vec<inner_type>`.\
+                            This can possibly cause incorrect routing of async messages in extreme cases.\
+                            Please open an issue if you see this. There are known solutions"
+                        );
+                    }
+                    // The known solution mentioned in the above message is to use a different ViewId for the index and the generation
+                    // We believe this to be superfluous for the default use case, as even with 1000 rebuilds a second, each adding
+                    // to the same array, this would take 50 days of the application running continuously.
+                    // See also https://github.com/bevyengine/bevy/pull/9907, where they warn in their equivalent case
+                    // Note that we have a slightly different strategy to Bevy, where we use a global generation
+                    // This theoretically allows some of the memory in `seq_state` to be reclaimed, at the cost of making overflow
+                    // more likely here. Note that we don't actually reclaim this memory at the moment.
+
+                    // We use 0 to wrap around. It would require extremely unfortunate timing to get an async event
+                    // with the correct generation exactly u32::MAX generations late, so wrapping is the best option
+                    0
+                });
             }
         } else if n > prev_n {
             // If needed, create new generations

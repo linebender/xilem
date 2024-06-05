@@ -11,6 +11,7 @@ repository.workspace = true
 publish = false # We'll publish this alongside Xilem 0.2
 
 [dependencies]
+tracing.workspace = true
 
 [lints]
 workspace = true

@@ -3852,6 +3852,9 @@ dependencies = [
 [[package]]
 name = "xilem_core"
 version = "0.1.0"
+dependencies = [
+ "tracing",
+]
 
 [[package]]
 name = "xilem_web"

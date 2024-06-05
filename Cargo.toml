@@ -37,7 +37,7 @@ kurbo = "0.11.0"
 parley = "0.1.0"
 peniko = "0.1.0"
 winit = "0.30.0"
-tracing = "0.1.40"
+tracing = {version = "0.1.40", default-features = false}
 smallvec = "1.13.2"
 dpi = "0.1.1"
 fnv = "1.0.7"
