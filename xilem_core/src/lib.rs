@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #![cfg_attr(not(test), no_std)]
+#![forbid(unsafe_code)]
+#![warn(missing_docs, unreachable_pub)]
 // TODO: Point at documentation for this pattern of README include.
 // It has some neat advantages but is quite esoteric
 #![doc = concat!(

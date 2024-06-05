@@ -12,18 +12,25 @@ use alloc::vec::Vec;
 use crate::{DynMessage, MessageResult, SuperElement, View, ViewElement, ViewId, ViewPathTracker};
 
 /// An append only `Vec`.
+///
+/// This will be passed to [`ViewSequence::seq_build`] to
+/// build the list of initial elements whilst materializing the sequence.
 #[derive(Debug)]
 pub struct AppendVec<T> {
     inner: Vec<T>,
 }
 
 impl<T> AppendVec<T> {
+    /// Convert `self` into the underlying `Vec`
+    #[must_use]
     pub fn into_inner(self) -> Vec<T> {
         self.inner
     }
+    /// Add an item to the end of the vector.
     pub fn push(&mut self, item: T) {
         self.inner.push(item);
     }
+    /// [Drain](Vec::drain) all items from this `AppendVec`.
     pub fn drain(&mut self) -> Drain<'_, T> {
         self.inner.drain(..)
     }
@@ -38,7 +45,7 @@ impl<T> From<Vec<T>> for AppendVec<T> {
 impl<T> Default for AppendVec<T> {
     fn default() -> Self {
         Self {
-            inner: Default::default(),
+            inner: Vec::default(),
         }
     }
 }
@@ -69,9 +76,9 @@ pub trait ViewSequence<State, Action, Context: ViewPathTracker, Element: ViewEle
     /// The associated state of this sequence. The main purposes of this are:
     /// - To store generations and other data needed to avoiding routing stale messages
     ///   to incorrect views.
-    /// - To pass on the state of child sequences, or a child View's [ViewState].
+    /// - To pass on the state of child sequences, or a child View's [`ViewState`].
     ///
-    /// [ViewState]: View::ViewState
+    /// [`ViewState`]: View::ViewState
     type SeqState;
 
     /// Build the associated widgets into `elements` and initialize all states.
@@ -98,7 +105,7 @@ pub trait ViewSequence<State, Action, Context: ViewPathTracker, Element: ViewEle
     /// Propagate a message.
     ///
     /// Handle a message, propagating to elements if needed. Here, `id_path` is a slice
-    /// of ids beginning at an element of this view_sequence.
+    /// of ids, where the first item identifiers a child element of this sequence, if necessary.
     fn seq_message(
         &self,
         seq_state: &mut Self::SeqState,
@@ -349,6 +356,7 @@ fn create_generational_view_id(index: usize, generation: u32) -> ViewId {
 
 /// Undoes [`create_vector_view_id`]
 fn view_id_to_index_generation(view_id: ViewId) -> (usize, u32) {
+    #![allow(clippy::cast_possible_truncation)]
     let view_id = view_id.routing_id();
     let id_low_ix = view_id as u32;
     let id_high_gen = (view_id >> 32) as u32;

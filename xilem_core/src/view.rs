@@ -89,15 +89,26 @@ pub trait View<State, Action, Context: ViewPathTracker>: 'static {
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-/// An identifier for a subtree in a view hierarchy.
-// TODO: also provide debugging information to give e.g. a useful stack trace?
+/// An identifier used to differentiation between the direct children of a [View].
+///
+/// These are [u64] backed identifiers, which will be added to the "view path" in
+/// [`View::build`] and [`View::rebuild`] (and their [`ViewSequence`](crate::ViewSequence) counterparts),
+/// and removed from the start of the path if necessary in [`View::message`].
+/// The value of `ViewId`s are only meaningful for the `View` or `ViewSequence` added them
+/// to the path, and can be used to store indices and/or generations.
+// TODO: maybe also provide debugging information to give e.g. a useful stack trace?
+// TODO: Rethink name, as 'Id' suggests global uniqueness
 pub struct ViewId(u64);
 
 impl ViewId {
+    /// Create a new `ViewId` with the given value.
+    #[must_use]
     pub fn new(raw: u64) -> Self {
         Self(raw)
     }
 
+    /// Access the raw value of this id.
+    #[must_use]
     pub fn routing_id(self) -> u64 {
         self.0
     }
@@ -187,10 +198,11 @@ impl<State, Action, Context: ViewPathTracker, V: View<State, Action, Context> + 
         ctx: &mut Context,
         element: Mut<'el, Self::Element>,
     ) -> Mut<'el, Self::Element> {
-        if !Arc::ptr_eq(self, prev) {
-            self.deref().rebuild(prev, view_state, ctx, element)
-        } else {
+        if Arc::ptr_eq(self, prev) {
+            // If this is the same value, there's no need to rebuild
             element
+        } else {
+            self.deref().rebuild(prev, view_state, ctx, element)
         }
     }
 

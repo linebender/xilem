@@ -3,6 +3,10 @@
 
 use crate::{DynMessage, MessageResult, Mut, View, ViewId, ViewPathTracker};
 
+/// A view which supports Memoization.
+///
+/// The story of Memoization in Xilem is still being worked out,
+/// so the details of this view might change.
 pub struct Memoize<D, F> {
     data: D,
     child_cb: F,
@@ -35,6 +39,7 @@ It's not possible in Rust currently to check whether the (content of the) callba
         );
     };
 
+    /// Create a new `Memoize` view.
     pub fn new(data: D, child_cb: F) -> Self {
         #[allow(clippy::let_unit_value)]
         let _ = Self::ASSERT_CONTEXTLESS_FN;

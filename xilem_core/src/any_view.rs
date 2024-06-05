@@ -12,7 +12,8 @@ use crate::{AnyElement, DynMessage, MessageResult, Mut, View, ViewId, ViewPathTr
 /// A view which can have any view type where the [`View::Element`] is compatible with
 /// `Element`.
 ///
-/// This is primarily used for type erasure of views.
+/// This is primarily used for type erasure of views, and is not expected to be implemented
+/// by end-users. Instead a blanket implementation exists for all applicable [`View`]s.
 ///
 /// This is useful for a view which can be any of several view types, by using
 /// `Box<dyn AnyView<...>>`, which implements [`View`].
@@ -24,10 +25,13 @@ use crate::{AnyElement, DynMessage, MessageResult, Mut, View, ViewId, ViewPathTr
 /// Libraries using `xilem_core` are expected to have a type alias for their own `AnyView`, which specifies
 /// the `Context` and `Element` types.
 pub trait AnyView<State, Action, Context, Element: crate::ViewElement> {
+    /// Get an [`Any`] reference to `self`.
     fn as_any(&self) -> &dyn Any;
 
+    /// Type erased [`View::build`].
     fn dyn_build(&self, ctx: &mut Context) -> (Element, AnyViewState);
 
+    /// Type erased [`View::rebuild`].
     fn dyn_rebuild<'el>(
         &self,
         dyn_state: &mut AnyViewState,
@@ -36,8 +40,9 @@ pub trait AnyView<State, Action, Context, Element: crate::ViewElement> {
         element: Element::Mut<'el>,
     ) -> Element::Mut<'el>;
 
-    /// Returns `Element::Mut<'el>` so that the element can be
-    /// returned and replaced in `dyn_rebuild`, if needed
+    /// Type erased [`View::teardown`].
+    ///
+    /// Returns `Element::Mut<'el>` so that the element's inner value can be replaced in `dyn_rebuild`.
     fn dyn_teardown<'el>(
         &self,
         dyn_state: &mut AnyViewState,
@@ -45,6 +50,7 @@ pub trait AnyView<State, Action, Context, Element: crate::ViewElement> {
         element: Element::Mut<'el>,
     ) -> Element::Mut<'el>;
 
+    /// Type erased [`View::message`].
     fn dyn_message(
         &self,
         dyn_state: &mut AnyViewState,
@@ -99,6 +105,8 @@ where
             })
         } else {
             // Otherwise, teardown the old element, then replace the value
+            // Note that we need to use `dyn_teardown` here, because `prev`
+            // is of a different type.
             element = prev.dyn_teardown(dyn_state, ctx, element);
 
             // Increase the generation, because the underlying widget has been swapped out.

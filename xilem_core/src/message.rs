@@ -17,6 +17,8 @@ pub enum MessageResult<Action> {
     /// This allows for sub-sections of your app to use an elm-like architecture
     Action(Action),
     // TODO: What does this mean?
+    /// This message's handler needs a rebuild to happen.
+    /// The exact semantics of this method haven't been determined.
     RequestRebuild,
     #[default]
     /// This event had no impact on the app state, or the impact it did have
@@ -29,6 +31,8 @@ pub enum MessageResult<Action> {
 /// A dynamically typed message for the [`View`] trait.
 ///
 /// Mostly equivalent to `Box<dyn Any>`, but with support for debug printing.
+// We can't use intra-doc links here because of
+/// The primary interface for this type is [`dyn Message::downcast`](trait.Message.html#method.downcast).
 ///
 /// These messages must also be [`Send`].
 /// This makes using this message type in a multithreaded context easier.
@@ -44,8 +48,11 @@ pub type DynMessage = Box<dyn Message>;
 // primarily to enable flexibility around Send/Sync and avoid the need
 // for allocation.
 pub trait Message: 'static + Send {
+    /// Convert `self` into a [`Box<dyn Any>`].
     fn into_any(self: Box<Self>) -> Box<dyn Any + Send>;
+    /// Convert `self` into a [`Box<dyn Any>`].
     fn as_any(&self) -> &(dyn Any + Send);
+    /// Gets the debug representation of this message.
     fn dyn_debug(&self) -> &dyn Debug;
 }
 
@@ -67,9 +74,17 @@ where
 impl dyn Message {
     /// Access the actual type of this [`DynMessage`].
     ///
-    /// In most cases, this can be safely unwrapped, as each [`View`](crate::View) will
-    /// only receive messages of a single type
+    /// In most cases, this will be unwrapped, as each [`View`](crate::View) will
+    /// coordinate with their runner and/or element type to only receive messages
+    /// of a single, expected, underlying type.
+    ///
+    /// ## Errors
+    ///
+    /// If the message contained within `self` is not of type `T`, returns `self`
+    /// (so that e.g. a different type can be used)
     pub fn downcast<T: Message>(self: Box<Self>) -> Result<Box<T>, Box<Self>> {
+        // The panic is unreachable
+        #![allow(clippy::missing_panics_doc)]
         if self.deref().as_any().is::<T>() {
             Ok(self
                 .into_any()
@@ -104,7 +119,7 @@ mod tests {
 
     use crate::DynMessage;
 
-    pub struct MyMessage(String);
+    struct MyMessage(String);
 
     impl Debug for MyMessage {
         fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
@@ -113,7 +128,7 @@ mod tests {
     }
 
     #[derive(Debug)]
-    pub struct NotMyMessage;
+    struct NotMyMessage;
 
     #[test]
     /// Downcasting a message to the correct type should work
