@@ -55,6 +55,9 @@ impl ViewElement for TestElement {
     type Mut<'a> = &'a mut Self;
 }
 
+/// A view which records all operations which happen on it into the element
+///
+/// The const generic parameter is used for testing `AnyView`
 pub(super) struct OperationView<const N: u32>(pub(super) u32);
 
 #[allow(clippy::manual_non_exhaustive)]

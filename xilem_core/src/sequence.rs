@@ -502,12 +502,13 @@ where
             .split_first()
             .expect("Id path has elements for Option<ViewSequence>");
         let (index, generation) = view_id_to_index_generation(*start);
-        let inner_state = &mut seq_state.inner_states[index];
         let stored_generation = &seq_state.generations[index];
         if *stored_generation != generation {
             // The value in the sequence i
             return MessageResult::Stale(message);
         }
+        // Panics if index is out of bounds, but we know it isn't because this is the same generation
+        let inner_state = &mut seq_state.inner_states[index];
         self[index].seq_message(inner_state, rest, message, app_state)
     }
 }
