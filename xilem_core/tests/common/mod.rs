@@ -8,17 +8,29 @@ use std::marker::PhantomData;
 
 use xilem_core::*;
 
-pub(super) struct TestCx(pub(super) Vec<ViewId>);
+#[derive(Default)]
+pub(super) struct TestCx(Vec<ViewId>);
 
 impl ViewPathTracker for TestCx {
     fn push_id(&mut self, id: ViewId) {
         self.0.push(id);
     }
     fn pop_id(&mut self) {
-        self.0.pop();
+        self.0
+            .pop()
+            .expect("Each pop_id should have a matching push_id");
     }
     fn view_path(&mut self) -> &[ViewId] {
         &self.0
+    }
+}
+
+impl TestCx {
+    pub(super) fn assert_empty(&self) {
+        assert!(
+            self.0.is_empty(),
+            "Views should always match push_ids and pop_ids"
+        );
     }
 }
 
@@ -102,6 +114,11 @@ where
         ctx: &mut TestCx,
         element: Mut<'el, Self::Element>,
     ) -> Mut<'el, Self::Element> {
+        assert_eq!(&*element.view_path, ctx.view_path());
+        element.operations.push(Operation::Rebuild {
+            from: prev.id,
+            to: self.id,
+        });
         let mut elements = SeqTracker {
             inner: element.children.as_mut().unwrap(),
             ix: 0,
@@ -118,6 +135,8 @@ where
         ctx: &mut TestCx,
         element: Mut<'_, Self::Element>,
     ) {
+        assert_eq!(&*element.view_path, ctx.view_path());
+        element.operations.push(Operation::Teardown(self.id));
         let mut elements = SeqTracker {
             inner: element.children.as_mut().unwrap(),
             ix: 0,
