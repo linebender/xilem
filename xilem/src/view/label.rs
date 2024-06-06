@@ -1,9 +1,10 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::{widget::WidgetMut, ArcStr, WidgetPod};
+use masonry::{widget, ArcStr};
+use xilem_core::Mut;
 
-use crate::{Color, MasonryView, MessageResult, TextAlignment, ViewCx, ViewId};
+use crate::{Color, MessageResult, Pod, TextAlignment, View, ViewCtx, ViewId};
 
 pub fn label(label: impl Into<ArcStr>) -> Label {
     Label {
@@ -39,49 +40,52 @@ impl Label {
     }
 }
 
-impl<State, Action> MasonryView<State, Action> for Label {
-    type Element = masonry::widget::Label;
+impl<State, Action> View<State, Action, ViewCtx> for Label {
+    type Element = Pod<widget::Label>;
     type ViewState = ();
 
-    fn build(&self, _cx: &mut ViewCx) -> (WidgetPod<Self::Element>, Self::ViewState) {
-        let widget_pod = WidgetPod::new(
-            masonry::widget::Label::new(self.label.clone())
+    fn build(&self, _ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+        let widget_pod = Pod::new(
+            widget::Label::new(self.label.clone())
                 .with_text_brush(self.text_color)
                 .with_text_alignment(self.alignment),
         );
         (widget_pod, ())
     }
 
-    fn rebuild(
+    fn rebuild<'el>(
         &self,
-        _view_state: &mut Self::ViewState,
-        cx: &mut ViewCx,
         prev: &Self,
-        mut element: WidgetMut<Self::Element>,
-    ) {
+        (): &mut Self::ViewState,
+        ctx: &mut ViewCtx,
+        mut element: Mut<'el, Self::Element>,
+    ) -> Mut<'el, Self::Element> {
         if prev.label != self.label {
             element.set_text(self.label.clone());
-            cx.mark_changed();
+            ctx.mark_changed();
         }
         // if prev.disabled != self.disabled {
         //     element.set_disabled(self.disabled);
-        //     cx.mark_changed();
+        //     ctx.mark_changed();
         // }
         if prev.text_color != self.text_color {
             element.set_text_brush(self.text_color);
-            cx.mark_changed();
+            ctx.mark_changed();
         }
         if prev.alignment != self.alignment {
             element.set_alignment(self.alignment);
-            cx.mark_changed();
+            ctx.mark_changed();
         }
+        element
     }
+
+    fn teardown(&self, (): &mut Self::ViewState, _: &mut ViewCtx, _: Mut<'_, Self::Element>) {}
 
     fn message(
         &self,
-        _view_state: &mut Self::ViewState,
+        (): &mut Self::ViewState,
         _id_path: &[ViewId],
-        message: Box<dyn std::any::Any>,
+        message: xilem_core::DynMessage,
         _app_state: &mut State,
     ) -> crate::MessageResult<Action> {
         tracing::error!("Message arrived in Label::message, but Label doesn't consume any messages, this is a bug");

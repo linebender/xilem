@@ -3,7 +3,7 @@
 
 use std::sync::Arc;
 use xilem::view::{button, flex, memoize};
-use xilem::{AnyMasonryView, EventLoop, MasonryView, Xilem};
+use xilem::{AnyWidgetView, EventLoop, WidgetView, Xilem};
 
 // There are currently two ways to do memoization
 
@@ -16,11 +16,11 @@ struct AppState {
 struct MemoizedArcView<D> {
     data: D,
     // When TAITs are stabilized this can be a non-erased concrete type
-    view: Option<Arc<dyn AnyMasonryView<AppState>>>,
+    view: Option<Arc<AnyWidgetView<AppState>>>,
 }
 
 // The following is an example to do memoization with an Arc
-fn increase_button(state: &mut AppState) -> Arc<dyn AnyMasonryView<AppState>> {
+fn increase_button(state: &mut AppState) -> Arc<AnyWidgetView<AppState>> {
     if state.count != state.increase_button.data || state.increase_button.view.is_none() {
         let view = Arc::new(button(
             format!("current count is {}", state.count),
@@ -38,7 +38,7 @@ fn increase_button(state: &mut AppState) -> Arc<dyn AnyMasonryView<AppState>> {
 
 // This is the alternative with Memoize
 // Note how this requires a closure that returns the memoized view, while Arc does not
-fn decrease_button(state: &AppState) -> impl MasonryView<AppState> {
+fn decrease_button(state: &AppState) -> impl WidgetView<AppState> {
     memoize(state.count, |count| {
         button(
             format!("decrease the count: {count}"),
@@ -47,11 +47,11 @@ fn decrease_button(state: &AppState) -> impl MasonryView<AppState> {
     })
 }
 
-fn reset_button() -> impl MasonryView<AppState> {
+fn reset_button() -> impl WidgetView<AppState> {
     button("reset", |data: &mut AppState| data.count = 0)
 }
 
-fn app_logic(state: &mut AppState) -> impl MasonryView<AppState> {
+fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> {
     flex((
         increase_button(state),
         decrease_button(state),

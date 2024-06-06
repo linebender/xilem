@@ -4,16 +4,15 @@
 // On Windows platform, don't show a console when opening the app.
 #![windows_subsystem = "windows"]
 
-use xilem::view::{button, checkbox, flex, label, prose, textbox};
 use xilem::{
-    Axis, BoxedMasonryView, Color, EventLoop, EventLoopBuilder, MasonryView, TextAlignment, Xilem,
+    view::{button, checkbox, flex, label, prose, textbox},
+    AnyWidgetView, Axis, Color, EventLoop, EventLoopBuilder, TextAlignment, WidgetView, Xilem,
 };
-
 const LOREM: &str = r"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi cursus mi sed euismod euismod. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Nullam placerat efficitur tellus at semper. Morbi ac risus magna. Donec ut cursus ex. Etiam quis posuere tellus. Mauris posuere dui et turpis mollis, vitae luctus tellus consectetur. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur eu facilisis nisl.
 
 Phasellus in viverra dolor, vitae facilisis est. Maecenas malesuada massa vel ultricies feugiat. Vivamus venenatis et nibh nec pharetra. Phasellus vestibulum elit enim, nec scelerisque orci faucibus id. Vivamus consequat purus sit amet orci egestas, non iaculis massa porttitor. Vestibulum ut eros leo. In fermentum convallis magna in finibus. Donec justo leo, maximus ac laoreet id, volutpat ut elit. Mauris sed leo non neque laoreet faucibus. Aliquam orci arcu, faucibus in molestie eget, ornare non dui. Donec volutpat nulla in fringilla elementum. Aliquam vitae ante egestas ligula tempus vestibulum sit amet sed ante. ";
 
-fn app_logic(data: &mut AppData) -> impl MasonryView<AppData> {
+fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> {
     // here's some logic, deriving state for the view from our state
     let count = data.count;
     let button_label = if count == 1 {
@@ -38,7 +37,8 @@ fn app_logic(data: &mut AppData) -> impl MasonryView<AppData> {
             label("Label")
                 .color(Color::REBECCA_PURPLE)
                 .alignment(TextAlignment::Start),
-            label("Disabled label").disabled(),
+            // TODO masonry doesn't allow setting disabled manually anymore?
+            // label("Disabled label").disabled(),
         ))
         .direction(Axis::Horizontal),
         textbox(
@@ -59,8 +59,8 @@ fn app_logic(data: &mut AppData) -> impl MasonryView<AppData> {
     ))
 }
 
-fn toggleable(data: &mut AppData) -> impl MasonryView<AppData> {
-    let inner_view: BoxedMasonryView<_, _> = if data.active {
+fn toggleable(data: &mut AppData) -> impl WidgetView<AppData> {
+    let inner_view: Box<AnyWidgetView<_>> = if data.active {
         Box::new(
             flex((
                 button("Deactivate", |data: &mut AppData| {
@@ -86,8 +86,8 @@ struct AppData {
 
 fn run(event_loop: EventLoopBuilder) {
     let data = AppData {
-        textbox_contents: "".into(),
         count: 0,
+        textbox_contents: "Not quite a placeholder".into(),
         active: false,
     };
 

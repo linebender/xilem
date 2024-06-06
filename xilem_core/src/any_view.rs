@@ -1,137 +1,350 @@
 // Copyright 2023 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-#[macro_export]
-macro_rules! generate_anyview_trait {
-    ($anyview:ident, $viewtrait:ident, $viewmarker:ty, $cx:ty, $changeflags:ty, $anywidget:ident, $boxedview:ident; $($ss:tt)*) => {
-        /// A trait enabling type erasure of views.
-        pub trait $anyview<T, A = ()> {
-            fn as_any(&self) -> &dyn std::any::Any;
+//! Support for a type erased [`View`].
 
-            fn dyn_build(
-                &self,
-                cx: &mut $cx,
-            ) -> ($crate::Id, Box<dyn std::any::Any $( $ss )* >, Box<dyn $anywidget>);
+use core::any::Any;
 
-            fn dyn_rebuild(
-                &self,
-                cx: &mut $cx,
-                prev: &dyn $anyview<T, A>,
-                id: &mut $crate::Id,
-                state: &mut Box<dyn std::any::Any $( $ss )* >,
-                element: &mut Box<dyn $anywidget>,
-            ) -> $changeflags;
+use alloc::boxed::Box;
 
-            fn dyn_message(
-                &self,
-                id_path: &[$crate::Id],
-                state: &mut dyn std::any::Any,
-                message: Box<dyn std::any::Any>,
-                app_state: &mut T,
-            ) -> $crate::MessageResult<A>;
+use crate::{AnyElement, DynMessage, MessageResult, Mut, View, ViewId, ViewPathTracker};
+
+/// A view which can have any view type where the [`View::Element`] is compatible with
+/// `Element`.
+///
+/// This is primarily used for type erasure of views, and is not expected to be implemented
+/// by end-users. Instead a blanket implementation exists for all applicable [`View`]s.
+///
+/// This is useful for a view which can be any of several view types, by using
+/// `Box<dyn AnyView<...>>`, which implements [`View`].
+// TODO: Mention `Either` when we have implemented that?
+///
+/// This is also useful for memoization, by storing an `Option<Arc<dyn AnyView<...>>>`,
+/// then [inserting](Option::get_or_insert_with) into that option at view tree construction time.
+///
+/// Libraries using `xilem_core` are expected to have a type alias for their own `AnyView`, which specifies
+/// the `Context` and `Element` types.
+pub trait AnyView<State, Action, Context, Element: crate::ViewElement> {
+    /// Get an [`Any`] reference to `self`.
+    fn as_any(&self) -> &dyn Any;
+
+    /// Type erased [`View::build`].
+    fn dyn_build(&self, ctx: &mut Context) -> (Element, AnyViewState);
+
+    /// Type erased [`View::rebuild`].
+    fn dyn_rebuild<'el>(
+        &self,
+        dyn_state: &mut AnyViewState,
+        ctx: &mut Context,
+        prev: &dyn AnyView<State, Action, Context, Element>,
+        element: Element::Mut<'el>,
+    ) -> Element::Mut<'el>;
+
+    /// Type erased [`View::teardown`].
+    ///
+    /// Returns `Element::Mut<'el>` so that the element's inner value can be replaced in `dyn_rebuild`.
+    fn dyn_teardown<'el>(
+        &self,
+        dyn_state: &mut AnyViewState,
+        ctx: &mut Context,
+        element: Element::Mut<'el>,
+    ) -> Element::Mut<'el>;
+
+    /// Type erased [`View::message`].
+    fn dyn_message(
+        &self,
+        dyn_state: &mut AnyViewState,
+        id_path: &[ViewId],
+        message: DynMessage,
+        app_state: &mut State,
+    ) -> MessageResult<Action>;
+}
+
+impl<State, Action, Context, DynamicElement, V> AnyView<State, Action, Context, DynamicElement>
+    for V
+where
+    DynamicElement: AnyElement<V::Element>,
+    Context: ViewPathTracker,
+    V: View<State, Action, Context> + 'static,
+    V::ViewState: 'static,
+{
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn dyn_build(&self, ctx: &mut Context) -> (DynamicElement, AnyViewState) {
+        let generation = 0;
+        let (element, view_state) = ctx.with_id(ViewId::new(generation), |ctx| self.build(ctx));
+        (
+            DynamicElement::upcast(element),
+            AnyViewState {
+                inner_state: Box::new(view_state),
+                generation,
+            },
+        )
+    }
+
+    fn dyn_rebuild<'el>(
+        &self,
+        dyn_state: &mut AnyViewState,
+        ctx: &mut Context,
+        prev: &dyn AnyView<State, Action, Context, DynamicElement>,
+        mut element: DynamicElement::Mut<'el>,
+    ) -> DynamicElement::Mut<'el> {
+        if let Some(prev) = prev.as_any().downcast_ref() {
+            // If we were previously of this type, then do a normal rebuild
+            DynamicElement::with_downcast(element, |element| {
+                let state = dyn_state
+                    .inner_state
+                    .downcast_mut()
+                    .expect("build or rebuild always set the correct corresponding state type");
+
+                ctx.with_id(ViewId::new(dyn_state.generation), move |ctx| {
+                    self.rebuild(prev, state, ctx, element);
+                });
+            })
+        } else {
+            // Otherwise, teardown the old element, then replace the value
+            // Note that we need to use `dyn_teardown` here, because `prev`
+            // is of a different type.
+            element = prev.dyn_teardown(dyn_state, ctx, element);
+
+            // Increase the generation, because the underlying widget has been swapped out.
+            // Overflow condition: Impossible to overflow, as u64 only ever incremented by 1
+            // and starting at 0.
+            dyn_state.generation = dyn_state.generation.wrapping_add(1);
+            let (new_element, view_state) =
+                ctx.with_id(ViewId::new(dyn_state.generation), |ctx| self.build(ctx));
+            dyn_state.inner_state = Box::new(view_state);
+            DynamicElement::replace_inner(element, new_element)
         }
+    }
+    fn dyn_teardown<'el>(
+        &self,
+        dyn_state: &mut AnyViewState,
+        ctx: &mut Context,
+        element: DynamicElement::Mut<'el>,
+    ) -> DynamicElement::Mut<'el> {
+        let state = dyn_state
+            .inner_state
+            .downcast_mut()
+            .expect("build or rebuild always set the correct corresponding state type");
 
-        impl<T, A, V: $viewtrait<T, A> + 'static> $anyview<T, A> for V
-        where
-            V::State: 'static,
-            V::Element: $anywidget + 'static,
-        {
-            fn as_any(&self) -> &dyn std::any::Any {
-                self
-            }
+        // We only need to teardown the inner value - there's no other state to cleanup in this widget
+        DynamicElement::with_downcast(element, |element| {
+            ctx.with_id(ViewId::new(dyn_state.generation), |ctx| {
+                self.teardown(state, ctx, element);
+            });
+        })
+    }
 
-            fn dyn_build(
-                &self,
-                cx: &mut $cx,
-            ) -> ($crate::Id, Box<dyn std::any::Any $( $ss )* >, Box<dyn $anywidget>) {
-                let (id, state, element) = self.build(cx);
-                (id, Box::new(state), Box::new(element))
-            }
-
-            fn dyn_rebuild(
-                &self,
-                cx: &mut $cx,
-                prev: &dyn $anyview<T, A>,
-                id: &mut $crate::Id,
-                state: &mut Box<dyn std::any::Any $( $ss )* >,
-                element: &mut Box<dyn $anywidget>,
-            ) -> ChangeFlags {
-                use std::ops::DerefMut;
-                if let Some(prev) = prev.as_any().downcast_ref() {
-                    if let Some(state) = state.downcast_mut() {
-                        if let Some(element) = element.deref_mut().as_any_mut().downcast_mut() {
-                            self.rebuild(cx, prev, id, state, element)
-                        } else {
-                            eprintln!("downcast of element failed in dyn_rebuild");
-                            <$changeflags>::default()
-                        }
-                    } else {
-                        eprintln!("downcast of state failed in dyn_rebuild");
-                        <$changeflags>::default()
-                    }
-                } else {
-                    let (new_id, new_state, new_element) = self.build(cx);
-                    *id = new_id;
-                    *state = Box::new(new_state);
-                    *element = Box::new(new_element);
-                    <$changeflags>::tree_structure()
-                }
-            }
-
-            fn dyn_message(
-                &self,
-                id_path: &[$crate::Id],
-                state: &mut dyn std::any::Any,
-                message: Box<dyn std::any::Any>,
-                app_state: &mut T,
-            ) -> $crate::MessageResult<A> {
-                if let Some(state) = state.downcast_mut() {
-                    self.message(id_path, state, message, app_state)
-                } else {
-                    // Possibly softer failure?
-                    panic!("downcast error in dyn_event");
-                }
-            }
+    fn dyn_message(
+        &self,
+        dyn_state: &mut AnyViewState,
+        id_path: &[ViewId],
+        message: DynMessage,
+        app_state: &mut State,
+    ) -> MessageResult<Action> {
+        let state = dyn_state
+            .inner_state
+            .downcast_mut()
+            .expect("build or rebuild always set the correct corresponding state type");
+        let Some((first, remainder)) = id_path.split_first() else {
+            unreachable!("Parent view of `AnyView` sent outdated and/or incorrect empty view path");
+        };
+        if first.routing_id() != dyn_state.generation {
+            // Do we want to log something here?
+            return MessageResult::Stale(message);
         }
+        self.message(state, remainder, message, app_state)
+    }
+}
 
-        pub type $boxedview<T, A = ()> = Box<dyn $anyview<T, A> $( $ss )* >;
+/// The state used by [`AnyView`].
+#[doc(hidden)]
+pub struct AnyViewState {
+    inner_state: Box<dyn Any>,
+    /// The generation is the value which is shown
+    generation: u64,
+}
 
-        impl<T, A> $viewmarker for $boxedview<T, A> {}
+impl<State: 'static, Action: 'static, Context, Element> View<State, Action, Context>
+    for dyn AnyView<State, Action, Context, Element>
+where
+    // Element must be `static` so it can be downcasted
+    Element: crate::ViewElement + 'static,
+    Context: crate::ViewPathTracker + 'static,
+{
+    type Element = Element;
 
-        impl<T, A> $viewtrait<T, A> for $boxedview<T, A> {
-            type State = Box<dyn std::any::Any $( $ss )* >;
+    type ViewState = AnyViewState;
 
-            type Element = Box<dyn $anywidget>;
+    fn build(&self, ctx: &mut Context) -> (Self::Element, Self::ViewState) {
+        self.dyn_build(ctx)
+    }
 
-            fn build(&self, cx: &mut $cx) -> ($crate::Id, Self::State, Self::Element) {
-                use std::ops::Deref;
-                self.deref().dyn_build(cx)
-            }
+    fn rebuild<'el>(
+        &self,
+        prev: &Self,
+        view_state: &mut Self::ViewState,
+        ctx: &mut Context,
+        element: Mut<'el, Self::Element>,
+    ) -> Mut<'el, Self::Element> {
+        self.dyn_rebuild(view_state, ctx, prev, element)
+    }
 
-            fn rebuild(
-                &self,
-                cx: &mut $cx,
-                prev: &Self,
-                id: &mut $crate::Id,
-                state: &mut Self::State,
-                element: &mut Self::Element,
-            ) -> $changeflags {
-                use std::ops::Deref;
-                self.deref()
-                    .dyn_rebuild(cx, prev.deref(), id, state, element)
-            }
+    fn teardown(
+        &self,
+        view_state: &mut Self::ViewState,
+        ctx: &mut Context,
+        element: Mut<'_, Self::Element>,
+    ) {
+        self.dyn_teardown(view_state, ctx, element);
+    }
 
-            fn message(
-                &self,
-                id_path: &[$crate::Id],
-                state: &mut Self::State,
-                message: Box<dyn std::any::Any>,
-                app_state: &mut T,
-            ) -> $crate::MessageResult<A> {
-                use std::ops::{Deref, DerefMut};
-                self.deref()
-                    .dyn_message(id_path, state.deref_mut(), message, app_state)
-            }
-        }
-    };
+    fn message(
+        &self,
+        view_state: &mut Self::ViewState,
+        id_path: &[crate::ViewId],
+        message: crate::DynMessage,
+        app_state: &mut State,
+    ) -> crate::MessageResult<Action> {
+        self.dyn_message(view_state, id_path, message, app_state)
+    }
+}
+
+// TODO: IWBN if we could avoid this
+impl<State: 'static, Action: 'static, Context, Element> View<State, Action, Context>
+    for dyn AnyView<State, Action, Context, Element> + Send
+where
+    // Element must be `static` so it can be downcasted
+    Element: crate::ViewElement + 'static,
+    Context: crate::ViewPathTracker + 'static,
+{
+    type Element = Element;
+
+    type ViewState = AnyViewState;
+
+    fn build(&self, ctx: &mut Context) -> (Self::Element, Self::ViewState) {
+        self.dyn_build(ctx)
+    }
+
+    fn rebuild<'el>(
+        &self,
+        prev: &Self,
+        view_state: &mut Self::ViewState,
+        ctx: &mut Context,
+        element: Mut<'el, Self::Element>,
+    ) -> Mut<'el, Self::Element> {
+        self.dyn_rebuild(view_state, ctx, prev, element)
+    }
+
+    fn teardown(
+        &self,
+        view_state: &mut Self::ViewState,
+        ctx: &mut Context,
+        element: Mut<'_, Self::Element>,
+    ) {
+        self.dyn_teardown(view_state, ctx, element);
+    }
+
+    fn message(
+        &self,
+        view_state: &mut Self::ViewState,
+        id_path: &[crate::ViewId],
+        message: crate::DynMessage,
+        app_state: &mut State,
+    ) -> crate::MessageResult<Action> {
+        self.dyn_message(view_state, id_path, message, app_state)
+    }
+}
+
+impl<State: 'static, Action: 'static, Context, Element> View<State, Action, Context>
+    for dyn AnyView<State, Action, Context, Element> + Send + Sync
+where
+    // Element must be `static` so it can be downcasted
+    Element: crate::ViewElement + 'static,
+    Context: crate::ViewPathTracker + 'static,
+{
+    type Element = Element;
+
+    type ViewState = AnyViewState;
+
+    fn build(&self, ctx: &mut Context) -> (Self::Element, Self::ViewState) {
+        self.dyn_build(ctx)
+    }
+
+    fn rebuild<'el>(
+        &self,
+        prev: &Self,
+        view_state: &mut Self::ViewState,
+        ctx: &mut Context,
+        element: Mut<'el, Self::Element>,
+    ) -> Mut<'el, Self::Element> {
+        self.dyn_rebuild(view_state, ctx, prev, element)
+    }
+
+    fn teardown(
+        &self,
+        view_state: &mut Self::ViewState,
+        ctx: &mut Context,
+        element: Mut<'_, Self::Element>,
+    ) {
+        self.dyn_teardown(view_state, ctx, element);
+    }
+
+    fn message(
+        &self,
+        view_state: &mut Self::ViewState,
+        id_path: &[crate::ViewId],
+        message: crate::DynMessage,
+        app_state: &mut State,
+    ) -> crate::MessageResult<Action> {
+        self.dyn_message(view_state, id_path, message, app_state)
+    }
+}
+
+impl<State: 'static, Action: 'static, Context, Element> View<State, Action, Context>
+    for dyn AnyView<State, Action, Context, Element> + Sync
+where
+    // Element must be `static` so it can be downcasted
+    Element: crate::ViewElement + 'static,
+    Context: crate::ViewPathTracker + 'static,
+{
+    type Element = Element;
+
+    type ViewState = AnyViewState;
+
+    fn build(&self, ctx: &mut Context) -> (Self::Element, Self::ViewState) {
+        self.dyn_build(ctx)
+    }
+
+    fn rebuild<'el>(
+        &self,
+        prev: &Self,
+        view_state: &mut Self::ViewState,
+        ctx: &mut Context,
+        element: Mut<'el, Self::Element>,
+    ) -> Mut<'el, Self::Element> {
+        self.dyn_rebuild(view_state, ctx, prev, element)
+    }
+
+    fn teardown(
+        &self,
+        view_state: &mut Self::ViewState,
+        ctx: &mut Context,
+        element: Mut<'_, Self::Element>,
+    ) {
+        self.dyn_teardown(view_state, ctx, element);
+    }
+
+    fn message(
+        &self,
+        view_state: &mut Self::ViewState,
+        id_path: &[crate::ViewId],
+        message: crate::DynMessage,
+        app_state: &mut State,
+    ) -> crate::MessageResult<Action> {
+        self.dyn_message(view_state, id_path, message, app_state)
+    }
 }

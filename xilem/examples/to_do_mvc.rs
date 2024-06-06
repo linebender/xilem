@@ -5,7 +5,7 @@
 #![windows_subsystem = "windows"]
 
 use xilem::view::{button, checkbox, flex, textbox};
-use xilem::{Axis, EventLoop, MasonryView, Xilem};
+use xilem::{Axis, EventLoop, WidgetView, Xilem};
 
 struct Task {
     description: String,
@@ -29,7 +29,7 @@ impl TaskList {
     }
 }
 
-fn app_logic(task_list: &mut TaskList) -> impl MasonryView<TaskList> {
+fn app_logic(task_list: &mut TaskList) -> impl WidgetView<TaskList> {
     let input_box = textbox(
         task_list.next_task.clone(),
         |task_list: &mut TaskList, new_value| {

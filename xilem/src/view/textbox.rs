@@ -1,9 +1,10 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::{text2::TextBrush, widget::WidgetMut, WidgetPod};
+use masonry::{text2::TextBrush, widget};
+use xilem_core::{Mut, View};
 
-use crate::{Color, MasonryView, MessageResult, TextAlignment, ViewCx, ViewId};
+use crate::{Color, MessageResult, Pod, TextAlignment, ViewCtx, ViewId};
 
 // FIXME - A major problem of the current approach (always setting the textbox contents)
 // is that if the user forgets to hook up the modify the state's contents in the callback,
@@ -62,13 +63,13 @@ impl<State, Action> Textbox<State, Action> {
     }
 }
 
-impl<State: 'static, Action: 'static> MasonryView<State, Action> for Textbox<State, Action> {
-    type Element = masonry::widget::Textbox;
+impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<State, Action> {
+    type Element = Pod<widget::Textbox>;
     type ViewState = ();
 
-    fn build(&self, cx: &mut ViewCx) -> (WidgetPod<Self::Element>, Self::ViewState) {
-        cx.with_leaf_action_widget(|_| {
-            WidgetPod::new(
+    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+        ctx.with_leaf_action_widget(|_| {
+            Pod::new(
                 masonry::widget::Textbox::new(self.contents.clone())
                     .with_text_brush(self.text_brush.clone())
                     .with_text_alignment(self.alignment),
@@ -76,44 +77,52 @@ impl<State: 'static, Action: 'static> MasonryView<State, Action> for Textbox<Sta
         })
     }
 
-    fn rebuild(
+    fn rebuild<'el>(
         &self,
-        _view_state: &mut Self::ViewState,
-        cx: &mut ViewCx,
         prev: &Self,
-        mut element: WidgetMut<Self::Element>,
-    ) {
+        _: &mut Self::ViewState,
+        ctx: &mut ViewCtx,
+        mut element: Mut<'el, Self::Element>,
+    ) -> Mut<'el, Self::Element> {
         // Unlike the other properties, we don't compare to the previous value;
         // instead, we compare directly to the element's text. This is to handle
         // cases like "Previous data says contents is 'fooba', user presses 'r',
         // now data and contents are both 'foobar' but previous data is 'fooba'"
         // without calling `set_text`.
+
+        // This is probably not the right behaviour, but determining what is the right behaviour is hard
         if self.contents != element.text() {
             element.reset_text(self.contents.clone());
-            cx.mark_changed();
+            ctx.mark_changed();
         }
 
-        // if prev.disabled != self.disabled {
-        //     element.set_disabled(self.disabled);
-        //     cx.mark_changed();
-        // }
         if prev.text_brush != self.text_brush {
             element.set_text_brush(self.text_brush.clone());
-            cx.mark_changed();
+            ctx.mark_changed();
         }
         if prev.alignment != self.alignment {
             element.set_alignment(self.alignment);
-            cx.mark_changed();
+            ctx.mark_changed();
         }
+        element
+    }
+
+    fn teardown(
+        &self,
+        _: &mut Self::ViewState,
+        ctx: &mut ViewCtx,
+        element: Mut<'_, Self::Element>,
+    ) {
+        ctx.teardown_leaf(element);
     }
 
     fn message(
         &self,
-        _view_state: &mut Self::ViewState,
+        _: &mut Self::ViewState,
         id_path: &[ViewId],
-        message: Box<dyn std::any::Any>,
+        message: xilem_core::DynMessage,
         app_state: &mut State,
-    ) -> crate::MessageResult<Action> {
+    ) -> MessageResult<Action> {
         debug_assert!(
             id_path.is_empty(),
             "id path should be empty in Textbox::message"

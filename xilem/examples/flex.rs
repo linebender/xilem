@@ -5,10 +5,10 @@ use masonry::widget::{CrossAxisAlignment, MainAxisAlignment};
 use winit::error::EventLoopError;
 use xilem::{
     view::{button, flex, label},
-    EventLoop, MasonryView, Xilem,
+    EventLoop, WidgetView, Xilem,
 };
 
-fn app_logic(data: &mut i32) -> impl MasonryView<i32> {
+fn app_logic(data: &mut i32) -> impl WidgetView<i32> {
     flex((
         button("-", |data| {
             *data -= 1;

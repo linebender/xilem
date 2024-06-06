@@ -1,74 +1,157 @@
-// Copyright 2022 the Xilem Authors
+// Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use std::any::Any;
+//! Message routing and type erasure primitives.
 
-#[macro_export]
-macro_rules! message {
-    ($($bounds:tt)*) => {
-        pub struct Message {
-            pub id_path: xilem_core::IdPath,
-            pub body: Box<dyn std::any::Any + $($bounds)*>,
-        }
+use core::{any::Any, fmt::Debug, ops::Deref};
 
-        impl Message {
-            pub fn new(id_path: xilem_core::IdPath, event: impl std::any::Any + $($bounds)*) -> Message {
-                Message {
-                    id_path,
-                    body: Box::new(event),
-                }
-            }
-        }
-    };
-}
+use alloc::boxed::Box;
 
-/// A result wrapper type for event handlers.
+/// The possible outcomes from a [`View::message`]
+///
+/// [`View::message`]: crate::View::message
 #[derive(Default)]
-pub enum MessageResult<A> {
-    /// The event handler was invoked and returned an action.
+pub enum MessageResult<Action> {
+    /// An action for a parent message handler to use
     ///
-    /// Use this return type if your widgets should respond to events by passing
-    /// a value up the tree, rather than changing their internal state.
-    Action(A),
-    /// The event handler received a change request that requests a rebuild.
-    ///
-    /// Note: A rebuild will always occur if there was a state change. This return
-    /// type can be used to indicate that a full rebuild is necessary even if the
-    /// state remained the same. It is expected that this type won't be used very
-    /// often.
-    #[allow(unused)]
+    /// This allows for sub-sections of your app to use an elm-like architecture
+    Action(Action),
+    // TODO: What does this mean?
+    /// This message's handler needs a rebuild to happen.
+    /// The exact semantics of this method haven't been determined.
     RequestRebuild,
-    /// The event handler discarded the event.
-    ///
-    /// This is the variant that you **almost always want** when you're not returning
-    /// an action.
-    #[allow(unused)]
     #[default]
+    /// This event had no impact on the app state, or the impact it did have
+    /// does not require the element tree to be recreated.
     Nop,
-    /// The event was addressed to an id path no longer in the tree.
-    ///
-    /// This is a normal outcome for async operation when the tree is changing
-    /// dynamically, but otherwise indicates a logic error.
-    Stale(Box<dyn Any>),
+    /// The view this message was being routed to no longer exists.
+    Stale(DynMessage),
 }
 
-// TODO: does this belong in core?
-pub struct AsyncWake;
+/// A dynamically typed message for the [`View`] trait.
+///
+/// Mostly equivalent to `Box<dyn Any>`, but with support for debug printing.
+// We can't use intra-doc links here because of
+/// The primary interface for this type is [`dyn Message::downcast`](trait.Message.html#method.downcast).
+///
+/// These messages must also be [`Send`].
+/// This makes using this message type in a multithreaded context easier.
+/// If this requirement is causing you issues, feel free to open an issue
+/// to discuss.
+/// We are aware of potential backwards-compatible workarounds, but
+/// are not aware of any tangible need for this.
+///
+/// [`View`]: crate::View
+pub type DynMessage = Box<dyn Message>;
+/// Types which can be contained in a [`DynMessage`].
+// The `View` trait could have been made generic over the message type,
+// primarily to enable flexibility around Send/Sync and avoid the need
+// for allocation.
+pub trait Message: 'static + Send {
+    /// Convert `self` into a [`Box<dyn Any>`].
+    fn into_any(self: Box<Self>) -> Box<dyn Any + Send>;
+    /// Convert `self` into a [`Box<dyn Any>`].
+    fn as_any(&self) -> &(dyn Any + Send);
+    /// Gets the debug representation of this message.
+    fn dyn_debug(&self) -> &dyn Debug;
+}
 
-impl<A> MessageResult<A> {
-    pub fn map<B>(self, f: impl FnOnce(A) -> B) -> MessageResult<B> {
-        match self {
-            MessageResult::Action(a) => MessageResult::Action(f(a)),
-            MessageResult::RequestRebuild => MessageResult::RequestRebuild,
-            MessageResult::Stale(event) => MessageResult::Stale(event),
-            MessageResult::Nop => MessageResult::Nop,
+impl<T> Message for T
+where
+    T: Any + Debug + Send,
+{
+    fn into_any(self: Box<Self>) -> Box<dyn Any + Send> {
+        self
+    }
+    fn as_any(&self) -> &(dyn Any + Send) {
+        self
+    }
+    fn dyn_debug(&self) -> &dyn Debug {
+        self
+    }
+}
+
+impl dyn Message {
+    /// Access the actual type of this [`DynMessage`].
+    ///
+    /// In most cases, this will be unwrapped, as each [`View`](crate::View) will
+    /// coordinate with their runner and/or element type to only receive messages
+    /// of a single, expected, underlying type.
+    ///
+    /// ## Errors
+    ///
+    /// If the message contained within `self` is not of type `T`, returns `self`
+    /// (so that e.g. a different type can be used)
+    pub fn downcast<T: Message>(self: Box<Self>) -> Result<Box<T>, Box<Self>> {
+        // The panic is unreachable
+        #![allow(clippy::missing_panics_doc)]
+        if self.deref().as_any().is::<T>() {
+            Ok(self
+                .into_any()
+                .downcast::<T>()
+                .expect("`as_any` should correspond with `into_any`"))
+        } else {
+            Err(self)
+        }
+    }
+}
+
+impl Debug for dyn Message {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        let inner = self.dyn_debug();
+        f.debug_tuple("Message").field(&inner).finish()
+    }
+}
+
+/* /// Types which can route a message to a child [`View`].
+// TODO: This trait needs to exist for desktop hot reloading
+// This would be a supertrait of View
+pub trait ViewMessage<State, Action> {
+    type ViewState;
+}
+*/
+
+#[cfg(test)]
+mod tests {
+    use core::fmt::Debug;
+
+    use alloc::boxed::Box;
+
+    use crate::DynMessage;
+
+    struct MyMessage(String);
+
+    impl Debug for MyMessage {
+        fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+            f.write_str("A present message")
         }
     }
 
-    pub fn or(self, f: impl FnOnce(Box<dyn Any>) -> Self) -> Self {
-        match self {
-            MessageResult::Stale(event) => f(event),
-            _ => self,
-        }
+    #[derive(Debug)]
+    struct NotMyMessage;
+
+    #[test]
+    /// Downcasting a message to the correct type should work
+    fn message_downcast() {
+        let message: DynMessage = Box::new(MyMessage("test".to_string()));
+        let result: Box<MyMessage> = message.downcast().unwrap();
+        assert_eq!(&result.0, "test");
+    }
+    #[test]
+    /// Downcasting a message to the wrong type shouldn't panic
+    fn message_downcast_wrong_type() {
+        let message: DynMessage = Box::new(MyMessage("test".to_string()));
+        let message = message.downcast::<NotMyMessage>().unwrap_err();
+        let result: Box<MyMessage> = message.downcast().unwrap();
+        assert_eq!(&result.0, "test");
+    }
+
+    #[test]
+    /// DynMessage's debug should pass through the debug implementation of
+    fn message_debug() {
+        let message: DynMessage = Box::new(MyMessage("".to_string()));
+        let debug_result = format!("{message:?}");
+        // Note that we
+        assert!(debug_result.contains("A present message"));
     }
 }

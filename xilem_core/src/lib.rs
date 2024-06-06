@@ -1,27 +1,48 @@
 // Copyright 2022 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-//! Generic implementation of Xilem view traits.
-//!
-//! This crate has a few basic types needed to support views, and also
-//! a set of macros used to instantiate the main view traits. The client
-//! will need to supply a bound on elements, a "pod" type which
-//! supports dynamic dispatching and marking of change flags, and a
-//! context.
-//!
-//! All this is still experimental. This crate is where more of the core
-//! Xilem architecture will land (some of which was implemented in the
-//! original prototype but not yet ported): adapt, memoize, use_state,
-//! and possibly some async logic. Likely most of env will also land
-//! here, but that also requires coordination with the context.
+#![cfg_attr(not(test), no_std)]
+#![forbid(unsafe_code)]
+#![warn(missing_docs, unreachable_pub)]
+// TODO: Point at documentation for this pattern of README include.
+// It has some neat advantages but is quite esoteric
+#![doc = concat!(
+" 
+<!-- This license link is in a .rustdoc-hidden section, but we may as well give the correct link -->
+[LICENSE]: https://github.com/linebender/xilem/blob/main/xilem_core/LICENSE
+
+<!-- intra-doc-links go here -->
+<!-- TODO: If the alloc feature is disabled, this link doesn't resolve -->
+[`alloc`]: alloc
+[`View`]: crate::View
+[`memoize`]: memoize
+
+<style>
+.rustdoc-hidden { display: none; }
+</style>
+
+<!-- Hide the header section of the README when using rustdoc -->
+<div style=\"display:none\">
+",
+    include_str!("../README.md"),
+)]
+
+extern crate alloc;
+
+mod view;
+pub use view::{View, ViewId, ViewPathTracker};
+
+mod views;
+pub use views::{memoize, Memoize};
+
+mod message;
+pub use message::{DynMessage, Message, MessageResult};
+
+mod element;
+pub use element::{AnyElement, Mut, SuperElement, ViewElement};
 
 mod any_view;
-mod id;
-mod message;
-mod sequence;
-mod vec_splice;
-mod view;
+pub use any_view::AnyView;
 
-pub use id::{Id, IdPath};
-pub use message::{AsyncWake, MessageResult};
-pub use vec_splice::VecSplice;
+mod sequence;
+pub use sequence::{AppendVec, ElementSplice, ViewSequence};

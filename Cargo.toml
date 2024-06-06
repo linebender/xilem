@@ -1,15 +1,17 @@
 [workspace]
 resolver = "2"
 members = [
+    "xilem",
     "xilem_core",
+    "masonry",
+
     "xilem_web",
+    "xilem_web/xilem_web_core",
     "xilem_web/web_examples/counter",
     "xilem_web/web_examples/counter_custom_element",
     "xilem_web/web_examples/todomvc",
     "xilem_web/web_examples/mathml_svg",
     "xilem_web/web_examples/svgtoy",
-    "masonry",
-    "xilem",
 ]
 
 [workspace.package]
@@ -26,15 +28,16 @@ clippy.assigning_clones = "allow"
 rust.unexpected_cfgs = { level = "warn", check-cfg = ['cfg(FALSE)', 'cfg(tarpaulin_include)'] }
 
 [workspace.dependencies]
-xilem_core = { version = "0.1.0", path = "xilem_core" }
+xilem_web_core = { version = "0.1.0", path = "xilem_web/xilem_web_core" }
 masonry = { version = "0.2.0", path = "masonry" }
+xilem_core = { version = "0.1.0", path = "xilem_core" }
 vello = "0.1.0"
 wgpu = "0.19.4"
 kurbo = "0.11.0"
 parley = "0.1.0"
 peniko = "0.1.0"
 winit = "0.30.0"
-tracing = "0.1.40"
+tracing = {version = "0.1.40", default-features = false}
 smallvec = "1.13.2"
 dpi = "0.1.1"
 fnv = "1.0.7"
