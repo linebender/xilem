@@ -1,0 +1,462 @@
+// Copyright 2023 the Xilem Authors
+// SPDX-License-ViewIdentifier: Apache-2.0
+
+use std::{borrow::Cow, marker::PhantomData};
+use wasm_bindgen::{prelude::Closure, throw_str, JsCast, UnwrapThrowExt};
+use web_sys::AddEventListenerOptions;
+use xilem_core::{MessageResult, View, ViewId, ViewPathTracker};
+
+use crate::{ElementAsRef, OptionalAction, ViewCtx};
+
+/// Wraps a [`View`] `V` and attaches an event listener.
+///
+/// The event type `Event` should inherit from [`web_sys::Event`]
+#[derive(Clone, Debug)]
+pub struct OnEvent<V, State, Action, Event, Callback> {
+    pub(crate) element: V,
+    pub(crate) event: Cow<'static, str>,
+    pub(crate) capture: bool,
+    pub(crate) passive: bool,
+    pub(crate) handler: Callback,
+    #[allow(clippy::type_complexity)]
+    pub(crate) phantom_event_ty: PhantomData<fn() -> (State, Action, Event)>,
+}
+
+impl<V, State, Action, Event, Callback> OnEvent<V, State, Action, Event, Callback>
+where
+    Event: JsCast + 'static,
+{
+    pub fn new(element: V, event: impl Into<Cow<'static, str>>, handler: Callback) -> Self {
+        OnEvent {
+            element,
+            event: event.into(),
+            passive: true,
+            capture: false,
+            handler,
+            phantom_event_ty: PhantomData,
+        }
+    }
+
+    /// Whether the event handler should be passive. (default = `true`)
+    ///
+    /// Passive event handlers can't prevent the browser's default action from
+    /// running (otherwise possible with `event.prevent_default()`), which
+    /// restricts what they can be used for, but reduces overhead.
+    pub fn passive(mut self, value: bool) -> Self {
+        self.passive = value;
+        self
+    }
+
+    /// Whether the event handler should capture the event *before* being dispatched to any EventTarget beneath it in the DOM tree. (default = `false`)
+    ///
+    /// Events that are bubbling upward through the tree will not trigger a listener designated to use capture.
+    /// Event bubbling and capturing are two ways of propagating events that occur in an element that is nested within another element,
+    /// when both elements have registered a handle for that event.
+    /// The event propagation mode determines the order in which elements receive the event.
+    // TODO use similar Nomenclature as gloo (Phase::Bubble/Phase::Capture)?
+    pub fn capture(mut self, value: bool) -> Self {
+        self.capture = value;
+        self
+    }
+}
+
+fn create_event_listener<Event: JsCast + xilem_core::Message>(
+    target: &web_sys::EventTarget,
+    event: &str,
+    // TODO options
+    capture: bool,
+    passive: bool,
+    ctx: &mut ViewCtx,
+) -> Closure<dyn FnMut(web_sys::Event)> {
+    let thunk = ctx.message_thunk();
+    let callback = Closure::new(move |event: web_sys::Event| {
+        // TODO make this configurable
+        event.prevent_default();
+        event.stop_propagation();
+        let event = event.dyn_into::<Event>().unwrap_throw();
+        thunk.push_message(event);
+    });
+
+    let mut options = AddEventListenerOptions::new();
+    options.capture(capture);
+    options.passive(passive);
+
+    target
+        .add_event_listener_with_callback_and_add_event_listener_options(
+            event,
+            callback.as_ref().unchecked_ref(),
+            &options,
+        )
+        .unwrap_throw();
+    callback
+}
+
+fn remove_event_listener(
+    target: &web_sys::EventTarget,
+    event: &str,
+    callback: &Closure<dyn FnMut(web_sys::Event)>,
+    is_capture: bool,
+) {
+    target
+        .remove_event_listener_with_callback_and_bool(
+            event,
+            callback.as_ref().unchecked_ref(),
+            is_capture,
+        )
+        .unwrap_throw();
+}
+
+/// State for the `OnEvent` view.
+pub struct OnEventState<S> {
+    #[allow(unused)]
+    child_state: S,
+    callback: Closure<dyn FnMut(web_sys::Event)>,
+}
+
+impl<V, State, Action, Event, Callback, OA> View<State, Action, ViewCtx>
+    for OnEvent<V, State, Action, Event, Callback>
+where
+    State: 'static,
+    Action: 'static,
+    OA: OptionalAction<Action>,
+    Callback: Fn(&mut State, Event) -> OA + 'static,
+    V: View<State, Action, ViewCtx>,
+    V::Element: ElementAsRef<web_sys::EventTarget>,
+    Event: JsCast + 'static + xilem_core::Message,
+{
+    type ViewState = OnEventState<V::ViewState>;
+
+    type Element = V::Element;
+
+    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+        // we use a placeholder id here, the id can never change, so we don't need to store it anywhere
+        ctx.with_id(ViewId::new(0), |ctx| {
+            let (element, child_state) = self.element.build(ctx);
+            let callback = create_event_listener::<Event>(
+                element.as_ref(),
+                &self.event,
+                self.capture,
+                self.passive,
+                ctx,
+            );
+            let state = OnEventState {
+                child_state,
+                callback,
+            };
+            (element, state)
+        })
+    }
+
+    fn rebuild<'a>(
+        &self,
+        prev: &Self,
+        view_state: &mut Self::ViewState,
+        ctx: &mut ViewCtx,
+        element: <Self::Element as xilem_core::ViewElement>::Mut<'a>,
+    ) -> <Self::Element as xilem_core::ViewElement>::Mut<'a> {
+        ctx.with_id(ViewId::new(0), |ctx| {
+            if prev.capture != self.capture
+                || prev.passive != self.passive
+                || prev.event != self.event
+            {
+                remove_event_listener(
+                    element.as_ref(),
+                    &prev.event,
+                    &view_state.callback,
+                    prev.capture,
+                );
+
+                view_state.callback = create_event_listener::<Event>(
+                    element.as_ref(),
+                    &self.event,
+                    self.capture,
+                    self.passive,
+                    ctx,
+                );
+            }
+            self.element
+                .rebuild(&prev.element, &mut view_state.child_state, ctx, element)
+        })
+    }
+
+    fn teardown(
+        &self,
+        view_state: &mut Self::ViewState,
+        ctx: &mut ViewCtx,
+        element: <Self::Element as xilem_core::ViewElement>::Mut<'_>,
+    ) {
+        remove_event_listener(
+            element.as_ref(),
+            &self.event,
+            &view_state.callback,
+            self.capture,
+        );
+        ctx.with_id(ViewId::new(0), |ctx| {
+            self.element
+                .teardown(&mut view_state.child_state, ctx, element);
+        });
+    }
+
+    fn message(
+        &self,
+        view_state: &mut Self::ViewState,
+        id_path: &[ViewId],
+        message: xilem_core::DynMessage,
+        app_state: &mut State,
+    ) -> MessageResult<Action> {
+        let Some((first, remainder)) = id_path.split_first() else {
+            throw_str("Parent view of `OnEvent` sent outdated and/or incorrect empty view path");
+        };
+        if first.routing_id() != 0 {
+            // TODO better message?
+            throw_str("Parent view of `OnEvent` sent outdated and/or incorrect empty view path");
+        }
+        if remainder.is_empty() {
+            let event = message.downcast::<Event>().unwrap_throw();
+            match (self.handler)(app_state, *event).action() {
+                Some(a) => MessageResult::Action(a),
+                None => MessageResult::Nop,
+            }
+        } else {
+            self.element
+                .message(&mut view_state.child_state, remainder, message, app_state)
+        }
+    }
+}
+
+macro_rules! event_definitions {
+    ($(($ty_name:ident, $event_name:literal, $web_sys_ty:ident)),*) => {
+        $(
+        pub struct $ty_name<V, State, Action, Callback> {
+            pub(crate) element: V,
+            pub(crate) capture: bool,
+            pub(crate) passive: bool,
+            pub(crate) handler: Callback,
+            // #[allow(clippy::type_complexity)]
+            pub(crate) phantom_event_ty: PhantomData<fn() -> (State, Action)>,
+        }
+
+        impl<V, State, Action, Callback> $ty_name<V, State, Action, Callback> {
+            pub fn new(element: V, handler: Callback) -> Self {
+                Self {
+                    element,
+                    passive: true,
+                    capture: false,
+                    handler,
+                    phantom_event_ty: PhantomData,
+                }
+            }
+
+            /// Whether the event handler should be passive. (default = `true`)
+            ///
+            /// Passive event handlers can't prevent the browser's default action from
+            /// running (otherwise possible with `event.prevent_default()`), which
+            /// restricts what they can be used for, but reduces overhead.
+            pub fn passive(mut self, value: bool) -> Self {
+                self.passive = value;
+                self
+            }
+
+            /// Whether the event handler should capture the event *before* being dispatched to any EventTarget beneath it in the DOM tree. (default = `false`)
+            ///
+            /// Events that are bubbling upward through the tree will not trigger a listener designated to use capture.
+            /// Event bubbling and capturing are two ways of propagating events that occur in an element that is nested within another element,
+            /// when both elements have registered a handle for that event.
+            /// The event propagation mode determines the order in which elements receive the event.
+            // TODO use similar Nomenclature as gloo (Phase::Bubble/Phase::Capture)?
+            pub fn capture(mut self, value: bool) -> Self {
+                self.capture = value;
+                self
+            }
+        }
+
+
+        impl<V, State, Action, Callback, OA> View<State, Action, ViewCtx>
+            for $ty_name<V, State, Action, Callback>
+        where
+            State: 'static,
+            Action: 'static,
+            OA: OptionalAction<Action>,
+            Callback: Fn(&mut State, web_sys::$web_sys_ty) -> OA + 'static,
+            V: View<State, Action, ViewCtx>,
+            V::Element: ElementAsRef<web_sys::EventTarget>,
+        {
+            type ViewState = OnEventState<V::ViewState>;
+
+            type Element = V::Element;
+
+            fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+                // we use a placeholder id here, the id can never change, so we don't need to store it anywhere
+                ctx.with_id(ViewId::new(0), |ctx| {
+                    let (element, child_state) = self.element.build(ctx);
+                    let callback = create_event_listener::<web_sys::$web_sys_ty>(
+                        element.as_ref(),
+                        $event_name,
+                        self.capture,
+                        self.passive,
+                        ctx,
+                    );
+                    let state = OnEventState {
+                        child_state,
+                        callback,
+                    };
+                    (element, state)
+                })
+            }
+
+            fn rebuild<'a>(
+                &self,
+                prev: &Self,
+                view_state: &mut Self::ViewState,
+                ctx: &mut ViewCtx,
+                element: <Self::Element as xilem_core::ViewElement>::Mut<'a>,
+            ) -> <Self::Element as xilem_core::ViewElement>::Mut<'a> {
+                ctx.with_id(ViewId::new(0), |ctx| {
+                    if prev.capture != self.capture
+                        || prev.passive != self.passive
+                    {
+                        remove_event_listener(
+                            element.as_ref(),
+                            $event_name,
+                            &view_state.callback,
+                            prev.capture,
+                        );
+
+                        view_state.callback = create_event_listener::<web_sys::$web_sys_ty>(
+                            element.as_ref(),
+                            $event_name,
+                            self.capture,
+                            self.passive,
+                            ctx,
+                        );
+                    }
+                    self.element
+                        .rebuild(&prev.element, &mut view_state.child_state, ctx, element)
+                })
+            }
+
+            fn teardown(
+                &self,
+                view_state: &mut Self::ViewState,
+                ctx: &mut ViewCtx,
+                element: <Self::Element as xilem_core::ViewElement>::Mut<'_>,
+            ) {
+                // TODO: is this really needed (as the element will be removed anyway)?
+                // remove_event_listener(
+                //     element.as_ref(),
+                //     $event_name,
+                //     &view_state.callback,
+                //     self.capture,
+                // );
+                ctx.with_id(ViewId::new(0), |ctx| {
+                    self.element
+                        .teardown(&mut view_state.child_state, ctx, element);
+                });
+            }
+
+            fn message(
+                &self,
+                view_state: &mut Self::ViewState,
+                id_path: &[ViewId],
+                message: xilem_core::DynMessage,
+                app_state: &mut State,
+            ) -> MessageResult<Action> {
+                let Some((first, remainder)) = id_path.split_first() else {
+                    throw_str(concat!("Parent view of ", stringify!($web_sys_ty), " sent outdated and/or incorrect empty view path"));
+                };
+                if first.routing_id() != 0 {
+                    // TODO better message?
+                    throw_str("Parent view of `OnEvent` sent outdated and/or incorrect empty view path");
+                }
+                if remainder.is_empty() {
+                    let event = message.downcast::<web_sys::$web_sys_ty>().unwrap_throw();
+                    match (self.handler)(app_state, *event).action() {
+                        Some(a) => MessageResult::Action(a),
+                        None => MessageResult::Nop,
+                    }
+                } else {
+                    self.element
+                        .message(&mut view_state.child_state, remainder, message, app_state)
+                }
+            }
+        }
+        )*
+    };
+}
+
+// click/auxclick/contextmenu are still mouse events in either Safari as well as Firefox,
+// see: https://stackoverflow.com/questions/70626381/why-chrome-emits-pointerevents-and-firefox-mouseevents-and-which-type-definition/76900433#76900433
+event_definitions!(
+    (OnAbort, "abort", Event),
+    (OnAuxClick, "auxclick", MouseEvent),
+    (OnBeforeInput, "beforeinput", InputEvent),
+    (OnBeforeMatch, "beforematch", Event),
+    (OnBeforeToggle, "beforetoggle", Event),
+    (OnBlur, "blur", FocusEvent),
+    (OnCancel, "cancel", Event),
+    (OnCanPlay, "canplay", Event),
+    (OnCanPlayThrough, "canplaythrough", Event),
+    (OnChange, "change", Event),
+    (OnClick, "click", MouseEvent),
+    (OnClose, "close", Event),
+    (OnContextLost, "contextlost", Event),
+    (OnContextMenu, "contextmenu", MouseEvent),
+    (OnContextRestored, "contextrestored", Event),
+    (OnCopy, "copy", Event),
+    (OnCueChange, "cuechange", Event),
+    (OnCut, "cut", Event),
+    (OnDblClick, "dblclick", MouseEvent),
+    (OnDrag, "drag", Event),
+    (OnDragEnd, "dragend", Event),
+    (OnDragEnter, "dragenter", Event),
+    (OnDragLeave, "dragleave", Event),
+    (OnDragOver, "dragover", Event),
+    (OnDragStart, "dragstart", Event),
+    (OnDrop, "drop", Event),
+    (OnDurationChange, "durationchange", Event),
+    (OnEmptied, "emptied", Event),
+    (OnEnded, "ended", Event),
+    (OnError, "error", Event),
+    (OnFocus, "focus", FocusEvent),
+    (OnFocusIn, "focusin", FocusEvent),
+    (OnFocusOut, "focusout", FocusEvent),
+    (OnFormData, "formdata", Event),
+    (OnInput, "input", Event),
+    (OnInvalid, "invalid", Event),
+    (OnKeyDown, "keydown", KeyboardEvent),
+    (OnKeyUp, "keyup", KeyboardEvent),
+    (OnLoad, "load", Event),
+    (OnLoadedData, "loadeddata", Event),
+    (OnLoadedMetadata, "loadedmetadata", Event),
+    (OnLoadStart, "loadstart", Event),
+    (OnMouseDown, "mousedown", MouseEvent),
+    (OnMouseEnter, "mouseenter", MouseEvent),
+    (OnMouseLeave, "mouseleave", MouseEvent),
+    (OnMouseMove, "mousemove", MouseEvent),
+    (OnMouseOut, "mouseout", MouseEvent),
+    (OnMouseOver, "mouseover", MouseEvent),
+    (OnMouseUp, "mouseup", MouseEvent),
+    (OnPaste, "paste", Event),
+    (OnPause, "pause", Event),
+    (OnPlay, "play", Event),
+    (OnPlaying, "playing", Event),
+    (OnProgress, "progress", Event),
+    (OnRateChange, "ratechange", Event),
+    (OnReset, "reset", Event),
+    (OnResize, "resize", Event),
+    (OnScroll, "scroll", Event),
+    (OnScrollEnd, "scrollend", Event),
+    (OnSecurityPolicyViolation, "securitypolicyviolation", Event),
+    (OnSeeked, "seeked", Event),
+    (OnSeeking, "seeking", Event),
+    (OnSelect, "select", Event),
+    (OnSlotChange, "slotchange", Event),
+    (OnStalled, "stalled", Event),
+    (OnSubmit, "submit", Event),
+    (OnSuspend, "suspend", Event),
+    (OnTimeUpdate, "timeupdate", Event),
+    (OnToggle, "toggle", Event),
+    (OnVolumeChange, "volumechange", Event),
+    (OnWaiting, "waiting", Event),
+    (OnWheel, "wheel", WheelEvent)
+);

@@ -12,6 +12,7 @@ members = [
     "xilem_web/web_examples/todomvc",
     "xilem_web/web_examples/mathml_svg",
     "xilem_web/web_examples/svgtoy",
+    "xilem_web2",
 ]
 
 [workspace.package]

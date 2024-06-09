@@ -3882,6 +3882,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "xilem_web2"
+version = "0.1.0"
+dependencies = [
+ "peniko",
+ "wasm-bindgen",
+ "web-sys",
+ "xilem_core",
+]
+
+[[package]]
 name = "xilem_web_core"
 version = "0.1.0"
 
