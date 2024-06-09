@@ -113,6 +113,9 @@ pub trait ViewSequence<State, Action, Context: ViewPathTracker, Element: ViewEle
         message: DynMessage,
         app_state: &mut State,
     ) -> MessageResult<Action>;
+
+    /// Returns the current amount of elements managed by this sequence.
+    fn count(&self, state: &Self::SeqState) -> usize;
 }
 
 /// A temporary "splice" to add, update and delete in an (ordered) sequence of elements.
@@ -187,6 +190,10 @@ where
         app_state: &mut State,
     ) -> MessageResult<Action> {
         self.message(seq_state, id_path, message, app_state)
+    }
+
+    fn count(&self, _state: &Self::SeqState) -> usize {
+        1
     }
 }
 
@@ -324,6 +331,14 @@ where
         } else {
             // TODO: this should be unreachable as the generation was increased on the falling edge
             MessageResult::Stale(message)
+        }
+    }
+
+    fn count(&self, state: &Self::SeqState) -> usize {
+        match (self, &state.inner) {
+            (Some(vt), Some(state)) => vt.count(state),
+            (None, None) => 0,
+            _ => panic!("non matching state and prev value"),
         }
     }
 }
@@ -519,6 +534,13 @@ where
         let inner_state = &mut seq_state.inner_states[index];
         self[index].seq_message(inner_state, rest, message, app_state)
     }
+
+    fn count(&self, state: &Self::SeqState) -> usize {
+        self.iter()
+            .zip(&state.inner_states)
+            .map(|(child, child_state)| child.count(child_state))
+            .sum()
+    }
 }
 
 impl<State, Action, Context, Element> ViewSequence<State, Action, Context, Element, ()> for ()
@@ -555,6 +577,10 @@ where
         _: &mut State,
     ) -> MessageResult<Action> {
         unreachable!("Messages should never be dispatched to an empty tuple, got {message:?}");
+    }
+
+    fn count(&self, _state: &Self::SeqState) -> usize {
+        0
     }
 }
 
@@ -598,6 +624,10 @@ where
         app_state: &mut State,
     ) -> MessageResult<Action> {
         self.0.seq_message(seq_state, id_path, message, app_state)
+    }
+
+    fn count(&self, state: &Self::SeqState) -> usize {
+        self.0.count(state)
     }
 }
 
@@ -678,6 +708,13 @@ macro_rules! impl_view_tuple {
                     // The only time that wouldn't be the case is when a generational index has overflowed?
                     _ => unreachable!("Unexpected id path {start:?} in tuple (wants to be routed via {rest:?})"),
                 }
+            }
+
+            fn count(&self, state: &Self::SeqState) -> usize {
+                0
+                $(
+                    + self.$idx.count(&state.$idx)
+                )+
             }
         }
     };
