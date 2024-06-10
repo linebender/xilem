@@ -71,7 +71,7 @@ enum ClassModifier {
 }
 
 #[derive(Debug, Default)]
-pub struct ClassAttributes {
+pub struct Classes {
     // TODO maybe this attribute is redundant and can be formed just from the class_modifiers attribute
     classes: VecMap<CowStr, ()>,
     class_modifiers: Vec<ClassModifier>,
@@ -83,7 +83,7 @@ pub struct ClassAttributes {
     build_finished: bool,
 }
 
-impl ClassAttributes {
+impl Classes {
     pub fn apply_class_changes(&mut self, element: &web_sys::Element) {
         if self.dirty {
             self.dirty = false;
@@ -101,7 +101,7 @@ impl ClassAttributes {
             }
             // intersperse would be the right way to do this, but avoid extra dependencies just for this (and otherwise it's unstable in std)...
             self.class_name.clear();
-            let last_idx = self.classes.len() - 1;
+            let last_idx = self.classes.len().saturating_sub(1);
             for (idx, class) in self.classes.keys().enumerate() {
                 self.class_name += class;
                 if idx != last_idx {
@@ -114,7 +114,7 @@ impl ClassAttributes {
     }
 }
 
-impl WithClasses for ClassAttributes {
+impl WithClasses for Classes {
     fn start_class_modifier(&mut self) {
         if self.build_finished {
             if self.idx == 0 {
@@ -180,19 +180,19 @@ impl WithClasses for ClassAttributes {
 
 impl WithClasses for ElementProps {
     fn add_class(&mut self, class_name: CowStr) {
-        self.class_attributes.add_class(class_name);
+        self.classes.add_class(class_name);
     }
 
     fn remove_class(&mut self, class_name: CowStr) {
-        self.class_attributes.remove_class(class_name);
+        self.classes.remove_class(class_name);
     }
 
     fn start_class_modifier(&mut self) {
-        self.class_attributes.start_class_modifier();
+        self.classes.start_class_modifier();
     }
 
     fn end_class_modifier(&mut self) {
-        self.class_attributes.end_class_modifier();
+        self.classes.end_class_modifier();
     }
 }
 

@@ -1,10 +1,10 @@
 use wasm_bindgen::UnwrapThrowExt;
 
-use crate::{attribute::Attributes, class::ClassAttributes, document, DynNode, Pod};
+use crate::{attribute::Attributes, class::Classes, document, DynNode, Pod};
 
 pub struct ElementProps {
     pub(crate) attributes: Attributes,
-    pub(crate) class_attributes: ClassAttributes,
+    pub(crate) classes: Classes,
     pub children: Vec<Pod<DynNode>>,
 }
 
@@ -13,7 +13,7 @@ impl ElementProps {
     // because we want to minimize DOM traffic as much as possible (that's basically the bottleneck)
     pub fn update_element(&mut self, element: &web_sys::Element) {
         self.attributes.apply_attribute_changes(element);
-        self.class_attributes.apply_class_changes(element);
+        self.classes.apply_class_changes(element);
     }
 }
 
@@ -31,7 +31,7 @@ impl Pod<web_sys::Element> {
             node: element,
             props: ElementProps {
                 attributes: Attributes::default(),
-                class_attributes: ClassAttributes::default(),
+                classes: Classes::default(),
                 children,
             },
         }
