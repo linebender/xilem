@@ -548,8 +548,9 @@ impl RenderRoot {
                 .push_back(RenderRootSignal::RequestAnimFrame);
         }
 
-        // If we either need to be repainted of need to update accessibility info,
-        // we request a redraw.
+        // We request a redraw if either the render tree or the accessibility
+        // tree needs to be rebuilt. Usually both happen at the same time.
+        // A redraw will trigger a rebuild of the accessibility tree.
         if self.root.state().needs_paint || self.root.state().needs_accessibility_update {
             self.state
                 .signal_queue
