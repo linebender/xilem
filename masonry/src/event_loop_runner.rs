@@ -509,13 +509,14 @@ pub(crate) fn try_init_tracing() -> Result<(), SetGlobalDefaultError> {
             .from_env_lossy();
         // This format is more concise than even the 'Compact' default:
         // - We print the time without the date (GUI apps usually run for very short periods).
-        // - We print the time with seconds precision (we really don't need anything lower).
+        // - We print the time with milliseconds precision.
         // - We skip the target. In app code, the target is almost always visual noise. By
         //   default, it only gives you the module a log was defined in. This is rarely useful;
         //   the log message is much more helpful for finding a log's location.
         let fmt_layer = tracing_subscriber::fmt::layer()
             .with_timer(UtcTime::new(format_description!(
-                "[hour]:[minute]:[second]"
+                // We append a `Z` here to indicate clearly that this is a UTC time
+                "[hour repr:24]:[minute]:[second].[subsecond digits:3]Z"
             )))
             .with_target(false);
 
