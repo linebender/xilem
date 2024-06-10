@@ -97,7 +97,7 @@ pub fn run_with(
     root_widget: impl Widget,
     app_driver: impl AppDriver + 'static,
 ) -> Result<(), EventLoopError> {
-    let render_cx = RenderContext::new().unwrap();
+    let render_cx = RenderContext::new();
     // TODO: We can't know this scale factor until later?
     let scale_factor = 1.0;
     let mut main_state = MainState {

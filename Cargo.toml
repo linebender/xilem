@@ -31,11 +31,11 @@ rust.unexpected_cfgs = { level = "warn", check-cfg = ['cfg(FALSE)', 'cfg(tarpaul
 xilem_web_core = { version = "0.1.0", path = "xilem_web/xilem_web_core" }
 masonry = { version = "0.2.0", path = "masonry" }
 xilem_core = { version = "0.1.0", path = "xilem_core" }
-vello = "0.1.0"
-wgpu = "0.19.4"
+vello = "0.2.0"
+wgpu = "0.20.0"
 kurbo = "0.11.0"
 parley = "0.1.0"
-peniko = "0.1.0"
+peniko = "0.1.1"
 winit = "0.30.0"
 tracing = {version = "0.1.40", default-features = false}
 smallvec = "1.13.2"

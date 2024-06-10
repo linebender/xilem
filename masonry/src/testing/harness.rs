@@ -243,8 +243,7 @@ impl TestHarness {
         if std::env::var("SKIP_RENDER_TESTS").is_ok_and(|it| !it.is_empty()) {
             return RgbaImage::from_pixel(1, 1, Rgba([255, 255, 255, 255]));
         }
-        let mut context =
-            RenderContext::new().expect("Got non-Send/Sync error from creating render context");
+        let mut context = RenderContext::new();
         let device_id =
             pollster::block_on(context.device(None)).expect("No compatible device found");
         let device_handle = &mut context.devices[device_id];
