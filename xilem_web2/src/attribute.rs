@@ -2,14 +2,14 @@ use std::marker::PhantomData;
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use xilem_core::{DynMessage, MessageResult, Mut, View, ViewElement, ViewId};
 
-use crate::{vecmap::VecMap, AttributeValue, DomNode, ElementAttributes, Pod, PodMut, ViewCtx};
+use crate::{vecmap::VecMap, AttributeValue, DomNode, ElementProps, Pod, PodMut, ViewCtx};
 
 type CowStr = std::borrow::Cow<'static, str>;
 
 pub trait WithAttributes {
     fn start_attribute_modifier(&mut self);
     fn end_attribute_modifier(&mut self);
-    fn set_attr(&mut self, name: CowStr, value: Option<AttributeValue>);
+    fn set_attribute(&mut self, name: CowStr, value: Option<AttributeValue>);
     // TODO first find a use-case for this...
     // fn get_attr(&self, name: &str) -> Option<&AttributeValue>;
 }
@@ -86,7 +86,7 @@ impl Attributes {
 }
 
 impl WithAttributes for Attributes {
-    fn set_attr(&mut self, name: CowStr, value: Option<AttributeValue>) {
+    fn set_attribute(&mut self, name: CowStr, value: Option<AttributeValue>) {
         let new_modifier = if let Some(value) = value {
             AttributeModifier::Set(name.clone(), value)
         } else {
@@ -146,7 +146,7 @@ impl WithAttributes for Attributes {
     }
 }
 
-impl WithAttributes for ElementAttributes {
+impl WithAttributes for ElementProps {
     fn start_attribute_modifier(&mut self) {
         self.attributes.start_attribute_modifier();
     }
@@ -155,35 +155,35 @@ impl WithAttributes for ElementAttributes {
         self.attributes.end_attribute_modifier();
     }
 
-    fn set_attr(&mut self, name: CowStr, value: Option<AttributeValue>) {
-        self.attributes.set_attr(name, value);
+    fn set_attribute(&mut self, name: CowStr, value: Option<AttributeValue>) {
+        self.attributes.set_attribute(name, value);
     }
 }
-impl<E: DomNode<Attrs: WithAttributes>> WithAttributes for Pod<E> {
+impl<E: DomNode<Props: WithAttributes>> WithAttributes for Pod<E> {
     fn start_attribute_modifier(&mut self) {
-        self.attrs.start_attribute_modifier();
+        self.props.start_attribute_modifier();
     }
 
     fn end_attribute_modifier(&mut self) {
-        self.attrs.end_attribute_modifier();
+        self.props.end_attribute_modifier();
     }
 
-    fn set_attr(&mut self, name: CowStr, value: Option<AttributeValue>) {
-        self.attrs.set_attr(name, value);
+    fn set_attribute(&mut self, name: CowStr, value: Option<AttributeValue>) {
+        self.props.set_attribute(name, value);
     }
 }
 
-impl<E: DomNode<Attrs: WithAttributes>> WithAttributes for PodMut<'_, E> {
+impl<E: DomNode<Props: WithAttributes>> WithAttributes for PodMut<'_, E> {
     fn start_attribute_modifier(&mut self) {
-        self.attrs.start_attribute_modifier();
+        self.props.start_attribute_modifier();
     }
 
     fn end_attribute_modifier(&mut self) {
-        self.attrs.end_attribute_modifier();
+        self.props.end_attribute_modifier();
     }
 
-    fn set_attr(&mut self, name: CowStr, value: Option<AttributeValue>) {
-        self.attrs.set_attr(name, value);
+    fn set_attribute(&mut self, name: CowStr, value: Option<AttributeValue>) {
+        self.props.set_attribute(name, value);
     }
 }
 
@@ -231,7 +231,7 @@ where
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let (mut element, state) = self.el.build(ctx);
         element.start_attribute_modifier();
-        element.set_attr(self.name.clone(), self.value.clone());
+        element.set_attribute(self.name.clone(), self.value.clone());
         element.end_attribute_modifier();
         (element, state)
     }
@@ -245,7 +245,7 @@ where
     ) -> Mut<'e, Self::Element> {
         element.start_attribute_modifier();
         let mut element = self.el.rebuild(&prev.el, view_state, ctx, element);
-        element.set_attr(self.name.clone(), self.value.clone());
+        element.set_attribute(self.name.clone(), self.value.clone());
         element.end_attribute_modifier();
         element
     }

@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 use xilem_core::{DynMessage, MessageResult, Mut, View, ViewElement, ViewId};
 
 // TODO maybe this attribute is redundant and can be formed just from the class_modifiers attribute
-use crate::{vecmap::VecMap, DomNode, ElementAttributes, Pod, PodMut, ViewCtx};
+use crate::{vecmap::VecMap, DomNode, ElementProps, Pod, PodMut, ViewCtx};
 
 type CowStr = std::borrow::Cow<'static, str>;
 
@@ -178,7 +178,7 @@ impl WithClasses for ClassAttributes {
     }
 }
 
-impl WithClasses for ElementAttributes {
+impl WithClasses for ElementProps {
     fn add_class(&mut self, class_name: CowStr) {
         self.class_attributes.add_class(class_name);
     }
@@ -196,39 +196,39 @@ impl WithClasses for ElementAttributes {
     }
 }
 
-impl<E: DomNode<Attrs: WithClasses>> WithClasses for Pod<E> {
+impl<E: DomNode<Props: WithClasses>> WithClasses for Pod<E> {
     fn add_class(&mut self, class_name: CowStr) {
-        self.attrs.add_class(class_name);
+        self.props.add_class(class_name);
     }
 
     fn remove_class(&mut self, class_name: CowStr) {
-        self.attrs.remove_class(class_name);
+        self.props.remove_class(class_name);
     }
 
     fn start_class_modifier(&mut self) {
-        self.attrs.start_class_modifier();
+        self.props.start_class_modifier();
     }
 
     fn end_class_modifier(&mut self) {
-        self.attrs.end_class_modifier();
+        self.props.end_class_modifier();
     }
 }
 
-impl<E: DomNode<Attrs: WithClasses>> WithClasses for PodMut<'_, E> {
+impl<E: DomNode<Props: WithClasses>> WithClasses for PodMut<'_, E> {
     fn add_class(&mut self, class_name: CowStr) {
-        self.attrs.add_class(class_name);
+        self.props.add_class(class_name);
     }
 
     fn remove_class(&mut self, class_name: CowStr) {
-        self.attrs.remove_class(class_name);
+        self.props.remove_class(class_name);
     }
 
     fn start_class_modifier(&mut self) {
-        self.attrs.start_class_modifier();
+        self.props.start_class_modifier();
     }
 
     fn end_class_modifier(&mut self) {
-        self.attrs.end_class_modifier();
+        self.props.end_class_modifier();
     }
 }
 

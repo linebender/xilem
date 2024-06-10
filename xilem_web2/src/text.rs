@@ -20,7 +20,7 @@ macro_rules! impl_string_view {
             fn build(&self, _ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
                 let pod = Pod {
                     node: web_sys::Text::new_with_data(&self.0).unwrap(),
-                    attrs: (),
+                    props: (),
                 };
                 (pod, ())
             }
@@ -72,7 +72,7 @@ macro_rules! impl_to_string_view {
             fn build(&self, _ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
                 let pod = Pod {
                     node: web_sys::Text::new_with_data(&self.0.to_string()).unwrap(),
-                    attrs: (),
+                    props: (),
                 };
                 (pod, ())
             }

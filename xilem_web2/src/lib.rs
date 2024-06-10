@@ -3,7 +3,7 @@
 
 use attribute::{Attr, WithAttributes};
 use class::{AsClassIter, Class, WithClasses};
-use element::ElementAttributes;
+use element::ElementProps;
 use std::any::Any;
 use wasm_bindgen::UnwrapThrowExt;
 use web_sys::wasm_bindgen::JsCast;
@@ -40,14 +40,46 @@ pub use text::text;
 type CowStr = std::borrow::Cow<'static, str>;
 
 pub trait DomNode: AnyNode + 'static {
-    type Attrs: 'static;
+    type Props: 'static;
 
-    fn apply_attributes(&self, attrs: &mut Self::Attrs);
+    fn update_node(&self, props: &mut Self::Props);
     // TODO maybe default impl?
-    fn into_dyn_node(self, attrs: Self::Attrs) -> Pod<DynNode>;
+    fn into_dyn_node(self, props: Self::Props) -> Pod<DynNode>;
 }
 
-pub trait AnyNode: 'static {
+// struct Cla;
+// trait WithProps<E> {
+//     fn update_props(&mut self, props: &mut E);
+// }
+
+// trait Classes {}
+// impl<E: WithProps< Classes for Props<Cla> {}
+// impl<E: Classes> Classes for Props<E> {}
+
+// trait Props {
+//     fn update<E>(&mut self, element: E, );
+// }
+
+// impl Classes
+
+// pub trait DomNodeNew: AnyNode + 'static {
+//     type Props<E: Props>: 'static;
+
+//     fn update_node(&self, props: &mut Self::Props<E>);
+//     // TODO maybe default impl?
+//     fn into_dyn_node(self, props: Self::Props) -> Pod<DynNode>;
+// }
+
+// pub trait DomNodeNew: AsRef<Self::Node> + 'static {
+//     type Node: AsRef<web_sys::Node>;
+// }
+
+// impl DomNodeNew for Pod<web_sys::Element> {
+//     type Node = web_sys::Element;
+
+// }
+
+pub trait AnyNode: AsRef<web_sys::Node> + 'static {
     fn as_any_mut(&mut self) -> &mut dyn Any;
 
     fn as_node_ref(&self) -> &web_sys::Node;
@@ -65,16 +97,16 @@ impl<N: AsRef<web_sys::Node> + Any> AnyNode for N {
 
 pub struct Pod<E: DomNode> {
     pub node: E,
-    pub attrs: E::Attrs,
+    pub props: E::Props,
 }
 
 impl<E: DomNode> Pod<E> {
-    pub fn into_dyn_node(node: E, attrs: E::Attrs) -> Pod<DynNode> {
+    pub fn into_dyn_node(node: E, props: E::Props) -> Pod<DynNode> {
         Pod {
             node: DynNode {
                 inner: Box::new(node),
             },
-            attrs: Box::new(attrs),
+            props: Box::new(props),
         }
     }
 }
@@ -85,7 +117,7 @@ impl<E: DomNode> ViewElement for Pod<E> {
 
 impl<E: DomNode> SuperElement<Pod<E>> for Pod<DynNode> {
     fn upcast(child: Pod<E>) -> Self {
-        child.node.into_dyn_node(child.attrs)
+        child.node.into_dyn_node(child.props)
     }
 
     fn with_downcast_val<R>(
@@ -108,13 +140,13 @@ impl<E: DomNode> AnyElement<Pod<E>> for Pod<DynNode> {
 impl Pod<DynNode> {
     pub(crate) fn replace_inner<E: DomNode>(this: &mut PodMut<'_, DynNode>, node: Pod<E>) {
         this.node.inner = Box::new(node.node);
-        *this.attrs = Box::new(node.attrs);
+        *this.props = Box::new(node.props);
     }
 
     fn as_mut(&mut self, was_removed: bool) -> PodMut<'_, DynNode> {
         PodMut {
             node: &mut self.node,
-            attrs: &mut self.attrs,
+            props: &mut self.props,
             was_removed,
         }
     }
@@ -131,23 +163,23 @@ impl AsRef<web_sys::Node> for DynNode {
 }
 
 impl DomNode for DynNode {
-    type Attrs = Box<dyn Any>;
+    type Props = Box<dyn Any>;
 
-    fn apply_attributes(&self, _attrs: &mut Self::Attrs) {
+    fn update_node(&self, _props: &mut Self::Props) {
         // TODO this is probably not optimal, as misleading, this is only implemented for concrete (non-type-erased) elements
         // I do *think* it's necessary as method on the trait because of the Drop impl (and not having specialization there)
     }
 
-    fn into_dyn_node(self, attrs: Self::Attrs) -> Pod<DynNode> {
+    fn into_dyn_node(self, props: Self::Props) -> Pod<DynNode> {
         // Double wrapping necessary because otherwise downcast can fail
-        Pod::into_dyn_node(self, attrs)
+        Pod::into_dyn_node(self, props)
     }
 }
 
 pub struct PodMut<'a, E: DomNode> {
     // TODO no pub!
     pub node: &'a mut E,
-    pub attrs: &'a mut E::Attrs,
+    pub props: &'a mut E::Props,
     pub was_removed: bool,
 }
 
@@ -155,7 +187,7 @@ impl PodMut<'_, DynNode> {
     fn downcast<E: DomNode>(&mut self) -> PodMut<'_, E> {
         PodMut {
             node: self.node.inner.as_any_mut().downcast_mut().unwrap(),
-            attrs: self.attrs.downcast_mut().unwrap(),
+            props: self.props.downcast_mut().unwrap(),
             was_removed: false,
         }
     }
@@ -163,14 +195,11 @@ impl PodMut<'_, DynNode> {
 
 impl<E: DomNode> Drop for PodMut<'_, E> {
     fn drop(&mut self) {
-        self.node.apply_attributes(self.attrs);
+        self.node.update_node(self.props);
     }
 }
 
-impl<T, E: AsRef<T> + DomNode> AsRef<T> for Pod<E>
-where
-    E: AsRef<T> + DomNode,
-{
+impl<T, E: AsRef<T> + DomNode> AsRef<T> for Pod<E> {
     fn as_ref(&self) -> &T {
         <E as AsRef<T>>::as_ref(&self.node)
     }
@@ -182,26 +211,28 @@ impl<T, E: AsRef<T> + DomNode> AsRef<T> for PodMut<'_, E> {
     }
 }
 
-impl DomNode for web_sys::Element {
-    type Attrs = ElementAttributes;
 
-    fn apply_attributes(&self, attrs: &mut Self::Attrs) {
-        attrs.apply_attributes(self);
+
+impl DomNode for web_sys::Element {
+    type Props = ElementProps;
+
+    fn update_node(&self, props: &mut Self::Props) {
+        props.update_element(self);
     }
 
-    fn into_dyn_node(self, mut attrs: Self::Attrs) -> Pod<DynNode> {
-        attrs.apply_attributes(&self);
-        Pod::into_dyn_node(self, attrs)
+    fn into_dyn_node(self, mut props: Self::Props) -> Pod<DynNode> {
+        props.update_element(&self);
+        Pod::into_dyn_node(self, props)
     }
 }
 
 impl DomNode for web_sys::Text {
-    type Attrs = ();
+    type Props = ();
 
-    fn apply_attributes(&self, _attrs: &mut Self::Attrs) {}
+    fn update_node(&self, _props: &mut Self::Props) {}
 
-    fn into_dyn_node(self, attrs: Self::Attrs) -> Pod<DynNode> {
-        Pod::into_dyn_node(self, attrs)
+    fn into_dyn_node(self, props: Self::Props) -> Pod<DynNode> {
+        Pod::into_dyn_node(self, props)
     }
 }
 
@@ -229,13 +260,13 @@ pub fn get_element_by_id(id: &str) -> web_sys::HtmlElement {
 macro_rules! impl_dom_node_for_elements {
     ($($ty:ident, )*) => {$(
         impl DomNode for web_sys::$ty {
-            type Attrs = ElementAttributes;
-            fn apply_attributes(&self, attrs: &mut Self::Attrs) {
-                attrs.apply_attributes(self);
+            type Props = ElementProps;
+            fn update_node(&self, props: &mut Self::Props) {
+                props.update_element(self);
             }
-            fn into_dyn_node(self, mut attrs: Self::Attrs) -> Pod<DynNode> {
-                attrs.apply_attributes(&self);
-                Pod::into_dyn_node(self, attrs)
+            fn into_dyn_node(self, mut props: Self::Props) -> Pod<DynNode> {
+                props.update_element(&self);
+                Pod::into_dyn_node(self, props)
             }
         }
 
@@ -247,7 +278,7 @@ macro_rules! impl_dom_node_for_elements {
             fn from(value: Pod<web_sys::Element>) -> Self {
                 Self {
                     node: value.node.dyn_into().unwrap_throw(),
-                    attrs: value.attrs,
+                    props: value.props,
                 }
             }
         }

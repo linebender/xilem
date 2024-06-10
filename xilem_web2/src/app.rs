@@ -164,12 +164,12 @@ impl<T: 'static, V: DomView<T> + 'static, F: FnMut(&mut T) -> V + 'static> AppRu
             let el = inner.element.as_mut().unwrap();
             let pod_mut = PodMut {
                 node: &mut el.node,
-                attrs: &mut el.attrs,
+                props: &mut el.props,
                 was_removed: false,
             };
             let _changed =
                 new_view.rebuild(view, inner.state.as_mut().unwrap(), &mut inner.cx, pod_mut);
-            // el.attrs.apply_
+            // el.props.apply_
             // Not sure we have to do anything on changed, the rebuild
             // traversal should cause the DOM to update.
             *view = new_view;

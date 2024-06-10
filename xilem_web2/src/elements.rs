@@ -182,13 +182,12 @@ macro_rules! define_element {
                 // TODO Thoroughly test whether the teardown for children is really needed...
                 if children_empty && prev.children.count(&element_state.seq_state) != 0 {
                     element.node.set_text_content(None);
-                    element.attrs.children.clear(); // maybe also shrink_to_fit?
-                                                    // element.attrs.children.shrink_to_fit();
+                    element.props.children.clear();
                     return element;
                 }
                 let mut dom_children_splice = DomChildrenSplice::new(
                     &mut element_state.append_scratch,
-                    &mut element.attrs.children,
+                    &mut element.props.children,
                     &mut element_state.vec_splice_scratch,
                     element.node,
                     element.was_removed || children_empty,
@@ -210,7 +209,7 @@ macro_rules! define_element {
             ) {
                 let mut dom_children_splice = DomChildrenSplice::new(
                     &mut element_state.append_scratch,
-                    &mut element.attrs.children,
+                    &mut element.props.children,
                     &mut element_state.vec_splice_scratch,
                     element.node,
                     element.was_removed,
