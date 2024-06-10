@@ -258,7 +258,16 @@ impl RenderRoot {
             if !event.is_high_density() {
                 debug!("Running ON_POINTER_EVENT pass with {}", event.short_name());
             }
+
             self.root.on_pointer_event(&mut ctx, &event);
+
+            if !event.is_high_density() {
+                debug!(
+                    focused_widget = ctx.global_state.focused_widget.map(|id| id.0),
+                    handled = ctx.is_handled,
+                    "ON_POINTER_EVENT finished",
+                );
+            }
             ctx.global_state.debug_logger.pop_span();
             Handled::from(ctx.is_handled)
         };
@@ -301,7 +310,16 @@ impl RenderRoot {
             if !event.is_high_density() {
                 debug!("Running ON_TEXT_EVENT pass with {}", event.short_name());
             }
+
             self.root.on_text_event(&mut ctx, &event);
+
+            if !event.is_high_density() {
+                debug!(
+                    focused_widget = ctx.global_state.focused_widget.map(|id| id.0),
+                    handled = ctx.is_handled,
+                    "ON_TEXT_EVENT finished",
+                );
+            }
             ctx.global_state.debug_logger.pop_span();
             Handled::from(ctx.is_handled)
         };
@@ -351,7 +369,14 @@ impl RenderRoot {
                 .push_important_span(&format!("ACCESS_EVENT {}", event.short_name()));
             let _span = info_span!("access_event").entered();
             debug!("Running ON_ACCESS_EVENT pass with {}", event.short_name());
+
             self.root.on_access_event(&mut ctx, &event);
+
+            debug!(
+                focused_widget = ctx.global_state.focused_widget.map(|id| id.0),
+                handled = ctx.is_handled,
+                "ON_POINTER_EVENT finished",
+            );
             ctx.global_state.debug_logger.pop_span();
         }
 
