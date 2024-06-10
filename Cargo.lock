@@ -20,15 +20,15 @@ checksum = "c71b1793ee61086797f5c80b6efa2b8ffa6d5dd703f118545808a7f2e27f7046"
 
 [[package]]
 name = "accesskit"
-version = "0.14.0"
+version = "0.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6cf780eb737f2d4a49ffbd512324d53ad089070f813f7be7f99dbd5123a7f448"
+checksum = "0ac5b518d65f20dc920b3a7bb92bb2b90cdb301416f27c2a55a128cd99f75c0c"
 
 [[package]]
 name = "accesskit_atspi_common"
-version = "0.4.0"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b3f1db0583df3e2f52501231d49001d17403bbdae4d14e359776cc87f591b618"
+checksum = "3869678048c6c1eb71b2c91c17be99edae309f88ead11ee96c831d9144ce9201"
 dependencies = [
  "accesskit",
  "accesskit_consumer",
@@ -40,18 +40,19 @@ dependencies = [
 
 [[package]]
 name = "accesskit_consumer"
-version = "0.19.1"
+version = "0.23.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f23ed30753d30d46a9395f72166a342e918ebe43cae87b8500638447186e4014"
+checksum = "17fa06310c6256253ef3474cb4694346222b4bca85a53aec7f796a73d18e7082"
 dependencies = [
  "accesskit",
+ "immutable-chunkmap",
 ]
 
 [[package]]
 name = "accesskit_macos"
-version = "0.13.0"
+version = "0.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5abdf2e75371122f769baeee90ecfd3987b1b00d6ff596fd1eec5d778795e19a"
+checksum = "46a3c2a5bb8b5e403502faff2bbb85de5c14bb822a0ba7e9561cb5229b42a176"
 dependencies = [
  "accesskit",
  "accesskit_consumer",
@@ -63,9 +64,9 @@ dependencies = [
 
 [[package]]
 name = "accesskit_unix"
-version = "0.9.0"
+version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "64bb5d87ed1f38c0e905de65cfe39b8adea00ec00c842308d020ebeb8c5da7ed"
+checksum = "a3e60feaa57f707d53047f508b55074e904126bf71f916c21d940ac0d8b40333"
 dependencies = [
  "accesskit",
  "accesskit_atspi_common",
@@ -81,9 +82,9 @@ dependencies = [
 
 [[package]]
 name = "accesskit_windows"
-version = "0.18.0"
+version = "0.21.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b2f80369680515d6929059cd19a6d154800506afc36430aed3ddddb9f2ab153a"
+checksum = "f2ab7baf1a8adacddc2c5a4f14d1f936f73a0f0e1c6d4592514992c4d4c57743"
 dependencies = [
  "accesskit",
  "accesskit_consumer",
@@ -94,9 +95,9 @@ dependencies = [
 
 [[package]]
 name = "accesskit_winit"
-version = "0.20.0"
+version = "0.21.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "585dba99dfbd169ce9ebfa8df51491c8fa283851476a7f96f23c269c730fe8db"
+checksum = "8e7490b3beef9621c28bbe306abbcb7560a6591444bc498f9b9f6637e1ed8783"
 dependencies = [
  "accesskit",
  "accesskit_macos",
@@ -1503,6 +1504,15 @@ dependencies = [
  "byteorder",
  "num-traits",
  "png",
+]
+
+[[package]]
+name = "immutable-chunkmap"
+version = "2.0.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4419f022e55cc63d5bbd6b44b71e1d226b9c9480a47824c706e9d54e5c40c5eb"
+dependencies = [
+ "arrayvec",
 ]
 
 [[package]]
