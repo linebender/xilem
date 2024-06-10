@@ -3,3 +3,6 @@
 
 mod memoize;
 pub use memoize::{memoize, Memoize};
+
+mod one_of;
+pub use one_of::{OneOf2, OneOf2Ctx};
