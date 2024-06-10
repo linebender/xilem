@@ -749,6 +749,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "counter2"
+version = "0.1.0"
+dependencies = [
+ "console_error_panic_hook",
+ "wasm-bindgen",
+ "web-sys",
+ "xilem_web2",
+]
+
+[[package]]
 name = "counter_custom_element"
 version = "0.1.0"
 dependencies = [
