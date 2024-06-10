@@ -1,19 +1,14 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-#![allow(unused)]
-
 use std::fs::File;
 use std::time::UNIX_EPOCH;
 
 use time::macros::format_description;
-use tracing::span;
 use tracing::subscriber::SetGlobalDefaultError;
-use tracing::Subscriber;
 use tracing_subscriber::filter::LevelFilter;
 use tracing_subscriber::fmt::time::UtcTime;
 use tracing_subscriber::prelude::*;
-use tracing_subscriber::registry::LookupSpan;
 use tracing_subscriber::EnvFilter;
 
 #[cfg(target_arch = "wasm32")]
@@ -58,7 +53,7 @@ pub(crate) fn try_init_layered_tracing() -> Result<(), SetGlobalDefaultError> {
 
     // This format is more concise than even the 'Compact' default:
     // - We print the time without the date (GUI apps usually run for very short periods).
-    // - We print the time with seconds precision (we really don't need anything lower).
+    // - We print the time with millisecond instead of microsecond precision.
     // - We skip the target. In app code, the target is almost always visual noise. By
     //   default, it only gives you the module a log was defined in. This is rarely useful;
     //   the log message is much more helpful for finding a log's location.
