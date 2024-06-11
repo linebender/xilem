@@ -9,6 +9,7 @@ use core::sync::atomic::Ordering;
 use alloc::vec::Drain;
 use alloc::vec::Vec;
 
+use crate::OneOf2;
 use crate::{DynMessage, MessageResult, SuperElement, View, ViewElement, ViewId, ViewPathTracker};
 
 /// An append only `Vec`.
@@ -736,3 +737,153 @@ impl_view_tuple!(M0, Seq0, 0; M1, Seq1, 1; M2, Seq2, 2; M3, Seq3, 3; M4, Seq4, 4
 impl_view_tuple!(M0, Seq0, 0; M1, Seq1, 1; M2, Seq2, 2; M3, Seq3, 3; M4, Seq4, 4; M5, Seq5, 5; M6, Seq6, 6; M7, Seq7, 7; M8, Seq8, 8; M9, Seq9, 9; M10, Seq10, 10; M11, Seq11, 11; M12, Seq12, 12; M13, Seq13, 13);
 impl_view_tuple!(M0, Seq0, 0; M1, Seq1, 1; M2, Seq2, 2; M3, Seq3, 3; M4, Seq4, 4; M5, Seq5, 5; M6, Seq6, 6; M7, Seq7, 7; M8, Seq8, 8; M9, Seq9, 9; M10, Seq10, 10; M11, Seq11, 11; M12, Seq12, 12; M13, Seq13, 13; M14, Seq14, 14);
 impl_view_tuple!(M0, Seq0, 0; M1, Seq1, 1; M2, Seq2, 2; M3, Seq3, 3; M4, Seq4, 4; M5, Seq5, 5; M6, Seq6, 6; M7, Seq7, 7; M8, Seq8, 8; M9, Seq9, 9; M10, Seq10, 10; M11, Seq11, 11; M12, Seq12, 12; M13, Seq13, 13; M14, Seq14, 14; M15, Seq15, 15);
+
+/// The state used to implement `OneOf2<SeqStateA, SeqStateB>`
+#[doc(hidden)] // Implementation detail, public because of trait visibility rules
+pub struct OneOf2SeqState<InnerStateA, InnerStateB> {
+    /// The current state of the inner view.
+    inner_state: OneOf2<InnerStateA, InnerStateB>,
+    /// The generation this OneOf2 is at.
+    ///
+    /// If the inner view sequence was A, then B or vice versa,
+    /// `ViewSequence::seq_build` is called again on the new view sequence,
+    /// the generation is incremented and used as ViewId in the id_path,
+    /// to avoid (possibly async) messages reaching the wrong view sequence,
+    /// See the implentations of `ViewSequence` for more details
+    generation: u64,
+}
+
+impl<State, Action, Context, Element, M0, M1, Seq0, Seq1>
+    ViewSequence<State, Action, Context, Element, OneOf2<M0, M1>> for OneOf2<Seq0, Seq1>
+where
+    Seq0: ViewSequence<State, Action, Context, Element, M0>,
+    Seq1: ViewSequence<State, Action, Context, Element, M1>,
+    Context: ViewPathTracker,
+    Element: ViewElement,
+{
+    type SeqState = OneOf2SeqState<Seq0::SeqState, Seq1::SeqState>;
+
+    fn seq_build(&self, ctx: &mut Context, elements: &mut AppendVec<Element>) -> Self::SeqState {
+        let generation = 0;
+        let inner_state = ctx.with_id(ViewId::new(generation), |ctx| match self {
+            OneOf2::A(e) => OneOf2::A(e.seq_build(ctx, elements)),
+            OneOf2::B(e) => OneOf2::B(e.seq_build(ctx, elements)),
+        });
+        OneOf2SeqState {
+            inner_state,
+            generation,
+        }
+    }
+
+    fn seq_rebuild(
+        &self,
+        prev: &Self,
+        seq_state: &mut Self::SeqState,
+        ctx: &mut Context,
+        elements: &mut impl ElementSplice<Element>,
+    ) {
+        match (prev, self) {
+            (OneOf2::A(prev), OneOf2::A(new)) => {
+                let OneOf2::A(inner_state) = &mut seq_state.inner_state else {
+                    unreachable!()
+                };
+                ctx.with_id(ViewId::new(seq_state.generation), |ctx| {
+                    new.seq_rebuild(prev, inner_state, ctx, elements);
+                });
+            }
+            (OneOf2::B(prev), OneOf2::B(new)) => {
+                let OneOf2::B(inner_state) = &mut seq_state.inner_state else {
+                    unreachable!()
+                };
+                ctx.with_id(ViewId::new(seq_state.generation), |ctx| {
+                    new.seq_rebuild(prev, inner_state, ctx, elements);
+                });
+            }
+            (OneOf2::B(prev), OneOf2::A(new)) => {
+                let OneOf2::B(old_state) = &mut seq_state.inner_state else {
+                    unreachable!()
+                };
+                ctx.with_id(ViewId::new(seq_state.generation), |ctx| {
+                    prev.seq_teardown(old_state, ctx, elements);
+                });
+                // Overflow handling: u64 starts at 0, incremented by 1 always.
+                // Can never realistically overflow, scale is too large.
+                // If would overflow, wrap to zero. Would need async message sent
+                // to view *exactly* `u64::MAX` versions of the view ago, which is implausible
+                seq_state.generation = seq_state.generation.wrapping_add(1);
+
+                ctx.with_id(ViewId::new(seq_state.generation), |ctx| {
+                    seq_state.inner_state =
+                        OneOf2::A(elements.with_scratch(|elements| new.seq_build(ctx, elements)));
+                });
+            }
+            (OneOf2::A(prev), OneOf2::B(new)) => {
+                let OneOf2::A(old_state) = &mut seq_state.inner_state else {
+                    unreachable!()
+                };
+                ctx.with_id(ViewId::new(seq_state.generation), |ctx| {
+                    prev.seq_teardown(old_state, ctx, elements);
+                });
+
+                seq_state.generation = seq_state.generation.wrapping_add(1);
+
+                ctx.with_id(ViewId::new(seq_state.generation), |ctx| {
+                    seq_state.inner_state =
+                        OneOf2::B(elements.with_scratch(|elements| new.seq_build(ctx, elements)));
+                });
+            }
+        }
+    }
+
+    fn seq_teardown(
+        &self,
+        seq_state: &mut Self::SeqState,
+        ctx: &mut Context,
+        elements: &mut impl ElementSplice<Element>,
+    ) {
+        ctx.with_id(ViewId::new(seq_state.generation), |ctx| {
+            match (self, &mut seq_state.inner_state) {
+                (OneOf2::A(view), OneOf2::A(state)) => {
+                    view.seq_teardown(state, ctx, elements);
+                }
+                (OneOf2::B(view), OneOf2::B(state)) => {
+                    view.seq_teardown(state, ctx, elements);
+                }
+                _ => unreachable!(),
+            }
+        });
+    }
+
+    fn seq_message(
+        &self,
+        seq_state: &mut Self::SeqState,
+        id_path: &[ViewId],
+        message: DynMessage,
+        app_state: &mut State,
+    ) -> MessageResult<Action> {
+        let (start, rest) = id_path
+            .split_first()
+            .expect("Id path has elements for OneOf2");
+        if start.routing_id() != seq_state.generation {
+            // The message was sent to a previous edition of the inner value
+            return MessageResult::Stale(message);
+        }
+        match (self, &mut seq_state.inner_state) {
+            (OneOf2::A(view), OneOf2::A(state)) => {
+                view.seq_message(state, rest, message, app_state)
+            }
+            (OneOf2::B(view), OneOf2::B(state)) => {
+                view.seq_message(state, rest, message, app_state)
+            }
+            _ => MessageResult::Stale(message),
+        }
+    }
+
+    fn count(&self, state: &Self::SeqState) -> usize {
+        match (self, &state.inner_state) {
+            (OneOf2::A(seq), OneOf2::A(state)) => seq.count(state),
+            (OneOf2::B(seq), OneOf2::B(state)) => seq.count(state),
+            _ => unreachable!(),
+        }
+    }
+}

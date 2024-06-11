@@ -201,7 +201,7 @@ where
         match (self, &mut view_state.inner_state) {
             (OneOf2::A(view), OneOf2::A(state)) => view.message(state, rest, message, app_state),
             (OneOf2::B(view), OneOf2::B(state)) => view.message(state, rest, message, app_state),
-            _ => MessageResult::Stale(message),
+            _ => unreachable!(),
         }
     }
 }
