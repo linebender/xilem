@@ -272,6 +272,7 @@ impl<T: EditableText> TextEditor<T> {
                 }
                 Ime::Preedit(preedit_string, preedit_sel) => {
                     if let Some(preedit) = self.preedit_range.clone() {
+                        // TODO: Handle the case where this is the same value, to avoid some potential infinite loops
                         self.text_mut().edit(preedit.clone(), preedit_string);
                         let np = preedit.start..(preedit.start + preedit_string.len());
                         self.preedit_range = if preedit_string.is_empty() {
@@ -289,6 +290,15 @@ impl<T: EditableText> TextEditor<T> {
                             Some(Selection::caret(np.end, Affinity::Upstream))
                         };
                     } else {
+                        // If we've been sent an event to clear the preedit,
+                        // but there was no existing pre-edit, there's nothing to do
+                        // so we report that the event has been handled
+                        // An empty preedit is sent by some environments when the
+                        // context of a text input has changed, even if the contents
+                        // haven't; this also avoids some potential infinite loops
+                        if preedit_string.is_empty() {
+                            return Handled::Yes;
+                        }
                         let sr = self.selection.map(|x| x.range()).unwrap_or(0..0);
                         self.text_mut().edit(sr.clone(), preedit_string);
                         let np = sr.start..(sr.start + preedit_string.len());
