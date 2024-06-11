@@ -33,6 +33,8 @@ const TEXTBOX_PADDING: f64 = 3.0;
 /// In theory, this should be proper margin/padding in the parent widget, but that hasn't been
 /// designed.
 const TEXTBOX_MARGIN: f64 = 8.0;
+/// The fallback minimum width for a textbox with infinite provided maximum width.
+const INFINITE_TEXTBOX_WIDTH: f64 = 400.0;
 
 /// The textbox widget is a widget which shows text which can be edited by the user
 ///
@@ -273,12 +275,18 @@ impl Widget for Textbox {
         if self.editor.needs_rebuild() {
             self.editor.rebuild(ctx.font_ctx());
         }
-        // We ignore trailing whitespace for a label
         let text_size = self.editor.size();
+        let width = if bc.max().width.is_finite() {
+            // If we have a finite width, chop off the margin
+            bc.max().width - 2. * TEXTBOX_MARGIN
+        } else {
+            // If we're drawing based on the width of the text instead, request proper padding
+            text_size.width.max(INFINITE_TEXTBOX_WIDTH) + 2. * TEXTBOX_PADDING
+        };
         let label_size = Size {
             height: text_size.height + 2. * TEXTBOX_PADDING,
             // TODO: Better heuristic here?
-            width: bc.max().width - 2. * TEXTBOX_MARGIN,
+            width,
         };
         let size = bc.constrain(label_size);
         trace!(
@@ -302,6 +310,9 @@ impl Widget for Textbox {
         self.editor
             .draw(scene, Point::new(TEXTBOX_PADDING, TEXTBOX_PADDING));
 
+        if self.line_break_mode == LineBreaking::Clip {
+            scene.pop_layer();
+        }
         let size = ctx.size();
         let outline_rect = size.to_rect().inset(1.0);
         scene.stroke(
@@ -311,9 +322,6 @@ impl Widget for Textbox {
             None,
             &outline_rect,
         );
-        if self.line_break_mode == LineBreaking::Clip {
-            scene.pop_layer();
-        }
         let origin = ctx.widget_state.window_origin();
         if ctx.widget_state.has_focus {
             ctx.signal(crate::render_root::RenderRootSignal::ImeMoved(
