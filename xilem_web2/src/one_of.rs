@@ -1,6 +1,4 @@
-use xilem_core::{
-    DynMessage, MessageResult, Mut, OneOf2, OneOf2Ctx, View, ViewId, ViewPathTracker,
-};
+use xilem_core::{Mut, OneOf2, OneOf2Ctx};
 
 use crate::{
     attribute::WithAttributes, class::WithClasses, AttributeValue, CowStr, DomNode, DynNode, Pod,
@@ -8,9 +6,9 @@ use crate::{
 };
 
 impl<N1: DomNode, N2: DomNode> OneOf2Ctx<Pod<N1>, Pod<N2>> for ViewCtx {
-    type OneOf2Element = Pod<OneOf2<N1, N2>>;
+    type OneOfTwoElement = Pod<OneOf2<N1, N2>>;
 
-    fn upcast_one_of_2_element(elem: OneOf2<Pod<N1>, Pod<N2>>) -> Self::OneOf2Element {
+    fn upcast_one_of_two_element(elem: OneOf2<Pod<N1>, Pod<N2>>) -> Self::OneOfTwoElement {
         match elem {
             OneOf2::A(e) => Pod {
                 node: OneOf2::A(e.node),
@@ -23,54 +21,8 @@ impl<N1: DomNode, N2: DomNode> OneOf2Ctx<Pod<N1>, Pod<N2>> for ViewCtx {
         }
     }
 
-    fn rebuild_a<'a, State, Action, Context, V>(
-        new: &V,
-        prev: &V,
-        view_state: &mut V::ViewState,
-        ctx: &mut Context,
-        mut elem: Mut<'a, Self::OneOf2Element>,
-    ) -> Mut<'a, Self::OneOf2Element>
-    where
-        Context: ViewPathTracker,
-        V: View<State, Action, Context, Element = Pod<N1>>,
-    {
-        let (OneOf2::A(node), OneOf2::A(props)) = (&mut elem.node, &mut elem.props) else {
-            unreachable!()
-        };
-        let elem_a = PodMut {
-            node,
-            props,
-            was_removed: elem.was_removed,
-        };
-        V::rebuild(new, prev, view_state, ctx, elem_a);
-        elem
-    }
-
-    fn rebuild_b<'a, State, Action, Context, V>(
-        new: &V,
-        prev: &V,
-        view_state: &mut V::ViewState,
-        ctx: &mut Context,
-        mut elem: Mut<'a, Self::OneOf2Element>,
-    ) -> Mut<'a, Self::OneOf2Element>
-    where
-        Context: ViewPathTracker,
-        V: View<State, Action, Context, Element = Pod<N2>>,
-    {
-        let (OneOf2::B(node), OneOf2::B(props)) = (&mut elem.node, &mut elem.props) else {
-            unreachable!()
-        };
-        let elem_a = PodMut {
-            node,
-            props,
-            was_removed: elem.was_removed,
-        };
-        new.rebuild(prev, view_state, ctx, elem_a);
-        elem
-    }
-
-    fn update_one_of_2_element_mut(
-        elem_mut: &mut Mut<'_, Self::OneOf2Element>,
+    fn update_one_of_two_element_mut(
+        elem_mut: &mut Mut<'_, Self::OneOfTwoElement>,
         new_elem: OneOf2<Pod<N1>, Pod<N2>>,
     ) {
         (*elem_mut.node, *elem_mut.props) = match new_elem {
@@ -79,54 +31,24 @@ impl<N1: DomNode, N2: DomNode> OneOf2Ctx<Pod<N1>, Pod<N2>> for ViewCtx {
         };
     }
 
-    fn teardown<State, Action, Context, V1, V2>(
-        view: &OneOf2<V1, V2>,
-        view_state: &mut OneOf2<V1::ViewState, V2::ViewState>,
-        ctx: &mut Context,
-        elem: &mut Mut<'_, Self::OneOf2Element>,
-    ) where
-        Context: ViewPathTracker,
-        V1: View<State, Action, Context, Element = Pod<N1>>,
-        V2: View<State, Action, Context, Element = Pod<N2>>,
-    {
-        match (view, view_state, &mut elem.node, &mut elem.props) {
-            (OneOf2::A(view), OneOf2::A(state), OneOf2::A(node), OneOf2::A(props)) => {
-                let pod_mut = PodMut {
-                    node,
-                    props,
-                    was_removed: elem.was_removed,
-                };
-                view.teardown(state, ctx, pod_mut);
-            }
-            (OneOf2::B(view), OneOf2::B(state), OneOf2::B(node), OneOf2::B(props)) => {
-                let pod_mut = PodMut {
-                    node,
-                    props,
-                    was_removed: elem.was_removed,
-                };
-                view.teardown(state, ctx, pod_mut);
-            }
-            _ => unreachable!(),
-        }
+    fn with_downcast_a<R>(
+        elem: &mut Mut<'_, Self::OneOfTwoElement>,
+        mut f: impl FnMut(Mut<'_, Pod<N1>>) -> R,
+    ) -> R {
+        let (OneOf2::A(node), OneOf2::A(props)) = (&mut elem.node, &mut elem.props) else {
+            unreachable!()
+        };
+        f(PodMut::new(node, props, elem.was_removed))
     }
 
-    fn message<State, Action, Context, V1, V2>(
-        view: &OneOf2<V1, V2>,
-        view_state: &mut OneOf2<V1::ViewState, V2::ViewState>,
-        id_path: &[ViewId],
-        message: DynMessage,
-        app_state: &mut State,
-    ) -> MessageResult<Action>
-    where
-        Context: ViewPathTracker,
-        V1: View<State, Action, Context, Element = Pod<N1>>,
-        V2: View<State, Action, Context, Element = Pod<N2>>,
-    {
-        match (view, view_state) {
-            (OneOf2::A(view), OneOf2::A(state)) => view.message(state, id_path, message, app_state),
-            (OneOf2::B(view), OneOf2::B(state)) => view.message(state, id_path, message, app_state),
-            _ => unreachable!(),
-        }
+    fn with_downcast_b<R>(
+        elem: &mut Mut<'_, Self::OneOfTwoElement>,
+        mut f: impl FnMut(Mut<'_, Pod<N2>>) -> R,
+    ) -> R {
+        let (OneOf2::B(node), OneOf2::B(props)) = (&mut elem.node, &mut elem.props) else {
+            unreachable!()
+        };
+        f(PodMut::new(node, props, elem.was_removed))
     }
 }
 

@@ -3,7 +3,7 @@
 
 use std::{cell::RefCell, rc::Rc};
 
-use crate::{AnyNode, DomView, PodMut};
+use crate::{AnyNode, DomNode, DomView, PodMut};
 use xilem_core::{DynMessage, MessageResult, ViewId, ViewPathTracker};
 
 type IdPath = Vec<ViewId>;
@@ -162,16 +162,8 @@ impl<T: 'static, V: DomView<T> + 'static, F: FnMut(&mut T) -> V + 'static> AppRu
 
             let new_view = (inner.app_logic)(&mut inner.data);
             let el = inner.element.as_mut().unwrap();
-            let pod_mut = PodMut {
-                node: &mut el.node,
-                props: &mut el.props,
-                was_removed: false,
-            };
-            let _changed =
-                new_view.rebuild(view, inner.state.as_mut().unwrap(), &mut inner.cx, pod_mut);
-            // el.props.apply_
-            // Not sure we have to do anything on changed, the rebuild
-            // traversal should cause the DOM to update.
+            let pod_mut = PodMut::new(&mut el.node, &mut el.props, false);
+            new_view.rebuild(view, inner.state.as_mut().unwrap(), &mut inner.cx, pod_mut);
             *view = new_view;
         }
     }

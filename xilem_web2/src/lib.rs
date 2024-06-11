@@ -184,6 +184,16 @@ pub struct PodMut<'a, E: DomNode> {
     pub was_removed: bool,
 }
 
+impl<'a, E: DomNode> PodMut<'a, E> {
+    fn new(node: &'a mut E, props: &'a mut E::Props, was_removed: bool) -> PodMut<'a, E> {
+        PodMut {
+            node,
+            props,
+            was_removed,
+        }
+    }
+}
+
 impl PodMut<'_, DynNode> {
     fn downcast<E: DomNode>(&mut self) -> PodMut<'_, E> {
         PodMut {
@@ -211,8 +221,6 @@ impl<T, E: AsRef<T> + DomNode> AsRef<T> for PodMut<'_, E> {
         <E as AsRef<T>>::as_ref(self.node)
     }
 }
-
-
 
 impl DomNode for web_sys::Element {
     type Props = ElementProps;

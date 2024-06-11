@@ -95,7 +95,7 @@ impl<'a, 'b, 'c, 'd> ElementSplice<Pod<DynNode>> for DomChildrenSplice<'a, 'b, '
         // This is an optimization to avoid too much DOM traffic, otherwise first the children would be deleted from that node in an up-traversal
         if !self.parent_was_removed {
             self.parent
-                .remove_child(child.node.as_ref())
+                .remove_child(child.as_ref())
                 .ok()
                 .unwrap_throw();
         }
