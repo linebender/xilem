@@ -283,7 +283,7 @@ impl TextEvent {
             TextEvent::Ime(Ime::Disabled) => "Ime::Disabled",
             TextEvent::Ime(Ime::Enabled) => "Ime::Enabled",
             TextEvent::Ime(Ime::Commit(_)) => "Ime::Commit",
-            TextEvent::Ime(Ime::Preedit(s, _)) if s.len() == 0 => "Ime::Preedit(\"\")",
+            TextEvent::Ime(Ime::Preedit(s, _)) if s.is_empty() => "Ime::Preedit(\"\")",
             TextEvent::Ime(Ime::Preedit(_, _)) => "Ime::Preedit",
             TextEvent::ModifierChange(_) => "ModifierChange",
             TextEvent::FocusChange(_) => "FocusChange",
