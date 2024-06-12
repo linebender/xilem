@@ -8,12 +8,12 @@ use xilem_core::{AnyView, MessageResult, View};
 mod common;
 use common::*;
 
-type AnyNoopView = dyn AnyView<(), Action, TestCx, TestElement>;
+type AnyNoopView = dyn AnyView<(), Action, TestCtx, TestElement>;
 
 #[test]
 fn messages_to_inner_view() {
     let view: Box<AnyNoopView> = Box::new(OperationView::<0>(0));
-    let mut ctx = TestCx::default();
+    let mut ctx = TestCtx::default();
     let (element, mut state) = view.build(&mut ctx);
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(0)]);
@@ -25,7 +25,7 @@ fn messages_to_inner_view() {
 #[test]
 fn message_after_rebuild() {
     let view: Box<AnyNoopView> = Box::new(OperationView::<0>(0));
-    let mut ctx = TestCx::default();
+    let mut ctx = TestCtx::default();
     let (mut element, mut state) = view.build(&mut ctx);
     ctx.assert_empty();
     let path = element.view_path.clone();
@@ -45,7 +45,7 @@ fn message_after_rebuild() {
 #[test]
 fn no_message_after_stale() {
     let view: Box<AnyNoopView> = Box::new(OperationView::<0>(0));
-    let mut ctx = TestCx::default();
+    let mut ctx = TestCtx::default();
     let (mut element, mut state) = view.build(&mut ctx);
     ctx.assert_empty();
     let path = element.view_path.clone();
@@ -69,7 +69,7 @@ fn no_message_after_stale() {
 #[test]
 fn no_message_after_stale_then_same_type() {
     let view: Box<AnyNoopView> = Box::new(OperationView::<0>(0));
-    let mut ctx = TestCx::default();
+    let mut ctx = TestCtx::default();
     let (mut element, mut state) = view.build(&mut ctx);
     ctx.assert_empty();
     let path = element.view_path.clone();

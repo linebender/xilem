@@ -21,7 +21,7 @@ fn record_ops(id: u32) -> OperationView<0> {
 /// The Arc view shouldn't impact the view path
 fn arc_no_path() {
     let view1 = Arc::new(record_ops(0));
-    let mut ctx = TestCx::default();
+    let mut ctx = TestCtx::default();
     let (element, ()) = view1.build(&mut ctx);
     ctx.assert_empty();
     assert!(element.view_path.is_empty());
@@ -30,7 +30,7 @@ fn arc_no_path() {
 #[test]
 fn same_arc_skip_rebuild() {
     let view1 = Arc::new(record_ops(0));
-    let mut ctx = TestCx::default();
+    let mut ctx = TestCtx::default();
     let (mut element, mut state) = view1.build(&mut ctx);
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(0)]);
@@ -45,7 +45,7 @@ fn same_arc_skip_rebuild() {
 /// If use a different Arc, a rebuild should happen
 fn new_arc_rebuild() {
     let view1 = Arc::new(record_ops(0));
-    let mut ctx = TestCx::default();
+    let mut ctx = TestCtx::default();
     let (mut element, mut state) = view1.build(&mut ctx);
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(0)]);
@@ -63,7 +63,7 @@ fn new_arc_rebuild() {
 /// If use a different Arc, a rebuild should happen
 fn new_arc_rebuild_same_value() {
     let view1 = Arc::new(record_ops(0));
-    let mut ctx = TestCx::default();
+    let mut ctx = TestCtx::default();
     let (mut element, mut state) = view1.build(&mut ctx);
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(0)]);
@@ -81,7 +81,7 @@ fn new_arc_rebuild_same_value() {
 /// Arc should successfully allow the child to teardown
 fn arc_passthrough_teardown() {
     let view1 = Arc::new(record_ops(0));
-    let mut ctx = TestCx::default();
+    let mut ctx = TestCtx::default();
     let (mut element, mut state) = view1.build(&mut ctx);
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(0)]);
@@ -97,7 +97,7 @@ fn arc_passthrough_teardown() {
 #[test]
 fn arc_passthrough_message() {
     let view1 = Arc::new(record_ops(0));
-    let mut ctx = TestCx::default();
+    let mut ctx = TestCtx::default();
     let (element, mut state) = view1.build(&mut ctx);
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(0)]);
@@ -111,7 +111,7 @@ fn arc_passthrough_message() {
 /// The Box view shouldn't impact the view path
 fn box_no_path() {
     let view1 = Box::new(record_ops(0));
-    let mut ctx = TestCx::default();
+    let mut ctx = TestCtx::default();
     let (element, ()) = view1.build(&mut ctx);
     ctx.assert_empty();
     assert!(element.view_path.is_empty());
@@ -121,7 +121,7 @@ fn box_no_path() {
 /// The Box view should always rebuild
 fn box_passthrough_rebuild() {
     let view1 = Box::new(record_ops(0));
-    let mut ctx = TestCx::default();
+    let mut ctx = TestCtx::default();
     let (mut element, mut state) = view1.build(&mut ctx);
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(0)]);
@@ -139,7 +139,7 @@ fn box_passthrough_rebuild() {
 /// The Box view should always rebuild
 fn box_passthrough_rebuild_same_value() {
     let view1 = Box::new(record_ops(0));
-    let mut ctx = TestCx::default();
+    let mut ctx = TestCtx::default();
     let (mut element, mut state) = view1.build(&mut ctx);
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(0)]);
@@ -156,7 +156,7 @@ fn box_passthrough_rebuild_same_value() {
 #[test]
 fn box_passthrough_teardown() {
     let view1 = Box::new(record_ops(0));
-    let mut ctx = TestCx::default();
+    let mut ctx = TestCtx::default();
     let (mut element, mut state) = view1.build(&mut ctx);
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(0)]);
@@ -172,7 +172,7 @@ fn box_passthrough_teardown() {
 #[test]
 fn box_passthrough_message() {
     let view1 = Box::new(record_ops(0));
-    let mut ctx = TestCx::default();
+    let mut ctx = TestCtx::default();
     let (element, mut state) = view1.build(&mut ctx);
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(0)]);

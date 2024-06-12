@@ -10,7 +10,7 @@ pub struct MasonryDriver<State, Logic, View, ViewState> {
     pub(crate) state: State,
     pub(crate) logic: Logic,
     pub(crate) current_view: View,
-    pub(crate) view_cx: ViewCtx,
+    pub(crate) view_ctx: ViewCtx,
     pub(crate) view_state: ViewState,
 }
 
@@ -25,7 +25,7 @@ where
         widget_id: masonry::WidgetId,
         action: masonry::Action,
     ) {
-        if let Some(id_path) = self.view_cx.widget_map.get(&widget_id) {
+        if let Some(id_path) = self.view_ctx.widget_map.get(&widget_id) {
             let message_result = self.current_view.message(
                 &mut self.view_state,
                 id_path.as_slice(),
@@ -48,14 +48,14 @@ where
                 let next_view = (self.logic)(&mut self.state);
                 let mut root = ctx.get_root::<RootWidget<View::Widget>>();
 
-                self.view_cx.view_tree_changed = false;
+                self.view_ctx.view_tree_changed = false;
                 next_view.rebuild(
                     &self.current_view,
                     &mut self.view_state,
-                    &mut self.view_cx,
+                    &mut self.view_ctx,
                     root.get_element(),
                 );
-                if cfg!(debug_assertions) && !self.view_cx.view_tree_changed {
+                if cfg!(debug_assertions) && !self.view_ctx.view_tree_changed {
                     tracing::debug!("Nothing changed as result of action");
                 }
                 self.current_view = next_view;
