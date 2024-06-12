@@ -31,24 +31,24 @@ impl<N1: DomNode, N2: DomNode> OneOf2Ctx<Pod<N1>, Pod<N2>> for ViewCtx {
         };
     }
 
-    fn with_downcast_a<R>(
+    fn with_downcast_a(
         elem: &mut Mut<'_, Self::OneOfTwoElement>,
-        mut f: impl FnMut(Mut<'_, Pod<N1>>) -> R,
-    ) -> R {
+        mut f: impl FnMut(Mut<'_, Pod<N1>>),
+    ) {
         let (OneOf2::A(node), OneOf2::A(props)) = (&mut elem.node, &mut elem.props) else {
             unreachable!()
         };
-        f(PodMut::new(node, props, elem.was_removed))
+        f(PodMut::new(node, props, elem.was_removed));
     }
 
-    fn with_downcast_b<R>(
+    fn with_downcast_b(
         elem: &mut Mut<'_, Self::OneOfTwoElement>,
-        mut f: impl FnMut(Mut<'_, Pod<N2>>) -> R,
-    ) -> R {
+        mut f: impl FnMut(Mut<'_, Pod<N2>>),
+    ) {
         let (OneOf2::B(node), OneOf2::B(props)) = (&mut elem.node, &mut elem.props) else {
             unreachable!()
         };
-        f(PodMut::new(node, props, elem.was_removed))
+        f(PodMut::new(node, props, elem.was_removed));
     }
 }
 
