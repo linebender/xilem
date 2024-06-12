@@ -33,7 +33,7 @@ mod view;
 pub use view::{View, ViewId, ViewPathTracker};
 
 mod views;
-pub use views::{memoize, Memoize};
+pub use views::{memoize, one_of, Memoize};
 
 mod message;
 pub use message::{DynMessage, Message, MessageResult};
