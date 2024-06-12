@@ -58,9 +58,9 @@ where
 
     type Element = V::Element;
 
-    fn build(&self, cx: &mut Context) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut Context) -> (Self::Element, Self::ViewState) {
         let view = (self.child_cb)(&self.data);
-        let (element, view_state) = view.build(cx);
+        let (element, view_state) = view.build(ctx);
         let memoize_state = MemoizeState {
             view,
             view_state,
@@ -73,12 +73,12 @@ where
         &self,
         prev: &Self,
         view_state: &mut Self::ViewState,
-        cx: &mut Context,
+        ctx: &mut Context,
         element: Mut<'el, Self::Element>,
     ) -> Mut<'el, Self::Element> {
         if core::mem::take(&mut view_state.dirty) || prev.data != self.data {
             let view = (self.child_cb)(&self.data);
-            let el = view.rebuild(&view_state.view, &mut view_state.view_state, cx, element);
+            let el = view.rebuild(&view_state.view, &mut view_state.view_state, ctx, element);
             view_state.view = view;
             el
         } else {

@@ -9,9 +9,9 @@ use std::marker::PhantomData;
 use xilem_core::*;
 
 #[derive(Default)]
-pub(super) struct TestCx(Vec<ViewId>);
+pub(super) struct TestCtx(Vec<ViewId>);
 
-impl ViewPathTracker for TestCx {
+impl ViewPathTracker for TestCtx {
     fn push_id(&mut self, id: ViewId) {
         self.0.push(id);
     }
@@ -25,7 +25,7 @@ impl ViewPathTracker for TestCx {
     }
 }
 
-impl TestCx {
+impl TestCtx {
     pub(super) fn assert_empty(&self) {
         assert!(
             self.0.is_empty(),
@@ -76,7 +76,7 @@ pub(super) struct SequenceView<Seq, Marker> {
 
 pub(super) fn sequence<Seq, Marker>(id: u32, seq: Seq) -> SequenceView<Seq, Marker>
 where
-    Seq: ViewSequence<(), Action, TestCx, TestElement, Marker>,
+    Seq: ViewSequence<(), Action, TestCtx, TestElement, Marker>,
 {
     SequenceView {
         id,
@@ -85,16 +85,16 @@ where
     }
 }
 
-impl<Seq, Marker> View<(), Action, TestCx> for SequenceView<Seq, Marker>
+impl<Seq, Marker> View<(), Action, TestCtx> for SequenceView<Seq, Marker>
 where
-    Seq: ViewSequence<(), Action, TestCx, TestElement, Marker>,
+    Seq: ViewSequence<(), Action, TestCtx, TestElement, Marker>,
     Marker: 'static,
 {
     type Element = TestElement;
 
     type ViewState = (Seq::SeqState, AppendVec<TestElement>);
 
-    fn build(&self, ctx: &mut TestCx) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut TestCtx) -> (Self::Element, Self::ViewState) {
         let mut elements = AppendVec::default();
         let state = self.seq.seq_build(ctx, &mut elements);
         (
@@ -114,7 +114,7 @@ where
         &self,
         prev: &Self,
         view_state: &mut Self::ViewState,
-        ctx: &mut TestCx,
+        ctx: &mut TestCtx,
         element: Mut<'el, Self::Element>,
     ) -> Mut<'el, Self::Element> {
         assert_eq!(&*element.view_path, ctx.view_path());
@@ -135,7 +135,7 @@ where
     fn teardown(
         &self,
         view_state: &mut Self::ViewState,
-        ctx: &mut TestCx,
+        ctx: &mut TestCtx,
         element: Mut<'_, Self::Element>,
     ) {
         assert_eq!(&*element.view_path, ctx.view_path());
@@ -160,12 +160,12 @@ where
     }
 }
 
-impl<const N: u32> View<(), Action, TestCx> for OperationView<N> {
+impl<const N: u32> View<(), Action, TestCtx> for OperationView<N> {
     type Element = TestElement;
 
     type ViewState = ();
 
-    fn build(&self, ctx: &mut TestCx) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut TestCtx) -> (Self::Element, Self::ViewState) {
         (
             TestElement {
                 operations: vec![Operation::Build(self.0)],
@@ -180,7 +180,7 @@ impl<const N: u32> View<(), Action, TestCx> for OperationView<N> {
         &self,
         prev: &Self,
         _: &mut Self::ViewState,
-        ctx: &mut TestCx,
+        ctx: &mut TestCtx,
         element: Mut<'el, Self::Element>,
     ) -> Mut<'el, Self::Element> {
         assert_eq!(&*element.view_path, ctx.view_path());
@@ -191,7 +191,12 @@ impl<const N: u32> View<(), Action, TestCx> for OperationView<N> {
         element
     }
 
-    fn teardown(&self, _: &mut Self::ViewState, ctx: &mut TestCx, element: Mut<'_, Self::Element>) {
+    fn teardown(
+        &self,
+        _: &mut Self::ViewState,
+        ctx: &mut TestCtx,
+        element: Mut<'_, Self::Element>,
+    ) {
         assert_eq!(&*element.view_path, ctx.view_path());
         element.operations.push(Operation::Teardown(self.0));
     }
