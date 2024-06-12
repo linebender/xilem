@@ -203,4 +203,5 @@ fn one_of_no_message_after_stale_then_same_type() {
     assert!(matches!(result, MessageResult::Stale(_)));
 }
 
-// TODO Logic for the `ViewSequence` implementation of `OneOf` is basically the same, so tests would be great, but probably not necessary
+// TODO: Logic for the `ViewSequence` implementation of `OneOf` is basically the same as the view minus up/downcasting of the element type
+// Tests would be great, but probably not necessary

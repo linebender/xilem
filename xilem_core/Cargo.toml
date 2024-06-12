@@ -12,6 +12,7 @@ publish = false # We'll publish this alongside Xilem 0.2
 
 [dependencies]
 tracing.workspace = true
+paste = "1"
 
 [lints]
 workspace = true
