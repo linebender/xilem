@@ -41,11 +41,11 @@ pub trait OneOf2Ctx<A: ViewElement, B: ViewElement> {
 
     /// Casts the view element `elem` to the `OneOf2::A` variant.
     /// `f` needs to be invoked with that inner `ViewElement`
-    fn with_downcast_a(elem: &mut Mut<'_, Self::OneOfTwoElement>, f: impl FnMut(Mut<'_, A>));
+    fn with_downcast_a(elem: &mut Mut<'_, Self::OneOfTwoElement>, f: impl FnOnce(Mut<'_, A>));
 
     /// Casts the view element `elem` to the `OneOf2::B` variant.
     /// `f` needs to be invoked with that inner `ViewElement`
-    fn with_downcast_b(elem: &mut Mut<'_, Self::OneOfTwoElement>, f: impl FnMut(Mut<'_, B>));
+    fn with_downcast_b(elem: &mut Mut<'_, Self::OneOfTwoElement>, f: impl FnOnce(Mut<'_, B>));
 
     /// Creates the wrapping element, this is used in `View::build` to wrap the inner view element variant
     fn upcast_one_of_two_element(elem: OneOf2<A, B>) -> Self::OneOfTwoElement;
