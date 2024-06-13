@@ -28,6 +28,7 @@ pub use xilem_core as core;
 mod any_view;
 pub use any_view::AnyWidgetView;
 mod driver;
+pub use driver::MasonryInterface;
 pub mod view;
 
 pub struct Xilem<State, Logic, View>
@@ -55,8 +56,19 @@ where
                 state,
                 view_cx,
                 view_state,
+                masonry_interface: None,
             },
             root_widget,
+        }
+    }
+
+    pub fn with_masonry_interface(self, masonry_interface: Box<dyn MasonryInterface<State>>) -> Self {
+        Xilem {
+            driver: MasonryDriver {
+                masonry_interface: Some(masonry_interface),
+                ..self.driver
+            },
+            root_widget: self.root_widget,
         }
     }
 
