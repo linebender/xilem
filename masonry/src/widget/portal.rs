@@ -262,26 +262,39 @@ impl<W: Widget> Widget for Portal<W> {
         self.scrollbar_horizontal.on_pointer_event(ctx, event);
         self.scrollbar_vertical.on_pointer_event(ctx, event);
 
-        if self.scrollbar_horizontal.widget().moved {
-            let progress = self.scrollbar_horizontal.widget().cursor_progress;
-            self.scrollbar_horizontal.widget_mut().moved = false;
-            self.viewport_pos = Axis::Horizontal
-                .pack(
-                    progress * Axis::Horizontal.major(content_size - portal_size),
-                    Axis::Horizontal.minor_pos(self.viewport_pos),
-                )
-                .into();
-            ctx.request_layout();
+        let mut scrollbar_moved = false;
+        {
+            let mut scrollbar = ctx.get_raw_mut(&mut self.scrollbar_horizontal);
+            if scrollbar.widget().moved {
+                scrollbar.widget().moved = false;
+
+                let progress = scrollbar.widget().cursor_progress;
+                self.viewport_pos = Axis::Horizontal
+                    .pack(
+                        progress * Axis::Horizontal.major(content_size - portal_size),
+                        Axis::Horizontal.minor_pos(self.viewport_pos),
+                    )
+                    .into();
+                scrollbar_moved = true;
+            }
         }
-        if self.scrollbar_vertical.widget().moved {
-            let progress = self.scrollbar_vertical.widget().cursor_progress;
-            self.scrollbar_vertical.widget_mut().moved = false;
-            self.viewport_pos = Axis::Vertical
-                .pack(
-                    progress * Axis::Vertical.major(content_size - portal_size),
-                    Axis::Vertical.minor_pos(self.viewport_pos),
-                )
-                .into();
+        {
+            let mut scrollbar = ctx.get_raw_mut(&mut self.scrollbar_vertical);
+            if scrollbar.widget().moved {
+                scrollbar.widget().moved = false;
+
+                let progress = scrollbar.widget().cursor_progress;
+                self.viewport_pos = Axis::Vertical
+                    .pack(
+                        progress * Axis::Vertical.major(content_size - portal_size),
+                        Axis::Vertical.minor_pos(self.viewport_pos),
+                    )
+                    .into();
+                scrollbar_moved = true;
+            }
+        }
+
+        if scrollbar_moved {
             ctx.request_layout();
         }
     }
@@ -341,8 +354,11 @@ impl<W: Widget> Widget for Portal<W> {
             !self.constrain_vertical && portal_size.height < content_size.height;
 
         if self.scrollbar_horizontal_visible {
-            self.scrollbar_horizontal.widget_mut().portal_size = portal_size.width;
-            self.scrollbar_horizontal.widget_mut().content_size = content_size.width;
+            let mut scrollbar = ctx.get_raw_mut(&mut self.scrollbar_horizontal);
+            scrollbar.widget().portal_size = portal_size.width;
+            scrollbar.widget().content_size = content_size.width;
+            std::mem::drop(scrollbar);
+
             let scrollbar_size = self.scrollbar_horizontal.layout(ctx, bc);
             ctx.place_child(
                 &mut self.scrollbar_horizontal,
@@ -352,8 +368,11 @@ impl<W: Widget> Widget for Portal<W> {
             ctx.skip_child(&mut self.scrollbar_horizontal);
         }
         if self.scrollbar_vertical_visible {
-            self.scrollbar_vertical.widget_mut().portal_size = portal_size.height;
-            self.scrollbar_vertical.widget_mut().content_size = content_size.height;
+            let mut scrollbar = ctx.get_raw_mut(&mut self.scrollbar_vertical);
+            scrollbar.widget().portal_size = portal_size.height;
+            scrollbar.widget().content_size = content_size.height;
+            std::mem::drop(scrollbar);
+
             let scrollbar_size = self.scrollbar_vertical.layout(ctx, bc);
             ctx.place_child(
                 &mut self.scrollbar_vertical,
@@ -397,11 +416,18 @@ impl<W: Widget> Widget for Portal<W> {
             ctx.current_node().set_scroll_x(self.viewport_pos.x);
             ctx.current_node().set_scroll_y(self.viewport_pos.y);
             ctx.current_node().set_scroll_x_min(0.0);
-            ctx.current_node()
-                .set_scroll_x_max(self.scrollbar_horizontal.widget().portal_size);
+
+            let x_max = ctx
+                .get_raw_ref(&self.scrollbar_horizontal)
+                .widget()
+                .portal_size;
+            let y_max = ctx
+                .get_raw_ref(&self.scrollbar_vertical)
+                .widget()
+                .portal_size;
+            ctx.current_node().set_scroll_x_max(x_max);
             ctx.current_node().set_scroll_y_min(0.0);
-            ctx.current_node()
-                .set_scroll_y_max(self.scrollbar_vertical.widget().portal_size);
+            ctx.current_node().set_scroll_y_max(y_max);
         }
 
         ctx.current_node().set_clips_children();

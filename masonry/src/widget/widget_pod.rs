@@ -57,12 +57,6 @@ impl<W: Widget> WidgetPod<W> {
     }
 
     // TODO - remove
-    /// Return a reference to the inner widget.
-    pub fn widget(&self) -> &W {
-        &self.inner
-    }
-
-    // TODO - remove
     /// Return a [`WidgetRef`] to the inner widget.
     pub fn as_ref(&self) -> WidgetRef<'_, W> {
         WidgetRef::new(&self.state, &self.inner)
@@ -125,12 +119,6 @@ impl<W: Widget> WidgetPod<W> {
     /// The distance from the bottom of this widget to the baseline.
     pub fn baseline_offset(&self) -> f64 {
         self.state.baseline_offset
-    }
-
-    // FIXME - Remove
-    /// Return a mutable reference to the inner widget.
-    pub(crate) fn widget_mut(&mut self) -> &mut W {
-        &mut self.inner
     }
 }
 

@@ -13,8 +13,8 @@ use crate::kurbo::Rect;
 use crate::paint_scene_helpers::{fill_color, stroke};
 use crate::widget::{WidgetMut, WidgetRef};
 use crate::{
-    theme, AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx,
-    PaintCtx, Point, PointerEvent, Size, StatusChange, TextEvent, Widget,
+    theme, AccessCtx, AccessEvent, AllowRawMut, BoxConstraints, EventCtx, LayoutCtx, LifeCycle,
+    LifeCycleCtx, PaintCtx, Point, PointerEvent, Size, StatusChange, TextEvent, Widget,
 };
 
 // RULES
@@ -159,7 +159,6 @@ impl Widget for ScrollBar {
                         grab_anchor,
                         mouse_pos,
                     );
-                    // TODO - set to false
                     self.moved = true;
                 }
                 ctx.request_paint();
@@ -234,6 +233,8 @@ impl Widget for ScrollBar {
         trace_span!("ScrollBar")
     }
 }
+
+impl AllowRawMut for ScrollBar {}
 
 // --- MARK: TESTS ---
 #[cfg(test)]

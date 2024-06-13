@@ -52,7 +52,7 @@ pub use widget_state::WidgetState;
 
 pub use sized_box::BackgroundBrush;
 #[doc(hidden)]
-pub use widget::{Widget, WidgetId};
+pub use widget::{AllowRawMut, Widget, WidgetId};
 
 /// The possible cursor states for a widget.
 #[derive(Clone, Debug)]

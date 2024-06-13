@@ -336,7 +336,7 @@ impl Widget for ReplaceChild {
     }
 
     fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
-        self.child.widget().children()
+        todo!()
     }
 }
 

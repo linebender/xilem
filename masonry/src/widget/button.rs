@@ -196,9 +196,14 @@ impl Widget for Button {
     }
 
     fn accessibility(&mut self, ctx: &mut AccessCtx) {
-        let _name = self.label.widget().text().as_str().to_string();
-        // We may want to add a name if it doesn't interfere with the child label
-        // ctx.current_node().set_name(name);
+        // IMPORTANT: We don't want to merge this code in practice, because
+        // the child label already has a 'name' property.
+        // This is more of a proof of concept of `get_raw_ref()`.
+        if false {
+            let label = ctx.get_raw_ref(&self.label);
+            let name = label.widget().text().as_str().to_string();
+            ctx.current_node().set_name(name);
+        }
         ctx.current_node()
             .set_default_action_verb(DefaultActionVerb::Click);
 

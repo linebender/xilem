@@ -129,6 +129,6 @@ pub use kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
 pub use parley::layout::Alignment as TextAlignment;
 pub use util::{AsAny, Handled};
 pub use vello::peniko::{Color, Gradient};
-pub use widget::{BackgroundBrush, Widget, WidgetId, WidgetPod, WidgetState};
+pub use widget::{AllowRawMut, BackgroundBrush, Widget, WidgetId, WidgetPod, WidgetState};
 
 pub use text_helpers::ArcStr;

@@ -3,6 +3,8 @@
 
 //! The context types that are passed into various widget methods.
 
+#![allow(private_bounds)]
+
 use std::any::Any;
 use std::time::Duration;
 
@@ -17,7 +19,7 @@ use crate::render_root::{RenderRootSignal, RenderRootState};
 use crate::text2::TextBrush;
 use crate::text_helpers::{ImeChangeSignal, TextFieldRegistration};
 use crate::widget::{CursorChange, WidgetMut, WidgetState};
-use crate::{CursorIcon, Insets, Point, Rect, Size, Widget, WidgetId, WidgetPod};
+use crate::{AllowRawMut, CursorIcon, Insets, Point, Rect, Size, Widget, WidgetId, WidgetPod};
 
 /// A macro for implementing methods on multiple contexts.
 ///
@@ -709,3 +711,146 @@ impl AccessCtx<'_> {
         self.widget_state.needs_accessibility_update
     }
 }
+
+macro_rules! impl_get_raw {
+    ($SomeCtx:tt) => {
+        impl<'s> $SomeCtx<'s> {
+            /// Get a child context and a raw shared reference to a child widget.
+            ///
+            /// The child context can be used to call context methods on behalf of the
+            /// child widget.
+            pub fn get_raw_ref<'a, 'r, Child>(
+                &'a mut self,
+                child: &'a mut WidgetPod<Child>,
+            ) -> RawWrapper<'r, $SomeCtx<'r>, Child>
+            where
+                'a: 'r,
+                's: 'r,
+            {
+                #[allow(clippy::needless_update)]
+                let child_ctx = $SomeCtx {
+                    widget_state: &mut child.state,
+                    global_state: self.global_state,
+                    ..*self
+                };
+                RawWrapper {
+                    ctx: child_ctx,
+                    widget: &child.inner,
+                }
+            }
+
+            /// Get a raw mutable reference to a child widget.
+            ///
+            /// See documentation for [`AllowRawMut`] for more details.
+            pub fn get_raw_mut<'a, 'r, Child>(
+                &'a mut self,
+                child: &'a mut WidgetPod<Child>,
+            ) -> RawWrapperMut<'r, $SomeCtx<'r>, Child>
+            where
+                Child: AllowRawMut,
+                'a: 'r,
+                's: 'r,
+            {
+                #[allow(clippy::needless_update)]
+                let child_ctx = $SomeCtx {
+                    widget_state: &mut child.state,
+                    global_state: self.global_state,
+                    ..*self
+                };
+                RawWrapperMut {
+                    parent_widget_state: &mut self.widget_state,
+                    ctx: child_ctx,
+                    widget: &mut child.inner,
+                }
+            }
+        }
+    };
+}
+
+impl_get_raw!(EventCtx);
+impl_get_raw!(LifeCycleCtx);
+impl_get_raw!(LayoutCtx);
+
+impl<'s> AccessCtx<'s> {
+    pub fn get_raw_ref<'a, 'r, Child>(
+        &'a mut self,
+        child: &'a WidgetPod<Child>,
+    ) -> RawWrapper<'r, AccessCtx<'r>, Child>
+    where
+        'a: 'r,
+        's: 'r,
+    {
+        let child_ctx = AccessCtx {
+            widget_state: &child.state,
+            global_state: self.global_state,
+            tree_update: self.tree_update,
+            // TODO - This doesn't make sense. NodeBuilder should probably be split
+            // out from AccessCtx.
+            current_node: NodeBuilder::default(),
+            rebuild_all: self.rebuild_all,
+            scale_factor: self.scale_factor,
+        };
+        RawWrapper {
+            ctx: child_ctx,
+            widget: &child.inner,
+        }
+    }
+}
+
+// --- MARK: WRAPPER
+
+pub struct RawWrapper<'a, Ctx, W> {
+    pub(crate) ctx: Ctx,
+    pub(crate) widget: &'a W,
+}
+
+pub struct RawWrapperMut<'a, Ctx: Context, W> {
+    pub(crate) parent_widget_state: &'a mut WidgetState,
+    pub(crate) ctx: Ctx,
+    pub(crate) widget: &'a mut W,
+}
+
+impl<Ctx, W> RawWrapper<'_, Ctx, W> {
+    pub fn widget(&self) -> &W {
+        self.widget
+    }
+
+    pub fn ctx(&self) -> &Ctx {
+        &self.ctx
+    }
+}
+
+impl<Ctx: Context, W> RawWrapperMut<'_, Ctx, W> {
+    pub fn widget(&mut self) -> &mut W {
+        self.widget
+    }
+
+    pub fn ctx(&mut self) -> &mut Ctx {
+        &mut self.ctx
+    }
+}
+
+impl<'a, Ctx: Context, W> Drop for RawWrapperMut<'a, Ctx, W> {
+    fn drop(&mut self) {
+        self.parent_widget_state
+            .merge_up(self.ctx.get_widget_state());
+    }
+}
+
+trait Context {
+    fn get_widget_state(&mut self) -> &mut WidgetState;
+}
+
+macro_rules! impl_context_trait {
+    ($SomeCtx:tt) => {
+        impl Context for $SomeCtx<'_> {
+            fn get_widget_state(&mut self) -> &mut WidgetState {
+                self.widget_state
+            }
+        }
+    };
+}
+
+impl_context_trait!(EventCtx);
+impl_context_trait!(LifeCycleCtx);
+impl_context_trait!(LayoutCtx);

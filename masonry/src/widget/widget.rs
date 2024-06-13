@@ -203,6 +203,23 @@ pub trait Widget: AsAny {
     }
 }
 
+/// Marker trait for Widgets whose parents can get a raw mutable reference to them.
+///
+/// "Raw mut" means using a mutable reference (eg `&mut MyWidget`) to the data
+/// structure, instead of going through the Widget trait methods
+/// (`on_text_event`, `lifecycle`, `layout`, etc) or through `WidgetMut`.
+///
+/// A parent widget can use [`EventCtx::get_raw_mut`], [`LifeCycleCtx::get_raw_mut`],
+/// or [`LayoutCtx::get_raw_mut`] to directly access a child widget. In that case,
+/// these methods return both a mutable reference to the child widget and a new
+/// context (`WidgetCtx`, `EventCtx`, etc) scoped to the child. The parent is
+/// responsible for calling the context methods (eg `request_layout`,
+/// `request_accessibility_update`) for the child.
+///
+/// Widgets implementing AllowRawMut are usually private widgets used as an
+/// internal implementation detail of public widgets.
+pub trait AllowRawMut: Widget {}
+
 #[cfg(not(tarpaulin_include))]
 impl WidgetId {
     /// Allocate a new, unique `WidgetId`.
