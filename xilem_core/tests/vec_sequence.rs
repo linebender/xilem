@@ -12,7 +12,7 @@ fn record_ops(id: u32) -> OperationView<0> {
 #[test]
 fn zero_zero() {
     let view = sequence(0, Vec::<OperationView<0>>::new());
-    let mut ctx = TestCx::default();
+    let mut ctx = TestCtx::default();
     let (mut element, mut state) = view.build(&mut ctx);
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(0)]);
@@ -53,7 +53,7 @@ fn zero_zero() {
 #[test]
 fn one_zero() {
     let view = sequence(1, vec![record_ops(0)]);
-    let mut ctx = TestCx::default();
+    let mut ctx = TestCtx::default();
     let (mut element, mut state) = view.build(&mut ctx);
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(1)]);
@@ -109,7 +109,7 @@ fn one_zero() {
 #[test]
 fn one_two() {
     let view = sequence(1, vec![record_ops(0)]);
-    let mut ctx = TestCx::default();
+    let mut ctx = TestCtx::default();
     let (mut element, mut state) = view.build(&mut ctx);
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(1)]);
@@ -178,7 +178,7 @@ fn one_two() {
 #[test]
 fn normal_messages() {
     let view = sequence(0, vec![record_ops(0), record_ops(1)]);
-    let mut ctx = TestCx::default();
+    let mut ctx = TestCtx::default();
     let (mut element, mut state) = view.build(&mut ctx);
     ctx.assert_empty();
     assert_eq!(element.view_path, &[]);
@@ -210,7 +210,7 @@ fn normal_messages() {
 #[test]
 fn stale_messages() {
     let view = sequence(0, vec![record_ops(0)]);
-    let mut ctx = TestCx::default();
+    let mut ctx = TestCtx::default();
     let (mut element, mut state) = view.build(&mut ctx);
     ctx.assert_empty();
     assert_eq!(element.view_path, &[]);

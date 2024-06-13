@@ -46,15 +46,15 @@ where
 {
     pub fn new(mut state: State, mut logic: Logic) -> Self {
         let first_view = logic(&mut state);
-        let mut view_cx = ViewCtx::default();
-        let (pod, view_state) = first_view.build(&mut view_cx);
+        let mut view_ctx = ViewCtx::default();
+        let (pod, view_state) = first_view.build(&mut view_ctx);
         let root_widget = RootWidget::from_pod(pod.inner);
         Xilem {
             driver: MasonryDriver {
                 current_view: first_view,
                 logic,
                 state,
-                view_cx,
+                view_ctx,
                 view_state,
                 masonry_interface: None,
             },

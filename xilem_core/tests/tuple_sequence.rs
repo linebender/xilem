@@ -12,7 +12,7 @@ fn record_ops(id: u32) -> OperationView<0> {
 #[test]
 fn unit_no_elements() {
     let view = sequence(0, ());
-    let mut ctx = TestCx::default();
+    let mut ctx = TestCtx::default();
     let (element, _state) = view.build(&mut ctx);
     ctx.assert_empty();
     assert!(element.children.unwrap().active.is_empty());
@@ -22,7 +22,7 @@ fn unit_no_elements() {
 #[test]
 fn one_element_passthrough() {
     let view = sequence(1, (record_ops(0),));
-    let mut ctx = TestCx::default();
+    let mut ctx = TestCtx::default();
     let (mut element, mut state) = view.build(&mut ctx);
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(1)]);
@@ -90,7 +90,7 @@ fn one_element_passthrough() {
 #[test]
 fn two_element_passthrough() {
     let view = sequence(2, (record_ops(0), record_ops(1)));
-    let mut ctx = TestCx::default();
+    let mut ctx = TestCtx::default();
     let (mut element, mut state) = view.build(&mut ctx);
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(2)]);
@@ -169,7 +169,7 @@ fn two_element_passthrough() {
 #[test]
 fn two_element_message() {
     let view = sequence(2, (record_ops(0), record_ops(1)));
-    let mut ctx = TestCx::default();
+    let mut ctx = TestCtx::default();
     let (element, mut state) = view.build(&mut ctx);
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(2)]);

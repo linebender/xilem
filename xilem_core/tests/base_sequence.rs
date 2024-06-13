@@ -17,7 +17,7 @@ fn record_ops(id: u32) -> OperationView<0> {
 #[test]
 fn one_element_sequence_passthrough() {
     let view = sequence(1, record_ops(0));
-    let mut ctx = TestCx::default();
+    let mut ctx = TestCtx::default();
     let (mut element, mut state) = view.build(&mut ctx);
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(1)]);
@@ -84,7 +84,7 @@ fn one_element_sequence_passthrough() {
 #[test]
 fn option_none_none() {
     let view = sequence(0, None::<OperationView<0>>);
-    let mut ctx = TestCx::default();
+    let mut ctx = TestCtx::default();
     let (mut element, mut state) = view.build(&mut ctx);
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(0)]);
@@ -125,7 +125,7 @@ fn option_none_none() {
 #[test]
 fn option_some_some() {
     let view = sequence(1, Some(record_ops(0)));
-    let mut ctx = TestCx::default();
+    let mut ctx = TestCtx::default();
     let (mut element, mut state) = view.build(&mut ctx);
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(1)]);
@@ -185,7 +185,7 @@ fn option_some_some() {
 #[test]
 fn option_none_some() {
     let view = sequence(0, None);
-    let mut ctx = TestCx::default();
+    let mut ctx = TestCtx::default();
     let (mut element, mut state) = view.build(&mut ctx);
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(0)]);
@@ -234,7 +234,7 @@ fn option_none_some() {
 #[test]
 fn option_some_none() {
     let view = sequence(1, Some(record_ops(0)));
-    let mut ctx = TestCx::default();
+    let mut ctx = TestCtx::default();
     let (mut element, mut state) = view.build(&mut ctx);
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(1)]);
@@ -285,7 +285,7 @@ fn option_some_none() {
 #[test]
 fn option_message_some() {
     let view = sequence(1, Some(record_ops(0)));
-    let mut ctx = TestCx::default();
+    let mut ctx = TestCtx::default();
     let (element, mut state) = view.build(&mut ctx);
     ctx.assert_empty();
 
@@ -301,7 +301,7 @@ fn option_message_some() {
 #[test]
 fn option_message_some_some() {
     let view = sequence(0, Some(record_ops(0)));
-    let mut ctx = TestCx::default();
+    let mut ctx = TestCtx::default();
     let (mut element, mut state) = view.build(&mut ctx);
     ctx.assert_empty();
 
@@ -320,7 +320,7 @@ fn option_message_some_some() {
 #[test]
 fn option_message_some_none_stale() {
     let view = sequence(0, Some(record_ops(0)));
-    let mut ctx = TestCx::default();
+    let mut ctx = TestCtx::default();
     let (mut element, mut state) = view.build(&mut ctx);
     ctx.assert_empty();
 
@@ -339,7 +339,7 @@ fn option_message_some_none_stale() {
 #[test]
 fn option_message_some_none_some_stale() {
     let view = sequence(0, Some(record_ops(0)));
-    let mut ctx = TestCx::default();
+    let mut ctx = TestCtx::default();
     let (mut element, mut state) = view.build(&mut ctx);
     ctx.assert_empty();
 
