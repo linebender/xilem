@@ -437,12 +437,8 @@ impl Widget for Split {
             }
         }
 
-        if !self.child1.is_active() {
-            self.child1.on_pointer_event(ctx, event);
-        }
-        if !self.child2.is_active() {
-            self.child2.on_pointer_event(ctx, event);
-        }
+        self.child1.on_pointer_event(ctx, event);
+        self.child2.on_pointer_event(ctx, event);
     }
 
     fn on_text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent) {

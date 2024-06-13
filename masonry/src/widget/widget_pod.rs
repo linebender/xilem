@@ -56,53 +56,22 @@ impl<W: Widget> WidgetPod<W> {
         }
     }
 
-    /// Read-only access to state. We don't mark the field as `pub` because
-    /// we want to control mutation.
-    pub(crate) fn state(&self) -> &WidgetState {
-        &self.state
-    }
-
     // TODO - remove
     /// Return a reference to the inner widget.
     pub fn widget(&self) -> &W {
         &self.inner
     }
 
+    // TODO - remove
     /// Return a [`WidgetRef`] to the inner widget.
     pub fn as_ref(&self) -> WidgetRef<'_, W> {
         WidgetRef::new(&self.state, &self.inner)
     }
 
+    // TODO - remove
     /// Return a type-erased [`WidgetRef`] to the inner widget.
     pub fn as_dyn(&self) -> WidgetRef<'_, dyn Widget> {
         WidgetRef::new(&self.state, &self.inner)
-    }
-
-    /// Return `true` if the widget has received [`LifeCycle::WidgetAdded`].
-    pub fn is_initialized(&self) -> bool {
-        !self.state.is_new
-    }
-
-    /// Return `true` if widget or any descendent is focused
-    pub fn has_focus(&self) -> bool {
-        self.state.has_focus
-    }
-
-    /// Query the "active" state of the widget.
-    pub fn is_active(&self) -> bool {
-        self.state.is_active
-    }
-
-    /// Return `true` if any descendant is active.
-    pub fn has_active(&self) -> bool {
-        self.state.has_active
-    }
-
-    /// Query the "hot" state of the widget.
-    ///
-    /// See [`EventCtx::is_hot`] for additional information.
-    pub fn is_hot(&self) -> bool {
-        self.state.is_hot
     }
 
     /// Get the identity of the widget.
@@ -136,23 +105,6 @@ impl<W: Widget> WidgetPod<W> {
     /// [`paint_insets`]: Self::paint_insets
     pub fn paint_rect(&self) -> Rect {
         self.state.paint_rect()
-    }
-
-    /// Return the paint [`Insets`] for this widget.
-    ///
-    /// If these [`Insets`] are nonzero, they describe the area beyond a widget's
-    /// layout rect where it needs to paint.
-    ///
-    /// These are generally zero; exceptions are widgets that do things like
-    /// paint a drop shadow.
-    ///
-    /// A widget can set its insets by calling [`set_paint_insets`] during its
-    /// [`layout`] method.
-    ///
-    /// [`set_paint_insets`]: LayoutCtx::set_paint_insets
-    /// [`layout`]: Widget::layout
-    pub fn paint_insets(&self) -> Insets {
-        self.state.paint_insets
     }
 
     /// Given a parents layout size, determine the appropriate paint `Insets`
@@ -290,7 +242,7 @@ impl<W: Widget> WidgetPod<W> {
             debug_panic!(
                 "Error in '{}' #{}: children changed in method {} but ctx.children_changed() wasn't called",
                 self.inner.short_type_name(),
-                self.state().id.to_raw(),
+                self.id().to_raw(),
                 method_name,
             );
         }
@@ -302,9 +254,9 @@ impl<W: Widget> WidgetPod<W> {
                 debug_panic!(
                     "Error in '{}' #{}: child widget '{}' #{} not visited in method {}",
                     self.inner.short_type_name(),
-                    self.state().id.to_raw(),
+                    self.id().to_raw(),
                     child.deref().short_type_name(),
-                    child.state().id.to_raw(),
+                    child.id().to_raw(),
                     method_name,
                 );
             }
@@ -314,11 +266,11 @@ impl<W: Widget> WidgetPod<W> {
     }
 
     fn check_initialized(&self, method_name: &str) {
-        if !self.is_initialized() {
+        if self.state.is_new {
             debug_panic!(
                 "Error in '{}' #{}: method '{}' called before receiving WidgetAdded.",
                 self.inner.short_type_name(),
-                self.state.id.to_raw(),
+                self.id().to_raw(),
                 method_name,
             );
         }
@@ -379,7 +331,7 @@ impl<W: Widget> WidgetPod<W> {
             trace!(
                 "Widget '{}' #{} visited",
                 self.inner.short_type_name(),
-                self.state.id.to_raw(),
+                self.id().to_raw(),
             );
 
             self.call_widget_method_with_checks("on_pointer_event", |widget_pod| {
@@ -623,9 +575,9 @@ impl<W: Widget> WidgetPod<W> {
                     }
                 }
                 InternalLifeCycle::RouteFocusChanged { old, new } => {
-                    let this_changed = if *old == Some(self.state.id) {
+                    let this_changed = if *old == Some(self.id()) {
                         Some(false)
-                    } else if *new == Some(self.state.id) {
+                    } else if *new == Some(self.id()) {
                         Some(true)
                     } else {
                         None
@@ -679,11 +631,11 @@ impl<W: Widget> WidgetPod<W> {
 
                 true
             }
-            _ if !self.is_initialized() => {
+            _ if self.state.is_new => {
                 debug_panic!(
                     "Error in '{}' #{}: received LifeCycle::{:?} before receiving WidgetAdded.",
                     self.inner.short_type_name(),
-                    self.state.id.to_raw(),
+                    self.id().to_raw(),
                     event
                 );
                 return;
@@ -705,7 +657,7 @@ impl<W: Widget> WidgetPod<W> {
             LifeCycle::BuildFocusChain => {
                 if self.state.update_focus_chain {
                     // Replace has_focus to check if the value changed in the meantime
-                    let is_focused = parent_ctx.global_state.focused_widget == Some(self.state.id);
+                    let is_focused = parent_ctx.global_state.focused_widget == Some(self.id());
                     self.state.has_focus = is_focused;
 
                     self.state.focus_chain.clear();
@@ -825,7 +777,7 @@ impl<W: Widget> WidgetPod<W> {
             debug_panic!(
                 "Error in '{}' #{}: trying to compute layout of stashed widget.",
                 self.inner.short_type_name(),
-                self.state().id.to_raw(),
+                self.id().to_raw(),
             );
             return Size::ZERO;
         }
@@ -869,9 +821,9 @@ impl<W: Widget> WidgetPod<W> {
                     debug_panic!(
                         "Error in '{}' #{}: missing call to place_child method for child widget '{}' #{}. During layout pass, if a widget calls WidgetPod::layout() on its child, it then needs to call LayoutCtx::place_child() on the same child.",
                         self.inner.short_type_name(),
-                        self.state().id.to_raw(),
+                        self.id().to_raw(),
                         child.deref().short_type_name(),
-                        child.state().id.to_raw(),
+                        child.id().to_raw(),
                     );
                 }
 
@@ -883,11 +835,11 @@ impl<W: Widget> WidgetPod<W> {
                     debug_panic!(
                         "Error in '{}' #{}: paint_rect {:?} doesn't contain paint_rect {:?} of child widget '{}' #{}",
                         self.inner.short_type_name(),
-                        self.state().id.to_raw(),
+                        self.id().to_raw(),
                         self.state.local_paint_rect,
                         child_rect,
                         child.deref().short_type_name(),
-                        child.state().id.to_raw(),
+                        child.id().to_raw(),
                     );
                 }
             }
@@ -945,7 +897,7 @@ impl<W: Widget> WidgetPod<W> {
             debug_panic!(
                 "Error in '{}' #{}: trying to paint stashed widget.",
                 self.inner.short_type_name(),
-                self.state().id.to_raw(),
+                self.id().to_raw(),
             );
             return;
         }
@@ -958,7 +910,7 @@ impl<W: Widget> WidgetPod<W> {
             trace!(
                 "Painting widget '{}' #{}",
                 self.inner.short_type_name(),
-                self.state.id.to_raw()
+                self.id().to_raw(),
             );
 
             self.state.needs_paint = false;
@@ -1014,7 +966,7 @@ impl<W: Widget> WidgetPod<W> {
             trace!(
                 "Building accessibility node for widget '{}' #{}",
                 self.inner.short_type_name(),
-                self.state.id.to_raw()
+                self.id().to_raw()
             );
 
             self.call_widget_method_with_checks("accessibility", |widget_pod| {

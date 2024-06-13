@@ -159,6 +159,7 @@ impl Widget for ScrollBar {
                         grab_anchor,
                         mouse_pos,
                     );
+                    // TODO - set to false
                     self.moved = true;
                 }
                 ctx.request_paint();

@@ -178,10 +178,10 @@ impl RenderRoot {
 
         // TODO - if root widget's request_anim is still set by the
         // time this is called, emit a warning
-        if self.root.state().needs_layout {
+        if self.root.state.needs_layout {
             self.root_layout();
         }
-        if self.root.state().needs_layout {
+        if self.root.state.needs_layout {
             warn!("Widget requested layout during layout pass");
             self.state
                 .signal_queue
@@ -547,7 +547,7 @@ impl RenderRoot {
             self.state.debug_logger.layout_tree.root = Some(self.root.id().to_raw() as u32);
         }
 
-        if self.root.state().needs_window_origin && !self.root.state().needs_layout {
+        if self.root.state.needs_window_origin && !self.root.state.needs_layout {
             let event = LifeCycle::Internal(InternalLifeCycle::ParentWindowOrigin {
                 mouse_pos: self.last_mouse_pos,
             });
@@ -556,14 +556,14 @@ impl RenderRoot {
 
         // Update the disabled state if necessary
         // Always do this before updating the focus-chain
-        if self.root.state().tree_disabled_changed() {
+        if self.root.state.tree_disabled_changed() {
             let event = LifeCycle::Internal(InternalLifeCycle::RouteDisabledChanged);
             self.root_lifecycle(event);
         }
 
         // Update the focus-chain if necessary
         // Always do this before sending focus change, since this event updates the focus chain.
-        if self.root.state().update_focus_chain {
+        if self.root.state.update_focus_chain {
             let event = LifeCycle::BuildFocusChain;
             self.root_lifecycle(event);
         }
@@ -579,7 +579,7 @@ impl RenderRoot {
         // We request a redraw if either the render tree or the accessibility
         // tree needs to be rebuilt. Usually both happen at the same time.
         // A redraw will trigger a rebuild of the accessibility tree.
-        if self.root.state().needs_paint || self.root.state().needs_accessibility_update {
+        if self.root.state.needs_paint || self.root.state.needs_accessibility_update {
             self.state
                 .signal_queue
                 .push_back(RenderRootSignal::RequestRedraw);
@@ -645,7 +645,7 @@ impl RenderRoot {
 
     // TODO - Store in RenderRootState
     pub(crate) fn focus_chain(&self) -> &[WidgetId] {
-        &self.root.state().focus_chain
+        &self.root.state.focus_chain
     }
 }
 
