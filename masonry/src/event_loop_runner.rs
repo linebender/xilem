@@ -12,7 +12,7 @@ use vello::{peniko::Color, AaSupport, RenderParams, Renderer, RendererOptions, S
 use wgpu::PresentMode;
 use winit::application::ApplicationHandler;
 use winit::error::EventLoopError;
-use winit::event::{MouseButton as WinitMouseButton, WindowEvent as WinitWindowEvent};
+use winit::event::{MouseButton as WinitMouseButton, WindowEvent as WinitWindowEvent, DeviceId, DeviceEvent as WinitDeviceEvent};
 use winit::event_loop::{ActiveEventLoop, EventLoopProxy};
 use winit::window::{Window, WindowAttributes, WindowId};
 
@@ -51,11 +51,10 @@ pub enum WindowState<'a> {
     },
 }
 
-struct MainState<'a> {
+pub struct MasonryState<'a> {
     render_cx: RenderContext,
     render_root: RenderRoot,
     pointer_state: PointerState,
-    app_driver: Box<dyn AppDriver>,
     renderer: Option<Renderer>,
     // TODO: Winit doesn't seem to let us create these proxies from within the loop
     // The reasons for this are unclear
@@ -64,6 +63,11 @@ struct MainState<'a> {
     // Per-Window state
     // In future, this will support multiple windows
     window: WindowState<'a>,
+}
+
+struct MainState<'a> {
+    masonry_state: MasonryState<'a>,
+    app_driver: Box<dyn AppDriver>,
 }
 
 /// The type of the event loop used by Masonry.
@@ -100,14 +104,16 @@ pub fn run_with(
     // TODO: We can't know this scale factor until later?
     let scale_factor = 1.0;
     let mut main_state = MainState {
-        render_cx,
-        render_root: RenderRoot::new(root_widget, WindowSizePolicy::User, scale_factor),
-        renderer: None,
-        pointer_state: PointerState::empty(),
-        app_driver: Box::new(app_driver),
-        proxy: event_loop.create_proxy(),
+        masonry_state: MasonryState {
+            render_cx,
+            render_root: RenderRoot::new(root_widget, WindowSizePolicy::User, scale_factor),
+            renderer: None,
+            pointer_state: PointerState::empty(),
+            proxy: event_loop.create_proxy(),
 
-        window: WindowState::Uninitialized(window),
+            window: WindowState::Uninitialized(window),
+        },
+        app_driver: Box::new(app_driver),
     };
 
     // If there is no default tracing subscriber, we set our own. If one has
@@ -121,6 +127,58 @@ pub fn run_with(
 
 impl ApplicationHandler<accesskit_winit::Event> for MainState<'_> {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
+        self.masonry_state.handle_resumed(event_loop);
+
+        // allow the app to do any setup it needs to do
+        self.app_driver.resumed(event_loop, &mut self.masonry_state);
+    }
+
+    fn suspended(&mut self, event_loop: &ActiveEventLoop) {
+        // allow the app to do any tear down it needs to do
+        self.app_driver.suspended(event_loop, &mut self.masonry_state);
+
+        self.masonry_state.handle_suspended(event_loop);
+    }
+
+    fn window_event(&mut self, event_loop: &ActiveEventLoop, window_id: WindowId, event: WinitWindowEvent) {
+        if !self.app_driver.window_event(event_loop, window_id, &event, &mut self.masonry_state) {
+            self.masonry_state.handle_window_event(event_loop, window_id, event, self.app_driver.as_mut());
+        }
+    }
+
+    fn device_event(&mut self, event_loop: &ActiveEventLoop, device_id: DeviceId, event: WinitDeviceEvent) {
+        if !self.app_driver.device_event(event_loop, device_id, &event, &mut self.masonry_state) {
+            self.masonry_state.handle_device_event(event_loop, device_id, event, self.app_driver.as_mut());
+        }
+     }
+
+     fn user_event(&mut self, event_loop: &ActiveEventLoop, event: accesskit_winit::Event) {
+        if !self.app_driver.user_event(event_loop, &event, &mut self.masonry_state) {
+            self.masonry_state.handle_user_event(event_loop, event, self.app_driver.as_mut());
+        }
+    }
+
+    fn new_events(&mut self, event_loop: &ActiveEventLoop, cause: winit::event::StartCause) {
+        self.app_driver.new_events(event_loop, cause, &mut self.masonry_state);
+    }
+    
+    fn exiting(&mut self, event_loop: &ActiveEventLoop) {
+        self.app_driver.exiting(event_loop, &mut self.masonry_state);
+    }
+    
+    fn memory_warning(&mut self, event_loop: &ActiveEventLoop) {
+        self.app_driver.memory_warning(event_loop, &mut self.masonry_state);
+    }
+
+    fn about_to_wait(&mut self, event_loop: &ActiveEventLoop) {
+        self.app_driver.about_to_wait(event_loop, &mut self.masonry_state);
+    }
+
+}
+
+impl MasonryState<'_> {
+    // --- MARK: RESUMED ---
+    fn handle_resumed(&mut self, event_loop: &ActiveEventLoop) {
         match std::mem::replace(
             &mut self.window,
             // TODO: Is there a better default value which could be used?
@@ -175,7 +233,9 @@ impl ApplicationHandler<accesskit_winit::Event> for MainState<'_> {
             }
         }
     }
-    fn suspended(&mut self, _event_loop: &ActiveEventLoop) {
+
+    // --- MARK: SUSPENDED ---
+    fn handle_suspended(&mut self, _event_loop: &ActiveEventLoop) {
         match std::mem::replace(
             &mut self.window,
             // TODO: Is there a better default value which could be used?
@@ -197,9 +257,68 @@ impl ApplicationHandler<accesskit_winit::Event> for MainState<'_> {
             }
         }
     }
+    
+
+    // --- MARK: RENDER ---
+    fn render(&mut self, scene: Scene) {
+        let WindowState::Rendering {
+            window, surface, ..
+        } = &mut self.window
+        else {
+            tracing::warn!("Tried to render whilst suspended or before window created");
+            return;
+        };
+        let scale_factor = window.scale_factor();
+        let size = window.inner_size();
+        let width = size.width;
+        let height = size.height;
+
+        if surface.config.width != width || surface.config.height != height {
+            self.render_cx.resize_surface(surface, width, height);
+        }
+
+        let transformed_scene = if scale_factor == 1.0 {
+            None
+        } else {
+            let mut new_scene = Scene::new();
+            new_scene.append(&scene, Some(Affine::scale(scale_factor)));
+            Some(new_scene)
+        };
+        let scene_ref = transformed_scene.as_ref().unwrap_or(&scene);
+
+        let Ok(surface_texture) = surface.surface.get_current_texture() else {
+            warn!("failed to acquire next swapchain texture");
+            return;
+        };
+        let dev_id = surface.dev_id;
+        let device = &self.render_cx.devices[dev_id].device;
+        let queue = &self.render_cx.devices[dev_id].queue;
+        let renderer_options = RendererOptions {
+            surface_format: Some(surface.format),
+            use_cpu: false,
+            antialiasing_support: AaSupport {
+                area: true,
+                msaa8: false,
+                msaa16: false,
+            },
+            num_init_threads: NonZeroUsize::new(1),
+        };
+        let render_params = RenderParams {
+            base_color: Color::BLACK,
+            width,
+            height,
+            antialiasing_method: vello::AaConfig::Area,
+        };
+        self.renderer
+            .get_or_insert_with(|| Renderer::new(device, renderer_options).unwrap())
+            .render_to_surface(device, queue, scene_ref, &surface_texture, &render_params)
+            .expect("failed to render to surface");
+        surface_texture.present();
+        device.poll(wgpu::Maintain::Wait);
+    }
 
     // --- MARK: WINDOW_EVENT ---
-    fn window_event(&mut self, event_loop: &ActiveEventLoop, _: WindowId, event: WinitWindowEvent) {
+    fn handle_window_event(&mut self, event_loop: &ActiveEventLoop, _: WindowId, event: WinitWindowEvent, app_driver: &mut dyn AppDriver) {
         let WindowState::Rendering {
             window,
             accesskit_adapter,
@@ -346,11 +465,15 @@ impl ApplicationHandler<accesskit_winit::Event> for MainState<'_> {
             _ => (),
         }
 
-        self.handle_signals(event_loop);
+        self.handle_signals(event_loop, app_driver);
+    }
+
+    // --- MARK: DEVICE_EVENT ---
+    fn handle_device_event(&mut self, _: &ActiveEventLoop, _: DeviceId, _: WinitDeviceEvent, _: &mut dyn AppDriver) {
     }
 
     // --- MARK: USER_EVENT ---
-    fn user_event(&mut self, event_loop: &ActiveEventLoop, event: accesskit_winit::Event) {
+    fn handle_user_event(&mut self, event_loop: &ActiveEventLoop, event: accesskit_winit::Event, app_driver: &mut dyn AppDriver) {
         match event.window_event {
             // Note that this event can be called at any time, even multiple times if
             // the user restarts their screen reader.
@@ -364,71 +487,11 @@ impl ApplicationHandler<accesskit_winit::Event> for MainState<'_> {
             accesskit_winit::WindowEvent::AccessibilityDeactivated => {}
         }
 
-        self.handle_signals(event_loop);
-    }
-}
-
-impl MainState<'_> {
-    // --- MARK: RENDER ---
-    fn render(&mut self, scene: Scene) {
-        let WindowState::Rendering {
-            window, surface, ..
-        } = &mut self.window
-        else {
-            tracing::warn!("Tried to render whilst suspended or before window created");
-            return;
-        };
-        let scale_factor = window.scale_factor();
-        let size = window.inner_size();
-        let width = size.width;
-        let height = size.height;
-
-        if surface.config.width != width || surface.config.height != height {
-            self.render_cx.resize_surface(surface, width, height);
-        }
-
-        let transformed_scene = if scale_factor == 1.0 {
-            None
-        } else {
-            let mut new_scene = Scene::new();
-            new_scene.append(&scene, Some(Affine::scale(scale_factor)));
-            Some(new_scene)
-        };
-        let scene_ref = transformed_scene.as_ref().unwrap_or(&scene);
-
-        let Ok(surface_texture) = surface.surface.get_current_texture() else {
-            warn!("failed to acquire next swapchain texture");
-            return;
-        };
-        let dev_id = surface.dev_id;
-        let device = &self.render_cx.devices[dev_id].device;
-        let queue = &self.render_cx.devices[dev_id].queue;
-        let renderer_options = RendererOptions {
-            surface_format: Some(surface.format),
-            use_cpu: false,
-            antialiasing_support: AaSupport {
-                area: true,
-                msaa8: false,
-                msaa16: false,
-            },
-            num_init_threads: NonZeroUsize::new(1),
-        };
-        let render_params = RenderParams {
-            base_color: Color::BLACK,
-            width,
-            height,
-            antialiasing_method: vello::AaConfig::Area,
-        };
-        self.renderer
-            .get_or_insert_with(|| Renderer::new(device, renderer_options).unwrap())
-            .render_to_surface(device, queue, scene_ref, &surface_texture, &render_params)
-            .expect("failed to render to surface");
-        surface_texture.present();
-        device.poll(wgpu::Maintain::Wait);
+        self.handle_signals(event_loop, app_driver);
     }
 
     // --- MARK: SIGNALS ---
-    fn handle_signals(&mut self, _event_loop: &ActiveEventLoop) {
+    fn handle_signals(&mut self, _event_loop: &ActiveEventLoop, app_driver: &mut dyn AppDriver) {
         let WindowState::Rendering { window, .. } = &mut self.window else {
             tracing::warn!("Tried to handle a signal whilst suspended or before window created");
             return;
@@ -441,7 +504,7 @@ impl MainState<'_> {
                         let mut driver_ctx = DriverCtx {
                             main_root_widget: root,
                         };
-                        self.app_driver
+                        app_driver
                             .on_action(&mut driver_ctx, widget_id, action);
                     });
                 }
@@ -480,4 +543,17 @@ impl MainState<'_> {
             }
         }
     }
+
+    pub fn submit_window_event(&mut self, event_loop: &ActiveEventLoop, app_driver: &mut dyn AppDriver, window_id: WindowId, event: WinitWindowEvent) {
+        self.handle_window_event(event_loop, window_id, event, app_driver);
+    }
+
+    pub fn submit_device_event(&mut self, event_loop: &ActiveEventLoop, app_driver: &mut dyn AppDriver, device_id: DeviceId, event: WinitDeviceEvent) {
+        self.handle_device_event(event_loop, device_id, event, app_driver);
+    }
+
+    pub fn submit_user_event(&mut self, event_loop: &ActiveEventLoop, app_driver: &mut dyn AppDriver, event: accesskit_winit::Event) {
+        self.handle_user_event(event_loop, event, app_driver);
+    }
+
 }
