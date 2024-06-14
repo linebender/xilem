@@ -1,7 +1,7 @@
 // Copyright 2023 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use xilem_web2::{document_body, elements::html as el, text, App, DomView, HtmlButtonElement};
+use xilem_web2::{document_body, elements::html as el, App, DomView};
 
 #[derive(Default)]
 struct AppState {
@@ -41,13 +41,13 @@ impl AppState {
 fn btn(
     label: &'static str,
     click_fn: impl Fn(&mut AppState, web_sys::MouseEvent) + 'static,
-) -> impl HtmlButtonElement<AppState> {
-    el::button(text(label)).on_click(click_fn)
+) -> impl DomView<AppState> {
+    el::button(label).on_click(click_fn)
 }
 
 fn app_logic(state: &mut AppState) -> impl DomView<AppState> {
     el::div((
-        el::span(text(format!("clicked {} times", state.clicks))).class(state.class),
+        el::span(format!("clicked {} times", state.clicks)).class(state.class),
         el::br(()),
         btn("+1 click", |state, _| state.increment()),
         btn("-1 click", |state, _| state.decrement()),
@@ -55,7 +55,7 @@ fn app_logic(state: &mut AppState) -> impl DomView<AppState> {
         btn("a different class", |state, _| state.change_class()),
         btn("change text", |state, _| state.change_text()),
         el::br(()),
-        text(state.text.clone()),
+        state.text.clone(),
     ))
 }
 

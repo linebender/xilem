@@ -1,9 +1,11 @@
 use xilem_core::{Mut, OneOf2, OneOf2Ctx};
 
 use crate::{
-    attribute::WithAttributes, class::WithClasses, AttributeValue, CowStr, DomNode, DynNode, Pod,
-    PodMut, ViewCtx,
+    attribute::WithAttributes, class::WithClasses, AttributeValue, DomNode, DynNode, Pod, PodMut,
+    ViewCtx,
 };
+
+type CowStr = std::borrow::Cow<'static, str>;
 
 impl<N1: DomNode, N2: DomNode> OneOf2Ctx<Pod<N1>, Pod<N2>> for ViewCtx {
     type OneOfTwoElement = Pod<OneOf2<N1, N2>>;

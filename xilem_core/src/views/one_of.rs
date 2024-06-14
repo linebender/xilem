@@ -67,7 +67,7 @@ macro_rules! one_of {
             );
         }
 
-        /// The state used to implement `View` or `ViewSequence` for `OneOfN`
+        /// The state used to implement [`View`] or [`ViewSequence`] for `OneOfN`
         #[doc(hidden)] // Implementation detail, public because of trait visibility rules
         pub struct [<$ty_name State>]<$($variant),+> {
             /// The current state of the inner view or view sequence.

@@ -1,8 +1,8 @@
 // Copyright 2023 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use attribute::{Attr, WithAttributes};
-use class::{AsClassIter, Class, WithClasses};
+pub use attribute::{Attr, WithAttributes};
+pub use class::{AsClassIter, Class, WithClasses};
 use element::ElementProps;
 use std::any::Any;
 use wasm_bindgen::UnwrapThrowExt;
@@ -36,7 +36,7 @@ mod vecmap;
 pub use app::{App, ViewCtx};
 pub use attribute_value::{AttributeValue, IntoAttributeValue};
 pub use optional_action::{Action, OptionalAction};
-pub use text::text;
+// pub use text::text;
 
 type CowStr = std::borrow::Cow<'static, str>;
 

@@ -2,7 +2,9 @@ use std::marker::PhantomData;
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use xilem_core::{DynMessage, MessageResult, Mut, View, ViewElement, ViewId};
 
-use crate::{vecmap::VecMap, AttributeValue, DomNode, ElementProps, Pod, PodMut, ViewCtx};
+use crate::{
+    vecmap::VecMap, AttributeValue, DomNode, ElementProps, Pod, PodMut, ViewCtx,
+};
 
 type CowStr = std::borrow::Cow<'static, str>;
 
@@ -159,6 +161,7 @@ impl WithAttributes for ElementProps {
         self.attributes.set_attribute(name, value);
     }
 }
+
 impl<E: DomNode<Props: WithAttributes>> WithAttributes for Pod<E> {
     fn start_attribute_modifier(&mut self) {
         self.props.start_attribute_modifier();

@@ -94,10 +94,7 @@ impl<'a, 'b, 'c, 'd> ElementSplice<Pod<DynNode>> for DomChildrenSplice<'a, 'b, '
         // TODO: Should the parent be kept for the child before invoking `f`?
         // This is an optimization to avoid too much DOM traffic, otherwise first the children would be deleted from that node in an up-traversal
         if !self.parent_was_removed {
-            self.parent
-                .remove_child(child.as_ref())
-                .ok()
-                .unwrap_throw();
+            self.parent.remove_child(child.as_ref()).ok().unwrap_throw();
         }
         f(child)
     }
@@ -157,7 +154,7 @@ macro_rules! define_element {
                 $vs: ViewSequence<$t, $a, ViewCtx, Pod<DynNode>, $marker>,
             > View<$t, $a, ViewCtx> for $ty_name<$vs, $marker>
         {
-            type Element = Pod<web_sys::$dom_interface>; // TODO correct type
+            type Element = Pod<web_sys::$dom_interface>;
 
             type ViewState = ElementState<$vs::SeqState>;
 

@@ -3,7 +3,7 @@
 
 use std::{cell::RefCell, rc::Rc};
 
-use crate::{AnyNode, DomNode, DomView, PodMut};
+use crate::{AnyNode, DomView, PodMut};
 use xilem_core::{DynMessage, MessageResult, ViewId, ViewPathTracker};
 
 type IdPath = Vec<ViewId>;
