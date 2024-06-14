@@ -5,15 +5,34 @@ use crate::{core::View, Pod};
 use masonry::{widget, ArcStr};
 use xilem_core::Mut;
 
+pub use masonry::PointerButton;
+
 use crate::{MessageResult, ViewCtx, ViewId};
 
-pub fn button<F, State, Action>(label: impl Into<ArcStr>, callback: F) -> Button<F>
-where
-    F: Fn(&mut State) -> Action + Send + 'static,
+/// A button which calls `callback` when the primary mouse button (normally left) is pressed.
+pub fn button<State, Action>(
+    label: impl Into<ArcStr>,
+    callback: impl Fn(&mut State) -> Action + Send + 'static,
+) -> Button<impl for<'a> Fn(&'a mut State, PointerButton) -> MessageResult<Action> + Send + 'static>
 {
     Button {
         label: label.into(),
-        callback,
+        callback: move |state: &mut State, button| match button {
+            PointerButton::Primary => MessageResult::Action(callback(state)),
+            _ => MessageResult::Nop,
+        },
+    }
+}
+
+/// A button which calls `callback` when pressed.
+pub fn button_any_pointer<State, Action>(
+    label: impl Into<ArcStr>,
+    callback: impl Fn(&mut State, PointerButton) -> Action + Send + 'static,
+) -> Button<impl for<'a> Fn(&'a mut State, PointerButton) -> MessageResult<Action> + Send + 'static>
+{
+    Button {
+        label: label.into(),
+        callback: move |state: &mut State, button| MessageResult::Action(callback(state, button)),
     }
 }
 
@@ -24,7 +43,7 @@ pub struct Button<F> {
 
 impl<F, State, Action> View<State, Action, ViewCtx> for Button<F>
 where
-    F: Fn(&mut State) -> Action + Send + Sync + 'static,
+    F: Fn(&mut State, PointerButton) -> MessageResult<Action> + Send + Sync + 'static,
 {
     type Element = Pod<widget::Button>;
     type ViewState = ();
@@ -69,8 +88,8 @@ where
         );
         match message.downcast::<masonry::Action>() {
             Ok(action) => {
-                if let masonry::Action::ButtonPressed = *action {
-                    MessageResult::Action((self.callback)(app_state))
+                if let masonry::Action::ButtonPressed(button) = *action {
+                    (self.callback)(app_state, button)
                 } else {
                     tracing::error!("Wrong action type in Button::message: {action:?}");
                     MessageResult::Stale(action)

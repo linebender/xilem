@@ -22,7 +22,7 @@ struct Driver {
 impl AppDriver for Driver {
     fn on_action(&mut self, ctx: &mut DriverCtx<'_>, _widget_id: WidgetId, action: Action) {
         match action {
-            Action::ButtonPressed => {
+            Action::ButtonPressed(_) => {
                 let mut root: WidgetMut<RootWidget<Portal<Flex>>> = ctx.get_root();
                 let mut root = root.get_element();
                 let mut flex = root.child_mut();

@@ -5,7 +5,7 @@
 #![windows_subsystem = "windows"]
 
 use xilem::{
-    view::{button, checkbox, flex, label, prose, textbox},
+    view::{button, button_any_pointer, checkbox, flex, label, prose, textbox},
     AnyWidgetView, Axis, Color, EventLoop, EventLoopBuilder, TextAlignment, WidgetView, Xilem,
 };
 const LOREM: &str = r"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi cursus mi sed euismod euismod. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Nullam placerat efficitur tellus at semper. Morbi ac risus magna. Donec ut cursus ex. Etiam quis posuere tellus. Mauris posuere dui et turpis mollis, vitae luctus tellus consectetur. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur eu facilisis nisl.
@@ -49,7 +49,13 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> {
         ))
         .direction(Axis::Horizontal),
         prose(LOREM).alignment(TextAlignment::Middle),
-        button(button_label, |data: &mut AppData| data.count += 1),
+        button_any_pointer(button_label, |data: &mut AppData, button| match button {
+            masonry::PointerButton::None => tracing::warn!("Got unexpected None from button"),
+            masonry::PointerButton::Primary => data.count += 1,
+            masonry::PointerButton::Secondary => data.count -= 1,
+            masonry::PointerButton::Auxiliary => data.count *= 2,
+            _ => (),
+        }),
         checkbox("Check me", data.active, |data: &mut AppData, checked| {
             data.active = checked;
         }),
