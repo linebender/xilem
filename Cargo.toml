@@ -29,7 +29,6 @@ rust.unexpected_cfgs = { level = "warn", check-cfg = [
     'cfg(FALSE)',
     'cfg(tarpaulin_include)',
 ] }
-rust.unreachable_pub = "warn"
 
 [workspace.dependencies]
 xilem_web_core = { version = "0.1.0", path = "xilem_web/xilem_web_core" }
