@@ -84,6 +84,7 @@ pub const HARNESS_DEFAULT_BACKGROUND_COLOR: Color = Color::rgb8(0x29, 0x29, 0x29
 /// ```
 /// use insta::assert_debug_snapshot;
 ///
+/// use masonry::PointerButton;
 /// use masonry::widget::Button;
 /// use masonry::Action;
 /// use masonry::assert_render_snapshot;
@@ -111,7 +112,7 @@ pub const HARNESS_DEFAULT_BACKGROUND_COLOR: Color = Color::rgb8(0x29, 0x29, 0x29
 ///     harness.mouse_click_on(button_id);
 ///     assert_eq!(
 ///         harness.pop_action(),
-///         Some((Action::ButtonPressed, button_id))
+///         Some((Action::ButtonPressed(PointerButton::Primary), button_id))
 ///     );
 /// }
 ///

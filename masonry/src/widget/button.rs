@@ -9,6 +9,7 @@ use tracing::{trace, trace_span, Span};
 use vello::Scene;
 
 use crate::action::Action;
+use crate::event::PointerButton;
 use crate::paint_scene_helpers::{fill_lin_gradient, stroke, UnitPoint};
 use crate::text2::TextStorage;
 use crate::widget::{Label, WidgetMut, WidgetPod, WidgetRef};
@@ -85,9 +86,9 @@ impl Widget for Button {
                     trace!("Button {:?} pressed", ctx.widget_id());
                 }
             }
-            PointerEvent::PointerUp(_, _) => {
+            PointerEvent::PointerUp(button, _) => {
                 if ctx.is_active() && ctx.is_hot() && !ctx.is_disabled() {
-                    ctx.submit_action(Action::ButtonPressed);
+                    ctx.submit_action(Action::ButtonPressed(*button));
                     trace!("Button {:?} released", ctx.widget_id());
                 }
                 ctx.request_paint();
@@ -111,7 +112,7 @@ impl Widget for Button {
         if event.target == ctx.widget_id() {
             match event.action {
                 accesskit::Action::Default => {
-                    ctx.submit_action(Action::ButtonPressed);
+                    ctx.submit_action(Action::ButtonPressed(PointerButton::Primary));
                     ctx.request_paint();
                 }
                 _ => {}
@@ -242,7 +243,7 @@ mod tests {
         harness.mouse_click_on(button_id);
         assert_eq!(
             harness.pop_action(),
-            Some((Action::ButtonPressed, button_id))
+            Some((Action::ButtonPressed(PointerButton::Primary), button_id))
         );
     }
 
