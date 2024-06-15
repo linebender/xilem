@@ -27,6 +27,7 @@ mod class;
 mod events;
 mod one_of;
 mod optional_action;
+mod pointer;
 mod style;
 mod text;
 mod vec_splice;
@@ -39,6 +40,7 @@ pub mod interfaces;
 pub use app::{App, ViewCtx};
 pub use attribute_value::{AttributeValue, IntoAttributeValue};
 pub use optional_action::{Action, OptionalAction};
+pub use pointer::{Pointer, PointerDetails, PointerMsg};
 pub use style::style;
 
 pub trait AnyNode: AsRef<web_sys::Node> + 'static {

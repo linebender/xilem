@@ -1,8 +1,8 @@
 use crate::{
     events,
     style::{IntoStyles, Style, WithStyle},
-    AsClassIter, Attr, Class, DomView, IntoAttributeValue, OptionalAction, WithAttributes,
-    WithClasses,
+    AsClassIter, Attr, Class, DomView, IntoAttributeValue, OptionalAction, Pointer, PointerMsg,
+    WithAttributes, WithClasses,
 };
 use wasm_bindgen::JsCast;
 
@@ -59,6 +59,13 @@ pub trait Element<State, Action = ()>:
         Self: Sized,
     {
         events::OnEvent::new(self, event, handler)
+    }
+
+    fn pointer<Callback: Fn(&mut State, PointerMsg)>(
+        self,
+        handler: Callback,
+    ) -> Pointer<Self, State, Action, Callback> {
+        crate::pointer::pointer(self, handler)
     }
 
     // event list from
