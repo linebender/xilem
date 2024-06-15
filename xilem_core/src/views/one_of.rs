@@ -252,6 +252,7 @@ macro_rules! one_of {
                         ctx.with_id(ViewId::new(seq_state.generation), |ctx| {
                             new.seq_rebuild(prev, inner_state, ctx, elements);
                         });
+                        return;
                     })+
                     _ => (),
                 };
