@@ -1,6 +1,6 @@
 use crate::{
     events,
-    style::{IntoStyles, Style},
+    style::{IntoStyles, Style, WithStyle},
     AsClassIter, Attr, Class, DomView, IntoAttributeValue, OptionalAction, WithAttributes,
     WithClasses,
 };
@@ -383,7 +383,7 @@ where
 
 // #[cfg(feature = "HtmlElement")]
 pub trait HtmlElement<State, Action = ()>:
-    Element<State, Action, DomNode: AsRef<web_sys::HtmlElement>>
+    Element<State, Action, Props: WithStyle, DomNode: AsRef<web_sys::HtmlElement>>
 {
     /// Set a style attribute
     fn style(self, style: impl IntoStyles) -> Style<Self, State, Action> {
@@ -398,6 +398,7 @@ impl<State, Action, T> HtmlElement<State, Action> for T
 where
     T: Element<State, Action>,
     T::DomNode: AsRef<web_sys::HtmlElement>,
+    T::Props: WithStyle,
 {
 }
 
@@ -1313,7 +1314,7 @@ where
 
 // #[cfg(feature = "SvgElement")]
 pub trait SvgElement<State, Action = ()>:
-    Element<State, Action, DomNode: AsRef<web_sys::SvgElement>>
+    Element<State, Action, Props: WithStyle, DomNode: AsRef<web_sys::SvgElement>>
 {
     /// Set a style attribute
     fn style(self, style: impl IntoStyles) -> Style<Self, State, Action> {
@@ -1328,6 +1329,7 @@ impl<State, Action, T> SvgElement<State, Action> for T
 where
     T: Element<State, Action>,
     T::DomNode: AsRef<web_sys::SvgElement>,
+    T::Props: WithStyle,
 {
 }
 

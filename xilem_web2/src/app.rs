@@ -1,6 +1,7 @@
 // Copyright 2023 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use crate::DomNode;
 use std::{cell::RefCell, rc::Rc};
 
 use crate::{AnyNode, DomView, PodMut};
@@ -122,7 +123,8 @@ impl<T, V: DomView<T>, F: FnMut(&mut T) -> V> AppInner<T, V, F> {
     fn ensure_app(&mut self) {
         if self.view.is_none() {
             let view = (self.app_logic)(&mut self.data);
-            let (element, state) = view.build(&mut self.cx);
+            let (mut element, state) = view.build(&mut self.cx);
+            element.node.apply_props(&mut element.props);
             self.view = Some(view);
             self.state = Some(state);
 

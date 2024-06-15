@@ -180,19 +180,19 @@ impl WithClasses for Classes {
 
 impl WithClasses for ElementProps {
     fn add_class(&mut self, class_name: CowStr) {
-        self.classes.add_class(class_name);
+        self.classes().add_class(class_name);
     }
 
     fn remove_class(&mut self, class_name: CowStr) {
-        self.classes.remove_class(class_name);
+        self.classes().remove_class(class_name);
     }
 
     fn start_class_modifier(&mut self) {
-        self.classes.start_class_modifier();
+        self.classes().start_class_modifier();
     }
 
     fn end_class_modifier(&mut self) {
-        self.classes.end_class_modifier();
+        self.classes().end_class_modifier();
     }
 }
 

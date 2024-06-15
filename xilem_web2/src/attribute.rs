@@ -148,15 +148,15 @@ impl WithAttributes for Attributes {
 
 impl WithAttributes for ElementProps {
     fn start_attribute_modifier(&mut self) {
-        self.attributes.start_attribute_modifier();
+        self.attributes().start_attribute_modifier();
     }
 
     fn end_attribute_modifier(&mut self) {
-        self.attributes.end_attribute_modifier();
+        self.attributes().end_attribute_modifier();
     }
 
     fn set_attribute(&mut self, name: CowStr, value: Option<AttributeValue>) {
-        self.attributes.set_attribute(name, value);
+        self.attributes().set_attribute(name, value);
     }
 }
 

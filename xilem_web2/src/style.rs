@@ -230,15 +230,15 @@ impl WithStyle for Styles {
 
 impl WithStyle for ElementProps {
     fn start_style_modifier(&mut self) {
-        self.styles.start_style_modifier();
+        self.styles().start_style_modifier();
     }
 
     fn end_style_modifier(&mut self) {
-        self.styles.end_style_modifier();
+        self.styles().end_style_modifier();
     }
 
     fn set_style(&mut self, name: CowStr, value: Option<CowStr>) {
-        self.styles.set_style(name, value);
+        self.styles().set_style(name, value);
     }
 }
 

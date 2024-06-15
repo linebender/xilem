@@ -4,10 +4,12 @@ use wasm_bindgen::UnwrapThrowExt;
 
 use crate::{attribute::Attributes, class::Classes, document, style::Styles, DynNode, Pod};
 
+// Lazy access to attributes etc. to avoid allocating unnecessary memory when it isn't needed
+// Benchmarks have shown, that this can significantly increase performance and reduce memory usage...
 pub struct ElementProps {
-    pub(crate) attributes: Attributes,
-    pub(crate) classes: Classes,
-    pub(crate) styles: Styles,
+    pub(crate) attributes: Option<Box<Attributes>>,
+    pub(crate) classes: Option<Box<Classes>>,
+    pub(crate) styles: Option<Box<Styles>>,
     pub children: Vec<Pod<DynNode, Box<dyn Any>>>,
 }
 
@@ -15,9 +17,29 @@ impl ElementProps {
     // All of this is slightly more complicated than it should be,
     // because we want to minimize DOM traffic as much as possible (that's basically the bottleneck)
     pub fn update_element(&mut self, element: &web_sys::Element) {
-        self.attributes.apply_attribute_changes(element);
-        self.classes.apply_class_changes(element);
-        self.styles.apply_style_changes(element);
+        if let Some(attributes) = &mut self.attributes {
+            attributes.apply_attribute_changes(element);
+        }
+        if let Some(classes) = &mut self.classes {
+            classes.apply_class_changes(element);
+        }
+        if let Some(styles) = &mut self.styles {
+            styles.apply_style_changes(element);
+        }
+    }
+
+    pub fn attributes(&mut self) -> &mut Attributes {
+        // still unstable, but this would even be more concise
+        // self.attributes.get_or_insert_default()
+        self.attributes.get_or_insert_with(Default::default)
+    }
+
+    pub fn styles(&mut self) -> &mut Styles {
+        self.styles.get_or_insert_with(Default::default)
+    }
+
+    pub fn classes(&mut self) -> &mut Classes {
+        self.classes.get_or_insert_with(Default::default)
     }
 }
 
@@ -38,9 +60,9 @@ impl Pod<web_sys::Element, ElementProps> {
         Self {
             node: element,
             props: ElementProps {
-                attributes: Attributes::default(),
-                classes: Classes::default(),
-                styles: Styles::default(),
+                attributes: None,
+                classes: None,
+                styles: None,
                 children,
             },
         }
