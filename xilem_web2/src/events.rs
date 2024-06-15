@@ -4,7 +4,7 @@
 use std::{borrow::Cow, marker::PhantomData};
 use wasm_bindgen::{prelude::Closure, throw_str, JsCast, UnwrapThrowExt};
 use web_sys::AddEventListenerOptions;
-use xilem_core::{MessageResult, View, ViewId, ViewPathTracker};
+use xilem_core::{MessageResult, Mut, View, ViewId, ViewPathTracker};
 
 use crate::{ElementAsRef, OptionalAction, ViewCtx};
 
@@ -113,6 +113,120 @@ pub struct OnEventState<S> {
     callback: Closure<dyn FnMut(web_sys::Event)>,
 }
 
+// These (boilerplatey) functions are there to reduce the boilerplate created by the macro-expansion below.
+
+fn build_event_listener<State, Action, V, Event>(
+    element_view: &V,
+    event: &str,
+    capture: bool,
+    passive: bool,
+    ctx: &mut ViewCtx,
+) -> (V::Element, OnEventState<V::ViewState>)
+where
+    State: 'static,
+    Action: 'static,
+    V: View<State, Action, ViewCtx>,
+    V::Element: ElementAsRef<web_sys::EventTarget>,
+    Event: JsCast + 'static + xilem_core::Message,
+{
+    // we use a placeholder id here, the id can never change, so we don't need to store it anywhere
+    ctx.with_id(ViewId::new(0), |ctx| {
+        let (element, child_state) = element_view.build(ctx);
+        let callback =
+            create_event_listener::<Event>(element.as_ref(), event, capture, passive, ctx);
+        let state = OnEventState {
+            child_state,
+            callback,
+        };
+        (element, state)
+    })
+}
+
+#[allow(clippy::too_many_arguments)]
+fn rebuild_event_listener<'el, State, Action, V, Event>(
+    element_view: &V,
+    prev_element_view: &V,
+    element: Mut<'el, V::Element>,
+    event: &str,
+    capture: bool,
+    passive: bool,
+    prev_capture: bool,
+    prev_passive: bool,
+    state: &mut OnEventState<V::ViewState>,
+    ctx: &mut ViewCtx,
+) -> Mut<'el, V::Element>
+where
+    State: 'static,
+    Action: 'static,
+    V: View<State, Action, ViewCtx>,
+    V::Element: ElementAsRef<web_sys::EventTarget>,
+    Event: JsCast + 'static + xilem_core::Message,
+{
+    ctx.with_id(ViewId::new(0), |ctx| {
+        if prev_capture != capture || prev_passive != passive {
+            remove_event_listener(element.as_ref(), event, &state.callback, prev_capture);
+
+            state.callback =
+                create_event_listener::<Event>(element.as_ref(), event, capture, passive, ctx);
+        }
+        element_view.rebuild(prev_element_view, &mut state.child_state, ctx, element)
+    })
+}
+
+fn teardown_event_listener<State, Action, V>(
+    element_view: &V,
+    element: Mut<'_, V::Element>,
+    _event: &str,
+    state: &mut OnEventState<V::ViewState>,
+    _capture: bool,
+    ctx: &mut ViewCtx,
+) where
+    State: 'static,
+    Action: 'static,
+    V: View<State, Action, ViewCtx>,
+    V::Element: ElementAsRef<web_sys::EventTarget>,
+{
+    // TODO: is this really needed (as the element will be removed anyway)?
+    // remove_event_listener(element.as_ref(), event, &state.callback, capture);
+    ctx.with_id(ViewId::new(0), |ctx| {
+        element_view.teardown(&mut state.child_state, ctx, element);
+    });
+}
+
+fn message_event_listener<State, Action, V, Event, OA, Callback>(
+    element_view: &V,
+    state: &mut OnEventState<V::ViewState>,
+    id_path: &[ViewId],
+    message: xilem_core::DynMessage,
+    app_state: &mut State,
+    handler: &Callback,
+) -> MessageResult<Action>
+where
+    State: 'static,
+    Action: 'static,
+    V: View<State, Action, ViewCtx>,
+    V::Element: ElementAsRef<web_sys::EventTarget>,
+    Event: JsCast + 'static + xilem_core::Message,
+    OA: OptionalAction<Action>,
+    Callback: Fn(&mut State, Event) -> OA + 'static,
+{
+    let Some((first, remainder)) = id_path.split_first() else {
+        throw_str("Parent view of `OnEvent` sent outdated and/or incorrect empty view path");
+    };
+    if first.routing_id() != 0 {
+        throw_str("Parent view of `OnEvent` sent outdated and/or incorrect empty view path");
+    }
+    if remainder.is_empty() {
+        let event = message.downcast::<Event>().unwrap_throw();
+        match (handler)(app_state, *event).action() {
+            Some(a) => MessageResult::Action(a),
+            None => MessageResult::Nop,
+        }
+    } else {
+        element_view.message(&mut state.child_state, remainder, message, app_state)
+    }
+}
+
 impl<V, State, Action, Event, Callback, OA> View<State, Action, ViewCtx>
     for OnEvent<V, State, Action, Event, Callback>
 where
@@ -129,31 +243,23 @@ where
     type Element = V::Element;
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        // we use a placeholder id here, the id can never change, so we don't need to store it anywhere
-        ctx.with_id(ViewId::new(0), |ctx| {
-            let (element, child_state) = self.element.build(ctx);
-            let callback = create_event_listener::<Event>(
-                element.as_ref(),
-                &self.event,
-                self.capture,
-                self.passive,
-                ctx,
-            );
-            let state = OnEventState {
-                child_state,
-                callback,
-            };
-            (element, state)
-        })
+        build_event_listener::<_, _, _, Event>(
+            &self.element,
+            &self.event,
+            self.capture,
+            self.passive,
+            ctx,
+        )
     }
 
-    fn rebuild<'a>(
+    fn rebuild<'el>(
         &self,
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: <Self::Element as xilem_core::ViewElement>::Mut<'a>,
-    ) -> <Self::Element as xilem_core::ViewElement>::Mut<'a> {
+        element: Mut<'el, Self::Element>,
+    ) -> Mut<'el, Self::Element> {
+        // special case, where event name can change, so we can't reuse the rebuild_event_listener function above
         ctx.with_id(ViewId::new(0), |ctx| {
             if prev.capture != self.capture
                 || prev.passive != self.passive
@@ -185,16 +291,14 @@ where
         ctx: &mut ViewCtx,
         element: <Self::Element as xilem_core::ViewElement>::Mut<'_>,
     ) {
-        remove_event_listener(
-            element.as_ref(),
+        teardown_event_listener(
+            &self.element,
+            element,
             &self.event,
-            &view_state.callback,
+            view_state,
             self.capture,
+            ctx,
         );
-        ctx.with_id(ViewId::new(0), |ctx| {
-            self.element
-                .teardown(&mut view_state.child_state, ctx, element);
-        });
     }
 
     fn message(
@@ -204,23 +308,14 @@ where
         message: xilem_core::DynMessage,
         app_state: &mut State,
     ) -> MessageResult<Action> {
-        let Some((first, remainder)) = id_path.split_first() else {
-            throw_str("Parent view of `OnEvent` sent outdated and/or incorrect empty view path");
-        };
-        if first.routing_id() != 0 {
-            // TODO better message?
-            throw_str("Parent view of `OnEvent` sent outdated and/or incorrect empty view path");
-        }
-        if remainder.is_empty() {
-            let event = message.downcast::<Event>().unwrap_throw();
-            match (self.handler)(app_state, *event).action() {
-                Some(a) => MessageResult::Action(a),
-                None => MessageResult::Nop,
-            }
-        } else {
-            self.element
-                .message(&mut view_state.child_state, remainder, message, app_state)
-        }
+        message_event_listener(
+            &self.element,
+            view_state,
+            id_path,
+            message,
+            app_state,
+            &self.handler,
+        )
     }
 }
 
@@ -232,7 +327,6 @@ macro_rules! event_definitions {
             pub(crate) capture: bool,
             pub(crate) passive: bool,
             pub(crate) handler: Callback,
-            // #[allow(clippy::type_complexity)]
             pub(crate) phantom_event_ty: PhantomData<fn() -> (State, Action)>,
         }
 
@@ -286,72 +380,43 @@ macro_rules! event_definitions {
             type Element = V::Element;
 
             fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-                // we use a placeholder id here, the id can never change, so we don't need to store it anywhere
-                ctx.with_id(ViewId::new(0), |ctx| {
-                    let (element, child_state) = self.element.build(ctx);
-                    let callback = create_event_listener::<web_sys::$web_sys_ty>(
-                        element.as_ref(),
-                        $event_name,
-                        self.capture,
-                        self.passive,
-                        ctx,
-                    );
-                    let state = OnEventState {
-                        child_state,
-                        callback,
-                    };
-                    (element, state)
-                })
+                build_event_listener::<_, _, _, web_sys::$web_sys_ty>(
+                    &self.element,
+                    $event_name,
+                    self.capture,
+                    self.passive,
+                    ctx,
+                )
             }
 
-            fn rebuild<'a>(
+            fn rebuild<'el>(
                 &self,
                 prev: &Self,
                 view_state: &mut Self::ViewState,
                 ctx: &mut ViewCtx,
-                element: <Self::Element as xilem_core::ViewElement>::Mut<'a>,
-            ) -> <Self::Element as xilem_core::ViewElement>::Mut<'a> {
-                ctx.with_id(ViewId::new(0), |ctx| {
-                    if prev.capture != self.capture
-                        || prev.passive != self.passive
-                    {
-                        remove_event_listener(
-                            element.as_ref(),
-                            $event_name,
-                            &view_state.callback,
-                            prev.capture,
-                        );
-
-                        view_state.callback = create_event_listener::<web_sys::$web_sys_ty>(
-                            element.as_ref(),
-                            $event_name,
-                            self.capture,
-                            self.passive,
-                            ctx,
-                        );
-                    }
-                    self.element
-                        .rebuild(&prev.element, &mut view_state.child_state, ctx, element)
-                })
+                element: Mut<'el, Self::Element>,
+            ) -> Mut<'el, Self::Element> {
+                rebuild_event_listener::<_, _, _, web_sys::$web_sys_ty>(
+                    &self.element,
+                    &prev.element,
+                    element,
+                    $event_name,
+                    self.capture,
+                    self.passive,
+                    prev.capture,
+                    prev.passive,
+                    view_state,
+                    ctx,
+                )
             }
 
             fn teardown(
                 &self,
                 view_state: &mut Self::ViewState,
                 ctx: &mut ViewCtx,
-                element: <Self::Element as xilem_core::ViewElement>::Mut<'_>,
+                element: Mut<'_, Self::Element>,
             ) {
-                // TODO: is this really needed (as the element will be removed anyway)?
-                // remove_event_listener(
-                //     element.as_ref(),
-                //     $event_name,
-                //     &view_state.callback,
-                //     self.capture,
-                // );
-                ctx.with_id(ViewId::new(0), |ctx| {
-                    self.element
-                        .teardown(&mut view_state.child_state, ctx, element);
-                });
+                teardown_event_listener(&self.element, element, $event_name, view_state, self.capture, ctx);
             }
 
             fn message(
@@ -361,23 +426,7 @@ macro_rules! event_definitions {
                 message: xilem_core::DynMessage,
                 app_state: &mut State,
             ) -> MessageResult<Action> {
-                let Some((first, remainder)) = id_path.split_first() else {
-                    throw_str(concat!("Parent view of ", stringify!($web_sys_ty), " sent outdated and/or incorrect empty view path"));
-                };
-                if first.routing_id() != 0 {
-                    // TODO better message?
-                    throw_str("Parent view of `OnEvent` sent outdated and/or incorrect empty view path");
-                }
-                if remainder.is_empty() {
-                    let event = message.downcast::<web_sys::$web_sys_ty>().unwrap_throw();
-                    match (self.handler)(app_state, *event).action() {
-                        Some(a) => MessageResult::Action(a),
-                        None => MessageResult::Nop,
-                    }
-                } else {
-                    self.element
-                        .message(&mut view_state.child_state, remainder, message, app_state)
-                }
+                message_event_listener(&self.element, view_state, id_path, message, app_state, &self.handler)
             }
         }
         )*

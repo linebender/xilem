@@ -1,13 +1,12 @@
-use std::any::Any;
 use wasm_bindgen::UnwrapThrowExt;
-use xilem_core::{AppendVec, ElementSplice, Mut};
+use xilem_core::{AppendVec, ElementSplice, Mut, ViewSequence};
 
-use crate::{vec_splice::VecSplice, DynNode, Pod};
+use crate::{element::ElementProps, vec_splice::VecSplice, AnyPod, DomNode, Pod, ViewCtx};
 
 pub struct ElementState<SeqState> {
     seq_state: SeqState,
-    append_scratch: AppendVec<Pod<DynNode, Box<dyn Any>>>,
-    vec_splice_scratch: Vec<Pod<DynNode, Box<dyn Any>>>,
+    append_scratch: AppendVec<AnyPod>,
+    vec_splice_scratch: Vec<AnyPod>,
 }
 
 impl<SeqState> ElementState<SeqState> {
@@ -24,8 +23,8 @@ impl<SeqState> ElementState<SeqState> {
 // and apply them at once, when this splice is being `Drop`ped, needs some investigation, whether that's better than in place mutations
 // TODO maybe we can save some allocations/memory (this needs two extra `Vec`s)
 struct DomChildrenSplice<'a, 'b, 'c, 'd> {
-    scratch: &'a mut AppendVec<Pod<DynNode, Box<dyn Any>>>,
-    children: VecSplice<'b, 'c, Pod<DynNode, Box<dyn Any>>>,
+    scratch: &'a mut AppendVec<AnyPod>,
+    children: VecSplice<'b, 'c, AnyPod>,
     ix: usize,
     parent: &'d web_sys::Node,
     parent_was_removed: bool,
@@ -33,9 +32,9 @@ struct DomChildrenSplice<'a, 'b, 'c, 'd> {
 
 impl<'a, 'b, 'c, 'd> DomChildrenSplice<'a, 'b, 'c, 'd> {
     fn new(
-        scratch: &'a mut AppendVec<Pod<DynNode, Box<dyn Any>>>,
-        children: &'b mut Vec<Pod<DynNode, Box<dyn Any>>>,
-        vec_splice_scratch: &'c mut Vec<Pod<DynNode, Box<dyn Any>>>,
+        scratch: &'a mut AppendVec<AnyPod>,
+        children: &'b mut Vec<AnyPod>,
+        vec_splice_scratch: &'c mut Vec<AnyPod>,
         parent: &'d web_sys::Node,
         parent_was_deleted: bool,
     ) -> Self {
@@ -49,16 +48,10 @@ impl<'a, 'b, 'c, 'd> DomChildrenSplice<'a, 'b, 'c, 'd> {
     }
 }
 
-impl<'a, 'b, 'c, 'd> ElementSplice<Pod<DynNode, Box<dyn Any>>>
-    for DomChildrenSplice<'a, 'b, 'c, 'd>
-{
-    fn with_scratch<R>(
-        &mut self,
-        f: impl FnOnce(&mut AppendVec<Pod<DynNode, Box<dyn Any>>>) -> R,
-    ) -> R {
+impl<'a, 'b, 'c, 'd> ElementSplice<AnyPod> for DomChildrenSplice<'a, 'b, 'c, 'd> {
+    fn with_scratch<R>(&mut self, f: impl FnOnce(&mut AppendVec<AnyPod>) -> R) -> R {
         let ret = f(self.scratch);
         for element in self.scratch.drain() {
-            // can't use self.push because borrow-checker...
             self.parent
                 .append_child(element.node.as_ref())
                 .unwrap_throw();
@@ -68,7 +61,7 @@ impl<'a, 'b, 'c, 'd> ElementSplice<Pod<DynNode, Box<dyn Any>>>
         ret
     }
 
-    fn insert(&mut self, element: Pod<DynNode, Box<dyn Any>>) {
+    fn insert(&mut self, element: AnyPod) {
         self.parent
             .insert_before(
                 element.node.as_ref(),
@@ -79,7 +72,7 @@ impl<'a, 'b, 'c, 'd> ElementSplice<Pod<DynNode, Box<dyn Any>>>
         self.children.insert(element);
     }
 
-    fn mutate<R>(&mut self, f: impl FnOnce(Mut<'_, Pod<DynNode, Box<dyn Any>>>) -> R) -> R {
+    fn mutate<R>(&mut self, f: impl FnOnce(Mut<'_, AnyPod>) -> R) -> R {
         let child = self.children.mutate();
         let ret = f(child.as_mut(self.parent, self.parent_was_removed));
         self.ix += 1;
@@ -91,7 +84,7 @@ impl<'a, 'b, 'c, 'd> ElementSplice<Pod<DynNode, Box<dyn Any>>>
         self.ix += n;
     }
 
-    fn delete<R>(&mut self, f: impl FnOnce(Mut<'_, Pod<DynNode, Box<dyn Any>>>) -> R) -> R {
+    fn delete<R>(&mut self, f: impl FnOnce(Mut<'_, AnyPod>) -> R) -> R {
         let mut child = self.children.delete_next();
         let child = child.as_mut(self.parent, true);
         // child.was_removed = true;
@@ -105,6 +98,71 @@ impl<'a, 'b, 'c, 'd> ElementSplice<Pod<DynNode, Box<dyn Any>>>
     }
 }
 
+// These (boilerplatey) functions are there to reduce the boilerplate created by the macro-expansion below.
+
+fn build_element<State, Action, Element, Children, SeqMarker>(
+    children: &Children,
+    tag_name: &'static str,
+    ns: &'static str,
+    ctx: &mut ViewCtx,
+) -> (Element, ElementState<Children::SeqState>)
+where
+    Element: From<Pod<web_sys::Element, ElementProps>>,
+    Children: ViewSequence<State, Action, ViewCtx, AnyPod, SeqMarker>,
+{
+    let mut elements = AppendVec::default();
+    let state = ElementState::new(children.seq_build(ctx, &mut elements));
+    (
+        Pod::new_element(elements.into_inner(), ns, tag_name).into(),
+        state,
+    )
+}
+
+fn rebuild_element<'el, State, Action, Element, Children, SeqMarker>(
+    children: &Children,
+    prev_children: &Children,
+    element: Mut<'el, Pod<Element, ElementProps>>,
+    state: &mut ElementState<Children::SeqState>,
+    ctx: &mut ViewCtx,
+) -> Mut<'el, Pod<Element, ElementProps>>
+where
+    Element: DomNode<ElementProps>,
+    Children: ViewSequence<State, Action, ViewCtx, AnyPod, SeqMarker>,
+{
+    let mut dom_children_splice = DomChildrenSplice::new(
+        &mut state.append_scratch,
+        &mut element.props.children,
+        &mut state.vec_splice_scratch,
+        element.node.as_node_ref(),
+        element.was_removed,
+    );
+    children.seq_rebuild(
+        prev_children,
+        &mut state.seq_state,
+        ctx,
+        &mut dom_children_splice,
+    );
+    element
+}
+
+fn teardown_element<State, Action, Element, Children, SeqMarker>(
+    children: &Children,
+    element: Mut<'_, Pod<Element, ElementProps>>,
+    state: &mut ElementState<Children::SeqState>,
+    ctx: &mut ViewCtx,
+) where
+    Element: DomNode<ElementProps>,
+    Children: ViewSequence<State, Action, ViewCtx, AnyPod, SeqMarker>,
+{
+    let mut dom_children_splice = DomChildrenSplice::new(
+        &mut state.append_scratch,
+        &mut element.props.children,
+        &mut state.vec_splice_scratch,
+        element.node.as_node_ref(),
+        true,
+    );
+    children.seq_teardown(&mut state.seq_state, ctx, &mut dom_children_splice);
+}
 macro_rules! define_element {
     ($ns:expr, ($ty_name:ident, $name:ident, $dom_interface:ident)) => {
         define_element!($ns, ($ty_name, $name, $dom_interface, stringify!($name)));
@@ -129,19 +187,14 @@ macro_rules! define_element {
             for $ty_name<Children, SeqMarker>
         where
             SeqMarker: 'static,
-            Children: ViewSequence<State, Action, ViewCtx, Pod<DynNode, Box<dyn Any>>, SeqMarker>,
+            Children: ViewSequence<State, Action, ViewCtx, AnyPod, SeqMarker>,
         {
             type Element = Pod<web_sys::$dom_interface, ElementProps>;
 
             type ViewState = ElementState<Children::SeqState>;
 
             fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-                let mut elements = AppendVec::default();
-                let state = ElementState::new(self.children.seq_build(ctx, &mut elements));
-                (
-                    Pod::new_element(elements.into_inner(), $ns, $tag_name).into(),
-                    state,
-                )
+                build_element(&self.children, $tag_name, $ns, ctx)
             }
 
             fn rebuild<'el>(
@@ -151,28 +204,7 @@ macro_rules! define_element {
                 ctx: &mut ViewCtx,
                 element: Mut<'el, Self::Element>,
             ) -> Mut<'el, Self::Element> {
-                // let children_empty = self.children.count(&element_state.seq_state) == 0;
-                // // TODO this is maybe not optimal in the sense that teardown is not called on the children views, but it's more performant,
-                // // TODO Thoroughly test whether the teardown for children is really needed...
-                // if children_empty && prev.children.count(&element_state.seq_state) != 0 {
-                //     element.node.set_text_content(None);
-                //     element.props.children.clear();
-                //     return element;
-                // } || children_empty
-                let mut dom_children_splice = DomChildrenSplice::new(
-                    &mut element_state.append_scratch,
-                    &mut element.props.children,
-                    &mut element_state.vec_splice_scratch,
-                    element.node,
-                    element.was_removed,
-                );
-                self.children.seq_rebuild(
-                    &prev.children,
-                    &mut element_state.seq_state,
-                    ctx,
-                    &mut dom_children_splice,
-                );
-                element
+                rebuild_element(&self.children, &prev.children, element, element_state, ctx)
             }
 
             fn teardown(
@@ -181,18 +213,7 @@ macro_rules! define_element {
                 ctx: &mut ViewCtx,
                 element: Mut<'_, Self::Element>,
             ) {
-                let mut dom_children_splice = DomChildrenSplice::new(
-                    &mut element_state.append_scratch,
-                    &mut element.props.children,
-                    &mut element_state.vec_splice_scratch,
-                    element.node,
-                    true,
-                );
-                self.children.seq_teardown(
-                    &mut element_state.seq_state,
-                    ctx,
-                    &mut dom_children_splice,
-                );
+                teardown_element(&self.children, element, element_state, ctx);
             }
 
             fn message(
@@ -212,12 +233,10 @@ macro_rules! define_element {
 macro_rules! define_elements {
     ($ns:ident, $($element_def:tt,)*) => {
         use std::marker::PhantomData;
-        // use wasm_bindgen::{JsCast, UnwrapThrowExt};
-        use xilem_core::{AppendVec, Mut, DynMessage, ViewId, MessageResult};
-        use std::any::Any;
-        use super::{DomChildrenSplice, ElementState};
+        use xilem_core::{Mut, DynMessage, ViewId, MessageResult};
+        use super::{ElementState, build_element, rebuild_element, teardown_element};
 
-        use crate::{ Pod, DynNode, ViewCtx, View, ViewSequence, ElementProps };
+        use crate::{Pod, ViewCtx, View, ViewSequence, ElementProps, AnyPod};
 
         $(define_element!(crate::$ns, $element_def);)*
     };

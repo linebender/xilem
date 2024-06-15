@@ -1,8 +1,5 @@
-use std::any::Any;
-
+use crate::{attribute::Attributes, class::Classes, document, style::Styles, AnyPod, Pod};
 use wasm_bindgen::UnwrapThrowExt;
-
-use crate::{attribute::Attributes, class::Classes, document, style::Styles, DynNode, Pod};
 
 // Lazy access to attributes etc. to avoid allocating unnecessary memory when it isn't needed
 // Benchmarks have shown, that this can significantly increase performance and reduce memory usage...
@@ -10,7 +7,7 @@ pub struct ElementProps {
     pub(crate) attributes: Option<Box<Attributes>>,
     pub(crate) classes: Option<Box<Classes>>,
     pub(crate) styles: Option<Box<Styles>>,
-    pub children: Vec<Pod<DynNode, Box<dyn Any>>>,
+    pub children: Vec<AnyPod>,
 }
 
 impl ElementProps {
@@ -44,11 +41,7 @@ impl ElementProps {
 }
 
 impl Pod<web_sys::Element, ElementProps> {
-    pub fn new_element(
-        children: Vec<Pod<DynNode, Box<dyn Any>>>,
-        ns: &str,
-        elem_name: &str,
-    ) -> Self {
+    pub fn new_element(children: Vec<AnyPod>, ns: &str, elem_name: &str) -> Self {
         let element = document()
             .create_element_ns(Some(ns), elem_name)
             .unwrap_throw();

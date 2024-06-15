@@ -35,7 +35,7 @@ fn set_attribute(element: &web_sys::Element, name: &str, value: &str) {
     // we have to special-case `value` because setting the value using `set_attribute`
     // doesn't work after the value has been changed.
     if name == "value" {
-        // TODO not sure, whether this is always a good idea, in case custom elements are used, which have "value" as their name.
+        // TODO not sure, whether this is always a good idea, in case custom elements are used that have "value" as an attribute name.
         let element: &web_sys::HtmlInputElement = element.dyn_ref().unwrap_throw();
         element.set_value(value);
     } else if name == "checked" {

@@ -70,8 +70,7 @@ where
 {
 }
 
-pub type AnyDomView<State, Action = ()> =
-    dyn AnyView<State, Action, ViewCtx, Pod<DynNode, Box<dyn Any>>>;
+pub type AnyDomView<State, Action = ()> = dyn AnyView<State, Action, ViewCtx, AnyPod>;
 
 impl<V, State, Action, W, P> DomView<State, Action> for V
 where
@@ -94,8 +93,10 @@ pub struct Pod<E, P> {
     pub props: P,
 }
 
+pub type AnyPod = Pod<DynNode, Box<dyn Any>>;
+
 impl<E: DomNode<P>, P: 'static> Pod<E, P> {
-    pub fn into_dyn_node(node: E, mut props: P) -> Pod<DynNode, Box<dyn Any>> {
+    pub fn into_dyn_node(node: E, mut props: P) -> AnyPod {
         node.apply_props(&mut props);
         Pod {
             node: DynNode {
@@ -110,7 +111,7 @@ impl<E: DomNode<P>, P: 'static> ViewElement for Pod<E, P> {
     type Mut<'a> = PodMut<'a, E, P>;
 }
 
-impl<E: DomNode<P>, P: 'static> SuperElement<Pod<E, P>> for Pod<DynNode, Box<dyn Any>> {
+impl<E: DomNode<P>, P: 'static> SuperElement<Pod<E, P>> for AnyPod {
     fn upcast(child: Pod<E, P>) -> Self {
         Pod::into_dyn_node(child.node, child.props)
     }
@@ -125,14 +126,14 @@ impl<E: DomNode<P>, P: 'static> SuperElement<Pod<E, P>> for Pod<DynNode, Box<dyn
     }
 }
 
-impl<E: DomNode<P>, P: 'static> AnyElement<Pod<E, P>> for Pod<DynNode, Box<dyn Any>> {
+impl<E: DomNode<P>, P: 'static> AnyElement<Pod<E, P>> for AnyPod {
     fn replace_inner(mut this: Self::Mut<'_>, child: Pod<E, P>) -> Self::Mut<'_> {
         Pod::replace_inner(&mut this, child);
         this
     }
 }
 
-impl Pod<DynNode, Box<dyn Any>> {
+impl AnyPod {
     pub(crate) fn replace_inner<E: DomNode<P>, P: 'static>(
         this: &mut PodMut<'_, DynNode, Box<dyn Any>>,
         node: Pod<E, P>,
