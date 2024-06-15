@@ -1253,6 +1253,9 @@ where
 pub trait SvgCircleElement<State, Action = ()>:
     SvgGeometryElement<State, Action, DomNode: AsRef<web_sys::SvgCircleElement>>
 {
+    fn fill(self, brush: impl Into<peniko::Brush>) -> crate::svg::Fill<Self, State, Action> {
+        crate::svg::fill(self, brush)
+    }
 }
 
 // #[cfg(feature = "SvgCircleElement")]
@@ -1344,6 +1347,9 @@ where
 pub trait SvgEllipseElement<State, Action = ()>:
     SvgGeometryElement<State, Action, DomNode: AsRef<web_sys::SvgEllipseElement>>
 {
+    fn fill(self, brush: impl Into<peniko::Brush>) -> crate::svg::Fill<Self, State, Action> {
+        crate::svg::fill(self, brush)
+    }
 }
 
 // #[cfg(feature = "SvgEllipseElement")]
@@ -1736,6 +1742,16 @@ where
 pub trait SvggElement<State, Action = ()>:
     SvgGraphicsElement<State, Action, DomNode: AsRef<web_sys::SvggElement>>
 {
+    fn fill(self, brush: impl Into<peniko::Brush>) -> crate::svg::Fill<Self, State, Action> {
+        crate::svg::fill(self, brush)
+    }
+    fn stroke(
+        self,
+        brush: impl Into<peniko::Brush>,
+        style: peniko::kurbo::Stroke,
+    ) -> crate::svg::Stroke<Self, State, Action> {
+        crate::svg::stroke(self, brush, style)
+    }
 }
 
 // #[cfg(feature = "SvggElement")]
@@ -1750,6 +1766,13 @@ where
 pub trait SvgGeometryElement<State, Action = ()>:
     SvgGraphicsElement<State, Action, DomNode: AsRef<web_sys::SvgGeometryElement>>
 {
+    fn stroke(
+        self,
+        brush: impl Into<peniko::Brush>,
+        style: peniko::kurbo::Stroke,
+    ) -> crate::svg::Stroke<Self, State, Action> {
+        crate::svg::stroke(self, brush, style)
+    }
 }
 
 // #[cfg(feature = "SvgGeometryElement")]
@@ -1876,6 +1899,9 @@ where
 pub trait SvgmPathElement<State, Action = ()>:
     SvgElement<State, Action, DomNode: AsRef<web_sys::SvgmPathElement>>
 {
+    fn fill(self, brush: impl Into<peniko::Brush>) -> crate::svg::Fill<Self, State, Action> {
+        crate::svg::fill(self, brush)
+    }
 }
 
 // #[cfg(feature = "SvgmPathElement")]
@@ -1918,6 +1944,9 @@ where
 pub trait SvgPolygonElement<State, Action = ()>:
     SvgGeometryElement<State, Action, DomNode: AsRef<web_sys::SvgPolygonElement>>
 {
+    fn fill(self, brush: impl Into<peniko::Brush>) -> crate::svg::Fill<Self, State, Action> {
+        crate::svg::fill(self, brush)
+    }
 }
 
 // #[cfg(feature = "SvgPolygonElement")]
@@ -1932,6 +1961,9 @@ where
 pub trait SvgPolylineElement<State, Action = ()>:
     SvgGeometryElement<State, Action, DomNode: AsRef<web_sys::SvgPolylineElement>>
 {
+    fn fill(self, brush: impl Into<peniko::Brush>) -> crate::svg::Fill<Self, State, Action> {
+        crate::svg::fill(self, brush)
+    }
 }
 
 // #[cfg(feature = "SvgPolylineElement")]
@@ -1946,6 +1978,9 @@ where
 pub trait SvgRectElement<State, Action = ()>:
     SvgGeometryElement<State, Action, DomNode: AsRef<web_sys::SvgRectElement>>
 {
+    fn fill(self, brush: impl Into<peniko::Brush>) -> crate::svg::Fill<Self, State, Action> {
+        crate::svg::fill(self, brush)
+    }
 }
 
 // #[cfg(feature = "SvgRectElement")]
@@ -2044,6 +2079,16 @@ where
 pub trait SvgTextContentElement<State, Action = ()>:
     SvgGraphicsElement<State, Action, DomNode: AsRef<web_sys::SvgTextContentElement>>
 {
+    fn fill(self, brush: impl Into<peniko::Brush>) -> crate::svg::Fill<Self, State, Action> {
+        crate::svg::fill(self, brush)
+    }
+    fn stroke(
+        self,
+        brush: impl Into<peniko::Brush>,
+        style: peniko::kurbo::Stroke,
+    ) -> crate::svg::Stroke<Self, State, Action> {
+        crate::svg::stroke(self, brush, style)
+    }
 }
 
 // #[cfg(feature = "SvgTextContentElement")]

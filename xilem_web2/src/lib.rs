@@ -29,6 +29,7 @@ mod one_of;
 mod optional_action;
 mod pointer;
 mod style;
+pub mod svg;
 mod text;
 mod vec_splice;
 mod vecmap;
