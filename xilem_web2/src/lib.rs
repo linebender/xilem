@@ -24,19 +24,22 @@ mod app;
 mod attribute;
 mod attribute_value;
 mod class;
-pub mod element;
-pub mod elements;
 mod events;
-pub mod interfaces;
 mod one_of;
 mod optional_action;
+mod style;
 mod text;
 mod vec_splice;
 mod vecmap;
 
+pub mod element;
+pub mod elements;
+pub mod interfaces;
+
 pub use app::{App, ViewCtx};
 pub use attribute_value::{AttributeValue, IntoAttributeValue};
 pub use optional_action::{Action, OptionalAction};
+pub use style::style;
 
 pub trait AnyNode: AsRef<web_sys::Node> + 'static {
     fn as_any_mut(&mut self) -> &mut dyn Any;
@@ -92,7 +95,8 @@ pub struct Pod<E, P> {
 }
 
 impl<E: DomNode<P>, P: 'static> Pod<E, P> {
-    pub fn into_dyn_node(node: E, props: P) -> Pod<DynNode, Box<dyn Any>> {
+    pub fn into_dyn_node(node: E, mut props: P) -> Pod<DynNode, Box<dyn Any>> {
+        node.apply_props(&mut props);
         Pod {
             node: DynNode {
                 inner: Box::new(node),
@@ -238,7 +242,6 @@ pub fn get_element_by_id(id: &str) -> web_sys::HtmlElement {
 }
 
 // TODO specialize some of these elements, maybe via features?
-// TODO currently all trait interfaces are directly bound to the
 macro_rules! impl_dom_node_for_elements {
     ($($ty:ident, )*) => {$(
         impl DomNode<ElementProps> for web_sys::$ty {

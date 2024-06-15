@@ -2,9 +2,7 @@ use std::marker::PhantomData;
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use xilem_core::{DynMessage, MessageResult, Mut, View, ViewElement, ViewId};
 
-use crate::{
-    vecmap::VecMap, AttributeValue, DomNode, ElementProps, Pod, PodMut, ViewCtx,
-};
+use crate::{vecmap::VecMap, AttributeValue, DomNode, ElementProps, Pod, PodMut, ViewCtx};
 
 type CowStr = std::borrow::Cow<'static, str>;
 

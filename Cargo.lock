@@ -1794,6 +1794,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "mathml_svg2"
+version = "0.1.0"
+dependencies = [
+ "console_error_panic_hook",
+ "wasm-bindgen",
+ "web-sys",
+ "xilem_web2",
+]
+
+[[package]]
 name = "memchr"
 version = "2.7.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"

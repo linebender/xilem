@@ -1,5 +1,9 @@
+use std::marker::PhantomData;
+
 use crate::{
-    events, AsClassIter, Attr, Class, DomView, IntoAttributeValue, OptionalAction, WithAttributes,
+    events,
+    style::{IntoStyles, Style},
+    AsClassIter, Attr, Class, DomView, IntoAttributeValue, OptionalAction, WithAttributes,
     WithClasses,
 };
 use wasm_bindgen::JsCast;
@@ -383,6 +387,12 @@ where
 pub trait HtmlElement<State, Action = ()>:
     Element<State, Action, DomNode: AsRef<web_sys::HtmlElement>>
 {
+    /// Set a style attribute
+    fn style(self, style: impl IntoStyles) -> Style<Self, State, Action> {
+        let mut styles = vec![];
+        style.into_styles(&mut styles);
+        Style::new(self, styles)
+    }
 }
 
 // #[cfg(feature = "HtmlElement")]
@@ -1307,6 +1317,12 @@ where
 pub trait SvgElement<State, Action = ()>:
     Element<State, Action, DomNode: AsRef<web_sys::SvgElement>>
 {
+    /// Set a style attribute
+    fn style(self, style: impl IntoStyles) -> Style<Self, State, Action> {
+        let mut styles = vec![];
+        style.into_styles(&mut styles);
+        Style::new(self, styles)
+    }
 }
 
 // #[cfg(feature = "SvgElement")]

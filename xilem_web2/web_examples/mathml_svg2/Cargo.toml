@@ -1,0 +1,15 @@
+[package]
+name = "mathml_svg2"
+version = "0.1.0"
+publish = false
+license.workspace = true
+edition.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+console_error_panic_hook = "0.1"
+wasm-bindgen = "0.2.92"
+web-sys = "0.3.69"
+xilem_web2 = { path = "../.." }
