@@ -1,13 +1,13 @@
+use std::any::Any;
 use wasm_bindgen::UnwrapThrowExt;
-// use web_sys::console;
 use xilem_core::{AppendVec, ElementSplice, Mut};
 
 use crate::{vec_splice::VecSplice, DynNode, Pod};
 
 pub struct ElementState<SeqState> {
     seq_state: SeqState,
-    append_scratch: AppendVec<Pod<DynNode>>,
-    vec_splice_scratch: Vec<Pod<DynNode>>,
+    append_scratch: AppendVec<Pod<DynNode, Box<dyn Any>>>,
+    vec_splice_scratch: Vec<Pod<DynNode, Box<dyn Any>>>,
 }
 
 impl<SeqState> ElementState<SeqState> {
@@ -24,8 +24,8 @@ impl<SeqState> ElementState<SeqState> {
 // and apply them at once, when this splice is being `Drop`ped, needs some investigation, whether that's better than in place mutations
 // TODO maybe we can save some allocations/memory (this needs two extra `Vec`s)
 struct DomChildrenSplice<'a, 'b, 'c, 'd> {
-    scratch: &'a mut AppendVec<Pod<DynNode>>,
-    children: VecSplice<'b, 'c, Pod<DynNode>>,
+    scratch: &'a mut AppendVec<Pod<DynNode, Box<dyn Any>>>,
+    children: VecSplice<'b, 'c, Pod<DynNode, Box<dyn Any>>>,
     ix: usize,
     parent: &'d web_sys::Node,
     parent_was_removed: bool,
@@ -33,9 +33,9 @@ struct DomChildrenSplice<'a, 'b, 'c, 'd> {
 
 impl<'a, 'b, 'c, 'd> DomChildrenSplice<'a, 'b, 'c, 'd> {
     fn new(
-        scratch: &'a mut AppendVec<Pod<DynNode>>,
-        children: &'b mut Vec<Pod<DynNode>>,
-        vec_splice_scratch: &'c mut Vec<Pod<DynNode>>,
+        scratch: &'a mut AppendVec<Pod<DynNode, Box<dyn Any>>>,
+        children: &'b mut Vec<Pod<DynNode, Box<dyn Any>>>,
+        vec_splice_scratch: &'c mut Vec<Pod<DynNode, Box<dyn Any>>>,
         parent: &'d web_sys::Node,
         parent_was_deleted: bool,
     ) -> Self {
@@ -49,8 +49,13 @@ impl<'a, 'b, 'c, 'd> DomChildrenSplice<'a, 'b, 'c, 'd> {
     }
 }
 
-impl<'a, 'b, 'c, 'd> ElementSplice<Pod<DynNode>> for DomChildrenSplice<'a, 'b, 'c, 'd> {
-    fn with_scratch<R>(&mut self, f: impl FnOnce(&mut AppendVec<Pod<DynNode>>) -> R) -> R {
+impl<'a, 'b, 'c, 'd> ElementSplice<Pod<DynNode, Box<dyn Any>>>
+    for DomChildrenSplice<'a, 'b, 'c, 'd>
+{
+    fn with_scratch<R>(
+        &mut self,
+        f: impl FnOnce(&mut AppendVec<Pod<DynNode, Box<dyn Any>>>) -> R,
+    ) -> R {
         let ret = f(self.scratch);
         for element in self.scratch.drain() {
             // can't use self.push because borrow-checker...
@@ -63,7 +68,7 @@ impl<'a, 'b, 'c, 'd> ElementSplice<Pod<DynNode>> for DomChildrenSplice<'a, 'b, '
         ret
     }
 
-    fn insert(&mut self, element: Pod<DynNode>) {
+    fn insert(&mut self, element: Pod<DynNode, Box<dyn Any>>) {
         self.parent
             .insert_before(
                 element.node.as_ref(),
@@ -74,7 +79,7 @@ impl<'a, 'b, 'c, 'd> ElementSplice<Pod<DynNode>> for DomChildrenSplice<'a, 'b, '
         self.children.insert(element);
     }
 
-    fn mutate<R>(&mut self, f: impl FnOnce(Mut<'_, Pod<DynNode>>) -> R) -> R {
+    fn mutate<R>(&mut self, f: impl FnOnce(Mut<'_, Pod<DynNode, Box<dyn Any>>>) -> R) -> R {
         let child = self.children.mutate();
         let ret = f(child.as_mut(self.parent_was_removed));
         self.ix += 1;
@@ -86,7 +91,7 @@ impl<'a, 'b, 'c, 'd> ElementSplice<Pod<DynNode>> for DomChildrenSplice<'a, 'b, '
         self.ix += n;
     }
 
-    fn delete<R>(&mut self, f: impl FnOnce(Mut<'_, Pod<DynNode>>) -> R) -> R {
+    fn delete<R>(&mut self, f: impl FnOnce(Mut<'_, Pod<DynNode, Box<dyn Any>>>) -> R) -> R {
         let mut child = self.children.delete_next();
         let child = child.as_mut(true);
         // child.was_removed = true;
@@ -102,61 +107,33 @@ impl<'a, 'b, 'c, 'd> ElementSplice<Pod<DynNode>> for DomChildrenSplice<'a, 'b, '
 
 macro_rules! define_element {
     ($ns:expr, ($ty_name:ident, $name:ident, $dom_interface:ident)) => {
-        define_element!(
-            $ns,
-            (
-                $ty_name,
-                $name,
-                $dom_interface,
-                stringify!($name),
-                State,
-                Action,
-                Children,
-                Marker
-            )
-        );
+        define_element!($ns, ($ty_name, $name, $dom_interface, stringify!($name)));
     };
-    ($ns:expr, ($ty_name:ident, $name:ident, $dom_interface:ident, $tag_name: expr)) => {
-        define_element!(
-            $ns,
-            (
-                $ty_name,
-                $name,
-                $dom_interface,
-                $tag_name,
-                State,
-                Action,
-                Children,
-                Marker
-            )
-        );
-    };
-    ($ns:expr, ($ty_name:ident, $name:ident, $dom_interface:ident, $tag_name:expr, $t:ident, $a: ident, $vs: ident, $marker: ident)) => {
-        pub struct $ty_name<$vs, $marker> {
-            children: $vs,
-            phantom: PhantomData<fn() -> $marker>,
+    ($ns:expr, ($ty_name:ident, $name:ident, $dom_interface:ident, $tag_name:expr)) => {
+        pub struct $ty_name<Children, SeqMarker> {
+            children: Children,
+            phantom: PhantomData<fn() -> SeqMarker>,
         }
 
         /// Builder function for a
         #[doc = concat!("`", $tag_name, "`")]
         /// element view.
-        pub fn $name<$vs, $marker>(children: $vs) -> $ty_name<$vs, $marker> {
+        pub fn $name<Children, SeqMarker>(children: Children) -> $ty_name<Children, SeqMarker> {
             $ty_name {
                 children,
                 phantom: PhantomData,
             }
         }
 
-        impl<
-                $t,
-                $a,
-                $marker: 'static,
-                $vs: ViewSequence<$t, $a, ViewCtx, Pod<DynNode>, $marker>,
-            > View<$t, $a, ViewCtx> for $ty_name<$vs, $marker>
+        impl<State, Action, SeqMarker, Children> View<State, Action, ViewCtx>
+            for $ty_name<Children, SeqMarker>
+        where
+            SeqMarker: 'static,
+            Children: ViewSequence<State, Action, ViewCtx, Pod<DynNode, Box<dyn Any>>, SeqMarker>,
         {
-            type Element = Pod<web_sys::$dom_interface>;
+            type Element = Pod<web_sys::$dom_interface, ElementProps>;
 
-            type ViewState = ElementState<$vs::SeqState>;
+            type ViewState = ElementState<Children::SeqState>;
 
             fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
                 let mut elements = AppendVec::default();
@@ -174,20 +151,20 @@ macro_rules! define_element {
                 ctx: &mut ViewCtx,
                 element: Mut<'el, Self::Element>,
             ) -> Mut<'el, Self::Element> {
-                let children_empty = self.children.count(&element_state.seq_state) == 0;
-                // TODO this is maybe not optimal in the sense that teardown is not called on the children views, but it's more performant,
-                // TODO Thoroughly test whether the teardown for children is really needed...
-                if children_empty && prev.children.count(&element_state.seq_state) != 0 {
-                    element.node.set_text_content(None);
-                    element.props.children.clear();
-                    return element;
-                }
+                // let children_empty = self.children.count(&element_state.seq_state) == 0;
+                // // TODO this is maybe not optimal in the sense that teardown is not called on the children views, but it's more performant,
+                // // TODO Thoroughly test whether the teardown for children is really needed...
+                // if children_empty && prev.children.count(&element_state.seq_state) != 0 {
+                //     element.node.set_text_content(None);
+                //     element.props.children.clear();
+                //     return element;
+                // } || children_empty
                 let mut dom_children_splice = DomChildrenSplice::new(
                     &mut element_state.append_scratch,
                     &mut element.props.children,
                     &mut element_state.vec_splice_scratch,
                     element.node,
-                    element.was_removed || children_empty,
+                    element.was_removed,
                 );
                 self.children.seq_rebuild(
                     &prev.children,
@@ -223,8 +200,8 @@ macro_rules! define_element {
                 view_state: &mut Self::ViewState,
                 id_path: &[ViewId],
                 message: DynMessage,
-                app_state: &mut $t,
-            ) -> MessageResult<$a> {
+                app_state: &mut State,
+            ) -> MessageResult<Action> {
                 self.children
                     .seq_message(&mut view_state.seq_state, id_path, message, app_state)
             }
@@ -237,9 +214,10 @@ macro_rules! define_elements {
         use std::marker::PhantomData;
         // use wasm_bindgen::{JsCast, UnwrapThrowExt};
         use xilem_core::{AppendVec, Mut, DynMessage, ViewId, MessageResult};
+        use std::any::Any;
         use super::{DomChildrenSplice, ElementState};
 
-        use crate::{ Pod, DynNode, ViewCtx, View, ViewSequence };
+        use crate::{ Pod, DynNode, ViewCtx, View, ViewSequence, ElementProps };
 
         $(define_element!(crate::$ns, $element_def);)*
     };
@@ -286,7 +264,7 @@ pub mod html {
         (Pre, pre, HtmlPreElement),
         (Ul, ul, HtmlUListElement),
         // inline text
-        (A, a, HtmlAnchorElement, "a", T, A_, VS, Marker),
+        (A, a, HtmlAnchorElement),
         (Abbr, abbr, HtmlElement),
         (B, b, HtmlElement),
         (Bdi, bdi, HtmlElement),
@@ -412,7 +390,7 @@ pub mod svg {
     define_elements!(
         SVG_NS,
         (Svg, svg, SvgsvgElement),
-        (A, a, SvgaElement, "a", T, A_, VS, Marker),
+        (A, a, SvgaElement),
         (Animate, animate, SvgAnimateElement),
         (
             AnimateMotion,
@@ -549,16 +527,7 @@ pub mod svg {
             SvgLinearGradientElement,
             "linearGradient"
         ),
-        (
-            Marker,
-            marker,
-            SvgMarkerElement,
-            "marker",
-            T,
-            A_,
-            VS,
-            Marker_
-        ),
+        (Marker, marker, SvgMarkerElement),
         (Mask, mask, SvgMaskElement),
         (Metadata, metadata, SvgMetadataElement),
         (Mpath, mpath, SvgmPathElement),

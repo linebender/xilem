@@ -196,7 +196,7 @@ impl WithClasses for ElementProps {
     }
 }
 
-impl<E: DomNode<Props: WithClasses>> WithClasses for Pod<E> {
+impl<E: DomNode<P>, P: WithClasses> WithClasses for Pod<E, P> {
     fn add_class(&mut self, class_name: CowStr) {
         self.props.add_class(class_name);
     }
@@ -214,7 +214,7 @@ impl<E: DomNode<Props: WithClasses>> WithClasses for Pod<E> {
     }
 }
 
-impl<E: DomNode<Props: WithClasses>> WithClasses for PodMut<'_, E> {
+impl<E: DomNode<P>, P: WithClasses> WithClasses for PodMut<'_, E, P> {
     fn add_class(&mut self, class_name: CowStr) {
         self.props.add_class(class_name);
     }

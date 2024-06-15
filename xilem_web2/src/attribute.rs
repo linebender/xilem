@@ -162,7 +162,7 @@ impl WithAttributes for ElementProps {
     }
 }
 
-impl<E: DomNode<Props: WithAttributes>> WithAttributes for Pod<E> {
+impl<E: DomNode<P>, P: WithAttributes> WithAttributes for Pod<E, P> {
     fn start_attribute_modifier(&mut self) {
         self.props.start_attribute_modifier();
     }
@@ -176,7 +176,7 @@ impl<E: DomNode<Props: WithAttributes>> WithAttributes for Pod<E> {
     }
 }
 
-impl<E: DomNode<Props: WithAttributes>> WithAttributes for PodMut<'_, E> {
+impl<E: DomNode<P>, P: WithAttributes> WithAttributes for PodMut<'_, E, P> {
     fn start_attribute_modifier(&mut self) {
         self.props.start_attribute_modifier();
     }

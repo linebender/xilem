@@ -1,7 +1,12 @@
 // Copyright 2023 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use xilem_web2::{document_body, elements::html as el, App, DomView};
+use xilem_web2::{
+    document_body,
+    elements::html as el,
+    interfaces::{Element, HtmlButtonElement, HtmlDivElement},
+    App,
+};
 
 #[derive(Default)]
 struct AppState {
@@ -41,11 +46,11 @@ impl AppState {
 fn btn(
     label: &'static str,
     click_fn: impl Fn(&mut AppState, web_sys::MouseEvent) + 'static,
-) -> impl DomView<AppState> {
+) -> impl HtmlButtonElement<AppState> {
     el::button(label).on_click(click_fn)
 }
 
-fn app_logic(state: &mut AppState) -> impl DomView<AppState> {
+fn app_logic(state: &mut AppState) -> impl HtmlDivElement<AppState> {
     el::div((
         el::span(format!("clicked {} times", state.clicks)).class(state.class),
         el::br(()),

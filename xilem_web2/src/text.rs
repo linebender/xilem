@@ -1,4 +1,4 @@
-use xilem_core::{Mut, OrphanView, AsOrphanView, View};
+use xilem_core::{AsOrphanView, Mut, OrphanView, View};
 
 use crate::{Pod, ViewCtx};
 
@@ -13,7 +13,7 @@ pub struct Text<T>(T);
 macro_rules! impl_string_view {
     ($ty:ty) => {
         impl<State, Action> View<State, Action, ViewCtx> for Text<$ty> {
-            type Element = Pod<web_sys::Text>;
+            type Element = Pod<web_sys::Text, ()>;
 
             type ViewState = ();
 
@@ -42,7 +42,7 @@ macro_rules! impl_string_view {
                 &self,
                 _view_state: &mut Self::ViewState,
                 _ctx: &mut ViewCtx,
-                _element: Mut<'_, Pod<web_sys::Text>>,
+                _element: Mut<'_, Pod<web_sys::Text, ()>>,
             ) {
             }
 
@@ -71,7 +71,7 @@ macro_rules! impl_string_view {
 macro_rules! impl_string_orphan_view {
     ($ty:ty) => {
         impl<State, Action> OrphanView<$ty, State, Action> for ViewCtx {
-            type Element = Pod<web_sys::Text>;
+            type Element = Pod<web_sys::Text, ()>;
 
             type ViewState = ();
 
@@ -100,7 +100,7 @@ macro_rules! impl_string_orphan_view {
                 _view: &$ty,
                 _view_state: &mut Self::ViewState,
                 _ctx: &mut ViewCtx,
-                _element: Mut<'_, Pod<web_sys::Text>>,
+                _element: Mut<'_, Pod<web_sys::Text, ()>>,
             ) {
             }
 
@@ -125,7 +125,7 @@ impl_string_view!(&'static str);
 macro_rules! impl_to_string_view {
     ($ty:ty) => {
         impl<State, Action> View<State, Action, ViewCtx> for Text<$ty> {
-            type Element = Pod<web_sys::Text>;
+            type Element = Pod<web_sys::Text, ()>;
 
             type ViewState = ();
 
@@ -154,7 +154,7 @@ macro_rules! impl_to_string_view {
                 &self,
                 _view_state: &mut Self::ViewState,
                 _ctx: &mut ViewCtx,
-                _element: Mut<'_, Pod<web_sys::Text>>,
+                _element: Mut<'_, Pod<web_sys::Text, ()>>,
             ) {
             }
 

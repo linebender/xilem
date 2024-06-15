@@ -27,6 +27,7 @@ mod class;
 pub mod element;
 pub mod elements;
 mod events;
+pub mod interfaces;
 mod one_of;
 mod optional_action;
 mod text;
@@ -36,49 +37,6 @@ mod vecmap;
 pub use app::{App, ViewCtx};
 pub use attribute_value::{AttributeValue, IntoAttributeValue};
 pub use optional_action::{Action, OptionalAction};
-// pub use text::text;
-
-type CowStr = std::borrow::Cow<'static, str>;
-
-pub trait DomNode: AnyNode + 'static {
-    type Props: 'static;
-
-    fn update_node(&self, props: &mut Self::Props);
-    // TODO maybe default impl?
-    fn into_dyn_node(self, props: Self::Props) -> Pod<DynNode>;
-}
-
-// struct Cla;
-// trait WithProps<E> {
-//     fn update_props(&mut self, props: &mut E);
-// }
-
-// trait Classes {}
-// impl<E: WithProps< Classes for Props<Cla> {}
-// impl<E: Classes> Classes for Props<E> {}
-
-// trait Props {
-//     fn update<E>(&mut self, element: E, );
-// }
-
-// impl Classes
-
-// pub trait DomNodeNew: AnyNode + 'static {
-//     type Props<E: Props>: 'static;
-
-//     fn update_node(&self, props: &mut Self::Props<E>);
-//     // TODO maybe default impl?
-//     fn into_dyn_node(self, props: Self::Props) -> Pod<DynNode>;
-// }
-
-// pub trait DomNodeNew: AsRef<Self::Node> + 'static {
-//     type Node: AsRef<web_sys::Node>;
-// }
-
-// impl DomNodeNew for Pod<web_sys::Element> {
-//     type Node = web_sys::Element;
-
-// }
 
 pub trait AnyNode: AsRef<web_sys::Node> + 'static {
     fn as_any_mut(&mut self) -> &mut dyn Any;
@@ -96,13 +54,45 @@ impl<N: AsRef<web_sys::Node> + Any> AnyNode for N {
     }
 }
 
-pub struct Pod<E: DomNode> {
-    pub node: E,
-    pub props: E::Props,
+pub trait DomNode<P>: AnyNode + 'static {
+    fn apply_props(&self, props: &mut P);
 }
 
-impl<E: DomNode> Pod<E> {
-    pub fn into_dyn_node(node: E, props: E::Props) -> Pod<DynNode> {
+pub trait ElementAsRef<E>: for<'a> ViewElement<Mut<'a>: AsRef<E>> + AsRef<E> {}
+
+impl<E, T> ElementAsRef<E> for T
+where
+    T: ViewElement + AsRef<E>,
+    for<'a> T::Mut<'a>: AsRef<E>,
+{
+}
+
+pub type AnyDomView<State, Action = ()> =
+    dyn AnyView<State, Action, ViewCtx, Pod<DynNode, Box<dyn Any>>>;
+
+impl<V, State, Action, W, P> DomView<State, Action> for V
+where
+    V: View<State, Action, ViewCtx, Element = Pod<W, P>>,
+    W: DomNode<P>,
+{
+    type DomNode = W;
+    type Props = P;
+}
+
+pub trait DomView<State, Action = ()>:
+    View<State, Action, ViewCtx, Element = Pod<Self::DomNode, Self::Props>>
+{
+    type DomNode: DomNode<Self::Props>;
+    type Props;
+}
+
+pub struct Pod<E, P> {
+    pub node: E,
+    pub props: P,
+}
+
+impl<E: DomNode<P>, P: 'static> Pod<E, P> {
+    pub fn into_dyn_node(node: E, props: P) -> Pod<DynNode, Box<dyn Any>> {
         Pod {
             node: DynNode {
                 inner: Box::new(node),
@@ -112,18 +102,18 @@ impl<E: DomNode> Pod<E> {
     }
 }
 
-impl<E: DomNode> ViewElement for Pod<E> {
-    type Mut<'a> = PodMut<'a, E>;
+impl<E: DomNode<P>, P: 'static> ViewElement for Pod<E, P> {
+    type Mut<'a> = PodMut<'a, E, P>;
 }
 
-impl<E: DomNode> SuperElement<Pod<E>> for Pod<DynNode> {
-    fn upcast(child: Pod<E>) -> Self {
-        child.node.into_dyn_node(child.props)
+impl<E: DomNode<P>, P: 'static> SuperElement<Pod<E, P>> for Pod<DynNode, Box<dyn Any>> {
+    fn upcast(child: Pod<E, P>) -> Self {
+        Pod::into_dyn_node(child.node, child.props)
     }
 
     fn with_downcast_val<R>(
         mut this: Self::Mut<'_>,
-        f: impl FnOnce(PodMut<'_, E>) -> R,
+        f: impl FnOnce(PodMut<'_, E, P>) -> R,
     ) -> (Self::Mut<'_>, R) {
         let downcast = this.downcast();
         let ret = f(downcast);
@@ -131,20 +121,23 @@ impl<E: DomNode> SuperElement<Pod<E>> for Pod<DynNode> {
     }
 }
 
-impl<E: DomNode> AnyElement<Pod<E>> for Pod<DynNode> {
-    fn replace_inner(mut this: Self::Mut<'_>, child: Pod<E>) -> Self::Mut<'_> {
-        Pod::<DynNode>::replace_inner(&mut this, child);
+impl<E: DomNode<P>, P: 'static> AnyElement<Pod<E, P>> for Pod<DynNode, Box<dyn Any>> {
+    fn replace_inner(mut this: Self::Mut<'_>, child: Pod<E, P>) -> Self::Mut<'_> {
+        Pod::replace_inner(&mut this, child);
         this
     }
 }
 
-impl Pod<DynNode> {
-    pub(crate) fn replace_inner<E: DomNode>(this: &mut PodMut<'_, DynNode>, node: Pod<E>) {
+impl Pod<DynNode, Box<dyn Any>> {
+    pub(crate) fn replace_inner<E: DomNode<P>, P: 'static>(
+        this: &mut PodMut<'_, DynNode, Box<dyn Any>>,
+        node: Pod<E, P>,
+    ) {
         this.node.inner = Box::new(node.node);
         *this.props = Box::new(node.props);
     }
 
-    fn as_mut(&mut self, was_removed: bool) -> PodMut<'_, DynNode> {
+    fn as_mut(&mut self, was_removed: bool) -> PodMut<'_, DynNode, Box<dyn Any>> {
         PodMut {
             node: &mut self.node,
             props: &mut self.props,
@@ -163,29 +156,22 @@ impl AsRef<web_sys::Node> for DynNode {
     }
 }
 
-impl DomNode for DynNode {
-    type Props = Box<dyn Any>;
-
-    fn update_node(&self, _props: &mut Self::Props) {
+impl DomNode<Box<dyn Any>> for DynNode {
+    fn apply_props(&self, _props: &mut Box<dyn Any>) {
         // TODO this is probably not optimal, as misleading, this is only implemented for concrete (non-type-erased) elements
         // I do *think* it's necessary as method on the trait because of the Drop impl (and not having specialization there)
     }
-
-    fn into_dyn_node(self, props: Self::Props) -> Pod<DynNode> {
-        // Double wrapping necessary because otherwise downcast can fail
-        Pod::into_dyn_node(self, props)
-    }
 }
 
-pub struct PodMut<'a, E: DomNode> {
+pub struct PodMut<'a, E: DomNode<P>, P> {
     // TODO no pub!
-    pub node: &'a mut E,
-    pub props: &'a mut E::Props,
-    pub was_removed: bool,
+    node: &'a mut E,
+    props: &'a mut P,
+    was_removed: bool,
 }
 
-impl<'a, E: DomNode> PodMut<'a, E> {
-    fn new(node: &'a mut E, props: &'a mut E::Props, was_removed: bool) -> PodMut<'a, E> {
+impl<'a, E: DomNode<P>, P> PodMut<'a, E, P> {
+    fn new(node: &'a mut E, props: &'a mut P, was_removed: bool) -> PodMut<'a, E, P> {
         PodMut {
             node,
             props,
@@ -194,8 +180,8 @@ impl<'a, E: DomNode> PodMut<'a, E> {
     }
 }
 
-impl PodMut<'_, DynNode> {
-    fn downcast<E: DomNode>(&mut self) -> PodMut<'_, E> {
+impl PodMut<'_, DynNode, Box<dyn Any>> {
+    fn downcast<E: DomNode<P>, P: 'static>(&mut self) -> PodMut<'_, E, P> {
         PodMut {
             node: self.node.inner.as_any_mut().downcast_mut().unwrap(),
             props: self.props.downcast_mut().unwrap(),
@@ -204,45 +190,32 @@ impl PodMut<'_, DynNode> {
     }
 }
 
-impl<E: DomNode> Drop for PodMut<'_, E> {
+impl<E: DomNode<P>, P> Drop for PodMut<'_, E, P> {
     fn drop(&mut self) {
-        self.node.update_node(self.props);
+        self.node.apply_props(self.props);
     }
 }
 
-impl<T, E: AsRef<T> + DomNode> AsRef<T> for Pod<E> {
+impl<T, E: AsRef<T> + DomNode<P>, P> AsRef<T> for Pod<E, P> {
     fn as_ref(&self) -> &T {
         <E as AsRef<T>>::as_ref(&self.node)
     }
 }
 
-impl<T, E: AsRef<T> + DomNode> AsRef<T> for PodMut<'_, E> {
+impl<T, E: AsRef<T> + DomNode<P>, P> AsRef<T> for PodMut<'_, E, P> {
     fn as_ref(&self) -> &T {
         <E as AsRef<T>>::as_ref(self.node)
     }
 }
 
-impl DomNode for web_sys::Element {
-    type Props = ElementProps;
-
-    fn update_node(&self, props: &mut Self::Props) {
+impl DomNode<ElementProps> for web_sys::Element {
+    fn apply_props(&self, props: &mut ElementProps) {
         props.update_element(self);
-    }
-
-    fn into_dyn_node(self, mut props: Self::Props) -> Pod<DynNode> {
-        props.update_element(&self);
-        Pod::into_dyn_node(self, props)
     }
 }
 
-impl DomNode for web_sys::Text {
-    type Props = ();
-
-    fn update_node(&self, _props: &mut Self::Props) {}
-
-    fn into_dyn_node(self, props: Self::Props) -> Pod<DynNode> {
-        Pod::into_dyn_node(self, props)
-    }
+impl DomNode<()> for web_sys::Text {
+    fn apply_props(&self, (): &mut ()) {}
 }
 
 /// Helper to get the HTML document body element
@@ -268,23 +241,14 @@ pub fn get_element_by_id(id: &str) -> web_sys::HtmlElement {
 // TODO currently all trait interfaces are directly bound to the
 macro_rules! impl_dom_node_for_elements {
     ($($ty:ident, )*) => {$(
-        impl DomNode for web_sys::$ty {
-            type Props = ElementProps;
-            fn update_node(&self, props: &mut Self::Props) {
+        impl DomNode<ElementProps> for web_sys::$ty {
+            fn apply_props(&self, props: &mut ElementProps) {
                 props.update_element(self);
-            }
-            fn into_dyn_node(self, mut props: Self::Props) -> Pod<DynNode> {
-                props.update_element(&self);
-                Pod::into_dyn_node(self, props)
             }
         }
 
-        // TODO make this more flexible... Right now a HtmlDivElement can't be a HtmlElement for example
-        pub trait $ty<State, Action = ()>: DomView<State, Action, DomNode = web_sys::$ty> {}
-        impl<State, Action, T: DomView<State, Action, DomNode = web_sys::$ty>> $ty<State, Action> for T {}
-
-        impl From<Pod<web_sys::Element>> for Pod<web_sys::$ty> {
-            fn from(value: Pod<web_sys::Element>) -> Self {
+        impl From<Pod<web_sys::Element, ElementProps>> for Pod<web_sys::$ty, ElementProps> {
+            fn from(value: Pod<web_sys::Element, ElementProps>) -> Self {
                 Self {
                     node: value.node.dyn_into().unwrap_throw(),
                     props: value.props,
@@ -439,184 +403,3 @@ impl_dom_node_for_elements!(
     SvgfeTurbulenceElement,
     SvgmPathElement,
 );
-
-pub trait ElementAsRef<E>: for<'a> ViewElement<Mut<'a>: AsRef<E>> + AsRef<E> {}
-
-impl<E, T> ElementAsRef<E> for T
-where
-    T: ViewElement + AsRef<E>,
-    for<'a> T::Mut<'a>: AsRef<E>,
-{
-}
-
-macro_rules! event_handler_mixin {
-    ($(($event_ty: ident, $fn_name:ident, $event:expr, $web_sys_event_type:ident),)*) => {
-    $(
-        fn $fn_name<Callback, OA>(
-            self,
-            handler: Callback,
-        ) -> events::$event_ty<Self, State, Action, Callback>
-        where
-            Self: Sized,
-            Self::Element: AsRef<web_sys::Element>,
-            OA: OptionalAction<Action>,
-            Callback: Fn(&mut State, web_sys::$web_sys_event_type) -> OA,
-        {
-            events::$event_ty::new(self, handler)
-        }
-    )*
-    };
-}
-
-// TODO, not working yet
-pub type AnyDomView<State, Action = ()> = dyn AnyView<State, Action, ViewCtx, Pod<DynNode>>;
-
-impl<V, State, Action, W> DomView<State, Action> for V
-where
-    V: View<State, Action, ViewCtx, Element = Pod<W>>,
-    W: DomNode,
-{
-    type DomNode = W;
-}
-
-pub trait DomView<State, Action = ()>:
-    View<State, Action, ViewCtx, Element = Pod<Self::DomNode>>
-{
-    type DomNode: DomNode;
-
-    fn attr(
-        self,
-        name: impl Into<CowStr>,
-        value: impl IntoAttributeValue,
-    ) -> Attr<Self, State, Action>
-    where
-        Self: Sized,
-        Self::Element: WithAttributes,
-        // The following bound would be more correct, but the current trait solver is not capable enough
-        // (the new trait solver is able to do handle this though...)
-        // but the bound above is enough for the API for now
-        // Self::Element: ElementWithAttributes,
-    {
-        Attr::new(self, name.into(), value.into_attr_value())
-    }
-
-    fn class<AsClasses: AsClassIter>(
-        self,
-        as_classes: AsClasses,
-    ) -> Class<Self, AsClasses, State, Action>
-    where
-        Self: Sized,
-        Self::Element: WithClasses,
-        // The following bound would be more correct, but the current trait solver is not capable enough
-        // (the new trait solver is able to do handle this though...)
-        // but the bound above is enough for the API for now
-        // Self::Element: ElementWithClasses,
-    {
-        Class::new(self, as_classes)
-    }
-
-    fn on<Event, Callback, OA>(
-        self,
-        event: impl Into<CowStr>,
-        handler: Callback,
-    ) -> events::OnEvent<Self, State, Action, Event, Callback>
-    where
-        Self::Element: AsRef<web_sys::Element>,
-        Event: JsCast + 'static,
-        OA: OptionalAction<Action>,
-        Callback: Fn(&mut State, Event) -> OA,
-        Self: Sized,
-    {
-        events::OnEvent::new(self, event, handler)
-    }
-
-    // event list from
-    // https://html.spec.whatwg.org/multipage/webappapis.html#idl-definitions
-    //
-    // I didn't include the events on the window, since we aren't attaching
-    // any events to the window in xilem_web
-    event_handler_mixin!(
-        (OnAbort, on_abort, "abort", Event),
-        (OnAuxClick, on_auxclick, "auxclick", PointerEvent),
-        (OnBeforeInput, on_beforeinput, "beforeinput", InputEvent),
-        (OnBeforeMatch, on_beforematch, "beforematch", Event),
-        (OnBeforeToggle, on_beforetoggle, "beforetoggle", Event),
-        (OnBlur, on_blur, "blur", FocusEvent),
-        (OnCancel, on_cancel, "cancel", Event),
-        (OnCanPlay, on_canplay, "canplay", Event),
-        (OnCanPlayThrough, on_canplaythrough, "canplaythrough", Event),
-        (OnChange, on_change, "change", Event),
-        (OnClick, on_click, "click", MouseEvent),
-        (OnClose, on_close, "close", Event),
-        (OnContextLost, on_contextlost, "contextlost", Event),
-        (OnContextMenu, on_contextmenu, "contextmenu", PointerEvent),
-        (
-            OnContextRestored,
-            on_contextrestored,
-            "contextrestored",
-            Event
-        ),
-        (OnCopy, on_copy, "copy", Event),
-        (OnCueChange, on_cuechange, "cuechange", Event),
-        (OnCut, on_cut, "cut", Event),
-        (OnDblClick, on_dblclick, "dblclick", MouseEvent),
-        (OnDrag, on_drag, "drag", Event),
-        (OnDragEnd, on_dragend, "dragend", Event),
-        (OnDragEnter, on_dragenter, "dragenter", Event),
-        (OnDragLeave, on_dragleave, "dragleave", Event),
-        (OnDragOver, on_dragover, "dragover", Event),
-        (OnDragStart, on_dragstart, "dragstart", Event),
-        (OnDrop, on_drop, "drop", Event),
-        (OnDurationChange, on_durationchange, "durationchange", Event),
-        (OnEmptied, on_emptied, "emptied", Event),
-        (OnEnded, on_ended, "ended", Event),
-        (OnError, on_error, "error", Event),
-        (OnFocus, on_focus, "focus", FocusEvent),
-        (OnFocusIn, on_focusin, "focusin", FocusEvent),
-        (OnFocusOut, on_focusout, "focusout", FocusEvent),
-        (OnFormData, on_formdata, "formdata", Event),
-        (OnInput, on_input, "input", Event),
-        (OnInvalid, on_invalid, "invalid", Event),
-        (OnKeyDown, on_keydown, "keydown", KeyboardEvent),
-        (OnKeyUp, on_keyup, "keyup", KeyboardEvent),
-        (OnLoad, on_load, "load", Event),
-        (OnLoadedData, on_loadeddata, "loadeddata", Event),
-        (OnLoadedMetadata, on_loadedmetadata, "loadedmetadata", Event),
-        (OnLoadStart, on_loadstart, "loadstart", Event),
-        (OnMouseDown, on_mousedown, "mousedown", MouseEvent),
-        (OnMouseEnter, on_mouseenter, "mouseenter", MouseEvent),
-        (OnMouseLeave, on_mouseleave, "mouseleave", MouseEvent),
-        (OnMouseMove, on_mousemove, "mousemove", MouseEvent),
-        (OnMouseOut, on_mouseout, "mouseout", MouseEvent),
-        (OnMouseOver, on_mouseover, "mouseover", MouseEvent),
-        (OnMouseUp, on_mouseup, "mouseup", MouseEvent),
-        (OnPaste, on_paste, "paste", Event),
-        (OnPause, on_pause, "pause", Event),
-        (OnPlay, on_play, "play", Event),
-        (OnPlaying, on_playing, "playing", Event),
-        (OnProgress, on_progress, "progress", Event),
-        (OnRateChange, on_ratechange, "ratechange", Event),
-        (OnReset, on_reset, "reset", Event),
-        (OnResize, on_resize, "resize", Event),
-        (OnScroll, on_scroll, "scroll", Event),
-        (OnScrollEnd, on_scrollend, "scrollend", Event),
-        (
-            OnSecurityPolicyViolation,
-            on_securitypolicyviolation,
-            "securitypolicyviolation",
-            Event
-        ),
-        (OnSeeked, on_seeked, "seeked", Event),
-        (OnSeeking, on_seeking, "seeking", Event),
-        (OnSelect, on_select, "select", Event),
-        (OnSlotChange, on_slotchange, "slotchange", Event),
-        (OnStalled, on_stalled, "stalled", Event),
-        (OnSubmit, on_submit, "submit", Event),
-        (OnSuspend, on_suspend, "suspend", Event),
-        (OnTimeUpdate, on_timeupdate, "timeupdate", Event),
-        (OnToggle, on_toggle, "toggle", Event),
-        (OnVolumeChange, on_volumechange, "volumechange", Event),
-        (OnWaiting, on_waiting, "waiting", Event),
-        (OnWheel, on_wheel, "wheel", WheelEvent),
-    );
-}

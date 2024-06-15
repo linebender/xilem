@@ -1,3 +1,5 @@
+use std::any::Any;
+
 use wasm_bindgen::UnwrapThrowExt;
 
 use crate::{attribute::Attributes, class::Classes, document, DynNode, Pod};
@@ -5,7 +7,7 @@ use crate::{attribute::Attributes, class::Classes, document, DynNode, Pod};
 pub struct ElementProps {
     pub(crate) attributes: Attributes,
     pub(crate) classes: Classes,
-    pub children: Vec<Pod<DynNode>>,
+    pub children: Vec<Pod<DynNode, Box<dyn Any>>>,
 }
 
 impl ElementProps {
@@ -17,8 +19,12 @@ impl ElementProps {
     }
 }
 
-impl Pod<web_sys::Element> {
-    pub fn new_element(children: Vec<Pod<DynNode>>, ns: &str, elem_name: &str) -> Self {
+impl Pod<web_sys::Element, ElementProps> {
+    pub fn new_element(
+        children: Vec<Pod<DynNode, Box<dyn Any>>>,
+        ns: &str,
+        elem_name: &str,
+    ) -> Self {
         let element = document()
             .create_element_ns(Some(ns), elem_name)
             .unwrap_throw();

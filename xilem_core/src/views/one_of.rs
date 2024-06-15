@@ -249,6 +249,7 @@ macro_rules! one_of {
                         ctx.with_id(ViewId::new(seq_state.generation), |ctx| {
                             new.seq_rebuild(prev, inner_state, ctx, elements);
                         });
+                        return;
                     })+
                     _ => (),
                 };
@@ -316,7 +317,7 @@ macro_rules! one_of {
             fn count(&self, state: &Self::SeqState) -> usize {
                 match (self, &state.inner_state) {
                     $(($ty_name::$variant(seq), $ty_name::$variant(state)) => seq.count(state),)+
-                    _ => unreachable!(),
+                    _ => unreachable!("This should not happen, have you tried executing `count` with the old `SeqState`?"),
                 }
             }
         }

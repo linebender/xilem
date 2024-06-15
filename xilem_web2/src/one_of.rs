@@ -1,16 +1,17 @@
 use xilem_core::{Mut, OneOf2, OneOf2Ctx};
 
 use crate::{
-    attribute::WithAttributes, class::WithClasses, AttributeValue, DomNode, DynNode, Pod, PodMut,
-    ViewCtx,
+    attribute::WithAttributes, class::WithClasses, AttributeValue, DomNode, Pod, PodMut, ViewCtx,
 };
 
 type CowStr = std::borrow::Cow<'static, str>;
 
-impl<N1: DomNode, N2: DomNode> OneOf2Ctx<Pod<N1>, Pod<N2>> for ViewCtx {
-    type OneOfTwoElement = Pod<OneOf2<N1, N2>>;
+impl<P1: 'static, P2: 'static, N1: DomNode<P1>, N2: DomNode<P2>> OneOf2Ctx<Pod<N1, P1>, Pod<N2, P2>>
+    for ViewCtx
+{
+    type OneOfTwoElement = Pod<OneOf2<N1, N2>, OneOf2<P1, P2>>;
 
-    fn upcast_one_of_two_element(elem: OneOf2<Pod<N1>, Pod<N2>>) -> Self::OneOfTwoElement {
+    fn upcast_one_of_two_element(elem: OneOf2<Pod<N1, P1>, Pod<N2, P2>>) -> Self::OneOfTwoElement {
         match elem {
             OneOf2::A(e) => Pod {
                 node: OneOf2::A(e.node),
@@ -25,7 +26,7 @@ impl<N1: DomNode, N2: DomNode> OneOf2Ctx<Pod<N1>, Pod<N2>> for ViewCtx {
 
     fn update_one_of_two_element_mut(
         elem_mut: &mut Mut<'_, Self::OneOfTwoElement>,
-        new_elem: OneOf2<Pod<N1>, Pod<N2>>,
+        new_elem: OneOf2<Pod<N1, P1>, Pod<N2, P2>>,
     ) {
         (*elem_mut.node, *elem_mut.props) = match new_elem {
             OneOf2::A(e) => (OneOf2::A(e.node), OneOf2::A(e.props)),
@@ -35,7 +36,7 @@ impl<N1: DomNode, N2: DomNode> OneOf2Ctx<Pod<N1>, Pod<N2>> for ViewCtx {
 
     fn with_downcast_a(
         elem: &mut Mut<'_, Self::OneOfTwoElement>,
-        f: impl FnOnce(Mut<'_, Pod<N1>>),
+        f: impl FnOnce(Mut<'_, Pod<N1, P1>>),
     ) {
         let (OneOf2::A(node), OneOf2::A(props)) = (&mut elem.node, &mut elem.props) else {
             unreachable!()
@@ -45,7 +46,7 @@ impl<N1: DomNode, N2: DomNode> OneOf2Ctx<Pod<N1>, Pod<N2>> for ViewCtx {
 
     fn with_downcast_b(
         elem: &mut Mut<'_, Self::OneOfTwoElement>,
-        f: impl FnOnce(Mut<'_, Pod<N2>>),
+        f: impl FnOnce(Mut<'_, Pod<N2, P2>>),
     ) {
         let (OneOf2::B(node), OneOf2::B(props)) = (&mut elem.node, &mut elem.props) else {
             unreachable!()
@@ -107,23 +108,12 @@ impl<E1: WithClasses, E2: WithClasses> WithClasses for OneOf2<E1, E2> {
     }
 }
 
-impl<E1: DomNode, E2: DomNode> DomNode for OneOf2<E1, E2> {
-    type Props = OneOf2<E1::Props, E2::Props>;
-
-    fn update_node(&self, props: &mut Self::Props) {
+impl<P1, P2, E1: DomNode<P1>, E2: DomNode<P2>> DomNode<OneOf2<P1, P2>> for OneOf2<E1, E2> {
+    fn apply_props(&self, props: &mut OneOf2<P1, P2>) {
         match (self, props) {
-            (OneOf2::A(el), OneOf2::A(props)) => el.update_node(props),
-            (OneOf2::B(el), OneOf2::B(props)) => el.update_node(props),
+            (OneOf2::A(el), OneOf2::A(props)) => el.apply_props(props),
+            (OneOf2::B(el), OneOf2::B(props)) => el.apply_props(props),
             _ => unreachable!(),
         }
-    }
-
-    fn into_dyn_node(mut self, mut props: Self::Props) -> Pod<DynNode> {
-        match (&mut self, &mut props) {
-            (OneOf2::A(el), OneOf2::A(props)) => el.update_node(props),
-            (OneOf2::B(el), OneOf2::B(props)) => el.update_node(props),
-            _ => unreachable!(),
-        }
-        Pod::into_dyn_node(self, props)
     }
 }
