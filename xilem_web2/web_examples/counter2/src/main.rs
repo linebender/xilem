@@ -66,6 +66,5 @@ fn app_logic(state: &mut AppState) -> impl HtmlDivElement<AppState> {
 
 pub fn main() {
     console_error_panic_hook::set_once();
-    let app = App::new(AppState::default(), app_logic);
-    app.run(&document_body());
+    App::new(document_body(), AppState::default(), app_logic).run();
 }

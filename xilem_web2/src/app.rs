@@ -65,6 +65,7 @@ pub struct App<T, V: DomView<T>, F: FnMut(&mut T) -> V>(Rc<RefCell<AppInner<T, V
 
 struct AppInner<T, V: DomView<T>, F: FnMut(&mut T) -> V> {
     data: T,
+    root: web_sys::Node,
     app_logic: F,
     view: Option<V>,
     state: Option<V::ViewState>,
@@ -86,8 +87,8 @@ impl<T: 'static, V: DomView<T> + 'static, F: FnMut(&mut T) -> V + 'static> Clone
 
 impl<T: 'static, V: DomView<T> + 'static, F: FnMut(&mut T) -> V + 'static> App<T, V, F> {
     /// Create an instance of your app with the given logic and initial state.
-    pub fn new(data: T, app_logic: F) -> Self {
-        let inner = AppInner::new(data, app_logic);
+    pub fn new(root: impl AsRef<web_sys::Node>, data: T, app_logic: F) -> Self {
+        let inner = AppInner::new(root.as_ref().clone(), data, app_logic);
         let app = App(Rc::new(RefCell::new(inner)));
         app.0.borrow_mut().cx.set_runner(app.clone());
         app
@@ -97,18 +98,19 @@ impl<T: 'static, V: DomView<T> + 'static, F: FnMut(&mut T) -> V + 'static> App<T
     ///
     /// Because we don't want to block the render thread, we return immediately here. The app is
     /// forgotten, and will continue to respond to events in the background.
-    pub fn run(self, root: &web_sys::HtmlElement) {
-        self.0.borrow_mut().ensure_app(root);
+    pub fn run(self) {
+        self.0.borrow_mut().ensure_app();
         // Latter may not be necessary, we have an rc loop.
         std::mem::forget(self);
     }
 }
 
 impl<T, V: DomView<T>, F: FnMut(&mut T) -> V> AppInner<T, V, F> {
-    pub fn new(data: T, app_logic: F) -> Self {
+    pub fn new(root: web_sys::Node, data: T, app_logic: F) -> Self {
         let cx = ViewCtx::default();
         AppInner {
             data,
+            root,
             app_logic,
             view: None,
             state: None,
@@ -117,7 +119,7 @@ impl<T, V: DomView<T>, F: FnMut(&mut T) -> V> AppInner<T, V, F> {
         }
     }
 
-    fn ensure_app(&mut self, root: &web_sys::HtmlElement) {
+    fn ensure_app(&mut self) {
         if self.view.is_none() {
             let view = (self.app_logic)(&mut self.data);
             let (element, state) = view.build(&mut self.cx);
@@ -126,7 +128,7 @@ impl<T, V: DomView<T>, F: FnMut(&mut T) -> V> AppInner<T, V, F> {
 
             // TODO should the element provide a separate method to access reference instead?
             let node: &web_sys::Node = element.node.as_node_ref();
-            root.append_child(node).unwrap();
+            self.root.append_child(node).unwrap();
             self.element = Some(element);
         }
     }
@@ -162,7 +164,7 @@ impl<T: 'static, V: DomView<T> + 'static, F: FnMut(&mut T) -> V + 'static> AppRu
 
             let new_view = (inner.app_logic)(&mut inner.data);
             let el = inner.element.as_mut().unwrap();
-            let pod_mut = PodMut::new(&mut el.node, &mut el.props, false);
+            let pod_mut = PodMut::new(&mut el.node, &mut el.props, &inner.root, false);
             new_view.rebuild(view, inner.state.as_mut().unwrap(), &mut inner.cx, pod_mut);
             *view = new_view;
         }

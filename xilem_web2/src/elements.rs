@@ -81,7 +81,7 @@ impl<'a, 'b, 'c, 'd> ElementSplice<Pod<DynNode, Box<dyn Any>>>
 
     fn mutate<R>(&mut self, f: impl FnOnce(Mut<'_, Pod<DynNode, Box<dyn Any>>>) -> R) -> R {
         let child = self.children.mutate();
-        let ret = f(child.as_mut(self.parent_was_removed));
+        let ret = f(child.as_mut(self.parent, self.parent_was_removed));
         self.ix += 1;
         ret
     }
@@ -93,7 +93,7 @@ impl<'a, 'b, 'c, 'd> ElementSplice<Pod<DynNode, Box<dyn Any>>>
 
     fn delete<R>(&mut self, f: impl FnOnce(Mut<'_, Pod<DynNode, Box<dyn Any>>>) -> R) -> R {
         let mut child = self.children.delete_next();
-        let child = child.as_mut(true);
+        let child = child.as_mut(self.parent, true);
         // child.was_removed = true;
         // TODO: Should the child cleanup and remove itself from its parent?
         // TODO: Should the parent be kept for the child before invoking `f`?
@@ -186,7 +186,7 @@ macro_rules! define_element {
                     &mut element.props.children,
                     &mut element_state.vec_splice_scratch,
                     element.node,
-                    element.was_removed,
+                    true,
                 );
                 self.children.seq_teardown(
                     &mut element_state.seq_state,

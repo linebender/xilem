@@ -1,3 +1,4 @@
+use wasm_bindgen::UnwrapThrowExt;
 use xilem_core::{Mut, OneOf2, OneOf2Ctx};
 
 use crate::{
@@ -28,6 +29,14 @@ impl<P1: 'static, P2: 'static, N1: DomNode<P1>, N2: DomNode<P2>> OneOf2Ctx<Pod<N
         elem_mut: &mut Mut<'_, Self::OneOfTwoElement>,
         new_elem: OneOf2<Pod<N1, P1>, Pod<N2, P2>>,
     ) {
+        let old_node: &web_sys::Node = elem_mut.node.as_ref();
+        let new_node: &web_sys::Node = new_elem.as_ref();
+        if old_node != new_node {
+            elem_mut
+                .parent
+                .replace_child(new_node, old_node)
+                .unwrap_throw();
+        }
         (*elem_mut.node, *elem_mut.props) = match new_elem {
             OneOf2::A(e) => (OneOf2::A(e.node), OneOf2::A(e.props)),
             OneOf2::B(e) => (OneOf2::B(e.node), OneOf2::B(e.props)),
@@ -41,7 +50,7 @@ impl<P1: 'static, P2: 'static, N1: DomNode<P1>, N2: DomNode<P2>> OneOf2Ctx<Pod<N
         let (OneOf2::A(node), OneOf2::A(props)) = (&mut elem.node, &mut elem.props) else {
             unreachable!()
         };
-        f(PodMut::new(node, props, elem.was_removed));
+        f(PodMut::new(node, props, elem.parent, elem.was_removed));
     }
 
     fn with_downcast_b(
@@ -51,7 +60,7 @@ impl<P1: 'static, P2: 'static, N1: DomNode<P1>, N2: DomNode<P2>> OneOf2Ctx<Pod<N
         let (OneOf2::B(node), OneOf2::B(props)) = (&mut elem.node, &mut elem.props) else {
             unreachable!()
         };
-        f(PodMut::new(node, props, elem.was_removed));
+        f(PodMut::new(node, props, elem.parent, elem.was_removed));
     }
 }
 

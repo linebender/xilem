@@ -141,12 +141,12 @@ impl Pod<DynNode, Box<dyn Any>> {
         *this.props = Box::new(node.props);
     }
 
-    fn as_mut(&mut self, was_removed: bool) -> PodMut<'_, DynNode, Box<dyn Any>> {
-        PodMut {
-            node: &mut self.node,
-            props: &mut self.props,
-            was_removed,
-        }
+    fn as_mut<'a>(
+        &'a mut self,
+        parent: &'a web_sys::Node,
+        was_removed: bool,
+    ) -> PodMut<'a, DynNode, Box<dyn Any>> {
+        PodMut::new(&mut self.node, &mut self.props, parent, was_removed)
     }
 }
 
@@ -168,17 +168,23 @@ impl DomNode<Box<dyn Any>> for DynNode {
 }
 
 pub struct PodMut<'a, E: DomNode<P>, P> {
-    // TODO no pub!
     node: &'a mut E,
     props: &'a mut P,
+    parent: &'a web_sys::Node,
     was_removed: bool,
 }
 
 impl<'a, E: DomNode<P>, P> PodMut<'a, E, P> {
-    fn new(node: &'a mut E, props: &'a mut P, was_removed: bool) -> PodMut<'a, E, P> {
+    fn new(
+        node: &'a mut E,
+        props: &'a mut P,
+        parent: &'a web_sys::Node,
+        was_removed: bool,
+    ) -> PodMut<'a, E, P> {
         PodMut {
             node,
             props,
+            parent,
             was_removed,
         }
     }
@@ -186,11 +192,12 @@ impl<'a, E: DomNode<P>, P> PodMut<'a, E, P> {
 
 impl PodMut<'_, DynNode, Box<dyn Any>> {
     fn downcast<E: DomNode<P>, P: 'static>(&mut self) -> PodMut<'_, E, P> {
-        PodMut {
-            node: self.node.inner.as_any_mut().downcast_mut().unwrap(),
-            props: self.props.downcast_mut().unwrap(),
-            was_removed: false,
-        }
+        PodMut::new(
+            self.node.inner.as_any_mut().downcast_mut().unwrap(),
+            self.props.downcast_mut().unwrap(),
+            self.parent,
+            false,
+        )
     }
 }
 
