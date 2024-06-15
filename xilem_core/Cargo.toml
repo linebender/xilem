@@ -13,6 +13,7 @@ publish = false # We'll publish this alongside Xilem 0.2
 [dependencies]
 tracing.workspace = true
 paste = "1"
+kurbo = { optional = true, workspace = true }
 
 [lints]
 workspace = true
@@ -26,4 +27,4 @@ targets = []
 # TODO should std be enabled by default?
 default = ["std"]
 std = []
-# kurbo = ["dep:kurbo"]
+kurbo = ["dep:kurbo"]

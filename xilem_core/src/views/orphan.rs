@@ -170,3 +170,20 @@ impl_as_orphan_view_for!(u64);
 impl_as_orphan_view_for!(u128);
 impl_as_orphan_view_for!(isize);
 impl_as_orphan_view_for!(usize);
+
+#[cfg(feature = "kurbo")]
+mod kurbo {
+    use crate::{DynMessage, MessageResult, Mut, View, ViewId};
+    use super::OrphanView;
+    impl_orphan_view_for!(kurbo::PathSeg);
+    impl_orphan_view_for!(kurbo::Arc);
+    impl_orphan_view_for!(kurbo::BezPath);
+    impl_orphan_view_for!(kurbo::Circle);
+    impl_orphan_view_for!(kurbo::CircleSegment);
+    impl_orphan_view_for!(kurbo::CubicBez);
+    impl_orphan_view_for!(kurbo::Ellipse);
+    impl_orphan_view_for!(kurbo::Line);
+    impl_orphan_view_for!(kurbo::QuadBez);
+    impl_orphan_view_for!(kurbo::Rect);
+    impl_orphan_view_for!(kurbo::RoundedRect);
+}

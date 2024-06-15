@@ -10,7 +10,7 @@ homepage.workspace = true
 workspace = true
 
 [dependencies]
-xilem_core.workspace = true
+xilem_core = { workspace = true, features = [ "kurbo" ] }
 peniko.workspace = true
 wasm-bindgen = "0.2.92"
 
