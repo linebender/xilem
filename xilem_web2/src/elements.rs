@@ -100,7 +100,7 @@ impl<'a, 'b, 'c, 'd> ElementSplice<AnyPod> for DomChildrenSplice<'a, 'b, 'c, 'd>
 
 // These (boilerplatey) functions are there to reduce the boilerplate created by the macro-expansion below.
 
-fn build_element<State, Action, Element, Children, SeqMarker>(
+pub(crate) fn build_element<State, Action, Element, Children, SeqMarker>(
     children: &Children,
     tag_name: &'static str,
     ns: &'static str,

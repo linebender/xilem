@@ -1,4 +1,5 @@
 use std::marker::PhantomData;
+use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
 use xilem_core::{DynMessage, MessageResult, Mut, View, ViewElement, ViewId};
 
@@ -108,7 +109,14 @@ impl Classes {
                     self.class_name += " ";
                 }
             }
-            element.set_class_name(&self.class_name);
+            // Svg elements do have issues with className, see https://developer.mozilla.org/en-US/docs/Web/API/Element/className
+            if element.dyn_ref::<web_sys::SvgElement>().is_some() {
+                element
+                    .set_attribute("class", &self.class_name)
+                    .unwrap_throw();
+            } else {
+                element.set_class_name(&self.class_name);
+            }
         }
         self.build_finished = true;
     }

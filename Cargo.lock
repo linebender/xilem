@@ -2720,6 +2720,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "svgtoy2"
+version = "0.1.0"
+dependencies = [
+ "console_error_panic_hook",
+ "wasm-bindgen",
+ "web-sys",
+ "xilem_web2",
+]
+
+[[package]]
 name = "swash"
 version = "0.1.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"

@@ -15,6 +15,7 @@ members = [
     "xilem_web2",
     "xilem_web2/web_examples/counter2",
     "xilem_web2/web_examples/mathml_svg2",
+    "xilem_web2/web_examples/svgtoy",
 ]
 
 [workspace.package]
