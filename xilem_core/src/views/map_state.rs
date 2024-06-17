@@ -23,7 +23,7 @@ pub struct MapState<ParentState, ChildState, V, F = fn(&mut ParentState) -> &mut
 ///     count: i32,
 ///     other: i32,
 /// }
-/// 
+///
 /// fn count_view(count: i32) -> impl WidgetView<i32> {
 ///     flex((
 ///         label(format!("count: {}", count)),
@@ -31,7 +31,7 @@ pub struct MapState<ParentState, ChildState, V, F = fn(&mut ParentState) -> &mut
 ///         button("-", |count| *count -= 1),
 ///     ))
 /// }
-/// 
+///
 /// fn main() -> Result<(), EventLoopError> {
 ///     Xilem::new(AppState::default(), |state| {
 ///         map_state(count_view(state.count), |state: &mut AppState|  &mut state.count)
