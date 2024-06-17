@@ -765,7 +765,7 @@ dependencies = [
  "console_error_panic_hook",
  "wasm-bindgen",
  "web-sys",
- "xilem_web",
+ "xilem_web2",
 ]
 
 [[package]]

@@ -1,7 +1,13 @@
-use wasm_bindgen::UnwrapThrowExt;
-use xilem_core::{AppendVec, ElementSplice, Mut, ViewSequence};
+use std::{borrow::Cow, marker::PhantomData};
 
-use crate::{element::ElementProps, vec_splice::VecSplice, AnyPod, DomNode, Pod, ViewCtx};
+use wasm_bindgen::{JsCast, UnwrapThrowExt};
+use xilem_core::{
+    AppendVec, DynMessage, ElementSplice, MessageResult, Mut, View, ViewId, ViewSequence,
+};
+
+use crate::{
+    document, element::ElementProps, vec_splice::VecSplice, AnyPod, DomNode, Pod, ViewCtx, HTML_NS,
+};
 
 pub struct ElementState<SeqState> {
     seq_state: SeqState,
@@ -102,8 +108,8 @@ impl<'a, 'b, 'c, 'd> ElementSplice<AnyPod> for DomChildrenSplice<'a, 'b, 'c, 'd>
 
 pub(crate) fn build_element<State, Action, Element, Children, SeqMarker>(
     children: &Children,
-    tag_name: &'static str,
-    ns: &'static str,
+    tag_name: &str,
+    ns: &str,
     ctx: &mut ViewCtx,
 ) -> (Element, ElementState<Children::SeqState>)
 where
@@ -163,6 +169,87 @@ fn teardown_element<State, Action, Element, Children, SeqMarker>(
     );
     children.seq_teardown(&mut state.seq_state, ctx, &mut dom_children_splice);
 }
+pub struct CustomElement<State, Action, Children, SeqMarker> {
+    name: Cow<'static, str>,
+    children: Children,
+    #[allow(clippy::type_complexity)]
+    phantom: PhantomData<fn() -> (State, Action, SeqMarker)>,
+}
+
+/// Builder function for a custom element view.
+pub fn custom_element<State, Action, Children, SeqMarker>(
+    name: impl Into<Cow<'static, str>>,
+    children: Children,
+) -> CustomElement<State, Action, Children, SeqMarker> {
+    CustomElement {
+        name: name.into(),
+        children,
+        phantom: PhantomData,
+    }
+}
+
+impl<State, Action, SeqMarker, Children> View<State, Action, ViewCtx>
+    for CustomElement<State, Action, Children, SeqMarker>
+where
+    State: 'static,
+    Action: 'static,
+    SeqMarker: 'static,
+    Children: ViewSequence<State, Action, ViewCtx, AnyPod, SeqMarker>,
+{
+    type Element = Pod<web_sys::HtmlElement, ElementProps>;
+
+    type ViewState = ElementState<Children::SeqState>;
+
+    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+        build_element(&self.children, &self.name, HTML_NS, ctx)
+    }
+
+    fn rebuild<'el>(
+        &self,
+        prev: &Self,
+        element_state: &mut Self::ViewState,
+        ctx: &mut ViewCtx,
+        element: Mut<'el, Self::Element>,
+    ) -> Mut<'el, Self::Element> {
+        if prev.name != self.name {
+            let new_element = document()
+                .create_element_ns(Some(HTML_NS), &self.name)
+                .unwrap_throw();
+
+            while let Some(child) = element.node.child_nodes().get(0) {
+                new_element.append_child(&child).unwrap_throw();
+            }
+            element
+                .parent
+                .replace_child(&new_element, element.node)
+                .unwrap_throw();
+            *element.node = new_element.dyn_into().unwrap_throw();
+        }
+
+        rebuild_element(&self.children, &prev.children, element, element_state, ctx)
+    }
+
+    fn teardown(
+        &self,
+        element_state: &mut Self::ViewState,
+        ctx: &mut ViewCtx,
+        element: Mut<'_, Self::Element>,
+    ) {
+        teardown_element(&self.children, element, element_state, ctx);
+    }
+
+    fn message(
+        &self,
+        view_state: &mut Self::ViewState,
+        id_path: &[ViewId],
+        message: DynMessage,
+        app_state: &mut State,
+    ) -> MessageResult<Action> {
+        self.children
+            .seq_message(&mut view_state.seq_state, id_path, message, app_state)
+    }
+}
+
 macro_rules! define_element {
     ($ns:expr, ($ty_name:ident, $name:ident, $dom_interface:ident)) => {
         define_element!($ns, ($ty_name, $name, $dom_interface, stringify!($name)));
