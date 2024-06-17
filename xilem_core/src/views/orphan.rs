@@ -173,8 +173,8 @@ impl_as_orphan_view_for!(usize);
 
 #[cfg(feature = "kurbo")]
 mod kurbo {
-    use crate::{DynMessage, MessageResult, Mut, View, ViewId};
     use super::OrphanView;
+    use crate::{DynMessage, MessageResult, Mut, View, ViewId};
     impl_orphan_view_for!(kurbo::PathSeg);
     impl_orphan_view_for!(kurbo::Arc);
     impl_orphan_view_for!(kurbo::BezPath);

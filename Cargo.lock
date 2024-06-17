@@ -2901,7 +2901,7 @@ dependencies = [
  "tracing-wasm",
  "wasm-bindgen",
  "web-sys",
- "xilem_web",
+ "xilem_web2",
 ]
 
 [[package]]
@@ -3303,6 +3303,17 @@ dependencies = [
  "log",
  "once_cell",
  "pkg-config",
+]
+
+[[package]]
+name = "web-playground"
+version = "0.1.0"
+dependencies = [
+ "console_error_panic_hook",
+ "peniko",
+ "wasm-bindgen",
+ "web-sys",
+ "xilem_web2",
 ]
 
 [[package]]

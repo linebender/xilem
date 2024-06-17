@@ -9,7 +9,7 @@ use xilem_web2::{
         kurbo::{self, Rect},
         peniko::Color,
     },
-    App, DomView, PointerMsg, View,
+    App, DomView, PointerMsg,
 };
 
 #[derive(Default)]
