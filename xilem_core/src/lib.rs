@@ -33,7 +33,9 @@ mod view;
 pub use view::{View, ViewId, ViewPathTracker};
 
 mod views;
-pub use views::{memoize, Adapt, AdaptThunk, Memoize};
+pub use views::{
+    adapt, map_action, map_state, memoize, Adapt, AdaptThunk, MapAction, MapState, Memoize,
+};
 
 mod message;
 pub use message::{DynMessage, Message, MessageResult};
