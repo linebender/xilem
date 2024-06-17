@@ -1,288 +1,128 @@
-// Copyright 2023 the Xilem Authors
-// SPDX-License-Identifier: Apache-2.0
-
-use wasm_bindgen::throw_str;
+use wasm_bindgen::UnwrapThrowExt;
+use xilem_core::{Mut, OneOf2, OneOf2Ctx};
 
 use crate::{
-    interfaces::for_all_element_descendents, ChangeFlags, Cx, ElementsSplice, View, ViewMarker,
-    ViewSequence,
+    attribute::WithAttributes, class::WithClasses, AttributeValue, DomNode, Pod, PodMut, ViewCtx,
 };
 
-macro_rules! impl_dom_traits {
-    ($dom_interface:ident, ($ident:ident: $($vars:ident),+)) => {
-        impl<VT, VA, $($vars: $crate::interfaces::$dom_interface<VT, VA>),+> $crate::interfaces::$dom_interface<VT, VA> for $ident<$($vars),+>
-        where
-        $($vars: $crate::interfaces::$dom_interface<VT, VA>,)+
-        {}
-    };
-}
+type CowStr = std::borrow::Cow<'static, str>;
 
-macro_rules! one_of_view {
-    (
-        #[doc = $first_doc_line:literal]
-        $ident:ident { $( $vars:ident ),+ }
-    ) => {
-        #[doc = $first_doc_line]
-        ///
-        /// It is a statically-typed alternative to the type-erased `AnyView`.
-        pub enum $ident<$($vars),+> {
-            $($vars($vars),)+
+impl<P1: 'static, P2: 'static, N1: DomNode<P1>, N2: DomNode<P2>> OneOf2Ctx<Pod<N1, P1>, Pod<N2, P2>>
+    for ViewCtx
+{
+    type OneOfTwoElement = Pod<OneOf2<N1, N2>, OneOf2<P1, P2>>;
+
+    fn upcast_one_of_two_element(elem: OneOf2<Pod<N1, P1>, Pod<N2, P2>>) -> Self::OneOfTwoElement {
+        match elem {
+            OneOf2::A(e) => Pod {
+                node: OneOf2::A(e.node),
+                props: OneOf2::A(e.props),
+            },
+            OneOf2::B(e) => Pod {
+                node: OneOf2::B(e.node),
+                props: OneOf2::B(e.props),
+            },
         }
+    }
 
-        impl<$($vars),+> crate::interfaces::sealed::Sealed for $ident<$($vars),+> {}
-        impl_dom_traits!(Element, ($ident: $($vars),+));
-        for_all_element_descendents!(impl_dom_traits, ($ident: $($vars),+));
-
-        impl<$($vars),+> AsRef<web_sys::Node> for $ident<$($vars),+>
-        where
-            $($vars: crate::view::DomNode,)+
-        {
-            fn as_ref(&self) -> &web_sys::Node {
-                match self {
-                    $( $ident::$vars(view) => view.as_node_ref(), )+
-                }
-            }
+    fn update_one_of_two_element_mut(
+        elem_mut: &mut Mut<'_, Self::OneOfTwoElement>,
+        new_elem: OneOf2<Pod<N1, P1>, Pod<N2, P2>>,
+    ) {
+        let old_node: &web_sys::Node = elem_mut.node.as_ref();
+        let new_node: &web_sys::Node = new_elem.as_ref();
+        if old_node != new_node {
+            elem_mut
+                .parent
+                .replace_child(new_node, old_node)
+                .unwrap_throw();
         }
-        impl<$($vars),+> ViewMarker for $ident<$($vars),+> {}
+        (*elem_mut.node, *elem_mut.props) = match new_elem {
+            OneOf2::A(e) => (OneOf2::A(e.node), OneOf2::A(e.props)),
+            OneOf2::B(e) => (OneOf2::B(e.node), OneOf2::B(e.props)),
+        };
+    }
 
-        impl<VT, VA, $($vars),+> View<VT, VA> for $ident<$($vars),+>
-        where
-            $($vars: View<VT, VA>,)+
-        {
-            type State = $ident<$($vars::State),+>;
-            type Element = $ident<$($vars::Element),+>;
+    fn with_downcast_a(
+        elem: &mut Mut<'_, Self::OneOfTwoElement>,
+        f: impl FnOnce(Mut<'_, Pod<N1, P1>>),
+    ) {
+        let (OneOf2::A(node), OneOf2::A(props)) = (&mut elem.node, &mut elem.props) else {
+            unreachable!()
+        };
+        f(PodMut::new(node, props, elem.parent, elem.was_removed));
+    }
 
-            fn build(&self, cx: &mut Cx) -> (xilem_core::Id, Self::State, Self::Element) {
-                match self {
-                    $(
-                        $ident::$vars(view) => {
-                            let (id, state, el) = view.build(cx);
-                            (id, $ident::$vars(state), $ident::$vars(el))
-                        }
-                    )+
-                }
-            }
+    fn with_downcast_b(
+        elem: &mut Mut<'_, Self::OneOfTwoElement>,
+        f: impl FnOnce(Mut<'_, Pod<N2, P2>>),
+    ) {
+        let (OneOf2::B(node), OneOf2::B(props)) = (&mut elem.node, &mut elem.props) else {
+            unreachable!()
+        };
+        f(PodMut::new(node, props, elem.parent, elem.was_removed));
+    }
+}
 
-            fn rebuild(
-                &self,
-                cx: &mut Cx,
-                prev: &Self,
-                id: &mut xilem_core::Id,
-                state: &mut Self::State,
-                element: &mut Self::Element,
-            ) -> ChangeFlags {
-                match (prev, self) {
-                    $(
-                        // Variant is the same as before
-                        ($ident::$vars(prev_view), $ident::$vars(view)) => {
-                            let ($ident::$vars(state), $ident::$vars(element)) = (state, element)
-                            else {
-                                throw_str(concat!(
-                                    "invalid state/view in ", stringify!($ident), " (unreachable)",
-                                ));
-                            };
-                            view.rebuild(cx, prev_view, id, state, element)
-                        }
-                        // Variant has changed
-                        (_, $ident::$vars(view)) => {
-                            let (new_id, new_state, new_element) = view.build(cx);
-                            *id = new_id;
-                            *state = $ident::$vars(new_state);
-                            *element = $ident::$vars(new_element);
-                            ChangeFlags::STRUCTURE
-                        }
-                    )+
-                }
-            }
-
-            fn message(
-                &self,
-                id_path: &[xilem_core::Id],
-                state: &mut Self::State,
-                message: Box<dyn std::any::Any>,
-                app_state: &mut VT,
-            ) -> xilem_core::MessageResult<VA> {
-                match self {
-                    $(
-                        $ident::$vars(view) => {
-                            let $ident::$vars(state) = state else {
-                                throw_str(concat!(
-                                    "invalid state/view in", stringify!($ident), "(unreachable)",
-                                ));
-                            };
-                            view.message(id_path, state, message, app_state)
-                        }
-                    )+
-                }
-            }
+impl<E1: WithAttributes, E2: WithAttributes> WithAttributes for OneOf2<E1, E2> {
+    fn start_attribute_modifier(&mut self) {
+        match self {
+            OneOf2::A(e) => e.start_attribute_modifier(),
+            OneOf2::B(e) => e.start_attribute_modifier(),
         }
-    };
-}
+    }
 
-one_of_view! {
-    /// This view container can switch between two views.
-    OneOf2 { A, B }
-}
-one_of_view! {
-    /// This view container can switch between three views.
-    OneOf3 { A, B, C }
-}
-
-one_of_view! {
-    /// This view container can switch between four views.
-    OneOf4 { A, B, C, D }
-}
-
-one_of_view! {
-    /// This view container can switch between five views.
-    OneOf5 { A, B, C, D, E }
-}
-
-one_of_view! {
-    /// This view container can switch between six views.
-    OneOf6 { A, B, C, D, E, F }
-}
-
-one_of_view! {
-    /// This view container can switch between seven views.
-    OneOf7 { A, B, C, D, E, F, G }
-}
-
-one_of_view! {
-    /// This view container can switch between eight views.
-    OneOf8 { A, B, C, D, E, F, G, H }
-}
-
-macro_rules! one_of_sequence {
-    (
-        #[doc = $first_doc_line:literal]
-        $ident:ident { $( $vars:ident ),+ }
-    ) => {
-        #[doc = $first_doc_line]
-        ///
-        /// It is a statically-typed alternative to the type-erased `AnyView`.
-        pub enum $ident<$($vars),+> {
-            $($vars($vars),)+
+    fn end_attribute_modifier(&mut self) {
+        match self {
+            OneOf2::A(e) => e.end_attribute_modifier(),
+            OneOf2::B(e) => e.end_attribute_modifier(),
         }
-        impl<VT, VA, $($vars),+> ViewSequence<VT, VA> for $ident<$($vars),+>
-        where $(
-            $vars: ViewSequence<VT, VA>,
-        )+ {
-            type State = $ident<$($vars::State),+>;
+    }
 
-            fn build(&self, cx: &mut Cx, elements: &mut dyn ElementsSplice) -> Self::State {
-                match self {
-                    $(
-                        $ident::$vars(view_sequence) => {
-                            $ident::$vars(view_sequence.build(cx, elements))
-                        }
-                    )+
-                }
-            }
-
-            fn rebuild(
-                &self,
-                cx: &mut Cx,
-                prev: &Self,
-                state: &mut Self::State,
-                elements: &mut dyn ElementsSplice,
-            ) -> ChangeFlags {
-                match (prev, self) {
-                    $(
-                        // Variant is the same as before
-                        ($ident::$vars(prev_view), $ident::$vars(view_sequence)) => {
-                            let $ident::$vars(state) = state else {
-                                throw_str(concat!(
-                                    "invalid state/view_sequence in ",
-                                    stringify!($ident),
-                                    " (unreachable)",
-                                ));
-                            };
-                            view_sequence.rebuild(cx, prev_view, state, elements)
-                        }
-                        // Variant has changed
-                        (_, $ident::$vars(view_sequence)) => {
-                            let new_state = view_sequence.build(cx, elements);
-                            *state = $ident::$vars(new_state);
-                            ChangeFlags::STRUCTURE
-                        }
-                    )+
-                }
-            }
-
-            fn message(
-                &self,
-                id_path: &[xilem_core::Id],
-                state: &mut Self::State,
-                message: Box<dyn std::any::Any>,
-                app_state: &mut VT,
-            ) -> xilem_core::MessageResult<VA> {
-                match self {
-                    $(
-                        $ident::$vars(view_sequence) => {
-                            let $ident::$vars(state) = state else {
-                                throw_str(concat!(
-                                    "invalid state/view_sequence in ",
-                                    stringify!($ident),
-                                    " (unreachable)",
-                                ));
-                            };
-                            view_sequence.message(id_path, state, message, app_state)
-                        }
-                    )+
-                }
-            }
-
-            fn count(&self, state: &Self::State) -> usize {
-                match self {
-                    $(
-                        $ident::$vars(view_sequence) => {
-                            let $ident::$vars(state) = state else {
-                                throw_str(concat!(
-                                    "invalid state/view_sequence in ",
-                                    stringify!($ident),
-                                    " (unreachable)",
-                                ));
-                            };
-                            view_sequence.count(state)
-                        }
-                    )+
-                }
-            }
+    fn set_attribute(&mut self, name: CowStr, value: Option<AttributeValue>) {
+        match self {
+            OneOf2::A(e) => e.set_attribute(name, value),
+            OneOf2::B(e) => e.set_attribute(name, value),
         }
-    };
+    }
 }
 
-one_of_sequence! {
-    /// This view sequence container can switch between two view sequences.
-    OneSeqOf2 { A, B }
-}
-one_of_sequence! {
-    /// This view sequence container can switch between three view sequences.
-    OneSeqOf3 { A, B, C }
+impl<E1: WithClasses, E2: WithClasses> WithClasses for OneOf2<E1, E2> {
+    fn start_class_modifier(&mut self) {
+        match self {
+            OneOf2::A(e) => e.start_class_modifier(),
+            OneOf2::B(e) => e.start_class_modifier(),
+        }
+    }
+
+    fn add_class(&mut self, class_name: CowStr) {
+        match self {
+            OneOf2::A(e) => e.add_class(class_name),
+            OneOf2::B(e) => e.add_class(class_name),
+        }
+    }
+
+    fn remove_class(&mut self, class_name: CowStr) {
+        match self {
+            OneOf2::A(e) => e.remove_class(class_name),
+            OneOf2::B(e) => e.remove_class(class_name),
+        }
+    }
+
+    fn end_class_modifier(&mut self) {
+        match self {
+            OneOf2::A(e) => e.end_class_modifier(),
+            OneOf2::B(e) => e.end_class_modifier(),
+        }
+    }
 }
 
-one_of_sequence! {
-    /// This view sequence container can switch between four view sequences.
-    OneSeqOf4 { A, B, C, D }
-}
-
-one_of_sequence! {
-    /// This view sequence container can switch between five view sequences.
-    OneSeqOf5 { A, B, C, D, E }
-}
-
-one_of_sequence! {
-    /// This view sequence container can switch between six view sequences.
-    OneSeqOf6 { A, B, C, D, E, F }
-}
-
-one_of_sequence! {
-    /// This view sequence container can switch between seven view sequences.
-    OneSeqOf7 { A, B, C, D, E, F, G }
-}
-
-one_of_sequence! {
-    /// This view sequence container can switch between eight view sequences.
-    OneSeqOf8 { A, B, C, D, E, F, G, H }
+impl<P1, P2, E1: DomNode<P1>, E2: DomNode<P2>> DomNode<OneOf2<P1, P2>> for OneOf2<E1, E2> {
+    fn apply_props(&self, props: &mut OneOf2<P1, P2>) {
+        match (self, props) {
+            (OneOf2::A(el), OneOf2::A(props)) => el.apply_props(props),
+            (OneOf2::B(el), OneOf2::B(props)) => el.apply_props(props),
+            _ => unreachable!(),
+        }
+    }
 }

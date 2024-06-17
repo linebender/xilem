@@ -6,7 +6,7 @@ mod state;
 use state::{AppState, Filter, Todo};
 
 use wasm_bindgen::JsCast;
-use xilem_web2::{
+use xilem_web::{
     elements::html as el, get_element_by_id, interfaces::*, style as s, Action, Adapt, App,
     DomView, MessageResult,
 };

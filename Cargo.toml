@@ -6,17 +6,11 @@ members = [
     "masonry",
 
     "xilem_web",
-    "xilem_web/xilem_web_core",
+    "xilem_web/web_examples/counter_custom_element",
+    "xilem_web/web_examples/todomvc",
     "xilem_web/web_examples/counter",
-    "xilem_web2/web_examples/counter_custom_element",
-    "xilem_web2/web_examples/todomvc",
     "xilem_web/web_examples/mathml_svg",
     "xilem_web/web_examples/svgtoy",
-    "xilem_web2",
-    "xilem_web2/web_examples/counter2",
-    "xilem_web2/web_examples/mathml_svg2",
-    "xilem_web2/web_examples/svgtoy",
-    "xilem_web2/web_examples/web-playground"
 ]
 
 # exclude = ["xilem_web2/web_examples/web-playground"]

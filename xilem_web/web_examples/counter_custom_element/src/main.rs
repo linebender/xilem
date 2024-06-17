@@ -1,7 +1,7 @@
 // Copyright 2023 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use xilem_web2::{
+use xilem_web::{
     document_body,
     elements::custom_element,
     interfaces::{Element, HtmlElement},

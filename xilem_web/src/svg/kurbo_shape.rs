@@ -6,200 +6,211 @@
 use peniko::kurbo::{BezPath, Circle, Line, Rect};
 use std::borrow::Cow;
 
-use xilem_core::{Id, MessageResult};
+use xilem_core::{MessageResult, Mut, OrphanView};
 
 use crate::{
-    context::{ChangeFlags, Cx, HtmlProps},
-    interfaces::sealed::Sealed,
-    view::{View, ViewMarker},
-    IntoAttributeValue, SVG_NS,
+    element::ElementProps,
+    elements::{build_element, ElementState},
+    IntoAttributeValue, Pod, ViewCtx, WithAttributes, SVG_NS,
 };
 
-macro_rules! generate_dom_interface_impl {
-    ($dom_interface:ident, ($ty_name:ident)) => {
-        impl<T, A> $crate::interfaces::$dom_interface<T, A> for $ty_name {}
-    };
-}
+impl<State, Action> OrphanView<Line, State, Action> for ViewCtx {
+    type ViewState = ElementState<()>;
+    type Element = Pod<web_sys::SvgLineElement, ElementProps>;
 
-generate_dom_interface_impl!(SvgLineElement, (Line));
-crate::interfaces::for_all_svg_line_element_ancestors!(generate_dom_interface_impl, (Line));
-
-impl ViewMarker for Line {}
-impl Sealed for Line {}
-
-impl<T, A> View<T, A> for Line {
-    type State = HtmlProps;
-    type Element = web_sys::Element;
-
-    fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
-        cx.add_attr_to_element(&"x1".into(), &self.p0.x.into_attr_value());
-        cx.add_attr_to_element(&"y1".into(), &self.p0.y.into_attr_value());
-        cx.add_attr_to_element(&"x2".into(), &self.p1.x.into_attr_value());
-        cx.add_attr_to_element(&"y2".into(), &self.p1.y.into_attr_value());
-        let (el, props) = cx.build_element(SVG_NS, "line");
-        let id = Id::next();
-        (id, props, el)
+    fn build(view: &Line, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+        let (mut element, state): (Self::Element, ElementState<()>) =
+            build_element::<State, Action, _, _, _>(&(), "line", SVG_NS, ctx);
+        element.start_attribute_modifier();
+        element.set_attribute("x1".into(), view.p0.x.into_attr_value());
+        element.set_attribute("y1".into(), view.p0.y.into_attr_value());
+        element.set_attribute("x2".into(), view.p1.x.into_attr_value());
+        element.set_attribute("y2".into(), view.p1.y.into_attr_value());
+        element.end_attribute_modifier();
+        (element, state)
     }
 
-    fn rebuild(
-        &self,
-        cx: &mut Cx,
-        _prev: &Self,
-        _id: &mut Id,
-        props: &mut Self::State,
-        element: &mut Self::Element,
-    ) -> ChangeFlags {
-        cx.add_attr_to_element(&"x1".into(), &self.p0.x.into_attr_value());
-        cx.add_attr_to_element(&"y1".into(), &self.p0.y.into_attr_value());
-        cx.add_attr_to_element(&"x2".into(), &self.p1.x.into_attr_value());
-        cx.add_attr_to_element(&"y2".into(), &self.p1.y.into_attr_value());
-        cx.rebuild_element(element, props)
+    fn rebuild<'el>(
+        new: &Line,
+        _prev: &Line,
+        _state: &mut Self::ViewState,
+        _ctx: &mut ViewCtx,
+        mut element: Mut<'el, Self::Element>,
+    ) -> Mut<'el, Self::Element> {
+        element.start_attribute_modifier();
+        element.set_attribute("x1".into(), new.p0.x.into_attr_value());
+        element.set_attribute("y1".into(), new.p0.y.into_attr_value());
+        element.set_attribute("x2".into(), new.p1.x.into_attr_value());
+        element.set_attribute("y2".into(), new.p1.y.into_attr_value());
+        element.end_attribute_modifier();
+        element
+    }
+
+    fn teardown(
+        _view: &Line,
+        _view_state: &mut Self::ViewState,
+        _ctx: &mut ViewCtx,
+        _element: Mut<'_, Self::Element>,
+    ) {
     }
 
     fn message(
-        &self,
-        _id_path: &[Id],
-        _state: &mut Self::State,
-        message: Box<dyn std::any::Any>,
-        _app_state: &mut T,
-    ) -> MessageResult<A> {
+        _view: &Line,
+        _view_state: &mut Self::ViewState,
+        _id_path: &[xilem_core::ViewId],
+        message: xilem_core::DynMessage,
+        _app_state: &mut State,
+    ) -> MessageResult<Action> {
         MessageResult::Stale(message)
     }
 }
 
-generate_dom_interface_impl!(SvgRectElement, (Rect));
-crate::interfaces::for_all_svg_rect_element_ancestors!(generate_dom_interface_impl, (Rect));
+impl<State, Action> OrphanView<Rect, State, Action> for ViewCtx {
+    type ViewState = ElementState<()>;
+    type Element = Pod<web_sys::SvgRectElement, ElementProps>;
 
-impl ViewMarker for Rect {}
-impl Sealed for Rect {}
-
-impl<T, A> View<T, A> for Rect {
-    type State = HtmlProps;
-    type Element = web_sys::Element;
-
-    fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
-        cx.add_attr_to_element(&"x".into(), &self.x0.into_attr_value());
-        cx.add_attr_to_element(&"y".into(), &self.y0.into_attr_value());
-        let size = self.size();
-        cx.add_attr_to_element(&"width".into(), &size.width.into_attr_value());
-        cx.add_attr_to_element(&"height".into(), &size.height.into_attr_value());
-        let (el, props) = cx.build_element(SVG_NS, "rect");
-        let id = Id::next();
-        (id, props, el)
+    fn build(view: &Rect, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+        let (mut element, state): (Self::Element, ElementState<()>) =
+            build_element::<State, Action, _, _, _>(&(), "rect", SVG_NS, ctx);
+        element.start_attribute_modifier();
+        element.set_attribute("x".into(), view.x0.into_attr_value());
+        element.set_attribute("y".into(), view.y0.into_attr_value());
+        element.set_attribute("width".into(), view.width().into_attr_value());
+        element.set_attribute("height".into(), view.height().into_attr_value());
+        element.end_attribute_modifier();
+        (element, state)
     }
 
-    fn rebuild(
-        &self,
-        cx: &mut Cx,
-        _prev: &Self,
-        _id: &mut Id,
-        props: &mut Self::State,
-        element: &mut Self::Element,
-    ) -> ChangeFlags {
-        cx.add_attr_to_element(&"x".into(), &self.x0.into_attr_value());
-        cx.add_attr_to_element(&"y".into(), &self.y0.into_attr_value());
-        let size = self.size();
-        cx.add_attr_to_element(&"width".into(), &size.width.into_attr_value());
-        cx.add_attr_to_element(&"height".into(), &size.height.into_attr_value());
-        cx.rebuild_element(element, props)
+    fn rebuild<'el>(
+        new: &Rect,
+        _prev: &Rect,
+        _state: &mut Self::ViewState,
+        _ctx: &mut ViewCtx,
+        mut element: Mut<'el, Self::Element>,
+    ) -> Mut<'el, Self::Element> {
+        element.start_attribute_modifier();
+        element.set_attribute("x".into(), new.x0.into_attr_value());
+        element.set_attribute("y".into(), new.y0.into_attr_value());
+        element.set_attribute("width".into(), new.width().into_attr_value());
+        element.set_attribute("height".into(), new.height().into_attr_value());
+        element.end_attribute_modifier();
+        element
+    }
+
+    fn teardown(
+        _view: &Rect,
+        _view_state: &mut Self::ViewState,
+        _ctx: &mut ViewCtx,
+        _element: Mut<'_, Self::Element>,
+    ) {
     }
 
     fn message(
-        &self,
-        _id_path: &[Id],
-        _state: &mut Self::State,
-        message: Box<dyn std::any::Any>,
-        _app_state: &mut T,
-    ) -> MessageResult<A> {
+        _view: &Rect,
+        _view_state: &mut Self::ViewState,
+        _id_path: &[xilem_core::ViewId],
+        message: xilem_core::DynMessage,
+        _app_state: &mut State,
+    ) -> MessageResult<Action> {
         MessageResult::Stale(message)
     }
 }
 
-generate_dom_interface_impl!(SvgCircleElement, (Circle));
-crate::interfaces::for_all_svg_circle_element_ancestors!(generate_dom_interface_impl, (Circle));
+impl<State, Action> OrphanView<Circle, State, Action> for ViewCtx {
+    type ViewState = ElementState<()>;
+    type Element = Pod<web_sys::SvgCircleElement, ElementProps>;
 
-impl ViewMarker for Circle {}
-impl Sealed for Circle {}
-
-impl<T, A> View<T, A> for Circle {
-    type State = HtmlProps;
-    type Element = web_sys::Element;
-
-    fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
-        cx.add_attr_to_element(&"cx".into(), &self.center.x.into_attr_value());
-        cx.add_attr_to_element(&"cy".into(), &self.center.y.into_attr_value());
-        cx.add_attr_to_element(&"r".into(), &self.radius.into_attr_value());
-        let (el, props) = cx.build_element(SVG_NS, "circle");
-        let id = Id::next();
-        (id, props, el)
+    fn build(view: &Circle, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+        let (mut element, state): (Self::Element, ElementState<()>) =
+            build_element::<State, Action, _, _, _>(&(), "circle", SVG_NS, ctx);
+        element.start_attribute_modifier();
+        element.set_attribute("cx".into(), view.center.x.into_attr_value());
+        element.set_attribute("cy".into(), view.center.y.into_attr_value());
+        element.set_attribute("r".into(), view.radius.into_attr_value());
+        element.end_attribute_modifier();
+        (element, state)
     }
 
-    fn rebuild(
-        &self,
-        cx: &mut Cx,
-        _prev: &Self,
-        _id: &mut Id,
-        props: &mut Self::State,
-        element: &mut Self::Element,
-    ) -> ChangeFlags {
-        cx.add_attr_to_element(&"cx".into(), &self.center.x.into_attr_value());
-        cx.add_attr_to_element(&"cy".into(), &self.center.y.into_attr_value());
-        cx.add_attr_to_element(&"r".into(), &self.radius.into_attr_value());
-        cx.rebuild_element(element, props)
+    fn rebuild<'el>(
+        new: &Circle,
+        _prev: &Circle,
+        _state: &mut Self::ViewState,
+        _ctx: &mut ViewCtx,
+        mut element: Mut<'el, Self::Element>,
+    ) -> Mut<'el, Self::Element> {
+        element.start_attribute_modifier();
+        element.set_attribute("cx".into(), new.center.x.into_attr_value());
+        element.set_attribute("cy".into(), new.center.y.into_attr_value());
+        element.set_attribute("r".into(), new.radius.into_attr_value());
+        element.end_attribute_modifier();
+        element
+    }
+
+    fn teardown(
+        _view: &Circle,
+        _view_state: &mut Self::ViewState,
+        _ctx: &mut ViewCtx,
+        _element: Mut<'_, Self::Element>,
+    ) {
     }
 
     fn message(
-        &self,
-        _id_path: &[Id],
-        _state: &mut Self::State,
-        message: Box<dyn std::any::Any>,
-        _app_state: &mut T,
-    ) -> MessageResult<A> {
+        _view: &Circle,
+        _view_state: &mut Self::ViewState,
+        _id_path: &[xilem_core::ViewId],
+        message: xilem_core::DynMessage,
+        _app_state: &mut State,
+    ) -> MessageResult<Action> {
         MessageResult::Stale(message)
     }
 }
 
-generate_dom_interface_impl!(SvgPathElement, (BezPath));
-crate::interfaces::for_all_svg_path_element_ancestors!(generate_dom_interface_impl, (BezPath));
+impl<State, Action> OrphanView<BezPath, State, Action> for ViewCtx {
+    type ViewState = (Cow<'static, str>, ElementState<()>);
+    type Element = Pod<web_sys::SvgPathElement, ElementProps>;
 
-impl ViewMarker for BezPath {}
-impl Sealed for BezPath {}
-
-impl<T, A> View<T, A> for BezPath {
-    type State = (Cow<'static, str>, HtmlProps);
-    type Element = web_sys::Element;
-
-    fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
-        let svg_repr = Cow::from(self.to_svg());
-        cx.add_attr_to_element(&"d".into(), &svg_repr.clone().into_attr_value());
-        let (el, props) = cx.build_element(SVG_NS, "path");
-        let id = Id::next();
-        (id, (svg_repr, props), el)
+    fn build(view: &BezPath, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+        let (mut element, state): (Self::Element, ElementState<()>) =
+            build_element::<State, Action, _, _, _>(&(), "path", SVG_NS, ctx);
+        let svg_repr = Cow::from(view.to_svg());
+        element.start_attribute_modifier();
+        element.set_attribute("d".into(), svg_repr.clone().into_attr_value());
+        element.end_attribute_modifier();
+        (element, (svg_repr, state))
     }
 
-    fn rebuild(
-        &self,
-        cx: &mut Cx,
-        prev: &Self,
-        _id: &mut Id,
-        (svg_repr, props): &mut Self::State,
-        element: &mut Self::Element,
-    ) -> ChangeFlags {
+    fn rebuild<'el>(
+        new: &BezPath,
+        prev: &BezPath,
+        (svg_repr, _): &mut Self::ViewState,
+        _ctx: &mut ViewCtx,
+        mut element: Mut<'el, Self::Element>,
+    ) -> Mut<'el, Self::Element> {
         // slight optimization to avoid serialization/allocation
-        if self != prev {
-            *svg_repr = Cow::from(self.to_svg());
+        if new != prev {
+            *svg_repr = Cow::from(new.to_svg());
         }
-        cx.add_attr_to_element(&"d".into(), &svg_repr.clone().into_attr_value());
-        cx.rebuild_element(element, props)
+        element.start_attribute_modifier();
+        element.set_attribute("d".into(), svg_repr.clone().into_attr_value());
+        element.end_attribute_modifier();
+        element
+    }
+
+    fn teardown(
+        _view: &BezPath,
+        _view_state: &mut Self::ViewState,
+        _ctx: &mut ViewCtx,
+        _element: Mut<'_, Self::Element>,
+    ) {
     }
 
     fn message(
-        &self,
-        _id_path: &[Id],
-        _state: &mut Self::State,
-        message: Box<dyn std::any::Any>,
-        _app_state: &mut T,
-    ) -> MessageResult<A> {
+        _view: &BezPath,
+        _view_state: &mut Self::ViewState,
+        _id_path: &[xilem_core::ViewId],
+        message: xilem_core::DynMessage,
+        _app_state: &mut State,
+    ) -> MessageResult<Action> {
         MessageResult::Stale(message)
     }
 }

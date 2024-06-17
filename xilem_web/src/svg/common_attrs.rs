@@ -2,37 +2,30 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use std::borrow::Cow;
-use std::{any::Any, marker::PhantomData};
+use std::marker::PhantomData;
 
 use peniko::Brush;
-use xilem_core::{Id, MessageResult};
+use xilem_core::{MessageResult, Mut, View};
 
-use crate::{
-    interfaces::{
-        Element, SvgCircleElement, SvgElement, SvgEllipseElement, SvgGeometryElement,
-        SvgGraphicsElement, SvgLineElement, SvgPathElement, SvgPolygonElement, SvgPolylineElement,
-        SvgRectElement, SvgTextContentElement, SvgTextElement, SvgTextPathElement,
-        SvgTextPositioningElement, SvggElement, SvgtSpanElement,
-    },
-    ChangeFlags, Cx, IntoAttributeValue, View, ViewMarker,
-};
+use crate::IntoAttributeValue;
+use crate::{attribute::ElementWithAttributes, ViewCtx, WithAttributes};
 
-pub struct Fill<V, T, A = ()> {
+pub struct Fill<V, State, Action> {
     child: V,
     // This could reasonably be static Cow also, but keep things simple
     brush: Brush,
-    phantom: PhantomData<fn() -> (T, A)>,
+    phantom: PhantomData<fn() -> (State, Action)>,
 }
 
-pub struct Stroke<V, T, A = ()> {
+pub struct Stroke<V, State, Action> {
     child: V,
     // This could reasonably be static Cow also, but keep things simple
     brush: Brush,
     style: peniko::kurbo::Stroke,
-    phantom: PhantomData<fn() -> (T, A)>,
+    phantom: PhantomData<fn() -> (State, Action)>,
 }
 
-pub fn fill<T, A, V>(child: V, brush: impl Into<Brush>) -> Fill<V, T, A> {
+pub fn fill<State, Action, V>(child: V, brush: impl Into<Brush>) -> Fill<V, State, Action> {
     Fill {
         child,
         brush: brush.into(),
@@ -40,11 +33,11 @@ pub fn fill<T, A, V>(child: V, brush: impl Into<Brush>) -> Fill<V, T, A> {
     }
 }
 
-pub fn stroke<T, A, V>(
+pub fn stroke<State, Action, V>(
     child: V,
     brush: impl Into<Brush>,
     style: peniko::kurbo::Stroke,
-) -> Stroke<V, T, A> {
+) -> Stroke<V, State, Action> {
     Stroke {
         child,
         brush: brush.into(),
@@ -66,127 +59,115 @@ fn brush_to_string(brush: &Brush) -> String {
     }
 }
 
-// manually implement interfaces, because multiple independent DOM interfaces use the View
-impl<T, A, E: SvgGraphicsElement<T, A>> Element<T, A> for Fill<E, T, A> {}
-impl<T, A, E: SvgGraphicsElement<T, A>> SvgElement<T, A> for Fill<E, T, A> {}
-impl<T, A, E: SvgGraphicsElement<T, A>> SvgGraphicsElement<T, A> for Fill<E, T, A> {}
-impl<T, A, E: SvggElement<T, A>> SvggElement<T, A> for Fill<E, T, A> {}
-// descendants of SvgGeometryElement (with the exception of SvgLineElement)
-impl<T, A, E: SvgGeometryElement<T, A>> SvgGeometryElement<T, A> for Fill<E, T, A> {}
-impl<T, A, E: SvgCircleElement<T, A>> SvgCircleElement<T, A> for Fill<E, T, A> {}
-impl<T, A, E: SvgEllipseElement<T, A>> SvgEllipseElement<T, A> for Fill<E, T, A> {}
-impl<T, A, E: SvgPathElement<T, A>> SvgPathElement<T, A> for Fill<E, T, A> {}
-impl<T, A, E: SvgPolygonElement<T, A>> SvgPolygonElement<T, A> for Fill<E, T, A> {}
-impl<T, A, E: SvgPolylineElement<T, A>> SvgPolylineElement<T, A> for Fill<E, T, A> {}
-impl<T, A, E: SvgRectElement<T, A>> SvgRectElement<T, A> for Fill<E, T, A> {}
-// descendants of SvgTextContentElement
-impl<T, A, E: SvgTextContentElement<T, A>> SvgTextContentElement<T, A> for Fill<E, T, A> {}
-impl<T, A, E: SvgTextPathElement<T, A>> SvgTextPathElement<T, A> for Fill<E, T, A> {}
-impl<T, A, E: SvgTextPositioningElement<T, A>> SvgTextPositioningElement<T, A> for Fill<E, T, A> {}
-impl<T, A, E: SvgTextElement<T, A>> SvgTextElement<T, A> for Fill<E, T, A> {}
-impl<T, A, E: SvgtSpanElement<T, A>> SvgtSpanElement<T, A> for Fill<E, T, A> {}
-
-impl<T, A, V> ViewMarker for Fill<V, T, A> {}
-impl<T, A, V> crate::interfaces::sealed::Sealed for Fill<V, T, A> {}
-
-impl<T, A, V: View<T, A>> View<T, A> for Fill<V, T, A> {
-    type State = (Cow<'static, str>, V::State);
+impl<State, Action, V: View<State, Action, ViewCtx>> View<State, Action, ViewCtx>
+    for Fill<V, State, Action>
+where
+    State: 'static,
+    Action: 'static,
+    V: View<State, Action, ViewCtx, Element: ElementWithAttributes>,
+{
+    type ViewState = (Cow<'static, str>, V::ViewState);
     type Element = V::Element;
 
-    fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
+    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+        let (mut element, child_state) = self.child.build(ctx);
         let brush_svg_repr = Cow::from(brush_to_string(&self.brush));
-        cx.add_attr_to_element(&"fill".into(), &brush_svg_repr.clone().into_attr_value());
-        let (id, child_state, element) = self.child.build(cx);
-        (id, (brush_svg_repr, child_state), element)
+        element.start_attribute_modifier();
+        element.set_attribute("fill".into(), brush_svg_repr.clone().into_attr_value());
+        element.end_attribute_modifier();
+        (element, (brush_svg_repr, child_state))
     }
 
-    fn rebuild(
+    fn rebuild<'el>(
         &self,
-        cx: &mut Cx,
         prev: &Self,
-        id: &mut Id,
-        (brush_svg_repr, child_state): &mut Self::State,
-        element: &mut V::Element,
-    ) -> ChangeFlags {
+        (brush_svg_repr, child_state): &mut Self::ViewState,
+        ctx: &mut ViewCtx,
+        mut element: Mut<'el, Self::Element>,
+    ) -> Mut<'el, Self::Element> {
+        element.start_attribute_modifier();
+        let mut element = self.child.rebuild(&prev.child, child_state, ctx, element);
         if self.brush != prev.brush {
             *brush_svg_repr = Cow::from(brush_to_string(&self.brush));
         }
-        cx.add_attr_to_element(&"fill".into(), &brush_svg_repr.clone().into_attr_value());
-        self.child
-            .rebuild(cx, &prev.child, id, child_state, element)
+        element.set_attribute("fill".into(), brush_svg_repr.clone().into_attr_value());
+        element.end_attribute_modifier();
+        element
+    }
+
+    fn teardown(
+        &self,
+        view_state: &mut Self::ViewState,
+        ctx: &mut ViewCtx,
+        element: Mut<'_, Self::Element>,
+    ) {
+        self.child.teardown(&mut view_state.1, ctx, element);
     }
 
     fn message(
         &self,
-        id_path: &[Id],
-        (_, child_state): &mut Self::State,
-        message: Box<dyn Any>,
-        app_state: &mut T,
-    ) -> MessageResult<A> {
-        self.child.message(id_path, child_state, message, app_state)
+        (_, child_state): &mut Self::ViewState,
+        id_path: &[xilem_core::ViewId],
+        message: xilem_core::DynMessage,
+        app_state: &mut State,
+    ) -> MessageResult<Action> {
+        self.child.message(child_state, id_path, message, app_state)
     }
 }
 
-// manually implement interfaces, because multiple independent DOM interfaces use the View
-impl<T, A, E: SvgGraphicsElement<T, A>> Element<T, A> for Stroke<E, T, A> {}
-impl<T, A, E: SvgGraphicsElement<T, A>> SvgElement<T, A> for Stroke<E, T, A> {}
-impl<T, A, E: SvgGraphicsElement<T, A>> SvgGraphicsElement<T, A> for Stroke<E, T, A> {}
-impl<T, A, E: SvggElement<T, A>> SvggElement<T, A> for Stroke<E, T, A> {}
-// descendants of SvgGeometryElement
-impl<T, A, E: SvgGeometryElement<T, A>> SvgGeometryElement<T, A> for Stroke<E, T, A> {}
-impl<T, A, E: SvgCircleElement<T, A>> SvgCircleElement<T, A> for Stroke<E, T, A> {}
-impl<T, A, E: SvgEllipseElement<T, A>> SvgEllipseElement<T, A> for Stroke<E, T, A> {}
-impl<T, A, E: SvgLineElement<T, A>> SvgLineElement<T, A> for Stroke<E, T, A> {}
-impl<T, A, E: SvgPathElement<T, A>> SvgPathElement<T, A> for Stroke<E, T, A> {}
-impl<T, A, E: SvgPolygonElement<T, A>> SvgPolygonElement<T, A> for Stroke<E, T, A> {}
-impl<T, A, E: SvgPolylineElement<T, A>> SvgPolylineElement<T, A> for Stroke<E, T, A> {}
-impl<T, A, E: SvgRectElement<T, A>> SvgRectElement<T, A> for Stroke<E, T, A> {}
-// descendants of SvgTextContentElement
-impl<T, A, E: SvgTextContentElement<T, A>> SvgTextContentElement<T, A> for Stroke<E, T, A> {}
-impl<T, A, E: SvgTextPathElement<T, A>> SvgTextPathElement<T, A> for Stroke<E, T, A> {}
-impl<T, A, E: SvgTextPositioningElement<T, A>> SvgTextPositioningElement<T, A> for Stroke<E, T, A> {}
-impl<T, A, E: SvgTextElement<T, A>> SvgTextElement<T, A> for Stroke<E, T, A> {}
-impl<T, A, E: SvgtSpanElement<T, A>> SvgtSpanElement<T, A> for Stroke<E, T, A> {}
-
-impl<T, A, V> ViewMarker for Stroke<V, T, A> {}
-impl<T, A, V> crate::interfaces::sealed::Sealed for Stroke<V, T, A> {}
-
-impl<T, A, V: View<T, A>> View<T, A> for Stroke<V, T, A> {
-    type State = (Cow<'static, str>, V::State);
+impl<State, Action, V> View<State, Action, ViewCtx> for Stroke<V, State, Action>
+where
+    State: 'static,
+    Action: 'static,
+    V: View<State, Action, ViewCtx, Element: ElementWithAttributes>,
+{
+    type ViewState = (Cow<'static, str>, V::ViewState);
     type Element = V::Element;
 
-    fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
+    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+        let (mut element, child_state) = self.child.build(ctx);
         let brush_svg_repr = Cow::from(brush_to_string(&self.brush));
-        cx.add_attr_to_element(&"stroke".into(), &brush_svg_repr.clone().into_attr_value());
-        cx.add_attr_to_element(&"stroke-width".into(), &self.style.width.into_attr_value());
-        let (id, child_state, element) = self.child.build(cx);
-        (id, (brush_svg_repr, child_state), element)
+        element.start_attribute_modifier();
+        element.set_attribute("stroke".into(), brush_svg_repr.clone().into_attr_value());
+        element.set_attribute("stroke-width".into(), self.style.width.into_attr_value());
+        element.end_attribute_modifier();
+        (element, (brush_svg_repr, child_state))
     }
 
-    fn rebuild(
+    fn rebuild<'el>(
         &self,
-        cx: &mut Cx,
         prev: &Self,
-        id: &mut Id,
-        (brush_svg_repr, child_state): &mut Self::State,
-        element: &mut V::Element,
-    ) -> ChangeFlags {
+        (brush_svg_repr, child_state): &mut Self::ViewState,
+        ctx: &mut ViewCtx,
+        mut element: Mut<'el, Self::Element>,
+    ) -> Mut<'el, Self::Element> {
+        element.start_attribute_modifier();
+        let mut element = self.child.rebuild(&prev.child, child_state, ctx, element);
         if self.brush != prev.brush {
             *brush_svg_repr = Cow::from(brush_to_string(&self.brush));
         }
-        cx.add_attr_to_element(&"stroke".into(), &brush_svg_repr.clone().into_attr_value());
-        cx.add_attr_to_element(&"stroke-width".into(), &self.style.width.into_attr_value());
-        self.child
-            .rebuild(cx, &prev.child, id, child_state, element)
+        element.set_attribute("stroke".into(), brush_svg_repr.clone().into_attr_value());
+        element.set_attribute("stroke-width".into(), self.style.width.into_attr_value());
+        element.end_attribute_modifier();
+        element
+    }
+
+    fn teardown(
+        &self,
+        view_state: &mut Self::ViewState,
+        ctx: &mut ViewCtx,
+        element: Mut<'_, Self::Element>,
+    ) {
+        self.child.teardown(&mut view_state.1, ctx, element);
     }
 
     fn message(
         &self,
-        id_path: &[Id],
-        (_, child_state): &mut Self::State,
-        message: Box<dyn Any>,
-        app_state: &mut T,
-    ) -> MessageResult<A> {
-        self.child.message(id_path, child_state, message, app_state)
+        (_, child_state): &mut Self::ViewState,
+        id_path: &[xilem_core::ViewId],
+        message: xilem_core::DynMessage,
+        app_state: &mut State,
+    ) -> MessageResult<Action> {
+        self.child.message(child_state, id_path, message, app_state)
     }
 }

@@ -749,23 +749,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "counter2"
-version = "0.1.0"
-dependencies = [
- "console_error_panic_hook",
- "wasm-bindgen",
- "web-sys",
- "xilem_web2",
-]
-
-[[package]]
 name = "counter_custom_element"
 version = "0.1.0"
 dependencies = [
  "console_error_panic_hook",
  "wasm-bindgen",
  "web-sys",
- "xilem_web2",
+ "xilem_web",
 ]
 
 [[package]]
@@ -1266,25 +1256,6 @@ dependencies = [
  "khronos_api",
  "log",
  "xml-rs",
-]
-
-[[package]]
-name = "gloo"
-version = "0.11.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d15282ece24eaf4bd338d73ef580c6714c8615155c4190c781290ee3fa0fd372"
-dependencies = [
- "gloo-events",
-]
-
-[[package]]
-name = "gloo-events"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "27c26fb45f7c385ba980f5fa87ac677e363949e065a083722697ef1b2cc91e41"
-dependencies = [
- "wasm-bindgen",
- "web-sys",
 ]
 
 [[package]]
@@ -1791,16 +1762,6 @@ dependencies = [
  "wasm-bindgen",
  "web-sys",
  "xilem_web",
-]
-
-[[package]]
-name = "mathml_svg2"
-version = "0.1.0"
-dependencies = [
- "console_error_panic_hook",
- "wasm-bindgen",
- "web-sys",
- "xilem_web2",
 ]
 
 [[package]]
@@ -2720,16 +2681,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "svgtoy2"
-version = "0.1.0"
-dependencies = [
- "console_error_panic_hook",
- "wasm-bindgen",
- "web-sys",
- "xilem_web2",
-]
-
-[[package]]
 name = "swash"
 version = "0.1.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2901,7 +2852,7 @@ dependencies = [
  "tracing-wasm",
  "wasm-bindgen",
  "web-sys",
- "xilem_web2",
+ "xilem_web",
 ]
 
 [[package]]
@@ -3303,17 +3254,6 @@ dependencies = [
  "log",
  "once_cell",
  "pkg-config",
-]
-
-[[package]]
-name = "web-playground"
-version = "0.1.0"
-dependencies = [
- "console_error_panic_hook",
- "peniko",
- "wasm-bindgen",
- "web-sys",
- "xilem_web2",
 ]
 
 [[package]]
@@ -3914,29 +3854,11 @@ dependencies = [
 name = "xilem_web"
 version = "0.1.0"
 dependencies = [
- "bitflags 2.5.0",
- "gloo",
- "log",
- "paste",
- "peniko",
- "wasm-bindgen",
- "web-sys",
- "xilem_web_core",
-]
-
-[[package]]
-name = "xilem_web2"
-version = "0.1.0"
-dependencies = [
  "peniko",
  "wasm-bindgen",
  "web-sys",
  "xilem_core",
 ]
-
-[[package]]
-name = "xilem_web_core"
-version = "0.1.0"
 
 [[package]]
 name = "xkbcommon-dl"

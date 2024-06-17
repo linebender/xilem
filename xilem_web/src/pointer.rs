@@ -3,18 +3,14 @@
 
 //! Interactivity with pointer events.
 
-use std::{any::Any, marker::PhantomData};
+use std::marker::PhantomData;
 
-use wasm_bindgen::{prelude::Closure, JsCast};
+use wasm_bindgen::{prelude::Closure, throw_str, JsCast, UnwrapThrowExt};
 use web_sys::PointerEvent;
 
-use xilem_core::{Id, MessageResult};
+use xilem_core::{MessageResult, View, ViewId, ViewPathTracker};
 
-use crate::{
-    context::{ChangeFlags, Cx},
-    interfaces::Element,
-    view::{DomNode, View, ViewMarker},
-};
+use crate::{interfaces::Element, ElementAsRef, ViewCtx};
 
 pub struct Pointer<V, T, A, F> {
     child: V,
@@ -72,86 +68,107 @@ pub fn pointer<T, A, F: Fn(&mut T, PointerMsg), V: Element<T, A>>(
     }
 }
 
-crate::interfaces::impl_dom_interfaces_for_ty!(
-    Element,
-    Pointer,
-    vars: <F,>,
-    vars_on_ty: <F,>,
-    bounds: {
-        F: Fn(&mut T, PointerMsg) -> A,
-    }
-);
-
-impl<V, T, A, F> ViewMarker for Pointer<V, T, A, F> {}
-impl<V, T, A, F> crate::interfaces::sealed::Sealed for Pointer<V, T, A, F> {}
-
-impl<T, A, F: Fn(&mut T, PointerMsg) -> A, V: View<T, A>> View<T, A> for Pointer<V, T, A, F> {
-    type State = PointerState<V::State>;
+impl<State, Action, Callback, V> View<State, Action, ViewCtx>
+    for Pointer<V, State, Action, Callback>
+where
+    State: 'static,
+    Action: 'static,
+    Callback: Fn(&mut State, PointerMsg) -> Action + 'static,
+    V: View<State, Action, ViewCtx>,
+    V::Element: ElementAsRef<web_sys::Element>,
+{
+    type ViewState = PointerState<V::ViewState>;
     type Element = V::Element;
 
-    fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
-        let (id, child_state, element) = self.child.build(cx);
-        let thunk = cx.with_id(id, |cx| cx.message_thunk());
-        let el = element.as_node_ref().dyn_ref::<web_sys::Element>().unwrap();
-        let el_clone = el.clone();
-        let down_closure = Closure::new(move |e: PointerEvent| {
-            thunk.push_message(PointerMsg::Down(PointerDetails::from_pointer_event(&e)));
-            el_clone.set_pointer_capture(e.pointer_id()).unwrap();
-            e.prevent_default();
-            e.stop_propagation();
-        });
-        el.add_event_listener_with_callback("pointerdown", down_closure.as_ref().unchecked_ref())
+    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+        ctx.with_id(ViewId::new(0), |ctx| {
+            let (element, child_state) = self.child.build(ctx);
+            let thunk = ctx.message_thunk();
+            let el = element.as_ref().dyn_ref::<web_sys::Element>().unwrap();
+            let el_clone = el.clone();
+            let down_closure = Closure::new(move |e: PointerEvent| {
+                thunk.push_message(PointerMsg::Down(PointerDetails::from_pointer_event(&e)));
+                el_clone.set_pointer_capture(e.pointer_id()).unwrap();
+                e.prevent_default();
+                e.stop_propagation();
+            });
+            el.add_event_listener_with_callback(
+                "pointerdown",
+                down_closure.as_ref().unchecked_ref(),
+            )
             .unwrap();
-        let thunk = cx.with_id(id, |cx| cx.message_thunk());
-        let move_closure = Closure::new(move |e: PointerEvent| {
-            thunk.push_message(PointerMsg::Move(PointerDetails::from_pointer_event(&e)));
-            e.prevent_default();
-            e.stop_propagation();
-        });
-        el.add_event_listener_with_callback("pointermove", move_closure.as_ref().unchecked_ref())
+            let thunk = ctx.message_thunk();
+            let move_closure = Closure::new(move |e: PointerEvent| {
+                thunk.push_message(PointerMsg::Move(PointerDetails::from_pointer_event(&e)));
+                e.prevent_default();
+                e.stop_propagation();
+            });
+            el.add_event_listener_with_callback(
+                "pointermove",
+                move_closure.as_ref().unchecked_ref(),
+            )
             .unwrap();
-        let thunk = cx.with_id(id, |cx| cx.message_thunk());
-        let up_closure = Closure::new(move |e: PointerEvent| {
-            thunk.push_message(PointerMsg::Up(PointerDetails::from_pointer_event(&e)));
-            e.prevent_default();
-            e.stop_propagation();
-        });
-        el.add_event_listener_with_callback("pointerup", up_closure.as_ref().unchecked_ref())
-            .unwrap();
-        let state = PointerState {
-            down_closure,
-            move_closure,
-            up_closure,
-            child_state,
-        };
-        (id, state, element)
+            let thunk = ctx.message_thunk();
+            let up_closure = Closure::new(move |e: PointerEvent| {
+                thunk.push_message(PointerMsg::Up(PointerDetails::from_pointer_event(&e)));
+                e.prevent_default();
+                e.stop_propagation();
+            });
+            el.add_event_listener_with_callback("pointerup", up_closure.as_ref().unchecked_ref())
+                .unwrap();
+            let state = PointerState {
+                down_closure,
+                move_closure,
+                up_closure,
+                child_state,
+            };
+            (element, state)
+        })
     }
 
-    fn rebuild(
+    fn rebuild<'el>(
         &self,
-        cx: &mut Cx,
         prev: &Self,
-        id: &mut Id,
-        state: &mut Self::State,
-        element: &mut Self::Element,
-    ) -> ChangeFlags {
-        // TODO: if the child id changes (as can happen with AnyView), reinstall closure
+        view_state: &mut Self::ViewState,
+        ctx: &mut ViewCtx,
+        element: xilem_core::Mut<'el, Self::Element>,
+    ) -> xilem_core::Mut<'el, Self::Element> {
+        ctx.with_id(ViewId::new(0), |ctx| {
+            self.child
+                .rebuild(&prev.child, &mut view_state.child_state, ctx, element)
+        })
+    }
+
+    fn teardown(
+        &self,
+        view_state: &mut Self::ViewState,
+        ctx: &mut ViewCtx,
+        element: xilem_core::Mut<'_, Self::Element>,
+    ) {
+        // TODO remove event listeners from child or is this not necessary?
         self.child
-            .rebuild(cx, &prev.child, id, &mut state.child_state, element)
+            .teardown(&mut view_state.child_state, ctx, element);
     }
 
     fn message(
         &self,
-        id_path: &[Id],
-        state: &mut Self::State,
-        message: Box<dyn Any>,
-        app_state: &mut T,
-    ) -> MessageResult<A> {
-        match message.downcast() {
-            Ok(msg) => MessageResult::Action((self.callback)(app_state, *msg)),
-            Err(message) => self
-                .child
-                .message(id_path, &mut state.child_state, message, app_state),
+        view_state: &mut Self::ViewState,
+        id_path: &[xilem_core::ViewId],
+        message: xilem_core::DynMessage,
+        app_state: &mut State,
+    ) -> xilem_core::MessageResult<Action> {
+        let Some((first, remainder)) = id_path.split_first() else {
+            throw_str("Parent view of `Pointer` sent outdated and/or incorrect empty view path");
+        };
+        if first.routing_id() != 0 {
+            throw_str("Parent view of `Pointer` sent outdated and/or incorrect empty view path");
+        }
+        if remainder.is_empty() {
+            let msg = message.downcast().unwrap_throw();
+            MessageResult::Action((self.callback)(app_state, *msg))
+        } else {
+            self.child
+                .message(&mut view_state.child_state, remainder, message, app_state)
         }
     }
 }

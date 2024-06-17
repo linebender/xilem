@@ -1,53 +1,37 @@
 // Copyright 2023 the Xilem Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-ViewIdentifier: Apache-2.0
 
-use crate::{
-    interfaces::{sealed::Sealed, Element},
-    view::DomNode,
-    ChangeFlags, Cx, OptionalAction, View, ViewMarker,
-};
-use std::{any::Any, borrow::Cow, marker::PhantomData};
-use wasm_bindgen::{JsCast, UnwrapThrowExt};
-use xilem_core::{Id, MessageResult};
+use std::{borrow::Cow, marker::PhantomData};
+use wasm_bindgen::{prelude::Closure, throw_str, JsCast, UnwrapThrowExt};
+use web_sys::AddEventListenerOptions;
+use xilem_core::{MessageResult, Mut, View, ViewId, ViewPathTracker};
 
-pub use gloo::events::EventListenerOptions;
+use crate::{ElementAsRef, OptionalAction, ViewCtx};
 
 /// Wraps a [`View`] `V` and attaches an event listener.
 ///
-/// The event type `E` should inherit from [`web_sys::Event`]
-pub struct OnEvent<E, T, A, Ev, C> {
-    pub(crate) element: E,
+/// The event type `Event` should inherit from [`web_sys::Event`]
+#[derive(Clone, Debug)]
+pub struct OnEvent<V, State, Action, Event, Callback> {
+    pub(crate) element: V,
     pub(crate) event: Cow<'static, str>,
-    pub(crate) options: EventListenerOptions,
-    pub(crate) handler: C,
+    pub(crate) capture: bool,
+    pub(crate) passive: bool,
+    pub(crate) handler: Callback,
     #[allow(clippy::type_complexity)]
-    pub(crate) phantom_event_ty: PhantomData<fn() -> (T, A, Ev)>,
+    pub(crate) phantom_event_ty: PhantomData<fn() -> (State, Action, Event)>,
 }
 
-impl<E, T, A, Ev, C> OnEvent<E, T, A, Ev, C>
+impl<V, State, Action, Event, Callback> OnEvent<V, State, Action, Event, Callback>
 where
-    Ev: JsCast + 'static,
+    Event: JsCast + 'static,
 {
-    pub fn new(element: E, event: impl Into<Cow<'static, str>>, handler: C) -> Self {
+    pub fn new(element: V, event: impl Into<Cow<'static, str>>, handler: Callback) -> Self {
         OnEvent {
             element,
             event: event.into(),
-            options: Default::default(),
-            handler,
-            phantom_event_ty: PhantomData,
-        }
-    }
-
-    pub fn new_with_options(
-        element: E,
-        event: impl Into<Cow<'static, str>>,
-        handler: C,
-        options: EventListenerOptions,
-    ) -> Self {
-        OnEvent {
-            element,
-            event: event.into(),
-            options,
+            passive: true,
+            capture: false,
             handler,
             phantom_event_ty: PhantomData,
         }
@@ -59,168 +43,301 @@ where
     /// running (otherwise possible with `event.prevent_default()`), which
     /// restricts what they can be used for, but reduces overhead.
     pub fn passive(mut self, value: bool) -> Self {
-        self.options.passive = value;
+        self.passive = value;
+        self
+    }
+
+    /// Whether the event handler should capture the event *before* being dispatched to any EventTarget beneath it in the DOM tree. (default = `false`)
+    ///
+    /// Events that are bubbling upward through the tree will not trigger a listener designated to use capture.
+    /// Event bubbling and capturing are two ways of propagating events that occur in an element that is nested within another element,
+    /// when both elements have registered a handle for that event.
+    /// The event propagation mode determines the order in which elements receive the event.
+    // TODO use similar Nomenclature as gloo (Phase::Bubble/Phase::Capture)?
+    pub fn capture(mut self, value: bool) -> Self {
+        self.capture = value;
         self
     }
 }
 
-fn create_event_listener<Ev: JsCast + 'static>(
+fn create_event_listener<Event: JsCast + xilem_core::Message>(
     target: &web_sys::EventTarget,
-    event: impl Into<Cow<'static, str>>,
-    options: EventListenerOptions,
-    cx: &Cx,
-) -> gloo::events::EventListener {
-    let thunk = cx.message_thunk();
-    gloo::events::EventListener::new_with_options(
-        target,
-        event,
-        options,
-        move |event: &web_sys::Event| {
-            let event = (*event).clone().dyn_into::<Ev>().unwrap_throw();
-            thunk.push_message(event);
-        },
-    )
+    event: &str,
+    // TODO options
+    capture: bool,
+    passive: bool,
+    ctx: &mut ViewCtx,
+) -> Closure<dyn FnMut(web_sys::Event)> {
+    let thunk = ctx.message_thunk();
+    let callback = Closure::new(move |event: web_sys::Event| {
+        // TODO make this configurable
+        event.prevent_default();
+        event.stop_propagation();
+        let event = event.dyn_into::<Event>().unwrap_throw();
+        thunk.push_message(event);
+    });
+
+    let mut options = AddEventListenerOptions::new();
+    options.capture(capture);
+    options.passive(passive);
+
+    target
+        .add_event_listener_with_callback_and_add_event_listener_options(
+            event,
+            callback.as_ref().unchecked_ref(),
+            &options,
+        )
+        .unwrap_throw();
+    callback
+}
+
+fn remove_event_listener(
+    target: &web_sys::EventTarget,
+    event: &str,
+    callback: &Closure<dyn FnMut(web_sys::Event)>,
+    is_capture: bool,
+) {
+    target
+        .remove_event_listener_with_callback_and_bool(
+            event,
+            callback.as_ref().unchecked_ref(),
+            is_capture,
+        )
+        .unwrap_throw();
 }
 
 /// State for the `OnEvent` view.
 pub struct OnEventState<S> {
     #[allow(unused)]
-    listener: gloo::events::EventListener,
-    child_id: Id,
     child_state: S,
+    callback: Closure<dyn FnMut(web_sys::Event)>,
 }
 
-impl<E, T, A, Ev, C> ViewMarker for OnEvent<E, T, A, Ev, C> {}
-impl<E, T, A, Ev, C> Sealed for OnEvent<E, T, A, Ev, C> {}
+// These (boilerplatey) functions are there to reduce the boilerplate created by the macro-expansion below.
 
-impl<E, T, A, Ev, C, OA> View<T, A> for OnEvent<E, T, A, Ev, C>
+fn build_event_listener<State, Action, V, Event>(
+    element_view: &V,
+    event: &str,
+    capture: bool,
+    passive: bool,
+    ctx: &mut ViewCtx,
+) -> (V::Element, OnEventState<V::ViewState>)
 where
-    OA: OptionalAction<A>,
-    C: Fn(&mut T, Ev) -> OA,
-    E: Element<T, A>,
-    Ev: JsCast + 'static,
+    State: 'static,
+    Action: 'static,
+    V: View<State, Action, ViewCtx>,
+    V::Element: ElementAsRef<web_sys::EventTarget>,
+    Event: JsCast + 'static + xilem_core::Message,
 {
-    type State = OnEventState<E::State>;
+    // we use a placeholder id here, the id can never change, so we don't need to store it anywhere
+    ctx.with_id(ViewId::new(0), |ctx| {
+        let (element, child_state) = element_view.build(ctx);
+        let callback =
+            create_event_listener::<Event>(element.as_ref(), event, capture, passive, ctx);
+        let state = OnEventState {
+            child_state,
+            callback,
+        };
+        (element, state)
+    })
+}
 
-    type Element = E::Element;
+#[allow(clippy::too_many_arguments)]
+fn rebuild_event_listener<'el, State, Action, V, Event>(
+    element_view: &V,
+    prev_element_view: &V,
+    element: Mut<'el, V::Element>,
+    event: &str,
+    capture: bool,
+    passive: bool,
+    prev_capture: bool,
+    prev_passive: bool,
+    state: &mut OnEventState<V::ViewState>,
+    ctx: &mut ViewCtx,
+) -> Mut<'el, V::Element>
+where
+    State: 'static,
+    Action: 'static,
+    V: View<State, Action, ViewCtx>,
+    V::Element: ElementAsRef<web_sys::EventTarget>,
+    Event: JsCast + 'static + xilem_core::Message,
+{
+    ctx.with_id(ViewId::new(0), |ctx| {
+        if prev_capture != capture || prev_passive != passive {
+            remove_event_listener(element.as_ref(), event, &state.callback, prev_capture);
 
-    fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
-        let (id, (element, state)) = cx.with_new_id(|cx| {
-            let (child_id, child_state, element) = self.element.build(cx);
-            let listener = create_event_listener::<Ev>(
-                element.as_node_ref(),
-                self.event.clone(),
-                self.options,
-                cx,
-            );
-            let state = OnEventState {
-                child_state,
-                child_id,
-                listener,
-            };
-            (element, state)
-        });
-        (id, state, element)
+            state.callback =
+                create_event_listener::<Event>(element.as_ref(), event, capture, passive, ctx);
+        }
+        element_view.rebuild(prev_element_view, &mut state.child_state, ctx, element)
+    })
+}
+
+fn teardown_event_listener<State, Action, V>(
+    element_view: &V,
+    element: Mut<'_, V::Element>,
+    _event: &str,
+    state: &mut OnEventState<V::ViewState>,
+    _capture: bool,
+    ctx: &mut ViewCtx,
+) where
+    State: 'static,
+    Action: 'static,
+    V: View<State, Action, ViewCtx>,
+    V::Element: ElementAsRef<web_sys::EventTarget>,
+{
+    // TODO: is this really needed (as the element will be removed anyway)?
+    // remove_event_listener(element.as_ref(), event, &state.callback, capture);
+    ctx.with_id(ViewId::new(0), |ctx| {
+        element_view.teardown(&mut state.child_state, ctx, element);
+    });
+}
+
+fn message_event_listener<State, Action, V, Event, OA, Callback>(
+    element_view: &V,
+    state: &mut OnEventState<V::ViewState>,
+    id_path: &[ViewId],
+    message: xilem_core::DynMessage,
+    app_state: &mut State,
+    handler: &Callback,
+) -> MessageResult<Action>
+where
+    State: 'static,
+    Action: 'static,
+    V: View<State, Action, ViewCtx>,
+    V::Element: ElementAsRef<web_sys::EventTarget>,
+    Event: JsCast + 'static + xilem_core::Message,
+    OA: OptionalAction<Action>,
+    Callback: Fn(&mut State, Event) -> OA + 'static,
+{
+    let Some((first, remainder)) = id_path.split_first() else {
+        throw_str("Parent view of `OnEvent` sent outdated and/or incorrect empty view path");
+    };
+    if first.routing_id() != 0 {
+        throw_str("Parent view of `OnEvent` sent outdated and/or incorrect empty view path");
+    }
+    if remainder.is_empty() {
+        let event = message.downcast::<Event>().unwrap_throw();
+        match (handler)(app_state, *event).action() {
+            Some(a) => MessageResult::Action(a),
+            None => MessageResult::Nop,
+        }
+    } else {
+        element_view.message(&mut state.child_state, remainder, message, app_state)
+    }
+}
+
+impl<V, State, Action, Event, Callback, OA> View<State, Action, ViewCtx>
+    for OnEvent<V, State, Action, Event, Callback>
+where
+    State: 'static,
+    Action: 'static,
+    OA: OptionalAction<Action>,
+    Callback: Fn(&mut State, Event) -> OA + 'static,
+    V: View<State, Action, ViewCtx>,
+    V::Element: ElementAsRef<web_sys::EventTarget>,
+    Event: JsCast + 'static + xilem_core::Message,
+{
+    type ViewState = OnEventState<V::ViewState>;
+
+    type Element = V::Element;
+
+    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+        build_event_listener::<_, _, _, Event>(
+            &self.element,
+            &self.event,
+            self.capture,
+            self.passive,
+            ctx,
+        )
     }
 
-    fn rebuild(
+    fn rebuild<'el>(
         &self,
-        cx: &mut Cx,
         prev: &Self,
-        id: &mut Id,
-        state: &mut Self::State,
-        element: &mut Self::Element,
-    ) -> ChangeFlags {
-        cx.with_id(*id, |cx| {
-            let prev_child_id = state.child_id;
-            let mut changed = self.element.rebuild(
-                cx,
-                &prev.element,
-                &mut state.child_id,
-                &mut state.child_state,
-                element,
-            );
-            if state.child_id != prev_child_id {
-                changed |= ChangeFlags::OTHER_CHANGE;
-            }
-            // TODO check equality of prev and current element somehow
-            if prev.event != self.event || changed.contains(ChangeFlags::STRUCTURE) {
-                state.listener = create_event_listener::<Ev>(
-                    element.as_node_ref(),
-                    self.event.clone(),
-                    self.options,
-                    cx,
+        view_state: &mut Self::ViewState,
+        ctx: &mut ViewCtx,
+        element: Mut<'el, Self::Element>,
+    ) -> Mut<'el, Self::Element> {
+        // special case, where event name can change, so we can't reuse the rebuild_event_listener function above
+        ctx.with_id(ViewId::new(0), |ctx| {
+            if prev.capture != self.capture
+                || prev.passive != self.passive
+                || prev.event != self.event
+            {
+                remove_event_listener(
+                    element.as_ref(),
+                    &prev.event,
+                    &view_state.callback,
+                    prev.capture,
                 );
-                changed |= ChangeFlags::OTHER_CHANGE;
+
+                view_state.callback = create_event_listener::<Event>(
+                    element.as_ref(),
+                    &self.event,
+                    self.capture,
+                    self.passive,
+                    ctx,
+                );
             }
-            changed
+            self.element
+                .rebuild(&prev.element, &mut view_state.child_state, ctx, element)
         })
+    }
+
+    fn teardown(
+        &self,
+        view_state: &mut Self::ViewState,
+        ctx: &mut ViewCtx,
+        element: <Self::Element as xilem_core::ViewElement>::Mut<'_>,
+    ) {
+        teardown_event_listener(
+            &self.element,
+            element,
+            &self.event,
+            view_state,
+            self.capture,
+            ctx,
+        );
     }
 
     fn message(
         &self,
-        id_path: &[Id],
-        state: &mut Self::State,
-        message: Box<dyn Any>,
-        app_state: &mut T,
-    ) -> MessageResult<A> {
-        match id_path {
-            [] if message.downcast_ref::<Ev>().is_some() => {
-                let event = message.downcast::<Ev>().unwrap();
-                match (self.handler)(app_state, *event).action() {
-                    Some(a) => MessageResult::Action(a),
-                    None => MessageResult::Nop,
-                }
-            }
-            [element_id, rest_path @ ..] if *element_id == state.child_id => {
-                self.element
-                    .message(rest_path, &mut state.child_state, message, app_state)
-            }
-            _ => MessageResult::Stale(message),
-        }
+        view_state: &mut Self::ViewState,
+        id_path: &[ViewId],
+        message: xilem_core::DynMessage,
+        app_state: &mut State,
+    ) -> MessageResult<Action> {
+        message_event_listener(
+            &self.element,
+            view_state,
+            id_path,
+            message,
+            app_state,
+            &self.handler,
+        )
     }
 }
-
-crate::interfaces::impl_dom_interfaces_for_ty!(
-    Element,
-    OnEvent,
-    vars: <Ev, C, OA,>,
-    vars_on_ty: <Ev, C,>,
-    bounds: {
-        Ev: JsCast + 'static,
-        OA: OptionalAction<A>,
-        C: Fn(&mut T, Ev) -> OA,
-    }
-);
 
 macro_rules! event_definitions {
     ($(($ty_name:ident, $event_name:literal, $web_sys_ty:ident)),*) => {
         $(
-        $crate::interfaces::impl_dom_interfaces_for_ty!(
-            Element,
-            $ty_name,
-            vars: <C, OA,>,
-            vars_on_ty: <C,>,
-            bounds: {
-                OA: OptionalAction<A>,
-                C: Fn(&mut T, web_sys::$web_sys_ty ) -> OA,
-            }
-        );
-
-        pub struct $ty_name<E, T, A, C> {
-            target: E,
-            callback: C,
-            options: EventListenerOptions,
-            phantom: PhantomData<fn() -> (T, A)>,
+        pub struct $ty_name<V, State, Action, Callback> {
+            pub(crate) element: V,
+            pub(crate) capture: bool,
+            pub(crate) passive: bool,
+            pub(crate) handler: Callback,
+            pub(crate) phantom_event_ty: PhantomData<fn() -> (State, Action)>,
         }
 
-        impl<E, T, A, C> $ty_name<E, T, A, C> {
-            pub fn new(target: E, callback: C) -> Self {
+        impl<V, State, Action, Callback> $ty_name<V, State, Action, Callback> {
+            pub fn new(element: V, handler: Callback) -> Self {
                 Self {
-                    target,
-                    options: Default::default(),
-                    callback,
-                    phantom: PhantomData,
+                    element,
+                    passive: true,
+                    capture: false,
+                    handler,
+                    phantom_event_ty: PhantomData,
                 }
             }
 
@@ -230,76 +347,86 @@ macro_rules! event_definitions {
             /// running (otherwise possible with `event.prevent_default()`), which
             /// restricts what they can be used for, but reduces overhead.
             pub fn passive(mut self, value: bool) -> Self {
-                self.options.passive = value;
+                self.passive = value;
+                self
+            }
+
+            /// Whether the event handler should capture the event *before* being dispatched to any EventTarget beneath it in the DOM tree. (default = `false`)
+            ///
+            /// Events that are bubbling upward through the tree will not trigger a listener designated to use capture.
+            /// Event bubbling and capturing are two ways of propagating events that occur in an element that is nested within another element,
+            /// when both elements have registered a handle for that event.
+            /// The event propagation mode determines the order in which elements receive the event.
+            // TODO use similar Nomenclature as gloo (Phase::Bubble/Phase::Capture)?
+            pub fn capture(mut self, value: bool) -> Self {
+                self.capture = value;
                 self
             }
         }
 
-        impl<E, T, A, C> ViewMarker for $ty_name<E, T, A, C> {}
-        impl<E, T, A, C> Sealed for $ty_name<E, T, A, C> {}
 
-        impl<E, T, A, C, OA> View<T, A> for $ty_name<E, T, A, C>
+        impl<V, State, Action, Callback, OA> View<State, Action, ViewCtx>
+            for $ty_name<V, State, Action, Callback>
         where
-            OA: OptionalAction<A>,
-            C: Fn(&mut T, web_sys::$web_sys_ty) -> OA,
-            E: Element<T, A>,
+            State: 'static,
+            Action: 'static,
+            OA: OptionalAction<Action>,
+            Callback: Fn(&mut State, web_sys::$web_sys_ty) -> OA + 'static,
+            V: View<State, Action, ViewCtx>,
+            V::Element: ElementAsRef<web_sys::EventTarget>,
         {
-            type State = OnEventState<E::State>;
+            type ViewState = OnEventState<V::ViewState>;
 
-            type Element = E::Element;
+            type Element = V::Element;
 
-            fn build(&self, cx: &mut Cx) -> (Id, Self::State, Self::Element) {
-                let (id, (element, state)) = cx.with_new_id(|cx| {
-                    let (child_id, child_state, el) = self.target.build(cx);
-                    let listener = create_event_listener::<web_sys::$web_sys_ty>(el.as_node_ref(), $event_name, self.options, cx);
-                    (el, OnEventState { child_state, child_id, listener })
-                });
-                (id, state, element)
+            fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+                build_event_listener::<_, _, _, web_sys::$web_sys_ty>(
+                    &self.element,
+                    $event_name,
+                    self.capture,
+                    self.passive,
+                    ctx,
+                )
             }
 
-            fn rebuild(
+            fn rebuild<'el>(
                 &self,
-                cx: &mut Cx,
                 prev: &Self,
-                id: &mut Id,
-                state: &mut Self::State,
-                element: &mut Self::Element,
-            ) -> ChangeFlags {
-                cx.with_id(*id, |cx| {
-                    let prev_child_id = state.child_id;
-                    let mut changed = self.target.rebuild(cx, &prev.target, &mut state.child_id, &mut state.child_state, element);
-                    if state.child_id != prev_child_id {
-                        changed |= ChangeFlags::OTHER_CHANGE;
-                    }
-                    // TODO check equality of prev and current element somehow
-                    if changed.contains(ChangeFlags::STRUCTURE) {
-                        state.listener = create_event_listener::<web_sys::$web_sys_ty>(element.as_node_ref(), $event_name, self.options, cx);
-                        changed |= ChangeFlags::OTHER_CHANGE;
-                    }
-                    changed
-                })
+                view_state: &mut Self::ViewState,
+                ctx: &mut ViewCtx,
+                element: Mut<'el, Self::Element>,
+            ) -> Mut<'el, Self::Element> {
+                rebuild_event_listener::<_, _, _, web_sys::$web_sys_ty>(
+                    &self.element,
+                    &prev.element,
+                    element,
+                    $event_name,
+                    self.capture,
+                    self.passive,
+                    prev.capture,
+                    prev.passive,
+                    view_state,
+                    ctx,
+                )
+            }
+
+            fn teardown(
+                &self,
+                view_state: &mut Self::ViewState,
+                ctx: &mut ViewCtx,
+                element: Mut<'_, Self::Element>,
+            ) {
+                teardown_event_listener(&self.element, element, $event_name, view_state, self.capture, ctx);
             }
 
             fn message(
                 &self,
-                id_path: &[Id],
-                state: &mut Self::State,
-                message: Box<dyn Any>,
-                app_state: &mut T,
-            ) -> MessageResult<A> {
-                match id_path {
-                    [] if message.downcast_ref::<web_sys::$web_sys_ty>().is_some() => {
-                        let event = message.downcast::<web_sys::$web_sys_ty>().unwrap();
-                        match (self.callback)(app_state, *event).action() {
-                            Some(a) => MessageResult::Action(a),
-                            None => MessageResult::Nop,
-                        }
-                    }
-                    [element_id, rest_path @ ..] if *element_id == state.child_id => {
-                        self.target.message(rest_path, &mut state.child_state, message, app_state)
-                    }
-                    _ => MessageResult::Stale(message),
-                }
+                view_state: &mut Self::ViewState,
+                id_path: &[ViewId],
+                message: xilem_core::DynMessage,
+                app_state: &mut State,
+            ) -> MessageResult<Action> {
+                message_event_listener(&self.element, view_state, id_path, message, app_state, &self.handler)
             }
         }
         )*
