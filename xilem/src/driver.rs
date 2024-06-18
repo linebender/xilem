@@ -66,9 +66,10 @@ where
         }
     }
 
-    // Note: the mem swap in all the methods below is necessary because we need a mutable reference to self and app_interface.
-    // Better method would be good (could at least roll the logic into a single method).
-    // One danger of the below method is if we ever had a recursive call to the driver, we would lose the app_interface.
+    // Note: app_interface is removed from MasonryDriver in all the event hooks below. This is necessary because we need
+    // to pass a mutable reference to the masonry driver to the app_interface, so it can't be owned by the masonry driver.
+    //
+    // One danger of this is if we ever had a recursive call to the driver, we would lose the app_interface on that call.
     // However, that is not likely to ever happen because these calls are all driven by the event loop and the event loop
     // is not recursive.
 
@@ -77,14 +78,10 @@ where
         event_loop: &winit::event_loop::ActiveEventLoop,
         masonry_state: &mut masonry::event_loop_runner::MasonryState<'_>,
     ) {
-        if self.app_interface.is_some() {
-            let mut app_interface = None;
-            std::mem::swap(&mut self.app_interface, &mut app_interface);
-            app_interface
-                .as_mut()
-                .unwrap()
-                .resumed(event_loop, self, masonry_state);
-            std::mem::swap(&mut self.app_interface, &mut app_interface);
+        let app_interface = self.app_interface.take();
+        if let Some(app_interface) = app_interface {
+            app_interface.resumed(event_loop, self, masonry_state);
+            self.app_interface = Some(app_interface);
         }
     }
 
@@ -93,14 +90,10 @@ where
         event_loop: &winit::event_loop::ActiveEventLoop,
         masonry_state: &mut masonry::event_loop_runner::MasonryState<'_>,
     ) {
-        if self.app_interface.is_some() {
-            let mut app_interface = None;
-            std::mem::swap(&mut self.app_interface, &mut app_interface);
-            app_interface
-                .as_mut()
-                .unwrap()
-                .suspended(event_loop, self, masonry_state);
-            std::mem::swap(&mut self.app_interface, &mut app_interface);
+        let app_interface = self.app_interface.take();
+        if let Some(app_interface) = app_interface {
+            app_interface.suspended(event_loop, self, masonry_state);
+            self.app_interface = Some(app_interface);
         }
     }
 
@@ -111,17 +104,10 @@ where
         event: &winit::event::WindowEvent,
         masonry_state: &mut masonry::event_loop_runner::MasonryState<'_>,
     ) -> bool {
-        if self.app_interface.is_some() {
-            let mut app_interface = None;
-            std::mem::swap(&mut self.app_interface, &mut app_interface);
-            let ret = app_interface.as_mut().unwrap().window_event(
-                event_loop,
-                window_id,
-                event,
-                self,
-                masonry_state,
-            );
-            std::mem::swap(&mut self.app_interface, &mut app_interface);
+        let app_interface = self.app_interface.take();
+        if let Some(app_interface) = app_interface {
+            let ret = app_interface.window_event(event_loop, window_id, event, self, masonry_state);
+            self.app_interface = Some(app_interface);
             ret
         } else {
             false
@@ -135,17 +121,10 @@ where
         event: &winit::event::DeviceEvent,
         masonry_state: &mut masonry::event_loop_runner::MasonryState<'_>,
     ) -> bool {
-        if self.app_interface.is_some() {
-            let mut app_interface = None;
-            std::mem::swap(&mut self.app_interface, &mut app_interface);
-            let ret = app_interface.as_mut().unwrap().device_event(
-                event_loop,
-                device_id,
-                event,
-                self,
-                masonry_state,
-            );
-            std::mem::swap(&mut self.app_interface, &mut app_interface);
+        let app_interface = self.app_interface.take();
+        if let Some(app_interface) = app_interface {
+            let ret = app_interface.device_event(event_loop, device_id, event, self, masonry_state);
+            self.app_interface = Some(app_interface);
             ret
         } else {
             false
@@ -158,15 +137,10 @@ where
         event: &accesskit_winit::Event,
         masonry_state: &mut masonry::event_loop_runner::MasonryState<'_>,
     ) -> bool {
-        if self.app_interface.is_some() {
-            let mut app_interface = None;
-            std::mem::swap(&mut self.app_interface, &mut app_interface);
-            let ret =
-                app_interface
-                    .as_mut()
-                    .unwrap()
-                    .user_event(event_loop, event, self, masonry_state);
-            std::mem::swap(&mut self.app_interface, &mut app_interface);
+        let app_interface = self.app_interface.take();
+        if let Some(app_interface) = app_interface {
+            let ret = app_interface.user_event(event_loop, event, self, masonry_state);
+            self.app_interface = Some(app_interface);
             ret
         } else {
             false
@@ -179,14 +153,10 @@ where
         cause: winit::event::StartCause,
         masonry_state: &mut masonry::event_loop_runner::MasonryState<'_>,
     ) {
-        if self.app_interface.is_some() {
-            let mut app_interface = None;
-            std::mem::swap(&mut self.app_interface, &mut app_interface);
-            app_interface
-                .as_mut()
-                .unwrap()
-                .new_events(event_loop, cause, self, masonry_state);
-            std::mem::swap(&mut self.app_interface, &mut app_interface);
+        let app_interface = self.app_interface.take();
+        if let Some(app_interface) = app_interface {
+            app_interface.new_events(event_loop, cause, self, masonry_state);
+            self.app_interface = Some(app_interface);
         }
     }
 
@@ -195,14 +165,9 @@ where
         event_loop: &winit::event_loop::ActiveEventLoop,
         masonry_state: &mut masonry::event_loop_runner::MasonryState<'_>,
     ) {
-        if self.app_interface.is_some() {
-            let mut app_interface = None;
-            std::mem::swap(&mut self.app_interface, &mut app_interface);
-            app_interface
-                .as_mut()
-                .unwrap()
-                .exiting(event_loop, self, masonry_state);
-            std::mem::swap(&mut self.app_interface, &mut app_interface);
+        let app_interface = self.app_interface.take();
+        if let Some(app_interface) = app_interface {
+            app_interface.exiting(event_loop, self, masonry_state);
         }
     }
 
@@ -211,14 +176,10 @@ where
         event_loop: &winit::event_loop::ActiveEventLoop,
         masonry_state: &mut masonry::event_loop_runner::MasonryState<'_>,
     ) {
-        if self.app_interface.is_some() {
-            let mut app_interface = None;
-            std::mem::swap(&mut self.app_interface, &mut app_interface);
-            app_interface
-                .as_mut()
-                .unwrap()
-                .memory_warning(event_loop, self, masonry_state);
-            std::mem::swap(&mut self.app_interface, &mut app_interface);
+        let app_interface = self.app_interface.take();
+        if let Some(app_interface) = app_interface {
+            app_interface.memory_warning(event_loop, self, masonry_state);
+            self.app_interface = Some(app_interface);
         }
     }
 
@@ -227,14 +188,10 @@ where
         event_loop: &winit::event_loop::ActiveEventLoop,
         masonry_state: &mut masonry::event_loop_runner::MasonryState<'_>,
     ) {
-        if self.app_interface.is_some() {
-            let mut app_interface = None;
-            std::mem::swap(&mut self.app_interface, &mut app_interface);
-            app_interface
-                .as_mut()
-                .unwrap()
-                .about_to_wait(event_loop, self, masonry_state);
-            std::mem::swap(&mut self.app_interface, &mut app_interface);
+        let app_interface = self.app_interface.take();
+        if let Some(app_interface) = app_interface {
+            app_interface.about_to_wait(event_loop, self, masonry_state);
+            self.app_interface = Some(app_interface);
         }
     }
 }
