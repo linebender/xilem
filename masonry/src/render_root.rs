@@ -5,7 +5,7 @@ use std::collections::VecDeque;
 
 use accesskit::{ActionRequest, NodeBuilder, Tree, TreeUpdate};
 use kurbo::Affine;
-use parley::FontContext;
+use parley::{FontContext, LayoutContext};
 use tracing::{debug, info_span, warn};
 use vello::peniko::{Color, Fill};
 use vello::Scene;
@@ -21,6 +21,7 @@ use crate::debug_logger::DebugLogger;
 use crate::dpi::{LogicalPosition, LogicalSize, PhysicalSize};
 use crate::event::{PointerEvent, TextEvent, WindowEvent};
 use crate::kurbo::Point;
+use crate::text2::TextBrush;
 use crate::widget::{WidgetMut, WidgetState};
 use crate::{
     AccessCtx, AccessEvent, Action, BoxConstraints, CursorIcon, Handled, InternalLifeCycle,
@@ -51,6 +52,7 @@ pub(crate) struct RenderRootState {
     pub(crate) focused_widget: Option<WidgetId>,
     pub(crate) next_focused_widget: Option<WidgetId>,
     pub(crate) font_context: FontContext,
+    pub(crate) text_layout_context: LayoutContext<TextBrush>,
 }
 
 /// Defines how a windows size should be determined
@@ -99,6 +101,7 @@ impl RenderRoot {
                 focused_widget: None,
                 next_focused_widget: None,
                 font_context: FontContext::default(),
+                text_layout_context: LayoutContext::new(),
             },
             rebuild_access_tree: true,
         };

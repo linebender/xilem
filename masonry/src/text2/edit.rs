@@ -4,7 +4,7 @@
 use std::ops::{Deref, DerefMut, Range};
 
 use kurbo::Point;
-use parley::FontContext;
+use parley::{FontContext, LayoutContext};
 use vello::Scene;
 use winit::{
     event::Ime,
@@ -19,7 +19,7 @@ use crate::{
 use super::{
     offset_for_delete_backwards,
     selection::{Affinity, Selection},
-    Selectable, TextWithSelection,
+    Selectable, TextBrush, TextWithSelection,
 };
 
 /// Text which can be edited
@@ -73,18 +73,24 @@ impl<T: EditableText> TextEditor<T> {
         self.preedit_range = None;
     }
 
-    pub fn rebuild(&mut self, fcx: &mut FontContext) {
-        // TODO: Add the pre-edit range as an underlined region in the text attributes
-
-        self.inner.rebuild_with_attributes(fcx, |mut builder| {
-            if let Some(range) = self.preedit_range.as_ref() {
-                builder.push(
-                    &parley::style::StyleProperty::Underline(true),
-                    range.clone(),
-                );
-            }
-            builder
-        });
+    /// Rebuild the text.
+    ///
+    /// See also [TextLayout::rebuild](crate::text2::TextLayout::rebuild) for more comprehensive docs.
+    pub fn rebuild(
+        &mut self,
+        font_ctx: &mut FontContext,
+        layout_ctx: &mut LayoutContext<TextBrush>,
+    ) {
+        self.inner
+            .rebuild_with_attributes(font_ctx, layout_ctx, |mut builder| {
+                if let Some(range) = self.preedit_range.as_ref() {
+                    builder.push(
+                        &parley::style::StyleProperty::Underline(true),
+                        range.clone(),
+                    );
+                }
+                builder
+            });
     }
 
     pub fn draw(&mut self, scene: &mut Scene, point: impl Into<Point>) {
