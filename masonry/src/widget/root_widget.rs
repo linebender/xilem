@@ -82,4 +82,8 @@ impl<W: Widget> Widget for RootWidget<W> {
     fn make_trace_span(&self) -> Span {
         trace_span!("RootWidget")
     }
+
+    fn always_repaint(&self) -> bool {
+        self.pod.inner.always_repaint()
+    }
 }

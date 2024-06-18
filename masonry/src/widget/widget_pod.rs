@@ -960,7 +960,7 @@ impl<W: Widget> WidgetPod<W> {
         self.mark_as_visited();
         self.check_initialized("paint");
 
-        if self.state.needs_paint {
+        if self.state.needs_paint || self.inner.always_repaint() {
             self.state.needs_paint = false;
             self.call_widget_method_with_checks("paint", |widget_pod| {
                 // TODO - Handle invalidation regions

@@ -201,6 +201,9 @@ pub trait Widget: AsAny {
     fn as_mut_any(&mut self) -> &mut dyn Any {
         self.as_mut_dyn_any()
     }
+
+    /// Return true if this widget should always be repainted
+    fn always_repaint(&self) -> bool { false }
 }
 
 #[cfg(not(tarpaulin_include))]
@@ -306,5 +309,9 @@ impl Widget for Box<dyn Widget> {
 
     fn as_mut_any(&mut self) -> &mut dyn Any {
         self.deref_mut().as_mut_dyn_any()
+    }
+
+    fn always_repaint(&self) -> bool {
+        self.deref().always_repaint()
     }
 }
