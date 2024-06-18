@@ -7,7 +7,7 @@ use vello::Scene;
 
 use crate::dpi::LogicalPosition;
 use crate::event::{AccessEvent, PointerEvent, TextEvent};
-use crate::kurbo::{Affine, Insets, Point, Rect, Shape, Size};
+use crate::kurbo::{Affine, Point, Rect, Shape, Size};
 use crate::paint_scene_helpers::stroke;
 use crate::render_root::RenderRootState;
 use crate::theme::get_debug_color;
@@ -99,21 +99,6 @@ impl<W: Widget> WidgetPod<W> {
     /// [`paint_insets`]: Self::paint_insets
     pub fn paint_rect(&self) -> Rect {
         self.state.paint_rect()
-    }
-
-    /// Given a parents layout size, determine the appropriate paint `Insets`
-    /// for the parent.
-    ///
-    /// This is a convenience method to be used from the [`layout`] method
-    /// of a `Widget` that manages a child; it allows the parent to correctly
-    /// propagate a child's desired paint rect, if it extends beyond the bounds
-    /// of the parent's layout rect.
-    ///
-    /// [`layout`]: Widget::layout
-    pub fn compute_parent_paint_insets(&self, parent_size: Size) -> Insets {
-        let parent_bounds = Rect::ZERO.with_size(parent_size);
-        let union_pant_rect = self.paint_rect().union(parent_bounds);
-        union_pant_rect - parent_bounds
     }
 
     /// The distance from the bottom of this widget to the baseline.

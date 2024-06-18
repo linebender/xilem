@@ -621,6 +621,43 @@ impl LayoutCtx<'_> {
         self.widget_state.paint_insets = insets.nonnegative();
     }
 
+    /// Given a child and its parent's size, determine the
+    /// appropriate paint `Insets` for the parent.
+    ///
+    /// This is a convenience method; it allows the parent to correctly
+    /// propagate a child's desired paint rect, if it extends beyond the bounds
+    /// of the parent's layout rect.
+    ///
+    /// ## Panics
+    ///
+    /// This method will panic if the child's [`layout()`](WidgetPod::layout) method has not been called yet
+    /// and if [`LayoutCtx::place_child()`] has not been called for the child.
+    pub fn compute_insets_from_child(
+        &mut self,
+        child: &WidgetPod<impl Widget>,
+        my_size: Size,
+    ) -> Insets {
+        if child.state.needs_layout {
+            debug_panic!(
+                "Error in #{}: trying to compute insets from child '{}' #{} before updating its layout",
+                self.widget_id().to_raw(),
+                child.inner.short_type_name(),
+                child.id().to_raw(),
+            );
+        }
+        if child.state.is_expecting_place_child_call {
+            debug_panic!(
+                "Error in #{}: trying to compute insets from child '{}' #{} before placing it",
+                self.widget_id().to_raw(),
+                child.inner.short_type_name(),
+                child.id().to_raw(),
+            );
+        }
+        let parent_bounds = Rect::ZERO.with_size(my_size);
+        let union_paint_rect = child.paint_rect().union(parent_bounds);
+        union_paint_rect - parent_bounds
+    }
+
     /// Set an explicit baseline position for this widget.
     ///
     /// The baseline position is used to align widgets that contain text,
