@@ -100,11 +100,6 @@ impl<W: Widget> WidgetPod<W> {
     pub fn paint_rect(&self) -> Rect {
         self.state.paint_rect()
     }
-
-    /// The distance from the bottom of this widget to the baseline.
-    pub fn baseline_offset(&self) -> f64 {
-        self.state.baseline_offset
-    }
 }
 
 impl<W: Widget + 'static> WidgetPod<W> {

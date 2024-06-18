@@ -130,13 +130,13 @@ impl Widget for Button {
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
-        let baseline = self.label.baseline_offset();
-        ctx.set_baseline_offset(baseline + LABEL_INSETS.y1);
-
         let padding = Size::new(LABEL_INSETS.x_value(), LABEL_INSETS.y_value());
         let label_bc = bc.shrink(padding).loosen();
 
         let label_size = self.label.layout(ctx, &label_bc);
+
+        let baseline = ctx.child_baseline_offset(&self.label);
+        ctx.set_baseline_offset(baseline + LABEL_INSETS.y1);
 
         // HACK: to make sure we look okay at default sizes when beside a textbox,
         // we make sure we will have at least the same height as the default textbox.

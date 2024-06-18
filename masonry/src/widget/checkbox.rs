@@ -127,7 +127,8 @@ impl Widget for Checkbox {
             check_size.max(label_size.height),
         );
         let our_size = bc.constrain(desired_size);
-        let baseline = self.label.baseline_offset() + (our_size.height - label_size.height);
+        let baseline =
+            ctx.child_baseline_offset(&self.label) + (our_size.height - label_size.height);
         ctx.set_baseline_offset(baseline);
         trace!("Computed layout: size={}, baseline={}", our_size, baseline);
         our_size

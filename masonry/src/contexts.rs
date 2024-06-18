@@ -672,6 +672,19 @@ impl LayoutCtx<'_> {
         self.widget_state.baseline_offset = baseline;
     }
 
+    /// The distance from the bottom of the given widget to the baseline.
+    pub fn child_baseline_offset(&self, child: &WidgetPod<impl Widget>) -> f64 {
+        if child.state.needs_layout {
+            debug_panic!(
+                "Error in #{}: trying to get baseline offset from child '{}' #{} before updating its layout",
+                self.widget_id().to_raw(),
+                child.inner.short_type_name(),
+                child.id().to_raw(),
+            );
+        }
+        child.state.baseline_offset
+    }
+
     /// Set the position of a child widget, in the paren't coordinate space. This
     /// will also implicitly change "hot" status and affect the parent's display rect.
     ///

@@ -523,7 +523,7 @@ impl Widget for Flex {
 
                     let child_bc = self.direction.constraints(&loosened_bc, 0.0, f64::INFINITY);
                     let child_size = widget.layout(ctx, &child_bc);
-                    let baseline_offset = widget.baseline_offset();
+                    let baseline_offset = ctx.child_baseline_offset(widget);
 
                     if child_size.width.is_infinite() {
                         tracing::warn!("A non-Flex child has an infinite width.");
@@ -567,7 +567,7 @@ impl Widget for Flex {
 
                     let child_bc = self.direction.constraints(&loosened_bc, 0.0, actual_major);
                     let child_size = widget.layout(ctx, &child_bc);
-                    let baseline_offset = widget.baseline_offset();
+                    let baseline_offset = ctx.child_baseline_offset(widget);
 
                     major_flex += self.direction.major(child_size).expand();
                     minor = minor.max(self.direction.minor(child_size).expand());
@@ -621,7 +621,7 @@ impl Widget for Flex {
                         CrossAxisAlignment::Baseline
                             if matches!(self.direction, Axis::Horizontal) =>
                         {
-                            let child_baseline = widget.baseline_offset();
+                            let child_baseline = ctx.child_baseline_offset(widget);
                             let child_above_baseline = child_size.height - child_baseline;
                             extra_height + (max_above_baseline - child_above_baseline)
                         }
@@ -679,7 +679,7 @@ impl Widget for Flex {
                 .map(|last| {
                     let child = last.widget();
                     if let Some(widget) = child {
-                        let child_bl = widget.baseline_offset();
+                        let child_bl = ctx.child_baseline_offset(widget);
                         let child_max_y = widget.layout_rect().max_y();
                         let extra_bottom_padding = my_size.height - child_max_y;
                         child_bl + extra_bottom_padding
