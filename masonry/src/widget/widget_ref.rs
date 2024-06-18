@@ -81,6 +81,7 @@ impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
         }
     }
 
+    // TODO - Replace with individual methods from WidgetState
     /// Get the [`WidgetState`] of the current widget.
     pub fn state(self) -> &'w WidgetState {
         self.widget_state

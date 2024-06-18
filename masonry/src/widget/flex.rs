@@ -613,7 +613,7 @@ impl Widget for Flex {
                 | Child::Flex {
                     widget, alignment, ..
                 } => {
-                    let child_size = widget.layout_rect().size();
+                    let child_size = ctx.child_size(widget);
                     let alignment = alignment.unwrap_or(self.cross_alignment);
                     let child_minor_offset = match alignment {
                         // This will ignore baseline alignment if it is overridden on children,
@@ -680,7 +680,7 @@ impl Widget for Flex {
                     let child = last.widget();
                     if let Some(widget) = child {
                         let child_bl = ctx.child_baseline_offset(widget);
-                        let child_max_y = widget.layout_rect().max_y();
+                        let child_max_y = ctx.child_layout_rect(widget).max_y();
                         let extra_bottom_padding = my_size.height - child_max_y;
                         child_bl + extra_bottom_padding
                     } else {

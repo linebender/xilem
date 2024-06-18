@@ -153,6 +153,10 @@ impl_context_method!(
             self.widget_state.size()
         }
 
+        pub fn layout_rect(&self) -> Rect {
+            self.widget_state.layout_rect()
+        }
+
         /// The origin of the widget in window coordinates, relative to the top left corner of the
         /// content area.
         pub fn window_origin(&self) -> Point {
@@ -317,6 +321,7 @@ impl<'a> WidgetCtx<'a> {
     }
 }
 
+// TODO - Remove
 impl<'a> EventCtx<'a> {
     /// Return a [`WidgetMut`] to a child widget.
     // FIXME - Assert that child's parent is self
@@ -336,6 +341,7 @@ impl<'a> EventCtx<'a> {
     }
 }
 
+// TODO - Remove
 impl<'a> LifeCycleCtx<'a> {
     /// Return a [`WidgetMut`] to a child widget.
     // FIXME - Assert that child's parent is self
@@ -605,6 +611,30 @@ impl LifeCycleCtx<'_> {
 }
 
 impl LayoutCtx<'_> {
+    fn assert_layout_done(&self, child: &WidgetPod<impl Widget>, method_name: &str) {
+        if child.state.needs_layout {
+            debug_panic!(
+                "Error in #{}: trying to call '{}' with child '{}' #{} before computing its layout",
+                self.widget_id().to_raw(),
+                method_name,
+                child.inner.short_type_name(),
+                child.id().to_raw(),
+            );
+        }
+    }
+
+    fn assert_placed(&self, child: &WidgetPod<impl Widget>, method_name: &str) {
+        if child.state.is_expecting_place_child_call {
+            debug_panic!(
+                "Error in #{}: trying to call '{}' with child '{}' #{} before placing it",
+                self.widget_id().to_raw(),
+                method_name,
+                child.inner.short_type_name(),
+                child.id().to_raw(),
+            );
+        }
+    }
+
     /// Set explicit paint [`Insets`] for this widget.
     ///
     /// You are not required to set explicit paint bounds unless you need
@@ -621,6 +651,7 @@ impl LayoutCtx<'_> {
         self.widget_state.paint_insets = insets.nonnegative();
     }
 
+    // TODO - This is currently redundant with the code in LayoutCtx::place_child
     /// Given a child and its parent's size, determine the
     /// appropriate paint `Insets` for the parent.
     ///
@@ -637,24 +668,10 @@ impl LayoutCtx<'_> {
         child: &WidgetPod<impl Widget>,
         my_size: Size,
     ) -> Insets {
-        if child.state.needs_layout {
-            debug_panic!(
-                "Error in #{}: trying to compute insets from child '{}' #{} before updating its layout",
-                self.widget_id().to_raw(),
-                child.inner.short_type_name(),
-                child.id().to_raw(),
-            );
-        }
-        if child.state.is_expecting_place_child_call {
-            debug_panic!(
-                "Error in #{}: trying to compute insets from child '{}' #{} before placing it",
-                self.widget_id().to_raw(),
-                child.inner.short_type_name(),
-                child.id().to_raw(),
-            );
-        }
+        self.assert_layout_done(child, "compute_insets_from_child");
+        self.assert_placed(child, "compute_insets_from_child");
         let parent_bounds = Rect::ZERO.with_size(my_size);
-        let union_paint_rect = child.paint_rect().union(parent_bounds);
+        let union_paint_rect = child.state.paint_rect().union(parent_bounds);
         union_paint_rect - parent_bounds
     }
 
@@ -674,15 +691,25 @@ impl LayoutCtx<'_> {
 
     /// The distance from the bottom of the given widget to the baseline.
     pub fn child_baseline_offset(&self, child: &WidgetPod<impl Widget>) -> f64 {
-        if child.state.needs_layout {
-            debug_panic!(
-                "Error in #{}: trying to get baseline offset from child '{}' #{} before updating its layout",
-                self.widget_id().to_raw(),
-                child.inner.short_type_name(),
-                child.id().to_raw(),
-            );
-        }
+        self.assert_layout_done(child, "child_baseline_offset");
         child.state.baseline_offset
+    }
+
+    pub fn child_layout_rect(&self, child: &WidgetPod<impl Widget>) -> Rect {
+        self.assert_layout_done(child, "child_layout_rect");
+        self.assert_placed(child, "child_layout_rect");
+        child.state.layout_rect()
+    }
+
+    pub fn child_paint_rect(&self, child: &WidgetPod<impl Widget>) -> Rect {
+        self.assert_layout_done(child, "child_paint_rect");
+        self.assert_placed(child, "child_paint_rect");
+        child.state.paint_rect()
+    }
+
+    pub fn child_size(&self, child: &WidgetPod<impl Widget>) -> Size {
+        self.assert_layout_done(child, "child_size");
+        child.state.layout_rect().size()
     }
 
     /// Set the position of a child widget, in the paren't coordinate space. This
@@ -697,8 +724,10 @@ impl LayoutCtx<'_> {
         }
         child.state.is_expecting_place_child_call = false;
 
-        self.widget_state.local_paint_rect =
-            self.widget_state.local_paint_rect.union(child.paint_rect());
+        self.widget_state.local_paint_rect = self
+            .widget_state
+            .local_paint_rect
+            .union(child.state.paint_rect());
 
         let mouse_pos = self.mouse_pos.map(|pos| LogicalPosition::new(pos.x, pos.y));
         // if the widget has moved, it may have moved under the mouse, in which

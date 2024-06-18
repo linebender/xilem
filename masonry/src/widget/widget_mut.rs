@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::contexts::WidgetCtx;
-use crate::Widget;
+use crate::{Widget, WidgetState};
 
 // TODO - Document extension trait workaround.
 // See https://xi.zulipchat.com/#narrow/stream/317477-masonry/topic/Thoughts.20on.20simplifying.20WidgetMut/near/436478885
@@ -31,6 +31,14 @@ pub struct WidgetMut<'a, W: Widget> {
 impl<W: Widget> Drop for WidgetMut<'_, W> {
     fn drop(&mut self) {
         self.ctx.parent_widget_state.merge_up(self.ctx.widget_state);
+    }
+}
+
+impl<'w, W: Widget> WidgetMut<'w, W> {
+    // TODO - Replace with individual methods from WidgetState
+    /// Get the [`WidgetState`] of the current widget.
+    pub fn state(&self) -> &WidgetState {
+        self.ctx.widget_state
     }
 }
 

@@ -196,19 +196,24 @@ impl<W: Widget> WidgetMut<'_, Portal<W>> {
     }
 
     pub fn set_viewport_pos(&mut self, position: Point) -> bool {
-        let portal_size = self.ctx.widget_state.layout_rect().size();
-        let content_size = self.widget.child.layout_rect().size();
+        let portal_size = self.state().layout_rect().size();
+        let content_size = self
+            .ctx
+            .get_mut(&mut self.widget.child)
+            .state()
+            .layout_rect()
+            .size();
 
         let pos_changed = self
             .widget
             .set_viewport_pos_raw(portal_size, content_size, position);
         if pos_changed {
             let progress_x = self.widget.viewport_pos.x / (content_size - portal_size).width;
-            self.horizontal_scrollbar_mut()
-                .set_cursor_progress(progress_x);
+            self.horizontal_scrollbar_mut().widget.cursor_progress = progress_x;
+            self.horizontal_scrollbar_mut().ctx.request_paint();
             let progress_y = self.widget.viewport_pos.y / (content_size - portal_size).height;
-            self.vertical_scrollbar_mut()
-                .set_cursor_progress(progress_y);
+            self.vertical_scrollbar_mut().widget.cursor_progress = progress_y;
+            self.vertical_scrollbar_mut().ctx.request_paint();
             self.ctx.request_layout();
         }
         pos_changed
@@ -241,7 +246,7 @@ impl<W: Widget> WidgetMut<'_, Portal<W>> {
 impl<W: Widget> Widget for Portal<W> {
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
         let portal_size = ctx.size();
-        let content_size = self.child.layout_rect().size();
+        let content_size = ctx.get_raw_ref(&mut self.child).ctx().layout_rect().size();
 
         match event {
             PointerEvent::MouseWheel(delta, _) => {
@@ -250,10 +255,13 @@ impl<W: Widget> Widget for Portal<W> {
                     content_size,
                     self.viewport_pos + Vec2::new(delta.x, delta.y),
                 );
-                // TODO - horizontal scrolling?
-                ctx.get_mut(&mut self.scrollbar_vertical)
-                    .set_cursor_progress(self.viewport_pos.y / (content_size - portal_size).height);
                 ctx.request_layout();
+
+                // TODO - horizontal scrolling?
+                let mut scrollbar = ctx.get_raw_mut(&mut self.scrollbar_vertical);
+                scrollbar.widget().cursor_progress =
+                    self.viewport_pos.y / (content_size - portal_size).height;
+                scrollbar.ctx.request_paint();
             }
             _ => (),
         }

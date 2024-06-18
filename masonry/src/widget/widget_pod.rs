@@ -72,34 +72,6 @@ impl<W: Widget> WidgetPod<W> {
     pub fn id(&self) -> WidgetId {
         self.state.id
     }
-
-    /// Return the layout rectangle.
-    ///
-    /// This will be a [`Rect`] with a [`Size`] determined by the child's [`layout`]
-    /// method, and the origin that was set by [`place_child`].
-    ///
-    /// Two sibling widgets' layout rects will almost never intersect.
-    ///
-    /// This rect will also be used to detect whether any given pointer event (eg clicks)
-    /// intersects with the rectangle.
-    ///
-    /// [`layout`]: Widget::layout
-    /// [`place_child`]: LayoutCtx::place_child
-    pub fn layout_rect(&self) -> Rect {
-        self.state.layout_rect()
-    }
-
-    /// Get the widget's paint rectangle.
-    ///
-    /// This is the [`Rect`] that widget has indicated it needs to paint in.
-    /// This is the same as the [`layout_rect`] with the [`paint_insets`] applied;
-    /// in the general case it is the same as the [`layout_rect`].
-    ///
-    /// [`layout_rect`]: Self::layout_rect
-    /// [`paint_insets`]: Self::paint_insets
-    pub fn paint_rect(&self) -> Rect {
-        self.state.paint_rect()
-    }
 }
 
 impl<W: Widget + 'static> WidgetPod<W> {
