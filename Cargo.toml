@@ -30,7 +30,7 @@ rust.unexpected_cfgs = { level = "warn", check-cfg = [
     'cfg(FALSE)',
     'cfg(tarpaulin_include)',
 ] }
-# We cannot need unsafe code
+# unsafe code is not allowed in Xilem or Masonry
 rust.unsafe_code = "forbid"
 
 [workspace.dependencies]
