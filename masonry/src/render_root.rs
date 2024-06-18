@@ -144,7 +144,7 @@ impl RenderRoot {
                 let last = self.last_anim.take();
                 let elapsed_ns = last.map(|t| now.duration_since(t).as_nanos()).unwrap_or(0) as u64;
 
-                if self.wants_animation_frame() {
+                if self.root.state().request_anim {
                     self.root_lifecycle(LifeCycle::AnimFrame(elapsed_ns));
                     self.last_anim = Some(now);
                 }
@@ -567,14 +567,16 @@ impl RenderRoot {
 
         self.update_focus();
 
-        // If we need a new paint pass, make sure winit knows it.
-        if self.wants_animation_frame() {
+        if self.root.state().request_anim {
             self.state
                 .signal_queue
                 .push_back(RenderRootSignal::RequestAnimFrame);
         }
 
-        if self.root.state().needs_paint {
+        // We request a redraw if either the render tree or the accessibility
+        // tree needs to be rebuilt. Usually both happen at the same time.
+        // A redraw will trigger a rebuild of the accessibility tree.
+        if self.root.state().needs_paint || self.root.state().needs_accessibility_update {
             self.state
                 .signal_queue
                 .push_back(RenderRootSignal::RequestRedraw);
@@ -586,11 +588,6 @@ impl RenderRoot {
             tracing::debug!("{:?} added", token);
             self.ime_handlers.push((token, ime_field));
         }
-    }
-
-    /// `true` iff any child requested an animation frame since the last `AnimFrame` event.
-    fn wants_animation_frame(&self) -> bool {
-        self.root.state().request_anim
     }
 
     fn update_focus(&mut self) {
