@@ -3,30 +3,20 @@
 
 //! Xilem supports several patterns for creating modular components.
 //! You can also emulate the elm architecture for a subset of your app.
-//! Though usually it's more idiomatic to update state directly within event callbacks, as seen in the `direct_counter` view.
+//! Though usually it's more idiomatic to modularize state with `map_state` and update state directly within event callbacks, as seen in the `components` example.
 
 use masonry::widget::{CrossAxisAlignment, MainAxisAlignment};
 use winit::error::EventLoopError;
 use xilem::{
+    core::{adapt, map_action, MessageResult},
     view::{button, flex, label},
     EventLoop, WidgetView, Xilem,
 };
-use xilem_core::{adapt, map_action, map_state, MessageResult};
 
 #[derive(Default)]
 struct AppState {
     adapt_count: i32,
-    map_state_count: i32,
     map_action_count: i32,
-}
-
-// `map_state()` maps a subset of the state from the parent, such that views can be modularized by state
-fn direct_counter(count: &mut i32) -> impl WidgetView<i32> {
-    flex((
-        label(format!("direct count: {count}")),
-        button("+", |count| *count += 1),
-        button("-", |count| *count -= 1),
-    ))
 }
 
 enum CountMessage {
@@ -51,7 +41,7 @@ enum AdaptMessage {
 }
 
 // `adapt()` is the most flexible but also most verbose way to modularize the views by state and action,
-// This is basically a combination of the two ways above, but it also allows to change the `MessageResult` for the parent view
+// This is basically a combination of `map_state` and `map_action`, but it also allows to change the `MessageResult` for the parent view
 fn adapt_counter(count: i32) -> impl WidgetView<i32, AdaptMessage> {
     flex((
         flex((
@@ -77,10 +67,6 @@ fn adapt_counter(count: i32) -> impl WidgetView<i32, AdaptMessage> {
 
 fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> {
     flex((
-        map_state(
-            direct_counter(&mut state.map_state_count),
-            |state: &mut AppState| &mut state.map_state_count,
-        ),
         map_action(
             elm_counter(state.map_action_count),
             |state: &mut AppState, message| match message {
@@ -93,7 +79,6 @@ fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> {
             |state: &mut AppState, thunk| match thunk.call(&mut state.adapt_count) {
                 MessageResult::Action(AdaptMessage::Reset) => {
                     state.adapt_count = 0;
-                    state.map_state_count = 0;
                     state.map_action_count = 0;
                     MessageResult::Action(())
                 }
@@ -109,6 +94,6 @@ fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> {
 
 fn main() -> Result<(), EventLoopError> {
     let app = Xilem::new(AppState::default(), app_logic);
-    app.run_windowed(EventLoop::with_user_event(), "Centered Flex".into())?;
+    app.run_windowed(EventLoop::with_user_event(), "Elm".into())?;
     Ok(())
 }
