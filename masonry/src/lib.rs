@@ -76,7 +76,7 @@
 //! [winit]: https://crates.io/crates/winit
 //! [Druid]: https://crates.io/crates/druid
 
-#![deny(unsafe_code, clippy::trivially_copy_pass_by_ref)]
+#![deny(clippy::trivially_copy_pass_by_ref)]
 // #![deny(rustdoc::broken_intra_doc_links)]
 // #![warn(missing_docs)]
 #![warn(unused_imports)]
