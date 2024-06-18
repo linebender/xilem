@@ -273,7 +273,8 @@ impl Widget for Textbox {
         };
         self.editor.set_max_advance(max_advance);
         if self.editor.needs_rebuild() {
-            self.editor.rebuild(ctx.font_ctx());
+            let (font_ctx, layout_ctx) = ctx.text_contexts();
+            self.editor.rebuild(font_ctx, layout_ctx);
         }
         let text_size = self.editor.size();
         let width = if bc.max().width.is_finite() {
