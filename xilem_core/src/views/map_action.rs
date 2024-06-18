@@ -43,15 +43,11 @@ pub struct MapAction<
 ///     ))
 /// }
 ///
-/// fn main() -> Result<(), EventLoopError> {
-///     Xilem::new(0, |count| {
-///         map_action(count_view(*count), |count, message| match message {
-///             CountMessage::Increment => *count += 1,
-///             CountMessage::Decrement => *count -= 1,
-///         })
+/// fn app_logic(count: &mut i32) -> impl WidgetView<i32> {
+///     map_action(count_view(*count), |count, message| match message {
+///         CountMessage::Increment => *count += 1,
+///         CountMessage::Decrement => *count -= 1,
 ///     })
-///     .run_windowed(EventLoop::with_user_event(), "Map action example".into())?;
-///     Ok(())
 /// }
 /// ```
 pub fn map_action<State, ParentAction, ChildAction, Context: ViewPathTracker, V, F>(

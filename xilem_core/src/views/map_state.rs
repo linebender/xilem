@@ -35,12 +35,8 @@ pub struct MapState<ParentState, ChildState, V, F = fn(&mut ParentState) -> &mut
 ///     ))
 /// }
 ///
-/// fn main() -> Result<(), EventLoopError> {
-///     Xilem::new(AppState::default(), |state| {
-///         map_state(count_view(state.count), |state: &mut AppState|  &mut state.count)
-///     })
-///     .run_windowed(EventLoop::with_user_event(), "Map action example".into())?;
-///     Ok(())
+/// fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> {
+///     map_state(count_view(state.count), |state: &mut AppState|  &mut state.count)
 /// }
 /// ```
 pub fn map_state<ParentState, ChildState, Action, Context: ViewPathTracker, V, F>(
