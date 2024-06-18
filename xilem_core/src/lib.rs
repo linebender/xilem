@@ -29,17 +29,19 @@
 
 extern crate alloc;
 
+mod deferred;
+
 mod view;
 pub use view::{View, ViewId, ViewPathTracker};
 
 mod views;
-pub use views::{memoize, Memoize};
+pub use views::{fork, memoize, Fork, Memoize};
 
 mod message;
 pub use message::{DynMessage, Message, MessageResult};
 
 mod element;
-pub use element::{AnyElement, Mut, SuperElement, ViewElement};
+pub use element::{AnyElement, Mut, NoElement, SuperElement, ViewElement};
 
 mod any_view;
 pub use any_view::AnyView;

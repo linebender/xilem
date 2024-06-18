@@ -9,6 +9,7 @@ use core::sync::atomic::Ordering;
 use alloc::vec::Drain;
 use alloc::vec::Vec;
 
+use crate::element::NoElement;
 use crate::{DynMessage, MessageResult, SuperElement, View, ViewElement, ViewId, ViewPathTracker};
 
 /// An append only `Vec`.
@@ -518,6 +519,57 @@ where
         // Panics if index is out of bounds, but we know it isn't because this is the same generation
         let inner_state = &mut seq_state.inner_states[index];
         self[index].seq_message(inner_state, rest, message, app_state)
+    }
+}
+
+/// A `View` with [no element](crate::NoElement) can be added to any ViewSequence, because it does not use any
+/// properties of the Element type.
+impl<State, Action, Context, Element, NoElementView>
+    ViewSequence<State, Action, Context, Element, NoElement> for NoElementView
+where
+    NoElementView: View<State, Action, Context, Element = NoElement>,
+    Element: ViewElement,
+    Context: ViewPathTracker,
+{
+    #[doc(hidden)]
+    type SeqState = NoElementView::ViewState;
+
+    #[doc(hidden)]
+    fn seq_build(&self, ctx: &mut Context, _: &mut AppendVec<Element>) -> Self::SeqState {
+        let (NoElement, state) = self.build(ctx);
+        state
+    }
+
+    #[doc(hidden)]
+    fn seq_rebuild(
+        &self,
+        prev: &Self,
+        seq_state: &mut Self::SeqState,
+        ctx: &mut Context,
+        _: &mut impl ElementSplice<Element>,
+    ) {
+        self.rebuild(prev, seq_state, ctx, ());
+    }
+
+    #[doc(hidden)]
+    fn seq_teardown(
+        &self,
+        seq_state: &mut Self::SeqState,
+        ctx: &mut Context,
+        _: &mut impl ElementSplice<Element>,
+    ) {
+        self.teardown(seq_state, ctx, ());
+    }
+
+    #[doc(hidden)]
+    fn seq_message(
+        &self,
+        seq_state: &mut Self::SeqState,
+        id_path: &[ViewId],
+        message: DynMessage,
+        app_state: &mut State,
+    ) -> MessageResult<Action> {
+        self.message(seq_state, id_path, message, app_state)
     }
 }
 

@@ -3,3 +3,6 @@
 
 mod memoize;
 pub use memoize::{memoize, Memoize};
+
+mod fork;
+pub use fork::{fork, Fork};
