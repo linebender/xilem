@@ -7,13 +7,14 @@ use std::any::Any;
 use std::time::Duration;
 
 use accesskit::{NodeBuilder, TreeUpdate};
-use parley::FontContext;
+use parley::{FontContext, LayoutContext};
 use tracing::{trace, warn};
 
 use crate::action::Action;
 use crate::dpi::LogicalPosition;
 use crate::promise::PromiseToken;
 use crate::render_root::{RenderRootSignal, RenderRootState};
+use crate::text2::TextBrush;
 use crate::text_helpers::{ImeChangeSignal, TextFieldRegistration};
 use crate::widget::{CursorChange, WidgetMut, WidgetState};
 use crate::{CursorIcon, Insets, Point, Rect, Size, Widget, WidgetId, WidgetPod};
@@ -662,8 +663,12 @@ impl LayoutCtx<'_> {
 }
 
 impl_context_method!(LayoutCtx<'_>, PaintCtx<'_>, {
-    pub fn font_ctx(&mut self) -> &mut FontContext {
-        &mut self.global_state.font_context
+    /// Get the contexts needed to build and paint text sections.
+    pub fn text_contexts(&mut self) -> (&mut FontContext, &mut LayoutContext<TextBrush>) {
+        (
+            &mut self.global_state.font_context,
+            &mut self.global_state.text_layout_context,
+        )
     }
 });
 

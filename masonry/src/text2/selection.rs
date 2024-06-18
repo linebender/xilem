@@ -8,7 +8,7 @@ use std::ops::{Deref, DerefMut, Range};
 
 use kurbo::{Affine, Line, Point, Stroke};
 use parley::context::RangedBuilder;
-use parley::FontContext;
+use parley::{FontContext, LayoutContext};
 use unicode_segmentation::{GraphemeCursor, UnicodeSegmentation};
 use vello::peniko::{Brush, Color};
 use vello::Scene;
@@ -209,10 +209,25 @@ impl<T: Selectable> TextWithSelection<T> {
         self.needs_selection_update = true;
     }
 
+    /// Rebuild the text layout.
+    ///
+    /// See also [TextLayout::rebuild] for more comprehensive docs.
+    pub fn rebuild(
+        &mut self,
+        font_ctx: &mut FontContext,
+        layout_ctx: &mut LayoutContext<TextBrush>,
+    ) {
+        self.rebuild_with_attributes(font_ctx, layout_ctx, |builder| builder);
+    }
+
     // Intentionally aliases the method on `TextLayout`
+    /// Rebuild the text layout, adding attributes to the builder.
+    ///
+    /// See also [TextLayout::rebuild_with_attributes] for more comprehensive docs.
     pub fn rebuild_with_attributes(
         &mut self,
-        fcx: &mut FontContext,
+        font_ctx: &mut FontContext,
+        layout_ctx: &mut LayoutContext<TextBrush>,
         attributes: impl for<'b> FnOnce(
             RangedBuilder<'b, TextBrush, &'b str>,
         ) -> RangedBuilder<'b, TextBrush, &'b str>,
@@ -221,24 +236,21 @@ impl<T: Selectable> TextWithSelection<T> {
         // selected range was previously or currently non-zero size (i.e. there is a selected range)
         if self.needs_selection_update || self.layout.needs_rebuild() {
             self.layout.invalidate();
-            self.layout.rebuild_with_attributes(fcx, |mut builder| {
-                if let Some(selection) = self.selection {
-                    let range = selection.range();
-                    if !range.is_empty() {
-                        builder.push(
-                            &parley::style::StyleProperty::Brush(self.highlight_brush.clone()),
-                            range,
-                        );
+            self.layout
+                .rebuild_with_attributes(font_ctx, layout_ctx, |mut builder| {
+                    if let Some(selection) = self.selection {
+                        let range = selection.range();
+                        if !range.is_empty() {
+                            builder.push(
+                                &parley::style::StyleProperty::Brush(self.highlight_brush.clone()),
+                                range,
+                            );
+                        }
                     }
-                }
-                attributes(builder)
-            });
+                    attributes(builder)
+                });
             self.needs_selection_update = false;
         }
-    }
-
-    pub fn rebuild(&mut self, fcx: &mut FontContext) {
-        self.rebuild_with_attributes(fcx, |builder| builder);
     }
 
     pub fn draw(&mut self, scene: &mut Scene, point: impl Into<Point>) {
