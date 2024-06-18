@@ -12,7 +12,10 @@ use vello::{peniko::Color, AaSupport, RenderParams, Renderer, RendererOptions, S
 use wgpu::PresentMode;
 use winit::application::ApplicationHandler;
 use winit::error::EventLoopError;
-use winit::event::{MouseButton as WinitMouseButton, WindowEvent as WinitWindowEvent, DeviceId, DeviceEvent as WinitDeviceEvent};
+use winit::event::{
+    DeviceEvent as WinitDeviceEvent, DeviceId, MouseButton as WinitMouseButton,
+    WindowEvent as WinitWindowEvent,
+};
 use winit::event_loop::{ActiveEventLoop, EventLoopProxy};
 use winit::window::{Window, WindowAttributes, WindowId};
 
@@ -135,45 +138,78 @@ impl ApplicationHandler<accesskit_winit::Event> for MainState<'_> {
 
     fn suspended(&mut self, event_loop: &ActiveEventLoop) {
         // allow the app to do any tear down it needs to do
-        self.app_driver.suspended(event_loop, &mut self.masonry_state);
+        self.app_driver
+            .suspended(event_loop, &mut self.masonry_state);
 
         self.masonry_state.handle_suspended(event_loop);
     }
 
-    fn window_event(&mut self, event_loop: &ActiveEventLoop, window_id: WindowId, event: WinitWindowEvent) {
-        if !self.app_driver.window_event(event_loop, window_id, &event, &mut self.masonry_state) {
-            self.masonry_state.handle_window_event(event_loop, window_id, event, self.app_driver.as_mut());
+    fn window_event(
+        &mut self,
+        event_loop: &ActiveEventLoop,
+        window_id: WindowId,
+        event: WinitWindowEvent,
+    ) {
+        if !self
+            .app_driver
+            .window_event(event_loop, window_id, &event, &mut self.masonry_state)
+        {
+            self.masonry_state.handle_window_event(
+                event_loop,
+                window_id,
+                event,
+                self.app_driver.as_mut(),
+            );
         }
     }
 
-    fn device_event(&mut self, event_loop: &ActiveEventLoop, device_id: DeviceId, event: WinitDeviceEvent) {
-        if !self.app_driver.device_event(event_loop, device_id, &event, &mut self.masonry_state) {
-            self.masonry_state.handle_device_event(event_loop, device_id, event, self.app_driver.as_mut());
+    fn device_event(
+        &mut self,
+        event_loop: &ActiveEventLoop,
+        device_id: DeviceId,
+        event: WinitDeviceEvent,
+    ) {
+        if !self
+            .app_driver
+            .device_event(event_loop, device_id, &event, &mut self.masonry_state)
+        {
+            self.masonry_state.handle_device_event(
+                event_loop,
+                device_id,
+                event,
+                self.app_driver.as_mut(),
+            );
         }
-     }
+    }
 
-     fn user_event(&mut self, event_loop: &ActiveEventLoop, event: accesskit_winit::Event) {
-        if !self.app_driver.user_event(event_loop, &event, &mut self.masonry_state) {
-            self.masonry_state.handle_user_event(event_loop, event, self.app_driver.as_mut());
+    fn user_event(&mut self, event_loop: &ActiveEventLoop, event: accesskit_winit::Event) {
+        if !self
+            .app_driver
+            .user_event(event_loop, &event, &mut self.masonry_state)
+        {
+            self.masonry_state
+                .handle_user_event(event_loop, event, self.app_driver.as_mut());
         }
     }
 
     fn new_events(&mut self, event_loop: &ActiveEventLoop, cause: winit::event::StartCause) {
-        self.app_driver.new_events(event_loop, cause, &mut self.masonry_state);
+        self.app_driver
+            .new_events(event_loop, cause, &mut self.masonry_state);
     }
-    
+
     fn exiting(&mut self, event_loop: &ActiveEventLoop) {
         self.app_driver.exiting(event_loop, &mut self.masonry_state);
     }
-    
+
     fn memory_warning(&mut self, event_loop: &ActiveEventLoop) {
-        self.app_driver.memory_warning(event_loop, &mut self.masonry_state);
+        self.app_driver
+            .memory_warning(event_loop, &mut self.masonry_state);
     }
 
     fn about_to_wait(&mut self, event_loop: &ActiveEventLoop) {
-        self.app_driver.about_to_wait(event_loop, &mut self.masonry_state);
+        self.app_driver
+            .about_to_wait(event_loop, &mut self.masonry_state);
     }
-
 }
 
 impl MasonryState<'_> {
@@ -257,7 +293,6 @@ impl MasonryState<'_> {
             }
         }
     }
-    
 
     // --- MARK: RENDER ---
     fn render(&mut self, scene: Scene) {
@@ -318,7 +353,13 @@ impl MasonryState<'_> {
     }
 
     // --- MARK: WINDOW_EVENT ---
-    fn handle_window_event(&mut self, event_loop: &ActiveEventLoop, _: WindowId, event: WinitWindowEvent, app_driver: &mut dyn AppDriver) {
+    fn handle_window_event(
+        &mut self,
+        event_loop: &ActiveEventLoop,
+        _: WindowId,
+        event: WinitWindowEvent,
+        app_driver: &mut dyn AppDriver,
+    ) {
         let WindowState::Rendering {
             window,
             accesskit_adapter,
@@ -469,11 +510,22 @@ impl MasonryState<'_> {
     }
 
     // --- MARK: DEVICE_EVENT ---
-    fn handle_device_event(&mut self, _: &ActiveEventLoop, _: DeviceId, _: WinitDeviceEvent, _: &mut dyn AppDriver) {
+    fn handle_device_event(
+        &mut self,
+        _: &ActiveEventLoop,
+        _: DeviceId,
+        _: WinitDeviceEvent,
+        _: &mut dyn AppDriver,
+    ) {
     }
 
     // --- MARK: USER_EVENT ---
-    fn handle_user_event(&mut self, event_loop: &ActiveEventLoop, event: accesskit_winit::Event, app_driver: &mut dyn AppDriver) {
+    fn handle_user_event(
+        &mut self,
+        event_loop: &ActiveEventLoop,
+        event: accesskit_winit::Event,
+        app_driver: &mut dyn AppDriver,
+    ) {
         match event.window_event {
             // Note that this event can be called at any time, even multiple times if
             // the user restarts their screen reader.
@@ -504,8 +556,7 @@ impl MasonryState<'_> {
                         let mut driver_ctx = DriverCtx {
                             main_root_widget: root,
                         };
-                        app_driver
-                            .on_action(&mut driver_ctx, widget_id, action);
+                        app_driver.on_action(&mut driver_ctx, widget_id, action);
                     });
                 }
                 render_root::RenderRootSignal::StartIme => {
@@ -544,16 +595,32 @@ impl MasonryState<'_> {
         }
     }
 
-    pub fn submit_window_event(&mut self, event_loop: &ActiveEventLoop, app_driver: &mut dyn AppDriver, window_id: WindowId, event: WinitWindowEvent) {
+    pub fn submit_window_event(
+        &mut self,
+        event_loop: &ActiveEventLoop,
+        app_driver: &mut dyn AppDriver,
+        window_id: WindowId,
+        event: WinitWindowEvent,
+    ) {
         self.handle_window_event(event_loop, window_id, event, app_driver);
     }
 
-    pub fn submit_device_event(&mut self, event_loop: &ActiveEventLoop, app_driver: &mut dyn AppDriver, device_id: DeviceId, event: WinitDeviceEvent) {
+    pub fn submit_device_event(
+        &mut self,
+        event_loop: &ActiveEventLoop,
+        app_driver: &mut dyn AppDriver,
+        device_id: DeviceId,
+        event: WinitDeviceEvent,
+    ) {
         self.handle_device_event(event_loop, device_id, event, app_driver);
     }
 
-    pub fn submit_user_event(&mut self, event_loop: &ActiveEventLoop, app_driver: &mut dyn AppDriver, event: accesskit_winit::Event) {
+    pub fn submit_user_event(
+        &mut self,
+        event_loop: &ActiveEventLoop,
+        app_driver: &mut dyn AppDriver,
+        event: accesskit_winit::Event,
+    ) {
         self.handle_user_event(event_loop, event, app_driver);
     }
-
 }

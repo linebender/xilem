@@ -28,7 +28,7 @@ pub use xilem_core as core;
 mod any_view;
 pub use any_view::AnyWidgetView;
 mod driver;
-pub use driver::{XilemToAppInterface,AppToXilemInterface};
+pub use driver::{AppToXilemInterface, XilemToAppInterface};
 pub mod view;
 
 pub struct Xilem<State, Logic, View>

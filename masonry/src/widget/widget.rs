@@ -203,7 +203,9 @@ pub trait Widget: AsAny {
     }
 
     /// Return true if this widget should always be repainted
-    fn always_repaint(&self) -> bool { false }
+    fn always_repaint(&self) -> bool {
+        false
+    }
 }
 
 #[cfg(not(tarpaulin_include))]
