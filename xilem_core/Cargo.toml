@@ -10,6 +10,10 @@ repository.workspace = true
 
 publish = false # We'll publish this alongside Xilem 0.2
 
+[features]
+default = ["std"]
+std = []
+
 [dependencies]
 tracing.workspace = true
 
@@ -20,3 +24,4 @@ workspace = true
 default-target = "x86_64-unknown-linux-gnu"
 # xilem_core is entirely platform-agnostic, so only display docs for one platform
 targets = []
+features = ["std"]

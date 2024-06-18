@@ -1,7 +1,7 @@
 // Copyright 2022 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-#![cfg_attr(not(test), no_std)]
+#![cfg_attr(not(any(test, feature = "std")), no_std)]
 #![forbid(unsafe_code)]
 #![warn(missing_docs, unreachable_pub)]
 // TODO: Point at documentation for this pattern of README include.
@@ -30,6 +30,7 @@
 extern crate alloc;
 
 mod deferred;
+pub use deferred::{AsyncCtx, Proxy};
 
 mod view;
 pub use view::{View, ViewId, ViewPathTracker};
