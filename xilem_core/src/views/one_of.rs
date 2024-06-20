@@ -1,3 +1,6 @@
+// Copyright 2023 the Xilem Authors
+// SPDX-License-Identifier: Apache-2.0
+
 use crate::{
     AppendVec, DynMessage, ElementSplice, MessageResult, Mut, View, ViewElement, ViewId,
     ViewPathTracker, ViewSequence,

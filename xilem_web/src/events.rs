@@ -1,5 +1,5 @@
 // Copyright 2023 the Xilem Authors
-// SPDX-License-ViewIdentifier: Apache-2.0
+// SPDX-License-Identifier: Apache-2.0
 
 use std::{borrow::Cow, marker::PhantomData};
 use wasm_bindgen::{prelude::Closure, throw_str, JsCast, UnwrapThrowExt};
