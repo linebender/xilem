@@ -26,7 +26,10 @@ clippy.semicolon_if_nothing_returned = "warn"
 # Remove assigning_clones once it's allowed by default in stable Rust
 # https://github.com/rust-lang/rust-clippy/pull/12779
 clippy.assigning_clones = "allow"
-rust.unexpected_cfgs = { level = "warn", check-cfg = ['cfg(FALSE)', 'cfg(tarpaulin_include)'] }
+rust.unexpected_cfgs = { level = "warn", check-cfg = [
+    'cfg(FALSE)',
+    'cfg(tarpaulin_include)',
+] }
 
 [workspace.dependencies]
 xilem_web_core = { version = "0.1.0", path = "xilem_web/xilem_web_core" }
@@ -37,8 +40,8 @@ wgpu = "0.20.0"
 kurbo = "0.11.0"
 parley = "0.1.0"
 peniko = "0.1.1"
-winit = "0.30.0"
-tracing = {version = "0.1.40", default-features = false}
+winit = "0.30.2"
+tracing = { version = "0.1.40", default-features = false }
 smallvec = "1.13.2"
 dpi = "0.1.1"
 fnv = "1.0.7"

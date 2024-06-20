@@ -28,6 +28,18 @@ pub enum MessageResult<Action> {
     Stale(DynMessage),
 }
 
+impl<A> MessageResult<A> {
+    /// Maps the action type `A` to `B`, i.e. [`MessageResult<A>`] to [`MessageResult<B>`]
+    pub fn map<B>(self, f: impl FnOnce(A) -> B) -> MessageResult<B> {
+        match self {
+            MessageResult::Action(a) => MessageResult::Action(f(a)),
+            MessageResult::RequestRebuild => MessageResult::RequestRebuild,
+            MessageResult::Stale(event) => MessageResult::Stale(event),
+            MessageResult::Nop => MessageResult::Nop,
+        }
+    }
+}
+
 /// A dynamically typed message for the [`View`] trait.
 ///
 /// Mostly equivalent to `Box<dyn Any>`, but with support for debug printing.

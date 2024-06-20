@@ -102,7 +102,7 @@ impl Widget for CustomWidget {
 
         // To render text, we first create a LayoutBuilder and set the text properties.
         let mut lcx = parley::LayoutContext::new();
-        let mut text_layout_builder = lcx.ranged_builder(ctx.font_ctx(), &self.0, 1.0);
+        let mut text_layout_builder = lcx.ranged_builder(ctx.text_contexts().0, &self.0, 1.0);
 
         text_layout_builder.push_default(&StyleProperty::FontStack(FontStack::Single(
             FontFamily::Generic(parley::style::GenericFamily::Serif),
