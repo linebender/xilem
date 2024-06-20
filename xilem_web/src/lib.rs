@@ -1,17 +1,11 @@
 // Copyright 2023 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-pub use attribute::{Attr, WithAttributes};
-pub use class::{AsClassIter, Class, WithClasses};
-use element::ElementProps;
+use core::{AnyElement, AnyView, SuperElement, View, ViewElement};
+use element_props::ElementProps;
 use std::any::Any;
 use wasm_bindgen::UnwrapThrowExt;
 use web_sys::wasm_bindgen::JsCast;
-
-pub use xilem_core::{
-    memoize, Adapt, AdaptThunk, AnyElement, AnyView, AppendVec, DynMessage, MessageResult, Mut,
-    OneOf2, OneOf2Ctx, SuperElement, View, ViewElement, ViewId, ViewPathTracker, ViewSequence,
-};
 
 /// The HTML namespace
 pub const HTML_NS: &str = "http://www.w3.org/1999/xhtml";
@@ -29,20 +23,23 @@ mod one_of;
 mod optional_action;
 mod pointer;
 mod style;
-pub mod svg;
 mod text;
 mod vec_splice;
 mod vecmap;
 
-pub mod element;
+pub mod element_props;
 pub mod elements;
 pub mod interfaces;
+pub mod svg;
 
 pub use app::{App, ViewCtx};
+pub use attribute::{Attr, WithAttributes};
 pub use attribute_value::{AttributeValue, IntoAttributeValue};
+pub use class::{AsClassIter, Class, WithClasses};
 pub use optional_action::{Action, OptionalAction};
 pub use pointer::{Pointer, PointerDetails, PointerMsg};
 pub use style::style;
+pub use xilem_core as core;
 
 pub trait AnyNode: AsRef<web_sys::Node> + 'static {
     fn as_any_mut(&mut self) -> &mut dyn Any;
@@ -207,7 +204,9 @@ impl PodMut<'_, DynNode, Box<dyn Any>> {
 
 impl<E: DomNode<P>, P> Drop for PodMut<'_, E, P> {
     fn drop(&mut self) {
-        self.node.apply_props(self.props);
+        if !self.was_removed {
+            self.node.apply_props(self.props);
+        }
     }
 }
 
