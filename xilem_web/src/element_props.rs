@@ -1,8 +1,12 @@
+// Copyright 2024 the Xilem Authors
+// SPDX-License-Identifier: Apache-2.0
+
 use crate::{attribute::Attributes, class::Classes, document, style::Styles, AnyPod, Pod};
 use wasm_bindgen::UnwrapThrowExt;
 
 // Lazy access to attributes etc. to avoid allocating unnecessary memory when it isn't needed
 // Benchmarks have shown, that this can significantly increase performance and reduce memory usage...
+/// This holds all the state for a DOM [`Element`](`crate::interfaces::Element`), it is used for [`DomView::Props`](`crate::DomView::Props`)
 pub struct ElementProps {
     pub(crate) attributes: Option<Box<Attributes>>,
     pub(crate) classes: Option<Box<Classes>>,
@@ -41,6 +45,7 @@ impl ElementProps {
 }
 
 impl Pod<web_sys::Element, ElementProps> {
+    /// Creates a new Pod with [`web_sys::Element`] as element and `ElementProps` as its [`DomView::Props`](`crate::DomView::Props`)
     pub fn new_element(children: Vec<AnyPod>, ns: &str, elem_name: &str) -> Self {
         let element = document()
             .create_element_ns(Some(ns), elem_name)

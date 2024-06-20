@@ -9,7 +9,8 @@ use std::borrow::Cow;
 use xilem_core::{MessageResult, Mut, OrphanView};
 
 use crate::{
-    element_props::ElementProps, IntoAttributeValue, Pod, ViewCtx, WithAttributes, SVG_NS,
+    attribute::WithAttributes, element_props::ElementProps, IntoAttributeValue, Pod, ViewCtx,
+    SVG_NS,
 };
 
 impl<State: 'static, Action: 'static> OrphanView<Line, State, Action> for ViewCtx {

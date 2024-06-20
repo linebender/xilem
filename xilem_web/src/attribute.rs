@@ -1,3 +1,6 @@
+// Copyright 2024 the Xilem Authors
+// SPDX-License-Identifier: Apache-2.0
+
 use std::marker::PhantomData;
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use xilem_core::{DynMessage, MessageResult, Mut, View, ViewElement, ViewId};
@@ -6,10 +9,21 @@ use crate::{vecmap::VecMap, AttributeValue, DomNode, ElementProps, Pod, PodMut, 
 
 type CowStr = std::borrow::Cow<'static, str>;
 
+/// This trait enables having attributes DOM [`Element`](`crate::interfaces::Element`)s. It is used within [`View`]s that modify the attributes of an element.
+///
+/// Modifications have to be done on the up-traversal of [`View::rebuild`], i.e. after [`View::rebuild`] was invoked for descendent views.
+/// See the [`View`] implementation of [`Attr`] for more details how to use it for [`ViewElement`]s that implement this trait.
+/// When these methods are used, they have to be used in every reconciliation pass (i.e. [`View::rebuild`]).
 pub trait WithAttributes {
+    /// Needs to be invoked within a [`View::build`] or [`View::rebuild`] before traversing to descendent views, and before any modifications are done
     fn start_attribute_modifier(&mut self);
+
+    /// Needs to be invoked after any modifications are done
     fn end_attribute_modifier(&mut self);
+
+    /// Sets or removes (when value is `None`) an attribute from the underlying element
     fn set_attribute(&mut self, name: CowStr, value: Option<AttributeValue>);
+
     // TODO first find a use-case for this...
     // fn get_attr(&self, name: &str) -> Option<&AttributeValue>;
 }
@@ -21,6 +35,7 @@ enum AttributeModifier {
     EndMarker(usize),
 }
 
+/// This contains all the current attributes of an [`Element`](`crate::interfaces::Element`)
 #[derive(Debug, Default)]
 pub struct Attributes {
     attribute_modifiers: Vec<AttributeModifier>,
@@ -58,6 +73,7 @@ fn remove_attribute(element: &web_sys::Element, name: &str) {
 }
 
 impl Attributes {
+    /// applies potential changes of the attributes of an element to the underlying DOM node
     pub fn apply_attribute_changes(&mut self, element: &web_sys::Element) {
         if !self.updated_attributes.is_empty() {
             for modifier in self.attribute_modifiers.iter().rev() {
@@ -188,6 +204,7 @@ impl<E: DomNode<P>, P: WithAttributes> WithAttributes for PodMut<'_, E, P> {
     }
 }
 
+/// Syntax sugar for adding a type bound on the `ViewElement` of a view, such that both, [`ViewElement`] and [`ViewElement::Mut`] are bound to [`WithAttributes`]
 pub trait ElementWithAttributes:
     for<'a> ViewElement<Mut<'a>: WithAttributes> + WithAttributes
 {
@@ -200,6 +217,7 @@ where
 {
 }
 
+/// A view to add or remove an attribute to/from an element, see [`Element::attr`](`crate::interfaces::Element::attr`) for how it's usually used.
 #[derive(Clone, Debug)]
 pub struct Attr<E, T, A> {
     el: E,

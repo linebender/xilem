@@ -1,13 +1,16 @@
+// Copyright 2024 the Xilem Authors
+// SPDX-License-Identifier: Apache-2.0
+
 use std::marker::PhantomData;
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
 use xilem_core::{DynMessage, MessageResult, Mut, View, ViewElement, ViewId};
 
-// TODO maybe this attribute is redundant and can be formed just from the class_modifiers attribute
 use crate::{vecmap::VecMap, DomNode, ElementProps, Pod, PodMut, ViewCtx};
 
 type CowStr = std::borrow::Cow<'static, str>;
 
+/// Types implementing this trait can be used in the [`Class`] view, see also [`Element::class`](`crate::interfaces::Element::class`)
 pub trait AsClassIter {
     fn class_iter(&self) -> impl Iterator<Item = CowStr>;
 }
@@ -51,11 +54,28 @@ impl<T: AsClassIter, const N: usize> AsClassIter for [T; N] {
     }
 }
 
+/// This trait enables having classes (via `className`) on DOM [`Element`](`crate::interfaces::Element`)s. It is used within [`View`]s that modify the classes of an element.
+///
+/// Modifications have to be done on the up-traversal of [`View::rebuild`], i.e. after [`View::rebuild`] was invoked for descendent views.
+/// See the [`View`] implementation of [`Class`] for more details how to use it for [`ViewElement`]s that implement this trait.
+/// When these methods are used, they have to be used in every reconciliation pass (i.e. [`View::rebuild`]).
 pub trait WithClasses {
+    /// Needs to be invoked within a [`View::build`] or [`View::rebuild`] before traversing to descendent views, and before any modifications are done
     fn start_class_modifier(&mut self);
-    fn add_class(&mut self, class_name: CowStr);
-    fn remove_class(&mut self, class_name: CowStr);
+
+    /// Needs to be invoked after any modifications are done
     fn end_class_modifier(&mut self);
+
+    /// Adds a class to the element
+    ///
+    /// It needs to be invoked on the up-traversal, i.e. after [`View::rebuild`] was invoked for descendent views.
+    fn add_class(&mut self, class_name: CowStr);
+
+    /// Removes a possibly previously added class from the element
+    ///
+    /// It needs to be invoked on the up-traversal, i.e. after [`View::rebuild`] was invoked for descendent views.
+    fn remove_class(&mut self, class_name: CowStr);
+
     // TODO something like the following, but I'm not yet sure how to support that efficiently (and without much binary bloat)
     // The modifiers possibly have to be applied then...
     // fn classes(&self) -> impl Iterator<CowStr>;
@@ -71,6 +91,7 @@ enum ClassModifier {
     EndMarker(usize),
 }
 
+/// This contains all the current classes of an [`Element`](`crate::interfaces::Element`)
 #[derive(Debug, Default)]
 pub struct Classes {
     // TODO maybe this attribute is redundant and can be formed just from the class_modifiers attribute
@@ -137,6 +158,23 @@ impl WithClasses for Classes {
         }
     }
 
+    fn end_class_modifier(&mut self) {
+        match self.class_modifiers.get_mut(self.idx) {
+            Some(ClassModifier::EndMarker(_)) if !self.dirty => (), // class modifier hasn't changed
+            Some(modifier) => {
+                self.dirty = true;
+                *modifier = ClassModifier::EndMarker(self.start_idx);
+            }
+            None => {
+                self.dirty = true;
+                self.class_modifiers
+                    .push(ClassModifier::EndMarker(self.start_idx));
+            }
+        }
+        self.idx += 1;
+        self.start_idx = self.idx;
+    }
+
     fn add_class(&mut self, class_name: CowStr) {
         match self.class_modifiers.get_mut(self.idx) {
             Some(ClassModifier::Add(class)) if class == &class_name => (), // class modifier hasn't changed
@@ -167,34 +205,9 @@ impl WithClasses for Classes {
         }
         self.idx += 1;
     }
-
-    fn end_class_modifier(&mut self) {
-        match self.class_modifiers.get_mut(self.idx) {
-            Some(ClassModifier::EndMarker(_)) if !self.dirty => (), // class modifier hasn't changed
-            Some(modifier) => {
-                self.dirty = true;
-                *modifier = ClassModifier::EndMarker(self.start_idx);
-            }
-            None => {
-                self.dirty = true;
-                self.class_modifiers
-                    .push(ClassModifier::EndMarker(self.start_idx));
-            }
-        }
-        self.idx += 1;
-        self.start_idx = self.idx;
-    }
 }
 
 impl WithClasses for ElementProps {
-    fn add_class(&mut self, class_name: CowStr) {
-        self.classes().add_class(class_name);
-    }
-
-    fn remove_class(&mut self, class_name: CowStr) {
-        self.classes().remove_class(class_name);
-    }
-
     fn start_class_modifier(&mut self) {
         self.classes().start_class_modifier();
     }
@@ -202,35 +215,35 @@ impl WithClasses for ElementProps {
     fn end_class_modifier(&mut self) {
         self.classes().end_class_modifier();
     }
-}
 
-impl<E: DomNode<P>, P: WithClasses> WithClasses for Pod<E, P> {
     fn add_class(&mut self, class_name: CowStr) {
-        self.props.add_class(class_name);
+        self.classes().add_class(class_name);
     }
 
     fn remove_class(&mut self, class_name: CowStr) {
-        self.props.remove_class(class_name);
+        self.classes().remove_class(class_name);
     }
+}
 
+impl<E: DomNode<P>, P: WithClasses> WithClasses for Pod<E, P> {
     fn start_class_modifier(&mut self) {
         self.props.start_class_modifier();
     }
 
     fn end_class_modifier(&mut self) {
         self.props.end_class_modifier();
+    }
+
+    fn add_class(&mut self, class_name: CowStr) {
+        self.props.add_class(class_name);
+    }
+
+    fn remove_class(&mut self, class_name: CowStr) {
+        self.props.remove_class(class_name);
     }
 }
 
 impl<E: DomNode<P>, P: WithClasses> WithClasses for PodMut<'_, E, P> {
-    fn add_class(&mut self, class_name: CowStr) {
-        self.props.add_class(class_name);
-    }
-
-    fn remove_class(&mut self, class_name: CowStr) {
-        self.props.remove_class(class_name);
-    }
-
     fn start_class_modifier(&mut self) {
         self.props.start_class_modifier();
     }
@@ -238,8 +251,17 @@ impl<E: DomNode<P>, P: WithClasses> WithClasses for PodMut<'_, E, P> {
     fn end_class_modifier(&mut self) {
         self.props.end_class_modifier();
     }
+
+    fn add_class(&mut self, class_name: CowStr) {
+        self.props.add_class(class_name);
+    }
+
+    fn remove_class(&mut self, class_name: CowStr) {
+        self.props.remove_class(class_name);
+    }
 }
 
+/// Syntax sugar for adding a type bound on the `ViewElement` of a view, such that both, [`ViewElement`] and [`ViewElement::Mut`] are bound to [`WithClasses`]
 pub trait ElementWithClasses: for<'a> ViewElement<Mut<'a>: WithClasses> + WithClasses {}
 
 impl<T> ElementWithClasses for T
@@ -249,6 +271,7 @@ where
 {
 }
 
+/// A view to add classes to elements
 #[derive(Clone, Debug)]
 pub struct Class<E, C, T, A> {
     el: E,

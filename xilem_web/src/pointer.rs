@@ -12,6 +12,7 @@ use xilem_core::{MessageResult, View, ViewId, ViewPathTracker};
 
 use crate::{interfaces::Element, ElementAsRef, ViewCtx};
 
+/// A view that allows stateful handling of PointerEvents with [`PointerMsg`]
 pub struct Pointer<V, T, A, F> {
     child: V,
     callback: F,

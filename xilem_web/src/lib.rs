@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use core::{AnyElement, AnyView, SuperElement, View, ViewElement};
-use element_props::ElementProps;
 use std::any::Any;
 use wasm_bindgen::UnwrapThrowExt;
 use web_sys::wasm_bindgen::JsCast;
@@ -18,6 +17,7 @@ mod app;
 mod attribute;
 mod attribute_value;
 mod class;
+mod element_props;
 mod events;
 mod one_of;
 mod optional_action;
@@ -27,40 +27,38 @@ mod text;
 mod vec_splice;
 mod vecmap;
 
-pub mod element_props;
 pub mod elements;
 pub mod interfaces;
 pub mod svg;
 
 pub use app::{App, ViewCtx};
-pub use attribute::{Attr, WithAttributes};
+pub use attribute::{Attr, Attributes, ElementWithAttributes, WithAttributes};
 pub use attribute_value::{AttributeValue, IntoAttributeValue};
-pub use class::{AsClassIter, Class, WithClasses};
+pub use class::{AsClassIter, Class, Classes, ElementWithClasses, WithClasses};
+pub use element_props::ElementProps;
 pub use optional_action::{Action, OptionalAction};
 pub use pointer::{Pointer, PointerDetails, PointerMsg};
 pub use style::style;
 pub use xilem_core as core;
 
+/// A trait used for type erasure of [`DomNode`]s
+/// It is e.g. used in [`AnyPod`]
 pub trait AnyNode: AsRef<web_sys::Node> + 'static {
     fn as_any_mut(&mut self) -> &mut dyn Any;
-
-    fn as_node_ref(&self) -> &web_sys::Node;
 }
 
 impl<N: AsRef<web_sys::Node> + Any> AnyNode for N {
     fn as_any_mut(&mut self) -> &mut dyn Any {
         self
     }
-
-    fn as_node_ref(&self) -> &web_sys::Node {
-        self.as_ref()
-    }
 }
 
+/// A trait to represent DOM nodes, which can optionally have associated `props` that are applied while building/rebuilding the views
 pub trait DomNode<P>: AnyNode + 'static {
     fn apply_props(&self, props: &mut P);
 }
 
+/// Syntax sugar for adding a type bound on the `ViewElement` of a view, such that both, [`ViewElement`] and [`ViewElement::Mut`] have the same [`AsRef`] type
 pub trait ElementAsRef<E>: for<'a> ViewElement<Mut<'a>: AsRef<E>> + AsRef<E> {}
 
 impl<E, T> ElementAsRef<E> for T
@@ -70,7 +68,16 @@ where
 {
 }
 
+/// A view which can have any [`DomView`] type, see [`AnyView`] for more details.
 pub type AnyDomView<State, Action = ()> = dyn AnyView<State, Action, ViewCtx, AnyPod>;
+
+/// The central [`View`] derived trait to represent DOM nodes in xilem_web, it's the base for all [`View`]s in xilem_web
+pub trait DomView<State, Action = ()>:
+    View<State, Action, ViewCtx, Element = Pod<Self::DomNode, Self::Props>>
+{
+    type DomNode: DomNode<Self::Props>;
+    type Props;
+}
 
 impl<V, State, Action, W, P> DomView<State, Action> for V
 where
@@ -81,18 +88,14 @@ where
     type Props = P;
 }
 
-pub trait DomView<State, Action = ()>:
-    View<State, Action, ViewCtx, Element = Pod<Self::DomNode, Self::Props>>
-{
-    type DomNode: DomNode<Self::Props>;
-    type Props;
-}
-
+/// A container, which holds the actual DOM node, and associated props, such as attributes or classes.
+/// These attributes are not directly set on the DOM node to avoid mutating or reading from the DOM tree unnecesserily, and to have more control over the whole update flow.
 pub struct Pod<E, P> {
     pub node: E,
     pub props: P,
 }
 
+/// Type-erased [`Pod`], it's used for example as intermediate representation for children of a DOM node
 pub type AnyPod = Pod<DynNode, Box<dyn Any>>;
 
 impl<E: DomNode<P>, P: 'static> Pod<E, P> {
@@ -151,13 +154,14 @@ impl AnyPod {
     }
 }
 
+/// A type erased DOM node, used in [`AnyPod`]
 pub struct DynNode {
     inner: Box<dyn AnyNode>,
 }
 
 impl AsRef<web_sys::Node> for DynNode {
     fn as_ref(&self) -> &web_sys::Node {
-        self.inner.as_node_ref()
+        (*self.inner).as_ref()
     }
 }
 
@@ -168,6 +172,9 @@ impl DomNode<Box<dyn Any>> for DynNode {
     }
 }
 
+/// The mutable representation of [`Pod`].
+/// This is a container which contains info of what has changed and provides mutable access to the underlying element and its props
+/// When it's dropped all changes are applied to the underlying DOM node
 pub struct PodMut<'a, E: DomNode<P>, P> {
     node: &'a mut E,
     props: &'a mut P,
@@ -243,6 +250,7 @@ pub fn document() -> web_sys::Document {
     window.document().expect("should have a document on window")
 }
 
+/// Helper to get a DOM element by id
 pub fn get_element_by_id(id: &str) -> web_sys::HtmlElement {
     document()
         .get_element_by_id(id)

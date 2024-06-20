@@ -7,7 +7,7 @@ use state::{AppState, Filter, Todo};
 
 use wasm_bindgen::JsCast;
 use xilem_web::{
-    core::{Adapt, MessageResult},
+    core::{adapt, MessageResult},
     elements::html as el,
     get_element_by_id,
     interfaces::*,
@@ -136,7 +136,8 @@ fn main_view(state: &mut AppState, should_display: bool) -> impl Element<AppStat
     let todos: Vec<_> = state
         .visible_todos()
         .map(|(idx, todo)| {
-            Adapt::new(
+            adapt(
+                todo_item(todo, editing_id == Some(todo.id)),
                 move |data: &mut AppState, thunk| {
                     if let MessageResult::Action(action) = thunk.call(&mut data.todos[idx]) {
                         match action {
@@ -151,7 +152,6 @@ fn main_view(state: &mut AppState, should_display: bool) -> impl Element<AppStat
                     }
                     MessageResult::Nop
                 },
-                todo_item(todo, editing_id == Some(todo.id)),
             )
         })
         .collect();

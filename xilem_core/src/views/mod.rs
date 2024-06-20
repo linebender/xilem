@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 mod adapt;
-pub use adapt::{Adapt, AdaptThunk};
+pub use adapt::{adapt, Adapt, AdaptThunk};
 
 mod memoize;
 pub use memoize::{memoize, Memoize};

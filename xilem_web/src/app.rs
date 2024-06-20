@@ -4,7 +4,7 @@
 use crate::DomNode;
 use std::{cell::RefCell, rc::Rc};
 
-use crate::{AnyNode, DomView, PodMut};
+use crate::{DomView, PodMut};
 use xilem_core::{DynMessage, MessageResult, ViewId, ViewPathTracker};
 
 type IdPath = Vec<ViewId>;
@@ -29,6 +29,7 @@ impl MessageThunk {
     }
 }
 
+/// The [`View`](`crate::core::View`) `Context` which is used for all [`DomView`]s
 #[derive(Default)]
 pub struct ViewCtx {
     id_path: IdPath,
@@ -129,7 +130,7 @@ impl<T, V: DomView<T>, F: FnMut(&mut T) -> V> AppInner<T, V, F> {
             self.state = Some(state);
 
             // TODO should the element provide a separate method to access reference instead?
-            let node: &web_sys::Node = element.node.as_node_ref();
+            let node: &web_sys::Node = element.node.as_ref();
             self.root.append_child(node).unwrap();
             self.element = Some(element);
         }

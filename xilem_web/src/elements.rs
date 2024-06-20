@@ -1,3 +1,8 @@
+// Copyright 2024 the Xilem Authors
+// SPDX-License-Identifier: Apache-2.0
+
+//! Basic builder functions to create DOM elements, such as [`html::div`]
+
 use std::any::Any;
 use std::borrow::Cow;
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
@@ -15,7 +20,7 @@ mod sealed {
 }
 
 // sealed, because this should only cover `ViewSequences` with the blanket impl below
-/// This is basically a specialized `AnyViewSequence`, with the exception, that it's currently not able to change the underlying type unlike [`AnyDomView`](crate::AnyDomView)
+/// This is basically a specialized dynamically dispatchable [`ViewSequence`], It's currently not able to change the underlying type unlike [`AnyDomView`](crate::AnyDomView), so it should not be used as `dyn DomViewSequence`.
 /// It's mostly a hack to avoid a completely static view tree, which unfortunately brings rustc (type-checking) down to its knees and results in long compile-times
 pub trait DomViewSequence<State, Action, SeqMarker>:
     sealed::Sealed<State, Action, SeqMarker> + 'static
@@ -198,6 +203,7 @@ impl<'a, 'b, 'c, 'd> ElementSplice<AnyPod> for DomChildrenSplice<'a, 'b, 'c, 'd>
     }
 }
 
+/// Used in all the basic DOM elements as [`View::ViewState`]
 pub struct ElementState {
     seq_state: Box<dyn Any>,
     append_scratch: AppendVec<AnyPod>,
@@ -255,7 +261,7 @@ where
         &mut state.append_scratch,
         &mut element.props.children,
         &mut state.vec_splice_scratch,
-        element.node.as_node_ref(),
+        element.node.as_ref(),
         element.was_removed,
     );
     children.dyn_seq_rebuild(
@@ -283,7 +289,7 @@ pub(crate) fn teardown_element<State, Action, Element, SeqMarker>(
         &mut state.append_scratch,
         &mut element.props.children,
         &mut state.vec_splice_scratch,
-        element.node.as_node_ref(),
+        element.node.as_ref(),
         true,
     );
     children.dyn_seq_teardown(&mut state.seq_state, ctx, &mut dom_children_splice);
@@ -473,6 +479,7 @@ macro_rules! define_elements {
 }
 
 pub mod html {
+    //! HTML elements with the namespace [`HTML_NS`](`crate::HTML_NS`)
     define_elements!(
         // the order is copied from
         // https://developer.mozilla.org/en-US/docs/Web/HTML/Element
@@ -600,6 +607,7 @@ pub mod html {
 }
 
 pub mod mathml {
+    //! MathML elements with the namespace [`MATHML_NS`](`crate::MATHML_NS`)
     define_elements!(
         MATHML_NS,
         (Math, math, Element),
@@ -636,6 +644,7 @@ pub mod mathml {
 }
 
 pub mod svg {
+    //! SVG elements with the namespace [`SVG_NS`](`crate::SVG_NS`)
     define_elements!(
         SVG_NS,
         (Svg, svg, SvgsvgElement),

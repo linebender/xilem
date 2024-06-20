@@ -1,3 +1,6 @@
+// Copyright 2024 the Xilem Authors
+// SPDX-License-Identifier: Apache-2.0
+
 use wasm_bindgen::UnwrapThrowExt;
 use xilem_core::{Mut, OneOf2, OneOf2Ctx};
 

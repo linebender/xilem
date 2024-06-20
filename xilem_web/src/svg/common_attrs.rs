@@ -8,7 +8,10 @@ use peniko::Brush;
 use xilem_core::{MessageResult, Mut, View};
 
 use crate::IntoAttributeValue;
-use crate::{attribute::ElementWithAttributes, ViewCtx, WithAttributes};
+use crate::{
+    attribute::{ElementWithAttributes, WithAttributes},
+    ViewCtx,
+};
 
 pub struct Fill<V, State, Action> {
     child: V,

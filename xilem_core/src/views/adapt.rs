@@ -1,6 +1,45 @@
-use std::marker::PhantomData;
+// Copyright 2023 the Xilem Authors
+// SPDX-License-Identifier: Apache-2.0
+
+use core::marker::PhantomData;
 
 use crate::{DynMessage, MessageResult, Mut, View, ViewId, ViewPathTracker};
+
+/// A view that wraps a child view and modifies the state that callbacks have access to.
+pub struct Adapt<
+    ParentState,
+    ParentAction,
+    ChildState,
+    ChildAction,
+    Context,
+    ChildView,
+    ProxyFn = fn(
+        &mut ParentState,
+        AdaptThunk<ChildState, ChildAction, Context, ChildView>,
+    ) -> MessageResult<ParentAction>,
+> where
+    Context: ViewPathTracker,
+{
+    proxy_fn: ProxyFn,
+    child: ChildView,
+    #[allow(clippy::type_complexity)]
+    phantom: PhantomData<fn() -> (ParentState, ParentAction, ChildState, ChildAction, Context)>,
+}
+
+/// A "thunk" which dispatches an message to an adapt node's child.
+///
+/// The closure passed to [`Adapt`] should call this thunk with the child's
+/// app state.
+pub struct AdaptThunk<'a, ChildState, ChildAction, Context, ChildView>
+where
+    Context: ViewPathTracker,
+    ChildView: View<ChildState, ChildAction, Context>,
+{
+    child: &'a ChildView,
+    view_state: &'a mut ChildView::ViewState,
+    id_path: &'a [ViewId],
+    message: DynMessage,
+}
 
 /// A view that wraps a child view and modifies the state that callbacks have access to.
 ///
@@ -9,7 +48,7 @@ use crate::{DynMessage, MessageResult, Mut, View, ViewId, ViewPathTracker};
 /// Suppose you have an outer type that looks like
 ///
 /// ```ignore
-/// struct State {
+/// struct TodoList {
 ///     todos: Vec<Todo>
 /// }
 /// ```
@@ -29,84 +68,48 @@ use crate::{DynMessage, MessageResult, Mut, View, ViewId, ViewPathTracker};
 ///     Delete
 /// }
 ///
-/// impl View<Todo, TodoAction, ViewCtx> for TodoView {
+/// impl<ViewCtx> View<Todo, TodoAction, ViewCtx> for TodoView {
 ///     // ...
 /// }
 /// ```
 ///
-/// then your top-level action (`()`) and state type (`State`) don't match `TodoView`'s.
+/// then your top-level action (`()`) and state type (`TodoList`) don't match `TodoView`'s.
 /// You can use the `Adapt` view to mediate between them:
 ///
 /// ```ignore
 /// state
 ///     .todos
 ///     .enumerate()
-///     .map(|(idx, todo)| {
-///         Adapt::new(
-///             move |data: &mut AppState, thunk| {
-///                 if let MessageResult::Action(action) = thunk.call(&mut data.todos[idx]) {
-///                     match action {
-///                         TodoAction::Delete => data.todos.remove(idx),
-///                     }
-///                 }
-///                 MessageResult::Nop
-///             },
-///             TodoView { label: todo.label }
-///         )
-///     })
+///     .map(|(idx, todo)| adapt(
+///         TodoView { label: todo.label },
+///         |data: &mut AppState, thunk| {
+///             thunk.call(&mut data.todos[idx]).map(|action| match action {
+///                 TodoAction::Delete => data.todos.remove(idx),
+///             })
+///         })
+///     )
 /// ```
-pub struct Adapt<
-    ParentState,
-    ParentAction,
-    ChildState,
-    ChildAction,
-    Context,
-    V,
-    F = fn(
-        &mut ParentState,
-        AdaptThunk<ChildState, ChildAction, Context, V>,
-    ) -> MessageResult<ParentAction>,
-> where
-    Context: ViewPathTracker,
-{
-    f: F,
-    child: V,
-    #[allow(clippy::type_complexity)]
-    phantom: PhantomData<fn() -> (ParentState, ParentAction, ChildState, ChildAction, Context)>,
-}
-
-/// A "thunk" which dispatches an message to an adapt node's child.
-///
-/// The closure passed to [`Adapt`] should call this thunk with the child's
-/// app state.
-pub struct AdaptThunk<'a, ChildState, ChildAction, Context, V>
+pub fn adapt<ParentState, ParentAction, ChildState, ChildAction, Context, ChildView, ProxyFn>(
+    child: ChildView,
+    proxy_fn: ProxyFn,
+) -> Adapt<ParentState, ParentAction, ChildState, ChildAction, Context, ChildView, ProxyFn>
 where
-    Context: ViewPathTracker,
-    V: View<ChildState, ChildAction, Context>,
-{
-    child: &'a V,
-    view_state: &'a mut V::ViewState,
-    id_path: &'a [ViewId],
-    message: DynMessage,
-}
-
-impl<ParentState, ParentAction, ChildState, ChildAction, Context, ChildView, ProxyFn>
-    Adapt<ParentState, ParentAction, ChildState, ChildAction, Context, ChildView, ProxyFn>
-where
-    Context: ViewPathTracker,
+    ChildState: 'static,
+    ChildAction: 'static,
+    ParentState: 'static,
+    ParentAction: 'static,
+    Context: ViewPathTracker + 'static,
     ChildView: View<ChildState, ChildAction, Context>,
     ProxyFn: Fn(
-        &mut ParentState,
-        AdaptThunk<ChildState, ChildAction, Context, ChildView>,
-    ) -> MessageResult<ParentAction>,
+            &mut ParentState,
+            AdaptThunk<ChildState, ChildAction, Context, ChildView>,
+        ) -> MessageResult<ParentAction>
+        + 'static,
 {
-    /// Creates a new [`Adapt<ParentState, ParentAction, ChildState, ChildAction, Context, V, F>`].
-    pub fn new(f: ProxyFn, child: ChildView) -> Self {
-        Adapt {
-            f,
-            child,
-            phantom: Default::default(),
-        }
+    Adapt {
+        proxy_fn,
+        child,
+        phantom: Default::default(),
     }
 }
 
@@ -181,6 +184,6 @@ where
             id_path,
             message,
         };
-        (self.f)(app_state, thunk)
+        (self.proxy_fn)(app_state, thunk)
     }
 }

@@ -1,8 +1,21 @@
+// Copyright 2024 the Xilem Authors
+// SPDX-License-Identifier: Apache-2.0
+
+//! Opinionated extension traits roughly resembling their equivalently named DOM interfaces.
+//! It is used for DOM elements, e.g. created with [`html::span`](`crate::elements::html::span`) to modify the underlying element, such as [`Element::attr`] or [`HtmlElement::style`]
+//!
+//! These traits can also be used as return type of components to allow modifying the underlying DOM element that is returned.
+//! For example:
+//! ```
+//! fn my_div_element_view() -> impl HtmlDivElement<State> {..}
+//! ```
+
 use crate::{
+    attribute::{Attr, WithAttributes},
+    class::{AsClassIter, Class, WithClasses},
     events,
     style::{IntoStyles, Style, WithStyle},
-    AsClassIter, Attr, Class, DomView, IntoAttributeValue, OptionalAction, Pointer, PointerMsg,
-    WithAttributes, WithClasses,
+    DomView, IntoAttributeValue, OptionalAction, Pointer, PointerMsg,
 };
 use wasm_bindgen::JsCast;
 
