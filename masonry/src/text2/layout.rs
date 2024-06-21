@@ -56,7 +56,6 @@ pub struct TextLayout<T> {
     needs_layout: bool,
     needs_line_breaks: bool,
     layout: Layout<TextBrush>,
-    layout_context: LayoutContext<TextBrush>,
     scratch_scene: Scene,
 }
 
@@ -131,7 +130,6 @@ impl<T> TextLayout<T> {
             needs_layout: true,
             needs_line_breaks: true,
             layout: Layout::new(),
-            layout_context: LayoutContext::new(),
             scratch_scene: Scene::new(),
         }
     }
@@ -422,8 +420,12 @@ impl<T: TextStorage> TextLayout<T> {
     /// This method should be called whenever any of these things may have changed.
     /// A simple way to ensure this is correct is to always call this method
     /// as part of your widget's [`layout`][crate::Widget::layout] method.
-    pub fn rebuild(&mut self, fcx: &mut FontContext) {
-        self.rebuild_with_attributes(fcx, |builder| builder);
+    pub fn rebuild(
+        &mut self,
+        font_ctx: &mut FontContext,
+        layout_ctx: &mut LayoutContext<TextBrush>,
+    ) {
+        self.rebuild_with_attributes(font_ctx, layout_ctx, |builder| builder);
     }
 
     /// Rebuild the inner layout as needed, adding attributes to the underlying layout.
@@ -431,7 +433,8 @@ impl<T: TextStorage> TextLayout<T> {
     /// See [`Self::rebuild`] for more information
     pub fn rebuild_with_attributes(
         &mut self,
-        fcx: &mut FontContext,
+        font_ctx: &mut FontContext,
+        layout_ctx: &mut LayoutContext<TextBrush>,
         attributes: impl for<'b> FnOnce(
             RangedBuilder<'b, TextBrush, &'b str>,
         ) -> RangedBuilder<'b, TextBrush, &'b str>,
@@ -439,9 +442,7 @@ impl<T: TextStorage> TextLayout<T> {
         if self.needs_layout {
             self.needs_layout = false;
 
-            let mut builder =
-                self.layout_context
-                    .ranged_builder(fcx, self.text.as_str(), self.scale);
+            let mut builder = layout_ctx.ranged_builder(font_ctx, self.text.as_str(), self.scale);
             builder.push_default(&StyleProperty::Brush(self.brush.clone()));
             builder.push_default(&StyleProperty::FontSize(self.text_size));
             builder.push_default(&StyleProperty::FontStack(self.font));

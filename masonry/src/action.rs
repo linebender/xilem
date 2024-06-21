@@ -4,6 +4,8 @@
 use std::any::Any;
 use std::sync::Arc;
 
+use crate::event::PointerButton;
+
 // TODO - Refactor - See issue #1
 
 // TODO - TextCursor changed, ImeChanged, EnterKey, MouseEnter
@@ -13,7 +15,7 @@ use std::sync::Arc;
 ///
 /// Note: Actions are still a WIP feature.
 pub enum Action {
-    ButtonPressed,
+    ButtonPressed(PointerButton),
     TextChanged(String),
     TextEntered(String),
     CheckboxChecked(bool),
@@ -24,7 +26,7 @@ pub enum Action {
 impl PartialEq for Action {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
-            (Self::ButtonPressed, Self::ButtonPressed) => true,
+            (Self::ButtonPressed(l_button), Self::ButtonPressed(r_button)) => l_button == r_button,
             (Self::TextChanged(l0), Self::TextChanged(r0)) => l0 == r0,
             (Self::TextEntered(l0), Self::TextEntered(r0)) => l0 == r0,
             (Self::CheckboxChecked(l0), Self::CheckboxChecked(r0)) => l0 == r0,
@@ -39,7 +41,7 @@ impl PartialEq for Action {
 impl std::fmt::Debug for Action {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::ButtonPressed => write!(f, "ButtonPressed"),
+            Self::ButtonPressed(button) => f.debug_tuple("ButtonPressed").field(button).finish(),
             Self::TextChanged(text) => f.debug_tuple("TextChanged").field(text).finish(),
             Self::TextEntered(text) => f.debug_tuple("TextEntered").field(text).finish(),
             Self::CheckboxChecked(b) => f.debug_tuple("CheckboxChecked").field(b).finish(),

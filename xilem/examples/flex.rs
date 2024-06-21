@@ -1,20 +1,31 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::widget::{CrossAxisAlignment, MainAxisAlignment};
+use masonry::{
+    widget::{CrossAxisAlignment, MainAxisAlignment},
+    ArcStr,
+};
 use winit::error::EventLoopError;
 use xilem::{
-    view::{button, flex, label},
+    view::{button, flex, label, sized_box},
     EventLoop, WidgetView, Xilem,
 };
 
+/// A component to make a bigger than usual button
+fn big_button(
+    label: impl Into<ArcStr>,
+    callback: impl Fn(&mut i32) + Send + Sync + 'static,
+) -> impl WidgetView<i32> {
+    sized_box(button(label, callback)).width(40.).height(40.)
+}
+
 fn app_logic(data: &mut i32) -> impl WidgetView<i32> {
     flex((
-        button("-", |data| {
+        big_button("-", |data| {
             *data -= 1;
         }),
         label(format!("count: {}", data)),
-        button("+", |data| {
+        big_button("+", |data| {
             *data += 1;
         }),
     ))

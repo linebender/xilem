@@ -83,6 +83,18 @@ impl SizedBox {
         }
     }
 
+    /// Construct container with child in a pod, and both width and height not set.
+    pub fn new_pod(child: WidgetPod<Box<dyn Widget>>) -> Self {
+        Self {
+            child: Some(child),
+            width: None,
+            height: None,
+            background: None,
+            border: None,
+            corner_radius: RoundedRectRadii::from_single_radius(0.0),
+        }
+    }
+
     /// Construct container without child, and both width and height not set.
     ///
     /// If the widget is unchanged, it will render nothing, which can be useful if you want to draw a
@@ -162,6 +174,18 @@ impl SizedBox {
     /// Builder style method for rounding off corners of this container by setting a corner radius
     pub fn rounded(mut self, radius: impl Into<RoundedRectRadii>) -> Self {
         self.corner_radius = radius.into();
+        self
+    }
+
+    /// Set the width directly. Intended for toolkits abstracting over `SizedBox`
+    pub fn raw_width(mut self, value: Option<f64>) -> Self {
+        self.width = value;
+        self
+    }
+
+    /// Set the height directly. Intended for toolkits abstracting over `SizedBox`
+    pub fn raw_height(mut self, value: Option<f64>) -> Self {
+        self.height = value;
         self
     }
 

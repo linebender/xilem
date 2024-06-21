@@ -29,7 +29,7 @@
 //! impl AppDriver for Driver {
 //!     fn on_action(&mut self, ctx: &mut DriverCtx<'_>, _widget_id: WidgetId, action: Action) {
 //!         match action {
-//!             Action::ButtonPressed => {
+//!             Action::ButtonPressed(_) => {
 //!                 let mut root: WidgetMut<RootWidget<Portal<Flex>>> = ctx.get_root();
 //!                 let mut root = root.get_element();
 //!                 let mut flex = root.child_mut();
@@ -122,8 +122,8 @@ pub use action::Action;
 pub use box_constraints::BoxConstraints;
 pub use contexts::{AccessCtx, EventCtx, LayoutCtx, LifeCycleCtx, PaintCtx, WidgetCtx};
 pub use event::{
-    AccessEvent, InternalLifeCycle, LifeCycle, PointerEvent, PointerState, StatusChange, TextEvent,
-    WindowEvent, WindowTheme,
+    AccessEvent, InternalLifeCycle, LifeCycle, PointerButton, PointerEvent, PointerState,
+    StatusChange, TextEvent, WindowEvent, WindowTheme,
 };
 pub use kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
 pub use parley::layout::Alignment as TextAlignment;

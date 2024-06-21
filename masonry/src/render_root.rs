@@ -5,7 +5,7 @@ use std::collections::VecDeque;
 
 use accesskit::{ActionRequest, NodeBuilder, Tree, TreeUpdate};
 use kurbo::Affine;
-use parley::FontContext;
+use parley::{FontContext, LayoutContext};
 use tracing::{debug, info_span, warn};
 use vello::peniko::{Color, Fill};
 use vello::Scene;
@@ -21,6 +21,7 @@ use crate::debug_logger::DebugLogger;
 use crate::dpi::{LogicalPosition, LogicalSize, PhysicalSize};
 use crate::event::{PointerEvent, TextEvent, WindowEvent};
 use crate::kurbo::Point;
+use crate::text2::TextBrush;
 use crate::widget::{WidgetMut, WidgetState};
 use crate::{
     AccessCtx, AccessEvent, Action, BoxConstraints, CursorIcon, Handled, InternalLifeCycle,
@@ -51,6 +52,7 @@ pub(crate) struct RenderRootState {
     pub(crate) focused_widget: Option<WidgetId>,
     pub(crate) next_focused_widget: Option<WidgetId>,
     pub(crate) font_context: FontContext,
+    pub(crate) text_layout_context: LayoutContext<TextBrush>,
 }
 
 /// Defines how a windows size should be determined
@@ -99,6 +101,7 @@ impl RenderRoot {
                 focused_widget: None,
                 next_focused_widget: None,
                 font_context: FontContext::default(),
+                text_layout_context: LayoutContext::new(),
             },
             rebuild_access_tree: true,
         };
@@ -144,7 +147,7 @@ impl RenderRoot {
                 let last = self.last_anim.take();
                 let elapsed_ns = last.map(|t| now.duration_since(t).as_nanos()).unwrap_or(0) as u64;
 
-                if self.wants_animation_frame() {
+                if self.root.state().request_anim {
                     self.root_lifecycle(LifeCycle::AnimFrame(elapsed_ns));
                     self.last_anim = Some(now);
                 }
@@ -567,14 +570,16 @@ impl RenderRoot {
 
         self.update_focus();
 
-        // If we need a new paint pass, make sure winit knows it.
-        if self.wants_animation_frame() {
+        if self.root.state().request_anim {
             self.state
                 .signal_queue
                 .push_back(RenderRootSignal::RequestAnimFrame);
         }
 
-        if self.root.state().needs_paint {
+        // We request a redraw if either the render tree or the accessibility
+        // tree needs to be rebuilt. Usually both happen at the same time.
+        // A redraw will trigger a rebuild of the accessibility tree.
+        if self.root.state().needs_paint || self.root.state().needs_accessibility_update {
             self.state
                 .signal_queue
                 .push_back(RenderRootSignal::RequestRedraw);
@@ -586,11 +591,6 @@ impl RenderRoot {
             tracing::debug!("{:?} added", token);
             self.ime_handlers.push((token, ime_field));
         }
-    }
-
-    /// `true` iff any child requested an animation frame since the last `AnimFrame` event.
-    fn wants_animation_frame(&self) -> bool {
-        self.root.state().request_anim
     }
 
     fn update_focus(&mut self) {

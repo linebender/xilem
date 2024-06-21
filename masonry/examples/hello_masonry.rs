@@ -20,7 +20,7 @@ struct Driver;
 impl AppDriver for Driver {
     fn on_action(&mut self, _ctx: &mut DriverCtx<'_>, _widget_id: WidgetId, action: Action) {
         match action {
-            Action::ButtonPressed => {
+            Action::ButtonPressed(_) => {
                 println!("Hello");
             }
             action => {
