@@ -147,7 +147,7 @@ impl RenderRoot {
                 let last = self.last_anim.take();
                 let elapsed_ns = last.map(|t| now.duration_since(t).as_nanos()).unwrap_or(0) as u64;
 
-                if self.root.state().request_anim {
+                if self.root.state.request_anim {
                     self.root_lifecycle(LifeCycle::AnimFrame(elapsed_ns));
                     self.last_anim = Some(now);
                 }
@@ -570,7 +570,7 @@ impl RenderRoot {
 
         self.update_focus();
 
-        if self.root.state().request_anim {
+        if self.root.state.request_anim {
             self.state
                 .signal_queue
                 .push_back(RenderRootSignal::RequestAnimFrame);
