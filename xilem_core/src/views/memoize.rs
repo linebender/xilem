@@ -1,7 +1,7 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{DynMessage, MessageResult, Mut, View, ViewId, ViewPathTracker};
+use crate::{MessageResult, Mut, View, ViewId, ViewPathTracker};
 
 /// A view which supports Memoization.
 ///
@@ -12,10 +12,10 @@ pub struct Memoize<D, F> {
     child_cb: F,
 }
 
-pub struct MemoizeState<State, Action, Context, V>
+pub struct MemoizeState<State, Action, Context, Message, V>
 where
     Context: ViewPathTracker,
-    V: View<State, Action, Context>,
+    V: View<State, Action, Context, Message>,
 {
     view: V,
     view_state: V::ViewState,
@@ -47,14 +47,15 @@ It's not possible in Rust currently to check whether the (content of the) callba
     }
 }
 
-impl<State, Action, Context, Data, V, ViewFn> View<State, Action, Context> for Memoize<Data, ViewFn>
+impl<State, Action, Context, Data, V, ViewFn, Message> View<State, Action, Context, Message>
+    for Memoize<Data, ViewFn>
 where
     Context: ViewPathTracker,
     Data: PartialEq + 'static,
-    V: View<State, Action, Context>,
+    V: View<State, Action, Context, Message>,
     ViewFn: Fn(&Data) -> V + 'static,
 {
-    type ViewState = MemoizeState<State, Action, Context, V>;
+    type ViewState = MemoizeState<State, Action, Context, Message, V>;
 
     type Element = V::Element;
 
@@ -90,9 +91,9 @@ where
         &self,
         view_state: &mut Self::ViewState,
         id_path: &[ViewId],
-        message: DynMessage,
+        message: Message,
         app_state: &mut State,
-    ) -> MessageResult<Action> {
+    ) -> MessageResult<Action, Message> {
         let message_result =
             view_state
                 .view
@@ -116,14 +117,14 @@ where
 }
 
 /// Memoize the view, until the `data` changes (in which case `view` is called again)
-pub fn memoize<State, Action, Context, Data, V, ViewFn>(
+pub fn memoize<State, Action, Context, Message, Data, V, ViewFn>(
     data: Data,
     view: ViewFn,
 ) -> Memoize<Data, ViewFn>
 where
     Data: PartialEq + 'static,
     ViewFn: Fn(&Data) -> V + 'static,
-    V: View<State, Action, Context>,
+    V: View<State, Action, Context, Message>,
     Context: ViewPathTracker,
 {
     Memoize::new(data, view)

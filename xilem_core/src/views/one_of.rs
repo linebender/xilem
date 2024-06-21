@@ -1,7 +1,7 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{DynMessage, MessageResult, Mut, View, ViewElement, ViewId, ViewPathTracker};
+use crate::{MessageResult, Mut, View, ViewElement, ViewId, ViewPathTracker};
 
 /// This trait allows, specifying a type as `ViewElement`, which should never be constructed or used,
 /// but allows downstream implementations to adjust the behaviour of [`PhantomElementCtx::PhantomElement`],
@@ -179,12 +179,12 @@ macro_rules! one_of {
             }
         }
 
-        impl<Context, State, Action, $($variant),+> View<State, Action, Context> for $ty_name<$($variant),+>
+        impl<Context, State, Action, Message, $($variant),+> View<State, Action, Context, Message> for $ty_name<$($variant),+>
         where
             State: 'static,
             Action: 'static,
             Context: ViewPathTracker + OneOfCtx<$($variant::Element),+>,
-            $($variant: View<State, Action, Context>),+
+            $($variant: View<State, Action, Context, Message>),+
         {
             type Element = Context::OneOfElement;
 
@@ -290,9 +290,9 @@ macro_rules! one_of {
                 &self,
                 view_state: &mut Self::ViewState,
                 id_path: &[ViewId],
-                message: DynMessage,
+                message: Message,
                 app_state: &mut State,
-            ) -> MessageResult<Action> {
+            ) -> MessageResult<Action, Message> {
                 let (start, rest) = id_path
                     .split_first()
                     .expect(concat!("Id path has elements for `", stringify!($ty_name), "`"));
