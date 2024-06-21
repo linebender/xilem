@@ -148,10 +148,8 @@ macro_rules! impl_as_orphan_view_for {
 
 // string impls
 impl_as_orphan_view_for!(&'static str);
-#[cfg(feature = "std")]
-impl_orphan_view_for!(String);
-#[cfg(feature = "std")]
-impl_as_orphan_view_for!(std::borrow::Cow<'static, str>);
+impl_orphan_view_for!(alloc::string::String);
+impl_as_orphan_view_for!(alloc::borrow::Cow<'static, str>);
 // Why does the following not work, but the `Cow` impl does??
 // #[cfg(feature = "std")]
 // impl_as_orphan_view_for!(std::sync::Arc<str>);
