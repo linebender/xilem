@@ -4013,7 +4013,6 @@ dependencies = [
 name = "xilem_core"
 version = "0.1.0"
 dependencies = [
- "paste",
  "tracing",
 ]
 

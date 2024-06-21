@@ -2,14 +2,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::{DynMessage, MessageResult, Mut, View, ViewElement, ViewId, ViewPathTracker};
-use paste::paste;
 
 /// This trait allows, specifying a type as `ViewElement`, which should never be constructed or used,
 /// but allows downstream implementations to adjust the behaviour of [`PhantomElementCtx::PhantomElement`],
 /// e.g. adding trait impls, or a wrapper type, to support features that would depend on the `ViewElement` implementing certain traits, or being a specific type. It's necessary to please the type-checker
 ///
 /// [`PhantomElementCtx::PhantomElement`] is used e.g. in `OneOfCtx` for default elements.
-pub trait PhantomElementCtx {
+pub trait PhantomElementCtx: ViewPathTracker {
     /// This element is never actually used, it's there to satisfy the type-checker
     type PhantomElement: ViewElement;
 }
@@ -18,7 +17,7 @@ pub trait PhantomElementCtx {
 /// It's mostly there, to avoid hardcoding all of the `OneOfN` variants in traits.
 /// The `OneOfN` views are a workaround over using this as `View`,
 /// since with defaults for generic parameters rustc is unfortunately not able to infer the default, when the variants are omitted
-#[allow(missing_docs)]
+#[allow(missing_docs)] // On variants
 pub enum OneOf<A = (), B = (), C = (), D = (), E = (), F = (), G = (), H = (), I = ()> {
     A(A),
     B(B),
@@ -122,9 +121,21 @@ pub trait OneOfCtx<
 
 #[doc(hidden)] // Implementation detail, `OneOfState` is public because of trait visibility rules
 mod hidden {
+    #[allow(unreachable_pub)]
+    pub enum Never {}
     /// The state used to implement `View` for `OneOfN`
     #[allow(unreachable_pub)]
-    pub struct OneOfState<A = (), B = (), C = (), D = (), E = (), F = (), G = (), H = (), I = ()> {
+    pub struct OneOfState<
+        A = Never,
+        B = Never,
+        C = Never,
+        D = Never,
+        E = Never,
+        F = Never,
+        G = Never,
+        H = Never,
+        I = Never,
+    > {
         /// The current state of the inner view or view sequence.
         pub(super) inner_state: super::OneOf<A, B, C, D, E, F, G, H, I>,
         /// The generation this OneOfN is at.
@@ -138,22 +149,21 @@ mod hidden {
 }
 
 macro_rules! one_of {
-    ($ty_name: ident, $num_word: ident, $($variant: ident),+) => {
+    ($ty_name: ident, $num_word: literal, $(($variant: ident, $downcast_method: ident),)+) => {
         // This is not optimal, as it requires $variant to contain at least `A` and `B`, but better than no doc example...
-        paste!{
         /// Statically typed alternative to the type-erased [`AnyView`](`crate::AnyView`).
         ///
-        #[doc = "This view container can switch between " $num_word " different views."]
+        #[doc = concat!("This view container can switch between ", $num_word, " different views.")]
         ///
         /// # Examples
         ///
         /// Basic usage:
         ///
         /// ```ignore
-        #[doc = "let mut v = " $ty_name "::A(my_view());"]
-        #[doc = "v = " $ty_name "::B(my_other_view());"]
+        #[doc = concat!("let mut v = ", stringify!($ty_name), "::A(my_view());")]
+        #[doc = concat!("v = ", stringify!($ty_name), "::B(my_other_view());")]
         /// ```
-        #[allow(missing_docs)]
+        #[allow(missing_docs)] // On variants
         pub enum $ty_name<$($variant),+> {
             $($variant($variant)),+
         }
@@ -210,7 +220,7 @@ macro_rules! one_of {
                 match (prev, self, &mut view_state.inner_state) {
                     $(($ty_name::$variant(prev), $ty_name::$variant(new), OneOf::$variant(inner_state)) => {
                         ctx.with_id(ViewId::new(view_state.generation), |ctx| {
-                            Context::[<with_downcast_ $variant:lower>](&mut element, |elem| {
+                            Context::$downcast_method(&mut element, |elem| {
                                 new.rebuild(prev, inner_state, ctx, elem);
                             });
                         });
@@ -225,7 +235,7 @@ macro_rules! one_of {
                 ctx.with_id(ViewId::new(view_state.generation), |ctx| {
                     match (prev, &mut view_state.inner_state) {
                         $(($ty_name::$variant(prev), OneOf::$variant(old_state)) => {
-                            Context::[<with_downcast_ $variant:lower>](&mut element, |elem| {
+                            Context::$downcast_method(&mut element, |elem| {
                                 prev.teardown(old_state, ctx, elem);
                             });
                         })+
@@ -265,7 +275,7 @@ macro_rules! one_of {
                 ctx.with_id(ViewId::new(view_state.generation), |ctx| {
                     match (self, &mut view_state.inner_state) {
                         $(($ty_name::$variant(view), OneOf::$variant(state)) => {
-                            Context::[<with_downcast_ $variant:lower>](&mut element, |elem| {
+                            Context::$downcast_method(&mut element, |elem| {
                                 view.teardown(state, ctx, elem);
                             });
                         })+
@@ -283,7 +293,7 @@ macro_rules! one_of {
             ) -> MessageResult<Action> {
                 let (start, rest) = id_path
                     .split_first()
-                    .expect(concat!("Id path has elements for ", stringify!($ty_name)));
+                    .expect(concat!("Id path has elements for `", stringify!($ty_name), "`"));
                 if start.routing_id() != view_state.generation {
                     // The message was sent to a previous edition of the inner value
                     return MessageResult::Stale(message);
@@ -296,15 +306,77 @@ macro_rules! one_of {
                 }
             }
         }
-        }
     };
 }
 
-one_of!(OneOf2, two, A, B);
-one_of!(OneOf3, three, A, B, C);
-one_of!(OneOf4, four, A, B, C, D);
-one_of!(OneOf5, five, A, B, C, D, E);
-one_of!(OneOf6, six, A, B, C, D, E, F);
-one_of!(OneOf7, seven, A, B, C, D, E, F, G);
-one_of!(OneOf8, eight, A, B, C, D, E, F, G, H);
-one_of!(OneOf9, nine, A, B, C, D, E, F, G, H, I);
+one_of!(OneOf2, "two", (A, with_downcast_a), (B, with_downcast_b),);
+one_of!(
+    OneOf3,
+    "three",
+    (A, with_downcast_a),
+    (B, with_downcast_b),
+    (C, with_downcast_c),
+);
+one_of!(
+    OneOf4,
+    "four",
+    (A, with_downcast_a),
+    (B, with_downcast_b),
+    (C, with_downcast_c),
+    (D, with_downcast_d),
+);
+one_of!(
+    OneOf5,
+    "five",
+    (A, with_downcast_a),
+    (B, with_downcast_b),
+    (C, with_downcast_c),
+    (D, with_downcast_d),
+    (E, with_downcast_e),
+);
+one_of!(
+    OneOf6,
+    "six",
+    (A, with_downcast_a),
+    (B, with_downcast_b),
+    (C, with_downcast_c),
+    (D, with_downcast_d),
+    (E, with_downcast_e),
+    (F, with_downcast_f),
+);
+one_of!(
+    OneOf7,
+    "seven",
+    (A, with_downcast_a),
+    (B, with_downcast_b),
+    (C, with_downcast_c),
+    (D, with_downcast_d),
+    (E, with_downcast_e),
+    (F, with_downcast_f),
+    (G, with_downcast_g),
+);
+one_of!(
+    OneOf8,
+    "eight",
+    (A, with_downcast_a),
+    (B, with_downcast_b),
+    (C, with_downcast_c),
+    (D, with_downcast_d),
+    (E, with_downcast_e),
+    (F, with_downcast_f),
+    (G, with_downcast_g),
+    (H, with_downcast_h),
+);
+one_of!(
+    OneOf9,
+    "nine",
+    (A, with_downcast_a),
+    (B, with_downcast_b),
+    (C, with_downcast_c),
+    (D, with_downcast_d),
+    (E, with_downcast_e),
+    (F, with_downcast_f),
+    (G, with_downcast_g),
+    (H, with_downcast_h),
+    (I, with_downcast_i),
+);
