@@ -12,3 +12,6 @@ pub use map_action::{map_action, MapAction};
 
 mod memoize;
 pub use memoize::{memoize, Memoize};
+
+/// Statically typed alternatives to the type-erased [`AnyView`](`crate::AnyView`).
+pub mod one_of;
