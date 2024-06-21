@@ -119,7 +119,9 @@ pub trait OneOfCtx<
     );
 }
 
-#[doc(hidden)] // Implementation detail, `OneOfState` is public because of trait visibility rules
+// Because `OneOfState` is not public API, but is part of a public trait `impl`, it must be marked pub, but we don't want
+// to export it. Since this (`one_of`) module is public, we create a new module, allowing it to be pub but not exposed.
+#[doc(hidden)]
 mod hidden {
     #[allow(unreachable_pub)]
     pub enum Never {}
