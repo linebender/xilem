@@ -1,7 +1,7 @@
 // Copyright 2022 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-#![cfg_attr(not(any(test, feature = "std")), no_std)]
+#![cfg_attr(not(test), no_std)]
 #![forbid(unsafe_code)]
 #![warn(missing_docs, unreachable_pub)]
 // TODO: Point at documentation for this pattern of README include.
@@ -34,9 +34,8 @@ pub use view::{View, ViewId, ViewPathTracker};
 
 mod views;
 pub use views::{
-    adapt, map_action, map_state, memoize, Adapt, AdaptThunk, AsOrphanView, MapAction, MapState,
-    Memoize, OneOf2, OneOf2Ctx, OneOf3, OneOf3Ctx, OneOf4, OneOf4Ctx, OneOf5, OneOf5Ctx, OneOf6,
-    OneOf6Ctx, OneOf7, OneOf7Ctx, OneOf8, OneOf8Ctx, OneOf9, OneOf9Ctx, OrphanView,
+    adapt, map_action, map_state, memoize, one_of, Adapt, AdaptThunk, MapAction, MapState, Memoize,
+    OrphanView,
 };
 
 mod message;

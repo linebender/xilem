@@ -14,11 +14,11 @@ use crate::{
 };
 
 impl<State: 'static, Action: 'static> OrphanView<Line, State, Action> for ViewCtx {
-    type ViewState = ();
-    type Element = Pod<web_sys::SvgLineElement, ElementProps>;
+    type OrphanViewState = ();
+    type OrphanElement = Pod<web_sys::SvgLineElement, ElementProps>;
 
-    fn build(view: &Line, _ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        let mut element: Self::Element = Pod::new_element(Vec::new(), SVG_NS, "line").into();
+    fn orphan_build(view: &Line, _ctx: &mut ViewCtx) -> (Self::OrphanElement, Self::OrphanViewState) {
+        let mut element: Self::OrphanElement = Pod::new_element(Vec::new(), SVG_NS, "line").into();
         element.start_attribute_modifier();
         element.set_attribute("x1".into(), view.p0.x.into_attr_value());
         element.set_attribute("y1".into(), view.p0.y.into_attr_value());
@@ -28,13 +28,13 @@ impl<State: 'static, Action: 'static> OrphanView<Line, State, Action> for ViewCt
         (element, ())
     }
 
-    fn rebuild<'el>(
+    fn orphan_rebuild<'el>(
         new: &Line,
         _prev: &Line,
-        (): &mut Self::ViewState,
+        (): &mut Self::OrphanViewState,
         _ctx: &mut ViewCtx,
-        mut element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
+        mut element: Mut<'el, Self::OrphanElement>,
+    ) -> Mut<'el, Self::OrphanElement> {
         element.start_attribute_modifier();
         element.set_attribute("x1".into(), new.p0.x.into_attr_value());
         element.set_attribute("y1".into(), new.p0.y.into_attr_value());
@@ -44,17 +44,17 @@ impl<State: 'static, Action: 'static> OrphanView<Line, State, Action> for ViewCt
         element
     }
 
-    fn teardown(
+    fn orphan_teardown(
         _view: &Line,
-        (): &mut Self::ViewState,
+        (): &mut Self::OrphanViewState,
         _ctx: &mut ViewCtx,
-        _element: Mut<'_, Self::Element>,
+        _element: Mut<'_, Self::OrphanElement>,
     ) {
     }
 
-    fn message(
+    fn orphan_message(
         _view: &Line,
-        (): &mut Self::ViewState,
+        (): &mut Self::OrphanViewState,
         _id_path: &[xilem_core::ViewId],
         message: xilem_core::DynMessage,
         _app_state: &mut State,
@@ -64,11 +64,11 @@ impl<State: 'static, Action: 'static> OrphanView<Line, State, Action> for ViewCt
 }
 
 impl<State: 'static, Action: 'static> OrphanView<Rect, State, Action> for ViewCtx {
-    type ViewState = ();
-    type Element = Pod<web_sys::SvgRectElement, ElementProps>;
+    type OrphanViewState = ();
+    type OrphanElement = Pod<web_sys::SvgRectElement, ElementProps>;
 
-    fn build(view: &Rect, _ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        let mut element: Self::Element = Pod::new_element(Vec::new(), SVG_NS, "rect").into();
+    fn orphan_build(view: &Rect, _ctx: &mut ViewCtx) -> (Self::OrphanElement, Self::OrphanViewState) {
+        let mut element: Self::OrphanElement = Pod::new_element(Vec::new(), SVG_NS, "rect").into();
         element.start_attribute_modifier();
         element.set_attribute("x".into(), view.x0.into_attr_value());
         element.set_attribute("y".into(), view.y0.into_attr_value());
@@ -78,13 +78,13 @@ impl<State: 'static, Action: 'static> OrphanView<Rect, State, Action> for ViewCt
         (element, ())
     }
 
-    fn rebuild<'el>(
+    fn orphan_rebuild<'el>(
         new: &Rect,
         _prev: &Rect,
-        (): &mut Self::ViewState,
+        (): &mut Self::OrphanViewState,
         _ctx: &mut ViewCtx,
-        mut element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
+        mut element: Mut<'el, Self::OrphanElement>,
+    ) -> Mut<'el, Self::OrphanElement> {
         element.start_attribute_modifier();
         element.set_attribute("x".into(), new.x0.into_attr_value());
         element.set_attribute("y".into(), new.y0.into_attr_value());
@@ -94,17 +94,17 @@ impl<State: 'static, Action: 'static> OrphanView<Rect, State, Action> for ViewCt
         element
     }
 
-    fn teardown(
+    fn orphan_teardown(
         _view: &Rect,
-        (): &mut Self::ViewState,
+        (): &mut Self::OrphanViewState,
         _ctx: &mut ViewCtx,
-        _element: Mut<'_, Self::Element>,
+        _element: Mut<'_, Self::OrphanElement>,
     ) {
     }
 
-    fn message(
+    fn orphan_message(
         _view: &Rect,
-        (): &mut Self::ViewState,
+        (): &mut Self::OrphanViewState,
         _id_path: &[xilem_core::ViewId],
         message: xilem_core::DynMessage,
         _app_state: &mut State,
@@ -114,11 +114,11 @@ impl<State: 'static, Action: 'static> OrphanView<Rect, State, Action> for ViewCt
 }
 
 impl<State: 'static, Action: 'static> OrphanView<Circle, State, Action> for ViewCtx {
-    type ViewState = ();
-    type Element = Pod<web_sys::SvgCircleElement, ElementProps>;
+    type OrphanViewState = ();
+    type OrphanElement = Pod<web_sys::SvgCircleElement, ElementProps>;
 
-    fn build(view: &Circle, _ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        let mut element: Self::Element = Pod::new_element(Vec::new(), SVG_NS, "circle").into();
+    fn orphan_build(view: &Circle, _ctx: &mut ViewCtx) -> (Self::OrphanElement, Self::OrphanViewState) {
+        let mut element: Self::OrphanElement = Pod::new_element(Vec::new(), SVG_NS, "circle").into();
         element.start_attribute_modifier();
         element.set_attribute("cx".into(), view.center.x.into_attr_value());
         element.set_attribute("cy".into(), view.center.y.into_attr_value());
@@ -127,13 +127,13 @@ impl<State: 'static, Action: 'static> OrphanView<Circle, State, Action> for View
         (element, ())
     }
 
-    fn rebuild<'el>(
+    fn orphan_rebuild<'el>(
         new: &Circle,
         _prev: &Circle,
-        (): &mut Self::ViewState,
+        (): &mut Self::OrphanViewState,
         _ctx: &mut ViewCtx,
-        mut element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
+        mut element: Mut<'el, Self::OrphanElement>,
+    ) -> Mut<'el, Self::OrphanElement> {
         element.start_attribute_modifier();
         element.set_attribute("cx".into(), new.center.x.into_attr_value());
         element.set_attribute("cy".into(), new.center.y.into_attr_value());
@@ -142,17 +142,17 @@ impl<State: 'static, Action: 'static> OrphanView<Circle, State, Action> for View
         element
     }
 
-    fn teardown(
+    fn orphan_teardown(
         _view: &Circle,
-        (): &mut Self::ViewState,
+        (): &mut Self::OrphanViewState,
         _ctx: &mut ViewCtx,
-        _element: Mut<'_, Self::Element>,
+        _element: Mut<'_, Self::OrphanElement>,
     ) {
     }
 
-    fn message(
+    fn orphan_message(
         _view: &Circle,
-        (): &mut Self::ViewState,
+        (): &mut Self::OrphanViewState,
         _id_path: &[xilem_core::ViewId],
         message: xilem_core::DynMessage,
         _app_state: &mut State,
@@ -162,11 +162,11 @@ impl<State: 'static, Action: 'static> OrphanView<Circle, State, Action> for View
 }
 
 impl<State: 'static, Action: 'static> OrphanView<BezPath, State, Action> for ViewCtx {
-    type ViewState = Cow<'static, str>;
-    type Element = Pod<web_sys::SvgPathElement, ElementProps>;
+    type OrphanViewState = Cow<'static, str>;
+    type OrphanElement = Pod<web_sys::SvgPathElement, ElementProps>;
 
-    fn build(view: &BezPath, _ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        let mut element: Self::Element = Pod::new_element(Vec::new(), SVG_NS, "path").into();
+    fn orphan_build(view: &BezPath, _ctx: &mut ViewCtx) -> (Self::OrphanElement, Self::OrphanViewState) {
+        let mut element: Self::OrphanElement = Pod::new_element(Vec::new(), SVG_NS, "path").into();
         let svg_repr = Cow::from(view.to_svg());
         element.start_attribute_modifier();
         element.set_attribute("d".into(), svg_repr.clone().into_attr_value());
@@ -174,13 +174,13 @@ impl<State: 'static, Action: 'static> OrphanView<BezPath, State, Action> for Vie
         (element, svg_repr)
     }
 
-    fn rebuild<'el>(
+    fn orphan_rebuild<'el>(
         new: &BezPath,
         prev: &BezPath,
-        svg_repr: &mut Self::ViewState,
+        svg_repr: &mut Self::OrphanViewState,
         _ctx: &mut ViewCtx,
-        mut element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
+        mut element: Mut<'el, Self::OrphanElement>,
+    ) -> Mut<'el, Self::OrphanElement> {
         // slight optimization to avoid serialization/allocation
         if new != prev {
             *svg_repr = Cow::from(new.to_svg());
@@ -191,17 +191,17 @@ impl<State: 'static, Action: 'static> OrphanView<BezPath, State, Action> for Vie
         element
     }
 
-    fn teardown(
+    fn orphan_teardown(
         _view: &BezPath,
-        _view_state: &mut Self::ViewState,
+        _view_state: &mut Self::OrphanViewState,
         _ctx: &mut ViewCtx,
-        _element: Mut<'_, Self::Element>,
+        _element: Mut<'_, Self::OrphanElement>,
     ) {
     }
 
-    fn message(
+    fn orphan_message(
         _view: &BezPath,
-        _view_state: &mut Self::ViewState,
+        _view_state: &mut Self::OrphanViewState,
         _id_path: &[xilem_core::ViewId],
         message: xilem_core::DynMessage,
         _app_state: &mut State,

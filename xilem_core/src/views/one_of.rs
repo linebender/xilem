@@ -1,38 +1,171 @@
-// Copyright 2023 the Xilem Authors
+// Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{
-    AppendVec, DynMessage, ElementSplice, MessageResult, Mut, View, ViewElement, ViewId,
-    ViewPathTracker, ViewSequence,
-};
-use paste::paste;
-// Used in doc comment
-#[allow(unused_imports)]
-use crate::AnyView;
+use crate::{MessageResult, Mut, View, ViewElement, ViewId, ViewPathTracker};
+
+/// This trait allows, specifying a type as `ViewElement`, which should never be constructed or used,
+/// but allows downstream implementations to adjust the behaviour of [`PhantomElementCtx::PhantomElement`],
+/// e.g. adding trait impls, or a wrapper type, to support features that would depend on the `ViewElement` implementing certain traits, or being a specific type. It's necessary to please the type-checker
+///
+/// [`PhantomElementCtx::PhantomElement`] is used e.g. in `OneOfCtx` for default elements.
+pub trait PhantomElementCtx: ViewPathTracker {
+    /// This element is never actually used, it's there to satisfy the type-checker
+    type PhantomElement: ViewElement;
+}
+
+/// This is used for updating the underlying view element for all the `OneOfN` views.
+/// It's mostly there, to avoid hardcoding all of the `OneOfN` variants in traits.
+/// The `OneOfN` views are a workaround over using this as `View`,
+/// since with defaults for generic parameters rustc is unfortunately not able to infer the default, when the variants are omitted
+#[allow(missing_docs)] // On variants
+pub enum OneOf<A = (), B = (), C = (), D = (), E = (), F = (), G = (), H = (), I = ()> {
+    A(A),
+    B(B),
+    C(C),
+    D(D),
+    E(E),
+    F(F),
+    G(G),
+    H(H),
+    I(I),
+}
+
+impl<T, A, B, C, D, E, F, G, H, I> AsRef<T> for OneOf<A, B, C, D, E, F, G, H, I>
+where
+    A: AsRef<T>,
+    B: AsRef<T>,
+    C: AsRef<T>,
+    D: AsRef<T>,
+    E: AsRef<T>,
+    F: AsRef<T>,
+    G: AsRef<T>,
+    H: AsRef<T>,
+    I: AsRef<T>,
+{
+    fn as_ref(&self) -> &T {
+        match self {
+            OneOf::A(e) => <A as AsRef<T>>::as_ref(e),
+            OneOf::B(e) => <B as AsRef<T>>::as_ref(e),
+            OneOf::C(e) => <C as AsRef<T>>::as_ref(e),
+            OneOf::D(e) => <D as AsRef<T>>::as_ref(e),
+            OneOf::E(e) => <E as AsRef<T>>::as_ref(e),
+            OneOf::F(e) => <F as AsRef<T>>::as_ref(e),
+            OneOf::G(e) => <G as AsRef<T>>::as_ref(e),
+            OneOf::H(e) => <H as AsRef<T>>::as_ref(e),
+            OneOf::I(e) => <I as AsRef<T>>::as_ref(e),
+        }
+    }
+}
+
+/// To be able to use `OneOfN` as a [`View`], it's necessary to implement [`OneOfCtx`] for your `ViewCtx` type
+pub trait OneOfCtx<
+    A: ViewElement = <Self as PhantomElementCtx>::PhantomElement,
+    B: ViewElement = <Self as PhantomElementCtx>::PhantomElement,
+    C: ViewElement = <Self as PhantomElementCtx>::PhantomElement,
+    D: ViewElement = <Self as PhantomElementCtx>::PhantomElement,
+    E: ViewElement = <Self as PhantomElementCtx>::PhantomElement,
+    F: ViewElement = <Self as PhantomElementCtx>::PhantomElement,
+    G: ViewElement = <Self as PhantomElementCtx>::PhantomElement,
+    H: ViewElement = <Self as PhantomElementCtx>::PhantomElement,
+    I: ViewElement = <Self as PhantomElementCtx>::PhantomElement,
+>: PhantomElementCtx
+{
+    /// Element wrapper, that holds the current view element variant
+    type OneOfElement: ViewElement;
+
+    /// Casts the view element `elem` to the `OneOf::A` variant.
+    /// `f` needs to be invoked with that inner `ViewElement`
+    fn with_downcast_a(elem: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, A>));
+
+    /// Casts the view element `elem` to the `OneOf::B` variant.
+    /// `f` needs to be invoked with that inner `ViewElement`
+    fn with_downcast_b(elem: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, B>));
+
+    /// Casts the view element `elem` to the `OneOf::C` variant.
+    /// `f` needs to be invoked with that inner `ViewElement`
+    fn with_downcast_c(elem: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, C>));
+
+    /// Casts the view element `elem` to the `OneOf::D` variant.
+    /// `f` needs to be invoked with that inner `ViewElement`
+    fn with_downcast_d(elem: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, D>));
+
+    /// Casts the view element `elem` to the `OneOf::E` variant.
+    /// `f` needs to be invoked with that inner `ViewElement`
+    fn with_downcast_e(elem: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, E>));
+
+    /// Casts the view element `elem` to the `OneOf::F` variant.
+    /// `f` needs to be invoked with that inner `ViewElement`
+    fn with_downcast_f(elem: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, F>));
+
+    /// Casts the view element `elem` to the `OneOf::G` variant.
+    /// `f` needs to be invoked with that inner `ViewElement`
+    fn with_downcast_g(elem: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, G>));
+
+    /// Casts the view element `elem` to the `OneOf::H` variant.
+    /// `f` needs to be invoked with that inner `ViewElement`
+    fn with_downcast_h(elem: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, H>));
+
+    /// Casts the view element `elem` to the `OneOf::I` variant.
+    /// `f` needs to be invoked with that inner `ViewElement`
+    fn with_downcast_i(elem: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, I>));
+
+    /// Creates the wrapping element, this is used in `View::build` to wrap the inner view element variant
+    fn upcast_one_of_element(elem: OneOf<A, B, C, D, E, F, G, H, I>) -> Self::OneOfElement;
+
+    /// When the variant of the inner view element has changed, the wrapping element needs to be updated, this is used in `View::rebuild`
+    fn update_one_of_element_mut(
+        elem_mut: &mut Mut<'_, Self::OneOfElement>,
+        new_elem: OneOf<A, B, C, D, E, F, G, H, I>,
+    );
+}
+
+// Because `OneOfState` is not public API, but is part of a public trait `impl`, it must be marked pub, but we don't want
+// to export it. Since this (`one_of`) module is public, we create a new module, allowing it to be pub but not exposed.
+#[doc(hidden)]
+mod hidden {
+    #[allow(unreachable_pub)]
+    pub enum Never {}
+    /// The state used to implement `View` for `OneOfN`
+    #[allow(unreachable_pub)]
+    pub struct OneOfState<
+        A = Never,
+        B = Never,
+        C = Never,
+        D = Never,
+        E = Never,
+        F = Never,
+        G = Never,
+        H = Never,
+        I = Never,
+    > {
+        /// The current state of the inner view or view sequence.
+        pub(super) inner_state: super::OneOf<A, B, C, D, E, F, G, H, I>,
+        /// The generation this OneOfN is at.
+        ///
+        /// If the variant of `OneOfN` has changed, i.e. the type of the inner view,
+        /// the generation is incremented and used as ViewId in the id_path,
+        /// to avoid (possibly async) messages reaching the wrong view,
+        /// See the implementations of other `ViewSequence`s for more details
+        pub(super) generation: u64,
+    }
+}
 
 macro_rules! one_of {
-    ($ty_name: ident, $num_word: ident, $($variant: ident),+) => {
+    ($ty_name: ident, $num_word: literal, $(($variant: ident, $downcast_method: ident),)+) => {
         // This is not optimal, as it requires $variant to contain at least `A` and `B`, but better than no doc example...
-        paste!{
-        /// Statically typed alternative to the type-erased [`AnyView`].
+        /// Statically typed alternative to the type-erased [`AnyView`](`crate::AnyView`).
         ///
-        #[doc = "This view container can switch between " $num_word " different views."]
-        ///
-        /// It can also be used for alternating between different [`ViewSequence`]s
+        #[doc = concat!("This view container can switch between ", $num_word, " different views.")]
         ///
         /// # Examples
         ///
         /// Basic usage:
         ///
         /// ```ignore
-        /// // As view
-        #[doc = "let mut v = " $ty_name "::A(my_view());"]
-        #[doc = "v = " $ty_name "::B(my_other_view());"]
-        /// // As view sequence
-        #[doc = "let mut seq = " $ty_name "::A((my_view(), my_other_view()));"]
-        #[doc = "seq = " $ty_name "::B(vec![my_view()]);"]
+        #[doc = concat!("let mut v = ", stringify!($ty_name), "::A(my_view());")]
+        #[doc = concat!("v = ", stringify!($ty_name), "::B(my_other_view());")]
         /// ```
-        #[allow(missing_docs)]
+        #[allow(missing_docs)] // On variants
         pub enum $ty_name<$($variant),+> {
             $($variant($variant)),+
         }
@@ -46,54 +179,16 @@ macro_rules! one_of {
             }
         }
 
-        #[doc = "To be able to use [`" $ty_name "`] as a [`View`], it's necessary to implement [`" $ty_name Ctx "`] for your `ViewCtx` type."]
-        pub trait [<$ty_name Ctx>]<$($variant: ViewElement),+> {
-            /// Element wrapper, that holds the current view element variant
-            type [<OneOf $num_word:camel Element>]: ViewElement;
-
-            $(
-            #[doc = "Casts the view element `elem` to the [`" $ty_name "::" $variant "`] variant."]
-            /// `f` needs to be invoked with that inner [`ViewElement`]
-            fn [<with_downcast_ $variant:lower>](
-                elem: &mut Mut<'_, Self::[<OneOf $num_word:camel Element>]>,
-                f: impl FnOnce(Mut<'_, $variant>),
-            );
-            )+
-
-            /// Creates the wrapping element, this is used in [`View::build`] to wrap the inner view element variant
-            fn [<upcast_one_of_ $num_word _element>](elem: $ty_name<$($variant),+>) -> Self::[<OneOf $num_word:camel Element>];
-
-            /// When the variant of the inner view element has changed, the wrapping element needs to be updated, this is used in [`View::rebuild`]
-            fn [<update_one_of_ $num_word _element_mut>](
-                elem_mut: &mut Mut<'_, Self::[<OneOf $num_word:camel Element>]>,
-                new_elem: $ty_name<$($variant),+>,
-            );
-        }
-
-        /// The state used to implement [`View`] or [`ViewSequence`] for `OneOfN`
-        #[doc(hidden)] // Implementation detail, public because of trait visibility rules
-        pub struct [<$ty_name State>]<$($variant),+> {
-            /// The current state of the inner view or view sequence.
-            inner_state: $ty_name<$($variant),+>,
-            /// The generation this OneOfN is at.
-            ///
-            /// If the variant of `OneOfN` has changed, i.e. the type of the inner view,
-            /// the generation is incremented and used as ViewId in the id_path,
-            /// to avoid (possibly async) messages reaching the wrong view,
-            /// See the implementations of other `ViewSequence`s for more details
-            generation: u64,
-        }
-
-        impl<Context, State, Action, $($variant),+> View<State, Action, Context> for $ty_name<$($variant),+>
+        impl<Context, State, Action, Message, $($variant),+> View<State, Action, Context, Message> for $ty_name<$($variant),+>
         where
             State: 'static,
             Action: 'static,
-            Context: ViewPathTracker + [<$ty_name Ctx>]<$($variant::Element),+>,
-            $($variant: View<State, Action, Context>),+
+            Context: ViewPathTracker + OneOfCtx<$($variant::Element),+>,
+            $($variant: View<State, Action, Context, Message>),+
         {
-            type Element = Context::[<OneOf $num_word:camel Element>];
+            type Element = Context::OneOfElement;
 
-            type ViewState = [<$ty_name State>]<$($variant::ViewState),+>;
+            type ViewState = hidden::OneOfState<$($variant::ViewState),+>;
 
             fn build(&self, ctx: &mut Context) -> (Self::Element, Self::ViewState) {
                 let generation = 0;
@@ -102,14 +197,14 @@ macro_rules! one_of {
                         $($ty_name::$variant(e) => {
                             let (element, state) = e.build(ctx);
                             (
-                                Context::[<upcast_one_of_ $num_word _element>]($ty_name::$variant(element)),
-                                $ty_name::$variant(state),
+                                Context::upcast_one_of_element(OneOf::$variant(element)),
+                                OneOf::$variant(state),
                             )
                         }),+
                     });
                 (
                     element,
-                    [<$ty_name State>] {
+                    hidden::OneOfState {
                         inner_state,
                         generation,
                     },
@@ -125,9 +220,9 @@ macro_rules! one_of {
             ) -> Mut<'e, Self::Element> {
                 // Type of the inner `View` stayed the same
                 match (prev, self, &mut view_state.inner_state) {
-                    $(($ty_name::$variant(prev), $ty_name::$variant(new), $ty_name::$variant(inner_state)) => {
+                    $(($ty_name::$variant(prev), $ty_name::$variant(new), OneOf::$variant(inner_state)) => {
                         ctx.with_id(ViewId::new(view_state.generation), |ctx| {
-                            Context::[<with_downcast_ $variant:lower>](&mut element, |elem| {
+                            Context::$downcast_method(&mut element, |elem| {
                                 new.rebuild(prev, inner_state, ctx, elem);
                             });
                         });
@@ -141,8 +236,8 @@ macro_rules! one_of {
 
                 ctx.with_id(ViewId::new(view_state.generation), |ctx| {
                     match (prev, &mut view_state.inner_state) {
-                        $(($ty_name::$variant(prev), $ty_name::$variant(old_state)) => {
-                            Context::[<with_downcast_ $variant:lower>](&mut element, |elem| {
+                        $(($ty_name::$variant(prev), OneOf::$variant(old_state)) => {
+                            Context::$downcast_method(&mut element, |elem| {
                                 prev.teardown(old_state, ctx, elem);
                             });
                         })+
@@ -162,10 +257,10 @@ macro_rules! one_of {
                     match self {
                         $($ty_name::$variant(new) => {
                             let (new_element, state) = new.build(ctx);
-                            view_state.inner_state = $ty_name::$variant(state);
-                            Context::[<update_one_of_ $num_word _element_mut>](
+                            view_state.inner_state = OneOf::$variant(state);
+                            Context::update_one_of_element_mut(
                                 &mut element,
-                                $ty_name::$variant(new_element),
+                                OneOf::$variant(new_element),
                             );
                         })+
                     };
@@ -181,8 +276,8 @@ macro_rules! one_of {
             ) {
                 ctx.with_id(ViewId::new(view_state.generation), |ctx| {
                     match (self, &mut view_state.inner_state) {
-                        $(($ty_name::$variant(view), $ty_name::$variant(state)) => {
-                            Context::[<with_downcast_ $variant:lower>](&mut element, |elem| {
+                        $(($ty_name::$variant(view), OneOf::$variant(state)) => {
+                            Context::$downcast_method(&mut element, |elem| {
                                 view.teardown(state, ctx, elem);
                             });
                         })+
@@ -195,144 +290,95 @@ macro_rules! one_of {
                 &self,
                 view_state: &mut Self::ViewState,
                 id_path: &[ViewId],
-                message: DynMessage,
+                message: Message,
                 app_state: &mut State,
-            ) -> MessageResult<Action> {
+            ) -> MessageResult<Action, Message> {
                 let (start, rest) = id_path
                     .split_first()
-                    .expect(concat!("Id path has elements for ", stringify!($ty_name)));
+                    .expect(concat!("Id path has elements for `", stringify!($ty_name), "`"));
                 if start.routing_id() != view_state.generation {
                     // The message was sent to a previous edition of the inner value
                     return MessageResult::Stale(message);
                 }
                 match (self, &mut view_state.inner_state) {
-                    $(($ty_name::$variant(view), $ty_name::$variant(state)) => {
+                    $(($ty_name::$variant(view), OneOf::$variant(state)) => {
                         view.message(state, rest, message, app_state)
                     }),+
                     _ => unreachable!(),
                 }
             }
         }
-
-        impl<State, Action, Context, Element, $([<Marker $variant>],)+ $($variant),+>
-            ViewSequence<State, Action, Context, Element, $ty_name<$([<Marker $variant>]),+>>
-            for $ty_name<$($variant),+>
-        where
-            $($variant: ViewSequence<State, Action, Context, Element, [<Marker $variant>]>,)+
-            Context: ViewPathTracker,
-            Element: ViewElement,
-        {
-            type SeqState = [<$ty_name State>]<$($variant::SeqState),+>;
-
-            fn seq_build(
-                &self,
-                ctx: &mut Context,
-                elements: &mut AppendVec<Element>,
-            ) -> Self::SeqState {
-                let generation = 0;
-                let inner_state = ctx.with_id(ViewId::new(generation), |ctx| match self {
-                    $($ty_name::$variant(e) => $ty_name::$variant(e.seq_build(ctx, elements))),+
-                });
-                [<$ty_name State>] {
-                    inner_state,
-                    generation,
-                }
-            }
-
-            fn seq_rebuild(
-                &self,
-                prev: &Self,
-                seq_state: &mut Self::SeqState,
-                ctx: &mut Context,
-                elements: &mut impl ElementSplice<Element>,
-            ) {
-                // Type of the inner `ViewSequence` stayed the same
-                match (prev, self, &mut seq_state.inner_state) {
-                    $(($ty_name::$variant(prev), $ty_name::$variant(new), $ty_name::$variant(inner_state)) => {
-                        ctx.with_id(ViewId::new(seq_state.generation), |ctx| {
-                            new.seq_rebuild(prev, inner_state, ctx, elements);
-                        });
-                        return;
-                    })+
-                    _ => (),
-                };
-
-                // `ViewSequence` has changed type, teardown the old view sequence
-                prev.seq_teardown(seq_state, ctx, elements);
-
-                // Overflow handling: u64 starts at 0, incremented by 1 always.
-                // Can never realistically overflow, scale is too large.
-                // If would overflow, wrap to zero. Would need async message sent
-                // to view *exactly* `u64::MAX` versions of the view ago, which is implausible
-                seq_state.generation = seq_state.generation.wrapping_add(1);
-
-                // Create the new view sequence
-
-                ctx.with_id(ViewId::new(seq_state.generation), |ctx| {
-                    match self {
-                        $($ty_name::$variant(new) => {
-                            seq_state.inner_state = $ty_name::$variant(
-                                elements.with_scratch(|elements| new.seq_build(ctx, elements)),
-                            );
-                        })+
-                    };
-                });
-            }
-
-            fn seq_teardown(
-                &self,
-                seq_state: &mut Self::SeqState,
-                ctx: &mut Context,
-                elements: &mut impl ElementSplice<Element>,
-            ) {
-                ctx.with_id(ViewId::new(seq_state.generation), |ctx| {
-                    match (self, &mut seq_state.inner_state) {
-                        $(($ty_name::$variant(view), $ty_name::$variant(state)) => {
-                            view.seq_teardown(state, ctx, elements);
-                        })+
-                        _ => unreachable!(),
-                    }
-                });
-            }
-
-            fn seq_message(
-                &self,
-                seq_state: &mut Self::SeqState,
-                id_path: &[ViewId],
-                message: DynMessage,
-                app_state: &mut State,
-            ) -> MessageResult<Action> {
-                let (start, rest) = id_path
-                    .split_first()
-                    .expect("Id path has elements for OneOfN");
-                if start.routing_id() != seq_state.generation {
-                    // The message was sent to a previous edition of the inner value
-                    return MessageResult::Stale(message);
-                }
-                match (self, &mut seq_state.inner_state) {
-                    $(($ty_name::$variant(view), $ty_name::$variant(state)) => {
-                        view.seq_message(state, rest, message, app_state)
-                    })+
-                    _ => MessageResult::Stale(message),
-                }
-            }
-
-            fn count(&self, state: &Self::SeqState) -> usize {
-                match (self, &state.inner_state) {
-                    $(($ty_name::$variant(seq), $ty_name::$variant(state)) => seq.count(state),)+
-                    _ => unreachable!("This should not happen, have you tried executing `count` with the old `SeqState`?"),
-                }
-            }
-        }
-        }
     };
 }
 
-one_of!(OneOf2, two, A, B);
-one_of!(OneOf3, three, A, B, C);
-one_of!(OneOf4, four, A, B, C, D);
-one_of!(OneOf5, five, A, B, C, D, E);
-one_of!(OneOf6, six, A, B, C, D, E, F);
-one_of!(OneOf7, seven, A, B, C, D, E, F, G);
-one_of!(OneOf8, eight, A, B, C, D, E, F, G, H);
-one_of!(OneOf9, nine, A, B, C, D, E, F, G, H, I);
+one_of!(OneOf2, "two", (A, with_downcast_a), (B, with_downcast_b),);
+one_of!(
+    OneOf3,
+    "three",
+    (A, with_downcast_a),
+    (B, with_downcast_b),
+    (C, with_downcast_c),
+);
+one_of!(
+    OneOf4,
+    "four",
+    (A, with_downcast_a),
+    (B, with_downcast_b),
+    (C, with_downcast_c),
+    (D, with_downcast_d),
+);
+one_of!(
+    OneOf5,
+    "five",
+    (A, with_downcast_a),
+    (B, with_downcast_b),
+    (C, with_downcast_c),
+    (D, with_downcast_d),
+    (E, with_downcast_e),
+);
+one_of!(
+    OneOf6,
+    "six",
+    (A, with_downcast_a),
+    (B, with_downcast_b),
+    (C, with_downcast_c),
+    (D, with_downcast_d),
+    (E, with_downcast_e),
+    (F, with_downcast_f),
+);
+one_of!(
+    OneOf7,
+    "seven",
+    (A, with_downcast_a),
+    (B, with_downcast_b),
+    (C, with_downcast_c),
+    (D, with_downcast_d),
+    (E, with_downcast_e),
+    (F, with_downcast_f),
+    (G, with_downcast_g),
+);
+one_of!(
+    OneOf8,
+    "eight",
+    (A, with_downcast_a),
+    (B, with_downcast_b),
+    (C, with_downcast_c),
+    (D, with_downcast_d),
+    (E, with_downcast_e),
+    (F, with_downcast_f),
+    (G, with_downcast_g),
+    (H, with_downcast_h),
+);
+one_of!(
+    OneOf9,
+    "nine",
+    (A, with_downcast_a),
+    (B, with_downcast_b),
+    (C, with_downcast_c),
+    (D, with_downcast_d),
+    (E, with_downcast_e),
+    (F, with_downcast_f),
+    (G, with_downcast_g),
+    (H, with_downcast_h),
+    (I, with_downcast_i),
+);

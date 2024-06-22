@@ -11,7 +11,7 @@ use alloc::boxed::Box;
 ///
 /// [`View::message`]: crate::View::message
 #[derive(Default)]
-pub enum MessageResult<Action> {
+pub enum MessageResult<Action, Message = DynMessage> {
     /// An action for a parent message handler to use
     ///
     /// This allows for sub-sections of your app to use an elm-like architecture
@@ -25,16 +25,16 @@ pub enum MessageResult<Action> {
     /// does not require the element tree to be recreated.
     Nop,
     /// The view this message was being routed to no longer exists.
-    Stale(DynMessage),
+    Stale(Message),
 }
 
-impl<A> MessageResult<A> {
+impl<A, Message> MessageResult<A, Message> {
     /// Maps the action type `A` to `B`, i.e. [`MessageResult<A>`] to [`MessageResult<B>`]
-    pub fn map<B>(self, f: impl FnOnce(A) -> B) -> MessageResult<B> {
+    pub fn map<B>(self, f: impl FnOnce(A) -> B) -> MessageResult<B, Message> {
         match self {
             MessageResult::Action(a) => MessageResult::Action(f(a)),
             MessageResult::RequestRebuild => MessageResult::RequestRebuild,
-            MessageResult::Stale(event) => MessageResult::Stale(event),
+            MessageResult::Stale(message) => MessageResult::Stale(message),
             MessageResult::Nop => MessageResult::Nop,
         }
     }

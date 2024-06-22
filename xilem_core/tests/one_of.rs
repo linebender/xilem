@@ -5,7 +5,10 @@
 //!
 //! This is an integration test so that it can use the infrastructure in [`common`].
 
-use xilem_core::{MessageResult, Mut, OneOf2, OneOf2Ctx, View, ViewId};
+use xilem_core::{
+    one_of::{OneOf, OneOf2, OneOfCtx, PhantomElementCtx},
+    MessageResult, Mut, View, ViewId,
+};
 
 mod common;
 use common::*;
@@ -18,36 +21,49 @@ fn record_ops_1(id: u32) -> OperationView<1> {
     OperationView(id)
 }
 
-impl OneOf2Ctx<TestElement, TestElement> for TestCtx {
-    type OneOfTwoElement = TestElement;
+impl PhantomElementCtx for TestCtx {
+    type PhantomElement = TestElement;
+}
 
-    fn with_downcast_a(
-        elem: &mut Mut<'_, Self::OneOfTwoElement>,
-        f: impl FnOnce(Mut<'_, TestElement>),
-    ) {
-        f(elem);
-    }
+impl OneOfCtx<TestElement, TestElement> for TestCtx {
+    type OneOfElement = TestElement;
 
-    fn with_downcast_b(
-        elem: &mut Mut<'_, Self::OneOfTwoElement>,
-        f: impl FnOnce(Mut<'_, TestElement>),
-    ) {
-        f(elem);
-    }
-
-    fn upcast_one_of_two_element(elem: OneOf2<TestElement, TestElement>) -> Self::OneOfTwoElement {
+    fn upcast_one_of_element(
+        elem: OneOf<
+            TestElement,
+            TestElement,
+            TestElement,
+            TestElement,
+            TestElement,
+            TestElement,
+            TestElement,
+            TestElement,
+            TestElement,
+        >,
+    ) -> Self::OneOfElement {
         match elem {
-            OneOf2::A(e) => e,
-            OneOf2::B(e) => e,
+            OneOf::A(e) => e,
+            OneOf::B(e) => e,
+            _ => unreachable!(),
         }
     }
 
-    fn update_one_of_two_element_mut(
-        elem_mut: &mut Mut<'_, Self::OneOfTwoElement>,
-        new_elem: OneOf2<TestElement, TestElement>,
+    fn update_one_of_element_mut(
+        elem_mut: &mut Mut<'_, Self::OneOfElement>,
+        new_elem: OneOf<
+            TestElement,
+            TestElement,
+            TestElement,
+            TestElement,
+            TestElement,
+            TestElement,
+            TestElement,
+            TestElement,
+            TestElement,
+        >,
     ) {
         match new_elem {
-            OneOf2::A(new_elem) | OneOf2::B(new_elem) => {
+            OneOf::A(new_elem) | OneOf::B(new_elem) => {
                 assert_eq!(new_elem.operations.len(), 1);
                 let Some(Operation::Build(new_id)) = new_elem.operations.first() else {
                     unreachable!()
@@ -56,7 +72,72 @@ impl OneOf2Ctx<TestElement, TestElement> for TestCtx {
                 elem_mut.view_path = new_elem.view_path;
                 elem_mut.children = new_elem.children;
             }
+            _ => unreachable!(),
         }
+    }
+
+    fn with_downcast_a(
+        elem: &mut Mut<'_, Self::OneOfElement>,
+        f: impl FnOnce(Mut<'_, TestElement>),
+    ) {
+        f(elem);
+    }
+
+    fn with_downcast_b(
+        elem: &mut Mut<'_, Self::OneOfElement>,
+        f: impl FnOnce(Mut<'_, TestElement>),
+    ) {
+        f(elem);
+    }
+
+    // when one of the following would be invoked, it would be an error in the impl of `OneOfN`
+    fn with_downcast_c(
+        _elem: &mut Mut<'_, Self::OneOfElement>,
+        _f: impl FnOnce(Mut<'_, <Self as PhantomElementCtx>::PhantomElement>),
+    ) {
+        unreachable!()
+    }
+
+    fn with_downcast_d(
+        _elem: &mut Mut<'_, Self::OneOfElement>,
+        _f: impl FnOnce(Mut<'_, <Self as PhantomElementCtx>::PhantomElement>),
+    ) {
+        unreachable!()
+    }
+
+    fn with_downcast_e(
+        _elem: &mut Mut<'_, Self::OneOfElement>,
+        _f: impl FnOnce(Mut<'_, <Self as PhantomElementCtx>::PhantomElement>),
+    ) {
+        unreachable!()
+    }
+
+    fn with_downcast_f(
+        _elem: &mut Mut<'_, Self::OneOfElement>,
+        _f: impl FnOnce(Mut<'_, <Self as PhantomElementCtx>::PhantomElement>),
+    ) {
+        unreachable!()
+    }
+
+    fn with_downcast_g(
+        _elem: &mut Mut<'_, Self::OneOfElement>,
+        _f: impl FnOnce(Mut<'_, <Self as PhantomElementCtx>::PhantomElement>),
+    ) {
+        unreachable!()
+    }
+
+    fn with_downcast_h(
+        _elem: &mut Mut<'_, Self::OneOfElement>,
+        _f: impl FnOnce(Mut<'_, <Self as PhantomElementCtx>::PhantomElement>),
+    ) {
+        unreachable!()
+    }
+
+    fn with_downcast_i(
+        _elem: &mut Mut<'_, Self::OneOfElement>,
+        _f: impl FnOnce(Mut<'_, <Self as PhantomElementCtx>::PhantomElement>),
+    ) {
+        unreachable!()
     }
 }
 
@@ -202,6 +283,3 @@ fn one_of_no_message_after_stale_then_same_type() {
     let result = view3.message(&mut state, &path, Box::new(()), &mut ());
     assert!(matches!(result, MessageResult::Stale(_)));
 }
-
-// TODO: Logic for the `ViewSequence` implementation of `OneOf` is basically the same as the view minus up/downcasting of the element type
-// Tests would be great, but probably not necessary

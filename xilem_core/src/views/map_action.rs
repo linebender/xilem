@@ -3,7 +3,7 @@
 
 use core::marker::PhantomData;
 
-use crate::{DynMessage, Mut, View, ViewId, ViewPathTracker};
+use crate::{Mut, View, ViewId, ViewPathTracker};
 
 /// A view that maps a child [`View<State,ChildAction,_>`] to [`View<State,ParentAction,_>`] while providing mutable access to `State` in the map function.
 ///
@@ -50,7 +50,7 @@ pub struct MapAction<
 ///     })
 /// }
 /// ```
-pub fn map_action<State, ParentAction, ChildAction, Context: ViewPathTracker, V, F>(
+pub fn map_action<State, ParentAction, ChildAction, Context: ViewPathTracker, Message, V, F>(
     view: V,
     map_fn: F,
 ) -> MapAction<State, ParentAction, ChildAction, V, F>
@@ -58,7 +58,7 @@ where
     State: 'static,
     ParentAction: 'static,
     ChildAction: 'static,
-    V: View<State, ChildAction, Context>,
+    V: View<State, ChildAction, Context, Message>,
     F: Fn(&mut State, ChildAction) -> ParentAction + 'static,
 {
     MapAction {
@@ -68,13 +68,14 @@ where
     }
 }
 
-impl<State, ParentAction, ChildAction, Context: ViewPathTracker, V, F>
-    View<State, ParentAction, Context> for MapAction<State, ParentAction, ChildAction, V, F>
+impl<State, ParentAction, ChildAction, Context: ViewPathTracker, Message, V, F>
+    View<State, ParentAction, Context, Message>
+    for MapAction<State, ParentAction, ChildAction, V, F>
 where
     State: 'static,
     ParentAction: 'static,
     ChildAction: 'static,
-    V: View<State, ChildAction, Context>,
+    V: View<State, ChildAction, Context, Message>,
     F: Fn(&mut State, ChildAction) -> ParentAction + 'static,
 {
     type ViewState = V::ViewState;
@@ -107,9 +108,9 @@ where
         &self,
         view_state: &mut Self::ViewState,
         id_path: &[ViewId],
-        message: DynMessage,
+        message: Message,
         app_state: &mut State,
-    ) -> crate::MessageResult<ParentAction> {
+    ) -> crate::MessageResult<ParentAction, Message> {
         self.child
             .message(view_state, id_path, message, app_state)
             .map(|action| (self.map_fn)(app_state, action))

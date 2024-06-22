@@ -32,11 +32,9 @@ use crate::{message::MessageResult, DynMessage, Mut, ViewElement};
 ///
 /// ## Alloc
 ///
-/// In order to support the open-ended [`DynMessage`] type, this trait requires an
+/// In order to support the default open-ended [`DynMessage`] type as `Message`, this trait requires an
 /// allocator to be available.
-/// It is possible (hopefully in a backwards compatible way) to add a generic
-/// defaulted parameter for the message type in future.
-pub trait View<State, Action, Context: ViewPathTracker>: 'static {
+pub trait View<State, Action, Context: ViewPathTracker, Message = DynMessage>: 'static {
     /// The element type which this view operates on.
     type Element: ViewElement;
     /// State that is used over the lifetime of the retained representation of the view.
@@ -81,9 +79,9 @@ pub trait View<State, Action, Context: ViewPathTracker>: 'static {
         &self,
         view_state: &mut Self::ViewState,
         id_path: &[ViewId],
-        message: DynMessage,
+        message: Message,
         app_state: &mut State,
-    ) -> MessageResult<Action>;
+    ) -> MessageResult<Action, Message>;
 
     // fn debug_name?
 }
@@ -139,8 +137,10 @@ pub trait ViewPathTracker {
     }
 }
 
-impl<State, Action, Context: ViewPathTracker, V: View<State, Action, Context> + ?Sized>
-    View<State, Action, Context> for Box<V>
+impl<State, Action, Context, Message, V> View<State, Action, Context, Message> for Box<V>
+where
+    Context: ViewPathTracker,
+    V: View<State, Action, Context, Message> + ?Sized,
 {
     type Element = V::Element;
     type ViewState = V::ViewState;
@@ -172,17 +172,19 @@ impl<State, Action, Context: ViewPathTracker, V: View<State, Action, Context> + 
         &self,
         view_state: &mut Self::ViewState,
         id_path: &[ViewId],
-        message: DynMessage,
+        message: Message,
         app_state: &mut State,
-    ) -> MessageResult<Action> {
+    ) -> MessageResult<Action, Message> {
         self.deref()
             .message(view_state, id_path, message, app_state)
     }
 }
 
 /// An implementation of [`View`] which only runs rebuild if the states are different
-impl<State, Action, Context: ViewPathTracker, V: View<State, Action, Context> + ?Sized>
-    View<State, Action, Context> for Arc<V>
+impl<State, Action, Context, Message, V> View<State, Action, Context, Message> for Arc<V>
+where
+    Context: ViewPathTracker,
+    V: View<State, Action, Context, Message> + ?Sized,
 {
     type Element = V::Element;
     type ViewState = V::ViewState;
@@ -219,9 +221,9 @@ impl<State, Action, Context: ViewPathTracker, V: View<State, Action, Context> + 
         &self,
         view_state: &mut Self::ViewState,
         id_path: &[ViewId],
-        message: DynMessage,
+        message: Message,
         app_state: &mut State,
-    ) -> MessageResult<Action> {
+    ) -> MessageResult<Action, Message> {
         self.deref()
             .message(view_state, id_path, message, app_state)
     }

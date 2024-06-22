@@ -3,7 +3,7 @@
 
 use core::marker::PhantomData;
 
-use crate::{DynMessage, MessageResult, Mut, View, ViewId, ViewPathTracker};
+use crate::{MessageResult, Mut, View, ViewId, ViewPathTracker};
 
 /// A view that "extracts" state from a [`View<ParentState,_,_>`] to [`View<ChildState,_,_>`].
 /// This allows modularization of views based on their state.
@@ -39,14 +39,14 @@ pub struct MapState<ParentState, ChildState, V, F = fn(&mut ParentState) -> &mut
 ///     map_state(count_view(state.count), |state: &mut AppState|  &mut state.count)
 /// }
 /// ```
-pub fn map_state<ParentState, ChildState, Action, Context: ViewPathTracker, V, F>(
+pub fn map_state<ParentState, ChildState, Action, Context: ViewPathTracker, Message, V, F>(
     view: V,
     f: F,
 ) -> MapState<ParentState, ChildState, V, F>
 where
     ParentState: 'static,
     ChildState: 'static,
-    V: View<ChildState, Action, Context>,
+    V: View<ChildState, Action, Context, Message>,
     F: Fn(&mut ParentState) -> &mut ChildState + 'static,
 {
     MapState {
@@ -56,12 +56,12 @@ where
     }
 }
 
-impl<ParentState, ChildState, Action, Context: ViewPathTracker, V, F>
-    View<ParentState, Action, Context> for MapState<ParentState, ChildState, V, F>
+impl<ParentState, ChildState, Action, Context: ViewPathTracker, Message, V, F>
+    View<ParentState, Action, Context, Message> for MapState<ParentState, ChildState, V, F>
 where
     ParentState: 'static,
     ChildState: 'static,
-    V: View<ChildState, Action, Context>,
+    V: View<ChildState, Action, Context, Message>,
     F: Fn(&mut ParentState) -> &mut ChildState + 'static,
 {
     type ViewState = V::ViewState;
@@ -94,9 +94,9 @@ where
         &self,
         view_state: &mut Self::ViewState,
         id_path: &[ViewId],
-        message: DynMessage,
+        message: Message,
         app_state: &mut ParentState,
-    ) -> MessageResult<Action> {
+    ) -> MessageResult<Action, Message> {
         self.child
             .message(view_state, id_path, message, (self.f)(app_state))
     }

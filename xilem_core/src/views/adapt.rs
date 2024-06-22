@@ -3,7 +3,7 @@
 
 use core::marker::PhantomData;
 
-use crate::{DynMessage, MessageResult, Mut, View, ViewId, ViewPathTracker};
+use crate::{MessageResult, Mut, View, ViewId, ViewPathTracker};
 
 /// A view that wraps a child view and modifies the state that callbacks have access to.
 pub struct Adapt<
@@ -13,9 +13,10 @@ pub struct Adapt<
     ChildAction,
     Context,
     ChildView,
+    Message,
     ProxyFn = fn(
         &mut ParentState,
-        AdaptThunk<ChildState, ChildAction, Context, ChildView>,
+        AdaptThunk<ChildState, ChildAction, Context, ChildView, Message>,
     ) -> MessageResult<ParentAction>,
 > where
     Context: ViewPathTracker,
@@ -23,22 +24,31 @@ pub struct Adapt<
     proxy_fn: ProxyFn,
     child: ChildView,
     #[allow(clippy::type_complexity)]
-    phantom: PhantomData<fn() -> (ParentState, ParentAction, ChildState, ChildAction, Context)>,
+    phantom: PhantomData<
+        fn() -> (
+            ParentState,
+            ParentAction,
+            ChildState,
+            ChildAction,
+            Context,
+            Message,
+        ),
+    >,
 }
 
 /// A "thunk" which dispatches an message to an adapt node's child.
 ///
 /// The closure passed to [`Adapt`] should call this thunk with the child's
 /// app state.
-pub struct AdaptThunk<'a, ChildState, ChildAction, Context, ChildView>
+pub struct AdaptThunk<'a, ChildState, ChildAction, Context, ChildView, Message>
 where
     Context: ViewPathTracker,
-    ChildView: View<ChildState, ChildAction, Context>,
+    ChildView: View<ChildState, ChildAction, Context, Message>,
 {
     child: &'a ChildView,
     view_state: &'a mut ChildView::ViewState,
     id_path: &'a [ViewId],
-    message: DynMessage,
+    message: Message,
 }
 
 /// A view that wraps a child view and modifies the state that callbacks have access to.
@@ -89,21 +99,30 @@ where
 ///         })
 ///     )
 /// ```
-pub fn adapt<ParentState, ParentAction, ChildState, ChildAction, Context, ChildView, ProxyFn>(
+pub fn adapt<
+    ParentState,
+    ParentAction,
+    ChildState,
+    ChildAction,
+    Context,
+    ChildView,
+    Message,
+    ProxyFn,
+>(
     child: ChildView,
     proxy_fn: ProxyFn,
-) -> Adapt<ParentState, ParentAction, ChildState, ChildAction, Context, ChildView, ProxyFn>
+) -> Adapt<ParentState, ParentAction, ChildState, ChildAction, Context, ChildView, Message, ProxyFn>
 where
     ChildState: 'static,
     ChildAction: 'static,
     ParentState: 'static,
     ParentAction: 'static,
     Context: ViewPathTracker + 'static,
-    ChildView: View<ChildState, ChildAction, Context>,
+    ChildView: View<ChildState, ChildAction, Context, Message>,
     ProxyFn: Fn(
             &mut ParentState,
-            AdaptThunk<ChildState, ChildAction, Context, ChildView>,
-        ) -> MessageResult<ParentAction>
+            AdaptThunk<ChildState, ChildAction, Context, ChildView, Message>,
+        ) -> MessageResult<ParentAction, Message>
         + 'static,
 {
     Adapt {
@@ -113,35 +132,36 @@ where
     }
 }
 
-impl<'a, ChildState, ChildAction, Context, ChildView>
-    AdaptThunk<'a, ChildState, ChildAction, Context, ChildView>
+impl<'a, ChildState, ChildAction, Context, ChildView, Message>
+    AdaptThunk<'a, ChildState, ChildAction, Context, ChildView, Message>
 where
     Context: ViewPathTracker,
-    ChildView: View<ChildState, ChildAction, Context>,
+    ChildView: View<ChildState, ChildAction, Context, Message>,
 {
     /// Proxies messages from the parent [`View<ParentState, ParentAction, Context>`] to the child [`View<ChildState, ChildAction, Context>`]
     ///
     /// When the `Action` types differ the `MessageResult` returned by this method has to be converted to [`MessageResult<ParentAction>`]
-    pub fn call(self, app_state: &mut ChildState) -> MessageResult<ChildAction> {
+    pub fn call(self, app_state: &mut ChildState) -> MessageResult<ChildAction, Message> {
         self.child
             .message(self.view_state, self.id_path, self.message, app_state)
     }
 }
 
-impl<ParentState, ParentAction, ChildState, ChildAction, Context, V, F>
-    View<ParentState, ParentAction, Context>
-    for Adapt<ParentState, ParentAction, ChildState, ChildAction, Context, V, F>
+impl<ParentState, ParentAction, ChildState, ChildAction, Context, Message, V, F>
+    View<ParentState, ParentAction, Context, Message>
+    for Adapt<ParentState, ParentAction, ChildState, ChildAction, Context, V, Message, F>
 where
     ChildState: 'static,
     ChildAction: 'static,
     ParentState: 'static,
     ParentAction: 'static,
+    Message: 'static,
     Context: ViewPathTracker + 'static,
-    V: View<ChildState, ChildAction, Context>,
+    V: View<ChildState, ChildAction, Context, Message>,
     F: Fn(
             &mut ParentState,
-            AdaptThunk<ChildState, ChildAction, Context, V>,
-        ) -> MessageResult<ParentAction>
+            AdaptThunk<ChildState, ChildAction, Context, V, Message>,
+        ) -> MessageResult<ParentAction, Message>
         + 'static,
 {
     type ViewState = V::ViewState;
@@ -175,9 +195,9 @@ where
         &self,
         view_state: &mut Self::ViewState,
         id_path: &[ViewId],
-        message: crate::DynMessage,
+        message: Message,
         app_state: &mut ParentState,
-    ) -> MessageResult<ParentAction> {
+    ) -> MessageResult<ParentAction, Message> {
         let thunk = AdaptThunk {
             child: &self.child,
             view_state,

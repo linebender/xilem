@@ -345,12 +345,6 @@ impl<W: Widget> WidgetPod<W> {
         self.mark_as_visited();
         self.check_initialized("on_pointer_event");
 
-        trace!(
-            "Widget '{}' #{} visited",
-            self.inner.short_type_name(),
-            self.state.id.to_raw(),
-        );
-
         if parent_ctx.is_handled {
             parent_ctx.global_state.debug_logger.pop_span();
             // If the event was already handled, we quit early.
@@ -382,6 +376,12 @@ impl<W: Widget> WidgetPod<W> {
         //let call_inner = true;
 
         if call_inner {
+            trace!(
+                "Widget '{}' #{} visited",
+                self.inner.short_type_name(),
+                self.state.id.to_raw(),
+            );
+
             self.call_widget_method_with_checks("on_pointer_event", |widget_pod| {
                 // widget_pod is a reborrow of `self`
                 let mut inner_ctx = EventCtx {
@@ -950,17 +950,17 @@ impl<W: Widget> WidgetPod<W> {
             return;
         }
 
-        trace!(
-            "Painting widget '{}' #{}",
-            self.inner.short_type_name(),
-            self.state.id.to_raw()
-        );
-
         // TODO - explain this
         self.mark_as_visited();
         self.check_initialized("paint");
 
         if self.state.needs_paint {
+            trace!(
+                "Painting widget '{}' #{}",
+                self.inner.short_type_name(),
+                self.state.id.to_raw()
+            );
+
             self.state.needs_paint = false;
             self.call_widget_method_with_checks("paint", |widget_pod| {
                 // TODO - Handle invalidation regions

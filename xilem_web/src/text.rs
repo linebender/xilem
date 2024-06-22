@@ -1,84 +1,22 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use xilem_core::{AsOrphanView, Mut, OrphanView, View};
+use xilem_core::{Mut, OrphanView};
 
 use crate::{Pod, ViewCtx};
-
-pub struct Text<T>(T);
-
-// // Due to new limitations of the orphan rule in xilem_core a new type wrapper is necessary here
-// pub fn text<T>(text: T) -> Text<T> {
-//     Text(text)
-// }
 
 // strings -> text nodes
 macro_rules! impl_string_view {
     ($ty:ty) => {
-        impl<State, Action> View<State, Action, ViewCtx> for Text<$ty> {
-            type Element = Pod<web_sys::Text, ()>;
-
-            type ViewState = ();
-
-            fn build(&self, _ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-                let pod = Pod {
-                    node: web_sys::Text::new_with_data(&self.0).unwrap(),
-                    props: (),
-                };
-                (pod, ())
-            }
-
-            fn rebuild<'a>(
-                &self,
-                prev: &Self,
-                (): &mut Self::ViewState,
-                _ctx: &mut ViewCtx,
-                element: <Self::Element as xilem_core::ViewElement>::Mut<'a>,
-            ) -> <Self::Element as xilem_core::ViewElement>::Mut<'a> {
-                if prev.0 != self.0 {
-                    element.node.set_data(&self.0);
-                }
-                element
-            }
-
-            fn teardown(
-                &self,
-                _view_state: &mut Self::ViewState,
-                _ctx: &mut ViewCtx,
-                _element: Mut<'_, Pod<web_sys::Text, ()>>,
-            ) {
-            }
-
-            fn message(
-                &self,
-                _view_state: &mut Self::ViewState,
-                _id_path: &[xilem_core::ViewId],
-                message: xilem_core::DynMessage,
-                _app_state: &mut State,
-            ) -> xilem_core::MessageResult<Action> {
-                xilem_core::MessageResult::Stale(message)
-            }
-        }
-
-        impl<State, Action> AsOrphanView<$ty, State, Action> for ViewCtx {
-            type V = Text<$ty>;
-
-            fn as_view(value: &$ty) -> Self::V {
-                Text(value)
-                // text(value)
-            }
-        }
-    };
-}
-
-macro_rules! impl_string_orphan_view {
-    ($ty:ty) => {
         impl<State, Action> OrphanView<$ty, State, Action> for ViewCtx {
-            type Element = Pod<web_sys::Text, ()>;
+            type OrphanElement = Pod<web_sys::Text, ()>;
 
-            type ViewState = ();
+            type OrphanViewState = ();
 
-            fn build(view: &$ty, _ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+            fn orphan_build(
+                view: &$ty,
+                _ctx: &mut ViewCtx,
+            ) -> (Self::OrphanElement, Self::OrphanViewState) {
                 let pod = Pod {
                     node: web_sys::Text::new_with_data(view).unwrap(),
                     props: (),
@@ -86,30 +24,30 @@ macro_rules! impl_string_orphan_view {
                 (pod, ())
             }
 
-            fn rebuild<'a>(
+            fn orphan_rebuild<'a>(
                 new: &$ty,
                 prev: &$ty,
-                (): &mut Self::ViewState,
+                (): &mut Self::OrphanViewState,
                 _ctx: &mut ViewCtx,
-                element: Mut<'a, Self::Element>,
-            ) -> Mut<'a, Self::Element> {
+                element: Mut<'a, Self::OrphanElement>,
+            ) -> Mut<'a, Self::OrphanElement> {
                 if prev != new {
                     element.node.set_data(new);
                 }
                 element
             }
 
-            fn teardown(
+            fn orphan_teardown(
                 _view: &$ty,
-                _view_state: &mut Self::ViewState,
+                _view_state: &mut Self::OrphanViewState,
                 _ctx: &mut ViewCtx,
                 _element: Mut<'_, Pod<web_sys::Text, ()>>,
             ) {
             }
 
-            fn message(
+            fn orphan_message(
                 _view: &$ty,
-                _view_state: &mut Self::ViewState,
+                _view_state: &mut Self::OrphanViewState,
                 _id_path: &[xilem_core::ViewId],
                 message: xilem_core::DynMessage,
                 _app_state: &mut State,
@@ -120,64 +58,57 @@ macro_rules! impl_string_orphan_view {
     };
 }
 
-// own?
-impl_string_orphan_view!(String);
 impl_string_view!(&'static str);
-// impl_string_view!(std::borrow::Cow<'static, str>);
+impl_string_view!(String);
+impl_string_view!(std::borrow::Cow<'static, str>);
 
 macro_rules! impl_to_string_view {
     ($ty:ty) => {
-        impl<State, Action> View<State, Action, ViewCtx> for Text<$ty> {
-            type Element = Pod<web_sys::Text, ()>;
+        impl<State, Action> OrphanView<$ty, State, Action> for ViewCtx {
+            type OrphanElement = Pod<web_sys::Text, ()>;
 
-            type ViewState = ();
+            type OrphanViewState = ();
 
-            fn build(&self, _ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+            fn orphan_build(
+                view: &$ty,
+                _ctx: &mut ViewCtx,
+            ) -> (Self::OrphanElement, Self::OrphanViewState) {
                 let pod = Pod {
-                    node: web_sys::Text::new_with_data(&self.0.to_string()).unwrap(),
+                    node: web_sys::Text::new_with_data(&view.to_string()).unwrap(),
                     props: (),
                 };
                 (pod, ())
             }
 
-            fn rebuild<'a>(
-                &self,
-                prev: &Self,
-                (): &mut Self::ViewState,
+            fn orphan_rebuild<'a>(
+                new: &$ty,
+                prev: &$ty,
+                (): &mut Self::OrphanViewState,
                 _ctx: &mut ViewCtx,
-                element: <Self::Element as xilem_core::ViewElement>::Mut<'a>,
-            ) -> <Self::Element as xilem_core::ViewElement>::Mut<'a> {
-                if prev.0 != self.0 {
-                    element.node.set_data(&self.0.to_string());
+                element: Mut<'a, Self::OrphanElement>,
+            ) -> Mut<'a, Self::OrphanElement> {
+                if prev != new {
+                    element.node.set_data(&new.to_string());
                 }
                 element
             }
 
-            fn teardown(
-                &self,
-                _view_state: &mut Self::ViewState,
+            fn orphan_teardown(
+                _view: &$ty,
+                _view_state: &mut Self::OrphanViewState,
                 _ctx: &mut ViewCtx,
                 _element: Mut<'_, Pod<web_sys::Text, ()>>,
             ) {
             }
 
-            fn message(
-                &self,
-                _view_state: &mut Self::ViewState,
+            fn orphan_message(
+                _view: &$ty,
+                _view_state: &mut Self::OrphanViewState,
                 _id_path: &[xilem_core::ViewId],
                 message: xilem_core::DynMessage,
                 _app_state: &mut State,
             ) -> xilem_core::MessageResult<Action> {
                 xilem_core::MessageResult::Stale(message)
-            }
-        }
-
-        impl<State, Action> AsOrphanView<$ty, State, Action> for ViewCtx {
-            type V = Text<$ty>;
-
-            fn as_view(value: &$ty) -> Self::V {
-                // text(*value)
-                Text(*value)
             }
         }
     };
