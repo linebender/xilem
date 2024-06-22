@@ -161,50 +161,58 @@ impl<W: Widget> WidgetPod<W> {
     // TODO - This method should take a 'can_skip: Fn(WidgetRef) -> bool'
     // predicate and only panic if can_skip returns false.
     #[inline(always)]
-    fn call_widget_method_with_checks<Ret>(
+    fn call_widget_method_with_checks(
         &mut self,
         method_name: &str,
-        visit: impl FnOnce(&mut Self) -> Ret,
-    ) -> Ret {
-        if cfg!(not(debug_assertions)) {
-            return visit(self);
+        visit: impl FnOnce(&mut Self) -> bool,
+    ) {
+        let _span = self.inner.make_trace_span().entered();
+
+        // TODO #370 - Re-implement debug logger
+
+        // TODO - explain this
+        self.mark_as_visited();
+
+        let mut children_ids = Vec::new();
+
+        if cfg!(debug_assertions) {
+            for child in self.inner.children() {
+                child.state().mark_as_visited(false);
+            }
+            children_ids = self.inner.children().iter().map(|w| w.id()).collect();
         }
 
-        for child in self.inner.children() {
-            child.state().mark_as_visited(false);
-        }
-        let children_ids: Vec<_> = self.inner.children().iter().map(|w| w.id()).collect();
+        let called_widget = visit(self);
 
-        let return_value = visit(self);
-
-        let new_children_ids: Vec<_> = self.inner.children().iter().map(|w| w.id()).collect();
-        if children_ids != new_children_ids && !self.state.children_changed {
-            debug_panic!(
+        if cfg!(debug_assertions) && called_widget {
+            let new_children_ids: Vec<_> = self.inner.children().iter().map(|w| w.id()).collect();
+            if children_ids != new_children_ids && !self.state.children_changed {
+                debug_panic!(
                 "Error in '{}' #{}: children changed in method {} but ctx.children_changed() wasn't called",
                 self.inner.short_type_name(),
                 self.id().to_raw(),
-                method_name,
-            );
-        }
-
-        #[cfg(debug_assertions)]
-        for child in self.inner.children() {
-            // FIXME - use can_skip callback instead
-            if child.state().needs_visit() && !child.state().is_stashed {
-                debug_panic!(
-                    "Error in '{}' #{}: child widget '{}' #{} not visited in method {}",
-                    self.inner.short_type_name(),
-                    self.id().to_raw(),
-                    child.deref().short_type_name(),
-                    child.id().to_raw(),
                     method_name,
                 );
             }
-        }
 
-        return_value
+            #[cfg(debug_assertions)]
+            for child in self.inner.children() {
+                // FIXME - use can_skip callback instead
+                if child.state().needs_visit() && !child.state().is_stashed {
+                    debug_panic!(
+                        "Error in '{}' #{}: child widget '{}' #{} not visited in method {}",
+                        self.inner.short_type_name(),
+                        self.id().to_raw(),
+                        child.deref().short_type_name(),
+                        child.id().to_raw(),
+                        method_name,
+                    );
+                }
+            }
+        }
     }
 
+    #[track_caller]
     fn check_initialized(&self, method_name: &str) {
         if self.state.is_new {
             debug_panic!(
@@ -226,21 +234,17 @@ impl<W: Widget> WidgetPod<W> {
     // - If a Widget has focus, then none of its parents is hidden
 
     pub fn on_pointer_event(&mut self, parent_ctx: &mut EventCtx, event: &PointerEvent) {
-        let _span = self.inner.make_trace_span().entered();
-        // TODO https://github.com/linebender/xilem/issues/370
-        parent_ctx
-            .global_state
-            .debug_logger
-            .push_span(self.inner.short_type_name());
-
-        // TODO - explain this
-        self.mark_as_visited();
         self.check_initialized("on_pointer_event");
+        self.call_widget_method_with_checks("on_pointer_event", |self2| {
+            self2.on_pointer_event_inner(parent_ctx, event)
+        });
+    }
 
+    fn on_pointer_event_inner(&mut self, parent_ctx: &mut EventCtx, event: &PointerEvent) -> bool {
         if parent_ctx.is_handled {
             parent_ctx.global_state.debug_logger.pop_span();
             // If the event was already handled, we quit early.
-            return;
+            return false;
         }
 
         let had_active = self.state.has_active;
@@ -264,114 +268,86 @@ impl<W: Widget> WidgetPod<W> {
             parent_ctx.global_state,
             hot_pos,
         );
-        let call_inner = (had_active || self.state.is_hot || hot_changed) && !self.state.is_stashed;
-        //let call_inner = true;
 
-        if call_inner {
+        let call_widget =
+            (had_active || self.state.is_hot || hot_changed) && !self.state.is_stashed;
+        if call_widget {
             trace!(
                 "Widget '{}' #{} visited",
                 self.inner.short_type_name(),
                 self.id().to_raw(),
             );
 
-            self.call_widget_method_with_checks("on_pointer_event", |widget_pod| {
-                // widget_pod is a reborrow of `self`
-                let mut inner_ctx = EventCtx {
-                    global_state: parent_ctx.global_state,
-                    widget_state: &mut widget_pod.state,
-                    is_handled: false,
-                    request_pan_to_child: None,
-                };
-                inner_ctx.widget_state.has_active = false;
+            let mut inner_ctx = EventCtx {
+                global_state: parent_ctx.global_state,
+                widget_state: &mut self.state,
+                is_handled: false,
+                request_pan_to_child: None,
+            };
+            inner_ctx.widget_state.has_active = false;
 
-                widget_pod.inner.on_pointer_event(&mut inner_ctx, event);
+            self.inner.on_pointer_event(&mut inner_ctx, event);
 
-                inner_ctx.widget_state.has_active |= inner_ctx.widget_state.is_active;
-                parent_ctx.is_handled |= inner_ctx.is_handled;
+            inner_ctx.widget_state.has_active |= inner_ctx.widget_state.is_active;
+            parent_ctx.is_handled |= inner_ctx.is_handled;
 
-                // TODO - there's some dubious logic here
-                if let Some(target_rect) = inner_ctx.request_pan_to_child {
-                    widget_pod.pan_to_child(parent_ctx, target_rect);
-                    let new_rect = target_rect
-                        .with_origin(target_rect.origin() + widget_pod.state.origin.to_vec2());
-                    parent_ctx.request_pan_to_child = Some(new_rect);
-                }
-            });
+            // TODO - there's some dubious logic here
+            if let Some(target_rect) = inner_ctx.request_pan_to_child {
+                self.pan_to_child(parent_ctx, target_rect);
+                let new_rect =
+                    target_rect.with_origin(target_rect.origin() + self.state.origin.to_vec2());
+                parent_ctx.request_pan_to_child = Some(new_rect);
+            }
         }
 
         // Always merge even if not needed, because merging is idempotent and gives us simpler code.
         // Doing this conditionally only makes sense when there's a measurable performance boost.
         parent_ctx.widget_state.merge_up(&mut self.state);
 
-        parent_ctx
-            .global_state
-            .debug_logger
-            .update_widget_state(self.as_dyn());
-        parent_ctx
-            .global_state
-            .debug_logger
-            .push_log(false, "updated state");
-
-        parent_ctx.global_state.debug_logger.pop_span();
+        call_widget
     }
 
     pub fn on_text_event(&mut self, parent_ctx: &mut EventCtx, event: &TextEvent) {
-        let _span = self.inner.make_trace_span().entered();
-        // TODO https://github.com/linebender/xilem/issues/370
-        parent_ctx
-            .global_state
-            .debug_logger
-            .push_span(self.inner.short_type_name());
-
-        // TODO - explain this
-        self.mark_as_visited();
         self.check_initialized("on_text_event");
+        self.call_widget_method_with_checks("on_text_event", |self2| {
+            self2.on_text_event_inner(parent_ctx, event)
+        });
+    }
 
+    fn on_text_event_inner(&mut self, parent_ctx: &mut EventCtx, event: &TextEvent) -> bool {
         if parent_ctx.is_handled {
-            parent_ctx.global_state.debug_logger.pop_span();
             // If the event was already handled, we quit early.
-            return;
+            return false;
         }
 
-        if self.state.has_focus {
-            self.call_widget_method_with_checks("on_text_event", |widget_pod| {
-                // widget_pod is a reborrow of `self`
-                let mut inner_ctx = EventCtx {
-                    global_state: parent_ctx.global_state,
-                    widget_state: &mut widget_pod.state,
-                    is_handled: false,
-                    request_pan_to_child: None,
-                };
+        let call_widget = self.state.has_focus && !self.state.is_stashed;
+        if call_widget {
+            let mut inner_ctx = EventCtx {
+                global_state: parent_ctx.global_state,
+                widget_state: &mut self.state,
+                is_handled: false,
+                request_pan_to_child: None,
+            };
 
-                widget_pod.inner.on_text_event(&mut inner_ctx, event);
+            self.inner.on_text_event(&mut inner_ctx, event);
 
-                inner_ctx.widget_state.has_active |= inner_ctx.widget_state.is_active;
-                parent_ctx.is_handled |= inner_ctx.is_handled;
+            inner_ctx.widget_state.has_active |= inner_ctx.widget_state.is_active;
+            parent_ctx.is_handled |= inner_ctx.is_handled;
 
-                // TODO - there's some dubious logic here
-                if let Some(target_rect) = inner_ctx.request_pan_to_child {
-                    widget_pod.pan_to_child(parent_ctx, target_rect);
-                    let new_rect = target_rect
-                        .with_origin(target_rect.origin() + widget_pod.state.origin.to_vec2());
-                    parent_ctx.request_pan_to_child = Some(new_rect);
-                }
-            });
+            // TODO - there's some dubious logic here
+            if let Some(target_rect) = inner_ctx.request_pan_to_child {
+                self.pan_to_child(parent_ctx, target_rect);
+                let new_rect =
+                    target_rect.with_origin(target_rect.origin() + self.state.origin.to_vec2());
+                parent_ctx.request_pan_to_child = Some(new_rect);
+            }
         }
 
         // Always merge even if not needed, because merging is idempotent and gives us simpler code.
         // Doing this conditionally only makes sense when there's a measurable performance boost.
         parent_ctx.widget_state.merge_up(&mut self.state);
 
-        parent_ctx
-            .global_state
-            .debug_logger
-            .update_widget_state(self.as_dyn());
-        parent_ctx
-            .global_state
-            .debug_logger
-            .push_log(false, "updated state");
-
-        parent_ctx.global_state.debug_logger.pop_span();
+        call_widget
     }
 
     fn pan_to_child(&mut self, parent_ctx: &mut EventCtx, rect: Rect) {
@@ -385,56 +361,42 @@ impl<W: Widget> WidgetPod<W> {
     }
 
     pub fn on_access_event(&mut self, parent_ctx: &mut EventCtx, event: &AccessEvent) {
-        let _span = self.inner.make_trace_span().entered();
-        // TODO https://github.com/linebender/xilem/issues/370
-        parent_ctx
-            .global_state
-            .debug_logger
-            .push_span(self.inner.short_type_name());
-
-        // TODO - explain this
-        self.mark_as_visited();
         self.check_initialized("on_text_event");
+        self.call_widget_method_with_checks("on_access_event", |self2| {
+            self2.on_access_event_inner(parent_ctx, event)
+        });
+    }
 
+    fn on_access_event_inner(&mut self, parent_ctx: &mut EventCtx, event: &AccessEvent) -> bool {
         if parent_ctx.is_handled {
             parent_ctx.global_state.debug_logger.pop_span();
             // If the event was already handled, we quit early.
-            return;
+            return false;
         }
 
-        if self.id() == event.target || self.state.children.may_contain(&event.target) {
-            self.call_widget_method_with_checks("on_access_event", |widget_pod| {
-                // widget_pod is a reborrow of `self`
-                let mut inner_ctx = EventCtx {
-                    global_state: parent_ctx.global_state,
-                    widget_state: &mut widget_pod.state,
-                    is_handled: false,
-                    request_pan_to_child: None,
-                };
+        let call_widget =
+            self.id() == event.target || self.state.children.may_contain(&event.target);
+        if call_widget {
+            let mut inner_ctx = EventCtx {
+                global_state: parent_ctx.global_state,
+                widget_state: &mut self.state,
+                is_handled: false,
+                request_pan_to_child: None,
+            };
 
-                widget_pod.inner.on_access_event(&mut inner_ctx, event);
+            self.inner.on_access_event(&mut inner_ctx, event);
 
-                inner_ctx.widget_state.has_active |= inner_ctx.widget_state.is_active;
-                parent_ctx.is_handled |= inner_ctx.is_handled;
+            inner_ctx.widget_state.has_active |= inner_ctx.widget_state.is_active;
+            parent_ctx.is_handled |= inner_ctx.is_handled;
 
-                // TODO - request_pan_to_child
-            });
+            // TODO - request_pan_to_child
         }
 
         // Always merge even if not needed, because merging is idempotent and gives us simpler code.
         // Doing this conditionally only makes sense when there's a measurable performance boost.
         parent_ctx.widget_state.merge_up(&mut self.state);
 
-        parent_ctx
-            .global_state
-            .debug_logger
-            .update_widget_state(self.as_dyn());
-        parent_ctx
-            .global_state
-            .debug_logger
-            .push_log(false, "updated state");
-
-        parent_ctx.global_state.debug_logger.pop_span();
+        call_widget
     }
 
     // --- MARK: LIFECYCLE ---
@@ -444,24 +406,19 @@ impl<W: Widget> WidgetPod<W> {
 
     /// Propagate a [`LifeCycle`] event.
     pub fn lifecycle(&mut self, parent_ctx: &mut LifeCycleCtx, event: &LifeCycle) {
-        let _span = self.inner.make_trace_span().entered();
+        self.call_widget_method_with_checks("lifecycle", |self2| {
+            self2.lifecycle_inner(parent_ctx, event)
+        });
+    }
 
-        // TODO https://github.com/linebender/xilem/issues/370
-        parent_ctx
-            .global_state
-            .debug_logger
-            .push_span(self.inner.short_type_name());
-
-        // TODO - explain this
-        self.mark_as_visited();
-
+    fn lifecycle_inner(&mut self, parent_ctx: &mut LifeCycleCtx, event: &LifeCycle) -> bool {
         // when routing a status change event, if we are at our target
         // we may send an extra event after the actual event
         let mut extra_event = None;
 
         let had_focus = self.state.has_focus;
 
-        let call_inner = match event {
+        let call_widget = match event {
             LifeCycle::Internal(internal) => match internal {
                 InternalLifeCycle::RouteWidgetAdded => {
                     // if this is called either we were just created, in
@@ -479,7 +436,7 @@ impl<W: Widget> WidgetPod<W> {
                             .debug_logger
                             .push_log(false, "updated state");
                         parent_ctx.global_state.debug_logger.pop_span();
-                        return;
+                        return true;
                     } else {
                         if self.state.children_changed {
                             // TODO - Separate "widget removed" case.
@@ -498,16 +455,15 @@ impl<W: Widget> WidgetPod<W> {
                     if was_disabled != self.state.is_disabled() {
                         // TODO
                         let disabled = self.state.is_disabled();
-                        self.call_widget_method_with_checks("lifecycle", |widget_pod| {
-                            let mut inner_ctx = LifeCycleCtx {
-                                global_state: parent_ctx.global_state,
-                                widget_state: &mut widget_pod.state,
-                            };
 
-                            widget_pod
-                                .inner
-                                .lifecycle(&mut inner_ctx, &LifeCycle::DisabledChanged(disabled));
-                        });
+                        let mut inner_ctx = LifeCycleCtx {
+                            global_state: parent_ctx.global_state,
+                            widget_state: &mut self.state,
+                        };
+
+                        self.inner
+                            .lifecycle(&mut inner_ctx, &LifeCycle::DisabledChanged(disabled));
+
                         //Each widget needs only one of DisabledChanged and RouteDisabledChanged
                         false
                     } else {
@@ -578,7 +534,7 @@ impl<W: Widget> WidgetPod<W> {
                     self.id().to_raw(),
                     event
                 );
-                return;
+                return false;
             }
             LifeCycle::AnimFrame(_) => true,
             LifeCycle::DisabledChanged(ancestors_disabled) => {
@@ -610,16 +566,13 @@ impl<W: Widget> WidgetPod<W> {
             LifeCycle::RequestPanToChild(_) => false,
         };
 
-        // widget_pod is a reborrow of `self`
-        if call_inner {
-            self.call_widget_method_with_checks("lifecycle", |widget_pod| {
-                let mut inner_ctx = LifeCycleCtx {
-                    global_state: parent_ctx.global_state,
-                    widget_state: &mut widget_pod.state,
-                };
+        if call_widget {
+            let mut inner_ctx = LifeCycleCtx {
+                global_state: parent_ctx.global_state,
+                widget_state: &mut self.state,
+            };
 
-                widget_pod.inner.lifecycle(&mut inner_ctx, event);
-            });
+            self.inner.lifecycle(&mut inner_ctx, event);
         }
 
         if let Some(event) = extra_event.as_ref() {
@@ -684,16 +637,7 @@ impl<W: Widget> WidgetPod<W> {
 
         parent_ctx.widget_state.merge_up(&mut self.state);
 
-        parent_ctx
-            .global_state
-            .debug_logger
-            .update_widget_state(self.as_dyn());
-        parent_ctx
-            .global_state
-            .debug_logger
-            .push_log(false, "updated state");
-
-        parent_ctx.global_state.debug_logger.pop_span();
+        call_widget || extra_event.is_some()
     }
 
     // --- MARK: LAYOUT ---
@@ -705,26 +649,21 @@ impl<W: Widget> WidgetPod<W> {
     ///
     /// [`layout`]: Widget::layout
     pub fn layout(&mut self, parent_ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
-        let _span = self.inner.make_trace_span().entered();
+        self.check_initialized("layout");
+        self.call_widget_method_with_checks("layout", |self2| self2.layout_inner(parent_ctx, bc));
+        self.state.size
+    }
 
-        // TODO https://github.com/linebender/xilem/issues/370
-        parent_ctx
-            .global_state
-            .debug_logger
-            .push_span(self.inner.short_type_name());
-
+    fn layout_inner(&mut self, parent_ctx: &mut LayoutCtx, bc: &BoxConstraints) -> bool {
         if self.state.is_stashed {
             debug_panic!(
                 "Error in '{}' #{}: trying to compute layout of stashed widget.",
                 self.inner.short_type_name(),
                 self.id().to_raw(),
             );
-            return Size::ZERO;
+            self.state.size = Size::ZERO;
+            return false;
         }
-
-        // TODO - explain this
-        self.mark_as_visited();
-        self.check_initialized("layout");
 
         self.state.needs_layout = false;
         self.state.is_expecting_place_child_call = true;
@@ -738,17 +677,15 @@ impl<W: Widget> WidgetPod<W> {
 
         self.state.local_paint_rect = Rect::ZERO;
 
-        let new_size = self.call_widget_method_with_checks("layout", |widget_pod| {
-            // widget_pod is a reborrow of `self`
-
+        let new_size = {
             let mut inner_ctx = LayoutCtx {
-                widget_state: &mut widget_pod.state,
+                widget_state: &mut self.state,
                 global_state: parent_ctx.global_state,
                 mouse_pos: parent_ctx.mouse_pos,
             };
 
-            widget_pod.inner.layout(&mut inner_ctx, bc)
-        });
+            self.inner.layout(&mut inner_ctx, bc)
+        };
 
         self.state.local_paint_rect = self
             .state
@@ -799,18 +736,7 @@ impl<W: Widget> WidgetPod<W> {
         self.state.size = new_size;
         self.log_layout_issues(new_size);
 
-        parent_ctx
-            .global_state
-            .debug_logger
-            .update_widget_state(self.as_dyn());
-        parent_ctx
-            .global_state
-            .debug_logger
-            .push_log(false, "updated state");
-
-        parent_ctx.global_state.debug_logger.pop_span();
-
-        new_size
+        true
     }
 
     fn log_layout_issues(&self, size: Size) {
@@ -831,52 +757,50 @@ impl<W: Widget> WidgetPod<W> {
     /// This will recursively paint widgets, stopping if a widget's layout
     /// rect is outside of the currently visible region.
     pub fn paint(&mut self, parent_ctx: &mut PaintCtx, scene: &mut Scene) {
-        let _span = self.inner.make_trace_span().entered();
+        self.check_initialized("paint");
+        self.call_widget_method_with_checks("paint", |self2| self2.paint_inner(parent_ctx, scene));
+    }
 
+    fn paint_inner(&mut self, parent_ctx: &mut PaintCtx, scene: &mut Scene) -> bool {
         if self.state.is_stashed {
             debug_panic!(
                 "Error in '{}' #{}: trying to paint stashed widget.",
                 self.inner.short_type_name(),
                 self.id().to_raw(),
             );
-            return;
+            return false;
         }
 
-        // TODO - explain this
-        self.mark_as_visited();
-        self.check_initialized("paint");
-
-        if self.state.needs_paint {
+        let call_widget = self.state.needs_paint;
+        if call_widget {
             trace!(
                 "Painting widget '{}' #{}",
                 self.inner.short_type_name(),
-                self.id().to_raw(),
+                self.id().to_raw()
             );
-
             self.state.needs_paint = false;
-            self.call_widget_method_with_checks("paint", |widget_pod| {
-                // TODO - Handle invalidation regions
-                let mut inner_ctx = PaintCtx {
-                    global_state: parent_ctx.global_state,
-                    widget_state: &widget_pod.state,
-                    depth: parent_ctx.depth + 1,
-                    debug_paint: parent_ctx.debug_paint,
-                    debug_widget: parent_ctx.debug_widget,
-                };
 
-                widget_pod.fragment.reset();
-                widget_pod
-                    .inner
-                    .paint(&mut inner_ctx, &mut widget_pod.fragment);
+            // TODO - Handle invalidation regions
+            let mut inner_ctx = PaintCtx {
+                global_state: parent_ctx.global_state,
+                widget_state: &self.state,
+                depth: parent_ctx.depth + 1,
+                debug_paint: parent_ctx.debug_paint,
+                debug_widget: parent_ctx.debug_widget,
+            };
 
-                if parent_ctx.debug_paint {
-                    widget_pod.debug_paint_layout_bounds(widget_pod.state.size);
-                }
-            });
+            self.fragment.reset();
+            self.inner.paint(&mut inner_ctx, &mut self.fragment);
+
+            if parent_ctx.debug_paint {
+                self.debug_paint_layout_bounds(self.state.size);
+            }
         }
 
         let transform = Affine::translate(self.state.origin.to_vec2());
         scene.append(&self.fragment, Some(transform));
+
+        call_widget
     }
 
     fn debug_paint_layout_bounds(&mut self, size: Size) {
@@ -890,53 +814,55 @@ impl<W: Widget> WidgetPod<W> {
 
     // --- MARK: ACCESSIBILITY ---
     pub fn accessibility(&mut self, parent_ctx: &mut AccessCtx) {
-        let _span = self.inner.make_trace_span().entered();
+        self.check_initialized("accessibility");
+        self.call_widget_method_with_checks("accessibility", |self2| {
+            self2.accessibility_inner(parent_ctx)
+        });
+    }
 
+    fn accessibility_inner(&mut self, parent_ctx: &mut AccessCtx) -> bool {
         // TODO
         // if self.state.is_stashed {}
-
-        // TODO - explain this
-        self.mark_as_visited();
-        self.check_initialized("accessibility");
 
         // If this widget or a child has requested an accessibility update,
         // or if AccessKit has requested a full rebuild,
         // we call the accessibility method on this widget.
-        if parent_ctx.rebuild_all || self.state.request_accessibility_update {
+        let call_widget = parent_ctx.rebuild_all || self.state.request_accessibility_update;
+        if call_widget {
             trace!(
                 "Building accessibility node for widget '{}' #{}",
                 self.inner.short_type_name(),
                 self.id().to_raw()
             );
 
-            self.call_widget_method_with_checks("accessibility", |widget_pod| {
-                let current_node = widget_pod.build_access_node(parent_ctx.scale_factor);
-                let mut inner_ctx = AccessCtx {
-                    global_state: parent_ctx.global_state,
-                    widget_state: &mut widget_pod.state,
-                    tree_update: parent_ctx.tree_update,
-                    current_node,
-                    rebuild_all: parent_ctx.rebuild_all,
-                    scale_factor: parent_ctx.scale_factor,
-                };
-                widget_pod.inner.accessibility(&mut inner_ctx);
+            let current_node = self.build_access_node(parent_ctx.scale_factor);
+            let mut inner_ctx = AccessCtx {
+                global_state: parent_ctx.global_state,
+                widget_state: &mut self.state,
+                tree_update: parent_ctx.tree_update,
+                current_node,
+                rebuild_all: parent_ctx.rebuild_all,
+                scale_factor: parent_ctx.scale_factor,
+            };
+            self.inner.accessibility(&mut inner_ctx);
 
-                let id: NodeId = inner_ctx.widget_state.id.into();
-                trace!(
-                    "Built node #{} with role={:?}, default_action={:?}",
-                    id.0,
-                    inner_ctx.current_node.role(),
-                    inner_ctx.current_node.default_action_verb(),
-                );
-                inner_ctx
-                    .tree_update
-                    .nodes
-                    .push((id, inner_ctx.current_node.build()));
-            });
+            let id: NodeId = inner_ctx.widget_state.id.into();
+            trace!(
+                "Built node #{} with role={:?}, default_action={:?}",
+                id.0,
+                inner_ctx.current_node.role(),
+                inner_ctx.current_node.default_action_verb(),
+            );
+            inner_ctx
+                .tree_update
+                .nodes
+                .push((id, inner_ctx.current_node.build()));
         }
 
         self.state.request_accessibility_update = false;
         self.state.needs_accessibility_update = false;
+
+        call_widget
     }
 
     fn build_access_node(&mut self, scale_factor: f64) -> NodeBuilder {
