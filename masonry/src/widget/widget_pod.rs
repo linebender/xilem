@@ -242,7 +242,6 @@ impl<W: Widget> WidgetPod<W> {
 
     fn on_pointer_event_inner(&mut self, parent_ctx: &mut EventCtx, event: &PointerEvent) -> bool {
         if parent_ctx.is_handled {
-            parent_ctx.global_state.debug_logger.pop_span();
             // If the event was already handled, we quit early.
             return false;
         }
@@ -427,15 +426,6 @@ impl<W: Widget> WidgetPod<W> {
                     // we just pass this event down
                     if self.state.is_new {
                         self.lifecycle(parent_ctx, &LifeCycle::WidgetAdded);
-                        parent_ctx
-                            .global_state
-                            .debug_logger
-                            .update_widget_state(self.as_dyn());
-                        parent_ctx
-                            .global_state
-                            .debug_logger
-                            .push_log(false, "updated state");
-                        parent_ctx.global_state.debug_logger.pop_span();
                         return true;
                     } else {
                         if self.state.children_changed {
