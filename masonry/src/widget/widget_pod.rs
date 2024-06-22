@@ -950,17 +950,17 @@ impl<W: Widget> WidgetPod<W> {
             return;
         }
 
-        trace!(
-            "Painting widget '{}' #{}",
-            self.inner.short_type_name(),
-            self.state.id.to_raw()
-        );
-
         // TODO - explain this
         self.mark_as_visited();
         self.check_initialized("paint");
 
         if self.state.needs_paint {
+            trace!(
+                "Painting widget '{}' #{}",
+                self.inner.short_type_name(),
+                self.state.id.to_raw()
+            );
+
             self.state.needs_paint = false;
             self.call_widget_method_with_checks("paint", |widget_pod| {
                 // TODO - Handle invalidation regions
