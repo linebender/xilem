@@ -30,6 +30,7 @@ Xilem apps will interact with some of the functions from this crate, in particul
 Xilem apps which use custom widgets (and therefore must implement custom views), will implement the [`View`][] trait.
 
 If you wish to implement the Xilem pattern in a different domain (such as for a terminal user interface), this crate can be used to do so.
+Though, while Xilem Core should be able to support all kinds of domains, the crate prioritizes the ergonomics for users of Xilem.
 
 ## Hot reloading
 
