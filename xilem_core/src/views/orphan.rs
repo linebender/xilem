@@ -1,45 +1,51 @@
-// TODO document everything, possibly different naming
-#![allow(missing_docs)]
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::{DynMessage, MessageResult, Mut, View, ViewElement, ViewId, ViewPathTracker};
 
 /// This trait provides a way to add [`View`] implementations for types that would be restricted otherwise by the orphan rules.
-/// Every type that can be supported with this trait, needs a concrete `View` implementation as seen below.
-pub trait OrphanView<T, State, Action>: ViewPathTracker + Sized {
+/// Every type that can be supported with this trait, needs a concrete `View` implementation in xilem_core, possibly feature-gated.
+pub trait OrphanView<V, State, Action, Message = DynMessage>: ViewPathTracker + Sized {
+    /// See [`View::Element`]
     type OrphanElement: ViewElement;
+    /// See [`View::ViewState`]
     type OrphanViewState;
 
-    fn orphan_build(view: &T, ctx: &mut Self) -> (Self::OrphanElement, Self::OrphanViewState);
+    /// See [`View::build`]
+    fn orphan_build(view: &V, ctx: &mut Self) -> (Self::OrphanElement, Self::OrphanViewState);
+
+    /// See [`View::rebuild`]
     fn orphan_rebuild<'el>(
-        new: &T,
-        prev: &T,
+        new: &V,
+        prev: &V,
         view_state: &mut Self::OrphanViewState,
         ctx: &mut Self,
         element: Mut<'el, Self::OrphanElement>,
     ) -> Mut<'el, Self::OrphanElement>;
 
+    /// See [`View::teardown`]
     fn orphan_teardown(
-        view: &T,
+        view: &V,
         view_state: &mut Self::OrphanViewState,
         ctx: &mut Self,
         element: Mut<'_, Self::OrphanElement>,
     );
+
+    /// See [`View::message`]
     fn orphan_message(
-        view: &T,
+        view: &V,
         view_state: &mut Self::OrphanViewState,
         id_path: &[ViewId],
-        message: DynMessage,
+        message: Message,
         app_state: &mut State,
-    ) -> MessageResult<Action>;
+    ) -> MessageResult<Action, Message>;
 }
 
 macro_rules! impl_orphan_view_for {
     ($ty: ty) => {
-        impl<State, Action, Context> View<State, Action, Context> for $ty
+        impl<State, Action, Context, Message> View<State, Action, Context, Message> for $ty
         where
-            Context: OrphanView<$ty, State, Action>,
+            Context: OrphanView<$ty, State, Action, Message>,
         {
             type Element = Context::OrphanElement;
 
@@ -72,9 +78,9 @@ macro_rules! impl_orphan_view_for {
                 &self,
                 view_state: &mut Self::ViewState,
                 id_path: &[ViewId],
-                message: DynMessage,
+                message: Message,
                 app_state: &mut State,
-            ) -> MessageResult<Action> {
+            ) -> MessageResult<Action, Message> {
                 Context::orphan_message(self, view_state, id_path, message, app_state)
             }
         }
@@ -104,7 +110,7 @@ impl_orphan_view_for!(usize);
 #[cfg(feature = "kurbo")]
 mod kurbo {
     use super::OrphanView;
-    use crate::{DynMessage, MessageResult, Mut, View, ViewId};
+    use crate::{MessageResult, Mut, View, ViewId};
     impl_orphan_view_for!(kurbo::PathSeg);
     impl_orphan_view_for!(kurbo::Arc);
     impl_orphan_view_for!(kurbo::BezPath);
