@@ -5,36 +5,30 @@
 
 use crate::{DynMessage, MessageResult, Mut, View, ViewElement, ViewId, ViewPathTracker};
 
-// TODO it would be nice to be able to decide between those two ways (mostly to avoid allocations, as otherwise `as_view` would be better I think)
-
-/// A way to implement `View` for foreign types
-pub trait AsOrphanView<T, State, Action>: ViewPathTracker + Sized {
-    type V: View<State, Action, Self>;
-    fn as_view(value: &T) -> Self::V;
-}
-
+/// This trait provides a way to add [`View`] implementations for types that would be restricted otherwise by the orphan rules.
+/// Every type that can be supported with this trait, needs a concrete `View` implementation as seen below.
 pub trait OrphanView<T, State, Action>: ViewPathTracker + Sized {
-    type Element: ViewElement;
-    type ViewState;
+    type OrphanElement: ViewElement;
+    type OrphanViewState;
 
-    fn build(view: &T, ctx: &mut Self) -> (Self::Element, Self::ViewState);
-    fn rebuild<'el>(
+    fn orphan_build(view: &T, ctx: &mut Self) -> (Self::OrphanElement, Self::OrphanViewState);
+    fn orphan_rebuild<'el>(
         new: &T,
         prev: &T,
-        view_state: &mut Self::ViewState,
+        view_state: &mut Self::OrphanViewState,
         ctx: &mut Self,
-        element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element>;
+        element: Mut<'el, Self::OrphanElement>,
+    ) -> Mut<'el, Self::OrphanElement>;
 
-    fn teardown(
+    fn orphan_teardown(
         view: &T,
-        view_state: &mut Self::ViewState,
+        view_state: &mut Self::OrphanViewState,
         ctx: &mut Self,
-        element: Mut<'_, Self::Element>,
+        element: Mut<'_, Self::OrphanElement>,
     );
-    fn message(
+    fn orphan_message(
         view: &T,
-        view_state: &mut Self::ViewState,
+        view_state: &mut Self::OrphanViewState,
         id_path: &[ViewId],
         message: DynMessage,
         app_state: &mut State,
@@ -47,12 +41,12 @@ macro_rules! impl_orphan_view_for {
         where
             Context: OrphanView<$ty, State, Action>,
         {
-            type Element = Context::Element;
+            type Element = Context::OrphanElement;
 
-            type ViewState = Context::ViewState;
+            type ViewState = Context::OrphanViewState;
 
             fn build(&self, ctx: &mut Context) -> (Self::Element, Self::ViewState) {
-                Context::build(self, ctx)
+                Context::orphan_build(self, ctx)
             }
 
             fn rebuild<'el>(
@@ -62,7 +56,7 @@ macro_rules! impl_orphan_view_for {
                 ctx: &mut Context,
                 element: Mut<'el, Self::Element>,
             ) -> Mut<'el, Self::Element> {
-                Context::rebuild(self, prev, view_state, ctx, element)
+                Context::orphan_rebuild(self, prev, view_state, ctx, element)
             }
 
             fn teardown(
@@ -71,7 +65,7 @@ macro_rules! impl_orphan_view_for {
                 ctx: &mut Context,
                 element: Mut<'_, Self::Element>,
             ) {
-                Context::teardown(self, view_state, ctx, element);
+                Context::orphan_teardown(self, view_state, ctx, element);
             }
 
             fn message(
@@ -81,93 +75,31 @@ macro_rules! impl_orphan_view_for {
                 message: DynMessage,
                 app_state: &mut State,
             ) -> MessageResult<Action> {
-                Context::message(self, view_state, id_path, message, app_state)
-            }
-        }
-    };
-}
-
-macro_rules! impl_as_orphan_view_for {
-    ($ty: ty) => {
-        impl<State, Action, Context> View<State, Action, Context> for $ty
-        where
-            Context: AsOrphanView<$ty, State, Action>,
-        {
-            type Element = <<Context as AsOrphanView<$ty, State, Action>>::V as View<State, Action, Context>>::Element;
-            type ViewState = <<Context as AsOrphanView<$ty, State, Action>>::V as View<State, Action, Context>>::ViewState;
-
-            fn build(&self, ctx: &mut Context) -> (Self::Element, Self::ViewState) {
-                <<Context as AsOrphanView<$ty, State, Action>>::V as View<State, Action, Context>>
-                    ::build(&Context::as_view(self), ctx)
-            }
-
-            fn rebuild<'el>(
-                &self,
-                prev: &Self,
-                view_state: &mut Self::ViewState,
-                ctx: &mut Context,
-                element: Mut<'el, Self::Element>,
-            ) -> Mut<'el, Self::Element> {
-                <<Context as AsOrphanView<$ty, State, Action>>::V as View<State, Action, Context>>::rebuild(
-                    &Context::as_view(self),
-                    &Context::as_view(prev),
-                    view_state,
-                    ctx,
-                    element,
-                )
-            }
-
-            fn teardown(
-                &self,
-                view_state: &mut Self::ViewState,
-                ctx: &mut Context,
-                element: <Self::Element as ViewElement>::Mut<'_>,
-            ) {
-                <<Context as AsOrphanView<$ty, State, Action>>::V as View<State, Action, Context>>
-                    ::teardown(&Context::as_view(self), view_state, ctx, element);
-            }
-
-            fn message(
-                &self,
-                view_state: &mut Self::ViewState,
-                id_path: &[ViewId],
-                message: DynMessage,
-                app_state: &mut State,
-            ) -> MessageResult<Action> {
-                <<Context as AsOrphanView<$ty, State, Action>>::V as View<State, Action, Context>>::message(
-                    &Context::as_view(self),
-                    view_state,
-                    id_path,
-                    message,
-                    app_state,
-                )
+                Context::orphan_message(self, view_state, id_path, message, app_state)
             }
         }
     };
 }
 
 // string impls
-impl_as_orphan_view_for!(&'static str);
+impl_orphan_view_for!(&'static str);
 impl_orphan_view_for!(alloc::string::String);
-impl_as_orphan_view_for!(alloc::borrow::Cow<'static, str>);
-// Why does the following not work, but the `Cow` impl does??
-// #[cfg(feature = "std")]
-// impl_as_orphan_view_for!(std::sync::Arc<str>);
+impl_orphan_view_for!(alloc::borrow::Cow<'static, str>);
 
 // number impls
-impl_as_orphan_view_for!(f32);
-impl_as_orphan_view_for!(f64);
-impl_as_orphan_view_for!(i8);
-impl_as_orphan_view_for!(u8);
-impl_as_orphan_view_for!(i16);
-impl_as_orphan_view_for!(u16);
-impl_as_orphan_view_for!(i32);
-impl_as_orphan_view_for!(u32);
-impl_as_orphan_view_for!(i64);
-impl_as_orphan_view_for!(u64);
-impl_as_orphan_view_for!(u128);
-impl_as_orphan_view_for!(isize);
-impl_as_orphan_view_for!(usize);
+impl_orphan_view_for!(f32);
+impl_orphan_view_for!(f64);
+impl_orphan_view_for!(i8);
+impl_orphan_view_for!(u8);
+impl_orphan_view_for!(i16);
+impl_orphan_view_for!(u16);
+impl_orphan_view_for!(i32);
+impl_orphan_view_for!(u32);
+impl_orphan_view_for!(i64);
+impl_orphan_view_for!(u64);
+impl_orphan_view_for!(u128);
+impl_orphan_view_for!(isize);
+impl_orphan_view_for!(usize);
 
 #[cfg(feature = "kurbo")]
 mod kurbo {

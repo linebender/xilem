@@ -17,4 +17,4 @@ pub use memoize::{memoize, Memoize};
 pub mod one_of;
 
 mod orphan;
-pub use orphan::{AsOrphanView, OrphanView};
+pub use orphan::OrphanView;

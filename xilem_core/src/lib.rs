@@ -34,8 +34,8 @@ pub use view::{View, ViewId, ViewPathTracker};
 
 mod views;
 pub use views::{
-    adapt, map_action, map_state, memoize, one_of, Adapt, AdaptThunk, AsOrphanView, MapAction,
-    MapState, Memoize, OrphanView,
+    adapt, map_action, map_state, memoize, one_of, Adapt, AdaptThunk, MapAction, MapState, Memoize,
+    OrphanView,
 };
 
 mod message;
