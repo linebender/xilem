@@ -7,7 +7,9 @@ use core::any::Any;
 
 use alloc::boxed::Box;
 
-use crate::{AnyElement, DynMessage, MessageResult, Mut, View, ViewId, ViewPathTracker};
+use crate::{
+    AnyElement, DynMessage, MessageResult, Mut, View, ViewElement, ViewId, ViewPathTracker,
+};
 
 /// A view which can have any view type where the [`View::Element`] is compatible with
 /// `Element`.
@@ -24,7 +26,7 @@ use crate::{AnyElement, DynMessage, MessageResult, Mut, View, ViewId, ViewPathTr
 ///
 /// Libraries using `xilem_core` are expected to have a type alias for their own `AnyView`, which specifies
 /// the `Context` and `Element` types.
-pub trait AnyView<State, Action, Context, Element: crate::ViewElement> {
+pub trait AnyView<State, Action, Context, Element: ViewElement, Message = DynMessage> {
     /// Get an [`Any`] reference to `self`.
     fn as_any(&self) -> &dyn Any;
 
@@ -36,7 +38,7 @@ pub trait AnyView<State, Action, Context, Element: crate::ViewElement> {
         &self,
         dyn_state: &mut AnyViewState,
         ctx: &mut Context,
-        prev: &dyn AnyView<State, Action, Context, Element>,
+        prev: &dyn AnyView<State, Action, Context, Element, Message>,
         element: Element::Mut<'el>,
     ) -> Element::Mut<'el>;
 
@@ -55,18 +57,19 @@ pub trait AnyView<State, Action, Context, Element: crate::ViewElement> {
         &self,
         dyn_state: &mut AnyViewState,
         id_path: &[ViewId],
-        message: DynMessage,
+        message: Message,
         app_state: &mut State,
-    ) -> MessageResult<Action>;
+    ) -> MessageResult<Action, Message>;
 }
 
-impl<State, Action, Context, DynamicElement, V> AnyView<State, Action, Context, DynamicElement>
-    for V
+impl<State, Action, Context, DynamicElement, Message, V>
+    AnyView<State, Action, Context, DynamicElement, Message> for V
 where
     DynamicElement: AnyElement<V::Element>,
     Context: ViewPathTracker,
-    V: View<State, Action, Context> + 'static,
+    V: View<State, Action, Context, Message> + 'static,
     V::ViewState: 'static,
+    Message: 'static,
 {
     fn as_any(&self) -> &dyn Any {
         self
@@ -88,7 +91,7 @@ where
         &self,
         dyn_state: &mut AnyViewState,
         ctx: &mut Context,
-        prev: &dyn AnyView<State, Action, Context, DynamicElement>,
+        prev: &dyn AnyView<State, Action, Context, DynamicElement, Message>,
         mut element: DynamicElement::Mut<'el>,
     ) -> DynamicElement::Mut<'el> {
         if let Some(prev) = prev.as_any().downcast_ref() {
@@ -142,9 +145,9 @@ where
         &self,
         dyn_state: &mut AnyViewState,
         id_path: &[ViewId],
-        message: DynMessage,
+        message: Message,
         app_state: &mut State,
-    ) -> MessageResult<Action> {
+    ) -> MessageResult<Action, Message> {
         let state = dyn_state
             .inner_state
             .downcast_mut()
@@ -168,12 +171,15 @@ pub struct AnyViewState {
     generation: u64,
 }
 
-impl<State: 'static, Action: 'static, Context, Element> View<State, Action, Context>
-    for dyn AnyView<State, Action, Context, Element>
+impl<State, Action, Context, Element, Message> View<State, Action, Context, Message>
+    for dyn AnyView<State, Action, Context, Element, Message>
 where
     // Element must be `static` so it can be downcasted
-    Element: crate::ViewElement + 'static,
+    Element: ViewElement + 'static,
     Context: crate::ViewPathTracker + 'static,
+    State: 'static,
+    Action: 'static,
+    Message: 'static,
 {
     type Element = Element;
 
@@ -206,20 +212,23 @@ where
         &self,
         view_state: &mut Self::ViewState,
         id_path: &[crate::ViewId],
-        message: crate::DynMessage,
+        message: Message,
         app_state: &mut State,
-    ) -> crate::MessageResult<Action> {
+    ) -> crate::MessageResult<Action, Message> {
         self.dyn_message(view_state, id_path, message, app_state)
     }
 }
 
 // TODO: IWBN if we could avoid this
-impl<State: 'static, Action: 'static, Context, Element> View<State, Action, Context>
-    for dyn AnyView<State, Action, Context, Element> + Send
+impl<State, Action, Context, Element, Message> View<State, Action, Context, Message>
+    for dyn AnyView<State, Action, Context, Element, Message> + Send
 where
     // Element must be `static` so it can be downcasted
-    Element: crate::ViewElement + 'static,
+    Element: ViewElement + 'static,
     Context: crate::ViewPathTracker + 'static,
+    State: 'static,
+    Action: 'static,
+    Message: 'static,
 {
     type Element = Element;
 
@@ -252,19 +261,22 @@ where
         &self,
         view_state: &mut Self::ViewState,
         id_path: &[crate::ViewId],
-        message: crate::DynMessage,
+        message: Message,
         app_state: &mut State,
-    ) -> crate::MessageResult<Action> {
+    ) -> crate::MessageResult<Action, Message> {
         self.dyn_message(view_state, id_path, message, app_state)
     }
 }
 
-impl<State: 'static, Action: 'static, Context, Element> View<State, Action, Context>
-    for dyn AnyView<State, Action, Context, Element> + Send + Sync
+impl<State, Action, Context, Element, Message> View<State, Action, Context, Message>
+    for dyn AnyView<State, Action, Context, Element, Message> + Send + Sync
 where
     // Element must be `static` so it can be downcasted
-    Element: crate::ViewElement + 'static,
+    Element: ViewElement + 'static,
     Context: crate::ViewPathTracker + 'static,
+    State: 'static,
+    Action: 'static,
+    Message: 'static,
 {
     type Element = Element;
 
@@ -297,19 +309,22 @@ where
         &self,
         view_state: &mut Self::ViewState,
         id_path: &[crate::ViewId],
-        message: crate::DynMessage,
+        message: Message,
         app_state: &mut State,
-    ) -> crate::MessageResult<Action> {
+    ) -> crate::MessageResult<Action, Message> {
         self.dyn_message(view_state, id_path, message, app_state)
     }
 }
 
-impl<State: 'static, Action: 'static, Context, Element> View<State, Action, Context>
-    for dyn AnyView<State, Action, Context, Element> + Sync
+impl<State, Action, Context, Element, Message> View<State, Action, Context, Message>
+    for dyn AnyView<State, Action, Context, Element, Message> + Sync
 where
     // Element must be `static` so it can be downcasted
-    Element: crate::ViewElement + 'static,
+    Element: ViewElement + 'static,
     Context: crate::ViewPathTracker + 'static,
+    State: 'static,
+    Action: 'static,
+    Message: 'static,
 {
     type Element = Element;
 
@@ -342,9 +357,9 @@ where
         &self,
         view_state: &mut Self::ViewState,
         id_path: &[crate::ViewId],
-        message: crate::DynMessage,
+        message: Message,
         app_state: &mut State,
-    ) -> crate::MessageResult<Action> {
+    ) -> crate::MessageResult<Action, Message> {
         self.dyn_message(view_state, id_path, message, app_state)
     }
 }
