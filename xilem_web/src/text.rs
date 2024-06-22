@@ -3,12 +3,12 @@
 
 use xilem_core::{Mut, OrphanView};
 
-use crate::{Pod, ViewCtx};
+use crate::{Pod, ViewCtx, DynMessage};
 
 // strings -> text nodes
 macro_rules! impl_string_view {
     ($ty:ty) => {
-        impl<State, Action> OrphanView<$ty, State, Action> for ViewCtx {
+        impl<State, Action> OrphanView<$ty, State, Action, DynMessage> for ViewCtx {
             type OrphanElement = Pod<web_sys::Text, ()>;
 
             type OrphanViewState = ();
@@ -49,9 +49,9 @@ macro_rules! impl_string_view {
                 _view: &$ty,
                 _view_state: &mut Self::OrphanViewState,
                 _id_path: &[xilem_core::ViewId],
-                message: xilem_core::DynMessage,
+                message: DynMessage,
                 _app_state: &mut State,
-            ) -> xilem_core::MessageResult<Action> {
+            ) -> xilem_core::MessageResult<Action, DynMessage> {
                 xilem_core::MessageResult::Stale(message)
             }
         }
@@ -64,7 +64,7 @@ impl_string_view!(std::borrow::Cow<'static, str>);
 
 macro_rules! impl_to_string_view {
     ($ty:ty) => {
-        impl<State, Action> OrphanView<$ty, State, Action> for ViewCtx {
+        impl<State, Action> OrphanView<$ty, State, Action, DynMessage> for ViewCtx {
             type OrphanElement = Pod<web_sys::Text, ()>;
 
             type OrphanViewState = ();
@@ -105,9 +105,9 @@ macro_rules! impl_to_string_view {
                 _view: &$ty,
                 _view_state: &mut Self::OrphanViewState,
                 _id_path: &[xilem_core::ViewId],
-                message: xilem_core::DynMessage,
+                message: DynMessage,
                 _app_state: &mut State,
-            ) -> xilem_core::MessageResult<Action> {
+            ) -> xilem_core::MessageResult<Action, DynMessage> {
                 xilem_core::MessageResult::Stale(message)
             }
         }

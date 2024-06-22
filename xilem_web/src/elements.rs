@@ -8,11 +8,11 @@ use std::borrow::Cow;
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
 use crate::{
-    core::{AppendVec, DynMessage, ElementSplice, MessageResult, Mut, View, ViewId, ViewSequence},
+    core::{AppendVec, ElementSplice, MessageResult, Mut, View, ViewId, ViewSequence},
     document,
     element_props::ElementProps,
     vec_splice::VecSplice,
-    AnyPod, DomNode, Pod, ViewCtx, HTML_NS,
+    AnyPod, DomNode, DynMessage, Pod, ViewCtx, HTML_NS,
 };
 
 mod sealed {
@@ -59,7 +59,7 @@ pub trait DomViewSequence<State, Action, SeqMarker>:
         id_path: &[ViewId],
         message: DynMessage,
         app_state: &mut State,
-    ) -> MessageResult<Action>;
+    ) -> MessageResult<Action, DynMessage>;
 }
 
 impl<State, Action, SeqMarker, S> sealed::Sealed<State, Action, SeqMarker> for S
@@ -67,7 +67,7 @@ where
     State: 'static,
     SeqMarker: 'static,
     Action: 'static,
-    S: ViewSequence<State, Action, ViewCtx, AnyPod, SeqMarker>,
+    S: ViewSequence<State, Action, ViewCtx, AnyPod, SeqMarker, DynMessage>,
 {
 }
 
@@ -76,7 +76,7 @@ where
     State: 'static,
     SeqMarker: 'static,
     Action: 'static,
-    S: ViewSequence<State, Action, ViewCtx, AnyPod, SeqMarker>,
+    S: ViewSequence<State, Action, ViewCtx, AnyPod, SeqMarker, DynMessage>,
 {
     fn as_any(&self) -> &dyn Any {
         self
@@ -116,7 +116,7 @@ where
         id_path: &[ViewId],
         message: DynMessage,
         app_state: &mut State,
-    ) -> MessageResult<Action> {
+    ) -> MessageResult<Action, DynMessage> {
         self.seq_message(
             seq_state.downcast_mut().unwrap_throw(),
             id_path,
@@ -317,7 +317,7 @@ pub fn custom_element<
     }
 }
 
-impl<State, Action, SeqMarker> View<State, Action, ViewCtx>
+impl<State, Action, SeqMarker> View<State, Action, ViewCtx, DynMessage>
     for CustomElement<State, Action, SeqMarker>
 where
     State: 'static,
@@ -378,7 +378,7 @@ where
         id_path: &[ViewId],
         message: DynMessage,
         app_state: &mut State,
-    ) -> MessageResult<Action> {
+    ) -> MessageResult<Action, DynMessage> {
         self.children
             .dyn_seq_message(&mut view_state.seq_state, id_path, message, app_state)
     }
@@ -409,7 +409,7 @@ macro_rules! define_element {
             }
         }
 
-        impl<State, Action, SeqMarker> View<State, Action, ViewCtx>
+        impl<State, Action, SeqMarker> View<State, Action, ViewCtx, DynMessage>
             for $ty_name<State, Action, SeqMarker>
         where
             State: 'static,
@@ -455,7 +455,7 @@ macro_rules! define_element {
                 id_path: &[ViewId],
                 message: DynMessage,
                 app_state: &mut State,
-            ) -> MessageResult<Action> {
+            ) -> MessageResult<Action, DynMessage> {
                 self.children.dyn_seq_message(
                     &mut view_state.seq_state,
                     id_path,
@@ -469,10 +469,10 @@ macro_rules! define_element {
 
 macro_rules! define_elements {
     ($ns:ident, $($element_def:tt,)*) => {
-        use super::{build_element, rebuild_element, teardown_element, ElementState, DomViewSequence};
+        use super::{build_element, rebuild_element, teardown_element, DomViewSequence, ElementState};
         use crate::{
-            core::{DynMessage, MessageResult, Mut, ViewId},
-            ElementProps, Pod, View, ViewCtx,
+            core::{MessageResult, Mut, ViewId},
+            DynMessage, ElementProps, Pod, View, ViewCtx,
         };
         $(define_element!(crate::$ns, $element_def);)*
     };

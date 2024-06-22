@@ -6,7 +6,7 @@ use wasm_bindgen::{prelude::Closure, throw_str, JsCast, UnwrapThrowExt};
 use web_sys::AddEventListenerOptions;
 use xilem_core::{MessageResult, Mut, View, ViewId, ViewPathTracker};
 
-use crate::{ElementAsRef, OptionalAction, ViewCtx};
+use crate::{DynMessage, ElementAsRef, OptionalAction, ViewCtx};
 
 /// Wraps a [`View`] `V` and attaches an event listener.
 ///
@@ -60,7 +60,7 @@ where
     }
 }
 
-fn create_event_listener<Event: JsCast + xilem_core::Message>(
+fn create_event_listener<Event: JsCast + crate::Message>(
     target: &web_sys::EventTarget,
     event: &str,
     // TODO options
@@ -125,9 +125,9 @@ fn build_event_listener<State, Action, V, Event>(
 where
     State: 'static,
     Action: 'static,
-    V: View<State, Action, ViewCtx>,
+    V: View<State, Action, ViewCtx, DynMessage>,
     V::Element: ElementAsRef<web_sys::EventTarget>,
-    Event: JsCast + 'static + xilem_core::Message,
+    Event: JsCast + 'static + crate::Message,
 {
     // we use a placeholder id here, the id can never change, so we don't need to store it anywhere
     ctx.with_id(ViewId::new(0), |ctx| {
@@ -158,9 +158,9 @@ fn rebuild_event_listener<'el, State, Action, V, Event>(
 where
     State: 'static,
     Action: 'static,
-    V: View<State, Action, ViewCtx>,
+    V: View<State, Action, ViewCtx, DynMessage>,
     V::Element: ElementAsRef<web_sys::EventTarget>,
-    Event: JsCast + 'static + xilem_core::Message,
+    Event: JsCast + 'static + crate::Message,
 {
     ctx.with_id(ViewId::new(0), |ctx| {
         if prev_capture != capture || prev_passive != passive {
@@ -183,7 +183,7 @@ fn teardown_event_listener<State, Action, V>(
 ) where
     State: 'static,
     Action: 'static,
-    V: View<State, Action, ViewCtx>,
+    V: View<State, Action, ViewCtx, DynMessage>,
     V::Element: ElementAsRef<web_sys::EventTarget>,
 {
     // TODO: is this really needed (as the element will be removed anyway)?
@@ -197,16 +197,16 @@ fn message_event_listener<State, Action, V, Event, OA, Callback>(
     element_view: &V,
     state: &mut OnEventState<V::ViewState>,
     id_path: &[ViewId],
-    message: xilem_core::DynMessage,
+    message: DynMessage,
     app_state: &mut State,
     handler: &Callback,
-) -> MessageResult<Action>
+) -> MessageResult<Action, DynMessage>
 where
     State: 'static,
     Action: 'static,
-    V: View<State, Action, ViewCtx>,
+    V: View<State, Action, ViewCtx, DynMessage>,
     V::Element: ElementAsRef<web_sys::EventTarget>,
-    Event: JsCast + 'static + xilem_core::Message,
+    Event: JsCast + 'static + crate::Message,
     OA: OptionalAction<Action>,
     Callback: Fn(&mut State, Event) -> OA + 'static,
 {
@@ -227,16 +227,16 @@ where
     }
 }
 
-impl<V, State, Action, Event, Callback, OA> View<State, Action, ViewCtx>
+impl<V, State, Action, Event, Callback, OA> View<State, Action, ViewCtx, DynMessage>
     for OnEvent<V, State, Action, Event, Callback>
 where
     State: 'static,
     Action: 'static,
     OA: OptionalAction<Action>,
     Callback: Fn(&mut State, Event) -> OA + 'static,
-    V: View<State, Action, ViewCtx>,
+    V: View<State, Action, ViewCtx, DynMessage>,
     V::Element: ElementAsRef<web_sys::EventTarget>,
-    Event: JsCast + 'static + xilem_core::Message,
+    Event: JsCast + 'static + crate::Message,
 {
     type ViewState = OnEventState<V::ViewState>;
 
@@ -289,7 +289,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: <Self::Element as xilem_core::ViewElement>::Mut<'_>,
+        element: Mut<'_, Self::Element>,
     ) {
         teardown_event_listener(
             &self.element,
@@ -305,9 +305,9 @@ where
         &self,
         view_state: &mut Self::ViewState,
         id_path: &[ViewId],
-        message: xilem_core::DynMessage,
+        message: crate::DynMessage,
         app_state: &mut State,
-    ) -> MessageResult<Action> {
+    ) -> MessageResult<Action, DynMessage> {
         message_event_listener(
             &self.element,
             view_state,
@@ -365,14 +365,14 @@ macro_rules! event_definitions {
         }
 
 
-        impl<V, State, Action, Callback, OA> View<State, Action, ViewCtx>
+        impl<V, State, Action, Callback, OA> View<State, Action, ViewCtx, DynMessage>
             for $ty_name<V, State, Action, Callback>
         where
             State: 'static,
             Action: 'static,
             OA: OptionalAction<Action>,
             Callback: Fn(&mut State, web_sys::$web_sys_ty) -> OA + 'static,
-            V: View<State, Action, ViewCtx>,
+            V: View<State, Action, ViewCtx, DynMessage>,
             V::Element: ElementAsRef<web_sys::EventTarget>,
         {
             type ViewState = OnEventState<V::ViewState>;
@@ -423,9 +423,9 @@ macro_rules! event_definitions {
                 &self,
                 view_state: &mut Self::ViewState,
                 id_path: &[ViewId],
-                message: xilem_core::DynMessage,
+                message: crate::DynMessage,
                 app_state: &mut State,
-            ) -> MessageResult<Action> {
+            ) -> MessageResult<Action, DynMessage> {
                 message_event_listener(&self.element, view_state, id_path, message, app_state, &self.handler)
             }
         }

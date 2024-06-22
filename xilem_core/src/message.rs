@@ -59,23 +59,23 @@ pub type DynMessage = Box<dyn Message>;
 // The `View` trait could have been made generic over the message type,
 // primarily to enable flexibility around Send/Sync and avoid the need
 // for allocation.
-pub trait Message: 'static {
+pub trait Message: 'static + Send {
     /// Convert `self` into a [`Box<dyn Any>`].
-    fn into_any(self: Box<Self>) -> Box<dyn Any>;
+    fn into_any(self: Box<Self>) -> Box<dyn Any + Send>;
     /// Convert `self` into a [`Box<dyn Any>`].
-    fn as_any(&self) -> &(dyn Any);
+    fn as_any(&self) -> &(dyn Any + Send);
     /// Gets the debug representation of this message.
     fn dyn_debug(&self) -> &dyn Debug;
 }
 
 impl<T> Message for T
 where
-    T: Any + Debug,
+    T: Any + Debug + Send,
 {
-    fn into_any(self: Box<Self>) -> Box<dyn Any> {
+    fn into_any(self: Box<Self>) -> Box<dyn Any + Send> {
         self
     }
-    fn as_any(&self) -> &dyn Any {
+    fn as_any(&self) -> &(dyn Any + Send) {
         self
     }
     fn dyn_debug(&self) -> &dyn Debug {

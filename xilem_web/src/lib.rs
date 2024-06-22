@@ -19,6 +19,7 @@ mod attribute_value;
 mod class;
 mod element_props;
 mod events;
+mod message;
 mod one_of;
 mod optional_action;
 mod pointer;
@@ -36,6 +37,7 @@ pub use attribute::{Attr, Attributes, ElementWithAttributes, WithAttributes};
 pub use attribute_value::{AttributeValue, IntoAttributeValue};
 pub use class::{AsClassIter, Class, Classes, ElementWithClasses, WithClasses};
 pub use element_props::ElementProps;
+pub use message::{DynMessage, Message};
 pub use optional_action::{Action, OptionalAction};
 pub use pointer::{Pointer, PointerDetails, PointerMsg};
 pub use style::style;
@@ -73,7 +75,7 @@ pub type AnyDomView<State, Action = ()> = dyn AnyView<State, Action, ViewCtx, An
 
 /// The central [`View`] derived trait to represent DOM nodes in xilem_web, it's the base for all [`View`]s in xilem_web
 pub trait DomView<State, Action = ()>:
-    View<State, Action, ViewCtx, Element = Pod<Self::DomNode, Self::Props>>
+    View<State, Action, ViewCtx, DynMessage, Element = Pod<Self::DomNode, Self::Props>>
 {
     type DomNode: DomNode<Self::Props>;
     type Props;
@@ -81,7 +83,7 @@ pub trait DomView<State, Action = ()>:
 
 impl<V, State, Action, W, P> DomView<State, Action> for V
 where
-    V: View<State, Action, ViewCtx, Element = Pod<W, P>>,
+    V: View<State, Action, ViewCtx, DynMessage, Element = Pod<W, P>>,
     W: DomNode<P>,
 {
     type DomNode = W;

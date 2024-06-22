@@ -9,15 +9,18 @@ use std::borrow::Cow;
 use xilem_core::{MessageResult, Mut, OrphanView};
 
 use crate::{
-    attribute::WithAttributes, element_props::ElementProps, IntoAttributeValue, Pod, ViewCtx,
-    SVG_NS,
+    attribute::WithAttributes, element_props::ElementProps, DynMessage, IntoAttributeValue, Pod,
+    ViewCtx, SVG_NS,
 };
 
-impl<State: 'static, Action: 'static> OrphanView<Line, State, Action> for ViewCtx {
+impl<State: 'static, Action: 'static> OrphanView<Line, State, Action, DynMessage> for ViewCtx {
     type OrphanViewState = ();
     type OrphanElement = Pod<web_sys::SvgLineElement, ElementProps>;
 
-    fn orphan_build(view: &Line, _ctx: &mut ViewCtx) -> (Self::OrphanElement, Self::OrphanViewState) {
+    fn orphan_build(
+        view: &Line,
+        _ctx: &mut ViewCtx,
+    ) -> (Self::OrphanElement, Self::OrphanViewState) {
         let mut element: Self::OrphanElement = Pod::new_element(Vec::new(), SVG_NS, "line").into();
         element.start_attribute_modifier();
         element.set_attribute("x1".into(), view.p0.x.into_attr_value());
@@ -56,18 +59,21 @@ impl<State: 'static, Action: 'static> OrphanView<Line, State, Action> for ViewCt
         _view: &Line,
         (): &mut Self::OrphanViewState,
         _id_path: &[xilem_core::ViewId],
-        message: xilem_core::DynMessage,
+        message: DynMessage,
         _app_state: &mut State,
-    ) -> MessageResult<Action> {
+    ) -> MessageResult<Action, DynMessage> {
         MessageResult::Stale(message)
     }
 }
 
-impl<State: 'static, Action: 'static> OrphanView<Rect, State, Action> for ViewCtx {
+impl<State: 'static, Action: 'static> OrphanView<Rect, State, Action, DynMessage> for ViewCtx {
     type OrphanViewState = ();
     type OrphanElement = Pod<web_sys::SvgRectElement, ElementProps>;
 
-    fn orphan_build(view: &Rect, _ctx: &mut ViewCtx) -> (Self::OrphanElement, Self::OrphanViewState) {
+    fn orphan_build(
+        view: &Rect,
+        _ctx: &mut ViewCtx,
+    ) -> (Self::OrphanElement, Self::OrphanViewState) {
         let mut element: Self::OrphanElement = Pod::new_element(Vec::new(), SVG_NS, "rect").into();
         element.start_attribute_modifier();
         element.set_attribute("x".into(), view.x0.into_attr_value());
@@ -106,19 +112,23 @@ impl<State: 'static, Action: 'static> OrphanView<Rect, State, Action> for ViewCt
         _view: &Rect,
         (): &mut Self::OrphanViewState,
         _id_path: &[xilem_core::ViewId],
-        message: xilem_core::DynMessage,
+        message: DynMessage,
         _app_state: &mut State,
-    ) -> MessageResult<Action> {
+    ) -> MessageResult<Action, DynMessage> {
         MessageResult::Stale(message)
     }
 }
 
-impl<State: 'static, Action: 'static> OrphanView<Circle, State, Action> for ViewCtx {
+impl<State: 'static, Action: 'static> OrphanView<Circle, State, Action, DynMessage> for ViewCtx {
     type OrphanViewState = ();
     type OrphanElement = Pod<web_sys::SvgCircleElement, ElementProps>;
 
-    fn orphan_build(view: &Circle, _ctx: &mut ViewCtx) -> (Self::OrphanElement, Self::OrphanViewState) {
-        let mut element: Self::OrphanElement = Pod::new_element(Vec::new(), SVG_NS, "circle").into();
+    fn orphan_build(
+        view: &Circle,
+        _ctx: &mut ViewCtx,
+    ) -> (Self::OrphanElement, Self::OrphanViewState) {
+        let mut element: Self::OrphanElement =
+            Pod::new_element(Vec::new(), SVG_NS, "circle").into();
         element.start_attribute_modifier();
         element.set_attribute("cx".into(), view.center.x.into_attr_value());
         element.set_attribute("cy".into(), view.center.y.into_attr_value());
@@ -154,18 +164,21 @@ impl<State: 'static, Action: 'static> OrphanView<Circle, State, Action> for View
         _view: &Circle,
         (): &mut Self::OrphanViewState,
         _id_path: &[xilem_core::ViewId],
-        message: xilem_core::DynMessage,
+        message: DynMessage,
         _app_state: &mut State,
-    ) -> MessageResult<Action> {
+    ) -> MessageResult<Action, DynMessage> {
         MessageResult::Stale(message)
     }
 }
 
-impl<State: 'static, Action: 'static> OrphanView<BezPath, State, Action> for ViewCtx {
+impl<State: 'static, Action: 'static> OrphanView<BezPath, State, Action, DynMessage> for ViewCtx {
     type OrphanViewState = Cow<'static, str>;
     type OrphanElement = Pod<web_sys::SvgPathElement, ElementProps>;
 
-    fn orphan_build(view: &BezPath, _ctx: &mut ViewCtx) -> (Self::OrphanElement, Self::OrphanViewState) {
+    fn orphan_build(
+        view: &BezPath,
+        _ctx: &mut ViewCtx,
+    ) -> (Self::OrphanElement, Self::OrphanViewState) {
         let mut element: Self::OrphanElement = Pod::new_element(Vec::new(), SVG_NS, "path").into();
         let svg_repr = Cow::from(view.to_svg());
         element.start_attribute_modifier();
@@ -203,9 +216,9 @@ impl<State: 'static, Action: 'static> OrphanView<BezPath, State, Action> for Vie
         _view: &BezPath,
         _view_state: &mut Self::OrphanViewState,
         _id_path: &[xilem_core::ViewId],
-        message: xilem_core::DynMessage,
+        message: DynMessage,
         _app_state: &mut State,
-    ) -> MessageResult<Action> {
+    ) -> MessageResult<Action, DynMessage> {
         MessageResult::Stale(message)
     }
 }

@@ -4,8 +4,8 @@
 use crate::DomNode;
 use std::{cell::RefCell, rc::Rc};
 
-use crate::{DomView, PodMut};
-use xilem_core::{DynMessage, MessageResult, ViewId, ViewPathTracker};
+use crate::{DomView, DynMessage, PodMut};
+use xilem_core::{MessageResult, ViewId, ViewPathTracker};
 
 type IdPath = Vec<ViewId>;
 
@@ -20,7 +20,7 @@ pub struct MessageThunk {
 }
 
 impl MessageThunk {
-    pub fn push_message(&self, message_body: impl xilem_core::Message) {
+    pub fn push_message(&self, message_body: impl crate::Message) {
         let message = Message {
             id_path: self.id_path.clone(),
             body: Box::new(message_body),

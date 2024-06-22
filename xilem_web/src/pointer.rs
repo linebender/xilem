@@ -8,9 +8,9 @@ use std::marker::PhantomData;
 use wasm_bindgen::{prelude::Closure, throw_str, JsCast, UnwrapThrowExt};
 use web_sys::PointerEvent;
 
-use xilem_core::{MessageResult, View, ViewId, ViewPathTracker};
+use xilem_core::{MessageResult, Mut, View, ViewId, ViewPathTracker};
 
-use crate::{interfaces::Element, ElementAsRef, ViewCtx};
+use crate::{interfaces::Element, DynMessage, ElementAsRef, ViewCtx};
 
 /// A view that allows stateful handling of PointerEvents with [`PointerMsg`]
 pub struct Pointer<V, T, A, F> {
@@ -69,13 +69,13 @@ pub fn pointer<T, A, F: Fn(&mut T, PointerMsg), V: Element<T, A>>(
     }
 }
 
-impl<State, Action, Callback, V> View<State, Action, ViewCtx>
+impl<State, Action, Callback, V> View<State, Action, ViewCtx, DynMessage>
     for Pointer<V, State, Action, Callback>
 where
     State: 'static,
     Action: 'static,
     Callback: Fn(&mut State, PointerMsg) -> Action + 'static,
-    V: View<State, Action, ViewCtx>,
+    V: View<State, Action, ViewCtx, DynMessage>,
     V::Element: ElementAsRef<web_sys::Element>,
 {
     type ViewState = PointerState<V::ViewState>;
@@ -132,8 +132,8 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: xilem_core::Mut<'el, Self::Element>,
-    ) -> xilem_core::Mut<'el, Self::Element> {
+        element: Mut<'el, Self::Element>,
+    ) -> Mut<'el, Self::Element> {
         ctx.with_id(ViewId::new(0), |ctx| {
             self.child
                 .rebuild(&prev.child, &mut view_state.child_state, ctx, element)
@@ -144,7 +144,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: xilem_core::Mut<'_, Self::Element>,
+        element: Mut<'_, Self::Element>,
     ) {
         // TODO remove event listeners from child or is this not necessary?
         self.child
@@ -154,10 +154,10 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[xilem_core::ViewId],
-        message: xilem_core::DynMessage,
+        id_path: &[ViewId],
+        message: DynMessage,
         app_state: &mut State,
-    ) -> xilem_core::MessageResult<Action> {
+    ) -> MessageResult<Action, DynMessage> {
         let Some((first, remainder)) = id_path.split_first() else {
             throw_str("Parent view of `Pointer` sent outdated and/or incorrect empty view path");
         };

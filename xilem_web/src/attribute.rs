@@ -3,9 +3,11 @@
 
 use std::marker::PhantomData;
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
-use xilem_core::{DynMessage, MessageResult, Mut, View, ViewElement, ViewId};
+use xilem_core::{MessageResult, Mut, View, ViewElement, ViewId};
 
-use crate::{vecmap::VecMap, AttributeValue, DomNode, ElementProps, Pod, PodMut, ViewCtx};
+use crate::{
+    vecmap::VecMap, AttributeValue, DomNode, DynMessage, ElementProps, Pod, PodMut, ViewCtx,
+};
 
 type CowStr = std::borrow::Cow<'static, str>;
 
@@ -237,11 +239,11 @@ impl<E, T, A> Attr<E, T, A> {
     }
 }
 
-impl<T, A, E> View<T, A, ViewCtx> for Attr<E, T, A>
+impl<T, A, E> View<T, A, ViewCtx, DynMessage> for Attr<E, T, A>
 where
     T: 'static,
     A: 'static,
-    E: View<T, A, ViewCtx, Element: ElementWithAttributes>,
+    E: View<T, A, ViewCtx, DynMessage, Element: ElementWithAttributes>,
 {
     type Element = E::Element;
 
@@ -284,7 +286,7 @@ where
         id_path: &[ViewId],
         message: DynMessage,
         app_state: &mut T,
-    ) -> MessageResult<A> {
+    ) -> MessageResult<A, DynMessage> {
         self.el.message(view_state, id_path, message, app_state)
     }
 }

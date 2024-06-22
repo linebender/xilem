@@ -5,12 +5,11 @@ use std::borrow::Cow;
 use std::marker::PhantomData;
 
 use peniko::Brush;
-use xilem_core::{MessageResult, Mut, View};
+use xilem_core::{MessageResult, Mut, View, ViewId};
 
-use crate::IntoAttributeValue;
 use crate::{
     attribute::{ElementWithAttributes, WithAttributes},
-    ViewCtx,
+    DynMessage, IntoAttributeValue, ViewCtx,
 };
 
 pub struct Fill<V, State, Action> {
@@ -62,12 +61,11 @@ fn brush_to_string(brush: &Brush) -> String {
     }
 }
 
-impl<State, Action, V: View<State, Action, ViewCtx>> View<State, Action, ViewCtx>
-    for Fill<V, State, Action>
+impl<State, Action, V> View<State, Action, ViewCtx, DynMessage> for Fill<V, State, Action>
 where
     State: 'static,
     Action: 'static,
-    V: View<State, Action, ViewCtx, Element: ElementWithAttributes>,
+    V: View<State, Action, ViewCtx, DynMessage, Element: ElementWithAttributes>,
 {
     type ViewState = (Cow<'static, str>, V::ViewState);
     type Element = V::Element;
@@ -110,19 +108,19 @@ where
     fn message(
         &self,
         (_, child_state): &mut Self::ViewState,
-        id_path: &[xilem_core::ViewId],
-        message: xilem_core::DynMessage,
+        id_path: &[ViewId],
+        message: DynMessage,
         app_state: &mut State,
-    ) -> MessageResult<Action> {
+    ) -> MessageResult<Action, DynMessage> {
         self.child.message(child_state, id_path, message, app_state)
     }
 }
 
-impl<State, Action, V> View<State, Action, ViewCtx> for Stroke<V, State, Action>
+impl<State, Action, V> View<State, Action, ViewCtx, DynMessage> for Stroke<V, State, Action>
 where
     State: 'static,
     Action: 'static,
-    V: View<State, Action, ViewCtx, Element: ElementWithAttributes>,
+    V: View<State, Action, ViewCtx, DynMessage, Element: ElementWithAttributes>,
 {
     type ViewState = (Cow<'static, str>, V::ViewState);
     type Element = V::Element;
@@ -167,10 +165,10 @@ where
     fn message(
         &self,
         (_, child_state): &mut Self::ViewState,
-        id_path: &[xilem_core::ViewId],
-        message: xilem_core::DynMessage,
+        id_path: &[ViewId],
+        message: DynMessage,
         app_state: &mut State,
-    ) -> MessageResult<Action> {
+    ) -> MessageResult<Action, DynMessage> {
         self.child.message(child_state, id_path, message, app_state)
     }
 }
