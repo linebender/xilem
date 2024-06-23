@@ -1,7 +1,7 @@
 // Copyright 2023 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::DomNode;
+use crate::{DomNode, Message};
 use std::{cell::RefCell, rc::Rc};
 
 use crate::{DomView, DynMessage, PodMut};
@@ -9,7 +9,7 @@ use xilem_core::{MessageResult, ViewId, ViewPathTracker};
 
 type IdPath = Vec<ViewId>;
 
-pub struct Message {
+pub(crate) struct AppMessage {
     pub id_path: IdPath,
     pub body: DynMessage,
 }
@@ -20,8 +20,8 @@ pub struct MessageThunk {
 }
 
 impl MessageThunk {
-    pub fn push_message(&self, message_body: impl crate::Message) {
-        let message = Message {
+    pub fn push_message(&self, message_body: impl Message) {
+        let message = AppMessage {
             id_path: self.id_path.clone(),
             body: Box::new(message_body),
         };
@@ -76,7 +76,7 @@ struct AppInner<T, V: DomView<T>, F: FnMut(&mut T) -> V> {
 }
 
 pub(crate) trait AppRunner {
-    fn handle_message(&self, message: Message);
+    fn handle_message(&self, message: AppMessage);
 
     fn clone_box(&self) -> Box<dyn AppRunner>;
 }
@@ -142,7 +142,7 @@ impl<T: 'static, V: DomView<T> + 'static, F: FnMut(&mut T) -> V + 'static> AppRu
 {
     // For now we handle the message synchronously, but it would also
     // make sense to to batch them (for example with requestAnimFrame).
-    fn handle_message(&self, message: Message) {
+    fn handle_message(&self, message: AppMessage) {
         let mut inner_guard = self.0.borrow_mut();
         let inner = &mut *inner_guard;
         if let Some(view) = &mut inner.view {
