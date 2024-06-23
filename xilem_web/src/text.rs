@@ -3,7 +3,7 @@
 
 use xilem_core::{Mut, OrphanView};
 
-use crate::{Pod, ViewCtx, DynMessage};
+use crate::{DynMessage, Pod, ViewCtx};
 
 // strings -> text nodes
 macro_rules! impl_string_view {

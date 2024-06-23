@@ -40,7 +40,7 @@ pub use element_props::ElementProps;
 pub use message::{DynMessage, Message};
 pub use optional_action::{Action, OptionalAction};
 pub use pointer::{Pointer, PointerDetails, PointerMsg};
-pub use style::style;
+pub use style::{style, ElementWithStyle, IntoStyles, Style, Styles, WithStyle};
 pub use xilem_core as core;
 
 /// A trait used for type erasure of [`DomNode`]s

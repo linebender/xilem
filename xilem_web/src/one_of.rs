@@ -8,7 +8,8 @@ use xilem_core::{
 };
 
 use crate::{
-    attribute::WithAttributes, class::WithClasses, AttributeValue, DomNode, Pod, PodMut, ViewCtx,
+    attribute::WithAttributes, class::WithClasses, style::WithStyle, AttributeValue, DomNode, Pod,
+    PodMut, ViewCtx,
 };
 
 type CowStr = std::borrow::Cow<'static, str>;
@@ -261,7 +262,21 @@ impl WithClasses for Noop {
     }
 
     fn end_class_modifier(&mut self) {
-        todo!()
+        unreachable!()
+    }
+}
+
+impl WithStyle for Noop {
+    fn start_style_modifier(&mut self) {
+        unreachable!()
+    }
+
+    fn set_style(&mut self, _name: CowStr, _value: Option<CowStr>) {
+        unreachable!()
+    }
+
+    fn end_style_modifier(&mut self) {
+        unreachable!()
     }
 }
 
@@ -397,6 +412,61 @@ impl<
             OneOf::G(e) => e.end_class_modifier(),
             OneOf::H(e) => e.end_class_modifier(),
             OneOf::I(e) => e.end_class_modifier(),
+        }
+    }
+}
+
+impl<
+        E1: WithStyle,
+        E2: WithStyle,
+        E3: WithStyle,
+        E4: WithStyle,
+        E5: WithStyle,
+        E6: WithStyle,
+        E7: WithStyle,
+        E8: WithStyle,
+        E9: WithStyle,
+    > WithStyle for OneOf<E1, E2, E3, E4, E5, E6, E7, E8, E9>
+{
+    fn start_style_modifier(&mut self) {
+        match self {
+            OneOf::A(e) => e.start_style_modifier(),
+            OneOf::B(e) => e.start_style_modifier(),
+            OneOf::C(e) => e.start_style_modifier(),
+            OneOf::D(e) => e.start_style_modifier(),
+            OneOf::E(e) => e.start_style_modifier(),
+            OneOf::F(e) => e.start_style_modifier(),
+            OneOf::G(e) => e.start_style_modifier(),
+            OneOf::H(e) => e.start_style_modifier(),
+            OneOf::I(e) => e.start_style_modifier(),
+        }
+    }
+
+    fn set_style(&mut self, name: CowStr, value: Option<CowStr>) {
+        match self {
+            OneOf::A(e) => e.set_style(name, value),
+            OneOf::B(e) => e.set_style(name, value),
+            OneOf::C(e) => e.set_style(name, value),
+            OneOf::D(e) => e.set_style(name, value),
+            OneOf::E(e) => e.set_style(name, value),
+            OneOf::F(e) => e.set_style(name, value),
+            OneOf::G(e) => e.set_style(name, value),
+            OneOf::H(e) => e.set_style(name, value),
+            OneOf::I(e) => e.set_style(name, value),
+        }
+    }
+
+    fn end_style_modifier(&mut self) {
+        match self {
+            OneOf::A(e) => e.end_style_modifier(),
+            OneOf::B(e) => e.end_style_modifier(),
+            OneOf::C(e) => e.end_style_modifier(),
+            OneOf::D(e) => e.end_style_modifier(),
+            OneOf::E(e) => e.end_style_modifier(),
+            OneOf::F(e) => e.end_style_modifier(),
+            OneOf::G(e) => e.end_style_modifier(),
+            OneOf::H(e) => e.end_style_modifier(),
+            OneOf::I(e) => e.end_style_modifier(),
         }
     }
 }

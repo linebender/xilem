@@ -6,9 +6,12 @@
 //!
 //! These traits can also be used as return type of components to allow modifying the underlying DOM element that is returned.
 //! For example:
-//! ```
+//! ```ignore
 //! fn my_div_element_view() -> impl HtmlDivElement<State> {..}
 //! ```
+//! A lot of the possible attributes are not yet added, if you find something missing for you - please open a PR at <https://github.com/linebender/xilem/pulls>
+
+use std::borrow::Cow;
 
 use crate::{
     attribute::{Attr, WithAttributes},
@@ -19,11 +22,16 @@ use crate::{
 };
 use wasm_bindgen::JsCast;
 
-type CowStr = std::borrow::Cow<'static, str>;
-
 macro_rules! event_handler_mixin {
     ($(($event_ty: ident, $fn_name:ident, $event:expr, $web_sys_event_type:ident),)*) => {
     $(
+        #[doc = concat!("Add an \"", $event, "\" event handler to this [`Element`].")]
+        ///
+        /// See [`Element::on`] for more information how to use this.
+        // TODO: This would be nice, but although all the events are specified in `web_sys` on the `Element` interface, events such as `dragend` or `reset` link to the more relevant sub interface
+        // We *could* add another parameter to the macro to fix this, or probably even not provide these events directly on the `Element` interface
+        // ///
+        // #[doc = concat!("See <https://developer.mozilla.org/en-US/docs/Web/API/Element/", $event, "_event> for more details")]
         fn $fn_name<Callback, OA>(
             self,
             handler: Callback,
@@ -44,14 +52,46 @@ pub trait Element<State, Action = ()>:
     Sized
     + DomView<State, Action, Props: WithAttributes + WithClasses, DomNode: AsRef<web_sys::Element>>
 {
+    /// Set an attribute for an [`Element`]
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use xilem_web::{interfaces::Element, elements::html::{a, canvas, div, input}};
+    /// # fn component() -> impl Element<()> {
+    /// div((
+    ///     a("a link to an anchor").attr("href", "#anchor"),
+    ///     // attribute will only appear if condition is met
+    ///     // previous attribute is overwritten (and removed if condition is false)
+    ///     a("a link to a new anchor - *maybe*")
+    ///         .attr("href", "#anchor")
+    ///         .attr("href", true.then_some("#new-anchor")),
+    ///     input(()).attr("autofocus", true),
+    ///     canvas(()).attr("width", 300)
+    /// ))
+    /// # }
+    /// ```
     fn attr(
         self,
-        name: impl Into<CowStr>,
+        name: impl Into<Cow<'static, str>>,
         value: impl IntoAttributeValue,
     ) -> Attr<Self, State, Action> {
         Attr::new(self, name.into(), value.into_attr_value())
     }
 
+    /// Add a class to an [`Element`]
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use xilem_web::{interfaces::Element, elements::html::div};
+    /// # fn component() -> impl Element<()> {
+    /// div(())
+    ///     .class("single-class")
+    ///     .class(["multiple", "classes"])
+    ///     .class(Some("optional-class"))
+    /// # }
+    /// ```
     fn class<AsClasses: AsClassIter>(
         self,
         as_classes: AsClasses,
@@ -59,9 +99,21 @@ pub trait Element<State, Action = ()>:
         Class::new(self, as_classes)
     }
 
+    /// Add a generic event handler to this [`Element`].
+    ///
+    /// For builtin events such as `onclick` prefer using the specialized event handlers (e.g. [`Element::on_click`])
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use xilem_web::{interfaces::Element, elements::html::div};
+    /// # fn component() -> impl Element<()> {
+    /// div(()).on("custom-event", |state, event: web_sys::Event| {/* modify `state` */})
+    /// # }
+    /// ```
     fn on<Event, Callback, OA>(
         self,
-        event: impl Into<CowStr>,
+        event: impl Into<Cow<'static, str>>,
         handler: Callback,
     ) -> events::OnEvent<Self, State, Action, Event, Callback>
     where
@@ -79,6 +131,14 @@ pub trait Element<State, Action = ()>:
         handler: Callback,
     ) -> Pointer<Self, State, Action, Callback> {
         crate::pointer::pointer(self, handler)
+    }
+
+    /// Defines a unique identifier (ID) which must be unique in the whole document.
+    /// Its purpose is to identify the element when linking (using a fragment identifier), scripting, or styling (with CSS).
+    ///
+    /// See <https://developer.mozilla.org/en-US/docs/Web/API/Element/id> for more details
+    fn id(self, value: impl IntoAttributeValue) -> Attr<Self, State, Action> {
+        Attr::new(self, Cow::from("id"), value.into_attr_value())
     }
 
     // event list from
@@ -268,6 +328,10 @@ where
 pub trait HtmlButtonElement<State, Action = ()>:
     HtmlElement<State, Action, DomNode: AsRef<web_sys::HtmlButtonElement>>
 {
+    /// See <https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/disabled> for more details
+    fn disabled(self, disable: bool) -> Attr<Self, State, Action> {
+        Attr::new(self, "disabled".into(), disable.into_attr_value())
+    }
 }
 
 // #[cfg(feature = "HtmlButtonElement")]
@@ -282,15 +346,8 @@ where
 pub trait HtmlCanvasElement<State, Action = ()>:
     HtmlElement<State, Action, DomNode: AsRef<web_sys::HtmlCanvasElement>>
 {
-    fn width(self, value: u32) -> Attr<Self, State, Action>
-    where
-        Self: Sized,
-        Self::Element: WithAttributes,
-        // The following bound would be more correct, but the current trait solver is not capable enough
-        // (the new trait solver is able to do handle this though...)
-        // but the bound above is enough for the API for now
-        // Self::Element: ElementWithAttributes,
-    {
+    /// See <https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/width> for more details
+    fn width(self, value: u32) -> Attr<Self, State, Action> {
         Attr::new(self, "width".into(), value.into_attr_value())
     }
 }
@@ -594,6 +651,10 @@ where
 pub trait HtmlImageElement<State, Action = ()>:
     HtmlElement<State, Action, DomNode: AsRef<web_sys::HtmlImageElement>>
 {
+    /// See <https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/src> for more details
+    fn src(self, value: impl IntoAttributeValue) -> Attr<Self, State, Action> {
+        Attr::new(self, Cow::from("src"), value.into_attr_value())
+    }
 }
 
 // #[cfg(feature = "HtmlImageElement")]
@@ -622,6 +683,15 @@ where
 pub trait HtmlLabelElement<State, Action = ()>:
     HtmlElement<State, Action, DomNode: AsRef<web_sys::HtmlLabelElement>>
 {
+    /// The first element in the document with an id attribute matching the value of the for attribute is the labeled control for this label element — if the element with that id is actually a labelable element.
+    /// If it is not a labelable element, then the for attribute has no effect.
+    /// If there are other elements that also match the id value, later in the document, they are not considered.
+    ///
+    /// See <https://developer.mozilla.org/en-US/docs/Web/HTML/Element/label#for> for more details
+    // TODO different name?
+    fn for_(self, value: impl IntoAttributeValue) -> Attr<Self, State, Action> {
+        Attr::new(self, Cow::from("for"), value.into_attr_value())
+    }
 }
 
 // #[cfg(feature = "HtmlLabelElement")]
@@ -818,6 +888,21 @@ where
 pub trait HtmlOptionElement<State, Action = ()>:
     HtmlElement<State, Action, DomNode: AsRef<web_sys::HtmlOptionElement>>
 {
+    /// A string representing the value of the HTMLOptionElement, i.e. the value attribute of the equivalent <option>.
+    /// If this is not specified, the value of text is used as the value, e.g. for the associated <select> element's value when the form is submitted to the server.
+    ///
+    /// See <https://developer.mozilla.org/en-US/docs/Web/HTML/Element/option#value> for more details
+    fn value(self, value: impl IntoAttributeValue) -> Attr<Self, State, Action> {
+        Attr::new(self, Cow::from("value"), value.into_attr_value())
+    }
+
+    /// If present, this Boolean attribute indicates that the option is initially selected.
+    /// If the <option> element is the descendant of a <select> element whose multiple attribute is not set, only one single <option> of this <select> element may have the selected attribute.
+    ///
+    /// See <https://developer.mozilla.org/en-US/docs/Web/HTML/Element/option#selected> for more details
+    fn selected(self, selected: bool) -> Attr<Self, State, Action> {
+        Attr::new(self, Cow::from("selected"), selected.into_attr_value())
+    }
 }
 
 // #[cfg(feature = "HtmlOptionElement")]
@@ -944,6 +1029,13 @@ where
 pub trait HtmlSelectElement<State, Action = ()>:
     HtmlElement<State, Action, DomNode: AsRef<web_sys::HtmlSelectElement>>
 {
+    /// A string representing the value of the HTMLOptionElement, i.e. the value attribute of the equivalent <option>.
+    /// If this is not specified, the value of text is used as the value, e.g. for the associated <select> element's value when the form is submitted to the server.
+    ///
+    /// See <https://developer.mozilla.org/en-US/docs/Web/API/HTMLSelectElement/value> for more details
+    fn value(self, value: impl IntoAttributeValue) -> Attr<Self, State, Action> {
+        Attr::new(self, Cow::from("value"), value.into_attr_value())
+    }
 }
 
 // #[cfg(feature = "HtmlSelectElement")]
