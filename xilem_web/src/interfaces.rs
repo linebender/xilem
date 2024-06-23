@@ -888,8 +888,8 @@ where
 pub trait HtmlOptionElement<State, Action = ()>:
     HtmlElement<State, Action, DomNode: AsRef<web_sys::HtmlOptionElement>>
 {
-    /// A string representing the value of the HTMLOptionElement, i.e. the value attribute of the equivalent <option>.
-    /// If this is not specified, the value of text is used as the value, e.g. for the associated <select> element's value when the form is submitted to the server.
+    /// A string representing the value of the HTMLOptionElement, i.e. the value attribute of the equivalent `<option>`.
+    /// If this is not specified, the value of text is used as the value, e.g. for the associated `<select>` element's value when the form is submitted to the server.
     ///
     /// See <https://developer.mozilla.org/en-US/docs/Web/HTML/Element/option#value> for more details
     fn value(self, value: impl IntoAttributeValue) -> Attr<Self, State, Action> {
@@ -897,7 +897,7 @@ pub trait HtmlOptionElement<State, Action = ()>:
     }
 
     /// If present, this Boolean attribute indicates that the option is initially selected.
-    /// If the <option> element is the descendant of a <select> element whose multiple attribute is not set, only one single <option> of this <select> element may have the selected attribute.
+    /// If the `<option>` element is the descendant of a `<select>` element whose multiple attribute is not set, only one single `<option>` of this `<select>` element may have the selected attribute.
     ///
     /// See <https://developer.mozilla.org/en-US/docs/Web/HTML/Element/option#selected> for more details
     fn selected(self, selected: bool) -> Attr<Self, State, Action> {
@@ -1029,8 +1029,8 @@ where
 pub trait HtmlSelectElement<State, Action = ()>:
     HtmlElement<State, Action, DomNode: AsRef<web_sys::HtmlSelectElement>>
 {
-    /// A string representing the value of the HTMLOptionElement, i.e. the value attribute of the equivalent <option>.
-    /// If this is not specified, the value of text is used as the value, e.g. for the associated <select> element's value when the form is submitted to the server.
+    /// A string representing the value of the HTMLOptionElement, i.e. the value attribute of the equivalent `<option>`.
+    /// If this is not specified, the value of text is used as the value, e.g. for the associated `<select>` element's value when the form is submitted to the server.
     ///
     /// See <https://developer.mozilla.org/en-US/docs/Web/API/HTMLSelectElement/value> for more details
     fn value(self, value: impl IntoAttributeValue) -> Attr<Self, State, Action> {
