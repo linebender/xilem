@@ -511,7 +511,7 @@ where
     ) -> MessageResult<Action, Message> {
         let (start, rest) = id_path
             .split_first()
-            .expect("Id path has elements for Option<ViewSequence>");
+            .expect("Id path has elements for Vec<ViewSequence>");
         let (index, generation) = view_id_to_index_generation(*start);
         let stored_generation = &seq_state.generations[index];
         if *stored_generation != generation {
@@ -521,6 +521,83 @@ where
         // Panics if index is out of bounds, but we know it isn't because this is the same generation
         let inner_state = &mut seq_state.inner_states[index];
         self[index].seq_message(inner_state, rest, message, app_state)
+    }
+}
+
+impl<State, Action, Context, Element, Marker, Seq, Message, const N: usize>
+    ViewSequence<State, Action, Context, Element, Vec<Marker>, Message> for [Seq; N]
+where
+    Seq: ViewSequence<State, Action, Context, Element, Marker, Message>,
+    Context: ViewPathTracker,
+    Element: ViewElement,
+{
+    type SeqState = [Seq::SeqState; N];
+
+    #[doc(hidden)]
+    fn seq_build(&self, ctx: &mut Context, elements: &mut AppendVec<Element>) -> Self::SeqState {
+        // there's no enumerate directly on an array
+        let mut generation = 0;
+        self.each_ref().map(|vs| {
+            let state = ctx.with_id(ViewId::new(generation), |ctx| vs.seq_build(ctx, elements));
+            generation += 1;
+            state
+        })
+    }
+
+    #[doc(hidden)]
+    fn seq_rebuild(
+        &self,
+        prev: &Self,
+        seq_state: &mut Self::SeqState,
+        ctx: &mut Context,
+        elements: &mut impl ElementSplice<Element>,
+    ) {
+        for (gen, ((seq, prev_seq), state)) in self.iter().zip(prev).zip(seq_state).enumerate() {
+            ctx.with_id(
+                ViewId::new(gen.try_into().expect("usize should fit in u64")),
+                |ctx| {
+                    seq.seq_rebuild(prev_seq, state, ctx, elements);
+                },
+            );
+        }
+    }
+
+    #[doc(hidden)]
+    fn seq_message(
+        &self,
+        seq_state: &mut Self::SeqState,
+        id_path: &[ViewId],
+        message: Message,
+        app_state: &mut State,
+    ) -> MessageResult<Action, Message> {
+        let (start, rest) = id_path
+            .split_first()
+            .expect("Id path has elements for [ViewSequence; N]");
+
+        let index: usize = start
+            .routing_id()
+            .try_into()
+            .expect("u64 should fit in usize");
+        // Panics if index is out of bounds, but we know it isn't because this is the same generation
+        let inner_state = &mut seq_state[index];
+        self[index].seq_message(inner_state, rest, message, app_state)
+    }
+
+    #[doc(hidden)]
+    fn seq_teardown(
+        &self,
+        seq_state: &mut Self::SeqState,
+        ctx: &mut Context,
+        elements: &mut impl ElementSplice<Element>,
+    ) {
+        for (gen, (seq, state)) in self.iter().zip(seq_state).enumerate() {
+            ctx.with_id(
+                ViewId::new(gen.try_into().expect("usize should fit in u64")),
+                |ctx| {
+                    seq.seq_teardown(state, ctx, elements);
+                },
+            );
+        }
     }
 }
 
