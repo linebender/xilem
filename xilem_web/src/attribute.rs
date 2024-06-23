@@ -51,13 +51,20 @@ pub struct Attributes {
 fn set_attribute(element: &web_sys::Element, name: &str, value: &str) {
     // we have to special-case `value` because setting the value using `set_attribute`
     // doesn't work after the value has been changed.
+    // TODO not sure, whether this is always a good idea, in case custom or other interfaces such as HtmlOptionElement elements are used that have "value" as an attribute name.
+    // We likely want to use the DOM attributes instead.
     if name == "value" {
-        // TODO not sure, whether this is always a good idea, in case custom elements are used that have "value" as an attribute name.
-        let element: &web_sys::HtmlInputElement = element.dyn_ref().unwrap_throw();
-        element.set_value(value);
+        if let Some(input_element) = element.dyn_ref::<web_sys::HtmlInputElement>() {
+            input_element.set_value(value);
+        } else {
+            element.set_attribute("value", value).unwrap_throw();
+        }
     } else if name == "checked" {
-        let element: &web_sys::HtmlInputElement = element.dyn_ref().unwrap_throw();
-        element.set_checked(true);
+        if let Some(input_element) = element.dyn_ref::<web_sys::HtmlInputElement>() {
+            input_element.set_checked(true);
+        } else {
+            element.set_attribute("checked", value).unwrap_throw();
+        }
     } else {
         element.set_attribute(name, value).unwrap_throw();
     }
@@ -67,8 +74,11 @@ fn remove_attribute(element: &web_sys::Element, name: &str) {
     // we have to special-case `checked` because setting the value using `set_attribute`
     // doesn't work after the value has been changed.
     if name == "checked" {
-        let element: &web_sys::HtmlInputElement = element.dyn_ref().unwrap_throw();
-        element.set_checked(false);
+        if let Some(input_element) = element.dyn_ref::<web_sys::HtmlInputElement>() {
+            input_element.set_checked(false);
+        } else {
+            element.remove_attribute("checked").unwrap_throw();
+        }
     } else {
         element.remove_attribute(name).unwrap_throw();
     }
