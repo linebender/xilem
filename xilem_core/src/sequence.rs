@@ -552,9 +552,11 @@ where
         ctx: &mut Context,
         elements: &mut impl ElementSplice<Element>,
     ) {
-        for (gen, ((seq, prev_seq), state)) in self.iter().zip(prev).zip(seq_state).enumerate() {
+        for (idx, ((seq, prev_seq), state)) in self.iter().zip(prev).zip(seq_state).enumerate() {
             ctx.with_id(
-                ViewId::new(gen.try_into().expect("usize should fit in u64")),
+                ViewId::new(idx.try_into().expect(
+                    "ViewSequence arrays with more than u64::MAX + 1 elements not supported",
+                )),
                 |ctx| {
                     seq.seq_rebuild(prev_seq, state, ctx, elements);
                 },
@@ -574,11 +576,8 @@ where
             .split_first()
             .expect("Id path has elements for [ViewSequence; N]");
 
-        let index: usize = start
-            .routing_id()
-            .try_into()
-            .expect("u64 should fit in usize");
-        // Panics if index is out of bounds, but we know it isn't because this is the same generation
+        let index: usize = start.routing_id().try_into().unwrap();
+        // We know the index is in bounds because it was created from an index into a value of Self
         let inner_state = &mut seq_state[index];
         self[index].seq_message(inner_state, rest, message, app_state)
     }
@@ -590,9 +589,11 @@ where
         ctx: &mut Context,
         elements: &mut impl ElementSplice<Element>,
     ) {
-        for (gen, (seq, state)) in self.iter().zip(seq_state).enumerate() {
+        for (idx, (seq, state)) in self.iter().zip(seq_state).enumerate() {
             ctx.with_id(
-                ViewId::new(gen.try_into().expect("usize should fit in u64")),
+                ViewId::new(idx.try_into().expect(
+                    "ViewSequence arrays with more than u64::MAX + 1 elements not supported",
+                )),
                 |ctx| {
                     seq.seq_teardown(state, ctx, elements);
                 },
