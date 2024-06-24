@@ -18,14 +18,10 @@ pub trait AsyncCtx: ViewPathTracker {
 ///
 /// These messages are [`crate::DynMessage`]s, which are sent to a view at
 /// a specific path.
-/// Note that it is only valid to send messages to views which expect
-/// them, of the type they expect.
-/// It is valid for Views to panic if this is not the case.
 ///
 /// This can be used for asynchronous event handling.
-/// For example, to get the result of a `Future` or to .
-///
-/// Other views
+/// For example, to get the result of a `Future` or a channel into
+/// the view, which then will ultimately.
 ///
 /// In the Xilem crate, this will wrap an `EventLoopProxy` from Winit.
 ///
@@ -33,10 +29,22 @@ pub trait AsyncCtx: ViewPathTracker {
 ///
 /// It is valid for a [`Proxy`] to outlive the [`View`](crate::View) it is associated with.
 pub trait Proxy: Send + 'static {
-    fn send_message(&mut self, path: Arc<[ViewId]>, message: DynMessage) -> Result<(), ProxyError>;
-    // TODO: Do we want a way to asynchronously report errors back to the parent
+    /// Send a `message` to the view at `path` in this driver.
+    ///
+    /// Note that it is only valid to send messages to views which expect
+    /// them, of the type they expect.
+    /// It is expected for [`View`](crate::View)s to panic otherwise, and the routing
+    /// will prefer to send stable.
+    ///
+    /// # Errors
+    ///
+    /// This method may error if the driver is no longer running, and in any other
+    /// cases directly documented on the context which was used to create this proxy.
+    /// It may also fail silently.
+    // TODO: Do we want/need a way to asynchronously report errors back to the caller?
     //
-    // e.g. an `Option<Arc<dyn FnMut(ProxyError, ProxyMessageId)>>`?
+    // e.g. an `Option<Arc<dyn FnMut(ProxyError, ProxyMessageId?)>>`?
+    fn send_message(&mut self, path: Arc<[ViewId]>, message: DynMessage) -> Result<(), ProxyError>;
 }
 
 /// The potential error conditions from a [`Proxy`] sending a message

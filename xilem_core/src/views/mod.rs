@@ -1,10 +1,11 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-#[cfg(feature = "std")]
-mod channel;
-#[cfg(feature = "std")]
-pub use channel::ChannelView;
+mod launch_async;
+pub use launch_async::{run_async, run_async_raw, RunAsync};
+
+mod run_once;
+pub use run_once::{run_once, run_once_raw};
 
 mod memoize;
 pub use memoize::{memoize, Memoize};
