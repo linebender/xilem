@@ -280,7 +280,11 @@ impl TextEvent {
     pub fn short_name(&self) -> &'static str {
         match self {
             TextEvent::KeyboardKey(_, _) => "KeyboardKey",
-            TextEvent::Ime(_) => "Ime",
+            TextEvent::Ime(Ime::Disabled) => "Ime::Disabled",
+            TextEvent::Ime(Ime::Enabled) => "Ime::Enabled",
+            TextEvent::Ime(Ime::Commit(_)) => "Ime::Commit",
+            TextEvent::Ime(Ime::Preedit(s, _)) if s.is_empty() => "Ime::Preedit(\"\")",
+            TextEvent::Ime(Ime::Preedit(_, _)) => "Ime::Preedit",
             TextEvent::ModifierChange(_) => "ModifierChange",
             TextEvent::FocusChange(_) => "FocusChange",
         }

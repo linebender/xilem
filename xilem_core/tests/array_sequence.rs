@@ -9,87 +9,10 @@ fn record_ops(id: u32) -> OperationView<0> {
     OperationView(id)
 }
 
-#[test]
-fn unit_no_elements() {
-    let view = sequence(0, ());
-    let mut ctx = TestCtx::default();
-    let (element, _state) = view.build(&mut ctx);
-    ctx.assert_empty();
-    assert!(element.children.unwrap().active.is_empty());
-}
-
-/// The sequence (item,) should pass through all methods to the child
-#[test]
-fn one_element_passthrough() {
-    let view = sequence(1, (record_ops(0),));
-    let mut ctx = TestCtx::default();
-    let (mut element, mut state) = view.build(&mut ctx);
-    ctx.assert_empty();
-    assert_eq!(element.operations, &[Operation::Build(1)]);
-    assert_eq!(element.view_path, &[]);
-
-    let seq_children = element.children.as_ref().unwrap();
-    assert!(seq_children.deleted.is_empty());
-    assert_eq!(seq_children.active.len(), 1);
-    let child = seq_children.active.first().unwrap();
-    assert_eq!(child.operations, &[Operation::Build(0)]);
-    assert_eq!(
-        child.view_path,
-        &[],
-        "The single item tuple ViewSequence shouldn't add to the view path"
-    );
-
-    let view2 = sequence(3, (record_ops(2),));
-    view2.rebuild(&view, &mut state, &mut ctx, &mut element);
-    ctx.assert_empty();
-    let seq_children = element.children.as_ref().unwrap();
-    assert_eq!(
-        element.operations,
-        &[Operation::Build(1), Operation::Rebuild { from: 1, to: 3 }]
-    );
-
-    assert_eq!(seq_children.active.len(), 1);
-    assert!(seq_children.deleted.is_empty());
-    let child = seq_children.active.first().unwrap();
-    assert_eq!(
-        child.operations,
-        &[Operation::Build(0), Operation::Rebuild { from: 0, to: 2 }]
-    );
-
-    let result = view2.message(&mut state, &[], Box::new(()), &mut ());
-    // The message should have been routed to the only child
-    assert_action(result, 2);
-
-    view2.teardown(&mut state, &mut ctx, &mut element);
-    assert_eq!(
-        element.operations,
-        &[
-            Operation::Build(1),
-            Operation::Rebuild { from: 1, to: 3 },
-            Operation::Teardown(3)
-        ]
-    );
-
-    let seq_children = element.children.as_ref().unwrap();
-    // It has been removed from the parent sequence when tearing down
-    assert_eq!(seq_children.active.len(), 0);
-    assert_eq!(seq_children.deleted.len(), 1);
-    let (child_idx, child) = seq_children.deleted.first().unwrap();
-    assert_eq!(*child_idx, 0);
-    assert_eq!(
-        child.operations,
-        &[
-            Operation::Build(0),
-            Operation::Rebuild { from: 0, to: 2 },
-            Operation::Teardown(2)
-        ]
-    );
-}
-
-/// The sequence (item, item) should pass through all methods to the children
+/// The sequence [item, item] should pass through all methods to the children
 #[test]
 fn two_element_passthrough() {
-    let view = sequence(2, (record_ops(0), record_ops(1)));
+    let view = sequence(2, [record_ops(0), record_ops(1)]);
     let mut ctx = TestCtx::default();
     let (mut element, mut state) = view.build(&mut ctx);
     ctx.assert_empty();
@@ -106,7 +29,7 @@ fn two_element_passthrough() {
     assert_eq!(second_child.operations, &[Operation::Build(1)]);
     assert_eq!(second_child.view_path.len(), 1);
 
-    let view2 = sequence(5, (record_ops(3), record_ops(4)));
+    let view2 = sequence(5, [record_ops(3), record_ops(4)]);
     view2.rebuild(&view, &mut state, &mut ctx, &mut element);
     ctx.assert_empty();
     assert_eq!(
@@ -165,10 +88,10 @@ fn two_element_passthrough() {
     );
 }
 
-/// The sequence (item, item) should route messages to the right children
+/// The sequence [item, item] should route messages to the right children
 #[test]
 fn two_element_message() {
-    let view = sequence(2, (record_ops(0), record_ops(1)));
+    let view = sequence(2, [record_ops(0), record_ops(1)]);
     let mut ctx = TestCtx::default();
     let (element, mut state) = view.build(&mut ctx);
     ctx.assert_empty();
@@ -191,5 +114,3 @@ fn two_element_message() {
     let result = view.message(&mut state, &second_path, Box::new(()), &mut ());
     assert_action(result, 1);
 }
-
-// We don't test higher tuples, because these all use the same implementation

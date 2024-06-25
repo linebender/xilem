@@ -4,7 +4,7 @@
 use crate::{DynMessage, MessageResult, Mut, View, ViewElement, ViewId, ViewPathTracker};
 
 /// This trait provides a way to add [`View`] implementations for types that would be restricted otherwise by the orphan rules.
-/// Every type that can be supported with this trait, needs a concrete `View` implementation in xilem_core, possibly feature-gated.
+/// Every type that can be supported with this trait, needs a concrete `View` implementation in `xilem_core`, possibly feature-gated.
 pub trait OrphanView<V, State, Action, Message = DynMessage>: ViewPathTracker + Sized {
     /// See [`View::Element`]
     type OrphanElement: ViewElement;
@@ -87,7 +87,7 @@ macro_rules! impl_orphan_view_for {
     };
 }
 
-// string impls
+// string impls - should be used for immutable strings which can be selected within and copied from
 impl_orphan_view_for!(&'static str);
 impl_orphan_view_for!(alloc::string::String);
 impl_orphan_view_for!(alloc::borrow::Cow<'static, str>);
@@ -108,6 +108,7 @@ impl_orphan_view_for!(isize);
 impl_orphan_view_for!(usize);
 
 #[cfg(feature = "kurbo")]
+/// These [`OrphanView`] implementations can e.g. be used in a vector graphics context, as for example seen in `xilem_web` within svg nodes
 mod kurbo {
     use super::OrphanView;
     use crate::{MessageResult, Mut, View, ViewId};
