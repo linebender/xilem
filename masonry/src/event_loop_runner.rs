@@ -623,4 +623,18 @@ impl MasonryState<'_> {
     ) {
         self.handle_user_event(event_loop, event, app_driver);
     }
+
+    pub fn get_window_state(&self) -> &WindowState {
+        &self.window
+    }
+
+    pub fn get_root(&mut self) -> &mut RenderRoot {
+        &mut self.render_root
+    }
+
+    pub fn set_present_mode(&mut self, present_mode: wgpu::PresentMode) {
+        if let WindowState::Rendering { surface, .. } = &mut self.window {
+            self.render_cx.set_present_mode(surface, present_mode);
+        }
+    }
 }
