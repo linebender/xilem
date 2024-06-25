@@ -66,18 +66,21 @@ pub(crate) fn try_init_layered_tracing() -> Result<(), SetGlobalDefaultError> {
         .with_target(false)
         .with_filter(env_filter);
 
-    let id = std::time::SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_millis();
-    let tmp_path = std::env::temp_dir().join(format!("masonry-{id:016}-dense.log"));
-    // TODO - For some reason, `.with_ansi(false)` still leaves some italics in the output.
-    let log_file_layer = tracing_subscriber::fmt::layer()
-        .with_timer(timer)
-        .with_writer(File::create(tmp_path.clone()).unwrap())
-        .with_ansi(false);
-    // We skip that layer in `--release` mode for performance.
+    // We skip the layer which stores to a file in `--release` mode for performance.
     let log_file_layer = if cfg!(debug_assertions) {
+        let id = std::time::SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_millis();
+        let tmp_path = std::env::temp_dir().join(format!("masonry-{id:016}-dense.log"));
+        // TODO - For some reason, `.with_ansi(false)` still leaves some italics in the output.
+        let log_file_layer = tracing_subscriber::fmt::layer()
+            .with_timer(timer)
+            .with_writer(File::create(tmp_path.clone()).unwrap())
+            .with_ansi(false);
+        println!("---");
+        println!("Writing full logs to {}", tmp_path.to_string_lossy());
+        println!("---");
         Some(log_file_layer)
     } else {
         None
@@ -88,10 +91,6 @@ pub(crate) fn try_init_layered_tracing() -> Result<(), SetGlobalDefaultError> {
         .with(log_file_layer);
 
     tracing::dispatcher::set_global_default(registry.into())?;
-
-    println!("---");
-    println!("Writing full logs to {}", tmp_path.to_string_lossy());
-    println!("---");
 
     if let Some(err) = env_var_error {
         tracing::error!("Failed to parse RUST_LOG environment variable: {err}");
