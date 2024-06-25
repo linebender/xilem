@@ -7,8 +7,6 @@ use core::{any::Any, fmt::Debug, ops::Deref};
 
 use alloc::boxed::Box;
 
-use crate::ViewId;
-
 /// The possible outcomes from a [`View::message`]
 ///
 /// [`View::message`]: crate::View::message

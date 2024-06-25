@@ -1,5 +1,8 @@
 use crate::{Mut, NoElement, View, ViewId, ViewPathTracker};
 
+/// Create a view which acts as `active_view`, whilst also running `alongside_view`, without inserting it into the tree.
+///
+/// `alongside_view` must be a View with an element type of [`NoElement`].
 pub fn fork<Active, Alongside>(
     active_view: Active,
     alongside_view: Alongside,
@@ -10,6 +13,7 @@ pub fn fork<Active, Alongside>(
     }
 }
 
+/// The view for [`fork`].
 pub struct Fork<Active, Alongside> {
     active_view: Active,
     alongside_view: Alongside,
@@ -43,7 +47,7 @@ where
     ) -> Mut<'el, Self::Element> {
         ctx.with_id(ViewId::new(0), |ctx| {
             self.alongside_view
-                .rebuild(&prev.alongside_view, alongside_state, ctx, ())
+                .rebuild(&prev.alongside_view, alongside_state, ctx, ());
         });
         ctx.with_id(ViewId::new(1), |ctx| {
             self.active_view
@@ -58,10 +62,10 @@ where
         element: Mut<'_, Self::Element>,
     ) {
         ctx.with_id(ViewId::new(0), |ctx| {
-            self.alongside_view.teardown(alongside_state, ctx, ())
+            self.alongside_view.teardown(alongside_state, ctx, ());
         });
         ctx.with_id(ViewId::new(1), |ctx| {
-            self.active_view.teardown(active_state, ctx, element)
+            self.active_view.teardown(active_state, ctx, element);
         });
     }
 

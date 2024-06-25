@@ -36,7 +36,10 @@ mod view;
 pub use view::{View, ViewId, ViewPathTracker};
 
 mod views;
-pub use views::{fork, memoize, Fork, Memoize};
+pub use views::{
+    fork, memoize, run_async, run_async_raw, run_once, run_once_raw, Fork, Memoize, RunAsync,
+    RunOnce,
+};
 
 mod message;
 pub use message::{DynMessage, Message, MessageResult};
@@ -49,3 +52,5 @@ pub use any_view::AnyView;
 
 mod sequence;
 pub use sequence::{AppendVec, ElementSplice, ViewSequence};
+
+pub mod docs;

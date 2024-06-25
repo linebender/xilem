@@ -5,7 +5,7 @@ mod launch_async;
 pub use launch_async::{run_async, run_async_raw, RunAsync};
 
 mod run_once;
-pub use run_once::{run_once, run_once_raw};
+pub use run_once::{run_once, run_once_raw, RunOnce};
 
 mod memoize;
 pub use memoize::{memoize, Memoize};

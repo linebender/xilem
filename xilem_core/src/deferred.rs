@@ -10,7 +10,8 @@ pub trait AsyncCtx: ViewPathTracker {
     /// The [`Proxy`] type used to access this view.
     type Proxy: Proxy;
 
-    /// Get a [`Proxy`] for this
+    /// Get a [`Proxy`] for this context.
+    // TODO: Store the path within this Proxy
     fn proxy(&mut self) -> Self::Proxy;
 }
 

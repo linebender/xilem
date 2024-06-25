@@ -192,7 +192,7 @@ where
 }
 
 /// The state used to implement `ViewSequence` for `Option<impl ViewSequence>`
-#[doc(hidden)] // Implementation detail, public because of trait visibility rules
+#[allow(unnameable_types)] // Public because of trait visibility rules, but has no public API.
 pub struct OptionSeqState<InnerState> {
     /// The current state.
     ///
