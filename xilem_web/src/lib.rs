@@ -91,7 +91,7 @@ where
 }
 
 /// A container, which holds the actual DOM node, and associated props, such as attributes or classes.
-/// These attributes are not directly set on the DOM node to avoid mutating or reading from the DOM tree unnecesserily, and to have more control over the whole update flow.
+/// These attributes are not directly set on the DOM node to avoid mutating or reading from the DOM tree unnecessarily, and to have more control over the whole update flow.
 pub struct Pod<E, P> {
     pub node: E,
     pub props: P,
