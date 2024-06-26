@@ -119,6 +119,81 @@ pub trait OneOfCtx<
     );
 }
 
+impl<State, Action, Context, Message, A, B, C, D, E, F, G, H, I>
+    View<State, Action, Context, Message> for OneOf<A, B, C, D, E, F, G, H, I>
+where
+    State: 'static,
+    Action: 'static,
+    Context: ViewPathTracker
+        + OneOfCtx<
+            A::Element,
+            B::Element,
+            C::Element,
+            D::Element,
+            E::Element,
+            F::Element,
+            G::Element,
+            H::Element,
+            I::Element,
+        >,
+    A: View<State, Action, Context, Message>,
+    B: View<State, Action, Context, Message>,
+    C: View<State, Action, Context, Message>,
+    D: View<State, Action, Context, Message>,
+    E: View<State, Action, Context, Message>,
+    F: View<State, Action, Context, Message>,
+    G: View<State, Action, Context, Message>,
+    H: View<State, Action, Context, Message>,
+    I: View<State, Action, Context, Message>,
+{
+    type Element = Context::OneOfElement;
+
+    type ViewState = hidden::OneOfState<
+        A::ViewState,
+        B::ViewState,
+        C::ViewState,
+        D::ViewState,
+        E::ViewState,
+        F::ViewState,
+        G::ViewState,
+        H::ViewState,
+        I::ViewState,
+    >;
+
+    fn build(&self, ctx: &mut Context) -> (Self::Element, Self::ViewState) {
+        todo!()
+    }
+
+    fn rebuild<'el>(
+        &self,
+        prev: &Self,
+        view_state: &mut Self::ViewState,
+        ctx: &mut Context,
+        element: Mut<'el, Self::Element>,
+    ) -> Mut<'el, Self::Element> {
+        todo!()
+    }
+
+    fn teardown(
+        &self,
+        view_state: &mut Self::ViewState,
+        ctx: &mut Context,
+        element: Mut<'_, Self::Element>,
+    ) {
+        todo!()
+    }
+
+    fn message(
+        &self,
+        view_state: &mut Self::ViewState,
+        id_path: &[ViewId],
+        message: Message,
+        app_state: &mut State,
+    ) -> MessageResult<Action, Message> {
+        todo!()
+    }
+}
+
 // Because `OneOfState` is not public API, but is part of a public trait `impl`, it must be marked pub, but we don't want
 // to export it. Since this (`one_of`) module is public, we create a new module, allowing it to be pub but not exposed.
 #[doc(hidden)]
@@ -311,7 +386,17 @@ macro_rules! one_of {
     };
 }
 
-one_of!(OneOf2, "two", (A, with_downcast_a), (B, with_downcast_b),);
+type N = hidden::Never;
+pub type One2Of2<A, B> = OneOf<A, B, N, N, N, N, N, N, N>;
+pub type One2Of3<A, B, C> = OneOf<A, B, C, N, N, N, N, N, N>;
+pub type One2Of4<A, B, C, D> = OneOf<A, B, C, D, N, N, N, N, N>;
+pub type One2Of5<A, B, C, D, E> = OneOf<A, B, C, D, E, N, N, N, N>;
+pub type One2Of6<A, B, C, D, E, F> = OneOf<A, B, C, D, E, F, N, N, N>;
+pub type One2Of7<A, B, C, D, E, F, G> = OneOf<A, B, C, D, E, F, G, N, N>;
+pub type One2Of8<A, B, C, D, E, F, G, H> = OneOf<A, B, C, D, E, F, G, H, N>;
+pub type One2Of9<A, B, C, D, E, F, G, H, I> = OneOf<A, B, C, D, E, F, G, H, I>;
+
+// one_of!(OneOf2, "two", (A, with_downcast_a), (B, with_downcast_b),);
 one_of!(
     OneOf3,
     "three",
@@ -382,3 +467,4 @@ one_of!(
     (H, with_downcast_h),
     (I, with_downcast_i),
 );
+Never
