@@ -46,11 +46,11 @@ The composition root of the framework. See **General architecture** section.
 
 ### `src/debug_logger.rs`, `src/debug_values.rs`
 
-WIP logger to get record of widget passes. See issue #11 in masonry repo.
+WIP logger to get record of widget passes. See <https://github.com/linebender/xilem/issues/370>.
 
 ## Module organization principles
 
-(Some of these principles aren't actually applied in the codebase yet. See issue #14 on Github.)
+(Some of these principles aren't actually applied in the codebase yet. See <https://github.com/linebender/xilem/issues/367>.)
 
 ### Module structure
 
@@ -135,7 +135,7 @@ Testing is provided by the **TestHarness** type implemented in the `src/testing/
 
 Ideally, the harness should provide ways to emulate absolutely every feature that Masonry apps can use. Besides the widget tree, that means keyboard events, mouse events, IME, timers, communication with background threads, animations, accessibility info, etc.
 
-(TODO - Some of that emulation support is not implemented yet. See issue #12.)
+(TODO - Some of that emulation support is not implemented yet. See <https://github.com/linebender/xilem/issues/369>.)
 
 Each widget has unit tests in its module and major features have modules with dedicated unit test suites. Ideally, we would like to achieve complete coverage within the crate.
 

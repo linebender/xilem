@@ -328,14 +328,14 @@ impl<W: Widget> WidgetPod<W> {
 impl<W: Widget> WidgetPod<W> {
     /// --- MARK: ON_XXX_EVENT ---
 
-    // TODO #5 - Some implicit invariants:
+    // TODO https://github.com/linebender/xilem/issues/376 - Some implicit invariants:
     // - If a Widget gets a keyboard event or an ImeStateChange, then
     // focus is on it, its child or its parent.
     // - If a Widget has focus, then none of its parents is hidden
 
     pub fn on_pointer_event(&mut self, parent_ctx: &mut EventCtx, event: &PointerEvent) {
         let _span = self.inner.make_trace_span().entered();
-        // TODO #11
+        // TODO https://github.com/linebender/xilem/issues/370
         parent_ctx
             .global_state
             .debug_logger
@@ -425,7 +425,7 @@ impl<W: Widget> WidgetPod<W> {
 
     pub fn on_text_event(&mut self, parent_ctx: &mut EventCtx, event: &TextEvent) {
         let _span = self.inner.make_trace_span().entered();
-        // TODO #11
+        // TODO https://github.com/linebender/xilem/issues/370
         parent_ctx
             .global_state
             .debug_logger
@@ -494,7 +494,7 @@ impl<W: Widget> WidgetPod<W> {
 
     pub fn on_access_event(&mut self, parent_ctx: &mut EventCtx, event: &AccessEvent) {
         let _span = self.inner.make_trace_span().entered();
-        // TODO #11
+        // TODO https://github.com/linebender/xilem/issues/370
         parent_ctx
             .global_state
             .debug_logger
@@ -547,14 +547,14 @@ impl<W: Widget> WidgetPod<W> {
 
     // --- MARK: LIFECYCLE ---
 
-    // TODO #5 - Some implicit invariants:
+    // TODO https://github.com/linebender/xilem/issues/376 - Some implicit invariants:
     // - A widget only receives BuildFocusChain if none of its parents are hidden.
 
     /// Propagate a [`LifeCycle`] event.
     pub fn lifecycle(&mut self, parent_ctx: &mut LifeCycleCtx, event: &LifeCycle) {
         let _span = self.inner.make_trace_span().entered();
 
-        // TODO #11
+        // TODO https://github.com/linebender/xilem/issues/370
         parent_ctx
             .global_state
             .debug_logger
@@ -815,7 +815,7 @@ impl<W: Widget> WidgetPod<W> {
     pub fn layout(&mut self, parent_ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
         let _span = self.inner.make_trace_span().entered();
 
-        // TODO #11
+        // TODO https://github.com/linebender/xilem/issues/370
         parent_ctx
             .global_state
             .debug_logger
@@ -901,7 +901,7 @@ impl<W: Widget> WidgetPod<W> {
         // - Panic: too harsh?
         // Also, we need to avoid spurious crashes when we initialize the app and the
         // size is (0,0)
-        // See issue #4
+        // See https://github.com/linebender/xilem/issues/377
 
         parent_ctx.widget_state.merge_up(&mut self.state);
         self.state.size = new_size;

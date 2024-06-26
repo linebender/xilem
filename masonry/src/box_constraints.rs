@@ -191,7 +191,7 @@ impl BoxConstraints {
         }
 
         // Then we check if any `Size`s with our desired aspect ratio are inside the constraints.
-        // TODO this currently outputs garbage when things are < 0 - See issue #4
+        // TODO this currently outputs garbage when things are < 0 - See https://github.com/linebender/xilem/issues/377
         let min_w_min_h = self.min.height / self.min.width;
         let max_w_min_h = self.min.height / self.max.width;
         let min_w_max_h = self.max.height / self.min.width;

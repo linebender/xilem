@@ -174,7 +174,7 @@ mod tests {
         let mut harness = TestHarness::create(spinner);
         assert_render_snapshot!(harness, "spinner_init");
 
-        // TODO - See issue #12
+        // TODO - See https://github.com/linebender/xilem/issues/369
         //harness.move_timers_forward(Duration::from_millis(700));
         //assert_render_snapshot!(harness, "spinner_700ms");
     }

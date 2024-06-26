@@ -11,7 +11,7 @@ use crate::text_helpers::TextFieldRegistration;
 use crate::widget::CursorChange;
 use crate::{CursorIcon, WidgetId};
 
-// FIXME #5 - Make a note documenting this: the only way to get a &mut WidgetState should be in a pass.
+// FIXME https://github.com/linebender/xilem/issues/376 - Make a note documenting this: the only way to get a &mut WidgetState should be in a pass.
 // A pass should reborrow the parent widget state (to avoid crossing wires) and call merge_up at
 // the end so that invalidations are always bubbled up.
 // Widgets with methods that require invalidation (eg Label::set_text) should take a

@@ -6,7 +6,7 @@ use std::sync::Arc;
 
 use crate::event::PointerButton;
 
-// TODO - Refactor - See issue #1
+// TODO - Refactor - See issue https://github.com/linebender/xilem/issues/335
 
 // TODO - TextCursor changed, ImeChanged, EnterKey, MouseEnter
 #[non_exhaustive]

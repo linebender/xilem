@@ -40,7 +40,7 @@ macro_rules! impl_context_method {
 /// requires a later pass (for instance, if your widget has a `set_color` method),
 /// you will need to signal that change in the pass (eg `request_paint`).
 ///
-// TODO add tutorial - See issue #5
+// TODO add tutorial - See https://github.com/linebender/xilem/issues/376
 pub struct WidgetCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) parent_widget_state: &'a mut WidgetState,
@@ -124,7 +124,7 @@ impl_context_method!(
         /// doing so as a mistake, and panics if debug assertions are on.
         ///
         /// This tells the framework that a child was deliberately skipped.
-        // TODO - see event flow tutorial - See issue #5
+        // TODO - see event flow tutorial - See https://github.com/linebender/xilem/issues/376
         pub fn skip_child(&self, child: &mut WidgetPod<impl Widget>) {
             child.mark_as_visited();
         }
@@ -567,7 +567,7 @@ impl LifeCycleCtx<'_> {
     ///
     /// In general, you should not need to call this method; it is handled by
     /// the `WidgetPod`.
-    // TODO - See issue #9
+    // TODO - See https://github.com/linebender/xilem/issues/372
     pub(crate) fn register_child(&mut self, child_id: WidgetId) {
         trace!("register_child id={:?}", child_id);
         self.widget_state.children.add(&child_id);
@@ -593,7 +593,7 @@ impl LifeCycleCtx<'_> {
         self.widget_state.text_registrations.push(registration);
     }
 
-    // TODO - remove - See issue #15
+    // TODO - remove - See issue https://github.com/linebender/xilem/issues/366
     /// Register this widget as a portal.
     ///
     /// This should only be used by scroll areas.
