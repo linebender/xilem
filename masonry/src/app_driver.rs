@@ -21,19 +21,18 @@ pub struct DriverCtx<'a> {
     pub main_root_widget: WidgetMut<'a, Box<dyn Widget>>,
 }
 
+#[allow(unused_variables)]
 pub trait AppDriver {
     fn on_action(&mut self, ctx: &mut DriverCtx<'_>, widget_id: WidgetId, action: Action);
 
     /// Called when the app is resumed. This happens after masonry handles resume, so windows and surfaces should be initialized.
     /// This corresponds to the winit::application::ApplicationHandler::resumed method.
     fn resumed(&mut self, event_loop: &ActiveEventLoop, masonry_state: &mut MasonryState<'_>) {
-        let _ = (event_loop, masonry_state);
     }
 
     /// Called when the app is suspended. This happens before masonry handles suspend, so windows and surfaces should be available still.
     /// This corresponds to the winit::application::ApplicationHandler::suspended method.
     fn suspended(&mut self, _event_loop: &ActiveEventLoop, masonry_state: &mut MasonryState<'_>) {
-        let _ = (_event_loop, masonry_state);
     }
 
     /// Called when the app receives a window event. Return `true` if the event was handled and
@@ -46,7 +45,6 @@ pub trait AppDriver {
         event: &WinitWindowEvent,
         masonry_state: &mut MasonryState<'_>,
     ) -> bool {
-        let _ = (event_loop, window_id, event, masonry_state);
         false
     }
 
@@ -60,7 +58,6 @@ pub trait AppDriver {
         event: &winit::event::DeviceEvent,
         masonry_state: &mut MasonryState<'_>,
     ) -> bool {
-        let _ = (event_loop, device_id, event, masonry_state);
         false
     }
 
@@ -73,7 +70,6 @@ pub trait AppDriver {
         event: &accesskit_winit::Event,
         masonry_state: &mut MasonryState<'_>,
     ) -> bool {
-        let _ = (event_loop, event, masonry_state);
         false
     }
 
@@ -84,12 +80,10 @@ pub trait AppDriver {
         cause: winit::event::StartCause,
         masonry_state: &mut MasonryState<'_>,
     ) {
-        let _ = (event_loop, cause, masonry_state);
     }
 
     /// This corresponds to the winit::application::ApplicationHandler::exiting method.
     fn exiting(&mut self, event_loop: &ActiveEventLoop, masonry_state: &mut MasonryState<'_>) {
-        let _ = (event_loop, masonry_state);
     }
 
     /// This corresponds to the winit::application::ApplicationHandler::memory_warning method.
@@ -98,7 +92,6 @@ pub trait AppDriver {
         event_loop: &ActiveEventLoop,
         masonry_state: &mut MasonryState<'_>,
     ) {
-        let _ = (event_loop, masonry_state);
     }
 
     /// This corresponds to the winit::application::ApplicationHandler::about_to_wait method.   
@@ -107,7 +100,6 @@ pub trait AppDriver {
         event_loop: &ActiveEventLoop,
         masonry_state: &mut MasonryState<'_>,
     ) {
-        let _ = (event_loop, masonry_state);
     }
 }
 

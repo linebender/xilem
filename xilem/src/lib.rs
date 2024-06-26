@@ -62,14 +62,9 @@ where
         }
     }
 
-    pub fn with_app_interface(self, app_interface: Box<dyn XilemToAppInterface<State>>) -> Self {
-        Xilem {
-            driver: MasonryDriver {
-                app_interface: Some(app_interface),
-                ..self.driver
-            },
-            root_widget: self.root_widget,
-        }
+    pub fn with_app_interface(mut self, app_interface: Box<dyn XilemToAppInterface<State>>) -> Self {
+        self.driver.app_interface = Some(app_interface);
+        self
     }
 
     // TODO: Make windows a specific view

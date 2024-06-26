@@ -263,6 +263,7 @@ where
     }
 }
 
+#[allow(unused_variables)]
 pub trait XilemToAppInterface<State> {
     fn resumed(
         &self,
@@ -270,7 +271,6 @@ pub trait XilemToAppInterface<State> {
         xilem_interface: &mut dyn AppToXilemInterface<State>,
         masonry_state: &mut masonry::event_loop_runner::MasonryState<'_>,
     ) {
-        let _ = (event_loop, xilem_interface, masonry_state);
     }
 
     fn suspended(
@@ -279,7 +279,6 @@ pub trait XilemToAppInterface<State> {
         xilem_interface: &mut dyn AppToXilemInterface<State>,
         masonry_state: &mut masonry::event_loop_runner::MasonryState<'_>,
     ) {
-        let _ = (event_loop, xilem_interface, masonry_state);
     }
 
     fn window_event(
@@ -290,7 +289,6 @@ pub trait XilemToAppInterface<State> {
         xilem_interface: &mut dyn AppToXilemInterface<State>,
         masonry_state: &mut masonry::event_loop_runner::MasonryState<'_>,
     ) -> bool {
-        let _ = (event_loop, window_id, event, xilem_interface, masonry_state);
         false
     }
 
@@ -302,7 +300,6 @@ pub trait XilemToAppInterface<State> {
         xilem_interface: &mut dyn AppToXilemInterface<State>,
         masonry_state: &mut masonry::event_loop_runner::MasonryState<'_>,
     ) -> bool {
-        let _ = (event_loop, device_id, event, xilem_interface, masonry_state);
         false
     }
 
@@ -313,7 +310,6 @@ pub trait XilemToAppInterface<State> {
         xilem_interface: &mut dyn AppToXilemInterface<State>,
         masonry_state: &mut masonry::event_loop_runner::MasonryState<'_>,
     ) -> bool {
-        let _ = (event_loop, event, xilem_interface, masonry_state);
         false
     }
 
@@ -324,7 +320,6 @@ pub trait XilemToAppInterface<State> {
         xilem_interface: &mut dyn AppToXilemInterface<State>,
         masonry_state: &mut masonry::event_loop_runner::MasonryState<'_>,
     ) {
-        let _ = (event_loop, cause, xilem_interface, masonry_state);
     }
 
     fn exiting(
@@ -333,7 +328,6 @@ pub trait XilemToAppInterface<State> {
         xilem_interface: &mut dyn AppToXilemInterface<State>,
         masonry_state: &mut masonry::event_loop_runner::MasonryState<'_>,
     ) {
-        let _ = (event_loop, xilem_interface, masonry_state);
     }
 
     fn memory_warning(
@@ -342,7 +336,6 @@ pub trait XilemToAppInterface<State> {
         xilem_interface: &mut dyn AppToXilemInterface<State>,
         masonry_state: &mut masonry::event_loop_runner::MasonryState<'_>,
     ) {
-        let _ = (event_loop, xilem_interface, masonry_state);
     }
 
     fn about_to_wait(
@@ -351,6 +344,5 @@ pub trait XilemToAppInterface<State> {
         xilem_interface: &mut dyn AppToXilemInterface<State>,
         masonry_state: &mut masonry::event_loop_runner::MasonryState<'_>,
     ) {
-        let _ = (event_loop, xilem_interface, masonry_state);
     }
 }
