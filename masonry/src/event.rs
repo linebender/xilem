@@ -5,7 +5,7 @@
 
 use crate::dpi::{LogicalPosition, PhysicalPosition, PhysicalSize};
 use crate::kurbo::Rect;
-// TODO - See issue #14
+// TODO - See issue https://github.com/linebender/xilem/issues/367
 use crate::WidgetId;
 
 use std::{collections::HashSet, path::PathBuf};
@@ -357,7 +357,7 @@ impl PointerState {
 }
 
 impl LifeCycle {
-    // TODO - link this to documentation of stashed widgets - See issue #9
+    // TODO - link this to documentation of stashed widgets - See issue https://github.com/linebender/xilem/issues/372
     /// Whether this event should be sent to widgets which are currently not visible and not
     /// accessible.
     ///

@@ -42,7 +42,7 @@ use crate::{
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
 pub struct WidgetId(pub(crate) NonZeroU64);
 
-// TODO - Add tutorial: implementing a widget - See issue #5
+// TODO - Add tutorial: implementing a widget - See https://github.com/linebender/xilem/issues/376
 /// The trait implemented by all widgets.
 ///
 /// For details on how to implement this trait, see tutorial **(TODO)**

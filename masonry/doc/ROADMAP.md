@@ -65,12 +65,12 @@
 
 # TODO - Next steps
 
-- [X] Remove Env type and Data trait (#8)
-- [ ] Re-add Dialog feature (#25)
-- [ ] Switch to using Vello and Glazier (#24)
-- [ ] Refactor TextLayout (#23)
+- [X] Remove Env type and Data trait (<https://github.com/linebender/xilem/issues/373>)
+- [ ] Re-add Dialog feature (<https://github.com/linebender/xilem/issues/356>)
+- [ ] Switch to using Vello and Glazier (<https://github.com/linebender/xilem/issues/357>)
+- [ ] Refactor TextLayout (<https://github.com/linebender/xilem/issues/358>)
 
-- [ ] Rework Widget trait (#26)
+- [ ] Rework Widget trait (<https://github.com/linebender/xilem/issues/355>)
 
 - [ ] Write Widget Inspector
 
