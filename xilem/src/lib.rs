@@ -62,7 +62,10 @@ where
         }
     }
 
-    pub fn with_app_interface(mut self, app_interface: Box<dyn XilemToAppInterface<State>>) -> Self {
+    pub fn with_app_interface(
+        mut self,
+        app_interface: Box<dyn XilemToAppInterface<State>>,
+    ) -> Self {
         self.driver.app_interface = Some(app_interface);
         self
     }

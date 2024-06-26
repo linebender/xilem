@@ -27,13 +27,11 @@ pub trait AppDriver {
 
     /// Called when the app is resumed. This happens after masonry handles resume, so windows and surfaces should be initialized.
     /// This corresponds to the winit::application::ApplicationHandler::resumed method.
-    fn resumed(&mut self, event_loop: &ActiveEventLoop, masonry_state: &mut MasonryState<'_>) {
-    }
+    fn resumed(&mut self, event_loop: &ActiveEventLoop, masonry_state: &mut MasonryState<'_>) {}
 
     /// Called when the app is suspended. This happens before masonry handles suspend, so windows and surfaces should be available still.
     /// This corresponds to the winit::application::ApplicationHandler::suspended method.
-    fn suspended(&mut self, _event_loop: &ActiveEventLoop, masonry_state: &mut MasonryState<'_>) {
-    }
+    fn suspended(&mut self, _event_loop: &ActiveEventLoop, masonry_state: &mut MasonryState<'_>) {}
 
     /// Called when the app receives a window event. Return `true` if the event was handled and
     /// should not be processed by the default handler.
@@ -83,8 +81,7 @@ pub trait AppDriver {
     }
 
     /// This corresponds to the winit::application::ApplicationHandler::exiting method.
-    fn exiting(&mut self, event_loop: &ActiveEventLoop, masonry_state: &mut MasonryState<'_>) {
-    }
+    fn exiting(&mut self, event_loop: &ActiveEventLoop, masonry_state: &mut MasonryState<'_>) {}
 
     /// This corresponds to the winit::application::ApplicationHandler::memory_warning method.
     fn memory_warning(
