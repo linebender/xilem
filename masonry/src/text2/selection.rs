@@ -278,12 +278,12 @@ impl<T: Selectable> TextWithSelection<T> {
 ///
 /// `key_without_modifiers` is only available on some platforms
 fn shortcut_key(key: &winit::event::KeyEvent) -> winit::keyboard::Key {
-    #[cfg(not(target_os = "android"))]
+    #[cfg(all(not(target_os = "android"), not(target_os = "ios")))]
     {
         use winit::platform::modifier_supplement::KeyEventExtModifierSupplement;
         key.key_without_modifiers()
     }
-    #[cfg(target_os = "android")]
+    #[cfg(any(target_os = "android", target_os = "ios"))]
     // We think it will be rare that users are using a physical keyboard with Android,
     // and so we don't really need to worry *too much* about the text selection shortcuts
     key.logical_key.clone()
