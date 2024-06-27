@@ -1,7 +1,7 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::{widget, ArcStr};
+use masonry::{text2::TextBrush, widget, ArcStr};
 use xilem_core::Mut;
 
 use crate::{Color, MessageResult, Pod, TextAlignment, View, ViewCtx, ViewId};
@@ -9,23 +9,25 @@ use crate::{Color, MessageResult, Pod, TextAlignment, View, ViewCtx, ViewId};
 pub fn label(label: impl Into<ArcStr>) -> Label {
     Label {
         label: label.into(),
-        text_color: Color::WHITE,
+        text_brush: Color::WHITE.into(),
         alignment: TextAlignment::default(),
-        disabled: false,
+        text_size: masonry::theme::TEXT_SIZE_NORMAL as f32,
     }
 }
 
 pub struct Label {
     label: ArcStr,
-    text_color: Color,
+
+    text_brush: TextBrush,
     alignment: TextAlignment,
-    disabled: bool,
+    text_size: f32,
     // TODO: add more attributes of `masonry::widget::Label`
 }
 
 impl Label {
-    pub fn color(mut self, color: Color) -> Self {
-        self.text_color = color;
+    #[doc(alias = "color")]
+    pub fn brush(mut self, brush: impl Into<TextBrush>) -> Self {
+        self.text_brush = brush.into();
         self
     }
 
@@ -34,8 +36,9 @@ impl Label {
         self
     }
 
-    pub fn disabled(mut self) -> Self {
-        self.disabled = true;
+    #[doc(alias = "font_size")]
+    pub fn text_size(mut self, text_size: f32) -> Self {
+        self.text_size = text_size;
         self
     }
 }
@@ -47,8 +50,9 @@ impl<State, Action> View<State, Action, ViewCtx> for Label {
     fn build(&self, _ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let widget_pod = Pod::new(
             widget::Label::new(self.label.clone())
-                .with_text_brush(self.text_color)
-                .with_text_alignment(self.alignment),
+                .with_text_brush(self.text_brush.clone())
+                .with_text_alignment(self.alignment)
+                .with_text_size(self.text_size),
         );
         (widget_pod, ())
     }
@@ -64,16 +68,16 @@ impl<State, Action> View<State, Action, ViewCtx> for Label {
             element.set_text(self.label.clone());
             ctx.mark_changed();
         }
-        // if prev.disabled != self.disabled {
-        //     element.set_disabled(self.disabled);
-        //     ctx.mark_changed();
-        // }
-        if prev.text_color != self.text_color {
-            element.set_text_brush(self.text_color);
+        if prev.text_brush != self.text_brush {
+            element.set_text_brush(self.text_brush.clone());
             ctx.mark_changed();
         }
         if prev.alignment != self.alignment {
             element.set_alignment(self.alignment);
+            ctx.mark_changed();
+        }
+        if prev.text_size != self.text_size {
+            element.set_text_size(self.text_size);
             ctx.mark_changed();
         }
         element

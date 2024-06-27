@@ -172,6 +172,7 @@ impl<T> TextLayout<T> {
     }
 
     /// Set the font size.
+    #[doc(alias = "set_font_size")]
     pub fn set_text_size(&mut self, size: f32) {
         if size != self.text_size {
             self.text_size = size;

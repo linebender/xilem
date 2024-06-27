@@ -6,27 +6,29 @@ use xilem_core::Mut;
 
 use crate::{Color, MessageResult, Pod, TextAlignment, View, ViewCtx, ViewId};
 
-pub fn prose(label: impl Into<ArcStr>) -> Prose {
+pub fn prose(content: impl Into<ArcStr>) -> Prose {
     Prose {
-        label: label.into(),
+        content: content.into(),
         text_brush: Color::WHITE.into(),
         alignment: TextAlignment::default(),
-        disabled: false,
+        text_size: masonry::theme::TEXT_SIZE_NORMAL as f32,
     }
 }
 
 pub struct Prose {
-    label: ArcStr,
+    content: ArcStr,
+
     text_brush: TextBrush,
     alignment: TextAlignment,
-    disabled: bool,
-    // TODO: add more attributes of `masonry::widget::Label`
+    text_size: f32,
+    // TODO: disabled: bool,
+    // TODO: add more attributes of `masonry::widget::Prose`
 }
 
 impl Prose {
     #[doc(alias = "color")]
-    pub fn brush(mut self, color: impl Into<TextBrush>) -> Self {
-        self.text_brush = color.into();
+    pub fn brush(mut self, brush: impl Into<TextBrush>) -> Self {
+        self.text_brush = brush.into();
         self
     }
 
@@ -35,8 +37,9 @@ impl Prose {
         self
     }
 
-    pub fn disabled(mut self) -> Self {
-        self.disabled = true;
+    #[doc(alias = "font_size")]
+    pub fn text_size(mut self, text_size: f32) -> Self {
+        self.text_size = text_size;
         self
     }
 }
@@ -47,9 +50,10 @@ impl<State, Action> View<State, Action, ViewCtx> for Prose {
 
     fn build(&self, _ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let widget_pod = Pod::new(
-            widget::Prose::new(self.label.clone())
+            widget::Prose::new(self.content.clone())
                 .with_text_brush(self.text_brush.clone())
-                .with_text_alignment(self.alignment),
+                .with_text_alignment(self.alignment)
+                .with_text_size(self.text_size),
         );
         (widget_pod, ())
     }
@@ -61,8 +65,8 @@ impl<State, Action> View<State, Action, ViewCtx> for Prose {
         ctx: &mut ViewCtx,
         mut element: Mut<'el, Self::Element>,
     ) -> Mut<'el, Self::Element> {
-        if prev.label != self.label {
-            element.set_text(self.label.clone());
+        if prev.content != self.content {
+            element.set_text(self.content.clone());
             ctx.mark_changed();
         }
         if prev.text_brush != self.text_brush {
@@ -71,6 +75,10 @@ impl<State, Action> View<State, Action, ViewCtx> for Prose {
         }
         if prev.alignment != self.alignment {
             element.set_alignment(self.alignment);
+            ctx.mark_changed();
+        }
+        if prev.text_size != self.text_size {
+            element.set_text_size(self.text_size);
             ctx.mark_changed();
         }
         element
