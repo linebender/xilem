@@ -1,6 +1,10 @@
 [package]
 name = "xilem_web"
 version = "0.1.0"
+description = "HTML DOM frontend for the Xilem Rust UI framework."
+keywords = ["xilem", "html", "svg", "dom", "web", "ui"]
+categories = ["gui", "web-programming"]
+publish = false                                                    # Until it's ready
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
