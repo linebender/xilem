@@ -46,7 +46,7 @@ env:
 # Using cargo-hack also allows us to more easily test the feature matrix of our packages.
 # We use --each-feature & --optional-deps which will run a separate check for every feature.
 #
-# We use macos-14 explictly instead of macos-latest because:
+# We use macos-14 explicitly instead of macos-latest because:
 #   * macos-latest currently points to macos-12
 #   * macos-14 provides us with the GPU support we want for testing
 #   * macos-14 comes with the M1 CPU which compiles our code much faster than the older runners
@@ -301,4 +301,4 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: check typos
-        uses: crate-ci/typos@v1.21.0
+        uses: crate-ci/typos@v1.22.9
