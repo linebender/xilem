@@ -22,7 +22,7 @@ mod sealed {
 // sealed, because this should only cover `ViewSequences` with the blanket impl below
 /// This is basically a specialized dynamically dispatchable [`ViewSequence`], It's currently not able to change the underlying type unlike [`AnyDomView`](crate::AnyDomView), so it should not be used as `dyn DomViewSequence`.
 /// It's mostly a hack to avoid a completely static view tree, which unfortunately brings rustc (type-checking) down to its knees and results in long compile-times
-pub trait DomViewSequence<State, Action, SeqMarker>:
+pub(crate) trait DomViewSequence<State, Action, SeqMarker>:
     sealed::Sealed<State, Action, SeqMarker> + 'static
 {
     /// Get an [`Any`] reference to `self`.
@@ -302,15 +302,16 @@ pub struct CustomElement<State, Action, SeqMarker> {
 }
 
 /// An element that can change its tag, it's useful for autonomous custom elements (i.e. web components)
-pub fn custom_element<
-    State,
-    Action,
-    SeqMarker,
-    Children: DomViewSequence<State, Action, SeqMarker>,
->(
+pub fn custom_element<State, Action, SeqMarker, Children>(
     name: impl Into<Cow<'static, str>>,
     children: Children,
-) -> CustomElement<State, Action, SeqMarker> {
+) -> CustomElement<State, Action, SeqMarker>
+where
+    State: 'static,
+    Action: 'static,
+    SeqMarker: 'static,
+    Children: ViewSequence<State, Action, ViewCtx, AnyPod, SeqMarker, DynMessage>,
+{
     CustomElement {
         name: name.into(),
         children: Box::new(children),
@@ -400,7 +401,7 @@ macro_rules! define_element {
             State: 'static,
             Action: 'static,
             SeqMarker: 'static,
-            Children: DomViewSequence<State, Action, SeqMarker>,
+            Children: ViewSequence<State, Action, ViewCtx, AnyPod, SeqMarker, DynMessage>,
         >(
             children: Children,
         ) -> $ty_name<State, Action, SeqMarker> {
@@ -471,8 +472,8 @@ macro_rules! define_elements {
     ($ns:ident, $($element_def:tt,)*) => {
         use super::{build_element, rebuild_element, teardown_element, DomViewSequence, ElementState};
         use crate::{
-            core::{MessageResult, Mut, ViewId},
-            DynMessage, ElementProps, Pod, View, ViewCtx,
+            core::{MessageResult, Mut, ViewId, ViewSequence},
+            AnyPod, DynMessage, ElementProps, Pod, View, ViewCtx,
         };
         $(define_element!(crate::$ns, $element_def);)*
     };
