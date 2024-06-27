@@ -23,7 +23,7 @@
 
 </div>
 
-Xilem Core provides primitives which are used by [Xilem][] (a cross-platform GUI toolkit). <!-- and Xilem Web (a web frontend framework) -->
+Xilem Core provides primitives which are used by [Xilem][] (a cross-platform GUI toolkit) and [Xilem Web][] (a web frontend framework).
 If you are using Xilem, [its documentation][xilem docs] will probably be more helpful for you. <!-- TODO: In the long-term, we probably also need a book? -->
 
 Xilem apps will interact with some of the functions from this crate, in particular [`memoize`][].
@@ -73,6 +73,7 @@ Contributions are welcome by pull request. The [Rust code of conduct][] applies.
 
 [LICENSE]: LICENSE
 [Xilem]: https://crates.io/crates/xilem
+[Xilem Web]: https://crates.io/crates/xilem_web
 [xilem docs]: https://docs.rs/xilem/latest/xilem/
 [`memoize`]: https://docs.rs/xilem_core/latest/xilem_core/views/memoize/fn.memoize.html
 [`View`]: https://docs.rs/xilem_core/latest/xilem_core/view/trait.View.html

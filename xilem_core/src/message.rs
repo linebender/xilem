@@ -46,13 +46,6 @@ impl<A, Message> MessageResult<A, Message> {
 // We can't use intra-doc links here because of
 /// The primary interface for this type is [`dyn Message::downcast`](trait.Message.html#method.downcast).
 ///
-/// These messages must also be [`Send`].
-/// This makes using this message type in a multithreaded context easier.
-/// If this requirement is causing you issues, feel free to open an issue
-/// to discuss.
-/// We are aware of potential backwards-compatible workarounds, but
-/// are not aware of any tangible need for this.
-///
 /// [`View`]: crate::View
 pub type DynMessage = Box<dyn Message>;
 /// Types which can be contained in a [`DynMessage`].
