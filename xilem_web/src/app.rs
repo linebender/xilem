@@ -7,10 +7,8 @@ use std::{cell::RefCell, rc::Rc};
 use crate::{DomView, DynMessage, PodMut};
 use xilem_core::{MessageResult, ViewId};
 
-type IdPath = Vec<ViewId>;
-
 pub(crate) struct AppMessage {
-    pub id_path: IdPath,
+    pub id_path: Rc<[ViewId]>,
     pub body: DynMessage,
 }
 
