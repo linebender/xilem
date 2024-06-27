@@ -19,7 +19,7 @@ env:
   NO_WASM_PKGS: "--exclude masonry --exclude xilem"
   # RUST_MIN_VER_PKGS + NO_WASM_PKGS, evaluated.
   # This is required because `cargo hack` does not support -p {x} --exclude {x}
-  RUST_MIN_VER_WASM_PKGS: "-xilem_core"
+  RUST_MIN_VER_WASM_PKGS: "-p xilem_core"
 
   # We do not run the masonry snapshot tests, because those currently require a specific font stack
   # See https://github.com/linebender/xilem/pull/233
