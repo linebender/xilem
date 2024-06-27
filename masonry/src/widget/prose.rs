@@ -57,6 +57,7 @@ impl Prose {
         self
     }
 
+    #[doc(alias = "with_font_size")]
     pub fn with_text_size(mut self, size: f32) -> Self {
         self.text_layout.set_text_size(size);
         self

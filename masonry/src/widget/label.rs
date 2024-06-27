@@ -15,8 +15,8 @@ use vello::Scene;
 use crate::text2::{TextBrush, TextLayout, TextStorage};
 use crate::widget::{WidgetMut, WidgetRef};
 use crate::{
-    AccessCtx, AccessEvent, ArcStr, BoxConstraints, Color, EventCtx, LayoutCtx, LifeCycle,
-    LifeCycleCtx, PaintCtx, PointerEvent, StatusChange, TextEvent, Widget,
+    AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx,
+    PaintCtx, PointerEvent, StatusChange, TextEvent, Widget,
 };
 
 // added padding between the edges of the widget and the text.
@@ -62,11 +62,12 @@ impl Label {
     }
 
     #[doc(alias = "with_text_color")]
-    pub fn with_text_brush(mut self, color: Color) -> Self {
-        self.text_layout.set_brush(color);
+    pub fn with_text_brush(mut self, brush: impl Into<TextBrush>) -> Self {
+        self.text_layout.set_brush(brush);
         self
     }
 
+    #[doc(alias = "with_font_size")]
     pub fn with_text_size(mut self, size: f32) -> Self {
         self.text_layout.set_text_size(size);
         self
