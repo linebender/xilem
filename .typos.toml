@@ -24,6 +24,11 @@ FillStrat = "FillStrat" # short for strategy
 seeked = "seeked" # Part of the HTML standard
 
 [files]
+# Include .github, .cargo, etc.
+ignore-hidden = false
 extend-exclude = [
-    "masonry/resources/i18n"
+    "masonry/resources/i18n",
+    # /.git isn't in .gitignore, because git never tracks it.
+    # Typos doesn't know that, though.
+    "/.git",
 ]
