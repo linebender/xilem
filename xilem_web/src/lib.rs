@@ -1,7 +1,10 @@
 // Copyright 2023 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use core::{AnyElement, AnyView, SuperElement, View, ViewElement};
+use core::{
+    Adapt, AdaptThunk, AnyElement, AnyView, MapAction, MapState, MessageResult, SuperElement, View,
+    ViewElement,
+};
 use std::any::Any;
 use wasm_bindgen::UnwrapThrowExt;
 use web_sys::wasm_bindgen::JsCast;
@@ -81,6 +84,49 @@ pub trait DomView<State, Action = ()>:
 {
     type DomNode: DomNode<Self::Props>;
     type Props;
+
+    /// See [`adapt`](`core::adapt`)
+    fn adapt<ParentState, ParentAction, ProxyFn>(
+        self,
+        f: ProxyFn,
+    ) -> Adapt<ParentState, ParentAction, State, Action, ViewCtx, Self, DynMessage, ProxyFn>
+    where
+        State: 'static,
+        Action: 'static,
+        ParentState: 'static,
+        ParentAction: 'static,
+        Self: Sized,
+        ProxyFn: Fn(
+                &mut ParentState,
+                AdaptThunk<State, Action, ViewCtx, Self, DynMessage>,
+            ) -> MessageResult<ParentAction, DynMessage>
+            + 'static,
+    {
+        core::adapt(self, f)
+    }
+
+    /// See [`map_state`](`core::map_state`)
+    fn map_state<ParentState, F>(self, f: F) -> MapState<ParentState, State, Self, F>
+    where
+        State: 'static,
+        ParentState: 'static,
+        Self: Sized,
+        F: Fn(&mut ParentState) -> &mut State + 'static,
+    {
+        core::map_state(self, f)
+    }
+
+    /// See [`map_action`](`core::map_action`)
+    fn map_action<ParentAction, F>(self, f: F) -> MapAction<State, ParentAction, Action, Self, F>
+    where
+        State: 'static,
+        ParentAction: 'static,
+        Action: 'static,
+        Self: Sized,
+        F: Fn(&mut State, Action) -> ParentAction + 'static,
+    {
+        core::map_action(self, f)
+    }
 }
 
 impl<V, State, Action, W, P> DomView<State, Action> for V

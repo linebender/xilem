@@ -21,7 +21,7 @@ impl MessageThunk {
     }
 }
 
-/// The [`View`](`crate::core::View`) `Context` which is used for all [`DomView`]s
+/// The [`View`](`crate::core::View`) `Context` which is used for all [`DomView`](`crate::DomView`)s
 #[derive(Default)]
 pub struct ViewCtx {
     id_path: IdPath,
