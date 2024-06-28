@@ -43,8 +43,11 @@ impl<A, Message> MessageResult<A, Message> {
 /// A dynamically typed message for the [`View`] trait.
 ///
 /// Mostly equivalent to `Box<dyn Any>`, but with support for debug printing.
-// We can't use intra-doc links here because of
+// We can't use intra-doc links here because of rustdoc doesn't understand impls on `dyn Message`
 /// The primary interface for this type is [`dyn Message::downcast`](trait.Message.html#method.downcast).
+///
+/// These messages must also be [`Send`].
+/// This makes using this message type in a multithreaded context easier.
 ///
 /// [`View`]: crate::View
 pub type DynMessage = Box<dyn Message>;

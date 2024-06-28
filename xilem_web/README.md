@@ -15,7 +15,7 @@
 [![Latest published version.](https://img.shields.io/crates/v/xilem_web.svg)](https://crates.io/crates/xilem_web)
 [![Documentation build status.](https://img.shields.io/docsrs/xilem_web.svg)](https://docs.rs/xilem_web)
 [![Apache 2.0 license.](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](#license)
-
+\
 [![Linebender Zulip chat.](https://img.shields.io/badge/Linebender-%23xilem-blue?logo=Zulip)](https://xi.zulipchat.com/#narrow/stream/354396-xilem)
 [![GitHub Actions CI status.](https://img.shields.io/github/actions/workflow/status/linebender/xilem/ci.yml?logo=github&label=CI)](https://github.com/linebender/xilem/actions)
 [![Dependency staleness status.](https://deps.rs/crate/xilem_web/latest/status.svg)](https://deps.rs/crate/xilem_web)
