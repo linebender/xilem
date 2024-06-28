@@ -10,7 +10,6 @@ use crate::WidgetId;
 
 use std::{collections::HashSet, path::PathBuf};
 
-use accesskit::{Action, ActionData};
 use winit::event::{Ime, KeyEvent, Modifiers};
 use winit::keyboard::ModifiersState;
 
@@ -82,8 +81,8 @@ pub enum TextEvent {
 pub struct AccessEvent {
     // TODO - Split out widget id from AccessEvent
     pub target: WidgetId,
-    pub action: Action,
-    pub data: Option<ActionData>,
+    pub action: accesskit::Action,
+    pub data: Option<accesskit::ActionData>,
 }
 
 #[derive(Debug, Clone)]
