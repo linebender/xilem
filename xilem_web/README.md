@@ -1,10 +1,6 @@
-<div align="center">
+<div align="center" class="rustdoc-hidden">
 
 # Xilem Web
-
-</div>
-
-<!-- Close the <div> opened in lib.rs for rustdoc, which hides the above title -->
 
 </div>
 

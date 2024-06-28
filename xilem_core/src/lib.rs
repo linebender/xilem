@@ -4,28 +4,18 @@
 #![cfg_attr(not(test), no_std)]
 #![forbid(unsafe_code)]
 #![warn(missing_docs, unreachable_pub)]
-// TODO: Point at documentation for this pattern of README include.
-// It has some neat advantages but is quite esoteric
-#![doc = concat!(
-" 
-<!-- This license link is in a .rustdoc-hidden section, but we may as well give the correct link -->
-[LICENSE]: https://github.com/linebender/xilem/blob/main/xilem_core/LICENSE
-
-<!-- intra-doc-links go here -->
-<!-- TODO: If the alloc feature is disabled, this link doesn't resolve -->
-[`alloc`]: alloc
-[`View`]: crate::View
-[`memoize`]: memoize
-
-<style>
-.rustdoc-hidden { display: none; }
-</style>
-
-<!-- Hide the header section of the README when using rustdoc -->
-<div style=\"display:none\">
-",
-    include_str!("../README.md"),
-)]
+// https://linebender.org/blog/doc-include
+//! <!-- This license link is in a .rustdoc-hidden section, but we may as well give the correct link -->
+//! [LICENSE]: https://github.com/linebender/xilem/blob/main/xilem_core/LICENSE
+//!
+//! [`alloc`]: alloc
+//! [`View`]: crate::View
+//! [`memoize`]: memoize
+//!
+//! <style>
+//! .rustdoc-hidden { display: none; }
+//! </style>
+#![doc = include_str!("../README.md")]
 
 extern crate alloc;
 
