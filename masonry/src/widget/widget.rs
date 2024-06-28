@@ -232,7 +232,7 @@ impl WidgetId {
     pub const fn reserved(raw: u16) -> WidgetId {
         let id = u64::MAX - raw as u64;
         // safety: by construction this can never be zero.
-        WidgetId(unsafe { std::num::NonZeroU64::new_unchecked(id) })
+        WidgetId(unsafe { NonZeroU64::new_unchecked(id) })
     }
 
     pub fn to_raw(self) -> u64 {
