@@ -13,7 +13,7 @@ use crate::action::Action;
 use crate::kurbo::{BezPath, Cap, Join, Size};
 use crate::paint_scene_helpers::{fill_lin_gradient, stroke, UnitPoint};
 use crate::text2::TextStorage;
-use crate::widget::{Label, WidgetMut, WidgetRef};
+use crate::widget::{Label, WidgetId, WidgetMut};
 use crate::{
     theme, AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, LayoutCtx, LifeCycle,
     LifeCycleCtx, PaintCtx, PointerEvent, StatusChange, TextEvent, Widget, WidgetPod,
@@ -215,8 +215,8 @@ impl Widget for Checkbox {
         self.label.accessibility(ctx);
     }
 
-    fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
-        smallvec![self.label.as_dyn()]
+    fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
+        smallvec![self.label.id()]
     }
 
     fn make_trace_span(&self) -> Span {
@@ -224,11 +224,11 @@ impl Widget for Checkbox {
     }
 
     fn get_debug_text(&self) -> Option<String> {
-        Some(format!(
-            "[{}] {}",
-            if self.checked { "X" } else { " " },
-            self.label.as_ref().text().as_str()
-        ))
+        if self.checked {
+            Some("[X]".to_string())
+        } else {
+            Some("[ ]".to_string())
+        }
     }
 }
 

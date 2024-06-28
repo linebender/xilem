@@ -49,6 +49,8 @@ impl<'a> WidgetMut<'a, Box<dyn Widget>> {
             global_state: self.ctx.global_state,
             parent_widget_state: self.ctx.parent_widget_state,
             widget_state: self.ctx.widget_state,
+            widget_state_children: self.ctx.widget_state_children.reborrow_mut(),
+            widget_children: self.ctx.widget_children.reborrow_mut(),
         };
         Some(WidgetMut {
             ctx,
@@ -67,6 +69,8 @@ impl<'a> WidgetMut<'a, Box<dyn Widget>> {
             global_state: self.ctx.global_state,
             parent_widget_state: self.ctx.parent_widget_state,
             widget_state: self.ctx.widget_state,
+            widget_state_children: self.ctx.widget_state_children.reborrow_mut(),
+            widget_children: self.ctx.widget_children.reborrow_mut(),
         };
         let w1_name = self.widget.type_name();
         match self.widget.as_mut_any().downcast_mut() {

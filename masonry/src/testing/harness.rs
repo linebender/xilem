@@ -430,7 +430,7 @@ impl TestHarness {
 
     /// Return the root widget.
     pub fn root_widget(&self) -> WidgetRef<'_, dyn Widget> {
-        self.render_root.root.as_dyn()
+        self.render_root.get_root_widget()
     }
 
     /// Return the widget with the given id.
@@ -439,14 +439,14 @@ impl TestHarness {
     ///
     /// Panics if no Widget with this id can be found.
     pub fn get_widget(&self, id: WidgetId) -> WidgetRef<'_, dyn Widget> {
-        self.root_widget()
-            .find_widget_by_id(id)
-            .expect("could not find widget")
+        self.render_root
+            .get_widget(id)
+            .unwrap_or_else(|| panic!("could not find widget #{}", id.to_raw()))
     }
 
     /// Try to return the widget with the given id.
     pub fn try_get_widget(&self, id: WidgetId) -> Option<WidgetRef<'_, dyn Widget>> {
-        self.root_widget().find_widget_by_id(id)
+        self.render_root.get_widget(id)
     }
 
     // TODO - link to focus documentation.
@@ -463,7 +463,7 @@ impl TestHarness {
             f: &(impl Fn(WidgetRef<'_, dyn Widget>) + 'static),
         ) {
             f(widget);
-            for child in widget.deref().children() {
+            for child in widget.children() {
                 inspect(child, f);
             }
         }

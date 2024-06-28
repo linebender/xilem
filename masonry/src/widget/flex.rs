@@ -12,7 +12,7 @@ use vello::Scene;
 use crate::kurbo::common::FloatExt;
 use crate::kurbo::{Line, Vec2};
 use crate::theme::get_debug_color;
-use crate::widget::{WidgetMut, WidgetRef};
+use crate::widget::WidgetMut;
 use crate::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
     Point, PointerEvent, Rect, Size, StatusChange, TextEvent, Widget, WidgetId, WidgetPod,
@@ -453,7 +453,10 @@ impl<'a> WidgetMut<'a, Flex> {
     }
 
     pub fn remove_child(&mut self, idx: usize) {
-        self.widget.children.remove(idx);
+        let child = self.widget.children.remove(idx);
+        if let Child::Fixed { widget, .. } | Child::Flex { widget, .. } = child {
+            self.ctx.remove_child(widget);
+        }
         self.ctx.widget_state.needs_layout = true;
     }
 
@@ -469,7 +472,11 @@ impl<'a> WidgetMut<'a, Flex> {
     }
 
     pub fn clear(&mut self) {
-        self.widget.children.clear();
+        for child in self.widget.children.drain(..) {
+            if let Child::Fixed { widget, .. } | Child::Flex { widget, .. } = child {
+                self.ctx.remove_child(widget);
+            }
+        }
         self.ctx.widget_state.needs_layout = true;
     }
 }
@@ -725,11 +732,11 @@ impl Widget for Flex {
         }
     }
 
-    fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
+    fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         self.children
             .iter()
             .filter_map(|child| child.widget())
-            .map(|widget_pod| widget_pod.as_dyn())
+            .map(|widget_pod| widget_pod.id())
             .collect()
     }
 

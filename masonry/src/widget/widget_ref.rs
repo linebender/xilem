@@ -6,6 +6,7 @@ use std::ops::Deref;
 use smallvec::SmallVec;
 
 use crate::kurbo::Point;
+use crate::tree_arena::TreeArenaToken;
 use crate::{Widget, WidgetId, WidgetState};
 
 /// A rich reference to a [`Widget`].
@@ -22,8 +23,10 @@ use crate::{Widget, WidgetId, WidgetState};
 /// This is only for shared access to widgets. For widget mutation, see [`WidgetMut`](crate::widget::WidgetMut).
 
 pub struct WidgetRef<'w, W: Widget + ?Sized> {
-    widget_state: &'w WidgetState,
-    widget: &'w W,
+    pub(crate) widget_state_children: TreeArenaToken<'w, WidgetState>,
+    pub(crate) widget_children: TreeArenaToken<'w, Box<dyn Widget>>,
+    pub(crate) widget_state: &'w WidgetState,
+    pub(crate) widget: &'w W,
 }
 
 // --- TRAIT IMPLS ---
@@ -32,6 +35,8 @@ pub struct WidgetRef<'w, W: Widget + ?Sized> {
 impl<'w, W: Widget + ?Sized> Clone for WidgetRef<'w, W> {
     fn clone(&self) -> Self {
         Self {
+            widget_state_children: self.widget_state_children,
+            widget_children: self.widget_children,
             widget_state: self.widget_state,
             widget: self.widget,
         }
@@ -49,7 +54,7 @@ impl<'w, W: Widget + ?Sized> std::fmt::Debug for WidgetRef<'w, W> {
             std::borrow::Cow::Borrowed(widget_name)
         };
 
-        let children = self.widget.children();
+        let children = self.children();
 
         if children.is_empty() {
             f.write_str(&display_name)
@@ -74,13 +79,6 @@ impl<'w, W: Widget + ?Sized> Deref for WidgetRef<'w, W> {
 // --- IMPLS ---
 
 impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
-    pub(crate) fn new(widget_state: &'w WidgetState, widget: &'w W) -> Self {
-        WidgetRef {
-            widget_state,
-            widget,
-        }
-    }
-
     // TODO - Replace with individual methods from WidgetState
     /// Get the [`WidgetState`] of the current widget.
     pub fn state(self) -> &'w WidgetState {
@@ -100,9 +98,43 @@ impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
     /// Attempt to downcast to `WidgetRef` of concrete Widget type.
     pub fn downcast<W2: Widget>(&self) -> Option<WidgetRef<'w, W2>> {
         Some(WidgetRef {
+            widget_state_children: self.widget_state_children,
+            widget_children: self.widget_children,
             widget_state: self.widget_state,
             widget: self.widget.as_any().downcast_ref()?,
         })
+    }
+
+    /// Return widget's children.
+    pub fn children(&self) -> SmallVec<[WidgetRef<'w, dyn Widget>; 16]> {
+        let parent_id = self.widget_state.id.to_raw();
+        self.widget
+            .children_ids()
+            .iter()
+            .map(|id| {
+                let id = id.to_raw();
+                let Some((state, state_token)) = self.widget_state_children.into_child(id) else {
+                    panic!(
+                        "Error in '{}' #{parent_id}: child #{id} has not been added to tree",
+                        self.widget.short_type_name()
+                    );
+                };
+                let Some((widget, widget_token)) = self.widget_children.into_child(id) else {
+                    panic!(
+                        "Error in '{}' #{parent_id}: child #{id} has not been added to tree",
+                        self.widget.short_type_name()
+                    );
+                };
+
+                let widget: &dyn Widget = &**widget;
+                WidgetRef {
+                    widget_state_children: state_token,
+                    widget_children: widget_token,
+                    widget_state: state,
+                    widget,
+                }
+            })
+            .collect()
     }
 }
 
@@ -110,6 +142,8 @@ impl<'w, W: Widget> WidgetRef<'w, W> {
     /// Return a type-erased `WidgetRef`.
     pub fn as_dyn(&self) -> WidgetRef<'w, dyn Widget> {
         WidgetRef {
+            widget_state_children: self.widget_state_children,
+            widget_children: self.widget_children,
             widget_state: self.widget_state,
             widget: self.widget,
         }
@@ -117,11 +151,6 @@ impl<'w, W: Widget> WidgetRef<'w, W> {
 }
 
 impl<'w> WidgetRef<'w, dyn Widget> {
-    /// Return widget's children.
-    pub fn children(&self) -> SmallVec<[WidgetRef<'w, dyn Widget>; 16]> {
-        self.widget.children()
-    }
-
     /// Recursively find child widget with given id.
     pub fn find_widget_by_id(&self, id: WidgetId) -> Option<WidgetRef<'w, dyn Widget>> {
         if self.state().id == id {
@@ -146,7 +175,12 @@ impl<'w> WidgetRef<'w, dyn Widget> {
         }
 
         loop {
-            if let Some(child) = innermost_widget.deref().get_child_at_pos(pos) {
+            // TODO - Use Widget::get_child_at_pos method
+            if let Some(child) = innermost_widget
+                .children()
+                .into_iter()
+                .find(|child| child.state().layout_rect().contains(pos))
+            {
                 pos -= innermost_widget.state().layout_rect().origin().to_vec2();
                 innermost_widget = child;
             } else {
@@ -163,6 +197,8 @@ impl<'w> WidgetRef<'w, dyn Widget> {
             return;
         }
 
+        // TODO
+        #[cfg(FALSE)]
         if self.state().is_new {
             debug_panic!(
                 "Widget '{}' #{} is invalid: widget did not receive WidgetAdded",
@@ -187,7 +223,7 @@ impl<'w> WidgetRef<'w, dyn Widget> {
             );
         }
 
-        for child in self.widget.children() {
+        for child in self.children() {
             child.debug_validate(after_layout);
 
             if !self.state().children.may_contain(&child.state().id) {
@@ -208,21 +244,8 @@ impl<'w> WidgetRef<'w, dyn Widget> {
 mod tests {
     use assert_matches::assert_matches;
 
-    use super::*;
     use crate::testing::{widget_ids, TestHarness, TestWidgetExt as _};
     use crate::widget::{Button, Label};
-    use crate::{Widget, WidgetPod};
-
-    #[test]
-    fn downcast_ref() {
-        let label = WidgetPod::new(Label::new("Hello"));
-        let dyn_widget: WidgetRef<dyn Widget> = label.as_dyn();
-
-        let label = dyn_widget.downcast::<Label>();
-        assert_matches!(label, Some(_));
-        let label = dyn_widget.downcast::<Button>();
-        assert_matches!(label, None);
-    }
 
     #[test]
     fn downcast_ref_in_harness() {

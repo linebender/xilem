@@ -15,7 +15,7 @@ use vello::Scene;
 
 use crate::contexts::AccessCtx;
 use crate::paint_scene_helpers::UnitPoint;
-use crate::widget::{WidgetPod, WidgetRef};
+use crate::widget::{WidgetId, WidgetPod};
 use crate::{
     AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
     PointerEvent, Rect, Size, StatusChange, TextEvent, Widget,
@@ -162,8 +162,8 @@ impl Widget for Align {
         self.child.accessibility(ctx);
     }
 
-    fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
-        smallvec![self.child.as_dyn()]
+    fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
+        smallvec![self.child.id()]
     }
 
     fn make_trace_span(&self) -> Span {

@@ -1,10 +1,16 @@
 ---
-source: crates/masonry/src/widget/tests/lifecycle_basic.rs
+source: masonry/src/widget/tests/lifecycle_basic.rs
+assertion_line: 22
 expression: record
 ---
 [
     L(
         WidgetAdded,
+    ),
+    L(
+        Internal(
+            RouteWidgetAdded,
+        ),
     ),
     L(
         BuildFocusChain,

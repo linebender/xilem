@@ -13,7 +13,7 @@ use vello::peniko::BlendMode;
 use vello::Scene;
 
 use crate::kurbo::{Point, Rect, Size, Vec2};
-use crate::widget::{Axis, ScrollBar, WidgetMut, WidgetRef};
+use crate::widget::{Axis, ScrollBar, WidgetId, WidgetMut};
 use crate::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
     PointerEvent, StatusChange, TextEvent, Widget, WidgetPod,
@@ -59,10 +59,6 @@ impl<W: Widget> Portal<W> {
 
     pub fn get_viewport_pos(&self) -> Point {
         self.viewport_pos
-    }
-
-    pub fn child(&self) -> WidgetRef<'_, W> {
-        self.child.as_ref()
     }
 
     // TODO - rewrite doc
@@ -449,8 +445,8 @@ impl<W: Widget> Widget for Portal<W> {
         self.scrollbar_vertical.accessibility(ctx);
     }
 
-    fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
-        smallvec![self.child.as_dyn()]
+    fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
+        smallvec![self.child.id()]
     }
 
     fn make_trace_span(&self) -> Span {

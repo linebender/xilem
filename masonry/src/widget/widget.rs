@@ -12,10 +12,8 @@ use tracing::{trace_span, Span};
 use vello::Scene;
 
 use crate::event::{AccessEvent, PointerEvent, StatusChange, TextEvent};
-use crate::widget::WidgetRef;
 use crate::{
-    AccessCtx, AsAny, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
-    Point, Size,
+    AccessCtx, AsAny, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Size,
 };
 
 /// A unique identifier for a single [`Widget`].
@@ -127,7 +125,8 @@ pub trait Widget: AsAny {
     /// `children_changed` on one of the Ctx parameters. Container widgets are also
     /// responsible for calling the main methods (on_event, lifecycle, layout, paint)
     /// on their children.
-    fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]>;
+    /// TODO - Update this doc
+    fn children_ids(&self) -> SmallVec<[WidgetId; 16]>;
 
     /// Return a span for tracing.
     ///
@@ -150,6 +149,8 @@ pub trait Widget: AsAny {
 
     // --- Auto-generated implementations ---
 
+    // FIXME
+    #[cfg(FALSE)]
     /// Return which child, if any, has the given `pos` in its layout rect.
     ///
     /// The child return is a direct child, not eg a grand-child. The position is in
@@ -263,6 +264,7 @@ impl From<WidgetId> for accesskit::NodeId {
     }
 }
 
+#[warn(clippy::missing_trait_methods)]
 // TODO - remove
 impl Widget for Box<dyn Widget> {
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
@@ -305,8 +307,12 @@ impl Widget for Box<dyn Widget> {
         self.deref().type_name()
     }
 
-    fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
-        self.deref().children()
+    fn short_type_name(&self) -> &'static str {
+        self.deref().short_type_name()
+    }
+
+    fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
+        self.deref().children_ids()
     }
 
     fn make_trace_span(&self) -> Span {

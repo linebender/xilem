@@ -11,7 +11,7 @@ use vello::Scene;
 use super::Axis;
 use crate::kurbo::Rect;
 use crate::paint_scene_helpers::{fill_color, stroke};
-use crate::widget::{WidgetMut, WidgetRef};
+use crate::widget::{WidgetMut, WidgetId};
 use crate::{
     theme, AccessCtx, AccessEvent, AllowRawMut, BoxConstraints, EventCtx, LayoutCtx, LifeCycle,
     LifeCycleCtx, PaintCtx, Point, PointerEvent, Size, StatusChange, TextEvent, Widget,
@@ -222,7 +222,7 @@ impl Widget for ScrollBar {
         // Use set_scroll_x/y_min/max?
     }
 
-    fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
+    fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         SmallVec::new()
     }
 

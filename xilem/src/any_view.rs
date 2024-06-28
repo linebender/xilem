@@ -2,12 +2,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use accesskit::Role;
-use masonry::widget::{WidgetMut, WidgetRef};
+use masonry::widget::{WidgetId, WidgetMut};
 use masonry::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
     Point, PointerEvent, Size, StatusChange, TextEvent, Widget, WidgetPod,
 };
-use smallvec::SmallVec;
+use smallvec::{smallvec, SmallVec};
 use vello::Scene;
 use xilem_core::{AnyElement, AnyView, SuperElement};
 
@@ -65,8 +65,8 @@ impl DynWidget {
         this: &mut WidgetMut<'_, Self>,
         widget: WidgetPod<Box<dyn Widget>>,
     ) {
-        this.widget.inner = widget;
-        this.ctx.children_changed();
+        let old_widget = std::mem::replace(&mut this.widget.inner, widget);
+        this.ctx.remove_child(old_widget);
     }
 }
 
@@ -108,9 +108,7 @@ impl Widget for DynWidget {
         self.inner.accessibility(ctx);
     }
 
-    fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
-        let mut vec = SmallVec::new();
-        vec.push(self.inner.as_dyn());
-        vec
+    fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
+        smallvec![self.inner.id()]
     }
 }

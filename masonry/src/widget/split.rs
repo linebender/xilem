@@ -13,7 +13,7 @@ use crate::event::PointerButton;
 use crate::kurbo::Line;
 use crate::paint_scene_helpers::{fill_color, stroke};
 use crate::widget::flex::Axis;
-use crate::widget::{WidgetMut, WidgetPod, WidgetRef};
+use crate::widget::{WidgetId, WidgetMut, WidgetPod};
 use crate::{
     theme, AccessCtx, AccessEvent, BoxConstraints, Color, CursorIcon, EventCtx, LayoutCtx,
     LifeCycle, LifeCycleCtx, PaintCtx, Point, PointerEvent, Rect, Size, StatusChange, TextEvent,
@@ -577,8 +577,8 @@ impl Widget for Split {
         self.child2.accessibility(ctx);
     }
 
-    fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
-        smallvec![self.child1.as_dyn(), self.child2.as_dyn()]
+    fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
+        smallvec![self.child1.id(), self.child2.id()]
     }
 
     fn make_trace_span(&self) -> Span {

@@ -12,7 +12,7 @@ use crate::action::Action;
 use crate::event::PointerButton;
 use crate::paint_scene_helpers::{fill_lin_gradient, stroke, UnitPoint};
 use crate::text2::TextStorage;
-use crate::widget::{Label, WidgetMut, WidgetPod, WidgetRef};
+use crate::widget::{Label, WidgetId, WidgetMut, WidgetPod};
 use crate::{
     theme, AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, Insets, LayoutCtx, LifeCycle,
     LifeCycleCtx, PaintCtx, PointerEvent, Size, StatusChange, TextEvent, Widget,
@@ -210,14 +210,16 @@ impl Widget for Button {
         self.label.accessibility(ctx);
     }
 
-    fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
-        smallvec![self.label.as_dyn()]
+    fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
+        smallvec![self.label.id()]
     }
 
     fn make_trace_span(&self) -> Span {
         trace_span!("Button")
     }
 
+    // FIXME
+    #[cfg(FALSE)]
     fn get_debug_text(&self) -> Option<String> {
         Some(self.label.as_ref().text().as_str().to_string())
     }

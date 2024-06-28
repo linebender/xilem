@@ -68,9 +68,6 @@ pub struct WidgetState {
     /// A flag used to track and debug missing calls to `place_child`.
     pub(crate) is_expecting_place_child_call: bool,
 
-    // True until a WidgetAdded event is received.
-    pub(crate) is_new: bool,
-
     // `true` if a descendent of this widget changed its disabled state and should receive
     // LifeCycle::DisabledChanged or InternalLifeCycle::RouteDisabledChanged
     pub(crate) children_disabled_changed: bool,
@@ -155,7 +152,6 @@ impl WidgetState {
             paint_insets: Insets::ZERO,
             local_paint_rect: Rect::ZERO,
             is_portal: false,
-            is_new: true,
             children_disabled_changed: false,
             ancestor_disabled: false,
             is_explicitly_disabled: false,

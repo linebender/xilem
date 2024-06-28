@@ -117,6 +117,7 @@ pub mod debug_values;
 pub mod event_loop_runner;
 pub mod text2;
 mod tracing_backend;
+mod tree_arena;
 
 pub use action::Action;
 pub use box_constraints::BoxConstraints;
