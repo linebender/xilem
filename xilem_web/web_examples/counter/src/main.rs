@@ -4,8 +4,8 @@
 use xilem_web::{
     document_body,
     elements::html as el,
-    interfaces::{Element, HtmlButtonElement},
-    App, View,
+    interfaces::{Element, HtmlButtonElement, HtmlDivElement},
+    App,
 };
 
 #[derive(Default)]
@@ -45,12 +45,12 @@ impl AppState {
 /// You can create functions that generate views.
 fn btn(
     label: &'static str,
-    click_fn: impl Fn(&mut AppState, web_sys::MouseEvent),
+    click_fn: impl Fn(&mut AppState, web_sys::MouseEvent) + 'static,
 ) -> impl HtmlButtonElement<AppState> {
     el::button(label).on_click(click_fn)
 }
 
-fn app_logic(state: &mut AppState) -> impl View<AppState> {
+fn app_logic(state: &mut AppState) -> impl HtmlDivElement<AppState> {
     el::div((
         el::span(format!("clicked {} times", state.clicks)).class(state.class),
         el::br(()),
@@ -66,6 +66,5 @@ fn app_logic(state: &mut AppState) -> impl View<AppState> {
 
 pub fn main() {
     console_error_panic_hook::set_once();
-    let app = App::new(AppState::default(), app_logic);
-    app.run(&document_body());
+    App::new(document_body(), AppState::default(), app_logic).run();
 }

@@ -9,7 +9,7 @@ use xilem_web::{
         kurbo::{self, Rect},
         peniko::Color,
     },
-    App, PointerMsg, View,
+    App, DomView, PointerMsg,
 };
 
 #[derive(Default)]
@@ -53,7 +53,7 @@ impl GrabState {
     }
 }
 
-fn app_logic(state: &mut AppState) -> impl View<AppState> {
+fn app_logic(state: &mut AppState) -> impl DomView<AppState> {
     let v = (0..10)
         .map(|i| Rect::from_origin_size((10.0 * i as f64, 150.0), (8.0, 8.0)))
         .collect::<Vec<_>>();
@@ -82,6 +82,5 @@ fn app_logic(state: &mut AppState) -> impl View<AppState> {
 
 pub fn main() {
     console_error_panic_hook::set_once();
-    let app = App::new(AppState::default(), app_logic);
-    app.run(&document_body());
+    App::new(document_body(), AppState::default(), app_logic).run();
 }

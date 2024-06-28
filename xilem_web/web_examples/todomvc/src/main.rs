@@ -7,8 +7,11 @@ use state::{AppState, Filter, Todo};
 
 use wasm_bindgen::JsCast;
 use xilem_web::{
-    elements::html as el, get_element_by_id, interfaces::*, style as s, Action, Adapt, App,
-    MessageResult, View,
+    core::{adapt, MessageResult},
+    elements::html as el,
+    get_element_by_id,
+    interfaces::*,
+    style as s, Action, App, DomView,
 };
 
 // All of these actions arise from within a `Todo`, but we need access to the full state to reduce
@@ -78,12 +81,11 @@ fn footer_view(state: &mut AppState, should_display: bool) -> impl Element<AppSt
     };
 
     let clear_button = (state.todos.iter().filter(|todo| todo.completed).count() > 0).then(|| {
-        Element::on_click(
-            el::button("Clear completed").class("clear-completed"),
-            |state: &mut AppState, _| {
+        el::button("Clear completed")
+            .class("clear-completed")
+            .on_click(|state: &mut AppState, _| {
                 state.todos.retain(|todo| !todo.completed);
-            },
-        )
+            })
     });
 
     let filter_class = |filter| (state.filter == filter).then_some("selected");
@@ -134,7 +136,8 @@ fn main_view(state: &mut AppState, should_display: bool) -> impl Element<AppStat
     let todos: Vec<_> = state
         .visible_todos()
         .map(|(idx, todo)| {
-            Adapt::new(
+            adapt(
+                todo_item(todo, editing_id == Some(todo.id)),
                 move |data: &mut AppState, thunk| {
                     if let MessageResult::Action(action) = thunk.call(&mut data.todos[idx]) {
                         match action {
@@ -149,7 +152,6 @@ fn main_view(state: &mut AppState, should_display: bool) -> impl Element<AppStat
                     }
                     MessageResult::Nop
                 },
-                todo_item(todo, editing_id == Some(todo.id)),
             )
         })
         .collect();
@@ -168,7 +170,7 @@ fn main_view(state: &mut AppState, should_display: bool) -> impl Element<AppStat
     .style((!should_display).then_some(s("display", "none")))
 }
 
-fn app_logic(state: &mut AppState) -> impl View<AppState> {
+fn app_logic(state: &mut AppState) -> impl DomView<AppState> {
     tracing::debug!("render: {state:?}");
     let some_todos = !state.todos.is_empty();
     let main = main_view(state, some_todos);
@@ -208,5 +210,5 @@ fn app_logic(state: &mut AppState) -> impl View<AppState> {
 pub fn main() {
     console_error_panic_hook::set_once();
     tracing_wasm::set_as_global_default();
-    App::new(AppState::load(), app_logic).run(&get_element_by_id("todoapp"));
+    App::new(get_element_by_id("todoapp"), AppState::load(), app_logic).run();
 }

@@ -1,288 +1,501 @@
-// Copyright 2023 the Xilem Authors
+// Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use wasm_bindgen::throw_str;
-
-use crate::{
-    interfaces::for_all_element_descendents, ChangeFlags, Cx, ElementsSplice, View, ViewMarker,
-    ViewSequence,
+use wasm_bindgen::UnwrapThrowExt;
+use xilem_core::{
+    one_of::{OneOf, OneOfCtx, PhantomElementCtx},
+    Mut,
 };
 
-macro_rules! impl_dom_traits {
-    ($dom_interface:ident, ($ident:ident: $($vars:ident),+)) => {
-        impl<VT, VA, $($vars: $crate::interfaces::$dom_interface<VT, VA>),+> $crate::interfaces::$dom_interface<VT, VA> for $ident<$($vars),+>
-        where
-        $($vars: $crate::interfaces::$dom_interface<VT, VA>,)+
-        {}
-    };
-}
+use crate::{
+    attribute::WithAttributes, class::WithClasses, style::WithStyle, AttributeValue, DomNode, Pod,
+    PodMut, ViewCtx,
+};
 
-macro_rules! one_of_view {
-    (
-        #[doc = $first_doc_line:literal]
-        $ident:ident { $( $vars:ident ),+ }
-    ) => {
-        #[doc = $first_doc_line]
-        ///
-        /// It is a statically-typed alternative to the type-erased `AnyView`.
-        pub enum $ident<$($vars),+> {
-            $($vars($vars),)+
+type CowStr = std::borrow::Cow<'static, str>;
+
+impl<P1, P2, P3, P4, P5, P6, P7, P8, P9, N1, N2, N3, N4, N5, N6, N7, N8, N9>
+    OneOfCtx<
+        Pod<N1, P1>,
+        Pod<N2, P2>,
+        Pod<N3, P3>,
+        Pod<N4, P4>,
+        Pod<N5, P5>,
+        Pod<N6, P6>,
+        Pod<N7, P7>,
+        Pod<N8, P8>,
+        Pod<N9, P9>,
+    > for ViewCtx
+where
+    P1: 'static,
+    P2: 'static,
+    P3: 'static,
+    P4: 'static,
+    P5: 'static,
+    P6: 'static,
+    P7: 'static,
+    P8: 'static,
+    P9: 'static,
+    N1: DomNode<P1>,
+    N2: DomNode<P2>,
+    N3: DomNode<P3>,
+    N4: DomNode<P4>,
+    N5: DomNode<P5>,
+    N6: DomNode<P6>,
+    N7: DomNode<P7>,
+    N8: DomNode<P8>,
+    N9: DomNode<P9>,
+{
+    type OneOfElement =
+        Pod<OneOf<N1, N2, N3, N4, N5, N6, N7, N8, N9>, OneOf<P1, P2, P3, P4, P5, P6, P7, P8, P9>>;
+
+    fn upcast_one_of_element(
+        elem: OneOf<
+            Pod<N1, P1>,
+            Pod<N2, P2>,
+            Pod<N3, P3>,
+            Pod<N4, P4>,
+            Pod<N5, P5>,
+            Pod<N6, P6>,
+            Pod<N7, P7>,
+            Pod<N8, P8>,
+            Pod<N9, P9>,
+        >,
+    ) -> Self::OneOfElement {
+        match elem {
+            OneOf::A(e) => Pod {
+                node: OneOf::A(e.node),
+                props: OneOf::A(e.props),
+            },
+            OneOf::B(e) => Pod {
+                node: OneOf::B(e.node),
+                props: OneOf::B(e.props),
+            },
+            OneOf::C(e) => Pod {
+                node: OneOf::C(e.node),
+                props: OneOf::C(e.props),
+            },
+            OneOf::D(e) => Pod {
+                node: OneOf::D(e.node),
+                props: OneOf::D(e.props),
+            },
+            OneOf::E(e) => Pod {
+                node: OneOf::E(e.node),
+                props: OneOf::E(e.props),
+            },
+            OneOf::F(e) => Pod {
+                node: OneOf::F(e.node),
+                props: OneOf::F(e.props),
+            },
+            OneOf::G(e) => Pod {
+                node: OneOf::G(e.node),
+                props: OneOf::G(e.props),
+            },
+            OneOf::H(e) => Pod {
+                node: OneOf::H(e.node),
+                props: OneOf::H(e.props),
+            },
+            OneOf::I(e) => Pod {
+                node: OneOf::I(e.node),
+                props: OneOf::I(e.props),
+            },
         }
+    }
 
-        impl<$($vars),+> crate::interfaces::sealed::Sealed for $ident<$($vars),+> {}
-        impl_dom_traits!(Element, ($ident: $($vars),+));
-        for_all_element_descendents!(impl_dom_traits, ($ident: $($vars),+));
-
-        impl<$($vars),+> AsRef<web_sys::Node> for $ident<$($vars),+>
-        where
-            $($vars: crate::view::DomNode,)+
-        {
-            fn as_ref(&self) -> &web_sys::Node {
-                match self {
-                    $( $ident::$vars(view) => view.as_node_ref(), )+
-                }
-            }
+    fn update_one_of_element_mut(
+        elem_mut: &mut Mut<'_, Self::OneOfElement>,
+        new_elem: OneOf<
+            Pod<N1, P1>,
+            Pod<N2, P2>,
+            Pod<N3, P3>,
+            Pod<N4, P4>,
+            Pod<N5, P5>,
+            Pod<N6, P6>,
+            Pod<N7, P7>,
+            Pod<N8, P8>,
+            Pod<N9, P9>,
+        >,
+    ) {
+        let old_node: &web_sys::Node = elem_mut.node.as_ref();
+        let new_node: &web_sys::Node = new_elem.as_ref();
+        if old_node != new_node {
+            elem_mut
+                .parent
+                .replace_child(new_node, old_node)
+                .unwrap_throw();
         }
-        impl<$($vars),+> ViewMarker for $ident<$($vars),+> {}
+        (*elem_mut.node, *elem_mut.props) = match new_elem {
+            OneOf::A(e) => (OneOf::A(e.node), OneOf::A(e.props)),
+            OneOf::B(e) => (OneOf::B(e.node), OneOf::B(e.props)),
+            OneOf::C(e) => (OneOf::C(e.node), OneOf::C(e.props)),
+            OneOf::D(e) => (OneOf::D(e.node), OneOf::D(e.props)),
+            OneOf::E(e) => (OneOf::E(e.node), OneOf::E(e.props)),
+            OneOf::F(e) => (OneOf::F(e.node), OneOf::F(e.props)),
+            OneOf::G(e) => (OneOf::G(e.node), OneOf::G(e.props)),
+            OneOf::H(e) => (OneOf::H(e.node), OneOf::H(e.props)),
+            OneOf::I(e) => (OneOf::I(e.node), OneOf::I(e.props)),
+        };
+    }
 
-        impl<VT, VA, $($vars),+> View<VT, VA> for $ident<$($vars),+>
-        where
-            $($vars: View<VT, VA>,)+
-        {
-            type State = $ident<$($vars::State),+>;
-            type Element = $ident<$($vars::Element),+>;
+    fn with_downcast_a(
+        elem: &mut Mut<'_, Self::OneOfElement>,
+        f: impl FnOnce(Mut<'_, Pod<N1, P1>>),
+    ) {
+        let (OneOf::A(node), OneOf::A(props)) = (&mut elem.node, &mut elem.props) else {
+            unreachable!()
+        };
+        f(PodMut::new(node, props, elem.parent, elem.was_removed));
+    }
 
-            fn build(&self, cx: &mut Cx) -> (xilem_core::Id, Self::State, Self::Element) {
-                match self {
-                    $(
-                        $ident::$vars(view) => {
-                            let (id, state, el) = view.build(cx);
-                            (id, $ident::$vars(state), $ident::$vars(el))
-                        }
-                    )+
-                }
-            }
+    fn with_downcast_b(
+        elem: &mut Mut<'_, Self::OneOfElement>,
+        f: impl FnOnce(Mut<'_, Pod<N2, P2>>),
+    ) {
+        let (OneOf::B(node), OneOf::B(props)) = (&mut elem.node, &mut elem.props) else {
+            unreachable!()
+        };
+        f(PodMut::new(node, props, elem.parent, elem.was_removed));
+    }
 
-            fn rebuild(
-                &self,
-                cx: &mut Cx,
-                prev: &Self,
-                id: &mut xilem_core::Id,
-                state: &mut Self::State,
-                element: &mut Self::Element,
-            ) -> ChangeFlags {
-                match (prev, self) {
-                    $(
-                        // Variant is the same as before
-                        ($ident::$vars(prev_view), $ident::$vars(view)) => {
-                            let ($ident::$vars(state), $ident::$vars(element)) = (state, element)
-                            else {
-                                throw_str(concat!(
-                                    "invalid state/view in ", stringify!($ident), " (unreachable)",
-                                ));
-                            };
-                            view.rebuild(cx, prev_view, id, state, element)
-                        }
-                        // Variant has changed
-                        (_, $ident::$vars(view)) => {
-                            let (new_id, new_state, new_element) = view.build(cx);
-                            *id = new_id;
-                            *state = $ident::$vars(new_state);
-                            *element = $ident::$vars(new_element);
-                            ChangeFlags::STRUCTURE
-                        }
-                    )+
-                }
-            }
+    fn with_downcast_c(
+        elem: &mut Mut<'_, Self::OneOfElement>,
+        f: impl FnOnce(Mut<'_, Pod<N3, P3>>),
+    ) {
+        let (OneOf::C(node), OneOf::C(props)) = (&mut elem.node, &mut elem.props) else {
+            unreachable!()
+        };
+        f(PodMut::new(node, props, elem.parent, elem.was_removed));
+    }
 
-            fn message(
-                &self,
-                id_path: &[xilem_core::Id],
-                state: &mut Self::State,
-                message: Box<dyn std::any::Any>,
-                app_state: &mut VT,
-            ) -> xilem_core::MessageResult<VA> {
-                match self {
-                    $(
-                        $ident::$vars(view) => {
-                            let $ident::$vars(state) = state else {
-                                throw_str(concat!(
-                                    "invalid state/view in", stringify!($ident), "(unreachable)",
-                                ));
-                            };
-                            view.message(id_path, state, message, app_state)
-                        }
-                    )+
-                }
-            }
+    fn with_downcast_d(
+        elem: &mut Mut<'_, Self::OneOfElement>,
+        f: impl FnOnce(Mut<'_, Pod<N4, P4>>),
+    ) {
+        let (OneOf::D(node), OneOf::D(props)) = (&mut elem.node, &mut elem.props) else {
+            unreachable!()
+        };
+        f(PodMut::new(node, props, elem.parent, elem.was_removed));
+    }
+
+    fn with_downcast_e(
+        elem: &mut Mut<'_, Self::OneOfElement>,
+        f: impl FnOnce(Mut<'_, Pod<N5, P5>>),
+    ) {
+        let (OneOf::E(node), OneOf::E(props)) = (&mut elem.node, &mut elem.props) else {
+            unreachable!()
+        };
+        f(PodMut::new(node, props, elem.parent, elem.was_removed));
+    }
+
+    fn with_downcast_f(
+        elem: &mut Mut<'_, Self::OneOfElement>,
+        f: impl FnOnce(Mut<'_, Pod<N6, P6>>),
+    ) {
+        let (OneOf::F(node), OneOf::F(props)) = (&mut elem.node, &mut elem.props) else {
+            unreachable!()
+        };
+        f(PodMut::new(node, props, elem.parent, elem.was_removed));
+    }
+
+    fn with_downcast_g(
+        elem: &mut Mut<'_, Self::OneOfElement>,
+        f: impl FnOnce(Mut<'_, Pod<N7, P7>>),
+    ) {
+        let (OneOf::G(node), OneOf::G(props)) = (&mut elem.node, &mut elem.props) else {
+            unreachable!()
+        };
+        f(PodMut::new(node, props, elem.parent, elem.was_removed));
+    }
+
+    fn with_downcast_h(
+        elem: &mut Mut<'_, Self::OneOfElement>,
+        f: impl FnOnce(Mut<'_, Pod<N8, P8>>),
+    ) {
+        let (OneOf::H(node), OneOf::H(props)) = (&mut elem.node, &mut elem.props) else {
+            unreachable!()
+        };
+        f(PodMut::new(node, props, elem.parent, elem.was_removed));
+    }
+
+    fn with_downcast_i(
+        elem: &mut Mut<'_, Self::OneOfElement>,
+        f: impl FnOnce(Mut<'_, Pod<N9, P9>>),
+    ) {
+        let (OneOf::I(node), OneOf::I(props)) = (&mut elem.node, &mut elem.props) else {
+            unreachable!()
+        };
+        f(PodMut::new(node, props, elem.parent, elem.was_removed));
+    }
+}
+
+pub enum Noop {}
+
+impl PhantomElementCtx for ViewCtx {
+    type PhantomElement = Pod<Noop, Noop>;
+}
+
+impl WithAttributes for Noop {
+    fn start_attribute_modifier(&mut self) {
+        unreachable!()
+    }
+
+    fn end_attribute_modifier(&mut self) {
+        unreachable!()
+    }
+
+    fn set_attribute(&mut self, _name: CowStr, _value: Option<AttributeValue>) {
+        unreachable!()
+    }
+}
+
+impl WithClasses for Noop {
+    fn start_class_modifier(&mut self) {
+        unreachable!()
+    }
+
+    fn add_class(&mut self, _class_name: CowStr) {
+        unreachable!()
+    }
+
+    fn remove_class(&mut self, _class_name: CowStr) {
+        unreachable!()
+    }
+
+    fn end_class_modifier(&mut self) {
+        unreachable!()
+    }
+}
+
+impl WithStyle for Noop {
+    fn start_style_modifier(&mut self) {
+        unreachable!()
+    }
+
+    fn set_style(&mut self, _name: CowStr, _value: Option<CowStr>) {
+        unreachable!()
+    }
+
+    fn end_style_modifier(&mut self) {
+        unreachable!()
+    }
+}
+
+impl<T> AsRef<T> for Noop {
+    fn as_ref(&self) -> &T {
+        unreachable!()
+    }
+}
+
+impl<P> DomNode<P> for Noop {
+    fn apply_props(&self, _props: &mut P) {
+        unreachable!()
+    }
+}
+
+impl<
+        E1: WithAttributes,
+        E2: WithAttributes,
+        E3: WithAttributes,
+        E4: WithAttributes,
+        E5: WithAttributes,
+        E6: WithAttributes,
+        E7: WithAttributes,
+        E8: WithAttributes,
+        E9: WithAttributes,
+    > WithAttributes for OneOf<E1, E2, E3, E4, E5, E6, E7, E8, E9>
+{
+    fn start_attribute_modifier(&mut self) {
+        match self {
+            OneOf::A(e) => e.start_attribute_modifier(),
+            OneOf::B(e) => e.start_attribute_modifier(),
+            OneOf::C(e) => e.start_attribute_modifier(),
+            OneOf::D(e) => e.start_attribute_modifier(),
+            OneOf::E(e) => e.start_attribute_modifier(),
+            OneOf::F(e) => e.start_attribute_modifier(),
+            OneOf::G(e) => e.start_attribute_modifier(),
+            OneOf::H(e) => e.start_attribute_modifier(),
+            OneOf::I(e) => e.start_attribute_modifier(),
         }
-    };
-}
+    }
 
-one_of_view! {
-    /// This view container can switch between two views.
-    OneOf2 { A, B }
-}
-one_of_view! {
-    /// This view container can switch between three views.
-    OneOf3 { A, B, C }
-}
-
-one_of_view! {
-    /// This view container can switch between four views.
-    OneOf4 { A, B, C, D }
-}
-
-one_of_view! {
-    /// This view container can switch between five views.
-    OneOf5 { A, B, C, D, E }
-}
-
-one_of_view! {
-    /// This view container can switch between six views.
-    OneOf6 { A, B, C, D, E, F }
-}
-
-one_of_view! {
-    /// This view container can switch between seven views.
-    OneOf7 { A, B, C, D, E, F, G }
-}
-
-one_of_view! {
-    /// This view container can switch between eight views.
-    OneOf8 { A, B, C, D, E, F, G, H }
-}
-
-macro_rules! one_of_sequence {
-    (
-        #[doc = $first_doc_line:literal]
-        $ident:ident { $( $vars:ident ),+ }
-    ) => {
-        #[doc = $first_doc_line]
-        ///
-        /// It is a statically-typed alternative to the type-erased `AnyView`.
-        pub enum $ident<$($vars),+> {
-            $($vars($vars),)+
+    fn end_attribute_modifier(&mut self) {
+        match self {
+            OneOf::A(e) => e.end_attribute_modifier(),
+            OneOf::B(e) => e.end_attribute_modifier(),
+            OneOf::C(e) => e.end_attribute_modifier(),
+            OneOf::D(e) => e.end_attribute_modifier(),
+            OneOf::E(e) => e.end_attribute_modifier(),
+            OneOf::F(e) => e.end_attribute_modifier(),
+            OneOf::G(e) => e.end_attribute_modifier(),
+            OneOf::H(e) => e.end_attribute_modifier(),
+            OneOf::I(e) => e.end_attribute_modifier(),
         }
-        impl<VT, VA, $($vars),+> ViewSequence<VT, VA> for $ident<$($vars),+>
-        where $(
-            $vars: ViewSequence<VT, VA>,
-        )+ {
-            type State = $ident<$($vars::State),+>;
+    }
 
-            fn build(&self, cx: &mut Cx, elements: &mut dyn ElementsSplice) -> Self::State {
-                match self {
-                    $(
-                        $ident::$vars(view_sequence) => {
-                            $ident::$vars(view_sequence.build(cx, elements))
-                        }
-                    )+
-                }
-            }
-
-            fn rebuild(
-                &self,
-                cx: &mut Cx,
-                prev: &Self,
-                state: &mut Self::State,
-                elements: &mut dyn ElementsSplice,
-            ) -> ChangeFlags {
-                match (prev, self) {
-                    $(
-                        // Variant is the same as before
-                        ($ident::$vars(prev_view), $ident::$vars(view_sequence)) => {
-                            let $ident::$vars(state) = state else {
-                                throw_str(concat!(
-                                    "invalid state/view_sequence in ",
-                                    stringify!($ident),
-                                    " (unreachable)",
-                                ));
-                            };
-                            view_sequence.rebuild(cx, prev_view, state, elements)
-                        }
-                        // Variant has changed
-                        (_, $ident::$vars(view_sequence)) => {
-                            let new_state = view_sequence.build(cx, elements);
-                            *state = $ident::$vars(new_state);
-                            ChangeFlags::STRUCTURE
-                        }
-                    )+
-                }
-            }
-
-            fn message(
-                &self,
-                id_path: &[xilem_core::Id],
-                state: &mut Self::State,
-                message: Box<dyn std::any::Any>,
-                app_state: &mut VT,
-            ) -> xilem_core::MessageResult<VA> {
-                match self {
-                    $(
-                        $ident::$vars(view_sequence) => {
-                            let $ident::$vars(state) = state else {
-                                throw_str(concat!(
-                                    "invalid state/view_sequence in ",
-                                    stringify!($ident),
-                                    " (unreachable)",
-                                ));
-                            };
-                            view_sequence.message(id_path, state, message, app_state)
-                        }
-                    )+
-                }
-            }
-
-            fn count(&self, state: &Self::State) -> usize {
-                match self {
-                    $(
-                        $ident::$vars(view_sequence) => {
-                            let $ident::$vars(state) = state else {
-                                throw_str(concat!(
-                                    "invalid state/view_sequence in ",
-                                    stringify!($ident),
-                                    " (unreachable)",
-                                ));
-                            };
-                            view_sequence.count(state)
-                        }
-                    )+
-                }
-            }
+    fn set_attribute(&mut self, name: CowStr, value: Option<AttributeValue>) {
+        match self {
+            OneOf::A(e) => e.set_attribute(name, value),
+            OneOf::B(e) => e.set_attribute(name, value),
+            OneOf::C(e) => e.set_attribute(name, value),
+            OneOf::D(e) => e.set_attribute(name, value),
+            OneOf::E(e) => e.set_attribute(name, value),
+            OneOf::F(e) => e.set_attribute(name, value),
+            OneOf::G(e) => e.set_attribute(name, value),
+            OneOf::H(e) => e.set_attribute(name, value),
+            OneOf::I(e) => e.set_attribute(name, value),
         }
-    };
+    }
 }
 
-one_of_sequence! {
-    /// This view sequence container can switch between two view sequences.
-    OneSeqOf2 { A, B }
-}
-one_of_sequence! {
-    /// This view sequence container can switch between three view sequences.
-    OneSeqOf3 { A, B, C }
+impl<
+        E1: WithClasses,
+        E2: WithClasses,
+        E3: WithClasses,
+        E4: WithClasses,
+        E5: WithClasses,
+        E6: WithClasses,
+        E7: WithClasses,
+        E8: WithClasses,
+        E9: WithClasses,
+    > WithClasses for OneOf<E1, E2, E3, E4, E5, E6, E7, E8, E9>
+{
+    fn start_class_modifier(&mut self) {
+        match self {
+            OneOf::A(e) => e.start_class_modifier(),
+            OneOf::B(e) => e.start_class_modifier(),
+            OneOf::C(e) => e.start_class_modifier(),
+            OneOf::D(e) => e.start_class_modifier(),
+            OneOf::E(e) => e.start_class_modifier(),
+            OneOf::F(e) => e.start_class_modifier(),
+            OneOf::G(e) => e.start_class_modifier(),
+            OneOf::H(e) => e.start_class_modifier(),
+            OneOf::I(e) => e.start_class_modifier(),
+        }
+    }
+
+    fn add_class(&mut self, class_name: CowStr) {
+        match self {
+            OneOf::A(e) => e.add_class(class_name),
+            OneOf::B(e) => e.add_class(class_name),
+            OneOf::C(e) => e.add_class(class_name),
+            OneOf::D(e) => e.add_class(class_name),
+            OneOf::E(e) => e.add_class(class_name),
+            OneOf::F(e) => e.add_class(class_name),
+            OneOf::G(e) => e.add_class(class_name),
+            OneOf::H(e) => e.add_class(class_name),
+            OneOf::I(e) => e.add_class(class_name),
+        }
+    }
+
+    fn remove_class(&mut self, class_name: CowStr) {
+        match self {
+            OneOf::A(e) => e.remove_class(class_name),
+            OneOf::B(e) => e.remove_class(class_name),
+            OneOf::C(e) => e.remove_class(class_name),
+            OneOf::D(e) => e.remove_class(class_name),
+            OneOf::E(e) => e.remove_class(class_name),
+            OneOf::F(e) => e.remove_class(class_name),
+            OneOf::G(e) => e.remove_class(class_name),
+            OneOf::H(e) => e.remove_class(class_name),
+            OneOf::I(e) => e.remove_class(class_name),
+        }
+    }
+
+    fn end_class_modifier(&mut self) {
+        match self {
+            OneOf::A(e) => e.end_class_modifier(),
+            OneOf::B(e) => e.end_class_modifier(),
+            OneOf::C(e) => e.end_class_modifier(),
+            OneOf::D(e) => e.end_class_modifier(),
+            OneOf::E(e) => e.end_class_modifier(),
+            OneOf::F(e) => e.end_class_modifier(),
+            OneOf::G(e) => e.end_class_modifier(),
+            OneOf::H(e) => e.end_class_modifier(),
+            OneOf::I(e) => e.end_class_modifier(),
+        }
+    }
 }
 
-one_of_sequence! {
-    /// This view sequence container can switch between four view sequences.
-    OneSeqOf4 { A, B, C, D }
+impl<
+        E1: WithStyle,
+        E2: WithStyle,
+        E3: WithStyle,
+        E4: WithStyle,
+        E5: WithStyle,
+        E6: WithStyle,
+        E7: WithStyle,
+        E8: WithStyle,
+        E9: WithStyle,
+    > WithStyle for OneOf<E1, E2, E3, E4, E5, E6, E7, E8, E9>
+{
+    fn start_style_modifier(&mut self) {
+        match self {
+            OneOf::A(e) => e.start_style_modifier(),
+            OneOf::B(e) => e.start_style_modifier(),
+            OneOf::C(e) => e.start_style_modifier(),
+            OneOf::D(e) => e.start_style_modifier(),
+            OneOf::E(e) => e.start_style_modifier(),
+            OneOf::F(e) => e.start_style_modifier(),
+            OneOf::G(e) => e.start_style_modifier(),
+            OneOf::H(e) => e.start_style_modifier(),
+            OneOf::I(e) => e.start_style_modifier(),
+        }
+    }
+
+    fn set_style(&mut self, name: CowStr, value: Option<CowStr>) {
+        match self {
+            OneOf::A(e) => e.set_style(name, value),
+            OneOf::B(e) => e.set_style(name, value),
+            OneOf::C(e) => e.set_style(name, value),
+            OneOf::D(e) => e.set_style(name, value),
+            OneOf::E(e) => e.set_style(name, value),
+            OneOf::F(e) => e.set_style(name, value),
+            OneOf::G(e) => e.set_style(name, value),
+            OneOf::H(e) => e.set_style(name, value),
+            OneOf::I(e) => e.set_style(name, value),
+        }
+    }
+
+    fn end_style_modifier(&mut self) {
+        match self {
+            OneOf::A(e) => e.end_style_modifier(),
+            OneOf::B(e) => e.end_style_modifier(),
+            OneOf::C(e) => e.end_style_modifier(),
+            OneOf::D(e) => e.end_style_modifier(),
+            OneOf::E(e) => e.end_style_modifier(),
+            OneOf::F(e) => e.end_style_modifier(),
+            OneOf::G(e) => e.end_style_modifier(),
+            OneOf::H(e) => e.end_style_modifier(),
+            OneOf::I(e) => e.end_style_modifier(),
+        }
+    }
 }
 
-one_of_sequence! {
-    /// This view sequence container can switch between five view sequences.
-    OneSeqOf5 { A, B, C, D, E }
-}
-
-one_of_sequence! {
-    /// This view sequence container can switch between six view sequences.
-    OneSeqOf6 { A, B, C, D, E, F }
-}
-
-one_of_sequence! {
-    /// This view sequence container can switch between seven view sequences.
-    OneSeqOf7 { A, B, C, D, E, F, G }
-}
-
-one_of_sequence! {
-    /// This view sequence container can switch between eight view sequences.
-    OneSeqOf8 { A, B, C, D, E, F, G, H }
+impl<P1, P2, P3, P4, P5, P6, P7, P8, P9, E1, E2, E3, E4, E5, E6, E7, E8, E9>
+    DomNode<OneOf<P1, P2, P3, P4, P5, P6, P7, P8, P9>> for OneOf<E1, E2, E3, E4, E5, E6, E7, E8, E9>
+where
+    E1: DomNode<P1>,
+    E2: DomNode<P2>,
+    E3: DomNode<P3>,
+    E4: DomNode<P4>,
+    E5: DomNode<P5>,
+    E6: DomNode<P6>,
+    E7: DomNode<P7>,
+    E8: DomNode<P8>,
+    E9: DomNode<P9>,
+{
+    fn apply_props(&self, props: &mut OneOf<P1, P2, P3, P4, P5, P6, P7, P8, P9>) {
+        match (self, props) {
+            (OneOf::A(el), OneOf::A(props)) => el.apply_props(props),
+            (OneOf::B(el), OneOf::B(props)) => el.apply_props(props),
+            (OneOf::C(el), OneOf::C(props)) => el.apply_props(props),
+            (OneOf::D(el), OneOf::D(props)) => el.apply_props(props),
+            (OneOf::E(el), OneOf::E(props)) => el.apply_props(props),
+            (OneOf::F(el), OneOf::F(props)) => el.apply_props(props),
+            (OneOf::G(el), OneOf::G(props)) => el.apply_props(props),
+            (OneOf::H(el), OneOf::H(props)) => el.apply_props(props),
+            (OneOf::I(el), OneOf::I(props)) => el.apply_props(props),
+            _ => unreachable!(),
+        }
+    }
 }

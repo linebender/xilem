@@ -3,6 +3,9 @@
 
 type CowStr = std::borrow::Cow<'static, str>;
 
+/// Representation of an attribute value.
+///
+/// This type is used as optimization, to avoid allocations, as it's copied around a lot
 #[derive(PartialEq, Clone, Debug, PartialOrd)]
 pub enum AttributeValue {
     True, // for the boolean true, this serializes to an empty string (e.g. for <input checked>)
@@ -26,6 +29,7 @@ impl AttributeValue {
     }
 }
 
+/// Types implementing this trait can be used as value in e.g. [`Element::attr`](`crate::interfaces::Element::attr`)
 pub trait IntoAttributeValue: Sized {
     fn into_attr_value(self) -> Option<AttributeValue>;
 }

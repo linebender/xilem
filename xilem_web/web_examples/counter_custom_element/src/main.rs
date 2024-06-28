@@ -5,7 +5,7 @@ use xilem_web::{
     document_body,
     elements::custom_element,
     interfaces::{Element, HtmlElement},
-    App, View,
+    App, DomView,
 };
 
 #[derive(Default)]
@@ -27,14 +27,14 @@ impl AppState {
 
 fn btn(
     label: &'static str,
-    click_fn: impl Fn(&mut AppState, web_sys::Event),
+    click_fn: impl Fn(&mut AppState, web_sys::Event) + 'static,
 ) -> impl HtmlElement<AppState> {
     custom_element("button", label).on("click", move |state: &mut AppState, evt| {
         click_fn(state, evt);
     })
 }
 
-fn app_logic(state: &mut AppState) -> impl View<AppState> {
+fn app_logic(state: &mut AppState) -> impl DomView<AppState> {
     custom_element(
         "div",
         (
@@ -48,6 +48,5 @@ fn app_logic(state: &mut AppState) -> impl View<AppState> {
 
 pub fn main() {
     console_error_panic_hook::set_once();
-    let app = App::new(AppState::default(), app_logic);
-    app.run(&document_body());
+    App::new(document_body(), AppState::default(), app_logic).run();
 }

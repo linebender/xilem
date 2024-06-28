@@ -279,6 +279,16 @@ impl<'a, K, V> IntoIterator for &'a VecMap<K, V> {
     }
 }
 
+impl<K, V> IntoIterator for VecMap<K, V> {
+    type Item = (K, V);
+
+    type IntoIter = std::vec::IntoIter<(K, V)>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
+    }
+}
+
 // Basically all the doc tests from the rustdoc examples above, to avoid having to expose this module (pub)
 #[cfg(test)]
 mod tests {

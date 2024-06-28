@@ -50,7 +50,7 @@ fn slider(
 
 pub fn main() {
     console_error_panic_hook::set_once();
-    App::new(Triangle { a: 200, b: 100 }, |t| {
+    App::new(document_body(), Triangle { a: 200, b: 100 }, |t| {
         let x1 = 390;
         let y1 = 30;
         let x2 = x1;
@@ -91,5 +91,5 @@ pub fn main() {
             ))),
         ))
     })
-    .run(&document_body());
+    .run();
 }
