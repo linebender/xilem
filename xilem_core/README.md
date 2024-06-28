@@ -1,11 +1,7 @@
 
-<div align="center">
+<div align="center" class="rustdoc-hidden">
 
 # Xilem Core
-
-</div>
-
-<!-- Close the <div> opened in lib.rs for rustdoc, which hides the above title -->
 
 </div>
 
@@ -44,7 +40,7 @@ The current proposal would split the application into two processes:
 
 ## no_std support
 
-Xilem Core supports running with `#![no_std]`, but does require an allocator to be available.
+Xilem Core supports running with `#![no_std]`, but does use [`alloc`][] to be available.
 
 It is plausible that this reactivity pattern could be used without allocation being required, but that is not provided by this package.
 If you wish to use Xilem Core in environments where an allocator is not available, feel free to bring this up on [Zulip](#community).
@@ -75,5 +71,6 @@ Contributions are welcome by pull request. The [Rust code of conduct][] applies.
 [Xilem]: https://crates.io/crates/xilem
 [Xilem Web]: https://crates.io/crates/xilem_web
 [xilem docs]: https://docs.rs/xilem/latest/xilem/
+[`alloc`]: https://doc.rust-lang.org/stable/alloc/
 [`memoize`]: https://docs.rs/xilem_core/latest/xilem_core/views/memoize/fn.memoize.html
 [`View`]: https://docs.rs/xilem_core/latest/xilem_core/view/trait.View.html
