@@ -31,6 +31,26 @@ Xilem's reactive layer is built on top of a wide array of foundational Rust UI p
 Xilem can currently be considered to be in an alpha state.
 Lots of things need improvements.
 
+## Minimum supported Rust Version (MSRV)
+
+This version of Xilem has been verified to compile with **Rust 1.77** and later.
+
+Future versions of Xilem might increase the Rust version requirement.
+It will not be treated as a breaking change and as such can even happen with small patch releases.
+
+<details>
+<summary>Click here if compiling fails.</summary>
+
+As time has passed, some of Xilem's dependencies could have released versions with a higher Rust requirement.
+If you encounter a compilation issue due to a dependency and don't want to upgrade your Rust toolchain, then you could downgrade the dependency.
+
+```sh
+# Use the problematic dependency's name and version
+cargo update -p package_name --precise 0.1.1
+```
+
+</details>
+
 ## Community
 
 Discussion of Xilem development happens in the [Linebender Zulip](https://xi.zulipchat.com/), specifically the [#xilem stream](https://xi.zulipchat.com/#narrow/stream/354396-xilem).

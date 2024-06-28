@@ -45,7 +45,25 @@ Xilem Core supports running with `#![no_std]`, but does use [`alloc`][] to be av
 It is plausible that this reactivity pattern could be used without allocation being required, but that is not provided by this package.
 If you wish to use Xilem Core in environments where an allocator is not available, feel free to bring this up on [Zulip](#community).
 
-<!-- MSRV will go here once we settle on that for this repository -->
+## Minimum supported Rust Version (MSRV)
+
+This version of Xilem Core has been verified to compile with **Rust 1.77** and later.
+
+Future versions of Xilem Core might increase the Rust version requirement.
+It will not be treated as a breaking change and as such can even happen with small patch releases.
+
+<details>
+<summary>Click here if compiling fails.</summary>
+
+As time has passed, some of Xilem Core's dependencies could have released versions with a higher Rust requirement.
+If you encounter a compilation issue due to a dependency and don't want to upgrade your Rust toolchain, then you could downgrade the dependency.
+
+```sh
+# Use the problematic dependency's name and version
+cargo update -p package_name --precise 0.1.1
+```
+
+</details>
 
 <!-- We hide these elements when viewing in Rustdoc, because they're not expected to be present in crate level docs -->
 <div class="rustdoc-hidden">
