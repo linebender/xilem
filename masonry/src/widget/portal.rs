@@ -257,7 +257,7 @@ impl<W: Widget> Widget for Portal<W> {
                 let mut scrollbar = ctx.get_raw_mut(&mut self.scrollbar_vertical);
                 scrollbar.widget().cursor_progress =
                     self.viewport_pos.y / (content_size - portal_size).height;
-                scrollbar.ctx.request_paint();
+                scrollbar.ctx().request_paint();
             }
             _ => (),
         }
@@ -361,6 +361,7 @@ impl<W: Widget> Widget for Portal<W> {
             let mut scrollbar = ctx.get_raw_mut(&mut self.scrollbar_horizontal);
             scrollbar.widget().portal_size = portal_size.width;
             scrollbar.widget().content_size = content_size.width;
+            // TODO - request paint for scrollbar?
             std::mem::drop(scrollbar);
 
             let scrollbar_size = self.scrollbar_horizontal.layout(ctx, bc);
@@ -375,6 +376,7 @@ impl<W: Widget> Widget for Portal<W> {
             let mut scrollbar = ctx.get_raw_mut(&mut self.scrollbar_vertical);
             scrollbar.widget().portal_size = portal_size.height;
             scrollbar.widget().content_size = content_size.height;
+            // TODO - request paint for scrollbar?
             std::mem::drop(scrollbar);
 
             let scrollbar_size = self.scrollbar_vertical.layout(ctx, bc);

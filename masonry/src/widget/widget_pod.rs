@@ -195,7 +195,7 @@ impl<W: Widget> WidgetPod<W> {
 
         let _span = widget.make_trace_span().entered();
 
-        // TODO #370 - Re-implement debug logger
+        // TODO https://github.com/linebender/xilem/issues/370 - Re-implement debug logger
 
         // TODO - explain this
         state.mark_as_visited(true);

@@ -1023,14 +1023,14 @@ impl<'s> AccessCtx<'s> {
 // --- MARK: WRAPPER
 
 pub struct RawWrapper<'a, Ctx, W> {
-    pub(crate) ctx: Ctx,
-    pub(crate) widget: &'a W,
+    ctx: Ctx,
+    widget: &'a W,
 }
 
-pub struct RawWrapperMut<'a, Ctx: Context, W> {
-    pub(crate) parent_widget_state: &'a mut WidgetState,
-    pub(crate) ctx: Ctx,
-    pub(crate) widget: &'a mut W,
+pub struct RawWrapperMut<'a, Ctx: IsContext, W> {
+    parent_widget_state: &'a mut WidgetState,
+    ctx: Ctx,
+    widget: &'a mut W,
 }
 
 impl<Ctx, W> RawWrapper<'_, Ctx, W> {
@@ -1043,7 +1043,7 @@ impl<Ctx, W> RawWrapper<'_, Ctx, W> {
     }
 }
 
-impl<Ctx: Context, W> RawWrapperMut<'_, Ctx, W> {
+impl<Ctx: IsContext, W> RawWrapperMut<'_, Ctx, W> {
     pub fn widget(&mut self) -> &mut W {
         self.widget
     }
@@ -1053,7 +1053,7 @@ impl<Ctx: Context, W> RawWrapperMut<'_, Ctx, W> {
     }
 }
 
-impl<'a, Ctx: Context, W> Drop for RawWrapperMut<'a, Ctx, W> {
+impl<'a, Ctx: IsContext, W> Drop for RawWrapperMut<'a, Ctx, W> {
     fn drop(&mut self) {
         self.parent_widget_state
             .merge_up(self.ctx.get_widget_state());
@@ -1064,7 +1064,7 @@ mod private {
     pub trait Sealed {}
 }
 
-pub trait Context: private::Sealed {
+pub trait IsContext: private::Sealed {
     fn get_widget_state(&mut self) -> &mut WidgetState;
 }
 
@@ -1072,7 +1072,7 @@ macro_rules! impl_context_trait {
     ($SomeCtx:tt) => {
         impl private::Sealed for $SomeCtx<'_> {}
 
-        impl Context for $SomeCtx<'_> {
+        impl IsContext for $SomeCtx<'_> {
             fn get_widget_state(&mut self) -> &mut WidgetState {
                 self.widget_state
             }
