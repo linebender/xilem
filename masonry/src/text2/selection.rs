@@ -278,7 +278,7 @@ impl<T: Selectable> TextWithSelection<T> {
 ///
 /// `key_without_modifiers` is only available on some platforms
 fn shortcut_key(key: &winit::event::KeyEvent) -> winit::keyboard::Key {
-    #[cfg(all(not(target_os = "android"), not(target_os = "ios")))]
+    #[cfg(not(any(target_os = "android", target_os = "ios")))]
     {
         use winit::platform::modifier_supplement::KeyEventExtModifierSupplement;
         key.key_without_modifiers()
