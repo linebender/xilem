@@ -1,7 +1,9 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0 AND MIT
 
-//! An example showing an emoji picker
+//! A simple emoji picker.
+//! It is expected that the Emoji in this example may not render.
+//! This is because Vello does not support any kinds of bitmap fonts.
 //!
 //! Note that the MIT license is needed because of the emoji data.
 //! Everything except for the [`EMOJI`] constant is Apache 2.0 licensed.
@@ -9,16 +11,18 @@
 use xilem::{
     core::map_state,
     view::{button, flex, label, prose, sized_box},
-    AnyWidgetView, Axis, EventLoop, EventLoopBuilder, WidgetView, Xilem,
+    AnyWidgetView, Axis, Color, EventLoop, EventLoopBuilder, WidgetView, Xilem,
 };
 
 fn app_logic(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> {
     flex((
         sized_box(flex(()).must_fill_major_axis(true)).height(50.), // Padding because of the info bar on Android
         flex((
+            // TODO: Expose that this is a "zoom out" button accessibly
             button("🔍-", |data: &mut EmojiPagination| {
                 data.size = (data.size + 1).min(5)
             }),
+            // TODO: Expose that this is a "zoom in" button accessibly
             button("🔍+", |data: &mut EmojiPagination| {
                 data.size = (data.size - 1).max(2)
             }),
@@ -54,12 +58,23 @@ fn picker(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> {
             let view: Box<AnyWidgetView<EmojiPagination>> = match emoji {
                 Some(emoji) => {
                     let view = flex((
+                        // TODO: Expose that this button corresponds to the label below to accessibility?
                         sized_box(button(emoji.display, move |data: &mut EmojiPagination| {
                             data.last_selected = Some(idx)
                         }))
                         .expand_width(),
-                        sized_box(prose(emoji.name).alignment(xilem::TextAlignment::Middle))
-                            .expand_width(),
+                        sized_box(
+                            prose(emoji.name)
+                                .alignment(xilem::TextAlignment::Middle)
+                                .brush(if data.last_selected.is_some_and(|it| it == idx) {
+                                    // TODO: Ensure this selection indicator color is accessible
+                                    // TODO: Expose selected state to accessibility tree
+                                    Color::BLUE
+                                } else {
+                                    Color::WHITE
+                                }),
+                        )
+                        .expand_width(),
                     ))
                     .must_fill_major_axis(true);
                     Box::new(view)
@@ -82,6 +97,7 @@ fn paginate(
     let percentage = (current_start * 100) / max_count;
 
     flex((
+        // TODO: Expose that this is a previous page button to accessibility
         button("<-", move |data| {
             *data = current_start.saturating_sub(count_per_page)
         }),
