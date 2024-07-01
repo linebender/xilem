@@ -1,3 +1,11 @@
+// Copyright 2024 the Xilem Authors
+// SPDX-License-Identifier: Apache-2.0 AND MIT
+
+//! An example showing an emoji picker
+//!
+//! Note that the MIT license is needed because of the emoji data.
+//! Everything except for the [`EMOJI`] constant is Apache 2.0 licensed.
+
 use xilem::{
     core::map_state,
     view::{button, flex, label, prose, sized_box},
