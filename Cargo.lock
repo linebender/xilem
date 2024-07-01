@@ -3058,7 +3058,7 @@ checksum = "830b7e5d4d90034032940e4ace0d9a9a057e7a45cd94e6c007832e39edb82f6d"
 [[package]]
 name = "vello"
 version = "0.2.0"
-source = "git+https://github.com/linebender/vello/#3ee3bea02164c5a816fe6c16ef4e3a810edb7620"
+source = "git+https://github.com/linebender/vello/?rev=3ee3bea02164c5a816fe6c16ef4e3a810edb7620#3ee3bea02164c5a816fe6c16ef4e3a810edb7620"
 dependencies = [
  "bytemuck",
  "futures-intrusive",
@@ -3076,7 +3076,7 @@ dependencies = [
 [[package]]
 name = "vello_encoding"
 version = "0.2.0"
-source = "git+https://github.com/linebender/vello/#3ee3bea02164c5a816fe6c16ef4e3a810edb7620"
+source = "git+https://github.com/linebender/vello/?rev=3ee3bea02164c5a816fe6c16ef4e3a810edb7620#3ee3bea02164c5a816fe6c16ef4e3a810edb7620"
 dependencies = [
  "bytemuck",
  "guillotiere",
@@ -3088,7 +3088,7 @@ dependencies = [
 [[package]]
 name = "vello_shaders"
 version = "0.2.0"
-source = "git+https://github.com/linebender/vello/#3ee3bea02164c5a816fe6c16ef4e3a810edb7620"
+source = "git+https://github.com/linebender/vello/?rev=3ee3bea02164c5a816fe6c16ef4e3a810edb7620#3ee3bea02164c5a816fe6c16ef4e3a810edb7620"
 dependencies = [
  "bytemuck",
  "naga",
