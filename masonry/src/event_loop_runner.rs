@@ -135,6 +135,10 @@ impl ApplicationHandler<accesskit_winit::Event> for MainState<'_> {
                 let adapter = Adapter::with_event_loop_proxy(&window, self.proxy.clone());
                 window.set_visible(visible);
                 let window = Arc::new(window);
+                // https://github.com/rust-windowing/winit/issues/2308
+                #[cfg(target_os = "ios")]
+                let size = window.outer_size();
+                #[cfg(not(target_os = "ios"))]
                 let size = window.inner_size();
                 let surface = pollster::block_on(self.render_cx.create_surface(
                     window.clone(),
@@ -156,6 +160,10 @@ impl ApplicationHandler<accesskit_winit::Event> for MainState<'_> {
                 window,
                 accesskit_adapter,
             } => {
+                // https://github.com/rust-windowing/winit/issues/2308
+                #[cfg(target_os = "ios")]
+                let size = window.outer_size();
+                #[cfg(not(target_os = "ios"))]
                 let size = window.inner_size();
                 let surface = pollster::block_on(self.render_cx.create_surface(
                     window.clone(),
@@ -379,6 +387,10 @@ impl MainState<'_> {
             return;
         };
         let scale_factor = window.scale_factor();
+        // https://github.com/rust-windowing/winit/issues/2308
+        #[cfg(target_os = "ios")]
+        let size = window.outer_size();
+        #[cfg(not(target_os = "ios"))]
         let size = window.inner_size();
         let width = size.width;
         let height = size.height;
