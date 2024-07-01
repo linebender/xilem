@@ -20,11 +20,11 @@ fn app_logic(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> {
         flex((
             // TODO: Expose that this is a "zoom out" button accessibly
             button("🔍-", |data: &mut EmojiPagination| {
-                data.size = (data.size + 1).min(5)
+                data.size = (data.size + 1).min(5);
             }),
             // TODO: Expose that this is a "zoom in" button accessibly
             button("🔍+", |data: &mut EmojiPagination| {
-                data.size = (data.size - 1).max(2)
+                data.size = (data.size - 1).max(2);
             }),
         ))
         .direction(Axis::Horizontal),
@@ -60,7 +60,7 @@ fn picker(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> {
                     let view = flex((
                         // TODO: Expose that this button corresponds to the label below to accessibility?
                         sized_box(button(emoji.display, move |data: &mut EmojiPagination| {
-                            data.last_selected = Some(idx)
+                            data.last_selected = Some(idx);
                         }))
                         .expand_width(),
                         sized_box(
@@ -83,7 +83,7 @@ fn picker(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> {
             };
             row_contents.push(sized_box(view).width(dimensions).height(dimensions));
         }
-        result.push(flex(row_contents).direction(Axis::Horizontal))
+        result.push(flex(row_contents).direction(Axis::Horizontal));
     }
 
     flex(result)
@@ -99,13 +99,13 @@ fn paginate(
     flex((
         // TODO: Expose that this is a previous page button to accessibility
         button("<-", move |data| {
-            *data = current_start.saturating_sub(count_per_page)
+            *data = current_start.saturating_sub(count_per_page);
         }),
         label(format!("{percentage}%")),
         button("->", move |data| {
             let new_idx = current_start + count_per_page;
             if new_idx < max_count {
-                *data = new_idx
+                *data = new_idx;
             }
         }),
     ))
