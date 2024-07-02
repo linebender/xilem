@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::contexts::WidgetCtx;
-use crate::Widget;
+use crate::{Widget, WidgetState};
 
 // TODO - Document extension trait workaround.
 // See https://xi.zulipchat.com/#narrow/stream/317477-masonry/topic/Thoughts.20on.20simplifying.20WidgetMut/near/436478885
@@ -34,6 +34,14 @@ impl<W: Widget> Drop for WidgetMut<'_, W> {
     }
 }
 
+impl<'w, W: Widget> WidgetMut<'w, W> {
+    // TODO - Replace with individual methods from WidgetState
+    /// Get the [`WidgetState`] of the current widget.
+    pub fn state(&self) -> &WidgetState {
+        self.ctx.widget_state
+    }
+}
+
 impl<'a> WidgetMut<'a, Box<dyn Widget>> {
     /// Attempt to downcast to `WidgetMut` of concrete Widget type.
     pub fn try_downcast<W2: Widget>(&mut self) -> Option<WidgetMut<'_, W2>> {
@@ -41,6 +49,8 @@ impl<'a> WidgetMut<'a, Box<dyn Widget>> {
             global_state: self.ctx.global_state,
             parent_widget_state: self.ctx.parent_widget_state,
             widget_state: self.ctx.widget_state,
+            widget_state_children: self.ctx.widget_state_children.reborrow_mut(),
+            widget_children: self.ctx.widget_children.reborrow_mut(),
         };
         Some(WidgetMut {
             ctx,
@@ -59,6 +69,8 @@ impl<'a> WidgetMut<'a, Box<dyn Widget>> {
             global_state: self.ctx.global_state,
             parent_widget_state: self.ctx.parent_widget_state,
             widget_state: self.ctx.widget_state,
+            widget_state_children: self.ctx.widget_state_children.reborrow_mut(),
+            widget_children: self.ctx.widget_children.reborrow_mut(),
         };
         let w1_name = self.widget.type_name();
         match self.widget.as_mut_any().downcast_mut() {

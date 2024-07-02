@@ -14,14 +14,13 @@ use vello::{
     Scene,
 };
 
+use crate::widget::{LineBreaking, WidgetMut};
 use crate::{
     dpi::{LogicalPosition, LogicalSize},
     text2::{TextBrush, TextEditor, TextStorage, TextWithSelection},
     AccessCtx, AccessEvent, BoxConstraints, CursorIcon, EventCtx, LayoutCtx, LifeCycle,
-    LifeCycleCtx, PaintCtx, PointerEvent, StatusChange, TextEvent, Widget,
+    LifeCycleCtx, PaintCtx, PointerEvent, StatusChange, TextEvent, Widget, WidgetId,
 };
-
-use super::{LineBreaking, WidgetMut, WidgetRef};
 
 const TEXTBOX_PADDING: f64 = 3.0;
 /// HACK: A "margin" which is placed around the outside of all textboxes, ensuring that
@@ -346,7 +345,7 @@ impl Widget for Textbox {
         // TODO
     }
 
-    fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
+    fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         SmallVec::new()
     }
 

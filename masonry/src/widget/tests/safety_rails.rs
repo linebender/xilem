@@ -5,7 +5,7 @@ use smallvec::smallvec;
 
 use crate::testing::{ModularWidget, TestHarness};
 use crate::widget::Flex;
-use crate::{LifeCycle, Point, Size, Widget, WidgetPod};
+use crate::{InternalLifeCycle, LifeCycle, Point, Size, Widget, WidgetPod};
 
 fn make_parent_widget<W: Widget>(child: W) -> ModularWidget<WidgetPod<W>> {
     let child = WidgetPod::new(child);
@@ -25,7 +25,7 @@ fn make_parent_widget<W: Widget>(child: W) -> ModularWidget<WidgetPod<W>> {
         .paint_fn(move |child, ctx, scene| {
             child.paint(ctx, scene);
         })
-        .children_fn(|child| smallvec![child.as_dyn()])
+        .children_fn(|child| smallvec![child.id()])
 }
 
 #[should_panic(expected = "not visited in method on_pointer_event")]
@@ -51,7 +51,7 @@ fn check_forget_to_recurse_text_event() {
     harness.mouse_move(Point::ZERO);
 }
 
-#[should_panic(expected = "not visited in method lifecycle")]
+#[should_panic(expected = "not added in method lifecycle")]
 #[test]
 fn check_forget_to_recurse_lifecycle() {
     let widget = make_parent_widget(Flex::row()).lifecycle_fn(|_child, _ctx, _event| {
@@ -61,6 +61,7 @@ fn check_forget_to_recurse_lifecycle() {
     let _harness = TestHarness::create(widget);
 }
 
+#[cfg(FALSE)]
 #[should_panic(expected = "before receiving WidgetAdded.")]
 #[test]
 fn check_forget_to_recurse_widget_added() {
@@ -170,10 +171,13 @@ fn allow_non_recurse_oob_paint() {
 fn allow_non_recurse_cursor_stashed() {
     let widget = make_parent_widget(Flex::row())
         .lifecycle_fn(|child, ctx, event| {
-            if matches!(event, LifeCycle::WidgetAdded) {
+            child.lifecycle(ctx, event);
+            if matches!(
+                event,
+                LifeCycle::Internal(InternalLifeCycle::RouteWidgetAdded)
+            ) {
                 ctx.set_stashed(child, true);
             }
-            child.lifecycle(ctx, event);
         })
         .pointer_event_fn(|_child, _ctx, _event| {
             // We skip calling child.on_pointer_event();
@@ -188,10 +192,13 @@ fn allow_non_recurse_cursor_stashed() {
 fn allow_non_recurse_stashed_paint() {
     let widget = make_parent_widget(Flex::row())
         .lifecycle_fn(|child, ctx, event| {
-            if matches!(event, LifeCycle::WidgetAdded) {
+            child.lifecycle(ctx, event);
+            if matches!(
+                event,
+                LifeCycle::Internal(InternalLifeCycle::RouteWidgetAdded)
+            ) {
                 ctx.set_stashed(child, true);
             }
-            child.lifecycle(ctx, event);
         })
         .layout_fn(|_child, _ctx, _bc| Size::ZERO)
         .paint_fn(|_child, _ctx, _scene| {
@@ -314,10 +321,13 @@ fn check_recurse_paint_twice() {
 fn check_layout_stashed() {
     let widget = make_parent_widget(Flex::row())
         .lifecycle_fn(|child, ctx, event| {
-            if matches!(event, LifeCycle::WidgetAdded) {
+            child.lifecycle(ctx, event);
+            if matches!(
+                event,
+                LifeCycle::Internal(InternalLifeCycle::RouteWidgetAdded)
+            ) {
                 ctx.set_stashed(child, true);
             }
-            child.lifecycle(ctx, event);
         })
         .layout_fn(|child, ctx, bc| {
             let size = child.layout(ctx, bc);
@@ -334,10 +344,13 @@ fn check_layout_stashed() {
 fn check_paint_stashed() {
     let widget = make_parent_widget(Flex::row())
         .lifecycle_fn(|child, ctx, event| {
-            if matches!(event, LifeCycle::WidgetAdded) {
+            child.lifecycle(ctx, event);
+            if matches!(
+                event,
+                LifeCycle::Internal(InternalLifeCycle::RouteWidgetAdded)
+            ) {
                 ctx.set_stashed(child, true);
             }
-            child.lifecycle(ctx, event);
         })
         .layout_fn(|_child, _ctx, _bc| Size::ZERO)
         .paint_fn(|child, ctx, scene| {

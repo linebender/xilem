@@ -11,14 +11,13 @@ use smallvec::SmallVec;
 use tracing::{trace, trace_span, Span};
 use vello::{peniko::BlendMode, Scene};
 
+use crate::widget::{LineBreaking, WidgetMut};
 use crate::{
     text2::{TextBrush, TextStorage, TextWithSelection},
     widget::label::LABEL_X_PADDING,
     AccessCtx, AccessEvent, ArcStr, BoxConstraints, CursorIcon, EventCtx, LayoutCtx, LifeCycle,
-    LifeCycleCtx, PaintCtx, PointerEvent, StatusChange, TextEvent, Widget,
+    LifeCycleCtx, PaintCtx, PointerEvent, StatusChange, TextEvent, Widget, WidgetId,
 };
-
-use super::{LineBreaking, WidgetMut, WidgetRef};
 
 /// The prose widget is a widget which displays text which can be
 /// selected with keyboard and mouse, and which can be copied from,
@@ -293,7 +292,7 @@ impl Widget for Prose {
             .set_name(self.text().as_str().to_string());
     }
 
-    fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
+    fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         SmallVec::new()
     }
 
