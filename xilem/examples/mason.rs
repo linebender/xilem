@@ -118,6 +118,9 @@ fn main() {
 use winit::platform::android::activity::AndroidApp;
 
 #[cfg(target_os = "android")]
+// Safety: We are following `android_activity`'s docs here
+// We believe that there are no other declarations using this name in the compiled objects here
+#[allow(unsafe_code)]
 #[no_mangle]
 fn android_main(app: AndroidApp) {
     use winit::platform::android::EventLoopBuilderExtAndroid;
