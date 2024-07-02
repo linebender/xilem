@@ -38,6 +38,16 @@ where
     driver: MasonryDriver<State, Logic, View, View::ViewState>,
 }
 
+// This struct is same as the Xilem struct, except it exposes members as public but implements
+// no methods. It is used to split Xilem into parts for use with external event loops.
+pub struct XilemParts<State, Logic, View>
+where
+    View: WidgetView<State>,
+{
+    pub root_widget: RootWidget<View::Widget>,
+    pub driver: MasonryDriver<State, Logic, View, View::ViewState>,
+}
+
 impl<State, Logic, View> Xilem<State, Logic, View>
 where
     Logic: FnMut(&mut State) -> View,
@@ -57,6 +67,13 @@ where
                 view_state,
             },
             root_widget,
+        }
+    }
+
+    pub fn split(self) -> XilemParts<State, Logic, View> {
+        XilemParts {
+            root_widget: self.root_widget,
+            driver: self.driver,
         }
     }
 
