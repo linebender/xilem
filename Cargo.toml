@@ -31,7 +31,9 @@ rust.unexpected_cfgs = { level = "warn", check-cfg = [
     'cfg(tarpaulin_include)',
 ] }
 # unsafe code is not allowed in Xilem or Masonry
-rust.unsafe_code = "forbid"
+# We would like to set this to `forbid`, but we have to use `deny` because `android_activity` 
+# requires us to use the unsafe `#[no_mangle]` attribute
+rust.unsafe_code = "deny"
 
 [workspace.dependencies]
 xilem_web_core = { version = "0.1.0", path = "xilem_web/xilem_web_core" }
