@@ -40,7 +40,8 @@ rust.unsafe_code = "deny"
 xilem_web_core = { version = "0.1.0", path = "xilem_web/xilem_web_core" }
 masonry = { version = "0.2.0", path = "masonry" }
 xilem_core = { version = "0.1.0", path = "xilem_core" }
-vello = "0.2.0"
+# We depend on this Vello revision for Emoji support (https://github.com/linebender/vello/pull/615)
+vello = { git = "https://github.com/linebender/vello/", rev = "3ee3bea02164c5a816fe6c16ef4e3a810edb7620" }
 wgpu = "0.20.0"
 kurbo = "0.11.0"
 parley = "0.1.0"
@@ -55,3 +56,7 @@ web-time = "1.1.0"
 bitflags = "2.5.0"
 accesskit = "0.15.0"
 accesskit_winit = "0.21.0"
+
+[patch.crates-io]
+# We depend on this Parley revision for Emoji support (https://github.com/linebender/parley/pull/56)
+parley = { git = "https://github.com/linebender/parley", rev = "a3c616e18ef39b1bbeb9bcafb879a884f09f1095" }

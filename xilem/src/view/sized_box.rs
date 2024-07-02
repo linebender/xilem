@@ -13,10 +13,7 @@ use crate::{
 /// This widget forces its child to have a specific width and/or height (assuming values are permitted by
 /// this widget's parent). If either the width or height is not set, this widget will size itself
 /// to match the child's size in that dimension.
-pub fn sized_box<State, Action, V>(inner: V) -> SizedBox<V>
-where
-    V: WidgetView<State, Action>,
-{
+pub fn sized_box<V>(inner: V) -> SizedBox<V> {
     SizedBox {
         inner,
         height: None,
