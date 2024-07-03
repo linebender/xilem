@@ -199,7 +199,7 @@ impl<'a, Item> TreeArenaToken<'a, Item> {
     /// Get the child of the item this token is associated with, which has the given id.
     ///
     /// This is the same as [`get_child`](Self::get_child), except it consumes the
-    /// token. This is sometimes necesssary to accomodate the borrow checker.
+    /// token. This is sometimes necesssary to accommodate the borrow checker.
     pub fn into_child(self, id: u64) -> Option<(&'a Item, TreeArenaToken<'a, Item>)> {
         for child in &self.children[..] {
             if child.id == id {
@@ -279,7 +279,7 @@ impl<'a, Item> TreeArenaTokenMut<'a, Item> {
     /// Get the child of the item this token is associated with, which has the given id.
     ///
     /// This is the same as [`get_child`](Self::get_child), except it consumes the
-    /// token. This is sometimes necesssary to accomodate the borrow checker.
+    /// token. This is sometimes necesssary to accommodate the borrow checker.
     pub fn into_child(self, id: u64) -> Option<(&'a Item, TreeArenaToken<'a, Item>)> {
         for child in &mut self.children[..] {
             if child.id == id {
@@ -297,7 +297,7 @@ impl<'a, Item> TreeArenaTokenMut<'a, Item> {
     /// Get the child of the item this token is associated with, which has the given id.
     ///
     /// This is the same as [`get_child_mut`](Self::get_child_mut), except it consumes
-    /// the token. This is sometimes necesssary to accomodate the borrow checker.
+    /// the token. This is sometimes necesssary to accommodate the borrow checker.
     pub fn into_child_mut(self, id: u64) -> Option<(&'a mut Item, TreeArenaTokenMut<'a, Item>)> {
         for child in &mut self.children[..] {
             if child.id == id {
