@@ -164,7 +164,7 @@ impl<Item> TreeArena<Item> {
 
 impl<'a, Item> TreeArenaToken<'a, Item> {
     // TODO - Implement this
-    fn parent_id(&self) -> Option<u64> {
+    fn parent_id(self) -> Option<u64> {
         unimplemented!()
     }
 
@@ -232,6 +232,11 @@ impl<'a, Item> TreeArenaToken<'a, Item> {
 }
 
 impl<'a, Item> TreeArenaTokenMut<'a, Item> {
+    // TODO - Implement this
+    fn parent_id(&self) -> Option<u64> {
+        unimplemented!()
+    }
+
     /// Get the child of the item this token is associated with, which has the given id.
     ///
     /// Returns a tuple of a shared reference to the child and a token to access
