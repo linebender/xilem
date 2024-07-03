@@ -19,23 +19,28 @@
 
 extern crate alloc;
 
+mod deferred;
+pub use deferred::{AsyncCtx, PhantomView, Proxy, ProxyError};
+
 mod view;
 pub use view::{View, ViewId, ViewPathTracker};
 
 mod views;
 pub use views::{
-    adapt, map_action, map_state, memoize, one_of, Adapt, AdaptThunk, MapAction, MapState, Memoize,
-    OrphanView,
+    adapt, fork, map_action, map_state, memoize, one_of, run_once, run_once_raw, Adapt, AdaptThunk,
+    Fork, MapAction, MapState, Memoize, OrphanView, RunOnce,
 };
 
 mod message;
 pub use message::{DynMessage, Message, MessageResult};
 
 mod element;
-pub use element::{AnyElement, Mut, SuperElement, ViewElement};
+pub use element::{AnyElement, Mut, NoElement, SuperElement, ViewElement};
 
 mod any_view;
 pub use any_view::AnyView;
 
 mod sequence;
 pub use sequence::{AppendVec, ElementSplice, ViewSequence};
+
+pub mod docs;

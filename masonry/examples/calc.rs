@@ -7,8 +7,6 @@
 #![windows_subsystem = "windows"]
 #![allow(clippy::single_match)]
 
-use std::sync::Arc;
-
 use accesskit::{DefaultActionVerb, Role};
 use masonry::app_driver::{AppDriver, DriverCtx};
 use masonry::dpi::LogicalSize;
@@ -156,7 +154,7 @@ impl Widget for CalcButton {
             }
             PointerEvent::PointerUp(_, _) => {
                 if ctx.is_active() && !ctx.is_disabled() {
-                    ctx.submit_action(Action::Other(Arc::new(self.action)));
+                    ctx.submit_action(Action::Other(Box::new(self.action)));
                     ctx.request_paint();
                     trace!("CalcButton {:?} released", ctx.widget_id());
                 }
@@ -176,7 +174,7 @@ impl Widget for CalcButton {
         if event.target == ctx.widget_id() {
             match event.action {
                 accesskit::Action::Default => {
-                    ctx.submit_action(Action::Other(Arc::new(self.action)));
+                    ctx.submit_action(Action::Other(Box::new(self.action)));
                     ctx.request_paint();
                 }
                 _ => {}

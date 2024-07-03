@@ -8,7 +8,7 @@ env:
   # If the compilation fails, then the version specified here needs to be bumped up to reality.
   # Be sure to also update the rust-version property in the workspace Cargo.toml file,
   # plus all the README.md files of the affected packages.
-  RUST_MIN_VER: "1.77"
+  RUST_MIN_VER: "1.79"
   # List of packages that will be checked with the minimum supported Rust version.
   # This should be limited to packages that are intended for publishing.
   # If updating, synchronise RUST_MIN_VER_WASM_PKGS

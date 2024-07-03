@@ -82,3 +82,15 @@ where
     /// Replace the inner value of this reference entirely
     fn replace_inner(this: Self::Mut<'_>, child: Child) -> Self::Mut<'_>;
 }
+
+/// Element type for views which don't impact the element tree.
+///
+/// Views with this element type can be included in any [`ViewSequence`](crate::ViewSequence) (with the
+/// correct `State` and `Action` types), as they do not need to actually add an element to the sequence.
+///
+/// These views can also as the `alongside_view` in [`fork`](crate::fork).
+pub struct NoElement;
+
+impl ViewElement for NoElement {
+    type Mut<'a> = ();
+}

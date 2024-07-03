@@ -4,9 +4,13 @@
 // On Windows platform, don't show a console when opening the app.
 #![windows_subsystem = "windows"]
 
+use std::{future::Future, time::Duration};
+
 use xilem::{
-    view::{button, button_any_pointer, checkbox, flex, label, prose, textbox},
-    AnyWidgetView, Axis, Color, EventLoop, EventLoopBuilder, TextAlignment, WidgetView, Xilem,
+    core::PhantomView,
+    view::{async_repeat, button, button_any_pointer, checkbox, flex, label, prose, textbox},
+    AnyWidgetView, Axis, Color, EventLoop, EventLoopBuilder, TextAlignment, ViewCtx, WidgetView,
+    Xilem,
 };
 const LOREM: &str = r"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi cursus mi sed euismod euismod. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Nullam placerat efficitur tellus at semper. Morbi ac risus magna. Donec ut cursus ex. Etiam quis posuere tellus. Mauris posuere dui et turpis mollis, vitae luctus tellus consectetur. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur eu facilisis nisl.
 
@@ -48,6 +52,7 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> {
             },
         ))
         .direction(Axis::Horizontal),
+        fun_name(),
         prose(LOREM).alignment(TextAlignment::Middle).text_size(18.),
         button_any_pointer(button_label, |data: &mut AppData, button| match button {
             masonry::PointerButton::None => tracing::warn!("Got unexpected None from button"),
@@ -64,6 +69,23 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> {
         button("Reset", |data: &mut AppData| data.count = 0),
         flex(sequence).direction(axis),
     ))
+}
+
+fn fun_name() -> impl PhantomView<AppData, (), ViewCtx> {
+    async_repeat::<(), _, _>(
+        // Clearly, the amount of `Box` messiness here is unfortunate, and will be resolved
+        |mut f: Box<dyn FnMut(()) + Send>| {
+            let fut: Box<dyn Future<Output = ()> + Unpin + Send> = Box::new(Box::pin(async move {
+                let mut interval = tokio::time::interval(Duration::from_secs(1));
+                loop {
+                    interval.tick().await;
+                    f(());
+                }
+            }));
+            fut
+        },
+        |data: &mut AppData, ()| data.count += 1,
+    )
 }
 
 fn toggleable(data: &mut AppData) -> impl WidgetView<AppData> {
