@@ -15,10 +15,10 @@ use vello::Scene;
 
 use crate::contexts::AccessCtx;
 use crate::paint_scene_helpers::UnitPoint;
-use crate::widget::{WidgetId, WidgetPod};
+use crate::widget::WidgetPod;
 use crate::{
     AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
-    PointerEvent, Rect, Size, StatusChange, TextEvent, Widget,
+    PointerEvent, Rect, Size, StatusChange, TextEvent, Widget, WidgetId,
 };
 
 // TODO - Have child widget type as generic argument

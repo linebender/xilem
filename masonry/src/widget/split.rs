@@ -13,11 +13,11 @@ use crate::event::PointerButton;
 use crate::kurbo::Line;
 use crate::paint_scene_helpers::{fill_color, stroke};
 use crate::widget::flex::Axis;
-use crate::widget::{WidgetId, WidgetMut, WidgetPod};
+use crate::widget::{WidgetMut, WidgetPod};
 use crate::{
     theme, AccessCtx, AccessEvent, BoxConstraints, Color, CursorIcon, EventCtx, LayoutCtx,
     LifeCycle, LifeCycleCtx, PaintCtx, Point, PointerEvent, Rect, Size, StatusChange, TextEvent,
-    Widget,
+    Widget, WidgetId,
 };
 
 // TODO - Have child widget type as generic argument

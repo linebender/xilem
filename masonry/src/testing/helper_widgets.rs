@@ -21,7 +21,7 @@ use smallvec::SmallVec;
 use vello::Scene;
 
 use crate::event::{PointerEvent, TextEvent};
-use crate::widget::{SizedBox, WidgetId};
+use crate::widget::SizedBox;
 use crate::*;
 
 pub type PointerEventFn<S> = dyn FnMut(&mut S, &mut EventCtx, &PointerEvent);

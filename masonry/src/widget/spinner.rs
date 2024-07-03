@@ -12,10 +12,11 @@ use tracing::{trace, trace_span, Span};
 use vello::Scene;
 
 use crate::kurbo::Line;
-use crate::widget::{WidgetMut, WidgetId};
+use crate::widget::WidgetMut;
 use crate::{
     theme, AccessCtx, AccessEvent, BoxConstraints, Color, EventCtx, LayoutCtx, LifeCycle,
     LifeCycleCtx, PaintCtx, Point, PointerEvent, Size, StatusChange, TextEvent, Vec2, Widget,
+    WidgetId,
 };
 
 // TODO - Set color

@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use accesskit::Role;
-use masonry::widget::{WidgetId, WidgetMut};
+use masonry::widget::WidgetMut;
 use masonry::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
-    Point, PointerEvent, Size, StatusChange, TextEvent, Widget, WidgetPod,
+    Point, PointerEvent, Size, StatusChange, TextEvent, Widget, WidgetId, WidgetPod,
 };
 use smallvec::{smallvec, SmallVec};
 use vello::Scene;

@@ -7,10 +7,10 @@ use smallvec::{smallvec, SmallVec};
 use tracing::{trace_span, Span};
 use vello::Scene;
 
-use crate::widget::{WidgetId, WidgetMut, WidgetPod};
+use crate::widget::{WidgetMut, WidgetPod};
 use crate::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
-    PointerEvent, Size, StatusChange, TextEvent, Widget,
+    PointerEvent, Size, StatusChange, TextEvent, Widget, WidgetId,
 };
 
 // TODO: This is a hack to provide an accessibility node with a Window type.

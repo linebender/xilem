@@ -13,10 +13,10 @@ use vello::peniko::BlendMode;
 use vello::Scene;
 
 use crate::kurbo::{Point, Rect, Size, Vec2};
-use crate::widget::{Axis, ScrollBar, WidgetId, WidgetMut};
+use crate::widget::{Axis, ScrollBar, WidgetMut};
 use crate::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
-    PointerEvent, StatusChange, TextEvent, Widget, WidgetPod,
+    PointerEvent, StatusChange, TextEvent, Widget, WidgetId, WidgetPod,
 };
 
 // TODO - refactor - see https://github.com/linebender/xilem/issues/366

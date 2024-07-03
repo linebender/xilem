@@ -12,10 +12,10 @@ use vello::Scene;
 
 use crate::kurbo::RoundedRectRadii;
 use crate::paint_scene_helpers::{fill_color, stroke};
-use crate::widget::{WidgetId, WidgetMut, WidgetPod};
+use crate::widget::{WidgetMut, WidgetPod};
 use crate::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
-    Point, PointerEvent, Size, StatusChange, TextEvent, Widget,
+    Point, PointerEvent, Size, StatusChange, TextEvent, Widget, WidgetId,
 };
 
 // FIXME - Improve all doc in this module ASAP.

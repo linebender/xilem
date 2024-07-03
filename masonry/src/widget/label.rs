@@ -13,10 +13,10 @@ use vello::peniko::BlendMode;
 use vello::Scene;
 
 use crate::text2::{TextBrush, TextLayout, TextStorage};
-use crate::widget::{WidgetMut, WidgetId};
+use crate::widget::WidgetMut;
 use crate::{
     AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx,
-    PaintCtx, PointerEvent, StatusChange, TextEvent, Widget,
+    PaintCtx, PointerEvent, StatusChange, TextEvent, Widget, WidgetId,
 };
 
 // added padding between the edges of the widget and the text.

@@ -239,7 +239,13 @@ impl RenderRoot {
             .into_child(self.root.id().to_raw())
             .expect("root widget not in widget tree");
 
-        let widget = widget.as_any().downcast_ref::<Box<dyn Widget>>().unwrap();
+        // Our WidgetArena stores all widgets as Box<dyn Widget>, but the "true"
+        // type of our root widget is *also* Box<dyn Widget>. We downcast so we
+        // don't add one more level of indirection to this.
+        let widget = widget
+            .as_dyn_any()
+            .downcast_ref::<Box<dyn Widget>>()
+            .unwrap();
 
         WidgetRef {
             widget_state_children: state_children,
@@ -264,8 +270,11 @@ impl RenderRoot {
             .into_child_mut(self.root.id().to_raw())
             .expect("root widget not in widget tree");
 
+        // Our WidgetArena stores all widgets as Box<dyn Widget>, but the "true"
+        // type of our root widget is *also* Box<dyn Widget>. We downcast so we
+        // don't add one more level of indirection to this.
         let widget = widget
-            .as_mut_any()
+            .as_mut_dyn_any()
             .downcast_mut::<Box<dyn Widget>>()
             .unwrap();
 
@@ -298,8 +307,11 @@ impl RenderRoot {
             .find(id.to_raw())
             .expect("found state but not widget");
 
-        let widget = widget.as_any().downcast_ref::<Box<dyn Widget>>().unwrap();
-
+        // Box<dyn Widget> -> &dyn Widget
+        // Without this step, the type of `WidgetRef::widget` would be
+        // `&Box<dyn Widget> as &dyn Widget`, which would be an additional layer
+        // of indirection.
+        let widget: &dyn Widget = &**widget;
         Some(WidgetRef {
             widget_state_children: state_token,
             widget_children: widget_token,

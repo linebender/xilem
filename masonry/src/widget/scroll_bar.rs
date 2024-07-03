@@ -11,10 +11,10 @@ use vello::Scene;
 use super::Axis;
 use crate::kurbo::Rect;
 use crate::paint_scene_helpers::{fill_color, stroke};
-use crate::widget::{WidgetMut, WidgetId};
+use crate::widget::WidgetMut;
 use crate::{
     theme, AccessCtx, AccessEvent, AllowRawMut, BoxConstraints, EventCtx, LayoutCtx, LifeCycle,
-    LifeCycleCtx, PaintCtx, Point, PointerEvent, Size, StatusChange, TextEvent, Widget,
+    LifeCycleCtx, PaintCtx, Point, PointerEvent, Size, StatusChange, TextEvent, Widget, WidgetId,
 };
 
 // RULES

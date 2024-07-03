@@ -126,6 +126,10 @@ impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
                     );
                 };
 
+                // Box<dyn Widget> -> &dyn Widget
+                // Without this step, the type of `WidgetRef::widget` would be
+                // `&Box<dyn Widget> as &dyn Widget`, which would be an additional layer
+                // of indirection.
                 let widget: &dyn Widget = &**widget;
                 WidgetRef {
                     widget_state_children: state_token,

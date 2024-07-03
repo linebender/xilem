@@ -324,10 +324,10 @@ impl Widget for Box<dyn Widget> {
     }
 
     fn as_any(&self) -> &dyn Any {
-        self.deref().as_dyn_any()
+        self.deref().as_any()
     }
 
     fn as_mut_any(&mut self) -> &mut dyn Any {
-        self.deref_mut().as_mut_dyn_any()
+        self.deref_mut().as_mut_any()
     }
 }

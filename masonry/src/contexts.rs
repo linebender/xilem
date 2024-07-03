@@ -3,8 +3,6 @@
 
 //! The context types that are passed into various widget methods.
 
-#![allow(private_bounds)]
-
 use std::any::Any;
 use std::time::Duration;
 
@@ -119,12 +117,14 @@ pub struct WorkerCtx<'a> {
 
 pub struct WorkerFn(pub Box<dyn FnOnce(WorkerCtx) + Send + 'static>);
 
+// --- MARK: GETTERS ---
+// Methods for all context types
 impl_context_method!(
     WidgetCtx<'_>,
     EventCtx<'_>,
     LifeCycleCtx<'_>,
-    PaintCtx<'_>,
     LayoutCtx<'_>,
+    PaintCtx<'_>,
     AccessCtx<'_>,
     {
         /// get the `WidgetId` of the current widget.
@@ -145,6 +145,7 @@ impl_context_method!(
         }
 
         #[allow(dead_code)]
+        /// Helper method to get a direct reference to a child widget from its WidgetPod.
         fn get_child<Child: Widget>(&self, child: &'_ WidgetPod<Child>) -> &'_ Child {
             let (child, _child_token) = self
                 .widget_children
@@ -154,6 +155,7 @@ impl_context_method!(
         }
 
         #[allow(dead_code)]
+        /// Helper method to get a direct reference to a child widget's WidgetState from its WidgetPod.
         fn get_child_state<Child: Widget>(&self, child: &'_ WidgetPod<Child>) -> &'_ WidgetState {
             let (child_state, _child_state_token) = self
                 .widget_state_children
@@ -164,12 +166,17 @@ impl_context_method!(
     }
 );
 
+// Methods for all mutable context types
 impl_context_method!(
     WidgetCtx<'_>,
     EventCtx<'_>,
     LifeCycleCtx<'_>,
     LayoutCtx<'_>,
     {
+        /// Helper method to get a mutable reference to a child widget's WidgetState from its WidgetPod.
+        ///
+        /// This one isn't defined for PaintCtx and AccessCtx because those contexts
+        /// can't mutate WidgetState.
         fn get_child_state_mut<Child: Widget>(
             &mut self,
             child: &'_ mut WidgetPod<Child>,
@@ -183,12 +190,15 @@ impl_context_method!(
     }
 );
 
-// methods on everyone but layoutctx
+// --- MARK: GET LAYOUT ---
+// Methods on all context types except LayoutCtx
+// These methods access layout info calculated during the layout pass.
 impl_context_method!(
     WidgetCtx<'_>,
     EventCtx<'_>,
     LifeCycleCtx<'_>,
     PaintCtx<'_>,
+    AccessCtx<'_>,
     {
         /// The layout size.
         ///
@@ -219,7 +229,19 @@ impl_context_method!(
         pub fn to_window(&self, widget_point: Point) -> Point {
             self.window_origin() + widget_point.to_vec2()
         }
+    }
+);
 
+// --- MARK: GET STATUS ---
+// Methods on all context types except LayoutCtx
+// Access status information (hot/active/disabled/etc).
+impl_context_method!(
+    WidgetCtx<'_>,
+    EventCtx<'_>,
+    LifeCycleCtx<'_>,
+    PaintCtx<'_>,
+    AccessCtx<'_>,
+    {
         /// The "hot" (aka hover) status of a widget.
         ///
         /// A widget is "hot" when the mouse is hovered over it. Widgets will
@@ -308,6 +330,8 @@ impl_context_method!(
     }
 );
 
+// --- MARK: CURSOR ---
+// Cursor-related impls.
 impl_context_method!(EventCtx<'_>, {
     /// Set the cursor icon.
     ///
@@ -352,8 +376,9 @@ impl_context_method!(EventCtx<'_>, {
     }
 });
 
+// --- MARK: WIDGET_MUT ---
+// Methods to get a child WidgetMut from a parent.
 impl<'a> WidgetCtx<'a> {
-    // FIXME - Assert that child's parent is self
     /// Return a [`WidgetMut`] to a child widget.
     pub fn get_mut<'c, Child: Widget>(
         &'c mut self,
@@ -381,10 +406,11 @@ impl<'a> WidgetCtx<'a> {
     }
 }
 
-// TODO - Remove
+// TODO - It's not clear whether EventCtx should be able to create a WidgetMut.
+// One of the examples currently uses that feature to change a child widget's color
+// in reaction to mouse events, but we might want to address that use-case differently.
 impl<'a> EventCtx<'a> {
     /// Return a [`WidgetMut`] to a child widget.
-    // FIXME - Assert that child's parent is self
     pub fn get_mut<'c, Child: Widget>(
         &'c mut self,
         child: &'c mut WidgetPod<Child>,
@@ -411,10 +437,9 @@ impl<'a> EventCtx<'a> {
     }
 }
 
-// TODO - Remove
+// TODO - It's not clear whether LifeCycleCtx should be able to create a WidgetMut.
 impl<'a> LifeCycleCtx<'a> {
     /// Return a [`WidgetMut`] to a child widget.
-    // FIXME - Assert that child's parent is self
     pub fn get_mut<'c, Child: Widget>(
         &'c mut self,
         child: &'c mut WidgetPod<Child>,
@@ -441,7 +466,7 @@ impl<'a> LifeCycleCtx<'a> {
     }
 }
 
-// methods on event and lifecycle
+// Methods on WidgetCtx, EventCtx, and LifeCycleCtx
 impl_context_method!(WidgetCtx<'_>, EventCtx<'_>, LifeCycleCtx<'_>, {
     /// Request a [`paint`](crate::Widget::paint) pass.
     pub fn request_paint(&mut self) {
@@ -539,7 +564,7 @@ impl_context_method!(WidgetCtx<'_>, EventCtx<'_>, LifeCycleCtx<'_>, {
     }
 });
 
-// methods on everyone but paintctx
+// Methods on all context types except PaintCtx and AccessCtx
 impl_context_method!(
     WidgetCtx<'_>,
     EventCtx<'_>,

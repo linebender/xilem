@@ -11,10 +11,10 @@ use tracing::{trace, trace_span, Span};
 use vello::peniko::{BlendMode, Image as ImageBuf};
 use vello::Scene;
 
-use crate::widget::{FillStrat, WidgetId, WidgetMut};
+use crate::widget::{FillStrat, WidgetMut};
 use crate::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
-    PointerEvent, Size, StatusChange, TextEvent, Widget,
+    PointerEvent, Size, StatusChange, TextEvent, Widget, WidgetId,
 };
 
 // TODO - Resolve name collision between masonry::Image and peniko::Image
