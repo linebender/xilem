@@ -9,7 +9,7 @@ use masonry::{
     widget::RootWidget,
     WidgetId,
 };
-use xilem_core::{DynMessage, Message, MessageResult, Proxy, ProxyError, ViewId};
+use xilem_core::{DynMessage, Message, MessageResult, ProxyError, RawProxy, ViewId};
 
 use crate::{ViewCtx, WidgetView};
 
@@ -35,7 +35,7 @@ pub fn async_action(path: Arc<[ViewId]>, message: Box<dyn Message>) -> masonry::
 
 type MessagePackage = (Arc<[ViewId]>, DynMessage);
 
-impl Proxy for MasonryProxy {
+impl RawProxy for MasonryProxy {
     fn send_message(&self, path: Arc<[ViewId]>, message: DynMessage) -> Result<(), ProxyError> {
         match self
             .0

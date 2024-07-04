@@ -17,7 +17,7 @@ use winit::{
     window::{Window, WindowAttributes},
 };
 use xilem_core::{
-    AsyncCtx, MessageResult, Proxy, SuperElement, View, ViewElement, ViewId, ViewPathTracker,
+    AsyncCtx, MessageResult, RawProxy, SuperElement, View, ViewElement, ViewId, ViewPathTracker,
 };
 
 pub use masonry::{
@@ -96,7 +96,7 @@ where
 
     pub fn into_driver(
         mut self,
-        proxy: Arc<dyn Proxy>,
+        proxy: Arc<dyn RawProxy>,
     ) -> (
         impl Widget,
         MasonryDriver<State, Logic, View, View::ViewState>,
@@ -185,7 +185,7 @@ pub struct ViewCtx {
     widget_map: WidgetMap,
     id_path: Vec<ViewId>,
     view_tree_changed: bool,
-    proxy: Arc<dyn Proxy>,
+    proxy: Arc<dyn RawProxy>,
     handle: tokio::runtime::Handle,
 }
 
@@ -231,7 +231,7 @@ impl ViewCtx {
 }
 
 impl AsyncCtx for ViewCtx {
-    fn proxy(&mut self) -> Arc<dyn Proxy> {
+    fn proxy(&mut self) -> Arc<dyn RawProxy> {
         self.proxy.clone()
     }
 }

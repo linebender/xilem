@@ -20,7 +20,7 @@
 extern crate alloc;
 
 mod deferred;
-pub use deferred::{AsyncCtx, PhantomView, Proxy, ProxyError};
+pub use deferred::{AsyncCtx, MessageProxy, PhantomView, ProxyError, RawProxy};
 
 mod view;
 pub use view::{View, ViewId, ViewPathTracker};

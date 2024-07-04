@@ -1,18 +1,18 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use core::fmt::Display;
+use core::{fmt::Display, marker::PhantomData};
 
-use alloc::sync::Arc;
+use alloc::{boxed::Box, sync::Arc};
 
-use crate::{DynMessage, NoElement, View, ViewId, ViewPathTracker};
+use crate::{DynMessage, Message, NoElement, View, ViewId, ViewPathTracker};
 
 /// A `Context` for a [`View`](crate::View) implementation which supports
 /// asynchronous message reporting.
 pub trait AsyncCtx: ViewPathTracker {
     /// Get a [`Proxy`] for this context.
     // TODO: Maybe store the current path within this Proxy?
-    fn proxy(&mut self) -> Arc<dyn Proxy>;
+    fn proxy(&mut self) -> Arc<dyn RawProxy>;
 }
 
 /// A handle to a Xilem driver which can be used to queue a message for a View.
@@ -29,7 +29,7 @@ pub trait AsyncCtx: ViewPathTracker {
 /// ## Lifetimes
 ///
 /// It is valid for a [`Proxy`] to outlive the [`View`](crate::View) it is associated with.
-pub trait Proxy: Send + Sync + 'static {
+pub trait RawProxy: Send + Sync + 'static {
     /// Send a `message` to the view at `path` in this driver.
     ///
     /// Note that it is only valid to send messages to views which expect
@@ -46,6 +46,30 @@ pub trait Proxy: Send + Sync + 'static {
     //
     // e.g. an `Option<Arc<dyn FnMut(ProxyError, ProxyMessageId?)>>`?
     fn send_message(&self, path: Arc<[ViewId]>, message: DynMessage) -> Result<(), ProxyError>;
+}
+
+/// A way to send a message of an expected type to a specific view.
+pub struct MessageProxy<M: Message> {
+    proxy: Arc<dyn RawProxy>,
+    path: Arc<[ViewId]>,
+    message: PhantomData<fn(M)>,
+}
+
+impl<M: Message> MessageProxy<M> {
+    /// Create a new `MessageProxy`
+    pub fn new(proxy: Arc<dyn RawProxy>, path: Arc<[ViewId]>) -> Self {
+        Self {
+            proxy,
+            path,
+            message: PhantomData,
+        }
+    }
+
+    /// Send `message` to the `View` which created this `MessageProxy`
+    pub fn message(&self, message: M) -> Result<(), ProxyError> {
+        self.proxy
+            .send_message(self.path.clone(), Box::new(message))
+    }
 }
 
 /// A [`View`] which has no element type.

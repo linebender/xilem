@@ -84,11 +84,11 @@ where
             .expect("Id path has elements for Fork");
         match first.routing_id() {
             0 => self
-                .active_view
-                .message(active_state, id_path, message, app_state),
-            1 => self
                 .alongside_view
                 .message(alongside_state, id_path, message, app_state),
+            1 => self
+                .active_view
+                .message(active_state, id_path, message, app_state),
             _ => unreachable!(),
         }
     }

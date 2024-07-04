@@ -4,11 +4,20 @@
 use std::{future::Future, marker::PhantomData, sync::Arc};
 
 use tokio::task::JoinHandle;
-use xilem_core::{DynMessage, Message, NoElement, View, ViewId, ViewPathTracker};
+use xilem_core::{DynMessage, Message, MessageProxy, NoElement, View, ViewId, ViewPathTracker};
 
 use crate::ViewCtx;
 
-pub fn async_repeat<M, F, H>(future_future: F, on_event: H) -> AsyncRepeat<F, H, M> {
+pub fn async_repeat<M, F, H, State, Action, Fut>(
+    future_future: F,
+    on_event: H,
+) -> AsyncRepeat<F, H, M>
+where
+    F: Fn(MessageProxy<M>) -> Fut,
+    Fut: Future<Output = ()> + Send + 'static,
+    H: Fn(&mut State, M) -> Action + 'static,
+    M: Message + 'static,
+{
     AsyncRepeat {
         future_future,
         on_event,
@@ -22,9 +31,10 @@ pub struct AsyncRepeat<F, H, M> {
     message: PhantomData<fn() -> M>,
 }
 
-impl<State, Action, F, H, M> View<State, Action, ViewCtx> for AsyncRepeat<F, H, M>
+impl<State, Action, F, H, M, Fut> View<State, Action, ViewCtx> for AsyncRepeat<F, H, M>
 where
-    F: Fn(Box<dyn FnMut(M) + Send>) -> Box<dyn Future<Output = ()> + Unpin + Send> + 'static,
+    F: Fn(MessageProxy<M>) -> Fut + 'static,
+    Fut: Future<Output = ()> + Send + 'static,
     H: Fn(&mut State, M) -> Action + 'static,
     M: Message + 'static,
 {
@@ -38,9 +48,7 @@ where
         let proxy = ctx.proxy.clone();
         let handle = ctx
             .handle
-            .spawn(Box::pin((self.future_future)(Box::new(move |message| {
-                proxy.send_message(path.clone(), Box::new(message)).unwrap();
-            }))));
+            .spawn((self.future_future)(MessageProxy::new(proxy, path)));
         // TODO: Clearly this shouldn't be a label here
         (NoElement, handle)
     }
