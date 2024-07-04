@@ -54,6 +54,9 @@ pub enum WindowState<'a> {
     },
 }
 
+/// The state of the Masonry application. If you run masonry from an external event loop, create a
+/// MasonryState via MasonryState::new and forward winit events to it via the appropriate method (e.g.,
+/// masonry_state.handle_window_event via window_event on the winit ApplicationHandler).
 pub struct MasonryState<'a> {
     render_cx: RenderContext,
     render_root: RenderRoot,
