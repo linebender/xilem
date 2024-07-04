@@ -44,12 +44,12 @@ fn app_logic(data: &mut i32) -> impl WidgetView<i32> {
     .main_axis_alignment(MainAxisAlignment::Center)
 }
 
-struct AppInterface {
+struct ExternalApp {
     masonry_state: masonry::event_loop_runner::MasonryState<'static>,
     app_driver: Box<dyn AppDriver>,
 }
 
-impl ApplicationHandler<accesskit_winit::Event> for AppInterface {
+impl ApplicationHandler<accesskit_winit::Event> for ExternalApp {
     fn resumed(&mut self, event_loop: &winit::event_loop::ActiveEventLoop) {
         self.masonry_state.handle_resumed(event_loop);
     }
@@ -134,18 +134,17 @@ fn main() -> Result<(), EventLoopError> {
         .with_min_inner_size(window_size);
 
     let xilem = Xilem::new(0, app_logic);
-    let parts = xilem.split();
 
     let event_loop = EventLoop::with_user_event().build().unwrap();
     let masonry_state = masonry::event_loop_runner::MasonryState::new(
         window_attributes,
         &event_loop,
-        parts.root_widget,
+        xilem.root_widget,
     );
 
-    let mut app = AppInterface {
+    let mut app = ExternalApp {
         masonry_state,
-        app_driver: Box::new(parts.driver),
+        app_driver: Box::new(xilem.driver),
     };
     event_loop.run_app(&mut app)
 }
