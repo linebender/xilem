@@ -1,6 +1,10 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+//! Shows driving a Xilem application from a pre-existing Winit event loop.
+//! Currently, this supports running as its own window alongside an existing application, or
+//! accessing raw events from winit.
+//! Support for more custom embeddings would be welcome, but needs more design work
 use masonry::{
     app_driver::AppDriver,
     widget::{CrossAxisAlignment, MainAxisAlignment},
