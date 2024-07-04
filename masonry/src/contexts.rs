@@ -466,6 +466,7 @@ impl<'a> LifeCycleCtx<'a> {
     }
 }
 
+// --- MARK: UPDATE FLAGS ---
 // Methods on WidgetCtx, EventCtx, and LifeCycleCtx
 impl_context_method!(WidgetCtx<'_>, EventCtx<'_>, LifeCycleCtx<'_>, {
     /// Request a [`paint`](crate::Widget::paint) pass.
@@ -564,6 +565,7 @@ impl_context_method!(WidgetCtx<'_>, EventCtx<'_>, LifeCycleCtx<'_>, {
     }
 });
 
+// --- MARK: OTHER METHODS ---
 // Methods on all context types except PaintCtx and AccessCtx
 impl_context_method!(
     WidgetCtx<'_>,
@@ -734,6 +736,7 @@ impl LifeCycleCtx<'_> {
     }
 }
 
+// --- MARK: UPDATE LAYOUT ---
 impl LayoutCtx<'_> {
     fn assert_layout_done(&self, child: &WidgetPod<impl Widget>, method_name: &str) {
         if self.get_child_state(child).needs_layout {
@@ -817,23 +820,46 @@ impl LayoutCtx<'_> {
     }
 
     /// The distance from the bottom of the given widget to the baseline.
+    ///
+    /// ## Panics
+    ///
+    /// This method will panic if [`WidgetPod::layout`] has not been called yet for
+    /// the child.
     pub fn child_baseline_offset(&self, child: &WidgetPod<impl Widget>) -> f64 {
         self.assert_layout_done(child, "child_baseline_offset");
         self.get_child_state(child).baseline_offset
     }
 
+    /// Get the given child's layout rect.
+    ///
+    /// ## Panics
+    ///
+    /// This method will panic if [`WidgetPod::layout`] and [`LayoutCtx::place_child`]
+    /// have not been called yet for the child.
     pub fn child_layout_rect(&self, child: &WidgetPod<impl Widget>) -> Rect {
         self.assert_layout_done(child, "child_layout_rect");
         self.assert_placed(child, "child_layout_rect");
         self.get_child_state(child).layout_rect()
     }
 
+    /// Get the given child's paint rect.
+    ///
+    /// ## Panics
+    ///
+    /// This method will panic if [`WidgetPod::layout`] and [`LayoutCtx::place_child`]
+    /// have not been called yet for the child.
     pub fn child_paint_rect(&self, child: &WidgetPod<impl Widget>) -> Rect {
         self.assert_layout_done(child, "child_paint_rect");
         self.assert_placed(child, "child_paint_rect");
         self.get_child_state(child).paint_rect()
     }
 
+    /// Get the given child's size.
+    ///
+    /// ## Panics
+    ///
+    /// This method will panic if [`WidgetPod::layout`] has not been called yet for
+    /// the child.
     pub fn child_size(&self, child: &WidgetPod<impl Widget>) -> Size {
         self.assert_layout_done(child, "child_size");
         self.get_child_state(child).layout_rect().size()
@@ -844,7 +870,13 @@ impl LayoutCtx<'_> {
     ///
     /// Container widgets must call this method with each non-stashed child in their
     /// layout method, after calling `child.layout(...)`.
+    ///
+    /// ## Panics
+    ///
+    /// This method will panic if [`WidgetPod::layout`] has not been called yet for
+    /// the child.
     pub fn place_child<W: Widget>(&mut self, child: &mut WidgetPod<W>, origin: Point) {
+        self.assert_layout_done(child, "place_child");
         if origin != self.get_child_state_mut(child).origin {
             self.get_child_state_mut(child).origin = origin;
             self.get_child_state_mut(child).needs_window_origin = true;
@@ -883,6 +915,7 @@ impl LayoutCtx<'_> {
     }
 }
 
+// --- MARK: OTHER STUFF ---
 impl_context_method!(LayoutCtx<'_>, PaintCtx<'_>, {
     /// Get the contexts needed to build and paint text sections.
     pub fn text_contexts(&mut self) -> (&mut FontContext, &mut LayoutContext<TextBrush>) {
@@ -931,6 +964,7 @@ impl AccessCtx<'_> {
     }
 }
 
+// --- MARK: RAW WRAPPERS ---
 macro_rules! impl_get_raw {
     ($SomeCtx:tt) => {
         impl<'s> $SomeCtx<'s> {
@@ -1044,8 +1078,6 @@ impl<'s> AccessCtx<'s> {
         }
     }
 }
-
-// --- MARK: WRAPPER
 
 pub struct RawWrapper<'a, Ctx, W> {
     ctx: Ctx,
