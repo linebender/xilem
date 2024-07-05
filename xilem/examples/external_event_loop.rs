@@ -44,6 +44,7 @@ fn app_logic(data: &mut i32) -> impl WidgetView<i32> {
     .main_axis_alignment(MainAxisAlignment::Center)
 }
 
+/// An application not managed by Xilem, but which wishes to embed Xilem.
 struct ExternalApp {
     masonry_state: masonry::event_loop_runner::MasonryState<'static>,
     app_driver: Box<dyn AppDriver>,
