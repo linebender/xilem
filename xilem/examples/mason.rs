@@ -7,6 +7,7 @@
 use std::time::Duration;
 
 use xilem::{
+    tokio::time,
     view::{async_repeat, button, button_any_pointer, checkbox, flex, label, prose, textbox},
     AnyWidgetView, Axis, Color, EventLoop, EventLoopBuilder, TextAlignment, WidgetView, Xilem,
 };
@@ -69,7 +70,7 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> {
         )),
         async_repeat(
             |proxy| async move {
-                let mut interval = tokio::time::interval(Duration::from_secs(1));
+                let mut interval = time::interval(Duration::from_secs(1));
                 loop {
                     interval.tick().await;
                     let Ok(()) = proxy.message(()) else {
