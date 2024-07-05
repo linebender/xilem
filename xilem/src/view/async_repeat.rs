@@ -76,10 +76,14 @@ where
     fn message(
         &self,
         _: &mut Self::ViewState,
-        _: &[xilem_core::ViewId],
+        id_path: &[xilem_core::ViewId],
         message: DynMessage,
         app_state: &mut State,
     ) -> xilem_core::MessageResult<Action> {
+        debug_assert!(
+            id_path.is_empty(),
+            "id path should be empty in AsyncRepeat::message"
+        );
         let message = message.downcast::<M>().unwrap();
         xilem_core::MessageResult::Action((self.on_event)(app_state, *message))
     }
