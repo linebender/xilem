@@ -34,8 +34,8 @@ pub struct Xilem<State, Logic, View>
 where
     View: WidgetView<State>,
 {
-    root_widget: RootWidget<View::Widget>,
-    driver: MasonryDriver<State, Logic, View, View::ViewState>,
+    pub root_widget: RootWidget<View::Widget>,
+    pub driver: MasonryDriver<State, Logic, View, View::ViewState>,
 }
 
 impl<State, Logic, View> Xilem<State, Logic, View>
