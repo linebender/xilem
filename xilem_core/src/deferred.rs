@@ -74,7 +74,7 @@ impl<M: Message> MessageProxy<M> {
 
 /// A [`View`] which has no element type.
 pub trait PhantomView<State, Action, Context, Message = DynMessage>:
-    View<State, Action, Context, Element = NoElement>
+    View<State, Action, Context, Message, Element = NoElement>
 where
     Context: ViewPathTracker,
 {
@@ -82,7 +82,7 @@ where
 
 impl<State, Action, Context, Message, V> PhantomView<State, Action, Context, Message> for V
 where
-    V: View<State, Action, Context, Element = NoElement>,
+    V: View<State, Action, Context, Message, Element = NoElement>,
     Context: ViewPathTracker,
 {
 }
