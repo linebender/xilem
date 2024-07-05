@@ -28,11 +28,12 @@ pub struct MasonryDriver<State, Logic, View, ViewState> {
 /// The `WidgetId` which async events should be sent to.
 pub const ASYNC_MARKER_WIDGET: WidgetId = WidgetId::reserved(0x1000);
 
-/// The action which should be used for async events
+/// The action which should be used for async events.
 pub fn async_action(path: Arc<[ViewId]>, message: Box<dyn Message>) -> masonry::Action {
     masonry::Action::Other(Box::<MessagePackage>::new((path, message)))
 }
 
+/// The type used to send a message for async events.
 type MessagePackage = (Arc<[ViewId]>, DynMessage);
 
 impl RawProxy for MasonryProxy {
@@ -58,7 +59,13 @@ impl RawProxy for MasonryProxy {
     }
 }
 
-pub(crate) struct MasonryProxy(pub(crate) EventLoopProxy);
+pub struct MasonryProxy(pub(crate) EventLoopProxy);
+
+impl MasonryProxy {
+    pub fn new(proxy: EventLoopProxy) -> Self {
+        Self(proxy)
+    }
+}
 
 impl<State, Logic, View> AppDriver for MasonryDriver<State, Logic, View, View::ViewState>
 where

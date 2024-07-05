@@ -5,7 +5,6 @@
 #![warn(unnameable_types, unreachable_pub)]
 use std::{collections::HashMap, sync::Arc};
 
-use driver::MasonryProxy;
 use masonry::{
     dpi::LogicalSize,
     event_loop_runner,
@@ -32,7 +31,7 @@ mod any_view;
 pub use any_view::AnyWidgetView;
 
 mod driver;
-pub use driver::{async_action, MasonryDriver, ASYNC_MARKER_WIDGET};
+pub use driver::{async_action, MasonryDriver, MasonryProxy, ASYNC_MARKER_WIDGET};
 
 pub mod view;
 
