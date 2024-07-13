@@ -55,6 +55,22 @@ impl<T: 'static, V: DomView<T> + 'static, F: FnMut(&mut T) -> V + 'static> App<T
         // Latter may not be necessary, we have an rc loop.
         std::mem::forget(self);
     }
+
+    pub fn modify_state<M>(&self, modify: M)
+    where
+        M: FnOnce(&mut T),
+    {
+        let mut inner_guard = self.0.borrow_mut();
+        let inner = &mut *inner_guard;
+        modify(&mut inner.data);
+        if let Some(view) = &mut inner.view {
+            let new_view = (inner.app_logic)(&mut inner.data);
+            let el = inner.element.as_mut().unwrap();
+            let pod_mut = PodMut::new(&mut el.node, &mut el.props, &inner.root, false);
+            new_view.rebuild(view, inner.state.as_mut().unwrap(), &mut inner.cx, pod_mut);
+            *view = new_view;
+        }
+    }
 }
 
 impl<T, V: DomView<T>, F: FnMut(&mut T) -> V> AppInner<T, V, F> {
