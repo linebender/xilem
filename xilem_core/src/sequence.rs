@@ -34,6 +34,12 @@ impl<T> AppendVec<T> {
     pub fn drain(&mut self) -> Drain<'_, T> {
         self.inner.drain(..)
     }
+    /// Returns `true` if the vector contains no elements.
+    ///
+    /// See [`Vec::is_empty`] for more details
+    pub fn is_empty(&self) -> bool {
+        self.inner.is_empty()
+    }
 }
 
 impl<T> From<Vec<T>> for AppendVec<T> {

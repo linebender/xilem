@@ -7,7 +7,7 @@ use masonry::{
 };
 use winit::error::EventLoopError;
 use xilem::{
-    view::{button, flex, label, sized_box},
+    view::{button, flex, label, sized_box, FlexSpacer},
     EventLoop, WidgetView, Xilem,
 };
 
@@ -21,13 +21,17 @@ fn big_button(
 
 fn app_logic(data: &mut i32) -> impl WidgetView<i32> {
     flex((
+        FlexSpacer::Fixed(30.0),
         big_button("-", |data| {
             *data -= 1;
         }),
-        label(format!("count: {}", data)).text_size(32.),
+        FlexSpacer::Flex(1.0),
+        label(format!("count: {}", data)).text_size(32.).flex(5.0),
+        FlexSpacer::Flex(1.0),
         big_button("+", |data| {
             *data += 1;
         }),
+        FlexSpacer::Fixed(30.0),
     ))
     .direction(xilem::Axis::Horizontal)
     .cross_axis_alignment(CrossAxisAlignment::Center)

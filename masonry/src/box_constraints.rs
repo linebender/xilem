@@ -21,7 +21,7 @@ use crate::kurbo::Size;
 /// [`layout`]: crate::widget::Widget::layout
 /// [Flutter BoxConstraints]: https://api.flutter.dev/flutter/rendering/BoxConstraints-class.html
 /// [rounded away from zero]: Size::expand
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct BoxConstraints {
     min: Size,
     max: Size,

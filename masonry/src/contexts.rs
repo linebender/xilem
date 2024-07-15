@@ -819,6 +819,27 @@ impl LayoutCtx<'_> {
         self.widget_state.baseline_offset = baseline;
     }
 
+    /// Returns whether this widget needs to call [`WidgetPod::layout`]
+    pub fn needs_layout(&self) -> bool {
+        self.widget_state.needs_layout
+    }
+
+    /// Returns whether a child of this widget needs to call [`WidgetPod::layout`]
+    pub fn child_needs_layout(&self, child: &WidgetPod<impl Widget>) -> bool {
+        self.get_child_state(child).needs_layout
+    }
+
+    #[allow(dead_code)]
+    pub(crate) fn mark_as_visited(&self, visited: bool) {
+        #[cfg(debug_assertions)]
+        self.widget_state.mark_as_visited(visited);
+    }
+
+    pub(crate) fn mark_child_as_visited(&self, child: &WidgetPod<impl Widget>, visited: bool) {
+        #[cfg(debug_assertions)]
+        self.get_child_state(child).mark_as_visited(visited);
+    }
+
     /// The distance from the bottom of the given widget to the baseline.
     ///
     /// ## Panics

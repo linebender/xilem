@@ -30,6 +30,8 @@ pub use any_view::AnyWidgetView;
 mod driver;
 pub mod view;
 
+use view::{flex_item, FlexItem, FlexParams};
+
 pub struct Xilem<State, Logic, View>
 where
     View: WidgetView<State>,
@@ -139,6 +141,13 @@ pub trait WidgetView<State, Action = ()>:
     View<State, Action, ViewCtx, Element = Pod<Self::Widget>> + Send + Sync
 {
     type Widget: Widget;
+
+    fn flex(self, params: impl Into<FlexParams>) -> FlexItem<Self, State, Action>
+    where
+        Self: Sized,
+    {
+        flex_item(self, params)
+    }
 }
 
 impl<V, State, Action, W> WidgetView<State, Action> for V

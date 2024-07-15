@@ -1,17 +1,20 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use std::marker::PhantomData;
+use std::{cell::RefCell, marker::PhantomData, rc::Rc};
 
 use masonry::{
     widget::{self, Axis, CrossAxisAlignment, MainAxisAlignment, WidgetMut},
     Widget,
 };
-use xilem_core::{AppendVec, ElementSplice, Mut, View, ViewSequence};
+use xilem_core::{
+    AppendVec, DynMessage, ElementSplice, Mut, SuperElement, View, ViewElement, ViewSequence,
+};
 
-use crate::{Pod, ViewCtx};
+use crate::{Pod, ViewCtx, WidgetView};
 
-// TODO: Create a custom ViewSequence dynamic element for this
+pub use masonry::widget::FlexParams;
+
 pub fn flex<Seq, Marker>(sequence: Seq) -> Flex<Seq, Marker> {
     Flex {
         phantom: PhantomData,
@@ -55,7 +58,7 @@ impl<Seq, Marker> Flex<Seq, Marker> {
 
 impl<State, Action, Seq, Marker: 'static> View<State, Action, ViewCtx> for Flex<Seq, Marker>
 where
-    Seq: ViewSequence<State, Action, ViewCtx, Pod<Box<dyn Widget>>, Marker>,
+    Seq: ViewSequence<State, Action, ViewCtx, FlexElement, Marker>,
 {
     type Element = Pod<widget::Flex>;
 
@@ -65,12 +68,17 @@ where
         let mut elements = AppendVec::default();
         let mut widget = widget::Flex::for_axis(self.axis)
             .cross_axis_alignment(self.cross_axis_alignment)
-            .with_default_spacer()
             .must_fill_main_axis(self.fill_major_axis)
             .main_axis_alignment(self.main_axis_alignment);
         let seq_state = self.sequence.seq_build(ctx, &mut elements);
-        for item in elements.into_inner() {
-            widget = widget.with_child_pod(item.inner).with_default_spacer();
+        for child in elements.into_inner() {
+            widget = match child {
+                FlexElement::Child(child, params) => {
+                    widget.with_flex_child_pod(child.inner, params)
+                }
+                FlexElement::FixedSpacer(size) => widget.with_spacer(size),
+                FlexElement::FlexSpacer(flex) => widget.with_flex_spacer(flex),
+            }
         }
         (Pod::new(widget), seq_state)
     }
@@ -98,31 +106,25 @@ where
             element.set_must_fill_main_axis(self.fill_major_axis);
             ctx.mark_changed();
         }
-        // TODO: Re-use scratch space?
-        let mut splice = FlexSplice {
-            // Skip the initial spacer which is always present
-            ix: 1,
-            element: &mut element,
-            scratch: AppendVec::default(),
-        };
-        self.sequence
-            .seq_rebuild(&prev.sequence, view_state, ctx, &mut splice);
-        debug_assert!(splice.scratch.into_inner().is_empty());
-        element
+
+        let element = Rc::new(RefCell::new(element));
+        {
+            // TODO: Re-use scratch space?
+            let mut splice = FlexSplice::new(element.clone());
+            self.sequence
+                .seq_rebuild(&prev.sequence, view_state, ctx, &mut splice);
+            debug_assert!(splice.scratch.is_empty());
+        }
+        Rc::try_unwrap(element).ok().unwrap().into_inner()
     }
 
     fn teardown(
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: Mut<'_, Self::Element>,
+        element: Mut<'_, Self::Element>,
     ) {
-        let mut splice = FlexSplice {
-            // Skip the initial spacer which is always present
-            ix: 1,
-            element: &mut element,
-            scratch: AppendVec::default(),
-        };
+        let mut splice = FlexSplice::new(Rc::new(RefCell::new(element)));
         self.sequence.seq_teardown(view_state, ctx, &mut splice);
         debug_assert!(splice.scratch.into_inner().is_empty());
     }
@@ -139,61 +141,255 @@ where
     }
 }
 
-struct FlexSplice<'f, 'w> {
-    ix: usize,
-    element: &'f mut WidgetMut<'w, widget::Flex>,
-    scratch: AppendVec<Pod<Box<dyn Widget>>>,
+pub enum FlexElement {
+    // Avoid making the enum massive for the spacer cases by boxing
+    Child(Box<Pod<Box<dyn Widget>>>, FlexParams),
+    FixedSpacer(f64),
+    FlexSpacer(f64),
 }
 
-impl<'f> ElementSplice<Pod<Box<dyn Widget>>> for FlexSplice<'f, '_> {
-    fn insert(&mut self, element: Pod<Box<dyn masonry::Widget>>) {
-        self.element.insert_child_pod(self.ix, element.inner);
-        // Insert a spacer after the child
-        self.element.insert_default_spacer(self.ix + 1);
-        self.ix += 2;
+#[derive(Clone)]
+pub struct FlexElementMut<'w> {
+    parent: Rc<RefCell<WidgetMut<'w, widget::Flex>>>,
+    idx: usize,
+}
+
+struct FlexSplice<'w> {
+    idx: usize,
+    element: Rc<RefCell<WidgetMut<'w, widget::Flex>>>,
+    scratch: AppendVec<FlexElement>,
+}
+
+impl<'w> FlexSplice<'w> {
+    fn new(element: Rc<RefCell<WidgetMut<'w, widget::Flex>>>) -> Self {
+        Self {
+            idx: 0,
+            element,
+            scratch: AppendVec::default(),
+        }
     }
-    fn with_scratch<R>(&mut self, f: impl FnOnce(&mut AppendVec<Pod<Box<dyn Widget>>>) -> R) -> R {
+}
+
+impl ViewElement for FlexElement {
+    type Mut<'w> = FlexElementMut<'w>;
+}
+
+impl SuperElement<FlexElement> for FlexElement {
+    fn upcast(child: FlexElement) -> Self {
+        child
+    }
+
+    fn with_downcast_val<R>(
+        this: Mut<'_, Self>,
+        f: impl FnOnce(Mut<'_, FlexElement>) -> R,
+    ) -> (Self::Mut<'_>, R) {
+        let r = f(this.clone());
+        (this, r)
+    }
+}
+
+impl<W: Widget> SuperElement<Pod<W>> for FlexElement {
+    fn upcast(child: Pod<W>) -> Self {
+        FlexElement::Child(Box::new(child.inner.boxed().into()), FlexParams::default())
+    }
+
+    fn with_downcast_val<R>(
+        this: Mut<'_, Self>,
+        f: impl FnOnce(Mut<'_, Pod<W>>) -> R,
+    ) -> (Mut<'_, Self>, R) {
+        let ret = {
+            let mut flex = this.parent.borrow_mut();
+            let mut child = flex
+                .child_mut(this.idx)
+                .expect("This is supposed to be a widget");
+            let downcast = child.downcast();
+            f(downcast)
+        };
+
+        (this, ret)
+    }
+}
+
+impl ElementSplice<FlexElement> for FlexSplice<'_> {
+    fn insert(&mut self, element: FlexElement) {
+        let mut flex = self.element.borrow_mut();
+        match element {
+            FlexElement::Child(child, params) => {
+                flex.insert_flex_child_pod(self.idx, child.inner, params);
+            }
+            FlexElement::FixedSpacer(len) => flex.insert_spacer(self.idx, len),
+            FlexElement::FlexSpacer(len) => flex.insert_flex_spacer(self.idx, len),
+        };
+        self.idx += 1;
+    }
+
+    fn with_scratch<R>(&mut self, f: impl FnOnce(&mut AppendVec<FlexElement>) -> R) -> R {
         let ret = f(&mut self.scratch);
+        let mut flex = self.element.borrow_mut();
         for element in self.scratch.drain() {
-            self.element.insert_child_pod(self.ix, element.inner);
-            self.element.insert_default_spacer(self.ix + 1);
-            self.ix += 2;
+            match element {
+                FlexElement::Child(child, params) => {
+                    flex.insert_flex_child_pod(self.idx, child.inner, params);
+                }
+                FlexElement::FixedSpacer(len) => flex.insert_spacer(self.idx, len),
+                FlexElement::FlexSpacer(len) => flex.insert_flex_spacer(self.idx, len),
+            };
+            self.idx += 1;
         }
         ret
     }
 
-    fn mutate<R>(
-        &mut self,
-        f: impl FnOnce(<Pod<Box<dyn Widget>> as xilem_core::ViewElement>::Mut<'_>) -> R,
-    ) -> R {
-        let child = self
-            .element
-            .child_mut(self.ix)
-            .expect("ElementSplice::mutate won't overflow");
+    fn mutate<R>(&mut self, f: impl FnOnce(Mut<'_, FlexElement>) -> R) -> R {
+        let child = FlexElementMut {
+            parent: self.element.clone(),
+            idx: self.idx,
+        };
         let ret = f(child);
-        // Skip past the implicit spacer as well as this child
-        self.ix += 2;
+        self.idx += 1;
         ret
     }
 
-    fn delete<R>(
-        &mut self,
-        f: impl FnOnce(<Pod<Box<dyn Widget>> as xilem_core::ViewElement>::Mut<'_>) -> R,
-    ) -> R {
-        let child = self
-            .element
-            .child_mut(self.ix)
-            .expect("ElementSplice::mutate won't overflow");
+    fn delete<R>(&mut self, f: impl FnOnce(Mut<'_, FlexElement>) -> R) -> R {
+        let child = FlexElementMut {
+            parent: self.element.clone(),
+            idx: self.idx,
+        };
         let ret = f(child);
-        self.element.remove_child(self.ix);
-        // Also remove the implicit spacer
-        // TODO: Make the spacers be explicit?
-        self.element.remove_child(self.ix);
-
+        let mut flex = self.element.borrow_mut();
+        flex.remove_child(self.idx);
         ret
     }
 
     fn skip(&mut self, n: usize) {
-        self.ix += n * 2;
+        self.idx += n;
+    }
+}
+
+pub struct FlexItem<V, State, Action> {
+    view: V,
+    params: FlexParams,
+    phantom: PhantomData<fn() -> (State, Action)>,
+}
+
+pub fn flex_item<V, State, Action>(
+    view: V,
+    params: impl Into<FlexParams>,
+) -> FlexItem<V, State, Action> {
+    FlexItem {
+        params: params.into(),
+        view,
+        phantom: PhantomData,
+    }
+}
+
+impl<State, Action, V> View<State, Action, ViewCtx> for FlexItem<V, State, Action>
+where
+    State: 'static,
+    Action: 'static,
+    V: WidgetView<State, Action>,
+{
+    type Element = FlexElement;
+
+    type ViewState = V::ViewState;
+
+    fn build(&self, cx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+        let (pod, state) = self.view.build(cx);
+        (
+            FlexElement::Child(Box::new(pod.inner.boxed().into()), self.params),
+            state,
+        )
+    }
+
+    fn rebuild<'el>(
+        &self,
+        prev: &Self,
+        view_state: &mut Self::ViewState,
+        ctx: &mut ViewCtx,
+        element: Mut<'el, Self::Element>,
+    ) -> Mut<'el, Self::Element> {
+        {
+            let mut parent = element.parent.borrow_mut();
+            if self.params != prev.params {
+                parent.update_child_flex_params(element.idx, self.params);
+            }
+            let mut child = parent
+                .child_mut(element.idx)
+                .expect("FlexWrapper always has a widget child");
+            self.view
+                .rebuild(&prev.view, view_state, ctx, child.downcast());
+        }
+        element
+    }
+
+    fn teardown(
+        &self,
+        view_state: &mut Self::ViewState,
+        ctx: &mut ViewCtx,
+        element: Mut<'_, Self::Element>,
+    ) {
+        let mut parent = element.parent.borrow_mut();
+        let mut child = parent
+            .child_mut(element.idx)
+            .expect("FlexWrapper always has a widget child");
+        self.view.teardown(view_state, ctx, child.downcast());
+    }
+
+    fn message(
+        &self,
+        view_state: &mut Self::ViewState,
+        id_path: &[xilem_core::ViewId],
+        message: xilem_core::DynMessage,
+        app_state: &mut State,
+    ) -> xilem_core::MessageResult<Action> {
+        self.view.message(view_state, id_path, message, app_state)
+    }
+}
+
+#[derive(Copy, Clone, PartialEq)]
+pub enum FlexSpacer {
+    Fixed(f64),
+    Flex(f64),
+}
+
+impl<State, Action> View<State, Action, ViewCtx> for FlexSpacer {
+    type Element = FlexElement;
+
+    type ViewState = ();
+
+    fn build(&self, _ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+        let el = match self {
+            FlexSpacer::Fixed(len) => FlexElement::FixedSpacer(*len),
+            FlexSpacer::Flex(flex) => FlexElement::FlexSpacer(*flex),
+        };
+        (el, ())
+    }
+
+    fn rebuild<'el>(
+        &self,
+        prev: &Self,
+        _: &mut Self::ViewState,
+        _: &mut ViewCtx,
+        element: Mut<'el, Self::Element>,
+    ) -> Mut<'el, Self::Element> {
+        if self != prev {
+            let mut parent = element.parent.borrow_mut();
+            match self {
+                FlexSpacer::Fixed(len) => parent.update_spacer_fixed(element.idx, *len),
+                FlexSpacer::Flex(flex) => parent.update_spacer_flex(element.idx, *flex),
+            };
+        }
+        element
+    }
+
+    fn teardown(&self, _: &mut Self::ViewState, _: &mut ViewCtx, _: Mut<'_, Self::Element>) {}
+
+    fn message(
+        &self,
+        _: &mut Self::ViewState,
+        _: &[xilem_core::ViewId],
+        _: DynMessage,
+        _: &mut State,
+    ) -> xilem_core::MessageResult<Action> {
+        unreachable!()
     }
 }

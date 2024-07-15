@@ -5,7 +5,7 @@
 #![windows_subsystem = "windows"]
 
 use xilem::{
-    view::{button, button_any_pointer, checkbox, flex, label, prose, textbox},
+    view::{button, button_any_pointer, checkbox, flex, label, prose, textbox, FlexSpacer},
     AnyWidgetView, Axis, Color, EventLoop, EventLoopBuilder, TextAlignment, WidgetView, Xilem,
 };
 const LOREM: &str = r"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi cursus mi sed euismod euismod. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Nullam placerat efficitur tellus at semper. Morbi ac risus magna. Donec ut cursus ex. Etiam quis posuere tellus. Mauris posuere dui et turpis mollis, vitae luctus tellus consectetur. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur eu facilisis nisl.
@@ -30,7 +30,16 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> {
     };
 
     let sequence = (0..count)
-        .map(|x| button(format!("+{x}"), move |data: &mut AppData| data.count += x))
+        .map(|x| {
+            (
+                button(format!("+{x}"), move |data: &mut AppData| data.count += x),
+                if data.active {
+                    FlexSpacer::Flex(x as f64)
+                } else {
+                    FlexSpacer::Fixed((count - x) as f64)
+                },
+            )
+        })
         .collect::<Vec<_>>();
     flex((
         flex((
