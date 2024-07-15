@@ -12,10 +12,11 @@ use tracing::{trace, trace_span, Span};
 use vello::Scene;
 
 use crate::kurbo::Line;
-use crate::widget::{WidgetMut, WidgetRef};
+use crate::widget::WidgetMut;
 use crate::{
     theme, AccessCtx, AccessEvent, BoxConstraints, Color, EventCtx, LayoutCtx, LifeCycle,
     LifeCycleCtx, PaintCtx, Point, PointerEvent, Size, StatusChange, TextEvent, Vec2, Widget,
+    WidgetId,
 };
 
 // TODO - Set color
@@ -150,7 +151,7 @@ impl Widget for Spinner {
 
     fn accessibility(&mut self, _ctx: &mut AccessCtx) {}
 
-    fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
+    fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         SmallVec::new()
     }
 

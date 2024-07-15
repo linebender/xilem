@@ -98,7 +98,7 @@ fn disable_tree() {
                 ctx.place_child(child, Point::ZERO);
                 size
             })
-            .children_fn(|child| smallvec![child.as_dyn()])
+            .children_fn(|child| smallvec![child.id()])
             .with_id(id)
     }
 

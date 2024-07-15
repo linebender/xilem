@@ -4,7 +4,7 @@
 //! Common widgets.
 
 #[allow(clippy::module_inception)]
-mod widget;
+pub(crate) mod widget;
 mod widget_mut;
 mod widget_pod;
 mod widget_ref;
@@ -51,8 +51,6 @@ pub use widget_ref::WidgetRef;
 pub use widget_state::WidgetState;
 
 pub use sized_box::BackgroundBrush;
-#[doc(hidden)]
-pub use widget::{Widget, WidgetId};
 
 /// The possible cursor states for a widget.
 #[derive(Clone, Debug)]

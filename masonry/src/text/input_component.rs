@@ -403,7 +403,7 @@ impl<T: TextStorage + EditableText> TextComponentMut<'_, T> {
 //         self.borrow().layout.draw(ctx, text_offset.to_point());
 //     }
 
-//     fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
+//     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
 //         SmallVec::new()
 //     }
 

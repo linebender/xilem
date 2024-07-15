@@ -11,10 +11,10 @@ use vello::Scene;
 use super::Axis;
 use crate::kurbo::Rect;
 use crate::paint_scene_helpers::{fill_color, stroke};
-use crate::widget::{WidgetMut, WidgetRef};
+use crate::widget::WidgetMut;
 use crate::{
-    theme, AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx,
-    PaintCtx, Point, PointerEvent, Size, StatusChange, TextEvent, Widget,
+    theme, AccessCtx, AccessEvent, AllowRawMut, BoxConstraints, EventCtx, LayoutCtx, LifeCycle,
+    LifeCycleCtx, PaintCtx, Point, PointerEvent, Size, StatusChange, TextEvent, Widget, WidgetId,
 };
 
 // RULES
@@ -108,20 +108,17 @@ impl ScrollBar {
 
 // --- MARK: WIDGETMUT ---
 impl WidgetMut<'_, ScrollBar> {
+    // TODO - Remove?
     pub fn set_sizes(&mut self, portal_size: f64, content_size: f64) {
         self.widget.portal_size = portal_size;
         self.widget.content_size = content_size;
         self.ctx.request_paint();
     }
 
+    // TODO - Remove?
     pub fn set_content_size(&mut self, content_size: f64) {
         // TODO - cursor_progress
         self.widget.content_size = content_size;
-        self.ctx.request_paint();
-    }
-
-    pub fn set_cursor_progress(&mut self, cursor_progress: f64) {
-        self.widget.cursor_progress = cursor_progress;
         self.ctx.request_paint();
     }
 }
@@ -225,7 +222,7 @@ impl Widget for ScrollBar {
         // Use set_scroll_x/y_min/max?
     }
 
-    fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
+    fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         SmallVec::new()
     }
 
@@ -233,6 +230,8 @@ impl Widget for ScrollBar {
         trace_span!("ScrollBar")
     }
 }
+
+impl AllowRawMut for ScrollBar {}
 
 // --- MARK: TESTS ---
 #[cfg(test)]

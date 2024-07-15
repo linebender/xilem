@@ -13,10 +13,10 @@ use vello::peniko::BlendMode;
 use vello::Scene;
 
 use crate::text2::{TextBrush, TextLayout, TextStorage};
-use crate::widget::{WidgetMut, WidgetRef};
+use crate::widget::WidgetMut;
 use crate::{
     AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx,
-    PaintCtx, PointerEvent, StatusChange, TextEvent, Widget,
+    PaintCtx, PointerEvent, StatusChange, TextEvent, Widget, WidgetId,
 };
 
 // added padding between the edges of the widget and the text.
@@ -259,7 +259,7 @@ impl Widget for Label {
             .set_name(self.text().as_str().to_string());
     }
 
-    fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
+    fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         SmallVec::new()
     }
 

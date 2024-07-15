@@ -12,7 +12,7 @@ use std::sync::Arc;
 use accesskit::{DefaultActionVerb, Role};
 use masonry::app_driver::{AppDriver, DriverCtx};
 use masonry::dpi::LogicalSize;
-use masonry::widget::{Align, CrossAxisAlignment, Flex, Label, RootWidget, SizedBox, WidgetRef};
+use masonry::widget::{Align, CrossAxisAlignment, Flex, Label, RootWidget, SizedBox};
 use masonry::{
     AccessCtx, AccessEvent, Action, BoxConstraints, Color, EventCtx, LayoutCtx, LifeCycle,
     LifeCycleCtx, PaintCtx, Point, PointerEvent, Size, StatusChange, TextEvent, Widget, WidgetId,
@@ -232,8 +232,8 @@ impl Widget for CalcButton {
         self.inner.accessibility(ctx);
     }
 
-    fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
-        smallvec![self.inner.as_dyn()]
+    fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
+        smallvec![self.inner.id()]
     }
 
     fn make_trace_span(&self) -> Span {

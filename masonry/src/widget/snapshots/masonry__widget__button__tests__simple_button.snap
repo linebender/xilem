@@ -1,10 +1,10 @@
 ---
-source: crates/masonry/src/widget/button.rs
-assertion_line: 233
+source: masonry/src/widget/button.rs
+assertion_line: 245
 expression: harness.root_widget()
 ---
 SizedBox(
-    Button<Hello>(
+    Button(
         Label<Hello>,
     ),
 )

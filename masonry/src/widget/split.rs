@@ -13,11 +13,11 @@ use crate::event::PointerButton;
 use crate::kurbo::Line;
 use crate::paint_scene_helpers::{fill_color, stroke};
 use crate::widget::flex::Axis;
-use crate::widget::{WidgetMut, WidgetPod, WidgetRef};
+use crate::widget::{WidgetMut, WidgetPod};
 use crate::{
     theme, AccessCtx, AccessEvent, BoxConstraints, Color, CursorIcon, EventCtx, LayoutCtx,
     LifeCycle, LifeCycleCtx, PaintCtx, Point, PointerEvent, Rect, Size, StatusChange, TextEvent,
-    Widget,
+    Widget, WidgetId,
 };
 
 // TODO - Have child widget type as generic argument
@@ -437,12 +437,8 @@ impl Widget for Split {
             }
         }
 
-        if !self.child1.is_active() {
-            self.child1.on_pointer_event(ctx, event);
-        }
-        if !self.child2.is_active() {
-            self.child2.on_pointer_event(ctx, event);
-        }
+        self.child1.on_pointer_event(ctx, event);
+        self.child2.on_pointer_event(ctx, event);
     }
 
     fn on_text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent) {
@@ -551,7 +547,9 @@ impl Widget for Split {
         ctx.place_child(&mut self.child1, child1_pos);
         ctx.place_child(&mut self.child2, child2_pos);
 
-        let paint_rect = self.child1.paint_rect().union(self.child2.paint_rect());
+        let child1_paint_rect = ctx.child_paint_rect(&self.child1);
+        let child2_paint_rect = ctx.child_paint_rect(&self.child2);
+        let paint_rect = child1_paint_rect.union(child2_paint_rect);
         let insets = paint_rect - my_size.to_rect();
         ctx.set_paint_insets(insets);
 
@@ -579,8 +577,8 @@ impl Widget for Split {
         self.child2.accessibility(ctx);
     }
 
-    fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
-        smallvec![self.child1.as_dyn(), self.child2.as_dyn()]
+    fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
+        smallvec![self.child1.id(), self.child2.id()]
     }
 
     fn make_trace_span(&self) -> Span {

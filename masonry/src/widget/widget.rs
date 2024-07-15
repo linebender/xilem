@@ -12,10 +12,8 @@ use tracing::{trace_span, Span};
 use vello::Scene;
 
 use crate::event::{AccessEvent, PointerEvent, StatusChange, TextEvent};
-use crate::widget::WidgetRef;
 use crate::{
-    AccessCtx, AsAny, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
-    Point, Size,
+    AccessCtx, AsAny, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Size,
 };
 
 /// A unique identifier for a single [`Widget`].
@@ -127,7 +125,8 @@ pub trait Widget: AsAny {
     /// `children_changed` on one of the Ctx parameters. Container widgets are also
     /// responsible for calling the main methods (on_event, lifecycle, layout, paint)
     /// on their children.
-    fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]>;
+    /// TODO - Update this doc
+    fn children_ids(&self) -> SmallVec<[WidgetId; 16]>;
 
     /// Return a span for tracing.
     ///
@@ -150,6 +149,8 @@ pub trait Widget: AsAny {
 
     // --- Auto-generated implementations ---
 
+    // FIXME
+    #[cfg(FALSE)]
     /// Return which child, if any, has the given `pos` in its layout rect.
     ///
     /// The child return is a direct child, not eg a grand-child. The position is in
@@ -203,6 +204,23 @@ pub trait Widget: AsAny {
     }
 }
 
+/// Marker trait for Widgets whose parents can get a raw mutable reference to them.
+///
+/// "Raw mut" means using a mutable reference (eg `&mut MyWidget`) to the data
+/// structure, instead of going through the Widget trait methods
+/// (`on_text_event`, `lifecycle`, `layout`, etc) or through `WidgetMut`.
+///
+/// A parent widget can use [`EventCtx::get_raw_mut`], [`LifeCycleCtx::get_raw_mut`],
+/// or [`LayoutCtx::get_raw_mut`] to directly access a child widget. In that case,
+/// these methods return both a mutable reference to the child widget and a new
+/// context (`WidgetCtx`, `EventCtx`, etc) scoped to the child. The parent is
+/// responsible for calling the context methods (eg `request_layout`,
+/// `request_accessibility_update`) for the child.
+///
+/// Widgets implementing AllowRawMut are usually private widgets used as an
+/// internal implementation detail of public widgets.
+pub trait AllowRawMut: Widget {}
+
 #[cfg(not(tarpaulin_include))]
 impl WidgetId {
     /// Allocate a new, unique `WidgetId`.
@@ -249,6 +267,7 @@ impl From<WidgetId> for accesskit::NodeId {
     }
 }
 
+#[warn(clippy::missing_trait_methods)]
 // TODO - remove
 impl Widget for Box<dyn Widget> {
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
@@ -291,8 +310,12 @@ impl Widget for Box<dyn Widget> {
         self.deref().type_name()
     }
 
-    fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
-        self.deref().children()
+    fn short_type_name(&self) -> &'static str {
+        self.deref().short_type_name()
+    }
+
+    fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
+        self.deref().children_ids()
     }
 
     fn make_trace_span(&self) -> Span {
@@ -304,10 +327,10 @@ impl Widget for Box<dyn Widget> {
     }
 
     fn as_any(&self) -> &dyn Any {
-        self.deref().as_dyn_any()
+        self.deref().as_any()
     }
 
     fn as_mut_any(&mut self) -> &mut dyn Any {
-        self.deref_mut().as_mut_dyn_any()
+        self.deref_mut().as_mut_any()
     }
 }

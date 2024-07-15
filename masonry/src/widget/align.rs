@@ -15,10 +15,10 @@ use vello::Scene;
 
 use crate::contexts::AccessCtx;
 use crate::paint_scene_helpers::UnitPoint;
-use crate::widget::{WidgetPod, WidgetRef};
+use crate::widget::WidgetPod;
 use crate::{
     AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
-    PointerEvent, Rect, Size, StatusChange, TextEvent, Widget,
+    PointerEvent, Rect, Size, StatusChange, TextEvent, Widget, WidgetId,
 };
 
 // TODO - Have child widget type as generic argument
@@ -132,10 +132,10 @@ impl Widget for Align {
             .expand();
         ctx.place_child(&mut self.child, origin);
 
-        let my_insets = self.child.compute_parent_paint_insets(my_size);
+        let my_insets = ctx.compute_insets_from_child(&self.child, my_size);
         ctx.set_paint_insets(my_insets);
         if self.height_factor.is_some() {
-            let baseline_offset = self.child.baseline_offset();
+            let baseline_offset = ctx.child_baseline_offset(&self.child);
             if baseline_offset > 0f64 {
                 ctx.set_baseline_offset(baseline_offset + extra_height / 2.0);
             }
@@ -162,8 +162,8 @@ impl Widget for Align {
         self.child.accessibility(ctx);
     }
 
-    fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
-        smallvec![self.child.as_dyn()]
+    fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
+        smallvec![self.child.id()]
     }
 
     fn make_trace_span(&self) -> Span {

@@ -12,10 +12,10 @@ use crate::action::Action;
 use crate::event::PointerButton;
 use crate::paint_scene_helpers::{fill_lin_gradient, stroke, UnitPoint};
 use crate::text2::TextStorage;
-use crate::widget::{Label, WidgetMut, WidgetPod, WidgetRef};
+use crate::widget::{Label, WidgetMut, WidgetPod};
 use crate::{
     theme, AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, Insets, LayoutCtx, LifeCycle,
-    LifeCycleCtx, PaintCtx, PointerEvent, Size, StatusChange, TextEvent, Widget,
+    LifeCycleCtx, PaintCtx, PointerEvent, Size, StatusChange, TextEvent, Widget, WidgetId,
 };
 
 // the minimum padding added to a button.
@@ -130,13 +130,13 @@ impl Widget for Button {
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
-        let baseline = self.label.baseline_offset();
-        ctx.set_baseline_offset(baseline + LABEL_INSETS.y1);
-
         let padding = Size::new(LABEL_INSETS.x_value(), LABEL_INSETS.y_value());
         let label_bc = bc.shrink(padding).loosen();
 
         let label_size = self.label.layout(ctx, &label_bc);
+
+        let baseline = ctx.child_baseline_offset(&self.label);
+        ctx.set_baseline_offset(baseline + LABEL_INSETS.y1);
 
         // HACK: to make sure we look okay at default sizes when beside a textbox,
         // we make sure we will have at least the same height as the default textbox.
@@ -196,23 +196,30 @@ impl Widget for Button {
     }
 
     fn accessibility(&mut self, ctx: &mut AccessCtx) {
-        let _name = self.label.widget().text().as_str().to_string();
-        // We may want to add a name if it doesn't interfere with the child label
-        // ctx.current_node().set_name(name);
+        // IMPORTANT: We don't want to merge this code in practice, because
+        // the child label already has a 'name' property.
+        // This is more of a proof of concept of `get_raw_ref()`.
+        if false {
+            let label = ctx.get_raw_ref(&self.label);
+            let name = label.widget().text().as_str().to_string();
+            ctx.current_node().set_name(name);
+        }
         ctx.current_node()
             .set_default_action_verb(DefaultActionVerb::Click);
 
         self.label.accessibility(ctx);
     }
 
-    fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
-        smallvec![self.label.as_dyn()]
+    fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
+        smallvec![self.label.id()]
     }
 
     fn make_trace_span(&self) -> Span {
         trace_span!("Button")
     }
 
+    // FIXME
+    #[cfg(FALSE)]
     fn get_debug_text(&self) -> Option<String> {
         Some(self.label.as_ref().text().as_str().to_string())
     }

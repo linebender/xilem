@@ -117,10 +117,14 @@ pub mod debug_values;
 pub mod event_loop_runner;
 pub mod text2;
 mod tracing_backend;
+mod tree_arena;
 
 pub use action::Action;
 pub use box_constraints::BoxConstraints;
-pub use contexts::{AccessCtx, EventCtx, LayoutCtx, LifeCycleCtx, PaintCtx, WidgetCtx};
+pub use contexts::{
+    AccessCtx, EventCtx, IsContext, LayoutCtx, LifeCycleCtx, PaintCtx, RawWrapper, RawWrapperMut,
+    WidgetCtx,
+};
 pub use event::{
     AccessEvent, InternalLifeCycle, LifeCycle, PointerButton, PointerEvent, PointerState,
     StatusChange, TextEvent, WindowEvent, WindowTheme,
@@ -129,6 +133,7 @@ pub use kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
 pub use parley::layout::Alignment as TextAlignment;
 pub use util::{AsAny, Handled};
 pub use vello::peniko::{Color, Gradient};
-pub use widget::{BackgroundBrush, Widget, WidgetId, WidgetPod, WidgetState};
+pub use widget::widget::{AllowRawMut, Widget, WidgetId};
+pub use widget::{BackgroundBrush, WidgetPod, WidgetState};
 
 pub use text_helpers::ArcStr;

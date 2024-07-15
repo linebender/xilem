@@ -3,14 +3,14 @@
 
 use accesskit::Role;
 use kurbo::Point;
-use smallvec::SmallVec;
+use smallvec::{smallvec, SmallVec};
 use tracing::{trace_span, Span};
 use vello::Scene;
 
-use crate::widget::{WidgetMut, WidgetPod, WidgetRef};
+use crate::widget::{WidgetMut, WidgetPod};
 use crate::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
-    PointerEvent, Size, StatusChange, TextEvent, Widget,
+    PointerEvent, Size, StatusChange, TextEvent, Widget, WidgetId,
 };
 
 // TODO: This is a hack to provide an accessibility node with a Window type.
@@ -33,6 +33,7 @@ impl<W: Widget> RootWidget<W> {
 }
 
 impl<W: Widget> WidgetMut<'_, RootWidget<W>> {
+    // TODO - rename to child_mut
     pub fn get_element(&mut self) -> WidgetMut<'_, W> {
         self.ctx.get_mut(&mut self.widget.pod)
     }
@@ -73,10 +74,8 @@ impl<W: Widget> Widget for RootWidget<W> {
         self.pod.accessibility(ctx);
     }
 
-    fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
-        let mut vec = SmallVec::new();
-        vec.push(self.pod.as_dyn());
-        vec
+    fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
+        smallvec![self.pod.id()]
     }
 
     fn make_trace_span(&self) -> Span {

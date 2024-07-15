@@ -21,7 +21,7 @@ use smallvec::SmallVec;
 use vello::Scene;
 
 use crate::event::{PointerEvent, TextEvent};
-use crate::widget::{SizedBox, WidgetRef};
+use crate::widget::SizedBox;
 use crate::*;
 
 pub type PointerEventFn<S> = dyn FnMut(&mut S, &mut EventCtx, &PointerEvent);
@@ -33,7 +33,7 @@ pub type LayoutFn<S> = dyn FnMut(&mut S, &mut LayoutCtx, &BoxConstraints) -> Siz
 pub type PaintFn<S> = dyn FnMut(&mut S, &mut PaintCtx, &mut Scene);
 pub type RoleFn<S> = dyn Fn(&S) -> Role;
 pub type AccessFn<S> = dyn FnMut(&mut S, &mut AccessCtx);
-pub type ChildrenFn<S> = dyn Fn(&S) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]>;
+pub type ChildrenFn<S> = dyn Fn(&S) -> SmallVec<[WidgetId; 16]>;
 
 #[cfg(FALSE)]
 pub const REPLACE_CHILD: Selector = Selector::new("masonry-test.replace-child");
@@ -198,7 +198,7 @@ impl<S> ModularWidget<S> {
 
     pub fn children_fn(
         mut self,
-        children: impl Fn(&S) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> + 'static,
+        children: impl Fn(&S) -> SmallVec<[WidgetId; 16]> + 'static,
     ) -> Self {
         self.children = Some(Box::new(children));
         self
@@ -268,7 +268,7 @@ impl<S: 'static> Widget for ModularWidget<S> {
         }
     }
 
-    fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
+    fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         if let Some(f) = self.children.as_ref() {
             f(&self.state)
         } else {
@@ -335,8 +335,8 @@ impl Widget for ReplaceChild {
         self.child.accessibility(ctx);
     }
 
-    fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
-        self.child.widget().children()
+    fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
+        todo!()
     }
 }
 
@@ -417,7 +417,7 @@ impl<W: Widget> Widget for Recorder<W> {
         self.child.accessibility(ctx);
     }
 
-    fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
-        self.child.children()
+    fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
+        self.child.children_ids()
     }
 }

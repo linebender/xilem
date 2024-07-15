@@ -12,10 +12,10 @@ use vello::Scene;
 
 use crate::kurbo::RoundedRectRadii;
 use crate::paint_scene_helpers::{fill_color, stroke};
-use crate::widget::{WidgetId, WidgetMut, WidgetPod, WidgetRef};
+use crate::widget::{WidgetMut, WidgetPod};
 use crate::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
-    Point, PointerEvent, Size, StatusChange, TextEvent, Widget,
+    Point, PointerEvent, Size, StatusChange, TextEvent, Widget, WidgetId,
 };
 
 // FIXME - Improve all doc in this module ASAP.
@@ -195,15 +195,18 @@ impl SizedBox {
 // --- MARK: WIDGETMUT ---
 impl WidgetMut<'_, SizedBox> {
     pub fn set_child(&mut self, child: impl Widget) {
+        if let Some(child) = self.widget.child.take() {
+            self.ctx.remove_child(child);
+        }
         self.widget.child = Some(WidgetPod::new(child).boxed());
         self.ctx.children_changed();
         self.ctx.request_layout();
     }
 
     pub fn remove_child(&mut self) {
-        self.widget.child = None;
-        self.ctx.children_changed();
-        self.ctx.request_layout();
+        if let Some(child) = self.widget.child.take() {
+            self.ctx.remove_child(child);
+        }
     }
 
     /// Set container's width.
@@ -407,9 +410,9 @@ impl Widget for SizedBox {
         }
     }
 
-    fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
+    fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         if let Some(child) = &self.child {
-            smallvec![child.as_dyn()]
+            smallvec![child.id()]
         } else {
             smallvec![]
         }

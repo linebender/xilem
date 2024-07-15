@@ -199,7 +199,6 @@ impl DebugLogger {
                 "is_expecting_place_child_call",
                 w_state.is_expecting_place_child_call,
             ),
-            StateTree::new("is_new", w_state.is_new),
             StateTree::new(
                 "children_disabled_changed",
                 w_state.children_disabled_changed,

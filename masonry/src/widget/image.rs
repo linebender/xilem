@@ -11,10 +11,10 @@ use tracing::{trace, trace_span, Span};
 use vello::peniko::{BlendMode, Image as ImageBuf};
 use vello::Scene;
 
-use crate::widget::{FillStrat, WidgetMut, WidgetRef};
+use crate::widget::{FillStrat, WidgetMut};
 use crate::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
-    PointerEvent, Size, StatusChange, TextEvent, Widget,
+    PointerEvent, Size, StatusChange, TextEvent, Widget, WidgetId,
 };
 
 // TODO - Resolve name collision between masonry::Image and peniko::Image
@@ -115,7 +115,7 @@ impl Widget for Image {
         // TODO - Handle alt text and such.
     }
 
-    fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
+    fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         SmallVec::new()
     }
 

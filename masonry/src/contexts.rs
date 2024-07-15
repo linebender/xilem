@@ -16,8 +16,9 @@ use crate::promise::PromiseToken;
 use crate::render_root::{RenderRootSignal, RenderRootState};
 use crate::text2::TextBrush;
 use crate::text_helpers::{ImeChangeSignal, TextFieldRegistration};
+use crate::tree_arena::TreeArenaTokenMut;
 use crate::widget::{CursorChange, WidgetMut, WidgetState};
-use crate::{CursorIcon, Insets, Point, Rect, Size, Widget, WidgetId, WidgetPod};
+use crate::{AllowRawMut, CursorIcon, Insets, Point, Rect, Size, Widget, WidgetId, WidgetPod};
 
 /// A macro for implementing methods on multiple contexts.
 ///
@@ -45,6 +46,8 @@ pub struct WidgetCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) parent_widget_state: &'a mut WidgetState,
     pub(crate) widget_state: &'a mut WidgetState,
+    pub(crate) widget_state_children: TreeArenaTokenMut<'a, WidgetState>,
+    pub(crate) widget_children: TreeArenaTokenMut<'a, Box<dyn Widget>>,
 }
 
 /// A context provided to event handling methods of widgets.
@@ -54,6 +57,8 @@ pub struct WidgetCtx<'a> {
 pub struct EventCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a mut WidgetState,
+    pub(crate) widget_state_children: TreeArenaTokenMut<'a, WidgetState>,
+    pub(crate) widget_children: TreeArenaTokenMut<'a, Box<dyn Widget>>,
     pub(crate) is_handled: bool,
     pub(crate) request_pan_to_child: Option<Rect>,
 }
@@ -64,6 +69,8 @@ pub struct EventCtx<'a> {
 pub struct LifeCycleCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a mut WidgetState,
+    pub(crate) widget_state_children: TreeArenaTokenMut<'a, WidgetState>,
+    pub(crate) widget_children: TreeArenaTokenMut<'a, Box<dyn Widget>>,
 }
 
 /// A context provided to layout handling methods of widgets.
@@ -74,6 +81,8 @@ pub struct LifeCycleCtx<'a> {
 pub struct LayoutCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a mut WidgetState,
+    pub(crate) widget_state_children: TreeArenaTokenMut<'a, WidgetState>,
+    pub(crate) widget_children: TreeArenaTokenMut<'a, Box<dyn Widget>>,
     pub(crate) mouse_pos: Option<Point>,
 }
 
@@ -81,6 +90,8 @@ pub struct LayoutCtx<'a> {
 pub struct PaintCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a WidgetState,
+    pub(crate) widget_state_children: TreeArenaTokenMut<'a, WidgetState>,
+    pub(crate) widget_children: TreeArenaTokenMut<'a, Box<dyn Widget>>,
     /// The approximate depth in the tree at the time of painting.
     pub(crate) depth: u32,
     pub(crate) debug_paint: bool,
@@ -90,6 +101,8 @@ pub struct PaintCtx<'a> {
 pub struct AccessCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a WidgetState,
+    pub(crate) widget_state_children: TreeArenaTokenMut<'a, WidgetState>,
+    pub(crate) widget_children: TreeArenaTokenMut<'a, Box<dyn Widget>>,
     pub(crate) tree_update: &'a mut TreeUpdate,
     pub(crate) current_node: NodeBuilder,
     pub(crate) rebuild_all: bool,
@@ -104,12 +117,14 @@ pub struct WorkerCtx<'a> {
 
 pub struct WorkerFn(pub Box<dyn FnOnce(WorkerCtx) + Send + 'static>);
 
+// --- MARK: GETTERS ---
+// Methods for all context types
 impl_context_method!(
     WidgetCtx<'_>,
     EventCtx<'_>,
     LifeCycleCtx<'_>,
-    PaintCtx<'_>,
     LayoutCtx<'_>,
+    PaintCtx<'_>,
     AccessCtx<'_>,
     {
         /// get the `WidgetId` of the current widget.
@@ -126,17 +141,64 @@ impl_context_method!(
         /// This tells the framework that a child was deliberately skipped.
         // TODO - see event flow tutorial - See https://github.com/linebender/xilem/issues/376
         pub fn skip_child(&self, child: &mut WidgetPod<impl Widget>) {
-            child.mark_as_visited();
+            self.get_child_state(child).mark_as_visited(true);
+        }
+
+        #[allow(dead_code)]
+        /// Helper method to get a direct reference to a child widget from its WidgetPod.
+        fn get_child<Child: Widget>(&self, child: &'_ WidgetPod<Child>) -> &'_ Child {
+            let (child, _child_token) = self
+                .widget_children
+                .get_child(child.id().to_raw())
+                .expect("get_child: child not found");
+            child.as_dyn_any().downcast_ref::<Child>().unwrap()
+        }
+
+        #[allow(dead_code)]
+        /// Helper method to get a direct reference to a child widget's WidgetState from its WidgetPod.
+        fn get_child_state<Child: Widget>(&self, child: &'_ WidgetPod<Child>) -> &'_ WidgetState {
+            let (child_state, _child_state_token) = self
+                .widget_state_children
+                .get_child(child.id().to_raw())
+                .expect("get_child_state: child not found");
+            child_state
         }
     }
 );
 
-// methods on everyone but layoutctx
+// Methods for all mutable context types
+impl_context_method!(
+    WidgetCtx<'_>,
+    EventCtx<'_>,
+    LifeCycleCtx<'_>,
+    LayoutCtx<'_>,
+    {
+        /// Helper method to get a mutable reference to a child widget's WidgetState from its WidgetPod.
+        ///
+        /// This one isn't defined for PaintCtx and AccessCtx because those contexts
+        /// can't mutate WidgetState.
+        fn get_child_state_mut<Child: Widget>(
+            &mut self,
+            child: &'_ mut WidgetPod<Child>,
+        ) -> &'_ mut WidgetState {
+            let (child_state, _child_state_token) = self
+                .widget_state_children
+                .get_child_mut(child.id().to_raw())
+                .expect("get_child_state_mut: child not found");
+            child_state
+        }
+    }
+);
+
+// --- MARK: GET LAYOUT ---
+// Methods on all context types except LayoutCtx
+// These methods access layout info calculated during the layout pass.
 impl_context_method!(
     WidgetCtx<'_>,
     EventCtx<'_>,
     LifeCycleCtx<'_>,
     PaintCtx<'_>,
+    AccessCtx<'_>,
     {
         /// The layout size.
         ///
@@ -151,6 +213,10 @@ impl_context_method!(
             self.widget_state.size()
         }
 
+        pub fn layout_rect(&self) -> Rect {
+            self.widget_state.layout_rect()
+        }
+
         /// The origin of the widget in window coordinates, relative to the top left corner of the
         /// content area.
         pub fn window_origin(&self) -> Point {
@@ -163,7 +229,19 @@ impl_context_method!(
         pub fn to_window(&self, widget_point: Point) -> Point {
             self.window_origin() + widget_point.to_vec2()
         }
+    }
+);
 
+// --- MARK: GET STATUS ---
+// Methods on all context types except LayoutCtx
+// Access status information (hot/active/disabled/etc).
+impl_context_method!(
+    WidgetCtx<'_>,
+    EventCtx<'_>,
+    LifeCycleCtx<'_>,
+    PaintCtx<'_>,
+    AccessCtx<'_>,
+    {
         /// The "hot" (aka hover) status of a widget.
         ///
         /// A widget is "hot" when the mouse is hovered over it. Widgets will
@@ -252,6 +330,8 @@ impl_context_method!(
     }
 );
 
+// --- MARK: CURSOR ---
+// Cursor-related impls.
 impl_context_method!(EventCtx<'_>, {
     /// Set the cursor icon.
     ///
@@ -296,64 +376,98 @@ impl_context_method!(EventCtx<'_>, {
     }
 });
 
+// --- MARK: WIDGET_MUT ---
+// Methods to get a child WidgetMut from a parent.
 impl<'a> WidgetCtx<'a> {
-    // FIXME - Assert that child's parent is self
     /// Return a [`WidgetMut`] to a child widget.
     pub fn get_mut<'c, Child: Widget>(
         &'c mut self,
         child: &'c mut WidgetPod<Child>,
     ) -> WidgetMut<'c, Child> {
+        let (child_state, child_state_token) = self
+            .widget_state_children
+            .get_child_mut(child.id().to_raw())
+            .expect("get_mut: child not found");
+        let (child, child_token) = self
+            .widget_children
+            .get_child_mut(child.id().to_raw())
+            .expect("get_mut: child not found");
         let child_ctx = WidgetCtx {
             global_state: self.global_state,
             parent_widget_state: self.widget_state,
-            widget_state: &mut child.state,
+            widget_state: child_state,
+            widget_state_children: child_state_token,
+            widget_children: child_token,
         };
         WidgetMut {
             ctx: child_ctx,
-            widget: &mut child.inner,
+            widget: child.as_mut_dyn_any().downcast_mut().unwrap(),
         }
     }
 }
 
+// TODO - It's not clear whether EventCtx should be able to create a WidgetMut.
+// One of the examples currently uses that feature to change a child widget's color
+// in reaction to mouse events, but we might want to address that use-case differently.
 impl<'a> EventCtx<'a> {
     /// Return a [`WidgetMut`] to a child widget.
-    // FIXME - Assert that child's parent is self
     pub fn get_mut<'c, Child: Widget>(
         &'c mut self,
         child: &'c mut WidgetPod<Child>,
     ) -> WidgetMut<'c, Child> {
+        let (child_state, child_state_token) = self
+            .widget_state_children
+            .get_child_mut(child.id().to_raw())
+            .expect("get_mut: child not found");
+        let (child, child_token) = self
+            .widget_children
+            .get_child_mut(child.id().to_raw())
+            .expect("get_mut: child not found");
         let child_ctx = WidgetCtx {
             global_state: self.global_state,
             parent_widget_state: self.widget_state,
-            widget_state: &mut child.state,
+            widget_state: child_state,
+            widget_state_children: child_state_token,
+            widget_children: child_token,
         };
         WidgetMut {
             ctx: child_ctx,
-            widget: &mut child.inner,
+            widget: child.as_mut_dyn_any().downcast_mut().unwrap(),
         }
     }
 }
 
+// TODO - It's not clear whether LifeCycleCtx should be able to create a WidgetMut.
 impl<'a> LifeCycleCtx<'a> {
     /// Return a [`WidgetMut`] to a child widget.
-    // FIXME - Assert that child's parent is self
     pub fn get_mut<'c, Child: Widget>(
         &'c mut self,
         child: &'c mut WidgetPod<Child>,
     ) -> WidgetMut<'c, Child> {
+        let (child_state, child_state_token) = self
+            .widget_state_children
+            .get_child_mut(child.id().to_raw())
+            .expect("get_mut: child not found");
+        let (child, child_token) = self
+            .widget_children
+            .get_child_mut(child.id().to_raw())
+            .expect("get_mut: child not found");
         let child_ctx = WidgetCtx {
             global_state: self.global_state,
             parent_widget_state: self.widget_state,
-            widget_state: &mut child.state,
+            widget_state: child_state,
+            widget_state_children: child_state_token,
+            widget_children: child_token,
         };
         WidgetMut {
             ctx: child_ctx,
-            widget: &mut child.inner,
+            widget: child.as_mut_dyn_any().downcast_mut().unwrap(),
         }
     }
 }
 
-// methods on event and lifecycle
+// --- MARK: UPDATE FLAGS ---
+// Methods on WidgetCtx, EventCtx, and LifeCycleCtx
 impl_context_method!(WidgetCtx<'_>, EventCtx<'_>, LifeCycleCtx<'_>, {
     /// Request a [`paint`](crate::Widget::paint) pass.
     pub fn request_paint(&mut self) {
@@ -390,12 +504,31 @@ impl_context_method!(WidgetCtx<'_>, EventCtx<'_>, LifeCycleCtx<'_>, {
 
     /// Indicate that your children have changed.
     ///
-    /// Widgets must call this method after adding a new child or removing a child.
+    /// Widgets must call this method after adding a new child.
     pub fn children_changed(&mut self) {
         trace!("children_changed");
         self.widget_state.children_changed = true;
         self.widget_state.update_focus_chain = true;
         self.request_layout();
+    }
+
+    /// Indicate that a child is about to be removed from the tree.
+    ///
+    /// Container widgets should avoid dropping WidgetPods. Instead, they should
+    /// pass them to this method.
+    pub fn remove_child(&mut self, child: WidgetPod<impl Widget>) {
+        // TODO - Send recursive event to child
+        let id = child.id().to_raw();
+        let _ = self
+            .widget_state_children
+            .remove_child(id)
+            .expect("remove_child: child not found");
+        let _ = self
+            .widget_children
+            .remove_child(id)
+            .expect("remove_child: child not found");
+
+        self.children_changed();
     }
 
     /// Set the disabled state for this widget.
@@ -417,7 +550,7 @@ impl_context_method!(WidgetCtx<'_>, EventCtx<'_>, LifeCycleCtx<'_>, {
     ///
     /// **Note:** Stashed widgets are a WIP feature
     pub fn set_stashed(&mut self, child: &mut WidgetPod<impl Widget>, stashed: bool) {
-        child.state.is_stashed = stashed;
+        self.get_child_state_mut(child).is_stashed = stashed;
         self.children_changed();
     }
 
@@ -432,7 +565,8 @@ impl_context_method!(WidgetCtx<'_>, EventCtx<'_>, LifeCycleCtx<'_>, {
     }
 });
 
-// methods on everyone but paintctx
+// --- MARK: OTHER METHODS ---
+// Methods on all context types except PaintCtx and AccessCtx
 impl_context_method!(
     WidgetCtx<'_>,
     EventCtx<'_>,
@@ -602,7 +736,32 @@ impl LifeCycleCtx<'_> {
     }
 }
 
+// --- MARK: UPDATE LAYOUT ---
 impl LayoutCtx<'_> {
+    fn assert_layout_done(&self, child: &WidgetPod<impl Widget>, method_name: &str) {
+        if self.get_child_state(child).needs_layout {
+            debug_panic!(
+                "Error in #{}: trying to call '{}' with child '{}' #{} before computing its layout",
+                self.widget_id().to_raw(),
+                method_name,
+                self.get_child(child).short_type_name(),
+                child.id().to_raw(),
+            );
+        }
+    }
+
+    fn assert_placed(&self, child: &WidgetPod<impl Widget>, method_name: &str) {
+        if self.get_child_state(child).is_expecting_place_child_call {
+            debug_panic!(
+                "Error in #{}: trying to call '{}' with child '{}' #{} before placing it",
+                self.widget_id().to_raw(),
+                method_name,
+                self.get_child(child).short_type_name(),
+                child.id().to_raw(),
+            );
+        }
+    }
+
     /// Set explicit paint [`Insets`] for this widget.
     ///
     /// You are not required to set explicit paint bounds unless you need
@@ -619,6 +778,33 @@ impl LayoutCtx<'_> {
         self.widget_state.paint_insets = insets.nonnegative();
     }
 
+    // TODO - This is currently redundant with the code in LayoutCtx::place_child
+    /// Given a child and its parent's size, determine the
+    /// appropriate paint `Insets` for the parent.
+    ///
+    /// This is a convenience method; it allows the parent to correctly
+    /// propagate a child's desired paint rect, if it extends beyond the bounds
+    /// of the parent's layout rect.
+    ///
+    /// ## Panics
+    ///
+    /// This method will panic if the child's [`layout()`](WidgetPod::layout) method has not been called yet
+    /// and if [`LayoutCtx::place_child()`] has not been called for the child.
+    pub fn compute_insets_from_child(
+        &mut self,
+        child: &WidgetPod<impl Widget>,
+        my_size: Size,
+    ) -> Insets {
+        self.assert_layout_done(child, "compute_insets_from_child");
+        self.assert_placed(child, "compute_insets_from_child");
+        let parent_bounds = Rect::ZERO.with_size(my_size);
+        let union_paint_rect = self
+            .get_child_state(child)
+            .paint_rect()
+            .union(parent_bounds);
+        union_paint_rect - parent_bounds
+    }
+
     /// Set an explicit baseline position for this widget.
     ///
     /// The baseline position is used to align widgets that contain text,
@@ -633,35 +819,103 @@ impl LayoutCtx<'_> {
         self.widget_state.baseline_offset = baseline;
     }
 
+    /// The distance from the bottom of the given widget to the baseline.
+    ///
+    /// ## Panics
+    ///
+    /// This method will panic if [`WidgetPod::layout`] has not been called yet for
+    /// the child.
+    pub fn child_baseline_offset(&self, child: &WidgetPod<impl Widget>) -> f64 {
+        self.assert_layout_done(child, "child_baseline_offset");
+        self.get_child_state(child).baseline_offset
+    }
+
+    /// Get the given child's layout rect.
+    ///
+    /// ## Panics
+    ///
+    /// This method will panic if [`WidgetPod::layout`] and [`LayoutCtx::place_child`]
+    /// have not been called yet for the child.
+    pub fn child_layout_rect(&self, child: &WidgetPod<impl Widget>) -> Rect {
+        self.assert_layout_done(child, "child_layout_rect");
+        self.assert_placed(child, "child_layout_rect");
+        self.get_child_state(child).layout_rect()
+    }
+
+    /// Get the given child's paint rect.
+    ///
+    /// ## Panics
+    ///
+    /// This method will panic if [`WidgetPod::layout`] and [`LayoutCtx::place_child`]
+    /// have not been called yet for the child.
+    pub fn child_paint_rect(&self, child: &WidgetPod<impl Widget>) -> Rect {
+        self.assert_layout_done(child, "child_paint_rect");
+        self.assert_placed(child, "child_paint_rect");
+        self.get_child_state(child).paint_rect()
+    }
+
+    /// Get the given child's size.
+    ///
+    /// ## Panics
+    ///
+    /// This method will panic if [`WidgetPod::layout`] has not been called yet for
+    /// the child.
+    pub fn child_size(&self, child: &WidgetPod<impl Widget>) -> Size {
+        self.assert_layout_done(child, "child_size");
+        self.get_child_state(child).layout_rect().size()
+    }
+
     /// Set the position of a child widget, in the paren't coordinate space. This
     /// will also implicitly change "hot" status and affect the parent's display rect.
     ///
     /// Container widgets must call this method with each non-stashed child in their
     /// layout method, after calling `child.layout(...)`.
-    pub fn place_child(&mut self, child: &mut WidgetPod<impl Widget>, origin: Point) {
-        if origin != child.state.origin {
-            child.state.origin = origin;
-            child.state.needs_window_origin = true;
+    ///
+    /// ## Panics
+    ///
+    /// This method will panic if [`WidgetPod::layout`] has not been called yet for
+    /// the child.
+    pub fn place_child<W: Widget>(&mut self, child: &mut WidgetPod<W>, origin: Point) {
+        self.assert_layout_done(child, "place_child");
+        if origin != self.get_child_state_mut(child).origin {
+            self.get_child_state_mut(child).origin = origin;
+            self.get_child_state_mut(child).needs_window_origin = true;
         }
-        child.state.is_expecting_place_child_call = false;
+        self.get_child_state_mut(child)
+            .is_expecting_place_child_call = false;
 
-        self.widget_state.local_paint_rect =
-            self.widget_state.local_paint_rect.union(child.paint_rect());
+        self.widget_state.local_paint_rect = self
+            .widget_state
+            .local_paint_rect
+            .union(self.get_child_state(child).paint_rect());
 
+        let child_id = child.id();
+        let (child, child_token) = self
+            .widget_children
+            .get_child_mut(child_id.to_raw())
+            .expect("place_child: child not found");
+        let (child_state, child_state_token) = self
+            .widget_state_children
+            .get_child_mut(child_id.to_raw())
+            .expect("place_child: child not found");
         let mouse_pos = self.mouse_pos.map(|pos| LogicalPosition::new(pos.x, pos.y));
         // if the widget has moved, it may have moved under the mouse, in which
         // case we need to handle that.
         if WidgetPod::update_hot_state(
-            &mut child.inner,
-            &mut child.state,
+            child_id,
+            child.as_mut_dyn_any().downcast_mut::<W>().unwrap(),
+            child_token,
+            child_state,
+            child_state_token,
             self.global_state,
             mouse_pos,
         ) {
-            self.widget_state.merge_up(&mut child.state);
+            self.widget_state.merge_up(child_state);
         }
     }
 }
 
+// --- MARK: OTHER STUFF ---
 impl_context_method!(LayoutCtx<'_>, PaintCtx<'_>, {
     /// Get the contexts needed to build and paint text sections.
     pub fn text_contexts(&mut self) -> (&mut FontContext, &mut LayoutContext<TextBrush>) {
@@ -709,3 +963,180 @@ impl AccessCtx<'_> {
         self.widget_state.needs_accessibility_update
     }
 }
+
+// --- MARK: RAW WRAPPERS ---
+macro_rules! impl_get_raw {
+    ($SomeCtx:tt) => {
+        impl<'s> $SomeCtx<'s> {
+            /// Get a child context and a raw shared reference to a child widget.
+            ///
+            /// The child context can be used to call context methods on behalf of the
+            /// child widget.
+            pub fn get_raw_ref<'a, 'r, Child: Widget>(
+                &'a mut self,
+                child: &'a mut WidgetPod<Child>,
+            ) -> RawWrapper<'r, $SomeCtx<'r>, Child>
+            where
+                'a: 'r,
+                's: 'r,
+            {
+                let (child_state, child_state_token) = self
+                    .widget_state_children
+                    .get_child_mut(child.id().to_raw())
+                    .expect("get_raw_ref: child not found");
+                let (child, child_token) = self
+                    .widget_children
+                    .get_child_mut(child.id().to_raw())
+                    .expect("get_raw_ref: child not found");
+                #[allow(clippy::needless_update)]
+                let child_ctx = $SomeCtx {
+                    widget_state: child_state,
+                    widget_state_children: child_state_token,
+                    widget_children: child_token,
+                    global_state: self.global_state,
+                    ..*self
+                };
+                RawWrapper {
+                    ctx: child_ctx,
+                    widget: child.as_dyn_any().downcast_ref().unwrap(),
+                }
+            }
+
+            /// Get a raw mutable reference to a child widget.
+            ///
+            /// See documentation for [`AllowRawMut`] for more details.
+            pub fn get_raw_mut<'a, 'r, Child: Widget + AllowRawMut>(
+                &'a mut self,
+                child: &'a mut WidgetPod<Child>,
+            ) -> RawWrapperMut<'r, $SomeCtx<'r>, Child>
+            where
+                'a: 'r,
+                's: 'r,
+            {
+                let (child_state, child_state_token) = self
+                    .widget_state_children
+                    .get_child_mut(child.id().to_raw())
+                    .expect("get_raw_mut: child not found");
+                let (child, child_token) = self
+                    .widget_children
+                    .get_child_mut(child.id().to_raw())
+                    .expect("get_raw_mut: child not found");
+                #[allow(clippy::needless_update)]
+                let child_ctx = $SomeCtx {
+                    widget_state: child_state,
+                    widget_state_children: child_state_token,
+                    widget_children: child_token,
+                    global_state: self.global_state,
+                    ..*self
+                };
+                RawWrapperMut {
+                    parent_widget_state: &mut self.widget_state,
+                    ctx: child_ctx,
+                    widget: child.as_mut_dyn_any().downcast_mut().unwrap(),
+                }
+            }
+        }
+    };
+}
+
+impl_get_raw!(EventCtx);
+impl_get_raw!(LifeCycleCtx);
+impl_get_raw!(LayoutCtx);
+
+impl<'s> AccessCtx<'s> {
+    pub fn get_raw_ref<'a, 'r, Child: Widget>(
+        &'a mut self,
+        child: &'a WidgetPod<Child>,
+    ) -> RawWrapper<'r, AccessCtx<'r>, Child>
+    where
+        'a: 'r,
+        's: 'r,
+    {
+        let (child_state, child_state_token) = self
+            .widget_state_children
+            .get_child_mut(child.id().to_raw())
+            .expect("get_raw_ref: child not found");
+        let (child, child_token) = self
+            .widget_children
+            .get_child_mut(child.id().to_raw())
+            .expect("get_raw_ref: child not found");
+        let child_ctx = AccessCtx {
+            widget_state: child_state,
+            widget_state_children: child_state_token,
+            widget_children: child_token,
+            global_state: self.global_state,
+            tree_update: self.tree_update,
+            // TODO - This doesn't make sense. NodeBuilder should probably be split
+            // out from AccessCtx.
+            current_node: NodeBuilder::default(),
+            rebuild_all: self.rebuild_all,
+            scale_factor: self.scale_factor,
+        };
+        RawWrapper {
+            ctx: child_ctx,
+            widget: child.as_dyn_any().downcast_ref().unwrap(),
+        }
+    }
+}
+
+pub struct RawWrapper<'a, Ctx, W> {
+    ctx: Ctx,
+    widget: &'a W,
+}
+
+pub struct RawWrapperMut<'a, Ctx: IsContext, W> {
+    parent_widget_state: &'a mut WidgetState,
+    ctx: Ctx,
+    widget: &'a mut W,
+}
+
+impl<Ctx, W> RawWrapper<'_, Ctx, W> {
+    pub fn widget(&self) -> &W {
+        self.widget
+    }
+
+    pub fn ctx(&self) -> &Ctx {
+        &self.ctx
+    }
+}
+
+impl<Ctx: IsContext, W> RawWrapperMut<'_, Ctx, W> {
+    pub fn widget(&mut self) -> &mut W {
+        self.widget
+    }
+
+    pub fn ctx(&mut self) -> &mut Ctx {
+        &mut self.ctx
+    }
+}
+
+impl<'a, Ctx: IsContext, W> Drop for RawWrapperMut<'a, Ctx, W> {
+    fn drop(&mut self) {
+        self.parent_widget_state
+            .merge_up(self.ctx.get_widget_state());
+    }
+}
+
+mod private {
+    pub trait Sealed {}
+}
+
+pub trait IsContext: private::Sealed {
+    fn get_widget_state(&mut self) -> &mut WidgetState;
+}
+
+macro_rules! impl_context_trait {
+    ($SomeCtx:tt) => {
+        impl private::Sealed for $SomeCtx<'_> {}
+
+        impl IsContext for $SomeCtx<'_> {
+            fn get_widget_state(&mut self) -> &mut WidgetState {
+                self.widget_state
+            }
+        }
+    };
+}
+
+impl_context_trait!(EventCtx);
+impl_context_trait!(LifeCycleCtx);
+impl_context_trait!(LayoutCtx);

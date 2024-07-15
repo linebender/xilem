@@ -13,10 +13,10 @@ use crate::action::Action;
 use crate::kurbo::{BezPath, Cap, Join, Size};
 use crate::paint_scene_helpers::{fill_lin_gradient, stroke, UnitPoint};
 use crate::text2::TextStorage;
-use crate::widget::{Label, WidgetMut, WidgetRef};
+use crate::widget::{Label, WidgetMut};
 use crate::{
     theme, AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, LayoutCtx, LifeCycle,
-    LifeCycleCtx, PaintCtx, PointerEvent, StatusChange, TextEvent, Widget, WidgetPod,
+    LifeCycleCtx, PaintCtx, PointerEvent, StatusChange, TextEvent, Widget, WidgetId, WidgetPod,
 };
 
 /// A checkbox that can be toggled.
@@ -127,7 +127,8 @@ impl Widget for Checkbox {
             check_size.max(label_size.height),
         );
         let our_size = bc.constrain(desired_size);
-        let baseline = self.label.baseline_offset() + (our_size.height - label_size.height);
+        let baseline =
+            ctx.child_baseline_offset(&self.label) + (our_size.height - label_size.height);
         ctx.set_baseline_offset(baseline);
         trace!("Computed layout: size={}, baseline={}", our_size, baseline);
         our_size
@@ -193,9 +194,14 @@ impl Widget for Checkbox {
     }
 
     fn accessibility(&mut self, ctx: &mut AccessCtx) {
-        let _name = self.label.widget().text().as_str().to_string();
-        // We may want to add a name if it doesn't interfere with the child label
-        // ctx.current_node().set_name(name);
+        // IMPORTANT: We don't want to merge this code in practice, because
+        // the child label already has a 'name' property.
+        // This is more of a proof of concept of `get_raw_ref()`.
+        if false {
+            let label = ctx.get_raw_ref(&self.label);
+            let name = label.widget().text().as_str().to_string();
+            ctx.current_node().set_name(name);
+        }
         if self.checked {
             ctx.current_node().set_toggled(Toggled::True);
             ctx.current_node()
@@ -209,8 +215,8 @@ impl Widget for Checkbox {
         self.label.accessibility(ctx);
     }
 
-    fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
-        smallvec![self.label.as_dyn()]
+    fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
+        smallvec![self.label.id()]
     }
 
     fn make_trace_span(&self) -> Span {
@@ -218,11 +224,11 @@ impl Widget for Checkbox {
     }
 
     fn get_debug_text(&self) -> Option<String> {
-        Some(format!(
-            "[{}] {}",
-            if self.checked { "X" } else { " " },
-            self.label.as_ref().text().as_str()
-        ))
+        if self.checked {
+            Some("[X]".to_string())
+        } else {
+            Some("[ ]".to_string())
+        }
     }
 }
 

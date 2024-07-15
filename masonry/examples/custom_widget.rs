@@ -11,7 +11,7 @@ use accesskit::Role;
 use kurbo::Stroke;
 use masonry::app_driver::{AppDriver, DriverCtx};
 use masonry::kurbo::BezPath;
-use masonry::widget::{FillStrat, RootWidget, WidgetRef};
+use masonry::widget::{FillStrat, RootWidget};
 use masonry::{
     AccessCtx, AccessEvent, Action, Affine, BoxConstraints, Color, EventCtx, LayoutCtx, LifeCycle,
     LifeCycleCtx, PaintCtx, Point, PointerEvent, Rect, Size, StatusChange, TextEvent, Widget,
@@ -140,7 +140,7 @@ impl Widget for CustomWidget {
         );
     }
 
-    fn children(&self) -> SmallVec<[WidgetRef<'_, dyn Widget>; 16]> {
+    fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         SmallVec::new()
     }
 
