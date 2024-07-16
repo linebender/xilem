@@ -402,6 +402,7 @@ impl<'a> WidgetCtx<'a> {
         WidgetMut {
             ctx: child_ctx,
             widget: child.as_mut_dyn_any().downcast_mut().unwrap(),
+            is_reborrow: false,
         }
     }
 }
@@ -433,6 +434,7 @@ impl<'a> EventCtx<'a> {
         WidgetMut {
             ctx: child_ctx,
             widget: child.as_mut_dyn_any().downcast_mut().unwrap(),
+            is_reborrow: false,
         }
     }
 }
@@ -462,6 +464,7 @@ impl<'a> LifeCycleCtx<'a> {
         WidgetMut {
             ctx: child_ctx,
             widget: child.as_mut_dyn_any().downcast_mut().unwrap(),
+            is_reborrow: false,
         }
     }
 }

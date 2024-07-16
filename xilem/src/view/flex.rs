@@ -1,7 +1,7 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use std::{cell::RefCell, marker::PhantomData, rc::Rc};
+use std::marker::PhantomData;
 
 use masonry::{
     widget::{self, Axis, CrossAxisAlignment, MainAxisAlignment, WidgetMut},
@@ -107,15 +107,12 @@ where
             ctx.mark_changed();
         }
 
-        let element = Rc::new(RefCell::new(element));
-        {
-            // TODO: Re-use scratch space?
-            let mut splice = FlexSplice::new(element.clone());
-            self.sequence
-                .seq_rebuild(&prev.sequence, view_state, ctx, &mut splice);
-            debug_assert!(splice.scratch.is_empty());
-        }
-        Rc::try_unwrap(element).ok().unwrap().into_inner()
+        // TODO: Re-use scratch space?
+        let mut splice = FlexSplice::new(element);
+        self.sequence
+            .seq_rebuild(&prev.sequence, view_state, ctx, &mut splice);
+        debug_assert!(splice.scratch.is_empty());
+        splice.element
     }
 
     fn teardown(
@@ -124,7 +121,7 @@ where
         ctx: &mut ViewCtx,
         element: Mut<'_, Self::Element>,
     ) {
-        let mut splice = FlexSplice::new(Rc::new(RefCell::new(element)));
+        let mut splice = FlexSplice::new(element);
         self.sequence.seq_teardown(view_state, ctx, &mut splice);
         debug_assert!(splice.scratch.into_inner().is_empty());
     }
@@ -148,20 +145,19 @@ pub enum FlexElement {
     FlexSpacer(f64),
 }
 
-#[derive(Clone)]
 pub struct FlexElementMut<'w> {
-    parent: Rc<RefCell<WidgetMut<'w, widget::Flex>>>,
+    parent: WidgetMut<'w, widget::Flex>,
     idx: usize,
 }
 
 struct FlexSplice<'w> {
     idx: usize,
-    element: Rc<RefCell<WidgetMut<'w, widget::Flex>>>,
+    element: WidgetMut<'w, widget::Flex>,
     scratch: AppendVec<FlexElement>,
 }
 
 impl<'w> FlexSplice<'w> {
-    fn new(element: Rc<RefCell<WidgetMut<'w, widget::Flex>>>) -> Self {
+    fn new(element: WidgetMut<'w, widget::Flex>) -> Self {
         Self {
             idx: 0,
             element,
@@ -180,10 +176,17 @@ impl SuperElement<FlexElement> for FlexElement {
     }
 
     fn with_downcast_val<R>(
-        this: Mut<'_, Self>,
+        mut this: Mut<'_, Self>,
         f: impl FnOnce(Mut<'_, FlexElement>) -> R,
     ) -> (Self::Mut<'_>, R) {
-        let r = f(this.clone());
+        let r = {
+            let parent = this.parent.reborrow_mut();
+            let reborrow = FlexElementMut {
+                idx: this.idx,
+                parent,
+            };
+            f(reborrow)
+        };
         (this, r)
     }
 }
@@ -194,12 +197,12 @@ impl<W: Widget> SuperElement<Pod<W>> for FlexElement {
     }
 
     fn with_downcast_val<R>(
-        this: Mut<'_, Self>,
+        mut this: Mut<'_, Self>,
         f: impl FnOnce(Mut<'_, Pod<W>>) -> R,
     ) -> (Mut<'_, Self>, R) {
         let ret = {
-            let mut flex = this.parent.borrow_mut();
-            let mut child = flex
+            let mut child = this
+                .parent
                 .child_mut(this.idx)
                 .expect("This is supposed to be a widget");
             let downcast = child.downcast();
@@ -212,27 +215,27 @@ impl<W: Widget> SuperElement<Pod<W>> for FlexElement {
 
 impl ElementSplice<FlexElement> for FlexSplice<'_> {
     fn insert(&mut self, element: FlexElement) {
-        let mut flex = self.element.borrow_mut();
         match element {
             FlexElement::Child(child, params) => {
-                flex.insert_flex_child_pod(self.idx, child.inner, params);
+                self.element
+                    .insert_flex_child_pod(self.idx, child.inner, params);
             }
-            FlexElement::FixedSpacer(len) => flex.insert_spacer(self.idx, len),
-            FlexElement::FlexSpacer(len) => flex.insert_flex_spacer(self.idx, len),
+            FlexElement::FixedSpacer(len) => self.element.insert_spacer(self.idx, len),
+            FlexElement::FlexSpacer(len) => self.element.insert_flex_spacer(self.idx, len),
         };
         self.idx += 1;
     }
 
     fn with_scratch<R>(&mut self, f: impl FnOnce(&mut AppendVec<FlexElement>) -> R) -> R {
         let ret = f(&mut self.scratch);
-        let mut flex = self.element.borrow_mut();
         for element in self.scratch.drain() {
             match element {
                 FlexElement::Child(child, params) => {
-                    flex.insert_flex_child_pod(self.idx, child.inner, params);
+                    self.element
+                        .insert_flex_child_pod(self.idx, child.inner, params);
                 }
-                FlexElement::FixedSpacer(len) => flex.insert_spacer(self.idx, len),
-                FlexElement::FlexSpacer(len) => flex.insert_flex_spacer(self.idx, len),
+                FlexElement::FixedSpacer(len) => self.element.insert_spacer(self.idx, len),
+                FlexElement::FlexSpacer(len) => self.element.insert_flex_spacer(self.idx, len),
             };
             self.idx += 1;
         }
@@ -241,7 +244,7 @@ impl ElementSplice<FlexElement> for FlexSplice<'_> {
 
     fn mutate<R>(&mut self, f: impl FnOnce(Mut<'_, FlexElement>) -> R) -> R {
         let child = FlexElementMut {
-            parent: self.element.clone(),
+            parent: self.element.reborrow_mut(),
             idx: self.idx,
         };
         let ret = f(child);
@@ -250,13 +253,14 @@ impl ElementSplice<FlexElement> for FlexSplice<'_> {
     }
 
     fn delete<R>(&mut self, f: impl FnOnce(Mut<'_, FlexElement>) -> R) -> R {
-        let child = FlexElementMut {
-            parent: self.element.clone(),
-            idx: self.idx,
+        let ret = {
+            let child = FlexElementMut {
+                parent: self.element.reborrow_mut(),
+                idx: self.idx,
+            };
+            f(child)
         };
-        let ret = f(child);
-        let mut flex = self.element.borrow_mut();
-        flex.remove_child(self.idx);
+        self.element.remove_child(self.idx);
         ret
     }
 
@@ -305,14 +309,16 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<'el, Self::Element>,
+        mut element: Mut<'el, Self::Element>,
     ) -> Mut<'el, Self::Element> {
         {
-            let mut parent = element.parent.borrow_mut();
             if self.params != prev.params {
-                parent.update_child_flex_params(element.idx, self.params);
+                element
+                    .parent
+                    .update_child_flex_params(element.idx, self.params);
             }
-            let mut child = parent
+            let mut child = element
+                .parent
                 .child_mut(element.idx)
                 .expect("FlexWrapper always has a widget child");
             self.view
@@ -325,10 +331,10 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<'_, Self::Element>,
+        mut element: Mut<'_, Self::Element>,
     ) {
-        let mut parent = element.parent.borrow_mut();
-        let mut child = parent
+        let mut child = element
+            .parent
             .child_mut(element.idx)
             .expect("FlexWrapper always has a widget child");
         self.view.teardown(view_state, ctx, child.downcast());
@@ -369,13 +375,12 @@ impl<State, Action> View<State, Action, ViewCtx> for FlexSpacer {
         prev: &Self,
         _: &mut Self::ViewState,
         _: &mut ViewCtx,
-        element: Mut<'el, Self::Element>,
+        mut element: Mut<'el, Self::Element>,
     ) -> Mut<'el, Self::Element> {
         if self != prev {
-            let mut parent = element.parent.borrow_mut();
             match self {
-                FlexSpacer::Fixed(len) => parent.update_spacer_fixed(element.idx, *len),
-                FlexSpacer::Flex(flex) => parent.update_spacer_flex(element.idx, *flex),
+                FlexSpacer::Fixed(len) => element.parent.update_spacer_fixed(element.idx, *len),
+                FlexSpacer::Flex(flex) => element.parent.update_spacer_flex(element.idx, *flex),
             };
         }
         element

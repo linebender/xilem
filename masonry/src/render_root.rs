@@ -288,6 +288,7 @@ impl RenderRoot {
                 widget_children: widget_token,
             },
             widget,
+            is_reborrow: false,
         };
 
         let res = {

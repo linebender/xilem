@@ -26,11 +26,15 @@ use crate::{Widget, WidgetState};
 pub struct WidgetMut<'a, W: Widget> {
     pub ctx: WidgetCtx<'a>,
     pub widget: &'a mut W,
+    /// False is this `WidgetMut` is a reborrow, meaning that merging up of the state can be skipped
+    pub(crate) is_reborrow: bool,
 }
 
 impl<W: Widget> Drop for WidgetMut<'_, W> {
     fn drop(&mut self) {
-        self.ctx.parent_widget_state.merge_up(self.ctx.widget_state);
+        if !self.is_reborrow {
+            self.ctx.parent_widget_state.merge_up(self.ctx.widget_state);
+        }
     }
 }
 
@@ -39,6 +43,22 @@ impl<'w, W: Widget> WidgetMut<'w, W> {
     /// Get the [`WidgetState`] of the current widget.
     pub fn state(&self) -> &WidgetState {
         self.ctx.widget_state
+    }
+
+    pub fn reborrow_mut(&mut self) -> WidgetMut<'_, W> {
+        let ctx = WidgetCtx {
+            global_state: self.ctx.global_state,
+            parent_widget_state: self.ctx.parent_widget_state,
+            widget_state: self.ctx.widget_state,
+            widget_state_children: self.ctx.widget_state_children.reborrow_mut(),
+            widget_children: self.ctx.widget_children.reborrow_mut(),
+        };
+        let widget = &mut self.widget;
+        WidgetMut {
+            ctx,
+            widget,
+            is_reborrow: true,
+        }
     }
 }
 
@@ -55,6 +75,7 @@ impl<'a> WidgetMut<'a, Box<dyn Widget>> {
         Some(WidgetMut {
             ctx,
             widget: self.widget.as_mut_any().downcast_mut()?,
+            is_reborrow: true,
         })
     }
 
@@ -74,7 +95,11 @@ impl<'a> WidgetMut<'a, Box<dyn Widget>> {
         };
         let w1_name = self.widget.type_name();
         match self.widget.as_mut_any().downcast_mut() {
-            Some(widget) => WidgetMut { ctx, widget },
+            Some(widget) => WidgetMut {
+                ctx,
+                widget,
+                is_reborrow: true,
+            },
             None => {
                 panic!(
                     "failed to downcast widget: expected widget of type `{}`, found `{}`",
