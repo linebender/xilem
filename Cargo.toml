@@ -54,5 +54,5 @@ fnv = "1.0.7"
 image = { version = "0.25.1", default-features = false }
 web-time = "1.1.0"
 bitflags = "2.5.0"
-accesskit = "0.15.0"
-accesskit_winit = "0.21.0"
+accesskit = "0.16.0"
+accesskit_winit = "0.22.0"

@@ -284,7 +284,7 @@ impl Widget for Prose {
     }
 
     fn accessibility_role(&self) -> Role {
-        Role::StaticText
+        Role::Paragraph
     }
 
     fn accessibility(&mut self, ctx: &mut AccessCtx) {

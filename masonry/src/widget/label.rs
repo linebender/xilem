@@ -251,7 +251,7 @@ impl Widget for Label {
     }
 
     fn accessibility_role(&self) -> Role {
-        Role::StaticText
+        Role::Label
     }
 
     fn accessibility(&mut self, ctx: &mut AccessCtx) {
