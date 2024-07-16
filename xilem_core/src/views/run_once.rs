@@ -1,7 +1,9 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{DynMessage, MessageResult, NoElement, View, ViewPathTracker};
+use core::fmt::Debug;
+
+use crate::{MessageResult, NoElement, View, ViewPathTracker};
 
 /// A view which executes `once` exactly once.
 ///
@@ -77,6 +79,8 @@ impl<F, State, Action, Context, Message> View<State, Action, Context, Message> f
 where
     Context: ViewPathTracker,
     F: Fn() + 'static,
+    // TODO: Work out what traits we want to require `Message`s to have
+    Message: Debug,
 {
     type Element = NoElement;
 
