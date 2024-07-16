@@ -9,10 +9,10 @@ use crate::{DynMessage, Message, NoElement, View, ViewId, ViewPathTracker};
 
 /// A `Context` for a [`View`](crate::View) implementation which supports
 /// asynchronous message reporting.
-pub trait AsyncCtx: ViewPathTracker {
+pub trait AsyncCtx<Message = DynMessage>: ViewPathTracker {
     /// Get a [`Proxy`] for this context.
     // TODO: Maybe store the current path within this Proxy?
-    fn proxy(&mut self) -> Arc<dyn RawProxy>;
+    fn proxy(&mut self) -> Arc<dyn RawProxy<Message>>;
 }
 
 /// A handle to a Xilem driver which can be used to queue a message for a View.
@@ -29,7 +29,7 @@ pub trait AsyncCtx: ViewPathTracker {
 /// ## Lifetimes
 ///
 /// It is valid for a [`Proxy`] to outlive the [`View`](crate::View) it is associated with.
-pub trait RawProxy: Send + Sync + 'static {
+pub trait RawProxy<Message = DynMessage>: Send + Sync + 'static {
     /// Send a `message` to the view at `path` in this driver.
     ///
     /// Note that it is only valid to send messages to views which expect
@@ -45,19 +45,19 @@ pub trait RawProxy: Send + Sync + 'static {
     // TODO: Do we want/need a way to asynchronously report errors back to the caller?
     //
     // e.g. an `Option<Arc<dyn FnMut(ProxyError, ProxyMessageId?)>>`?
-    fn send_message(&self, path: Arc<[ViewId]>, message: DynMessage) -> Result<(), ProxyError>;
+    fn send_message(&self, path: Arc<[ViewId]>, message: Message) -> Result<(), ProxyError>;
 }
 
 /// A way to send a message of an expected type to a specific view.
 pub struct MessageProxy<M: Message> {
-    proxy: Arc<dyn RawProxy>,
+    proxy: Arc<dyn RawProxy<DynMessage>>,
     path: Arc<[ViewId]>,
     message: PhantomData<fn(M)>,
 }
 
 impl<M: Message> MessageProxy<M> {
     /// Create a new `MessageProxy`
-    pub fn new(proxy: Arc<dyn RawProxy>, path: Arc<[ViewId]>) -> Self {
+    pub fn new(proxy: Arc<dyn RawProxy<DynMessage>>, path: Arc<[ViewId]>) -> Self {
         Self {
             proxy,
             path,
