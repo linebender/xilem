@@ -93,6 +93,7 @@ fn toggleable(data: &mut AppData) -> impl WidgetView<AppData> {
                 button("Unlimited Power", |data: &mut AppData| {
                     data.count = -1_000_000;
                 }),
+                run_once(|| tracing::warn!("The pathway to unlimited power has been revealed")),
             ))
             .direction(Axis::Horizontal),
         )
@@ -133,7 +134,7 @@ fn main() {
 
 #[cfg(target_os = "android")]
 use winit::platform::android::activity::AndroidApp;
-use xilem_core::fork;
+use xilem_core::{fork, run_once};
 
 #[cfg(target_os = "android")]
 // Safety: We are following `android_activity`'s docs here
