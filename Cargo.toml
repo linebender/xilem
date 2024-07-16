@@ -41,8 +41,8 @@ rust.unsafe_code = "deny"
 xilem_web_core = { version = "0.1.0", path = "xilem_web/xilem_web_core" }
 masonry = { version = "0.2.0", path = "masonry" }
 xilem_core = { version = "0.1.0", path = "xilem_core" }
-vello = "0.2.0"
-wgpu = "0.20.0"
+vello = "0.2.1"
+wgpu = "0.20.1"
 kurbo = "0.11.0"
 parley = "0.1.0"
 peniko = "0.1.1"
