@@ -73,7 +73,7 @@ pub struct RunOnce<F> {
     once: F,
 }
 
-impl<F, State, Action, Context> View<State, Action, Context> for RunOnce<F>
+impl<F, State, Action, Context, Message> View<State, Action, Context, Message> for RunOnce<F>
 where
     Context: ViewPathTracker,
     F: Fn() + 'static,
@@ -110,9 +110,9 @@ where
         &self,
         (): &mut Self::ViewState,
         _: &[crate::ViewId],
-        message: DynMessage,
+        message: Message,
         _: &mut State,
-    ) -> MessageResult<Action> {
+    ) -> MessageResult<Action, Message> {
         // Nothing to do
         panic!("Message should not have been sent to a `RunOnce` View: {message:?}");
     }
