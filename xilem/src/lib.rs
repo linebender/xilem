@@ -109,7 +109,7 @@ where
             id_path: Vec::new(),
             view_tree_changed: false,
             proxy,
-            handle: self.runtime.handle().clone(),
+            runtime: self.runtime,
         };
         let (pod, view_state) = first_view.build(&mut ctx);
         let root_widget = RootWidget::from_pod(pod.inner);
@@ -119,7 +119,6 @@ where
             state: self.state,
             ctx,
             view_state,
-            runtime: self.runtime,
         };
         (root_widget, driver)
     }
@@ -188,7 +187,7 @@ pub struct ViewCtx {
     id_path: Vec<ViewId>,
     view_tree_changed: bool,
     proxy: Arc<dyn RawProxy>,
-    handle: tokio::runtime::Handle,
+    runtime: tokio::runtime::Runtime,
 }
 
 impl ViewPathTracker for ViewCtx {
@@ -229,6 +228,10 @@ impl ViewCtx {
 
     pub fn teardown_leaf<E: Widget>(&mut self, widget: WidgetMut<E>) {
         self.widget_map.remove(&widget.ctx.widget_id());
+    }
+
+    pub fn runtime(&self) -> &tokio::runtime::Runtime {
+        &self.runtime
     }
 }
 

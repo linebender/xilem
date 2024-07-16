@@ -47,7 +47,7 @@ where
 
         let proxy = ctx.proxy.clone();
         let handle = ctx
-            .handle
+            .runtime()
             .spawn((self.future_future)(MessageProxy::new(proxy, path)));
         // TODO: Clearly this shouldn't be a label here
         (NoElement, handle)

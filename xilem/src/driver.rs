@@ -19,10 +19,6 @@ pub struct MasonryDriver<State, Logic, View, ViewState> {
     pub(crate) current_view: View,
     pub(crate) ctx: ViewCtx,
     pub(crate) view_state: ViewState,
-    #[allow(unused)]
-    // Keep the runtime alive
-    // Is it more idiomatic to stick this in the `ViewCtx`?
-    pub(crate) runtime: tokio::runtime::Runtime,
 }
 
 /// The `WidgetId` which async events should be sent to.
