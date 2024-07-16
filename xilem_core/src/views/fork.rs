@@ -109,6 +109,14 @@ where
     }
 }
 
+/// A stub `ElementSplice` implementation for `NoElement`.
+///
+/// We know that none of the methods will be called, because the `ViewSequence`
+/// implementation for `NoElement` views does not use the provided `elements`.
+///
+/// It is technically possible for someone to create an implementation of `ViewSequence`
+/// which uses a `NoElement` `ElementSplice`. But we don't think that sequence could be meaningful,
+/// so we still panic in that case.
 struct NoElements;
 
 impl ElementSplice<NoElement> for NoElements {
