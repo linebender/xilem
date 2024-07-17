@@ -26,12 +26,13 @@ use crate::{Widget, WidgetState};
 pub struct WidgetMut<'a, W: Widget> {
     pub ctx: WidgetCtx<'a>,
     pub widget: &'a mut W,
-    /// False is this `WidgetMut` is a reborrow, meaning that merging up of the state can be skipped
     pub(crate) is_reborrow: bool,
 }
 
 impl<W: Widget> Drop for WidgetMut<'_, W> {
     fn drop(&mut self) {
+        // If this `WidgetMut` is a reborrow, a parent non-reborrow `WidgetMut`
+        // still exists which will do the merge-up in `Drop`.
         if !self.is_reborrow {
             self.ctx.parent_widget_state.merge_up(self.ctx.widget_state);
         }
@@ -45,6 +46,7 @@ impl<'w, W: Widget> WidgetMut<'w, W> {
         self.ctx.widget_state
     }
 
+    /// Get a `WidgetMut` to the same underlying widget
     pub fn reborrow_mut(&mut self) -> WidgetMut<'_, W> {
         let ctx = WidgetCtx {
             global_state: self.ctx.global_state,
