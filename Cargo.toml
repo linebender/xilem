@@ -37,6 +37,26 @@ rust.unexpected_cfgs = { level = "warn", check-cfg = [
 # (And cargo doesn't let us have platform specific lints here)
 rust.unsafe_code = "deny"
 
+# rust.missing_docs = "warn"
+# rust.unreachable_pub = "warn"
+# rust.unnameable_types = "warn"
+# rust.keyword_idents_2024 = "warn"
+# rust.missing_debug_implementations = "warn"
+# rust.non_ascii_idents = "warn"
+# rust.unit_bindings = "warn"
+# rust.unsafe_op_in_unsafe_fn = "warn"
+# rust.unused_import_braces = "warn"
+# rust.unused_lifetimes = "warn"
+# rust.non_local_definitions = "warn"
+# rust.single_use_lifetimes = "warn"
+# rust.let_underscore_drop = "warn"
+# rust.trivial_numeric_casts = "warn"
+# rust.unused_crate_dependencies = "warn"
+# rust.unused_macro_rules = "warn"
+# rust.unused_qualifications = "warn"
+# rust.variant_size_differences = "warn"
+
+
 [workspace.dependencies]
 xilem_web_core = { version = "0.1.0", path = "xilem_web/xilem_web_core" }
 masonry = { version = "0.2.0", path = "masonry" }
