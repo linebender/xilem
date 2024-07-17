@@ -889,24 +889,19 @@ impl<W: Widget> WidgetPod<W> {
             .local_paint_rect
             .union(new_size.to_rect() + state.paint_insets);
 
-        if cfg!(debug_assertions) {
+        #[cfg(debug_assertions)]
+        {
             for child_id in widget.children_ids() {
                 let child_id = child_id.to_raw();
                 let (child_state, _) = state_token
                     .get_child(child_id)
                     .unwrap_or_else(|| panic!("widget #{child_id} not found"));
-                // The `widget_name` field is only available under debug_assertions - we don't want to
-                // #[cfg] out this entire block so that the same borrow-checking applies in release and debug.
-                #[cfg(not(debug_assertions))]
-                let widget_name = "UNREACHABLE";
-                #[cfg(debug_assertions)]
-                let widget_name = &child_state.widget_name;
                 if child_state.is_expecting_place_child_call {
                     debug_panic!(
                         "Error in '{}' #{}: missing call to place_child method for child widget '{}' #{}. During layout pass, if a widget calls WidgetPod::layout() on its child, it then needs to call LayoutCtx::place_child() on the same child.",
                         widget.short_type_name(),
                         id,
-                        widget_name,
+                        child_state.widget_name,
                         child_state.id.to_raw(),
                     );
                 }
@@ -920,7 +915,7 @@ impl<W: Widget> WidgetPod<W> {
                         id,
                         state.local_paint_rect,
                         child_rect,
-                        widget_name,
+                        child_state.widget_name,
                         child_state.id.to_raw(),
                     );
                 }
