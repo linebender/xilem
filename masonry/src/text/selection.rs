@@ -569,7 +569,7 @@ pub trait EditableTextCursor {
 impl<Str: Deref<Target = str> + TextStorage> Selectable for Str {
     type Cursor<'a> = StringCursor<'a> where Self: 'a;
 
-    fn cursor<'a>(&self, position: usize) -> Option<StringCursor> {
+    fn cursor(&self, position: usize) -> Option<StringCursor> {
         let new_cursor = StringCursor {
             text: self,
             position,
