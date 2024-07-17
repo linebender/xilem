@@ -5,7 +5,7 @@
 
 // On Windows platform, don't show a console when opening the app.
 #![windows_subsystem = "windows"]
-#![allow(variant_size_differences)]
+#![allow(variant_size_differences, clippy::single_match)]
 
 use accesskit::{DefaultActionVerb, Role};
 use masonry::app_driver::{AppDriver, DriverCtx};
