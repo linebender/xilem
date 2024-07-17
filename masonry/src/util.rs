@@ -15,15 +15,14 @@ use std::hash::Hash;
 ///
 /// It's useful when a backtrace would aid debugging but a crash can be avoided in release.
 macro_rules! debug_panic {
-    () => { ... };
-    ($msg:expr) => {
+    // () => { ... }; // TODO: What was this rule for?
+    ($msg:expr$(,)?) => {
         if cfg!(debug_assertions) {
             panic!($msg);
         } else {
             tracing::error!($msg);
         }
     };
-    ($msg:expr,) => { debug_panic!($msg) };
     ($fmt:expr, $($arg:tt)+) => {
         if cfg!(debug_assertions) {
             panic!($fmt, $($arg)*);
