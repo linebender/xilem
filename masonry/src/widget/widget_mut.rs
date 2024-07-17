@@ -46,7 +46,7 @@ impl<'w, W: Widget> WidgetMut<'w, W> {
         self.ctx.widget_state
     }
 
-    /// Get a `WidgetMut` to the same underlying widget
+    /// Get a `WidgetMut` for the same underlying widget with a shorter lifetime.
     pub fn reborrow_mut(&mut self) -> WidgetMut<'_, W> {
         let ctx = WidgetCtx {
             global_state: self.ctx.global_state,
