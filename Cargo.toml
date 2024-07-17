@@ -23,6 +23,9 @@ repository = "https://github.com/linebender/xilem"
 homepage = "https://xilem.dev/"
 
 [workspace.lints]
+# Remove assigning_clones once it's allowed by default in stable Rust
+# https://github.com/rust-lang/rust-clippy/pull/12779
+clippy.assigning_clones = "allow"
 rust.unexpected_cfgs = { level = "warn", check-cfg = [
     'cfg(FALSE)',
     'cfg(tarpaulin_include)',
@@ -72,6 +75,8 @@ clippy.unseparated_literal_suffix = "warn"
 # clippy.missing_assert_message = "warn"
 # clippy.return_self_not_must_use = "warn"
 # clippy.wildcard_imports = "warn"
+# rust.elided_lifetimes_in_paths = "warn"
+# clippy.use_self = "warn"
 
 # Aspirational lints, not enabled for one reason or another
 
