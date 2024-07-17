@@ -889,7 +889,8 @@ impl<W: Widget> WidgetPod<W> {
             .local_paint_rect
             .union(new_size.to_rect() + state.paint_insets);
 
-        if cfg!(debug_assertions) {
+        #[cfg(debug_assertions)]
+        {
             for child_id in widget.children_ids() {
                 let child_id = child_id.to_raw();
                 let (child_state, _) = state_token
