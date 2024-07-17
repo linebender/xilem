@@ -139,7 +139,7 @@ mod tests {
         assert!(promise_result.try_get(promise_token_2).is_none());
     }
 
-    #[should_panic]
+    #[should_panic(expected = "mismatched token")]
     #[test]
     fn bad_promise_get() {
         let promise_token_1: PromiseToken<i32> = PromiseToken::new();
@@ -149,7 +149,7 @@ mod tests {
         promise_result.get(promise_token_2);
     }
 
-    #[should_panic]
+    #[should_panic(expected = "payload already taken")]
     #[test]
     fn get_promise_twice() {
         let promise_token = PromiseToken::new();
