@@ -350,7 +350,11 @@ checksum = "3b43422f69d8ff38f95f1b2bb76517c91589a924d1559a0e935d7c8ce0274c11"
 dependencies = [
  "proc-macro2",
  "quote",
+<<<<<<< HEAD
  "syn 2.0.72",
+=======
+ "syn 2.0.71",
+>>>>>>> 4b98de5b1 (Stash nv-flip work)
 ]
 
 [[package]]
@@ -385,7 +389,11 @@ checksum = "6e0c28dcc82d7c8ead5cb13beb15405b57b8546e93215673ff8ca0349a028107"
 dependencies = [
  "proc-macro2",
  "quote",
+<<<<<<< HEAD
  "syn 2.0.72",
+=======
+ "syn 2.0.71",
+>>>>>>> 4b98de5b1 (Stash nv-flip work)
 ]
 
 [[package]]
@@ -550,7 +558,11 @@ checksum = "1ee891b04274a59bd38b412188e24b849617b2e45a0fd8d057deb63e7403761b"
 dependencies = [
  "proc-macro2",
  "quote",
+<<<<<<< HEAD
  "syn 2.0.72",
+=======
+ "syn 2.0.71",
+>>>>>>> 4b98de5b1 (Stash nv-flip work)
 ]
 
 [[package]]
@@ -560,6 +572,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1fd0f2584146f6f2ef48085050886acf353beff7305ebd1ae69500e27c67f64b"
 
 [[package]]
+<<<<<<< HEAD
 name = "byteorder-lite"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -569,6 +582,11 @@ checksum = "8f1fe948ff07f4bd06c30984e69f5b4899c516a3ef74f34df92a2df2ab535495"
 name = "bytes"
 version = "1.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+=======
+name = "bytes"
+version = "1.6.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+>>>>>>> 4b98de5b1 (Stash nv-flip work)
 checksum = "a12916984aab3fa6e39d655a33e09c0071eb36d6ab3aea5c2d78551f1df6d952"
 
 [[package]]
@@ -599,9 +617,15 @@ dependencies = [
 
 [[package]]
 name = "cc"
+<<<<<<< HEAD
 version = "1.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2aba8f4e9906c7ce3c73463f62a7f0c65183ada1a2d47e397cc8810827f9694f"
+=======
+version = "1.1.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "324c74f2155653c90b04f25b2a47a8a631360cb908f92a772695f430c7e31052"
+>>>>>>> 4b98de5b1 (Stash nv-flip work)
 dependencies = [
  "jobserver",
  "libc",
@@ -843,7 +867,11 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b28bfe653d79bd16c77f659305b195b82bb5ce0c0eb2a4846b82ddbd77586813"
 dependencies = [
  "bitflags 2.6.0",
+<<<<<<< HEAD
  "libloading 0.8.5",
+=======
+ "libloading 0.8.4",
+>>>>>>> 4b98de5b1 (Stash nv-flip work)
  "winapi",
 ]
 
@@ -891,7 +919,11 @@ checksum = "97369cbbc041bc366949bc74d34658d6cda5621039731c6310521892a3a20ae0"
 dependencies = [
  "proc-macro2",
  "quote",
+<<<<<<< HEAD
  "syn 2.0.72",
+=======
+ "syn 2.0.71",
+>>>>>>> 4b98de5b1 (Stash nv-flip work)
 ]
 
 [[package]]
@@ -900,7 +932,11 @@ version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "330c60081dcc4c72131f8eb70510f1ac07223e5d4163db481a04a0befcffa412"
 dependencies = [
+<<<<<<< HEAD
  "libloading 0.8.5",
+=======
+ "libloading 0.8.4",
+>>>>>>> 4b98de5b1 (Stash nv-flip work)
 ]
 
 [[package]]
@@ -972,7 +1008,11 @@ checksum = "de0d48a183585823424a4ce1aa132d174a6a81bd540895822eb4c8373a8e49e8"
 dependencies = [
  "proc-macro2",
  "quote",
+<<<<<<< HEAD
  "syn 2.0.72",
+=======
+ "syn 2.0.71",
+>>>>>>> 4b98de5b1 (Stash nv-flip work)
 ]
 
 [[package]]
@@ -1157,7 +1197,11 @@ checksum = "1a5c6c585bc94aaf2c7b51dd4c2ba22680844aba4c687be581871a6f518c5742"
 dependencies = [
  "proc-macro2",
  "quote",
+<<<<<<< HEAD
  "syn 2.0.72",
+=======
+ "syn 2.0.71",
+>>>>>>> 4b98de5b1 (Stash nv-flip work)
 ]
 
 [[package]]
@@ -1225,7 +1269,11 @@ checksum = "87750cf4b7a4c0625b1529e4c543c2182106e4dedc60a2a6455e00d212c489ac"
 dependencies = [
  "proc-macro2",
  "quote",
+<<<<<<< HEAD
  "syn 2.0.72",
+=======
+ "syn 2.0.71",
+>>>>>>> 4b98de5b1 (Stash nv-flip work)
 ]
 
 [[package]]
@@ -1437,7 +1485,11 @@ dependencies = [
  "bitflags 2.6.0",
  "com",
  "libc",
+<<<<<<< HEAD
  "libloading 0.8.5",
+=======
+ "libloading 0.8.4",
+>>>>>>> 4b98de5b1 (Stash nv-flip work)
  "thiserror",
  "widestring",
  "winapi",
@@ -1468,6 +1520,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dfa686283ad6dd069f105e5ab091b04c62850d3e4cf5d67debad1933f55023df"
 
 [[package]]
+<<<<<<< HEAD
 name = "http"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1482,6 +1535,11 @@ dependencies = [
 name = "icu_collections"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+=======
+name = "icu_collections"
+version = "1.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+>>>>>>> 4b98de5b1 (Stash nv-flip work)
 checksum = "db2fa452206ebee18c4b5c2274dbf1de17008e874b4dc4f0aea9d01ca79e4526"
 dependencies = [
  "displaydoc",
@@ -1569,7 +1627,11 @@ checksum = "1ec89e9337638ecdc08744df490b221a7399bf8d164eb52a665454e60e075ad6"
 dependencies = [
  "proc-macro2",
  "quote",
+<<<<<<< HEAD
  "syn 2.0.72",
+=======
+ "syn 2.0.71",
+>>>>>>> 4b98de5b1 (Stash nv-flip work)
 ]
 
 [[package]]
@@ -1688,7 +1750,11 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6aae1df220ece3c0ada96b8153459b67eebe9ae9212258bb0134ae60416fdf76"
 dependencies = [
  "libc",
+<<<<<<< HEAD
  "libloading 0.8.5",
+=======
+ "libloading 0.8.4",
+>>>>>>> 4b98de5b1 (Stash nv-flip work)
  "pkg-config",
 ]
 
@@ -1732,9 +1798,15 @@ dependencies = [
 
 [[package]]
 name = "libloading"
+<<<<<<< HEAD
 version = "0.8.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4979f22fdb869068da03c9f7528f8297c6fd2606bc3a4affe42e6a823fdb8da4"
+=======
+version = "0.8.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e310b3a6b5907f99202fcdb4960ff45b93735d7c7d96b760fcff8db2dc0e103d"
+>>>>>>> 4b98de5b1 (Stash nv-flip work)
 dependencies = [
  "cfg-if",
  "windows-targets 0.52.6",
@@ -2031,7 +2103,11 @@ dependencies = [
  "proc-macro-crate 3.1.0",
  "proc-macro2",
  "quote",
+<<<<<<< HEAD
  "syn 2.0.72",
+=======
+ "syn 2.0.71",
+>>>>>>> 4b98de5b1 (Stash nv-flip work)
 ]
 
 [[package]]
@@ -2375,7 +2451,11 @@ checksum = "2f38a4412a78282e09a2cf38d195ea5420d15ba0602cb375210efbc877243965"
 dependencies = [
  "proc-macro2",
  "quote",
+<<<<<<< HEAD
  "syn 2.0.72",
+=======
+ "syn 2.0.71",
+>>>>>>> 4b98de5b1 (Stash nv-flip work)
 ]
 
 [[package]]
@@ -2749,7 +2829,11 @@ checksum = "e0cd7e117be63d3c3678776753929474f3b04a43a080c744d6b0ae2a8c28e222"
 dependencies = [
  "proc-macro2",
  "quote",
+<<<<<<< HEAD
  "syn 2.0.72",
+=======
+ "syn 2.0.71",
+>>>>>>> 4b98de5b1 (Stash nv-flip work)
 ]
 
 [[package]]
@@ -2771,7 +2855,11 @@ checksum = "6c64451ba24fc7a6a2d60fc75dd9c83c90903b19028d4eff35e88fc1e86564e9"
 dependencies = [
  "proc-macro2",
  "quote",
+<<<<<<< HEAD
  "syn 2.0.72",
+=======
+ "syn 2.0.71",
+>>>>>>> 4b98de5b1 (Stash nv-flip work)
 ]
 
 [[package]]
@@ -2960,9 +3048,15 @@ dependencies = [
 
 [[package]]
 name = "syn"
+<<<<<<< HEAD
 version = "2.0.72"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dc4b9b9bf2add8093d3f2c0204471e951b2285580335de42f9d2534f3ae7a8af"
+=======
+version = "2.0.71"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b146dcf730474b4bcd16c311627b31ede9ab149045db4d6088b3becaea046462"
+>>>>>>> 4b98de5b1 (Stash nv-flip work)
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2977,7 +3071,11 @@ checksum = "c8af7666ab7b6390ab78131fb5b0fce11d6b7a6951602017c35fa82800708971"
 dependencies = [
  "proc-macro2",
  "quote",
+<<<<<<< HEAD
  "syn 2.0.72",
+=======
+ "syn 2.0.71",
+>>>>>>> 4b98de5b1 (Stash nv-flip work)
 ]
 
 [[package]]
@@ -3003,15 +3101,22 @@ dependencies = [
 
 [[package]]
 name = "thiserror"
+<<<<<<< HEAD
 version = "1.0.63"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c0342370b38b6a11b6cc11d6a805569958d54cfa061a29969c3b5ce2ea405724"
+=======
+version = "1.0.62"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f2675633b1499176c2dff06b0856a27976a8f9d436737b4cf4f312d4d91d8bbb"
+>>>>>>> 4b98de5b1 (Stash nv-flip work)
 dependencies = [
  "thiserror-impl",
 ]
 
 [[package]]
 name = "thiserror-impl"
+<<<<<<< HEAD
 version = "1.0.63"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a4558b58466b9ad7ca0f102865eccc95938dca1a74a856f2b57b6629050da261"
@@ -3019,6 +3124,15 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.72",
+=======
+version = "1.0.62"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d20468752b09f49e909e55a5d338caa8bedf615594e9d80bc4c565d30faf798c"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.71",
+>>>>>>> 4b98de5b1 (Stash nv-flip work)
 ]
 
 [[package]]
@@ -3123,9 +3237,15 @@ dependencies = [
 
 [[package]]
 name = "toml_datetime"
+<<<<<<< HEAD
 version = "0.6.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f8fb9f64314842840f1d940ac544da178732128f1c78c21772e876579e0da1db"
+=======
+version = "0.6.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4badfd56924ae69bcc9039335b2e017639ce3f9b001c393c1b2d1ef846ce2cbf"
+>>>>>>> 4b98de5b1 (Stash nv-flip work)
 
 [[package]]
 name = "toml_edit"
@@ -3168,7 +3288,11 @@ checksum = "34704c8d6ebcbc939824180af020566b01a7c01f80641264eba0999f6c2b6be7"
 dependencies = [
  "proc-macro2",
  "quote",
+<<<<<<< HEAD
  "syn 2.0.72",
+=======
+ "syn 2.0.71",
+>>>>>>> 4b98de5b1 (Stash nv-flip work)
 ]
 
 [[package]]
@@ -3368,7 +3492,11 @@ dependencies = [
  "once_cell",
  "proc-macro2",
  "quote",
+<<<<<<< HEAD
  "syn 2.0.72",
+=======
+ "syn 2.0.71",
+>>>>>>> 4b98de5b1 (Stash nv-flip work)
  "wasm-bindgen-shared",
 ]
 
@@ -3402,7 +3530,11 @@ checksum = "e94f17b526d0a461a191c78ea52bbce64071ed5c04c9ffe424dcb38f74171bb7"
 dependencies = [
  "proc-macro2",
  "quote",
+<<<<<<< HEAD
  "syn 2.0.72",
+=======
+ "syn 2.0.71",
+>>>>>>> 4b98de5b1 (Stash nv-flip work)
  "wasm-bindgen-backend",
  "wasm-bindgen-shared",
 ]
@@ -3619,7 +3751,11 @@ dependencies = [
  "js-sys",
  "khronos-egl",
  "libc",
+<<<<<<< HEAD
  "libloading 0.8.5",
+=======
+ "libloading 0.8.4",
+>>>>>>> 4b98de5b1 (Stash nv-flip work)
  "log",
  "metal",
  "naga",
@@ -3737,7 +3873,11 @@ checksum = "942ac266be9249c84ca862f0a164a39533dc2f6f33dc98ec89c8da99b82ea0bd"
 dependencies = [
  "proc-macro2",
  "quote",
+<<<<<<< HEAD
  "syn 2.0.72",
+=======
+ "syn 2.0.71",
+>>>>>>> 4b98de5b1 (Stash nv-flip work)
 ]
 
 [[package]]
@@ -3748,7 +3888,11 @@ checksum = "da33557140a288fae4e1d5f8873aaf9eb6613a9cf82c3e070223ff177f598b60"
 dependencies = [
  "proc-macro2",
  "quote",
+<<<<<<< HEAD
  "syn 2.0.72",
+=======
+ "syn 2.0.71",
+>>>>>>> 4b98de5b1 (Stash nv-flip work)
 ]
 
 [[package]]
@@ -4061,7 +4205,11 @@ dependencies = [
  "as-raw-xcb-connection",
  "gethostname",
  "libc",
+<<<<<<< HEAD
  "libloading 0.8.5",
+=======
+ "libloading 0.8.4",
+>>>>>>> 4b98de5b1 (Stash nv-flip work)
  "once_cell",
  "rustix 0.38.34",
  "x11rb-protocol",
@@ -4180,7 +4328,11 @@ checksum = "28cc31741b18cb6f1d5ff12f5b7523e3d6eb0852bbbad19d73905511d9849b95"
 dependencies = [
  "proc-macro2",
  "quote",
+<<<<<<< HEAD
  "syn 2.0.72",
+=======
+ "syn 2.0.71",
+>>>>>>> 4b98de5b1 (Stash nv-flip work)
  "synstructure",
 ]
 
@@ -4273,7 +4425,11 @@ checksum = "fa4f8080344d4671fb4e831a13ad1e68092748387dfc4f55e356242fae12ce3e"
 dependencies = [
  "proc-macro2",
  "quote",
+<<<<<<< HEAD
  "syn 2.0.72",
+=======
+ "syn 2.0.71",
+>>>>>>> 4b98de5b1 (Stash nv-flip work)
 ]
 
 [[package]]
@@ -4293,7 +4449,11 @@ checksum = "0ea7b4a3637ea8669cedf0f1fd5c286a17f3de97b8dd5a70a6c167a1730e63a5"
 dependencies = [
  "proc-macro2",
  "quote",
+<<<<<<< HEAD
  "syn 2.0.72",
+=======
+ "syn 2.0.71",
+>>>>>>> 4b98de5b1 (Stash nv-flip work)
  "synstructure",
 ]
 
@@ -4316,7 +4476,11 @@ checksum = "6eafa6dfb17584ea3e2bd6e76e0cc15ad7af12b09abdd1ca55961bed9b1063c6"
 dependencies = [
  "proc-macro2",
  "quote",
+<<<<<<< HEAD
  "syn 2.0.72",
+=======
+ "syn 2.0.71",
+>>>>>>> 4b98de5b1 (Stash nv-flip work)
 ]
 
 [[package]]

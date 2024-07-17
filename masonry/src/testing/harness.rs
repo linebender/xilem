@@ -194,13 +194,12 @@ impl TestHarness {
             window_size,
             background_color,
         };
-        const FONT_PATH: &str = concat!(
+        const ROBOTO: &[u8] = include_bytes!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/resources/fonts/roboto/Roboto-Regular.ttf"
-        );
-        harness
-            .render_root
-            .add_test_font(std::fs::read(FONT_PATH).unwrap());
+        ));
+        let data = ROBOTO.to_vec();
+        harness.render_root.add_test_font(data);
         harness.process_window_event(WindowEvent::Resize(window_size));
 
         harness
@@ -257,6 +256,7 @@ impl TestHarness {
         if std::env::var("SKIP_RENDER_TESTS").is_ok_and(|it| !it.is_empty()) {
             return RgbaImage::from_pixel(1, 1, Rgba([255, 255, 255, 255]));
         }
+        // TODO: Cache/share the context
         let mut context = RenderContext::new();
         let device_id =
             pollster::block_on(context.device(None)).expect("No compatible device found");
