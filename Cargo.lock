@@ -1830,6 +1830,7 @@ dependencies = [
  "image",
  "insta",
  "kurbo",
+ "nv-flip",
  "once_cell",
  "parley",
  "pollster",
@@ -2041,6 +2042,24 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.72",
+]
+
+[[package]]
+name = "nv-flip"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4ec3c68ac226790270de1d9d0eb5853832d82a34b62199ab2a1a4756df1a1974"
+dependencies = [
+ "nv-flip-sys",
+]
+
+[[package]]
+name = "nv-flip-sys"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "932e1eed40002ba70fccac6dab3b64be3301607c3ee88bd14989c4d4e1c1c993"
+dependencies = [
+ "cc",
 ]
 
 [[package]]

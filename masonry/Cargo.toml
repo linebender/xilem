@@ -43,6 +43,7 @@ accesskit_winit.workspace = true
 time = { version = "0.3.36", features = ["macros", "formatting"] }
 cursor-icon = "1.1.0"
 dpi.workspace = true
+nv-flip.workspace = true
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 web-time.workspace = true
