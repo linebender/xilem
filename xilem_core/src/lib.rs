@@ -3,7 +3,7 @@
 
 #![cfg_attr(not(test), no_std)]
 #![forbid(unsafe_code)]
-#![warn(missing_docs, unreachable_pub)]
+#![warn(missing_docs, unreachable_pub, unused_crate_dependencies)]
 // https://linebender.org/blog/doc-include
 //! <!-- This license link is in a .rustdoc-hidden section, but we may as well give the correct link -->
 //! [LICENSE]: https://github.com/linebender/xilem/blob/main/xilem_core/LICENSE
