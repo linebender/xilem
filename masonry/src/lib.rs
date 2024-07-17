@@ -79,7 +79,7 @@
 #![deny(clippy::trivially_copy_pass_by_ref)]
 // #![deny(rustdoc::broken_intra_doc_links)]
 // #![warn(missing_docs)]
-#![warn(unused_imports)]
+#![warn(unused_imports, /* TODO: clippy::print_stdout, clippy::print_stderr */)]
 #![allow(clippy::should_implement_trait)]
 #![allow(clippy::single_match)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
