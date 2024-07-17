@@ -37,25 +37,35 @@ rust.unexpected_cfgs = { level = "warn", check-cfg = [
 # (And cargo doesn't let us have platform specific lints here)
 rust.unsafe_code = "deny"
 
-# rust.missing_docs = "warn"
-# rust.unreachable_pub = "warn"
-# rust.unnameable_types = "warn"
-# rust.keyword_idents_2024 = "warn"
-# rust.missing_debug_implementations = "warn"
-# rust.non_ascii_idents = "warn"
-# rust.unit_bindings = "warn"
-# rust.unsafe_op_in_unsafe_fn = "warn"
-# rust.unused_import_braces = "warn"
-# rust.unused_lifetimes = "warn"
-# rust.non_local_definitions = "warn"
-# rust.single_use_lifetimes = "warn"
-# rust.let_underscore_drop = "warn"
-# rust.trivial_numeric_casts = "warn"
-# rust.unused_crate_dependencies = "warn"
-# rust.unused_macro_rules = "warn"
-# rust.unused_qualifications = "warn"
-# rust.variant_size_differences = "warn"
+rust.keyword_idents_2024 = "forbid"
+rust.non_ascii_idents = "forbid"
+rust.unsafe_op_in_unsafe_fn = "forbid"
+rust.non_local_definitions = "forbid"
 
+rust.unused_lifetimes = "warn"
+rust.unit_bindings = "warn"
+rust.unused_import_braces = "warn"
+rust.trivial_numeric_casts = "warn"
+rust.unused_macro_rules = "warn"
+rust.variant_size_differences = "warn"
+
+# Follow-ups for their own PRs, too noisy on their own
+
+# rust.let_underscore_drop = "warn"
+# rust.missing_debug_implementations = "warn"
+# rust.unused_qualifications = "warn"
+# rust.single_use_lifetimes = "warn"
+
+# Aspirational lints, not enabled for one reason or another
+
+# rust.missing_docs = "warn" # We have many as-yet undocumented items
+# rust.unreachable_pub = "warn" # Potentially controversial code style
+# rust.unnameable_types = "warn" # Requires lint_reasons rustc feature for exceptions
+
+
+# Lints which we still set in individual crates lib.rs
+# False positives in example targets - https://github.com/rust-lang/rust/issues/57274
+# rust.unused_crate_dependencies = "warn" 
 
 [workspace.dependencies]
 xilem_web_core = { version = "0.1.0", path = "xilem_web/xilem_web_core" }
