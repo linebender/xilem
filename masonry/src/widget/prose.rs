@@ -13,7 +13,7 @@ use vello::{peniko::BlendMode, Scene};
 
 use crate::widget::{LineBreaking, WidgetMut};
 use crate::{
-    text2::{TextBrush, TextStorage, TextWithSelection},
+    text::{TextBrush, TextStorage, TextWithSelection},
     widget::label::LABEL_X_PADDING,
     AccessCtx, AccessEvent, ArcStr, BoxConstraints, CursorIcon, EventCtx, LayoutCtx, LifeCycle,
     LifeCycleCtx, PaintCtx, PointerEvent, StatusChange, TextEvent, Widget, WidgetId,

@@ -7,7 +7,7 @@ use kurbo::{Line, Rect, Stroke};
 use parley::Layout;
 use vello::{kurbo::Affine, peniko::Fill, Scene};
 
-use crate::{text2::TextBrush, WidgetId};
+use crate::{text::TextBrush, WidgetId};
 
 /// A reference counted string slice.
 ///

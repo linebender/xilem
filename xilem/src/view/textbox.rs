@@ -1,7 +1,7 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::{text2::TextBrush, widget};
+use masonry::{text::TextBrush, widget};
 use xilem_core::{Mut, View};
 
 use crate::{Color, MessageResult, Pod, TextAlignment, ViewCtx, ViewId};

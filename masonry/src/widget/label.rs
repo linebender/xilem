@@ -12,7 +12,7 @@ use tracing::{trace, trace_span, Span};
 use vello::peniko::BlendMode;
 use vello::Scene;
 
-use crate::text2::{TextBrush, TextLayout, TextStorage};
+use crate::text::{TextBrush, TextLayout, TextStorage};
 use crate::widget::WidgetMut;
 use crate::{
     AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx,
