@@ -3179,9 +3179,9 @@ checksum = "830b7e5d4d90034032940e4ace0d9a9a057e7a45cd94e6c007832e39edb82f6d"
 
 [[package]]
 name = "vello"
-version = "0.2.0"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d08e6dd8a058d02acc1dff78487a0fa34c79bd9b85c01123d97b9134bfd48b24"
+checksum = "861c12258ed7e72762765e2c88a07bb528040ec4e5f87514d65b19b29a7cccf0"
 dependencies = [
  "bytemuck",
  "futures-intrusive",
@@ -3198,9 +3198,9 @@ dependencies = [
 
 [[package]]
 name = "vello_encoding"
-version = "0.2.0"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "77306d1ae01e2ef6a2e5dfd6f81696556ddee3e15f6a7422f360759672a0fd90"
+checksum = "e5d73777327877fa824a45c7195f850390dd3f91feb15f47d331db1fc01abf6d"
 dependencies = [
  "bytemuck",
  "guillotiere",
@@ -3211,9 +3211,9 @@ dependencies = [
 
 [[package]]
 name = "vello_shaders"
-version = "0.2.0"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3f3f31e3763e09febb449533238551bca5203aff4513324c8558b4c0b1c546fb"
+checksum = "13ab6bcb2b079c3cf57e964d1ba0b1f08901284be1c7f5cba34d3e0e08154bce"
 dependencies = [
  "bytemuck",
  "naga",
@@ -3446,9 +3446,9 @@ dependencies = [
 
 [[package]]
 name = "wgpu"
-version = "0.20.0"
+version = "0.20.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "32ff1bfee408e1028e2e3acbf6d32d98b08a5a059ccbf5f33305534453ba5d3e"
+checksum = "90e37c7b9921b75dfd26dd973fdcbce36f13dfa6e2dc82aece584e0ed48c355c"
 dependencies = [
  "arrayvec",
  "cfg-if",
@@ -3472,9 +3472,9 @@ dependencies = [
 
 [[package]]
 name = "wgpu-core"
-version = "0.20.0"
+version = "0.21.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ac6a86eaa5e763e59c73cf9e97d55fffd4dfda69fd8bda19589fcf851ddfef1f"
+checksum = "d50819ab545b867d8a454d1d756b90cd5f15da1f2943334ca314af10583c9d39"
 dependencies = [
  "arrayvec",
  "bit-vec",
@@ -3499,9 +3499,9 @@ dependencies = [
 
 [[package]]
 name = "wgpu-hal"
-version = "0.20.0"
+version = "0.21.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4d71c8ae05170583049b65ee562fd839fdc0b3e9ddb84f4e40c9d5f8ea0d4c8c"
+checksum = "172e490a87295564f3fcc0f165798d87386f6231b04d4548bca458cbbfd63222"
 dependencies = [
  "android_system_properties",
  "arrayvec",
