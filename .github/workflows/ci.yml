@@ -201,8 +201,13 @@ jobs:
           sudo apt-get update
           sudo apt install -y xvfb libegl1-mesa libgl1-mesa-dri libxcb-xfixes0-dev mesa-vulkan-drivers
 
+      - name: Install cargo-nextest
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-nextest
+
       - name: cargo test
-        run: cargo test --workspace --locked --all-features
+        run: cargo nextest run --workspace --locked --all-features
         env:
           SKIP_RENDER_TESTS: ${{ matrix.skip_gpu }}
           SKIP_RENDER_SNAPSHOTS: ${{ matrix.skip_gpu }}
