@@ -545,10 +545,7 @@ where
 #[doc(hidden)] // Implementation detail, public because of trait visibility rules
 pub struct AnyFlexChildState<State: 'static, Action: 'static> {
     /// Just the optional view state of the flex item view
-    #[allow(
-        clippy::type_complexity,
-        reason = "a lot of explicit typing necessary just to get to the `ViewState` of a `FlexItem`"
-    )]
+    #[allow(clippy::type_complexity)]
     inner: Option<
         <FlexItem<Box<AnyWidgetView<State, Action>>, State, Action> as View<
             State,
