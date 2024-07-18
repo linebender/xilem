@@ -27,7 +27,7 @@ impl AppState {
         }
         let title = self.new_todo.trim().to_string();
         self.new_todo.clear();
-        let id = self.next_id();
+        let id: u64 = self.next_id();
         self.todos.push(Todo::new(title, id));
         self.focus_new_todo = true;
         self.save();

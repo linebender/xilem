@@ -136,7 +136,7 @@ impl Widget for Align {
         ctx.set_paint_insets(my_insets);
         if self.height_factor.is_some() {
             let baseline_offset = ctx.child_baseline_offset(&self.child);
-            if baseline_offset > 0f64 {
+            if baseline_offset > 0_f64 {
                 ctx.set_baseline_offset(baseline_offset + extra_height / 2.0);
             }
         }

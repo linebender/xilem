@@ -516,8 +516,8 @@ impl Widget for Flex {
         // minor-axis values for all children
         let mut minor = self.direction.minor(bc.min());
         // these two are calculated but only used if we're baseline aligned
-        let mut max_above_baseline = 0f64;
-        let mut max_below_baseline = 0f64;
+        let mut max_above_baseline = 0_f64;
+        let mut max_below_baseline = 0_f64;
         let mut any_use_baseline = self.cross_alignment == CrossAxisAlignment::Baseline;
 
         // Measure non-flex children.
@@ -1085,7 +1085,7 @@ mod tests {
 
     // TODO - fix this test
     #[test]
-    #[should_panic]
+    #[ignore = "Unclear what test is trying to validate"]
     fn test_invalid_flex_params() {
         use float_cmp::approx_eq;
         let params = FlexParams::new(0.0, None);

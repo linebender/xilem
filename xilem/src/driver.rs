@@ -90,7 +90,7 @@ where
                 &mut self.state,
             )
         } else {
-            eprintln!("Got action {action:?} for unknown widget. Did you forget to use `with_action_widget`?");
+            tracing::error!("Got action {action:?} for unknown widget. Did you forget to use `with_action_widget`?");
             return;
         };
         let rebuild = match message_result {

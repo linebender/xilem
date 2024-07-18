@@ -1,8 +1,10 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-#![allow(clippy::comparison_chain)]
+// False-positive with dev-dependencies only used in examples
+#![cfg_attr(not(test), warn(unused_crate_dependencies))]
 #![warn(unnameable_types, unreachable_pub)]
+#![warn(clippy::print_stdout, clippy::print_stderr)]
 use std::{collections::HashMap, sync::Arc};
 
 use masonry::{

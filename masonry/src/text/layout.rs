@@ -503,7 +503,8 @@ impl<T: TextStorage> std::fmt::Debug for TextLayout<T> {
             .field("outdated?", &self.needs_rebuild())
             .field("width", &self.layout.width())
             .field("height", &self.layout.height())
-            .finish()
+            .field("links", &self.links)
+            .finish_non_exhaustive()
     }
 }
 
