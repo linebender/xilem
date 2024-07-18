@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #![allow(clippy::comparison_chain)]
-use std::collections::HashMap;
+#![warn(unnameable_types, unreachable_pub)]
+use std::{collections::HashMap, sync::Arc};
 
-use driver::MasonryDriver;
 use masonry::{
     dpi::LogicalSize,
     event_loop_runner,
@@ -15,7 +15,9 @@ use winit::{
     error::EventLoopError,
     window::{Window, WindowAttributes},
 };
-use xilem_core::{MessageResult, SuperElement, View, ViewElement, ViewId, ViewPathTracker};
+use xilem_core::{
+    AsyncCtx, MessageResult, RawProxy, SuperElement, View, ViewElement, ViewId, ViewPathTracker,
+};
 
 pub use masonry::{
     dpi,
@@ -27,36 +29,32 @@ pub use xilem_core as core;
 
 mod any_view;
 pub use any_view::AnyWidgetView;
+
 mod driver;
+pub use driver::{async_action, MasonryDriver, MasonryProxy, ASYNC_MARKER_WIDGET};
+
 pub mod view;
 
-pub struct Xilem<State, Logic, View>
-where
-    View: WidgetView<State>,
-{
-    pub root_widget: RootWidget<View::Widget>,
-    pub driver: MasonryDriver<State, Logic, View, View::ViewState>,
+/// Re-export of tokio as the async driver for Masonry
+pub use tokio;
+
+pub struct Xilem<State, Logic> {
+    state: State,
+    logic: Logic,
+    runtime: tokio::runtime::Runtime,
 }
 
-impl<State, Logic, View> Xilem<State, Logic, View>
+impl<State, Logic, View> Xilem<State, Logic>
 where
     Logic: FnMut(&mut State) -> View,
     View: WidgetView<State>,
 {
-    pub fn new(mut state: State, mut logic: Logic) -> Self {
-        let first_view = logic(&mut state);
-        let mut view_ctx = ViewCtx::default();
-        let (pod, view_state) = first_view.build(&mut view_ctx);
-        let root_widget = RootWidget::from_pod(pod.inner);
+    pub fn new(state: State, logic: Logic) -> Self {
+        let runtime = tokio::runtime::Runtime::new().unwrap();
         Xilem {
-            driver: MasonryDriver {
-                current_view: first_view,
-                logic,
-                state,
-                view_ctx,
-                view_state,
-            },
-            root_widget,
+            state,
+            logic,
+            runtime,
         }
     }
 
@@ -84,7 +82,7 @@ where
     // TODO: Make windows into a custom view
     pub fn run_windowed_in(
         self,
-        event_loop: EventLoopBuilder,
+        mut event_loop: EventLoopBuilder,
         window_attributes: WindowAttributes,
     ) -> Result<(), EventLoopError>
     where
@@ -92,7 +90,37 @@ where
         Logic: 'static,
         View: 'static,
     {
-        event_loop_runner::run(event_loop, window_attributes, self.root_widget, self.driver)
+        let event_loop = event_loop.build()?;
+        let proxy = event_loop.create_proxy();
+        let (root_widget, driver) = self.into_driver(Arc::new(MasonryProxy(proxy)));
+        event_loop_runner::run_with(event_loop, window_attributes, root_widget, driver)
+    }
+
+    pub fn into_driver(
+        mut self,
+        proxy: Arc<dyn RawProxy>,
+    ) -> (
+        impl Widget,
+        MasonryDriver<State, Logic, View, View::ViewState>,
+    ) {
+        let first_view = (self.logic)(&mut self.state);
+        let mut ctx = ViewCtx {
+            widget_map: WidgetMap::default(),
+            id_path: Vec::new(),
+            view_tree_changed: false,
+            proxy,
+            runtime: self.runtime,
+        };
+        let (pod, view_state) = first_view.build(&mut ctx);
+        let root_widget = RootWidget::from_pod(pod.inner);
+        let driver = MasonryDriver {
+            current_view: first_view,
+            logic: self.logic,
+            state: self.state,
+            ctx,
+            view_state,
+        };
+        (root_widget, driver)
     }
 }
 
@@ -149,15 +177,17 @@ where
     type Widget = W;
 }
 
-#[derive(Default)]
+type WidgetMap = HashMap<WidgetId, Vec<ViewId>>;
+
 pub struct ViewCtx {
     /// The map from a widgets id to its position in the View tree.
     ///
     /// This includes only the widgets which might send actions
-    /// This is currently never cleaned up
-    widget_map: HashMap<WidgetId, Vec<ViewId>>,
+    widget_map: WidgetMap,
     id_path: Vec<ViewId>,
     view_tree_changed: bool,
+    proxy: Arc<dyn RawProxy>,
+    runtime: tokio::runtime::Runtime,
 }
 
 impl ViewPathTracker for ViewCtx {
@@ -198,5 +228,15 @@ impl ViewCtx {
 
     pub fn teardown_leaf<E: Widget>(&mut self, widget: WidgetMut<E>) {
         self.widget_map.remove(&widget.ctx.widget_id());
+    }
+
+    pub fn runtime(&self) -> &tokio::runtime::Runtime {
+        &self.runtime
+    }
+}
+
+impl AsyncCtx for ViewCtx {
+    fn proxy(&mut self) -> Arc<dyn RawProxy> {
+        self.proxy.clone()
     }
 }

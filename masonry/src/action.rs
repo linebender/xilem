@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use std::any::Any;
-use std::sync::Arc;
 
 use crate::event::PointerButton;
 
@@ -20,7 +19,7 @@ pub enum Action {
     TextEntered(String),
     CheckboxChecked(bool),
     // FIXME - This is a huge hack
-    Other(Arc<dyn Any + Send + Sync>),
+    Other(Box<dyn Any + Send>),
 }
 
 impl PartialEq for Action {
@@ -30,9 +29,8 @@ impl PartialEq for Action {
             (Self::TextChanged(l0), Self::TextChanged(r0)) => l0 == r0,
             (Self::TextEntered(l0), Self::TextEntered(r0)) => l0 == r0,
             (Self::CheckboxChecked(l0), Self::CheckboxChecked(r0)) => l0 == r0,
-            #[allow(ambiguous_wide_pointer_comparisons)]
             // FIXME
-            (Self::Other(val_l), Self::Other(val_r)) => Arc::ptr_eq(val_l, val_r),
+            // (Self::Other(val_l), Self::Other(val_r)) => false,
             _ => false,
         }
     }

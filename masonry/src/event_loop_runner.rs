@@ -16,14 +16,27 @@ use winit::event::{
     DeviceEvent as WinitDeviceEvent, DeviceId, MouseButton as WinitMouseButton,
     WindowEvent as WinitWindowEvent,
 };
-use winit::event_loop::{ActiveEventLoop, EventLoopProxy};
+use winit::event_loop::ActiveEventLoop;
 use winit::window::{Window, WindowAttributes, WindowId};
 
 use crate::app_driver::{AppDriver, DriverCtx};
 use crate::dpi::LogicalPosition;
 use crate::event::{PointerButton, PointerState, WindowEvent};
 use crate::render_root::{self, RenderRoot, WindowSizePolicy};
-use crate::{PointerEvent, TextEvent, Widget};
+use crate::{PointerEvent, TextEvent, Widget, WidgetId};
+
+#[derive(Debug)]
+pub enum MasonryUserEvent {
+    AccessKit(accesskit_winit::Event),
+    // TODO: A more considered design here
+    Action(crate::Action, WidgetId),
+}
+
+impl From<accesskit_winit::Event> for MasonryUserEvent {
+    fn from(value: accesskit_winit::Event) -> Self {
+        Self::AccessKit(value)
+    }
+}
 
 impl From<WinitMouseButton> for PointerButton {
     fn from(button: WinitMouseButton) -> Self {
@@ -64,7 +77,7 @@ pub struct MasonryState<'a> {
     renderer: Option<Renderer>,
     // TODO: Winit doesn't seem to let us create these proxies from within the loop
     // The reasons for this are unclear
-    proxy: EventLoopProxy<accesskit_winit::Event>,
+    proxy: EventLoopProxy,
 
     // Per-Window state
     // In future, this will support multiple windows
@@ -79,11 +92,14 @@ struct MainState<'a> {
 /// The type of the event loop used by Masonry.
 ///
 /// This *will* be changed to allow custom event types, but is implemented this way for expedience
-pub type EventLoop = winit::event_loop::EventLoop<accesskit_winit::Event>;
+pub type EventLoop = winit::event_loop::EventLoop<MasonryUserEvent>;
 /// The type of the event loop builder used by Masonry.
 ///
 /// This *will* be changed to allow custom event types, but is implemented this way for expedience
-pub type EventLoopBuilder = winit::event_loop::EventLoopBuilder<accesskit_winit::Event>;
+pub type EventLoopBuilder = winit::event_loop::EventLoopBuilder<MasonryUserEvent>;
+
+/// A proxy used to send events to the event loop
+pub type EventLoopProxy = winit::event_loop::EventLoopProxy<MasonryUserEvent>;
 
 // --- MARK: RUN ---
 pub fn run(
@@ -97,12 +113,12 @@ pub fn run(
 ) -> Result<(), EventLoopError> {
     let event_loop = loop_builder.build()?;
 
-    run_with(window_attributes, event_loop, root_widget, app_driver)
+    run_with(event_loop, window_attributes, root_widget, app_driver)
 }
 
 pub fn run_with(
-    window: WindowAttributes,
     event_loop: EventLoop,
+    window: WindowAttributes,
     root_widget: impl Widget,
     app_driver: impl AppDriver + 'static,
 ) -> Result<(), EventLoopError> {
@@ -120,7 +136,7 @@ pub fn run_with(
     event_loop.run_app(&mut main_state)
 }
 
-impl ApplicationHandler<accesskit_winit::Event> for MainState<'_> {
+impl ApplicationHandler<MasonryUserEvent> for MainState<'_> {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         self.masonry_state.handle_resumed(event_loop);
     }
@@ -157,7 +173,7 @@ impl ApplicationHandler<accesskit_winit::Event> for MainState<'_> {
         );
     }
 
-    fn user_event(&mut self, event_loop: &ActiveEventLoop, event: accesskit_winit::Event) {
+    fn user_event(&mut self, event_loop: &ActiveEventLoop, event: MasonryUserEvent) {
         self.masonry_state
             .handle_user_event(event_loop, event, self.app_driver.as_mut());
     }
@@ -526,20 +542,29 @@ impl MasonryState<'_> {
     pub fn handle_user_event(
         &mut self,
         event_loop: &ActiveEventLoop,
-        event: accesskit_winit::Event,
+        event: MasonryUserEvent,
         app_driver: &mut dyn AppDriver,
     ) {
-        match event.window_event {
-            // Note that this event can be called at any time, even multiple times if
-            // the user restarts their screen reader.
-            accesskit_winit::WindowEvent::InitialTreeRequested => {
-                self.render_root
-                    .handle_window_event(WindowEvent::RebuildAccessTree);
+        match event {
+            MasonryUserEvent::AccessKit(event) => {
+                match event.window_event {
+                    // Note that this event can be called at any time, even multiple times if
+                    // the user restarts their screen reader.
+                    accesskit_winit::WindowEvent::InitialTreeRequested => {
+                        self.render_root
+                            .handle_window_event(WindowEvent::RebuildAccessTree);
+                    }
+                    accesskit_winit::WindowEvent::ActionRequested(action_request) => {
+                        self.render_root.root_on_access_event(action_request);
+                    }
+                    accesskit_winit::WindowEvent::AccessibilityDeactivated => {}
+                }
             }
-            accesskit_winit::WindowEvent::ActionRequested(action_request) => {
-                self.render_root.root_on_access_event(action_request);
-            }
-            accesskit_winit::WindowEvent::AccessibilityDeactivated => {}
+            MasonryUserEvent::Action(action, widget) => self
+                .render_root
+                .state
+                .signal_queue
+                .push_back(render_root::RenderRootSignal::Action(action, widget)),
         }
 
         self.handle_signals(event_loop, app_driver);

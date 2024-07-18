@@ -107,6 +107,7 @@ impl WidgetMut<'_, Label> {
         let ret = f(&mut self.widget.text_layout);
         if self.widget.text_layout.needs_rebuild() {
             self.ctx.request_layout();
+            self.ctx.request_paint();
         }
         ret
     }
@@ -151,7 +152,7 @@ impl Widget for Label {
                 // TODO: Set cursor if over link
             }
             PointerEvent::PointerDown(_button, _state) => {
-                // TODO: Start tracking currently pressed link
+                // TODO: Start tracking currently pressed
                 // (i.e. don't press)
             }
             PointerEvent::PointerUp(_button, _state) => {
