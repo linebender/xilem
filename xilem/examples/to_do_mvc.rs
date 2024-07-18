@@ -4,8 +4,8 @@
 // On Windows platform, don't show a console when opening the app.
 #![windows_subsystem = "windows"]
 
-use xilem::view::{button, checkbox, flex, textbox};
-use xilem::{Axis, EventLoop, WidgetView, Xilem};
+use xilem::view::{button, checkbox, flex, textbox, Axis};
+use xilem::{EventLoop, WidgetView, Xilem};
 
 struct Task {
     description: String,

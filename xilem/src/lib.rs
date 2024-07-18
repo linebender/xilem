@@ -20,7 +20,6 @@ use xilem_core::{MessageResult, SuperElement, View, ViewElement, ViewId, ViewPat
 pub use masonry::{
     dpi,
     event_loop_runner::{EventLoop, EventLoopBuilder},
-    widget::Axis,
     Color, TextAlignment,
 };
 pub use xilem_core as core;
@@ -29,8 +28,6 @@ mod any_view;
 pub use any_view::AnyWidgetView;
 mod driver;
 pub mod view;
-
-use view::{flex_item, FlexItem, FlexParams};
 
 pub struct Xilem<State, Logic, View>
 where
@@ -142,11 +139,14 @@ pub trait WidgetView<State, Action = ()>:
 {
     type Widget: Widget;
 
-    fn flex(self, params: impl Into<FlexParams>) -> FlexItem<Self, State, Action>
+    /// Returns a boxed type erased [`AnyWidgetView`]
+    fn boxed(self) -> Box<AnyWidgetView<State, Action>>
     where
+        State: 'static,
+        Action: 'static,
         Self: Sized,
     {
-        flex_item(self, params)
+        Box::new(self)
     }
 }
 

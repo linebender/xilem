@@ -7,7 +7,7 @@ use masonry::widget::MainAxisAlignment;
 use winit::error::EventLoopError;
 use xilem::{
     core::map_state,
-    view::{button, flex, label},
+    view::{button, flex, label, Axis},
     EventLoop, WidgetView, Xilem,
 };
 
@@ -36,7 +36,7 @@ fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> {
             |state: &mut AppState| state.global_count += 1,
         ),
     ))
-    .direction(xilem::Axis::Horizontal)
+    .direction(Axis::Horizontal)
     .main_axis_alignment(MainAxisAlignment::Center)
 }
 

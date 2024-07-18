@@ -7,7 +7,7 @@ use masonry::{
 };
 use winit::error::EventLoopError;
 use xilem::{
-    view::{button, flex, label, sized_box, FlexSpacer},
+    view::{button, flex, label, sized_box, Axis, FlexExt as _, FlexSpacer},
     EventLoop, WidgetView, Xilem,
 };
 
@@ -33,7 +33,7 @@ fn app_logic(data: &mut i32) -> impl WidgetView<i32> {
         }),
         FlexSpacer::Fixed(30.0),
     ))
-    .direction(xilem::Axis::Horizontal)
+    .direction(Axis::Horizontal)
     .cross_axis_alignment(CrossAxisAlignment::Center)
     .main_axis_alignment(MainAxisAlignment::Center)
 }
