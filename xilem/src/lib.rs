@@ -140,6 +140,16 @@ pub trait WidgetView<State, Action = ()>:
     type Widget: Widget;
 
     /// Returns a boxed type erased [`AnyWidgetView`]
+    ///
+    /// # Examples
+    /// ```
+    /// use xilem::{view::label, WidgetView};
+    ///
+    /// # fn view<State: 'static>() -> impl WidgetView<State> {
+    /// label("a label").boxed()
+    /// # }
+    ///
+    /// ```
     fn boxed(self) -> Box<AnyWidgetView<State, Action>>
     where
         State: 'static,
