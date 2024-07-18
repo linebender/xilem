@@ -14,7 +14,7 @@ use crate::action::Action;
 use crate::dpi::LogicalPosition;
 use crate::promise::PromiseToken;
 use crate::render_root::{RenderRootSignal, RenderRootState};
-use crate::text2::TextBrush;
+use crate::text::TextBrush;
 use crate::text_helpers::{ImeChangeSignal, TextFieldRegistration};
 use crate::tree_arena::TreeArenaTokenMut;
 use crate::widget::{CursorChange, WidgetMut, WidgetState};

@@ -12,7 +12,7 @@ use vello::Scene;
 use crate::action::Action;
 use crate::kurbo::{BezPath, Cap, Join, Size};
 use crate::paint_scene_helpers::{fill_lin_gradient, stroke, UnitPoint};
-use crate::text2::TextStorage;
+use crate::text::TextStorage;
 use crate::widget::{Label, WidgetMut};
 use crate::{
     theme, AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, LayoutCtx, LifeCycle,

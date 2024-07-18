@@ -545,7 +545,10 @@ where
 #[doc(hidden)] // Implementation detail, public because of trait visibility rules
 pub struct AnyFlexChildState<State: 'static, Action: 'static> {
     /// Just the optional view state of the flex item view
-    #[allow(clippy::type_complexity)]
+    #[allow(
+        clippy::type_complexity,
+        reason = "a lot of explicit typing necessary just to get to the `ViewState` of a `FlexItem`"
+    )]
     inner: Option<
         <FlexItem<Box<AnyWidgetView<State, Action>>, State, Action> as View<
             State,
@@ -568,10 +571,11 @@ where
     type ViewState = AnyFlexChildState<State, Action>;
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        let gen = 0;
+        let generation = 0;
         let (element, view_state) = match self {
             AnyFlexChild::Item(flex_item) => {
-                let (element, state) = ctx.with_id(ViewId::new(gen), |ctx| flex_item.build(ctx));
+                let (element, state) =
+                    ctx.with_id(ViewId::new(generation), |ctx| flex_item.build(ctx));
                 (element, Some(state))
             }
             AnyFlexChild::Spacer(spacer) => {
@@ -585,7 +589,7 @@ where
             element,
             AnyFlexChildState {
                 inner: view_state,
-                generation: gen,
+                generation,
             },
         )
     }

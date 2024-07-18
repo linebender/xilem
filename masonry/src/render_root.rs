@@ -21,7 +21,7 @@ use crate::debug_logger::DebugLogger;
 use crate::dpi::{LogicalPosition, LogicalSize, PhysicalSize};
 use crate::event::{PointerEvent, TextEvent, WindowEvent};
 use crate::kurbo::Point;
-use crate::text2::TextBrush;
+use crate::text::TextBrush;
 use crate::tree_arena::TreeArena;
 use crate::widget::{WidgetMut, WidgetRef, WidgetState};
 use crate::{

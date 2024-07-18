@@ -41,8 +41,7 @@ It's not possible in Rust currently to check whether the (content of the) callba
 
     /// Create a new `Memoize` view.
     pub fn new(data: D, child_cb: F) -> Self {
-        #[allow(clippy::let_unit_value)]
-        let _ = Self::ASSERT_CONTEXTLESS_FN;
+        let () = Self::ASSERT_CONTEXTLESS_FN;
         Memoize { data, child_cb }
     }
 }

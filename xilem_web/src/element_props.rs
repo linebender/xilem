@@ -11,7 +11,7 @@ pub struct ElementProps {
     pub(crate) attributes: Option<Box<Attributes>>,
     pub(crate) classes: Option<Box<Classes>>,
     pub(crate) styles: Option<Box<Styles>>,
-    pub children: Vec<AnyPod>,
+    pub(crate) children: Vec<AnyPod>,
 }
 
 impl ElementProps {

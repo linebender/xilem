@@ -56,6 +56,7 @@ impl<W: Widget> AnyElement<Pod<W>> for Pod<DynWidget> {
 /// A widget whose only child can be dynamically replaced.
 ///
 /// `WidgetPod<Box<dyn Widget>>` doesn't expose this possibility.
+#[allow(unnameable_types)] // This is an implementation detail of `AnyWidgetView`
 pub struct DynWidget {
     inner: WidgetPod<Box<dyn Widget>>,
 }

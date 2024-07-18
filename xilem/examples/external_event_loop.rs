@@ -5,8 +5,11 @@
 //! Currently, this supports running as its own window alongside an existing application, or
 //! accessing raw events from winit.
 //! Support for more custom embeddings would be welcome, but needs more design work
+use std::sync::Arc;
+
 use masonry::{
     app_driver::AppDriver,
+    event_loop_runner::MasonryUserEvent,
     widget::{CrossAxisAlignment, MainAxisAlignment},
     ArcStr,
 };
@@ -18,7 +21,7 @@ use winit::{
 };
 use xilem::{
     view::{button, flex, label, sized_box, Axis},
-    EventLoop, WidgetView, Xilem,
+    EventLoop, MasonryProxy, WidgetView, Xilem,
 };
 
 /// A component to make a bigger than usual button
@@ -50,7 +53,7 @@ struct ExternalApp {
     app_driver: Box<dyn AppDriver>,
 }
 
-impl ApplicationHandler<accesskit_winit::Event> for ExternalApp {
+impl ApplicationHandler<MasonryUserEvent> for ExternalApp {
     fn resumed(&mut self, event_loop: &winit::event_loop::ActiveEventLoop) {
         self.masonry_state.handle_resumed(event_loop);
     }
@@ -80,7 +83,7 @@ impl ApplicationHandler<accesskit_winit::Event> for ExternalApp {
     fn user_event(
         &mut self,
         event_loop: &winit::event_loop::ActiveEventLoop,
-        event: accesskit_winit::Event,
+        event: MasonryUserEvent,
     ) {
         self.masonry_state
             .handle_user_event(event_loop, event, self.app_driver.as_mut());
@@ -137,15 +140,14 @@ fn main() -> Result<(), EventLoopError> {
     let xilem = Xilem::new(0, app_logic);
 
     let event_loop = EventLoop::with_user_event().build().unwrap();
-    let masonry_state = masonry::event_loop_runner::MasonryState::new(
-        window_attributes,
-        &event_loop,
-        xilem.root_widget,
-    );
+    let proxy = MasonryProxy::new(event_loop.create_proxy());
+    let (widget, driver) = xilem.into_driver(Arc::new(proxy));
+    let masonry_state =
+        masonry::event_loop_runner::MasonryState::new(window_attributes, &event_loop, widget);
 
     let mut app = ExternalApp {
         masonry_state,
-        app_driver: Box::new(xilem.driver),
+        app_driver: Box::new(driver),
     };
     event_loop.run_app(&mut app)
 }

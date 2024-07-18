@@ -12,7 +12,7 @@ use tracing::{trace, trace_span, Span};
 use vello::peniko::BlendMode;
 use vello::Scene;
 
-use crate::text2::{TextBrush, TextLayout, TextStorage};
+use crate::text::{TextBrush, TextLayout, TextStorage};
 use crate::widget::WidgetMut;
 use crate::{
     AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx,
@@ -107,6 +107,7 @@ impl WidgetMut<'_, Label> {
         let ret = f(&mut self.widget.text_layout);
         if self.widget.text_layout.needs_rebuild() {
             self.ctx.request_layout();
+            self.ctx.request_paint();
         }
         ret
     }
@@ -151,7 +152,7 @@ impl Widget for Label {
                 // TODO: Set cursor if over link
             }
             PointerEvent::PointerDown(_button, _state) => {
-                // TODO: Start tracking currently pressed link
+                // TODO: Start tracking currently pressed
                 // (i.e. don't press)
             }
             PointerEvent::PointerUp(_button, _state) => {
@@ -251,7 +252,7 @@ impl Widget for Label {
     }
 
     fn accessibility_role(&self) -> Role {
-        Role::StaticText
+        Role::Label
     }
 
     fn accessibility(&mut self, ctx: &mut AccessCtx) {

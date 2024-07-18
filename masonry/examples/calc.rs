@@ -5,9 +5,7 @@
 
 // On Windows platform, don't show a console when opening the app.
 #![windows_subsystem = "windows"]
-#![allow(clippy::single_match)]
-
-use std::sync::Arc;
+#![allow(variant_size_differences, clippy::single_match)]
 
 use accesskit::{DefaultActionVerb, Role};
 use masonry::app_driver::{AppDriver, DriverCtx};
@@ -156,7 +154,7 @@ impl Widget for CalcButton {
             }
             PointerEvent::PointerUp(_, _) => {
                 if ctx.is_active() && !ctx.is_disabled() {
-                    ctx.submit_action(Action::Other(Arc::new(self.action)));
+                    ctx.submit_action(Action::Other(Box::new(self.action)));
                     ctx.request_paint();
                     trace!("CalcButton {:?} released", ctx.widget_id());
                 }
@@ -176,7 +174,7 @@ impl Widget for CalcButton {
         if event.target == ctx.widget_id() {
             match event.action {
                 accesskit::Action::Default => {
-                    ctx.submit_action(Action::Other(Arc::new(self.action)));
+                    ctx.submit_action(Action::Other(Box::new(self.action)));
                     ctx.request_paint();
                 }
                 _ => {}

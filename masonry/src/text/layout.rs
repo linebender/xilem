@@ -5,17 +5,16 @@
 
 use std::rc::Rc;
 
-use kurbo::{Line, Point, Rect, Size};
+use kurbo::{Affine, Line, Point, Rect, Size};
+use parley::context::RangedBuilder;
+use parley::fontique::{Style, Weight};
 use parley::layout::{Alignment, Cursor};
-use parley::style::{FontFamily, GenericFamily};
-use parley::{Layout, LayoutContext};
-use vello::peniko::{Brush, Color};
+use parley::style::{Brush as BrushTrait, FontFamily, FontStack, GenericFamily, StyleProperty};
+use parley::{FontContext, Layout, LayoutContext};
+use vello::peniko::{self, Color, Gradient};
+use vello::Scene;
 
-use crate::PaintCtx;
-
-use super::attribute::Link;
-use super::font_descriptor::FontDescriptor;
-use super::storage::TextStorage;
+use super::{Link, TextStorage};
 
 /// A component for displaying text on screen.
 ///
@@ -35,20 +34,67 @@ use super::storage::TextStorage;
 /// [`update`]: trait.Widget.html#tymethod.update
 /// [`needs_rebuild_after_update`]: #method.needs_rebuild_after_update
 /// [`rebuild_if_needed`]: #method.rebuild_if_needed
+///
+/// TODO: Update docs to mentionParley
 #[derive(Clone)]
 pub struct TextLayout<T> {
-    // TODO - remove Option
-    text: Option<T>,
-    font: FontDescriptor,
-    // when set, this will be used to override the size in he font descriptor.
-    // This provides an easy way to change only the font size, while still
-    // using a `FontDescriptor` in the `Env`.
-    text_size_override: Option<f32>,
-    text_color: Color,
-    layout: Option<Layout<Brush>>,
-    wrap_width: f64,
+    text: T,
+    // TODO: Find a way to let this use borrowed data
+    scale: f32,
+
+    brush: TextBrush,
+    font: FontStack<'static>,
+    text_size: f32,
+    weight: Weight,
+    style: Style,
+
     alignment: Alignment,
+    max_advance: Option<f32>,
+
     links: Rc<[(Rect, usize)]>,
+
+    needs_layout: bool,
+    needs_line_breaks: bool,
+    layout: Layout<TextBrush>,
+    scratch_scene: Scene,
+}
+
+/// A custom brush for `Parley`, enabling using Parley to pass-through
+/// which glyphs are selected/highlighted
+#[derive(Clone, Debug, PartialEq)]
+pub enum TextBrush {
+    Normal(peniko::Brush),
+    Highlight {
+        text: peniko::Brush,
+        fill: peniko::Brush,
+    },
+}
+
+impl BrushTrait for TextBrush {}
+
+impl From<peniko::Brush> for TextBrush {
+    fn from(value: peniko::Brush) -> Self {
+        Self::Normal(value)
+    }
+}
+
+impl From<Gradient> for TextBrush {
+    fn from(value: Gradient) -> Self {
+        Self::Normal(value.into())
+    }
+}
+
+impl From<Color> for TextBrush {
+    fn from(value: Color) -> Self {
+        Self::Normal(value.into())
+    }
+}
+
+// Parley requires their Brush implementations to implement Default
+impl Default for TextBrush {
+    fn default() -> Self {
+        Self::Normal(Default::default())
+    }
 }
 
 /// Metrics describing the layout text.
@@ -65,80 +111,129 @@ pub struct LayoutMetrics {
 
 impl<T> TextLayout<T> {
     /// Create a new `TextLayout` object.
-    ///
-    /// You must set the text ([`set_text`]) before using this object.
-    ///
-    /// [`set_text`]: #method.set_text
-    pub fn new() -> Self {
+    pub fn new(text: T, text_size: f32) -> Self {
         TextLayout {
-            text: None,
-            font: FontDescriptor::new(FontFamily::Generic(GenericFamily::SystemUi)),
-            text_color: crate::theme::TEXT_COLOR,
-            text_size_override: None,
-            layout: None,
-            wrap_width: f64::INFINITY,
+            text,
+            scale: 1.0,
+
+            brush: crate::theme::TEXT_COLOR.into(),
+            font: FontStack::Single(FontFamily::Generic(GenericFamily::SansSerif)),
+            text_size,
+            weight: Weight::NORMAL,
+            style: Style::Normal,
+
+            max_advance: None,
             alignment: Default::default(),
+
             links: Rc::new([]),
+
+            needs_layout: true,
+            needs_line_breaks: true,
+            layout: Layout::new(),
+            scratch_scene: Scene::new(),
         }
     }
 
-    /// Set the default text color for this layout.
-    pub fn set_text_color(&mut self, color: Color) {
-        if color != self.text_color {
-            self.text_color = color;
-            self.layout = None;
+    /// Mark that the inner layout needs to be updated.
+    ///
+    /// This should be used if your `T` has interior mutability
+    pub fn invalidate(&mut self) {
+        self.needs_layout = true;
+        self.needs_line_breaks = true;
+    }
+
+    /// Set the scaling factor
+    pub fn set_scale(&mut self, scale: f32) {
+        if scale != self.scale {
+            self.scale = scale;
+            self.invalidate();
         }
     }
 
-    /// Set the default font.
+    /// Set the default brush used for the layout.
     ///
-    /// The argument is a [`FontDescriptor`].
-    ///
-    /// [`FontDescriptor`]: struct.FontDescriptor.html
-    pub fn set_font(&mut self, font: FontDescriptor) {
+    /// This is the non-layout impacting styling (primarily colour)
+    /// used when displaying the text
+    #[doc(alias = "set_color")]
+    pub fn set_brush(&mut self, brush: impl Into<TextBrush>) {
+        let brush = brush.into();
+        if brush != self.brush {
+            self.brush = brush;
+            self.invalidate();
+        }
+    }
+
+    /// Set the default font stack.
+    pub fn set_font(&mut self, font: FontStack<'static>) {
         if font != self.font {
             self.font = font;
-            self.layout = None;
-            self.text_size_override = None;
+            self.invalidate();
         }
     }
 
     /// Set the font size.
-    ///
-    /// This overrides the size in the [`FontDescriptor`] provided to [`set_font`].
-    ///
-    /// [`set_font`]: #method.set_font.html
-    /// [`FontDescriptor`]: struct.FontDescriptor.html
+    #[doc(alias = "set_font_size")]
     pub fn set_text_size(&mut self, size: f32) {
-        if Some(&size) != self.text_size_override.as_ref() {
-            self.text_size_override = Some(size);
-            self.layout = None;
+        if size != self.text_size {
+            self.text_size = size;
+            self.invalidate();
+        }
+    }
+
+    /// Set the font weight.
+    pub fn set_weight(&mut self, weight: Weight) {
+        if weight != self.weight {
+            self.weight = weight;
+            self.invalidate();
+        }
+    }
+
+    /// Set the font style.
+    pub fn set_style(&mut self, style: Style) {
+        if style != self.style {
+            self.style = style;
+            self.invalidate();
+        }
+    }
+
+    /// Set the [`Alignment`] for this layout.
+    pub fn set_text_alignment(&mut self, alignment: Alignment) {
+        if self.alignment != alignment {
+            self.alignment = alignment;
+            self.invalidate();
         }
     }
 
     /// Set the width at which to wrap words.
     ///
-    /// You may pass `f64::INFINITY` to disable word wrapping
+    /// You may pass `None` to disable word wrapping
     /// (the default behaviour).
-    pub fn set_wrap_width(&mut self, width: f64) {
-        let width = width.max(0.0);
-        // 1e-4 is an arbitrary small-enough value that we don't care to rewrap
-        if (width - self.wrap_width).abs() > 1e-4 {
-            self.wrap_width = width;
-            self.layout = None;
+    pub fn set_max_advance(&mut self, max_advance: Option<f32>) {
+        let max_advance = max_advance.map(|it| it.max(0.0));
+        if self.max_advance.is_some() != max_advance.is_some()
+            || self
+                .max_advance
+                .zip(max_advance)
+                // 1e-4 is an arbitrary small-enough value that we don't care to rewrap
+                .map(|(old, new)| (old - new).abs() >= 1e-4)
+                .unwrap_or(false)
+        {
+            self.max_advance = max_advance;
+            self.needs_line_breaks = true;
         }
     }
 
-    /// Set the [`TextAlignment`] for this layout.
+    /// Returns `true` if this layout needs to be rebuilt.
     ///
-    /// [`TextAlignment`]: enum.TextAlignment.html
-    pub fn set_text_alignment(&mut self, alignment: Alignment) {
-        if self.alignment != alignment {
-            self.alignment = alignment;
-            self.layout = None;
-        }
+    /// This happens (for instance) after style attributes are modified.
+    ///
+    /// This does not account for things like the text changing, handling that
+    /// is the responsibility of the user.
+    pub fn needs_rebuild(&self) -> bool {
+        self.needs_layout || self.needs_line_breaks
     }
 
+    // TODO: What are the valid use cases for this, where we shouldn't use a run-specific check instead?
     // /// Returns `true` if this layout's text appears to be right-to-left.
     // ///
     // /// See [`piet::util::first_strong_rtl`] for more information.
@@ -150,99 +245,85 @@ impl<T> TextLayout<T> {
 }
 
 impl<T: TextStorage> TextLayout<T> {
-    /// Create a new `TextLayout` with the provided text.
-    ///
-    /// This is useful when the text is not tied to application data.
-    pub fn from_text(text: impl Into<T>) -> Self {
-        let mut this = TextLayout::new();
-        this.set_text(text.into());
-        this
-    }
-
-    /// Returns `true` if this layout needs to be rebuilt.
-    ///
-    /// This happens (for instance) after style attributes are modified.
-    ///
-    /// This does not account for things like the text changing, handling that
-    /// is the responsibility of the user.
-    pub fn needs_rebuild(&self) -> bool {
-        self.layout.is_none()
+    #[track_caller]
+    fn assert_rebuilt(&self, method: &str) {
+        if self.needs_layout || self.needs_line_breaks {
+            debug_panic!(
+                "TextLayout::{method} called without rebuilding layout object. Text was '{}'",
+                self.text.as_str().chars().take(250).collect::<String>()
+            );
+        }
     }
 
     /// Set the text to display.
     pub fn set_text(&mut self, text: T) {
-        if self.text.is_none() || !self.text.as_ref().unwrap().maybe_eq(&text) {
-            self.text = Some(text);
-            self.layout = None;
+        if !self.text.maybe_eq(&text) {
+            self.text = text;
+            self.invalidate();
         }
     }
 
     /// Returns the [`TextStorage`] backing this layout, if it exists.
-    pub fn text(&self) -> Option<&T> {
-        self.text.as_ref()
+    pub fn text(&self) -> &T {
+        &self.text
     }
 
-    /// Returns the length of the [`TextStorage`] backing this layout, if it exists.
-    pub fn text_len(&self) -> usize {
-        if let Some(text) = &self.text {
-            text.as_str().len()
-        } else {
-            0
-        }
+    /// Returns the [`TextStorage`] backing this layout, if it exists.
+    ///
+    /// Invalidates the layout and so should only be used when definitely applying an edit
+    pub fn text_mut(&mut self) -> &mut T {
+        self.invalidate();
+        &mut self.text
     }
 
-    /// Returns the inner Piet [`TextLayout`] type.
-    ///
-    /// [`TextLayout`]: ./piet/trait.TextLayout.html
-    pub fn layout(&self) -> Option<&Layout<Brush>> {
-        self.layout.as_ref()
+    /// Returns the inner Parley [`Layout`] value.
+    pub fn layout(&self) -> &Layout<TextBrush> {
+        self.assert_rebuilt("layout");
+        &self.layout
     }
 
-    /// The size of the laid-out text.
+    /// The size of the laid-out text, excluding any trailing whitespace.
     ///
-    /// This is not meaningful until [`rebuild_if_needed`] has been called.
-    ///
-    /// [`rebuild_if_needed`]: #method.rebuild_if_needed
+    /// This is not meaningful until [`Self::rebuild`] has been called.
     pub fn size(&self) -> Size {
-        self.layout
-            .as_ref()
-            .map(|layout| Size::new(layout.width().into(), layout.height().into()))
-            .unwrap_or_default()
+        self.assert_rebuilt("size");
+        Size::new(self.layout.width().into(), self.layout.height().into())
+    }
+
+    /// The size of the laid-out text, including any trailing whitespace.
+    ///
+    /// This is not meaningful until [`Self::rebuild`] has been called.
+    pub fn full_size(&self) -> Size {
+        self.assert_rebuilt("full_size");
+        Size::new(self.layout.full_width().into(), self.layout.height().into())
     }
 
     /// Return the text's [`LayoutMetrics`].
     ///
-    /// This is not meaningful until [`rebuild_if_needed`] has been called.
-    ///
-    /// [`rebuild_if_needed`]: #method.rebuild_if_needed
-    /// [`LayoutMetrics`]: struct.LayoutMetrics.html
+    /// This is not meaningful until [`Self::rebuild`] has been called.
     pub fn layout_metrics(&self) -> LayoutMetrics {
-        debug_assert!(
-            self.layout.is_some(),
-            "TextLayout::layout_metrics called without rebuilding layout object. Text was '{}'",
-            self.text().as_ref().map(|s| s.as_str()).unwrap_or_default()
-        );
+        self.assert_rebuilt("layout_metrics");
 
-        if let Some(layout) = self.layout.as_ref() {
-            let first_baseline = layout.get(0).unwrap().metrics().baseline;
-            let size = Size::new(layout.width().into(), layout.height().into());
-            LayoutMetrics {
-                size,
-                first_baseline,
-                trailing_whitespace_width: layout.width(),
-            }
-        } else {
-            LayoutMetrics::default()
+        let first_baseline = self.layout.get(0).unwrap().metrics().baseline;
+        let size = Size::new(self.layout.width().into(), self.layout.height().into());
+        LayoutMetrics {
+            size,
+            first_baseline,
+            trailing_whitespace_width: self.layout.full_width(),
         }
     }
 
     /// For a given `Point` (relative to this object's origin), returns index
     /// into the underlying text of the nearest grapheme boundary.
-    pub fn text_position_for_point(&self, point: Point) -> usize {
-        self.layout
-            .as_ref()
-            .map(|layout| Cursor::from_point(layout, point.x as f32, point.y as f32).insert_point)
-            .unwrap_or_default()
+    ///
+    /// This is not meaningful until [`Self::rebuild`] has been called.
+    pub fn cursor_for_point(&self, point: Point) -> Cursor {
+        self.assert_rebuilt("text_position_for_point");
+
+        // TODO: This is a mostly good first pass, but doesn't handle cursor positions in
+        // grapheme clusters within a parley cluster.
+        // We can also try
+        Cursor::from_point(&self.layout, point.x as f32, point.y as f32)
     }
 
     /// Given the utf-8 position of a character boundary in the underlying text,
@@ -252,20 +333,38 @@ impl<T: TextStorage> TextLayout<T> {
     /// # Panics
     ///
     /// Panics if `text_pos` is not a character boundary.
-    pub fn point_for_text_position(&self, text_pos: usize) -> Point {
-        self.layout
-            .as_ref()
-            .map(|layout| {
-                let from_position = Cursor::from_position(layout, text_pos, /* TODO */ false);
+    ///
+    /// This is not meaningful until [`Self::rebuild`] has been called.
+    pub fn cursor_for_text_position(&self, text_pos: usize) -> Cursor {
+        self.assert_rebuilt("cursor_for_text_position");
 
-                Point::new(
-                    from_position.advance as f64,
-                    (from_position.baseline + from_position.offset) as f64,
-                )
-            })
-            .unwrap_or_default()
+        // TODO: As a reminder, `is_leading` is not very useful to us; we don't know this ahead of time
+        // We're going to need to do quite a bit of remedial work on these
+        // e.g. to handle a inside a ligature made of multiple (unicode) grapheme clusters
+        // https://raphlinus.github.io/text/2020/10/26/text-layout.html#shaping-cluster
+        // But we're choosing to defer this work
+        // This also needs to handle affinity.
+        Cursor::from_position(&self.layout, text_pos, true)
     }
 
+    /// Given the utf-8 position of a character boundary in the underlying text,
+    /// return the `Point` (relative to this object's origin) representing the
+    /// boundary of the containing grapheme.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `text_pos` is not a character boundary.
+    ///
+    /// This is not meaningful until [`Self::rebuild`] has been called.
+    pub fn point_for_text_position(&self, text_pos: usize) -> Point {
+        let cursor = self.cursor_for_text_position(text_pos);
+        Point::new(
+            cursor.advance as f64,
+            (cursor.baseline + cursor.offset) as f64,
+        )
+    }
+
+    // TODO: needed for text selection
     // /// Given a utf-8 range in the underlying text, return a `Vec` of `Rect`s
     // /// representing the nominal bounding boxes of the text in that range.
     // ///
@@ -273,30 +372,28 @@ impl<T: TextStorage> TextLayout<T> {
     // ///
     // /// Panics if the range start or end is not a character boundary.
     // pub fn rects_for_range(&self, range: Range<usize>) -> Vec<Rect> {
-    //     self.layout
-    //         .as_ref()
-    //         .map(|layout| layout.rects_for_range(range))
-    //         .unwrap_or_default()
+    //     self.layout.rects_for_range(range)
     // }
 
     /// Given the utf-8 position of a character boundary in the underlying text,
     /// return a `Line` suitable for drawing a vertical cursor at that boundary.
+    ///
+    /// This is not meaningful until [`Self::rebuild`] has been called.
+    // TODO: This is too simplistic. See https://raphlinus.github.io/text/2020/10/26/text-layout.html#shaping-cluster
+    // for example. This would break in a `fi` ligature
     pub fn cursor_line_for_text_position(&self, text_pos: usize) -> Line {
-        self.layout
-            .as_ref()
-            .map(|layout| {
-                let from_position = Cursor::from_position(layout, text_pos, /* TODO */ false);
+        let from_position = self.cursor_for_text_position(text_pos);
 
-                let line_metrics = from_position.path.line(layout).unwrap().metrics();
+        let line = from_position.path.line(&self.layout).unwrap();
+        let line_metrics = line.metrics();
 
-                let p1 = (from_position.advance as f64, line_metrics.baseline as f64);
-                let p2 = (
-                    from_position.advance as f64,
-                    (line_metrics.baseline + line_metrics.size()) as f64,
-                );
-                Line::new(p1, p2)
-            })
-            .unwrap_or_else(|| Line::new(Point::ZERO, Point::ZERO))
+        let baseline = line_metrics.baseline + line_metrics.descent;
+        let p1 = (from_position.offset as f64, baseline as f64);
+        let p2 = (
+            from_position.offset as f64,
+            (baseline - line_metrics.size()) as f64,
+        );
+        Line::new(p1, p2)
     }
 
     /// Returns the [`Link`] at the provided point (relative to the layout's origin) if one exists.
@@ -312,8 +409,7 @@ impl<T: TextStorage> TextLayout<T> {
             .iter()
             .rfind(|(hit_box, _)| hit_box.contains(pos))?;
 
-        let text = self.text()?;
-        text.links().get(*i)
+        self.text.links().get(*i)
     }
 
     /// Rebuild the inner layout as needed.
@@ -324,94 +420,96 @@ impl<T: TextStorage> TextLayout<T> {
     ///
     /// This method should be called whenever any of these things may have changed.
     /// A simple way to ensure this is correct is to always call this method
-    /// as part of your widget's [`layout`] method.
+    /// as part of your widget's [`layout`][crate::Widget::layout] method.
+    pub fn rebuild(
+        &mut self,
+        font_ctx: &mut FontContext,
+        layout_ctx: &mut LayoutContext<TextBrush>,
+    ) {
+        self.rebuild_with_attributes(font_ctx, layout_ctx, |builder| builder);
+    }
+
+    /// Rebuild the inner layout as needed, adding attributes to the underlying layout.
     ///
-    /// [`layout`]: trait.Widget.html#method.layout
-    pub fn rebuild_if_needed(&mut self, factory: &mut LayoutContext<Brush>) {
-        if let Some(text) = &self.text {
-            if self.layout.is_none() {
-                let font = self.font.clone();
-                let color = self.text_color;
-                let size_override = self.text_size_override;
+    /// See [`Self::rebuild`] for more information
+    pub fn rebuild_with_attributes(
+        &mut self,
+        font_ctx: &mut FontContext,
+        layout_ctx: &mut LayoutContext<TextBrush>,
+        attributes: impl for<'b> FnOnce(
+            RangedBuilder<'b, TextBrush, &'b str>,
+        ) -> RangedBuilder<'b, TextBrush, &'b str>,
+    ) {
+        if self.needs_layout {
+            self.needs_layout = false;
 
-                let descriptor = if let Some(size) = size_override {
-                    font.with_size(size)
-                } else {
-                    font
-                };
+            let mut builder = layout_ctx.ranged_builder(font_ctx, self.text.as_str(), self.scale);
+            builder.push_default(&StyleProperty::Brush(self.brush.clone()));
+            builder.push_default(&StyleProperty::FontSize(self.text_size));
+            builder.push_default(&StyleProperty::FontStack(self.font));
+            builder.push_default(&StyleProperty::FontWeight(self.weight));
+            builder.push_default(&StyleProperty::FontStyle(self.style));
+            // For more advanced features (e.g. variable font axes), these can be set in add_attributes
 
-                let builder = factory.ranged_builder(fcx, text, 1.0);
-                builder
-                    .push_default(StyleProperty)
-                    .new_text_layout(text.clone())
-                    .max_width(self.wrap_width)
-                    .alignment(self.alignment)
-                    .font(descriptor.family.clone(), descriptor.size)
-                    .default_attribute(descriptor.weight)
-                    .default_attribute(descriptor.style);
-                // .default_attribute(TextAttribute::TextColor(color));
-                let layout = text.add_attributes(builder).build().unwrap();
+            let builder = self.text.add_attributes(builder);
+            let mut builder = attributes(builder);
+            builder.build_into(&mut self.layout);
 
-                self.links = text
-                    .links()
-                    .iter()
-                    .enumerate()
-                    .flat_map(|(i, link)| {
-                        layout
-                            .rects_for_range(link.range())
-                            .into_iter()
-                            .map(move |rect| (rect, i))
-                    })
-                    .collect();
+            self.needs_line_breaks = true;
+        }
+        if self.needs_line_breaks {
+            self.needs_line_breaks = false;
+            self.layout
+                .break_all_lines(self.max_advance, self.alignment);
 
-                self.layout = Some(layout);
-            }
+            // TODO:
+            // self.links = text
+            //     .links()
+            // ...
         }
     }
 
-    ///  Draw the layout at the provided `Point`.
+    /// Draw the layout at the provided `Point`.
     ///
-    ///  The origin of the layout is the top-left corner.
+    /// The origin of the layout is the top-left corner.
     ///
-    ///  You must call [`rebuild_if_needed`] at some point before you first
-    ///  call this method.
-    ///
-    ///  [`rebuild_if_needed`]: #method.rebuild_if_needed
-    pub fn draw(&self, ctx: &mut PaintCtx, point: impl Into<Point>) {
-        debug_assert!(
-            self.layout.is_some(),
-            "TextLayout::draw called without rebuilding layout object. Text was '{}'",
-            self.text
-                .as_ref()
-                .map(|t| t.as_str())
-                .unwrap_or("layout is missing text")
+    /// You must call [`Self::rebuild`] at some point before you first
+    /// call this method.
+    pub fn draw(&mut self, scene: &mut Scene, point: impl Into<Point>) {
+        self.assert_rebuilt("draw");
+        // TODO: This translation doesn't seem great
+        let p: Point = point.into();
+        crate::text_helpers::render_text(
+            scene,
+            &mut self.scratch_scene,
+            Affine::translate((p.x, p.y)),
+            &self.layout,
         );
-        if let Some(layout) = self.layout.as_ref() {
-            ctx.draw_text(layout, point);
-        }
     }
 }
 
-impl<T> std::fmt::Debug for TextLayout<T> {
+impl<T: TextStorage> std::fmt::Debug for TextLayout<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         f.debug_struct("TextLayout")
+            .field("text", &self.text.as_str().len())
+            .field("scale", &self.scale)
+            .field("brush", &self.brush)
             .field("font", &self.font)
-            .field("text_size_override", &self.text_size_override)
-            .field("text_color", &self.text_color)
-            .field(
-                "layout",
-                if self.layout.is_some() {
-                    &"Some"
-                } else {
-                    &"None"
-                },
-            )
-            .finish()
+            .field("text_size", &self.text_size)
+            .field("weight", &self.weight)
+            .field("style", &self.style)
+            .field("alignment", &self.alignment)
+            .field("wrap_width", &self.max_advance)
+            .field("outdated?", &self.needs_rebuild())
+            .field("width", &self.layout.width())
+            .field("height", &self.layout.height())
+            .field("links", &self.links)
+            .finish_non_exhaustive()
     }
 }
 
-impl<T: TextStorage> Default for TextLayout<T> {
+impl<T: TextStorage + Default> Default for TextLayout<T> {
     fn default() -> Self {
-        Self::new()
+        Self::new(Default::default(), crate::theme::TEXT_SIZE_NORMAL as f32)
     }
 }

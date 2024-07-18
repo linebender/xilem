@@ -9,6 +9,7 @@ use core::sync::atomic::Ordering;
 use alloc::vec::Drain;
 use alloc::vec::Vec;
 
+use crate::element::NoElement;
 use crate::{DynMessage, MessageResult, SuperElement, View, ViewElement, ViewId, ViewPathTracker};
 
 /// An append only `Vec`.
@@ -200,7 +201,7 @@ where
 }
 
 /// The state used to implement `ViewSequence` for `Option<impl ViewSequence>`
-#[doc(hidden)] // Implementation detail, public because of trait visibility rules
+#[allow(unnameable_types)] // Public because of trait visibility rules, but has no public API.
 pub struct OptionSeqState<InnerState> {
     /// The current state.
     ///
@@ -334,6 +335,57 @@ where
             // TODO: this should be unreachable as the generation was increased on the falling edge
             MessageResult::Stale(message)
         }
+    }
+}
+
+/// A `View` with [no element](crate::NoElement) can be added to any ViewSequence, because it does not use any
+/// properties of the Element type.
+impl<State, Action, Context, Element, NoElementView, Message>
+    ViewSequence<State, Action, Context, Element, NoElement, Message> for NoElementView
+where
+    NoElementView: View<State, Action, Context, Message, Element = NoElement>,
+    Element: ViewElement,
+    Context: ViewPathTracker,
+{
+    #[doc(hidden)]
+    type SeqState = NoElementView::ViewState;
+
+    #[doc(hidden)]
+    fn seq_build(&self, ctx: &mut Context, _: &mut AppendVec<Element>) -> Self::SeqState {
+        let (NoElement, state) = self.build(ctx);
+        state
+    }
+
+    #[doc(hidden)]
+    fn seq_rebuild(
+        &self,
+        prev: &Self,
+        seq_state: &mut Self::SeqState,
+        ctx: &mut Context,
+        _: &mut impl ElementSplice<Element>,
+    ) {
+        self.rebuild(prev, seq_state, ctx, ());
+    }
+
+    #[doc(hidden)]
+    fn seq_teardown(
+        &self,
+        seq_state: &mut Self::SeqState,
+        ctx: &mut Context,
+        _: &mut impl ElementSplice<Element>,
+    ) {
+        self.teardown(seq_state, ctx, ());
+    }
+
+    #[doc(hidden)]
+    fn seq_message(
+        &self,
+        seq_state: &mut Self::SeqState,
+        id_path: &[ViewId],
+        message: Message,
+        app_state: &mut State,
+    ) -> MessageResult<Action, Message> {
+        self.message(seq_state, id_path, message, app_state)
     }
 }
 
