@@ -115,7 +115,7 @@ pub mod app_driver;
 pub mod debug_logger;
 pub mod debug_values;
 pub mod event_loop_runner;
-pub mod text2;
+pub mod text;
 mod tracing_backend;
 mod tree_arena;
 
