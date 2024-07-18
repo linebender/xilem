@@ -25,7 +25,19 @@ impl PhantomElementCtx for TestCtx {
     type PhantomElement = TestElement;
 }
 
-impl OneOfCtx<TestElement, TestElement> for TestCtx {
+impl
+    OneOfCtx<
+        TestElement,
+        TestElement,
+        TestElement,
+        TestElement,
+        TestElement,
+        TestElement,
+        TestElement,
+        TestElement,
+        TestElement,
+    > for TestCtx
+{
     type OneOfElement = TestElement;
 
     fn upcast_one_of_element(

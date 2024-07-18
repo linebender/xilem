@@ -19,7 +19,6 @@ pub use fork::{fork, Fork};
 mod memoize;
 pub use memoize::{memoize, Memoize};
 
-/// Statically typed alternatives to the type-erased [`AnyView`](`crate::AnyView`).
 pub mod one_of;
 
 mod orphan;

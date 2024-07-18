@@ -1,7 +1,10 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+//! Statically typed alternatives to the type-erased [`AnyView`](`crate::AnyView`).
+
 use crate::{MessageResult, Mut, View, ViewElement, ViewId, ViewPathTracker};
+use hidden::OneOfState;
 
 /// This trait allows, specifying a type as `ViewElement`, which should never be constructed or used,
 /// but allows downstream implementations to adjust the behaviour of [`PhantomElementCtx::PhantomElement`],
@@ -59,15 +62,15 @@ where
 
 /// To be able to use `OneOfN` as a [`View`], it's necessary to implement [`OneOfCtx`] for your `ViewCtx` type
 pub trait OneOfCtx<
-    A: ViewElement = <Self as PhantomElementCtx>::PhantomElement,
-    B: ViewElement = <Self as PhantomElementCtx>::PhantomElement,
-    C: ViewElement = <Self as PhantomElementCtx>::PhantomElement,
-    D: ViewElement = <Self as PhantomElementCtx>::PhantomElement,
-    E: ViewElement = <Self as PhantomElementCtx>::PhantomElement,
-    F: ViewElement = <Self as PhantomElementCtx>::PhantomElement,
-    G: ViewElement = <Self as PhantomElementCtx>::PhantomElement,
-    H: ViewElement = <Self as PhantomElementCtx>::PhantomElement,
-    I: ViewElement = <Self as PhantomElementCtx>::PhantomElement,
+    A: ViewElement,
+    B: ViewElement,
+    C: ViewElement,
+    D: ViewElement,
+    E: ViewElement,
+    F: ViewElement,
+    G: ViewElement,
+    H: ViewElement,
+    I: ViewElement,
 >: PhantomElementCtx
 {
     /// Element wrapper, that holds the current view element variant
@@ -161,7 +164,51 @@ where
     >;
 
     fn build(&self, ctx: &mut Context) -> (Self::Element, Self::ViewState) {
-        todo!()
+        let (element, state) = match self {
+            OneOf::A(v) => {
+                let (element, state) = v.build(ctx);
+                (OneOf::A(element), OneOf::A(state))
+            }
+            OneOf::B(v) => {
+                let (element, state) = v.build(ctx);
+                (OneOf::B(element), OneOf::B(state))
+            }
+            OneOf::C(v) => {
+                let (element, state) = v.build(ctx);
+                (OneOf::C(element), OneOf::C(state))
+            }
+            OneOf::D(v) => {
+                let (element, state) = v.build(ctx);
+                (OneOf::D(element), OneOf::D(state))
+            }
+            OneOf::E(v) => {
+                let (element, state) = v.build(ctx);
+                (OneOf::E(element), OneOf::E(state))
+            }
+            OneOf::F(v) => {
+                let (element, state) = v.build(ctx);
+                (OneOf::F(element), OneOf::F(state))
+            }
+            OneOf::G(v) => {
+                let (element, state) = v.build(ctx);
+                (OneOf::G(element), OneOf::G(state))
+            }
+            OneOf::H(v) => {
+                let (element, state) = v.build(ctx);
+                (OneOf::H(element), OneOf::H(state))
+            }
+            OneOf::I(v) => {
+                let (element, state) = v.build(ctx);
+                (OneOf::I(element), OneOf::I(state))
+            }
+        };
+        (
+            Context::upcast_one_of_element(element),
+            OneOfState {
+                generation: 0,
+                inner_state: state,
+            },
+        )
     }
 
     fn rebuild<'el>(
@@ -169,18 +216,154 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<'el, Self::Element>,
+        mut element: Mut<'el, Self::Element>,
     ) -> Mut<'el, Self::Element> {
-        todo!()
+        // Happy path: All the elements are of the same type.
+        match (self, prev, &mut view_state.inner_state) {
+            (OneOf::A(this), OneOf::A(prev), OneOf::A(ref mut state)) => {
+                ctx.with_id(ViewId::new(view_state.generation), |ctx| {
+                    Context::with_downcast_a(&mut element, |element| {
+                        this.rebuild(prev, state, ctx, element);
+                    })
+                });
+                return element;
+            }
+            (OneOf::B(this), OneOf::B(prev), OneOf::B(ref mut state)) => {
+                ctx.with_id(ViewId::new(view_state.generation), |ctx| {
+                    Context::with_downcast_b(&mut element, |element| {
+                        this.rebuild(prev, state, ctx, element);
+                    })
+                });
+                return element;
+            }
+            (OneOf::C(this), OneOf::C(prev), OneOf::C(ref mut state)) => {
+                ctx.with_id(ViewId::new(view_state.generation), |ctx| {
+                    Context::with_downcast_c(&mut element, |element| {
+                        this.rebuild(prev, state, ctx, element);
+                    })
+                });
+                return element;
+            }
+            (OneOf::D(this), OneOf::D(prev), OneOf::D(ref mut state)) => {
+                ctx.with_id(ViewId::new(view_state.generation), |ctx| {
+                    Context::with_downcast_d(&mut element, |element| {
+                        this.rebuild(prev, state, ctx, element);
+                    })
+                });
+                return element;
+            }
+            (OneOf::E(this), OneOf::E(prev), OneOf::E(ref mut state)) => {
+                ctx.with_id(ViewId::new(view_state.generation), |ctx| {
+                    Context::with_downcast_e(&mut element, |element| {
+                        this.rebuild(prev, state, ctx, element);
+                    })
+                });
+                return element;
+            }
+            (OneOf::F(this), OneOf::F(prev), OneOf::F(ref mut state)) => {
+                ctx.with_id(ViewId::new(view_state.generation), |ctx| {
+                    Context::with_downcast_f(&mut element, |element| {
+                        this.rebuild(prev, state, ctx, element);
+                    })
+                });
+                return element;
+            }
+            (OneOf::G(this), OneOf::G(prev), OneOf::G(ref mut state)) => {
+                ctx.with_id(ViewId::new(view_state.generation), |ctx| {
+                    Context::with_downcast_g(&mut element, |element| {
+                        this.rebuild(prev, state, ctx, element);
+                    })
+                });
+                return element;
+            }
+            (OneOf::H(this), OneOf::H(prev), OneOf::H(ref mut state)) => {
+                ctx.with_id(ViewId::new(view_state.generation), |ctx| {
+                    Context::with_downcast_h(&mut element, |element| {
+                        this.rebuild(prev, state, ctx, element);
+                    })
+                });
+                return element;
+            }
+            (OneOf::I(this), OneOf::I(prev), OneOf::I(ref mut state)) => {
+                ctx.with_id(ViewId::new(view_state.generation), |ctx| {
+                    Context::with_downcast_i(&mut element, |element| {
+                        this.rebuild(prev, state, ctx, element);
+                    })
+                });
+                return element;
+            }
+            _ => (),
+        }
+        match (prev, view_state.inner_state) {
+            (OneOf::A(prev), OneOf::A(ref mut state)) => todo!(),
+            (OneOf::B(prev), OneOf::B(ref mut state)) => todo!(),
+            (OneOf::C(prev), OneOf::C(ref mut state)) => todo!(),
+            (OneOf::D(prev), OneOf::D(ref mut state)) => todo!(),
+            (OneOf::E(prev), OneOf::E(ref mut state)) => todo!(),
+            (OneOf::F(prev), OneOf::F(ref mut state)) => todo!(),
+            (OneOf::G(prev), OneOf::G(ref mut state)) => todo!(),
+            (OneOf::H(prev), OneOf::H(ref mut state)) => todo!(),
+            (OneOf::I(prev), OneOf::I(ref mut state)) => todo!(),
+            _ => unreachable!(),
+        }
     }
 
     fn teardown(
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<'_, Self::Element>,
+        mut element: Mut<'_, Self::Element>,
     ) {
-        todo!()
+        ctx.with_id(ViewId::new(view_state.generation), |ctx| {
+            match (self, &mut view_state.inner_state) {
+                (OneOf::A(v), OneOf::A(ref mut state)) => {
+                    Context::with_downcast_a(&mut element, |element| {
+                        v.teardown(state, ctx, element);
+                    });
+                }
+                (OneOf::B(v), OneOf::B(ref mut state)) => {
+                    Context::with_downcast_b(&mut element, |element| {
+                        v.teardown(state, ctx, element);
+                    });
+                }
+                (OneOf::C(v), OneOf::C(ref mut state)) => {
+                    Context::with_downcast_c(&mut element, |element| {
+                        v.teardown(state, ctx, element);
+                    });
+                }
+                (OneOf::D(v), OneOf::D(ref mut state)) => {
+                    Context::with_downcast_d(&mut element, |element| {
+                        v.teardown(state, ctx, element);
+                    });
+                }
+                (OneOf::E(v), OneOf::E(ref mut state)) => {
+                    Context::with_downcast_e(&mut element, |element| {
+                        v.teardown(state, ctx, element);
+                    });
+                }
+                (OneOf::F(v), OneOf::F(ref mut state)) => {
+                    Context::with_downcast_f(&mut element, |element| {
+                        v.teardown(state, ctx, element);
+                    });
+                }
+                (OneOf::G(v), OneOf::G(ref mut state)) => {
+                    Context::with_downcast_g(&mut element, |element| {
+                        v.teardown(state, ctx, element);
+                    });
+                }
+                (OneOf::H(v), OneOf::H(ref mut state)) => {
+                    Context::with_downcast_h(&mut element, |element| {
+                        v.teardown(state, ctx, element);
+                    });
+                }
+                (OneOf::I(v), OneOf::I(ref mut state)) => {
+                    Context::with_downcast_i(&mut element, |element| {
+                        v.teardown(state, ctx, element);
+                    });
+                }
+                _ => unreachable!(),
+            }
+        });
     }
 
     fn message(
@@ -190,7 +373,24 @@ where
         message: Message,
         app_state: &mut State,
     ) -> MessageResult<Action, Message> {
-        todo!()
+        let (start, rest) = id_path
+            .split_first()
+            .expect("Id path has elements for OneOf");
+        if start.routing_id() != view_state.generation {
+            return MessageResult::Stale(message);
+        }
+        match (self, &mut view_state.inner_state) {
+            (OneOf::A(v), OneOf::A(ref mut state)) => v.message(state, rest, message, app_state),
+            (OneOf::B(v), OneOf::B(ref mut state)) => v.message(state, rest, message, app_state),
+            (OneOf::C(v), OneOf::C(ref mut state)) => v.message(state, rest, message, app_state),
+            (OneOf::D(v), OneOf::D(ref mut state)) => v.message(state, rest, message, app_state),
+            (OneOf::E(v), OneOf::E(ref mut state)) => v.message(state, rest, message, app_state),
+            (OneOf::F(v), OneOf::F(ref mut state)) => v.message(state, rest, message, app_state),
+            (OneOf::G(v), OneOf::G(ref mut state)) => v.message(state, rest, message, app_state),
+            (OneOf::H(v), OneOf::H(ref mut state)) => v.message(state, rest, message, app_state),
+            (OneOf::I(v), OneOf::I(ref mut state)) => v.message(state, rest, message, app_state),
+            _ => unreachable!(),
+        }
     }
 }
 
@@ -198,21 +398,56 @@ where
 // to export it. Since this (`one_of`) module is public, we create a new module, allowing it to be pub but not exposed.
 #[doc(hidden)]
 mod hidden {
+    use crate::View;
+
+    use super::PhantomElementCtx;
+
     #[allow(unreachable_pub)]
     pub enum Never {}
+
+    impl<State, Action, Context: PhantomElementCtx, Message> View<State, Action, Context, Message>
+        for Never
+    {
+        type Element = Context::PhantomElement;
+
+        type ViewState = Never;
+
+        fn build(&self, _: &mut Context) -> (Self::Element, Self::ViewState) {
+            match *self {}
+        }
+
+        fn rebuild<'el>(
+            &self,
+            _: &Self,
+            _: &mut Self::ViewState,
+            _: &mut Context,
+            _: crate::Mut<'el, Self::Element>,
+        ) -> crate::Mut<'el, Self::Element> {
+            match *self {}
+        }
+
+        fn teardown(
+            &self,
+            _: &mut Self::ViewState,
+            _: &mut Context,
+            _: crate::Mut<'_, Self::Element>,
+        ) {
+            match *self {}
+        }
+
+        fn message(
+            &self,
+            _: &mut Self::ViewState,
+            _: &[crate::ViewId],
+            _: Message,
+            _: &mut State,
+        ) -> crate::MessageResult<Action, Message> {
+            match *self {}
+        }
+    }
     /// The state used to implement `View` for `OneOfN`
     #[allow(unreachable_pub)]
-    pub struct OneOfState<
-        A = Never,
-        B = Never,
-        C = Never,
-        D = Never,
-        E = Never,
-        F = Never,
-        G = Never,
-        H = Never,
-        I = Never,
-    > {
+    pub struct OneOfState<A, B, C, D, E, F, G, H, I> {
         /// The current state of the inner view or view sequence.
         pub(super) inner_state: super::OneOf<A, B, C, D, E, F, G, H, I>,
         /// The generation this OneOfN is at.
@@ -225,246 +460,12 @@ mod hidden {
     }
 }
 
-macro_rules! one_of {
-    ($ty_name: ident, $num_word: literal, $(($variant: ident, $downcast_method: ident),)+) => {
-        // This is not optimal, as it requires $variant to contain at least `A` and `B`, but better than no doc example...
-        /// Statically typed alternative to the type-erased [`AnyView`](`crate::AnyView`).
-        ///
-        #[doc = concat!("This view container can switch between ", $num_word, " different views.")]
-        ///
-        /// # Examples
-        ///
-        /// Basic usage:
-        ///
-        /// ```ignore
-        #[doc = concat!("let mut v = ", stringify!($ty_name), "::A(my_view());")]
-        #[doc = concat!("v = ", stringify!($ty_name), "::B(my_other_view());")]
-        /// ```
-        #[allow(missing_docs)] // On variants
-        pub enum $ty_name<$($variant),+> {
-            $($variant($variant)),+
-        }
-
-        impl<T, $($variant: AsRef<T>),+> AsRef<T> for $ty_name<$($variant),+>
-        {
-            fn as_ref(&self) -> &T {
-                match self {
-                    $($ty_name::$variant(e) => <$variant as AsRef<T>>::as_ref(e)),+
-                }
-            }
-        }
-
-        impl<Context, State, Action, Message, $($variant),+> View<State, Action, Context, Message> for $ty_name<$($variant),+>
-        where
-            State: 'static,
-            Action: 'static,
-            Context: ViewPathTracker + OneOfCtx<$($variant::Element),+>,
-            $($variant: View<State, Action, Context, Message>),+
-        {
-            type Element = Context::OneOfElement;
-
-            type ViewState = hidden::OneOfState<$($variant::ViewState),+>;
-
-            fn build(&self, ctx: &mut Context) -> (Self::Element, Self::ViewState) {
-                let generation = 0;
-                let (element, inner_state) =
-                    ctx.with_id(ViewId::new(generation), |ctx| match self {
-                        $($ty_name::$variant(e) => {
-                            let (element, state) = e.build(ctx);
-                            (
-                                Context::upcast_one_of_element(OneOf::$variant(element)),
-                                OneOf::$variant(state),
-                            )
-                        }),+
-                    });
-                (
-                    element,
-                    hidden::OneOfState {
-                        inner_state,
-                        generation,
-                    },
-                )
-            }
-
-            fn rebuild<'e>(
-                &self,
-                prev: &Self,
-                view_state: &mut Self::ViewState,
-                ctx: &mut Context,
-                mut element: Mut<'e, Self::Element>,
-            ) -> Mut<'e, Self::Element> {
-                // Type of the inner `View` stayed the same
-                match (prev, self, &mut view_state.inner_state) {
-                    $(($ty_name::$variant(prev), $ty_name::$variant(new), OneOf::$variant(inner_state)) => {
-                        ctx.with_id(ViewId::new(view_state.generation), |ctx| {
-                            Context::$downcast_method(&mut element, |elem| {
-                                new.rebuild(prev, inner_state, ctx, elem);
-                            });
-                        });
-                        return element;
-                    })+
-                    _ => ()
-                };
-
-                // View has changed type, teardown the old view
-                // we can't use Self::teardown, because we still need access to the element
-
-                ctx.with_id(ViewId::new(view_state.generation), |ctx| {
-                    match (prev, &mut view_state.inner_state) {
-                        $(($ty_name::$variant(prev), OneOf::$variant(old_state)) => {
-                            Context::$downcast_method(&mut element, |elem| {
-                                prev.teardown(old_state, ctx, elem);
-                            });
-                        })+
-                        _ => unreachable!(),
-                    };
-                });
-
-                // Overflow handling: u64 starts at 0, incremented by 1 always.
-                // Can never realistically overflow, scale is too large.
-                // If would overflow, wrap to zero. Would need async message sent
-                // to view *exactly* `u64::MAX` versions of the view ago, which is implausible
-                view_state.generation = view_state.generation.wrapping_add(1);
-
-                // Create the new view
-
-                ctx.with_id(ViewId::new(view_state.generation), |ctx| {
-                    match self {
-                        $($ty_name::$variant(new) => {
-                            let (new_element, state) = new.build(ctx);
-                            view_state.inner_state = OneOf::$variant(state);
-                            Context::update_one_of_element_mut(
-                                &mut element,
-                                OneOf::$variant(new_element),
-                            );
-                        })+
-                    };
-                });
-                element
-            }
-
-            fn teardown(
-                &self,
-                view_state: &mut Self::ViewState,
-                ctx: &mut Context,
-                mut element: Mut<'_, Self::Element>,
-            ) {
-                ctx.with_id(ViewId::new(view_state.generation), |ctx| {
-                    match (self, &mut view_state.inner_state) {
-                        $(($ty_name::$variant(view), OneOf::$variant(state)) => {
-                            Context::$downcast_method(&mut element, |elem| {
-                                view.teardown(state, ctx, elem);
-                            });
-                        })+
-                        _ => unreachable!(),
-                    }
-                });
-            }
-
-            fn message(
-                &self,
-                view_state: &mut Self::ViewState,
-                id_path: &[ViewId],
-                message: Message,
-                app_state: &mut State,
-            ) -> MessageResult<Action, Message> {
-                let (start, rest) = id_path
-                    .split_first()
-                    .expect(concat!("Id path has elements for `", stringify!($ty_name), "`"));
-                if start.routing_id() != view_state.generation {
-                    // The message was sent to a previous edition of the inner value
-                    return MessageResult::Stale(message);
-                }
-                match (self, &mut view_state.inner_state) {
-                    $(($ty_name::$variant(view), OneOf::$variant(state)) => {
-                        view.message(state, rest, message, app_state)
-                    }),+
-                    _ => unreachable!(),
-                }
-            }
-        }
-    };
-}
-
 type N = hidden::Never;
-pub type One2Of2<A, B> = OneOf<A, B, N, N, N, N, N, N, N>;
-pub type One2Of3<A, B, C> = OneOf<A, B, C, N, N, N, N, N, N>;
-pub type One2Of4<A, B, C, D> = OneOf<A, B, C, D, N, N, N, N, N>;
-pub type One2Of5<A, B, C, D, E> = OneOf<A, B, C, D, E, N, N, N, N>;
-pub type One2Of6<A, B, C, D, E, F> = OneOf<A, B, C, D, E, F, N, N, N>;
-pub type One2Of7<A, B, C, D, E, F, G> = OneOf<A, B, C, D, E, F, G, N, N>;
-pub type One2Of8<A, B, C, D, E, F, G, H> = OneOf<A, B, C, D, E, F, G, H, N>;
-pub type One2Of9<A, B, C, D, E, F, G, H, I> = OneOf<A, B, C, D, E, F, G, H, I>;
-
-// one_of!(OneOf2, "two", (A, with_downcast_a), (B, with_downcast_b),);
-one_of!(
-    OneOf3,
-    "three",
-    (A, with_downcast_a),
-    (B, with_downcast_b),
-    (C, with_downcast_c),
-);
-one_of!(
-    OneOf4,
-    "four",
-    (A, with_downcast_a),
-    (B, with_downcast_b),
-    (C, with_downcast_c),
-    (D, with_downcast_d),
-);
-one_of!(
-    OneOf5,
-    "five",
-    (A, with_downcast_a),
-    (B, with_downcast_b),
-    (C, with_downcast_c),
-    (D, with_downcast_d),
-    (E, with_downcast_e),
-);
-one_of!(
-    OneOf6,
-    "six",
-    (A, with_downcast_a),
-    (B, with_downcast_b),
-    (C, with_downcast_c),
-    (D, with_downcast_d),
-    (E, with_downcast_e),
-    (F, with_downcast_f),
-);
-one_of!(
-    OneOf7,
-    "seven",
-    (A, with_downcast_a),
-    (B, with_downcast_b),
-    (C, with_downcast_c),
-    (D, with_downcast_d),
-    (E, with_downcast_e),
-    (F, with_downcast_f),
-    (G, with_downcast_g),
-);
-one_of!(
-    OneOf8,
-    "eight",
-    (A, with_downcast_a),
-    (B, with_downcast_b),
-    (C, with_downcast_c),
-    (D, with_downcast_d),
-    (E, with_downcast_e),
-    (F, with_downcast_f),
-    (G, with_downcast_g),
-    (H, with_downcast_h),
-);
-one_of!(
-    OneOf9,
-    "nine",
-    (A, with_downcast_a),
-    (B, with_downcast_b),
-    (C, with_downcast_c),
-    (D, with_downcast_d),
-    (E, with_downcast_e),
-    (F, with_downcast_f),
-    (G, with_downcast_g),
-    (H, with_downcast_h),
-    (I, with_downcast_i),
-);
-Never
+pub type OneOf2<A, B> = OneOf<A, B, N, N, N, N, N, N, N>;
+pub type OneOf3<A, B, C> = OneOf<A, B, C, N, N, N, N, N, N>;
+pub type OneOf4<A, B, C, D> = OneOf<A, B, C, D, N, N, N, N, N>;
+pub type OneOf5<A, B, C, D, E> = OneOf<A, B, C, D, E, N, N, N, N>;
+pub type OneOf6<A, B, C, D, E, F> = OneOf<A, B, C, D, E, F, N, N, N>;
+pub type OneOf7<A, B, C, D, E, F, G> = OneOf<A, B, C, D, E, F, G, N, N>;
+pub type OneOf8<A, B, C, D, E, F, G, H> = OneOf<A, B, C, D, E, F, G, H, N>;
+pub type OneOf9<A, B, C, D, E, F, G, H, I> = OneOf<A, B, C, D, E, F, G, H, I>;
