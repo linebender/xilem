@@ -8,23 +8,21 @@ use nv_flip::{FlipImageRgb8, DEFAULT_PIXELS_PER_DEGREE};
 
 pub(crate) fn get_image_diff(ref_image: &RgbImage, new_image: &RgbImage) -> Option<RgbImage> {
     if ref_image.width() != new_image.width() || ref_image.height() != new_image.height() {
-        panic!("Got a different size");
+        // TODO: Handle more gracefully
+        panic!("Images were different size");
     }
-    let ref_image_flip =
-        FlipImageRgb8::with_data(ref_image.width(), ref_image.height(), &*ref_image);
-    let new_image_flip =
-        FlipImageRgb8::with_data(new_image.width(), new_image.height(), &*new_image);
+    let ref_image_flip = FlipImageRgb8::with_data(ref_image.width(), ref_image.height(), ref_image);
+    let new_image_flip = FlipImageRgb8::with_data(new_image.width(), new_image.height(), new_image);
     let error_map = nv_flip::flip(ref_image_flip, new_image_flip, DEFAULT_PIXELS_PER_DEGREE);
     let pool = nv_flip::FlipPool::from_image(&error_map);
     let mean = pool.mean();
 
-    let mut is_changed = mean.abs() > 0.05;
+    let is_changed = mean.abs() > 0.01;
 
     if !is_changed {
         return None;
     }
 
-    let visualized = error_map.apply_color_lut(&nv_flip::magma_lut());
     let width = std::cmp::max(ref_image.width(), new_image.width());
     let height = std::cmp::max(ref_image.height(), new_image.height());
 
@@ -41,16 +39,11 @@ pub(crate) fn get_image_diff(ref_image: &RgbImage, new_image: &RgbImage) -> Opti
         };
 
         if new_pixel != ref_pixel {
-            is_changed = true;
             new_pixel
         } else {
             [0, 0, 0].into()
         }
     });
 
-    if is_changed {
-        Some(diff_image)
-    } else {
-        None
-    }
+    Some(diff_image)
 }

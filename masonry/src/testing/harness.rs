@@ -5,7 +5,7 @@
 
 use std::num::NonZeroUsize;
 
-use image::{ImageReader, Rgba, RgbaImage};
+use image::{DynamicImage, ImageReader, Rgba, RgbaImage};
 use vello::util::RenderContext;
 use vello::{block_on_wgpu, RendererOptions};
 use wgpu::{
@@ -540,7 +540,7 @@ impl TestHarness {
             return;
         }
 
-        let new_image = self.render();
+        let new_image: DynamicImage = self.render().into();
 
         let workspace_path = get_cargo_workspace(manifest_dir);
         let test_file_path_abs = workspace_path.join(test_file_path);
@@ -556,9 +556,9 @@ impl TestHarness {
         let diff_path = screenshots_folder.join(format!("{module_str}__{test_name}.diff.png"));
 
         if let Ok(reference_file) = ImageReader::open(reference_path) {
-            let ref_image = reference_file.decode().unwrap().to_rgba8();
+            let ref_image = reference_file.decode().unwrap().to_rgb8();
 
-            if let Some(diff_image) = get_image_diff(&ref_image, &new_image) {
+            if let Some(diff_image) = get_image_diff(&ref_image, &new_image.to_rgb8()) {
                 // Remove '<test_name>.new.png' '<test_name>.diff.png' files if they exist
                 let _ = std::fs::remove_file(&new_path);
                 let _ = std::fs::remove_file(&diff_path);
