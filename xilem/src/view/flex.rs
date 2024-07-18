@@ -270,7 +270,7 @@ impl ElementSplice<FlexElement> for FlexSplice<'_> {
     }
 }
 
-/// A trait which extends a [`WidgetView`] with methods to provide parameters for a flex item, or being able to use it interchangably with a spacer
+/// A trait which extends a [`WidgetView`] with methods to provide parameters for a flex item, or being able to use it interchangeably with a spacer
 pub trait FlexExt<State, Action>: WidgetView<State, Action> {
     /// Applies [`impl Into<FlexParams>`](`FlexParams`) to this view, can be used as child of a [`Flex`] [`View`]
     ///
@@ -299,7 +299,7 @@ pub trait FlexExt<State, Action>: WidgetView<State, Action> {
     }
 
     /// Turns this [`WidgetView`] into an [`AnyFlexChild`],
-    /// which can be used interchangably with an `FlexSpacer`, as child of a [`Flex`] [`View`]
+    /// which can be used interchangeably with an `FlexSpacer`, as child of a [`Flex`] [`View`]
     ///
     /// # Examples
     /// ```
@@ -502,7 +502,7 @@ pub enum AnyFlexChild<State, Action = ()> {
 
 impl FlexSpacer {
     /// Turns this [`FlexSpacer`] into an [`AnyFlexChild`],
-    /// which can be used interchangably with an `FlexItem` (as [`AnyFlexChild`]), as child of a [`Flex`] [`View`]
+    /// which can be used interchangeably with an `FlexItem` (as [`AnyFlexChild`]), as child of a [`Flex`] [`View`]
     ///
     /// # Examples
     /// ```
