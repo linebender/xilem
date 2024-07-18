@@ -37,7 +37,7 @@ pub use driver::{async_action, MasonryDriver, MasonryProxy, ASYNC_MARKER_WIDGET}
 
 pub mod view;
 
-/// Re-export of tokio as the async driver for Masonry
+/// Tokio is the async runner used with Xilem.
 pub use tokio;
 
 pub struct Xilem<State, Logic> {
