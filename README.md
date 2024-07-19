@@ -131,6 +131,26 @@ To install them on Debian or Ubuntu, run
 sudo apt-get install pkg-config clang libwayland-dev libxkbcommon-x11-dev libvulkan-dev
 ```
 
+## Minimum supported Rust Version (MSRV)
+
+This version of Xilem has been verified to compile with **Rust 1.79** and later.
+
+Future versions of Xilem might increase the Rust version requirement.
+It will not be treated as a breaking change and as such can even happen with small patch releases.
+
+<details>
+<summary>Click here if compiling fails.</summary>
+
+As time has passed, some of Xilem's dependencies could have released versions with a higher Rust requirement.
+If you encounter a compilation issue due to a dependency and don't want to upgrade your Rust toolchain, then you could downgrade the dependency.
+
+```sh
+# Use the problematic dependency's name and version
+cargo update -p package_name --precise 0.1.1
+```
+
+</details>
+
 ## License
 
 Licensed under the Apache License, Version 2.0
