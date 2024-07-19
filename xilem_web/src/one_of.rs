@@ -3,7 +3,7 @@
 
 use wasm_bindgen::UnwrapThrowExt;
 use xilem_core::{
-    one_of::{OneOf, OneOfCtx, PhantomElementCtx},
+    one_of::{OneOf9, OneOfCtx, PhantomElementCtx},
     Mut,
 };
 
@@ -47,10 +47,10 @@ where
     N9: DomNode<P9>,
 {
     type OneOfElement =
-        Pod<OneOf<N1, N2, N3, N4, N5, N6, N7, N8, N9>, OneOf<P1, P2, P3, P4, P5, P6, P7, P8, P9>>;
+        Pod<OneOf9<N1, N2, N3, N4, N5, N6, N7, N8, N9>, OneOf9<P1, P2, P3, P4, P5, P6, P7, P8, P9>>;
 
     fn upcast_one_of_element(
-        elem: OneOf<
+        elem: OneOf9<
             Pod<N1, P1>,
             Pod<N2, P2>,
             Pod<N3, P3>,
@@ -63,48 +63,48 @@ where
         >,
     ) -> Self::OneOfElement {
         match elem {
-            OneOf::A(e) => Pod {
-                node: OneOf::A(e.node),
-                props: OneOf::A(e.props),
+            OneOf9::A(e) => Pod {
+                node: OneOf9::A(e.node),
+                props: OneOf9::A(e.props),
             },
-            OneOf::B(e) => Pod {
-                node: OneOf::B(e.node),
-                props: OneOf::B(e.props),
+            OneOf9::B(e) => Pod {
+                node: OneOf9::B(e.node),
+                props: OneOf9::B(e.props),
             },
-            OneOf::C(e) => Pod {
-                node: OneOf::C(e.node),
-                props: OneOf::C(e.props),
+            OneOf9::C(e) => Pod {
+                node: OneOf9::C(e.node),
+                props: OneOf9::C(e.props),
             },
-            OneOf::D(e) => Pod {
-                node: OneOf::D(e.node),
-                props: OneOf::D(e.props),
+            OneOf9::D(e) => Pod {
+                node: OneOf9::D(e.node),
+                props: OneOf9::D(e.props),
             },
-            OneOf::E(e) => Pod {
-                node: OneOf::E(e.node),
-                props: OneOf::E(e.props),
+            OneOf9::E(e) => Pod {
+                node: OneOf9::E(e.node),
+                props: OneOf9::E(e.props),
             },
-            OneOf::F(e) => Pod {
-                node: OneOf::F(e.node),
-                props: OneOf::F(e.props),
+            OneOf9::F(e) => Pod {
+                node: OneOf9::F(e.node),
+                props: OneOf9::F(e.props),
             },
-            OneOf::G(e) => Pod {
-                node: OneOf::G(e.node),
-                props: OneOf::G(e.props),
+            OneOf9::G(e) => Pod {
+                node: OneOf9::G(e.node),
+                props: OneOf9::G(e.props),
             },
-            OneOf::H(e) => Pod {
-                node: OneOf::H(e.node),
-                props: OneOf::H(e.props),
+            OneOf9::H(e) => Pod {
+                node: OneOf9::H(e.node),
+                props: OneOf9::H(e.props),
             },
-            OneOf::I(e) => Pod {
-                node: OneOf::I(e.node),
-                props: OneOf::I(e.props),
+            OneOf9::I(e) => Pod {
+                node: OneOf9::I(e.node),
+                props: OneOf9::I(e.props),
             },
         }
     }
 
     fn update_one_of_element_mut(
         elem_mut: &mut Mut<'_, Self::OneOfElement>,
-        new_elem: OneOf<
+        new_elem: OneOf9<
             Pod<N1, P1>,
             Pod<N2, P2>,
             Pod<N3, P3>,
@@ -125,15 +125,15 @@ where
                 .unwrap_throw();
         }
         (*elem_mut.node, *elem_mut.props) = match new_elem {
-            OneOf::A(e) => (OneOf::A(e.node), OneOf::A(e.props)),
-            OneOf::B(e) => (OneOf::B(e.node), OneOf::B(e.props)),
-            OneOf::C(e) => (OneOf::C(e.node), OneOf::C(e.props)),
-            OneOf::D(e) => (OneOf::D(e.node), OneOf::D(e.props)),
-            OneOf::E(e) => (OneOf::E(e.node), OneOf::E(e.props)),
-            OneOf::F(e) => (OneOf::F(e.node), OneOf::F(e.props)),
-            OneOf::G(e) => (OneOf::G(e.node), OneOf::G(e.props)),
-            OneOf::H(e) => (OneOf::H(e.node), OneOf::H(e.props)),
-            OneOf::I(e) => (OneOf::I(e.node), OneOf::I(e.props)),
+            OneOf9::A(e) => (OneOf9::A(e.node), OneOf9::A(e.props)),
+            OneOf9::B(e) => (OneOf9::B(e.node), OneOf9::B(e.props)),
+            OneOf9::C(e) => (OneOf9::C(e.node), OneOf9::C(e.props)),
+            OneOf9::D(e) => (OneOf9::D(e.node), OneOf9::D(e.props)),
+            OneOf9::E(e) => (OneOf9::E(e.node), OneOf9::E(e.props)),
+            OneOf9::F(e) => (OneOf9::F(e.node), OneOf9::F(e.props)),
+            OneOf9::G(e) => (OneOf9::G(e.node), OneOf9::G(e.props)),
+            OneOf9::H(e) => (OneOf9::H(e.node), OneOf9::H(e.props)),
+            OneOf9::I(e) => (OneOf9::I(e.node), OneOf9::I(e.props)),
         };
     }
 
@@ -141,7 +141,7 @@ where
         elem: &mut Mut<'_, Self::OneOfElement>,
         f: impl FnOnce(Mut<'_, Pod<N1, P1>>),
     ) {
-        let (OneOf::A(node), OneOf::A(props)) = (&mut elem.node, &mut elem.props) else {
+        let (OneOf9::A(node), OneOf9::A(props)) = (&mut elem.node, &mut elem.props) else {
             unreachable!()
         };
         f(PodMut::new(node, props, elem.parent, elem.was_removed));
@@ -151,7 +151,7 @@ where
         elem: &mut Mut<'_, Self::OneOfElement>,
         f: impl FnOnce(Mut<'_, Pod<N2, P2>>),
     ) {
-        let (OneOf::B(node), OneOf::B(props)) = (&mut elem.node, &mut elem.props) else {
+        let (OneOf9::B(node), OneOf9::B(props)) = (&mut elem.node, &mut elem.props) else {
             unreachable!()
         };
         f(PodMut::new(node, props, elem.parent, elem.was_removed));
@@ -161,7 +161,7 @@ where
         elem: &mut Mut<'_, Self::OneOfElement>,
         f: impl FnOnce(Mut<'_, Pod<N3, P3>>),
     ) {
-        let (OneOf::C(node), OneOf::C(props)) = (&mut elem.node, &mut elem.props) else {
+        let (OneOf9::C(node), OneOf9::C(props)) = (&mut elem.node, &mut elem.props) else {
             unreachable!()
         };
         f(PodMut::new(node, props, elem.parent, elem.was_removed));
@@ -171,7 +171,7 @@ where
         elem: &mut Mut<'_, Self::OneOfElement>,
         f: impl FnOnce(Mut<'_, Pod<N4, P4>>),
     ) {
-        let (OneOf::D(node), OneOf::D(props)) = (&mut elem.node, &mut elem.props) else {
+        let (OneOf9::D(node), OneOf9::D(props)) = (&mut elem.node, &mut elem.props) else {
             unreachable!()
         };
         f(PodMut::new(node, props, elem.parent, elem.was_removed));
@@ -181,7 +181,7 @@ where
         elem: &mut Mut<'_, Self::OneOfElement>,
         f: impl FnOnce(Mut<'_, Pod<N5, P5>>),
     ) {
-        let (OneOf::E(node), OneOf::E(props)) = (&mut elem.node, &mut elem.props) else {
+        let (OneOf9::E(node), OneOf9::E(props)) = (&mut elem.node, &mut elem.props) else {
             unreachable!()
         };
         f(PodMut::new(node, props, elem.parent, elem.was_removed));
@@ -191,7 +191,7 @@ where
         elem: &mut Mut<'_, Self::OneOfElement>,
         f: impl FnOnce(Mut<'_, Pod<N6, P6>>),
     ) {
-        let (OneOf::F(node), OneOf::F(props)) = (&mut elem.node, &mut elem.props) else {
+        let (OneOf9::F(node), OneOf9::F(props)) = (&mut elem.node, &mut elem.props) else {
             unreachable!()
         };
         f(PodMut::new(node, props, elem.parent, elem.was_removed));
@@ -201,7 +201,7 @@ where
         elem: &mut Mut<'_, Self::OneOfElement>,
         f: impl FnOnce(Mut<'_, Pod<N7, P7>>),
     ) {
-        let (OneOf::G(node), OneOf::G(props)) = (&mut elem.node, &mut elem.props) else {
+        let (OneOf9::G(node), OneOf9::G(props)) = (&mut elem.node, &mut elem.props) else {
             unreachable!()
         };
         f(PodMut::new(node, props, elem.parent, elem.was_removed));
@@ -211,7 +211,7 @@ where
         elem: &mut Mut<'_, Self::OneOfElement>,
         f: impl FnOnce(Mut<'_, Pod<N8, P8>>),
     ) {
-        let (OneOf::H(node), OneOf::H(props)) = (&mut elem.node, &mut elem.props) else {
+        let (OneOf9::H(node), OneOf9::H(props)) = (&mut elem.node, &mut elem.props) else {
             unreachable!()
         };
         f(PodMut::new(node, props, elem.parent, elem.was_removed));
@@ -221,7 +221,7 @@ where
         elem: &mut Mut<'_, Self::OneOfElement>,
         f: impl FnOnce(Mut<'_, Pod<N9, P9>>),
     ) {
-        let (OneOf::I(node), OneOf::I(props)) = (&mut elem.node, &mut elem.props) else {
+        let (OneOf9::I(node), OneOf9::I(props)) = (&mut elem.node, &mut elem.props) else {
             unreachable!()
         };
         f(PodMut::new(node, props, elem.parent, elem.was_removed));
@@ -302,47 +302,47 @@ impl<
         E7: WithAttributes,
         E8: WithAttributes,
         E9: WithAttributes,
-    > WithAttributes for OneOf<E1, E2, E3, E4, E5, E6, E7, E8, E9>
+    > WithAttributes for OneOf9<E1, E2, E3, E4, E5, E6, E7, E8, E9>
 {
     fn start_attribute_modifier(&mut self) {
         match self {
-            OneOf::A(e) => e.start_attribute_modifier(),
-            OneOf::B(e) => e.start_attribute_modifier(),
-            OneOf::C(e) => e.start_attribute_modifier(),
-            OneOf::D(e) => e.start_attribute_modifier(),
-            OneOf::E(e) => e.start_attribute_modifier(),
-            OneOf::F(e) => e.start_attribute_modifier(),
-            OneOf::G(e) => e.start_attribute_modifier(),
-            OneOf::H(e) => e.start_attribute_modifier(),
-            OneOf::I(e) => e.start_attribute_modifier(),
+            OneOf9::A(e) => e.start_attribute_modifier(),
+            OneOf9::B(e) => e.start_attribute_modifier(),
+            OneOf9::C(e) => e.start_attribute_modifier(),
+            OneOf9::D(e) => e.start_attribute_modifier(),
+            OneOf9::E(e) => e.start_attribute_modifier(),
+            OneOf9::F(e) => e.start_attribute_modifier(),
+            OneOf9::G(e) => e.start_attribute_modifier(),
+            OneOf9::H(e) => e.start_attribute_modifier(),
+            OneOf9::I(e) => e.start_attribute_modifier(),
         }
     }
 
     fn end_attribute_modifier(&mut self) {
         match self {
-            OneOf::A(e) => e.end_attribute_modifier(),
-            OneOf::B(e) => e.end_attribute_modifier(),
-            OneOf::C(e) => e.end_attribute_modifier(),
-            OneOf::D(e) => e.end_attribute_modifier(),
-            OneOf::E(e) => e.end_attribute_modifier(),
-            OneOf::F(e) => e.end_attribute_modifier(),
-            OneOf::G(e) => e.end_attribute_modifier(),
-            OneOf::H(e) => e.end_attribute_modifier(),
-            OneOf::I(e) => e.end_attribute_modifier(),
+            OneOf9::A(e) => e.end_attribute_modifier(),
+            OneOf9::B(e) => e.end_attribute_modifier(),
+            OneOf9::C(e) => e.end_attribute_modifier(),
+            OneOf9::D(e) => e.end_attribute_modifier(),
+            OneOf9::E(e) => e.end_attribute_modifier(),
+            OneOf9::F(e) => e.end_attribute_modifier(),
+            OneOf9::G(e) => e.end_attribute_modifier(),
+            OneOf9::H(e) => e.end_attribute_modifier(),
+            OneOf9::I(e) => e.end_attribute_modifier(),
         }
     }
 
     fn set_attribute(&mut self, name: CowStr, value: Option<AttributeValue>) {
         match self {
-            OneOf::A(e) => e.set_attribute(name, value),
-            OneOf::B(e) => e.set_attribute(name, value),
-            OneOf::C(e) => e.set_attribute(name, value),
-            OneOf::D(e) => e.set_attribute(name, value),
-            OneOf::E(e) => e.set_attribute(name, value),
-            OneOf::F(e) => e.set_attribute(name, value),
-            OneOf::G(e) => e.set_attribute(name, value),
-            OneOf::H(e) => e.set_attribute(name, value),
-            OneOf::I(e) => e.set_attribute(name, value),
+            OneOf9::A(e) => e.set_attribute(name, value),
+            OneOf9::B(e) => e.set_attribute(name, value),
+            OneOf9::C(e) => e.set_attribute(name, value),
+            OneOf9::D(e) => e.set_attribute(name, value),
+            OneOf9::E(e) => e.set_attribute(name, value),
+            OneOf9::F(e) => e.set_attribute(name, value),
+            OneOf9::G(e) => e.set_attribute(name, value),
+            OneOf9::H(e) => e.set_attribute(name, value),
+            OneOf9::I(e) => e.set_attribute(name, value),
         }
     }
 }
@@ -357,61 +357,61 @@ impl<
         E7: WithClasses,
         E8: WithClasses,
         E9: WithClasses,
-    > WithClasses for OneOf<E1, E2, E3, E4, E5, E6, E7, E8, E9>
+    > WithClasses for OneOf9<E1, E2, E3, E4, E5, E6, E7, E8, E9>
 {
     fn start_class_modifier(&mut self) {
         match self {
-            OneOf::A(e) => e.start_class_modifier(),
-            OneOf::B(e) => e.start_class_modifier(),
-            OneOf::C(e) => e.start_class_modifier(),
-            OneOf::D(e) => e.start_class_modifier(),
-            OneOf::E(e) => e.start_class_modifier(),
-            OneOf::F(e) => e.start_class_modifier(),
-            OneOf::G(e) => e.start_class_modifier(),
-            OneOf::H(e) => e.start_class_modifier(),
-            OneOf::I(e) => e.start_class_modifier(),
+            OneOf9::A(e) => e.start_class_modifier(),
+            OneOf9::B(e) => e.start_class_modifier(),
+            OneOf9::C(e) => e.start_class_modifier(),
+            OneOf9::D(e) => e.start_class_modifier(),
+            OneOf9::E(e) => e.start_class_modifier(),
+            OneOf9::F(e) => e.start_class_modifier(),
+            OneOf9::G(e) => e.start_class_modifier(),
+            OneOf9::H(e) => e.start_class_modifier(),
+            OneOf9::I(e) => e.start_class_modifier(),
         }
     }
 
     fn add_class(&mut self, class_name: CowStr) {
         match self {
-            OneOf::A(e) => e.add_class(class_name),
-            OneOf::B(e) => e.add_class(class_name),
-            OneOf::C(e) => e.add_class(class_name),
-            OneOf::D(e) => e.add_class(class_name),
-            OneOf::E(e) => e.add_class(class_name),
-            OneOf::F(e) => e.add_class(class_name),
-            OneOf::G(e) => e.add_class(class_name),
-            OneOf::H(e) => e.add_class(class_name),
-            OneOf::I(e) => e.add_class(class_name),
+            OneOf9::A(e) => e.add_class(class_name),
+            OneOf9::B(e) => e.add_class(class_name),
+            OneOf9::C(e) => e.add_class(class_name),
+            OneOf9::D(e) => e.add_class(class_name),
+            OneOf9::E(e) => e.add_class(class_name),
+            OneOf9::F(e) => e.add_class(class_name),
+            OneOf9::G(e) => e.add_class(class_name),
+            OneOf9::H(e) => e.add_class(class_name),
+            OneOf9::I(e) => e.add_class(class_name),
         }
     }
 
     fn remove_class(&mut self, class_name: CowStr) {
         match self {
-            OneOf::A(e) => e.remove_class(class_name),
-            OneOf::B(e) => e.remove_class(class_name),
-            OneOf::C(e) => e.remove_class(class_name),
-            OneOf::D(e) => e.remove_class(class_name),
-            OneOf::E(e) => e.remove_class(class_name),
-            OneOf::F(e) => e.remove_class(class_name),
-            OneOf::G(e) => e.remove_class(class_name),
-            OneOf::H(e) => e.remove_class(class_name),
-            OneOf::I(e) => e.remove_class(class_name),
+            OneOf9::A(e) => e.remove_class(class_name),
+            OneOf9::B(e) => e.remove_class(class_name),
+            OneOf9::C(e) => e.remove_class(class_name),
+            OneOf9::D(e) => e.remove_class(class_name),
+            OneOf9::E(e) => e.remove_class(class_name),
+            OneOf9::F(e) => e.remove_class(class_name),
+            OneOf9::G(e) => e.remove_class(class_name),
+            OneOf9::H(e) => e.remove_class(class_name),
+            OneOf9::I(e) => e.remove_class(class_name),
         }
     }
 
     fn end_class_modifier(&mut self) {
         match self {
-            OneOf::A(e) => e.end_class_modifier(),
-            OneOf::B(e) => e.end_class_modifier(),
-            OneOf::C(e) => e.end_class_modifier(),
-            OneOf::D(e) => e.end_class_modifier(),
-            OneOf::E(e) => e.end_class_modifier(),
-            OneOf::F(e) => e.end_class_modifier(),
-            OneOf::G(e) => e.end_class_modifier(),
-            OneOf::H(e) => e.end_class_modifier(),
-            OneOf::I(e) => e.end_class_modifier(),
+            OneOf9::A(e) => e.end_class_modifier(),
+            OneOf9::B(e) => e.end_class_modifier(),
+            OneOf9::C(e) => e.end_class_modifier(),
+            OneOf9::D(e) => e.end_class_modifier(),
+            OneOf9::E(e) => e.end_class_modifier(),
+            OneOf9::F(e) => e.end_class_modifier(),
+            OneOf9::G(e) => e.end_class_modifier(),
+            OneOf9::H(e) => e.end_class_modifier(),
+            OneOf9::I(e) => e.end_class_modifier(),
         }
     }
 }
@@ -426,53 +426,54 @@ impl<
         E7: WithStyle,
         E8: WithStyle,
         E9: WithStyle,
-    > WithStyle for OneOf<E1, E2, E3, E4, E5, E6, E7, E8, E9>
+    > WithStyle for OneOf9<E1, E2, E3, E4, E5, E6, E7, E8, E9>
 {
     fn start_style_modifier(&mut self) {
         match self {
-            OneOf::A(e) => e.start_style_modifier(),
-            OneOf::B(e) => e.start_style_modifier(),
-            OneOf::C(e) => e.start_style_modifier(),
-            OneOf::D(e) => e.start_style_modifier(),
-            OneOf::E(e) => e.start_style_modifier(),
-            OneOf::F(e) => e.start_style_modifier(),
-            OneOf::G(e) => e.start_style_modifier(),
-            OneOf::H(e) => e.start_style_modifier(),
-            OneOf::I(e) => e.start_style_modifier(),
+            OneOf9::A(e) => e.start_style_modifier(),
+            OneOf9::B(e) => e.start_style_modifier(),
+            OneOf9::C(e) => e.start_style_modifier(),
+            OneOf9::D(e) => e.start_style_modifier(),
+            OneOf9::E(e) => e.start_style_modifier(),
+            OneOf9::F(e) => e.start_style_modifier(),
+            OneOf9::G(e) => e.start_style_modifier(),
+            OneOf9::H(e) => e.start_style_modifier(),
+            OneOf9::I(e) => e.start_style_modifier(),
         }
     }
 
     fn set_style(&mut self, name: CowStr, value: Option<CowStr>) {
         match self {
-            OneOf::A(e) => e.set_style(name, value),
-            OneOf::B(e) => e.set_style(name, value),
-            OneOf::C(e) => e.set_style(name, value),
-            OneOf::D(e) => e.set_style(name, value),
-            OneOf::E(e) => e.set_style(name, value),
-            OneOf::F(e) => e.set_style(name, value),
-            OneOf::G(e) => e.set_style(name, value),
-            OneOf::H(e) => e.set_style(name, value),
-            OneOf::I(e) => e.set_style(name, value),
+            OneOf9::A(e) => e.set_style(name, value),
+            OneOf9::B(e) => e.set_style(name, value),
+            OneOf9::C(e) => e.set_style(name, value),
+            OneOf9::D(e) => e.set_style(name, value),
+            OneOf9::E(e) => e.set_style(name, value),
+            OneOf9::F(e) => e.set_style(name, value),
+            OneOf9::G(e) => e.set_style(name, value),
+            OneOf9::H(e) => e.set_style(name, value),
+            OneOf9::I(e) => e.set_style(name, value),
         }
     }
 
     fn end_style_modifier(&mut self) {
         match self {
-            OneOf::A(e) => e.end_style_modifier(),
-            OneOf::B(e) => e.end_style_modifier(),
-            OneOf::C(e) => e.end_style_modifier(),
-            OneOf::D(e) => e.end_style_modifier(),
-            OneOf::E(e) => e.end_style_modifier(),
-            OneOf::F(e) => e.end_style_modifier(),
-            OneOf::G(e) => e.end_style_modifier(),
-            OneOf::H(e) => e.end_style_modifier(),
-            OneOf::I(e) => e.end_style_modifier(),
+            OneOf9::A(e) => e.end_style_modifier(),
+            OneOf9::B(e) => e.end_style_modifier(),
+            OneOf9::C(e) => e.end_style_modifier(),
+            OneOf9::D(e) => e.end_style_modifier(),
+            OneOf9::E(e) => e.end_style_modifier(),
+            OneOf9::F(e) => e.end_style_modifier(),
+            OneOf9::G(e) => e.end_style_modifier(),
+            OneOf9::H(e) => e.end_style_modifier(),
+            OneOf9::I(e) => e.end_style_modifier(),
         }
     }
 }
 
 impl<P1, P2, P3, P4, P5, P6, P7, P8, P9, E1, E2, E3, E4, E5, E6, E7, E8, E9>
-    DomNode<OneOf<P1, P2, P3, P4, P5, P6, P7, P8, P9>> for OneOf<E1, E2, E3, E4, E5, E6, E7, E8, E9>
+    DomNode<OneOf9<P1, P2, P3, P4, P5, P6, P7, P8, P9>>
+    for OneOf9<E1, E2, E3, E4, E5, E6, E7, E8, E9>
 where
     E1: DomNode<P1>,
     E2: DomNode<P2>,
@@ -484,17 +485,17 @@ where
     E8: DomNode<P8>,
     E9: DomNode<P9>,
 {
-    fn apply_props(&self, props: &mut OneOf<P1, P2, P3, P4, P5, P6, P7, P8, P9>) {
+    fn apply_props(&self, props: &mut OneOf9<P1, P2, P3, P4, P5, P6, P7, P8, P9>) {
         match (self, props) {
-            (OneOf::A(el), OneOf::A(props)) => el.apply_props(props),
-            (OneOf::B(el), OneOf::B(props)) => el.apply_props(props),
-            (OneOf::C(el), OneOf::C(props)) => el.apply_props(props),
-            (OneOf::D(el), OneOf::D(props)) => el.apply_props(props),
-            (OneOf::E(el), OneOf::E(props)) => el.apply_props(props),
-            (OneOf::F(el), OneOf::F(props)) => el.apply_props(props),
-            (OneOf::G(el), OneOf::G(props)) => el.apply_props(props),
-            (OneOf::H(el), OneOf::H(props)) => el.apply_props(props),
-            (OneOf::I(el), OneOf::I(props)) => el.apply_props(props),
+            (OneOf9::A(el), OneOf9::A(props)) => el.apply_props(props),
+            (OneOf9::B(el), OneOf9::B(props)) => el.apply_props(props),
+            (OneOf9::C(el), OneOf9::C(props)) => el.apply_props(props),
+            (OneOf9::D(el), OneOf9::D(props)) => el.apply_props(props),
+            (OneOf9::E(el), OneOf9::E(props)) => el.apply_props(props),
+            (OneOf9::F(el), OneOf9::F(props)) => el.apply_props(props),
+            (OneOf9::G(el), OneOf9::G(props)) => el.apply_props(props),
+            (OneOf9::H(el), OneOf9::H(props)) => el.apply_props(props),
+            (OneOf9::I(el), OneOf9::I(props)) => el.apply_props(props),
             _ => unreachable!(),
         }
     }

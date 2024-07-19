@@ -6,7 +6,7 @@
 //! This is an integration test so that it can use the infrastructure in [`common`].
 
 use xilem_core::{
-    one_of::{OneOf, OneOf2, OneOfCtx, PhantomElementCtx},
+    one_of::{OneOf2, OneOf9, OneOfCtx, PhantomElementCtx},
     MessageResult, Mut, View, ViewId,
 };
 
@@ -25,11 +25,23 @@ impl PhantomElementCtx for TestCtx {
     type PhantomElement = TestElement;
 }
 
-impl OneOfCtx<TestElement, TestElement> for TestCtx {
+impl
+    OneOfCtx<
+        TestElement,
+        TestElement,
+        TestElement,
+        TestElement,
+        TestElement,
+        TestElement,
+        TestElement,
+        TestElement,
+        TestElement,
+    > for TestCtx
+{
     type OneOfElement = TestElement;
 
     fn upcast_one_of_element(
-        elem: OneOf<
+        elem: OneOf9<
             TestElement,
             TestElement,
             TestElement,
@@ -42,15 +54,15 @@ impl OneOfCtx<TestElement, TestElement> for TestCtx {
         >,
     ) -> Self::OneOfElement {
         match elem {
-            OneOf::A(e) => e,
-            OneOf::B(e) => e,
+            OneOf9::A(e) => e,
+            OneOf9::B(e) => e,
             _ => unreachable!(),
         }
     }
 
     fn update_one_of_element_mut(
         elem_mut: &mut Mut<'_, Self::OneOfElement>,
-        new_elem: OneOf<
+        new_elem: OneOf9<
             TestElement,
             TestElement,
             TestElement,
@@ -63,7 +75,7 @@ impl OneOfCtx<TestElement, TestElement> for TestCtx {
         >,
     ) {
         match new_elem {
-            OneOf::A(new_elem) | OneOf::B(new_elem) => {
+            OneOf9::A(new_elem) | OneOf9::B(new_elem) => {
                 assert_eq!(new_elem.operations.len(), 1);
                 let Some(Operation::Build(new_id)) = new_elem.operations.first() else {
                     unreachable!()
