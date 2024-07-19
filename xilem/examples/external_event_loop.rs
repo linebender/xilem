@@ -20,7 +20,7 @@ use winit::{
     keyboard::{KeyCode, PhysicalKey},
 };
 use xilem::{
-    view::{button, flex, label, sized_box},
+    view::{button, flex, label, sized_box, Axis},
     EventLoop, MasonryProxy, WidgetView, Xilem,
 };
 
@@ -42,7 +42,7 @@ fn app_logic(data: &mut i32) -> impl WidgetView<i32> {
             *data += 1;
         }),
     ))
-    .direction(xilem::Axis::Horizontal)
+    .direction(Axis::Horizontal)
     .cross_axis_alignment(CrossAxisAlignment::Center)
     .main_axis_alignment(MainAxisAlignment::Center)
 }

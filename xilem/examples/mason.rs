@@ -8,8 +8,11 @@ use std::time::Duration;
 
 use xilem::{
     tokio::time,
-    view::{async_repeat, button, button_any_pointer, checkbox, flex, label, prose, textbox},
-    AnyWidgetView, Axis, Color, EventLoop, EventLoopBuilder, TextAlignment, WidgetView, Xilem,
+    view::{
+        async_repeat, button, button_any_pointer, checkbox, flex, label, prose, textbox, Axis,
+        FlexExt as _, FlexSpacer,
+    },
+    AnyWidgetView, Color, EventLoop, EventLoopBuilder, TextAlignment, WidgetView, Xilem,
 };
 const LOREM: &str = r"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi cursus mi sed euismod euismod. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Nullam placerat efficitur tellus at semper. Morbi ac risus magna. Donec ut cursus ex. Etiam quis posuere tellus. Mauris posuere dui et turpis mollis, vitae luctus tellus consectetur. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur eu facilisis nisl.
 
@@ -32,9 +35,30 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> {
         Axis::Vertical
     };
 
-    let sequence = (0..count)
-        .map(|x| button(format!("+{x}"), move |data: &mut AppData| data.count += x))
+    let flex_sequence = (0..count)
+        .map(|x| {
+            (
+                button(format!("+{x}"), move |data: &mut AppData| data.count += x),
+                if data.active {
+                    FlexSpacer::Flex(x as f64)
+                } else {
+                    FlexSpacer::Fixed((count - x) as f64)
+                },
+            )
+        })
         .collect::<Vec<_>>();
+
+    let fizz_buzz_flex_sequence = [(3, "Fizz"), (5, "Buzz")].map(|c| {
+        if data.count.abs() % c.0 == 0 {
+            button(c.1, move |data: &mut AppData| {
+                data.count += 1;
+            })
+            .into_any_flex()
+        } else {
+            FlexSpacer::Fixed(10.0 * c.0 as f64).into_any_flex()
+        }
+    });
+
     fork(
         flex((
             flex((
@@ -66,7 +90,7 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> {
             toggleable(data),
             button("Decrement", |data: &mut AppData| data.count -= 1),
             button("Reset", |data: &mut AppData| data.count = 0),
-            flex(sequence).direction(axis),
+            flex((fizz_buzz_flex_sequence, flex_sequence)).direction(axis),
         )),
         async_repeat(
             |proxy| async move {

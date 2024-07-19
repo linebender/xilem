@@ -24,7 +24,6 @@ use xilem_core::{
 pub use masonry::{
     dpi,
     event_loop_runner::{EventLoop, EventLoopBuilder},
-    widget::Axis,
     Color, TextAlignment,
 };
 pub use xilem_core as core;
@@ -169,6 +168,26 @@ pub trait WidgetView<State, Action = ()>:
     View<State, Action, ViewCtx, Element = Pod<Self::Widget>> + Send + Sync
 {
     type Widget: Widget;
+
+    /// Returns a boxed type erased [`AnyWidgetView`]
+    ///
+    /// # Examples
+    /// ```
+    /// use xilem::{view::label, WidgetView};
+    ///
+    /// # fn view<State: 'static>() -> impl WidgetView<State> {
+    /// label("a label").boxed()
+    /// # }
+    ///
+    /// ```
+    fn boxed(self) -> Box<AnyWidgetView<State, Action>>
+    where
+        State: 'static,
+        Action: 'static,
+        Self: Sized,
+    {
+        Box::new(self)
+    }
 }
 
 impl<V, State, Action, W> WidgetView<State, Action> for V

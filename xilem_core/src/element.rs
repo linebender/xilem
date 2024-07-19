@@ -58,7 +58,7 @@ where
     /// You can safely use this methods in contexts where it is known that the
     ///
     /// If you need to return a value, see [`with_downcast_val`](SuperElement::with_downcast_val).
-    fn with_downcast(this: Self::Mut<'_>, f: impl FnOnce(Child::Mut<'_>)) -> Self::Mut<'_> {
+    fn with_downcast(this: Mut<'_, Self>, f: impl FnOnce(Mut<'_, Child>)) -> Mut<'_, Self> {
         let (this, ()) = Self::with_downcast_val(this, f);
         this
     }
@@ -69,8 +69,8 @@ where
     ///
     /// If you don't need to return a value, see [`with_downcast`](SuperElement::with_downcast).
     fn with_downcast_val<R>(
-        this: Self::Mut<'_>,
-        f: impl FnOnce(Child::Mut<'_>) -> R,
+        this: Mut<'_, Self>,
+        f: impl FnOnce(Mut<'_, Child>) -> R,
     ) -> (Self::Mut<'_>, R);
 }
 
