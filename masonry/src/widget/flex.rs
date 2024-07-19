@@ -28,6 +28,7 @@ pub struct Flex {
     fill_major_axis: bool,
     children: Vec<Child>,
     old_bc: BoxConstraints,
+    gap: Option<f64>,
 }
 
 /// Optional parameters for an item in a [`Flex`] container (row or column).
@@ -105,6 +106,7 @@ impl Flex {
             main_alignment: MainAxisAlignment::Start,
             fill_major_axis: false,
             old_bc: BoxConstraints::tight(Size::ZERO),
+            gap: None,
         }
     }
 
@@ -139,6 +141,52 @@ impl Flex {
     /// to fill the available space on its main axis.
     pub fn must_fill_main_axis(mut self, fill: bool) -> Self {
         self.fill_major_axis = fill;
+        self
+    }
+
+    /// Builder-style method for setting the spacing along the
+    /// major axis between any two elements in logical pixels.
+    ///
+    /// Equivalent to the css [gap] property.
+    /// This gap is also present between spacers.
+    ///
+    /// See also [`default_gap`](Self::default_gap).
+    ///
+    /// ## Panics
+    ///
+    /// If `gap` is not a non-negative finite value.
+    ///
+    /// [gap]: https://developer.mozilla.org/en-US/docs/Web/CSS/gap
+    // TODO: Semantics - should this include fixed spacers?
+    pub fn gap(mut self, gap: f64) -> Self {
+        if gap.is_finite() && gap >= 0.0 {
+            self.gap = Some(gap);
+        } else {
+            panic!("Invalid `gap` {gap}, expected a non-negative finite value.")
+        }
+        self
+    }
+
+    /// Builder-style method to use the default gap value.
+    ///
+    /// This is [`WIDGET_PADDING_VERTICAL`] for a flex column and
+    /// [`WIDGET_PADDING_HORIZONTAL`] for flex row.
+    ///
+    /// See also [`gap`](Self::gap)
+    ///
+    /// [`WIDGET_PADDING_VERTICAL`]: crate::theme::WIDGET_PADDING_VERTICAL
+    /// [`WIDGET_PADDING_HORIZONTAL`]: crate::theme::WIDGET_PADDING_VERTICAL
+    pub fn default_gap(mut self) -> Self {
+        self.gap = None;
+        self
+    }
+
+    /// Equivalent to [`gap`](Self::gap) if `gap` is `Some`, or
+    /// [`default_gap`](Self::default_gap) otherwise.
+    ///
+    /// Does not perform validation of the provided value.
+    pub fn raw_gap(mut self, gap: Option<f64>) -> Self {
+        self.gap = gap;
         self
     }
 
@@ -189,10 +237,7 @@ impl Flex {
     /// The actual value of this spacer depends on whether this container is
     /// a row or column, as well as theme settings.
     pub fn with_default_spacer(self) -> Self {
-        let key = match self.direction {
-            Axis::Vertical => crate::theme::WIDGET_PADDING_VERTICAL,
-            Axis::Horizontal => crate::theme::WIDGET_PADDING_HORIZONTAL,
-        };
+        let key = axis_default_spacer(self.direction);
         self.with_spacer(key)
     }
 
@@ -262,6 +307,50 @@ impl<'a> WidgetMut<'a, Flex> {
         self.ctx.request_layout();
     }
 
+    /// Set the spacing along the major axis between any two elements in logical pixels.
+    ///
+    /// Equivalent to the css [gap] property.
+    /// This gap is also present between spacers.
+    ///
+    /// [gap]: https://developer.mozilla.org/en-US/docs/Web/CSS/gap
+    ///
+    /// ## Panics
+    ///
+    /// If `gap` is not a non-negative finite value.
+    ///
+    /// See also [`use_default_gap`](Self::use_default_gap).
+    pub fn set_gap(&mut self, gap: f64) {
+        if gap.is_finite() && gap >= 0.0 {
+            self.widget.gap = Some(gap);
+        } else {
+            panic!("Invalid `gap` {gap}, expected a non-negative finite value.")
+        }
+        self.ctx.request_layout();
+    }
+
+    /// Use the default gap value.
+    ///
+    /// This is [`WIDGET_PADDING_VERTICAL`] for a flex column and
+    /// [`WIDGET_PADDING_HORIZONTAL`] for flex row.
+    ///
+    /// See also [`set_gap`](Self::set_gap)
+    ///
+    /// [`WIDGET_PADDING_VERTICAL`]: crate::theme::WIDGET_PADDING_VERTICAL
+    /// [`WIDGET_PADDING_HORIZONTAL`]: crate::theme::WIDGET_PADDING_VERTICAL
+    pub fn use_default_gap(&mut self) {
+        self.widget.gap = None;
+        self.ctx.request_layout();
+    }
+
+    /// Equivalent to [`set_gap`](Self::set_gap) if `gap` is `Some`, or
+    /// [`use_default_gap`](Self::use_default_gap) otherwise.
+    ///
+    /// Does not perform validation of the provided value.
+    pub fn set_raw_gap(&mut self, gap: Option<f64>) {
+        self.widget.gap = gap;
+        self.ctx.request_layout();
+    }
+
     /// Add a non-flex child widget.
     ///
     /// See also [`with_child`].
@@ -299,10 +388,7 @@ impl<'a> WidgetMut<'a, Flex> {
     /// The actual value of this spacer depends on whether this container is
     /// a row or column, as well as theme settings.
     pub fn add_default_spacer(&mut self) {
-        let key = match self.widget.direction {
-            Axis::Vertical => crate::theme::WIDGET_PADDING_VERTICAL,
-            Axis::Horizontal => crate::theme::WIDGET_PADDING_HORIZONTAL,
-        };
+        let key = axis_default_spacer(self.widget.direction);
         self.add_spacer(key);
         self.ctx.request_layout();
     }
@@ -384,10 +470,7 @@ impl<'a> WidgetMut<'a, Flex> {
     /// The actual value of this spacer depends on whether this container is
     /// a row or column, as well as theme settings.
     pub fn insert_default_spacer(&mut self, idx: usize) {
-        let key = match self.widget.direction {
-            Axis::Vertical => crate::theme::WIDGET_PADDING_VERTICAL,
-            Axis::Horizontal => crate::theme::WIDGET_PADDING_HORIZONTAL,
-        };
+        let key = axis_default_spacer(self.widget.direction);
         self.insert_spacer(idx, key);
         self.ctx.request_layout();
     }
@@ -511,6 +594,14 @@ impl<'a> WidgetMut<'a, Flex> {
     }
 }
 
+/// The size in logical pixels of the default spacer for an axis.
+fn axis_default_spacer(axis: Axis) -> f64 {
+    match axis {
+        Axis::Vertical => crate::theme::WIDGET_PADDING_VERTICAL,
+        Axis::Horizontal => crate::theme::WIDGET_PADDING_HORIZONTAL,
+    }
+}
+
 fn new_flex_child(params: FlexParams, widget: WidgetPod<Box<dyn Widget>>) -> Child {
     if let Some(flex) = params.flex {
         if flex.is_normal() && flex > 0.0 {
@@ -580,8 +671,11 @@ impl Widget for Flex {
         let mut any_changed = bc_changed;
         self.old_bc = *bc;
 
+        let gap = self.gap.unwrap_or(axis_default_spacer(self.direction));
+        // The gaps are only between the items, so 2 children means 1 gap.
+        let total_gap = self.children.len().saturating_sub(1) as f64 * gap;
         // Measure non-flex children.
-        let mut major_non_flex = 0.0;
+        let mut major_non_flex = total_gap;
         let mut flex_sum = 0.0;
         for child in &mut self.children {
             match child {
@@ -756,10 +850,12 @@ impl Widget for Flex {
                     child_paint_rect = child_paint_rect.union(ctx.widget_state.paint_rect());
                     major += self.direction.major(child_size).expand();
                     major += spacing.next().unwrap_or(0.);
+                    major += gap;
                 }
                 Child::FlexedSpacer(_, calculated_size)
                 | Child::FixedSpacer(_, calculated_size) => {
                     major += *calculated_size;
+                    major += gap;
                 }
             }
         }

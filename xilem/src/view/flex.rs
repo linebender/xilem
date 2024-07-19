@@ -24,6 +24,7 @@ pub fn flex<Seq, Marker>(sequence: Seq) -> Flex<Seq, Marker> {
         cross_axis_alignment: CrossAxisAlignment::Center,
         main_axis_alignment: MainAxisAlignment::Start,
         fill_major_axis: false,
+        gap: None,
     }
 }
 
@@ -34,6 +35,7 @@ pub struct Flex<Seq, Marker> {
     main_axis_alignment: MainAxisAlignment,
     fill_major_axis: bool,
     phantom: PhantomData<fn() -> Marker>,
+    gap: Option<f64>,
 }
 
 impl<Seq, Marker> Flex<Seq, Marker> {
@@ -55,6 +57,32 @@ impl<Seq, Marker> Flex<Seq, Marker> {
         self.fill_major_axis = fill_major_axis;
         self
     }
+
+    /// Set the spacing along the major axis between any two elements in logical pixels.
+    ///
+    /// Equivalent to the css [gap] property.
+    /// This gap is also present between spacers.
+    ///
+    /// Leave unset to use the default spacing, which is [`WIDGET_PADDING_VERTICAL`] for a flex
+    /// column and [`WIDGET_PADDING_HORIZONTAL`] for flex row.
+    ///
+    /// ## Panics
+    ///
+    /// If `gap` is not a non-negative finite value.
+    ///
+    /// [gap]: https://developer.mozilla.org/en-US/docs/Web/CSS/gap
+    /// [`WIDGET_PADDING_VERTICAL`]: masonry::theme::WIDGET_PADDING_VERTICAL
+    /// [`WIDGET_PADDING_HORIZONTAL`]: masonry::theme::WIDGET_PADDING_VERTICAL
+    #[track_caller]
+    pub fn gap(mut self, gap: f64) -> Self {
+        if gap.is_finite() && gap >= 0.0 {
+            self.gap = Some(gap);
+        } else {
+            // TODO: Don't panic here, for future editor scenarios.
+            panic!("Invalid `gap` {gap}, expected a non-negative finite value.")
+        }
+        self
+    }
 }
 
 impl<State, Action, Seq, Marker: 'static> View<State, Action, ViewCtx> for Flex<Seq, Marker>
@@ -68,6 +96,7 @@ where
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let mut elements = AppendVec::default();
         let mut widget = widget::Flex::for_axis(self.axis)
+            .raw_gap(self.gap)
             .cross_axis_alignment(self.cross_axis_alignment)
             .must_fill_main_axis(self.fill_major_axis)
             .main_axis_alignment(self.main_axis_alignment);
@@ -107,7 +136,10 @@ where
             element.set_must_fill_main_axis(self.fill_major_axis);
             ctx.mark_changed();
         }
-
+        if prev.gap != self.gap {
+            element.set_raw_gap(self.gap);
+            ctx.mark_changed();
+        }
         // TODO: Re-use scratch space?
         let mut splice = FlexSplice::new(element);
         self.sequence
