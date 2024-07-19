@@ -90,7 +90,7 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> {
             toggleable(data),
             button("Decrement", |data: &mut AppData| data.count -= 1),
             button("Reset", |data: &mut AppData| data.count = 0),
-            flex((flex_sequence, flexy_flex_sequence)).direction(axis),
+            flex((flexy_flex_sequence, flex_sequence)).direction(axis),
         )),
         async_repeat(
             |proxy| async move {

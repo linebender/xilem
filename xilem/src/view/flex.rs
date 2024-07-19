@@ -330,7 +330,7 @@ pub struct FlexItem<V, State, Action> {
     phantom: PhantomData<fn() -> (State, Action)>,
 }
 
-/// Applies [`impl Into<FlexParams>`](`FlexParams`) to the [`View`] `V`, can be used as child of a [`Flex`] [`View`]
+/// Applies [`impl Into<FlexParams>`](`FlexParams`) to the [`View`] `V`, can be used as child of a [`Flex`] View
 ///
 /// # Examples
 /// ```
