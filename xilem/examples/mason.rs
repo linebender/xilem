@@ -48,14 +48,14 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> {
         })
         .collect::<Vec<_>>();
 
-    let flexy_flex_sequence = [2, 3, 4].map(|c| {
-        if data.count.abs() % c == 0 {
-            FlexSpacer::Fixed(30.0 * c as f64).into_any_flex()
-        } else {
-            button(format!("flexy +{c}"), move |data: &mut AppData| {
-                data.count += c;
+    let fizz_buzz_flex_sequence = [(3, "Fizz"), (5, "Buzz")].map(|c| {
+        if data.count.abs() % c.0 == 0 {
+            button(c.1, move |data: &mut AppData| {
+                data.count += 1;
             })
             .into_any_flex()
+        } else {
+            FlexSpacer::Fixed(10.0 * c.0 as f64).into_any_flex()
         }
     });
 
@@ -90,7 +90,7 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> {
             toggleable(data),
             button("Decrement", |data: &mut AppData| data.count -= 1),
             button("Reset", |data: &mut AppData| data.count = 0),
-            flex((flexy_flex_sequence, flex_sequence)).direction(axis),
+            flex((fizz_buzz_flex_sequence, flex_sequence)).direction(axis),
         )),
         async_repeat(
             |proxy| async move {

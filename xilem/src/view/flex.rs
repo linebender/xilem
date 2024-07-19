@@ -139,9 +139,10 @@ where
     }
 }
 
+#[allow(clippy::large_enum_variant)]
 pub enum FlexElement {
     // Avoid making the enum massive for the spacer cases by boxing
-    Child(Box<Pod<Box<dyn Widget>>>, FlexParams),
+    Child(Pod<Box<dyn Widget>>, FlexParams),
     FixedSpacer(f64),
     FlexSpacer(f64),
 }
@@ -194,7 +195,7 @@ impl SuperElement<FlexElement> for FlexElement {
 
 impl<W: Widget> SuperElement<Pod<W>> for FlexElement {
     fn upcast(child: Pod<W>) -> Self {
-        FlexElement::Child(Box::new(child.inner.boxed().into()), FlexParams::default())
+        FlexElement::Child(child.inner.boxed().into(), FlexParams::default())
     }
 
     fn with_downcast_val<R>(
@@ -387,7 +388,7 @@ where
     fn build(&self, cx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let (pod, state) = self.view.build(cx);
         (
-            FlexElement::Child(Box::new(pod.inner.boxed().into()), self.params),
+            FlexElement::Child(pod.inner.boxed().into(), self.params),
             state,
         )
     }
@@ -452,6 +453,8 @@ impl<State, Action> From<FlexSpacer> for AnyFlexChild<State, Action> {
     }
 }
 
+// This impl doesn't require a view id, as it neither receives, nor sends any messages
+// If this should ever change, it's necessary to adjust the `AnyFlexChild` `View` impl
 impl<State, Action> View<State, Action, ViewCtx> for FlexSpacer {
     type Element = FlexElement;
 
