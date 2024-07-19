@@ -82,6 +82,7 @@ pub struct MasonryState<'a> {
     // Per-Window state
     // In future, this will support multiple windows
     window: WindowState<'a>,
+    background_color: Color,
 }
 
 struct MainState<'a> {
@@ -113,7 +114,13 @@ pub fn run(
 ) -> Result<(), EventLoopError> {
     let event_loop = loop_builder.build()?;
 
-    run_with(event_loop, window_attributes, root_widget, app_driver)
+    run_with(
+        event_loop,
+        window_attributes,
+        root_widget,
+        app_driver,
+        Color::BLACK,
+    )
 }
 
 pub fn run_with(
@@ -121,9 +128,10 @@ pub fn run_with(
     window: WindowAttributes,
     root_widget: impl Widget,
     app_driver: impl AppDriver + 'static,
+    background_color: Color,
 ) -> Result<(), EventLoopError> {
     let mut main_state = MainState {
-        masonry_state: MasonryState::new(window, &event_loop, root_widget),
+        masonry_state: MasonryState::new(window, &event_loop, root_widget, background_color),
         app_driver: Box::new(app_driver),
     };
 
@@ -204,7 +212,12 @@ impl ApplicationHandler<MasonryUserEvent> for MainState<'_> {
 }
 
 impl MasonryState<'_> {
-    pub fn new(window: WindowAttributes, event_loop: &EventLoop, root_widget: impl Widget) -> Self {
+    pub fn new(
+        window: WindowAttributes,
+        event_loop: &EventLoop,
+        root_widget: impl Widget,
+        background_color: Color,
+    ) -> Self {
         let render_cx = RenderContext::new();
         // TODO: We can't know this scale factor until later?
         let scale_factor = 1.0;
@@ -217,6 +230,7 @@ impl MasonryState<'_> {
             proxy: event_loop.create_proxy(),
 
             window: WindowState::Uninitialized(window),
+            background_color,
         }
     }
 
@@ -358,7 +372,7 @@ impl MasonryState<'_> {
             num_init_threads: NonZeroUsize::new(1),
         };
         let render_params = RenderParams {
-            base_color: Color::BLACK,
+            base_color: self.background_color,
             width,
             height,
             antialiasing_method: vello::AaConfig::Area,
