@@ -6,7 +6,10 @@ use wasm_bindgen::{prelude::Closure, throw_str, JsCast, UnwrapThrowExt};
 use web_sys::AddEventListenerOptions;
 use xilem_core::{MessageResult, Mut, View, ViewId, ViewPathTracker};
 
-use crate::{DynMessage, ElementAsRef, EventHandler, EventHandlerMessage, OptionalAction, ViewCtx};
+use crate::{
+    event_handler::{EventHandler, EventHandlerMessage},
+    DynMessage, ElementAsRef, OptionalAction, ViewCtx,
+};
 
 /// Wraps a [`View`] `V` and attaches an event listener.
 ///

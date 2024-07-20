@@ -1,6 +1,10 @@
+use std::{future::Future, marker::PhantomData, rc::Rc};
+
+use wasm_bindgen::UnwrapThrowExt;
+use wasm_bindgen_futures::spawn_local;
 use xilem_core::{MessageResult, ViewPathTracker};
 
-use crate::DynMessage;
+use crate::{context::MessageThunk, DynMessage, Message, ViewCtx};
 
 pub enum EventHandlerMessage<E, Message = DynMessage> {
     Event(E),
@@ -73,5 +77,88 @@ where
             EventHandlerMessage::Event(event) => MessageResult::Action(self(app_state, event)),
             EventHandlerMessage::Message(_) => unreachable!(),
         }
+    }
+}
+
+#[derive(Default, Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub struct DeferEventHandler<T, A, FO, F, FF, CF> {
+    #[allow(clippy::complexity)]
+    phantom: PhantomData<fn() -> (T, A, FO, F)>,
+    future_fn: FF,
+    callback_fn: CF,
+}
+
+impl<State, Action, Event, FO, F, FF, CF> EventHandler<Event, State, Action, ViewCtx>
+    for DeferEventHandler<State, Action, FO, F, FF, CF>
+where
+    State: 'static,
+    Action: 'static,
+    Event: 'static,
+    FO: Message,
+    F: Future<Output = FO> + 'static,
+    FF: Fn(&mut State, Event) -> F + 'static,
+    CF: Fn(&mut State, FO) + 'static,
+{
+    type State = Rc<MessageThunk>;
+
+    fn build(&self, ctx: &mut ViewCtx) -> Self::State {
+        Rc::new(ctx.message_thunk())
+    }
+
+    fn rebuild(&self, _prev: &Self, _event_handler_state: &mut Self::State, _ctx: &mut ViewCtx) {}
+
+    fn teardown(&self, _event_handler_state: &mut Self::State, _ctx: &mut ViewCtx) {}
+
+    fn message(
+        &self,
+        message_thunk: &mut Self::State,
+        id_path: &[xilem_core::ViewId],
+        message: EventHandlerMessage<Event>,
+        app_state: &mut State,
+    ) -> MessageResult<Action, EventHandlerMessage<Event>> {
+        debug_assert!(id_path.is_empty());
+        match message {
+            EventHandlerMessage::Event(event) => {
+                let future = (self.future_fn)(app_state, event);
+                let thunk = Rc::clone(message_thunk);
+                // TODO currently, multiple events could trigger this, while the (old) future is still not resolved
+                // This may be intended, but can also lead to surprising behavior.
+                // We could add an atomic boolean, to avoid this, i.e. either block a new future,
+                // or even queue it after the first future being resolved, there may also be other possible desired behaviors
+                // This could also be made configurable, e.g. via the builder pattern, like this:
+                // ```
+                // defer(...)
+                //     .block() // block new events triggering that future
+                //     .once() // allow this event to trigger the future only once.
+                //     .queue() // queue additional triggered futures
+                // ```
+                spawn_local(async move { thunk.push_message(future.await) });
+                MessageResult::RequestRebuild
+            }
+            EventHandlerMessage::Message(output) => {
+                (self.callback_fn)(app_state, *output.downcast::<FO>().unwrap_throw());
+                MessageResult::RequestRebuild
+            }
+        }
+    }
+}
+
+pub fn defer<State, Action, Event, FO, F, FF, CF>(
+    future_fn: FF,
+    callback_fn: CF,
+) -> DeferEventHandler<State, Action, FO, F, FF, CF>
+where
+    State: 'static,
+    Action: 'static,
+    Event: 'static,
+    FO: Message,
+    F: Future<Output = FO> + 'static,
+    FF: Fn(&mut State, Event) -> F + 'static,
+    CF: Fn(&mut State, FO) + 'static,
+{
+    DeferEventHandler {
+        phantom: PhantomData,
+        future_fn,
+        callback_fn,
     }
 }
