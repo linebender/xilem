@@ -109,7 +109,7 @@ pub trait Element<State, Action = ()>:
     /// ```
     /// use xilem_web::{interfaces::Element, elements::html::div};
     /// # fn component() -> impl Element<()> {
-    /// div(()).on("custom-event", |state, event: web_sys::Event| {/* modify `state` */})
+    /// div(()).on("custom-event", |state: &mut _, event: web_sys::Event| {/* modify `state` */})
     /// # }
     /// ```
     fn on<Event, Handler, OA>(

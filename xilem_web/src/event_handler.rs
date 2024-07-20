@@ -1,3 +1,6 @@
+// Copyright 2024 the Xilem Authors
+// SPDX-License-Identifier: Apache-2.0
+
 use std::{future::Future, marker::PhantomData, rc::Rc};
 
 use wasm_bindgen::UnwrapThrowExt;
@@ -81,23 +84,23 @@ where
 }
 
 #[derive(Default, Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub struct DeferEventHandler<State, Action, FO, F, FF, CF> {
+pub struct DeferEventHandler<State, Action, FOut, F, FF, CF> {
     #[allow(clippy::complexity)]
-    phantom: PhantomData<fn() -> (State, Action, FO, F)>,
+    phantom: PhantomData<fn() -> (State, Action, FOut, F)>,
     future_fn: FF,
     callback_fn: CF,
 }
 
-impl<State, Action, Event, FO, F, FF, CF> EventHandler<Event, State, Action, ViewCtx>
-    for DeferEventHandler<State, Action, FO, F, FF, CF>
+impl<State, Action, Event, FOut, F, FF, CF> EventHandler<Event, State, Action, ViewCtx>
+    for DeferEventHandler<State, Action, FOut, F, FF, CF>
 where
     State: 'static,
     Action: 'static,
     Event: 'static,
-    FO: Message,
-    F: Future<Output = FO> + 'static,
+    FOut: Message,
+    F: Future<Output = FOut> + 'static,
     FF: Fn(&mut State, Event) -> F + 'static,
-    CF: Fn(&mut State, FO) -> Action + 'static,
+    CF: Fn(&mut State, FOut) -> Action + 'static,
 {
     type State = Rc<MessageThunk>;
 
@@ -137,24 +140,24 @@ where
             }
             EventHandlerMessage::Message(output) => MessageResult::Action((self.callback_fn)(
                 app_state,
-                *output.downcast::<FO>().unwrap_throw(),
+                *output.downcast::<FOut>().unwrap_throw(),
             )),
         }
     }
 }
 
-pub fn defer<State, Action, Event, FO, F, FF, CF>(
+pub fn defer<State, Action, Event, FOut, F, FF, CF>(
     future_fn: FF,
     callback_fn: CF,
-) -> DeferEventHandler<State, Action, FO, F, FF, CF>
+) -> DeferEventHandler<State, Action, FOut, F, FF, CF>
 where
     State: 'static,
     Action: 'static,
     Event: 'static,
-    FO: Message,
-    F: Future<Output = FO> + 'static,
+    FOut: Message,
+    F: Future<Output = FOut> + 'static,
     FF: Fn(&mut State, Event) -> F + 'static,
-    CF: Fn(&mut State, FO) -> Action + 'static,
+    CF: Fn(&mut State, FOut) -> Action + 'static,
 {
     DeferEventHandler {
         phantom: PhantomData,
