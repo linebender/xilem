@@ -35,7 +35,7 @@ macro_rules! event_handler_mixin {
         fn $fn_name<Callback, OA>(
             self,
             handler: Callback,
-        ) -> events::$event_ty<Self, State, Action, Callback>
+        ) -> events::$event_ty<Self, State, Action, OA, Callback>
         where
             Self: Sized,
             Self::Element: AsRef<web_sys::Element>,
@@ -115,7 +115,7 @@ pub trait Element<State, Action = ()>:
         self,
         event: impl Into<Cow<'static, str>>,
         handler: Callback,
-    ) -> events::OnEvent<Self, State, Action, Event, Callback>
+    ) -> events::OnEvent<Self, State, Action, OA, Event, Callback>
     where
         Self::Element: AsRef<web_sys::Element>,
         Event: JsCast + 'static,
