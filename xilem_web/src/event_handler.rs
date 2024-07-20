@@ -81,9 +81,9 @@ where
 }
 
 #[derive(Default, Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub struct DeferEventHandler<T, A, FO, F, FF, CF> {
+pub struct DeferEventHandler<State, Action, FO, F, FF, CF> {
     #[allow(clippy::complexity)]
-    phantom: PhantomData<fn() -> (T, A, FO, F)>,
+    phantom: PhantomData<fn() -> (State, Action, FO, F)>,
     future_fn: FF,
     callback_fn: CF,
 }
@@ -97,7 +97,7 @@ where
     FO: Message,
     F: Future<Output = FO> + 'static,
     FF: Fn(&mut State, Event) -> F + 'static,
-    CF: Fn(&mut State, FO) + 'static,
+    CF: Fn(&mut State, FO) -> Action + 'static,
 {
     type State = Rc<MessageThunk>;
 
@@ -135,10 +135,10 @@ where
                 spawn_local(async move { thunk.push_message(future.await) });
                 MessageResult::RequestRebuild
             }
-            EventHandlerMessage::Message(output) => {
-                (self.callback_fn)(app_state, *output.downcast::<FO>().unwrap_throw());
-                MessageResult::RequestRebuild
-            }
+            EventHandlerMessage::Message(output) => MessageResult::Action((self.callback_fn)(
+                app_state,
+                *output.downcast::<FO>().unwrap_throw(),
+            )),
         }
     }
 }
@@ -154,7 +154,7 @@ where
     FO: Message,
     F: Future<Output = FO> + 'static,
     FF: Fn(&mut State, Event) -> F + 'static,
-    CF: Fn(&mut State, FO) + 'static,
+    CF: Fn(&mut State, FO) -> Action + 'static,
 {
     DeferEventHandler {
         phantom: PhantomData,

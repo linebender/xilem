@@ -15,7 +15,7 @@ use crate::{
 ///
 /// The event type `Event` should inherit from [`web_sys::Event`]
 #[derive(Clone, Debug)]
-pub struct OnEvent<V, State, Action, OA, Event, Handler> {
+pub struct OnEvent<V, State, Action, OA, Event, Handler = fn(&mut State, Event) -> OA> {
     pub(crate) element: V,
     pub(crate) event: Cow<'static, str>,
     pub(crate) capture: bool,

@@ -16,9 +16,10 @@ use std::borrow::Cow;
 use crate::{
     attribute::{Attr, WithAttributes},
     class::{AsClassIter, Class, WithClasses},
+    event_handler::EventHandler,
     events,
     style::{IntoStyles, Style, WithStyle},
-    DomView, IntoAttributeValue, OptionalAction, Pointer, PointerMsg,
+    DomView, IntoAttributeValue, OptionalAction, Pointer, PointerMsg, ViewCtx,
 };
 use wasm_bindgen::JsCast;
 
@@ -32,15 +33,15 @@ macro_rules! event_handler_mixin {
         // We *could* add another parameter to the macro to fix this, or probably even not provide these events directly on the `Element` interface
         // ///
         // #[doc = concat!("See <https://developer.mozilla.org/en-US/docs/Web/API/Element/", $event, "_event> for more details")]
-        fn $fn_name<Callback, OA>(
+        fn $fn_name<Handler, OA>(
             self,
-            handler: Callback,
-        ) -> events::$event_ty<Self, State, Action, OA, Callback>
+            handler: Handler,
+        ) -> events::$event_ty<Self, State, Action, OA, Handler>
         where
             Self: Sized,
             Self::Element: AsRef<web_sys::Element>,
             OA: OptionalAction<Action>,
-            Callback: Fn(&mut State, web_sys::$web_sys_event_type) -> OA,
+            Handler: EventHandler<web_sys::$web_sys_event_type, State, OA, ViewCtx>,
         {
             events::$event_ty::new(self, handler)
         }
@@ -111,25 +112,25 @@ pub trait Element<State, Action = ()>:
     /// div(()).on("custom-event", |state, event: web_sys::Event| {/* modify `state` */})
     /// # }
     /// ```
-    fn on<Event, Callback, OA>(
+    fn on<Event, Handler, OA>(
         self,
         event: impl Into<Cow<'static, str>>,
-        handler: Callback,
-    ) -> events::OnEvent<Self, State, Action, OA, Event, Callback>
+        handler: Handler,
+    ) -> events::OnEvent<Self, State, Action, OA, Event, Handler>
     where
         Self::Element: AsRef<web_sys::Element>,
         Event: JsCast + 'static,
         OA: OptionalAction<Action>,
-        Callback: Fn(&mut State, Event) -> OA,
+        Handler: EventHandler<Event, State, OA, ViewCtx>,
         Self: Sized,
     {
         events::OnEvent::new(self, event, handler)
     }
 
-    fn pointer<Callback: Fn(&mut State, PointerMsg)>(
+    fn pointer<Handler: Fn(&mut State, PointerMsg)>(
         self,
-        handler: Callback,
-    ) -> Pointer<Self, State, Action, Callback> {
+        handler: Handler,
+    ) -> Pointer<Self, State, Action, Handler> {
         crate::pointer::pointer(self, handler)
     }
 
