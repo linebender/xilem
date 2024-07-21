@@ -1,5 +1,9 @@
 <div align="center">
 
+# Masonry
+
+**A foundational framework for Rust GUI libraries.**
+
 [![Latest published version.](https://img.shields.io/crates/v/masonry.svg)](https://crates.io/crates/masonry)
 [![Documentation build status.](https://img.shields.io/docsrs/masonry.svg)](https://docs.rs/masonry)
 [![Apache 2.0 license.](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](#license)
@@ -8,13 +12,9 @@
 [![GitHub Actions CI status.](https://img.shields.io/github/actions/workflow/status/linebender/xilem/ci.yml?logo=github&label=CI)](https://github.com/linebender/xilem/actions)
 [![Dependency staleness status.](https://deps.rs/crate/masonry/latest/status.svg)](https://deps.rs/crate/masonry)
 
-# Masonry
-
 </div>
 
 <!-- cargo-rdme start -->
-
-**A foundational framework for Rust GUI libraries.**
 
 Masonry gives you a platform to create windows (using [winit] as a backend) each with a tree of widgets. It also gives you tools to inspect that widget tree at runtime, write unit tests on it, and generally have an easier time debugging and maintaining your app.
 
