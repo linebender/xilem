@@ -8,6 +8,17 @@ use xilem_core::{DynMessage, Message, MessageProxy, NoElement, View, ViewId, Vie
 
 use crate::ViewCtx;
 
+/// Launch a task which will run until the view is no longer in the tree.
+/// `future_future` is given a [`MessageProxy`], which it will store in the future it returns.
+/// This `MessageProxy` can be used to send a message to `on_event`, which can then update
+/// the app's state.
+///
+/// For exampe, this can be used with the time functions in [`crate::tokio::time`].
+///
+/// Note that this task will not be updated if the view is rebuilt, so `future_future`
+/// cannot capture.
+// TODO: More thorough documentation.
+/// See [run_once](crate::core::run_once) for details.
 pub fn async_repeat<M, F, H, State, Action, Fut>(
     future_future: F,
     on_event: H,
@@ -18,6 +29,13 @@ where
     H: Fn(&mut State, M) -> Action + 'static,
     M: Message + 'static,
 {
+    const {
+        assert!(
+            core::mem::size_of::<F>() == 0,
+            "`async_repeat` will not be ran again when its captured variables are updated.\n\
+            To ignore this warning, use `async_repeat_raw`."
+        );
+    };
     AsyncRepeat {
         future_future,
         on_event,
