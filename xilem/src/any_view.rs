@@ -19,7 +19,7 @@ use crate::{Pod, ViewCtx};
 /// or used to implement conditional display and switching of views.
 ///
 /// Note that `Option` can also be used for conditionally displaying
-/// views in a [`ViewSequence`](crate::ViewSequence).
+/// views in a [`ViewSequence`](xilem_core::ViewSequence).
 // TODO: Mention `Either` when we have implemented that?
 pub type AnyWidgetView<State, Action = ()> =
     dyn AnyView<State, Action, ViewCtx, Pod<DynWidget>> + Send + Sync;
