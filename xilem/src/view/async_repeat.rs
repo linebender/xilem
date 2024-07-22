@@ -49,7 +49,6 @@ where
         let handle = ctx
             .runtime()
             .spawn((self.future_future)(MessageProxy::new(proxy, path)));
-        // TODO: Clearly this shouldn't be a label here
         (NoElement, handle)
     }
 
@@ -65,12 +64,11 @@ where
 
     fn teardown(
         &self,
-        _: &mut Self::ViewState,
+        view_state: &mut Self::ViewState,
         _: &mut ViewCtx,
         _: xilem_core::Mut<'_, Self::Element>,
     ) {
-        // Nothing to do
-        // TODO: Our state will be dropped, finishing the future
+        view_state.abort();
     }
 
     fn message(
