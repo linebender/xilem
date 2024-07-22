@@ -82,11 +82,11 @@ where
 
     fn teardown(
         &self,
-        view_state: &mut Self::ViewState,
+        join_handle: &mut Self::ViewState,
         _: &mut ViewCtx,
         _: xilem_core::Mut<'_, Self::Element>,
     ) {
-        view_state.abort();
+        join_handle.abort();
     }
 
     fn message(
