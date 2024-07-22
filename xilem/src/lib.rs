@@ -61,6 +61,7 @@ where
         }
     }
 
+    /// Sets main window background color.
     pub fn background_color(mut self, color: Color) -> Self {
         self.background_color = color;
         self
