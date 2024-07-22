@@ -18,7 +18,7 @@ use crate::ViewCtx;
 /// Note that this task will not be updated if the view is rebuilt, so `future_future`
 /// cannot capture.
 // TODO: More thorough documentation.
-/// See [run_once](crate::core::run_once) for details.
+/// See [`run_once`](crate::core::run_once) for details.
 pub fn async_repeat<M, F, H, State, Action, Fut>(
     future_future: F,
     on_event: H,
@@ -36,6 +36,27 @@ where
             To ignore this warning, use `async_repeat_raw`."
         );
     };
+    AsyncRepeat {
+        future_future,
+        on_event,
+        message: PhantomData,
+    }
+}
+
+/// Launch a task which will run until the view is no longer in the tree.
+///
+/// This is [`async_repeat`] without the capturing rules.
+/// See `async_repeat` for full documentation.
+pub fn async_repeat_raw<M, F, H, State, Action, Fut>(
+    future_future: F,
+    on_event: H,
+) -> AsyncRepeat<F, H, M>
+where
+    F: Fn(MessageProxy<M>) -> Fut,
+    Fut: Future<Output = ()> + Send + 'static,
+    H: Fn(&mut State, M) -> Action + 'static,
+    M: Message + 'static,
+{
     AsyncRepeat {
         future_future,
         on_event,

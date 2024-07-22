@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 mod async_repeat;
-pub use async_repeat::{async_repeat, AsyncRepeat};
+pub use async_repeat::*;
 
 mod button;
 pub use button::*;
