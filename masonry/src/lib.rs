@@ -1,15 +1,18 @@
 // Copyright 2018 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-//! A framework that aims to provide the foundation for Rust GUI libraries.
-//!
 //! Masonry gives you a platform to create windows (using [winit] as a backend) each with a tree of widgets. It also gives you tools to inspect that widget tree at runtime, write unit tests on it, and generally have an easier time debugging and maintaining your app.
 //!
 //! The framework is not opinionated about what your user-facing abstraction will be: you can implement immediate-mode GUI, the Elm architecture, functional reactive GUI, etc, on top of Masonry.
 //!
+//! See [Xilem] as an example of reactive UI built on top of Masonry.
+//!
 //! Masonry was originally a fork of [Druid] that emerged from discussions within the Linebender community about what it would look like to turn Druid into a foundational library.
 //!
-//! ## Example
+//! Masonry can currently be considered to be in an alpha state.
+//! Lots of things need improvements, e.g. text input is janky and snapshot testing is not consistent across platforms.
+//!
+//! # Example
 //!
 //! The to-do-list example looks like this:
 //!
@@ -75,6 +78,7 @@
 //!
 //! [winit]: https://crates.io/crates/winit
 //! [Druid]: https://crates.io/crates/druid
+//! [Xilem]: https://crates.io/crates/xilem
 
 #![deny(clippy::trivially_copy_pass_by_ref)]
 // #![deny(rustdoc::broken_intra_doc_links)]

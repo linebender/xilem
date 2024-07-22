@@ -57,7 +57,7 @@ on:
 
 jobs:
   fmt:
-    name: cargo fmt
+    name: formatting
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -78,6 +78,15 @@ jobs:
 
       - name: check copyright headers
         run: bash .github/copyright.sh
+
+      - name: install cargo-rdme
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-rdme
+
+      - name: cargo rdme
+        run: |
+          cargo rdme --check --workspace-project=masonry
 
   clippy-stable:
     name: cargo clippy
