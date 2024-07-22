@@ -57,7 +57,7 @@ on:
 
 jobs:
   fmt:
-    name: check formatting
+    name: formatting
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
