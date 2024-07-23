@@ -43,6 +43,7 @@ pub struct Xilem<State, Logic> {
     state: State,
     logic: Logic,
     runtime: tokio::runtime::Runtime,
+    background_color: Color,
 }
 
 impl<State, Logic, View> Xilem<State, Logic>
@@ -56,7 +57,14 @@ where
             state,
             logic,
             runtime,
+            background_color: Color::BLACK,
         }
+    }
+
+    /// Sets main window background color.
+    pub fn background_color(mut self, color: Color) -> Self {
+        self.background_color = color;
+        self
     }
 
     // TODO: Make windows a specific view
@@ -93,8 +101,9 @@ where
     {
         let event_loop = event_loop.build()?;
         let proxy = event_loop.create_proxy();
+        let bg_color = self.background_color;
         let (root_widget, driver) = self.into_driver(Arc::new(MasonryProxy(proxy)));
-        event_loop_runner::run_with(event_loop, window_attributes, root_widget, driver)
+        event_loop_runner::run_with(event_loop, window_attributes, root_widget, driver, bg_color)
     }
 
     pub fn into_driver(
