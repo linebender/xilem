@@ -1,6 +1,8 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+//! A state machine to detect whether the button was pressed an even or an odd number of times.
+
 use winit::error::EventLoopError;
 use xilem::{
     view::{button, flex, label, prose},
