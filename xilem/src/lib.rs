@@ -28,6 +28,8 @@ pub use masonry::{
 };
 pub use xilem_core as core;
 
+mod one_of;
+
 mod any_view;
 pub use any_view::AnyWidgetView;
 
