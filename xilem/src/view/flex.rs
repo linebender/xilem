@@ -403,7 +403,7 @@ where
     V: WidgetView<State, Action, ViewState: 'static>,
 {
     fn from(value: FlexItem<V, State, Action>) -> Self {
-        AnyFlexChild::Item(flex_item(Box::new(value.view), value.params))
+        AnyFlexChild::Item(flex_item(value.view.boxed(), value.params))
     }
 }
 
