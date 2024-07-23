@@ -12,7 +12,7 @@ use xilem::{
         async_repeat, button, button_any_pointer, checkbox, flex, label, prose, textbox, Axis,
         FlexExt as _, FlexSpacer,
     },
-    AnyWidgetView, Color, EventLoop, EventLoopBuilder, TextAlignment, WidgetView, Xilem,
+    Color, EventLoop, EventLoopBuilder, TextAlignment, WidgetView, Xilem,
 };
 const LOREM: &str = r"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi cursus mi sed euismod euismod. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Nullam placerat efficitur tellus at semper. Morbi ac risus magna. Donec ut cursus ex. Etiam quis posuere tellus. Mauris posuere dui et turpis mollis, vitae luctus tellus consectetur. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur eu facilisis nisl.
 
