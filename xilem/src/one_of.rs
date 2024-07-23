@@ -6,7 +6,7 @@
 use accesskit::Role;
 use masonry::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
-    PointerEvent, Size, StatusChange, TextEvent, Widget, WidgetId, WidgetPod,
+    Point, PointerEvent, Size, StatusChange, TextEvent, Widget, WidgetId, WidgetPod,
 };
 use smallvec::{smallvec, SmallVec};
 use vello::Scene;
@@ -277,15 +277,51 @@ impl<
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
         match self {
-            OneOfWidget::A(w) => w.layout(ctx, bc),
-            OneOfWidget::B(w) => w.layout(ctx, bc),
-            OneOfWidget::C(w) => w.layout(ctx, bc),
-            OneOfWidget::D(w) => w.layout(ctx, bc),
-            OneOfWidget::E(w) => w.layout(ctx, bc),
-            OneOfWidget::F(w) => w.layout(ctx, bc),
-            OneOfWidget::G(w) => w.layout(ctx, bc),
-            OneOfWidget::H(w) => w.layout(ctx, bc),
-            OneOfWidget::I(w) => w.layout(ctx, bc),
+            OneOfWidget::A(w) => {
+                let size = w.layout(ctx, bc);
+                ctx.place_child(w, Point::ORIGIN);
+                size
+            }
+            OneOfWidget::B(w) => {
+                let size = w.layout(ctx, bc);
+                ctx.place_child(w, Point::ORIGIN);
+                size
+            }
+            OneOfWidget::C(w) => {
+                let size = w.layout(ctx, bc);
+                ctx.place_child(w, Point::ORIGIN);
+                size
+            }
+            OneOfWidget::D(w) => {
+                let size = w.layout(ctx, bc);
+                ctx.place_child(w, Point::ORIGIN);
+                size
+            }
+            OneOfWidget::E(w) => {
+                let size = w.layout(ctx, bc);
+                ctx.place_child(w, Point::ORIGIN);
+                size
+            }
+            OneOfWidget::F(w) => {
+                let size = w.layout(ctx, bc);
+                ctx.place_child(w, Point::ORIGIN);
+                size
+            }
+            OneOfWidget::G(w) => {
+                let size = w.layout(ctx, bc);
+                ctx.place_child(w, Point::ORIGIN);
+                size
+            }
+            OneOfWidget::H(w) => {
+                let size = w.layout(ctx, bc);
+                ctx.place_child(w, Point::ORIGIN);
+                size
+            }
+            OneOfWidget::I(w) => {
+                let size = w.layout(ctx, bc);
+                ctx.place_child(w, Point::ORIGIN);
+                size
+            }
         }
     }
 
