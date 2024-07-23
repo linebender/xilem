@@ -108,7 +108,7 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> {
 }
 
 fn toggleable(data: &mut AppData) -> impl WidgetView<AppData> {
-    let inner_view: Box<AnyWidgetView<_>> = if data.active {
+    if data.active {
         flex((
             button("Deactivate", |data: &mut AppData| {
                 data.active = false;
@@ -122,8 +122,7 @@ fn toggleable(data: &mut AppData) -> impl WidgetView<AppData> {
         .boxed()
     } else {
         button("Activate", |data: &mut AppData| data.active = true).boxed()
-    };
-    inner_view
+    }
 }
 
 struct AppData {
