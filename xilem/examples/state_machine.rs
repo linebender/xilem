@@ -5,13 +5,17 @@
 
 use winit::error::EventLoopError;
 use xilem::{
+    core::one_of::{OneOf, OneOf3},
     view::{button, flex, label, prose},
     EventLoop, WidgetView, Xilem,
 };
-use xilem_core::one_of::{OneOf, OneOf4};
 
-struct AppState {
-    value: IsEven,
+/// The state of the entire application.
+///
+/// This is owned by Xilem, used to construct the view tree, and updated by event handlers.
+struct StateMachine {
+    state: IsEven,
+    /// The history of which transitions were taken in this run.
     history: String,
 }
 
@@ -24,47 +28,56 @@ enum IsEven {
     Success,
 }
 
-fn sequence_button(value: &'static str, target_state: IsEven) -> impl WidgetView<AppState> {
-    button(value, move |state: &mut AppState| {
-        state.value = target_state;
-        state.history.push_str(value);
-    })
-}
-
-fn state_machine(state: &mut AppState) -> impl WidgetView<AppState> {
-    match state.value {
-        IsEven::Initial | IsEven::Even => OneOf4::A(flex((
+fn state_machine(app_data: &mut StateMachine) -> impl WidgetView<StateMachine> {
+    match app_data.state {
+        // The first time we use `OneOf` in a conditional statement, we need
+        // to specify the number of `OneOf` variants used - 3 in this case.
+        // This works around a rustc inference issue.
+        IsEven::Initial | IsEven::Even => OneOf3::A(flex((
             sequence_button("1", IsEven::Odd),
             sequence_button("_", IsEven::Success),
         ))),
-        IsEven::Odd => OneOf::D(flex((
+        // Subsequent branches can instead use the overarching `OneOf` type,
+        // meaning that they don't need to change if additional branches are added.
+        IsEven::Odd => OneOf::B(flex((
             sequence_button("1", IsEven::Even),
             sequence_button("_", IsEven::Halt),
         ))),
-        IsEven::Halt => OneOf::B(label("Failure! Tally total was odd.")),
+        // These branches can use the same variant of `OneOf`, because
+        // they both have the same view type (`Label`).
+        IsEven::Halt => OneOf::C(label("Failure! Tally total was odd.")),
         IsEven::Success => OneOf::C(label("Success! Tally total was even.")),
     }
 }
 
-fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> {
+/// A button component which transitions to a specified `target_state`
+/// and appends its value to the history when pressed.
+fn sequence_button(value: &'static str, target_state: IsEven) -> impl WidgetView<StateMachine> {
+    button(value, move |app_data: &mut StateMachine| {
+        app_data.state = target_state;
+        app_data.history.push_str(value);
+    })
+}
+
+fn app_logic(app_data: &mut StateMachine) -> impl WidgetView<StateMachine> {
     flex((
-        button("Reset", |state: &mut AppState| {
-            state.history.clear();
-            state.value = IsEven::Initial;
+        button("Reset", |app_data: &mut StateMachine| {
+            app_data.history.clear();
+            app_data.state = IsEven::Initial;
         }),
-        prose(&*state.history),
-        label(format!("Current state: {:?}", state.value)),
-        state_machine(state),
-        // TODO: When we have a canvas widget, visualise the state machine
+        prose(&*app_data.history),
+        label(format!("Current state: {:?}", app_data.state)),
+        state_machine(app_data),
+        // TODO: When we have a canvas widget, visualise the entire state machine here.
     ))
 }
 
 fn main() -> Result<(), EventLoopError> {
-    let state = AppState {
-        value: IsEven::Initial,
+    let app_data = StateMachine {
+        state: IsEven::Initial,
         history: String::new(),
     };
-    let app = Xilem::new(state, app_logic);
+    let app = Xilem::new(app_data, app_logic);
     app.run_windowed(EventLoop::with_user_event(), "Centered Flex".into())?;
     Ok(())
 }
