@@ -11,6 +11,7 @@ pub enum AttributeValue {
     True, // for the boolean true, this serializes to an empty string (e.g. for <input checked>)
     I32(i32),
     U32(u32),
+    Usize(usize),
     F32(f32),
     F64(f64),
     String(CowStr),
@@ -22,6 +23,7 @@ impl AttributeValue {
             AttributeValue::True => "".into(), // empty string is equivalent to a true set attribute
             AttributeValue::I32(n) => n.to_string().into(),
             AttributeValue::U32(n) => n.to_string().into(),
+            AttributeValue::Usize(n) => n.to_string().into(),
             AttributeValue::F32(n) => n.to_string().into(),
             AttributeValue::F64(n) => n.to_string().into(),
             AttributeValue::String(s) => s.clone(),
@@ -59,6 +61,12 @@ impl IntoAttributeValue for AttributeValue {
 impl IntoAttributeValue for u32 {
     fn into_attr_value(self) -> Option<AttributeValue> {
         Some(AttributeValue::U32(self))
+    }
+}
+
+impl IntoAttributeValue for usize {
+    fn into_attr_value(self) -> Option<AttributeValue> {
+        Some(AttributeValue::Usize(self))
     }
 }
 
