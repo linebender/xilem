@@ -6,7 +6,7 @@
 //! This is an integration test so that it can use the infrastructure in [`common`].
 
 use xilem_core::{
-    one_of::{OneOf2, OneOf, OneOfCtx, PhantomElementCtx},
+    one_of::{OneOf, OneOf2, OneOfCtx, PhantomElementCtx},
     MessageResult, Mut, View, ViewId,
 };
 

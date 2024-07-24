@@ -472,8 +472,7 @@ impl<
 }
 
 impl<P1, P2, P3, P4, P5, P6, P7, P8, P9, E1, E2, E3, E4, E5, E6, E7, E8, E9>
-    DomNode<OneOf<P1, P2, P3, P4, P5, P6, P7, P8, P9>>
-    for OneOf<E1, E2, E3, E4, E5, E6, E7, E8, E9>
+    DomNode<OneOf<P1, P2, P3, P4, P5, P6, P7, P8, P9>> for OneOf<E1, E2, E3, E4, E5, E6, E7, E8, E9>
 where
     E1: DomNode<P1>,
     E2: DomNode<P2>,
