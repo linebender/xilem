@@ -2004,9 +2004,6 @@ where
 pub trait SvgmPathElement<State, Action = ()>:
     SvgElement<State, Action, DomNode: AsRef<web_sys::SvgmPathElement>>
 {
-    fn fill(self, brush: impl Into<peniko::Brush>) -> crate::svg::Fill<Self, State, Action> {
-        crate::svg::fill(self, brush)
-    }
 }
 
 // #[cfg(feature = "SvgmPathElement")]
@@ -2021,6 +2018,9 @@ where
 pub trait SvgPathElement<State, Action = ()>:
     SvgGeometryElement<State, Action, DomNode: AsRef<web_sys::SvgPathElement>>
 {
+    fn fill(self, brush: impl Into<peniko::Brush>) -> crate::svg::Fill<Self, State, Action> {
+        crate::svg::fill(self, brush)
+    }
 }
 
 // #[cfg(feature = "SvgPathElement")]
