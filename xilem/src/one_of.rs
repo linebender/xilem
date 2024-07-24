@@ -120,7 +120,7 @@ impl<
         }
     }
     fn upcast_one_of_element(
-        elem: xilem_core::one_of::OneOf9<
+        elem: xilem_core::one_of::OneOf<
             Pod<A>,
             Pod<B>,
             Pod<C>,
@@ -133,21 +133,21 @@ impl<
         >,
     ) -> Self::OneOfElement {
         match elem {
-            xilem_core::one_of::OneOf9::A(w) => Pod::new(OneOfWidget::A(w.inner)),
-            xilem_core::one_of::OneOf9::B(w) => Pod::new(OneOfWidget::B(w.inner)),
-            xilem_core::one_of::OneOf9::C(w) => Pod::new(OneOfWidget::C(w.inner)),
-            xilem_core::one_of::OneOf9::D(w) => Pod::new(OneOfWidget::D(w.inner)),
-            xilem_core::one_of::OneOf9::E(w) => Pod::new(OneOfWidget::E(w.inner)),
-            xilem_core::one_of::OneOf9::F(w) => Pod::new(OneOfWidget::F(w.inner)),
-            xilem_core::one_of::OneOf9::G(w) => Pod::new(OneOfWidget::G(w.inner)),
-            xilem_core::one_of::OneOf9::H(w) => Pod::new(OneOfWidget::H(w.inner)),
-            xilem_core::one_of::OneOf9::I(w) => Pod::new(OneOfWidget::I(w.inner)),
+            xilem_core::one_of::OneOf::A(w) => Pod::new(OneOfWidget::A(w.inner)),
+            xilem_core::one_of::OneOf::B(w) => Pod::new(OneOfWidget::B(w.inner)),
+            xilem_core::one_of::OneOf::C(w) => Pod::new(OneOfWidget::C(w.inner)),
+            xilem_core::one_of::OneOf::D(w) => Pod::new(OneOfWidget::D(w.inner)),
+            xilem_core::one_of::OneOf::E(w) => Pod::new(OneOfWidget::E(w.inner)),
+            xilem_core::one_of::OneOf::F(w) => Pod::new(OneOfWidget::F(w.inner)),
+            xilem_core::one_of::OneOf::G(w) => Pod::new(OneOfWidget::G(w.inner)),
+            xilem_core::one_of::OneOf::H(w) => Pod::new(OneOfWidget::H(w.inner)),
+            xilem_core::one_of::OneOf::I(w) => Pod::new(OneOfWidget::I(w.inner)),
         }
     }
 
     fn update_one_of_element_mut(
         elem_mut: &mut xilem_core::Mut<'_, Self::OneOfElement>,
-        new_elem: xilem_core::one_of::OneOf9<
+        new_elem: xilem_core::one_of::OneOf<
             Pod<A>,
             Pod<B>,
             Pod<C>,
@@ -160,15 +160,15 @@ impl<
         >,
     ) {
         let new_inner = match new_elem {
-            xilem_core::one_of::OneOf9::A(w) => OneOfWidget::A(w.inner),
-            xilem_core::one_of::OneOf9::B(w) => OneOfWidget::B(w.inner),
-            xilem_core::one_of::OneOf9::C(w) => OneOfWidget::C(w.inner),
-            xilem_core::one_of::OneOf9::D(w) => OneOfWidget::D(w.inner),
-            xilem_core::one_of::OneOf9::E(w) => OneOfWidget::E(w.inner),
-            xilem_core::one_of::OneOf9::F(w) => OneOfWidget::F(w.inner),
-            xilem_core::one_of::OneOf9::G(w) => OneOfWidget::G(w.inner),
-            xilem_core::one_of::OneOf9::H(w) => OneOfWidget::H(w.inner),
-            xilem_core::one_of::OneOf9::I(w) => OneOfWidget::I(w.inner),
+            xilem_core::one_of::OneOf::A(w) => OneOfWidget::A(w.inner),
+            xilem_core::one_of::OneOf::B(w) => OneOfWidget::B(w.inner),
+            xilem_core::one_of::OneOf::C(w) => OneOfWidget::C(w.inner),
+            xilem_core::one_of::OneOf::D(w) => OneOfWidget::D(w.inner),
+            xilem_core::one_of::OneOf::E(w) => OneOfWidget::E(w.inner),
+            xilem_core::one_of::OneOf::F(w) => OneOfWidget::F(w.inner),
+            xilem_core::one_of::OneOf::G(w) => OneOfWidget::G(w.inner),
+            xilem_core::one_of::OneOf::H(w) => OneOfWidget::H(w.inner),
+            xilem_core::one_of::OneOf::I(w) => OneOfWidget::I(w.inner),
         };
         let old_inner = std::mem::replace(elem_mut.widget, new_inner);
         match old_inner {

@@ -8,7 +8,7 @@ use xilem::{
     view::{button, flex, label, prose},
     EventLoop, WidgetView, Xilem,
 };
-use xilem_core::one_of::{OneOf4, OneOf9};
+use xilem_core::one_of::{OneOf, OneOf4};
 
 struct AppState {
     value: IsEven,
@@ -37,12 +37,12 @@ fn state_machine(state: &mut AppState) -> impl WidgetView<AppState> {
             sequence_button("1", IsEven::Odd),
             sequence_button("_", IsEven::Success),
         ))),
-        IsEven::Odd => OneOf9::D(flex((
+        IsEven::Odd => OneOf::D(flex((
             sequence_button("1", IsEven::Even),
             sequence_button("_", IsEven::Halt),
         ))),
-        IsEven::Halt => OneOf9::B(label("Failure! Tally total was odd.")),
-        IsEven::Success => OneOf9::C(label("Success! Tally total was even.")),
+        IsEven::Halt => OneOf::B(label("Failure! Tally total was odd.")),
+        IsEven::Success => OneOf::C(label("Success! Tally total was even.")),
     }
 }
 
@@ -55,6 +55,7 @@ fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> {
         prose(&*state.history),
         label(format!("Current state: {:?}", state.value)),
         state_machine(state),
+        // TODO: When we have a canvas widget, visualise the state machine
     ))
 }
 
