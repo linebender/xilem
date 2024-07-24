@@ -6,7 +6,7 @@
 //! This is an integration test so that it can use the infrastructure in [`common`].
 
 use xilem_core::{
-    one_of::{OneOf2, OneOf9, OneOfCtx, PhantomElementCtx},
+    one_of::{OneOf, OneOf2, OneOfCtx, PhantomElementCtx},
     MessageResult, Mut, View, ViewId,
 };
 
@@ -41,7 +41,7 @@ impl
     type OneOfElement = TestElement;
 
     fn upcast_one_of_element(
-        elem: OneOf9<
+        elem: OneOf<
             TestElement,
             TestElement,
             TestElement,
@@ -54,15 +54,15 @@ impl
         >,
     ) -> Self::OneOfElement {
         match elem {
-            OneOf9::A(e) => e,
-            OneOf9::B(e) => e,
+            OneOf::A(e) => e,
+            OneOf::B(e) => e,
             _ => unreachable!(),
         }
     }
 
     fn update_one_of_element_mut(
         elem_mut: &mut Mut<'_, Self::OneOfElement>,
-        new_elem: OneOf9<
+        new_elem: OneOf<
             TestElement,
             TestElement,
             TestElement,
@@ -75,7 +75,7 @@ impl
         >,
     ) {
         match new_elem {
-            OneOf9::A(new_elem) | OneOf9::B(new_elem) => {
+            OneOf::A(new_elem) | OneOf::B(new_elem) => {
                 assert_eq!(new_elem.operations.len(), 1);
                 let Some(Operation::Build(new_id)) = new_elem.operations.first() else {
                     unreachable!()
