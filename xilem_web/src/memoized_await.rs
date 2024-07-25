@@ -20,8 +20,12 @@ pub struct MemoizedAwait<State, Action, OA, InitFuture, Data, Callback, F, FOut>
     phantom: PhantomData<fn() -> (State, Action, OA, F, FOut)>,
 }
 
-impl<State, Action, OA, InitFuture, Data, CB, F, FOut>
-    MemoizedAwait<State, Action, OA, InitFuture, Data, CB, F, FOut>
+impl<State, Action, OA, InitFuture, Data, Callback, F, FOut>
+    MemoizedAwait<State, Action, OA, InitFuture, Data, Callback, F, FOut>
+where
+    FOut: std::fmt::Debug + 'static,
+    F: Future<Output = FOut> + 'static,
+    InitFuture: Fn(&Data) -> F,
 {
     /// Debounce the `init_future` function, when `data` updates,
     /// when `reset_debounce_on_update == false` then this throttles updates each `millisecconds`
@@ -35,6 +39,16 @@ impl<State, Action, OA, InitFuture, Data, CB, F, FOut>
     pub fn reset_debounce_on_update(mut self, reset: bool) -> Self {
         self.reset_debounce_on_update = reset;
         self
+    }
+
+    fn init_future(&self, ctx: &mut ViewCtx, generation: u64) {
+        ctx.with_id(ViewId::new(generation), |ctx| {
+            let thunk = ctx.message_thunk();
+            let future = (self.init_future)(&self.data);
+            spawn_local(async move {
+                thunk.push_message(MemoizedAwaitMessage::<FOut>::Output(future.await));
+            });
+        });
     }
 }
 
@@ -83,6 +97,7 @@ where
     }
 }
 
+#[derive(Default)]
 pub struct MemoizedAwaitState {
     generation: u64,
     schedule_update: bool,
@@ -100,6 +115,7 @@ impl MemoizedAwaitState {
                 .clear_timeout_with_handle(handle);
         }
         self.schedule_update_timeout_handle = None;
+        self.schedule_update_fn = None;
     }
 
     fn reset_debounce_timeout_and_schedule_update<FOut: std::fmt::Debug + 'static>(
@@ -150,24 +166,15 @@ where
     type ViewState = MemoizedAwaitState;
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        let generation = 0;
-        ctx.with_id(ViewId::new(generation), |ctx| {
-            let thunk = ctx.message_thunk();
-            let future = (self.init_future)(&self.data);
-            spawn_local(async move {
-                thunk.push_message(MemoizedAwaitMessage::<FOut>::Output(future.await));
-            });
-            (
-                NoElement,
-                MemoizedAwaitState {
-                    generation,
-                    schedule_update: false,
-                    schedule_update_fn: None,
-                    schedule_update_timeout_handle: None,
-                    update: false,
-                },
-            )
-        })
+        let mut state = MemoizedAwaitState::default();
+
+        if self.debounce > 0 {
+            state.reset_debounce_timeout_and_schedule_update::<FOut>(ctx, self.debounce);
+        } else {
+            self.init_future(ctx, state.generation);
+        }
+
+        (NoElement, state)
     }
 
     fn rebuild<'el>(
@@ -204,13 +211,7 @@ where
                 // no debounce
                 view_state.generation += 1;
                 view_state.update = false;
-                ctx.with_id(ViewId::new(view_state.generation), |ctx| {
-                    let future = (self.init_future)(&self.data);
-                    let thunk = ctx.message_thunk();
-                    spawn_local(async move {
-                        thunk.push_message(MemoizedAwaitMessage::<FOut>::Output(future.await));
-                    });
-                });
+                self.init_future(ctx, view_state.generation);
             }
         }
     }

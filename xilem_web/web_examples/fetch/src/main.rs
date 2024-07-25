@@ -18,6 +18,8 @@ const TOO_MANY_CATS: usize = 8;
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Cat {
     pub url: String,
+    pub width: u16,
+    pub height: u16,
 }
 
 async fn fetch_cats(count: usize) -> Result<Vec<Cat>, gloo_net::Error> {
@@ -73,7 +75,12 @@ fn app_logic(state: &mut AppState) -> impl HtmlDivElement<AppState> {
     let cat_images = state
         .cats
         .iter()
-        .map(|cat| img(()).src(cat.url.clone()))
+        .map(|cat| {
+            img(())
+                .src(cat.url.clone())
+                .attr("width", cat.width)
+                .attr("height", cat.height)
+        })
         .collect::<Vec<_>>();
     div((
         fieldset((

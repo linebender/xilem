@@ -9,6 +9,8 @@ type CowStr = std::borrow::Cow<'static, str>;
 #[derive(PartialEq, Clone, Debug, PartialOrd)]
 pub enum AttributeValue {
     True, // for the boolean true, this serializes to an empty string (e.g. for <input checked>)
+    I16(i16),
+    U16(u16),
     I32(i32),
     U32(u32),
     Usize(usize),
@@ -21,6 +23,8 @@ impl AttributeValue {
     pub fn serialize(&self) -> CowStr {
         match self {
             AttributeValue::True => "".into(), // empty string is equivalent to a true set attribute
+            AttributeValue::I16(n) => n.to_string().into(),
+            AttributeValue::U16(n) => n.to_string().into(),
             AttributeValue::I32(n) => n.to_string().into(),
             AttributeValue::U32(n) => n.to_string().into(),
             AttributeValue::Usize(n) => n.to_string().into(),
@@ -58,6 +62,24 @@ impl IntoAttributeValue for AttributeValue {
     }
 }
 
+impl IntoAttributeValue for i16 {
+    fn into_attr_value(self) -> Option<AttributeValue> {
+        Some(AttributeValue::I16(self))
+    }
+}
+
+impl IntoAttributeValue for u16 {
+    fn into_attr_value(self) -> Option<AttributeValue> {
+        Some(AttributeValue::U16(self))
+    }
+}
+
+impl IntoAttributeValue for i32 {
+    fn into_attr_value(self) -> Option<AttributeValue> {
+        Some(AttributeValue::I32(self))
+    }
+}
+
 impl IntoAttributeValue for u32 {
     fn into_attr_value(self) -> Option<AttributeValue> {
         Some(AttributeValue::U32(self))
@@ -67,12 +89,6 @@ impl IntoAttributeValue for u32 {
 impl IntoAttributeValue for usize {
     fn into_attr_value(self) -> Option<AttributeValue> {
         Some(AttributeValue::Usize(self))
-    }
-}
-
-impl IntoAttributeValue for i32 {
-    fn into_attr_value(self) -> Option<AttributeValue> {
-        Some(AttributeValue::I32(self))
     }
 }
 
