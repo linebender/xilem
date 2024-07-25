@@ -21,6 +21,24 @@
     width: 50%;
     min-width: 300px;
   }
+
+  .blink {
+    animation: blinker 1s infinite;
+  }
+
+  @keyframes blinker {
+    from {
+      color: blueviolet;
+    }
+
+    50% {
+      color: hotpink;
+    }
+
+    to {
+      color: blueviolet;
+    }
+  }
 </style>
 
 <body></body>

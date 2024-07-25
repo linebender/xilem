@@ -3,11 +3,11 @@
 
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use xilem_web::{
-    core::{fork, one_of::OneOf6},
+    core::{fork, one_of::Either},
     document_body,
     elements::html::*,
-    interfaces::{Element, HtmlDivElement, HtmlImageElement, HtmlLabelElement},
-    memoized_await, App,
+    interfaces::{Element, HtmlDivElement, HtmlElement, HtmlImageElement, HtmlLabelElement},
+    memoized_await, style as s, App,
 };
 
 use gloo_net::http::Request;
@@ -127,24 +127,22 @@ fn app_logic(state: &mut AppState) -> impl HtmlDivElement<AppState> {
             .map(|err| div((h2("Error"), p(err.to_string()))).class("error")),
         fork(
             div((
-                p(
-                    if state.cats_to_fetch != 0 && state.cats_to_fetch == cat_images.len() {
-                        OneOf6::A("Here are your cats:")
-                    } else if state.cats_to_fetch >= TOO_MANY_CATS {
-                        OneOf6::B("Woah there, that's too many cats")
-                    } else if state.debounce_in_ms > 0
-                        && state.cats_to_fetch > 0
-                        && state.reset_debounce_on_update
-                    {
-                        OneOf6::C("Debounced fetch of cats...")
-                    } else if state.debounce_in_ms > 0 && state.cats_to_fetch > 0 {
-                        OneOf6::D("Throttled fetch of cats...")
-                    } else if state.cats_to_fetch > 0 && state.cats_are_being_fetched {
-                        OneOf6::E("Fetching cats...")
-                    } else {
-                        OneOf6::F("You need to fetch cats")
-                    },
-                ),
+                if state.cats_to_fetch != 0 && state.cats_to_fetch == cat_images.len() {
+                    Either::A(p("Here are your cats:").class("blink"))
+                } else if state.cats_to_fetch >= TOO_MANY_CATS {
+                    Either::B(p("Woah there, that's too many cats"))
+                } else if state.debounce_in_ms > 0
+                    && state.cats_to_fetch > 0
+                    && state.reset_debounce_on_update
+                {
+                    Either::B(p("Debounced fetch of cats..."))
+                } else if state.debounce_in_ms > 0 && state.cats_to_fetch > 0 {
+                    Either::B(p("Throttled fetch of cats..."))
+                } else if state.cats_to_fetch > 0 && state.cats_are_being_fetched {
+                    Either::B(p("Fetching cats..."))
+                } else {
+                    Either::B(p("You need to fetch cats"))
+                },
                 cat_images,
             )),
             // Here's the actual fetching logic:
