@@ -3,11 +3,12 @@
 
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use xilem_web::{
+    concurrent::memoized_await,
     core::{fork, one_of::Either},
     document_body,
     elements::html::*,
     interfaces::{Element, HtmlDivElement, HtmlImageElement, HtmlLabelElement},
-    memoized_await, App,
+    App,
 };
 
 use gloo_net::http::Request;
