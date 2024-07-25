@@ -59,7 +59,7 @@ where
 /// # Examples
 ///
 /// ```
-/// use xilem_web::{core::fork, memoized_await, elements::html::div, interfaces::Element};
+/// use xilem_web::{core::fork, concurrent::memoized_await, elements::html::div, interfaces::Element};
 ///
 /// fn app_logic(state: &mut i32) -> impl Element<i32> {
 ///     fork(
