@@ -6,8 +6,8 @@ use xilem_web::{
     core::{fork, one_of::Either},
     document_body,
     elements::html::*,
-    interfaces::{Element, HtmlDivElement, HtmlElement, HtmlImageElement, HtmlLabelElement},
-    memoized_await, style as s, App,
+    interfaces::{Element, HtmlDivElement, HtmlImageElement, HtmlLabelElement},
+    memoized_await, App,
 };
 
 use gloo_net::http::Request;
