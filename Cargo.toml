@@ -23,9 +23,6 @@ repository = "https://github.com/linebender/xilem"
 homepage = "https://xilem.dev/"
 
 [workspace.lints]
-# Remove assigning_clones once it's allowed by default in stable Rust
-# https://github.com/rust-lang/rust-clippy/pull/12779
-clippy.assigning_clones = "allow"
 rust.unexpected_cfgs = { level = "warn", check-cfg = [
     'cfg(FALSE)',
     'cfg(tarpaulin_include)',
@@ -109,13 +106,13 @@ wgpu = "0.20.1"
 kurbo = "0.11.0"
 parley = "0.1.0"
 peniko = "0.1.1"
-winit = "0.30.2"
+winit = "0.30.4"
 tracing = { version = "0.1.40", default-features = false }
 smallvec = "1.13.2"
 dpi = "0.1.1"
 fnv = "1.0.7"
-image = { version = "0.25.1", default-features = false }
+image = { version = "0.25.2", default-features = false }
 web-time = "1.1.0"
-bitflags = "2.5.0"
+bitflags = "2.6.0"
 accesskit = "0.16.0"
 accesskit_winit = "0.22.0"

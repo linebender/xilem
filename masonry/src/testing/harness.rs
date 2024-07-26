@@ -5,8 +5,7 @@
 
 use std::num::NonZeroUsize;
 
-use image::io::Reader as ImageReader;
-use image::{Rgba, RgbaImage};
+use image::{ImageReader, Rgba, RgbaImage};
 use vello::util::RenderContext;
 use vello::{block_on_wgpu, RendererOptions};
 use wgpu::{

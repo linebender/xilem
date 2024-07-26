@@ -166,11 +166,11 @@ impl<State, Action> View<State, Action, ViewCtx> for File {
     ) -> Mut<'el, Self::Element> {
         if prev.name != self.name {
             let new_path = ctx.current_folder_path.join(&*self.name);
-            let _ = std::fs::rename(&element, &new_path);
+            let _ = std::fs::rename(&*element, &new_path);
             *element = new_path;
         }
         if self.contents != prev.contents {
-            let _ = std::fs::write(&element, self.contents.as_bytes());
+            let _ = std::fs::write(&*element, self.contents.as_bytes());
         }
         element
     }
