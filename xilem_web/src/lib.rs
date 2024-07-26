@@ -33,6 +33,7 @@ mod attribute_value;
 mod class;
 mod context;
 mod element_props;
+pub mod event_handler;
 mod events;
 mod message;
 mod one_of;

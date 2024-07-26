@@ -45,8 +45,8 @@ fn app_logic(model: &mut Model) -> impl HtmlDivElement<Model> {
 fn counter_view<T: 'static>(count: i32) -> impl HtmlDivElement<T, Message> {
     el::div((
         el::label(format!("count: {count}")),
-        el::button("+").on_click(|_, _| Message::Increment),
-        el::button("-").on_click(|_, _| Message::Decrement),
+        el::button("+").on_click(|_: &mut _, _| Message::Increment),
+        el::button("-").on_click(|_: &mut _, _| Message::Decrement),
     ))
 }
 

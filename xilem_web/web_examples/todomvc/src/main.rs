@@ -45,7 +45,7 @@ fn todo_item(todo: &mut Todo, editing: bool) -> impl Element<Todo, TodoAction> {
         el::input(())
             .attr("value", todo.title_editing.clone())
             .class("edit")
-            .on_keydown(|state: &mut Todo, evt| {
+            .on_keydown(|state: &mut Todo, evt: web_sys::KeyboardEvent| {
                 let key = evt.key();
                 if key == "Enter" {
                     state.save_editing();
@@ -56,7 +56,7 @@ fn todo_item(todo: &mut Todo, editing: bool) -> impl Element<Todo, TodoAction> {
                     None
                 }
             })
-            .on_input(|state: &mut Todo, evt| {
+            .on_input(|state: &mut Todo, evt: web_sys::Event| {
                 // TODO There could/should be further checks, if this is indeed the right event (same DOM element)
                 if let Some(element) = evt
                     .target()
@@ -67,7 +67,7 @@ fn todo_item(todo: &mut Todo, editing: bool) -> impl Element<Todo, TodoAction> {
                 }
             })
             .passive(true)
-            .on_blur(|_, _| TodoAction::CancelEditing),
+            .on_blur(|_: &mut _, _| TodoAction::CancelEditing),
     ))
     .class(todo.completed.then_some("completed"))
     .class(editing.then_some("editing"))
@@ -184,12 +184,12 @@ fn app_logic(state: &mut AppState) -> impl DomView<AppState> {
         el::header((
             el::h1("TODOs"),
             input
-                .on_keydown(|state: &mut AppState, evt| {
+                .on_keydown(|state: &mut AppState, evt: web_sys::KeyboardEvent| {
                     if evt.key() == "Enter" {
                         state.create_todo();
                     }
                 })
-                .on_input(|state: &mut AppState, evt| {
+                .on_input(|state: &mut AppState, evt: web_sys::Event| {
                     // TODO There could/should be further checks, if this is indeed the right event (same DOM element)
                     if let Some(element) = evt
                         .target()
