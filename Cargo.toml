@@ -26,60 +26,41 @@ homepage = "https://xilem.dev/"
 # Remove assigning_clones once it's allowed by default in stable Rust
 # https://github.com/rust-lang/rust-clippy/pull/12779
 clippy.assigning_clones = "allow"
-# Remove assigning_clones once it's allowed by default in stable Rust
-# https://github.com/rust-lang/rust-clippy/pull/12779
-clippy.allow_attributes_without_reason = "warn"
-# Remove assigning_clones once it's allowed by default in stable Rust
-# https://github.com/rust-lang/rust-clippy/pull/12779
-clippy.collection_is_never_read = "warn"
-# Remove assigning_clones once it's allowed by default in stable Rust
-# https://github.com/rust-lang/rust-clippy/pull/12779
-clippy.debug_assert_with_mut_call = "warn"
-# Remove assigning_clones once it's allowed by default in stable Rust
-# https://github.com/rust-lang/rust-clippy/pull/12779
-clippy.fn_to_numeric_cast_any = "forbid"
-# Remove assigning_clones once it's allowed by default in stable Rust
-# https://github.com/rust-lang/rust-clippy/pull/12779
-clippy.infinite_loop = "warn"
-# Remove assigning_clones once it's allowed by default in stable Rust
-# https://github.com/rust-lang/rust-clippy/pull/12779
-clippy.large_include_file = "warn"
-# Remove assigning_clones once it's allowed by default in stable Rust
-# https://github.com/rust-lang/rust-clippy/pull/12779
-clippy.large_stack_arrays = "warn"
-# Remove assigning_clones once it's allowed by default in stable Rust
-# https://github.com/rust-lang/rust-clippy/pull/12779
-clippy.mismatching_type_param_order = "warn"
-# Remove assigning_clones once it's allowed by default in stable Rust
-# https://github.com/rust-lang/rust-clippy/pull/12779
-clippy.missing_fields_in_debug = "warn"
-# Remove assigning_clones once it's allowed by default in stable Rust
-# https://github.com/rust-lang/rust-clippy/pull/12779
-clippy.same_functions_in_if_condition = "warn"
-# Remove assigning_clones once it's allowed by default in stable Rust
-# https://github.com/rust-lang/rust-clippy/pull/12779
-clippy.semicolon_if_nothing_returned = "warn"
-# Remove assigning_clones once it's allowed by default in stable Rust
-# https://github.com/rust-lang/rust-clippy/pull/12779
-clippy.should_panic_without_expect = "warn"
-# Remove assigning_clones once it's allowed by default in stable Rust
-# https://github.com/rust-lang/rust-clippy/pull/12779
-clippy.unseparated_literal_suffix = "warn"
 rust.unexpected_cfgs = { level = "warn", check-cfg = [
     'cfg(FALSE)',
     'cfg(tarpaulin_include)',
 ] }
+# unsafe code is not allowed in Xilem or Masonry
+# We would like to set this to `forbid`, but we have to use `deny` because `android_activity` 
+# requires us to use the unsafe `#[no_mangle]` attribute
+# (And cargo doesn't let us have platform specific lints here)
 rust.unsafe_code = "deny"
+
 rust.keyword_idents_2024 = "forbid"
 rust.non_ascii_idents = "forbid"
 rust.unsafe_op_in_unsafe_fn = "forbid"
 rust.non_local_definitions = "forbid"
+
 rust.unused_lifetimes = "warn"
 rust.unit_bindings = "warn"
 rust.unused_import_braces = "warn"
 rust.trivial_numeric_casts = "warn"
 rust.unused_macro_rules = "warn"
 rust.variant_size_differences = "warn"
+
+clippy.allow_attributes_without_reason = "warn"
+clippy.collection_is_never_read = "warn"
+clippy.debug_assert_with_mut_call = "warn"
+clippy.fn_to_numeric_cast_any = "forbid"
+clippy.infinite_loop = "warn"
+clippy.large_include_file = "warn"
+clippy.large_stack_arrays = "warn"
+clippy.mismatching_type_param_order = "warn"
+clippy.missing_fields_in_debug = "warn"
+clippy.same_functions_in_if_condition = "warn"
+clippy.semicolon_if_nothing_returned = "warn"
+clippy.should_panic_without_expect = "warn"
+clippy.unseparated_literal_suffix = "warn"
 
 # Follow-ups for their own PRs, too noisy to go in lint group PR
 
