@@ -43,6 +43,7 @@ mod text;
 mod vec_splice;
 mod vecmap;
 
+pub mod concurrent;
 pub mod elements;
 pub mod interfaces;
 pub mod svg;
