@@ -23,22 +23,6 @@ pub struct Cat {
     pub height: u16,
 }
 
-async fn fetch_cats(count: usize) -> Result<Vec<Cat>, gloo_net::Error> {
-    log::debug!("Fetch {count} cats");
-    if count == 0 {
-        return Ok(Vec::new());
-    }
-    let url = format!("https://api.thecatapi.com/v1/images/search?limit={count}");
-    Ok(Request::get(&url)
-        .send()
-        .await?
-        .json::<Vec<Cat>>()
-        .await?
-        .into_iter()
-        .take(count)
-        .collect())
-}
-
 struct AppState {
     cats_to_fetch: usize,
     cats_are_being_fetched: bool,
@@ -61,6 +45,22 @@ impl Default for AppState {
     }
 }
 
+async fn fetch_cats(count: usize) -> Result<Vec<Cat>, gloo_net::Error> {
+    log::debug!("Fetch {count} cats");
+    if count == 0 {
+        return Ok(Vec::new());
+    }
+    let url = format!("https://api.thecatapi.com/v1/images/search?limit={count}");
+    Ok(Request::get(&url)
+        .send()
+        .await?
+        .json::<Vec<Cat>>()
+        .await?
+        .into_iter()
+        .take(count)
+        .collect())
+}
+
 pub fn input_target<T>(event: &T) -> web_sys::HtmlInputElement
 where
     T: JsCast,
@@ -73,89 +73,18 @@ where
 }
 
 fn app_logic(state: &mut AppState) -> impl HtmlDivElement<AppState> {
-    let cat_images = state
-        .cats
-        .iter()
-        .map(|cat| {
-            img(())
-                .src(cat.url.clone())
-                .attr("width", cat.width)
-                .attr("height", cat.height)
-        })
-        .collect::<Vec<_>>();
     div((
-        fieldset((
-            legend("Cat fetch controls"),
-            table((
-                tr((
-                    td(
-                        label("Reset fetch debounce timeout when updating the cat count:")
-                            .for_("reset-debounce-update"),
-                    ),
-                    td(input(())
-                        .id("reset-debounce-update")
-                        .attr("type", "checkbox")
-                        .attr("checked", state.reset_debounce_on_update)
-                        .on_input(|state: &mut AppState, event: web_sys::Event| {
-                            state.reset_debounce_on_update = input_target(&event).checked();
-                        })),
-                )),
-                tr((
-                    td(label("Debounce timeout in ms:").for_("debounce-timeout-duration")),
-                    td(input(())
-                        .id("debounce-timeout-duration")
-                        .attr("type", "number")
-                        .attr("min", 0)
-                        .attr("value", state.debounce_in_ms)
-                        .on_input(|state: &mut AppState, ev: web_sys::Event| {
-                            state.debounce_in_ms = input_target(&ev).value().parse().unwrap_or(0);
-                        })),
-                )),
-                tr((
-                    td(label("How many cats would you like?").for_("cat-count")),
-                    td(input(())
-                        .id("cat-count")
-                        .attr("type", "number")
-                        .attr("min", 0)
-                        .attr("value", state.cats_to_fetch)
-                        .on_input(|state: &mut AppState, ev: web_sys::Event| {
-                            if !state.cats_are_being_fetched {
-                                state.cats.clear();
-                            }
-                            state.cats_are_being_fetched = true;
-                            state.cats_to_fetch = input_target(&ev).value().parse().unwrap_or(0);
-                        })),
-                )),
-            )),
-        ))
-        .class("cat-fetch-controls"),
-        state
-            .error
-            .as_ref()
-            .map(|err| div((h2("Error"), p(err.to_string()))).class("error")),
+        cat_fetch_controls(state),
         fork(
-            div((
-                if state.cats_to_fetch != 0 && state.cats_to_fetch == cat_images.len() {
-                    Either::A(p("Here are your cats:").class("blink"))
-                } else if state.cats_to_fetch >= TOO_MANY_CATS {
-                    Either::B(p("Woah there, that's too many cats"))
-                } else if state.debounce_in_ms > 0
-                    && state.cats_to_fetch > 0
-                    && state.reset_debounce_on_update
-                {
-                    Either::B(p("Debounced fetch of cats..."))
-                } else if state.debounce_in_ms > 0 && state.cats_to_fetch > 0 {
-                    Either::B(p("Throttled fetch of cats..."))
-                } else if state.cats_to_fetch > 0 && state.cats_are_being_fetched {
-                    Either::B(p("Fetching cats..."))
-                } else {
-                    Either::B(p("You need to fetch cats"))
-                },
-                cat_images,
-            )),
+            cat_images_and_fetching_indicator(state),
             // Here's the actual fetching logic:
             (state.cats_to_fetch < TOO_MANY_CATS).then_some(
                 memoized_await(
+                    // This is given to the first closure right below which when resolved invokes the second closure with the output of the future,
+                    // and when it changes, that first closure will be reevaluated again (similarly as the `Memoize` view).
+                    // If `debounce_ms` below > `0`, then further updates (i.e. invocation of `fetch_cats`) are either throttled (when `!reset_debounce_on_update`),
+                    // or debounced otherwise:
+                    // As long as updates are happening within `debounce_in_ms` ms the first closure is not invoked, and a debounce timeout which runs `debounce_in_ms` is reset.
                     state.cats_to_fetch,
                     |count| fetch_cats(*count),
                     |state: &mut AppState, cats_result| match cats_result {
@@ -172,11 +101,96 @@ fn app_logic(state: &mut AppState) -> impl HtmlDivElement<AppState> {
                         }
                     },
                 )
-                .debounce(state.debounce_in_ms)
+                .debounce_ms(state.debounce_in_ms)
                 .reset_debounce_on_update(state.reset_debounce_on_update),
             ),
         ),
     ))
+}
+
+fn cat_images_and_fetching_indicator(state: &AppState) -> impl HtmlDivElement<AppState> {
+    let cat_images = state
+        .cats
+        .iter()
+        .map(|cat| {
+            img(())
+                .src(cat.url.clone())
+                .attr("width", cat.width)
+                .attr("height", cat.height)
+        })
+        .collect::<Vec<_>>();
+    let error_message = state
+        .error
+        .as_ref()
+        .map(|err| div((h2("Error"), p(err.to_string()))).class("error"));
+    div((
+        error_message,
+        if state.cats_to_fetch != 0 && state.cats_to_fetch == cat_images.len() {
+            Either::A(h1("Here are your cats:").class("blink"))
+        } else if state.cats_to_fetch >= TOO_MANY_CATS {
+            Either::B(p("Woah there, that's too many cats"))
+        } else if state.debounce_in_ms > 0
+            && state.cats_to_fetch > 0
+            && state.reset_debounce_on_update
+        {
+            Either::B(p("Debounced fetch of cats..."))
+        } else if state.debounce_in_ms > 0 && state.cats_to_fetch > 0 {
+            Either::B(p("Throttled fetch of cats..."))
+        } else if state.cats_to_fetch > 0 && state.cats_are_being_fetched {
+            Either::B(p("Fetching cats..."))
+        } else {
+            Either::B(p("You need to fetch cats"))
+        },
+        cat_images,
+    ))
+}
+
+fn cat_fetch_controls(state: &AppState) -> impl Element<AppState> {
+    fieldset((
+        legend("Cat fetch controls"),
+        table((
+            tr((
+                td(label("How many cats would you like?").for_("cat-count")),
+                td(input(())
+                    .id("cat-count")
+                    .attr("type", "number")
+                    .attr("min", 0)
+                    .attr("value", state.cats_to_fetch)
+                    .on_input(|state: &mut AppState, ev: web_sys::Event| {
+                        if !state.cats_are_being_fetched {
+                            state.cats.clear();
+                        }
+                        state.cats_are_being_fetched = true;
+                        state.cats_to_fetch = input_target(&ev).value().parse().unwrap_or(0);
+                    })),
+            )),
+            tr((
+                td(
+                    label("Reset fetch debounce timeout when updating the cat count:")
+                        .for_("reset-debounce-update"),
+                ),
+                td(input(())
+                    .id("reset-debounce-update")
+                    .attr("type", "checkbox")
+                    .attr("checked", state.reset_debounce_on_update)
+                    .on_input(|state: &mut AppState, event: web_sys::Event| {
+                        state.reset_debounce_on_update = input_target(&event).checked();
+                    })),
+            )),
+            tr((
+                td(label("Debounce timeout in ms:").for_("debounce-timeout-duration")),
+                td(input(())
+                    .id("debounce-timeout-duration")
+                    .attr("type", "number")
+                    .attr("min", 0)
+                    .attr("value", state.debounce_in_ms)
+                    .on_input(|state: &mut AppState, ev: web_sys::Event| {
+                        state.debounce_in_ms = input_target(&ev).value().parse().unwrap_or(0);
+                    })),
+            )),
+        )),
+    ))
+    .class("cat-fetch-controls")
 }
 
 pub fn main() {

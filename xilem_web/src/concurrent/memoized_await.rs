@@ -14,7 +14,7 @@ pub struct MemoizedAwait<State, Action, OA, InitFuture, Data, Callback, F, FOut>
     init_future: InitFuture,
     data: Data,
     callback: Callback,
-    debounce: usize,
+    debounce_ms: usize,
     reset_debounce_on_update: bool,
     #[allow(clippy::type_complexity)]
     phantom: PhantomData<fn() -> (State, Action, OA, F, FOut)>,
@@ -28,9 +28,9 @@ where
     InitFuture: Fn(&Data) -> F,
 {
     /// Debounce the `init_future` function, when `data` updates,
-    /// when `reset_debounce_on_update == false` then this throttles updates each `millisecconds`
-    pub fn debounce(mut self, milliseconds: usize) -> Self {
-        self.debounce = milliseconds;
+    /// when `reset_debounce_on_update == false` then this throttles updates each `milliseconds`
+    pub fn debounce_ms(mut self, milliseconds: usize) -> Self {
+        self.debounce_ms = milliseconds;
         self
     }
 
@@ -91,7 +91,7 @@ where
         init_future,
         data,
         callback,
-        debounce: 0,
+        debounce_ms: 0,
         reset_debounce_on_update: false,
         phantom: PhantomData,
     }
@@ -168,8 +168,8 @@ where
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let mut state = MemoizedAwaitState::default();
 
-        if self.debounce > 0 {
-            state.reset_debounce_timeout_and_schedule_update::<FOut>(ctx, self.debounce);
+        if self.debounce_ms > 0 {
+            state.reset_debounce_timeout_and_schedule_update::<FOut>(ctx, self.debounce_ms);
         } else {
             self.init_future(ctx, state.generation);
         }
@@ -186,17 +186,18 @@ where
     ) -> Mut<'el, Self::Element> {
         let debounce_has_changed_and_update_is_scheduled = view_state.schedule_update
             && (prev.reset_debounce_on_update != self.reset_debounce_on_update
-                || prev.debounce != self.debounce);
+                || prev.debounce_ms != self.debounce_ms);
 
         if debounce_has_changed_and_update_is_scheduled {
-            if self.debounce == 0 {
+            if self.debounce_ms == 0 {
                 if view_state.schedule_update_timeout_handle.is_some() {
                     view_state.clear_update_timeout();
                     view_state.schedule_update = false;
                     view_state.update = true;
                 }
             } else {
-                view_state.reset_debounce_timeout_and_schedule_update::<FOut>(ctx, self.debounce);
+                view_state
+                    .reset_debounce_timeout_and_schedule_update::<FOut>(ctx, self.debounce_ms);
                 return; // avoid update below, as it's already scheduled
             }
         }
@@ -205,8 +206,9 @@ where
             || (prev.data != self.data
                 && (!view_state.schedule_update || self.reset_debounce_on_update))
         {
-            if !view_state.update && self.debounce > 0 {
-                view_state.reset_debounce_timeout_and_schedule_update::<FOut>(ctx, self.debounce);
+            if !view_state.update && self.debounce_ms > 0 {
+                view_state
+                    .reset_debounce_timeout_and_schedule_update::<FOut>(ctx, self.debounce_ms);
             } else {
                 // no debounce
                 view_state.generation += 1;
