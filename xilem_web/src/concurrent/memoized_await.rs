@@ -29,6 +29,8 @@ where
 {
     /// Debounce the `init_future` function, when `data` updates,
     /// when `reset_debounce_on_update == false` then this throttles updates each `milliseconds`
+    ///
+    /// The default for this is `0`
     pub fn debounce_ms(mut self, milliseconds: usize) -> Self {
         self.debounce_ms = milliseconds;
         self
@@ -36,6 +38,8 @@ where
 
     /// When `reset` is `true`, everytime `data` updates, the debounce timeout is cleared until `init_future` is invoked.
     /// This is only effective when `debounce > 0`
+    ///
+    /// The default for this is `true`
     pub fn reset_debounce_on_update(mut self, reset: bool) -> Self {
         self.reset_debounce_on_update = reset;
         self
@@ -92,7 +96,7 @@ where
         data,
         callback,
         debounce_ms: 0,
-        reset_debounce_on_update: false,
+        reset_debounce_on_update: true,
         phantom: PhantomData,
     }
 }
