@@ -17,7 +17,7 @@ mod fork;
 pub use fork::{fork, Fork};
 
 mod memoize;
-pub use memoize::{memoize, Memoize};
+pub use memoize::{memoize, static_view, Memoize, Static};
 
 pub mod one_of;
 
