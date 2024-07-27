@@ -95,7 +95,7 @@ pub struct PointerState {
     pub mods: Modifiers,
     pub count: u8,
     pub focus: bool,
-    pub force: Option<Force>
+    pub force: Option<Force>,
 }
 
 #[derive(Debug, Clone)]
@@ -352,7 +352,7 @@ impl PointerState {
             mods: Default::default(),
             count: 0,
             focus: false,
-            force: None
+            force: None,
         }
     }
 }

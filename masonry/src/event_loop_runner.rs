@@ -497,14 +497,16 @@ impl MasonryState<'_> {
                     ));
             }
             WinitWindowEvent::Touch(winit::event::Touch {
-                location, phase, force, ..
+                location,
+                phase,
+                force,
+                ..
             }) => {
                 // FIXME: This is naïve and should be refined for actual use.
                 //        It will also interact with gesture discrimination.
                 self.pointer_state.physical_position = location;
                 self.pointer_state.position = location.to_logical(window.scale_factor());
                 self.pointer_state.force = force;
-                 
                 match phase {
                     winit::event::TouchPhase::Started => {
                         self.render_root
