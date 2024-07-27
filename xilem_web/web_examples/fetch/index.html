@@ -3,43 +3,44 @@
 
 <head>
   <link data-trunk rel="rust" data-wasm-opt="z" />
+  <title>Fetch | Xilem Web</title>
+  <style>
+    img {
+      max-width: 250px;
+      height: auto;
+    }
+
+    .error {
+      border: 1px solid red;
+      color: red;
+      background-color: lightpink;
+    }
+
+    .cat-fetch-controls {
+      margin: auto;
+      width: 50%;
+      min-width: 300px;
+    }
+
+    .blink {
+      animation: blinker 1s infinite;
+    }
+
+    @keyframes blinker {
+      from {
+        color: blueviolet;
+      }
+
+      50% {
+        color: hotpink;
+      }
+
+      to {
+        color: blueviolet;
+      }
+    }
+  </style>
 </head>
-<style>
-  img {
-    max-width: 250px;
-    height: auto;
-  }
-
-  .error {
-    border: 1px solid red;
-    color: red;
-    background-color: lightpink;
-  }
-
-  .cat-fetch-controls {
-    margin: auto;
-    width: 50%;
-    min-width: 300px;
-  }
-
-  .blink {
-    animation: blinker 1s infinite;
-  }
-
-  @keyframes blinker {
-    from {
-      color: blueviolet;
-    }
-
-    50% {
-      color: hotpink;
-    }
-
-    to {
-      color: blueviolet;
-    }
-  }
-</style>
 
 <body></body>
 
