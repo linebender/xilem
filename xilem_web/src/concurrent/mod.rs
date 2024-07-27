@@ -8,4 +8,3 @@ pub use await_once::{await_once, AwaitOnce};
 
 mod memoized_await;
 pub use memoized_await::{memoized_await, MemoizedAwait};
-
