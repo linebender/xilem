@@ -22,7 +22,7 @@ fn record_ops(id: u32) -> OperationView<0> {
 fn arc_no_path() {
     let view1 = Arc::new(record_ops(0));
     let mut ctx = TestCtx::default();
-    let (element, ()) = view1.build(&mut ctx);
+    let (element, _) = view1.build(&mut ctx);
     ctx.assert_empty();
     assert!(element.view_path.is_empty());
 }
