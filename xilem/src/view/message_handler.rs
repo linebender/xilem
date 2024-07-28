@@ -9,18 +9,18 @@ use xilem_core::{
 
 use crate::ViewCtx;
 
-/// No-element view which allows to update app-data in response to
-/// asynchronous user messages.
+/// No-element view which allows to update app state in response to
+/// asynchronous user messages, for example from another thread.
 ///
 /// `store_proxy` serves as a way to obtain [`MessageProxy`], which can then
-/// be used to send messages to self.
-/// It is given a mutable reference to the app data and a proxy, so the proxy
-/// can be saved to the app data here, or sent to another thread for example.
-/// Note, it is always called only once, changes to the app data won't trigger
-/// `store_proxy` to rerun.
+/// be used to send messages to this view.
+/// It is given a mutable reference to the app state and a message proxy, so
+/// the proxy can be e.g. saved to the app state here, or sent to another thread.
+/// Note, `store_proxy` is called once, shortly after the view is built.
+/// Changes to the app state won't it to rerun.
 ///
 /// `handle_event` receives messages from the aforementioned `MessageProxy`,
-/// along with a mutable reference to the app data.
+/// along with a mutable reference to the app state.
 pub fn message_handler<M, F, H, State, Action>(
     store_proxy: F,
     handle_event: H,
