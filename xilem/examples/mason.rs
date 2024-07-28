@@ -9,7 +9,7 @@ use std::time::Duration;
 use xilem::{
     tokio::time,
     view::{
-        async_repeat, button, button_any_pointer, checkbox, flex, label, prose, textbox, Axis,
+        async_worker, button, button_any_pointer, checkbox, flex, label, prose, textbox, Axis,
         FlexExt as _, FlexSpacer,
     },
     Color, EventLoop, EventLoopBuilder, TextAlignment, WidgetView, Xilem,
@@ -92,7 +92,7 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> {
             button("Reset", |data: &mut AppData| data.count = 0),
             flex((fizz_buzz_flex_sequence, flex_sequence)).direction(axis),
         )),
-        async_repeat(
+        async_worker(
             |proxy| async move {
                 let mut interval = time::interval(Duration::from_secs(1));
                 loop {
