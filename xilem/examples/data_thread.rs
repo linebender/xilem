@@ -33,7 +33,7 @@ fn data_thread(proxy_receiver: mpsc::Receiver<MessageProxy<i32>>) {
         let mut number = 0;
         while let Ok(()) = proxy.message(number) {
             number += 1;
-            thread::sleep(time::Duration::from_secs(1))
+            thread::sleep(time::Duration::from_secs(1));
         }
     }
 }
@@ -47,5 +47,5 @@ fn main() {
     thread::spawn(move || data_thread(proxy_receiver));
     Xilem::new(data, app_logic)
         .run_windowed(EventLoop::with_user_event(), "Centered Flex".into())
-        .unwrap()
+        .unwrap();
 }
