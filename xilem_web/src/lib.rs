@@ -88,7 +88,7 @@ where
 }
 
 /// A view which can have any [`DomView`] type, see [`AnyView`] for more details.
-pub type AnyDomView<State, Action = ()> = dyn AnyView<State, Action, ViewCtx, AnyPod>;
+pub type AnyDomView<State, Action = ()> = dyn AnyView<State, Action, ViewCtx, AnyPod, DynMessage>;
 
 /// The central [`View`] derived trait to represent DOM nodes in xilem_web, it's the base for all [`View`]s in xilem_web
 pub trait DomView<State, Action = ()>:
@@ -96,6 +96,26 @@ pub trait DomView<State, Action = ()>:
 {
     type DomNode: DomNode<Self::Props>;
     type Props;
+
+    /// Returns a boxed type erased [`AnyDomView`]
+    ///
+    /// # Examples
+    /// ```
+    /// use xilem_web::{elements::html::div, DomView};
+    ///
+    /// # fn view<State: 'static>() -> impl DomView<State> {
+    /// div("a label").boxed()
+    /// # }
+    ///
+    /// ```
+    fn boxed(self) -> Box<AnyDomView<State, Action>>
+    where
+        State: 'static,
+        Action: 'static,
+        Self: Sized,
+    {
+        Box::new(self)
+    }
 
     /// See [`adapt`](`core::adapt`)
     fn adapt<ParentState, ParentAction, ProxyFn>(
