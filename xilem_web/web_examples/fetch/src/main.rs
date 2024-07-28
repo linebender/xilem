@@ -1,6 +1,8 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use gloo_net::http::Request;
+use serde::{Deserialize, Serialize};
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use xilem_web::{
     concurrent::memoized_await,
@@ -10,9 +12,6 @@ use xilem_web::{
     interfaces::{Element, HtmlDivElement, HtmlImageElement, HtmlLabelElement},
     App,
 };
-
-use gloo_net::http::Request;
-use serde::{Deserialize, Serialize};
 
 const TOO_MANY_CATS: usize = 8;
 
@@ -43,6 +42,34 @@ impl Default for AppState {
             error: None,
         }
     }
+}
+
+impl AppState {
+    fn fetch_state(&self) -> FetchState {
+        if self.cats_to_fetch != 0 && self.cats_to_fetch == self.cats.len() {
+            FetchState::Finished
+        } else if self.cats_to_fetch >= TOO_MANY_CATS {
+            FetchState::TooMany
+        } else if self.debounce_in_ms > 0 && self.cats_to_fetch > 0 && self.reset_debounce_on_update
+        {
+            FetchState::Debounced
+        } else if self.debounce_in_ms > 0 && self.cats_to_fetch > 0 {
+            FetchState::Throttled
+        } else if self.cats_to_fetch > 0 && self.cats_are_being_fetched {
+            FetchState::Fetching
+        } else {
+            FetchState::Initial
+        }
+    }
+}
+
+enum FetchState {
+    Initial,
+    Fetching,
+    TooMany,
+    Debounced,
+    Throttled,
+    Finished,
 }
 
 async fn fetch_cats(count: usize) -> Result<Vec<Cat>, gloo_net::Error> {
@@ -123,26 +150,15 @@ fn cat_images_and_fetching_indicator(state: &AppState) -> impl HtmlDivElement<Ap
         .error
         .as_ref()
         .map(|err| div((h2("Error"), p(err.to_string()))).class("error"));
-    div((
-        error_message,
-        if state.cats_to_fetch != 0 && state.cats_to_fetch == cat_images.len() {
-            Either::A(h1("Here are your cats:").class("blink"))
-        } else if state.cats_to_fetch >= TOO_MANY_CATS {
-            Either::B(p("Woah there, that's too many cats"))
-        } else if state.debounce_in_ms > 0
-            && state.cats_to_fetch > 0
-            && state.reset_debounce_on_update
-        {
-            Either::B(p("Debounced fetch of cats..."))
-        } else if state.debounce_in_ms > 0 && state.cats_to_fetch > 0 {
-            Either::B(p("Throttled fetch of cats..."))
-        } else if state.cats_to_fetch > 0 && state.cats_are_being_fetched {
-            Either::B(p("Fetching cats..."))
-        } else {
-            Either::B(p("You need to fetch cats"))
-        },
-        cat_images,
-    ))
+    let fetch_state = match state.fetch_state() {
+        FetchState::Initial => Either::B(p("You need to fetch cats")),
+        FetchState::Fetching => Either::B(p("Fetching cats...")),
+        FetchState::TooMany => Either::B(p("Woah there, that's too many cats")),
+        FetchState::Debounced => Either::B(p("Debounced fetch of cats...")),
+        FetchState::Throttled => Either::B(p("Throttled fetch of cats...")),
+        FetchState::Finished => Either::A(h1("Here are your cats:").class("blink")),
+    };
+    div((error_message, fetch_state, cat_images))
 }
 
 fn cat_fetch_controls(state: &AppState) -> impl Element<AppState> {
