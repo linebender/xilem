@@ -26,7 +26,7 @@ pub fn message_handler<M, F, H, State, Action>(
     handle_event: H,
 ) -> MessageHandler<F, H, M>
 where
-    F: Fn(&mut State, MessageProxy<M>) + 'static,
+    F: Fn(&mut State, MessageProxy<M>) -> Action + 'static,
     H: Fn(&mut State, M) -> Action + 'static,
     M: Message + 'static,
 {
@@ -48,7 +48,7 @@ pub struct MessageHandler<F, H, M> {
 
 impl<State, Action, F, H, M> View<State, Action, ViewCtx> for MessageHandler<F, H, M>
 where
-    F: Fn(&mut State, MessageProxy<M>) + 'static,
+    F: Fn(&mut State, MessageProxy<M>) -> Action + 'static,
     H: Fn(&mut State, M) -> Action + 'static,
     M: Message + 'static,
 {
@@ -95,11 +95,12 @@ where
         );
         if message.deref().as_any().is::<StoreProxyMessage>() {
             let proxy = MessageProxy::new(raw_proxy.clone(), path.clone());
-            (self.store_proxy)(app_state, proxy);
-            xilem_core::MessageResult::Nop
+            let action = (self.store_proxy)(app_state, proxy);
+            xilem_core::MessageResult::Action(action)
         } else {
             let message = message.downcast::<M>().unwrap();
-            xilem_core::MessageResult::Action((self.handle_event)(app_state, *message))
+            let action = (self.handle_event)(app_state, *message);
+            xilem_core::MessageResult::Action(action)
         }
     }
 }
