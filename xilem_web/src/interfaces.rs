@@ -637,6 +637,10 @@ where
 pub trait HtmlIFrameElement<State, Action = ()>:
     HtmlElement<State, Action, DomNode: AsRef<web_sys::HtmlIFrameElement>>
 {
+    /// See <https://developer.mozilla.org/en-US/docs/Web/API/HTMLIFrameElement/src> for more details
+    fn src(self, value: impl IntoAttributeValue) -> Attr<Self, State, Action> {
+        Attr::new(self, "src".into(), value.into_attr_value())
+    }
 }
 
 // #[cfg(feature = "HtmlIFrameElement")]
