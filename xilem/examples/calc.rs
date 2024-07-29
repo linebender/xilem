@@ -1,10 +1,10 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use masonry::widget::{CrossAxisAlignment, MainAxisAlignment};
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
 use winit::window::Window;
-use masonry::widget::{CrossAxisAlignment, MainAxisAlignment};
 use xilem::{
     view::{button, flex, label, sized_box, Axis, FlexExt as _, FlexSpacer},
     EventLoop, WidgetView, Xilem,
@@ -48,7 +48,7 @@ struct AppData {
 
 impl AppData {
     fn get_current_number(&self) -> String {
-        return self.numbers[self.current_num_index].clone()
+        return self.numbers[self.current_num_index].clone();
     }
 
     fn set_current_number(&mut self, new_num: String) {
@@ -59,7 +59,9 @@ impl AppData {
         self.current_num_index = 0;
         self.result = None;
         self.operation = None;
-        for num in self.numbers.iter_mut() { *num = "".into(); }
+        for num in self.numbers.iter_mut() {
+            *num = "".into();
+        }
     }
 
     fn clear_entry(&mut self) {
@@ -119,7 +121,6 @@ impl AppData {
             }
         }
         self.operation = Some(operator);
-
     }
 
     // For instances when you continue working with the prior result.
@@ -136,7 +137,7 @@ impl AppData {
         // Requires both numbers be present
         if self.numbers[0].is_empty() || self.numbers[1].is_empty() {
             play_bell_sound();
-            return // Just abort.
+            return; // Just abort.
         } else if self.result.is_some() {
             // Repeat the operation using the prior result on the left.
             self.numbers[0] = self.result.clone().unwrap()
@@ -150,7 +151,12 @@ impl AppData {
         } else if num2.is_err() {
             self.result = Some(num2.err().unwrap().to_string())
         } else {
-            self.result = Some(self.operation.unwrap().perform_op(num1.unwrap(), num2.unwrap()).to_string())
+            self.result = Some(
+                self.operation
+                    .unwrap()
+                    .perform_op(num1.unwrap(), num2.unwrap())
+                    .to_string(),
+            )
         }
     }
 
@@ -196,30 +202,42 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> {
         flex((
             FlexSpacer::Flex(0.1),
             label(data.numbers[0].clone()).text_size(DISPLAY_FONT_SIZE),
-            data.operation.clone().map(|operation| label(operation.as_str()).text_size(DISPLAY_FONT_SIZE)),
+            data.operation
+                .clone()
+                .map(|operation| label(operation.as_str()).text_size(DISPLAY_FONT_SIZE)),
             label(data.numbers[1].clone()).text_size(DISPLAY_FONT_SIZE),
-            data.result.clone().map(|_| label("=").text_size(DISPLAY_FONT_SIZE)),
-            data.result.clone().map(|result| label(result).text_size(DISPLAY_FONT_SIZE)),
+            data.result
+                .clone()
+                .map(|_| label("=").text_size(DISPLAY_FONT_SIZE)),
+            data.result
+                .clone()
+                .map(|result| label(result).text_size(DISPLAY_FONT_SIZE)),
             FlexSpacer::Flex(0.1),
         ))
-            .direction(Axis::Horizontal)
-            .cross_axis_alignment(CrossAxisAlignment::Center)
-            .main_axis_alignment(MainAxisAlignment::Start)
-            .gap(5.)
-            .flex(1.0),
+        .direction(Axis::Horizontal)
+        .cross_axis_alignment(CrossAxisAlignment::Center)
+        .main_axis_alignment(MainAxisAlignment::Start)
+        .gap(5.)
+        .flex(1.0),
         FlexSpacer::Fixed(10.0),
         // Top row
         flex((
-            sized_box(button("CE", |data: &mut AppData| {data.clear_entry()})).expand().flex(1.0),
-            sized_box(button("C", |data: &mut AppData| {data.clear_all()})).expand().flex(1.0),
-            sized_box(button("DEL", |data: &mut AppData| {data.on_delete()})).expand().flex(1.0),
+            sized_box(button("CE", |data: &mut AppData| data.clear_entry()))
+                .expand()
+                .flex(1.0),
+            sized_box(button("C", |data: &mut AppData| data.clear_all()))
+                .expand()
+                .flex(1.0),
+            sized_box(button("DEL", |data: &mut AppData| data.on_delete()))
+                .expand()
+                .flex(1.0),
             operator_button(MathOperator::Divide).flex(1.0),
         ))
-            .direction(Axis::Horizontal)
-            .cross_axis_alignment(CrossAxisAlignment::Center)
-            .main_axis_alignment(MainAxisAlignment::SpaceEvenly)
-            .gap(GRID_GAP)
-            .flex(1.0),
+        .direction(Axis::Horizontal)
+        .cross_axis_alignment(CrossAxisAlignment::Center)
+        .main_axis_alignment(MainAxisAlignment::SpaceEvenly)
+        .gap(GRID_GAP)
+        .flex(1.0),
         // 7 8 9 X
         flex((
             digit_button("7").flex(1.0),
@@ -227,11 +245,11 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> {
             digit_button("9").flex(1.0),
             operator_button(MathOperator::Multiply).flex(1.0),
         ))
-            .direction(Axis::Horizontal)
-            .cross_axis_alignment(CrossAxisAlignment::Fill)
-            .main_axis_alignment(MainAxisAlignment::SpaceEvenly)
-            .gap(GRID_GAP)
-            .flex(1.0),
+        .direction(Axis::Horizontal)
+        .cross_axis_alignment(CrossAxisAlignment::Fill)
+        .main_axis_alignment(MainAxisAlignment::SpaceEvenly)
+        .gap(GRID_GAP)
+        .flex(1.0),
         // 4 5 6 -
         flex((
             digit_button("4").flex(1.0),
@@ -239,11 +257,11 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> {
             digit_button("6").flex(1.0),
             operator_button(MathOperator::Subtract).flex(1.0),
         ))
-            .direction(Axis::Horizontal)
-            .cross_axis_alignment(CrossAxisAlignment::Fill)
-            .main_axis_alignment(MainAxisAlignment::SpaceEvenly)
-            .gap(GRID_GAP)
-            .flex(1.0),
+        .direction(Axis::Horizontal)
+        .cross_axis_alignment(CrossAxisAlignment::Fill)
+        .main_axis_alignment(MainAxisAlignment::SpaceEvenly)
+        .gap(GRID_GAP)
+        .flex(1.0),
         // 1 2 3 +
         flex((
             digit_button("1").flex(1.0),
@@ -251,48 +269,45 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> {
             digit_button("3").flex(1.0),
             operator_button(MathOperator::Add).flex(1.0),
         ))
-            .direction(Axis::Horizontal)
-            .cross_axis_alignment(CrossAxisAlignment::Fill)
-            .main_axis_alignment(MainAxisAlignment::SpaceEvenly)
-            .gap(GRID_GAP)
-            .flex(1.0),
+        .direction(Axis::Horizontal)
+        .cross_axis_alignment(CrossAxisAlignment::Fill)
+        .main_axis_alignment(MainAxisAlignment::SpaceEvenly)
+        .gap(GRID_GAP)
+        .flex(1.0),
         // bottom row
         flex((
-            sized_box(button("±", |data: &mut AppData| {data.negate()})).expand().flex(1.0),
+            sized_box(button("±", |data: &mut AppData| data.negate()))
+                .expand()
+                .flex(1.0),
             digit_button("0").flex(1.0),
             digit_button(".").flex(1.0),
-            sized_box(button("=", |data: &mut AppData| {data.on_equals()})).expand().flex(1.0),
+            sized_box(button("=", |data: &mut AppData| data.on_equals()))
+                .expand()
+                .flex(1.0),
         ))
-            .direction(Axis::Horizontal)
-            .cross_axis_alignment(CrossAxisAlignment::Fill)
-            .main_axis_alignment(MainAxisAlignment::SpaceEvenly)
-            .gap(GRID_GAP)
-            .flex(1.0),
-    ))
-        .gap(GRID_GAP)
+        .direction(Axis::Horizontal)
         .cross_axis_alignment(CrossAxisAlignment::Fill)
-        .main_axis_alignment(MainAxisAlignment::End)
-        .must_fill_major_axis(true)
+        .main_axis_alignment(MainAxisAlignment::SpaceEvenly)
+        .gap(GRID_GAP)
+        .flex(1.0),
+    ))
+    .gap(GRID_GAP)
+    .cross_axis_alignment(CrossAxisAlignment::Fill)
+    .main_axis_alignment(MainAxisAlignment::End)
+    .must_fill_major_axis(true)
 }
 fn operator_button(math_operator: MathOperator) -> impl WidgetView<AppData> {
-    sized_box(
-        button(
-            math_operator.as_str(),
-            move |data: &mut AppData| {
-                data.on_entered_operator(math_operator)
-            }
-        )
-    )
-        .expand()
+    sized_box(button(math_operator.as_str(), move |data: &mut AppData| {
+        data.on_entered_operator(math_operator)
+    }))
+    .expand()
 }
 
 fn digit_button(digit: &'static str) -> impl WidgetView<AppData> {
-    sized_box(
-        button(digit, |data: &mut AppData| {
-            data.on_entered_digit(digit)
-        })
-    )
-        .expand()
+    sized_box(button(digit, |data: &mut AppData| {
+        data.on_entered_digit(digit)
+    }))
+    .expand()
 }
 
 fn play_bell_sound() {
