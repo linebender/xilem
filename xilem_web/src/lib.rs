@@ -106,7 +106,6 @@ pub trait DomView<State, Action = ()>:
     /// # fn view<State: 'static>() -> impl DomView<State> {
     /// div("a label").boxed()
     /// # }
-    ///
     /// ```
     fn boxed(self) -> Box<AnyDomView<State, Action>>
     where
