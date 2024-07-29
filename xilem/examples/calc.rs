@@ -48,7 +48,7 @@ struct AppData {
 
 impl AppData {
     fn get_current_number(&self) -> String {
-        return self.numbers[self.current_num_index].clone();
+        self.numbers[self.current_num_index].clone()
     }
 
     fn set_current_number(&mut self, new_num: String) {
@@ -82,7 +82,7 @@ impl AppData {
         let mut num = self.get_current_number();
         // Special case: Don't allow more than one decimal.
         if digit == "." {
-            if num.contains(".") {
+            if num.contains('.') {
                 play_bell_sound();
                 return;
             }
@@ -90,13 +90,11 @@ impl AppData {
             if num.is_empty() {
                 num = "0".into();
             }
-            num += "."
+            num += ".";
+        } else if num == "0" || num.is_empty() {
+            num = digit.to_string();
         } else {
-            if num == "0" || num == "" {
-                num = digit.to_string();
-            } else {
-                num += digit;
-            }
+            num += digit;
         }
         self.set_current_number(num);
     }
@@ -104,13 +102,13 @@ impl AppData {
     fn on_entered_operator(&mut self, operator: MathOperator) {
         self.clear_current_entry_on_input = false;
         if self.operation.is_some() && !self.numbers[1].is_empty() {
-            if !self.result.is_some() {
+            if self.result.is_none() {
                 // All info is there to create a result, so calculate it.
-                self.on_equals()
+                self.on_equals();
             }
             // There is a result present, so put that on the left.
             self.move_result_to_left();
-            self.current_num_index = 1
+            self.current_num_index = 1;
         } else if self.current_num_index == 0 {
             if self.numbers[0].is_empty() {
                 // Not ready yet. Left number needed.
@@ -140,24 +138,17 @@ impl AppData {
             return; // Just abort.
         } else if self.result.is_some() {
             // Repeat the operation using the prior result on the left.
-            self.numbers[0] = self.result.clone().unwrap()
+            self.numbers[0] = self.result.clone().unwrap();
         }
         self.current_num_index = 0;
         let num1 = self.numbers[0].parse::<f64>();
         let num2 = self.numbers[1].parse::<f64>();
         // Display format error or display the result of the operation.
-        if num1.is_err() {
-            self.result = Some(num1.err().unwrap().to_string())
-        } else if num2.is_err() {
-            self.result = Some(num2.err().unwrap().to_string())
-        } else {
-            self.result = Some(
-                self.operation
-                    .unwrap()
-                    .perform_op(num1.unwrap(), num2.unwrap())
-                    .to_string(),
-            )
-        }
+        self.result = Some(match (num1, num2) {
+            (Ok(num1), Ok(num2)) => self.operation.unwrap().perform_op(num1, num2).to_string(),
+            (Err(err), _) => err.to_string(),
+            (_, Err(err)) => err.to_string(),
+        });
     }
 
     fn on_delete(&mut self) {
@@ -167,7 +158,7 @@ impl AppData {
             return;
         }
         let mut num = self.get_current_number();
-        if num.len() > 0 {
+        if !num.is_empty() {
             num.remove(num.len() - 1);
             self.set_current_number(num);
         } else {
@@ -178,7 +169,7 @@ impl AppData {
     fn negate(&mut self) {
         // If there is a result, negate that after clearing and moving it to the first number
         if self.result.is_some() {
-            self.move_result_to_left()
+            self.move_result_to_left();
         }
         let mut num = self.get_current_number();
         if num.is_empty() {
@@ -203,7 +194,6 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> {
             FlexSpacer::Flex(0.1),
             label(data.numbers[0].clone()).text_size(DISPLAY_FONT_SIZE),
             data.operation
-                .clone()
                 .map(|operation| label(operation.as_str()).text_size(DISPLAY_FONT_SIZE)),
             label(data.numbers[1].clone()).text_size(DISPLAY_FONT_SIZE),
             data.result
@@ -298,14 +288,14 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> {
 }
 fn operator_button(math_operator: MathOperator) -> impl WidgetView<AppData> {
     sized_box(button(math_operator.as_str(), move |data: &mut AppData| {
-        data.on_entered_operator(math_operator)
+        data.on_entered_operator(math_operator);
     }))
     .expand()
 }
 
 fn digit_button(digit: &'static str) -> impl WidgetView<AppData> {
     sized_box(button(digit, |data: &mut AppData| {
-        data.on_entered_digit(digit)
+        data.on_entered_digit(digit);
     }))
     .expand()
 }
