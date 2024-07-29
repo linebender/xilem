@@ -70,9 +70,6 @@ fn create_event_listener<Event: JsCast + crate::Message>(
 ) -> Closure<dyn FnMut(web_sys::Event)> {
     let thunk = ctx.message_thunk();
     let callback = Closure::new(move |event: web_sys::Event| {
-        // TODO make this configurable
-        event.prevent_default();
-        event.stop_propagation();
         let event = event.dyn_into::<Event>().unwrap_throw();
         thunk.push_message(event);
     });
