@@ -36,7 +36,7 @@ tracing.workspace = true
 vello.workspace = true
 smallvec.workspace = true
 accesskit.workspace = true
-tokio = { version = "1.39.1", features = ["rt", "rt-multi-thread", "time"] }
+tokio = { version = "1.39.2", features = ["rt", "rt-multi-thread", "time"] }
 
 [dev-dependencies]
 accesskit_winit.workspace = true
