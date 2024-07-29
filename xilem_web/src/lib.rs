@@ -222,6 +222,9 @@ impl AnyPod {
         this: &mut PodMut<'_, DynNode, Box<dyn Any>>,
         node: Pod<E, P>,
     ) {
+        this.parent
+            .replace_child(node.node.as_ref(), this.node.as_ref())
+            .unwrap_throw();
         this.node.inner = Box::new(node.node);
         *this.props = Box::new(node.props);
     }
