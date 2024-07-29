@@ -1,11 +1,9 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use std::hash::Hash;
-use winit::dpi::{LogicalSize, Size};
+use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
-use winit::window::{Window, WindowAttributes};
-use masonry::text::Selectable;
+use winit::window::Window;
 use masonry::widget::{CrossAxisAlignment, MainAxisAlignment};
 use xilem::{
     view::{button, flex, label, sized_box, Axis, FlexExt as _, FlexSpacer},
@@ -200,7 +198,7 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> {
             label(data.numbers[0].clone()).text_size(DISPLAY_FONT_SIZE),
             data.operation.clone().map(|operation| label(operation.as_str()).text_size(DISPLAY_FONT_SIZE)),
             label(data.numbers[1].clone()).text_size(DISPLAY_FONT_SIZE),
-            data.result.clone().map(|result| label("=").text_size(DISPLAY_FONT_SIZE)),
+            data.result.clone().map(|_| label("=").text_size(DISPLAY_FONT_SIZE)),
             data.result.clone().map(|result| label(result).text_size(DISPLAY_FONT_SIZE)),
             FlexSpacer::Flex(0.1),
         ))
@@ -290,7 +288,7 @@ fn operator_button(math_operator: MathOperator) -> impl WidgetView<AppData> {
 
 fn digit_button(digit: &'static str) -> impl WidgetView<AppData> {
     sized_box(
-        button(digit.clone(), |data: &mut AppData| {
+        button(digit, |data: &mut AppData| {
             data.on_entered_digit(digit)
         })
     )
