@@ -209,9 +209,11 @@ fn app_logic(data: &mut CalculatorState) -> impl WidgetView<CalculatorState> {
         FlexSpacer::Fixed(10.0),
         // Top row
         flex((
-            sized_box(button("CE", |data: &mut CalculatorState| data.clear_entry()))
-                .expand()
-                .flex(1.0),
+            sized_box(button("CE", |data: &mut CalculatorState| {
+                data.clear_entry();
+            }))
+            .expand()
+            .flex(1.0),
             sized_box(button("C", |data: &mut CalculatorState| data.clear_all()))
                 .expand()
                 .flex(1.0),
@@ -285,9 +287,12 @@ fn app_logic(data: &mut CalculatorState) -> impl WidgetView<CalculatorState> {
 }
 
 fn operator_button(math_operator: MathOperator) -> impl WidgetView<CalculatorState> {
-    sized_box(button(math_operator.as_str(), move |data: &mut CalculatorState| {
-        data.on_entered_operator(math_operator);
-    }))
+    sized_box(button(
+        math_operator.as_str(),
+        move |data: &mut CalculatorState| {
+            data.on_entered_operator(math_operator);
+        },
+    ))
     .expand()
 }
 
