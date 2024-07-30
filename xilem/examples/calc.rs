@@ -38,7 +38,7 @@ impl MathOperator {
     }
 }
 
-struct AppData {
+struct CalculatorState {
     current_num_index: usize,
     clear_current_entry_on_input: bool, // For instances of negation used on a result.
     numbers: [String; 2],
@@ -46,7 +46,7 @@ struct AppData {
     operation: Option<MathOperator>,
 }
 
-impl AppData {
+impl CalculatorState {
     fn get_current_number(&self) -> String {
         self.numbers[self.current_num_index].clone()
     }
@@ -187,21 +187,21 @@ impl AppData {
 
 const DISPLAY_FONT_SIZE: f32 = 30.;
 const GRID_GAP: f64 = 2.;
-fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> {
+fn app_logic(data: &mut CalculatorState) -> impl WidgetView<CalculatorState> {
     flex((
         // Display
         flex((
             FlexSpacer::Flex(0.1),
-            label(data.numbers[0].clone()).text_size(DISPLAY_FONT_SIZE),
+            label(data.numbers[0].as_ref()).text_size(DISPLAY_FONT_SIZE),
             data.operation
                 .map(|operation| label(operation.as_str()).text_size(DISPLAY_FONT_SIZE)),
-            label(data.numbers[1].clone()).text_size(DISPLAY_FONT_SIZE),
+            label(data.numbers[1].as_ref()).text_size(DISPLAY_FONT_SIZE),
             data.result
-                .clone()
-                .map(|_| label("=").text_size(DISPLAY_FONT_SIZE)),
+                .is_some()
+                .then(|| label("=").text_size(DISPLAY_FONT_SIZE)),
             data.result
-                .clone()
-                .map(|result| label(result).text_size(DISPLAY_FONT_SIZE)),
+                .as_ref()
+                .map(|result| label(result.as_ref()).text_size(DISPLAY_FONT_SIZE)),
             FlexSpacer::Flex(0.1),
         ))
         .direction(Axis::Horizontal)
@@ -212,13 +212,13 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> {
         FlexSpacer::Fixed(10.0),
         // Top row
         flex((
-            sized_box(button("CE", |data: &mut AppData| data.clear_entry()))
+            sized_box(button("CE", |data: &mut CalculatorState| data.clear_entry()))
                 .expand()
                 .flex(1.0),
-            sized_box(button("C", |data: &mut AppData| data.clear_all()))
+            sized_box(button("C", |data: &mut CalculatorState| data.clear_all()))
                 .expand()
                 .flex(1.0),
-            sized_box(button("DEL", |data: &mut AppData| data.on_delete()))
+            sized_box(button("DEL", |data: &mut CalculatorState| data.on_delete()))
                 .expand()
                 .flex(1.0),
             operator_button(MathOperator::Divide).flex(1.0),
@@ -266,12 +266,12 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> {
         .flex(1.0),
         // bottom row
         flex((
-            sized_box(button("±", |data: &mut AppData| data.negate()))
+            sized_box(button("±", |data: &mut CalculatorState| data.negate()))
                 .expand()
                 .flex(1.0),
             digit_button("0").flex(1.0),
             digit_button(".").flex(1.0),
-            sized_box(button("=", |data: &mut AppData| data.on_equals()))
+            sized_box(button("=", |data: &mut CalculatorState| data.on_equals()))
                 .expand()
                 .flex(1.0),
         ))
@@ -286,15 +286,16 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> {
     .main_axis_alignment(MainAxisAlignment::End)
     .must_fill_major_axis(true)
 }
-fn operator_button(math_operator: MathOperator) -> impl WidgetView<AppData> {
-    sized_box(button(math_operator.as_str(), move |data: &mut AppData| {
+
+fn operator_button(math_operator: MathOperator) -> impl WidgetView<CalculatorState> {
+    sized_box(button(math_operator.as_str(), move |data: &mut CalculatorState| {
         data.on_entered_operator(math_operator);
     }))
     .expand()
 }
 
-fn digit_button(digit: &'static str) -> impl WidgetView<AppData> {
-    sized_box(button(digit, |data: &mut AppData| {
+fn digit_button(digit: &'static str) -> impl WidgetView<CalculatorState> {
+    sized_box(button(digit, |data: &mut CalculatorState| {
         data.on_entered_digit(digit);
     }))
     .expand()
@@ -305,7 +306,7 @@ fn play_bell_sound() {
 }
 
 fn main() -> Result<(), EventLoopError> {
-    let data = AppData {
+    let data = CalculatorState {
         current_num_index: 0,
         clear_current_entry_on_input: false,
         numbers: ["".into(), "".into()],
