@@ -83,7 +83,7 @@ impl CalculatorState {
         // Special case: Don't allow more than one decimal.
         if digit == "." {
             if num.contains('.') {
-                play_bell_sound();
+                // invalid action
                 return;
             }
             // Make it so you don't end up with just a decimal point
@@ -112,7 +112,7 @@ impl CalculatorState {
         } else if self.current_num_index == 0 {
             if self.numbers[0].is_empty() {
                 // Not ready yet. Left number needed.
-                play_bell_sound();
+                // invalid action
                 return;
             } else {
                 self.current_num_index = 1;
@@ -134,7 +134,7 @@ impl CalculatorState {
     fn on_equals(&mut self) {
         // Requires both numbers be present
         if self.numbers[0].is_empty() || self.numbers[1].is_empty() {
-            play_bell_sound();
+            // invalid action
             return; // Just abort.
         } else if self.result.is_some() {
             // Repeat the operation using the prior result on the left.
@@ -153,17 +153,14 @@ impl CalculatorState {
 
     fn on_delete(&mut self) {
         if self.result.is_some() {
-            // Delete does not do anything with the result.
-            play_bell_sound();
+            // Delete does not do anything with the result. Invalid action.
             return;
         }
         let mut num = self.get_current_number();
         if !num.is_empty() {
             num.remove(num.len() - 1);
             self.set_current_number(num);
-        } else {
-            play_bell_sound();
-        }
+        } // else, invalid action
     }
 
     fn negate(&mut self) {
@@ -173,7 +170,7 @@ impl CalculatorState {
         }
         let mut num = self.get_current_number();
         if num.is_empty() {
-            play_bell_sound();
+            // invalid action
             return;
         }
         if num.starts_with('-') {
@@ -299,10 +296,6 @@ fn digit_button(digit: &'static str) -> impl WidgetView<CalculatorState> {
         data.on_entered_digit(digit);
     }))
     .expand()
-}
-
-fn play_bell_sound() {
-    println!("\x07");
 }
 
 fn main() -> Result<(), EventLoopError> {
