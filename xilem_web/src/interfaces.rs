@@ -720,6 +720,10 @@ where
 pub trait HtmlLiElement<State, Action = ()>:
     HtmlElement<State, Action, DomNode: AsRef<web_sys::HtmlLiElement>>
 {
+    /// See <https://developer.mozilla.org/en-US/docs/Web/HTML/Element/li#value> for more details
+    fn value(self, value: i32) -> Attr<Self, State, Action> {
+        Attr::new(self, "value".into(), value.into_attr_value())
+    }
 }
 
 // #[cfg(feature = "HtmlLiElement")]
