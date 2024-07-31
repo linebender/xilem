@@ -118,7 +118,7 @@ cargo update -p package_name --precise 0.1.1
 
 ## Community
 
-Discussion of Masonry development happens in the [Linebender Zulip](https://xi.zulipchat.com/), specifically the [#masonry stream](https://xi.zulipchat.com/#narrow/stream/317477-masonry).
+Discussion of Masonry development happens in the [Linebender Zulip](https://xi.zulipchat.com/), specifically the [#masonry channel](https://xi.zulipchat.com/#narrow/stream/317477-masonry).
 All public content can be read without logging in.
 
 Contributions are welcome by pull request. The [Rust code of conduct] applies.

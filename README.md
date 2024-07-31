@@ -19,7 +19,8 @@ This repo contains an experimental architecture, implemented with a toy UI. At a
 
 [![Xi Zulip](https://img.shields.io/badge/Xi%20Zulip-%23xilem-blue?logo=Zulip)](https://xi.zulipchat.com/#narrow/stream/354396-xilem)
 
-Discussion of Xilem development happens in the [Xi Zulip](https://xi.zulipchat.com/), specifically the [#xilem stream](https://xi.zulipchat.com/#narrow/stream/354396-xilem). All public content can be read without logging in
+Discussion of Xilem development happens in the [Xi Zulip](https://xi.zulipchat.com/), specifically the [#xilem channel](https://xi.zulipchat.com/#narrow/stream/354396-xilem). 
+All public content can be read without logging in
 
 ## Project structure
 

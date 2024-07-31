@@ -53,7 +53,7 @@ cargo update -p package_name --precise 0.1.1
 
 ## Community
 
-Discussion of Xilem development happens in the [Linebender Zulip](https://xi.zulipchat.com/), specifically the [#xilem stream](https://xi.zulipchat.com/#narrow/stream/354396-xilem).
+Discussion of Xilem development happens in the [Linebender Zulip](https://xi.zulipchat.com/), specifically the [#xilem channel](https://xi.zulipchat.com/#narrow/stream/354396-xilem).
 All public content can be read without logging in.
 
 Contributions are welcome by pull request. The [Rust code of conduct] applies.
