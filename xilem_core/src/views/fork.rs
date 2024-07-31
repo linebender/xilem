@@ -1,8 +1,6 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use core::marker::PhantomData;
-
 use crate::{
     AppendVec, ElementSplice, Mut, NoElement, View, ViewId, ViewMarker, ViewPathTracker,
     ViewSequence,
@@ -11,32 +9,29 @@ use crate::{
 /// Create a view which acts as `active_view`, whilst also running `alongside_view`, without inserting it into the tree.
 ///
 /// `alongside_view` must be a `ViewSequence` with an element type of [`NoElement`].
-pub fn fork<Active, Alongside, Marker>(
+pub fn fork<Active, Alongside>(
     active_view: Active,
     alongside_view: Alongside,
-) -> Fork<Active, Alongside, Marker> {
+) -> Fork<Active, Alongside> {
     Fork {
         active_view,
         alongside_view,
-        marker: PhantomData,
     }
 }
 
 /// The view for [`fork`].
-pub struct Fork<Active, Alongside, Marker> {
+pub struct Fork<Active, Alongside> {
     active_view: Active,
     alongside_view: Alongside,
-    marker: PhantomData<Marker>,
 }
 
-impl<Active, Alongside, Marker> ViewMarker for Fork<Active, Alongside, Marker> {}
-impl<State, Action, Context, Active, Alongside, Marker, Message>
-    View<State, Action, Context, Message> for Fork<Active, Alongside, Marker>
+impl<Active, Alongside> ViewMarker for Fork<Active, Alongside> {}
+impl<State, Action, Context, Active, Alongside, Message> View<State, Action, Context, Message>
+    for Fork<Active, Alongside>
 where
     Active: View<State, Action, Context, Message>,
-    Alongside: ViewSequence<State, Action, Context, NoElement, Marker, Message>,
+    Alongside: ViewSequence<State, Action, Context, NoElement, Message>,
     Context: ViewPathTracker,
-    Marker: 'static,
 {
     type Element = Active::Element;
 

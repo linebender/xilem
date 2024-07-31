@@ -16,14 +16,14 @@ use crate::{
 };
 
 mod sealed {
-    pub trait Sealed<State, Action, SeqMarker> {}
+    pub trait Sealed<State, Action> {}
 }
 
 // sealed, because this should only cover `ViewSequences` with the blanket impl below
 /// This is basically a specialized dynamically dispatchable [`ViewSequence`], It's currently not able to change the underlying type unlike [`AnyDomView`](crate::AnyDomView), so it should not be used as `dyn DomViewSequence`.
 /// It's mostly a hack to avoid a completely static view tree, which unfortunately brings rustc (type-checking) down to its knees and results in long compile-times
-pub(crate) trait DomViewSequence<State, Action, SeqMarker>:
-    sealed::Sealed<State, Action, SeqMarker> + 'static
+pub(crate) trait DomViewSequence<State, Action>:
+    sealed::Sealed<State, Action> + 'static
 {
     /// Get an [`Any`] reference to `self`.
     fn as_any(&self) -> &dyn Any;
@@ -35,7 +35,7 @@ pub(crate) trait DomViewSequence<State, Action, SeqMarker>:
     /// Update the associated widgets.
     fn dyn_seq_rebuild(
         &self,
-        prev: &dyn DomViewSequence<State, Action, SeqMarker>,
+        prev: &dyn DomViewSequence<State, Action>,
         seq_state: &mut Box<dyn Any>,
         ctx: &mut ViewCtx,
         elements: &mut DomChildrenSplice,
@@ -62,21 +62,19 @@ pub(crate) trait DomViewSequence<State, Action, SeqMarker>:
     ) -> MessageResult<Action, DynMessage>;
 }
 
-impl<State, Action, SeqMarker, S> sealed::Sealed<State, Action, SeqMarker> for S
+impl<State, Action, S> sealed::Sealed<State, Action> for S
 where
     State: 'static,
-    SeqMarker: 'static,
     Action: 'static,
-    S: ViewSequence<State, Action, ViewCtx, AnyPod, SeqMarker, DynMessage>,
+    S: ViewSequence<State, Action, ViewCtx, AnyPod, DynMessage>,
 {
 }
 
-impl<State, Action, SeqMarker, S> DomViewSequence<State, Action, SeqMarker> for S
+impl<State, Action, S> DomViewSequence<State, Action> for S
 where
     State: 'static,
-    SeqMarker: 'static,
     Action: 'static,
-    S: ViewSequence<State, Action, ViewCtx, AnyPod, SeqMarker, DynMessage>,
+    S: ViewSequence<State, Action, ViewCtx, AnyPod, DynMessage>,
 {
     fn as_any(&self) -> &dyn Any {
         self
@@ -88,7 +86,7 @@ where
 
     fn dyn_seq_rebuild(
         &self,
-        prev: &dyn DomViewSequence<State, Action, SeqMarker>,
+        prev: &dyn DomViewSequence<State, Action>,
         seq_state: &mut Box<dyn Any>,
         ctx: &mut ViewCtx,
         elements: &mut DomChildrenSplice,
@@ -222,8 +220,8 @@ impl ElementState {
 
 // These (boilerplatey) functions are there to reduce the boilerplate created by the macro-expansion below.
 
-pub(crate) fn build_element<State, Action, Element, SeqMarker>(
-    children: &dyn DomViewSequence<State, Action, SeqMarker>,
+pub(crate) fn build_element<State, Action, Element>(
+    children: &dyn DomViewSequence<State, Action>,
     tag_name: &str,
     ns: &str,
     ctx: &mut ViewCtx,
@@ -232,7 +230,6 @@ where
     State: 'static,
     Action: 'static,
     Element: 'static,
-    SeqMarker: 'static,
     Element: From<Pod<web_sys::Element, ElementProps>>,
 {
     let mut elements = AppendVec::default();
@@ -243,9 +240,9 @@ where
     )
 }
 
-pub(crate) fn rebuild_element<'el, State, Action, Element, SeqMarker>(
-    children: &dyn DomViewSequence<State, Action, SeqMarker>,
-    prev_children: &dyn DomViewSequence<State, Action, SeqMarker>,
+pub(crate) fn rebuild_element<'el, State, Action, Element>(
+    children: &dyn DomViewSequence<State, Action>,
+    prev_children: &dyn DomViewSequence<State, Action>,
     element: Mut<'el, Pod<Element, ElementProps>>,
     state: &mut ElementState,
     ctx: &mut ViewCtx,
@@ -254,7 +251,6 @@ where
     State: 'static,
     Action: 'static,
     Element: 'static,
-    SeqMarker: 'static,
     Element: DomNode<ElementProps>,
 {
     let mut dom_children_splice = DomChildrenSplice::new(
@@ -273,8 +269,8 @@ where
     element
 }
 
-pub(crate) fn teardown_element<State, Action, Element, SeqMarker>(
-    children: &dyn DomViewSequence<State, Action, SeqMarker>,
+pub(crate) fn teardown_element<State, Action, Element>(
+    children: &dyn DomViewSequence<State, Action>,
     element: Mut<'_, Pod<Element, ElementProps>>,
     state: &mut ElementState,
     ctx: &mut ViewCtx,
@@ -282,7 +278,6 @@ pub(crate) fn teardown_element<State, Action, Element, SeqMarker>(
     State: 'static,
     Action: 'static,
     Element: 'static,
-    SeqMarker: 'static,
     Element: DomNode<ElementProps>,
 {
     let mut dom_children_splice = DomChildrenSplice::new(
@@ -296,34 +291,32 @@ pub(crate) fn teardown_element<State, Action, Element, SeqMarker>(
 }
 
 /// An element that can change its tag, it's useful for autonomous custom elements (i.e. web components)
-pub struct CustomElement<State, Action, SeqMarker> {
+pub struct CustomElement<State, Action> {
     name: Cow<'static, str>,
-    children: Box<dyn DomViewSequence<State, Action, SeqMarker>>,
+    children: Box<dyn DomViewSequence<State, Action>>,
 }
 
 /// An element that can change its tag, it's useful for autonomous custom elements (i.e. web components)
-pub fn custom_element<State, Action, SeqMarker, Children>(
+pub fn custom_element<State, Action, Children>(
     name: impl Into<Cow<'static, str>>,
     children: Children,
-) -> CustomElement<State, Action, SeqMarker>
+) -> CustomElement<State, Action>
 where
     State: 'static,
     Action: 'static,
-    SeqMarker: 'static,
-    Children: ViewSequence<State, Action, ViewCtx, AnyPod, SeqMarker, DynMessage>,
+    Children: ViewSequence<State, Action, ViewCtx, AnyPod, DynMessage>,
 {
     CustomElement {
         name: name.into(),
         children: Box::new(children),
     }
 }
-impl<State, Action, SeqMarker> ViewMarker for CustomElement<State, Action, SeqMarker> {}
-impl<State, Action, SeqMarker> View<State, Action, ViewCtx, DynMessage>
-    for CustomElement<State, Action, SeqMarker>
+impl<State, Action> ViewMarker for CustomElement<State, Action> {}
+impl<State, Action> View<State, Action, ViewCtx, DynMessage>
+    for CustomElement<State, Action>
 where
     State: 'static,
     Action: 'static,
-    SeqMarker: 'static,
 {
     type Element = Pod<web_sys::HtmlElement, ElementProps>;
 
@@ -390,8 +383,8 @@ macro_rules! define_element {
         define_element!($ns, ($ty_name, $name, $dom_interface, stringify!($name)));
     };
     ($ns:expr, ($ty_name:ident, $name:ident, $dom_interface:ident, $tag_name:expr)) => {
-        pub struct $ty_name<State, Action, SeqMarker> {
-            children: Box<dyn DomViewSequence<State, Action, SeqMarker>>,
+        pub struct $ty_name<State, Action> {
+            children: Box<dyn DomViewSequence<State, Action>>,
         }
 
         /// Builder function for a
@@ -400,23 +393,21 @@ macro_rules! define_element {
         pub fn $name<
             State: 'static,
             Action: 'static,
-            SeqMarker: 'static,
-            Children: ViewSequence<State, Action, ViewCtx, AnyPod, SeqMarker, DynMessage>,
+            Children: ViewSequence<State, Action, ViewCtx, AnyPod, DynMessage>,
         >(
             children: Children,
-        ) -> $ty_name<State, Action, SeqMarker> {
+        ) -> $ty_name<State, Action> {
             $ty_name {
                 children: Box::new(children),
             }
         }
 
-        impl<State, Action, SeqMarker> ViewMarker for $ty_name<State, Action, SeqMarker> {}
-        impl<State, Action, SeqMarker> View<State, Action, ViewCtx, DynMessage>
-            for $ty_name<State, Action, SeqMarker>
+        impl<State, Action> ViewMarker for $ty_name<State, Action> {}
+        impl<State, Action> View<State, Action, ViewCtx, DynMessage>
+            for $ty_name<State, Action>
         where
             State: 'static,
             Action: 'static,
-            SeqMarker: 'static,
         {
             type Element = Pod<web_sys::$dom_interface, ElementProps>;
 

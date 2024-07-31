@@ -4,8 +4,6 @@
 #![allow(dead_code)] // This is a utility module, which means that some exposed items aren't
 #![deny(unreachable_pub)]
 
-use std::marker::PhantomData;
-
 use xilem_core::*;
 
 #[derive(Default)]
@@ -68,28 +66,22 @@ pub(super) struct Action {
     _priv: (),
 }
 
-pub(super) struct SequenceView<Seq, Marker> {
+pub(super) struct SequenceView<Seq> {
     id: u32,
     seq: Seq,
-    phantom: PhantomData<Marker>,
 }
 
-pub(super) fn sequence<Seq, Marker>(id: u32, seq: Seq) -> SequenceView<Seq, Marker>
+pub(super) fn sequence<Seq>(id: u32, seq: Seq) -> SequenceView<Seq>
 where
-    Seq: ViewSequence<(), Action, TestCtx, TestElement, Marker>,
+    Seq: ViewSequence<(), Action, TestCtx, TestElement>,
 {
-    SequenceView {
-        id,
-        seq,
-        phantom: PhantomData,
-    }
+    SequenceView { id, seq }
 }
 
-impl<Seq, Marker> ViewMarker for SequenceView<Seq, Marker> {}
-impl<Seq, Marker> View<(), Action, TestCtx> for SequenceView<Seq, Marker>
+impl<Seq> ViewMarker for SequenceView<Seq> {}
+impl<Seq> View<(), Action, TestCtx> for SequenceView<Seq>
 where
-    Seq: ViewSequence<(), Action, TestCtx, TestElement, Marker>,
-    Marker: 'static,
+    Seq: ViewSequence<(), Action, TestCtx, TestElement>,
 {
     type Element = TestElement;
 

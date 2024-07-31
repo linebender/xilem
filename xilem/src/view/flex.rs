@@ -16,9 +16,8 @@ use crate::{AnyWidgetView, Pod, ViewCtx, WidgetView};
 
 pub use masonry::widget::{Axis, CrossAxisAlignment, FlexParams, MainAxisAlignment};
 
-pub fn flex<Seq, Marker>(sequence: Seq) -> Flex<Seq, Marker> {
+pub fn flex<Seq>(sequence: Seq) -> Flex<Seq> {
     Flex {
-        phantom: PhantomData,
         sequence,
         axis: Axis::Vertical,
         cross_axis_alignment: CrossAxisAlignment::Center,
@@ -28,17 +27,16 @@ pub fn flex<Seq, Marker>(sequence: Seq) -> Flex<Seq, Marker> {
     }
 }
 
-pub struct Flex<Seq, Marker> {
+pub struct Flex<Seq> {
     sequence: Seq,
     axis: Axis,
     cross_axis_alignment: CrossAxisAlignment,
     main_axis_alignment: MainAxisAlignment,
     fill_major_axis: bool,
-    phantom: PhantomData<fn() -> Marker>,
     gap: Option<f64>,
 }
 
-impl<Seq, Marker> Flex<Seq, Marker> {
+impl<Seq> Flex<Seq> {
     pub fn direction(mut self, axis: Axis) -> Self {
         self.axis = axis;
         self
@@ -84,10 +82,10 @@ impl<Seq, Marker> Flex<Seq, Marker> {
         self
     }
 }
-impl<Seq, Marker> ViewMarker for Flex<Seq, Marker> {}
-impl<State, Action, Seq, Marker: 'static> View<State, Action, ViewCtx> for Flex<Seq, Marker>
+impl<Seq> ViewMarker for Flex<Seq> {}
+impl<State, Action, Seq> View<State, Action, ViewCtx> for Flex<Seq>
 where
-    Seq: ViewSequence<State, Action, ViewCtx, FlexElement, Marker>,
+    Seq: ViewSequence<State, Action, ViewCtx, FlexElement>,
 {
     type Element = Pod<widget::Flex>;
 
