@@ -85,6 +85,7 @@ where
     }
 }
 
+impl<Seq, Marker> ViewMarker for SequenceView<Seq, Marker> {}
 impl<Seq, Marker> View<(), Action, TestCtx> for SequenceView<Seq, Marker>
 where
     Seq: ViewSequence<(), Action, TestCtx, TestElement, Marker>,
@@ -160,6 +161,7 @@ where
     }
 }
 
+impl<const N: u32> ViewMarker for OperationView<N> {}
 impl<const N: u32> View<(), Action, TestCtx> for OperationView<N> {
     type Element = TestElement;
 

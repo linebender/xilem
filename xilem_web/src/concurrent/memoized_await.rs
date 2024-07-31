@@ -5,7 +5,7 @@ use std::{future::Future, marker::PhantomData};
 
 use wasm_bindgen::{closure::Closure, JsCast, UnwrapThrowExt};
 use wasm_bindgen_futures::spawn_local;
-use xilem_core::{MessageResult, Mut, NoElement, View, ViewId, ViewPathTracker};
+use xilem_core::{MessageResult, Mut, NoElement, View, ViewId, ViewMarker, ViewPathTracker};
 
 use crate::{DynMessage, OptionalAction, ViewCtx};
 
@@ -153,6 +153,10 @@ enum MemoizedAwaitMessage<Output: std::fmt::Debug> {
     ScheduleUpdate,
 }
 
+impl<State, Action, OA, InitFuture, Data, CB, F, FOut> ViewMarker
+    for MemoizedAwait<State, Action, OA, InitFuture, Data, CB, F, FOut>
+{
+}
 impl<State, Action, InitFuture, F, FOut, Data, CB, OA> View<State, Action, ViewCtx, DynMessage>
     for MemoizedAwait<State, Action, OA, InitFuture, Data, CB, F, FOut>
 where

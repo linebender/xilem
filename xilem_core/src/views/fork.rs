@@ -4,7 +4,8 @@
 use core::marker::PhantomData;
 
 use crate::{
-    AppendVec, ElementSplice, Mut, NoElement, View, ViewId, ViewPathTracker, ViewSequence,
+    AppendVec, ElementSplice, Mut, NoElement, View, ViewId, ViewMarker, ViewPathTracker,
+    ViewSequence,
 };
 
 /// Create a view which acts as `active_view`, whilst also running `alongside_view`, without inserting it into the tree.
@@ -28,6 +29,7 @@ pub struct Fork<Active, Alongside, Marker> {
     marker: PhantomData<Marker>,
 }
 
+impl<Active, Alongside, Marker> ViewMarker for Fork<Active, Alongside, Marker> {}
 impl<State, Action, Context, Active, Alongside, Marker, Message>
     View<State, Action, Context, Message> for Fork<Active, Alongside, Marker>
 where

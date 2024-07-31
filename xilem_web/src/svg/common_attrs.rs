@@ -5,7 +5,7 @@ use std::borrow::Cow;
 use std::marker::PhantomData;
 
 use peniko::Brush;
-use xilem_core::{MessageResult, Mut, View, ViewId};
+use xilem_core::{MessageResult, Mut, View, ViewId, ViewMarker};
 
 use crate::{
     attribute::{ElementWithAttributes, WithAttributes},
@@ -61,6 +61,7 @@ fn brush_to_string(brush: &Brush) -> String {
     }
 }
 
+impl<V, State, Action> ViewMarker for Fill<V, State, Action> {}
 impl<State, Action, V> View<State, Action, ViewCtx, DynMessage> for Fill<V, State, Action>
 where
     State: 'static,
@@ -116,6 +117,7 @@ where
     }
 }
 
+impl<V, State, Action> ViewMarker for Stroke<V, State, Action> {}
 impl<State, Action, V> View<State, Action, ViewCtx, DynMessage> for Stroke<V, State, Action>
 where
     State: 'static,

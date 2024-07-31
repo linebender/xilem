@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::{text::TextBrush, widget, ArcStr};
-use xilem_core::Mut;
+use xilem_core::{Mut, ViewMarker};
 
 use crate::{Color, MessageResult, Pod, TextAlignment, View, ViewCtx, ViewId};
 
@@ -43,6 +43,7 @@ impl Label {
     }
 }
 
+impl ViewMarker for Label {}
 impl<State, Action> View<State, Action, ViewCtx> for Label {
     type Element = Pod<widget::Label>;
     type ViewState = ();

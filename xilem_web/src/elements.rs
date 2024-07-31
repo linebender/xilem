@@ -8,7 +8,7 @@ use std::borrow::Cow;
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
 use crate::{
-    core::{AppendVec, ElementSplice, MessageResult, Mut, View, ViewId, ViewSequence},
+    core::{AppendVec, ElementSplice, MessageResult, Mut, View, ViewId, ViewMarker, ViewSequence},
     document,
     element_props::ElementProps,
     vec_splice::VecSplice,
@@ -317,7 +317,7 @@ where
         children: Box::new(children),
     }
 }
-
+impl<State, Action, SeqMarker> ViewMarker for CustomElement<State, Action, SeqMarker> {}
 impl<State, Action, SeqMarker> View<State, Action, ViewCtx, DynMessage>
     for CustomElement<State, Action, SeqMarker>
 where
@@ -410,6 +410,7 @@ macro_rules! define_element {
             }
         }
 
+        impl<State, Action, SeqMarker> ViewMarker for $ty_name<State, Action, SeqMarker> {}
         impl<State, Action, SeqMarker> View<State, Action, ViewCtx, DynMessage>
             for $ty_name<State, Action, SeqMarker>
         where
@@ -472,7 +473,7 @@ macro_rules! define_elements {
     ($ns:ident, $($element_def:tt,)*) => {
         use super::{build_element, rebuild_element, teardown_element, DomViewSequence, ElementState};
         use crate::{
-            core::{MessageResult, Mut, ViewId, ViewSequence},
+            core::{MessageResult, Mut, ViewId, ViewSequence, ViewMarker},
             AnyPod, DynMessage, ElementProps, Pod, View, ViewCtx,
         };
         $(define_element!(crate::$ns, $element_def);)*

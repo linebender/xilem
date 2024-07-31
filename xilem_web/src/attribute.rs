@@ -3,7 +3,7 @@
 
 use std::marker::PhantomData;
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
-use xilem_core::{MessageResult, Mut, View, ViewElement, ViewId};
+use xilem_core::{MessageResult, Mut, View, ViewElement, ViewId, ViewMarker};
 
 use crate::{
     vecmap::VecMap, AttributeValue, DomNode, DynMessage, ElementProps, Pod, PodMut, ViewCtx,
@@ -249,7 +249,8 @@ impl<E, T, A> Attr<E, T, A> {
     }
 }
 
-impl<T, A, E> View<T, A, ViewCtx, DynMessage> for Attr<E, T, A>
+impl<E, T, A> ViewMarker for Attr<E, T, A> {}
+impl<E, T, A> View<T, A, ViewCtx, DynMessage> for Attr<E, T, A>
 where
     T: 'static,
     A: 'static,

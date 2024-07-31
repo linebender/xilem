@@ -9,6 +9,10 @@ use alloc::{boxed::Box, sync::Arc};
 
 use crate::{message::MessageResult, DynMessage, Mut, ViewElement};
 
+// TODO better doc-comment
+/// To avoid ambiguity for `impl ViewSequence for impl View`
+pub trait ViewMarker {}
+
 /// A lightweight, short-lived representation of the state of a retained
 /// structure, usually a user interface node.
 ///
@@ -34,7 +38,9 @@ use crate::{message::MessageResult, DynMessage, Mut, ViewElement};
 ///
 /// In order to support the default open-ended [`DynMessage`] type as `Message`, this trait requires an
 /// allocator to be available.
-pub trait View<State, Action, Context: ViewPathTracker, Message = DynMessage>: 'static {
+pub trait View<State, Action, Context: ViewPathTracker, Message = DynMessage>:
+    ViewMarker + 'static
+{
     /// The element type which this view operates on.
     type Element: ViewElement;
     /// State that is used over the lifetime of the retained representation of the view.
@@ -137,6 +143,7 @@ pub trait ViewPathTracker {
     }
 }
 
+impl<V: ?Sized> ViewMarker for Box<V> {}
 impl<State, Action, Context, Message, V> View<State, Action, Context, Message> for Box<V>
 where
     Context: ViewPathTracker,
@@ -180,6 +187,7 @@ where
     }
 }
 
+impl<V: ?Sized> ViewMarker for Arc<V> {}
 /// An implementation of [`View`] which only runs rebuild if the states are different
 impl<State, Action, Context, Message, V> View<State, Action, Context, Message> for Arc<V>
 where

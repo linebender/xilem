@@ -1,7 +1,7 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{MessageResult, Mut, View, ViewId, ViewPathTracker};
+use crate::{MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker};
 
 /// A view which supports Memoization.
 ///
@@ -46,6 +46,7 @@ It's not possible in Rust currently to check whether the (content of the) callba
     }
 }
 
+impl<Data, ViewFn> ViewMarker for Memoize<Data, ViewFn> {}
 impl<State, Action, Context, Data, V, ViewFn, Message> View<State, Action, Context, Message>
     for Memoize<Data, ViewFn>
 where

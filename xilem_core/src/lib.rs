@@ -29,7 +29,7 @@ mod deferred;
 pub use deferred::{AsyncCtx, MessageProxy, PhantomView, ProxyError, RawProxy};
 
 mod view;
-pub use view::{View, ViewId, ViewPathTracker};
+pub use view::{View, ViewId, ViewMarker, ViewPathTracker};
 
 mod views;
 pub use views::{

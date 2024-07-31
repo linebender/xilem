@@ -9,7 +9,7 @@ use masonry::{
 };
 use xilem_core::{
     AppendVec, DynMessage, ElementSplice, MessageResult, Mut, SuperElement, View, ViewElement,
-    ViewId, ViewPathTracker, ViewSequence,
+    ViewId, ViewMarker, ViewPathTracker, ViewSequence,
 };
 
 use crate::{AnyWidgetView, Pod, ViewCtx, WidgetView};
@@ -84,7 +84,7 @@ impl<Seq, Marker> Flex<Seq, Marker> {
         self
     }
 }
-
+impl<Seq, Marker> ViewMarker for Flex<Seq, Marker> {}
 impl<State, Action, Seq, Marker: 'static> View<State, Action, ViewCtx> for Flex<Seq, Marker>
 where
     Seq: ViewSequence<State, Action, ViewCtx, FlexElement, Marker>,
@@ -407,6 +407,7 @@ where
     }
 }
 
+impl<V, State, Action> ViewMarker for FlexItem<V, State, Action> {}
 impl<State, Action, V> View<State, Action, ViewCtx> for FlexItem<V, State, Action>
 where
     State: 'static,
@@ -485,6 +486,7 @@ impl<State, Action> From<FlexSpacer> for AnyFlexChild<State, Action> {
     }
 }
 
+impl ViewMarker for FlexSpacer {}
 // This impl doesn't require a view id, as it neither receives, nor sends any messages
 // If this should ever change, it's necessary to adjust the `AnyFlexChild` `View` impl
 impl<State, Action> View<State, Action, ViewCtx> for FlexSpacer {
@@ -593,6 +595,7 @@ pub struct AnyFlexChildState<State: 'static, Action: 'static> {
     generation: u64,
 }
 
+impl<State, Action> ViewMarker for AnyFlexChild<State, Action> {}
 impl<State, Action> View<State, Action, ViewCtx> for AnyFlexChild<State, Action>
 where
     State: 'static,

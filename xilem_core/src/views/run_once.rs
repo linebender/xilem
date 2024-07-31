@@ -3,7 +3,7 @@
 
 use core::fmt::Debug;
 
-use crate::{MessageResult, NoElement, View, ViewPathTracker};
+use crate::{MessageResult, NoElement, View, ViewMarker, ViewPathTracker};
 
 /// A view which executes `once` exactly once.
 ///
@@ -75,6 +75,7 @@ pub struct RunOnce<F> {
     once: F,
 }
 
+impl<F> ViewMarker for RunOnce<F> {}
 impl<F, State, Action, Context, Message> View<State, Action, Context, Message> for RunOnce<F>
 where
     Context: ViewPathTracker,
