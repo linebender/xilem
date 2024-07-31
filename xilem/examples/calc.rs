@@ -122,7 +122,7 @@ impl Calculator {
         self.operation = Some(operator);
     }
 
-    // For instances when you continue working with the prior result.
+    /// For instances when you continue working with the prior result.
     fn move_result_to_left(&mut self) {
         self.clear_current_entry_on_input = true;
         self.numbers[0] = self.result.clone().expect("expected result");
@@ -252,6 +252,7 @@ fn app_logic(data: &mut Calculator) -> impl WidgetView<Calculator> {
     .must_fill_major_axis(true)
 }
 
+/// Creates a horizontal centered flex row designed for the display portion of the calculator.
 pub fn centered_flex_row<Seq, Marker>(sequence: Seq) -> Flex<Seq, Marker> {
     flex(sequence)
         .direction(Axis::Horizontal)
@@ -260,6 +261,7 @@ pub fn centered_flex_row<Seq, Marker>(sequence: Seq) -> Flex<Seq, Marker> {
         .gap(5.)
 }
 
+/// Creates a horizontal filled flex row designed to be used in a grid.
 pub fn flex_row<Seq, Marker>(sequence: Seq) -> Flex<Seq, Marker> {
     flex(sequence)
         .direction(Axis::Horizontal)
@@ -268,10 +270,14 @@ pub fn flex_row<Seq, Marker>(sequence: Seq) -> Flex<Seq, Marker> {
         .gap(GRID_GAP)
 }
 
+/// Returns a label intended to be used in the calculator's top display.
+/// It sets the text size to DISPLAY_FONT_SIZE.
 fn display_label(text: &str) -> impl WidgetView<Calculator> {
     label(text).text_size(DISPLAY_FONT_SIZE)
 }
 
+/// Returns a button contained in an expanded box. Useful for the buttons so that
+/// they take up all available space in flex containers.
 fn expanded_button(
     text: &str,
     callback: impl Fn(&mut Calculator) + Send + Sync + 'static,
@@ -279,12 +285,16 @@ fn expanded_button(
     sized_box(button(text, callback)).expand()
 }
 
+/// Returns an expanded button that triggers the calculator's operator handler,
+/// on_entered_operator().
 fn operator_button(math_operator: MathOperator) -> impl WidgetView<Calculator> {
     expanded_button(math_operator.as_str(), move |data: &mut Calculator| {
         data.on_entered_operator(math_operator);
     })
 }
 
+/// Returns an expanded button that triggers the calculator's digit handler,
+/// on_entered_digit().
 fn digit_button(digit: &'static str) -> impl WidgetView<Calculator> {
     expanded_button(digit, |data: &mut Calculator| {
         data.on_entered_digit(digit);
