@@ -59,6 +59,7 @@ pub use optional_action::{Action, OptionalAction};
 pub use pointer::{Pointer, PointerDetails, PointerMsg};
 pub use style::{style, ElementWithStyle, IntoStyles, Style, Styles, WithStyle};
 pub use xilem_core as core;
+use xilem_core::ViewSequence;
 
 /// A trait used for type erasure of [`DomNode`]s
 /// It is e.g. used in [`AnyPod`]
@@ -167,6 +168,18 @@ where
 {
     type DomNode = W;
     type Props = P;
+}
+
+pub trait DomViewSequence<State: 'static, Action = ()>:
+    ViewSequence<State, Action, ViewCtx, AnyPod, DynMessage>
+{
+}
+impl<V, State, Action> DomViewSequence<State, Action> for V
+where
+    State: 'static,
+    Action: 'static,
+    V: ViewSequence<State, Action, ViewCtx, AnyPod, DynMessage>,
+{
 }
 
 /// A container, which holds the actual DOM node, and associated props, such as attributes or classes.

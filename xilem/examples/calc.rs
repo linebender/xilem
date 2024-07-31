@@ -253,7 +253,7 @@ fn app_logic(data: &mut Calculator) -> impl WidgetView<Calculator> {
 }
 
 /// Creates a horizontal centered flex row designed for the display portion of the calculator.
-pub fn centered_flex_row<Seq, Marker>(sequence: Seq) -> Flex<Seq, Marker> {
+pub fn centered_flex_row<Seq>(sequence: Seq) -> Flex<Seq> {
     flex(sequence)
         .direction(Axis::Horizontal)
         .cross_axis_alignment(CrossAxisAlignment::Center)
@@ -262,7 +262,7 @@ pub fn centered_flex_row<Seq, Marker>(sequence: Seq) -> Flex<Seq, Marker> {
 }
 
 /// Creates a horizontal filled flex row designed to be used in a grid.
-pub fn flex_row<Seq, Marker>(sequence: Seq) -> Flex<Seq, Marker> {
+pub fn flex_row<Seq>(sequence: Seq) -> Flex<Seq> {
     flex(sequence)
         .direction(Axis::Horizontal)
         .cross_axis_alignment(CrossAxisAlignment::Fill)

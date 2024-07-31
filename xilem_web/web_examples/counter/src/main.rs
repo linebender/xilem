@@ -5,7 +5,7 @@ use xilem_web::{
     document_body,
     elements::html as el,
     interfaces::{Element, HtmlButtonElement, HtmlDivElement},
-    App,
+    App, DomViewSequence,
 };
 
 #[derive(Default)]
@@ -50,8 +50,13 @@ fn btn(
     el::button(label).on_click(click_fn)
 }
 
+fn my_fragment(state: &mut AppState) -> impl DomViewSequence<AppState> {
+    (state.clicks >= 5).then_some(el::p("Huzzah, clicked at least 5 times"))
+}
+
 fn app_logic(state: &mut AppState) -> impl HtmlDivElement<AppState> {
     el::div((
+        my_fragment(state),
         el::span(format!("clicked {} times", state.clicks)).class(state.class),
         el::br(()),
         btn("+1 click", |state, _| state.increment()),

@@ -312,8 +312,7 @@ where
     }
 }
 impl<State, Action> ViewMarker for CustomElement<State, Action> {}
-impl<State, Action> View<State, Action, ViewCtx, DynMessage>
-    for CustomElement<State, Action>
+impl<State, Action> View<State, Action, ViewCtx, DynMessage> for CustomElement<State, Action>
 where
     State: 'static,
     Action: 'static,
@@ -403,8 +402,7 @@ macro_rules! define_element {
         }
 
         impl<State, Action> ViewMarker for $ty_name<State, Action> {}
-        impl<State, Action> View<State, Action, ViewCtx, DynMessage>
-            for $ty_name<State, Action>
+        impl<State, Action> View<State, Action, ViewCtx, DynMessage> for $ty_name<State, Action>
         where
             State: 'static,
             Action: 'static,
