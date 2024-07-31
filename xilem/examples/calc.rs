@@ -5,6 +5,7 @@ use masonry::widget::{CrossAxisAlignment, MainAxisAlignment};
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
 use winit::window::Window;
+use xilem::view::Flex;
 use xilem::{
     view::{button, flex, label, sized_box, Axis, FlexExt as _, FlexSpacer},
     EventLoop, WidgetView, Xilem,
@@ -38,7 +39,7 @@ impl MathOperator {
     }
 }
 
-struct CalculatorState {
+struct Calculator {
     current_num_index: usize,
     clear_current_entry_on_input: bool, // For instances of negation used on a result.
     numbers: [String; 2],
@@ -46,7 +47,7 @@ struct CalculatorState {
     operation: Option<MathOperator>,
 }
 
-impl CalculatorState {
+impl Calculator {
     fn get_current_number(&self) -> String {
         self.numbers[self.current_num_index].clone()
     }
@@ -184,100 +185,65 @@ impl CalculatorState {
 
 const DISPLAY_FONT_SIZE: f32 = 30.;
 const GRID_GAP: f64 = 2.;
-fn app_logic(data: &mut CalculatorState) -> impl WidgetView<CalculatorState> {
+fn app_logic(data: &mut Calculator) -> impl WidgetView<Calculator> {
     flex((
         // Display
-        flex((
+        centered_flex_row((
             FlexSpacer::Flex(0.1),
-            label(data.numbers[0].as_ref()).text_size(DISPLAY_FONT_SIZE),
+            display_label(data.numbers[0].as_ref()),
             data.operation
-                .map(|operation| label(operation.as_str()).text_size(DISPLAY_FONT_SIZE)),
-            label(data.numbers[1].as_ref()).text_size(DISPLAY_FONT_SIZE),
-            data.result
-                .is_some()
-                .then(|| label("=").text_size(DISPLAY_FONT_SIZE)),
+                .map(|operation| display_label(operation.as_str())),
+            display_label(data.numbers[1].as_ref()),
+            data.result.is_some().then(|| display_label("=")),
             data.result
                 .as_ref()
-                .map(|result| label(result.as_ref()).text_size(DISPLAY_FONT_SIZE)),
+                .map(|result| display_label(result.as_ref())),
             FlexSpacer::Flex(0.1),
         ))
-        .direction(Axis::Horizontal)
-        .cross_axis_alignment(CrossAxisAlignment::Center)
-        .main_axis_alignment(MainAxisAlignment::Start)
-        .gap(5.)
         .flex(1.0),
         FlexSpacer::Fixed(10.0),
         // Top row
-        flex((
-            sized_box(button("CE", |data: &mut CalculatorState| {
+        flex_row((
+            expanded_button("CE", |data: &mut Calculator| {
                 data.clear_entry();
-            }))
-            .expand()
-            .flex(1.0),
-            sized_box(button("C", |data: &mut CalculatorState| data.clear_all()))
-                .expand()
-                .flex(1.0),
-            sized_box(button("DEL", |data: &mut CalculatorState| data.on_delete()))
-                .expand()
-                .flex(1.0),
-            operator_button(MathOperator::Divide).flex(1.0),
+            })
+            .flex(1.),
+            expanded_button("C", |data: &mut Calculator| data.clear_all()).flex(1.),
+            expanded_button("DEL", |data: &mut Calculator| data.on_delete()).flex(1.),
+            operator_button(MathOperator::Divide).flex(1.),
         ))
-        .direction(Axis::Horizontal)
-        .cross_axis_alignment(CrossAxisAlignment::Center)
-        .main_axis_alignment(MainAxisAlignment::SpaceEvenly)
-        .gap(GRID_GAP)
         .flex(1.0),
         // 7 8 9 X
-        flex((
-            digit_button("7").flex(1.0),
-            digit_button("8").flex(1.0),
-            digit_button("9").flex(1.0),
-            operator_button(MathOperator::Multiply).flex(1.0),
+        flex_row((
+            digit_button("7").flex(1.),
+            digit_button("8").flex(1.),
+            digit_button("9").flex(1.),
+            operator_button(MathOperator::Multiply).flex(1.),
         ))
-        .direction(Axis::Horizontal)
-        .cross_axis_alignment(CrossAxisAlignment::Fill)
-        .main_axis_alignment(MainAxisAlignment::SpaceEvenly)
-        .gap(GRID_GAP)
         .flex(1.0),
         // 4 5 6 -
-        flex((
-            digit_button("4").flex(1.0),
-            digit_button("5").flex(1.0),
-            digit_button("6").flex(1.0),
-            operator_button(MathOperator::Subtract).flex(1.0),
+        flex_row((
+            digit_button("4").flex(1.),
+            digit_button("5").flex(1.),
+            digit_button("6").flex(1.),
+            operator_button(MathOperator::Subtract).flex(1.),
         ))
-        .direction(Axis::Horizontal)
-        .cross_axis_alignment(CrossAxisAlignment::Fill)
-        .main_axis_alignment(MainAxisAlignment::SpaceEvenly)
-        .gap(GRID_GAP)
         .flex(1.0),
         // 1 2 3 +
-        flex((
-            digit_button("1").flex(1.0),
-            digit_button("2").flex(1.0),
-            digit_button("3").flex(1.0),
-            operator_button(MathOperator::Add).flex(1.0),
+        flex_row((
+            digit_button("1").flex(1.),
+            digit_button("2").flex(1.),
+            digit_button("3").flex(1.),
+            operator_button(MathOperator::Add).flex(1.),
         ))
-        .direction(Axis::Horizontal)
-        .cross_axis_alignment(CrossAxisAlignment::Fill)
-        .main_axis_alignment(MainAxisAlignment::SpaceEvenly)
-        .gap(GRID_GAP)
         .flex(1.0),
         // bottom row
-        flex((
-            sized_box(button("±", |data: &mut CalculatorState| data.negate()))
-                .expand()
-                .flex(1.0),
-            digit_button("0").flex(1.0),
-            digit_button(".").flex(1.0),
-            sized_box(button("=", |data: &mut CalculatorState| data.on_equals()))
-                .expand()
-                .flex(1.0),
+        flex_row((
+            expanded_button("±", |data: &mut Calculator| data.negate()).flex(1.),
+            digit_button("0").flex(1.),
+            digit_button(".").flex(1.),
+            expanded_button("=", |data: &mut Calculator| data.on_equals()).flex(1.),
         ))
-        .direction(Axis::Horizontal)
-        .cross_axis_alignment(CrossAxisAlignment::Fill)
-        .main_axis_alignment(MainAxisAlignment::SpaceEvenly)
-        .gap(GRID_GAP)
         .flex(1.0),
     ))
     .gap(GRID_GAP)
@@ -286,25 +252,47 @@ fn app_logic(data: &mut CalculatorState) -> impl WidgetView<CalculatorState> {
     .must_fill_major_axis(true)
 }
 
-fn operator_button(math_operator: MathOperator) -> impl WidgetView<CalculatorState> {
-    sized_box(button(
-        math_operator.as_str(),
-        move |data: &mut CalculatorState| {
-            data.on_entered_operator(math_operator);
-        },
-    ))
-    .expand()
+pub fn centered_flex_row<Seq, Marker>(sequence: Seq) -> Flex<Seq, Marker> {
+    flex(sequence)
+        .direction(Axis::Horizontal)
+        .cross_axis_alignment(CrossAxisAlignment::Center)
+        .main_axis_alignment(MainAxisAlignment::Start)
+        .gap(5.)
 }
 
-fn digit_button(digit: &'static str) -> impl WidgetView<CalculatorState> {
-    sized_box(button(digit, |data: &mut CalculatorState| {
+pub fn flex_row<Seq, Marker>(sequence: Seq) -> Flex<Seq, Marker> {
+    flex(sequence)
+        .direction(Axis::Horizontal)
+        .cross_axis_alignment(CrossAxisAlignment::Fill)
+        .main_axis_alignment(MainAxisAlignment::SpaceEvenly)
+        .gap(GRID_GAP)
+}
+
+fn display_label(text: &str) -> impl WidgetView<Calculator> {
+    label(text).text_size(DISPLAY_FONT_SIZE)
+}
+
+fn expanded_button(
+    text: &str,
+    callback: impl Fn(&mut Calculator) + Send + Sync + 'static,
+) -> impl WidgetView<Calculator> + '_ {
+    sized_box(button(text, callback)).expand()
+}
+
+fn operator_button(math_operator: MathOperator) -> impl WidgetView<Calculator> {
+    expanded_button(math_operator.as_str(), move |data: &mut Calculator| {
+        data.on_entered_operator(math_operator);
+    })
+}
+
+fn digit_button(digit: &'static str) -> impl WidgetView<Calculator> {
+    expanded_button(digit, |data: &mut Calculator| {
         data.on_entered_digit(digit);
-    }))
-    .expand()
+    })
 }
 
 fn main() -> Result<(), EventLoopError> {
-    let data = CalculatorState {
+    let data = Calculator {
         current_num_index: 0,
         clear_current_entry_on_input: false,
         numbers: ["".into(), "".into()],
