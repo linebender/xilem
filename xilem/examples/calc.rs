@@ -271,7 +271,7 @@ pub fn flex_row<Seq, Marker>(sequence: Seq) -> Flex<Seq, Marker> {
 }
 
 /// Returns a label intended to be used in the calculator's top display.
-/// It sets the text size to DISPLAY_FONT_SIZE.
+/// The default text size is out of proportion for this use case.
 fn display_label(text: &str) -> impl WidgetView<Calculator> {
     label(text).text_size(DISPLAY_FONT_SIZE)
 }
@@ -293,8 +293,7 @@ fn operator_button(math_operator: MathOperator) -> impl WidgetView<Calculator> {
     })
 }
 
-/// Returns an expanded button that triggers the calculator's digit handler,
-/// on_entered_digit().
+/// A button which adds `digit` to the current input when pressed
 fn digit_button(digit: &'static str) -> impl WidgetView<Calculator> {
     expanded_button(digit, |data: &mut Calculator| {
         data.on_entered_digit(digit);
