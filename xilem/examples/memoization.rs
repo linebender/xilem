@@ -3,7 +3,7 @@
 
 use std::sync::Arc;
 use xilem::{
-    core::{memoize, static_view},
+    core::{frozen, memoize},
     view::{button, flex},
 };
 use xilem::{AnyWidgetView, EventLoop, WidgetView, Xilem};
@@ -50,9 +50,9 @@ fn decrease_button(state: &AppState) -> impl WidgetView<AppState> {
     })
 }
 
-// When there's no access to the app state, i.e. the view is "static", you can use `static_view` which is basically a Memoize view without data
+// When there's no access to the app state, i.e. the view is "static", you can use `frozen` which is basically a Memoize view without data
 fn reset_button() -> impl WidgetView<AppState> {
-    static_view(|| button("reset", |data: &mut AppState| data.count = 0))
+    frozen(|| button("reset", |data: &mut AppState| data.count = 0))
 }
 
 fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> {

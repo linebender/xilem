@@ -33,8 +33,8 @@ pub use view::{View, ViewId, ViewPathTracker};
 
 mod views;
 pub use views::{
-    adapt, fork, map_action, map_state, memoize, one_of, run_once, run_once_raw, static_view,
-    Adapt, AdaptThunk, Fork, MapAction, MapState, Memoize, OrphanView, RunOnce, Static,
+    adapt, fork, frozen, map_action, map_state, memoize, one_of, run_once, run_once_raw, Adapt,
+    AdaptThunk, Fork, Frozen, MapAction, MapState, Memoize, OrphanView, RunOnce,
 };
 
 mod message;

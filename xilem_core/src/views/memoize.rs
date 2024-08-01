@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use core::marker::PhantomData;
+use core::mem::size_of;
 
 use crate::{MessageResult, Mut, View, ViewId, ViewPathTracker};
 
@@ -15,36 +16,43 @@ pub struct Memoize<Data, InitView, State, Action> {
     phantom: PhantomData<fn() -> (State, Action)>,
 }
 
-pub struct MemoizeState<V, VState> {
-    view: V,
-    view_state: VState,
-    dirty: bool,
-}
-
-impl<Data, V, InitView, State, Action> Memoize<Data, InitView, State, Action>
-where
-    InitView: Fn(&Data) -> V,
-{
-    /// Create a new `Memoize` view.
-    pub fn new(data: Data, init_view: InitView) -> Self {
-        const {
-            assert!(
-                core::mem::size_of::<InitView>() == 0,
-                "
+macro_rules! non_capturing_closure_string {
+    () => {
+"
 It's not possible to use function pointers or captured context in closures,
 as this potentially messes up the logic of memoize or produces unwanted effects.
 
 For example a different kind of view could be instantiated with a different callback, while the old one is still memoized, but it's not updated then.
 It's not possible in Rust currently to check whether the (content of the) callback has changed with the `Fn` trait, which would make this otherwise possible.
 "
-        );
-        };
-        Memoize {
-            data,
-            init_view,
-            phantom: PhantomData,
-        }
+    };
+}
+
+/// Memoize the view, until the `data` changes (in which case `view` is called again)
+pub fn memoize<State, Action, Context, Message, Data, V, InitView>(
+    data: Data,
+    init_view: InitView,
+) -> Memoize<Data, InitView, State, Action>
+where
+    Data: PartialEq + 'static,
+    InitView: Fn(&Data) -> V + 'static,
+    V: View<State, Action, Context, Message>,
+    Context: ViewPathTracker,
+{
+    const {
+        assert!(size_of::<InitView>() == 0, non_capturing_closure_string!());
     }
+    Memoize {
+        data,
+        init_view,
+        phantom: PhantomData,
+    }
+}
+
+pub struct MemoizeState<V, VState> {
+    view: V,
+    view_state: VState,
+    dirty: bool,
 }
 
 impl<State, Action, Context, Data, V, ViewFn, Message> View<State, Action, Context, Message>
@@ -118,30 +126,16 @@ where
     }
 }
 
-/// Memoize the view, until the `data` changes (in which case `view` is called again)
-pub fn memoize<State, Action, Context, Message, Data, V, InitView>(
-    data: Data,
-    init_view: InitView,
-) -> Memoize<Data, InitView, State, Action>
-where
-    Data: PartialEq + 'static,
-    InitView: Fn(&Data) -> V + 'static,
-    V: View<State, Action, Context, Message>,
-    Context: ViewPathTracker,
-{
-    Memoize::new(data, init_view)
-}
-
 /// Specialized version of [`Memoize`], which doesn't take any data at all, the closure is evaluated only once and when a child view forces a rebuild
-pub struct Static<InitView, State, Action> {
+pub struct Frozen<InitView, State, Action> {
     init_view: InitView,
     phantom: PhantomData<fn() -> (State, Action)>,
 }
 
 /// Specialized version of [`memoize`], which doesn't take any data at all, the closure is evaluated only once and when a child view forces a rebuild
-pub fn static_view<State, Action, Context, Message, V, InitView>(
+pub fn frozen<State, Action, Context, Message, V, InitView>(
     init_view: InitView,
-) -> Static<InitView, State, Action>
+) -> Frozen<InitView, State, Action>
 where
     State: 'static,
     Action: 'static,
@@ -150,25 +144,16 @@ where
     InitView: Fn() -> V,
 {
     const {
-        assert!(
-            core::mem::size_of::<InitView>() == 0,
-                "
-It's not possible to use function pointers or captured context in closures,
-as this potentially messes up the logic of memoize or produces unwanted effects.
-
-For example a different kind of view could be instantiated with a different callback, while the old one is still memoized, but it's not updated then.
-It's not possible in Rust currently to check whether the (content of the) callback has changed with the `Fn` trait, which would make this otherwise possible.
-"
-        );
-    };
-    Static {
+        assert!(size_of::<InitView>() == 0, non_capturing_closure_string!());
+    }
+    Frozen {
         init_view,
         phantom: PhantomData,
     }
 }
 
 impl<State, Action, Context, Message, V, InitView> View<State, Action, Context, Message>
-    for Static<InitView, State, Action>
+    for Frozen<InitView, State, Action>
 where
     State: 'static,
     Action: 'static,
