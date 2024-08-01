@@ -64,6 +64,7 @@ pub enum PointerEvent {
     HoverFile(PathBuf, PointerState),
     DropFile(PathBuf, PointerState),
     HoverFileCancel(PointerState),
+    Pinch(f64, PointerState),
 }
 
 // TODO - Clipboard Paste?
@@ -243,7 +244,8 @@ impl PointerEvent {
             | PointerEvent::MouseWheel(_, state)
             | PointerEvent::HoverFile(_, state)
             | PointerEvent::DropFile(_, state)
-            | PointerEvent::HoverFileCancel(state) => state,
+            | PointerEvent::HoverFileCancel(state)
+            | PointerEvent::Pinch(_, state) => state,
         }
     }
 
@@ -258,6 +260,7 @@ impl PointerEvent {
             PointerEvent::HoverFile(_, _) => "HoverFile",
             PointerEvent::DropFile(_, _) => "DropFile",
             PointerEvent::HoverFileCancel(_) => "HoverFileCancel",
+            PointerEvent::Pinch(_, _) => "Pinch",
         }
     }
 
@@ -272,6 +275,7 @@ impl PointerEvent {
             PointerEvent::HoverFile(_, _) => true,
             PointerEvent::DropFile(_, _) => false,
             PointerEvent::HoverFileCancel(_) => false,
+            PointerEvent::Pinch(_, _) => true,
         }
     }
 }

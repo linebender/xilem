@@ -540,6 +540,10 @@ impl MasonryState<'_> {
                     }
                 }
             }
+            WinitWindowEvent::PinchGesture { delta, .. } => {
+                self.render_root
+                    .handle_pointer_event(PointerEvent::Pinch(delta, self.pointer_state.clone()));
+            }
             _ => (),
         }
 
