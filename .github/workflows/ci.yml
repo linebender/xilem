@@ -171,19 +171,52 @@ jobs:
       - name: cargo clippy (release)
         run: cargo clippy --release --workspace ${{ env.NO_WASM_PKGS }} --locked --target wasm32-unknown-unknown --all-targets -- -D warnings
 
+  prime-lfs-cache:
+    name: Prime LFS Cache
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Cache git lfs
+      id: lfs-cache
+      uses: actions/cache@v4
+      with:
+        path: .git/lfs
+        # The files targeted with git lfs
+        key: masonry-lfs-${{ hashFiles('masonry/src/widget/screenshots/*.png') }}
+        restore-keys: masonry-lfs-
+        enableCrossOsArchive: true
+
+    - name: Fetch lfs data
+      if: ${{ steps.lfs-cache.outputs.cache-hit != 'true' }}
+      run: git lfs fetch
+        
   test-stable:
     name: cargo test
+    needs: prime-lfs-cache
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [windows-latest, macos-latest, ubuntu-latest]
     steps:
       - uses: actions/checkout@v4
+        # We intentionally do not use lfs: true here, instead using the caching method to save LFS bandwidth.
 
       - name: restore cache
         uses: Swatinem/rust-cache@v2
         with:
           save-if: ${{ github.event_name != 'merge_group' }}
+
+      - name: Restore lfs cache
+        id: lfs-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .git/lfs
+          # The files targeted with git lfs
+          key: masonry-lfs-${{ hashFiles('masonry/src/widget/screenshots/*.png') }}
+          enableCrossOsArchive: true
 
       - name: install stable toolchain
         uses: dtolnay/rust-toolchain@master
