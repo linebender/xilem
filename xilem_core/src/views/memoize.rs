@@ -16,7 +16,7 @@ pub struct Memoize<Data, InitView, State, Action> {
     phantom: PhantomData<fn() -> (State, Action)>,
 }
 
-const NON_CAPTURE_CLOSURE: &str = "
+const NON_CAPTURING_CLOSURE: &str = "
 It's not possible to use function pointers or captured context in closures,
 as this potentially messes up the logic of memoize or produces unwanted effects.
 
@@ -49,7 +49,7 @@ where
     Context: ViewPathTracker,
 {
     const {
-        assert!(size_of::<InitView>() == 0, "{}", NON_CAPTURE_CLOSURE);
+        assert!(size_of::<InitView>() == 0, "{}", NON_CAPTURING_CLOSURE);
     }
     Memoize {
         data,
@@ -164,7 +164,7 @@ where
     InitView: Fn() -> V,
 {
     const {
-        assert!(size_of::<InitView>() == 0, "{}", NON_CAPTURE_CLOSURE);
+        assert!(size_of::<InitView>() == 0, "{}", NON_CAPTURING_CLOSURE);
     }
     Frozen {
         init_view,
