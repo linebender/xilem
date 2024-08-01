@@ -216,7 +216,7 @@ jobs:
         if: failure()
         with:
           name: masonry-snapshot-tests-${{ matrix.os }}
-          path: crates/masonry/src/widget/screenshots/
+          path: masonry/src/widget/screenshots/
 
   test-stable-wasm:
     name: cargo test (wasm32)
