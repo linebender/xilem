@@ -16,19 +16,28 @@ pub struct Memoize<Data, InitView, State, Action> {
     phantom: PhantomData<fn() -> (State, Action)>,
 }
 
-macro_rules! non_capturing_closure_string {
-    () => {
-"
+const NON_CAPTURE_CLOSURE: &str = "
 It's not possible to use function pointers or captured context in closures,
 as this potentially messes up the logic of memoize or produces unwanted effects.
 
 For example a different kind of view could be instantiated with a different callback, while the old one is still memoized, but it's not updated then.
 It's not possible in Rust currently to check whether the (content of the) callback has changed with the `Fn` trait, which would make this otherwise possible.
-"
-    };
-}
+";
 
 /// Memoize the view, until the `data` changes (in which case `view` is called again)
+///
+/// # Examples
+///
+/// (From the Xilem implementation)
+///
+/// ```ignore
+/// fn memoized_button(count: u32) -> impl WidgetView<i32> {
+///     memoize(
+///         count, // if this changes, the closure below is reevaluated
+///         |count| button(format!("clicked {count} times"), |count| { count += 1; }),
+///     )
+/// }
+/// ```
 pub fn memoize<State, Action, Context, Message, Data, V, InitView>(
     data: Data,
     init_view: InitView,
@@ -40,7 +49,7 @@ where
     Context: ViewPathTracker,
 {
     const {
-        assert!(size_of::<InitView>() == 0, non_capturing_closure_string!());
+        assert!(size_of::<InitView>() == 0, "{}", NON_CAPTURE_CLOSURE);
     }
     Memoize {
         data,
@@ -126,13 +135,24 @@ where
     }
 }
 
-/// Specialized version of [`Memoize`], which doesn't take any data at all, the closure is evaluated only once and when a child view forces a rebuild
+/// This view can be used, when there's no access to the `State`, other than in event callbacks
 pub struct Frozen<InitView, State, Action> {
     init_view: InitView,
     phantom: PhantomData<fn() -> (State, Action)>,
 }
 
-/// Specialized version of [`memoize`], which doesn't take any data at all, the closure is evaluated only once and when a child view forces a rebuild
+/// This view can be used, when the view returned by `init_view` doesn't access the `State`, other than in event callbacks
+/// It only evaluates the `init_view` once, when it's being created.
+///
+/// # Examples
+///
+/// (From the Xilem implementation)
+///
+/// ```ignore
+/// fn frozen_button() -> impl WidgetView<i32> {
+///     frozen(|| button("doesn't access any external state", |count| { count += 1; })),
+/// }
+/// ```
 pub fn frozen<State, Action, Context, Message, V, InitView>(
     init_view: InitView,
 ) -> Frozen<InitView, State, Action>
@@ -144,7 +164,7 @@ where
     InitView: Fn() -> V,
 {
     const {
-        assert!(size_of::<InitView>() == 0, non_capturing_closure_string!());
+        assert!(size_of::<InitView>() == 0, "{}", NON_CAPTURE_CLOSURE);
     }
     Frozen {
         init_view,
