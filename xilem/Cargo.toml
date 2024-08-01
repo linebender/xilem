@@ -18,10 +18,20 @@ cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
 [[example]]
 name = "mason"
 
+# Also add to ANDROID_TARGETS in .github/ci.yml if adding a new Android example
 [[example]]
 # A custom example target which uses the same `mason.rs` file but for android
 name = "mason_android"
 path = "examples/mason.rs"
+# cdylib is required for cargo-apk
+crate-type = ["cdylib"]
+
+[[example]]
+name = "calc"
+
+[[example]]
+name = "calc_android"
+path = "examples/calc.rs"
 # cdylib is required for cargo-apk
 crate-type = ["cdylib"]
 

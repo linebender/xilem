@@ -21,6 +21,9 @@ env:
   # This is required because `cargo hack` does not support -p {x} --exclude {x}
   RUST_MIN_VER_WASM_PKGS: "-p xilem_core"
 
+  # Only some of our examples support Android (primarily due to extra required boilerplate).
+  ANDROID_TARGETS: -p xilem --example mason_android --example calc_android
+
   # We do not run the masonry snapshot tests, because those currently require a specific font stack
   # See https://github.com/linebender/xilem/pull/233
   SKIP_RENDER_SNAPSHOTS: 1
@@ -230,7 +233,7 @@ jobs:
         run: cargo install cargo-apk
 
       - name: cargo apk check (android)
-        run: cargo apk check -p xilem --example mason_android
+        run: cargo apk check ${{ env.ANDROID_TARGETS }}
         env:
           # This is a bit of a hack, but cargo apk doesn't seem to allow customising this otherwise
           RUSTFLAGS: '-D warnings'
