@@ -50,8 +50,9 @@ fn decrease_button(state: &AppState) -> impl WidgetView<AppState> {
     })
 }
 
-// When there's no access to the app state, i.e. the view is "static", you can use `frozen` which is basically a Memoize view without data
 fn reset_button() -> impl WidgetView<AppState> {
+    // The contents of this view never changes, so we use `frozen` to avoid unnecessary rebuilds.
+    // This is a special case of memoization for when the view doesn't depend on any data.
     frozen(|| button("reset", |data: &mut AppState| data.count = 0))
 }
 
