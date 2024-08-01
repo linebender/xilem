@@ -25,6 +25,15 @@ path = "examples/mason.rs"
 # cdylib is required for cargo-apk
 crate-type = ["cdylib"]
 
+[[example]]
+name = "calc"
+
+[[example]]
+name = "calc_android"
+path = "examples/calc.rs"
+# cdylib is required for cargo-apk
+crate-type = ["cdylib"]
+
 [lints]
 workspace = true
 
