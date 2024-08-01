@@ -2,7 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use std::sync::Arc;
-use xilem::view::{button, flex, memoize};
+use xilem::{
+    core::{frozen, memoize},
+    view::{button, flex},
+};
 use xilem::{AnyWidgetView, EventLoop, WidgetView, Xilem};
 
 // There are currently two ways to do memoization
@@ -48,7 +51,9 @@ fn decrease_button(state: &AppState) -> impl WidgetView<AppState> {
 }
 
 fn reset_button() -> impl WidgetView<AppState> {
-    button("reset", |data: &mut AppState| data.count = 0)
+    // The contents of this view never changes, so we use `frozen` to avoid unnecessary rebuilds.
+    // This is a special case of memoization for when the view doesn't depend on any data.
+    frozen(|| button("reset", |data: &mut AppState| data.count = 0))
 }
 
 fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> {

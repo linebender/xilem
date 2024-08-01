@@ -24,5 +24,3 @@ pub use prose::*;
 
 mod textbox;
 pub use textbox::*;
-
-pub use xilem_core::memoize;
