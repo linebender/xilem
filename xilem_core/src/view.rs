@@ -187,6 +187,11 @@ where
     }
 }
 
+pub struct ArcState<ViewState> {
+    view_state: ViewState,
+    dirty: bool,
+}
+
 impl<V: ?Sized> ViewMarker for Arc<V> {}
 /// An implementation of [`View`] which only runs rebuild if the states are different
 impl<State, Action, Context, Message, V> View<State, Action, Context, Message> for Arc<V>
@@ -195,10 +200,17 @@ where
     V: View<State, Action, Context, Message> + ?Sized,
 {
     type Element = V::Element;
-    type ViewState = V::ViewState;
+    type ViewState = ArcState<V::ViewState>;
 
     fn build(&self, ctx: &mut Context) -> (Self::Element, Self::ViewState) {
-        self.deref().build(ctx)
+        let (element, view_state) = self.deref().build(ctx);
+        (
+            element,
+            ArcState {
+                view_state,
+                dirty: false,
+            },
+        )
     }
 
     fn rebuild<'el>(
@@ -208,11 +220,12 @@ where
         ctx: &mut Context,
         element: Mut<'el, Self::Element>,
     ) -> Mut<'el, Self::Element> {
-        if Arc::ptr_eq(self, prev) {
-            // If this is the same value, there's no need to rebuild
-            element
+        if core::mem::take(&mut view_state.dirty) || !Arc::ptr_eq(self, prev) {
+            self.deref()
+                .rebuild(prev, &mut view_state.view_state, ctx, element)
         } else {
-            self.deref().rebuild(prev, view_state, ctx, element)
+            // If this is the same value, or no rebuild was forced, there's no need to rebuild
+            element
         }
     }
 
@@ -222,7 +235,8 @@ where
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
     ) {
-        self.deref().teardown(view_state, ctx, element);
+        self.deref()
+            .teardown(&mut view_state.view_state, ctx, element);
     }
 
     fn message(
@@ -232,7 +246,12 @@ where
         message: Message,
         app_state: &mut State,
     ) -> MessageResult<Action, Message> {
-        self.deref()
-            .message(view_state, id_path, message, app_state)
+        let message_result =
+            self.deref()
+                .message(&mut view_state.view_state, id_path, message, app_state);
+        if matches!(message_result, MessageResult::RequestRebuild) {
+            view_state.dirty = true;
+        }
+        message_result
     }
 }
