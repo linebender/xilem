@@ -287,7 +287,7 @@ fn expanded_button(
 }
 
 /// Returns an expanded button that triggers the calculator's operator handler,
-/// on_entered_operator().
+/// `on_entered_operator()`.
 fn operator_button(math_operator: MathOperator) -> impl WidgetView<Calculator> {
     expanded_button(math_operator.as_str(), move |data: &mut Calculator| {
         data.on_entered_operator(math_operator);
