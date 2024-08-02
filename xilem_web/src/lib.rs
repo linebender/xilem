@@ -91,7 +91,7 @@ where
 /// A view which can have any [`DomView`] type, see [`AnyView`] for more details.
 pub type AnyDomView<State, Action = ()> = dyn AnyView<State, Action, ViewCtx, AnyPod, DynMessage>;
 
-/// The central [`View`] derived trait to represent DOM nodes in xilem_web, it's the base for all [`View`]s in xilem_web
+/// The central [`View`] derived trait to represent DOM nodes in `xilem_web`, it's the base for all [`View`]s in `xilem_web`
 pub trait DomView<State, Action = ()>:
     View<State, Action, ViewCtx, DynMessage, Element = Pod<Self::DomNode, Self::Props>>
 {

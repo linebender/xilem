@@ -155,7 +155,7 @@ mod tests {
     }
 
     #[test]
-    /// DynMessage's debug should pass through the debug implementation of
+    /// `DynMessage`'s debug should pass through the debug implementation of
     fn message_debug() {
         let message: DynMessage = Box::new(MyMessage("".to_string()));
         let debug_result = format!("{message:?}");

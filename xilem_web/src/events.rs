@@ -47,7 +47,7 @@ where
         self
     }
 
-    /// Whether the event handler should capture the event *before* being dispatched to any EventTarget beneath it in the DOM tree. (default = `false`)
+    /// Whether the event handler should capture the event *before* being dispatched to any `EventTarget` beneath it in the DOM tree. (default = `false`)
     ///
     /// Events that are bubbling upward through the tree will not trigger a listener designated to use capture.
     /// Event bubbling and capturing are two ways of propagating events that occur in an element that is nested within another element,
@@ -350,7 +350,7 @@ macro_rules! event_definitions {
                 self
             }
 
-            /// Whether the event handler should capture the event *before* being dispatched to any EventTarget beneath it in the DOM tree. (default = `false`)
+            /// Whether the event handler should capture the event *before* being dispatched to any `EventTarget` beneath it in the DOM tree. (default = `false`)
             ///
             /// Events that are bubbling upward through the tree will not trigger a listener designated to use capture.
             /// Event bubbling and capturing are two ways of propagating events that occur in an element that is nested within another element,

@@ -571,10 +571,10 @@ mod hidden {
     pub struct OneOfState<A, B, C, D, E, F, G, H, I> {
         /// The current state of the inner view or view sequence.
         pub(super) inner_state: super::OneOf<A, B, C, D, E, F, G, H, I>,
-        /// The generation this OneOfN is at.
+        /// The generation this `OneOfN` is at.
         ///
         /// If the variant of `OneOfN` has changed, i.e. the type of the inner view,
-        /// the generation is incremented and used as ViewId in the id_path,
+        /// the generation is incremented and used as `ViewId` in the `id_path`,
         /// to avoid (possibly async) messages reaching the wrong view,
         /// See the implementations of other `ViewSequence`s for more details
         pub(super) generation: u64,

@@ -29,7 +29,7 @@ use crate::{MessageResult, NoElement, View, ViewMarker, ViewPathTracker};
 /// You might otherwise expect the function to be reran when the captured values change, which is not the case.
 /// [`run_once_raw`] is the same as `run_once`, but without this restriction.
 ///
-/// // https://doc.rust-lang.org/error_codes/E0080.html
+/// // <https://doc.rust-lang.org/error_codes/E0080.html>
 /// // Note that this error code is only checked on nightly
 /// ```compile_fail,E0080
 /// # use xilem_core::{run_once, View, docs::{Fake as ViewCtx}, PhantomView};

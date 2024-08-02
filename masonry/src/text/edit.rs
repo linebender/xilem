@@ -75,7 +75,7 @@ impl<T: EditableText> TextEditor<T> {
 
     /// Rebuild the text.
     ///
-    /// See also [TextLayout::rebuild](crate::text2::TextLayout::rebuild) for more comprehensive docs.
+    /// See also [`TextLayout::rebuild`](crate::text::TextLayout::rebuild) for more comprehensive docs.
     pub fn rebuild(
         &mut self,
         font_ctx: &mut FontContext,
