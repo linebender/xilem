@@ -80,6 +80,8 @@
 //! [Druid]: https://crates.io/crates/druid
 //! [Xilem]: https://crates.io/crates/xilem
 
+// TODO: #449: Remove this once the issues within masonry are fixed.
+#![allow(rustdoc::broken_intra_doc_links, clippy::doc_markdown)]
 #![deny(clippy::trivially_copy_pass_by_ref)]
 // #![deny(rustdoc::broken_intra_doc_links)]
 // #![warn(missing_docs)]
