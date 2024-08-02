@@ -7,10 +7,12 @@ use image::{GenericImageView as _, RgbImage};
 use nv_flip::{FlipImageRgb8, DEFAULT_PIXELS_PER_DEGREE};
 
 pub(crate) fn get_image_diff(ref_image: &RgbImage, new_image: &RgbImage) -> Option<RgbImage> {
-    if ref_image.width() != new_image.width() || ref_image.height() != new_image.height() {
-        // TODO: Handle more gracefully
-        panic!("Images were different size");
-    }
+    assert_eq!(
+        (ref_image.width(), ref_image.height()),
+        (new_image.width(), new_image.height()),
+        "New image (right) has different size from old image (left)."
+    );
+
     let ref_image_flip = FlipImageRgb8::with_data(ref_image.width(), ref_image.height(), ref_image);
     let new_image_flip = FlipImageRgb8::with_data(new_image.width(), new_image.height(), new_image);
     let error_map = nv_flip::flip(ref_image_flip, new_image_flip, DEFAULT_PIXELS_PER_DEGREE);

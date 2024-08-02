@@ -79,8 +79,11 @@ fn check_forget_to_recurse_widget_added() {
 
 #[should_panic(expected = "not visited in method layout")]
 #[test]
+#[cfg_attr(
+    not(debug_assertions),
+    ignore = "This test doesn't work without debug assertions (i.e. in release mode). See https://github.com/linebender/xilem/issues/477"
+)]
 fn check_forget_to_recurse_layout() {
-    assert!(cfg!(debug_assertions));
     let widget = make_parent_widget(Flex::row()).layout_fn(|_child, _ctx, _| {
         // We forget to call child.layout();
         Size::ZERO
@@ -91,8 +94,11 @@ fn check_forget_to_recurse_layout() {
 
 #[should_panic(expected = "missing call to place_child method for child widget")]
 #[test]
+#[cfg_attr(
+    not(debug_assertions),
+    ignore = "This test doesn't work without debug assertions (i.e. in release mode). See https://github.com/linebender/xilem/issues/477"
+)]
 fn check_forget_to_call_place_child() {
-    assert!(cfg!(debug_assertions));
     let widget = make_parent_widget(Flex::row()).layout_fn(|child, ctx, bc| {
         // We call child.layout(), but forget place_child
         child.layout(ctx, bc)
