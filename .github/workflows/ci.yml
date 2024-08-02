@@ -181,7 +181,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: .git/lfs
-        # The files targeted with git lfs
+        # The files stored in git lfs are all in this folder
         key: masonry-lfs-${{ hashFiles('masonry/src/widget/screenshots/*.png') }}
         restore-keys: masonry-lfs-
         enableCrossOsArchive: true
@@ -211,9 +211,13 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: .git/lfs
-          # The files targeted with git lfs
+          # The files stored in git lfs are all in this folder
           key: masonry-lfs-${{ hashFiles('masonry/src/widget/screenshots/*.png') }}
           enableCrossOsArchive: true
+
+      - name: Checkout LFS files
+        run: git lfs checkout
+        continue-on-error: true
 
       - name: install stable toolchain
         uses: dtolnay/rust-toolchain@master
