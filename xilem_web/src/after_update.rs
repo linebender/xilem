@@ -103,18 +103,3 @@ where
         }
     }
 }
-
-#[allow(unused_macros)] // FIXME
-macro_rules! impl_dom_interface_for_attr {
-    ($dom_interface:ident) => {
-        impl<T, A, E, F> $crate::interfaces::$dom_interface<T, A> for AfterUpdate<E, F>
-        where
-            E: $crate::interfaces::$dom_interface<T, A>,
-            E::Element: Clone + PartialEq,
-            F: Fn(&mut T, &E::Element),
-        {
-        }
-    };
-}
-
-//FIXME: for_all_dom_interfaces!(impl_dom_interface_for_attr);
