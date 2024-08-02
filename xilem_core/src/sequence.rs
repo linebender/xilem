@@ -338,8 +338,8 @@ where
     }
 }
 
-/// A `View` with [no element](crate::NoElement) can be added to any ViewSequence, because it does not use any
-/// properties of the Element type.
+/// A `View` with [no element](crate::NoElement) can be added to any [`ViewSequence`], because it does not use any
+/// properties of the `Element` type.
 impl<State, Action, Context, Element, NoElementView, Message>
     ViewSequence<State, Action, Context, Element, NoElement, Message> for NoElementView
 where
