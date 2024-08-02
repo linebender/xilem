@@ -170,15 +170,23 @@ where
     type Props = P;
 }
 
-pub trait DomViewSequence<State: 'static, Action = ()>:
+/// An ordered sequence of views, or sometimes also called fragment, it's used for `0..N` [`DomView`]s.
+/// See [`ViewSequence`] for more technical details.
+///
+/// # Examples
+///
+/// ```
+/// fn huzzah(clicks: i32) -> impl xilem_web::DomFragment<i32> {
+///     (clicks >= 5).then_some("Huzzah, clicked at least 5 times")
+/// }
+/// ```
+pub trait DomFragment<State, Action = ()>:
     ViewSequence<State, Action, ViewCtx, AnyPod, DynMessage>
 {
 }
-impl<V, State, Action> DomViewSequence<State, Action> for V
-where
-    State: 'static,
-    Action: 'static,
-    V: ViewSequence<State, Action, ViewCtx, AnyPod, DynMessage>,
+
+impl<V, State, Action> DomFragment<State, Action> for V where
+    V: ViewSequence<State, Action, ViewCtx, AnyPod, DynMessage>
 {
 }
 

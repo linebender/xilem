@@ -108,12 +108,8 @@ where
 
 /// A stub `ElementSplice` implementation for `NoElement`.
 ///
-/// We know that none of the methods will be called, because the `ViewSequence`
-/// implementation for `NoElement` views does not use the provided `elements`.
-///
 /// It is technically possible for someone to create an implementation of `ViewSequence`
-/// which uses a `NoElement` `ElementSplice`. But we don't think that sequence could be meaningful,
-/// so we still panic in that case.
+/// which uses a `NoElement` `ElementSplice`. But we don't think that sequence could be meaningful.
 struct NoElements;
 
 impl ElementSplice<NoElement> for NoElements {
@@ -124,21 +120,15 @@ impl ElementSplice<NoElement> for NoElements {
         ret
     }
 
-    fn insert(&mut self, _: NoElement) {
-        unreachable!()
+    fn insert(&mut self, _: NoElement) {}
+
+    fn mutate<R>(&mut self, f: impl FnOnce(<NoElement as crate::ViewElement>::Mut<'_>) -> R) -> R {
+        f(())
     }
 
-    fn mutate<R>(&mut self, _: impl FnOnce(<NoElement as crate::ViewElement>::Mut<'_>) -> R) -> R {
-        unreachable!()
-    }
+    fn skip(&mut self, _: usize) {}
 
-    fn skip(&mut self, n: usize) {
-        if n > 0 {
-            unreachable!()
-        }
-    }
-
-    fn delete<R>(&mut self, _: impl FnOnce(<NoElement as crate::ViewElement>::Mut<'_>) -> R) -> R {
-        unreachable!()
+    fn delete<R>(&mut self, f: impl FnOnce(<NoElement as crate::ViewElement>::Mut<'_>) -> R) -> R {
+        f(())
     }
 }

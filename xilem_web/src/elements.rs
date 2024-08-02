@@ -8,23 +8,17 @@ use std::borrow::Cow;
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
 use crate::{
-    core::{AppendVec, ElementSplice, MessageResult, Mut, View, ViewId, ViewMarker, ViewSequence},
+    core::{AppendVec, ElementSplice, MessageResult, Mut, View, ViewId, ViewMarker},
     document,
     element_props::ElementProps,
     vec_splice::VecSplice,
-    AnyPod, DomNode, DynMessage, Pod, ViewCtx, HTML_NS,
+    AnyPod, DomFragment, DomNode, DynMessage, Pod, ViewCtx, HTML_NS,
 };
-
-mod sealed {
-    pub trait Sealed<State, Action> {}
-}
 
 // sealed, because this should only cover `ViewSequences` with the blanket impl below
 /// This is basically a specialized dynamically dispatchable [`ViewSequence`], It's currently not able to change the underlying type unlike [`AnyDomView`](crate::AnyDomView), so it should not be used as `dyn DomViewSequence`.
 /// It's mostly a hack to avoid a completely static view tree, which unfortunately brings rustc (type-checking) down to its knees and results in long compile-times
-pub(crate) trait DomViewSequence<State, Action>:
-    sealed::Sealed<State, Action> + 'static
-{
+pub(crate) trait DomViewSequence<State, Action>: 'static {
     /// Get an [`Any`] reference to `self`.
     fn as_any(&self) -> &dyn Any;
 
@@ -62,19 +56,11 @@ pub(crate) trait DomViewSequence<State, Action>:
     ) -> MessageResult<Action, DynMessage>;
 }
 
-impl<State, Action, S> sealed::Sealed<State, Action> for S
-where
-    State: 'static,
-    Action: 'static,
-    S: ViewSequence<State, Action, ViewCtx, AnyPod, DynMessage>,
-{
-}
-
 impl<State, Action, S> DomViewSequence<State, Action> for S
 where
     State: 'static,
     Action: 'static,
-    S: ViewSequence<State, Action, ViewCtx, AnyPod, DynMessage>,
+    S: DomFragment<State, Action>,
 {
     fn as_any(&self) -> &dyn Any {
         self
@@ -304,7 +290,7 @@ pub fn custom_element<State, Action, Children>(
 where
     State: 'static,
     Action: 'static,
-    Children: ViewSequence<State, Action, ViewCtx, AnyPod, DynMessage>,
+    Children: DomFragment<State, Action>,
 {
     CustomElement {
         name: name.into(),
@@ -389,11 +375,7 @@ macro_rules! define_element {
         /// Builder function for a
         #[doc = concat!("`", $tag_name, "`")]
         /// element view.
-        pub fn $name<
-            State: 'static,
-            Action: 'static,
-            Children: ViewSequence<State, Action, ViewCtx, AnyPod, DynMessage>,
-        >(
+        pub fn $name<State: 'static, Action: 'static, Children: DomFragment<State, Action>>(
             children: Children,
         ) -> $ty_name<State, Action> {
             $ty_name {
@@ -462,8 +444,8 @@ macro_rules! define_elements {
     ($ns:ident, $($element_def:tt,)*) => {
         use super::{build_element, rebuild_element, teardown_element, DomViewSequence, ElementState};
         use crate::{
-            core::{MessageResult, Mut, ViewId, ViewSequence, ViewMarker},
-            AnyPod, DynMessage, ElementProps, Pod, View, ViewCtx,
+            core::{MessageResult, Mut, ViewId, ViewMarker},
+            DomFragment, DynMessage, ElementProps, Pod, View, ViewCtx,
         };
         $(define_element!(crate::$ns, $element_def);)*
     };

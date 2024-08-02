@@ -5,7 +5,7 @@ use masonry::widget::{CrossAxisAlignment, MainAxisAlignment};
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
 use winit::window::Window;
-use xilem::view::Flex;
+use xilem::view::{Flex, FlexSequence};
 use xilem::EventLoopBuilder;
 use xilem::{
     view::{button, flex, label, sized_box, Axis, FlexExt as _, FlexSpacer},
@@ -254,7 +254,7 @@ fn app_logic(data: &mut Calculator) -> impl WidgetView<Calculator> {
 }
 
 /// Creates a horizontal centered flex row designed for the display portion of the calculator.
-pub fn centered_flex_row<Seq>(sequence: Seq) -> Flex<Seq> {
+pub fn centered_flex_row<State, Seq: FlexSequence<State>>(sequence: Seq) -> Flex<Seq, State> {
     flex(sequence)
         .direction(Axis::Horizontal)
         .cross_axis_alignment(CrossAxisAlignment::Center)
@@ -263,7 +263,7 @@ pub fn centered_flex_row<Seq>(sequence: Seq) -> Flex<Seq> {
 }
 
 /// Creates a horizontal filled flex row designed to be used in a grid.
-pub fn flex_row<Seq>(sequence: Seq) -> Flex<Seq> {
+pub fn flex_row<State, Seq: FlexSequence<State>>(sequence: Seq) -> Flex<Seq, State> {
     flex(sequence)
         .direction(Axis::Horizontal)
         .cross_axis_alignment(CrossAxisAlignment::Fill)

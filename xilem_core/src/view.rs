@@ -9,8 +9,8 @@ use alloc::{boxed::Box, sync::Arc};
 
 use crate::{message::MessageResult, DynMessage, Mut, ViewElement};
 
-// TODO better doc-comment
-/// To avoid ambiguity for `impl ViewSequence for impl View`
+/// This trait is a necessary workaround of the orphan rules to be able to have `impl ViewSequence for impl View` to avoid ambiguity.
+/// It needs to be implemented for every type that implements [`View`].
 pub trait ViewMarker {}
 
 /// A lightweight, short-lived representation of the state of a retained

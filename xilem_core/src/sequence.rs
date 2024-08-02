@@ -76,6 +76,7 @@ impl<T> Default for AppendVec<T> {
 ///    Note that this will have persistent allocation with size proportional
 ///    to the *longest* `Vec` which is ever provided in the View tree, as this
 ///    uses a generational indexing scheme.
+///  - An [`array`] of `ViewSequence` values.
 ///  - Tuples of `ViewSequences` with up to 15 elements.
 ///    These can be nested if an ad-hoc sequence of more than 15 sequences is needed.
 ///
@@ -334,57 +335,6 @@ where
         }
     }
 }
-
-/// A `View` with [no element](crate::NoElement) can be added to any ViewSequence, because it does not use any
-/// properties of the Element type.
-// impl<State, Action, Context, Element, NoElementView, Message>
-//     ViewSequence<State, Action, Context, Element, Message> for NoElementView
-// where
-//     NoElementView: View<State, Action, Context, Message, Element = NoElement> + NoElementViewMarker,
-//     Element: ViewElement,
-//     Context: ViewPathTracker,
-// {
-//     #[doc(hidden)]
-//     type SeqState = NoElementView::ViewState;
-
-//     #[doc(hidden)]
-//     fn seq_build(&self, ctx: &mut Context, _: &mut AppendVec<Element>) -> Self::SeqState {
-//         let (NoElement, state) = self.build(ctx);
-//         state
-//     }
-
-//     #[doc(hidden)]
-//     fn seq_rebuild(
-//         &self,
-//         prev: &Self,
-//         seq_state: &mut Self::SeqState,
-//         ctx: &mut Context,
-//         _: &mut impl ElementSplice<Element>,
-//     ) {
-//         self.rebuild(prev, seq_state, ctx, ());
-//     }
-
-//     #[doc(hidden)]
-//     fn seq_teardown(
-//         &self,
-//         seq_state: &mut Self::SeqState,
-//         ctx: &mut Context,
-//         _: &mut impl ElementSplice<Element>,
-//     ) {
-//         self.teardown(seq_state, ctx, ());
-//     }
-
-//     #[doc(hidden)]
-//     fn seq_message(
-//         &self,
-//         seq_state: &mut Self::SeqState,
-//         id_path: &[ViewId],
-//         message: Message,
-//         app_state: &mut State,
-//     ) -> MessageResult<Action, Message> {
-//         self.message(seq_state, id_path, message, app_state)
-//     }
-// }
 
 /// The state used to implement `ViewSequence` for `Vec<impl ViewSequence>`
 ///

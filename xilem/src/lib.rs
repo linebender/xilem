@@ -19,6 +19,7 @@ use winit::{
 };
 use xilem_core::{
     AsyncCtx, MessageResult, RawProxy, SuperElement, View, ViewElement, ViewId, ViewPathTracker,
+    ViewSequence,
 };
 
 pub use masonry::{
@@ -207,6 +208,30 @@ where
     W: Widget,
 {
     type Widget = W;
+}
+
+/// An ordered sequence of widget views, it's used for `0..N` views.
+/// See [`ViewSequence`] for more technical details.
+///
+/// # Examples
+///
+/// ```
+/// use xilem::{view::prose, WidgetViewSequence};
+///
+/// fn prose_sequence<State: 'static>(
+///     texts: impl Iterator<Item = &'static str>,
+/// ) -> impl WidgetViewSequence<State> {
+///     texts.map(prose).collect::<Vec<_>>()
+/// }
+/// ```
+pub trait WidgetViewSequence<State, Action = ()>:
+    ViewSequence<State, Action, ViewCtx, Pod<any_view::DynWidget>>
+{
+}
+
+impl<Seq, State, Action> WidgetViewSequence<State, Action> for Seq where
+    Seq: ViewSequence<State, Action, ViewCtx, Pod<any_view::DynWidget>>
+{
 }
 
 type WidgetMap = HashMap<WidgetId, Vec<ViewId>>;

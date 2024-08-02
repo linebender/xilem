@@ -16,7 +16,9 @@ use crate::{AnyWidgetView, Pod, ViewCtx, WidgetView};
 
 pub use masonry::widget::{Axis, CrossAxisAlignment, FlexParams, MainAxisAlignment};
 
-pub fn flex<Seq>(sequence: Seq) -> Flex<Seq> {
+pub fn flex<State, Action, Seq: FlexSequence<State, Action>>(
+    sequence: Seq,
+) -> Flex<Seq, State, Action> {
     Flex {
         sequence,
         axis: Axis::Vertical,
@@ -24,19 +26,21 @@ pub fn flex<Seq>(sequence: Seq) -> Flex<Seq> {
         main_axis_alignment: MainAxisAlignment::Start,
         fill_major_axis: false,
         gap: None,
+        phantom: PhantomData,
     }
 }
 
-pub struct Flex<Seq> {
+pub struct Flex<Seq, State, Action = ()> {
     sequence: Seq,
     axis: Axis,
     cross_axis_alignment: CrossAxisAlignment,
     main_axis_alignment: MainAxisAlignment,
     fill_major_axis: bool,
     gap: Option<f64>,
+    phantom: PhantomData<fn() -> (State, Action)>,
 }
 
-impl<Seq> Flex<Seq> {
+impl<Seq, State, Action> Flex<Seq, State, Action> {
     pub fn direction(mut self, axis: Axis) -> Self {
         self.axis = axis;
         self
@@ -82,10 +86,13 @@ impl<Seq> Flex<Seq> {
         self
     }
 }
-impl<Seq> ViewMarker for Flex<Seq> {}
-impl<State, Action, Seq> View<State, Action, ViewCtx> for Flex<Seq>
+
+impl<Seq, State, Action> ViewMarker for Flex<Seq, State, Action> {}
+impl<State, Action, Seq> View<State, Action, ViewCtx> for Flex<Seq, State, Action>
 where
-    Seq: ViewSequence<State, Action, ViewCtx, FlexElement>,
+    State: 'static,
+    Action: 'static,
+    Seq: FlexSequence<State, Action>,
 {
     type Element = Pod<widget::Flex>;
 
@@ -299,6 +306,31 @@ impl ElementSplice<FlexElement> for FlexSplice<'_> {
     fn skip(&mut self, n: usize) {
         self.idx += n;
     }
+}
+
+/// An ordered sequence of views for a [`Flex`] view.
+/// See [`ViewSequence`] for more technical details.
+///
+/// # Examples
+///
+/// ```
+/// use xilem::view::{label, FlexSequence, FlexExt as _};
+///
+/// fn label_sequence<State: 'static>(
+///     labels: impl Iterator<Item = &'static str>,
+///     flex: f64,
+/// ) -> impl FlexSequence<State> {
+///     labels.map(|l| label(l).flex(flex)).collect::<Vec<_>>()
+/// }
+/// ```
+pub trait FlexSequence<State, Action = ()>:
+    ViewSequence<State, Action, ViewCtx, FlexElement>
+{
+}
+
+impl<Seq, State, Action> FlexSequence<State, Action> for Seq where
+    Seq: ViewSequence<State, Action, ViewCtx, FlexElement>
+{
 }
 
 /// A trait which extends a [`WidgetView`] with methods to provide parameters for a flex item, or being able to use it interchangeably with a spacer
