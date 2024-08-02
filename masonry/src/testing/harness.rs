@@ -336,7 +336,7 @@ impl TestHarness {
 
     // --- MARK: EVENT HELPERS ---
 
-    /// Move an internal mouse state, and send a MouseMove event to the window.
+    /// Move an internal mouse state, and send a [`PointerMove`](PointerEvent::PointerMove) event to the window.
     pub fn mouse_move(&mut self, pos: impl Into<Point>) {
         // FIXME - Account for scaling
         let pos = pos.into();
@@ -349,19 +349,19 @@ impl TestHarness {
         self.process_pointer_event(PointerEvent::PointerMove(self.mouse_state.clone()));
     }
 
-    /// Send a MouseDown event to the window.
+    /// Send a [`PointerDown`](PointerEvent::PointerDown) event to the window.
     pub fn mouse_button_press(&mut self, button: PointerButton) {
         self.mouse_state.buttons.insert(button);
         self.process_pointer_event(PointerEvent::PointerDown(button, self.mouse_state.clone()));
     }
 
-    /// Send a MouseUp event to the window.
+    /// Send a [`PointerUp`](PointerEvent::PointerUp) event to the window.
     pub fn mouse_button_release(&mut self, button: PointerButton) {
         self.mouse_state.buttons.remove(&button);
         self.process_pointer_event(PointerEvent::PointerUp(button, self.mouse_state.clone()));
     }
 
-    /// Send a Wheel event to the window
+    /// Send a [`MouseWheel`](PointerEvent::MouseWheel) event to the window.
     pub fn mouse_wheel(&mut self, wheel_delta: Vec2) {
         let pixel_delta = LogicalPosition::new(wheel_delta.x, wheel_delta.y);
         self.process_pointer_event(PointerEvent::MouseWheel(

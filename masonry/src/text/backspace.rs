@@ -8,7 +8,7 @@ use xi_unicode::*;
 use super::{EditableTextCursor, Selectable};
 
 /// Logic adapted from Android and
-/// https://github.com/xi-editor/xi-editor/pull/837
+/// <https://github.com/xi-editor/xi-editor/pull/837>
 /// See links present in that PR for upstream Android Source
 /// Matches Android Logic as at 2024-05-10
 #[allow(clippy::cognitive_complexity)]
