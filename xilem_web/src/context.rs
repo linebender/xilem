@@ -29,6 +29,13 @@ pub struct ViewCtx {
     id_path: Vec<ViewId>,
     app_ref: Option<Box<dyn AppRunner>>,
     pub(crate) fragment: Rc<web_sys::DocumentFragment>,
+    #[cfg(feature = "hydration")]
+    hydration_node_stack: Vec<web_sys::Node>,
+    #[cfg(feature = "hydration")]
+    is_hydrating: bool,
+    #[cfg(feature = "hydration")]
+    pub(crate) templates:
+        crate::vecmap::VecMap<std::any::TypeId, (web_sys::Node, Rc<dyn std::any::Any>)>,
 }
 
 impl Default for ViewCtx {
@@ -37,6 +44,12 @@ impl Default for ViewCtx {
             id_path: Vec::default(),
             app_ref: None,
             fragment: Rc::new(crate::document().create_document_fragment()),
+            #[cfg(feature = "hydration")]
+            templates: Default::default(),
+            #[cfg(feature = "hydration")]
+            hydration_node_stack: Default::default(),
+            #[cfg(feature = "hydration")]
+            is_hydrating: false,
         }
     }
 }
@@ -50,6 +63,46 @@ impl ViewCtx {
     }
     pub(crate) fn set_runner(&mut self, runner: impl AppRunner + 'static) {
         self.app_ref = Some(Box::new(runner));
+    }
+
+    #[cfg(feature = "hydration")]
+    pub(crate) fn push_hydration_node(&mut self, node: web_sys::Node) {
+        self.hydration_node_stack.push(node);
+    }
+
+    #[cfg(feature = "hydration")]
+    pub(crate) fn enable_hydration(&mut self) {
+        self.is_hydrating = true;
+    }
+
+    #[cfg(feature = "hydration")]
+    pub(crate) fn disable_hydration(&mut self) {
+        self.is_hydrating = false;
+    }
+
+    #[cfg(feature = "hydration")]
+    pub(crate) fn is_hydrating(&self) -> bool {
+        self.is_hydrating
+    }
+
+    #[cfg(feature = "hydration")]
+    pub(crate) fn enter_hydrating_children(&mut self) {
+        if let Some(node) = self.hydration_node_stack.last() {
+            if let Some(child) = node.first_child() {
+                self.hydration_node_stack.push(child);
+            }
+            // TODO panic else? Probably not, e.g. because of empty view sequences...
+        }
+    }
+
+    #[cfg(feature = "hydration")]
+    /// Returns the current node, and goes to the `next_sibling`, if it's `None`, it's popping the stack
+    pub(crate) fn hydrate_node(&mut self) -> Option<web_sys::Node> {
+        let node = self.hydration_node_stack.pop()?;
+        if let Some(next_child) = node.next_sibling() {
+            self.hydration_node_stack.push(next_child);
+        }
+        Some(node)
     }
 }
 

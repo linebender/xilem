@@ -140,6 +140,8 @@ where
                 &inner.root,
                 inner.cx.fragment.clone(),
                 false,
+                #[cfg(feature = "hydration")]
+                false,
             );
             new_fragment.seq_rebuild(
                 fragment,

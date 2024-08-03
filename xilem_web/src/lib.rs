@@ -28,6 +28,8 @@ pub const SVG_NS: &str = "http://www.w3.org/2000/svg";
 pub const MATHML_NS: &str = "http://www.w3.org/1998/Math/MathML";
 
 mod app;
+#[cfg(feature = "hydration")]
+mod as_template;
 mod attribute;
 mod attribute_value;
 mod class;
@@ -49,6 +51,8 @@ pub mod interfaces;
 pub mod svg;
 
 pub use app::App;
+#[cfg(feature = "hydration")]
+pub use as_template::as_template;
 pub use attribute::{Attr, Attributes, ElementWithAttributes, WithAttributes};
 pub use attribute_value::{AttributeValue, IntoAttributeValue};
 pub use class::{AsClassIter, Class, Classes, ElementWithClasses, WithClasses};
@@ -243,19 +247,21 @@ impl AnyPod {
         this: &mut PodMut<'_, DynNode, Box<dyn Any>>,
         node: Pod<E, P>,
     ) {
-        this.parent
-            .replace_child(node.node.as_ref(), this.node.as_ref())
-            .unwrap_throw();
+        if let Some(parent) = this.parent {
+            parent
+                .replace_child(node.node.as_ref(), this.node.as_ref())
+                .unwrap_throw();
+        }
         this.node.inner = Box::new(node.node);
         *this.props = Box::new(node.props);
     }
 
     fn as_mut<'a>(
         &'a mut self,
-        parent: &'a web_sys::Node,
+        parent: impl Into<Option<&'a web_sys::Node>>,
         was_removed: bool,
     ) -> PodMut<'a, DynNode, Box<dyn Any>> {
-        PodMut::new(&mut self.node, &mut self.props, parent, was_removed)
+        PodMut::new(&mut self.node, &mut self.props, parent.into(), was_removed)
     }
 }
 
@@ -283,7 +289,7 @@ impl DomNode<Box<dyn Any>> for DynNode {
 pub struct PodMut<'a, E: DomNode<P>, P> {
     node: &'a mut E,
     props: &'a mut P,
-    parent: &'a web_sys::Node,
+    parent: Option<&'a web_sys::Node>,
     was_removed: bool,
 }
 
@@ -291,7 +297,7 @@ impl<'a, E: DomNode<P>, P> PodMut<'a, E, P> {
     fn new(
         node: &'a mut E,
         props: &'a mut P,
-        parent: &'a web_sys::Node,
+        parent: Option<&'a web_sys::Node>,
         was_removed: bool,
     ) -> PodMut<'a, E, P> {
         PodMut {

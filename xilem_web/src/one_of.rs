@@ -119,10 +119,9 @@ where
         let old_node: &web_sys::Node = elem_mut.node.as_ref();
         let new_node: &web_sys::Node = new_elem.as_ref();
         if old_node != new_node {
-            elem_mut
-                .parent
-                .replace_child(new_node, old_node)
-                .unwrap_throw();
+            if let Some(parent) = elem_mut.parent {
+                parent.replace_child(new_node, old_node).unwrap_throw();
+            }
         }
         (*elem_mut.node, *elem_mut.props) = match new_elem {
             OneOf::A(e) => (OneOf::A(e.node), OneOf::A(e.props)),
