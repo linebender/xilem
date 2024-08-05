@@ -11,7 +11,7 @@ use crate::{message::MessageResult, DynMessage, Mut, ViewElement};
 
 /// A type which can be a [`View`]. Imposes no requirements on the underlying type.
 /// Should be implemented alongside every `View` implementation:
-/// ```rust
+/// ```ignore
 /// impl<...> ViewMarker for Button<...> {}
 /// impl<...> View<...> for Button<...> {...}
 /// ```
@@ -49,7 +49,7 @@ pub trait ViewMarker {}
 /// Due to restrictions of the [orphan rules](https://doc.rust-lang.org/reference/items/implementations.html#orphan-rules),
 /// `ViewMarker` needs to be implemented for every type that implements `View`, see [`ViewMarker`] for more details.
 /// For example:
-/// ```rust
+/// ```ignore
 /// impl<...> ViewMarker for Button<...> {}
 /// impl<...> View<...> for Button<...> {...}
 /// ```
