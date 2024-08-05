@@ -9,7 +9,16 @@ use alloc::{boxed::Box, sync::Arc};
 
 use crate::{message::MessageResult, DynMessage, Mut, ViewElement};
 
-/// Because [`View`] is generic, Rust [allows you](https://doc.rust-lang.org/reference/items/implementations.html#orphan-rules) to implement this trait for certain non-local types.
+/// A type which can be a [`View`]. Imposes no requirements on the underlying type.
+/// Should be implemented alongside every `View` implementation:
+/// ```rust
+/// impl<...> ViewMarker for Button<...> {}
+/// impl<...> View<...> for Button<...> {}
+/// ```
+///
+/// ## Details
+///
+/// Because `View` is generic, Rust [allows you](https://doc.rust-lang.org/reference/items/implementations.html#orphan-rules) to implement this trait for certain non-local types.
 /// These non-local types can include `Vec<_>` and `Option<_>`.
 /// If this trait were not present, those implementations of `View` would conflict with those types' implementations of `ViewSequence`.
 /// This is because every `View` type also implementations `ViewSequence`.
