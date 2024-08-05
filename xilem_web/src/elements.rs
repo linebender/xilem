@@ -3,8 +3,8 @@
 
 //! Basic builder functions to create DOM elements, such as [`html::div`]
 
-use std::any::Any;
 use std::borrow::Cow;
+use std::{any::Any, rc::Rc};
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
 use crate::{
@@ -135,6 +135,7 @@ pub struct DomChildrenSplice<'a, 'b, 'c, 'd> {
     children: VecSplice<'b, 'c, AnyPod>,
     ix: usize,
     parent: &'d web_sys::Node,
+    fragment: Rc<web_sys::DocumentFragment>,
     parent_was_removed: bool,
 }
 
@@ -144,6 +145,7 @@ impl<'a, 'b, 'c, 'd> DomChildrenSplice<'a, 'b, 'c, 'd> {
         children: &'b mut Vec<AnyPod>,
         vec_splice_scratch: &'c mut Vec<AnyPod>,
         parent: &'d web_sys::Node,
+        fragment: Rc<web_sys::DocumentFragment>,
         parent_was_deleted: bool,
     ) -> Self {
         Self {
@@ -151,6 +153,7 @@ impl<'a, 'b, 'c, 'd> DomChildrenSplice<'a, 'b, 'c, 'd> {
             children: VecSplice::new(children, vec_splice_scratch),
             ix: 0,
             parent,
+            fragment,
             parent_was_removed: parent_was_deleted,
         }
     }
@@ -159,12 +162,20 @@ impl<'a, 'b, 'c, 'd> DomChildrenSplice<'a, 'b, 'c, 'd> {
 impl<'a, 'b, 'c, 'd> ElementSplice<AnyPod> for DomChildrenSplice<'a, 'b, 'c, 'd> {
     fn with_scratch<R>(&mut self, f: impl FnOnce(&mut AppendVec<AnyPod>) -> R) -> R {
         let ret = f(self.scratch);
-        for element in self.scratch.drain() {
+        if !self.scratch.is_empty() {
+            for element in self.scratch.drain() {
+                self.fragment
+                    .append_child(element.node.as_ref())
+                    .unwrap_throw();
+                self.children.insert(element);
+                self.ix += 1;
+            }
             self.parent
-                .append_child(element.node.as_ref())
+                .insert_before(
+                    self.fragment.as_ref(),
+                    self.children.next_mut().map(|p| p.node.as_ref()),
+                )
                 .unwrap_throw();
-            self.children.insert(element);
-            self.ix += 1;
         }
         ret
     }
@@ -262,6 +273,7 @@ where
         &mut element.props.children,
         &mut state.vec_splice_scratch,
         element.node.as_ref(),
+        ctx.fragment.clone(),
         element.was_removed,
     );
     children.dyn_seq_rebuild(
@@ -290,6 +302,7 @@ pub(crate) fn teardown_element<State, Action, Element, SeqMarker>(
         &mut element.props.children,
         &mut state.vec_splice_scratch,
         element.node.as_ref(),
+        ctx.fragment.clone(),
         true,
     );
     children.dyn_seq_teardown(&mut state.seq_state, ctx, &mut dom_children_splice);
