@@ -83,11 +83,11 @@ pub fn main() {
                 slider(150, t.b, |t, e| t.b = get_value(e)),
             )),
             ml::math(ml::mrow((
-                ml::msup((ml::mi(format!("{}", t.a)), ml::mn("2"))),
+                ml::msup((ml::mi(t.a), ml::mn(2))),
                 ml::mo("+"),
-                ml::msup((ml::mi(format!("{}", t.b)), ml::mn("2"))),
+                ml::msup((ml::mi(t.b), ml::mn(2))),
                 ml::mo("="),
-                ml::msup((ml::mi(format!("{c}")), ml::mn("2"))),
+                ml::msup((ml::mi(c), ml::mn(2))),
             ))),
         ))
     })
