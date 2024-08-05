@@ -53,6 +53,10 @@ fn check_forget_to_recurse_text_event() {
 
 #[should_panic(expected = "not added in method lifecycle")]
 #[test]
+#[cfg_attr(
+    not(debug_assertions),
+    ignore = "This test doesn't work without debug assertions (i.e. in release mode). See https://github.com/linebender/xilem/issues/477"
+)]
 fn check_forget_to_recurse_lifecycle() {
     let widget = make_parent_widget(Flex::row()).lifecycle_fn(|_child, _ctx, _event| {
         // We forget to call child.lifecycle();
@@ -109,6 +113,10 @@ fn check_forget_to_call_place_child() {
 
 #[should_panic(expected = "not visited in method paint")]
 #[test]
+#[cfg_attr(
+    not(debug_assertions),
+    ignore = "This test doesn't work without debug assertions (i.e. in release mode). See https://github.com/linebender/xilem/issues/477"
+)]
 fn check_forget_to_recurse_paint() {
     let widget = make_parent_widget(Flex::row()).paint_fn(|_child, _ctx, _scene| {
         // We forget to call child.paint();
