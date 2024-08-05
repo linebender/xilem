@@ -15,7 +15,7 @@ use crate::{context::MessageThunk, DynMessage, Message, ViewCtx};
 /// The `init_future` function is given a [`AsyncRepeatProxy`] and a [`ShutdownSignal`].
 /// The `AsyncRepeatProxy` can be used to send a message to `on_event`, which can then update
 /// the app's state.
-/// The `ShudownSignal` can be used to detect whether the view has disappeared and
+/// The `ShutdownSignal` can be used to detect whether the view has disappeared and
 /// a shutdown request has been made (because a future cannot be canceled from the outside).
 ///
 /// Note that this task will not be updated if the view is rebuilt, so `future`

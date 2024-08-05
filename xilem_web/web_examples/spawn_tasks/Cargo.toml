@@ -1,5 +1,5 @@
 [package]
-name = "async_repeat"
+name = "spawn_tasks"
 version = "0.0.0" # not versioned
 publish = false
 license.workspace = true

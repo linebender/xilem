@@ -389,18 +389,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "async_repeat"
-version = "0.0.0"
-dependencies = [
- "console_error_panic_hook",
- "console_log",
- "futures",
- "gloo-timers",
- "log",
- "xilem_web",
-]
-
-[[package]]
 name = "atomic-waker"
 version = "1.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3004,6 +2992,18 @@ checksum = "9f7916fc008ca5542385b89a3d3ce689953c143e9304a9bf8beec1de48994c0d"
 dependencies = [
  "libc",
  "winapi",
+]
+
+[[package]]
+name = "spawn_tasks"
+version = "0.0.0"
+dependencies = [
+ "console_error_panic_hook",
+ "console_log",
+ "futures",
+ "gloo-timers",
+ "log",
+ "xilem_web",
 ]
 
 [[package]]
