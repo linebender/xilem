@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::{text::TextBrush, widget};
-use xilem_core::{Mut, View};
+use xilem_core::{Mut, View, ViewMarker};
 
 use crate::{Color, MessageResult, Pod, TextAlignment, ViewCtx, ViewId};
 
@@ -63,6 +63,7 @@ impl<State, Action> Textbox<State, Action> {
     }
 }
 
+impl<State, Action> ViewMarker for Textbox<State, Action> {}
 impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<State, Action> {
     type Element = Pod<widget::Textbox>;
     type ViewState = ();

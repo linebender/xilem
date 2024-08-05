@@ -5,7 +5,7 @@
 
 use std::num::NonZeroUsize;
 
-use image::{ImageReader, Rgba, RgbaImage};
+use image::{DynamicImage, ImageReader, Rgba, RgbaImage};
 use vello::util::RenderContext;
 use vello::{block_on_wgpu, RendererOptions};
 use wgpu::{
@@ -19,7 +19,7 @@ use super::snapshot_utils::get_cargo_workspace;
 use crate::action::Action;
 use crate::dpi::{LogicalPosition, PhysicalPosition, PhysicalSize};
 use crate::event::{PointerButton, PointerEvent, PointerState, TextEvent, WindowEvent};
-use crate::render_root::{RenderRoot, RenderRootSignal, WindowSizePolicy};
+use crate::render_root::{RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy};
 use crate::tracing_backend::try_init_tracing;
 use crate::widget::{WidgetMut, WidgetRef};
 use crate::{Color, Handled, Point, Size, Vec2, Widget, WidgetId};
@@ -182,11 +182,24 @@ impl TestHarness {
         let _ = try_init_tracing();
 
         let mut harness = TestHarness {
-            render_root: RenderRoot::new(root_widget, WindowSizePolicy::User, 1.0),
+            render_root: RenderRoot::new(
+                root_widget,
+                RenderRootOptions {
+                    use_system_fonts: false,
+                    size_policy: WindowSizePolicy::User,
+                    scale_factor: 1.0,
+                },
+            ),
             mouse_state,
             window_size,
             background_color,
         };
+        const ROBOTO: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/resources/fonts/roboto/Roboto-Regular.ttf"
+        ));
+        let data = ROBOTO.to_vec();
+        harness.render_root.add_test_font(data);
         harness.process_window_event(WindowEvent::Resize(window_size));
 
         harness
@@ -243,6 +256,7 @@ impl TestHarness {
         if std::env::var("SKIP_RENDER_TESTS").is_ok_and(|it| !it.is_empty()) {
             return RgbaImage::from_pixel(1, 1, Rgba([255, 255, 255, 255]));
         }
+        // TODO: Cache/share the context
         let mut context = RenderContext::new();
         let device_id =
             pollster::block_on(context.device(None)).expect("No compatible device found");
@@ -514,19 +528,14 @@ impl TestHarness {
         test_module_path: &str,
         test_name: &str,
     ) {
-        if option_env!("SKIP_RENDER_SNAPSHOTS").is_some() {
-            // FIXME - This is a terrible, awful hack.
-            // We need a way to skip render snapshots on CI and locally
-            // until we can make sure the snapshots render the same on
-            // different platforms.
-
+        if std::env::var("SKIP_RENDER_TESTS").is_ok_and(|it| !it.is_empty()) {
             // We still redraw to get some coverage in the paint code.
             let _ = self.render_root.redraw();
 
             return;
         }
 
-        let new_image = self.render();
+        let new_image: DynamicImage = self.render().into();
 
         let workspace_path = get_cargo_workspace(manifest_dir);
         let test_file_path_abs = workspace_path.join(test_file_path);
@@ -541,16 +550,23 @@ impl TestHarness {
         let new_path = screenshots_folder.join(format!("{module_str}__{test_name}.new.png"));
         let diff_path = screenshots_folder.join(format!("{module_str}__{test_name}.diff.png"));
 
+        // TODO: If this file is corrupted, it could be an lfs bandwidth/installation issue.
+        // Have a warning for that case (i.e. differentiation between not-found and invalid format)
+        // and a environment variable to ignore the test in that case.
         if let Ok(reference_file) = ImageReader::open(reference_path) {
-            let ref_image = reference_file.decode().unwrap().to_rgba8();
+            let ref_image = reference_file.decode().unwrap().to_rgb8();
 
-            if let Some(diff_image) = get_image_diff(&ref_image, &new_image) {
+            if let Some(diff_image) = get_image_diff(&ref_image, &new_image.to_rgb8()) {
                 // Remove '<test_name>.new.png' '<test_name>.diff.png' files if they exist
                 let _ = std::fs::remove_file(&new_path);
                 let _ = std::fs::remove_file(&diff_path);
                 new_image.save(&new_path).unwrap();
                 diff_image.save(&diff_path).unwrap();
                 panic!("Images are different");
+            } else {
+                // Remove the vestigal new and diff images
+                let _ = std::fs::remove_file(&new_path);
+                let _ = std::fs::remove_file(&diff_path);
             }
         } else {
             // Remove '<test_name>.new.png' file if it exists

@@ -4,7 +4,9 @@
 use std::{future::Future, marker::PhantomData, sync::Arc};
 
 use tokio::task::JoinHandle;
-use xilem_core::{DynMessage, Message, MessageProxy, NoElement, View, ViewId, ViewPathTracker};
+use xilem_core::{
+    DynMessage, Message, MessageProxy, NoElement, View, ViewId, ViewMarker, ViewPathTracker,
+};
 
 use crate::ViewCtx;
 
@@ -70,6 +72,7 @@ pub struct AsyncRepeat<F, H, M> {
     message: PhantomData<fn() -> M>,
 }
 
+impl<F, H, M> ViewMarker for AsyncRepeat<F, H, M> {}
 impl<State, Action, F, H, M, Fut> View<State, Action, ViewCtx> for AsyncRepeat<F, H, M>
 where
     F: Fn(MessageProxy<M>) -> Fut + 'static,

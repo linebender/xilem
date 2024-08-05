@@ -61,6 +61,7 @@ pub use optional_action::{Action, OptionalAction};
 pub use pointer::{Pointer, PointerDetails, PointerMsg};
 pub use style::{style, ElementWithStyle, IntoStyles, Style, Styles, WithStyle};
 pub use xilem_core as core;
+use xilem_core::ViewSequence;
 
 /// A trait used for type erasure of [`DomNode`]s
 /// It is e.g. used in [`AnyPod`]
@@ -169,6 +170,26 @@ where
 {
     type DomNode = W;
     type Props = P;
+}
+
+/// An ordered sequence of views, or sometimes also called fragment, it's used for `0..N` [`DomView`]s.
+/// See [`ViewSequence`] for more technical details.
+///
+/// # Examples
+///
+/// ```
+/// fn huzzah(clicks: i32) -> impl xilem_web::DomFragment<i32> {
+///     (clicks >= 5).then_some("Huzzah, clicked at least 5 times")
+/// }
+/// ```
+pub trait DomFragment<State, Action = ()>:
+    ViewSequence<State, Action, ViewCtx, AnyPod, DynMessage>
+{
+}
+
+impl<V, State, Action> DomFragment<State, Action> for V where
+    V: ViewSequence<State, Action, ViewCtx, AnyPod, DynMessage>
+{
 }
 
 /// A container, which holds the actual DOM node, and associated props, such as attributes or classes.

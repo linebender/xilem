@@ -3,7 +3,7 @@
 
 use core::marker::PhantomData;
 
-use crate::{MessageResult, Mut, View, ViewId, ViewPathTracker};
+use crate::{MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker};
 
 /// A view that "extracts" state from a [`View<ParentState,_,_>`] to [`View<ChildState,_,_>`].
 /// This allows modularization of views based on their state.
@@ -56,6 +56,7 @@ where
     }
 }
 
+impl<ParentState, ChildState, V, F> ViewMarker for MapState<ParentState, ChildState, V, F> {}
 impl<ParentState, ChildState, Action, Context: ViewPathTracker, Message, V, F>
     View<ParentState, Action, Context, Message> for MapState<ParentState, ChildState, V, F>
 where

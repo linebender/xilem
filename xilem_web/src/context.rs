@@ -25,11 +25,21 @@ impl MessageThunk {
 }
 
 /// The [`View`](`crate::core::View`) `Context` which is used for all [`DomView`](`crate::DomView`)s
-#[derive(Default)]
 pub struct ViewCtx {
     id_path: Vec<ViewId>,
     pub(crate) after_update: BTreeMap<ViewId, (bool, Vec<ViewId>)>,
     app_ref: Option<Box<dyn AppRunner>>,
+    pub(crate) fragment: Rc<web_sys::DocumentFragment>,
+}
+
+impl Default for ViewCtx {
+    fn default() -> Self {
+        ViewCtx {
+            id_path: Vec::default(),
+            app_ref: None,
+            fragment: Rc::new(crate::document().create_document_fragment()),
+        }
+    }
 }
 
 impl ViewCtx {

@@ -4,7 +4,7 @@
 use core::marker::PhantomData;
 use core::mem::size_of;
 
-use crate::{MessageResult, Mut, View, ViewId, ViewPathTracker};
+use crate::{MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker};
 
 /// A view which supports Memoization.
 ///
@@ -64,6 +64,7 @@ pub struct MemoizeState<V, VState> {
     dirty: bool,
 }
 
+impl<Data, ViewFn, State, Action> ViewMarker for Memoize<Data, ViewFn, State, Action> {}
 impl<State, Action, Context, Data, V, ViewFn, Message> View<State, Action, Context, Message>
     for Memoize<Data, ViewFn, State, Action>
 where
@@ -172,6 +173,7 @@ where
     }
 }
 
+impl<InitView, State, Action> ViewMarker for Frozen<InitView, State, Action> {}
 impl<State, Action, Context, Message, V, InitView> View<State, Action, Context, Message>
     for Frozen<InitView, State, Action>
 where

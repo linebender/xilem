@@ -5,7 +5,7 @@ use masonry::widget::{CrossAxisAlignment, MainAxisAlignment};
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
 use winit::window::Window;
-use xilem::view::Flex;
+use xilem::view::{Flex, FlexSequence};
 use xilem::EventLoopBuilder;
 use xilem::{
     view::{button, flex, label, sized_box, Axis, FlexExt as _, FlexSpacer},
@@ -187,6 +187,12 @@ impl Calculator {
 const DISPLAY_FONT_SIZE: f32 = 30.;
 const GRID_GAP: f64 = 2.;
 fn app_logic(data: &mut Calculator) -> impl WidgetView<Calculator> {
+    let num_row = |nums: [&'static str; 3], operator| {
+        flex_row((
+            nums.map(|num| digit_button(num).flex(1.)),
+            operator_button(operator).flex(1.),
+        ))
+    };
     flex((
         // Display
         centered_flex_row((
@@ -205,45 +211,21 @@ fn app_logic(data: &mut Calculator) -> impl WidgetView<Calculator> {
         FlexSpacer::Fixed(10.0),
         // Top row
         flex_row((
-            expanded_button("CE", |data: &mut Calculator| {
-                data.clear_entry();
-            })
-            .flex(1.),
-            expanded_button("C", |data: &mut Calculator| data.clear_all()).flex(1.),
-            expanded_button("DEL", |data: &mut Calculator| data.on_delete()).flex(1.),
+            expanded_button("CE", Calculator::clear_entry).flex(1.),
+            expanded_button("C", Calculator::clear_all).flex(1.),
+            expanded_button("DEL", Calculator::on_delete).flex(1.),
             operator_button(MathOperator::Divide).flex(1.),
         ))
         .flex(1.0),
-        // 7 8 9 X
-        flex_row((
-            digit_button("7").flex(1.),
-            digit_button("8").flex(1.),
-            digit_button("9").flex(1.),
-            operator_button(MathOperator::Multiply).flex(1.),
-        ))
-        .flex(1.0),
-        // 4 5 6 -
-        flex_row((
-            digit_button("4").flex(1.),
-            digit_button("5").flex(1.),
-            digit_button("6").flex(1.),
-            operator_button(MathOperator::Subtract).flex(1.),
-        ))
-        .flex(1.0),
-        // 1 2 3 +
-        flex_row((
-            digit_button("1").flex(1.),
-            digit_button("2").flex(1.),
-            digit_button("3").flex(1.),
-            operator_button(MathOperator::Add).flex(1.),
-        ))
-        .flex(1.0),
+        num_row(["7", "8", "9"], MathOperator::Multiply),
+        num_row(["4", "5", "6"], MathOperator::Subtract),
+        num_row(["1", "2", "3"], MathOperator::Add),
         // bottom row
         flex_row((
-            expanded_button("±", |data: &mut Calculator| data.negate()).flex(1.),
+            expanded_button("±", Calculator::negate).flex(1.),
             digit_button("0").flex(1.),
             digit_button(".").flex(1.),
-            expanded_button("=", |data: &mut Calculator| data.on_equals()).flex(1.),
+            expanded_button("=", Calculator::on_equals).flex(1.),
         ))
         .flex(1.0),
     ))
@@ -254,7 +236,7 @@ fn app_logic(data: &mut Calculator) -> impl WidgetView<Calculator> {
 }
 
 /// Creates a horizontal centered flex row designed for the display portion of the calculator.
-pub fn centered_flex_row<Seq, Marker>(sequence: Seq) -> Flex<Seq, Marker> {
+pub fn centered_flex_row<State, Seq: FlexSequence<State>>(sequence: Seq) -> Flex<Seq, State> {
     flex(sequence)
         .direction(Axis::Horizontal)
         .cross_axis_alignment(CrossAxisAlignment::Center)
@@ -263,7 +245,7 @@ pub fn centered_flex_row<Seq, Marker>(sequence: Seq) -> Flex<Seq, Marker> {
 }
 
 /// Creates a horizontal filled flex row designed to be used in a grid.
-pub fn flex_row<Seq, Marker>(sequence: Seq) -> Flex<Seq, Marker> {
+pub fn flex_row<State, Seq: FlexSequence<State>>(sequence: Seq) -> Flex<Seq, State> {
     flex(sequence)
         .direction(Axis::Horizontal)
         .cross_axis_alignment(CrossAxisAlignment::Fill)

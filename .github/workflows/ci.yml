@@ -57,6 +57,12 @@ name: CI
 on:
   pull_request:
   merge_group:
+  # We run on push, even though the commit is the same as when we ran in merge_group. 
+  # This allows the cache to be primed.
+  # See https://github.com/orgs/community/discussions/66430
+  push:
+    branches:
+      - main
 
 jobs:
   fmt:
@@ -102,6 +108,8 @@ jobs:
 
       - name: restore cache
         uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.event_name != 'merge_group' }}
 
       - name: install stable toolchain
         uses: dtolnay/rust-toolchain@master
@@ -137,6 +145,8 @@ jobs:
 
       - name: restore cache
         uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.event_name != 'merge_group' }}
 
       - name: install stable toolchain
         uses: dtolnay/rust-toolchain@master
@@ -161,17 +171,65 @@ jobs:
       - name: cargo clippy (release)
         run: cargo clippy --release --workspace ${{ env.NO_WASM_PKGS }} --locked --target wasm32-unknown-unknown --all-targets -- -D warnings
 
+  prime-lfs-cache:
+    name: Prime LFS Cache
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Cache git lfs
+      id: lfs-cache
+      uses: actions/cache@v4
+      with:
+        path: .git/lfs
+        # The files stored in git lfs are all in this folder
+        key: masonry-lfs-${{ hashFiles('masonry/src/widget/screenshots/*.png') }}
+        restore-keys: masonry-lfs-
+        enableCrossOsArchive: true
+
+    - name: Fetch lfs data
+      if: ${{ steps.lfs-cache.outputs.cache-hit != 'true' }}
+      run: git lfs fetch
+        
   test-stable:
     name: cargo test
+    needs: prime-lfs-cache
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [windows-latest, macos-latest, ubuntu-latest]
+        include:
+          - os: windows-latest
+            # TODO: It should be possible to get WARP working here
+            skip_gpu: '1'
+          - os: macos-latest
+            skip_gpu: ''
+          - os: ubuntu-latest
+            skip_gpu: ''
     steps:
       - uses: actions/checkout@v4
+        # We intentionally do not use lfs: true here, instead using the caching method to save LFS bandwidth.
 
       - name: restore cache
         uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.event_name != 'merge_group' }}
+
+      - name: Restore lfs cache
+        id: lfs-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .git/lfs
+          # The files stored in git lfs are all in this folder
+          key: masonry-lfs-${{ hashFiles('masonry/src/widget/screenshots/*.png') }}
+          enableCrossOsArchive: true
+
+      - name: Checkout LFS files
+        run: git lfs checkout
+        continue-on-error: true
 
       - name: install stable toolchain
         uses: dtolnay/rust-toolchain@master
@@ -192,8 +250,21 @@ jobs:
           sudo apt-get update
           sudo apt install -y xvfb libegl1-mesa libgl1-mesa-dri libxcb-xfixes0-dev mesa-vulkan-drivers
 
+      - name: Install cargo-nextest
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-nextest
+
       - name: cargo test
-        run: cargo test --workspace --locked --all-features
+        run: cargo nextest run --workspace --locked --all-features
+        env:
+          SKIP_RENDER_TESTS: ${{ matrix.skip_gpu }}
+      
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: masonry-snapshot-tests-${{ matrix.os }}
+          path: masonry/src/widget/screenshots/
 
   test-stable-wasm:
     name: cargo test (wasm32)
@@ -203,6 +274,8 @@ jobs:
 
       - name: restore cache
         uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.event_name != 'merge_group' }}
 
       - name: install stable toolchain
         uses: dtolnay/rust-toolchain@master
@@ -222,6 +295,8 @@ jobs:
 
       - name: restore cache
         uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.event_name != 'merge_group' }}
 
       - name: install stable toolchain
         uses: dtolnay/rust-toolchain@master
@@ -249,6 +324,8 @@ jobs:
 
       - name: restore cache
         uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.event_name != 'merge_group' }}
 
       - name: install msrv toolchain
         uses: dtolnay/rust-toolchain@master
@@ -275,6 +352,8 @@ jobs:
 
       - name: restore cache
         uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.event_name != 'merge_group' }}
 
       - name: install msrv toolchain
         uses: dtolnay/rust-toolchain@master
@@ -300,6 +379,8 @@ jobs:
 
       - name: restore cache
         uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.event_name != 'merge_group' }}
 
       - name: install nightly toolchain
         uses: dtolnay/rust-toolchain@nightly

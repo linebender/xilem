@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::widget;
+use xilem_core::ViewMarker;
 
 use crate::{
     core::{Mut, View, ViewId},
@@ -74,6 +75,7 @@ impl<V> SizedBox<V> {
     }
 }
 
+impl<V> ViewMarker for SizedBox<V> {}
 impl<V, State, Action> View<State, Action, ViewCtx> for SizedBox<V>
 where
     V: WidgetView<State, Action>,

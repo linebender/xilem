@@ -9,6 +9,22 @@ use alloc::{boxed::Box, sync::Arc};
 
 use crate::{message::MessageResult, DynMessage, Mut, ViewElement};
 
+/// A type which can be a [`View`]. Imposes no requirements on the underlying type.
+/// Should be implemented alongside every `View` implementation:
+/// ```ignore
+/// impl<...> ViewMarker for Button<...> {}
+/// impl<...> View<...> for Button<...> {...}
+/// ```
+///
+/// ## Details
+///
+/// Because `View` is generic, Rust [allows you](https://doc.rust-lang.org/reference/items/implementations.html#orphan-rules) to implement this trait for certain non-local types.
+/// These non-local types can include `Vec<_>` and `Option<_>`.
+/// If this trait were not present, those implementations of `View` would conflict with those types' implementations of `ViewSequence`.
+/// This is because every `View` type also implementations `ViewSequence`.
+/// Since `ViewMarker` is not generic, these non-local implementations are not permitted for this trait, which means that the conflicting implementation cannot happen.
+pub trait ViewMarker {}
+
 /// A lightweight, short-lived representation of the state of a retained
 /// structure, usually a user interface node.
 ///
@@ -30,11 +46,21 @@ use crate::{message::MessageResult, DynMessage, Mut, ViewElement};
 /// During message handling, mutable access to the app state is given to view nodes,
 /// which will in turn generally expose it to callbacks.
 ///
+/// Due to restrictions of the [orphan rules](https://doc.rust-lang.org/reference/items/implementations.html#orphan-rules),
+/// `ViewMarker` needs to be implemented for every type that implements `View`, see [`ViewMarker`] for more details.
+/// For example:
+/// ```ignore
+/// impl<...> ViewMarker for Button<...> {}
+/// impl<...> View<...> for Button<...> {...}
+/// ```
+///
 /// ## Alloc
 ///
 /// In order to support the default open-ended [`DynMessage`] type as `Message`, this trait requires an
 /// allocator to be available.
-pub trait View<State, Action, Context: ViewPathTracker, Message = DynMessage>: 'static {
+pub trait View<State, Action, Context: ViewPathTracker, Message = DynMessage>:
+    ViewMarker + 'static
+{
     /// The element type which this view operates on.
     type Element: ViewElement;
     /// State that is used over the lifetime of the retained representation of the view.
@@ -137,6 +163,7 @@ pub trait ViewPathTracker {
     }
 }
 
+impl<V: ?Sized> ViewMarker for Box<V> {}
 impl<State, Action, Context, Message, V> View<State, Action, Context, Message> for Box<V>
 where
     Context: ViewPathTracker,
@@ -185,6 +212,7 @@ pub struct ArcState<ViewState> {
     dirty: bool,
 }
 
+impl<V: ?Sized> ViewMarker for Arc<V> {}
 /// An implementation of [`View`] which only runs rebuild if the states are different
 impl<State, Action, Context, Message, V> View<State, Action, Context, Message> for Arc<V>
 where
