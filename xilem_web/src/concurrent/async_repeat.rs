@@ -10,7 +10,20 @@ use xilem_core::{MessageResult, Mut, NoElement, View, ViewId, ViewMarker};
 
 use crate::{context::MessageThunk, DynMessage, Message, ViewCtx};
 
-pub fn async_repeat<M, F, H, State, Action, Fut>(future: F, on_event: H) -> AsyncRepeat<F, H, M>
+/// Spawn a future.
+///
+/// The `init_future` function is given a [`AsyncRepeatProxy`] and a [`ShutdownSignal`].
+/// The `AsyncRepeatProxy` can be used to send a message to `on_event`, which can then update
+/// the app's state.
+/// The `ShudownSignal` can be used to detect whether the view has disappeared and
+/// a shutdown request has been made (because a future cannot be canceled from the outside).
+///
+/// Note that this task will not be updated if the view is rebuilt, so `future`
+/// cannot capture.
+pub fn async_repeat<M, F, H, State, Action, Fut>(
+    init_future: F,
+    on_event: H,
+) -> AsyncRepeat<F, H, M>
 where
     F: Fn(AsyncRepeatProxy, ShutdownSignal) -> Fut + 'static,
     Fut: Future<Output = ()> + 'static,
@@ -25,20 +38,27 @@ where
         );
     };
     AsyncRepeat {
-        future,
+        init_future,
         on_event,
         message: PhantomData,
     }
 }
 
-pub fn async_repeat_raw<M, F, H, State, Action, Fut>(future: F, on_event: H) -> AsyncRepeat<F, H, M>
+/// Spawn a future.
+///
+/// This is [`async_repeat`] without the capturing rules.
+/// See `async_repeat` for full documentation.
+pub fn async_repeat_raw<M, F, H, State, Action, Fut>(
+    init_future: F,
+    on_event: H,
+) -> AsyncRepeat<F, H, M>
 where
     F: Fn(AsyncRepeatProxy, ShutdownSignal) -> Fut + 'static,
     Fut: Future<Output = ()> + 'static,
     H: Fn(&mut State, M) -> Action + 'static,
 {
     AsyncRepeat {
-        future,
+        init_future,
         on_event,
         message: PhantomData,
     }
@@ -64,6 +84,8 @@ impl ShutdownSignal {
         (ShutdownSignal { shutdown_rx }, AbortHandle { abort_tx })
     }
 
+    /// Detect whether the view has disappeared and
+    /// a shutdown request has been made.
     pub fn should_shutdown(&mut self) -> bool {
         match self.shutdown_rx.try_recv() {
             Ok(Some(())) | Err(oneshot::Canceled) => true,
@@ -71,13 +93,15 @@ impl ShutdownSignal {
         }
     }
 
+    /// Transform the signal into a future
+    /// that resolves if a shutdown request has been made.
     pub fn into_future(self) -> impl Future<Output = ()> {
         self.shutdown_rx.map(|_| ())
     }
 }
 
 pub struct AsyncRepeat<F, H, M> {
-    future: F,
+    init_future: F,
     on_event: H,
     message: PhantomData<fn() -> M>,
 }
@@ -126,7 +150,7 @@ where
         let proxy = AsyncRepeatProxy {
             thunk: Rc::new(thunk),
         };
-        spawn_local((self.future)(proxy, shutdown_signal));
+        spawn_local((self.init_future)(proxy, shutdown_signal));
         (NoElement, view_state)
     }
 
