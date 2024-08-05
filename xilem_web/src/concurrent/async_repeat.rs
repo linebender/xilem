@@ -1,7 +1,7 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use std::{future::Future, marker::PhantomData};
+use std::{future::Future, marker::PhantomData, sync::Arc};
 
 use futures::channel::oneshot;
 use wasm_bindgen_futures::spawn_local;
@@ -60,7 +60,7 @@ pub struct AsyncRepeatState {
 }
 
 pub struct AsyncRepeatProxy {
-    thunk: MessageThunk,
+    thunk: Arc<MessageThunk>,
 }
 
 impl AsyncRepeatProxy {
@@ -68,7 +68,10 @@ impl AsyncRepeatProxy {
     where
         M: Message,
     {
-        self.thunk.push_message(message);
+        let thunk = Arc::clone(&self.thunk);
+        spawn_local(async move {
+            thunk.push_message(message);
+        });
     }
 }
 
@@ -93,7 +96,9 @@ where
         let view_state = AsyncRepeatState {
             abort_tx: Some(abort_tx),
         };
-        let proxy = AsyncRepeatProxy { thunk };
+        let proxy = AsyncRepeatProxy {
+            thunk: Arc::new(thunk),
+        };
         spawn_local((self.future_future)(proxy, abort_rx));
         (NoElement, view_state)
     }
