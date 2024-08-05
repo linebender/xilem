@@ -13,7 +13,7 @@ use crate::{message::MessageResult, DynMessage, Mut, ViewElement};
 /// Should be implemented alongside every `View` implementation:
 /// ```rust
 /// impl<...> ViewMarker for Button<...> {}
-/// impl<...> View<...> for Button<...> {}
+/// impl<...> View<...> for Button<...> {...}
 /// ```
 ///
 /// ## Details
@@ -51,7 +51,7 @@ pub trait ViewMarker {}
 /// For example:
 /// ```rust
 /// impl<...> ViewMarker for Button<...> {}
-/// impl<...> View<...> for Button<...> {}
+/// impl<...> View<...> for Button<...> {...}
 /// ```
 ///
 /// ## Alloc
