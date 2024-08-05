@@ -7,7 +7,8 @@
 #   -g "!src/special_directory"
 
 # Check all the standard Rust source files
-output=$(rg "^// Copyright (19|20)[\d]{2} (.+ and )?the Xilem Authors( and .+)?$\n^// SPDX-License-Identifier: Apache-2\.0$\n\n" --files-without-match --multiline -g "*.rs" .)
+# Exclude the Emoji picker example because it also has some MIT licensed content
+output=$(rg "^// Copyright (19|20)[\d]{2} (.+ and )?the Xilem Authors( and .+)?$\n^// SPDX-License-Identifier: Apache-2\.0$\n\n" --files-without-match --multiline -g "*.rs" -g "!xilem/examples/emoji_picker.rs" .)
 
 if [ -n "$output" ]; then
 	echo -e "The following files lack the correct copyright header:\n"

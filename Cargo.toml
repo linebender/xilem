@@ -104,8 +104,9 @@ clippy.unseparated_literal_suffix = "warn"
 xilem_web_core = { version = "0.1.0", path = "xilem_web/xilem_web_core" }
 masonry = { version = "0.2.0", path = "masonry" }
 xilem_core = { version = "0.1.0", path = "xilem_core" }
-vello = "0.2.1"
-wgpu = "0.20.1"
+# We depend on this Vello revision for Emoji support (https://github.com/linebender/vello/pull/615)
+vello = { git = "https://github.com/DJMcNab/vello/", rev = "339b029c73ce0cc7a4433c1cd5a98bd681857118" }
+wgpu = "22.1.0"
 kurbo = "0.11.0"
 parley = "0.1.0"
 peniko = "0.1.1"
@@ -119,3 +120,7 @@ web-time = "1.1.0"
 bitflags = "2.6.0"
 accesskit = "0.16.0"
 accesskit_winit = "0.22.0"
+
+[patch.crates-io]
+# We depend on this Parley revision for Emoji support (https://github.com/linebender/parley/pull/56)
+parley = { git = "https://github.com/linebender/parley", rev = "a3c616e18ef39b1bbeb9bcafb879a884f09f1095" }

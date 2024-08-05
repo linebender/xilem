@@ -270,6 +270,7 @@ impl TestHarness {
             width,
             height,
             antialiasing_method: vello::AaConfig::Area,
+            debug: vello::DebugLayers::none(),
         };
 
         let size = Extent3d {

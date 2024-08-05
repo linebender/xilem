@@ -9,7 +9,7 @@ use kurbo::{Affine, Line, Point, Rect, Size};
 use parley::context::RangedBuilder;
 use parley::fontique::{Style, Weight};
 use parley::layout::{Alignment, Cursor};
-use parley::style::{Brush as BrushTrait, FontFamily, FontStack, GenericFamily, StyleProperty};
+use parley::style::{FontFamily, FontStack, GenericFamily, StyleProperty};
 use parley::{FontContext, Layout, LayoutContext};
 use vello::peniko::{self, Color, Gradient};
 use vello::Scene;
@@ -69,8 +69,6 @@ pub enum TextBrush {
         fill: peniko::Brush,
     },
 }
-
-impl BrushTrait for TextBrush {}
 
 impl From<peniko::Brush> for TextBrush {
     fn from(value: peniko::Brush) -> Self {

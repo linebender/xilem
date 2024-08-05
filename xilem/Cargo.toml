@@ -35,6 +35,17 @@ path = "examples/calc.rs"
 # cdylib is required for cargo-apk
 crate-type = ["cdylib"]
 
+[[example]]
+name = "emoji_picker"
+
+[[example]]
+# A custom example target which uses the same `mason.rs` file but for android
+name = "emoji_picker_android"
+path = "examples/emoji_picker.rs"
+# cdylib is required for cargo-apk
+crate-type = ["cdylib"]
+
+
 [lints]
 workspace = true
 

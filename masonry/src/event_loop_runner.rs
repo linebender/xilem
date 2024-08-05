@@ -376,6 +376,7 @@ impl MasonryState<'_> {
             width,
             height,
             antialiasing_method: vello::AaConfig::Area,
+            debug: vello::DebugLayers::none(),
         };
         self.renderer
             .get_or_insert_with(|| Renderer::new(device, renderer_options).unwrap())
