@@ -528,12 +528,7 @@ impl TestHarness {
         test_module_path: &str,
         test_name: &str,
     ) {
-        if std::env::var("SKIP_RENDER_SNAPSHOTS").is_ok_and(|it| !it.is_empty()) {
-            // FIXME - This is a terrible, awful hack.
-            // We need a way to skip render snapshots on CI and locally
-            // until we can make sure the snapshots render the same on
-            // different platforms.
-
+        if std::env::var("SKIP_RENDER_TESTS").is_ok_and(|it| !it.is_empty()) {
             // We still redraw to get some coverage in the paint code.
             let _ = self.render_root.redraw();
 
@@ -555,6 +550,9 @@ impl TestHarness {
         let new_path = screenshots_folder.join(format!("{module_str}__{test_name}.new.png"));
         let diff_path = screenshots_folder.join(format!("{module_str}__{test_name}.diff.png"));
 
+        // TODO: If this file is corrupted, it could be an lfs bandwidth/installation issue.
+        // Have a warning for that case (i.e. differentiation between not-found and invalid format)
+        // and a environment variable to ignore the test in that case.
         if let Ok(reference_file) = ImageReader::open(reference_path) {
             let ref_image = reference_file.decode().unwrap().to_rgb8();
 

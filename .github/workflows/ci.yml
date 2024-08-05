@@ -259,7 +259,6 @@ jobs:
         run: cargo nextest run --workspace --locked --all-features
         env:
           SKIP_RENDER_TESTS: ${{ matrix.skip_gpu }}
-          SKIP_RENDER_SNAPSHOTS: ${{ matrix.skip_gpu }}
       
       - uses: actions/upload-artifact@v4
         if: failure()
