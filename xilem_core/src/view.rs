@@ -48,6 +48,11 @@ pub trait ViewMarker {}
 ///
 /// Due to restrictions of the [orphan rules](https://doc.rust-lang.org/reference/items/implementations.html#orphan-rules),
 /// `ViewMarker` needs to be implemented for every type that implements `View`, see [`ViewMarker`] for more details.
+/// For example:
+/// ```rust
+/// impl<...> ViewMarker for Button<...> {}
+/// impl<...> View<...> for Button<...> {}
+/// ```
 ///
 /// ## Alloc
 ///
