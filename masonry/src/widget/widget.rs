@@ -7,6 +7,7 @@ use std::ops::{Deref, DerefMut};
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use accesskit::Role;
+use cursor_icon::CursorIcon;
 use smallvec::SmallVec;
 use tracing::{trace_span, Span};
 use vello::Scene;
@@ -145,6 +146,12 @@ pub trait Widget: AsAny {
     /// be eg a label's text, or whether a checkbox is checked.
     fn get_debug_text(&self) -> Option<String> {
         None
+    }
+
+    // TODO - Document
+    // TODO - Add &UpdateCtx argument
+    fn get_cursor(&self) -> CursorIcon {
+        CursorIcon::Default
     }
 
     // --- Auto-generated implementations ---

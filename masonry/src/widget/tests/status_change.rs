@@ -60,11 +60,16 @@ fn propagate_hot() {
 
     harness.mouse_move_to(empty);
 
-    dbg!(harness.get_widget(empty).state().layout_rect());
+    dbg!(harness.get_widget(button).state().window_layout_rect());
+    dbg!(harness.get_widget(pad).state().window_layout_rect());
+    dbg!(harness.get_widget(root).state().window_layout_rect());
+    dbg!(harness.get_widget(empty).state().window_layout_rect());
 
     eprintln!("root: {root:?}");
     eprintln!("empty: {empty:?}");
     eprintln!("pad: {pad:?}");
+    eprintln!("button: {button:?}");
+
     assert!(is_hot(&harness, root));
     assert!(is_hot(&harness, empty));
     assert!(!is_hot(&harness, pad));
@@ -133,6 +138,7 @@ fn update_hot_on_mouse_leave() {
     assert!(is_hot(&harness, label_id));
 
     label_rec.clear();
+    println!("leaving");
     harness.process_pointer_event(PointerEvent::PointerLeave(PointerState::empty()));
 
     assert!(!is_hot(&harness, label_id));

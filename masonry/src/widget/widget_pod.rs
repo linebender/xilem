@@ -113,14 +113,9 @@ impl<W: Widget> WidgetPod<W> {
     // - A concept of "cursor moved to inner widget" (though I think that's not super useful outside the browser).
     // - Multiple pointers handling.
 
-    /// Determines if the provided `mouse_pos` is inside `rect`
-    /// and if so updates the hot state and sends `LifeCycle::HotChanged`.
-    ///
-    /// Return `true` if the hot state changed.
-    ///
-    /// The provided `inner_state` should be merged up if this returns `true`.
+    #[allow(unused)]
     pub(crate) fn update_hot_state(
-        #[allow(unused)] id: WidgetId,
+        id: WidgetId,
         inner: &mut W,
         inner_children: TreeArenaTokenMut<'_, Box<dyn Widget>>,
         inner_state: &mut WidgetState,
@@ -128,34 +123,6 @@ impl<W: Widget> WidgetPod<W> {
         global_state: &mut RenderRootState,
         mouse_pos: Option<LogicalPosition<f64>>,
     ) -> bool {
-        let rect = inner_state.layout_rect() + inner_state.parent_window_origin.to_vec2();
-        let had_hot = inner_state.is_hot;
-        inner_state.is_hot = match mouse_pos {
-            Some(pos) => rect.winding(Point::new(pos.x, pos.y)) != 0,
-            None => false,
-        };
-        // FIXME - don't send event, update flags instead
-        if had_hot != inner_state.is_hot {
-            trace!(
-                "Widget '{}' #{}: set hot state to {}",
-                inner.short_type_name(),
-                inner_state.id.to_raw(),
-                inner_state.is_hot
-            );
-
-            let hot_changed_event = StatusChange::HotChanged(inner_state.is_hot);
-            let mut inner_ctx = LifeCycleCtx {
-                global_state,
-                widget_state: inner_state,
-                widget_state_children: inner_state_children,
-                widget_children: inner_children,
-            };
-
-            let _span = info_span!("on_status_change").entered();
-            inner.on_status_change(&mut inner_ctx, &hot_changed_event);
-
-            return true;
-        }
         false
     }
 
