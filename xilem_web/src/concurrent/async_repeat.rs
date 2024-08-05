@@ -10,10 +10,7 @@ use xilem_core::{MessageResult, Mut, NoElement, View, ViewId, ViewMarker};
 
 use crate::{context::MessageThunk, DynMessage, Message, ViewCtx};
 
-pub fn async_repeat<M, F, H, State, Action, Fut>(
-    future_future: F,
-    on_event: H,
-) -> AsyncRepeat<F, H, M>
+pub fn async_repeat<M, F, H, State, Action, Fut>(future: F, on_event: H) -> AsyncRepeat<F, H, M>
 where
     F: Fn(AsyncRepeatProxy, oneshot::Receiver<()>) -> Fut + 'static,
     Fut: Future<Output = ()> + 'static,
@@ -28,30 +25,27 @@ where
         );
     };
     AsyncRepeat {
-        future_future,
+        future,
         on_event,
         message: PhantomData,
     }
 }
 
-pub fn async_repeat_raw<M, F, H, State, Action, Fut>(
-    future_future: F,
-    on_event: H,
-) -> AsyncRepeat<F, H, M>
+pub fn async_repeat_raw<M, F, H, State, Action, Fut>(future: F, on_event: H) -> AsyncRepeat<F, H, M>
 where
     F: Fn(MessageThunk) -> Fut + 'static,
     Fut: Future<Output = ()> + 'static,
     H: Fn(&mut State, M) -> Action + 'static,
 {
     AsyncRepeat {
-        future_future,
+        future,
         on_event,
         message: PhantomData,
     }
 }
 
 pub struct AsyncRepeat<F, H, M> {
-    future_future: F,
+    future: F,
     on_event: H,
     message: PhantomData<fn() -> M>,
 }
@@ -100,7 +94,7 @@ where
         let proxy = AsyncRepeatProxy {
             thunk: Rc::new(thunk),
         };
-        spawn_local((self.future_future)(proxy, abort_rx));
+        spawn_local((self.future)(proxy, abort_rx));
         (NoElement, view_state)
     }
 
