@@ -49,7 +49,7 @@ pub mod elements;
 pub mod interfaces;
 pub mod svg;
 
-pub use after_update::AfterUpdate;
+pub use after_update::{AfterBuild, AfterRebuild};
 pub use app::App;
 pub use attribute::{Attr, Attributes, ElementWithAttributes, WithAttributes};
 pub use attribute_value::{AttributeValue, IntoAttributeValue};
