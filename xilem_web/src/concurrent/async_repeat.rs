@@ -4,6 +4,7 @@
 use std::{future::Future, marker::PhantomData, rc::Rc};
 
 use futures::channel::oneshot;
+use wasm_bindgen::UnwrapThrowExt;
 use wasm_bindgen_futures::spawn_local;
 use xilem_core::{MessageResult, Mut, NoElement, View, ViewId, ViewMarker};
 
@@ -119,10 +120,7 @@ where
         _: &mut ViewCtx,
         _: Mut<'_, Self::Element>,
     ) {
-        let Some(tx) = view_state.abort_tx.take() else {
-            // TODO: Is that even allowed to happen?
-            return;
-        };
+        let tx = view_state.abort_tx.take().unwrap_throw();
         let _ = tx.send(());
     }
 
