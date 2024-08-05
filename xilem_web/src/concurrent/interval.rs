@@ -38,7 +38,8 @@ pub struct Interval<Callback, State, Action> {
 ///
 /// # Panics
 ///
-/// While `ms` is a `u32`, `setInterval` actually requires this to be a `i32`, so values above `2147483647` lead to a panic
+/// While `ms` is a `u32`, `setInterval` actually requires this to be a `i32`, so values above `2147483647` lead to a panic.
+/// See <https://developer.mozilla.org/en-US/docs/Web/API/setInterval#sect2> for more details.
 pub fn interval<State, Action, OA, Callback>(
     ms: u32,
     callback: Callback,
