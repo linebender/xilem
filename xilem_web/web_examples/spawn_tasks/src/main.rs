@@ -46,7 +46,7 @@ async fn create_ping_task(proxy: AsyncRepeatProxy, shutdown_signal: ShutdownSign
             }
             _ = abort => {
                 // The view no longer exists so
-                // we can do e.g. a gracefull shutdown here.
+                // we can do e.g. a graceful shutdown here.
                 break;
             }
         }
