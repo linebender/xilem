@@ -10,14 +10,15 @@ use crate::{DynMessage, OptionalAction, ViewCtx};
 
 /// Start an interval which invokes `callback` every `ms` milliseconds
 pub struct Interval<Callback, State, Action> {
-    ms: i32,
+    ms: u32,
     callback: Callback,
     phantom: PhantomData<fn() -> (State, Action)>,
 }
 
 /// Start an interval which invokes `callback` every `ms` milliseconds
 ///
-/// `ms` is of type `i32` because of the weird choice for it in [`setInterval`](https://developer.mozilla.org/en-US/docs/Web/API/setInterval#sect2)
+/// Currently, when `ms` changes, the previous interval is cleared, and starts with the new interval.
+/// This default behavior may change in the future, and may even be configurable.
 ///
 /// # Examples
 ///
@@ -34,8 +35,12 @@ pub struct Interval<Callback, State, Action> {
 ///     )
 /// }
 /// ```
+///
+/// # Panics
+///
+/// While `ms` is a `u32`, `setInterval` actually requires this to be a `i32`, so values above `2147483647` lead to a panic
 pub fn interval<State, Action, OA, Callback>(
-    ms: i32,
+    ms: u32,
     callback: Callback,
 ) -> Interval<Callback, State, Action>
 where
@@ -57,12 +62,17 @@ pub struct IntervalState {
     interval_handle: i32,
 }
 
-fn start_interval(callback: &Closure<dyn FnMut()>, ms: i32) -> i32 {
+fn start_interval(callback: &Closure<dyn FnMut()>, ms: u32) -> i32 {
     web_sys::window()
         .unwrap_throw()
         .set_interval_with_callback_and_timeout_and_arguments_0(
             callback.as_ref().unchecked_ref(),
-            ms,
+            ms.try_into().expect_throw(
+                "`setInterval` requires this to be an `i32`,\
+                 which is why values above `2147483647` are not possible,\
+                 see https://developer.mozilla.org/en-US/docs/Web/API/setInterval#sect2 \
+                 for more details",
+            ),
         )
         .unwrap_throw()
 }
