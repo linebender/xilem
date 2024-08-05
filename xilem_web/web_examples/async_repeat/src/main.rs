@@ -21,8 +21,11 @@ enum Message {
 
 fn app_logic(state: &mut AppState) -> impl Element<AppState> {
     let task = async_repeat(
-        |proxy, mut abort_rx| async move {
+        |proxy, shutdown_signal| async move {
             log::debug!("Start ping task");
+
+            let mut abort = shutdown_signal.into_future().fuse();
+
             #[allow(clippy::infinite_loop)]
             loop {
                 let mut timeout = TimeoutFuture::new(1_000).fuse();
@@ -31,7 +34,7 @@ fn app_logic(state: &mut AppState) -> impl Element<AppState> {
                       proxy.send_message(Message::Ping);
                       continue;
                   }
-                   _ = abort_rx => {
+                   _ = abort => {
                         log::debug!("Stop ping task");
                         break;
                    }

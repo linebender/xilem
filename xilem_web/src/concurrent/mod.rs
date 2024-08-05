@@ -4,7 +4,9 @@
 //! Async views, allowing concurrent operations, like fetching data from a server
 
 mod async_repeat;
-pub use async_repeat::{async_repeat, async_repeat_raw, AsyncRepeat, AsyncRepeatProxy};
+pub use async_repeat::{
+    async_repeat, async_repeat_raw, AsyncRepeat, AsyncRepeatProxy, ShutdownSignal,
+};
 
 mod interval;
 pub use interval::{interval, Interval};

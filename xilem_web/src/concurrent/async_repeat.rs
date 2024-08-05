@@ -3,7 +3,7 @@
 
 use std::{future::Future, marker::PhantomData, rc::Rc};
 
-use futures::channel::oneshot;
+use futures::{channel::oneshot, FutureExt};
 use wasm_bindgen::UnwrapThrowExt;
 use wasm_bindgen_futures::spawn_local;
 use xilem_core::{MessageResult, Mut, NoElement, View, ViewId, ViewMarker};
@@ -12,7 +12,7 @@ use crate::{context::MessageThunk, DynMessage, Message, ViewCtx};
 
 pub fn async_repeat<M, F, H, State, Action, Fut>(future: F, on_event: H) -> AsyncRepeat<F, H, M>
 where
-    F: Fn(AsyncRepeatProxy, oneshot::Receiver<()>) -> Fut + 'static,
+    F: Fn(AsyncRepeatProxy, ShutdownSignal) -> Fut + 'static,
     Fut: Future<Output = ()> + 'static,
     H: Fn(&mut State, M) -> Action + 'static,
     M: Message,
@@ -33,7 +33,7 @@ where
 
 pub fn async_repeat_raw<M, F, H, State, Action, Fut>(future: F, on_event: H) -> AsyncRepeat<F, H, M>
 where
-    F: Fn(MessageThunk) -> Fut + 'static,
+    F: Fn(AsyncRepeatProxy, ShutdownSignal) -> Fut + 'static,
     Fut: Future<Output = ()> + 'static,
     H: Fn(&mut State, M) -> Action + 'static,
 {
@@ -44,6 +44,38 @@ where
     }
 }
 
+struct AbortHandle {
+    abort_tx: oneshot::Sender<()>,
+}
+
+impl AbortHandle {
+    fn abort(self) {
+        let _ = self.abort_tx.send(());
+    }
+}
+
+pub struct ShutdownSignal {
+    shutdown_rx: oneshot::Receiver<()>,
+}
+
+impl ShutdownSignal {
+    fn new() -> (Self, AbortHandle) {
+        let (abort_tx, shutdown_rx) = oneshot::channel();
+        (ShutdownSignal { shutdown_rx }, AbortHandle { abort_tx })
+    }
+
+    pub fn should_shutdown(&mut self) -> bool {
+        match self.shutdown_rx.try_recv() {
+            Ok(Some(())) | Err(oneshot::Canceled) => true,
+            Ok(None) => false,
+        }
+    }
+
+    pub fn into_future(self) -> impl Future<Output = ()> {
+        self.shutdown_rx.map(|_| ())
+    }
+}
+
 pub struct AsyncRepeat<F, H, M> {
     future: F,
     on_event: H,
@@ -51,7 +83,7 @@ pub struct AsyncRepeat<F, H, M> {
 }
 
 pub struct AsyncRepeatState {
-    abort_tx: Option<oneshot::Sender<()>>,
+    abort_handle: Option<AbortHandle>,
 }
 
 pub struct AsyncRepeatProxy {
@@ -76,7 +108,7 @@ impl<State, Action, F, H, M, Fut> View<State, Action, ViewCtx, DynMessage> for A
 where
     State: 'static,
     Action: 'static,
-    F: Fn(AsyncRepeatProxy, oneshot::Receiver<()>) -> Fut + 'static,
+    F: Fn(AsyncRepeatProxy, ShutdownSignal) -> Fut + 'static,
     Fut: Future<Output = ()> + 'static,
     H: Fn(&mut State, M) -> Action + 'static,
     M: Message,
@@ -87,14 +119,14 @@ where
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let thunk = ctx.message_thunk();
-        let (abort_tx, abort_rx) = oneshot::channel();
+        let (shutdown_signal, abort_handle) = ShutdownSignal::new();
         let view_state = AsyncRepeatState {
-            abort_tx: Some(abort_tx),
+            abort_handle: Some(abort_handle),
         };
         let proxy = AsyncRepeatProxy {
             thunk: Rc::new(thunk),
         };
-        spawn_local((self.future)(proxy, abort_rx));
+        spawn_local((self.future)(proxy, shutdown_signal));
         (NoElement, view_state)
     }
 
@@ -114,8 +146,8 @@ where
         _: &mut ViewCtx,
         _: Mut<'_, Self::Element>,
     ) {
-        let tx = view_state.abort_tx.take().unwrap_throw();
-        let _ = tx.send(());
+        let handle = view_state.abort_handle.take().unwrap_throw();
+        handle.abort();
     }
 
     fn message(
