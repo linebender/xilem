@@ -3,7 +3,7 @@
 
 use core::marker::PhantomData;
 
-use crate::{Mut, View, ViewId, ViewPathTracker};
+use crate::{Mut, View, ViewId, ViewMarker, ViewPathTracker};
 
 /// A view that maps a child [`View<State,ChildAction,_>`] to [`View<State,ParentAction,_>`] while providing mutable access to `State` in the map function.
 ///
@@ -68,6 +68,10 @@ where
     }
 }
 
+impl<State, ParentAction, ChildAction, V, F> ViewMarker
+    for MapAction<State, ParentAction, ChildAction, V, F>
+{
+}
 impl<State, ParentAction, ChildAction, Context: ViewPathTracker, Message, V, F>
     View<State, ParentAction, Context, Message>
     for MapAction<State, ParentAction, ChildAction, V, F>

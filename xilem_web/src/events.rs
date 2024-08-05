@@ -4,7 +4,7 @@
 use std::{borrow::Cow, marker::PhantomData};
 use wasm_bindgen::{prelude::Closure, throw_str, JsCast, UnwrapThrowExt};
 use web_sys::AddEventListenerOptions;
-use xilem_core::{MessageResult, Mut, View, ViewId, ViewPathTracker};
+use xilem_core::{MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker};
 
 use crate::{DynMessage, ElementAsRef, OptionalAction, ViewCtx};
 
@@ -224,6 +224,7 @@ where
     }
 }
 
+impl<V, State, Action, Event, Callback> ViewMarker for OnEvent<V, State, Action, Event, Callback> {}
 impl<V, State, Action, Event, Callback, OA> View<State, Action, ViewCtx, DynMessage>
     for OnEvent<V, State, Action, Event, Callback>
 where
@@ -327,6 +328,7 @@ macro_rules! event_definitions {
             pub(crate) phantom_event_ty: PhantomData<fn() -> (State, Action)>,
         }
 
+        impl<V, State, Action, Callback> ViewMarker for $ty_name<V, State, Action, Callback> {}
         impl<V, State, Action, Callback> $ty_name<V, State, Action, Callback> {
             pub fn new(element: V, handler: Callback) -> Self {
                 Self {

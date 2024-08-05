@@ -94,3 +94,16 @@ pub struct NoElement;
 impl ViewElement for NoElement {
     type Mut<'a> = ();
 }
+
+impl SuperElement<NoElement> for NoElement {
+    fn upcast(child: NoElement) -> Self {
+        child
+    }
+
+    fn with_downcast_val<R>(
+        this: Mut<'_, Self>,
+        f: impl FnOnce(Mut<'_, NoElement>) -> R,
+    ) -> (Self::Mut<'_>, R) {
+        ((), f(this))
+    }
+}

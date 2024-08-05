@@ -109,16 +109,18 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> {
 
 fn toggleable(data: &mut AppData) -> impl WidgetView<AppData> {
     if data.active {
-        flex((
-            button("Deactivate", |data: &mut AppData| {
-                data.active = false;
-            }),
-            button("Unlimited Power", |data: &mut AppData| {
-                data.count = -1_000_000;
-            }),
+        fork(
+            flex((
+                button("Deactivate", |data: &mut AppData| {
+                    data.active = false;
+                }),
+                button("Unlimited Power", |data: &mut AppData| {
+                    data.count = -1_000_000;
+                }),
+            ))
+            .direction(Axis::Horizontal),
             run_once(|| tracing::warn!("The pathway to unlimited power has been revealed")),
-        ))
-        .direction(Axis::Horizontal)
+        )
         .boxed()
     } else {
         button("Activate", |data: &mut AppData| data.active = true).boxed()

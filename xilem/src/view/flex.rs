@@ -9,36 +9,38 @@ use masonry::{
 };
 use xilem_core::{
     AppendVec, DynMessage, ElementSplice, MessageResult, Mut, SuperElement, View, ViewElement,
-    ViewId, ViewPathTracker, ViewSequence,
+    ViewId, ViewMarker, ViewPathTracker, ViewSequence,
 };
 
 use crate::{AnyWidgetView, Pod, ViewCtx, WidgetView};
 
 pub use masonry::widget::{Axis, CrossAxisAlignment, FlexParams, MainAxisAlignment};
 
-pub fn flex<Seq, Marker>(sequence: Seq) -> Flex<Seq, Marker> {
+pub fn flex<State, Action, Seq: FlexSequence<State, Action>>(
+    sequence: Seq,
+) -> Flex<Seq, State, Action> {
     Flex {
-        phantom: PhantomData,
         sequence,
         axis: Axis::Vertical,
         cross_axis_alignment: CrossAxisAlignment::Center,
         main_axis_alignment: MainAxisAlignment::Start,
         fill_major_axis: false,
         gap: None,
+        phantom: PhantomData,
     }
 }
 
-pub struct Flex<Seq, Marker> {
+pub struct Flex<Seq, State, Action = ()> {
     sequence: Seq,
     axis: Axis,
     cross_axis_alignment: CrossAxisAlignment,
     main_axis_alignment: MainAxisAlignment,
     fill_major_axis: bool,
-    phantom: PhantomData<fn() -> Marker>,
     gap: Option<f64>,
+    phantom: PhantomData<fn() -> (State, Action)>,
 }
 
-impl<Seq, Marker> Flex<Seq, Marker> {
+impl<Seq, State, Action> Flex<Seq, State, Action> {
     pub fn direction(mut self, axis: Axis) -> Self {
         self.axis = axis;
         self
@@ -85,9 +87,12 @@ impl<Seq, Marker> Flex<Seq, Marker> {
     }
 }
 
-impl<State, Action, Seq, Marker: 'static> View<State, Action, ViewCtx> for Flex<Seq, Marker>
+impl<Seq, State, Action> ViewMarker for Flex<Seq, State, Action> {}
+impl<State, Action, Seq> View<State, Action, ViewCtx> for Flex<Seq, State, Action>
 where
-    Seq: ViewSequence<State, Action, ViewCtx, FlexElement, Marker>,
+    State: 'static,
+    Action: 'static,
+    Seq: FlexSequence<State, Action>,
 {
     type Element = Pod<widget::Flex>;
 
@@ -303,6 +308,31 @@ impl ElementSplice<FlexElement> for FlexSplice<'_> {
     }
 }
 
+/// An ordered sequence of views for a [`Flex`] view.
+/// See [`ViewSequence`] for more technical details.
+///
+/// # Examples
+///
+/// ```
+/// use xilem::view::{label, FlexSequence, FlexExt as _};
+///
+/// fn label_sequence<State: 'static>(
+///     labels: impl Iterator<Item = &'static str>,
+///     flex: f64,
+/// ) -> impl FlexSequence<State> {
+///     labels.map(|l| label(l).flex(flex)).collect::<Vec<_>>()
+/// }
+/// ```
+pub trait FlexSequence<State, Action = ()>:
+    ViewSequence<State, Action, ViewCtx, FlexElement>
+{
+}
+
+impl<Seq, State, Action> FlexSequence<State, Action> for Seq where
+    Seq: ViewSequence<State, Action, ViewCtx, FlexElement>
+{
+}
+
 /// A trait which extends a [`WidgetView`] with methods to provide parameters for a flex item, or being able to use it interchangeably with a spacer
 pub trait FlexExt<State, Action>: WidgetView<State, Action> {
     /// Applies [`impl Into<FlexParams>`](`FlexParams`) to this view, can be used as child of a [`Flex`] [`View`]
@@ -407,6 +437,7 @@ where
     }
 }
 
+impl<V, State, Action> ViewMarker for FlexItem<V, State, Action> {}
 impl<State, Action, V> View<State, Action, ViewCtx> for FlexItem<V, State, Action>
 where
     State: 'static,
@@ -485,6 +516,7 @@ impl<State, Action> From<FlexSpacer> for AnyFlexChild<State, Action> {
     }
 }
 
+impl ViewMarker for FlexSpacer {}
 // This impl doesn't require a view id, as it neither receives, nor sends any messages
 // If this should ever change, it's necessary to adjust the `AnyFlexChild` `View` impl
 impl<State, Action> View<State, Action, ViewCtx> for FlexSpacer {
@@ -593,6 +625,7 @@ pub struct AnyFlexChildState<State: 'static, Action: 'static> {
     generation: u64,
 }
 
+impl<State, Action> ViewMarker for AnyFlexChild<State, Action> {}
 impl<State, Action> View<State, Action, ViewCtx> for AnyFlexChild<State, Action>
 where
     State: 'static,

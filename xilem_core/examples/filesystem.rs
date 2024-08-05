@@ -4,7 +4,7 @@
 use std::{io::stdin, path::PathBuf};
 
 use xilem_core::{
-    AnyElement, AnyView, Mut, SuperElement, View, ViewElement, ViewId, ViewPathTracker,
+    AnyElement, AnyView, Mut, SuperElement, View, ViewElement, ViewId, ViewMarker, ViewPathTracker,
 };
 
 #[derive(Debug)]
@@ -145,6 +145,7 @@ impl ViewElement for FsPath {
     type Mut<'a> = &'a mut PathBuf;
 }
 
+impl ViewMarker for File {}
 impl<State, Action> View<State, Action, ViewCtx> for File {
     type Element = FsPath;
     type ViewState = ();

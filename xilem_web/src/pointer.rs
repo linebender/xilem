@@ -8,7 +8,7 @@ use std::marker::PhantomData;
 use wasm_bindgen::{prelude::Closure, throw_str, JsCast, UnwrapThrowExt};
 use web_sys::PointerEvent;
 
-use xilem_core::{MessageResult, Mut, View, ViewId, ViewPathTracker};
+use xilem_core::{MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker};
 
 use crate::{interfaces::Element, DynMessage, ElementAsRef, ViewCtx};
 
@@ -69,6 +69,7 @@ pub fn pointer<T, A, F: Fn(&mut T, PointerMsg), V: Element<T, A>>(
     }
 }
 
+impl<V, State, Action, Callback> ViewMarker for Pointer<V, State, Action, Callback> {}
 impl<State, Action, Callback, V> View<State, Action, ViewCtx, DynMessage>
     for Pointer<V, State, Action, Callback>
 where
