@@ -1,17 +1,30 @@
 // Copyright 2023 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use xilem_web::{DomView, core::one_of::Either, document_body, elements::html, interfaces::Element, App};
+//! This example demonstrates a dirty hack that should be avoided,
+//! and only used with extreme caution in cases where direct access
+//! to the raw DOM nodes is necessary
+//! (e.g. when using external JS libraries).
+//!
+//! Please also note that no rebuild is triggered
+//! after a callback has been performed in
+//! `after_build`, `after_rebuild` or `before_teardown`.
+
+use std::{cell::Cell, rc::Rc};
+
+use xilem_web::{
+    core::one_of::Either, document_body, elements::html, interfaces::Element, App, DomView,
+};
 
 #[derive(Default)]
 struct AppState {
-    focus: bool,
+    focus: Rc<Cell<bool>>,
     show_input: bool,
 }
 
 fn app_logic(app_state: &mut AppState) -> impl Element<AppState> {
     html::div(if app_state.show_input {
-        let focus = app_state.focus;
+        let focus = Rc::clone(&app_state.focus);
         Either::A(html::div((
             html::button("remove input").on_click(|app_state: &mut AppState, _| {
                 app_state.show_input = false;
@@ -22,15 +35,17 @@ fn app_logic(app_state: &mut AppState) -> impl Element<AppState> {
                 })
                 .after_rebuild(move |el| {
                     log::debug!("element was re-build");
-                    if focus {
-                        el.focus().unwrap();
+                    if focus.get() {
+                        let _ = el.focus();
+                        // Reset `focus` to avoid calling `el.focus` on every rebuild.
+                        focus.set(false); // NOTE: this does NOT trigger a rebuild.
                     }
                 })
                 .before_teardown(|_| {
                     log::debug!("element will be removed");
                 }),
             html::button("Focus the input").on_click(|app_state: &mut AppState, _| {
-                app_state.focus = true;
+                app_state.focus.set(true);
             }),
         )))
     } else {
