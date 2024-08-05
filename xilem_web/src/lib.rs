@@ -49,7 +49,9 @@ pub mod elements;
 pub mod interfaces;
 pub mod svg;
 
-pub use after_update::{AfterBuild, AfterRebuild};
+pub use after_update::{
+    after_build, after_rebuild, before_teardown, AfterBuild, AfterRebuild, BeforeTeardown,
+};
 pub use app::App;
 pub use attribute::{Attr, Attributes, ElementWithAttributes, WithAttributes};
 pub use attribute_value::{AttributeValue, IntoAttributeValue};
@@ -137,6 +139,33 @@ pub trait DomView<State, Action = ()>:
             + 'static,
     {
         core::adapt(self, f)
+    }
+
+    /// See [`after_build`](`after_update::after_build`)
+    fn after_build<F>(self, callback: F) -> AfterBuild<Self, F>
+    where
+        Self: Sized,
+        F: Fn(&Self::DomNode),
+    {
+        after_build(self, callback)
+    }
+
+    /// See [`after_rebuild`](`after_update::after_rebuild`)
+    fn after_rebuild<F>(self, callback: F) -> AfterRebuild<Self, F>
+    where
+        Self: Sized,
+        F: Fn(&Self::DomNode),
+    {
+        after_rebuild(self, callback)
+    }
+
+    /// See [`before_teardown`](`after_update::before_teardown`)
+    fn before_teardown<F>(self, callback: F) -> BeforeTeardown<Self, F>
+    where
+        Self: Sized,
+        F: Fn(&Self::DomNode),
+    {
+        before_teardown(self, callback)
     }
 
     /// See [`map_state`](`core::map_state`)

@@ -1,7 +1,7 @@
 // Copyright 2023 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use xilem_web::{core::one_of::Either, document_body, elements::html, interfaces::Element, App};
+use xilem_web::{DomView, core::one_of::Either, document_body, elements::html, interfaces::Element, App};
 
 #[derive(Default)]
 struct AppState {

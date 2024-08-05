@@ -3,7 +3,7 @@
 
 use xilem_core::{MessageResult, Mut, View, ViewId, ViewMarker};
 
-use crate::{DomView, DynMessage, ViewCtx};
+use crate::{DomNode, DomView, DynMessage, ViewCtx};
 
 pub struct AfterBuild<E, F> {
     element: E,
@@ -20,22 +20,39 @@ pub struct BeforeTeardown<E, F> {
     callback: F,
 }
 
-impl<E, F> AfterBuild<E, F> {
-    pub fn new(element: E, callback: F) -> AfterBuild<E, F> {
-        Self { element, callback }
-    }
+/// This adds a callback to a DOM node
+/// that is invoked after it has been created.
+/// The callback has a reference to the raw DOM node as its only parameter.
+///
+/// Caution: At this point, however,
+/// no properties have been applied to the node.
+///
+/// The use of this function should be avoided and
+/// should only be utilized in exceptional cases!
+pub fn after_build<E, F>(element: E, callback: F) -> AfterBuild<E, F> {
+    AfterBuild { element, callback }
 }
 
-impl<E, F> AfterRebuild<E, F> {
-    pub fn new(element: E, callback: F) -> AfterRebuild<E, F> {
-        Self { element, callback }
-    }
+/// This adds a callback to a DOM node
+/// that is invoked after it has been rebuild.
+/// The callback has a reference to the raw DOM node as its only parameter.
+///
+/// The use of this function should be avoided and
+/// should only be utilized in exceptional cases!
+pub fn after_rebuild<E, F>(element: E, callback: F) -> AfterRebuild<E, F> {
+    AfterRebuild { element, callback }
 }
 
-impl<E, F> BeforeTeardown<E, F> {
-    pub fn new(element: E, callback: F) -> BeforeTeardown<E, F> {
-        Self { element, callback }
-    }
+/// This adds a callback to a DOM node
+/// that is invoked before it is destroyed.
+/// This adds a callback to the view
+/// that is called before a DOM node is destroyed.
+/// The callback has a reference to the raw DOM node as its only parameter.
+///
+/// The use of this function should be avoided and
+/// should only be utilized in exceptional cases!
+pub fn before_teardown<E, F>(element: E, callback: F) -> BeforeTeardown<E, F> {
+    BeforeTeardown { element, callback }
 }
 
 impl<E, F> ViewMarker for AfterBuild<E, F> {}
@@ -54,6 +71,8 @@ where
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let (el, view_state) = self.element.build(ctx);
+        // TODO:
+        // The props should be applied before the callback is invoked.
         (self.callback)(&el.node);
         (el, view_state)
     }
@@ -114,6 +133,7 @@ where
         let element = self
             .element
             .rebuild(&prev.element, view_state, ctx, element);
+        element.node.apply_props(element.props);
         (self.callback)(element.node);
         element
     }
