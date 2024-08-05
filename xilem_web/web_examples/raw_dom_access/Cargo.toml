@@ -1,5 +1,5 @@
 [package]
-name = "after_updtae"
+name = "raw_dom_access"
 version = "0.1.0"
 publish = false
 license.workspace = true

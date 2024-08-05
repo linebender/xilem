@@ -6,13 +6,13 @@ members = [
     "masonry",
 
     "xilem_web",
-    "xilem_web/web_examples/after_update",
     "xilem_web/web_examples/counter",
     "xilem_web/web_examples/counter_custom_element",
     "xilem_web/web_examples/elm",
     "xilem_web/web_examples/fetch",
     "xilem_web/web_examples/todomvc",
     "xilem_web/web_examples/mathml_svg",
+    "xilem_web/web_examples/raw_dom_access",
     "xilem_web/web_examples/svgtoy",
 ]
 
