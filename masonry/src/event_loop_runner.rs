@@ -224,7 +224,14 @@ impl MasonryState<'_> {
 
         MasonryState {
             render_cx,
-            render_root: RenderRoot::new(root_widget, WindowSizePolicy::User, scale_factor),
+            render_root: RenderRoot::new(
+                root_widget,
+                render_root::RenderRootOptions {
+                    use_system_fonts: true,
+                    size_policy: WindowSizePolicy::User,
+                    scale_factor,
+                },
+            ),
             renderer: None,
             pointer_state: PointerState::empty(),
             proxy: event_loop.create_proxy(),
