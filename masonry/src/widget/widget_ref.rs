@@ -171,7 +171,6 @@ impl<'w> WidgetRef<'w, dyn Widget> {
     /// **pos** - the position in local coordinates (zero being the top-left of the
     /// inner widget).
     pub fn find_widget_at_pos(&self, pos: Point) -> Option<WidgetRef<'w, dyn Widget>> {
-        let mut pos = pos;
         let mut innermost_widget: WidgetRef<'w, dyn Widget> = *self;
 
         if !self.state().layout_rect().contains(pos) {
@@ -183,9 +182,8 @@ impl<'w> WidgetRef<'w, dyn Widget> {
             if let Some(child) = innermost_widget
                 .children()
                 .into_iter()
-                .find(|child| child.state().layout_rect().contains(pos))
+                .find(|child| child.state().window_layout_rect().contains(pos))
             {
-                pos -= innermost_widget.state().layout_rect().origin().to_vec2();
                 innermost_widget = child;
             } else {
                 return Some(innermost_widget);
