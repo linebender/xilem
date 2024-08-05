@@ -3,6 +3,7 @@
 
 use std::{future::Future, marker::PhantomData};
 
+use futures::channel::oneshot;
 use wasm_bindgen_futures::spawn_local;
 use xilem_core::{MessageResult, Mut, NoElement, View, ViewId, ViewMarker};
 
@@ -13,7 +14,7 @@ pub fn async_repeat<M, F, H, State, Action, Fut>(
     on_event: H,
 ) -> AsyncRepeat<F, H, M>
 where
-    F: Fn(MessageThunk) -> Fut + 'static,
+    F: Fn(AsyncRepeatProxy, oneshot::Receiver<()>) -> Fut + 'static,
     Fut: Future<Output = ()> + 'static,
     H: Fn(&mut State, M) -> Action + 'static,
     M: Message,
@@ -54,39 +55,70 @@ pub struct AsyncRepeat<F, H, M> {
     message: PhantomData<fn() -> M>,
 }
 
+pub struct AsyncRepeatState {
+    abort_tx: Option<oneshot::Sender<()>>,
+}
+
+pub struct AsyncRepeatProxy {
+    thunk: MessageThunk,
+}
+
+impl AsyncRepeatProxy {
+    pub fn send_message<M>(&self, message: M)
+    where
+        M: Message,
+    {
+        self.thunk.push_message(message);
+    }
+}
+
 impl<F, H, M> ViewMarker for AsyncRepeat<F, H, M> {}
 
 impl<State, Action, F, H, M, Fut> View<State, Action, ViewCtx, DynMessage> for AsyncRepeat<F, H, M>
 where
     State: 'static,
     Action: 'static,
-    F: Fn(MessageThunk) -> Fut + 'static,
+    F: Fn(AsyncRepeatProxy, oneshot::Receiver<()>) -> Fut + 'static,
     Fut: Future<Output = ()> + 'static,
     H: Fn(&mut State, M) -> Action + 'static,
     M: Message,
 {
     type Element = NoElement;
 
-    type ViewState = ();
+    type ViewState = AsyncRepeatState;
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let thunk = ctx.message_thunk();
-        spawn_local((self.future_future)(thunk));
-        (NoElement, ())
+        let (abort_tx, abort_rx) = oneshot::channel();
+        let view_state = AsyncRepeatState {
+            abort_tx: Some(abort_tx),
+        };
+        let proxy = AsyncRepeatProxy { thunk };
+        spawn_local((self.future_future)(proxy, abort_rx));
+        (NoElement, view_state)
     }
 
     fn rebuild<'el>(
         &self,
         _: &Self,
-        (): &mut Self::ViewState,
+        _: &mut Self::ViewState,
         _: &mut ViewCtx,
         (): Mut<'el, Self::Element>,
     ) -> Mut<'el, Self::Element> {
         // Nothing to do
     }
 
-    fn teardown(&self, (): &mut Self::ViewState, _: &mut ViewCtx, _: Mut<'_, Self::Element>) {
-        // Nothing to do
+    fn teardown(
+        &self,
+        view_state: &mut Self::ViewState,
+        _: &mut ViewCtx,
+        _: Mut<'_, Self::Element>,
+    ) {
+        let Some(tx) = view_state.abort_tx.take() else {
+            // TODO: Is that even allowed to happen?
+            return;
+        };
+        let _ = tx.send(());
     }
 
     fn message(
