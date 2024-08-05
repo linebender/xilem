@@ -3,6 +3,8 @@
 
 //! Async views, allowing concurrent operations, like fetching data from a server
 
-mod memoized_await;
+mod interval;
+pub use interval::{interval, Interval};
 
+mod memoized_await;
 pub use memoized_await::{memoized_await, MemoizedAwait};
