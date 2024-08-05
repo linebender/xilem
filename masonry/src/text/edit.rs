@@ -124,6 +124,9 @@ impl<T: EditableText> TextEditor<T> {
                                     self.text_mut().edit(selection.range(), "");
                                     self.inner.selection =
                                         Some(Selection::caret(selection.min(), Affinity::Upstream));
+
+                                    let contents = self.text().as_str().to_string();
+                                    ctx.submit_action(Action::TextChanged(contents));
                                 } else {
                                     // TODO: more specific behavior may sometimes be warranted here
                                     //       because whole EGCs are more coarse than what people expect
@@ -135,6 +138,9 @@ impl<T: EditableText> TextEditor<T> {
                                     self.text_mut().edit(offset..selection.active, "");
                                     self.inner.selection =
                                         Some(Selection::caret(offset, selection.active_affinity));
+
+                                    let contents = self.text().as_str().to_string();
+                                    ctx.submit_action(Action::TextChanged(contents));
                                 }
                                 Handled::Yes
                             } else {
@@ -149,6 +155,9 @@ impl<T: EditableText> TextEditor<T> {
                                         selection.min(),
                                         Affinity::Downstream,
                                     ));
+
+                                    let contents = self.text().as_str().to_string();
+                                    ctx.submit_action(Action::TextChanged(contents));
                                 } else if let Some(offset) =
                                     self.text().next_grapheme_offset(selection.active)
                                 {
@@ -157,6 +166,9 @@ impl<T: EditableText> TextEditor<T> {
                                         selection.min(),
                                         selection.active_affinity,
                                     ));
+
+                                    let contents = self.text().as_str().to_string();
+                                    ctx.submit_action(Action::TextChanged(contents));
                                 }
                                 Handled::Yes
                             } else {
