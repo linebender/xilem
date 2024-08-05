@@ -9,8 +9,11 @@ use alloc::{boxed::Box, sync::Arc};
 
 use crate::{message::MessageResult, DynMessage, Mut, ViewElement};
 
-/// This trait is a necessary workaround of the orphan rules to be able to have `impl ViewSequence for impl View` to avoid ambiguity.
-/// It needs to be implemented for every type that implements [`View`].
+/// Because [`View`] is generic, Rust [allows you](https://doc.rust-lang.org/reference/items/implementations.html#orphan-rules) to implement this trait for certain non-local types.
+/// These non-local types can include `Vec<_>` and `Option<_>`.
+/// If this trait were not present, those implementations of `View` would conflict with those types' implementations of `ViewSequence`.
+/// This is because every `View` type also implementations `ViewSequence`.
+/// Since `ViewMarker` is not generic, these non-local implementations are not permitted for this trait, which means that the conflicting implementation cannot happen.
 pub trait ViewMarker {}
 
 /// A lightweight, short-lived representation of the state of a retained
@@ -33,6 +36,9 @@ pub trait ViewMarker {}
 /// propagation.
 /// During message handling, mutable access to the app state is given to view nodes,
 /// which will in turn generally expose it to callbacks.
+///
+/// Due to restrictions of the [orphan rules](https://doc.rust-lang.org/reference/items/implementations.html#orphan-rules),
+/// `ViewMarker` needs to be implemented for every type that implements `View`, see [`ViewMarker`] for more details.
 ///
 /// ## Alloc
 ///
