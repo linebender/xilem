@@ -521,6 +521,7 @@ impl TestHarness {
     /// * **test_file_path:** file path the current test is in.
     /// * **test_module_path:** import path of the module the current test is in.
     /// * **test_name:** arbitrary name; second argument of assert_render_snapshot.
+    #[track_caller]
     pub fn check_render_snapshot(
         &mut self,
         manifest_dir: &str,
@@ -562,7 +563,7 @@ impl TestHarness {
                 let _ = std::fs::remove_file(&diff_path);
                 new_image.save(&new_path).unwrap();
                 diff_image.save(&diff_path).unwrap();
-                panic!("Images are different");
+                panic!("Snapshot test '{test_name}' failed: Images are different");
             } else {
                 // Remove the vestigal new and diff images
                 let _ = std::fs::remove_file(&new_path);
@@ -572,7 +573,7 @@ impl TestHarness {
             // Remove '<test_name>.new.png' file if it exists
             let _ = std::fs::remove_file(&new_path);
             new_image.save(&new_path).unwrap();
-            panic!("No reference file");
+            panic!("Snapshot test '{test_name}' failed: No reference file");
         }
     }
 
