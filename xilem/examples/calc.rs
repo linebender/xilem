@@ -192,6 +192,7 @@ fn app_logic(data: &mut Calculator) -> impl WidgetView<Calculator> {
             nums.map(|num| digit_button(num).flex(1.)),
             operator_button(operator).flex(1.),
         ))
+        .flex(1.0)
     };
     flex((
         // Display
