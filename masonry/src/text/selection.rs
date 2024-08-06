@@ -184,16 +184,8 @@ impl<T: Selectable> TextWithSelection<T> {
                         }
                         _ => Handled::No,
                     },
-                    winit::keyboard::Key::Unidentified(key) => {
-                        // TODO: figure out correct behavior
-                        tracing::warn!(?key, "got unidentified key, did not handle");
-                        Handled::No
-                    }
-                    winit::keyboard::Key::Dead(key) => {
-                        // TODO: figure out correct behavior
-                        tracing::warn!(?key, "got dead key, did not handle");
-                        Handled::No
-                    }
+                    winit::keyboard::Key::Unidentified(_) => Handled::No,
+                    winit::keyboard::Key::Dead(_) => Handled::No,
                 }
             }
             TextEvent::KeyboardKey(_, _) => Handled::No,

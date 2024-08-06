@@ -191,6 +191,8 @@ impl<T: EditableText> TextEditor<T> {
                             self.insert_text(event.text.as_ref().unwrap_or(c), ctx)
                         }
                         Key::Unidentified(_) => {
+                            // Ensures conformance with native Windows behavior in case some
+                            // key event hook sets unidentifed key code and some text for pickup
                             if cfg!(windows) {
                                 event
                                     .text
