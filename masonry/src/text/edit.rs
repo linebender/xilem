@@ -190,18 +190,10 @@ impl<T: EditableText> TextEditor<T> {
                         Key::Character(c) => {
                             self.insert_text(event.text.as_ref().unwrap_or(c), ctx)
                         }
-                        Key::Unidentified(_) => {
-                            // Ensures conformance with native Windows behavior in case some
-                            // key event hook sets unidentifed key code and some text for pickup
-                            if cfg!(windows) {
-                                event
-                                    .text
-                                    .as_ref()
-                                    .map_or(Handled::No, |c| self.insert_text(c, ctx))
-                            } else {
-                                Handled::No
-                            }
-                        }
+                        Key::Unidentified(_) => match event.text.as_ref() {
+                            Some(text) => self.insert_text(text, ctx),
+                            None => Handled::No,
+                        },
                         Key::Dead(d) => {
                             eprintln!("Got dead key {d:?}. Will handle");
                             Handled::No
