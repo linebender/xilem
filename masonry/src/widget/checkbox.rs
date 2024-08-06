@@ -86,12 +86,9 @@ impl Widget for Checkbox {
             }
             _ => (),
         }
-        self.label.on_pointer_event(ctx, event);
     }
 
-    fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {
-        self.label.on_text_event(_ctx, _event);
-    }
+    fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
 
     fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {
         if event.target == ctx.widget_id() {
@@ -104,7 +101,6 @@ impl Widget for Checkbox {
                 _ => {}
             }
         }
-        self.label.on_access_event(ctx, event);
     }
 
     fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, _event: &StatusChange) {
