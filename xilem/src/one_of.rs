@@ -215,46 +215,9 @@ impl<
         I: Widget,
     > Widget for OneOfWidget<A, B, C, D, E, F, G, H, I>
 {
-    fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
-        match self {
-            OneOfWidget::A(w) => w.on_pointer_event(ctx, event),
-            OneOfWidget::B(w) => w.on_pointer_event(ctx, event),
-            OneOfWidget::C(w) => w.on_pointer_event(ctx, event),
-            OneOfWidget::D(w) => w.on_pointer_event(ctx, event),
-            OneOfWidget::E(w) => w.on_pointer_event(ctx, event),
-            OneOfWidget::F(w) => w.on_pointer_event(ctx, event),
-            OneOfWidget::G(w) => w.on_pointer_event(ctx, event),
-            OneOfWidget::H(w) => w.on_pointer_event(ctx, event),
-            OneOfWidget::I(w) => w.on_pointer_event(ctx, event),
-        }
-    }
-    fn on_text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent) {
-        match self {
-            OneOfWidget::A(w) => w.on_text_event(ctx, event),
-            OneOfWidget::B(w) => w.on_text_event(ctx, event),
-            OneOfWidget::C(w) => w.on_text_event(ctx, event),
-            OneOfWidget::D(w) => w.on_text_event(ctx, event),
-            OneOfWidget::E(w) => w.on_text_event(ctx, event),
-            OneOfWidget::F(w) => w.on_text_event(ctx, event),
-            OneOfWidget::G(w) => w.on_text_event(ctx, event),
-            OneOfWidget::H(w) => w.on_text_event(ctx, event),
-            OneOfWidget::I(w) => w.on_text_event(ctx, event),
-        }
-    }
-
-    fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {
-        match self {
-            OneOfWidget::A(w) => w.on_access_event(ctx, event),
-            OneOfWidget::B(w) => w.on_access_event(ctx, event),
-            OneOfWidget::C(w) => w.on_access_event(ctx, event),
-            OneOfWidget::D(w) => w.on_access_event(ctx, event),
-            OneOfWidget::E(w) => w.on_access_event(ctx, event),
-            OneOfWidget::F(w) => w.on_access_event(ctx, event),
-            OneOfWidget::G(w) => w.on_access_event(ctx, event),
-            OneOfWidget::H(w) => w.on_access_event(ctx, event),
-            OneOfWidget::I(w) => w.on_access_event(ctx, event),
-        }
-    }
+    fn on_pointer_event(&mut self, _ctx: &mut EventCtx, _event: &PointerEvent) {}
+    fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
+    fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {}
 
     #[allow(missing_docs)]
     fn on_status_change(&mut self, _: &mut LifeCycleCtx, _: &StatusChange) {
