@@ -188,23 +188,18 @@ impl<T: EditableText> TextEditor<T> {
                         }
                         Key::Named(_) => Handled::No,
                         Key::Character(c) => {
-                            let selection = self.inner.selection.unwrap_or(Selection {
-                                anchor: 0,
-                                active: 0,
-                                active_affinity: Affinity::Downstream,
-                                h_pos: None,
-                            });
-                            self.text_mut().edit(selection.range(), &**c);
-                            self.inner.selection = Some(Selection::caret(
-                                selection.min() + c.len(),
-                                // We have just added this character, so we are "affined" with it
-                                Affinity::Downstream,
-                            ));
-                            let contents = self.text().as_str().to_string();
-                            ctx.submit_action(Action::TextChanged(contents));
-                            Handled::Yes
+                            self.insert_text(event.text.as_ref().unwrap_or(c), ctx)
                         }
-                        Key::Unidentified(_) => Handled::No,
+                        Key::Unidentified(_) => {
+                            if cfg!(windows) {
+                                event
+                                    .text
+                                    .as_ref()
+                                    .map_or(Handled::No, |c| self.insert_text(c, ctx))
+                            } else {
+                                Handled::No
+                            }
+                        }
                         Key::Dead(d) => {
                             eprintln!("Got dead key {d:?}. Will handle");
                             Handled::No
@@ -353,6 +348,24 @@ impl<T: EditableText> TextEditor<T> {
             TextEvent::ModifierChange(_) => Handled::No,
             TextEvent::FocusChange(_) => Handled::No,
         }
+    }
+
+    fn insert_text(&mut self, c: &winit::keyboard::SmolStr, ctx: &mut EventCtx) -> Handled {
+        let selection = self.inner.selection.unwrap_or(Selection {
+            anchor: 0,
+            active: 0,
+            active_affinity: Affinity::Downstream,
+            h_pos: None,
+        });
+        self.text_mut().edit(selection.range(), &**c);
+        self.inner.selection = Some(Selection::caret(
+            selection.min() + c.len(),
+            // We have just added this character, so we are "affined" with it
+            Affinity::Downstream,
+        ));
+        let contents = self.text().as_str().to_string();
+        ctx.submit_action(Action::TextChanged(contents));
+        Handled::Yes
     }
 }
 
