@@ -20,8 +20,7 @@ pub struct BeforeTeardown<E, F> {
     callback: F,
 }
 
-/// This adds a callback to a DOM node
-/// that is invoked after it has been created.
+/// Invokes the `callback` after the inner `element` [`DomView`] was created.
 /// The callback has a reference to the raw DOM node as its only parameter.
 ///
 /// Caution: At this point, however,
