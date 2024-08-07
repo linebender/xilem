@@ -32,7 +32,8 @@ pub fn after_build<E, F>(element: E, callback: F) -> AfterBuild<E, F> {
     AfterBuild { element, callback }
 }
 
-/// Invokes the `callback` after the inner `element` [`DomView<State>`] was rebuild, which usually happens after anything has changed in the `State` .
+/// Invokes the `callback` after the inner `element` [`DomView<State>`]
+/// was rebuild, which usually happens after anything has changed in the `State` .
 ///
 /// Memoization can prevent `callback` being called.
 /// The callback has a reference to the raw DOM node as its only parameter.
@@ -44,8 +45,9 @@ pub fn after_rebuild<E, F>(element: E, callback: F) -> AfterRebuild<E, F> {
 }
 
 /// Invokes the `callback` before the inner `element` [`DomView`] (and its underlying DOM node) is destroyed.
-/// As accessing the underlying raw DOM node can mess with the inner logic of xilem_web,
-/// this should only be used as an escape-hatch for properties not supported by xilem_web. E.g. to be interoperable with external javascript libraries.
+/// As accessing the underlying raw DOM node can mess with the inner logic of `xilem_web`,
+/// this should only be used as an escape-hatch for properties not supported by `xilem_web`.
+/// E.g. to be interoperable with external javascript libraries.
 pub fn before_teardown<E, F>(element: E, callback: F) -> BeforeTeardown<E, F> {
     BeforeTeardown { element, callback }
 }
