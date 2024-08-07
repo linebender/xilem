@@ -27,16 +27,16 @@ enum Message {
     Ping,
 }
 
+/// NOTE:
+/// This is just to simulate some async behavior.
+/// If you just need an interval, you should use
+/// [`interval`](xilem_web::concurrent::interval) instead.
 async fn create_ping_task(proxy: AsyncRepeatProxy, shutdown_signal: ShutdownSignal) {
     log::debug!("Start ping task");
     let mut abort = shutdown_signal.into_future().fuse();
 
     #[allow(clippy::infinite_loop)]
     loop {
-        // NOTE:
-        // This is just to simulate some async behavior.
-        // If you just need an interval, you should use
-        // [`interval`](xilem_web::concurrent::interval) instead.
         let mut timeout = TimeoutFuture::new(1_000).fuse();
 
         select! {
