@@ -32,8 +32,9 @@ pub fn after_build<E, F>(element: E, callback: F) -> AfterBuild<E, F> {
     AfterBuild { element, callback }
 }
 
-/// This adds a callback to a DOM node
-/// that is invoked after it has been rebuild.
+/// Invokes the `callback` after the inner `element` [`DomView<State>`] was rebuild, which usually happens after anything has changed in the `State` .
+///
+/// Memoization can prevent `callback` being called.
 /// The callback has a reference to the raw DOM node as its only parameter.
 ///
 /// The use of this function should be avoided and
