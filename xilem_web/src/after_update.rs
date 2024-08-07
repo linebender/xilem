@@ -44,10 +44,8 @@ pub fn after_rebuild<E, F>(element: E, callback: F) -> AfterRebuild<E, F> {
 }
 
 /// Invokes the `callback` before the inner `element` [`DomView`] (and its underlying DOM node) is destroyed.
-/// The callback has a reference to the raw DOM node as its only parameter.
-///
-/// The use of this function should be avoided and
-/// should only be utilized in exceptional cases!
+/// As accessing the underlying raw DOM node can mess with the inner logic of xilem_web,
+/// this should only be used as an escape-hatch for properties not supported by xilem_web. E.g. to be interoperable with external javascript libraries.
 pub fn before_teardown<E, F>(element: E, callback: F) -> BeforeTeardown<E, F> {
     BeforeTeardown { element, callback }
 }
