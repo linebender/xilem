@@ -10,7 +10,7 @@ use xilem_core::{MessageResult, Mut, NoElement, View, ViewId, ViewMarker};
 
 use crate::{context::MessageThunk, DynMessage, Message, ViewCtx};
 
-/// Spawn a future.
+/// Spawn an async task to update state asynchronously
 ///
 /// The `init_future` function is given a [`AsyncRepeatProxy`] and a [`ShutdownSignal`].
 /// The `AsyncRepeatProxy` can be used to send a message to `on_event`, which can then update
