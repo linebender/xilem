@@ -12,7 +12,7 @@ use crate::{context::MessageThunk, DynMessage, Message, ViewCtx};
 
 /// Spawn an async task to update state asynchronously
 ///
-/// The `init_future` function is given a [`AsyncRepeatProxy`] and a [`ShutdownSignal`].
+/// The `init_future` function is given an [`AsyncRepeatProxy`] and a [`ShutdownSignal`].
 /// The `AsyncRepeatProxy` can be used to send a message to `on_event`, which can then update
 /// the app's state.
 /// The `ShutdownSignal` can be used to detect whether the view has disappeared and
