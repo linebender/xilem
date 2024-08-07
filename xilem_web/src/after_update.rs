@@ -43,10 +43,7 @@ pub fn after_rebuild<E, F>(element: E, callback: F) -> AfterRebuild<E, F> {
     AfterRebuild { element, callback }
 }
 
-/// This adds a callback to a DOM node
-/// that is invoked before it is destroyed.
-/// This adds a callback to the view
-/// that is called before a DOM node is destroyed.
+/// Invokes the `callback` before the inner `element` [`DomView`] (and its underlying DOM node) is destroyed.
 /// The callback has a reference to the raw DOM node as its only parameter.
 ///
 /// The use of this function should be avoided and
