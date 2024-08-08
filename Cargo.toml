@@ -12,6 +12,7 @@ members = [
     "xilem_web/web_examples/fetch",
     "xilem_web/web_examples/todomvc",
     "xilem_web/web_examples/mathml_svg",
+    "xilem_web/web_examples/spawn_tasks",
     "xilem_web/web_examples/svgtoy",
 ]
 
