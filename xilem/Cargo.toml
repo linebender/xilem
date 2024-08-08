@@ -35,8 +35,6 @@ path = "examples/calc.rs"
 # cdylib is required for cargo-apk
 crate-type = ["cdylib"]
 
-
-
 [[example]]
 name = "stopwatch"
 
