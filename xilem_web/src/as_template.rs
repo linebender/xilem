@@ -1,3 +1,6 @@
+// Copyright 2024 the Xilem Authors
+// SPDX-License-Identifier: Apache-2.0
+
 use std::{any::TypeId, ops::Deref as _, rc::Rc};
 
 use wasm_bindgen::UnwrapThrowExt;
