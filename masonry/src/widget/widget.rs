@@ -129,6 +129,12 @@ pub trait Widget: AsAny {
     /// TODO - Update this doc
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]>;
 
+    // TODO - Rename
+    // TODO - Document
+    fn skip_pointer(&self) -> bool {
+        false
+    }
+
     /// Return a span for tracing.
     ///
     /// As methods recurse through the widget tree, trace spans are added for each child

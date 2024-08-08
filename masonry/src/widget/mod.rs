@@ -29,8 +29,6 @@ mod spinner;
 mod split;
 mod textbox;
 
-use crate::CursorIcon;
-
 pub use self::image::Image;
 pub use align::Align;
 pub use button::Button;
@@ -51,18 +49,6 @@ pub use widget_ref::WidgetRef;
 pub use widget_state::WidgetState;
 
 pub use sized_box::BackgroundBrush;
-
-/// The possible cursor states for a widget.
-#[derive(Clone, Debug)]
-pub(crate) enum CursorChange {
-    /// No cursor has been set.
-    Default,
-    /// Someone set a cursor, but if a child widget also set their cursor then we'll use theirs
-    /// instead of ours.
-    Set(CursorIcon),
-    /// Someone set a cursor, and we'll use it regardless of what the children say.
-    Override(CursorIcon),
-}
 
 use crate::{Affine, Size};
 
@@ -85,16 +71,6 @@ pub enum FillStrat {
     None,
     /// Scale down to fit but do not scale up
     ScaleDown,
-}
-
-// TODO
-impl CursorChange {
-    pub fn cursor(&self) -> Option<CursorIcon> {
-        match self {
-            CursorChange::Set(c) | CursorChange::Override(c) => Some(*c),
-            CursorChange::Default => None,
-        }
-    }
 }
 
 // TODO - Need to write tests for this, in a way that's relatively easy to visualize.

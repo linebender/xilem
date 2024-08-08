@@ -228,10 +228,7 @@ fn get_pointer_events_while_active() {
     let mut harness = TestHarness::create(widget);
 
     // First we check that the default state is clear: nothing active, no event recorded
-
-    assert!(!harness.get_widget(button).state().is_active);
-    assert!(!harness.get_widget(empty).state().is_active);
-    assert!(!harness.get_widget(root).state().has_active);
+    assert_eq!(harness.pointer_capture_target_id(), None);
 
     assert_matches!(next_pointer_event(&button_rec), None);
 
@@ -250,11 +247,7 @@ fn get_pointer_events_while_active() {
     );
     assert_matches!(next_pointer_event(&button_rec), None);
 
-    assert!(harness.get_widget(button).state().is_active);
-    assert!(!harness.get_widget(empty).state().is_active);
-
-    assert!(harness.get_widget(root).state().has_active);
-    assert!(!harness.get_widget(root).state().is_active);
+    assert_eq!(harness.pointer_capture_target_id(), Some(button));
 
     // We move the cursor away without releasing the button
 
@@ -266,9 +259,7 @@ fn get_pointer_events_while_active() {
     );
     assert_matches!(next_pointer_event(&button_rec), None);
 
-    assert!(harness.get_widget(button).state().is_active);
-    assert!(!harness.get_widget(empty).state().is_active);
-    assert!(harness.get_widget(root).state().has_active);
+    assert_eq!(harness.pointer_capture_target_id(), Some(button));
 
     // We simulate the scroll wheel, still without releasing the button
 
@@ -290,9 +281,7 @@ fn get_pointer_events_while_active() {
     );
     assert_matches!(next_pointer_event(&button_rec), None);
 
-    assert!(!harness.get_widget(button).state().is_active);
-    assert!(!harness.get_widget(empty).state().is_active);
-    assert!(!harness.get_widget(root).state().has_active);
+    assert_eq!(harness.pointer_capture_target_id(), None);
 
     // We move the mouse again to check movements aren't captured anymore
     harness.mouse_move_to(empty_2);

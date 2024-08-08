@@ -1,4 +1,5 @@
 use cursor_icon::CursorIcon;
+use dpi::LogicalPosition;
 use tracing::{debug, info_span, trace};
 use winit::keyboard::{KeyCode, PhysicalKey};
 
@@ -68,6 +69,26 @@ fn merge_state_up(arena: &mut WidgetArena, widget_id: WidgetId, root_state: &mut
     parent_state.merge_up(child_state);
 }
 
+fn get_target_widget(
+    root: &RenderRoot,
+    pointer_pos: Option<LogicalPosition<f64>>,
+) -> Option<WidgetId> {
+    if let Some(capture_target) = root.state.pointer_capture_target {
+        return Some(capture_target);
+    }
+
+    if let Some(pointer_pos) = pointer_pos {
+        // TODO - Apply scale?
+        let pointer_pos = (pointer_pos.x, pointer_pos.y).into();
+        return root
+            .get_root_widget()
+            .find_widget_at_pos(pointer_pos)
+            .map(|widget| widget.id());
+    }
+
+    None
+}
+
 // ----------------
 
 // TODO - Handle hover status
@@ -84,18 +105,9 @@ pub fn root_on_pointer_event(
         debug!("Running ON_POINTER_EVENT pass with {}", event.short_name());
     }
 
-    let pointer_pos = event.position().map(|pos| (pos.x, pos.y).into());
     root.last_mouse_pos = event.position();
 
-    // TODO - Pointer capture
-    let target_widget_id = if let Some(pos) = pointer_pos {
-        // TODO - Apply scale?
-        root.get_root_widget()
-            .find_widget_at_pos(pos)
-            .map(|widget| widget.id())
-    } else {
-        None
-    };
+    let target_widget_id = get_target_widget(root, event.position());
 
     let handled = run_event_pass(
         root,

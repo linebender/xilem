@@ -15,7 +15,7 @@ use crate::render_root::{RenderRootSignal, RenderRootState};
 use crate::text::TextBrush;
 use crate::text_helpers::{ImeChangeSignal, TextFieldRegistration};
 use crate::tree_arena::TreeArenaTokenMut;
-use crate::widget::{CursorChange, WidgetMut, WidgetState};
+use crate::widget::{WidgetMut, WidgetState};
 use crate::{AllowRawMut, CursorIcon, Insets, Point, Rect, Size, Widget, WidgetId, WidgetPod};
 
 /// A macro for implementing methods on multiple contexts.
@@ -250,16 +250,9 @@ impl_context_method!(
             self.widget_state.is_hot
         }
 
-        /// The active status of a widget.
-        ///
-        /// Active status generally corresponds to a mouse button down. Widgets
-        /// with behavior similar to a button will call [`set_active`](EventCtx::set_active) on mouse
-        /// down and then up.
-        ///
-        /// When a widget is active, it gets mouse events even when the mouse
-        /// is dragged away.
+        // TODO - remove
         pub fn is_active(&self) -> bool {
-            self.widget_state.is_active
+            self.global_state.pointer_capture_target == Some(self.widget_id())
         }
 
         /// The focus status of a widget.
@@ -323,6 +316,7 @@ impl_context_method!(
 // --- MARK: CURSOR ---
 // Cursor-related impls.
 impl_context_method!(EventCtx<'_>, {
+    // TODO - Rewrite doc
     /// Set the cursor icon.
     ///
     /// This setting will be retained until [`clear_cursor`] is called, but it will only take
@@ -336,22 +330,8 @@ impl_context_method!(EventCtx<'_>, {
     /// [`active`]: EventCtx::is_active
     pub fn set_cursor(&mut self, cursor: &CursorIcon) {
         trace!("set_cursor {:?}", cursor);
-        self.widget_state.cursor_change = CursorChange::Set(*cursor);
-    }
-
-    /// Override the cursor icon.
-    ///
-    /// This setting will be retained until [`clear_cursor`] is called, but it will only take
-    /// effect when this widget is either [`hot`] or [`active`]. This will override the cursor
-    /// preferences of a child widget. (If that isn't what you want, use [`set_cursor`] instead.)
-    ///
-    /// [`clear_cursor`]: EventCtx::clear_cursor
-    /// [`set_cursor`]: EventCtx::override_cursor
-    /// [`hot`]: EventCtx::is_hot
-    /// [`active`]: EventCtx::is_active
-    pub fn override_cursor(&mut self, cursor: &CursorIcon) {
-        trace!("override_cursor {:?}", cursor);
-        self.widget_state.cursor_change = CursorChange::Override(*cursor);
+        self.widget_state.cursor = Some(*cursor);
+        self.widget_state.cursor_changed = true;
     }
 
     /// Clear the cursor icon.
@@ -362,7 +342,8 @@ impl_context_method!(EventCtx<'_>, {
     /// [`set_cursor`]: EventCtx::set_cursor
     pub fn clear_cursor(&mut self) {
         trace!("clear_cursor");
-        self.widget_state.cursor_change = CursorChange::Default;
+        self.widget_state.cursor = None;
+        self.widget_state.cursor_changed = true;
     }
 });
 
@@ -590,18 +571,35 @@ impl_context_method!(
 pub struct TimerToken;
 
 impl EventCtx<'_> {
+    // TODO - Document
+    // TODO - Figure out cases where widget should be notified of pointer capture
+    // loss
+    // TODO - Panic when event isn't PointerDown
+    pub fn capture_pointer(&mut self) {
+        // TODO: plumb pointer capture through to platform (through winit)
+        self.global_state.pointer_capture_target = Some(self.widget_state.id);
+    }
+
+    pub fn release_pointer(&mut self) {
+        self.global_state.pointer_capture_target = None;
+    }
+
+    pub fn has_pointer_capture(&self) -> bool {
+        self.global_state.pointer_capture_target == Some(self.widget_state.id)
+    }
+
     /// Send a signal to parent widgets to scroll this widget into view.
     pub fn request_pan_to_this(&mut self) {
         self.request_pan_to_child = Some(self.widget_state.layout_rect());
     }
 
-    /// Set the "active" state of the widget.
-    ///
-    /// See [`EventCtx::is_active`](Self::is_active).
+    // TODO - Remove
     pub fn set_active(&mut self, active: bool) {
-        trace!("set_active({})", active);
-        self.widget_state.is_active = active;
-        // TODO: plumb mouse grab through to platform (through druid-shell)
+        if active {
+            self.global_state.pointer_capture_target = Some(self.widget_state.id);
+        } else {
+            self.global_state.pointer_capture_target = None;
+        }
     }
 
     /// Set the event as "handled", which stops its propagation to other

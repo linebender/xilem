@@ -30,7 +30,7 @@ impl Checkbox {
     pub fn new(checked: bool, text: impl Into<ArcStr>) -> Checkbox {
         Checkbox {
             checked,
-            label: WidgetPod::new(Label::new(text)),
+            label: WidgetPod::new(Label::new(text).with_skip_pointer(true)),
         }
     }
 
@@ -38,7 +38,7 @@ impl Checkbox {
     pub fn from_label(checked: bool, label: Label) -> Checkbox {
         Checkbox {
             checked,
-            label: WidgetPod::new(label),
+            label: WidgetPod::new(label.with_skip_pointer(true)),
         }
     }
 }
@@ -74,14 +74,12 @@ impl Widget for Checkbox {
                 }
             }
             PointerEvent::PointerUp(_, _) => {
-                if ctx.is_active() && !ctx.is_disabled() {
-                    if ctx.is_hot() {
-                        self.checked = !self.checked;
-                        ctx.submit_action(Action::CheckboxChecked(self.checked));
-                        trace!("Checkbox {:?} released", ctx.widget_id());
-                    }
-                    ctx.request_paint();
+                if ctx.is_active() && ctx.is_hot() && !ctx.is_disabled() {
+                    self.checked = !self.checked;
+                    ctx.submit_action(Action::CheckboxChecked(self.checked));
+                    trace!("Checkbox {:?} released", ctx.widget_id());
                 }
+                ctx.request_paint();
                 ctx.set_active(false);
             }
             _ => (),

@@ -56,6 +56,7 @@ pub(crate) struct RenderRootState {
     pub(crate) focused_widget: Option<WidgetId>,
     pub(crate) next_focused_widget: Option<WidgetId>,
     pub(crate) hovered_path: Vec<WidgetId>,
+    pub(crate) pointer_capture_target: Option<WidgetId>,
     pub(crate) font_context: FontContext,
     pub(crate) text_layout_context: LayoutContext<TextBrush>,
 }
@@ -68,7 +69,7 @@ pub(crate) struct WidgetArena {
 // TODO
 #[allow(dead_code)]
 impl WidgetArena {
-    pub(crate) fn get_widget(&mut self, widget_id: WidgetId) -> &dyn Widget {
+    pub(crate) fn get_widget(&self, widget_id: WidgetId) -> &dyn Widget {
         let (widget, _token) = self
             .widgets
             .find(widget_id.to_raw())
@@ -85,10 +86,35 @@ impl WidgetArena {
         widget
     }
 
+    pub(crate) fn get_widget_mut(&mut self, widget_id: WidgetId) -> &mut dyn Widget {
+        let (widget, _token) = self
+            .widgets
+            .find_mut(widget_id.to_raw())
+            .expect("widget not in widget tree");
+
+        // Our WidgetArena stores all widgets as Box<dyn Widget>, but the "true"
+        // type of our root widget is *also* Box<dyn Widget>. We downcast so we
+        // don't add one more level of indirection to this.
+        let widget = widget
+            .as_mut_dyn_any()
+            .downcast_mut::<Box<dyn Widget>>()
+            .unwrap();
+
+        widget
+    }
+
     pub(crate) fn get_state(&mut self, widget_id: WidgetId) -> &WidgetState {
         let (state, _token) = self
             .widget_states
             .find(widget_id.to_raw())
+            .expect("widget not in widget tree");
+        state
+    }
+
+    pub(crate) fn get_state_mut(&mut self, widget_id: WidgetId) -> &mut WidgetState {
+        let (state, _token) = self
+            .widget_states
+            .find_mut(widget_id.to_raw())
             .expect("widget not in widget tree");
         state
     }
@@ -152,6 +178,7 @@ impl RenderRoot {
                 focused_widget: None,
                 next_focused_widget: None,
                 hovered_path: Vec::new(),
+                pointer_capture_target: None,
                 font_context: FontContext {
                     collection: Collection::new(CollectionOptions {
                         system_fonts: use_system_fonts,
