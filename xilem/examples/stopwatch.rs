@@ -60,6 +60,8 @@ impl Stopwatch {
         self.active = false;
         self.last_start_time = None;
         self.added_duration = Duration::ZERO;
+        self.completed_lap_splits.clear();
+        self.split_start_time = Duration::ZERO;
         self.update_display();
     }
 
