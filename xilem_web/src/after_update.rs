@@ -31,8 +31,9 @@ pub struct BeforeTeardown<State, Action, E, F> {
 /// Caution: At this point, however,
 /// no properties have been applied to the node.
 ///
-/// The use of this function should be avoided and
-/// should only be utilized in exceptional cases!
+/// As accessing the underlying raw DOM node can mess with the inner logic of `xilem_web`,
+/// this should only be used as an escape-hatch for properties not supported by `xilem_web`.
+/// E.g. to be interoperable with external javascript libraries.
 pub fn after_build<State, Action, E, F>(element: E, callback: F) -> AfterBuild<State, Action, E, F>
 where
     State: 'static,
@@ -53,8 +54,9 @@ where
 /// Memoization can prevent `callback` being called.
 /// The callback has a reference to the raw DOM node as its only parameter.
 ///
-/// The use of this function should be avoided and
-/// should only be utilized in exceptional cases!
+/// As accessing the underlying raw DOM node can mess with the inner logic of `xilem_web`,
+/// this should only be used as an escape-hatch for properties not supported by `xilem_web`.
+/// E.g. to be interoperable with external javascript libraries.
 pub fn after_rebuild<State, Action, E, F>(
     element: E,
     callback: F,
@@ -73,6 +75,7 @@ where
 }
 
 /// Invokes the `callback` before the inner `element` [`DomView`] (and its underlying DOM node) is destroyed.
+///
 /// As accessing the underlying raw DOM node can mess with the inner logic of `xilem_web`,
 /// this should only be used as an escape-hatch for properties not supported by `xilem_web`.
 /// E.g. to be interoperable with external javascript libraries.
