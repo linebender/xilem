@@ -1,23 +1,28 @@
 // Copyright 2023 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use std::marker::PhantomData;
+
 use xilem_core::{MessageResult, Mut, View, ViewId, ViewMarker};
 
 use crate::{DomNode, DomView, DynMessage, ViewCtx};
 
-pub struct AfterBuild<E, F> {
+pub struct AfterBuild<State, Action, E, F> {
     element: E,
     callback: F,
+    phantom: PhantomData<fn() -> (State, Action)>,
 }
 
-pub struct AfterRebuild<E, F> {
+pub struct AfterRebuild<State, Action, E, F> {
     element: E,
     callback: F,
+    phantom: PhantomData<fn() -> (State, Action)>,
 }
 
-pub struct BeforeTeardown<E, F> {
+pub struct BeforeTeardown<State, Action, E, F> {
     element: E,
     callback: F,
+    phantom: PhantomData<fn() -> (State, Action)>,
 }
 
 /// Invokes the `callback` after the inner `element` [`DomView`] was created.
@@ -28,8 +33,18 @@ pub struct BeforeTeardown<E, F> {
 ///
 /// The use of this function should be avoided and
 /// should only be utilized in exceptional cases!
-pub fn after_build<E, F>(element: E, callback: F) -> AfterBuild<E, F> {
-    AfterBuild { element, callback }
+pub fn after_build<State, Action, E, F>(element: E, callback: F) -> AfterBuild<State, Action, E, F>
+where
+    State: 'static,
+    Action: 'static,
+    E: DomView<State, Action> + 'static,
+    F: Fn(&E::DomNode) + 'static,
+{
+    AfterBuild {
+        element,
+        callback,
+        phantom: PhantomData,
+    }
 }
 
 /// Invokes the `callback` after the inner `element` [`DomView<State>`]
@@ -40,27 +55,55 @@ pub fn after_build<E, F>(element: E, callback: F) -> AfterBuild<E, F> {
 ///
 /// The use of this function should be avoided and
 /// should only be utilized in exceptional cases!
-pub fn after_rebuild<E, F>(element: E, callback: F) -> AfterRebuild<E, F> {
-    AfterRebuild { element, callback }
+pub fn after_rebuild<State, Action, E, F>(
+    element: E,
+    callback: F,
+) -> AfterRebuild<State, Action, E, F>
+where
+    State: 'static,
+    Action: 'static,
+    E: DomView<State, Action> + 'static,
+    F: Fn(&E::DomNode) + 'static,
+{
+    AfterRebuild {
+        element,
+        callback,
+        phantom: PhantomData,
+    }
 }
 
 /// Invokes the `callback` before the inner `element` [`DomView`] (and its underlying DOM node) is destroyed.
 /// As accessing the underlying raw DOM node can mess with the inner logic of `xilem_web`,
 /// this should only be used as an escape-hatch for properties not supported by `xilem_web`.
 /// E.g. to be interoperable with external javascript libraries.
-pub fn before_teardown<E, F>(element: E, callback: F) -> BeforeTeardown<E, F> {
-    BeforeTeardown { element, callback }
-}
-
-impl<E, F> ViewMarker for AfterBuild<E, F> {}
-impl<E, F> ViewMarker for AfterRebuild<E, F> {}
-impl<E, F> ViewMarker for BeforeTeardown<E, F> {}
-
-impl<State, V, F> View<State, (), ViewCtx, DynMessage> for AfterBuild<V, F>
+pub fn before_teardown<State, Action, E, F>(
+    element: E,
+    callback: F,
+) -> BeforeTeardown<State, Action, E, F>
 where
     State: 'static,
+    Action: 'static,
+    E: DomView<State, Action> + 'static,
+    F: Fn(&E::DomNode) + 'static,
+{
+    BeforeTeardown {
+        element,
+        callback,
+        phantom: PhantomData,
+    }
+}
+
+impl<State, Action, E, F> ViewMarker for AfterBuild<State, Action, E, F> {}
+impl<State, Action, E, F> ViewMarker for AfterRebuild<State, Action, E, F> {}
+impl<State, Action, E, F> ViewMarker for BeforeTeardown<State, Action, E, F> {}
+
+impl<State, Action, V, F> View<State, Action, ViewCtx, DynMessage>
+    for AfterBuild<State, Action, V, F>
+where
+    State: 'static,
+    Action: 'static,
     F: Fn(&V::DomNode) + 'static,
-    V: DomView<State> + 'static,
+    V: DomView<State, Action> + 'static,
 {
     type Element = V::Element;
 
@@ -100,17 +143,19 @@ where
         id_path: &[ViewId],
         message: DynMessage,
         app_state: &mut State,
-    ) -> MessageResult<(), DynMessage> {
+    ) -> MessageResult<Action, DynMessage> {
         self.element
             .message(view_state, id_path, message, app_state)
     }
 }
 
-impl<State, V, F> View<State, (), ViewCtx, DynMessage> for AfterRebuild<V, F>
+impl<State, Action, V, F> View<State, Action, ViewCtx, DynMessage>
+    for AfterRebuild<State, Action, V, F>
 where
     State: 'static,
+    Action: 'static,
     F: Fn(&V::DomNode) + 'static,
-    V: DomView<State> + 'static,
+    V: DomView<State, Action> + 'static,
 {
     type Element = V::Element;
 
@@ -150,17 +195,19 @@ where
         id_path: &[ViewId],
         message: DynMessage,
         app_state: &mut State,
-    ) -> MessageResult<(), DynMessage> {
+    ) -> MessageResult<Action, DynMessage> {
         self.element
             .message(view_state, id_path, message, app_state)
     }
 }
 
-impl<State, V, F> View<State, (), ViewCtx, DynMessage> for BeforeTeardown<V, F>
+impl<State, Action, V, F> View<State, Action, ViewCtx, DynMessage>
+    for BeforeTeardown<State, Action, V, F>
 where
     State: 'static,
+    Action: 'static,
     F: Fn(&V::DomNode) + 'static,
-    V: DomView<State> + 'static,
+    V: DomView<State, Action> + 'static,
 {
     type Element = V::Element;
 
@@ -197,7 +244,7 @@ where
         id_path: &[ViewId],
         message: DynMessage,
         app_state: &mut State,
-    ) -> MessageResult<(), DynMessage> {
+    ) -> MessageResult<Action, DynMessage> {
         self.element
             .message(view_state, id_path, message, app_state)
     }

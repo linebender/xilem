@@ -142,28 +142,34 @@ pub trait DomView<State, Action = ()>:
     }
 
     /// See [`after_build`](`after_update::after_build`)
-    fn after_build<F>(self, callback: F) -> AfterBuild<Self, F>
+    fn after_build<F>(self, callback: F) -> AfterBuild<State, Action, Self, F>
     where
+        State: 'static,
+        Action: 'static,
         Self: Sized,
-        F: Fn(&Self::DomNode),
+        F: Fn(&Self::DomNode) + 'static,
     {
         after_build(self, callback)
     }
 
     /// See [`after_rebuild`](`after_update::after_rebuild`)
-    fn after_rebuild<F>(self, callback: F) -> AfterRebuild<Self, F>
+    fn after_rebuild<F>(self, callback: F) -> AfterRebuild<State, Action, Self, F>
     where
+        State: 'static,
+        Action: 'static,
         Self: Sized,
-        F: Fn(&Self::DomNode),
+        F: Fn(&Self::DomNode) + 'static,
     {
         after_rebuild(self, callback)
     }
 
     /// See [`before_teardown`](`after_update::before_teardown`)
-    fn before_teardown<F>(self, callback: F) -> BeforeTeardown<Self, F>
+    fn before_teardown<F>(self, callback: F) -> BeforeTeardown<State, Action, Self, F>
     where
+        State: 'static,
+        Action: 'static,
         Self: Sized,
-        F: Fn(&Self::DomNode),
+        F: Fn(&Self::DomNode) + 'static,
     {
         before_teardown(self, callback)
     }
