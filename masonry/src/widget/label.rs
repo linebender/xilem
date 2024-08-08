@@ -43,6 +43,7 @@ pub struct Label {
     line_break_mode: LineBreaking,
     show_disabled: bool,
     brush: TextBrush,
+    skip_pointer: bool,
 }
 
 // --- MARK: BUILDERS ---
@@ -54,7 +55,15 @@ impl Label {
             line_break_mode: LineBreaking::Overflow,
             show_disabled: true,
             brush: crate::theme::TEXT_COLOR.into(),
+            skip_pointer: false,
         }
+    }
+
+    // TODO - Rename
+    // TODO - Document
+    pub fn with_skip_pointer(mut self, skip_pointer: bool) -> Self {
+        self.skip_pointer = skip_pointer;
+        self
     }
 
     pub fn text(&self) -> &ArcStr {
@@ -258,6 +267,10 @@ impl Widget for Label {
     fn accessibility(&mut self, ctx: &mut AccessCtx) {
         ctx.current_node()
             .set_name(self.text().as_str().to_string());
+    }
+
+    fn skip_pointer(&self) -> bool {
+        self.skip_pointer
     }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {

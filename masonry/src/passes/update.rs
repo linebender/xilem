@@ -105,8 +105,7 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot, root_state: &mut Wi
     // -- UPDATE HOVERED WIDGETS --
 
     let hovered_widget = root.state.hovered_path.last().copied();
-    // TODO - Pointer capture
-    let next_hovered_widget = if let Some(pos) = pointer_pos {
+    let mut next_hovered_widget = if let Some(pos) = pointer_pos {
         // TODO - Apply scale?
         root.get_root_widget()
             .find_widget_at_pos(pos)
@@ -114,6 +113,11 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot, root_state: &mut Wi
     } else {
         None
     };
+    if let Some(capture_target) = root.state.pointer_capture_target {
+        if next_hovered_widget != Some(capture_target) {
+            next_hovered_widget = None;
+        }
+    }
 
     let prev_hovered_path = std::mem::take(&mut root.state.hovered_path);
     let next_hovered_path = get_id_path(root, next_hovered_widget);
@@ -134,12 +138,12 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot, root_state: &mut Wi
 
     // TODO - Make sure widgets are iterated from the bottom up
     for widget_id in &prev_hovered_path {
-        if root.widget_arena.get_state(*widget_id).is_hot != hovered_set.contains(widget_id) {
+        if root.widget_arena.get_state_mut(*widget_id).is_hot != hovered_set.contains(widget_id) {
             update_hovered_status_of(root, root_state, *widget_id, &hovered_set);
         }
     }
     for widget_id in &next_hovered_path {
-        if root.widget_arena.get_state(*widget_id).is_hot != hovered_set.contains(widget_id) {
+        if root.widget_arena.get_state_mut(*widget_id).is_hot != hovered_set.contains(widget_id) {
             update_hovered_status_of(root, root_state, *widget_id, &hovered_set);
         }
     }
@@ -147,22 +151,29 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot, root_state: &mut Wi
     root.state.hovered_path = next_hovered_path;
 
     // -- UPDATE CURSOR --
-
-    // TODO - Pointer capture
-    // TODO - Add "update_cursor" flag to WidgetState
-    if hovered_widget != next_hovered_widget {
-        if let Some(next_hovered_widget) = next_hovered_widget {
+    // TODO - Rewrite more cleanly
+    let cursor_changed =
+        next_hovered_widget.is_some_and(|id| root.widget_arena.get_state_mut(id).cursor_changed);
+    if hovered_widget != next_hovered_widget || cursor_changed {
+        let cursor;
+        if let Some(capture_target) = root.state.pointer_capture_target {
+            let (widget, _) = get_widget_mut(&mut root.widget_arena, capture_target);
+            cursor = widget.get_cursor();
+        } else if let Some(next_hovered_widget) = next_hovered_widget {
             let (widget, _) = get_widget_mut(&mut root.widget_arena, next_hovered_widget);
-            let cursor = widget.get_cursor();
-
-            // TODO - Add methods and `into()` impl to make this more concise.
-            root.state
-                .signal_queue
-                .push_back(RenderRootSignal::SetCursor(cursor));
+            cursor = widget.get_cursor();
         } else {
-            root.state
-                .signal_queue
-                .push_back(RenderRootSignal::SetCursor(CursorIcon::Default));
+            cursor = CursorIcon::Default;
+        }
+        // TODO - Add methods and `into()` impl to make this more concise.
+        root.state
+            .signal_queue
+            .push_back(RenderRootSignal::SetCursor(cursor));
+
+        if let Some(next_hovered_widget) = next_hovered_widget {
+            root.widget_arena
+                .get_state_mut(next_hovered_widget)
+                .cursor_changed = false;
         }
     }
 }

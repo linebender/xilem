@@ -469,6 +469,17 @@ impl TestHarness {
             .find_widget_by_id(self.render_root.state.focused_widget?)
     }
 
+    // TODO - Multiple pointers
+    pub fn pointer_capture_target(&self) -> Option<WidgetRef<'_, dyn Widget>> {
+        self.render_root
+            .get_widget(self.render_root.state.pointer_capture_target?)
+    }
+
+    // TODO - This is kinda redundant with the above
+    pub fn pointer_capture_target_id(&self) -> Option<WidgetId> {
+        self.render_root.state.pointer_capture_target
+    }
+
     /// Call the provided visitor on every widget in the widget tree.
     pub fn inspect_widgets(&mut self, f: impl Fn(WidgetRef<'_, dyn Widget>) + 'static) {
         fn inspect(

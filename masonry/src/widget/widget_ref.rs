@@ -179,11 +179,9 @@ impl<'w> WidgetRef<'w, dyn Widget> {
 
         loop {
             // TODO - Use Widget::get_child_at_pos method
-            if let Some(child) = innermost_widget
-                .children()
-                .into_iter()
-                .find(|child| child.state().window_layout_rect().contains(pos))
-            {
+            if let Some(child) = innermost_widget.children().into_iter().find(|child| {
+                !child.widget.skip_pointer() && child.state().window_layout_rect().contains(pos)
+            }) {
                 innermost_widget = child;
             } else {
                 return Some(innermost_widget);
