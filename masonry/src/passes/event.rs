@@ -1,3 +1,6 @@
+// Copyright 2024 the Xilem Authors
+// SPDX-License-Identifier: Apache-2.0
+
 use cursor_icon::CursorIcon;
 use dpi::LogicalPosition;
 use tracing::{debug, info_span, trace};
