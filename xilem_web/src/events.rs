@@ -3,7 +3,7 @@
 
 use std::{borrow::Cow, marker::PhantomData};
 use wasm_bindgen::{prelude::Closure, throw_str, JsCast, UnwrapThrowExt};
-use web_sys::AddEventListenerOptions;
+use web_sys::{js_sys, AddEventListenerOptions};
 use xilem_core::{MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker};
 
 use crate::{DynMessage, ElementAsRef, OptionalAction, ViewCtx};
@@ -491,7 +491,6 @@ event_definitions!(
     (OnProgress, "progress", Event),
     (OnRateChange, "ratechange", Event),
     (OnReset, "reset", Event),
-    (OnResize, "resize", Event),
     (OnScroll, "scroll", Event),
     (OnScrollEnd, "scrollend", Event),
     (OnSecurityPolicyViolation, "securitypolicyviolation", Event),
@@ -508,3 +507,109 @@ event_definitions!(
     (OnWaiting, "waiting", Event),
     (OnWheel, "wheel", WheelEvent)
 );
+
+pub struct OnResize<V, State, Action, Callback> {
+    pub(crate) element: V,
+    pub(crate) handler: Callback,
+    pub(crate) phantom_event_ty: PhantomData<fn() -> (State, Action)>,
+}
+
+pub struct OnResizeState<VState> {
+    child_state: VState,
+    // Closures are retained so they can be called by environment
+    #[allow(unused)]
+    callback: Closure<dyn FnMut(js_sys::Array)>,
+    observer: web_sys::ResizeObserver,
+}
+
+impl<V, State, Action, Callback> ViewMarker for OnResize<V, State, Action, Callback> {}
+impl<State, Action, OA, Callback, V: View<State, Action, ViewCtx, DynMessage>>
+    View<State, Action, ViewCtx, DynMessage> for OnResize<V, State, Action, Callback>
+where
+    State: 'static,
+    Action: 'static,
+    OA: OptionalAction<Action>,
+    Callback: Fn(&mut State, web_sys::ResizeObserverEntry) -> OA + 'static,
+    V: View<State, Action, ViewCtx, DynMessage>,
+    V::Element: ElementAsRef<web_sys::Element>,
+{
+    type Element = V::Element;
+
+    type ViewState = OnResizeState<V::ViewState>;
+
+    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+        ctx.with_id(ViewId::new(0), |ctx| {
+            let thunk = ctx.message_thunk();
+            let callback = Closure::new(move |entries: js_sys::Array| {
+                let entry: web_sys::ResizeObserverEntry = entries.at(0).dyn_into().unwrap_throw();
+                thunk.push_message(entry);
+            });
+
+            let observer =
+                web_sys::ResizeObserver::new(callback.as_ref().unchecked_ref()).unwrap_throw();
+            let (element, child_state) = self.element.build(ctx);
+            observer.observe(element.as_ref());
+
+            let state = OnResizeState {
+                child_state,
+                callback,
+                observer,
+            };
+
+            (element, state)
+        })
+    }
+
+    fn rebuild<'el>(
+        &self,
+        prev: &Self,
+        view_state: &mut Self::ViewState,
+        ctx: &mut ViewCtx,
+        element: Mut<'el, Self::Element>,
+    ) -> Mut<'el, Self::Element> {
+        ctx.with_id(ViewId::new(0), |ctx| {
+            self.element
+                .rebuild(&prev.element, &mut view_state.child_state, ctx, element)
+        })
+    }
+
+    fn teardown(
+        &self,
+        view_state: &mut Self::ViewState,
+        ctx: &mut ViewCtx,
+        element: Mut<'_, Self::Element>,
+    ) {
+        ctx.with_id(ViewId::new(0), |ctx| {
+            view_state.observer.unobserve(element.as_ref());
+            self.element
+                .teardown(&mut view_state.child_state, ctx, element);
+        });
+    }
+
+    fn message(
+        &self,
+        view_state: &mut Self::ViewState,
+        id_path: &[ViewId],
+        message: DynMessage,
+        app_state: &mut State,
+    ) -> MessageResult<Action, DynMessage> {
+        let Some((first, remainder)) = id_path.split_first() else {
+            throw_str("Parent view of `OnResize` sent outdated and/or incorrect empty view path");
+        };
+        if first.routing_id() != 0 {
+            throw_str("Parent view of `OnResize` sent outdated and/or incorrect empty view path");
+        }
+        if remainder.is_empty() {
+            let event = message
+                .downcast::<web_sys::ResizeObserverEntry>()
+                .unwrap_throw();
+            match (self.handler)(app_state, *event).action() {
+                Some(a) => MessageResult::Action(a),
+                None => MessageResult::Nop,
+            }
+        } else {
+            self.element
+                .message(&mut view_state.child_state, remainder, message, app_state)
+        }
+    }
+}
