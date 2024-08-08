@@ -331,12 +331,20 @@ impl Widget for Box<dyn Widget> {
         self.deref().children_ids()
     }
 
+    fn skip_pointer(&self) -> bool {
+        self.deref().skip_pointer()
+    }
+
     fn make_trace_span(&self) -> Span {
         self.deref().make_trace_span()
     }
 
     fn get_debug_text(&self) -> Option<String> {
         self.deref().get_debug_text()
+    }
+
+    fn get_cursor(&self) -> CursorIcon {
+        self.deref().get_cursor()
     }
 
     fn as_any(&self) -> &dyn Any {
