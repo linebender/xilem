@@ -3,17 +3,17 @@
 
 //! A stopwatch to display elapsed time.
 
-use std::ops::{Add, Sub};
-use std::time::{Duration, SystemTime};
-use tokio::time;
-use winit::error::EventLoopError;
-use winit::window::Window;
 use masonry::dpi::LogicalSize;
 use masonry::event_loop_runner::{EventLoop, EventLoopBuilder};
 use masonry::widget::{Axis, CrossAxisAlignment, MainAxisAlignment};
-use xilem::{WidgetView, Xilem};
-use xilem::view::{AnyFlexChild, async_repeat, button, flex, FlexExt, FlexSpacer, label};
+use std::ops::{Add, Sub};
+use std::time::{Duration, SystemTime};
+use tokio::time;
 use tracing::warn;
+use winit::error::EventLoopError;
+use winit::window::Window;
+use xilem::view::{async_repeat, button, flex, label, AnyFlexChild, FlexExt, FlexSpacer};
+use xilem::{WidgetView, Xilem};
 use xilem_core::fork;
 
 /// The state of the entire application.
@@ -25,10 +25,15 @@ struct Stopwatch {
     // This is needed since you can pause a timer, and we need to account for all
     // time the timer was active before the last start.
     added_duration: Duration,
+    // The absolute time of the last start for calculating elapsed time.
     last_start_time: Option<SystemTime>,
+    // The duration displayed; updated by by `update_display()`
     displayed_duration: Duration,
+    // An error string to display if there is an error.
     displayed_error: String,
+    // A list of the length of all completed splits. Does not include the current split.
     completed_lap_splits: Vec<Duration>,
+    // The duration of the main timer when the split was started.
     split_start_time: Duration,
 }
 
@@ -40,15 +45,17 @@ impl Stopwatch {
     }
 
     fn stop(&mut self) {
-        let dur_since_last_instant = self.last_start_time
-            .expect("stop should only be called when the start time is set").elapsed();
+        let dur_since_last_instant = self
+            .last_start_time
+            .expect("stop should only be called when the start time is set")
+            .elapsed();
         match dur_since_last_instant {
             Ok(dur) => {
                 self.added_duration = self.added_duration.add(dur);
                 self.displayed_error = "".into();
-            },
+            }
             Err(err) => {
-                self.displayed_error = format!("failed to calculate elapsed time: {}", err.to_string());
+                self.displayed_error = format!("failed to calculate elapsed time: {}", err);
             }
         }
         self.last_start_time = None;
@@ -67,24 +74,21 @@ impl Stopwatch {
 
     fn lap(&mut self) {
         let split_end = self.get_current_duration();
-        self.completed_lap_splits.push(split_end.sub(self.split_start_time));
+        self.completed_lap_splits
+            .push(split_end.sub(self.split_start_time));
         self.split_start_time = split_end;
     }
 
     fn get_current_duration(&self) -> Duration {
         match self.last_start_time {
-            Some(last_start_time) => {
-                match last_start_time.elapsed() {
-                    Ok(elapsed) => {
-                        self.added_duration + elapsed
-                    },
-                    Err(err) => {
-                        warn!("error calculating elapsed time: {}", err.to_string());
-                        self.added_duration
-                    }
+            Some(last_start_time) => match last_start_time.elapsed() {
+                Ok(elapsed) => self.added_duration + elapsed,
+                Err(err) => {
+                    warn!("error calculating elapsed time: {}", err.to_string());
+                    self.added_duration
                 }
-            }
-            _ => {self.added_duration}
+            },
+            _ => self.added_duration,
         }
     }
 
@@ -103,36 +107,35 @@ fn get_formatted_duration(dur: &Duration) -> String {
 fn app_logic(data: &mut Stopwatch) -> impl WidgetView<Stopwatch> {
     fork(
         flex((
-                 FlexSpacer::Fixed(5.0),
-                 label(get_formatted_duration(&data.displayed_duration)).text_size(70.0),
-                 flex((
-                          lap_reset_button(data),
-                          start_stop_button(data),
-                      ),
-                 ).direction(Axis::Horizontal),
-                 laps_section(data),
-                 label(data.displayed_error.as_ref()),
+            FlexSpacer::Fixed(5.0),
+            label(get_formatted_duration(&data.displayed_duration)).text_size(70.0),
+            flex((lap_reset_button(data), start_stop_button(data))).direction(Axis::Horizontal),
+            FlexSpacer::Fixed(1.0),
+            laps_section(data),
+            label(data.displayed_error.as_ref()),
         ))
-            .main_axis_alignment(MainAxisAlignment::Start)
-            .cross_axis_alignment(CrossAxisAlignment::Center),
+        .main_axis_alignment(MainAxisAlignment::Start)
+        .cross_axis_alignment(CrossAxisAlignment::Center),
         async_repeat(
-             |proxy| async move {
-                 let mut interval = time::interval(Duration::from_millis(50));
-                 loop {
-                     interval.tick().await;
-                     let Ok(()) = proxy.message(()) else {
-                         break;
-                     };
-                 }
-             },
-             |data: &mut Stopwatch, ()|
-             if data.active {
-                 data.update_display();
-             },
-        )
+            |proxy| async move {
+                let mut interval = time::interval(Duration::from_millis(50));
+                loop {
+                    interval.tick().await;
+                    let Ok(()) = proxy.message(()) else {
+                        break;
+                    };
+                }
+            },
+            |data: &mut Stopwatch, ()| {
+                if data.active {
+                    data.update_display();
+                }
+            },
+        ),
     )
 }
 
+/// Creates a list of items that shows the lap number, split time, and total cumulative time.
 fn laps_section(data: &mut Stopwatch) -> Vec<AnyFlexChild<Stopwatch>> {
     let mut items: Vec<AnyFlexChild<Stopwatch>> = Vec::new();
     let mut total_dur = Duration::ZERO;
@@ -143,47 +146,62 @@ fn laps_section(data: &mut Stopwatch) -> Vec<AnyFlexChild<Stopwatch>> {
         items.push(single_lap(i, split_dur, &total_dur).into_any_flex());
     }
     let current_split_duration = data.get_current_duration().sub(total_dur);
-    let mut reversed  = Vec::new();
-    reversed.push(single_lap(current_lap, &current_split_duration, &data.get_current_duration()).into_any_flex());
+    let mut reversed = Vec::new();
+    reversed.push(
+        single_lap(
+            current_lap,
+            &current_split_duration,
+            &data.get_current_duration(),
+        )
+        .into_any_flex(),
+    );
     for item in items.into_iter().rev() {
         reversed.push(item);
     }
     reversed
 }
 
-fn single_lap(lap_id: usize, split_dur: &Duration, total_dur: &Duration) -> impl WidgetView<Stopwatch> {
+fn single_lap(
+    lap_id: usize,
+    split_dur: &Duration,
+    total_dur: &Duration,
+) -> impl WidgetView<Stopwatch> {
     flex((
         FlexSpacer::Flex(1.0),
         label(format!("Lap {}", lap_id + 1)).flex(1.0),
         label(get_formatted_duration(split_dur)).flex(1.0),
         label(get_formatted_duration(total_dur)).flex(1.0),
     ))
-        .direction(Axis::Horizontal)
-        .cross_axis_alignment(CrossAxisAlignment::Center)
-        .main_axis_alignment(MainAxisAlignment::Center)
+    .direction(Axis::Horizontal)
+    .cross_axis_alignment(CrossAxisAlignment::Center)
+    .main_axis_alignment(MainAxisAlignment::Center)
 }
 
 fn start_stop_button(data: &mut Stopwatch) -> AnyFlexChild<Stopwatch> {
-    return if data.active {
+    if data.active {
         button("Stop", |data: &mut Stopwatch| {
             data.stop();
-        }).into_any_flex()
+        })
+        .into_any_flex()
     } else {
         button("Start", |data: &mut Stopwatch| {
             data.start();
-        }).into_any_flex()
+        })
+        .into_any_flex()
     }
 }
 
 fn lap_reset_button(data: &mut Stopwatch) -> AnyFlexChild<Stopwatch> {
-    return if data.active {
+    if data.active {
         button("  Lap  ", |data: &mut Stopwatch| {
             data.lap();
-        }).into_any_flex()
+        })
+        .into_any_flex()
     } else {
         button("Reset", |data: &mut Stopwatch| {
             data.reset();
-        }).into_any_flex()
+        })
+        .into_any_flex()
     }
 }
 
