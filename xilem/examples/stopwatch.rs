@@ -14,6 +14,7 @@ use masonry::widget::{Axis, CrossAxisAlignment, MainAxisAlignment};
 use xilem::{WidgetView, Xilem};
 use xilem::view::{AnyFlexChild, async_repeat, button, flex, FlexExt, FlexSpacer, label};
 use tracing::warn;
+use xilem_core::fork;
 
 /// The state of the entire application.
 ///
@@ -98,34 +99,36 @@ fn get_formatted_duration(dur: &Duration) -> String {
 }
 
 fn app_logic(data: &mut Stopwatch) -> impl WidgetView<Stopwatch> {
-    flex((
-        FlexSpacer::Fixed(5.0),
-        label(get_formatted_duration(&data.displayed_duration)).text_size(70.0),
+    fork(
         flex((
-            lap_reset_button(data),
-            start_stop_button(data),
-        ),
-        ).direction(Axis::Horizontal),
-        laps_section(data),
-        label(data.displayed_error.as_ref()),
+                 FlexSpacer::Fixed(5.0),
+                 label(get_formatted_duration(&data.displayed_duration)).text_size(70.0),
+                 flex((
+                          lap_reset_button(data),
+                          start_stop_button(data),
+                      ),
+                 ).direction(Axis::Horizontal),
+                 laps_section(data),
+                 label(data.displayed_error.as_ref()),
+        ))
+            .main_axis_alignment(MainAxisAlignment::Start)
+            .cross_axis_alignment(CrossAxisAlignment::Center),
         async_repeat(
-            |proxy| async move {
-                let mut interval = time::interval(Duration::from_millis(50));
-                loop {
-                    interval.tick().await;
-                    let Ok(()) = proxy.message(()) else {
-                        break;
-                    };
-                }
-            },
-            |data: &mut Stopwatch, ()|
-                if data.active {
-                    data.update_display();
-                },
-        ),
-    ))
-        .main_axis_alignment(MainAxisAlignment::Start)
-        .cross_axis_alignment(CrossAxisAlignment::Center)
+             |proxy| async move {
+                 let mut interval = time::interval(Duration::from_millis(50));
+                 loop {
+                     interval.tick().await;
+                     let Ok(()) = proxy.message(()) else {
+                         break;
+                     };
+                 }
+             },
+             |data: &mut Stopwatch, ()|
+             if data.active {
+                 data.update_display();
+             },
+        )
+    )
 }
 
 fn laps_section(data: &mut Stopwatch) -> Vec<AnyFlexChild<Stopwatch>> {
