@@ -58,7 +58,7 @@ where
 
 /// Await a future returned by `init_future` invoked with the argument `data`, `callback` is called with the output of the resolved future. `init_future` will be invoked again, when `data` changes.
 ///
-/// The update behavior can be controlled, by [`debounce`](`MemoizedAwait::debounce`) and [`reset_debounce_on_update`](`MemoizedAwait::reset_debounce_on_update`)
+/// The update behavior can be controlled, by [`debounce_ms`](`MemoizedAwait::debounce_ms`) and [`reset_debounce_on_update`](`MemoizedAwait::reset_debounce_on_update`)
 ///
 /// # Examples
 ///
