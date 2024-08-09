@@ -175,3 +175,7 @@ features = [
   "HtmlUListElement",
   "HtmlVideoElement",
 ]
+
+[features]
+default = ["hydration"]
+hydration = []
