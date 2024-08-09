@@ -10,7 +10,6 @@ use parley::{FontContext, LayoutContext};
 use tracing::{trace, warn};
 
 use crate::action::Action;
-use crate::dpi::LogicalPosition;
 use crate::render_root::{RenderRootSignal, RenderRootState};
 use crate::text::TextBrush;
 use crate::text_helpers::{ImeChangeSignal, TextFieldRegistration};
@@ -873,30 +872,6 @@ impl LayoutCtx<'_> {
             .widget_state
             .local_paint_rect
             .union(self.get_child_state(child).paint_rect());
-
-        let child_id = child.id();
-        let child_mut = self
-            .widget_children
-            .get_child_mut(child_id.to_raw())
-            .expect("place_child: child not found");
-        let child_state_mut = self
-            .widget_state_children
-            .get_child_mut(child_id.to_raw())
-            .expect("place_child: child not found");
-        let mouse_pos = self.mouse_pos.map(|pos| LogicalPosition::new(pos.x, pos.y));
-        // if the widget has moved, it may have moved under the mouse, in which
-        // case we need to handle that.
-        if WidgetPod::update_hot_state(
-            child_id,
-            child_mut.item.as_mut_dyn_any().downcast_mut::<W>().unwrap(),
-            child_mut.children,
-            child_state_mut.item,
-            child_state_mut.children,
-            self.global_state,
-            mouse_pos,
-        ) {
-            self.widget_state.merge_up(child_state_mut.item);
-        }
     }
 }
 

@@ -238,62 +238,8 @@ fn run_event_pass<E>(
     Handled::from(is_handled)
 }
 
-#[cfg(FALSE)]
-fn on_pointer_event() {
-    let hot_changed = true;
-
-    let call_widget = (had_active || state.is_hot || hot_changed) && !state.is_stashed;
-    if call_widget {
-        let mut inner_ctx = EventCtx {
-            global_state: parent_ctx.global_state,
-            widget_state: state,
-            widget_state_children: state_token,
-            widget_children: widget_token,
-            is_handled: false,
-            request_pan_to_child: None,
-        };
-        inner_ctx.widget_state.has_active = false;
-
-        widget.on_pointer_event(&mut inner_ctx, event);
-
-        inner_ctx.widget_state.has_active |= inner_ctx.widget_state.is_active;
-        parent_ctx.is_handled |= inner_ctx.is_handled;
-    }
-
-    call_widget
-}
-
-#[cfg(FALSE)]
-fn hot_state() {
-    // TODO - This doesn't handle the case where multiple cursors
-    // are over the same widget
-    let hot_pos = match event {
-        PointerEvent::PointerDown(_, pointer_state) => Some(pointer_state.position),
-        PointerEvent::PointerUp(_, pointer_state) => Some(pointer_state.position),
-        PointerEvent::PointerMove(pointer_state) => Some(pointer_state.position),
-        PointerEvent::PointerEnter(pointer_state) => Some(pointer_state.position),
-        PointerEvent::PointerLeave(_) => None,
-        PointerEvent::MouseWheel(_, pointer_state) => Some(pointer_state.position),
-        PointerEvent::HoverFile(_, _) => None,
-        PointerEvent::DropFile(_, _) => None,
-        PointerEvent::HoverFileCancel(_) => None,
-    };
-    let hot_changed = WidgetPod::update_hot_state(
-        self.id(),
-        widget.as_mut_dyn_any().downcast_mut::<W>().unwrap(),
-        widget_token.reborrow_mut(),
-        state,
-        state_token.reborrow_mut(),
-        parent_ctx.global_state,
-        hot_pos,
-    );
-
-    let call_widget = (had_active || state.is_hot || hot_changed) && !state.is_stashed;
-    if call_widget {
-        // stuff
-    }
-}
-
+// These functions were carved out of WidgetPod code during a previous refactor
+// The general "pan to child" logic needs to be added back in.
 #[cfg(FALSE)]
 fn pan_to_child() {
     // TODO - there's some dubious logic here

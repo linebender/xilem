@@ -180,7 +180,7 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot, root_state: &mut Wi
         // TODO - Add methods and `into()` impl to make this more concise.
         root.state
             .signal_queue
-            .push_back(RenderRootSignal::SetCursor(dbg!(cursor)));
+            .push_back(RenderRootSignal::SetCursor(cursor));
 
         if let Some(next_hovered_widget) = next_hovered_widget {
             root.widget_arena

@@ -6,12 +6,10 @@ use smallvec::SmallVec;
 use tracing::{info_span, trace, warn};
 use vello::Scene;
 
-use crate::dpi::LogicalPosition;
 use crate::kurbo::{Affine, Rect, Size};
 use crate::paint_scene_helpers::stroke;
-use crate::render_root::RenderRootState;
 use crate::theme::get_debug_color;
-use crate::tree_arena::{ArenaMutChildren, ArenaRefChildren};
+use crate::tree_arena::ArenaRefChildren;
 use crate::widget::WidgetState;
 use crate::{
     AccessCtx, BoxConstraints, InternalLifeCycle, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
@@ -111,19 +109,6 @@ impl<W: Widget> WidgetPod<W> {
     // Other things hot state is missing:
     // - A concept of "cursor moved to inner widget" (though I think that's not super useful outside the browser).
     // - Multiple pointers handling.
-
-    #[allow(unused)]
-    pub(crate) fn update_hot_state(
-        id: WidgetId,
-        inner: &mut W,
-        inner_children: ArenaMutChildren<'_, Box<dyn Widget>>,
-        inner_state: &mut WidgetState,
-        inner_state_children: ArenaMutChildren<'_, WidgetState>,
-        global_state: &mut RenderRootState,
-        mouse_pos: Option<LogicalPosition<f64>>,
-    ) -> bool {
-        false
-    }
 
     // TODO - document
     // TODO - This method should take a 'can_skip: Fn(WidgetRef) -> bool'
@@ -395,18 +380,9 @@ impl<W: Widget> WidgetPod<W> {
                         _ => false,
                     }
                 }
-                InternalLifeCycle::ParentWindowOrigin { mouse_pos } => {
+                InternalLifeCycle::ParentWindowOrigin { .. } => {
                     state.parent_window_origin = parent_ctx.widget_state.window_origin();
                     state.needs_window_origin = false;
-                    WidgetPod::update_hot_state(
-                        self.id(),
-                        widget.as_mut_dyn_any().downcast_mut::<W>().unwrap(),
-                        widget_mut.children.reborrow_mut(),
-                        state,
-                        state_mut.children.reborrow_mut(),
-                        parent_ctx.global_state,
-                        *mouse_pos,
-                    );
                     // TODO - state.is_hidden
                     true
                 }
