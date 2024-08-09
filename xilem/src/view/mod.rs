@@ -22,6 +22,9 @@ pub use spinner::*;
 mod label;
 pub use label::*;
 
+mod message_handler;
+pub use message_handler::*;
+
 mod prose;
 pub use prose::*;
 
