@@ -1,12 +1,11 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use cursor_icon::CursorIcon;
 use dpi::LogicalPosition;
 use tracing::{debug, info_span, trace};
 use winit::keyboard::{KeyCode, PhysicalKey};
 
-use crate::render_root::{RenderRoot, RenderRootSignal, WidgetArena};
+use crate::render_root::{RenderRoot, WidgetArena};
 use crate::tree_arena::{ArenaMut, ArenaMutChildren};
 use crate::{
     AccessEvent, EventCtx, Handled, PointerEvent, TextEvent, Widget, WidgetId, WidgetState,
@@ -121,18 +120,6 @@ pub fn root_on_pointer_event(
             widget.on_pointer_event(ctx, event);
         },
     );
-
-    // Update cursor depending on pointed widget
-    if let Some(cursor) = &root_state.cursor {
-        // TODO - Add methods and `into()` impl to make this more concise.
-        root.state
-            .signal_queue
-            .push_back(RenderRootSignal::SetCursor(*cursor));
-    } else {
-        root.state
-            .signal_queue
-            .push_back(RenderRootSignal::SetCursor(CursorIcon::Default));
-    }
 
     if !event.is_high_density() {
         debug!(
