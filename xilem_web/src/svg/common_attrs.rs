@@ -172,6 +172,8 @@ where
             .then(|| Cow::from(join(&mut self.style.dash_pattern.iter(), " ")));
         let dash_pattern = stroke_dash_pattern_svg_repr.clone().into_attr_value();
         element.set_attribute("stroke-dasharray".into(), dash_pattern);
+        let dash_offset = (self.style.dash_offset != 0.0).then_some(self.style.dash_offset);
+        element.set_attribute("stroke-dashoffset".into(), dash_offset.into_attr_value());
         element.set_attribute("stroke-width".into(), self.style.width.into_attr_value());
         add_opacity_to_element(&self.brush, &mut element, "stroke-opacity");
 
@@ -211,6 +213,8 @@ where
         }
         let dash_pattern = stroke_dash_pattern_svg_repr.clone().into_attr_value();
         element.set_attribute("stroke-dasharray".into(), dash_pattern);
+        let dash_offset = (self.style.dash_offset != 0.0).then_some(self.style.dash_offset);
+        element.set_attribute("stroke-dashoffset".into(), dash_offset.into_attr_value());
         element.set_attribute("stroke-width".into(), self.style.width.into_attr_value());
         add_opacity_to_element(&self.brush, &mut element, "stroke-opacity");
 
