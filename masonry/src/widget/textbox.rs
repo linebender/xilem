@@ -180,7 +180,10 @@ impl Widget for Textbox {
                 }
             }
             PointerEvent::PointerMove(state) => {
-                if !ctx.is_disabled() && ctx.is_active() && self.editor.pointer_move(inner_origin, state) {
+                if !ctx.is_disabled()
+                    && ctx.is_active()
+                    && self.editor.pointer_move(inner_origin, state)
+                {
                     // We might have changed text colours, so we need to re-request a layout
                     ctx.request_layout();
                     ctx.request_paint();
