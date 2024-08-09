@@ -4,6 +4,9 @@
 mod async_repeat;
 pub use async_repeat::*;
 
+mod async_worker;
+pub use async_worker::*;
+
 mod button;
 pub use button::*;
 
