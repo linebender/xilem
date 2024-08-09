@@ -296,16 +296,7 @@ impl<W: Widget> WidgetPod<W> {
             }
         }
 
-        // TODO - Write new constructor for WidgetState
-        let mut state = WidgetState::new(self.id, None, widget.short_type_name());
-        state.children_changed = true;
-        state.needs_layout = true;
-        state.update_focus_chain = true;
-        state.needs_layout = true;
-        state.needs_paint = true;
-        state.needs_window_origin = true;
-        state.needs_accessibility_update = true;
-        state.request_accessibility_update = true;
+        let state = WidgetState::new(self.id, widget.short_type_name());
 
         parent_ctx
             .widget_children
