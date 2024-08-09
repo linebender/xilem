@@ -12,7 +12,7 @@ use tokio::time;
 use tracing::warn;
 use winit::error::EventLoopError;
 use winit::window::Window;
-use xilem::view::{async_repeat, button, flex, label, AnyFlexChild, FlexExt, FlexSpacer};
+use xilem::view::{async_repeat, button, flex, label, FlexSequence, FlexSpacer};
 use xilem::{WidgetView, Xilem};
 use xilem_core::fork;
 use xilem_core::one_of::Either;
@@ -136,25 +136,22 @@ fn app_logic(data: &mut Stopwatch) -> impl WidgetView<Stopwatch> {
 }
 
 /// Creates a list of items that shows the lap number, split time, and total cumulative time.
-fn laps_section(data: &mut Stopwatch) -> Vec<AnyFlexChild<Stopwatch>> {
-    let mut items: Vec<AnyFlexChild<Stopwatch>> = Vec::new();
+fn laps_section(data: &mut Stopwatch) -> impl FlexSequence<Stopwatch> {
+    let mut items = Vec::new();
     let mut total_dur = Duration::ZERO;
     let current_lap = data.completed_lap_splits.len();
-
     for (i, split_dur) in data.completed_lap_splits.iter().enumerate() {
         total_dur = total_dur.add(*split_dur);
-        items.push(single_lap(i, split_dur, &total_dur).into_any_flex());
+        items.push(single_lap(i, split_dur, &total_dur));
     }
     let current_split_duration = data.get_current_duration().sub(total_dur);
     let mut reversed = Vec::new();
-    reversed.push(
-        single_lap(
-            current_lap,
-            &current_split_duration,
-            &data.get_current_duration(),
-        )
-        .into_any_flex(),
-    );
+    // Add the current lap first so that it shows up on the top.
+    reversed.push(single_lap(
+        current_lap,
+        &current_split_duration,
+        &data.get_current_duration(),
+    ));
     for item in items.into_iter().rev() {
         reversed.push(item);
     }
