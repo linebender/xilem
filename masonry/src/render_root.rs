@@ -70,6 +70,7 @@ pub(crate) struct WidgetArena {
     pub(crate) widget_states: TreeArena<WidgetState>,
 }
 
+#[allow(clippy::type_complexity)]
 pub(crate) struct MutateCallback {
     pub(crate) id: WidgetId,
     pub(crate) callback: Box<dyn FnOnce(WidgetMut<'_, Box<dyn Widget>>)>,
