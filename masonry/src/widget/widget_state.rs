@@ -133,12 +133,48 @@ pub struct WidgetState {
 pub(crate) struct VisitBool(pub AtomicBool);
 
 impl WidgetState {
-    pub(crate) fn new(id: WidgetId, size: Option<Size>, widget_name: &'static str) -> WidgetState {
+    pub(crate) fn new(id: WidgetId, widget_name: &'static str) -> WidgetState {
         WidgetState {
             id,
             origin: Point::ORIGIN,
             parent_window_origin: Point::ORIGIN,
-            size: size.unwrap_or_default(),
+            size: Size::ZERO,
+            is_expecting_place_child_call: false,
+            paint_insets: Insets::ZERO,
+            local_paint_rect: Rect::ZERO,
+            is_portal: false,
+            children_disabled_changed: false,
+            ancestor_disabled: false,
+            is_explicitly_disabled: false,
+            baseline_offset: 0.0,
+            is_hot: false,
+            needs_layout: true,
+            needs_paint: true,
+            needs_accessibility_update: true,
+            needs_window_origin: true,
+            has_focus: false,
+            request_anim: false,
+            request_accessibility_update: true,
+            focus_chain: Vec::new(),
+            children: Bloom::new(),
+            children_changed: true,
+            cursor: None,
+            is_explicitly_disabled_new: false,
+            text_registrations: Vec::new(),
+            update_focus_chain: true,
+            is_stashed: false,
+            #[cfg(debug_assertions)]
+            needs_visit: VisitBool(false.into()),
+            #[cfg(debug_assertions)]
+            widget_name,
+        }
+    }
+    pub(crate) fn root(id: WidgetId, size: Size) -> WidgetState {
+        WidgetState {
+            id,
+            origin: Point::ORIGIN,
+            parent_window_origin: Point::ORIGIN,
+            size,
             is_expecting_place_child_call: false,
             paint_insets: Insets::ZERO,
             local_paint_rect: Rect::ZERO,
@@ -166,7 +202,7 @@ impl WidgetState {
             #[cfg(debug_assertions)]
             needs_visit: VisitBool(false.into()),
             #[cfg(debug_assertions)]
-            widget_name,
+            widget_name: "<root>",
         }
     }
 
