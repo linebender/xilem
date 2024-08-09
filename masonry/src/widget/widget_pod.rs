@@ -313,6 +313,7 @@ impl<W: Widget> WidgetPod<W> {
             PointerEvent::HoverFile(_, _) => None,
             PointerEvent::DropFile(_, _) => None,
             PointerEvent::HoverFileCancel(_) => None,
+            PointerEvent::Pinch(_, pointer_state) => Some(pointer_state.position),
         };
         let hot_changed = WidgetPod::update_hot_state(
             self.id(),
