@@ -10,7 +10,7 @@ use parley::{FontContext, LayoutContext};
 use tracing::{trace, warn};
 
 use crate::action::Action;
-use crate::render_root::{RenderRootSignal, RenderRootState};
+use crate::render_root::{MutateCallback, RenderRootSignal, RenderRootState};
 use crate::text::TextBrush;
 use crate::text_helpers::{ImeChangeSignal, TextFieldRegistration};
 use crate::tree_arena::ArenaMutChildren;
@@ -376,68 +376,6 @@ impl<'a> MutateCtx<'a> {
     }
 }
 
-// TODO - It's not clear whether EventCtx should be able to create a WidgetMut.
-// One of the examples currently uses that feature to change a child widget's color
-// in reaction to mouse events, but we might want to address that use-case differently.
-impl<'a> EventCtx<'a> {
-    /// Return a [`WidgetMut`] to a child widget.
-    pub fn get_mut<'c, Child: Widget>(
-        &'c mut self,
-        child: &'c mut WidgetPod<Child>,
-    ) -> WidgetMut<'c, Child> {
-        let child_state_mut = self
-            .widget_state_children
-            .get_child_mut(child.id().to_raw())
-            .expect("get_mut: child not found");
-        let child_mut = self
-            .widget_children
-            .get_child_mut(child.id().to_raw())
-            .expect("get_mut: child not found");
-        let child_ctx = MutateCtx {
-            global_state: self.global_state,
-            parent_widget_state: self.widget_state,
-            widget_state: child_state_mut.item,
-            widget_state_children: child_state_mut.children,
-            widget_children: child_mut.children,
-        };
-        WidgetMut {
-            ctx: child_ctx,
-            widget: child_mut.item.as_mut_dyn_any().downcast_mut().unwrap(),
-            is_reborrow: false,
-        }
-    }
-}
-
-// TODO - It's not clear whether LifeCycleCtx should be able to create a WidgetMut.
-impl<'a> LifeCycleCtx<'a> {
-    /// Return a [`WidgetMut`] to a child widget.
-    pub fn get_mut<'c, Child: Widget>(
-        &'c mut self,
-        child: &'c mut WidgetPod<Child>,
-    ) -> WidgetMut<'c, Child> {
-        let child_state_mut = self
-            .widget_state_children
-            .get_child_mut(child.id().to_raw())
-            .expect("get_mut: child not found");
-        let child_mut = self
-            .widget_children
-            .get_child_mut(child.id().to_raw())
-            .expect("get_mut: child not found");
-        let child_ctx = MutateCtx {
-            global_state: self.global_state,
-            parent_widget_state: self.widget_state,
-            widget_state: child_state_mut.item,
-            widget_state_children: child_state_mut.children,
-            widget_children: child_mut.children,
-        };
-        WidgetMut {
-            ctx: child_ctx,
-            widget: child_mut.item.as_mut_dyn_any().downcast_mut().unwrap(),
-            is_reborrow: false,
-        }
-    }
-}
-
 // --- MARK: UPDATE FLAGS ---
 // Methods on MutateCtx, EventCtx, and LifeCycleCtx
 impl_context_method!(MutateCtx<'_>, EventCtx<'_>, LifeCycleCtx<'_>, {
@@ -545,6 +483,29 @@ impl_context_method!(
     LifeCycleCtx<'_>,
     LayoutCtx<'_>,
     {
+        pub fn mutate_self_later(
+            &mut self,
+            f: impl FnOnce(WidgetMut<'_, Box<dyn Widget>>) + Send + 'static,
+        ) {
+            let callback = MutateCallback {
+                id: self.widget_state.id,
+                callback: Box::new(f),
+            };
+            self.global_state.mutate_callbacks.push(callback);
+        }
+
+        pub fn mutate_later<W: Widget>(
+            &mut self,
+            child: &mut WidgetPod<W>,
+            f: impl FnOnce(WidgetMut<'_, W>) + Send + 'static,
+        ) {
+            let callback = MutateCallback {
+                id: child.id(),
+                callback: Box::new(|mut widget_mut| f(widget_mut.downcast())),
+            };
+            self.global_state.mutate_callbacks.push(callback);
+        }
+
         /// Submit an [`Action`].
         ///
         /// Note: Actions are still a WIP feature.
