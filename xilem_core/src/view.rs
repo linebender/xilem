@@ -127,13 +127,13 @@ pub struct ViewId(u64);
 impl ViewId {
     /// Create a new `ViewId` with the given value.
     #[must_use]
-    pub fn new(raw: u64) -> Self {
+    pub const fn new(raw: u64) -> Self {
         Self(raw)
     }
 
     /// Access the raw value of this id.
     #[must_use]
-    pub fn routing_id(self) -> u64 {
+    pub const fn routing_id(self) -> u64 {
         self.0
     }
 }

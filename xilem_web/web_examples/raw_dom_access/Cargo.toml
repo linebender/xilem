@@ -1,0 +1,13 @@
+[package]
+name = "raw_dom_access"
+version = "0.1.0"
+publish = false
+license.workspace = true
+edition.workspace = true
+
+[dependencies]
+console_error_panic_hook = "0.1"
+console_log = "1.0.0"
+log = "0.4.22"
+web-sys = "0.3.69"
+xilem_web = { path = "../.." }

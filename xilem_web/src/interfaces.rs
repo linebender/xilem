@@ -208,7 +208,6 @@ pub trait Element<State, Action = ()>:
         (OnProgress, on_progress, "progress", Event),
         (OnRateChange, on_ratechange, "ratechange", Event),
         (OnReset, on_reset, "reset", Event),
-        (OnResize, on_resize, "resize", Event),
         (OnScroll, on_scroll, "scroll", Event),
         (OnScrollEnd, on_scrollend, "scrollend", Event),
         (
@@ -230,6 +229,42 @@ pub trait Element<State, Action = ()>:
         (OnWaiting, on_waiting, "waiting", Event),
         (OnWheel, on_wheel, "wheel", WheelEvent),
     );
+
+    /// Register a [`web_sys::ResizeObserver`] on this [`Element`].
+    ///
+    /// See <https://developer.mozilla.org/en-US/docs/Web/API/ResizeObserver/ResizeObserver> for more details
+    ///
+    /// Note, that this is a different than <https://developer.mozilla.org/en-US/docs/Web/API/Window/resize_event>
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use xilem_web::{interfaces::Element, elements::html::{a, canvas, div, input}};
+    ///
+    /// fn observe_size() -> impl Element<(f64, f64)> {
+    ///     div(()).on_resize(|(width, height), resize_observer_entry| {
+    ///         *width = resize_observer_entry.content_rect().width();
+    ///         *height = resize_observer_entry.content_rect().height();
+    ///     })
+    /// }
+    /// ```
+    fn on_resize<Callback, OA>(
+        self,
+        handler: Callback,
+    ) -> events::OnResize<Self, State, Action, Callback>
+    where
+        State: 'static,
+        Action: 'static,
+        OA: OptionalAction<Action>,
+        Callback: Fn(&mut State, web_sys::ResizeObserverEntry) -> OA + 'static,
+        Self::Element: AsRef<web_sys::Element>,
+    {
+        events::OnResize {
+            element: self,
+            handler,
+            phantom_event_ty: std::marker::PhantomData,
+        }
+    }
 }
 
 impl<State, Action, T> Element<State, Action> for T
