@@ -7,7 +7,7 @@ use tracing::{debug, info_span, trace};
 use winit::keyboard::{KeyCode, PhysicalKey};
 
 use crate::render_root::{RenderRoot, RenderRootSignal, WidgetArena};
-use crate::tree_arena::TreeArenaTokenMut;
+use crate::tree_arena::ArenaMutChildren;
 use crate::{
     AccessEvent, EventCtx, Handled, PointerEvent, TextEvent, Widget, WidgetId, WidgetState,
 };
@@ -15,8 +15,8 @@ use crate::{
 // References shared by all passes
 struct PassCtx<'a> {
     pub(crate) widget_state: &'a mut WidgetState,
-    pub(crate) widget_state_children: TreeArenaTokenMut<'a, WidgetState>,
-    pub(crate) widget_children: TreeArenaTokenMut<'a, Box<dyn Widget>>,
+    pub(crate) widget_state_children: ArenaMutChildren<'a, WidgetState>,
+    pub(crate) widget_children: ArenaMutChildren<'a, Box<dyn Widget>>,
 }
 
 impl<'a> PassCtx<'a> {
@@ -28,11 +28,11 @@ impl<'a> PassCtx<'a> {
 }
 
 fn get_widget_mut(arena: &mut WidgetArena, id: WidgetId) -> (&mut dyn Widget, PassCtx<'_>) {
-    let (state, state_token) = arena
+    let state_mut = arena
         .widget_states
         .find_mut(id.to_raw())
         .expect("widget state not found in arena");
-    let (widget, widget_token) = arena
+    let widget_mut = arena
         .widgets
         .find_mut(id.to_raw())
         .expect("widget not found in arena");
@@ -41,35 +41,37 @@ fn get_widget_mut(arena: &mut WidgetArena, id: WidgetId) -> (&mut dyn Widget, Pa
     // Without this step, the type of `WidgetRef::widget` would be
     // `&Box<dyn Widget> as &dyn Widget`, which would be an additional layer
     // of indirection.
+    let widget = widget_mut.item;
     let widget: &mut dyn Widget = &mut **widget;
 
     (
         widget,
         PassCtx {
-            widget_state: state,
-            widget_state_children: state_token,
-            widget_children: widget_token,
+            widget_state: state_mut.item,
+            widget_state_children: state_mut.children,
+            widget_children: widget_mut.children,
         },
     )
 }
 
+// TODO - Merge copy-pasted code
 fn merge_state_up(arena: &mut WidgetArena, widget_id: WidgetId, root_state: &mut WidgetState) {
     let parent_id = get_widget_mut(arena, widget_id).1.parent();
 
     let Some(parent_id) = parent_id else {
         // We've reached the root
-        let (child_state, _) = arena.widget_states.find_mut(widget_id.to_raw()).unwrap();
-        root_state.merge_up(child_state);
+        let child_state_mut = arena.widget_states.find_mut(widget_id.to_raw()).unwrap();
+        root_state.merge_up(child_state_mut.item);
         return;
     };
 
-    let (parent_state, mut parent_state_token) =
-        arena.widget_states.find_mut(parent_id.to_raw()).unwrap();
-    let (child_state, _) = parent_state_token
+    let mut parent_state_mut = arena.widget_states.find_mut(parent_id.to_raw()).unwrap();
+    let child_state_mut = parent_state_mut
+        .children
         .get_child_mut(widget_id.to_raw())
         .unwrap();
 
-    parent_state.merge_up(child_state);
+    parent_state_mut.item.merge_up(child_state_mut.item);
 }
 
 fn get_target_widget(

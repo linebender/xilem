@@ -6,7 +6,7 @@ use std::ops::Deref;
 use smallvec::SmallVec;
 
 use crate::kurbo::Point;
-use crate::tree_arena::TreeArenaToken;
+use crate::tree_arena::ArenaRefChildren;
 use crate::{Widget, WidgetId, WidgetState};
 
 /// A rich reference to a [`Widget`].
@@ -23,8 +23,8 @@ use crate::{Widget, WidgetId, WidgetState};
 /// This is only for shared access to widgets. For widget mutation, see [`WidgetMut`](crate::widget::WidgetMut).
 
 pub struct WidgetRef<'w, W: Widget + ?Sized> {
-    pub(crate) widget_state_children: TreeArenaToken<'w, WidgetState>,
-    pub(crate) widget_children: TreeArenaToken<'w, Box<dyn Widget>>,
+    pub(crate) widget_state_children: ArenaRefChildren<'w, WidgetState>,
+    pub(crate) widget_children: ArenaRefChildren<'w, Box<dyn Widget>>,
     pub(crate) widget_state: &'w WidgetState,
     pub(crate) widget: &'w W,
 }
@@ -113,13 +113,13 @@ impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
             .iter()
             .map(|id| {
                 let id = id.to_raw();
-                let Some((state, state_token)) = self.widget_state_children.into_child(id) else {
+                let Some(state_ref) = self.widget_state_children.into_child(id) else {
                     panic!(
                         "Error in '{}' #{parent_id}: child #{id} has not been added to tree",
                         self.widget.short_type_name()
                     );
                 };
-                let Some((widget, widget_token)) = self.widget_children.into_child(id) else {
+                let Some(widget_ref) = self.widget_children.into_child(id) else {
                     panic!(
                         "Error in '{}' #{parent_id}: child #{id} has not been added to tree",
                         self.widget.short_type_name()
@@ -130,11 +130,13 @@ impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
                 // Without this step, the type of `WidgetRef::widget` would be
                 // `&Box<dyn Widget> as &dyn Widget`, which would be an additional layer
                 // of indirection.
+                let widget = widget_ref.item;
                 let widget: &dyn Widget = &**widget;
+
                 WidgetRef {
-                    widget_state_children: state_token,
-                    widget_children: widget_token,
-                    widget_state: state,
+                    widget_state_children: state_ref.children,
+                    widget_children: widget_ref.children,
+                    widget_state: state_ref.item,
                     widget,
                 }
             })
