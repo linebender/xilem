@@ -8,6 +8,8 @@ use xilem_core::{MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker};
 
 use crate::{DynMessage, ElementAsRef, OptionalAction, ViewCtx};
 
+/// Use a distinctive number here, to be able to catch bugs.
+/// In case the generational-id view path in `View::Message` lead to a wrong view
 const ON_EVENT_VIEW_ID: ViewId = ViewId::new(0x2357_1113);
 
 /// Wraps a [`View`] `V` and attaches an event listener.
