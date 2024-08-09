@@ -28,7 +28,6 @@ mod sized_box;
 mod spinner;
 mod split;
 mod textbox;
-mod variable_label;
 
 use crate::CursorIcon;
 
