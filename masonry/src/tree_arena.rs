@@ -28,15 +28,29 @@ struct TreeNode<Item> {
 // TODO - Keep track of parent relationships, and use them to implement
 // "find" methods in O(depth) time instead of O(N) time.
 
-#[derive(Default)]
 /// A container type for a tree of items.
 ///
 /// This type is used to store zero, one or many tree of a given item types. It
 /// will keep track of parent-child relationships, lets you efficiently find
 /// an item anywhere in the tree hierarchy, and give you mutable access to this item
 /// and its children.
+#[derive(Default)]
 pub struct TreeArena<Item> {
     roots: Vec<TreeNode<Item>>,
+}
+
+pub struct ArenaRef<'a, Item> {
+    pub parent_id: Option<u64>,
+    pub id: Option<u64>,
+    pub item: &'a Item,
+    pub children: ArenaRefChildren<'a, Item>,
+}
+
+pub struct ArenaMut<'a, Item> {
+    pub parent_id: Option<u64>,
+    pub id: Option<u64>,
+    pub item: &'a mut Item,
+    pub children: ArenaMutChildren<'a, Item>,
 }
 
 /// A reference type giving shared access to an item's children.
@@ -44,30 +58,32 @@ pub struct TreeArena<Item> {
 /// When you borrow an item from a [`TreeArena`], you get two values, returned
 /// separately for lifetime reasons: a reference to the item itself, and a token
 /// to access its children.
-pub struct TreeArenaToken<'a, Item> {
+pub struct ArenaRefChildren<'a, Item> {
     id: Option<u64>,
     parent_id: Option<u64>,
     children: &'a Vec<TreeNode<Item>>,
 }
-
-impl<'a, Item> Clone for TreeArenaToken<'a, Item> {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-
-impl<'a, Item> Copy for TreeArenaToken<'a, Item> {}
 
 /// A reference type giving mutable access to an item's children.
 ///
 /// When you borrow an item from a [`TreeArena`], you get two values, returned
 /// separately for lifetime reasons: a reference to the item itself, and a token
 /// to access its children.
-pub struct TreeArenaTokenMut<'a, Item> {
+pub struct ArenaMutChildren<'a, Item> {
     id: Option<u64>,
     parent_id: Option<u64>,
     children: &'a mut Vec<TreeNode<Item>>,
 }
+
+// -- MARK: IMPLS ---
+
+impl<'a, Item> Clone for ArenaRefChildren<'a, Item> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+impl<'a, Item> Copy for ArenaRefChildren<'a, Item> {}
 
 impl<Item> TreeArena<Item> {
     /// Create an empty tree.
@@ -76,8 +92,8 @@ impl<Item> TreeArena<Item> {
     }
 
     /// Returns a token whose children are the roots, if any, of the tree.
-    pub fn root_token(&self) -> TreeArenaToken<'_, Item> {
-        TreeArenaToken {
+    pub fn root_token(&self) -> ArenaRefChildren<'_, Item> {
+        ArenaRefChildren {
             id: None,
             parent_id: None,
             children: &self.roots,
@@ -88,8 +104,8 @@ impl<Item> TreeArena<Item> {
     ///
     /// Using [`insert_child`](TreeArenaTokenMut::insert_child) on this token
     /// will add a new root to the tree.
-    pub fn root_token_mut(&mut self) -> TreeArenaTokenMut<'_, Item> {
-        TreeArenaTokenMut {
+    pub fn root_token_mut(&mut self) -> ArenaMutChildren<'_, Item> {
+        ArenaMutChildren {
             id: None,
             parent_id: None,
             children: &mut self.roots,
@@ -106,33 +122,35 @@ impl<Item> TreeArena<Item> {
     ///
     /// O(N) where N is the size of the tree. In future versions, will be O(depth)
     /// or O(1).
-    pub fn find(&self, id: u64) -> Option<(&Item, TreeArenaToken<'_, Item>)> {
+    pub fn find(&self, id: u64) -> Option<ArenaRef<'_, Item>> {
         fn find_child<Item>(
             node: &TreeNode<Item>,
             parent_id: Option<u64>,
             id: u64,
-        ) -> Option<(&Item, TreeArenaToken<'_, Item>)> {
+        ) -> Option<ArenaRef<'_, Item>> {
             if node.id == id {
-                return Some((
-                    &node.item,
-                    TreeArenaToken {
+                return Some(ArenaRef {
+                    parent_id,
+                    id: Some(node.id),
+                    item: &node.item,
+                    children: ArenaRefChildren {
                         id: Some(node.id),
                         parent_id,
                         children: &node.children,
                     },
-                ));
+                });
             }
             for child in &node.children {
-                if let Some((item, token)) = find_child(child, Some(node.id), id) {
-                    return Some((item, token));
+                if let Some(arena_ref) = find_child(child, Some(node.id), id) {
+                    return Some(arena_ref);
                 }
             }
             None
         }
 
         for child in &self.roots {
-            if let Some((item, token)) = find_child(child, None, id) {
-                return Some((item, token));
+            if let Some(arena_ref) = find_child(child, None, id) {
+                return Some(arena_ref);
             }
         }
 
@@ -148,33 +166,35 @@ impl<Item> TreeArena<Item> {
     ///
     /// O(N) where N is the size of the tree. In future versions, will be O(depth)
     /// or O(1).
-    pub fn find_mut(&mut self, id: u64) -> Option<(&mut Item, TreeArenaTokenMut<'_, Item>)> {
+    pub fn find_mut(&mut self, id: u64) -> Option<ArenaMut<'_, Item>> {
         fn find_child_mut<Item>(
             node: &mut TreeNode<Item>,
             parent_id: Option<u64>,
             id: u64,
-        ) -> Option<(&mut Item, TreeArenaTokenMut<'_, Item>)> {
+        ) -> Option<ArenaMut<'_, Item>> {
             if node.id == id {
-                return Some((
-                    &mut node.item,
-                    TreeArenaTokenMut {
+                return Some(ArenaMut {
+                    parent_id,
+                    id: Some(node.id),
+                    item: &mut node.item,
+                    children: ArenaMutChildren {
                         id: Some(node.id),
                         parent_id,
                         children: &mut node.children,
                     },
-                ));
+                });
             }
             for child in &mut node.children {
-                if let Some((item, token)) = find_child_mut(child, Some(node.id), id) {
-                    return Some((item, token));
+                if let Some(arena_mut) = find_child_mut(child, Some(node.id), id) {
+                    return Some(arena_mut);
                 }
             }
             None
         }
 
         for child in &mut self.roots {
-            if let Some((item, token)) = find_child_mut(child, None, id) {
-                return Some((item, token));
+            if let Some(arena_mut) = find_child_mut(child, None, id) {
+                return Some(arena_mut);
             }
         }
 
@@ -192,13 +212,13 @@ impl<Item> TreeArena<Item> {
         let mut current_id = Some(id);
         while let Some(id) = current_id {
             path.push(id);
-            current_id = self.find(id).unwrap().1.parent_id;
+            current_id = self.find(id).unwrap().parent_id;
         }
         path
     }
 }
 
-impl<'a, Item> TreeArenaToken<'a, Item> {
+impl<'a, Item> ArenaRefChildren<'a, Item> {
     /// Returns the id of the parent of the item this token is associated with.
     pub fn parent_id(&self) -> Option<u64> {
         self.parent_id
@@ -218,17 +238,19 @@ impl<'a, Item> TreeArenaToken<'a, Item> {
     ///
     /// Returns a tuple of a shared reference to the child and a token to access
     /// its children.
-    pub fn get_child(&self, id: u64) -> Option<(&'_ Item, TreeArenaToken<'_, Item>)> {
+    pub fn get_child(&self, id: u64) -> Option<ArenaRef<'_, Item>> {
         for child in self.children {
             if child.id == id {
-                return Some((
-                    &child.item,
-                    TreeArenaToken {
+                return Some(ArenaRef {
+                    parent_id: self.id,
+                    id: Some(child.id),
+                    item: &child.item,
+                    children: ArenaRefChildren {
                         id: Some(child.id),
                         parent_id: self.id,
                         children: &child.children,
                     },
-                ));
+                });
             }
         }
         None
@@ -238,17 +260,19 @@ impl<'a, Item> TreeArenaToken<'a, Item> {
     ///
     /// This is the same as [`get_child`](Self::get_child), except it consumes the
     /// token. This is sometimes necesssary to accommodate the borrow checker.
-    pub fn into_child(self, id: u64) -> Option<(&'a Item, TreeArenaToken<'a, Item>)> {
+    pub fn into_child(self, id: u64) -> Option<ArenaRef<'a, Item>> {
         for child in &self.children[..] {
             if child.id == id {
-                return Some((
-                    &child.item,
-                    TreeArenaToken {
+                return Some(ArenaRef {
+                    parent_id: self.id,
+                    id: Some(child.id),
+                    item: &child.item,
+                    children: ArenaRefChildren {
                         id: Some(child.id),
                         parent_id: self.id,
                         children: &child.children,
                     },
-                ));
+                });
             }
         }
         None
@@ -257,23 +281,21 @@ impl<'a, Item> TreeArenaToken<'a, Item> {
     // TODO - This method could not be implemented with an actual arena design.
     // It's currently used for some sanity-checking of widget code, but will
     // likely be removed.
-    pub(crate) fn iter_children(
-        &self,
-    ) -> impl Iterator<Item = (&'_ Item, TreeArenaToken<'_, Item>)> {
-        self.children.iter().map(|child| {
-            (
-                &child.item,
-                TreeArenaToken {
-                    id: Some(child.id),
-                    parent_id: self.id,
-                    children: &child.children,
-                },
-            )
+    pub(crate) fn iter_children(&self) -> impl Iterator<Item = ArenaRef<'_, Item>> {
+        self.children.iter().map(|child| ArenaRef {
+            parent_id: self.id,
+            id: Some(child.id),
+            item: &child.item,
+            children: ArenaRefChildren {
+                id: Some(child.id),
+                parent_id: self.id,
+                children: &child.children,
+            },
         })
     }
 }
 
-impl<'a, Item> TreeArenaTokenMut<'a, Item> {
+impl<'a, Item> ArenaMutChildren<'a, Item> {
     /// Returns the id of the parent of the item this token is associated with.
     pub fn parent_id(&self) -> Option<u64> {
         self.parent_id
@@ -283,17 +305,19 @@ impl<'a, Item> TreeArenaTokenMut<'a, Item> {
     ///
     /// Returns a tuple of a shared reference to the child and a token to access
     /// its children.
-    pub fn get_child(&self, id: u64) -> Option<(&'_ Item, TreeArenaToken<'_, Item>)> {
+    pub fn get_child(&self, id: u64) -> Option<ArenaRef<'_, Item>> {
         for child in &*self.children {
             if child.id == id {
-                return Some((
-                    &child.item,
-                    TreeArenaToken {
+                return Some(ArenaRef {
+                    parent_id: self.id,
+                    id: Some(child.id),
+                    item: &child.item,
+                    children: ArenaRefChildren {
                         id: Some(child.id),
                         parent_id: self.id,
                         children: &child.children,
                     },
-                ));
+                });
             }
         }
         None
@@ -303,20 +327,19 @@ impl<'a, Item> TreeArenaTokenMut<'a, Item> {
     ///
     /// Returns a tuple of a mutable reference to the child and a token to access
     /// its children.
-    pub fn get_child_mut(
-        &mut self,
-        id: u64,
-    ) -> Option<(&'_ mut Item, TreeArenaTokenMut<'_, Item>)> {
+    pub fn get_child_mut(&mut self, id: u64) -> Option<ArenaMut<'_, Item>> {
         for child in &mut self.children[..] {
             if child.id == id {
-                return Some((
-                    &mut child.item,
-                    TreeArenaTokenMut {
+                return Some(ArenaMut {
+                    parent_id: self.id,
+                    id: Some(child.id),
+                    item: &mut child.item,
+                    children: ArenaMutChildren {
                         id: Some(child.id),
                         parent_id: self.id,
                         children: &mut child.children,
                     },
-                ));
+                });
             }
         }
         None
@@ -326,17 +349,19 @@ impl<'a, Item> TreeArenaTokenMut<'a, Item> {
     ///
     /// This is the same as [`get_child`](Self::get_child), except it consumes the
     /// token. This is sometimes necesssary to accommodate the borrow checker.
-    pub fn into_child(self, id: u64) -> Option<(&'a Item, TreeArenaToken<'a, Item>)> {
+    pub fn into_child(self, id: u64) -> Option<ArenaMut<'a, Item>> {
         for child in &mut self.children[..] {
             if child.id == id {
-                return Some((
-                    &child.item,
-                    TreeArenaToken {
+                return Some(ArenaMut {
+                    parent_id: self.id,
+                    id: Some(child.id),
+                    item: &mut child.item,
+                    children: ArenaMutChildren {
                         id: Some(child.id),
                         parent_id: self.id,
-                        children: &child.children,
+                        children: &mut child.children,
                     },
-                ));
+                });
             }
         }
         None
@@ -346,17 +371,19 @@ impl<'a, Item> TreeArenaTokenMut<'a, Item> {
     ///
     /// This is the same as [`get_child_mut`](Self::get_child_mut), except it consumes
     /// the token. This is sometimes necesssary to accommodate the borrow checker.
-    pub fn into_child_mut(self, id: u64) -> Option<(&'a mut Item, TreeArenaTokenMut<'a, Item>)> {
+    pub fn into_child_mut(self, id: u64) -> Option<ArenaMut<'a, Item>> {
         for child in &mut self.children[..] {
             if child.id == id {
-                return Some((
-                    &mut child.item,
-                    TreeArenaTokenMut {
+                return Some(ArenaMut {
+                    parent_id: self.id,
+                    id: Some(child.id),
+                    item: &mut child.item,
+                    children: ArenaMutChildren {
                         id: Some(child.id),
                         parent_id: self.id,
                         children: &mut child.children,
                     },
-                ));
+                });
             }
         }
         None
@@ -365,36 +392,32 @@ impl<'a, Item> TreeArenaTokenMut<'a, Item> {
     // TODO - This method could not be implemented with an actual arena design.
     // It's currently used for some sanity-checking of widget code, but will
     // likely be removed.
-    pub(crate) fn iter_children(
-        &self,
-    ) -> impl Iterator<Item = (&'_ Item, TreeArenaToken<'_, Item>)> {
-        self.children.iter().map(|child| {
-            (
-                &child.item,
-                TreeArenaToken {
-                    id: Some(child.id),
-                    parent_id: self.id,
-                    children: &child.children,
-                },
-            )
+    pub(crate) fn iter_children(&self) -> impl Iterator<Item = ArenaRef<'_, Item>> {
+        self.children.iter().map(|child| ArenaRef {
+            parent_id: self.id,
+            id: Some(child.id),
+            item: &child.item,
+            children: ArenaRefChildren {
+                id: Some(child.id),
+                parent_id: self.id,
+                children: &child.children,
+            },
         })
     }
 
     // TODO - This method could not be implemented with an actual arena design.
     // It's currently used for some sanity-checking of widget code, but will
     // likely be removed.
-    pub(crate) fn iter_children_mut(
-        &mut self,
-    ) -> impl Iterator<Item = (&'_ mut Item, TreeArenaTokenMut<'_, Item>)> {
-        self.children.iter_mut().map(|child| {
-            (
-                &mut child.item,
-                TreeArenaTokenMut {
-                    id: Some(child.id),
-                    parent_id: self.id,
-                    children: &mut child.children,
-                },
-            )
+    pub(crate) fn iter_children_mut(&mut self) -> impl Iterator<Item = ArenaMut<'_, Item>> {
+        self.children.iter_mut().map(|child| ArenaMut {
+            parent_id: self.id,
+            id: Some(child.id),
+            item: &mut child.item,
+            children: ArenaMutChildren {
+                id: Some(child.id),
+                parent_id: self.id,
+                children: &mut child.children,
+            },
         })
     }
 
@@ -428,8 +451,8 @@ impl<'a, Item> TreeArenaTokenMut<'a, Item> {
     }
 
     /// Returns a shared token equivalent to this one.
-    pub fn reborrow(&mut self) -> TreeArenaToken<'_, Item> {
-        TreeArenaToken {
+    pub fn reborrow(&mut self) -> ArenaRefChildren<'_, Item> {
+        ArenaRefChildren {
             id: self.id,
             parent_id: self.parent_id,
             children: &*self.children,
@@ -439,8 +462,8 @@ impl<'a, Item> TreeArenaTokenMut<'a, Item> {
     /// Returns a mutable token equivalent to this one.
     ///
     /// This is sometimes useful to work with the borrow checker.
-    pub fn reborrow_mut(&mut self) -> TreeArenaTokenMut<'_, Item> {
-        TreeArenaTokenMut {
+    pub fn reborrow_mut(&mut self) -> ArenaMutChildren<'_, Item> {
+        ArenaMutChildren {
             id: self.id,
             parent_id: self.parent_id,
             children: &mut *self.children,

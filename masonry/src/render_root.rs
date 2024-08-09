@@ -70,7 +70,7 @@ pub(crate) struct WidgetArena {
 #[allow(dead_code)]
 impl WidgetArena {
     pub(crate) fn get_widget(&self, widget_id: WidgetId) -> &dyn Widget {
-        let (widget, _token) = self
+        let widget_ref = self
             .widgets
             .find(widget_id.to_raw())
             .expect("widget not in widget tree");
@@ -78,6 +78,7 @@ impl WidgetArena {
         // Our WidgetArena stores all widgets as Box<dyn Widget>, but the "true"
         // type of our root widget is *also* Box<dyn Widget>. We downcast so we
         // don't add one more level of indirection to this.
+        let widget = widget_ref.item;
         let widget = widget
             .as_dyn_any()
             .downcast_ref::<Box<dyn Widget>>()
@@ -87,7 +88,7 @@ impl WidgetArena {
     }
 
     pub(crate) fn get_widget_mut(&mut self, widget_id: WidgetId) -> &mut dyn Widget {
-        let (widget, _token) = self
+        let widget_mut = self
             .widgets
             .find_mut(widget_id.to_raw())
             .expect("widget not in widget tree");
@@ -95,6 +96,7 @@ impl WidgetArena {
         // Our WidgetArena stores all widgets as Box<dyn Widget>, but the "true"
         // type of our root widget is *also* Box<dyn Widget>. We downcast so we
         // don't add one more level of indirection to this.
+        let widget = widget_mut.item;
         let widget = widget
             .as_mut_dyn_any()
             .downcast_mut::<Box<dyn Widget>>()
@@ -104,19 +106,19 @@ impl WidgetArena {
     }
 
     pub(crate) fn get_state(&mut self, widget_id: WidgetId) -> &WidgetState {
-        let (state, _token) = self
+        let state_ref = self
             .widget_states
             .find(widget_id.to_raw())
             .expect("widget not in widget tree");
-        state
+        state_ref.item
     }
 
     pub(crate) fn get_state_mut(&mut self, widget_id: WidgetId) -> &mut WidgetState {
-        let (state, _token) = self
+        let state_mut = self
             .widget_states
             .find_mut(widget_id.to_raw())
             .expect("widget not in widget tree");
-        state
+        state_mut.item
     }
 }
 
@@ -212,7 +214,7 @@ impl RenderRoot {
             .root_token_mut()
             .into_child_mut(self.root.id().to_raw())
             .expect("root widget not in widget tree")
-            .0
+            .item
     }
 
     // --- MARK: WINDOW_EVENT ---
@@ -327,25 +329,26 @@ impl RenderRoot {
     pub fn get_root_widget(&self) -> WidgetRef<dyn Widget> {
         let root_state_token = self.widget_arena.widget_states.root_token();
         let root_widget_token = self.widget_arena.widgets.root_token();
-        let (state, state_children) = root_state_token
+        let state_ref = root_state_token
             .into_child(self.root.id().to_raw())
             .expect("root widget not in widget tree");
-        let (widget, widget_children) = root_widget_token
+        let widget_ref = root_widget_token
             .into_child(self.root.id().to_raw())
             .expect("root widget not in widget tree");
 
         // Our WidgetArena stores all widgets as Box<dyn Widget>, but the "true"
         // type of our root widget is *also* Box<dyn Widget>. We downcast so we
         // don't add one more level of indirection to this.
+        let widget = widget_ref.item;
         let widget = widget
             .as_dyn_any()
             .downcast_ref::<Box<dyn Widget>>()
             .unwrap();
 
         WidgetRef {
-            widget_state_children: state_children,
-            widget_children,
-            widget_state: state,
+            widget_state_children: state_ref.children,
+            widget_children: widget_ref.children,
+            widget_state: state_ref.item,
             widget,
         }
     }
@@ -358,16 +361,17 @@ impl RenderRoot {
             WidgetState::new(self.root.id(), Some(self.get_kurbo_size()), "<root>");
         let root_state_token = self.widget_arena.widget_states.root_token_mut();
         let root_widget_token = self.widget_arena.widgets.root_token_mut();
-        let (state, state_token) = root_state_token
+        let state_ref = root_state_token
             .into_child_mut(self.root.id().to_raw())
             .expect("root widget not in widget tree");
-        let (widget, widget_token) = root_widget_token
+        let widget_ref = root_widget_token
             .into_child_mut(self.root.id().to_raw())
             .expect("root widget not in widget tree");
 
         // Our WidgetArena stores all widgets as Box<dyn Widget>, but the "true"
         // type of our root widget is *also* Box<dyn Widget>. We downcast so we
         // don't add one more level of indirection to this.
+        let widget = widget_ref.item;
         let widget = widget
             .as_mut_dyn_any()
             .downcast_mut::<Box<dyn Widget>>()
@@ -378,9 +382,9 @@ impl RenderRoot {
             ctx: WidgetCtx {
                 global_state: &mut self.state,
                 parent_widget_state: &mut fake_widget_state,
-                widget_state: state,
-                widget_state_children: state_token,
-                widget_children: widget_token,
+                widget_state: state_ref.item,
+                widget_state_children: state_ref.children,
+                widget_children: widget_ref.children,
             },
             widget,
             is_reborrow: false,
@@ -396,8 +400,8 @@ impl RenderRoot {
     }
 
     pub fn get_widget(&self, id: WidgetId) -> Option<WidgetRef<dyn Widget>> {
-        let (state, state_token) = self.widget_arena.widget_states.find(id.to_raw())?;
-        let (widget, widget_token) = self
+        let state_ref = self.widget_arena.widget_states.find(id.to_raw())?;
+        let widget_ref = self
             .widget_arena
             .widgets
             .find(id.to_raw())
@@ -407,11 +411,12 @@ impl RenderRoot {
         // Without this step, the type of `WidgetRef::widget` would be
         // `&Box<dyn Widget> as &dyn Widget`, which would be an additional layer
         // of indirection.
+        let widget = widget_ref.item;
         let widget: &dyn Widget = &**widget;
         Some(WidgetRef {
-            widget_state_children: state_token,
-            widget_children: widget_token,
-            widget_state: state,
+            widget_state_children: state_ref.children,
+            widget_children: widget_ref.children,
+            widget_state: state_ref.item,
             widget,
         })
     }
