@@ -7,24 +7,43 @@ use tracing::{debug, info_span, trace};
 use winit::keyboard::{KeyCode, PhysicalKey};
 
 use crate::render_root::{RenderRoot, RenderRootSignal, WidgetArena};
-use crate::tree_arena::ArenaMutChildren;
+use crate::tree_arena::{ArenaMut, ArenaMutChildren};
 use crate::{
     AccessEvent, EventCtx, Handled, PointerEvent, TextEvent, Widget, WidgetId, WidgetState,
 };
 
 // References shared by all passes
 struct PassCtx<'a> {
-    pub(crate) widget_state: &'a mut WidgetState,
-    pub(crate) widget_state_children: ArenaMutChildren<'a, WidgetState>,
+    pub(crate) widget_state: ArenaMut<'a, WidgetState>,
     pub(crate) widget_children: ArenaMutChildren<'a, Box<dyn Widget>>,
 }
 
 impl<'a> PassCtx<'a> {
     fn parent(&self) -> Option<WidgetId> {
-        let parent_id = self.widget_children.parent_id()?;
+        let parent_id = self.widget_state.parent_id?;
         let parent_id = parent_id.try_into().unwrap();
         Some(WidgetId(parent_id))
     }
+}
+
+// TODO - Merge copy-pasted code
+fn merge_state_up(arena: &mut WidgetArena, widget_id: WidgetId, root_state: &mut WidgetState) {
+    let parent_id = get_widget_mut(arena, widget_id).1.parent();
+
+    let Some(parent_id) = parent_id else {
+        // We've reached the root
+        let child_state_mut = arena.widget_states.find_mut(widget_id.to_raw()).unwrap();
+        root_state.merge_up(child_state_mut.item);
+        return;
+    };
+
+    let mut parent_state_mut = arena.widget_states.find_mut(parent_id.to_raw()).unwrap();
+    let child_state_mut = parent_state_mut
+        .children
+        .get_child_mut(widget_id.to_raw())
+        .unwrap();
+
+    parent_state_mut.item.merge_up(child_state_mut.item);
 }
 
 fn get_widget_mut(arena: &mut WidgetArena, id: WidgetId) -> (&mut dyn Widget, PassCtx<'_>) {
@@ -47,31 +66,10 @@ fn get_widget_mut(arena: &mut WidgetArena, id: WidgetId) -> (&mut dyn Widget, Pa
     (
         widget,
         PassCtx {
-            widget_state: state_mut.item,
-            widget_state_children: state_mut.children,
+            widget_state: state_mut,
             widget_children: widget_mut.children,
         },
     )
-}
-
-// TODO - Merge copy-pasted code
-fn merge_state_up(arena: &mut WidgetArena, widget_id: WidgetId, root_state: &mut WidgetState) {
-    let parent_id = get_widget_mut(arena, widget_id).1.parent();
-
-    let Some(parent_id) = parent_id else {
-        // We've reached the root
-        let child_state_mut = arena.widget_states.find_mut(widget_id.to_raw()).unwrap();
-        root_state.merge_up(child_state_mut.item);
-        return;
-    };
-
-    let mut parent_state_mut = arena.widget_states.find_mut(parent_id.to_raw()).unwrap();
-    let child_state_mut = parent_state_mut
-        .children
-        .get_child_mut(widget_id.to_raw())
-        .unwrap();
-
-    parent_state_mut.item.merge_up(child_state_mut.item);
 }
 
 fn get_target_widget(
@@ -223,13 +221,13 @@ fn run_event_pass<E>(
     let mut target_widget_id = target;
     let mut is_handled = false;
     while let Some(widget_id) = target_widget_id {
-        let (widget, pass_ctx) = get_widget_mut(&mut root.widget_arena, widget_id);
+        let (widget, mut pass_ctx) = get_widget_mut(&mut root.widget_arena, widget_id);
         let parent_id = pass_ctx.parent();
 
         let mut ctx = EventCtx {
             global_state: &mut root.state,
-            widget_state: pass_ctx.widget_state,
-            widget_state_children: pass_ctx.widget_state_children,
+            widget_state: &mut pass_ctx.widget_state.item,
+            widget_state_children: pass_ctx.widget_state.children,
             widget_children: pass_ctx.widget_children,
             is_handled: false,
             request_pan_to_child: None,
