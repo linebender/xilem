@@ -34,12 +34,12 @@ macro_rules! impl_context_method {
 /// A context provided inside of [`WidgetMut`].
 ///
 /// When you declare a mutable reference type for your widget, methods of this type
-/// will have access to a `WidgetCtx`. If that method mutates the widget in a way that
+/// will have access to a `MutateCtx`. If that method mutates the widget in a way that
 /// requires a later pass (for instance, if your widget has a `set_color` method),
 /// you will need to signal that change in the pass (eg `request_paint`).
 ///
 // TODO add tutorial - See https://github.com/linebender/xilem/issues/376
-pub struct WidgetCtx<'a> {
+pub struct MutateCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) parent_widget_state: &'a mut WidgetState,
     pub(crate) widget_state: &'a mut WidgetState,
@@ -110,7 +110,7 @@ pub struct AccessCtx<'a> {
 // --- MARK: GETTERS ---
 // Methods for all context types
 impl_context_method!(
-    WidgetCtx<'_>,
+    MutateCtx<'_>,
     EventCtx<'_>,
     LifeCycleCtx<'_>,
     LayoutCtx<'_>,
@@ -158,7 +158,7 @@ impl_context_method!(
 
 // Methods for all mutable context types
 impl_context_method!(
-    WidgetCtx<'_>,
+    MutateCtx<'_>,
     EventCtx<'_>,
     LifeCycleCtx<'_>,
     LayoutCtx<'_>,
@@ -184,7 +184,7 @@ impl_context_method!(
 // Methods on all context types except LayoutCtx
 // These methods access layout info calculated during the layout pass.
 impl_context_method!(
-    WidgetCtx<'_>,
+    MutateCtx<'_>,
     EventCtx<'_>,
     LifeCycleCtx<'_>,
     PaintCtx<'_>,
@@ -226,7 +226,7 @@ impl_context_method!(
 // Methods on all context types except LayoutCtx
 // Access status information (hot/active/disabled/etc).
 impl_context_method!(
-    WidgetCtx<'_>,
+    MutateCtx<'_>,
     EventCtx<'_>,
     LifeCycleCtx<'_>,
     PaintCtx<'_>,
@@ -347,7 +347,7 @@ impl_context_method!(EventCtx<'_>, {
 
 // --- MARK: WIDGET_MUT ---
 // Methods to get a child WidgetMut from a parent.
-impl<'a> WidgetCtx<'a> {
+impl<'a> MutateCtx<'a> {
     /// Return a [`WidgetMut`] to a child widget.
     pub fn get_mut<'c, Child: Widget>(
         &'c mut self,
@@ -361,7 +361,7 @@ impl<'a> WidgetCtx<'a> {
             .widget_children
             .get_child_mut(child.id().to_raw())
             .expect("get_mut: child not found");
-        let child_ctx = WidgetCtx {
+        let child_ctx = MutateCtx {
             global_state: self.global_state,
             parent_widget_state: self.widget_state,
             widget_state: child_state_mut.item,
@@ -393,7 +393,7 @@ impl<'a> EventCtx<'a> {
             .widget_children
             .get_child_mut(child.id().to_raw())
             .expect("get_mut: child not found");
-        let child_ctx = WidgetCtx {
+        let child_ctx = MutateCtx {
             global_state: self.global_state,
             parent_widget_state: self.widget_state,
             widget_state: child_state_mut.item,
@@ -423,7 +423,7 @@ impl<'a> LifeCycleCtx<'a> {
             .widget_children
             .get_child_mut(child.id().to_raw())
             .expect("get_mut: child not found");
-        let child_ctx = WidgetCtx {
+        let child_ctx = MutateCtx {
             global_state: self.global_state,
             parent_widget_state: self.widget_state,
             widget_state: child_state_mut.item,
@@ -439,8 +439,8 @@ impl<'a> LifeCycleCtx<'a> {
 }
 
 // --- MARK: UPDATE FLAGS ---
-// Methods on WidgetCtx, EventCtx, and LifeCycleCtx
-impl_context_method!(WidgetCtx<'_>, EventCtx<'_>, LifeCycleCtx<'_>, {
+// Methods on MutateCtx, EventCtx, and LifeCycleCtx
+impl_context_method!(MutateCtx<'_>, EventCtx<'_>, LifeCycleCtx<'_>, {
     /// Request a [`paint`](crate::Widget::paint) pass.
     pub fn request_paint(&mut self) {
         trace!("request_paint");
@@ -540,7 +540,7 @@ impl_context_method!(WidgetCtx<'_>, EventCtx<'_>, LifeCycleCtx<'_>, {
 // --- MARK: OTHER METHODS ---
 // Methods on all context types except PaintCtx and AccessCtx
 impl_context_method!(
-    WidgetCtx<'_>,
+    MutateCtx<'_>,
     EventCtx<'_>,
     LifeCycleCtx<'_>,
     LayoutCtx<'_>,

@@ -16,7 +16,7 @@ use std::time::Instant;
 #[cfg(target_arch = "wasm32")]
 use web_time::Instant;
 
-use crate::contexts::{LayoutCtx, LifeCycleCtx, PaintCtx, WidgetCtx};
+use crate::contexts::{LayoutCtx, LifeCycleCtx, MutateCtx, PaintCtx};
 use crate::debug_logger::DebugLogger;
 use crate::dpi::{LogicalPosition, LogicalSize, PhysicalSize};
 use crate::event::{PointerEvent, TextEvent, WindowEvent};
@@ -321,7 +321,7 @@ impl RenderRoot {
 
         self.state.next_focused_widget = self.state.focused_widget;
         let root_widget = WidgetMut {
-            ctx: WidgetCtx {
+            ctx: MutateCtx {
                 global_state: &mut self.state,
                 parent_widget_state: &mut fake_widget_state,
                 widget_state: state_ref.item,
