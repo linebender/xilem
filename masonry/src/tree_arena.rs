@@ -97,7 +97,7 @@ impl<Item> TreeArena<Item> {
 
     /// Returns a token whose children are the roots, if any, of the tree.
     ///
-    /// Using [`insert_child`](TreeArenaTokenMut::insert_child) on this token
+    /// Using [`insert_child`](ArenaMutChildren::insert_child) on this token
     /// will add a new root to the tree.
     pub fn root_token_mut(&mut self) -> ArenaMutChildren<'_, Item> {
         ArenaMutChildren {
@@ -451,15 +451,15 @@ impl<'a, Item> ArenaMutChildren<'a, Item> {
 mod arena_version {
     struct TreeArena<Item> {
         items: HashMap<u64, UnsafeCell<Item>>,
-        parents: HashMap<u64, u64>,
+        parents: HashMap<u64, Option<u64>>,
     }
 
-    struct TreeArenaToken<'a, Item> {
+    struct ArenaRefChildren<'a, Item> {
         arena: &'a TreeArena<Item>,
         id: u64,
     }
 
-    struct TreeArenaTokenMut<'a, Item> {
+    struct ArenaMutChildren<'a, Item> {
         arena: &'a TreeArena<Item>,
         id: u64,
     }
