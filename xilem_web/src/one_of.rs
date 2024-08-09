@@ -234,11 +234,11 @@ impl PhantomElementCtx for ViewCtx {
 }
 
 impl WithAttributes for Noop {
-    fn start_attribute_modifier(&mut self) {
+    fn rebuild_attribute_modifier(&mut self) {
         unreachable!()
     }
 
-    fn end_attribute_modifier(&mut self) {
+    fn mark_end_of_attribute_modifier(&mut self) {
         unreachable!()
     }
 
@@ -248,7 +248,7 @@ impl WithAttributes for Noop {
 }
 
 impl WithClasses for Noop {
-    fn start_class_modifier(&mut self) {
+    fn rebuild_class_modifier(&mut self) {
         unreachable!()
     }
 
@@ -260,13 +260,13 @@ impl WithClasses for Noop {
         unreachable!()
     }
 
-    fn end_class_modifier(&mut self) {
+    fn mark_end_of_class_modifier(&mut self) {
         unreachable!()
     }
 }
 
 impl WithStyle for Noop {
-    fn start_style_modifier(&mut self) {
+    fn rebuild_style_modifier(&mut self) {
         unreachable!()
     }
 
@@ -274,7 +274,7 @@ impl WithStyle for Noop {
         unreachable!()
     }
 
-    fn end_style_modifier(&mut self) {
+    fn mark_end_of_style_modifier(&mut self) {
         unreachable!()
     }
 }
@@ -303,31 +303,31 @@ impl<
         E9: WithAttributes,
     > WithAttributes for OneOf<E1, E2, E3, E4, E5, E6, E7, E8, E9>
 {
-    fn start_attribute_modifier(&mut self) {
+    fn rebuild_attribute_modifier(&mut self) {
         match self {
-            OneOf::A(e) => e.start_attribute_modifier(),
-            OneOf::B(e) => e.start_attribute_modifier(),
-            OneOf::C(e) => e.start_attribute_modifier(),
-            OneOf::D(e) => e.start_attribute_modifier(),
-            OneOf::E(e) => e.start_attribute_modifier(),
-            OneOf::F(e) => e.start_attribute_modifier(),
-            OneOf::G(e) => e.start_attribute_modifier(),
-            OneOf::H(e) => e.start_attribute_modifier(),
-            OneOf::I(e) => e.start_attribute_modifier(),
+            OneOf::A(e) => e.rebuild_attribute_modifier(),
+            OneOf::B(e) => e.rebuild_attribute_modifier(),
+            OneOf::C(e) => e.rebuild_attribute_modifier(),
+            OneOf::D(e) => e.rebuild_attribute_modifier(),
+            OneOf::E(e) => e.rebuild_attribute_modifier(),
+            OneOf::F(e) => e.rebuild_attribute_modifier(),
+            OneOf::G(e) => e.rebuild_attribute_modifier(),
+            OneOf::H(e) => e.rebuild_attribute_modifier(),
+            OneOf::I(e) => e.rebuild_attribute_modifier(),
         }
     }
 
-    fn end_attribute_modifier(&mut self) {
+    fn mark_end_of_attribute_modifier(&mut self) {
         match self {
-            OneOf::A(e) => e.end_attribute_modifier(),
-            OneOf::B(e) => e.end_attribute_modifier(),
-            OneOf::C(e) => e.end_attribute_modifier(),
-            OneOf::D(e) => e.end_attribute_modifier(),
-            OneOf::E(e) => e.end_attribute_modifier(),
-            OneOf::F(e) => e.end_attribute_modifier(),
-            OneOf::G(e) => e.end_attribute_modifier(),
-            OneOf::H(e) => e.end_attribute_modifier(),
-            OneOf::I(e) => e.end_attribute_modifier(),
+            OneOf::A(e) => e.mark_end_of_attribute_modifier(),
+            OneOf::B(e) => e.mark_end_of_attribute_modifier(),
+            OneOf::C(e) => e.mark_end_of_attribute_modifier(),
+            OneOf::D(e) => e.mark_end_of_attribute_modifier(),
+            OneOf::E(e) => e.mark_end_of_attribute_modifier(),
+            OneOf::F(e) => e.mark_end_of_attribute_modifier(),
+            OneOf::G(e) => e.mark_end_of_attribute_modifier(),
+            OneOf::H(e) => e.mark_end_of_attribute_modifier(),
+            OneOf::I(e) => e.mark_end_of_attribute_modifier(),
         }
     }
 
@@ -358,17 +358,17 @@ impl<
         E9: WithClasses,
     > WithClasses for OneOf<E1, E2, E3, E4, E5, E6, E7, E8, E9>
 {
-    fn start_class_modifier(&mut self) {
+    fn rebuild_class_modifier(&mut self) {
         match self {
-            OneOf::A(e) => e.start_class_modifier(),
-            OneOf::B(e) => e.start_class_modifier(),
-            OneOf::C(e) => e.start_class_modifier(),
-            OneOf::D(e) => e.start_class_modifier(),
-            OneOf::E(e) => e.start_class_modifier(),
-            OneOf::F(e) => e.start_class_modifier(),
-            OneOf::G(e) => e.start_class_modifier(),
-            OneOf::H(e) => e.start_class_modifier(),
-            OneOf::I(e) => e.start_class_modifier(),
+            OneOf::A(e) => e.rebuild_class_modifier(),
+            OneOf::B(e) => e.rebuild_class_modifier(),
+            OneOf::C(e) => e.rebuild_class_modifier(),
+            OneOf::D(e) => e.rebuild_class_modifier(),
+            OneOf::E(e) => e.rebuild_class_modifier(),
+            OneOf::F(e) => e.rebuild_class_modifier(),
+            OneOf::G(e) => e.rebuild_class_modifier(),
+            OneOf::H(e) => e.rebuild_class_modifier(),
+            OneOf::I(e) => e.rebuild_class_modifier(),
         }
     }
 
@@ -400,17 +400,17 @@ impl<
         }
     }
 
-    fn end_class_modifier(&mut self) {
+    fn mark_end_of_class_modifier(&mut self) {
         match self {
-            OneOf::A(e) => e.end_class_modifier(),
-            OneOf::B(e) => e.end_class_modifier(),
-            OneOf::C(e) => e.end_class_modifier(),
-            OneOf::D(e) => e.end_class_modifier(),
-            OneOf::E(e) => e.end_class_modifier(),
-            OneOf::F(e) => e.end_class_modifier(),
-            OneOf::G(e) => e.end_class_modifier(),
-            OneOf::H(e) => e.end_class_modifier(),
-            OneOf::I(e) => e.end_class_modifier(),
+            OneOf::A(e) => e.mark_end_of_class_modifier(),
+            OneOf::B(e) => e.mark_end_of_class_modifier(),
+            OneOf::C(e) => e.mark_end_of_class_modifier(),
+            OneOf::D(e) => e.mark_end_of_class_modifier(),
+            OneOf::E(e) => e.mark_end_of_class_modifier(),
+            OneOf::F(e) => e.mark_end_of_class_modifier(),
+            OneOf::G(e) => e.mark_end_of_class_modifier(),
+            OneOf::H(e) => e.mark_end_of_class_modifier(),
+            OneOf::I(e) => e.mark_end_of_class_modifier(),
         }
     }
 }
@@ -427,17 +427,17 @@ impl<
         E9: WithStyle,
     > WithStyle for OneOf<E1, E2, E3, E4, E5, E6, E7, E8, E9>
 {
-    fn start_style_modifier(&mut self) {
+    fn rebuild_style_modifier(&mut self) {
         match self {
-            OneOf::A(e) => e.start_style_modifier(),
-            OneOf::B(e) => e.start_style_modifier(),
-            OneOf::C(e) => e.start_style_modifier(),
-            OneOf::D(e) => e.start_style_modifier(),
-            OneOf::E(e) => e.start_style_modifier(),
-            OneOf::F(e) => e.start_style_modifier(),
-            OneOf::G(e) => e.start_style_modifier(),
-            OneOf::H(e) => e.start_style_modifier(),
-            OneOf::I(e) => e.start_style_modifier(),
+            OneOf::A(e) => e.rebuild_style_modifier(),
+            OneOf::B(e) => e.rebuild_style_modifier(),
+            OneOf::C(e) => e.rebuild_style_modifier(),
+            OneOf::D(e) => e.rebuild_style_modifier(),
+            OneOf::E(e) => e.rebuild_style_modifier(),
+            OneOf::F(e) => e.rebuild_style_modifier(),
+            OneOf::G(e) => e.rebuild_style_modifier(),
+            OneOf::H(e) => e.rebuild_style_modifier(),
+            OneOf::I(e) => e.rebuild_style_modifier(),
         }
     }
 
@@ -455,17 +455,17 @@ impl<
         }
     }
 
-    fn end_style_modifier(&mut self) {
+    fn mark_end_of_style_modifier(&mut self) {
         match self {
-            OneOf::A(e) => e.end_style_modifier(),
-            OneOf::B(e) => e.end_style_modifier(),
-            OneOf::C(e) => e.end_style_modifier(),
-            OneOf::D(e) => e.end_style_modifier(),
-            OneOf::E(e) => e.end_style_modifier(),
-            OneOf::F(e) => e.end_style_modifier(),
-            OneOf::G(e) => e.end_style_modifier(),
-            OneOf::H(e) => e.end_style_modifier(),
-            OneOf::I(e) => e.end_style_modifier(),
+            OneOf::A(e) => e.mark_end_of_style_modifier(),
+            OneOf::B(e) => e.mark_end_of_style_modifier(),
+            OneOf::C(e) => e.mark_end_of_style_modifier(),
+            OneOf::D(e) => e.mark_end_of_style_modifier(),
+            OneOf::E(e) => e.mark_end_of_style_modifier(),
+            OneOf::F(e) => e.mark_end_of_style_modifier(),
+            OneOf::G(e) => e.mark_end_of_style_modifier(),
+            OneOf::H(e) => e.mark_end_of_style_modifier(),
+            OneOf::I(e) => e.mark_end_of_style_modifier(),
         }
     }
 }

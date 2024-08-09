@@ -100,10 +100,9 @@ where
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let (mut element, child_state) = self.child.build(ctx);
         let brush_svg_repr = Cow::from(brush_to_string(&self.brush));
-        element.start_attribute_modifier();
         element.set_attribute("fill".into(), brush_svg_repr.clone().into_attr_value());
         add_opacity_to_element(&self.brush, &mut element, "fill-opacity");
-        element.end_attribute_modifier();
+        element.mark_end_of_attribute_modifier();
         (element, (brush_svg_repr, child_state))
     }
 
@@ -114,14 +113,14 @@ where
         ctx: &mut ViewCtx,
         mut element: Mut<'el, Self::Element>,
     ) -> Mut<'el, Self::Element> {
-        element.start_attribute_modifier();
+        element.rebuild_attribute_modifier();
         let mut element = self.child.rebuild(&prev.child, child_state, ctx, element);
         if self.brush != prev.brush {
             *brush_svg_repr = Cow::from(brush_to_string(&self.brush));
         }
         element.set_attribute("fill".into(), brush_svg_repr.clone().into_attr_value());
         add_opacity_to_element(&self.brush, &mut element, "fill-opacity");
-        element.end_attribute_modifier();
+        element.mark_end_of_attribute_modifier();
         element
     }
 
@@ -163,9 +162,6 @@ where
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let (mut element, child_state) = self.child.build(ctx);
-
-        element.start_attribute_modifier();
-
         let brush_svg_repr = Cow::from(brush_to_string(&self.brush));
         element.set_attribute("stroke".into(), brush_svg_repr.clone().into_attr_value());
         let stroke_dash_pattern_svg_repr = (!self.style.dash_pattern.is_empty())
@@ -177,7 +173,7 @@ where
         element.set_attribute("stroke-width".into(), self.style.width.into_attr_value());
         add_opacity_to_element(&self.brush, &mut element, "stroke-opacity");
 
-        element.end_attribute_modifier();
+        element.mark_end_of_attribute_modifier();
         (
             element,
             StrokeState {
@@ -199,7 +195,7 @@ where
         ctx: &mut ViewCtx,
         mut element: Mut<'el, Self::Element>,
     ) -> Mut<'el, Self::Element> {
-        element.start_attribute_modifier();
+        element.rebuild_attribute_modifier();
 
         let mut element = self.child.rebuild(&prev.child, child_state, ctx, element);
 
@@ -218,7 +214,7 @@ where
         element.set_attribute("stroke-width".into(), self.style.width.into_attr_value());
         add_opacity_to_element(&self.brush, &mut element, "stroke-opacity");
 
-        element.end_attribute_modifier();
+        element.mark_end_of_attribute_modifier();
         element
     }
 

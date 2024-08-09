@@ -11,19 +11,21 @@ use crate::{
 
 type CowStr = std::borrow::Cow<'static, str>;
 
-/// This trait enables having attributes DOM [`Element`](`crate::interfaces::Element`)s. It is used within [`View`]s that modify the attributes of an element.
+/// This trait allows (modifying) HTML/SVG/MathML attributes on DOM [`Element`](`crate::interfaces::Element`)s.
 ///
 /// Modifications have to be done on the up-traversal of [`View::rebuild`], i.e. after [`View::rebuild`] was invoked for descendent views.
-/// See the [`View`] implementation of [`Attr`] for more details how to use it for [`ViewElement`]s that implement this trait.
+/// See [`Attr::build`] and [`Attr::rebuild`], how to use this for [`ViewElement`]s that implement this trait.
 /// When these methods are used, they have to be used in every reconciliation pass (i.e. [`View::rebuild`]).
 pub trait WithAttributes {
-    /// Needs to be invoked within a [`View::build`] or [`View::rebuild`] before traversing to descendent views, and before any modifications are done
-    fn start_attribute_modifier(&mut self);
+    /// Needs to be invoked within a [`View::rebuild`] before traversing to descendent views, and before any modifications (with [`set_attribute`](`WithAttributes::set_attribute`)) are done in that view
+    fn rebuild_attribute_modifier(&mut self);
 
     /// Needs to be invoked after any modifications are done
-    fn end_attribute_modifier(&mut self);
+    fn mark_end_of_attribute_modifier(&mut self);
 
-    /// Sets or removes (when value is `None`) an attribute from the underlying element
+    /// Sets or removes (when value is `None`) an attribute from the underlying element.
+    ///
+    /// When in [`View::rebuild`] this has to be invoked *after* traversing the inner `View` with [`View::rebuild`]
     fn set_attribute(&mut self, name: CowStr, value: Option<AttributeValue>);
 
     // TODO first find a use-case for this...
@@ -44,8 +46,6 @@ pub struct Attributes {
     updated_attributes: VecMap<CowStr, ()>,
     idx: usize, // To save some memory, this could be u16 or even u8 (but this is risky)
     start_idx: usize, // same here
-    /// a flag necessary, such that `start_attribute_modifier` doesn't always overwrite the last changes in `View::build`
-    build_finished: bool,
     #[cfg(feature = "hydration")]
     pub(crate) in_hydration: bool,
 }
@@ -61,6 +61,15 @@ impl Attributes {
 }
 
 fn set_attribute(element: &web_sys::Element, name: &str, value: &str) {
+    debug_assert_ne!(
+        name, "class",
+        "Using `class` as attribute is not supported, use the `el.class()` modifier instead"
+    );
+    debug_assert_ne!(
+        name, "style",
+        "Using `style` as attribute is not supported, use the `el.style()` modifier instead"
+    );
+
     // we have to special-case `value` because setting the value using `set_attribute`
     // doesn't work after the value has been changed.
     // TODO not sure, whether this is always a good idea, in case custom or other interfaces such as HtmlOptionElement elements are used that have "value" as an attribute name.
@@ -83,6 +92,14 @@ fn set_attribute(element: &web_sys::Element, name: &str, value: &str) {
 }
 
 fn remove_attribute(element: &web_sys::Element, name: &str) {
+    debug_assert_ne!(
+        name, "class",
+        "Using `class` as attribute is not supported, use the `el.class()` modifier instead"
+    );
+    debug_assert_ne!(
+        name, "style",
+        "Using `style` as attribute is not supported, use the `el.style()` modifier instead"
+    );
     // we have to special-case `checked` because setting the value using `set_attribute`
     // doesn't work after the value has been changed.
     if name == "checked" {
@@ -102,7 +119,6 @@ impl Attributes {
         #[cfg(feature = "hydration")]
         if self.in_hydration {
             self.updated_attributes.clear();
-            self.build_finished = true;
             self.in_hydration = false;
             return;
         }
@@ -129,7 +145,6 @@ impl Attributes {
             }
             debug_assert!(self.updated_attributes.is_empty());
         }
-        self.build_finished = true;
     }
 }
 
@@ -161,26 +176,23 @@ impl WithAttributes for Attributes {
         self.idx += 1;
     }
 
-    fn start_attribute_modifier(&mut self) {
-        if self.build_finished {
-            if self.idx == 0 {
-                self.start_idx = 0;
-            } else {
-                let AttributeModifier::EndMarker(start_idx) =
-                    self.attribute_modifiers[self.idx - 1]
-                else {
-                    unreachable!("this should not happen, as either `start_attribute_modifier` happens first, or follows an end_attribute_modifier")
-                };
-                self.idx = start_idx;
-                self.start_idx = start_idx;
-            }
+    fn rebuild_attribute_modifier(&mut self) {
+        if self.idx == 0 {
+            self.start_idx = 0;
+        } else {
+            let AttributeModifier::EndMarker(start_idx) = self.attribute_modifiers[self.idx - 1]
+            else {
+                unreachable!("this should not happen, as either `rebuild_attribute_modifier` happens first, or follows an `mark_end_of_attribute_modifier`")
+            };
+            self.idx = start_idx;
+            self.start_idx = start_idx;
         }
     }
 
-    fn end_attribute_modifier(&mut self) {
+    fn mark_end_of_attribute_modifier(&mut self) {
         match self.attribute_modifiers.get_mut(self.idx) {
             Some(AttributeModifier::EndMarker(prev_start_idx))
-                if *prev_start_idx == self.start_idx => {} // class modifier hasn't changed
+                if *prev_start_idx == self.start_idx => {} // attribute modifier hasn't changed
             Some(modifier) => {
                 *modifier = AttributeModifier::EndMarker(self.start_idx);
             }
@@ -195,12 +207,12 @@ impl WithAttributes for Attributes {
 }
 
 impl WithAttributes for ElementProps {
-    fn start_attribute_modifier(&mut self) {
-        self.attributes().start_attribute_modifier();
+    fn rebuild_attribute_modifier(&mut self) {
+        self.attributes().rebuild_attribute_modifier();
     }
 
-    fn end_attribute_modifier(&mut self) {
-        self.attributes().end_attribute_modifier();
+    fn mark_end_of_attribute_modifier(&mut self) {
+        self.attributes().mark_end_of_attribute_modifier();
     }
 
     fn set_attribute(&mut self, name: CowStr, value: Option<AttributeValue>) {
@@ -209,12 +221,12 @@ impl WithAttributes for ElementProps {
 }
 
 impl<E: DomNode<P>, P: WithAttributes> WithAttributes for Pod<E, P> {
-    fn start_attribute_modifier(&mut self) {
-        self.props.start_attribute_modifier();
+    fn rebuild_attribute_modifier(&mut self) {
+        self.props.rebuild_attribute_modifier();
     }
 
-    fn end_attribute_modifier(&mut self) {
-        self.props.end_attribute_modifier();
+    fn mark_end_of_attribute_modifier(&mut self) {
+        self.props.mark_end_of_attribute_modifier();
     }
 
     fn set_attribute(&mut self, name: CowStr, value: Option<AttributeValue>) {
@@ -223,12 +235,12 @@ impl<E: DomNode<P>, P: WithAttributes> WithAttributes for Pod<E, P> {
 }
 
 impl<E: DomNode<P>, P: WithAttributes> WithAttributes for PodMut<'_, E, P> {
-    fn start_attribute_modifier(&mut self) {
-        self.props.start_attribute_modifier();
+    fn rebuild_attribute_modifier(&mut self) {
+        self.props.rebuild_attribute_modifier();
     }
 
-    fn end_attribute_modifier(&mut self) {
-        self.props.end_attribute_modifier();
+    fn mark_end_of_attribute_modifier(&mut self) {
+        self.props.mark_end_of_attribute_modifier();
     }
 
     fn set_attribute(&mut self, name: CowStr, value: Option<AttributeValue>) {
@@ -282,9 +294,8 @@ where
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let (mut element, state) = self.el.build(ctx);
-        element.start_attribute_modifier();
         element.set_attribute(self.name.clone(), self.value.clone());
-        element.end_attribute_modifier();
+        element.mark_end_of_attribute_modifier();
         (element, state)
     }
 
@@ -295,10 +306,10 @@ where
         ctx: &mut ViewCtx,
         mut element: Mut<'e, Self::Element>,
     ) -> Mut<'e, Self::Element> {
-        element.start_attribute_modifier();
+        element.rebuild_attribute_modifier();
         let mut element = self.el.rebuild(&prev.el, view_state, ctx, element);
         element.set_attribute(self.name.clone(), self.value.clone());
-        element.end_attribute_modifier();
+        element.mark_end_of_attribute_modifier();
         element
     }
 
