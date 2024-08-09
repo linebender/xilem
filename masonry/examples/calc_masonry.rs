@@ -145,8 +145,10 @@ impl Widget for CalcButton {
         match event {
             PointerEvent::PointerDown(_, _) => {
                 if !ctx.is_disabled() {
-                    ctx.get_mut(&mut self.inner)
-                        .set_background(self.active_color);
+                    let color = self.active_color;
+                    ctx.mutate_later(&mut self.inner, move |mut inner| {
+                        inner.set_background(color);
+                    });
                     ctx.set_active(true);
                     ctx.request_paint();
                     trace!("CalcButton {:?} pressed", ctx.widget_id());
@@ -154,11 +156,14 @@ impl Widget for CalcButton {
             }
             PointerEvent::PointerUp(_, _) => {
                 if ctx.is_active() && !ctx.is_disabled() {
+                    let color = self.base_color;
+                    ctx.mutate_later(&mut self.inner, move |mut inner| {
+                        inner.set_background(color);
+                    });
                     ctx.submit_action(Action::Other(Box::new(self.action)));
                     ctx.request_paint();
                     trace!("CalcButton {:?} released", ctx.widget_id());
                 }
-                ctx.get_mut(&mut self.inner).set_background(self.base_color);
                 ctx.set_active(false);
             }
             _ => (),
@@ -183,12 +188,15 @@ impl Widget for CalcButton {
     fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange) {
         match event {
             StatusChange::HotChanged(true) => {
-                ctx.get_mut(&mut self.inner).set_border(Color::WHITE, 3.0);
+                ctx.mutate_later(&mut self.inner, move |mut inner| {
+                    inner.set_border(Color::WHITE, 3.0);
+                });
                 ctx.request_paint();
             }
             StatusChange::HotChanged(false) => {
-                ctx.get_mut(&mut self.inner)
-                    .set_border(Color::TRANSPARENT, 3.0);
+                ctx.mutate_later(&mut self.inner, move |mut inner| {
+                    inner.set_border(Color::TRANSPARENT, 3.0);
+                });
                 ctx.request_paint();
             }
             _ => (),

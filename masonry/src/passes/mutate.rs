@@ -10,6 +10,7 @@ use crate::{
     MutateCtx, Widget, WidgetId, WidgetState,
 };
 
+#[allow(unused)]
 // References shared by all passes
 struct PassCtx<'a> {
     pub(crate) widget_state: ArenaMut<'a, WidgetState>,
@@ -79,26 +80,27 @@ pub(crate) fn mutate_widget(
     let mut fake_widget_state =
         WidgetState::new(root.root.id(), Some(root.get_kurbo_size()), "<root>");
 
-    let (widget, pass_ctx) = get_widget_mut(&mut root.widget_arena, id);
-
-    // Our WidgetArena stores all widgets as Box<dyn Widget>, but the "true"
-    // type of our root widget is *also* Box<dyn Widget>. We downcast so we
-    // don't add one more level of indirection to this.
-    let widget = widget
-        .as_mut_dyn_any()
-        .downcast_mut::<Box<dyn Widget>>()
-        .unwrap();
+    let state_mut = root
+        .widget_arena
+        .widget_states
+        .find_mut(id.to_raw())
+        .expect("widget state not found in arena");
+    let widget_mut = root
+        .widget_arena
+        .widgets
+        .find_mut(id.to_raw())
+        .expect("widget not found in arena");
 
     let _span = info_span!("mutate_widget").entered();
     let root_widget = WidgetMut {
         ctx: MutateCtx {
             global_state: &mut root.state,
             parent_widget_state: &mut fake_widget_state,
-            widget_state: pass_ctx.widget_state.item,
-            widget_state_children: pass_ctx.widget_state.children,
-            widget_children: pass_ctx.widget_children,
+            widget_state: state_mut.item,
+            widget_state_children: state_mut.children,
+            widget_children: widget_mut.children,
         },
-        widget,
+        widget: widget_mut.item,
         is_reborrow: false,
     };
 
