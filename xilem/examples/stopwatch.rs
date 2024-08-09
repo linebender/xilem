@@ -115,7 +115,8 @@ fn app_logic(data: &mut Stopwatch) -> impl WidgetView<Stopwatch> {
             laps_section(data),
             label(data.displayed_error.as_ref()),
         )),
-        data.active.then(|| { // Only update while active.
+        data.active.then(|| {
+            // Only update while active.
             async_repeat(
                 |proxy| async move {
                     let mut interval = time::interval(Duration::from_millis(50));
