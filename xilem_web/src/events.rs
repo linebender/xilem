@@ -212,7 +212,7 @@ where
     let Some((first, remainder)) = id_path.split_first() else {
         throw_str("Parent view of `OnEvent` sent outdated and/or incorrect empty view path");
     };
-    if first.routing_id() != 0 {
+    if *first != ON_EVENT_VIEW_ID {
         throw_str("Parent view of `OnEvent` sent outdated and/or incorrect empty view path");
     }
     if remainder.is_empty() {
@@ -598,7 +598,7 @@ where
         let Some((first, remainder)) = id_path.split_first() else {
             throw_str("Parent view of `OnResize` sent outdated and/or incorrect empty view path");
         };
-        if first.routing_id() != 0 {
+        if *first != ON_EVENT_VIEW_ID {
             throw_str("Parent view of `OnResize` sent outdated and/or incorrect empty view path");
         }
         if remainder.is_empty() {
