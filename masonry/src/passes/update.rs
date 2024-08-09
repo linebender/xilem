@@ -138,12 +138,24 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot, root_state: &mut Wi
 
     // TODO - Make sure widgets are iterated from the bottom up
     for widget_id in &prev_hovered_path {
-        if root.widget_arena.get_state_mut(*widget_id).is_hot != hovered_set.contains(widget_id) {
+        if root
+            .widget_arena
+            .widget_states
+            .find(widget_id.to_raw())
+            .is_some()
+            && root.widget_arena.get_state_mut(*widget_id).is_hot != hovered_set.contains(widget_id)
+        {
             update_hovered_status_of(root, root_state, *widget_id, &hovered_set);
         }
     }
     for widget_id in &next_hovered_path {
-        if root.widget_arena.get_state_mut(*widget_id).is_hot != hovered_set.contains(widget_id) {
+        if root
+            .widget_arena
+            .widget_states
+            .find(widget_id.to_raw())
+            .is_some()
+            && root.widget_arena.get_state_mut(*widget_id).is_hot != hovered_set.contains(widget_id)
+        {
             update_hovered_status_of(root, root_state, *widget_id, &hovered_set);
         }
     }

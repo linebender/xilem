@@ -209,14 +209,6 @@ impl<'w> WidgetRef<'w, dyn Widget> {
             );
         }
 
-        if self.state().children_changed || self.state().cursor.is_some() {
-            debug_panic!(
-                "Widget '{}' #{} is invalid: widget state not cleared",
-                self.deref().short_type_name(),
-                self.state().id.to_raw(),
-            );
-        }
-
         if after_layout && (self.state().needs_layout || self.state().needs_window_origin) {
             debug_panic!(
                 "Widget '{}' #{} is invalid: widget layout state not cleared",
