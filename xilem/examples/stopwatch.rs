@@ -145,17 +145,14 @@ fn laps_section(data: &mut Stopwatch) -> impl FlexSequence<Stopwatch> {
         items.push(single_lap(i, split_dur, &total_dur));
     }
     let current_split_duration = data.get_current_duration().sub(total_dur);
-    let mut reversed = Vec::new();
-    // Add the current lap first so that it shows up on the top.
-    reversed.push(single_lap(
+    // Add the current lap, which is not stored in completed_lap_splits
+    items.push(single_lap(
         current_lap,
         &current_split_duration,
         &data.get_current_duration(),
     ));
-    for item in items.into_iter().rev() {
-        reversed.push(item);
-    }
-    reversed
+    items.reverse();
+    items
 }
 
 fn single_lap(
