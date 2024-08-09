@@ -457,9 +457,7 @@ impl<'a> WidgetMut<'a, Flex> {
         child: WidgetPod<Box<dyn Widget>>,
         params: impl Into<FlexParams>,
     ) {
-        let p = params.into();
-        tracing::info!("{:?}", p);
-        let child = new_flex_child(p, child);
+        let child = new_flex_child(params.into(), child);
         self.widget.children.insert(idx, child);
         self.ctx.children_changed();
     }
