@@ -10,7 +10,7 @@ use crate::{DynMessage, Message, NoElement, View, ViewId, ViewPathTracker};
 /// A `Context` for a [`View`](crate::View) implementation which supports
 /// asynchronous message reporting.
 pub trait AsyncCtx<Message = DynMessage>: ViewPathTracker {
-    /// Get a [`Proxy`] for this context.
+    /// Get a [`RawProxy`] for this context.
     // TODO: Maybe store the current path within this Proxy?
     fn proxy(&mut self) -> Arc<dyn RawProxy<Message>>;
 }
@@ -28,7 +28,7 @@ pub trait AsyncCtx<Message = DynMessage>: ViewPathTracker {
 ///
 /// ## Lifetimes
 ///
-/// It is valid for a [`Proxy`] to outlive the [`View`](crate::View) it is associated with.
+/// It is valid for a [`RawProxy`] to outlive the [`View`](crate::View) it is associated with.
 pub trait RawProxy<Message = DynMessage>: Send + Sync + 'static {
     /// Send a `message` to the view at `path` in this driver.
     ///
@@ -87,7 +87,7 @@ where
 {
 }
 
-/// The potential error conditions from a [`Proxy`] sending a message
+/// The potential error conditions from a [`RawProxy`] sending a message
 #[derive(Debug)]
 pub enum ProxyError {
     /// The underlying driver (such as an event loop) is no longer running.
