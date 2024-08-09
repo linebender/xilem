@@ -60,7 +60,6 @@ pub struct ArenaMut<'a, Item> {
 /// to access its children.
 pub struct ArenaRefChildren<'a, Item> {
     id: Option<u64>,
-    parent_id: Option<u64>,
     children: &'a Vec<TreeNode<Item>>,
 }
 
@@ -71,7 +70,6 @@ pub struct ArenaRefChildren<'a, Item> {
 /// to access its children.
 pub struct ArenaMutChildren<'a, Item> {
     id: Option<u64>,
-    parent_id: Option<u64>,
     children: &'a mut Vec<TreeNode<Item>>,
 }
 
@@ -95,7 +93,6 @@ impl<Item> TreeArena<Item> {
     pub fn root_token(&self) -> ArenaRefChildren<'_, Item> {
         ArenaRefChildren {
             id: None,
-            parent_id: None,
             children: &self.roots,
         }
     }
@@ -107,7 +104,6 @@ impl<Item> TreeArena<Item> {
     pub fn root_token_mut(&mut self) -> ArenaMutChildren<'_, Item> {
         ArenaMutChildren {
             id: None,
-            parent_id: None,
             children: &mut self.roots,
         }
     }
@@ -135,7 +131,6 @@ impl<Item> TreeArena<Item> {
                     item: &node.item,
                     children: ArenaRefChildren {
                         id: Some(node.id),
-                        parent_id,
                         children: &node.children,
                     },
                 });
@@ -179,7 +174,6 @@ impl<Item> TreeArena<Item> {
                     item: &mut node.item,
                     children: ArenaMutChildren {
                         id: Some(node.id),
-                        parent_id,
                         children: &mut node.children,
                     },
                 });
@@ -219,11 +213,6 @@ impl<Item> TreeArena<Item> {
 }
 
 impl<'a, Item> ArenaRefChildren<'a, Item> {
-    /// Returns the id of the parent of the item this token is associated with.
-    pub fn parent_id(&self) -> Option<u64> {
-        self.parent_id
-    }
-
     /// Returns true if the token has a child with the given id.
     pub fn has_child(self, id: u64) -> bool {
         for child in self.children {
@@ -247,7 +236,6 @@ impl<'a, Item> ArenaRefChildren<'a, Item> {
                     item: &child.item,
                     children: ArenaRefChildren {
                         id: Some(child.id),
-                        parent_id: self.id,
                         children: &child.children,
                     },
                 });
@@ -269,7 +257,6 @@ impl<'a, Item> ArenaRefChildren<'a, Item> {
                     item: &child.item,
                     children: ArenaRefChildren {
                         id: Some(child.id),
-                        parent_id: self.id,
                         children: &child.children,
                     },
                 });
@@ -288,7 +275,6 @@ impl<'a, Item> ArenaRefChildren<'a, Item> {
             item: &child.item,
             children: ArenaRefChildren {
                 id: Some(child.id),
-                parent_id: self.id,
                 children: &child.children,
             },
         })
@@ -296,11 +282,6 @@ impl<'a, Item> ArenaRefChildren<'a, Item> {
 }
 
 impl<'a, Item> ArenaMutChildren<'a, Item> {
-    /// Returns the id of the parent of the item this token is associated with.
-    pub fn parent_id(&self) -> Option<u64> {
-        self.parent_id
-    }
-
     /// Get the child of the item this token is associated with, which has the given id.
     ///
     /// Returns a tuple of a shared reference to the child and a token to access
@@ -314,7 +295,6 @@ impl<'a, Item> ArenaMutChildren<'a, Item> {
                     item: &child.item,
                     children: ArenaRefChildren {
                         id: Some(child.id),
-                        parent_id: self.id,
                         children: &child.children,
                     },
                 });
@@ -336,7 +316,6 @@ impl<'a, Item> ArenaMutChildren<'a, Item> {
                     item: &mut child.item,
                     children: ArenaMutChildren {
                         id: Some(child.id),
-                        parent_id: self.id,
                         children: &mut child.children,
                     },
                 });
@@ -358,7 +337,6 @@ impl<'a, Item> ArenaMutChildren<'a, Item> {
                     item: &mut child.item,
                     children: ArenaMutChildren {
                         id: Some(child.id),
-                        parent_id: self.id,
                         children: &mut child.children,
                     },
                 });
@@ -380,7 +358,6 @@ impl<'a, Item> ArenaMutChildren<'a, Item> {
                     item: &mut child.item,
                     children: ArenaMutChildren {
                         id: Some(child.id),
-                        parent_id: self.id,
                         children: &mut child.children,
                     },
                 });
@@ -399,7 +376,6 @@ impl<'a, Item> ArenaMutChildren<'a, Item> {
             item: &child.item,
             children: ArenaRefChildren {
                 id: Some(child.id),
-                parent_id: self.id,
                 children: &child.children,
             },
         })
@@ -415,7 +391,6 @@ impl<'a, Item> ArenaMutChildren<'a, Item> {
             item: &mut child.item,
             children: ArenaMutChildren {
                 id: Some(child.id),
-                parent_id: self.id,
                 children: &mut child.children,
             },
         })
@@ -454,7 +429,6 @@ impl<'a, Item> ArenaMutChildren<'a, Item> {
     pub fn reborrow(&mut self) -> ArenaRefChildren<'_, Item> {
         ArenaRefChildren {
             id: self.id,
-            parent_id: self.parent_id,
             children: &*self.children,
         }
     }
@@ -465,7 +439,6 @@ impl<'a, Item> ArenaMutChildren<'a, Item> {
     pub fn reborrow_mut(&mut self) -> ArenaMutChildren<'_, Item> {
         ArenaMutChildren {
             id: self.id,
-            parent_id: self.parent_id,
             children: &mut *self.children,
         }
     }
