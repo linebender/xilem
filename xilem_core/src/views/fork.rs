@@ -115,9 +115,7 @@ struct NoElements;
 impl ElementSplice<NoElement> for NoElements {
     fn with_scratch<R>(&mut self, f: impl FnOnce(&mut AppendVec<NoElement>) -> R) -> R {
         let mut append_vec = AppendVec::default();
-        let ret = f(&mut append_vec);
-        debug_assert!(append_vec.into_inner().is_empty());
-        ret
+        f(&mut append_vec)
     }
 
     fn insert(&mut self, _: NoElement) {}

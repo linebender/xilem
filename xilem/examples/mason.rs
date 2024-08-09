@@ -92,18 +92,24 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> {
             button("Reset", |data: &mut AppData| data.count = 0),
             flex((fizz_buzz_flex_sequence, flex_sequence)).direction(axis),
         )),
-        async_repeat(
-            |proxy| async move {
-                let mut interval = time::interval(Duration::from_secs(1));
-                loop {
-                    interval.tick().await;
-                    let Ok(()) = proxy.message(()) else {
-                        break;
-                    };
-                }
-            },
-            |data: &mut AppData, ()| data.count += 1,
-        ),
+        // The following `async_repeat` view only exists whilst the example is in the "active" state, so
+        // the updates it performs will only be running whilst we are in that state.
+        data.active.then(|| {
+            async_repeat(
+                |proxy| async move {
+                    let mut interval = time::interval(Duration::from_secs(1));
+                    loop {
+                        interval.tick().await;
+                        let Ok(()) = proxy.message(()) else {
+                            break;
+                        };
+                    }
+                },
+                |data: &mut AppData, ()| {
+                    data.count += 1;
+                },
+            )
+        }),
     )
 }
 
