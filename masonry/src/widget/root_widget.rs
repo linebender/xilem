@@ -40,15 +40,9 @@ impl<W: Widget> WidgetMut<'_, RootWidget<W>> {
 }
 
 impl<W: Widget> Widget for RootWidget<W> {
-    fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
-        self.pod.on_pointer_event(ctx, event);
-    }
-    fn on_text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent) {
-        self.pod.on_text_event(ctx, event);
-    }
-    fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {
-        self.pod.on_access_event(ctx, event);
-    }
+    fn on_pointer_event(&mut self, _ctx: &mut EventCtx, _event: &PointerEvent) {}
+    fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
+    fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {}
 
     fn on_status_change(&mut self, _: &mut LifeCycleCtx, _: &StatusChange) {}
 

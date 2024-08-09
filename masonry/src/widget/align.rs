@@ -85,17 +85,11 @@ impl Align {
 
 // --- MARK: IMPL WIDGET ---
 impl Widget for Align {
-    fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
-        self.child.on_pointer_event(ctx, event);
-    }
+    fn on_pointer_event(&mut self, _ctx: &mut EventCtx, _event: &PointerEvent) {}
 
-    fn on_text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent) {
-        self.child.on_text_event(ctx, event);
-    }
+    fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
 
-    fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {
-        self.child.on_access_event(ctx, event);
-    }
+    fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {}
 
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
         self.child.lifecycle(ctx, event);

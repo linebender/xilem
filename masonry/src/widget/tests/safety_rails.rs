@@ -10,12 +10,6 @@ use crate::{InternalLifeCycle, LifeCycle, Point, Size, Widget, WidgetPod};
 fn make_parent_widget<W: Widget>(child: W) -> ModularWidget<WidgetPod<W>> {
     let child = WidgetPod::new(child);
     ModularWidget::new(child)
-        .pointer_event_fn(move |child, ctx, event| {
-            child.on_pointer_event(ctx, event);
-        })
-        .text_event_fn(move |child, ctx, event| {
-            child.on_text_event(ctx, event);
-        })
         .lifecycle_fn(move |child, ctx, event| child.lifecycle(ctx, event))
         .layout_fn(move |child, ctx, bc| {
             let size = child.layout(ctx, bc);
@@ -26,17 +20,6 @@ fn make_parent_widget<W: Widget>(child: W) -> ModularWidget<WidgetPod<W>> {
             child.paint(ctx, scene);
         })
         .children_fn(|child| smallvec![child.id()])
-}
-
-#[should_panic(expected = "not visited in method on_pointer_event")]
-#[test]
-fn check_forget_to_recurse_pointer_event() {
-    let widget = make_parent_widget(Flex::row()).pointer_event_fn(|_child, _ctx, _event| {
-        // We forget to call child.on_pointer_event();
-    });
-
-    let mut harness = TestHarness::create(widget);
-    harness.mouse_move(Point::ZERO);
 }
 
 #[cfg(FALSE)]

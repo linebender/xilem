@@ -7,6 +7,7 @@ use std::ops::{Deref, DerefMut};
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use accesskit::Role;
+use cursor_icon::CursorIcon;
 use smallvec::SmallVec;
 use tracing::{trace_span, Span};
 use vello::Scene;
@@ -128,6 +129,12 @@ pub trait Widget: AsAny {
     /// TODO - Update this doc
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]>;
 
+    // TODO - Rename
+    // TODO - Document
+    fn skip_pointer(&self) -> bool {
+        false
+    }
+
     /// Return a span for tracing.
     ///
     /// As methods recurse through the widget tree, trace spans are added for each child
@@ -145,6 +152,12 @@ pub trait Widget: AsAny {
     /// be eg a label's text, or whether a checkbox is checked.
     fn get_debug_text(&self) -> Option<String> {
         None
+    }
+
+    // TODO - Document
+    // TODO - Add &UpdateCtx argument
+    fn get_cursor(&self) -> CursorIcon {
+        CursorIcon::Default
     }
 
     // --- Auto-generated implementations ---
@@ -318,12 +331,20 @@ impl Widget for Box<dyn Widget> {
         self.deref().children_ids()
     }
 
+    fn skip_pointer(&self) -> bool {
+        self.deref().skip_pointer()
+    }
+
     fn make_trace_span(&self) -> Span {
         self.deref().make_trace_span()
     }
 
     fn get_debug_text(&self) -> Option<String> {
         self.deref().get_debug_text()
+    }
+
+    fn get_cursor(&self) -> CursorIcon {
+        self.deref().get_cursor()
     }
 
     fn as_any(&self) -> &dyn Any {
