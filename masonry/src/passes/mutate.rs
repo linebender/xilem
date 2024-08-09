@@ -77,9 +77,6 @@ pub(crate) fn mutate_widget(
     id: WidgetId,
     mutate_fn: impl FnOnce(WidgetMut<'_, Box<dyn Widget>>),
 ) {
-    let mut fake_widget_state =
-        WidgetState::new(root.root.id(), Some(root.get_kurbo_size()), "<root>");
-
     let state_mut = root
         .widget_arena
         .widget_states
@@ -95,7 +92,7 @@ pub(crate) fn mutate_widget(
     let root_widget = WidgetMut {
         ctx: MutateCtx {
             global_state: &mut root.state,
-            parent_widget_state: &mut fake_widget_state,
+            parent_widget_state: root_state,
             widget_state: state_mut.item,
             widget_state_children: state_mut.children,
             widget_children: widget_mut.children,
