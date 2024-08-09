@@ -1,7 +1,7 @@
 // Copyright 2018 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::contexts::WidgetCtx;
+use crate::contexts::MutateCtx;
 use crate::{Widget, WidgetState};
 
 // TODO - Document extension trait workaround.
@@ -15,7 +15,7 @@ use crate::{Widget, WidgetState};
 ///
 /// You can create a `WidgetMut` from [`TestHarness`](crate::testing::TestHarness),
 /// [`EventCtx`](crate::EventCtx), [`LifeCycleCtx`](crate::LifeCycleCtx) or from a parent
-/// `WidgetMut` with [`WidgetCtx`](crate::WidgetCtx).
+/// `WidgetMut` with [`MutateCtx`](crate::MutateCtx).
 ///
 /// `WidgetMut` implements [`Deref`](std::ops::Deref) with `W::Mut` as target.
 ///
@@ -24,7 +24,7 @@ use crate::{Widget, WidgetState};
 /// Once the Receiver trait is stabilized, `WidgetMut` will implement it so that custom
 /// widgets in downstream crates can use `WidgetMut` as the receiver for inherent methods.
 pub struct WidgetMut<'a, W: Widget> {
-    pub ctx: WidgetCtx<'a>,
+    pub ctx: MutateCtx<'a>,
     pub widget: &'a mut W,
     pub(crate) is_reborrow: bool,
 }
@@ -48,7 +48,7 @@ impl<'w, W: Widget> WidgetMut<'w, W> {
 
     /// Get a `WidgetMut` for the same underlying widget with a shorter lifetime.
     pub fn reborrow_mut(&mut self) -> WidgetMut<'_, W> {
-        let ctx = WidgetCtx {
+        let ctx = MutateCtx {
             global_state: self.ctx.global_state,
             parent_widget_state: self.ctx.parent_widget_state,
             widget_state: self.ctx.widget_state,
@@ -67,7 +67,7 @@ impl<'w, W: Widget> WidgetMut<'w, W> {
 impl<'a> WidgetMut<'a, Box<dyn Widget>> {
     /// Attempt to downcast to `WidgetMut` of concrete Widget type.
     pub fn try_downcast<W2: Widget>(&mut self) -> Option<WidgetMut<'_, W2>> {
-        let ctx = WidgetCtx {
+        let ctx = MutateCtx {
             global_state: self.ctx.global_state,
             parent_widget_state: self.ctx.parent_widget_state,
             widget_state: self.ctx.widget_state,
@@ -88,7 +88,7 @@ impl<'a> WidgetMut<'a, Box<dyn Widget>> {
     /// Panics if the downcast fails, with an error message that shows the
     /// discrepancy between the expected and actual types.
     pub fn downcast<W2: Widget>(&mut self) -> WidgetMut<'_, W2> {
-        let ctx = WidgetCtx {
+        let ctx = MutateCtx {
             global_state: self.ctx.global_state,
             parent_widget_state: self.ctx.parent_widget_state,
             widget_state: self.ctx.widget_state,

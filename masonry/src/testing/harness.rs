@@ -469,6 +469,17 @@ impl TestHarness {
             .find_widget_by_id(self.render_root.state.focused_widget?)
     }
 
+    // TODO - Multiple pointers
+    pub fn pointer_capture_target(&self) -> Option<WidgetRef<'_, dyn Widget>> {
+        self.render_root
+            .get_widget(self.render_root.state.pointer_capture_target?)
+    }
+
+    // TODO - This is kinda redundant with the above
+    pub fn pointer_capture_target_id(&self) -> Option<WidgetId> {
+        self.render_root.state.pointer_capture_target
+    }
+
     /// Call the provided visitor on every widget in the widget tree.
     pub fn inspect_widgets(&mut self, f: impl Fn(WidgetRef<'_, dyn Widget>) + 'static) {
         fn inspect(
@@ -521,6 +532,7 @@ impl TestHarness {
     /// * **test_file_path:** file path the current test is in.
     /// * **test_module_path:** import path of the module the current test is in.
     /// * **test_name:** arbitrary name; second argument of assert_render_snapshot.
+    #[track_caller]
     pub fn check_render_snapshot(
         &mut self,
         manifest_dir: &str,
@@ -562,7 +574,7 @@ impl TestHarness {
                 let _ = std::fs::remove_file(&diff_path);
                 new_image.save(&new_path).unwrap();
                 diff_image.save(&diff_path).unwrap();
-                panic!("Images are different");
+                panic!("Snapshot test '{test_name}' failed: Images are different");
             } else {
                 // Remove the vestigal new and diff images
                 let _ = std::fs::remove_file(&new_path);
@@ -572,7 +584,7 @@ impl TestHarness {
             // Remove '<test_name>.new.png' file if it exists
             let _ = std::fs::remove_file(&new_path);
             new_image.save(&new_path).unwrap();
-            panic!("No reference file");
+            panic!("Snapshot test '{test_name}' failed: No reference file");
         }
     }
 

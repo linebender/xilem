@@ -123,6 +123,7 @@ pub mod app_driver;
 pub mod debug_logger;
 pub mod debug_values;
 pub mod event_loop_runner;
+pub mod passes;
 pub mod text;
 mod tracing_backend;
 mod tree_arena;
@@ -131,7 +132,7 @@ pub use action::Action;
 pub use box_constraints::BoxConstraints;
 pub use contexts::{
     AccessCtx, EventCtx, IsContext, LayoutCtx, LifeCycleCtx, PaintCtx, RawWrapper, RawWrapperMut,
-    WidgetCtx,
+    MutateCtx,
 };
 pub use event::{
     AccessEvent, InternalLifeCycle, LifeCycle, PointerButton, PointerEvent, PointerState,

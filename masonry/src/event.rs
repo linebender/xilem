@@ -247,6 +247,13 @@ impl PointerEvent {
         }
     }
 
+    pub fn position(&self) -> Option<LogicalPosition<f64>> {
+        match self {
+            PointerEvent::PointerLeave(_) | PointerEvent::HoverFileCancel(_) => None,
+            _ => Some(self.pointer_state().position),
+        }
+    }
+
     pub fn short_name(&self) -> &'static str {
         match self {
             PointerEvent::PointerDown(_, _) => "PointerDown",
