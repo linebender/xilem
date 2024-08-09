@@ -22,19 +22,19 @@ use xilem_core::one_of::Either;
 /// This is owned by Xilem, used to construct the view tree, and updated by event handlers.
 struct Stopwatch {
     active: bool,
-    // The duration to add to the duration since the last instant.
-    // This is needed since you can pause a timer, and we need to account for all
-    // time the timer was active before the last start.
+    /// The duration to add to the duration since the last instant.
+    /// This is needed since you can pause a timer, and we need to account for all
+    /// time the timer was active before the last start.
     added_duration: Duration,
-    // The absolute time of the last start for calculating elapsed time.
+    /// The absolute time of the last start for calculating elapsed time.
     last_start_time: Option<SystemTime>,
-    // The duration displayed; updated by by `update_display()`
+    /// The duration displayed; updated by by `update_display()`
     displayed_duration: Duration,
-    // An error string to display if there is an error.
+    /// An error string to display if there is an error.
     displayed_error: String,
-    // A list of the length of all completed splits. Does not include the current split.
+    /// A list of the length of all completed splits. Does not include the current split.
     completed_lap_splits: Vec<Duration>,
-    // The duration of the main timer when the split was started.
+    /// The duration of the main timer when the split was started.
     split_start_time: Duration,
 }
 
