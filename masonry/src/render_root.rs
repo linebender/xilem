@@ -16,12 +16,13 @@ use std::time::Instant;
 #[cfg(target_arch = "wasm32")]
 use web_time::Instant;
 
-use crate::contexts::{LayoutCtx, LifeCycleCtx, MutateCtx, PaintCtx};
+use crate::contexts::{LayoutCtx, LifeCycleCtx, PaintCtx};
 use crate::debug_logger::DebugLogger;
 use crate::dpi::{LogicalPosition, LogicalSize, PhysicalSize};
 use crate::event::{PointerEvent, TextEvent, WindowEvent};
 use crate::kurbo::Point;
 use crate::passes::event::{root_on_access_event, root_on_pointer_event, root_on_text_event};
+use crate::passes::mutate::{mutate_widget, run_mutate_pass};
 use crate::passes::update::run_update_pointer_pass;
 use crate::text::TextBrush;
 use crate::tree_arena::TreeArena;
@@ -31,6 +32,8 @@ use crate::{
     AccessCtx, AccessEvent, Action, BoxConstraints, CursorIcon, Handled, InternalLifeCycle,
     LifeCycle, Widget, WidgetId, WidgetPod,
 };
+
+// --- MARK: STRUCTS ---
 
 // TODO - Remove pub(crate)
 pub struct RenderRoot {
@@ -61,6 +64,12 @@ pub(crate) struct RenderRootState {
     pub(crate) cursor_icon: CursorIcon,
     pub(crate) font_context: FontContext,
     pub(crate) text_layout_context: LayoutContext<TextBrush>,
+    pub(crate) mutate_callbacks: Vec<MutateCallback>,
+}
+
+pub(crate) struct MutateCallback {
+    pub(crate) id: WidgetId,
+    pub(crate) callback: Box<dyn FnOnce(WidgetMut<'_, Box<dyn Widget>>)>,
 }
 
 /// Defines how a windows size should be determined
@@ -131,6 +140,7 @@ impl RenderRoot {
                     source_cache: Default::default(),
                 },
                 text_layout_context: LayoutContext::new(),
+                mutate_callbacks: Vec::new(),
             },
             widget_arena: WidgetArena {
                 widgets: TreeArena::new(),
@@ -301,50 +311,27 @@ impl RenderRoot {
     ) -> R {
         let mut fake_widget_state =
             WidgetState::new(self.root.id(), Some(self.get_kurbo_size()), "<root>");
-        let root_state_token = self.widget_arena.widget_states.root_token_mut();
-        let root_widget_token = self.widget_arena.widgets.root_token_mut();
-        let state_ref = root_state_token
-            .into_child_mut(self.root.id().to_raw())
-            .expect("root widget not in widget tree");
-        let widget_ref = root_widget_token
-            .into_child_mut(self.root.id().to_raw())
-            .expect("root widget not in widget tree");
 
-        // Our WidgetArena stores all widgets as Box<dyn Widget>, but the "true"
-        // type of our root widget is *also* Box<dyn Widget>. We downcast so we
-        // don't add one more level of indirection to this.
-        let widget = widget_ref
-            .item
-            .as_mut_dyn_any()
-            .downcast_mut::<Box<dyn Widget>>()
-            .unwrap();
-
+        // TODO - Factor out into a "pre-event" function?
         self.state.next_focused_widget = self.state.focused_widget;
-        let root_widget = WidgetMut {
-            ctx: MutateCtx {
-                global_state: &mut self.state,
-                parent_widget_state: &mut fake_widget_state,
-                widget_state: state_ref.item,
-                widget_state_children: state_ref.children,
-                widget_children: widget_ref.children,
-            },
-            widget,
-            is_reborrow: false,
-        };
 
-        let res = {
-            let _span = info_span!("edit_root_widget").entered();
-            f(root_widget)
-        };
+        let mut res = None;
+        mutate_widget(self, &mut fake_widget_state, self.root.id(), |w| {
+            res = Some(f(w));
+        });
+
         self.post_event_processing(&mut fake_widget_state);
 
-        res
+        res.unwrap()
     }
 
     // --- MARK: POINTER_EVENT ---
     fn root_on_pointer_event(&mut self, event: PointerEvent) -> Handled {
         let mut root_state =
             WidgetState::new(self.root.id(), Some(self.get_kurbo_size()), "<root>");
+
+        // TODO - Factor out into a "pre-event" function?
+        self.state.next_focused_widget = self.state.focused_widget;
 
         let handled = root_on_pointer_event(self, &mut root_state, &event);
         run_update_pointer_pass(self, &mut root_state);
@@ -359,6 +346,9 @@ impl RenderRoot {
     fn root_on_text_event(&mut self, event: TextEvent) -> Handled {
         let mut root_state =
             WidgetState::new(self.root.id(), Some(self.get_kurbo_size()), "<root>");
+
+        // TODO - Factor out into a "pre-event" function?
+        self.state.next_focused_widget = self.state.focused_widget;
 
         let handled = root_on_text_event(self, &mut root_state, &event);
 
@@ -382,6 +372,9 @@ impl RenderRoot {
             action: event.action,
             data: event.data,
         };
+
+        // TODO - Factor out into a "pre-event" function?
+        self.state.next_focused_widget = self.state.focused_widget;
 
         root_on_access_event(self, &mut root_state, &event);
 
@@ -549,7 +542,7 @@ impl RenderRoot {
         tree_update
     }
 
-    fn get_kurbo_size(&self) -> kurbo::Size {
+    pub(crate) fn get_kurbo_size(&self) -> kurbo::Size {
         let size = self.size.to_logical(self.scale_factor);
         kurbo::Size::new(size.width, size.height)
     }
@@ -606,6 +599,8 @@ impl RenderRoot {
                 .signal_queue
                 .push_back(RenderRootSignal::RequestRedraw);
         }
+
+        run_mutate_pass(self, widget_state);
 
         #[cfg(FALSE)]
         for ime_field in widget_state.text_registrations.drain(..) {
