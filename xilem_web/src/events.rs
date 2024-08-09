@@ -8,6 +8,8 @@ use xilem_core::{MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker};
 
 use crate::{DynMessage, ElementAsRef, OptionalAction, ViewCtx};
 
+const ON_EVENT_VIEW_ID: ViewId = ViewId::new(0x2357_1113);
+
 /// Wraps a [`View`] `V` and attaches an event listener.
 ///
 /// The event type `Event` should inherit from [`web_sys::Event`]
@@ -127,7 +129,7 @@ where
     Event: JsCast + 'static + crate::Message,
 {
     // we use a placeholder id here, the id can never change, so we don't need to store it anywhere
-    ctx.with_id(ViewId::new(0), |ctx| {
+    ctx.with_id(ON_EVENT_VIEW_ID, |ctx| {
         let (element, child_state) = element_view.build(ctx);
         let callback =
             create_event_listener::<Event>(element.as_ref(), event, capture, passive, ctx);
@@ -159,7 +161,7 @@ where
     V::Element: ElementAsRef<web_sys::EventTarget>,
     Event: JsCast + 'static + crate::Message,
 {
-    ctx.with_id(ViewId::new(0), |ctx| {
+    ctx.with_id(ON_EVENT_VIEW_ID, |ctx| {
         if prev_capture != capture || prev_passive != passive {
             remove_event_listener(element.as_ref(), event, &state.callback, prev_capture);
 
@@ -185,7 +187,7 @@ fn teardown_event_listener<State, Action, V>(
 {
     // TODO: is this really needed (as the element will be removed anyway)?
     // remove_event_listener(element.as_ref(), event, &state.callback, capture);
-    ctx.with_id(ViewId::new(0), |ctx| {
+    ctx.with_id(ON_EVENT_VIEW_ID, |ctx| {
         element_view.teardown(&mut state.child_state, ctx, element);
     });
 }
@@ -258,7 +260,7 @@ where
         element: Mut<'el, Self::Element>,
     ) -> Mut<'el, Self::Element> {
         // special case, where event name can change, so we can't reuse the rebuild_event_listener function above
-        ctx.with_id(ViewId::new(0), |ctx| {
+        ctx.with_id(ON_EVENT_VIEW_ID, |ctx| {
             if prev.capture != self.capture
                 || prev.passive != self.passive
                 || prev.event != self.event
@@ -538,7 +540,7 @@ where
     type ViewState = OnResizeState<V::ViewState>;
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        ctx.with_id(ViewId::new(0), |ctx| {
+        ctx.with_id(ON_EVENT_VIEW_ID, |ctx| {
             let thunk = ctx.message_thunk();
             let callback = Closure::new(move |entries: js_sys::Array| {
                 let entry: web_sys::ResizeObserverEntry = entries.at(0).dyn_into().unwrap_throw();
@@ -567,7 +569,7 @@ where
         ctx: &mut ViewCtx,
         element: Mut<'el, Self::Element>,
     ) -> Mut<'el, Self::Element> {
-        ctx.with_id(ViewId::new(0), |ctx| {
+        ctx.with_id(ON_EVENT_VIEW_ID, |ctx| {
             self.element
                 .rebuild(&prev.element, &mut view_state.child_state, ctx, element)
         })
@@ -579,7 +581,7 @@ where
         ctx: &mut ViewCtx,
         element: Mut<'_, Self::Element>,
     ) {
-        ctx.with_id(ViewId::new(0), |ctx| {
+        ctx.with_id(ON_EVENT_VIEW_ID, |ctx| {
             view_state.observer.unobserve(element.as_ref());
             self.element
                 .teardown(&mut view_state.child_state, ctx, element);
