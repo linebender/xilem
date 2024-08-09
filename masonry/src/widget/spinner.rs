@@ -49,11 +49,13 @@ impl Spinner {
     }
 }
 
+const DEFAULT_SPINNER_COLOR: Color = theme::TEXT_COLOR;
+
 impl Default for Spinner {
     fn default() -> Self {
         Spinner {
             t: 0.0,
-            color: theme::TEXT_COLOR,
+            color: DEFAULT_SPINNER_COLOR,
         }
     }
 }
@@ -68,6 +70,11 @@ impl WidgetMut<'_, Spinner> {
     pub fn set_color(&mut self, color: impl Into<Color>) {
         self.widget.color = color.into();
         self.ctx.request_paint();
+    }
+
+    /// Reset the spinner's color to its default value.
+    pub fn reset_color(&mut self) {
+        self.set_color(DEFAULT_SPINNER_COLOR);
     }
 }
 

@@ -16,6 +16,9 @@ pub use flex::*;
 mod sized_box;
 pub use sized_box::*;
 
+mod spinner;
+pub use spinner::*;
+
 mod label;
 pub use label::*;
 
