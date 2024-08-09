@@ -15,6 +15,7 @@ use winit::window::Window;
 use xilem::view::{async_repeat, button, flex, label, AnyFlexChild, FlexExt, FlexSpacer};
 use xilem::{WidgetView, Xilem};
 use xilem_core::fork;
+use xilem_core::one_of::Either;
 
 /// The state of the entire application.
 ///
@@ -113,9 +114,7 @@ fn app_logic(data: &mut Stopwatch) -> impl WidgetView<Stopwatch> {
             FlexSpacer::Fixed(1.0),
             laps_section(data),
             label(data.displayed_error.as_ref()),
-        ))
-        .main_axis_alignment(MainAxisAlignment::Start)
-        .cross_axis_alignment(CrossAxisAlignment::Center),
+        )),
         async_repeat(
             |proxy| async move {
                 let mut interval = time::interval(Duration::from_millis(50));
@@ -171,37 +170,35 @@ fn single_lap(
         label(format!("Lap {}", lap_id + 1)).flex(1.0),
         label(get_formatted_duration(split_dur)).flex(1.0),
         label(get_formatted_duration(total_dur)).flex(1.0),
+        FlexSpacer::Flex(1.0),
     ))
     .direction(Axis::Horizontal)
     .cross_axis_alignment(CrossAxisAlignment::Center)
     .main_axis_alignment(MainAxisAlignment::Center)
+    .must_fill_major_axis(true)
 }
 
-fn start_stop_button(data: &mut Stopwatch) -> AnyFlexChild<Stopwatch> {
+fn start_stop_button(data: &mut Stopwatch) -> impl WidgetView<Stopwatch> {
     if data.active {
-        button("Stop", |data: &mut Stopwatch| {
+        Either::A(button("Stop", |data: &mut Stopwatch| {
             data.stop();
-        })
-        .into_any_flex()
+        }))
     } else {
-        button("Start", |data: &mut Stopwatch| {
+        Either::B(button("Start", |data: &mut Stopwatch| {
             data.start();
-        })
-        .into_any_flex()
+        }))
     }
 }
 
-fn lap_reset_button(data: &mut Stopwatch) -> AnyFlexChild<Stopwatch> {
+fn lap_reset_button(data: &mut Stopwatch) -> impl WidgetView<Stopwatch> {
     if data.active {
-        button("  Lap  ", |data: &mut Stopwatch| {
+        Either::A(button("  Lap  ", |data: &mut Stopwatch| {
             data.lap();
-        })
-        .into_any_flex()
+        }))
     } else {
-        button("Reset", |data: &mut Stopwatch| {
+        Either::B(button("Reset", |data: &mut Stopwatch| {
             data.reset();
-        })
-        .into_any_flex()
+        }))
     }
 }
 
