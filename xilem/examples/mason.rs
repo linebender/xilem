@@ -102,7 +102,11 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> {
                     };
                 }
             },
-            |data: &mut AppData, ()| data.count += 1,
+            |data: &mut AppData, ()| {
+                if data.active {
+                    data.count += 1;
+                }
+            },
         ),
     )
 }
