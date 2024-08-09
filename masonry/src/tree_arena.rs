@@ -13,20 +13,13 @@
 
 #![allow(dead_code)]
 
-// TODO:
-// - Replace (&T, TreeArenaToken<T>) with "ArenaRef<T>"
-// - Replace (&mut T, TreeArenaTokenMut<T>) with "ArenaRefMut<T>"
-// - Replace TreeArenaToken<T> with ArenaRefChildren<T>
-// - Replace TreeArenaTokenMut<T> with ArenaRefChildrenMut<T>
+use std::collections::HashMap;
 
 struct TreeNode<Item> {
     id: u64,
     item: Item,
     children: Vec<TreeNode<Item>>,
 }
-
-// TODO - Keep track of parent relationships, and use them to implement
-// "find" methods in O(depth) time instead of O(N) time.
 
 /// A container type for a tree of items.
 ///
@@ -37,6 +30,7 @@ struct TreeNode<Item> {
 #[derive(Default)]
 pub struct TreeArena<Item> {
     roots: Vec<TreeNode<Item>>,
+    parents_map: HashMap<u64, Option<u64>>,
 }
 
 pub struct ArenaRef<'a, Item> {
@@ -71,6 +65,7 @@ pub struct ArenaRefChildren<'a, Item> {
 pub struct ArenaMutChildren<'a, Item> {
     id: Option<u64>,
     children: &'a mut Vec<TreeNode<Item>>,
+    parents_map: &'a mut HashMap<u64, Option<u64>>,
 }
 
 // -- MARK: IMPLS ---
@@ -86,7 +81,10 @@ impl<'a, Item> Copy for ArenaRefChildren<'a, Item> {}
 impl<Item> TreeArena<Item> {
     /// Create an empty tree.
     pub fn new() -> Self {
-        TreeArena { roots: Vec::new() }
+        TreeArena {
+            roots: Vec::new(),
+            parents_map: HashMap::new(),
+        }
     }
 
     /// Returns a token whose children are the roots, if any, of the tree.
@@ -105,6 +103,7 @@ impl<Item> TreeArena<Item> {
         ArenaMutChildren {
             id: None,
             children: &mut self.roots,
+            parents_map: &mut self.parents_map,
         }
     }
 
@@ -119,37 +118,30 @@ impl<Item> TreeArena<Item> {
     /// O(N) where N is the size of the tree. In future versions, will be O(depth)
     /// or O(1).
     pub fn find(&self, id: u64) -> Option<ArenaRef<'_, Item>> {
-        fn find_child<Item>(
-            node: &TreeNode<Item>,
-            parent_id: Option<u64>,
-            id: u64,
-        ) -> Option<ArenaRef<'_, Item>> {
-            if node.id == id {
-                return Some(ArenaRef {
-                    parent_id,
-                    id: Some(node.id),
-                    item: &node.item,
-                    children: ArenaRefChildren {
-                        id: Some(node.id),
-                        children: &node.children,
-                    },
-                });
-            }
-            for child in &node.children {
-                if let Some(arena_ref) = find_child(child, Some(node.id), id) {
-                    return Some(arena_ref);
-                }
-            }
-            None
+        if !self.parents_map.contains_key(&id) {
+            return None;
         }
 
-        for child in &self.roots {
-            if let Some(arena_ref) = find_child(child, None, id) {
-                return Some(arena_ref);
-            }
+        let mut id_path = self.get_id_path(id);
+        let root_id = id_path.pop().unwrap();
+
+        let mut id_path = id_path.as_slice();
+        let mut node = self.roots.iter().find(|root| root.id == root_id).unwrap();
+
+        while let Some((id, new_id_path)) = id_path.split_last() {
+            id_path = new_id_path;
+            node = node.children.iter().find(|child| child.id == *id).unwrap();
         }
 
-        None
+        Some(ArenaRef {
+            parent_id: self.parents_map[&id],
+            id: Some(id),
+            item: &node.item,
+            children: ArenaRefChildren {
+                id: Some(node.id),
+                children: &node.children,
+            },
+        })
     }
 
     /// Find an item in the tree.
@@ -162,51 +154,52 @@ impl<Item> TreeArena<Item> {
     /// O(N) where N is the size of the tree. In future versions, will be O(depth)
     /// or O(1).
     pub fn find_mut(&mut self, id: u64) -> Option<ArenaMut<'_, Item>> {
-        fn find_child_mut<Item>(
-            node: &mut TreeNode<Item>,
-            parent_id: Option<u64>,
-            id: u64,
-        ) -> Option<ArenaMut<'_, Item>> {
-            if node.id == id {
-                return Some(ArenaMut {
-                    parent_id,
-                    id: Some(node.id),
-                    item: &mut node.item,
-                    children: ArenaMutChildren {
-                        id: Some(node.id),
-                        children: &mut node.children,
-                    },
-                });
-            }
-            for child in &mut node.children {
-                if let Some(arena_mut) = find_child_mut(child, Some(node.id), id) {
-                    return Some(arena_mut);
-                }
-            }
-            None
+        if !self.parents_map.contains_key(&id) {
+            return None;
         }
 
-        for child in &mut self.roots {
-            if let Some(arena_mut) = find_child_mut(child, None, id) {
-                return Some(arena_mut);
-            }
+        let mut id_path = self.get_id_path(id);
+        let root_id = id_path.pop().unwrap();
+
+        let mut id_path = id_path.as_slice();
+        let mut node = self
+            .roots
+            .iter_mut()
+            .find(|root| root.id == root_id)
+            .unwrap();
+
+        while let Some((id, new_id_path)) = id_path.split_last() {
+            id_path = new_id_path;
+            node = node
+                .children
+                .iter_mut()
+                .find(|child| child.id == *id)
+                .unwrap();
         }
 
-        None
+        Some(ArenaMut {
+            parent_id: self.parents_map[&id],
+            id: Some(id),
+            item: &mut node.item,
+            children: ArenaMutChildren {
+                id: Some(node.id),
+                children: &mut node.children,
+                parents_map: &mut self.parents_map,
+            },
+        })
     }
 
     pub fn get_id_path(&self, id: u64) -> Vec<u64> {
         let mut path = Vec::new();
 
-        if self.find(id).is_none() {
+        if !self.parents_map.contains_key(&id) {
             return path;
         }
 
-        // FIXME
         let mut current_id = Some(id);
         while let Some(id) = current_id {
             path.push(id);
-            current_id = self.find(id).unwrap().parent_id;
+            current_id = *self.parents_map.get(&id).unwrap();
         }
         path
     }
@@ -317,6 +310,7 @@ impl<'a, Item> ArenaMutChildren<'a, Item> {
                     children: ArenaMutChildren {
                         id: Some(child.id),
                         children: &mut child.children,
+                        parents_map: self.parents_map,
                     },
                 });
             }
@@ -328,14 +322,14 @@ impl<'a, Item> ArenaMutChildren<'a, Item> {
     ///
     /// This is the same as [`get_child`](Self::get_child), except it consumes the
     /// token. This is sometimes necesssary to accommodate the borrow checker.
-    pub fn into_child(self, id: u64) -> Option<ArenaMut<'a, Item>> {
+    pub fn into_child(self, id: u64) -> Option<ArenaRef<'a, Item>> {
         for child in &mut self.children[..] {
             if child.id == id {
-                return Some(ArenaMut {
+                return Some(ArenaRef {
                     parent_id: self.id,
                     id: Some(child.id),
                     item: &mut child.item,
-                    children: ArenaMutChildren {
+                    children: ArenaRefChildren {
                         id: Some(child.id),
                         children: &mut child.children,
                     },
@@ -359,6 +353,7 @@ impl<'a, Item> ArenaMutChildren<'a, Item> {
                     children: ArenaMutChildren {
                         id: Some(child.id),
                         children: &mut child.children,
+                        parents_map: self.parents_map,
                     },
                 });
             }
@@ -381,28 +376,21 @@ impl<'a, Item> ArenaMutChildren<'a, Item> {
         })
     }
 
-    // TODO - This method could not be implemented with an actual arena design.
-    // It's currently used for some sanity-checking of widget code, but will
-    // likely be removed.
-    pub(crate) fn iter_children_mut(&mut self) -> impl Iterator<Item = ArenaMut<'_, Item>> {
-        self.children.iter_mut().map(|child| ArenaMut {
-            parent_id: self.id,
-            id: Some(child.id),
-            item: &mut child.item,
-            children: ArenaMutChildren {
-                id: Some(child.id),
-                children: &mut child.children,
-            },
-        })
-    }
-
     // TODO - Remove the child_id argument once creation of Widgets is figured out.
     // Return the id instead.
     // TODO - Add #[must_use]
     /// Insert a child into the tree under the item associated with this token.
     ///
     /// The new child will have the given id.
+    ///
+    /// # Panics
+    ///
+    /// The `insert_child` method will panic if the arena already contains a child
+    /// with the given id.
     pub fn insert_child(&mut self, child_id: u64, value: Item) {
+        assert!(!self.parents_map.contains_key(&child_id));
+        self.parents_map.insert(child_id, self.id);
+
         self.children.push(TreeNode {
             id: child_id,
             item: value,
@@ -411,18 +399,30 @@ impl<'a, Item> ArenaMutChildren<'a, Item> {
     }
 
     // TODO - How to handle when a subtree is removed?
-    #[must_use]
+    // Move children to the root?
     /// Remove the child with the given id from the tree.
     ///
     /// Returns the removed item, or None if no child with the given id exists.
     ///
     /// Calling this will silently remove any recursive grandchildren of this item.
+    #[must_use]
     pub fn remove_child(&mut self, child_id: u64) -> Option<Item> {
         let i = self
             .children
             .iter()
             .position(|child| child.id == child_id)?;
-        Some(self.children.remove(i).item)
+
+        fn remove_children<I>(node: &TreeNode<I>, parents_map: &mut HashMap<u64, Option<u64>>) {
+            parents_map.remove(&node.id);
+            for child in &node.children {
+                remove_children(child, parents_map);
+            }
+        }
+
+        let child = self.children.remove(i);
+        remove_children(&child, self.parents_map);
+
+        Some(child.item)
     }
 
     /// Returns a shared token equivalent to this one.
@@ -440,6 +440,7 @@ impl<'a, Item> ArenaMutChildren<'a, Item> {
         ArenaMutChildren {
             id: self.id,
             children: &mut *self.children,
+            parents_map: self.parents_map,
         }
     }
 }

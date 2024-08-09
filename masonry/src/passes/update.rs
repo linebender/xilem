@@ -83,12 +83,12 @@ pub(crate) fn run_targeted_update_pass(
 
     let mut target_widget_id = target;
     while let Some(widget_id) = target_widget_id {
-        let (widget, mut pass_ctx) = get_widget_mut(&mut root.widget_arena, widget_id);
+        let (widget, pass_ctx) = get_widget_mut(&mut root.widget_arena, widget_id);
         let parent_id = pass_ctx.parent();
 
         let mut ctx = LifeCycleCtx {
             global_state: &mut root.state,
-            widget_state: &mut pass_ctx.widget_state.item,
+            widget_state: pass_ctx.widget_state.item,
             widget_state_children: pass_ctx.widget_state.children,
             widget_children: pass_ctx.widget_children,
         };
