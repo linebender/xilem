@@ -28,6 +28,7 @@ mod sized_box;
 mod spinner;
 mod split;
 mod textbox;
+mod variable_label;
 mod widget_arena;
 
 pub use self::image::Image;
