@@ -67,6 +67,7 @@ pub(crate) struct RenderRootState {
     pub(crate) mutate_callbacks: Vec<MutateCallback>,
 }
 
+#[allow(clippy::type_complexity)]
 pub(crate) struct MutateCallback {
     pub(crate) id: WidgetId,
     pub(crate) callback: Box<dyn FnOnce(WidgetMut<'_, Box<dyn Widget>>)>,
