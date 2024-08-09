@@ -167,14 +167,14 @@ fn single_lap(
 ) -> impl WidgetView<Stopwatch> {
     flex((
         FlexSpacer::Flex(1.0),
-        label(format!("Lap {}", lap_id + 1)).flex(1.0),
-        label(get_formatted_duration(split_dur)).flex(1.0),
-        label(get_formatted_duration(total_dur)).flex(1.0),
+        label(format!("Lap {}", lap_id + 1)),
+        label(get_formatted_duration(split_dur)),
+        label(get_formatted_duration(total_dur)),
         FlexSpacer::Flex(1.0),
     ))
     .direction(Axis::Horizontal)
     .cross_axis_alignment(CrossAxisAlignment::Center)
-    .main_axis_alignment(MainAxisAlignment::Center)
+    .main_axis_alignment(MainAxisAlignment::Start)
     .must_fill_major_axis(true)
 }
 
