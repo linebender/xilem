@@ -17,7 +17,7 @@ use std::time::Instant;
 #[cfg(target_arch = "wasm32")]
 use web_time::Instant;
 
-use crate::contexts::{EventCtx, LayoutCtx, LifeCycleCtx, PaintCtx, WidgetCtx, WorkerFn};
+use crate::contexts::{EventCtx, LayoutCtx, LifeCycleCtx, PaintCtx, WidgetCtx};
 use crate::debug_logger::DebugLogger;
 use crate::dpi::{LogicalPosition, LogicalSize, PhysicalSize};
 use crate::event::{PointerEvent, TextEvent, WindowEvent};
@@ -92,7 +92,6 @@ pub enum RenderRootSignal {
     ImeMoved(LogicalPosition<f64>, LogicalSize<f64>),
     RequestRedraw,
     RequestAnimFrame,
-    SpawnWorker(WorkerFn),
     TakeFocus,
     SetCursor(CursorIcon),
     SetSize(PhysicalSize<u32>),

@@ -110,7 +110,6 @@ mod box_constraints;
 mod contexts;
 mod event;
 pub mod paint_scene_helpers;
-pub mod promise;
 pub mod render_root;
 pub mod testing;
 // mod text;
@@ -131,7 +130,7 @@ pub use action::Action;
 pub use box_constraints::BoxConstraints;
 pub use contexts::{
     AccessCtx, EventCtx, IsContext, LayoutCtx, LifeCycleCtx, PaintCtx, RawWrapper, RawWrapperMut,
-    WidgetCtx, WorkerCtx,
+    WidgetCtx,
 };
 pub use event::{
     AccessEvent, InternalLifeCycle, LifeCycle, PointerButton, PointerEvent, PointerState,
