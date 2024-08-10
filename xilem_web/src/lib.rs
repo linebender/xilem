@@ -56,7 +56,7 @@ pub use app::App;
 pub use attribute::{Attr, Attributes, ElementWithAttributes, WithAttributes};
 pub use attribute_value::{AttributeValue, IntoAttributeValue};
 pub use class::{AsClassIter, Class, Classes, ElementWithClasses, WithClasses};
-pub use context::ViewCtx;
+pub use context::{MessageThunk, ViewCtx};
 pub use element_props::ElementProps;
 pub use message::{DynMessage, Message};
 pub use optional_action::{Action, OptionalAction};
