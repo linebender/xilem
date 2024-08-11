@@ -11,7 +11,7 @@ use masonry::{
     app_driver::AppDriver,
     event_loop_runner::MasonryUserEvent,
     widget::{CrossAxisAlignment, MainAxisAlignment},
-    ArcStr,
+    ArcStr, Color,
 };
 use winit::{
     application::ApplicationHandler,
@@ -142,8 +142,12 @@ fn main() -> Result<(), EventLoopError> {
     let event_loop = EventLoop::with_user_event().build().unwrap();
     let proxy = MasonryProxy::new(event_loop.create_proxy());
     let (widget, driver) = xilem.into_driver(Arc::new(proxy));
-    let masonry_state =
-        masonry::event_loop_runner::MasonryState::new(window_attributes, &event_loop, widget);
+    let masonry_state = masonry::event_loop_runner::MasonryState::new(
+        window_attributes,
+        &event_loop,
+        widget,
+        Color::BLACK,
+    );
 
     let mut app = ExternalApp {
         masonry_state,

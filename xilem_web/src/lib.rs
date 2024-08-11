@@ -27,6 +27,7 @@ pub const SVG_NS: &str = "http://www.w3.org/2000/svg";
 /// The MathML namespace
 pub const MATHML_NS: &str = "http://www.w3.org/1998/Math/MathML";
 
+mod after_update;
 mod app;
 mod attribute;
 mod attribute_value;
@@ -44,10 +45,14 @@ mod text;
 mod vec_splice;
 mod vecmap;
 
+pub mod concurrent;
 pub mod elements;
 pub mod interfaces;
 pub mod svg;
 
+pub use after_update::{
+    after_build, after_rebuild, before_teardown, AfterBuild, AfterRebuild, BeforeTeardown,
+};
 pub use app::App;
 pub use attribute::{Attr, Attributes, ElementWithAttributes, WithAttributes};
 pub use attribute_value::{AttributeValue, IntoAttributeValue};
@@ -59,6 +64,7 @@ pub use optional_action::{Action, OptionalAction};
 pub use pointer::{Pointer, PointerDetails, PointerMsg};
 pub use style::{style, ElementWithStyle, IntoStyles, Style, Styles, WithStyle};
 pub use xilem_core as core;
+use xilem_core::ViewSequence;
 
 /// A trait used for type erasure of [`DomNode`]s
 /// It is e.g. used in [`AnyPod`]
@@ -88,14 +94,33 @@ where
 }
 
 /// A view which can have any [`DomView`] type, see [`AnyView`] for more details.
-pub type AnyDomView<State, Action = ()> = dyn AnyView<State, Action, ViewCtx, AnyPod>;
+pub type AnyDomView<State, Action = ()> = dyn AnyView<State, Action, ViewCtx, AnyPod, DynMessage>;
 
-/// The central [`View`] derived trait to represent DOM nodes in xilem_web, it's the base for all [`View`]s in xilem_web
+/// The central [`View`] derived trait to represent DOM nodes in `xilem_web`, it's the base for all [`View`]s in `xilem_web`
 pub trait DomView<State, Action = ()>:
     View<State, Action, ViewCtx, DynMessage, Element = Pod<Self::DomNode, Self::Props>>
 {
     type DomNode: DomNode<Self::Props>;
     type Props;
+
+    /// Returns a boxed type erased [`AnyDomView`]
+    ///
+    /// # Examples
+    /// ```
+    /// use xilem_web::{elements::html::div, DomView};
+    ///
+    /// # fn view<State: 'static>() -> impl DomView<State> {
+    /// div("a label").boxed()
+    /// # }
+    /// ```
+    fn boxed(self) -> Box<AnyDomView<State, Action>>
+    where
+        State: 'static,
+        Action: 'static,
+        Self: Sized,
+    {
+        Box::new(self)
+    }
 
     /// See [`adapt`](`core::adapt`)
     fn adapt<ParentState, ParentAction, ProxyFn>(
@@ -115,6 +140,39 @@ pub trait DomView<State, Action = ()>:
             + 'static,
     {
         core::adapt(self, f)
+    }
+
+    /// See [`after_build`](`after_update::after_build`)
+    fn after_build<F>(self, callback: F) -> AfterBuild<State, Action, Self, F>
+    where
+        State: 'static,
+        Action: 'static,
+        Self: Sized,
+        F: Fn(&Self::DomNode) + 'static,
+    {
+        after_build(self, callback)
+    }
+
+    /// See [`after_rebuild`](`after_update::after_rebuild`)
+    fn after_rebuild<F>(self, callback: F) -> AfterRebuild<State, Action, Self, F>
+    where
+        State: 'static,
+        Action: 'static,
+        Self: Sized,
+        F: Fn(&Self::DomNode) + 'static,
+    {
+        after_rebuild(self, callback)
+    }
+
+    /// See [`before_teardown`](`after_update::before_teardown`)
+    fn before_teardown<F>(self, callback: F) -> BeforeTeardown<State, Action, Self, F>
+    where
+        State: 'static,
+        Action: 'static,
+        Self: Sized,
+        F: Fn(&Self::DomNode) + 'static,
+    {
+        before_teardown(self, callback)
     }
 
     /// See [`map_state`](`core::map_state`)
@@ -148,6 +206,26 @@ where
 {
     type DomNode = W;
     type Props = P;
+}
+
+/// An ordered sequence of views, or sometimes also called fragment, it's used for `0..N` [`DomView`]s.
+/// See [`ViewSequence`] for more technical details.
+///
+/// # Examples
+///
+/// ```
+/// fn huzzah(clicks: i32) -> impl xilem_web::DomFragment<i32> {
+///     (clicks >= 5).then_some("Huzzah, clicked at least 5 times")
+/// }
+/// ```
+pub trait DomFragment<State, Action = ()>:
+    ViewSequence<State, Action, ViewCtx, AnyPod, DynMessage>
+{
+}
+
+impl<V, State, Action> DomFragment<State, Action> for V where
+    V: ViewSequence<State, Action, ViewCtx, AnyPod, DynMessage>
+{
 }
 
 /// A container, which holds the actual DOM node, and associated props, such as attributes or classes.
@@ -203,6 +281,9 @@ impl AnyPod {
         this: &mut PodMut<'_, DynNode, Box<dyn Any>>,
         node: Pod<E, P>,
     ) {
+        this.parent
+            .replace_child(node.node.as_ref(), this.node.as_ref())
+            .unwrap_throw();
         this.node.inner = Box::new(node.node);
         *this.props = Box::new(node.props);
     }

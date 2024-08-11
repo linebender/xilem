@@ -184,8 +184,8 @@ impl<T: Selectable> TextWithSelection<T> {
                         }
                         _ => Handled::No,
                     },
-                    winit::keyboard::Key::Unidentified(_) => todo!(),
-                    winit::keyboard::Key::Dead(_) => todo!(),
+                    winit::keyboard::Key::Unidentified(_) => Handled::No,
+                    winit::keyboard::Key::Dead(_) => Handled::No,
                 }
             }
             TextEvent::KeyboardKey(_, _) => Handled::No,
@@ -211,7 +211,7 @@ impl<T: Selectable> TextWithSelection<T> {
 
     /// Rebuild the text layout.
     ///
-    /// See also [TextLayout::rebuild] for more comprehensive docs.
+    /// See also [`TextLayout::rebuild`] for more comprehensive docs.
     pub fn rebuild(
         &mut self,
         font_ctx: &mut FontContext,
@@ -223,7 +223,7 @@ impl<T: Selectable> TextWithSelection<T> {
     // Intentionally aliases the method on `TextLayout`
     /// Rebuild the text layout, adding attributes to the builder.
     ///
-    /// See also [TextLayout::rebuild_with_attributes] for more comprehensive docs.
+    /// See also [`TextLayout::rebuild_with_attributes`] for more comprehensive docs.
     pub fn rebuild_with_attributes(
         &mut self,
         font_ctx: &mut FontContext,

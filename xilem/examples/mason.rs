@@ -12,7 +12,7 @@ use xilem::{
         async_repeat, button, button_any_pointer, checkbox, flex, label, prose, textbox, Axis,
         FlexExt as _, FlexSpacer,
     },
-    AnyWidgetView, Color, EventLoop, EventLoopBuilder, TextAlignment, WidgetView, Xilem,
+    Color, EventLoop, EventLoopBuilder, TextAlignment, WidgetView, Xilem,
 };
 const LOREM: &str = r"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi cursus mi sed euismod euismod. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Nullam placerat efficitur tellus at semper. Morbi ac risus magna. Donec ut cursus ex. Etiam quis posuere tellus. Mauris posuere dui et turpis mollis, vitae luctus tellus consectetur. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur eu facilisis nisl.
 
@@ -92,24 +92,30 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> {
             button("Reset", |data: &mut AppData| data.count = 0),
             flex((fizz_buzz_flex_sequence, flex_sequence)).direction(axis),
         )),
-        async_repeat(
-            |proxy| async move {
-                let mut interval = time::interval(Duration::from_secs(1));
-                loop {
-                    interval.tick().await;
-                    let Ok(()) = proxy.message(()) else {
-                        break;
-                    };
-                }
-            },
-            |data: &mut AppData, ()| data.count += 1,
-        ),
+        // The following `async_repeat` view only exists whilst the example is in the "active" state, so
+        // the updates it performs will only be running whilst we are in that state.
+        data.active.then(|| {
+            async_repeat(
+                |proxy| async move {
+                    let mut interval = time::interval(Duration::from_secs(1));
+                    loop {
+                        interval.tick().await;
+                        let Ok(()) = proxy.message(()) else {
+                            break;
+                        };
+                    }
+                },
+                |data: &mut AppData, ()| {
+                    data.count += 1;
+                },
+            )
+        }),
     )
 }
 
 fn toggleable(data: &mut AppData) -> impl WidgetView<AppData> {
-    let inner_view: Box<AnyWidgetView<_>> = if data.active {
-        Box::new(
+    if data.active {
+        fork(
             flex((
                 button("Deactivate", |data: &mut AppData| {
                     data.active = false;
@@ -117,14 +123,14 @@ fn toggleable(data: &mut AppData) -> impl WidgetView<AppData> {
                 button("Unlimited Power", |data: &mut AppData| {
                     data.count = -1_000_000;
                 }),
-                run_once(|| tracing::warn!("The pathway to unlimited power has been revealed")),
             ))
             .direction(Axis::Horizontal),
+            run_once(|| tracing::warn!("The pathway to unlimited power has been revealed")),
         )
+        .boxed()
     } else {
-        Box::new(button("Activate", |data: &mut AppData| data.active = true))
-    };
-    inner_view
+        button("Activate", |data: &mut AppData| data.active = true).boxed()
+    }
 }
 
 struct AppData {
@@ -140,8 +146,9 @@ fn run(event_loop: EventLoopBuilder) {
         active: false,
     };
 
-    let app = Xilem::new(data, app_logic);
-    app.run_windowed(event_loop, "First Example".into())
+    Xilem::new(data, app_logic)
+        .background_color(Color::rgb8(0x20, 0x20, 0x20))
+        .run_windowed(event_loop, "First Example".into())
         .unwrap();
 }
 

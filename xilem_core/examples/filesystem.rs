@@ -4,7 +4,7 @@
 use std::{io::stdin, path::PathBuf};
 
 use xilem_core::{
-    AnyElement, AnyView, Mut, SuperElement, View, ViewElement, ViewId, ViewPathTracker,
+    AnyElement, AnyView, Mut, SuperElement, View, ViewElement, ViewId, ViewMarker, ViewPathTracker,
 };
 
 #[derive(Debug)]
@@ -145,6 +145,7 @@ impl ViewElement for FsPath {
     type Mut<'a> = &'a mut PathBuf;
 }
 
+impl ViewMarker for File {}
 impl<State, Action> View<State, Action, ViewCtx> for File {
     type Element = FsPath;
     type ViewState = ();
@@ -166,11 +167,11 @@ impl<State, Action> View<State, Action, ViewCtx> for File {
     ) -> Mut<'el, Self::Element> {
         if prev.name != self.name {
             let new_path = ctx.current_folder_path.join(&*self.name);
-            let _ = std::fs::rename(&element, &new_path);
+            let _ = std::fs::rename(&*element, &new_path);
             *element = new_path;
         }
         if self.contents != prev.contents {
-            let _ = std::fs::write(&element, self.contents.as_bytes());
+            let _ = std::fs::write(&*element, self.contents.as_bytes());
         }
         element
     }

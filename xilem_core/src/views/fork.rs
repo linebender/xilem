@@ -1,40 +1,37 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use core::marker::PhantomData;
-
 use crate::{
-    AppendVec, ElementSplice, Mut, NoElement, View, ViewId, ViewPathTracker, ViewSequence,
+    AppendVec, ElementSplice, Mut, NoElement, View, ViewId, ViewMarker, ViewPathTracker,
+    ViewSequence,
 };
 
 /// Create a view which acts as `active_view`, whilst also running `alongside_view`, without inserting it into the tree.
 ///
 /// `alongside_view` must be a `ViewSequence` with an element type of [`NoElement`].
-pub fn fork<Active, Alongside, Marker>(
+pub fn fork<Active, Alongside>(
     active_view: Active,
     alongside_view: Alongside,
-) -> Fork<Active, Alongside, Marker> {
+) -> Fork<Active, Alongside> {
     Fork {
         active_view,
         alongside_view,
-        marker: PhantomData,
     }
 }
 
 /// The view for [`fork`].
-pub struct Fork<Active, Alongside, Marker> {
+pub struct Fork<Active, Alongside> {
     active_view: Active,
     alongside_view: Alongside,
-    marker: PhantomData<Marker>,
 }
 
-impl<State, Action, Context, Active, Alongside, Marker, Message>
-    View<State, Action, Context, Message> for Fork<Active, Alongside, Marker>
+impl<Active, Alongside> ViewMarker for Fork<Active, Alongside> {}
+impl<State, Action, Context, Active, Alongside, Message> View<State, Action, Context, Message>
+    for Fork<Active, Alongside>
 where
     Active: View<State, Action, Context, Message>,
-    Alongside: ViewSequence<State, Action, Context, NoElement, Marker, Message>,
+    Alongside: ViewSequence<State, Action, Context, NoElement, Message>,
     Context: ViewPathTracker,
-    Marker: 'static,
 {
     type Element = Active::Element;
 
@@ -111,37 +108,25 @@ where
 
 /// A stub `ElementSplice` implementation for `NoElement`.
 ///
-/// We know that none of the methods will be called, because the `ViewSequence`
-/// implementation for `NoElement` views does not use the provided `elements`.
-///
 /// It is technically possible for someone to create an implementation of `ViewSequence`
-/// which uses a `NoElement` `ElementSplice`. But we don't think that sequence could be meaningful,
-/// so we still panic in that case.
+/// which uses a `NoElement` `ElementSplice`. But we don't think that sequence could be meaningful.
 struct NoElements;
 
 impl ElementSplice<NoElement> for NoElements {
     fn with_scratch<R>(&mut self, f: impl FnOnce(&mut AppendVec<NoElement>) -> R) -> R {
         let mut append_vec = AppendVec::default();
-        let ret = f(&mut append_vec);
-        debug_assert!(append_vec.into_inner().is_empty());
-        ret
+        f(&mut append_vec)
     }
 
-    fn insert(&mut self, _: NoElement) {
-        unreachable!()
+    fn insert(&mut self, _: NoElement) {}
+
+    fn mutate<R>(&mut self, f: impl FnOnce(<NoElement as crate::ViewElement>::Mut<'_>) -> R) -> R {
+        f(())
     }
 
-    fn mutate<R>(&mut self, _: impl FnOnce(<NoElement as crate::ViewElement>::Mut<'_>) -> R) -> R {
-        unreachable!()
-    }
+    fn skip(&mut self, _: usize) {}
 
-    fn skip(&mut self, n: usize) {
-        if n > 0 {
-            unreachable!()
-        }
-    }
-
-    fn delete<R>(&mut self, _: impl FnOnce(<NoElement as crate::ViewElement>::Mut<'_>) -> R) -> R {
-        unreachable!()
+    fn delete<R>(&mut self, f: impl FnOnce(<NoElement as crate::ViewElement>::Mut<'_>) -> R) -> R {
+        f(())
     }
 }

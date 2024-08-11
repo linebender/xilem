@@ -82,6 +82,7 @@ pub struct MasonryState<'a> {
     // Per-Window state
     // In future, this will support multiple windows
     window: WindowState<'a>,
+    background_color: Color,
 }
 
 struct MainState<'a> {
@@ -113,7 +114,13 @@ pub fn run(
 ) -> Result<(), EventLoopError> {
     let event_loop = loop_builder.build()?;
 
-    run_with(event_loop, window_attributes, root_widget, app_driver)
+    run_with(
+        event_loop,
+        window_attributes,
+        root_widget,
+        app_driver,
+        Color::BLACK,
+    )
 }
 
 pub fn run_with(
@@ -121,9 +128,10 @@ pub fn run_with(
     window: WindowAttributes,
     root_widget: impl Widget,
     app_driver: impl AppDriver + 'static,
+    background_color: Color,
 ) -> Result<(), EventLoopError> {
     let mut main_state = MainState {
-        masonry_state: MasonryState::new(window, &event_loop, root_widget),
+        masonry_state: MasonryState::new(window, &event_loop, root_widget, background_color),
         app_driver: Box::new(app_driver),
     };
 
@@ -204,19 +212,32 @@ impl ApplicationHandler<MasonryUserEvent> for MainState<'_> {
 }
 
 impl MasonryState<'_> {
-    pub fn new(window: WindowAttributes, event_loop: &EventLoop, root_widget: impl Widget) -> Self {
+    pub fn new(
+        window: WindowAttributes,
+        event_loop: &EventLoop,
+        root_widget: impl Widget,
+        background_color: Color,
+    ) -> Self {
         let render_cx = RenderContext::new();
         // TODO: We can't know this scale factor until later?
         let scale_factor = 1.0;
 
         MasonryState {
             render_cx,
-            render_root: RenderRoot::new(root_widget, WindowSizePolicy::User, scale_factor),
+            render_root: RenderRoot::new(
+                root_widget,
+                render_root::RenderRootOptions {
+                    use_system_fonts: true,
+                    size_policy: WindowSizePolicy::User,
+                    scale_factor,
+                },
+            ),
             renderer: None,
             pointer_state: PointerState::empty(),
             proxy: event_loop.create_proxy(),
 
             window: WindowState::Uninitialized(window),
+            background_color,
         }
     }
 
@@ -358,11 +379,13 @@ impl MasonryState<'_> {
             num_init_threads: NonZeroUsize::new(1),
         };
         let render_params = RenderParams {
-            base_color: Color::BLACK,
+            base_color: self.background_color,
             width,
             height,
             antialiasing_method: vello::AaConfig::Area,
         };
+        // TODO: Run this in-between `submit` and `present`.
+        window.pre_present_notify();
         self.renderer
             .get_or_insert_with(|| Renderer::new(device, renderer_options).unwrap())
             .render_to_surface(device, queue, scene_ref, &surface_texture, &render_params)
@@ -399,6 +422,7 @@ impl MasonryState<'_> {
                     .handle_window_event(WindowEvent::Rescale(scale_factor));
             }
             WinitWindowEvent::RedrawRequested => {
+                self.render_root.handle_window_event(WindowEvent::AnimFrame);
                 let (scene, tree_update) = self.render_root.redraw();
                 self.render(scene);
                 let WindowState::Rendering {
@@ -483,12 +507,16 @@ impl MasonryState<'_> {
                     ));
             }
             WinitWindowEvent::Touch(winit::event::Touch {
-                location, phase, ..
+                location,
+                phase,
+                force,
+                ..
             }) => {
                 // FIXME: This is naïve and should be refined for actual use.
                 //        It will also interact with gesture discrimination.
                 self.pointer_state.physical_position = location;
                 self.pointer_state.position = location.to_logical(window.scale_factor());
+                self.pointer_state.force = force;
                 match phase {
                     winit::event::TouchPhase::Started => {
                         self.render_root

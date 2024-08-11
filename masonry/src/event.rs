@@ -10,7 +10,7 @@ use crate::WidgetId;
 
 use std::{collections::HashSet, path::PathBuf};
 
-use winit::event::{Ime, KeyEvent, Modifiers};
+use winit::event::{Force, Ime, KeyEvent, Modifiers};
 use winit::keyboard::ModifiersState;
 
 // TODO - Occluded(bool) event
@@ -95,6 +95,7 @@ pub struct PointerState {
     pub mods: Modifiers,
     pub count: u8,
     pub focus: bool,
+    pub force: Option<Force>,
 }
 
 #[derive(Debug, Clone)]
@@ -351,6 +352,7 @@ impl PointerState {
             mods: Default::default(),
             count: 0,
             focus: false,
+            force: None,
         }
     }
 }

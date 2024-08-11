@@ -66,12 +66,16 @@ fn app_logic(state: &mut AppState) -> impl DomView<AppState> {
             .stroke(Color::BLUE, Default::default()),
         Rect::new(320.0, 100.0, 420.0, 200.0).class("red"),
         Rect::new(state.x, state.y, state.x + 100., state.y + 100.)
+            .fill(Color::rgba8(100, 100, 255, 100))
             .pointer(|s: &mut AppState, msg| s.grab.handle(&mut s.x, &mut s.y, &msg)),
         g(v),
         Rect::new(210.0, 210.0, 310.0, 310.0).pointer(|_, e| {
             web_sys::console::log_1(&format!("pointer event {e:?}").into());
         }),
-        kurbo::Line::new((310.0, 210.0), (410.0, 310.0)),
+        kurbo::Line::new((310.0, 210.0), (410.0, 310.0)).stroke(
+            Color::YELLOW_GREEN,
+            kurbo::Stroke::new(1.0).with_dashes(state.x, [7.0, 1.0]),
+        ),
         kurbo::Circle::new((460.0, 260.0), 45.0).on_click(|_: &mut _, _| {
             web_sys::console::log_1(&"circle clicked".into());
         }),

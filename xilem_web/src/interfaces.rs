@@ -209,7 +209,6 @@ pub trait Element<State, Action = ()>:
         (OnProgress, on_progress, "progress", Event),
         (OnRateChange, on_ratechange, "ratechange", Event),
         (OnReset, on_reset, "reset", Event),
-        (OnResize, on_resize, "resize", Event),
         (OnScroll, on_scroll, "scroll", Event),
         (OnScrollEnd, on_scrollend, "scrollend", Event),
         (
@@ -231,6 +230,42 @@ pub trait Element<State, Action = ()>:
         (OnWaiting, on_waiting, "waiting", Event),
         (OnWheel, on_wheel, "wheel", WheelEvent),
     );
+
+    /// Register a [`web_sys::ResizeObserver`] on this [`Element`].
+    ///
+    /// See <https://developer.mozilla.org/en-US/docs/Web/API/ResizeObserver/ResizeObserver> for more details
+    ///
+    /// Note, that this is a different than <https://developer.mozilla.org/en-US/docs/Web/API/Window/resize_event>
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use xilem_web::{interfaces::Element, elements::html::{a, canvas, div, input}};
+    ///
+    /// fn observe_size() -> impl Element<(f64, f64)> {
+    ///     div(()).on_resize(|(width, height), resize_observer_entry| {
+    ///         *width = resize_observer_entry.content_rect().width();
+    ///         *height = resize_observer_entry.content_rect().height();
+    ///     })
+    /// }
+    /// ```
+    fn on_resize<Callback, OA>(
+        self,
+        handler: Callback,
+    ) -> events::OnResize<Self, State, Action, Callback>
+    where
+        State: 'static,
+        Action: 'static,
+        OA: OptionalAction<Action>,
+        Callback: Fn(&mut State, web_sys::ResizeObserverEntry) -> OA + 'static,
+        Self::Element: AsRef<web_sys::Element>,
+    {
+        events::OnResize {
+            element: self,
+            handler,
+            phantom_event_ty: std::marker::PhantomData,
+        }
+    }
 }
 
 impl<State, Action, T> Element<State, Action> for T
@@ -638,6 +673,10 @@ where
 pub trait HtmlIFrameElement<State, Action = ()>:
     HtmlElement<State, Action, DomNode: AsRef<web_sys::HtmlIFrameElement>>
 {
+    /// See <https://developer.mozilla.org/en-US/docs/Web/API/HTMLIFrameElement/src> for more details
+    fn src(self, value: impl IntoAttributeValue) -> Attr<Self, State, Action> {
+        Attr::new(self, "src".into(), value.into_attr_value())
+    }
 }
 
 // #[cfg(feature = "HtmlIFrameElement")]
@@ -721,6 +760,10 @@ where
 pub trait HtmlLiElement<State, Action = ()>:
     HtmlElement<State, Action, DomNode: AsRef<web_sys::HtmlLiElement>>
 {
+    /// See <https://developer.mozilla.org/en-US/docs/Web/HTML/Element/li#value> for more details
+    fn value(self, value: i32) -> Attr<Self, State, Action> {
+        Attr::new(self, "value".into(), value.into_attr_value())
+    }
 }
 
 // #[cfg(feature = "HtmlLiElement")]
@@ -889,7 +932,7 @@ where
 pub trait HtmlOptionElement<State, Action = ()>:
     HtmlElement<State, Action, DomNode: AsRef<web_sys::HtmlOptionElement>>
 {
-    /// A string representing the value of the HTMLOptionElement, i.e. the value attribute of the equivalent `<option>`.
+    /// A string representing the value of the `HTMLOptionElement`, i.e. the value attribute of the equivalent `<option>`.
     /// If this is not specified, the value of text is used as the value, e.g. for the associated `<select>` element's value when the form is submitted to the server.
     ///
     /// See <https://developer.mozilla.org/en-US/docs/Web/HTML/Element/option#value> for more details
@@ -1030,7 +1073,7 @@ where
 pub trait HtmlSelectElement<State, Action = ()>:
     HtmlElement<State, Action, DomNode: AsRef<web_sys::HtmlSelectElement>>
 {
-    /// A string representing the value of the HTMLOptionElement, i.e. the value attribute of the equivalent `<option>`.
+    /// A string representing the value of the `HTMLOptionElement`, i.e. the value attribute of the equivalent `<option>`.
     /// If this is not specified, the value of text is used as the value, e.g. for the associated `<select>` element's value when the form is submitted to the server.
     ///
     /// See <https://developer.mozilla.org/en-US/docs/Web/API/HTMLSelectElement/value> for more details
@@ -2005,9 +2048,6 @@ where
 pub trait SvgmPathElement<State, Action = ()>:
     SvgElement<State, Action, DomNode: AsRef<web_sys::SvgmPathElement>>
 {
-    fn fill(self, brush: impl Into<peniko::Brush>) -> crate::svg::Fill<Self, State, Action> {
-        crate::svg::fill(self, brush)
-    }
 }
 
 // #[cfg(feature = "SvgmPathElement")]
@@ -2022,6 +2062,9 @@ where
 pub trait SvgPathElement<State, Action = ()>:
     SvgGeometryElement<State, Action, DomNode: AsRef<web_sys::SvgPathElement>>
 {
+    fn fill(self, brush: impl Into<peniko::Brush>) -> crate::svg::Fill<Self, State, Action> {
+        crate::svg::fill(self, brush)
+    }
 }
 
 // #[cfg(feature = "SvgPathElement")]

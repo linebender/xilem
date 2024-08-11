@@ -4,7 +4,7 @@
 use std::marker::PhantomData;
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
-use xilem_core::{MessageResult, Mut, View, ViewElement, ViewId};
+use xilem_core::{MessageResult, Mut, View, ViewElement, ViewId, ViewMarker};
 
 use crate::{vecmap::VecMap, DomNode, DynMessage, ElementProps, Pod, PodMut, ViewCtx};
 
@@ -289,6 +289,7 @@ impl<E, C, T, A> Class<E, C, T, A> {
     }
 }
 
+impl<E, C, T, A> ViewMarker for Class<E, C, T, A> {}
 impl<E, C, T, A> View<T, A, ViewCtx, DynMessage> for Class<E, C, T, A>
 where
     T: 'static,

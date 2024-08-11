@@ -1,7 +1,9 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{DynMessage, MessageResult, Mut, View, ViewElement, ViewId, ViewPathTracker};
+use crate::{
+    DynMessage, MessageResult, Mut, View, ViewElement, ViewId, ViewMarker, ViewPathTracker,
+};
 
 /// This trait provides a way to add [`View`] implementations for types that would be restricted otherwise by the orphan rules.
 /// Every type that can be supported with this trait, needs a concrete `View` implementation in `xilem_core`, possibly feature-gated.
@@ -43,6 +45,8 @@ pub trait OrphanView<V, State, Action, Message = DynMessage>: ViewPathTracker + 
 
 macro_rules! impl_orphan_view_for {
     ($ty: ty) => {
+        impl ViewMarker for $ty {}
+
         impl<State, Action, Context, Message> View<State, Action, Context, Message> for $ty
         where
             Context: OrphanView<$ty, State, Action, Message>,
@@ -111,7 +115,7 @@ impl_orphan_view_for!(usize);
 /// These [`OrphanView`] implementations can e.g. be used in a vector graphics context, as for example seen in `xilem_web` within svg nodes
 mod kurbo {
     use super::OrphanView;
-    use crate::{MessageResult, Mut, View, ViewId};
+    use crate::{MessageResult, Mut, View, ViewId, ViewMarker};
     impl_orphan_view_for!(kurbo::PathSeg);
     impl_orphan_view_for!(kurbo::Arc);
     impl_orphan_view_for!(kurbo::BezPath);

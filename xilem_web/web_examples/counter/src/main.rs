@@ -4,8 +4,8 @@
 use xilem_web::{
     document_body,
     elements::html as el,
-    interfaces::{Element, HtmlButtonElement, HtmlDivElement},
-    App,
+    interfaces::{Element, HtmlButtonElement},
+    App, DomFragment,
 };
 
 #[derive(Default)]
@@ -50,8 +50,14 @@ fn btn(
     el::button(label).on_click(click_fn)
 }
 
-fn app_logic(state: &mut AppState) -> impl HtmlDivElement<AppState> {
-    el::div((
+/// And functions that return a sequence of views.
+fn huzzah(state: &mut AppState) -> impl DomFragment<AppState> {
+    (state.clicks >= 5).then_some("Huzzah, clicked at least 5 times")
+}
+
+/// Even the root `app_logic` can return a sequence of views
+fn app_logic(state: &mut AppState) -> impl DomFragment<AppState> {
+    (
         el::span(format!("clicked {} times", state.clicks)).class(state.class),
         el::br(()),
         btn("+1 click", |state, _| state.increment()),
@@ -60,8 +66,10 @@ fn app_logic(state: &mut AppState) -> impl HtmlDivElement<AppState> {
         btn("a different class", |state, _| state.change_class()),
         btn("change text", |state, _| state.change_text()),
         el::br(()),
+        huzzah(state),
+        el::br(()),
         state.text.clone(),
-    ))
+    )
 }
 
 pub fn main() {

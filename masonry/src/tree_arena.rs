@@ -35,7 +35,7 @@ pub struct TreeArena<Item> {
 
 /// A reference type giving shared access to an item's children.
 ///
-/// When you borrow an item from a TreeArena, you get two values, returned
+/// When you borrow an item from a [`TreeArena`], you get two values, returned
 /// separately for lifetime reasons: a reference to the item itself, and a token
 /// to access its children.
 pub struct TreeArenaToken<'a, Item> {
@@ -52,10 +52,9 @@ impl<'a, Item> Copy for TreeArenaToken<'a, Item> {}
 
 /// A reference type giving mutable access to an item's children.
 ///
-/// When you borrow an item from a TreeArena, you get two values, returned
+/// When you borrow an item from a [`TreeArena`], you get two values, returned
 /// separately for lifetime reasons: a reference to the item itself, and a token
 /// to access its children.
-
 pub struct TreeArenaTokenMut<'a, Item> {
     children: &'a mut Vec<TreeNode<Item>>,
 }

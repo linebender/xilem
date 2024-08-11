@@ -10,8 +10,11 @@ members = [
     "xilem_web/web_examples/counter_custom_element",
     "xilem_web/web_examples/elm",
     "xilem_web/web_examples/fetch",
+    "xilem_web/web_examples/fetch_event_handler",
     "xilem_web/web_examples/todomvc",
     "xilem_web/web_examples/mathml_svg",
+    "xilem_web/web_examples/raw_dom_access",
+    "xilem_web/web_examples/spawn_tasks",
     "xilem_web/web_examples/svgtoy",
 ]
 
@@ -24,9 +27,6 @@ repository = "https://github.com/linebender/xilem"
 homepage = "https://xilem.dev/"
 
 [workspace.lints]
-# Remove assigning_clones once it's allowed by default in stable Rust
-# https://github.com/rust-lang/rust-clippy/pull/12779
-clippy.assigning_clones = "allow"
 rust.unexpected_cfgs = { level = "warn", check-cfg = [
     'cfg(FALSE)',
     'cfg(tarpaulin_include)',
@@ -52,6 +52,8 @@ rust.variant_size_differences = "warn"
 clippy.allow_attributes_without_reason = "warn"
 clippy.collection_is_never_read = "warn"
 clippy.debug_assert_with_mut_call = "warn"
+# This is marked as `allow` within masonry due to https://github.com/linebender/xilem/issues/449.
+clippy.doc_markdown = "warn"
 clippy.fn_to_numeric_cast_any = "forbid"
 clippy.infinite_loop = "warn"
 clippy.large_include_file = "warn"
@@ -110,13 +112,14 @@ wgpu = "0.20.1"
 kurbo = "0.11.0"
 parley = "0.1.0"
 peniko = "0.1.1"
-winit = "0.30.2"
+winit = "0.30.4"
 tracing = { version = "0.1.40", default-features = false }
 smallvec = "1.13.2"
 dpi = "0.1.1"
 fnv = "1.0.7"
-image = { version = "0.25.1", default-features = false }
+image = { version = "0.25.2", default-features = false }
 web-time = "1.1.0"
-bitflags = "2.5.0"
+bitflags = "2.6.0"
 accesskit = "0.16.0"
 accesskit_winit = "0.22.0"
+nv-flip = "0.1.2"

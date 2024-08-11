@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 mod async_repeat;
-pub use async_repeat::{async_repeat, AsyncRepeat};
+pub use async_repeat::*;
 
 mod button;
 pub use button::*;
@@ -16,6 +16,9 @@ pub use flex::*;
 mod sized_box;
 pub use sized_box::*;
 
+mod spinner;
+pub use spinner::*;
+
 mod label;
 pub use label::*;
 
@@ -24,5 +27,3 @@ pub use prose::*;
 
 mod textbox;
 pub use textbox::*;
-
-pub use xilem_core::memoize;

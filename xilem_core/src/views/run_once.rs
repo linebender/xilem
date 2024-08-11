@@ -3,7 +3,7 @@
 
 use core::fmt::Debug;
 
-use crate::{MessageResult, NoElement, View, ViewPathTracker};
+use crate::{MessageResult, NoElement, View, ViewMarker, ViewPathTracker};
 
 /// A view which executes `once` exactly once.
 ///
@@ -29,7 +29,7 @@ use crate::{MessageResult, NoElement, View, ViewPathTracker};
 /// You might otherwise expect the function to be reran when the captured values change, which is not the case.
 /// [`run_once_raw`] is the same as `run_once`, but without this restriction.
 ///
-/// // https://doc.rust-lang.org/error_codes/E0080.html
+/// // <https://doc.rust-lang.org/error_codes/E0080.html>
 /// // Note that this error code is only checked on nightly
 /// ```compile_fail,E0080
 /// # use xilem_core::{run_once, View, docs::{Fake as ViewCtx}, PhantomView};
@@ -75,6 +75,7 @@ pub struct RunOnce<F> {
     once: F,
 }
 
+impl<F> ViewMarker for RunOnce<F> {}
 impl<F, State, Action, Context, Message> View<State, Action, Context, Message> for RunOnce<F>
 where
     Context: ViewPathTracker,

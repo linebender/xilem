@@ -59,7 +59,7 @@ pub struct WidgetId(pub(crate) NonZeroU64);
 /// for details **(TODO)**.
 ///
 /// Generally speaking, widgets aren't used directly. They are stored in
-/// [`WidgetPods`](crate::WidgetPod). Widget methods are called by WidgetPods, and the
+/// [`WidgetPod`](crate::WidgetPod)s. Widget methods are called by `WidgetPod`s, and the
 /// widget is mutated either during a method call (eg `on_event` or `lifecycle`) or
 /// through a [`WidgetMut`](crate::widget::WidgetMut). See tutorials for details.
 pub trait Widget: AsAny {
@@ -217,7 +217,7 @@ pub trait Widget: AsAny {
 /// responsible for calling the context methods (eg `request_layout`,
 /// `request_accessibility_update`) for the child.
 ///
-/// Widgets implementing AllowRawMut are usually private widgets used as an
+/// Widgets implementing `AllowRawMut` are usually private widgets used as an
 /// internal implementation detail of public widgets.
 pub trait AllowRawMut: Widget {}
 

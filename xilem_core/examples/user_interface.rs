@@ -6,7 +6,8 @@
 use core::any::Any;
 
 use xilem_core::{
-    DynMessage, MessageResult, Mut, SuperElement, View, ViewElement, ViewId, ViewPathTracker,
+    DynMessage, MessageResult, Mut, SuperElement, View, ViewElement, ViewId, ViewMarker,
+    ViewPathTracker,
 };
 
 pub fn app_logic(_: &mut u32) -> impl WidgetView<u32> {
@@ -44,6 +45,7 @@ impl<W: Widget> ViewElement for WidgetPod<W> {
     type Mut<'a> = WidgetMut<'a, W>;
 }
 
+impl ViewMarker for Button {}
 impl<State, Action> View<State, Action, ViewCtx> for Button {
     type Element = WidgetPod<ButtonWidget>;
     type ViewState = ();

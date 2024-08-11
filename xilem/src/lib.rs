@@ -19,6 +19,7 @@ use winit::{
 };
 use xilem_core::{
     AsyncCtx, MessageResult, RawProxy, SuperElement, View, ViewElement, ViewId, ViewPathTracker,
+    ViewSequence,
 };
 
 pub use masonry::{
@@ -27,6 +28,8 @@ pub use masonry::{
     Color, TextAlignment,
 };
 pub use xilem_core as core;
+
+mod one_of;
 
 mod any_view;
 pub use any_view::AnyWidgetView;
@@ -43,6 +46,7 @@ pub struct Xilem<State, Logic> {
     state: State,
     logic: Logic,
     runtime: tokio::runtime::Runtime,
+    background_color: Color,
 }
 
 impl<State, Logic, View> Xilem<State, Logic>
@@ -56,7 +60,14 @@ where
             state,
             logic,
             runtime,
+            background_color: Color::BLACK,
         }
+    }
+
+    /// Sets main window background color.
+    pub fn background_color(mut self, color: Color) -> Self {
+        self.background_color = color;
+        self
     }
 
     // TODO: Make windows a specific view
@@ -93,8 +104,9 @@ where
     {
         let event_loop = event_loop.build()?;
         let proxy = event_loop.create_proxy();
+        let bg_color = self.background_color;
         let (root_widget, driver) = self.into_driver(Arc::new(MasonryProxy(proxy)));
-        event_loop_runner::run_with(event_loop, window_attributes, root_widget, driver)
+        event_loop_runner::run_with(event_loop, window_attributes, root_widget, driver, bg_color)
     }
 
     pub fn into_driver(
@@ -196,6 +208,30 @@ where
     W: Widget,
 {
     type Widget = W;
+}
+
+/// An ordered sequence of widget views, it's used for `0..N` views.
+/// See [`ViewSequence`] for more technical details.
+///
+/// # Examples
+///
+/// ```
+/// use xilem::{view::prose, WidgetViewSequence};
+///
+/// fn prose_sequence<State: 'static>(
+///     texts: impl Iterator<Item = &'static str>,
+/// ) -> impl WidgetViewSequence<State> {
+///     texts.map(prose).collect::<Vec<_>>()
+/// }
+/// ```
+pub trait WidgetViewSequence<State, Action = ()>:
+    ViewSequence<State, Action, ViewCtx, Pod<any_view::DynWidget>>
+{
+}
+
+impl<Seq, State, Action> WidgetViewSequence<State, Action> for Seq where
+    Seq: ViewSequence<State, Action, ViewCtx, Pod<any_view::DynWidget>>
+{
 }
 
 type WidgetMap = HashMap<WidgetId, Vec<ViewId>>;

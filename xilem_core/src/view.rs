@@ -9,6 +9,22 @@ use alloc::{boxed::Box, sync::Arc};
 
 use crate::{message::MessageResult, DynMessage, Mut, ViewElement};
 
+/// A type which can be a [`View`]. Imposes no requirements on the underlying type.
+/// Should be implemented alongside every `View` implementation:
+/// ```ignore
+/// impl<...> ViewMarker for Button<...> {}
+/// impl<...> View<...> for Button<...> {...}
+/// ```
+///
+/// ## Details
+///
+/// Because `View` is generic, Rust [allows you](https://doc.rust-lang.org/reference/items/implementations.html#orphan-rules) to implement this trait for certain non-local types.
+/// These non-local types can include `Vec<_>` and `Option<_>`.
+/// If this trait were not present, those implementations of `View` would conflict with those types' implementations of `ViewSequence`.
+/// This is because every `View` type also implementations `ViewSequence`.
+/// Since `ViewMarker` is not generic, these non-local implementations are not permitted for this trait, which means that the conflicting implementation cannot happen.
+pub trait ViewMarker {}
+
 /// A lightweight, short-lived representation of the state of a retained
 /// structure, usually a user interface node.
 ///
@@ -30,11 +46,21 @@ use crate::{message::MessageResult, DynMessage, Mut, ViewElement};
 /// During message handling, mutable access to the app state is given to view nodes,
 /// which will in turn generally expose it to callbacks.
 ///
+/// Due to restrictions of the [orphan rules](https://doc.rust-lang.org/reference/items/implementations.html#orphan-rules),
+/// `ViewMarker` needs to be implemented for every type that implements `View`, see [`ViewMarker`] for more details.
+/// For example:
+/// ```ignore
+/// impl<...> ViewMarker for Button<...> {}
+/// impl<...> View<...> for Button<...> {...}
+/// ```
+///
 /// ## Alloc
 ///
 /// In order to support the default open-ended [`DynMessage`] type as `Message`, this trait requires an
 /// allocator to be available.
-pub trait View<State, Action, Context: ViewPathTracker, Message = DynMessage>: 'static {
+pub trait View<State, Action, Context: ViewPathTracker, Message = DynMessage>:
+    ViewMarker + 'static
+{
     /// The element type which this view operates on.
     type Element: ViewElement;
     /// State that is used over the lifetime of the retained representation of the view.
@@ -101,13 +127,13 @@ pub struct ViewId(u64);
 impl ViewId {
     /// Create a new `ViewId` with the given value.
     #[must_use]
-    pub fn new(raw: u64) -> Self {
+    pub const fn new(raw: u64) -> Self {
         Self(raw)
     }
 
     /// Access the raw value of this id.
     #[must_use]
-    pub fn routing_id(self) -> u64 {
+    pub const fn routing_id(self) -> u64 {
         self.0
     }
 }
@@ -137,6 +163,7 @@ pub trait ViewPathTracker {
     }
 }
 
+impl<V: ?Sized> ViewMarker for Box<V> {}
 impl<State, Action, Context, Message, V> View<State, Action, Context, Message> for Box<V>
 where
     Context: ViewPathTracker,
@@ -180,6 +207,12 @@ where
     }
 }
 
+pub struct ArcState<ViewState> {
+    view_state: ViewState,
+    dirty: bool,
+}
+
+impl<V: ?Sized> ViewMarker for Arc<V> {}
 /// An implementation of [`View`] which only runs rebuild if the states are different
 impl<State, Action, Context, Message, V> View<State, Action, Context, Message> for Arc<V>
 where
@@ -187,10 +220,17 @@ where
     V: View<State, Action, Context, Message> + ?Sized,
 {
     type Element = V::Element;
-    type ViewState = V::ViewState;
+    type ViewState = ArcState<V::ViewState>;
 
     fn build(&self, ctx: &mut Context) -> (Self::Element, Self::ViewState) {
-        self.deref().build(ctx)
+        let (element, view_state) = self.deref().build(ctx);
+        (
+            element,
+            ArcState {
+                view_state,
+                dirty: false,
+            },
+        )
     }
 
     fn rebuild<'el>(
@@ -200,11 +240,12 @@ where
         ctx: &mut Context,
         element: Mut<'el, Self::Element>,
     ) -> Mut<'el, Self::Element> {
-        if Arc::ptr_eq(self, prev) {
-            // If this is the same value, there's no need to rebuild
-            element
+        if core::mem::take(&mut view_state.dirty) || !Arc::ptr_eq(self, prev) {
+            self.deref()
+                .rebuild(prev, &mut view_state.view_state, ctx, element)
         } else {
-            self.deref().rebuild(prev, view_state, ctx, element)
+            // If this is the same value, or no rebuild was forced, there's no need to rebuild
+            element
         }
     }
 
@@ -214,7 +255,8 @@ where
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
     ) {
-        self.deref().teardown(view_state, ctx, element);
+        self.deref()
+            .teardown(&mut view_state.view_state, ctx, element);
     }
 
     fn message(
@@ -224,7 +266,12 @@ where
         message: Message,
         app_state: &mut State,
     ) -> MessageResult<Action, Message> {
-        self.deref()
-            .message(view_state, id_path, message, app_state)
+        let message_result =
+            self.deref()
+                .message(&mut view_state.view_state, id_path, message, app_state);
+        if matches!(message_result, MessageResult::RequestRebuild) {
+            view_state.dirty = true;
+        }
+        message_result
     }
 }

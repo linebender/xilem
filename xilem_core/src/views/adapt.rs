@@ -3,7 +3,7 @@
 
 use core::marker::PhantomData;
 
-use crate::{MessageResult, Mut, View, ViewId, ViewPathTracker};
+use crate::{MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker};
 
 /// A view that wraps a child view and modifies the state that callbacks have access to.
 pub struct Adapt<
@@ -18,9 +18,7 @@ pub struct Adapt<
         &mut ParentState,
         AdaptThunk<ChildState, ChildAction, Context, ChildView, Message>,
     ) -> MessageResult<ParentAction>,
-> where
-    Context: ViewPathTracker,
-{
+> {
     proxy_fn: ProxyFn,
     child: ChildView,
     #[allow(clippy::type_complexity)]
@@ -147,6 +145,10 @@ where
     }
 }
 
+impl<ParentState, ParentAction, ChildState, ChildAction, Context, Message, V, F> ViewMarker
+    for Adapt<ParentState, ParentAction, ChildState, ChildAction, Context, V, Message, F>
+{
+}
 impl<ParentState, ParentAction, ChildState, ChildAction, Context, Message, V, F>
     View<ParentState, ParentAction, Context, Message>
     for Adapt<ParentState, ParentAction, ChildState, ChildAction, Context, V, Message, F>
