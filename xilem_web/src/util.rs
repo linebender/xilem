@@ -26,12 +26,8 @@ pub fn get_element_by_id(id: &str) -> web_sys::HtmlElement {
 /// Helper to get the value from an HTML input element from a given event.
 ///
 /// Returns `None` if the event isn't a valid input event or conversions fail.
-pub fn event_target_value<T>(event: &T) -> Option<String>
-where
-    T: JsCast,
-{
+pub fn input_event_target_value(event: &web_sys::Event) -> Option<String> {
     event
-        .unchecked_ref::<web_sys::Event>()
         .target()?
         .dyn_into::<web_sys::HtmlInputElement>()
         .ok()?

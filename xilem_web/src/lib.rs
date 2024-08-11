@@ -61,7 +61,7 @@ pub use self::{
     optional_action::{Action, OptionalAction},
     pointer::{Pointer, PointerDetails, PointerMsg},
     style::{style, ElementWithStyle, IntoStyles, Style, Styles, WithStyle},
-    util::{document, document_body, event_target_value, get_element_by_id},
+    util::{document, document_body, get_element_by_id, input_event_target_value},
 };
 
 pub use xilem_core as core;
