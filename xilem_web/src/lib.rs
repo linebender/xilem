@@ -12,11 +12,8 @@
 //! </style>
 #![doc = include_str!("../README.md")]
 
-use core::{
-    Adapt, AdaptThunk, AnyElement, AnyView, MapAction, MapState, MessageResult, SuperElement, View,
-    ViewElement,
-};
 use std::any::Any;
+
 use wasm_bindgen::UnwrapThrowExt;
 use web_sys::wasm_bindgen::JsCast;
 
@@ -41,6 +38,7 @@ mod optional_action;
 mod pointer;
 mod style;
 mod text;
+mod util;
 mod vec_splice;
 mod vecmap;
 
@@ -49,21 +47,29 @@ pub mod elements;
 pub mod interfaces;
 pub mod svg;
 
-pub use after_update::{
-    after_build, after_rebuild, before_teardown, AfterBuild, AfterRebuild, BeforeTeardown,
+pub use self::{
+    after_update::{
+        after_build, after_rebuild, before_teardown, AfterBuild, AfterRebuild, BeforeTeardown,
+    },
+    app::App,
+    attribute::{Attr, Attributes, ElementWithAttributes, WithAttributes},
+    attribute_value::{AttributeValue, IntoAttributeValue},
+    class::{AsClassIter, Class, Classes, ElementWithClasses, WithClasses},
+    context::{MessageThunk, ViewCtx},
+    element_props::ElementProps,
+    message::{DynMessage, Message},
+    optional_action::{Action, OptionalAction},
+    pointer::{Pointer, PointerDetails, PointerMsg},
+    style::{style, ElementWithStyle, IntoStyles, Style, Styles, WithStyle},
+    util::{document, document_body, event_target_value, get_element_by_id},
 };
-pub use app::App;
-pub use attribute::{Attr, Attributes, ElementWithAttributes, WithAttributes};
-pub use attribute_value::{AttributeValue, IntoAttributeValue};
-pub use class::{AsClassIter, Class, Classes, ElementWithClasses, WithClasses};
-pub use context::{MessageThunk, ViewCtx};
-pub use element_props::ElementProps;
-pub use message::{DynMessage, Message};
-pub use optional_action::{Action, OptionalAction};
-pub use pointer::{Pointer, PointerDetails, PointerMsg};
-pub use style::{style, ElementWithStyle, IntoStyles, Style, Styles, WithStyle};
+
 pub use xilem_core as core;
-use xilem_core::ViewSequence;
+
+use xilem_core::{
+    Adapt, AdaptThunk, AnyElement, AnyView, MapAction, MapState, MessageResult, SuperElement, View,
+    ViewElement, ViewSequence,
+};
 
 /// A trait used for type erasure of [`DomNode`]s
 /// It is e.g. used in [`AnyPod`]
@@ -379,26 +385,6 @@ impl DomNode<ElementProps> for web_sys::Element {
 
 impl DomNode<()> for web_sys::Text {
     fn apply_props(&self, (): &mut ()) {}
-}
-
-/// Helper to get the HTML document body element
-pub fn document_body() -> web_sys::HtmlElement {
-    document().body().expect("HTML document missing body")
-}
-
-/// Helper to get the HTML document
-pub fn document() -> web_sys::Document {
-    let window = web_sys::window().expect("no global `window` exists");
-    window.document().expect("should have a document on window")
-}
-
-/// Helper to get a DOM element by id
-pub fn get_element_by_id(id: &str) -> web_sys::HtmlElement {
-    document()
-        .get_element_by_id(id)
-        .unwrap()
-        .dyn_into()
-        .unwrap()
 }
 
 // TODO specialize some of these elements, maybe via features?
