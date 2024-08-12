@@ -3,7 +3,7 @@
 use masonry::parley::fontique::Weight;
 use winit::error::EventLoopError;
 use xilem::{
-    view::{button, flex, variable_label},
+    view::{button, flex, variable_label, CrossAxisAlignment, FlexExt, FlexSpacer},
     EventLoop, EventLoopBuilder, WidgetView, Xilem,
 };
 
@@ -17,6 +17,7 @@ struct Clocks {
 
 fn app_logic(data: &mut Clocks) -> impl WidgetView<Clocks> {
     flex((
+        FlexSpacer::Fixed(40.),
         button("Increase", |data: &mut Clocks| {
             data.weight = (data.weight + 100.).clamp(1., 1000.);
         }),
@@ -25,7 +26,8 @@ fn app_logic(data: &mut Clocks) -> impl WidgetView<Clocks> {
         }),
         variable_label(LOREM)
             .text_size(36.)
-            .target_weight(data.weight, 400.),
+            .target_weight(data.weight, 400.)
+            .flex(CrossAxisAlignment::Start),
     ))
 }
 
