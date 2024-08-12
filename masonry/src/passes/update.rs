@@ -24,7 +24,7 @@ fn get_id_path(root: &RenderRoot, widget_id: Option<WidgetId>) -> Vec<WidgetId> 
 }
 
 // TODO - Replace LifecycleCtx with UpdateCtx
-pub(crate) fn run_targeted_update_pass(
+fn run_targeted_update_pass(
     root: &mut RenderRoot,
     target: Option<WidgetId>,
     mut pass_fn: impl FnMut(&mut dyn Widget, &mut LifeCycleCtx),
