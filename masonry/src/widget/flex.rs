@@ -14,8 +14,9 @@ use crate::kurbo::{Line, Vec2};
 use crate::theme::get_debug_color;
 use crate::widget::WidgetMut;
 use crate::{
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
-    Point, PointerEvent, Rect, Size, StatusChange, TextEvent, Widget, WidgetId, WidgetPod,
+    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx,
+    MutateCtx, PaintCtx, Point, PointerEvent, Rect, Size, StatusChange, TextEvent, Widget,
+    WidgetId, WidgetPod,
 };
 
 /// A container with either horizontal or vertical layout.
@@ -363,6 +364,20 @@ impl<'a> WidgetMut<'a, Flex> {
         };
         self.widget.children.push(child);
         self.ctx.children_changed();
+    }
+
+    // TODO - Document
+    pub fn add_child_with<W: Widget>(&mut self, callback: impl FnOnce(&mut MutateCtx) -> W) {
+        let widget = self.ctx.add_child(|ctx| {
+            let child = callback(ctx);
+            let child: Box<dyn Widget> = Box::new(child);
+            child
+        });
+        let child = Child::Fixed {
+            widget,
+            alignment: None,
+        };
+        self.widget.children.push(child);
     }
 
     pub fn add_child_id(&mut self, child: impl Widget, id: WidgetId) {
@@ -1531,7 +1546,7 @@ mod tests {
 
                 flex.remove_child(1);
                 // -> acd
-                flex.add_child(Label::new("x"));
+                flex.add_child_with(|_| Label::new("x"));
                 // -> acdx
                 flex.add_flex_child(Label::new("y"), 2.0);
                 // -> acdxy

@@ -15,7 +15,8 @@ use crate::text::TextStorage;
 use crate::widget::{Label, WidgetMut, WidgetPod};
 use crate::{
     theme, AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, Insets, LayoutCtx, LifeCycle,
-    LifeCycleCtx, PaintCtx, PointerEvent, Size, StatusChange, TextEvent, Widget, WidgetId,
+    LifeCycleCtx, MutateCtx, PaintCtx, PointerEvent, Size, StatusChange, TextEvent, Widget,
+    WidgetId,
 };
 
 // the minimum padding added to a button.
@@ -43,6 +44,12 @@ impl Button {
     /// ```
     pub fn new(text: impl Into<ArcStr>) -> Button {
         Button::from_label(Label::new(text))
+    }
+
+    pub fn create(ctx: &mut MutateCtx, text: impl Into<ArcStr>) -> Button {
+        Button {
+            label: ctx.add_child(|_| Label::new(text)),
+        }
     }
 
     /// Create a new button with the provided [`Label`].

@@ -386,6 +386,48 @@ impl<'a> MutateCtx<'a> {
             is_reborrow: false,
         }
     }
+
+    pub fn add_child<W: Widget>(
+        &mut self,
+        f: impl FnOnce(&mut MutateCtx<'_>) -> W,
+    ) -> WidgetPod<W> {
+        // FIXME - Remove
+        self.children_changed();
+
+        let id = WidgetId::next();
+        // TODO - Add placeholder widget
+        // An empty placehold wouldn't need to be allocated: Box::new would be a noop (maybe?), probably better for optimization.
+        let placeholder = crate::widget::Label::new("");
+        // FIXME - Give name of widget type
+        let state = WidgetState::new(id, "<placeholder>");
+
+        self.widget_children
+            .insert_child(id.to_raw(), Box::new(placeholder));
+        self.widget_state_children.insert_child(id.to_raw(), state);
+
+        let child_state_mut = self
+            .widget_state_children
+            .get_child_mut(id.to_raw())
+            .unwrap();
+        let child_mut = self.widget_children.get_child_mut(id.to_raw()).unwrap();
+
+        let mut child_ctx = MutateCtx {
+            global_state: self.global_state,
+            parent_widget_state: self.widget_state,
+            widget_state: child_state_mut.item,
+            widget_state_children: child_state_mut.children,
+            widget_children: child_mut.children,
+        };
+        let widget = f(&mut child_ctx);
+
+        #[cfg(debug_assertions)]
+        {
+            child_ctx.widget_state.widget_name = widget.short_type_name();
+        }
+
+        *child_mut.item = Box::new(widget);
+        WidgetPod::new2(id)
+    }
 }
 
 // --- MARK: UPDATE FLAGS ---

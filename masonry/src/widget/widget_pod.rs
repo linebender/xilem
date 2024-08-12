@@ -65,6 +65,14 @@ impl<W: Widget> WidgetPod<W> {
         }
     }
 
+    pub(crate) fn new2(id: WidgetId) -> WidgetPod<W> {
+        WidgetPod {
+            id,
+            inner: WidgetPodInner::Inserted,
+            fragment: Scene::new(),
+        }
+    }
+
     /// Get the identity of the widget.
     pub fn id(&self) -> WidgetId {
         self.id
