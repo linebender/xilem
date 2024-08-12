@@ -449,15 +449,17 @@ impl TestHarness {
     /// ## Panics
     ///
     /// Panics if no Widget with this id can be found.
+    #[track_caller]
     pub fn get_widget(&self, id: WidgetId) -> WidgetRef<'_, dyn Widget> {
         self.render_root
-            .get_widget(id)
+            .widget_arena
+            .try_get_widget_ref(id)
             .unwrap_or_else(|| panic!("could not find widget #{}", id.to_raw()))
     }
 
     /// Try to return the widget with the given id.
     pub fn try_get_widget(&self, id: WidgetId) -> Option<WidgetRef<'_, dyn Widget>> {
-        self.render_root.get_widget(id)
+        self.render_root.widget_arena.try_get_widget_ref(id)
     }
 
     // TODO - link to focus documentation.
@@ -470,7 +472,8 @@ impl TestHarness {
     // TODO - Multiple pointers
     pub fn pointer_capture_target(&self) -> Option<WidgetRef<'_, dyn Widget>> {
         self.render_root
-            .get_widget(self.render_root.state.pointer_capture_target?)
+            .widget_arena
+            .try_get_widget_ref(self.render_root.state.pointer_capture_target?)
     }
 
     // TODO - This is kinda redundant with the above

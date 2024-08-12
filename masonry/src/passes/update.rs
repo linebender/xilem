@@ -27,12 +27,10 @@ fn get_id_path(root: &RenderRoot, widget_id: Option<WidgetId>) -> Vec<WidgetId> 
 pub(crate) fn run_targeted_update_pass(
     root: &mut RenderRoot,
     target: Option<WidgetId>,
-    pass_fn: impl FnMut(&mut dyn Widget, &mut LifeCycleCtx),
+    mut pass_fn: impl FnMut(&mut dyn Widget, &mut LifeCycleCtx),
 ) {
-    let mut pass_fn = pass_fn;
-
-    let mut target_widget_id = target;
-    while let Some(widget_id) = target_widget_id {
+    let mut current_id = target;
+    while let Some(widget_id) = current_id {
         let parent_id = root.widget_arena.parent_of(widget_id);
         let (widget_mut, state_mut) = root.widget_arena.get_pair_mut(widget_id);
 
@@ -45,7 +43,7 @@ pub(crate) fn run_targeted_update_pass(
         pass_fn(widget_mut.item, &mut ctx);
 
         merge_state_up(&mut root.widget_arena, widget_id);
-        target_widget_id = parent_id;
+        current_id = parent_id;
     }
 }
 

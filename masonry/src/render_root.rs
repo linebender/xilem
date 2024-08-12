@@ -142,6 +142,27 @@ impl WidgetArena {
             .find_mut(widget_id.to_raw())
             .expect("get_state_mut: widget state not in widget tree")
     }
+
+    pub fn try_get_widget_ref(&self, id: WidgetId) -> Option<WidgetRef<dyn Widget>> {
+        let state_ref = self.widget_states.find(id.to_raw())?;
+        let widget_ref = self
+            .widgets
+            .find(id.to_raw())
+            .expect("found state but not widget");
+
+        // Box<dyn Widget> -> &dyn Widget
+        // Without this step, the type of `WidgetRef::widget` would be
+        // `&Box<dyn Widget> as &dyn Widget`, which would be an additional layer
+        // of indirection.
+        let widget = widget_ref.item;
+        let widget: &dyn Widget = &**widget;
+        Some(WidgetRef {
+            widget_state_children: state_ref.children,
+            widget_children: widget_ref.children,
+            widget_state: state_ref.item,
+            widget,
+        })
+    }
 }
 
 /// Defines how a windows size should be determined
@@ -361,8 +382,8 @@ impl RenderRoot {
         // Our WidgetArena stores all widgets as Box<dyn Widget>, but the "true"
         // type of our root widget is *also* Box<dyn Widget>. We downcast so we
         // don't add one more level of indirection to this.
-        let widget = widget_ref.item;
-        let widget = widget
+        let widget = widget_ref
+            .item
             .as_dyn_any()
             .downcast_ref::<Box<dyn Widget>>()
             .unwrap();
@@ -393,8 +414,8 @@ impl RenderRoot {
         // Our WidgetArena stores all widgets as Box<dyn Widget>, but the "true"
         // type of our root widget is *also* Box<dyn Widget>. We downcast so we
         // don't add one more level of indirection to this.
-        let widget = widget_ref.item;
-        let widget = widget
+        let widget = widget_ref
+            .item
             .as_mut_dyn_any()
             .downcast_mut::<Box<dyn Widget>>()
             .unwrap();
@@ -419,28 +440,6 @@ impl RenderRoot {
         self.post_event_processing(&mut fake_widget_state);
 
         res
-    }
-
-    pub fn get_widget(&self, id: WidgetId) -> Option<WidgetRef<dyn Widget>> {
-        let state_ref = self.widget_arena.widget_states.find(id.to_raw())?;
-        let widget_ref = self
-            .widget_arena
-            .widgets
-            .find(id.to_raw())
-            .expect("found state but not widget");
-
-        // Box<dyn Widget> -> &dyn Widget
-        // Without this step, the type of `WidgetRef::widget` would be
-        // `&Box<dyn Widget> as &dyn Widget`, which would be an additional layer
-        // of indirection.
-        let widget = widget_ref.item;
-        let widget: &dyn Widget = &**widget;
-        Some(WidgetRef {
-            widget_state_children: state_ref.children,
-            widget_children: widget_ref.children,
-            widget_state: state_ref.item,
-            widget,
-        })
     }
 
     // --- MARK: POINTER_EVENT ---
