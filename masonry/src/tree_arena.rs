@@ -35,14 +35,12 @@ pub struct TreeArena<Item> {
 
 pub struct ArenaRef<'a, Item> {
     pub parent_id: Option<u64>,
-    pub id: Option<u64>,
     pub item: &'a Item,
     pub children: ArenaRefChildren<'a, Item>,
 }
 
 pub struct ArenaMut<'a, Item> {
     pub parent_id: Option<u64>,
-    pub id: Option<u64>,
     pub item: &'a mut Item,
     pub children: ArenaMutChildren<'a, Item>,
 }
@@ -135,7 +133,6 @@ impl<Item> TreeArena<Item> {
 
         Some(ArenaRef {
             parent_id: self.parents_map[&id],
-            id: Some(id),
             item: &node.item,
             children: ArenaRefChildren {
                 id: Some(node.id),
@@ -179,7 +176,6 @@ impl<Item> TreeArena<Item> {
 
         Some(ArenaMut {
             parent_id: self.parents_map[&id],
-            id: Some(id),
             item: &mut node.item,
             children: ArenaMutChildren {
                 id: Some(node.id),
@@ -225,7 +221,6 @@ impl<'a, Item> ArenaRefChildren<'a, Item> {
             if child.id == id {
                 return Some(ArenaRef {
                     parent_id: self.id,
-                    id: Some(child.id),
                     item: &child.item,
                     children: ArenaRefChildren {
                         id: Some(child.id),
@@ -246,7 +241,6 @@ impl<'a, Item> ArenaRefChildren<'a, Item> {
             if child.id == id {
                 return Some(ArenaRef {
                     parent_id: self.id,
-                    id: Some(child.id),
                     item: &child.item,
                     children: ArenaRefChildren {
                         id: Some(child.id),
@@ -264,7 +258,6 @@ impl<'a, Item> ArenaRefChildren<'a, Item> {
     pub(crate) fn iter_children(&self) -> impl Iterator<Item = ArenaRef<'_, Item>> {
         self.children.iter().map(|child| ArenaRef {
             parent_id: self.id,
-            id: Some(child.id),
             item: &child.item,
             children: ArenaRefChildren {
                 id: Some(child.id),
@@ -284,7 +277,6 @@ impl<'a, Item> ArenaMutChildren<'a, Item> {
             if child.id == id {
                 return Some(ArenaRef {
                     parent_id: self.id,
-                    id: Some(child.id),
                     item: &child.item,
                     children: ArenaRefChildren {
                         id: Some(child.id),
@@ -305,7 +297,6 @@ impl<'a, Item> ArenaMutChildren<'a, Item> {
             if child.id == id {
                 return Some(ArenaMut {
                     parent_id: self.id,
-                    id: Some(child.id),
                     item: &mut child.item,
                     children: ArenaMutChildren {
                         id: Some(child.id),
@@ -327,7 +318,6 @@ impl<'a, Item> ArenaMutChildren<'a, Item> {
             if child.id == id {
                 return Some(ArenaRef {
                     parent_id: self.id,
-                    id: Some(child.id),
                     item: &mut child.item,
                     children: ArenaRefChildren {
                         id: Some(child.id),
@@ -348,7 +338,6 @@ impl<'a, Item> ArenaMutChildren<'a, Item> {
             if child.id == id {
                 return Some(ArenaMut {
                     parent_id: self.id,
-                    id: Some(child.id),
                     item: &mut child.item,
                     children: ArenaMutChildren {
                         id: Some(child.id),
@@ -367,7 +356,6 @@ impl<'a, Item> ArenaMutChildren<'a, Item> {
     pub(crate) fn iter_children(&self) -> impl Iterator<Item = ArenaRef<'_, Item>> {
         self.children.iter().map(|child| ArenaRef {
             parent_id: self.id,
-            id: Some(child.id),
             item: &child.item,
             children: ArenaRefChildren {
                 id: Some(child.id),
