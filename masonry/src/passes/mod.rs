@@ -1,7 +1,8 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{render_root::WidgetArena, WidgetId};
+use crate::widget::WidgetArena;
+use crate::WidgetId;
 
 pub mod event;
 pub mod update;

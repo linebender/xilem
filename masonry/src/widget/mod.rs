@@ -28,6 +28,7 @@ mod sized_box;
 mod spinner;
 mod split;
 mod textbox;
+mod widget_arena;
 
 pub use self::image::Image;
 pub use align::Align;
@@ -47,6 +48,8 @@ pub use widget_mut::WidgetMut;
 pub use widget_pod::WidgetPod;
 pub use widget_ref::WidgetRef;
 pub use widget_state::WidgetState;
+
+pub(crate) use widget_arena::WidgetArena;
 
 pub use sized_box::BackgroundBrush;
 
