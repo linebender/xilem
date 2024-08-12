@@ -64,8 +64,6 @@ pub const HARNESS_DEFAULT_BACKGROUND_COLOR: Color = Color::rgb8(0x29, 0x29, 0x29
 /// The passage of time is simulated with the [`move_timers_forward`](Self::move_timers_forward) methods. **(TODO -
 /// Doesn't move animations forward.)**
 ///
-/// **(TODO - ExtEvents aren't handled.)**
-///
 /// **(TODO - Painting invalidation might not be accurate.)**
 ///
 /// One minor difference is that layout is always calculated after every event, whereas

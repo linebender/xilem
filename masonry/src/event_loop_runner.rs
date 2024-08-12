@@ -640,9 +640,6 @@ impl MasonryState<'_> {
                     // TODO
                     window.request_redraw();
                 }
-                render_root::RenderRootSignal::SpawnWorker(_worker_fn) => {
-                    // TODO
-                }
                 render_root::RenderRootSignal::TakeFocus => {
                     window.focus_window();
                 }

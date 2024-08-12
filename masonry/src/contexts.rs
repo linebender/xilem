@@ -3,7 +3,6 @@
 
 //! The context types that are passed into various widget methods.
 
-use std::any::Any;
 use std::time::Duration;
 
 use accesskit::{NodeBuilder, TreeUpdate};
@@ -12,7 +11,6 @@ use tracing::{trace, warn};
 
 use crate::action::Action;
 use crate::dpi::LogicalPosition;
-use crate::promise::PromiseToken;
 use crate::render_root::{RenderRootSignal, RenderRootState};
 use crate::text::TextBrush;
 use crate::text_helpers::{ImeChangeSignal, TextFieldRegistration};
@@ -108,14 +106,6 @@ pub struct AccessCtx<'a> {
     pub(crate) rebuild_all: bool,
     pub(crate) scale_factor: f64,
 }
-
-pub struct WorkerCtx<'a> {
-    // TODO
-    #[allow(dead_code)]
-    pub(crate) global_state: &'a mut RenderRootState,
-}
-
-pub struct WorkerFn(pub Box<dyn FnOnce(WorkerCtx) + Send + 'static>);
 
 // --- MARK: GETTERS ---
 // Methods for all context types
@@ -584,33 +574,6 @@ impl_context_method!(
             self.global_state
                 .signal_queue
                 .push_back(RenderRootSignal::Action(action, self.widget_state.id));
-        }
-
-        /// Run the provided function in the background.
-        ///
-        /// The function takes a [`WorkerCtx`] which it can use to
-        /// communicate with the main thread.
-        pub fn run_in_background(
-            &mut self,
-            _background_task: impl FnOnce(WorkerCtx) + Send + 'static,
-        ) {
-            // TODO - Use RenderRootSignal::SpawnWorker
-            todo!("run_in_background");
-        }
-
-        /// Run the provided function in the background, and send its result once it's done.
-        ///
-        /// The function takes a [`WorkerCtx`] which it can use to
-        /// communicate with the main thread.
-        ///
-        /// Once the function returns, an [`Event::PromiseResult`](crate::Event::PromiseResult)
-        /// is emitted with the return value.
-        pub fn compute_in_background<T: Any + Send>(
-            &mut self,
-            _background_task: impl FnOnce(WorkerCtx) -> T + Send + 'static,
-        ) -> PromiseToken<T> {
-            // TODO - Use RenderRootSignal::SpawnWorker
-            todo!("compute_in_background");
         }
 
         /// Request a timer event.
