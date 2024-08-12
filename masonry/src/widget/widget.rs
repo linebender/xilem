@@ -63,17 +63,18 @@ pub struct WidgetId(pub(crate) NonZeroU64);
 /// [`WidgetPod`](crate::WidgetPod)s. Widget methods are called by `WidgetPod`s, and the
 /// widget is mutated either during a method call (eg `on_event` or `lifecycle`) or
 /// through a [`WidgetMut`](crate::widget::WidgetMut). See tutorials for details.
+#[allow(unused_variables)]
 pub trait Widget: AsAny {
     /// Handle an event - usually user interaction.
     ///
     /// A number of different events (in the [`Event`] enum) are handled in this
     /// method call. A widget can handle these events in a number of ways, such as
     /// requesting things from the [`EventCtx`] or mutating the data.
-    fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent);
-    fn on_text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent);
+    fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {}
+    fn on_text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent) {}
 
     /// Handle an event from the platform's accessibility API.
-    fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent);
+    fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {}
 
     #[allow(missing_docs)]
     fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange);
