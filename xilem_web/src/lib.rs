@@ -30,6 +30,7 @@ mod attribute;
 mod attribute_value;
 mod class;
 mod context;
+mod dom_helpers;
 mod element_props;
 mod events;
 mod message;
@@ -38,7 +39,6 @@ mod optional_action;
 mod pointer;
 mod style;
 mod text;
-mod util;
 mod vec_splice;
 mod vecmap;
 
@@ -56,12 +56,12 @@ pub use self::{
     attribute_value::{AttributeValue, IntoAttributeValue},
     class::{AsClassIter, Class, Classes, ElementWithClasses, WithClasses},
     context::{MessageThunk, ViewCtx},
+    dom_helpers::{document, document_body, get_element_by_id, input_event_target_value},
     element_props::ElementProps,
     message::{DynMessage, Message},
     optional_action::{Action, OptionalAction},
     pointer::{Pointer, PointerDetails, PointerMsg},
     style::{style, ElementWithStyle, IntoStyles, Style, Styles, WithStyle},
-    util::{document, document_body, get_element_by_id, input_event_target_value},
 };
 
 pub use xilem_core as core;
