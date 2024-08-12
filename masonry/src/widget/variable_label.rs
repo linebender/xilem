@@ -235,6 +235,7 @@ impl WidgetMut<'_, VariableLabel> {
     /// Set the weight which this font will target.
     pub fn set_target_weight(&mut self, target: f32, over_millis: f32) {
         self.widget.weight.move_to(target, over_millis);
+        self.ctx.request_layout();
         self.ctx.request_paint();
         self.ctx.request_anim_frame();
     }

@@ -1,16 +1,34 @@
 //! This example uses variable fonts in a touch sensitive digital clock.
 
+use masonry::parley::fontique::Weight;
 use winit::error::EventLoopError;
-use xilem::{view::flex, EventLoop, EventLoopBuilder, WidgetView, Xilem};
+use xilem::{
+    view::{button, flex, variable_label},
+    EventLoop, EventLoopBuilder, WidgetView, Xilem,
+};
 
-struct Clocks {}
+struct Clocks {
+    weight: f32,
+}
 
 fn app_logic(data: &mut Clocks) -> impl WidgetView<Clocks> {
-    flex(())
+    flex((
+        variable_label("Text")
+            .text_size(72.)
+            .target_weight(data.weight, 400.),
+        button("Increase", |data: &mut Clocks| {
+            data.weight = (data.weight + 100.).clamp(1., 1000.);
+        }),
+        button("Decrease", |data: &mut Clocks| {
+            data.weight = (data.weight - 100.).clamp(1., 1000.);
+        }),
+    ))
 }
 
 fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
-    let data = Clocks {};
+    let data = Clocks {
+        weight: Weight::BLACK.value(),
+    };
 
     let app = Xilem::new(data, app_logic);
 
