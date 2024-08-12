@@ -52,7 +52,7 @@ impl AnimatedF32 {
     pub fn move_to(&mut self, target: f32, over_millis: f32) {
         assert!(target.is_finite());
         self.target = target;
-        self.rate_per_millisecond = (self.value - self.target) / over_millis;
+        self.rate_per_millisecond = (self.target - self.value) / over_millis;
         assert!(
             self.rate_per_millisecond.is_finite(),
             "Provided invalid time step {over_millis}"
@@ -75,7 +75,6 @@ impl AnimatedF32 {
             .expect("Target and value are not NaN.");
 
         self.value += self.rate_per_millisecond * by_millis;
-
         let other_side = self
             .value
             .partial_cmp(&self.target)
@@ -297,9 +296,9 @@ impl Widget for VariableLabel {
                 }
             }
             LifeCycle::AnimFrame(time) => {
-                let millis = (*time as f64 / 1000.) as f32;
+                let millis = (*time as f64 / 1_000_000.) as f32;
                 let result = self.weight.advance(millis);
-                self.text_layout.needs_rebuild();
+                self.text_layout.invalidate();
                 if !result.is_completed() {
                     ctx.request_anim_frame();
                 }

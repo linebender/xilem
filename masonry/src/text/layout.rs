@@ -229,6 +229,7 @@ impl<T> TextLayout<T> {
     ///
     /// This does not account for things like the text changing, handling that
     /// is the responsibility of the user.
+    #[must_use = "Has no side effects"]
     pub fn needs_rebuild(&self) -> bool {
         self.needs_layout || self.needs_line_breaks
     }
