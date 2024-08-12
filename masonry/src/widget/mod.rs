@@ -45,6 +45,7 @@ pub use sized_box::SizedBox;
 pub use spinner::Spinner;
 pub use split::Split;
 pub use textbox::Textbox;
+pub use variable_label::VariableLabel;
 pub use widget_mut::WidgetMut;
 pub use widget_pod::WidgetPod;
 pub use widget_ref::WidgetRef;

@@ -1,11 +1,7 @@
-// Copyright 2024 the Xilem Authors and the Druid Authors
-// SPDX-License-Identifier: Apache-2.0
-
-//! A label with support for animated variable font properties
 // Copyright 2019 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-//! A label widget.
+//! A label with support for animated variable font properties
 
 use accesskit::Role;
 use kurbo::{Affine, Point, Size};
@@ -29,23 +25,30 @@ use super::LineBreaking;
 // added padding between the edges of the widget and the text.
 pub(super) const LABEL_X_PADDING: f64 = 2.0;
 
-pub struct AnimatedFloat {
+/// An `f32` value which can move towards a target value at a linear rate over time.
+#[derive(Clone, Debug)]
+pub struct AnimatedF32 {
+    /// The value which self will eventually reach.
     target: f32,
+    /// The current value
     value: f32,
-    // TODO: Provide different easing functions
+    // TODO: Provide different easing functions, instead of just linear
+    /// The change in value every millisecond, which will not change over the lifetime of the value.
     rate_per_millisecond: f32,
 }
 
-impl AnimatedFloat {
+impl AnimatedF32 {
+    /// Create a value which is not changing.
     pub fn stable(value: f32) -> Self {
         assert!(value.is_finite());
-        AnimatedFloat {
+        AnimatedF32 {
             target: value,
             value,
             rate_per_millisecond: 0.,
         }
     }
 
+    /// Move this value to the `target` over `target` milliseconds.
     pub fn move_to(&mut self, target: f32, over_millis: f32) {
         assert!(target.is_finite());
         self.target = target;
@@ -56,7 +59,10 @@ impl AnimatedFloat {
         );
     }
 
-    pub fn advance(&mut self, by_millis: f32) {
+    /// Advance this animation by `by_millis` milliseconds.
+    ///
+    /// Returns the status of the animation after this advancement.
+    pub fn advance(&mut self, by_millis: f32) -> AnimationStatus {
         if !self.value.is_finite() {
             tracing::error!("Got unexpected non-finite value {}", self.value);
             debug_assert!(self.target.is_finite());
@@ -78,17 +84,38 @@ impl AnimatedFloat {
         if other_side.is_eq() || original_side != other_side {
             self.value = self.target;
             self.rate_per_millisecond = 0.;
+            AnimationStatus::Completed
+        } else {
+            AnimationStatus::Ongoing
         }
     }
 }
 
-/// A widget displaying non-editable text.
+/// The status an animation can be in.
+///
+/// Generally returned when an animation is advanced, to determine whether.
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum AnimationStatus {
+    /// The animation has finished.
+    Completed,
+    /// The animation is still running
+    Ongoing,
+}
+
+impl AnimationStatus {
+    pub fn is_completed(self) -> bool {
+        matches!(self, AnimationStatus::Completed)
+    }
+}
+
+// TODO: Make this a wrapper (around `Label`?)
+/// A widget displaying non-editable text, with a variable [weight](parley::style::FontWeight).
 pub struct VariableLabel {
     text_layout: TextLayout<ArcStr>,
     line_break_mode: LineBreaking,
     show_disabled: bool,
     brush: TextBrush,
-    weight: AnimatedFloat,
+    weight: AnimatedF32,
 }
 
 // --- MARK: BUILDERS ---
@@ -100,7 +127,7 @@ impl VariableLabel {
             line_break_mode: LineBreaking::Overflow,
             show_disabled: true,
             brush: crate::theme::TEXT_COLOR.into(),
-            weight: AnimatedFloat::stable(Weight::NORMAL.value()),
+            weight: AnimatedF32::stable(Weight::NORMAL.value()),
         }
     }
 
@@ -137,21 +164,28 @@ impl VariableLabel {
         self.line_break_mode = line_break_mode;
         self
     }
+    /// Set the initial font weight for this text.
+    pub fn with_initial_weight(mut self, weight: f32) -> Self {
+        self.weight.value = weight;
+        self
+    }
 
     /// Create a label with empty text.
     pub fn empty() -> Self {
         Self::new("")
     }
-
-    pub fn with_initial_weight(&mut self) {}
 }
 
 // --- MARK: WIDGETMUT ---
 impl WidgetMut<'_, VariableLabel> {
+    /// Read the text.
     pub fn text(&self) -> &ArcStr {
         self.widget.text_layout.text()
     }
 
+    /// Set a property on the underlying text.
+    ///
+    /// This cannot be used to set attributes.
     pub fn set_text_properties<R>(&mut self, f: impl FnOnce(&mut TextLayout<ArcStr>) -> R) -> R {
         let ret = f(&mut self.widget.text_layout);
         if self.widget.text_layout.needs_rebuild() {
@@ -161,12 +195,14 @@ impl WidgetMut<'_, VariableLabel> {
         ret
     }
 
+    /// Modify the underlying text.
     pub fn set_text(&mut self, new_text: impl Into<ArcStr>) {
         let new_text = new_text.into();
         self.set_text_properties(|layout| layout.set_text(new_text));
     }
 
     #[doc(alias = "set_text_color")]
+    /// Set the brush of the text, normally used for the colour.
     pub fn set_text_brush(&mut self, brush: impl Into<TextBrush>) {
         let brush = brush.into();
         self.widget.brush = brush;
@@ -175,21 +211,32 @@ impl WidgetMut<'_, VariableLabel> {
             self.set_text_properties(|layout| layout.set_brush(brush));
         }
     }
+    /// Set the font size for this text.
     pub fn set_text_size(&mut self, size: f32) {
         self.set_text_properties(|layout| layout.set_text_size(size));
     }
+    /// Set the text alignment of the contained text
     pub fn set_alignment(&mut self, alignment: Alignment) {
         self.set_text_properties(|layout| layout.set_text_alignment(alignment));
     }
+    /// Set the font (potentially with fallbacks) which will be used for this text.
     pub fn set_font(&mut self, font_stack: FontStack<'static>) {
         self.set_text_properties(|layout| layout.set_font(font_stack));
     }
+    /// A helper method to use a single font family.
     pub fn set_font_family(&mut self, family: FontFamily<'static>) {
         self.set_font(FontStack::Single(family));
     }
+    /// How to handle overflowing lines.
     pub fn set_line_break_mode(&mut self, line_break_mode: LineBreaking) {
         self.widget.line_break_mode = line_break_mode;
         self.ctx.request_paint();
+    }
+    /// Set the weight which this font will target.
+    pub fn set_target_weight(&mut self, target: f32, over_millis: f32) {
+        self.widget.weight.move_to(target, over_millis);
+        self.ctx.request_paint();
+        self.ctx.request_anim_frame();
     }
 }
 
@@ -250,9 +297,11 @@ impl Widget for VariableLabel {
             }
             LifeCycle::AnimFrame(time) => {
                 let millis = (*time as f64 / 1000.) as f32;
-                self.weight.advance(millis);
+                let result = self.weight.advance(millis);
                 self.text_layout.needs_rebuild();
-                ctx.request_anim_frame();
+                if !result.is_completed() {
+                    ctx.request_anim_frame();
+                }
                 ctx.request_layout();
                 ctx.request_paint();
             }

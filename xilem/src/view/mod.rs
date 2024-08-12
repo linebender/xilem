@@ -22,6 +22,9 @@ pub use spinner::*;
 mod label;
 pub use label::*;
 
+mod variable_label;
+pub use variable_label::*;
+
 mod prose;
 pub use prose::*;
 
