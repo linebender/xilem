@@ -5,71 +5,11 @@ use dpi::LogicalPosition;
 use tracing::{debug, info_span, trace};
 use winit::keyboard::{KeyCode, PhysicalKey};
 
-use crate::render_root::{RenderRoot, WidgetArena};
-use crate::tree_arena::{ArenaMut, ArenaMutChildren};
+use crate::passes::merge_state_up;
+use crate::render_root::RenderRoot;
 use crate::{
     AccessEvent, EventCtx, Handled, PointerEvent, TextEvent, Widget, WidgetId, WidgetState,
 };
-
-// References shared by all passes
-struct PassCtx<'a> {
-    pub(crate) widget_state: ArenaMut<'a, WidgetState>,
-    pub(crate) widget_children: ArenaMutChildren<'a, Box<dyn Widget>>,
-}
-
-impl<'a> PassCtx<'a> {
-    fn parent(&self) -> Option<WidgetId> {
-        let parent_id = self.widget_state.parent_id?;
-        let parent_id = parent_id.try_into().unwrap();
-        Some(WidgetId(parent_id))
-    }
-}
-
-// TODO - Merge copy-pasted code
-fn merge_state_up(arena: &mut WidgetArena, widget_id: WidgetId, root_state: &mut WidgetState) {
-    let parent_id = get_widget_mut(arena, widget_id).1.parent();
-
-    let Some(parent_id) = parent_id else {
-        // We've reached the root
-        let child_state_mut = arena.widget_states.find_mut(widget_id.to_raw()).unwrap();
-        root_state.merge_up(child_state_mut.item);
-        return;
-    };
-
-    let mut parent_state_mut = arena.widget_states.find_mut(parent_id.to_raw()).unwrap();
-    let child_state_mut = parent_state_mut
-        .children
-        .get_child_mut(widget_id.to_raw())
-        .unwrap();
-
-    parent_state_mut.item.merge_up(child_state_mut.item);
-}
-
-fn get_widget_mut(arena: &mut WidgetArena, id: WidgetId) -> (&mut dyn Widget, PassCtx<'_>) {
-    let state_mut = arena
-        .widget_states
-        .find_mut(id.to_raw())
-        .expect("widget state not found in arena");
-    let widget_mut = arena
-        .widgets
-        .find_mut(id.to_raw())
-        .expect("widget not found in arena");
-
-    // Box<dyn Widget> -> &dyn Widget
-    // Without this step, the type of `WidgetRef::widget` would be
-    // `&Box<dyn Widget> as &dyn Widget`, which would be an additional layer
-    // of indirection.
-    let widget = widget_mut.item;
-    let widget: &mut dyn Widget = &mut **widget;
-
-    (
-        widget,
-        PassCtx {
-            widget_state: state_mut,
-            widget_children: widget_mut.children,
-        },
-    )
-}
 
 fn get_target_widget(
     root: &RenderRoot,
@@ -91,10 +31,54 @@ fn get_target_widget(
     None
 }
 
+fn run_event_pass<E>(
+    root: &mut RenderRoot,
+    root_state: &mut WidgetState,
+    target: Option<WidgetId>,
+    event: &E,
+    pass_fn: impl FnMut(&mut dyn Widget, &mut EventCtx, &E),
+) -> Handled {
+    let mut pass_fn = pass_fn;
+
+    let mut target_widget_id = target;
+    let mut is_handled = false;
+    while let Some(widget_id) = target_widget_id {
+        let parent_id = root.widget_arena.parent_of(widget_id);
+        let (widget_mut, state_mut) = root.widget_arena.get_pair_mut(widget_id);
+
+        let mut ctx = EventCtx {
+            global_state: &mut root.state,
+            widget_state: state_mut.item,
+            widget_state_children: state_mut.children,
+            widget_children: widget_mut.children,
+            is_handled: false,
+            request_pan_to_child: None,
+        };
+        let widget = widget_mut.item;
+
+        if !is_handled {
+            trace!(
+                "Widget '{}' #{} visited",
+                widget.short_type_name(),
+                widget_id.to_raw(),
+            );
+
+            pass_fn(widget, &mut ctx, event);
+            is_handled = ctx.is_handled;
+        }
+
+        merge_state_up(&mut root.widget_arena, widget_id);
+        target_widget_id = parent_id;
+    }
+
+    // Pass root widget state to synthetic state create at beginning of pass
+    root_state.merge_up(root.widget_arena.get_state_mut(root.root.id()).item);
+
+    Handled::from(is_handled)
+}
+
 // ----------------
 
-// TODO - Handle hover status
-// TODO - Handle pointer capture
 // TODO - Send synthetic MouseLeave events
 
 pub fn root_on_pointer_event(
@@ -192,50 +176,6 @@ pub fn root_on_access_event(
     );
 
     handled
-}
-
-// ---
-
-fn run_event_pass<E>(
-    root: &mut RenderRoot,
-    root_state: &mut WidgetState,
-    target: Option<WidgetId>,
-    event: &E,
-    pass_fn: impl FnMut(&mut dyn Widget, &mut EventCtx, &E),
-) -> Handled {
-    let mut pass_fn = pass_fn;
-
-    let mut target_widget_id = target;
-    let mut is_handled = false;
-    while let Some(widget_id) = target_widget_id {
-        let (widget, pass_ctx) = get_widget_mut(&mut root.widget_arena, widget_id);
-        let parent_id = pass_ctx.parent();
-
-        let mut ctx = EventCtx {
-            global_state: &mut root.state,
-            widget_state: pass_ctx.widget_state.item,
-            widget_state_children: pass_ctx.widget_state.children,
-            widget_children: pass_ctx.widget_children,
-            is_handled: false,
-            request_pan_to_child: None,
-        };
-
-        if !is_handled {
-            trace!(
-                "Widget '{}' #{} visited",
-                widget.short_type_name(),
-                widget_id.to_raw(),
-            );
-
-            pass_fn(widget, &mut ctx, event);
-            is_handled = ctx.is_handled;
-        }
-
-        merge_state_up(&mut root.widget_arena, widget_id, root_state);
-        target_widget_id = parent_id;
-    }
-
-    Handled::from(is_handled)
 }
 
 // These functions were carved out of WidgetPod code during a previous refactor

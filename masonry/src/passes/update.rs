@@ -6,76 +6,26 @@ use std::collections::HashSet;
 use cursor_icon::CursorIcon;
 use tracing::trace;
 
-use crate::{
-    render_root::{RenderRoot, RenderRootSignal, WidgetArena},
-    tree_arena::{ArenaMut, ArenaMutChildren},
-    LifeCycleCtx, StatusChange, Widget, WidgetId, WidgetState,
-};
+use crate::passes::merge_state_up;
+use crate::render_root::{RenderRoot, RenderRootSignal};
+use crate::{LifeCycleCtx, StatusChange, Widget, WidgetId, WidgetState};
 
-// References shared by all passes
-struct PassCtx<'a> {
-    pub(crate) widget_state: ArenaMut<'a, WidgetState>,
-    pub(crate) widget_children: ArenaMutChildren<'a, Box<dyn Widget>>,
-}
-
-impl<'a> PassCtx<'a> {
-    fn parent(&self) -> Option<WidgetId> {
-        let parent_id = self.widget_state.parent_id?;
-        let parent_id = parent_id.try_into().unwrap();
-        Some(WidgetId(parent_id))
-    }
-}
-
-// TODO - Merge copy-pasted code
-fn merge_state_up(arena: &mut WidgetArena, widget_id: WidgetId, root_state: &mut WidgetState) {
-    let parent_id = get_widget_mut(arena, widget_id).1.parent();
-
-    let Some(parent_id) = parent_id else {
-        // We've reached the root
-        let child_state_mut = arena.widget_states.find_mut(widget_id.to_raw()).unwrap();
-        root_state.merge_up(child_state_mut.item);
-        return;
+fn get_id_path(root: &RenderRoot, widget_id: Option<WidgetId>) -> Vec<WidgetId> {
+    let Some(widget_id) = widget_id else {
+        return Vec::new();
     };
 
-    let mut parent_state_mut = arena.widget_states.find_mut(parent_id.to_raw()).unwrap();
-    let child_state_mut = parent_state_mut
-        .children
-        .get_child_mut(widget_id.to_raw())
-        .unwrap();
-
-    parent_state_mut.item.merge_up(child_state_mut.item);
-}
-
-fn get_widget_mut(arena: &mut WidgetArena, id: WidgetId) -> (&mut dyn Widget, PassCtx<'_>) {
-    let state_mut = arena
+    root.widget_arena
         .widget_states
-        .find_mut(id.to_raw())
-        .expect("widget state not found in arena");
-    let widget_mut = arena
-        .widgets
-        .find_mut(id.to_raw())
-        .expect("widget not found in arena");
-
-    // Box<dyn Widget> -> &dyn Widget
-    // Without this step, the type of `WidgetRef::widget` would be
-    // `&Box<dyn Widget> as &dyn Widget`, which would be an additional layer
-    // of indirection.
-    let widget = widget_mut.item;
-    let widget: &mut dyn Widget = &mut **widget;
-
-    (
-        widget,
-        PassCtx {
-            widget_state: state_mut,
-            widget_children: widget_mut.children,
-        },
-    )
+        .get_id_path(widget_id.to_raw())
+        .iter()
+        .map(|&id| WidgetId(id.try_into().unwrap()))
+        .collect()
 }
 
 // TODO - Replace LifecycleCtx with UpdateCtx
 pub(crate) fn run_targeted_update_pass(
     root: &mut RenderRoot,
-    root_state: &mut WidgetState,
     target: Option<WidgetId>,
     pass_fn: impl FnMut(&mut dyn Widget, &mut LifeCycleCtx),
 ) {
@@ -83,18 +33,18 @@ pub(crate) fn run_targeted_update_pass(
 
     let mut target_widget_id = target;
     while let Some(widget_id) = target_widget_id {
-        let (widget, pass_ctx) = get_widget_mut(&mut root.widget_arena, widget_id);
-        let parent_id = pass_ctx.parent();
+        let parent_id = root.widget_arena.parent_of(widget_id);
+        let (widget_mut, state_mut) = root.widget_arena.get_pair_mut(widget_id);
 
         let mut ctx = LifeCycleCtx {
             global_state: &mut root.state,
-            widget_state: pass_ctx.widget_state.item,
-            widget_state_children: pass_ctx.widget_state.children,
-            widget_children: pass_ctx.widget_children,
+            widget_state: state_mut.item,
+            widget_state_children: state_mut.children,
+            widget_children: widget_mut.children,
         };
-        pass_fn(widget, &mut ctx);
+        pass_fn(widget_mut.item, &mut ctx);
 
-        merge_state_up(&mut root.widget_arena, widget_id, root_state);
+        merge_state_up(&mut root.widget_arena, widget_id);
         target_widget_id = parent_id;
     }
 }
@@ -132,9 +82,25 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot, root_state: &mut Wi
 
     // This algorithm is written to be resilient to future changes like reparenting and multiple
     // cursors. In theory it's O(Depth² * CursorCount) in the worst case, which isn't too bad
-    // (cursor count is usually 1 or 2, depth is usually small), but in practice it's almost
+    // (cursor count is usually 1 or 2, depth is usually small), but in practice it's virtually
     // always O(Depth * CursorCount) because we only need to update the hovered status of the
     // widgets that changed.
+    // The above assumes that accessing the widget tree is O(1) for simplicity.
+
+    fn update_hovered_status_of(
+        root: &mut RenderRoot,
+        widget_id: WidgetId,
+        hovered_set: &HashSet<WidgetId>,
+    ) {
+        run_targeted_update_pass(root, Some(widget_id), |widget, ctx| {
+            let is_hot = hovered_set.contains(&ctx.widget_id());
+
+            if ctx.widget_state.is_hot != is_hot {
+                widget.on_status_change(ctx, &StatusChange::HotChanged(is_hot));
+            }
+            ctx.widget_state.is_hot = is_hot;
+        });
+    }
 
     // TODO - Make sure widgets are iterated from the bottom up
     for widget_id in &prev_hovered_path {
@@ -143,9 +109,10 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot, root_state: &mut Wi
             .widget_states
             .find(widget_id.to_raw())
             .is_some()
-            && root.widget_arena.get_state_mut(*widget_id).is_hot != hovered_set.contains(widget_id)
+            && root.widget_arena.get_state_mut(*widget_id).item.is_hot
+                != hovered_set.contains(widget_id)
         {
-            update_hovered_status_of(root, root_state, *widget_id, &hovered_set);
+            update_hovered_status_of(root, *widget_id, &hovered_set);
         }
     }
     for widget_id in &next_hovered_path {
@@ -154,9 +121,10 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot, root_state: &mut Wi
             .widget_states
             .find(widget_id.to_raw())
             .is_some()
-            && root.widget_arena.get_state_mut(*widget_id).is_hot != hovered_set.contains(widget_id)
+            && root.widget_arena.get_state_mut(*widget_id).item.is_hot
+                != hovered_set.contains(widget_id)
         {
-            update_hovered_status_of(root, root_state, *widget_id, &hovered_set);
+            update_hovered_status_of(root, *widget_id, &hovered_set);
         }
     }
 
@@ -164,15 +132,15 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot, root_state: &mut Wi
 
     // -- UPDATE CURSOR --
     // TODO - Rewrite more cleanly
-    let cursor_changed =
-        next_hovered_widget.is_some_and(|id| root.widget_arena.get_state_mut(id).cursor_changed);
+    let cursor_changed = next_hovered_widget
+        .is_some_and(|id| root.widget_arena.get_state_mut(id).item.cursor_changed);
     if hovered_widget != next_hovered_widget || cursor_changed {
         let cursor;
         if let Some(capture_target) = root.state.pointer_capture_target {
-            let (widget, _) = get_widget_mut(&mut root.widget_arena, capture_target);
+            let widget = root.widget_arena.get_widget(capture_target).item;
             cursor = widget.get_cursor();
         } else if let Some(next_hovered_widget) = next_hovered_widget {
-            let (widget, _) = get_widget_mut(&mut root.widget_arena, next_hovered_widget);
+            let widget = root.widget_arena.get_widget(next_hovered_widget).item;
             cursor = widget.get_cursor();
         } else {
             cursor = CursorIcon::Default;
@@ -185,36 +153,11 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot, root_state: &mut Wi
         if let Some(next_hovered_widget) = next_hovered_widget {
             root.widget_arena
                 .get_state_mut(next_hovered_widget)
+                .item
                 .cursor_changed = false;
         }
     }
-}
 
-fn update_hovered_status_of(
-    root: &mut RenderRoot,
-    root_state: &mut WidgetState,
-    widget_id: WidgetId,
-    hovered_set: &HashSet<WidgetId>,
-) {
-    run_targeted_update_pass(root, root_state, Some(widget_id), |widget, ctx| {
-        let is_hot = hovered_set.contains(&ctx.widget_id());
-
-        if ctx.widget_state.is_hot != is_hot {
-            widget.on_status_change(ctx, &StatusChange::HotChanged(is_hot));
-        }
-        ctx.widget_state.is_hot = is_hot;
-    });
-}
-
-fn get_id_path(root: &mut RenderRoot, widget_id: Option<WidgetId>) -> Vec<WidgetId> {
-    let Some(widget_id) = widget_id else {
-        return Vec::new();
-    };
-
-    root.widget_arena
-        .widget_states
-        .get_id_path(widget_id.to_raw())
-        .iter()
-        .map(|&id| WidgetId(id.try_into().unwrap()))
-        .collect()
+    // Pass root widget state to synthetic state create at beginning of pass
+    root_state.merge_up(root.widget_arena.get_state_mut(root.root.id()).item);
 }

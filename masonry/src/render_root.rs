@@ -24,7 +24,7 @@ use crate::kurbo::Point;
 use crate::passes::event::{root_on_access_event, root_on_pointer_event, root_on_text_event};
 use crate::passes::update::run_update_pointer_pass;
 use crate::text::TextBrush;
-use crate::tree_arena::TreeArena;
+use crate::tree_arena::{ArenaMut, ArenaRef, TreeArena};
 use crate::widget::{WidgetMut, WidgetRef, WidgetState};
 use crate::{
     AccessCtx, AccessEvent, Action, BoxConstraints, CursorIcon, Handled, InternalLifeCycle,
@@ -66,59 +66,81 @@ pub(crate) struct WidgetArena {
     pub(crate) widget_states: TreeArena<WidgetState>,
 }
 
-// TODO
 #[allow(dead_code)]
 impl WidgetArena {
-    pub(crate) fn get_widget(&self, widget_id: WidgetId) -> &dyn Widget {
+    pub(crate) fn has(&self, widget_id: WidgetId) -> bool {
+        self.widgets.find(widget_id.to_raw()).is_some()
+    }
+
+    #[track_caller]
+    pub(crate) fn parent_of(&self, widget_id: WidgetId) -> Option<WidgetId> {
         let widget_ref = self
             .widgets
             .find(widget_id.to_raw())
-            .expect("widget not in widget tree");
+            .expect("parent_of: widget not found in arena");
 
-        // Our WidgetArena stores all widgets as Box<dyn Widget>, but the "true"
-        // type of our root widget is *also* Box<dyn Widget>. We downcast so we
-        // don't add one more level of indirection to this.
-        let widget = widget_ref.item;
-        let widget = widget
-            .as_dyn_any()
-            .downcast_ref::<Box<dyn Widget>>()
-            .unwrap();
-
-        widget
+        let id = widget_ref.parent_id?;
+        Some(WidgetId(id.try_into().unwrap()))
     }
 
-    pub(crate) fn get_widget_mut(&mut self, widget_id: WidgetId) -> &mut dyn Widget {
-        let widget_mut = self
+    #[track_caller]
+    pub(crate) fn get_pair(
+        &self,
+        widget_id: WidgetId,
+    ) -> (ArenaRef<Box<dyn Widget>>, ArenaRef<WidgetState>) {
+        let widget = self
             .widgets
-            .find_mut(widget_id.to_raw())
-            .expect("widget not in widget tree");
-
-        // Our WidgetArena stores all widgets as Box<dyn Widget>, but the "true"
-        // type of our root widget is *also* Box<dyn Widget>. We downcast so we
-        // don't add one more level of indirection to this.
-        let widget = widget_mut.item;
-        let widget = widget
-            .as_mut_dyn_any()
-            .downcast_mut::<Box<dyn Widget>>()
-            .unwrap();
-
-        widget
-    }
-
-    pub(crate) fn get_state(&mut self, widget_id: WidgetId) -> &WidgetState {
-        let state_ref = self
+            .find(widget_id.to_raw())
+            .expect("get_pair: widget not in widget tree");
+        let state = self
             .widget_states
             .find(widget_id.to_raw())
-            .expect("widget not in widget tree");
-        state_ref.item
+            .expect("get_pair: widget state not in widget tree");
+        (widget, state)
     }
 
-    pub(crate) fn get_state_mut(&mut self, widget_id: WidgetId) -> &mut WidgetState {
-        let state_mut = self
+    #[track_caller]
+    pub(crate) fn get_pair_mut(
+        &mut self,
+        widget_id: WidgetId,
+    ) -> (ArenaMut<Box<dyn Widget>>, ArenaMut<WidgetState>) {
+        let widget = self
+            .widgets
+            .find_mut(widget_id.to_raw())
+            .expect("get_pair_mut: widget not in widget tree");
+        let state = self
             .widget_states
             .find_mut(widget_id.to_raw())
-            .expect("widget not in widget tree");
-        state_mut.item
+            .expect("get_pair_mut: widget state not in widget tree");
+        (widget, state)
+    }
+
+    #[track_caller]
+    pub(crate) fn get_widget(&self, widget_id: WidgetId) -> ArenaRef<Box<dyn Widget>> {
+        self.widgets
+            .find(widget_id.to_raw())
+            .expect("get_widget: widget not in widget tree")
+    }
+
+    #[track_caller]
+    pub(crate) fn get_widget_mut(&mut self, widget_id: WidgetId) -> ArenaMut<Box<dyn Widget>> {
+        self.widgets
+            .find_mut(widget_id.to_raw())
+            .expect("get_widget_mut: widget not in widget tree")
+    }
+
+    #[track_caller]
+    pub(crate) fn get_state(&mut self, widget_id: WidgetId) -> ArenaRef<WidgetState> {
+        self.widget_states
+            .find(widget_id.to_raw())
+            .expect("get_state: widget state not in widget tree")
+    }
+
+    #[track_caller]
+    pub(crate) fn get_state_mut(&mut self, widget_id: WidgetId) -> ArenaMut<WidgetState> {
+        self.widget_states
+            .find_mut(widget_id.to_raw())
+            .expect("get_state_mut: widget state not in widget tree")
     }
 }
 
