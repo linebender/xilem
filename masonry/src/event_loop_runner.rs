@@ -130,23 +130,20 @@ pub fn run_with(
     app_driver: impl AppDriver + 'static,
     background_color: Color,
 ) -> Result<(), EventLoopError> {
-    let mut main_state = MainState {
-        masonry_state: MasonryState::new(window, &event_loop, root_widget, background_color),
-        app_driver: Box::new(app_driver),
-    };
-
     // If there is no default tracing subscriber, we set our own. If one has
     // already been set, we get an error which we swallow.
     // By now, we're about to take control of the event loop. The user is unlikely
     // to try to set their own subscriber once the event loop has started.
     let _ = crate::tracing_backend::try_init_tracing();
 
-    const ROBOTO: &[u8] = include_bytes!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/resources/fonts/Roboto_Flex/RobotoFlex-VariableFont_GRAD,XOPQ,XTRA,YOPQ,YTAS,YTDE,YTFI,YTLC,YTUC,opsz,slnt,wdth,wght.ttf"
-    ));
-    let data = ROBOTO.to_vec();
-    main_state.masonry_state.render_root.add_test_font(data);
+    let mut main_state = MainState {
+        masonry_state: MasonryState::new(window, &event_loop, root_widget, background_color),
+        app_driver: Box::new(app_driver),
+    };
+    main_state
+        .app_driver
+        .on_start(&mut main_state.masonry_state);
+
     event_loop.run_app(&mut main_state)
 }
 
