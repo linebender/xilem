@@ -21,6 +21,35 @@ struct TreeNode<Item> {
     children: Vec<TreeNode<Item>>,
 }
 
+impl<Item> TreeNode<Item> {
+    fn arena_ref(&self, parent_id: Option<u64>) -> ArenaRef<'_, Item> {
+        ArenaRef {
+            parent_id,
+            item: &self.item,
+            children: ArenaRefChildren {
+                id: Some(self.id),
+                children: &self.children,
+            },
+        }
+    }
+
+    fn arena_mut<'a>(
+        &'a mut self,
+        parent_id: Option<u64>,
+        parents_map: &'a mut HashMap<u64, Option<u64>>,
+    ) -> ArenaMut<'a, Item> {
+        ArenaMut {
+            parent_id,
+            item: &mut self.item,
+            children: ArenaMutChildren {
+                id: Some(self.id),
+                children: &mut self.children,
+                parents_map,
+            },
+        }
+    }
+}
+
 /// A container type for a tree of items.
 ///
 /// This type is used to store zero, one or many tree of a given item types. It
@@ -131,14 +160,7 @@ impl<Item> TreeArena<Item> {
             node = node.children.iter().find(|child| child.id == *id).unwrap();
         }
 
-        Some(ArenaRef {
-            parent_id: self.parents_map[&id],
-            item: &node.item,
-            children: ArenaRefChildren {
-                id: Some(node.id),
-                children: &node.children,
-            },
-        })
+        Some(node.arena_ref(self.parents_map[&id]))
     }
 
     /// Find an item in the tree.
@@ -174,15 +196,7 @@ impl<Item> TreeArena<Item> {
                 .unwrap();
         }
 
-        Some(ArenaMut {
-            parent_id: self.parents_map[&id],
-            item: &mut node.item,
-            children: ArenaMutChildren {
-                id: Some(node.id),
-                children: &mut node.children,
-                parents_map: &mut self.parents_map,
-            },
-        })
+        Some(node.arena_mut(self.parents_map[&id], &mut self.parents_map))
     }
 
     pub fn get_id_path(&self, id: u64) -> Vec<u64> {
@@ -204,12 +218,7 @@ impl<Item> TreeArena<Item> {
 impl<'a, Item> ArenaRefChildren<'a, Item> {
     /// Returns true if the token has a child with the given id.
     pub fn has_child(self, id: u64) -> bool {
-        for child in self.children {
-            if child.id == id {
-                return true;
-            }
-        }
-        false
+        self.children.iter().any(|child| child.id == id)
     }
 
     /// Get the child of the item this token is associated with, which has the given id.
@@ -217,19 +226,10 @@ impl<'a, Item> ArenaRefChildren<'a, Item> {
     /// Returns a tuple of a shared reference to the child and a token to access
     /// its children.
     pub fn get_child(&self, id: u64) -> Option<ArenaRef<'_, Item>> {
-        for child in self.children {
-            if child.id == id {
-                return Some(ArenaRef {
-                    parent_id: self.id,
-                    item: &child.item,
-                    children: ArenaRefChildren {
-                        id: Some(child.id),
-                        children: &child.children,
-                    },
-                });
-            }
-        }
-        None
+        self.children
+            .iter()
+            .find(|child| child.id == id)
+            .map(|child| child.arena_ref(self.id))
     }
 
     /// Get the child of the item this token is associated with, which has the given id.
@@ -237,33 +237,17 @@ impl<'a, Item> ArenaRefChildren<'a, Item> {
     /// This is the same as [`get_child`](Self::get_child), except it consumes the
     /// token. This is sometimes necesssary to accommodate the borrow checker.
     pub fn into_child(self, id: u64) -> Option<ArenaRef<'a, Item>> {
-        for child in &self.children[..] {
-            if child.id == id {
-                return Some(ArenaRef {
-                    parent_id: self.id,
-                    item: &child.item,
-                    children: ArenaRefChildren {
-                        id: Some(child.id),
-                        children: &child.children,
-                    },
-                });
-            }
-        }
-        None
+        self.children
+            .iter()
+            .find(|child| child.id == id)
+            .map(|child| child.arena_ref(self.id))
     }
 
     // TODO - This method could not be implemented with an actual arena design.
     // It's currently used for some sanity-checking of widget code, but will
     // likely be removed.
     pub(crate) fn iter_children(&self) -> impl Iterator<Item = ArenaRef<'_, Item>> {
-        self.children.iter().map(|child| ArenaRef {
-            parent_id: self.id,
-            item: &child.item,
-            children: ArenaRefChildren {
-                id: Some(child.id),
-                children: &child.children,
-            },
-        })
+        self.children.iter().map(|child| child.arena_ref(self.id))
     }
 }
 
@@ -273,19 +257,10 @@ impl<'a, Item> ArenaMutChildren<'a, Item> {
     /// Returns a tuple of a shared reference to the child and a token to access
     /// its children.
     pub fn get_child(&self, id: u64) -> Option<ArenaRef<'_, Item>> {
-        for child in &*self.children {
-            if child.id == id {
-                return Some(ArenaRef {
-                    parent_id: self.id,
-                    item: &child.item,
-                    children: ArenaRefChildren {
-                        id: Some(child.id),
-                        children: &child.children,
-                    },
-                });
-            }
-        }
-        None
+        self.children
+            .iter()
+            .find(|child| child.id == id)
+            .map(|child| child.arena_ref(self.id))
     }
 
     /// Get the child of the item this token is associated with, which has the given id.
@@ -293,20 +268,10 @@ impl<'a, Item> ArenaMutChildren<'a, Item> {
     /// Returns a tuple of a mutable reference to the child and a token to access
     /// its children.
     pub fn get_child_mut(&mut self, id: u64) -> Option<ArenaMut<'_, Item>> {
-        for child in &mut self.children[..] {
-            if child.id == id {
-                return Some(ArenaMut {
-                    parent_id: self.id,
-                    item: &mut child.item,
-                    children: ArenaMutChildren {
-                        id: Some(child.id),
-                        children: &mut child.children,
-                        parents_map: self.parents_map,
-                    },
-                });
-            }
-        }
-        None
+        self.children
+            .iter_mut()
+            .find(|child| child.id == id)
+            .map(|child| child.arena_mut(self.id, self.parents_map))
     }
 
     /// Get the child of the item this token is associated with, which has the given id.
@@ -314,19 +279,10 @@ impl<'a, Item> ArenaMutChildren<'a, Item> {
     /// This is the same as [`get_child`](Self::get_child), except it consumes the
     /// token. This is sometimes necesssary to accommodate the borrow checker.
     pub fn into_child(self, id: u64) -> Option<ArenaRef<'a, Item>> {
-        for child in &mut self.children[..] {
-            if child.id == id {
-                return Some(ArenaRef {
-                    parent_id: self.id,
-                    item: &mut child.item,
-                    children: ArenaRefChildren {
-                        id: Some(child.id),
-                        children: &mut child.children,
-                    },
-                });
-            }
-        }
-        None
+        self.children
+            .iter()
+            .find(|child| child.id == id)
+            .map(|child| child.arena_ref(self.id))
     }
 
     /// Get the child of the item this token is associated with, which has the given id.
@@ -334,34 +290,17 @@ impl<'a, Item> ArenaMutChildren<'a, Item> {
     /// This is the same as [`get_child_mut`](Self::get_child_mut), except it consumes
     /// the token. This is sometimes necesssary to accommodate the borrow checker.
     pub fn into_child_mut(self, id: u64) -> Option<ArenaMut<'a, Item>> {
-        for child in &mut self.children[..] {
-            if child.id == id {
-                return Some(ArenaMut {
-                    parent_id: self.id,
-                    item: &mut child.item,
-                    children: ArenaMutChildren {
-                        id: Some(child.id),
-                        children: &mut child.children,
-                        parents_map: self.parents_map,
-                    },
-                });
-            }
-        }
-        None
+        self.children
+            .iter_mut()
+            .find(|child| child.id == id)
+            .map(|child| child.arena_mut(self.id, self.parents_map))
     }
 
     // TODO - This method could not be implemented with an actual arena design.
     // It's currently used for some sanity-checking of widget code, but will
     // likely be removed.
     pub(crate) fn iter_children(&self) -> impl Iterator<Item = ArenaRef<'_, Item>> {
-        self.children.iter().map(|child| ArenaRef {
-            parent_id: self.id,
-            item: &child.item,
-            children: ArenaRefChildren {
-                id: Some(child.id),
-                children: &child.children,
-            },
-        })
+        self.children.iter().map(|child| child.arena_ref(self.id))
     }
 
     // TODO - Remove the child_id argument once creation of Widgets is figured out.
