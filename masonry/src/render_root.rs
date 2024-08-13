@@ -198,8 +198,9 @@ impl RenderRoot {
                 // See https://github.com/linebender/druid/issues/85 for discussion.
                 let last = self.last_anim.take();
                 let elapsed_ns = last.map(|t| now.duration_since(t).as_nanos()).unwrap_or(0) as u64;
-
-                if self.root_state().request_anim {
+                let root_state = self.root_state();
+                if root_state.request_anim {
+                    root_state.request_anim = false;
                     self.root_lifecycle(LifeCycle::AnimFrame(elapsed_ns));
                     self.last_anim = Some(now);
                 }

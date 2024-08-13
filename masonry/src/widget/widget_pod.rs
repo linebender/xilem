@@ -386,7 +386,10 @@ impl<W: Widget> WidgetPod<W> {
 
                 true
             }
-            LifeCycle::AnimFrame(_) => true,
+            LifeCycle::AnimFrame(_) => {
+                state.request_anim = false;
+                true
+            }
             LifeCycle::DisabledChanged(ancestors_disabled) => {
                 state.update_focus_chain = true;
 
