@@ -124,13 +124,7 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot, root_state: &mut Wi
 
     // If the pointer is captured, its cursor always reflects the
     // capture target, even when not hovered.
-    let cursor_source = if let Some(capture_target) = root.state.pointer_capture_target {
-        Some(capture_target)
-    } else if let Some(next_hovered_widget) = next_hovered_widget {
-        Some(next_hovered_widget)
-    } else {
-        None
-    };
+    let cursor_source = root.state.pointer_capture_target.or(next_hovered_widget);
 
     let new_cursor = if let Some(cursor_source) = cursor_source {
         let (widget, state) = root.widget_arena.get_pair(cursor_source);
