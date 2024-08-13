@@ -300,6 +300,14 @@ fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
         .with_resizable(true)
         .with_min_inner_size(min_window_size)
         .with_inner_size(window_size);
+    // On iOS, winit has unsensible handling of `inner_size`
+    // See https://github.com/rust-windowing/winit/issues/2308 for more details
+    #[cfg(target_os = "ios")]
+    let window_attributes = {
+        let mut window_attributes = window_attributes; // to avoid `unused_mut`
+        window_attributes.inner_size = None;
+        window_attributes
+    };
     app.run_windowed_in(event_loop, window_attributes)?;
     Ok(())
 }
