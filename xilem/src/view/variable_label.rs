@@ -1,7 +1,14 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::{parley::fontique::Weight, text::TextBrush, widget, ArcStr};
+use masonry::{
+    parley::{
+        fontique::Weight,
+        style::{FontFamily, FontStack, GenericFamily},
+    },
+    text::TextBrush,
+    widget, ArcStr,
+};
 use xilem_core::{Mut, ViewMarker};
 
 use crate::{Color, MessageResult, Pod, TextAlignment, View, ViewCtx, ViewId};
@@ -14,6 +21,7 @@ pub fn variable_label(label: impl Into<ArcStr>) -> VariableLabel {
         text_size: masonry::theme::TEXT_SIZE_NORMAL as f32,
         target_weight: Weight::NORMAL,
         over_millis: 0.,
+        font: FontStack::Single(FontFamily::Generic(GenericFamily::SystemUi)),
     }
 }
 
@@ -25,6 +33,7 @@ pub struct VariableLabel {
     text_size: f32,
     target_weight: Weight,
     over_millis: f32,
+    font: FontStack<'static>,
     // TODO: add more attributes of `masonry::widget::Label`
 }
 
@@ -57,6 +66,24 @@ impl VariableLabel {
         self.over_millis = over_millis;
         self
     }
+
+    /// Set the [font stack](FontStack) this label will use.
+    ///
+    /// A font stack allows for providing fallbacks. If there is no matching font
+    /// for a character, a system font will be used (if the system fonts are enabled).
+    ///
+    /// This currently requires a `FontStack<'static>`, because it is stored in
+    /// the view, and Parley doesn't support an owned or `Arc` based `FontStack`.
+    /// In most cases, a fontstack value can be static-promoted, but otherwise
+    /// you will currently have to [leak](String::leak) a value and manually keep
+    /// the value.
+    ///
+    /// This should be a font stack with variable font support,
+    /// although non-variable fonts will work, just without the smooth animation support.
+    pub fn with_font(mut self, font: FontStack<'static>) -> Self {
+        self.font = font;
+        self
+    }
 }
 
 impl ViewMarker for VariableLabel {}
@@ -70,7 +97,7 @@ impl<State, Action> View<State, Action, ViewCtx> for VariableLabel {
                 .with_text_brush(self.text_brush.clone())
                 .with_line_break_mode(widget::LineBreaking::WordWrap)
                 .with_text_alignment(self.alignment)
-                .with_font_family(masonry::parley::style::FontFamily::Named("Roboto Flex"))
+                .with_font(self.font)
                 .with_text_size(self.text_size)
                 .with_initial_weight(self.target_weight.value()),
         );
@@ -104,6 +131,12 @@ impl<State, Action> View<State, Action, ViewCtx> for VariableLabel {
             element.set_target_weight(self.target_weight.value(), self.over_millis);
             ctx.mark_changed();
         }
+        // First perform a fast filter, then perform a full comparison if that suggests a possible change.
+        let fonts_eq = fonts_eq_fastpath(prev.font, self.font) || prev.font == self.font;
+        if !fonts_eq {
+            element.set_font(self.font);
+            ctx.mark_changed();
+        }
         element
     }
 
@@ -118,5 +151,26 @@ impl<State, Action> View<State, Action, ViewCtx> for VariableLabel {
     ) -> crate::MessageResult<Action> {
         tracing::error!("Message arrived in Label::message, but Label doesn't consume any messages, this is a bug");
         MessageResult::Stale(message)
+    }
+}
+
+/// Because all the `FontStack`s we use are 'static, we expect the value to never change.
+///
+/// Because of this, we compare the inner pointer value first.
+/// This function has false negatives, but no false positives.
+///
+/// It should be used with a secondary direct comparison using `==`
+/// if it returns false. If the value does change, this is potentially more expensive.
+fn fonts_eq_fastpath(lhs: FontStack<'static>, rhs: FontStack<'static>) -> bool {
+    match (lhs, rhs) {
+        (FontStack::Source(lhs), FontStack::Source(rhs)) => {
+            // Slices/strs are properly compared by length
+            core::ptr::eq(lhs.as_ptr(), rhs.as_ptr())
+        }
+        (FontStack::Single(FontFamily::Named(lhs)), FontStack::Single(FontFamily::Named(rhs))) => {
+            core::ptr::eq(lhs.as_ptr(), rhs.as_ptr())
+        }
+        (FontStack::List(lhs), FontStack::List(rhs)) => core::ptr::eq(lhs.as_ptr(), rhs.as_ptr()),
+        _ => false,
     }
 }
