@@ -316,7 +316,7 @@ impl RenderRoot {
         self.state.next_focused_widget = self.state.focused_widget;
 
         let mut res = None;
-        mutate_widget(self, &mut root_state, self.root.id(), |mut widget_mut| {
+        mutate_widget(self, self.root.id(), |mut widget_mut| {
             // Our WidgetArena stores all widgets as Box<dyn Widget>, but the "true"
             // type of our root widget is *also* Box<dyn Widget>. We downcast so we
             // don't add one more level of indirection to this.
@@ -342,6 +342,7 @@ impl RenderRoot {
             res = Some(f(widget_mut));
         });
 
+        root_state.merge_up(self.widget_arena.get_state_mut(self.root.id()).item);
         self.post_event_processing(&mut root_state);
 
         res.unwrap()
