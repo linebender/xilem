@@ -34,11 +34,13 @@ pub(crate) fn try_init_wasm_tracing() -> Result<(), SetGlobalDefaultError> {
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-pub(crate) fn try_init_layered_tracing() -> Result<(), SetGlobalDefaultError> {
-    // Default level is DEBUG in --dev, INFO in --release
+pub(crate) fn try_init_layered_tracing(testing: bool) -> Result<(), SetGlobalDefaultError> {
+    // Default level is DEBUG in --dev, INFO in --release, WARN in unit tests.
     // DEBUG should print a few logs per low-density event.
     // INFO should only print logs for noteworthy things.
-    let default_level = if cfg!(debug_assertions) {
+    let default_level = if testing {
+        LevelFilter::WARN
+    } else if cfg!(debug_assertions) {
         LevelFilter::DEBUG
     } else {
         LevelFilter::INFO
@@ -99,10 +101,10 @@ pub(crate) fn try_init_layered_tracing() -> Result<(), SetGlobalDefaultError> {
     Ok(())
 }
 
-pub(crate) fn try_init_tracing() -> Result<(), SetGlobalDefaultError> {
+pub(crate) fn try_init_tracing(testing: bool) -> Result<(), SetGlobalDefaultError> {
     #[cfg(not(target_arch = "wasm32"))]
     {
-        try_init_layered_tracing()
+        try_init_layered_tracing(testing)
     }
 
     #[cfg(target_arch = "wasm32")]

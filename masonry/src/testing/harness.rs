@@ -177,7 +177,7 @@ impl TestHarness {
         // Having a default subscriber is helpful for tests; swallowing errors means
         // we don't panic if the user has already set one, or a test creates multiple
         // harnesses.
-        let _ = try_init_tracing();
+        let _ = try_init_tracing(true);
 
         let mut harness = TestHarness {
             render_root: RenderRoot::new(

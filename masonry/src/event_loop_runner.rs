@@ -139,7 +139,7 @@ pub fn run_with(
     // already been set, we get an error which we swallow.
     // By now, we're about to take control of the event loop. The user is unlikely
     // to try to set their own subscriber once the event loop has started.
-    let _ = crate::tracing_backend::try_init_tracing();
+    let _ = crate::tracing_backend::try_init_tracing(false);
 
     event_loop.run_app(&mut main_state)
 }
