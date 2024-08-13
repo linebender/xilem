@@ -1,3 +1,6 @@
+// Copyright 2024 the Xilem Authors
+// SPDX-License-Identifier: Apache-2.0
+
 use insta::assert_debug_snapshot;
 
 use crate::testing::{widget_ids, TestHarness};
