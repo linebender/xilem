@@ -1,42 +1,80 @@
 //! This example uses variable fonts in a touch sensitive digital clock.
 
-use masonry::parley::fontique::Weight;
+use masonry::parley::{
+    fontique::Weight,
+    style::{FontFamily, FontStack},
+};
 use winit::error::EventLoopError;
 use xilem::{
-    view::{button, flex, variable_label, CrossAxisAlignment, FlexExt, FlexSpacer},
+    view::{button, flex, variable_label, Axis, CrossAxisAlignment, FlexExt, FlexSpacer},
     EventLoop, EventLoopBuilder, WidgetView, Xilem,
 };
 
-const LOREM: &str = r"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi cursus mi sed euismod euismod. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Nullam placerat efficitur tellus at semper. Morbi ac risus magna. Donec ut cursus ex. Etiam quis posuere tellus. Mauris posuere dui et turpis mollis, vitae luctus tellus consectetur. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur eu facilisis nisl.
+// TODO: Move to a more full-featured (e.g. multiple time-zones) example.
+/// The text used in the example. This will be replaced.
+/// Notice that not all of the text is included in the font subset chosen.
+/// This is an intentional choice to show the graceful fallback of animated weight still working.
+const LOREM: &str = r"Office hours is at 16:00";
 
-Phasellus in viverra dolor, vitae facilisis est. Maecenas malesuada massa vel ultricies feugiat. Vivamus venenatis et nibh nec pharetra. Phasellus vestibulum elit enim, nec scelerisque orci faucibus id. Vivamus consequat purus sit amet orci egestas, non iaculis massa porttitor. Vestibulum ut eros leo. In fermentum convallis magna in finibus. Donec justo leo, maximus ac laoreet id, volutpat ut elit. Mauris sed leo non neque laoreet faucibus. Aliquam orci arcu, faucibus in molestie eget, ornare non dui. Donec volutpat nulla in fringilla elementum. Aliquam vitae ante egestas ligula tempus vestibulum sit amet sed ante. ";
-
+/// The state of the application, owned by Xilem and updated by the callbacks below.
 struct Clocks {
+    /// The font [weight](Weight) used for the values.
     weight: f32,
 }
 
 fn app_logic(data: &mut Clocks) -> impl WidgetView<Clocks> {
     flex((
+        // HACK: We add a spacer at the top for Android. See https://github.com/rust-windowing/winit/issues/2308
         FlexSpacer::Fixed(40.),
-        button("Increase", |data: &mut Clocks| {
-            data.weight = (data.weight + 100.).clamp(1., 1000.);
-        }),
-        button("Decrease", |data: &mut Clocks| {
-            data.weight = (data.weight - 100.).clamp(1., 1000.);
-        }),
+        flex((
+            button("Increase", |data: &mut Clocks| {
+                data.weight = (data.weight + 100.).clamp(1., 1000.);
+            }),
+            button("Decrease", |data: &mut Clocks| {
+                data.weight = (data.weight - 100.).clamp(1., 1000.);
+            }),
+            button("Minimum", |data: &mut Clocks| {
+                data.weight = 1.;
+            }),
+            button("Maximum", |data: &mut Clocks| {
+                data.weight = 1000.;
+            }),
+        ))
+        .direction(Axis::Horizontal),
         variable_label(LOREM)
             .text_size(36.)
+            // Use the roboto flex we have just loaded.
+            .with_font(FontStack::List(&[FontFamily::Named("Roboto Flex")]))
+            // This is the key functionality
             .target_weight(data.weight, 400.)
             .flex(CrossAxisAlignment::Start),
     ))
 }
+
+/// A subset of [Roboto Flex](https://fonts.google.com/specimen/Roboto+Flex), used under the OFL.
+/// This is a variable font, and so can be.
+/// The version in the repository supports the numbers 0-9 and `:`, as it is included for this example,
+/// which is using it for clocks.
+// TODO: Double check which subset we want to commit.
+/// Full details can also be found in `xilem/resources/fonts/roboto_flex/README` from
+/// the workspace root.
+const ROBOTO_FLEX: &[u8] = include_bytes!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/resources/fonts/roboto_flex/",
+    // The full font file is *not* included in this repository, due to size constraints.
+    // If you download the full font, you can use it by moving it into the roboto_flex folder,
+    // then swapping which of the following two lines is commented out:
+    // "RobotoFlex-VariableFont_GRAD,XOPQ,XTRA,YOPQ,YTAS,YTDE,YTFI,YTLC,YTUC,opsz,slnt,wdth,wght.ttf",
+    "RobotoFlex-Subset.ttf"
+));
 
 fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
     let data = Clocks {
         weight: Weight::BLACK.value(),
     };
 
-    let app = Xilem::new(data, app_logic);
+    // Load Roboto Flex so that it can be used at runtime.
+    let app = Xilem::new(data, app_logic).with_font(ROBOTO_FLEX);
 
     app.run_windowed(event_loop, "Clocks".into())?;
     Ok(())
