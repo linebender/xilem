@@ -311,17 +311,9 @@ impl SizedBox {
 
 // --- MARK: IMPL WIDGET ---
 impl Widget for SizedBox {
-    fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
-        if let Some(ref mut child) = self.child {
-            child.on_pointer_event(ctx, event);
-        }
-    }
+    fn on_pointer_event(&mut self, _ctx: &mut EventCtx, _event: &PointerEvent) {}
 
-    fn on_text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent) {
-        if let Some(ref mut child) = self.child {
-            child.on_text_event(ctx, event);
-        }
-    }
+    fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
 
     fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {}
 

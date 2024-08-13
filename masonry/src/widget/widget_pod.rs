@@ -6,17 +6,14 @@ use smallvec::SmallVec;
 use tracing::{info_span, trace, warn};
 use vello::Scene;
 
-use crate::dpi::LogicalPosition;
-use crate::event::{AccessEvent, PointerEvent, TextEvent};
-use crate::kurbo::{Affine, Point, Rect, Shape, Size};
+use crate::kurbo::{Affine, Rect, Size};
 use crate::paint_scene_helpers::stroke;
-use crate::render_root::RenderRootState;
 use crate::theme::get_debug_color;
-use crate::tree_arena::{TreeArenaToken, TreeArenaTokenMut};
+use crate::tree_arena::ArenaRefChildren;
 use crate::widget::WidgetState;
 use crate::{
-    AccessCtx, BoxConstraints, EventCtx, InternalLifeCycle, LayoutCtx, LifeCycle, LifeCycleCtx,
-    PaintCtx, StatusChange, Widget, WidgetId,
+    AccessCtx, BoxConstraints, InternalLifeCycle, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
+    StatusChange, Widget, WidgetId,
 };
 
 // TODO - rewrite links in doc
@@ -113,52 +110,6 @@ impl<W: Widget> WidgetPod<W> {
     // - A concept of "cursor moved to inner widget" (though I think that's not super useful outside the browser).
     // - Multiple pointers handling.
 
-    /// Determines if the provided `mouse_pos` is inside `rect`
-    /// and if so updates the hot state and sends `LifeCycle::HotChanged`.
-    ///
-    /// Return `true` if the hot state changed.
-    ///
-    /// The provided `inner_state` should be merged up if this returns `true`.
-    pub(crate) fn update_hot_state(
-        #[allow(unused)] id: WidgetId,
-        inner: &mut W,
-        inner_children: TreeArenaTokenMut<'_, Box<dyn Widget>>,
-        inner_state: &mut WidgetState,
-        inner_state_children: TreeArenaTokenMut<'_, WidgetState>,
-        global_state: &mut RenderRootState,
-        mouse_pos: Option<LogicalPosition<f64>>,
-    ) -> bool {
-        let rect = inner_state.layout_rect() + inner_state.parent_window_origin.to_vec2();
-        let had_hot = inner_state.is_hot;
-        inner_state.is_hot = match mouse_pos {
-            Some(pos) => rect.winding(Point::new(pos.x, pos.y)) != 0,
-            None => false,
-        };
-        // FIXME - don't send event, update flags instead
-        if had_hot != inner_state.is_hot {
-            trace!(
-                "Widget '{}' #{}: set hot state to {}",
-                inner.short_type_name(),
-                inner_state.id.to_raw(),
-                inner_state.is_hot
-            );
-
-            let hot_changed_event = StatusChange::HotChanged(inner_state.is_hot);
-            let mut inner_ctx = LifeCycleCtx {
-                global_state,
-                widget_state: inner_state,
-                widget_state_children: inner_state_children,
-                widget_children: inner_children,
-            };
-
-            let _span = info_span!("on_status_change").entered();
-            inner.on_status_change(&mut inner_ctx, &hot_changed_event);
-
-            return true;
-        }
-        false
-    }
-
     // TODO - document
     // TODO - This method should take a 'can_skip: Fn(WidgetRef) -> bool'
     // predicate and only panic if can_skip returns false.
@@ -170,8 +121,8 @@ impl<W: Widget> WidgetPod<W> {
         get_tokens: impl Fn(
             &mut Ctx,
         ) -> (
-            TreeArenaToken<'_, WidgetState>,
-            TreeArenaToken<'_, Box<dyn Widget>>,
+            ArenaRefChildren<'_, WidgetState>,
+            ArenaRefChildren<'_, Box<dyn Widget>>,
         ),
         visit: impl FnOnce(&mut Self, &mut Ctx) -> bool,
     ) {
@@ -185,13 +136,15 @@ impl<W: Widget> WidgetPod<W> {
         }
 
         let id = self.id().to_raw();
-        let (parent_state_token, parent_token) = get_tokens(ctx);
-        let (widget, _widget_token) = parent_token
+        let (parent_state_mut, parent_token) = get_tokens(ctx);
+        let widget_ref = parent_token
             .get_child(id)
             .expect("WidgetPod: inner widget not found in widget tree");
-        let (state, state_token) = parent_state_token
+        let state_ref = parent_state_mut
             .get_child(id)
             .expect("WidgetPod: inner widget not found in widget tree");
+        let widget = widget_ref.item;
+        let state = state_ref.item;
 
         let _span = widget.make_trace_span().entered();
 
@@ -203,21 +156,23 @@ impl<W: Widget> WidgetPod<W> {
         let mut children_ids = SmallVec::new();
 
         if cfg!(debug_assertions) {
-            for (child_state, _) in state_token.iter_children() {
-                child_state.mark_as_visited(false);
+            for child_state_ref in state_ref.children.iter_children() {
+                child_state_ref.item.mark_as_visited(false);
             }
             children_ids = widget.children_ids();
         }
 
         let called_widget = visit(self, ctx);
 
-        let (parent_state_token, parent_token) = get_tokens(ctx);
-        let (widget, _widget_token) = parent_token
+        let (parent_state_mut, parent_token) = get_tokens(ctx);
+        let widget_ref = parent_token
             .get_child(id)
             .expect("WidgetPod: inner widget not found in widget tree");
-        let (state, state_token) = parent_state_token
+        let state_ref = parent_state_mut
             .get_child(id)
             .expect("WidgetPod: inner widget not found in widget tree");
+        let widget = widget_ref.item;
+        let state = state_ref.item;
 
         if cfg!(debug_assertions) && called_widget {
             let new_children_ids = widget.children_ids();
@@ -232,7 +187,7 @@ impl<W: Widget> WidgetPod<W> {
 
             for id in &new_children_ids {
                 let id = id.to_raw();
-                if !state_token.has_child(id) {
+                if !state_ref.children.has_child(id) {
                     debug_panic!(
                         "Error in '{}' #{}: child widget #{} not added in method {}",
                         widget.short_type_name(),
@@ -244,15 +199,15 @@ impl<W: Widget> WidgetPod<W> {
             }
 
             #[cfg(debug_assertions)]
-            for (child_state, _) in state_token.iter_children() {
+            for child_state_ref in state_ref.children.iter_children() {
                 // FIXME - use can_skip callback instead
-                if child_state.needs_visit() && !child_state.is_stashed {
+                if child_state_ref.item.needs_visit() && !child_state_ref.item.is_stashed {
                     debug_panic!(
                         "Error in '{}' #{}: child widget '{}' #{} not visited in method {}",
                         widget.short_type_name(),
                         self.id().to_raw(),
-                        child_state.widget_name,
-                        child_state.id.to_raw(),
+                        child_state_ref.item.widget_name,
+                        child_state_ref.item.id.to_raw(),
                         method_name,
                     );
                 }
@@ -268,258 +223,6 @@ impl<W: Widget> WidgetPod<W> {
     // - If a Widget gets a keyboard event or an ImeStateChange, then
     // focus is on it, its child or its parent.
     // - If a Widget has focus, then none of its parents is hidden
-
-    pub fn on_pointer_event(&mut self, parent_ctx: &mut EventCtx, event: &PointerEvent) {
-        self.call_widget_method_with_checks(
-            "on_pointer_event",
-            parent_ctx,
-            |ctx| {
-                (
-                    ctx.widget_state_children.reborrow(),
-                    ctx.widget_children.reborrow(),
-                )
-            },
-            |self2, parent_ctx| self2.on_pointer_event_inner(parent_ctx, event),
-        );
-    }
-
-    fn on_pointer_event_inner(&mut self, parent_ctx: &mut EventCtx, event: &PointerEvent) -> bool {
-        if parent_ctx.is_handled {
-            // If the event was already handled, we quit early.
-            return false;
-        }
-
-        let id = self.id().to_raw();
-        let (widget, mut widget_token) = parent_ctx
-            .widget_children
-            .get_child_mut(id)
-            .expect("WidgetPod: inner widget not found in widget tree");
-        let (state, mut state_token) = parent_ctx
-            .widget_state_children
-            .get_child_mut(id)
-            .expect("WidgetPod: inner widget not found in widget tree");
-
-        let had_active = state.has_active;
-
-        // TODO - This doesn't handle the case where multiple cursors
-        // are over the same widget
-        let hot_pos = match event {
-            PointerEvent::PointerDown(_, pointer_state) => Some(pointer_state.position),
-            PointerEvent::PointerUp(_, pointer_state) => Some(pointer_state.position),
-            PointerEvent::PointerMove(pointer_state) => Some(pointer_state.position),
-            PointerEvent::PointerEnter(pointer_state) => Some(pointer_state.position),
-            PointerEvent::PointerLeave(_) => None,
-            PointerEvent::MouseWheel(_, pointer_state) => Some(pointer_state.position),
-            PointerEvent::HoverFile(_, _) => None,
-            PointerEvent::DropFile(_, _) => None,
-            PointerEvent::HoverFileCancel(_) => None,
-        };
-        let hot_changed = WidgetPod::update_hot_state(
-            self.id(),
-            widget.as_mut_dyn_any().downcast_mut::<W>().unwrap(),
-            widget_token.reborrow_mut(),
-            state,
-            state_token.reborrow_mut(),
-            parent_ctx.global_state,
-            hot_pos,
-        );
-
-        let call_widget = (had_active || state.is_hot || hot_changed) && !state.is_stashed;
-        if call_widget {
-            trace!(
-                "Widget '{}' #{} visited",
-                widget.short_type_name(),
-                self.id().to_raw(),
-            );
-            let mut inner_ctx = EventCtx {
-                global_state: parent_ctx.global_state,
-                widget_state: state,
-                widget_state_children: state_token,
-                widget_children: widget_token,
-                is_handled: false,
-                request_pan_to_child: None,
-            };
-            inner_ctx.widget_state.has_active = false;
-
-            widget.on_pointer_event(&mut inner_ctx, event);
-
-            inner_ctx.widget_state.has_active |= inner_ctx.widget_state.is_active;
-            parent_ctx.is_handled |= inner_ctx.is_handled;
-
-            // TODO - there's some dubious logic here
-            if let Some(target_rect) = inner_ctx.request_pan_to_child {
-                self.pan_to_child(parent_ctx, target_rect);
-                let (state, _) = parent_ctx
-                    .widget_state_children
-                    .get_child_mut(id)
-                    .expect("WidgetPod: inner widget not found in widget tree");
-                let new_rect =
-                    target_rect.with_origin(target_rect.origin() + state.origin.to_vec2());
-                parent_ctx.request_pan_to_child = Some(new_rect);
-            }
-        }
-
-        // Always merge even if not needed, because merging is idempotent and gives us simpler code.
-        // Doing this conditionally only makes sense when there's a measurable performance boost.
-        let (state, _) = parent_ctx
-            .widget_state_children
-            .get_child_mut(id)
-            .expect("WidgetPod: inner widget not found in widget tree");
-        parent_ctx.widget_state.merge_up(state);
-
-        call_widget
-    }
-
-    pub fn on_text_event(&mut self, parent_ctx: &mut EventCtx, event: &TextEvent) {
-        self.call_widget_method_with_checks(
-            "on_text_event",
-            parent_ctx,
-            |ctx| {
-                (
-                    ctx.widget_state_children.reborrow(),
-                    ctx.widget_children.reborrow(),
-                )
-            },
-            |self2, parent_ctx| self2.on_text_event_inner(parent_ctx, event),
-        );
-    }
-
-    fn on_text_event_inner(&mut self, parent_ctx: &mut EventCtx, event: &TextEvent) -> bool {
-        if parent_ctx.is_handled {
-            // If the event was already handled, we quit early.
-            return false;
-        }
-
-        let id = self.id().to_raw();
-        let (widget, widget_token) = parent_ctx
-            .widget_children
-            .get_child_mut(id)
-            .expect("WidgetPod: inner widget not found in widget tree");
-        let (state, state_token) = parent_ctx
-            .widget_state_children
-            .get_child_mut(id)
-            .expect("WidgetPod: inner widget not found in widget tree");
-
-        let call_widget = state.has_focus && !state.is_stashed;
-        if call_widget {
-            let mut inner_ctx = EventCtx {
-                global_state: parent_ctx.global_state,
-                widget_state: state,
-                widget_state_children: state_token,
-                widget_children: widget_token,
-                is_handled: false,
-                request_pan_to_child: None,
-            };
-
-            widget.on_text_event(&mut inner_ctx, event);
-
-            inner_ctx.widget_state.has_active |= inner_ctx.widget_state.is_active;
-            parent_ctx.is_handled |= inner_ctx.is_handled;
-
-            // TODO - there's some dubious logic here
-            if let Some(target_rect) = inner_ctx.request_pan_to_child {
-                self.pan_to_child(parent_ctx, target_rect);
-                let (state, _) = parent_ctx
-                    .widget_state_children
-                    .get_child_mut(id)
-                    .expect("WidgetPod: inner widget not found in widget tree");
-                let new_rect =
-                    target_rect.with_origin(target_rect.origin() + state.origin.to_vec2());
-                parent_ctx.request_pan_to_child = Some(new_rect);
-            }
-        }
-
-        // Always merge even if not needed, because merging is idempotent and gives us simpler code.
-        // Doing this conditionally only makes sense when there's a measurable performance boost.
-        let (state, _) = parent_ctx
-            .widget_state_children
-            .get_child_mut(id)
-            .expect("WidgetPod: inner widget not found in widget tree");
-        parent_ctx.widget_state.merge_up(state);
-
-        call_widget
-    }
-
-    fn pan_to_child(&mut self, parent_ctx: &mut EventCtx, rect: Rect) {
-        let id = self.id().to_raw();
-        let (widget, widget_token) = parent_ctx
-            .widget_children
-            .get_child_mut(id)
-            .expect("WidgetPod: inner widget not found in widget tree");
-        let (state, state_token) = parent_ctx
-            .widget_state_children
-            .get_child_mut(id)
-            .expect("WidgetPod: inner widget not found in widget tree");
-        let mut inner_ctx = LifeCycleCtx {
-            global_state: parent_ctx.global_state,
-            widget_state: state,
-            widget_state_children: state_token,
-            widget_children: widget_token,
-        };
-        let event = LifeCycle::RequestPanToChild(rect);
-
-        widget.lifecycle(&mut inner_ctx, &event);
-    }
-
-    pub fn on_access_event(&mut self, parent_ctx: &mut EventCtx, event: &AccessEvent) {
-        self.call_widget_method_with_checks(
-            "on_access_event",
-            parent_ctx,
-            |ctx| {
-                (
-                    ctx.widget_state_children.reborrow(),
-                    ctx.widget_children.reborrow(),
-                )
-            },
-            |self2, parent_ctx| self2.on_access_event_inner(parent_ctx, event),
-        );
-    }
-
-    fn on_access_event_inner(&mut self, parent_ctx: &mut EventCtx, event: &AccessEvent) -> bool {
-        if parent_ctx.is_handled {
-            // If the event was already handled, we quit early.
-            return false;
-        }
-
-        let id = self.id().to_raw();
-        let (widget, widget_token) = parent_ctx
-            .widget_children
-            .get_child_mut(id)
-            .expect("WidgetPod: inner widget not found in widget tree");
-        let (state, state_token) = parent_ctx
-            .widget_state_children
-            .get_child_mut(id)
-            .expect("WidgetPod: inner widget not found in widget tree");
-
-        let call_widget = self.id() == event.target || state.children.may_contain(&event.target);
-        if call_widget {
-            let mut inner_ctx = EventCtx {
-                global_state: parent_ctx.global_state,
-                widget_state: state,
-                widget_state_children: state_token,
-                widget_children: widget_token,
-                is_handled: false,
-                request_pan_to_child: None,
-            };
-
-            widget.on_access_event(&mut inner_ctx, event);
-
-            inner_ctx.widget_state.has_active |= inner_ctx.widget_state.is_active;
-            parent_ctx.is_handled |= inner_ctx.is_handled;
-
-            // TODO - request_pan_to_child
-        }
-
-        // Always merge even if not needed, because merging is idempotent and gives us simpler code.
-        // Doing this conditionally only makes sense when there's a measurable performance boost.
-        let (state, _) = parent_ctx
-            .widget_state_children
-            .get_child_mut(id)
-            .expect("WidgetPod: inner widget not found in widget tree");
-        parent_ctx.widget_state.merge_up(state);
-
-        call_widget
-    }
 
     // --- MARK: LIFECYCLE ---
 
@@ -600,14 +303,16 @@ impl<W: Widget> WidgetPod<W> {
 
     fn lifecycle_inner(&mut self, parent_ctx: &mut LifeCycleCtx, event: &LifeCycle) -> bool {
         let id = self.id().to_raw();
-        let (widget, mut widget_token) = parent_ctx
+        let mut widget_mut = parent_ctx
             .widget_children
             .get_child_mut(id)
             .expect("WidgetPod: inner widget not found in widget tree");
-        let (state, mut state_token) = parent_ctx
+        let mut state_mut = parent_ctx
             .widget_state_children
             .get_child_mut(id)
             .expect("WidgetPod: inner widget not found in widget tree");
+        let widget = widget_mut.item;
+        let state = state_mut.item;
 
         // when routing a status change event, if we are at our target
         // we may send an extra event after the actual event
@@ -639,8 +344,8 @@ impl<W: Widget> WidgetPod<W> {
                         let mut inner_ctx = LifeCycleCtx {
                             global_state: parent_ctx.global_state,
                             widget_state: state,
-                            widget_state_children: state_token.reborrow_mut(),
-                            widget_children: widget_token.reborrow_mut(),
+                            widget_state_children: state_mut.children.reborrow_mut(),
+                            widget_children: widget_mut.children.reborrow_mut(),
                         };
 
                         widget.lifecycle(&mut inner_ctx, &LifeCycle::DisabledChanged(disabled));
@@ -675,18 +380,9 @@ impl<W: Widget> WidgetPod<W> {
                         _ => false,
                     }
                 }
-                InternalLifeCycle::ParentWindowOrigin { mouse_pos } => {
+                InternalLifeCycle::ParentWindowOrigin { .. } => {
                     state.parent_window_origin = parent_ctx.widget_state.window_origin();
                     state.needs_window_origin = false;
-                    WidgetPod::update_hot_state(
-                        self.id(),
-                        widget.as_mut_dyn_any().downcast_mut::<W>().unwrap(),
-                        widget_token.reborrow_mut(),
-                        state,
-                        state_token.reborrow_mut(),
-                        parent_ctx.global_state,
-                        *mouse_pos,
-                    );
                     // TODO - state.is_hidden
                     true
                 }
@@ -733,8 +429,8 @@ impl<W: Widget> WidgetPod<W> {
             let mut inner_ctx = LifeCycleCtx {
                 global_state: parent_ctx.global_state,
                 widget_state: state,
-                widget_state_children: state_token.reborrow_mut(),
-                widget_children: widget_token.reborrow_mut(),
+                widget_state_children: state_mut.children.reborrow_mut(),
+                widget_children: widget_mut.children.reborrow_mut(),
             };
 
             widget.lifecycle(&mut inner_ctx, event);
@@ -744,8 +440,8 @@ impl<W: Widget> WidgetPod<W> {
             let mut inner_ctx = LifeCycleCtx {
                 global_state: parent_ctx.global_state,
                 widget_state: state,
-                widget_state_children: state_token.reborrow_mut(),
-                widget_children: widget_token.reborrow_mut(),
+                widget_state_children: state_mut.children.reborrow_mut(),
+                widget_children: widget_mut.children.reborrow_mut(),
             };
 
             // We add a span so that inner logs are marked as being in an on_status_change pass
@@ -802,11 +498,11 @@ impl<W: Widget> WidgetPod<W> {
             _ => (),
         }
 
-        let (state, _) = parent_ctx
+        let state_mut = parent_ctx
             .widget_state_children
             .get_child_mut(id)
             .expect("WidgetPod: inner widget not found in widget tree");
-        parent_ctx.widget_state.merge_up(state);
+        parent_ctx.widget_state.merge_up(state_mut.item);
 
         call_widget || extra_event.is_some()
     }
@@ -833,23 +529,25 @@ impl<W: Widget> WidgetPod<W> {
         );
 
         let id = self.id().to_raw();
-        let (state, _) = parent_ctx
+        let state_mut = parent_ctx
             .widget_state_children
             .get_child_mut(id)
             .expect("WidgetPod: inner widget not found in widget tree");
-        state.size
+        state_mut.item.size
     }
 
     fn layout_inner(&mut self, parent_ctx: &mut LayoutCtx, bc: &BoxConstraints) -> bool {
         let id = self.id().to_raw();
-        let (widget, widget_token) = parent_ctx
+        let widget_mut = parent_ctx
             .widget_children
             .get_child_mut(id)
             .expect("WidgetPod: inner widget not found in widget tree");
-        let (state, mut state_token) = parent_ctx
+        let mut state_mut = parent_ctx
             .widget_state_children
             .get_child_mut(id)
             .expect("WidgetPod: inner widget not found in widget tree");
+        let widget = widget_mut.item;
+        let state = state_mut.item;
 
         if state.is_stashed {
             debug_panic!(
@@ -876,8 +574,8 @@ impl<W: Widget> WidgetPod<W> {
         let new_size = {
             let mut inner_ctx = LayoutCtx {
                 widget_state: state,
-                widget_state_children: state_token.reborrow_mut(),
-                widget_children: widget_token,
+                widget_state_children: state_mut.children.reborrow_mut(),
+                widget_children: widget_mut.children,
                 global_state: parent_ctx.global_state,
                 mouse_pos: parent_ctx.mouse_pos,
             };
@@ -893,9 +591,11 @@ impl<W: Widget> WidgetPod<W> {
         {
             for child_id in widget.children_ids() {
                 let child_id = child_id.to_raw();
-                let (child_state, _) = state_token
-                    .get_child(child_id)
+                let child_state_mut = state_mut
+                    .children
+                    .get_child_mut(child_id)
                     .unwrap_or_else(|| panic!("widget #{child_id} not found"));
+                let child_state = child_state_mut.item;
                 if child_state.is_expecting_place_child_call {
                     debug_panic!(
                         "Error in '{}' #{}: missing call to place_child method for child widget '{}' #{}. During layout pass, if a widget calls WidgetPod::layout() on its child, it then needs to call LayoutCtx::place_child() on the same child.",
@@ -932,12 +632,12 @@ impl<W: Widget> WidgetPod<W> {
         // size is (0,0)
         // See https://github.com/linebender/xilem/issues/377
 
-        let (state, _) = parent_ctx
+        let state_mut = parent_ctx
             .widget_state_children
             .get_child_mut(id)
             .expect("WidgetPod: inner widget not found in widget tree");
-        parent_ctx.widget_state.merge_up(state);
-        state.size = new_size;
+        parent_ctx.widget_state.merge_up(state_mut.item);
+        state_mut.item.size = new_size;
 
         self.log_layout_issues(widget.short_type_name(), new_size);
 
@@ -975,14 +675,16 @@ impl<W: Widget> WidgetPod<W> {
 
     fn paint_inner(&mut self, parent_ctx: &mut PaintCtx, scene: &mut Scene) -> bool {
         let id = self.id().to_raw();
-        let (widget, widget_token) = parent_ctx
+        let widget_mut = parent_ctx
             .widget_children
             .get_child_mut(id)
             .expect("WidgetPod: inner widget not found in widget tree");
-        let (state, state_token) = parent_ctx
+        let state_mut = parent_ctx
             .widget_state_children
             .get_child_mut(id)
             .expect("WidgetPod: inner widget not found in widget tree");
+        let widget = widget_mut.item;
+        let state = state_mut.item;
 
         if state.is_stashed {
             debug_panic!(
@@ -1006,8 +708,8 @@ impl<W: Widget> WidgetPod<W> {
             let mut inner_ctx = PaintCtx {
                 global_state: parent_ctx.global_state,
                 widget_state: state,
-                widget_state_children: state_token,
-                widget_children: widget_token,
+                widget_state_children: state_mut.children,
+                widget_children: widget_mut.children,
                 depth: parent_ctx.depth + 1,
                 debug_paint: parent_ctx.debug_paint,
                 debug_widget: parent_ctx.debug_widget,
@@ -1056,14 +758,16 @@ impl<W: Widget> WidgetPod<W> {
         // if state.is_stashed {}
 
         let id = self.id().to_raw();
-        let (widget, widget_token) = parent_ctx
+        let widget_mut = parent_ctx
             .widget_children
             .get_child_mut(id)
             .expect("WidgetPod: inner widget not found in widget tree");
-        let (state, state_token) = parent_ctx
+        let state_mut = parent_ctx
             .widget_state_children
             .get_child_mut(id)
             .expect("WidgetPod: inner widget not found in widget tree");
+        let widget = widget_mut.item;
+        let state = state_mut.item;
 
         // If this widget or a child has requested an accessibility update,
         // or if AccessKit has requested a full rebuild,
@@ -1080,8 +784,8 @@ impl<W: Widget> WidgetPod<W> {
             let mut inner_ctx = AccessCtx {
                 global_state: parent_ctx.global_state,
                 widget_state: state,
-                widget_state_children: state_token,
-                widget_children: widget_token,
+                widget_state_children: state_mut.children,
+                widget_children: widget_mut.children,
                 tree_update: parent_ctx.tree_update,
                 current_node,
                 rebuild_all: parent_ctx.rebuild_all,

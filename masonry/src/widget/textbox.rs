@@ -180,14 +180,13 @@ impl Widget for Textbox {
                 }
             }
             PointerEvent::PointerMove(state) => {
-                if !ctx.is_disabled() {
-                    // TODO: Set cursor if over link
-                    ctx.set_cursor(&CursorIcon::Text);
-                    if ctx.is_active() && self.editor.pointer_move(inner_origin, state) {
-                        // We might have changed text colours, so we need to re-request a layout
-                        ctx.request_layout();
-                        ctx.request_paint();
-                    }
+                if !ctx.is_disabled()
+                    && ctx.is_active()
+                    && self.editor.pointer_move(inner_origin, state)
+                {
+                    // We might have changed text colours, so we need to re-request a layout
+                    ctx.request_layout();
+                    ctx.request_paint();
                 }
             }
             PointerEvent::PointerUp(button, state) => {
@@ -335,6 +334,10 @@ impl Widget for Textbox {
                 },
             ));
         }
+    }
+
+    fn get_cursor(&self) -> CursorIcon {
+        CursorIcon::Text
     }
 
     fn accessibility_role(&self) -> Role {

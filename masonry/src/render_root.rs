@@ -10,20 +10,22 @@ use parley::{FontContext, LayoutContext};
 use tracing::{debug, info_span, warn};
 use vello::peniko::{Color, Fill};
 use vello::Scene;
-use winit::keyboard::{KeyCode, PhysicalKey};
 
 #[cfg(not(target_arch = "wasm32"))]
 use std::time::Instant;
 #[cfg(target_arch = "wasm32")]
 use web_time::Instant;
 
-use crate::contexts::{EventCtx, LayoutCtx, LifeCycleCtx, PaintCtx, WidgetCtx};
+use crate::contexts::{LayoutCtx, LifeCycleCtx, PaintCtx, WidgetCtx};
 use crate::debug_logger::DebugLogger;
 use crate::dpi::{LogicalPosition, LogicalSize, PhysicalSize};
 use crate::event::{PointerEvent, TextEvent, WindowEvent};
 use crate::kurbo::Point;
+use crate::passes::event::{root_on_access_event, root_on_pointer_event, root_on_text_event};
+use crate::passes::update::run_update_pointer_pass;
 use crate::text::TextBrush;
 use crate::tree_arena::TreeArena;
+use crate::widget::WidgetArena;
 use crate::widget::{WidgetMut, WidgetRef, WidgetState};
 use crate::{
     AccessCtx, AccessEvent, Action, BoxConstraints, CursorIcon, Handled, InternalLifeCycle,
@@ -54,13 +56,11 @@ pub(crate) struct RenderRootState {
     pub(crate) signal_queue: VecDeque<RenderRootSignal>,
     pub(crate) focused_widget: Option<WidgetId>,
     pub(crate) next_focused_widget: Option<WidgetId>,
+    pub(crate) hovered_path: Vec<WidgetId>,
+    pub(crate) pointer_capture_target: Option<WidgetId>,
+    pub(crate) cursor_icon: CursorIcon,
     pub(crate) font_context: FontContext,
     pub(crate) text_layout_context: LayoutContext<TextBrush>,
-}
-
-pub(crate) struct WidgetArena {
-    pub(crate) widgets: TreeArena<Box<dyn Widget>>,
-    pub(crate) widget_states: TreeArena<WidgetState>,
 }
 
 /// Defines how a windows size should be determined
@@ -120,6 +120,9 @@ impl RenderRoot {
                 signal_queue: VecDeque::new(),
                 focused_widget: None,
                 next_focused_widget: None,
+                hovered_path: Vec::new(),
+                pointer_capture_target: None,
+                cursor_icon: CursorIcon::Default,
                 font_context: FontContext {
                     collection: Collection::new(CollectionOptions {
                         system_fonts: use_system_fonts,
@@ -153,7 +156,7 @@ impl RenderRoot {
             .root_token_mut()
             .into_child_mut(self.root.id().to_raw())
             .expect("root widget not in widget tree")
-            .0
+            .item
     }
 
     // --- MARK: WINDOW_EVENT ---
@@ -268,25 +271,26 @@ impl RenderRoot {
     pub fn get_root_widget(&self) -> WidgetRef<dyn Widget> {
         let root_state_token = self.widget_arena.widget_states.root_token();
         let root_widget_token = self.widget_arena.widgets.root_token();
-        let (state, state_children) = root_state_token
+        let state_ref = root_state_token
             .into_child(self.root.id().to_raw())
             .expect("root widget not in widget tree");
-        let (widget, widget_children) = root_widget_token
+        let widget_ref = root_widget_token
             .into_child(self.root.id().to_raw())
             .expect("root widget not in widget tree");
 
         // Our WidgetArena stores all widgets as Box<dyn Widget>, but the "true"
         // type of our root widget is *also* Box<dyn Widget>. We downcast so we
         // don't add one more level of indirection to this.
-        let widget = widget
+        let widget = widget_ref
+            .item
             .as_dyn_any()
             .downcast_ref::<Box<dyn Widget>>()
             .unwrap();
 
         WidgetRef {
-            widget_state_children: state_children,
-            widget_children,
-            widget_state: state,
+            widget_state_children: state_ref.children,
+            widget_children: widget_ref.children,
+            widget_state: state_ref.item,
             widget,
         }
     }
@@ -299,17 +303,18 @@ impl RenderRoot {
             WidgetState::new(self.root.id(), Some(self.get_kurbo_size()), "<root>");
         let root_state_token = self.widget_arena.widget_states.root_token_mut();
         let root_widget_token = self.widget_arena.widgets.root_token_mut();
-        let (state, state_token) = root_state_token
+        let state_ref = root_state_token
             .into_child_mut(self.root.id().to_raw())
             .expect("root widget not in widget tree");
-        let (widget, widget_token) = root_widget_token
+        let widget_ref = root_widget_token
             .into_child_mut(self.root.id().to_raw())
             .expect("root widget not in widget tree");
 
         // Our WidgetArena stores all widgets as Box<dyn Widget>, but the "true"
         // type of our root widget is *also* Box<dyn Widget>. We downcast so we
         // don't add one more level of indirection to this.
-        let widget = widget
+        let widget = widget_ref
+            .item
             .as_mut_dyn_any()
             .downcast_mut::<Box<dyn Widget>>()
             .unwrap();
@@ -319,9 +324,9 @@ impl RenderRoot {
             ctx: WidgetCtx {
                 global_state: &mut self.state,
                 parent_widget_state: &mut fake_widget_state,
-                widget_state: state,
-                widget_state_children: state_token,
-                widget_children: widget_token,
+                widget_state: state_ref.item,
+                widget_state_children: state_ref.children,
+                widget_children: widget_ref.children,
             },
             widget,
             is_reborrow: false,
@@ -336,83 +341,13 @@ impl RenderRoot {
         res
     }
 
-    pub fn get_widget(&self, id: WidgetId) -> Option<WidgetRef<dyn Widget>> {
-        let (state, state_token) = self.widget_arena.widget_states.find(id.to_raw())?;
-        let (widget, widget_token) = self
-            .widget_arena
-            .widgets
-            .find(id.to_raw())
-            .expect("found state but not widget");
-
-        // Box<dyn Widget> -> &dyn Widget
-        // Without this step, the type of `WidgetRef::widget` would be
-        // `&Box<dyn Widget> as &dyn Widget`, which would be an additional layer
-        // of indirection.
-        let widget: &dyn Widget = &**widget;
-        Some(WidgetRef {
-            widget_state_children: state_token,
-            widget_children: widget_token,
-            widget_state: state,
-            widget,
-        })
-    }
-
     // --- MARK: POINTER_EVENT ---
     fn root_on_pointer_event(&mut self, event: PointerEvent) -> Handled {
         let mut root_state =
             WidgetState::new(self.root.id(), Some(self.get_kurbo_size()), "<root>");
 
-        let root_state_token = self.widget_arena.widget_states.root_token_mut();
-        let root_widget_token = self.widget_arena.widgets.root_token_mut();
-
-        self.state.next_focused_widget = self.state.focused_widget;
-        let mut ctx = EventCtx {
-            global_state: &mut self.state,
-            widget_state: &mut root_state,
-            widget_state_children: root_state_token,
-            widget_children: root_widget_token,
-            is_handled: false,
-            request_pan_to_child: None,
-        };
-
-        // TODO - Only for primary pointer
-        self.last_mouse_pos = match event {
-            PointerEvent::PointerLeave(_) | PointerEvent::HoverFile(_, _) => None,
-            _ => Some(event.pointer_state().position),
-        };
-
-        let handled = {
-            ctx.global_state
-                .debug_logger
-                .push_important_span(&format!("POINTER_EVENT {}", event.short_name()));
-            let _span = info_span!("pointer_event").entered();
-            if !event.is_high_density() {
-                debug!("Running ON_POINTER_EVENT pass with {}", event.short_name());
-            }
-
-            self.root.on_pointer_event(&mut ctx, &event);
-
-            if !event.is_high_density() {
-                debug!(
-                    focused_widget = ctx.global_state.focused_widget.map(|id| id.0),
-                    handled = ctx.is_handled,
-                    "ON_POINTER_EVENT finished",
-                );
-            }
-            ctx.global_state.debug_logger.pop_span();
-            Handled::from(ctx.is_handled)
-        };
-
-        if let Some(cursor) = &ctx.widget_state.cursor {
-            // TODO - Add methods and `into()` impl to make this more concise.
-            ctx.global_state
-                .signal_queue
-                .push_back(RenderRootSignal::SetCursor(*cursor));
-        } else {
-            ctx.global_state
-                .signal_queue
-                .push_back(RenderRootSignal::SetCursor(CursorIcon::Default));
-        }
+        let handled = root_on_pointer_event(self, &mut root_state, &event);
+        run_update_pointer_pass(self, &mut root_state);
 
         self.post_event_processing(&mut root_state);
         self.get_root_widget().debug_validate(false);
@@ -425,51 +360,7 @@ impl RenderRoot {
         let mut root_state =
             WidgetState::new(self.root.id(), Some(self.get_kurbo_size()), "<root>");
 
-        let root_state_token = self.widget_arena.widget_states.root_token_mut();
-        let root_widget_token = self.widget_arena.widgets.root_token_mut();
-
-        self.state.next_focused_widget = self.state.focused_widget;
-        let mut ctx = EventCtx {
-            global_state: &mut self.state,
-            widget_state: &mut root_state,
-            widget_state_children: root_state_token,
-            widget_children: root_widget_token,
-            is_handled: false,
-            request_pan_to_child: None,
-        };
-
-        let handled = {
-            ctx.global_state
-                .debug_logger
-                .push_important_span(&format!("TEXT_EVENT {}", event.short_name()));
-            let _span = info_span!("text_event").entered();
-            if !event.is_high_density() {
-                debug!("Running ON_TEXT_EVENT pass with {}", event.short_name());
-            }
-
-            self.root.on_text_event(&mut ctx, &event);
-
-            if !event.is_high_density() {
-                debug!(
-                    focused_widget = ctx.global_state.focused_widget.map(|id| id.0),
-                    handled = ctx.is_handled,
-                    "ON_TEXT_EVENT finished",
-                );
-            }
-            ctx.global_state.debug_logger.pop_span();
-            Handled::from(ctx.is_handled)
-        };
-
-        // If event is tab we handle focus
-        if let TextEvent::KeyboardKey(key, mods) = event {
-            if handled == Handled::No && key.physical_key == PhysicalKey::Code(KeyCode::Tab) {
-                if !mods.shift_key() {
-                    self.state.next_focused_widget = self.widget_from_focus_chain(true);
-                } else {
-                    self.state.next_focused_widget = self.widget_from_focus_chain(false);
-                }
-            }
-        }
+        let handled = root_on_text_event(self, &mut root_state, &event);
 
         self.post_event_processing(&mut root_state);
         self.get_root_widget().debug_validate(false);
@@ -482,18 +373,6 @@ impl RenderRoot {
         let mut root_state =
             WidgetState::new(self.root.id(), Some(self.get_kurbo_size()), "<root>");
 
-        let root_state_token = self.widget_arena.widget_states.root_token_mut();
-        let root_widget_token = self.widget_arena.widgets.root_token_mut();
-
-        let mut ctx = EventCtx {
-            global_state: &mut self.state,
-            widget_state: &mut root_state,
-            widget_state_children: root_state_token,
-            widget_children: root_widget_token,
-            is_handled: false,
-            request_pan_to_child: None,
-        };
-
         let Ok(id) = event.target.0.try_into() else {
             warn!("Received ActionRequest with id 0. This shouldn't be possible.");
             return;
@@ -504,22 +383,7 @@ impl RenderRoot {
             data: event.data,
         };
 
-        {
-            ctx.global_state
-                .debug_logger
-                .push_important_span(&format!("ACCESS_EVENT {}", event.short_name()));
-            let _span = info_span!("access_event").entered();
-            debug!("Running ON_ACCESS_EVENT pass with {}", event.short_name());
-
-            self.root.on_access_event(&mut ctx, &event);
-
-            debug!(
-                focused_widget = ctx.global_state.focused_widget.map(|id| id.0),
-                handled = ctx.is_handled,
-                "ON_POINTER_EVENT finished",
-            );
-            ctx.global_state.debug_logger.pop_span();
-        }
+        root_on_access_event(self, &mut root_state, &event);
 
         self.post_event_processing(&mut root_state);
         self.get_root_widget().debug_validate(false);
@@ -583,6 +447,7 @@ impl RenderRoot {
             let _span = info_span!("layout").entered();
             self.root.layout(&mut layout_ctx, &bc)
         };
+        layout_ctx.place_child(&mut self.root, Point::ORIGIN);
         layout_ctx.global_state.debug_logger.pop_span();
 
         if let WindowSizePolicy::Content = self.size_policy {
@@ -596,7 +461,8 @@ impl RenderRoot {
             }
         }
 
-        layout_ctx.place_child(&mut self.root, Point::ORIGIN);
+        run_update_pointer_pass(self, &mut root_state);
+
         self.post_event_processing(&mut root_state);
     }
 
@@ -771,7 +637,7 @@ impl RenderRoot {
         }
     }
 
-    fn widget_from_focus_chain(&mut self, forward: bool) -> Option<WidgetId> {
+    pub(crate) fn widget_from_focus_chain(&mut self, forward: bool) -> Option<WidgetId> {
         self.state.focused_widget.and_then(|focus| {
             self.focus_chain()
                 .iter()

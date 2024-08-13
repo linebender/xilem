@@ -262,10 +262,8 @@ impl<W: Widget> Widget for Portal<W> {
             _ => (),
         }
 
-        self.child.on_pointer_event(ctx, event);
-        self.scrollbar_horizontal.on_pointer_event(ctx, event);
-        self.scrollbar_vertical.on_pointer_event(ctx, event);
-
+        // This section works because events are propagated up. So if the scrollbar got
+        // pointer events, then its event method has already been called by the time this runs.
         let mut scrollbar_moved = false;
         {
             let mut scrollbar = ctx.get_raw_mut(&mut self.scrollbar_horizontal);
@@ -304,19 +302,10 @@ impl<W: Widget> Widget for Portal<W> {
     }
 
     // TODO - handle Home/End keys, etc
-    fn on_text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent) {
-        self.child.on_text_event(ctx, event);
-        self.scrollbar_horizontal.on_text_event(ctx, event);
-        self.scrollbar_vertical.on_text_event(ctx, event);
-    }
+    fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
 
-    fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {
-        // TODO - Handle scroll-related events?
-
-        self.child.on_access_event(ctx, event);
-        self.scrollbar_horizontal.on_access_event(ctx, event);
-        self.scrollbar_vertical.on_access_event(ctx, event);
-    }
+    // TODO - Handle scroll-related events?
+    fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {}
 
     fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange) {}
 

@@ -8,7 +8,6 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use crate::bloom::Bloom;
 use crate::kurbo::{Insets, Point, Rect, Size};
 use crate::text_helpers::TextFieldRegistration;
-use crate::widget::CursorChange;
 use crate::{CursorIcon, WidgetId};
 
 // FIXME https://github.com/linebender/xilem/issues/376 - Make a note documenting this: the only way to get a &mut WidgetState should be in a pass.
@@ -95,10 +94,7 @@ pub struct WidgetState {
 
     pub(crate) children: Bloom<WidgetId>,
     pub(crate) children_changed: bool,
-    /// The cursor that was set using one of the context methods.
-    pub(crate) cursor_change: CursorChange,
-    /// The result of merging up children cursors. This gets cleared when merging state up (unlike
-    /// `cursor_change`, which is persistent).
+
     // TODO - Remove and handle in WidgetRoot instead
     pub(crate) cursor: Option<CursorIcon>,
 
@@ -113,11 +109,6 @@ pub struct WidgetState {
     pub(crate) is_explicitly_disabled: bool,
 
     pub(crate) is_hot: bool,
-
-    pub(crate) is_active: bool,
-
-    /// Any descendant is active.
-    pub(crate) has_active: bool,
 
     /// In the focused path, starting from window and ending at the focused widget.
     /// Descendants of the focused widget are not in the focused path.
@@ -161,15 +152,12 @@ impl WidgetState {
             needs_paint: false,
             needs_accessibility_update: false,
             needs_window_origin: false,
-            is_active: false,
-            has_active: false,
             has_focus: false,
             request_anim: false,
             request_accessibility_update: false,
             focus_chain: Vec::new(),
             children: Bloom::new(),
             children_changed: false,
-            cursor_change: CursorChange::Default,
             cursor: None,
             is_explicitly_disabled_new: false,
             text_registrations: Vec::new(),
@@ -218,34 +206,11 @@ impl WidgetState {
         self.children_disabled_changed |= child_state.children_disabled_changed;
         self.children_disabled_changed |=
             child_state.is_explicitly_disabled_new != child_state.is_explicitly_disabled;
-        self.has_active |= child_state.has_active;
         self.has_focus |= child_state.has_focus;
         self.children_changed |= child_state.children_changed;
         self.text_registrations
             .append(&mut child_state.text_registrations);
         self.update_focus_chain |= child_state.update_focus_chain;
-
-        // We reset `child_state.cursor` no matter what, so that on the every pass through the tree,
-        // things will be recalculated just from `cursor_change`.
-        let child_cursor = child_state.take_cursor();
-        if let CursorChange::Override(cursor) = &self.cursor_change {
-            self.cursor = Some(*cursor);
-        } else if child_state.has_active || child_state.is_hot {
-            self.cursor = child_cursor;
-        }
-
-        if self.cursor.is_none() {
-            if let CursorChange::Set(cursor) = &self.cursor_change {
-                self.cursor = Some(*cursor);
-            }
-        }
-    }
-
-    /// Because of how cursor merge logic works, we need to handle the leaf case;
-    /// in that case there will be nothing in the `cursor` field (as `merge_up`
-    /// is never called) and so we need to also check the `cursor_change` field.
-    fn take_cursor(&mut self) -> Option<CursorIcon> {
-        self.cursor.take().or_else(|| self.cursor_change.cursor())
     }
 
     #[inline]

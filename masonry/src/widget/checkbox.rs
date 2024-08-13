@@ -30,7 +30,7 @@ impl Checkbox {
     pub fn new(checked: bool, text: impl Into<ArcStr>) -> Checkbox {
         Checkbox {
             checked,
-            label: WidgetPod::new(Label::new(text)),
+            label: WidgetPod::new(Label::new(text).with_skip_pointer(true)),
         }
     }
 
@@ -38,7 +38,7 @@ impl Checkbox {
     pub fn from_label(checked: bool, label: Label) -> Checkbox {
         Checkbox {
             checked,
-            label: WidgetPod::new(label),
+            label: WidgetPod::new(label.with_skip_pointer(true)),
         }
     }
 }
@@ -74,24 +74,19 @@ impl Widget for Checkbox {
                 }
             }
             PointerEvent::PointerUp(_, _) => {
-                if ctx.is_active() && !ctx.is_disabled() {
-                    if ctx.is_hot() {
-                        self.checked = !self.checked;
-                        ctx.submit_action(Action::CheckboxChecked(self.checked));
-                        trace!("Checkbox {:?} released", ctx.widget_id());
-                    }
-                    ctx.request_paint();
+                if ctx.is_active() && ctx.is_hot() && !ctx.is_disabled() {
+                    self.checked = !self.checked;
+                    ctx.submit_action(Action::CheckboxChecked(self.checked));
+                    trace!("Checkbox {:?} released", ctx.widget_id());
                 }
+                ctx.request_paint();
                 ctx.set_active(false);
             }
             _ => (),
         }
-        self.label.on_pointer_event(ctx, event);
     }
 
-    fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {
-        self.label.on_text_event(_ctx, _event);
-    }
+    fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
 
     fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {
         if event.target == ctx.widget_id() {
@@ -104,7 +99,6 @@ impl Widget for Checkbox {
                 _ => {}
             }
         }
-        self.label.on_access_event(ctx, event);
     }
 
     fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, _event: &StatusChange) {
