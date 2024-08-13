@@ -306,6 +306,9 @@ impl RenderRoot {
         }
     }
 
+    /// Get a [`WidgetMut`] to the root widget.
+    ///
+    /// Because of how `WidgetMut` works, it can only be passed to a user-provided callback.
     pub fn edit_root_widget<R>(
         &mut self,
         f: impl FnOnce(WidgetMut<'_, Box<dyn Widget>>) -> R,
@@ -331,6 +334,30 @@ impl RenderRoot {
                 is_reborrow: true,
             };
 
+            res = Some(f(widget_mut));
+        });
+
+        root_state.merge_up(self.widget_arena.get_state_mut(self.root.id()).item);
+        self.post_event_processing(&mut root_state);
+
+        res.unwrap()
+    }
+
+    /// Get a [`WidgetMut`] to a specific widget.
+    ///
+    /// Because of how `WidgetMut` works, it can only be passed to a user-provided callback.
+    pub fn edit_widget<R>(
+        &mut self,
+        id: WidgetId,
+        f: impl FnOnce(WidgetMut<'_, Box<dyn Widget>>) -> R,
+    ) -> R {
+        let mut root_state = WidgetState::root(self.root.id(), self.get_kurbo_size());
+
+        // TODO - Factor out into a "pre-event" function?
+        self.state.next_focused_widget = self.state.focused_widget;
+
+        let mut res = None;
+        mutate_widget(self, id, |widget_mut| {
             res = Some(f(widget_mut));
         });
 

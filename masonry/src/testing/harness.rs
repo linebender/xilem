@@ -508,6 +508,19 @@ impl TestHarness {
         res
     }
 
+    /// Get a [`WidgetMut`] to a specific widget.
+    ///
+    /// Because of how `WidgetMut` works, it can only be passed to a user-provided callback.
+    pub fn edit_widget<R>(
+        &mut self,
+        id: WidgetId,
+        f: impl FnOnce(WidgetMut<'_, Box<dyn Widget>>) -> R,
+    ) -> R {
+        let res = self.render_root.edit_widget(id, f);
+        self.process_state_after_event();
+        res
+    }
+
     /// Pop next action from the queue
     ///
     /// Note: Actions are still a WIP feature.
