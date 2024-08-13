@@ -1,3 +1,6 @@
+// Copyright 2024 the Xilem Authors
+// SPDX-License-Identifier: Apache-2.0
+
 //! This example uses variable fonts in a touch sensitive digital clock.
 
 use masonry::parley::{
