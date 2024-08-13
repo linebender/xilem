@@ -36,6 +36,7 @@ fn run_event_pass<E>(
     root_state: &mut WidgetState,
     target: Option<WidgetId>,
     event: &E,
+    allow_pointer_capture: bool,
     pass_fn: impl FnMut(&mut dyn Widget, &mut EventCtx, &E),
 ) -> Handled {
     let mut pass_fn = pass_fn;
@@ -51,6 +52,7 @@ fn run_event_pass<E>(
             widget_state: state_mut.item,
             widget_state_children: state_mut.children,
             widget_children: widget_mut.children,
+            allow_pointer_capture,
             is_handled: false,
             request_pan_to_child: None,
         };
@@ -100,6 +102,7 @@ pub fn root_on_pointer_event(
         root_state,
         target_widget_id,
         event,
+        matches!(event, PointerEvent::PointerDown(..)),
         |widget, ctx, event| {
             widget.on_pointer_event(ctx, event);
         },
@@ -128,9 +131,16 @@ pub fn root_on_text_event(
 
     let target = root.state.focused_widget;
 
-    let mut handled = run_event_pass(root, root_state, target, event, |widget, ctx, event| {
-        widget.on_text_event(ctx, event);
-    });
+    let mut handled = run_event_pass(
+        root,
+        root_state,
+        target,
+        event,
+        false,
+        |widget, ctx, event| {
+            widget.on_text_event(ctx, event);
+        },
+    );
 
     // Handle Tab focus
     if let TextEvent::KeyboardKey(key, mods) = event {
@@ -165,9 +175,16 @@ pub fn root_on_access_event(
 
     let target = Some(event.target);
 
-    let handled = run_event_pass(root, root_state, target, event, |widget, ctx, event| {
-        widget.on_access_event(ctx, event);
-    });
+    let handled = run_event_pass(
+        root,
+        root_state,
+        target,
+        event,
+        false,
+        |widget, ctx, event| {
+            widget.on_access_event(ctx, event);
+        },
+    );
 
     debug!(
         focused_widget = root.state.focused_widget.map(|id| id.0),

@@ -56,6 +56,7 @@ pub struct EventCtx<'a> {
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) widget_state_children: ArenaMutChildren<'a, WidgetState>,
     pub(crate) widget_children: ArenaMutChildren<'a, Box<dyn Widget>>,
+    pub(crate) allow_pointer_capture: bool,
     pub(crate) is_handled: bool,
     pub(crate) request_pan_to_child: Option<Rect>,
 }
@@ -573,8 +574,13 @@ impl EventCtx<'_> {
     // TODO - Document
     // TODO - Figure out cases where widget should be notified of pointer capture
     // loss
-    // TODO - Panic when event isn't PointerDown
+    #[track_caller]
     pub fn capture_pointer(&mut self) {
+        debug_assert!(
+            self.allow_pointer_capture,
+            "Error in #{}: event does not allow pointer capture",
+            self.widget_id().to_raw(),
+        );
         // TODO: plumb pointer capture through to platform (through winit)
         self.global_state.pointer_capture_target = Some(self.widget_state.id);
     }
