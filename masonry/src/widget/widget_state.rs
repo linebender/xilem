@@ -169,40 +169,18 @@ impl WidgetState {
             widget_name,
         }
     }
+
     pub(crate) fn root(id: WidgetId, size: Size) -> WidgetState {
         WidgetState {
-            id,
-            origin: Point::ORIGIN,
-            parent_window_origin: Point::ORIGIN,
             size,
-            is_expecting_place_child_call: false,
-            paint_insets: Insets::ZERO,
-            local_paint_rect: Rect::ZERO,
-            is_portal: false,
-            children_disabled_changed: false,
-            ancestor_disabled: false,
-            is_explicitly_disabled: false,
-            baseline_offset: 0.0,
-            is_hot: false,
             needs_layout: false,
             needs_paint: false,
             needs_accessibility_update: false,
             needs_window_origin: false,
-            has_focus: false,
-            request_anim: false,
             request_accessibility_update: false,
-            focus_chain: Vec::new(),
-            children: Bloom::new(),
             children_changed: false,
-            cursor: None,
-            is_explicitly_disabled_new: false,
-            text_registrations: Vec::new(),
             update_focus_chain: false,
-            is_stashed: false,
-            #[cfg(debug_assertions)]
-            needs_visit: VisitBool(false.into()),
-            #[cfg(debug_assertions)]
-            widget_name: "<root>",
+            ..WidgetState::new(id, "<root>")
         }
     }
 
