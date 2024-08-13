@@ -374,6 +374,16 @@ impl<'a> MutateCtx<'a> {
             is_reborrow: false,
         }
     }
+
+    pub(crate) fn reborrow_mut(&mut self) -> MutateCtx<'_> {
+        MutateCtx {
+            global_state: self.global_state,
+            parent_widget_state: self.parent_widget_state,
+            widget_state: self.widget_state,
+            widget_state_children: self.widget_state_children.reborrow_mut(),
+            widget_children: self.widget_children.reborrow_mut(),
+        }
+    }
 }
 
 // --- MARK: UPDATE FLAGS ---

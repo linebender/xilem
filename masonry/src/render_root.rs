@@ -325,17 +325,9 @@ impl RenderRoot {
                 .as_mut_dyn_any()
                 .downcast_mut::<Box<dyn Widget>>()
                 .unwrap();
-
-            let ctx = crate::MutateCtx {
-                global_state: widget_mut.ctx.global_state,
-                parent_widget_state: widget_mut.ctx.parent_widget_state,
-                widget_state: widget_mut.ctx.widget_state,
-                widget_state_children: widget_mut.ctx.widget_state_children.reborrow_mut(),
-                widget_children: widget_mut.ctx.widget_children.reborrow_mut(),
-            };
             let widget_mut = WidgetMut {
+                ctx: widget_mut.ctx.reborrow_mut(),
                 widget,
-                ctx,
                 is_reborrow: true,
             };
 

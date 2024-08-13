@@ -48,16 +48,9 @@ impl<'w, W: Widget> WidgetMut<'w, W> {
 
     /// Get a `WidgetMut` for the same underlying widget with a shorter lifetime.
     pub fn reborrow_mut(&mut self) -> WidgetMut<'_, W> {
-        let ctx = MutateCtx {
-            global_state: self.ctx.global_state,
-            parent_widget_state: self.ctx.parent_widget_state,
-            widget_state: self.ctx.widget_state,
-            widget_state_children: self.ctx.widget_state_children.reborrow_mut(),
-            widget_children: self.ctx.widget_children.reborrow_mut(),
-        };
         let widget = &mut self.widget;
         WidgetMut {
-            ctx,
+            ctx: self.ctx.reborrow_mut(),
             widget,
             is_reborrow: true,
         }
@@ -67,15 +60,8 @@ impl<'w, W: Widget> WidgetMut<'w, W> {
 impl<'a> WidgetMut<'a, Box<dyn Widget>> {
     /// Attempt to downcast to `WidgetMut` of concrete Widget type.
     pub fn try_downcast<W2: Widget>(&mut self) -> Option<WidgetMut<'_, W2>> {
-        let ctx = MutateCtx {
-            global_state: self.ctx.global_state,
-            parent_widget_state: self.ctx.parent_widget_state,
-            widget_state: self.ctx.widget_state,
-            widget_state_children: self.ctx.widget_state_children.reborrow_mut(),
-            widget_children: self.ctx.widget_children.reborrow_mut(),
-        };
         Some(WidgetMut {
-            ctx,
+            ctx: self.ctx.reborrow_mut(),
             widget: self.widget.as_mut_any().downcast_mut()?,
             is_reborrow: true,
         })
@@ -88,17 +74,10 @@ impl<'a> WidgetMut<'a, Box<dyn Widget>> {
     /// Panics if the downcast fails, with an error message that shows the
     /// discrepancy between the expected and actual types.
     pub fn downcast<W2: Widget>(&mut self) -> WidgetMut<'_, W2> {
-        let ctx = MutateCtx {
-            global_state: self.ctx.global_state,
-            parent_widget_state: self.ctx.parent_widget_state,
-            widget_state: self.ctx.widget_state,
-            widget_state_children: self.ctx.widget_state_children.reborrow_mut(),
-            widget_children: self.ctx.widget_children.reborrow_mut(),
-        };
         let w1_name = self.widget.type_name();
         match self.widget.as_mut_any().downcast_mut() {
             Some(widget) => WidgetMut {
-                ctx,
+                ctx: self.ctx.reborrow_mut(),
                 widget,
                 is_reborrow: true,
             },
