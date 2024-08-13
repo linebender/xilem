@@ -60,12 +60,14 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot, root_state: &mut Wi
     } else {
         None
     };
+    // If the pointer is captured, it can either hover its capture target or nothing.
     if let Some(capture_target) = root.state.pointer_capture_target {
         if next_hovered_widget != Some(capture_target) {
             next_hovered_widget = None;
         }
     }
 
+    // "Hovered path" means the widget which is considered hovered, and all its parents.
     let prev_hovered_path = std::mem::take(&mut root.state.hovered_path);
     let next_hovered_path = get_id_path(root, next_hovered_widget);
 
@@ -99,33 +101,29 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot, root_state: &mut Wi
         });
     }
 
-    // TODO - Make sure widgets are iterated from the bottom up
-    for widget_id in &prev_hovered_path {
-        if root
-            .widget_arena
-            .widget_states
-            .find(widget_id.to_raw())
-            .is_some()
-            && root.widget_arena.get_state_mut(*widget_id).item.is_hot
-                != hovered_set.contains(widget_id)
+    // TODO - Make sure widgets are iterated from the bottom up.
+    // TODO - Document the iteration order for update_pointer pass.
+    for widget_id in prev_hovered_path.iter().copied() {
+        if root.widget_arena.has(widget_id)
+            && root.widget_arena.get_state_mut(widget_id).item.is_hot
+                != hovered_set.contains(&widget_id)
         {
-            update_hovered_status_of(root, *widget_id, &hovered_set);
+            update_hovered_status_of(root, widget_id, &hovered_set);
         }
     }
-    for widget_id in &next_hovered_path {
-        if root
-            .widget_arena
-            .widget_states
-            .find(widget_id.to_raw())
-            .is_some()
-            && root.widget_arena.get_state_mut(*widget_id).item.is_hot
-                != hovered_set.contains(widget_id)
+    for widget_id in next_hovered_path.iter().copied() {
+        if root.widget_arena.has(widget_id)
+            && root.widget_arena.get_state_mut(widget_id).item.is_hot
+                != hovered_set.contains(&widget_id)
         {
-            update_hovered_status_of(root, *widget_id, &hovered_set);
+            update_hovered_status_of(root, widget_id, &hovered_set);
         }
     }
 
     // -- UPDATE CURSOR --
+
+    // If the pointer is captured, its cursor always reflects the
+    // capture target, even when not hovered.
     let cursor_source = if let Some(capture_target) = root.state.pointer_capture_target {
         Some(capture_target)
     } else if let Some(next_hovered_widget) = next_hovered_widget {
@@ -142,7 +140,6 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot, root_state: &mut Wi
     };
 
     if root.state.cursor_icon != new_cursor {
-        // TODO - Add methods and `into()` impl to make this more concise.
         root.state
             .signal_queue
             .push_back(RenderRootSignal::SetCursor(new_cursor));
