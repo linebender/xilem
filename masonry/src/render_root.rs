@@ -224,7 +224,22 @@ impl RenderRoot {
         self.root_on_text_event(event)
     }
 
+    /// Registers all fonts that exist in the given data.
+    ///
+    /// Returns a list of pairs each containing the family identifier and fonts
+    /// added to that family.
+    pub fn register_fonts(
+        &mut self,
+        data: Vec<u8>,
+    ) -> Vec<(fontique::FamilyId, Vec<fontique::FontInfo>)> {
+        self.state.font_context.collection.register_fonts(data)
+    }
+
     /// Add a font from its raw data for use in tests.
+    /// The font is added to the fallback chain for Latin scripts.
+    /// This is expected to be used with
+    /// [`RenderRootOptions.use_system_fonts = false`](RenderRootOptions::use_system_fonts)
+    /// to ensure rendering is consistent cross-platform.
     ///
     /// We expect to develop a much more fully-featured font API in the future, but
     /// this is necessary for our testing of Masonry.
@@ -232,8 +247,9 @@ impl RenderRoot {
         &mut self,
         data: Vec<u8>,
     ) -> Vec<(fontique::FamilyId, Vec<fontique::FontInfo>)> {
-        let families = self.state.font_context.collection.register_fonts(data);
-        // TODO: This code doesn't *seem* reasonable
+        let families = self.register_fonts(data);
+        // Make sure that all of these fonts are in the fallback chain for the Latin script.
+        // <https://en.wikipedia.org/wiki/Script_(Unicode)#Latn>
         self.state
             .font_context
             .collection
