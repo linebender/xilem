@@ -97,7 +97,6 @@ pub struct WidgetState {
 
     // TODO - Remove and handle in WidgetRoot instead
     pub(crate) cursor: Option<CursorIcon>,
-    pub(crate) cursor_changed: bool,
 
     pub(crate) text_registrations: Vec<TextFieldRegistration>,
 
@@ -160,7 +159,6 @@ impl WidgetState {
             children: Bloom::new(),
             children_changed: false,
             cursor: None,
-            cursor_changed: false,
             is_explicitly_disabled_new: false,
             text_registrations: Vec::new(),
             update_focus_chain: false,

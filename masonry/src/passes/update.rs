@@ -52,7 +52,6 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot, root_state: &mut Wi
 
     // -- UPDATE HOVERED WIDGETS --
 
-    let hovered_widget = root.state.hovered_path.last().copied();
     let mut next_hovered_widget = if let Some(pos) = pointer_pos {
         // TODO - Apply scale?
         root.get_root_widget()
@@ -126,35 +125,31 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot, root_state: &mut Wi
         }
     }
 
-    root.state.hovered_path = next_hovered_path;
-
     // -- UPDATE CURSOR --
-    // TODO - Rewrite more cleanly
-    let cursor_changed = next_hovered_widget
-        .is_some_and(|id| root.widget_arena.get_state_mut(id).item.cursor_changed);
-    if hovered_widget != next_hovered_widget || cursor_changed {
-        let cursor;
-        if let Some(capture_target) = root.state.pointer_capture_target {
-            let widget = root.widget_arena.get_widget(capture_target).item;
-            cursor = widget.get_cursor();
-        } else if let Some(next_hovered_widget) = next_hovered_widget {
-            let widget = root.widget_arena.get_widget(next_hovered_widget).item;
-            cursor = widget.get_cursor();
-        } else {
-            cursor = CursorIcon::Default;
-        }
+    let cursor_source = if let Some(capture_target) = root.state.pointer_capture_target {
+        Some(capture_target)
+    } else if let Some(next_hovered_widget) = next_hovered_widget {
+        Some(next_hovered_widget)
+    } else {
+        None
+    };
+
+    let new_cursor = if let Some(cursor_source) = cursor_source {
+        let (widget, state) = root.widget_arena.get_pair(cursor_source);
+        state.item.cursor.unwrap_or(widget.item.get_cursor())
+    } else {
+        CursorIcon::Default
+    };
+
+    if root.state.cursor_icon != new_cursor {
         // TODO - Add methods and `into()` impl to make this more concise.
         root.state
             .signal_queue
-            .push_back(RenderRootSignal::SetCursor(cursor));
-
-        if let Some(next_hovered_widget) = next_hovered_widget {
-            root.widget_arena
-                .get_state_mut(next_hovered_widget)
-                .item
-                .cursor_changed = false;
-        }
+            .push_back(RenderRootSignal::SetCursor(new_cursor));
     }
+
+    root.state.cursor_icon = new_cursor;
+    root.state.hovered_path = next_hovered_path;
 
     // Pass root widget state to synthetic state create at beginning of pass
     root_state.merge_up(root.widget_arena.get_state_mut(root.root.id()).item);

@@ -58,6 +58,7 @@ pub(crate) struct RenderRootState {
     pub(crate) next_focused_widget: Option<WidgetId>,
     pub(crate) hovered_path: Vec<WidgetId>,
     pub(crate) pointer_capture_target: Option<WidgetId>,
+    pub(crate) cursor_icon: CursorIcon,
     pub(crate) font_context: FontContext,
     pub(crate) text_layout_context: LayoutContext<TextBrush>,
 }
@@ -121,6 +122,7 @@ impl RenderRoot {
                 next_focused_widget: None,
                 hovered_path: Vec::new(),
                 pointer_capture_target: None,
+                cursor_icon: CursorIcon::Default,
                 font_context: FontContext {
                     collection: Collection::new(CollectionOptions {
                         system_fonts: use_system_fonts,

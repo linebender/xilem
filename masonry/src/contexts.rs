@@ -331,7 +331,6 @@ impl_context_method!(EventCtx<'_>, {
     pub fn set_cursor(&mut self, cursor: &CursorIcon) {
         trace!("set_cursor {:?}", cursor);
         self.widget_state.cursor = Some(*cursor);
-        self.widget_state.cursor_changed = true;
     }
 
     /// Clear the cursor icon.
@@ -343,7 +342,6 @@ impl_context_method!(EventCtx<'_>, {
     pub fn clear_cursor(&mut self) {
         trace!("clear_cursor");
         self.widget_state.cursor = None;
-        self.widget_state.cursor_changed = true;
     }
 });
 
