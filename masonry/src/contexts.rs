@@ -10,7 +10,7 @@ use parley::{FontContext, LayoutContext};
 use tracing::{trace, warn};
 
 use crate::action::Action;
-use crate::render_root::{RenderRootSignal, RenderRootState};
+use crate::render_root::{MutateCallback, RenderRootSignal, RenderRootState};
 use crate::text::TextBrush;
 use crate::text_helpers::{ImeChangeSignal, TextFieldRegistration};
 use crate::tree_arena::ArenaMutChildren;
@@ -34,14 +34,14 @@ macro_rules! impl_context_method {
 /// A context provided inside of [`WidgetMut`].
 ///
 /// When you declare a mutable reference type for your widget, methods of this type
-/// will have access to a `WidgetCtx`. If that method mutates the widget in a way that
+/// will have access to a `MutateCtx`. If that method mutates the widget in a way that
 /// requires a later pass (for instance, if your widget has a `set_color` method),
 /// you will need to signal that change in the pass (eg `request_paint`).
 ///
 // TODO add tutorial - See https://github.com/linebender/xilem/issues/376
-pub struct WidgetCtx<'a> {
+pub struct MutateCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
-    pub(crate) parent_widget_state: &'a mut WidgetState,
+    pub(crate) parent_widget_state: Option<&'a mut WidgetState>,
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) widget_state_children: ArenaMutChildren<'a, WidgetState>,
     pub(crate) widget_children: ArenaMutChildren<'a, Box<dyn Widget>>,
@@ -110,7 +110,7 @@ pub struct AccessCtx<'a> {
 // --- MARK: GETTERS ---
 // Methods for all context types
 impl_context_method!(
-    WidgetCtx<'_>,
+    MutateCtx<'_>,
     EventCtx<'_>,
     LifeCycleCtx<'_>,
     LayoutCtx<'_>,
@@ -158,7 +158,7 @@ impl_context_method!(
 
 // Methods for all mutable context types
 impl_context_method!(
-    WidgetCtx<'_>,
+    MutateCtx<'_>,
     EventCtx<'_>,
     LifeCycleCtx<'_>,
     LayoutCtx<'_>,
@@ -184,7 +184,7 @@ impl_context_method!(
 // Methods on all context types except LayoutCtx
 // These methods access layout info calculated during the layout pass.
 impl_context_method!(
-    WidgetCtx<'_>,
+    MutateCtx<'_>,
     EventCtx<'_>,
     LifeCycleCtx<'_>,
     PaintCtx<'_>,
@@ -226,7 +226,7 @@ impl_context_method!(
 // Methods on all context types except LayoutCtx
 // Access status information (hot/active/disabled/etc).
 impl_context_method!(
-    WidgetCtx<'_>,
+    MutateCtx<'_>,
     EventCtx<'_>,
     LifeCycleCtx<'_>,
     PaintCtx<'_>,
@@ -347,7 +347,7 @@ impl_context_method!(EventCtx<'_>, {
 
 // --- MARK: WIDGET_MUT ---
 // Methods to get a child WidgetMut from a parent.
-impl<'a> WidgetCtx<'a> {
+impl<'a> MutateCtx<'a> {
     /// Return a [`WidgetMut`] to a child widget.
     pub fn get_mut<'c, Child: Widget>(
         &'c mut self,
@@ -361,9 +361,9 @@ impl<'a> WidgetCtx<'a> {
             .widget_children
             .get_child_mut(child.id().to_raw())
             .expect("get_mut: child not found");
-        let child_ctx = WidgetCtx {
+        let child_ctx = MutateCtx {
             global_state: self.global_state,
-            parent_widget_state: self.widget_state,
+            parent_widget_state: Some(&mut self.widget_state),
             widget_state: child_state_mut.item,
             widget_state_children: child_state_mut.children,
             widget_children: child_mut.children,
@@ -371,76 +371,26 @@ impl<'a> WidgetCtx<'a> {
         WidgetMut {
             ctx: child_ctx,
             widget: child_mut.item.as_mut_dyn_any().downcast_mut().unwrap(),
-            is_reborrow: false,
         }
     }
-}
 
-// TODO - It's not clear whether EventCtx should be able to create a WidgetMut.
-// One of the examples currently uses that feature to change a child widget's color
-// in reaction to mouse events, but we might want to address that use-case differently.
-impl<'a> EventCtx<'a> {
-    /// Return a [`WidgetMut`] to a child widget.
-    pub fn get_mut<'c, Child: Widget>(
-        &'c mut self,
-        child: &'c mut WidgetPod<Child>,
-    ) -> WidgetMut<'c, Child> {
-        let child_state_mut = self
-            .widget_state_children
-            .get_child_mut(child.id().to_raw())
-            .expect("get_mut: child not found");
-        let child_mut = self
-            .widget_children
-            .get_child_mut(child.id().to_raw())
-            .expect("get_mut: child not found");
-        let child_ctx = WidgetCtx {
+    pub(crate) fn reborrow_mut(&mut self) -> MutateCtx<'_> {
+        MutateCtx {
             global_state: self.global_state,
-            parent_widget_state: self.widget_state,
-            widget_state: child_state_mut.item,
-            widget_state_children: child_state_mut.children,
-            widget_children: child_mut.children,
-        };
-        WidgetMut {
-            ctx: child_ctx,
-            widget: child_mut.item.as_mut_dyn_any().downcast_mut().unwrap(),
-            is_reborrow: false,
-        }
-    }
-}
-
-// TODO - It's not clear whether LifeCycleCtx should be able to create a WidgetMut.
-impl<'a> LifeCycleCtx<'a> {
-    /// Return a [`WidgetMut`] to a child widget.
-    pub fn get_mut<'c, Child: Widget>(
-        &'c mut self,
-        child: &'c mut WidgetPod<Child>,
-    ) -> WidgetMut<'c, Child> {
-        let child_state_mut = self
-            .widget_state_children
-            .get_child_mut(child.id().to_raw())
-            .expect("get_mut: child not found");
-        let child_mut = self
-            .widget_children
-            .get_child_mut(child.id().to_raw())
-            .expect("get_mut: child not found");
-        let child_ctx = WidgetCtx {
-            global_state: self.global_state,
-            parent_widget_state: self.widget_state,
-            widget_state: child_state_mut.item,
-            widget_state_children: child_state_mut.children,
-            widget_children: child_mut.children,
-        };
-        WidgetMut {
-            ctx: child_ctx,
-            widget: child_mut.item.as_mut_dyn_any().downcast_mut().unwrap(),
-            is_reborrow: false,
+            // We don't don't reborrow `parent_widget_state`. This avoids running
+            // `merge_up` in `WidgetMut::Drop` multiple times for the same state.
+            // It will still be called when the original borrow is dropped.
+            parent_widget_state: None,
+            widget_state: self.widget_state,
+            widget_state_children: self.widget_state_children.reborrow_mut(),
+            widget_children: self.widget_children.reborrow_mut(),
         }
     }
 }
 
 // --- MARK: UPDATE FLAGS ---
-// Methods on WidgetCtx, EventCtx, and LifeCycleCtx
-impl_context_method!(WidgetCtx<'_>, EventCtx<'_>, LifeCycleCtx<'_>, {
+// Methods on MutateCtx, EventCtx, and LifeCycleCtx
+impl_context_method!(MutateCtx<'_>, EventCtx<'_>, LifeCycleCtx<'_>, {
     /// Request a [`paint`](crate::Widget::paint) pass.
     pub fn request_paint(&mut self) {
         trace!("request_paint");
@@ -540,11 +490,41 @@ impl_context_method!(WidgetCtx<'_>, EventCtx<'_>, LifeCycleCtx<'_>, {
 // --- MARK: OTHER METHODS ---
 // Methods on all context types except PaintCtx and AccessCtx
 impl_context_method!(
-    WidgetCtx<'_>,
+    MutateCtx<'_>,
     EventCtx<'_>,
     LifeCycleCtx<'_>,
     LayoutCtx<'_>,
     {
+        // TODO - Remove from MutateCtx?
+        /// Queue a callback that will be called with a [`WidgetMut`] for this widget.
+        ///
+        /// The callbacks will be run in the order they were submitted during the mutate pass.
+        pub fn mutate_self_later(
+            &mut self,
+            f: impl FnOnce(WidgetMut<'_, Box<dyn Widget>>) + Send + 'static,
+        ) {
+            let callback = MutateCallback {
+                id: self.widget_state.id,
+                callback: Box::new(f),
+            };
+            self.global_state.mutate_callbacks.push(callback);
+        }
+
+        /// Queue a callback that will be called with a [`WidgetMut`] for the given child widget.
+        ///
+        /// The callbacks will be run in the order they were submitted during the mutate pass.
+        pub fn mutate_later<W: Widget>(
+            &mut self,
+            child: &mut WidgetPod<W>,
+            f: impl FnOnce(WidgetMut<'_, W>) + Send + 'static,
+        ) {
+            let callback = MutateCallback {
+                id: child.id(),
+                callback: Box::new(|mut widget_mut| f(widget_mut.downcast())),
+            };
+            self.global_state.mutate_callbacks.push(callback);
+        }
+
         /// Submit an [`Action`].
         ///
         /// Note: Actions are still a WIP feature.

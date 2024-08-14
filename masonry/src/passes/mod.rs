@@ -5,6 +5,7 @@ use crate::widget::WidgetArena;
 use crate::WidgetId;
 
 pub mod event;
+pub mod mutate;
 pub mod update;
 
 pub(crate) fn merge_state_up(arena: &mut WidgetArena, widget_id: WidgetId) {
