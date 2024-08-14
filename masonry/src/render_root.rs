@@ -20,6 +20,7 @@ use crate::contexts::{LayoutCtx, LifeCycleCtx, PaintCtx};
 use crate::debug_logger::DebugLogger;
 use crate::dpi::{LogicalPosition, LogicalSize, PhysicalSize};
 use crate::event::{PointerEvent, TextEvent, WindowEvent};
+use crate::passes::compose::root_compose;
 use crate::passes::event::{root_on_access_event, root_on_pointer_event, root_on_text_event};
 use crate::passes::mutate::{mutate_widget, run_mutate_pass};
 use crate::passes::update::run_update_pointer_pass;
@@ -603,11 +604,8 @@ impl RenderRoot {
             self.state.debug_logger.layout_tree.root = Some(self.root.id().to_raw() as u32);
         }
 
-        if self.root_state().needs_window_origin && !self.root_state().needs_layout {
-            let event = LifeCycle::Internal(InternalLifeCycle::ParentWindowOrigin {
-                mouse_pos: self.last_mouse_pos,
-            });
-            self.root_lifecycle(event);
+        if self.root_state().needs_compose && !self.root_state().needs_layout {
+            root_compose(self, widget_state);
         }
 
         // Update the disabled state if necessary

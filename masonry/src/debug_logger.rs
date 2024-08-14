@@ -207,7 +207,6 @@ impl DebugLogger {
             StateTree::new("is_explicitly_disabled", w_state.is_explicitly_disabled),
             StateTree::new("is_hot", w_state.is_hot),
             StateTree::new("needs_layout", w_state.needs_layout),
-            StateTree::new("needs_window_origin", w_state.needs_window_origin),
             StateTree::new("has_focus", w_state.has_focus),
             StateTree::new("request_anim", w_state.request_anim),
             StateTree::new("children_changed", w_state.children_changed),

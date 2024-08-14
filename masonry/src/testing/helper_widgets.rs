@@ -30,6 +30,7 @@ pub type AccessEventFn<S> = dyn FnMut(&mut S, &mut EventCtx, &AccessEvent);
 pub type StatusChangeFn<S> = dyn FnMut(&mut S, &mut LifeCycleCtx, &StatusChange);
 pub type LifeCycleFn<S> = dyn FnMut(&mut S, &mut LifeCycleCtx, &LifeCycle);
 pub type LayoutFn<S> = dyn FnMut(&mut S, &mut LayoutCtx, &BoxConstraints) -> Size;
+pub type ComposeFn<S> = dyn FnMut(&mut S, &mut ComposeCtx);
 pub type PaintFn<S> = dyn FnMut(&mut S, &mut PaintCtx, &mut Scene);
 pub type RoleFn<S> = dyn Fn(&S) -> Role;
 pub type AccessFn<S> = dyn FnMut(&mut S, &mut AccessCtx);
@@ -49,6 +50,7 @@ pub struct ModularWidget<S> {
     on_status_change: Option<Box<StatusChangeFn<S>>>,
     lifecycle: Option<Box<LifeCycleFn<S>>>,
     layout: Option<Box<LayoutFn<S>>>,
+    compose: Option<Box<ComposeFn<S>>>,
     paint: Option<Box<PaintFn<S>>>,
     role: Option<Box<RoleFn<S>>>,
     access: Option<Box<AccessFn<S>>>,
@@ -96,6 +98,7 @@ pub enum Record {
     SC(StatusChange),
     L(LifeCycle),
     Layout(Size),
+    Compose,
     Paint,
     Access,
 }
@@ -126,6 +129,7 @@ impl<S> ModularWidget<S> {
             on_status_change: None,
             lifecycle: None,
             layout: None,
+            compose: None,
             paint: None,
             role: None,
             access: None,
@@ -181,6 +185,11 @@ impl<S> ModularWidget<S> {
         self
     }
 
+    pub fn compose_fn(mut self, f: impl FnMut(&mut S, &mut ComposeCtx) + 'static) -> Self {
+        self.compose = Some(Box::new(f));
+        self
+    }
+
     pub fn paint_fn(mut self, f: impl FnMut(&mut S, &mut PaintCtx, &mut Scene) + 'static) -> Self {
         self.paint = Some(Box::new(f));
         self
@@ -205,6 +214,8 @@ impl<S> ModularWidget<S> {
     }
 }
 
+// TODO
+// #[warn(clippy::missing_trait_methods)]
 impl<S: 'static> Widget for ModularWidget<S> {
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &event::PointerEvent) {
         if let Some(f) = self.on_pointer_event.as_mut() {
@@ -246,6 +257,12 @@ impl<S: 'static> Widget for ModularWidget<S> {
             .as_mut()
             .map(|f| f(state, ctx, bc))
             .unwrap_or_else(|| Size::new(100., 100.))
+    }
+
+    fn compose(&mut self, ctx: &mut ComposeCtx) {
+        if let Some(f) = self.compose.as_mut() {
+            f(&mut self.state, ctx);
+        }
     }
 
     fn accessibility_role(&self) -> Role {
@@ -299,17 +316,11 @@ impl Widget for ReplaceChild {
         self.child.on_event(ctx, event)
     }
 
-    fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &event::PointerEvent) {
-        todo!()
-    }
+    fn on_pointer_event(&mut self, _ctx: &mut EventCtx, _event: &event::PointerEvent) {}
 
-    fn on_text_event(&mut self, ctx: &mut EventCtx, event: &event::TextEvent) {
-        todo!()
-    }
+    fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &event::TextEvent) {}
 
-    fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {
-        todo!()
-    }
+    fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {}
 
     fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, _event: &StatusChange) {
         ctx.request_layout();
@@ -322,6 +333,8 @@ impl Widget for ReplaceChild {
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
         self.child.layout(ctx, bc)
     }
+
+    fn compose(&mut self, _ctx: &mut ComposeCtx) {}
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
         self.child.paint(ctx, scene);
@@ -401,6 +414,11 @@ impl<W: Widget> Widget for Recorder<W> {
         let size = self.child.layout(ctx, bc);
         self.recording.push(Record::Layout(size));
         size
+    }
+
+    fn compose(&mut self, ctx: &mut ComposeCtx) {
+        self.recording.push(Record::Compose);
+        self.child.compose(ctx);
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {

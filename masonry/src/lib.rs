@@ -130,8 +130,8 @@ mod tree_arena;
 pub use action::Action;
 pub use box_constraints::BoxConstraints;
 pub use contexts::{
-    AccessCtx, EventCtx, IsContext, LayoutCtx, LifeCycleCtx, MutateCtx, PaintCtx, RawWrapper,
-    RawWrapperMut,
+    AccessCtx, ComposeCtx, EventCtx, IsContext, LayoutCtx, LifeCycleCtx, MutateCtx, PaintCtx,
+    RawWrapper, RawWrapperMut,
 };
 pub use event::{
     AccessEvent, InternalLifeCycle, LifeCycle, PointerButton, PointerEvent, PointerState,

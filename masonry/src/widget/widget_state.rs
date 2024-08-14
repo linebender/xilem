@@ -6,9 +6,15 @@
 use std::sync::atomic::{AtomicBool, Ordering};
 use vello::kurbo::{Insets, Point, Rect, Size};
 
+use kurbo::Vec2;
+
 use crate::bloom::Bloom;
 use crate::text_helpers::TextFieldRegistration;
 use crate::{CursorIcon, WidgetId};
+
+// TODO - Sort out names of widget state flags in two categories:
+// - request_xxx: means this widget needs the xxx pass to run on it
+// - needs_xxx: means this widget or one of its descendants has requested the xxx pass
 
 // FIXME https://github.com/linebender/xilem/issues/376 - Make a note documenting this: the only way to get a &mut WidgetState should be in a pass.
 // A pass should reborrow the parent widget state (to avoid crossing wires) and call merge_up at
@@ -37,14 +43,14 @@ pub struct WidgetState {
     pub(crate) id: WidgetId,
 
     // --- LAYOUT ---
-    /// The size of the child; this is the value returned by the child's layout
+    /// The size of the widget; this is the value returned by the widget's layout
     /// method.
     pub(crate) size: Size,
-    /// The origin of the child in the parent's coordinate space; together with
-    /// `size` these constitute the child's layout rect.
+    /// The origin of the widget in the parent's coordinate space; together with
+    /// `size` these constitute the widget's layout rect.
     pub(crate) origin: Point,
-    /// The origin of the parent in the window coordinate space;
-    pub(crate) parent_window_origin: Point,
+    /// The origin of the widget in the window coordinate space;
+    pub(crate) window_origin: Point,
     /// The insets applied to the layout rect to generate the paint rect.
     /// In general, these will be zero; the exception is for things like
     /// drop shadows or overflowing text.
@@ -61,6 +67,11 @@ pub struct WidgetState {
     // TODO - Document
     pub(crate) is_portal: bool,
 
+    pub(crate) request_compose: bool,
+    // TODO - Handle matrix transforms
+    pub(crate) translation: Vec2,
+    pub(crate) translation_changed: bool,
+
     // --- PASSES ---
 
     // TODO: consider using bitflags for the booleans.
@@ -76,11 +87,9 @@ pub struct WidgetState {
     pub(crate) is_explicitly_disabled_new: bool,
 
     pub(crate) needs_layout: bool,
+    pub(crate) needs_compose: bool,
     pub(crate) needs_paint: bool,
     pub(crate) needs_accessibility_update: bool,
-
-    /// Because of some scrolling or something, `parent_window_origin` needs to be updated.
-    pub(crate) needs_window_origin: bool,
 
     /// Any descendant has requested an animation frame.
     pub(crate) request_anim: bool,
@@ -137,21 +146,24 @@ impl WidgetState {
         WidgetState {
             id,
             origin: Point::ORIGIN,
-            parent_window_origin: Point::ORIGIN,
+            window_origin: Point::ORIGIN,
             size: Size::ZERO,
             is_expecting_place_child_call: false,
             paint_insets: Insets::ZERO,
             local_paint_rect: Rect::ZERO,
             is_portal: false,
+            request_compose: true,
+            translation: Vec2::ZERO,
+            translation_changed: false,
             children_disabled_changed: false,
             ancestor_disabled: false,
             is_explicitly_disabled: false,
             baseline_offset: 0.0,
             is_hot: false,
             needs_layout: true,
+            needs_compose: true,
             needs_paint: true,
             needs_accessibility_update: true,
-            needs_window_origin: true,
             has_focus: false,
             request_anim: true,
             request_accessibility_update: true,
@@ -179,7 +191,8 @@ impl WidgetState {
             needs_layout: false,
             needs_paint: false,
             needs_accessibility_update: false,
-            needs_window_origin: false,
+            needs_compose: false,
+            request_compose: false,
             request_accessibility_update: false,
             request_anim: false,
             children_changed: false,
@@ -217,8 +230,8 @@ impl WidgetState {
     /// This method is idempotent and can be called multiple times.
     pub(crate) fn merge_up(&mut self, child_state: &mut WidgetState) {
         self.needs_layout |= child_state.needs_layout;
+        self.needs_compose |= child_state.needs_compose;
         self.needs_paint |= child_state.needs_paint;
-        self.needs_window_origin |= child_state.needs_window_origin;
         self.request_anim |= child_state.request_anim;
         self.request_accessibility_update |= child_state.request_accessibility_update;
         self.children_disabled_changed |= child_state.children_disabled_changed;
@@ -259,7 +272,7 @@ impl WidgetState {
     }
 
     pub(crate) fn window_origin(&self) -> Point {
-        self.parent_window_origin + self.origin.to_vec2()
+        self.window_origin
     }
 }
 

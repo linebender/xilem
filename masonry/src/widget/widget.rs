@@ -12,6 +12,7 @@ use smallvec::SmallVec;
 use tracing::{trace_span, Span};
 use vello::Scene;
 
+use crate::contexts::ComposeCtx;
 use crate::event::{AccessEvent, PointerEvent, StatusChange, TextEvent};
 use crate::{
     AccessCtx, AsAny, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Size,
@@ -104,6 +105,8 @@ pub trait Widget: AsAny {
     ///
     /// The layout strategy is strongly inspired by Flutter.
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size;
+
+    fn compose(&mut self, ctx: &mut ComposeCtx) {}
 
     /// Paint the widget appearance.
     ///
@@ -306,6 +309,10 @@ impl Widget for Box<dyn Widget> {
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
         self.deref_mut().layout(ctx, bc)
+    }
+
+    fn compose(&mut self, ctx: &mut ComposeCtx) {
+        self.deref_mut().compose(ctx);
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {

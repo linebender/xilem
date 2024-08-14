@@ -6,6 +6,7 @@
 use std::time::Duration;
 
 use accesskit::{NodeBuilder, TreeUpdate};
+use kurbo::Vec2;
 use parley::{FontContext, LayoutContext};
 use tracing::{trace, warn};
 
@@ -84,6 +85,13 @@ pub struct LayoutCtx<'a> {
     pub(crate) mouse_pos: Option<Point>,
 }
 
+pub struct ComposeCtx<'a> {
+    pub(crate) global_state: &'a mut RenderRootState,
+    pub(crate) widget_state: &'a mut WidgetState,
+    pub(crate) widget_state_children: ArenaMutChildren<'a, WidgetState>,
+    pub(crate) widget_children: ArenaMutChildren<'a, Box<dyn Widget>>,
+}
+
 /// A context passed to paint methods of widgets.
 pub struct PaintCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
@@ -114,6 +122,7 @@ impl_context_method!(
     EventCtx<'_>,
     LifeCycleCtx<'_>,
     LayoutCtx<'_>,
+    ComposeCtx<'_>,
     PaintCtx<'_>,
     AccessCtx<'_>,
     {
@@ -187,6 +196,7 @@ impl_context_method!(
     MutateCtx<'_>,
     EventCtx<'_>,
     LifeCycleCtx<'_>,
+    ComposeCtx<'_>,
     PaintCtx<'_>,
     AccessCtx<'_>,
     {
@@ -229,6 +239,7 @@ impl_context_method!(
     MutateCtx<'_>,
     EventCtx<'_>,
     LifeCycleCtx<'_>,
+    ComposeCtx<'_>,
     PaintCtx<'_>,
     AccessCtx<'_>,
     {
@@ -412,6 +423,17 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, LifeCycleCtx<'_>, {
         self.widget_state.needs_layout = true;
     }
 
+    // TODO - Document better
+    /// Request a compose pass.
+    ///
+    /// The compose pass is often cheaper than the layout pass, because it can only transform individual widgets' position.
+    /// [`compose`]: crate::Widget::compose
+    pub fn request_compose(&mut self) {
+        trace!("request_compose");
+        self.widget_state.needs_compose = true;
+        self.widget_state.request_compose = true;
+    }
+
     pub fn request_accessibility_update(&mut self) {
         trace!("request_accessibility_update");
         self.widget_state.needs_accessibility_update = true;
@@ -494,6 +516,7 @@ impl_context_method!(
     EventCtx<'_>,
     LifeCycleCtx<'_>,
     LayoutCtx<'_>,
+    ComposeCtx<'_>,
     {
         // TODO - Remove from MutateCtx?
         /// Queue a callback that will be called with a [`WidgetMut`] for this widget.
@@ -847,7 +870,7 @@ impl LayoutCtx<'_> {
         self.assert_layout_done(child, "place_child");
         if origin != self.get_child_state_mut(child).origin {
             self.get_child_state_mut(child).origin = origin;
-            self.get_child_state_mut(child).needs_window_origin = true;
+            self.get_child_state_mut(child).translation_changed = true;
         }
         self.get_child_state_mut(child)
             .is_expecting_place_child_call = false;
@@ -856,6 +879,19 @@ impl LayoutCtx<'_> {
             .widget_state
             .local_paint_rect
             .union(self.get_child_state(child).paint_rect());
+    }
+}
+
+impl ComposeCtx<'_> {
+    pub fn needs_compose(&self) -> bool {
+        self.widget_state.needs_compose
+    }
+
+    pub fn set_child_translation(&mut self, translation: Vec2) {
+        if self.widget_state.translation != translation {
+            self.widget_state.translation = translation;
+            self.widget_state.translation_changed = true;
+        }
     }
 }
 

@@ -372,6 +372,38 @@ impl<'a, Item> ArenaMutChildren<'a, Item> {
     }
 }
 
+impl<'a, Item> ArenaRef<'a, Item> {
+    pub fn id(&self) -> u64 {
+        self.children.id.unwrap()
+    }
+}
+
+impl<'a, Item> ArenaMut<'a, Item> {
+    pub fn id(&self) -> u64 {
+        self.children.id.unwrap()
+    }
+
+    /// Returns a shared token equivalent to this one.
+    pub fn reborrow(&mut self) -> ArenaRef<'_, Item> {
+        ArenaRef {
+            parent_id: self.parent_id,
+            item: self.item,
+            children: self.children.reborrow(),
+        }
+    }
+
+    /// Returns a mutable token equivalent to this one.
+    ///
+    /// This is sometimes useful to work with the borrow checker.
+    pub fn reborrow_mut(&mut self) -> ArenaMut<'_, Item> {
+        ArenaMut {
+            parent_id: self.parent_id,
+            item: self.item,
+            children: self.children.reborrow_mut(),
+        }
+    }
+}
+
 // This is a sketch of what the unsafe version of this code would look like,
 // one with an actual arena.
 #[cfg(FALSE)]
