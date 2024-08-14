@@ -170,7 +170,10 @@ impl WidgetState {
         }
     }
 
-    pub(crate) fn root(id: WidgetId, size: Size) -> WidgetState {
+    /// Create a dummy root state.
+    ///
+    /// This is useful for passes that need a parent state for the root widget.
+    pub(crate) fn synthetic(id: WidgetId, size: Size) -> WidgetState {
         WidgetState {
             size,
             needs_layout: false,
@@ -178,6 +181,7 @@ impl WidgetState {
             needs_accessibility_update: false,
             needs_window_origin: false,
             request_accessibility_update: false,
+            request_anim: false,
             children_changed: false,
             update_focus_chain: false,
             ..WidgetState::new(id, "<root>")

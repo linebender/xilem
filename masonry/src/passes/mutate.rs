@@ -13,7 +13,7 @@ pub(crate) fn mutate_widget<R>(
     id: WidgetId,
     mutate_fn: impl FnOnce(WidgetMut<'_, Box<dyn Widget>>) -> R,
 ) -> R {
-    let mut dummy_state = WidgetState::root(root.root.id(), root.get_kurbo_size());
+    let mut dummy_state = WidgetState::synthetic(root.root.id(), root.get_kurbo_size());
     let (widget_mut, state_mut) = root.widget_arena.get_pair_mut(id);
 
     let _span = info_span!("mutate_widget", name = widget_mut.item.short_type_name()).entered();
