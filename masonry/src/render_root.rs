@@ -354,7 +354,7 @@ impl RenderRoot {
         let mut root_state = self.widget_arena.get_state_mut(self.root.id()).item.clone();
         self.post_event_processing(&mut root_state);
 
-        res.unwrap()
+        res
     }
 
     // --- MARK: POINTER_EVENT ---
