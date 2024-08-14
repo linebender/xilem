@@ -4233,9 +4233,9 @@ name = "xilem"
 version = "0.1.0"
 dependencies = [
  "accesskit",
- "accesskit_winit",
  "masonry",
  "smallvec",
+ "time",
  "tokio",
  "tracing",
  "vello",

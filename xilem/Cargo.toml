@@ -68,7 +68,9 @@ accesskit.workspace = true
 tokio = { version = "1.39.1", features = ["rt", "rt-multi-thread", "time"] }
 
 [dev-dependencies]
-accesskit_winit.workspace = true
+# accesskit_winit.workspace = true
+# Used for `variable_clock`
+time.workspace = true
 
 [target.'cfg(target_os = "android")'.dev-dependencies]
 winit = { features = ["android-native-activity"], workspace = true }

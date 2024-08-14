@@ -83,6 +83,52 @@ fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
     Ok(())
 }
 
+/// A possible timezone, with an offset from UTC.
+struct TimeZone {
+    /// An approximate region which this offset applies to.
+    region: &'static str,
+    /// The offset from UTC of
+    offset: time::UtcOffset,
+}
+
+/// A shorthand for creating a [`TimeZone`].
+const fn tz(region: &'static str, offset: i8) -> TimeZone {
+    TimeZone {
+        region,
+        offset: match time::UtcOffset::from_hms(offset, 0, 0) {
+            Ok(it) => it,
+            Err(_) => {
+                panic!("Component out of range.");
+            }
+        },
+    }
+}
+
+/// A static list of timezones to display. All regions selected do not observe daylight savings time.
+///
+/// The timezones were determined on 2024-08-14.
+const TIMEZONES: &[TimeZone] = &[
+    tz("Hawaii", -10),
+    tz("Pitcairn Islands", -8),
+    tz("Arizona", -7),
+    tz("Saskatchewan", -6),
+    tz("Peru", -5),
+    tz("Barbados", -4),
+    tz("Martinique", -4),
+    tz("Uruguay", -3),
+    tz("Iceland", 0),
+    tz("Tunisia", 1),
+    tz("Mozambique", 2),
+    tz("Qatar", 3),
+    tz("Azerbaijan", 4),
+    tz("Pakistan", 5),
+    tz("Bangladesh", 6),
+    tz("Thailand", 7),
+    tz("Singapore", 8),
+    tz("Japan", 9),
+    tz("Queensland", 10),
+];
+
 #[cfg(not(target_os = "android"))]
 #[allow(dead_code)]
 // This is treated as dead code by the Android version of the example, but is actually live
