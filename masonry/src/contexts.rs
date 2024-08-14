@@ -41,7 +41,7 @@ macro_rules! impl_context_method {
 // TODO add tutorial - See https://github.com/linebender/xilem/issues/376
 pub struct MutateCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
-    pub(crate) parent_widget_state: &'a mut WidgetState,
+    pub(crate) parent_widget_state: Option<&'a mut WidgetState>,
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) widget_state_children: ArenaMutChildren<'a, WidgetState>,
     pub(crate) widget_children: ArenaMutChildren<'a, Box<dyn Widget>>,
@@ -363,7 +363,7 @@ impl<'a> MutateCtx<'a> {
             .expect("get_mut: child not found");
         let child_ctx = MutateCtx {
             global_state: self.global_state,
-            parent_widget_state: self.widget_state,
+            parent_widget_state: Some(&mut self.widget_state),
             widget_state: child_state_mut.item,
             widget_state_children: child_state_mut.children,
             widget_children: child_mut.children,
@@ -371,14 +371,16 @@ impl<'a> MutateCtx<'a> {
         WidgetMut {
             ctx: child_ctx,
             widget: child_mut.item.as_mut_dyn_any().downcast_mut().unwrap(),
-            is_reborrow: false,
         }
     }
 
     pub(crate) fn reborrow_mut(&mut self) -> MutateCtx<'_> {
         MutateCtx {
             global_state: self.global_state,
-            parent_widget_state: self.parent_widget_state,
+            // We don't don't reborrow parent_widget_state. This means a WidgetMut
+            // made from this won't merge state on Drop, which is usually what you want
+            // from a reborrowed WidgetMut.
+            parent_widget_state: None,
             widget_state: self.widget_state,
             widget_state_children: self.widget_state_children.reborrow_mut(),
             widget_children: self.widget_children.reborrow_mut(),

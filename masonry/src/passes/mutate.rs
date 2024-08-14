@@ -13,23 +13,20 @@ pub(crate) fn mutate_widget<R>(
     id: WidgetId,
     mutate_fn: impl FnOnce(WidgetMut<'_, Box<dyn Widget>>) -> R,
 ) -> R {
-    let mut dummy_state = WidgetState::synthetic(root.root.id(), root.get_kurbo_size());
     let (widget_mut, state_mut) = root.widget_arena.get_pair_mut(id);
 
     let _span = info_span!("mutate_widget", name = widget_mut.item.short_type_name()).entered();
+    // NOTE - parent_widget_state can be None here, because the loop below will merge the
+    // state up to the root.
     let root_widget = WidgetMut {
         ctx: MutateCtx {
             global_state: &mut root.state,
-            // FIXME - This works in practice, because the loop below will merge the
-            // state up to the root. But it's semantically awkward.
-            // parent_widget_state should probably be an Option.
-            parent_widget_state: &mut dummy_state,
+            parent_widget_state: None,
             widget_state: state_mut.item,
             widget_state_children: state_mut.children,
             widget_children: widget_mut.children,
         },
         widget: widget_mut.item,
-        is_reborrow: false,
     };
 
     let result = mutate_fn(root_widget);

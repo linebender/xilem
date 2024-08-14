@@ -328,7 +328,6 @@ impl RenderRoot {
             let widget_mut = WidgetMut {
                 ctx: widget_mut.ctx.reborrow_mut(),
                 widget,
-                is_reborrow: true,
             };
             f(widget_mut)
         });
