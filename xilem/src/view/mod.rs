@@ -22,6 +22,9 @@ pub use spinner::*;
 mod label;
 pub use label::*;
 
+mod progress_bar;
+pub use progress_bar::*;
+
 mod prose;
 pub use prose::*;
 
