@@ -1,7 +1,7 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use kurbo::{Point, Vec2};
+use kurbo::Vec2;
 use tracing::info_span;
 
 use crate::render_root::{RenderRoot, RenderRootState};
@@ -51,7 +51,7 @@ fn compose_widget(
 ) {
     let moved = parent_moved || state.item.translation_changed;
     let translation = parent_translation + state.item.translation + state.item.origin.to_vec2();
-    state.item.window_origin = Point::new(translation.x, translation.y);
+    state.item.window_origin = translation.to_point();
 
     let mut ctx = ComposeCtx {
         global_state,

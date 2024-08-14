@@ -424,7 +424,7 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, LifeCycleCtx<'_>, {
     }
 
     // TODO - Document better
-    /// Request a compose pass.
+    /// Request a [`compose`] pass.
     ///
     /// The compose pass is often cheaper than the layout pass, because it can only transform individual widgets' position.
     /// [`compose`]: crate::Widget::compose
