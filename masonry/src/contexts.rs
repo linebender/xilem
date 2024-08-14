@@ -493,6 +493,9 @@ impl_context_method!(
     LifeCycleCtx<'_>,
     LayoutCtx<'_>,
     {
+        /// Queue a callback that will be called with a [`WidgetMut`] for this widget.
+        ///
+        /// The callbacks will be run in the order they were submitted during the mutate pass.
         pub fn mutate_self_later(
             &mut self,
             f: impl FnOnce(WidgetMut<'_, Box<dyn Widget>>) + Send + 'static,
@@ -504,6 +507,9 @@ impl_context_method!(
             self.global_state.mutate_callbacks.push(callback);
         }
 
+        /// Queue a callback that will be called with a [`WidgetMut`] for the given child widget.
+        ///
+        /// The callbacks will be run in the order they were submitted during the mutate pass.
         pub fn mutate_later<W: Widget>(
             &mut self,
             child: &mut WidgetPod<W>,

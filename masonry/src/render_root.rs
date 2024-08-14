@@ -278,7 +278,7 @@ impl RenderRoot {
         self.cursor_icon
     }
 
-    // --- MARK: GET ROOT---
+    // --- MARK: ACCESS WIDGETS---
     pub fn get_root_widget(&self) -> WidgetRef<dyn Widget> {
         let root_state_token = self.widget_arena.widget_states.root_token();
         let root_widget_token = self.widget_arena.widgets.root_token();
@@ -318,8 +318,7 @@ impl RenderRoot {
         // TODO - Factor out into a "pre-event" function?
         self.state.next_focused_widget = self.state.focused_widget;
 
-        let mut res = None;
-        mutate_widget(self, self.root.id(), |mut widget_mut| {
+        let res = mutate_widget(self, self.root.id(), |mut widget_mut| {
             // Our WidgetArena stores all widgets as Box<dyn Widget>, but the "true"
             // type of our root widget is *also* Box<dyn Widget>. We downcast so we
             // don't add one more level of indirection to this.
@@ -333,14 +332,13 @@ impl RenderRoot {
                 widget,
                 is_reborrow: true,
             };
-
-            res = Some(f(widget_mut));
+            f(widget_mut)
         });
 
         root_state.merge_up(self.widget_arena.get_state_mut(self.root.id()).item);
         self.post_event_processing(&mut root_state);
 
-        res.unwrap()
+        res
     }
 
     /// Get a [`WidgetMut`] to a specific widget.
