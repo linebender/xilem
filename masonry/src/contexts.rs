@@ -377,9 +377,9 @@ impl<'a> MutateCtx<'a> {
     pub(crate) fn reborrow_mut(&mut self) -> MutateCtx<'_> {
         MutateCtx {
             global_state: self.global_state,
-            // We don't don't reborrow parent_widget_state. This means a WidgetMut
-            // made from this won't merge state on Drop, which is usually what you want
-            // from a reborrowed WidgetMut.
+            // We don't don't reborrow `parent_widget_state`. This avoids running
+            // `merge_up` in `WidgetMut::Drop` multiple times for the same state.
+            // It will still be called when the original borrow is dropped.
             parent_widget_state: None,
             widget_state: self.widget_state,
             widget_state_children: self.widget_state_children.reborrow_mut(),

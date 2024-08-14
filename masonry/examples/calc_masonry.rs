@@ -146,22 +146,22 @@ impl Widget for CalcButton {
             PointerEvent::PointerDown(_, _) => {
                 if !ctx.is_disabled() {
                     let color = self.active_color;
+                    // See on_status_change for why we use `mutate_later` here.
                     ctx.mutate_later(&mut self.inner, move |mut inner| {
                         inner.set_background(color);
                     });
                     ctx.set_active(true);
-                    ctx.request_paint();
                     trace!("CalcButton {:?} pressed", ctx.widget_id());
                 }
             }
             PointerEvent::PointerUp(_, _) => {
                 if ctx.is_active() && !ctx.is_disabled() {
                     let color = self.base_color;
+                    // See on_status_change for why we use `mutate_later` here.
                     ctx.mutate_later(&mut self.inner, move |mut inner| {
                         inner.set_background(color);
                     });
                     ctx.submit_action(Action::Other(Box::new(self.action)));
-                    ctx.request_paint();
                     trace!("CalcButton {:?} released", ctx.widget_id());
                 }
                 ctx.set_active(false);
@@ -186,18 +186,21 @@ impl Widget for CalcButton {
     }
 
     fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange) {
+        // Masonry doesn't let us change a widget's attributes directly.
+        // We use `mutate_later` to get a mutable reference to the inner widget
+        // and change its border color. This is a simple way to implement a
+        // "hovered" visual effect, but it's somewhat non-idiomatic compared to
+        // implementing the effect inside the "paint" method.
         match event {
             StatusChange::HotChanged(true) => {
                 ctx.mutate_later(&mut self.inner, move |mut inner| {
                     inner.set_border(Color::WHITE, 3.0);
                 });
-                ctx.request_paint();
             }
             StatusChange::HotChanged(false) => {
                 ctx.mutate_later(&mut self.inner, move |mut inner| {
                     inner.set_border(Color::TRANSPARENT, 3.0);
                 });
-                ctx.request_paint();
             }
             _ => (),
         }
