@@ -349,10 +349,7 @@ impl RenderRoot {
         // TODO - Factor out into a "pre-event" function?
         self.state.next_focused_widget = self.state.focused_widget;
 
-        let mut res = None;
-        mutate_widget(self, id, |widget_mut| {
-            res = Some(f(widget_mut));
-        });
+        let res = mutate_widget(self, id, f);
 
         let mut root_state = self.widget_arena.get_state_mut(self.root.id()).item.clone();
         self.post_event_processing(&mut root_state);
