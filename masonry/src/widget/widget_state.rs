@@ -153,7 +153,7 @@ impl WidgetState {
             needs_accessibility_update: true,
             needs_window_origin: true,
             has_focus: false,
-            request_anim: false,
+            request_anim: true,
             request_accessibility_update: true,
             focus_chain: Vec::new(),
             children: Bloom::new(),
