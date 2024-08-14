@@ -51,9 +51,6 @@ fn compose_widget(
 ) {
     let moved = parent_moved || state.item.translation_changed;
     let translation = parent_translation + state.item.translation + state.item.origin.to_vec2();
-    state.item.needs_compose = false;
-    state.item.request_compose = false;
-    state.item.translation_changed = false;
     state.item.window_origin = Point::new(translation.x, translation.y);
 
     let mut ctx = ComposeCtx {
@@ -65,6 +62,10 @@ fn compose_widget(
     if ctx.widget_state.request_compose {
         widget.item.compose(&mut ctx);
     }
+
+    state.item.needs_compose = false;
+    state.item.request_compose = false;
+    state.item.translation_changed = false;
 
     let id = state.item.id;
     let parent_state = state.item;
