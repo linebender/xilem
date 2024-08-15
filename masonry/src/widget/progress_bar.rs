@@ -1,7 +1,7 @@
 // Copyright 2019 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-//! A checkbox widget.
+//! A progress bar widget.
 
 use accesskit::Role;
 use kurbo::Point;
@@ -18,7 +18,7 @@ use crate::{
     LifeCycleCtx, PaintCtx, PointerEvent, StatusChange, TextEvent, Widget, WidgetId,
 };
 
-/// A checkbox that can be toggled.
+/// A progress bar
 pub struct ProgressBar {
     /// A value in the range `[0, 1]` inclusive, where 0 is 0% and 1 is 100% complete.
     ///
@@ -188,9 +188,6 @@ impl Widget for ProgressBar {
 
     fn accessibility(&mut self, ctx: &mut AccessCtx) {
         ctx.current_node().set_value(self.value_accessibility());
-        if let Some(value) = self.part_complete {
-            ctx.current_node().set_value(value * 100.0);
-        }
     }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
@@ -226,13 +223,63 @@ mod tests {
     use crate::testing::{widget_ids, TestHarness, TestWidgetExt};
 
     #[test]
-    fn empty_progressbar() {
-        let [checkbox_id] = widget_ids();
-        let widget = ProgressBar::new(Some(0.)).with_id(checkbox_id);
+    fn indeterminate_progressbar() {
+        let [progressbar_id] = widget_ids();
+        let widget = ProgressBar::new(None).with_id(progressbar_id);
 
         let mut harness = TestHarness::create(widget);
 
         assert_debug_snapshot!(harness.root_widget());
-        assert_render_snapshot!(harness, "default_bar");
+        assert_render_snapshot!(harness, "indeterminate_progressbar");
+    }
+
+    #[test]
+    fn _0_percent_progressbar() {
+        let [_0percent] = widget_ids();
+
+        let widget = ProgressBar::new(Some(0.)).with_id(_0percent);
+        let mut harness = TestHarness::create(widget);
+        assert_debug_snapshot!(harness.root_widget());
+        assert_render_snapshot!(harness, "0_percent_progressbar");
+    }
+
+    #[test]
+    fn _25_percent_progressbar() {
+        let [_25percent] = widget_ids();
+
+        let widget = ProgressBar::new(Some(0.25)).with_id(_25percent);
+        let mut harness = TestHarness::create(widget);
+        assert_debug_snapshot!(harness.root_widget());
+        assert_render_snapshot!(harness, "25_percent_progressbar");
+    }
+
+    #[test]
+    fn _50_percent_progressbar() {
+        let [_50percent] = widget_ids();
+
+        let widget = ProgressBar::new(Some(0.5)).with_id(_50percent);
+        let mut harness = TestHarness::create(widget);
+        assert_debug_snapshot!(harness.root_widget());
+        assert_render_snapshot!(harness, "50_percent_progressbar");
+    }
+
+    #[test]
+    fn _75_percent_progressbar() {
+        let [_75percent] = widget_ids();
+
+        let widget = ProgressBar::new(Some(0.75)).with_id(_75percent);
+        let mut harness = TestHarness::create(widget);
+        assert_debug_snapshot!(harness.root_widget());
+        assert_render_snapshot!(harness, "75_percent_progressbar");
+    }
+
+    #[test]
+    fn _100_percent_progressbar() {
+        let [_100percent] = widget_ids();
+
+        let widget = ProgressBar::new(Some(1.)).with_id(_100percent);
+        let mut harness = TestHarness::create(widget);
+        assert_debug_snapshot!(harness.root_widget());
+        assert_render_snapshot!(harness, "100_percent_progressbar");
     }
 }
