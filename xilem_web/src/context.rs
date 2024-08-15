@@ -25,7 +25,7 @@ impl MessageThunk {
     ///
     /// # Panics
     ///
-    /// When this is called synchronously (i.e. not via an event callback or by queing it in the event loop with e.g. [`spawn_local`](`wasm_bindgen_futures::spawn_local`).
+    /// When this is called synchronously (i.e. not via an event callback or by queuing it in the event loop with e.g. [`spawn_local`](`wasm_bindgen_futures::spawn_local`).
     pub fn push_message(&self, message_body: impl Message) {
         let message = AppMessage {
             id_path: Rc::clone(&self.id_path),
