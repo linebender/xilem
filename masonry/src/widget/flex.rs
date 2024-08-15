@@ -457,9 +457,7 @@ impl<'a> WidgetMut<'a, Flex> {
         child: WidgetPod<Box<dyn Widget>>,
         params: impl Into<FlexParams>,
     ) {
-        let p = params.into();
-        tracing::info!("{:?}", p);
-        let child = new_flex_child(p, child);
+        let child = new_flex_child(params.into(), child);
         self.widget.children.insert(idx, child);
         self.ctx.children_changed();
     }
@@ -627,23 +625,11 @@ fn new_flex_child(params: FlexParams, widget: WidgetPod<Box<dyn Widget>>) -> Chi
 
 // --- MARK: IMPL WIDGET---
 impl Widget for Flex {
-    fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
-        for child in self.children.iter_mut().filter_map(|x| x.widget_mut()) {
-            child.on_pointer_event(ctx, event);
-        }
-    }
+    fn on_pointer_event(&mut self, _ctx: &mut EventCtx, _event: &PointerEvent) {}
 
-    fn on_text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent) {
-        for child in self.children.iter_mut().filter_map(|x| x.widget_mut()) {
-            child.on_text_event(ctx, event);
-        }
-    }
+    fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
 
-    fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {
-        for child in self.children.iter_mut().filter_map(|x| x.widget_mut()) {
-            child.on_access_event(ctx, event);
-        }
-    }
+    fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {}
 
     fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange) {}
 

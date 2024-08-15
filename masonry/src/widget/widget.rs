@@ -7,6 +7,7 @@ use std::ops::{Deref, DerefMut};
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use accesskit::Role;
+use cursor_icon::CursorIcon;
 use smallvec::SmallVec;
 use tracing::{trace_span, Span};
 use vello::Scene;
@@ -62,17 +63,18 @@ pub struct WidgetId(pub(crate) NonZeroU64);
 /// [`WidgetPod`](crate::WidgetPod)s. Widget methods are called by `WidgetPod`s, and the
 /// widget is mutated either during a method call (eg `on_event` or `lifecycle`) or
 /// through a [`WidgetMut`](crate::widget::WidgetMut). See tutorials for details.
+#[allow(unused_variables)]
 pub trait Widget: AsAny {
     /// Handle an event - usually user interaction.
     ///
     /// A number of different events (in the [`Event`] enum) are handled in this
     /// method call. A widget can handle these events in a number of ways, such as
     /// requesting things from the [`EventCtx`] or mutating the data.
-    fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent);
-    fn on_text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent);
+    fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {}
+    fn on_text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent) {}
 
     /// Handle an event from the platform's accessibility API.
-    fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent);
+    fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {}
 
     #[allow(missing_docs)]
     fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange);
@@ -128,6 +130,12 @@ pub trait Widget: AsAny {
     /// TODO - Update this doc
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]>;
 
+    // TODO - Rename
+    // TODO - Document
+    fn skip_pointer(&self) -> bool {
+        false
+    }
+
     /// Return a span for tracing.
     ///
     /// As methods recurse through the widget tree, trace spans are added for each child
@@ -145,6 +153,12 @@ pub trait Widget: AsAny {
     /// be eg a label's text, or whether a checkbox is checked.
     fn get_debug_text(&self) -> Option<String> {
         None
+    }
+
+    // TODO - Document
+    // TODO - Add &UpdateCtx argument
+    fn get_cursor(&self) -> CursorIcon {
+        CursorIcon::Default
     }
 
     // --- Auto-generated implementations ---
@@ -213,7 +227,7 @@ pub trait Widget: AsAny {
 /// A parent widget can use [`EventCtx::get_raw_mut`], [`LifeCycleCtx::get_raw_mut`],
 /// or [`LayoutCtx::get_raw_mut`] to directly access a child widget. In that case,
 /// these methods return both a mutable reference to the child widget and a new
-/// context (`WidgetCtx`, `EventCtx`, etc) scoped to the child. The parent is
+/// context (`MutateCtx`, `EventCtx`, etc) scoped to the child. The parent is
 /// responsible for calling the context methods (eg `request_layout`,
 /// `request_accessibility_update`) for the child.
 ///
@@ -318,12 +332,20 @@ impl Widget for Box<dyn Widget> {
         self.deref().children_ids()
     }
 
+    fn skip_pointer(&self) -> bool {
+        self.deref().skip_pointer()
+    }
+
     fn make_trace_span(&self) -> Span {
         self.deref().make_trace_span()
     }
 
     fn get_debug_text(&self) -> Option<String> {
         self.deref().get_debug_text()
+    }
+
+    fn get_cursor(&self) -> CursorIcon {
+        self.deref().get_cursor()
     }
 
     fn as_any(&self) -> &dyn Any {

@@ -384,6 +384,8 @@ impl MasonryState<'_> {
             height,
             antialiasing_method: vello::AaConfig::Area,
         };
+        // TODO: Run this in-between `submit` and `present`.
+        window.pre_present_notify();
         self.renderer
             .get_or_insert_with(|| Renderer::new(device, renderer_options).unwrap())
             .render_to_surface(device, queue, scene_ref, &surface_texture, &render_params)
@@ -420,6 +422,7 @@ impl MasonryState<'_> {
                     .handle_window_event(WindowEvent::Rescale(scale_factor));
             }
             WinitWindowEvent::RedrawRequested => {
+                self.render_root.handle_window_event(WindowEvent::AnimFrame);
                 let (scene, tree_update) = self.render_root.redraw();
                 self.render(scene);
                 let WindowState::Rendering {
@@ -636,9 +639,6 @@ impl MasonryState<'_> {
                 render_root::RenderRootSignal::RequestAnimFrame => {
                     // TODO
                     window.request_redraw();
-                }
-                render_root::RenderRootSignal::SpawnWorker(_worker_fn) => {
-                    // TODO
                 }
                 render_root::RenderRootSignal::TakeFocus => {
                     window.focus_window();

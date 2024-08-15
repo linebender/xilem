@@ -192,7 +192,6 @@ fn app_logic(data: &mut Calculator) -> impl WidgetView<Calculator> {
             nums.map(|num| digit_button(num).flex(1.)),
             operator_button(operator).flex(1.),
         ))
-        .flex(1.0)
     };
     flex((
         // Display
@@ -218,9 +217,9 @@ fn app_logic(data: &mut Calculator) -> impl WidgetView<Calculator> {
             operator_button(MathOperator::Divide).flex(1.),
         ))
         .flex(1.0),
-        num_row(["7", "8", "9"], MathOperator::Multiply),
-        num_row(["4", "5", "6"], MathOperator::Subtract),
-        num_row(["1", "2", "3"], MathOperator::Add),
+        num_row(["7", "8", "9"], MathOperator::Multiply).flex(1.0),
+        num_row(["4", "5", "6"], MathOperator::Subtract).flex(1.0),
+        num_row(["1", "2", "3"], MathOperator::Add).flex(1.0),
         // bottom row
         flex_row((
             expanded_button("±", Calculator::negate).flex(1.),
@@ -301,6 +300,14 @@ fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
         .with_resizable(true)
         .with_min_inner_size(min_window_size)
         .with_inner_size(window_size);
+    // On iOS, winit has unsensible handling of `inner_size`
+    // See https://github.com/rust-windowing/winit/issues/2308 for more details
+    #[cfg(target_os = "ios")]
+    let window_attributes = {
+        let mut window_attributes = window_attributes; // to avoid `unused_mut`
+        window_attributes.inner_size = None;
+        window_attributes
+    };
     app.run_windowed_in(event_loop, window_attributes)?;
     Ok(())
 }

@@ -64,8 +64,6 @@ pub const HARNESS_DEFAULT_BACKGROUND_COLOR: Color = Color::rgb8(0x29, 0x29, 0x29
 /// The passage of time is simulated with the [`move_timers_forward`](Self::move_timers_forward) methods. **(TODO -
 /// Doesn't move animations forward.)**
 ///
-/// **(TODO - ExtEvents aren't handled.)**
-///
 /// **(TODO - Painting invalidation might not be accurate.)**
 ///
 /// One minor difference is that layout is always calculated after every event, whereas
@@ -451,15 +449,17 @@ impl TestHarness {
     /// ## Panics
     ///
     /// Panics if no Widget with this id can be found.
+    #[track_caller]
     pub fn get_widget(&self, id: WidgetId) -> WidgetRef<'_, dyn Widget> {
         self.render_root
-            .get_widget(id)
+            .widget_arena
+            .try_get_widget_ref(id)
             .unwrap_or_else(|| panic!("could not find widget #{}", id.to_raw()))
     }
 
     /// Try to return the widget with the given id.
     pub fn try_get_widget(&self, id: WidgetId) -> Option<WidgetRef<'_, dyn Widget>> {
-        self.render_root.get_widget(id)
+        self.render_root.widget_arena.try_get_widget_ref(id)
     }
 
     // TODO - link to focus documentation.
@@ -467,6 +467,18 @@ impl TestHarness {
     pub fn focused_widget(&self) -> Option<WidgetRef<'_, dyn Widget>> {
         self.root_widget()
             .find_widget_by_id(self.render_root.state.focused_widget?)
+    }
+
+    // TODO - Multiple pointers
+    pub fn pointer_capture_target(&self) -> Option<WidgetRef<'_, dyn Widget>> {
+        self.render_root
+            .widget_arena
+            .try_get_widget_ref(self.render_root.state.pointer_capture_target?)
+    }
+
+    // TODO - This is kinda redundant with the above
+    pub fn pointer_capture_target_id(&self) -> Option<WidgetId> {
+        self.render_root.state.pointer_capture_target
     }
 
     /// Call the provided visitor on every widget in the widget tree.
@@ -496,6 +508,19 @@ impl TestHarness {
         res
     }
 
+    /// Get a [`WidgetMut`] to a specific widget.
+    ///
+    /// Because of how `WidgetMut` works, it can only be passed to a user-provided callback.
+    pub fn edit_widget<R>(
+        &mut self,
+        id: WidgetId,
+        f: impl FnOnce(WidgetMut<'_, Box<dyn Widget>>) -> R,
+    ) -> R {
+        let res = self.render_root.edit_widget(id, f);
+        self.process_state_after_event();
+        res
+    }
+
     /// Pop next action from the queue
     ///
     /// Note: Actions are still a WIP feature.
@@ -521,6 +546,7 @@ impl TestHarness {
     /// * **test_file_path:** file path the current test is in.
     /// * **test_module_path:** import path of the module the current test is in.
     /// * **test_name:** arbitrary name; second argument of assert_render_snapshot.
+    #[track_caller]
     pub fn check_render_snapshot(
         &mut self,
         manifest_dir: &str,
@@ -562,7 +588,7 @@ impl TestHarness {
                 let _ = std::fs::remove_file(&diff_path);
                 new_image.save(&new_path).unwrap();
                 diff_image.save(&diff_path).unwrap();
-                panic!("Images are different");
+                panic!("Snapshot test '{test_name}' failed: Images are different");
             } else {
                 // Remove the vestigal new and diff images
                 let _ = std::fs::remove_file(&new_path);
@@ -572,7 +598,7 @@ impl TestHarness {
             // Remove '<test_name>.new.png' file if it exists
             let _ = std::fs::remove_file(&new_path);
             new_image.save(&new_path).unwrap();
-            panic!("No reference file");
+            panic!("Snapshot test '{test_name}' failed: No reference file");
         }
     }
 

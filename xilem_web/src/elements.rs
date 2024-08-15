@@ -4,6 +4,7 @@
 //! Basic builder functions to create DOM elements, such as [`html::div`]
 
 use std::borrow::Cow;
+use std::marker::PhantomData;
 use std::{any::Any, rc::Rc};
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
@@ -322,16 +323,17 @@ pub(crate) fn teardown_element<State, Action, Element>(
 }
 
 /// An element that can change its tag, it's useful for autonomous custom elements (i.e. web components)
-pub struct CustomElement<State, Action> {
+pub struct CustomElement<Children, State, Action> {
     name: Cow<'static, str>,
     children: Box<dyn DomViewSequence<State, Action>>,
+    phantom: PhantomData<Children>,
 }
 
 /// An element that can change its tag, it's useful for autonomous custom elements (i.e. web components)
 pub fn custom_element<State, Action, Children>(
     name: impl Into<Cow<'static, str>>,
     children: Children,
-) -> CustomElement<State, Action>
+) -> CustomElement<Children, State, Action>
 where
     State: 'static,
     Action: 'static,
@@ -340,11 +342,14 @@ where
     CustomElement {
         name: name.into(),
         children: Box::new(children),
+        phantom: PhantomData,
     }
 }
-impl<State, Action> ViewMarker for CustomElement<State, Action> {}
-impl<State, Action> View<State, Action, ViewCtx, DynMessage> for CustomElement<State, Action>
+impl<State, Action, Children> ViewMarker for CustomElement<Children, State, Action> {}
+impl<State, Action, Children> View<State, Action, ViewCtx, DynMessage>
+    for CustomElement<Children, State, Action>
 where
+    Children: 'static,
     State: 'static,
     Action: 'static,
 {
@@ -414,8 +419,9 @@ macro_rules! define_element {
         define_element!($ns, ($ty_name, $name, $dom_interface, stringify!($name)));
     };
     ($ns:expr, ($ty_name:ident, $name:ident, $dom_interface:ident, $tag_name:expr)) => {
-        pub struct $ty_name<State, Action> {
+        pub struct $ty_name<Children, State, Action> {
             children: Box<dyn DomViewSequence<State, Action>>,
+            phantom: PhantomData<Children>,
         }
 
         /// Builder function for a
@@ -423,15 +429,18 @@ macro_rules! define_element {
         /// element view.
         pub fn $name<State: 'static, Action: 'static, Children: DomFragment<State, Action>>(
             children: Children,
-        ) -> $ty_name<State, Action> {
+        ) -> $ty_name<Children, State, Action> {
             $ty_name {
                 children: Box::new(children),
+                phantom: PhantomData,
             }
         }
 
-        impl<State, Action> ViewMarker for $ty_name<State, Action> {}
-        impl<State, Action> View<State, Action, ViewCtx, DynMessage> for $ty_name<State, Action>
+        impl<Children, State, Action> ViewMarker for $ty_name<Children, State, Action> {}
+        impl<Children, State, Action> View<State, Action, ViewCtx, DynMessage>
+            for $ty_name<Children, State, Action>
         where
+            Children: 'static,
             State: 'static,
             Action: 'static,
         {
@@ -488,6 +497,7 @@ macro_rules! define_element {
 
 macro_rules! define_elements {
     ($ns:ident, $($element_def:tt,)*) => {
+        use std::marker::PhantomData;
         use super::{build_element, rebuild_element, teardown_element, DomViewSequence, ElementState};
         use crate::{
             core::{MessageResult, Mut, ViewId, ViewMarker},
