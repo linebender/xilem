@@ -8,18 +8,11 @@ use masonry::parley::{
     style::{FontFamily, FontStack},
 };
 use time::{error::IndeterminateOffset, macros::format_description, OffsetDateTime, UtcOffset};
-use vello::glyph::skrifa::raw::Offset;
 use winit::error::EventLoopError;
 use xilem::{
     view::{button, flex, label, prose, sized_box, variable_label, Axis, FlexExt, FlexSpacer},
     Color, EventLoop, EventLoopBuilder, WidgetView, Xilem,
 };
-
-// TODO: Move to a more full-featured (e.g. multiple time-zones) example.
-/// The text used in the example. This will be replaced.
-/// Notice that not all of the text is included in the font subset chosen.
-/// This is an intentional choice to show the graceful fallback of animated weight still working.
-const LOREM: &str = r"Office hours is at 16:00";
 
 /// The state of the application, owned by Xilem and updated by the callbacks below.
 struct Clocks {
