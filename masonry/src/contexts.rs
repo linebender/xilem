@@ -135,7 +135,7 @@ impl_context_method!(
         }
 
         #[allow(dead_code)]
-        /// Helper method to get a direct reference to a child widget from its WidgetPod.
+        /// Helper method to get a direct reference to a child widget from its `WidgetPod`.
         fn get_child<Child: Widget>(&self, child: &'_ WidgetPod<Child>) -> &'_ Child {
             let child_ref = self
                 .widget_children
@@ -145,7 +145,7 @@ impl_context_method!(
         }
 
         #[allow(dead_code)]
-        /// Helper method to get a direct reference to a child widget's WidgetState from its WidgetPod.
+        /// Helper method to get a direct reference to a child widget's `WidgetState` from its `WidgetPod`.
         fn get_child_state<Child: Widget>(&self, child: &'_ WidgetPod<Child>) -> &'_ WidgetState {
             let child_state_ref = self
                 .widget_state_children
@@ -163,10 +163,10 @@ impl_context_method!(
     LifeCycleCtx<'_>,
     LayoutCtx<'_>,
     {
-        /// Helper method to get a mutable reference to a child widget's WidgetState from its WidgetPod.
+        /// Helper method to get a mutable reference to a child widget's `WidgetState` from its `WidgetPod`.
         ///
-        /// This one isn't defined for PaintCtx and AccessCtx because those contexts
-        /// can't mutate WidgetState.
+        /// This one isn't defined for `PaintCtx` and `AccessCtx` because those contexts
+        /// can't mutate `WidgetState`.
         fn get_child_state_mut<Child: Widget>(
             &mut self,
             child: &'_ mut WidgetPod<Child>,
@@ -436,7 +436,7 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, LifeCycleCtx<'_>, {
 
     /// Indicate that a child is about to be removed from the tree.
     ///
-    /// Container widgets should avoid dropping WidgetPods. Instead, they should
+    /// Container widgets should avoid dropping `WidgetPod`s. Instead, they should
     /// pass them to this method.
     pub fn remove_child(&mut self, child: WidgetPod<impl Widget>) {
         // TODO - Send recursive event to child
@@ -833,7 +833,7 @@ impl LayoutCtx<'_> {
         self.get_child_state(child).layout_rect().size()
     }
 
-    /// Set the position of a child widget, in the paren't coordinate space. This
+    /// Set the position of a child widget, in the parent's coordinate space. This
     /// will also implicitly change "hot" status and affect the parent's display rect.
     ///
     /// Container widgets must call this method with each non-stashed child in their

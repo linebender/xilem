@@ -10,7 +10,7 @@ use vello::peniko::Color;
 use crate::Insets;
 
 // Colors are from https://sashat.me/2017/01/11/list-of-20-simple-distinct-colors/
-// They're picked for visual distinction and accessbility (99 percent)
+// They're picked for visual distinction and accessibility (99 percent)
 
 pub const WINDOW_BACKGROUND_COLOR: Color = Color::rgb8(0x29, 0x29, 0x29);
 pub const TEXT_COLOR: Color = Color::rgb8(0xf0, 0xf0, 0xea);
