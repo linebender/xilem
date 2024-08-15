@@ -22,47 +22,15 @@ use super::{
     Selectable, TextBrush, TextWithSelection,
 };
 
-/// Text which can be edited
-pub trait EditableText: Selectable {
-    /// Replace range with new text.
-    /// Can panic if supplied an invalid range.
-    // TODO: make this generic over Self
-    fn edit(&mut self, range: Range<usize>, new: impl Into<String>);
-    /// Create a value of this struct
-    fn from_str(s: &str) -> Self;
-}
-
-impl EditableText for String {
-    fn edit(&mut self, range: Range<usize>, new: impl Into<String>) {
-        self.replace_range(range, &new.into());
-    }
-    fn from_str(s: &str) -> Self {
-        s.to_string()
-    }
-}
-
-// TODO: What advantage does this actually have?
-// impl EditableText for Arc<String> {
-//     fn edit(&mut self, range: Range<usize>, new: impl Into<String>) {
-//         let new = new.into();
-//         if !range.is_empty() || !new.is_empty() {
-//             Arc::make_mut(self).edit(range, new)
-//         }
-//     }
-//     fn from_str(s: &str) -> Self {
-//         Arc::new(s.to_owned())
-//     }
-// }
-
 /// A region of text which can support editing operations
-pub struct TextEditor<T: EditableText> {
-    inner: TextWithSelection<T>,
+pub struct TextEditor {
+    inner: TextWithSelection<String>,
     /// The range of the preedit region in the text
     preedit_range: Option<Range<usize>>,
 }
 
-impl<T: EditableText> TextEditor<T> {
-    pub fn new(text: T, text_size: f32) -> Self {
+impl TextEditor {
+    pub fn new(text: String, text_size: f32) -> Self {
         Self {
             inner: TextWithSelection::new(text, text_size),
             preedit_range: None,
@@ -121,11 +89,11 @@ impl<T: EditableText> TextEditor<T> {
                         Key::Named(NamedKey::Backspace) => {
                             if let Some(selection) = self.inner.selection {
                                 if !selection.is_caret() {
-                                    self.text_mut().edit(selection.range(), "");
+                                    self.text_mut().replace_range(selection.range(), "");
                                     self.inner.selection =
                                         Some(Selection::caret(selection.min(), Affinity::Upstream));
 
-                                    let contents = self.text().as_str().to_string();
+                                    let contents = self.text().clone();
                                     ctx.submit_action(Action::TextChanged(contents));
                                 } else {
                                     // TODO: more specific behavior may sometimes be warranted here
@@ -135,11 +103,11 @@ impl<T: EditableText> TextEditor<T> {
                                     let text = self.text_mut();
                                     let offset =
                                         offset_for_delete_backwards(selection.active, text);
-                                    self.text_mut().edit(offset..selection.active, "");
+                                    self.text_mut().replace_range(offset..selection.active, "");
                                     self.inner.selection =
                                         Some(Selection::caret(offset, selection.active_affinity));
 
-                                    let contents = self.text().as_str().to_string();
+                                    let contents = self.text().clone();
                                     ctx.submit_action(Action::TextChanged(contents));
                                 }
                                 Handled::Yes
@@ -150,24 +118,24 @@ impl<T: EditableText> TextEditor<T> {
                         Key::Named(NamedKey::Delete) => {
                             if let Some(selection) = self.inner.selection {
                                 if !selection.is_caret() {
-                                    self.text_mut().edit(selection.range(), "");
+                                    self.text_mut().replace_range(selection.range(), "");
                                     self.inner.selection = Some(Selection::caret(
                                         selection.min(),
                                         Affinity::Downstream,
                                     ));
 
-                                    let contents = self.text().as_str().to_string();
+                                    let contents = self.text().clone();
                                     ctx.submit_action(Action::TextChanged(contents));
                                 } else if let Some(offset) =
                                     self.text().next_grapheme_offset(selection.active)
                                 {
-                                    self.text_mut().edit(selection.min()..offset, "");
+                                    self.text_mut().replace_range(selection.min()..offset, "");
                                     self.inner.selection = Some(Selection::caret(
                                         selection.min(),
                                         selection.active_affinity,
                                     ));
 
-                                    let contents = self.text().as_str().to_string();
+                                    let contents = self.text().clone();
                                     ctx.submit_action(Action::TextChanged(contents));
                                 }
                                 Handled::Yes
@@ -183,18 +151,19 @@ impl<T: EditableText> TextEditor<T> {
                                 h_pos: None,
                             });
                             let c = ' ';
-                            self.text_mut().edit(selection.range(), c);
+                            self.text_mut()
+                                .replace_range(selection.range(), &c.to_string());
                             self.inner.selection = Some(Selection::caret(
                                 selection.min() + c.len_utf8(),
                                 // We have just added this character, so we are "affined" with it
                                 Affinity::Downstream,
                             ));
-                            let contents = self.text().as_str().to_string();
+                            let contents = self.text().clone();
                             ctx.submit_action(Action::TextChanged(contents));
                             Handled::Yes
                         }
                         Key::Named(NamedKey::Enter) => {
-                            let contents = self.text().as_str().to_string();
+                            let contents = self.text().clone();
                             ctx.submit_action(Action::TextEntered(contents));
                             Handled::Yes
                         }
@@ -218,17 +187,17 @@ impl<T: EditableText> TextEditor<T> {
                         Key::Named(NamedKey::Backspace) => {
                             if let Some(selection) = self.inner.selection {
                                 if !selection.is_caret() {
-                                    self.text_mut().edit(selection.range(), "");
+                                    self.text_mut().replace_range(selection.range(), "");
                                     self.inner.selection =
                                         Some(Selection::caret(selection.min(), Affinity::Upstream));
                                 }
                                 let offset =
                                     self.text().prev_word_offset(selection.active).unwrap_or(0);
-                                self.text_mut().edit(offset..selection.active, "");
+                                self.text_mut().replace_range(offset..selection.active, "");
                                 self.inner.selection =
                                     Some(Selection::caret(offset, Affinity::Upstream));
 
-                                let contents = self.text().as_str().to_string();
+                                let contents = self.text().clone();
                                 ctx.submit_action(Action::TextChanged(contents));
                                 Handled::Yes
                             } else {
@@ -238,7 +207,7 @@ impl<T: EditableText> TextEditor<T> {
                         Key::Named(NamedKey::Delete) => {
                             if let Some(selection) = self.inner.selection {
                                 if !selection.is_caret() {
-                                    self.text_mut().edit(selection.range(), "");
+                                    self.text_mut().replace_range(selection.range(), "");
                                     self.inner.selection = Some(Selection::caret(
                                         selection.min(),
                                         Affinity::Downstream,
@@ -246,11 +215,11 @@ impl<T: EditableText> TextEditor<T> {
                                 } else if let Some(offset) =
                                     self.text().next_word_offset(selection.active)
                                 {
-                                    self.text_mut().edit(selection.active..offset, "");
+                                    self.text_mut().replace_range(selection.active..offset, "");
                                     self.inner.selection =
                                         Some(Selection::caret(selection.min(), Affinity::Upstream));
                                 }
-                                let contents = self.text().as_str().to_string();
+                                let contents = self.text().clone();
                                 ctx.submit_action(Action::TextChanged(contents));
                                 Handled::Yes
                             } else {
@@ -267,20 +236,21 @@ impl<T: EditableText> TextEditor<T> {
             TextEvent::Ime(ime) => match ime {
                 Ime::Commit(text) => {
                     if let Some(selection_range) = self.selection.map(|x| x.range()) {
-                        self.text_mut().edit(selection_range.clone(), text);
+                        self.text_mut().replace_range(selection_range.clone(), text);
                         self.selection = Some(Selection::caret(
                             selection_range.start + text.len(),
                             Affinity::Upstream,
                         ));
                     }
-                    let contents = self.text().as_str().to_string();
+                    let contents = self.text().clone();
                     ctx.submit_action(Action::TextChanged(contents));
                     Handled::Yes
                 }
                 Ime::Preedit(preedit_string, preedit_sel) => {
                     if let Some(preedit) = self.preedit_range.clone() {
                         // TODO: Handle the case where this is the same value, to avoid some potential infinite loops
-                        self.text_mut().edit(preedit.clone(), preedit_string);
+                        self.text_mut()
+                            .replace_range(preedit.clone(), preedit_string);
                         let np = preedit.start..(preedit.start + preedit_string.len());
                         self.preedit_range = if preedit_string.is_empty() {
                             None
@@ -307,7 +277,7 @@ impl<T: EditableText> TextEditor<T> {
                             return Handled::Yes;
                         }
                         let sr = self.selection.map(|x| x.range()).unwrap_or(0..0);
-                        self.text_mut().edit(sr.clone(), preedit_string);
+                        self.text_mut().replace_range(sr.clone(), preedit_string);
                         let np = sr.start..(sr.start + preedit_string.len());
                         self.preedit_range = if preedit_string.is_empty() {
                             None
@@ -329,7 +299,7 @@ impl<T: EditableText> TextEditor<T> {
                 Ime::Enabled => {
                     // Generally this shouldn't happen, but I can't prove it won't.
                     if let Some(preedit) = self.preedit_range.clone() {
-                        self.text_mut().edit(preedit.clone(), "");
+                        self.text_mut().replace_range(preedit.clone(), "");
                         self.selection = Some(
                             self.selection
                                 .unwrap_or(Selection::caret(0, Affinity::Upstream)),
@@ -340,7 +310,7 @@ impl<T: EditableText> TextEditor<T> {
                 }
                 Ime::Disabled => {
                     if let Some(preedit) = self.preedit_range.clone() {
-                        self.text_mut().edit(preedit.clone(), "");
+                        self.text_mut().replace_range(preedit.clone(), "");
                         self.preedit_range = None;
                         let sm = self.selection.map(|x| x.min()).unwrap_or(0);
                         if preedit.contains(&sm) {
@@ -363,20 +333,20 @@ impl<T: EditableText> TextEditor<T> {
             active_affinity: Affinity::Downstream,
             h_pos: None,
         });
-        self.text_mut().edit(selection.range(), &**c);
+        self.text_mut().replace_range(selection.range(), &**c);
         self.inner.selection = Some(Selection::caret(
             selection.min() + c.len(),
             // We have just added this character, so we are "affined" with it
             Affinity::Downstream,
         ));
-        let contents = self.text().as_str().to_string();
+        let contents = self.text().clone();
         ctx.submit_action(Action::TextChanged(contents));
         Handled::Yes
     }
 }
 
-impl<T: EditableText> Deref for TextEditor<T> {
-    type Target = TextWithSelection<T>;
+impl Deref for TextEditor {
+    type Target = TextWithSelection<String>;
 
     fn deref(&self) -> &Self::Target {
         &self.inner
@@ -384,7 +354,7 @@ impl<T: EditableText> Deref for TextEditor<T> {
 }
 
 // TODO: Being able to call `Self::Target::rebuild` (and `draw`) isn't great.
-impl<T: EditableText> DerefMut for TextEditor<T> {
+impl DerefMut for TextEditor {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.inner
     }
@@ -392,20 +362,10 @@ impl<T: EditableText> DerefMut for TextEditor<T> {
 
 #[cfg(test)]
 mod tests {
-    use super::EditableText;
-
-    // #[test]
-    // fn arcstring_empty_edit() {
-    //     let a = Arc::new("hello".to_owned());
-    //     let mut b = a.clone();
-    //     b.edit(5..5, "");
-    //     assert!(Arc::ptr_eq(&a, &b));
-    // }
-
     #[test]
     fn replace() {
         let mut a = String::from("hello world");
-        a.edit(1..9, "era");
+        a.replace_range(1..9, "era");
         assert_eq!("herald", a);
     }
 }

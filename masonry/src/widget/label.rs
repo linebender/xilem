@@ -12,7 +12,7 @@ use vello::kurbo::{Affine, Point, Size};
 use vello::peniko::BlendMode;
 use vello::Scene;
 
-use crate::text::{TextBrush, TextLayout, TextStorage};
+use crate::text::{TextBrush, TextLayout};
 use crate::widget::WidgetMut;
 use crate::{
     AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx,
@@ -203,7 +203,9 @@ impl Widget for Label {
                 // TODO: Parley seems to require a relayout when colours change
                 ctx.request_layout();
             }
-            LifeCycle::BuildFocusChain => {
+            LifeCycle::BuildFocusChain =>
+            {
+                #[cfg(FALSE)]
                 if !self.text_layout.text().links().is_empty() {
                     tracing::warn!("Links present in text, but not yet integrated");
                 }
@@ -266,7 +268,7 @@ impl Widget for Label {
 
     fn accessibility(&mut self, ctx: &mut AccessCtx) {
         ctx.current_node()
-            .set_name(self.text().as_str().to_string());
+            .set_name(self.text().as_ref().to_string());
     }
 
     fn skip_pointer(&self) -> bool {
@@ -282,7 +284,7 @@ impl Widget for Label {
     }
 
     fn get_debug_text(&self) -> Option<String> {
-        Some(self.text_layout.text().as_str().to_string())
+        Some(self.text_layout.text().as_ref().to_string())
     }
 }
 
