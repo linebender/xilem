@@ -90,6 +90,8 @@ impl<N: AsRef<web_sys::Node> + Any> AnyNode for N {
 
 /// A trait to represent DOM nodes, which can optionally have associated `props` that are applied while building/rebuilding the views
 pub trait DomNode<P>: AnyNode + 'static {
+    /// When this is called any accumulated (virtual) `props` changes are applied to the underlying DOM node.
+    /// Where `props` stands for all kinds of modifiable properties, like attributes, styles, classes or more specific properties related to an element.
     fn apply_props(&self, props: &mut P);
 }
 

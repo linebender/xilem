@@ -13,12 +13,19 @@ use crate::{
     Message,
 };
 
+/// A thunk to send messages to the views, it's being used for example in event callbacks
 pub struct MessageThunk {
     id_path: Rc<[ViewId]>,
     app_ref: Box<dyn AppRunner>,
 }
 
 impl MessageThunk {
+    /// Sends a message to the [`View`](`crate::core::View`) this thunk was being created in.
+    /// One needs to be cautious with this being called synchronously, as this can produce a panic ("already mutably borrowed")
+    ///
+    /// # Panics
+    ///
+    /// When this is called synchronously (i.e. not via an event callback or by queing it in the event loop with e.g. [`spawn_local`](`wasm_bindgen_futures::spawn_local`).
     pub fn push_message(&self, message_body: impl Message) {
         let message = AppMessage {
             id_path: Rc::clone(&self.id_path),
@@ -58,6 +65,7 @@ impl Default for ViewCtx {
 }
 
 impl ViewCtx {
+    /// Create a thunk to delay a message to the [`View`](`crate::core::View`) this was called in.
     pub fn message_thunk(&self) -> MessageThunk {
         MessageThunk {
             id_path: self.id_path.iter().copied().collect(),

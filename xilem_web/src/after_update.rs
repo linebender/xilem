@@ -7,18 +7,24 @@ use xilem_core::{MessageResult, Mut, View, ViewId, ViewMarker};
 
 use crate::{DomNode, DomView, DynMessage, ViewCtx};
 
+/// Invokes the `callback` after the inner `element` [`DomView`] was created.
+/// See [`after_build`] for more details.
 pub struct AfterBuild<State, Action, E, F> {
     element: E,
     callback: F,
     phantom: PhantomData<fn() -> (State, Action)>,
 }
 
+/// Invokes the `callback` after the inner `element` [`DomView<State>`]
+/// See [`after_rebuild`] for more details.
 pub struct AfterRebuild<State, Action, E, F> {
     element: E,
     callback: F,
     phantom: PhantomData<fn() -> (State, Action)>,
 }
 
+/// Invokes the `callback` before the inner `element` [`DomView`] (and its underlying DOM node) is destroyed.
+/// See [`before_teardown`] for more details.
 pub struct BeforeTeardown<State, Action, E, F> {
     element: E,
     callback: F,

@@ -134,6 +134,7 @@ enum StyleModifier {
 }
 
 #[derive(Debug, Default)]
+/// This contains all the current style properties of an [`HtmlElement`](`crate::interfaces::Element`) or [`SvgElement`](`crate::interfaces::SvgElement`).
 pub struct Styles {
     style_modifiers: Vec<StyleModifier>,
     updated_styles: VecMap<CowStr, ()>,
@@ -300,6 +301,7 @@ impl<E: DomNode<P>, P: WithStyle> WithStyle for PodMut<'_, E, P> {
     }
 }
 
+/// Syntax sugar for adding a type bound on the `ViewElement` of a view, such that both, [`ViewElement`] and [`ViewElement::Mut`] are bound to [`WithStyle`]
 pub trait ElementWithStyle: for<'a> ViewElement<Mut<'a>: WithStyle> + WithStyle {}
 
 impl<T> ElementWithStyle for T
@@ -310,6 +312,7 @@ where
 }
 
 #[derive(Clone, Debug)]
+/// A view to add `style` properties of `HTMLElement` and `SVGElement` derived elements,
 pub struct Style<E, T, A> {
     el: E,
     styles: Vec<(CowStr, CowStr)>,
