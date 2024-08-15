@@ -16,7 +16,7 @@ use vello::{
 
 use crate::widget::{LineBreaking, WidgetMut};
 use crate::{
-    text::{TextBrush, TextStorage, TextWithSelection},
+    text::{TextBrush, TextWithSelection},
     widget::label::LABEL_X_PADDING,
     AccessCtx, AccessEvent, ArcStr, BoxConstraints, CursorIcon, EventCtx, LayoutCtx, LifeCycle,
     LifeCycleCtx, PaintCtx, PointerEvent, StatusChange, TextEvent, Widget, WidgetId,
@@ -224,6 +224,7 @@ impl Widget for Prose {
             }
             LifeCycle::BuildFocusChain => {
                 // TODO: This is *definitely* empty
+                #[cfg(FALSE)]
                 if !self.text_layout.text().links().is_empty() {
                     tracing::warn!("Links present in text, but not yet integrated");
                 }
@@ -287,7 +288,7 @@ impl Widget for Prose {
 
     fn accessibility(&mut self, ctx: &mut AccessCtx) {
         ctx.current_node()
-            .set_name(self.text().as_str().to_string());
+            .set_name(self.text().as_ref().to_string());
     }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
@@ -299,6 +300,6 @@ impl Widget for Prose {
     }
 
     fn get_debug_text(&self) -> Option<String> {
-        Some(self.text_layout.text().as_str().chars().take(100).collect())
+        Some(self.text_layout.text().as_ref().chars().take(100).collect())
     }
 }

@@ -18,7 +18,7 @@ use winit::event::Ime;
 use crate::widget::{LineBreaking, WidgetMut};
 use crate::{
     dpi::{LogicalPosition, LogicalSize},
-    text::{TextBrush, TextEditor, TextStorage, TextWithSelection},
+    text::{TextBrush, TextEditor, TextWithSelection},
     AccessCtx, AccessEvent, BoxConstraints, CursorIcon, EventCtx, LayoutCtx, LifeCycle,
     LifeCycleCtx, PaintCtx, PointerEvent, StatusChange, TextEvent, Widget, WidgetId,
 };
@@ -45,7 +45,7 @@ pub struct Textbox {
     // We might change this to a rope based structure at some point.
     // If you need a text box which uses a different text type, you should
     // create a custom widget
-    editor: TextEditor<String>,
+    editor: TextEditor,
     line_break_mode: LineBreaking,
     show_disabled: bool,
     brush: TextBrush,
@@ -259,6 +259,7 @@ impl Widget for Textbox {
             LifeCycle::BuildFocusChain => {
                 ctx.register_for_focus();
                 // TODO: This will always be empty
+                #[cfg(FALSE)]
                 if !self.editor.text().links().is_empty() {
                     tracing::warn!("Links present in text, but not yet integrated");
                 }
@@ -367,6 +368,6 @@ impl Widget for Textbox {
     }
 
     fn get_debug_text(&self) -> Option<String> {
-        Some(self.editor.text().as_str().chars().take(100).collect())
+        Some(self.editor.text().chars().take(100).collect())
     }
 }

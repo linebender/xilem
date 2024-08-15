@@ -5,14 +5,14 @@
 
 use xi_unicode::*;
 
-use super::{EditableTextCursor, Selectable};
+use crate::text::StringCursor;
 
 /// Logic adapted from Android and
 /// <https://github.com/xi-editor/xi-editor/pull/837>
 /// See links present in that PR for upstream Android Source
 /// Matches Android Logic as at 2024-05-10
 #[allow(clippy::cognitive_complexity)]
-fn backspace_offset(text: &impl Selectable, start: usize) -> usize {
+fn backspace_offset(text: &str, start: usize) -> usize {
     #[derive(PartialEq)]
     enum State {
         Start,
@@ -34,9 +34,15 @@ fn backspace_offset(text: &impl Selectable, start: usize) -> usize {
 
     let mut delete_code_point_count = 0;
     let mut last_seen_vs_code_point_count = 0;
-    let mut cursor = text
-        .cursor(start)
-        .expect("Backspace must begin at a valid codepoint boundary.");
+
+    let mut cursor = StringCursor {
+        text,
+        position: start,
+    };
+    assert!(
+        cursor.is_boundary(),
+        "Backspace must begin at a valid codepoint boundary."
+    );
 
     while state != State::Finished && cursor.pos() > 0 {
         let code_point = cursor.prev_codepoint().unwrap_or('0');
@@ -190,8 +196,8 @@ fn backspace_offset(text: &impl Selectable, start: usize) -> usize {
 /// This involves complicated logic to handle various special cases that
 /// are unique to backspace.
 #[allow(clippy::trivially_copy_pass_by_ref)]
-pub fn offset_for_delete_backwards(caret_position: usize, text: &impl Selectable) -> usize {
-    backspace_offset(text, caret_position)
+pub fn offset_for_delete_backwards(caret_position: usize, text: &impl AsRef<str>) -> usize {
+    backspace_offset(text.as_ref(), caret_position)
 }
 
 #[cfg(test)]
