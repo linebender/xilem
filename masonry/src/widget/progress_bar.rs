@@ -4,9 +4,10 @@
 //! A progress bar widget.
 
 use accesskit::Role;
-use kurbo::Point;
+use kurbo::{Affine, Point, Rect};
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace, trace_span, Span};
+use vello::peniko::{BlendMode, Color};
 use vello::Scene;
 
 use crate::kurbo::Size;
@@ -26,6 +27,9 @@ pub struct ProgressBar {
     /// It is also used if an invalid float (outside of [0, 1]) is passed.
     progress: Option<f32>,
     label: TextLayout<ArcStr>,
+    /// Animation state
+    // TODO should we cache the gradient used for the animation
+    animation: Animation,
 }
 
 impl ProgressBar {
@@ -44,6 +48,7 @@ impl ProgressBar {
         Self {
             progress: None,
             label: TextLayout::new("".into(), crate::theme::TEXT_SIZE_NORMAL as f32),
+            animation: Animation::new(),
         }
     }
 
@@ -59,6 +64,11 @@ impl ProgressBar {
     /// Updates the text layout with the current part-complete value
     fn update_text(&mut self) {
         self.label.set_text(self.value().into());
+    }
+
+    /// How much of the widget should the progress bar take up (in range `[0, 1]`)
+    fn rel_bar_len(&self) -> f64 {
+        self.progress.unwrap_or(1.).into()
     }
 
     fn value(&self) -> ArcStr {
@@ -124,7 +134,19 @@ impl Widget for ProgressBar {
         ctx.request_paint();
     }
 
-    fn lifecycle(&mut self, _ctx: &mut LifeCycleCtx, _event: &LifeCycle) {}
+    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
+        match event {
+            LifeCycle::WidgetAdded => ctx.request_anim_frame(),
+            LifeCycle::AnimFrame(nanos) => {
+                // TODO use timer for 'passive' part of the animation
+                let nanos = *nanos as f64 / 1_000_000.;
+                self.animation.step(nanos);
+                ctx.request_anim_frame();
+                ctx.request_paint();
+            }
+            _ => (),
+        }
+    }
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
         const DEFAULT_WIDTH: f64 = 400.;
@@ -140,22 +162,25 @@ impl Widget for ProgressBar {
             crate::theme::BASIC_WIDGET_HEIGHT.max(label_size.height),
         );
         let our_size = bc.constrain(desired_size);
+
+        // update animation parameters
+        self.animation
+            .set_bar_len(our_size.width * self.rel_bar_len());
+        self.animation.set_anim_width(our_size.height);
+
         trace!("Computed layout: size={}", our_size);
         our_size
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
         let border_width = 1.;
+        let size = ctx.size();
 
         if self.label.needs_rebuild() {
             debug_panic!("Called ProgressBar paint before layout");
         }
 
-        let rect = ctx
-            .size()
-            .to_rect()
-            .inset(-border_width / 2.)
-            .to_rounded_rect(2.);
+        let rect = size.to_rect().inset(-border_width / 2.).to_rounded_rect(2.);
 
         fill_lin_gradient(
             scene,
@@ -167,10 +192,8 @@ impl Widget for ProgressBar {
 
         stroke(scene, &rect, theme::BORDER_DARK, border_width);
 
-        let progress_rect_size = Size::new(
-            ctx.size().width * self.progress.unwrap_or(1.) as f64,
-            ctx.size().height,
-        );
+        let bar_len = self.rel_bar_len();
+        let progress_rect_size = Size::new(size.width * bar_len, size.height);
         let progress_rect = progress_rect_size
             .to_rect()
             .inset(-border_width / 2.)
@@ -185,12 +208,27 @@ impl Widget for ProgressBar {
         );
         stroke(scene, &progress_rect, theme::BORDER_DARK, border_width);
 
+        // animation
+        scene.push_layer(BlendMode::default(), 1., Affine::IDENTITY, &progress_rect);
+        const WHITE_TRANSPARENT: Color = Color::rgba8(255, 255, 255, 0);
+        const WHITE_SEMITRANSPARENT: Color = Color::rgba8(255, 255, 255, 64);
+        if let Some(pos) = self.animation.position() {
+            let rect = Rect::from_origin_size((pos, 0.), (size.height, size.height));
+            fill_lin_gradient(
+                scene,
+                &rect,
+                [WHITE_TRANSPARENT, WHITE_SEMITRANSPARENT, WHITE_TRANSPARENT],
+                UnitPoint::new(0., 0.4),
+                UnitPoint::new(1., 0.6),
+            );
+        }
+        scene.pop_layer();
+
         // center text
-        let widget_size = ctx.size();
         let label_size = self.label.size();
         let text_pos = Point::new(
-            ((widget_size.width - label_size.width) * 0.5).max(0.),
-            ((widget_size.height - label_size.height) * 0.5).max(0.),
+            ((size.width - label_size.width) * 0.5).max(0.),
+            ((size.height - label_size.height) * 0.5).max(0.),
         );
         self.label.draw(scene, text_pos);
     }
@@ -213,6 +251,91 @@ impl Widget for ProgressBar {
 
     fn get_debug_text(&self) -> Option<String> {
         Some(self.value_accessibility().into())
+    }
+}
+
+struct Animation {
+    // configs
+    /// The time to wait between animations, in ms.
+    time_between_anims_ms: f64,
+    /// The number of ms to take to cover 100 pixels (speed of animation)
+    ms_per_100px: f64,
+
+    /// a value in `[0, 1)`` that indicates how far through a cycle we are
+    cycle_position: f64,
+    /// The total length of the progress bar, used to calculate speed
+    bar_len_px: f64,
+    /// How wide the animation will be (for positioning)
+    anim_width_px: f64,
+}
+
+impl Animation {
+    /// 2 secs between animations
+    const DEFAULT_TIME_BETWEEN_ANIMS_MS: f64 = 2000.;
+    /// cover 500px per second
+    const DEFAULT_MS_PER_100PX: f64 = 500.;
+
+    fn new() -> Self {
+        Self {
+            time_between_anims_ms: Self::DEFAULT_TIME_BETWEEN_ANIMS_MS,
+            ms_per_100px: Self::DEFAULT_MS_PER_100PX,
+
+            cycle_position: 0.,
+            // We set the bar length to some arbitrary value. If it is not updated then the animation
+            // will change speed depending on the actual bar length
+            bar_len_px: 400.,
+            // Again, this should be overwritten with the correct value
+            anim_width_px: 18.,
+        }
+    }
+
+    fn set_bar_len(&mut self, bar_len: f64) {
+        self.bar_len_px = bar_len;
+        // no need to update cycle position
+    }
+
+    fn set_anim_width(&mut self, anim_width: f64) {
+        self.anim_width_px = anim_width;
+    }
+
+    /// The position to draw the animation (or `None` if we shouldn't draw)
+    fn position(&self) -> Option<f64> {
+        let cycle_time = self.cycle_time();
+        let waiting_end = self.time_between_anims_ms / cycle_time;
+        if self.cycle_position < waiting_end {
+            return None;
+        }
+        // We now know we are in the draw state
+        // scale position to be on `[0, 1)` in the draw section
+        let pos = (self.cycle_position - waiting_end) / (1. - waiting_end);
+        // scale to pixels
+        let pos = pos * self.bar_len_px;
+        // scale pos so we start off the end and finish off the end
+        // 0 -> -anim_width, end -> end
+        let scale = (self.anim_width_px + self.bar_len_px) / self.bar_len_px;
+        let pos = pos * scale - self.anim_width_px;
+        Some(pos)
+    }
+
+    /// Step the animation forward by `delta_ms` milliseconds
+    fn step(&mut self, delta_ms: f64) {
+        // update time
+        let delta = delta_ms / self.cycle_time();
+        self.cycle_position = (self.cycle_position + delta).rem_euclid(1.);
+    }
+
+    /// milliseconds to move 1 pixel
+    fn ms_per_pixel(&self) -> f64 {
+        self.ms_per_100px * 0.01
+    }
+
+    /// Time for a whole animation cycle
+    fn cycle_time(&self) -> f64 {
+        self.time_between_anims_ms + self.ms_per_pixel() * self.bar_len_px
+    }
+
+    fn reset(&mut self) {
+        self.cycle_position = 0.;
     }
 }
 
