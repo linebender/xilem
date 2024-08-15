@@ -1,6 +1,10 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+#[cfg(feature = "hydration")]
+use crate::vecmap::VecMap;
+#[cfg(feature = "hydration")]
+use std::any::{Any, TypeId};
 use std::rc::Rc;
 
 use crate::{
@@ -34,8 +38,7 @@ pub struct ViewCtx {
     #[cfg(feature = "hydration")]
     is_hydrating: bool,
     #[cfg(feature = "hydration")]
-    pub(crate) templates:
-        crate::vecmap::VecMap<std::any::TypeId, (web_sys::Node, Rc<dyn std::any::Any>)>,
+    pub(crate) templates: VecMap<TypeId, (web_sys::Node, Rc<dyn Any>)>,
 }
 
 impl Default for ViewCtx {

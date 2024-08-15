@@ -17,7 +17,7 @@ macro_rules! impl_string_view {
 
             fn orphan_build(
                 view: &$ty,
-                #[allow(unused_variables)] ctx: &mut ViewCtx,
+                #[cfg_attr(not(feature = "hydration"), allow(unused_variables))] ctx: &mut ViewCtx,
             ) -> (Self::OrphanElement, Self::OrphanViewState) {
                 #[cfg(feature = "hydration")]
                 let node = if ctx.is_hydrating() {
@@ -77,7 +77,7 @@ macro_rules! impl_to_string_view {
 
             fn orphan_build(
                 view: &$ty,
-                #[allow(unused_variables)] ctx: &mut ViewCtx,
+                #[cfg_attr(not(feature = "hydration"), allow(unused_variables))] ctx: &mut ViewCtx,
             ) -> (Self::OrphanElement, Self::OrphanViewState) {
                 #[cfg(feature = "hydration")]
                 let node = if ctx.is_hydrating() {
