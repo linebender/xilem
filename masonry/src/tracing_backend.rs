@@ -6,7 +6,6 @@ use std::time::UNIX_EPOCH;
 
 use time::macros::format_description;
 use tracing::subscriber::SetGlobalDefaultError;
-use tracing::Level;
 use tracing_subscriber::filter::LevelFilter;
 use tracing_subscriber::fmt::time::UtcTime;
 use tracing_subscriber::prelude::*;
