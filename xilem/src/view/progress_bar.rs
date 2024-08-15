@@ -55,16 +55,7 @@ impl<State, Action> View<State, Action, ViewCtx> for ProgressBar {
         message: xilem_core::DynMessage,
         _app_state: &mut State,
     ) -> MessageResult<Action> {
-        debug_assert!(
-            id_path.is_empty(),
-            "id path should be empty in ProgressBar::message"
-        );
-        match message.downcast::<masonry::Action>() {
-            Ok(_) => MessageResult::Nop,
-            Err(message) => {
-                tracing::error!("Wrong message type in Checkbox::message");
-                MessageResult::Stale(message)
-            }
-        }
+        tracing::error!("Message arrived in ProgressBar::ProgressBar, but Label doesn't consume any messages, this is a bug");
+        MessageResult::Stale(message)
     }
 }

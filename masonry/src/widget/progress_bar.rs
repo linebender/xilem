@@ -187,7 +187,10 @@ impl Widget for ProgressBar {
     }
 
     fn accessibility(&mut self, ctx: &mut AccessCtx) {
-        ctx.current_node().set_value(self.value_accessibility())
+        ctx.current_node().set_value(self.value_accessibility());
+        if let Some(value) = self.part_complete {
+            ctx.current_node().set_value(value * 100.0);
+        }
     }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
@@ -195,7 +198,7 @@ impl Widget for ProgressBar {
     }
 
     fn make_trace_span(&self) -> Span {
-        trace_span!("Progress bar")
+        trace_span!("ProgressBar")
     }
 
     fn get_debug_text(&self) -> Option<String> {
@@ -230,6 +233,6 @@ mod tests {
         let mut harness = TestHarness::create(widget);
 
         assert_debug_snapshot!(harness.root_widget());
-        assert_render_snapshot!(harness, "hello_unchecked");
+        assert_render_snapshot!(harness, "default_bar");
     }
 }
