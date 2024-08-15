@@ -6,12 +6,12 @@ use xilem_core::{Mut, ViewMarker};
 
 use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
 
-pub fn progress_bar(part_complete: Option<f32>) -> ProgressBar {
-    ProgressBar { part_complete }
+pub fn progress_bar(progress: Option<f32>) -> ProgressBar {
+    ProgressBar { progress }
 }
 
 pub struct ProgressBar {
-    part_complete: Option<f32>,
+    progress: Option<f32>,
 }
 
 impl ViewMarker for ProgressBar {}
@@ -20,9 +20,7 @@ impl<State, Action> View<State, Action, ViewCtx> for ProgressBar {
     type ViewState = ();
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        ctx.with_leaf_action_widget(|_| {
-            Pod::new(masonry::widget::ProgressBar::new(self.part_complete))
-        })
+        ctx.with_leaf_action_widget(|_| Pod::new(masonry::widget::ProgressBar::new(self.progress)))
     }
 
     fn rebuild<'el>(
@@ -32,8 +30,8 @@ impl<State, Action> View<State, Action, ViewCtx> for ProgressBar {
         ctx: &mut ViewCtx,
         mut element: Mut<'el, Self::Element>,
     ) -> Mut<'el, Self::Element> {
-        if prev.part_complete != self.part_complete {
-            element.set_part_complete(self.part_complete);
+        if prev.progress != self.progress {
+            element.set_progress(self.progress);
             ctx.mark_changed();
         }
         element
@@ -51,7 +49,7 @@ impl<State, Action> View<State, Action, ViewCtx> for ProgressBar {
     fn message(
         &self,
         (): &mut Self::ViewState,
-        id_path: &[ViewId],
+        _id_path: &[ViewId],
         message: xilem_core::DynMessage,
         _app_state: &mut State,
     ) -> MessageResult<Action> {

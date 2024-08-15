@@ -24,34 +24,34 @@ pub struct ProgressBar {
     ///
     /// `None` variant can be used to show a progress bar without a percentage.
     /// It is also used if an invalid float (outside of [0, 1]) is passed.
-    part_complete: Option<f32>,
+    progress: Option<f32>,
     label: TextLayout<ArcStr>,
 }
 
 impl ProgressBar {
     /// Create a new `ProgressBar`.
     ///
-    /// `part_complete` is a number between 0 and 1 inclusive. If it is `NaN`, then an
+    /// `progress` is a number between 0 and 1 inclusive. If it is `NaN`, then an
     /// indefinite progress bar will be shown.
     /// Otherwise, the input will be clamped to [0, 1].
-    pub fn new(part_complete: Option<f32>) -> Self {
+    pub fn new(progress: Option<f32>) -> Self {
         let mut out = Self::new_indefinite();
-        out.set_part_complete(part_complete);
+        out.set_progress(progress);
         out
     }
 
     fn new_indefinite() -> Self {
         Self {
-            part_complete: None,
+            progress: None,
             label: TextLayout::new("".into(), crate::theme::TEXT_SIZE_NORMAL as f32),
         }
     }
 
-    fn set_part_complete(&mut self, mut part_complete: Option<f32>) {
-        clamp_part_complete(&mut part_complete);
+    fn set_progress(&mut self, mut progress: Option<f32>) {
+        clamp_progress(&mut progress);
         // check to see if we can avoid doing work
-        if self.part_complete != part_complete {
-            self.part_complete = part_complete;
+        if self.progress != progress {
+            self.progress = progress;
             self.update_text();
         }
     }
@@ -62,7 +62,7 @@ impl ProgressBar {
     }
 
     fn value(&self) -> ArcStr {
-        if let Some(value) = self.part_complete {
+        if let Some(value) = self.progress {
             format!("{:.0}%", value * 100.).into()
         } else {
             "".into()
@@ -70,7 +70,7 @@ impl ProgressBar {
     }
 
     fn value_accessibility(&self) -> Box<str> {
-        if let Some(value) = self.part_complete {
+        if let Some(value) = self.progress {
             format!("{:.0}%", value * 100.).into()
         } else {
             "progress unspecified".into()
@@ -80,10 +80,23 @@ impl ProgressBar {
 
 // --- MARK: WIDGETMUT ---
 impl WidgetMut<'_, ProgressBar> {
-    pub fn set_part_complete(&mut self, part_complete: Option<f32>) {
-        self.widget.set_part_complete(part_complete);
+    pub fn set_progress(&mut self, progress: Option<f32>) {
+        self.widget.set_progress(progress);
         self.ctx.request_layout();
         self.ctx.request_accessibility_update();
+    }
+}
+
+/// Helper to ensure progress is either a number between [0, 1] inclusive, or `None`.
+///
+/// NaNs are converted to `None`.
+fn clamp_progress(progress: &mut Option<f32>) {
+    if let Some(value) = progress {
+        if value.is_nan() {
+            *progress = None;
+        } else {
+            *progress = Some(value.clamp(0., 1.));
+        }
     }
 }
 
@@ -155,7 +168,7 @@ impl Widget for ProgressBar {
         stroke(scene, &rect, theme::BORDER_DARK, border_width);
 
         let progress_rect_size = Size::new(
-            ctx.size().width * self.part_complete.unwrap_or(1.) as f64,
+            ctx.size().width * self.progress.unwrap_or(1.) as f64,
             ctx.size().height,
         );
         let progress_rect = progress_rect_size
@@ -200,16 +213,6 @@ impl Widget for ProgressBar {
 
     fn get_debug_text(&self) -> Option<String> {
         Some(self.value_accessibility().into())
-    }
-}
-
-fn clamp_part_complete(part_complete: &mut Option<f32>) {
-    if let Some(value) = part_complete {
-        if value.is_nan() {
-            *part_complete = None;
-        } else {
-            *part_complete = Some(value.clamp(0., 1.));
-        }
     }
 }
 
