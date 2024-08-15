@@ -20,7 +20,7 @@ use crate::action::Action;
 use crate::dpi::{LogicalPosition, PhysicalPosition, PhysicalSize};
 use crate::event::{PointerButton, PointerEvent, PointerState, TextEvent, WindowEvent};
 use crate::render_root::{RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy};
-use crate::tracing_backend::try_init_tracing;
+use crate::tracing_backend::try_init_test_tracing;
 use crate::widget::{WidgetMut, WidgetRef};
 use crate::{Color, Handled, Point, Size, Vec2, Widget, WidgetId};
 
@@ -177,7 +177,7 @@ impl TestHarness {
         // Having a default subscriber is helpful for tests; swallowing errors means
         // we don't panic if the user has already set one, or a test creates multiple
         // harnesses.
-        let _ = try_init_tracing(true);
+        let _ = try_init_test_tracing();
 
         let mut harness = TestHarness {
             render_root: RenderRoot::new(

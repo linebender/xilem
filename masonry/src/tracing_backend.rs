@@ -6,6 +6,7 @@ use std::time::UNIX_EPOCH;
 
 use time::macros::format_description;
 use tracing::subscriber::SetGlobalDefaultError;
+use tracing::Level;
 use tracing_subscriber::filter::LevelFilter;
 use tracing_subscriber::fmt::time::UtcTime;
 use tracing_subscriber::prelude::*;
@@ -34,12 +35,14 @@ pub(crate) fn try_init_wasm_tracing() -> Result<(), SetGlobalDefaultError> {
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-pub(crate) fn try_init_layered_tracing(testing: bool) -> Result<(), SetGlobalDefaultError> {
-    // Default level is DEBUG in --dev, INFO in --release, WARN in unit tests.
+pub(crate) fn try_init_layered_tracing(
+    default_level: Option<LevelFilter>,
+) -> Result<(), SetGlobalDefaultError> {
+    // Default level is DEBUG in --dev, INFO in --release, unless a level is passed.
     // DEBUG should print a few logs per low-density event.
     // INFO should only print logs for noteworthy things.
-    let default_level = if testing {
-        LevelFilter::WARN
+    let default_level = if let Some(level) = default_level {
+        level
     } else if cfg!(debug_assertions) {
         LevelFilter::DEBUG
     } else {
@@ -101,10 +104,23 @@ pub(crate) fn try_init_layered_tracing(testing: bool) -> Result<(), SetGlobalDef
     Ok(())
 }
 
-pub(crate) fn try_init_tracing(testing: bool) -> Result<(), SetGlobalDefaultError> {
+pub(crate) fn try_init_test_tracing() -> Result<(), SetGlobalDefaultError> {
     #[cfg(not(target_arch = "wasm32"))]
     {
-        try_init_layered_tracing(testing)
+        // For unit tests we want to suppress most messages.
+        try_init_layered_tracing(Some(LevelFilter::WARN))
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    {
+        try_init_wasm_tracing()
+    }
+}
+
+pub(crate) fn try_init_tracing() -> Result<(), SetGlobalDefaultError> {
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        try_init_layered_tracing(None)
     }
 
     #[cfg(target_arch = "wasm32")]
