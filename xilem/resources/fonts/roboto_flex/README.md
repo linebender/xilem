@@ -21,7 +21,7 @@ Roboto Flex is a variable font with these axes:
 The subset was created using the command:
 
 ```shell
-> fonttools subset --text="0123456789:-/+=÷×±" --output-file=RobotoFlex-Subset.ttf RobotoFlex-VariableFont_GRAD,XOPQ,XTRA,YOPQ,YTAS,YTDE,YTFI,YTLC,YTUC,opsz,slnt,wdth,wght.ttf --layout-features='*'
+> fonttools subset --text="0123456789:-/+=÷×±()" --output-file=RobotoFlex-Subset.ttf RobotoFlex-VariableFont_GRAD,XOPQ,XTRA,YOPQ,YTAS,YTDE,YTFI,YTLC,YTUC,opsz,slnt,wdth,wght.ttf --layout-features='*'
 ```
 
 with RobotoFlex [downloaded from Google Fonts](https://fonts.google.com/specimen/Roboto+Flex) in early August 2024:
