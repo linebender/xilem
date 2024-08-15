@@ -1,6 +1,8 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+#[cfg(feature = "hydration")]
+use wasm_bindgen::JsCast;
 use xilem_core::{Mut, OrphanView};
 
 use crate::{DynMessage, Pod, ViewCtx};
@@ -15,13 +17,17 @@ macro_rules! impl_string_view {
 
             fn orphan_build(
                 view: &$ty,
-                _ctx: &mut ViewCtx,
+                #[cfg_attr(not(feature = "hydration"), allow(unused_variables))] ctx: &mut ViewCtx,
             ) -> (Self::OrphanElement, Self::OrphanViewState) {
-                let pod = Pod {
-                    node: web_sys::Text::new_with_data(view).unwrap(),
-                    props: (),
+                #[cfg(feature = "hydration")]
+                let node = if ctx.is_hydrating() {
+                    ctx.hydrate_node().unwrap().dyn_into().unwrap()
+                } else {
+                    web_sys::Text::new_with_data(view).unwrap()
                 };
-                (pod, ())
+                #[cfg(not(feature = "hydration"))]
+                let node = web_sys::Text::new_with_data(view).unwrap();
+                (Pod { node, props: () }, ())
             }
 
             fn orphan_rebuild<'a>(
@@ -71,13 +77,17 @@ macro_rules! impl_to_string_view {
 
             fn orphan_build(
                 view: &$ty,
-                _ctx: &mut ViewCtx,
+                #[cfg_attr(not(feature = "hydration"), allow(unused_variables))] ctx: &mut ViewCtx,
             ) -> (Self::OrphanElement, Self::OrphanViewState) {
-                let pod = Pod {
-                    node: web_sys::Text::new_with_data(&view.to_string()).unwrap(),
-                    props: (),
+                #[cfg(feature = "hydration")]
+                let node = if ctx.is_hydrating() {
+                    ctx.hydrate_node().unwrap().dyn_into().unwrap()
+                } else {
+                    web_sys::Text::new_with_data(&view.to_string()).unwrap()
                 };
-                (pod, ())
+                #[cfg(not(feature = "hydration"))]
+                let node = web_sys::Text::new_with_data(&view.to_string()).unwrap();
+                (Pod { node, props: () }, ())
             }
 
             fn orphan_rebuild<'a>(

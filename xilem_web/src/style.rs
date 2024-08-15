@@ -128,6 +128,18 @@ pub struct Styles {
     start_idx: usize, // same here
     /// a flag necessary, such that `start_style_modifier` doesn't always overwrite the last changes in `View::build`
     build_finished: bool,
+    #[cfg(feature = "hydration")]
+    pub(crate) in_hydration: bool,
+}
+
+#[cfg(feature = "hydration")]
+impl Styles {
+    pub(crate) fn new(in_hydration: bool) -> Self {
+        Self {
+            in_hydration,
+            ..Default::default()
+        }
+    }
 }
 
 fn set_style(element: &web_sys::Element, name: &str, value: &str) {
@@ -148,6 +160,14 @@ fn remove_style(element: &web_sys::Element, name: &str) {
 
 impl Styles {
     pub fn apply_style_changes(&mut self, element: &web_sys::Element) {
+        #[cfg(feature = "hydration")]
+        if self.in_hydration {
+            self.updated_styles.clear();
+            self.build_finished = true;
+            self.in_hydration = false;
+            return;
+        }
+
         if !self.updated_styles.is_empty() {
             for modifier in self.style_modifiers.iter().rev() {
                 match modifier {

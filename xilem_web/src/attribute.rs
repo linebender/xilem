@@ -46,6 +46,18 @@ pub struct Attributes {
     start_idx: usize, // same here
     /// a flag necessary, such that `start_attribute_modifier` doesn't always overwrite the last changes in `View::build`
     build_finished: bool,
+    #[cfg(feature = "hydration")]
+    pub(crate) in_hydration: bool,
+}
+
+#[cfg(feature = "hydration")]
+impl Attributes {
+    pub(crate) fn new(in_hydration: bool) -> Self {
+        Self {
+            in_hydration,
+            ..Default::default()
+        }
+    }
 }
 
 fn set_attribute(element: &web_sys::Element, name: &str, value: &str) {
@@ -87,6 +99,14 @@ fn remove_attribute(element: &web_sys::Element, name: &str) {
 impl Attributes {
     /// applies potential changes of the attributes of an element to the underlying DOM node
     pub fn apply_attribute_changes(&mut self, element: &web_sys::Element) {
+        #[cfg(feature = "hydration")]
+        if self.in_hydration {
+            self.updated_attributes.clear();
+            self.build_finished = true;
+            self.in_hydration = false;
+            return;
+        }
+
         if !self.updated_attributes.is_empty() {
             for modifier in self.attribute_modifiers.iter().rev() {
                 match modifier {

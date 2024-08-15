@@ -103,10 +103,28 @@ pub struct Classes {
     dirty: bool,
     /// a flag necessary, such that `start_class_modifier` doesn't always overwrite the last changes in `View::build`
     build_finished: bool,
+    #[cfg(feature = "hydration")]
+    pub(crate) in_hydration: bool,
+}
+
+#[cfg(feature = "hydration")]
+impl Classes {
+    pub(crate) fn new(in_hydration: bool) -> Self {
+        Self {
+            in_hydration,
+            ..Default::default()
+        }
+    }
 }
 
 impl Classes {
     pub fn apply_class_changes(&mut self, element: &web_sys::Element) {
+        #[cfg(feature = "hydration")]
+        if self.in_hydration {
+            self.in_hydration = false;
+            self.dirty = false;
+        }
+
         if self.dirty {
             self.dirty = false;
             self.classes.clear();

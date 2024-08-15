@@ -38,6 +38,8 @@ mod one_of;
 mod optional_action;
 mod pointer;
 mod style;
+#[cfg(feature = "hydration")]
+mod templated;
 mod text;
 mod vec_splice;
 mod vecmap;
@@ -63,6 +65,9 @@ pub use self::{
     pointer::{Pointer, PointerDetails, PointerMsg},
     style::{style, ElementWithStyle, IntoStyles, Style, Styles, WithStyle},
 };
+
+#[cfg(feature = "hydration")]
+pub use templated::{templated, Templated};
 
 pub use xilem_core as core;
 
@@ -286,19 +291,21 @@ impl AnyPod {
         this: &mut PodMut<'_, DynNode, Box<dyn Any>>,
         node: Pod<E, P>,
     ) {
-        this.parent
-            .replace_child(node.node.as_ref(), this.node.as_ref())
-            .unwrap_throw();
+        if let Some(parent) = this.parent {
+            parent
+                .replace_child(node.node.as_ref(), this.node.as_ref())
+                .unwrap_throw();
+        }
         this.node.inner = Box::new(node.node);
         *this.props = Box::new(node.props);
     }
 
     fn as_mut<'a>(
         &'a mut self,
-        parent: &'a web_sys::Node,
+        parent: impl Into<Option<&'a web_sys::Node>>,
         was_removed: bool,
     ) -> PodMut<'a, DynNode, Box<dyn Any>> {
-        PodMut::new(&mut self.node, &mut self.props, parent, was_removed)
+        PodMut::new(&mut self.node, &mut self.props, parent.into(), was_removed)
     }
 }
 
@@ -326,7 +333,7 @@ impl DomNode<Box<dyn Any>> for DynNode {
 pub struct PodMut<'a, E: DomNode<P>, P> {
     node: &'a mut E,
     props: &'a mut P,
-    parent: &'a web_sys::Node,
+    parent: Option<&'a web_sys::Node>,
     was_removed: bool,
 }
 
@@ -334,7 +341,7 @@ impl<'a, E: DomNode<P>, P> PodMut<'a, E, P> {
     fn new(
         node: &'a mut E,
         props: &'a mut P,
-        parent: &'a web_sys::Node,
+        parent: Option<&'a web_sys::Node>,
         was_removed: bool,
     ) -> PodMut<'a, E, P> {
         PodMut {
