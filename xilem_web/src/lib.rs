@@ -29,8 +29,6 @@ pub const MATHML_NS: &str = "http://www.w3.org/1998/Math/MathML";
 
 mod after_update;
 mod app;
-#[cfg(feature = "hydration")]
-mod as_template;
 mod attribute;
 mod attribute_value;
 mod class;
@@ -42,6 +40,8 @@ mod one_of;
 mod optional_action;
 mod pointer;
 mod style;
+#[cfg(feature = "hydration")]
+mod templated;
 mod text;
 mod vec_splice;
 mod vecmap;
@@ -55,8 +55,6 @@ pub use after_update::{
     after_build, after_rebuild, before_teardown, AfterBuild, AfterRebuild, BeforeTeardown,
 };
 pub use app::App;
-#[cfg(feature = "hydration")]
-pub use as_template::as_template;
 pub use attribute::{Attr, Attributes, ElementWithAttributes, WithAttributes};
 pub use attribute_value::{AttributeValue, IntoAttributeValue};
 pub use class::{AsClassIter, Class, Classes, ElementWithClasses, WithClasses};
@@ -66,6 +64,8 @@ pub use message::{DynMessage, Message};
 pub use optional_action::{Action, OptionalAction};
 pub use pointer::{Pointer, PointerDetails, PointerMsg};
 pub use style::{style, ElementWithStyle, IntoStyles, Style, Styles, WithStyle};
+#[cfg(feature = "hydration")]
+pub use templated::{templated, Templated};
 pub use xilem_core as core;
 use xilem_core::ViewSequence;
 

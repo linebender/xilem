@@ -8,15 +8,15 @@ use xilem_core::{MessageResult, View, ViewMarker};
 
 use crate::{DomNode, DomView, DynMessage, PodMut, ViewCtx};
 
-pub struct AsTemplate<E>(Rc<E>);
+pub struct Templated<E>(Rc<E>);
 
-pub struct AsTemplateState<ViewState> {
+pub struct TemplatedState<ViewState> {
     view_state: ViewState,
     dirty: bool,
 }
 
-impl<E> ViewMarker for AsTemplate<E> {}
-impl<State, Action, E> View<State, Action, ViewCtx, DynMessage> for AsTemplate<E>
+impl<E> ViewMarker for Templated<E> {}
+impl<State, Action, E> View<State, Action, ViewCtx, DynMessage> for Templated<E>
 where
     State: 'static,
     Action: 'static,
@@ -24,7 +24,7 @@ where
 {
     type Element = E::Element;
 
-    type ViewState = AsTemplateState<E::ViewState>;
+    type ViewState = TemplatedState<E::ViewState>;
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let type_id = TypeId::of::<Self>();
@@ -57,7 +57,7 @@ where
             ctx.templates.insert(type_id, (template, self.0.clone()));
             (element, state)
         };
-        let state = AsTemplateState {
+        let state = TemplatedState {
             view_state,
             dirty: false,
         };
@@ -110,23 +110,27 @@ where
 
 /// This view creates an internally cached deep-clone of the underlying DOM node.
 /// When the inner view is created again, this will be done more efficiently.
-/// It's recommended to use this as wrapper, when it's expected that the inner `view` will be created a lot, for example in a long list
+/// It's recommended to use this as wrapper, when it's expected that the inner `view` is a little bigger and will be created a lot, for example in a long list
+/// It's *not* recommended to use this, when the inner `view` is rather small (as in the example),
+/// as it in that case introduces a little bit of overhead (memory and perf)
 ///
 /// Additionally it supports memoization when the given `view` is an [`Rc<impl DomView>`].
 ///
 /// # Examples
 ///
 /// ```
-/// use xilem_web::{as_template, elements::html};
+/// use xilem_web::{templated, elements::html, DomFragment};
 ///
-/// # use xilem_web::interfaces::Element;
-/// # fn component() -> impl Element<()> {
-/// as_template(html::p("This will likely created a lot"))
-/// # }
+/// fn long_list_fragment() -> impl DomFragment<()> {
+///     (0..1000)
+///         // Performance increase will be larger with a deeper child views
+///         .map(|num| templated(html::li(format!("number: {num}"))))
+///         .collect::<Vec<_>>()
+/// }
 /// ```
-pub fn as_template<State, Action, E>(view: impl Into<Rc<E>>) -> AsTemplate<E>
+pub fn templated<State, Action, E>(view: impl Into<Rc<E>>) -> Templated<E>
 where
     E: DomView<State, Action>,
 {
-    AsTemplate(view.into())
+    Templated(view.into())
 }
