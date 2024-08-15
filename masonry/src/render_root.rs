@@ -228,7 +228,7 @@ impl RenderRoot {
     /// Add a font from its raw data for use in tests.
     ///
     /// We expect to develop a much more fully-featured font API in the future, but
-    /// this is necessaary for our testing of Masonry.
+    /// this is necessary for our testing of Masonry.
     pub fn add_test_font(
         &mut self,
         data: Vec<u8>,

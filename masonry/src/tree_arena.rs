@@ -235,7 +235,7 @@ impl<'a, Item> ArenaRefChildren<'a, Item> {
     /// Get the child of the item this token is associated with, which has the given id.
     ///
     /// This is the same as [`get_child`](Self::get_child), except it consumes the
-    /// token. This is sometimes necesssary to accommodate the borrow checker.
+    /// token. This is sometimes necessary to accommodate the borrow checker.
     pub fn into_child(self, id: u64) -> Option<ArenaRef<'a, Item>> {
         self.children
             .iter()
@@ -277,7 +277,7 @@ impl<'a, Item> ArenaMutChildren<'a, Item> {
     /// Get the child of the item this token is associated with, which has the given id.
     ///
     /// This is the same as [`get_child`](Self::get_child), except it consumes the
-    /// token. This is sometimes necesssary to accommodate the borrow checker.
+    /// token. This is sometimes necessary to accommodate the borrow checker.
     pub fn into_child(self, id: u64) -> Option<ArenaRef<'a, Item>> {
         self.children
             .iter()
@@ -288,7 +288,7 @@ impl<'a, Item> ArenaMutChildren<'a, Item> {
     /// Get the child of the item this token is associated with, which has the given id.
     ///
     /// This is the same as [`get_child_mut`](Self::get_child_mut), except it consumes
-    /// the token. This is sometimes necesssary to accommodate the borrow checker.
+    /// the token. This is sometimes necessary to accommodate the borrow checker.
     pub fn into_child_mut(self, id: u64) -> Option<ArenaMut<'a, Item>> {
         self.children
             .iter_mut()

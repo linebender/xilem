@@ -332,7 +332,7 @@ mod tests {
                 105.0,
                 Size::new(100.0, 50.0),
             ),
-            // The correct aspet ratio is not available
+            // The correct aspect ratio is not available
             (
                 bc(20.0, 20.0, 40.0, 40.0),
                 10.0,
