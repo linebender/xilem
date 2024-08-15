@@ -7,10 +7,12 @@ use masonry::parley::{
     fontique::Weight,
     style::{FontFamily, FontStack},
 };
+use time::{error::IndeterminateOffset, macros::format_description, OffsetDateTime, UtcOffset};
+use vello::glyph::skrifa::raw::Offset;
 use winit::error::EventLoopError;
 use xilem::{
-    view::{button, flex, variable_label, Axis, CrossAxisAlignment, FlexExt, FlexSpacer},
-    EventLoop, EventLoopBuilder, WidgetView, Xilem,
+    view::{button, flex, label, prose, sized_box, variable_label, Axis, FlexExt, FlexSpacer},
+    Color, EventLoop, EventLoopBuilder, WidgetView, Xilem,
 };
 
 // TODO: Move to a more full-featured (e.g. multiple time-zones) example.
@@ -23,35 +25,103 @@ const LOREM: &str = r"Office hours is at 16:00";
 struct Clocks {
     /// The font [weight](Weight) used for the values.
     weight: f32,
+    /// The current UTC offset on this machine.
+    local_offset: Result<UtcOffset, IndeterminateOffset>,
+    /// The current time.
+    now_utc: OffsetDateTime,
+}
+
+impl Clocks {
+    fn local_now(&self) -> OffsetDateTime {
+        match self.local_offset {
+            Ok(offset) => self.now_utc.to_offset(offset),
+            Err(_) => self.now_utc,
+        }
+    }
+}
+
+/// A possible timezone, with an offset from UTC.
+struct TimeZone {
+    /// An approximate region which this offset applies to.
+    region: &'static str,
+    /// The offset from UTC
+    offset: time::UtcOffset,
+}
+
+impl TimeZone {
+    fn view(&self, data: &mut Clocks) -> impl WidgetView<Clocks> {
+        let date_time_in_self = data.now_utc.to_offset(self.offset);
+        sized_box(flex((
+            flex((
+                prose(self.region),
+                FlexSpacer::Flex(1.),
+                label(format!("UTC{}", self.offset)).brush(
+                    if data.local_offset.is_ok_and(|it| it == self.offset) {
+                        Color::ORANGE
+                    } else {
+                        masonry::theme::TEXT_COLOR
+                    },
+                ),
+            ))
+            .must_fill_major_axis(true)
+            .direction(Axis::Horizontal)
+            .flex(1.),
+            flex((
+                variable_label(
+                    date_time_in_self
+                        .format(format_description!("[hour repr:24]:[minute]:[second]"))
+                        .unwrap()
+                        .to_string(),
+                )
+                .text_size(48.)
+                // Use the roboto flex we have just loaded.
+                .with_font(FontStack::List(&[FontFamily::Named("Roboto Flex")]))
+                .target_weight(data.weight, 400.),
+                FlexSpacer::Flex(1.0),
+                (data.local_now().date() != date_time_in_self.date()).then(|| {
+                    label(
+                        date_time_in_self
+                            .format(format_description!("([day] [month repr:short])"))
+                            .unwrap(),
+                    )
+                }),
+            ))
+            .direction(Axis::Horizontal),
+        )))
+        .expand_width()
+        .height(72.)
+    }
 }
 
 fn app_logic(data: &mut Clocks) -> impl WidgetView<Clocks> {
     flex((
         // HACK: We add a spacer at the top for Android. See https://github.com/rust-windowing/winit/issues/2308
         FlexSpacer::Fixed(40.),
-        flex((
-            button("Increase", |data: &mut Clocks| {
-                data.weight = (data.weight + 100.).clamp(1., 1000.);
-            }),
-            button("Decrease", |data: &mut Clocks| {
-                data.weight = (data.weight - 100.).clamp(1., 1000.);
-            }),
-            button("Minimum", |data: &mut Clocks| {
-                data.weight = 1.;
-            }),
-            button("Maximum", |data: &mut Clocks| {
-                data.weight = 1000.;
-            }),
-        ))
-        .direction(Axis::Horizontal),
-        variable_label(LOREM)
-            .text_size(36.)
-            // Use the roboto flex we have just loaded.
-            .with_font(FontStack::List(&[FontFamily::Named("Roboto Flex")]))
-            // This is the key functionality
-            .target_weight(data.weight, 400.)
-            .flex(CrossAxisAlignment::Start),
+        controls(),
+        TIMEZONES.iter().map(|it| it.view(data)).collect::<Vec<_>>(),
     ))
+}
+
+fn controls() -> impl WidgetView<Clocks> {
+    flex((
+        button("Increase", |data: &mut Clocks| {
+            data.weight = (data.weight + 100.).clamp(1., 1000.);
+        }),
+        button("Decrease", |data: &mut Clocks| {
+            data.weight = (data.weight - 100.).clamp(1., 1000.);
+        }),
+        button("Minimum", |data: &mut Clocks| {
+            data.weight = 1.;
+        }),
+        button("Maximum", |data: &mut Clocks| {
+            data.weight = 1000.;
+        }),
+        button("Refresh Offset", |data: &mut Clocks| {
+            // This does nothing because of `time`'s soundness checks...
+            data.local_offset = UtcOffset::current_local_offset().or(data.local_offset);
+        }),
+    ))
+    .direction(Axis::Horizontal)
 }
 
 /// A subset of [Roboto Flex](https://fonts.google.com/specimen/Roboto+Flex), used under the OFL.
@@ -74,6 +144,8 @@ const ROBOTO_FLEX: &[u8] = include_bytes!(concat!(
 fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
     let data = Clocks {
         weight: Weight::BLACK.value(),
+        local_offset: UtcOffset::current_local_offset(),
+        now_utc: OffsetDateTime::now_utc(),
     };
 
     // Load Roboto Flex so that it can be used at runtime.
@@ -81,14 +153,6 @@ fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
 
     app.run_windowed(event_loop, "Clocks".into())?;
     Ok(())
-}
-
-/// A possible timezone, with an offset from UTC.
-struct TimeZone {
-    /// An approximate region which this offset applies to.
-    region: &'static str,
-    /// The offset from UTC of
-    offset: time::UtcOffset,
 }
 
 /// A shorthand for creating a [`TimeZone`].
@@ -127,6 +191,7 @@ const TIMEZONES: &[TimeZone] = &[
     tz("Singapore", 8),
     tz("Japan", 9),
     tz("Queensland", 10),
+    tz("Tonga", 13),
 ];
 
 #[cfg(not(target_os = "android"))]
