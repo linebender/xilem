@@ -30,15 +30,6 @@ struct Clocks {
     now_utc: OffsetDateTime,
 }
 
-impl Clocks {
-    fn local_now(&self) -> OffsetDateTime {
-        match self.local_offset {
-            Ok(offset) => self.now_utc.to_offset(offset),
-            Err(_) => self.now_utc,
-        }
-    }
-}
-
 /// A possible timezone, with an offset from UTC.
 struct TimeZone {
     /// An approximate region which this offset applies to.
@@ -47,7 +38,77 @@ struct TimeZone {
     offset: time::UtcOffset,
 }
 
+fn app_logic(data: &mut Clocks) -> impl WidgetView<Clocks> {
+    let view = flex((
+        // HACK: We add a spacer at the top for Android. See https://github.com/rust-windowing/winit/issues/2308
+        FlexSpacer::Fixed(40.),
+        local_time(data),
+        controls(),
+        // TODO: When we get responsive layouts, move this into a two-column view.
+        TIMEZONES.iter().map(|it| it.view(data)).collect::<Vec<_>>(),
+    ));
+    fork(
+        view,
+        async_repeat(
+            |proxy| async move {
+                // TODO: Synchronise with the actual "second" interval. This is expected to show the wrong second
+                // ~50% of the time.
+                let mut interval = tokio::time::interval(Duration::from_secs(1));
+                loop {
+                    interval.tick().await;
+                    let Ok(()) = proxy.message(()) else {
+                        break;
+                    };
+                }
+            },
+            |data: &mut Clocks, ()| data.now_utc = OffsetDateTime::now_utc(),
+        ),
+    )
+}
+
+/// Shows the current system time on a best-effort basis.
+// TODO: Maybe make this have a larger font size?
+fn local_time(data: &mut Clocks) -> impl WidgetView<Clocks> {
+    let (error_view, offset) = if let Ok(offset) = data.local_offset {
+        (None, offset)
+    } else {
+        (
+            Some(prose("Could not determine local UTC offset, using UTC").brush(Color::ORANGE_RED)),
+            UtcOffset::UTC,
+        )
+    };
+
+    flex((
+        TimeZone {
+            region: "Here",
+            offset,
+        }
+        .view(data),
+        error_view,
+    ))
+}
+
+/// Controls for the variable font weight.
+fn controls() -> impl WidgetView<Clocks> {
+    flex((
+        button("Increase", |data: &mut Clocks| {
+            data.weight = (data.weight + 100.).clamp(1., 1000.);
+        }),
+        button("Decrease", |data: &mut Clocks| {
+            data.weight = (data.weight - 100.).clamp(1., 1000.);
+        }),
+        button("Minimum", |data: &mut Clocks| {
+            data.weight = 1.;
+        }),
+        button("Maximum", |data: &mut Clocks| {
+            data.weight = 1000.;
+        }),
+    ))
+    .direction(Axis::Horizontal)
+}
+
 impl TimeZone {
+    /// Display this timezone as a row, designed to be shown in a list of time zones.
     fn view(&self, data: &mut Clocks) -> impl WidgetView<Clocks> {
         let date_time_in_self = data.now_utc.to_offset(self.offset);
         sized_box(flex((
@@ -93,70 +154,13 @@ impl TimeZone {
     }
 }
 
-fn local_time(data: &mut Clocks) -> impl WidgetView<Clocks> {
-    let (error_view, offset) = if let Ok(offset) = data.local_offset {
-        (None, offset)
-    } else {
-        (
-            Some(prose("Could not determine local UTC offset, using UTC").brush(Color::ORANGE_RED)),
-            UtcOffset::UTC,
-        )
-    };
-
-    flex((
-        TimeZone {
-            region: "Here",
-            offset,
+impl Clocks {
+    fn local_now(&self) -> OffsetDateTime {
+        match self.local_offset {
+            Ok(offset) => self.now_utc.to_offset(offset),
+            Err(_) => self.now_utc,
         }
-        .view(data),
-        error_view,
-    ))
-}
-
-fn app_logic(data: &mut Clocks) -> impl WidgetView<Clocks> {
-    let view = flex((
-        // HACK: We add a spacer at the top for Android. See https://github.com/rust-windowing/winit/issues/2308
-        FlexSpacer::Fixed(40.),
-        local_time(data),
-        controls(),
-        // TODO: When we get responsive layouts, move this into a two-column view.
-        TIMEZONES.iter().map(|it| it.view(data)).collect::<Vec<_>>(),
-    ));
-    fork(
-        view,
-        async_repeat(
-            |proxy| async move {
-                // TODO: Synchronise with the actual "second" interval. This is expected to show the wrong second
-                // ~50% of the time.
-                let mut interval = tokio::time::interval(Duration::from_secs(1));
-                loop {
-                    interval.tick().await;
-                    let Ok(()) = proxy.message(()) else {
-                        break;
-                    };
-                }
-            },
-            |data: &mut Clocks, ()| data.now_utc = OffsetDateTime::now_utc(),
-        ),
-    )
-}
-
-fn controls() -> impl WidgetView<Clocks> {
-    flex((
-        button("Increase", |data: &mut Clocks| {
-            data.weight = (data.weight + 100.).clamp(1., 1000.);
-        }),
-        button("Decrease", |data: &mut Clocks| {
-            data.weight = (data.weight - 100.).clamp(1., 1000.);
-        }),
-        button("Minimum", |data: &mut Clocks| {
-            data.weight = 1.;
-        }),
-        button("Maximum", |data: &mut Clocks| {
-            data.weight = 1000.;
-        }),
-    ))
-    .direction(Axis::Horizontal)
+    }
 }
 
 /// A subset of [Roboto Flex](https://fonts.google.com/specimen/Roboto+Flex), used under the OFL.
