@@ -291,8 +291,9 @@ impl<E: DomNode<P>, P: 'static> AnyElement<Pod<E, P>> for AnyPod {
 impl AnyPod {
     pub(crate) fn replace_inner<E: DomNode<P>, P: 'static>(
         this: &mut PodMut<'_, DynNode, Box<dyn Any>>,
-        node: Pod<E, P>,
+        mut node: Pod<E, P>,
     ) {
+        node.node.apply_props(&mut node.props);
         if let Some(parent) = this.parent {
             parent
                 .replace_child(node.node.as_ref(), this.node.as_ref())
