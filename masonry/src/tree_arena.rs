@@ -97,6 +97,14 @@ pub struct ArenaMutChildren<'a, Item> {
 
 // -- MARK: IMPLS ---
 
+impl<'a, Item> Clone for ArenaRef<'a, Item> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+impl<'a, Item> Copy for ArenaRef<'a, Item> {}
+
 impl<'a, Item> Clone for ArenaRefChildren<'a, Item> {
     fn clone(&self) -> Self {
         *self
@@ -374,12 +382,14 @@ impl<'a, Item> ArenaMutChildren<'a, Item> {
 
 impl<'a, Item> ArenaRef<'a, Item> {
     pub fn id(&self) -> u64 {
+        // ArenaRefChildren always has an id when it's a member of ArenaRef
         self.children.id.unwrap()
     }
 }
 
 impl<'a, Item> ArenaMut<'a, Item> {
     pub fn id(&self) -> u64 {
+        // ArenaRefChildren always has an id when it's a member of ArenaRef
         self.children.id.unwrap()
     }
 

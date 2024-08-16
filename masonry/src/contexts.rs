@@ -887,6 +887,9 @@ impl ComposeCtx<'_> {
         self.widget_state.needs_compose
     }
 
+    /// Set a translation for the child widget.
+    ///
+    /// The translation is applied on top of the position from [`LayoutCtx::place_child`].
     pub fn set_child_translation(&mut self, translation: Vec2) {
         if self.widget_state.translation != translation {
             self.widget_state.translation = translation;

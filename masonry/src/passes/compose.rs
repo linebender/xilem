@@ -87,8 +87,6 @@ fn compose_widget(
             parent_state.merge_up(state.item);
         },
     );
-
-    // state.item.moved = false;
 }
 
 // ----------------
