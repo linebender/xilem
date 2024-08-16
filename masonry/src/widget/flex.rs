@@ -190,14 +190,14 @@ impl Flex {
         self
     }
 
-    /// Builder-style variant of `add_child`.
+    /// Builder-style variant of [`WidgetMut::add_child`].
     ///
     /// Convenient for assembling a group of widgets in a single expression.
     pub fn with_child(self, child: impl Widget) -> Self {
         self.with_child_pod(WidgetPod::new(Box::new(child)))
     }
 
-    /// Builder-style variant of `add_child`, that takes the id that the child will have.
+    /// Builder-style variant of [`WidgetMut::add_child`], that takes the id that the child will have.
     ///
     /// Useful for unit tests.
     pub fn with_child_id(self, child: impl Widget, id: WidgetId) -> Self {
@@ -398,7 +398,7 @@ impl<'a> WidgetMut<'a, Flex> {
     /// If you are laying out standard controls in this container, you should
     /// generally prefer to use [`add_default_spacer`].
     ///
-    /// [`add_default_spacer`]: Flex::add_default_spacer
+    /// [`add_default_spacer`]: WidgetMut::add_default_spacer
     pub fn add_spacer(&mut self, mut len: f64) {
         if len < 0.0 {
             tracing::warn!("add_spacer called with negative length: {}", len);
@@ -478,7 +478,7 @@ impl<'a> WidgetMut<'a, Flex> {
     /// If you are laying out standard controls in this container, you should
     /// generally prefer to use [`add_default_spacer`].
     ///
-    /// [`add_default_spacer`]: Flex::add_default_spacer
+    /// [`add_default_spacer`]: WidgetMut::add_default_spacer
     pub fn insert_spacer(&mut self, idx: usize, mut len: f64) {
         if len < 0.0 {
             tracing::warn!("add_spacer called with negative length: {}", len);

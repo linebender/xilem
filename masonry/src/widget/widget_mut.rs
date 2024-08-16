@@ -15,7 +15,7 @@ use crate::{Widget, WidgetState};
 ///
 /// You can create a `WidgetMut` from [`TestHarness`](crate::testing::TestHarness),
 /// [`EventCtx`](crate::EventCtx), [`LifeCycleCtx`](crate::LifeCycleCtx) or from a parent
-/// `WidgetMut` with [`MutateCtx`](crate::MutateCtx).
+/// `WidgetMut` with [`MutateCtx`].
 ///
 /// `WidgetMut` implements [`Deref`](std::ops::Deref) with `W::Mut` as target.
 ///
