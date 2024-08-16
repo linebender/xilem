@@ -6,12 +6,12 @@
 use std::cmp::Ordering;
 
 use accesskit::Role;
-use kurbo::{Affine, Point, Size};
 use parley::fontique::Weight;
 use parley::layout::Alignment;
 use parley::style::{FontFamily, FontStack};
 use smallvec::SmallVec;
 use tracing::{trace, trace_span, Span};
+use vello::kurbo::{Affine, Point, Size};
 use vello::peniko::BlendMode;
 use vello::Scene;
 
