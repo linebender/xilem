@@ -118,11 +118,10 @@ fn controls() -> impl WidgetView<Clocks> {
 }
 
 /// A subset of [Roboto Flex](https://fonts.google.com/specimen/Roboto+Flex), used under the OFL.
-/// This is a variable font, and so can be.
-/// The version in the repository supports the numbers 0-9 and `:`, as it is included for this example,
-/// which is using it for clocks.
-// TODO: Double check which subset we want to commit.
-/// Full details can also be found in `xilem/resources/fonts/roboto_flex/README` from
+/// This is a variable font, and so can have its axes be animated.
+/// The version in the repository supports the numbers 0-9 and `:`, to this examples use of
+/// it for clocks.
+/// Full details can be found in `xilem/resources/fonts/roboto_flex/README` from
 /// the workspace root.
 const ROBOTO_FLEX: &[u8] = include_bytes!(concat!(
     env!("CARGO_MANIFEST_DIR"),
