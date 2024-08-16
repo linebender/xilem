@@ -18,11 +18,5 @@ expression: record
     Layout(
         400.0W×400.0H,
     ),
-    L(
-        Internal(
-            ParentWindowOrigin {
-                mouse_pos: None,
-            },
-        ),
-    ),
+    Compose,
 ]

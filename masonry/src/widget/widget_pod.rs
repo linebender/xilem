@@ -371,12 +371,6 @@ impl<W: Widget> WidgetPod<W> {
                         _ => false,
                     }
                 }
-                InternalLifeCycle::ParentWindowOrigin { .. } => {
-                    state.parent_window_origin = parent_ctx.widget_state.window_origin();
-                    state.needs_window_origin = false;
-                    // TODO - state.is_hidden
-                    true
-                }
             },
             LifeCycle::WidgetAdded => {
                 trace!(
@@ -554,6 +548,7 @@ impl<W: Widget> WidgetPod<W> {
         }
 
         state.needs_layout = false;
+        state.needs_compose = true;
         state.is_expecting_place_child_call = true;
         // TODO - Not everything that has been re-laid out needs to be repainted.
         state.needs_paint = true;

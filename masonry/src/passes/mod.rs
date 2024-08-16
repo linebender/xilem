@@ -4,6 +4,7 @@
 use crate::widget::WidgetArena;
 use crate::WidgetId;
 
+pub mod compose;
 pub mod event;
 pub mod mutate;
 pub mod update;

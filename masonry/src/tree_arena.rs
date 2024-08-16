@@ -97,6 +97,14 @@ pub struct ArenaMutChildren<'a, Item> {
 
 // -- MARK: IMPLS ---
 
+impl<'a, Item> Clone for ArenaRef<'a, Item> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+impl<'a, Item> Copy for ArenaRef<'a, Item> {}
+
 impl<'a, Item> Clone for ArenaRefChildren<'a, Item> {
     fn clone(&self) -> Self {
         *self
@@ -368,6 +376,40 @@ impl<'a, Item> ArenaMutChildren<'a, Item> {
             id: self.id,
             children: &mut *self.children,
             parents_map: self.parents_map,
+        }
+    }
+}
+
+impl<'a, Item> ArenaRef<'a, Item> {
+    pub fn id(&self) -> u64 {
+        // ArenaRefChildren always has an id when it's a member of ArenaRef
+        self.children.id.unwrap()
+    }
+}
+
+impl<'a, Item> ArenaMut<'a, Item> {
+    pub fn id(&self) -> u64 {
+        // ArenaRefChildren always has an id when it's a member of ArenaRef
+        self.children.id.unwrap()
+    }
+
+    /// Returns a shared token equivalent to this one.
+    pub fn reborrow(&mut self) -> ArenaRef<'_, Item> {
+        ArenaRef {
+            parent_id: self.parent_id,
+            item: self.item,
+            children: self.children.reborrow(),
+        }
+    }
+
+    /// Returns a mutable token equivalent to this one.
+    ///
+    /// This is sometimes useful to work with the borrow checker.
+    pub fn reborrow_mut(&mut self) -> ArenaMut<'_, Item> {
+        ArenaMut {
+            parent_id: self.parent_id,
+            item: self.item,
+            children: self.children.reborrow_mut(),
         }
     }
 }

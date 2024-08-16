@@ -209,7 +209,7 @@ impl<'w> WidgetRef<'w, dyn Widget> {
             );
         }
 
-        if after_layout && (self.state().needs_layout || self.state().needs_window_origin) {
+        if after_layout && self.state().needs_layout {
             debug_panic!(
                 "Widget '{}' #{} is invalid: widget layout state not cleared",
                 self.deref().short_type_name(),
