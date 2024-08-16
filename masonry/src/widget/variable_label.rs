@@ -49,13 +49,19 @@ impl AnimatedF32 {
     }
 
     /// Move this value to the `target` over `target` milliseconds.
+    ///
+    /// # Panics
+    ///
+    /// If `target` is not a finite value, or `over_millis` is zero or negative.
     pub fn move_to(&mut self, target: f32, over_millis: f32) {
         assert!(target.is_finite());
+        assert!(over_millis > 0., "Provided invalid time step {over_millis}");
         self.target = target;
         self.rate_per_millisecond = (self.target - self.value) / over_millis;
-        assert!(
+        debug_assert!(
             self.rate_per_millisecond.is_finite(),
-            "Provided invalid time step {over_millis}"
+            "Calculated invalid rate despite valid inputs. Current value is {}",
+            self.value
         );
     }
 
