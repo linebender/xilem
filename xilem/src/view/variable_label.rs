@@ -62,7 +62,15 @@ impl VariableLabel {
     ///
     /// Note that updating `over_millis` without changing `weight` will *not* change
     /// the length of time the weight change occurs over.
+    ///
+    /// `over_millis` should be non-negative.
+    /// `weight` should be within the valid range for font weights.
+    ///
+    /// # Panics
+    ///
+    /// If `weight` is non-finite.
     pub fn target_weight(mut self, weight: f32, over_millis: f32) -> Self {
+        assert!(weight.is_finite(), "Invalid target weight {weight}.");
         self.target_weight = Weight::new(weight);
         self.over_millis = over_millis;
         self

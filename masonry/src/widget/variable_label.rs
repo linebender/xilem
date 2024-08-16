@@ -3,6 +3,8 @@
 
 //! A label with support for animated variable font properties
 
+use std::cmp::Ordering;
+
 use accesskit::Role;
 use kurbo::{Affine, Point, Size};
 use parley::fontique::Weight;
@@ -48,21 +50,34 @@ impl AnimatedF32 {
         }
     }
 
-    /// Move this value to the `target` over `target` milliseconds.
+    /// Move this value to the `target` over `over_millis` milliseconds.
+    /// Might change the current value, if `over_millis` is zero.
+    ///
+    /// `over_millis` should be non-negative.
     ///
     /// # Panics
     ///
-    /// If `target` is not a finite value, or `over_millis` is zero or negative.
+    /// If `target` is not a finite value.
     pub fn move_to(&mut self, target: f32, over_millis: f32) {
         assert!(target.is_finite());
-        assert!(over_millis > 0., "Provided invalid time step {over_millis}");
         self.target = target;
-        self.rate_per_millisecond = (self.target - self.value) / over_millis;
-        debug_assert!(
-            self.rate_per_millisecond.is_finite(),
-            "Calculated invalid rate despite valid inputs. Current value is {}",
-            self.value
-        );
+        match over_millis.partial_cmp(&0.) {
+            Some(Ordering::Equal) => self.value = target,
+            Some(Ordering::Less) => {
+                tracing::warn!("move_to: provided negative time step {over_millis}");
+                self.value = target;
+            }
+            Some(Ordering::Greater) => {
+                // Since over_millis is positive, we know that this vector is in the direction of the `target`.
+                self.rate_per_millisecond = (self.target - self.value) / over_millis;
+                debug_assert!(
+                    self.rate_per_millisecond.is_finite(),
+                    "Calculated invalid rate despite valid inputs. Current value is {}",
+                    self.value
+                );
+            }
+            None => panic!("Provided invalid time step {over_millis}"),
+        }
     }
 
     /// Advance this animation by `by_millis` milliseconds.
