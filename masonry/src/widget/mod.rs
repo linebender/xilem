@@ -28,6 +28,7 @@ mod sized_box;
 mod spinner;
 mod split;
 mod textbox;
+mod variable_label;
 mod widget_arena;
 
 pub use self::image::Image;
@@ -44,6 +45,7 @@ pub use sized_box::SizedBox;
 pub use spinner::Spinner;
 pub use split::Split;
 pub use textbox::Textbox;
+pub use variable_label::VariableLabel;
 pub use widget_mut::WidgetMut;
 pub use widget_pod::WidgetPod;
 pub use widget_ref::WidgetRef;

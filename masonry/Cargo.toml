@@ -39,7 +39,7 @@ xi-unicode = "0.3.0"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter", "time"] }
 accesskit.workspace = true
 accesskit_winit.workspace = true
-time = { version = "0.3.36", features = ["macros", "formatting"] }
+time = { workspace = true, features = ["macros", "formatting"] }
 cursor-icon = "1.1.0"
 dpi.workspace = true
 nv-flip.workspace = true

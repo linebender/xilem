@@ -19,6 +19,8 @@ pub struct MasonryDriver<State, Logic, View, ViewState> {
     pub(crate) current_view: View,
     pub(crate) ctx: ViewCtx,
     pub(crate) view_state: ViewState,
+    // Fonts which will be registered on startup.
+    pub(crate) fonts: Vec<Vec<u8>>,
 }
 
 /// The `WidgetId` which async events should be sent to.
@@ -120,6 +122,16 @@ where
                 tracing::debug!("Nothing changed as result of action");
             }
             self.current_view = next_view;
+        }
+    }
+    fn on_start(&mut self, state: &mut event_loop_runner::MasonryState) {
+        let root = state.get_root();
+        // Register all provided fonts
+        // self.fonts is never used again, so we may as well deallocate it.
+        for font in std::mem::take(&mut self.fonts).drain(..) {
+            // We currently don't do anything with the resulting family information,
+            // because we don't have an easy way to return this to the application.
+            drop(root.register_fonts(font));
         }
     }
 }

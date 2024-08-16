@@ -47,6 +47,8 @@ pub struct Xilem<State, Logic> {
     logic: Logic,
     runtime: tokio::runtime::Runtime,
     background_color: Color,
+    // Font data to include in loading.
+    fonts: Vec<Vec<u8>>,
 }
 
 impl<State, Logic, View> Xilem<State, Logic>
@@ -61,7 +63,16 @@ where
             logic,
             runtime,
             background_color: Color::BLACK,
+            fonts: Vec::new(),
         }
+    }
+
+    /// Load a font when this `Xilem` is run.
+    ///
+    /// This is an interim API whilst font lifecycles are determined.
+    pub fn with_font(mut self, data: impl Into<Vec<u8>>) -> Self {
+        self.fonts.push(data.into());
+        self
     }
 
     /// Sets main window background color.
@@ -132,6 +143,7 @@ where
             state: self.state,
             ctx,
             view_state,
+            fonts: self.fonts,
         };
         (root_widget, driver)
     }

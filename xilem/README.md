@@ -64,6 +64,10 @@ Unless you explicitly state otherwise, any contribution intentionally submitted 
 
 Licensed under the Apache License, Version 2.0 ([LICENSE](LICENSE) or <http://www.apache.org/licenses/LICENSE-2.0>)
 
+The font file (`RobotoFlex-Subset.ttf`) in `resources/fonts/roboto_flex/` is licensed solely as documented in that folder,
+(and is not licensed under the Apache License, Version 2.0).
+Note that this file is *not* distributed with the.
+
 [Masonry]: https://crates.io/crates/masonry
 [Druid]: https://crates.io/crates/druid
 [Vello]: https://crates.io/crates/vello

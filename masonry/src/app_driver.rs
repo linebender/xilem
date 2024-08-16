@@ -1,6 +1,7 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use crate::event_loop_runner::MasonryState;
 use crate::widget::WidgetMut;
 use crate::{Action, Widget, WidgetId};
 
@@ -18,6 +19,12 @@ pub struct DriverCtx<'a> {
 
 pub trait AppDriver {
     fn on_action(&mut self, ctx: &mut DriverCtx<'_>, widget_id: WidgetId, action: Action);
+
+    #[allow(unused_variables)]
+    /// A hook which will be executed when the application starts, to allow initial configuration of the `MasonryState`.
+    ///
+    /// Use cases include loading fonts.
+    fn on_start(&mut self, state: &mut MasonryState) {}
 }
 
 impl<'a> DriverCtx<'a> {
