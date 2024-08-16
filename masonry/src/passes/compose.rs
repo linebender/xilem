@@ -1,8 +1,8 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use kurbo::Vec2;
 use tracing::info_span;
+use vello::kurbo::Vec2;
 
 use crate::render_root::{RenderRoot, RenderRootState};
 use crate::tree_arena::{ArenaMut, ArenaMutChildren};

@@ -6,9 +6,9 @@
 use std::time::Duration;
 
 use accesskit::{NodeBuilder, TreeUpdate};
-use kurbo::Vec2;
 use parley::{FontContext, LayoutContext};
 use tracing::{trace, warn};
+use vello::kurbo::Vec2;
 
 use crate::action::Action;
 use crate::render_root::{MutateCallback, RenderRootSignal, RenderRootState};
