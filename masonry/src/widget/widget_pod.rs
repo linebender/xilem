@@ -371,13 +371,6 @@ impl<W: Widget> WidgetPod<W> {
                         _ => false,
                     }
                 }
-                InternalLifeCycle::ParentWindowOrigin { .. } => {
-                    // FIXME
-                    //state.parent_window_origin = parent_ctx.widget_state.window_origin();
-                    //state.needs_window_origin = false;
-                    // TODO - state.is_hidden
-                    true
-                }
             },
             LifeCycle::WidgetAdded => {
                 trace!(
