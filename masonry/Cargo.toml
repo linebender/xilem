@@ -22,7 +22,6 @@ workspace = true
 [dependencies]
 vello.workspace = true
 wgpu.workspace = true
-kurbo.workspace = true
 parley.workspace = true
 winit.workspace = true
 smallvec.workspace = true

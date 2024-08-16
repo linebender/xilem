@@ -4,13 +4,11 @@
 //! A widget that arranges its children in a one-dimensional array.
 
 use accesskit::Role;
-use kurbo::{Affine, Stroke};
 use smallvec::SmallVec;
 use tracing::{trace, trace_span, Span};
+use vello::kurbo::{common::FloatExt, Affine, Line, Stroke, Vec2};
 use vello::Scene;
 
-use crate::kurbo::common::FloatExt;
-use crate::kurbo::{Line, Vec2};
 use crate::theme::get_debug_color;
 use crate::widget::WidgetMut;
 use crate::{

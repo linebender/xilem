@@ -4,9 +4,9 @@
 use accesskit::{NodeBuilder, NodeId};
 use smallvec::SmallVec;
 use tracing::{info_span, trace, warn};
+use vello::kurbo::{Affine, Rect, Size};
 use vello::Scene;
 
-use crate::kurbo::{Affine, Rect, Size};
 use crate::paint_scene_helpers::stroke;
 use crate::theme::get_debug_color;
 use crate::tree_arena::ArenaRefChildren;

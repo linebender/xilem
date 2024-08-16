@@ -2,14 +2,17 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use accesskit::Role;
-use kurbo::{Affine, Point, Size};
 use parley::{
     layout::Alignment,
     style::{FontFamily, FontStack},
 };
 use smallvec::SmallVec;
 use tracing::{trace, trace_span, Span};
-use vello::{peniko::BlendMode, Scene};
+use vello::{
+    kurbo::{Affine, Point, Size},
+    peniko::BlendMode,
+    Scene,
+};
 
 use crate::widget::{LineBreaking, WidgetMut};
 use crate::{

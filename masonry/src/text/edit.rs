@@ -3,8 +3,8 @@
 
 use std::ops::{Deref, DerefMut, Range};
 
-use kurbo::Point;
 use parley::{FontContext, LayoutContext};
+use vello::kurbo::Point;
 use vello::Scene;
 use winit::{
     event::Ime,

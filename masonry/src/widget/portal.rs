@@ -6,13 +6,12 @@
 use std::ops::Range;
 
 use accesskit::Role;
-use kurbo::Affine;
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace_span, Span};
+use vello::kurbo::{Affine, Point, Rect, Size, Vec2};
 use vello::peniko::BlendMode;
 use vello::Scene;
 
-use crate::kurbo::{Point, Rect, Size, Vec2};
 use crate::widget::{Axis, ScrollBar, WidgetMut};
 use crate::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,

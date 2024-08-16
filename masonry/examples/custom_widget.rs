@@ -8,9 +8,8 @@
 #![windows_subsystem = "windows"]
 
 use accesskit::Role;
-use kurbo::Stroke;
 use masonry::app_driver::{AppDriver, DriverCtx};
-use masonry::kurbo::BezPath;
+use masonry::kurbo::{BezPath, Stroke};
 use masonry::widget::{FillStrat, RootWidget};
 use masonry::{
     AccessCtx, AccessEvent, Action, Affine, BoxConstraints, Color, EventCtx, LayoutCtx, LifeCycle,

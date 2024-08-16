@@ -4,8 +4,8 @@
 use std::ops::Deref;
 
 use smallvec::SmallVec;
+use vello::kurbo::Point;
 
-use crate::kurbo::Point;
 use crate::tree_arena::ArenaRefChildren;
 use crate::{Widget, WidgetId, WidgetState};
 
