@@ -68,7 +68,6 @@ accesskit.workspace = true
 tokio = { version = "1.39.1", features = ["rt", "rt-multi-thread", "time"] }
 
 [dev-dependencies]
-# accesskit_winit.workspace = true
 # Used for `variable_clock`
 time = { workspace = true, features = ["local-offset"] }
 
