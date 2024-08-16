@@ -164,7 +164,7 @@ impl WithClasses for Classes {
             self.start_idx = 0;
         } else {
             let ClassModifier::EndMarker(start_idx) = self.class_modifiers[self.idx - 1] else {
-                unreachable!("this should not happen, as either `start_class_modifier` is happens first, or follows an end_class_modifier")
+                unreachable!("this should not happen, as either `rebuild_class_modifier` is happens first, or follows an `mark_end_of_class_modifier`")
             };
             self.idx = start_idx;
             self.start_idx = start_idx;
