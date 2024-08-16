@@ -3,6 +3,8 @@
 
 //! This example uses variable fonts in a touch sensitive digital clock.
 
+use std::time::Duration;
+
 use masonry::parley::{
     fontique::Weight,
     style::{FontFamily, FontStack},
@@ -10,9 +12,13 @@ use masonry::parley::{
 use time::{error::IndeterminateOffset, macros::format_description, OffsetDateTime, UtcOffset};
 use winit::error::EventLoopError;
 use xilem::{
-    view::{button, flex, label, prose, sized_box, variable_label, Axis, FlexExt, FlexSpacer},
+    view::{
+        async_repeat, button, flex, label, prose, sized_box, variable_label, Axis, FlexExt,
+        FlexSpacer,
+    },
     Color, EventLoop, EventLoopBuilder, WidgetView, Xilem,
 };
+use xilem_core::fork;
 
 /// The state of the application, owned by Xilem and updated by the callbacks below.
 struct Clocks {
@@ -87,12 +93,30 @@ impl TimeZone {
 }
 
 fn app_logic(data: &mut Clocks) -> impl WidgetView<Clocks> {
-    flex((
+    let view = flex((
         // HACK: We add a spacer at the top for Android. See https://github.com/rust-windowing/winit/issues/2308
         FlexSpacer::Fixed(40.),
         controls(),
+        // TODO: When we get responsive layouts, move this into a two-column view.
         TIMEZONES.iter().map(|it| it.view(data)).collect::<Vec<_>>(),
-    ))
+    ));
+    fork(
+        view,
+        async_repeat(
+            |proxy| async move {
+                // TODO: Synchronise with the actual "second" interval. This is expected to show the wrong second
+                // ~50% of the time.
+                let mut interval = tokio::time::interval(Duration::from_secs(1));
+                loop {
+                    interval.tick().await;
+                    let Ok(()) = proxy.message(()) else {
+                        break;
+                    };
+                }
+            },
+            |data: &mut Clocks, ()| data.now_utc = OffsetDateTime::now_utc(),
+        ),
+    )
 }
 
 fn controls() -> impl WidgetView<Clocks> {
