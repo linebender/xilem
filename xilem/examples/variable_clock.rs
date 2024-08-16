@@ -56,6 +56,7 @@ impl TimeZone {
                 FlexSpacer::Flex(1.),
                 label(format!("UTC{}", self.offset)).brush(
                     if data.local_offset.is_ok_and(|it| it == self.offset) {
+                        // TODO: Consider accessibility here.
                         Color::ORANGE
                     } else {
                         masonry::theme::TEXT_COLOR
@@ -92,10 +93,31 @@ impl TimeZone {
     }
 }
 
+fn local_time(data: &mut Clocks) -> impl WidgetView<Clocks> {
+    let (error_view, offset) = if let Ok(offset) = data.local_offset {
+        (None, offset)
+    } else {
+        (
+            Some(prose("Could not determine local UTC offset, using UTC").brush(Color::ORANGE_RED)),
+            UtcOffset::UTC,
+        )
+    };
+
+    flex((
+        TimeZone {
+            region: "Here",
+            offset,
+        }
+        .view(data),
+        error_view,
+    ))
+}
+
 fn app_logic(data: &mut Clocks) -> impl WidgetView<Clocks> {
     let view = flex((
         // HACK: We add a spacer at the top for Android. See https://github.com/rust-windowing/winit/issues/2308
         FlexSpacer::Fixed(40.),
+        local_time(data),
         controls(),
         // TODO: When we get responsive layouts, move this into a two-column view.
         TIMEZONES.iter().map(|it| it.view(data)).collect::<Vec<_>>(),
@@ -133,10 +155,6 @@ fn controls() -> impl WidgetView<Clocks> {
         button("Maximum", |data: &mut Clocks| {
             data.weight = 1000.;
         }),
-        button("Refresh Offset", |data: &mut Clocks| {
-            // This does nothing because of `time`'s soundness checks...
-            data.local_offset = UtcOffset::current_local_offset().or(data.local_offset);
-        }),
     ))
     .direction(Axis::Horizontal)
 }
@@ -160,6 +178,7 @@ const ROBOTO_FLEX: &[u8] = include_bytes!(concat!(
 fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
     let data = Clocks {
         weight: Weight::BLACK.value(),
+        // TODO: We can't get this on Android, because
         local_offset: UtcOffset::current_local_offset(),
         now_utc: OffsetDateTime::now_utc(),
     };
