@@ -57,23 +57,23 @@ impl<T: AsClassIter, const N: usize> AsClassIter for [T; N] {
 /// This trait enables having classes (via `className`) on DOM [`Element`](`crate::interfaces::Element`)s. It is used within [`View`]s that modify the classes of an element.
 ///
 /// Modifications have to be done on the up-traversal of [`View::rebuild`], i.e. after [`View::rebuild`] was invoked for descendent views.
-/// See the [`View`] implementation of [`Class`] for more details how to use it for [`ViewElement`]s that implement this trait.
+/// See [`Class::build`] and [`Class::rebuild`], how to use this for [`ViewElement`]s that implement this trait.
 /// When these methods are used, they have to be used in every reconciliation pass (i.e. [`View::rebuild`]).
 pub trait WithClasses {
-    /// Needs to be invoked within a [`View::build`] or [`View::rebuild`] before traversing to descendent views, and before any modifications are done
-    fn start_class_modifier(&mut self);
+    /// Needs to be invoked within a [`View::rebuild`] before traversing to descendent views, and before any modifications (with [`add_class`](`WithClasses::add_class`) or [`remove_class`](`WithClasses::remove_class`)) are done in that view
+    fn rebuild_class_modifier(&mut self);
 
     /// Needs to be invoked after any modifications are done
-    fn end_class_modifier(&mut self);
+    fn mark_end_of_class_modifier(&mut self);
 
     /// Adds a class to the element
     ///
-    /// It needs to be invoked on the up-traversal, i.e. after [`View::rebuild`] was invoked for descendent views.
+    /// When in [`View::rebuild`] this has to be invoked *after* traversing the inner `View` with [`View::rebuild`]
     fn add_class(&mut self, class_name: CowStr);
 
     /// Removes a possibly previously added class from the element
     ///
-    /// It needs to be invoked on the up-traversal, i.e. after [`View::rebuild`] was invoked for descendent views.
+    /// When in [`View::rebuild`] this has to be invoked *after* traversing the inner `View` with [`View::rebuild`]
     fn remove_class(&mut self, class_name: CowStr);
 
     // TODO something like the following, but I'm not yet sure how to support that efficiently (and without much binary bloat)
@@ -101,8 +101,6 @@ pub struct Classes {
     idx: usize,
     start_idx: usize,
     dirty: bool,
-    /// a flag necessary, such that `start_class_modifier` doesn't always overwrite the last changes in `View::build`
-    build_finished: bool,
     #[cfg(feature = "hydration")]
     pub(crate) in_hydration: bool,
 }
@@ -157,26 +155,23 @@ impl Classes {
                 element.set_class_name(&self.class_name);
             }
         }
-        self.build_finished = true;
     }
 }
 
 impl WithClasses for Classes {
-    fn start_class_modifier(&mut self) {
-        if self.build_finished {
-            if self.idx == 0 {
-                self.start_idx = 0;
-            } else {
-                let ClassModifier::EndMarker(start_idx) = self.class_modifiers[self.idx - 1] else {
-                    unreachable!("this should not happen, as either `start_class_modifier` is happens first, or follows an end_class_modifier")
-                };
-                self.idx = start_idx;
-                self.start_idx = start_idx;
-            }
+    fn rebuild_class_modifier(&mut self) {
+        if self.idx == 0 {
+            self.start_idx = 0;
+        } else {
+            let ClassModifier::EndMarker(start_idx) = self.class_modifiers[self.idx - 1] else {
+                unreachable!("this should not happen, as either `rebuild_class_modifier` is happens first, or follows an `mark_end_of_class_modifier`")
+            };
+            self.idx = start_idx;
+            self.start_idx = start_idx;
         }
     }
 
-    fn end_class_modifier(&mut self) {
+    fn mark_end_of_class_modifier(&mut self) {
         match self.class_modifiers.get_mut(self.idx) {
             Some(ClassModifier::EndMarker(_)) if !self.dirty => (), // class modifier hasn't changed
             Some(modifier) => {
@@ -226,12 +221,12 @@ impl WithClasses for Classes {
 }
 
 impl WithClasses for ElementProps {
-    fn start_class_modifier(&mut self) {
-        self.classes().start_class_modifier();
+    fn rebuild_class_modifier(&mut self) {
+        self.classes().rebuild_class_modifier();
     }
 
-    fn end_class_modifier(&mut self) {
-        self.classes().end_class_modifier();
+    fn mark_end_of_class_modifier(&mut self) {
+        self.classes().mark_end_of_class_modifier();
     }
 
     fn add_class(&mut self, class_name: CowStr) {
@@ -244,12 +239,12 @@ impl WithClasses for ElementProps {
 }
 
 impl<E: DomNode<P>, P: WithClasses> WithClasses for Pod<E, P> {
-    fn start_class_modifier(&mut self) {
-        self.props.start_class_modifier();
+    fn rebuild_class_modifier(&mut self) {
+        self.props.rebuild_class_modifier();
     }
 
-    fn end_class_modifier(&mut self) {
-        self.props.end_class_modifier();
+    fn mark_end_of_class_modifier(&mut self) {
+        self.props.mark_end_of_class_modifier();
     }
 
     fn add_class(&mut self, class_name: CowStr) {
@@ -262,12 +257,12 @@ impl<E: DomNode<P>, P: WithClasses> WithClasses for Pod<E, P> {
 }
 
 impl<E: DomNode<P>, P: WithClasses> WithClasses for PodMut<'_, E, P> {
-    fn start_class_modifier(&mut self) {
-        self.props.start_class_modifier();
+    fn rebuild_class_modifier(&mut self) {
+        self.props.rebuild_class_modifier();
     }
 
-    fn end_class_modifier(&mut self) {
-        self.props.end_class_modifier();
+    fn mark_end_of_class_modifier(&mut self) {
+        self.props.mark_end_of_class_modifier();
     }
 
     fn add_class(&mut self, class_name: CowStr) {
@@ -321,11 +316,10 @@ where
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let (mut e, s) = self.el.build(ctx);
-        e.start_class_modifier();
         for class in self.classes.class_iter() {
             e.add_class(class);
         }
-        e.end_class_modifier();
+        e.mark_end_of_class_modifier();
         (e, s)
     }
 
@@ -338,12 +332,12 @@ where
     ) -> Mut<'e, Self::Element> {
         // This has to happen, before any children are rebuilt, otherwise this state machine breaks...
         // The actual modifiers also have to happen after the children are rebuilt, see `add_class` below.
-        element.start_class_modifier();
+        element.rebuild_class_modifier();
         let mut element = self.el.rebuild(&prev.el, view_state, ctx, element);
         for class in self.classes.class_iter() {
             element.add_class(class);
         }
-        element.end_class_modifier();
+        element.mark_end_of_class_modifier();
         element
     }
 

@@ -8,6 +8,7 @@ use xilem_core::{MessageResult, View, ViewMarker};
 
 use crate::{DomNode, DomView, DynMessage, PodMut, ViewCtx};
 
+/// This view creates an internally cached deep-clone of the underlying DOM node. When the inner view is created again, this will be done more efficiently.
 pub struct Templated<E>(Rc<E>);
 
 pub struct TemplatedState<ViewState> {

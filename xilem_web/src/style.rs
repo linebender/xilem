@@ -105,12 +105,25 @@ where
     }
 }
 
+/// This trait allows (modifying) the `style` property of `HTMLElement`/`SVGElement`s, used in the DOM interface traits [`HtmlElement`](`crate::interfaces::HtmlElement`) and [`SvgElement`](`crate::interfaces::SvgElement`).
+///
+/// Modifications have to be done on the up-traversal of [`View::rebuild`], i.e. after [`View::rebuild`] was invoked for descendent views.
+/// See [`Style::build`] and [`Style::rebuild`], how to use this for [`ViewElement`]s that implement this trait.
+/// When these methods are used, they have to be used in every reconciliation pass (i.e. [`View::rebuild`]).
 pub trait WithStyle {
-    fn start_style_modifier(&mut self);
-    fn end_style_modifier(&mut self);
+    /// Needs to be invoked within a [`View::rebuild`] before traversing to descendent views, and before any modifications (with [`set_style`](`WithStyle::set_style`)) are done in that view
+    fn rebuild_style_modifier(&mut self);
+
+    /// Needs to be invoked after any modifications are done
+    fn mark_end_of_style_modifier(&mut self);
+
+    /// Sets or removes (when value is `None`) a style property from the underlying element.
+    ///
+    /// When in [`View::rebuild`] this has to be invoked *after* traversing the inner `View` with [`View::rebuild`]
     fn set_style(&mut self, name: CowStr, value: Option<CowStr>);
+
     // TODO first find a use-case for this...
-    // fn get_attr(&self, name: &str) -> Option<&CowStr>;
+    // fn get_style(&self, name: &str) -> Option<&CowStr>;
 }
 
 #[derive(Debug, PartialEq)]
@@ -121,13 +134,12 @@ enum StyleModifier {
 }
 
 #[derive(Debug, Default)]
+/// This contains all the current style properties of an [`HtmlElement`](`crate::interfaces::Element`) or [`SvgElement`](`crate::interfaces::SvgElement`).
 pub struct Styles {
     style_modifiers: Vec<StyleModifier>,
     updated_styles: VecMap<CowStr, ()>,
     idx: usize, // To save some memory, this could be u16 or even u8 (but this is risky)
     start_idx: usize, // same here
-    /// a flag necessary, such that `start_style_modifier` doesn't always overwrite the last changes in `View::build`
-    build_finished: bool,
     #[cfg(feature = "hydration")]
     pub(crate) in_hydration: bool,
 }
@@ -163,7 +175,6 @@ impl Styles {
         #[cfg(feature = "hydration")]
         if self.in_hydration {
             self.updated_styles.clear();
-            self.build_finished = true;
             self.in_hydration = false;
             return;
         }
@@ -188,7 +199,6 @@ impl Styles {
             }
             debug_assert!(self.updated_styles.is_empty());
         }
-        self.build_finished = true;
     }
 }
 
@@ -220,21 +230,19 @@ impl WithStyle for Styles {
         self.idx += 1;
     }
 
-    fn start_style_modifier(&mut self) {
-        if self.build_finished {
-            if self.idx == 0 {
-                self.start_idx = 0;
-            } else {
-                let StyleModifier::EndMarker(start_idx) = self.style_modifiers[self.idx - 1] else {
-                    unreachable!("this should not happen, as either `start_style_modifier` happens first, or follows an end_style_modifier")
-                };
-                self.idx = start_idx;
-                self.start_idx = start_idx;
-            }
+    fn rebuild_style_modifier(&mut self) {
+        if self.idx == 0 {
+            self.start_idx = 0;
+        } else {
+            let StyleModifier::EndMarker(start_idx) = self.style_modifiers[self.idx - 1] else {
+                unreachable!("this should not happen, as either `rebuild_style_modifier` happens first, or follows an `mark_end_of_style_modifier`")
+            };
+            self.idx = start_idx;
+            self.start_idx = start_idx;
         }
     }
 
-    fn end_style_modifier(&mut self) {
+    fn mark_end_of_style_modifier(&mut self) {
         match self.style_modifiers.get_mut(self.idx) {
             Some(StyleModifier::EndMarker(prev_start_idx)) if *prev_start_idx == self.start_idx => {
             } // class modifier hasn't changed
@@ -252,12 +260,12 @@ impl WithStyle for Styles {
 }
 
 impl WithStyle for ElementProps {
-    fn start_style_modifier(&mut self) {
-        self.styles().start_style_modifier();
+    fn rebuild_style_modifier(&mut self) {
+        self.styles().rebuild_style_modifier();
     }
 
-    fn end_style_modifier(&mut self) {
-        self.styles().end_style_modifier();
+    fn mark_end_of_style_modifier(&mut self) {
+        self.styles().mark_end_of_style_modifier();
     }
 
     fn set_style(&mut self, name: CowStr, value: Option<CowStr>) {
@@ -266,12 +274,12 @@ impl WithStyle for ElementProps {
 }
 
 impl<E: DomNode<P>, P: WithStyle> WithStyle for Pod<E, P> {
-    fn start_style_modifier(&mut self) {
-        self.props.start_style_modifier();
+    fn rebuild_style_modifier(&mut self) {
+        self.props.rebuild_style_modifier();
     }
 
-    fn end_style_modifier(&mut self) {
-        self.props.end_style_modifier();
+    fn mark_end_of_style_modifier(&mut self) {
+        self.props.mark_end_of_style_modifier();
     }
 
     fn set_style(&mut self, name: CowStr, value: Option<CowStr>) {
@@ -280,12 +288,12 @@ impl<E: DomNode<P>, P: WithStyle> WithStyle for Pod<E, P> {
 }
 
 impl<E: DomNode<P>, P: WithStyle> WithStyle for PodMut<'_, E, P> {
-    fn start_style_modifier(&mut self) {
-        self.props.start_style_modifier();
+    fn rebuild_style_modifier(&mut self) {
+        self.props.rebuild_style_modifier();
     }
 
-    fn end_style_modifier(&mut self) {
-        self.props.end_style_modifier();
+    fn mark_end_of_style_modifier(&mut self) {
+        self.props.mark_end_of_style_modifier();
     }
 
     fn set_style(&mut self, name: CowStr, value: Option<CowStr>) {
@@ -293,6 +301,7 @@ impl<E: DomNode<P>, P: WithStyle> WithStyle for PodMut<'_, E, P> {
     }
 }
 
+/// Syntax sugar for adding a type bound on the `ViewElement` of a view, such that both, [`ViewElement`] and [`ViewElement::Mut`] are bound to [`WithStyle`]
 pub trait ElementWithStyle: for<'a> ViewElement<Mut<'a>: WithStyle> + WithStyle {}
 
 impl<T> ElementWithStyle for T
@@ -303,6 +312,7 @@ where
 }
 
 #[derive(Clone, Debug)]
+/// A view to add `style` properties of `HTMLElement` and `SVGElement` derived elements,
 pub struct Style<E, T, A> {
     el: E,
     styles: Vec<(CowStr, CowStr)>,
@@ -332,11 +342,10 @@ where
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let (mut element, state) = self.el.build(ctx);
-        element.start_style_modifier();
         for (key, value) in &self.styles {
             element.set_style(key.clone(), Some(value.clone()));
         }
-        element.end_style_modifier();
+        element.mark_end_of_style_modifier();
         (element, state)
     }
 
@@ -347,12 +356,12 @@ where
         ctx: &mut ViewCtx,
         mut element: Mut<'e, Self::Element>,
     ) -> Mut<'e, Self::Element> {
-        element.start_style_modifier();
+        element.rebuild_style_modifier();
         let mut element = self.el.rebuild(&prev.el, view_state, ctx, element);
         for (key, value) in &self.styles {
             element.set_style(key.clone(), Some(value.clone()));
         }
-        element.end_style_modifier();
+        element.mark_end_of_style_modifier();
         element
     }
 

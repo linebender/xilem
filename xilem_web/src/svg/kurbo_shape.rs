@@ -22,12 +22,11 @@ impl<State: 'static, Action: 'static> OrphanView<Line, State, Action, DynMessage
         _ctx: &mut ViewCtx,
     ) -> (Self::OrphanElement, Self::OrphanViewState) {
         let mut element: Self::OrphanElement = Pod::new_element(Vec::new(), SVG_NS, "line").into();
-        element.start_attribute_modifier();
         element.set_attribute("x1".into(), view.p0.x.into_attr_value());
         element.set_attribute("y1".into(), view.p0.y.into_attr_value());
         element.set_attribute("x2".into(), view.p1.x.into_attr_value());
         element.set_attribute("y2".into(), view.p1.y.into_attr_value());
-        element.end_attribute_modifier();
+        element.mark_end_of_attribute_modifier();
         (element, ())
     }
 
@@ -38,12 +37,12 @@ impl<State: 'static, Action: 'static> OrphanView<Line, State, Action, DynMessage
         _ctx: &mut ViewCtx,
         mut element: Mut<'el, Self::OrphanElement>,
     ) -> Mut<'el, Self::OrphanElement> {
-        element.start_attribute_modifier();
+        element.rebuild_attribute_modifier();
         element.set_attribute("x1".into(), new.p0.x.into_attr_value());
         element.set_attribute("y1".into(), new.p0.y.into_attr_value());
         element.set_attribute("x2".into(), new.p1.x.into_attr_value());
         element.set_attribute("y2".into(), new.p1.y.into_attr_value());
-        element.end_attribute_modifier();
+        element.mark_end_of_attribute_modifier();
         element
     }
 
@@ -75,12 +74,11 @@ impl<State: 'static, Action: 'static> OrphanView<Rect, State, Action, DynMessage
         _ctx: &mut ViewCtx,
     ) -> (Self::OrphanElement, Self::OrphanViewState) {
         let mut element: Self::OrphanElement = Pod::new_element(Vec::new(), SVG_NS, "rect").into();
-        element.start_attribute_modifier();
         element.set_attribute("x".into(), view.x0.into_attr_value());
         element.set_attribute("y".into(), view.y0.into_attr_value());
         element.set_attribute("width".into(), view.width().into_attr_value());
         element.set_attribute("height".into(), view.height().into_attr_value());
-        element.end_attribute_modifier();
+        element.mark_end_of_attribute_modifier();
         (element, ())
     }
 
@@ -91,12 +89,12 @@ impl<State: 'static, Action: 'static> OrphanView<Rect, State, Action, DynMessage
         _ctx: &mut ViewCtx,
         mut element: Mut<'el, Self::OrphanElement>,
     ) -> Mut<'el, Self::OrphanElement> {
-        element.start_attribute_modifier();
+        element.rebuild_attribute_modifier();
         element.set_attribute("x".into(), new.x0.into_attr_value());
         element.set_attribute("y".into(), new.y0.into_attr_value());
         element.set_attribute("width".into(), new.width().into_attr_value());
         element.set_attribute("height".into(), new.height().into_attr_value());
-        element.end_attribute_modifier();
+        element.mark_end_of_attribute_modifier();
         element
     }
 
@@ -129,11 +127,10 @@ impl<State: 'static, Action: 'static> OrphanView<Circle, State, Action, DynMessa
     ) -> (Self::OrphanElement, Self::OrphanViewState) {
         let mut element: Self::OrphanElement =
             Pod::new_element(Vec::new(), SVG_NS, "circle").into();
-        element.start_attribute_modifier();
         element.set_attribute("cx".into(), view.center.x.into_attr_value());
         element.set_attribute("cy".into(), view.center.y.into_attr_value());
         element.set_attribute("r".into(), view.radius.into_attr_value());
-        element.end_attribute_modifier();
+        element.mark_end_of_attribute_modifier();
         (element, ())
     }
 
@@ -144,11 +141,11 @@ impl<State: 'static, Action: 'static> OrphanView<Circle, State, Action, DynMessa
         _ctx: &mut ViewCtx,
         mut element: Mut<'el, Self::OrphanElement>,
     ) -> Mut<'el, Self::OrphanElement> {
-        element.start_attribute_modifier();
+        element.rebuild_attribute_modifier();
         element.set_attribute("cx".into(), new.center.x.into_attr_value());
         element.set_attribute("cy".into(), new.center.y.into_attr_value());
         element.set_attribute("r".into(), new.radius.into_attr_value());
-        element.end_attribute_modifier();
+        element.mark_end_of_attribute_modifier();
         element
     }
 
@@ -181,9 +178,8 @@ impl<State: 'static, Action: 'static> OrphanView<BezPath, State, Action, DynMess
     ) -> (Self::OrphanElement, Self::OrphanViewState) {
         let mut element: Self::OrphanElement = Pod::new_element(Vec::new(), SVG_NS, "path").into();
         let svg_repr = Cow::from(view.to_svg());
-        element.start_attribute_modifier();
         element.set_attribute("d".into(), svg_repr.clone().into_attr_value());
-        element.end_attribute_modifier();
+        element.mark_end_of_attribute_modifier();
         (element, svg_repr)
     }
 
@@ -198,9 +194,9 @@ impl<State: 'static, Action: 'static> OrphanView<BezPath, State, Action, DynMess
         if new != prev {
             *svg_repr = Cow::from(new.to_svg());
         }
-        element.start_attribute_modifier();
+        element.rebuild_attribute_modifier();
         element.set_attribute("d".into(), svg_repr.clone().into_attr_value());
-        element.end_attribute_modifier();
+        element.mark_end_of_attribute_modifier();
         element
     }
 
