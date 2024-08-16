@@ -13,6 +13,7 @@ use xilem_core::{Mut, ViewMarker};
 
 use crate::{Color, MessageResult, Pod, TextAlignment, View, ViewCtx, ViewId};
 
+/// A view for displaying non-editable text, with a variable [weight](masonry::parley::style::FontWeight).
 pub fn variable_label(label: impl Into<ArcStr>) -> VariableLabel {
     VariableLabel {
         label: label.into(),
