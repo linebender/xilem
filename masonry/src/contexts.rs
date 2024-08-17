@@ -948,16 +948,6 @@ impl AccessCtx<'_> {
     pub fn current_node(&mut self) -> &mut NodeBuilder {
         &mut self.current_node
     }
-
-    /// Report whether accessibility was requested on this widget.
-    ///
-    /// This method is primarily intended for containers. The `accessibility`
-    /// method will be called on a widget when it or any of its descendants
-    /// have seen a request. However, in many cases a container need not push
-    /// a node for itself.
-    pub fn is_requested(&self) -> bool {
-        self.widget_state.needs_accessibility_update
-    }
 }
 
 // --- MARK: RAW WRAPPERS ---

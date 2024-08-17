@@ -3,12 +3,11 @@
 
 use std::collections::{HashMap, VecDeque};
 
-use accesskit::{ActionRequest, NodeBuilder, Tree, TreeUpdate};
+use accesskit::{ActionRequest, Tree, TreeUpdate};
 use parley::fontique::{self, Collection, CollectionOptions};
 use parley::{FontContext, LayoutContext};
-use tracing::{debug, info_span, warn};
-use vello::kurbo::{self, Affine, Point};
-use vello::peniko::{Color, Fill};
+use tracing::{info_span, warn};
+use vello::kurbo::{self, Point};
 use vello::Scene;
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -16,10 +15,11 @@ use std::time::Instant;
 #[cfg(target_arch = "wasm32")]
 use web_time::Instant;
 
-use crate::contexts::{LayoutCtx, LifeCycleCtx, PaintCtx};
+use crate::contexts::{LayoutCtx, LifeCycleCtx};
 use crate::debug_logger::DebugLogger;
 use crate::dpi::{LogicalPosition, LogicalSize, PhysicalSize};
 use crate::event::{PointerEvent, TextEvent, WindowEvent};
+use crate::passes::accessibility::root_accessibility;
 use crate::passes::compose::root_compose;
 use crate::passes::event::{root_on_access_event, root_on_pointer_event, root_on_text_event};
 use crate::passes::mutate::{mutate_widget, run_mutate_pass};
@@ -30,8 +30,8 @@ use crate::tree_arena::TreeArena;
 use crate::widget::WidgetArena;
 use crate::widget::{WidgetMut, WidgetRef, WidgetState};
 use crate::{
-    AccessCtx, AccessEvent, Action, BoxConstraints, CursorIcon, Handled, InternalLifeCycle,
-    LifeCycle, Widget, WidgetId, WidgetPod,
+    AccessEvent, Action, BoxConstraints, CursorIcon, Handled, InternalLifeCycle, LifeCycle, Widget,
+    WidgetId, WidgetPod,
 };
 
 // --- MARK: STRUCTS ---
@@ -513,42 +513,14 @@ impl RenderRoot {
     // --- MARK: ACCESSIBILITY ---
     // TODO - Integrate in unit tests?
     fn root_accessibility(&mut self) -> TreeUpdate {
-        let mut tree_update = TreeUpdate {
-            nodes: vec![],
-            tree: None,
-            focus: self.state.focused_widget.unwrap_or(self.root.id()).into(),
-        };
-        let mut dummy_state = WidgetState::synthetic(self.root.id(), self.get_kurbo_size());
-        let root_state_token = self.widget_arena.widget_states.root_token_mut();
-        let root_widget_token = self.widget_arena.widgets.root_token_mut();
-        let mut ctx = AccessCtx {
-            global_state: &mut self.state,
-            widget_state: &mut dummy_state,
-            widget_state_children: root_state_token,
-            widget_children: root_widget_token,
-            tree_update: &mut tree_update,
-            current_node: NodeBuilder::default(),
-            rebuild_all: self.rebuild_access_tree,
-            scale_factor: self.scale_factor,
-        };
+        let mut tree_update = root_accessibility(self, self.rebuild_access_tree, self.scale_factor);
 
-        {
-            let _span = info_span!("accessibility").entered();
-            if self.rebuild_access_tree {
-                debug!("Running ACCESSIBILITY pass with rebuild_all");
-            }
-            self.root.accessibility(&mut ctx);
-            self.rebuild_access_tree = false;
-        }
-
-        if true {
-            tree_update.tree = Some(Tree {
-                root: self.root.id().into(),
-                app_name: None,
-                toolkit_name: Some("Masonry".to_string()),
-                toolkit_version: Some(env!("CARGO_PKG_VERSION").to_string()),
-            });
-        }
+        tree_update.tree = Some(Tree {
+            root: self.root.id().into(),
+            app_name: None,
+            toolkit_name: Some("Masonry".to_string()),
+            toolkit_version: Some(env!("CARGO_PKG_VERSION").to_string()),
+        });
 
         tree_update
     }

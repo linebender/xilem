@@ -234,7 +234,7 @@ impl WidgetState {
         self.needs_compose |= child_state.needs_compose;
         self.needs_paint |= child_state.needs_paint;
         self.request_anim |= child_state.request_anim;
-        self.request_accessibility_update |= child_state.request_accessibility_update;
+        self.needs_accessibility_update |= child_state.needs_accessibility_update;
         self.children_disabled_changed |= child_state.children_disabled_changed;
         self.children_disabled_changed |=
             child_state.is_explicitly_disabled_new != child_state.is_explicitly_disabled;
