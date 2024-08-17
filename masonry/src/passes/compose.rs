@@ -55,6 +55,10 @@ fn compose_widget(
     let translation = parent_translation + state.item.translation + state.item.origin.to_vec2();
     state.item.window_origin = translation.to_point();
 
+    if !moved && !state.item.translation_changed && !state.item.needs_compose {
+        return;
+    }
+
     let mut ctx = ComposeCtx {
         global_state,
         widget_state: state.item,
@@ -64,6 +68,10 @@ fn compose_widget(
     if ctx.widget_state.request_compose {
         widget.item.compose(&mut ctx);
     }
+
+    // We need to update the accessibility node's coordinates and repaint it at the new position.
+    state.item.needs_accessibility_update = true;
+    state.item.needs_paint = true;
 
     state.item.needs_compose = false;
     state.item.request_compose = false;
@@ -76,9 +84,6 @@ fn compose_widget(
         widget.reborrow_mut(),
         state.children,
         |widget, mut state| {
-            if !moved && !state.item.translation_changed && !state.item.needs_compose {
-                return;
-            }
             compose_widget(
                 global_state,
                 widget,
