@@ -42,7 +42,8 @@ fn paint_widget(
             id.to_raw(),
         );
 
-        // TODO - Reserve (see comment below)
+        // TODO - Reserve scene
+        // https://github.com/linebender/xilem/issues/524
         let mut scene = Scene::new();
         widget.item.paint(&mut ctx, &mut scene);
         *scenes.entry(id).or_default() = scene;
@@ -103,7 +104,8 @@ pub fn root_paint(root: &mut RenderRoot) -> Scene {
 
     let debug_paint = std::env::var("MASONRY_DEBUG_PAINT").is_ok_and(|it| !it.is_empty());
 
-    // TODO - Reserve
+    // TODO - Reserve scene
+    // https://github.com/linebender/xilem/issues/524
     let mut complete_scene = Scene::new();
 
     let (root_widget, root_state) = {
