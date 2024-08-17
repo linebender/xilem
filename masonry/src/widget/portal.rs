@@ -8,8 +8,7 @@ use std::ops::Range;
 use accesskit::Role;
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace_span, Span};
-use vello::kurbo::{Affine, Point, Rect, Size, Vec2};
-use vello::peniko::BlendMode;
+use vello::kurbo::{Point, Rect, Size, Vec2};
 use vello::Scene;
 
 use crate::widget::{Axis, ScrollBar, WidgetMut};
