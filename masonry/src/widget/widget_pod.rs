@@ -337,12 +337,10 @@ impl<W: Widget> WidgetPod<W> {
 
                 true
             }
-            LifeCycle::AnimFrame(_) => {
-                state.request_anim = false;
-                true
-            }
             // Routing DisabledChanged has been moved to the update_disabled pass
             LifeCycle::DisabledChanged(_) => false,
+            // Animations have been moved to the update_anim pass
+            LifeCycle::AnimFrame(_) => false,
             LifeCycle::BuildFocusChain => {
                 if state.update_focus_chain {
                     // Replace has_focus to check if the value changed in the meantime

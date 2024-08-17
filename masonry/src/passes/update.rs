@@ -230,3 +230,52 @@ pub(crate) fn run_update_scroll_pass(root: &mut RenderRoot) {
         });
     }
 }
+
+// ----------------
+
+fn update_anim_for_widget(
+    global_state: &mut RenderRootState,
+    mut widget: ArenaMut<'_, Box<dyn Widget>>,
+    mut state: ArenaMut<'_, WidgetState>,
+    elapsed_ns: u64,
+) {
+    let _span = widget.item.make_trace_span().entered();
+
+    if !state.item.needs_anim {
+        return;
+    }
+
+    if state.item.request_anim {
+        let mut ctx = LifeCycleCtx {
+            global_state,
+            widget_state: state.item,
+            widget_state_children: state.children.reborrow_mut(),
+            widget_children: widget.children.reborrow_mut(),
+        };
+        widget
+            .item
+            .lifecycle(&mut ctx, &LifeCycle::AnimFrame(elapsed_ns));
+    }
+
+    state.item.needs_anim = false;
+    state.item.request_anim = false;
+
+    let id = state.item.id;
+    let parent_state = state.item;
+    recurse_on_children(
+        id,
+        widget.reborrow_mut(),
+        state.children,
+        |widget, mut state| {
+            update_anim_for_widget(global_state, widget, state.reborrow_mut(), elapsed_ns);
+            parent_state.merge_up(state.item);
+        },
+    );
+}
+
+pub(crate) fn run_update_anim_pass(root: &mut RenderRoot, elapsed_ns: u64) {
+    let _span = info_span!("update_anim").entered();
+
+    let (root_widget, root_state) = root.widget_arena.get_pair_mut(root.root.id());
+    update_anim_for_widget(&mut root.state, root_widget, root_state, elapsed_ns);
+}

@@ -99,8 +99,10 @@ pub struct WidgetState {
     /// The accessibility method must be called on this widget or a descendant
     pub(crate) needs_accessibility: bool,
 
-    /// Any descendant has requested an animation frame.
+    /// An animation must run on this widget
     pub(crate) request_anim: bool,
+    /// An animation must run on this widget or a descendant
+    pub(crate) needs_anim: bool,
 
     /// This widget or a descendant changed its `explicitly_disabled` value
     pub(crate) needs_update_disabled: bool,
@@ -173,6 +175,7 @@ impl WidgetState {
             request_accessibility: true,
             needs_accessibility: true,
             has_focus: false,
+            needs_anim: true,
             request_anim: true,
             needs_update_disabled: true,
             focus_chain: Vec::new(),
@@ -197,11 +200,12 @@ impl WidgetState {
             needs_layout: false,
             request_compose: false,
             needs_compose: false,
-            needs_paint: false,
             request_paint: false,
+            needs_paint: false,
             request_accessibility: false,
             needs_accessibility: false,
             request_anim: false,
+            needs_anim: false,
             needs_update_disabled: false,
             children_changed: false,
             update_focus_chain: false,
@@ -231,7 +235,7 @@ impl WidgetState {
         self.needs_layout |= child_state.needs_layout;
         self.needs_compose |= child_state.needs_compose;
         self.needs_paint |= child_state.needs_paint;
-        self.request_anim |= child_state.request_anim;
+        self.needs_anim |= child_state.needs_anim;
         self.needs_accessibility |= child_state.needs_accessibility;
         self.needs_update_disabled |= child_state.needs_update_disabled;
         self.has_focus |= child_state.has_focus;
