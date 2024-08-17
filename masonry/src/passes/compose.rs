@@ -49,6 +49,8 @@ fn compose_widget(
     parent_moved: bool,
     parent_translation: Vec2,
 ) {
+    let _span = widget.item.make_trace_span().entered();
+
     let moved = parent_moved || state.item.translation_changed;
     let translation = parent_translation + state.item.translation + state.item.origin.to_vec2();
     state.item.window_origin = translation.to_point();
