@@ -4,7 +4,7 @@
 use std::collections::HashMap;
 
 use tracing::{info_span, trace};
-use vello::kurbo::{Affine, Rect, Stroke};
+use vello::kurbo::{Affine, Stroke};
 use vello::peniko::BlendMode;
 use vello::Scene;
 
