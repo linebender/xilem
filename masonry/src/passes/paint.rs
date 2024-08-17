@@ -8,44 +8,11 @@ use vello::kurbo::{Affine, Rect, Stroke};
 use vello::peniko::BlendMode;
 use vello::Scene;
 
+use crate::passes::recurse_on_children;
 use crate::render_root::{RenderRoot, RenderRootState};
 use crate::theme::get_debug_color;
-use crate::tree_arena::{ArenaMut, ArenaMutChildren};
+use crate::tree_arena::ArenaMut;
 use crate::{PaintCtx, Widget, WidgetId, WidgetState};
-
-fn recurse_on_children(
-    id: WidgetId,
-    mut widget: ArenaMut<'_, Box<dyn Widget>>,
-    mut state: ArenaMutChildren<'_, WidgetState>,
-    mut callback: impl FnMut(ArenaMut<'_, Box<dyn Widget>>, ArenaMut<'_, WidgetState>),
-) {
-    let parent_name = widget.item.short_type_name();
-    let parent_id = id;
-
-    for child_id in widget.item.children_ids() {
-        let widget = widget
-            .children
-            .get_child_mut(child_id.to_raw())
-            .unwrap_or_else(|| {
-                panic!(
-                    "Error in '{}' #{}: cannot find child #{} returned by children_ids()",
-                    parent_name,
-                    parent_id.to_raw(),
-                    child_id.to_raw()
-                )
-            });
-        let state = state.get_child_mut(child_id.to_raw()).unwrap_or_else(|| {
-            panic!(
-                "Error in '{}' #{}: cannot find child #{} returned by children_ids()",
-                parent_name,
-                parent_id.to_raw(),
-                child_id.to_raw()
-            )
-        });
-
-        callback(widget, state);
-    }
-}
 
 fn paint_widget(
     global_state: &mut RenderRootState,
