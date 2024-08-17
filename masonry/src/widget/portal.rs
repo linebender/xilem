@@ -337,6 +337,8 @@ impl<W: Widget> Widget for Portal<W> {
         self.set_viewport_pos_raw(portal_size, content_size, self.viewport_pos);
         // TODO - recompute portal progress
 
+        ctx.set_clip(portal_size.to_rect());
+
         ctx.place_child(&mut self.child, Point::new(0.0, -self.viewport_pos.y));
 
         self.scrollbar_horizontal_visible =
@@ -378,24 +380,10 @@ impl<W: Widget> Widget for Portal<W> {
         portal_size
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
-        // TODO - also clip the invalidated region
-        let clip_rect = ctx.size().to_rect();
-
-        scene.push_layer(BlendMode::default(), 1., Affine::IDENTITY, &clip_rect);
-        self.child.paint(ctx, scene);
-        scene.pop_layer();
-
-        if self.scrollbar_horizontal_visible {
-            self.scrollbar_horizontal.paint(ctx, scene);
-        } else {
-            ctx.skip_child(&mut self.scrollbar_horizontal);
-        }
-        if self.scrollbar_vertical_visible {
-            self.scrollbar_vertical.paint(ctx, scene);
-        } else {
-            ctx.skip_child(&mut self.scrollbar_vertical);
-        }
+    fn paint(&mut self, _ctx: &mut PaintCtx, _scene: &mut Scene) {
+        // TODO
+        // self.scrollbar_horizontal_visible
+        // self.scrollbar_vertical_visible
     }
 
     fn accessibility_role(&self) -> Role {

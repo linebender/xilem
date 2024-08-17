@@ -52,8 +52,7 @@ fn paint_widget(
     state.item.request_paint = false;
     state.item.needs_paint = false;
 
-    // TODO
-    let clip: Option<Rect> = None;
+    let clip = state.item.clip;
     let has_clip = clip.is_some();
     let transform = Affine::translate(dbg!(state.item.window_origin).to_vec2());
     let scene = scenes.get(&id).unwrap();
@@ -63,6 +62,8 @@ fn paint_widget(
     }
 
     complete_scene.append(scene, Some(transform));
+
+    // TODO - Skip stashed children
 
     let id = state.item.id;
     let size = state.item.size;

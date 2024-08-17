@@ -65,6 +65,9 @@ pub struct WidgetState {
     // TODO - Document
     pub(crate) is_portal: bool,
 
+    // TODO - Use general Shape
+    pub(crate) clip: Option<Rect>,
+
     pub(crate) request_compose: bool,
     // TODO - Handle matrix transforms
     pub(crate) translation: Vec2,
@@ -151,6 +154,7 @@ impl WidgetState {
             paint_insets: Insets::ZERO,
             local_paint_rect: Rect::ZERO,
             is_portal: false,
+            clip: Default::default(),
             request_compose: true,
             translation: Vec2::ZERO,
             translation_changed: false,

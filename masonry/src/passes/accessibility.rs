@@ -61,6 +61,8 @@ fn build_accessibility_tree(
     state.item.request_accessibility_update = false;
     state.item.needs_accessibility_update = false;
 
+    // TODO - Skip stashed children
+
     let id = state.item.id;
     let parent_state = state.item;
     recurse_on_children(
@@ -102,6 +104,9 @@ fn build_access_node(widget: &dyn Widget, state: &WidgetState, scale_factor: f64
     }
     if state.is_stashed {
         node.set_hidden();
+    }
+    if state.clip.is_some() {
+        node.set_clips_children();
     }
 
     node

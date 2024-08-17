@@ -868,6 +868,28 @@ impl LayoutCtx<'_> {
         self.get_child_state_mut(child).needs_layout = false;
     }
 
+    /// Gives the widget a clip path.
+    ///
+    /// A widget's clip path will have two effects:
+    /// - It serves as a mask for painting operations of the widget's children (*not* the widget itself).
+    /// - Pointer events must be inside that path to reach the widget's children.
+    pub fn set_clip(&mut self, path: Rect) {
+        trace!("set_clip {:?}", path);
+        self.widget_state.clip = Some(path);
+        // TODO - May not be the right flag to set.
+        self.widget_state.needs_paint = true;
+    }
+
+    /// Remove the widget's clip path.
+    ///
+    /// See [`LayoutCtx::set_clip`] for details.
+    pub fn clear_clip(&mut self) {
+        trace!("clear_clip");
+        self.widget_state.clip = None;
+        // TODO - May not be the right flag to set.
+        self.widget_state.needs_paint = true;
+    }
+
     /// Set the position of a child widget, in the parent's coordinate space. This
     /// will also implicitly change "hot" status and affect the parent's display rect.
     ///
