@@ -649,79 +649,8 @@ impl<W: Widget> WidgetPod<W> {
 
     // --- MARK: PAINT ---
 
-    /// Paint the widget, translating it by the origin of its layout rectangle.
-    ///
-    /// This will recursively paint widgets, stopping if a widget's layout
-    /// rect is outside of the currently visible region.
-    pub fn paint(&mut self, parent_ctx: &mut PaintCtx, scene: &mut Scene) {
-        self.call_widget_method_with_checks(
-            "paint",
-            parent_ctx,
-            |ctx| {
-                (
-                    ctx.widget_state_children.reborrow(),
-                    ctx.widget_children.reborrow(),
-                )
-            },
-            |self2, parent_ctx| self2.paint_inner(parent_ctx, scene),
-        );
-    }
-
-    fn paint_inner(&mut self, parent_ctx: &mut PaintCtx, scene: &mut Scene) -> bool {
-        let id = self.id().to_raw();
-        let widget_mut = parent_ctx
-            .widget_children
-            .get_child_mut(id)
-            .expect("WidgetPod: inner widget not found in widget tree");
-        let state_mut = parent_ctx
-            .widget_state_children
-            .get_child_mut(id)
-            .expect("WidgetPod: inner widget not found in widget tree");
-        let widget = widget_mut.item;
-        let state = state_mut.item;
-
-        if state.is_stashed {
-            debug_panic!(
-                "Error in '{}' #{}: trying to paint stashed widget.",
-                widget.short_type_name(),
-                self.id().to_raw(),
-            );
-            return false;
-        }
-
-        let call_widget = state.needs_paint;
-        if call_widget {
-            trace!(
-                "Painting widget '{}' #{}",
-                widget.short_type_name(),
-                self.id().to_raw()
-            );
-            state.needs_paint = false;
-
-            // TODO - Handle invalidation regions
-            let mut inner_ctx = PaintCtx {
-                global_state: parent_ctx.global_state,
-                widget_state: state,
-                widget_state_children: state_mut.children,
-                widget_children: widget_mut.children,
-                depth: parent_ctx.depth + 1,
-                debug_paint: parent_ctx.debug_paint,
-                debug_widget: parent_ctx.debug_widget,
-            };
-
-            self.fragment.reset();
-            widget.paint(&mut inner_ctx, &mut self.fragment);
-
-            if parent_ctx.debug_paint {
-                self.debug_paint_layout_bounds(state.size);
-            }
-        }
-
-        let transform = Affine::translate(state.origin.to_vec2());
-        scene.append(&self.fragment, Some(transform));
-
-        call_widget
-    }
+    // TODO - remove
+    pub fn paint(&mut self, _parent_ctx: &mut PaintCtx, _scene: &mut Scene) {}
 
     fn debug_paint_layout_bounds(&mut self, size: Size) {
         const BORDER_WIDTH: f64 = 1.0;

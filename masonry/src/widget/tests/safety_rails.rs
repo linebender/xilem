@@ -94,21 +94,6 @@ fn check_forget_to_call_place_child() {
     let _harness = TestHarness::create(widget);
 }
 
-#[should_panic(expected = "not visited in method paint")]
-#[test]
-#[cfg_attr(
-    not(debug_assertions),
-    ignore = "This test doesn't work without debug assertions (i.e. in release mode). See https://github.com/linebender/xilem/issues/477"
-)]
-fn check_forget_to_recurse_paint() {
-    let widget = make_parent_widget(Flex::row()).paint_fn(|_child, _ctx, _scene| {
-        // We forget to call child.paint();
-    });
-
-    let mut harness = TestHarness::create(widget);
-    harness.render();
-}
-
 // ---
 
 // TODO - allow non-recurse in some cases
@@ -336,29 +321,6 @@ fn check_layout_stashed() {
 
     let mut harness = TestHarness::create(widget);
     harness.mouse_move(Point::ZERO);
-}
-
-#[should_panic(expected = "trying to paint stashed widget")]
-#[test]
-fn check_paint_stashed() {
-    let widget = make_parent_widget(Flex::row())
-        .lifecycle_fn(|child, ctx, event| {
-            child.lifecycle(ctx, event);
-            if matches!(
-                event,
-                LifeCycle::Internal(InternalLifeCycle::RouteWidgetAdded)
-            ) {
-                ctx.set_stashed(child, true);
-            }
-        })
-        .layout_fn(|_child, _ctx, _bc| Size::ZERO)
-        .paint_fn(|child, ctx, scene| {
-            child.paint(ctx, scene);
-        });
-
-    let mut harness = TestHarness::create(widget);
-    harness.mouse_move(Point::ZERO);
-    harness.render();
 }
 
 // ---

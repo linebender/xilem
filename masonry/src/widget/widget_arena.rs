@@ -1,13 +1,19 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use std::collections::HashMap;
+
+use vello::Scene;
+
 use crate::tree_arena::{ArenaMut, ArenaRef, TreeArena};
 use crate::widget::WidgetRef;
 use crate::{Widget, WidgetId, WidgetState};
 
 pub(crate) struct WidgetArena {
     pub(crate) widgets: TreeArena<Box<dyn Widget>>,
+    // TODO - Rename to "states"
     pub(crate) widget_states: TreeArena<WidgetState>,
+    pub(crate) scenes: HashMap<WidgetId, Scene>,
 }
 
 #[allow(dead_code)]
@@ -85,6 +91,20 @@ impl WidgetArena {
         self.widget_states
             .find_mut(widget_id.to_raw())
             .expect("get_state_mut: widget state not in widget tree")
+    }
+
+    #[track_caller]
+    pub(crate) fn get_scene(&mut self, widget_id: WidgetId) -> &Scene {
+        self.scenes
+            .get(&widget_id)
+            .expect("get_scene: scene not in widget tree")
+    }
+
+    #[track_caller]
+    pub(crate) fn get_scene_mut(&mut self, widget_id: WidgetId) -> &mut Scene {
+        self.scenes
+            .get_mut(&widget_id)
+            .expect("get_scene_mut: scene not in widget tree")
     }
 
     pub fn try_get_widget_ref(&self, id: WidgetId) -> Option<WidgetRef<dyn Widget>> {

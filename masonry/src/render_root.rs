@@ -1,7 +1,7 @@
 // Copyright 2019 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use std::collections::VecDeque;
+use std::collections::{HashMap, VecDeque};
 
 use accesskit::{ActionRequest, NodeBuilder, Tree, TreeUpdate};
 use parley::fontique::{self, Collection, CollectionOptions};
@@ -23,6 +23,7 @@ use crate::event::{PointerEvent, TextEvent, WindowEvent};
 use crate::passes::compose::root_compose;
 use crate::passes::event::{root_on_access_event, root_on_pointer_event, root_on_text_event};
 use crate::passes::mutate::{mutate_widget, run_mutate_pass};
+use crate::passes::paint::root_paint;
 use crate::passes::update::run_update_pointer_pass;
 use crate::text::TextBrush;
 use crate::tree_arena::TreeArena;
@@ -146,6 +147,7 @@ impl RenderRoot {
             widget_arena: WidgetArena {
                 widgets: TreeArena::new(),
                 widget_states: TreeArena::new(),
+                scenes: HashMap::new(),
             },
             rebuild_access_tree: true,
         };
@@ -505,40 +507,7 @@ impl RenderRoot {
 
     // --- MARK: PAINT ---
     fn root_paint(&mut self) -> Scene {
-        // TODO - Handle Xilem's VIEW_CONTEXT_CHANGED
-
-        let mut dummy_state = WidgetState::synthetic(self.root.id(), self.get_kurbo_size());
-        let root_state_token = self.widget_arena.widget_states.root_token_mut();
-        let root_widget_token = self.widget_arena.widgets.root_token_mut();
-        let mut ctx = PaintCtx {
-            global_state: &mut self.state,
-            widget_state: &mut dummy_state,
-            widget_state_children: root_state_token,
-            widget_children: root_widget_token,
-            depth: 0,
-            debug_paint: false,
-            debug_widget: false,
-        };
-
-        let mut scene = Scene::new();
-        {
-            let _span = info_span!("paint").entered();
-            self.root.paint(&mut ctx, &mut scene);
-        }
-
-        // FIXME - This is a workaround to Vello panicking when given an
-        // empty scene
-        // See https://github.com/linebender/vello/issues/291
-        let empty_path = kurbo::Rect::ZERO;
-        scene.fill(
-            Fill::NonZero,
-            Affine::IDENTITY,
-            Color::TRANSPARENT,
-            None,
-            &empty_path,
-        );
-
-        scene
+        root_paint(self)
     }
 
     // --- MARK: ACCESSIBILITY ---

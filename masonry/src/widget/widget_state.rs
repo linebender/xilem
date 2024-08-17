@@ -88,6 +88,7 @@ pub struct WidgetState {
     pub(crate) needs_compose: bool,
     pub(crate) needs_paint: bool,
     pub(crate) needs_accessibility_update: bool,
+    pub(crate) request_paint: bool,
 
     /// Any descendant has requested an animation frame.
     pub(crate) request_anim: bool,
@@ -162,6 +163,7 @@ impl WidgetState {
             needs_compose: true,
             needs_paint: true,
             needs_accessibility_update: true,
+            request_paint: true,
             has_focus: false,
             request_anim: true,
             request_accessibility_update: true,
@@ -191,6 +193,7 @@ impl WidgetState {
             needs_accessibility_update: false,
             needs_compose: false,
             request_compose: false,
+            request_paint: false,
             request_accessibility_update: false,
             request_anim: false,
             children_changed: false,

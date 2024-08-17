@@ -101,7 +101,6 @@ pub struct PaintCtx<'a> {
     /// The approximate depth in the tree at the time of painting.
     pub(crate) depth: u32,
     pub(crate) debug_paint: bool,
-    pub(crate) debug_widget: bool,
 }
 
 pub struct AccessCtx<'a> {
@@ -405,6 +404,7 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, LifeCycleCtx<'_>, {
     /// Request a [`paint`](crate::Widget::paint) pass.
     pub fn request_paint(&mut self) {
         trace!("request_paint");
+        self.widget_state.request_paint = true;
         self.widget_state.needs_paint = true;
     }
 
