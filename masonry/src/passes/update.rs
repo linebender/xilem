@@ -4,11 +4,12 @@
 use std::collections::HashSet;
 
 use cursor_icon::CursorIcon;
-use tracing::trace;
+use tracing::{info_span, trace};
 
 use crate::passes::merge_state_up;
-use crate::render_root::{RenderRoot, RenderRootSignal};
-use crate::{LifeCycleCtx, StatusChange, Widget, WidgetId, WidgetState};
+use crate::render_root::{RenderRoot, RenderRootSignal, RenderRootState};
+use crate::tree_arena::{ArenaMut, ArenaMutChildren};
+use crate::{LifeCycle, LifeCycleCtx, StatusChange, Widget, WidgetId, WidgetState};
 
 fn get_id_path(root: &RenderRoot, widget_id: Option<WidgetId>) -> Vec<WidgetId> {
     let Some(widget_id) = widget_id else {
@@ -144,4 +145,87 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot, root_state: &mut Wi
 
     // Pass root widget state to synthetic state create at beginning of pass
     root_state.merge_up(root.widget_arena.get_state_mut(root.root.id()).item);
+}
+
+// ----------------
+
+fn recurse_on_children(
+    id: WidgetId,
+    mut widget: ArenaMut<'_, Box<dyn Widget>>,
+    mut state: ArenaMutChildren<'_, WidgetState>,
+    mut callback: impl FnMut(ArenaMut<'_, Box<dyn Widget>>, ArenaMut<'_, WidgetState>),
+) {
+    let parent_name = widget.item.short_type_name();
+    let parent_id = id;
+
+    for child_id in widget.item.children_ids() {
+        let widget = widget
+            .children
+            .get_child_mut(child_id.to_raw())
+            .unwrap_or_else(|| {
+                panic!(
+                    "Error in '{}' #{}: cannot find child #{} returned by children_ids()",
+                    parent_name,
+                    parent_id.to_raw(),
+                    child_id.to_raw()
+                )
+            });
+        let state = state.get_child_mut(child_id.to_raw()).unwrap_or_else(|| {
+            panic!(
+                "Error in '{}' #{}: cannot find child #{} returned by children_ids()",
+                parent_name,
+                parent_id.to_raw(),
+                child_id.to_raw()
+            )
+        });
+
+        callback(widget, state);
+    }
+}
+
+fn update_anim_for_widget(
+    global_state: &mut RenderRootState,
+    mut widget: ArenaMut<'_, Box<dyn Widget>>,
+    mut state: ArenaMut<'_, WidgetState>,
+    elapsed_ns: u64,
+) {
+    let _span = widget.item.make_trace_span().entered();
+
+    if !state.item.needs_anim {
+        return;
+    }
+
+    if state.item.request_anim {
+        let mut ctx = LifeCycleCtx {
+            global_state,
+            widget_state: state.item,
+            widget_state_children: state.children.reborrow_mut(),
+            widget_children: widget.children.reborrow_mut(),
+        };
+        widget
+            .item
+            .lifecycle(&mut ctx, &LifeCycle::AnimFrame(elapsed_ns));
+    }
+
+    state.item.needs_anim = false;
+    state.item.request_anim = false;
+
+    let id = state.item.id;
+    let parent_state = state.item;
+    recurse_on_children(
+        id,
+        widget.reborrow_mut(),
+        state.children,
+        |widget, mut state| {
+            update_anim_for_widget(global_state, widget, state.reborrow_mut(), elapsed_ns);
+            parent_state.merge_up(state.item);
+        },
+    );
+}
+
+pub(crate) fn run_update_anim_pass(root: &mut RenderRoot, elapsed_ns: u64) {
+    let _span = info_span!("update_anim").entered();
+
+    let (root_widget, root_state) = root.widget_arena.get_pair_mut(root.root.id());
+    update_anim_for_widget(&mut root.state, root_widget, root_state, elapsed_ns);
 }

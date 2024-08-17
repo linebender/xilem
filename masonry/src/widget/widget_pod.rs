@@ -374,10 +374,8 @@ impl<W: Widget> WidgetPod<W> {
 
                 true
             }
-            LifeCycle::AnimFrame(_) => {
-                state.request_anim = false;
-                true
-            }
+            // Animations have been moved to the update_anim pass
+            LifeCycle::AnimFrame(_) => false,
             LifeCycle::DisabledChanged(ancestors_disabled) => {
                 state.update_focus_chain = true;
 

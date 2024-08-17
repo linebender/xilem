@@ -24,7 +24,7 @@ use crate::passes::compose::root_compose;
 use crate::passes::event::{root_on_access_event, root_on_pointer_event, root_on_text_event};
 use crate::passes::mutate::{mutate_widget, run_mutate_pass};
 use crate::passes::paint::root_paint;
-use crate::passes::update::run_update_pointer_pass;
+use crate::passes::update::{run_update_anim_pass, run_update_pointer_pass};
 use crate::text::TextBrush;
 use crate::tree_arena::TreeArena;
 use crate::widget::WidgetArena;
@@ -203,9 +203,13 @@ impl RenderRoot {
                 let last = self.last_anim.take();
                 let elapsed_ns = last.map(|t| now.duration_since(t).as_nanos()).unwrap_or(0) as u64;
                 let root_state = self.root_state();
-                if root_state.request_anim {
-                    root_state.request_anim = false;
-                    self.root_lifecycle(LifeCycle::AnimFrame(elapsed_ns));
+                if root_state.needs_anim {
+                    run_update_anim_pass(self, elapsed_ns);
+
+                    let mut root_state =
+                        self.widget_arena.get_state_mut(self.root.id()).item.clone();
+                    self.post_event_processing(&mut root_state);
+
                     self.last_anim = Some(now);
                 }
                 Handled::Yes
