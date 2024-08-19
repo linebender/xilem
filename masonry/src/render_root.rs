@@ -24,7 +24,7 @@ use crate::passes::compose::root_compose;
 use crate::passes::event::{root_on_access_event, root_on_pointer_event, root_on_text_event};
 use crate::passes::mutate::{mutate_widget, run_mutate_pass};
 use crate::passes::paint::root_paint;
-use crate::passes::update::{run_update_anim_pass, run_update_pointer_pass};
+use crate::passes::update::{run_update_anim_pass, run_update_focus_pass, run_update_pointer_pass};
 use crate::text::TextBrush;
 use crate::tree_arena::TreeArena;
 use crate::widget::WidgetArena;
@@ -59,6 +59,7 @@ pub(crate) struct RenderRootState {
     pub(crate) debug_logger: DebugLogger,
     pub(crate) signal_queue: VecDeque<RenderRootSignal>,
     pub(crate) focused_widget: Option<WidgetId>,
+    pub(crate) focused_path: Vec<WidgetId>,
     pub(crate) next_focused_widget: Option<WidgetId>,
     pub(crate) hovered_path: Vec<WidgetId>,
     pub(crate) pointer_capture_target: Option<WidgetId>,
@@ -131,6 +132,7 @@ impl RenderRoot {
                 debug_logger: DebugLogger::new(false),
                 signal_queue: VecDeque::new(),
                 focused_widget: None,
+                focused_path: Vec::new(),
                 next_focused_widget: None,
                 hovered_path: Vec::new(),
                 pointer_capture_target: None,
@@ -337,9 +339,6 @@ impl RenderRoot {
         &mut self,
         f: impl FnOnce(WidgetMut<'_, Box<dyn Widget>>) -> R,
     ) -> R {
-        // TODO - Factor out into a "pre-event" function?
-        self.state.next_focused_widget = self.state.focused_widget;
-
         let res = mutate_widget(self, self.root.id(), |mut widget_mut| {
             // Our WidgetArena stores all widgets as Box<dyn Widget>, but the "true"
             // type of our root widget is *also* Box<dyn Widget>. We downcast so we
@@ -370,9 +369,6 @@ impl RenderRoot {
         id: WidgetId,
         f: impl FnOnce(WidgetMut<'_, Box<dyn Widget>>) -> R,
     ) -> R {
-        // TODO - Factor out into a "pre-event" function?
-        self.state.next_focused_widget = self.state.focused_widget;
-
         let res = mutate_widget(self, id, f);
 
         let mut root_state = self.widget_arena.get_state_mut(self.root.id()).item.clone();
@@ -384,9 +380,6 @@ impl RenderRoot {
     // --- MARK: POINTER_EVENT ---
     fn root_on_pointer_event(&mut self, event: PointerEvent) -> Handled {
         let mut dummy_state = WidgetState::synthetic(self.root.id(), self.get_kurbo_size());
-
-        // TODO - Factor out into a "pre-event" function?
-        self.state.next_focused_widget = self.state.focused_widget;
 
         let handled = root_on_pointer_event(self, &mut dummy_state, &event);
         run_update_pointer_pass(self, &mut dummy_state);
@@ -401,10 +394,8 @@ impl RenderRoot {
     fn root_on_text_event(&mut self, event: TextEvent) -> Handled {
         let mut dummy_state = WidgetState::synthetic(self.root.id(), self.get_kurbo_size());
 
-        // TODO - Factor out into a "pre-event" function?
-        self.state.next_focused_widget = self.state.focused_widget;
-
         let handled = root_on_text_event(self, &mut dummy_state, &event);
+        run_update_focus_pass(self, &mut dummy_state);
 
         self.post_event_processing(&mut dummy_state);
         self.get_root_widget().debug_validate(false);
@@ -425,9 +416,6 @@ impl RenderRoot {
             action: event.action,
             data: event.data,
         };
-
-        // TODO - Factor out into a "pre-event" function?
-        self.state.next_focused_widget = self.state.focused_widget;
 
         root_on_access_event(self, &mut dummy_state, &event);
 
@@ -566,10 +554,9 @@ impl RenderRoot {
         // Always do this before sending focus change, since this event updates the focus chain.
         if self.root_state().update_focus_chain {
             let event = LifeCycle::BuildFocusChain;
+            println!("BuildFocusChain");
             self.root_lifecycle(event);
         }
-
-        self.update_focus();
 
         if self.root_state().request_anim {
             self.state
@@ -593,28 +580,6 @@ impl RenderRoot {
             let token = self.handle.add_text_field();
             tracing::debug!("{:?} added", token);
             self.ime_handlers.push((token, ime_field));
-        }
-    }
-
-    fn update_focus(&mut self) {
-        let old = self.state.focused_widget;
-        let new = self.state.next_focused_widget;
-
-        // TODO
-        // Skip change if requested widget is disabled
-
-        // Only send RouteFocusChanged in case there's actual change
-        if old != new {
-            let event = LifeCycle::Internal(InternalLifeCycle::RouteFocusChanged { old, new });
-            self.state.focused_widget = new;
-            self.root_lifecycle(event);
-
-            // TODO: discriminate between text focus, and non-text focus.
-            self.state.signal_queue.push_back(if new.is_some() {
-                RenderRootSignal::StartIme
-            } else {
-                RenderRootSignal::EndIme
-            });
         }
     }
 
