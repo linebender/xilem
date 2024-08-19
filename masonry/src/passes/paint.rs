@@ -54,7 +54,7 @@ fn paint_widget(
 
     let clip = state.item.clip;
     let has_clip = clip.is_some();
-    let transform = Affine::translate(dbg!(state.item.window_origin).to_vec2());
+    let transform = Affine::translate(state.item.window_origin.to_vec2());
     let scene = scenes.get(&id).unwrap();
 
     if let Some(clip) = clip {
