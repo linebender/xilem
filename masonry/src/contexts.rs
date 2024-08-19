@@ -170,6 +170,7 @@ impl_context_method!(
     EventCtx<'_>,
     LifeCycleCtx<'_>,
     LayoutCtx<'_>,
+    ComposeCtx<'_>,
     {
         /// Helper method to get a mutable reference to a child widget's `WidgetState` from its `WidgetPod`.
         ///
@@ -490,14 +491,6 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, LifeCycleCtx<'_>, {
         self.widget_state.is_explicitly_disabled_new = disabled;
     }
 
-    /// Mark child widget as stashed.
-    ///
-    /// **Note:** Stashed widgets are a WIP feature
-    pub fn set_stashed(&mut self, child: &mut WidgetPod<impl Widget>, stashed: bool) {
-        self.get_child_state_mut(child).is_stashed = stashed;
-        self.children_changed();
-    }
-
     #[allow(unused)]
     /// Indicate that text input state has changed.
     ///
@@ -564,6 +557,19 @@ impl_context_method!(
         /// request with the event.
         pub fn request_timer(&mut self, _deadline: Duration) -> TimerToken {
             todo!("request_timer");
+        }
+
+        /// Mark child widget as stashed.
+        ///
+        /// If `stashed` is true, the child will not be painted or listed in the accessibility tree.
+        ///
+        /// **Note:** Stashed widgets are a WIP feature
+        pub fn set_stashed(&mut self, child: &mut WidgetPod<impl Widget>, stashed: bool) {
+            self.get_child_state_mut(child).is_stashed = stashed;
+            // TODO - Maybe this should be
+            // self.children_changed();
+            self.widget_state.children_changed = true;
+            self.widget_state.update_focus_chain = true;
         }
     }
 );

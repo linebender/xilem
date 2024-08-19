@@ -63,8 +63,6 @@ fn paint_widget(
 
     complete_scene.append(scene, Some(transform));
 
-    // TODO - Skip stashed children
-
     let id = state.item.id;
     let size = state.item.size;
     let parent_state = state.item;
@@ -73,6 +71,11 @@ fn paint_widget(
         widget.reborrow_mut(),
         state.children,
         |widget, mut state| {
+            // TODO - We skip painting stashed items.
+            // This may have knock-on effects we'd need to document.
+            if state.item.is_stashed {
+                return;
+            }
             paint_widget(
                 global_state,
                 complete_scene,

@@ -376,14 +376,19 @@ impl<W: Widget> Widget for Portal<W> {
             ctx.skip_child(&mut self.scrollbar_vertical);
         }
 
+        ctx.set_stashed(
+            &mut self.scrollbar_vertical,
+            self.scrollbar_vertical_visible,
+        );
+        ctx.set_stashed(
+            &mut self.scrollbar_horizontal,
+            self.scrollbar_horizontal_visible,
+        );
+
         portal_size
     }
 
-    fn paint(&mut self, _ctx: &mut PaintCtx, _scene: &mut Scene) {
-        // TODO
-        // self.scrollbar_horizontal_visible
-        // self.scrollbar_vertical_visible
-    }
+    fn paint(&mut self, _ctx: &mut PaintCtx, _scene: &mut Scene) {}
 
     fn accessibility_role(&self) -> Role {
         Role::GenericContainer
