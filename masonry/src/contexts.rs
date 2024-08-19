@@ -11,12 +11,15 @@ use tracing::{trace, warn};
 use vello::kurbo::Vec2;
 
 use crate::action::Action;
+use crate::passes::layout::run_layout_on;
 use crate::render_root::{MutateCallback, RenderRootSignal, RenderRootState};
 use crate::text::TextBrush;
 use crate::text_helpers::{ImeChangeSignal, TextFieldRegistration};
 use crate::tree_arena::ArenaMutChildren;
 use crate::widget::{WidgetMut, WidgetState};
-use crate::{AllowRawMut, CursorIcon, Insets, Point, Rect, Size, Widget, WidgetId, WidgetPod};
+use crate::{
+    AllowRawMut, BoxConstraints, CursorIcon, Insets, Point, Rect, Size, Widget, WidgetId, WidgetPod,
+};
 
 /// A macro for implementing methods on multiple contexts.
 ///
@@ -898,6 +901,16 @@ impl LayoutCtx<'_> {
         self.widget_state.request_accessibility = true;
         self.widget_state.needs_accessibility = true;
         self.widget_state.needs_paint = true;
+    }
+
+    /// Compute layout of a child widget.
+    ///
+    /// Container widgets must call this on every child as part of
+    /// their [`layout`] method.
+    ///
+    /// [`layout`]: Widget::layout
+    pub fn run_layout<W: Widget>(&mut self, child: &mut WidgetPod<W>, bc: &BoxConstraints) -> Size {
+        run_layout_on(self, child, bc)
     }
 
     /// Set the position of a child widget, in the parent's coordinate space. This

@@ -51,7 +51,7 @@ impl<W: Widget> Widget for RootWidget<W> {
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
-        let size = self.pod.layout(ctx, bc);
+        let size = ctx.run_layout(&mut self.pod, bc);
         ctx.place_child(&mut self.pod, Point::ORIGIN);
         size
     }

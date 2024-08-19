@@ -129,7 +129,7 @@ impl Widget for Button {
         let padding = Size::new(LABEL_INSETS.x_value(), LABEL_INSETS.y_value());
         let label_bc = bc.shrink(padding).loosen();
 
-        let label_size = self.label.layout(ctx, &label_bc);
+        let label_size = ctx.run_layout(&mut self.label, &label_bc);
 
         let baseline = ctx.child_baseline_offset(&self.label);
         ctx.set_baseline_offset(baseline + LABEL_INSETS.y1);

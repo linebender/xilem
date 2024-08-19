@@ -94,7 +94,7 @@ fn disable_tree() {
                 child.on_event(ctx, event);
             })
             .layout_fn(|child, ctx, my_bc| {
-                let size = child.layout(ctx, my_bc);
+                let size = ctx.run_layout(&mut child, my_bc);
                 ctx.place_child(child, Point::ZERO);
                 size
             })

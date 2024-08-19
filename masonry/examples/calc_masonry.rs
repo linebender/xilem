@@ -217,7 +217,7 @@ impl Widget for CalcButton {
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
-        let size = self.inner.layout(ctx, bc);
+        let size = ctx.run_layout(&mut self.inner, bc);
         ctx.place_child(&mut self.inner, Point::ORIGIN);
 
         size
