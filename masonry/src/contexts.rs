@@ -565,11 +565,14 @@ impl_context_method!(
         ///
         /// **Note:** Stashed widgets are a WIP feature
         pub fn set_stashed(&mut self, child: &mut WidgetPod<impl Widget>, stashed: bool) {
+            if self.get_child_state_mut(child).is_stashed != stashed {
+                // TODO - Maybe this should be
+                // self.children_changed();
+                self.widget_state.children_changed = true;
+                self.widget_state.update_focus_chain = true;
+            }
+
             self.get_child_state_mut(child).is_stashed = stashed;
-            // TODO - Maybe this should be
-            // self.children_changed();
-            self.widget_state.children_changed = true;
-            self.widget_state.update_focus_chain = true;
         }
     }
 );

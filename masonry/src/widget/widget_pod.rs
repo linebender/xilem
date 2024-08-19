@@ -544,6 +544,7 @@ impl<W: Widget> WidgetPod<W> {
         state.needs_compose = true;
         state.is_expecting_place_child_call = true;
         // TODO - Not everything that has been re-laid out needs to be repainted.
+        state.request_paint = true;
         state.needs_paint = true;
         state.request_accessibility = true;
         state.needs_accessibility = true;
