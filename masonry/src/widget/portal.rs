@@ -240,12 +240,14 @@ impl<W: Widget> WidgetMut<'_, Portal<W>> {
 // --- MARK: IMPL WIDGET ---
 impl<W: Widget> Widget for Portal<W> {
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
+        const SCROLLING_SPEED: f64 = 10.0;
+
         let portal_size = ctx.size();
         let content_size = ctx.get_raw_ref(&mut self.child).ctx().layout_rect().size();
 
         match event {
             PointerEvent::MouseWheel(delta, _) => {
-                let delta = Vec2::new(delta.x * -10., delta.y * -10.);
+                let delta = Vec2::new(delta.x * -SCROLLING_SPEED, delta.y * -SCROLLING_SPEED);
                 self.set_viewport_pos_raw(portal_size, content_size, self.viewport_pos + delta);
                 ctx.request_layout();
 
