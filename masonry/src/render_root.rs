@@ -514,6 +514,7 @@ impl RenderRoot {
     // TODO - Integrate in unit tests?
     fn root_accessibility(&mut self) -> TreeUpdate {
         let mut tree_update = root_accessibility(self, self.rebuild_access_tree, self.scale_factor);
+        self.rebuild_access_tree = false;
 
         tree_update.tree = Some(Tree {
             root: self.root.id().into(),
