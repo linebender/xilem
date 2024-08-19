@@ -24,11 +24,11 @@ fn build_accessibility_tree(
     let _span = widget.item.make_trace_span().entered();
     let id = state.item.id;
 
-    if !rebuild_all && !state.item.needs_accessibility_update {
+    if !rebuild_all && !state.item.needs_accessibility {
         return;
     }
 
-    if rebuild_all || state.item.request_accessibility_update {
+    if rebuild_all || state.item.request_accessibility {
         trace!(
             "Building accessibility node for widget '{}' #{}",
             widget.item.short_type_name(),
@@ -58,8 +58,8 @@ fn build_accessibility_tree(
         ctx.tree_update.nodes.push((id, ctx.current_node.build()));
     }
 
-    state.item.request_accessibility_update = false;
-    state.item.needs_accessibility_update = false;
+    state.item.request_accessibility = false;
+    state.item.needs_accessibility = false;
 
     // TODO - Skip stashed children
 

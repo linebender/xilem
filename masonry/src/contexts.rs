@@ -436,8 +436,8 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, LifeCycleCtx<'_>, {
 
     pub fn request_accessibility_update(&mut self) {
         trace!("request_accessibility_update");
-        self.widget_state.needs_accessibility_update = true;
-        self.widget_state.request_accessibility_update = true;
+        self.widget_state.needs_accessibility = true;
+        self.widget_state.request_accessibility = true;
     }
 
     /// Request an animation frame.

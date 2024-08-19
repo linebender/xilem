@@ -545,8 +545,8 @@ impl<W: Widget> WidgetPod<W> {
         state.is_expecting_place_child_call = true;
         // TODO - Not everything that has been re-laid out needs to be repainted.
         state.needs_paint = true;
-        state.request_accessibility_update = true;
-        state.needs_accessibility_update = true;
+        state.request_accessibility = true;
+        state.needs_accessibility = true;
 
         bc.debug_check(widget.short_type_name());
         trace!("Computing layout with constraints {:?}", bc);

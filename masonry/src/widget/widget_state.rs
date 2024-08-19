@@ -68,7 +68,6 @@ pub struct WidgetState {
     // TODO - Use general Shape
     pub(crate) clip: Option<Rect>,
 
-    pub(crate) request_compose: bool,
     // TODO - Handle matrix transforms
     pub(crate) translation: Vec2,
     pub(crate) translation_changed: bool,
@@ -88,16 +87,24 @@ pub struct WidgetState {
     pub(crate) is_explicitly_disabled_new: bool,
 
     pub(crate) needs_layout: bool,
+
+    /// The compose method must be called on this widget
+    pub(crate) request_compose: bool,
+    /// The compose method must be called on this widget or a descendant
     pub(crate) needs_compose: bool,
-    pub(crate) needs_paint: bool,
-    pub(crate) needs_accessibility_update: bool,
+
+    /// The paint method must be called on this widget
     pub(crate) request_paint: bool,
+    /// The paint method must be called on this widget or a descendant
+    pub(crate) needs_paint: bool,
+
+    /// The accessibility method must be called on this widget
+    pub(crate) request_accessibility: bool,
+    /// The accessibility method must be called on this widget or a descendant
+    pub(crate) needs_accessibility: bool,
 
     /// Any descendant has requested an animation frame.
     pub(crate) request_anim: bool,
-
-    /// Any descendant has requested an accessibility update.
-    pub(crate) request_accessibility_update: bool,
 
     pub(crate) update_focus_chain: bool,
 
@@ -155,7 +162,6 @@ impl WidgetState {
             local_paint_rect: Rect::ZERO,
             is_portal: false,
             clip: Default::default(),
-            request_compose: true,
             translation: Vec2::ZERO,
             translation_changed: false,
             children_disabled_changed: false,
@@ -164,13 +170,14 @@ impl WidgetState {
             baseline_offset: 0.0,
             is_hot: false,
             needs_layout: true,
+            request_compose: true,
             needs_compose: true,
-            needs_paint: true,
-            needs_accessibility_update: true,
             request_paint: true,
+            needs_paint: true,
+            request_accessibility: true,
+            needs_accessibility: true,
             has_focus: false,
             request_anim: true,
-            request_accessibility_update: true,
             focus_chain: Vec::new(),
             children: Bloom::new(),
             children_changed: true,
@@ -193,12 +200,12 @@ impl WidgetState {
         WidgetState {
             size,
             needs_layout: false,
-            needs_paint: false,
-            needs_accessibility_update: false,
-            needs_compose: false,
             request_compose: false,
+            needs_compose: false,
+            needs_paint: false,
             request_paint: false,
-            request_accessibility_update: false,
+            request_accessibility: false,
+            needs_accessibility: false,
             request_anim: false,
             children_changed: false,
             update_focus_chain: false,
@@ -238,7 +245,7 @@ impl WidgetState {
         self.needs_compose |= child_state.needs_compose;
         self.needs_paint |= child_state.needs_paint;
         self.request_anim |= child_state.request_anim;
-        self.needs_accessibility_update |= child_state.needs_accessibility_update;
+        self.needs_accessibility |= child_state.needs_accessibility;
         self.children_disabled_changed |= child_state.children_disabled_changed;
         self.children_disabled_changed |=
             child_state.is_explicitly_disabled_new != child_state.is_explicitly_disabled;
