@@ -547,7 +547,6 @@ impl<W: Widget> WidgetPod<W> {
             return false;
         }
 
-        state.needs_layout = false;
         state.needs_compose = true;
         state.is_expecting_place_child_call = true;
         // TODO - Not everything that has been re-laid out needs to be repainted.
@@ -571,6 +570,8 @@ impl<W: Widget> WidgetPod<W> {
 
             widget.layout(&mut inner_ctx, bc)
         };
+
+        state.needs_layout = false;
 
         state.local_paint_rect = state
             .local_paint_rect

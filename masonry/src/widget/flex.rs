@@ -688,7 +688,7 @@ impl Widget for Flex {
 
                         child_size
                     } else {
-                        ctx.mark_child_as_visited(widget, true);
+                        ctx.skip_layout(widget);
                         ctx.child_layout_rect(widget).size()
                     };
 
@@ -746,7 +746,7 @@ impl Widget for Flex {
 
                         child_size
                     } else {
-                        ctx.mark_child_as_visited(widget, true);
+                        ctx.skip_layout(widget);
                         ctx.child_layout_rect(widget).size()
                     };
 
@@ -852,17 +852,10 @@ impl Widget for Flex {
             major = total_major;
         }
 
+        // my_size may be larger than the given constraints.
+        // In which case, the Flex widget will either overflow its parent
+        // or be clipped (e.g. if its parent is a Portal).
         let my_size: Size = self.direction.pack(major, minor_dim).into();
-
-        // if we don't have to fill the main axis, we loosen that axis before constraining
-        let my_size = if !self.fill_major_axis {
-            let max_major = self.direction.major(bc.max());
-            self.direction
-                .constraints(bc, 0.0, max_major)
-                .constrain(my_size)
-        } else {
-            bc.constrain(my_size)
-        };
 
         let my_bounds = Rect::ZERO.with_size(my_size);
         let insets = child_paint_rect - my_bounds;
