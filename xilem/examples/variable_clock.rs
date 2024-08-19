@@ -13,7 +13,7 @@ use time::{error::IndeterminateOffset, macros::format_description, OffsetDateTim
 use winit::error::EventLoopError;
 use xilem::{
     view::{
-        async_repeat, button, flex, label, prose, sized_box, variable_label, Axis, FlexExt,
+        task, button, flex, label, prose, sized_box, variable_label, Axis, FlexExt,
         FlexSpacer,
     },
     Color, EventLoop, EventLoopBuilder, WidgetView, Xilem,
@@ -49,7 +49,7 @@ fn app_logic(data: &mut Clocks) -> impl WidgetView<Clocks> {
     ));
     fork(
         view,
-        async_repeat(
+        task(
             |proxy| async move {
                 // TODO: Synchronise with the actual "second" interval. This is expected to show the wrong second
                 // ~50% of the time.

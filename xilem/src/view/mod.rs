@@ -1,8 +1,8 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-mod async_repeat;
-pub use async_repeat::*;
+mod task;
+pub use task::*;
 
 mod button;
 pub use button::*;

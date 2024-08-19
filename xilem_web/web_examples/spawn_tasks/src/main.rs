@@ -7,7 +7,7 @@
 use futures::{select, FutureExt};
 use gloo_timers::future::TimeoutFuture;
 use xilem_web::{
-    concurrent::{async_repeat, AsyncRepeatProxy, ShutdownSignal},
+    concurrent::{task, TaskProxy, ShutdownSignal},
     core::fork,
     core::one_of::Either,
     document_body,
@@ -31,7 +31,7 @@ enum Message {
 /// This is just to simulate some async behavior.
 /// If you just need an interval, you should use
 /// [`interval`](xilem_web::concurrent::interval) instead.
-async fn create_ping_task(proxy: AsyncRepeatProxy, shutdown_signal: ShutdownSignal) {
+async fn create_ping_task(proxy: TaskProxy, shutdown_signal: ShutdownSignal) {
     log::debug!("Start ping task");
     let mut abort = shutdown_signal.into_future().fuse();
 
@@ -55,7 +55,7 @@ async fn create_ping_task(proxy: AsyncRepeatProxy, shutdown_signal: ShutdownSign
 }
 
 fn app_logic(state: &mut AppState) -> impl Element<AppState> {
-    let task = async_repeat(
+    let task = task(
         create_ping_task,
         |state: &mut AppState, message: Message| match message {
             Message::Ping => {
