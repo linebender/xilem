@@ -196,11 +196,17 @@ impl Widget for CalcButton {
                 ctx.mutate_later(&mut self.inner, move |mut inner| {
                     inner.set_border(Color::WHITE, 3.0);
                 });
+                // FIXME - This is a monkey-patch for a problem where the mutate pass isn't run after this.
+                // Should be fixed once the pass spec RFC is implemented.
+                ctx.request_anim_frame();
             }
             StatusChange::HotChanged(false) => {
                 ctx.mutate_later(&mut self.inner, move |mut inner| {
                     inner.set_border(Color::TRANSPARENT, 3.0);
                 });
+                // FIXME - This is a monkey-patch for a problem where the mutate pass isn't run after this.
+                // Should be fixed once the pass spec RFC is implemented.
+                ctx.request_anim_frame();
             }
             _ => (),
         }
