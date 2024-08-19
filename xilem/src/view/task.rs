@@ -21,10 +21,7 @@ use crate::ViewCtx;
 /// cannot capture.
 // TODO: More thorough documentation.
 /// See [`run_once`](crate::core::run_once) for details.
-pub fn task<M, F, H, State, Action, Fut>(
-    init_future: F,
-    on_event: H,
-) -> Task<F, H, M>
+pub fn task<M, F, H, State, Action, Fut>(init_future: F, on_event: H) -> Task<F, H, M>
 where
     F: Fn(MessageProxy<M>) -> Fut,
     Fut: Future<Output = ()> + Send + 'static,
@@ -49,10 +46,7 @@ where
 ///
 /// This is [`task`] without the capturing rules.
 /// See `task` for full documentation.
-pub fn task_raw<M, F, H, State, Action, Fut>(
-    init_future: F,
-    on_event: H,
-) -> Task<F, H, M>
+pub fn task_raw<M, F, H, State, Action, Fut>(init_future: F, on_event: H) -> Task<F, H, M>
 where
     F: Fn(MessageProxy<M>) -> Fut,
     Fut: Future<Output = ()> + Send + 'static,

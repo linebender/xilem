@@ -20,10 +20,7 @@ use crate::{context::MessageThunk, DynMessage, Message, ViewCtx};
 ///
 /// Note that this task will not be updated if the view is rebuilt, so `init_future`
 /// cannot capture.
-pub fn task<M, F, H, State, Action, Fut>(
-    init_future: F,
-    on_event: H,
-) -> Task<F, H, M>
+pub fn task<M, F, H, State, Action, Fut>(init_future: F, on_event: H) -> Task<F, H, M>
 where
     F: Fn(TaskProxy, ShutdownSignal) -> Fut + 'static,
     Fut: Future<Output = ()> + 'static,
@@ -48,10 +45,7 @@ where
 ///
 /// This is [`task`] without the capturing rules.
 /// See `task` for full documentation.
-pub fn task_raw<M, F, H, State, Action, Fut>(
-    init_future: F,
-    on_event: H,
-) -> Task<F, H, M>
+pub fn task_raw<M, F, H, State, Action, Fut>(init_future: F, on_event: H) -> Task<F, H, M>
 where
     F: Fn(TaskProxy, ShutdownSignal) -> Fut + 'static,
     Fut: Future<Output = ()> + 'static,

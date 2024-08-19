@@ -7,7 +7,7 @@
 use futures::{select, FutureExt};
 use gloo_timers::future::TimeoutFuture;
 use xilem_web::{
-    concurrent::{task, TaskProxy, ShutdownSignal},
+    concurrent::{task, ShutdownSignal, TaskProxy},
     core::fork,
     core::one_of::Either,
     document_body,

@@ -13,8 +13,7 @@ use time::{error::IndeterminateOffset, macros::format_description, OffsetDateTim
 use winit::error::EventLoopError;
 use xilem::{
     view::{
-        task, button, flex, label, prose, sized_box, variable_label, Axis, FlexExt,
-        FlexSpacer,
+        button, flex, label, prose, sized_box, task, variable_label, Axis, FlexExt, FlexSpacer,
     },
     Color, EventLoop, EventLoopBuilder, WidgetView, Xilem,
 };

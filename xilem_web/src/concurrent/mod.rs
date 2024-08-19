@@ -4,9 +4,7 @@
 //! Async views, allowing concurrent operations, like fetching data from a server
 
 mod task;
-pub use task::{
-    task, task_raw, Task, TaskProxy, ShutdownSignal,
-};
+pub use task::{task, task_raw, ShutdownSignal, Task, TaskProxy};
 
 mod interval;
 pub use interval::{interval, Interval};

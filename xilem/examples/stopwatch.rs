@@ -12,7 +12,7 @@ use tokio::time;
 use tracing::warn;
 use winit::error::EventLoopError;
 use winit::window::Window;
-use xilem::view::{task, button, flex, label, FlexSequence, FlexSpacer};
+use xilem::view::{button, flex, label, task, FlexSequence, FlexSpacer};
 use xilem::{WidgetView, Xilem};
 use xilem_core::fork;
 use xilem_core::one_of::Either;
