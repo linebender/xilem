@@ -2,11 +2,14 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use smallvec::SmallVec;
-use tracing::{info_span, trace};
+use tracing::trace;
 
 use crate::tree_arena::ArenaRefChildren;
 use crate::widget::WidgetState;
-use crate::{InternalLifeCycle, LifeCycle, LifeCycleCtx, StatusChange, Widget, WidgetId};
+use crate::{
+    InternalLifeCycle, LifeCycle, LifeCycleCtx, Widget,
+    WidgetId,
+};
 
 // TODO - rewrite links in doc
 
@@ -295,35 +298,11 @@ impl<W: Widget> WidgetPod<W> {
         let widget = widget_mut.item;
         let state = state_mut.item;
 
-        // when routing a status change event, if we are at our target
-        // we may send an extra event after the actual event
-        let mut extra_event = None;
-
         let had_focus = state.has_focus;
 
         let call_widget = match event {
             LifeCycle::Internal(internal) => match internal {
                 InternalLifeCycle::RouteWidgetAdded => state.children_changed,
-                InternalLifeCycle::RouteFocusChanged { old, new } => {
-                    let this_changed = if *old == Some(self.id()) {
-                        Some(false)
-                    } else if *new == Some(self.id()) {
-                        Some(true)
-                    } else {
-                        None
-                    };
-
-                    if let Some(change) = this_changed {
-                        state.has_focus = change;
-                        extra_event = Some(StatusChange::FocusChanged(change));
-                    } else {
-                        state.has_focus = false;
-                    }
-
-                    // TODO - This returns a lot of false positives.
-                    // We'll remove this code soon anyway.
-                    matches!((old, new), (Some(_), _) | (_, Some(_)))
-                }
             },
             LifeCycle::WidgetAdded => {
                 trace!(
@@ -364,19 +343,6 @@ impl<W: Widget> WidgetPod<W> {
             widget.lifecycle(&mut inner_ctx, event);
         }
 
-        if let Some(event) = extra_event.as_ref() {
-            let mut inner_ctx = LifeCycleCtx {
-                global_state: parent_ctx.global_state,
-                widget_state: state,
-                widget_state_children: state_mut.children.reborrow_mut(),
-                widget_children: widget_mut.children.reborrow_mut(),
-            };
-
-            // We add a span so that inner logs are marked as being in an on_status_change pass
-            let _span = info_span!("on_status_change").entered();
-            widget.on_status_change(&mut inner_ctx, event);
-        }
-
         // Sync our state with our parent's state after the event!
 
         match event {
@@ -415,6 +381,6 @@ impl<W: Widget> WidgetPod<W> {
             .expect("WidgetPod: inner widget not found in widget tree");
         parent_ctx.widget_state.merge_up(state_mut.item);
 
-        call_widget || extra_event.is_some()
+        call_widget
     }
 }

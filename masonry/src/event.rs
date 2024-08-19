@@ -320,14 +320,6 @@ pub enum LifeCycle {
 pub enum InternalLifeCycle {
     /// Used to route the `WidgetAdded` event to the required widgets.
     RouteWidgetAdded,
-
-    /// Used to route the `FocusChanged` event.
-    RouteFocusChanged {
-        /// the widget that is losing focus, if any
-        old: Option<WidgetId>,
-        /// the widget that is gaining focus, if any
-        new: Option<WidgetId>,
-    },
 }
 
 /// Event indicating status changes within the widget hierarchy.
@@ -354,6 +346,9 @@ pub enum StatusChange {
     ///
     /// [`EventCtx::is_focused`]: crate::EventCtx::is_focused
     FocusChanged(bool),
+
+    /// Called when a widget becomes or no longer is parent of a focused widget.
+    HasFocusChanged(bool),
 }
 
 impl PointerEvent {
@@ -519,7 +514,6 @@ impl LifeCycle {
         match self {
             LifeCycle::Internal(internal) => match internal {
                 InternalLifeCycle::RouteWidgetAdded => "RouteWidgetAdded",
-                InternalLifeCycle::RouteFocusChanged { .. } => "RouteFocusChanged",
             },
             LifeCycle::WidgetAdded => "WidgetAdded",
             LifeCycle::AnimFrame(_) => "AnimFrame",
@@ -541,9 +535,7 @@ impl InternalLifeCycle {
     /// [`Event::should_propagate_to_hidden`]: Event::should_propagate_to_hidden
     pub fn should_propagate_to_hidden(&self) -> bool {
         match self {
-            InternalLifeCycle::RouteWidgetAdded | InternalLifeCycle::RouteFocusChanged { .. } => {
-                true
-            }
+            InternalLifeCycle::RouteWidgetAdded => true,
         }
     }
 }
