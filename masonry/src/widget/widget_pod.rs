@@ -655,11 +655,14 @@ impl<W: Widget> WidgetPod<W> {
 
     // --- MARK: PAINT ---
 
-    // TODO - remove
+    // TODO - This should be removed in a follow-up PR immediately after
+    // this is merged. I'm leaving the method for now to avoid blowing up the diff.
     pub fn paint(&mut self, _parent_ctx: &mut PaintCtx, _scene: &mut vello::Scene) {}
 
     // --- MARK: ACCESSIBILITY ---
-    // TODO - Remove
+
+    // TODO - This should be removed in a follow-up PR immediately after
+    // this is merged. I'm leaving the method for now to avoid blowing up the diff.
     pub fn accessibility(&mut self, _parent_ctx: &mut AccessCtx) {}
 }
 

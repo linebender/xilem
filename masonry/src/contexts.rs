@@ -564,11 +564,11 @@ impl_context_method!(
         ///
         /// If `stashed` is true, the child will not be painted or listed in the accessibility tree.
         ///
+        /// This will *not* trigger a layout pass.
+        ///
         /// **Note:** Stashed widgets are a WIP feature
         pub fn set_stashed(&mut self, child: &mut WidgetPod<impl Widget>, stashed: bool) {
             if self.get_child_state_mut(child).is_stashed != stashed {
-                // TODO - Maybe this should be
-                // self.children_changed();
                 self.widget_state.children_changed = true;
                 self.widget_state.update_focus_chain = true;
             }
@@ -886,6 +886,8 @@ impl LayoutCtx<'_> {
     pub fn set_clip_path(&mut self, path: Rect) {
         trace!("set_clip_path {:?}", path);
         self.widget_state.clip = Some(path);
+        // TODO - Updating the clip path may have
+        // other knock-on effects we'd need to document.
         self.widget_state.request_accessibility = true;
         self.widget_state.needs_accessibility = true;
         self.widget_state.needs_paint = true;
@@ -897,6 +899,8 @@ impl LayoutCtx<'_> {
     pub fn clear_clip_path(&mut self) {
         trace!("clear_clip_path");
         self.widget_state.clip = None;
+        // TODO - Updating the clip path may have
+        // other knock-on effects we'd need to document.
         self.widget_state.request_accessibility = true;
         self.widget_state.needs_accessibility = true;
         self.widget_state.needs_paint = true;
