@@ -858,7 +858,11 @@ impl LayoutCtx<'_> {
         self.get_child_state(child).layout_rect().size()
     }
 
-    pub(crate) fn skip_layout(&mut self, child: &mut WidgetPod<impl Widget>) {
+    /// Skips running the layout pass and calling `place_child` on the child.
+    ///
+    /// This may be removed in the future. Currently it's useful for
+    /// stashed children and children whose layout is cached.
+    pub fn skip_layout(&mut self, child: &mut WidgetPod<impl Widget>) {
         #[cfg(debug_assertions)]
         self.get_child_state(child).mark_as_visited(true);
         self.get_child_state_mut(child).needs_layout = false;
