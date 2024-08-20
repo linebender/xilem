@@ -541,19 +541,12 @@ impl<W: Widget> WidgetPod<W> {
             return false;
         }
 
-        state.needs_compose = true;
-        state.is_expecting_place_child_call = true;
-        // TODO - Not everything that has been re-laid out needs to be repainted.
-        state.request_paint = true;
-        state.needs_paint = true;
-        state.request_accessibility = true;
-        state.needs_accessibility = true;
-
         bc.debug_check(widget.short_type_name());
         trace!("Computing layout with constraints {:?}", bc);
 
         state.local_paint_rect = Rect::ZERO;
 
+        state.request_layout = false;
         let new_size = {
             let mut inner_ctx = LayoutCtx {
                 widget_state: state,
@@ -566,11 +559,29 @@ impl<W: Widget> WidgetPod<W> {
             widget.layout(&mut inner_ctx, bc)
         };
 
-        // We reset `needs_layout` after the layout call, in case `layout` calls `request_layout`.
-        // If this did happen, it would be a bug; however, it is allowed for a child of `widget`
-        // (accessed using `get_raw_mut`) to call `request_layout`, so long as its `layout` is called
-        // by the parent. We currently cannot differentiate these cases, so we allow both.
+        if state.request_layout {
+            debug_panic!(
+                "Error in '{}' #{}: layout pass has requested layout.",
+                widget.short_type_name(),
+                id,
+            );
+        }
+
+        // We reset `needs_layout` after the layout call, which means if
+        // the widget sets needs_layout to true, that will be overridden.
+        // This shouldn't happen in practice, except in one case: if we access
+        // a child using `get_raw_mut` before the child's layout is run. In that
+        // case the child's needs_layout is still true, and propagates up to
+        // this widget. The line below resets it to false.
         state.needs_layout = false;
+
+        state.needs_compose = true;
+        state.is_expecting_place_child_call = true;
+        // TODO - Not everything that has been re-laid out needs to be repainted.
+        state.request_paint = true;
+        state.needs_paint = true;
+        state.request_accessibility = true;
+        state.needs_accessibility = true;
 
         state.local_paint_rect = state
             .local_paint_rect

@@ -421,6 +421,7 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, LifeCycleCtx<'_>, {
     /// [`layout`]: crate::Widget::layout
     pub fn request_layout(&mut self) {
         trace!("request_layout");
+        self.widget_state.request_layout = true;
         self.widget_state.needs_layout = true;
     }
 

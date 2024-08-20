@@ -86,6 +86,9 @@ pub struct WidgetState {
     // LifeCycle::DisabledChanged or InternalLifeCycle::RouteDisabledChanged
     pub(crate) is_explicitly_disabled_new: bool,
 
+    /// This widget explicitly requested layout
+    pub(crate) request_layout: bool,
+    /// This widget or a descendant explicitly requested layout
     pub(crate) needs_layout: bool,
 
     /// The compose method must be called on this widget
@@ -169,6 +172,7 @@ impl WidgetState {
             is_explicitly_disabled: false,
             baseline_offset: 0.0,
             is_hot: false,
+            request_layout: true,
             needs_layout: true,
             request_compose: true,
             needs_compose: true,
