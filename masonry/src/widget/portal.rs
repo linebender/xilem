@@ -336,7 +336,7 @@ impl<W: Widget> Widget for Portal<W> {
         self.set_viewport_pos_raw(portal_size, content_size, self.viewport_pos);
         // TODO - recompute portal progress
 
-        ctx.set_clip(portal_size.to_rect());
+        ctx.set_clip_path(portal_size.to_rect());
 
         ctx.place_child(&mut self.child, Point::new(0.0, -self.viewport_pos.y));
 

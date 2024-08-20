@@ -37,6 +37,7 @@ fn compose_widget(
     }
 
     // We need to update the accessibility node's coordinates and repaint it at the new position.
+    state.item.request_accessibility = true;
     state.item.needs_accessibility = true;
     state.item.needs_paint = true;
 

@@ -883,20 +883,22 @@ impl LayoutCtx<'_> {
     /// A widget's clip path will have two effects:
     /// - It serves as a mask for painting operations of the widget's children (*not* the widget itself).
     /// - Pointer events must be inside that path to reach the widget's children.
-    pub fn set_clip(&mut self, path: Rect) {
-        trace!("set_clip {:?}", path);
+    pub fn set_clip_path(&mut self, path: Rect) {
+        trace!("set_clip_path {:?}", path);
         self.widget_state.clip = Some(path);
-        // TODO - May not be the right flag to set.
+        self.widget_state.request_accessibility = true;
+        self.widget_state.needs_accessibility = true;
         self.widget_state.needs_paint = true;
     }
 
     /// Remove the widget's clip path.
     ///
     /// See [`LayoutCtx::set_clip`] for details.
-    pub fn clear_clip(&mut self) {
-        trace!("clear_clip");
+    pub fn clear_clip_path(&mut self) {
+        trace!("clear_clip_path");
         self.widget_state.clip = None;
-        // TODO - May not be the right flag to set.
+        self.widget_state.request_accessibility = true;
+        self.widget_state.needs_accessibility = true;
         self.widget_state.needs_paint = true;
     }
 
