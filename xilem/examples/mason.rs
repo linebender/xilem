@@ -9,7 +9,7 @@ use std::time::Duration;
 use xilem::{
     tokio::time,
     view::{
-        async_repeat, button, button_any_pointer, checkbox, flex, label, prose, textbox, Axis,
+        button, button_any_pointer, checkbox, flex, label, prose, task, textbox, Axis,
         FlexExt as _, FlexSpacer,
     },
     Color, EventLoop, EventLoopBuilder, TextAlignment, WidgetView, Xilem,
@@ -92,10 +92,10 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> {
             button("Reset", |data: &mut AppData| data.count = 0),
             flex((fizz_buzz_flex_sequence, flex_sequence)).direction(axis),
         )),
-        // The following `async_repeat` view only exists whilst the example is in the "active" state, so
+        // The following `task` view only exists whilst the example is in the "active" state, so
         // the updates it performs will only be running whilst we are in that state.
         data.active.then(|| {
-            async_repeat(
+            task(
                 |proxy| async move {
                     let mut interval = time::interval(Duration::from_secs(1));
                     loop {

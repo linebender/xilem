@@ -11,20 +11,17 @@ use xilem_core::{
 use crate::ViewCtx;
 
 /// Launch a task which will run until the view is no longer in the tree.
-/// `future_future` is given a [`MessageProxy`], which it will store in the future it returns.
+/// `init_future` is given a [`MessageProxy`], which it will store in the future it returns.
 /// This `MessageProxy` can be used to send a message to `on_event`, which can then update
 /// the app's state.
 ///
 /// For exampe, this can be used with the time functions in [`crate::tokio::time`].
 ///
-/// Note that this task will not be updated if the view is rebuilt, so `future_future`
+/// Note that this task will not be updated if the view is rebuilt, so `init_future`
 /// cannot capture.
 // TODO: More thorough documentation.
 /// See [`run_once`](crate::core::run_once) for details.
-pub fn async_repeat<M, F, H, State, Action, Fut>(
-    future_future: F,
-    on_event: H,
-) -> AsyncRepeat<F, H, M>
+pub fn task<M, F, H, State, Action, Fut>(init_future: F, on_event: H) -> Task<F, H, M>
 where
     F: Fn(MessageProxy<M>) -> Fut,
     Fut: Future<Output = ()> + Send + 'static,
@@ -34,12 +31,12 @@ where
     const {
         assert!(
             core::mem::size_of::<F>() == 0,
-            "`async_repeat` will not be ran again when its captured variables are updated.\n\
-            To ignore this warning, use `async_repeat_raw`."
+            "`task` will not be ran again when its captured variables are updated.\n\
+            To ignore this warning, use `task_raw`."
         );
     };
-    AsyncRepeat {
-        future_future,
+    Task {
+        init_future,
         on_event,
         message: PhantomData,
     }
@@ -47,33 +44,30 @@ where
 
 /// Launch a task which will run until the view is no longer in the tree.
 ///
-/// This is [`async_repeat`] without the capturing rules.
-/// See `async_repeat` for full documentation.
-pub fn async_repeat_raw<M, F, H, State, Action, Fut>(
-    future_future: F,
-    on_event: H,
-) -> AsyncRepeat<F, H, M>
+/// This is [`task`] without the capturing rules.
+/// See `task` for full documentation.
+pub fn task_raw<M, F, H, State, Action, Fut>(init_future: F, on_event: H) -> Task<F, H, M>
 where
     F: Fn(MessageProxy<M>) -> Fut,
     Fut: Future<Output = ()> + Send + 'static,
     H: Fn(&mut State, M) -> Action + 'static,
     M: Message + 'static,
 {
-    AsyncRepeat {
-        future_future,
+    Task {
+        init_future,
         on_event,
         message: PhantomData,
     }
 }
 
-pub struct AsyncRepeat<F, H, M> {
-    future_future: F,
+pub struct Task<F, H, M> {
+    init_future: F,
     on_event: H,
     message: PhantomData<fn() -> M>,
 }
 
-impl<F, H, M> ViewMarker for AsyncRepeat<F, H, M> {}
-impl<State, Action, F, H, M, Fut> View<State, Action, ViewCtx> for AsyncRepeat<F, H, M>
+impl<F, H, M> ViewMarker for Task<F, H, M> {}
+impl<State, Action, F, H, M, Fut> View<State, Action, ViewCtx> for Task<F, H, M>
 where
     F: Fn(MessageProxy<M>) -> Fut + 'static,
     Fut: Future<Output = ()> + Send + 'static,
@@ -90,7 +84,7 @@ where
         let proxy = ctx.proxy.clone();
         let handle = ctx
             .runtime()
-            .spawn((self.future_future)(MessageProxy::new(proxy, path)));
+            .spawn((self.init_future)(MessageProxy::new(proxy, path)));
         (NoElement, handle)
     }
 
@@ -122,7 +116,7 @@ where
     ) -> xilem_core::MessageResult<Action> {
         debug_assert!(
             id_path.is_empty(),
-            "id path should be empty in AsyncRepeat::message"
+            "id path should be empty in Task::message"
         );
         let message = message.downcast::<M>().unwrap();
         xilem_core::MessageResult::Action((self.on_event)(app_state, *message))

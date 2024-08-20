@@ -12,7 +12,7 @@ use tokio::time;
 use tracing::warn;
 use winit::error::EventLoopError;
 use winit::window::Window;
-use xilem::view::{async_repeat, button, flex, label, FlexSequence, FlexSpacer};
+use xilem::view::{button, flex, label, task, FlexSequence, FlexSpacer};
 use xilem::{WidgetView, Xilem};
 use xilem_core::fork;
 use xilem_core::one_of::Either;
@@ -117,7 +117,7 @@ fn app_logic(data: &mut Stopwatch) -> impl WidgetView<Stopwatch> {
         )),
         data.active.then(|| {
             // Only update while active.
-            async_repeat(
+            task(
                 |proxy| async move {
                     let mut interval = time::interval(Duration::from_millis(50));
                     loop {
