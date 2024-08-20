@@ -1,0 +1,177 @@
+// Copyright 2024 the Xilem Authors
+// SPDX-License-Identifier: Apache-2.0
+
+use accesskit::Role;
+use smallvec::SmallVec;
+use tracing::{trace, trace_span, Span};
+use vello::kurbo::{common::FloatExt, Affine, Line, Stroke, Vec2};
+use vello::Scene;
+
+use crate::theme::get_debug_color;
+use crate::widget::{WidgetMut};
+use crate::{
+    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
+    Point, PointerEvent, Rect, Size, StatusChange, TextEvent, Widget, WidgetId, WidgetPod,
+};
+
+pub struct Grid {
+    children: Vec<Child>,
+    grid_width: i32,
+    grid_height: i32,
+}
+
+// --- MARK: IMPL GRID ---
+impl Grid {
+    pub fn with_dimensions(width: i32, height: i32) -> Self {
+        Grid {
+            children: Vec::new(),
+            grid_width: width,
+            grid_height: height,
+        }
+    }
+
+    /// Builder-style variant of [`WidgetMut::add_child`].
+    ///
+    /// Convenient for assembling a group of widgets in a single expression.
+    pub fn with_child(self, child: impl Widget, x: i32, y: i32, width: i32, height: i32) -> Self {
+        self.with_child_pod(WidgetPod::new(Box::new(child)), x, y, width, height)
+    }
+
+    pub fn with_child_id(self, child: impl Widget, id: WidgetId, x: i32, y: i32, width: i32, height: i32) -> Self {
+        self.with_child_pod(WidgetPod::new_with_id(Box::new(child), id), x, y, width, height)
+    }
+
+    pub fn with_child_pod(mut self, widget: WidgetPod<Box<dyn Widget>>, x: i32, y: i32, width: i32, height: i32) -> Self {
+        let child = Child {
+            widget,
+            x,
+            y,
+            width,
+            height,
+        };
+        self.children.push(child);
+        self
+    }
+}
+
+// --- MARK: WIDGETMUT---
+impl<'a> WidgetMut<'a, Grid> {
+    /*/// Add a child widget.
+    ///
+    /// See also [`with_child`].
+    ///
+    /// [`with_child`]: Grid::with_child
+    pub fn add_child(&mut self, child: impl Widget, x: i32, y: i32, width: i32, height: i32) {
+        let child_pod = WidgetPod::new(Box::new(child));
+        self.insert_child_pod(child_pod, x, y, width, height);
+    }
+
+    pub fn add_child_id(&mut self, child: impl Widget, id: WidgetId, x: i32, y: i32, width: i32, height: i32) {
+        let child_pod = WidgetPod::new_with_id(Box::new(child), id);
+        self.insert_child_pod(child_pod, x, y, width, height);
+    }
+
+    /// Add a child widget.
+    pub fn insert_child_pod(&mut self, widget: WidgetPod<Box<dyn Widget>>, x: i32, y: i32, width: i32, height: i32) {
+        let child = Child {
+            widget,
+            x,
+            y,
+            width,
+            height,
+        };
+        self.widget.children.push(child);
+        self.ctx.children_changed();
+    }*/
+}
+
+// --- MARK: IMPL WIDGET---
+impl Widget for Grid {
+    fn on_pointer_event(&mut self, _ctx: &mut EventCtx, _event: &PointerEvent) {}
+
+    fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
+
+    fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {}
+
+    fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange) {}
+
+    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
+        for child in self.children.iter_mut().filter_map(|x| x.widget_mut()) {
+            child.lifecycle(ctx, event);
+        }
+    }
+
+    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
+        bc.debug_check("Grid");
+        let total_size = bc.max();
+        let width_unit = total_size.width / (self.grid_width as f64);
+        let height_unit = total_size.height / (self.grid_height as f64);
+        for child in &mut self.children {
+            let cell_size = Size::new(
+                child.width as f64 * width_unit,
+                child.height as f64 * height_unit,
+            );
+            let child_bc = BoxConstraints::new(cell_size, cell_size);
+            let _ = child.widget.layout(ctx, &child_bc);
+            // TODO: Baseline offset?
+            // TODO: Insets?
+            ctx.place_child(&mut child.widget, Point::new(child.x as f64 *width_unit, child.y as f64 * height_unit))
+        }
+        total_size
+    }
+
+    fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
+        for child in self.children.iter_mut().filter_map(|x| x.widget_mut()) {
+            child.paint(ctx, scene);
+        }
+
+        // paint the baseline if we're debugging layout
+        if ctx.debug_paint && ctx.widget_state.baseline_offset != 0.0 {
+            let color = get_debug_color(ctx.widget_id().to_raw());
+            let my_baseline = ctx.size().height - ctx.widget_state.baseline_offset;
+            let line = Line::new((0.0, my_baseline), (ctx.size().width, my_baseline));
+
+            let stroke_style = Stroke::new(1.0).with_dashes(0., [4.0, 4.0]);
+            scene.stroke(&stroke_style, Affine::IDENTITY, color, None, &line);
+        }
+    }
+
+    fn accessibility_role(&self) -> Role {
+        Role::GenericContainer
+    }
+
+    fn accessibility(&mut self, ctx: &mut AccessCtx) {
+        for child in self.children.iter_mut().filter_map(|x| x.widget_mut()) {
+            child.accessibility(ctx);
+        }
+    }
+
+    fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
+        self.children
+            .iter()
+            .filter_map(|child| child.widget())
+            .map(|widget_pod| widget_pod.id())
+            .collect()
+    }
+
+    fn make_trace_span(&self) -> Span {
+        trace_span!("Grid")
+    }
+}
+
+struct Child {
+    widget: WidgetPod<Box<dyn Widget>>,
+    x: i32,
+    y: i32,
+    width: i32,
+    height: i32,
+}
+
+impl Child {
+    fn widget_mut(&mut self) -> Option<&mut WidgetPod<Box<dyn Widget>>> {
+        Some(&mut self.widget)
+    }
+    fn widget(&self) -> Option<&WidgetPod<Box<dyn Widget>>> {
+        Some(&self.widget)
+    }
+}
