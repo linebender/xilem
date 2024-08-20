@@ -572,8 +572,8 @@ impl<W: Widget> WidgetPod<W> {
         };
 
         // We reset `needs_layout` after the layout call, in case `layout` calls `request_layout`.
-        // If this did happen, it would be a bug; however, it is allowed for a child of `widget` 
-        // (accessed using `get_raw_mut`) to call `request_layout`, so long as its `layout` is called 
+        // If this did happen, it would be a bug; however, it is allowed for a child of `widget`
+        // (accessed using `get_raw_mut`) to call `request_layout`, so long as its `layout` is called
         // by the parent. We currently cannot differentiate these cases, so we allow both.
         state.needs_layout = false;
 
