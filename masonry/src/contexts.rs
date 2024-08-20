@@ -708,6 +708,7 @@ impl LifeCycleCtx<'_> {
 
 // --- MARK: UPDATE LAYOUT ---
 impl LayoutCtx<'_> {
+    #[track_caller]
     fn assert_layout_done(&self, child: &WidgetPod<impl Widget>, method_name: &str) {
         if self.get_child_state(child).needs_layout {
             debug_panic!(
@@ -720,6 +721,7 @@ impl LayoutCtx<'_> {
         }
     }
 
+    #[track_caller]
     fn assert_placed(&self, child: &WidgetPod<impl Widget>, method_name: &str) {
         if self.get_child_state(child).is_expecting_place_child_call {
             debug_panic!(
@@ -760,6 +762,7 @@ impl LayoutCtx<'_> {
     ///
     /// This method will panic if the child's [`layout()`](WidgetPod::layout) method has not been called yet
     /// and if [`LayoutCtx::place_child()`] has not been called for the child.
+    #[track_caller]
     pub fn compute_insets_from_child(
         &mut self,
         child: &WidgetPod<impl Widget>,
@@ -805,17 +808,13 @@ impl LayoutCtx<'_> {
         self.widget_state.mark_as_visited(visited);
     }
 
-    pub(crate) fn mark_child_as_visited(&self, child: &WidgetPod<impl Widget>, visited: bool) {
-        #[cfg(debug_assertions)]
-        self.get_child_state(child).mark_as_visited(visited);
-    }
-
     /// The distance from the bottom of the given widget to the baseline.
     ///
     /// ## Panics
     ///
     /// This method will panic if [`WidgetPod::layout`] has not been called yet for
     /// the child.
+    #[track_caller]
     pub fn child_baseline_offset(&self, child: &WidgetPod<impl Widget>) -> f64 {
         self.assert_layout_done(child, "child_baseline_offset");
         self.get_child_state(child).baseline_offset
@@ -827,6 +826,7 @@ impl LayoutCtx<'_> {
     ///
     /// This method will panic if [`WidgetPod::layout`] and [`LayoutCtx::place_child`]
     /// have not been called yet for the child.
+    #[track_caller]
     pub fn child_layout_rect(&self, child: &WidgetPod<impl Widget>) -> Rect {
         self.assert_layout_done(child, "child_layout_rect");
         self.assert_placed(child, "child_layout_rect");
@@ -839,6 +839,7 @@ impl LayoutCtx<'_> {
     ///
     /// This method will panic if [`WidgetPod::layout`] and [`LayoutCtx::place_child`]
     /// have not been called yet for the child.
+    #[track_caller]
     pub fn child_paint_rect(&self, child: &WidgetPod<impl Widget>) -> Rect {
         self.assert_layout_done(child, "child_paint_rect");
         self.assert_placed(child, "child_paint_rect");
@@ -851,9 +852,20 @@ impl LayoutCtx<'_> {
     ///
     /// This method will panic if [`WidgetPod::layout`] has not been called yet for
     /// the child.
+    #[track_caller]
     pub fn child_size(&self, child: &WidgetPod<impl Widget>) -> Size {
         self.assert_layout_done(child, "child_size");
         self.get_child_state(child).layout_rect().size()
+    }
+
+    /// Skips running the layout pass and calling `place_child` on the child.
+    ///
+    /// This may be removed in the future. Currently it's useful for
+    /// stashed children and children whose layout is cached.
+    pub fn skip_layout(&mut self, child: &mut WidgetPod<impl Widget>) {
+        #[cfg(debug_assertions)]
+        self.get_child_state(child).mark_as_visited(true);
+        self.get_child_state_mut(child).needs_layout = false;
     }
 
     /// Set the position of a child widget, in the parent's coordinate space. This
@@ -866,6 +878,7 @@ impl LayoutCtx<'_> {
     ///
     /// This method will panic if [`WidgetPod::layout`] has not been called yet for
     /// the child.
+    #[track_caller]
     pub fn place_child<W: Widget>(&mut self, child: &mut WidgetPod<W>, origin: Point) {
         self.assert_layout_done(child, "place_child");
         if origin != self.get_child_state_mut(child).origin {
