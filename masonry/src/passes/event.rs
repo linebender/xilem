@@ -83,7 +83,7 @@ fn run_event_pass<E>(
 
 // TODO - Send synthetic MouseLeave events
 
-pub fn root_on_pointer_event(
+pub(crate) fn root_on_pointer_event(
     root: &mut RenderRoot,
     root_state: &mut WidgetState,
     event: &PointerEvent,
@@ -119,7 +119,7 @@ pub fn root_on_pointer_event(
     handled
 }
 
-pub fn root_on_text_event(
+pub(crate) fn root_on_text_event(
     root: &mut RenderRoot,
     root_state: &mut WidgetState,
     event: &TextEvent,
@@ -165,7 +165,7 @@ pub fn root_on_text_event(
     handled
 }
 
-pub fn root_on_access_event(
+pub(crate) fn root_on_access_event(
     root: &mut RenderRoot,
     root_state: &mut WidgetState,
     event: &AccessEvent,

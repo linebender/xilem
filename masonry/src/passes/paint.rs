@@ -103,7 +103,7 @@ fn paint_widget(
 
 // ----------------
 
-pub fn root_paint(root: &mut RenderRoot) -> Scene {
+pub(crate) fn root_paint(root: &mut RenderRoot) -> Scene {
     let _span = info_span!("paint").entered();
 
     let debug_paint = std::env::var("MASONRY_DEBUG_PAINT").is_ok_and(|it| !it.is_empty());
