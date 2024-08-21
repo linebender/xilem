@@ -1,23 +1,24 @@
-// Copyright 2024 the Xilem Authors
+// Copyright 2024 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
 use accesskit::Role;
 use smallvec::SmallVec;
-use tracing::{trace, trace_span, Span};
-use vello::kurbo::{common::FloatExt, Affine, Line, Stroke, Vec2};
+use tracing::{trace_span, Span};
+use vello::kurbo::{Affine, Line, Stroke};
 use vello::Scene;
 
 use crate::theme::get_debug_color;
-use crate::widget::{WidgetMut};
+use crate::widget::WidgetMut;
 use crate::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
-    Point, PointerEvent, Rect, Size, StatusChange, TextEvent, Widget, WidgetId, WidgetPod,
+    Point, PointerEvent, Size, StatusChange, TextEvent, Widget, WidgetId, WidgetPod,
 };
 
 pub struct Grid {
     children: Vec<Child>,
     grid_width: i32,
     grid_height: i32,
+    grid_spacing: f64,
 }
 
 // --- MARK: IMPL GRID ---
@@ -27,7 +28,13 @@ impl Grid {
             children: Vec::new(),
             grid_width: width,
             grid_height: height,
+            grid_spacing: 0.0,
         }
+    }
+
+    pub fn with_spacing(mut self, spacing: f64) -> Self {
+        self.grid_spacing = spacing;
+        self
     }
 
     /// Builder-style variant of [`WidgetMut::add_child`].
@@ -56,18 +63,18 @@ impl Grid {
 
 // --- MARK: WIDGETMUT---
 impl<'a> WidgetMut<'a, Grid> {
-    /*/// Add a child widget.
+    /// Add a child widget.
     ///
     /// See also [`with_child`].
     ///
     /// [`with_child`]: Grid::with_child
     pub fn add_child(&mut self, child: impl Widget, x: i32, y: i32, width: i32, height: i32) {
-        let child_pod = WidgetPod::new(Box::new(child));
+        let child_pod: WidgetPod<Box<dyn Widget>>  = WidgetPod::new(Box::new(child));
         self.insert_child_pod(child_pod, x, y, width, height);
     }
 
     pub fn add_child_id(&mut self, child: impl Widget, id: WidgetId, x: i32, y: i32, width: i32, height: i32) {
-        let child_pod = WidgetPod::new_with_id(Box::new(child), id);
+        let child_pod: WidgetPod<Box<dyn Widget>> = WidgetPod::new_with_id(Box::new(child), id);
         self.insert_child_pod(child_pod, x, y, width, height);
     }
 
@@ -82,7 +89,12 @@ impl<'a> WidgetMut<'a, Grid> {
         };
         self.widget.children.push(child);
         self.ctx.children_changed();
-    }*/
+    }
+
+    pub fn set_spacing(&mut self, spacing: f64) {
+        self.widget.grid_spacing = spacing;
+        self.ctx.request_layout();
+    }
 }
 
 // --- MARK: IMPL WIDGET---
@@ -104,23 +116,22 @@ impl Widget for Grid {
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
         bc.debug_check("Grid");
         let total_size = bc.max();
-        let width_unit = total_size.width / (self.grid_width as f64);
-        let height_unit = total_size.height / (self.grid_height as f64);
+        let width_unit = (total_size.width + self.grid_spacing) / (self.grid_width as f64);
+        let height_unit = (total_size.height + self.grid_spacing) / (self.grid_height as f64);
         for child in &mut self.children {
             let cell_size = Size::new(
-                child.width as f64 * width_unit,
-                child.height as f64 * height_unit,
+                child.width as f64 * width_unit - self.grid_spacing,
+                child.height as f64 * height_unit - self.grid_spacing,
             );
             let child_bc = BoxConstraints::new(cell_size, cell_size);
             let _ = child.widget.layout(ctx, &child_bc);
-            // TODO: Baseline offset?
-            // TODO: Insets?
             ctx.place_child(&mut child.widget, Point::new(child.x as f64 *width_unit, child.y as f64 * height_unit))
         }
         total_size
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
+        // Just paint every child
         for child in self.children.iter_mut().filter_map(|x| x.widget_mut()) {
             child.paint(ctx, scene);
         }

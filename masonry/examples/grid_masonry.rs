@@ -9,17 +9,31 @@
 
 use masonry::app_driver::{AppDriver, DriverCtx};
 use masonry::dpi::LogicalSize;
-use masonry::widget::{Button, Flex, Grid, Label, RootWidget};
-use masonry::{Action, WidgetId};
+use masonry::widget::{Button, Grid, Label, RootWidget};
+use masonry::{Action, PointerButton, WidgetId};
 use winit::window::Window;
 
-const GRID_SPACING: f64 = 10.0;
-
-struct Driver;
+struct Driver {
+    grid_spacing: f64,
+}
 
 impl AppDriver for Driver {
-    fn on_action(&mut self, _ctx: &mut DriverCtx<'_>, _widget_id: WidgetId, action: Action) {
+    fn on_action(&mut self, ctx: &mut DriverCtx<'_>, _widget_id: WidgetId, action: Action) {
+        match action {
+            Action::ButtonPressed(button) => {
+                if button == PointerButton::Primary {
+                    self.grid_spacing += 1.0;
+                } else if button == PointerButton::Secondary {
+                    self.grid_spacing -= 1.0;
+                } else {
+                    self.grid_spacing += 0.5;
+                }
 
+                ctx.get_root::<RootWidget<Grid>>()
+                    .get_element().set_spacing(self.grid_spacing)
+            }
+            _ => ()
+        }
     }
 }
 
@@ -28,7 +42,6 @@ struct DrawnButton {
     y: i32,
     width: i32,
     height: i32,
-    // TODO: Color?
 }
 
 impl DrawnButton {
@@ -38,7 +51,8 @@ impl DrawnButton {
 }
 
 pub fn main() {
-    let label = Label::new("A Label").with_text_size(28.0);
+    let label = Label::new("Change spacing by right and\n left clicking on the buttons")
+            .with_text_size(14.0);
     let button_inputs = vec![
         DrawnButton{ x: 0, y: 0, width: 1, height: 1 },
         DrawnButton{ x: 2, y: 0, width: 2, height: 1 },
@@ -49,8 +63,13 @@ pub fn main() {
         DrawnButton{ x: 0, y: 3, width: 4, height: 1 },
     ];
 
+    let driver = Driver {
+        grid_spacing: 1.0,
+    };
+
     // Arrange the two widgets vertically, with some padding
     let mut main_widget = Grid::with_dimensions(4, 4)
+        .with_spacing(driver.grid_spacing)
         .with_child(label, 1, 0, 1, 1);
     for button_input in button_inputs {
         let button = Button::new(button_input.get_label());
@@ -63,7 +82,7 @@ pub fn main() {
         )
     }
 
-    let window_size = LogicalSize::new(600.0, 500.0);
+    let window_size = LogicalSize::new(800.0, 500.0);
     let window_attributes = Window::default_attributes()
         .with_title("Grid Layout")
         .with_resizable(true)
@@ -73,7 +92,7 @@ pub fn main() {
         masonry::event_loop_runner::EventLoop::with_user_event(),
         window_attributes,
         RootWidget::new(main_widget),
-        Driver,
+        driver,
     )
         .unwrap();
 }
