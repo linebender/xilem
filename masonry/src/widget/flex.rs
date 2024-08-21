@@ -671,8 +671,7 @@ impl Widget for Flex {
                         any_use_baseline |= alignment == CrossAxisAlignment::Baseline;
 
                         let old_size = ctx.widget_state.layout_rect().size();
-                        let child_bc = self.direction.constraints(&loosened_bc, 0.0, 9000.0); // TODO Infinity does lead to NaN and then crashes the app, if this is too big, it leads to floating point issues
-                        let child_size = widget.layout(ctx, &child_bc);
+                        let child_size = widget.layout(ctx, &loosened_bc);
 
                         if child_size.width.is_infinite() {
                             tracing::warn!("A non-Flex child has an infinite width.");
