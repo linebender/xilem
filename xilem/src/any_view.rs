@@ -8,6 +8,7 @@ use masonry::{
     Point, PointerEvent, Size, StatusChange, TextEvent, Widget, WidgetId, WidgetPod,
 };
 use smallvec::{smallvec, SmallVec};
+use tracing::{trace_span, Span};
 use vello::Scene;
 use xilem_core::{AnyElement, AnyView, SuperElement};
 
@@ -105,5 +106,9 @@ impl Widget for DynWidget {
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         smallvec![self.inner.id()]
+    }
+
+    fn make_trace_span(&self) -> Span {
+        trace_span!("DynWidget")
     }
 }
