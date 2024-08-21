@@ -1,6 +1,18 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+#![warn(rustdoc::broken_intra_doc_links, clippy::doc_markdown, missing_docs)]
+
+//! Configures a suitable default [`tracing`] implementation for a Masonry application.
+//!
+//! This uses a custom log format specialised for GUI applications,
+//! and will write all logs to a temporary file in debug mode.
+//! This also uses a default filter, which can be overwritten using `RUST_LOG`.
+//! This will include all [`DEBUG`](tracing::Level::DEBUG) messages in debug mode,
+//! and all [`INFO`](tracing::Level::INFO) level messages in release mode.
+//!
+//! If a `tracing` backend is already configured, this will not overwrite that.
+
 use std::fs::File;
 use std::time::UNIX_EPOCH;
 
@@ -11,44 +23,9 @@ use tracing_subscriber::fmt::time::UtcTime;
 use tracing_subscriber::prelude::*;
 use tracing_subscriber::EnvFilter;
 
-#[cfg(target_arch = "wasm32")]
-pub(crate) fn try_init_wasm_tracing() -> Result<(), SetGlobalDefaultError> {
-    // Note - tracing-wasm might not work in headless Node.js. Probably doesn't matter anyway,
-    // because this is a GUI framework, so wasm targets will virtually always be browsers.
-
-    // Ignored if the panic hook is already set
-    console_error_panic_hook::set_once();
-
-    let max_level = if cfg!(debug_assertions) {
-        tracing::Level::DEBUG
-    } else {
-        tracing::Level::INFO
-    };
-    let config = tracing_wasm::WASMLayerConfigBuilder::new()
-        .set_max_level(max_level)
-        .build();
-
-    tracing::subscriber::set_global_default(
-        Registry::default().with(tracing_wasm::WASMLayer::new(config)),
-    )
-}
-
-// TODO - Remove
-#[allow(clippy::print_stdout)]
 #[cfg(not(target_arch = "wasm32"))]
-pub(crate) fn try_init_layered_tracing(
-    default_level: Option<LevelFilter>,
-) -> Result<(), SetGlobalDefaultError> {
-    // Default level is DEBUG in --dev, INFO in --release, unless a level is passed.
-    // DEBUG should print a few logs per low-density event.
-    // INFO should only print logs for noteworthy things.
-    let default_level = if let Some(level) = default_level {
-        level
-    } else if cfg!(debug_assertions) {
-        LevelFilter::DEBUG
-    } else {
-        LevelFilter::INFO
-    };
+/// Initialise tracing for a non-web platform with the given `default_level`.
+fn try_init_layered_tracing(default_level: LevelFilter) -> Result<(), SetGlobalDefaultError> {
     // Use EnvFilter to allow the user to override the log level without recompiling.
     let env_filter_builder = EnvFilter::builder()
         .with_default_directive(default_level.into())
@@ -67,6 +44,7 @@ pub(crate) fn try_init_layered_tracing(
         // We append a `Z` here to indicate clearly that this is a UTC time
         "[hour repr:24]:[minute]:[second].[subsecond digits:3]Z"
     ));
+    // If modifying, also update the module level docs
     let console_layer = tracing_subscriber::fmt::layer()
         .with_timer(timer.clone())
         .with_target(false)
@@ -79,14 +57,21 @@ pub(crate) fn try_init_layered_tracing(
             .unwrap()
             .as_millis();
         let tmp_path = std::env::temp_dir().join(format!("masonry-{id:016}-dense.log"));
-        // TODO - For some reason, `.with_ansi(false)` still leaves some italics in the output.
+        // If modifying, also update the module level docs
         let log_file_layer = tracing_subscriber::fmt::layer()
             .with_timer(timer)
-            .with_writer(File::create(tmp_path.clone()).unwrap())
+            .with_writer(File::create(&tmp_path).unwrap())
+            // TODO - For some reason, `.with_ansi(false)` still leaves some italics in the output.
             .with_ansi(false);
-        println!("---");
-        println!("Writing full logs to {}", tmp_path.to_string_lossy());
-        println!("---");
+        // Note that this layer does not use the provided filter, and instead logs all events.
+
+        #[allow(clippy::print_stderr)]
+        {
+            eprintln!("---");
+            eprintln!("Writing full logs to {}", tmp_path.display());
+            eprintln!("---");
+        }
+
         Some(log_file_layer)
     } else {
         None
@@ -105,33 +90,65 @@ pub(crate) fn try_init_layered_tracing(
     tracing::dispatcher::set_global_default(registry.into())?;
 
     if let Some(err) = env_var_error {
-        tracing::error!("Failed to parse RUST_LOG environment variable: {err}");
+        tracing::error!(
+            err = &err as &dyn std::error::Error,
+            "Failed to parse RUST_LOG environment variable"
+        );
     }
-
     Ok(())
 }
 
+#[cfg(target_arch = "wasm32")]
+/// Initialise tracing for the web with the given `max_level`.
+fn try_init_wasm_tracing(max_level: LevelFilter) -> Result<(), SetGlobalDefaultError> {
+    // Note - tracing-wasm might not work in headless Node.js. Probably doesn't matter anyway,
+    // because this is a GUI framework, so wasm targets will virtually always be browsers.
+
+    // Ignored if the panic hook is already set
+    console_error_panic_hook::set_once();
+
+    let config = tracing_wasm::WASMLayerConfigBuilder::new()
+        .set_max_level(max_level)
+        .build();
+
+    tracing::subscriber::set_global_default(
+        Registry::default().with(tracing_wasm::WASMLayer::new(config)),
+    )
+}
+
+/// Initialise tracing for a unit test.
+/// This ignores most messages to limit noise (but will still log all messages to a file).
 pub(crate) fn try_init_test_tracing() -> Result<(), SetGlobalDefaultError> {
+    // For unit tests we want to suppress most messages.
+    let default_level = LevelFilter::WARN;
     #[cfg(not(target_arch = "wasm32"))]
     {
-        // For unit tests we want to suppress most messages.
-        try_init_layered_tracing(Some(LevelFilter::WARN))
+        try_init_layered_tracing(default_level)
     }
 
     #[cfg(target_arch = "wasm32")]
     {
-        try_init_wasm_tracing()
+        try_init_wasm_tracing(default_level)
     }
 }
 
+/// Initialise tracing for an end-user application.
 pub(crate) fn try_init_tracing() -> Result<(), SetGlobalDefaultError> {
+    // Default level is DEBUG in --dev, INFO in --release, unless a level is passed.
+    // DEBUG should print a few logs per low-density event.
+    // INFO should only print logs for noteworthy things.
+    let default_level = if cfg!(debug_assertions) {
+        LevelFilter::DEBUG
+    } else {
+        LevelFilter::INFO
+    };
     #[cfg(not(target_arch = "wasm32"))]
     {
-        try_init_layered_tracing(None)
+        try_init_layered_tracing(default_level)
     }
 
     #[cfg(target_arch = "wasm32")]
     {
-        try_init_wasm_tracing()
+        try_init_wasm_tracing(default_level)
     }
 }
