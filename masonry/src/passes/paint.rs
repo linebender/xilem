@@ -44,9 +44,9 @@ fn paint_widget(
 
         // TODO - Reserve scene
         // https://github.com/linebender/xilem/issues/524
-        let mut scene = Scene::new();
+        let mut scene = scenes.entry(id).or_default();
+        scene.reset();
         widget.item.paint(&mut ctx, &mut scene);
-        *scenes.entry(id).or_default() = scene;
     }
 
     state.item.request_paint = false;
@@ -58,7 +58,7 @@ fn paint_widget(
     let scene = scenes.get(&id).unwrap();
 
     if let Some(clip) = clip {
-        complete_scene.push_layer(BlendMode::default(), 1., transform, &clip);
+        complete_scene.push_layer(Mix::Clip, 1., transform, &clip);
     }
 
     complete_scene.append(scene, Some(transform));

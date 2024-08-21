@@ -895,7 +895,7 @@ impl LayoutCtx<'_> {
 
     /// Remove the widget's clip path.
     ///
-    /// See [`LayoutCtx::set_clip`] for details.
+    /// See [`LayoutCtx::set_clip_path`] for details.
     pub fn clear_clip_path(&mut self) {
         trace!("clear_clip_path");
         self.widget_state.clip = None;
