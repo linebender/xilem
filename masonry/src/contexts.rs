@@ -98,8 +98,6 @@ pub struct PaintCtx<'a> {
     pub(crate) widget_state: &'a WidgetState,
     pub(crate) widget_state_children: ArenaMutChildren<'a, WidgetState>,
     pub(crate) widget_children: ArenaMutChildren<'a, Box<dyn Widget>>,
-    /// The approximate depth in the tree at the time of painting.
-    pub(crate) depth: u32,
     pub(crate) debug_paint: bool,
 }
 
@@ -473,6 +471,7 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, LifeCycleCtx<'_>, {
             .widget_children
             .remove_child(id)
             .expect("remove_child: child not found");
+        self.global_state.scenes.remove(&child.id());
 
         self.children_changed();
     }
@@ -966,18 +965,6 @@ impl_context_method!(LayoutCtx<'_>, PaintCtx<'_>, {
 });
 
 impl PaintCtx<'_> {
-    /// The depth in the tree of the currently painting widget.
-    ///
-    /// This may be used in combination with [`paint_with_z_index`](Self::paint_with_z_index) in order
-    /// to correctly order painting operations.
-    ///
-    /// The `depth` here may not be exact; it is only guaranteed that a child will
-    /// have a greater depth than its parent.
-    #[inline]
-    pub fn depth(&self) -> u32 {
-        self.depth
-    }
-
     // signal may be useful elsewhere, but is currently only used on PaintCtx
     /// Submit a [`RenderRootSignal`]
     ///

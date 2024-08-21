@@ -66,6 +66,7 @@ pub(crate) struct RenderRootState {
     pub(crate) font_context: FontContext,
     pub(crate) text_layout_context: LayoutContext<TextBrush>,
     pub(crate) mutate_callbacks: Vec<MutateCallback>,
+    pub(crate) scenes: HashMap<WidgetId, Scene>,
 }
 
 #[allow(clippy::type_complexity)]
@@ -143,11 +144,11 @@ impl RenderRoot {
                 },
                 text_layout_context: LayoutContext::new(),
                 mutate_callbacks: Vec::new(),
+                scenes: HashMap::new(),
             },
             widget_arena: WidgetArena {
                 widgets: TreeArena::new(),
                 widget_states: TreeArena::new(),
-                scenes: HashMap::new(),
             },
             rebuild_access_tree: true,
         };

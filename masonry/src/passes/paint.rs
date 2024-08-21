@@ -5,7 +5,7 @@ use std::collections::HashMap;
 
 use tracing::{info_span, trace};
 use vello::kurbo::{Affine, Stroke};
-use vello::peniko::BlendMode;
+use vello::peniko::Mix;
 use vello::Scene;
 
 use crate::passes::recurse_on_children;
@@ -20,7 +20,6 @@ fn paint_widget(
     scenes: &mut HashMap<WidgetId, Scene>,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
     mut state: ArenaMut<'_, WidgetState>,
-    depth: u32,
     debug_paint: bool,
 ) {
     let _span = widget.item.make_trace_span().entered();
@@ -32,7 +31,6 @@ fn paint_widget(
         widget_state: state.item,
         widget_state_children: state.children.reborrow_mut(),
         widget_children: widget.children.reborrow_mut(),
-        depth,
         debug_paint,
     };
     if ctx.widget_state.request_paint {
@@ -44,9 +42,9 @@ fn paint_widget(
 
         // TODO - Reserve scene
         // https://github.com/linebender/xilem/issues/524
-        let mut scene = scenes.entry(id).or_default();
+        let scene = scenes.entry(id).or_default();
         scene.reset();
-        widget.item.paint(&mut ctx, &mut scene);
+        widget.item.paint(&mut ctx, scene);
     }
 
     state.item.request_paint = false;
@@ -76,13 +74,16 @@ fn paint_widget(
             if state.item.is_stashed {
                 return;
             }
+            // TODO: We could skip painting children outside the parent clip path.
+            // There's a few things to consider if we do:
+            // - Some widgets can paint outside of their layout box.
+            // - Once we implement compositor layers, we may want to paint outside of the clip path anyway in anticipation of user scrolling.
             paint_widget(
                 global_state,
                 complete_scene,
                 scenes,
                 widget,
                 state.reborrow_mut(),
-                depth + 1,
                 debug_paint,
             );
             parent_state.merge_up(state.item);
@@ -127,15 +128,19 @@ pub(crate) fn root_paint(root: &mut RenderRoot) -> Scene {
         (widget, state)
     };
 
+    // TODO - This is a bit of a hack until we refactor widget tree mutation.
+    // This should be removed once remove_child is exclusive to MutqteCtx.
+    let mut scenes = std::mem::take(&mut root.state.scenes);
+
     paint_widget(
         &mut root.state,
         &mut complete_scene,
-        &mut root.widget_arena.scenes,
+        &mut scenes,
         root_widget,
         root_state,
-        0,
         debug_paint,
     );
+    root.state.scenes = scenes;
 
     complete_scene
 }

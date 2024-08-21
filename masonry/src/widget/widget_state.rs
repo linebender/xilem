@@ -66,6 +66,8 @@ pub struct WidgetState {
     pub(crate) is_portal: bool,
 
     // TODO - Use general Shape
+    // Currently Kurbo doesn't really provide a type that lets us
+    // efficiently hold an arbitrary shape.
     pub(crate) clip: Option<Rect>,
 
     // TODO - Handle matrix transforms
