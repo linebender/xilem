@@ -19,6 +19,7 @@ pub struct Grid {
     grid_width: i32,
     grid_height: i32,
     grid_spacing: f64,
+    old_bc: BoxConstraints,
 }
 
 // --- MARK: IMPL GRID ---
@@ -29,6 +30,7 @@ impl Grid {
             grid_width: width,
             grid_height: height,
             grid_spacing: 0.0,
+            old_bc: BoxConstraints::new(Size::ZERO, Size::ZERO),
         }
     }
 
@@ -115,10 +117,17 @@ impl Widget for Grid {
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
         bc.debug_check("Grid");
+        let bc_changed = self.old_bc != *bc;
+        if bc_changed {
+            self.old_bc = *bc;
+        }
         let total_size = bc.max();
         let width_unit = (total_size.width + self.grid_spacing) / (self.grid_width as f64);
         let height_unit = (total_size.height + self.grid_spacing) / (self.grid_height as f64);
         for child in &mut self.children {
+            if !bc_changed && !ctx.child_needs_layout(&child.widget) {
+                continue;
+            }
             let cell_size = Size::new(
                 child.width as f64 * width_unit - self.grid_spacing,
                 child.height as f64 * height_unit - self.grid_spacing,
