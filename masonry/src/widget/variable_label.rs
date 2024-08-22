@@ -191,7 +191,7 @@ impl VariableLabel {
     }
     /// Set the initial font weight for this text.
     pub fn with_initial_weight(mut self, weight: f32) -> Self {
-        self.weight.value = weight;
+        self.weight = AnimatedF32::stable(weight);
         self
     }
 
