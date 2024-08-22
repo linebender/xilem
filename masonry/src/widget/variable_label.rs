@@ -15,7 +15,7 @@ use vello::kurbo::{Affine, Point, Size};
 use vello::peniko::BlendMode;
 use vello::Scene;
 
-use crate::text::{TextBrush, TextLayout, TextStorage};
+use crate::text::{Hinting, TextBrush, TextLayout, TextStorage};
 use crate::widget::WidgetMut;
 use crate::{
     AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx,
@@ -48,6 +48,11 @@ impl AnimatedF32 {
             value,
             rate_per_millisecond: 0.,
         }
+    }
+
+    /// Is this animation finished?
+    pub fn is_completed(&self) -> bool {
+        self.target == self.value
     }
 
     /// Move this value to the `target` over `over_millis` milliseconds.
@@ -194,6 +199,19 @@ impl VariableLabel {
     pub fn empty() -> Self {
         Self::new("")
     }
+
+    fn brush(&self, disabled: bool) -> TextBrush {
+        if disabled {
+            crate::theme::DISABLED_TEXT_COLOR.into()
+        } else {
+            let mut brush = self.brush.clone();
+            if !self.weight.is_completed() {
+                brush.set_hinting(Hinting::No);
+            }
+            // N.B. if hinting is No externally, we don't want to overwrite it to yes.
+            brush
+        }
+    }
 }
 
 // --- MARK: WIDGETMUT ---
@@ -227,8 +245,9 @@ impl WidgetMut<'_, VariableLabel> {
         let brush = brush.into();
         self.widget.brush = brush;
         if !self.ctx.is_disabled() {
-            let brush = self.widget.brush.clone();
-            self.set_text_properties(|layout| layout.set_brush(brush));
+            self.widget.text_layout.invalidate();
+            self.ctx.request_layout();
+            self.ctx.request_paint();
         }
     }
     /// Set the font size for this text.
@@ -343,6 +362,8 @@ impl Widget for VariableLabel {
         };
         self.text_layout.set_max_advance(max_advance);
         if self.text_layout.needs_rebuild() {
+            self.text_layout
+                .set_brush(self.brush(ctx.widget_state.is_disabled()));
             let (font_ctx, layout_ctx) = ctx.text_contexts();
             self.text_layout
                 .rebuild_with_attributes(font_ctx, layout_ctx, |mut builder| {

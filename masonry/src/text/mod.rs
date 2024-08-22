@@ -14,7 +14,7 @@ mod store;
 pub use store::{Link, TextStorage};
 
 mod layout;
-pub use layout::{LayoutMetrics, TextBrush, TextLayout};
+pub use layout::{Hinting, LayoutMetrics, TextBrush, TextLayout};
 
 mod selection;
 pub use selection::{

@@ -89,6 +89,18 @@ pub enum TextBrush {
     },
 }
 
+impl TextBrush {
+    pub fn set_hinting(&mut self, hinting: Hinting) {
+        match self {
+            TextBrush::Normal(_, should_hint) => *should_hint = hinting,
+            TextBrush::Highlight {
+                hinting: should_hint,
+                ..
+            } => *should_hint = hinting,
+        }
+    }
+}
+
 impl BrushTrait for TextBrush {}
 
 impl From<peniko::Brush> for TextBrush {
