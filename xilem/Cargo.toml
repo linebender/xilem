@@ -73,3 +73,8 @@ time = { workspace = true, features = ["local-offset"] }
 
 [target.'cfg(target_os = "android")'.dev-dependencies]
 winit = { features = ["android-native-activity"], workspace = true }
+
+# This makes the examples discoverable to (e.g.) Android GPU inspector without needing to provide the full name manually.
+# Do not use when releasing a production app.
+[package.metadata.android.application]
+debuggable = true
