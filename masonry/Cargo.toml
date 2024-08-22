@@ -57,3 +57,6 @@ tempfile = "3.10.1"
 [[example]]
 name = "simple_image"
 #required-features = ["image", "png"]
+
+[target.'cfg(target_os = "android")'.dependencies]
+tracing_android_trace = "0.1.0"

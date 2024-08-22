@@ -90,9 +90,15 @@ pub(crate) fn try_init_layered_tracing(
         None
     };
 
+    #[cfg(target_os = "android")]
+    let android_trace_layer = tracing_android_trace::AndroidTraceLayer::new();
+
     let registry = tracing_subscriber::registry()
         .with(console_layer)
         .with(log_file_layer);
+
+    #[cfg(target_os = "android")]
+    let registry = registry.with(android_trace_layer);
 
     tracing::dispatcher::set_global_default(registry.into())?;
 
