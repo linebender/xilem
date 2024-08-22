@@ -20,6 +20,7 @@ pub struct Grid {
     grid_height: i32,
     grid_spacing: f64,
     old_bc: BoxConstraints,
+    needs_layout: bool,
 }
 
 // --- MARK: IMPL GRID ---
@@ -31,6 +32,7 @@ impl Grid {
             grid_height: height,
             grid_spacing: 0.0,
             old_bc: BoxConstraints::new(Size::ZERO, Size::ZERO),
+            needs_layout: true,
         }
     }
 
@@ -91,10 +93,16 @@ impl<'a> WidgetMut<'a, Grid> {
         };
         self.widget.children.push(child);
         self.ctx.children_changed();
+        self.mark_needs_layout();
     }
 
     pub fn set_spacing(&mut self, spacing: f64) {
         self.widget.grid_spacing = spacing;
+        self.mark_needs_layout();
+    }
+
+    fn mark_needs_layout(&mut self) {
+        self.widget.needs_layout = true;
         self.ctx.request_layout();
     }
 }
@@ -120,12 +128,15 @@ impl Widget for Grid {
         let bc_changed = self.old_bc != *bc;
         if bc_changed {
             self.old_bc = *bc;
+            if !self.needs_layout {
+                self.needs_layout = true;
+            }
         }
         let total_size = bc.max();
         let width_unit = (total_size.width + self.grid_spacing) / (self.grid_width as f64);
         let height_unit = (total_size.height + self.grid_spacing) / (self.grid_height as f64);
         for child in &mut self.children {
-            if !bc_changed && !ctx.child_needs_layout(&child.widget) {
+            if !self.needs_layout && !ctx.child_needs_layout(&child.widget) {
                 continue;
             }
             let cell_size = Size::new(
@@ -135,6 +146,9 @@ impl Widget for Grid {
             let child_bc = BoxConstraints::new(cell_size, cell_size);
             let _ = child.widget.layout(ctx, &child_bc);
             ctx.place_child(&mut child.widget, Point::new(child.x as f64 *width_unit, child.y as f64 * height_unit))
+        }
+        if self.needs_layout {
+            self.needs_layout = false;
         }
         total_size
     }
