@@ -32,6 +32,7 @@ mod class;
 mod context;
 mod dom_helpers;
 mod element_props;
+pub mod event_handler;
 mod events;
 mod message;
 mod one_of;

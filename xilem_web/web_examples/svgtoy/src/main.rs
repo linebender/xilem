@@ -58,7 +58,7 @@ fn app_logic(state: &mut AppState) -> impl DomView<AppState> {
         .map(|i| Rect::from_origin_size((10.0 * i as f64, 150.0), (8.0, 8.0)))
         .collect::<Vec<_>>();
     svg(g((
-        Rect::new(100.0, 100.0, 200.0, 200.0).on_click(|_, _| {
+        Rect::new(100.0, 100.0, 200.0, 200.0).on_click(|_: &mut _, _| {
             web_sys::console::log_1(&"app logic clicked".into());
         }),
         Rect::new(210.0, 100.0, 310.0, 200.0)
@@ -76,7 +76,7 @@ fn app_logic(state: &mut AppState) -> impl DomView<AppState> {
             Color::YELLOW_GREEN,
             kurbo::Stroke::new(1.0).with_dashes(state.x, [7.0, 1.0]),
         ),
-        kurbo::Circle::new((460.0, 260.0), 45.0).on_click(|_, _| {
+        kurbo::Circle::new((460.0, 260.0), 45.0).on_click(|_: &mut _, _| {
             web_sys::console::log_1(&"circle clicked".into());
         }),
     )))
