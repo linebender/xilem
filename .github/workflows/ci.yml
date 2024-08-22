@@ -259,6 +259,11 @@ jobs:
         run: cargo nextest run --workspace --locked --all-features
         env:
           SKIP_RENDER_TESTS: ${{ matrix.skip_gpu }}
+
+      # Run doc tests separately because nexttest doesn't run them.
+      # See https://github.com/linebender/xilem/issues/500
+      - name: cargo test doc
+        run: cargo test --doc --workspace --locked --all-features
       
       - uses: actions/upload-artifact@v4
         if: failure()
