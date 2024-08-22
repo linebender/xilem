@@ -389,10 +389,13 @@ impl MasonryState<'_> {
         };
         // TODO: Run this in-between `submit` and `present`.
         window.pre_present_notify();
-        self.renderer
-            .get_or_insert_with(|| Renderer::new(device, renderer_options).unwrap())
-            .render_to_surface(device, queue, scene_ref, &surface_texture, &render_params)
-            .expect("failed to render to surface");
+        {
+            let _render_span = tracing::info_span!("Rendering using Vello").entered();
+            self.renderer
+                .get_or_insert_with(|| Renderer::new(device, renderer_options).unwrap())
+                .render_to_surface(device, queue, scene_ref, &surface_texture, &render_params)
+                .expect("failed to render to surface");
+        }
         surface_texture.present();
         device.poll(wgpu::Maintain::Wait);
     }

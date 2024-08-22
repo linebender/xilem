@@ -401,7 +401,7 @@ impl Widget for VariableLabel {
     }
 
     fn make_trace_span(&self) -> Span {
-        trace_span!("Label")
+        trace_span!("VariableLabel")
     }
 
     fn get_debug_text(&self) -> Option<String> {
