@@ -11,12 +11,12 @@
 //! All of these have the same set of global styling options, and can contain rich text
 
 mod layout;
+pub mod movement;
+pub mod text_action;
 pub use layout::{LayoutMetrics, TextBrush, TextLayout};
 
 mod selection;
 pub use selection::{len_utf8_from_first_byte, Selectable, StringCursor, TextWithSelection};
-
-// mod movement;
 
 mod edit;
 pub use edit::TextEditor;
