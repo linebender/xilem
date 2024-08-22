@@ -76,9 +76,13 @@ pub fn render_text(
                 .iter()
                 .map(|coord| vello::skrifa::instance::NormalizedCoord::from_bits(*coord))
                 .collect::<Vec<_>>();
-            let text_brush = match &style.brush {
-                TextBrush::Normal(text_brush) => text_brush,
-                TextBrush::Highlight { text, fill } => {
+            let (text_brush, hinting) = match &style.brush {
+                TextBrush::Normal(text_brush, hinting) => (text_brush, hinting),
+                TextBrush::Highlight {
+                    text,
+                    fill,
+                    hinting,
+                } => {
                     scene.fill(
                         Fill::EvenOdd,
                         transform,
@@ -95,13 +99,13 @@ pub fn render_text(
                         ),
                     );
 
-                    text
+                    (text, hinting)
                 }
             };
             scratch_scene
                 .draw_glyphs(font)
                 .brush(text_brush)
-                .hint(true)
+                .hint(hinting.should_hint())
                 .transform(transform)
                 .glyph_transform(glyph_xform)
                 .font_size(font_size)
@@ -121,7 +125,8 @@ pub fn render_text(
                 );
             if let Some(underline) = &style.underline {
                 let underline_brush = match &underline.brush {
-                    TextBrush::Normal(text) => text,
+                    // Underlines aren't hinted
+                    TextBrush::Normal(text, _) => text,
                     // It doesn't make sense for an underline to have a highlight colour, so we
                     // just use the text colour for the colour
                     TextBrush::Highlight { text, .. } => text,
@@ -154,7 +159,8 @@ pub fn render_text(
             }
             if let Some(strikethrough) = &style.strikethrough {
                 let strikethrough_brush = match &strikethrough.brush {
-                    TextBrush::Normal(text) => text,
+                    // Strikethroughs aren't hinted
+                    TextBrush::Normal(text, _) => text,
                     // It doesn't make sense for an underline to have a highlight colour, so we
                     // just use the text colour for the colour
                     TextBrush::Highlight { text, .. } => text,
