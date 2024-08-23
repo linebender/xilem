@@ -59,41 +59,72 @@ pub struct TextLayout<T> {
     scratch_scene: Scene,
 }
 
+/// Whether a section of text should be hinted.
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, Default)]
+pub enum Hinting {
+    #[default]
+    Yes,
+    No,
+}
+
+impl Hinting {
+    /// Whether the
+    pub fn should_hint(self) -> bool {
+        match self {
+            Hinting::Yes => true,
+            Hinting::No => false,
+        }
+    }
+}
+
 /// A custom brush for `Parley`, enabling using Parley to pass-through
 /// which glyphs are selected/highlighted
 #[derive(Clone, Debug, PartialEq)]
 pub enum TextBrush {
-    Normal(peniko::Brush),
+    Normal(peniko::Brush, Hinting),
     Highlight {
         text: peniko::Brush,
         fill: peniko::Brush,
+        hinting: Hinting,
     },
+}
+
+impl TextBrush {
+    pub fn set_hinting(&mut self, hinting: Hinting) {
+        match self {
+            TextBrush::Normal(_, should_hint) => *should_hint = hinting,
+            TextBrush::Highlight {
+                hinting: should_hint,
+                ..
+            } => *should_hint = hinting,
+        }
+    }
 }
 
 impl BrushTrait for TextBrush {}
 
 impl From<peniko::Brush> for TextBrush {
     fn from(value: peniko::Brush) -> Self {
-        Self::Normal(value)
+        Self::Normal(value, Hinting::default())
     }
 }
 
 impl From<Gradient> for TextBrush {
     fn from(value: Gradient) -> Self {
-        Self::Normal(value.into())
+        Self::Normal(value.into(), Hinting::default())
     }
 }
 
 impl From<Color> for TextBrush {
     fn from(value: Color) -> Self {
-        Self::Normal(value.into())
+        Self::Normal(value.into(), Hinting::default())
     }
 }
 
 // Parley requires their Brush implementations to implement Default
 impl Default for TextBrush {
     fn default() -> Self {
-        Self::Normal(Default::default())
+        Self::Normal(Default::default(), Hinting::default())
     }
 }
 

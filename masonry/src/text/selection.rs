@@ -42,6 +42,7 @@ impl<T: Selectable> TextWithSelection<T> {
             highlight_brush: TextBrush::Highlight {
                 text: Color::WHITE.into(),
                 fill: Color::LIGHT_BLUE.into(),
+                hinting: Default::default(),
             },
         }
     }
