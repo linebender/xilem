@@ -8,14 +8,13 @@ use std::ops::Range;
 use accesskit::Role;
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace_span, Span};
-use vello::kurbo::{Affine, Point, Rect, Size, Vec2};
-use vello::peniko::BlendMode;
+use vello::kurbo::{Point, Rect, Size, Vec2};
 use vello::Scene;
 
 use crate::widget::{Axis, ScrollBar, WidgetMut};
 use crate::{
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
-    PointerEvent, StatusChange, TextEvent, Widget, WidgetId, WidgetPod,
+    AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, LayoutCtx, LifeCycle,
+    LifeCycleCtx, PaintCtx, PointerEvent, StatusChange, TextEvent, Widget, WidgetId, WidgetPod,
 };
 
 // TODO - refactor - see https://github.com/linebender/xilem/issues/366
@@ -249,7 +248,7 @@ impl<W: Widget> Widget for Portal<W> {
             PointerEvent::MouseWheel(delta, _) => {
                 let delta = Vec2::new(delta.x * -SCROLLING_SPEED, delta.y * -SCROLLING_SPEED);
                 self.set_viewport_pos_raw(portal_size, content_size, self.viewport_pos + delta);
-                ctx.request_layout();
+                ctx.request_compose();
 
                 // TODO - horizontal scrolling?
                 let mut scrollbar = ctx.get_raw_mut(&mut self.scrollbar_vertical);
@@ -337,12 +336,23 @@ impl<W: Widget> Widget for Portal<W> {
         self.set_viewport_pos_raw(portal_size, content_size, self.viewport_pos);
         // TODO - recompute portal progress
 
-        ctx.place_child(&mut self.child, Point::new(0.0, -self.viewport_pos.y));
+        ctx.set_clip_path(portal_size.to_rect());
+
+        ctx.place_child(&mut self.child, Point::ZERO);
 
         self.scrollbar_horizontal_visible =
             !self.constrain_horizontal && portal_size.width < content_size.width;
         self.scrollbar_vertical_visible =
             !self.constrain_vertical && portal_size.height < content_size.height;
+
+        ctx.set_stashed(
+            &mut self.scrollbar_vertical,
+            !self.scrollbar_vertical_visible,
+        );
+        ctx.set_stashed(
+            &mut self.scrollbar_horizontal,
+            !self.scrollbar_horizontal_visible,
+        );
 
         if self.scrollbar_horizontal_visible {
             let mut scrollbar = ctx.get_raw_mut(&mut self.scrollbar_horizontal);
@@ -357,7 +367,7 @@ impl<W: Widget> Widget for Portal<W> {
                 Point::new(0.0, portal_size.height - scrollbar_size.height),
             );
         } else {
-            ctx.skip_child(&mut self.scrollbar_horizontal);
+            ctx.skip_layout(&mut self.scrollbar_horizontal);
         }
         if self.scrollbar_vertical_visible {
             let mut scrollbar = ctx.get_raw_mut(&mut self.scrollbar_vertical);
@@ -372,31 +382,17 @@ impl<W: Widget> Widget for Portal<W> {
                 Point::new(portal_size.width - scrollbar_size.width, 0.0),
             );
         } else {
-            ctx.skip_child(&mut self.scrollbar_vertical);
+            ctx.skip_layout(&mut self.scrollbar_vertical);
         }
 
         portal_size
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
-        // TODO - also clip the invalidated region
-        let clip_rect = ctx.size().to_rect();
-
-        scene.push_layer(BlendMode::default(), 1., Affine::IDENTITY, &clip_rect);
-        self.child.paint(ctx, scene);
-        scene.pop_layer();
-
-        if self.scrollbar_horizontal_visible {
-            self.scrollbar_horizontal.paint(ctx, scene);
-        } else {
-            ctx.skip_child(&mut self.scrollbar_horizontal);
-        }
-        if self.scrollbar_vertical_visible {
-            self.scrollbar_vertical.paint(ctx, scene);
-        } else {
-            ctx.skip_child(&mut self.scrollbar_vertical);
-        }
+    fn compose(&mut self, ctx: &mut ComposeCtx) {
+        ctx.set_child_translation(&mut self.child, Vec2::new(0.0, -self.viewport_pos.y));
     }
+
+    fn paint(&mut self, _ctx: &mut PaintCtx, _scene: &mut Scene) {}
 
     fn accessibility_role(&self) -> Role {
         Role::GenericContainer

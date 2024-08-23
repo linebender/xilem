@@ -7,6 +7,7 @@ use crate::{Widget, WidgetId, WidgetState};
 
 pub(crate) struct WidgetArena {
     pub(crate) widgets: TreeArena<Box<dyn Widget>>,
+    // TODO - Rename to "states"
     pub(crate) widget_states: TreeArena<WidgetState>,
 }
 

@@ -98,10 +98,7 @@ pub struct PaintCtx<'a> {
     pub(crate) widget_state: &'a WidgetState,
     pub(crate) widget_state_children: ArenaMutChildren<'a, WidgetState>,
     pub(crate) widget_children: ArenaMutChildren<'a, Box<dyn Widget>>,
-    /// The approximate depth in the tree at the time of painting.
-    pub(crate) depth: u32,
     pub(crate) debug_paint: bool,
-    pub(crate) debug_widget: bool,
 }
 
 pub struct AccessCtx<'a> {
@@ -171,6 +168,7 @@ impl_context_method!(
     EventCtx<'_>,
     LifeCycleCtx<'_>,
     LayoutCtx<'_>,
+    ComposeCtx<'_>,
     {
         /// Helper method to get a mutable reference to a child widget's `WidgetState` from its `WidgetPod`.
         ///
@@ -405,6 +403,7 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, LifeCycleCtx<'_>, {
     /// Request a [`paint`](crate::Widget::paint) pass.
     pub fn request_paint(&mut self) {
         trace!("request_paint");
+        self.widget_state.request_paint = true;
         self.widget_state.needs_paint = true;
     }
 
@@ -420,6 +419,7 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, LifeCycleCtx<'_>, {
     /// [`layout`]: crate::Widget::layout
     pub fn request_layout(&mut self) {
         trace!("request_layout");
+        self.widget_state.request_layout = true;
         self.widget_state.needs_layout = true;
     }
 
@@ -436,8 +436,8 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, LifeCycleCtx<'_>, {
 
     pub fn request_accessibility_update(&mut self) {
         trace!("request_accessibility_update");
-        self.widget_state.needs_accessibility_update = true;
-        self.widget_state.request_accessibility_update = true;
+        self.widget_state.needs_accessibility = true;
+        self.widget_state.request_accessibility = true;
     }
 
     /// Request an animation frame.
@@ -471,6 +471,7 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, LifeCycleCtx<'_>, {
             .widget_children
             .remove_child(id)
             .expect("remove_child: child not found");
+        self.global_state.scenes.remove(&child.id());
 
         self.children_changed();
     }
@@ -488,14 +489,6 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, LifeCycleCtx<'_>, {
         // widget_state.children_disabled_changed is not set because we want to be able to delete
         // changes that happened during DisabledChanged.
         self.widget_state.is_explicitly_disabled_new = disabled;
-    }
-
-    /// Mark child widget as stashed.
-    ///
-    /// **Note:** Stashed widgets are a WIP feature
-    pub fn set_stashed(&mut self, child: &mut WidgetPod<impl Widget>, stashed: bool) {
-        self.get_child_state_mut(child).is_stashed = stashed;
-        self.children_changed();
     }
 
     #[allow(unused)]
@@ -564,6 +557,22 @@ impl_context_method!(
         /// request with the event.
         pub fn request_timer(&mut self, _deadline: Duration) -> TimerToken {
             todo!("request_timer");
+        }
+
+        /// Mark child widget as stashed.
+        ///
+        /// If `stashed` is true, the child will not be painted or listed in the accessibility tree.
+        ///
+        /// This will *not* trigger a layout pass.
+        ///
+        /// **Note:** Stashed widgets are a WIP feature
+        pub fn set_stashed(&mut self, child: &mut WidgetPod<impl Widget>, stashed: bool) {
+            if self.get_child_state_mut(child).is_stashed != stashed {
+                self.widget_state.children_changed = true;
+                self.widget_state.update_focus_chain = true;
+            }
+
+            self.get_child_state_mut(child).is_stashed = stashed;
         }
     }
 );
@@ -868,6 +877,34 @@ impl LayoutCtx<'_> {
         self.get_child_state_mut(child).needs_layout = false;
     }
 
+    /// Gives the widget a clip path.
+    ///
+    /// A widget's clip path will have two effects:
+    /// - It serves as a mask for painting operations of the widget's children (*not* the widget itself).
+    /// - Pointer events must be inside that path to reach the widget's children.
+    pub fn set_clip_path(&mut self, path: Rect) {
+        trace!("set_clip_path {:?}", path);
+        self.widget_state.clip = Some(path);
+        // TODO - Updating the clip path may have
+        // other knock-on effects we'd need to document.
+        self.widget_state.request_accessibility = true;
+        self.widget_state.needs_accessibility = true;
+        self.widget_state.needs_paint = true;
+    }
+
+    /// Remove the widget's clip path.
+    ///
+    /// See [`LayoutCtx::set_clip_path`] for details.
+    pub fn clear_clip_path(&mut self) {
+        trace!("clear_clip_path");
+        self.widget_state.clip = None;
+        // TODO - Updating the clip path may have
+        // other knock-on effects we'd need to document.
+        self.widget_state.request_accessibility = true;
+        self.widget_state.needs_accessibility = true;
+        self.widget_state.needs_paint = true;
+    }
+
     /// Set the position of a child widget, in the parent's coordinate space. This
     /// will also implicitly change "hot" status and affect the parent's display rect.
     ///
@@ -903,10 +940,15 @@ impl ComposeCtx<'_> {
     /// Set a translation for the child widget.
     ///
     /// The translation is applied on top of the position from [`LayoutCtx::place_child`].
-    pub fn set_child_translation(&mut self, translation: Vec2) {
-        if self.widget_state.translation != translation {
-            self.widget_state.translation = translation;
-            self.widget_state.translation_changed = true;
+    pub fn set_child_translation<W: Widget>(
+        &mut self,
+        child: &mut WidgetPod<W>,
+        translation: Vec2,
+    ) {
+        let child = self.get_child_state_mut(child);
+        if translation != child.translation {
+            child.translation = translation;
+            child.translation_changed = true;
         }
     }
 }
@@ -923,18 +965,6 @@ impl_context_method!(LayoutCtx<'_>, PaintCtx<'_>, {
 });
 
 impl PaintCtx<'_> {
-    /// The depth in the tree of the currently painting widget.
-    ///
-    /// This may be used in combination with [`paint_with_z_index`](Self::paint_with_z_index) in order
-    /// to correctly order painting operations.
-    ///
-    /// The `depth` here may not be exact; it is only guaranteed that a child will
-    /// have a greater depth than its parent.
-    #[inline]
-    pub fn depth(&self) -> u32 {
-        self.depth
-    }
-
     // signal may be useful elsewhere, but is currently only used on PaintCtx
     /// Submit a [`RenderRootSignal`]
     ///
@@ -947,16 +977,6 @@ impl PaintCtx<'_> {
 impl AccessCtx<'_> {
     pub fn current_node(&mut self) -> &mut NodeBuilder {
         &mut self.current_node
-    }
-
-    /// Report whether accessibility was requested on this widget.
-    ///
-    /// This method is primarily intended for containers. The `accessibility`
-    /// method will be called on a widget when it or any of its descendants
-    /// have seen a request. However, in many cases a container need not push
-    /// a node for itself.
-    pub fn is_requested(&self) -> bool {
-        self.widget_state.needs_accessibility_update
     }
 }
 

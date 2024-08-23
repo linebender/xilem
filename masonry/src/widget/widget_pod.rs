@@ -1,14 +1,10 @@
 // Copyright 2018 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use accesskit::{NodeBuilder, NodeId};
 use smallvec::SmallVec;
 use tracing::{info_span, trace, warn};
-use vello::kurbo::{Affine, Rect, Size};
-use vello::Scene;
+use vello::kurbo::{Rect, Size};
 
-use crate::paint_scene_helpers::stroke;
-use crate::theme::get_debug_color;
 use crate::tree_arena::ArenaRefChildren;
 use crate::widget::WidgetState;
 use crate::{
@@ -29,7 +25,6 @@ use crate::{
 pub struct WidgetPod<W> {
     id: WidgetId,
     inner: WidgetPodInner<W>,
-    pub(crate) fragment: Scene,
 }
 
 // TODO - This is a simple state machine that lets users create WidgetPods
@@ -59,7 +54,6 @@ impl<W: Widget> WidgetPod<W> {
         WidgetPod {
             id,
             inner: WidgetPodInner::Created(inner),
-            fragment: Scene::new(),
         }
     }
 
@@ -547,18 +541,12 @@ impl<W: Widget> WidgetPod<W> {
             return false;
         }
 
-        state.needs_compose = true;
-        state.is_expecting_place_child_call = true;
-        // TODO - Not everything that has been re-laid out needs to be repainted.
-        state.needs_paint = true;
-        state.request_accessibility_update = true;
-        state.needs_accessibility_update = true;
-
         bc.debug_check(widget.short_type_name());
         trace!("Computing layout with constraints {:?}", bc);
 
         state.local_paint_rect = Rect::ZERO;
 
+        state.request_layout = false;
         let new_size = {
             let mut inner_ctx = LayoutCtx {
                 widget_state: state,
@@ -571,11 +559,29 @@ impl<W: Widget> WidgetPod<W> {
             widget.layout(&mut inner_ctx, bc)
         };
 
-        // We reset `needs_layout` after the layout call, in case `layout` calls `request_layout`.
-        // If this did happen, it would be a bug; however, it is allowed for a child of `widget`
-        // (accessed using `get_raw_mut`) to call `request_layout`, so long as its `layout` is called
-        // by the parent. We currently cannot differentiate these cases, so we allow both.
+        if state.request_layout {
+            debug_panic!(
+                "Error in '{}' #{}: layout pass has requested layout.",
+                widget.short_type_name(),
+                id,
+            );
+        }
+
+        // We reset `needs_layout` after the layout call, which means if
+        // the widget sets needs_layout to true, that will be overridden.
+        // This shouldn't happen in practice, except in one case: if we access
+        // a child using `get_raw_mut` before the child's layout is run. In that
+        // case the child's needs_layout is still true, and propagates up to
+        // this widget. The line below resets it to false.
         state.needs_layout = false;
+
+        state.needs_compose = true;
+        state.is_expecting_place_child_call = true;
+        // TODO - Not everything that has been re-laid out needs to be repainted.
+        state.request_paint = true;
+        state.needs_paint = true;
+        state.request_accessibility = true;
+        state.needs_accessibility = true;
 
         state.local_paint_rect = state
             .local_paint_rect
@@ -649,198 +655,15 @@ impl<W: Widget> WidgetPod<W> {
 
     // --- MARK: PAINT ---
 
-    /// Paint the widget, translating it by the origin of its layout rectangle.
-    ///
-    /// This will recursively paint widgets, stopping if a widget's layout
-    /// rect is outside of the currently visible region.
-    pub fn paint(&mut self, parent_ctx: &mut PaintCtx, scene: &mut Scene) {
-        self.call_widget_method_with_checks(
-            "paint",
-            parent_ctx,
-            |ctx| {
-                (
-                    ctx.widget_state_children.reborrow(),
-                    ctx.widget_children.reborrow(),
-                )
-            },
-            |self2, parent_ctx| self2.paint_inner(parent_ctx, scene),
-        );
-    }
-
-    fn paint_inner(&mut self, parent_ctx: &mut PaintCtx, scene: &mut Scene) -> bool {
-        let id = self.id().to_raw();
-        let widget_mut = parent_ctx
-            .widget_children
-            .get_child_mut(id)
-            .expect("WidgetPod: inner widget not found in widget tree");
-        let state_mut = parent_ctx
-            .widget_state_children
-            .get_child_mut(id)
-            .expect("WidgetPod: inner widget not found in widget tree");
-        let widget = widget_mut.item;
-        let state = state_mut.item;
-
-        if state.is_stashed {
-            debug_panic!(
-                "Error in '{}' #{}: trying to paint stashed widget.",
-                widget.short_type_name(),
-                self.id().to_raw(),
-            );
-            return false;
-        }
-
-        let call_widget = state.needs_paint;
-        if call_widget {
-            trace!(
-                "Painting widget '{}' #{}",
-                widget.short_type_name(),
-                self.id().to_raw()
-            );
-            state.needs_paint = false;
-
-            // TODO - Handle invalidation regions
-            let mut inner_ctx = PaintCtx {
-                global_state: parent_ctx.global_state,
-                widget_state: state,
-                widget_state_children: state_mut.children,
-                widget_children: widget_mut.children,
-                depth: parent_ctx.depth + 1,
-                debug_paint: parent_ctx.debug_paint,
-                debug_widget: parent_ctx.debug_widget,
-            };
-
-            self.fragment.reset();
-            widget.paint(&mut inner_ctx, &mut self.fragment);
-
-            if parent_ctx.debug_paint {
-                self.debug_paint_layout_bounds(state.size);
-            }
-        }
-
-        let transform = Affine::translate(state.origin.to_vec2());
-        scene.append(&self.fragment, Some(transform));
-
-        call_widget
-    }
-
-    fn debug_paint_layout_bounds(&mut self, size: Size) {
-        const BORDER_WIDTH: f64 = 1.0;
-        let rect = size.to_rect().inset(BORDER_WIDTH / -2.0);
-        let id = self.id().to_raw();
-        let color = get_debug_color(id);
-        let scene = &mut self.fragment;
-        stroke(scene, &rect, color, BORDER_WIDTH);
-    }
+    // TODO - This should be removed in a follow-up PR immediately after
+    // this is merged. I'm leaving the method for now to avoid blowing up the diff.
+    pub fn paint(&mut self, _parent_ctx: &mut PaintCtx, _scene: &mut vello::Scene) {}
 
     // --- MARK: ACCESSIBILITY ---
-    pub fn accessibility(&mut self, parent_ctx: &mut AccessCtx) {
-        self.call_widget_method_with_checks(
-            "accessibility",
-            parent_ctx,
-            |ctx| {
-                (
-                    ctx.widget_state_children.reborrow(),
-                    ctx.widget_children.reborrow(),
-                )
-            },
-            |self2, parent_ctx| self2.accessibility_inner(parent_ctx),
-        );
-    }
 
-    fn accessibility_inner(&mut self, parent_ctx: &mut AccessCtx) -> bool {
-        // TODO
-        // if state.is_stashed {}
-
-        let id = self.id().to_raw();
-        let widget_mut = parent_ctx
-            .widget_children
-            .get_child_mut(id)
-            .expect("WidgetPod: inner widget not found in widget tree");
-        let state_mut = parent_ctx
-            .widget_state_children
-            .get_child_mut(id)
-            .expect("WidgetPod: inner widget not found in widget tree");
-        let widget = widget_mut.item;
-        let state = state_mut.item;
-
-        // If this widget or a child has requested an accessibility update,
-        // or if AccessKit has requested a full rebuild,
-        // we call the accessibility method on this widget.
-        let call_widget = parent_ctx.rebuild_all || state.request_accessibility_update;
-        if call_widget {
-            trace!(
-                "Building accessibility node for widget '{}' #{}",
-                widget.short_type_name(),
-                id,
-            );
-
-            let current_node = self.build_access_node(widget, state, parent_ctx.scale_factor);
-            let mut inner_ctx = AccessCtx {
-                global_state: parent_ctx.global_state,
-                widget_state: state,
-                widget_state_children: state_mut.children,
-                widget_children: widget_mut.children,
-                tree_update: parent_ctx.tree_update,
-                current_node,
-                rebuild_all: parent_ctx.rebuild_all,
-                scale_factor: parent_ctx.scale_factor,
-            };
-            widget.accessibility(&mut inner_ctx);
-
-            let id: NodeId = inner_ctx.widget_state.id.into();
-            trace!(
-                "Built node #{} with role={:?}, default_action={:?}",
-                id.0,
-                inner_ctx.current_node.role(),
-                inner_ctx.current_node.default_action_verb(),
-            );
-            inner_ctx
-                .tree_update
-                .nodes
-                .push((id, inner_ctx.current_node.build()));
-        }
-
-        state.request_accessibility_update = false;
-        state.needs_accessibility_update = false;
-
-        call_widget
-    }
-
-    fn build_access_node(
-        &mut self,
-        widget: &dyn Widget,
-        state: &WidgetState,
-        scale_factor: f64,
-    ) -> NodeBuilder {
-        let mut node = NodeBuilder::new(widget.accessibility_role());
-        node.set_bounds(to_accesskit_rect(state.window_layout_rect(), scale_factor));
-
-        node.set_children(
-            widget
-                .children_ids()
-                .iter()
-                .copied()
-                .map(|id| id.into())
-                .collect::<Vec<NodeId>>(),
-        );
-
-        if state.is_hot {
-            node.set_hovered();
-        }
-        if state.is_disabled() {
-            node.set_disabled();
-        }
-        if state.is_stashed {
-            node.set_hidden();
-        }
-
-        node
-    }
-}
-
-fn to_accesskit_rect(r: Rect, scale_factor: f64) -> accesskit::Rect {
-    let s = scale_factor;
-    accesskit::Rect::new(s * r.x0, s * r.y0, s * r.x1, s * r.y1)
+    // TODO - This should be removed in a follow-up PR immediately after
+    // this is merged. I'm leaving the method for now to avoid blowing up the diff.
+    pub fn accessibility(&mut self, _parent_ctx: &mut AccessCtx) {}
 }
 
 // TODO - negative rects?

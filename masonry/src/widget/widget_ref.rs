@@ -179,16 +179,27 @@ impl<'w> WidgetRef<'w, dyn Widget> {
             return None;
         }
 
+        // TODO - Rewrite more elegantly
         loop {
+            if let Some(clip) = innermost_widget.state().clip {
+                let relative_pos = pos.to_vec2() - innermost_widget.state().window_origin.to_vec2();
+                // If the widget has a clip, the point must be inside
+                // else we don't iterate over children.
+                if !clip.contains(relative_pos.to_point()) {
+                    break;
+                }
+            }
             // TODO - Use Widget::get_child_at_pos method
             if let Some(child) = innermost_widget.children().into_iter().find(|child| {
                 !child.widget.skip_pointer() && child.state().window_layout_rect().contains(pos)
             }) {
                 innermost_widget = child;
             } else {
-                return Some(innermost_widget);
+                break;
             }
         }
+
+        Some(innermost_widget)
     }
 
     /// Recursively check that the Widget tree upholds various invariants.
