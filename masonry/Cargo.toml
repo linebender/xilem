@@ -26,7 +26,6 @@ parley.workspace = true
 winit.workspace = true
 smallvec.workspace = true
 tracing = { workspace = true, features = ["default"] }
-fnv.workspace = true
 image.workspace = true
 once_cell = "1.19.0"
 serde = { version = "1.0.204", features = ["derive"] }

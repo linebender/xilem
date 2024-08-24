@@ -115,7 +115,6 @@ winit = "0.30.4"
 tracing = { version = "0.1.40", default-features = false }
 smallvec = "1.13.2"
 dpi = "0.1.1"
-fnv = "1.0.7"
 image = { version = "0.25.2", default-features = false }
 web-time = "1.1.0"
 bitflags = "2.6.0"
