@@ -230,16 +230,6 @@ impl<'w> WidgetRef<'w, dyn Widget> {
 
         for child in self.children() {
             child.debug_validate(after_layout);
-
-            if !self.state().children.may_contain(&child.state().id) {
-                debug_panic!(
-                    "Widget '{}' #{} is invalid: child widget '{}' #{} not registered in children filter",
-                    self.deref().short_type_name(),
-                    self.state().id.to_raw(),
-                    child.deref().short_type_name(),
-                    child.state().id.to_raw(),
-                );
-            }
         }
     }
 }

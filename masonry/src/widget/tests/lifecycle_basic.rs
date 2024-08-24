@@ -57,34 +57,6 @@ fn adding_child() {
     assert_debug_snapshot!(record_new_child);
 }
 
-#[test]
-fn child_tracking() {
-    let [id_1, id_2, id_3, id_4] = widget_ids();
-
-    let widget = SizedBox::new_with_id(
-        SizedBox::new_with_id(
-            Flex::row()
-                .with_child_id(SizedBox::empty(), id_1)
-                .with_child_id(SizedBox::empty(), id_2),
-            id_3,
-        ),
-        id_4,
-    );
-
-    let harness = TestHarness::create(widget);
-
-    let root_state = harness.get_widget(id_4).state();
-    assert_eq!(root_state.children.entry_count(), 3);
-    assert!(root_state.children.may_contain(&id_1));
-    assert!(root_state.children.may_contain(&id_2));
-    assert!(root_state.children.may_contain(&id_3));
-
-    let child_state = harness.get_widget(id_3).state();
-    assert!(child_state.children.may_contain(&id_1));
-    assert!(child_state.children.may_contain(&id_2));
-    assert_eq!(child_state.children.entry_count(), 2);
-}
-
 /// Test that all children are registered correctly after a child is replaced.
 #[test]
 #[cfg(FALSE)]

@@ -307,14 +307,7 @@ impl<W: Widget> WidgetPod<W> {
 
         let call_widget = match event {
             LifeCycle::Internal(internal) => match internal {
-                InternalLifeCycle::RouteWidgetAdded => {
-                    // TODO - explain
-                    if state.children_changed {
-                        // TODO - Separate "widget removed" case.
-                        state.children.clear();
-                    }
-                    state.children_changed
-                }
+                InternalLifeCycle::RouteWidgetAdded => state.children_changed,
                 InternalLifeCycle::RouteDisabledChanged => {
                     state.update_focus_chain = true;
 
@@ -360,8 +353,8 @@ impl<W: Widget> WidgetPod<W> {
                     // Recurse when the target widgets could be our descendants.
                     // The bloom filter we're checking can return false positives.
                     match (old, new) {
-                        (Some(old), _) if state.children.may_contain(old) => true,
-                        (_, Some(new)) if state.children.may_contain(new) => true,
+                        (Some(old), _) => true,
+                        (_, Some(new)) => true,
                         _ => false,
                     }
                 }
@@ -437,9 +430,6 @@ impl<W: Widget> WidgetPod<W> {
             // we need to (re)register children in case of one of the following events
             LifeCycle::Internal(InternalLifeCycle::RouteWidgetAdded) => {
                 state.children_changed = false;
-                parent_ctx.widget_state.children =
-                    parent_ctx.widget_state.children.union(state.children);
-                parent_ctx.register_child(self.id());
             }
             LifeCycle::DisabledChanged(_)
             | LifeCycle::Internal(InternalLifeCycle::RouteDisabledChanged) => {

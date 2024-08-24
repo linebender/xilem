@@ -14,6 +14,7 @@ struct Task {
 
 struct TaskList {
     next_task: String,
+    next_task2: String,
     tasks: Vec<Task>,
 }
 
@@ -47,6 +48,13 @@ fn app_logic(task_list: &mut TaskList) -> impl WidgetView<TaskList> {
     ))
     .direction(Axis::Vertical);
 
+    let input_box2 = textbox(
+        task_list.next_task2.clone(),
+        |task_list: &mut TaskList, new_value| {
+            task_list.next_task2 = new_value;
+        },
+    );
+
     let tasks = task_list
         .tasks
         .iter()
@@ -66,12 +74,13 @@ fn app_logic(task_list: &mut TaskList) -> impl WidgetView<TaskList> {
         })
         .collect::<Vec<_>>();
 
-    flex((first_line, tasks))
+    flex((first_line, input_box2, tasks))
 }
 
 fn main() {
     let data = TaskList {
         next_task: String::new(),
+        next_task2: String::new(),
         tasks: vec![
             Task {
                 description: "Buy milk".into(),

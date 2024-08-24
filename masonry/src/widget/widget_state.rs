@@ -6,7 +6,6 @@
 use std::sync::atomic::{AtomicBool, Ordering};
 use vello::kurbo::{Insets, Point, Rect, Size, Vec2};
 
-use crate::bloom::Bloom;
 use crate::text_helpers::TextFieldRegistration;
 use crate::{CursorIcon, WidgetId};
 
@@ -115,7 +114,6 @@ pub struct WidgetState {
 
     pub(crate) focus_chain: Vec<WidgetId>,
 
-    pub(crate) children: Bloom<WidgetId>,
     pub(crate) children_changed: bool,
 
     // TODO - Remove and handle in WidgetRoot instead
@@ -185,7 +183,6 @@ impl WidgetState {
             has_focus: false,
             request_anim: true,
             focus_chain: Vec::new(),
-            children: Bloom::new(),
             children_changed: true,
             cursor: None,
             is_explicitly_disabled_new: false,
