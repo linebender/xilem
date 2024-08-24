@@ -228,7 +228,6 @@ impl WidgetMut<'_, VariableLabel> {
         let ret = f(&mut self.widget.text_layout);
         if self.widget.text_layout.needs_rebuild() {
             self.ctx.request_layout();
-            self.ctx.request_paint();
         }
         ret
     }
@@ -247,7 +246,6 @@ impl WidgetMut<'_, VariableLabel> {
         if !self.ctx.is_disabled() {
             self.widget.text_layout.invalidate();
             self.ctx.request_layout();
-            self.ctx.request_paint();
         }
     }
     /// Set the font size for this text.
@@ -269,13 +267,12 @@ impl WidgetMut<'_, VariableLabel> {
     /// How to handle overflowing lines.
     pub fn set_line_break_mode(&mut self, line_break_mode: LineBreaking) {
         self.widget.line_break_mode = line_break_mode;
-        self.ctx.request_paint();
+        self.ctx.request_layout();
     }
     /// Set the weight which this font will target.
     pub fn set_target_weight(&mut self, target: f32, over_millis: f32) {
         self.widget.weight.move_to(target, over_millis);
         self.ctx.request_layout();
-        self.ctx.request_paint();
         self.ctx.request_anim_frame();
     }
 }
@@ -343,7 +340,6 @@ impl Widget for VariableLabel {
                     ctx.request_anim_frame();
                 }
                 ctx.request_layout();
-                ctx.request_paint();
             }
             _ => {}
         }
