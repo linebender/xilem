@@ -350,13 +350,9 @@ impl<W: Widget> WidgetPod<W> {
                         state.has_focus = false;
                     }
 
-                    // Recurse when the target widgets could be our descendants.
-                    // The bloom filter we're checking can return false positives.
-                    match (old, new) {
-                        (Some(old), _) => true,
-                        (_, Some(new)) => true,
-                        _ => false,
-                    }
+                    // TODO - This returns a lot of false positives.
+                    // We'll remove this code soon anyway.
+                    matches!((old, new), (Some(_), _) | (_, Some(_)))
                 }
             },
             LifeCycle::WidgetAdded => {
