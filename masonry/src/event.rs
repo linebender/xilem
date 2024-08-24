@@ -328,9 +328,6 @@ pub enum InternalLifeCycle {
         /// the widget that is gaining focus, if any
         new: Option<WidgetId>,
     },
-
-    /// Used to route the `DisabledChanged` event to the required widgets.
-    RouteDisabledChanged,
 }
 
 /// Event indicating status changes within the widget hierarchy.
@@ -523,7 +520,6 @@ impl LifeCycle {
             LifeCycle::Internal(internal) => match internal {
                 InternalLifeCycle::RouteWidgetAdded => "RouteWidgetAdded",
                 InternalLifeCycle::RouteFocusChanged { .. } => "RouteFocusChanged",
-                InternalLifeCycle::RouteDisabledChanged => "RouteDisabledChanged",
             },
             LifeCycle::WidgetAdded => "WidgetAdded",
             LifeCycle::AnimFrame(_) => "AnimFrame",
@@ -545,9 +541,9 @@ impl InternalLifeCycle {
     /// [`Event::should_propagate_to_hidden`]: Event::should_propagate_to_hidden
     pub fn should_propagate_to_hidden(&self) -> bool {
         match self {
-            InternalLifeCycle::RouteWidgetAdded
-            | InternalLifeCycle::RouteFocusChanged { .. }
-            | InternalLifeCycle::RouteDisabledChanged => true,
+            InternalLifeCycle::RouteWidgetAdded | InternalLifeCycle::RouteFocusChanged { .. } => {
+                true
+            }
         }
     }
 }

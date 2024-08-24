@@ -24,7 +24,7 @@ use crate::passes::compose::root_compose;
 use crate::passes::event::{root_on_access_event, root_on_pointer_event, root_on_text_event};
 use crate::passes::mutate::{mutate_widget, run_mutate_pass};
 use crate::passes::paint::root_paint;
-use crate::passes::update::run_update_pointer_pass;
+use crate::passes::update::{run_update_disabled_pass, run_update_pointer_pass};
 use crate::text::TextBrush;
 use crate::tree_arena::TreeArena;
 use crate::widget::WidgetArena;
@@ -553,9 +553,8 @@ impl RenderRoot {
 
         // Update the disabled state if necessary
         // Always do this before updating the focus-chain
-        if self.root_state().tree_disabled_changed() {
-            let event = LifeCycle::Internal(InternalLifeCycle::RouteDisabledChanged);
-            self.root_lifecycle(event);
+        if self.root_state().needs_update_disabled {
+            run_update_disabled_pass(self);
         }
 
         // Update the focus-chain if necessary

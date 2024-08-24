@@ -122,7 +122,7 @@ fn build_access_node(
     if state.is_hot {
         node.set_hovered();
     }
-    if state.is_disabled() {
+    if state.is_disabled {
         node.set_disabled();
     }
     if state.is_stashed {

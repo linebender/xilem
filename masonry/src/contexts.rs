@@ -309,7 +309,7 @@ impl_context_method!(
         ///
         /// [`set_disabled`]: EventCtx::set_disabled
         pub fn is_disabled(&self) -> bool {
-            self.widget_state.is_disabled()
+            self.widget_state.is_disabled
         }
 
         /// Check is widget is stashed.
@@ -481,14 +481,10 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, LifeCycleCtx<'_>, {
     /// Setting this to `false` does not mean a widget is not still disabled; for instance it may
     /// still be disabled by an ancestor. See [`is_disabled`] for more information.
     ///
-    /// Calling this method during [`LifeCycle::DisabledChanged`] has no effect.
-    ///
-    /// [`LifeCycle::DisabledChanged`]: crate::LifeCycle::DisabledChanged
     /// [`is_disabled`]: EventCtx::is_disabled
     pub fn set_disabled(&mut self, disabled: bool) {
-        // widget_state.children_disabled_changed is not set because we want to be able to delete
-        // changes that happened during DisabledChanged.
-        self.widget_state.is_explicitly_disabled_new = disabled;
+        self.widget_state.needs_update_disabled = true;
+        self.widget_state.is_explicitly_disabled = disabled;
     }
 
     #[allow(unused)]
