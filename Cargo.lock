@@ -1883,7 +1883,6 @@ dependencies = [
  "cursor-icon",
  "dpi",
  "float-cmp",
- "fnv",
  "futures-intrusive",
  "image",
  "insta",

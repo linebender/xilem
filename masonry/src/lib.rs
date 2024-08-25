@@ -105,7 +105,6 @@ pub use vello::kurbo;
 mod util;
 
 mod action;
-mod bloom;
 mod box_constraints;
 mod contexts;
 mod event;

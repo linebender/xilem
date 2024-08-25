@@ -674,18 +674,6 @@ impl EventCtx<'_> {
 }
 
 impl LifeCycleCtx<'_> {
-    /// Registers a child widget.
-    ///
-    /// This should only be called in response to a `LifeCycle::WidgetAdded` event.
-    ///
-    /// In general, you should not need to call this method; it is handled by
-    /// the `WidgetPod`.
-    // TODO - See https://github.com/linebender/xilem/issues/372
-    pub(crate) fn register_child(&mut self, child_id: WidgetId) {
-        trace!("register_child id={:?}", child_id);
-        self.widget_state.children.add(&child_id);
-    }
-
     /// Register this widget to be eligile to accept focus automatically.
     ///
     /// This should only be called in response to a [`LifeCycle::BuildFocusChain`] event.
