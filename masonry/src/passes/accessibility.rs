@@ -136,8 +136,8 @@ fn build_access_node(
 }
 
 fn to_accesskit_rect(r: Rect, scale_factor: f64) -> accesskit::Rect {
-    let s = scale_factor;
-    accesskit::Rect::new(s * r.x0, s * r.y0, s * r.x1, s * r.y1)
+    let sr = r.scale_from_origin(scale_factor);
+    accesskit::Rect::new(sr.x0, sr.y0, sr.x1, sr.y1)
 }
 
 // ----------------
