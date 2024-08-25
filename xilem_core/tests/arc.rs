@@ -106,7 +106,7 @@ fn arc_passthrough_message() {
     assert_action(result, 0);
 }
 
-/// --- MARK: Box tests ---
+// --- MARK: Box tests ---
 #[test]
 /// The Box view shouldn't impact the view path
 fn box_no_path() {

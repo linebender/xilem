@@ -211,7 +211,7 @@ impl<W: Widget> WidgetPod<W> {
 }
 
 impl<W: Widget> WidgetPod<W> {
-    /// --- MARK: ON_XXX_EVENT ---
+    // --- MARK: ON_XXX_EVENT ---
 
     // TODO https://github.com/linebender/xilem/issues/376 - Some implicit invariants:
     // - If a Widget gets a keyboard event or an ImeStateChange, then
