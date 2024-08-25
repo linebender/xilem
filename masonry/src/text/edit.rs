@@ -4,6 +4,7 @@
 use std::ops::{Deref, DerefMut, Range};
 
 use parley::{FontContext, LayoutContext};
+use tracing::warn;
 use vello::kurbo::Point;
 use vello::Scene;
 use winit::{
@@ -207,7 +208,7 @@ impl<T: EditableText> TextEditor<T> {
                             None => Handled::No,
                         },
                         Key::Dead(d) => {
-                            eprintln!("Got dead key {d:?}. Will handle");
+                            warn!("Got dead key {d:?}. Will handle");
                             Handled::No
                         }
                     }

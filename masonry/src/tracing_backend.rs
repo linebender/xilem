@@ -33,6 +33,8 @@ pub(crate) fn try_init_wasm_tracing() -> Result<(), SetGlobalDefaultError> {
     )
 }
 
+// TODO - Remove
+#[allow(clippy::print_stdout)]
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) fn try_init_layered_tracing(
     default_level: Option<LevelFilter>,
