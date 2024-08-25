@@ -102,7 +102,7 @@ pub struct WidgetState {
     /// Any descendant has requested an animation frame.
     pub(crate) request_anim: bool,
 
-    /// This widget or a descendant changed its explicitly_disabled value
+    /// This widget or a descendant changed its `explicitly_disabled` value
     pub(crate) needs_update_disabled: bool,
 
     pub(crate) update_focus_chain: bool,
