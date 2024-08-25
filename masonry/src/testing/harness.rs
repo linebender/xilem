@@ -6,6 +6,7 @@
 use std::num::NonZeroUsize;
 
 use image::{DynamicImage, ImageReader, Rgba, RgbaImage};
+use tracing::debug;
 use vello::util::RenderContext;
 use vello::{block_on_wgpu, RendererOptions};
 use wgpu::{
@@ -353,7 +354,10 @@ impl TestHarness {
         // FIXME - Account for scaling
         let pos = pos.into();
         let pos = PhysicalPosition::new(pos.x, pos.y);
-        self.mouse_state.physical_position = dbg!(pos);
+        self.mouse_state.physical_position = pos;
+
+        debug!("Harness mouse moved to {}, {}", pos.x, pos.y);
+
         // TODO: may want to support testing with non-unity scale factors.
         let scale_factor = 1.0;
         self.mouse_state.position = pos.to_logical(scale_factor);

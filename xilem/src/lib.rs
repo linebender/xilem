@@ -4,7 +4,7 @@
 // False-positive with dev-dependencies only used in examples
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 #![warn(unnameable_types, unreachable_pub)]
-#![warn(clippy::print_stdout, clippy::print_stderr)]
+#![warn(clippy::print_stdout, clippy::print_stderr, clippy::dbg_macro)]
 use std::{collections::HashMap, sync::Arc};
 
 use masonry::{

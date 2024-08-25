@@ -8,6 +8,7 @@ use std::ops::{Deref, DerefMut, Range};
 
 use parley::context::RangedBuilder;
 use parley::{FontContext, LayoutContext};
+use tracing::debug;
 use unicode_segmentation::{GraphemeCursor, UnicodeSegmentation};
 use vello::kurbo::{Affine, Line, Point, Stroke};
 use vello::peniko::{Brush, Color};
@@ -177,7 +178,7 @@ impl<T: Selectable> TextWithSelection<T> {
                             // e.g. to put HTML code if supported by the rich text kind
                             if let Some(text) = self.text().slice(selection.min()..selection.max())
                             {
-                                println!(r#"Copying "{text}""#);
+                                debug!(r#"Copying "{text}""#);
                             } else {
                                 debug_panic!("Had invalid selection");
                             }

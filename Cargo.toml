@@ -99,8 +99,8 @@ clippy.unseparated_literal_suffix = "warn"
 # False positives with example targets - https://github.com/rust-lang/rust/issues/57274
 # rust.unused_crate_dependencies = "warn"
 # Examples often do want to print
-# clippy.print_stdout = "warn" # Note that this is allowed in Masonry
-# clippy.print_stderr = "warn" # Note that this is allowed in Masonry
+# clippy.print_stdout = "warn"
+# clippy.print_stderr = "warn"
 
 [workspace.dependencies]
 xilem_web_core = { version = "0.1.0", path = "xilem_web/xilem_web_core" }
