@@ -542,10 +542,10 @@ impl TestHarness {
     /// Renders the current Widget tree to a pixmap, and compares the pixmap against the
     /// snapshot stored in `./screenshots/module_path__test_name.png`.
     ///
-    /// * **manifest_dir:** directory where `Cargo.toml` can be found.
-    /// * **test_file_path:** file path the current test is in.
-    /// * **test_module_path:** import path of the module the current test is in.
-    /// * **test_name:** arbitrary name; second argument of assert_render_snapshot.
+    /// * `manifest_dir`: directory where `Cargo.toml` can be found.
+    /// * `test_file_path`: file path the current test is in.
+    /// * `test_module_path`: import path of the module the current test is in.
+    /// * `test_name`: arbitrary name; second argument of [`assert_render_snapshot`].
     #[track_caller]
     pub fn check_render_snapshot(
         &mut self,
