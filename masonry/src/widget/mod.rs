@@ -10,7 +10,6 @@ mod widget_pod;
 mod widget_ref;
 mod widget_state;
 
-// --- MARK: TESTS ---
 #[cfg(test)]
 mod tests;
 
