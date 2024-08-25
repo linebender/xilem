@@ -204,7 +204,7 @@ impl<'w> WidgetRef<'w, dyn Widget> {
 
     /// Recursively check that the Widget tree upholds various invariants.
     ///
-    /// Can only be called after on_event and lifecycle.
+    /// Can only be called after `on_event` and `lifecycle`.
     pub fn debug_validate(&self, after_layout: bool) {
         if cfg!(not(debug_assertions)) {
             return;

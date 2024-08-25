@@ -43,7 +43,7 @@ pub(crate) fn mutate_widget<R>(
 }
 
 // TODO - Add link to mutate pass documentation
-/// Apply any deferred mutations (created using [...Ctx::mutate_later](crate::LayoutCtx::mutate_later)).
+/// Apply any deferred mutations (created using [`...Ctx::mutate_later`](crate::LayoutCtx::mutate_later)).
 pub(crate) fn run_mutate_pass(root: &mut RenderRoot, root_state: &mut WidgetState) {
     // TODO - Factor out into a "pre-event" function?
     // root.state.next_focused_widget = root.state.focused_widget;
