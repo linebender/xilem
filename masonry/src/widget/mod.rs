@@ -16,6 +16,7 @@ mod tests;
 
 mod align;
 mod button;
+mod canvas;
 mod checkbox;
 mod flex;
 mod image;
@@ -34,6 +35,7 @@ mod widget_arena;
 pub use self::image::Image;
 pub use align::Align;
 pub use button::Button;
+pub use canvas::Canvas;
 pub use checkbox::Checkbox;
 pub use flex::{Axis, CrossAxisAlignment, Flex, FlexParams, MainAxisAlignment};
 pub use label::{Label, LineBreaking};
