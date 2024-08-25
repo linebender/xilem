@@ -128,8 +128,8 @@ pub trait Widget: AsAny {
     /// This methods has some validity invariants. A widget's children list must be
     /// consistent. If children are added or removed, the parent widget should call
     /// `children_changed` on one of the Ctx parameters. Container widgets are also
-    /// responsible for calling the main methods (on_event, lifecycle, layout, paint)
-    /// on their children.
+    /// responsible for calling the main methods (`on_event`, `lifecycle`, `layout`,
+    /// `paint`) on their children.
     /// TODO - Update this doc
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]>;
 
