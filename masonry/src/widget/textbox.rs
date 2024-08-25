@@ -207,6 +207,8 @@ impl Widget for Textbox {
         let result = self.editor.text_event(ctx, event);
         // If focused on a link and enter pressed, follow it?
         if result.is_handled() {
+            // TODO - Use request_scroll_to with cursor rect
+            ctx.request_scroll_to_this();
             ctx.set_handled();
             // TODO: only some handlers need this repaint
             ctx.request_layout();

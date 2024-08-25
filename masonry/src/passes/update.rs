@@ -202,3 +202,26 @@ pub(crate) fn run_update_disabled_pass(root: &mut RenderRoot) {
     let (root_widget, root_state) = root.widget_arena.get_pair_mut(root.root.id());
     update_disabled_for_widget(&mut root.state, root_widget, root_state, false);
 }
+
+// ----------------
+
+pub(crate) fn run_update_scroll_pass(root: &mut RenderRoot) {
+    let _span = info_span!("update_scroll").entered();
+
+    let scroll_request_targets = std::mem::take(&mut root.state.scroll_request_targets);
+    for (target, rect) in scroll_request_targets {
+        let mut target_rect = rect;
+
+        run_targeted_update_pass(root, Some(target), |widget, ctx| {
+            let event = LifeCycle::RequestPanToChild(rect);
+            widget.lifecycle(ctx, &event);
+
+            // TODO - We should run the compose method after this, so
+            // translations are updated and the rect passed to parents
+            // is more accurate.
+
+            let state = &ctx.widget_state;
+            target_rect = target_rect + state.translation + state.origin.to_vec2();
+        });
+    }
+}

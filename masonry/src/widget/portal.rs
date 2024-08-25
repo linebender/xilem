@@ -145,6 +145,31 @@ impl<W: Widget> Portal<W> {
             false
         }
     }
+
+    // Note - Rect is in child coordinates
+    // TODO - Merge with pan_viewport_to
+    // Right now these functions are just different enough to be a pain to merge.
+    pub fn pan_viewport_to_raw(
+        &mut self,
+        portal_size: Size,
+        content_size: Size,
+        target: Rect,
+    ) -> bool {
+        let viewport = Rect::from_origin_size(self.viewport_pos, portal_size);
+
+        let new_pos_x = compute_pan_range(
+            viewport.min_x()..viewport.max_x(),
+            target.min_x()..target.max_x(),
+        )
+        .start;
+        let new_pos_y = compute_pan_range(
+            viewport.min_y()..viewport.max_y(),
+            target.min_y()..target.max_y(),
+        )
+        .start;
+
+        self.set_viewport_pos_raw(portal_size, content_size, Point::new(new_pos_x, new_pos_y))
+    }
 }
 
 // --- MARK: WIDGETMUT ---
@@ -315,8 +340,14 @@ impl<W: Widget> Widget for Portal<W> {
             LifeCycle::WidgetAdded => {
                 ctx.register_as_portal();
             }
-            //TODO
-            //LifeCycle::RequestPanToChild(target_rect) => {}
+            LifeCycle::RequestPanToChild(target) => {
+                let portal_size = ctx.size();
+                let content_size = ctx.get_raw_ref(&mut self.child).ctx().layout_rect().size();
+
+                // FIXME - Update scrollbars
+                self.pan_viewport_to_raw(portal_size, content_size, *target);
+                ctx.request_compose();
+            }
             _ => {}
         }
 

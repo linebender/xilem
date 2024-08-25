@@ -54,7 +54,6 @@ fn run_event_pass<E>(
             widget_children: widget_mut.children,
             allow_pointer_capture,
             is_handled: false,
-            request_pan_to_child: None,
         };
         let widget = widget_mut.item;
 
@@ -193,42 +192,4 @@ pub(crate) fn root_on_access_event(
     );
 
     handled
-}
-
-// These functions were carved out of WidgetPod code during a previous refactor
-// The general "pan to child" logic needs to be added back in.
-#[cfg(FALSE)]
-fn pan_to_child() {
-    // TODO - there's some dubious logic here
-    if let Some(target_rect) = inner_ctx.request_pan_to_child {
-        self.pan_to_child(parent_ctx, target_rect);
-        let (state, _) = parent_ctx
-            .widget_state_children
-            .get_child_mut(id)
-            .expect("WidgetPod: inner widget not found in widget tree");
-        let new_rect = target_rect.with_origin(target_rect.origin() + state.origin.to_vec2());
-        parent_ctx.request_pan_to_child = Some(new_rect);
-    }
-}
-
-#[cfg(FALSE)]
-fn pan_to_child(&mut self, parent_ctx: &mut EventCtx, rect: Rect) {
-    let id = self.id().to_raw();
-    let (widget, widget_token) = parent_ctx
-        .widget_children
-        .get_child_mut(id)
-        .expect("WidgetPod: inner widget not found in widget tree");
-    let (state, state_token) = parent_ctx
-        .widget_state_children
-        .get_child_mut(id)
-        .expect("WidgetPod: inner widget not found in widget tree");
-    let mut inner_ctx = LifeCycleCtx {
-        global_state: parent_ctx.global_state,
-        widget_state: state,
-        widget_state_children: state_token,
-        widget_children: widget_token,
-    };
-    let event = LifeCycle::RequestPanToChild(rect);
-
-    widget.lifecycle(&mut inner_ctx, &event);
 }
