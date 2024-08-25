@@ -51,7 +51,6 @@ rust.variant_size_differences = "warn"
 clippy.allow_attributes_without_reason = "warn"
 clippy.collection_is_never_read = "warn"
 clippy.debug_assert_with_mut_call = "warn"
-# This is marked as `allow` within masonry due to https://github.com/linebender/xilem/issues/449.
 clippy.doc_markdown = "warn"
 clippy.fn_to_numeric_cast_any = "forbid"
 clippy.infinite_loop = "warn"
