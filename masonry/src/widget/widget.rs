@@ -57,13 +57,12 @@ pub struct WidgetId(pub(crate) NonZeroU64);
 ///
 /// Widgets also have a [`children`](Self::children) method. Leaf widgets return an empty array,
 /// whereas container widgets return an array of [`WidgetRef`]. Container widgets
-/// have some validity invariants to maintain regarding their children. See TUTORIAL_2
-/// for details **(TODO)**.
+/// have some validity invariants to maintain regarding their children.
 ///
 /// Generally speaking, widgets aren't used directly. They are stored in
 /// [`WidgetPod`](crate::WidgetPod)s. Widget methods are called by `WidgetPod`s, and the
 /// widget is mutated either during a method call (eg `on_event` or `lifecycle`) or
-/// through a [`WidgetMut`](crate::widget::WidgetMut). See tutorials for details.
+/// through a [`WidgetMut`](crate::widget::WidgetMut).
 #[allow(unused_variables)]
 pub trait Widget: AsAny {
     /// Handle an event - usually user interaction.
