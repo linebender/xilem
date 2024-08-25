@@ -196,8 +196,8 @@ pub fn offset_for_delete_backwards(caret_position: usize, text: &impl Selectable
 
 #[cfg(test)]
 mod tests {
-    //! These tests originate from https://github.com/xi-editor/xi-editor/pull/837, with the logic itself
-    //! originating from
+    //! These tests originate from <https://github.com/xi-editor/xi-editor/pull/837>,
+    //! with the logic itself originating from upstream Android.
 
     #[track_caller]
     fn assert_delete_backwards(input: &'static str, target: &'static str) {
