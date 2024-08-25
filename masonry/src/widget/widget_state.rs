@@ -79,14 +79,6 @@ pub struct WidgetState {
     /// A flag used to track and debug missing calls to `place_child`.
     pub(crate) is_expecting_place_child_call: bool,
 
-    // `true` if a descendent of this widget changed its disabled state and should receive
-    // LifeCycle::DisabledChanged or InternalLifeCycle::RouteDisabledChanged
-    pub(crate) children_disabled_changed: bool,
-
-    // `true` if this widget has been explicitly disabled, but has not yet seen one of
-    // LifeCycle::DisabledChanged or InternalLifeCycle::RouteDisabledChanged
-    pub(crate) is_explicitly_disabled_new: bool,
-
     /// This widget explicitly requested layout
     pub(crate) request_layout: bool,
     /// This widget or a descendant explicitly requested layout
@@ -110,6 +102,9 @@ pub struct WidgetState {
     /// Any descendant has requested an animation frame.
     pub(crate) request_anim: bool,
 
+    /// This widget or a descendant changed its `explicitly_disabled` value
+    pub(crate) needs_update_disabled: bool,
+
     pub(crate) update_focus_chain: bool,
 
     pub(crate) focus_chain: Vec<WidgetId>,
@@ -122,12 +117,10 @@ pub struct WidgetState {
     pub(crate) text_registrations: Vec<TextFieldRegistration>,
 
     // --- STATUS ---
-    // `true` if one of our ancestors is disabled (meaning we are also disabled).
-    pub(crate) ancestor_disabled: bool,
-
-    // `true` if this widget has been explicitly disabled.
-    // A widget can be disabled without being *explicitly* disabled if an ancestor is disabled.
+    /// This widget has been disabled.
     pub(crate) is_explicitly_disabled: bool,
+    /// This widget or an ancestor has been disabled.
+    pub(crate) is_disabled: bool,
 
     pub(crate) is_hot: bool,
 
@@ -167,9 +160,8 @@ impl WidgetState {
             clip: Default::default(),
             translation: Vec2::ZERO,
             translation_changed: false,
-            children_disabled_changed: false,
-            ancestor_disabled: false,
             is_explicitly_disabled: false,
+            is_disabled: false,
             baseline_offset: 0.0,
             is_hot: false,
             request_layout: true,
@@ -182,10 +174,10 @@ impl WidgetState {
             needs_accessibility: true,
             has_focus: false,
             request_anim: true,
+            needs_update_disabled: true,
             focus_chain: Vec::new(),
             children_changed: true,
             cursor: None,
-            is_explicitly_disabled_new: false,
             text_registrations: Vec::new(),
             update_focus_chain: true,
             is_stashed: false,
@@ -210,6 +202,7 @@ impl WidgetState {
             request_accessibility: false,
             needs_accessibility: false,
             request_anim: false,
+            needs_update_disabled: false,
             children_changed: false,
             update_focus_chain: false,
             ..WidgetState::new(id, "<root>")
@@ -229,15 +222,6 @@ impl WidgetState {
         self.needs_visit.0.load(Ordering::SeqCst)
     }
 
-    pub(crate) fn is_disabled(&self) -> bool {
-        self.is_explicitly_disabled || self.ancestor_disabled
-    }
-
-    pub(crate) fn tree_disabled_changed(&self) -> bool {
-        self.children_disabled_changed
-            || self.is_explicitly_disabled != self.is_explicitly_disabled_new
-    }
-
     /// Update to incorporate state changes from a child.
     ///
     /// This will also clear some requests in the child state.
@@ -249,9 +233,7 @@ impl WidgetState {
         self.needs_paint |= child_state.needs_paint;
         self.request_anim |= child_state.request_anim;
         self.needs_accessibility |= child_state.needs_accessibility;
-        self.children_disabled_changed |= child_state.children_disabled_changed;
-        self.children_disabled_changed |=
-            child_state.is_explicitly_disabled_new != child_state.is_explicitly_disabled;
+        self.needs_update_disabled |= child_state.needs_update_disabled;
         self.has_focus |= child_state.has_focus;
         self.children_changed |= child_state.children_changed;
         self.text_registrations

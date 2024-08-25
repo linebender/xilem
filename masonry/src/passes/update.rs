@@ -4,11 +4,12 @@
 use std::collections::HashSet;
 
 use cursor_icon::CursorIcon;
-use tracing::trace;
+use tracing::{info_span, trace};
 
-use crate::passes::merge_state_up;
-use crate::render_root::{RenderRoot, RenderRootSignal};
-use crate::{LifeCycleCtx, StatusChange, Widget, WidgetId, WidgetState};
+use crate::passes::{merge_state_up, recurse_on_children};
+use crate::render_root::{RenderRoot, RenderRootSignal, RenderRootState};
+use crate::tree_arena::ArenaMut;
+use crate::{LifeCycle, LifeCycleCtx, StatusChange, Widget, WidgetId, WidgetState};
 
 fn get_id_path(root: &RenderRoot, widget_id: Option<WidgetId>) -> Vec<WidgetId> {
     let Some(widget_id) = widget_id else {
@@ -144,4 +145,60 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot, root_state: &mut Wi
 
     // Pass root widget state to synthetic state create at beginning of pass
     root_state.merge_up(root.widget_arena.get_state_mut(root.root.id()).item);
+}
+
+// ----------------
+
+fn update_disabled_for_widget(
+    global_state: &mut RenderRootState,
+    mut widget: ArenaMut<'_, Box<dyn Widget>>,
+    mut state: ArenaMut<'_, WidgetState>,
+    parent_disabled: bool,
+) {
+    let _span = widget.item.make_trace_span().entered();
+    let id = state.item.id;
+
+    let disabled = state.item.is_explicitly_disabled | parent_disabled;
+    if !state.item.needs_update_disabled && disabled == state.item.is_disabled {
+        return;
+    }
+
+    if disabled != state.item.is_disabled {
+        let mut ctx = LifeCycleCtx {
+            global_state,
+            widget_state: state.item,
+            widget_state_children: state.children.reborrow_mut(),
+            widget_children: widget.children.reborrow_mut(),
+        };
+        widget
+            .item
+            .lifecycle(&mut ctx, &LifeCycle::DisabledChanged(disabled));
+        state.item.is_disabled = disabled;
+    }
+
+    state.item.needs_update_disabled = false;
+
+    if disabled && global_state.next_focused_widget == Some(id) {
+        // This may get overwritten. That's ok, because either way the
+        // focused widget, if there's one, won't be disabled.
+        global_state.next_focused_widget = None;
+    }
+
+    let parent_state = state.item;
+    recurse_on_children(
+        id,
+        widget.reborrow_mut(),
+        state.children,
+        |widget, mut state| {
+            update_disabled_for_widget(global_state, widget, state.reborrow_mut(), disabled);
+            parent_state.merge_up(state.item);
+        },
+    );
+}
+
+pub(crate) fn run_update_disabled_pass(root: &mut RenderRoot) {
+    let _span = info_span!("update_disabled").entered();
+
+    let (root_widget, root_state) = root.widget_arena.get_pair_mut(root.root.id());
+    update_disabled_for_widget(&mut root.state, root_widget, root_state, false);
 }

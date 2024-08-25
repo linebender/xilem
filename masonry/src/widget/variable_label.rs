@@ -363,7 +363,7 @@ impl Widget for VariableLabel {
         self.text_layout.set_max_advance(max_advance);
         if self.text_layout.needs_rebuild() {
             self.text_layout
-                .set_brush(self.brush(ctx.widget_state.is_disabled()));
+                .set_brush(self.brush(ctx.widget_state.is_disabled));
             let (font_ctx, layout_ctx) = ctx.text_contexts();
             self.text_layout
                 .rebuild_with_attributes(font_ctx, layout_ctx, |mut builder| {

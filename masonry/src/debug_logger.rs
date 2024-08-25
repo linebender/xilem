@@ -199,21 +199,12 @@ impl DebugLogger {
                 "is_expecting_place_child_call",
                 w_state.is_expecting_place_child_call,
             ),
-            StateTree::new(
-                "children_disabled_changed",
-                w_state.children_disabled_changed,
-            ),
-            StateTree::new("ancestor_disabled", w_state.ancestor_disabled),
             StateTree::new("is_explicitly_disabled", w_state.is_explicitly_disabled),
             StateTree::new("is_hot", w_state.is_hot),
             StateTree::new("needs_layout", w_state.needs_layout),
             StateTree::new("has_focus", w_state.has_focus),
             StateTree::new("request_anim", w_state.request_anim),
             StateTree::new("children_changed", w_state.children_changed),
-            StateTree::new(
-                "is_explicitly_disabled_new",
-                w_state.is_explicitly_disabled_new,
-            ),
             StateTree::new("update_focus_chain", w_state.update_focus_chain),
         ]
         .into();

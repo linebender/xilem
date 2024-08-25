@@ -308,32 +308,6 @@ impl<W: Widget> WidgetPod<W> {
         let call_widget = match event {
             LifeCycle::Internal(internal) => match internal {
                 InternalLifeCycle::RouteWidgetAdded => state.children_changed,
-                InternalLifeCycle::RouteDisabledChanged => {
-                    state.update_focus_chain = true;
-
-                    let was_disabled = state.is_disabled();
-
-                    state.is_explicitly_disabled = state.is_explicitly_disabled_new;
-
-                    if was_disabled != state.is_disabled() {
-                        // TODO
-                        let disabled = state.is_disabled();
-
-                        let mut inner_ctx = LifeCycleCtx {
-                            global_state: parent_ctx.global_state,
-                            widget_state: state,
-                            widget_state_children: state_mut.children.reborrow_mut(),
-                            widget_children: widget_mut.children.reborrow_mut(),
-                        };
-
-                        widget.lifecycle(&mut inner_ctx, &LifeCycle::DisabledChanged(disabled));
-
-                        //Each widget needs only one of DisabledChanged and RouteDisabledChanged
-                        false
-                    } else {
-                        state.children_disabled_changed
-                    }
-                }
                 InternalLifeCycle::RouteFocusChanged { old, new } => {
                     let this_changed = if *old == Some(self.id()) {
                         Some(false)
@@ -367,19 +341,8 @@ impl<W: Widget> WidgetPod<W> {
                 state.request_anim = false;
                 true
             }
-            LifeCycle::DisabledChanged(ancestors_disabled) => {
-                state.update_focus_chain = true;
-
-                let was_disabled = state.is_disabled();
-
-                state.is_explicitly_disabled = state.is_explicitly_disabled_new;
-                state.ancestor_disabled = *ancestors_disabled;
-
-                // the change direction (true -> false or false -> true) of our parent and ourself
-                // is always the same, or we dont change at all, because we stay disabled if either
-                // we or our parent are disabled.
-                was_disabled != state.is_disabled()
-            }
+            // Routing DisabledChanged has been moved to the update_disabled pass
+            LifeCycle::DisabledChanged(_) => false,
             LifeCycle::BuildFocusChain => {
                 if state.update_focus_chain {
                     // Replace has_focus to check if the value changed in the meantime
@@ -427,20 +390,6 @@ impl<W: Widget> WidgetPod<W> {
             LifeCycle::Internal(InternalLifeCycle::RouteWidgetAdded) => {
                 state.children_changed = false;
             }
-            LifeCycle::DisabledChanged(_)
-            | LifeCycle::Internal(InternalLifeCycle::RouteDisabledChanged) => {
-                state.children_disabled_changed = false;
-
-                if state.is_disabled() && state.has_focus {
-                    // This may gets overwritten. This is ok because it still ensures that a
-                    // FocusChange is routed after we updated the focus-chain.
-                    parent_ctx.global_state.next_focused_widget = None;
-                }
-
-                // Delete changes of disabled state that happened during DisabledChanged to avoid
-                // recursions.
-                state.is_explicitly_disabled_new = state.is_explicitly_disabled;
-            }
             // Update focus-chain of our parent
             LifeCycle::BuildFocusChain => {
                 state.update_focus_chain = false;
@@ -456,7 +405,7 @@ impl<W: Widget> WidgetPod<W> {
                 }
                 state.has_focus = had_focus;
 
-                if !state.is_disabled() {
+                if !state.is_disabled {
                     parent_ctx
                         .widget_state
                         .focus_chain
