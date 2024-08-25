@@ -117,10 +117,9 @@ pub struct WidgetState {
     pub(crate) text_registrations: Vec<TextFieldRegistration>,
 
     // --- STATUS ---
-
-    // This widget has been disabled.
+    /// This widget has been disabled.
     pub(crate) is_explicitly_disabled: bool,
-    // This widget or an ancestor has been disabled.
+    /// This widget or an ancestor has been disabled.
     pub(crate) is_disabled: bool,
 
     pub(crate) is_hot: bool,
