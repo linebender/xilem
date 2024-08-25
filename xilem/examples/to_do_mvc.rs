@@ -66,7 +66,7 @@ fn app_logic(task_list: &mut TaskList) -> impl WidgetView<TaskList> {
         })
         .collect::<Vec<_>>();
 
-    flex((first_line, input_box2, tasks))
+    flex((first_line, tasks))
 }
 
 fn main() {
