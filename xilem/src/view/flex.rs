@@ -448,8 +448,8 @@ where
 
     type ViewState = V::ViewState;
 
-    fn build(&self, cx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        let (pod, state) = self.view.build(cx);
+    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+        let (pod, state) = self.view.build(ctx);
         (
             FlexElement::Child(pod.inner.boxed().into(), self.params),
             state,

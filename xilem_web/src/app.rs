@@ -27,7 +27,7 @@ struct AppInner<State, Fragment: DomFragment<State>, InitFragment> {
     fragment_append_scratch: AppendVec<AnyPod>,
     vec_splice_scratch: Vec<AnyPod>,
     elements: Vec<AnyPod>,
-    cx: ViewCtx,
+    ctx: ViewCtx,
 }
 
 pub(crate) trait AppRunner {
@@ -54,7 +54,7 @@ where
     pub fn new(root: impl AsRef<web_sys::Node>, data: State, app_logic: InitFragment) -> Self {
         let inner = AppInner::new(root.as_ref().clone(), data, app_logic);
         let app = App(Rc::new(RefCell::new(inner)));
-        app.0.borrow_mut().cx.set_runner(app.clone());
+        app.0.borrow_mut().ctx.set_runner(app.clone());
         app
     }
 
@@ -73,7 +73,7 @@ impl<State, Fragment: DomFragment<State>, InitFragment: FnMut(&mut State) -> Fra
     AppInner<State, Fragment, InitFragment>
 {
     pub fn new(root: web_sys::Node, data: State, app_logic: InitFragment) -> Self {
-        let cx = ViewCtx::default();
+        let ctx = ViewCtx::default();
         AppInner {
             data,
             root,
@@ -81,7 +81,7 @@ impl<State, Fragment: DomFragment<State>, InitFragment: FnMut(&mut State) -> Fra
             fragment: None,
             fragment_state: None,
             elements: Vec::new(),
-            cx,
+            ctx,
             fragment_append_scratch: Default::default(),
             vec_splice_scratch: Default::default(),
         }
@@ -90,7 +90,7 @@ impl<State, Fragment: DomFragment<State>, InitFragment: FnMut(&mut State) -> Fra
     fn ensure_app(&mut self) {
         if self.fragment.is_none() {
             let fragment = (self.app_logic)(&mut self.data);
-            let state = fragment.seq_build(&mut self.cx, &mut self.fragment_append_scratch);
+            let state = fragment.seq_build(&mut self.ctx, &mut self.fragment_append_scratch);
             self.fragment = Some(fragment);
             self.fragment_state = Some(state);
 
@@ -138,7 +138,7 @@ where
                 &mut inner.elements,
                 &mut inner.vec_splice_scratch,
                 &inner.root,
-                inner.cx.fragment.clone(),
+                inner.ctx.fragment.clone(),
                 false,
                 #[cfg(feature = "hydration")]
                 false,
@@ -146,7 +146,7 @@ where
             new_fragment.seq_rebuild(
                 fragment,
                 inner.fragment_state.as_mut().unwrap(),
-                &mut inner.cx,
+                &mut inner.ctx,
                 &mut dom_children_splice,
             );
             *fragment = new_fragment;
