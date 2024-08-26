@@ -1,6 +1,8 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use std::marker::PhantomData;
+
 use masonry::widget;
 use xilem_core::ViewMarker;
 
@@ -14,7 +16,7 @@ use crate::{
 /// This widget forces its child to have a specific width and/or height (assuming values are permitted by
 /// this widget's parent). If either the width or height is not set, this widget will size itself
 /// to match the child's size in that dimension.
-pub fn sized_box<State, Action, V>(inner: V) -> SizedBox<V>
+pub fn sized_box<State, Action, V>(inner: V) -> SizedBox<V, State, Action>
 where
     V: WidgetView<State, Action>,
 {
@@ -22,16 +24,18 @@ where
         inner,
         height: None,
         width: None,
+        phantom: PhantomData,
     }
 }
 
-pub struct SizedBox<V> {
+pub struct SizedBox<V, State, Action = ()> {
     inner: V,
     width: Option<f64>,
     height: Option<f64>,
+    phantom: PhantomData<fn() -> (State, Action)>,
 }
 
-impl<V> SizedBox<V> {
+impl<V, State, Action> SizedBox<V, State, Action> {
     /// Set container's width.
     pub fn width(mut self, width: f64) -> Self {
         self.width = Some(width);
@@ -75,9 +79,11 @@ impl<V> SizedBox<V> {
     }
 }
 
-impl<V> ViewMarker for SizedBox<V> {}
-impl<V, State, Action> View<State, Action, ViewCtx> for SizedBox<V>
+impl<V, State, Action> ViewMarker for SizedBox<V, State, Action> {}
+impl<V, State, Action> View<State, Action, ViewCtx> for SizedBox<V, State, Action>
 where
+    State: 'static,
+    Action: 'static,
     V: WidgetView<State, Action>,
 {
     type Element = Pod<widget::SizedBox>;
