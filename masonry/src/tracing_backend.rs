@@ -67,6 +67,10 @@ fn try_init_layered_tracing(default_level: LevelFilter) -> Result<(), SetGlobalD
 
         #[allow(clippy::print_stderr)]
         {
+            // We print this message to stderr (rather than through `tracing`), because:
+            // 1) Tracing hasn't been set up yet
+            // 2) The tracing logs could have been configured to eat this message, and we think this is still important to have visible.
+            // 3) This message is only sent in debug mode, so won't be exposed to users.
             eprintln!("---");
             eprintln!("Writing full logs to {}", tmp_path.display());
             eprintln!("---");
