@@ -594,7 +594,7 @@ impl TestHarness {
                 diff_image.save(&diff_path).unwrap();
                 panic!("Snapshot test '{test_name}' failed: Images are different");
             } else {
-                // Remove the vestigal new and diff images
+                // Remove the vestigial new and diff images
                 let _ = std::fs::remove_file(&new_path);
                 let _ = std::fs::remove_file(&diff_path);
             }
