@@ -1,6 +1,6 @@
 # ARCHITECTURE
 
-**Note - The crate was migrated from the `PoignardAzur/masonry` repository and ported to work with winit. A lot of stuff was changed during that port and all the documentation wasn't updated. some of this might be outdated.**
+**Note - The crate was migrated from the `PoignardAzur/masonry` repository and ported to work with winit. A lot of stuff was changed during that port and all the documentation wasn't updated. Some of this might be outdated.**
 
 Masonry is a framework that aims to provide the foundation for Rust GUI libraries.
 

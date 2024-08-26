@@ -1,7 +1,7 @@
 // Copyright 2020 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-//! This showcase demonstrates how to use the image widget and is
+//! This showcase demonstrates how to use the image widget and its
 //! properties. You can change the parameters in the GUI to see how
 //! everything behaves.
 
