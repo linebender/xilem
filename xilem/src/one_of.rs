@@ -288,37 +288,13 @@ impl<
         }
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
-        match self {
-            OneOfWidget::A(w) => w.paint(ctx, scene),
-            OneOfWidget::B(w) => w.paint(ctx, scene),
-            OneOfWidget::C(w) => w.paint(ctx, scene),
-            OneOfWidget::D(w) => w.paint(ctx, scene),
-            OneOfWidget::E(w) => w.paint(ctx, scene),
-            OneOfWidget::F(w) => w.paint(ctx, scene),
-            OneOfWidget::G(w) => w.paint(ctx, scene),
-            OneOfWidget::H(w) => w.paint(ctx, scene),
-            OneOfWidget::I(w) => w.paint(ctx, scene),
-        }
-    }
+    fn paint(&mut self, _ctx: &mut PaintCtx, _scene: &mut Scene) {}
 
     fn accessibility_role(&self) -> Role {
         Role::GenericContainer
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx) {
-        match self {
-            OneOfWidget::A(w) => w.accessibility(ctx),
-            OneOfWidget::B(w) => w.accessibility(ctx),
-            OneOfWidget::C(w) => w.accessibility(ctx),
-            OneOfWidget::D(w) => w.accessibility(ctx),
-            OneOfWidget::E(w) => w.accessibility(ctx),
-            OneOfWidget::F(w) => w.accessibility(ctx),
-            OneOfWidget::G(w) => w.accessibility(ctx),
-            OneOfWidget::H(w) => w.accessibility(ctx),
-            OneOfWidget::I(w) => w.accessibility(ctx),
-        }
-    }
+    fn accessibility(&mut self, _ctx: &mut AccessCtx) {}
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         match self {

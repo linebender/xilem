@@ -555,18 +555,13 @@ impl Widget for Split {
         } else {
             self.paint_stroked_bar(ctx, scene);
         }
-        self.child1.paint(ctx, scene);
-        self.child2.paint(ctx, scene);
     }
 
     fn accessibility_role(&self) -> Role {
         Role::Splitter
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx) {
-        self.child1.accessibility(ctx);
-        self.child2.accessibility(ctx);
-    }
+    fn accessibility(&mut self, _ctx: &mut AccessCtx) {}
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         smallvec![self.child1.id(), self.child2.id()]

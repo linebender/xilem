@@ -177,9 +177,6 @@ impl Widget for Checkbox {
 
             scene.stroke(&style, Affine::IDENTITY, brush, None, &path);
         }
-
-        // Paint the text label
-        self.label.paint(ctx, scene);
     }
 
     fn accessibility_role(&self) -> Role {
@@ -204,8 +201,6 @@ impl Widget for Checkbox {
             ctx.current_node()
                 .set_default_action_verb(DefaultActionVerb::Check);
         }
-
-        self.label.accessibility(ctx);
     }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {

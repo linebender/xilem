@@ -8,8 +8,8 @@ use vello::kurbo::{Rect, Size};
 use crate::tree_arena::ArenaRefChildren;
 use crate::widget::WidgetState;
 use crate::{
-    AccessCtx, BoxConstraints, InternalLifeCycle, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
-    StatusChange, Widget, WidgetId,
+    BoxConstraints, InternalLifeCycle, LayoutCtx, LifeCycle, LifeCycleCtx, StatusChange, Widget,
+    WidgetId,
 };
 
 // TODO - rewrite links in doc
@@ -587,18 +587,6 @@ impl<W: Widget> WidgetPod<W> {
             warn!("Widget `{type_name}` has an infinite height.");
         }
     }
-
-    // --- MARK: PAINT ---
-
-    // TODO - This should be removed in a follow-up PR immediately after
-    // this is merged. I'm leaving the method for now to avoid blowing up the diff.
-    pub fn paint(&mut self, _parent_ctx: &mut PaintCtx, _scene: &mut vello::Scene) {}
-
-    // --- MARK: ACCESSIBILITY ---
-
-    // TODO - This should be removed in a follow-up PR immediately after
-    // this is merged. I'm leaving the method for now to avoid blowing up the diff.
-    pub fn accessibility(&mut self, _parent_ctx: &mut AccessCtx) {}
 }
 
 // TODO - negative rects?
