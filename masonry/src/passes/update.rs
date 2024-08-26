@@ -158,7 +158,7 @@ fn update_disabled_for_widget(
     let _span = widget.item.make_trace_span().entered();
     let id = state.item.id;
 
-    let disabled = state.item.is_explicitly_disabled | parent_disabled;
+    let disabled = state.item.is_explicitly_disabled || parent_disabled;
     if !state.item.needs_update_disabled && disabled == state.item.is_disabled {
         return;
     }
