@@ -52,8 +52,6 @@ pub use widget_state::WidgetState;
 
 pub(crate) use widget_arena::WidgetArena;
 
-pub use sized_box::BackgroundBrush;
-
 use crate::{Affine, Size};
 
 // These are based on https://api.flutter.dev/flutter/painting/BoxFit-class.html

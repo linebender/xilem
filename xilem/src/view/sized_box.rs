@@ -4,6 +4,8 @@
 use std::marker::PhantomData;
 
 use masonry::widget;
+use vello::kurbo::RoundedRectRadii;
+use vello::peniko::{Brush, Color};
 use xilem_core::ViewMarker;
 
 use crate::{
@@ -24,6 +26,9 @@ where
         inner,
         height: None,
         width: None,
+        background: None,
+        border: None,
+        corner_radius: RoundedRectRadii::from_single_radius(0.0),
         phantom: PhantomData,
     }
 }
@@ -32,6 +37,9 @@ pub struct SizedBox<V, State, Action = ()> {
     inner: V,
     width: Option<f64>,
     height: Option<f64>,
+    background: Option<Brush>,
+    border: Option<BorderStyle>,
+    corner_radius: RoundedRectRadii,
     phantom: PhantomData<fn() -> (State, Action)>,
 }
 
@@ -77,6 +85,32 @@ impl<V, State, Action> SizedBox<V, State, Action> {
         self.height = Some(f64::INFINITY);
         self
     }
+
+    /// Builder-style method for setting the background for this widget.
+    ///
+    /// This can be passed anything which can be represented by a [`Brush`];
+    /// notably, it can be any [`Color`], any gradient, or an [`Image`].
+    ///
+    /// [`Image`]: vello::peniko::Image
+    pub fn background(mut self, brush: impl Into<Brush>) -> Self {
+        self.background = Some(brush.into());
+        self
+    }
+
+    /// Builder-style method for painting a border around the widget with a color and width.
+    pub fn border(mut self, color: impl Into<Color>, width: impl Into<f64>) -> Self {
+        self.border = Some(BorderStyle {
+            color: color.into(),
+            width: width.into(),
+        });
+        self
+    }
+
+    /// Builder style method for rounding off corners of this container by setting a corner radius
+    pub fn rounded(mut self, radius: impl Into<RoundedRectRadii>) -> Self {
+        self.corner_radius = radius.into();
+        self
+    }
 }
 
 impl<V, State, Action> ViewMarker for SizedBox<V, State, Action> {}
@@ -91,9 +125,16 @@ where
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let (child, child_state) = self.inner.build(ctx);
-        let widget = widget::SizedBox::new_pod(child.inner.boxed())
+        let mut widget = widget::SizedBox::new_pod(child.inner.boxed())
             .raw_width(self.width)
-            .raw_height(self.height);
+            .raw_height(self.height)
+            .rounded(self.corner_radius);
+        if let Some(background) = &self.background {
+            widget = widget.background(background.clone());
+        }
+        if let Some(border) = &self.border {
+            widget = widget.border(border.color, border.width);
+        }
         (Pod::new(widget), child_state)
     }
 
@@ -115,6 +156,21 @@ where
                 Some(height) => element.set_height(height),
                 None => element.unset_height(),
             }
+        }
+        if self.background != prev.background {
+            match &self.background {
+                Some(background) => element.set_background(background.clone()),
+                None => element.clear_background(),
+            }
+        }
+        if self.border != prev.border {
+            match &self.border {
+                Some(border) => element.set_border(border.color, border.width),
+                None => element.clear_border(),
+            }
+        }
+        if self.corner_radius != prev.corner_radius {
+            element.set_rounded(self.corner_radius);
         }
         {
             let mut child = element
@@ -147,4 +203,11 @@ where
     ) -> crate::MessageResult<Action> {
         self.inner.message(view_state, id_path, message, app_state)
     }
+}
+
+/// Something that can be used as the border for a widget.
+#[derive(PartialEq)]
+struct BorderStyle {
+    width: f64,
+    color: Color,
 }
