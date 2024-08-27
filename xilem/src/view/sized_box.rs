@@ -13,13 +13,6 @@ use crate::{
     Pod, ViewCtx, WidgetView,
 };
 
-/// Something that can be used as the border for a widget.
-#[derive(PartialEq)]
-struct BorderStyle {
-    width: f64,
-    color: Color,
-}
-
 /// A widget with predefined size.
 ///
 /// This widget forces its child to have a specific width and/or height (assuming values are permitted by
@@ -210,4 +203,11 @@ where
     ) -> crate::MessageResult<Action> {
         self.inner.message(view_state, id_path, message, app_state)
     }
+}
+
+/// Something that can be used as the border for a widget.
+#[derive(PartialEq)]
+struct BorderStyle {
+    width: f64,
+    color: Color,
 }

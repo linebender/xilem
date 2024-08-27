@@ -10,7 +10,7 @@ use vello::kurbo::{Affine, RoundedRectRadii};
 use vello::peniko::{BlendMode, Brush, Color, Fill};
 use vello::Scene;
 
-use crate::paint_scene_helpers::{fill_color, stroke};
+use crate::paint_scene_helpers::stroke;
 use crate::widget::{WidgetMut, WidgetPod};
 use crate::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
@@ -365,7 +365,13 @@ impl Widget for SizedBox {
 
             trace_span!("paint background").in_scope(|| {
                 scene.push_layer(BlendMode::default(), 1., Affine::IDENTITY, &panel);
-                paint(background, ctx, scene);
+                scene.fill(
+                    Fill::NonZero,
+                    Affine::IDENTITY,
+                    &*background,
+                    Some(Affine::IDENTITY),
+                    &ctx.size().to_rect(),
+                );
                 scene.pop_layer();
             });
         }
@@ -405,24 +411,6 @@ impl Widget for SizedBox {
 
     fn make_trace_span(&self) -> Span {
         trace_span!("SizedBox")
-    }
-}
-
-// --- BackgroundBrush ---
-
-/// Draw this brush into a provided [`PaintCtx`].
-fn paint(brush: &Brush, ctx: &mut PaintCtx, scene: &mut Scene) {
-    let bounds = ctx.size().to_rect();
-    match brush {
-        Brush::Solid(color) => fill_color(scene, &bounds, *color),
-        Brush::Gradient(grad) => scene.fill(
-            Fill::NonZero,
-            Affine::IDENTITY,
-            grad,
-            Some(Affine::IDENTITY),
-            &bounds,
-        ),
-        Brush::Image(image) => scene.draw_image(image, Affine::IDENTITY),
     }
 }
 
