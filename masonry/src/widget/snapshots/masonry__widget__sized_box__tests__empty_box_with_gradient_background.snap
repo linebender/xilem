@@ -1,0 +1,5 @@
+---
+source: masonry/src/widget/sized_box.rs
+expression: harness.root_widget()
+---
+SizedBox

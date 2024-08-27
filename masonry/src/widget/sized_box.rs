@@ -432,6 +432,7 @@ fn paint(brush: &Brush, ctx: &mut PaintCtx, scene: &mut Scene) {
 #[cfg(test)]
 mod tests {
     use insta::assert_debug_snapshot;
+    use vello::peniko::Gradient;
 
     use super::*;
     use crate::assert_render_snapshot;
@@ -500,12 +501,35 @@ mod tests {
         let widget = SizedBox::new(Label::new("hello"))
             .width(40.0)
             .height(40.0)
-            .background(Brush::Solid(Color::PLUM));
+            .background(Color::PLUM);
 
         let mut harness = TestHarness::create(widget);
 
         assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "label_box_with_solid_background");
+    }
+
+    #[test]
+    fn empty_box_with_gradient_background() {
+        let widget = SizedBox::empty()
+            .width(40.)
+            .height(40.)
+            .rounded(20.)
+            .border(Color::LIGHT_SKY_BLUE, 5.)
+            .background(
+                Gradient::new_sweep((30., 30.), 0., std::f32::consts::TAU).with_stops([
+                    (0., Color::WHITE),
+                    (0.25, Color::BLACK),
+                    (0.5, Color::RED),
+                    (0.75, Color::GREEN),
+                    (1., Color::WHITE),
+                ]),
+            );
+
+        let mut harness = TestHarness::create(widget);
+
+        assert_debug_snapshot!(harness.root_widget());
+        assert_render_snapshot!(harness, "empty_box_with_gradient_background");
     }
 
     // TODO - add screenshot tests for different brush types
