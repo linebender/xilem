@@ -7,7 +7,7 @@ use accesskit::Role;
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace, trace_span, warn, Span};
 use vello::kurbo::{Affine, RoundedRectRadii};
-use vello::peniko::{BlendMode, Color, Fill, Gradient};
+use vello::peniko::{BlendMode, Brush, Color, Fill};
 use vello::Scene;
 
 use crate::paint_scene_helpers::{fill_color, stroke};
@@ -18,16 +18,6 @@ use crate::{
 };
 
 // FIXME - Improve all doc in this module ASAP.
-
-/// Something that can be used as the background for a widget.
-#[non_exhaustive]
-#[allow(missing_docs)]
-#[allow(clippy::type_complexity)]
-pub enum BackgroundBrush {
-    Color(Color),
-    Gradient(Gradient),
-    PainterFn(Box<dyn FnMut(&mut PaintCtx)>),
-}
 
 /// Something that can be used as the border for a widget.
 struct BorderStyle {
@@ -51,7 +41,7 @@ pub struct SizedBox {
     child: Option<WidgetPod<Box<dyn Widget>>>,
     width: Option<f64>,
     height: Option<f64>,
-    background: Option<BackgroundBrush>,
+    background: Option<Brush>,
     border: Option<BorderStyle>,
     corner_radius: RoundedRectRadii,
 }
@@ -154,9 +144,11 @@ impl SizedBox {
 
     /// Builder-style method for setting the background for this widget.
     ///
-    /// This can be passed anything which can be represented by a [`BackgroundBrush`];
-    /// notably, it can be any [`Color`], any gradient, or a fully custom painter `FnMut`.
-    pub fn background(mut self, brush: impl Into<BackgroundBrush>) -> Self {
+    /// This can be passed anything which can be represented by a [`Brush`];
+    /// notably, it can be any [`Color`], any gradient, or an [`Image`].
+    ///
+    /// [`Image`]: vello::peniko::Image
+    pub fn background(mut self, brush: impl Into<Brush>) -> Self {
         self.background = Some(brush.into());
         self
     }
@@ -234,9 +226,11 @@ impl WidgetMut<'_, SizedBox> {
 
     /// Set the background for this widget.
     ///
-    /// This can be passed anything which can be represented by a [`BackgroundBrush`];
-    /// notably, it can be any [`Color`], any gradient, or a fully custom painter `FnMut`.
-    pub fn set_background(&mut self, brush: impl Into<BackgroundBrush>) {
+    /// This can be passed anything which can be represented by a [`Brush`];
+    /// notably, it can be any [`Color`], any gradient, or an [`Image`].
+    ///
+    /// [`Image`]: vello::peniko::Image
+    pub fn set_background(&mut self, brush: impl Into<Brush>) {
         self.widget.background = Some(brush.into());
         self.ctx.request_paint();
     }
@@ -371,7 +365,7 @@ impl Widget for SizedBox {
 
             trace_span!("paint background").in_scope(|| {
                 scene.push_layer(BlendMode::default(), 1., Affine::IDENTITY, &panel);
-                background.paint(ctx, scene);
+                paint(background, ctx, scene);
                 scene.pop_layer();
             });
         }
@@ -416,39 +410,19 @@ impl Widget for SizedBox {
 
 // --- BackgroundBrush ---
 
-impl BackgroundBrush {
-    /// Draw this brush into a provided [`PaintCtx`].
-    pub fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
-        let bounds = ctx.size().to_rect();
-        match self {
-            Self::Color(color) => fill_color(scene, &bounds, *color),
-            Self::Gradient(grad) => scene.fill(
-                Fill::NonZero,
-                Affine::IDENTITY,
-                &*grad,
-                Some(Affine::IDENTITY),
-                &bounds,
-            ),
-            Self::PainterFn(painter) => painter(ctx),
-        }
-    }
-}
-
-impl From<Color> for BackgroundBrush {
-    fn from(src: Color) -> BackgroundBrush {
-        BackgroundBrush::Color(src)
-    }
-}
-
-impl From<Gradient> for BackgroundBrush {
-    fn from(src: Gradient) -> BackgroundBrush {
-        BackgroundBrush::Gradient(src)
-    }
-}
-
-impl<Painter: FnMut(&mut PaintCtx) + 'static> From<Painter> for BackgroundBrush {
-    fn from(src: Painter) -> BackgroundBrush {
-        BackgroundBrush::PainterFn(Box::new(src))
+/// Draw this brush into a provided [`PaintCtx`].
+fn paint(brush: &Brush, ctx: &mut PaintCtx, scene: &mut Scene) {
+    let bounds = ctx.size().to_rect();
+    match brush {
+        Brush::Solid(color) => fill_color(scene, &bounds, *color),
+        Brush::Gradient(grad) => scene.fill(
+            Fill::NonZero,
+            Affine::IDENTITY,
+            grad,
+            Some(Affine::IDENTITY),
+            &bounds,
+        ),
+        Brush::Image(image) => scene.draw_image(image, Affine::IDENTITY),
     }
 }
 
@@ -518,7 +492,20 @@ mod tests {
         let mut harness = TestHarness::create(widget);
 
         assert_debug_snapshot!(harness.root_widget());
-        assert_render_snapshot!(harness, "label_box_no_size");
+        assert_render_snapshot!(harness, "label_box_with_size");
+    }
+
+    #[test]
+    fn label_box_with_solid_background() {
+        let widget = SizedBox::new(Label::new("hello"))
+            .width(40.0)
+            .height(40.0)
+            .background(Brush::Solid(Color::PLUM));
+
+        let mut harness = TestHarness::create(widget);
+
+        assert_debug_snapshot!(harness.root_widget());
+        assert_render_snapshot!(harness, "label_box_with_solid_background");
     }
 
     // TODO - add screenshot tests for different brush types
