@@ -364,15 +364,13 @@ impl Widget for SizedBox {
             let panel = ctx.size().to_rounded_rect(corner_radius);
 
             trace_span!("paint background").in_scope(|| {
-                scene.push_layer(BlendMode::default(), 1., Affine::IDENTITY, &panel);
                 scene.fill(
                     Fill::NonZero,
                     Affine::IDENTITY,
                     &*background,
                     Some(Affine::IDENTITY),
-                    &ctx.size().to_rect(),
+                    &panel,
                 );
-                scene.pop_layer();
             });
         }
 
