@@ -9,7 +9,7 @@ use std::time::Duration;
 use xilem::{
     tokio::time,
     view::{
-        button, button_any_pointer, checkbox, flex, label, prose, task, textbox, Axis,
+        button, button_any_pointer, checkbox, flex, label, portal, prose, task, textbox, Axis,
         FlexExt as _, FlexSpacer,
     },
     Color, EventLoop, EventLoopBuilder, TextAlignment, WidgetView, Xilem,
@@ -60,7 +60,7 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> {
     });
 
     fork(
-        flex((
+        portal(flex((
             flex((
                 label("Label")
                     .brush(Color::REBECCA_PURPLE)
@@ -91,7 +91,7 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> {
             button("Decrement", |data: &mut AppData| data.count -= 1),
             button("Reset", |data: &mut AppData| data.count = 0),
             flex((fizz_buzz_flex_sequence, flex_sequence)).direction(axis),
-        )),
+        ))),
         // The following `task` view only exists whilst the example is in the "active" state, so
         // the updates it performs will only be running whilst we are in that state.
         data.active.then(|| {

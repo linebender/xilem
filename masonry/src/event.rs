@@ -218,6 +218,13 @@ pub struct AccessEvent {
 }
 
 #[derive(Debug, Clone)]
+pub enum PointerType {
+    Mouse,
+    Touch,
+    Pen,
+}
+
+#[derive(Debug, Clone)]
 pub struct PointerState {
     // TODO
     // pub device_id: DeviceId,
@@ -228,6 +235,7 @@ pub struct PointerState {
     pub count: u8,
     pub focus: bool,
     pub force: Option<Force>,
+    pub pointer_type: PointerType,
 }
 
 #[derive(Debug, Clone)]
@@ -487,6 +495,7 @@ impl PointerState {
             count: 0,
             focus: false,
             force: None,
+            pointer_type: PointerType::Mouse,
         }
     }
 }
