@@ -144,17 +144,13 @@ impl Widget for Align {
         my_size
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
-        self.child.paint(ctx, scene);
-    }
+    fn paint(&mut self, _ctx: &mut PaintCtx, _scene: &mut Scene) {}
 
     fn accessibility_role(&self) -> Role {
         Role::GenericContainer
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx) {
-        self.child.accessibility(ctx);
-    }
+    fn accessibility(&mut self, _ctx: &mut AccessCtx) {}
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         smallvec![self.child.id()]

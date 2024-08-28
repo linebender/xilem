@@ -383,21 +383,13 @@ impl Widget for SizedBox {
                 .to_rounded_rect(corner_radius);
             stroke(scene, &border_rect, border.color, border_width);
         };
-
-        if let Some(ref mut child) = self.child {
-            child.paint(ctx, scene);
-        }
     }
 
     fn accessibility_role(&self) -> Role {
         Role::GenericContainer
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx) {
-        if let Some(child) = self.child.as_mut() {
-            child.accessibility(ctx);
-        }
-    }
+    fn accessibility(&mut self, _ctx: &mut AccessCtx) {}
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         if let Some(child) = &self.child {

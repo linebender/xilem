@@ -16,9 +16,6 @@ fn make_parent_widget<W: Widget>(child: W) -> ModularWidget<WidgetPod<W>> {
             ctx.place_child(child, Point::ZERO);
             size
         })
-        .paint_fn(move |child, ctx, scene| {
-            child.paint(ctx, scene);
-        })
         .children_fn(|child| smallvec![child.id()])
 }
 

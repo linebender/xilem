@@ -223,9 +223,7 @@ impl Widget for CalcButton {
         size
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
-        self.inner.paint(ctx, scene);
-    }
+    fn paint(&mut self, _ctx: &mut PaintCtx, _scene: &mut Scene) {}
 
     fn accessibility_role(&self) -> Role {
         Role::Button
@@ -240,8 +238,6 @@ impl Widget for CalcButton {
         // ctx.current_node().set_name(name);
         ctx.current_node()
             .set_default_action_verb(DefaultActionVerb::Click);
-
-        self.inner.accessibility(ctx);
     }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {

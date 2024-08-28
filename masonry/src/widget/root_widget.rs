@@ -56,17 +56,13 @@ impl<W: Widget> Widget for RootWidget<W> {
         size
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
-        self.pod.paint(ctx, scene);
-    }
+    fn paint(&mut self, _ctx: &mut PaintCtx, _scene: &mut Scene) {}
 
     fn accessibility_role(&self) -> Role {
         Role::Window
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx) {
-        self.pod.accessibility(ctx);
-    }
+    fn accessibility(&mut self, _ctx: &mut AccessCtx) {}
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         smallvec![self.pod.id()]

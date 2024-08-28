@@ -183,8 +183,6 @@ impl Widget for Button {
             UnitPoint::TOP,
             UnitPoint::BOTTOM,
         );
-
-        self.label.paint(ctx, scene);
     }
 
     fn accessibility_role(&self) -> Role {
@@ -202,8 +200,6 @@ impl Widget for Button {
         }
         ctx.current_node()
             .set_default_action_verb(DefaultActionVerb::Click);
-
-        self.label.accessibility(ctx);
     }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {

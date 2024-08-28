@@ -424,10 +424,6 @@ impl<W: Widget> Widget for Portal<W> {
             .push_child(self.scrollbar_horizontal.id().into());
         ctx.current_node()
             .push_child(self.scrollbar_vertical.id().into());
-
-        self.child.accessibility(ctx);
-        self.scrollbar_horizontal.accessibility(ctx);
-        self.scrollbar_vertical.accessibility(ctx);
     }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
