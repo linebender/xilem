@@ -847,6 +847,12 @@ impl Widget for Flex {
             tracing::warn!("A child of Flex is flex, but Flex is unbounded.");
         }
 
+        if !self.children.is_empty() {
+            // If we have at least one child, the last child added `gap` to the total major non-flex amount, when it shouldn't have.
+            // This means that the
+            major -= gap;
+        }
+
         if flex_sum > 0.0 {
             major = total_major;
         }
