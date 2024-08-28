@@ -9,7 +9,7 @@ use std::time::Duration;
 use xilem::{
     tokio::time,
     view::{
-        button, button_any_pointer, checkbox, flex, label, prose, task, textbox, Axis,
+        button, button_any_pointer, checkbox, flex, label, portal, prose, task, textbox, Axis,
         FlexExt as _, FlexSpacer,
     },
     Color, EventLoop, EventLoopBuilder, TextAlignment, WidgetView, Xilem,
