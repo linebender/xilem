@@ -17,17 +17,21 @@ use crate::{
     LifeCycleCtx, PaintCtx, PointerEvent, StatusChange, TextEvent, Widget, WidgetId, WidgetPod,
 };
 
+struct FlickGesture {}
+
 // TODO - refactor - see https://github.com/linebender/xilem/issues/366
 // TODO - rename "Portal" to "ScrollPortal"?
 // Conceptually, a Portal is a Widget giving a restricted view of a child widget
 // Imagine a very large widget, and a rect that represents the part of the widget we see
-pub struct Portal<W: Widget> {
-    child: WidgetPod<W>,
+pub struct Portal {
+    child: WidgetPod<Box<dyn Widget>>,
     // TODO - differentiate between the "explicit" viewport pos determined
     // by user input, and the computed viewport pos that may change based
     // on re-layouts
     // TODO - rename
     viewport_pos: Point,
+    #[allow(dead_code)]
+    flick_gesture: Option<FlickGesture>,
     // TODO - test how it looks like
     constrain_horizontal: bool,
     constrain_vertical: bool,
@@ -39,11 +43,28 @@ pub struct Portal<W: Widget> {
 }
 
 // --- MARK: BUILDERS ---
-impl<W: Widget> Portal<W> {
-    pub fn new(child: W) -> Self {
+impl Portal {
+    pub fn new(child: impl Widget) -> Self {
         Portal {
-            child: WidgetPod::new(child),
+            child: WidgetPod::new(child).boxed(),
             viewport_pos: Point::ORIGIN,
+            flick_gesture: None,
+            constrain_horizontal: false,
+            constrain_vertical: false,
+            must_fill: false,
+            // TODO - remove
+            scrollbar_horizontal: WidgetPod::new(ScrollBar::new(Axis::Horizontal, 1.0, 1.0)),
+            scrollbar_horizontal_visible: false,
+            scrollbar_vertical: WidgetPod::new(ScrollBar::new(Axis::Vertical, 1.0, 1.0)),
+            scrollbar_vertical_visible: false,
+        }
+    }
+
+    pub fn new_pod(child: WidgetPod<Box<dyn Widget>>) -> Self {
+        Portal {
+            child,
+            viewport_pos: Point::ORIGIN,
+            flick_gesture: None,
             constrain_horizontal: false,
             constrain_vertical: false,
             must_fill: false,
@@ -124,7 +145,7 @@ fn compute_pan_range(mut viewport: Range<f64>, target: Range<f64>) -> Range<f64>
     viewport
 }
 
-impl<W: Widget> Portal<W> {
+impl Portal {
     // TODO - rename
     fn set_viewport_pos_raw(&mut self, portal_size: Size, content_size: Size, pos: Point) -> bool {
         let viewport_max_pos =
@@ -144,8 +165,8 @@ impl<W: Widget> Portal<W> {
 }
 
 // --- MARK: WIDGETMUT ---
-impl<W: Widget> WidgetMut<'_, Portal<W>> {
-    pub fn child_mut(&mut self) -> WidgetMut<'_, W> {
+impl WidgetMut<'_, Portal> {
+    pub fn child_mut(&mut self) -> WidgetMut<'_, Box<dyn Widget>> {
         self.ctx.get_mut(&mut self.widget.child)
     }
 
@@ -237,9 +258,9 @@ impl<W: Widget> WidgetMut<'_, Portal<W>> {
 }
 
 // --- MARK: IMPL WIDGET ---
-impl<W: Widget> Widget for Portal<W> {
+impl Widget for Portal {
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
-        const SCROLLING_SPEED: f64 = 10.0;
+        const SCROLLING_SPEED: f64 = 120.0;
 
         let portal_size = ctx.size();
         let content_size = ctx.get_raw_ref(&mut self.child).ctx().layout_rect().size();
@@ -401,7 +422,7 @@ impl<W: Widget> Widget for Portal<W> {
     fn accessibility(&mut self, ctx: &mut AccessCtx) {
         // TODO - Double check this code
         // Not sure about these values
-        if false {
+        if true {
             ctx.current_node().set_scroll_x(self.viewport_pos.x);
             ctx.current_node().set_scroll_y(self.viewport_pos.y);
             ctx.current_node().set_scroll_x_min(0.0);
@@ -420,10 +441,14 @@ impl<W: Widget> Widget for Portal<W> {
         }
 
         ctx.current_node().set_clips_children();
-        ctx.current_node()
-            .push_child(self.scrollbar_horizontal.id().into());
-        ctx.current_node()
-            .push_child(self.scrollbar_vertical.id().into());
+        // if self.scrollbar_horizontal_visible {
+        //     ctx.current_node()
+        //         .push_child(self.scrollbar_horizontal.id().into());
+        // }
+        // if self.scrollbar_vertical_visible {
+        //     ctx.current_node()
+        //         .push_child(self.scrollbar_vertical.id().into());
+        // }
     }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
@@ -497,7 +522,7 @@ mod tests {
         assert_render_snapshot!(harness, "button_list_no_scroll");
 
         harness.edit_root_widget(|mut portal| {
-            let mut portal = portal.downcast::<Portal<Flex>>();
+            let mut portal = portal.downcast::<Portal>();
             portal.set_viewport_pos(Point::new(0.0, 130.0))
         });
 
@@ -505,7 +530,7 @@ mod tests {
 
         let item_3_rect = harness.get_widget(item_3_id).state().layout_rect();
         harness.edit_root_widget(|mut portal| {
-            let mut portal = portal.downcast::<Portal<Flex>>();
+            let mut portal = portal.downcast::<Portal>();
             portal.pan_viewport_to(item_3_rect);
         });
 
@@ -513,7 +538,7 @@ mod tests {
 
         let item_13_rect = harness.get_widget(item_13_id).state().layout_rect();
         harness.edit_root_widget(|mut portal| {
-            let mut portal = portal.downcast::<Portal<Flex>>();
+            let mut portal = portal.downcast::<Portal>();
             portal.pan_viewport_to(item_13_rect);
         });
 

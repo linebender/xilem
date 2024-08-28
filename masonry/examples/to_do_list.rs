@@ -23,9 +23,10 @@ impl AppDriver for Driver {
     fn on_action(&mut self, ctx: &mut DriverCtx<'_>, _widget_id: WidgetId, action: Action) {
         match action {
             Action::ButtonPressed(_) => {
-                let mut root: WidgetMut<RootWidget<Portal<Flex>>> = ctx.get_root();
-                let mut root = root.get_element();
-                let mut flex = root.child_mut();
+                let mut root: WidgetMut<RootWidget<Portal>> = ctx.get_root();
+                let mut element = root.get_element();
+                let mut root_mut = element.child_mut();
+                let mut flex = root_mut.downcast::<Flex>();
                 flex.add_child(Label::new(self.next_task.clone()));
 
                 let mut first_row = flex.child_mut(0).unwrap();

@@ -4,7 +4,7 @@
 // On Windows platform, don't show a console when opening the app.
 #![windows_subsystem = "windows"]
 
-use xilem::view::{button, checkbox, flex, textbox, Axis};
+use xilem::view::{button, checkbox, flex, portal, textbox, Axis};
 use xilem::{EventLoop, WidgetView, Xilem};
 
 struct Task {
@@ -66,7 +66,7 @@ fn app_logic(task_list: &mut TaskList) -> impl WidgetView<TaskList> {
         })
         .collect::<Vec<_>>();
 
-    flex((first_line, tasks))
+    portal(flex((first_line, tasks)))
 }
 
 fn main() {
