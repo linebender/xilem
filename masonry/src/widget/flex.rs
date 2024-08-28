@@ -847,6 +847,13 @@ impl Widget for Flex {
             tracing::warn!("A child of Flex is flex, but Flex is unbounded.");
         }
 
+        if !self.children.is_empty() {
+            // If we have at least one child, the last child added `gap` to `major`, which means that `major` is
+            // not the total size of the flex in the major axis, it's instead where the "next widget" will be placed.
+            // However, for the rest of this value, we need the total size of the widget in the major axis.
+            major -= gap;
+        }
+
         if flex_sum > 0.0 {
             major = total_major;
         }
