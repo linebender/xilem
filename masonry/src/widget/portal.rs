@@ -41,13 +41,17 @@ pub struct Portal<W: Widget> {
 // --- MARK: BUILDERS ---
 impl<W: Widget> Portal<W> {
     pub fn new(child: W) -> Self {
+        Self::new_pod(WidgetPod::new(child))
+    }
+
+    pub fn new_pod(child: WidgetPod<W>) -> Self {
         Portal {
-            child: WidgetPod::new(child),
+            child,
             viewport_pos: Point::ORIGIN,
             constrain_horizontal: false,
             constrain_vertical: false,
             must_fill: false,
-            // TODO - remove
+            // TODO - remove (TODO: why?)
             scrollbar_horizontal: WidgetPod::new(ScrollBar::new(Axis::Horizontal, 1.0, 1.0)),
             scrollbar_horizontal_visible: false,
             scrollbar_vertical: WidgetPod::new(ScrollBar::new(Axis::Vertical, 1.0, 1.0)),

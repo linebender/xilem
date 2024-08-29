@@ -30,3 +30,6 @@ pub use prose::*;
 
 mod textbox;
 pub use textbox::*;
+
+mod portal;
+pub use portal::*;

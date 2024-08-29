@@ -13,7 +13,8 @@ use time::{error::IndeterminateOffset, macros::format_description, OffsetDateTim
 use winit::error::EventLoopError;
 use xilem::{
     view::{
-        button, flex, label, prose, sized_box, task, variable_label, Axis, FlexExt, FlexSpacer,
+        button, flex, label, portal, prose, sized_box, task, variable_label, Axis, FlexExt,
+        FlexSpacer,
     },
     Color, EventLoop, EventLoopBuilder, WidgetView, Xilem,
 };
@@ -43,8 +44,11 @@ fn app_logic(data: &mut Clocks) -> impl WidgetView<Clocks> {
         FlexSpacer::Fixed(40.),
         local_time(data),
         controls(),
-        // TODO: When we get responsive layouts, move this into a two-column view.
-        TIMEZONES.iter().map(|it| it.view(data)).collect::<Vec<_>>(),
+        portal(flex(
+            // TODO: When we get responsive layouts, move this into a two-column view on desktop.
+            TIMEZONES.iter().map(|it| it.view(data)).collect::<Vec<_>>(),
+        ))
+        .flex(1.),
     ));
     fork(
         view,
