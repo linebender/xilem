@@ -128,7 +128,7 @@ impl Widget for ScrollBar {
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
         match event {
             PointerEvent::PointerDown(_, state) => {
-                ctx.set_active(true);
+                ctx.capture_pointer();
 
                 let cursor_min_length = theme::SCROLLBAR_MIN_SIZE;
                 let cursor_rect = self.get_cursor_rect(ctx.size(), cursor_min_length);
@@ -162,7 +162,7 @@ impl Widget for ScrollBar {
             }
             PointerEvent::PointerUp(_, _) => {
                 self.grab_anchor = None;
-                ctx.set_active(false);
+                ctx.release_pointer();
                 ctx.request_paint();
             }
             _ => {}

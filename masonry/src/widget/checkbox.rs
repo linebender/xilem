@@ -67,19 +67,19 @@ impl Widget for Checkbox {
         match event {
             PointerEvent::PointerDown(_, _) => {
                 if !ctx.is_disabled() {
-                    ctx.set_active(true);
+                    ctx.capture_pointer();
                     ctx.request_paint();
                     trace!("Checkbox {:?} pressed", ctx.widget_id());
                 }
             }
             PointerEvent::PointerUp(_, _) => {
-                if ctx.is_active() && ctx.is_hot() && !ctx.is_disabled() {
+                if ctx.has_pointer_capture() && ctx.is_hot() && !ctx.is_disabled() {
                     self.checked = !self.checked;
                     ctx.submit_action(Action::CheckboxChecked(self.checked));
                     trace!("Checkbox {:?} released", ctx.widget_id());
                 }
                 ctx.request_paint();
-                ctx.set_active(false);
+                ctx.release_pointer();
             }
             _ => (),
         }

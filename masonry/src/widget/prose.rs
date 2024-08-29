@@ -154,7 +154,7 @@ impl Widget for Prose {
                         ctx.request_layout();
                         ctx.request_paint();
                         ctx.request_focus();
-                        ctx.set_active(true);
+                        ctx.capture_pointer();
                     }
                 }
             }
@@ -162,7 +162,9 @@ impl Widget for Prose {
                 if !ctx.is_disabled() {
                     // TODO: Set cursor if over link
                     ctx.set_cursor(&CursorIcon::Text);
-                    if ctx.is_active() && self.text_layout.pointer_move(inner_origin, state) {
+                    if ctx.has_pointer_capture()
+                        && self.text_layout.pointer_move(inner_origin, state)
+                    {
                         // We might have changed text colours, so we need to re-request a layout
                         ctx.request_layout();
                         ctx.request_paint();
@@ -171,13 +173,13 @@ impl Widget for Prose {
             }
             PointerEvent::PointerUp(button, state) => {
                 // TODO: Follow link (if not now dragging ?)
-                if !ctx.is_disabled() && ctx.is_active() {
+                if !ctx.is_disabled() && ctx.has_pointer_capture() {
                     self.text_layout.pointer_up(inner_origin, state, *button);
                 }
-                ctx.set_active(false);
+                ctx.release_pointer();
             }
             PointerEvent::PointerLeave(_state) => {
-                ctx.set_active(false);
+                ctx.release_pointer();
             }
             _ => {}
         }

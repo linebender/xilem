@@ -81,23 +81,23 @@ impl Widget for Button {
         match event {
             PointerEvent::PointerDown(_, _) => {
                 if !ctx.is_disabled() {
-                    ctx.set_active(true);
+                    ctx.capture_pointer();
                     ctx.request_paint();
                     trace!("Button {:?} pressed", ctx.widget_id());
                 }
             }
             PointerEvent::PointerUp(button, _) => {
-                if ctx.is_active() && ctx.is_hot() && !ctx.is_disabled() {
+                if ctx.has_pointer_capture() && ctx.is_hot() && !ctx.is_disabled() {
                     ctx.submit_action(Action::ButtonPressed(*button));
                     trace!("Button {:?} released", ctx.widget_id());
                 }
                 ctx.request_paint();
-                ctx.set_active(false);
+                ctx.release_pointer();
             }
             PointerEvent::PointerLeave(_) => {
                 // If the screen was locked whilst holding down the mouse button, we don't get a `PointerUp`
                 // event, but should no longer be active
-                ctx.set_active(false);
+                ctx.release_pointer();
             }
             _ => (),
         }
@@ -151,7 +151,7 @@ impl Widget for Button {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
-        let is_active = ctx.is_active() && !ctx.is_disabled();
+        let is_active = ctx.has_pointer_capture() && !ctx.is_disabled();
         let is_hot = ctx.is_hot();
         let size = ctx.size();
         let stroke_width = theme::BUTTON_BORDER_WIDTH;
