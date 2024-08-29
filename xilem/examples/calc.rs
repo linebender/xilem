@@ -24,7 +24,7 @@ impl MathOperator {
     fn as_str(&self) -> &'static str {
         match self {
             MathOperator::Add => "+",
-            MathOperator::Subtract => "-",
+            MathOperator::Subtract => "\u{2212}",
             MathOperator::Multiply => "×",
             MathOperator::Divide => "÷",
         }
