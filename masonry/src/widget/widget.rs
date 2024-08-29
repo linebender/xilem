@@ -14,9 +14,10 @@ use vello::Scene;
 
 use crate::contexts::ComposeCtx;
 use crate::event::{AccessEvent, PointerEvent, StatusChange, TextEvent};
+use crate::widget::WidgetRef;
 use crate::{
     AccessCtx, AsAny, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
-    RegisterCtx, Size,
+    Point, RegisterCtx, Size,
 };
 
 /// A unique identifier for a single [`Widget`].
@@ -177,20 +178,29 @@ pub trait Widget: AsAny {
 
     // --- Auto-generated implementations ---
 
-    // FIXME
-    #[cfg(FALSE)]
     /// Return which child, if any, has the given `pos` in its layout rect.
     ///
-    /// The child return is a direct child, not eg a grand-child. The position is in
+    /// The child returned is a direct child, not eg a grand-child. The position is in
     /// relative coordinates. (Eg `(0,0)` is the top-left corner of `self`).
     ///
     /// Has a default implementation, that can be overridden to search children more
     /// efficiently.
-    fn get_child_at_pos(&self, pos: Point) -> Option<WidgetRef<'_, dyn Widget>> {
-        // layout_rect() is in parent coordinate space
-        self.children()
-            .into_iter()
-            .find(|child| child.state().layout_rect().contains(pos))
+    ///
+    /// The child widget references in `children` are in the same order as returned by
+    /// [`Self::children_ids`].
+    fn get_child_at_pos<'w>(
+        &self,
+        children: &[WidgetRef<'w, dyn Widget>],
+        pos: Point,
+    ) -> Option<WidgetRef<'w, dyn Widget>> {
+        children
+            .iter()
+            // TODO: currently assumes `Self::children_ids` is in increasing "z-order". Picks the
+            // last child in case of overlapping children. Is this the desired behavior?
+            .rev()
+            // A child's layout_rect() is in the parent's coordinate space.
+            .find(|child| !child.widget.skip_pointer() && child.state().layout_rect().contains(pos))
+            .copied()
     }
 
     /// Get the (verbose) type name of the widget for debugging purposes.
@@ -368,6 +378,14 @@ impl Widget for Box<dyn Widget> {
 
     fn get_cursor(&self) -> CursorIcon {
         self.deref().get_cursor()
+    }
+
+    fn get_child_at_pos<'w>(
+        &self,
+        children: &[WidgetRef<'w, dyn Widget>],
+        pos: Point,
+    ) -> Option<WidgetRef<'w, dyn Widget>> {
+        self.deref().get_child_at_pos(children, pos)
     }
 
     fn as_any(&self) -> &dyn Any {

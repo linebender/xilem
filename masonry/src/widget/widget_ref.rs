@@ -175,33 +175,32 @@ impl<'w> WidgetRef<'w, dyn Widget> {
     ///
     /// **pos** - the position in local coordinates (zero being the top-left of the
     /// inner widget).
-    pub fn find_widget_at_pos(&self, pos: Point) -> Option<WidgetRef<'w, dyn Widget>> {
+    pub fn find_widget_at_pos(&self, mut pos: Point) -> Option<WidgetRef<'w, dyn Widget>> {
         let mut innermost_widget: WidgetRef<'w, dyn Widget> = *self;
 
         if !self.state().layout_rect().contains(pos) {
             return None;
         }
 
-        // TODO - Rewrite more elegantly
         loop {
             if let Some(clip) = innermost_widget.state().clip {
-                let relative_pos = pos.to_vec2() - innermost_widget.state().window_origin.to_vec2();
-                // If the widget has a clip, the point must be inside
-                // else we don't iterate over children.
-                if !clip.contains(relative_pos.to_point()) {
+                // If the widget has a clip, the point must be inside, else we don't iterate over
+                // children.
+                if !clip.contains(pos) {
                     break;
                 }
             }
-            // TODO - Use Widget::get_child_at_pos method
-            if let Some(child) = innermost_widget.children().into_iter().rev().find(|child| {
-                !child.state().is_stashed
-                    && !child.widget.skip_pointer()
-                    && child.state().window_layout_rect().contains(pos)
-            }) {
+
+            if let Some(child) = innermost_widget
+                .widget
+                .get_child_at_pos(&innermost_widget.children(), pos)
+            {
                 innermost_widget = child;
             } else {
                 break;
             }
+
+            pos -= innermost_widget.state().layout_rect().origin().to_vec2();
         }
 
         Some(innermost_widget)
