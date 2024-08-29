@@ -201,6 +201,9 @@ impl Widget for ProgressBar {
 
     fn accessibility(&mut self, ctx: &mut AccessCtx) {
         ctx.current_node().set_value(self.value_accessibility());
+        if let Some(value) = self.progress {
+            ctx.current_node().set_numeric_value(value * 100.0);
+        }
     }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
