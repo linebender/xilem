@@ -21,14 +21,25 @@ checksum = "c71b1793ee61086797f5c80b6efa2b8ffa6d5dd703f118545808a7f2e27f7046"
 [[package]]
 name = "accesskit"
 version = "0.16.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e4700bdc115b306d6c43381c344dc307f03b7f0460c304e4892c309930322bd7"
+source = "git+https://github.com/AccessKit/accesskit.git?branch=android-basics#8cff0cfbf95ffd8a39be5acf4a471cd35f579751"
+
+[[package]]
+name = "accesskit_android"
+version = "0.1.0"
+source = "git+https://github.com/AccessKit/accesskit.git?branch=android-basics#8cff0cfbf95ffd8a39be5acf4a471cd35f579751"
+dependencies = [
+ "accesskit",
+ "accesskit_consumer",
+ "jni",
+ "log",
+ "once_cell",
+ "paste",
+]
 
 [[package]]
 name = "accesskit_atspi_common"
 version = "0.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a1de72dc7093910a1284cef784b6b143bab0a34d67f6178e4fc3aaaf29a09f8b"
+source = "git+https://github.com/AccessKit/accesskit.git?branch=android-basics#8cff0cfbf95ffd8a39be5acf4a471cd35f579751"
 dependencies = [
  "accesskit",
  "accesskit_consumer",
@@ -41,8 +52,7 @@ dependencies = [
 [[package]]
 name = "accesskit_consumer"
 version = "0.24.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fe3a07a32ab5837ad83db3230ac490c8504c2cd5b90ac8c00db6535f6ed65d0b"
+source = "git+https://github.com/AccessKit/accesskit.git?branch=android-basics#8cff0cfbf95ffd8a39be5acf4a471cd35f579751"
 dependencies = [
  "accesskit",
  "immutable-chunkmap",
@@ -51,8 +61,7 @@ dependencies = [
 [[package]]
 name = "accesskit_macos"
 version = "0.17.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a189d159c153ae0fce5f9eefdcfec4a27885f453ce5ef0ccf078f72a73c39d34"
+source = "git+https://github.com/AccessKit/accesskit.git?branch=android-basics#8cff0cfbf95ffd8a39be5acf4a471cd35f579751"
 dependencies = [
  "accesskit",
  "accesskit_consumer",
@@ -65,8 +74,7 @@ dependencies = [
 [[package]]
 name = "accesskit_unix"
 version = "0.12.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b76c448cfd96d16131a9ad3ab786d06951eb341cdac1db908978ab010245a19d"
+source = "git+https://github.com/AccessKit/accesskit.git?branch=android-basics#8cff0cfbf95ffd8a39be5acf4a471cd35f579751"
 dependencies = [
  "accesskit",
  "accesskit_atspi_common",
@@ -83,8 +91,7 @@ dependencies = [
 [[package]]
 name = "accesskit_windows"
 version = "0.22.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "682d8c4fb425606f97408e7577793f32e96310b646fa77662eb4216293eddc7f"
+source = "git+https://github.com/AccessKit/accesskit.git?branch=android-basics#8cff0cfbf95ffd8a39be5acf4a471cd35f579751"
 dependencies = [
  "accesskit",
  "accesskit_consumer",
@@ -96,10 +103,10 @@ dependencies = [
 [[package]]
 name = "accesskit_winit"
 version = "0.22.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9afbd6d598b7c035639ad2b664aa0edc94c93dc1fc3ebb4b40d8a95fcd43ffac"
+source = "git+https://github.com/AccessKit/accesskit.git?branch=android-basics#8cff0cfbf95ffd8a39be5acf4a471cd35f579751"
 dependencies = [
  "accesskit",
+ "accesskit_android",
  "accesskit_macos",
  "accesskit_unix",
  "accesskit_windows",
@@ -864,7 +871,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b28bfe653d79bd16c77f659305b195b82bb5ce0c0eb2a4846b82ddbd77586813"
 dependencies = [
  "bitflags 2.6.0",
- "libloading 0.8.5",
+ "libloading 0.7.4",
  "winapi",
 ]
 
@@ -921,7 +928,7 @@ version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "330c60081dcc4c72131f8eb70510f1ac07223e5d4163db481a04a0befcffa412"
 dependencies = [
- "libloading 0.8.5",
+ "libloading 0.7.4",
 ]
 
 [[package]]
@@ -1525,7 +1532,7 @@ dependencies = [
  "bitflags 2.6.0",
  "com",
  "libc",
- "libloading 0.8.5",
+ "libloading 0.7.4",
  "thiserror",
  "widestring",
  "winapi",
@@ -2239,7 +2246,7 @@ version = "0.7.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "af1844ef2428cc3e1cb900be36181049ef3d3193c63e43026cfe202983b27a56"
 dependencies = [
- "proc-macro-crate 3.1.0",
+ "proc-macro-crate",
  "proc-macro2",
  "quote",
  "syn 2.0.72",
@@ -2723,16 +2730,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f4c021e1093a56626774e81216a4ce732a735e5bad4868a03f3ed65ca0c3919"
 dependencies = [
  "once_cell",
- "toml_edit 0.19.15",
-]
-
-[[package]]
-name = "proc-macro-crate"
-version = "3.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6d37c51ca738a55da99dc0c4a34860fd675453b8b36209178c2249bb13651284"
-dependencies = [
- "toml_edit 0.21.1",
+ "toml_edit",
 ]
 
 [[package]]
@@ -3667,17 +3665,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "toml_edit"
-version = "0.21.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6a8534fd7f78b5405e860340ad6575217ce99f38d4d5c8f2442cb5ecb50090e1"
-dependencies = [
- "indexmap",
- "toml_datetime",
- "winnow",
-]
-
-[[package]]
 name = "tower"
 version = "0.4.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4244,7 +4231,7 @@ dependencies = [
  "js-sys",
  "khronos-egl",
  "libc",
- "libloading 0.8.5",
+ "libloading 0.7.4",
  "log",
  "metal",
  "naga",
@@ -4304,7 +4291,7 @@ version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf221c93e13a30d793f7645a0e7762c55d169dbb0a49671918a2319d289b10bb"
 dependencies = [
- "windows-sys 0.59.0",
+ "windows-sys 0.48.0",
 ]
 
 [[package]]
@@ -4438,15 +4425,6 @@ name = "windows-sys"
 version = "0.52.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "282be5f36a8ce781fad8c8ae18fa3f9beff57ec1b52cb3de0789201425d9a33d"
-dependencies = [
- "windows-targets 0.52.6",
-]
-
-[[package]]
-name = "windows-sys"
-version = "0.59.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1e38bc4d79ed67fd075bcc251a1c39b32a1776bbe92e5bef1f0bf1f8c531853b"
 dependencies = [
  "windows-targets 0.52.6",
 ]
@@ -4631,9 +4609,9 @@ checksum = "589f6da84c646204747d1270a2a5661ea66ed1cced2631d546fdfb155959f9ec"
 
 [[package]]
 name = "winit"
-version = "0.30.4"
+version = "0.30.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4225ddd8ab67b8b59a2fee4b34889ebf13c0460c1c3fa297c58e21eb87801b33"
+checksum = "0be9e76a1f1077e04a411f0b989cbd3c93339e1771cb41e71ac4aee95bfd2c67"
 dependencies = [
  "ahash",
  "android-activity",
@@ -4900,7 +4878,7 @@ version = "3.15.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7131497b0f887e8061b430c530240063d33bf9455fa34438f388a245da69e0a5"
 dependencies = [
- "proc-macro-crate 1.3.1",
+ "proc-macro-crate",
  "proc-macro2",
  "quote",
  "regex",
@@ -5030,7 +5008,7 @@ version = "3.15.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "37c24dc0bed72f5f90d1f8bb5b07228cbf63b3c6e9f82d82559d4bae666e7ed9"
 dependencies = [
- "proc-macro-crate 1.3.1",
+ "proc-macro-crate",
  "proc-macro2",
  "quote",
  "syn 1.0.109",
