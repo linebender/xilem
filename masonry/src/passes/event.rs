@@ -8,7 +8,8 @@ use winit::keyboard::{KeyCode, PhysicalKey};
 use crate::passes::merge_state_up;
 use crate::render_root::RenderRoot;
 use crate::{
-    AccessEvent, EventCtx, Handled, PointerEvent, TextEvent, Widget, WidgetId, WidgetState,
+    AccessEvent, EventCtx, Handled, PointerEvent, TextEvent, TouchEvent, Widget, WidgetId,
+    WidgetState,
 };
 
 fn get_target_widget(
@@ -117,6 +118,58 @@ pub(crate) fn root_on_pointer_event(
     }
 
     handled
+}
+
+pub(crate) fn root_on_touch_event(
+    root: &mut RenderRoot,
+    root_state: &mut WidgetState,
+    event: &TouchEvent,
+) -> Handled {
+    let pos = event.position();
+
+    // Descend from the root when dispatching touches
+    // to allow portals and other containers to process gestures
+    let mut is_handled = false;
+    if let Some(target_widget_id) = root
+        .get_root_widget()
+        .find_widget_at_pos((pos.x, pos.y).into())
+        .map(|widget| widget.id())
+    {
+        //        println!("{:?}", root.widget_arena.path_of(target_widget_id));
+        for widget_id in root.widget_arena.path_of(target_widget_id).iter().rev() {
+            let (widget_mut, state_mut) = root.widget_arena.get_pair_mut(*widget_id);
+
+            let mut ctx = EventCtx {
+                global_state: &mut root.state,
+                widget_state: state_mut.item,
+                widget_state_children: state_mut.children,
+                widget_children: widget_mut.children,
+                allow_pointer_capture: matches!(event, TouchEvent::Start(..)),
+                is_handled: false,
+                request_pan_to_child: None,
+            };
+            let widget = widget_mut.item;
+
+            if !is_handled {
+                trace!(
+                    "Widget '{}' #{} visited",
+                    widget.short_type_name(),
+                    widget_id.to_raw(),
+                );
+
+                widget.on_touch_event(&mut ctx, event);
+                is_handled = ctx.is_handled;
+                if is_handled {
+                    break;
+                }
+            }
+        }
+    }
+
+    // Pass root widget state to synthetic state create at beginning of pass
+    root_state.merge_up(root.widget_arena.get_state_mut(root.root.id()).item);
+
+    Handled::from(is_handled)
 }
 
 pub(crate) fn root_on_text_event(

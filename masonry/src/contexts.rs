@@ -16,7 +16,9 @@ use crate::text::TextBrush;
 use crate::text_helpers::{ImeChangeSignal, TextFieldRegistration};
 use crate::tree_arena::ArenaMutChildren;
 use crate::widget::{WidgetMut, WidgetState};
-use crate::{AllowRawMut, CursorIcon, Insets, Point, Rect, Size, Widget, WidgetId, WidgetPod};
+use crate::{
+    AllowRawMut, CursorIcon, Insets, Point, Rect, Size, TouchEvent, Widget, WidgetId, WidgetPod,
+};
 
 /// A macro for implementing methods on multiple contexts.
 ///
@@ -589,6 +591,19 @@ impl EventCtx<'_> {
         );
         // TODO: plumb pointer capture through to platform (through winit)
         self.global_state.pointer_capture_target = Some(self.widget_state.id);
+    }
+
+    // TODO: process captures
+    // TODO: clean up captures
+    pub fn capture_touch(&mut self, event: &TouchEvent) {
+        debug_assert!(
+            self.allow_pointer_capture,
+            "Error in #{}: event does not allow pointer capture",
+            self.widget_id().to_raw(),
+        );
+        self.global_state
+            .touch_capture_targets
+            .insert(event.state().id(), self.widget_id());
     }
 
     pub fn release_pointer(&mut self) {

@@ -1,8 +1,10 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use std::collections::BTreeMap;
 use std::num::NonZeroUsize;
 use std::sync::Arc;
+use std::time::Instant;
 
 use accesskit_winit::Adapter;
 use tracing::{debug, warn};
@@ -21,9 +23,9 @@ use winit::window::{Window, WindowAttributes, WindowId};
 
 use crate::app_driver::{AppDriver, DriverCtx};
 use crate::dpi::LogicalPosition;
-use crate::event::{PointerButton, PointerState, WindowEvent};
+use crate::event::{PointerButton, PointerState, TouchFrame, TouchState, WindowEvent};
 use crate::render_root::{self, RenderRoot, WindowSizePolicy};
-use crate::{PointerEvent, TextEvent, Widget, WidgetId};
+use crate::{Handled, PointerEvent, TextEvent, TouchEvent, Widget, WidgetId};
 
 #[derive(Debug)]
 pub enum MasonryUserEvent {
@@ -74,6 +76,7 @@ pub struct MasonryState<'a> {
     render_cx: RenderContext,
     render_root: RenderRoot,
     pointer_state: PointerState,
+    touches: BTreeMap<u64, TouchState>,
     renderer: Option<Renderer>,
     // TODO: Winit doesn't seem to let us create these proxies from within the loop
     // The reasons for this are unclear
@@ -237,6 +240,7 @@ impl MasonryState<'_> {
             ),
             renderer: None,
             pointer_state: PointerState::empty(),
+            touches: Default::default(),
             proxy: event_loop.create_proxy(),
 
             window: WindowState::Uninitialized(window),
@@ -516,10 +520,48 @@ impl MasonryState<'_> {
                 location,
                 phase,
                 force,
+                id,
                 ..
             }) => {
                 // FIXME: This is naïve and should be refined for actual use.
                 //        It will also interact with gesture discrimination.
+                let frame = TouchFrame {
+                    time: Instant::now(),
+                    position: location.to_logical(window.scale_factor()),
+                    force,
+                };
+                let state = self
+                    .touches
+                    .entry(id)
+                    .and_modify(|v| v.push(frame))
+                    .or_insert_with(|| TouchState::new(id, frame));
+
+                // Try to dispatch as touch
+                let handled = match phase {
+                    winit::event::TouchPhase::Started => self
+                        .render_root
+                        .handle_touch_event(TouchEvent::Start(state.clone())),
+                    winit::event::TouchPhase::Ended => match self.touches.remove_entry(&id) {
+                        Some((_, state)) => self
+                            .render_root
+                            .handle_touch_event(TouchEvent::End(state.clone())),
+                        _ => Handled::No,
+                    },
+                    winit::event::TouchPhase::Moved => self
+                        .render_root
+                        .handle_touch_event(TouchEvent::Move(state.clone())),
+                    winit::event::TouchPhase::Cancelled => match self.touches.remove_entry(&id) {
+                        Some((_, state)) => self
+                            .render_root
+                            .handle_touch_event(TouchEvent::Cancel(state.clone())),
+                        _ => Handled::No,
+                    },
+                };
+
+                if handled == Handled::Yes {
+                    return;
+                }
+
                 self.pointer_state.physical_position = location;
                 self.pointer_state.position = location.to_logical(window.scale_factor());
                 self.pointer_state.force = force;

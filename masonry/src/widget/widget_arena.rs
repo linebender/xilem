@@ -28,6 +28,14 @@ impl WidgetArena {
         Some(WidgetId(id.try_into().unwrap()))
     }
 
+    pub(crate) fn path_of(&self, widget_id: WidgetId) -> Vec<WidgetId> {
+        self.widgets
+            .get_id_path(widget_id.to_raw())
+            .iter()
+            .map(|x| WidgetId((*x).try_into().unwrap()))
+            .collect()
+    }
+
     #[track_caller]
     pub(crate) fn get_pair(
         &self,

@@ -13,7 +13,7 @@ use tracing::{trace_span, Span};
 use vello::Scene;
 
 use crate::contexts::ComposeCtx;
-use crate::event::{AccessEvent, PointerEvent, StatusChange, TextEvent};
+use crate::event::{AccessEvent, PointerEvent, StatusChange, TextEvent, TouchEvent};
 use crate::{
     AccessCtx, AsAny, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Size,
 };
@@ -65,12 +65,13 @@ pub struct WidgetId(pub(crate) NonZeroU64);
 /// through a [`WidgetMut`](crate::widget::WidgetMut).
 #[allow(unused_variables)]
 pub trait Widget: AsAny {
-    /// Handle an event - usually user interaction.
-    ///
-    /// A number of different events (in the [`Event`] enum) are handled in this
-    /// method call. A widget can handle these events in a number of ways, such as
-    /// requesting things from the [`EventCtx`] or mutating the data.
+    /// Handle a pointer event
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {}
+
+    /// Handle a touch event
+    fn on_touch_event(&mut self, ctx: &mut EventCtx, event: &TouchEvent) {}
+
+    /// Handle a text event
     fn on_text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent) {}
 
     /// Handle an event from the platform's accessibility API.
@@ -288,6 +289,10 @@ impl From<WidgetId> for accesskit::NodeId {
 impl Widget for Box<dyn Widget> {
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
         self.deref_mut().on_pointer_event(ctx, event);
+    }
+
+    fn on_touch_event(&mut self, ctx: &mut EventCtx, event: &TouchEvent) {
+        self.deref_mut().on_touch_event(ctx, event);
     }
 
     fn on_text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent) {

@@ -11,13 +11,50 @@ use tracing::{trace_span, Span};
 use vello::kurbo::{Point, Rect, Size, Vec2};
 use vello::Scene;
 
+use crate::event::TouchState;
 use crate::widget::{Axis, ScrollBar, WidgetMut};
 use crate::{
     AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, LayoutCtx, LifeCycle,
-    LifeCycleCtx, PaintCtx, PointerEvent, StatusChange, TextEvent, Widget, WidgetId, WidgetPod,
+    LifeCycleCtx, PaintCtx, PointerEvent, StatusChange, TextEvent, TouchEvent, Widget, WidgetId,
+    WidgetPod,
 };
 
-struct FlickGesture {}
+#[derive(Debug, Clone)]
+struct PanGesture {
+    state: TouchState,
+    start_pos: Point,
+}
+
+impl PanGesture {
+    fn new(state: TouchState, start_pos: Point) -> Self {
+        Self { state, start_pos }
+    }
+
+    fn update_start(&mut self, state: TouchState) -> Point {
+        self.start_pos = self.clone().pos();
+        self.state = state;
+        self.pos()
+    }
+
+    fn update(&mut self, state: TouchState) -> Point {
+        if self.state.id() == state.id() {
+            self.state = state;
+        }
+        self.pos()
+    }
+
+    fn same_touch(&mut self, id: u64) -> bool {
+        self.state.id() == id
+    }
+
+    fn pos(&mut self) -> Point {
+        self.start_pos + self.state.displacement()
+    }
+
+    fn start_pos(&mut self) -> Point {
+        self.start_pos
+    }
+}
 
 // TODO - refactor - see https://github.com/linebender/xilem/issues/366
 // TODO - rename "Portal" to "ScrollPortal"?
@@ -30,8 +67,7 @@ pub struct Portal {
     // on re-layouts
     // TODO - rename
     viewport_pos: Point,
-    #[allow(dead_code)]
-    flick_gesture: Option<FlickGesture>,
+    pan_gesture: Option<PanGesture>,
     // TODO - test how it looks like
     constrain_horizontal: bool,
     constrain_vertical: bool,
@@ -48,10 +84,10 @@ impl Portal {
         Portal {
             child: WidgetPod::new(child).boxed(),
             viewport_pos: Point::ORIGIN,
-            flick_gesture: None,
             constrain_horizontal: false,
             constrain_vertical: false,
             must_fill: false,
+            pan_gesture: None,
             // TODO - remove
             scrollbar_horizontal: WidgetPod::new(ScrollBar::new(Axis::Horizontal, 1.0, 1.0)),
             scrollbar_horizontal_visible: false,
@@ -64,10 +100,10 @@ impl Portal {
         Portal {
             child,
             viewport_pos: Point::ORIGIN,
-            flick_gesture: None,
             constrain_horizontal: false,
             constrain_vertical: false,
             must_fill: false,
+            pan_gesture: None,
             // TODO - remove
             scrollbar_horizontal: WidgetPod::new(ScrollBar::new(Axis::Horizontal, 1.0, 1.0)),
             scrollbar_horizontal_visible: false,
@@ -145,15 +181,19 @@ fn compute_pan_range(mut viewport: Range<f64>, target: Range<f64>) -> Range<f64>
     viewport
 }
 
+fn viewport_pos_clamp(portal_size: Size, content_size: Size, pos: Point) -> Point {
+    let viewport_max_pos =
+        (content_size - portal_size).clamp(Size::ZERO, Size::new(f64::INFINITY, f64::INFINITY));
+    Point::new(
+        pos.x.clamp(0.0, viewport_max_pos.width),
+        pos.y.clamp(0.0, viewport_max_pos.height),
+    )
+}
+
 impl Portal {
     // TODO - rename
     fn set_viewport_pos_raw(&mut self, portal_size: Size, content_size: Size, pos: Point) -> bool {
-        let viewport_max_pos =
-            (content_size - portal_size).clamp(Size::ZERO, Size::new(f64::INFINITY, f64::INFINITY));
-        let pos = Point::new(
-            pos.x.clamp(0.0, viewport_max_pos.width),
-            pos.y.clamp(0.0, viewport_max_pos.height),
-        );
+        let pos = viewport_pos_clamp(portal_size, content_size, pos);
 
         if (pos - self.viewport_pos).hypot2() > 1e-12 {
             self.viewport_pos = pos;
@@ -316,6 +356,71 @@ impl Widget for Portal {
 
         if scrollbar_moved {
             ctx.request_layout();
+        }
+    }
+
+    fn on_touch_event(&mut self, ctx: &mut EventCtx, event: &TouchEvent) {
+        match event {
+            TouchEvent::Start(state) => {
+                if let Some(ref mut pan_gesture) = self.pan_gesture {
+                    self.viewport_pos = Point {
+                        x: 0.0,
+                        y: pan_gesture.update_start(state.clone()).y,
+                    };
+                } else {
+                    self.pan_gesture = Some(PanGesture::new(state.clone(), self.viewport_pos));
+                }
+
+                ctx.is_handled = true;
+                ctx.request_layout();
+                ctx.request_compose();
+            }
+            TouchEvent::Move(state) => {
+                if self
+                    .pan_gesture
+                    .as_mut()
+                    .map_or(false, |x| x.same_touch(state.id()))
+                {
+                    self.viewport_pos = Point {
+                        x: 0.0,
+                        y: self.pan_gesture.as_mut().unwrap().update(state.clone()).y,
+                    };
+                    ctx.is_handled = true;
+                    ctx.request_layout();
+                    ctx.request_compose();
+                }
+            }
+            TouchEvent::End(state) => {
+                if self
+                    .pan_gesture
+                    .as_mut()
+                    .map_or(false, |x| x.same_touch(state.id()))
+                {
+                    if let Some(pan_gesture) = self.pan_gesture.as_mut() {
+                        self.viewport_pos = Point {
+                            x: 0.0,
+                            y: pan_gesture.update(state.clone()).y,
+                        };
+                        ctx.is_handled = true;
+                    }
+                    self.pan_gesture = None;
+                }
+            }
+            TouchEvent::Cancel(state) => {
+                if self
+                    .pan_gesture
+                    .as_mut()
+                    .map_or(false, |x| x.same_touch(state.id()))
+                {
+                    if let Some(pan_gesture) = self.pan_gesture.as_mut() {
+                        self.viewport_pos = pan_gesture.start_pos();
+                        ctx.is_handled = true;
+                        ctx.request_layout();
+                        ctx.request_compose();
+                    }
+                    self.pan_gesture = None;
+                }
+            }
         }
     }
 

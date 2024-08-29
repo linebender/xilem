@@ -135,7 +135,7 @@ pub use contexts::{
 };
 pub use event::{
     AccessEvent, InternalLifeCycle, LifeCycle, PointerButton, PointerEvent, PointerState,
-    StatusChange, TextEvent, WindowEvent, WindowTheme,
+    StatusChange, TextEvent, TouchEvent, WindowEvent, WindowTheme,
 };
 pub use kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
 pub use parley::layout::Alignment as TextAlignment;

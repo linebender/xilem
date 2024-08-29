@@ -39,14 +39,17 @@ struct TimeZone {
 }
 
 fn app_logic(data: &mut Clocks) -> impl WidgetView<Clocks> {
-    let view = portal(flex((
+    let view = flex((
         // HACK: We add a spacer at the top for Android. See https://github.com/rust-windowing/winit/issues/2308
         FlexSpacer::Fixed(40.),
         local_time(data),
         controls(),
         // TODO: When we get responsive layouts, move this into a two-column view.
-        flex(TIMEZONES.iter().map(|it| it.view(data)).collect::<Vec<_>>()),
-    )));
+        portal(flex(
+            TIMEZONES.iter().map(|it| it.view(data)).collect::<Vec<_>>(),
+        ))
+        .flex(1.),
+    ));
     fork(
         view,
         task(

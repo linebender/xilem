@@ -8,9 +8,13 @@ use crate::kurbo::Rect;
 // TODO - See issue https://github.com/linebender/xilem/issues/367
 use crate::WidgetId;
 
-use std::path::PathBuf;
+use dpi::LogicalUnit;
+use vello::kurbo::Vec2;
 
-use winit::event::{Force, Ime, KeyEvent, Modifiers};
+use std::path::PathBuf;
+use std::time::Instant;
+
+use winit::event::{Force, Ime, KeyEvent, Modifiers, TouchPhase};
 use winit::keyboard::ModifiersState;
 
 // TODO - Occluded(bool) event
@@ -218,13 +222,6 @@ pub struct AccessEvent {
 }
 
 #[derive(Debug, Clone)]
-pub enum PointerType {
-    Mouse,
-    Touch,
-    Pen,
-}
-
-#[derive(Debug, Clone)]
 pub struct PointerState {
     // TODO
     // pub device_id: DeviceId,
@@ -235,7 +232,89 @@ pub struct PointerState {
     pub count: u8,
     pub focus: bool,
     pub force: Option<Force>,
-    pub pointer_type: PointerType,
+}
+
+#[derive(Debug, Clone)]
+pub enum TouchEvent {
+    Start(TouchState),
+    Move(TouchState),
+    End(TouchState),
+    Cancel(TouchState),
+}
+
+impl TouchEvent {
+    pub fn state(&self) -> &TouchState {
+        match self {
+            Self::Start(state) | Self::Move(state) | Self::End(state) | Self::Cancel(state) => {
+                state
+            }
+        }
+    }
+
+    pub fn position(&self) -> LogicalPosition<f64> {
+        self.state().position()
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct TouchFrame {
+    pub time: Instant,
+    pub position: LogicalPosition<f64>,
+    pub force: Option<Force>,
+}
+
+#[derive(Debug, Clone)]
+pub struct TouchState {
+    id: u64,
+    frames: Vec<TouchFrame>,
+}
+
+impl TouchState {
+    pub fn new(id: u64, frame: TouchFrame) -> Self {
+        Self {
+            id,
+            frames: Vec::from([frame]),
+        }
+    }
+
+    pub fn push(&mut self, frame: TouchFrame) {
+        self.frames.push(frame);
+    }
+
+    pub fn last_frame(&self) -> &TouchFrame {
+        self.frames
+            .last()
+            .expect("TouchState has at least one frame")
+    }
+
+    pub fn first_frame(&self) -> &TouchFrame {
+        self.frames
+            .first()
+            .expect("TouchState has at least one frame")
+    }
+
+    pub fn velocity(&self) -> (LogicalUnit<f64>, LogicalUnit<f64>) {
+        // TODO: impl
+        (0.0.into(), 0.0.into())
+    }
+
+    pub fn position(&self) -> LogicalPosition<f64> {
+        self.last_frame().position
+    }
+
+    pub fn displacement(&self) -> Vec2 {
+        let LogicalPosition::<f64> { x: ax, y: ay } = self.first_frame().position;
+        let LogicalPosition::<f64> { x: bx, y: by } = self.last_frame().position;
+        Vec2::new(ax - bx, ay - by)
+    }
+
+    pub fn force(&self) -> Option<Force> {
+        self.last_frame().force
+    }
+
+    pub fn id(&self) -> u64 {
+        self.id
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -495,7 +574,6 @@ impl PointerState {
             count: 0,
             focus: false,
             force: None,
-            pointer_type: PointerType::Mouse,
         }
     }
 }

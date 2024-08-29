@@ -1,7 +1,7 @@
 // Copyright 2019 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use std::collections::{HashMap, VecDeque};
+use std::collections::{BTreeMap, HashMap, VecDeque};
 
 use accesskit::{ActionRequest, Tree, TreeUpdate};
 use parley::fontique::{self, Collection, CollectionOptions};
@@ -18,10 +18,12 @@ use web_time::Instant;
 use crate::contexts::{LayoutCtx, LifeCycleCtx};
 use crate::debug_logger::DebugLogger;
 use crate::dpi::{LogicalPosition, LogicalSize, PhysicalSize};
-use crate::event::{PointerEvent, TextEvent, WindowEvent};
+use crate::event::{PointerEvent, TextEvent, TouchState, WindowEvent};
 use crate::passes::accessibility::root_accessibility;
 use crate::passes::compose::root_compose;
-use crate::passes::event::{root_on_access_event, root_on_pointer_event, root_on_text_event};
+use crate::passes::event::{
+    root_on_access_event, root_on_pointer_event, root_on_text_event, root_on_touch_event,
+};
 use crate::passes::mutate::{mutate_widget, run_mutate_pass};
 use crate::passes::paint::root_paint;
 use crate::passes::update::{run_update_disabled_pass, run_update_pointer_pass};
@@ -30,8 +32,8 @@ use crate::tree_arena::TreeArena;
 use crate::widget::WidgetArena;
 use crate::widget::{WidgetMut, WidgetRef, WidgetState};
 use crate::{
-    AccessEvent, Action, BoxConstraints, CursorIcon, Handled, InternalLifeCycle, LifeCycle, Widget,
-    WidgetId, WidgetPod,
+    AccessEvent, Action, BoxConstraints, CursorIcon, Handled, InternalLifeCycle, LifeCycle,
+    TouchEvent, Widget, WidgetId, WidgetPod,
 };
 
 // --- MARK: STRUCTS ---
@@ -62,6 +64,7 @@ pub(crate) struct RenderRootState {
     pub(crate) next_focused_widget: Option<WidgetId>,
     pub(crate) hovered_path: Vec<WidgetId>,
     pub(crate) pointer_capture_target: Option<WidgetId>,
+    pub(crate) touch_capture_targets: BTreeMap<u64, WidgetId>,
     pub(crate) cursor_icon: CursorIcon,
     pub(crate) font_context: FontContext,
     pub(crate) text_layout_context: LayoutContext<TextBrush>,
@@ -134,6 +137,7 @@ impl RenderRoot {
                 next_focused_widget: None,
                 hovered_path: Vec::new(),
                 pointer_capture_target: None,
+                touch_capture_targets: Default::default(),
                 cursor_icon: CursorIcon::Default,
                 font_context: FontContext {
                     collection: Collection::new(CollectionOptions {
@@ -223,6 +227,10 @@ impl RenderRoot {
     // --- MARK: PUB FUNCTIONS ---
     pub fn handle_pointer_event(&mut self, event: PointerEvent) -> Handled {
         self.root_on_pointer_event(event)
+    }
+
+    pub fn handle_touch_event(&mut self, state: TouchEvent) -> Handled {
+        self.root_on_touch_event(state)
     }
 
     pub fn handle_text_event(&mut self, event: TextEvent) -> Handled {
@@ -386,6 +394,17 @@ impl RenderRoot {
 
         let handled = root_on_pointer_event(self, &mut dummy_state, &event);
         run_update_pointer_pass(self, &mut dummy_state);
+
+        self.post_event_processing(&mut dummy_state);
+        self.get_root_widget().debug_validate(false);
+
+        handled
+    }
+
+    fn root_on_touch_event(&mut self, event: TouchEvent) -> Handled {
+        let mut dummy_state = WidgetState::synthetic(self.root.id(), self.get_kurbo_size());
+
+        let handled = root_on_touch_event(self, &mut dummy_state, &event);
 
         self.post_event_processing(&mut dummy_state);
         self.get_root_widget().debug_validate(false);
