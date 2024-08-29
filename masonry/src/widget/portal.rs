@@ -298,7 +298,7 @@ impl<W: Widget> Widget for Portal<W> {
         }
 
         if scrollbar_moved {
-            ctx.request_layout();
+            ctx.request_compose();
         }
     }
 
