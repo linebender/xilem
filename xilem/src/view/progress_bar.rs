@@ -53,7 +53,7 @@ impl<State, Action> View<State, Action, ViewCtx> for ProgressBar {
         message: xilem_core::DynMessage,
         _app_state: &mut State,
     ) -> MessageResult<Action> {
-        tracing::error!("Message arrived in ProgressBar::ProgressBar, but Label doesn't consume any messages, this is a bug");
+        tracing::error!("Message arrived in ProgressBar::message, but ProgressBar doesn't consume any messages, this is a bug");
         MessageResult::Stale(message)
     }
 }
