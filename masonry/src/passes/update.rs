@@ -211,7 +211,7 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot, root_state: &mut Widg
             let has_focus = focused_set.contains(&ctx.widget_id());
 
             if ctx.widget_state.has_focus != has_focus {
-                widget.on_status_change(ctx, &StatusChange::HasFocusChanged(has_focus));
+                widget.on_status_change(ctx, &StatusChange::ChildFocusChanged(has_focus));
             }
             ctx.widget_state.has_focus = has_focus;
         });

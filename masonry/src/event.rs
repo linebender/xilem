@@ -348,7 +348,7 @@ pub enum StatusChange {
     FocusChanged(bool),
 
     /// Called when a widget becomes or no longer is parent of a focused widget.
-    HasFocusChanged(bool),
+    ChildFocusChanged(bool),
 }
 
 impl PointerEvent {
