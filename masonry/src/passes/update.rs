@@ -205,6 +205,11 @@ pub(crate) fn run_update_disabled_pass(root: &mut RenderRoot) {
 
 // ----------------
 
+// This pass will update scroll positions in cases where a widget has requested to be
+// scrolled into view (usually a textbox getting text events).
+// Each parent that implements scrolling will update its scroll position to ensure the
+// child is visible. (If the target area is larger than the parent, the parent will try
+// to show the top left of that area.)
 pub(crate) fn run_update_scroll_pass(root: &mut RenderRoot) {
     let _span = info_span!("update_scroll").entered();
 
