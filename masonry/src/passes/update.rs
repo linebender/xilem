@@ -244,8 +244,10 @@ fn update_anim_for_widget(
     if !state.item.needs_anim {
         return;
     }
+    state.item.needs_anim = false;
 
     if state.item.request_anim {
+        state.item.request_anim = false;
         let mut ctx = LifeCycleCtx {
             global_state,
             widget_state: state.item,
@@ -256,9 +258,6 @@ fn update_anim_for_widget(
             .item
             .lifecycle(&mut ctx, &LifeCycle::AnimFrame(elapsed_ns));
     }
-
-    state.item.needs_anim = false;
-    state.item.request_anim = false;
 
     let id = state.item.id;
     let parent_state = state.item;

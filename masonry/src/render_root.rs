@@ -207,16 +207,14 @@ impl RenderRoot {
                 // See https://github.com/linebender/druid/issues/85 for discussion.
                 let last = self.last_anim.take();
                 let elapsed_ns = last.map(|t| now.duration_since(t).as_nanos()).unwrap_or(0) as u64;
-                let root_state = self.root_state();
-                if root_state.needs_anim {
-                    run_update_anim_pass(self, elapsed_ns);
 
-                    let mut root_state =
-                        self.widget_arena.get_state_mut(self.root.id()).item.clone();
-                    self.post_event_processing(&mut root_state);
+                run_update_anim_pass(self, elapsed_ns);
 
-                    self.last_anim = Some(now);
-                }
+                let mut root_state = self.widget_arena.get_state_mut(self.root.id()).item.clone();
+                self.post_event_processing(&mut root_state);
+
+                self.last_anim = Some(now);
+
                 Handled::Yes
             }
             WindowEvent::RebuildAccessTree => {
