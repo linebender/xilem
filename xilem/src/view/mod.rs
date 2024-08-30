@@ -25,6 +25,9 @@ pub use label::*;
 mod variable_label;
 pub use variable_label::*;
 
+mod progress_bar;
+pub use progress_bar::*;
+
 mod prose;
 pub use prose::*;
 
