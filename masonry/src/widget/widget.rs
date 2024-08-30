@@ -91,9 +91,9 @@ pub trait Widget: AsAny {
     /// A leaf widget should determine its size (subject to the provided
     /// constraints) and return it.
     ///
-    /// A container widget will recursively call [`WidgetPod::layout`](crate::WidgetPod::layout) on its
+    /// A container widget will recursively call [`LayoutCtx::run_layout`] on its
     /// child widgets, providing each of them an appropriate box constraint,
-    /// compute layout, then call [`LayoutCtx::place_child`] on each of its children.
+    /// run some layout logic, then call [`LayoutCtx::place_child`] on each of its children.
     /// Finally, it should return the size of the container. The container
     /// can recurse in any order, which can be helpful to, for example, compute
     /// the size of non-flex widgets first, to determine the amount of space

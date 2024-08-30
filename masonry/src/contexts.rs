@@ -741,6 +741,19 @@ impl LayoutCtx<'_> {
         }
     }
 
+    // TODO - Reorder methods so that methods necessary for layout
+    // appear higher in documentation.
+
+    /// Compute layout of a child widget.
+    ///
+    /// Container widgets must call this on every child as part of
+    /// their [`layout`] method.
+    ///
+    /// [`layout`]: Widget::layout
+    pub fn run_layout<W: Widget>(&mut self, child: &mut WidgetPod<W>, bc: &BoxConstraints) -> Size {
+        run_layout_on(self, child, bc)
+    }
+
     /// Set explicit paint [`Insets`] for this widget.
     ///
     /// You are not required to set explicit paint bounds unless you need
@@ -901,16 +914,6 @@ impl LayoutCtx<'_> {
         self.widget_state.request_accessibility = true;
         self.widget_state.needs_accessibility = true;
         self.widget_state.needs_paint = true;
-    }
-
-    /// Compute layout of a child widget.
-    ///
-    /// Container widgets must call this on every child as part of
-    /// their [`layout`] method.
-    ///
-    /// [`layout`]: Widget::layout
-    pub fn run_layout<W: Widget>(&mut self, child: &mut WidgetPod<W>, bc: &BoxConstraints) -> Size {
-        run_layout_on(self, child, bc)
     }
 
     /// Set the position of a child widget, in the parent's coordinate space. This

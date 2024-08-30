@@ -1,6 +1,10 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+//! The layout pass, which provides the size and position of each widget
+//! before any translations applied in [`compose`](crate::passes::compose).
+//! Most of the logic for this pass happens in [`Widget::layout`] implementations.
+
 use tracing::{info_span, trace, warn};
 use vello::kurbo::{Point, Rect, Size};
 
@@ -167,7 +171,7 @@ pub(crate) fn run_layout_on<W: Widget>(
     state_mut.item.size
 }
 
-pub fn root_layout(
+pub(crate) fn root_layout(
     root: &mut RenderRoot,
     synthetic_root_state: &mut WidgetState,
     bc: &BoxConstraints,
