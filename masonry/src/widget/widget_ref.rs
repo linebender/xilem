@@ -175,8 +175,9 @@ impl<'w> WidgetRef<'w, dyn Widget> {
     ///
     /// **pos** - the position in local coordinates (zero being the top-left of the
     /// inner widget).
-    pub fn find_widget_at_pos(&self, mut pos: Point) -> Option<WidgetRef<'w, dyn Widget>> {
+    pub fn find_widget_at_pos(&self, pos: Point) -> Option<WidgetRef<'w, dyn Widget>> {
         let mut innermost_widget: WidgetRef<'w, dyn Widget> = *self;
+        let mut pos = pos;
 
         if !self.state().layout_rect().contains(pos) {
             return None;
