@@ -6,12 +6,12 @@ use xilem_core::{Mut, ViewMarker};
 
 use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
 
-pub fn progress_bar(progress: Option<f32>) -> ProgressBar {
+pub fn progress_bar(progress: Option<f64>) -> ProgressBar {
     ProgressBar { progress }
 }
 
 pub struct ProgressBar {
-    progress: Option<f32>,
+    progress: Option<f64>,
 }
 
 impl ViewMarker for ProgressBar {}

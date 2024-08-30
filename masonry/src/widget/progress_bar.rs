@@ -4,7 +4,7 @@
 //! A progress bar widget.
 
 use accesskit::Role;
-use kurbo::Point;
+use crate::Point;
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace, trace_span, Span};
 use vello::Scene;
@@ -24,7 +24,7 @@ pub struct ProgressBar {
     ///
     /// `None` variant can be used to show a progress bar without a percentage.
     /// It is also used if an invalid float (outside of [0, 1]) is passed.
-    progress: Option<f32>,
+    progress: Option<f64>,
     label: TextLayout<ArcStr>,
 }
 
@@ -34,7 +34,7 @@ impl ProgressBar {
     /// `progress` is a number between 0 and 1 inclusive. If it is `NaN`, then an
     /// indefinite progress bar will be shown.
     /// Otherwise, the input will be clamped to [0, 1].
-    pub fn new(progress: Option<f32>) -> Self {
+    pub fn new(progress: Option<f64>) -> Self {
         let mut out = Self::new_indefinite();
         out.set_progress(progress);
         out
@@ -47,7 +47,7 @@ impl ProgressBar {
         }
     }
 
-    fn set_progress(&mut self, mut progress: Option<f32>) {
+    fn set_progress(&mut self, mut progress: Option<f64>) {
         clamp_progress(&mut progress);
         // check to see if we can avoid doing work
         if self.progress != progress {
@@ -80,7 +80,7 @@ impl ProgressBar {
 
 // --- MARK: WIDGETMUT ---
 impl WidgetMut<'_, ProgressBar> {
-    pub fn set_progress(&mut self, progress: Option<f32>) {
+    pub fn set_progress(&mut self, progress: Option<f64>) {
         self.widget.set_progress(progress);
         self.ctx.request_layout();
         self.ctx.request_accessibility_update();
@@ -90,7 +90,7 @@ impl WidgetMut<'_, ProgressBar> {
 /// Helper to ensure progress is either a number between [0, 1] inclusive, or `None`.
 ///
 /// NaNs are converted to `None`.
-fn clamp_progress(progress: &mut Option<f32>) {
+fn clamp_progress(progress: &mut Option<f64>) {
     if let Some(value) = progress {
         if value.is_nan() {
             *progress = None;
@@ -168,7 +168,7 @@ impl Widget for ProgressBar {
         stroke(scene, &rect, theme::BORDER_DARK, border_width);
 
         let progress_rect_size = Size::new(
-            ctx.size().width * self.progress.unwrap_or(1.) as f64,
+            ctx.size().width * self.progress.unwrap_or(1.),
             ctx.size().height,
         );
         let progress_rect = progress_rect_size

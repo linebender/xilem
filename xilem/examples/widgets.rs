@@ -14,7 +14,7 @@ use xilem::{WidgetView, Xilem};
 ///
 /// This is owned by Xilem, used to construct the view tree, and updated by event handlers.
 struct WidgetGallery {
-    progress: Option<f32>,
+    progress: Option<f64>,
 }
 
 fn app_logic(data: &mut WidgetGallery) -> impl WidgetView<WidgetGallery> {
