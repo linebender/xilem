@@ -339,9 +339,24 @@ impl<W: Widget> Widget for Portal<W> {
                 let portal_size = ctx.size();
                 let content_size = ctx.get_raw_ref(&mut self.child).ctx().layout_rect().size();
 
-                // FIXME - Update scrollbars
                 self.pan_viewport_to_raw(portal_size, content_size, *target);
                 ctx.request_compose();
+
+                // TODO - There's a lot of code here that's duplicated from the `MouseWheel`
+                // event in `on_pointer_event`.
+                // Because this code directly manipulates child widgets, it's hard to factor
+                // it out.
+                let mut scrollbar = ctx.get_raw_mut(&mut self.scrollbar_vertical);
+                scrollbar.widget().cursor_progress =
+                    self.viewport_pos.y / (content_size - portal_size).height;
+                scrollbar.ctx().request_paint();
+
+                std::mem::drop(scrollbar);
+
+                let mut scrollbar = ctx.get_raw_mut(&mut self.scrollbar_horizontal);
+                scrollbar.widget().cursor_progress =
+                    self.viewport_pos.x / (content_size - portal_size).width;
+                scrollbar.ctx().request_paint();
             }
             _ => {}
         }
@@ -450,10 +465,6 @@ impl<W: Widget> Widget for Portal<W> {
         }
 
         ctx.current_node().set_clips_children();
-        ctx.current_node()
-            .push_child(self.scrollbar_horizontal.id().into());
-        ctx.current_node()
-            .push_child(self.scrollbar_vertical.id().into());
     }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
