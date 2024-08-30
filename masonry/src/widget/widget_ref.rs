@@ -194,7 +194,7 @@ impl<'w> WidgetRef<'w, dyn Widget> {
 
             if let Some(child) = innermost_widget
                 .widget
-                .get_child_at_pos(&innermost_widget.children(), pos)
+                .get_child_at_pos(innermost_widget, pos)
             {
                 innermost_widget = child;
             } else {

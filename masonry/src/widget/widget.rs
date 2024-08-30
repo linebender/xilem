@@ -183,17 +183,20 @@ pub trait Widget: AsAny {
     /// The child returned is a direct child, not eg a grand-child. The position is in
     /// relative coordinates. (Eg `(0,0)` is the top-left corner of `self`).
     ///
+    /// [`widget_ref`] is a rich reference to the current widget, giving access to this widget's
+    /// state.
+    ///
     /// Has a default implementation, that can be overridden to search children more
     /// efficiently.
     ///
-    /// The child widget references in `children` are in the same order as returned by
-    /// [`Self::children_ids`].
+    /// [`widget_ref`]: WidgetRef
     fn get_child_at_pos<'w>(
         &self,
-        children: &[WidgetRef<'w, dyn Widget>],
+        widget_ref: WidgetRef<'w, dyn Widget>,
         pos: Point,
     ) -> Option<WidgetRef<'w, dyn Widget>> {
-        children
+        widget_ref
+            .children()
             .iter()
             // TODO: currently assumes `Self::children_ids` is in increasing "z-order". Picks the
             // last child in case of overlapping children. Is this the desired behavior?
@@ -382,10 +385,10 @@ impl Widget for Box<dyn Widget> {
 
     fn get_child_at_pos<'w>(
         &self,
-        children: &[WidgetRef<'w, dyn Widget>],
+        widget_ref: WidgetRef<'w, dyn Widget>,
         pos: Point,
     ) -> Option<WidgetRef<'w, dyn Widget>> {
-        self.deref().get_child_at_pos(children, pos)
+        self.deref().get_child_at_pos(widget_ref, pos)
     }
 
     fn as_any(&self) -> &dyn Any {
