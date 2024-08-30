@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::render_root::RenderRoot;
-use crate::tree_arena::ArenaMutChildren;
 use accesskit::{NodeBuilder, NodeId, TreeUpdate};
 use tracing::debug;
 use tracing::info_span;
@@ -35,12 +34,7 @@ fn build_accessibility_tree(
             widget.item.short_type_name(),
             id.to_raw(),
         );
-        let current_node = build_access_node(
-            widget.item,
-            state.item,
-            state.children.reborrow_mut(),
-            scale_factor,
-        );
+        let current_node = build_access_node(widget.item, state.item, scale_factor);
 
         let mut ctx = AccessCtx {
             global_state,
@@ -74,8 +68,8 @@ fn build_accessibility_tree(
         widget.reborrow_mut(),
         state.children,
         |widget, mut state| {
-            // TODO - We skip updating stashed items.
-            // This may have knock-on effects we'd need to document.
+            // TODO - We don't skip updating stashed items because doing so
+            // is error-prone. We may want to revisit that decision.
             if state.item.is_stashed {
                 return;
             }
@@ -92,29 +86,15 @@ fn build_accessibility_tree(
     );
 }
 
-fn build_access_node(
-    widget: &dyn Widget,
-    state: &WidgetState,
-    state_children: ArenaMutChildren<'_, WidgetState>,
-    scale_factor: f64,
-) -> NodeBuilder {
+fn build_access_node(widget: &dyn Widget, state: &WidgetState, scale_factor: f64) -> NodeBuilder {
     let mut node = NodeBuilder::new(widget.accessibility_role());
     node.set_bounds(to_accesskit_rect(state.window_layout_rect(), scale_factor));
 
-    // TODO - We skip listing stashed items.
-    // This may have knock-on effects we'd need to document.
     node.set_children(
         widget
             .children_ids()
             .iter()
             .copied()
-            .filter(|id| {
-                !state_children
-                    .get_child(id.to_raw())
-                    .unwrap()
-                    .item
-                    .is_stashed
-            })
             .map(|id| id.into())
             .collect::<Vec<NodeId>>(),
     );
