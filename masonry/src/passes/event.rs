@@ -108,6 +108,16 @@ pub(crate) fn root_on_pointer_event(
         },
     );
 
+    if matches!(
+        event,
+        PointerEvent::PointerUp(..) | PointerEvent::PointerLeave(..)
+    ) {
+        // Automatically release the pointer on pointer up or leave. If a widget holds the capture,
+        // it is notified of the pointer event before the capture is released, so it knows it is
+        // about to lose the pointer.
+        root.state.pointer_capture_target = None;
+    }
+
     if !event.is_high_density() {
         debug!(
             focused_widget = root.state.focused_widget.map(|id| id.0),

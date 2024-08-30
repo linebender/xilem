@@ -600,7 +600,16 @@ impl EventCtx<'_> {
     /// captured the pointer and another widget captures it, the first widget loses the pointer
     /// capture.
     ///
+    /// # Releasing the pointer
+    ///
+    /// Any widget can [`release`] the pointer during any event. The pointer is automatically
+    /// released after handling of a [`PointerUp`] or [`PointerLeave`] event completes. A widget
+    /// holding the pointer capture will be the target of these events.
+    ///
     /// [`PointerDown`]: crate::PointerEvent::PointerDown
+    /// [`PointerUp`]: crate::PointerEvent::PointerUp
+    /// [`PointerLeave`]: crate::PointerEvent::PointerLeave
+    /// [`release`]: Self::release_pointer
     #[track_caller]
     pub fn capture_pointer(&mut self) {
         debug_assert!(

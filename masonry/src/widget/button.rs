@@ -92,12 +92,6 @@ impl Widget for Button {
                     trace!("Button {:?} released", ctx.widget_id());
                 }
                 ctx.request_paint();
-                ctx.release_pointer();
-            }
-            PointerEvent::PointerLeave(_) => {
-                // If the screen was locked whilst holding down the mouse button, we don't get a `PointerUp`
-                // event, but should no longer be active
-                ctx.release_pointer();
             }
             _ => (),
         }

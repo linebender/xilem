@@ -162,7 +162,6 @@ impl Widget for ScrollBar {
             }
             PointerEvent::PointerUp(_, _) => {
                 self.grab_anchor = None;
-                ctx.release_pointer();
                 ctx.request_paint();
             }
             _ => {}

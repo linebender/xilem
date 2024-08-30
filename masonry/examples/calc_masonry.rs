@@ -164,7 +164,6 @@ impl Widget for CalcButton {
                     ctx.submit_action(Action::Other(Box::new(self.action)));
                     trace!("CalcButton {:?} released", ctx.widget_id());
                 }
-                ctx.release_pointer();
             }
             _ => (),
         }

@@ -79,7 +79,6 @@ impl Widget for Checkbox {
                     trace!("Checkbox {:?} released", ctx.widget_id());
                 }
                 ctx.request_paint();
-                ctx.release_pointer();
             }
             _ => (),
         }

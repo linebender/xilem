@@ -394,7 +394,6 @@ impl Widget for Split {
                 PointerEvent::PointerUp(PointerButton::Primary, state) => {
                     if ctx.has_pointer_capture() {
                         ctx.set_handled();
-                        ctx.release_pointer();
                         // Dependending on where the mouse cursor is when the button is released,
                         // the cursor might or might not need to be changed
                         self.is_bar_hover =

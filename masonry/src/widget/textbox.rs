@@ -194,10 +194,6 @@ impl Widget for Textbox {
                 if !ctx.is_disabled() && ctx.has_pointer_capture() {
                     self.editor.pointer_up(inner_origin, state, *button);
                 }
-                ctx.release_pointer();
-            }
-            PointerEvent::PointerLeave(_state) => {
-                ctx.release_pointer();
             }
             _ => {}
         }
