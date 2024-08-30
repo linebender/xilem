@@ -3,8 +3,8 @@
 
 //! A progress bar widget.
 
-use accesskit::Role;
 use crate::Point;
+use accesskit::Role;
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace, trace_span, Span};
 use vello::Scene;
@@ -58,7 +58,7 @@ impl ProgressBar {
 
     /// Updates the text layout with the current part-complete value
     fn update_text(&mut self) {
-        self.label.set_text(self.value().into());
+        self.label.set_text(self.value());
     }
 
     fn value(&self) -> ArcStr {
