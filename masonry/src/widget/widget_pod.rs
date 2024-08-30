@@ -427,12 +427,9 @@ impl<W: Widget> WidgetPod<W> {
 
     // --- MARK: LAYOUT ---
 
-    /// Compute layout of a widget.
-    ///
-    /// Generally called by container widgets as part of their [`layout`]
-    /// method.
-    ///
-    /// [`layout`]: Widget::layout
+    // FIXME - We keep this around to keep the diff of PR #529 small.
+    // We should remove this function in a follow-up PR after #529 lands.
+    /// Deprecated. Used `LayoutCtx::run_layout` instead.
     pub fn layout(&mut self, parent_ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
         run_layout_on(parent_ctx, self, bc)
     }
