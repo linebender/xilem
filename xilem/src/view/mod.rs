@@ -34,5 +34,5 @@ pub use textbox::*;
 mod portal;
 pub use portal::*;
 
-mod date_selector;
-pub use date_selector::*;
+mod date_picker;
+pub use date_picker::*;
