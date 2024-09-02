@@ -1,31 +1,27 @@
-use std::fmt::format;
-
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 use masonry::widget::{CrossAxisAlignment, MainAxisAlignment};
-use time::{util::days_in_year_month, Date, Month, OffsetDateTime};
+use time::{Date, OffsetDateTime};
 use winit::error::EventLoopError;
 use xilem::{
-    view::{button, date, flex, label, sized_box, Axis, DateData, FlexExt as _, FlexSpacer},
+    view::{button, flex, label, Axis, DatePicker, DatePickerMessage},
     EventLoop, WidgetView, Xilem,
 };
-use xilem_core::{frozen, map_state};
+use xilem_core::{adapt, MessageResult};
 
 struct Calendar {
-    // selected_date: Date,
-    // month: Month,
-    // year: i32,
-    date: DateData,
+    selected_date: Date,
+    date: DatePicker,
 }
 
 impl Calendar {
     fn new() -> Self {
         let now = OffsetDateTime::now_utc();
         Self {
-            // selected_date: ,
+            selected_date: now.date(),
             // month: now.month(),
             // year: now.year(),
-            date: DateData::new(now.date(), now.month(), now.year()),
+            date: DatePicker::new(now.month(), now.year()),
         }
     }
 }
@@ -37,10 +33,10 @@ fn selected_date(selected_date: Date) -> impl WidgetView<Calendar> {
 fn external_controls() -> impl WidgetView<Calendar> {
     flex((
         button("Today", |data: &mut Calendar| {
-            data.date.selected_date = OffsetDateTime::now_utc().date();
+            data.selected_date = OffsetDateTime::now_utc().date();
         }),
         button("Tomorrow", |data: &mut Calendar| {
-            data.date.selected_date = OffsetDateTime::now_utc().date().next_day().unwrap();
+            data.selected_date = OffsetDateTime::now_utc().date().next_day().unwrap();
         }),
     ))
     .direction(Axis::Horizontal)
@@ -48,15 +44,19 @@ fn external_controls() -> impl WidgetView<Calendar> {
 
 fn app_logic(data: &mut Calendar) -> impl WidgetView<Calendar> {
     flex((
-        selected_date(data.date.selected_date),
+        selected_date(data.selected_date),
         external_controls(),
-        map_state(
-            date(
-                &mut data.date.selected_date,
-                &mut data.date.month,
-                &mut data.date.year,
-            ),
-            |data: &mut Calendar| &mut data.date,
+        adapt(
+            data.date.view(&mut data.selected_date),
+            |state: &mut Calendar, thunk| match thunk.call(&mut state.date) {
+                MessageResult::Action(DatePickerMessage::Select(date)) => {
+                    state.selected_date = date;
+                    MessageResult::Action(())
+                }
+                MessageResult::Action(DatePickerMessage::Nop) => MessageResult::Nop,
+                MessageResult::Action(DatePickerMessage::ChangeView) => MessageResult::Action(()),
+                message_result => message_result.map(|_| ()),
+            },
         ),
     ))
     .direction(Axis::Vertical)
