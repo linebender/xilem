@@ -1,5 +1,5 @@
 use masonry::widget::{Axis, CrossAxisAlignment, MainAxisAlignment};
-use time::{Date, Month};
+use time::{Date, Month, OffsetDateTime};
 
 use crate::{view::sized_box, WidgetView};
 
@@ -12,16 +12,30 @@ pub enum DatePickerMessage {
 }
 
 pub struct DatePicker {
+    previous_date: Date,
     month: Month,
     year: i32,
 }
 
 impl DatePicker {
     pub fn new(month: Month, year: i32) -> Self {
-        Self { month, year }
+        let previous_date = OffsetDateTime::now_utc().date();
+        Self {
+            previous_date,
+            month,
+            year,
+        }
     }
 
-    pub fn view(&self, selected_date: &mut Date) -> impl WidgetView<DatePicker, DatePickerMessage> {
+    pub fn view(
+        &mut self,
+        selected_date: &mut Date,
+    ) -> impl WidgetView<DatePicker, DatePickerMessage> {
+        if self.previous_date != *selected_date {
+            self.month = selected_date.month();
+            self.year = selected_date.year();
+            self.previous_date = selected_date.clone();
+        }
         flex((self.date_controls(), self.date_grid(selected_date)))
             .direction(Axis::Vertical)
             .cross_axis_alignment(CrossAxisAlignment::Center)
@@ -31,6 +45,7 @@ impl DatePicker {
     fn date_controls(&self) -> impl WidgetView<DatePicker, DatePickerMessage> {
         let month = self.month;
         let year = self.year;
+
         flex((
             button("<", |data: &mut DatePicker| {
                 data.month = data.month.previous();
@@ -80,8 +95,9 @@ impl DatePicker {
                 columns.push(
                     sized_box(button(
                         format!("{day_number}"),
-                        move |_data: &mut DatePicker| {
+                        move |data: &mut DatePicker| {
                             // Set the selected_date
+                            data.previous_date = date;
                             DatePickerMessage::Select(date)
                         },
                     ))

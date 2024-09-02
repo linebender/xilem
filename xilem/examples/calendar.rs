@@ -19,8 +19,6 @@ impl Calendar {
         let now = OffsetDateTime::now_utc();
         Self {
             selected_date: now.date(),
-            // month: now.month(),
-            // year: now.year(),
             date: DatePicker::new(now.month(), now.year()),
         }
     }
