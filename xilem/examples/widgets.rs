@@ -48,7 +48,7 @@ fn checkbox_view(data: bool) -> impl WidgetView<bool> {
     })
 }
 
-/// Wrap widgets in a box with a border
+/// Wrap `inner` in a box with a border
 fn border_box<State: 'static, Action: 'static>(
     inner: impl WidgetView<State, Action>,
 ) -> impl WidgetView<State, Action> {
