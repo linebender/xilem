@@ -170,6 +170,9 @@ impl<'w> WidgetRef<'w, dyn Widget> {
 
     /// Recursively find innermost widget at given position.
     ///
+    /// If multiple overlapping children of a widget contain the given position in their layout
+    /// boxes, the last child as determined by [`Widget::children_ids`] is chosen.
+    ///
     /// **pos** - the position in local coordinates (zero being the top-left of the
     /// inner widget).
     pub fn find_widget_at_pos(&self, pos: Point) -> Option<WidgetRef<'w, dyn Widget>> {
@@ -190,7 +193,7 @@ impl<'w> WidgetRef<'w, dyn Widget> {
                 }
             }
             // TODO - Use Widget::get_child_at_pos method
-            if let Some(child) = innermost_widget.children().into_iter().find(|child| {
+            if let Some(child) = innermost_widget.children().into_iter().rev().find(|child| {
                 !child.widget.skip_pointer() && child.state().window_layout_rect().contains(pos)
             }) {
                 innermost_widget = child;
