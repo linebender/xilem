@@ -9,7 +9,7 @@
 
 use masonry::app_driver::{AppDriver, DriverCtx};
 use masonry::dpi::LogicalSize;
-use masonry::widget::{Button, Grid, Label, RootWidget};
+use masonry::widget::{Button, Grid, GridParams, Label, RootWidget};
 use masonry::{Action, PointerButton, WidgetId};
 use winit::window::Window;
 
@@ -38,15 +38,12 @@ impl AppDriver for Driver {
 }
 
 struct DrawnButton {
-    x: i32,
-    y: i32,
-    width: i32,
-    height: i32,
+    grid_params: GridParams,
 }
 
 impl DrawnButton {
     fn get_label(&self) -> String {
-        format!("X: {}, Y: {}, W: {}, H: {}", self.x, self.y, self.width, self.height)
+        format!("X: {}, Y: {}, W: {}, H: {}", self.grid_params.x, self.grid_params.y, self.grid_params.width, self.grid_params.height)
     }
 }
 
@@ -54,13 +51,13 @@ pub fn main() {
     let label = Label::new("Change spacing by right and\n left clicking on the buttons")
             .with_text_size(14.0);
     let button_inputs = vec![
-        DrawnButton{ x: 0, y: 0, width: 1, height: 1 },
-        DrawnButton{ x: 2, y: 0, width: 2, height: 1 },
-        DrawnButton{ x: 0, y: 1, width: 1, height: 2 },
-        DrawnButton{ x: 1, y: 1, width: 2, height: 2 },
-        DrawnButton{ x: 3, y: 1, width: 1, height: 1 },
-        DrawnButton{ x: 3, y: 2, width: 1, height: 1 },
-        DrawnButton{ x: 0, y: 3, width: 4, height: 1 },
+        DrawnButton{ grid_params: GridParams { x: 0, y: 0, width: 1, height: 1 }},
+        DrawnButton{ grid_params: GridParams { x: 2, y: 0, width: 2, height: 1 }},
+        DrawnButton{ grid_params: GridParams { x: 0, y: 1, width: 1, height: 2 }},
+        DrawnButton{ grid_params: GridParams { x: 1, y: 1, width: 2, height: 2 }},
+        DrawnButton{ grid_params: GridParams { x: 3, y: 1, width: 1, height: 1 }},
+        DrawnButton{ grid_params: GridParams { x: 3, y: 2, width: 1, height: 1 }},
+        DrawnButton{ grid_params: GridParams { x: 0, y: 3, width: 4, height: 1 }},
     ];
 
     let driver = Driver {
@@ -70,15 +67,12 @@ pub fn main() {
     // Arrange the two widgets vertically, with some padding
     let mut main_widget = Grid::with_dimensions(4, 4)
         .with_spacing(driver.grid_spacing)
-        .with_child(label, 1, 0, 1, 1);
+        .with_child(label, GridParams::new(1, 0, 1, 1));
     for button_input in button_inputs {
         let button = Button::new(button_input.get_label());
         main_widget = main_widget.with_child(
             button,
-            button_input.x,
-            button_input.y,
-            button_input.width,
-            button_input.height,
+            button_input.grid_params,
         )
     }
 

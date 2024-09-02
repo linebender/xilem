@@ -37,7 +37,7 @@ pub use align::Align;
 pub use button::Button;
 pub use checkbox::Checkbox;
 pub use flex::{Axis, CrossAxisAlignment, Flex, FlexParams, MainAxisAlignment};
-pub use grid::Grid;
+pub use grid::{Grid, GridParams};
 pub use label::{Label, LineBreaking};
 pub use portal::Portal;
 pub use progress_bar::ProgressBar;

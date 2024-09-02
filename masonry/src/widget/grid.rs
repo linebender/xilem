@@ -1,4 +1,4 @@
-// Copyright 2024 the Xilem Authors and the Druid Authors
+// Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
 use accesskit::Role;
@@ -44,21 +44,21 @@ impl Grid {
     /// Builder-style variant of [`WidgetMut::add_child`].
     ///
     /// Convenient for assembling a group of widgets in a single expression.
-    pub fn with_child(self, child: impl Widget, x: i32, y: i32, width: i32, height: i32) -> Self {
-        self.with_child_pod(WidgetPod::new(Box::new(child)), x, y, width, height)
+    pub fn with_child(self, child: impl Widget, params: GridParams) -> Self {
+        self.with_child_pod(WidgetPod::new(Box::new(child)), params)
     }
 
-    pub fn with_child_id(self, child: impl Widget, id: WidgetId, x: i32, y: i32, width: i32, height: i32) -> Self {
-        self.with_child_pod(WidgetPod::new_with_id(Box::new(child), id), x, y, width, height)
+    pub fn with_child_id(self, child: impl Widget, id: WidgetId, params: GridParams) -> Self {
+        self.with_child_pod(WidgetPod::new_with_id(Box::new(child), id), params)
     }
 
-    pub fn with_child_pod(mut self, widget: WidgetPod<Box<dyn Widget>>, x: i32, y: i32, width: i32, height: i32) -> Self {
+    pub fn with_child_pod(mut self, widget: WidgetPod<Box<dyn Widget>>, params: GridParams) -> Self {
         let child = Child {
             widget,
-            x,
-            y,
-            width,
-            height,
+            x: params.x,
+            y: params.y,
+            width: params.width,
+            height: params.height,
         };
         self.children.push(child);
         self
@@ -72,28 +72,50 @@ impl<'a> WidgetMut<'a, Grid> {
     /// See also [`with_child`].
     ///
     /// [`with_child`]: Grid::with_child
-    pub fn add_child(&mut self, child: impl Widget, x: i32, y: i32, width: i32, height: i32) {
+    pub fn add_child(&mut self, child: impl Widget, params: GridParams) {
         let child_pod: WidgetPod<Box<dyn Widget>>  = WidgetPod::new(Box::new(child));
-        self.insert_child_pod(child_pod, x, y, width, height);
+        self.insert_child_pod(child_pod, params);
     }
 
-    pub fn add_child_id(&mut self, child: impl Widget, id: WidgetId, x: i32, y: i32, width: i32, height: i32) {
+    pub fn add_child_id(&mut self, child: impl Widget, id: WidgetId, params: GridParams) {
         let child_pod: WidgetPod<Box<dyn Widget>> = WidgetPod::new_with_id(Box::new(child), id);
-        self.insert_child_pod(child_pod, x, y, width, height);
+        self.insert_child_pod(child_pod, params);
     }
 
     /// Add a child widget.
-    pub fn insert_child_pod(&mut self, widget: WidgetPod<Box<dyn Widget>>, x: i32, y: i32, width: i32, height: i32) {
+    pub fn insert_child_pod(&mut self, widget: WidgetPod<Box<dyn Widget>>, params: GridParams) {
         let child = Child {
             widget,
-            x,
-            y,
-            width,
-            height,
+            x: params.x,
+            y: params.y,
+            width: params.width,
+            height: params.height,
         };
         self.widget.children.push(child);
         self.ctx.children_changed();
         self.mark_needs_layout();
+    }
+
+    pub fn insert_grid_child(
+        &mut self,
+        idx: usize,
+        child: impl Widget,
+        params: impl Into<GridParams>,
+    ) {
+        self.insert_grid_child_pod(idx, WidgetPod::new(Box::new(child)), params);
+    }
+
+    pub fn insert_grid_child_pod(
+        &mut self,
+        idx: usize,
+        child: WidgetPod<Box<dyn Widget>>,
+        params: impl Into<GridParams>,
+    ) {
+        let child = new_grid_child(params.into(), child);
+        self.widget.children.insert(idx, child);
+        self.ctx.children_changed();
+
+        self.mark_needs_layout(); // TODO: needed?
     }
 
     pub fn set_spacing(&mut self, spacing: f64) {
@@ -101,9 +123,57 @@ impl<'a> WidgetMut<'a, Grid> {
         self.mark_needs_layout();
     }
 
+    pub fn set_width(&mut self, width: i32) {
+        self.widget.grid_width = width;
+        self.mark_needs_layout();
+    }
+
+    pub fn set_height(&mut self, height: i32) {
+        self.widget.grid_height = height;
+        self.mark_needs_layout();
+    }
+
     fn mark_needs_layout(&mut self) {
         self.widget.needs_layout = true;
         self.ctx.request_layout();
+    }
+
+    pub fn child_mut(&mut self, idx: usize) -> Option<WidgetMut<'_, Box<dyn Widget>>>{
+        let child = match self.widget.children[idx].widget_mut() {
+            Some(widget) => widget,
+            None => return None,
+        };
+
+        Some(self.ctx.get_mut(child))
+    }
+
+    /// Updates the grid parameters for the child at `idx`,
+    ///
+    /// # Panics
+    ///
+    /// Panics if the element at `idx` is not a widget.
+    pub fn update_child_grid_params(&mut self, idx: usize, params: GridParams) {
+        let child = &mut self.widget.children[idx];
+        //let new_child = new_grid_child(params.into(), widget);
+        //*child = new_child;
+        child.update_params(params);
+        self.mark_needs_layout();
+    }
+
+    pub fn remove_child(&mut self, idx: usize) {
+        let child = self.widget.children.remove(idx);
+        self.ctx.remove_child(child.widget);
+        self.mark_needs_layout();
+    }
+}
+
+fn new_grid_child(params: GridParams, widget: WidgetPod<Box<dyn Widget>>) -> Child {
+    Child{
+        widget,
+        x: params.x,
+        y: params.y,
+        width: params.width,
+        height: params.height,
     }
 }
 
@@ -207,5 +277,31 @@ impl Child {
     }
     fn widget(&self) -> Option<&WidgetPod<Box<dyn Widget>>> {
         Some(&self.widget)
+    }
+
+    fn update_params(&mut self, params: GridParams) {
+        self.x = params.x;
+        self.y = params.y;
+        self.width = params.width;
+        self.height = params.height;
+    }
+}
+
+#[derive(Default, Debug, Copy, Clone, PartialEq)]
+pub struct GridParams {
+    pub x: i32,
+    pub y: i32,
+    pub width: i32,
+    pub height: i32,
+}
+
+impl GridParams {
+    pub fn new(x: i32, y: i32, width: i32, height: i32) -> GridParams {
+        GridParams{
+            x,
+            y,
+            width,
+            height,
+        }
     }
 }
