@@ -22,6 +22,9 @@ pub use sized_box::*;
 mod spinner;
 pub use spinner::*;
 
+mod image;
+pub use image::*;
+
 mod label;
 pub use label::*;
 
