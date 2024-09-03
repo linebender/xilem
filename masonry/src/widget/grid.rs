@@ -19,8 +19,8 @@ pub struct Grid {
     grid_width: i32,
     grid_height: i32,
     grid_spacing: f64,
-    old_bc: BoxConstraints,
-    needs_layout: bool,
+    //old_bc: BoxConstraints,
+    //needs_layout: bool,
 }
 
 // --- MARK: IMPL GRID ---
@@ -31,8 +31,8 @@ impl Grid {
             grid_width: width,
             grid_height: height,
             grid_spacing: 0.0,
-            old_bc: BoxConstraints::new(Size::ZERO, Size::ZERO),
-            needs_layout: true,
+            //old_bc: BoxConstraints::new(Size::ZERO, Size::ZERO),
+            //needs_layout: true,
         }
     }
 
@@ -115,7 +115,7 @@ impl<'a> WidgetMut<'a, Grid> {
         self.widget.children.insert(idx, child);
         self.ctx.children_changed();
 
-        self.mark_needs_layout(); // TODO: needed?
+        self.mark_needs_layout();
     }
 
     pub fn set_spacing(&mut self, spacing: f64) {
@@ -133,8 +133,9 @@ impl<'a> WidgetMut<'a, Grid> {
         self.mark_needs_layout();
     }
 
+    /// Used to force a re-layout.
     fn mark_needs_layout(&mut self) {
-        self.widget.needs_layout = true;
+        //self.widget.needs_layout = true;
         self.ctx.request_layout();
     }
 
@@ -154,8 +155,6 @@ impl<'a> WidgetMut<'a, Grid> {
     /// Panics if the element at `idx` is not a widget.
     pub fn update_child_grid_params(&mut self, idx: usize, params: GridParams) {
         let child = &mut self.widget.children[idx];
-        //let new_child = new_grid_child(params.into(), widget);
-        //*child = new_child;
         child.update_params(params);
         self.mark_needs_layout();
     }
@@ -195,20 +194,21 @@ impl Widget for Grid {
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
         bc.debug_check("Grid");
-        let bc_changed = self.old_bc != *bc;
+        /*let bc_changed = self.old_bc != *bc;
         if bc_changed {
             self.old_bc = *bc;
             if !self.needs_layout {
                 self.needs_layout = true;
             }
-        }
+        }*/
         let total_size = bc.max();
         let width_unit = (total_size.width + self.grid_spacing) / (self.grid_width as f64);
         let height_unit = (total_size.height + self.grid_spacing) / (self.grid_height as f64);
         for child in &mut self.children {
-            if !self.needs_layout && !ctx.child_needs_layout(&child.widget) {
-                continue;
-            }
+            /*if !self.needs_layout && !ctx.child_needs_layout(&child.widget) {
+                ctx.mark_child_as_visited(&child.widget, true);
+                continue; // TODO: This breaks it. This is an attempted optimization.
+            }*/
             let cell_size = Size::new(
                 child.width as f64 * width_unit - self.grid_spacing,
                 child.height as f64 * height_unit - self.grid_spacing,
@@ -217,9 +217,9 @@ impl Widget for Grid {
             let _ = child.widget.layout(ctx, &child_bc);
             ctx.place_child(&mut child.widget, Point::new(child.x as f64 *width_unit, child.y as f64 * height_unit))
         }
-        if self.needs_layout {
+        /*if self.needs_layout {
             self.needs_layout = false;
-        }
+        }*/
         total_size
     }
 

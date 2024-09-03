@@ -1,14 +1,14 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::widget::{CrossAxisAlignment, MainAxisAlignment};
+use masonry::widget::{CrossAxisAlignment, GridParams, MainAxisAlignment};
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
 use winit::window::Window;
-use xilem::view::{Flex, FlexSequence};
+use xilem::view::{Flex, FlexSequence, FlexSpacer, grid, GridExt, GridItem};
 use xilem::EventLoopBuilder;
 use xilem::{
-    view::{button, flex, label, sized_box, Axis, FlexExt as _, FlexSpacer},
+    view::{button, flex, label, sized_box, Axis},
     EventLoop, WidgetView, Xilem,
 };
 
@@ -184,16 +184,20 @@ impl Calculator {
     }
 }
 
+// TODO: Is there a more generic way of doing the return type? This doesn't allow different
+//      "types" of grid_pos values. For example, I couldn't add the operator button.
+fn num_row(nums: [&'static str; 3], row: i32) -> Vec<GridItem<impl WidgetView<Calculator>, Calculator, ()>> {
+    let mut views: Vec<_> = vec![];
+    for (i, num) in nums.iter().enumerate() {
+        views.push(digit_button(num).grid_pos(i as i32, row))
+    }
+    views
+}
+
 const DISPLAY_FONT_SIZE: f32 = 30.;
 const GRID_GAP: f64 = 2.;
 fn app_logic(data: &mut Calculator) -> impl WidgetView<Calculator> {
-    let num_row = |nums: [&'static str; 3], operator| {
-        flex_row((
-            nums.map(|num| digit_button(num).flex(1.)),
-            operator_button(operator).flex(1.),
-        ))
-    };
-    flex((
+    grid((
         // Display
         centered_flex_row((
             FlexSpacer::Flex(0.1),
@@ -207,32 +211,25 @@ fn app_logic(data: &mut Calculator) -> impl WidgetView<Calculator> {
                 .map(|result| display_label(result.as_ref())),
             FlexSpacer::Flex(0.1),
         ))
-        .flex(1.0),
-        FlexSpacer::Fixed(10.0),
+        .grid_item(GridParams::new(0, 0, 4, 1)),
         // Top row
-        flex_row((
-            expanded_button("CE", Calculator::clear_entry).flex(1.),
-            expanded_button("C", Calculator::clear_all).flex(1.),
-            expanded_button("DEL", Calculator::on_delete).flex(1.),
-            operator_button(MathOperator::Divide).flex(1.),
-        ))
-        .flex(1.0),
-        num_row(["7", "8", "9"], MathOperator::Multiply).flex(1.0),
-        num_row(["4", "5", "6"], MathOperator::Subtract).flex(1.0),
-        num_row(["1", "2", "3"], MathOperator::Add).flex(1.0),
+        expanded_button("CE", Calculator::clear_entry).grid_pos(0, 1),
+        expanded_button("C", Calculator::clear_all).grid_pos(1, 1),
+        expanded_button("DEL", Calculator::on_delete).grid_pos(2, 1),
+        operator_button(MathOperator::Divide).grid_pos(3, 1),
+        num_row(["7", "8", "9"], 2),
+        operator_button(MathOperator::Multiply).grid_pos(3, 2),
+        num_row(["4", "5", "6"], 3),
+        operator_button(MathOperator::Subtract).grid_pos(3, 3),
+        num_row(["1", "2", "3"], 4),
+        operator_button(MathOperator::Add).grid_pos(3, 4),
         // bottom row
-        flex_row((
-            expanded_button("±", Calculator::negate).flex(1.),
-            digit_button("0").flex(1.),
-            digit_button(".").flex(1.),
-            expanded_button("=", Calculator::on_equals).flex(1.),
-        ))
-        .flex(1.0),
-    ))
-    .gap(GRID_GAP)
-    .cross_axis_alignment(CrossAxisAlignment::Fill)
-    .main_axis_alignment(MainAxisAlignment::End)
-    .must_fill_major_axis(true)
+        expanded_button("±", Calculator::negate).grid_pos(0, 5),
+        digit_button("0").grid_pos(1, 5),
+        digit_button(".").grid_pos(2, 5),
+        expanded_button("=", Calculator::on_equals).grid_pos(3, 5),
+    ), 4, 6)
+    .spacing(GRID_GAP)
 }
 
 /// Creates a horizontal centered flex row designed for the display portion of the calculator.
@@ -242,15 +239,6 @@ pub fn centered_flex_row<State, Seq: FlexSequence<State>>(sequence: Seq) -> Flex
         .cross_axis_alignment(CrossAxisAlignment::Center)
         .main_axis_alignment(MainAxisAlignment::Start)
         .gap(5.)
-}
-
-/// Creates a horizontal filled flex row designed to be used in a grid.
-pub fn flex_row<State, Seq: FlexSequence<State>>(sequence: Seq) -> Flex<Seq, State> {
-    flex(sequence)
-        .direction(Axis::Horizontal)
-        .cross_axis_alignment(CrossAxisAlignment::Fill)
-        .main_axis_alignment(MainAxisAlignment::SpaceEvenly)
-        .gap(GRID_GAP)
 }
 
 /// Returns a label intended to be used in the calculator's top display.

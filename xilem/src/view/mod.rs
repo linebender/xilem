@@ -32,6 +32,9 @@ mod prose;
 pub use prose::*;
 
 mod textbox;
+mod grid;
+pub use grid::*;
+
 pub use textbox::*;
 
 mod portal;
