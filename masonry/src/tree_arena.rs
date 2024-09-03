@@ -207,6 +207,10 @@ impl<Item> TreeArena<Item> {
         Some(node.arena_mut(self.parents_map[&id], &mut self.parents_map))
     }
 
+    /// Construct the path of items from the given item to the root of the tree.
+    ///
+    /// The path is in order from the bottom to the top, starting at the given item and ending at
+    /// the root.
     pub fn get_id_path(&self, id: u64) -> Vec<u64> {
         let mut path = Vec::new();
 
