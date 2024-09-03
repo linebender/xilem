@@ -254,7 +254,9 @@ impl_context_method!(
         /// Discussion: there is currently some confusion about whether a
         /// widget can be considered hot when some other widget is active (for
         /// example, when clicking to one widget and dragging to the next).
-        /// The documentation should clearly state the resolution.
+        /// The documentation should clearly state the resolution. At the
+        /// moment, if a widget has pointer capture, it and its ancestors can
+        /// be hot, but no other widgets can be.
         pub fn is_hot(&self) -> bool {
             self.widget_state.is_hot
         }
