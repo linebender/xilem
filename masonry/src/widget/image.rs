@@ -22,6 +22,8 @@ use crate::{
 /// A widget that renders a bitmap Image.
 ///
 /// The underlying image uses `Arc` for buffer data, making it cheap to clone.
+///
+/// This currently uses bilinear interpolation, which falls down when the image is larger than the
 pub struct Image {
     image_data: ImageBuf,
     fill: FillStrat,
@@ -87,7 +89,7 @@ impl Widget for Image {
             trace!("Computed size: {}", size);
             return size;
         }
-        // This size logic has NOT been carefully considered
+        // This size logic has NOT been carefully considered, in particular with regards to self.fill.
         // TODO: Carefully consider it
         let size =
             bc.constrain_aspect_ratio(image_size.height / image_size.width, image_size.width);

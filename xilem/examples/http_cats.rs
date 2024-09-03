@@ -32,7 +32,7 @@ struct Status {
 }
 
 #[derive(Debug)]
-/// What operations have happened on a fetching image.
+/// The state of the download of an image from a URL
 enum ImageState {
     NotRequested,
     Pending,
@@ -144,7 +144,6 @@ impl HttpCats {
 
 /// Load a [`vello::peniko::Image`] from the given url.
 async fn image_from_url(url: &str) -> anyhow::Result<Image> {
-    // TODO: Error handling
     let response = reqwest::get(url).await?;
     let bytes = response.bytes().await?;
     let image = image::load_from_memory(&bytes)?.into_rgba8();
@@ -185,7 +184,7 @@ impl Status {
             ),
             ImageState::Pending => OneOf3::B(sized_box(spinner()).width(80.).height(80.)),
             // TODO: Alt text?
-            ImageState::Available(image_data) => OneOf3::C(image(image_data.clone())),
+            ImageState::Available(image_data) => OneOf3::C(image(image_data)),
         };
         flex((
             prose(format!("HTTP Status Code: {}", self.code)).alignment(TextAlignment::Middle),
