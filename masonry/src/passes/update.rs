@@ -53,7 +53,7 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot, root_state: &mut Wi
 
     // -- UPDATE HOVERED WIDGETS --
 
-    let mut next_hovered_widget = if let Some(pos) = pointer_pos {
+    let next_hovered_widget = if let Some(pos) = pointer_pos {
         // TODO - Apply scale?
         root.get_root_widget()
             .find_widget_at_pos(pos)
@@ -61,16 +61,22 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot, root_state: &mut Wi
     } else {
         None
     };
-    // If the pointer is captured, it can either hover its capture target or nothing.
-    if let Some(capture_target) = root.state.pointer_capture_target {
-        if next_hovered_widget != Some(capture_target) {
-            next_hovered_widget = None;
-        }
-    }
 
     // "Hovered path" means the widget which is considered hovered, and all its parents.
     let prev_hovered_path = std::mem::take(&mut root.state.hovered_path);
-    let next_hovered_path = get_id_path(root, next_hovered_widget);
+    let next_hovered_path = {
+        let next_hovered_path = get_id_path(root, next_hovered_widget);
+        if let Some(capture_target) = root.state.pointer_capture_target {
+            // If the pointer is captured, it can only hover its capture target (and the capture
+            // target's ancestors) or nothing.
+            next_hovered_path
+                .into_iter()
+                .skip_while(|id| *id != capture_target)
+                .collect()
+        } else {
+            next_hovered_path
+        }
+    };
 
     let mut hovered_set = HashSet::new();
     for widget_id in &next_hovered_path {
