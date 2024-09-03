@@ -2,18 +2,102 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use winit::{dpi::LogicalSize, error::EventLoopError, window::Window};
-use xilem::{view::flex, EventLoop, EventLoopBuilder, WidgetView, Xilem};
+use xilem::{
+    view::{button, flex, portal, prose, Axis, FlexExt, FlexSpacer},
+    Color, EventLoop, EventLoopBuilder, TextAlignment, WidgetView, Xilem,
+};
+use xilem_core::one_of::OneOf3;
 
-struct HttpCats;
+#[derive(Clone)]
+struct Status {
+    code: u32,
+    message: &'static str,
+}
+
+struct HttpCats {
+    statuses: Vec<Status>,
+    // The currently active code.
+    selected_code: Option<u32>,
+}
 
 impl HttpCats {
-    fn view(&mut self) -> impl WidgetView<Self> {
-        flex(())
+    fn view(&mut self) -> impl WidgetView<HttpCats> {
+        let left_column = portal(flex((
+            prose("Status"),
+            self.statuses
+                .iter_mut()
+                .map(Status::list_view)
+                .collect::<Vec<_>>(),
+        )));
+        let info_area = if let Some(selected_code) = self.selected_code {
+            if let Some(selected_status) =
+                self.statuses.iter_mut().find(|it| it.code == selected_code)
+            {
+                OneOf3::A(selected_status.details_view())
+            } else {
+                OneOf3::B(
+                    prose(format!(
+                        "Status code {selected_code} selected, but this was not found."
+                    ))
+                    .alignment(TextAlignment::Middle)
+                    .brush(Color::YELLOW),
+                )
+            }
+        } else {
+            OneOf3::C(
+                prose("No selection yet made. Select an item from the sidebar to continue.")
+                    .alignment(TextAlignment::Middle),
+            )
+        };
+
+        flex((
+            // Add padding to the top for Android. Still a horrible hack
+            FlexSpacer::Fixed(40.),
+            flex((left_column.flex(1.), info_area.flex(1.)))
+                .direction(Axis::Horizontal)
+                .must_fill_major_axis(true)
+                .flex(1.),
+        ))
+        .must_fill_major_axis(true)
+    }
+}
+
+impl Status {
+    fn list_view(&mut self) -> impl WidgetView<HttpCats> {
+        let code = self.code;
+        flex((
+            // TODO: Reduce allocations here?
+            prose(self.code.to_string()),
+            prose(self.message),
+            FlexSpacer::Flex(1.),
+            button("Select", move |state: &mut HttpCats| {
+                state.selected_code = Some(code);
+            }),
+            FlexSpacer::Fixed(masonry::theme::SCROLLBAR_WIDTH),
+        ))
+        .direction(Axis::Horizontal)
+    }
+
+    fn details_view(&mut self) -> impl WidgetView<HttpCats> {
+        flex((
+            prose(format!("HTTP Status Code: {}", self.code)),
+            prose(self.message).text_size(20.),
+            prose(format!(
+                "(Downloaded image from: https://http.cat/{})",
+                self.code
+            )),
+            prose("Copyright ©️ https://http.cat"),
+        ))
+        .main_axis_alignment(xilem::view::MainAxisAlignment::Start)
+        .must_fill_major_axis(true)
     }
 }
 
 fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
-    let data = HttpCats {};
+    let data = HttpCats {
+        statuses: Status::parse_file(),
+        selected_code: None,
+    };
 
     let app = Xilem::new(data, HttpCats::view);
     let min_window_size = LogicalSize::new(200., 200.);
@@ -25,6 +109,32 @@ fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
 
     app.run_windowed_in(event_loop, window_attributes)
 }
+
+impl Status {
+    /// Parse the supported HTTP cats.
+    fn parse_file() -> Vec<Self> {
+        let mut lines = STATUS_CODES_CSV.lines();
+        let first_line = lines.next();
+        assert_eq!(first_line, Some("code,message"));
+        lines.flat_map(Status::parse_single).collect()
+    }
+
+    fn parse_single(line: &'static str) -> Option<Self> {
+        let (code, message) = line.split_once(',')?;
+        Some(Self {
+            code: code.parse().ok()?,
+            message: message.trim(),
+        })
+    }
+}
+
+/// The status codes supported by <https://http.cat>, used under the MIT license.
+/// Full details can be found in `xilem/resources/data/http_cats_status/README.md` from
+/// the workspace root.
+const STATUS_CODES_CSV: &str = include_str!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/resources/data/http_cats_status/status.csv",
+));
 
 #[cfg(not(target_os = "android"))]
 #[allow(dead_code)]
