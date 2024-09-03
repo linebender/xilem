@@ -224,11 +224,6 @@ impl Widget for Grid {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
-        // Just paint every child
-        for child in self.children.iter_mut().filter_map(|x| x.widget_mut()) {
-            child.paint(ctx, scene);
-        }
-
         // paint the baseline if we're debugging layout
         if ctx.debug_paint && ctx.widget_state.baseline_offset != 0.0 {
             let color = get_debug_color(ctx.widget_id().to_raw());
@@ -244,10 +239,7 @@ impl Widget for Grid {
         Role::GenericContainer
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx) {
-        for child in self.children.iter_mut().filter_map(|x| x.widget_mut()) {
-            child.accessibility(ctx);
-        }
+    fn accessibility(&mut self, _: &mut AccessCtx) {
     }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
