@@ -22,6 +22,10 @@ use crate::{
 /// A widget that renders a bitmap Image.
 ///
 /// The underlying image uses `Arc` for buffer data, making it cheap to clone.
+///
+/// This currently uses bilinear interpolation, which falls down when the image is
+/// larger than its layout size (e.g. it is in a [sized box](super::SizedBox) smaller
+/// than the image size).
 pub struct Image {
     image_data: ImageBuf,
     fill: FillStrat,
@@ -32,7 +36,6 @@ impl Image {
     /// Create an image drawing widget from an image buffer.
     ///
     /// By default, the Image will scale to fit its box constraints ([`FillStrat::Fill`]).
-
     #[inline]
     pub fn new(image_data: ImageBuf) -> Self {
         Image {
@@ -82,17 +85,16 @@ impl Widget for Image {
         // If either the width or height is constrained calculate a value so that the image fits
         // in the size exactly. If it is unconstrained by both width and height take the size of
         // the image.
-        let max = bc.max();
         let image_size = Size::new(self.image_data.width as f64, self.image_data.height as f64);
-        let size = if bc.is_width_bounded() && !bc.is_height_bounded() {
-            let ratio = max.width / image_size.width;
-            Size::new(max.width, ratio * image_size.height)
-        } else if bc.is_height_bounded() && !bc.is_width_bounded() {
-            let ratio = max.height / image_size.height;
-            Size::new(ratio * image_size.width, max.height)
-        } else {
-            bc.constrain(image_size)
-        };
+        if image_size.is_empty() {
+            let size = bc.min();
+            trace!("Computed size: {}", size);
+            return size;
+        }
+        // This size logic has NOT been carefully considered, in particular with regards to self.fill.
+        // TODO: Carefully consider it
+        let size =
+            bc.constrain_aspect_ratio(image_size.height / image_size.width, image_size.width);
         trace!("Computed size: {}", size);
         size
     }

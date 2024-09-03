@@ -55,6 +55,16 @@ pub struct MessageProxy<M: Message> {
     message: PhantomData<fn(M)>,
 }
 
+impl<M: Message> Clone for MessageProxy<M> {
+    fn clone(&self) -> Self {
+        Self {
+            proxy: self.proxy.clone(),
+            path: self.path.clone(),
+            message: PhantomData,
+        }
+    }
+}
+
 impl<M: Message> MessageProxy<M> {
     /// Create a new `MessageProxy`
     pub fn new(proxy: Arc<dyn RawProxy<DynMessage>>, path: Arc<[ViewId]>) -> Self {

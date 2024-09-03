@@ -9,7 +9,7 @@ license.workspace = true
 repository.workspace = true
 homepage.workspace = true
 rust-version.workspace = true
-exclude = ["/resources/fonts/roboto_flex/"]
+exclude = ["/resources/fonts/roboto_flex/", "/resources/data/http_cats_status/"]
 
 [package.metadata.docs.rs]
 all-features = true
@@ -35,6 +35,16 @@ name = "calc_android"
 path = "examples/calc.rs"
 # cdylib is required for cargo-apk
 crate-type = ["cdylib"]
+
+[[example]]
+name = "http_cats"
+
+[[example]]
+name = "http_cats_android"
+path = "examples/http_cats.rs"
+# cdylib is required for cargo-apk
+crate-type = ["cdylib"]
+
 
 [[example]]
 name = "stopwatch"
@@ -65,14 +75,28 @@ tracing.workspace = true
 vello.workspace = true
 smallvec.workspace = true
 accesskit.workspace = true
-tokio = { version = "1.39.1", features = ["rt", "rt-multi-thread", "time"] }
+tokio = { version = "1.39.1", features = [
+    "rt",
+    "rt-multi-thread",
+    "time",
+    "sync",
+] }
 
 [dev-dependencies]
 # Used for `variable_clock`
 time = { workspace = true, features = ["local-offset"] }
 
+# Used for http_cats
+reqwest = { version = "0.12.7", default-features = false, features = [
+    # We use rustls as Android doesn't ship with openssl
+    # and this is likely to be easiest to get working.
+    "rustls-tls",
+] }
+image = { workspace = true, features = ["jpeg"] }
+
 # Make wgpu use tracing for its spans.
 profiling = { version = "1.0.15", features = ["profile-with-tracing"] }
+anyhow = "1.0.86"
 
 [target.'cfg(target_os = "android")'.dev-dependencies]
 winit = { features = ["android-native-activity"], workspace = true }
@@ -81,3 +105,7 @@ winit = { features = ["android-native-activity"], workspace = true }
 # Do not use when releasing a production app.
 [package.metadata.android.application]
 debuggable = true
+
+[[package.metadata.android.uses_permission]]
+# Needed for http_cats
+name = "android.permission.INTERNET"

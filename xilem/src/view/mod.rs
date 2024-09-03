@@ -4,6 +4,9 @@
 mod task;
 pub use task::*;
 
+mod worker;
+pub use worker::*;
+
 mod button;
 pub use button::*;
 
@@ -18,6 +21,9 @@ pub use sized_box::*;
 
 mod spinner;
 pub use spinner::*;
+
+mod image;
+pub use image::*;
 
 mod label;
 pub use label::*;
