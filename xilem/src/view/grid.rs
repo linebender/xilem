@@ -300,7 +300,6 @@ impl<'w> GridSplice<'w> {
 pub struct GridItem<V, State, Action> {
     view: V,
     params: GridParams,
-    // TODO: Document and learn what this does.
     phantom: PhantomData<fn() -> (State, Action)>,
 }
 
