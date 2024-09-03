@@ -1,10 +1,12 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use vello::peniko::Image;
+use std::sync::Arc;
+
+use vello::peniko::{Blob, Image};
 use winit::{dpi::LogicalSize, error::EventLoopError, window::Window};
 use xilem::{
-    view::{button, flex, portal, prose, worker, Axis, FlexExt, FlexSpacer},
+    view::{button, flex, portal, prose, sized_box, spinner, worker, Axis, FlexExt, FlexSpacer},
     Color, EventLoop, EventLoopBuilder, TextAlignment, WidgetView, Xilem,
 };
 use xilem_core::{fork, one_of::OneOf3};
@@ -99,10 +101,21 @@ impl HttpCats {
                 |proxy, mut rx| async move {
                     while let Some(request) = rx.recv().await {
                         if let Some(code) = request {
-                            eprintln!("https://http.cat/{code}");
-                            // let value = request::get(format!(https://http.cat/{code}));
-                            // image::parse(value);
-                            // Convert to peniko Image
+                            let proxy = proxy.clone();
+                            tokio::task::spawn(async move {
+                                let url = format!("https://http.cat/{code}");
+                                let result = image_from_url(&url).await;
+                                match result {
+                                    // We choose not to handle the case where the event loop has ended
+                                    Ok(image) => drop(proxy.message((code, image))),
+                                    // TODO: Report in the frontend
+                                    Err(err) => {
+                                        tracing::warn!(
+                                            "Loading image for HTTP status code {code} from {url} failed: {err:?}"
+                                        );
+                                    }
+                                }
+                            });
                         }
                     }
                 },
@@ -116,6 +129,23 @@ impl HttpCats {
             ),
         )
     }
+}
+
+/// Load a [`vello::peniko::Image`] from the given url.
+async fn image_from_url(url: &str) -> anyhow::Result<Image> {
+    // TODO: Error handling
+    let response = reqwest::get(url).await?;
+    let bytes = response.bytes().await?;
+    let image = image::load_from_memory(&bytes)?.into_rgba8();
+    let width = image.width();
+    let height = image.height();
+    let data = image.into_vec();
+    Ok(Image::new(
+        Blob::new(Arc::new(data)),
+        vello::peniko::Format::Rgba8,
+        width,
+        height,
+    ))
 }
 
 impl Status {
@@ -137,13 +167,20 @@ impl Status {
     }
 
     fn details_view(&mut self) -> impl WidgetView<HttpCats> {
+        let image = match &self.image {
+            ImageState::NotRequested => {
+                OneOf3::A(prose("Failed to start fetching image. This is a bug!"))
+            }
+            ImageState::Pending => OneOf3::B(sized_box(spinner())),
+            ImageState::Available(image) => OneOf3::C(prose(format!(
+                "TODO: Displaying image of a cat of size {}x{}",
+                image.width, image.height
+            ))),
+        };
         flex((
             prose(format!("HTTP Status Code: {}", self.code)),
             prose(self.message).text_size(20.),
-            prose(format!(
-                "(TODO: Downloaded image from: https://http.cat/{})",
-                self.code
-            )),
+            image,
             prose("Copyright ©️ https://http.cat"),
         ))
         .main_axis_alignment(xilem::view::MainAxisAlignment::Start)
