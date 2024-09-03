@@ -9,7 +9,7 @@ license.workspace = true
 repository.workspace = true
 homepage.workspace = true
 rust-version.workspace = true
-exclude = ["/resources/fonts/roboto_flex/"]
+exclude = ["/resources/fonts/roboto_flex/", "/resources/data/http_cats_status/"]
 
 [package.metadata.docs.rs]
 all-features = true
@@ -35,6 +35,16 @@ name = "calc_android"
 path = "examples/calc.rs"
 # cdylib is required for cargo-apk
 crate-type = ["cdylib"]
+
+[[example]]
+name = "http_cats"
+
+[[example]]
+name = "http_cats_android"
+path = "examples/http_cats/main.rs"
+# cdylib is required for cargo-apk
+crate-type = ["cdylib"]
+
 
 [[example]]
 name = "stopwatch"
