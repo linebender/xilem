@@ -23,7 +23,9 @@ use crate::{
 ///
 /// The underlying image uses `Arc` for buffer data, making it cheap to clone.
 ///
-/// This currently uses bilinear interpolation, which falls down when the image is larger than the
+/// This currently uses bilinear interpolation, which falls down when the image is
+/// larger than its layout size (e.g. it is in a [sized box](super::SizedBox) smaller
+/// than the image size).
 pub struct Image {
     image_data: ImageBuf,
     fill: FillStrat,
