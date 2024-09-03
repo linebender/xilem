@@ -94,7 +94,7 @@ pub fn main() {
 
     let driver = Driver { grid_spacing: 1.0 };
 
-    // Arrange the two widgets vertically, with some padding
+    // Arrange widgets in a 4 by 4 grid.
     let mut main_widget = Grid::with_dimensions(4, 4)
         .with_spacing(driver.grid_spacing)
         .with_child(label, GridParams::new(1, 0, 1, 1));
