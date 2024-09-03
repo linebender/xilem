@@ -1,13 +1,17 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+//! An example demonstrating the use of Async web requests in Xilem to access the <https://http.cat/> API.
+//! This also demonstrates image loading.
+
 use std::sync::Arc;
 
 use vello::peniko::{Blob, Image};
 use winit::{dpi::LogicalSize, error::EventLoopError, window::Window};
 use xilem::{
     view::{
-        button, flex, image, portal, prose, sized_box, spinner, worker, Axis, FlexExt, FlexSpacer,
+        button, flex, image, portal, prose, sized_box, spinner, worker, Axis, CrossAxisAlignment,
+        FlexExt, FlexSpacer,
     },
     Color, EventLoop, EventLoopBuilder, TextAlignment, WidgetView, Xilem,
 };
@@ -92,12 +96,17 @@ impl HttpCats {
             flex((
                 // Add padding to the top for Android. Still a horrible hack
                 FlexSpacer::Fixed(40.),
-                flex((left_column.flex(1.), portal(info_area).flex(1.)))
-                    .direction(Axis::Horizontal)
-                    .must_fill_major_axis(true)
-                    .flex(1.),
+                flex((
+                    left_column.flex(1.),
+                    portal(sized_box(info_area).expand_width()).flex(1.),
+                ))
+                .direction(Axis::Horizontal)
+                .cross_axis_alignment(CrossAxisAlignment::Fill)
+                .must_fill_major_axis(true)
+                .flex(1.),
             ))
-            .must_fill_major_axis(true),
+            .must_fill_major_axis(true)
+            .cross_axis_alignment(CrossAxisAlignment::Fill),
             worker(
                 worker_value,
                 |proxy, mut rx| async move {
@@ -170,21 +179,26 @@ impl Status {
 
     fn details_view(&mut self) -> impl WidgetView<HttpCats> {
         let image = match &self.image {
-            ImageState::NotRequested => {
-                OneOf3::A(prose("Failed to start fetching image. This is a bug!"))
-            }
-            ImageState::Pending => OneOf3::B(sized_box(spinner())),
+            ImageState::NotRequested => OneOf3::A(
+                prose("Failed to start fetching image. This is a bug!")
+                    .alignment(TextAlignment::Middle),
+            ),
+            ImageState::Pending => OneOf3::B(sized_box(spinner()).width(80.).height(80.)),
+            // TODO: Alt text?
             ImageState::Available(image_data) => OneOf3::C(image(image_data.clone())),
         };
         flex((
-            prose(format!("HTTP Status Code: {}", self.code)),
-            prose(self.message).text_size(20.),
-            // TODO: Alt text?
+            prose(format!("HTTP Status Code: {}", self.code)).alignment(TextAlignment::Middle),
+            prose(self.message)
+                .text_size(20.)
+                .alignment(TextAlignment::Middle),
+            FlexSpacer::Fixed(10.),
             image,
             // TODO: Overlay on top of the image?
-            prose("Copyright ©️ https://http.cat"),
+            prose("Copyright ©️ https://http.cat").alignment(TextAlignment::End),
         ))
         .main_axis_alignment(xilem::view::MainAxisAlignment::Start)
+        .cross_axis_alignment(CrossAxisAlignment::Fill)
         .must_fill_major_axis(true)
     }
 }
