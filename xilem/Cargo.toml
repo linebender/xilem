@@ -41,7 +41,7 @@ name = "http_cats"
 
 [[example]]
 name = "http_cats_android"
-path = "examples/http_cats/main.rs"
+path = "examples/http_cats.rs"
 # cdylib is required for cargo-apk
 crate-type = ["cdylib"]
 

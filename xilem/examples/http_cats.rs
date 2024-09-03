@@ -195,11 +195,11 @@ impl Status {
             FlexSpacer::Fixed(10.),
             image,
             // TODO: Overlay on top of the image?
-            prose("Copyright ©️ https://http.cat").alignment(TextAlignment::End),
+            // HACK: Trailing spaces workaround scrollbar covering content
+            prose("Copyright ©️ https://http.cat      ").alignment(TextAlignment::End),
         ))
         .main_axis_alignment(xilem::view::MainAxisAlignment::Start)
         .cross_axis_alignment(CrossAxisAlignment::Fill)
-        .must_fill_major_axis(true)
     }
 }
 
