@@ -1,23 +1,35 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use vello::peniko::Image;
 use winit::{dpi::LogicalSize, error::EventLoopError, window::Window};
 use xilem::{
-    view::{button, flex, portal, prose, Axis, FlexExt, FlexSpacer},
+    view::{button, flex, portal, prose, worker, Axis, FlexExt, FlexSpacer},
     Color, EventLoop, EventLoopBuilder, TextAlignment, WidgetView, Xilem,
 };
-use xilem_core::one_of::OneOf3;
+use xilem_core::{fork, one_of::OneOf3};
 
-#[derive(Clone)]
+/// The main state of the application.
+struct HttpCats {
+    statuses: Vec<Status>,
+    // The currently active (http status) code.
+    selected_code: Option<u32>,
+}
+
+#[derive(Debug)]
 struct Status {
     code: u32,
     message: &'static str,
+    image: ImageState,
 }
 
-struct HttpCats {
-    statuses: Vec<Status>,
-    // The currently active code.
-    selected_code: Option<u32>,
+#[derive(Debug)]
+/// What operations have happened on a fetching image.
+enum ImageState {
+    NotRequested,
+    Pending,
+    // Error,
+    Available(Image),
 }
 
 impl HttpCats {
@@ -29,36 +41,80 @@ impl HttpCats {
                 .map(Status::list_view)
                 .collect::<Vec<_>>(),
         )));
-        let info_area = if let Some(selected_code) = self.selected_code {
+        let (info_area, worker_value) = if let Some(selected_code) = self.selected_code {
             if let Some(selected_status) =
                 self.statuses.iter_mut().find(|it| it.code == selected_code)
             {
-                OneOf3::A(selected_status.details_view())
+                // If we haven't requested the image yet, make sure we do so.
+                let value = match selected_status.image {
+                    ImageState::NotRequested => {
+                        // TODO: Should a view_function be editing `self`?
+                        // This feels too imperative.
+                        selected_status.image = ImageState::Pending;
+                        Some(selected_code)
+                    }
+                    // If the image is pending, that means that worker already knows about it.
+                    // We don't set the requested code to `selected_code` here because we could have been on
+                    // a different view in-between, so we don't want to request the same image twice.
+                    ImageState::Pending => None,
+                    ImageState::Available(_) => None,
+                };
+                (OneOf3::A(selected_status.details_view()), value)
             } else {
-                OneOf3::B(
-                    prose(format!(
-                        "Status code {selected_code} selected, but this was not found."
-                    ))
-                    .alignment(TextAlignment::Middle)
-                    .brush(Color::YELLOW),
+                (
+                    OneOf3::B(
+                        prose(format!(
+                            "Status code {selected_code} selected, but this was not found."
+                        ))
+                        .alignment(TextAlignment::Middle)
+                        .brush(Color::YELLOW),
+                    ),
+                    None,
                 )
             }
         } else {
-            OneOf3::C(
-                prose("No selection yet made. Select an item from the sidebar to continue.")
-                    .alignment(TextAlignment::Middle),
+            (
+                OneOf3::C(
+                    prose("No selection yet made. Select an item from the sidebar to continue.")
+                        .alignment(TextAlignment::Middle),
+                ),
+                None,
             )
         };
 
-        flex((
-            // Add padding to the top for Android. Still a horrible hack
-            FlexSpacer::Fixed(40.),
-            flex((left_column.flex(1.), info_area.flex(1.)))
-                .direction(Axis::Horizontal)
-                .must_fill_major_axis(true)
-                .flex(1.),
-        ))
-        .must_fill_major_axis(true)
+        // TODO: Should `web_image` be a built-in component?
+
+        fork(
+            flex((
+                // Add padding to the top for Android. Still a horrible hack
+                FlexSpacer::Fixed(40.),
+                flex((left_column.flex(1.), info_area.flex(1.)))
+                    .direction(Axis::Horizontal)
+                    .must_fill_major_axis(true)
+                    .flex(1.),
+            ))
+            .must_fill_major_axis(true),
+            worker(
+                worker_value,
+                |proxy, mut rx| async move {
+                    while let Some(request) = rx.recv().await {
+                        if let Some(code) = request {
+                            eprintln!("https://http.cat/{code}");
+                            // let value = request::get(format!(https://http.cat/{code}));
+                            // image::parse(value);
+                            // Convert to peniko Image
+                        }
+                    }
+                },
+                |state: &mut HttpCats, (code, image): (u32, Image)| {
+                    if let Some(status) = state.statuses.iter_mut().find(|it| it.code == code) {
+                        status.image = ImageState::Available(image);
+                    } else {
+                        // TODO: Error handling?
+                    }
+                },
+            ),
+        )
     }
 }
 
@@ -70,6 +126,8 @@ impl Status {
             prose(self.code.to_string()),
             prose(self.message),
             FlexSpacer::Flex(1.),
+            // TODO: Spinner if image pending?
+            // TODO: Tick if image loaded?
             button("Select", move |state: &mut HttpCats| {
                 state.selected_code = Some(code);
             }),
@@ -83,7 +141,7 @@ impl Status {
             prose(format!("HTTP Status Code: {}", self.code)),
             prose(self.message).text_size(20.),
             prose(format!(
-                "(Downloaded image from: https://http.cat/{})",
+                "(TODO: Downloaded image from: https://http.cat/{})",
                 self.code
             )),
             prose("Copyright ©️ https://http.cat"),
@@ -124,6 +182,7 @@ impl Status {
         Some(Self {
             code: code.parse().ok()?,
             message: message.trim(),
+            image: ImageState::NotRequested,
         })
     }
 }

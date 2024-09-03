@@ -4,6 +4,9 @@
 mod task;
 pub use task::*;
 
+mod worker;
+pub use worker::*;
+
 mod button;
 pub use button::*;
 

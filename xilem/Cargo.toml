@@ -75,7 +75,12 @@ tracing.workspace = true
 vello.workspace = true
 smallvec.workspace = true
 accesskit.workspace = true
-tokio = { version = "1.39.1", features = ["rt", "rt-multi-thread", "time"] }
+tokio = { version = "1.39.1", features = [
+    "rt",
+    "rt-multi-thread",
+    "time",
+    "sync",
+] }
 
 [dev-dependencies]
 # Used for `variable_clock`
