@@ -1,8 +1,7 @@
-// Copyright 2019 the Xilem Authors and the Druid Authors
+// Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-//! This is a very small example of how to setup a masonry application.
-//! It does the almost bare minimum while still being useful.
+//! Shows how to use a grid layout in Masonry.
 
 // On Windows platform, don't show a console when opening the app.
 #![windows_subsystem = "windows"]
@@ -48,7 +47,7 @@ impl DrawnButton {
 }
 
 pub fn main() {
-    let label = Label::new("Change spacing by right and\n left clicking on the buttons")
+    let label = Prose::new("Change spacing by right and\n left clicking on the buttons")
             .with_text_size(14.0);
     let button_inputs = vec![
         DrawnButton{ grid_params: GridParams { x: 0, y: 0, width: 1, height: 1 }},
