@@ -5,7 +5,7 @@ use masonry::widget::{CrossAxisAlignment, GridParams, MainAxisAlignment};
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
 use winit::window::Window;
-use xilem::view::{Flex, FlexSequence, FlexSpacer, grid, GridExt, GridItem};
+use xilem::view::{Flex, FlexSequence, FlexSpacer, grid, GridExt, GridItem, GridSequence};
 use xilem::EventLoopBuilder;
 use xilem::{
     view::{button, flex, label, sized_box, Axis},
@@ -184,9 +184,7 @@ impl Calculator {
     }
 }
 
-// TODO: Is there a more generic way of doing the return type? This doesn't allow different
-//      "types" of grid_pos values. For example, I couldn't add the operator button.
-fn num_row(nums: [&'static str; 3], row: i32) -> Vec<GridItem<impl WidgetView<Calculator>, Calculator, ()>> {
+fn num_row(nums: [&'static str; 3], row: i32) -> impl GridSequence<Calculator> {
     let mut views: Vec<_> = vec![];
     for (i, num) in nums.iter().enumerate() {
         views.push(digit_button(num).grid_pos(i as i32, row))

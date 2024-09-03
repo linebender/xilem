@@ -8,8 +8,8 @@
 
 use masonry::app_driver::{AppDriver, DriverCtx};
 use masonry::dpi::LogicalSize;
-use masonry::widget::{Button, Grid, GridParams, Label, RootWidget};
-use masonry::{Action, PointerButton, WidgetId};
+use masonry::widget::{Button, Grid, GridParams, Prose, RootWidget, SizedBox};
+use masonry::{Action, Color, PointerButton, WidgetId};
 use winit::window::Window;
 
 struct Driver {
@@ -36,27 +36,22 @@ impl AppDriver for Driver {
     }
 }
 
-struct DrawnButton {
-    grid_params: GridParams,
-}
-
-impl DrawnButton {
-    fn get_label(&self) -> String {
-        format!("X: {}, Y: {}, W: {}, H: {}", self.grid_params.x, self.grid_params.y, self.grid_params.width, self.grid_params.height)
-    }
+fn grid_button(params: GridParams) -> Button {
+    Button::new(format!("X: {}, Y: {}, W: {}, H: {}", params.x, params.y, params.width, params.height))
 }
 
 pub fn main() {
-    let label = Prose::new("Change spacing by right and\n left clicking on the buttons")
-            .with_text_size(14.0);
+    let label = SizedBox::new(Prose::new("Change spacing by right and\n left clicking on the buttons")
+            .with_text_size(14.0))
+        .border(Color::rgb8(40, 40, 80), 1.0);
     let button_inputs = vec![
-        DrawnButton{ grid_params: GridParams { x: 0, y: 0, width: 1, height: 1 }},
-        DrawnButton{ grid_params: GridParams { x: 2, y: 0, width: 2, height: 1 }},
-        DrawnButton{ grid_params: GridParams { x: 0, y: 1, width: 1, height: 2 }},
-        DrawnButton{ grid_params: GridParams { x: 1, y: 1, width: 2, height: 2 }},
-        DrawnButton{ grid_params: GridParams { x: 3, y: 1, width: 1, height: 1 }},
-        DrawnButton{ grid_params: GridParams { x: 3, y: 2, width: 1, height: 1 }},
-        DrawnButton{ grid_params: GridParams { x: 0, y: 3, width: 4, height: 1 }},
+        GridParams { x: 0, y: 0, width: 1, height: 1 },
+        GridParams { x: 2, y: 0, width: 2, height: 1 },
+        GridParams { x: 0, y: 1, width: 1, height: 2 },
+        GridParams { x: 1, y: 1, width: 2, height: 2 },
+        GridParams { x: 3, y: 1, width: 1, height: 1 },
+        GridParams { x: 3, y: 2, width: 1, height: 1 },
+        GridParams { x: 0, y: 3, width: 4, height: 1 },
     ];
 
     let driver = Driver {
@@ -68,10 +63,10 @@ pub fn main() {
         .with_spacing(driver.grid_spacing)
         .with_child(label, GridParams::new(1, 0, 1, 1));
     for button_input in button_inputs {
-        let button = Button::new(button_input.get_label());
+        let button = grid_button(button_input);
         main_widget = main_widget.with_child(
             button,
-            button_input.grid_params,
+            button_input,
         )
     }
 

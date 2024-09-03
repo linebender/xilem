@@ -13,6 +13,9 @@ pub use checkbox::*;
 mod flex;
 pub use flex::*;
 
+mod grid;
+pub use grid::*;
+
 mod sized_box;
 pub use sized_box::*;
 
@@ -32,9 +35,6 @@ mod prose;
 pub use prose::*;
 
 mod textbox;
-mod grid;
-pub use grid::*;
-
 pub use textbox::*;
 
 mod portal;
