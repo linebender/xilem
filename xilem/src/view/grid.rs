@@ -3,11 +3,11 @@
 
 use std::marker::PhantomData;
 
+use masonry::widget::GridParams;
 use masonry::{
     widget::{self, WidgetMut},
     Widget,
 };
-use masonry::widget::GridParams;
 use xilem_core::{
     AppendVec, DynMessage, ElementSplice, MessageResult, Mut, SuperElement, View, ViewElement,
     ViewMarker, ViewSequence,
@@ -71,9 +71,7 @@ where
         let seq_state = self.sequence.seq_build(ctx, &mut elements);
         for child in elements.into_inner() {
             widget = match child {
-                GridElement::Child(child, params) => {
-                    widget.with_child_pod(child.inner, params)
-                }
+                GridElement::Child(child, params) => widget.with_child_pod(child.inner, params),
             }
         }
         (Pod::new(widget), seq_state)
@@ -189,7 +187,7 @@ impl ElementSplice<GridElement> for GridSplice<'_> {
                 GridElement::Child(child, params) => {
                     self.element
                         .insert_grid_child_pod(self.idx, child.inner, params);
-                },
+                }
             };
             self.idx += 1;
         }
@@ -201,7 +199,7 @@ impl ElementSplice<GridElement> for GridSplice<'_> {
             GridElement::Child(child, params) => {
                 self.element
                     .insert_grid_child_pod(self.idx, child.inner, params);
-            },
+            }
         };
         self.idx += 1;
     }
@@ -284,7 +282,6 @@ pub struct GridSplice<'w> {
     scratch: AppendVec<GridElement>,
 }
 
-
 impl<'w> GridSplice<'w> {
     fn new(element: WidgetMut<'w, widget::Grid>) -> Self {
         Self {
@@ -294,7 +291,6 @@ impl<'w> GridSplice<'w> {
         }
     }
 }
-
 
 /// A `WidgetView` that can be used within a [`Grid`] [`View`]
 pub struct GridItem<V, State, Action> {
@@ -385,7 +381,3 @@ where
         self.view.message(view_state, id_path, message, app_state)
     }
 }
-
-
-
-

@@ -29,34 +29,73 @@ impl AppDriver for Driver {
                 }
 
                 ctx.get_root::<RootWidget<Grid>>()
-                    .get_element().set_spacing(self.grid_spacing)
+                    .get_element()
+                    .set_spacing(self.grid_spacing)
             }
-            _ => ()
+            _ => (),
         }
     }
 }
 
 fn grid_button(params: GridParams) -> Button {
-    Button::new(format!("X: {}, Y: {}, W: {}, H: {}", params.x, params.y, params.width, params.height))
+    Button::new(format!(
+        "X: {}, Y: {}, W: {}, H: {}",
+        params.x, params.y, params.width, params.height
+    ))
 }
 
 pub fn main() {
-    let label = SizedBox::new(Prose::new("Change spacing by right and\n left clicking on the buttons")
-            .with_text_size(14.0))
-        .border(Color::rgb8(40, 40, 80), 1.0);
+    let label = SizedBox::new(
+        Prose::new("Change spacing by right and\n left clicking on the buttons")
+            .with_text_size(14.0),
+    )
+    .border(Color::rgb8(40, 40, 80), 1.0);
     let button_inputs = vec![
-        GridParams { x: 0, y: 0, width: 1, height: 1 },
-        GridParams { x: 2, y: 0, width: 2, height: 1 },
-        GridParams { x: 0, y: 1, width: 1, height: 2 },
-        GridParams { x: 1, y: 1, width: 2, height: 2 },
-        GridParams { x: 3, y: 1, width: 1, height: 1 },
-        GridParams { x: 3, y: 2, width: 1, height: 1 },
-        GridParams { x: 0, y: 3, width: 4, height: 1 },
+        GridParams {
+            x: 0,
+            y: 0,
+            width: 1,
+            height: 1,
+        },
+        GridParams {
+            x: 2,
+            y: 0,
+            width: 2,
+            height: 1,
+        },
+        GridParams {
+            x: 0,
+            y: 1,
+            width: 1,
+            height: 2,
+        },
+        GridParams {
+            x: 1,
+            y: 1,
+            width: 2,
+            height: 2,
+        },
+        GridParams {
+            x: 3,
+            y: 1,
+            width: 1,
+            height: 1,
+        },
+        GridParams {
+            x: 3,
+            y: 2,
+            width: 1,
+            height: 1,
+        },
+        GridParams {
+            x: 0,
+            y: 3,
+            width: 4,
+            height: 1,
+        },
     ];
 
-    let driver = Driver {
-        grid_spacing: 1.0,
-    };
+    let driver = Driver { grid_spacing: 1.0 };
 
     // Arrange the two widgets vertically, with some padding
     let mut main_widget = Grid::with_dimensions(4, 4)
@@ -64,10 +103,7 @@ pub fn main() {
         .with_child(label, GridParams::new(1, 0, 1, 1));
     for button_input in button_inputs {
         let button = grid_button(button_input);
-        main_widget = main_widget.with_child(
-            button,
-            button_input,
-        )
+        main_widget = main_widget.with_child(button, button_input)
     }
 
     let window_size = LogicalSize::new(800.0, 500.0);
@@ -82,5 +118,5 @@ pub fn main() {
         RootWidget::new(main_widget),
         driver,
     )
-        .unwrap();
+    .unwrap();
 }

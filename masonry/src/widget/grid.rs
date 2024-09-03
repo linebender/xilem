@@ -52,7 +52,11 @@ impl Grid {
         self.with_child_pod(WidgetPod::new_with_id(Box::new(child), id), params)
     }
 
-    pub fn with_child_pod(mut self, widget: WidgetPod<Box<dyn Widget>>, params: GridParams) -> Self {
+    pub fn with_child_pod(
+        mut self,
+        widget: WidgetPod<Box<dyn Widget>>,
+        params: GridParams,
+    ) -> Self {
         let child = Child {
             widget,
             x: params.x,
@@ -73,7 +77,7 @@ impl<'a> WidgetMut<'a, Grid> {
     ///
     /// [`with_child`]: Grid::with_child
     pub fn add_child(&mut self, child: impl Widget, params: GridParams) {
-        let child_pod: WidgetPod<Box<dyn Widget>>  = WidgetPod::new(Box::new(child));
+        let child_pod: WidgetPod<Box<dyn Widget>> = WidgetPod::new(Box::new(child));
         self.insert_child_pod(child_pod, params);
     }
 
@@ -139,7 +143,7 @@ impl<'a> WidgetMut<'a, Grid> {
         self.ctx.request_layout();
     }
 
-    pub fn child_mut(&mut self, idx: usize) -> Option<WidgetMut<'_, Box<dyn Widget>>>{
+    pub fn child_mut(&mut self, idx: usize) -> Option<WidgetMut<'_, Box<dyn Widget>>> {
         let child = match self.widget.children[idx].widget_mut() {
             Some(widget) => widget,
             None => return None,
@@ -167,7 +171,7 @@ impl<'a> WidgetMut<'a, Grid> {
 }
 
 fn new_grid_child(params: GridParams, widget: WidgetPod<Box<dyn Widget>>) -> Child {
-    Child{
+    Child {
         widget,
         x: params.x,
         y: params.y,
@@ -215,7 +219,10 @@ impl Widget for Grid {
             );
             let child_bc = BoxConstraints::new(cell_size, cell_size);
             let _ = child.widget.layout(ctx, &child_bc);
-            ctx.place_child(&mut child.widget, Point::new(child.x as f64 *width_unit, child.y as f64 * height_unit))
+            ctx.place_child(
+                &mut child.widget,
+                Point::new(child.x as f64 * width_unit, child.y as f64 * height_unit),
+            );
         }
         /*if self.needs_layout {
             self.needs_layout = false;
@@ -239,8 +246,7 @@ impl Widget for Grid {
         Role::GenericContainer
     }
 
-    fn accessibility(&mut self, _: &mut AccessCtx) {
-    }
+    fn accessibility(&mut self, _: &mut AccessCtx) {}
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         self.children
@@ -289,7 +295,7 @@ pub struct GridParams {
 
 impl GridParams {
     pub fn new(x: i32, y: i32, width: i32, height: i32) -> GridParams {
-        GridParams{
+        GridParams {
             x,
             y,
             width,

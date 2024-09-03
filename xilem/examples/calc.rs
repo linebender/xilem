@@ -5,7 +5,7 @@ use masonry::widget::{CrossAxisAlignment, GridParams, MainAxisAlignment};
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
 use winit::window::Window;
-use xilem::view::{Flex, FlexSequence, FlexSpacer, grid, GridExt, GridItem, GridSequence};
+use xilem::view::{grid, Flex, FlexSequence, FlexSpacer, GridExt, GridItem, GridSequence};
 use xilem::EventLoopBuilder;
 use xilem::{
     view::{button, flex, label, sized_box, Axis},
@@ -195,38 +195,42 @@ fn num_row(nums: [&'static str; 3], row: i32) -> impl GridSequence<Calculator> {
 const DISPLAY_FONT_SIZE: f32 = 30.;
 const GRID_GAP: f64 = 2.;
 fn app_logic(data: &mut Calculator) -> impl WidgetView<Calculator> {
-    grid((
-        // Display
-        centered_flex_row((
-            FlexSpacer::Flex(0.1),
-            display_label(data.numbers[0].as_ref()),
-            data.operation
-                .map(|operation| display_label(operation.as_str())),
-            display_label(data.numbers[1].as_ref()),
-            data.result.is_some().then(|| display_label("=")),
-            data.result
-                .as_ref()
-                .map(|result| display_label(result.as_ref())),
-            FlexSpacer::Flex(0.1),
-        ))
-        .grid_item(GridParams::new(0, 0, 4, 1)),
-        // Top row
-        expanded_button("CE", Calculator::clear_entry).grid_pos(0, 1),
-        expanded_button("C", Calculator::clear_all).grid_pos(1, 1),
-        expanded_button("DEL", Calculator::on_delete).grid_pos(2, 1),
-        operator_button(MathOperator::Divide).grid_pos(3, 1),
-        num_row(["7", "8", "9"], 2),
-        operator_button(MathOperator::Multiply).grid_pos(3, 2),
-        num_row(["4", "5", "6"], 3),
-        operator_button(MathOperator::Subtract).grid_pos(3, 3),
-        num_row(["1", "2", "3"], 4),
-        operator_button(MathOperator::Add).grid_pos(3, 4),
-        // bottom row
-        expanded_button("±", Calculator::negate).grid_pos(0, 5),
-        digit_button("0").grid_pos(1, 5),
-        digit_button(".").grid_pos(2, 5),
-        expanded_button("=", Calculator::on_equals).grid_pos(3, 5),
-    ), 4, 6)
+    grid(
+        (
+            // Display
+            centered_flex_row((
+                FlexSpacer::Flex(0.1),
+                display_label(data.numbers[0].as_ref()),
+                data.operation
+                    .map(|operation| display_label(operation.as_str())),
+                display_label(data.numbers[1].as_ref()),
+                data.result.is_some().then(|| display_label("=")),
+                data.result
+                    .as_ref()
+                    .map(|result| display_label(result.as_ref())),
+                FlexSpacer::Flex(0.1),
+            ))
+            .grid_item(GridParams::new(0, 0, 4, 1)),
+            // Top row
+            expanded_button("CE", Calculator::clear_entry).grid_pos(0, 1),
+            expanded_button("C", Calculator::clear_all).grid_pos(1, 1),
+            expanded_button("DEL", Calculator::on_delete).grid_pos(2, 1),
+            operator_button(MathOperator::Divide).grid_pos(3, 1),
+            num_row(["7", "8", "9"], 2),
+            operator_button(MathOperator::Multiply).grid_pos(3, 2),
+            num_row(["4", "5", "6"], 3),
+            operator_button(MathOperator::Subtract).grid_pos(3, 3),
+            num_row(["1", "2", "3"], 4),
+            operator_button(MathOperator::Add).grid_pos(3, 4),
+            // bottom row
+            expanded_button("±", Calculator::negate).grid_pos(0, 5),
+            digit_button("0").grid_pos(1, 5),
+            digit_button(".").grid_pos(2, 5),
+            expanded_button("=", Calculator::on_equals).grid_pos(3, 5),
+        ),
+        4,
+        6,
+    )
     .spacing(GRID_GAP)
 }
 

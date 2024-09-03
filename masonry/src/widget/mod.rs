@@ -17,6 +17,7 @@ mod align;
 mod button;
 mod checkbox;
 mod flex;
+mod grid;
 mod image;
 mod label;
 mod portal;
@@ -30,7 +31,6 @@ mod split;
 mod textbox;
 mod variable_label;
 mod widget_arena;
-mod grid;
 
 pub use self::image::Image;
 pub use align::Align;
