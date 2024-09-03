@@ -105,3 +105,7 @@ winit = { features = ["android-native-activity"], workspace = true }
 # Do not use when releasing a production app.
 [package.metadata.android.application]
 debuggable = true
+
+[[package.metadata.android.uses_permission]]
+# Needed for http_cats
+name = "android.permission.INTERNET"

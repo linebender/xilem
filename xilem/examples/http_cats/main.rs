@@ -6,7 +6,9 @@ use std::sync::Arc;
 use vello::peniko::{Blob, Image};
 use winit::{dpi::LogicalSize, error::EventLoopError, window::Window};
 use xilem::{
-    view::{button, flex, portal, prose, sized_box, spinner, worker, Axis, FlexExt, FlexSpacer},
+    view::{
+        button, flex, image, portal, prose, sized_box, spinner, worker, Axis, FlexExt, FlexSpacer,
+    },
     Color, EventLoop, EventLoopBuilder, TextAlignment, WidgetView, Xilem,
 };
 use xilem_core::{fork, one_of::OneOf3};
@@ -90,7 +92,7 @@ impl HttpCats {
             flex((
                 // Add padding to the top for Android. Still a horrible hack
                 FlexSpacer::Fixed(40.),
-                flex((left_column.flex(1.), info_area.flex(1.)))
+                flex((left_column.flex(1.), portal(info_area).flex(1.)))
                     .direction(Axis::Horizontal)
                     .must_fill_major_axis(true)
                     .flex(1.),
@@ -172,15 +174,14 @@ impl Status {
                 OneOf3::A(prose("Failed to start fetching image. This is a bug!"))
             }
             ImageState::Pending => OneOf3::B(sized_box(spinner())),
-            ImageState::Available(image) => OneOf3::C(prose(format!(
-                "TODO: Displaying image of a cat of size {}x{}",
-                image.width, image.height
-            ))),
+            ImageState::Available(image_data) => OneOf3::C(image(image_data.clone())),
         };
         flex((
             prose(format!("HTTP Status Code: {}", self.code)),
             prose(self.message).text_size(20.),
+            // TODO: Alt text?
             image,
+            // TODO: Overlay on top of the image?
             prose("Copyright ©️ https://http.cat"),
         ))
         .main_axis_alignment(xilem::view::MainAxisAlignment::Start)
