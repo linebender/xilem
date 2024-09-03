@@ -32,7 +32,6 @@ impl Image {
     /// Create an image drawing widget from an image buffer.
     ///
     /// By default, the Image will scale to fit its box constraints ([`FillStrat::Fill`]).
-
     #[inline]
     pub fn new(image_data: ImageBuf) -> Self {
         Image {
