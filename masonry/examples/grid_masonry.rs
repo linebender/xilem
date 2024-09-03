@@ -18,21 +18,18 @@ struct Driver {
 
 impl AppDriver for Driver {
     fn on_action(&mut self, ctx: &mut DriverCtx<'_>, _widget_id: WidgetId, action: Action) {
-        match action {
-            Action::ButtonPressed(button) => {
-                if button == PointerButton::Primary {
-                    self.grid_spacing += 1.0;
-                } else if button == PointerButton::Secondary {
-                    self.grid_spacing -= 1.0;
-                } else {
-                    self.grid_spacing += 0.5;
-                }
-
-                ctx.get_root::<RootWidget<Grid>>()
-                    .get_element()
-                    .set_spacing(self.grid_spacing)
+        if let Action::ButtonPressed(button) = action {
+            if button == PointerButton::Primary {
+                self.grid_spacing += 1.0;
+            } else if button == PointerButton::Secondary {
+                self.grid_spacing -= 1.0;
+            } else {
+                self.grid_spacing += 0.5;
             }
-            _ => (),
+
+            ctx.get_root::<RootWidget<Grid>>()
+                .get_element()
+                .set_spacing(self.grid_spacing);
         }
     }
 }
@@ -103,7 +100,7 @@ pub fn main() {
         .with_child(label, GridParams::new(1, 0, 1, 1));
     for button_input in button_inputs {
         let button = grid_button(button_input);
-        main_widget = main_widget.with_child(button, button_input)
+        main_widget = main_widget.with_child(button, button_input);
     }
 
     let window_size = LogicalSize::new(800.0, 500.0);

@@ -5,7 +5,7 @@ use masonry::widget::{CrossAxisAlignment, GridParams, MainAxisAlignment};
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
 use winit::window::Window;
-use xilem::view::{grid, Flex, FlexSequence, FlexSpacer, GridExt, GridItem, GridSequence};
+use xilem::view::{grid, Flex, FlexSequence, FlexSpacer, GridExt, GridSequence};
 use xilem::EventLoopBuilder;
 use xilem::{
     view::{button, flex, label, sized_box, Axis},
@@ -187,7 +187,7 @@ impl Calculator {
 fn num_row(nums: [&'static str; 3], row: i32) -> impl GridSequence<Calculator> {
     let mut views: Vec<_> = vec![];
     for (i, num) in nums.iter().enumerate() {
-        views.push(digit_button(num).grid_pos(i as i32, row))
+        views.push(digit_button(num).grid_pos(i as i32, row));
     }
     views
 }
