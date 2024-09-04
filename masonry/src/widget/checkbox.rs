@@ -47,6 +47,7 @@ impl WidgetMut<'_, Checkbox> {
     pub fn set_checked(&mut self, checked: bool) {
         self.widget.checked = checked;
         self.ctx.request_paint();
+        self.ctx.request_accessibility_update();
     }
 
     /// Set the text.
@@ -76,6 +77,7 @@ impl Widget for Checkbox {
                 if ctx.is_active() && ctx.is_hot() && !ctx.is_disabled() {
                     self.checked = !self.checked;
                     ctx.submit_action(Action::CheckboxChecked(self.checked));
+                    ctx.request_accessibility_update();
                     trace!("Checkbox {:?} released", ctx.widget_id());
                 }
                 ctx.request_paint();
@@ -94,6 +96,7 @@ impl Widget for Checkbox {
                     self.checked = !self.checked;
                     ctx.submit_action(Action::CheckboxChecked(self.checked));
                     ctx.request_paint();
+                    ctx.request_accessibility_update();
                 }
                 _ => {}
             }
