@@ -45,13 +45,21 @@ path = "examples/http_cats.rs"
 # cdylib is required for cargo-apk
 crate-type = ["cdylib"]
 
-
 [[example]]
 name = "stopwatch"
 
 [[example]]
 name = "stopwatch_android"
 path = "examples/stopwatch.rs"
+# cdylib is required for cargo-apk
+crate-type = ["cdylib"]
+
+[[example]]
+name = "to_do_mvc"
+
+[[example]]
+name = "to_do_mvc_android"
+path = "examples/to_do_mvc.rs"
 # cdylib is required for cargo-apk
 crate-type = ["cdylib"]
 
