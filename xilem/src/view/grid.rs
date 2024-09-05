@@ -234,7 +234,7 @@ impl ElementSplice<GridElement> for GridSplice<'_> {
     }
 }
 
-/// GridSequence is what allows an input to the grid that contains all the grid elements.
+/// `GridSequence` is what allows an input to the grid that contains all the grid elements.
 pub trait GridSequence<State, Action = ()>:
     ViewSequence<State, Action, ViewCtx, GridElement>
 {
