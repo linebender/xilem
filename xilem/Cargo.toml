@@ -64,6 +64,15 @@ path = "examples/variable_clock.rs"
 # cdylib is required for cargo-apk
 crate-type = ["cdylib"]
 
+[[example]]
+name = "to_do_mvc"
+
+[[example]]
+name = "to_do_mvc_android"
+path = "examples/to_do_mvc.rs"
+# cdylib is required for cargo-apk
+crate-type = ["cdylib"]
+
 [lints]
 workspace = true
 
