@@ -156,8 +156,12 @@ impl SuperElement<GridElement> for GridElement {
 
 impl<W: Widget> SuperElement<Pod<W>> for GridElement {
     fn upcast(child: Pod<W>) -> Self {
-        // TODO: Defaults are bad.
-        GridElement::Child(child.inner.boxed().into(), GridParams::default())
+        // Getting here means that the widget didn't use .grid_item or .grid_pos.
+        // This currently places the widget in the top left cell.
+        // There is not much else, beyond purposefully failing, that can be done here,
+        // because there isn't enough information to determine an appropriate spot
+        // for the widget.
+        GridElement::Child(child.inner.boxed().into(), GridParams::new(1, 1, 1, 1))
     }
 
     fn with_downcast_val<R>(
@@ -178,7 +182,6 @@ impl<W: Widget> SuperElement<Pod<W>> for GridElement {
 }
 
 // Used for building and rebuilding the ViewSequence
-
 impl ElementSplice<GridElement> for GridSplice<'_> {
     fn with_scratch<R>(&mut self, f: impl FnOnce(&mut AppendVec<GridElement>) -> R) -> R {
         let ret = f(&mut self.scratch);
@@ -231,7 +234,7 @@ impl ElementSplice<GridElement> for GridSplice<'_> {
     }
 }
 
-// TODO: Document
+/// GridSequence is what allows an input to the grid that contains all the grid elements.
 pub trait GridSequence<State, Action = ()>:
     ViewSequence<State, Action, ViewCtx, GridElement>
 {
@@ -244,7 +247,22 @@ impl<Seq, State, Action> GridSequence<State, Action> for Seq where
 
 /// A trait which extends a [`WidgetView`] with methods to provide parameters for a grid item
 pub trait GridExt<State, Action>: WidgetView<State, Action> {
-    // TODO: Document.
+    /// Applies [`impl Into<GridParams>`](`GridParams`) to this view. This allows the view
+    /// to be placed as a child within a [`Grid`] [`View`].
+    ///
+    /// # Examples
+    /// ```
+    /// use masonry::widget::GridParams;
+    /// use xilem::{view::{button, prose, grid, GridExt}};
+    /// # use xilem::{WidgetView};
+    ///
+    /// # fn view<State: 'static>() -> impl WidgetView<State> {
+    /// grid((
+    ///     button("click me", |_| ()).grid_item(GridParams::new(0, 0, 2, 1)),
+    ///     prose("a prose").grid_item(GridParams::new(1, 1, 1, 1)),
+    /// ), 2, 2)
+    /// # }
+    /// ```
     fn grid_item(self, params: impl Into<GridParams>) -> GridItem<Self, State, Action>
     where
         State: 'static,
@@ -254,6 +272,23 @@ pub trait GridExt<State, Action>: WidgetView<State, Action> {
         grid_item(self, params)
     }
 
+    /// Applies a [`impl Into<GridParams>`](`GridParams`) with the specified position to this view.
+    /// This allows the view to be placed as a child within a [`Grid`] [`View`].
+    /// For instances where a grid item is expected to take up multiple cell units,
+    /// use [`GridExt::grid_item`]
+    ///
+    /// # Examples
+    /// ```
+    /// use masonry::widget::GridParams;
+    /// use xilem::{view::{button, prose, grid, GridExt}};
+    /// # use xilem::{WidgetView};
+    ///
+    /// # fn view<State: 'static>() -> impl WidgetView<State> {
+    /// grid((
+    ///     button("click me", |_| ()).grid_pos(0, 0),
+    ///     prose("a prose").grid_pos(1, 1),
+    /// ), 2, 2)
+    /// # }
     fn grid_pos(self, x: i32, y: i32) -> GridItem<Self, State, Action>
     where
         State: 'static,
@@ -275,7 +310,7 @@ pub struct GridElementMut<'w> {
     idx: usize,
 }
 
-// This stores the widget and a scratch vec of GridElement?
+// Used for manipulating the ViewSequence.
 pub struct GridSplice<'w> {
     idx: usize,
     element: WidgetMut<'w, widget::Grid>,
