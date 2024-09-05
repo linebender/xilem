@@ -155,6 +155,7 @@ impl WidgetMut<'_, Textbox> {
     pub fn set_line_break_mode(&mut self, line_break_mode: LineBreaking) {
         self.widget.line_break_mode = line_break_mode;
         self.ctx.request_paint();
+        self.ctx.request_accessibility_update();
     }
 }
 
@@ -174,6 +175,7 @@ impl Widget for Textbox {
                     if made_change {
                         ctx.request_layout();
                         ctx.request_paint();
+                        ctx.request_accessibility_update();
                         ctx.request_focus();
                         ctx.set_active(true);
                     }
@@ -187,6 +189,7 @@ impl Widget for Textbox {
                     // We might have changed text colours, so we need to re-request a layout
                     ctx.request_layout();
                     ctx.request_paint();
+                    ctx.request_accessibility_update();
                 }
             }
             PointerEvent::PointerUp(button, state) => {
@@ -211,6 +214,7 @@ impl Widget for Textbox {
             // TODO: only some handlers need this repaint
             ctx.request_layout();
             ctx.request_paint();
+            ctx.request_accessibility_update();
         }
     }
 
@@ -344,8 +348,9 @@ impl Widget for Textbox {
         Role::TextInput
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx) {
-        // TODO
+    fn accessibility(&mut self, ctx: &mut AccessCtx) {
+        // TODO: Replace with full accessibility.
+        ctx.current_node().set_value(self.text());
     }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
