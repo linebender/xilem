@@ -88,7 +88,7 @@ impl<'a> WidgetMut<'a, Grid> {
 
     /// Add a child widget.
     pub fn insert_child_pod(&mut self, widget: WidgetPod<Box<dyn Widget>>, params: GridParams) {
-        let child = new_grid_child(params.into(), widget);
+        let child = new_grid_child(params, widget);
         self.widget.children.push(child);
         self.ctx.children_changed();
         self.mark_needs_layout();
@@ -298,11 +298,17 @@ impl GridParams {
             y = 0;
         }
         if width <= 0 {
-            debug_panic!("Grid width value should be a positive nonzero number; got {}", width);
+            debug_panic!(
+                "Grid width value should be a positive nonzero number; got {}",
+                width
+            );
             width = 1;
         }
         if height <= 0 {
-            debug_panic!("Grid height value should be a positive nonzero number; got {}", height);
+            debug_panic!(
+                "Grid height value should be a positive nonzero number; got {}",
+                height
+            );
             height = 1;
         }
         GridParams {
@@ -347,24 +353,21 @@ mod tests {
         // Add a widget that takes up more than one horizontal cell
         harness.edit_root_widget(|mut grid| {
             let mut grid = grid.downcast::<Grid>();
-            grid.add_child(button::Button::new("B"),
-                           GridParams::new(1, 0, 3, 1));
+            grid.add_child(button::Button::new("B"), GridParams::new(1, 0, 3, 1));
         });
         assert_render_snapshot!(harness, "with_horizontal_widget");
 
         // Add a widget that takes up more than one vertical cell
         harness.edit_root_widget(|mut grid| {
             let mut grid = grid.downcast::<Grid>();
-            grid.add_child(button::Button::new("C"),
-                           GridParams::new(0, 1, 1, 3));
+            grid.add_child(button::Button::new("C"), GridParams::new(0, 1, 1, 3));
         });
         assert_render_snapshot!(harness, "with_vertical_widget");
 
         // Add a widget that takes up more than one horizontal and vertical cell
         harness.edit_root_widget(|mut grid| {
             let mut grid = grid.downcast::<Grid>();
-            grid.add_child(button::Button::new("D"),
-                           GridParams::new(1, 1, 2, 2));
+            grid.add_child(button::Button::new("D"), GridParams::new(1, 1, 2, 2));
         });
         assert_render_snapshot!(harness, "with_2x2_widget");
 
@@ -435,6 +438,5 @@ mod tests {
             grid.insert_grid_child_at(0, button::Button::new("C"), GridParams::new(0, 0, 2, 1));
         });
         assert_render_snapshot!(harness, "2x2_with_overlapping_c");
-
     }
 }
