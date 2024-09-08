@@ -110,7 +110,7 @@ wgpu = "0.20.1"
 kurbo = "0.11.0"
 parley = "0.1.0"
 peniko = "0.1.1"
-winit = "0.30.4"
+winit = "0.30.5"
 tracing = { version = "0.1.40", default-features = false }
 smallvec = "1.13.2"
 dpi = "0.1.1"
@@ -123,5 +123,7 @@ nv-flip = "0.1.2"
 time = "0.3.36"
 
 [patch.crates-io]
-dpi = { git = "https://github.com/mwcampbell/winit", branch = "android-hover-events-backport" }
-winit = { git = "https://github.com/mwcampbell/winit", branch = "android-hover-events-backport" }
+#dpi = { git = "https://github.com/mwcampbell/winit", branch = "android-hover-events-backport" }
+#winit = { git = "https://github.com/mwcampbell/winit", branch = "android-hover-events-backport" }
+dpi = { path = "../winit/dpi" }
+winit = { path = "../winit" }

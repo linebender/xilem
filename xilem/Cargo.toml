@@ -117,3 +117,7 @@ debuggable = true
 [[package.metadata.android.uses_permission]]
 # Needed for http_cats
 name = "android.permission.INTERNET"
+
+[package.metadata.android.signing.release]
+path = "/home/aaron/.android/debug.keystore"
+keystore_password = "android"
