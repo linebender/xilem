@@ -276,9 +276,7 @@ fn update_anim_for_widget(
 }
 
 /// Run the animation pass.
-///
-/// Returns `true` if the animation should continue.
-pub(crate) fn run_update_anim_pass(root: &mut RenderRoot, elapsed_ns: u64) -> bool {
+pub(crate) fn run_update_anim_pass(root: &mut RenderRoot, elapsed_ns: u64) {
     let _span = info_span!("update_anim").entered();
 
     let (root_widget, mut root_state) = root.widget_arena.get_pair_mut(root.root.id());
@@ -288,5 +286,4 @@ pub(crate) fn run_update_anim_pass(root: &mut RenderRoot, elapsed_ns: u64) -> bo
         root_state.reborrow_mut(),
         elapsed_ns,
     );
-    root_state.item.needs_anim
 }

@@ -208,13 +208,14 @@ impl RenderRoot {
                 let last = self.last_anim.take();
                 let elapsed_ns = last.map(|t| now.duration_since(t).as_nanos()).unwrap_or(0) as u64;
 
-                let animation_continues = run_update_anim_pass(self, elapsed_ns);
+                run_update_anim_pass(self, elapsed_ns);
 
                 let mut root_state = self.widget_arena.get_state_mut(self.root.id()).item.clone();
                 self.post_event_processing(&mut root_state);
 
                 // If this animation will continue, store the time.
                 // If a new animation starts, then it will have zero reported elapsed time.
+                let animation_continues = root_state.needs_anim;
                 self.last_anim = animation_continues.then_some(now);
 
                 Handled::Yes
