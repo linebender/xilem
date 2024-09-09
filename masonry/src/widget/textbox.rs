@@ -13,6 +13,7 @@ use vello::{
     peniko::{BlendMode, Color},
     Scene,
 };
+use winit::event::Ime;
 
 use crate::widget::{LineBreaking, WidgetMut};
 use crate::{
@@ -208,8 +209,13 @@ impl Widget for Textbox {
 
     fn on_text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent) {
         let result = self.editor.text_event(ctx, event);
-        // If focused on a link and enter pressed, follow it?
         if result.is_handled() {
+            // Some platforms will send a lot of spurious Preedit events.
+            // We only want to request a scroll on user input.
+            if !matches!(event, TextEvent::Ime(Ime::Preedit(preedit, ..)) if preedit.is_empty()) {
+                // TODO - Use request_scroll_to with cursor rect
+                ctx.request_scroll_to_this();
+            }
             ctx.set_handled();
             // TODO: only some handlers need this repaint
             ctx.request_layout();

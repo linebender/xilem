@@ -7,7 +7,7 @@ use accesskit::{ActionRequest, Tree, TreeUpdate};
 use parley::fontique::{self, Collection, CollectionOptions};
 use parley::{FontContext, LayoutContext};
 use tracing::{info_span, warn};
-use vello::kurbo::{self, Point};
+use vello::kurbo::{self, Point, Rect};
 use vello::Scene;
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -24,7 +24,9 @@ use crate::passes::compose::root_compose;
 use crate::passes::event::{root_on_access_event, root_on_pointer_event, root_on_text_event};
 use crate::passes::mutate::{mutate_widget, run_mutate_pass};
 use crate::passes::paint::root_paint;
-use crate::passes::update::{run_update_disabled_pass, run_update_pointer_pass};
+use crate::passes::update::{
+    run_update_disabled_pass, run_update_pointer_pass, run_update_scroll_pass,
+};
 use crate::text::TextBrush;
 use crate::tree_arena::TreeArena;
 use crate::widget::WidgetArena;
@@ -55,11 +57,13 @@ pub struct RenderRoot {
     pub(crate) widget_arena: WidgetArena,
 }
 
+// TODO - Document these fields.
 pub(crate) struct RenderRootState {
     pub(crate) debug_logger: DebugLogger,
     pub(crate) signal_queue: VecDeque<RenderRootSignal>,
     pub(crate) focused_widget: Option<WidgetId>,
     pub(crate) next_focused_widget: Option<WidgetId>,
+    pub(crate) scroll_request_targets: Vec<(WidgetId, Rect)>,
     pub(crate) hovered_path: Vec<WidgetId>,
     pub(crate) pointer_capture_target: Option<WidgetId>,
     pub(crate) cursor_icon: CursorIcon,
@@ -132,6 +136,7 @@ impl RenderRoot {
                 signal_queue: VecDeque::new(),
                 focused_widget: None,
                 next_focused_widget: None,
+                scroll_request_targets: Vec::new(),
                 hovered_path: Vec::new(),
                 pointer_capture_target: None,
                 cursor_icon: CursorIcon::Default,
@@ -545,6 +550,10 @@ impl RenderRoot {
 
         if self.state.debug_logger.layout_tree.root.is_none() {
             self.state.debug_logger.layout_tree.root = Some(self.root.id().to_raw() as u32);
+        }
+
+        if !self.state.scroll_request_targets.is_empty() {
+            run_update_scroll_pass(self);
         }
 
         if self.root_state().needs_compose && !self.root_state().needs_layout {

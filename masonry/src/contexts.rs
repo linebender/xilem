@@ -59,7 +59,6 @@ pub struct EventCtx<'a> {
     pub(crate) widget_children: ArenaMutChildren<'a, Box<dyn Widget>>,
     pub(crate) allow_pointer_capture: bool,
     pub(crate) is_handled: bool,
-    pub(crate) request_pan_to_child: Option<Rect>,
 }
 
 /// A context provided to the [`lifecycle`] method on widgets.
@@ -600,8 +599,20 @@ impl EventCtx<'_> {
     }
 
     /// Send a signal to parent widgets to scroll this widget into view.
-    pub fn request_pan_to_this(&mut self) {
-        self.request_pan_to_child = Some(self.widget_state.layout_rect());
+    pub fn request_scroll_to_this(&mut self) {
+        let rect = self.widget_state.layout_rect();
+        self.global_state
+            .scroll_request_targets
+            .push((self.widget_state.id, rect));
+    }
+
+    /// Send a signal to parent widgets to scroll this area into view.
+    ///
+    /// `rect` is in local coordinates.
+    pub fn request_scroll_to(&mut self, rect: Rect) {
+        self.global_state
+            .scroll_request_targets
+            .push((self.widget_state.id, rect));
     }
 
     // TODO - Remove
