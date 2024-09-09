@@ -5,7 +5,7 @@
 //! before any translations applied in [`compose`](crate::passes::compose).
 //! Most of the logic for this pass happens in [`Widget::layout`] implementations.
 
-use tracing::{info_span, trace, warn};
+use tracing::{info_span, trace};
 use vello::kurbo::{Point, Rect, Size};
 
 use crate::render_root::RenderRoot;
@@ -22,6 +22,8 @@ fn rect_contains(larger: &Rect, smaller: &Rect) -> bool {
         && smaller.y1 <= larger.y1
 }
 
+// Returns "true" if the Widget's layout method was called, in which case debug checks
+// need to be run. (See 'called_widget' in WidgetPod::call_widget_method_with_checks)
 pub(crate) fn run_layout_inner<W: Widget>(
     parent_ctx: &mut LayoutCtx<'_>,
     pod: &mut WidgetPod<W>,
@@ -49,12 +51,13 @@ pub(crate) fn run_layout_inner<W: Widget>(
         return false;
     }
 
-    state.needs_compose = true;
-    state.is_expecting_place_child_call = true;
     // TODO - Not everything that has been re-laid out needs to be repainted.
     state.needs_paint = true;
-    state.request_accessibility = true;
+    state.needs_compose = true;
     state.needs_accessibility = true;
+    state.request_paint = true;
+    state.request_compose = true;
+    state.request_accessibility = true;
 
     bc.debug_check(widget.short_type_name());
     trace!("Computing layout with constraints {:?}", bc);
@@ -70,12 +73,21 @@ pub(crate) fn run_layout_inner<W: Widget>(
             mouse_pos: parent_ctx.mouse_pos,
         };
 
+        // TODO - If constraints are the same and request_layout isn't set,
+        // skip calling layout
+        inner_ctx.widget_state.request_layout = false;
         widget.layout(&mut inner_ctx, bc)
     };
+    if state.request_layout {
+        debug_panic!(
+            "Error in '{}' #{}: layout request flag was set during layout pass",
+            widget.short_type_name(),
+            id,
+        );
+    }
 
-    // TODO - One we add request_layout, check for that flag.
-    // If it's true, that's probably an error.
     state.needs_layout = false;
+    state.is_expecting_place_child_call = true;
 
     state.local_paint_rect = state
         .local_paint_rect
@@ -133,18 +145,24 @@ pub(crate) fn run_layout_inner<W: Widget>(
     parent_ctx.widget_state.merge_up(state_mut.item);
     state_mut.item.size = new_size;
 
-    log_layout_issues(widget.short_type_name(), new_size);
+    {
+        if new_size.width.is_infinite() {
+            debug_panic!(
+                "Error in '{}' #{}: width is infinite",
+                widget.short_type_name(),
+                id,
+            );
+        }
+        if new_size.height.is_infinite() {
+            debug_panic!(
+                "Error in '{}' #{}: height is infinite",
+                widget.short_type_name(),
+                id,
+            );
+        }
+    }
 
     true
-}
-
-fn log_layout_issues(type_name: &str, size: Size) {
-    if size.width.is_infinite() {
-        warn!("Widget `{type_name}` has an infinite width.");
-    }
-    if size.height.is_infinite() {
-        warn!("Widget `{type_name}` has an infinite height.");
-    }
 }
 
 /// Run [`Widget::layout`] method on the widget contained in `pod`.
