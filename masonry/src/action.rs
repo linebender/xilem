@@ -18,6 +18,7 @@ pub enum Action {
     TextChanged(String),
     TextEntered(String),
     CheckboxChecked(bool),
+    VariableDrag(f64, f64),
     // FIXME - This is a huge hack
     Other(Box<dyn Any + Send>),
 }
@@ -43,6 +44,7 @@ impl std::fmt::Debug for Action {
             Self::TextChanged(text) => f.debug_tuple("TextChanged").field(text).finish(),
             Self::TextEntered(text) => f.debug_tuple("TextEntered").field(text).finish(),
             Self::CheckboxChecked(b) => f.debug_tuple("CheckboxChecked").field(b).finish(),
+            Self::VariableDrag(x, y) => f.debug_tuple("VariableDrag").field(x).field(y).finish(),
             Self::Other(_) => write!(f, "Other(...)"),
         }
     }

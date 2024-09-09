@@ -24,10 +24,13 @@ use xilem_core::fork;
 struct Clocks {
     /// The font [weight](Weight) used for the values.
     weight: f32,
+    width: f32,
+    smoothing_ms: f32,
     /// The current UTC offset on this machine.
     local_offset: Result<UtcOffset, IndeterminateOffset>,
     /// The current time.
     now_utc: OffsetDateTime,
+    big: bool,
 }
 
 /// A possible timezone, with an offset from UTC.
@@ -94,18 +97,24 @@ fn local_time(data: &mut Clocks) -> impl WidgetView<Clocks> {
 /// Controls for the variable font weight.
 fn controls() -> impl WidgetView<Clocks> {
     flex((
-        button("Increase", |data: &mut Clocks| {
-            data.weight = (data.weight + 100.).clamp(1., 1000.);
-        }),
-        button("Decrease", |data: &mut Clocks| {
-            data.weight = (data.weight - 100.).clamp(1., 1000.);
-        }),
+        // button("Increase", |data: &mut Clocks| {
+        //     data.smoothing_ms = 400.0;
+        //     data.weight = (data.weight + 100.).clamp(1., 1000.);
+        // }),
+        // button("Decrease", |data: &mut Clocks| {
+        //     data.smoothing_ms = 400.0;
+        //     data.weight = (data.weight  - 100.).clamp(1., 1000.);
+        // }),
         button("Minimum", |data: &mut Clocks| {
+            data.smoothing_ms = 400.0;
             data.weight = 1.;
         }),
         button("Maximum", |data: &mut Clocks| {
+            data.smoothing_ms = 400.0;
             data.weight = 1000.;
         }),
+        button("Big", |data: &mut Clocks| data.big = true),
+        button("Small", |data: &mut Clocks| data.big = false),
     ))
     .direction(Axis::Horizontal)
 }
@@ -114,6 +123,11 @@ impl TimeZone {
     /// Display this timezone as a row, designed to be shown in a list of time zones.
     fn view(&self, data: &mut Clocks) -> impl WidgetView<Clocks> {
         let date_time_in_self = data.now_utc.to_offset(self.offset);
+        let text_size = if data.big {
+            85.0
+        } else {
+            48.0
+        };
         sized_box(flex((
             flex((
                 prose(self.region),
@@ -136,11 +150,17 @@ impl TimeZone {
                         .format(format_description!("[hour repr:24]:[minute]:[second]"))
                         .unwrap()
                         .to_string(),
+                    |state: &mut Clocks, x, y| {
+                        state.width = (x * 0.5).clamp(25., 151.) as f32;
+                        state.weight = (y * 15.0).clamp(1., 1000.) as f32;
+                        state.smoothing_ms = 10.0;
+                    }
                 )
-                .text_size(48.)
+                .text_size(text_size)
                 // Use the roboto flex we have just loaded.
                 .with_font(FontStack::List(&[FontFamily::Named("Roboto Flex")]))
-                .target_weight(data.weight, 400.),
+                .target_weight(data.weight, data.smoothing_ms)
+                .target_width(data.width),
                 FlexSpacer::Flex(1.0),
                 (data.local_now().date() != date_time_in_self.date()).then(|| {
                     label(
@@ -153,7 +173,7 @@ impl TimeZone {
             .direction(Axis::Horizontal),
         )))
         .expand_width()
-        .height(72.)
+        .height(text_size as f64 + 24.0)
     }
 }
 
@@ -185,9 +205,12 @@ const ROBOTO_FLEX: &[u8] = include_bytes!(concat!(
 fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
     let data = Clocks {
         weight: Weight::BLACK.value(),
+        width: 100.0,
+        smoothing_ms: 400.0,
         // TODO: We can't get this on Android, because
         local_offset: UtcOffset::current_local_offset(),
         now_utc: OffsetDateTime::now_utc(),
+        big: false,
     };
 
     // Load Roboto Flex so that it can be used at runtime.

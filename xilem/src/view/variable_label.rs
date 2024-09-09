@@ -14,31 +14,39 @@ use xilem_core::{Mut, ViewMarker};
 use crate::{Color, MessageResult, Pod, TextAlignment, View, ViewCtx, ViewId};
 
 /// A view for displaying non-editable text, with a variable [weight](masonry::parley::style::FontWeight).
-pub fn variable_label(label: impl Into<ArcStr>) -> VariableLabel {
+pub fn variable_label<State, Action>(
+    label: impl Into<ArcStr>,
+    callback: impl Fn(&mut State, f64, f64) -> Action + Send + 'static,
+) -> VariableLabel<impl for<'a> Fn(&'a mut State, f64, f64) -> MessageResult<Action> + Send + 'static>
+{
     VariableLabel {
         label: label.into(),
         text_brush: Color::WHITE.into(),
         alignment: TextAlignment::default(),
         text_size: masonry::theme::TEXT_SIZE_NORMAL as f32,
         target_weight: Weight::NORMAL,
+        target_width: 100.0,
         over_millis: 0.,
         font: FontStack::Single(FontFamily::Generic(GenericFamily::SystemUi)),
+        callback: move |state: &mut State, x, y| MessageResult::Action(callback(state, x, y)),
     }
 }
 
-pub struct VariableLabel {
+pub struct VariableLabel<F> {
     label: ArcStr,
 
     text_brush: TextBrush,
     alignment: TextAlignment,
     text_size: f32,
+    target_width: f32,
     target_weight: Weight,
     over_millis: f32,
     font: FontStack<'static>,
     // TODO: add more attributes of `masonry::widget::Label`
+    callback: F,
 }
 
-impl VariableLabel {
+impl<F> VariableLabel<F> {
     #[doc(alias = "color")]
     pub fn brush(mut self, brush: impl Into<TextBrush>) -> Self {
         self.text_brush = brush.into();
@@ -76,6 +84,12 @@ impl VariableLabel {
         self
     }
 
+    pub fn target_width(mut self, width: f32) -> Self {
+        assert!(width.is_finite(), "Invalid target width {width}.");
+        self.target_width = width;
+        self
+    }
+
     /// Set the [font stack](FontStack) this label will use.
     ///
     /// A font stack allows for providing fallbacks. If there is no matching font
@@ -95,22 +109,26 @@ impl VariableLabel {
     }
 }
 
-impl ViewMarker for VariableLabel {}
-impl<State, Action> View<State, Action, ViewCtx> for VariableLabel {
+impl<F> ViewMarker for VariableLabel<F> {}
+impl<F, State, Action> View<State, Action, ViewCtx> for VariableLabel<F>
+where
+    F: Fn(&mut State, f64, f64) -> MessageResult<Action> + Send + Sync + 'static,
+{
     type Element = Pod<widget::VariableLabel>;
     type ViewState = ();
 
-    fn build(&self, _ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        let widget_pod = Pod::new(
-            widget::VariableLabel::new(self.label.clone())
-                .with_text_brush(self.text_brush.clone())
-                .with_line_break_mode(widget::LineBreaking::WordWrap)
-                .with_text_alignment(self.alignment)
-                .with_font(self.font)
-                .with_text_size(self.text_size)
-                .with_initial_weight(self.target_weight.value()),
-        );
-        (widget_pod, ())
+    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+        ctx.with_leaf_action_widget(|_| {
+            Pod::new(
+                widget::VariableLabel::new(self.label.clone())
+                    .with_text_brush(self.text_brush.clone())
+                    .with_line_break_mode(widget::LineBreaking::WordWrap)
+                    .with_text_alignment(self.alignment)
+                    .with_font(self.font)
+                    .with_text_size(self.text_size)
+                    .with_initial_weight(self.target_weight.value()),
+            )
+        })
     }
 
     fn rebuild<'el>(
@@ -140,6 +158,10 @@ impl<State, Action> View<State, Action, ViewCtx> for VariableLabel {
             element.set_target_weight(self.target_weight.value(), self.over_millis);
             ctx.mark_changed();
         }
+        if prev.target_width != self.target_width {
+            element.set_target_width(self.target_width, self.over_millis);
+            ctx.mark_changed();
+        }
         // First perform a fast filter, then perform a full comparison if that suggests a possible change.
         let fonts_eq = fonts_eq_fastpath(prev.font, self.font) || prev.font == self.font;
         if !fonts_eq {
@@ -156,10 +178,22 @@ impl<State, Action> View<State, Action, ViewCtx> for VariableLabel {
         (): &mut Self::ViewState,
         _id_path: &[ViewId],
         message: xilem_core::DynMessage,
-        _app_state: &mut State,
+        app_state: &mut State,
     ) -> crate::MessageResult<Action> {
-        tracing::error!("Message arrived in Label::message, but Label doesn't consume any messages, this is a bug");
-        MessageResult::Stale(message)
+        match message.downcast::<masonry::Action>() {
+            Ok(action) => {
+                if let masonry::Action::VariableDrag(x, y) = *action {
+                    (self.callback)(app_state, x, y)
+                } else {
+                    tracing::error!("Wrong action type in VariableLabel::message: {action:?}");
+                    MessageResult::Stale(action)
+                }
+            }
+            Err(message) => {
+                tracing::error!("Wrong message type in VariableLabel::message: {message:?}");
+                MessageResult::Stale(message)
+            }
+        }
     }
 }
 

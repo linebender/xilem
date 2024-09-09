@@ -8,13 +8,14 @@ use std::cmp::Ordering;
 use accesskit::Role;
 use parley::fontique::Weight;
 use parley::layout::Alignment;
-use parley::style::{FontFamily, FontStack};
+use parley::style::{FontFamily, FontSettings, FontStack};
 use smallvec::SmallVec;
-use tracing::{trace, trace_span, Span};
+use tracing::{debug, trace, trace_span, Span};
 use vello::kurbo::{Affine, Point, Size};
 use vello::peniko::BlendMode;
 use vello::Scene;
 
+use crate::action::Action;
 use crate::text::{Hinting, TextBrush, TextLayout, TextStorage};
 use crate::widget::WidgetMut;
 use crate::{
@@ -141,6 +142,7 @@ pub struct VariableLabel {
     show_disabled: bool,
     brush: TextBrush,
     weight: AnimatedF32,
+    width: AnimatedF32,
 }
 
 // --- MARK: BUILDERS ---
@@ -153,6 +155,7 @@ impl VariableLabel {
             show_disabled: true,
             brush: crate::theme::TEXT_COLOR.into(),
             weight: AnimatedF32::stable(Weight::NORMAL.value()),
+            width: AnimatedF32::stable(100.0),
         }
     }
 
@@ -278,22 +281,32 @@ impl WidgetMut<'_, VariableLabel> {
         self.ctx.request_paint();
         self.ctx.request_anim_frame();
     }
+   /// Set the weight which this font will target.
+   pub fn set_target_width(&mut self, target: f32, over_millis: f32) {
+        self.widget.width.move_to(target, over_millis);
+        self.ctx.request_layout();
+        self.ctx.request_paint();
+        self.ctx.request_anim_frame();
+    }
 }
 
 // --- MARK: IMPL WIDGET ---
 impl Widget for VariableLabel {
-    fn on_pointer_event(&mut self, _ctx: &mut EventCtx, event: &PointerEvent) {
+    fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
         match event {
-            PointerEvent::PointerMove(_point) => {
+            PointerEvent::PointerMove(point) => {
+                let mouse_pos =
+                    Point::new(point.position.x, point.position.y) - ctx.window_origin().to_vec2();
                 // TODO: Set cursor if over link
+                if ctx.is_active() {
+                    debug!("got pointer move event in variable label {point:?}");
+                    ctx.submit_action(Action::VariableDrag(mouse_pos.x, mouse_pos.y));
+                }
             }
             PointerEvent::PointerDown(_button, _state) => {
-                // TODO: Start tracking currently pressed
-                // (i.e. don't press)
+                ctx.set_active(true);
             }
-            PointerEvent::PointerUp(_button, _state) => {
-                // TODO: Follow link (if not now dragging ?)
-            }
+            PointerEvent::PointerUp(_button, _state) => ctx.set_active(false),
             _ => {}
         }
     }
@@ -337,9 +350,10 @@ impl Widget for VariableLabel {
             }
             LifeCycle::AnimFrame(time) => {
                 let millis = (*time as f64 / 1_000_000.) as f32;
-                let result = self.weight.advance(millis);
+                let result1 = self.weight.advance(millis);
+                let result2 = self.width.advance(millis);
                 self.text_layout.invalidate();
-                if !result.is_completed() {
+                if !result1.is_completed() || !result2.is_completed() {
                     ctx.request_anim_frame();
                 }
                 ctx.request_layout();
@@ -370,6 +384,8 @@ impl Widget for VariableLabel {
                     builder.push_default(&parley::style::StyleProperty::FontWeight(Weight::new(
                         self.weight.value,
                     )));
+                    let wdth_setting = ("wdth", self.width.value).into();
+                    builder.push_default(&parley::style::StyleProperty::FontVariations(FontSettings::List(&[wdth_setting])));
                     // builder.push_default(&parley::style::StyleProperty::FontVariations(
                     //     parley::style::FontSettings::List(&[]),
                     // ));
