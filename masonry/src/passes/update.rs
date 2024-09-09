@@ -246,6 +246,9 @@ fn update_anim_for_widget(
     }
     state.item.needs_anim = false;
 
+    // Most passes reset their `needs` and `request` flags after the call to
+    // the widget method, but it's valid and expected for `request_anim` to be
+    // set in response to `AnimFrame`.
     if state.item.request_anim {
         state.item.request_anim = false;
         let mut ctx = LifeCycleCtx {
