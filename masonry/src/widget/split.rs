@@ -519,8 +519,8 @@ impl Widget for Split {
             }
         };
 
-        let child1_size = self.child1.layout(ctx, &child1_bc);
-        let child2_size = self.child2.layout(ctx, &child2_bc);
+        let child1_size = ctx.run_layout(&mut self.child1, &child1_bc);
+        let child2_size = ctx.run_layout(&mut self.child2, &child2_bc);
 
         // Top-left align for both children, out of laziness.
         // Reduce our unsplit direction to the larger of the two widgets

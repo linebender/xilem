@@ -8,6 +8,7 @@ use crate::{Widget, WidgetId, WidgetState};
 pub mod accessibility;
 pub mod compose;
 pub mod event;
+pub mod layout;
 pub mod mutate;
 pub mod paint;
 pub mod update;

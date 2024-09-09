@@ -373,7 +373,7 @@ impl<W: Widget> Widget for Portal<W> {
 
         let child_bc = BoxConstraints::new(min_child_size, max_child_size);
 
-        let content_size = self.child.layout(ctx, &child_bc);
+        let content_size = ctx.run_layout(&mut self.child, &child_bc);
         let portal_size = bc.constrain(content_size);
 
         // TODO - document better
@@ -406,7 +406,7 @@ impl<W: Widget> Widget for Portal<W> {
             // TODO - request paint for scrollbar?
             std::mem::drop(scrollbar);
 
-            let scrollbar_size = self.scrollbar_horizontal.layout(ctx, bc);
+            let scrollbar_size = ctx.run_layout(&mut self.scrollbar_horizontal, bc);
             ctx.place_child(
                 &mut self.scrollbar_horizontal,
                 Point::new(0.0, portal_size.height - scrollbar_size.height),
@@ -421,7 +421,7 @@ impl<W: Widget> Widget for Portal<W> {
             // TODO - request paint for scrollbar?
             std::mem::drop(scrollbar);
 
-            let scrollbar_size = self.scrollbar_vertical.layout(ctx, bc);
+            let scrollbar_size = ctx.run_layout(&mut self.scrollbar_vertical, bc);
             ctx.place_child(
                 &mut self.scrollbar_vertical,
                 Point::new(portal_size.width - scrollbar_size.width, 0.0),

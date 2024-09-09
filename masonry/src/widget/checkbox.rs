@@ -115,7 +115,7 @@ impl Widget for Checkbox {
         let x_padding = theme::WIDGET_CONTROL_COMPONENT_PADDING;
         let check_size = theme::BASIC_WIDGET_HEIGHT;
 
-        let label_size = self.label.layout(ctx, bc);
+        let label_size = ctx.run_layout(&mut self.label, bc);
         ctx.place_child(&mut self.label, (check_size + x_padding, 0.0).into());
 
         let desired_size = Size::new(

@@ -178,7 +178,7 @@ fn resign_focus_on_disable() {
                 child.lifecycle(ctx, event);
             })
             .layout_fn(|child, ctx, bc| {
-                let layout = child.layout(ctx, bc);
+                let layout = ctx.run_layout(&mut child, bc);
                 ctx.place_child(child, Point::ZERO);
                 layout
             })
