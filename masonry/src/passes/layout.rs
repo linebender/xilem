@@ -12,7 +12,8 @@ use crate::render_root::RenderRoot;
 use crate::widget::WidgetState;
 use crate::{BoxConstraints, LayoutCtx, Widget, WidgetPod};
 
-// TODO - negative rects?
+// TODO - Replace with contains_rect once new Kurbo version is released.
+// See https://github.com/linebender/kurbo/pull/347
 /// Return `true` if all of `smaller` is within `larger`.
 fn rect_contains(larger: &Rect, smaller: &Rect) -> bool {
     smaller.x0 >= larger.x0
@@ -146,6 +147,8 @@ fn log_layout_issues(type_name: &str, size: Size) {
     }
 }
 
+/// Run [`Widget::layout`] method on the widget contained in `pod`.
+/// This will be called by [`LayoutCtx::run_layout`], which is itself called in the parent widget's `layout`.
 pub(crate) fn run_layout_on<W: Widget>(
     parent_ctx: &mut LayoutCtx<'_>,
     pod: &mut WidgetPod<W>,

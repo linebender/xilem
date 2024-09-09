@@ -331,7 +331,7 @@ impl Widget for ReplaceChild {
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
-        self.child.layout(ctx, bc)
+        ctx.run_layout(&mut self.child, bc)
     }
 
     fn compose(&mut self, _ctx: &mut ComposeCtx) {}

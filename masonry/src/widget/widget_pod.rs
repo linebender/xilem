@@ -3,15 +3,10 @@
 
 use smallvec::SmallVec;
 use tracing::{info_span, trace};
-use vello::kurbo::Size;
 
-use crate::passes::layout::run_layout_on;
 use crate::tree_arena::ArenaRefChildren;
 use crate::widget::WidgetState;
-use crate::{
-    BoxConstraints, InternalLifeCycle, LayoutCtx, LifeCycle, LifeCycleCtx, StatusChange, Widget,
-    WidgetId,
-};
+use crate::{InternalLifeCycle, LifeCycle, LifeCycleCtx, StatusChange, Widget, WidgetId};
 
 // TODO - rewrite links in doc
 
@@ -423,14 +418,5 @@ impl<W: Widget> WidgetPod<W> {
         parent_ctx.widget_state.merge_up(state_mut.item);
 
         call_widget || extra_event.is_some()
-    }
-
-    // --- MARK: LAYOUT ---
-
-    // FIXME - We keep this around to keep the diff of PR #529 small.
-    // We should remove this function in a follow-up PR after #529 lands.
-    /// Deprecated. Used `LayoutCtx::run_layout` instead.
-    pub fn layout(&mut self, parent_ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
-        run_layout_on(parent_ctx, self, bc)
     }
 }
