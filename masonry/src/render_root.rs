@@ -542,7 +542,6 @@ impl RenderRoot {
         // Always do this before sending focus change, since this event updates the focus chain.
         if self.root_state().update_focus_chain {
             let event = LifeCycle::BuildFocusChain;
-            println!("BuildFocusChain");
             self.root_lifecycle(event);
         }
 
