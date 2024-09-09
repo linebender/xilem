@@ -275,8 +275,6 @@ impl RenderRoot {
         // TODO - Xilem's reconciliation logic will have to be called
         // by the function that calls this
 
-        // TODO - if root widget's request_anim is still set by the
-        // time this is called, emit a warning
         if self.root_state().needs_layout {
             self.root_layout();
         }
