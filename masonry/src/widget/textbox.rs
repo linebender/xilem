@@ -209,7 +209,7 @@ impl Widget for Textbox {
         if result.is_handled() {
             // Some platforms will send a lot of spurious Preedit events.
             // We only want to request a scroll on user input.
-            if !matches!(event, TextEvent::Ime(Ime::Preedit(..))) {
+            if !matches!(event, TextEvent::Ime(Ime::Preedit(preedit, ..)) if preedit.is_empty()) {
                 // TODO - Use request_scroll_to with cursor rect
                 ctx.request_scroll_to_this();
             }
