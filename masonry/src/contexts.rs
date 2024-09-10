@@ -429,7 +429,7 @@ impl<'a> MutateCtx<'a> {
 // Methods to get a child WidgetRef from a parent.
 impl<'w> QueryCtx<'w> {
     /// Return a [`WidgetRef`] to a child widget.
-    pub fn get<'c>(&'c self, child: WidgetId) -> WidgetRef<'c, dyn Widget> {
+    pub fn get(&self, child: WidgetId) -> WidgetRef<'_, dyn Widget> {
         let child_state = self
             .widget_state_children
             .get_child(child.to_raw())
