@@ -34,7 +34,7 @@ use crate::tree_arena::TreeArena;
 use crate::widget::WidgetArena;
 use crate::widget::{WidgetMut, WidgetRef, WidgetState};
 use crate::{
-    AccessEvent, Action, BoxConstraints, CursorIcon, Handled, Widget, WidgetId, WidgetPod,
+    AccessEvent, Action, BoxConstraints, CursorIcon, Handled, QueryCtx, Widget, WidgetId, WidgetPod,
 };
 
 // --- MARK: STRUCTS ---
@@ -306,6 +306,7 @@ impl RenderRoot {
     }
 
     // --- MARK: ACCESS WIDGETS---
+    /// Get a [`WidgetRef`] to the root widget.
     pub fn get_root_widget(&self) -> WidgetRef<dyn Widget> {
         let root_state_token = self.widget_arena.widget_states.root_token();
         let root_widget_token = self.widget_arena.widgets.root_token();
@@ -325,12 +326,38 @@ impl RenderRoot {
             .downcast_ref::<Box<dyn Widget>>()
             .unwrap();
 
-        WidgetRef {
+        let ctx = QueryCtx {
+            global_state: &self.state,
             widget_state_children: state_ref.children,
             widget_children: widget_ref.children,
             widget_state: state_ref.item,
-            widget,
-        }
+        };
+
+        WidgetRef { ctx, widget }
+    }
+
+    /// Get a [`WidgetRef`] to a specific widget.
+    pub fn get_widget(&self, id: WidgetId) -> Option<WidgetRef<dyn Widget>> {
+        let state_ref = self.widget_arena.widget_states.find(id.to_raw())?;
+        let widget_ref = self
+            .widget_arena
+            .widgets
+            .find(id.to_raw())
+            .expect("found state but not widget");
+
+        // Box<dyn Widget> -> &dyn Widget
+        // Without this step, the type of `WidgetRef::widget` would be
+        // `&Box<dyn Widget> as &dyn Widget`, which would be an additional layer
+        // of indirection.
+        let widget = widget_ref.item;
+        let widget: &dyn Widget = &**widget;
+        let ctx = QueryCtx {
+            global_state: &self.state,
+            widget_state_children: state_ref.children,
+            widget_children: widget_ref.children,
+            widget_state: state_ref.item,
+        };
+        Some(WidgetRef { ctx, widget })
     }
 
     /// Get a [`WidgetMut`] to the root widget.

@@ -439,10 +439,15 @@ impl<'w> QueryCtx<'w> {
             .get_child(child.to_raw())
             .expect("get: child not found");
 
-        WidgetRef {
+        let ctx = QueryCtx {
+            global_state: self.global_state,
             widget_state_children: child_state.children,
             widget_children: child.children,
             widget_state: child_state.item,
+        };
+
+        WidgetRef {
+            ctx,
             widget: child.item,
         }
     }

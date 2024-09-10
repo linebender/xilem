@@ -6,9 +6,7 @@ use std::ops::Deref;
 use smallvec::SmallVec;
 use vello::kurbo::Point;
 
-use crate::render_root::RenderRoot;
-use crate::tree_arena::ArenaRefChildren;
-use crate::{QueryCtx, Widget, WidgetId, WidgetState};
+use crate::{render_root::RenderRoot, QueryCtx, Widget, WidgetId, WidgetState};
 
 /// A rich reference to a [`Widget`].
 ///
@@ -24,9 +22,7 @@ use crate::{QueryCtx, Widget, WidgetId, WidgetState};
 /// This is only for shared access to widgets. For widget mutation, see [`WidgetMut`](crate::widget::WidgetMut).
 
 pub struct WidgetRef<'w, W: Widget + ?Sized> {
-    pub(crate) widget_state_children: ArenaRefChildren<'w, WidgetState>,
-    pub(crate) widget_children: ArenaRefChildren<'w, Box<dyn Widget>>,
-    pub(crate) widget_state: &'w WidgetState,
+    pub(crate) ctx: QueryCtx<'w>,
     pub(crate) widget: &'w W,
 }
 
@@ -36,9 +32,7 @@ pub struct WidgetRef<'w, W: Widget + ?Sized> {
 impl<'w, W: Widget + ?Sized> Clone for WidgetRef<'w, W> {
     fn clone(&self) -> Self {
         Self {
-            widget_state_children: self.widget_state_children,
-            widget_children: self.widget_children,
-            widget_state: self.widget_state,
+            ctx: self.ctx,
             widget: self.widget,
         }
     }
@@ -83,7 +77,7 @@ impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
     // TODO - Replace with individual methods from WidgetState
     /// Get the [`WidgetState`] of the current widget.
     pub fn state(self) -> &'w WidgetState {
-        self.widget_state
+        self.ctx.widget_state
     }
 
     /// Get the actual referenced `Widget`.
@@ -93,34 +87,32 @@ impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
 
     /// Get the [`WidgetId`] of the current widget.
     pub fn id(&self) -> WidgetId {
-        self.widget_state.id
+        self.ctx.widget_state.id
     }
 
     /// Attempt to downcast to `WidgetRef` of concrete Widget type.
     pub fn downcast<W2: Widget>(&self) -> Option<WidgetRef<'w, W2>> {
         Some(WidgetRef {
-            widget_state_children: self.widget_state_children,
-            widget_children: self.widget_children,
-            widget_state: self.widget_state,
+            ctx: self.ctx,
             widget: self.widget.as_any().downcast_ref()?,
         })
     }
 
     /// Return widget's children.
     pub fn children(&self) -> SmallVec<[WidgetRef<'w, dyn Widget>; 16]> {
-        let parent_id = self.widget_state.id.to_raw();
+        let parent_id = self.ctx.widget_state.id.to_raw();
         self.widget
             .children_ids()
             .iter()
             .map(|id| {
                 let id = id.to_raw();
-                let Some(state_ref) = self.widget_state_children.into_child(id) else {
+                let Some(state_ref) = self.ctx.widget_state_children.into_child(id) else {
                     panic!(
                         "Error in '{}' #{parent_id}: child #{id} has not been added to tree",
                         self.widget.short_type_name()
                     );
                 };
-                let Some(widget_ref) = self.widget_children.into_child(id) else {
+                let Some(widget_ref) = self.ctx.widget_children.into_child(id) else {
                     panic!(
                         "Error in '{}' #{parent_id}: child #{id} has not been added to tree",
                         self.widget.short_type_name()
@@ -134,12 +126,14 @@ impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
                 let widget = widget_ref.item;
                 let widget: &dyn Widget = &**widget;
 
-                WidgetRef {
+                let ctx = QueryCtx {
+                    global_state: self.ctx.global_state,
                     widget_state_children: state_ref.children,
                     widget_children: widget_ref.children,
                     widget_state: state_ref.item,
-                    widget,
-                }
+                };
+
+                WidgetRef { ctx, widget }
             })
             .collect()
     }
@@ -149,9 +143,7 @@ impl<'w, W: Widget> WidgetRef<'w, W> {
     /// Return a type-erased `WidgetRef`.
     pub fn as_dyn(&self) -> WidgetRef<'w, dyn Widget> {
         WidgetRef {
-            widget_state_children: self.widget_state_children,
-            widget_children: self.widget_children,
-            widget_state: self.widget_state,
+            ctx: self.ctx,
             widget: self.widget,
         }
     }
@@ -183,7 +175,7 @@ impl<'w> WidgetRef<'w, dyn Widget> {
     ) -> Option<WidgetRef<'a, dyn Widget>> {
         // Get self from the widget arena to bind it to the arena's lifetime. Is there a way around
         // this? Also see the comment inside the loop rebinding child to the arena's lifetime.
-        let mut innermost_widget = root.widget_arena.try_get_widget_ref(self.id()).unwrap();
+        let mut innermost_widget = root.get_widget(self.id()).unwrap();
         let mut pos = pos;
 
         if !self.state().layout_rect().contains(pos) {
@@ -199,16 +191,13 @@ impl<'w> WidgetRef<'w, dyn Widget> {
                 }
             }
 
-            let (widget, state) = root.widget_arena.get_pair(innermost_widget.id());
-            let ctx = QueryCtx {
-                global_state: &root.state,
-                widget_state: state.item,
-                widget_state_children: state.children,
-                widget_children: widget.children,
-            };
-
-            if let Some(child) = innermost_widget.widget.get_child_at_pos(&ctx, pos) {
-                let child = root.widget_arena.try_get_widget_ref(child.id()).unwrap();
+            if let Some(child) = innermost_widget
+                .widget
+                .get_child_at_pos(&innermost_widget.ctx, pos)
+            {
+                // Get child from the widget arena to bind it to the arena's lifetime. Is there a
+                // way around this?
+                let child = root.get_widget(child.id()).unwrap();
                 innermost_widget = child;
             } else {
                 break;
