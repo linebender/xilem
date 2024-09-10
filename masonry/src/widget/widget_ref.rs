@@ -6,8 +6,9 @@ use std::ops::Deref;
 use smallvec::SmallVec;
 use vello::kurbo::Point;
 
+use crate::render_root::RenderRoot;
 use crate::tree_arena::ArenaRefChildren;
-use crate::{Widget, WidgetId, WidgetState};
+use crate::{QueryCtx, Widget, WidgetId, WidgetState};
 
 /// A rich reference to a [`Widget`].
 ///
@@ -175,8 +176,14 @@ impl<'w> WidgetRef<'w, dyn Widget> {
     ///
     /// **pos** - the position in local coordinates (zero being the top-left of the
     /// inner widget).
-    pub fn find_widget_at_pos(&self, pos: Point) -> Option<WidgetRef<'w, dyn Widget>> {
-        let mut innermost_widget: WidgetRef<'w, dyn Widget> = *self;
+    pub fn find_widget_at_pos<'a>(
+        &self,
+        root: &'a RenderRoot,
+        pos: Point,
+    ) -> Option<WidgetRef<'a, dyn Widget>> {
+        // Get self from the widget arena to bind it to the arena's lifetime. Is there a way around
+        // this? Also see the comment inside the loop rebinding child to the arena's lifetime.
+        let mut innermost_widget = root.widget_arena.try_get_widget_ref(self.id()).unwrap();
         let mut pos = pos;
 
         if !self.state().layout_rect().contains(pos) {
@@ -192,10 +199,16 @@ impl<'w> WidgetRef<'w, dyn Widget> {
                 }
             }
 
-            if let Some(child) = innermost_widget
-                .widget
-                .get_child_at_pos(innermost_widget, pos)
-            {
+            let (widget, state) = root.widget_arena.get_pair(innermost_widget.id());
+            let ctx = QueryCtx {
+                global_state: &root.state,
+                widget_state: state.item,
+                widget_state_children: state.children,
+                widget_children: widget.children,
+            };
+
+            if let Some(child) = innermost_widget.widget.get_child_at_pos(&ctx, pos) {
+                let child = root.widget_arena.try_get_widget_ref(child.id()).unwrap();
                 innermost_widget = child;
             } else {
                 break;

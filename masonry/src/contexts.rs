@@ -15,8 +15,8 @@ use crate::passes::layout::run_layout_on;
 use crate::render_root::{MutateCallback, RenderRootSignal, RenderRootState};
 use crate::text::TextBrush;
 use crate::text_helpers::ImeChangeSignal;
-use crate::tree_arena::ArenaMutChildren;
-use crate::widget::{WidgetMut, WidgetState};
+use crate::tree_arena::{ArenaMutChildren, ArenaRefChildren};
+use crate::widget::{WidgetMut, WidgetRef, WidgetState};
 use crate::{
     AllowRawMut, BoxConstraints, CursorIcon, Insets, Point, Rect, Size, Widget, WidgetId, WidgetPod,
 };
@@ -49,6 +49,15 @@ pub struct MutateCtx<'a> {
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) widget_state_children: ArenaMutChildren<'a, WidgetState>,
     pub(crate) widget_children: ArenaMutChildren<'a, Box<dyn Widget>>,
+}
+
+/// A context provided to methods of widgets requiring shared, read-only access.
+#[derive(Clone, Copy)]
+pub struct QueryCtx<'a> {
+    pub(crate) global_state: &'a RenderRootState,
+    pub(crate) widget_state: &'a WidgetState,
+    pub(crate) widget_state_children: ArenaRefChildren<'a, WidgetState>,
+    pub(crate) widget_children: ArenaRefChildren<'a, Box<dyn Widget>>,
 }
 
 /// A context provided to event handling methods of widgets.
@@ -124,6 +133,7 @@ pub struct AccessCtx<'a> {
 // Methods for all context types
 impl_context_method!(
     MutateCtx<'_>,
+    QueryCtx<'_>,
     EventCtx<'_>,
     LifeCycleCtx<'_>,
     LayoutCtx<'_>,
@@ -200,6 +210,7 @@ impl_context_method!(
 // These methods access layout info calculated during the layout pass.
 impl_context_method!(
     MutateCtx<'_>,
+    QueryCtx<'_>,
     EventCtx<'_>,
     LifeCycleCtx<'_>,
     ComposeCtx<'_>,
@@ -243,6 +254,7 @@ impl_context_method!(
 // Access status information (hot/pointer captured/disabled/etc).
 impl_context_method!(
     MutateCtx<'_>,
+    QueryCtx<'_>,
     EventCtx<'_>,
     LifeCycleCtx<'_>,
     ComposeCtx<'_>,
@@ -409,6 +421,29 @@ impl<'a> MutateCtx<'a> {
             widget_state: self.widget_state,
             widget_state_children: self.widget_state_children.reborrow_mut(),
             widget_children: self.widget_children.reborrow_mut(),
+        }
+    }
+}
+
+// --- MARK: WIDGET_REF ---
+// Methods to get a child WidgetRef from a parent.
+impl<'w> QueryCtx<'w> {
+    /// Return a [`WidgetRef`] to a child widget.
+    pub fn get<'c>(&'c self, child: WidgetId) -> WidgetRef<'c, dyn Widget> {
+        let child_state = self
+            .widget_state_children
+            .get_child(child.to_raw())
+            .expect("get: child not found");
+        let child = self
+            .widget_children
+            .get_child(child.to_raw())
+            .expect("get: child not found");
+
+        WidgetRef {
+            widget_state_children: child_state.children,
+            widget_children: child.children,
+            widget_state: child_state.item,
+            widget: child.item,
         }
     }
 }

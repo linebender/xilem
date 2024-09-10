@@ -17,7 +17,7 @@ use crate::event::{AccessEvent, PointerEvent, StatusChange, TextEvent};
 use crate::widget::WidgetRef;
 use crate::{
     AccessCtx, AsAny, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
-    Point, RegisterCtx, Size,
+    Point, QueryCtx, RegisterCtx, Size,
 };
 
 /// A unique identifier for a single [`Widget`].
@@ -190,20 +190,22 @@ pub trait Widget: AsAny {
     /// efficiently.
     ///
     /// [`widget_ref`]: WidgetRef
-    fn get_child_at_pos<'w>(
+    fn get_child_at_pos<'c>(
         &self,
-        widget_ref: WidgetRef<'w, dyn Widget>,
+        ctx: &'c QueryCtx,
         pos: Point,
-    ) -> Option<WidgetRef<'w, dyn Widget>> {
-        widget_ref
-            .children()
-            .iter()
-            // TODO: currently assumes `Self::children_ids` is in increasing "z-order". Picks the
-            // last child in case of overlapping children. Is this the desired behavior?
-            .rev()
-            // A child's layout_rect() is in the parent's coordinate space.
-            .find(|child| !child.widget.skip_pointer() && child.state().layout_rect().contains(pos))
-            .copied()
+    ) -> Option<WidgetRef<'c, dyn Widget>> {
+        // Assumes `Self::children_ids` is in increasing "z-order", picking the last child in case
+        // of overlapping children.
+        for child_id in self.children_ids().iter().rev() {
+            let child = ctx.get(*child_id);
+
+            if !child.widget.skip_pointer() && child.state().layout_rect().contains(pos) {
+                return Some(child);
+            }
+        }
+
+        None
     }
 
     /// Get the (verbose) type name of the widget for debugging purposes.
@@ -383,12 +385,12 @@ impl Widget for Box<dyn Widget> {
         self.deref().get_cursor()
     }
 
-    fn get_child_at_pos<'w>(
+    fn get_child_at_pos<'c>(
         &self,
-        widget_ref: WidgetRef<'w, dyn Widget>,
+        ctx: &'c QueryCtx,
         pos: Point,
-    ) -> Option<WidgetRef<'w, dyn Widget>> {
-        self.deref().get_child_at_pos(widget_ref, pos)
+    ) -> Option<WidgetRef<'c, dyn Widget>> {
+        self.deref().get_child_at_pos(ctx, pos)
     }
 
     fn as_any(&self) -> &dyn Any {
