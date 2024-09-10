@@ -375,7 +375,7 @@ impl Widget for Split {
                 PointerEvent::PointerDown(PointerButton::Primary, state) => {
                     if self.bar_hit_test(ctx.size(), state.position) {
                         ctx.set_handled();
-                        ctx.set_active(true);
+                        ctx.capture_pointer();
                         // Save the delta between the mouse click position and the split point
                         self.click_offset = match self.split_axis {
                             Axis::Horizontal => state.position.x,
@@ -392,9 +392,8 @@ impl Widget for Split {
                     }
                 }
                 PointerEvent::PointerUp(PointerButton::Primary, state) => {
-                    if ctx.is_active() {
+                    if ctx.has_pointer_capture() {
                         ctx.set_handled();
-                        ctx.set_active(false);
                         // Dependending on where the mouse cursor is when the button is released,
                         // the cursor might or might not need to be changed
                         self.is_bar_hover =
@@ -405,7 +404,7 @@ impl Widget for Split {
                     }
                 }
                 PointerEvent::PointerMove(state) => {
-                    if ctx.is_active() {
+                    if ctx.has_pointer_capture() {
                         // If active, assume always hover/hot
                         let effective_pos = match self.split_axis {
                             Axis::Horizontal => {

@@ -178,13 +178,13 @@ impl Widget for Textbox {
                         ctx.request_paint();
                         ctx.request_accessibility_update();
                         ctx.request_focus();
-                        ctx.set_active(true);
+                        ctx.capture_pointer();
                     }
                 }
             }
             PointerEvent::PointerMove(state) => {
                 if !ctx.is_disabled()
-                    && ctx.is_active()
+                    && ctx.has_pointer_capture()
                     && self.editor.pointer_move(inner_origin, state)
                 {
                     // We might have changed text colours, so we need to re-request a layout
@@ -195,13 +195,9 @@ impl Widget for Textbox {
             }
             PointerEvent::PointerUp(button, state) => {
                 // TODO: Follow link (if not now dragging ?)
-                if !ctx.is_disabled() && ctx.is_active() {
+                if !ctx.is_disabled() && ctx.has_pointer_capture() {
                     self.editor.pointer_up(inner_origin, state, *button);
                 }
-                ctx.set_active(false);
-            }
-            PointerEvent::PointerLeave(_state) => {
-                ctx.set_active(false);
             }
             _ => {}
         }
