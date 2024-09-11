@@ -180,8 +180,8 @@ pub trait Widget: AsAny {
 
     /// Return which child, if any, has the given `pos` in its layout rect.
     ///
-    /// The child returned is a direct child, not eg a grand-child. The position is in
-    /// relative coordinates. (Eg `(0,0)` is the top-left corner of `self`).
+    /// The child returned is a direct child, not eg a grand-child. The position is in global
+    /// coordinates. (Eg `(0,0)` is the top-left corner of the window).
     ///
     /// [`widget_ref`] is a rich reference to the current widget, giving access to this widget's
     /// state.
@@ -200,7 +200,7 @@ pub trait Widget: AsAny {
         for child_id in self.children_ids().iter().rev() {
             let child = ctx.get(*child_id);
 
-            if !child.widget.skip_pointer() && child.state().layout_rect().contains(pos) {
+            if !child.widget.skip_pointer() && child.state().window_layout_rect().contains(pos) {
                 return Some(child);
             }
         }

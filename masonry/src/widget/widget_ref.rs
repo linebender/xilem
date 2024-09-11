@@ -176,7 +176,6 @@ impl<'w> WidgetRef<'w, dyn Widget> {
         // Get self from the widget arena to bind it to the arena's lifetime. Is there a way around
         // this? Also see the comment inside the loop rebinding child to the arena's lifetime.
         let mut innermost_widget = root.get_widget(self.id()).unwrap();
-        let mut pos = pos;
 
         if !self.state().layout_rect().contains(pos) {
             return None;
@@ -202,8 +201,6 @@ impl<'w> WidgetRef<'w, dyn Widget> {
             } else {
                 break;
             }
-
-            pos -= innermost_widget.state().layout_rect().origin().to_vec2();
         }
 
         Some(innermost_widget)
