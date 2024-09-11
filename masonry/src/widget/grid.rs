@@ -354,6 +354,13 @@ mod tests {
             grid.set_spacing(7.0);
         });
         assert_render_snapshot!(harness, "with_changed_spacing");
+
+        // Make the spacing negative
+        harness.edit_root_widget(|mut grid| {
+            let mut grid = grid.downcast::<Grid>();
+            grid.set_spacing(-4.0);
+        });
+        assert_render_snapshot!(harness, "with_negative_spacing");
     }
 
     #[test]
