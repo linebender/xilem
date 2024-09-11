@@ -16,6 +16,9 @@ pub use checkbox::*;
 mod flex;
 pub use flex::*;
 
+mod grid;
+pub use grid::*;
+
 mod sized_box;
 pub use sized_box::*;
 

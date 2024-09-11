@@ -524,7 +524,7 @@ impl<'a> WidgetMut<'a, Flex> {
     ///
     /// # Panics
     ///
-    /// Panics if the the element at `idx` is not a widget.
+    /// Panics if the element at `idx` is not a widget.
     pub fn update_child_flex_params(&mut self, idx: usize, params: impl Into<FlexParams>) {
         let child = &mut self.widget.children[idx];
         let child_val = std::mem::replace(child, Child::FixedSpacer(0.0, 0.0));
