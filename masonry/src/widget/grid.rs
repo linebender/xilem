@@ -257,7 +257,7 @@ impl Widget for Grid {
                 child.height as f64 * height_unit - self.grid_spacing,
             );
             let child_bc = BoxConstraints::new(cell_size, cell_size);
-            let _ = child.widget.layout(ctx, &child_bc);
+            let _ = ctx.run_layout(&mut child.widget, &child_bc);
             ctx.place_child(
                 &mut child.widget,
                 Point::new(child.x as f64 * width_unit, child.y as f64 * height_unit),
