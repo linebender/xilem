@@ -43,9 +43,11 @@ fn grid_button(params: GridParams) -> Button {
 
 pub fn main() {
     let label = SizedBox::new(
-        Prose::new("Change spacing by right and\n\
-                               left clicking on the buttons")
-            .with_text_size(14.0),
+        Prose::new(
+            "Change spacing by right and\n\
+                               left clicking on the buttons",
+        )
+        .with_text_size(14.0),
     )
     .border(Color::rgb8(40, 40, 80), 1.0);
     let button_inputs = vec![

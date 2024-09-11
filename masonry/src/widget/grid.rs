@@ -21,6 +21,22 @@ pub struct Grid {
     grid_spacing: f64,
 }
 
+struct Child {
+    widget: WidgetPod<Box<dyn Widget>>,
+    x: i32,
+    y: i32,
+    width: i32,
+    height: i32,
+}
+
+#[derive(Default, Debug, Copy, Clone, PartialEq)]
+pub struct GridParams {
+    pub x: i32,
+    pub y: i32,
+    pub width: i32,
+    pub height: i32,
+}
+
 // --- MARK: IMPL GRID ---
 impl Grid {
     pub fn with_dimensions(width: i32, height: i32) -> Self {
@@ -62,6 +78,67 @@ impl Grid {
         };
         self.children.push(child);
         self
+    }
+}
+
+// --- MARK: IMPL CHILD ---
+impl Child {
+    fn widget_mut(&mut self) -> Option<&mut WidgetPod<Box<dyn Widget>>> {
+        Some(&mut self.widget)
+    }
+    fn widget(&self) -> Option<&WidgetPod<Box<dyn Widget>>> {
+        Some(&self.widget)
+    }
+
+    fn update_params(&mut self, params: GridParams) {
+        self.x = params.x;
+        self.y = params.y;
+        self.width = params.width;
+        self.height = params.height;
+    }
+}
+
+fn new_grid_child(params: GridParams, widget: WidgetPod<Box<dyn Widget>>) -> Child {
+    Child {
+        widget,
+        x: params.x,
+        y: params.y,
+        width: params.width,
+        height: params.height,
+    }
+}
+
+// --- MARK: IMPL GRIDPARAMS ---
+impl GridParams {
+    pub fn new(mut x: i32, mut y: i32, mut width: i32, mut height: i32) -> GridParams {
+        if x < 0 {
+            debug_panic!("Grid x value should be a non-negative number; got {}", x);
+            x = 0;
+        }
+        if y < 0 {
+            debug_panic!("Grid y value should be a non-negative number; got {}", y);
+            y = 0;
+        }
+        if width <= 0 {
+            debug_panic!(
+                "Grid width value should be a positive nonzero number; got {}",
+                width
+            );
+            width = 1;
+        }
+        if height <= 0 {
+            debug_panic!(
+                "Grid height value should be a positive nonzero number; got {}",
+                height
+            );
+            height = 1;
+        }
+        GridParams {
+            x,
+            y,
+            width,
+            height,
+        }
     }
 }
 
@@ -153,16 +230,6 @@ impl<'a> WidgetMut<'a, Grid> {
     }
 }
 
-fn new_grid_child(params: GridParams, widget: WidgetPod<Box<dyn Widget>>) -> Child {
-    Child {
-        widget,
-        x: params.x,
-        y: params.y,
-        width: params.width,
-        height: params.height,
-    }
-}
-
 // --- MARK: IMPL WIDGET---
 impl Widget for Grid {
     fn on_pointer_event(&mut self, _ctx: &mut EventCtx, _event: &PointerEvent) {}
@@ -227,71 +294,6 @@ impl Widget for Grid {
 
     fn make_trace_span(&self) -> Span {
         trace_span!("Grid")
-    }
-}
-
-struct Child {
-    widget: WidgetPod<Box<dyn Widget>>,
-    x: i32,
-    y: i32,
-    width: i32,
-    height: i32,
-}
-
-impl Child {
-    fn widget_mut(&mut self) -> Option<&mut WidgetPod<Box<dyn Widget>>> {
-        Some(&mut self.widget)
-    }
-    fn widget(&self) -> Option<&WidgetPod<Box<dyn Widget>>> {
-        Some(&self.widget)
-    }
-
-    fn update_params(&mut self, params: GridParams) {
-        self.x = params.x;
-        self.y = params.y;
-        self.width = params.width;
-        self.height = params.height;
-    }
-}
-
-#[derive(Default, Debug, Copy, Clone, PartialEq)]
-pub struct GridParams {
-    pub x: i32,
-    pub y: i32,
-    pub width: i32,
-    pub height: i32,
-}
-
-impl GridParams {
-    pub fn new(mut x: i32, mut y: i32, mut width: i32, mut height: i32) -> GridParams {
-        if x < 0 {
-            debug_panic!("Grid x value should be a non-negative number; got {}", x);
-            x = 0;
-        }
-        if y < 0 {
-            debug_panic!("Grid y value should be a non-negative number; got {}", y);
-            y = 0;
-        }
-        if width <= 0 {
-            debug_panic!(
-                "Grid width value should be a positive nonzero number; got {}",
-                width
-            );
-            width = 1;
-        }
-        if height <= 0 {
-            debug_panic!(
-                "Grid height value should be a positive nonzero number; got {}",
-                height
-            );
-            height = 1;
-        }
-        GridParams {
-            x,
-            y,
-            width,
-            height,
-        }
     }
 }
 
