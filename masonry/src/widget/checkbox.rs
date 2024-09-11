@@ -47,6 +47,7 @@ impl WidgetMut<'_, Checkbox> {
     pub fn set_checked(&mut self, checked: bool) {
         self.widget.checked = checked;
         self.ctx.request_paint();
+        self.ctx.request_accessibility_update();
     }
 
     /// Set the text.
@@ -67,19 +68,19 @@ impl Widget for Checkbox {
         match event {
             PointerEvent::PointerDown(_, _) => {
                 if !ctx.is_disabled() {
-                    ctx.set_active(true);
+                    ctx.capture_pointer();
                     ctx.request_paint();
                     trace!("Checkbox {:?} pressed", ctx.widget_id());
                 }
             }
             PointerEvent::PointerUp(_, _) => {
-                if ctx.is_active() && ctx.is_hot() && !ctx.is_disabled() {
+                if ctx.has_pointer_capture() && ctx.is_hot() && !ctx.is_disabled() {
                     self.checked = !self.checked;
                     ctx.submit_action(Action::CheckboxChecked(self.checked));
+                    ctx.request_accessibility_update();
                     trace!("Checkbox {:?} released", ctx.widget_id());
                 }
                 ctx.request_paint();
-                ctx.set_active(false);
             }
             _ => (),
         }
@@ -94,6 +95,7 @@ impl Widget for Checkbox {
                     self.checked = !self.checked;
                     ctx.submit_action(Action::CheckboxChecked(self.checked));
                     ctx.request_paint();
+                    ctx.request_accessibility_update();
                 }
                 _ => {}
             }
@@ -112,7 +114,7 @@ impl Widget for Checkbox {
         let x_padding = theme::WIDGET_CONTROL_COMPONENT_PADDING;
         let check_size = theme::BASIC_WIDGET_HEIGHT;
 
-        let label_size = self.label.layout(ctx, bc);
+        let label_size = ctx.run_layout(&mut self.label, bc);
         ctx.place_child(&mut self.label, (check_size + x_padding, 0.0).into());
 
         let desired_size = Size::new(

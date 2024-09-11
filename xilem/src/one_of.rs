@@ -241,47 +241,47 @@ impl<
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
         match self {
             OneOfWidget::A(w) => {
-                let size = w.layout(ctx, bc);
+                let size = ctx.run_layout(w, bc);
                 ctx.place_child(w, Point::ORIGIN);
                 size
             }
             OneOfWidget::B(w) => {
-                let size = w.layout(ctx, bc);
+                let size = ctx.run_layout(w, bc);
                 ctx.place_child(w, Point::ORIGIN);
                 size
             }
             OneOfWidget::C(w) => {
-                let size = w.layout(ctx, bc);
+                let size = ctx.run_layout(w, bc);
                 ctx.place_child(w, Point::ORIGIN);
                 size
             }
             OneOfWidget::D(w) => {
-                let size = w.layout(ctx, bc);
+                let size = ctx.run_layout(w, bc);
                 ctx.place_child(w, Point::ORIGIN);
                 size
             }
             OneOfWidget::E(w) => {
-                let size = w.layout(ctx, bc);
+                let size = ctx.run_layout(w, bc);
                 ctx.place_child(w, Point::ORIGIN);
                 size
             }
             OneOfWidget::F(w) => {
-                let size = w.layout(ctx, bc);
+                let size = ctx.run_layout(w, bc);
                 ctx.place_child(w, Point::ORIGIN);
                 size
             }
             OneOfWidget::G(w) => {
-                let size = w.layout(ctx, bc);
+                let size = ctx.run_layout(w, bc);
                 ctx.place_child(w, Point::ORIGIN);
                 size
             }
             OneOfWidget::H(w) => {
-                let size = w.layout(ctx, bc);
+                let size = ctx.run_layout(w, bc);
                 ctx.place_child(w, Point::ORIGIN);
                 size
             }
             OneOfWidget::I(w) => {
-                let size = w.layout(ctx, bc);
+                let size = ctx.run_layout(w, bc);
                 ctx.place_child(w, Point::ORIGIN);
                 size
             }

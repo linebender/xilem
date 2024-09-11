@@ -7,7 +7,7 @@ use accesskit::{ActionRequest, Tree, TreeUpdate};
 use parley::fontique::{self, Collection, CollectionOptions};
 use parley::{FontContext, LayoutContext};
 use tracing::{info_span, warn};
-use vello::kurbo::{self, Point};
+use vello::kurbo::{self, Rect};
 use vello::Scene;
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -15,16 +15,19 @@ use std::time::Instant;
 #[cfg(target_arch = "wasm32")]
 use web_time::Instant;
 
-use crate::contexts::{LayoutCtx, LifeCycleCtx};
+use crate::contexts::LifeCycleCtx;
 use crate::debug_logger::DebugLogger;
 use crate::dpi::{LogicalPosition, LogicalSize, PhysicalSize};
 use crate::event::{PointerEvent, TextEvent, WindowEvent};
 use crate::passes::accessibility::root_accessibility;
 use crate::passes::compose::root_compose;
 use crate::passes::event::{root_on_access_event, root_on_pointer_event, root_on_text_event};
+use crate::passes::layout::root_layout;
 use crate::passes::mutate::{mutate_widget, run_mutate_pass};
 use crate::passes::paint::root_paint;
-use crate::passes::update::{run_update_disabled_pass, run_update_pointer_pass};
+use crate::passes::update::{
+    run_update_disabled_pass, run_update_pointer_pass, run_update_scroll_pass,
+};
 use crate::text::TextBrush;
 use crate::tree_arena::TreeArena;
 use crate::widget::WidgetArena;
@@ -55,11 +58,13 @@ pub struct RenderRoot {
     pub(crate) widget_arena: WidgetArena,
 }
 
+// TODO - Document these fields.
 pub(crate) struct RenderRootState {
     pub(crate) debug_logger: DebugLogger,
     pub(crate) signal_queue: VecDeque<RenderRootSignal>,
     pub(crate) focused_widget: Option<WidgetId>,
     pub(crate) next_focused_widget: Option<WidgetId>,
+    pub(crate) scroll_request_targets: Vec<(WidgetId, Rect)>,
     pub(crate) hovered_path: Vec<WidgetId>,
     pub(crate) pointer_capture_target: Option<WidgetId>,
     pub(crate) cursor_icon: CursorIcon,
@@ -132,6 +137,7 @@ impl RenderRoot {
                 signal_queue: VecDeque::new(),
                 focused_widget: None,
                 next_focused_widget: None,
+                scroll_request_targets: Vec::new(),
                 hovered_path: Vec::new(),
                 pointer_capture_target: None,
                 cursor_icon: CursorIcon::Default,
@@ -461,41 +467,20 @@ impl RenderRoot {
 
     // --- MARK: LAYOUT ---
     pub(crate) fn root_layout(&mut self) {
-        let mut dummy_state = WidgetState::synthetic(self.root.id(), self.get_kurbo_size());
-        let size = self.get_kurbo_size();
-        let mouse_pos = self.last_mouse_pos.map(|pos| (pos.x, pos.y).into());
-        let root_state_token = self.widget_arena.widget_states.root_token_mut();
-        let root_widget_token = self.widget_arena.widgets.root_token_mut();
-        let mut layout_ctx = LayoutCtx {
-            global_state: &mut self.state,
-            widget_state: &mut dummy_state,
-            widget_state_children: root_state_token,
-            widget_children: root_widget_token,
-            mouse_pos,
-        };
-
+        let window_size = self.get_kurbo_size();
         let bc = match self.size_policy {
-            WindowSizePolicy::User => BoxConstraints::tight(size),
+            WindowSizePolicy::User => BoxConstraints::tight(window_size),
             WindowSizePolicy::Content => BoxConstraints::UNBOUNDED,
         };
 
-        let size = {
-            layout_ctx
-                .global_state
-                .debug_logger
-                .push_important_span("LAYOUT");
-            let _span = info_span!("layout").entered();
-            self.root.layout(&mut layout_ctx, &bc)
-        };
-        layout_ctx.place_child(&mut self.root, Point::ORIGIN);
-        layout_ctx.global_state.debug_logger.pop_span();
+        let mut dummy_state = WidgetState::synthetic(self.root.id(), self.get_kurbo_size());
+        let size = root_layout(self, &mut dummy_state, &bc);
 
         if let WindowSizePolicy::Content = self.size_policy {
             let new_size = LogicalSize::new(size.width, size.height).to_physical(self.scale_factor);
             if self.size != new_size {
                 self.size = new_size;
-                layout_ctx
-                    .global_state
+                self.state
                     .signal_queue
                     .push_back(RenderRootSignal::SetSize(new_size));
             }
@@ -545,6 +530,10 @@ impl RenderRoot {
 
         if self.state.debug_logger.layout_tree.root.is_none() {
             self.state.debug_logger.layout_tree.root = Some(self.root.id().to_raw() as u32);
+        }
+
+        if !self.state.scroll_request_targets.is_empty() {
+            run_update_scroll_pass(self);
         }
 
         if self.root_state().needs_compose && !self.root_state().needs_layout {

@@ -13,6 +13,7 @@ use vello::{
     peniko::{BlendMode, Color},
     Scene,
 };
+use winit::event::Ime;
 
 use crate::widget::{LineBreaking, WidgetMut};
 use crate::{
@@ -155,6 +156,7 @@ impl WidgetMut<'_, Textbox> {
     pub fn set_line_break_mode(&mut self, line_break_mode: LineBreaking) {
         self.widget.line_break_mode = line_break_mode;
         self.ctx.request_paint();
+        self.ctx.request_accessibility_update();
     }
 }
 
@@ -174,30 +176,28 @@ impl Widget for Textbox {
                     if made_change {
                         ctx.request_layout();
                         ctx.request_paint();
+                        ctx.request_accessibility_update();
                         ctx.request_focus();
-                        ctx.set_active(true);
+                        ctx.capture_pointer();
                     }
                 }
             }
             PointerEvent::PointerMove(state) => {
                 if !ctx.is_disabled()
-                    && ctx.is_active()
+                    && ctx.has_pointer_capture()
                     && self.editor.pointer_move(inner_origin, state)
                 {
                     // We might have changed text colours, so we need to re-request a layout
                     ctx.request_layout();
                     ctx.request_paint();
+                    ctx.request_accessibility_update();
                 }
             }
             PointerEvent::PointerUp(button, state) => {
                 // TODO: Follow link (if not now dragging ?)
-                if !ctx.is_disabled() && ctx.is_active() {
+                if !ctx.is_disabled() && ctx.has_pointer_capture() {
                     self.editor.pointer_up(inner_origin, state, *button);
                 }
-                ctx.set_active(false);
-            }
-            PointerEvent::PointerLeave(_state) => {
-                ctx.set_active(false);
             }
             _ => {}
         }
@@ -205,12 +205,18 @@ impl Widget for Textbox {
 
     fn on_text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent) {
         let result = self.editor.text_event(ctx, event);
-        // If focused on a link and enter pressed, follow it?
         if result.is_handled() {
+            // Some platforms will send a lot of spurious Preedit events.
+            // We only want to request a scroll on user input.
+            if !matches!(event, TextEvent::Ime(Ime::Preedit(preedit, ..)) if preedit.is_empty()) {
+                // TODO - Use request_scroll_to with cursor rect
+                ctx.request_scroll_to_this();
+            }
             ctx.set_handled();
             // TODO: only some handlers need this repaint
             ctx.request_layout();
             ctx.request_paint();
+            ctx.request_accessibility_update();
         }
     }
 
@@ -344,8 +350,9 @@ impl Widget for Textbox {
         Role::TextInput
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx) {
-        // TODO
+    fn accessibility(&mut self, ctx: &mut AccessCtx) {
+        // TODO: Replace with full accessibility.
+        ctx.current_node().set_value(self.text());
     }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {

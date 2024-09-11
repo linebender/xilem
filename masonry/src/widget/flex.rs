@@ -671,7 +671,7 @@ impl Widget for Flex {
                         any_use_baseline |= alignment == CrossAxisAlignment::Baseline;
 
                         let old_size = ctx.widget_state.layout_rect().size();
-                        let child_size = widget.layout(ctx, &loosened_bc);
+                        let child_size = ctx.run_layout(widget, &loosened_bc);
 
                         if child_size.width.is_infinite() {
                             tracing::warn!("A non-Flex child has an infinite width.");
@@ -737,7 +737,7 @@ impl Widget for Flex {
 
                         let old_size = ctx.widget_state.layout_rect().size();
                         let child_bc = self.direction.constraints(&loosened_bc, 0.0, actual_major);
-                        let child_size = widget.layout(ctx, &child_bc);
+                        let child_size = ctx.run_layout(widget, &child_bc);
 
                         if old_size != child_size {
                             any_changed = true;
@@ -818,7 +818,7 @@ impl Widget for Flex {
                                 //TODO: this is the second call of layout on the same child, which
                                 // is bad, because it can lead to exponential increase in layout calls
                                 // when used multiple times in the widget hierarchy.
-                                widget.layout(ctx, &child_bc);
+                                ctx.run_layout(widget, &child_bc);
                             }
                             0.0
                         }

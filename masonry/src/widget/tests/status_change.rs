@@ -8,6 +8,18 @@ use crate::testing::{widget_ids, Record, Recording, TestHarness, TestWidgetExt a
 use crate::widget::{Button, Flex, Label, SizedBox};
 use crate::*;
 
+fn next_pointer_event(recording: &Recording) -> Option<PointerEvent> {
+    while let Some(event) = recording.next() {
+        match event {
+            Record::PE(event) => {
+                return Some(event);
+            }
+            _ => {}
+        };
+    }
+    None
+}
+
 fn is_hot(harness: &TestHarness, id: WidgetId) -> bool {
     harness.get_widget(id).state().is_hot
 }
@@ -203,18 +215,6 @@ fn update_hot_from_layout() {
 
 #[test]
 fn get_pointer_events_while_active() {
-    fn next_pointer_event(recording: &Recording) -> Option<PointerEvent> {
-        while let Some(event) = recording.next() {
-            match event {
-                Record::PE(event) => {
-                    return Some(event);
-                }
-                _ => {}
-            };
-        }
-        None
-    }
-
     let [button, root, empty, empty_2] = widget_ids();
 
     let button_rec = Recording::default();
@@ -285,5 +285,64 @@ fn get_pointer_events_while_active() {
 
     // We move the mouse again to check movements aren't captured anymore
     harness.mouse_move_to(empty_2);
+    assert_matches!(next_pointer_event(&button_rec), None);
+}
+
+#[test]
+fn automatically_lose_pointer_on_pointer_leave() {
+    let [button, root, empty] = widget_ids();
+
+    let button_rec = Recording::default();
+
+    let widget = Flex::column()
+        .with_child_id(SizedBox::empty().width(10.0).height(10.0), empty)
+        .with_child_id(Button::new("hello").record(&button_rec), button)
+        .with_id(root);
+
+    let mut harness = TestHarness::create(widget);
+
+    // The default state is that nothing has captured the pointer.
+    assert_eq!(harness.pointer_capture_target_id(), None);
+
+    // We press the button
+    harness.mouse_move_to(button);
+    harness.mouse_button_press(PointerButton::Primary);
+
+    // The button should be notified of the move and pointer down events
+    assert_matches!(
+        next_pointer_event(&button_rec),
+        Some(PointerEvent::PointerMove(_))
+    );
+    assert_matches!(
+        next_pointer_event(&button_rec),
+        Some(PointerEvent::PointerDown(_, _))
+    );
+
+    // and should now hold the capture.
+    assert_eq!(harness.pointer_capture_target_id(), Some(button));
+
+    // The pointer moves to empty space. The button is notified and still holds the capture.
+    harness.mouse_move_to(empty);
+    assert_matches!(
+        next_pointer_event(&button_rec),
+        Some(PointerEvent::PointerMove(_))
+    );
+    assert_eq!(harness.pointer_capture_target_id(), Some(button));
+
+    // The pointer leaves, without releasing the primary button first
+    harness.process_pointer_event(PointerEvent::PointerLeave(PointerState::empty()));
+
+    // The button holds the capture during this event and should be notified the pointer is leaving
+    assert_matches!(
+        next_pointer_event(&button_rec),
+        Some(PointerEvent::PointerLeave(_))
+    );
+
+    // The button should have lost the pointer capture
+    assert_eq!(harness.pointer_capture_target_id(), None);
+
+    // If the pointer enters and leaves again, the button should not be notified
+    harness.process_pointer_event(PointerEvent::PointerEnter(PointerState::empty()));
+    harness.process_pointer_event(PointerEvent::PointerLeave(PointerState::empty()));
     assert_matches!(next_pointer_event(&button_rec), None);
 }

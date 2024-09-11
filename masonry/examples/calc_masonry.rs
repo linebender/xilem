@@ -150,12 +150,12 @@ impl Widget for CalcButton {
                     ctx.mutate_later(&mut self.inner, move |mut inner| {
                         inner.set_background(color);
                     });
-                    ctx.set_active(true);
+                    ctx.capture_pointer();
                     trace!("CalcButton {:?} pressed", ctx.widget_id());
                 }
             }
             PointerEvent::PointerUp(_, _) => {
-                if ctx.is_active() && !ctx.is_disabled() {
+                if ctx.has_pointer_capture() && !ctx.is_disabled() {
                     let color = self.base_color;
                     // See on_status_change for why we use `mutate_later` here.
                     ctx.mutate_later(&mut self.inner, move |mut inner| {
@@ -164,7 +164,6 @@ impl Widget for CalcButton {
                     ctx.submit_action(Action::Other(Box::new(self.action)));
                     trace!("CalcButton {:?} released", ctx.widget_id());
                 }
-                ctx.set_active(false);
             }
             _ => (),
         }
@@ -217,7 +216,7 @@ impl Widget for CalcButton {
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
-        let size = self.inner.layout(ctx, bc);
+        let size = ctx.run_layout(&mut self.inner, bc);
         ctx.place_child(&mut self.inner, Point::ORIGIN);
 
         size

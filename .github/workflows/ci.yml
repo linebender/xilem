@@ -22,7 +22,7 @@ env:
   RUST_MIN_VER_WASM_PKGS: "-p xilem_core"
 
   # Only some of our examples support Android (primarily due to extra required boilerplate).
-  ANDROID_TARGETS: -p xilem --example mason_android --example calc_android --example stopwatch_android --example variable_clock_android
+  ANDROID_TARGETS: -p xilem --example mason_android --example calc_android --example stopwatch_android --example variable_clock_android --example http_cats_android --example to_do_mvc_android
 
   # We do not run the masonry snapshot tests, because those currently require a specific font stack
   # See https://github.com/linebender/xilem/pull/233

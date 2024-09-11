@@ -332,7 +332,7 @@ impl Widget for SizedBox {
         let mut size;
         match self.child.as_mut() {
             Some(child) => {
-                size = child.layout(ctx, &child_bc);
+                size = ctx.run_layout(child, &child_bc);
                 ctx.place_child(child, origin);
                 size = Size::new(
                     size.width + 2.0 * border_width,

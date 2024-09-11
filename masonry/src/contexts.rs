@@ -11,12 +11,15 @@ use tracing::{trace, warn};
 use vello::kurbo::Vec2;
 
 use crate::action::Action;
+use crate::passes::layout::run_layout_on;
 use crate::render_root::{MutateCallback, RenderRootSignal, RenderRootState};
 use crate::text::TextBrush;
 use crate::text_helpers::{ImeChangeSignal, TextFieldRegistration};
 use crate::tree_arena::ArenaMutChildren;
 use crate::widget::{WidgetMut, WidgetState};
-use crate::{AllowRawMut, CursorIcon, Insets, Point, Rect, Size, Widget, WidgetId, WidgetPod};
+use crate::{
+    AllowRawMut, BoxConstraints, CursorIcon, Insets, Point, Rect, Size, Widget, WidgetId, WidgetPod,
+};
 
 /// A macro for implementing methods on multiple contexts.
 ///
@@ -59,7 +62,6 @@ pub struct EventCtx<'a> {
     pub(crate) widget_children: ArenaMutChildren<'a, Box<dyn Widget>>,
     pub(crate) allow_pointer_capture: bool,
     pub(crate) is_handled: bool,
-    pub(crate) request_pan_to_child: Option<Rect>,
 }
 
 /// A context provided to the [`lifecycle`] method on widgets.
@@ -232,7 +234,7 @@ impl_context_method!(
 
 // --- MARK: GET STATUS ---
 // Methods on all context types except LayoutCtx
-// Access status information (hot/active/disabled/etc).
+// Access status information (hot/pointer captured/disabled/etc).
 impl_context_method!(
     MutateCtx<'_>,
     EventCtx<'_>,
@@ -252,16 +254,20 @@ impl_context_method!(
         /// mouse position have hot status.
         ///
         /// Discussion: there is currently some confusion about whether a
-        /// widget can be considered hot when some other widget is active (for
-        /// example, when clicking to one widget and dragging to the next).
-        /// The documentation should clearly state the resolution.
+        /// widget can be considered hot when some other widget has captured the
+        /// pointer (for example, when clicking one widget and dragging to the
+        /// next). The documentation should clearly state the resolution.
         pub fn is_hot(&self) -> bool {
             self.widget_state.is_hot
         }
 
-        // TODO - remove
-        pub fn is_active(&self) -> bool {
-            self.global_state.pointer_capture_target == Some(self.widget_id())
+        /// Whether the pointer is captured by this widget.
+        ///
+        /// See [`capture_pointer`] for more information about pointer capture.
+        ///
+        /// [`capture_pointer`]: EventCtx::capture_pointer
+        pub fn has_pointer_capture(&self) -> bool {
+            self.global_state.pointer_capture_target == Some(self.widget_state.id)
         }
 
         /// The focus status of a widget.
@@ -329,14 +335,14 @@ impl_context_method!(EventCtx<'_>, {
     /// Set the cursor icon.
     ///
     /// This setting will be retained until [`clear_cursor`] is called, but it will only take
-    /// effect when this widget is either [`hot`] or [`active`]. If a child widget also sets a
-    /// cursor, the child widget's cursor will take precedence. (If that isn't what you want, use
-    /// [`override_cursor`] instead.)
+    /// effect when this widget is [`hot`] and/or [`has_pointer_capture`]. If a child widget also
+    /// sets a cursor, the child widget's cursor will take precedence. (If that isn't what you
+    /// want, use [`override_cursor`] instead.)
     ///
     /// [`clear_cursor`]: EventCtx::clear_cursor
     /// [`override_cursor`]: EventCtx::override_cursor
     /// [`hot`]: EventCtx::is_hot
-    /// [`active`]: EventCtx::is_active
+    /// [`has_pointer_capture`]: EventCtx::has_pointer_capture
     pub fn set_cursor(&mut self, cursor: &CursorIcon) {
         trace!("set_cursor {:?}", cursor);
         self.widget_state.cursor = Some(*cursor);
@@ -577,9 +583,35 @@ impl_context_method!(
 pub struct TimerToken;
 
 impl EventCtx<'_> {
-    // TODO - Document
+    // TODO - clearly document all semantics of pointer capture when they've been decided on
     // TODO - Figure out cases where widget should be notified of pointer capture
     // loss
+    /// Capture the pointer in the current widget.
+    ///
+    /// Pointer capture is only allowed during a [`PointerDown`] event. It is a logic error to
+    /// capture the pointer during any other event.
+    ///
+    /// A widget normally only receives pointer events when the pointer is inside the widget's
+    /// layout box. Pointer capture causes widget layout boxes to be ignored: when the pointer is
+    /// captured by a widget, that widget will continue receiving pointer events when the pointer
+    /// is outside the widget's layout box. Other widgets the pointer is over will not receive
+    /// events. Events that are not marked as handled by the capturing widget, bubble up to the
+    /// widget's ancestors, ignoring their layout boxes as well.
+    ///
+    /// The pointer cannot be captured by multiple widgets at the same time. If a widget has
+    /// captured the pointer and another widget captures it, the first widget loses the pointer
+    /// capture.
+    ///
+    /// # Releasing the pointer
+    ///
+    /// Any widget can [`release`] the pointer during any event. The pointer is automatically
+    /// released after handling of a [`PointerUp`] or [`PointerLeave`] event completes. A widget
+    /// holding the pointer capture will be the target of these events.
+    ///
+    /// [`PointerDown`]: crate::PointerEvent::PointerDown
+    /// [`PointerUp`]: crate::PointerEvent::PointerUp
+    /// [`PointerLeave`]: crate::PointerEvent::PointerLeave
+    /// [`release`]: Self::release_pointer
     #[track_caller]
     pub fn capture_pointer(&mut self) {
         debug_assert!(
@@ -591,26 +623,28 @@ impl EventCtx<'_> {
         self.global_state.pointer_capture_target = Some(self.widget_state.id);
     }
 
+    /// Release the pointer previously captured through [`capture_pointer`].
+    ///
+    /// [`capture_pointer`]: EventCtx::capture_pointer
     pub fn release_pointer(&mut self) {
         self.global_state.pointer_capture_target = None;
     }
 
-    pub fn has_pointer_capture(&self) -> bool {
-        self.global_state.pointer_capture_target == Some(self.widget_state.id)
-    }
-
     /// Send a signal to parent widgets to scroll this widget into view.
-    pub fn request_pan_to_this(&mut self) {
-        self.request_pan_to_child = Some(self.widget_state.layout_rect());
+    pub fn request_scroll_to_this(&mut self) {
+        let rect = self.widget_state.layout_rect();
+        self.global_state
+            .scroll_request_targets
+            .push((self.widget_state.id, rect));
     }
 
-    // TODO - Remove
-    pub fn set_active(&mut self, active: bool) {
-        if active {
-            self.global_state.pointer_capture_target = Some(self.widget_state.id);
-        } else {
-            self.global_state.pointer_capture_target = None;
-        }
+    /// Send a signal to parent widgets to scroll this area into view.
+    ///
+    /// `rect` is in local coordinates.
+    pub fn request_scroll_to(&mut self, rect: Rect) {
+        self.global_state
+            .scroll_request_targets
+            .push((self.widget_state.id, rect));
     }
 
     /// Set the event as "handled", which stops its propagation to other
@@ -725,6 +759,19 @@ impl LayoutCtx<'_> {
                 child.id().to_raw(),
             );
         }
+    }
+
+    // TODO - Reorder methods so that methods necessary for layout
+    // appear higher in documentation.
+
+    /// Compute layout of a child widget.
+    ///
+    /// Container widgets must call this on every child as part of
+    /// their [`layout`] method.
+    ///
+    /// [`layout`]: Widget::layout
+    pub fn run_layout<W: Widget>(&mut self, child: &mut WidgetPod<W>, bc: &BoxConstraints) -> Size {
+        run_layout_on(self, child, bc)
     }
 
     /// Set explicit paint [`Insets`] for this widget.

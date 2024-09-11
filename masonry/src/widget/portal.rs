@@ -145,6 +145,26 @@ impl<W: Widget> Portal<W> {
             false
         }
     }
+
+    // Note - Rect is in child coordinates
+    // TODO - Merge with pan_viewport_to
+    // Right now these functions are just different enough to be a pain to merge.
+    fn pan_viewport_to_raw(&mut self, portal_size: Size, content_size: Size, target: Rect) -> bool {
+        let viewport = Rect::from_origin_size(self.viewport_pos, portal_size);
+
+        let new_pos_x = compute_pan_range(
+            viewport.min_x()..viewport.max_x(),
+            target.min_x()..target.max_x(),
+        )
+        .start;
+        let new_pos_y = compute_pan_range(
+            viewport.min_y()..viewport.max_y(),
+            target.min_y()..target.max_y(),
+        )
+        .start;
+
+        self.set_viewport_pos_raw(portal_size, content_size, Point::new(new_pos_x, new_pos_y))
+    }
 }
 
 // --- MARK: WIDGETMUT ---
@@ -315,8 +335,29 @@ impl<W: Widget> Widget for Portal<W> {
             LifeCycle::WidgetAdded => {
                 ctx.register_as_portal();
             }
-            //TODO
-            //LifeCycle::RequestPanToChild(target_rect) => {}
+            LifeCycle::RequestPanToChild(target) => {
+                let portal_size = ctx.size();
+                let content_size = ctx.get_raw_ref(&mut self.child).ctx().layout_rect().size();
+
+                self.pan_viewport_to_raw(portal_size, content_size, *target);
+                ctx.request_compose();
+
+                // TODO - There's a lot of code here that's duplicated from the `MouseWheel`
+                // event in `on_pointer_event`.
+                // Because this code directly manipulates child widgets, it's hard to factor
+                // it out.
+                let mut scrollbar = ctx.get_raw_mut(&mut self.scrollbar_vertical);
+                scrollbar.widget().cursor_progress =
+                    self.viewport_pos.y / (content_size - portal_size).height;
+                scrollbar.ctx().request_paint();
+
+                std::mem::drop(scrollbar);
+
+                let mut scrollbar = ctx.get_raw_mut(&mut self.scrollbar_horizontal);
+                scrollbar.widget().cursor_progress =
+                    self.viewport_pos.x / (content_size - portal_size).width;
+                scrollbar.ctx().request_paint();
+            }
             _ => {}
         }
 
@@ -332,7 +373,7 @@ impl<W: Widget> Widget for Portal<W> {
 
         let child_bc = BoxConstraints::new(min_child_size, max_child_size);
 
-        let content_size = self.child.layout(ctx, &child_bc);
+        let content_size = ctx.run_layout(&mut self.child, &child_bc);
         let portal_size = bc.constrain(content_size);
 
         // TODO - document better
@@ -365,7 +406,7 @@ impl<W: Widget> Widget for Portal<W> {
             // TODO - request paint for scrollbar?
             std::mem::drop(scrollbar);
 
-            let scrollbar_size = self.scrollbar_horizontal.layout(ctx, bc);
+            let scrollbar_size = ctx.run_layout(&mut self.scrollbar_horizontal, bc);
             ctx.place_child(
                 &mut self.scrollbar_horizontal,
                 Point::new(0.0, portal_size.height - scrollbar_size.height),
@@ -380,7 +421,7 @@ impl<W: Widget> Widget for Portal<W> {
             // TODO - request paint for scrollbar?
             std::mem::drop(scrollbar);
 
-            let scrollbar_size = self.scrollbar_vertical.layout(ctx, bc);
+            let scrollbar_size = ctx.run_layout(&mut self.scrollbar_vertical, bc);
             ctx.place_child(
                 &mut self.scrollbar_vertical,
                 Point::new(portal_size.width - scrollbar_size.width, 0.0),
@@ -424,10 +465,6 @@ impl<W: Widget> Widget for Portal<W> {
         }
 
         ctx.current_node().set_clips_children();
-        ctx.current_node()
-            .push_child(self.scrollbar_horizontal.id().into());
-        ctx.current_node()
-            .push_child(self.scrollbar_vertical.id().into());
     }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
