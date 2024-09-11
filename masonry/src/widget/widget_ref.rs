@@ -177,7 +177,7 @@ impl<'w> WidgetRef<'w, dyn Widget> {
         // this? Also see the comment inside the loop rebinding child to the arena's lifetime.
         let mut innermost_widget = root.get_widget(self.id()).unwrap();
 
-        if !self.state().layout_rect().contains(pos) {
+        if !self.state().window_layout_rect().contains(pos) {
             return None;
         }
 
@@ -185,6 +185,7 @@ impl<'w> WidgetRef<'w, dyn Widget> {
             if let Some(clip) = innermost_widget.state().clip {
                 // If the widget has a clip, the point must be inside, else we don't iterate over
                 // children.
+                let pos = pos - innermost_widget.state().window_origin().to_vec2();
                 if !clip.contains(pos) {
                     break;
                 }
