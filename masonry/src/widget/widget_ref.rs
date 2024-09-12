@@ -161,10 +161,8 @@ impl<'w> WidgetRef<'w, dyn Widget> {
         }
     }
 
-    /// Recursively find innermost widget at given position.
-    ///
-    /// If multiple overlapping children of a widget contain the given position in their layout
-    /// boxes, the last child as determined by [`Widget::children_ids`] is chosen.
+    /// Recursively find the innermost widget at the given position, using
+    /// [`Widget::get_child_at_pos`] to descend the widget tree.
     ///
     /// **pos** - the position in local coordinates (zero being the top-left of the
     /// inner widget).
@@ -177,20 +175,17 @@ impl<'w> WidgetRef<'w, dyn Widget> {
         // this? Also see the comment inside the loop rebinding child to the arena's lifetime.
         let mut innermost_widget = root.get_widget(self.id()).unwrap();
 
-        if !self.state().window_layout_rect().contains(pos) {
+        let relative_pos = pos - self.state().window_origin().to_vec2();
+        if !self.state().window_layout_rect().contains(pos)
+            || !self
+                .state()
+                .clip
+                .map_or(true, |clip| clip.contains(relative_pos))
+        {
             return None;
         }
 
         loop {
-            if let Some(clip) = innermost_widget.state().clip {
-                // If the widget has a clip, the point must be inside, else we don't iterate over
-                // children.
-                let pos = pos - innermost_widget.state().window_origin().to_vec2();
-                if !clip.contains(pos) {
-                    break;
-                }
-            }
-
             if let Some(child) = innermost_widget
                 .widget
                 .get_child_at_pos(&innermost_widget.ctx, pos)

@@ -178,7 +178,9 @@ pub trait Widget: AsAny {
 
     // --- Auto-generated implementations ---
 
-    /// Return which child, if any, has the given `pos` in its layout rect.
+    /// Return which child, if any, has the given `pos` in its layout rect and clip path. In case
+    /// of overlapping children, the last child as determined by [`Widget::children_ids`] is
+    /// chosen.
     ///
     /// The child returned is a direct child, not eg a grand-child. The position is in global
     /// coordinates. (Eg `(0,0)` is the top-left corner of the window).
@@ -200,7 +202,16 @@ pub trait Widget: AsAny {
         for child_id in self.children_ids().iter().rev() {
             let child = ctx.get(*child_id);
 
-            if !child.widget.skip_pointer() && child.state().window_layout_rect().contains(pos) {
+            let relative_pos = pos - child.state().window_origin().to_vec2();
+            // The position must be inside the child's layout and inside the child's clip path (if
+            // any).
+            if !child.widget.skip_pointer()
+                && child.state().window_layout_rect().contains(pos)
+                && child
+                    .state()
+                    .clip
+                    .map_or(true, |clip| clip.contains(relative_pos))
+            {
                 return Some(child);
             }
         }
