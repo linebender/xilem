@@ -186,18 +186,14 @@ impl<'w> WidgetRef<'w, dyn Widget> {
             return None;
         }
 
-        loop {
-            if let Some(child) = innermost_widget
-                .widget
-                .get_child_at_pos(&innermost_widget.ctx, pos)
-            {
-                // Get child from the widget arena to bind it to the arena's lifetime. Is there a
-                // way around this?
-                let child = root.get_widget(child.id()).unwrap();
-                innermost_widget = child;
-            } else {
-                break;
-            }
+        while let Some(child) = innermost_widget
+            .widget
+            .get_child_at_pos(&innermost_widget.ctx, pos)
+        {
+            // Get child from the widget arena to bind it to the arena's lifetime. Is there a
+            // way around this?
+            let child = root.get_widget(child.id()).unwrap();
+            innermost_widget = child;
         }
 
         Some(innermost_widget)
