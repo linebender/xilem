@@ -450,6 +450,7 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, LifeCycleCtx<'_>, {
     pub fn request_anim_frame(&mut self) {
         trace!("request_anim_frame");
         self.widget_state.request_anim = true;
+        self.widget_state.needs_anim = true;
     }
 
     /// Indicate that your children have changed.

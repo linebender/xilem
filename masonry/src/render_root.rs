@@ -26,7 +26,7 @@ use crate::passes::layout::root_layout;
 use crate::passes::mutate::{mutate_widget, run_mutate_pass};
 use crate::passes::paint::root_paint;
 use crate::passes::update::{
-    run_update_disabled_pass, run_update_pointer_pass, run_update_scroll_pass,
+    run_update_anim_pass, run_update_disabled_pass, run_update_pointer_pass, run_update_scroll_pass,
 };
 use crate::text::TextBrush;
 use crate::tree_arena::TreeArena;
@@ -208,12 +208,17 @@ impl RenderRoot {
                 // See https://github.com/linebender/druid/issues/85 for discussion.
                 let last = self.last_anim.take();
                 let elapsed_ns = last.map(|t| now.duration_since(t).as_nanos()).unwrap_or(0) as u64;
-                let root_state = self.root_state();
-                if root_state.request_anim {
-                    root_state.request_anim = false;
-                    self.root_lifecycle(LifeCycle::AnimFrame(elapsed_ns));
-                    self.last_anim = Some(now);
-                }
+
+                run_update_anim_pass(self, elapsed_ns);
+
+                let mut root_state = self.widget_arena.get_state_mut(self.root.id()).item.clone();
+                self.post_event_processing(&mut root_state);
+
+                // If this animation will continue, store the time.
+                // If a new animation starts, then it will have zero reported elapsed time.
+                let animation_continues = root_state.needs_anim;
+                self.last_anim = animation_continues.then_some(now);
+
                 Handled::Yes
             }
             WindowEvent::RebuildAccessTree => {
@@ -272,8 +277,6 @@ impl RenderRoot {
         // TODO - Xilem's reconciliation logic will have to be called
         // by the function that calls this
 
-        // TODO - if root widget's request_anim is still set by the
-        // time this is called, emit a warning
         if self.root_state().needs_layout {
             self.root_layout();
         }
