@@ -6,10 +6,7 @@ use tracing::trace;
 
 use crate::tree_arena::ArenaRefChildren;
 use crate::widget::WidgetState;
-use crate::{
-    InternalLifeCycle, LifeCycle, LifeCycleCtx, Widget,
-    WidgetId,
-};
+use crate::{InternalLifeCycle, LifeCycle, LifeCycleCtx, Widget, WidgetId};
 
 // TODO - rewrite links in doc
 
