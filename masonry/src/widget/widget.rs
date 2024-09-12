@@ -185,6 +185,7 @@ pub trait Widget: AsAny {
     /// The child returned is a direct child, not e.g. a grand-child.
     ///
     /// Has a default implementation that can be overridden to search children more efficiently.
+    /// Custom implementations must uphold the conditions outlined above.
     ///
     /// **pos** - the position in global coordinates (e.g. `(0,0)` is the top-left corner of the
     /// window).
