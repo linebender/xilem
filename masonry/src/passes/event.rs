@@ -3,6 +3,7 @@
 
 use dpi::LogicalPosition;
 use tracing::{debug, info_span, trace};
+use winit::event::ElementState;
 use winit::keyboard::{KeyCode, PhysicalKey};
 
 use crate::passes::merge_state_up;
@@ -72,7 +73,7 @@ fn run_event_pass<E>(
         target_widget_id = parent_id;
     }
 
-    // Pass root widget state to synthetic state create at beginning of pass
+    // Merge root widget state with synthetic state created at beginning of pass
     root_state.merge_up(root.widget_arena.get_state_mut(root.root.id()).item);
 
     Handled::from(is_handled)
@@ -153,7 +154,10 @@ pub(crate) fn root_on_text_event(
 
     // Handle Tab focus
     if let TextEvent::KeyboardKey(key, mods) = event {
-        if handled == Handled::No && key.physical_key == PhysicalKey::Code(KeyCode::Tab) {
+        if handled == Handled::No
+            && key.physical_key == PhysicalKey::Code(KeyCode::Tab)
+            && key.state == ElementState::Pressed
+        {
             if !mods.shift_key() {
                 root.state.next_focused_widget = root.widget_from_focus_chain(true);
             } else {

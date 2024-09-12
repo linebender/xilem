@@ -255,6 +255,7 @@ impl Widget for Textbox {
                 ctx.request_layout();
             }
             LifeCycle::BuildFocusChain => {
+                ctx.register_for_focus();
                 // TODO: This will always be empty
                 if !self.editor.text().links().is_empty() {
                     tracing::warn!("Links present in text, but not yet integrated");

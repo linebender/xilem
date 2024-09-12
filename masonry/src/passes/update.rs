@@ -48,6 +48,31 @@ fn run_targeted_update_pass(
     }
 }
 
+// TODO - Replace LifecycleCtx with UpdateCtx
+fn run_single_update_pass(
+    root: &mut RenderRoot,
+    target: Option<WidgetId>,
+    mut pass_fn: impl FnMut(&mut dyn Widget, &mut LifeCycleCtx),
+) {
+    if let Some(widget_id) = target {
+        let (widget_mut, state_mut) = root.widget_arena.get_pair_mut(widget_id);
+
+        let mut ctx = LifeCycleCtx {
+            global_state: &mut root.state,
+            widget_state: state_mut.item,
+            widget_state_children: state_mut.children,
+            widget_children: widget_mut.children,
+        };
+        pass_fn(widget_mut.item, &mut ctx);
+    }
+
+    let mut current_id = target;
+    while let Some(widget_id) = current_id {
+        merge_state_up(&mut root.widget_arena, widget_id);
+        current_id = root.widget_arena.parent_of(widget_id);
+    }
+}
+
 pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot, root_state: &mut WidgetState) {
     let pointer_pos = root.last_mouse_pos.map(|pos| (pos.x, pos.y).into());
 
@@ -143,7 +168,96 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot, root_state: &mut Wi
     root.state.cursor_icon = new_cursor;
     root.state.hovered_path = next_hovered_path;
 
-    // Pass root widget state to synthetic state create at beginning of pass
+    // Merge root widget state with synthetic state created at beginning of pass
+    root_state.merge_up(root.widget_arena.get_state_mut(root.root.id()).item);
+}
+
+// ----------------
+
+pub(crate) fn run_update_focus_pass(root: &mut RenderRoot, root_state: &mut WidgetState) {
+    // If the focused widget ends up disabled or removed, we set
+    // the focused id to None
+    if let Some(id) = root.state.next_focused_widget {
+        if !root.widget_arena.has(id) || root.widget_arena.get_state_mut(id).item.is_disabled {
+            root.state.next_focused_widget = None;
+        }
+    }
+
+    let prev_focused = root.state.focused_widget;
+    let next_focused = root.state.next_focused_widget;
+
+    // "Focused path" means the focused widget, and all its parents.
+    let prev_focused_path = std::mem::take(&mut root.state.focused_path);
+    let next_focused_path = get_id_path(root, next_focused);
+
+    let mut focused_set = HashSet::new();
+    for widget_id in &next_focused_path {
+        focused_set.insert(*widget_id);
+    }
+
+    trace!("prev_focused_path: {:?}", prev_focused_path);
+    trace!("next_focused_path: {:?}", next_focused_path);
+
+    // This is the same algorithm as the one in
+    // run_update_pointer_pass
+    // See comment in that function.
+
+    fn update_focused_status_of(
+        root: &mut RenderRoot,
+        widget_id: WidgetId,
+        focused_set: &HashSet<WidgetId>,
+    ) {
+        run_targeted_update_pass(root, Some(widget_id), |widget, ctx| {
+            let has_focus = focused_set.contains(&ctx.widget_id());
+
+            if ctx.widget_state.has_focus != has_focus {
+                widget.on_status_change(ctx, &StatusChange::ChildFocusChanged(has_focus));
+            }
+            ctx.widget_state.has_focus = has_focus;
+        });
+    }
+
+    // TODO - Make sure widgets are iterated from the bottom up.
+    // TODO - Document the iteration order for update_focus pass.
+    for widget_id in prev_focused_path.iter().copied() {
+        if root.widget_arena.has(widget_id)
+            && root.widget_arena.get_state_mut(widget_id).item.has_focus
+                != focused_set.contains(&widget_id)
+        {
+            update_focused_status_of(root, widget_id, &focused_set);
+        }
+    }
+    for widget_id in next_focused_path.iter().copied() {
+        if root.widget_arena.has(widget_id)
+            && root.widget_arena.get_state_mut(widget_id).item.has_focus
+                != focused_set.contains(&widget_id)
+        {
+            update_focused_status_of(root, widget_id, &focused_set);
+        }
+    }
+
+    if prev_focused != next_focused {
+        run_single_update_pass(root, prev_focused, |widget, ctx| {
+            widget.on_status_change(ctx, &StatusChange::FocusChanged(false));
+        });
+        run_single_update_pass(root, next_focused, |widget, ctx| {
+            widget.on_status_change(ctx, &StatusChange::FocusChanged(true));
+        });
+
+        // TODO: discriminate between text focus, and non-text focus.
+        root.state
+            .signal_queue
+            .push_back(if next_focused.is_some() {
+                RenderRootSignal::StartIme
+            } else {
+                RenderRootSignal::EndIme
+            });
+    }
+
+    root.state.focused_widget = root.state.next_focused_widget;
+    root.state.focused_path = next_focused_path;
+
+    // Merge root widget state with synthetic state created at beginning of pass
     root_state.merge_up(root.widget_arena.get_state_mut(root.root.id()).item);
 }
 
