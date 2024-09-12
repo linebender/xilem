@@ -162,10 +162,11 @@ impl<'w> WidgetRef<'w, dyn Widget> {
     }
 
     /// Recursively find the innermost widget at the given position, using
-    /// [`Widget::get_child_at_pos`] to descend the widget tree.
+    /// [`Widget::get_child_at_pos`] to descend the widget tree. If `self` does not contain the
+    /// given position in its layout rect or clip path, this returns `None`.
     ///
-    /// **pos** - the position in local coordinates (zero being the top-left of the
-    /// inner widget).
+    /// **pos** - the position in global coordinates (e.g. `(0,0)` is the top-left corner of the
+    /// window).
     pub fn find_widget_at_pos<'a>(
         &self,
         root: &'a RenderRoot,

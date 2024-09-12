@@ -182,16 +182,12 @@ pub trait Widget: AsAny {
     /// of overlapping children, the last child as determined by [`Widget::children_ids`] is
     /// chosen.
     ///
-    /// The child returned is a direct child, not eg a grand-child. The position is in global
-    /// coordinates. (Eg `(0,0)` is the top-left corner of the window).
+    /// The child returned is a direct child, not e.g. a grand-child.
     ///
-    /// [`widget_ref`] is a rich reference to the current widget, giving access to this widget's
-    /// state.
+    /// Has a default implementation that can be overridden to search children more efficiently.
     ///
-    /// Has a default implementation, that can be overridden to search children more
-    /// efficiently.
-    ///
-    /// [`widget_ref`]: WidgetRef
+    /// **pos** - the position in global coordinates (e.g. `(0,0)` is the top-left corner of the
+    /// window).
     fn get_child_at_pos<'c>(
         &self,
         ctx: &'c QueryCtx,
