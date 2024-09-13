@@ -21,12 +21,12 @@ checksum = "c71b1793ee61086797f5c80b6efa2b8ffa6d5dd703f118545808a7f2e27f7046"
 [[package]]
 name = "accesskit"
 version = "0.16.0"
-source = "git+https://github.com/AccessKit/accesskit.git?branch=android-basics#d4e0a0e7dc099a978d07f3f6cdd9cd153330b011"
+source = "git+https://github.com/AccessKit/accesskit.git?branch=android-basics#29f4603116f9bb522d8a60831dafeaa86f43926c"
 
 [[package]]
 name = "accesskit_android"
 version = "0.1.0"
-source = "git+https://github.com/AccessKit/accesskit.git?branch=android-basics#d4e0a0e7dc099a978d07f3f6cdd9cd153330b011"
+source = "git+https://github.com/AccessKit/accesskit.git?branch=android-basics#29f4603116f9bb522d8a60831dafeaa86f43926c"
 dependencies = [
  "accesskit",
  "accesskit_consumer",
@@ -39,7 +39,7 @@ dependencies = [
 [[package]]
 name = "accesskit_atspi_common"
 version = "0.9.0"
-source = "git+https://github.com/AccessKit/accesskit.git?branch=android-basics#d4e0a0e7dc099a978d07f3f6cdd9cd153330b011"
+source = "git+https://github.com/AccessKit/accesskit.git?branch=android-basics#29f4603116f9bb522d8a60831dafeaa86f43926c"
 dependencies = [
  "accesskit",
  "accesskit_consumer",
@@ -52,7 +52,7 @@ dependencies = [
 [[package]]
 name = "accesskit_consumer"
 version = "0.24.0"
-source = "git+https://github.com/AccessKit/accesskit.git?branch=android-basics#d4e0a0e7dc099a978d07f3f6cdd9cd153330b011"
+source = "git+https://github.com/AccessKit/accesskit.git?branch=android-basics#29f4603116f9bb522d8a60831dafeaa86f43926c"
 dependencies = [
  "accesskit",
  "immutable-chunkmap",
@@ -61,7 +61,7 @@ dependencies = [
 [[package]]
 name = "accesskit_macos"
 version = "0.17.0"
-source = "git+https://github.com/AccessKit/accesskit.git?branch=android-basics#d4e0a0e7dc099a978d07f3f6cdd9cd153330b011"
+source = "git+https://github.com/AccessKit/accesskit.git?branch=android-basics#29f4603116f9bb522d8a60831dafeaa86f43926c"
 dependencies = [
  "accesskit",
  "accesskit_consumer",
@@ -74,7 +74,7 @@ dependencies = [
 [[package]]
 name = "accesskit_unix"
 version = "0.12.0"
-source = "git+https://github.com/AccessKit/accesskit.git?branch=android-basics#d4e0a0e7dc099a978d07f3f6cdd9cd153330b011"
+source = "git+https://github.com/AccessKit/accesskit.git?branch=android-basics#29f4603116f9bb522d8a60831dafeaa86f43926c"
 dependencies = [
  "accesskit",
  "accesskit_atspi_common",
@@ -91,7 +91,7 @@ dependencies = [
 [[package]]
 name = "accesskit_windows"
 version = "0.22.0"
-source = "git+https://github.com/AccessKit/accesskit.git?branch=android-basics#d4e0a0e7dc099a978d07f3f6cdd9cd153330b011"
+source = "git+https://github.com/AccessKit/accesskit.git?branch=android-basics#29f4603116f9bb522d8a60831dafeaa86f43926c"
 dependencies = [
  "accesskit",
  "accesskit_consumer",
@@ -103,7 +103,7 @@ dependencies = [
 [[package]]
 name = "accesskit_winit"
 version = "0.22.0"
-source = "git+https://github.com/AccessKit/accesskit.git?branch=android-basics#d4e0a0e7dc099a978d07f3f6cdd9cd153330b011"
+source = "git+https://github.com/AccessKit/accesskit.git?branch=android-basics#29f4603116f9bb522d8a60831dafeaa86f43926c"
 dependencies = [
  "accesskit",
  "accesskit_android",
@@ -871,7 +871,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b28bfe653d79bd16c77f659305b195b82bb5ce0c0eb2a4846b82ddbd77586813"
 dependencies = [
  "bitflags 2.6.0",
- "libloading 0.7.4",
+ "libloading 0.8.5",
  "winapi",
 ]
 
@@ -928,7 +928,7 @@ version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "330c60081dcc4c72131f8eb70510f1ac07223e5d4163db481a04a0befcffa412"
 dependencies = [
- "libloading 0.7.4",
+ "libloading 0.8.5",
 ]
 
 [[package]]
@@ -1531,7 +1531,7 @@ dependencies = [
  "bitflags 2.6.0",
  "com",
  "libc",
- "libloading 0.7.4",
+ "libloading 0.8.5",
  "thiserror",
  "widestring",
  "winapi",
@@ -4230,7 +4230,7 @@ dependencies = [
  "js-sys",
  "khronos-egl",
  "libc",
- "libloading 0.7.4",
+ "libloading 0.8.5",
  "log",
  "metal",
  "naga",
