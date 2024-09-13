@@ -86,7 +86,7 @@ where
     Element: ViewElement,
 {
     /// The associated state of this sequence. The main purposes of this are:
-    /// - To store generations and other data needed to avoiding routing stale messages
+    /// - To store generations and other data needed to avoid routing stale messages
     ///   to incorrect views.
     /// - To pass on the state of child sequences, or a child View's [`ViewState`].
     ///
