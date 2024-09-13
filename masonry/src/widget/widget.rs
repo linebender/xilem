@@ -191,7 +191,7 @@ pub trait Widget: AsAny {
     /// window).
     fn get_child_at_pos<'c>(
         &self,
-        ctx: &'c QueryCtx,
+        ctx: QueryCtx<'c>,
         pos: Point,
     ) -> Option<WidgetRef<'c, dyn Widget>> {
         // Assumes `Self::children_ids` is in increasing "z-order", picking the last child in case
@@ -395,7 +395,7 @@ impl Widget for Box<dyn Widget> {
 
     fn get_child_at_pos<'c>(
         &self,
-        ctx: &'c QueryCtx,
+        ctx: QueryCtx<'c>,
         pos: Point,
     ) -> Option<WidgetRef<'c, dyn Widget>> {
         self.deref().get_child_at_pos(ctx, pos)

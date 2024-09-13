@@ -6,7 +6,7 @@ use std::ops::Deref;
 use smallvec::SmallVec;
 use vello::kurbo::Point;
 
-use crate::{render_root::RenderRoot, QueryCtx, Widget, WidgetId, WidgetState};
+use crate::{QueryCtx, Widget, WidgetId, WidgetState};
 
 /// A rich reference to a [`Widget`].
 ///
@@ -167,14 +167,8 @@ impl<'w> WidgetRef<'w, dyn Widget> {
     ///
     /// **pos** - the position in global coordinates (e.g. `(0,0)` is the top-left corner of the
     /// window).
-    pub fn find_widget_at_pos<'a>(
-        &self,
-        root: &'a RenderRoot,
-        pos: Point,
-    ) -> Option<WidgetRef<'a, dyn Widget>> {
-        // Get self from the widget arena to bind it to the arena's lifetime. Is there a way around
-        // this? Also see the comment inside the loop rebinding child to the arena's lifetime.
-        let mut innermost_widget = root.get_widget(self.id()).unwrap();
+    pub fn find_widget_at_pos(&self, pos: Point) -> Option<WidgetRef<'w, dyn Widget>> {
+        let mut innermost_widget = *self;
 
         let relative_pos = pos - self.state().window_origin().to_vec2();
         if !self.state().window_layout_rect().contains(pos)
@@ -188,11 +182,8 @@ impl<'w> WidgetRef<'w, dyn Widget> {
 
         while let Some(child) = innermost_widget
             .widget
-            .get_child_at_pos(&innermost_widget.ctx, pos)
+            .get_child_at_pos(innermost_widget.ctx, pos)
         {
-            // Get child from the widget arena to bind it to the arena's lifetime. Is there a
-            // way around this?
-            let child = root.get_widget(child.id()).unwrap();
             innermost_widget = child;
         }
 

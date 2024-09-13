@@ -429,14 +429,14 @@ impl<'a> MutateCtx<'a> {
 // Methods to get a child WidgetRef from a parent.
 impl<'w> QueryCtx<'w> {
     /// Return a [`WidgetRef`] to a child widget.
-    pub fn get(&self, child: WidgetId) -> WidgetRef<'_, dyn Widget> {
+    pub fn get(self, child: WidgetId) -> WidgetRef<'w, dyn Widget> {
         let child_state = self
             .widget_state_children
-            .get_child(child.to_raw())
+            .into_child(child.to_raw())
             .expect("get: child not found");
         let child = self
             .widget_children
-            .get_child(child.to_raw())
+            .into_child(child.to_raw())
             .expect("get: child not found");
 
         let ctx = QueryCtx {

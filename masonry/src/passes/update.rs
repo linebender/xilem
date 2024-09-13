@@ -88,7 +88,7 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot, root_state: &mut Wi
     let mut next_hovered_widget = if let Some(pos) = pointer_pos {
         // TODO - Apply scale?
         root.get_root_widget()
-            .find_widget_at_pos(root, pos)
+            .find_widget_at_pos(pos)
             .map(|widget| widget.id())
     } else {
         None
