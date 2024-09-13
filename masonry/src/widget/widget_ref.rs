@@ -170,11 +170,11 @@ impl<'w> WidgetRef<'w, dyn Widget> {
     pub fn find_widget_at_pos(&self, pos: Point) -> Option<WidgetRef<'_, dyn Widget>> {
         let mut innermost_widget = *self;
 
-        let relative_pos = pos - self.state().window_origin().to_vec2();
         if !self.state().window_layout_rect().contains(pos) {
             return None;
         }
 
+        let relative_pos = pos - self.state().window_origin().to_vec2();
         if !self
             .state()
             .clip
