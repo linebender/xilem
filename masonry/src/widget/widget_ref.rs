@@ -174,15 +174,6 @@ impl<'w> WidgetRef<'w, dyn Widget> {
             return None;
         }
 
-        let relative_pos = pos - self.state().window_origin().to_vec2();
-        if !self
-            .state()
-            .clip
-            .map_or(true, |clip| clip.contains(relative_pos))
-        {
-            return None;
-        }
-
         while let Some(child) = innermost_widget
             .widget
             .get_child_at_pos(innermost_widget.ctx, pos)

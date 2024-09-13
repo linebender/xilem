@@ -178,9 +178,9 @@ pub trait Widget: AsAny {
 
     // --- Auto-generated implementations ---
 
-    /// Return which child, if any, has the given `pos` in its layout rect and clip path. In case
-    /// of overlapping children, the last child as determined by [`Widget::children_ids`] is
-    /// chosen.
+    /// Return which child, if any, has the given `pos` in its layout rect. In case of overlapping
+    /// children, the last child as determined by [`Widget::children_ids`] is chosen. No child is
+    /// returned if `pos` is outside the widget's clip path.
     ///
     /// The child returned is a direct child, not e.g. a grand-child.
     ///
@@ -194,6 +194,15 @@ pub trait Widget: AsAny {
         ctx: QueryCtx<'c>,
         pos: Point,
     ) -> Option<WidgetRef<'c, dyn Widget>> {
+        let relative_pos = pos - ctx.widget_state.window_origin().to_vec2();
+        if !ctx
+            .widget_state
+            .clip
+            .map_or(true, |clip| clip.contains(relative_pos))
+        {
+            return None;
+        }
+
         // Assumes `Self::children_ids` is in increasing "z-order", picking the last child in case
         // of overlapping children.
         for child_id in self.children_ids().iter().rev() {
@@ -202,13 +211,7 @@ pub trait Widget: AsAny {
             let relative_pos = pos - child.state().window_origin().to_vec2();
             // The position must be inside the child's layout and inside the child's clip path (if
             // any).
-            if !child.widget.skip_pointer()
-                && child.state().window_layout_rect().contains(pos)
-                && child
-                    .state()
-                    .clip
-                    .map_or(true, |clip| clip.contains(relative_pos))
-            {
+            if !child.widget.skip_pointer() && child.state().window_layout_rect().contains(pos) {
                 return Some(child);
             }
         }
