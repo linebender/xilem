@@ -121,15 +121,18 @@ The type erasure of View nodes is not an easy trick, as the trait has two associ
 ### Linux and BSD
 
 You need to have installed `pkg-config`, `clang`, and the development packages of `wayland`,
-`libxkbcommon`, `libxcb`, and `vulkan-loader`.
+`libxkbcommon`, `libxcb`, and `vulkan-loader`. Most distributions have `pkg-config` installed by default.
 
-Most distributions have `pkg-config` installed by default. To install the remaining packages on Fedora, run
+To install the remaining packages on Fedora, run:
+
 ```sh
 sudo dnf install clang wayland-devel libxkbcommon-x11-devel libxcb-devel vulkan-loader-devel
 ```
-To install them on Debian or Ubuntu, run
+
+To install the remaining packages on Debian or Ubuntu, run:
+
 ```sh
-sudo apt-get install pkg-config clang libwayland-dev libxkbcommon-x11-dev libvulkan-dev
+sudo apt-get install clang libwayland-dev libxkbcommon-x11-dev libvulkan-dev
 ```
 
 ## Minimum supported Rust Version (MSRV)
