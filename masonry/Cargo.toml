@@ -1,0 +1,64 @@
+[package]
+name = "masonry"
+version = "0.2.0"
+description = "Data-oriented Rust UI design toolkit."
+keywords = ["gui", "ui", "toolkit"]
+categories = ["gui", "internationalization", "accessibility"]
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+exclude = ["/doc/", ".gitignore"]
+rust-version.workspace = true
+
+[package.metadata.docs.rs]
+all-features = true
+# rustdoc-scrape-examples tracking issue https://github.com/rust-lang/rust/issues/88791
+cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
+
+[lints]
+workspace = true
+
+[dependencies]
+vello.workspace = true
+wgpu.workspace = true
+parley.workspace = true
+winit.workspace = true
+smallvec.workspace = true
+tracing = { workspace = true, features = ["default"] }
+image.workspace = true
+once_cell = "1.19.0"
+serde = { version = "1.0.204", features = ["derive"] }
+serde_json = "1.0.120"
+futures-intrusive = "0.5.0"
+pollster = "0.3.0"
+unicode-segmentation = "1.11.0"
+# TODO: Is this still the most up-to-date crate for this?
+xi-unicode = "0.3.0"
+tracing-subscriber = { version = "0.3.18", features = ["env-filter", "time"] }
+accesskit.workspace = true
+accesskit_winit.workspace = true
+time = { workspace = true, features = ["macros", "formatting"] }
+cursor-icon = "1.1.0"
+dpi.workspace = true
+nv-flip.workspace = true
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+web-time.workspace = true
+
+[dev-dependencies]
+float-cmp = { version = "0.9.0", features = ["std"], default-features = false }
+image = { workspace = true, features = ["png"] }
+insta = { version = "1.39.0" }
+assert_matches = "1.5.0"
+tempfile = "3.10.1"
+
+# Make wgpu use tracing for its spans.
+profiling = { version = "1.0.15", features = ["profile-with-tracing"] }
+
+[[example]]
+name = "simple_image"
+#required-features = ["image", "png"]
+
+[target.'cfg(target_os = "android")'.dependencies]
+tracing_android_trace = "0.1.0"

@@ -1,0 +1,10 @@
+---
+source: masonry/src/widget/button.rs
+assertion_line: 245
+expression: harness.root_widget()
+---
+SizedBox(
+    Button(
+        Label<Hello>,
+    ),
+)

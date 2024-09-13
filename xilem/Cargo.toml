@@ -1,0 +1,119 @@
+[package]
+name = "xilem"
+version = "0.1.0"
+description = "A next-generation cross-platform Rust UI framework."
+keywords = ["gui", "ui", "native", "gpu", "performance"]
+categories = ["gui", "graphics", "internationalization", "accessibility"]
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+rust-version.workspace = true
+exclude = ["/resources/fonts/roboto_flex/", "/resources/data/http_cats_status/"]
+
+[package.metadata.docs.rs]
+all-features = true
+# rustdoc-scrape-examples tracking issue https://github.com/rust-lang/rust/issues/88791
+cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
+
+[[example]]
+name = "mason"
+
+# Also add to ANDROID_TARGETS in .github/ci.yml if adding a new Android example
+[[example]]
+# A custom example target which uses the same `mason.rs` file but for android
+name = "mason_android"
+path = "examples/mason.rs"
+# cdylib is required for cargo-apk
+crate-type = ["cdylib"]
+
+[[example]]
+name = "calc"
+
+[[example]]
+name = "calc_android"
+path = "examples/calc.rs"
+# cdylib is required for cargo-apk
+crate-type = ["cdylib"]
+
+[[example]]
+name = "http_cats"
+
+[[example]]
+name = "http_cats_android"
+path = "examples/http_cats.rs"
+# cdylib is required for cargo-apk
+crate-type = ["cdylib"]
+
+[[example]]
+name = "stopwatch"
+
+[[example]]
+name = "stopwatch_android"
+path = "examples/stopwatch.rs"
+# cdylib is required for cargo-apk
+crate-type = ["cdylib"]
+
+[[example]]
+name = "to_do_mvc"
+
+[[example]]
+name = "to_do_mvc_android"
+path = "examples/to_do_mvc.rs"
+# cdylib is required for cargo-apk
+crate-type = ["cdylib"]
+
+[[example]]
+name = "variable_clock"
+
+[[example]]
+name = "variable_clock_android"
+path = "examples/variable_clock.rs"
+# cdylib is required for cargo-apk
+crate-type = ["cdylib"]
+
+[lints]
+workspace = true
+
+[dependencies]
+xilem_core.workspace = true
+masonry.workspace = true
+winit.workspace = true
+tracing.workspace = true
+vello.workspace = true
+smallvec.workspace = true
+accesskit.workspace = true
+tokio = { version = "1.39.1", features = [
+    "rt",
+    "rt-multi-thread",
+    "time",
+    "sync",
+] }
+
+[dev-dependencies]
+# Used for `variable_clock`
+time = { workspace = true, features = ["local-offset"] }
+
+# Used for http_cats
+reqwest = { version = "0.12.7", default-features = false, features = [
+    # We use rustls as Android doesn't ship with openssl
+    # and this is likely to be easiest to get working.
+    "rustls-tls",
+] }
+image = { workspace = true, features = ["jpeg"] }
+
+# Make wgpu use tracing for its spans.
+profiling = { version = "1.0.15", features = ["profile-with-tracing"] }
+anyhow = "1.0.86"
+
+[target.'cfg(target_os = "android")'.dev-dependencies]
+winit = { features = ["android-native-activity"], workspace = true }
+
+# This makes the examples discoverable to (e.g.) Android GPU inspector without needing to provide the full name manually.
+# Do not use when releasing a production app.
+[package.metadata.android.application]
+debuggable = true
+
+[[package.metadata.android.uses_permission]]
+# Needed for http_cats
+name = "android.permission.INTERNET"

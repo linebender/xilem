@@ -19,9 +19,32 @@ This repo contains an experimental architecture, implemented with a toy UI. At a
 
 [![Xi Zulip](https://img.shields.io/badge/Xi%20Zulip-%23xilem-blue?logo=Zulip)](https://xi.zulipchat.com/#narrow/stream/354396-xilem)
 
-Discussion of Xilem development happens in the [Xi Zulip](https://xi.zulipchat.com/), specifically the [#xilem stream](https://xi.zulipchat.com/#narrow/stream/354396-xilem). All public content can be read without logging in
+Discussion of Xilem development happens in the [Xi Zulip](https://xi.zulipchat.com/), specifically the [#xilem channel](https://xi.zulipchat.com/#narrow/stream/354396-xilem). 
+All public content can be read without logging in
 
-## Overall program flow
+## Project structure
+
+This diagram gives an idea what the Xilem project is built on:
+
+![Xilem project layers](docs/assets/xilem-layers.svg)
+
+On a very coarse level, Xilem is built directly on top of xilem_core and Masonry, both of which are crates in this repository.
+
+Then Masonry is built on top of:
+
+- **winit** for window creation.
+- **Vello and wgpu** for 2D graphics.
+- **Parley** for [the text stack](https://github.com/linebender/parley#the-Parley-text-stack).
+- **AccessKit** for plugging into accessibility APIs.
+
+## Architecture
+
+See [ARCHITECTURE.md](./ARCHITECTURE.md) for details.
+
+<!--- TODO: This needs a serious refactor.
+This section should not be in the main README. -->
+
+### Overall program flow
 
 > **Warning:**
 >
@@ -44,7 +67,7 @@ These are all just vanilla data structures. The next step is diffing or reconcil
 
 The closures are the interesting part. When they're run, they take a mutable reference to the app data.
 
-## Components
+### Components
 
 A major goal is to support React-like components, where modules that build UI for some fragment of the overall app state are composed together. 
 
@@ -65,7 +88,7 @@ fn app_logic(data: &mut AppData) -> impl View<AppData, (), Element = impl Widget
 
 This adapt node is very similar to a lens (quite familiar to existing Druid users), and is also very similar to the [Html.map] node in Elm. Note that in this case the data presented to the child component to render, and the mutable app state available in callbacks is the same, but that is not necessarily the case.
 
-## Memoization
+### Memoization
 
 In the simplest case, the app builds the entire view tree, which is diffed against the previous tree, only to find that most of it hasn't changed.
 
@@ -87,7 +110,7 @@ The combination of memoization with pointer equality and an adapt node that call
 
 I anticipate it will also be possible to do dirty tracking manually - the app logic can set a dirty flag when a subtree needs re-rendering.
 
-## Optional type erasure
+### Optional type erasure
 
 By default, view nodes are strongly typed. The type of a container includes the types of its children (through the `ViewTuple` trait), so for a large tree the type can become quite large. In addition, such types don't make for easy dynamic reconfiguration of the UI. SwiftUI has exactly this issue, and provides [AnyView] as the solution. Ours is more or less identical.
 
@@ -112,10 +135,35 @@ To install the remaining packages on Debian or Ubuntu, run:
 sudo apt-get install clang libwayland-dev libxkbcommon-x11-dev libvulkan-dev
 ```
 
+## Minimum supported Rust Version (MSRV)
+
+This version of Xilem has been verified to compile with **Rust 1.79** and later.
+
+Future versions of Xilem might increase the Rust version requirement.
+It will not be treated as a breaking change and as such can even happen with small patch releases.
+
+<details>
+<summary>Click here if compiling fails.</summary>
+
+As time has passed, some of Xilem's dependencies could have released versions with a higher Rust requirement.
+If you encounter a compilation issue due to a dependency and don't want to upgrade your Rust toolchain, then you could downgrade the dependency.
+
+```sh
+# Use the problematic dependency's name and version
+cargo update -p package_name --precise 0.1.1
+```
+
+</details>
+
 ## License
 
 Licensed under the Apache License, Version 2.0
 ([LICENSE](LICENSE) or <http://www.apache.org/licenses/LICENSE-2.0>)
+
+Some files used for examples are under different licenses:
+
+- The font file (`RobotoFlex-Subset.ttf`) in `xilem/resources/fonts/roboto_flex/` is licensed solely as documented in that folder (and is not licensed under the Apache License, Version 2.0).
+- The data file (`status.csv`) in `xilem/resources/data/http_cats_status/` is licensed solely as documented in that folder (and is not licensed under the Apache License, Version 2.0).
 
 ## Contribution
 

@@ -1,0 +1,10 @@
+---
+source: masonry/src/widget/checkbox.rs
+assertion_line: 263
+expression: harness.root_widget()
+---
+SizedBox(
+    Checkbox<[X]>(
+        Label<Hello>,
+    ),
+)

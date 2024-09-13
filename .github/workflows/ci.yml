@@ -3,30 +3,71 @@ env:
   # version like 1.70. Note that we only specify MAJOR.MINOR and not PATCH so that bugfixes still
   # come automatically. If the version specified here is no longer the latest stable version,
   # then please feel free to submit a PR that adjusts it along with the potential clippy fixes.
-  RUST_STABLE_VER: "1.77" # In quotes because otherwise 1.70 would be interpreted as 1.7
-  # We do not run the masonry snapshot tests, because those require a specific font stack
+  RUST_STABLE_VER: "1.80" # In quotes because otherwise (e.g.) 1.70 would be interpreted as 1.7
+  # The purpose of checking with the minimum supported Rust toolchain is to detect its staleness.
+  # If the compilation fails, then the version specified here needs to be bumped up to reality.
+  # Be sure to also update the rust-version property in the workspace Cargo.toml file,
+  # plus all the README.md files of the affected packages.
+  RUST_MIN_VER: "1.79"
+  # List of packages that will be checked with the minimum supported Rust version.
+  # This should be limited to packages that are intended for publishing.
+  # If updating, synchronise RUST_MIN_VER_WASM_PKGS
+  RUST_MIN_VER_PKGS: "-p xilem -p xilem_core -p masonry"
+
+  # List of packages that can not target Wasm.
+  # If updating, synchronise RUST_MIN_VER_WASM_PKGS
+  NO_WASM_PKGS: "--exclude masonry --exclude xilem"
+  # RUST_MIN_VER_PKGS + NO_WASM_PKGS, evaluated.
+  # This is required because `cargo hack` does not support -p {x} --exclude {x}
+  RUST_MIN_VER_WASM_PKGS: "-p xilem_core"
+
+  # Only some of our examples support Android (primarily due to extra required boilerplate).
+  ANDROID_TARGETS: -p xilem --example mason_android --example calc_android --example stopwatch_android --example variable_clock_android --example http_cats_android --example to_do_mvc_android
+
+  # We do not run the masonry snapshot tests, because those currently require a specific font stack
+  # See https://github.com/linebender/xilem/pull/233
   SKIP_RENDER_SNAPSHOTS: 1
   # We do not run the masonry render tests, because those require Vello rendering to be working
-  # See https://github.com/linebender/vello/pull/439
+  # See also https://github.com/linebender/vello/pull/610
   SKIP_RENDER_TESTS: 1
 
 # Rationale
 #
 # We don't run clippy with --all-targets because then even --lib and --bins are compiled with
 # dev dependencies enabled, which does not match how they would be compiled by users.
-# A dev dependency might enable a feature of a regular dependency that we need, but testing
-# with --all-targets would not catch that. Thus we split --lib & --bins into a separate step.
+# A dev dependency might enable a feature that we need for a regular dependency,
+# and checking with --all-targets would not find our feature requirements lacking.
+# This problem still applies to cargo resolver version 2.
+# Thus we split all the targets into two steps, one with --lib --bins
+# and another with --tests --benches --examples.
+# Also, we can't give --lib --bins explicitly because then cargo will error on binary-only packages.
+# Luckily the default behavior of cargo with no explicit targets is the same but without the error.
+#
+# We use cargo-hack for a similar reason. Cargo's --workspace will do feature unification across
+# the whole workspace. While cargo-hack will instead check each workspace package separately.
+#
+# Using cargo-hack also allows us to more easily test the feature matrix of our packages.
+# We use --each-feature & --optional-deps which will run a separate check for every feature.
+#
+# The MSRV jobs run only cargo check because different clippy versions can disagree on goals and
+# running tests introduces dev dependencies which may require a higher MSRV than the bare package.
 
 name: CI
 
 on:
   pull_request:
   merge_group:
+  # We run on push, even though the commit is the same as when we ran in merge_group. 
+  # This allows the cache to be primed.
+  # See https://github.com/orgs/community/discussions/66430
+  push:
+    branches:
+      - main
 
 jobs:
-  rustfmt:
+  fmt:
+    name: formatting
     runs-on: ubuntu-latest
-    name: cargo fmt
     steps:
       - uses: actions/checkout@v4
 
@@ -47,20 +88,28 @@ jobs:
       - name: check copyright headers
         run: bash .github/copyright.sh
 
-  test-stable:
+      - name: install cargo-rdme
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-rdme
+
+      - name: cargo rdme
+        run: |
+          cargo rdme --check --workspace-project=masonry
+
+  clippy-stable:
+    name: cargo clippy
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [windows-latest, macos-latest, ubuntu-latest]
-    name: cargo clippy + test
     steps:
       - uses: actions/checkout@v4
 
-      - name: install additional linux dependencies
-        run: |
-          sudo apt update
-          sudo apt install libwayland-dev libxkbcommon-x11-dev
-        if: contains(matrix.os, 'ubuntu')
+      - name: restore cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.event_name != 'merge_group' }}
 
       - name: install stable toolchain
         uses: dtolnay/rust-toolchain@master
@@ -68,36 +117,209 @@ jobs:
           toolchain: ${{ env.RUST_STABLE_VER }}
           components: clippy
 
+      - name: install cargo-hack
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-hack
+
+      - name: install native dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev
+
+      - name: cargo clippy
+        run: cargo hack clippy --workspace --locked --each-feature --optional-deps -- -D warnings
+
+      - name: cargo clippy (auxiliary)
+        run: cargo hack clippy --workspace --locked --each-feature --optional-deps --tests --benches --examples -- -D warnings
+
+      # Verify that we can build in release mode
+      # TODO: Find a way for this to share artifacts with the above job?
+      - name: cargo clippy (release)
+        run: cargo clippy --release --workspace --locked --all-targets -- -D warnings
+
+  clippy-stable-wasm:
+    name: cargo clippy (wasm32)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
       - name: restore cache
         uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.event_name != 'merge_group' }}
 
-      - name: cargo clippy (no default features)
-        run: cargo clippy --workspace --lib --bins --no-default-features -- -D warnings
-        # No default features means no backend on Linux, so we won't run it
-        if: contains(matrix.os, 'ubuntu') == false
+      - name: install stable toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ env.RUST_STABLE_VER }}
+          targets: wasm32-unknown-unknown
+          components: clippy
 
-      - name: cargo clippy (no default features) (auxiliary)
-        run: cargo clippy --workspace --tests --benches --examples --no-default-features -- -D warnings
-        # No default features means no backend on Linux, so we won't run it
-        if: contains(matrix.os, 'ubuntu') == false
+      - name: install cargo-hack
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-hack
 
-      - name: cargo clippy (default features)
-        run: cargo clippy --workspace --lib --bins -- -D warnings
+      - name: cargo clippy
+        run: cargo hack clippy --workspace ${{ env.NO_WASM_PKGS }} --locked --target wasm32-unknown-unknown --each-feature --optional-deps -- -D warnings
 
-      - name: cargo clippy (default features) (auxiliary)
-        run: cargo clippy --workspace --tests --benches --examples -- -D warnings
+      - name: cargo clippy (auxiliary)
+        run: cargo hack clippy --workspace ${{ env.NO_WASM_PKGS }} --locked --target wasm32-unknown-unknown --each-feature --optional-deps --tests --benches --examples -- -D warnings
 
-      - name: cargo clippy (all features)
-        run: cargo clippy --workspace --lib --bins --all-features -- -D warnings
+      # Verify that we can build in release mode
+      # TODO: Find a way for this to share artifacts with the above job?
+      - name: cargo clippy (release)
+        run: cargo clippy --release --workspace ${{ env.NO_WASM_PKGS }} --locked --target wasm32-unknown-unknown --all-targets -- -D warnings
 
-      - name: cargo clippy (all features) (auxiliary)
-        run: cargo clippy --workspace --tests --benches --examples --all-features -- -D warnings
+  prime-lfs-cache:
+    name: Prime LFS Cache
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Cache git lfs
+      id: lfs-cache
+      uses: actions/cache@v4
+      with:
+        path: .git/lfs
+        # The files stored in git lfs are all in this folder
+        key: masonry-lfs-${{ hashFiles('masonry/src/widget/screenshots/*.png') }}
+        restore-keys: masonry-lfs-
+        enableCrossOsArchive: true
+
+    - name: Fetch lfs data
+      if: ${{ steps.lfs-cache.outputs.cache-hit != 'true' }}
+      run: git lfs fetch
+        
+  test-stable:
+    name: cargo test
+    needs: prime-lfs-cache
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+        include:
+          - os: windows-latest
+            # TODO: It should be possible to get WARP working here
+            skip_gpu: '1'
+          - os: macos-latest
+            skip_gpu: ''
+          - os: ubuntu-latest
+            skip_gpu: ''
+    steps:
+      - uses: actions/checkout@v4
+        # We intentionally do not use lfs: true here, instead using the caching method to save LFS bandwidth.
+
+      - name: restore cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.event_name != 'merge_group' }}
+
+      - name: Restore lfs cache
+        id: lfs-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .git/lfs
+          # The files stored in git lfs are all in this folder
+          key: masonry-lfs-${{ hashFiles('masonry/src/widget/screenshots/*.png') }}
+          enableCrossOsArchive: true
+
+      - name: Checkout LFS files
+        run: git lfs checkout
+        continue-on-error: true
+
+      - name: install stable toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ env.RUST_STABLE_VER }}
+
+      - name: install native dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev
+
+      # Adapted from https://github.com/bevyengine/bevy/blob/b446374392adc70aceb92621b080d1a6cf7a7392/.github/workflows/validation-jobs.yml#L74-L79
+      - name: install xvfb, llvmpipe and lavapipe
+        if: matrix.os == 'ubuntu-latest'
+        # https://launchpad.net/~kisak/+archive/ubuntu/turtle
+        run: |
+          sudo apt-get update -y -qq
+          sudo add-apt-repository ppa:kisak/turtle -y
+          sudo apt-get update
+          sudo apt install -y xvfb libegl1-mesa libgl1-mesa-dri libxcb-xfixes0-dev mesa-vulkan-drivers
+
+      - name: Install cargo-nextest
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-nextest
 
       - name: cargo test
-        run: cargo test --workspace --all-features
+        run: cargo nextest run --workspace --locked --all-features
+        env:
+          SKIP_RENDER_TESTS: ${{ matrix.skip_gpu }}
 
-  docs:
-    name: cargo doc
+      # Run doc tests separately because nexttest doesn't run them.
+      # See https://github.com/linebender/xilem/issues/500
+      - name: cargo test doc
+        run: cargo test --doc --workspace --locked --all-features
+      
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: masonry-snapshot-tests-${{ matrix.os }}
+          path: masonry/src/widget/screenshots/
+
+  test-stable-wasm:
+    name: cargo test (wasm32)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: restore cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.event_name != 'merge_group' }}
+
+      - name: install stable toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ env.RUST_STABLE_VER }}
+          targets: wasm32-unknown-unknown
+
+      # TODO: Find a way to make tests work. Until then the tests are merely compiled.
+      - name: cargo test compile
+        run: cargo test --workspace ${{ env.NO_WASM_PKGS }} --locked --target wasm32-unknown-unknown --all-features --no-run
+
+  check-stable-android:
+    name: cargo check (aarch64-android)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: restore cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.event_name != 'merge_group' }}
+
+      - name: install stable toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ env.RUST_STABLE_VER }}
+          targets: aarch64-linux-android
+
+      - name: install cargo apk
+        run: cargo install cargo-apk
+
+      - name: cargo apk check (android)
+        run: cargo apk check ${{ env.ANDROID_TARGETS }}
+        env:
+          # This is a bit of a hack, but cargo apk doesn't seem to allow customising this otherwise
+          RUSTFLAGS: '-D warnings'
+
+  check-msrv:
+    name: cargo check (msrv)
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -105,18 +327,78 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: install additional linux dependencies
-        run: |
-          sudo apt update
-          sudo apt install libwayland-dev libxkbcommon-x11-dev
-        if: contains(matrix.os, 'ubuntu')
+      - name: restore cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.event_name != 'merge_group' }}
+
+      - name: install msrv toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ env.RUST_MIN_VER }}
+
+      - name: install cargo-hack
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-hack
+
+      - name: install native dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev
+
+      - name: cargo check
+        run: cargo hack check ${{ env.RUST_MIN_VER_PKGS }} --locked --each-feature --optional-deps
+
+  check-msrv-wasm:
+    name: cargo check (msrv) (wasm32)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: restore cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.event_name != 'merge_group' }}
+
+      - name: install msrv toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ env.RUST_MIN_VER }}
+          targets: wasm32-unknown-unknown
+
+      - name: install cargo-hack
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-hack
+
+      - name: cargo check
+        run: cargo hack check ${{ env.RUST_MIN_VER_WASM_PKGS }} --locked --target wasm32-unknown-unknown --each-feature --optional-deps
+
+  doc:
+    name: cargo doc
+    # NOTE: We don't have any platform specific docs in this workspace, so we only run on Ubuntu.
+    #       If we get per-platform docs (win/macos/linux/wasm32/..) then doc jobs should match that.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: restore cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.event_name != 'merge_group' }}
 
       - name: install nightly toolchain
         uses: dtolnay/rust-toolchain@nightly
 
-      - name: restore cache
-        uses: Swatinem/rust-cache@v2
-
+      # We test documentation using nightly to match docs.rs. This prevents potential breakages
       - name: cargo doc
-        # We currently skip checking masonry's docs
-        run: cargo doc --workspace --all-features --no-deps --document-private-items -Zunstable-options -Zrustdoc-scrape-examples --exclude masonry
+        run: cargo doc --workspace --locked --all-features --no-deps --document-private-items -Zunstable-options -Zrustdoc-scrape-examples
+
+  # If this fails, consider changing your text or adding something to .typos.toml
+  typos:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: check typos
+        uses: crate-ci/typos@v1.23.2
