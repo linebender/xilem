@@ -171,11 +171,14 @@ impl<'w> WidgetRef<'w, dyn Widget> {
         let mut innermost_widget = *self;
 
         let relative_pos = pos - self.state().window_origin().to_vec2();
-        if !self.state().window_layout_rect().contains(pos)
-            || !self
-                .state()
-                .clip
-                .map_or(true, |clip| clip.contains(relative_pos))
+        if !self.state().window_layout_rect().contains(pos) {
+            return None;
+        }
+
+        if !self
+            .state()
+            .clip
+            .map_or(true, |clip| clip.contains(relative_pos))
         {
             return None;
         }
