@@ -167,7 +167,7 @@ impl<'w> WidgetRef<'w, dyn Widget> {
     ///
     /// **pos** - the position in global coordinates (e.g. `(0,0)` is the top-left corner of the
     /// window).
-    pub fn find_widget_at_pos(&self, pos: Point) -> Option<WidgetRef<'w, dyn Widget>> {
+    pub fn find_widget_at_pos(&self, pos: Point) -> Option<WidgetRef<'_, dyn Widget>> {
         let mut innermost_widget = *self;
 
         let relative_pos = pos - self.state().window_origin().to_vec2();
