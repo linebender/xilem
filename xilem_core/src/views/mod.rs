@@ -13,6 +13,9 @@ pub use map_state::{map_state, MapState};
 mod map_action;
 pub use map_action::{map_action, MapAction};
 
+mod lens;
+pub use lens::{lens, Lens};
+
 mod fork;
 pub use fork::{fork, Fork};
 
