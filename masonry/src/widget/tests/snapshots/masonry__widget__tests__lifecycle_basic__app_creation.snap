@@ -5,12 +5,12 @@ expression: record
 ---
 [
     L(
-        WidgetAdded,
-    ),
-    L(
         Internal(
             RouteWidgetAdded,
         ),
+    ),
+    L(
+        WidgetAdded,
     ),
     L(
         BuildFocusChain,

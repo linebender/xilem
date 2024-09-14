@@ -20,6 +20,8 @@ use crate::{CursorIcon, WidgetId};
 // &mut WidgetState as a parameter. Because passes reborrow the parent WidgetState, the only
 // way to call such a method is during a pass on the given widget.
 
+// TODO: consider using bitflags for the booleans.
+
 /// Generic state for all widgets in the hierarchy.
 ///
 /// This struct contains the widget's layout rect, flags
@@ -74,8 +76,9 @@ pub struct WidgetState {
     pub(crate) translation_changed: bool,
 
     // --- PASSES ---
+    /// `WidgetAdded` hasn't been sent to this widget yet.
+    pub(crate) is_new: bool,
 
-    // TODO: consider using bitflags for the booleans.
     /// A flag used to track and debug missing calls to `place_child`.
     pub(crate) is_expecting_place_child_call: bool,
 
@@ -165,6 +168,7 @@ impl WidgetState {
             is_explicitly_disabled: false,
             is_disabled: false,
             baseline_offset: 0.0,
+            is_new: true,
             is_hot: false,
             request_layout: true,
             needs_layout: true,
@@ -197,6 +201,7 @@ impl WidgetState {
     pub(crate) fn synthetic(id: WidgetId, size: Size) -> WidgetState {
         WidgetState {
             size,
+            is_new: false,
             needs_layout: false,
             request_compose: false,
             needs_compose: false,

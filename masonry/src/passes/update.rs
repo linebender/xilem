@@ -404,6 +404,84 @@ pub(crate) fn run_update_anim_pass(root: &mut RenderRoot, elapsed_ns: u64) {
 
 // ----------------
 
+fn update_new_widgets(
+    global_state: &mut RenderRootState,
+    mut widget: ArenaMut<'_, Box<dyn Widget>>,
+    mut state: ArenaMut<'_, WidgetState>,
+) {
+    let _span = widget.item.make_trace_span().entered();
+
+    if !state.item.children_changed {
+        return;
+    }
+    state.item.children_changed = false;
+
+    // This will recursively call WidgetPod::lifecycle for all children of this widget,
+    // which will add the new widgets to the arena.
+    {
+        let mut ctx = LifeCycleCtx {
+            global_state,
+            widget_state: state.item,
+            widget_state_children: state.children.reborrow_mut(),
+            widget_children: widget.children.reborrow_mut(),
+        };
+        let event = LifeCycle::Internal(crate::InternalLifeCycle::RouteWidgetAdded);
+        widget.item.lifecycle(&mut ctx, &event);
+    }
+
+    if state.item.is_new {
+        let mut ctx = LifeCycleCtx {
+            global_state,
+            widget_state: state.item,
+            widget_state_children: state.children.reborrow_mut(),
+            widget_children: widget.children.reborrow_mut(),
+        };
+        widget.item.lifecycle(&mut ctx, &LifeCycle::WidgetAdded);
+        trace!(
+            "{} received LifeCycle::WidgetAdded",
+            widget.item.short_type_name()
+        );
+    }
+    state.item.is_new = false;
+
+    // We can recurse on this widget's children, because they have already been added
+    // to the arena above.
+    let id = state.item.id;
+    let parent_state = state.item;
+    recurse_on_children(
+        id,
+        widget.reborrow_mut(),
+        state.children,
+        |widget, mut state| {
+            update_new_widgets(global_state, widget, state.reborrow_mut());
+            parent_state.merge_up(state.item);
+        },
+    );
+}
+
+pub(crate) fn run_update_new_widgets_pass(
+    root: &mut RenderRoot,
+    synthetic_root_state: &mut WidgetState,
+) {
+    let _span = info_span!("update_new_widgets").entered();
+
+    if root.root.incomplete() {
+        let mut ctx = LifeCycleCtx {
+            global_state: &mut root.state,
+            widget_state: synthetic_root_state,
+            widget_state_children: root.widget_arena.widget_states.root_token_mut(),
+            widget_children: root.widget_arena.widgets.root_token_mut(),
+        };
+        let event = LifeCycle::Internal(crate::InternalLifeCycle::RouteWidgetAdded);
+        root.root.lifecycle(&mut ctx, &event);
+    }
+
+    let (root_widget, mut root_state) = root.widget_arena.get_pair_mut(root.root.id());
+    update_new_widgets(&mut root.state, root_widget, root_state.reborrow_mut());
+}
+
+// ----------------
+
 // TODO - This logic was copy-pasted from WidgetPod code and may need to be refactored.
 // It doesn't quite behave like other update passes (for instance, some code runs after
 // recurse_on_children), and some design decisions inherited from Druid should be reconsidered.

@@ -6,7 +6,7 @@ use std::collections::{HashMap, VecDeque};
 use accesskit::{ActionRequest, Tree, TreeUpdate};
 use parley::fontique::{self, Collection, CollectionOptions};
 use parley::{FontContext, LayoutContext};
-use tracing::{info_span, warn};
+use tracing::warn;
 use vello::kurbo::{self, Rect};
 use vello::Scene;
 
@@ -15,7 +15,6 @@ use std::time::Instant;
 #[cfg(target_arch = "wasm32")]
 use web_time::Instant;
 
-use crate::contexts::LifeCycleCtx;
 use crate::debug_logger::DebugLogger;
 use crate::dpi::{LogicalPosition, LogicalSize, PhysicalSize};
 use crate::event::{PointerEvent, TextEvent, WindowEvent};
@@ -27,15 +26,15 @@ use crate::passes::mutate::{mutate_widget, run_mutate_pass};
 use crate::passes::paint::root_paint;
 use crate::passes::update::{
     run_update_anim_pass, run_update_disabled_pass, run_update_focus_chain_pass,
-    run_update_focus_pass, run_update_pointer_pass, run_update_scroll_pass,
+    run_update_focus_pass, run_update_new_widgets_pass, run_update_pointer_pass,
+    run_update_scroll_pass,
 };
 use crate::text::TextBrush;
 use crate::tree_arena::TreeArena;
 use crate::widget::WidgetArena;
 use crate::widget::{WidgetMut, WidgetRef, WidgetState};
 use crate::{
-    AccessEvent, Action, BoxConstraints, CursorIcon, Handled, InternalLifeCycle, LifeCycle, Widget,
-    WidgetId, WidgetPod,
+    AccessEvent, Action, BoxConstraints, CursorIcon, Handled, Widget, WidgetId, WidgetPod,
 };
 
 // --- MARK: STRUCTS ---
@@ -163,7 +162,10 @@ impl RenderRoot {
         };
 
         // We send WidgetAdded to all widgets right away
-        root.root_lifecycle(LifeCycle::Internal(InternalLifeCycle::RouteWidgetAdded));
+        let mut dummy_state = WidgetState::synthetic(root.root.id(), root.get_kurbo_size());
+        run_update_new_widgets_pass(&mut root, &mut dummy_state);
+        // TODO - Remove this line
+        root.post_event_processing(&mut dummy_state);
 
         // We run a layout pass right away to have a SetSize signal ready
         if size_policy == WindowSizePolicy::Content {
@@ -429,34 +431,6 @@ impl RenderRoot {
         self.get_root_widget().debug_validate(false);
     }
 
-    // --- MARK: LIFECYCLE ---
-    fn root_lifecycle(&mut self, event: LifeCycle) {
-        let mut dummy_state = WidgetState::synthetic(self.root.id(), self.get_kurbo_size());
-
-        let root_state_token = self.widget_arena.widget_states.root_token_mut();
-        let root_widget_token = self.widget_arena.widgets.root_token_mut();
-        let mut ctx = LifeCycleCtx {
-            global_state: &mut self.state,
-            widget_state: &mut dummy_state,
-            widget_state_children: root_state_token,
-            widget_children: root_widget_token,
-        };
-
-        {
-            ctx.global_state
-                .debug_logger
-                .push_important_span(&format!("LIFECYCLE {}", event.short_name()));
-            let _span = info_span!("lifecycle").entered();
-            self.root.lifecycle(&mut ctx, &event);
-            self.state.debug_logger.pop_span();
-        }
-
-        // TODO - Remove this line
-        // post_event_processing can recursively call root_lifecycle, which
-        // makes the execution model more complex and unpredictable.
-        self.post_event_processing(&mut dummy_state);
-    }
-
     // --- MARK: LAYOUT ---
     pub(crate) fn root_layout(&mut self) {
         let window_size = self.get_kurbo_size();
@@ -517,7 +491,7 @@ impl RenderRoot {
             // TODO - Update IME handlers
             // Send TextFieldRemoved signal
 
-            self.root_lifecycle(LifeCycle::Internal(InternalLifeCycle::RouteWidgetAdded));
+            run_update_new_widgets_pass(self, widget_state);
         }
 
         if self.state.debug_logger.layout_tree.root.is_none() {

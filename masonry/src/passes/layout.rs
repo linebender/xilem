@@ -5,10 +5,12 @@
 //! before any translations applied in [`compose`](crate::passes::compose).
 //! Most of the logic for this pass happens in [`Widget::layout`] implementations.
 
+use smallvec::SmallVec;
 use tracing::{info_span, trace};
 use vello::kurbo::{Point, Rect, Size};
 
 use crate::render_root::RenderRoot;
+use crate::tree_arena::ArenaRefChildren;
 use crate::widget::WidgetState;
 use crate::{BoxConstraints, LayoutCtx, Widget, WidgetPod};
 
@@ -20,6 +22,113 @@ fn rect_contains(larger: &Rect, smaller: &Rect) -> bool {
         && smaller.x1 <= larger.x1
         && smaller.y0 >= larger.y0
         && smaller.y1 <= larger.y1
+}
+
+// TODO - document
+// TODO - This method should take a 'can_skip: Fn(WidgetRef) -> bool'
+// predicate and only panic if can_skip returns false.
+// TODO - This method was copy-pasted from WidgetPod. It was originally used
+// in multiple passes, but it's only used in layout right now. It should be
+// rewritten with that in mind.
+#[inline(always)]
+fn call_widget_method_with_checks<W: Widget, Ctx>(
+    pod: &mut WidgetPod<W>,
+    method_name: &str,
+    ctx: &mut Ctx,
+    get_tokens: impl Fn(
+        &mut Ctx,
+    ) -> (
+        ArenaRefChildren<'_, WidgetState>,
+        ArenaRefChildren<'_, Box<dyn Widget>>,
+    ),
+    visit: impl FnOnce(&mut WidgetPod<W>, &mut Ctx) -> bool,
+) {
+    if pod.incomplete() {
+        debug_panic!(
+            "Error in widget #{}: method '{}' called before receiving WidgetAdded.",
+            pod.id().to_raw(),
+            method_name,
+        );
+    }
+
+    let id = pod.id().to_raw();
+    let (parent_state_mut, parent_token) = get_tokens(ctx);
+    let widget_ref = parent_token
+        .get_child(id)
+        .expect("WidgetPod: inner widget not found in widget tree");
+    let state_ref = parent_state_mut
+        .get_child(id)
+        .expect("WidgetPod: inner widget not found in widget tree");
+    let widget = widget_ref.item;
+    let state = state_ref.item;
+
+    let _span = widget.make_trace_span().entered();
+
+    // TODO https://github.com/linebender/xilem/issues/370 - Re-implement debug logger
+
+    // TODO - explain this
+    state.mark_as_visited(true);
+
+    let mut children_ids = SmallVec::new();
+
+    if cfg!(debug_assertions) {
+        for child_state_ref in state_ref.children.iter_children() {
+            child_state_ref.item.mark_as_visited(false);
+        }
+        children_ids = widget.children_ids();
+    }
+
+    let called_widget = visit(pod, ctx);
+
+    let (parent_state_mut, parent_token) = get_tokens(ctx);
+    let widget_ref = parent_token
+        .get_child(id)
+        .expect("WidgetPod: inner widget not found in widget tree");
+    let state_ref = parent_state_mut
+        .get_child(id)
+        .expect("WidgetPod: inner widget not found in widget tree");
+    let widget = widget_ref.item;
+    let state = state_ref.item;
+
+    if cfg!(debug_assertions) && called_widget {
+        let new_children_ids = widget.children_ids();
+        if children_ids != new_children_ids && !state.children_changed {
+            debug_panic!(
+                    "Error in '{}' #{}: children changed in method {} but ctx.children_changed() wasn't called",
+                    widget.short_type_name(),
+                    pod.id().to_raw(),
+                    method_name,
+                );
+        }
+
+        for id in &new_children_ids {
+            let id = id.to_raw();
+            if !state_ref.children.has_child(id) {
+                debug_panic!(
+                    "Error in '{}' #{}: child widget #{} not added in method {}",
+                    widget.short_type_name(),
+                    pod.id().to_raw(),
+                    id,
+                    method_name,
+                );
+            }
+        }
+
+        #[cfg(debug_assertions)]
+        for child_state_ref in state_ref.children.iter_children() {
+            // FIXME - use can_skip callback instead
+            if child_state_ref.item.needs_visit() && !child_state_ref.item.is_stashed {
+                debug_panic!(
+                    "Error in '{}' #{}: child widget '{}' #{} not visited in method {}",
+                    widget.short_type_name(),
+                    pod.id().to_raw(),
+                    child_state_ref.item.widget_name,
+                    child_state_ref.item.id.to_raw(),
+                    method_name,
+                );
+            }
+        }
+    }
 }
 
 // Returns "true" if the Widget's layout method was called, in which case debug checks
@@ -104,26 +213,26 @@ pub(crate) fn run_layout_inner<W: Widget>(
             let child_state = child_state_mut.item;
             if child_state.is_expecting_place_child_call {
                 debug_panic!(
-                        "Error in '{}' #{}: missing call to place_child method for child widget '{}' #{}. During layout pass, if a widget calls WidgetPod::layout() on its child, it then needs to call LayoutCtx::place_child() on the same child.",
-                        widget.short_type_name(),
-                        id,
-                        child_state.widget_name,
-                        child_state.id.to_raw(),
-                    );
+                    "Error in '{}' #{}: missing call to place_child method for child widget '{}' #{}. During layout pass, if a widget calls WidgetPod::layout() on its child, it then needs to call LayoutCtx::place_child() on the same child.",
+                    widget.short_type_name(),
+                    id,
+                    child_state.widget_name,
+                    child_state.id.to_raw(),
+                );
             }
 
             // TODO - This check might be redundant with the code updating local_paint_rect
             let child_rect = child_state.paint_rect();
             if !rect_contains(&state.local_paint_rect, &child_rect) && !state.is_portal {
                 debug_panic!(
-                        "Error in '{}' #{}: paint_rect {:?} doesn't contain paint_rect {:?} of child widget '{}' #{}",
-                        widget.short_type_name(),
-                        id,
-                        state.local_paint_rect,
-                        child_rect,
-                        child_state.widget_name,
-                        child_state.id.to_raw(),
-                    );
+                    "Error in '{}' #{}: paint_rect {:?} doesn't contain paint_rect {:?} of child widget '{}' #{}",
+                    widget.short_type_name(),
+                    id,
+                    state.local_paint_rect,
+                    child_rect,
+                    child_state.widget_name,
+                    child_state.id.to_raw(),
+                );
             }
         }
     }
@@ -172,7 +281,8 @@ pub(crate) fn run_layout_on<W: Widget>(
     pod: &mut WidgetPod<W>,
     bc: &BoxConstraints,
 ) -> Size {
-    pod.call_widget_method_with_checks(
+    call_widget_method_with_checks(
+        pod,
         "layout",
         parent_ctx,
         |ctx| {
