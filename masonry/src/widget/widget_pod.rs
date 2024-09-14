@@ -295,8 +295,6 @@ impl<W: Widget> WidgetPod<W> {
         let widget = widget_mut.item;
         let state = state_mut.item;
 
-        let had_focus = state.has_focus;
-
         let call_widget = match event {
             LifeCycle::Internal(internal) => match internal {
                 InternalLifeCycle::RouteWidgetAdded => state.children_changed,
@@ -313,18 +311,7 @@ impl<W: Widget> WidgetPod<W> {
             LifeCycle::DisabledChanged(_) => false,
             // Animations have been moved to the update_anim pass
             LifeCycle::AnimFrame(_) => false,
-            LifeCycle::BuildFocusChain => {
-                if state.update_focus_chain {
-                    // Replace has_focus to check if the value changed in the meantime
-                    let is_focused = parent_ctx.global_state.focused_widget == Some(self.id());
-                    state.has_focus = is_focused;
-
-                    state.focus_chain.clear();
-                    true
-                } else {
-                    false
-                }
-            }
+            LifeCycle::BuildFocusChain => false,
             // This is called by children when going up the widget tree.
             LifeCycle::RequestPanToChild(_) => false,
         };
@@ -346,28 +333,6 @@ impl<W: Widget> WidgetPod<W> {
             // we need to (re)register children in case of one of the following events
             LifeCycle::Internal(InternalLifeCycle::RouteWidgetAdded) => {
                 state.children_changed = false;
-            }
-            // Update focus-chain of our parent
-            LifeCycle::BuildFocusChain => {
-                state.update_focus_chain = false;
-
-                // had_focus is the old focus value. state.has_focus was replaced with parent_ctx.is_focused().
-                // Therefore if had_focus is true but state.has_focus is false then the widget which is
-                // currently focused is not part of the functional tree anymore
-                // (Lifecycle::BuildFocusChain.should_propagate_to_hidden() is false!) and should
-                // resign the focus.
-                if had_focus && !state.has_focus {
-                    // Not sure about this logic, might remove
-                    parent_ctx.global_state.next_focused_widget = None;
-                }
-                state.has_focus = had_focus;
-
-                if !state.is_disabled {
-                    parent_ctx
-                        .widget_state
-                        .focus_chain
-                        .extend(&state.focus_chain);
-                }
             }
             _ => (),
         }

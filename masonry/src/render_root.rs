@@ -26,8 +26,8 @@ use crate::passes::layout::root_layout;
 use crate::passes::mutate::{mutate_widget, run_mutate_pass};
 use crate::passes::paint::root_paint;
 use crate::passes::update::{
-    run_update_anim_pass, run_update_disabled_pass, run_update_focus_pass, run_update_pointer_pass,
-    run_update_scroll_pass,
+    run_update_anim_pass, run_update_disabled_pass, run_update_focus_chain_pass,
+    run_update_focus_pass, run_update_pointer_pass, run_update_scroll_pass,
 };
 use crate::text::TextBrush;
 use crate::tree_arena::TreeArena;
@@ -541,8 +541,7 @@ impl RenderRoot {
         // Update the focus-chain if necessary
         // Always do this before sending focus change, since this event updates the focus chain.
         if self.root_state().update_focus_chain {
-            let event = LifeCycle::BuildFocusChain;
-            self.root_lifecycle(event);
+            run_update_focus_chain_pass(self);
         }
 
         if self.root_state().request_anim {

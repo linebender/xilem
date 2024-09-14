@@ -401,3 +401,82 @@ pub(crate) fn run_update_anim_pass(root: &mut RenderRoot, elapsed_ns: u64) {
         elapsed_ns,
     );
 }
+
+// ----------------
+
+// TODO - This logic was copy-pasted from WidgetPod code and may need to be refactored.
+// It doesn't quite behave like other update passes (for instance, some code runs after
+// recurse_on_children), and some design decisions inherited from Druid should be reconsidered.
+fn update_focus_chain_for_widget(
+    global_state: &mut RenderRootState,
+    mut widget: ArenaMut<'_, Box<dyn Widget>>,
+    mut state: ArenaMut<'_, WidgetState>,
+    parent_focus_chain: &mut Vec<WidgetId>,
+) {
+    let _span = widget.item.make_trace_span().entered();
+    let id = state.item.id;
+
+    if !state.item.update_focus_chain {
+        return;
+    }
+
+    // Replace has_focus to check if the value changed in the meantime
+    state.item.has_focus = global_state.focused_widget == Some(id);
+    let had_focus = state.item.has_focus;
+
+    state.item.focus_chain.clear();
+    {
+        let mut ctx = LifeCycleCtx {
+            global_state,
+            widget_state: state.item,
+            widget_state_children: state.children.reborrow_mut(),
+            widget_children: widget.children.reborrow_mut(),
+        };
+        widget.item.lifecycle(&mut ctx, &LifeCycle::BuildFocusChain);
+
+        if !state.item.is_disabled {
+            parent_focus_chain.extend(&state.item.focus_chain);
+        }
+    }
+    state.item.update_focus_chain = false;
+
+    let parent_state = &mut *state.item;
+    recurse_on_children(
+        id,
+        widget.reborrow_mut(),
+        state.children,
+        |widget, mut state| {
+            update_focus_chain_for_widget(
+                global_state,
+                widget,
+                state.reborrow_mut(),
+                &mut parent_state.focus_chain,
+            );
+            parent_state.merge_up(state.item);
+        },
+    );
+
+    // had_focus is the old focus value. state.has_focus was replaced with parent_ctx.is_focused().
+    // Therefore if had_focus is true but state.has_focus is false then the widget which is
+    // currently focused is not part of the functional tree anymore
+    // (Lifecycle::BuildFocusChain.should_propagate_to_hidden() is false!) and should
+    // resign the focus.
+    if had_focus && !state.item.has_focus {
+        // Not sure about this logic, might remove
+        global_state.next_focused_widget = None;
+    }
+    state.item.has_focus = had_focus;
+}
+
+pub(crate) fn run_update_focus_chain_pass(root: &mut RenderRoot) {
+    let _span = info_span!("update_focus_chain").entered();
+    let mut dummy_focus_chain = Vec::new();
+
+    let (root_widget, mut root_state) = root.widget_arena.get_pair_mut(root.root.id());
+    update_focus_chain_for_widget(
+        &mut root.state,
+        root_widget,
+        root_state.reborrow_mut(),
+        &mut dummy_focus_chain,
+    );
+}
