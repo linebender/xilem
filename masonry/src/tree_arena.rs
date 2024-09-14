@@ -300,7 +300,7 @@ impl<'a, Item> ArenaRefChildren<'a, Item> {
         };
 
         let mut id_path = id_path.as_slice();
-        let mut node_children = &*self.children;
+        let mut node_children = self.children;
         while let Some((id, new_id_path)) = id_path.split_last() {
             id_path = new_id_path;
             node_children = &node_children
@@ -311,7 +311,7 @@ impl<'a, Item> ArenaRefChildren<'a, Item> {
         }
 
         let node = node_children.iter().find(|child| child.id == id).unwrap();
-        Some(node.arena_ref(*parent_id, &*self.parents_map.parents_map))
+        Some(node.arena_ref(*parent_id, self.parents_map.parents_map))
     }
 }
 
@@ -490,10 +490,10 @@ impl<'a> ArenaMapRef<'a> {
     /// The path is in order from the bottom to the top, starting at the given item and ending at
     /// the root.
     ///
-    /// If start_id is Some, the path ends just before that id instead; start_id is not included.
+    /// If `start_id` is Some, the path ends just before that id instead; `start_id` is not included.
     ///
-    /// If there is no path from start_id to id, returns an empty vector.
-    pub fn get_id_path(&self, id: u64, start_id: Option<u64>) -> Vec<u64> {
+    /// If there is no path from `start_id` to id, returns an empty vector.
+    pub fn get_id_path(self, id: u64, start_id: Option<u64>) -> Vec<u64> {
         let mut path = Vec::new();
 
         if !self.parents_map.contains_key(&id) {
@@ -539,9 +539,9 @@ impl<'a> ArenaMapMut<'a> {
     /// The path is in order from the bottom to the top, starting at the given item and ending at
     /// the root.
     ///
-    /// If start_id is Some, the path ends just before that id instead; start_id is not included.
+    /// If `start_id` is Some, the path ends just before that id instead; `start_id` is not included.
     ///
-    /// If there is no path from start_id to id, returns an empty vector.
+    /// If there is no path from `start_id` to id, returns an empty vector.
     pub fn get_id_path(&self, id: u64, start_id: Option<u64>) -> Vec<u64> {
         self.reborrow().get_id_path(id, start_id)
     }
