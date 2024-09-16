@@ -188,7 +188,7 @@ fn cat_fetch_controls(state: &AppState) -> impl Element<AppState> {
                 td(input(())
                     .id("reset-debounce-update")
                     .attr("type", "checkbox")
-                    .attr("checked", state.reset_debounce_on_update)
+                    .attr("checked", state.reset_debounce_on_update.then_some("checked"))
                     .on_input(|state: &mut AppState, event: web_sys::Event| {
                         state.reset_debounce_on_update = input_target(&event).checked();
                     })),
