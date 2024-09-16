@@ -116,7 +116,6 @@ impl WidgetMut<'_, Label> {
         let ret = f(&mut self.widget.text_layout);
         if self.widget.text_layout.needs_rebuild() {
             self.ctx.request_layout();
-            self.ctx.request_paint();
         }
         ret
     }

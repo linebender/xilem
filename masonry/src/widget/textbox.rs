@@ -235,7 +235,9 @@ impl Widget for Textbox {
                 // TODO: Stop focusing on any links
             }
             StatusChange::FocusChanged(true) => {
+                self.editor.focus_gained();
                 // TODO: Focus on first link
+                ctx.request_layout();
             }
             _ => {}
         }

@@ -154,9 +154,9 @@ pub(crate) fn root_on_text_event(
 
     // Handle Tab focus
     if let TextEvent::KeyboardKey(key, mods) = event {
-        if handled == Handled::No
-            && key.physical_key == PhysicalKey::Code(KeyCode::Tab)
+        if key.physical_key == PhysicalKey::Code(KeyCode::Tab)
             && key.state == ElementState::Pressed
+            && handled == Handled::No
         {
             if !mods.shift_key() {
                 root.state.next_focused_widget = root.widget_from_focus_chain(true);
