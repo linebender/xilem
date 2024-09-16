@@ -16,7 +16,7 @@ use xilem_core::{
 
 use crate::{AnyWidgetView, Pod, ViewCtx, WidgetView};
 
-pub use masonry::widget::{Axis, BoardParams, CrossAxisAlignment, MainAxisAlignment};
+pub use masonry::widget::BoardParams;
 
 pub fn board<State, Action, Seq: BoardSequence<State, Action>>(
     sequence: Seq,

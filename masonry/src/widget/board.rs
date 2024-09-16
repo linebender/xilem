@@ -284,7 +284,7 @@ impl<'a> WidgetMut<'a, Shape> {
     }
 }
 
-// --- MARK: IMPL WIDGET---
+// --- MARK: IMPL WIDGET ---
 impl Widget for Board {
     fn on_pointer_event(&mut self, _ctx: &mut EventCtx, _event: &PointerEvent) {}
 
