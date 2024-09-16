@@ -21,9 +21,12 @@ struct TreeNode<Item> {
     children: Vec<TreeNode<Item>>,
 }
 
+// TODO - ArenaRefChildren and ArenaMutChildren might be easier to document if they were
+// called ArenaRefGroup and ArenaMutGroup or something similar.
+
 /// A container type for a tree of items.
 ///
-/// This type is used to store zero, one or many tree of a given item types. It
+/// This type is used to store zero, one or many trees of a given item type. It
 /// will keep track of parent-child relationships, lets you efficiently find
 /// an item anywhere in the tree hierarchy, and give you mutable access to this item
 /// and its children.
@@ -33,35 +36,35 @@ pub struct TreeArena<Item> {
     parents_map: HashMap<u64, Option<u64>>,
 }
 
-/// A reference type giving shared access to an item and its children.
+/// A reference type giving shared access to an arena item and its children.
 ///
 /// When you borrow an item from a [`TreeArena`], it returns an `ArenaRef`.
-/// You can iterate over the children to get access to child `ArenaRef` handles.
+/// You can iterate over its children to get access to child `ArenaRef` handles.
 pub struct ArenaRef<'a, Item> {
     pub parent_id: Option<u64>,
     pub item: &'a Item,
     pub children: ArenaRefChildren<'a, Item>,
 }
 
-/// A reference type giving mutable access to an item and its children.
+/// A reference type giving mutable access to an arena item and its children.
 ///
 /// When you borrow an item from a [`TreeArena`], it returns an `ArenaMut`.
 /// This struct holds three fields:
 ///  - the id of its parent.
 ///  - a reference to the item itself.
-///  - an `ArenaMutChildren` handle to access its children.
+///  - an [`ArenaMutChildren`] handle to access its children.
 ///
 /// Because the latter two are disjoint references, you can mutate the node's value
 /// and its children independently without invalidating the references.
 ///
-/// You can iterate over the children to get access to child `ArenaMut` handles.
+/// You can iterate over its children to get access to child `ArenaMut` handles.
 pub struct ArenaMut<'a, Item> {
     pub parent_id: Option<u64>,
     pub item: &'a mut Item,
     pub children: ArenaMutChildren<'a, Item>,
 }
 
-/// A reference type giving shared access to an item's children.
+/// A handle giving shared access to an arena item's children.
 ///
 /// See [`ArenaRef`] for more information.
 pub struct ArenaRefChildren<'a, Item> {
@@ -70,7 +73,7 @@ pub struct ArenaRefChildren<'a, Item> {
     parents_map: ArenaMapRef<'a>,
 }
 
-/// A reference type giving mutable access to an item's children.
+/// A handle giving mutable access to an arena item's children.
 ///
 /// See [`ArenaMut`] for more information.
 pub struct ArenaMutChildren<'a, Item> {
@@ -115,7 +118,7 @@ impl<Item> TreeArena<Item> {
         }
     }
 
-    /// Returns a token whose children are the roots, if any, of the tree.
+    /// Returns a handle whose children are the roots, if any, of the tree.
     pub fn root_token(&self) -> ArenaRefChildren<'_, Item> {
         ArenaRefChildren {
             id: None,
@@ -126,9 +129,9 @@ impl<Item> TreeArena<Item> {
         }
     }
 
-    /// Returns a token whose children are the roots, if any, of the tree.
+    /// Returns a handle whose children are the roots, if any, of the tree.
     ///
-    /// Using [`insert_child`](ArenaMutChildren::insert_child) on this token
+    /// Using [`insert_child`](ArenaMutChildren::insert_child) on this handle
     /// will add a new root to the tree.
     pub fn root_token_mut(&mut self) -> ArenaMutChildren<'_, Item> {
         ArenaMutChildren {
@@ -142,7 +145,7 @@ impl<Item> TreeArena<Item> {
 
     /// Find an item in the tree.
     ///
-    /// Returns a shared reference to the item.
+    /// Returns a shared reference to the item if present.
     ///
     /// ## Complexity
     ///
@@ -153,7 +156,7 @@ impl<Item> TreeArena<Item> {
 
     /// Find an item in the tree.
     ///
-    /// Returns a mutable reference to the item.
+    /// Returns a mutable reference to the item if present.
     ///
     /// ## Complexity
     ///
@@ -225,7 +228,7 @@ impl<'a, Item> ArenaMut<'a, Item> {
         self.children.id.unwrap()
     }
 
-    /// Returns a shared token equivalent to this one.
+    /// Returns a shared reference equivalent to this one.
     pub fn reborrow(&mut self) -> ArenaRef<'_, Item> {
         ArenaRef {
             parent_id: self.parent_id,
@@ -234,7 +237,7 @@ impl<'a, Item> ArenaMut<'a, Item> {
         }
     }
 
-    /// Returns a mutable token equivalent to this one.
+    /// Returns a mutable reference equivalent to this one.
     ///
     /// This is sometimes useful to work with the borrow checker.
     pub fn reborrow_mut(&mut self) -> ArenaMut<'_, Item> {
@@ -247,14 +250,14 @@ impl<'a, Item> ArenaMut<'a, Item> {
 }
 
 impl<'a, Item> ArenaRefChildren<'a, Item> {
-    /// Returns true if the token has a child with the given id.
+    /// Returns true if the handle has a child with the given id.
     pub fn has_child(self, id: u64) -> bool {
         self.children.iter().any(|child| child.id == id)
     }
 
-    /// Get the child of the item this token is associated with, which has the given id.
+    /// Get the child of the item this handle is associated with, which has the given id.
     ///
-    /// Returns a tuple of a shared reference to the child and a token to access
+    /// Returns a tuple of a shared reference to the child and a handle to access
     /// its children.
     pub fn get_child(&self, id: u64) -> Option<ArenaRef<'_, Item>> {
         self.children
@@ -263,10 +266,10 @@ impl<'a, Item> ArenaRefChildren<'a, Item> {
             .map(|child| child.arena_ref(self.id, self.parents_map.parents_map))
     }
 
-    /// Get the child of the item this token is associated with, which has the given id.
+    /// Get the child of the item this handle is associated with, which has the given id.
     ///
     /// This is the same as [`get_child`](Self::get_child), except it consumes the
-    /// token. This is sometimes necessary to accommodate the borrow checker.
+    /// handle. This is sometimes necessary to accommodate the borrow checker.
     pub fn into_child(self, id: u64) -> Option<ArenaRef<'a, Item>> {
         self.children
             .iter()
@@ -283,9 +286,9 @@ impl<'a, Item> ArenaRefChildren<'a, Item> {
             .map(|child| child.arena_ref(self.id, self.parents_map.parents_map))
     }
 
-    /// Find an item in the tree.
+    /// Find an arena item among descendants (this node not included).
     ///
-    /// Returns a shared reference to the item.
+    /// Returns a shared reference to the item if present.
     ///
     /// ## Complexity
     ///
@@ -316,9 +319,9 @@ impl<'a, Item> ArenaRefChildren<'a, Item> {
 }
 
 impl<'a, Item> ArenaMutChildren<'a, Item> {
-    /// Get the child of the item this token is associated with, which has the given id.
+    /// Get the child of the item this handle is associated with, which has the given id.
     ///
-    /// Returns a tuple of a shared reference to the child and a token to access
+    /// Returns a tuple of a shared reference to the child and a handle to access
     /// its children.
     pub fn get_child(&self, id: u64) -> Option<ArenaRef<'_, Item>> {
         self.children
@@ -327,9 +330,9 @@ impl<'a, Item> ArenaMutChildren<'a, Item> {
             .map(|child| child.arena_ref(self.id, self.parents_map.parents_map))
     }
 
-    /// Get the child of the item this token is associated with, which has the given id.
+    /// Get the child of the item this handle is associated with, which has the given id.
     ///
-    /// Returns a tuple of a mutable reference to the child and a token to access
+    /// Returns a tuple of a mutable reference to the child and a handle to access
     /// its children.
     pub fn get_child_mut(&mut self, id: u64) -> Option<ArenaMut<'_, Item>> {
         self.children
@@ -338,10 +341,10 @@ impl<'a, Item> ArenaMutChildren<'a, Item> {
             .map(|child| child.arena_mut(self.id, self.parents_map.parents_map))
     }
 
-    /// Get the child of the item this token is associated with, which has the given id.
+    /// Get the child of the item this handle is associated with, which has the given id.
     ///
     /// This is the same as [`get_child`](Self::get_child), except it consumes the
-    /// token. This is sometimes necessary to accommodate the borrow checker.
+    /// handle. This is sometimes necessary to accommodate the borrow checker.
     pub fn into_child(self, id: u64) -> Option<ArenaRef<'a, Item>> {
         self.children
             .iter()
@@ -349,10 +352,10 @@ impl<'a, Item> ArenaMutChildren<'a, Item> {
             .map(|child| child.arena_ref(self.id, self.parents_map.parents_map))
     }
 
-    /// Get the child of the item this token is associated with, which has the given id.
+    /// Get the child of the item this handle is associated with, which has the given id.
     ///
     /// This is the same as [`get_child_mut`](Self::get_child_mut), except it consumes
-    /// the token. This is sometimes necessary to accommodate the borrow checker.
+    /// the handle. This is sometimes necessary to accommodate the borrow checker.
     pub fn into_child_mut(self, id: u64) -> Option<ArenaMut<'a, Item>> {
         self.children
             .iter_mut()
@@ -372,7 +375,7 @@ impl<'a, Item> ArenaMutChildren<'a, Item> {
     // TODO - Remove the child_id argument once creation of Widgets is figured out.
     // Return the id instead.
     // TODO - Add #[must_use]
-    /// Insert a child into the tree under the item associated with this token.
+    /// Insert a child into the tree under the item associated with this handle.
     ///
     /// The new child will have the given id.
     ///
@@ -418,7 +421,7 @@ impl<'a, Item> ArenaMutChildren<'a, Item> {
         Some(child.item)
     }
 
-    /// Returns a shared token equivalent to this one.
+    /// Returns a shared handle equivalent to this one.
     pub fn reborrow(&self) -> ArenaRefChildren<'_, Item> {
         ArenaRefChildren {
             id: self.id,
@@ -427,7 +430,7 @@ impl<'a, Item> ArenaMutChildren<'a, Item> {
         }
     }
 
-    /// Returns a mutable token equivalent to this one.
+    /// Returns a mutable handle equivalent to this one.
     ///
     /// This is sometimes useful to work with the borrow checker.
     pub fn reborrow_mut(&mut self) -> ArenaMutChildren<'_, Item> {
@@ -438,9 +441,9 @@ impl<'a, Item> ArenaMutChildren<'a, Item> {
         }
     }
 
-    /// Find an item in the tree.
+    /// Find an arena item among descendants (this node not included).
     ///
-    /// Returns a shared reference to the item.
+    /// Returns a shared reference to the item if present.
     ///
     /// ## Complexity
     ///
@@ -449,9 +452,9 @@ impl<'a, Item> ArenaMutChildren<'a, Item> {
         self.reborrow().find(id)
     }
 
-    /// Find an item in the tree.
+    /// Find an arena item among descendants (this node not included).
     ///
-    /// Returns a shared reference to the item.
+    /// Returns a mutable reference to the item if present.
     ///
     /// ## Complexity
     ///
@@ -518,14 +521,14 @@ impl<'a> ArenaMapRef<'a> {
     }
 }
 impl<'a> ArenaMapMut<'a> {
-    /// Returns a shared token equivalent to this one.
+    /// Returns a shared handle equivalent to this one.
     pub fn reborrow(&self) -> ArenaMapRef<'_> {
         ArenaMapRef {
             parents_map: self.parents_map,
         }
     }
 
-    /// Returns a mutable token equivalent to this one.
+    /// Returns a mutable handle equivalent to this one.
     ///
     /// This is sometimes useful to work with the borrow checker.
     pub fn reborrow_mut(&mut self) -> ArenaMapMut<'_> {
