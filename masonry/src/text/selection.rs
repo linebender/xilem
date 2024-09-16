@@ -204,6 +204,15 @@ impl<T: Selectable> TextWithSelection<T> {
         }
     }
 
+    /// Call when this widget becomes focused
+    pub fn focus_gained(&mut self) {
+        if self.selection.is_none() {
+            // TODO - We need to have some "memory" of the text selected instead.
+            self.selection = Some(Selection::caret(self.text().len(), Affinity::Downstream));
+        }
+        self.needs_selection_update = true;
+    }
+
     /// Call when another widget becomes focused
     pub fn focus_lost(&mut self) {
         self.selection = None;
