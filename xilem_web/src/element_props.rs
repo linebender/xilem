@@ -70,7 +70,10 @@ impl Pod<web_sys::Element, ElementProps> {
     /// Creates a new Pod with [`web_sys::Element`] as element and `ElementProps` as its [`DomView::Props`](`crate::DomView::Props`)
     pub fn new_element(children: Vec<AnyPod>, ns: &str, elem_name: &str) -> Self {
         let element = document()
-            .create_element_ns(Some(ns), elem_name)
+            .create_element_ns(
+                Some(wasm_bindgen::intern(ns)),
+                wasm_bindgen::intern(elem_name),
+            )
             .unwrap_throw();
 
         for child in children.iter() {
@@ -93,7 +96,7 @@ impl Pod<web_sys::Element, ElementProps> {
     #[cfg(feature = "hydration")]
     pub fn hydrate_element(children: Vec<AnyPod>, element: web_sys::Node) -> Self {
         Self {
-            node: element.dyn_into().unwrap_throw(),
+            node: element.unchecked_into(),
             props: ElementProps {
                 in_hydration: true,
                 attributes: None,

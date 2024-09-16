@@ -86,7 +86,7 @@ where
         ctx.with_id(ViewId::new(0), |ctx| {
             let (element, child_state) = self.child.build(ctx);
             let thunk = ctx.message_thunk();
-            let el = element.as_ref().dyn_ref::<web_sys::Element>().unwrap();
+            let el = element.as_ref().unchecked_ref::<web_sys::Element>();
             let el_clone = el.clone();
             let down_closure = Closure::new(move |e: PointerEvent| {
                 thunk.push_message(PointerMsg::Down(PointerDetails::from_pointer_event(&e)));

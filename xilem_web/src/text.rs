@@ -21,7 +21,7 @@ macro_rules! impl_string_view {
             ) -> (Self::OrphanElement, Self::OrphanViewState) {
                 #[cfg(feature = "hydration")]
                 let node = if ctx.is_hydrating() {
-                    ctx.hydrate_node().unwrap().dyn_into().unwrap()
+                    ctx.hydrate_node().unwrap().unchecked_into()
                 } else {
                     web_sys::Text::new_with_data(view).unwrap()
                 };
@@ -81,7 +81,7 @@ macro_rules! impl_to_string_view {
             ) -> (Self::OrphanElement, Self::OrphanViewState) {
                 #[cfg(feature = "hydration")]
                 let node = if ctx.is_hydrating() {
-                    ctx.hydrate_node().unwrap().dyn_into().unwrap()
+                    ctx.hydrate_node().unwrap().unchecked_into()
                 } else {
                     web_sys::Text::new_with_data(&view.to_string()).unwrap()
                 };

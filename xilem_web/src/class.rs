@@ -149,7 +149,7 @@ impl Classes {
             // Svg elements do have issues with className, see https://developer.mozilla.org/en-US/docs/Web/API/Element/className
             if element.dyn_ref::<web_sys::SvgElement>().is_some() {
                 element
-                    .set_attribute("class", &self.class_name)
+                    .set_attribute(wasm_bindgen::intern("class"), &self.class_name)
                     .unwrap_throw();
             } else {
                 element.set_class_name(&self.class_name);

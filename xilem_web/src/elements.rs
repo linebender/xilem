@@ -381,7 +381,7 @@ where
                     .replace_child(&new_element, element.node)
                     .unwrap_throw();
             }
-            *element.node = new_element.dyn_into().unwrap_throw();
+            *element.node = new_element.unchecked_into();
         }
 
         rebuild_element(
