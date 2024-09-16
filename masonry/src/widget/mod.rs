@@ -14,6 +14,7 @@ mod widget_state;
 mod tests;
 
 mod align;
+mod board;
 mod button;
 mod checkbox;
 mod flex;
@@ -34,6 +35,7 @@ mod widget_arena;
 
 pub use self::image::Image;
 pub use align::Align;
+pub use board::{Board, BoardParams, KurboShape, Shape};
 pub use button::Button;
 pub use checkbox::Checkbox;
 pub use flex::{Axis, CrossAxisAlignment, Flex, FlexParams, MainAxisAlignment};
