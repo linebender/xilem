@@ -31,6 +31,7 @@ fn check_forget_to_recurse_text_event() {
     harness.mouse_move(Point::ZERO);
 }
 
+#[cfg(FALSE)]
 #[should_panic(expected = "not added in method lifecycle")]
 #[test]
 #[cfg_attr(

@@ -69,14 +69,16 @@ pub struct ReplaceChild {
 ///
 /// ```
 /// # use masonry::widget::Label;
-/// # use masonry::LifeCycle;
+/// # use masonry::{LifeCycle, InternalLifeCycle};
 /// use masonry::testing::{Recording, Record, TestWidgetExt};
 /// use masonry::testing::TestHarness;
+/// use assert_matches::assert_matches;
 /// let recording = Recording::default();
 /// let widget = Label::new("Hello").record(&recording);
 ///
 /// TestHarness::create(widget);
-/// assert!(matches!(recording.next().unwrap(), Record::L(LifeCycle::WidgetAdded)));
+/// assert_matches!(recording.next().unwrap(), Record::L(LifeCycle::Internal(InternalLifeCycle::RouteWidgetAdded)));
+/// assert_matches!(recording.next().unwrap(), Record::L(LifeCycle::WidgetAdded));
 /// ```
 pub struct Recorder<W> {
     recording: Recording,
