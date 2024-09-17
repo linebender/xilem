@@ -108,28 +108,8 @@ pub trait GraphicsExt<State, Action>: GraphicsView<State, Action> + Sized {
     }
 }
 
-impl<State: 'static, Action: 'static> GraphicsExt<State, Action> for kurbo::PathSeg {}
-impl<State: 'static, Action: 'static> GraphicsExt<State, Action> for kurbo::Arc {}
-impl<State: 'static, Action: 'static> GraphicsExt<State, Action> for kurbo::BezPath {}
-impl<State: 'static, Action: 'static> GraphicsExt<State, Action> for kurbo::Circle {}
-impl<State: 'static, Action: 'static> GraphicsExt<State, Action> for kurbo::CircleSegment {}
-impl<State: 'static, Action: 'static> GraphicsExt<State, Action> for kurbo::CubicBez {}
-impl<State: 'static, Action: 'static> GraphicsExt<State, Action> for kurbo::Ellipse {}
-impl<State: 'static, Action: 'static> GraphicsExt<State, Action> for kurbo::Line {}
-impl<State: 'static, Action: 'static> GraphicsExt<State, Action> for kurbo::QuadBez {}
-impl<State: 'static, Action: 'static> GraphicsExt<State, Action> for kurbo::Rect {}
-impl<State: 'static, Action: 'static> GraphicsExt<State, Action> for kurbo::RoundedRect {}
-
 impl<State: 'static, Action: 'static, V: GraphicsView<State, Action>> GraphicsExt<State, Action>
-    for Transform<V, State, Action>
-{
-}
-impl<State: 'static, Action: 'static, V: GraphicsView<State, Action>> GraphicsExt<State, Action>
-    for Fill<V, State, Action>
-{
-}
-impl<State: 'static, Action: 'static, V: GraphicsView<State, Action>> GraphicsExt<State, Action>
-    for Stroke<V, State, Action>
+    for V
 {
 }
 

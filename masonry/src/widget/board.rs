@@ -3,6 +3,8 @@
 
 //! A widget that arranges its children in a one-dimensional array.
 
+use std::ops::{Deref as _, DerefMut as _};
+
 use accesskit::Role;
 use smallvec::SmallVec;
 use tracing::{trace_span, warn, Span};
@@ -21,7 +23,7 @@ use crate::{
 
 /// A container with absolute positioning layout.
 pub struct Board {
-    children: Vec<Child>,
+    children: Vec<WidgetPod<Box<dyn SvgElement>>>,
 }
 
 /// Parameters for an item in a [`Board`] container.
@@ -57,6 +59,164 @@ pub enum ConcreteShape {
     RoundedRect(RoundedRect),
 }
 
+pub trait SvgElement: Widget {
+    fn origin(&self) -> Point; // relative to parents transform
+    fn size(&self) -> Size;
+}
+
+impl SvgElement for KurboShape {
+    fn origin(&self) -> Point {
+        self.shape.bounding_box().origin()
+    }
+
+    fn size(&self) -> Size {
+        self.shape.bounding_box().size()
+    }
+}
+
+impl SvgElement for Box<dyn SvgElement> {
+    fn origin(&self) -> Point {
+        self.deref().origin()
+    }
+
+    fn size(&self) -> Size {
+        self.deref().size()
+    }
+}
+
+impl Widget for Box<dyn SvgElement> {
+    fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
+        self.deref_mut().on_pointer_event(ctx, event);
+    }
+
+    fn on_text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent) {
+        self.deref_mut().on_text_event(ctx, event);
+    }
+
+    fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {
+        self.deref_mut().on_access_event(ctx, event);
+    }
+
+    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange) {
+        self.deref_mut().on_status_change(ctx, event);
+    }
+
+    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
+        self.deref_mut().lifecycle(ctx, event);
+    }
+
+    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
+        self.deref_mut().layout(ctx, bc)
+    }
+
+    fn compose(&mut self, ctx: &mut crate::ComposeCtx) {
+        self.deref_mut().compose(ctx);
+    }
+
+    fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
+        self.deref_mut().paint(ctx, scene);
+    }
+
+    fn accessibility_role(&self) -> Role {
+        self.deref().accessibility_role()
+    }
+
+    fn accessibility(&mut self, ctx: &mut AccessCtx) {
+        self.deref_mut().accessibility(ctx);
+    }
+
+    fn type_name(&self) -> &'static str {
+        self.deref().type_name()
+    }
+
+    fn short_type_name(&self) -> &'static str {
+        self.deref().short_type_name()
+    }
+
+    fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
+        self.deref().children_ids()
+    }
+
+    fn skip_pointer(&self) -> bool {
+        self.deref().skip_pointer()
+    }
+
+    fn make_trace_span(&self) -> Span {
+        self.deref().make_trace_span()
+    }
+
+    fn get_debug_text(&self) -> Option<String> {
+        self.deref().get_debug_text()
+    }
+
+    fn get_cursor(&self) -> cursor_icon::CursorIcon {
+        self.deref().get_cursor()
+    }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self.deref().as_any()
+    }
+
+    fn as_mut_any(&mut self) -> &mut dyn std::any::Any {
+        self.deref_mut().as_mut_any()
+    }
+}
+
+pub struct PositionedElement<W> {
+    inner: W,
+    params: BoardParams,
+}
+
+impl<W> PositionedElement<W> {
+    pub fn new(widget: W, params: impl Into<BoardParams>) -> Self {
+        PositionedElement {
+            inner: widget,
+            params: params.into(),
+        }
+    }
+}
+
+impl<W: Widget> SvgElement for PositionedElement<W> {
+    fn origin(&self) -> Point {
+        self.params.origin
+    }
+
+    fn size(&self) -> Size {
+        self.params.size
+    }
+}
+
+// TODO Should also implement the other methods...
+impl<W: Widget> Widget for PositionedElement<W> {
+    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange) {
+        self.inner.on_status_change(ctx, event);
+    }
+
+    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
+        self.inner.lifecycle(ctx, event);
+    }
+
+    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
+        self.inner.layout(ctx, bc)
+    }
+
+    fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
+        self.inner.paint(ctx, scene);
+    }
+
+    fn accessibility_role(&self) -> Role {
+        self.inner.accessibility_role()
+    }
+
+    fn accessibility(&mut self, ctx: &mut AccessCtx) {
+        self.inner.accessibility(ctx);
+    }
+
+    fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
+        self.inner.children_ids()
+    }
+}
+
 // --- MARK: IMPL BOARD ---
 impl Board {
     /// Create a new Board oriented with viewport origin set to (0, 0) and scale (1, 1).
@@ -67,25 +227,8 @@ impl Board {
     }
 
     /// Builder-style method to add a positioned child to the container.
-    pub fn with_child_pod(
-        mut self,
-        widget: WidgetPod<Box<dyn Widget>>,
-        params: impl Into<BoardParams>,
-    ) -> Self {
-        // TODO - dedup?
-        self.children.push(Child {
-            widget,
-            params: params.into(),
-        });
-        self
-    }
-
-    /// Builder-style method to add a Kurbo shape to the container.
-    pub fn with_shape_pod(mut self, shape: WidgetPod<KurboShape>) -> Self {
-        self.children.push(Child {
-            params: shape.as_ref().unwrap().shape.bounding_box().into(),
-            widget: shape.boxed(),
-        });
+    pub fn with_child_pod(mut self, child: WidgetPod<Box<dyn SvgElement>>) -> Self {
+        self.children.push(child);
         self
     }
 
@@ -155,79 +298,25 @@ impl KurboShape {
 // --- MARK: WIDGETMUT---
 impl<'a> WidgetMut<'a, Board> {
     /// Add a positioned child widget.
-    pub fn add_child(&mut self, child: impl Widget, params: impl Into<BoardParams>) {
-        self.widget.children.push(Child {
-            widget: WidgetPod::new(Box::new(child)),
-            params: params.into(),
-        });
+    pub fn add_child(&mut self, child: impl SvgElement) {
+        self.widget.children.push(WidgetPod::new(Box::new(child)));
         self.ctx.children_changed();
     }
 
-    /// Add a Kurbo shape.
-    pub fn add_shape_child(&mut self, shape: Box<KurboShape>) {
-        self.widget.children.push(Child {
-            params: shape.shape.bounding_box().into(),
-            widget: WidgetPod::new(shape),
-        });
-        self.ctx.children_changed();
-    }
-
-    pub fn insert_child(&mut self, idx: usize, child: impl Widget, params: impl Into<BoardParams>) {
-        self.insert_child_pod(idx, WidgetPod::new(Box::new(child)), params);
-    }
-
-    pub fn insert_child_pod(
-        &mut self,
-        idx: usize,
-        child: WidgetPod<Box<dyn Widget>>,
-        params: impl Into<BoardParams>,
-    ) {
-        let child = Child {
-            widget: child,
-            params: params.into(),
-        };
-        self.widget.children.insert(idx, child);
-        self.ctx.children_changed();
-    }
-
-    pub fn insert_shape_pod(&mut self, idx: usize, shape: WidgetPod<KurboShape>) {
-        let child = Child {
-            params: shape.as_ref().unwrap().shape.bounding_box().into(),
-            widget: shape.boxed(),
-        };
+    pub fn insert_child(&mut self, idx: usize, child: WidgetPod<Box<dyn SvgElement>>) {
         self.widget.children.insert(idx, child);
         self.ctx.children_changed();
     }
 
     pub fn remove_child(&mut self, idx: usize) {
-        let Child { widget, .. } = self.widget.children.remove(idx);
+        let widget = self.widget.children.remove(idx);
         self.ctx.remove_child(widget);
         self.ctx.request_layout();
     }
 
-    // FIXME: unsure about correctness of keeping child params unchanged
-    pub fn replace_child(&mut self, idx: usize, new_widget: WidgetPod<Box<dyn Widget>>) {
-        let Child { widget, .. } = &mut self.widget.children[idx];
-        let old_widget = std::mem::replace(widget, new_widget);
-        self.ctx.remove_child(old_widget);
-        self.ctx.request_layout();
-    }
-
     // FIXME - Remove Box
-    pub fn child_mut(&mut self, idx: usize) -> WidgetMut<'_, Box<dyn Widget>> {
-        let Child { widget, .. } = &mut self.widget.children[idx];
-        self.ctx.get_mut(widget)
-    }
-
-    /// Updates the position parameters for the child at `idx`,
-    ///
-    /// # Panics
-    ///
-    /// Panics if the element at `idx` is not a widget.
-    pub fn update_child_board_params(&mut self, idx: usize, new_params: impl Into<BoardParams>) {
-        // FIXME: should check if the child is a graphics or rugular widget
-        self.widget.children[idx].params = new_params.into();
-        self.ctx.children_changed();
+    pub fn child_mut(&mut self, idx: usize) -> WidgetMut<'_, Box<dyn SvgElement>> {
+        self.ctx.get_mut(&mut self.widget.children[idx])
     }
 
     pub fn clear(&mut self) {
@@ -235,7 +324,7 @@ impl<'a> WidgetMut<'a, Board> {
             self.ctx.request_layout();
 
             for child in self.widget.children.drain(..) {
-                self.ctx.remove_child(child.widget);
+                self.ctx.remove_child(child);
             }
         }
     }
@@ -331,16 +420,19 @@ impl Widget for Board {
 
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
         for child in &mut self.children {
-            child.widget.lifecycle(ctx, event);
+            child.lifecycle(ctx, event);
         }
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
         bc.debug_check("Board");
 
-        for Child { widget, params } in &mut self.children {
-            ctx.run_layout(widget, &BoxConstraints::tight(params.size));
-            ctx.place_child(widget, params.origin);
+        for widget in &mut self.children {
+            ctx.run_layout(
+                widget,
+                &BoxConstraints::tight(widget.as_ref().unwrap().size()),
+            );
+            ctx.place_child(widget, widget.as_ref().unwrap().origin());
         }
 
         bc.max()
@@ -355,10 +447,7 @@ impl Widget for Board {
     fn accessibility(&mut self, _ctx: &mut AccessCtx) {}
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
-        self.children
-            .iter()
-            .map(|child| child.widget.id())
-            .collect()
+        self.children.iter().map(|child| child.id()).collect()
     }
 
     fn make_trace_span(&self) -> Span {
@@ -596,14 +685,14 @@ mod tests {
     #[test]
     fn board_absolute_placement_snapshots() {
         let widget = Board::new()
-            .with_child_pod(
-                WidgetPod::new(Box::new(Button::new("hello"))),
+            .with_child_pod(WidgetPod::new(Box::new(PositionedElement::new(
+                Button::new("hello"),
                 Rect::new(10., 10., 60., 40.),
-            )
-            .with_child_pod(
-                WidgetPod::new(Box::new(Button::new("world"))),
+            ))))
+            .with_child_pod(WidgetPod::new(Box::new(PositionedElement::new(
+                Button::new("hello"),
                 Rect::new(30., 30., 80., 60.),
-            );
+            ))));
 
         let mut harness = TestHarness::create(widget);
 
@@ -617,11 +706,11 @@ mod tests {
         shape.set_stroke_style(Stroke::new(2.).with_dashes(0., [2., 1.]));
         shape.set_stroke_brush(Brush::Solid(vello::peniko::Color::PALE_VIOLET_RED));
         let widget = Board::new()
-            .with_child_pod(
-                WidgetPod::new(Box::new(Button::new("hello"))),
+            .with_child_pod(WidgetPod::new(Box::new(PositionedElement::new(
+                Button::new("hello"),
                 Rect::new(10., 10., 60., 40.),
-            )
-            .with_shape_pod(WidgetPod::new(shape));
+            ))))
+            .with_child_pod(WidgetPod::new(Box::new(shape)));
 
         let mut harness = TestHarness::create(widget);
 
