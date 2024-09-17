@@ -548,31 +548,33 @@ impl RenderRoot {
     }
 
     pub(crate) fn widget_from_focus_chain(&mut self, forward: bool) -> Option<WidgetId> {
-        self.state.focused_widget.and_then(|focus| {
+        let focused_widget = self.state.focused_widget;
+        let focused_idx = focused_widget.and_then(|focused_widget| {
             self.focus_chain()
                 .iter()
                 // Find where the focused widget is in the focus chain
-                .position(|id| id == &focus)
-                .map(|idx| {
-                    // Return the id that's next to it in the focus chain
-                    let len = self.focus_chain().len();
-                    let new_idx = if forward {
-                        (idx + 1) % len
-                    } else {
-                        (idx + len - 1) % len
-                    };
-                    self.focus_chain()[new_idx]
-                })
-                .or_else(|| {
-                    // If the currently focused widget isn't in the focus chain,
-                    // then we'll just return the first/last entry of the chain, if any.
-                    if forward {
-                        self.focus_chain().first().copied()
-                    } else {
-                        self.focus_chain().last().copied()
-                    }
-                })
-        })
+                .position(|id| id == &focused_widget)
+        });
+
+        if let Some(idx) = focused_idx {
+            // Return the id that's next to it in the focus chain
+            let len = self.focus_chain().len();
+            let new_idx = if forward {
+                (idx + 1) % len
+            } else {
+                (idx + len - 1) % len
+            };
+            Some(self.focus_chain()[new_idx])
+        } else {
+            // If no widget is currently focused or the
+            // currently focused widget isn't in the focus chain,
+            // then we'll just return the first/last entry of the chain, if any.
+            if forward {
+                self.focus_chain().first().copied()
+            } else {
+                self.focus_chain().last().copied()
+            }
+        }
     }
 
     // TODO - Store in RenderRootState
