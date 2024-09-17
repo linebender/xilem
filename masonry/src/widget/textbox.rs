@@ -220,7 +220,22 @@ impl Widget for Textbox {
         }
     }
 
-    fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {
+    fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {
+        if event.target == ctx.widget_id() {
+            match event.action {
+                accesskit::Action::Focus => {
+                    if !ctx.is_disabled() && !ctx.is_focused() {
+                        ctx.request_focus();
+                    }
+                }
+                accesskit::Action::Blur => {
+                    if ctx.is_focused() {
+                        ctx.resign_focus();
+                    }
+                }
+                _ => {}
+            }
+        }
         // TODO - Handle accesskit::Action::SetTextSelection
         // TODO - Handle accesskit::Action::ReplaceSelectedText
         // TODO - Handle accesskit::Action::SetValue
@@ -354,6 +369,8 @@ impl Widget for Textbox {
     }
 
     fn accessibility(&mut self, ctx: &mut AccessCtx) {
+        ctx.current_node().add_action(accesskit::Action::Focus);
+        ctx.current_node().add_action(accesskit::Action::Blur);
         // TODO: Replace with full accessibility.
         ctx.current_node().set_value(self.text());
     }
