@@ -70,37 +70,32 @@ where
 /// - `map`: A function from the higher-level state type to `component`'s state type
 /// - `component`: The child component the lens is being created for.
 ///
+/// This is a wrapper around [`map_state`].
+/// That view can be used if the child doesn't follow the expected component signature.
+///
 /// # Examples
 ///
 /// In code, the date picker example might look like:
 ///
-/// ```ignore
-/// # use
-/// #[derive(Default)]
-/// struct AppState {
-///     count: i32,
-///     other: i32,
+/// ```
+/// # use xilem_core::docs::{DocsView as WidgetView, State as Date, State as Flight, some_component as date_picker};
+/// use xilem_core::lens;
+///
+/// fn app_logic(state: &mut FlightPlanner) -> impl WidgetView<FlightPlanner> {
+///     lens(date_picker, state, |state| &mut state.date)
 /// }
 ///
-/// fn count_view(count: i32) -> impl WidgetView<i32> {
-///     flex((
-///         label(format!("count: {}", count)),
-///         button("+", |count| *count += 1),
-///         button("-", |count| *count -= 1),
-///     ))
-/// }
-///
-/// fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> {
-///     lens(count_view, state, |state: &mut AppState|  &mut state.count)
+/// struct FlightPlanner {
+///     date: Date,
+///     available_flights: Vec<Flight>,
 /// }
 /// ```
 pub fn lens<OuterState, Action, Context, Message, InnerState, StateF, InnerView, Component>(
-    state: &mut OuterState,
-    // Since this parameter is a function which will "always" be an anonymous closure,
-    // making it be the last parameter leads to undesirable formatting
-    // We choose the only available argument ordering without this constraint.
-    map: StateF,
     component: Component,
+    state: &mut OuterState,
+    // This parameter ordering does run into https://github.com/rust-lang/rustfmt/issues/3605
+    // Our general advice is to make sure that the lens arguments are short enough...
+    map: StateF,
 ) -> MapState<InnerView, StateF, OuterState, InnerState, Action, Context, Message>
 where
     StateF: Fn(&mut OuterState) -> &mut InnerState + Send + Sync + 'static,
