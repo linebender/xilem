@@ -511,10 +511,6 @@ fn update_focus_chain_for_widget(
             widget_children: widget.children.reborrow_mut(),
         };
         widget.item.lifecycle(&mut ctx, &LifeCycle::BuildFocusChain);
-
-        if !state.item.is_disabled {
-            parent_focus_chain.extend(&state.item.focus_chain);
-        }
     }
     state.item.update_focus_chain = false;
 
@@ -533,6 +529,10 @@ fn update_focus_chain_for_widget(
             parent_state.merge_up(state.item);
         },
     );
+
+    if !state.item.is_disabled {
+        parent_focus_chain.extend(&state.item.focus_chain);
+    }
 
     // had_focus is the old focus value. state.has_focus was replaced with parent_ctx.is_focused().
     // Therefore if had_focus is true but state.has_focus is false then the widget which is
