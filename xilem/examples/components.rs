@@ -6,7 +6,7 @@
 use masonry::widget::MainAxisAlignment;
 use winit::error::EventLoopError;
 use xilem::{
-    core::map_state,
+    core::lens,
     view::{button, flex, label, Axis},
     EventLoop, WidgetView, Xilem,
 };
@@ -27,9 +27,10 @@ fn modularized_counter(count: &mut i32) -> impl WidgetView<i32> {
 
 fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> {
     flex((
-        map_state(
-            modularized_counter(&mut state.modularized_count),
+        lens(
+            state,
             |state: &mut AppState| &mut state.modularized_count,
+            modularized_counter,
         ),
         button(
             format!("clicked {} times", state.global_count),

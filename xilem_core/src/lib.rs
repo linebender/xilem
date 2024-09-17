@@ -29,7 +29,7 @@ pub use view::{View, ViewId, ViewMarker, ViewPathTracker};
 mod views;
 pub use views::{
     adapt, fork, frozen, lens, map_action, map_state, memoize, one_of, run_once, run_once_raw,
-    Adapt, AdaptThunk, Fork, Frozen, Lens, MapAction, MapState, Memoize, OrphanView, RunOnce,
+    Adapt, AdaptThunk, Fork, Frozen, MapAction, MapState, Memoize, OrphanView, RunOnce,
 };
 
 mod message;
