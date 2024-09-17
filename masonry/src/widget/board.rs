@@ -8,7 +8,7 @@ use smallvec::SmallVec;
 use tracing::{trace_span, warn, Span};
 use vello::kurbo::{
     self, Affine, Arc, BezPath, Circle, CircleSegment, CubicBez, Ellipse, Line, PathEl, PathSeg,
-    QuadBez, RoundedRect, Shape as _, Stroke, Vec2,
+    QuadBez, RoundedRect, Shape as _, Stroke,
 };
 use vello::peniko::{Brush, Fill};
 use vello::Scene;
@@ -22,8 +22,6 @@ use crate::{
 /// A container with absolute positioning layout.
 pub struct Board {
     children: Vec<Child>,
-    origin: Point,
-    scale: Vec2,
 }
 
 /// Parameters for an item in a [`Board`] container.
@@ -33,10 +31,10 @@ pub struct BoardParams {
     size: Size,
 }
 
-pub struct Shape {
-    shape: KurboShape,
+pub struct KurboShape {
+    shape: ConcreteShape,
     transform: Affine,
-    fill_style: Fill,
+    fill_mode: Fill,
     fill_brush: Brush,
     fill_brush_transform: Option<Affine>,
     stroke_style: Stroke,
@@ -45,7 +43,7 @@ pub struct Shape {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum KurboShape {
+pub enum ConcreteShape {
     PathSeg(PathSeg),
     Arc(Arc),
     BezPath(BezPath),
@@ -65,8 +63,6 @@ impl Board {
     pub fn new() -> Self {
         Board {
             children: Vec::new(),
-            origin: Point::ZERO,
-            scale: Vec2::new(1., 1.),
         }
     }
 
@@ -77,14 +73,19 @@ impl Board {
         params: impl Into<BoardParams>,
     ) -> Self {
         // TODO - dedup?
-        self.children.push(Child::Widget(widget, params.into()));
+        self.children.push(Child {
+            widget,
+            params: params.into(),
+        });
         self
     }
 
     /// Builder-style method to add a Kurbo shape to the container.
-    pub fn with_shape_child(mut self, shape: Shape) -> Self {
-        self.children
-            .push(Child::Shape(WidgetPod::new(Box::new(shape))));
+    pub fn with_shape_pod(mut self, shape: WidgetPod<KurboShape>) -> Self {
+        self.children.push(Child {
+            params: shape.as_ref().unwrap().shape.bounding_box().into(),
+            widget: shape.boxed(),
+        });
         self
     }
 
@@ -104,12 +105,12 @@ impl Default for Board {
 }
 
 // --- MARK: IMPL SHAPE ---
-impl Shape {
-    pub fn new(shape: impl Into<KurboShape>) -> Self {
-        Shape {
+impl KurboShape {
+    pub fn new(shape: impl Into<ConcreteShape>) -> Self {
+        KurboShape {
             shape: shape.into(),
             transform: Default::default(),
-            fill_style: Fill::NonZero,
+            fill_mode: Fill::NonZero,
             fill_brush: Default::default(),
             fill_brush_transform: Default::default(),
             stroke_style: Default::default(),
@@ -118,7 +119,7 @@ impl Shape {
         }
     }
 
-    pub fn shape(&self) -> &KurboShape {
+    pub fn shape(&self) -> &ConcreteShape {
         &self.shape
     }
 
@@ -126,8 +127,8 @@ impl Shape {
         self.transform = transform;
     }
 
-    pub fn set_fill_style(&mut self, fill_style: Fill) {
-        self.fill_style = fill_style;
+    pub fn set_fill_mode(&mut self, fill_mode: Fill) {
+        self.fill_mode = fill_mode;
     }
 
     pub fn set_fill_brush(&mut self, fill_brush: Brush) {
@@ -153,31 +154,21 @@ impl Shape {
 
 // --- MARK: WIDGETMUT---
 impl<'a> WidgetMut<'a, Board> {
-    /// Set the origin.
-    pub fn set_origin(&mut self, origin: Point) {
-        self.widget.origin = origin;
-        self.ctx.request_layout();
-    }
-
-    /// Set the scale.
-    pub fn set_scale(&mut self, scale: Vec2) {
-        self.widget.scale = scale;
-        self.ctx.request_layout();
-    }
-
     /// Add a positioned child widget.
     pub fn add_child(&mut self, child: impl Widget, params: impl Into<BoardParams>) {
-        let child = Child::Widget(WidgetPod::new(Box::new(child)), params.into());
-
-        self.widget.children.push(child);
+        self.widget.children.push(Child {
+            widget: WidgetPod::new(Box::new(child)),
+            params: params.into(),
+        });
         self.ctx.children_changed();
     }
 
     /// Add a Kurbo shape.
-    pub fn add_shape_child(&mut self, shape: Shape) {
-        self.widget
-            .children
-            .push(Child::Shape(WidgetPod::new(Box::new(shape))));
+    pub fn add_shape_child(&mut self, shape: Box<KurboShape>) {
+        self.widget.children.push(Child {
+            params: shape.shape.bounding_box().into(),
+            widget: WidgetPod::new(shape),
+        });
         self.ctx.children_changed();
     }
 
@@ -191,27 +182,40 @@ impl<'a> WidgetMut<'a, Board> {
         child: WidgetPod<Box<dyn Widget>>,
         params: impl Into<BoardParams>,
     ) {
-        let child = Child::Widget(child, params.into());
+        let child = Child {
+            widget: child,
+            params: params.into(),
+        };
         self.widget.children.insert(idx, child);
         self.ctx.children_changed();
     }
 
-    pub fn insert_shape_child(&mut self, idx: usize, shape: Shape) {
-        self.widget
-            .children
-            .insert(idx, Child::Shape(WidgetPod::new(Box::new(shape))));
+    pub fn insert_shape_pod(&mut self, idx: usize, shape: WidgetPod<KurboShape>) {
+        let child = Child {
+            params: shape.as_ref().unwrap().shape.bounding_box().into(),
+            widget: shape.boxed(),
+        };
+        self.widget.children.insert(idx, child);
         self.ctx.children_changed();
     }
 
     pub fn remove_child(&mut self, idx: usize) {
-        let (Child::Widget(widget, _) | Child::Shape(widget)) = self.widget.children.remove(idx);
+        let Child { widget, .. } = self.widget.children.remove(idx);
         self.ctx.remove_child(widget);
+        self.ctx.request_layout();
+    }
+
+    // FIXME: unsure about correctness of keeping child params unchanged
+    pub fn replace_child(&mut self, idx: usize, new_widget: WidgetPod<Box<dyn Widget>>) {
+        let Child { widget, .. } = &mut self.widget.children[idx];
+        let old_widget = std::mem::replace(widget, new_widget);
+        self.ctx.remove_child(old_widget);
         self.ctx.request_layout();
     }
 
     // FIXME - Remove Box
     pub fn child_mut(&mut self, idx: usize) -> WidgetMut<'_, Box<dyn Widget>> {
-        let (Child::Widget(widget, _) | Child::Shape(widget)) = &mut self.widget.children[idx];
+        let Child { widget, .. } = &mut self.widget.children[idx];
         self.ctx.get_mut(widget)
     }
 
@@ -221,10 +225,9 @@ impl<'a> WidgetMut<'a, Board> {
     ///
     /// Panics if the element at `idx` is not a widget.
     pub fn update_child_board_params(&mut self, idx: usize, new_params: impl Into<BoardParams>) {
-        if let Child::Widget(_, params) = &mut self.widget.children[idx] {
-            *params = new_params.into();
-            self.ctx.children_changed();
-        }
+        // FIXME: should check if the child is a graphics or rugular widget
+        self.widget.children[idx].params = new_params.into();
+        self.ctx.children_changed();
     }
 
     pub fn clear(&mut self) {
@@ -232,16 +235,48 @@ impl<'a> WidgetMut<'a, Board> {
             self.ctx.request_layout();
 
             for child in self.widget.children.drain(..) {
-                if let Child::Widget(widget, _) = child {
-                    self.ctx.remove_child(widget);
-                }
+                self.ctx.remove_child(child.widget);
             }
         }
     }
 }
 
-impl<'a> WidgetMut<'a, Shape> {
-    pub fn set_shape(&mut self, shape: KurboShape) {
+impl<'a> WidgetMut<'a, KurboShape> {
+    pub fn update_from(&mut self, shape: &KurboShape) {
+        if self.widget.shape != shape.shape {
+            self.set_shape(shape.shape.clone());
+        }
+        if self.widget.transform != shape.transform {
+            self.set_transform(shape.transform);
+        }
+        if self.widget.fill_mode != shape.fill_mode {
+            self.set_fill_mode(shape.fill_mode);
+        }
+        if self.widget.fill_brush != shape.fill_brush {
+            self.set_fill_brush(shape.fill_brush.clone());
+        }
+        if self.widget.fill_brush_transform != shape.fill_brush_transform {
+            self.set_fill_brush_transform(shape.fill_brush_transform);
+        }
+        if self.widget.stroke_style.width != shape.stroke_style.width
+            || self.widget.stroke_style.join != shape.stroke_style.join
+            || self.widget.stroke_style.miter_limit != shape.stroke_style.miter_limit
+            || self.widget.stroke_style.start_cap != shape.stroke_style.start_cap
+            || self.widget.stroke_style.end_cap != shape.stroke_style.end_cap
+            || self.widget.stroke_style.dash_pattern != shape.stroke_style.dash_pattern
+            || self.widget.stroke_style.dash_offset != shape.stroke_style.dash_offset
+        {
+            self.set_stroke_style(shape.stroke_style.clone());
+        }
+        if self.widget.stroke_brush != shape.stroke_brush {
+            self.set_stroke_brush(shape.stroke_brush.clone());
+        }
+        if self.widget.stroke_brush_transform != shape.stroke_brush_transform {
+            self.set_stroke_brush_transform(shape.stroke_brush_transform);
+        }
+    }
+
+    pub fn set_shape(&mut self, shape: ConcreteShape) {
         self.widget.shape = shape;
         self.ctx.request_layout();
         self.ctx.request_paint();
@@ -253,8 +288,8 @@ impl<'a> WidgetMut<'a, Shape> {
         self.ctx.request_paint();
     }
 
-    pub fn set_fill_style(&mut self, fill_style: Fill) {
-        self.widget.fill_style = fill_style;
+    pub fn set_fill_mode(&mut self, fill_mode: Fill) {
+        self.widget.fill_mode = fill_mode;
         self.ctx.request_paint();
     }
 
@@ -295,44 +330,17 @@ impl Widget for Board {
     fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange) {}
 
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
-        for child in self.children.iter_mut().filter_map(|x| x.widget_mut()) {
-            child.lifecycle(ctx, event);
+        for child in &mut self.children {
+            child.widget.lifecycle(ctx, event);
         }
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
         bc.debug_check("Board");
 
-        for child in &mut self.children {
-            match child {
-                Child::Widget(widget, params) => {
-                    if ctx.child_needs_layout(widget) {
-                        ctx.run_layout(widget, &BoxConstraints::tight(params.size));
-                    } else {
-                        ctx.skip_layout(widget);
-                    };
-                    ctx.place_child(widget, self.origin + params.origin.to_vec2());
-                }
-                Child::Shape(shape) => {
-                    let raw_widget = ctx.get_raw_ref(shape);
-                    let params = BoardParams::from(
-                        raw_widget
-                            .widget()
-                            .as_ref()
-                            .as_dyn_any()
-                            .downcast_ref::<Shape>()
-                            .unwrap()
-                            .shape()
-                            .bounding_box(),
-                    );
-                    if ctx.child_needs_layout(shape) {
-                        ctx.run_layout(shape, &BoxConstraints::tight(params.size));
-                    } else {
-                        ctx.skip_layout(shape);
-                    };
-                    ctx.place_child(shape, self.origin);
-                }
-            }
+        for Child { widget, params } in &mut self.children {
+            ctx.run_layout(widget, &BoxConstraints::tight(params.size));
+            ctx.place_child(widget, params.origin);
         }
 
         bc.max()
@@ -349,8 +357,7 @@ impl Widget for Board {
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         self.children
             .iter()
-            .filter_map(|child| child.widget())
-            .map(|widget_pod| widget_pod.id())
+            .map(|child| child.widget.id())
             .collect()
     }
 
@@ -359,7 +366,7 @@ impl Widget for Board {
     }
 }
 
-impl Widget for Shape {
+impl Widget for KurboShape {
     fn on_pointer_event(&mut self, _ctx: &mut EventCtx, _event: &PointerEvent) {}
     fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
     fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {}
@@ -375,16 +382,19 @@ impl Widget for Shape {
     }
 
     fn paint(&mut self, _ctx: &mut PaintCtx, scene: &mut Scene) {
+        let transform = self
+            .transform
+            .then_translate(-self.shape.bounding_box().origin().to_vec2());
         scene.fill(
-            self.fill_style,
-            self.transform,
+            self.fill_mode,
+            transform,
             &self.fill_brush,
             self.fill_brush_transform,
             &self.shape,
         );
         scene.stroke(
             &self.stroke_style,
-            self.transform,
+            transform,
             &self.stroke_brush,
             self.stroke_brush_transform,
             &self.shape,
@@ -426,22 +436,9 @@ impl From<Rect> for BoardParams {
     }
 }
 
-enum Child {
-    Widget(WidgetPod<Box<dyn Widget>>, BoardParams),
-    Shape(WidgetPod<Box<dyn Widget>>),
-}
-
-impl Child {
-    fn widget_mut(&mut self) -> Option<&mut WidgetPod<Box<dyn Widget>>> {
-        match self {
-            Child::Widget(widget, _) | Child::Shape(widget) => Some(widget),
-        }
-    }
-    fn widget(&self) -> Option<&WidgetPod<Box<dyn Widget>>> {
-        match self {
-            Child::Widget(widget, _) | Child::Shape(widget) => Some(widget),
-        }
-    }
+struct Child {
+    widget: WidgetPod<Box<dyn Widget>>,
+    params: BoardParams,
 }
 
 macro_rules! for_all_variants {
@@ -462,7 +459,7 @@ macro_rules! for_all_variants {
     };
 }
 
-impl kurbo::Shape for KurboShape {
+impl kurbo::Shape for ConcreteShape {
     type PathElementsIter<'iter> = PathElementsIter<'iter>;
 
     fn path_elements(&self, tolerance: f64) -> Self::PathElementsIter<'_> {
@@ -532,9 +529,9 @@ impl kurbo::Shape for KurboShape {
 
 macro_rules! impl_from_shape {
     ($t:ident) => {
-        impl From<kurbo::$t> for KurboShape {
+        impl From<kurbo::$t> for ConcreteShape {
             fn from(value: kurbo::$t) -> Self {
-                KurboShape::$t(value)
+                ConcreteShape::$t(value)
             }
         }
     };
@@ -586,7 +583,7 @@ mod tests {
 
     #[test]
     fn kurbo_shape_circle() {
-        let mut widget = Shape::new(Circle::new((50., 50.), 30.));
+        let mut widget = KurboShape::new(Circle::new((50., 50.), 30.));
         widget.set_fill_brush(Brush::Solid(vello::peniko::Color::CHARTREUSE));
         widget.set_stroke_style(Stroke::new(2.).with_dashes(0., [2., 1.]));
         widget.set_stroke_brush(Brush::Solid(vello::peniko::Color::PALE_VIOLET_RED));
@@ -615,7 +612,7 @@ mod tests {
 
     #[test]
     fn board_shape_placement_snapshots() {
-        let mut shape = Shape::new(Circle::new((70., 50.), 30.));
+        let mut shape = KurboShape::new(Circle::new((70., 50.), 30.));
         shape.set_fill_brush(Brush::Solid(vello::peniko::Color::NAVY));
         shape.set_stroke_style(Stroke::new(2.).with_dashes(0., [2., 1.]));
         shape.set_stroke_brush(Brush::Solid(vello::peniko::Color::PALE_VIOLET_RED));
@@ -624,10 +621,12 @@ mod tests {
                 WidgetPod::new(Box::new(Button::new("hello"))),
                 Rect::new(10., 10., 60., 40.),
             )
-            .with_shape_child(shape);
+            .with_shape_pod(WidgetPod::new(shape));
 
         let mut harness = TestHarness::create(widget);
 
         assert_render_snapshot!(harness, "shape_placement");
     }
+
+    // TODO: add test for KurboShape in Flex
 }

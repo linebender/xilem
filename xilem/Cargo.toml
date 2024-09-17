@@ -76,7 +76,7 @@ crate-type = ["cdylib"]
 workspace = true
 
 [dependencies]
-xilem_core.workspace = true
+xilem_core = { workspace = true, features = ["kurbo"] }
 masonry.workspace = true
 winit.workspace = true
 tracing.workspace = true

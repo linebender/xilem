@@ -57,6 +57,33 @@ impl<W: Widget> WidgetPod<W> {
     pub fn id(&self) -> WidgetId {
         self.id
     }
+
+    /// Take the inner widget, if it has not been inserted yet.
+    pub fn inner(self) -> Option<W> {
+        if let WidgetPodInner::Created(w) = self.inner {
+            Some(w)
+        } else {
+            None
+        }
+    }
+
+    /// Get access to the inner widget, if it has not been inserted yet.
+    pub fn as_ref(&self) -> Option<&W> {
+        if let WidgetPodInner::Created(w) = &self.inner {
+            Some(w)
+        } else {
+            None
+        }
+    }
+
+    /// Get access to the inner widget, if it has not been inserted yet.
+    pub fn as_mut(&mut self) -> Option<&mut W> {
+        if let WidgetPodInner::Created(w) = &mut self.inner {
+            Some(w)
+        } else {
+            None
+        }
+    }
 }
 
 impl<W: Widget + 'static> WidgetPod<W> {

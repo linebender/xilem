@@ -7,7 +7,7 @@ use masonry::{
 };
 use winit::error::EventLoopError;
 use xilem::view::{
-    board, button, flex, label, Axis, BoardExt, BoardParams, FlexExt as _, FlexSpacer, ShapeExt,
+    board, button, flex, label, Axis, BoardExt, BoardParams, FlexExt as _, FlexSpacer, GraphicsExt,
 };
 use xilem::{Color, EventLoop, WidgetView, Xilem};
 
@@ -50,10 +50,8 @@ impl AppState {
                             .into_any_board()
                         } else {
                             vello::kurbo::Circle::new((origin + 15., origin + 15.), 15.)
-                                .view()
-                                .fill_brush(Color::NAVY)
-                                .stroke_brush(Color::PAPAYA_WHIP)
-                                .stroke_style(vello::kurbo::Stroke::new(2.))
+                                .fill(Color::NAVY)
+                                .stroke(Color::PAPAYA_WHIP, vello::kurbo::Stroke::new(2.))
                                 .into_any_board()
                         }
                     })
