@@ -1,2 +1,7 @@
 # Don't warn about these identifiers when using clippy::doc_markdown.
 doc-valid-idents = ["MathML", ".."]
+
+# The default clippy value for this is 250, which causes warnings for rather simple types
+# like Box<dyn Fn(&mut Env, &T)>, which seems overly strict. The new value of 400 is
+# a simple guess. It might be worth lowering this, or using the default, in the future.
+type-complexity-threshold = 400

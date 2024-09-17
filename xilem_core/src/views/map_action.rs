@@ -17,7 +17,6 @@ pub struct MapAction<
 > {
     map_fn: F,
     child: V,
-    #[allow(clippy::type_complexity)]
     phantom: PhantomData<fn() -> (State, ParentAction, ChildAction)>,
 }
 
