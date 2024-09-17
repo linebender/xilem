@@ -74,7 +74,7 @@ fn create_event_listener<Event: JsCast + crate::Message>(
 ) -> Closure<dyn FnMut(web_sys::Event)> {
     let thunk = ctx.message_thunk();
     let callback = Closure::new(move |event: web_sys::Event| {
-        let event = event.dyn_into::<Event>().unwrap_throw();
+        let event = event.unchecked_into::<Event>();
         thunk.push_message(event);
     });
 
@@ -545,7 +545,7 @@ where
         ctx.with_id(ON_EVENT_VIEW_ID, |ctx| {
             let thunk = ctx.message_thunk();
             let callback = Closure::new(move |entries: js_sys::Array| {
-                let entry: web_sys::ResizeObserverEntry = entries.at(0).dyn_into().unwrap_throw();
+                let entry: web_sys::ResizeObserverEntry = entries.at(0).unchecked_into();
                 thunk.push_message(entry);
             });
 

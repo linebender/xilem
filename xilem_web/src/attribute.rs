@@ -127,17 +127,13 @@ impl Attributes {
             for modifier in self.attribute_modifiers.iter().rev() {
                 match modifier {
                     AttributeModifier::Remove(name) => {
-                        if self.updated_attributes.contains_key(name) {
-                            self.updated_attributes.remove(name);
+                        if self.updated_attributes.remove(name).is_some() {
                             remove_attribute(element, name);
-                            // element.remove_attribute(name);
                         }
                     }
                     AttributeModifier::Set(name, value) => {
-                        if self.updated_attributes.contains_key(name) {
-                            self.updated_attributes.remove(name);
+                        if self.updated_attributes.remove(name).is_some() {
                             set_attribute(element, name, &value.serialize());
-                            // element.set_attribute(name, &value.serialize());
                         }
                     }
                     AttributeModifier::EndMarker(_) => (),

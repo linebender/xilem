@@ -183,14 +183,12 @@ impl Styles {
             for modifier in self.style_modifiers.iter().rev() {
                 match modifier {
                     StyleModifier::Remove(name) => {
-                        if self.updated_styles.contains_key(name) {
-                            self.updated_styles.remove(name);
+                        if self.updated_styles.remove(name).is_some() {
                             remove_style(element, name);
                         }
                     }
                     StyleModifier::Set(name, value) => {
-                        if self.updated_styles.contains_key(name) {
-                            self.updated_styles.remove(name);
+                        if self.updated_styles.remove(name).is_some() {
                             set_style(element, name, value);
                         }
                     }

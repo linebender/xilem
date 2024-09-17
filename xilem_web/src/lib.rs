@@ -409,7 +409,7 @@ macro_rules! impl_dom_node_for_elements {
         impl From<Pod<web_sys::Element, ElementProps>> for Pod<web_sys::$ty, ElementProps> {
             fn from(value: Pod<web_sys::Element, ElementProps>) -> Self {
                 Self {
-                    node: value.node.dyn_into().unwrap_throw(),
+                    node: value.node.unchecked_into(),
                     props: value.props,
                 }
             }
