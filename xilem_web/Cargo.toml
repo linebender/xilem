@@ -179,3 +179,5 @@ features = [
 [features]
 default = ["hydration"]
 hydration = []
+# This interns some often used strings, such as element tags ("div" etc.), which slightly improves performance when creating elements at the cost of a bigger wasm binary
+intern_strings = ["wasm-bindgen/enable-interning"]
