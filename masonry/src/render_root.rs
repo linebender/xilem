@@ -562,8 +562,8 @@ impl RenderRoot {
             };
             Some(self.focus_chain()[new_idx])
         } else {
-            // If no widget is currently focused
-            // If the currently focused widget isn't in the focus chain,
+            // If no widget is currently focused or the
+            // currently focused widget isn't in the focus chain,
             // then we'll just return the first/last entry of the chain, if any.
             if forward {
                 self.focus_chain().first().copied()
