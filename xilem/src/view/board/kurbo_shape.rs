@@ -3,21 +3,23 @@
 
 //! Implementation of the View trait for various kurbo shapes.
 
-use masonry::widget::KurboShape;
+use masonry::widget::{KurboShape, SvgElement};
 use vello::kurbo;
 use xilem_core::{AnyElement, AnyView, DynMessage, MessageResult, Mut, OrphanView, SuperElement};
 
 use crate::{Pod, ViewCtx, WidgetView};
 
-pub trait GraphicsView<State, Action = ()>: WidgetView<State, Action, Widget = KurboShape> {}
+use super::BoardElement;
+
+pub trait GraphicsView<State, Action = ()>: WidgetView<State, Action, Widget: SvgElement> {}
 
 impl<V, State, Action> GraphicsView<State, Action> for V where
-    V: WidgetView<State, Action, Widget = KurboShape> + Send + Sync
+    V: WidgetView<State, Action, Widget: SvgElement> + Send + Sync
 {
 }
 
-pub type AnyGraphicsView<State, Action = ()> =
-    dyn AnyView<State, Action, ViewCtx, Pod<KurboShape>> + Send + Sync;
+pub type AnyBoardView<State, Action = ()> =
+    dyn AnyView<State, Action, ViewCtx, BoardElement> + Send + Sync;
 
 impl SuperElement<Pod<KurboShape>> for Pod<KurboShape> {
     fn upcast(child: Pod<KurboShape>) -> Self {

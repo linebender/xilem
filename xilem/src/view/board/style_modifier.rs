@@ -12,7 +12,7 @@ use xilem_core::{AnyView, DynMessage, MessageResult, Mut, View, ViewId, ViewMark
 
 use crate::{Pod, ViewCtx};
 
-use super::{AnyBoardChild, GraphicsView};
+use super::{AnyBoardView, BoardElement, GraphicsView};
 
 pub struct Transform<V, State, Action> {
     child: V,
@@ -100,11 +100,11 @@ pub trait GraphicsExt<State, Action>: GraphicsView<State, Action> + Sized {
         stroke(self, brush, style)
     }
 
-    fn into_any_board(self) -> AnyBoardChild<State, Action>
+    fn into_any_board(self) -> Box<AnyBoardView<State, Action>>
     where
-        Self: AnyView<State, Action, ViewCtx, Pod<KurboShape>> + Send + Sync + 'static,
+        Self: AnyView<State, Action, ViewCtx, BoardElement> + Send + Sync + 'static,
     {
-        AnyBoardChild::Graphics(Box::new(self))
+        Box::new(self)
     }
 }
 
@@ -118,7 +118,7 @@ impl<State, Action, V> View<State, Action, ViewCtx> for Transform<V, State, Acti
 where
     State: 'static,
     Action: 'static,
-    V: GraphicsView<State, Action>,
+    V: GraphicsView<State, Action, Widget = KurboShape>,
 {
     type ViewState = V::ViewState;
     type Element = Pod<KurboShape>;
@@ -173,7 +173,7 @@ impl<State, Action, V> View<State, Action, ViewCtx> for Fill<V, State, Action>
 where
     State: 'static,
     Action: 'static,
-    V: GraphicsView<State, Action>,
+    V: GraphicsView<State, Action, Widget = KurboShape>,
 {
     type ViewState = V::ViewState;
     type Element = Pod<KurboShape>;
@@ -244,7 +244,7 @@ impl<State, Action, V> View<State, Action, ViewCtx> for Stroke<V, State, Action>
 where
     State: 'static,
     Action: 'static,
-    V: GraphicsView<State, Action>,
+    V: GraphicsView<State, Action, Widget = KurboShape>,
 {
     type ViewState = V::ViewState;
     type Element = Pod<KurboShape>;

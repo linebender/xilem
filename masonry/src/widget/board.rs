@@ -289,7 +289,6 @@ impl<W: Widget> SvgElement for PositionedElement<W> {
     }
 }
 
-// TODO Should also implement the other methods...
 impl<W: Widget> Widget for PositionedElement<W> {
     fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange) {
         self.inner.on_status_change(ctx, event);
@@ -317,6 +316,34 @@ impl<W: Widget> Widget for PositionedElement<W> {
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         self.inner.children_ids()
+    }
+
+    fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
+        self.inner.on_pointer_event(ctx, event);
+    }
+
+    fn on_text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent) {
+        self.inner.on_text_event(ctx, event);
+    }
+
+    fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {
+        self.inner.on_access_event(ctx, event);
+    }
+
+    fn compose(&mut self, ctx: &mut crate::ComposeCtx) {
+        self.inner.compose(ctx);
+    }
+
+    fn skip_pointer(&self) -> bool {
+        self.inner.skip_pointer()
+    }
+
+    fn get_debug_text(&self) -> Option<String> {
+        self.inner.get_debug_text()
+    }
+
+    fn get_cursor(&self) -> cursor_icon::CursorIcon {
+        self.inner.get_cursor()
     }
 }
 
