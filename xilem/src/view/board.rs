@@ -3,7 +3,10 @@
 
 use std::marker::PhantomData;
 
-use masonry::widget::{self, KurboShape, SvgElement, WidgetMut};
+use masonry::{
+    widget::{self, KurboShape, PositionedElement, SvgElement, WidgetMut},
+    Widget,
+};
 use xilem_core::{
     AnyElement, AnyView, AppendVec, DynMessage, ElementSplice, MessageResult, Mut, SuperElement,
     View, ViewElement, ViewMarker, ViewSequence,
@@ -153,6 +156,33 @@ impl AnyElement<BoardElement> for BoardElement {
     }
 }
 
+impl<W: Widget> SuperElement<Pod<PositionedElement<W>>> for BoardElement {
+    fn upcast(child: Pod<PositionedElement<W>>) -> Self {
+        BoardElement {
+            element: child.inner.svg_boxed().into(),
+        }
+    }
+
+    fn with_downcast_val<R>(
+        mut this: Mut<'_, Self>,
+        f: impl FnOnce(Mut<'_, Pod<PositionedElement<W>>>) -> R,
+    ) -> (Self::Mut<'_>, R) {
+        let r = {
+            let mut child = this.parent.child_mut(this.idx);
+            f(child.downcast())
+        };
+        (this, r)
+    }
+}
+
+impl<W: Widget> AnyElement<Pod<PositionedElement<W>>> for BoardElement {
+    fn replace_inner(mut this: Self::Mut<'_>, child: Pod<PositionedElement<W>>) -> Self::Mut<'_> {
+        this.parent.remove_child(this.idx);
+        this.parent.insert_child(this.idx, child.inner.svg_boxed());
+        this
+    }
+}
+
 impl SuperElement<Pod<KurboShape>> for BoardElement {
     fn upcast(child: Pod<KurboShape>) -> Self {
         BoardElement {
@@ -250,14 +280,14 @@ pub trait BoardExt<State, Action>: WidgetView<State, Action> {
 
 impl<State, Action, V: WidgetView<State, Action>> BoardExt<State, Action> for V {}
 
-/// A `WidgetView` that can be used within a [`Board`] [`View`]
+/// A [`WidgetView`] that can be used within a [`Board`] [`View`]
 pub struct PositionedView<V, State, Action> {
     view: V,
     params: BoardParams,
     phantom: PhantomData<fn() -> (State, Action)>,
 }
 
-/// Makes this view absolutely positioned in a `Board`.
+/// Makes this view absolutely positioned in a [`Board`].
 pub fn positioned<V, State, Action>(
     view: V,
     params: impl Into<BoardParams>,
@@ -280,8 +310,8 @@ where
     Action: 'static,
     V: WidgetView<State, Action, ViewState: 'static>,
 {
-    fn from(value: PositionedView<V, State, Action>) -> Self {
-        Box::new(positioned(value.view, value.params))
+    fn from(view: PositionedView<V, State, Action>) -> Self {
+        Box::new(positioned(view.view, view.params))
     }
 }
 
@@ -291,7 +321,7 @@ where
     Action: 'static,
     V: WidgetView<State, Action>,
 {
-    /// Turns this [`BoardItem`] into an [`AnyBoardChild`]
+    /// Turns this [`PositionedView`] into a boxed [`AnyBoardView`].
     pub fn into_any_board(self) -> Box<AnyBoardView<State, Action>> {
         self.into()
     }
@@ -304,18 +334,13 @@ where
     Action: 'static,
     V: WidgetView<State, Action>,
 {
-    type Element = BoardElement;
+    type Element = Pod<PositionedElement<V::Widget>>;
 
     type ViewState = V::ViewState;
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let (pod, state) = self.view.build(ctx);
-        (
-            BoardElement {
-                element: pod.inner.positioned(self.params).into(),
-            },
-            state,
-        )
+        (pod.inner.positioned(self.params).into(), state)
     }
 
     fn rebuild<'el>(
@@ -325,23 +350,15 @@ where
         ctx: &mut ViewCtx,
         mut element: Mut<'el, Self::Element>,
     ) -> Mut<'el, Self::Element> {
-        {
-            // if self.params != prev.params {
-            //     element
-            //         .parent
-            //         .update_child_board_params(element.idx, self.params);
-            // }
-            let mut child = element.parent.child_mut(element.idx);
-            self.view
-                .rebuild(&prev.view, view_state, ctx, child.downcast_positioned());
-            if self.params.origin != prev.params.origin {
-                child.widget.set_origin(self.params.origin);
-                child.ctx.request_layout();
-            }
-            if self.params.size != prev.params.size {
-                child.widget.set_size(self.params.size);
-                child.ctx.request_layout();
-            }
+        self.view
+            .rebuild(&prev.view, view_state, ctx, element.inner_mut());
+        if self.params.origin != prev.params.origin {
+            element.widget.set_origin(self.params.origin);
+            element.ctx.request_layout();
+        }
+        if self.params.size != prev.params.size {
+            element.widget.set_size(self.params.size);
+            element.ctx.request_layout();
         }
         element
     }
@@ -352,9 +369,7 @@ where
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
     ) {
-        let mut child = element.parent.child_mut(element.idx);
-        self.view
-            .teardown(view_state, ctx, child.downcast_positioned());
+        self.view.teardown(view_state, ctx, element.inner_mut());
     }
 
     fn message(

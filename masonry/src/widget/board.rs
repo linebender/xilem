@@ -111,6 +111,15 @@ impl<'a> WidgetMut<'a, Board> {
     }
 }
 
+impl<'a, W: Widget> WidgetMut<'a, PositionedElement<W>> {
+    pub fn inner_mut(&mut self) -> WidgetMut<'_, W> {
+        WidgetMut {
+            ctx: self.ctx.reborrow_mut(),
+            widget: &mut self.widget.inner,
+        }
+    }
+}
+
 impl<'a> WidgetMut<'a, Box<dyn SvgElement>> {
     /// Attempt to downcast to `WidgetMut` of concrete Widget type.
     pub fn try_downcast<W2: Widget>(&mut self) -> Option<WidgetMut<'_, W2>> {
@@ -118,29 +127,6 @@ impl<'a> WidgetMut<'a, Box<dyn SvgElement>> {
             ctx: self.ctx.reborrow_mut(),
             widget: self.widget.as_mut_any().downcast_mut()?,
         })
-    }
-
-    /// Downcasts to `WidgetMut` of concrete Widget type.
-    ///
-    /// ## Panics
-    ///
-    /// Panics if the downcast fails, with an error message that shows the
-    /// discrepancy between the expected and actual types.
-    pub fn downcast_positioned<W2: Widget>(&mut self) -> WidgetMut<'_, W2> {
-        let w1_name = self.widget.type_name();
-        match self.widget.as_mut_any().downcast_mut() {
-            Some(PositionedElement { inner: widget, .. }) => WidgetMut {
-                ctx: self.ctx.reborrow_mut(),
-                widget,
-            },
-            None => {
-                panic!(
-                    "failed to downcast widget: expected widget of type `{}`, found `{}`",
-                    std::any::type_name::<W2>(),
-                    w1_name,
-                );
-            }
-        }
     }
 
     /// Downcasts to `WidgetMut` of concrete Widget type.
@@ -407,15 +393,22 @@ impl From<Rect> for BoardParams {
 }
 
 impl<W: Widget> WidgetPod<W> {
-    pub fn positioned(self, params: impl Into<BoardParams>) -> WidgetPod<Box<dyn SvgElement>> {
+    pub fn positioned(self, params: impl Into<BoardParams>) -> WidgetPod<PositionedElement<W>> {
         let id = self.id();
         WidgetPod::new_with_id(
-            Box::new(PositionedElement {
+            PositionedElement {
                 inner: self.inner().unwrap(),
                 params: params.into(),
-            }),
+            },
             id,
         )
+    }
+}
+
+impl<W: Widget> WidgetPod<PositionedElement<W>> {
+    pub fn svg_boxed(self) -> WidgetPod<Box<dyn SvgElement>> {
+        let id = self.id();
+        WidgetPod::new_with_id(Box::new(self.inner().unwrap()), id)
     }
 }
 
@@ -434,10 +427,14 @@ mod tests {
     fn board_absolute_placement_snapshots() {
         let board = Board::new()
             .with_child_pod(
-                WidgetPod::new(Button::new("hello")).positioned(Rect::new(10., 10., 60., 40.)),
+                WidgetPod::new(Button::new("hello"))
+                    .positioned(Rect::new(10., 10., 60., 40.))
+                    .svg_boxed(),
             )
             .with_child_pod(
-                WidgetPod::new(Button::new("world")).positioned(Rect::new(30., 30., 80., 60.)),
+                WidgetPod::new(Button::new("world"))
+                    .positioned(Rect::new(30., 30., 80., 60.))
+                    .svg_boxed(),
             );
 
         let mut harness = TestHarness::create(board);
@@ -454,7 +451,9 @@ mod tests {
 
         let board = Board::new()
             .with_child_pod(
-                WidgetPod::new(Button::new("hello")).positioned(Rect::new(10., 10., 60., 40.)),
+                WidgetPod::new(Button::new("hello"))
+                    .positioned(Rect::new(10., 10., 60., 40.))
+                    .svg_boxed(),
             )
             .with_child_pod(WidgetPod::new(Box::new(shape)));
 
