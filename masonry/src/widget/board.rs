@@ -77,11 +77,11 @@ impl SvgElement for KurboShape {
     }
 
     fn set_origin(&mut self, _: Point) {
-        panic!("a shape doens not support setting its origin after creation")
+        panic!("a shape doesn't not support setting its origin after creation")
     }
 
     fn set_size(&mut self, _: Size) {
-        panic!("a shape doens not support setting its size after creation")
+        panic!("a shape doesn't not support setting its size after creation")
     }
 }
 
