@@ -55,8 +55,8 @@ impl<State, Action> View<State, Action, ViewCtx> for Spinner {
     type Element = Pod<widget::Spinner>;
     type ViewState = ();
 
-    fn build(&self, _: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        (Pod::new(widget::Spinner::new()), ())
+    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+        (ctx.new_pod(widget::Spinner::new()), ())
     }
 
     fn rebuild<'el>(

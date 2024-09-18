@@ -48,8 +48,8 @@ impl<State, Action> View<State, Action, ViewCtx> for Label {
     type Element = Pod<widget::Label>;
     type ViewState = ();
 
-    fn build(&self, _ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        let widget_pod = Pod::new(
+    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+        let widget_pod = ctx.new_pod(
             widget::Label::new(self.label.clone())
                 .with_text_brush(self.text_brush.clone())
                 .with_text_alignment(self.alignment)

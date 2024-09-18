@@ -210,8 +210,8 @@ impl<const N: u32> View<(), Action, TestCtx> for OperationView<N> {
     }
 }
 
-impl SuperElement<TestElement> for TestElement {
-    fn upcast(child: TestElement) -> Self {
+impl SuperElement<TestElement, TestCtx> for TestElement {
+    fn upcast(_ctx: &mut TestCtx, child: TestElement) -> Self {
         child
     }
 
@@ -224,7 +224,7 @@ impl SuperElement<TestElement> for TestElement {
     }
 }
 
-impl AnyElement<TestElement> for TestElement {
+impl AnyElement<TestElement, TestCtx> for TestElement {
     fn replace_inner(this: Self::Mut<'_>, child: TestElement) -> Self::Mut<'_> {
         assert_eq!(child.operations.len(), 1);
         let Operation::Build(child_id) = child.operations.first().unwrap() else {

@@ -98,8 +98,8 @@ impl<V, State, Action> FileView<State, Action> for V where
 
 type DynFileView<State, Action = ()> = Box<dyn AnyView<State, Action, ViewCtx, FsPath>>;
 
-impl SuperElement<FsPath> for FsPath {
-    fn upcast(child: FsPath) -> Self {
+impl SuperElement<FsPath, ViewCtx> for FsPath {
+    fn upcast(_ctx: &mut ViewCtx, child: FsPath) -> Self {
         child
     }
 
@@ -112,7 +112,7 @@ impl SuperElement<FsPath> for FsPath {
     }
 }
 
-impl AnyElement<FsPath> for FsPath {
+impl AnyElement<FsPath, ViewCtx> for FsPath {
     fn replace_inner(this: Self::Mut<'_>, child: FsPath) -> Self::Mut<'_> {
         *this = child.0;
         this

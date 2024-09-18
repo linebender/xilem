@@ -120,6 +120,7 @@ impl<
         }
     }
     fn upcast_one_of_element(
+        &mut self,
         elem: xilem_core::one_of::OneOf<
             Pod<A>,
             Pod<B>,
@@ -133,15 +134,15 @@ impl<
         >,
     ) -> Self::OneOfElement {
         match elem {
-            xilem_core::one_of::OneOf::A(w) => Pod::new(OneOfWidget::A(w.inner)),
-            xilem_core::one_of::OneOf::B(w) => Pod::new(OneOfWidget::B(w.inner)),
-            xilem_core::one_of::OneOf::C(w) => Pod::new(OneOfWidget::C(w.inner)),
-            xilem_core::one_of::OneOf::D(w) => Pod::new(OneOfWidget::D(w.inner)),
-            xilem_core::one_of::OneOf::E(w) => Pod::new(OneOfWidget::E(w.inner)),
-            xilem_core::one_of::OneOf::F(w) => Pod::new(OneOfWidget::F(w.inner)),
-            xilem_core::one_of::OneOf::G(w) => Pod::new(OneOfWidget::G(w.inner)),
-            xilem_core::one_of::OneOf::H(w) => Pod::new(OneOfWidget::H(w.inner)),
-            xilem_core::one_of::OneOf::I(w) => Pod::new(OneOfWidget::I(w.inner)),
+            xilem_core::one_of::OneOf::A(w) => self.new_pod(OneOfWidget::A(w.inner)),
+            xilem_core::one_of::OneOf::B(w) => self.new_pod(OneOfWidget::B(w.inner)),
+            xilem_core::one_of::OneOf::C(w) => self.new_pod(OneOfWidget::C(w.inner)),
+            xilem_core::one_of::OneOf::D(w) => self.new_pod(OneOfWidget::D(w.inner)),
+            xilem_core::one_of::OneOf::E(w) => self.new_pod(OneOfWidget::E(w.inner)),
+            xilem_core::one_of::OneOf::F(w) => self.new_pod(OneOfWidget::F(w.inner)),
+            xilem_core::one_of::OneOf::G(w) => self.new_pod(OneOfWidget::G(w.inner)),
+            xilem_core::one_of::OneOf::H(w) => self.new_pod(OneOfWidget::H(w.inner)),
+            xilem_core::one_of::OneOf::I(w) => self.new_pod(OneOfWidget::I(w.inner)),
         }
     }
 

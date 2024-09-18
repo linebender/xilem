@@ -40,7 +40,7 @@ where
         // The Portal `View` doesn't get any messages directly (yet - scroll events?), so doesn't need to
         // use ctx.with_id.
         let (child, child_state) = self.child.build(ctx);
-        let widget_pod = Pod::new(widget::Portal::new_pod(child.inner));
+        let widget_pod = ctx.new_pod(widget::Portal::new_pod(child.inner));
         (widget_pod, child_state)
     }
 

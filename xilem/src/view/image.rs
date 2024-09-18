@@ -49,8 +49,8 @@ impl<State, Action> View<State, Action, ViewCtx> for Image {
     type Element = Pod<widget::Image>;
     type ViewState = ();
 
-    fn build(&self, _: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        (Pod::new(widget::Image::new(self.image.clone())), ())
+    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+        (ctx.new_pod(widget::Image::new(self.image.clone())), ())
     }
 
     fn rebuild<'el>(

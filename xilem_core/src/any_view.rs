@@ -66,7 +66,7 @@ pub trait AnyView<State, Action, Context, Element: ViewElement, Message = DynMes
 impl<State, Action, Context, DynamicElement, Message, V>
     AnyView<State, Action, Context, DynamicElement, Message> for V
 where
-    DynamicElement: AnyElement<V::Element>,
+    DynamicElement: AnyElement<V::Element, Context>,
     Context: ViewPathTracker,
     V: View<State, Action, Context, Message> + 'static,
     V::ViewState: 'static,
@@ -80,7 +80,7 @@ where
         let generation = 0;
         let (element, view_state) = ctx.with_id(ViewId::new(generation), |ctx| self.build(ctx));
         (
-            DynamicElement::upcast(element),
+            DynamicElement::upcast(ctx, element),
             AnyViewState {
                 inner_state: Box::new(view_state),
                 generation,
