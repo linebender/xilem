@@ -200,14 +200,16 @@ pub(crate) fn root_on_access_event(
                     accesskit::Action::Focus => {
                         if ctx.is_in_focus_chain() && !ctx.is_disabled() && !ctx.is_focused() {
                             ctx.request_focus();
+                            ctx.set_handled();
+                            return;
                         }
-                        return;
                     }
                     accesskit::Action::Blur => {
                         if ctx.is_focused() {
                             ctx.resign_focus();
+                            ctx.set_handled();
+                            return;
                         }
-                        return;
                     }
                     _ => {}
                 }
