@@ -137,7 +137,10 @@ pub trait OneOfCtx<
     fn with_downcast_i(elem: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, I>));
 
     /// Creates the wrapping element, this is used in `View::build` to wrap the inner view element variant
-    fn upcast_one_of_element(elem: OneOf<A, B, C, D, E, F, G, H, I>) -> Self::OneOfElement;
+    fn upcast_one_of_element(
+        &mut self,
+        elem: OneOf<A, B, C, D, E, F, G, H, I>,
+    ) -> Self::OneOfElement;
 
     /// When the variant of the inner view element has changed, the wrapping element needs to be updated, this is used in `View::rebuild`
     fn update_one_of_element_mut(
@@ -233,7 +236,7 @@ where
             }
         });
         (
-            Context::upcast_one_of_element(element),
+            ctx.upcast_one_of_element(element),
             OneOfState {
                 generation,
                 inner_state: state,

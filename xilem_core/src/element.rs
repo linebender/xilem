@@ -42,12 +42,12 @@ pub type Mut<'el, E> = <E as ViewElement>::Mut<'el>;
 ///
 /// [`AnyView`]: crate::AnyView
 /// [`ViewSequence`]: crate::ViewSequence
-pub trait SuperElement<Child>: ViewElement
+pub trait SuperElement<Child, Context>: ViewElement
 where
     Child: ViewElement,
 {
     /// Convert from the child to this element type.
-    fn upcast(child: Child) -> Self;
+    fn upcast(ctx: &mut Context, child: Child) -> Self;
 
     /// Perform a reborrowing downcast to the child reference type.
     ///
@@ -75,7 +75,7 @@ where
 }
 
 /// An element which can be used for an [`AnyView`](crate::AnyView) containing `Child`.
-pub trait AnyElement<Child>: SuperElement<Child>
+pub trait AnyElement<Child, Context>: SuperElement<Child, Context>
 where
     Child: ViewElement,
 {
@@ -95,8 +95,8 @@ impl ViewElement for NoElement {
     type Mut<'a> = ();
 }
 
-impl SuperElement<NoElement> for NoElement {
-    fn upcast(child: NoElement) -> Self {
+impl<Context> SuperElement<NoElement, Context> for NoElement {
+    fn upcast(_ctx: &mut Context, child: NoElement) -> Self {
         child
     }
 

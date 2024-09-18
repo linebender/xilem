@@ -269,8 +269,8 @@ impl<E: DomNode<P>, P: 'static> ViewElement for Pod<E, P> {
     type Mut<'a> = PodMut<'a, E, P>;
 }
 
-impl<E: DomNode<P>, P: 'static> SuperElement<Pod<E, P>> for AnyPod {
-    fn upcast(child: Pod<E, P>) -> Self {
+impl<E: DomNode<P>, P: 'static> SuperElement<Pod<E, P>, ViewCtx> for AnyPod {
+    fn upcast(_ctx: &mut ViewCtx, child: Pod<E, P>) -> Self {
         Pod::into_dyn_node(child.node, child.props)
     }
 
@@ -284,7 +284,7 @@ impl<E: DomNode<P>, P: 'static> SuperElement<Pod<E, P>> for AnyPod {
     }
 }
 
-impl<E: DomNode<P>, P: 'static> AnyElement<Pod<E, P>> for AnyPod {
+impl<E: DomNode<P>, P: 'static> AnyElement<Pod<E, P>, ViewCtx> for AnyPod {
     fn replace_inner(mut this: Self::Mut<'_>, child: Pod<E, P>) -> Self::Mut<'_> {
         Pod::replace_inner(&mut this, child);
         this

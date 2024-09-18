@@ -41,6 +41,7 @@ impl
     type OneOfElement = TestElement;
 
     fn upcast_one_of_element(
+        &mut self,
         elem: OneOf<
             TestElement,
             TestElement,

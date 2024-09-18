@@ -99,8 +99,8 @@ impl Widget for ButtonWidget {
     }
 }
 
-impl<W: Widget> SuperElement<WidgetPod<W>> for WidgetPod<Box<dyn Widget>> {
-    fn upcast(child: WidgetPod<W>) -> Self {
+impl<W: Widget> SuperElement<WidgetPod<W>, ViewCtx> for WidgetPod<Box<dyn Widget>> {
+    fn upcast(_ctx: &mut ViewCtx, child: WidgetPod<W>) -> Self {
         WidgetPod {
             widget: Box::new(child.widget),
         }

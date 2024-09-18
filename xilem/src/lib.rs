@@ -156,26 +156,13 @@ pub struct Pod<W: Widget> {
     pub inner: WidgetPod<W>,
 }
 
-impl<W: Widget> Pod<W> {
-    /// Create a new `Pod` for `inner`.
-    pub fn new(inner: W) -> Self {
-        Self::from(WidgetPod::new(inner))
-    }
-}
-
-impl<W: Widget> From<WidgetPod<W>> for Pod<W> {
-    fn from(inner: WidgetPod<W>) -> Self {
-        Pod { inner }
-    }
-}
-
 impl<W: Widget> ViewElement for Pod<W> {
     type Mut<'a> = WidgetMut<'a, W>;
 }
 
-impl<W: Widget> SuperElement<Pod<W>> for Pod<Box<dyn Widget>> {
-    fn upcast(child: Pod<W>) -> Self {
-        child.inner.boxed().into()
+impl<W: Widget> SuperElement<Pod<W>, ViewCtx> for Pod<Box<dyn Widget>> {
+    fn upcast(ctx: &mut ViewCtx, child: Pod<W>) -> Self {
+        ctx.boxed_pod(child)
     }
 
     fn with_downcast_val<R>(
@@ -274,6 +261,18 @@ impl ViewPathTracker for ViewCtx {
 }
 
 impl ViewCtx {
+    pub fn new_pod<W: Widget>(&mut self, widget: W) -> Pod<W> {
+        Pod {
+            inner: WidgetPod::new(widget),
+        }
+    }
+
+    pub fn boxed_pod<W: Widget>(&mut self, pod: Pod<W>) -> Pod<Box<dyn Widget>> {
+        Pod {
+            inner: pod.inner.boxed(),
+        }
+    }
+
     pub fn mark_changed(&mut self) {
         if cfg!(debug_assertions) {
             self.view_tree_changed = true;

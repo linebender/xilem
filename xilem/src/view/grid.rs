@@ -74,7 +74,7 @@ where
                 GridElement::Child(child, params) => widget.with_child_pod(child.inner, params),
             }
         }
-        (Pod::new(widget), seq_state)
+        (ctx.new_pod(widget), seq_state)
     }
 
     fn rebuild<'el>(
@@ -133,8 +133,8 @@ impl ViewElement for GridElement {
 }
 
 // Used to allow the item to be used as a generic item in ViewSequence.
-impl SuperElement<GridElement> for GridElement {
-    fn upcast(child: GridElement) -> Self {
+impl SuperElement<GridElement, ViewCtx> for GridElement {
+    fn upcast(_ctx: &mut ViewCtx, child: GridElement) -> Self {
         child
     }
 
@@ -154,14 +154,14 @@ impl SuperElement<GridElement> for GridElement {
     }
 }
 
-impl<W: Widget> SuperElement<Pod<W>> for GridElement {
-    fn upcast(child: Pod<W>) -> Self {
+impl<W: Widget> SuperElement<Pod<W>, ViewCtx> for GridElement {
+    fn upcast(ctx: &mut ViewCtx, child: Pod<W>) -> Self {
         // Getting here means that the widget didn't use .grid_item or .grid_pos.
         // This currently places the widget in the top left cell.
         // There is not much else, beyond purposefully failing, that can be done here,
         // because there isn't enough information to determine an appropriate spot
         // for the widget.
-        GridElement::Child(child.inner.boxed().into(), GridParams::new(1, 1, 1, 1))
+        GridElement::Child(ctx.boxed_pod(child), GridParams::new(1, 1, 1, 1))
     }
 
     fn with_downcast_val<R>(
@@ -362,12 +362,9 @@ where
 
     type ViewState = V::ViewState;
 
-    fn build(&self, cx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        let (pod, state) = self.view.build(cx);
-        (
-            GridElement::Child(pod.inner.boxed().into(), self.params),
-            state,
-        )
+    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+        let (pod, state) = self.view.build(ctx);
+        (GridElement::Child(ctx.boxed_pod(pod), self.params), state)
     }
 
     fn rebuild<'el>(

@@ -50,6 +50,7 @@ where
         Pod<OneOf<N1, N2, N3, N4, N5, N6, N7, N8, N9>, OneOf<P1, P2, P3, P4, P5, P6, P7, P8, P9>>;
 
     fn upcast_one_of_element(
+        &mut self,
         elem: OneOf<
             Pod<N1, P1>,
             Pod<N2, P2>,

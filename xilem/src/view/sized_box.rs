@@ -135,7 +135,7 @@ where
         if let Some(border) = &self.border {
             widget = widget.border(border.color, border.width);
         }
-        (Pod::new(widget), child_state)
+        (ctx.new_pod(widget), child_state)
     }
 
     fn rebuild<'el>(

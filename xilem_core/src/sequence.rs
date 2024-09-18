@@ -150,14 +150,14 @@ impl<State, Action, Context, V, Element, Message>
 where
     Context: ViewPathTracker,
     V: View<State, Action, Context, Message> + ViewMarker,
-    Element: SuperElement<V::Element>,
+    Element: SuperElement<V::Element, Context>,
     V::Element: ViewElement,
 {
     type SeqState = V::ViewState;
 
     fn seq_build(&self, ctx: &mut Context, elements: &mut AppendVec<Element>) -> Self::SeqState {
         let (element, view_state) = self.build(ctx);
-        elements.push(Element::upcast(element));
+        elements.push(Element::upcast(ctx, element));
         view_state
     }
     fn seq_rebuild(

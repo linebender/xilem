@@ -115,7 +115,7 @@ where
                 FlexElement::FlexSpacer(flex) => widget.with_flex_spacer(flex),
             }
         }
-        (Pod::new(widget), seq_state)
+        (ctx.new_pod(widget), seq_state)
     }
 
     fn rebuild<'el>(
@@ -209,8 +209,8 @@ impl ViewElement for FlexElement {
     type Mut<'w> = FlexElementMut<'w>;
 }
 
-impl SuperElement<FlexElement> for FlexElement {
-    fn upcast(child: FlexElement) -> Self {
+impl SuperElement<FlexElement, ViewCtx> for FlexElement {
+    fn upcast(_ctx: &mut ViewCtx, child: FlexElement) -> Self {
         child
     }
 
@@ -230,9 +230,9 @@ impl SuperElement<FlexElement> for FlexElement {
     }
 }
 
-impl<W: Widget> SuperElement<Pod<W>> for FlexElement {
-    fn upcast(child: Pod<W>) -> Self {
-        FlexElement::Child(child.inner.boxed().into(), FlexParams::default())
+impl<W: Widget> SuperElement<Pod<W>, ViewCtx> for FlexElement {
+    fn upcast(ctx: &mut ViewCtx, child: Pod<W>) -> Self {
+        FlexElement::Child(ctx.boxed_pod(child), FlexParams::default())
     }
 
     fn with_downcast_val<R>(
@@ -450,10 +450,7 @@ where
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let (pod, state) = self.view.build(ctx);
-        (
-            FlexElement::Child(pod.inner.boxed().into(), self.params),
-            state,
-        )
+        (FlexElement::Child(ctx.boxed_pod(pod), self.params), state)
     }
 
     fn rebuild<'el>(

@@ -100,8 +100,8 @@ impl<State, Action> View<State, Action, ViewCtx> for VariableLabel {
     type Element = Pod<widget::VariableLabel>;
     type ViewState = ();
 
-    fn build(&self, _ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        let widget_pod = Pod::new(
+    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+        let widget_pod = ctx.new_pod(
             widget::VariableLabel::new(self.label.clone())
                 .with_text_brush(self.text_brush.clone())
                 .with_line_break_mode(widget::LineBreaking::WordWrap)
