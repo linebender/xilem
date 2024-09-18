@@ -502,6 +502,7 @@ fn update_focus_chain_for_widget(
     state.item.has_focus = global_state.focused_widget == Some(id);
     let had_focus = state.item.has_focus;
 
+    state.item.in_focus_chain = false;
     state.item.focus_chain.clear();
     {
         let mut ctx = LifeCycleCtx {

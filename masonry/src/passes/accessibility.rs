@@ -111,6 +111,10 @@ fn build_access_node(widget: &dyn Widget, state: &WidgetState, scale_factor: f64
     if state.clip.is_some() {
         node.set_clips_children();
     }
+    if state.in_focus_chain {
+        node.add_action(accesskit::Action::Focus);
+        node.add_action(accesskit::Action::Blur);
+    }
 
     node
 }

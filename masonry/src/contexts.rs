@@ -301,6 +301,11 @@ impl_context_method!(
             self.widget_state.has_focus
         }
 
+        /// Whether this specific widget is in the focus chain.
+        pub fn is_in_focus_chain(&self) -> bool {
+            self.widget_state.in_focus_chain
+        }
+
         /// The disabled state of a widget.
         ///
         /// Returns `true` if this widget or any of its ancestors is explicitly disabled.
@@ -715,6 +720,7 @@ impl LifeCycleCtx<'_> {
     pub fn register_for_focus(&mut self) {
         trace!("register_for_focus");
         self.widget_state.focus_chain.push(self.widget_id());
+        self.widget_state.in_focus_chain = true;
     }
 
     /// Register this widget as accepting text input.

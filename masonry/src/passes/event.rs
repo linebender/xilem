@@ -195,6 +195,23 @@ pub(crate) fn root_on_access_event(
         event,
         false,
         |widget, ctx, event| {
+            if event.target == ctx.widget_id() {
+                match event.action {
+                    accesskit::Action::Focus => {
+                        if ctx.is_in_focus_chain() && !ctx.is_disabled() && !ctx.is_focused() {
+                            ctx.request_focus();
+                        }
+                        return;
+                    }
+                    accesskit::Action::Blur => {
+                        if ctx.is_focused() {
+                            ctx.resign_focus();
+                        }
+                        return;
+                    }
+                    _ => {}
+                }
+            }
             widget.on_access_event(ctx, event);
         },
     );
