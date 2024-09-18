@@ -188,7 +188,10 @@ pub trait DomView<State, Action = ()>:
     }
 
     /// See [`map_state`](`core::map_state`)
-    fn map_state<ParentState, F>(self, f: F) -> MapState<ParentState, State, Self, F>
+    fn map_state<ParentState, F>(
+        self,
+        f: F,
+    ) -> MapState<Self, F, ParentState, State, Action, ViewCtx, DynMessage>
     where
         State: 'static,
         ParentState: 'static,

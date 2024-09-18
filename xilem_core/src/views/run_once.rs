@@ -16,9 +16,9 @@ use crate::{MessageResult, NoElement, View, ViewMarker, ViewPathTracker};
 /// This can be useful for logging a value:
 ///
 /// ```
-/// # use xilem_core::{run_once, View, docs::{Fake as ViewCtx}, PhantomView};
+/// # use xilem_core::{run_once, View, docs::{Fake as ViewCtx, DocsView as WidgetView}};
 /// # struct AppData;
-/// fn log_lifecycle(data: &mut AppData) -> impl PhantomView<AppData, (), ViewCtx> {
+/// fn log_lifecycle(data: &mut AppData) -> impl WidgetView<AppData, ()> {
 ///     run_once(|| eprintln!("View constructed"))
 /// }
 /// ```
@@ -32,11 +32,11 @@ use crate::{MessageResult, NoElement, View, ViewMarker, ViewPathTracker};
 /// // <https://doc.rust-lang.org/error_codes/E0080.html>
 /// // Note that this error code is only checked on nightly
 /// ```compile_fail,E0080
-/// # use xilem_core::{run_once, View, docs::{Fake as ViewCtx}, PhantomView};
+/// # use xilem_core::{run_once, View, docs::{DocsView as WidgetView}};
 /// # struct AppData {
 /// #    data: u32
 /// # }
-/// fn log_data(app: &mut AppData) -> impl PhantomView<AppData, (), ViewCtx> {
+/// fn log_data(app: &mut AppData) -> impl WidgetView<AppData, ()> {
 ///     let val = app.data;
 ///     run_once(move || println!("{}", val))
 /// }

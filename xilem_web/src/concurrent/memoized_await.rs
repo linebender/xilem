@@ -16,7 +16,6 @@ pub struct MemoizedAwait<State, Action, OA, InitFuture, Data, Callback, F, FOut>
     callback: Callback,
     debounce_ms: usize,
     reset_debounce_on_update: bool,
-    #[allow(clippy::type_complexity)]
     phantom: PhantomData<fn() -> (State, Action, OA, F, FOut)>,
 }
 

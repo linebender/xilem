@@ -1,12 +1,12 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-//! Modularizing state can be done with `map_state` which maps a subset of the state from the parent view state
+//! Modularizing state can be done with `lens` which allows using modular components.
 
 use masonry::widget::MainAxisAlignment;
 use winit::error::EventLoopError;
 use xilem::{
-    core::map_state,
+    core::lens,
     view::{button, flex, label, Axis},
     EventLoop, WidgetView, Xilem,
 };
@@ -17,7 +17,7 @@ struct AppState {
     global_count: i32,
 }
 
-fn modularized_counter(count: &mut i32) -> impl WidgetView<i32> {
+fn modular_counter(count: &mut i32) -> impl WidgetView<i32> {
     flex((
         label(format!("modularized count: {count}")),
         button("+", |count| *count += 1),
@@ -27,10 +27,7 @@ fn modularized_counter(count: &mut i32) -> impl WidgetView<i32> {
 
 fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> {
     flex((
-        map_state(
-            modularized_counter(&mut state.modularized_count),
-            |state: &mut AppState| &mut state.modularized_count,
-        ),
+        lens(modular_counter, state, |state| &mut state.modularized_count),
         button(
             format!("clicked {} times", state.global_count),
             |state: &mut AppState| state.global_count += 1,

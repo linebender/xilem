@@ -22,7 +22,6 @@ pub struct OnEvent<V, State, Action, Event, Callback> {
     pub(crate) capture: bool,
     pub(crate) passive: bool,
     pub(crate) handler: Callback,
-    #[allow(clippy::type_complexity)]
     pub(crate) phantom_event_ty: PhantomData<fn() -> (State, Action, Event)>,
 }
 
