@@ -66,9 +66,9 @@ where
 /// For example, a flight finder app might have a `Date` field for the currently selected date.
 ///
 /// The parameters of this view are:
+/// - `component`: The child component the lens is being created for.
 /// - `state`: The current outer view's state
 /// - `map`: A function from the higher-level state type to `component`'s state type
-/// - `component`: The child component the lens is being created for.
 ///
 /// This is a wrapper around [`map_state`].
 /// That view can be used if the child doesn't follow the expected component signature.
