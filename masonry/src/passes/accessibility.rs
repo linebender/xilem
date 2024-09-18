@@ -70,9 +70,6 @@ fn build_accessibility_tree(
         |widget, mut state| {
             // TODO - We don't skip updating stashed items because doing so
             // is error-prone. We may want to revisit that decision.
-            if state.item.is_stashed {
-                return;
-            }
             build_accessibility_tree(
                 global_state,
                 tree_update,
