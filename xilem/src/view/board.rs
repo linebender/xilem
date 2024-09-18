@@ -3,10 +3,7 @@
 
 use std::marker::PhantomData;
 
-use masonry::{
-    widget::{self, KurboShape, WidgetMut},
-    Widget,
-};
+use masonry::widget::{self, SvgElement, WidgetMut};
 use xilem_core::{
     AppendVec, DynMessage, ElementSplice, MessageResult, Mut, SuperElement, View, ViewElement,
     ViewId, ViewMarker, ViewPathTracker, ViewSequence,
@@ -51,11 +48,8 @@ where
         let mut elements = AppendVec::default();
         let mut widget = widget::Board::new();
         let seq_state = self.sequence.seq_build(ctx, &mut elements);
-        for child in elements.into_inner() {
-            widget = match child {
-                BoardElement::View(pod, params) => widget.with_child_pod(pod.inner, params),
-                BoardElement::Graphics(pod) => widget.with_shape_pod(pod.inner),
-            }
+        for BoardElement { element } in elements.into_inner() {
+            widget = widget.with_child_pod(element.inner);
         }
         (Pod::new(widget), seq_state)
     }
@@ -98,10 +92,8 @@ where
     }
 }
 
-#[expect(clippy::large_enum_variant)]
-pub enum BoardElement {
-    View(Pod<Box<dyn Widget>>, BoardParams),
-    Graphics(Pod<KurboShape>),
+pub struct BoardElement {
+    element: Pod<Box<dyn SvgElement>>,
 }
 
 impl ViewElement for BoardElement {
@@ -151,29 +143,15 @@ impl<'w> BoardSplice<'w> {
 }
 
 impl ElementSplice<BoardElement> for BoardSplice<'_> {
-    fn insert(&mut self, element: BoardElement) {
-        match element {
-            BoardElement::View(pod, params) => {
-                self.element.insert_child_pod(self.idx, pod.inner, params);
-            }
-            BoardElement::Graphics(pod) => {
-                self.element.insert_shape_pod(self.idx, pod.inner);
-            }
-        }
+    fn insert(&mut self, BoardElement { element }: BoardElement) {
+        self.element.insert_child(self.idx, element.inner);
         self.idx += 1;
     }
 
     fn with_scratch<R>(&mut self, f: impl FnOnce(&mut AppendVec<BoardElement>) -> R) -> R {
         let ret = f(&mut self.scratch);
-        for element in self.scratch.drain() {
-            match element {
-                BoardElement::View(pod, params) => {
-                    self.element.insert_child_pod(self.idx, pod.inner, params);
-                }
-                BoardElement::Graphics(pod) => {
-                    self.element.insert_shape_pod(self.idx, pod.inner);
-                }
-            }
+        for BoardElement { element } in self.scratch.drain() {
+            self.element.insert_child(self.idx, element.inner);
             self.idx += 1;
         }
         ret
@@ -283,7 +261,9 @@ where
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let (pod, state) = self.view.build(ctx);
         (
-            BoardElement::View(pod.inner.boxed().into(), self.params),
+            BoardElement {
+                element: pod.inner.positioned(self.params).into(),
+            },
             state,
         )
     }
@@ -296,14 +276,22 @@ where
         mut element: Mut<'el, Self::Element>,
     ) -> Mut<'el, Self::Element> {
         {
-            if self.params != prev.params {
-                element
-                    .parent
-                    .update_child_board_params(element.idx, self.params);
-            }
+            // if self.params != prev.params {
+            //     element
+            //         .parent
+            //         .update_child_board_params(element.idx, self.params);
+            // }
             let mut child = element.parent.child_mut(element.idx);
             self.view
-                .rebuild(&prev.view, view_state, ctx, child.downcast());
+                .rebuild(&prev.view, view_state, ctx, child.downcast_positioned());
+            if self.params.origin != prev.params.origin {
+                child.widget.set_origin(self.params.origin);
+                child.ctx.request_layout();
+            }
+            if self.params.size != prev.params.size {
+                child.widget.set_size(self.params.size);
+                child.ctx.request_layout();
+            }
         }
         element
     }
@@ -315,7 +303,8 @@ where
         mut element: Mut<'_, Self::Element>,
     ) {
         let mut child = element.parent.child_mut(element.idx);
-        self.view.teardown(view_state, ctx, child.downcast());
+        self.view
+            .teardown(view_state, ctx, child.downcast_positioned());
     }
 
     fn message(
@@ -380,7 +369,12 @@ where
             AnyBoardChild::Graphics(shape_item) => {
                 let (element, state) =
                     ctx.with_id(ViewId::new(generation), |ctx| shape_item.build(ctx));
-                (BoardElement::Graphics(element), state)
+                (
+                    BoardElement {
+                        element: element.inner.svg_boxed().into(),
+                    },
+                    state,
+                )
             }
         };
         (
@@ -431,7 +425,9 @@ where
                     new_shape.build(ctx)
                 });
                 view_state.inner = child_state;
-                element.parent.insert_shape_pod(element.idx, child.inner);
+                element
+                    .parent
+                    .insert_child(element.idx, child.inner.svg_boxed());
                 element
             }
             (AnyBoardChild::Graphics(prev_shape), AnyBoardChild::View(new_view)) => {
@@ -449,12 +445,9 @@ where
                         new_view.build(ctx)
                     });
                 view_state.inner = child_state;
-                let BoardElement::View(pod, params) = view_element else {
-                    unreachable!()
-                };
                 element
                     .parent
-                    .insert_child_pod(element.idx, pod.inner, params);
+                    .insert_child(element.idx, view_element.element.inner);
                 element
             }
         }

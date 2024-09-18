@@ -29,8 +29,8 @@ pub struct Board {
 /// Parameters for an item in a [`Board`] container.
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct BoardParams {
-    origin: Point,
-    size: Size,
+    pub origin: Point,
+    pub size: Size,
 }
 
 pub struct KurboShape {
@@ -62,6 +62,9 @@ pub enum ConcreteShape {
 pub trait SvgElement: Widget {
     fn origin(&self) -> Point; // relative to parents transform
     fn size(&self) -> Size;
+
+    fn set_origin(&mut self, origin: Point); // relative to parents transform
+    fn set_size(&mut self, size: Size);
 }
 
 impl SvgElement for KurboShape {
@@ -72,6 +75,14 @@ impl SvgElement for KurboShape {
     fn size(&self) -> Size {
         self.shape.bounding_box().size()
     }
+
+    fn set_origin(&mut self, _: Point) {
+        panic!("a shape doens not support setting its origin after creation")
+    }
+
+    fn set_size(&mut self, _: Size) {
+        panic!("a shape doens not support setting its size after creation")
+    }
 }
 
 impl SvgElement for Box<dyn SvgElement> {
@@ -81,6 +92,14 @@ impl SvgElement for Box<dyn SvgElement> {
 
     fn size(&self) -> Size {
         self.deref().size()
+    }
+
+    fn set_origin(&mut self, origin: Point) {
+        self.deref_mut().set_origin(origin);
+    }
+
+    fn set_size(&mut self, size: Size) {
+        self.deref_mut().set_size(size);
     }
 }
 
@@ -162,6 +181,62 @@ impl Widget for Box<dyn SvgElement> {
     }
 }
 
+impl<'a> WidgetMut<'a, Box<dyn SvgElement>> {
+    /// Attempt to downcast to `WidgetMut` of concrete Widget type.
+    pub fn try_downcast<W2: Widget>(&mut self) -> Option<WidgetMut<'_, W2>> {
+        Some(WidgetMut {
+            ctx: self.ctx.reborrow_mut(),
+            widget: self.widget.as_mut_any().downcast_mut()?,
+        })
+    }
+
+    /// Downcasts to `WidgetMut` of concrete Widget type.
+    ///
+    /// ## Panics
+    ///
+    /// Panics if the downcast fails, with an error message that shows the
+    /// discrepancy between the expected and actual types.
+    pub fn downcast_positioned<W2: Widget>(&mut self) -> WidgetMut<'_, W2> {
+        let w1_name = self.widget.type_name();
+        match self.widget.as_mut_any().downcast_mut() {
+            Some(PositionedElement { inner: widget, .. }) => WidgetMut {
+                ctx: self.ctx.reborrow_mut(),
+                widget,
+            },
+            None => {
+                panic!(
+                    "failed to downcast widget: expected widget of type `{}`, found `{}`",
+                    std::any::type_name::<W2>(),
+                    w1_name,
+                );
+            }
+        }
+    }
+
+    /// Downcasts to `WidgetMut` of concrete Widget type.
+    ///
+    /// ## Panics
+    ///
+    /// Panics if the downcast fails, with an error message that shows the
+    /// discrepancy between the expected and actual types.
+    pub fn downcast<W2: Widget>(&mut self) -> WidgetMut<'_, W2> {
+        let w1_name = self.widget.type_name();
+        match self.widget.as_mut_any().downcast_mut() {
+            Some(widget) => WidgetMut {
+                ctx: self.ctx.reborrow_mut(),
+                widget,
+            },
+            None => {
+                panic!(
+                    "failed to downcast widget: expected widget of type `{}`, found `{}`",
+                    std::any::type_name::<W2>(),
+                    w1_name,
+                );
+            }
+        }
+    }
+}
+
 pub struct PositionedElement<W> {
     inner: W,
     params: BoardParams,
@@ -176,6 +251,26 @@ impl<W> PositionedElement<W> {
     }
 }
 
+impl<W: Widget> WidgetPod<W> {
+    pub fn positioned(self, params: impl Into<BoardParams>) -> WidgetPod<Box<dyn SvgElement>> {
+        let id = self.id();
+        WidgetPod::new_with_id(
+            Box::new(PositionedElement {
+                inner: self.inner().unwrap(),
+                params: params.into(),
+            }),
+            id,
+        )
+    }
+}
+
+impl WidgetPod<KurboShape> {
+    pub fn svg_boxed(self) -> WidgetPod<Box<dyn SvgElement>> {
+        let id = self.id();
+        WidgetPod::new_with_id(Box::new(self.inner().unwrap()), id)
+    }
+}
+
 impl<W: Widget> SvgElement for PositionedElement<W> {
     fn origin(&self) -> Point {
         self.params.origin
@@ -183,6 +278,14 @@ impl<W: Widget> SvgElement for PositionedElement<W> {
 
     fn size(&self) -> Size {
         self.params.size
+    }
+
+    fn set_origin(&mut self, origin: Point) {
+        self.params.origin = origin;
+    }
+
+    fn set_size(&mut self, size: Size) {
+        self.params.size = size;
     }
 }
 
@@ -427,12 +530,13 @@ impl Widget for Board {
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
         bc.debug_check("Board");
 
-        for widget in &mut self.children {
-            ctx.run_layout(
-                widget,
-                &BoxConstraints::tight(widget.as_ref().unwrap().size()),
-            );
-            ctx.place_child(widget, widget.as_ref().unwrap().origin());
+        for child in &mut self.children {
+            let (size, origin) = {
+                let child_ref = ctx.get_raw_ref(child);
+                (child_ref.widget().size(), child_ref.widget().origin())
+            };
+            ctx.run_layout(child, &BoxConstraints::tight(size));
+            ctx.place_child(child, origin);
         }
 
         bc.max()
@@ -523,11 +627,6 @@ impl From<Rect> for BoardParams {
             size: rect.size(),
         }
     }
-}
-
-struct Child {
-    widget: WidgetPod<Box<dyn Widget>>,
-    params: BoardParams,
 }
 
 macro_rules! for_all_variants {
