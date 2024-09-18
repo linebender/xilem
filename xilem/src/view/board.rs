@@ -5,8 +5,8 @@ use std::marker::PhantomData;
 
 use masonry::widget::{self, KurboShape, SvgElement, WidgetMut};
 use xilem_core::{
-    AnyElement, AppendVec, DynMessage, ElementSplice, MessageResult, Mut, SuperElement, View,
-    ViewElement, ViewMarker, ViewSequence,
+    AnyElement, AnyView, AppendVec, DynMessage, ElementSplice, MessageResult, Mut, SuperElement,
+    View, ViewElement, ViewMarker, ViewSequence,
 };
 
 use crate::{Pod, ViewCtx, WidgetView};
@@ -16,7 +16,7 @@ pub use masonry::widget::BoardParams;
 mod kurbo_shape;
 mod style_modifier;
 
-pub use kurbo_shape::{AnyBoardView, GraphicsView};
+pub use kurbo_shape::GraphicsView;
 pub use style_modifier::{fill, stroke, transform, Fill, GraphicsExt, Stroke, Transform};
 
 pub fn board<State, Action, Seq: BoardSequence<State, Action>>(
@@ -92,8 +92,32 @@ where
     }
 }
 
+pub type AnyBoardView<State, Action = ()> =
+    dyn AnyView<State, Action, ViewCtx, BoardElement> + Send + Sync;
+
 pub struct BoardElement {
     element: Pod<Box<dyn SvgElement>>,
+}
+
+pub struct BoardElementMut<'w> {
+    parent: WidgetMut<'w, widget::Board>,
+    idx: usize,
+}
+
+struct BoardSplice<'w> {
+    idx: usize,
+    element: WidgetMut<'w, widget::Board>,
+    scratch: AppendVec<BoardElement>,
+}
+
+impl<'w> BoardSplice<'w> {
+    fn new(element: WidgetMut<'w, widget::Board>) -> Self {
+        Self {
+            idx: 0,
+            element,
+            scratch: AppendVec::default(),
+        }
+    }
 }
 
 impl ViewElement for BoardElement {
@@ -153,27 +177,6 @@ impl AnyElement<Pod<KurboShape>> for BoardElement {
         this.parent.remove_child(this.idx);
         this.parent.insert_child(this.idx, child.inner.svg_boxed());
         this
-    }
-}
-
-pub struct BoardElementMut<'w> {
-    parent: WidgetMut<'w, widget::Board>,
-    idx: usize,
-}
-
-struct BoardSplice<'w> {
-    idx: usize,
-    element: WidgetMut<'w, widget::Board>,
-    scratch: AppendVec<BoardElement>,
-}
-
-impl<'w> BoardSplice<'w> {
-    fn new(element: WidgetMut<'w, widget::Board>) -> Self {
-        Self {
-            idx: 0,
-            element,
-            scratch: AppendVec::default(),
-        }
     }
 }
 
@@ -282,6 +285,18 @@ where
     }
 }
 
+impl<State, Action, V> PositionedView<V, State, Action>
+where
+    State: 'static,
+    Action: 'static,
+    V: WidgetView<State, Action>,
+{
+    /// Turns this [`BoardItem`] into an [`AnyBoardChild`]
+    pub fn into_any_board(self) -> Box<AnyBoardView<State, Action>> {
+        self.into()
+    }
+}
+
 impl<V, State, Action> ViewMarker for PositionedView<V, State, Action> {}
 impl<State, Action, V> View<State, Action, ViewCtx> for PositionedView<V, State, Action>
 where
@@ -350,17 +365,5 @@ where
         app_state: &mut State,
     ) -> MessageResult<Action> {
         self.view.message(view_state, id_path, message, app_state)
-    }
-}
-
-impl<State, Action, V> PositionedView<V, State, Action>
-where
-    State: 'static,
-    Action: 'static,
-    V: WidgetView<State, Action>,
-{
-    /// Turns this [`BoardItem`] into an [`AnyBoardChild`]
-    pub fn into_any_board(self) -> Box<AnyBoardView<State, Action>> {
-        self.into()
     }
 }

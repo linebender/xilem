@@ -180,17 +180,10 @@ where
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let (mut element, state) = self.child.build(ctx);
-        element.inner.as_mut().unwrap().set_fill_mode(self.mode);
-        element
-            .inner
-            .as_mut()
-            .unwrap()
-            .set_fill_brush(self.brush.clone());
-        element
-            .inner
-            .as_mut()
-            .unwrap()
-            .set_fill_brush_transform(self.brush_transform);
+        let element_mut = element.inner.as_mut().unwrap();
+        element_mut.set_fill_mode(self.mode);
+        element_mut.set_fill_brush(self.brush.clone());
+        element_mut.set_fill_brush_transform(self.brush_transform);
         (element, state)
     }
 
@@ -251,21 +244,10 @@ where
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let (mut element, state) = self.child.build(ctx);
-        element
-            .inner
-            .as_mut()
-            .unwrap()
-            .set_stroke_style(self.style.clone());
-        element
-            .inner
-            .as_mut()
-            .unwrap()
-            .set_stroke_brush(self.brush.clone());
-        element
-            .inner
-            .as_mut()
-            .unwrap()
-            .set_stroke_brush_transform(self.brush_transform);
+        let element_mut = element.inner.as_mut().unwrap();
+        element_mut.set_stroke_style(self.style.clone());
+        element_mut.set_stroke_brush(self.brush.clone());
+        element_mut.set_stroke_brush_transform(self.brush_transform);
         (element, state)
     }
 
