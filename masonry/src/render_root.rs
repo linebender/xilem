@@ -390,6 +390,7 @@ impl RenderRoot {
 
         let handled = root_on_pointer_event(self, &mut dummy_state, &event);
         run_update_pointer_pass(self, &mut dummy_state);
+        run_update_focus_pass(self, &mut dummy_state);
 
         self.post_event_processing(&mut dummy_state);
         self.get_root_widget().debug_validate(false);
@@ -425,6 +426,7 @@ impl RenderRoot {
         };
 
         root_on_access_event(self, &mut dummy_state, &event);
+        run_update_focus_pass(self, &mut dummy_state);
 
         self.post_event_processing(&mut dummy_state);
         self.get_root_widget().debug_validate(false);
