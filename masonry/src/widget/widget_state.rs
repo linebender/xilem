@@ -133,6 +133,9 @@ pub struct WidgetState {
     /// Descendants of the focused widget are not in the focused path.
     pub(crate) has_focus: bool,
 
+    /// Whether this specific widget is in the focus chain.
+    pub(crate) in_focus_chain: bool,
+
     // TODO - document
     pub(crate) is_stashed: bool,
 
@@ -179,6 +182,7 @@ impl WidgetState {
             request_accessibility: true,
             needs_accessibility: true,
             has_focus: false,
+            in_focus_chain: false,
             request_anim: true,
             needs_anim: true,
             needs_update_disabled: true,

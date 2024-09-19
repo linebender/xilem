@@ -46,6 +46,7 @@ fn build_accessibility_tree(
             rebuild_all,
             scale_factor,
         };
+        set_common_properties(&mut ctx);
         widget.item.accessibility(&mut ctx);
 
         let id: NodeId = ctx.widget_state.id.into();
@@ -96,20 +97,28 @@ fn build_access_node(widget: &dyn Widget, state: &WidgetState, scale_factor: f64
             .collect::<Vec<NodeId>>(),
     );
 
-    if state.is_hot {
-        node.set_hovered();
-    }
-    if state.is_disabled {
-        node.set_disabled();
-    }
-    if state.is_stashed {
-        node.set_hidden();
-    }
-    if state.clip.is_some() {
-        node.set_clips_children();
-    }
-
     node
+}
+
+fn set_common_properties(ctx: &mut AccessCtx) {
+    if ctx.is_hot() {
+        ctx.current_node().set_hovered();
+    }
+    if ctx.is_disabled() {
+        ctx.current_node().set_disabled();
+    }
+    if ctx.is_stashed() {
+        ctx.current_node().set_hidden();
+    }
+    if ctx.widget_state.clip.is_some() {
+        ctx.current_node().set_clips_children();
+    }
+    if ctx.is_in_focus_chain() && !ctx.is_disabled() {
+        ctx.current_node().add_action(accesskit::Action::Focus);
+    }
+    if ctx.is_focused() {
+        ctx.current_node().add_action(accesskit::Action::Blur);
+    }
 }
 
 fn to_accesskit_rect(r: Rect, scale_factor: f64) -> accesskit::Rect {
