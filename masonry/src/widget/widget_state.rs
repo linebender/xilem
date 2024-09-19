@@ -65,7 +65,7 @@ pub struct WidgetState {
     // TODO - Remove
     pub(crate) is_portal: bool,
 
-    /// Tracks whether widget is elligible for IME events.
+    /// Tracks whether widget is eligible for IME events.
     /// Should be immutable after `WidgetAdded` event.
     pub(crate) is_text_input: bool,
     /// The area of the widget that is being edited by
