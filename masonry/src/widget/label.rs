@@ -204,10 +204,6 @@ impl Widget for Label {
             }
             LifeCycle::BuildFocusChain =>
             {
-                #[cfg(FALSE)]
-                if !self.text_layout.text().links().is_empty() {
-                    tracing::warn!("Links present in text, but not yet integrated");
-                }
             }
             _ => {}
         }

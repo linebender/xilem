@@ -662,7 +662,7 @@ impl<'a> StringCursor<'a> {
     }
 
     /// Move cursor to previous codepoint boundary, if it exists.
-    /// Returns previous codepoint as usize offset.
+    /// Returns previous codepoint as usize offset, or `None` if this cursor was already at the first boundary.
     pub(crate) fn prev(&mut self) -> Option<usize> {
         let current_pos = self.pos();
 

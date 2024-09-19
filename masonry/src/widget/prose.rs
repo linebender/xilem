@@ -223,11 +223,7 @@ impl Widget for Prose {
                 ctx.request_layout();
             }
             LifeCycle::BuildFocusChain => {
-                // TODO: This is *definitely* empty
-                #[cfg(FALSE)]
-                if !self.text_layout.text().links().is_empty() {
-                    tracing::warn!("Links present in text, but not yet integrated");
-                }
+                // When we add links to `Prose`, they will probably need to be handled here.
             }
             _ => {}
         }
