@@ -325,8 +325,7 @@ impl_context_method!(
 
         /// Check is widget is stashed.
         ///
-        /// **Note:** Stashed widgets are a WIP feature
-        // FIXME - take stashed parents into account
+        /// **Note:** Stashed widgets are a WIP feature.
         pub fn is_stashed(&self) -> bool {
             self.widget_state.is_stashed
         }
@@ -573,14 +572,10 @@ impl_context_method!(
         ///
         /// This will *not* trigger a layout pass.
         ///
-        /// **Note:** Stashed widgets are a WIP feature
+        /// **Note:** Stashed widgets are a WIP feature.
         pub fn set_stashed(&mut self, child: &mut WidgetPod<impl Widget>, stashed: bool) {
-            if self.get_child_state_mut(child).is_stashed != stashed {
-                self.widget_state.children_changed = true;
-                self.widget_state.update_focus_chain = true;
-            }
-
-            self.get_child_state_mut(child).is_stashed = stashed;
+            self.get_child_state_mut(child).needs_update_stashed = true;
+            self.get_child_state_mut(child).is_explicitly_stashed = stashed;
         }
     }
 );

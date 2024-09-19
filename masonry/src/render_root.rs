@@ -27,7 +27,7 @@ use crate::passes::paint::root_paint;
 use crate::passes::update::{
     run_update_anim_pass, run_update_disabled_pass, run_update_focus_chain_pass,
     run_update_focus_pass, run_update_new_widgets_pass, run_update_pointer_pass,
-    run_update_scroll_pass,
+    run_update_scroll_pass, run_update_stashed_pass,
 };
 use crate::text::TextBrush;
 use crate::tree_arena::TreeArena;
@@ -505,10 +505,13 @@ impl RenderRoot {
             root_compose(self, widget_state);
         }
 
-        // Update the disabled state if necessary
+        // Update the disabled and stashed state if necessary
         // Always do this before updating the focus-chain
         if self.root_state().needs_update_disabled {
             run_update_disabled_pass(self);
+        }
+        if self.root_state().needs_update_stashed {
+            run_update_stashed_pass(self);
         }
 
         // Update the focus-chain if necessary
@@ -544,6 +547,14 @@ impl RenderRoot {
             tracing::debug!("{:?} added", token);
             self.ime_handlers.push((token, ime_field));
         }
+    }
+
+    pub(crate) fn is_still_interactive(&self, id: WidgetId) -> bool {
+        let Some(state) = self.widget_arena.widget_states.find(id.to_raw()) else {
+            return false;
+        };
+
+        !state.item.is_stashed && !state.item.is_disabled
     }
 
     pub(crate) fn widget_from_focus_chain(&mut self, forward: bool) -> Option<WidgetId> {

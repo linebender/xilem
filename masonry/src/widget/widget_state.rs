@@ -107,8 +107,10 @@ pub struct WidgetState {
     /// An animation must run on this widget or a descendant
     pub(crate) needs_anim: bool,
 
-    /// This widget or a descendant changed its `explicitly_disabled` value
+    /// This widget or a descendant changed its `is_explicitly_disabled` value
     pub(crate) needs_update_disabled: bool,
+    /// This widget or a descendant changed its `is_explicitly_stashed` value
+    pub(crate) needs_update_stashed: bool,
 
     pub(crate) update_focus_chain: bool,
 
@@ -127,6 +129,12 @@ pub struct WidgetState {
     /// This widget or an ancestor has been disabled.
     pub(crate) is_disabled: bool,
 
+    // TODO - Document concept of "stashing".
+    /// This widget has been stashed.
+    pub(crate) is_explicitly_stashed: bool,
+    /// This widget or an ancestor has been stashed.
+    pub(crate) is_stashed: bool,
+
     pub(crate) is_hot: bool,
 
     /// In the focused path, starting from window and ending at the focused widget.
@@ -135,9 +143,6 @@ pub struct WidgetState {
 
     /// Whether this specific widget is in the focus chain.
     pub(crate) in_focus_chain: bool,
-
-    // TODO - document
-    pub(crate) is_stashed: bool,
 
     // --- DEBUG INFO ---
     // Used in event/lifecycle/etc methods that are expected to be called recursively
@@ -169,7 +174,9 @@ impl WidgetState {
             translation: Vec2::ZERO,
             translation_changed: false,
             is_explicitly_disabled: false,
+            is_explicitly_stashed: false,
             is_disabled: false,
+            is_stashed: false,
             baseline_offset: 0.0,
             is_new: true,
             is_hot: false,
@@ -186,12 +193,12 @@ impl WidgetState {
             request_anim: true,
             needs_anim: true,
             needs_update_disabled: true,
+            needs_update_stashed: true,
             focus_chain: Vec::new(),
             children_changed: true,
             cursor: None,
             text_registrations: Vec::new(),
             update_focus_chain: true,
-            is_stashed: false,
             #[cfg(debug_assertions)]
             needs_visit: VisitBool(false.into()),
             #[cfg(debug_assertions)]
@@ -216,6 +223,7 @@ impl WidgetState {
             request_anim: false,
             needs_anim: false,
             needs_update_disabled: false,
+            needs_update_stashed: false,
             children_changed: false,
             update_focus_chain: false,
             ..WidgetState::new(id, "<root>")
