@@ -71,7 +71,7 @@ pub struct ReplaceChild {
 ///
 /// ```
 /// # use masonry::widget::Label;
-/// # use masonry::{LifeCycle, InternalLifeCycle};
+/// # use masonry::{LifeCycle};
 /// use masonry::testing::{Recording, Record, TestWidgetExt};
 /// use masonry::testing::TestHarness;
 /// use assert_matches::assert_matches;
@@ -79,7 +79,7 @@ pub struct ReplaceChild {
 /// let widget = Label::new("Hello").record(&recording);
 ///
 /// TestHarness::create(widget);
-/// assert_matches!(recording.next().unwrap(), Record::L(LifeCycle::Internal(InternalLifeCycle::RouteWidgetAdded)));
+/// assert_matches!(recording.next().unwrap(), Record::RegisterChildren);
 /// assert_matches!(recording.next().unwrap(), Record::L(LifeCycle::WidgetAdded));
 /// ```
 pub struct Recorder<W> {
