@@ -195,6 +195,7 @@ pub(crate) fn root_on_access_event(
         event,
         false,
         |widget, ctx, event| {
+            // TODO - Split into "access_event_focus" pass or something similar.
             if event.target == ctx.widget_id() {
                 match event.action {
                     accesskit::Action::Focus => {
