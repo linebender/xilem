@@ -14,7 +14,7 @@ use crate::action::Action;
 use crate::passes::layout::run_layout_on;
 use crate::render_root::{MutateCallback, RenderRootSignal, RenderRootState};
 use crate::text::TextBrush;
-use crate::text_helpers::{ImeChangeSignal, TextFieldRegistration};
+use crate::text_helpers::ImeChangeSignal;
 use crate::tree_arena::ArenaMutChildren;
 use crate::widget::{WidgetMut, WidgetState};
 use crate::{
@@ -744,10 +744,7 @@ impl LifeCycleCtx<'_> {
 
     /// Register this widget as accepting text input.
     pub fn register_as_text_input(&mut self) {
-        let registration = TextFieldRegistration {
-            widget_id: self.widget_id(),
-        };
-        self.widget_state.text_registrations.push(registration);
+        self.widget_state.is_text_input = true;
     }
 
     // TODO - remove - See issue https://github.com/linebender/xilem/issues/366
@@ -1020,16 +1017,6 @@ impl_context_method!(LayoutCtx<'_>, PaintCtx<'_>, {
         )
     }
 });
-
-impl PaintCtx<'_> {
-    // signal may be useful elsewhere, but is currently only used on PaintCtx
-    /// Submit a [`RenderRootSignal`]
-    ///
-    /// Note: May be removed in future, and replaced with more specific methods.
-    pub fn signal(&mut self, s: RenderRootSignal) {
-        self.global_state.signal_queue.push_back(s);
-    }
-}
 
 impl AccessCtx<'_> {
     pub fn current_node(&mut self) -> &mut NodeBuilder {

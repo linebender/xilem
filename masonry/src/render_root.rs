@@ -72,6 +72,7 @@ pub(crate) struct RenderRootState {
     pub(crate) font_context: FontContext,
     pub(crate) text_layout_context: LayoutContext<TextBrush>,
     pub(crate) mutate_callbacks: Vec<MutateCallback>,
+    pub(crate) is_ime_active: bool,
     pub(crate) scenes: HashMap<WidgetId, Scene>,
 }
 
@@ -151,6 +152,7 @@ impl RenderRoot {
                 },
                 text_layout_context: LayoutContext::new(),
                 mutate_callbacks: Vec::new(),
+                is_ime_active: false,
                 scenes: HashMap::new(),
             },
             widget_arena: WidgetArena {
@@ -542,13 +544,6 @@ impl RenderRoot {
         }
 
         run_mutate_pass(self, widget_state);
-
-        #[cfg(FALSE)]
-        for ime_field in widget_state.text_registrations.drain(..) {
-            let token = self.handle.add_text_field();
-            tracing::debug!("{:?} added", token);
-            self.ime_handlers.push((token, ime_field));
-        }
     }
 
     // Checks whether the given id points to a widget that is "interactive".
@@ -595,6 +590,21 @@ impl RenderRoot {
     // TODO - Store in RenderRootState
     pub(crate) fn focus_chain(&mut self) -> &[WidgetId] {
         &self.root_state().focus_chain
+    }
+}
+
+impl RenderRootSignal {
+    pub(crate) fn ime_moved(area: Rect) -> Self {
+        RenderRootSignal::ImeMoved(
+            LogicalPosition {
+                x: area.origin().x,
+                y: area.origin().y + area.size().height,
+            },
+            LogicalSize {
+                width: area.size().width,
+                height: area.size().height,
+            },
+        )
     }
 }
 

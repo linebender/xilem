@@ -243,6 +243,14 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot, root_state: &mut Widg
         }
     }
 
+    let was_ime_active = root.state.is_ime_active;
+    let is_ime_active = if let Some(id) = next_focused {
+        root.widget_arena.get_state(id).item.is_text_input
+    } else {
+        false
+    };
+    root.state.is_ime_active = is_ime_active;
+
     if prev_focused != next_focused {
         run_single_update_pass(root, prev_focused, |widget, ctx| {
             widget.on_status_change(ctx, &StatusChange::FocusChanged(false));
@@ -251,14 +259,21 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot, root_state: &mut Widg
             widget.on_status_change(ctx, &StatusChange::FocusChanged(true));
         });
 
-        // TODO: discriminate between text focus, and non-text focus.
-        root.state
-            .signal_queue
-            .push_back(if next_focused.is_some() {
-                RenderRootSignal::StartIme
-            } else {
-                RenderRootSignal::EndIme
-            });
+        if prev_focused.is_some() && was_ime_active {
+            root.state.signal_queue.push_back(RenderRootSignal::EndIme);
+        }
+        if next_focused.is_some() && is_ime_active {
+            root.state
+                .signal_queue
+                .push_back(RenderRootSignal::StartIme);
+        }
+
+        if let Some(id) = next_focused {
+            let ime_area = root.widget_arena.get_state(id).item.get_ime_area();
+            root.state
+                .signal_queue
+                .push_back(RenderRootSignal::ime_moved(ime_area));
+        }
     }
 
     root.state.focused_widget = root.state.next_focused_widget;

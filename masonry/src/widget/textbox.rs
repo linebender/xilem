@@ -15,10 +15,9 @@ use vello::{
 };
 use winit::event::Ime;
 
+use crate::text::{TextBrush, TextEditor, TextWithSelection};
 use crate::widget::{LineBreaking, WidgetMut};
 use crate::{
-    dpi::{LogicalPosition, LogicalSize},
-    text::{TextBrush, TextEditor, TextWithSelection},
     AccessCtx, AccessEvent, BoxConstraints, CursorIcon, EventCtx, LayoutCtx, LifeCycle,
     LifeCycleCtx, PaintCtx, PointerEvent, RegisterCtx, StatusChange, TextEvent, Widget, WidgetId,
 };
@@ -326,19 +325,6 @@ impl Widget for Textbox {
             None,
             &outline_rect,
         );
-        let origin = ctx.widget_state.window_origin();
-        if ctx.widget_state.has_focus {
-            ctx.signal(crate::render_root::RenderRootSignal::ImeMoved(
-                LogicalPosition {
-                    x: origin.x,
-                    y: origin.y + size.height,
-                },
-                LogicalSize {
-                    width: size.width,
-                    height: size.height,
-                },
-            ));
-        }
     }
 
     fn get_cursor(&self) -> CursorIcon {
