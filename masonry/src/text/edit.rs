@@ -334,7 +334,7 @@ impl TextEditor {
             active_affinity: Affinity::Downstream,
             h_pos: None,
         });
-        self.text_mut().replace_range(selection.range(), &**c);
+        self.text_mut().replace_range(selection.range(), c);
         self.inner.selection = Some(Selection::caret(
             selection.min() + c.len(),
             // We have just added this character, so we are "affined" with it
