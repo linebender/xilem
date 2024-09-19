@@ -322,6 +322,7 @@ pub(crate) fn run_update_disabled_pass(root: &mut RenderRoot) {
 
 // ----------------
 
+#[allow(clippy::only_used_in_recursion)]
 fn update_stashed_for_widget(
     global_state: &mut RenderRootState,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
