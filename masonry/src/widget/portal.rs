@@ -14,7 +14,8 @@ use vello::Scene;
 use crate::widget::{Axis, ScrollBar, WidgetMut};
 use crate::{
     AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, LayoutCtx, LifeCycle,
-    LifeCycleCtx, PaintCtx, PointerEvent, StatusChange, TextEvent, Widget, WidgetId, WidgetPod,
+    LifeCycleCtx, PaintCtx, PointerEvent, RegisterCtx, StatusChange, TextEvent, Widget, WidgetId,
+    WidgetPod,
 };
 
 // TODO - refactor - see https://github.com/linebender/xilem/issues/366
@@ -330,6 +331,12 @@ impl<W: Widget> Widget for Portal<W> {
 
     fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange) {}
 
+    fn register_children(&mut self, ctx: &mut RegisterCtx) {
+        ctx.register_child(&mut self.child);
+        ctx.register_child(&mut self.scrollbar_horizontal);
+        ctx.register_child(&mut self.scrollbar_vertical);
+    }
+
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
         match event {
             LifeCycle::WidgetAdded => {
@@ -360,10 +367,6 @@ impl<W: Widget> Widget for Portal<W> {
             }
             _ => {}
         }
-
-        self.child.lifecycle(ctx, event);
-        self.scrollbar_horizontal.lifecycle(ctx, event);
-        self.scrollbar_vertical.lifecycle(ctx, event);
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {

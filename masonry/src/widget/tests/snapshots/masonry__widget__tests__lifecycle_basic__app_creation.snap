@@ -4,11 +4,7 @@ assertion_line: 22
 expression: record
 ---
 [
-    L(
-        Internal(
-            RouteWidgetAdded,
-        ),
-    ),
+    RegisterChildren,
     L(
         WidgetAdded,
     ),

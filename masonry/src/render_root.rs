@@ -160,10 +160,10 @@ impl RenderRoot {
             rebuild_access_tree: true,
         };
 
-        // We send WidgetAdded to all widgets right away
-        let mut dummy_state = WidgetState::synthetic(root.root.id(), root.get_kurbo_size());
-        run_update_new_widgets_pass(&mut root, &mut dummy_state);
+        // We run a set of passes to initialize the widget tree
+        run_update_new_widgets_pass(&mut root);
         // TODO - Remove this line
+        let mut dummy_state = WidgetState::synthetic(root.root.id(), root.get_kurbo_size());
         root.post_event_processing(&mut dummy_state);
 
         // We run a layout pass right away to have a SetSize signal ready
@@ -490,7 +490,7 @@ impl RenderRoot {
             // TODO - Update IME handlers
             // Send TextFieldRemoved signal
 
-            run_update_new_widgets_pass(self, widget_state);
+            run_update_new_widgets_pass(self);
         }
 
         if self.state.debug_logger.layout_tree.root.is_none() {

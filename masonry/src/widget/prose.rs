@@ -19,7 +19,7 @@ use crate::{
     text::{TextBrush, TextStorage, TextWithSelection},
     widget::label::LABEL_X_PADDING,
     AccessCtx, AccessEvent, ArcStr, BoxConstraints, CursorIcon, EventCtx, LayoutCtx, LifeCycle,
-    LifeCycleCtx, PaintCtx, PointerEvent, StatusChange, TextEvent, Widget, WidgetId,
+    LifeCycleCtx, PaintCtx, PointerEvent, RegisterCtx, StatusChange, TextEvent, Widget, WidgetId,
 };
 
 /// The prose widget is a widget which displays text which can be
@@ -192,6 +192,8 @@ impl Widget for Prose {
     fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {
         // TODO - Handle accesskit::Action::SetTextSelection
     }
+
+    fn register_children(&mut self, _ctx: &mut RegisterCtx) {}
 
     #[allow(missing_docs)]
     fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange) {

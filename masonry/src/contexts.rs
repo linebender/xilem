@@ -64,6 +64,12 @@ pub struct EventCtx<'a> {
     pub(crate) is_handled: bool,
 }
 
+/// A context provided to the [`Widget::register_children`] method on widgets.
+pub struct RegisterCtx<'a> {
+    pub(crate) widget_state_children: ArenaMutChildren<'a, WidgetState>,
+    pub(crate) widget_children: ArenaMutChildren<'a, Box<dyn Widget>>,
+}
+
 /// A context provided to the [`lifecycle`] method on widgets.
 ///
 /// [`lifecycle`]: Widget::lifecycle
@@ -706,6 +712,24 @@ impl EventCtx<'_> {
                 self.widget_id()
             );
         }
+    }
+}
+
+impl RegisterCtx<'_> {
+    /// Register a child widget.
+    ///
+    /// Container widgets should call this on all their children in
+    /// their implementation of [`Widget::register_children`].
+    pub fn register_child(&mut self, child: &mut WidgetPod<impl Widget>) {
+        let Some(widget) = child.take_inner() else {
+            return;
+        };
+
+        let id = child.id().to_raw();
+        let state = WidgetState::new(child.id(), widget.short_type_name());
+
+        self.widget_children.insert_child(id, Box::new(widget));
+        self.widget_state_children.insert_child(id, state);
     }
 }
 

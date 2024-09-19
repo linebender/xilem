@@ -9,7 +9,7 @@ use tracing::{info_span, trace};
 use crate::passes::{merge_state_up, recurse_on_children};
 use crate::render_root::{RenderRoot, RenderRootSignal, RenderRootState};
 use crate::tree_arena::ArenaMut;
-use crate::{LifeCycle, LifeCycleCtx, StatusChange, Widget, WidgetId, WidgetState};
+use crate::{LifeCycle, LifeCycleCtx, RegisterCtx, StatusChange, Widget, WidgetId, WidgetState};
 
 fn get_id_path(root: &RenderRoot, widget_id: Option<WidgetId>) -> Vec<WidgetId> {
     let Some(widget_id) = widget_id else {
@@ -416,17 +416,14 @@ fn update_new_widgets(
     }
     state.item.children_changed = false;
 
-    // This will recursively call WidgetPod::lifecycle for all children of this widget,
-    // which will add the new widgets to the arena.
     {
-        let mut ctx = LifeCycleCtx {
-            global_state,
-            widget_state: state.item,
+        let mut ctx = RegisterCtx {
             widget_state_children: state.children.reborrow_mut(),
             widget_children: widget.children.reborrow_mut(),
         };
-        let event = LifeCycle::Internal(crate::InternalLifeCycle::RouteWidgetAdded);
-        widget.item.lifecycle(&mut ctx, &event);
+        // The widget will call `RegisterCtx::register_child` on all its children,
+        // which will add the new widgets to the arena.
+        widget.item.register_children(&mut ctx);
     }
 
     if state.item.is_new {
@@ -459,21 +456,15 @@ fn update_new_widgets(
     );
 }
 
-pub(crate) fn run_update_new_widgets_pass(
-    root: &mut RenderRoot,
-    synthetic_root_state: &mut WidgetState,
-) {
+pub(crate) fn run_update_new_widgets_pass(root: &mut RenderRoot) {
     let _span = info_span!("update_new_widgets").entered();
 
     if root.root.incomplete() {
-        let mut ctx = LifeCycleCtx {
-            global_state: &mut root.state,
-            widget_state: synthetic_root_state,
+        let mut ctx = RegisterCtx {
             widget_state_children: root.widget_arena.widget_states.root_token_mut(),
             widget_children: root.widget_arena.widgets.root_token_mut(),
         };
-        let event = LifeCycle::Internal(crate::InternalLifeCycle::RouteWidgetAdded);
-        root.root.lifecycle(&mut ctx, &event);
+        ctx.register_child(&mut root.root);
     }
 
     let (root_widget, mut root_state) = root.widget_arena.get_pair_mut(root.root.id());
@@ -481,6 +472,9 @@ pub(crate) fn run_update_new_widgets_pass(
 }
 
 // ----------------
+
+// TODO https://github.com/linebender/xilem/issues/376 - Some implicit invariants:
+// - A widget only receives BuildFocusChain if none of its parents are hidden.
 
 // TODO - This logic was copy-pasted from WidgetPod code and may need to be refactored.
 // It doesn't quite behave like other update passes (for instance, some code runs after

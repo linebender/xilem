@@ -15,7 +15,8 @@ use vello::Scene;
 use crate::contexts::ComposeCtx;
 use crate::event::{AccessEvent, PointerEvent, StatusChange, TextEvent};
 use crate::{
-    AccessCtx, AsAny, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Size,
+    AccessCtx, AsAny, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
+    RegisterCtx, Size,
 };
 
 /// A unique identifier for a single [`Widget`].
@@ -79,12 +80,20 @@ pub trait Widget: AsAny {
     #[allow(missing_docs)]
     fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange);
 
+    /// Register child widgets with Masonry.
+    ///
+    /// Leaf widgets can implement this with an empty body.
+    ///
+    /// Container widgets need to call [`RegisterCtx::register_child`] for all
+    /// their children. Forgetting to do so is a logic error and may lead to crashes.
+    fn register_children(&mut self, ctx: &mut RegisterCtx);
+
     /// Handle a lifecycle notification.
     ///
     /// This method is called to notify your widget of certain special events,
     /// (available in the [`LifeCycle`] enum) that are generally related to
     /// changes in the widget graph or in the state of your specific widget.
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle);
+    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {}
 
     /// Compute layout.
     ///
@@ -296,6 +305,10 @@ impl Widget for Box<dyn Widget> {
 
     fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {
         self.deref_mut().on_access_event(ctx, event);
+    }
+
+    fn register_children(&mut self, ctx: &mut RegisterCtx) {
+        self.deref_mut().register_children(ctx);
     }
 
     fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange) {
