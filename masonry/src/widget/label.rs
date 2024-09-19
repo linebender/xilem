@@ -202,9 +202,7 @@ impl Widget for Label {
                 // TODO: Parley seems to require a relayout when colours change
                 ctx.request_layout();
             }
-            LifeCycle::BuildFocusChain =>
-            {
-            }
+            LifeCycle::BuildFocusChain => {}
             _ => {}
         }
     }
