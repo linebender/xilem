@@ -390,7 +390,6 @@ impl RenderRoot {
 
         let handled = root_on_pointer_event(self, &mut dummy_state, &event);
         run_update_pointer_pass(self, &mut dummy_state);
-        run_update_focus_pass(self, &mut dummy_state);
 
         self.post_event_processing(&mut dummy_state);
         self.get_root_widget().debug_validate(false);
@@ -403,7 +402,6 @@ impl RenderRoot {
         let mut dummy_state = WidgetState::synthetic(self.root.id(), self.get_kurbo_size());
 
         let handled = root_on_text_event(self, &mut dummy_state, &event);
-        run_update_focus_pass(self, &mut dummy_state);
 
         self.post_event_processing(&mut dummy_state);
         self.get_root_widget().debug_validate(false);
@@ -426,7 +424,6 @@ impl RenderRoot {
         };
 
         root_on_access_event(self, &mut dummy_state, &event);
-        run_update_focus_pass(self, &mut dummy_state);
 
         self.post_event_processing(&mut dummy_state);
         self.get_root_widget().debug_validate(false);
@@ -486,6 +483,8 @@ impl RenderRoot {
 
     // --- MARK: POST-EVENT ---
     fn post_event_processing(&mut self, widget_state: &mut WidgetState) {
+        run_update_focus_pass(self, widget_state);
+
         // If children are changed during the handling of an event,
         // we need to send RouteWidgetAdded now, so that they are ready for update/layout.
         if widget_state.children_changed {
