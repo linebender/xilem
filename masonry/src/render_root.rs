@@ -9,6 +9,7 @@ use parley::{FontContext, LayoutContext};
 use tracing::{info_span, warn};
 use vello::kurbo::{self, Rect};
 use vello::Scene;
+use winit::window::ResizeDirection;
 
 #[cfg(not(target_arch = "wasm32"))]
 use std::time::Instant;
@@ -123,6 +124,12 @@ pub enum RenderRootSignal {
     SetCursor(CursorIcon),
     SetSize(PhysicalSize<u32>),
     SetTitle(String),
+    DragWindow,
+    DragResizeWindow(ResizeDirection),
+    ToggleMaximized,
+    Minimize,
+    Exit,
+    ShowWindowMenu(LogicalPosition<f64>),
 }
 
 impl RenderRoot {
