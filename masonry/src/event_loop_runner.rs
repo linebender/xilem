@@ -646,7 +646,7 @@ impl MasonryState<'_> {
     pub fn handle_memory_warning(&mut self, _: &ActiveEventLoop) {}
 
     // --- MARK: SIGNALS ---
-    fn handle_signals(&mut self, _event_loop: &ActiveEventLoop, app_driver: &mut dyn AppDriver) {
+    fn handle_signals(&mut self, event_loop: &ActiveEventLoop, app_driver: &mut dyn AppDriver) {
         let WindowState::Rendering { window, .. } = &mut self.window else {
             tracing::warn!("Tried to handle a signal whilst suspended or before window created");
             return;
@@ -690,6 +690,26 @@ impl MasonryState<'_> {
                 }
                 render_root::RenderRootSignal::SetTitle(title) => {
                     window.set_title(&title);
+                }
+                render_root::RenderRootSignal::DragWindow => {
+                    // TODO - Handle return value?
+                    let _ = window.drag_window();
+                }
+                render_root::RenderRootSignal::DragResizeWindow(direction) => {
+                    // TODO - Handle return value?
+                    let _ = window.drag_resize_window(direction);
+                }
+                render_root::RenderRootSignal::ToggleMaximized => {
+                    window.set_maximized(!window.is_maximized());
+                }
+                render_root::RenderRootSignal::Minimize => {
+                    window.set_minimized(true);
+                }
+                render_root::RenderRootSignal::Exit => {
+                    event_loop.exit();
+                }
+                render_root::RenderRootSignal::ShowWindowMenu(position) => {
+                    window.show_window_menu(position);
                 }
             }
         }
