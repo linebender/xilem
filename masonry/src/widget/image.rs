@@ -91,10 +91,26 @@ impl Widget for Image {
             trace!("Computed size: {}", size);
             return size;
         }
-        // This size logic has NOT been carefully considered, in particular with regards to self.fill.
-        // TODO: Carefully consider it
-        let size =
-            bc.constrain_aspect_ratio(image_size.height / image_size.width, image_size.width);
+        let image_aspect_ratio = image_size.height / image_size.width;
+        let size = match self.fill {
+            FillStrat::Contain => bc.constrain_aspect_ratio(image_aspect_ratio, image_size.width),
+            FillStrat::Cover => Size::new(bc.max().width, bc.max().width * image_aspect_ratio),
+            FillStrat::Fill => bc.max(),
+            FillStrat::FitHeight => {
+                Size::new(bc.max().height / image_aspect_ratio, bc.max().height)
+            }
+            FillStrat::FitWidth => Size::new(bc.max().width, bc.max().width * image_aspect_ratio),
+            FillStrat::None => image_size,
+            FillStrat::ScaleDown => {
+                let mut size = image_size;
+
+                if !bc.contains(size) {
+                    size = bc.constrain_aspect_ratio(image_aspect_ratio, size.width);
+                }
+
+                size
+            }
+        };
         trace!("Computed size: {}", size);
         size
     }
