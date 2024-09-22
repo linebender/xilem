@@ -31,6 +31,7 @@ mod split;
 mod textbox;
 mod variable_label;
 mod widget_arena;
+mod window_handle;
 
 pub use self::image::Image;
 pub use align::Align;
@@ -53,6 +54,7 @@ pub use widget_mut::WidgetMut;
 pub use widget_pod::WidgetPod;
 pub use widget_ref::WidgetRef;
 pub use widget_state::WidgetState;
+pub use window_handle::WindowHandle;
 
 pub(crate) use widget_arena::WidgetArena;
 
