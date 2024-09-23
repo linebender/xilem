@@ -341,6 +341,12 @@ fn update_stashed_for_widget(
         // TODO - Send update event
         state.item.is_stashed = stashed;
         state.item.update_focus_chain = true;
+        // Note: We don't need request_repaint because stashing doesn't actually change
+        // how widgets are painted, only how the Scenes they create are composed.
+        state.item.needs_paint = true;
+        state.item.needs_accessibility = true;
+        // TODO - Remove once accessibility can be composed, same as above.
+        state.item.request_accessibility = true;
     }
 
     state.item.needs_update_stashed = false;
