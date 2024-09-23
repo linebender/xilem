@@ -594,7 +594,7 @@ impl RenderRoot {
 }
 
 impl RenderRootSignal {
-    pub(crate) fn ime_moved(area: Rect) -> Self {
+    pub(crate) fn new_ime_moved_signal(area: Rect) -> Self {
         RenderRootSignal::ImeMoved(
             LogicalPosition {
                 x: area.origin().x,

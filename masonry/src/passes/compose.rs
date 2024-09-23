@@ -41,7 +41,7 @@ fn compose_widget(
         let ime_area = state.item.get_ime_area();
         global_state
             .signal_queue
-            .push_back(RenderRootSignal::ime_moved(ime_area));
+            .push_back(RenderRootSignal::new_ime_moved_signal(ime_area));
     }
 
     // We need to update the accessibility node's coordinates and repaint it at the new position.
