@@ -131,11 +131,11 @@ pub use action::Action;
 pub use box_constraints::BoxConstraints;
 pub use contexts::{
     AccessCtx, ComposeCtx, EventCtx, IsContext, LayoutCtx, LifeCycleCtx, MutateCtx, PaintCtx,
-    RawWrapper, RawWrapperMut,
+    RawWrapper, RawWrapperMut, RegisterCtx,
 };
 pub use event::{
-    AccessEvent, InternalLifeCycle, LifeCycle, PointerButton, PointerEvent, PointerState,
-    StatusChange, TextEvent, WindowEvent, WindowTheme,
+    AccessEvent, LifeCycle, PointerButton, PointerEvent, PointerState, StatusChange, TextEvent,
+    WindowEvent, WindowTheme,
 };
 pub use kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
 pub use parley::layout::Alignment as TextAlignment;

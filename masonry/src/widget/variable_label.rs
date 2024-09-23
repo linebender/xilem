@@ -19,7 +19,7 @@ use crate::text::{Hinting, TextBrush, TextLayout, TextStorage};
 use crate::widget::WidgetMut;
 use crate::{
     AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx,
-    PaintCtx, PointerEvent, StatusChange, TextEvent, Widget, WidgetId,
+    PaintCtx, PointerEvent, RegisterCtx, StatusChange, TextEvent, Widget, WidgetId,
 };
 
 use super::LineBreaking;
@@ -302,6 +302,8 @@ impl Widget for VariableLabel {
     }
 
     fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {}
+
+    fn register_children(&mut self, _ctx: &mut RegisterCtx) {}
 
     #[allow(missing_docs)]
     fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, event: &StatusChange) {

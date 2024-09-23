@@ -129,6 +129,11 @@ pub(crate) fn root_on_pointer_event(
     handled
 }
 
+// TODO https://github.com/linebender/xilem/issues/376 - Some implicit invariants:
+// - If a Widget gets a keyboard event or an ImeStateChange, then
+// focus is on it, its child or its parent.
+// - If a Widget has focus, then none of its parents is hidden
+
 pub(crate) fn root_on_text_event(
     root: &mut RenderRoot,
     root_state: &mut WidgetState,

@@ -27,6 +27,7 @@ use crate::*;
 pub type PointerEventFn<S> = dyn FnMut(&mut S, &mut EventCtx, &PointerEvent);
 pub type TextEventFn<S> = dyn FnMut(&mut S, &mut EventCtx, &TextEvent);
 pub type AccessEventFn<S> = dyn FnMut(&mut S, &mut EventCtx, &AccessEvent);
+pub type RegisterChildrenFn<S> = dyn FnMut(&mut S, &mut RegisterCtx);
 pub type StatusChangeFn<S> = dyn FnMut(&mut S, &mut LifeCycleCtx, &StatusChange);
 pub type LifeCycleFn<S> = dyn FnMut(&mut S, &mut LifeCycleCtx, &LifeCycle);
 pub type LayoutFn<S> = dyn FnMut(&mut S, &mut LayoutCtx, &BoxConstraints) -> Size;
@@ -47,6 +48,7 @@ pub struct ModularWidget<S> {
     on_pointer_event: Option<Box<PointerEventFn<S>>>,
     on_text_event: Option<Box<TextEventFn<S>>>,
     on_access_event: Option<Box<AccessEventFn<S>>>,
+    register_children: Option<Box<RegisterChildrenFn<S>>>,
     on_status_change: Option<Box<StatusChangeFn<S>>>,
     lifecycle: Option<Box<LifeCycleFn<S>>>,
     layout: Option<Box<LayoutFn<S>>>,
@@ -69,7 +71,7 @@ pub struct ReplaceChild {
 ///
 /// ```
 /// # use masonry::widget::Label;
-/// # use masonry::{LifeCycle, InternalLifeCycle};
+/// # use masonry::{LifeCycle};
 /// use masonry::testing::{Recording, Record, TestWidgetExt};
 /// use masonry::testing::TestHarness;
 /// use assert_matches::assert_matches;
@@ -77,7 +79,7 @@ pub struct ReplaceChild {
 /// let widget = Label::new("Hello").record(&recording);
 ///
 /// TestHarness::create(widget);
-/// assert_matches!(recording.next().unwrap(), Record::L(LifeCycle::Internal(InternalLifeCycle::RouteWidgetAdded)));
+/// assert_matches!(recording.next().unwrap(), Record::RegisterChildren);
 /// assert_matches!(recording.next().unwrap(), Record::L(LifeCycle::WidgetAdded));
 /// ```
 pub struct Recorder<W> {
@@ -97,6 +99,7 @@ pub enum Record {
     PE(PointerEvent),
     TE(TextEvent),
     AE(AccessEvent),
+    RegisterChildren,
     SC(StatusChange),
     L(LifeCycle),
     Layout(Size),
@@ -128,6 +131,7 @@ impl<S> ModularWidget<S> {
             on_pointer_event: None,
             on_text_event: None,
             on_access_event: None,
+            register_children: None,
             on_status_change: None,
             lifecycle: None,
             layout: None,
@@ -160,6 +164,14 @@ impl<S> ModularWidget<S> {
         f: impl FnMut(&mut S, &mut EventCtx, &AccessEvent) + 'static,
     ) -> Self {
         self.on_access_event = Some(Box::new(f));
+        self
+    }
+
+    pub fn register_children_fn(
+        mut self,
+        f: impl FnMut(&mut S, &mut RegisterCtx) + 'static,
+    ) -> Self {
+        self.register_children = Some(Box::new(f));
         self
     }
 
@@ -234,6 +246,12 @@ impl<S: 'static> Widget for ModularWidget<S> {
     fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {
         if let Some(f) = self.on_access_event.as_mut() {
             f(&mut self.state, ctx, event);
+        }
+    }
+
+    fn register_children(&mut self, ctx: &mut RegisterCtx) {
+        if let Some(f) = self.register_children.as_mut() {
+            f(&mut self.state, ctx);
         }
     }
 
@@ -328,9 +346,11 @@ impl Widget for ReplaceChild {
         ctx.request_layout();
     }
 
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
-        self.child.lifecycle(ctx, event);
+    fn register_children(&mut self, ctx: &mut RegisterCtx) {
+        ctx.register_child(&mut self.child);
     }
+
+    fn lifecycle(&mut self, _ctx: &mut LifeCycleCtx, _event: &LifeCycle) {}
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
         ctx.run_layout(&mut self.child, bc)
@@ -396,6 +416,11 @@ impl<W: Widget> Widget for Recorder<W> {
     fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {
         self.recording.push(Record::AE(event.clone()));
         self.child.on_access_event(ctx, event);
+    }
+
+    fn register_children(&mut self, ctx: &mut RegisterCtx) {
+        self.recording.push(Record::RegisterChildren);
+        self.child.register_children(ctx);
     }
 
     fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange) {

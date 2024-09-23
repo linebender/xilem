@@ -14,7 +14,8 @@ use crate::paint_scene_helpers::{fill_color, stroke};
 use crate::widget::WidgetMut;
 use crate::{
     theme, AccessCtx, AccessEvent, AllowRawMut, BoxConstraints, EventCtx, LayoutCtx, LifeCycle,
-    LifeCycleCtx, PaintCtx, Point, PointerEvent, Size, StatusChange, TextEvent, Widget, WidgetId,
+    LifeCycleCtx, PaintCtx, Point, PointerEvent, RegisterCtx, Size, StatusChange, TextEvent,
+    Widget, WidgetId,
 };
 
 // RULES
@@ -175,6 +176,8 @@ impl Widget for ScrollBar {
     fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {
         // TODO - Handle scroll-related events?
     }
+
+    fn register_children(&mut self, _ctx: &mut RegisterCtx) {}
 
     fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange) {}
 

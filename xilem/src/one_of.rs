@@ -5,8 +5,8 @@
 
 use accesskit::Role;
 use masonry::{
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
-    Point, PointerEvent, Size, StatusChange, TextEvent, Widget, WidgetId, WidgetPod,
+    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycleCtx, PaintCtx, Point,
+    PointerEvent, RegisterCtx, Size, StatusChange, TextEvent, Widget, WidgetId, WidgetPod,
 };
 use smallvec::{smallvec, SmallVec};
 use vello::Scene;
@@ -225,17 +225,17 @@ impl<
         // Intentionally do nothing
     }
 
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
+    fn register_children(&mut self, ctx: &mut RegisterCtx) {
         match self {
-            OneOfWidget::A(w) => w.lifecycle(ctx, event),
-            OneOfWidget::B(w) => w.lifecycle(ctx, event),
-            OneOfWidget::C(w) => w.lifecycle(ctx, event),
-            OneOfWidget::D(w) => w.lifecycle(ctx, event),
-            OneOfWidget::E(w) => w.lifecycle(ctx, event),
-            OneOfWidget::F(w) => w.lifecycle(ctx, event),
-            OneOfWidget::G(w) => w.lifecycle(ctx, event),
-            OneOfWidget::H(w) => w.lifecycle(ctx, event),
-            OneOfWidget::I(w) => w.lifecycle(ctx, event),
+            OneOfWidget::A(w) => ctx.register_child(w),
+            OneOfWidget::B(w) => ctx.register_child(w),
+            OneOfWidget::C(w) => ctx.register_child(w),
+            OneOfWidget::D(w) => ctx.register_child(w),
+            OneOfWidget::E(w) => ctx.register_child(w),
+            OneOfWidget::F(w) => ctx.register_child(w),
+            OneOfWidget::G(w) => ctx.register_child(w),
+            OneOfWidget::H(w) => ctx.register_child(w),
+            OneOfWidget::I(w) => ctx.register_child(w),
         }
     }
 

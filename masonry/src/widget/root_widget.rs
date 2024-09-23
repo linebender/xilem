@@ -9,8 +9,8 @@ use vello::Scene;
 
 use crate::widget::{WidgetMut, WidgetPod};
 use crate::{
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
-    PointerEvent, Size, StatusChange, TextEvent, Widget, WidgetId,
+    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycleCtx, PaintCtx,
+    PointerEvent, RegisterCtx, Size, StatusChange, TextEvent, Widget, WidgetId,
 };
 
 // TODO: This is a hack to provide an accessibility node with a Window type.
@@ -46,8 +46,8 @@ impl<W: Widget> Widget for RootWidget<W> {
 
     fn on_status_change(&mut self, _: &mut LifeCycleCtx, _: &StatusChange) {}
 
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
-        self.pod.lifecycle(ctx, event);
+    fn register_children(&mut self, ctx: &mut RegisterCtx) {
+        ctx.register_child(&mut self.pod);
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {

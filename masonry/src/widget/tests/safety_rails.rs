@@ -5,12 +5,14 @@ use smallvec::smallvec;
 
 use crate::testing::{ModularWidget, TestHarness};
 use crate::widget::Flex;
-use crate::{InternalLifeCycle, LifeCycle, Point, Size, Widget, WidgetPod};
+use crate::{LifeCycle, Point, Size, Widget, WidgetPod};
 
 fn make_parent_widget<W: Widget>(child: W) -> ModularWidget<WidgetPod<W>> {
     let child = WidgetPod::new(child);
     ModularWidget::new(child)
-        .lifecycle_fn(move |child, ctx, event| child.lifecycle(ctx, event))
+        .register_children_fn(move |child, ctx| {
+            ctx.register_child(child);
+        })
         .layout_fn(move |child, ctx, bc| {
             let size = ctx.run_layout(child, bc);
             ctx.place_child(child, Point::ZERO);
@@ -149,48 +151,6 @@ fn allow_non_recurse_oob_paint() {
     harness.render();
 }
 
-#[test]
-fn allow_non_recurse_cursor_stashed() {
-    let widget = make_parent_widget(Flex::row())
-        .lifecycle_fn(|child, ctx, event| {
-            child.lifecycle(ctx, event);
-            if matches!(
-                event,
-                LifeCycle::Internal(InternalLifeCycle::RouteWidgetAdded)
-            ) {
-                ctx.set_stashed(child, true);
-            }
-        })
-        .pointer_event_fn(|_child, _ctx, _event| {
-            // We skip calling child.on_pointer_event();
-        })
-        .layout_fn(|_child, _ctx, _bc| Size::ZERO);
-
-    let mut harness = TestHarness::create(widget);
-    harness.mouse_move(Point::new(5000.0, 5000.0));
-}
-
-#[test]
-fn allow_non_recurse_stashed_paint() {
-    let widget = make_parent_widget(Flex::row())
-        .lifecycle_fn(|child, ctx, event| {
-            child.lifecycle(ctx, event);
-            if matches!(
-                event,
-                LifeCycle::Internal(InternalLifeCycle::RouteWidgetAdded)
-            ) {
-                ctx.set_stashed(child, true);
-            }
-        })
-        .layout_fn(|_child, _ctx, _bc| Size::ZERO)
-        .paint_fn(|_child, _ctx, _scene| {
-            // We skip calling child.paint();
-        });
-
-    let mut harness = TestHarness::create_with_size(widget, Size::new(400.0, 400.0));
-    harness.render();
-}
-
 // ---
 
 #[cfg(FALSE)]
@@ -303,11 +263,7 @@ fn check_recurse_paint_twice() {
 fn check_layout_stashed() {
     let widget = make_parent_widget(Flex::row())
         .lifecycle_fn(|child, ctx, event| {
-            child.lifecycle(ctx, event);
-            if matches!(
-                event,
-                LifeCycle::Internal(InternalLifeCycle::RouteWidgetAdded)
-            ) {
+            if matches!(event, LifeCycle::WidgetAdded) {
                 ctx.set_stashed(child, true);
             }
         })

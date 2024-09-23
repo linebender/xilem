@@ -301,25 +301,6 @@ pub enum LifeCycle {
     /// Called when a child widgets uses
     /// [`EventCtx::request_pan_to_this`](crate::EventCtx::request_pan_to_this).
     RequestPanToChild(Rect),
-
-    /// Internal Masonry lifecycle event.
-    ///
-    /// This should always be passed down to descendant [`WidgetPod`]s.
-    ///
-    /// [`WidgetPod`]: crate::WidgetPod
-    Internal(InternalLifeCycle),
-}
-
-/// Internal lifecycle events used by Masonry inside [`WidgetPod`].
-///
-/// These events are translated into regular [`LifeCycle`] events
-/// and should not be used directly.
-///
-/// [`WidgetPod`]: crate::WidgetPod
-#[derive(Debug, Clone)]
-pub enum InternalLifeCycle {
-    /// Used to route the `WidgetAdded` event to the required widgets.
-    RouteWidgetAdded,
 }
 
 /// Event indicating status changes within the widget hierarchy.
@@ -498,7 +479,6 @@ impl LifeCycle {
     /// [`Event::should_propagate_to_hidden`]: Event::should_propagate_to_hidden
     pub fn should_propagate_to_hidden(&self) -> bool {
         match self {
-            LifeCycle::Internal(internal) => internal.should_propagate_to_hidden(),
             LifeCycle::WidgetAdded => true,
             LifeCycle::AnimFrame(_) => true,
             LifeCycle::DisabledChanged(_) => true,
@@ -512,30 +492,11 @@ impl LifeCycle {
     /// Essentially returns the enum variant name.
     pub fn short_name(&self) -> &str {
         match self {
-            LifeCycle::Internal(internal) => match internal {
-                InternalLifeCycle::RouteWidgetAdded => "RouteWidgetAdded",
-            },
             LifeCycle::WidgetAdded => "WidgetAdded",
             LifeCycle::AnimFrame(_) => "AnimFrame",
             LifeCycle::DisabledChanged(_) => "DisabledChanged",
             LifeCycle::BuildFocusChain => "BuildFocusChain",
             LifeCycle::RequestPanToChild(_) => "RequestPanToChild",
-        }
-    }
-}
-
-impl InternalLifeCycle {
-    /// Whether this event should be sent to widgets which are currently not visible and not
-    /// accessible.
-    ///
-    /// If a widget changes which children are `hidden` it must call [`children_changed`].
-    /// For a more detailed explanation of the `hidden` state, see [`Event::should_propagate_to_hidden`].
-    ///
-    /// [`children_changed`]: crate::EventCtx::children_changed
-    /// [`Event::should_propagate_to_hidden`]: Event::should_propagate_to_hidden
-    pub fn should_propagate_to_hidden(&self) -> bool {
-        match self {
-            InternalLifeCycle::RouteWidgetAdded => true,
         }
     }
 }

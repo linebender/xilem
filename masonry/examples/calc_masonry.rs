@@ -12,8 +12,8 @@ use masonry::app_driver::{AppDriver, DriverCtx};
 use masonry::dpi::LogicalSize;
 use masonry::widget::{Align, CrossAxisAlignment, Flex, Label, RootWidget, SizedBox};
 use masonry::{
-    AccessCtx, AccessEvent, Action, BoxConstraints, Color, EventCtx, LayoutCtx, LifeCycle,
-    LifeCycleCtx, PaintCtx, Point, PointerEvent, Size, StatusChange, TextEvent, Widget, WidgetId,
+    AccessCtx, AccessEvent, Action, BoxConstraints, Color, EventCtx, LayoutCtx, LifeCycleCtx,
+    PaintCtx, Point, PointerEvent, RegisterCtx, Size, StatusChange, TextEvent, Widget, WidgetId,
     WidgetPod,
 };
 use smallvec::{smallvec, SmallVec};
@@ -211,8 +211,8 @@ impl Widget for CalcButton {
         }
     }
 
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
-        self.inner.lifecycle(ctx, event);
+    fn register_children(&mut self, ctx: &mut RegisterCtx) {
+        ctx.register_child(&mut self.inner);
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {

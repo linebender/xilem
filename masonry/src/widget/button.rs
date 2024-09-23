@@ -13,8 +13,9 @@ use crate::event::PointerButton;
 use crate::paint_scene_helpers::{fill_lin_gradient, stroke, UnitPoint};
 use crate::text::TextStorage;
 use crate::widget::{Label, WidgetMut, WidgetPod};
+
 use crate::{
-    theme, AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, Insets, LayoutCtx, LifeCycle,
+    theme, AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, Insets, LayoutCtx,
     LifeCycleCtx, PaintCtx, PointerEvent, Size, StatusChange, TextEvent, Widget, WidgetId,
 };
 
@@ -115,8 +116,8 @@ impl Widget for Button {
         ctx.request_paint();
     }
 
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
-        self.label.lifecycle(ctx, event);
+    fn register_children(&mut self, ctx: &mut crate::RegisterCtx) {
+        ctx.register_child(&mut self.label);
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {

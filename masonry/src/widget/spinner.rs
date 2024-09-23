@@ -14,8 +14,8 @@ use vello::Scene;
 use crate::widget::WidgetMut;
 use crate::{
     theme, AccessCtx, AccessEvent, BoxConstraints, Color, EventCtx, LayoutCtx, LifeCycle,
-    LifeCycleCtx, PaintCtx, Point, PointerEvent, Size, StatusChange, TextEvent, Vec2, Widget,
-    WidgetId,
+    LifeCycleCtx, PaintCtx, Point, PointerEvent, RegisterCtx, Size, StatusChange, TextEvent, Vec2,
+    Widget, WidgetId,
 };
 
 // TODO - Set color
@@ -84,6 +84,8 @@ impl Widget for Spinner {
     fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
 
     fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {}
+
+    fn register_children(&mut self, _ctx: &mut RegisterCtx) {}
 
     fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange) {}
 
