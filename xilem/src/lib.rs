@@ -224,12 +224,12 @@ where
 /// }
 /// ```
 pub trait WidgetViewSequence<State, Action = ()>:
-    ViewSequence<State, Action, ViewCtx, Pod<any_view::DynWidget>>
+    ViewSequence<State, Action, ViewCtx, Pod<Box<dyn Widget>>>
 {
 }
 
 impl<Seq, State, Action> WidgetViewSequence<State, Action> for Seq where
-    Seq: ViewSequence<State, Action, ViewCtx, Pod<any_view::DynWidget>>
+    Seq: ViewSequence<State, Action, ViewCtx, Pod<Box<dyn Widget>>>
 {
 }
 

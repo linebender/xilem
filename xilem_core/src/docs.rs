@@ -35,7 +35,7 @@
 //! # struct InterestingPrimitive;
 //! ```
 
-use crate::{run_once, View, ViewPathTracker};
+use crate::{run_once, NoElement, View, ViewPathTracker, ViewSequence};
 
 /// A type used for documentation
 pub enum Fake {}
@@ -62,11 +62,35 @@ impl ViewPathTracker for Fake {
 pub trait DocsView<State, Action = ()>: View<State, Action, Fake> {}
 impl<V, State, Action> DocsView<State, Action> for V where V: View<State, Action, Fake> {}
 
+/// A version of [`ViewSequence`] used for documentation.
+///
+/// This will often be imported by a different name in a hidden use item.
+///
+/// In most cases, that name will be `WidgetViewSequence`, as Xilem Core's documentation is
+/// primarily targeted at users of [Xilem](https://crates.io/crates/xilem/).
+pub trait DocsViewSequence<State, Action = ()>:
+    ViewSequence<State, Action, Fake, NoElement>
+{
+}
+
+impl<Seq, State, Action> DocsViewSequence<State, Action> for Seq where
+    Seq: ViewSequence<State, Action, Fake, NoElement>
+{
+}
+
 /// A state type usable in a component
 pub struct State;
 
 /// A minimal component.
-pub fn some_component<Action>(_: &mut State) -> impl DocsView<State, Action> {
+pub fn some_component<Action>(_: &mut State) -> impl DocsView<State, Action, Element = NoElement> {
+    // The view which does nothing already exists in `run_once`.
+    run_once(|| {})
+}
+
+/// A minimal component with generic State.
+pub fn some_component_generic<State, Action>(
+    _: &mut State,
+) -> impl DocsView<State, Action, Element = NoElement> {
     // The view which does nothing already exists in `run_once`.
     run_once(|| {})
 }

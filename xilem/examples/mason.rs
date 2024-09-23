@@ -7,6 +7,7 @@
 use std::time::Duration;
 
 use xilem::{
+    core::{fork, run_once, without_elements},
     tokio::time,
     view::{
         button, button_any_pointer, checkbox, flex, label, prose, task, textbox, Axis,
@@ -115,18 +116,18 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> {
 
 fn toggleable(data: &mut AppData) -> impl WidgetView<AppData> {
     if data.active {
-        fork(
-            flex((
-                button("Deactivate", |data: &mut AppData| {
-                    data.active = false;
-                }),
-                button("Unlimited Power", |data: &mut AppData| {
-                    data.count = -1_000_000;
-                }),
-            ))
-            .direction(Axis::Horizontal),
-            run_once(|| tracing::warn!("The pathway to unlimited power has been revealed")),
-        )
+        flex((
+            button("Deactivate", |data: &mut AppData| {
+                data.active = false;
+            }),
+            button("Unlimited Power", |data: &mut AppData| {
+                data.count = -1_000_000;
+            }),
+            without_elements(run_once(|| {
+                tracing::warn!("The pathway to unlimited power has been revealed");
+            })),
+        ))
+        .direction(Axis::Horizontal)
         .boxed()
     } else {
         button("Activate", |data: &mut AppData| data.active = true).boxed()
@@ -165,7 +166,6 @@ fn main() {
 
 #[cfg(target_os = "android")]
 use winit::platform::android::activity::AndroidApp;
-use xilem_core::{fork, run_once};
 
 #[cfg(target_os = "android")]
 // Safety: We are following `android_activity`'s docs here

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::{
-    AppendVec, ElementSplice, Mut, NoElement, View, ViewId, ViewMarker, ViewPathTracker,
+    sequence::NoElements, AppendVec, Mut, NoElement, View, ViewId, ViewMarker, ViewPathTracker,
     ViewSequence,
 };
 
@@ -103,30 +103,5 @@ where
                 .seq_message(alongside_state, id_path, message, app_state),
             _ => unreachable!(),
         }
-    }
-}
-
-/// A stub `ElementSplice` implementation for `NoElement`.
-///
-/// It is technically possible for someone to create an implementation of `ViewSequence`
-/// which uses a `NoElement` `ElementSplice`. But we don't think that sequence could be meaningful.
-struct NoElements;
-
-impl ElementSplice<NoElement> for NoElements {
-    fn with_scratch<R>(&mut self, f: impl FnOnce(&mut AppendVec<NoElement>) -> R) -> R {
-        let mut append_vec = AppendVec::default();
-        f(&mut append_vec)
-    }
-
-    fn insert(&mut self, _: NoElement) {}
-
-    fn mutate<R>(&mut self, f: impl FnOnce(<NoElement as crate::ViewElement>::Mut<'_>) -> R) -> R {
-        f(())
-    }
-
-    fn skip(&mut self, _: usize) {}
-
-    fn delete<R>(&mut self, f: impl FnOnce(<NoElement as crate::ViewElement>::Mut<'_>) -> R) -> R {
-        f(())
     }
 }
