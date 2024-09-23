@@ -94,6 +94,29 @@ pub enum MainAxisAlignment {
     SpaceAround,
 }
 
+struct Spacing {
+    alignment: MainAxisAlignment,
+    extra: f64,
+    n_children: usize,
+    index: usize,
+    equal_space: f64,
+    remainder: f64,
+}
+
+enum Child {
+    Fixed {
+        widget: WidgetPod<Box<dyn Widget>>,
+        alignment: Option<CrossAxisAlignment>,
+    },
+    Flex {
+        widget: WidgetPod<Box<dyn Widget>>,
+        alignment: Option<CrossAxisAlignment>,
+        flex: f64,
+    },
+    FixedSpacer(f64, f64),
+    FlexedSpacer(f64, f64),
+}
+
 // --- MARK: IMPL FLEX ---
 impl Flex {
     /// Create a new Flex oriented along the provided axis.
@@ -591,6 +614,254 @@ impl<'a> WidgetMut<'a, Flex> {
     }
 }
 
+// --- MARK: OTHER IMPLS---
+impl Axis {
+    /// Get the axis perpendicular to this one.
+    pub fn cross(self) -> Axis {
+        match self {
+            Axis::Horizontal => Axis::Vertical,
+            Axis::Vertical => Axis::Horizontal,
+        }
+    }
+
+    /// Extract from the argument the magnitude along this axis
+    pub fn major(self, size: Size) -> f64 {
+        match self {
+            Axis::Horizontal => size.width,
+            Axis::Vertical => size.height,
+        }
+    }
+
+    /// Extract from the argument the magnitude along the perpendicular axis
+    pub fn minor(self, size: Size) -> f64 {
+        self.cross().major(size)
+    }
+
+    /// Extract the extent of the argument in this axis as a pair.
+    pub fn major_span(self, rect: Rect) -> (f64, f64) {
+        match self {
+            Axis::Horizontal => (rect.x0, rect.x1),
+            Axis::Vertical => (rect.y0, rect.y1),
+        }
+    }
+
+    /// Extract the extent of the argument in the minor axis as a pair.
+    pub fn minor_span(self, rect: Rect) -> (f64, f64) {
+        self.cross().major_span(rect)
+    }
+
+    /// Extract the coordinate locating the argument with respect to this axis.
+    pub fn major_pos(self, pos: Point) -> f64 {
+        match self {
+            Axis::Horizontal => pos.x,
+            Axis::Vertical => pos.y,
+        }
+    }
+
+    /// Extract the coordinate locating the argument with respect to this axis.
+    pub fn major_vec(self, vec: Vec2) -> f64 {
+        match self {
+            Axis::Horizontal => vec.x,
+            Axis::Vertical => vec.y,
+        }
+    }
+
+    /// Extract the coordinate locating the argument with respect to the perpendicular axis.
+    pub fn minor_pos(self, pos: Point) -> f64 {
+        self.cross().major_pos(pos)
+    }
+
+    /// Extract the coordinate locating the argument with respect to the perpendicular axis.
+    pub fn minor_vec(self, vec: Vec2) -> f64 {
+        self.cross().major_vec(vec)
+    }
+
+    // TODO - make_pos, make_size, make_rect
+    /// Arrange the major and minor measurements with respect to this axis such that it forms
+    /// an (x, y) pair.
+    pub fn pack(self, major: f64, minor: f64) -> (f64, f64) {
+        match self {
+            Axis::Horizontal => (major, minor),
+            Axis::Vertical => (minor, major),
+        }
+    }
+
+    /// Generate constraints with new values on the major axis.
+    pub(crate) fn constraints(
+        self,
+        bc: &BoxConstraints,
+        min_major: f64,
+        major: f64,
+    ) -> BoxConstraints {
+        match self {
+            Axis::Horizontal => BoxConstraints::new(
+                Size::new(min_major, bc.min().height),
+                Size::new(major, bc.max().height),
+            ),
+            Axis::Vertical => BoxConstraints::new(
+                Size::new(bc.min().width, min_major),
+                Size::new(bc.max().width, major),
+            ),
+        }
+    }
+}
+
+impl FlexParams {
+    /// Create custom `FlexParams` with a specific `flex_factor` and an optional
+    /// [`CrossAxisAlignment`].
+    ///
+    /// You likely only need to create these manually if you need to specify
+    /// a custom alignment; if you only need to use a custom `flex_factor` you
+    /// can pass an `f64` to any of the functions that take `FlexParams`.
+    ///
+    /// By default, the widget uses the alignment of its parent [`Flex`] container.
+    pub fn new(
+        flex: impl Into<Option<f64>>,
+        alignment: impl Into<Option<CrossAxisAlignment>>,
+    ) -> Self {
+        let flex = match flex.into() {
+            Some(flex) if flex <= 0.0 => {
+                debug_panic!("Flex value should be > 0.0. Flex given was: {}", flex);
+                Some(0.0)
+            }
+            other => other,
+        };
+
+        FlexParams {
+            flex,
+            alignment: alignment.into(),
+        }
+    }
+}
+
+impl CrossAxisAlignment {
+    /// Given the difference between the size of the container and the size
+    /// of the child (on their minor axis) return the necessary offset for
+    /// this alignment.
+    fn align(self, val: f64) -> f64 {
+        match self {
+            CrossAxisAlignment::Start => 0.0,
+            // in vertical layout, baseline is equivalent to center
+            CrossAxisAlignment::Center | CrossAxisAlignment::Baseline => (val / 2.0).round(),
+            CrossAxisAlignment::End => val,
+            CrossAxisAlignment::Fill => 0.0,
+        }
+    }
+}
+
+impl Spacing {
+    /// Given the provided extra space and children count,
+    /// this returns an iterator of `f64` spacing,
+    /// where the first element is the spacing before any children
+    /// and all subsequent elements are the spacing after children.
+    fn new(alignment: MainAxisAlignment, extra: f64, n_children: usize) -> Spacing {
+        let extra = if extra.is_finite() { extra } else { 0. };
+        let equal_space = if n_children > 0 {
+            match alignment {
+                MainAxisAlignment::Center => extra / 2.,
+                MainAxisAlignment::SpaceBetween => extra / (n_children - 1).max(1) as f64,
+                MainAxisAlignment::SpaceEvenly => extra / (n_children + 1) as f64,
+                MainAxisAlignment::SpaceAround => extra / (2 * n_children) as f64,
+                _ => 0.,
+            }
+        } else {
+            0.
+        };
+        Spacing {
+            alignment,
+            extra,
+            n_children,
+            index: 0,
+            equal_space,
+            remainder: 0.,
+        }
+    }
+
+    fn next_space(&mut self) -> f64 {
+        let desired_space = self.equal_space + self.remainder;
+        let actual_space = desired_space.round();
+        self.remainder = desired_space - actual_space;
+        actual_space
+    }
+}
+
+impl Iterator for Spacing {
+    type Item = f64;
+
+    fn next(&mut self) -> Option<f64> {
+        if self.index > self.n_children {
+            return None;
+        }
+        let result = {
+            if self.n_children == 0 {
+                self.extra
+            } else {
+                #[allow(clippy::match_bool)]
+                match self.alignment {
+                    MainAxisAlignment::Start => match self.index == self.n_children {
+                        true => self.extra,
+                        false => 0.,
+                    },
+                    MainAxisAlignment::End => match self.index == 0 {
+                        true => self.extra,
+                        false => 0.,
+                    },
+                    MainAxisAlignment::Center => match self.index {
+                        0 => self.next_space(),
+                        i if i == self.n_children => self.next_space(),
+                        _ => 0.,
+                    },
+                    MainAxisAlignment::SpaceBetween => match self.index {
+                        0 => 0.,
+                        i if i != self.n_children => self.next_space(),
+                        _ => match self.n_children {
+                            1 => self.next_space(),
+                            _ => 0.,
+                        },
+                    },
+                    MainAxisAlignment::SpaceEvenly => self.next_space(),
+                    MainAxisAlignment::SpaceAround => {
+                        if self.index == 0 || self.index == self.n_children {
+                            self.next_space()
+                        } else {
+                            self.next_space() + self.next_space()
+                        }
+                    }
+                }
+            }
+        };
+        self.index += 1;
+        Some(result)
+    }
+}
+
+impl From<f64> for FlexParams {
+    fn from(flex: f64) -> FlexParams {
+        FlexParams::new(flex, None)
+    }
+}
+
+impl From<CrossAxisAlignment> for FlexParams {
+    fn from(alignment: CrossAxisAlignment) -> FlexParams {
+        FlexParams::new(None, alignment)
+    }
+}
+
+impl Child {
+    fn widget_mut(&mut self) -> Option<&mut WidgetPod<Box<dyn Widget>>> {
+        match self {
+            Child::Fixed { widget, .. } | Child::Flex { widget, .. } => Some(widget),
+            _ => None,
+        }
+    }
+    fn widget(&self) -> Option<&WidgetPod<Box<dyn Widget>>> {
+        match self {
+            Child::Fixed { widget, .. } | Child::Flex { widget, .. } => Some(widget),
+            _ => None,
+        }
+    }
+}
+
 /// The size in logical pixels of the default spacer for an axis.
 fn axis_default_spacer(axis: Axis) -> f64 {
     match axis {
@@ -924,277 +1195,6 @@ impl Widget for Flex {
 
     fn make_trace_span(&self) -> Span {
         trace_span!("Flex")
-    }
-}
-
-// --- MARK: OTHER IMPLS---
-impl Axis {
-    /// Get the axis perpendicular to this one.
-    pub fn cross(self) -> Axis {
-        match self {
-            Axis::Horizontal => Axis::Vertical,
-            Axis::Vertical => Axis::Horizontal,
-        }
-    }
-
-    /// Extract from the argument the magnitude along this axis
-    pub fn major(self, size: Size) -> f64 {
-        match self {
-            Axis::Horizontal => size.width,
-            Axis::Vertical => size.height,
-        }
-    }
-
-    /// Extract from the argument the magnitude along the perpendicular axis
-    pub fn minor(self, size: Size) -> f64 {
-        self.cross().major(size)
-    }
-
-    /// Extract the extent of the argument in this axis as a pair.
-    pub fn major_span(self, rect: Rect) -> (f64, f64) {
-        match self {
-            Axis::Horizontal => (rect.x0, rect.x1),
-            Axis::Vertical => (rect.y0, rect.y1),
-        }
-    }
-
-    /// Extract the extent of the argument in the minor axis as a pair.
-    pub fn minor_span(self, rect: Rect) -> (f64, f64) {
-        self.cross().major_span(rect)
-    }
-
-    /// Extract the coordinate locating the argument with respect to this axis.
-    pub fn major_pos(self, pos: Point) -> f64 {
-        match self {
-            Axis::Horizontal => pos.x,
-            Axis::Vertical => pos.y,
-        }
-    }
-
-    /// Extract the coordinate locating the argument with respect to this axis.
-    pub fn major_vec(self, vec: Vec2) -> f64 {
-        match self {
-            Axis::Horizontal => vec.x,
-            Axis::Vertical => vec.y,
-        }
-    }
-
-    /// Extract the coordinate locating the argument with respect to the perpendicular axis.
-    pub fn minor_pos(self, pos: Point) -> f64 {
-        self.cross().major_pos(pos)
-    }
-
-    /// Extract the coordinate locating the argument with respect to the perpendicular axis.
-    pub fn minor_vec(self, vec: Vec2) -> f64 {
-        self.cross().major_vec(vec)
-    }
-
-    // TODO - make_pos, make_size, make_rect
-    /// Arrange the major and minor measurements with respect to this axis such that it forms
-    /// an (x, y) pair.
-    pub fn pack(self, major: f64, minor: f64) -> (f64, f64) {
-        match self {
-            Axis::Horizontal => (major, minor),
-            Axis::Vertical => (minor, major),
-        }
-    }
-
-    /// Generate constraints with new values on the major axis.
-    pub(crate) fn constraints(
-        self,
-        bc: &BoxConstraints,
-        min_major: f64,
-        major: f64,
-    ) -> BoxConstraints {
-        match self {
-            Axis::Horizontal => BoxConstraints::new(
-                Size::new(min_major, bc.min().height),
-                Size::new(major, bc.max().height),
-            ),
-            Axis::Vertical => BoxConstraints::new(
-                Size::new(bc.min().width, min_major),
-                Size::new(bc.max().width, major),
-            ),
-        }
-    }
-}
-
-impl FlexParams {
-    /// Create custom `FlexParams` with a specific `flex_factor` and an optional
-    /// [`CrossAxisAlignment`].
-    ///
-    /// You likely only need to create these manually if you need to specify
-    /// a custom alignment; if you only need to use a custom `flex_factor` you
-    /// can pass an `f64` to any of the functions that take `FlexParams`.
-    ///
-    /// By default, the widget uses the alignment of its parent [`Flex`] container.
-    pub fn new(
-        flex: impl Into<Option<f64>>,
-        alignment: impl Into<Option<CrossAxisAlignment>>,
-    ) -> Self {
-        let flex = match flex.into() {
-            Some(flex) if flex <= 0.0 => {
-                debug_panic!("Flex value should be > 0.0. Flex given was: {}", flex);
-                Some(0.0)
-            }
-            other => other,
-        };
-
-        FlexParams {
-            flex,
-            alignment: alignment.into(),
-        }
-    }
-}
-
-impl CrossAxisAlignment {
-    /// Given the difference between the size of the container and the size
-    /// of the child (on their minor axis) return the necessary offset for
-    /// this alignment.
-    fn align(self, val: f64) -> f64 {
-        match self {
-            CrossAxisAlignment::Start => 0.0,
-            // in vertical layout, baseline is equivalent to center
-            CrossAxisAlignment::Center | CrossAxisAlignment::Baseline => (val / 2.0).round(),
-            CrossAxisAlignment::End => val,
-            CrossAxisAlignment::Fill => 0.0,
-        }
-    }
-}
-
-struct Spacing {
-    alignment: MainAxisAlignment,
-    extra: f64,
-    n_children: usize,
-    index: usize,
-    equal_space: f64,
-    remainder: f64,
-}
-
-impl Spacing {
-    /// Given the provided extra space and children count,
-    /// this returns an iterator of `f64` spacing,
-    /// where the first element is the spacing before any children
-    /// and all subsequent elements are the spacing after children.
-    fn new(alignment: MainAxisAlignment, extra: f64, n_children: usize) -> Spacing {
-        let extra = if extra.is_finite() { extra } else { 0. };
-        let equal_space = if n_children > 0 {
-            match alignment {
-                MainAxisAlignment::Center => extra / 2.,
-                MainAxisAlignment::SpaceBetween => extra / (n_children - 1).max(1) as f64,
-                MainAxisAlignment::SpaceEvenly => extra / (n_children + 1) as f64,
-                MainAxisAlignment::SpaceAround => extra / (2 * n_children) as f64,
-                _ => 0.,
-            }
-        } else {
-            0.
-        };
-        Spacing {
-            alignment,
-            extra,
-            n_children,
-            index: 0,
-            equal_space,
-            remainder: 0.,
-        }
-    }
-
-    fn next_space(&mut self) -> f64 {
-        let desired_space = self.equal_space + self.remainder;
-        let actual_space = desired_space.round();
-        self.remainder = desired_space - actual_space;
-        actual_space
-    }
-}
-
-impl Iterator for Spacing {
-    type Item = f64;
-
-    fn next(&mut self) -> Option<f64> {
-        if self.index > self.n_children {
-            return None;
-        }
-        let result = {
-            if self.n_children == 0 {
-                self.extra
-            } else {
-                #[allow(clippy::match_bool)]
-                match self.alignment {
-                    MainAxisAlignment::Start => match self.index == self.n_children {
-                        true => self.extra,
-                        false => 0.,
-                    },
-                    MainAxisAlignment::End => match self.index == 0 {
-                        true => self.extra,
-                        false => 0.,
-                    },
-                    MainAxisAlignment::Center => match self.index {
-                        0 => self.next_space(),
-                        i if i == self.n_children => self.next_space(),
-                        _ => 0.,
-                    },
-                    MainAxisAlignment::SpaceBetween => match self.index {
-                        0 => 0.,
-                        i if i != self.n_children => self.next_space(),
-                        _ => match self.n_children {
-                            1 => self.next_space(),
-                            _ => 0.,
-                        },
-                    },
-                    MainAxisAlignment::SpaceEvenly => self.next_space(),
-                    MainAxisAlignment::SpaceAround => {
-                        if self.index == 0 || self.index == self.n_children {
-                            self.next_space()
-                        } else {
-                            self.next_space() + self.next_space()
-                        }
-                    }
-                }
-            }
-        };
-        self.index += 1;
-        Some(result)
-    }
-}
-
-impl From<f64> for FlexParams {
-    fn from(flex: f64) -> FlexParams {
-        FlexParams::new(flex, None)
-    }
-}
-
-impl From<CrossAxisAlignment> for FlexParams {
-    fn from(alignment: CrossAxisAlignment) -> FlexParams {
-        FlexParams::new(None, alignment)
-    }
-}
-
-enum Child {
-    Fixed {
-        widget: WidgetPod<Box<dyn Widget>>,
-        alignment: Option<CrossAxisAlignment>,
-    },
-    Flex {
-        widget: WidgetPod<Box<dyn Widget>>,
-        alignment: Option<CrossAxisAlignment>,
-        flex: f64,
-    },
-    FixedSpacer(f64, f64),
-    FlexedSpacer(f64, f64),
-}
-
-impl Child {
-    fn widget_mut(&mut self) -> Option<&mut WidgetPod<Box<dyn Widget>>> {
-        match self {
-            Child::Fixed { widget, .. } | Child::Flex { widget, .. } => Some(widget),
-            _ => None,
-        }
-    }
-    fn widget(&self) -> Option<&WidgetPod<Box<dyn Widget>>> {
-        match self {
-            Child::Fixed { widget, .. } | Child::Flex { widget, .. } => Some(widget),
-            _ => None,
-        }
     }
 }
 
