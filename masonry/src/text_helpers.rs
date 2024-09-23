@@ -10,21 +10,13 @@ use vello::{
     Scene,
 };
 
-use crate::{text::TextBrush, WidgetId};
+use crate::text::TextBrush;
 
 /// A reference counted string slice.
 ///
 /// This is a data-friendly way to represent strings in Masonry. Unlike `String`
 /// it cannot be mutated, but unlike `String` it can be cheaply cloned.
 pub type ArcStr = std::sync::Arc<str>;
-
-/// A type we use to keep track of which widgets are responsible for which
-/// ime sessions.
-#[derive(Clone, Debug)]
-#[allow(unused)]
-pub(crate) struct TextFieldRegistration {
-    pub widget_id: WidgetId,
-}
 
 // Copy-pasted from druid_shell
 /// An event representing an application-initiated change in [`InputHandler`]

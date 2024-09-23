@@ -6,7 +6,6 @@
 use std::sync::atomic::{AtomicBool, Ordering};
 use vello::kurbo::{Insets, Point, Rect, Size, Vec2};
 
-use crate::text_helpers::TextFieldRegistration;
 use crate::{CursorIcon, WidgetId};
 
 // TODO - Sort out names of widget state flags in two categories:
@@ -63,8 +62,15 @@ pub struct WidgetState {
     /// the baseline. Widgets that contain text or controls that expect to be
     /// laid out alongside text can set this as appropriate.
     pub(crate) baseline_offset: f64,
-    // TODO - Document
+    // TODO - Remove
     pub(crate) is_portal: bool,
+
+    /// Tracks whether widget is eligible for IME events.
+    /// Should be immutable after `WidgetAdded` event.
+    pub(crate) is_text_input: bool,
+    /// The area of the widget that is being edited by
+    /// an IME, in local coordinates.
+    pub(crate) ime_area: Option<Rect>,
 
     // TODO - Use general Shape
     // Currently Kurbo doesn't really provide a type that lets us
@@ -121,8 +127,6 @@ pub struct WidgetState {
     // TODO - Remove and handle in WidgetRoot instead
     pub(crate) cursor: Option<CursorIcon>,
 
-    pub(crate) text_registrations: Vec<TextFieldRegistration>,
-
     // --- STATUS ---
     /// This widget has been disabled.
     pub(crate) is_explicitly_disabled: bool,
@@ -170,6 +174,8 @@ impl WidgetState {
             paint_insets: Insets::ZERO,
             local_paint_rect: Rect::ZERO,
             is_portal: false,
+            is_text_input: false,
+            ime_area: None,
             clip: Default::default(),
             translation: Vec2::ZERO,
             translation_changed: false,
@@ -197,7 +203,6 @@ impl WidgetState {
             focus_chain: Vec::new(),
             children_changed: true,
             cursor: None,
-            text_registrations: Vec::new(),
             update_focus_chain: true,
             #[cfg(debug_assertions)]
             needs_visit: VisitBool(false.into()),
@@ -257,8 +262,6 @@ impl WidgetState {
         self.needs_update_disabled |= child_state.needs_update_disabled;
         self.has_focus |= child_state.has_focus;
         self.children_changed |= child_state.children_changed;
-        self.text_registrations
-            .append(&mut child_state.text_registrations);
         self.update_focus_chain |= child_state.update_focus_chain;
     }
 
@@ -287,6 +290,13 @@ impl WidgetState {
     /// away.
     pub fn window_layout_rect(&self) -> Rect {
         Rect::from_origin_size(self.window_origin(), self.size)
+    }
+
+    /// Returns the area being edited by an IME, in global coordinates.
+    ///
+    /// By default, returns the same as [`Self::window_layout_rect`].
+    pub(crate) fn get_ime_area(&self) -> Rect {
+        self.ime_area.unwrap_or_else(|| self.size.to_rect()) + self.window_origin.to_vec2()
     }
 
     pub(crate) fn window_origin(&self) -> Point {

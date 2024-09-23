@@ -5,7 +5,7 @@ use tracing::info_span;
 use vello::kurbo::Vec2;
 
 use crate::passes::recurse_on_children;
-use crate::render_root::{RenderRoot, RenderRootState};
+use crate::render_root::{RenderRoot, RenderRootSignal, RenderRootState};
 use crate::tree_arena::ArenaMut;
 use crate::{ComposeCtx, Widget, WidgetState};
 
@@ -22,7 +22,7 @@ fn compose_widget(
     let translation = parent_translation + state.item.translation + state.item.origin.to_vec2();
     state.item.window_origin = translation.to_point();
 
-    if !moved && !state.item.translation_changed && !state.item.needs_compose {
+    if !parent_moved && !state.item.translation_changed && !state.item.needs_compose {
         return;
     }
 
@@ -34,6 +34,14 @@ fn compose_widget(
     };
     if ctx.widget_state.request_compose {
         widget.item.compose(&mut ctx);
+    }
+
+    // TODO - Add unit tests for this.
+    if moved {
+        let ime_area = state.item.get_ime_area();
+        global_state
+            .signal_queue
+            .push_back(RenderRootSignal::new_ime_moved_signal(ime_area));
     }
 
     // We need to update the accessibility node's coordinates and repaint it at the new position.
