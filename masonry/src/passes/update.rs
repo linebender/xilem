@@ -243,15 +243,15 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot, root_state: &mut Widg
         }
     }
 
-    let was_ime_active = root.state.is_ime_active;
-    let is_ime_active = if let Some(id) = next_focused {
-        root.widget_arena.get_state(id).item.is_text_input
-    } else {
-        false
-    };
+    if prev_focused != next_focused {
+        let was_ime_active = root.state.is_ime_active;
+        let is_ime_active = if let Some(id) = next_focused {
+            root.widget_arena.get_state(id).item.is_text_input
+        } else {
+            false
+        };
+        root.state.is_ime_active = is_ime_active;
 
-    // (The second check is redundant with the first, but we include it for clarity.)
-    if prev_focused != next_focused || was_ime_active != is_ime_active {
         run_single_update_pass(root, prev_focused, |widget, ctx| {
             widget.on_status_change(ctx, &StatusChange::FocusChanged(false));
         });
@@ -267,7 +267,6 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot, root_state: &mut Widg
                 .signal_queue
                 .push_back(RenderRootSignal::StartIme);
         }
-        root.state.is_ime_active = is_ime_active;
 
         if let Some(id) = next_focused {
             let ime_area = root.widget_arena.get_state(id).item.get_ime_area();
