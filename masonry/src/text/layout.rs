@@ -14,8 +14,6 @@ use vello::kurbo::{Affine, Line, Point, Rect, Size};
 use vello::peniko::{self, Color, Gradient};
 use vello::Scene;
 
-use super::{Link, TextStorage};
-
 /// A component for displaying text on screen.
 ///
 /// This is a type intended to be used by other widgets that display text.
@@ -276,31 +274,31 @@ impl<T> TextLayout<T> {
     // }
 }
 
-impl<T: TextStorage> TextLayout<T> {
+impl<T: AsRef<str> + Eq> TextLayout<T> {
     #[track_caller]
     fn assert_rebuilt(&self, method: &str) {
         if self.needs_layout || self.needs_line_breaks {
             debug_panic!(
                 "TextLayout::{method} called without rebuilding layout object. Text was '{}'",
-                self.text.as_str().chars().take(250).collect::<String>()
+                self.text.as_ref().chars().take(250).collect::<String>()
             );
         }
     }
 
     /// Set the text to display.
     pub fn set_text(&mut self, text: T) {
-        if !self.text.maybe_eq(&text) {
+        if self.text != text {
             self.text = text;
             self.invalidate();
         }
     }
 
-    /// Returns the [`TextStorage`] backing this layout, if it exists.
+    /// Returns the string backing this layout, if it exists.
     pub fn text(&self) -> &T {
         &self.text
     }
 
-    /// Returns the [`TextStorage`] backing this layout, if it exists.
+    /// Returns the string backing this layout, if it exists.
     ///
     /// Invalidates the layout and so should only be used when definitely applying an edit
     pub fn text_mut(&mut self) -> &mut T {
@@ -428,22 +426,6 @@ impl<T: TextStorage> TextLayout<T> {
         Line::new(p1, p2)
     }
 
-    /// Returns the [`Link`] at the provided point (relative to the layout's origin) if one exists.
-    ///
-    /// This can be used both for hit-testing (deciding whether to change the mouse cursor,
-    /// or performing some other action when hovering) as well as for retrieving a [`Link`]
-    /// on click.
-    ///
-    /// [`Link`]: super::attribute::Link
-    pub fn link_for_pos(&self, pos: Point) -> Option<&Link> {
-        let (_, i) = self
-            .links
-            .iter()
-            .rfind(|(hit_box, _)| hit_box.contains(pos))?;
-
-        self.text.links().get(*i)
-    }
-
     /// Rebuild the inner layout as needed.
     ///
     /// This `TextLayout` object manages a lower-level layout object that may
@@ -475,15 +457,16 @@ impl<T: TextStorage> TextLayout<T> {
         if self.needs_layout {
             self.needs_layout = false;
 
-            let mut builder = layout_ctx.ranged_builder(font_ctx, self.text.as_str(), self.scale);
+            let mut builder = layout_ctx.ranged_builder(font_ctx, self.text.as_ref(), self.scale);
             builder.push_default(&StyleProperty::Brush(self.brush.clone()));
             builder.push_default(&StyleProperty::FontSize(self.text_size));
             builder.push_default(&StyleProperty::FontStack(self.font));
             builder.push_default(&StyleProperty::FontWeight(self.weight));
             builder.push_default(&StyleProperty::FontStyle(self.style));
-            // For more advanced features (e.g. variable font axes), these can be set in add_attributes
 
-            let builder = self.text.add_attributes(builder);
+            // Currently, this is used for:
+            // - underlining IME suggestions
+            // - applying a brush to selected text.
             let mut builder = attributes(builder);
             builder.build_into(&mut self.layout);
 
@@ -520,10 +503,10 @@ impl<T: TextStorage> TextLayout<T> {
     }
 }
 
-impl<T: TextStorage> std::fmt::Debug for TextLayout<T> {
+impl<T: AsRef<str> + Eq> std::fmt::Debug for TextLayout<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         f.debug_struct("TextLayout")
-            .field("text", &self.text.as_str().len())
+            .field("text", &self.text.as_ref())
             .field("scale", &self.scale)
             .field("brush", &self.brush)
             .field("font", &self.font)
@@ -540,7 +523,7 @@ impl<T: TextStorage> std::fmt::Debug for TextLayout<T> {
     }
 }
 
-impl<T: TextStorage + Default> Default for TextLayout<T> {
+impl<T: AsRef<str> + Eq + Default> Default for TextLayout<T> {
     fn default() -> Self {
         Self::new(Default::default(), crate::theme::TEXT_SIZE_NORMAL as f32)
     }

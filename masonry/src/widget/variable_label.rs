@@ -15,7 +15,7 @@ use vello::kurbo::{Affine, Point, Size};
 use vello::peniko::BlendMode;
 use vello::Scene;
 
-use crate::text::{Hinting, TextBrush, TextLayout, TextStorage};
+use crate::text::{Hinting, TextBrush, TextLayout};
 use crate::widget::WidgetMut;
 use crate::{
     AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx,
@@ -329,11 +329,6 @@ impl Widget for VariableLabel {
                 // TODO: Parley seems to require a relayout when colours change
                 ctx.request_layout();
             }
-            LifeCycle::BuildFocusChain => {
-                if !self.text_layout.text().links().is_empty() {
-                    tracing::warn!("Links present in text, but not yet integrated");
-                }
-            }
             LifeCycle::AnimFrame(time) => {
                 let millis = (*time as f64 / 1_000_000.) as f32;
                 let result = self.weight.advance(millis);
@@ -412,7 +407,7 @@ impl Widget for VariableLabel {
 
     fn accessibility(&mut self, ctx: &mut AccessCtx) {
         ctx.current_node()
-            .set_name(self.text().as_str().to_string());
+            .set_name(self.text().as_ref().to_string());
     }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
@@ -424,7 +419,7 @@ impl Widget for VariableLabel {
     }
 
     fn get_debug_text(&self) -> Option<String> {
-        Some(self.text_layout.text().as_str().to_string())
+        Some(self.text_layout.text().as_ref().to_string())
     }
 }
 

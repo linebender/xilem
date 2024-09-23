@@ -18,7 +18,7 @@ use winit::keyboard::NamedKey;
 use crate::event::{PointerButton, PointerState};
 use crate::{Handled, TextEvent};
 
-use super::{TextBrush, TextLayout, TextStorage};
+use super::{TextBrush, TextLayout};
 
 pub struct TextWithSelection<T: Selectable> {
     pub layout: TextLayout<T>,
@@ -498,15 +498,7 @@ pub enum Affinity {
 }
 
 /// Text which can have internal selections
-pub trait Selectable: Sized + TextStorage {
-    type Cursor<'a>: EditableTextCursor
-    where
-        Self: 'a;
-
-    /// Create a cursor with a reference to the text and a offset position.
-    ///
-    /// Returns None if the position isn't a codepoint boundary.
-    fn cursor(&self, position: usize) -> Option<Self::Cursor<'_>>;
+pub trait Selectable: Sized + AsRef<str> + Eq {
     /// Get slice of text at range.
     fn slice(&self, range: Range<usize>) -> Option<Cow<str>>;
 
@@ -541,83 +533,32 @@ pub trait Selectable: Sized + TextStorage {
     fn is_empty(&self) -> bool;
 }
 
-/// A cursor with convenience functions for moving through `EditableText`.
-pub trait EditableTextCursor {
-    /// Set cursor position.
-    fn set(&mut self, position: usize);
-
-    /// Get cursor position.
-    fn pos(&self) -> usize;
-
-    /// Check if cursor position is at a codepoint boundary.
-    fn is_boundary(&self) -> bool;
-
-    /// Move cursor to previous codepoint boundary, if it exists.
-    /// Returns previous codepoint as usize offset.
-    fn prev(&mut self) -> Option<usize>;
-
-    /// Move cursor to next codepoint boundary, if it exists.
-    /// Returns current codepoint as usize offset.
-    fn next(&mut self) -> Option<usize>;
-
-    /// Get the next codepoint after the cursor position, without advancing
-    /// the cursor.
-    fn peek_next_codepoint(&self) -> Option<char>;
-
-    /// Return codepoint preceding cursor offset and move cursor backward.
-    fn prev_codepoint(&mut self) -> Option<char>;
-
-    /// Return codepoint at cursor offset and move cursor forward.
-    fn next_codepoint(&mut self) -> Option<char>;
-
-    /// Return current offset if it's a boundary, else next.
-    fn at_or_next(&mut self) -> Option<usize>;
-
-    /// Return current offset if it's a boundary, else previous.
-    fn at_or_prev(&mut self) -> Option<usize>;
-}
-
-impl<Str: Deref<Target = str> + TextStorage> Selectable for Str {
-    type Cursor<'a> = StringCursor<'a> where Self: 'a;
-
-    fn cursor(&self, position: usize) -> Option<StringCursor> {
-        let new_cursor = StringCursor {
-            text: self,
-            position,
-        };
-
-        if new_cursor.is_boundary() {
-            Some(new_cursor)
-        } else {
-            None
-        }
-    }
-
+impl<Str: AsRef<str> + Eq> Selectable for Str {
     fn slice(&self, range: Range<usize>) -> Option<Cow<str>> {
-        self.get(range).map(Cow::from)
+        self.as_ref().get(range).map(Cow::from)
     }
 
     fn len(&self) -> usize {
-        self.deref().len()
+        self.as_ref().len()
     }
 
     fn prev_grapheme_offset(&self, from: usize) -> Option<usize> {
         let mut c = GraphemeCursor::new(from, self.len(), true);
-        c.prev_boundary(self, 0).unwrap()
+        c.prev_boundary(self.as_ref(), 0).unwrap()
     }
 
     fn next_grapheme_offset(&self, from: usize) -> Option<usize> {
         let mut c = GraphemeCursor::new(from, self.len(), true);
-        c.next_boundary(self, 0).unwrap()
+        c.next_boundary(self.as_ref(), 0).unwrap()
     }
 
     fn prev_codepoint_offset(&self, from: usize) -> Option<usize> {
-        let mut c = self.cursor(from).unwrap();
+        let mut c = StringCursor::new(self.as_ref(), from).unwrap();
         c.prev()
     }
 
     fn next_codepoint_offset(&self, from: usize) -> Option<usize> {
-        let mut c = self.cursor(from).unwrap();
+        let mut c = StringCursor::new(self.as_ref(), from).unwrap();
         if c.next().is_some() {
             Some(c.pos())
         } else {
@@ -628,7 +569,7 @@ impl<Str: Deref<Target = str> + TextStorage> Selectable for Str {
     fn prev_word_offset(&self, from: usize) -> Option<usize> {
         let mut offset = from;
         let mut passed_alphanumeric = false;
-        for prev_grapheme in self.get(0..from)?.graphemes(true).rev() {
+        for prev_grapheme in self.as_ref().get(0..from)?.graphemes(true).rev() {
             let is_alphanumeric = prev_grapheme.chars().next()?.is_alphanumeric();
             if is_alphanumeric {
                 passed_alphanumeric = true;
@@ -643,7 +584,7 @@ impl<Str: Deref<Target = str> + TextStorage> Selectable for Str {
     fn next_word_offset(&self, from: usize) -> Option<usize> {
         let mut offset = from;
         let mut passed_alphanumeric = false;
-        for next_grapheme in self.get(from..)?.graphemes(true) {
+        for next_grapheme in self.as_ref().get(from..)?.graphemes(true) {
             let is_alphanumeric = next_grapheme.chars().next()?.is_alphanumeric();
             if is_alphanumeric {
                 passed_alphanumeric = true;
@@ -656,13 +597,13 @@ impl<Str: Deref<Target = str> + TextStorage> Selectable for Str {
     }
 
     fn is_empty(&self) -> bool {
-        self.deref().is_empty()
+        self.as_ref().is_empty()
     }
 
     fn preceding_line_break(&self, from: usize) -> usize {
         let mut offset = from;
 
-        for byte in self.get(0..from).unwrap_or("").bytes().rev() {
+        for byte in self.as_ref().get(0..from).unwrap_or("").bytes().rev() {
             if byte == 0x0a {
                 return offset;
             }
@@ -675,7 +616,7 @@ impl<Str: Deref<Target = str> + TextStorage> Selectable for Str {
     fn next_line_break(&self, from: usize) -> usize {
         let mut offset = from;
 
-        for char in self.get(from..).unwrap_or("").bytes() {
+        for char in self.as_ref().get(from..).unwrap_or("").bytes() {
             if char == 0x0a {
                 return offset;
             }
@@ -686,27 +627,43 @@ impl<Str: Deref<Target = str> + TextStorage> Selectable for Str {
     }
 }
 
-/// A cursor type that implements `EditableTextCursor` for string types
+/// A cursor type with helper methods for moving through strings.
 #[derive(Debug)]
 pub struct StringCursor<'a> {
-    text: &'a str,
-    position: usize,
+    pub(crate) text: &'a str,
+    pub(crate) position: usize,
 }
 
-impl<'a> EditableTextCursor for StringCursor<'a> {
-    fn set(&mut self, position: usize) {
+impl<'a> StringCursor<'a> {
+    pub fn new(text: &'a str, position: usize) -> Option<Self> {
+        let res = Self { text, position };
+        if res.is_boundary() {
+            Some(res)
+        } else {
+            None
+        }
+    }
+}
+
+impl<'a> StringCursor<'a> {
+    /// Set cursor position.
+    pub(crate) fn set(&mut self, position: usize) {
         self.position = position;
     }
 
-    fn pos(&self) -> usize {
+    /// Get cursor position.
+    pub(crate) fn pos(&self) -> usize {
         self.position
     }
 
-    fn is_boundary(&self) -> bool {
+    /// Check if cursor position is at a codepoint boundary.
+    pub(crate) fn is_boundary(&self) -> bool {
         self.text.is_char_boundary(self.position)
     }
 
-    fn prev(&mut self) -> Option<usize> {
+    /// Move cursor to previous codepoint boundary, if it exists.
+    /// Returns previous codepoint as usize offset, or `None` if this cursor was already at the first boundary.
+    pub(crate) fn prev(&mut self) -> Option<usize> {
         let current_pos = self.pos();
 
         if current_pos == 0 {
@@ -721,7 +678,9 @@ impl<'a> EditableTextCursor for StringCursor<'a> {
         }
     }
 
-    fn next(&mut self) -> Option<usize> {
+    /// Move cursor to next codepoint boundary, if it exists.
+    /// Returns current codepoint as usize offset.
+    pub(crate) fn next(&mut self) -> Option<usize> {
         let current_pos = self.pos();
 
         if current_pos == self.text.len() {
@@ -733,40 +692,12 @@ impl<'a> EditableTextCursor for StringCursor<'a> {
         }
     }
 
-    fn peek_next_codepoint(&self) -> Option<char> {
-        self.text[self.pos()..].chars().next()
-    }
-
-    fn prev_codepoint(&mut self) -> Option<char> {
+    /// Return codepoint preceding cursor offset and move cursor backward.
+    pub(crate) fn prev_codepoint(&mut self) -> Option<char> {
         if let Some(prev) = self.prev() {
             self.text[prev..].chars().next()
         } else {
             None
-        }
-    }
-
-    fn next_codepoint(&mut self) -> Option<char> {
-        let current_index = self.pos();
-        if self.next().is_some() {
-            self.text[current_index..].chars().next()
-        } else {
-            None
-        }
-    }
-
-    fn at_or_next(&mut self) -> Option<usize> {
-        if self.is_boundary() {
-            Some(self.pos())
-        } else {
-            self.next()
-        }
-    }
-
-    fn at_or_prev(&mut self) -> Option<usize> {
-        if self.is_boundary() {
-            Some(self.pos())
-        } else {
-            self.prev()
         }
     }
 }
@@ -780,6 +711,7 @@ pub fn len_utf8_from_first_byte(b: u8) -> usize {
     }
 }
 
+// --- MARK: TESTS ---
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -817,35 +749,12 @@ mod tests {
     #[test]
     fn prev_next() {
         let input = String::from("abc");
-        let mut cursor = input.cursor(0).unwrap();
+        let mut cursor = StringCursor::new(&input, 0).unwrap();
         assert_eq!(cursor.next(), Some(0));
         assert_eq!(cursor.next(), Some(1));
         assert_eq!(cursor.prev(), Some(1));
         assert_eq!(cursor.next(), Some(1));
         assert_eq!(cursor.next(), Some(2));
-    }
-
-    #[test]
-    fn peek_next_codepoint() {
-        let inp = String::from("$¢€£💶");
-        let mut cursor = inp.cursor(0).unwrap();
-        assert_eq!(cursor.peek_next_codepoint(), Some('$'));
-        assert_eq!(cursor.peek_next_codepoint(), Some('$'));
-        assert_eq!(cursor.next_codepoint(), Some('$'));
-        assert_eq!(cursor.peek_next_codepoint(), Some('¢'));
-        assert_eq!(cursor.prev_codepoint(), Some('$'));
-        assert_eq!(cursor.peek_next_codepoint(), Some('$'));
-        assert_eq!(cursor.next_codepoint(), Some('$'));
-        assert_eq!(cursor.next_codepoint(), Some('¢'));
-        assert_eq!(cursor.peek_next_codepoint(), Some('€'));
-        assert_eq!(cursor.next_codepoint(), Some('€'));
-        assert_eq!(cursor.peek_next_codepoint(), Some('£'));
-        assert_eq!(cursor.next_codepoint(), Some('£'));
-        assert_eq!(cursor.peek_next_codepoint(), Some('💶'));
-        assert_eq!(cursor.next_codepoint(), Some('💶'));
-        assert_eq!(cursor.peek_next_codepoint(), None);
-        assert_eq!(cursor.next_codepoint(), None);
-        assert_eq!(cursor.peek_next_codepoint(), None);
     }
 
     #[test]

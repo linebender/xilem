@@ -11,7 +11,6 @@ use vello::Scene;
 
 use crate::action::Action;
 use crate::paint_scene_helpers::{fill_lin_gradient, stroke, UnitPoint};
-use crate::text::TextStorage;
 use crate::widget::{Label, WidgetMut};
 
 use crate::{
@@ -192,7 +191,7 @@ impl Widget for Checkbox {
         // This is more of a proof of concept of `get_raw_ref()`.
         if false {
             let label = ctx.get_raw_ref(&self.label);
-            let name = label.widget().text().as_str().to_string();
+            let name = label.widget().text().as_ref().to_string();
             ctx.current_node().set_name(name);
         }
         if self.checked {
