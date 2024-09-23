@@ -520,6 +520,8 @@ impl RenderRoot {
             run_update_focus_chain_pass(self);
         }
 
+        run_update_focus_pass(self, widget_state);
+
         if self.root_state().request_anim {
             self.state
                 .signal_queue
