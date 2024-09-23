@@ -123,7 +123,5 @@ nv-flip = "0.1.2"
 time = "0.3.36"
 
 [patch.crates-io]
-#dpi = { git = "https://github.com/mwcampbell/winit", branch = "android-hover-events-backport" }
-#winit = { git = "https://github.com/mwcampbell/winit", branch = "android-hover-events-backport" }
-dpi = { path = "../winit/dpi" }
-winit = { path = "../winit" }
+dpi = { git = "https://github.com/mwcampbell/winit", branch = "android-combined-patches-backport" }
+winit = { git = "https://github.com/mwcampbell/winit", branch = "android-combined-patches-backport" }
