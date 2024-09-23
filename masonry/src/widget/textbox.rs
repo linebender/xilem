@@ -244,6 +244,9 @@ impl Widget for Textbox {
 
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
         match event {
+            LifeCycle::WidgetAdded => {
+                ctx.register_as_text_input();
+            }
             LifeCycle::DisabledChanged(disabled) => {
                 if self.show_disabled {
                     if *disabled {
