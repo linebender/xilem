@@ -194,7 +194,9 @@ impl<'w> WidgetRef<'w, dyn Widget> {
             }
             // TODO - Use Widget::get_child_at_pos method
             if let Some(child) = innermost_widget.children().into_iter().rev().find(|child| {
-                !child.widget.skip_pointer() && child.state().window_layout_rect().contains(pos)
+                !child.state().is_stashed
+                    && !child.widget.skip_pointer()
+                    && child.state().window_layout_rect().contains(pos)
             }) {
                 innermost_widget = child;
             } else {

@@ -77,6 +77,13 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot, root_state: &mut Wi
     let pointer_pos = root.last_mouse_pos.map(|pos| (pos.x, pos.y).into());
 
     // -- UPDATE HOVERED WIDGETS --
+    // Release pointer capture if target can no longer hold it.
+    if let Some(id) = root.state.pointer_capture_target {
+        if !root.is_still_interactive(id) {
+            // TODO - Send PointerLeave event
+            root.state.pointer_capture_target = None;
+        }
+    }
 
     let mut next_hovered_widget = if let Some(pos) = pointer_pos {
         // TODO - Apply scale?
@@ -175,10 +182,10 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot, root_state: &mut Wi
 // ----------------
 
 pub(crate) fn run_update_focus_pass(root: &mut RenderRoot, root_state: &mut WidgetState) {
-    // If the focused widget ends up disabled or removed, we set
+    // If the focused widget is disabled, stashed or removed, we set
     // the focused id to None
     if let Some(id) = root.state.next_focused_widget {
-        if !root.widget_arena.has(id) || root.widget_arena.get_state_mut(id).item.is_disabled {
+        if !root.is_still_interactive(id) {
             root.state.next_focused_widget = None;
         }
     }
@@ -288,15 +295,10 @@ fn update_disabled_for_widget(
             .item
             .lifecycle(&mut ctx, &LifeCycle::DisabledChanged(disabled));
         state.item.is_disabled = disabled;
+        state.item.update_focus_chain = true;
     }
 
     state.item.needs_update_disabled = false;
-
-    if disabled && global_state.next_focused_widget == Some(id) {
-        // This may get overwritten. That's ok, because either way the
-        // focused widget, if there's one, won't be disabled.
-        global_state.next_focused_widget = None;
-    }
 
     let parent_state = state.item;
     recurse_on_children(
@@ -315,6 +317,61 @@ pub(crate) fn run_update_disabled_pass(root: &mut RenderRoot) {
 
     let (root_widget, root_state) = root.widget_arena.get_pair_mut(root.root.id());
     update_disabled_for_widget(&mut root.state, root_widget, root_state, false);
+}
+
+// ----------------
+
+// TODO - Document the stashed pass.
+// *Stashed* is for widgets that are no longer "part of the graph". So they can't get keyboard events, don't get painted, etc, but should keep some state.
+// The stereotypical use case would be the contents of hidden tabs in a "tab group" widget.
+// Scrolled-out widgets are *not* stashed.
+
+#[allow(clippy::only_used_in_recursion)]
+fn update_stashed_for_widget(
+    global_state: &mut RenderRootState,
+    mut widget: ArenaMut<'_, Box<dyn Widget>>,
+    state: ArenaMut<'_, WidgetState>,
+    parent_stashed: bool,
+) {
+    let _span = widget.item.make_trace_span().entered();
+    let id = state.item.id;
+
+    let stashed = state.item.is_explicitly_stashed || parent_stashed;
+    if !state.item.needs_update_stashed && stashed == state.item.is_stashed {
+        return;
+    }
+
+    if stashed != state.item.is_stashed {
+        // TODO - Send update event
+        state.item.is_stashed = stashed;
+        state.item.update_focus_chain = true;
+        // Note: We don't need request_repaint because stashing doesn't actually change
+        // how widgets are painted, only how the Scenes they create are composed.
+        state.item.needs_paint = true;
+        state.item.needs_accessibility = true;
+        // TODO - Remove once accessibility can be composed, same as above.
+        state.item.request_accessibility = true;
+    }
+
+    state.item.needs_update_stashed = false;
+
+    let parent_state = state.item;
+    recurse_on_children(
+        id,
+        widget.reborrow_mut(),
+        state.children,
+        |widget, mut state| {
+            update_stashed_for_widget(global_state, widget, state.reborrow_mut(), stashed);
+            parent_state.merge_up(state.item);
+        },
+    );
+}
+
+pub(crate) fn run_update_stashed_pass(root: &mut RenderRoot) {
+    let _span = info_span!("update_stashed").entered();
+
+    let (root_widget, root_state) = root.widget_arena.get_pair_mut(root.root.id());
+    update_stashed_for_widget(&mut root.state, root_widget, root_state, false);
 }
 
 // ----------------
