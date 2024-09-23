@@ -549,6 +549,9 @@ impl RenderRoot {
         }
     }
 
+    // Checks whether the given id points to a widget that is "interactive".
+    // i.e. not disabled or stashed.
+    // Only interactive widgets can have text focus or pointer capture.
     pub(crate) fn is_still_interactive(&self, id: WidgetId) -> bool {
         let Some(state) = self.widget_arena.widget_states.find(id.to_raw()) else {
             return false;

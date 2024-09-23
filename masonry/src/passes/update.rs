@@ -77,8 +77,7 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot, root_state: &mut Wi
     let pointer_pos = root.last_mouse_pos.map(|pos| (pos.x, pos.y).into());
 
     // -- UPDATE HOVERED WIDGETS --
-    // If the capture target is disabled, stashed or removed, we set
-    // the capture target id to None.
+    // Release pointer capture if target can no longer hold it.
     if let Some(id) = root.state.pointer_capture_target {
         if !root.is_still_interactive(id) {
             // TODO - Send PointerLeave event
@@ -321,6 +320,11 @@ pub(crate) fn run_update_disabled_pass(root: &mut RenderRoot) {
 }
 
 // ----------------
+
+// TODO - Document the stashed pass.
+// *Stashed* is for widgets that are no longer "part of the graph". So they can't get keyboard events, don't get painted, etc, but should keep some state.
+// The stereotypical use case would be the contents of hidden tabs in a "tab group" widget.
+// Scrolled-out widgets are *not* stashed.
 
 #[allow(clippy::only_used_in_recursion)]
 fn update_stashed_for_widget(
