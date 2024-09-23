@@ -232,11 +232,9 @@ impl Widget for Textbox {
             StatusChange::FocusChanged(false) => {
                 self.editor.focus_lost();
                 ctx.request_layout();
-                // TODO: Stop focusing on any links
             }
             StatusChange::FocusChanged(true) => {
                 self.editor.focus_gained();
-                // TODO: Focus on first link
                 ctx.request_layout();
             }
             _ => {}
@@ -258,11 +256,6 @@ impl Widget for Textbox {
             }
             LifeCycle::BuildFocusChain => {
                 ctx.register_for_focus();
-                // TODO: This will always be empty
-                #[cfg(FALSE)]
-                if !self.editor.text().links().is_empty() {
-                    tracing::warn!("Links present in text, but not yet integrated");
-                }
             }
             _ => {}
         }

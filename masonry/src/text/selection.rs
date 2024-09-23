@@ -533,32 +533,32 @@ pub trait Selectable: Sized + AsRef<str> + Eq {
     fn is_empty(&self) -> bool;
 }
 
-impl<Str: Deref<Target = str> + AsRef<str> + Eq> Selectable for Str {
+impl<Str: AsRef<str> + Eq> Selectable for Str {
     fn slice(&self, range: Range<usize>) -> Option<Cow<str>> {
-        self.get(range).map(Cow::from)
+        self.as_ref().get(range).map(Cow::from)
     }
 
     fn len(&self) -> usize {
-        self.deref().len()
+        self.as_ref().len()
     }
 
     fn prev_grapheme_offset(&self, from: usize) -> Option<usize> {
         let mut c = GraphemeCursor::new(from, self.len(), true);
-        c.prev_boundary(self, 0).unwrap()
+        c.prev_boundary(self.as_ref(), 0).unwrap()
     }
 
     fn next_grapheme_offset(&self, from: usize) -> Option<usize> {
         let mut c = GraphemeCursor::new(from, self.len(), true);
-        c.next_boundary(self, 0).unwrap()
+        c.next_boundary(self.as_ref(), 0).unwrap()
     }
 
     fn prev_codepoint_offset(&self, from: usize) -> Option<usize> {
-        let mut c = StringCursor::new(self, from).unwrap();
+        let mut c = StringCursor::new(self.as_ref(), from).unwrap();
         c.prev()
     }
 
     fn next_codepoint_offset(&self, from: usize) -> Option<usize> {
-        let mut c = StringCursor::new(self, from).unwrap();
+        let mut c = StringCursor::new(self.as_ref(), from).unwrap();
         if c.next().is_some() {
             Some(c.pos())
         } else {
@@ -569,7 +569,7 @@ impl<Str: Deref<Target = str> + AsRef<str> + Eq> Selectable for Str {
     fn prev_word_offset(&self, from: usize) -> Option<usize> {
         let mut offset = from;
         let mut passed_alphanumeric = false;
-        for prev_grapheme in self.get(0..from)?.graphemes(true).rev() {
+        for prev_grapheme in self.as_ref().get(0..from)?.graphemes(true).rev() {
             let is_alphanumeric = prev_grapheme.chars().next()?.is_alphanumeric();
             if is_alphanumeric {
                 passed_alphanumeric = true;
@@ -584,7 +584,7 @@ impl<Str: Deref<Target = str> + AsRef<str> + Eq> Selectable for Str {
     fn next_word_offset(&self, from: usize) -> Option<usize> {
         let mut offset = from;
         let mut passed_alphanumeric = false;
-        for next_grapheme in self.get(from..)?.graphemes(true) {
+        for next_grapheme in self.as_ref().get(from..)?.graphemes(true) {
             let is_alphanumeric = next_grapheme.chars().next()?.is_alphanumeric();
             if is_alphanumeric {
                 passed_alphanumeric = true;
@@ -597,13 +597,13 @@ impl<Str: Deref<Target = str> + AsRef<str> + Eq> Selectable for Str {
     }
 
     fn is_empty(&self) -> bool {
-        self.deref().is_empty()
+        self.as_ref().is_empty()
     }
 
     fn preceding_line_break(&self, from: usize) -> usize {
         let mut offset = from;
 
-        for byte in self.get(0..from).unwrap_or("").bytes().rev() {
+        for byte in self.as_ref().get(0..from).unwrap_or("").bytes().rev() {
             if byte == 0x0a {
                 return offset;
             }
@@ -616,7 +616,7 @@ impl<Str: Deref<Target = str> + AsRef<str> + Eq> Selectable for Str {
     fn next_line_break(&self, from: usize) -> usize {
         let mut offset = from;
 
-        for char in self.get(from..).unwrap_or("").bytes() {
+        for char in self.as_ref().get(from..).unwrap_or("").bytes() {
             if char == 0x0a {
                 return offset;
             }
@@ -627,7 +627,7 @@ impl<Str: Deref<Target = str> + AsRef<str> + Eq> Selectable for Str {
     }
 }
 
-/// A cursor type with helper methods for working with strings.
+/// A cursor type with helper methods for moving through strings.
 #[derive(Debug)]
 pub struct StringCursor<'a> {
     pub(crate) text: &'a str,

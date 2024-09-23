@@ -464,8 +464,9 @@ impl<T: AsRef<str> + Eq> TextLayout<T> {
             builder.push_default(&StyleProperty::FontWeight(self.weight));
             builder.push_default(&StyleProperty::FontStyle(self.style));
 
-            // Currently, this is used for underlining IME suggestions
-            // applying a brush to selected text.
+            // Currently, this is used for:
+            // - underlining IME suggestions
+            // - applying a brush to selected text.
             let mut builder = attributes(builder);
             builder.build_into(&mut self.layout);
 
