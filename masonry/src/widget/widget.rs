@@ -149,6 +149,7 @@ pub trait Widget: AsAny {
 
     // TODO - Write a generic default implementation once
     // `const std::any::type_name` is stable.
+    // See https://github.com/rust-lang/rust/issues/63084
     /// Return a span for tracing.
     ///
     /// As methods recurse through the widget tree, trace spans are added for each child
