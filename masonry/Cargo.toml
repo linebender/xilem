@@ -23,6 +23,7 @@ default = []
 tracy = [
     "tracing-tracy/enable",
     "dep:tracing-tracy",
+    "dep:wgpu-profiler",
     "wgpu-profiler/tracy",
     "vello/wgpu-profiler",
 ]
