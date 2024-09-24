@@ -9,8 +9,7 @@ use tracing::{debug, warn};
 use vello::kurbo::Affine;
 use vello::util::{RenderContext, RenderSurface};
 use vello::{peniko::Color, AaSupport, RenderParams, Renderer, RendererOptions, Scene};
-use wgpu::{Backend, PresentMode};
-use wgpu_profiler::{GpuProfiler, GpuProfilerSettings};
+use wgpu::PresentMode;
 use winit::application::ApplicationHandler;
 use winit::error::EventLoopError;
 use winit::event::{
@@ -398,17 +397,21 @@ impl MasonryState<'_> {
             let _render_span = tracing::info_span!("Rendering using Vello").entered();
             self.renderer
                 .get_or_insert_with(|| {
+                    #[cfg_attr(not(feature = "tracy"), expect(unused_mut))]
                     let mut renderer = Renderer::new(device, renderer_options).unwrap();
                     #[cfg(feature = "tracy")]
-                    let new_profiler = GpuProfiler::new_with_tracy_client(
-                        GpuProfilerSettings::default(),
-                        // We don't have access to the adapter until we get  https://github.com/linebender/vello/pull/634
-                        Backend::Vulkan,
-                        device,
-                        queue,
-                    )
-                    .unwrap_or(renderer.profiler);
-                    renderer.profiler = new_profiler;
+                    {
+                        let new_profiler = wgpu_profiler::GpuProfiler::new_with_tracy_client(
+                            wgpu_profiler::GpuProfilerSettings::default(),
+                            // We don't have access to the adapter until we get  https://github.com/linebender/vello/pull/634
+                            // Luckily, this `backend` is only used for visual display in the profiling, so we can just guess here
+                            wgpu::Backend::Vulkan,
+                            device,
+                            queue,
+                        )
+                        .unwrap_or(renderer.profiler);
+                        renderer.profiler = new_profiler;
+                    }
                     renderer
                 })
                 .render_to_surface(device, queue, scene_ref, &surface_texture, &render_params)
