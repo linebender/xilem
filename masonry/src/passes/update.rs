@@ -168,8 +168,7 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot, root_state: &mut Wi
 
     if root.state.cursor_icon != new_cursor {
         root.state
-            .signal_queue
-            .push_back(RenderRootSignal::SetCursor(new_cursor));
+            .emit_signal(RenderRootSignal::SetCursor(new_cursor));
     }
 
     root.state.cursor_icon = new_cursor;
@@ -260,19 +259,16 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot, root_state: &mut Widg
         });
 
         if prev_focused.is_some() && was_ime_active {
-            root.state.signal_queue.push_back(RenderRootSignal::EndIme);
+            root.state.emit_signal(RenderRootSignal::EndIme);
         }
         if next_focused.is_some() && is_ime_active {
-            root.state
-                .signal_queue
-                .push_back(RenderRootSignal::StartIme);
+            root.state.emit_signal(RenderRootSignal::StartIme);
         }
 
         if let Some(id) = next_focused {
             let ime_area = root.widget_arena.get_state(id).item.get_ime_area();
             root.state
-                .signal_queue
-                .push_back(RenderRootSignal::new_ime_moved_signal(ime_area));
+                .emit_signal(RenderRootSignal::new_ime_moved_signal(ime_area));
         }
     }
 
