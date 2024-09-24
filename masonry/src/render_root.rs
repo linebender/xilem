@@ -580,6 +580,7 @@ impl RenderRoot {
 }
 
 impl RenderRootState {
+    /// Send a signal to the runner of this app, which allows global actions to be triggered by a widget.
     pub(crate) fn emit_signal(&mut self, signal: RenderRootSignal) {
         self.signal_queue.push_back(signal);
     }
