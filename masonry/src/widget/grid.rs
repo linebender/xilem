@@ -247,7 +247,6 @@ impl Widget for Grid {
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
-        bc.debug_check("Grid");
         let total_size = bc.max();
         let width_unit = (total_size.width + self.grid_spacing) / (self.grid_width as f64);
         let height_unit = (total_size.height + self.grid_spacing) / (self.grid_height as f64);

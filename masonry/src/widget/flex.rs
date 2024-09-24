@@ -910,7 +910,6 @@ impl Widget for Flex {
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
-        bc.debug_check("Flex");
         // we loosen our constraints when passing to children.
         let loosened_bc = bc.loosen();
 
