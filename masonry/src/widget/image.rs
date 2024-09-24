@@ -214,4 +214,45 @@ mod tests {
         // We don't use assert_eq because we don't want rich assert
         assert!(render_1 == render_2);
     }
+
+    #[test]
+    fn layout() {
+        let image_data = ImageBuf::new(vec![255; 4 * 8 * 8].into(), Format::Rgba8, 8, 8);
+        let harness_size = Size::new(100.0, 50.0);
+
+        // Contain.
+        let image_widget = Image::new(image_data.clone()).fill_mode(FillStrat::Contain);
+        let mut harness = TestHarness::create_with_size(image_widget, harness_size);
+        assert_render_snapshot!(harness, "layout_contain");
+
+        // Cover.
+        let image_widget = Image::new(image_data.clone()).fill_mode(FillStrat::Cover);
+        let mut harness = TestHarness::create_with_size(image_widget, harness_size);
+        assert_render_snapshot!(harness, "layout_cover");
+
+        // Fill.
+        let image_widget = Image::new(image_data.clone()).fill_mode(FillStrat::Fill);
+        let mut harness = TestHarness::create_with_size(image_widget, harness_size);
+        assert_render_snapshot!(harness, "layout_fill");
+
+        // FitHeight.
+        let image_widget = Image::new(image_data.clone()).fill_mode(FillStrat::FitHeight);
+        let mut harness = TestHarness::create_with_size(image_widget, harness_size);
+        assert_render_snapshot!(harness, "layout_fitheight");
+
+        // FitWidth.
+        let image_widget = Image::new(image_data.clone()).fill_mode(FillStrat::FitWidth);
+        let mut harness = TestHarness::create_with_size(image_widget, harness_size);
+        assert_render_snapshot!(harness, "layout_fitwidth");
+
+        // None.
+        let image_widget = Image::new(image_data.clone()).fill_mode(FillStrat::None);
+        let mut harness = TestHarness::create_with_size(image_widget, harness_size);
+        assert_render_snapshot!(harness, "layout_none");
+
+        // ScaleDown.
+        let image_widget = Image::new(image_data.clone()).fill_mode(FillStrat::ScaleDown);
+        let mut harness = TestHarness::create_with_size(image_widget, harness_size);
+        assert_render_snapshot!(harness, "layout_scaledown");
+    }
 }
