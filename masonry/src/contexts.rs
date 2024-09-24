@@ -560,8 +560,7 @@ impl_context_method!(
         pub fn submit_action(&mut self, action: Action) {
             trace!("submit_action");
             self.global_state
-                .signal_queue
-                .push_back(RenderRootSignal::Action(action, self.widget_state.id));
+                .emit_signal(RenderRootSignal::Action(action, self.widget_state.id));
         }
 
         /// Request a timer event.

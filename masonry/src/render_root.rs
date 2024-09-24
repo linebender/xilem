@@ -193,17 +193,13 @@ impl RenderRoot {
                 // TODO - What we'd really like is to request a repaint and an accessibility
                 // pass for every single widget.
                 self.root_state().needs_layout = true;
-                self.state
-                    .signal_queue
-                    .push_back(RenderRootSignal::RequestRedraw);
+                self.state.emit_signal(RenderRootSignal::RequestRedraw);
                 Handled::Yes
             }
             WindowEvent::Resize(size) => {
                 self.size = size;
                 self.root_state().needs_layout = true;
-                self.state
-                    .signal_queue
-                    .push_back(RenderRootSignal::RequestRedraw);
+                self.state.emit_signal(RenderRootSignal::RequestRedraw);
                 Handled::Yes
             }
             WindowEvent::AnimFrame => {
@@ -229,9 +225,7 @@ impl RenderRoot {
             }
             WindowEvent::RebuildAccessTree => {
                 self.rebuild_access_tree = true;
-                self.state
-                    .signal_queue
-                    .push_back(RenderRootSignal::RequestRedraw);
+                self.state.emit_signal(RenderRootSignal::RequestRedraw);
                 Handled::Yes
             }
         }
@@ -288,9 +282,7 @@ impl RenderRoot {
         }
         if self.root_state().needs_layout {
             warn!("Widget requested layout during layout pass");
-            self.state
-                .signal_queue
-                .push_back(RenderRootSignal::RequestRedraw);
+            self.state.emit_signal(RenderRootSignal::RequestRedraw);
         }
 
         // TODO - Improve caching of scenes.
@@ -447,9 +439,7 @@ impl RenderRoot {
             let new_size = LogicalSize::new(size.width, size.height).to_physical(self.scale_factor);
             if self.size != new_size {
                 self.size = new_size;
-                self.state
-                    .signal_queue
-                    .push_back(RenderRootSignal::SetSize(new_size));
+                self.state.emit_signal(RenderRootSignal::SetSize(new_size));
             }
         }
 
@@ -525,9 +515,7 @@ impl RenderRoot {
         run_update_focus_pass(self, widget_state);
 
         if self.root_state().request_anim {
-            self.state
-                .signal_queue
-                .push_back(RenderRootSignal::RequestAnimFrame);
+            self.state.emit_signal(RenderRootSignal::RequestAnimFrame);
         }
 
         // We request a redraw if either the render tree or the accessibility
@@ -538,9 +526,7 @@ impl RenderRoot {
             || self.root_state().needs_accessibility
             || self.root_state().needs_layout
         {
-            self.state
-                .signal_queue
-                .push_back(RenderRootSignal::RequestRedraw);
+            self.state.emit_signal(RenderRootSignal::RequestRedraw);
         }
 
         run_mutate_pass(self, widget_state);
@@ -590,6 +576,13 @@ impl RenderRoot {
     // TODO - Store in RenderRootState
     pub(crate) fn focus_chain(&mut self) -> &[WidgetId] {
         &self.root_state().focus_chain
+    }
+}
+
+impl RenderRootState {
+    /// Send a signal to the runner of this app, which allows global actions to be triggered by a widget.
+    pub(crate) fn emit_signal(&mut self, signal: RenderRootSignal) {
+        self.signal_queue.push_back(signal);
     }
 }
 
