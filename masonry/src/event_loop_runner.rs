@@ -397,7 +397,8 @@ impl MasonryState<'_> {
             let _render_span = tracing::info_span!("Rendering using Vello").entered();
             self.renderer
                 .get_or_insert_with(|| {
-                    #[cfg_attr(not(feature = "tracy"), expect(unused_mut))]
+                    // Should be `expect`, when we up our MSRV.
+                    #[cfg_attr(not(feature = "tracy"), allow(unused_mut))]
                     let mut renderer = Renderer::new(device, renderer_options).unwrap();
                     #[cfg(feature = "tracy")]
                     {
