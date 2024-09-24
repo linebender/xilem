@@ -9,7 +9,8 @@ use tracing::{debug, warn};
 use vello::kurbo::Affine;
 use vello::util::{RenderContext, RenderSurface};
 use vello::{peniko::Color, AaSupport, RenderParams, Renderer, RendererOptions, Scene};
-use wgpu::PresentMode;
+use wgpu::{Backend, PresentMode};
+use wgpu_profiler::{GpuProfiler, GpuProfilerSettings};
 use winit::application::ApplicationHandler;
 use winit::error::EventLoopError;
 use winit::event::{
@@ -78,6 +79,8 @@ pub struct MasonryState<'a> {
     // TODO: Winit doesn't seem to let us create these proxies from within the loop
     // The reasons for this are unclear
     proxy: EventLoopProxy,
+    #[cfg(feature = "tracy")]
+    frame: Option<tracing_tracy::client::Frame>,
 
     // Per-Window state
     // In future, this will support multiple windows
@@ -236,6 +239,8 @@ impl MasonryState<'_> {
                 },
             ),
             renderer: None,
+            #[cfg(feature = "tracy")]
+            frame: None,
             pointer_state: PointerState::empty(),
             proxy: event_loop.create_proxy(),
 
@@ -392,12 +397,27 @@ impl MasonryState<'_> {
         {
             let _render_span = tracing::info_span!("Rendering using Vello").entered();
             self.renderer
-                .get_or_insert_with(|| Renderer::new(device, renderer_options).unwrap())
+                .get_or_insert_with(|| {
+                    let mut renderer = Renderer::new(device, renderer_options).unwrap();
+                    #[cfg(feature = "tracy")]
+                    let new_profiler = GpuProfiler::new_with_tracy_client(
+                        GpuProfilerSettings::default(),
+                        // We don't have access to the adapter until we get  https://github.com/linebender/vello/pull/634
+                        Backend::Vulkan,
+                        device,
+                        queue,
+                    )
+                    .unwrap_or(renderer.profiler);
+                    renderer.profiler = new_profiler;
+                    renderer
+                })
                 .render_to_surface(device, queue, scene_ref, &surface_texture, &render_params)
                 .expect("failed to render to surface");
         }
         surface_texture.present();
         device.poll(wgpu::Maintain::Wait);
+        #[cfg(feature = "tracy")]
+        drop(self.frame.take());
     }
 
     // --- MARK: WINDOW_EVENT ---
@@ -420,6 +440,10 @@ impl MasonryState<'_> {
             );
             return;
         };
+        #[cfg(feature = "tracy")]
+        if self.frame.is_none() {
+            self.frame = Some(tracing_tracy::client::non_continuous_frame!("Masonry"));
+        }
         accesskit_adapter.process_event(window, &event);
 
         match event {

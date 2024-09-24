@@ -16,6 +16,17 @@ all-features = true
 # rustdoc-scrape-examples tracking issue https://github.com/rust-lang/rust/issues/88791
 cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
 
+[features]
+default = []
+# Enables tracing using tracy if the default Masonry tracing is used.
+# https://github.com/wolfpld/tracy can be connected to when this feature is enabled.
+tracy = [
+    "tracing-tracy/enable",
+    "dep:tracing-tracy",
+    "wgpu-profiler/tracy",
+    "vello/wgpu-profiler",
+]
+
 [lints]
 workspace = true
 
@@ -42,6 +53,8 @@ time = { workspace = true, features = ["macros", "formatting"] }
 cursor-icon = "1.1.0"
 dpi.workspace = true
 nv-flip.workspace = true
+tracing-tracy = { version = "0.11.3", optional = true }
+wgpu-profiler = { optional = true, version = "0.17.0", default-features = false }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 web-time.workspace = true
