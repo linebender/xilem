@@ -13,6 +13,7 @@ use crate::render_root::RenderRoot;
 use crate::tree_arena::ArenaRefChildren;
 use crate::widget::WidgetState;
 use crate::{BoxConstraints, LayoutCtx, Widget, WidgetPod};
+use crate::widget::widget::Axis;
 
 // TODO - Replace with contains_rect once new Kurbo version is released.
 // See https://github.com/linebender/kurbo/pull/347
@@ -274,6 +275,66 @@ pub(crate) fn run_layout_inner<W: Widget>(
     true
 }
 
+// TODO
+pub(crate) fn run_measure_inner<W: Widget>(
+    parent_ctx: &mut LayoutCtx<'_>,
+    pod: &mut WidgetPod<W>,
+    bc: &BoxConstraints,
+    axis: Axis,
+) -> f64 {
+    let id = pod.id().to_raw();
+    let widget_mut = parent_ctx
+        .widget_children
+        .get_child_mut(id)
+        .expect("WidgetPod: inner widget not found in widget tree");
+    let mut state_mut = parent_ctx
+        .widget_state_children
+        .get_child_mut(id)
+        .expect("WidgetPod: inner widget not found in widget tree");
+    let widget = widget_mut.item;
+    let state = state_mut.item;
+
+    if state.is_stashed {
+        debug_panic!(
+            "Error in '{}' #{}: trying to compute layout of stashed widget.",
+            widget.short_type_name(),
+            id,
+        );
+        state.size = Size::ZERO;
+        return 0.0;
+    }
+
+    // One of the optimizations of measure is that it does not need to invalidate the needs
+    // and request variables. So do not reset those to true.
+
+    bc.debug_check(widget.short_type_name());
+
+    let measure_result = {
+        let mut inner_ctx = LayoutCtx {
+            widget_state: state,
+            widget_state_children: state_mut.children.reborrow_mut(),
+            widget_children: widget_mut.children,
+            global_state: parent_ctx.global_state,
+            mouse_pos: parent_ctx.mouse_pos,
+        };
+
+        // TODO - If constraints are the same and request_layout isn't set,
+        // skip calling measure.
+        inner_ctx.widget_state.request_layout = false;
+        widget.measure(&mut inner_ctx, bc, axis)
+    };
+
+    if measure_result.is_infinite() {
+        debug_panic!(
+            "Error in '{}' #{}: measurement is infinite",
+            widget.short_type_name(),
+            id,
+        );
+    }
+
+    measure_result
+}
+
 /// Run [`Widget::layout`] method on the widget contained in `pod`.
 /// This will be called by [`LayoutCtx::run_layout`], which is itself called in the parent widget's `layout`.
 pub(crate) fn run_layout_on<W: Widget>(
@@ -300,6 +361,16 @@ pub(crate) fn run_layout_on<W: Widget>(
         .get_child_mut(id)
         .expect("run_layout_on: inner widget not found in widget tree");
     state_mut.item.size
+}
+
+// TODO
+pub(crate) fn run_measure_on<W: Widget>(
+    parent_ctx: &mut LayoutCtx<'_>,
+    pod: &mut WidgetPod<W>,
+    bc: &BoxConstraints,
+    axis: Axis,
+) -> f64 {
+    return run_measure_inner(parent_ctx, pod, bc, axis)
 }
 
 pub(crate) fn root_layout(

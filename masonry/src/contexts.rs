@@ -11,7 +11,7 @@ use tracing::{trace, warn};
 use vello::kurbo::Vec2;
 
 use crate::action::Action;
-use crate::passes::layout::run_layout_on;
+use crate::passes::layout::{run_layout_on, run_measure_on};
 use crate::render_root::{MutateCallback, RenderRootSignal, RenderRootState};
 use crate::text::TextBrush;
 use crate::text_helpers::ImeChangeSignal;
@@ -20,6 +20,7 @@ use crate::widget::{WidgetMut, WidgetState};
 use crate::{
     AllowRawMut, BoxConstraints, CursorIcon, Insets, Point, Rect, Size, Widget, WidgetId, WidgetPod,
 };
+use crate::widget::widget::Axis;
 
 /// A macro for implementing methods on multiple contexts.
 ///
@@ -794,6 +795,11 @@ impl LayoutCtx<'_> {
     /// [`layout`]: Widget::layout
     pub fn run_layout<W: Widget>(&mut self, child: &mut WidgetPod<W>, bc: &BoxConstraints) -> Size {
         run_layout_on(self, child, bc)
+    }
+
+    // TODO: Document
+    pub fn run_measure<W: Widget>(&mut self, child: &mut WidgetPod<W>, bc: &BoxConstraints, axis: Axis) -> f64 {
+        run_measure_on(self, child, bc, axis)
     }
 
     /// Set explicit paint [`Insets`] for this widget.

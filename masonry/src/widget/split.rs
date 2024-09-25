@@ -12,7 +12,7 @@ use crate::dpi::LogicalPosition;
 use crate::event::PointerButton;
 use crate::kurbo::Line;
 use crate::paint_scene_helpers::{fill_color, stroke};
-use crate::widget::flex::Axis;
+use crate::widget::Axis;
 use crate::widget::{WidgetMut, WidgetPod};
 use crate::{
     theme, AccessCtx, AccessEvent, BoxConstraints, Color, CursorIcon, EventCtx, LayoutCtx,

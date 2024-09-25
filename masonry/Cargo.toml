@@ -42,6 +42,7 @@ time = { workspace = true, features = ["macros", "formatting"] }
 cursor-icon = "1.1.0"
 dpi.workspace = true
 nv-flip.workspace = true
+taffy = "0.5.2"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 web-time.workspace = true

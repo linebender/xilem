@@ -31,13 +31,15 @@ mod split;
 mod textbox;
 mod variable_label;
 mod widget_arena;
+mod taffy;
 
 pub use self::image::Image;
 pub use align::Align;
 pub use button::Button;
 pub use checkbox::Checkbox;
-pub use flex::{Axis, CrossAxisAlignment, Flex, FlexParams, MainAxisAlignment};
+pub use flex::{CrossAxisAlignment, Flex, FlexParams, MainAxisAlignment};
 pub use grid::{Grid, GridParams};
+pub use taffy::{Taffy, TaffyParams};
 pub use label::{Label, LineBreaking};
 pub use portal::Portal;
 pub use progress_bar::ProgressBar;
@@ -53,6 +55,7 @@ pub use widget_mut::WidgetMut;
 pub use widget_pod::WidgetPod;
 pub use widget_ref::WidgetRef;
 pub use widget_state::WidgetState;
+pub use widget::Axis;
 
 pub(crate) use widget_arena::WidgetArena;
 

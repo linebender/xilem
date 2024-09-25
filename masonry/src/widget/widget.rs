@@ -14,10 +14,7 @@ use vello::Scene;
 
 use crate::contexts::ComposeCtx;
 use crate::event::{AccessEvent, PointerEvent, StatusChange, TextEvent};
-use crate::{
-    AccessCtx, AsAny, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
-    RegisterCtx, Size,
-};
+use crate::{AccessCtx, AsAny, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Point, Rect, RegisterCtx, Size, Vec2};
 
 /// A unique identifier for a single [`Widget`].
 ///
@@ -42,6 +39,20 @@ use crate::{
 /// is unique. Two widgets must not be created with the same id.
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
 pub struct WidgetId(pub(crate) NonZeroU64);
+
+// TODO: Figure out where this should go.
+/// An axis in visual space.
+///
+/// Most often used by widgets to describe
+/// the direction in which they grow as their number of children increases.
+/// Has some methods for manipulating geometry with respect to the axis.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum Axis {
+    /// The x axis
+    Horizontal,
+    /// The y axis
+    Vertical,
+}
 
 // TODO - Add tutorial: implementing a widget - See https://github.com/linebender/xilem/issues/376
 /// The trait implemented by all widgets.
@@ -113,6 +124,15 @@ pub trait Widget: AsAny {
     ///
     /// The layout strategy is strongly inspired by Flutter.
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size;
+
+    // TODO: Document
+    // Does not trigger a re-draw, unlike layout.
+    fn measure(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, axis: Axis) -> f64 {
+        match axis {
+            Axis::Horizontal => self.layout(ctx, bc).width,
+            Axis::Vertical => self.layout(ctx, bc).height,
+        }
+    }
 
     fn compose(&mut self, ctx: &mut ComposeCtx) {}
 
@@ -326,6 +346,10 @@ impl Widget for Box<dyn Widget> {
         self.deref_mut().layout(ctx, bc)
     }
 
+    fn measure(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, axis: Axis) -> f64 {
+        self.deref_mut().measure(ctx, bc, axis)
+    }
+
     fn compose(&mut self, ctx: &mut ComposeCtx) {
         self.deref_mut().compose(ctx);
     }
@@ -376,5 +400,96 @@ impl Widget for Box<dyn Widget> {
 
     fn as_mut_any(&mut self) -> &mut dyn Any {
         self.deref_mut().as_mut_any()
+    }
+}
+
+impl Axis {
+    /// Get the axis perpendicular to this one.
+    pub fn cross(self) -> Axis {
+        match self {
+            Axis::Horizontal => Axis::Vertical,
+            Axis::Vertical => Axis::Horizontal,
+        }
+    }
+
+    /// Extract from the argument the magnitude along this axis
+    pub fn major(self, size: Size) -> f64 {
+        match self {
+            Axis::Horizontal => size.width,
+            Axis::Vertical => size.height,
+        }
+    }
+
+    /// Extract from the argument the magnitude along the perpendicular axis
+    pub fn minor(self, size: Size) -> f64 {
+        self.cross().major(size)
+    }
+
+    /// Extract the extent of the argument in this axis as a pair.
+    pub fn major_span(self, rect: Rect) -> (f64, f64) {
+        match self {
+            Axis::Horizontal => (rect.x0, rect.x1),
+            Axis::Vertical => (rect.y0, rect.y1),
+        }
+    }
+
+    /// Extract the extent of the argument in the minor axis as a pair.
+    pub fn minor_span(self, rect: Rect) -> (f64, f64) {
+        self.cross().major_span(rect)
+    }
+
+    /// Extract the coordinate locating the argument with respect to this axis.
+    pub fn major_pos(self, pos: Point) -> f64 {
+        match self {
+            Axis::Horizontal => pos.x,
+            Axis::Vertical => pos.y,
+        }
+    }
+
+    /// Extract the coordinate locating the argument with respect to this axis.
+    pub fn major_vec(self, vec: Vec2) -> f64 {
+        match self {
+            Axis::Horizontal => vec.x,
+            Axis::Vertical => vec.y,
+        }
+    }
+
+    /// Extract the coordinate locating the argument with respect to the perpendicular axis.
+    pub fn minor_pos(self, pos: Point) -> f64 {
+        self.cross().major_pos(pos)
+    }
+
+    /// Extract the coordinate locating the argument with respect to the perpendicular axis.
+    pub fn minor_vec(self, vec: Vec2) -> f64 {
+        self.cross().major_vec(vec)
+    }
+
+    // TODO - make_pos, make_size, make_rect
+    /// Arrange the major and minor measurements with respect to this axis such that it forms
+    /// an (x, y) pair.
+    pub fn pack(self, major: f64, minor: f64) -> (f64, f64) {
+        match self {
+            Axis::Horizontal => (major, minor),
+            Axis::Vertical => (minor, major),
+        }
+    }
+
+    /// Generate constraints with new values on the major axis.
+    pub(crate) fn constraints(
+        self,
+        bc: &BoxConstraints,
+        min_major: f64,
+        major: f64,
+    ) -> BoxConstraints {
+        match self {
+            Axis::Horizontal => BoxConstraints::new(
+                Size::new(min_major, bc.min().height),
+                Size::new(major, bc.max().height),
+            ),
+            Axis::Vertical => BoxConstraints::new(
+                Size::new(bc.min().width, min_major),
+                Size::new(bc.max().width, major),
+            ),
+        }
     }
 }
