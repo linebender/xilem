@@ -174,6 +174,9 @@ impl<'w> WidgetRef<'w, dyn Widget> {
             return None;
         }
 
+        // TODO: add debug assertion to check whether the child returned by
+        // `Widget::get_child_at_pos` upholds the conditions of that method. See
+        // https://github.com/linebender/xilem/pull/565#discussion_r1756536870
         while let Some(child) = innermost_widget
             .widget
             .get_child_at_pos(innermost_widget.ctx, pos)
