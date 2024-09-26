@@ -4,7 +4,7 @@
 //! A progress bar widget.
 
 use crate::Point;
-use accesskit::Role;
+use accesskit::{NodeBuilder, Role};
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace, trace_span, Span};
 use vello::Scene;
@@ -191,10 +191,10 @@ impl Widget for ProgressBar {
         Role::ProgressIndicator
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx) {
-        ctx.current_node().set_value(self.value_accessibility());
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, builder: &mut NodeBuilder) {
+        builder.set_value(self.value_accessibility());
         if let Some(value) = self.progress {
-            ctx.current_node().set_numeric_value(value * 100.0);
+            builder.set_numeric_value(value * 100.0);
         }
     }
 

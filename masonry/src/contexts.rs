@@ -5,7 +5,7 @@
 
 use std::time::Duration;
 
-use accesskit::{NodeBuilder, TreeUpdate};
+use accesskit::TreeUpdate;
 use parley::{FontContext, LayoutContext};
 use tracing::{trace, warn};
 use vello::kurbo::Vec2;
@@ -115,7 +115,6 @@ pub struct AccessCtx<'a> {
     pub(crate) widget_state_children: ArenaMutChildren<'a, WidgetState>,
     pub(crate) widget_children: ArenaMutChildren<'a, Box<dyn Widget>>,
     pub(crate) tree_update: &'a mut TreeUpdate,
-    pub(crate) current_node: NodeBuilder,
     pub(crate) rebuild_all: bool,
     pub(crate) scale_factor: f64,
 }
@@ -1017,12 +1016,6 @@ impl_context_method!(LayoutCtx<'_>, PaintCtx<'_>, {
     }
 });
 
-impl AccessCtx<'_> {
-    pub fn current_node(&mut self) -> &mut NodeBuilder {
-        &mut self.current_node
-    }
-}
-
 // --- MARK: RAW WRAPPERS ---
 macro_rules! impl_get_raw {
     ($SomeCtx:tt) => {
@@ -1125,9 +1118,6 @@ impl<'s> AccessCtx<'s> {
             widget_children: child_mut.children,
             global_state: self.global_state,
             tree_update: self.tree_update,
-            // TODO - This doesn't make sense. NodeBuilder should probably be split
-            // out from AccessCtx.
-            current_node: NodeBuilder::default(),
             rebuild_all: self.rebuild_all,
             scale_factor: self.scale_factor,
         };

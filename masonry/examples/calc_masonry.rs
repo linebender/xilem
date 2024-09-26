@@ -7,7 +7,7 @@
 #![windows_subsystem = "windows"]
 #![allow(variant_size_differences, clippy::single_match)]
 
-use accesskit::{DefaultActionVerb, Role};
+use accesskit::{DefaultActionVerb, NodeBuilder, Role};
 use masonry::app_driver::{AppDriver, DriverCtx};
 use masonry::dpi::LogicalSize;
 use masonry::widget::{Align, CrossAxisAlignment, Flex, Label, RootWidget, SizedBox};
@@ -228,15 +228,14 @@ impl Widget for CalcButton {
         Role::Button
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx) {
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, builder: &mut NodeBuilder) {
         let _name = match self.action {
             CalcAction::Digit(digit) => digit.to_string(),
             CalcAction::Op(op) => op.to_string(),
         };
         // We may want to add a name if it doesn't interfere with the child label
         // ctx.current_node().set_name(name);
-        ctx.current_node()
-            .set_default_action_verb(DefaultActionVerb::Click);
+        builder.set_default_action_verb(DefaultActionVerb::Click);
     }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {

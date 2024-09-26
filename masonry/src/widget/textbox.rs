@@ -1,7 +1,7 @@
 // Copyright 2018 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use accesskit::Role;
+use accesskit::{NodeBuilder, Role};
 use parley::{
     layout::Alignment,
     style::{FontFamily, FontStack},
@@ -338,9 +338,9 @@ impl Widget for Textbox {
         Role::TextInput
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx) {
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, builder: &mut NodeBuilder) {
         // TODO: Replace with full accessibility.
-        ctx.current_node().set_value(self.text());
+        builder.set_value(self.text());
     }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {

@@ -34,7 +34,7 @@ fn build_accessibility_tree(
             widget.item.short_type_name(),
             id.to_raw(),
         );
-        let current_node = build_access_node(widget.item, state.item, scale_factor);
+        let mut builder = build_access_node(widget.item, state.item, scale_factor);
 
         let mut ctx = AccessCtx {
             global_state,
@@ -42,21 +42,20 @@ fn build_accessibility_tree(
             widget_state_children: state.children.reborrow_mut(),
             widget_children: widget.children.reborrow_mut(),
             tree_update,
-            current_node,
             rebuild_all,
             scale_factor,
         };
-        set_common_properties(&mut ctx);
-        widget.item.accessibility(&mut ctx);
+        set_common_properties(&mut ctx, &mut builder);
+        widget.item.accessibility(&mut ctx, &mut builder);
 
         let id: NodeId = ctx.widget_state.id.into();
         trace!(
             "Built node #{} with role={:?}, default_action={:?}",
             id.0,
-            ctx.current_node.role(),
-            ctx.current_node.default_action_verb(),
+            builder.role(),
+            builder.default_action_verb(),
         );
-        ctx.tree_update.nodes.push((id, ctx.current_node.build()));
+        ctx.tree_update.nodes.push((id, builder.build()));
     }
 
     state.item.request_accessibility = false;
@@ -100,24 +99,24 @@ fn build_access_node(widget: &dyn Widget, state: &WidgetState, scale_factor: f64
     node
 }
 
-fn set_common_properties(ctx: &mut AccessCtx) {
+fn set_common_properties(ctx: &mut AccessCtx, builder: &mut NodeBuilder) {
     if ctx.is_hot() {
-        ctx.current_node().set_hovered();
+        builder.set_hovered();
     }
     if ctx.is_disabled() {
-        ctx.current_node().set_disabled();
+        builder.set_disabled();
     }
     if ctx.is_stashed() {
-        ctx.current_node().set_hidden();
+        builder.set_hidden();
     }
     if ctx.widget_state.clip.is_some() {
-        ctx.current_node().set_clips_children();
+        builder.set_clips_children();
     }
     if ctx.is_in_focus_chain() && !ctx.is_disabled() {
-        ctx.current_node().add_action(accesskit::Action::Focus);
+        builder.add_action(accesskit::Action::Focus);
     }
     if ctx.is_focused() {
-        ctx.current_node().add_action(accesskit::Action::Blur);
+        builder.add_action(accesskit::Action::Blur);
     }
 }
 

@@ -7,7 +7,7 @@
 // On Windows platform, don't show a console when opening the app.
 #![windows_subsystem = "windows"]
 
-use accesskit::Role;
+use accesskit::{NodeBuilder, Role};
 use masonry::app_driver::{AppDriver, DriverCtx};
 use masonry::kurbo::{BezPath, Stroke};
 use masonry::widget::{FillStrat, RootWidget};
@@ -132,9 +132,9 @@ impl Widget for CustomWidget {
         Role::Window
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx) {
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, builder: &mut NodeBuilder) {
         let text = &self.0;
-        ctx.current_node().set_name(
+        builder.set_name(
             format!("This is a demo of the Masonry Widget trait. Masonry has accessibility tree support. The demo shows colored shapes with the text '{text}'."),
         );
     }

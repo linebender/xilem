@@ -3,7 +3,7 @@
 
 //! A label widget.
 
-use accesskit::Role;
+use accesskit::{NodeBuilder, Role};
 use parley::layout::Alignment;
 use parley::style::{FontFamily, FontStack};
 use smallvec::SmallVec;
@@ -261,9 +261,8 @@ impl Widget for Label {
         Role::Label
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx) {
-        ctx.current_node()
-            .set_name(self.text().as_ref().to_string());
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, builder: &mut NodeBuilder) {
+        builder.set_name(self.text().as_ref().to_string());
     }
 
     fn skip_pointer(&self) -> bool {

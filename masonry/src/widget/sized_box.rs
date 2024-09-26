@@ -3,7 +3,7 @@
 
 //! A widget with predefined size.
 
-use accesskit::Role;
+use accesskit::{NodeBuilder, Role};
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace, trace_span, warn, Span};
 use vello::kurbo::{Affine, RoundedRectRadii};
@@ -389,7 +389,7 @@ impl Widget for SizedBox {
         Role::GenericContainer
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx) {}
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, _builder: &mut NodeBuilder) {}
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         if let Some(child) = &self.child {
