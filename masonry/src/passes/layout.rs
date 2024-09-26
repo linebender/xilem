@@ -150,7 +150,11 @@ pub(crate) fn run_layout_inner<W: Widget>(
     let widget = widget_mut.item;
     let state = state_mut.item;
 
-    if state.is_stashed {
+    // The parent (and only the parent) controls the stashed state, and it is valid to set `stashed` in layout.
+    // Because of that, we use the local value rather than the global value.
+    // Note that if we are stashed by a grandparent, this check would trigger for that grandparent, so we should
+    // never be called.
+    if state.is_explicitly_stashed {
         debug_panic!(
             "Error in '{}' #{}: trying to compute layout of stashed widget.",
             widget.short_type_name(),
