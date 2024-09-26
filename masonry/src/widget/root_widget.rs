@@ -1,7 +1,7 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use accesskit::Role;
+use accesskit::{NodeBuilder, Role};
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace_span, Span};
 use vello::kurbo::Point;
@@ -62,7 +62,7 @@ impl<W: Widget> Widget for RootWidget<W> {
         Role::Window
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx) {}
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, _node: &mut NodeBuilder) {}
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         smallvec![self.pod.id()]

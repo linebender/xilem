@@ -5,7 +5,7 @@
 
 use std::ops::Range;
 
-use accesskit::Role;
+use accesskit::{NodeBuilder, Role};
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace_span, Span};
 use vello::kurbo::{Point, Rect, Size, Vec2};
@@ -446,13 +446,13 @@ impl<W: Widget> Widget for Portal<W> {
         Role::GenericContainer
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx) {
+    fn accessibility(&mut self, ctx: &mut AccessCtx, node: &mut NodeBuilder) {
         // TODO - Double check this code
         // Not sure about these values
         if false {
-            ctx.current_node().set_scroll_x(self.viewport_pos.x);
-            ctx.current_node().set_scroll_y(self.viewport_pos.y);
-            ctx.current_node().set_scroll_x_min(0.0);
+            node.set_scroll_x(self.viewport_pos.x);
+            node.set_scroll_y(self.viewport_pos.y);
+            node.set_scroll_x_min(0.0);
 
             let x_max = ctx
                 .get_raw_ref(&self.scrollbar_horizontal)
@@ -462,12 +462,12 @@ impl<W: Widget> Widget for Portal<W> {
                 .get_raw_ref(&self.scrollbar_vertical)
                 .widget()
                 .portal_size;
-            ctx.current_node().set_scroll_x_max(x_max);
-            ctx.current_node().set_scroll_y_min(0.0);
-            ctx.current_node().set_scroll_y_max(y_max);
+            node.set_scroll_x_max(x_max);
+            node.set_scroll_y_min(0.0);
+            node.set_scroll_y_max(y_max);
         }
 
-        ctx.current_node().set_clips_children();
+        node.set_clips_children();
     }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {

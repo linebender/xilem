@@ -3,7 +3,7 @@
 
 //! A widget which splits an area in two, with a settable ratio, and optional draggable resizing.
 
-use accesskit::Role;
+use accesskit::{NodeBuilder, Role};
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace, trace_span, warn, Span};
 use vello::Scene;
@@ -560,7 +560,7 @@ impl Widget for Split {
         Role::Splitter
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx) {}
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, _node: &mut NodeBuilder) {}
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         smallvec![self.child1.id(), self.child2.id()]

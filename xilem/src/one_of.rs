@@ -3,7 +3,7 @@
 
 //! Statically typed alternatives to the type-erased [`AnyView`](`crate::AnyView`).
 
-use accesskit::Role;
+use accesskit::{NodeBuilder, Role};
 use masonry::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycleCtx, PaintCtx, Point,
     PointerEvent, RegisterCtx, Size, StatusChange, TextEvent, Widget, WidgetId, WidgetPod,
@@ -295,7 +295,7 @@ impl<
         Role::GenericContainer
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx) {}
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, _node: &mut NodeBuilder) {}
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         match self {

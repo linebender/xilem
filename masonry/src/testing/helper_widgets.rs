@@ -15,7 +15,7 @@ use std::cell::RefCell;
 use std::collections::VecDeque;
 use std::rc::Rc;
 
-use accesskit::Role;
+use accesskit::{NodeBuilder, Role};
 use accesskit_winit::Event;
 use smallvec::SmallVec;
 use vello::Scene;
@@ -34,7 +34,7 @@ pub type LayoutFn<S> = dyn FnMut(&mut S, &mut LayoutCtx, &BoxConstraints) -> Siz
 pub type ComposeFn<S> = dyn FnMut(&mut S, &mut ComposeCtx);
 pub type PaintFn<S> = dyn FnMut(&mut S, &mut PaintCtx, &mut Scene);
 pub type RoleFn<S> = dyn Fn(&S) -> Role;
-pub type AccessFn<S> = dyn FnMut(&mut S, &mut AccessCtx);
+pub type AccessFn<S> = dyn FnMut(&mut S, &mut AccessCtx, &mut NodeBuilder);
 pub type ChildrenFn<S> = dyn Fn(&S) -> SmallVec<[WidgetId; 16]>;
 
 #[cfg(FALSE)]
@@ -214,7 +214,10 @@ impl<S> ModularWidget<S> {
         self
     }
 
-    pub fn access_fn(mut self, f: impl FnMut(&mut S, &mut AccessCtx) + 'static) -> Self {
+    pub fn access_fn(
+        mut self,
+        f: impl FnMut(&mut S, &mut AccessCtx, &mut NodeBuilder) + 'static,
+    ) -> Self {
         self.access = Some(Box::new(f));
         self
     }
@@ -293,9 +296,9 @@ impl<S: 'static> Widget for ModularWidget<S> {
         }
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx) {
+    fn accessibility(&mut self, ctx: &mut AccessCtx, node: &mut NodeBuilder) {
         if let Some(f) = self.access.as_mut() {
-            f(&mut self.state, ctx);
+            f(&mut self.state, ctx, node);
         }
     }
 
@@ -364,7 +367,7 @@ impl Widget for ReplaceChild {
         Role::GenericContainer
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx) {}
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, _node: &mut NodeBuilder) {}
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         todo!()
@@ -453,9 +456,9 @@ impl<W: Widget> Widget for Recorder<W> {
         self.child.accessibility_role()
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx) {
+    fn accessibility(&mut self, ctx: &mut AccessCtx, node: &mut NodeBuilder) {
         self.recording.push(Record::Access);
-        self.child.accessibility(ctx);
+        self.child.accessibility(ctx, node);
     }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {

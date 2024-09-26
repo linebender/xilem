@@ -8,7 +8,7 @@
 // size constraints to its child means that "aligning" a widget may actually change
 // its computed size. See https://github.com/linebender/xilem/issues/378
 
-use accesskit::Role;
+use accesskit::{NodeBuilder, Role};
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace, trace_span, Span};
 use vello::Scene;
@@ -150,7 +150,7 @@ impl Widget for Align {
         Role::GenericContainer
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx) {}
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, _node: &mut NodeBuilder) {}
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         smallvec![self.child.id()]

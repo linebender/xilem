@@ -3,7 +3,7 @@
 
 //! A widget that arranges its children in a one-dimensional array.
 
-use accesskit::Role;
+use accesskit::{NodeBuilder, Role};
 use smallvec::SmallVec;
 use tracing::{trace, trace_span, Span};
 use vello::kurbo::{common::FloatExt, Affine, Line, Stroke, Vec2};
@@ -1182,7 +1182,7 @@ impl Widget for Flex {
         Role::GenericContainer
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx) {}
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, _node: &mut NodeBuilder) {}
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         self.children

@@ -1,7 +1,7 @@
 // Copyright 2018 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use accesskit::Role;
+use accesskit::{NodeBuilder, Role};
 use parley::{
     layout::Alignment,
     style::{FontFamily, FontStack},
@@ -284,9 +284,8 @@ impl Widget for Prose {
         Role::Paragraph
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx) {
-        ctx.current_node()
-            .set_name(self.text().as_ref().to_string());
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, node: &mut NodeBuilder) {
+        node.set_name(self.text().as_ref().to_string());
     }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {

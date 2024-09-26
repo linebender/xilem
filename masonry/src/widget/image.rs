@@ -4,7 +4,7 @@
 //! An Image widget.
 //! Please consider using SVG and the SVG widget as it scales much better.
 
-use accesskit::Role;
+use accesskit::{NodeBuilder, Role};
 use smallvec::SmallVec;
 use tracing::{trace, trace_span, Span};
 use vello::kurbo::Affine;
@@ -115,7 +115,7 @@ impl Widget for Image {
         Role::Image
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx) {
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, _node: &mut NodeBuilder) {
         // TODO - Handle alt text and such.
     }
 
