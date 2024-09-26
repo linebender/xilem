@@ -126,7 +126,7 @@ pub trait Widget: AsAny {
 
     fn accessibility_role(&self) -> Role;
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx, builder: &mut NodeBuilder);
+    fn accessibility(&mut self, ctx: &mut AccessCtx, node: &mut NodeBuilder);
 
     /// Return references to this widget's children.
     ///
@@ -338,8 +338,8 @@ impl Widget for Box<dyn Widget> {
         self.deref().accessibility_role()
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx, builder: &mut NodeBuilder) {
-        self.deref_mut().accessibility(ctx, builder);
+    fn accessibility(&mut self, ctx: &mut AccessCtx, node: &mut NodeBuilder) {
+        self.deref_mut().accessibility(ctx, node);
     }
 
     fn type_name(&self) -> &'static str {

@@ -296,9 +296,9 @@ impl<S: 'static> Widget for ModularWidget<S> {
         }
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx, builder: &mut NodeBuilder) {
+    fn accessibility(&mut self, ctx: &mut AccessCtx, node: &mut NodeBuilder) {
         if let Some(f) = self.access.as_mut() {
-            f(&mut self.state, ctx, builder);
+            f(&mut self.state, ctx, node);
         }
     }
 
@@ -367,7 +367,7 @@ impl Widget for ReplaceChild {
         Role::GenericContainer
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx, _builder: &mut NodeBuilder) {}
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, _node: &mut NodeBuilder) {}
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         todo!()
@@ -456,9 +456,9 @@ impl<W: Widget> Widget for Recorder<W> {
         self.child.accessibility_role()
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx, builder: &mut NodeBuilder) {
+    fn accessibility(&mut self, ctx: &mut AccessCtx, node: &mut NodeBuilder) {
         self.recording.push(Record::Access);
-        self.child.accessibility(ctx, builder);
+        self.child.accessibility(ctx, node);
     }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {

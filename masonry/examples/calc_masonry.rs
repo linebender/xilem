@@ -228,14 +228,14 @@ impl Widget for CalcButton {
         Role::Button
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx, builder: &mut NodeBuilder) {
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, node: &mut NodeBuilder) {
         let _name = match self.action {
             CalcAction::Digit(digit) => digit.to_string(),
             CalcAction::Op(op) => op.to_string(),
         };
         // We may want to add a name if it doesn't interfere with the child label
         // ctx.current_node().set_name(name);
-        builder.set_default_action_verb(DefaultActionVerb::Click);
+        node.set_default_action_verb(DefaultActionVerb::Click);
     }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {

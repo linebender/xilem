@@ -560,7 +560,7 @@ impl Widget for Split {
         Role::Splitter
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx, _builder: &mut NodeBuilder) {}
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, _node: &mut NodeBuilder) {}
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         smallvec![self.child1.id(), self.child2.id()]

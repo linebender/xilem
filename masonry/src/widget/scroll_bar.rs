@@ -221,7 +221,7 @@ impl Widget for ScrollBar {
         Role::ScrollBar
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx, _builder: &mut NodeBuilder) {
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, _node: &mut NodeBuilder) {
         // TODO
         // Use set_scroll_x/y_min/max?
     }

@@ -191,10 +191,10 @@ impl Widget for ProgressBar {
         Role::ProgressIndicator
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx, builder: &mut NodeBuilder) {
-        builder.set_value(self.value_accessibility());
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, node: &mut NodeBuilder) {
+        node.set_value(self.value_accessibility());
         if let Some(value) = self.progress {
-            builder.set_numeric_value(value * 100.0);
+            node.set_numeric_value(value * 100.0);
         }
     }
 

@@ -446,13 +446,13 @@ impl<W: Widget> Widget for Portal<W> {
         Role::GenericContainer
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx, builder: &mut NodeBuilder) {
+    fn accessibility(&mut self, ctx: &mut AccessCtx, node: &mut NodeBuilder) {
         // TODO - Double check this code
         // Not sure about these values
         if false {
-            builder.set_scroll_x(self.viewport_pos.x);
-            builder.set_scroll_y(self.viewport_pos.y);
-            builder.set_scroll_x_min(0.0);
+            node.set_scroll_x(self.viewport_pos.x);
+            node.set_scroll_y(self.viewport_pos.y);
+            node.set_scroll_x_min(0.0);
 
             let x_max = ctx
                 .get_raw_ref(&self.scrollbar_horizontal)
@@ -462,12 +462,12 @@ impl<W: Widget> Widget for Portal<W> {
                 .get_raw_ref(&self.scrollbar_vertical)
                 .widget()
                 .portal_size;
-            builder.set_scroll_x_max(x_max);
-            builder.set_scroll_y_min(0.0);
-            builder.set_scroll_y_max(y_max);
+            node.set_scroll_x_max(x_max);
+            node.set_scroll_y_min(0.0);
+            node.set_scroll_y_max(y_max);
         }
 
-        builder.set_clips_children();
+        node.set_clips_children();
     }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {

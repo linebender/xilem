@@ -338,9 +338,9 @@ impl Widget for Textbox {
         Role::TextInput
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx, builder: &mut NodeBuilder) {
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, node: &mut NodeBuilder) {
         // TODO: Replace with full accessibility.
-        builder.set_value(self.text());
+        node.set_value(self.text());
     }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {

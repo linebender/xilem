@@ -115,7 +115,7 @@ impl Widget for Image {
         Role::Image
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx, _builder: &mut NodeBuilder) {
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, _node: &mut NodeBuilder) {
         // TODO - Handle alt text and such.
     }
 

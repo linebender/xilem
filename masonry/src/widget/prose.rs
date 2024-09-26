@@ -284,8 +284,8 @@ impl Widget for Prose {
         Role::Paragraph
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx, builder: &mut NodeBuilder) {
-        builder.set_name(self.text().as_ref().to_string());
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, node: &mut NodeBuilder) {
+        node.set_name(self.text().as_ref().to_string());
     }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {

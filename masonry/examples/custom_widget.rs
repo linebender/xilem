@@ -132,9 +132,9 @@ impl Widget for CustomWidget {
         Role::Window
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx, builder: &mut NodeBuilder) {
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, node: &mut NodeBuilder) {
         let text = &self.0;
-        builder.set_name(
+        node.set_name(
             format!("This is a demo of the Masonry Widget trait. Masonry has accessibility tree support. The demo shows colored shapes with the text '{text}'."),
         );
     }
