@@ -7,14 +7,10 @@ use tracing::{trace_span, Span};
 use vello::kurbo::{Affine, Line, Stroke};
 use vello::Scene;
 use taffy;
-use taffy::AvailableSpace;
 
 use crate::theme::get_debug_color;
 use crate::widget::{WidgetMut};
-use crate::{
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
-    Point, PointerEvent, Size, StatusChange, TextEvent, Widget, WidgetId, WidgetPod,
-};
+use crate::{AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Point, PointerEvent, RegisterCtx, Size, StatusChange, TextEvent, Widget, WidgetId, WidgetPod};
 
 pub struct Taffy {
     children: Vec<Child>,
@@ -23,12 +19,7 @@ pub struct Taffy {
 
 struct Child {
     widget: WidgetPod<Box<dyn Widget>>,
-    //style: taffy::Style,
-}
-
-#[derive(Default, Debug, Copy, Clone, PartialEq)]
-pub struct TaffyParams {
-
+    style: taffy::Style,
 }
 
 /// Iterator over the widget's children. Used in the implementation of `taffy::TraversePartialTree`.
@@ -71,21 +62,22 @@ impl Taffy {
     /// Builder-style variant of [`WidgetMut::add_child`].
     ///
     /// Convenient for assembling a group of widgets in a single expression.
-    pub fn with_child(self, child: impl Widget, params: TaffyParams) -> Self {
+    pub fn with_child(self, child: impl Widget, params: taffy::Style) -> Self {
         self.with_child_pod(WidgetPod::new(Box::new(child)), params)
     }
 
-    pub fn with_child_id(self, child: impl Widget, id: WidgetId, params: TaffyParams) -> Self {
+    pub fn with_child_id(self, child: impl Widget, id: WidgetId, params: taffy::Style) -> Self {
         self.with_child_pod(WidgetPod::new_with_id(Box::new(child), id), params)
     }
 
     pub fn with_child_pod(
         mut self,
         widget: WidgetPod<Box<dyn Widget>>,
-        params: TaffyParams,
+        style: taffy::Style,
     ) -> Self {
         let child = Child {
             widget,
+            style,
         };
         self.children.push(child);
         self
@@ -100,21 +92,12 @@ impl Child {
     fn widget(&self) -> Option<&WidgetPod<Box<dyn Widget>>> {
         Some(&self.widget)
     }
-
-    fn update_params(&mut self, params: TaffyParams) {
-    }
 }
 
-fn new_taffy_child(params: TaffyParams, widget: WidgetPod<Box<dyn Widget>>) -> Child {
+fn new_taffy_child(style: taffy::Style, widget: WidgetPod<Box<dyn Widget>>) -> Child {
     Child {
         widget,
-    }
-}
-
-// --- MARK: IMPL GRIDPARAMS ---
-impl TaffyParams {
-    pub fn new() -> TaffyParams {
-        TaffyParams {}
+        style,
     }
 }
 
@@ -125,19 +108,19 @@ impl<'a> WidgetMut<'a, Taffy> {
     /// See also [`with_child`].
     ///
     /// [`with_child`]: Taffy::with_child
-    pub fn add_child(&mut self, child: impl Widget, params: TaffyParams) {
+    pub fn add_child(&mut self, child: impl Widget, style: taffy::Style) {
         let child_pod: WidgetPod<Box<dyn Widget>> = WidgetPod::new(Box::new(child));
-        self.insert_child_pod(child_pod, params);
+        self.insert_child_pod(child_pod, style);
     }
 
-    pub fn add_child_id(&mut self, child: impl Widget, id: WidgetId, params: TaffyParams) {
+    pub fn add_child_id(&mut self, child: impl Widget, id: WidgetId, style: taffy::Style) {
         let child_pod: WidgetPod<Box<dyn Widget>> = WidgetPod::new_with_id(Box::new(child), id);
-        self.insert_child_pod(child_pod, params);
+        self.insert_child_pod(child_pod, style);
     }
 
     /// Add a child widget.
-    pub fn insert_child_pod(&mut self, widget: WidgetPod<Box<dyn Widget>>, params: TaffyParams) {
-        let child = new_taffy_child(params, widget);
+    pub fn insert_child_pod(&mut self, widget: WidgetPod<Box<dyn Widget>>, style: taffy::Style) {
+        let child = new_taffy_child(style, widget);
         self.widget.children.push(child);
         self.ctx.children_changed();
         self.ctx.request_layout();
@@ -147,7 +130,7 @@ impl<'a> WidgetMut<'a, Taffy> {
         &mut self,
         idx: usize,
         child: impl Widget,
-        params: impl Into<TaffyParams>,
+        params: impl Into<taffy::Style>,
     ) {
         self.insert_taffy_child_pod(idx, WidgetPod::new(Box::new(child)), params);
     }
@@ -156,7 +139,7 @@ impl<'a> WidgetMut<'a, Taffy> {
         &mut self,
         idx: usize,
         child: WidgetPod<Box<dyn Widget>>,
-        params: impl Into<TaffyParams>,
+        params: impl Into<taffy::Style>,
     ) {
         let child = new_taffy_child(params.into(), child);
         self.widget.children.insert(idx, child);
@@ -173,14 +156,19 @@ impl<'a> WidgetMut<'a, Taffy> {
         Some(self.ctx.get_mut(child))
     }
 
+    pub fn update_global_taffy_style(&mut self, style: taffy::Style) {
+        self.widget.style = style;
+        self.ctx.request_layout();
+    }
+
     /// Updates the taffy parameters for the child at `idx`,
     ///
     /// # Panics
     ///
     /// Panics if the element at `idx` is not a widget.
-    pub fn update_child_taffy_params(&mut self, idx: usize, params: TaffyParams) {
+    pub fn update_child_taffy_params(&mut self, idx: usize, style: taffy::Style) {
         let child = &mut self.widget.children[idx];
-        child.update_params(params);
+        child.style = style;
         self.ctx.request_layout();
     }
 
@@ -201,15 +189,13 @@ impl Widget for Taffy {
 
     fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange) {}
 
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
+    fn register_children(&mut self, ctx: &mut RegisterCtx) {
         for child in self.children.iter_mut().filter_map(|x| x.widget_mut()) {
-            child.lifecycle(ctx, event);
+            ctx.register_child(child);
         }
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
-        bc.debug_check("Taffy");
-
         let display_mode = self.style.display;
         let has_children = !self.children.is_empty();
 
@@ -317,19 +303,12 @@ impl<'w, 'a> taffy::TraversePartialTree for TaffyLayoutCtx<'w, 'a> {
 impl<'w, 'a> taffy::LayoutPartialTree for TaffyLayoutCtx<'w, 'a> {
     fn get_style(&self, node_id: taffy::NodeId) -> &taffy::Style {
         let node_id = usize::from(node_id);
-        //if node_id == usize::MAX {
-        &self.widget.style
-        // TODO: Per-child style
-        /*} else {
+        if node_id == usize::MAX {
+            &self.widget.style
+        } else {
             let child = &self.widget.children[node_id];
-            match child {
-                Some(child_widget) => &child_widget.style,
-                None => {
-                    static DEFAULT_STYLE: taffy::Style = taffy::Style::DEFAULT;
-                    &DEFAULT_STYLE
-                }
-            }
-        }*/
+            &child.style
+        }
     }
 
     fn set_unrounded_layout(&mut self, node_id: taffy::NodeId, layout: &taffy::Layout) {

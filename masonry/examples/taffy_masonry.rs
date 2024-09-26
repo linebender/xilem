@@ -1,9 +1,11 @@
 use dpi::LogicalSize;
 use parley::layout::Alignment;
+use taffy::{Dimension, FlexDirection, GridPlacement, Line, Rect};
+use taffy::Display::{Block, Flex, Grid};
 use winit::window::Window;
 use masonry::app_driver::{AppDriver, DriverCtx};
-use masonry::{Action, Color, WidgetId};
-use masonry::widget::{Taffy, TaffyParams, Prose, RootWidget, SizedBox};
+use masonry::{Action, Color, Widget, WidgetId};
+use masonry::widget::{Taffy, Prose, RootWidget, SizedBox};
 
 
 struct Driver {
@@ -15,33 +17,122 @@ impl AppDriver for Driver {
     }
 }
 
-pub fn main() {
+fn get_layout_with_style(style: taffy::Style) -> impl Widget {
     let label1 = SizedBox::new(
         Prose::new("Label 1")
             .with_text_size(14.0)
             .with_text_alignment(Alignment::Middle),
     )
-        .border(Color::rgb8(150, 60, 90), 20.0);
+        .border(Color::rgb8(150, 60, 90), 4.0);
     let label2 = SizedBox::new(
         Prose::new("Label 2")
             .with_text_size(10.0)
             .with_text_alignment(Alignment::Middle),
     )
-        .border(Color::rgb8(40, 40, 80), 10.0);
+        .border(Color::rgb8(40, 40, 80), 2.0);
     let label3 = SizedBox::new(
         Prose::new("Label 3: This is a long one. It will take up more space.")
             .with_text_size(10.0)
             .with_text_alignment(Alignment::Middle),
     )
-        .border(Color::rgb8(20, 230, 80), 2.0);
+        .border(Color::rgb8(20, 230, 80), 1.0);
+
+    Taffy::new(style)
+        .with_child(label1, taffy::Style::default())
+        .with_child(label2, taffy::Style::default())
+        .with_child(label3, taffy::Style::default())
+}
+
+fn get_custom_grid() -> impl Widget {
+    let label1 = SizedBox::new(
+        Prose::new("Label 1")
+            .with_text_size(14.0)
+            .with_text_alignment(Alignment::Middle),
+    )
+        .border(Color::rgb8(150, 60, 90), 4.0);
+    let label2 = SizedBox::new(
+        Prose::new("Label 2")
+            .with_text_size(10.0)
+            .with_text_alignment(Alignment::Middle),
+    )
+        .border(Color::rgb8(40, 40, 80), 2.0);
+    let label3 = SizedBox::new(
+        Prose::new("Label 3: This is a long one. It will take up more space.")
+            .with_text_size(10.0)
+            .with_text_alignment(Alignment::Middle),
+    )
+        .border(Color::rgb8(20, 230, 80), 1.0);
+
+    Taffy::new(taffy::Style{
+        display: Grid,
+        ..taffy::Style::default()
+    })
+        .with_child(label1, taffy::Style{
+            grid_row: Line { start: GridPlacement::Span(1), end: GridPlacement::Span(1) },
+            grid_column: Line { start: GridPlacement::Span(1), end: GridPlacement::Span(2) },
+            ..taffy::Style::default()
+        })
+        .with_child(label2, taffy::Style{
+            grid_row: Line { start: GridPlacement::Span(2), end: GridPlacement::Span(2) },
+            grid_column: Line { start: GridPlacement::Span(1), end: GridPlacement::Span(1) },
+            ..taffy::Style::default()
+        })
+        .with_child(label3, taffy::Style{
+            grid_row: Line { start: GridPlacement::Span(2), end: GridPlacement::Span(2) },
+            grid_column: Line { start: GridPlacement::Span(2), end: GridPlacement::Span(2) },
+            ..taffy::Style::default()
+        })
+}
+
+pub fn main() {
+    let block_layout = get_layout_with_style(taffy::Style{
+        display: Block,
+        ..taffy::Style::default()
+    });
+
+    let flex_row_layout = get_layout_with_style(taffy::Style{
+        display: Flex,
+        flex_direction: FlexDirection::Row,
+        ..taffy::Style::default()
+    });
+
+    let flex_col_layout = get_layout_with_style(taffy::Style{
+        display: Flex,
+        flex_direction: FlexDirection::Column,
+        ..taffy::Style::default()
+    });
+
+    let grid_layout = get_layout_with_style(taffy::Style{
+        display: Grid,
+        ..taffy::Style::default()
+    });
 
     let driver = Driver {};
 
-    // Arrange widgets in a 4 by 4 grid.
-    let main_widget = Taffy::new(taffy::Style::default())
-        .with_child(label1, TaffyParams::new())
-        .with_child(label2, TaffyParams::new())
-        .with_child(label3, TaffyParams::new());
+    let mut section_title_style = taffy::Style {
+        margin: Rect {
+            left: taffy::LengthPercentageAuto::Length(5.0),
+            right: taffy::LengthPercentageAuto::Length(5.0),
+            top: taffy::LengthPercentageAuto::Length(15.0),
+            bottom: taffy::LengthPercentageAuto::Length(5.0),
+        },
+        ..taffy::Style::default()
+    };
+
+    let mut vertical_flex_style = taffy::Style::default();
+    vertical_flex_style.display = Flex;
+    vertical_flex_style.flex_direction = FlexDirection::Column;
+    let main_vertical_layout = Taffy::new(vertical_flex_style)
+        .with_child(Prose::new("Block"), section_title_style.clone())
+        .with_child(block_layout, taffy::Style::default())
+        .with_child(Prose::new("Flex Col"), section_title_style.clone())
+        .with_child(flex_col_layout, taffy::Style::default())
+        .with_child(Prose::new("Flex Row"), section_title_style.clone())
+        .with_child(flex_row_layout, taffy::Style::default())
+        .with_child(Prose::new("Default Grid"), section_title_style.clone())
+        .with_child(grid_layout, taffy::Style::default())
+        .with_child(Prose::new("Custom Grid"), section_title_style.clone())
+        .with_child(get_custom_grid(), taffy::Style::default());
 
     let window_size = LogicalSize::new(800.0, 500.0);
     let window_attributes = Window::default_attributes()
@@ -52,7 +143,7 @@ pub fn main() {
     masonry::event_loop_runner::run(
         masonry::event_loop_runner::EventLoop::with_user_event(),
         window_attributes,
-        RootWidget::new(main_widget),
+        RootWidget::new(main_vertical_layout),
         driver,
     )
         .unwrap();

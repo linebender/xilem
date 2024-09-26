@@ -39,7 +39,7 @@ pub use button::Button;
 pub use checkbox::Checkbox;
 pub use flex::{CrossAxisAlignment, Flex, FlexParams, MainAxisAlignment};
 pub use grid::{Grid, GridParams};
-pub use taffy::{Taffy, TaffyParams};
+pub use taffy::{Taffy};
 pub use label::{Label, LineBreaking};
 pub use portal::Portal;
 pub use progress_bar::ProgressBar;
