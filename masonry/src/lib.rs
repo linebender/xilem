@@ -131,7 +131,7 @@ pub use action::Action;
 pub use box_constraints::BoxConstraints;
 pub use contexts::{
     AccessCtx, ComposeCtx, EventCtx, IsContext, LayoutCtx, LifeCycleCtx, MutateCtx, PaintCtx,
-    RawWrapper, RawWrapperMut, RegisterCtx,
+    QueryCtx, RawWrapper, RawWrapperMut, RegisterCtx,
 };
 pub use event::{
     AccessEvent, LifeCycle, PointerButton, PointerEvent, PointerState, StatusChange, TextEvent,
