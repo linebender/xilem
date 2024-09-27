@@ -8,6 +8,7 @@ use accesskit_winit::Adapter;
 use tracing::{debug, warn};
 use vello::kurbo::Affine;
 use vello::util::{RenderContext, RenderSurface};
+use vello::DebugLayers;
 use vello::{peniko::Color, AaSupport, RenderParams, Renderer, RendererOptions, Scene};
 use wgpu::PresentMode;
 use winit::application::ApplicationHandler;
@@ -386,6 +387,7 @@ impl MasonryState<'_> {
             width,
             height,
             antialiasing_method: vello::AaConfig::Area,
+            debug: DebugLayers::none(),
         };
         // TODO: Run this in-between `submit` and `present`.
         window.pre_present_notify();
