@@ -352,6 +352,7 @@ impl<T: Selectable> TextWithSelection<T> {
             self.selection.active_affinity,
         );
         parent_node.set_text_selection(TextSelection { anchor, focus });
+        parent_node.add_action(accesskit::Action::SetTextSelection);
     }
 
     fn offset_from_access_position(&self, pos: TextPosition) -> Option<(usize, Affinity)> {
