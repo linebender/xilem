@@ -274,11 +274,12 @@ impl Widget for Prose {
     }
 
     fn accessibility_role(&self) -> Role {
-        Role::Paragraph
+        Role::Document
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx, node: &mut NodeBuilder) {
-        node.set_name(self.text().as_ref().to_string());
+    fn accessibility(&mut self, ctx: &mut AccessCtx, node: &mut NodeBuilder) {
+        node.set_read_only();
+        self.text_layout.accessibility(ctx, node);
     }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {

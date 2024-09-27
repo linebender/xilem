@@ -3,18 +3,24 @@
 
 //! A type for laying out, drawing, and interacting with text.
 
-use std::rc::Rc;
+use std::{
+    collections::{HashMap, HashSet},
+    rc::Rc,
+};
 
+use accesskit::{NodeBuilder, NodeId, Role};
 use parley::context::RangedBuilder;
 use parley::fontique::{Style, Weight};
 use parley::layout::{Alignment, Cursor};
 use parley::style::{FontFamily, FontStack, GenericFamily, StyleProperty};
 use parley::{FontContext, Layout, LayoutContext};
+use unicode_segmentation::UnicodeSegmentation;
 use vello::kurbo::{Affine, Line, Point, Rect, Size};
 use vello::peniko::{self, Color, Gradient};
 use vello::Scene;
 
 use crate::text::render_text;
+use crate::{AccessCtx, WidgetId};
 
 /// A component for displaying text on screen.
 ///
@@ -54,10 +60,14 @@ pub struct TextLayout {
 
     needs_layout: bool,
     needs_line_breaks: bool,
-    layout: Layout<TextBrush>,
+    pub(crate) layout: Layout<TextBrush>,
     scratch_scene: Scene,
     // TODO - Add field to check whether text has changed since last layout
     // #[cfg(debug_assertions)] last_text_start: String,
+
+    pub(crate) access_ids_by_run_path: HashMap<(usize, usize), NodeId>,
+    pub(crate) run_paths_by_access_id: HashMap<NodeId, (usize, usize)>,
+    pub(crate) character_lengths_by_access_id: HashMap<NodeId, Box<[u8]>>,
 }
 
 /// Whether a section of text should be hinted.
@@ -162,6 +172,10 @@ impl TextLayout {
             needs_line_breaks: true,
             layout: Layout::new(),
             scratch_scene: Scene::new(),
+
+            access_ids_by_run_path: HashMap::new(),
+            run_paths_by_access_id: HashMap::new(),
+            character_lengths_by_access_id: HashMap::new(),
         }
     }
 
@@ -436,6 +450,89 @@ impl TextLayout {
             Affine::translate((p.x, p.y)),
             &self.layout,
         );
+    }
+
+    pub fn accessibility(&mut self, ctx: &mut AccessCtx, parent_node: &mut NodeBuilder) {
+        self.assert_rebuilt("accessibility");
+
+        let text = self.text.as_ref();
+        let mut ids = HashSet::<NodeId>::new();
+
+        for (line_index, line) in self.layout.lines().enumerate() {
+            let mut last_node: Option<(NodeId, NodeBuilder)> = None;
+
+            for (run_index, run) in line.runs().enumerate() {
+                let run_path = (line_index, run_index);
+                let id = self
+                    .access_ids_by_run_path
+                    .get(&run_path)
+                    .copied()
+                    .unwrap_or_else(|| {
+                        let id = NodeId::from(WidgetId::next());
+                        self.access_ids_by_run_path.insert(run_path, id);
+                        self.run_paths_by_access_id.insert(id, run_path);
+                        id
+                    });
+                ids.insert(id);
+                let mut node = NodeBuilder::new(Role::InlineTextBox);
+
+                if let Some((last_id, mut last_node)) = last_node.take() {
+                    last_node.set_next_on_line(id);
+                    node.set_previous_on_line(last_id);
+                    ctx.tree_update.nodes.push((last_id, last_node.build()));
+                    parent_node.push_child(last_id);
+                }
+
+                // TODO: bounding rectangle and character position/width
+                let run_text = &text[run.text_range()];
+                node.set_value(run_text);
+
+                let mut character_lengths = Vec::new();
+                let mut word_lengths = Vec::new();
+                let mut was_at_word_end = false;
+                let mut last_word_start = 0;
+
+                for grapheme in run_text.graphemes(true) {
+                    let is_word_char = grapheme.chars().next().unwrap().is_alphanumeric();
+                    if is_word_char && was_at_word_end {
+                        word_lengths.push((character_lengths.len() - last_word_start) as _);
+                        last_word_start = character_lengths.len();
+                    }
+                    was_at_word_end = !is_word_char;
+                    character_lengths.push(grapheme.len() as _);
+                }
+
+                word_lengths.push((character_lengths.len() - last_word_start) as _);
+                self.character_lengths_by_access_id
+                    .insert(id, character_lengths.clone().into());
+                node.set_character_lengths(character_lengths);
+                node.set_word_lengths(word_lengths);
+
+                last_node = Some((id, node));
+            }
+
+            if let Some((id, node)) = last_node {
+                // TODO: trailing newline if not the last line?
+                ctx.tree_update.nodes.push((id, node.build()));
+                parent_node.push_child(id);
+            }
+        }
+
+        let mut ids_to_remove = Vec::<NodeId>::new();
+        let mut run_paths_to_remove = Vec::<(usize, usize)>::new();
+        for (access_id, run_path) in self.run_paths_by_access_id.iter() {
+            if !ids.contains(access_id) {
+                ids_to_remove.push(*access_id);
+                run_paths_to_remove.push(*run_path);
+            }
+        }
+        for id in ids_to_remove {
+            self.run_paths_by_access_id.remove(&id);
+            self.character_lengths_by_access_id.remove(&id);
+        }
+        for run_path in run_paths_to_remove {
+            self.access_ids_by_run_path.remove(&run_path);
+        }
     }
 }
 

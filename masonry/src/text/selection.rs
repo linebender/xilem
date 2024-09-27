@@ -6,6 +6,7 @@
 use std::borrow::Cow;
 use std::ops::{Deref, DerefMut, Range};
 
+use accesskit::{NodeBuilder, TextPosition, TextSelection};
 use parley::context::RangedBuilder;
 use parley::{FontContext, LayoutContext};
 use tracing::debug;
@@ -15,9 +16,9 @@ use vello::peniko::{Brush, Color};
 use vello::Scene;
 use winit::keyboard::NamedKey;
 
-use crate::event::{PointerButton, PointerState};
+use crate::event::{AccessEvent, PointerButton, PointerState};
 use crate::text::{TextBrush, TextLayout};
-use crate::{Handled, TextEvent};
+use crate::{AccessCtx, Handled, TextEvent};
 
 pub struct TextWithSelection<T: Selectable> {
     text: T,
@@ -282,6 +283,115 @@ impl<T: Selectable> TextWithSelection<T> {
             );
         }
         self.layout.draw(scene, point);
+    }
+
+    fn access_position_from_offset(
+        &self,
+        parent_node: &NodeBuilder,
+        offset: usize,
+        affinity: Affinity,
+    ) -> TextPosition {
+        let text = self.text().as_ref();
+        assert!(offset <= text.len());
+        if offset == text.len() {
+            let last_id = *parent_node.children().last().unwrap();
+            let character_lengths = self
+                .layout
+                .character_lengths_by_access_id
+                .get(&last_id)
+                .unwrap();
+            return TextPosition {
+                node: last_id,
+                character_index: character_lengths.len(),
+            };
+        }
+        for (line_index, line) in self.layout.layout.lines().enumerate() {
+            for (run_index, run) in line.runs().enumerate() {
+                let range = run.text_range();
+                if !(range.contains(&offset)
+                    || (affinity == Affinity::Upstream && offset == range.end))
+                {
+                    continue;
+                }
+                let run_offset = offset - range.start;
+                let run_path = (line_index, run_index);
+                let id = *self.layout.access_ids_by_run_path.get(&run_path).unwrap();
+                let character_lengths =
+                    self.layout.character_lengths_by_access_id.get(&id).unwrap();
+                let mut length_sum = 0_usize;
+                for (character_index, length) in character_lengths.iter().copied().enumerate() {
+                    if run_offset == length_sum {
+                        return TextPosition {
+                            node: id,
+                            character_index,
+                        };
+                    }
+                    length_sum += length as usize;
+                }
+                return TextPosition {
+                    node: id,
+                    character_index: character_lengths.len(),
+                };
+            }
+        }
+        unreachable!()
+    }
+
+    pub fn accessibility(&mut self, ctx: &mut AccessCtx, parent_node: &mut NodeBuilder) {
+        self.layout.accessibility(ctx, parent_node);
+        let anchor_affinity = if self.selection.anchor == self.selection.active {
+            self.selection.active_affinity
+        } else {
+            Affinity::Downstream
+        };
+        let anchor =
+            self.access_position_from_offset(parent_node, self.selection.anchor, anchor_affinity);
+        let focus = self.access_position_from_offset(
+            parent_node,
+            self.selection.active,
+            self.selection.active_affinity,
+        );
+        parent_node.set_text_selection(TextSelection { anchor, focus });
+    }
+
+    fn offset_from_access_position(&self, pos: TextPosition) -> Option<(usize, Affinity)> {
+        let character_lengths = self.layout.character_lengths_by_access_id.get(&pos.node)?;
+        if pos.character_index > character_lengths.len() {
+            return None;
+        }
+        let run_path = *self.layout.run_paths_by_access_id.get(&pos.node)?;
+        let (line_index, run_index) = run_path;
+        let line = self.layout.layout.get(line_index)?;
+        let run = line.get(run_index)?;
+        let offset = run.text_range().start
+            + character_lengths[..pos.character_index]
+                .iter()
+                .copied()
+                .map(usize::from)
+                .sum::<usize>();
+        let affinity = if pos.character_index == character_lengths.len() && line_index < run.len() {
+            Affinity::Upstream
+        } else {
+            Affinity::Downstream
+        };
+        Some((offset, affinity))
+    }
+
+    pub fn set_selection_from_access_event(&mut self, event: &AccessEvent) -> bool {
+        let Some(accesskit::ActionData::SetTextSelection(access_selection)) = event.data else {
+            return false;
+        };
+        let Some((anchor, _)) = self.offset_from_access_position(access_selection.anchor) else {
+            return false;
+        };
+        let Some((active, active_affinity)) =
+            self.offset_from_access_position(access_selection.focus)
+        else {
+            return false;
+        };
+        self.selection = Selection::new(anchor, active, active_affinity);
+        self.needs_selection_update = true;
+        true
     }
 }
 
