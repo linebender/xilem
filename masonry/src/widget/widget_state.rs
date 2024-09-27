@@ -263,6 +263,7 @@ impl WidgetState {
         self.has_focus |= child_state.has_focus;
         self.children_changed |= child_state.children_changed;
         self.update_focus_chain |= child_state.update_focus_chain;
+        self.needs_update_stashed |= child_state.needs_update_stashed;
     }
 
     #[inline]
