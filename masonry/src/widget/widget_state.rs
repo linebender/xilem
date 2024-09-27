@@ -143,7 +143,7 @@ pub struct WidgetState {
 
     /// In the focused path, starting from window and ending at the focused widget.
     /// Descendants of the focused widget are not in the focused path.
-    pub(crate) has_focus: bool,
+    pub(crate) subtree_has_focus: bool,
 
     /// Whether this specific widget is in the focus chain.
     pub(crate) in_focus_chain: bool,
@@ -194,7 +194,7 @@ impl WidgetState {
             needs_paint: true,
             request_accessibility: true,
             needs_accessibility: true,
-            has_focus: false,
+            subtree_has_focus: false,
             in_focus_chain: false,
             request_anim: true,
             needs_anim: true,
@@ -260,7 +260,7 @@ impl WidgetState {
         self.needs_anim |= child_state.needs_anim;
         self.needs_accessibility |= child_state.needs_accessibility;
         self.needs_update_disabled |= child_state.needs_update_disabled;
-        self.has_focus |= child_state.has_focus;
+        self.subtree_has_focus |= child_state.subtree_has_focus;
         self.children_changed |= child_state.children_changed;
         self.update_focus_chain |= child_state.update_focus_chain;
         self.needs_update_stashed |= child_state.needs_update_stashed;

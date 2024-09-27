@@ -290,7 +290,7 @@ impl_context_method!(
         /// The focus status of a widget.
         ///
         /// Returns `true` if this specific widget is focused.
-        /// To check if any descendants are focused use [`has_focus`].
+        /// To check if any descendants are focused use [`subtree_has_focus`].
         ///
         /// Focus means that the widget receives keyboard events.
         ///
@@ -314,8 +314,8 @@ impl_context_method!(
         ///
         /// Returns `true` if either this specific widget or any one of its descendants is focused.
         /// To check if only this specific widget is focused use [`is_focused`](Self::is_focused).
-        pub fn has_focus(&self) -> bool {
-            self.widget_state.has_focus
+        pub fn subtree_has_focus(&self) -> bool {
+            self.widget_state.subtree_has_focus
         }
 
         /// Whether this specific widget is in the focus chain.
@@ -742,7 +742,7 @@ impl EventCtx<'_> {
     /// See [`is_focused`](Self::is_focused) for more information about focus.
     pub fn resign_focus(&mut self) {
         trace!("resign_focus");
-        if self.has_focus() {
+        if self.subtree_has_focus() {
             self.global_state.next_focused_widget = None;
         } else {
             warn!(

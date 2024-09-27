@@ -214,12 +214,12 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot, root_state: &mut Widg
         focused_set: &HashSet<WidgetId>,
     ) {
         run_targeted_update_pass(root, Some(widget_id), |widget, ctx| {
-            let has_focus = focused_set.contains(&ctx.widget_id());
+            let subtree_has_focus = focused_set.contains(&ctx.widget_id());
 
-            if ctx.widget_state.has_focus != has_focus {
-                widget.on_status_change(ctx, &StatusChange::ChildFocusChanged(has_focus));
+            if ctx.widget_state.subtree_has_focus != subtree_has_focus {
+                widget.on_status_change(ctx, &StatusChange::ChildFocusChanged(subtree_has_focus));
             }
-            ctx.widget_state.has_focus = has_focus;
+            ctx.widget_state.subtree_has_focus = subtree_has_focus;
         });
     }
 
@@ -227,7 +227,11 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot, root_state: &mut Widg
     // TODO - Document the iteration order for update_focus pass.
     for widget_id in prev_focused_path.iter().copied() {
         if root.widget_arena.has(widget_id)
-            && root.widget_arena.get_state_mut(widget_id).item.has_focus
+            && root
+                .widget_arena
+                .get_state_mut(widget_id)
+                .item
+                .subtree_has_focus
                 != focused_set.contains(&widget_id)
         {
             update_focused_status_of(root, widget_id, &focused_set);
@@ -235,7 +239,11 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot, root_state: &mut Widg
     }
     for widget_id in next_focused_path.iter().copied() {
         if root.widget_arena.has(widget_id)
-            && root.widget_arena.get_state_mut(widget_id).item.has_focus
+            && root
+                .widget_arena
+                .get_state_mut(widget_id)
+                .item
+                .subtree_has_focus
                 != focused_set.contains(&widget_id)
         {
             update_focused_status_of(root, widget_id, &focused_set);
@@ -560,9 +568,9 @@ fn update_focus_chain_for_widget(
         return;
     }
 
-    // Replace has_focus to check if the value changed in the meantime
-    state.item.has_focus = global_state.focused_widget == Some(id);
-    let had_focus = state.item.has_focus;
+    // Replace subtree_has_focus to check if the value changed in the meantime
+    state.item.subtree_has_focus = global_state.focused_widget == Some(id);
+    let subtree_had_focus = state.item.subtree_has_focus;
 
     state.item.in_focus_chain = false;
     state.item.focus_chain.clear();
@@ -597,16 +605,16 @@ fn update_focus_chain_for_widget(
         parent_focus_chain.extend(&state.item.focus_chain);
     }
 
-    // had_focus is the old focus value. state.has_focus was replaced with parent_ctx.is_focused().
-    // Therefore if had_focus is true but state.has_focus is false then the widget which is
-    // currently focused is not part of the functional tree anymore
-    // (Lifecycle::BuildFocusChain.should_propagate_to_hidden() is false!) and should
+    // subtree_had_focus is the old focus value. state.subtree_has_focus was replaced with
+    // parent_ctx.is_focused(). Therefore if subtree_had_focus is true but state.subtree_has_focus
+    // is false then the widget which is currently focused is not part of the functional tree
+    // anymore (Lifecycle::BuildFocusChain.should_propagate_to_hidden() is false!) and should
     // resign the focus.
-    if had_focus && !state.item.has_focus {
+    if subtree_had_focus && !state.item.subtree_has_focus {
         // Not sure about this logic, might remove
         global_state.next_focused_widget = None;
     }
-    state.item.has_focus = had_focus;
+    state.item.subtree_has_focus = subtree_had_focus;
 }
 
 pub(crate) fn run_update_focus_chain_pass(root: &mut RenderRoot) {
