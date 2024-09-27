@@ -581,8 +581,9 @@ impl_context_method!(
         /// **Note:** Stashed widgets are a WIP feature.
         pub fn set_stashed(&mut self, child: &mut WidgetPod<impl Widget>, stashed: bool) {
             let child_state = self.get_child_state_mut(child);
-            // Stashing is generally a static property based on the parent widget's state, so
-            // allowing it to be set superfluously can help performance.
+            // Stashing is generally a property derived from the parent widget's state
+            // (rather than set imperatively), so it is likely to be set as part of passes.
+            // Therefore, we avoid re-running the update_stashed_pass in most cases.
             if child_state.is_explicitly_stashed != stashed {
                 child_state.needs_update_stashed = true;
                 child_state.is_explicitly_stashed = stashed;
