@@ -9,10 +9,10 @@ use vello::Scene;
 use taffy;
 
 use crate::theme::get_debug_color;
-use crate::widget::{WidgetMut};
-use crate::{AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Point, PointerEvent, RegisterCtx, Size, StatusChange, TextEvent, Widget, WidgetId, WidgetPod};
+use crate::widget::WidgetMut;
+use crate::{AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycleCtx, PaintCtx, Point, PointerEvent, RegisterCtx, Size, StatusChange, TextEvent, Widget, WidgetId, WidgetPod};
 
-pub struct Taffy {
+pub struct TaffyLayout {
     children: Vec<Child>,
     style: taffy::Style,
 }
@@ -38,22 +38,22 @@ impl Iterator for ChildIter {
 // TODO: Determine what information is still required for the updated partial tree.
 struct TaffyLayoutCtx<'w, 'a> {
     /// A mutable reference to the widget
-    widget: &'w mut Taffy,
+    widget: &'w mut TaffyLayout,
     /// A mutable reference to the layout context
     ctx: &'w mut LayoutCtx<'a>,
 }
 
-impl<'w, 'a, 'b> TaffyLayoutCtx<'w, 'a> {
+impl<'w, 'a> TaffyLayoutCtx<'w, 'a> {
     /// Create a new `TaffyLayoutCtx`
-    fn new(widget: &'w mut Taffy, ctx: &'w mut LayoutCtx<'a>) -> Self {
+    fn new(widget: &'w mut TaffyLayout, ctx: &'w mut LayoutCtx<'a>) -> Self {
         TaffyLayoutCtx { widget, ctx }
     }
 }
 
 // --- MARK: IMPL TAFFY ---
-impl Taffy {
+impl TaffyLayout {
     pub fn new(style: taffy::Style) -> Self {
-        Taffy {
+        TaffyLayout {
             children: Vec::new(),
             style,
         }
@@ -102,12 +102,12 @@ fn new_taffy_child(style: taffy::Style, widget: WidgetPod<Box<dyn Widget>>) -> C
 }
 
 // --- MARK: WIDGETMUT---
-impl<'a> WidgetMut<'a, Taffy> {
+impl<'a> WidgetMut<'a, TaffyLayout> {
     /// Add a child widget.
     ///
     /// See also [`with_child`].
     ///
-    /// [`with_child`]: Taffy::with_child
+    /// [`with_child`]: TaffyLayout::with_child
     pub fn add_child(&mut self, child: impl Widget, style: taffy::Style) {
         let child_pod: WidgetPod<Box<dyn Widget>> = WidgetPod::new(Box::new(child));
         self.insert_child_pod(child_pod, style);
@@ -177,10 +177,15 @@ impl<'a> WidgetMut<'a, Taffy> {
         self.ctx.remove_child(child.widget);
         self.ctx.request_layout();
     }
+
+    pub fn set_style(&mut self, style: taffy::Style) {
+        self.widget.style = style;
+        self.ctx.request_layout();
+    }
 }
 
 // --- MARK: IMPL WIDGET---
-impl Widget for Taffy {
+impl Widget for TaffyLayout {
     fn on_pointer_event(&mut self, _ctx: &mut EventCtx, _event: &PointerEvent) {}
 
     fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
@@ -224,11 +229,8 @@ impl Widget for Taffy {
             }
             (_, false) => {
                 taffy::compute_leaf_layout(inputs, &self.style, |known_dimensions, available_space| {
-                    // TODO: This is a fixed value until the measure function is done.
-                    taffy::geometry::Size{
-                        width: 1.0,
-                        height: 1.0,
-                    }
+                    // The layout is empty, so pass in zero size.
+                    taffy::geometry::Size::zero()
                 })
             }
         };

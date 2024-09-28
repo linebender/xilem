@@ -1,11 +1,11 @@
 use dpi::LogicalSize;
 use parley::layout::Alignment;
-use taffy::{Dimension, FlexDirection, GridPlacement, Line, Rect};
+use taffy::{Dimension, FlexDirection, GridPlacement, LengthPercentage, Line, Rect, Size};
 use taffy::Display::{Block, Flex, Grid};
 use winit::window::Window;
 use masonry::app_driver::{AppDriver, DriverCtx};
 use masonry::{Action, Color, Widget, WidgetId};
-use masonry::widget::{Taffy, Prose, RootWidget, SizedBox};
+use masonry::widget::{TaffyLayout, Prose, RootWidget, SizedBox};
 
 
 struct Driver {
@@ -37,10 +37,19 @@ fn get_layout_with_style(style: taffy::Style) -> impl Widget {
     )
         .border(Color::rgb8(20, 230, 80), 1.0);
 
-    Taffy::new(style)
-        .with_child(label1, taffy::Style::default())
-        .with_child(label2, taffy::Style::default())
-        .with_child(label3, taffy::Style::default())
+    TaffyLayout::new(style)
+        .with_child(label1, taffy::Style{
+            flex_grow: 2.0,
+            ..taffy::Style::default()
+        })
+        .with_child(label2, taffy::Style{
+            flex_grow: 1.0,
+            ..taffy::Style::default()
+        })
+        .with_child(label3, taffy::Style{
+            flex_grow: 1.0,
+            ..taffy::Style::default()
+        })
 }
 
 fn get_custom_grid() -> impl Widget {
@@ -63,7 +72,7 @@ fn get_custom_grid() -> impl Widget {
     )
         .border(Color::rgb8(20, 230, 80), 1.0);
 
-    Taffy::new(taffy::Style{
+    TaffyLayout::new(taffy::Style{
         display: Grid,
         ..taffy::Style::default()
     })
@@ -119,10 +128,30 @@ pub fn main() {
         ..taffy::Style::default()
     };
 
+    // The empty layout shows how it handles leaf nodes.
+    let empty_layout = SizedBox::new(
+        TaffyLayout::new(taffy::Style::default()),
+    )
+        .border(Color::rgb8(90, 90, 100), 5.0);
+
+    let empty_style = taffy::Style{
+        max_size: Size{
+            width: Dimension::Length(200.0),
+            height: Dimension::Length(30.0),
+        },
+        min_size: Size{
+            width: Dimension::Length(100.0),
+            height: Dimension::Length(20.0),
+        },
+        ..taffy::Style::default()
+    };
+
     let mut vertical_flex_style = taffy::Style::default();
     vertical_flex_style.display = Flex;
     vertical_flex_style.flex_direction = FlexDirection::Column;
-    let main_vertical_layout = Taffy::new(vertical_flex_style)
+    let main_vertical_layout = TaffyLayout::new(vertical_flex_style)
+        .with_child(Prose::new("Empty With Sizing"), section_title_style.clone())
+        .with_child(empty_layout, empty_style)
         .with_child(Prose::new("Block"), section_title_style.clone())
         .with_child(block_layout, taffy::Style::default())
         .with_child(Prose::new("Flex Col"), section_title_style.clone())
