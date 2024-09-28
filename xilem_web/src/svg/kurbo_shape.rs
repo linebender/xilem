@@ -8,14 +8,11 @@ use std::borrow::Cow;
 
 use xilem_core::{MessageResult, Mut, OrphanView};
 
-use crate::{
-    attribute::WithAttributes, element_props::ElementProps, DynMessage, IntoAttributeValue, Pod,
-    ViewCtx, SVG_NS,
-};
+use crate::{attribute::WithAttributes, DynMessage, IntoAttributeValue, Pod, ViewCtx, SVG_NS};
 
 impl<State: 'static, Action: 'static> OrphanView<Line, State, Action, DynMessage> for ViewCtx {
     type OrphanViewState = ();
-    type OrphanElement = Pod<web_sys::SvgLineElement, ElementProps>;
+    type OrphanElement = Pod<web_sys::SvgLineElement>;
 
     fn orphan_build(
         view: &Line,
@@ -67,7 +64,7 @@ impl<State: 'static, Action: 'static> OrphanView<Line, State, Action, DynMessage
 
 impl<State: 'static, Action: 'static> OrphanView<Rect, State, Action, DynMessage> for ViewCtx {
     type OrphanViewState = ();
-    type OrphanElement = Pod<web_sys::SvgRectElement, ElementProps>;
+    type OrphanElement = Pod<web_sys::SvgRectElement>;
 
     fn orphan_build(
         view: &Rect,
@@ -119,7 +116,7 @@ impl<State: 'static, Action: 'static> OrphanView<Rect, State, Action, DynMessage
 
 impl<State: 'static, Action: 'static> OrphanView<Circle, State, Action, DynMessage> for ViewCtx {
     type OrphanViewState = ();
-    type OrphanElement = Pod<web_sys::SvgCircleElement, ElementProps>;
+    type OrphanElement = Pod<web_sys::SvgCircleElement>;
 
     fn orphan_build(
         view: &Circle,
@@ -170,7 +167,7 @@ impl<State: 'static, Action: 'static> OrphanView<Circle, State, Action, DynMessa
 
 impl<State: 'static, Action: 'static> OrphanView<BezPath, State, Action, DynMessage> for ViewCtx {
     type OrphanViewState = Cow<'static, str>;
-    type OrphanElement = Pod<web_sys::SvgPathElement, ElementProps>;
+    type OrphanElement = Pod<web_sys::SvgPathElement>;
 
     fn orphan_build(
         view: &BezPath,

@@ -238,7 +238,10 @@ impl WithClasses for ElementProps {
     }
 }
 
-impl<E: DomNode<P>, P: WithClasses> WithClasses for Pod<E, P> {
+impl<N: DomNode> WithClasses for Pod<N>
+where
+    N::Props: WithClasses,
+{
     fn rebuild_class_modifier(&mut self) {
         self.props.rebuild_class_modifier();
     }
@@ -256,7 +259,10 @@ impl<E: DomNode<P>, P: WithClasses> WithClasses for Pod<E, P> {
     }
 }
 
-impl<E: DomNode<P>, P: WithClasses> WithClasses for PodMut<'_, E, P> {
+impl<N: DomNode> WithClasses for PodMut<'_, N>
+where
+    N::Props: WithClasses,
+{
     fn rebuild_class_modifier(&mut self) {
         self.props.rebuild_class_modifier();
     }

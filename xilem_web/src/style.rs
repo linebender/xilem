@@ -105,8 +105,9 @@ where
     }
 }
 
-/// This trait allows (modifying) the `style` property of `HTMLElement`/`SVGElement`s, used in the DOM interface traits [`HtmlElement`](`crate::interfaces::HtmlElement`) and [`SvgElement`](`crate::interfaces::SvgElement`).
+/// This trait allows (modifying) the `style` property of `HTMLElement`/`SVGElement`s
 ///
+/// It's e.g. used in the DOM interface traits [`HtmlElement`](`crate::interfaces::HtmlElement`) and [`SvgElement`](`crate::interfaces::SvgElement`).
 /// Modifications have to be done on the up-traversal of [`View::rebuild`], i.e. after [`View::rebuild`] was invoked for descendent views.
 /// See [`Style::build`] and [`Style::rebuild`], how to use this for [`ViewElement`]s that implement this trait.
 /// When these methods are used, they have to be used in every reconciliation pass (i.e. [`View::rebuild`]).
@@ -271,7 +272,10 @@ impl WithStyle for ElementProps {
     }
 }
 
-impl<E: DomNode<P>, P: WithStyle> WithStyle for Pod<E, P> {
+impl<N: DomNode> WithStyle for Pod<N>
+where
+    N::Props: WithStyle,
+{
     fn rebuild_style_modifier(&mut self) {
         self.props.rebuild_style_modifier();
     }
@@ -285,7 +289,10 @@ impl<E: DomNode<P>, P: WithStyle> WithStyle for Pod<E, P> {
     }
 }
 
-impl<E: DomNode<P>, P: WithStyle> WithStyle for PodMut<'_, E, P> {
+impl<N: DomNode> WithStyle for PodMut<'_, N>
+where
+    N::Props: WithStyle,
+{
     fn rebuild_style_modifier(&mut self) {
         self.props.rebuild_style_modifier();
     }
