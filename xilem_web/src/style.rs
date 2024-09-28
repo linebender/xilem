@@ -14,26 +14,23 @@ type CowStr = std::borrow::Cow<'static, str>;
 
 /// A trait to make the class adding functions generic over collection type
 pub trait IntoStyles {
-    fn into_styles(self, styles: &mut Vec<(CowStr, CowStr)>);
+    fn into_styles(self, styles: &mut Vec<(CowStr, Option<CowStr>)>);
 }
 
 struct StyleTuple<T1, T2>(T1, T2);
 
+// TODO should this also allow removing style values, via `None`?
 /// Create a style from a style name and its value.
-pub fn style<T1, T2>(name: T1, value: T2) -> impl IntoStyles
-where
-    T1: Into<CowStr>,
-    T2: Into<CowStr>,
-{
-    StyleTuple(name, value)
+pub fn style(name: impl Into<CowStr>, value: impl Into<CowStr>) -> impl IntoStyles {
+    StyleTuple(name, Some(value.into()))
 }
 
 impl<T1, T2> IntoStyles for StyleTuple<T1, T2>
 where
     T1: Into<CowStr>,
-    T2: Into<CowStr>,
+    T2: Into<Option<CowStr>>,
 {
-    fn into_styles(self, styles: &mut Vec<(CowStr, CowStr)>) {
+    fn into_styles(self, styles: &mut Vec<(CowStr, Option<CowStr>)>) {
         let StyleTuple(key, value) = self;
         styles.push((key.into(), value.into()));
     }
@@ -43,7 +40,7 @@ impl<T> IntoStyles for Option<T>
 where
     T: IntoStyles,
 {
-    fn into_styles(self, styles: &mut Vec<(CowStr, CowStr)>) {
+    fn into_styles(self, styles: &mut Vec<(CowStr, Option<CowStr>)>) {
         if let Some(t) = self {
             t.into_styles(styles);
         }
@@ -54,7 +51,7 @@ impl<T> IntoStyles for Vec<T>
 where
     T: IntoStyles,
 {
-    fn into_styles(self, styles: &mut Vec<(CowStr, CowStr)>) {
+    fn into_styles(self, styles: &mut Vec<(CowStr, Option<CowStr>)>) {
         for itm in self {
             itm.into_styles(styles);
         }
@@ -62,7 +59,7 @@ where
 }
 
 impl<T: IntoStyles, const N: usize> IntoStyles for [T; N] {
-    fn into_styles(self, styles: &mut Vec<(CowStr, CowStr)>) {
+    fn into_styles(self, styles: &mut Vec<(CowStr, Option<CowStr>)>) {
         for itm in self {
             itm.into_styles(styles);
         }
@@ -72,9 +69,9 @@ impl<T: IntoStyles, const N: usize> IntoStyles for [T; N] {
 impl<T1, T2, S> IntoStyles for HashMap<T1, T2, S>
 where
     T1: Into<CowStr>,
-    T2: Into<CowStr>,
+    T2: Into<Option<CowStr>>,
 {
-    fn into_styles(self, styles: &mut Vec<(CowStr, CowStr)>) {
+    fn into_styles(self, styles: &mut Vec<(CowStr, Option<CowStr>)>) {
         for (key, value) in self {
             styles.push((key.into(), value.into()));
         }
@@ -84,9 +81,9 @@ where
 impl<T1, T2> IntoStyles for BTreeMap<T1, T2>
 where
     T1: Into<CowStr>,
-    T2: Into<CowStr>,
+    T2: Into<Option<CowStr>>,
 {
-    fn into_styles(self, styles: &mut Vec<(CowStr, CowStr)>) {
+    fn into_styles(self, styles: &mut Vec<(CowStr, Option<CowStr>)>) {
         for (key, value) in self {
             styles.push((key.into(), value.into()));
         }
@@ -96,9 +93,9 @@ where
 impl<T1, T2> IntoStyles for VecMap<T1, T2>
 where
     T1: Into<CowStr>,
-    T2: Into<CowStr>,
+    T2: Into<Option<CowStr>>,
 {
-    fn into_styles(self, styles: &mut Vec<(CowStr, CowStr)>) {
+    fn into_styles(self, styles: &mut Vec<(CowStr, Option<CowStr>)>) {
         for (key, value) in self {
             styles.push((key.into(), value.into()));
         }
@@ -121,7 +118,7 @@ pub trait WithStyle {
     /// Sets or removes (when value is `None`) a style property from the underlying element.
     ///
     /// When in [`View::rebuild`] this has to be invoked *after* traversing the inner `View` with [`View::rebuild`]
-    fn set_style(&mut self, name: CowStr, value: Option<CowStr>);
+    fn set_style(&mut self, name: &CowStr, value: &Option<CowStr>);
 
     // TODO first find a use-case for this...
     // fn get_style(&self, name: &str) -> Option<&CowStr>;
@@ -202,28 +199,51 @@ impl Styles {
 }
 
 impl WithStyle for Styles {
-    fn set_style(&mut self, name: CowStr, value: Option<CowStr>) {
-        let new_modifier = if let Some(value) = value {
-            StyleModifier::Set(name.clone(), value)
-        } else {
-            StyleModifier::Remove(name.clone())
-        };
-
+    fn set_style(&mut self, name: &CowStr, value: &Option<CowStr>) {
         if let Some(modifier) = self.style_modifiers.get_mut(self.idx) {
-            if modifier != &new_modifier {
-                if let StyleModifier::Remove(previous_name) | StyleModifier::Set(previous_name, _) =
-                    modifier
-                {
-                    if &name != previous_name {
-                        self.updated_styles.insert(previous_name.clone(), ());
+            let dirty = match (&modifier, value) {
+                // early return if nothing has changed, avoids allocations
+                (StyleModifier::Set(old_name, old_value), Some(new_value)) if old_name == name => {
+                    if old_value == new_value {
+                        false
+                    } else {
+                        self.updated_styles.insert(name.clone(), ());
+                        true
                     }
                 }
-                self.updated_styles.insert(name, ());
-                *modifier = new_modifier;
+                (StyleModifier::Remove(removed), None) if removed == name => false,
+                (StyleModifier::Set(old_name, _), None)
+                | (StyleModifier::Remove(old_name), Some(_))
+                    if old_name == name =>
+                {
+                    self.updated_styles.insert(name.clone(), ());
+                    true
+                }
+                (StyleModifier::EndMarker(_), None) | (StyleModifier::EndMarker(_), Some(_)) => {
+                    self.updated_styles.insert(name.clone(), ());
+                    true
+                }
+                (StyleModifier::Set(old_name, _), _) | (StyleModifier::Remove(old_name), _) => {
+                    self.updated_styles.insert(name.clone(), ());
+                    self.updated_styles.insert(old_name.clone(), ());
+                    true
+                }
+            };
+            if dirty {
+                *modifier = if let Some(value) = value {
+                    StyleModifier::Set(name.clone(), value.clone())
+                } else {
+                    StyleModifier::Remove(name.clone())
+                };
             }
             // else remove it out of updated_styles? (because previous styles are overwritten) not sure if worth it because potentially worse perf
         } else {
-            self.updated_styles.insert(name, ());
+            let new_modifier = if let Some(value) = value {
+                StyleModifier::Set(name.clone(), value.clone())
+            } else {
+                StyleModifier::Remove(name.clone())
+            };
+            self.updated_styles.insert(name.clone(), ());
             self.style_modifiers.push(new_modifier);
         }
         self.idx += 1;
@@ -267,7 +287,7 @@ impl WithStyle for ElementProps {
         self.styles().mark_end_of_style_modifier();
     }
 
-    fn set_style(&mut self, name: CowStr, value: Option<CowStr>) {
+    fn set_style(&mut self, name: &CowStr, value: &Option<CowStr>) {
         self.styles().set_style(name, value);
     }
 }
@@ -284,7 +304,7 @@ where
         self.props.mark_end_of_style_modifier();
     }
 
-    fn set_style(&mut self, name: CowStr, value: Option<CowStr>) {
+    fn set_style(&mut self, name: &CowStr, value: &Option<CowStr>) {
         self.props.set_style(name, value);
     }
 }
@@ -301,7 +321,7 @@ where
         self.props.mark_end_of_style_modifier();
     }
 
-    fn set_style(&mut self, name: CowStr, value: Option<CowStr>) {
+    fn set_style(&mut self, name: &CowStr, value: &Option<CowStr>) {
         self.props.set_style(name, value);
     }
 }
@@ -320,12 +340,12 @@ where
 /// A view to add `style` properties of `HTMLElement` and `SVGElement` derived elements,
 pub struct Style<E, T, A> {
     el: E,
-    styles: Vec<(CowStr, CowStr)>,
+    styles: Vec<(CowStr, Option<CowStr>)>,
     phantom: PhantomData<fn() -> (T, A)>,
 }
 
 impl<E, T, A> Style<E, T, A> {
-    pub fn new(el: E, styles: Vec<(CowStr, CowStr)>) -> Self {
+    pub fn new(el: E, styles: Vec<(CowStr, Option<CowStr>)>) -> Self {
         Style {
             el,
             styles,
@@ -348,7 +368,7 @@ where
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let (mut element, state) = self.el.build(ctx);
         for (key, value) in &self.styles {
-            element.set_style(key.clone(), Some(value.clone()));
+            element.set_style(key, value);
         }
         element.mark_end_of_style_modifier();
         (element, state)
@@ -364,7 +384,7 @@ where
         element.rebuild_style_modifier();
         let mut element = self.el.rebuild(&prev.el, view_state, ctx, element);
         for (key, value) in &self.styles {
-            element.set_style(key.clone(), Some(value.clone()));
+            element.set_style(key, value);
         }
         element.mark_end_of_style_modifier();
         element
