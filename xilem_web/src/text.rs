@@ -11,7 +11,7 @@ use crate::{DynMessage, Pod, ViewCtx};
 macro_rules! impl_string_view {
     ($ty:ty) => {
         impl<State, Action> OrphanView<$ty, State, Action, DynMessage> for ViewCtx {
-            type OrphanElement = Pod<web_sys::Text, ()>;
+            type OrphanElement = Pod<web_sys::Text>;
 
             type OrphanViewState = ();
 
@@ -47,7 +47,7 @@ macro_rules! impl_string_view {
                 _view: &$ty,
                 _view_state: &mut Self::OrphanViewState,
                 _ctx: &mut ViewCtx,
-                _element: Mut<'_, Pod<web_sys::Text, ()>>,
+                _element: Mut<'_, Pod<web_sys::Text>>,
             ) {
             }
 
@@ -71,7 +71,7 @@ impl_string_view!(std::borrow::Cow<'static, str>);
 macro_rules! impl_to_string_view {
     ($ty:ty) => {
         impl<State, Action> OrphanView<$ty, State, Action, DynMessage> for ViewCtx {
-            type OrphanElement = Pod<web_sys::Text, ()>;
+            type OrphanElement = Pod<web_sys::Text>;
 
             type OrphanViewState = ();
 
@@ -107,7 +107,7 @@ macro_rules! impl_to_string_view {
                 _view: &$ty,
                 _view_state: &mut Self::OrphanViewState,
                 _ctx: &mut ViewCtx,
-                _element: Mut<'_, Pod<web_sys::Text, ()>>,
+                _element: Mut<'_, Pod<web_sys::Text>>,
             ) {
             }
 

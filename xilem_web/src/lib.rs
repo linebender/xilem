@@ -12,7 +12,10 @@
 //! </style>
 #![doc = include_str!("../README.md")]
 
-use std::any::Any;
+use std::{
+    any::Any,
+    ops::{Deref as _, DerefMut as _},
+};
 
 use wasm_bindgen::UnwrapThrowExt;
 use web_sys::wasm_bindgen::JsCast;
@@ -82,17 +85,18 @@ pub trait AnyNode: AsRef<web_sys::Node> + 'static {
     fn as_any_mut(&mut self) -> &mut dyn Any;
 }
 
-impl<N: AsRef<web_sys::Node> + Any> AnyNode for N {
+impl<N: AsRef<web_sys::Node> + 'static> AnyNode for N {
     fn as_any_mut(&mut self) -> &mut dyn Any {
         self
     }
 }
 
 /// A trait to represent DOM nodes, which can optionally have associated `props` that are applied while building/rebuilding the views
-pub trait DomNode<P>: AnyNode + 'static {
+pub trait DomNode: AnyNode {
+    type Props: 'static;
     /// When this is called any accumulated (virtual) `props` changes are applied to the underlying DOM node.
     /// Where `props` stands for all kinds of modifiable properties, like attributes, styles, classes or more specific properties related to an element.
-    fn apply_props(&self, props: &mut P);
+    fn apply_props(&self, props: &mut Self::Props);
 }
 
 /// Syntax sugar for adding a type bound on the `ViewElement` of a view, such that both, [`ViewElement`] and [`ViewElement::Mut`] have the same [`AsRef`] type
@@ -110,10 +114,9 @@ pub type AnyDomView<State, Action = ()> = dyn AnyView<State, Action, ViewCtx, An
 
 /// The central [`View`] derived trait to represent DOM nodes in `xilem_web`, it's the base for all [`View`]s in `xilem_web`
 pub trait DomView<State, Action = ()>:
-    View<State, Action, ViewCtx, DynMessage, Element = Pod<Self::DomNode, Self::Props>>
+    View<State, Action, ViewCtx, DynMessage, Element = Pod<Self::DomNode>>
 {
-    type DomNode: DomNode<Self::Props>;
-    type Props;
+    type DomNode: DomNode;
 
     /// Returns a boxed type erased [`AnyDomView`]
     ///
@@ -214,13 +217,12 @@ pub trait DomView<State, Action = ()>:
     }
 }
 
-impl<V, State, Action, W, P> DomView<State, Action> for V
+impl<V, State, Action, N> DomView<State, Action> for V
 where
-    V: View<State, Action, ViewCtx, DynMessage, Element = Pod<W, P>>,
-    W: DomNode<P>,
+    V: View<State, Action, ViewCtx, DynMessage, Element = Pod<N>>,
+    N: DomNode,
 {
-    type DomNode = W;
-    type Props = P;
+    type DomNode = N;
 }
 
 /// An ordered sequence of views, or sometimes also called fragment, it's used for `0..N` [`DomView`]s.
@@ -244,39 +246,53 @@ impl<V, State, Action> DomFragment<State, Action> for V where
 }
 
 /// A container, which holds the actual DOM node, and associated props, such as attributes or classes.
+///
 /// These attributes are not directly set on the DOM node to avoid mutating or reading from the DOM tree unnecessarily, and to have more control over the whole update flow.
-pub struct Pod<E, P> {
-    pub node: E,
-    pub props: P,
+pub struct Pod<N: DomNode> {
+    pub node: N,
+    pub props: N::Props,
 }
 
 /// Type-erased [`Pod`], it's used for example as intermediate representation for children of a DOM node
-pub type AnyPod = Pod<DynNode, Box<dyn Any>>;
+pub type AnyPod = Pod<Box<dyn AnyNode>>;
 
-impl<E: DomNode<P>, P: 'static> Pod<E, P> {
-    pub fn into_dyn_node(node: E, mut props: P) -> AnyPod {
+impl<N: DomNode> Pod<N> {
+    pub fn into_any_pod(node: N, mut props: N::Props) -> AnyPod {
         node.apply_props(&mut props);
         Pod {
-            node: DynNode {
-                inner: Box::new(node),
-            },
+            node: Box::new(node),
             props: Box::new(props),
         }
     }
 }
 
-impl<E: DomNode<P>, P: 'static> ViewElement for Pod<E, P> {
-    type Mut<'a> = PodMut<'a, E, P>;
+impl DomNode for Box<dyn AnyNode> {
+    type Props = Box<dyn Any>;
+
+    fn apply_props(&self, _props: &mut Self::Props) {
+        // TODO this is probably not optimal, as misleading, this is only implemented for concrete (non-type-erased) elements
+        // I do *think* it's necessary as method on the trait because of the Drop impl (and not having specialization there)
+    }
 }
 
-impl<E: DomNode<P>, P: 'static> SuperElement<Pod<E, P>, ViewCtx> for AnyPod {
-    fn upcast(_ctx: &mut ViewCtx, child: Pod<E, P>) -> Self {
-        Pod::into_dyn_node(child.node, child.props)
+impl AsRef<web_sys::Node> for Box<dyn AnyNode> {
+    fn as_ref(&self) -> &web_sys::Node {
+        self.deref().as_ref()
+    }
+}
+
+impl<N: DomNode> ViewElement for Pod<N> {
+    type Mut<'a> = PodMut<'a, N>;
+}
+
+impl<N: DomNode> SuperElement<Pod<N>, ViewCtx> for AnyPod {
+    fn upcast(_ctx: &mut ViewCtx, child: Pod<N>) -> Self {
+        Pod::into_any_pod(child.node, child.props)
     }
 
     fn with_downcast_val<R>(
         mut this: Self::Mut<'_>,
-        f: impl FnOnce(PodMut<'_, E, P>) -> R,
+        f: impl FnOnce(PodMut<'_, N>) -> R,
     ) -> (Self::Mut<'_>, R) {
         let downcast = this.downcast();
         let ret = f(downcast);
@@ -284,72 +300,48 @@ impl<E: DomNode<P>, P: 'static> SuperElement<Pod<E, P>, ViewCtx> for AnyPod {
     }
 }
 
-impl<E: DomNode<P>, P: 'static> AnyElement<Pod<E, P>, ViewCtx> for AnyPod {
-    fn replace_inner(mut this: Self::Mut<'_>, child: Pod<E, P>) -> Self::Mut<'_> {
-        Pod::replace_inner(&mut this, child);
+impl<N: DomNode> AnyElement<Pod<N>, ViewCtx> for AnyPod {
+    fn replace_inner(this: Self::Mut<'_>, mut child: Pod<N>) -> Self::Mut<'_> {
+        child.node.apply_props(&mut child.props);
+        if let Some(parent) = this.parent {
+            parent
+                .replace_child(child.node.as_ref(), this.node.as_ref())
+                .unwrap_throw();
+        }
+        *this.node = Box::new(child.node);
+        *this.props = Box::new(child.props);
         this
     }
 }
 
 impl AnyPod {
-    pub(crate) fn replace_inner<E: DomNode<P>, P: 'static>(
-        this: &mut PodMut<'_, DynNode, Box<dyn Any>>,
-        mut node: Pod<E, P>,
-    ) {
-        node.node.apply_props(&mut node.props);
-        if let Some(parent) = this.parent {
-            parent
-                .replace_child(node.node.as_ref(), this.node.as_ref())
-                .unwrap_throw();
-        }
-        this.node.inner = Box::new(node.node);
-        *this.props = Box::new(node.props);
-    }
-
     fn as_mut<'a>(
         &'a mut self,
         parent: impl Into<Option<&'a web_sys::Node>>,
         was_removed: bool,
-    ) -> PodMut<'a, DynNode, Box<dyn Any>> {
+    ) -> PodMut<'a, Box<dyn AnyNode>> {
         PodMut::new(&mut self.node, &mut self.props, parent.into(), was_removed)
     }
 }
 
-/// A type erased DOM node, used in [`AnyPod`]
-pub struct DynNode {
-    inner: Box<dyn AnyNode>,
-}
-
-impl AsRef<web_sys::Node> for DynNode {
-    fn as_ref(&self) -> &web_sys::Node {
-        (*self.inner).as_ref()
-    }
-}
-
-impl DomNode<Box<dyn Any>> for DynNode {
-    fn apply_props(&self, _props: &mut Box<dyn Any>) {
-        // TODO this is probably not optimal, as misleading, this is only implemented for concrete (non-type-erased) elements
-        // I do *think* it's necessary as method on the trait because of the Drop impl (and not having specialization there)
-    }
-}
-
 /// The mutable representation of [`Pod`].
+///
 /// This is a container which contains info of what has changed and provides mutable access to the underlying element and its props
 /// When it's dropped all changes are applied to the underlying DOM node
-pub struct PodMut<'a, E: DomNode<P>, P> {
-    node: &'a mut E,
-    props: &'a mut P,
+pub struct PodMut<'a, N: DomNode> {
+    node: &'a mut N,
+    props: &'a mut N::Props,
     parent: Option<&'a web_sys::Node>,
     was_removed: bool,
 }
 
-impl<'a, E: DomNode<P>, P> PodMut<'a, E, P> {
+impl<'a, N: DomNode> PodMut<'a, N> {
     fn new(
-        node: &'a mut E,
-        props: &'a mut P,
+        node: &'a mut N,
+        props: &'a mut N::Props,
         parent: Option<&'a web_sys::Node>,
         was_removed: bool,
-    ) -> PodMut<'a, E, P> {
+    ) -> PodMut<'a, N> {
         PodMut {
             node,
             props,
@@ -359,10 +351,10 @@ impl<'a, E: DomNode<P>, P> PodMut<'a, E, P> {
     }
 }
 
-impl PodMut<'_, DynNode, Box<dyn Any>> {
-    fn downcast<E: DomNode<P>, P: 'static>(&mut self) -> PodMut<'_, E, P> {
+impl PodMut<'_, Box<dyn AnyNode>> {
+    fn downcast<N: DomNode>(&mut self) -> PodMut<'_, N> {
         PodMut::new(
-            self.node.inner.as_any_mut().downcast_mut().unwrap(),
+            self.node.deref_mut().as_any_mut().downcast_mut().unwrap(),
             self.props.downcast_mut().unwrap(),
             self.parent,
             false,
@@ -370,7 +362,7 @@ impl PodMut<'_, DynNode, Box<dyn Any>> {
     }
 }
 
-impl<E: DomNode<P>, P> Drop for PodMut<'_, E, P> {
+impl<N: DomNode> Drop for PodMut<'_, N> {
     fn drop(&mut self) {
         if !self.was_removed {
             self.node.apply_props(self.props);
@@ -378,39 +370,45 @@ impl<E: DomNode<P>, P> Drop for PodMut<'_, E, P> {
     }
 }
 
-impl<T, E: AsRef<T> + DomNode<P>, P> AsRef<T> for Pod<E, P> {
+impl<T, N: AsRef<T> + DomNode> AsRef<T> for Pod<N> {
     fn as_ref(&self) -> &T {
-        <E as AsRef<T>>::as_ref(&self.node)
+        <N as AsRef<T>>::as_ref(&self.node)
     }
 }
 
-impl<T, E: AsRef<T> + DomNode<P>, P> AsRef<T> for PodMut<'_, E, P> {
+impl<T, N: AsRef<T> + DomNode> AsRef<T> for PodMut<'_, N> {
     fn as_ref(&self) -> &T {
-        <E as AsRef<T>>::as_ref(self.node)
+        <N as AsRef<T>>::as_ref(self.node)
     }
 }
 
-impl DomNode<ElementProps> for web_sys::Element {
+impl DomNode for web_sys::Element {
+    type Props = ElementProps;
+
     fn apply_props(&self, props: &mut ElementProps) {
         props.update_element(self);
     }
 }
 
-impl DomNode<()> for web_sys::Text {
+impl DomNode for web_sys::Text {
+    type Props = ();
+
     fn apply_props(&self, (): &mut ()) {}
 }
 
 // TODO specialize some of these elements, maybe via features?
 macro_rules! impl_dom_node_for_elements {
     ($($ty:ident, )*) => {$(
-        impl DomNode<ElementProps> for web_sys::$ty {
+        impl DomNode for web_sys::$ty {
+            type Props = ElementProps;
+
             fn apply_props(&self, props: &mut ElementProps) {
                 props.update_element(self);
             }
         }
 
-        impl From<Pod<web_sys::Element, ElementProps>> for Pod<web_sys::$ty, ElementProps> {
-            fn from(value: Pod<web_sys::Element, ElementProps>) -> Self {
+        impl From<Pod<web_sys::Element>> for Pod<web_sys::$ty> {
+            fn from(value: Pod<web_sys::Element>) -> Self {
                 Self {
                     node: value.node.unchecked_into(),
                     props: value.props,

@@ -110,6 +110,7 @@ where
 }
 
 /// This view creates an internally cached deep-clone of the underlying DOM node.
+///
 /// When the inner view is created again, this will be done more efficiently.
 /// It's recommended to use this as wrapper, when it's expected that the inner `view` is a little bigger and will be created a lot, for example in a long list
 /// It's *not* recommended to use this, when the inner `view` is rather small (as in the example),

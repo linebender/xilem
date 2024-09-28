@@ -66,7 +66,7 @@ impl ElementProps {
     }
 }
 
-impl Pod<web_sys::Element, ElementProps> {
+impl Pod<web_sys::Element> {
     /// Creates a new Pod with [`web_sys::Element`] as element and `ElementProps` as its [`DomView::Props`](`crate::DomView::Props`)
     pub fn new_element(children: Vec<AnyPod>, ns: &str, elem_name: &str) -> Self {
         let element = document()
