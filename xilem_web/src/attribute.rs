@@ -26,7 +26,7 @@ pub trait WithAttributes {
     /// Sets or removes (when value is `None`) an attribute from the underlying element.
     ///
     /// When in [`View::rebuild`] this has to be invoked *after* traversing the inner `View` with [`View::rebuild`]
-    fn set_attribute(&mut self, name: CowStr, value: Option<AttributeValue>);
+    fn set_attribute(&mut self, name: &CowStr, value: &Option<AttributeValue>);
 
     // TODO first find a use-case for this...
     // fn get_attr(&self, name: &str) -> Option<&AttributeValue>;
@@ -145,28 +145,55 @@ impl Attributes {
 }
 
 impl WithAttributes for Attributes {
-    fn set_attribute(&mut self, name: CowStr, value: Option<AttributeValue>) {
-        let new_modifier = if let Some(value) = value {
-            AttributeModifier::Set(name.clone(), value)
-        } else {
-            AttributeModifier::Remove(name.clone())
-        };
-
+    fn set_attribute(&mut self, name: &CowStr, value: &Option<AttributeValue>) {
         if let Some(modifier) = self.attribute_modifiers.get_mut(self.idx) {
-            if modifier != &new_modifier {
-                if let AttributeModifier::Remove(previous_name)
-                | AttributeModifier::Set(previous_name, _) = modifier
+            let dirty = match (&modifier, value) {
+                // early return if nothing has changed, avoids allocations
+                (AttributeModifier::Set(old_name, old_value), Some(new_value))
+                    if old_name == name =>
                 {
-                    if &name != previous_name {
-                        self.updated_attributes.insert(previous_name.clone(), ());
+                    if old_value == new_value {
+                        false
+                    } else {
+                        self.updated_attributes.insert(name.clone(), ());
+                        true
                     }
                 }
-                self.updated_attributes.insert(name, ());
-                *modifier = new_modifier;
+                (AttributeModifier::Remove(removed), None) if removed == name => false,
+                (AttributeModifier::Set(old_name, _), None)
+                | (AttributeModifier::Remove(old_name), Some(_))
+                    if old_name == name =>
+                {
+                    self.updated_attributes.insert(name.clone(), ());
+                    true
+                }
+                (AttributeModifier::EndMarker(_), None)
+                | (AttributeModifier::EndMarker(_), Some(_)) => {
+                    self.updated_attributes.insert(name.clone(), ());
+                    true
+                }
+                (AttributeModifier::Set(old_name, _), _)
+                | (AttributeModifier::Remove(old_name), _) => {
+                    self.updated_attributes.insert(name.clone(), ());
+                    self.updated_attributes.insert(old_name.clone(), ());
+                    true
+                }
+            };
+            if dirty {
+                *modifier = if let Some(value) = value {
+                    AttributeModifier::Set(name.clone(), value.clone())
+                } else {
+                    AttributeModifier::Remove(name.clone())
+                };
             }
             // else remove it out of updated_attributes? (because previous attributes are overwritten) not sure if worth it because potentially worse perf
         } else {
-            self.updated_attributes.insert(name, ());
+            let new_modifier = if let Some(value) = value {
+                AttributeModifier::Set(name.clone(), value.clone())
+            } else {
+                AttributeModifier::Remove(name.clone())
+            };
+            self.updated_attributes.insert(name.clone(), ());
             self.attribute_modifiers.push(new_modifier);
         }
         self.idx += 1;
@@ -211,7 +238,7 @@ impl WithAttributes for ElementProps {
         self.attributes().mark_end_of_attribute_modifier();
     }
 
-    fn set_attribute(&mut self, name: CowStr, value: Option<AttributeValue>) {
+    fn set_attribute(&mut self, name: &CowStr, value: &Option<AttributeValue>) {
         self.attributes().set_attribute(name, value);
     }
 }
@@ -229,7 +256,7 @@ where
         self.props.mark_end_of_attribute_modifier();
     }
 
-    fn set_attribute(&mut self, name: CowStr, value: Option<AttributeValue>) {
+    fn set_attribute(&mut self, name: &CowStr, value: &Option<AttributeValue>) {
         self.props.set_attribute(name, value);
     }
 }
@@ -247,7 +274,7 @@ where
         self.props.mark_end_of_attribute_modifier();
     }
 
-    fn set_attribute(&mut self, name: CowStr, value: Option<AttributeValue>) {
+    fn set_attribute(&mut self, name: &CowStr, value: &Option<AttributeValue>) {
         self.props.set_attribute(name, value);
     }
 }
@@ -298,7 +325,7 @@ where
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let (mut element, state) = self.el.build(ctx);
-        element.set_attribute(self.name.clone(), self.value.clone());
+        element.set_attribute(&self.name, &self.value);
         element.mark_end_of_attribute_modifier();
         (element, state)
     }
@@ -312,7 +339,7 @@ where
     ) -> Mut<'e, Self::Element> {
         element.rebuild_attribute_modifier();
         let mut element = self.el.rebuild(&prev.el, view_state, ctx, element);
-        element.set_attribute(self.name.clone(), self.value.clone());
+        element.set_attribute(&self.name, &self.value);
         element.mark_end_of_attribute_modifier();
         element
     }

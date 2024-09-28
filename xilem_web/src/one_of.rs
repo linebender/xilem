@@ -197,7 +197,7 @@ impl WithAttributes for Noop {
         unreachable!()
     }
 
-    fn set_attribute(&mut self, _name: CowStr, _value: Option<AttributeValue>) {
+    fn set_attribute(&mut self, _name: &CowStr, _value: &Option<AttributeValue>) {
         unreachable!()
     }
 }
@@ -288,7 +288,7 @@ impl<
         }
     }
 
-    fn set_attribute(&mut self, name: CowStr, value: Option<AttributeValue>) {
+    fn set_attribute(&mut self, name: &CowStr, value: &Option<AttributeValue>) {
         match self {
             OneOf::A(e) => e.set_attribute(name, value),
             OneOf::B(e) => e.set_attribute(name, value),
