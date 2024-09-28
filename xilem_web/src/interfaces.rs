@@ -18,7 +18,7 @@ use crate::{
     attribute::{Attr, WithAttributes},
     class::{AsClassIter, Class, WithClasses},
     events,
-    style::{IntoStyles, Style, WithStyle},
+    style::{IntoStyles, Rotate, Scale, ScaleValue, Style, WithStyle},
     DomNode, DomView, IntoAttributeValue, OptionalAction, Pointer, PointerMsg,
 };
 use wasm_bindgen::JsCast;
@@ -498,16 +498,33 @@ where
 {
 }
 
+/// Keep this shared code in sync between `HtmlElement` and `SvgElement`
+macro_rules! style_impls {
+    () => {
+        /// Set a style attribute
+        fn style(self, style: impl IntoStyles) -> Style<Self, State, Action> {
+            let mut styles = vec![];
+            style.into_styles(&mut styles);
+            Style::new(self, styles)
+        }
+
+        /// Add a `rotate(<radians>rad)` [transform-function](https://developer.mozilla.org/en-US/docs/Web/CSS/transform-function) to the current CSS `transform`
+        fn rotate(self, radians: f64) -> Rotate<Self, State, Action> {
+            Rotate::new(self, radians)
+        }
+
+        /// Add a `scale(<scale>)` [transform-function](https://developer.mozilla.org/en-US/docs/Web/CSS/transform-function) to the current CSS `transform`
+        fn scale(self, scale: impl Into<ScaleValue>) -> Scale<Self, State, Action> {
+            Scale::new(self, scale)
+        }
+    };
+}
+
 // #[cfg(feature = "HtmlElement")]
 pub trait HtmlElement<State, Action = ()>:
     Element<State, Action, DomNode: DomNode<Props: WithStyle> + AsRef<web_sys::HtmlElement>>
 {
-    /// Set a style attribute
-    fn style(self, style: impl IntoStyles) -> Style<Self, State, Action> {
-        let mut styles = vec![];
-        style.into_styles(&mut styles);
-        Style::new(self, styles)
-    }
+    style_impls!();
 }
 
 // #[cfg(feature = "HtmlElement")]
@@ -1479,12 +1496,7 @@ where
 pub trait SvgElement<State, Action = ()>:
     Element<State, Action, DomNode: DomNode<Props: WithStyle> + AsRef<web_sys::SvgElement>>
 {
-    /// Set a style attribute
-    fn style(self, style: impl IntoStyles) -> Style<Self, State, Action> {
-        let mut styles = vec![];
-        style.into_styles(&mut styles);
-        Style::new(self, styles)
-    }
+    style_impls!();
 }
 
 // #[cfg(feature = "SvgElement")]
