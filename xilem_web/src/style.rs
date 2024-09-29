@@ -128,25 +128,34 @@ pub trait WithStyle {
 enum StyleModifier {
     Remove(CowStr),
     Set(CowStr, CowStr),
-    EndMarker(usize),
+    EndMarker(u16),
 }
+
+const IN_HYDRATION: u16 = 1 << 14;
+const IN_CREATION: u16 = 1 << 15;
+const RESERVED_BIT_MASK: u16 = IN_HYDRATION | IN_CREATION;
 
 #[derive(Debug, Default)]
 /// This contains all the current style properties of an [`HtmlElement`](`crate::interfaces::Element`) or [`SvgElement`](`crate::interfaces::SvgElement`).
 pub struct Styles {
     style_modifiers: Vec<StyleModifier>,
     updated_styles: VecMap<CowStr, ()>,
-    idx: usize, // To save some memory, this could be u16 or even u8 (but this is risky)
-    start_idx: usize, // same here
-    #[cfg(feature = "hydration")]
-    pub(crate) in_hydration: bool,
+    idx: u16,
+    /// the two most significant bits are reserved for whether this was just created (bit 15) and if it's currently being hydrated (bit 14)
+    start_idx: u16,
 }
 
-#[cfg(feature = "hydration")]
 impl Styles {
-    pub(crate) fn new(in_hydration: bool) -> Self {
+    pub(crate) fn new(size_hint: usize, #[cfg(feature = "hydration")] in_hydration: bool) -> Self {
+        let mut start_idx = IN_CREATION;
+        #[cfg(feature = "hydration")]
+        if in_hydration {
+            start_idx |= IN_HYDRATION;
+        }
+
         Self {
-            in_hydration,
+            style_modifiers: Vec::with_capacity(size_hint),
+            start_idx,
             ..Default::default()
         }
     }
@@ -170,10 +179,26 @@ fn remove_style(element: &web_sys::Element, name: &str) {
 
 impl Styles {
     pub fn apply_style_changes(&mut self, element: &web_sys::Element) {
-        #[cfg(feature = "hydration")]
-        if self.in_hydration {
-            self.updated_styles.clear();
-            self.in_hydration = false;
+        if (self.start_idx & IN_HYDRATION) == IN_HYDRATION {
+            self.start_idx &= !RESERVED_BIT_MASK;
+            debug_assert!(self.updated_styles.is_empty());
+            return;
+        }
+
+        if (self.start_idx & IN_CREATION) == IN_CREATION {
+            for modifier in self.style_modifiers.iter().rev() {
+                match modifier {
+                    StyleModifier::Remove(name) => {
+                        remove_style(element, name);
+                    }
+                    StyleModifier::Set(name, value) => {
+                        set_style(element, name, value);
+                    }
+                    StyleModifier::EndMarker(_) => (),
+                }
+            }
+            self.start_idx &= !RESERVED_BIT_MASK;
+            debug_assert!(self.updated_styles.is_empty());
             return;
         }
 
@@ -200,7 +225,14 @@ impl Styles {
 
 impl WithStyle for Styles {
     fn set_style(&mut self, name: &CowStr, value: &Option<CowStr>) {
-        if let Some(modifier) = self.style_modifiers.get_mut(self.idx) {
+        if (self.start_idx & RESERVED_BIT_MASK) != 0 {
+            let modifier = if let Some(value) = value {
+                StyleModifier::Set(name.clone(), value.clone())
+            } else {
+                StyleModifier::Remove(name.clone())
+            };
+            self.style_modifiers.push(modifier);
+        } else if let Some(modifier) = self.style_modifiers.get_mut(self.idx as usize) {
             let dirty = match (&modifier, value) {
                 // early return if nothing has changed, avoids allocations
                 (StyleModifier::Set(old_name, old_value), Some(new_value)) if old_name == name => {
@@ -251,30 +283,28 @@ impl WithStyle for Styles {
 
     fn rebuild_style_modifier(&mut self) {
         if self.idx == 0 {
-            self.start_idx = 0;
+            self.start_idx &= RESERVED_BIT_MASK;
         } else {
-            let StyleModifier::EndMarker(start_idx) = self.style_modifiers[self.idx - 1] else {
+            let StyleModifier::EndMarker(start_idx) = self.style_modifiers[(self.idx - 1) as usize]
+            else {
                 unreachable!("this should not happen, as either `rebuild_style_modifier` happens first, or follows an `mark_end_of_style_modifier`")
             };
             self.idx = start_idx;
-            self.start_idx = start_idx;
+            self.start_idx = start_idx | (self.start_idx & RESERVED_BIT_MASK);
         }
     }
 
     fn mark_end_of_style_modifier(&mut self) {
-        match self.style_modifiers.get_mut(self.idx) {
-            Some(StyleModifier::EndMarker(prev_start_idx)) if *prev_start_idx == self.start_idx => {
-            } // class modifier hasn't changed
-            Some(modifier) => {
-                *modifier = StyleModifier::EndMarker(self.start_idx);
-            }
-            None => {
-                self.style_modifiers
-                    .push(StyleModifier::EndMarker(self.start_idx));
-            }
+        let start_idx = self.start_idx & !RESERVED_BIT_MASK;
+        match self.style_modifiers.get_mut(self.idx as usize) {
+            Some(StyleModifier::EndMarker(prev_start_idx)) if *prev_start_idx == start_idx => {} // style modifier hasn't changed
+            Some(modifier) => *modifier = StyleModifier::EndMarker(start_idx),
+            None => self
+                .style_modifiers
+                .push(StyleModifier::EndMarker(start_idx)),
         }
         self.idx += 1;
-        self.start_idx = self.idx;
+        self.start_idx = self.idx | (self.start_idx & RESERVED_BIT_MASK);
     }
 }
 
@@ -366,6 +396,7 @@ where
     type ViewState = E::ViewState;
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+        ctx.add_modifier_size_hint::<Styles>(self.styles.len());
         let (mut element, state) = self.el.build(ctx);
         for (key, value) in &self.styles {
             element.set_style(key, value);

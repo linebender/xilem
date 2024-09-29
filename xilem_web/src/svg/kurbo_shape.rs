@@ -7,8 +7,21 @@ use peniko::kurbo::{BezPath, Circle, Line, Rect};
 use xilem_core::{MessageResult, Mut, OrphanView};
 
 use crate::{
-    attribute::WithAttributes, AttributeValue, DynMessage, IntoAttributeValue, Pod, ViewCtx, SVG_NS,
+    attribute::WithAttributes, AttributeValue, Attributes, DynMessage, IntoAttributeValue, Pod,
+    ViewCtx, SVG_NS,
 };
+
+fn create_element(name: &str, ctx: &mut ViewCtx, attr_size_hint: usize) -> Pod<web_sys::Element> {
+    ctx.add_modifier_size_hint::<Attributes>(attr_size_hint);
+    #[cfg(feature = "hydration")]
+    if ctx.is_hydrating() {
+        Pod::hydrate_element_with_ctx(Vec::new(), ctx.hydrate_node().unwrap(), ctx)
+    } else {
+        Pod::new_element_with_ctx(Vec::new(), SVG_NS, name, ctx)
+    }
+    #[cfg(not(feature = "hydration"))]
+    Pod::new_element_with_ctx(Vec::new(), SVG_NS, name, ctx)
+}
 
 impl<State: 'static, Action: 'static> OrphanView<Line, State, Action, DynMessage> for ViewCtx {
     type OrphanViewState = ();
@@ -16,9 +29,9 @@ impl<State: 'static, Action: 'static> OrphanView<Line, State, Action, DynMessage
 
     fn orphan_build(
         view: &Line,
-        _ctx: &mut ViewCtx,
+        ctx: &mut ViewCtx,
     ) -> (Self::OrphanElement, Self::OrphanViewState) {
-        let mut element: Self::OrphanElement = Pod::new_element(Vec::new(), SVG_NS, "line").into();
+        let mut element: Self::OrphanElement = create_element("line", ctx, 4).into();
         element.set_attribute(&"x1".into(), &view.p0.x.into_attr_value());
         element.set_attribute(&"y1".into(), &view.p0.y.into_attr_value());
         element.set_attribute(&"x2".into(), &view.p1.x.into_attr_value());
@@ -68,9 +81,9 @@ impl<State: 'static, Action: 'static> OrphanView<Rect, State, Action, DynMessage
 
     fn orphan_build(
         view: &Rect,
-        _ctx: &mut ViewCtx,
+        ctx: &mut ViewCtx,
     ) -> (Self::OrphanElement, Self::OrphanViewState) {
-        let mut element: Self::OrphanElement = Pod::new_element(Vec::new(), SVG_NS, "rect").into();
+        let mut element: Self::OrphanElement = create_element("rect", ctx, 4).into();
         element.set_attribute(&"x".into(), &view.x0.into_attr_value());
         element.set_attribute(&"y".into(), &view.y0.into_attr_value());
         element.set_attribute(&"width".into(), &view.width().into_attr_value());
@@ -120,10 +133,9 @@ impl<State: 'static, Action: 'static> OrphanView<Circle, State, Action, DynMessa
 
     fn orphan_build(
         view: &Circle,
-        _ctx: &mut ViewCtx,
+        ctx: &mut ViewCtx,
     ) -> (Self::OrphanElement, Self::OrphanViewState) {
-        let mut element: Self::OrphanElement =
-            Pod::new_element(Vec::new(), SVG_NS, "circle").into();
+        let mut element: Self::OrphanElement = create_element("circle", ctx, 3).into();
         element.set_attribute(&"cx".into(), &view.center.x.into_attr_value());
         element.set_attribute(&"cy".into(), &view.center.y.into_attr_value());
         element.set_attribute(&"r".into(), &view.radius.into_attr_value());
@@ -171,9 +183,9 @@ impl<State: 'static, Action: 'static> OrphanView<BezPath, State, Action, DynMess
 
     fn orphan_build(
         view: &BezPath,
-        _ctx: &mut ViewCtx,
+        ctx: &mut ViewCtx,
     ) -> (Self::OrphanElement, Self::OrphanViewState) {
-        let mut element: Self::OrphanElement = Pod::new_element(Vec::new(), SVG_NS, "path").into();
+        let mut element: Self::OrphanElement = create_element("path", ctx, 1).into();
         let svg_repr = view.to_svg().into_attr_value();
         element.set_attribute(&"d".into(), &svg_repr);
         element.mark_end_of_attribute_modifier();

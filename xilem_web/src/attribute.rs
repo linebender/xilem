@@ -36,25 +36,34 @@ pub trait WithAttributes {
 enum AttributeModifier {
     Remove(CowStr),
     Set(CowStr, AttributeValue),
-    EndMarker(usize),
+    EndMarker(u16),
 }
+
+const IN_HYDRATION: u16 = 1 << 14;
+const IN_CREATION: u16 = 1 << 15;
+const RESERVED_BIT_MASK: u16 = IN_HYDRATION | IN_CREATION;
 
 /// This contains all the current attributes of an [`Element`](`crate::interfaces::Element`)
 #[derive(Debug, Default)]
 pub struct Attributes {
     attribute_modifiers: Vec<AttributeModifier>,
     updated_attributes: VecMap<CowStr, ()>,
-    idx: usize, // To save some memory, this could be u16 or even u8 (but this is risky)
-    start_idx: usize, // same here
-    #[cfg(feature = "hydration")]
-    pub(crate) in_hydration: bool,
+    idx: u16,
+    /// the two most significant bits are reserved for whether this was just created (bit 15) and if it's currently being hydrated (bit 14)
+    start_idx: u16,
 }
 
-#[cfg(feature = "hydration")]
 impl Attributes {
-    pub(crate) fn new(in_hydration: bool) -> Self {
+    pub(crate) fn new(size_hint: usize, #[cfg(feature = "hydration")] in_hydration: bool) -> Self {
+        let mut start_idx = IN_CREATION;
+        #[cfg(feature = "hydration")]
+        if in_hydration {
+            start_idx |= IN_HYDRATION;
+        }
+
         Self {
-            in_hydration,
+            attribute_modifiers: Vec::with_capacity(size_hint),
+            start_idx,
             ..Default::default()
         }
     }
@@ -116,10 +125,25 @@ fn remove_attribute(element: &web_sys::Element, name: &str) {
 impl Attributes {
     /// applies potential changes of the attributes of an element to the underlying DOM node
     pub fn apply_attribute_changes(&mut self, element: &web_sys::Element) {
-        #[cfg(feature = "hydration")]
-        if self.in_hydration {
-            self.updated_attributes.clear();
-            self.in_hydration = false;
+        if (self.start_idx & IN_HYDRATION) == IN_HYDRATION {
+            self.start_idx &= !RESERVED_BIT_MASK;
+            return;
+        }
+
+        if (self.start_idx & IN_CREATION) == IN_CREATION {
+            for modifier in self.attribute_modifiers.iter().rev() {
+                match modifier {
+                    AttributeModifier::Remove(name) => {
+                        remove_attribute(element, name);
+                    }
+                    AttributeModifier::Set(name, value) => {
+                        set_attribute(element, name, &value.serialize());
+                    }
+                    AttributeModifier::EndMarker(_) => (),
+                }
+            }
+            self.start_idx &= !RESERVED_BIT_MASK;
+            debug_assert!(self.updated_attributes.is_empty());
             return;
         }
 
@@ -146,7 +170,14 @@ impl Attributes {
 
 impl WithAttributes for Attributes {
     fn set_attribute(&mut self, name: &CowStr, value: &Option<AttributeValue>) {
-        if let Some(modifier) = self.attribute_modifiers.get_mut(self.idx) {
+        if (self.start_idx & RESERVED_BIT_MASK) != 0 {
+            let modifier = if let Some(value) = value {
+                AttributeModifier::Set(name.clone(), value.clone())
+            } else {
+                AttributeModifier::Remove(name.clone())
+            };
+            self.attribute_modifiers.push(modifier);
+        } else if let Some(modifier) = self.attribute_modifiers.get_mut(self.idx as usize) {
             let dirty = match (&modifier, value) {
                 // early return if nothing has changed, avoids allocations
                 (AttributeModifier::Set(old_name, old_value), Some(new_value))
@@ -201,31 +232,29 @@ impl WithAttributes for Attributes {
 
     fn rebuild_attribute_modifier(&mut self) {
         if self.idx == 0 {
-            self.start_idx = 0;
+            self.start_idx &= RESERVED_BIT_MASK;
         } else {
-            let AttributeModifier::EndMarker(start_idx) = self.attribute_modifiers[self.idx - 1]
+            let AttributeModifier::EndMarker(start_idx) =
+                self.attribute_modifiers[(self.idx - 1) as usize]
             else {
                 unreachable!("this should not happen, as either `rebuild_attribute_modifier` happens first, or follows an `mark_end_of_attribute_modifier`")
             };
             self.idx = start_idx;
-            self.start_idx = start_idx;
+            self.start_idx = start_idx | (self.start_idx & RESERVED_BIT_MASK);
         }
     }
 
     fn mark_end_of_attribute_modifier(&mut self) {
-        match self.attribute_modifiers.get_mut(self.idx) {
-            Some(AttributeModifier::EndMarker(prev_start_idx))
-                if *prev_start_idx == self.start_idx => {} // attribute modifier hasn't changed
-            Some(modifier) => {
-                *modifier = AttributeModifier::EndMarker(self.start_idx);
-            }
-            None => {
-                self.attribute_modifiers
-                    .push(AttributeModifier::EndMarker(self.start_idx));
-            }
+        let start_idx = self.start_idx & !RESERVED_BIT_MASK;
+        match self.attribute_modifiers.get_mut(self.idx as usize) {
+            Some(AttributeModifier::EndMarker(prev_start_idx)) if *prev_start_idx == start_idx => {} // attribute modifier hasn't changed
+            Some(modifier) => *modifier = AttributeModifier::EndMarker(start_idx),
+            None => self
+                .attribute_modifiers
+                .push(AttributeModifier::EndMarker(start_idx)),
         }
         self.idx += 1;
-        self.start_idx = self.idx;
+        self.start_idx = self.idx | (self.start_idx & RESERVED_BIT_MASK);
     }
 }
 
@@ -324,6 +353,7 @@ where
     type ViewState = E::ViewState;
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+        ctx.add_modifier_size_hint::<Attributes>(1);
         let (mut element, state) = self.el.build(ctx);
         element.set_attribute(&self.name, &self.value);
         element.mark_end_of_attribute_modifier();
