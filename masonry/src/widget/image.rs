@@ -11,7 +11,7 @@ use vello::kurbo::Affine;
 use vello::peniko::{BlendMode, Image as ImageBuf};
 use vello::Scene;
 
-use crate::widget::{FillStrat, WidgetMut};
+use crate::widget::{ObjectFit, WidgetMut};
 use crate::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
     PointerEvent, Size, StatusChange, TextEvent, Widget, WidgetId,
@@ -28,7 +28,7 @@ use crate::{
 /// than the image size).
 pub struct Image {
     image_data: ImageBuf,
-    fill: FillStrat,
+    fill: ObjectFit,
 }
 
 // --- MARK: BUILDERS ---
@@ -40,13 +40,13 @@ impl Image {
     pub fn new(image_data: ImageBuf) -> Self {
         Image {
             image_data,
-            fill: FillStrat::default(),
+            fill: ObjectFit::default(),
         }
     }
 
     /// Builder-style method for specifying the fill strategy.
     #[inline]
-    pub fn fill_mode(mut self, mode: FillStrat) -> Self {
+    pub fn fill_mode(mut self, mode: ObjectFit) -> Self {
         self.fill = mode;
         self
     }
@@ -56,7 +56,7 @@ impl Image {
 impl<'a> WidgetMut<'a, Image> {
     /// Modify the widget's fill strategy.
     #[inline]
-    pub fn set_fill_mode(&mut self, newfil: FillStrat) {
+    pub fn set_fill_mode(&mut self, newfil: ObjectFit) {
         self.widget.fill = newfil;
         self.ctx.request_paint();
     }
@@ -93,15 +93,15 @@ impl Widget for Image {
         }
         let image_aspect_ratio = image_size.height / image_size.width;
         let size = match self.fill {
-            FillStrat::Contain => bc.constrain_aspect_ratio(image_aspect_ratio, image_size.width),
-            FillStrat::Cover => Size::new(bc.max().width, bc.max().width * image_aspect_ratio),
-            FillStrat::Fill => bc.max(),
-            FillStrat::FitHeight => {
+            ObjectFit::Contain => bc.constrain_aspect_ratio(image_aspect_ratio, image_size.width),
+            ObjectFit::Cover => Size::new(bc.max().width, bc.max().width * image_aspect_ratio),
+            ObjectFit::Fill => bc.max(),
+            ObjectFit::FitHeight => {
                 Size::new(bc.max().height / image_aspect_ratio, bc.max().height)
             }
-            FillStrat::FitWidth => Size::new(bc.max().width, bc.max().width * image_aspect_ratio),
-            FillStrat::None => image_size,
-            FillStrat::ScaleDown => {
+            ObjectFit::FitWidth => Size::new(bc.max().width, bc.max().width * image_aspect_ratio),
+            ObjectFit::None => image_size,
+            ObjectFit::ScaleDown => {
                 let mut size = image_size;
 
                 if !bc.contains(size) {
@@ -221,37 +221,37 @@ mod tests {
         let harness_size = Size::new(100.0, 50.0);
 
         // Contain.
-        let image_widget = Image::new(image_data.clone()).fill_mode(FillStrat::Contain);
+        let image_widget = Image::new(image_data.clone()).fill_mode(ObjectFit::Contain);
         let mut harness = TestHarness::create_with_size(image_widget, harness_size);
         assert_render_snapshot!(harness, "layout_contain");
 
         // Cover.
-        let image_widget = Image::new(image_data.clone()).fill_mode(FillStrat::Cover);
+        let image_widget = Image::new(image_data.clone()).fill_mode(ObjectFit::Cover);
         let mut harness = TestHarness::create_with_size(image_widget, harness_size);
         assert_render_snapshot!(harness, "layout_cover");
 
         // Fill.
-        let image_widget = Image::new(image_data.clone()).fill_mode(FillStrat::Fill);
+        let image_widget = Image::new(image_data.clone()).fill_mode(ObjectFit::Fill);
         let mut harness = TestHarness::create_with_size(image_widget, harness_size);
         assert_render_snapshot!(harness, "layout_fill");
 
         // FitHeight.
-        let image_widget = Image::new(image_data.clone()).fill_mode(FillStrat::FitHeight);
+        let image_widget = Image::new(image_data.clone()).fill_mode(ObjectFit::FitHeight);
         let mut harness = TestHarness::create_with_size(image_widget, harness_size);
         assert_render_snapshot!(harness, "layout_fitheight");
 
         // FitWidth.
-        let image_widget = Image::new(image_data.clone()).fill_mode(FillStrat::FitWidth);
+        let image_widget = Image::new(image_data.clone()).fill_mode(ObjectFit::FitWidth);
         let mut harness = TestHarness::create_with_size(image_widget, harness_size);
         assert_render_snapshot!(harness, "layout_fitwidth");
 
         // None.
-        let image_widget = Image::new(image_data.clone()).fill_mode(FillStrat::None);
+        let image_widget = Image::new(image_data.clone()).fill_mode(ObjectFit::None);
         let mut harness = TestHarness::create_with_size(image_widget, harness_size);
         assert_render_snapshot!(harness, "layout_none");
 
         // ScaleDown.
-        let image_widget = Image::new(image_data.clone()).fill_mode(FillStrat::ScaleDown);
+        let image_widget = Image::new(image_data.clone()).fill_mode(ObjectFit::ScaleDown);
         let mut harness = TestHarness::create_with_size(image_widget, harness_size);
         assert_render_snapshot!(harness, "layout_scaledown");
     }

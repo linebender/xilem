@@ -61,7 +61,7 @@ use crate::{Affine, Size};
 // These are based on https://api.flutter.dev/flutter/painting/BoxFit-class.html
 /// Strategies for inscribing a rectangle inside another rectangle.
 #[derive(Clone, Copy, Default, PartialEq)]
-pub enum FillStrat {
+pub enum ObjectFit {
     /// As large as possible without changing aspect ratio of image and all of image shown
     #[default]
     Contain,
@@ -81,7 +81,7 @@ pub enum FillStrat {
 
 // TODO - Need to write tests for this, in a way that's relatively easy to visualize.
 
-impl FillStrat {
+impl ObjectFit {
     /// Calculate an origin and scale for an image with a given `FillStrat`.
     ///
     /// This takes some properties of a widget and a fill strategy and returns an affine matrix
@@ -91,22 +91,22 @@ impl FillStrat {
         let raw_scaley = parent.height / fit_box.height;
 
         let (scalex, scaley) = match self {
-            FillStrat::Contain => {
+            ObjectFit::Contain => {
                 let scale = raw_scalex.min(raw_scaley);
                 (scale, scale)
             }
-            FillStrat::Cover => {
+            ObjectFit::Cover => {
                 let scale = raw_scalex.max(raw_scaley);
                 (scale, scale)
             }
-            FillStrat::Fill => (raw_scalex, raw_scaley),
-            FillStrat::FitHeight => (raw_scaley, raw_scaley),
-            FillStrat::FitWidth => (raw_scalex, raw_scalex),
-            FillStrat::ScaleDown => {
+            ObjectFit::Fill => (raw_scalex, raw_scaley),
+            ObjectFit::FitHeight => (raw_scaley, raw_scaley),
+            ObjectFit::FitWidth => (raw_scalex, raw_scalex),
+            ObjectFit::ScaleDown => {
                 let scale = raw_scalex.min(raw_scaley).min(1.0);
                 (scale, scale)
             }
-            FillStrat::None => (1.0, 1.0),
+            ObjectFit::None => (1.0, 1.0),
         };
 
         let origin_x = (parent.width - (fit_box.width * scalex)) / 2.0;
@@ -114,14 +114,4 @@ impl FillStrat {
 
         Affine::new([scalex, 0., 0., scaley, origin_x, origin_y])
     }
-}
-
-// TODO - remove prelude
-#[allow(missing_docs)]
-pub mod prelude {
-    #[doc(hidden)]
-    pub use crate::{
-        BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, PointerEvent, Size,
-        StatusChange, TextEvent, Widget, WidgetId,
-    };
 }

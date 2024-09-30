@@ -3,7 +3,7 @@
 
 //! The bitmap image widget.
 
-use masonry::widget::{self, FillStrat};
+use masonry::widget::{self, ObjectFit};
 use xilem_core::{Mut, ViewMarker};
 
 use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
@@ -24,7 +24,7 @@ pub fn image(image: &vello::peniko::Image) -> Image {
         // We take by reference as we expect all users of this API will need to clone, and it's
         // easier than documenting that cloning is cheap.
         image: image.clone(),
-        fill: FillStrat::default(),
+        fill: ObjectFit::default(),
     }
 }
 
@@ -33,12 +33,12 @@ pub fn image(image: &vello::peniko::Image) -> Image {
 /// See `image`'s docs for more details.
 pub struct Image {
     image: vello::peniko::Image,
-    fill: FillStrat,
+    fill: ObjectFit,
 }
 
 impl Image {
     /// Specify the fill strategy.
-    pub fn fill(mut self, fill: FillStrat) -> Self {
+    pub fn fill(mut self, fill: ObjectFit) -> Self {
         self.fill = fill;
         self
     }

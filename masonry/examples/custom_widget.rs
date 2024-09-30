@@ -10,7 +10,7 @@
 use accesskit::Role;
 use masonry::app_driver::{AppDriver, DriverCtx};
 use masonry::kurbo::{BezPath, Stroke};
-use masonry::widget::{FillStrat, RootWidget};
+use masonry::widget::{ObjectFit, RootWidget};
 use masonry::{
     AccessCtx, AccessEvent, Action, Affine, BoxConstraints, Color, EventCtx, LayoutCtx, LifeCycle,
     LifeCycleCtx, PaintCtx, Point, PointerEvent, Rect, Size, StatusChange, TextEvent, Widget,
@@ -124,7 +124,7 @@ impl Widget for CustomWidget {
         // Let's burn some CPU to make a (partially transparent) image buffer
         let image_data = make_image_data(256, 256);
         let image_data = Image::new(image_data.into(), Format::Rgba8, 256, 256);
-        let transform = FillStrat::Fill.affine_to_fill(ctx.size(), size);
+        let transform = ObjectFit::Fill.affine_to_fill(ctx.size(), size);
         scene.draw_image(&image_data, transform);
     }
 
