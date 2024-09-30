@@ -550,7 +550,6 @@ where
         element.rebuild_style_modifier();
         let mut element = self.el.rebuild(&prev.el, view_state, ctx, element);
         if prev.radians != self.radians || element.was_updated("transform") {
-            // web_sys::console::log_0();
             *css_repr = modify_rotate_transform(element.get_style("transform"), self.radians);
         }
         element.set_style("transform".into(), Some(css_repr.clone()));

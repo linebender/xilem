@@ -7,7 +7,7 @@ use xilem_web::{
     interfaces::*,
     style as s,
     svg::{
-        kurbo::{self, Rect},
+        kurbo::{Circle, Line, Rect, Stroke},
         peniko::Color,
     },
     App, DomView, PointerMsg,
@@ -84,11 +84,11 @@ fn app_logic(state: &mut AppState) -> impl DomView<AppState> {
         Rect::new(210.0, 210.0, 310.0, 310.0).pointer(|_, e| {
             web_sys::console::log_1(&format!("pointer event {e:?}").into());
         }),
-        kurbo::Line::new((310.0, 210.0), (410.0, 310.0)).stroke(
+        Line::new((310.0, 210.0), (410.0, 310.0)).stroke(
             Color::YELLOW_GREEN,
-            kurbo::Stroke::new(1.0).with_dashes(state.x, [7.0, 1.0]),
+            Stroke::new(1.0).with_dashes(state.x, [7.0, 1.0]),
         ),
-        kurbo::Circle::new((460.0, 260.0), 45.0).on_click(|_, _| {
+        Circle::new((460.0, 260.0), 45.0).on_click(|_, _| {
             web_sys::console::log_1(&"circle clicked".into());
         }),
     )))
