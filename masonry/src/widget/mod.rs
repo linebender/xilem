@@ -82,7 +82,7 @@ pub enum ObjectFit {
 // TODO - Need to write tests for this, in a way that's relatively easy to visualize.
 
 impl ObjectFit {
-    /// Calculate an origin and scale for an image with a given `FillStrat`.
+    /// Calculate an origin and scale for an image with a given `ObjectFit`.
     ///
     /// This takes some properties of a widget and a fill strategy and returns an affine matrix
     /// used to position and scale the image in the widget.

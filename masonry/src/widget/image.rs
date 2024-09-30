@@ -35,7 +35,7 @@ pub struct Image {
 impl Image {
     /// Create an image drawing widget from an image buffer.
     ///
-    /// By default, the Image will scale to fit its box constraints ([`FillStrat::Fill`]).
+    /// By default, the Image will scale to fit its box constraints ([`ObjectFit::Fill`]).
     #[inline]
     pub fn new(image_data: ImageBuf) -> Self {
         Image {

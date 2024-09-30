@@ -10,7 +10,7 @@ use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
 
 /// Displays the bitmap `image`.
 ///
-/// By default, the Image will scale to fit its box constraints ([`FillStrat::Fill`]).
+/// By default, the Image will scale to fit its box constraints ([`ObjectFit::Fill`]).
 /// To configure this, call [`fill`](Image::fill) on the returned value.
 ///
 /// Corresponds to the [`Image`](widget::Image) widget.
