@@ -536,7 +536,7 @@ macro_rules! style_impls {
         /// Circle::new((10.0, 20.0), 30.0)
         ///     .style(s("transform", "translate(10px, 0)")) // can be combined with untyped `transform`
         ///     .scale(1.5)
-        ///     .scale((1.5, 2.0)),
+        ///     .scale((1.5, 2.0))
         /// // results in the following html:
         /// // <circle r="30" cy="20" cx="10" style="transform: translate(10px, 0) scale(1.5) scale(1.5, 2);"></circle>
         /// # }
