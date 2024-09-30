@@ -91,9 +91,9 @@ enum ClassModifier {
     EndMarker(u16),
 }
 
-const IS_DIRTY: u16 = 1 << 14;
-const IN_HYDRATION: u16 = 1 << 15;
-const RESERVED_BIT_MASK: u16 = IN_HYDRATION | IS_DIRTY;
+const DIRTY: u16 = 1 << 14;
+const HYDRATING: u16 = 1 << 15;
+const RESERVED_BIT_MASK: u16 = HYDRATING | DIRTY;
 
 /// This contains all the current classes of an [`Element`](`crate::interfaces::Element`)
 #[derive(Debug, Default)]
@@ -113,7 +113,7 @@ impl Classes {
         let mut start_idx = 0;
         #[cfg(feature = "hydration")]
         if in_hydration {
-            start_idx |= IN_HYDRATION;
+            start_idx |= HYDRATING;
         }
 
         Self {
@@ -127,12 +127,12 @@ impl Classes {
 impl Classes {
     pub fn apply_class_changes(&mut self, element: &web_sys::Element) {
         #[cfg(feature = "hydration")]
-        if (self.start_idx & IN_HYDRATION) == IN_HYDRATION {
+        if (self.start_idx & HYDRATING) == HYDRATING {
             self.start_idx &= !RESERVED_BIT_MASK;
             return;
         }
 
-        if (self.start_idx & IS_DIRTY) == IS_DIRTY {
+        if (self.start_idx & DIRTY) == DIRTY {
             self.start_idx &= !RESERVED_BIT_MASK;
             self.classes.clear();
             for modifier in &self.class_modifiers {
@@ -183,13 +183,13 @@ impl WithClasses for Classes {
 
     fn mark_end_of_class_modifier(&mut self) {
         match self.class_modifiers.get_mut(self.idx as usize) {
-            Some(ClassModifier::EndMarker(_)) if self.start_idx & IS_DIRTY != IS_DIRTY => (), // class modifier hasn't changed
+            Some(ClassModifier::EndMarker(_)) if self.start_idx & DIRTY != DIRTY => (), // class modifier hasn't changed
             Some(modifier) => {
-                self.start_idx |= IS_DIRTY;
+                self.start_idx |= DIRTY;
                 *modifier = ClassModifier::EndMarker(self.start_idx & !RESERVED_BIT_MASK);
             }
             None => {
-                self.start_idx |= IS_DIRTY;
+                self.start_idx |= DIRTY;
                 self.class_modifiers.push(ClassModifier::EndMarker(
                     self.start_idx & !RESERVED_BIT_MASK,
                 ));
@@ -203,11 +203,11 @@ impl WithClasses for Classes {
         match self.class_modifiers.get_mut(self.idx as usize) {
             Some(ClassModifier::Add(class)) if class == class_name => (), // class modifier hasn't changed
             Some(modifier) => {
-                self.start_idx |= IS_DIRTY;
+                self.start_idx |= DIRTY;
                 *modifier = ClassModifier::Add(class_name.clone());
             }
             None => {
-                self.start_idx |= IS_DIRTY;
+                self.start_idx |= DIRTY;
                 self.class_modifiers
                     .push(ClassModifier::Add(class_name.clone()));
             }
@@ -220,11 +220,11 @@ impl WithClasses for Classes {
         match self.class_modifiers.get_mut(self.idx as usize) {
             Some(ClassModifier::Remove(class)) if class == class_name => (), // class modifier hasn't changed
             Some(modifier) => {
-                self.start_idx |= IS_DIRTY;
+                self.start_idx |= DIRTY;
                 *modifier = ClassModifier::Remove(class_name.clone());
             }
             None => {
-                self.start_idx |= IS_DIRTY;
+                self.start_idx |= DIRTY;
                 self.class_modifiers
                     .push(ClassModifier::Remove(class_name.clone()));
             }

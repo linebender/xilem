@@ -39,9 +39,9 @@ enum AttributeModifier {
     EndMarker(u16),
 }
 
-const IN_HYDRATION: u16 = 1 << 14;
-const IN_CREATION: u16 = 1 << 15;
-const RESERVED_BIT_MASK: u16 = IN_HYDRATION | IN_CREATION;
+const HYDRATING: u16 = 1 << 14;
+const CREATING: u16 = 1 << 15;
+const RESERVED_BIT_MASK: u16 = HYDRATING | CREATING;
 
 /// This contains all the current attributes of an [`Element`](`crate::interfaces::Element`)
 #[derive(Debug, Default)]
@@ -56,10 +56,10 @@ pub struct Attributes {
 impl Attributes {
     pub(crate) fn new(size_hint: usize, #[cfg(feature = "hydration")] in_hydration: bool) -> Self {
         #[allow(unused_mut)]
-        let mut start_idx = IN_CREATION;
+        let mut start_idx = CREATING;
         #[cfg(feature = "hydration")]
         if in_hydration {
-            start_idx |= IN_HYDRATION;
+            start_idx |= HYDRATING;
         }
 
         Self {
@@ -126,12 +126,12 @@ fn remove_attribute(element: &web_sys::Element, name: &str) {
 impl Attributes {
     /// applies potential changes of the attributes of an element to the underlying DOM node
     pub fn apply_attribute_changes(&mut self, element: &web_sys::Element) {
-        if (self.start_idx & IN_HYDRATION) == IN_HYDRATION {
+        if (self.start_idx & HYDRATING) == HYDRATING {
             self.start_idx &= !RESERVED_BIT_MASK;
             return;
         }
 
-        if (self.start_idx & IN_CREATION) == IN_CREATION {
+        if (self.start_idx & CREATING) == CREATING {
             for modifier in self.attribute_modifiers.iter().rev() {
                 match modifier {
                     AttributeModifier::Remove(name) => {
