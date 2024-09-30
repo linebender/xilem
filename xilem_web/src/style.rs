@@ -147,6 +147,7 @@ pub struct Styles {
 
 impl Styles {
     pub(crate) fn new(size_hint: usize, #[cfg(feature = "hydration")] in_hydration: bool) -> Self {
+        #[allow(unused_mut)]
         let mut start_idx = IN_CREATION;
         #[cfg(feature = "hydration")]
         if in_hydration {

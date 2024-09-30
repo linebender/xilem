@@ -1,10 +1,10 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-#[cfg(feature = "hydration")]
 use crate::vecmap::VecMap;
 #[cfg(feature = "hydration")]
-use std::any::{Any, TypeId};
+use std::any::Any;
+use std::any::TypeId;
 use std::rc::Rc;
 
 use crate::{

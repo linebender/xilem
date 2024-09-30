@@ -109,6 +109,7 @@ pub struct Classes {
 
 impl Classes {
     pub(crate) fn new(size_hint: usize, #[cfg(feature = "hydration")] in_hydration: bool) -> Self {
+        #[allow(unused_mut)]
         let mut start_idx = 0;
         #[cfg(feature = "hydration")]
         if in_hydration {
