@@ -513,11 +513,11 @@ impl<E, State, Action> Rotate<E, State, Action> {
     }
 }
 
-fn modify_rotate_transform(transform: Option<&CowStr>, radians: f64) -> CowStr {
+fn modify_rotate_transform(transform: Option<&CowStr>, radians: f64) -> Option<CowStr> {
     if let Some(transform) = transform {
-        CowStr::from(format!("{transform} rotate({radians}rad)"))
+        Some(CowStr::from(format!("{transform} rotate({radians}rad)")))
     } else {
-        CowStr::from(format!("rotate({radians}rad)"))
+        Some(CowStr::from(format!("rotate({radians}rad)")))
     }
 }
 
@@ -530,12 +530,12 @@ where
 {
     type Element = E::Element;
 
-    type ViewState = (E::ViewState, CowStr);
+    type ViewState = (E::ViewState, Option<CowStr>);
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let (mut element, state) = self.el.build(ctx);
         let css_repr = modify_rotate_transform(element.get_style("transform"), self.radians);
-        element.set_style("transform".into(), Some(css_repr.clone()));
+        element.set_style("transform".into(), css_repr.clone());
         element.mark_end_of_style_modifier();
         (element, (state, css_repr))
     }
@@ -552,7 +552,7 @@ where
         if prev.radians != self.radians || element.was_updated("transform") {
             *css_repr = modify_rotate_transform(element.get_style("transform"), self.radians);
         }
-        element.set_style("transform".into(), Some(css_repr.clone()));
+        element.set_style("transform".into(), css_repr.clone());
         element.mark_end_of_style_modifier();
         element
     }
@@ -627,11 +627,11 @@ impl<E, State, Action> Scale<E, State, Action> {
     }
 }
 
-fn modify_scale_transform(transform: Option<&CowStr>, scale: ScaleValue) -> CowStr {
+fn modify_scale_transform(transform: Option<&CowStr>, scale: ScaleValue) -> Option<CowStr> {
     if let Some(transform) = transform {
-        CowStr::from(format!("{transform} scale({scale})"))
+        Some(CowStr::from(format!("{transform} scale({scale})")))
     } else {
-        CowStr::from(format!("scale({scale})"))
+        Some(CowStr::from(format!("scale({scale})")))
     }
 }
 
@@ -644,12 +644,12 @@ where
 {
     type Element = E::Element;
 
-    type ViewState = (E::ViewState, CowStr);
+    type ViewState = (E::ViewState, Option<CowStr>);
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let (mut element, state) = self.el.build(ctx);
         let css_repr = modify_scale_transform(element.get_style("transform"), self.scale);
-        element.set_style("transform".into(), Some(css_repr.clone()));
+        element.set_style("transform".into(), css_repr.clone());
         element.mark_end_of_style_modifier();
         (element, (state, css_repr))
     }
@@ -666,7 +666,7 @@ where
         if prev.scale != self.scale || element.was_updated("transform") {
             *css_repr = modify_scale_transform(element.get_style("transform"), self.scale);
         }
-        element.set_style("transform".into(), Some(css_repr.clone()));
+        element.set_style("transform".into(), css_repr.clone());
         element.mark_end_of_style_modifier();
         element
     }
