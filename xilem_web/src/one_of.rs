@@ -197,7 +197,7 @@ impl WithAttributes for Noop {
         unreachable!()
     }
 
-    fn set_attribute(&mut self, _name: CowStr, _value: Option<AttributeValue>) {
+    fn set_attribute(&mut self, _name: &CowStr, _value: &Option<AttributeValue>) {
         unreachable!()
     }
 }
@@ -207,11 +207,11 @@ impl WithClasses for Noop {
         unreachable!()
     }
 
-    fn add_class(&mut self, _class_name: CowStr) {
+    fn add_class(&mut self, _class_name: &CowStr) {
         unreachable!()
     }
 
-    fn remove_class(&mut self, _class_name: CowStr) {
+    fn remove_class(&mut self, _class_name: &CowStr) {
         unreachable!()
     }
 
@@ -225,7 +225,7 @@ impl WithStyle for Noop {
         unreachable!()
     }
 
-    fn set_style(&mut self, _name: CowStr, _value: Option<CowStr>) {
+    fn set_style(&mut self, _name: &CowStr, _value: &Option<CowStr>) {
         unreachable!()
     }
 
@@ -288,7 +288,7 @@ impl<
         }
     }
 
-    fn set_attribute(&mut self, name: CowStr, value: Option<AttributeValue>) {
+    fn set_attribute(&mut self, name: &CowStr, value: &Option<AttributeValue>) {
         match self {
             OneOf::A(e) => e.set_attribute(name, value),
             OneOf::B(e) => e.set_attribute(name, value),
@@ -329,7 +329,7 @@ impl<
         }
     }
 
-    fn add_class(&mut self, class_name: CowStr) {
+    fn add_class(&mut self, class_name: &CowStr) {
         match self {
             OneOf::A(e) => e.add_class(class_name),
             OneOf::B(e) => e.add_class(class_name),
@@ -343,7 +343,7 @@ impl<
         }
     }
 
-    fn remove_class(&mut self, class_name: CowStr) {
+    fn remove_class(&mut self, class_name: &CowStr) {
         match self {
             OneOf::A(e) => e.remove_class(class_name),
             OneOf::B(e) => e.remove_class(class_name),
@@ -398,7 +398,7 @@ impl<
         }
     }
 
-    fn set_style(&mut self, name: CowStr, value: Option<CowStr>) {
+    fn set_style(&mut self, name: &CowStr, value: &Option<CowStr>) {
         match self {
             OneOf::A(e) => e.set_style(name, value),
             OneOf::B(e) => e.set_style(name, value),

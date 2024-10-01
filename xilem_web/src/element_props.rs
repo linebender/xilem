@@ -1,7 +1,7 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{attribute::Attributes, class::Classes, document, style::Styles, AnyPod, Pod};
+use crate::{attribute::Attributes, class::Classes, document, style::Styles, AnyPod, Pod, ViewCtx};
 #[cfg(feature = "hydration")]
 use wasm_bindgen::JsCast;
 use wasm_bindgen::UnwrapThrowExt;
@@ -19,6 +19,50 @@ pub struct ElementProps {
 }
 
 impl ElementProps {
+    pub fn new(
+        children: Vec<AnyPod>,
+        attr_size_hint: usize,
+        style_size_hint: usize,
+        class_size_hint: usize,
+        #[cfg(feature = "hydration")] in_hydration: bool,
+    ) -> Self {
+        let attributes = if attr_size_hint > 0 {
+            Some(Box::new(Attributes::new(
+                attr_size_hint,
+                #[cfg(feature = "hydration")]
+                in_hydration,
+            )))
+        } else {
+            None
+        };
+        let styles = if style_size_hint > 0 {
+            Some(Box::new(Styles::new(
+                style_size_hint,
+                #[cfg(feature = "hydration")]
+                in_hydration,
+            )))
+        } else {
+            None
+        };
+        let classes = if class_size_hint > 0 {
+            Some(Box::new(Classes::new(
+                class_size_hint,
+                #[cfg(feature = "hydration")]
+                in_hydration,
+            )))
+        } else {
+            None
+        };
+        Self {
+            attributes,
+            classes,
+            styles,
+            children,
+            #[cfg(feature = "hydration")]
+            in_hydration,
+        }
+    }
+
     // All of this is slightly more complicated than it should be,
     // because we want to minimize DOM traffic as much as possible (that's basically the bottleneck)
     pub fn update_element(&mut self, element: &web_sys::Element) {
@@ -34,41 +78,65 @@ impl ElementProps {
     }
 
     pub fn attributes(&mut self) -> &mut Attributes {
-        #[cfg(feature = "hydration")]
-        let attributes = self
-            .attributes
-            .get_or_insert_with(|| Box::new(Attributes::new(self.in_hydration)));
-        #[cfg(not(feature = "hydration"))]
-        // still unstable, but this would even be more concise
-        // self.attributes.get_or_insert_default()
-        let attributes = self.attributes.get_or_insert_with(Default::default);
-        attributes
+        self.attributes.get_or_insert_with(|| {
+            Box::new(Attributes::new(
+                0,
+                #[cfg(feature = "hydration")]
+                self.in_hydration,
+            ))
+        })
     }
 
     pub fn styles(&mut self) -> &mut Styles {
-        #[cfg(feature = "hydration")]
-        let styles = self
-            .styles
-            .get_or_insert_with(|| Box::new(Styles::new(self.in_hydration)));
-        #[cfg(not(feature = "hydration"))]
-        let styles = self.styles.get_or_insert_with(Default::default);
-        styles
+        self.styles.get_or_insert_with(|| {
+            Box::new(Styles::new(
+                0,
+                #[cfg(feature = "hydration")]
+                self.in_hydration,
+            ))
+        })
     }
 
     pub fn classes(&mut self) -> &mut Classes {
-        #[cfg(feature = "hydration")]
-        let classes = self
-            .classes
-            .get_or_insert_with(|| Box::new(Classes::new(self.in_hydration)));
-        #[cfg(not(feature = "hydration"))]
-        let classes = self.classes.get_or_insert_with(Default::default);
-        classes
+        self.classes.get_or_insert_with(|| {
+            Box::new(Classes::new(
+                0,
+                #[cfg(feature = "hydration")]
+                self.in_hydration,
+            ))
+        })
     }
 }
 
 impl Pod<web_sys::Element> {
+    pub fn new_element_with_ctx(
+        children: Vec<AnyPod>,
+        ns: &str,
+        elem_name: &str,
+        ctx: &mut ViewCtx,
+    ) -> Self {
+        let attr_size_hint = ctx.modifier_size_hint::<Attributes>();
+        let class_size_hint = ctx.modifier_size_hint::<Classes>();
+        let style_size_hint = ctx.modifier_size_hint::<Styles>();
+        Self::new_element(
+            children,
+            ns,
+            elem_name,
+            attr_size_hint,
+            style_size_hint,
+            class_size_hint,
+        )
+    }
+
     /// Creates a new Pod with [`web_sys::Element`] as element and `ElementProps` as its [`DomView::Props`](`crate::DomView::Props`)
-    pub fn new_element(children: Vec<AnyPod>, ns: &str, elem_name: &str) -> Self {
+    pub fn new_element(
+        children: Vec<AnyPod>,
+        ns: &str,
+        elem_name: &str,
+        attr_size_hint: usize,
+        style_size_hint: usize,
+        class_size_hint: usize,
+    ) -> Self {
         let element = document()
             .create_element_ns(
                 Some(wasm_bindgen::intern(ns)),
@@ -82,28 +150,53 @@ impl Pod<web_sys::Element> {
 
         Self {
             node: element,
-            props: ElementProps {
-                #[cfg(feature = "hydration")]
-                in_hydration: false,
-                attributes: None,
-                classes: None,
-                styles: None,
+            props: ElementProps::new(
                 children,
-            },
+                attr_size_hint,
+                style_size_hint,
+                class_size_hint,
+                #[cfg(feature = "hydration")]
+                false,
+            ),
         }
     }
 
     #[cfg(feature = "hydration")]
-    pub fn hydrate_element(children: Vec<AnyPod>, element: web_sys::Node) -> Self {
+    pub fn hydrate_element_with_ctx(
+        children: Vec<AnyPod>,
+        element: web_sys::Node,
+        ctx: &mut ViewCtx,
+    ) -> Self {
+        let attr_size_hint = ctx.modifier_size_hint::<Attributes>();
+        let class_size_hint = ctx.modifier_size_hint::<Classes>();
+        let style_size_hint = ctx.modifier_size_hint::<Styles>();
+        Self::hydrate_element(
+            children,
+            element,
+            attr_size_hint,
+            style_size_hint,
+            class_size_hint,
+        )
+    }
+
+    #[cfg(feature = "hydration")]
+    pub fn hydrate_element(
+        children: Vec<AnyPod>,
+        element: web_sys::Node,
+        attr_size_hint: usize,
+        style_size_hint: usize,
+        class_size_hint: usize,
+    ) -> Self {
         Self {
             node: element.unchecked_into(),
-            props: ElementProps {
-                in_hydration: true,
-                attributes: None,
-                classes: None,
-                styles: None,
+            props: ElementProps::new(
                 children,
-            },
+                attr_size_hint,
+                style_size_hint,
+                class_size_hint,
+                #[cfg(feature = "hydration")]
+                true,
+            ),
         }
     }
 }

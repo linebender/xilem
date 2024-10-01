@@ -69,12 +69,12 @@ pub trait WithClasses {
     /// Adds a class to the element
     ///
     /// When in [`View::rebuild`] this has to be invoked *after* traversing the inner `View` with [`View::rebuild`]
-    fn add_class(&mut self, class_name: CowStr);
+    fn add_class(&mut self, class_name: &CowStr);
 
     /// Removes a possibly previously added class from the element
     ///
     /// When in [`View::rebuild`] this has to be invoked *after* traversing the inner `View` with [`View::rebuild`]
-    fn remove_class(&mut self, class_name: CowStr);
+    fn remove_class(&mut self, class_name: &CowStr);
 
     // TODO something like the following, but I'm not yet sure how to support that efficiently (and without much binary bloat)
     // The modifiers possibly have to be applied then...
@@ -88,8 +88,12 @@ pub trait WithClasses {
 enum ClassModifier {
     Remove(CowStr),
     Add(CowStr),
-    EndMarker(usize),
+    EndMarker(u16),
 }
+
+const DIRTY: u16 = 1 << 14;
+const HYDRATING: u16 = 1 << 15;
+const RESERVED_BIT_MASK: u16 = HYDRATING | DIRTY;
 
 /// This contains all the current classes of an [`Element`](`crate::interfaces::Element`)
 #[derive(Debug, Default)]
@@ -98,18 +102,23 @@ pub struct Classes {
     classes: VecMap<CowStr, ()>,
     class_modifiers: Vec<ClassModifier>,
     class_name: String,
-    idx: usize,
-    start_idx: usize,
-    dirty: bool,
-    #[cfg(feature = "hydration")]
-    pub(crate) in_hydration: bool,
+    idx: u16,
+    /// the two most significant bits are reserved for whether it's currently being hydrated (bit 15), or is dirty (bit 14)
+    start_idx: u16,
 }
 
-#[cfg(feature = "hydration")]
 impl Classes {
-    pub(crate) fn new(in_hydration: bool) -> Self {
+    pub(crate) fn new(size_hint: usize, #[cfg(feature = "hydration")] in_hydration: bool) -> Self {
+        #[allow(unused_mut)]
+        let mut start_idx = 0;
+        #[cfg(feature = "hydration")]
+        if in_hydration {
+            start_idx |= HYDRATING;
+        }
+
         Self {
-            in_hydration,
+            class_modifiers: Vec::with_capacity(size_hint),
+            start_idx,
             ..Default::default()
         }
     }
@@ -118,13 +127,13 @@ impl Classes {
 impl Classes {
     pub fn apply_class_changes(&mut self, element: &web_sys::Element) {
         #[cfg(feature = "hydration")]
-        if self.in_hydration {
-            self.in_hydration = false;
-            self.dirty = false;
+        if (self.start_idx & HYDRATING) == HYDRATING {
+            self.start_idx &= !RESERVED_BIT_MASK;
+            return;
         }
 
-        if self.dirty {
-            self.dirty = false;
+        if (self.start_idx & DIRTY) == DIRTY {
+            self.start_idx &= !RESERVED_BIT_MASK;
             self.classes.clear();
             for modifier in &self.class_modifiers {
                 match modifier {
@@ -163,57 +172,61 @@ impl WithClasses for Classes {
         if self.idx == 0 {
             self.start_idx = 0;
         } else {
-            let ClassModifier::EndMarker(start_idx) = self.class_modifiers[self.idx - 1] else {
+            let ClassModifier::EndMarker(start_idx) = self.class_modifiers[(self.idx - 1) as usize]
+            else {
                 unreachable!("this should not happen, as either `rebuild_class_modifier` is happens first, or follows an `mark_end_of_class_modifier`")
             };
             self.idx = start_idx;
-            self.start_idx = start_idx;
+            self.start_idx = start_idx | (self.start_idx & RESERVED_BIT_MASK);
         }
     }
 
     fn mark_end_of_class_modifier(&mut self) {
-        match self.class_modifiers.get_mut(self.idx) {
-            Some(ClassModifier::EndMarker(_)) if !self.dirty => (), // class modifier hasn't changed
+        match self.class_modifiers.get_mut(self.idx as usize) {
+            Some(ClassModifier::EndMarker(_)) if self.start_idx & DIRTY != DIRTY => (), // class modifier hasn't changed
             Some(modifier) => {
-                self.dirty = true;
-                *modifier = ClassModifier::EndMarker(self.start_idx);
+                self.start_idx |= DIRTY;
+                *modifier = ClassModifier::EndMarker(self.start_idx & !RESERVED_BIT_MASK);
             }
             None => {
-                self.dirty = true;
+                self.start_idx |= DIRTY;
+                self.class_modifiers.push(ClassModifier::EndMarker(
+                    self.start_idx & !RESERVED_BIT_MASK,
+                ));
+            }
+        }
+        self.idx += 1;
+        self.start_idx = self.idx | (self.start_idx & RESERVED_BIT_MASK);
+    }
+
+    fn add_class(&mut self, class_name: &CowStr) {
+        match self.class_modifiers.get_mut(self.idx as usize) {
+            Some(ClassModifier::Add(class)) if class == class_name => (), // class modifier hasn't changed
+            Some(modifier) => {
+                self.start_idx |= DIRTY;
+                *modifier = ClassModifier::Add(class_name.clone());
+            }
+            None => {
+                self.start_idx |= DIRTY;
                 self.class_modifiers
-                    .push(ClassModifier::EndMarker(self.start_idx));
-            }
-        }
-        self.idx += 1;
-        self.start_idx = self.idx;
-    }
-
-    fn add_class(&mut self, class_name: CowStr) {
-        match self.class_modifiers.get_mut(self.idx) {
-            Some(ClassModifier::Add(class)) if class == &class_name => (), // class modifier hasn't changed
-            Some(modifier) => {
-                self.dirty = true;
-                *modifier = ClassModifier::Add(class_name);
-            }
-            None => {
-                self.dirty = true;
-                self.class_modifiers.push(ClassModifier::Add(class_name));
+                    .push(ClassModifier::Add(class_name.clone()));
             }
         }
         self.idx += 1;
     }
 
-    fn remove_class(&mut self, class_name: CowStr) {
+    fn remove_class(&mut self, class_name: &CowStr) {
         // Same code as add_class but with remove...
-        match self.class_modifiers.get_mut(self.idx) {
-            Some(ClassModifier::Remove(class)) if class == &class_name => (), // class modifier hasn't changed
+        match self.class_modifiers.get_mut(self.idx as usize) {
+            Some(ClassModifier::Remove(class)) if class == class_name => (), // class modifier hasn't changed
             Some(modifier) => {
-                self.dirty = true;
-                *modifier = ClassModifier::Remove(class_name);
+                self.start_idx |= DIRTY;
+                *modifier = ClassModifier::Remove(class_name.clone());
             }
             None => {
-                self.dirty = true;
-                self.class_modifiers.push(ClassModifier::Remove(class_name));
+                self.start_idx |= DIRTY;
+                self.class_modifiers
+                    .push(ClassModifier::Remove(class_name.clone()));
             }
         }
         self.idx += 1;
@@ -229,11 +242,11 @@ impl WithClasses for ElementProps {
         self.classes().mark_end_of_class_modifier();
     }
 
-    fn add_class(&mut self, class_name: CowStr) {
+    fn add_class(&mut self, class_name: &CowStr) {
         self.classes().add_class(class_name);
     }
 
-    fn remove_class(&mut self, class_name: CowStr) {
+    fn remove_class(&mut self, class_name: &CowStr) {
         self.classes().remove_class(class_name);
     }
 }
@@ -250,11 +263,11 @@ where
         self.props.mark_end_of_class_modifier();
     }
 
-    fn add_class(&mut self, class_name: CowStr) {
+    fn add_class(&mut self, class_name: &CowStr) {
         self.props.add_class(class_name);
     }
 
-    fn remove_class(&mut self, class_name: CowStr) {
+    fn remove_class(&mut self, class_name: &CowStr) {
         self.props.remove_class(class_name);
     }
 }
@@ -271,11 +284,11 @@ where
         self.props.mark_end_of_class_modifier();
     }
 
-    fn add_class(&mut self, class_name: CowStr) {
+    fn add_class(&mut self, class_name: &CowStr) {
         self.props.add_class(class_name);
     }
 
-    fn remove_class(&mut self, class_name: CowStr) {
+    fn remove_class(&mut self, class_name: &CowStr) {
         self.props.remove_class(class_name);
     }
 }
@@ -321,9 +334,11 @@ where
     type ViewState = E::ViewState;
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+        let class_iter = self.classes.class_iter();
+        ctx.add_modifier_size_hint::<Classes>(class_iter.size_hint().0);
         let (mut e, s) = self.el.build(ctx);
-        for class in self.classes.class_iter() {
-            e.add_class(class);
+        for class in class_iter {
+            e.add_class(&class);
         }
         e.mark_end_of_class_modifier();
         (e, s)
@@ -341,7 +356,7 @@ where
         element.rebuild_class_modifier();
         let mut element = self.el.rebuild(&prev.el, view_state, ctx, element);
         for class in self.classes.class_iter() {
-            element.add_class(class);
+            element.add_class(&class);
         }
         element.mark_end_of_class_modifier();
         element

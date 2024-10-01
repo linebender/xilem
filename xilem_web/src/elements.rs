@@ -15,6 +15,7 @@ use crate::{
     vec_splice::VecSplice,
     AnyPod, DomFragment, DomNode, DynMessage, Pod, ViewCtx, HTML_NS,
 };
+use crate::{Attributes, Classes, Styles};
 
 // sealed, because this should only cover `ViewSequences` with the blanket impl below
 /// This is basically a specialized dynamically dispatchable [`ViewSequence`], It's currently not able to change the underlying type unlike [`AnyDomView`](crate::AnyDomView), so it should not be used as `dyn DomViewSequence`.
@@ -246,6 +247,10 @@ where
     Element: 'static,
     Element: From<Pod<web_sys::Element>>,
 {
+    // We need to get those size hints before traversing to the children, otherwise the hints are messed up
+    let attr_size_hint = ctx.modifier_size_hint::<Attributes>();
+    let class_size_hint = ctx.modifier_size_hint::<Classes>();
+    let style_size_hint = ctx.modifier_size_hint::<Styles>();
     let mut elements = AppendVec::default();
     #[cfg(feature = "hydration")]
     if ctx.is_hydrating() {
@@ -256,12 +261,27 @@ where
     if ctx.is_hydrating() {
         let hydrating_node = ctx.hydrate_node().unwrap_throw();
         return (
-            Pod::hydrate_element(elements.into_inner(), hydrating_node).into(),
+            Pod::hydrate_element(
+                elements.into_inner(),
+                hydrating_node,
+                attr_size_hint,
+                style_size_hint,
+                class_size_hint,
+            )
+            .into(),
             state,
         );
     }
     (
-        Pod::new_element(elements.into_inner(), ns, tag_name).into(),
+        Pod::new_element(
+            elements.into_inner(),
+            ns,
+            tag_name,
+            attr_size_hint,
+            style_size_hint,
+            class_size_hint,
+        )
+        .into(),
         state,
     )
 }
