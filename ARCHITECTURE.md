@@ -85,9 +85,5 @@ Contains the `View` trait, and other general implementations. Is also contains t
 ### `xilem_web/`
 An implementation of Xilem running on the DOM.
 
-### `xilem_web_core`
-A historical version of `xilem_core` used in `xilem_web`
-
-
 ### `masonry/`
 See `ARCHITECTURE.md` file located under `crates/masonry/doc`
