@@ -319,7 +319,7 @@ impl WithStyle for Styles {
     }
 
     fn get_style(&self, name: &str) -> Option<&CowStr> {
-        for modifier in self.style_modifiers[..self.idx].iter().rev() {
+        for modifier in self.style_modifiers[..self.idx as usize].iter().rev() {
             match modifier {
                 StyleModifier::Remove(removed) if removed == name => return None,
                 StyleModifier::Set(key, value) if key == name => return Some(value),
@@ -535,7 +535,7 @@ where
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let (mut element, state) = self.el.build(ctx);
         let css_repr = modify_rotate_transform(element.get_style("transform"), self.radians);
-        element.set_style("transform".into(), css_repr.clone());
+        element.set_style(&"transform".into(), &css_repr);
         element.mark_end_of_style_modifier();
         (element, (state, css_repr))
     }
@@ -552,7 +552,7 @@ where
         if prev.radians != self.radians || element.was_updated("transform") {
             *css_repr = modify_rotate_transform(element.get_style("transform"), self.radians);
         }
-        element.set_style("transform".into(), css_repr.clone());
+        element.set_style(&"transform".into(), css_repr);
         element.mark_end_of_style_modifier();
         element
     }
@@ -649,7 +649,7 @@ where
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let (mut element, state) = self.el.build(ctx);
         let css_repr = modify_scale_transform(element.get_style("transform"), self.scale);
-        element.set_style("transform".into(), css_repr.clone());
+        element.set_style(&"transform".into(), &css_repr);
         element.mark_end_of_style_modifier();
         (element, (state, css_repr))
     }
@@ -666,7 +666,7 @@ where
         if prev.scale != self.scale || element.was_updated("transform") {
             *css_repr = modify_scale_transform(element.get_style("transform"), self.scale);
         }
-        element.set_style("transform".into(), css_repr.clone());
+        element.set_style(&"transform".into(), css_repr);
         element.mark_end_of_style_modifier();
         element
     }
