@@ -295,6 +295,13 @@ impl WidgetState {
         Rect::from_origin_size(self.window_origin(), self.size)
     }
 
+    /// The clip path of the widget, if any was set.
+    ///
+    /// For more information, see [`LayoutCtx::set_clip_path`](crate::LayoutCtx::set_clip_path).
+    pub fn clip_path(&self) -> Option<Rect> {
+        self.clip
+    }
+
     /// Returns the area being edited by an IME, in global coordinates.
     ///
     /// By default, returns the same as [`Self::window_layout_rect`].

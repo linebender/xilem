@@ -194,10 +194,9 @@ pub trait Widget: AsAny {
         ctx: QueryCtx<'c>,
         pos: Point,
     ) -> Option<WidgetRef<'c, dyn Widget>> {
-        let relative_pos = pos - ctx.widget_state.window_origin().to_vec2();
+        let relative_pos = pos - ctx.window_origin().to_vec2();
         if !ctx
-            .widget_state
-            .clip
+            .clip_path()
             .map_or(true, |clip| clip.contains(relative_pos))
         {
             return None;
