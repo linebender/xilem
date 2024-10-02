@@ -14,6 +14,8 @@
 
 </div>
 
+[tracing_tracy]: https://crates.io/crates/tracing-tracy
+
 <!-- cargo-rdme start -->
 
 Masonry gives you a platform to create windows (using [winit] as a backend) each with a tree of widgets. It also gives you tools to inspect that widget tree at runtime, write unit tests on it, and generally have an easier time debugging and maintaining your app.
@@ -89,6 +91,12 @@ fn main() {
     .unwrap();
 }
 ```
+
+### Create feature flags
+
+The following feature flags are available:
+
+- `tracy`: Enables connecting to the [Tracy](https://github.com/wolfpld/tracy) profiler using [`tracing-tracy`][tracing_tracy].
 
 [winit]: https://crates.io/crates/winit
 [Druid]: https://crates.io/crates/druid

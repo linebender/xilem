@@ -76,6 +76,12 @@
 //! }
 //! ```
 //!
+//! ## Create feature flags
+//!
+//! The following feature flags are available:
+//!
+//! - `tracy`: Enables connecting to the [Tracy](https://github.com/wolfpld/tracy) profiler using [`tracing-tracy`][tracing_tracy].
+//!
 //! [winit]: https://crates.io/crates/winit
 //! [Druid]: https://crates.io/crates/druid
 //! [Xilem]: https://crates.io/crates/xilem
