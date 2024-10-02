@@ -209,7 +209,7 @@
  -> [X] Label
  -> [X] SizedBox
  -> [X] Spinner
--> [ ] FillStrat
+-> [ ] ObjectFit
 -> [ ] text
  -> [ ] TextBox
 
@@ -255,7 +255,7 @@ Make library of commonly desired layouts
 - Side gutters
 - Document format
 
-How do make easily-readable test of Flex, FillStrat layout?
+How do make easily-readable test of Flex, ObjectFit layout?
 
 
 ## Passes

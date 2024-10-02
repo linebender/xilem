@@ -17,7 +17,6 @@ extend-ignore-re = [
 # is treated as always incorrect.
 
 [default.extend-identifiers]
-FillStrat = "FillStrat" # short for strategy
 wdth = "wdth"           # Variable font parameter
 
 # Case insensitive
