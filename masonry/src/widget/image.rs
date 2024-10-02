@@ -28,7 +28,7 @@ use crate::{
 /// than the image size).
 pub struct Image {
     image_data: ImageBuf,
-    fill: ObjectFit,
+    object_fit: ObjectFit,
 }
 
 // --- MARK: BUILDERS ---
@@ -40,24 +40,24 @@ impl Image {
     pub fn new(image_data: ImageBuf) -> Self {
         Image {
             image_data,
-            fill: ObjectFit::default(),
+            object_fit: ObjectFit::default(),
         }
     }
 
-    /// Builder-style method for specifying the fill strategy.
+    /// Builder-style method for specifying the object fit.
     #[inline]
-    pub fn fill_mode(mut self, mode: ObjectFit) -> Self {
-        self.fill = mode;
+    pub fn fit_mode(mut self, mode: ObjectFit) -> Self {
+        self.object_fit = mode;
         self
     }
 }
 
 // --- MARK: WIDGETMUT ---
 impl<'a> WidgetMut<'a, Image> {
-    /// Modify the widget's fill strategy.
+    /// Modify the widget's object fit.
     #[inline]
-    pub fn set_fill_mode(&mut self, newfil: ObjectFit) {
-        self.widget.fill = newfil;
+    pub fn set_fit_mode(&mut self, new_object_fit: ObjectFit) {
+        self.widget.object_fit = new_object_fit;
         self.ctx.request_paint();
     }
 
@@ -92,7 +92,7 @@ impl Widget for Image {
             return size;
         }
         let image_aspect_ratio = image_size.height / image_size.width;
-        let size = match self.fill {
+        let size = match self.object_fit {
             ObjectFit::Contain => bc.constrain_aspect_ratio(image_aspect_ratio, image_size.width),
             ObjectFit::Cover => Size::new(bc.max().width, bc.max().width * image_aspect_ratio),
             ObjectFit::Fill => bc.max(),
@@ -117,7 +117,7 @@ impl Widget for Image {
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
         let image_size = Size::new(self.image_data.width as f64, self.image_data.height as f64);
-        let transform = self.fill.affine_to_fill(ctx.size(), image_size);
+        let transform = self.object_fit.affine_to_fill(ctx.size(), image_size);
 
         let clip_rect = ctx.size().to_rect();
         scene.push_layer(BlendMode::default(), 1., Affine::IDENTITY, &clip_rect);
@@ -221,37 +221,37 @@ mod tests {
         let harness_size = Size::new(100.0, 50.0);
 
         // Contain.
-        let image_widget = Image::new(image_data.clone()).fill_mode(ObjectFit::Contain);
+        let image_widget = Image::new(image_data.clone()).fit_mode(ObjectFit::Contain);
         let mut harness = TestHarness::create_with_size(image_widget, harness_size);
         assert_render_snapshot!(harness, "layout_contain");
 
         // Cover.
-        let image_widget = Image::new(image_data.clone()).fill_mode(ObjectFit::Cover);
+        let image_widget = Image::new(image_data.clone()).fit_mode(ObjectFit::Cover);
         let mut harness = TestHarness::create_with_size(image_widget, harness_size);
         assert_render_snapshot!(harness, "layout_cover");
 
         // Fill.
-        let image_widget = Image::new(image_data.clone()).fill_mode(ObjectFit::Fill);
+        let image_widget = Image::new(image_data.clone()).fit_mode(ObjectFit::Fill);
         let mut harness = TestHarness::create_with_size(image_widget, harness_size);
         assert_render_snapshot!(harness, "layout_fill");
 
         // FitHeight.
-        let image_widget = Image::new(image_data.clone()).fill_mode(ObjectFit::FitHeight);
+        let image_widget = Image::new(image_data.clone()).fit_mode(ObjectFit::FitHeight);
         let mut harness = TestHarness::create_with_size(image_widget, harness_size);
         assert_render_snapshot!(harness, "layout_fitheight");
 
         // FitWidth.
-        let image_widget = Image::new(image_data.clone()).fill_mode(ObjectFit::FitWidth);
+        let image_widget = Image::new(image_data.clone()).fit_mode(ObjectFit::FitWidth);
         let mut harness = TestHarness::create_with_size(image_widget, harness_size);
         assert_render_snapshot!(harness, "layout_fitwidth");
 
         // None.
-        let image_widget = Image::new(image_data.clone()).fill_mode(ObjectFit::None);
+        let image_widget = Image::new(image_data.clone()).fit_mode(ObjectFit::None);
         let mut harness = TestHarness::create_with_size(image_widget, harness_size);
         assert_render_snapshot!(harness, "layout_none");
 
         // ScaleDown.
-        let image_widget = Image::new(image_data.clone()).fill_mode(ObjectFit::ScaleDown);
+        let image_widget = Image::new(image_data.clone()).fit_mode(ObjectFit::ScaleDown);
         let mut harness = TestHarness::create_with_size(image_widget, harness_size);
         assert_render_snapshot!(harness, "layout_scaledown");
     }
