@@ -80,7 +80,8 @@
 //!
 //! The following feature flags are available:
 //!
-//! - `tracy`: Enables connecting to the [Tracy](https://github.com/wolfpld/tracy) profiler using [`tracing-tracy`][tracing_tracy].
+//! - `tracy`: Enables creating output for the [Tracy](https://github.com/wolfpld/tracy) profiler using [`tracing-tracy`][tracing_tracy].
+//!   This can be used by installing Tracy and connecting to a Masonry with this feature enabled.
 //!
 //! [winit]: https://crates.io/crates/winit
 //! [Druid]: https://crates.io/crates/druid
