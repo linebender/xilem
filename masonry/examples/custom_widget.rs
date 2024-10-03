@@ -109,8 +109,9 @@ impl Widget for CustomWidget {
         text_layout_builder.push_default(&StyleProperty::FontSize(24.0));
         text_layout_builder.push_default(&StyleProperty::Brush(Brush::Solid(fill_color).into()));
 
-        let mut text_layout = text_layout_builder.build();
-        text_layout.break_all_lines(None, Alignment::Start);
+        let mut text_layout = text_layout_builder.build(&self.0);
+        text_layout.break_all_lines(None);
+        text_layout.align(None, Alignment::Start);
 
         let mut scratch_scene = Scene::new();
         // We can pass a transform matrix to rotate the text we render

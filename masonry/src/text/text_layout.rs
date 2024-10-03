@@ -5,10 +5,10 @@
 
 use std::rc::Rc;
 
-use parley::context::RangedBuilder;
+use parley::builder::RangedBuilder;
 use parley::fontique::{Style, Weight};
-use parley::layout::{Alignment, Cursor};
-use parley::style::{Brush as BrushTrait, FontFamily, FontStack, GenericFamily, StyleProperty};
+use parley::layout::{Affinity, Alignment, Cursor};
+use parley::style::{FontFamily, FontStack, GenericFamily, StyleProperty};
 use parley::{FontContext, Layout, LayoutContext};
 use vello::kurbo::{Affine, Line, Point, Rect, Size};
 use vello::peniko::{self, Color, Gradient};
@@ -101,8 +101,6 @@ impl TextBrush {
         }
     }
 }
-
-impl BrushTrait for TextBrush {}
 
 impl From<peniko::Brush> for TextBrush {
     fn from(value: peniko::Brush) -> Self {
@@ -317,86 +315,25 @@ impl TextLayout {
         }
     }
 
-    /// For a given `Point` (relative to this object's origin), returns index
-    /// into the underlying text of the nearest grapheme boundary.
-    ///
-    /// This is not meaningful until [`Self::rebuild`] has been called.
-    pub fn cursor_for_point(&self, point: Point) -> Cursor {
-        self.assert_rebuilt("text_position_for_point");
-
-        // TODO: This is a mostly good first pass, but doesn't handle cursor positions in
-        // grapheme clusters within a parley cluster.
-        // We can also try
-        Cursor::from_point(&self.layout, point.x as f32, point.y as f32)
-    }
-
-    /// Given the utf-8 position of a character boundary in the underlying text,
-    /// return the `Point` (relative to this object's origin) representing the
-    /// boundary of the containing grapheme.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `text_pos` is not a character boundary.
-    ///
-    /// This is not meaningful until [`Self::rebuild`] has been called.
-    pub fn cursor_for_text_position(&self, text_pos: usize) -> Cursor {
-        self.assert_rebuilt("cursor_for_text_position");
-
-        // TODO: As a reminder, `is_leading` is not very useful to us; we don't know this ahead of time
-        // We're going to need to do quite a bit of remedial work on these
-        // e.g. to handle a inside a ligature made of multiple (unicode) grapheme clusters
-        // https://raphlinus.github.io/text/2020/10/26/text-layout.html#shaping-cluster
-        // But we're choosing to defer this work
-        // This also needs to handle affinity.
-        Cursor::from_position(&self.layout, text_pos, true)
-    }
-
-    /// Given the utf-8 position of a character boundary in the underlying text,
-    /// return the `Point` (relative to this object's origin) representing the
-    /// boundary of the containing grapheme.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `text_pos` is not a character boundary.
-    ///
-    /// This is not meaningful until [`Self::rebuild`] has been called.
-    pub fn point_for_text_position(&self, text_pos: usize) -> Point {
-        let cursor = self.cursor_for_text_position(text_pos);
-        Point::new(
-            cursor.advance as f64,
-            (cursor.baseline + cursor.offset) as f64,
-        )
-    }
-
-    // TODO: needed for text selection
-    // /// Given a utf-8 range in the underlying text, return a `Vec` of `Rect`s
-    // /// representing the nominal bounding boxes of the text in that range.
-    // ///
-    // /// # Panics
-    // ///
-    // /// Panics if the range start or end is not a character boundary.
-    // pub fn rects_for_range(&self, range: Range<usize>) -> Vec<Rect> {
-    //     self.layout.rects_for_range(range)
-    // }
-
     /// Given the utf-8 position of a character boundary in the underlying text,
     /// return a `Line` suitable for drawing a vertical cursor at that boundary.
     ///
     /// This is not meaningful until [`Self::rebuild`] has been called.
     // TODO: This is too simplistic. See https://raphlinus.github.io/text/2020/10/26/text-layout.html#shaping-cluster
     // for example. This would break in a `fi` ligature
-    pub fn cursor_line_for_text_position(&self, text_pos: usize) -> Line {
-        let from_position = self.cursor_for_text_position(text_pos);
+    pub fn caret_line_from_index(&self, text_pos: usize, affinity: Affinity) -> Line {
+        let caret = Cursor::from_index(&self.layout, text_pos, affinity);
 
-        let line = from_position.path.line(&self.layout).unwrap();
+        let Some(line) = caret.cluster_path().line(&self.layout) else {
+            // TODO
+            return Line::new((0., 0.), (0., 0.));
+        };
         let line_metrics = line.metrics();
 
         let baseline = line_metrics.baseline + line_metrics.descent;
-        let p1 = (from_position.offset as f64, baseline as f64);
-        let p2 = (
-            from_position.offset as f64,
-            (baseline - line_metrics.size()) as f64,
-        );
+        let line_size = line_metrics.size();
+        let p1 = (caret.visual_offset() as f64, baseline as f64);
+        let p2 = (caret.visual_offset() as f64, (baseline - line_size) as f64);
         Line::new(p1, p2)
     }
 
@@ -431,14 +368,15 @@ impl TextLayout {
         layout_ctx: &mut LayoutContext<TextBrush>,
         text: &str,
         text_changed: bool,
-        attributes: impl for<'b> FnOnce(
-            RangedBuilder<'b, TextBrush, &'b str>,
-        ) -> RangedBuilder<'b, TextBrush, &'b str>,
+        attributes: impl for<'b> FnOnce(RangedBuilder<'b, TextBrush>) -> RangedBuilder<'b, TextBrush>,
     ) {
         // TODO - check against self.last_text_start
 
         if self.needs_layout || text_changed {
             self.needs_layout = false;
+
+            // Workaround for how parley treats empty lines.
+            //let text = if !text.is_empty() { text } else { " " };
 
             let mut builder = layout_ctx.ranged_builder(font_ctx, text, self.scale);
             builder.push_default(&StyleProperty::Brush(self.brush.clone()));
@@ -451,14 +389,14 @@ impl TextLayout {
             // - underlining IME suggestions
             // - applying a brush to selected text.
             let mut builder = attributes(builder);
-            builder.build_into(&mut self.layout);
+            builder.build_into(&mut self.layout, text);
 
             self.needs_line_breaks = true;
         }
         if self.needs_line_breaks || text_changed {
             self.needs_line_breaks = false;
-            self.layout
-                .break_all_lines(self.max_advance, self.alignment);
+            self.layout.break_all_lines(self.max_advance);
+            self.layout.align(self.max_advance, self.alignment);
 
             // TODO:
             // self.links = text

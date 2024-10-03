@@ -3,12 +3,11 @@
 
 //! Helper functions for working with text in Masonry.
 
+use parley::layout::PositionedLayoutItem;
 use parley::Layout;
-use vello::{
-    kurbo::{Affine, Line, Rect, Stroke},
-    peniko::Fill,
-    Scene,
-};
+use vello::kurbo::{Affine, Line, Rect, Stroke};
+use vello::peniko::Fill;
+use vello::Scene;
 
 use crate::text::TextBrush;
 
@@ -22,7 +21,10 @@ pub fn render_text(
     scratch_scene.reset();
     for line in layout.lines() {
         let metrics = &line.metrics();
-        for glyph_run in line.glyph_runs() {
+        for item in line.items() {
+            let PositionedLayoutItem::GlyphRun(glyph_run) = item else {
+                continue;
+            };
             let mut x = glyph_run.offset();
             let y = glyph_run.baseline();
             let run = glyph_run.run();
