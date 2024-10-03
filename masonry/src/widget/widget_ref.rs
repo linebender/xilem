@@ -20,7 +20,6 @@ use crate::{QueryCtx, Widget, WidgetId, WidgetState};
 /// children, and their children, etc).
 ///
 /// This is only for shared access to widgets. For widget mutation, see [`WidgetMut`](crate::widget::WidgetMut).
-
 pub struct WidgetRef<'w, W: Widget + ?Sized> {
     pub(crate) ctx: QueryCtx<'w>,
     pub(crate) widget: &'w W,
