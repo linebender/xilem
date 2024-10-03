@@ -239,6 +239,14 @@ impl_context_method!(
             self.widget_state.window_origin()
         }
 
+        /// The clip path of the widget, if any was set.
+        ///
+        /// For more information, see
+        /// [`LayoutCtx::set_clip_path`](crate::LayoutCtx::set_clip_path).
+        pub fn clip_path(&self) -> Option<Rect> {
+            self.widget_state.clip_path()
+        }
+
         /// Convert a point from the widget's coordinate space to the window's.
         ///
         /// The returned point is relative to the content area; it excludes window chrome.
