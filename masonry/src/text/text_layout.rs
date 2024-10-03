@@ -37,8 +37,7 @@ use crate::text::render_text;
 ///
 /// TODO: Update docs to mentionParley
 #[derive(Clone)]
-pub struct TextLayout<T> {
-    text: T,
+pub struct TextLayout {
     // TODO: Find a way to let this use borrowed data
     scale: f32,
 
@@ -57,6 +56,8 @@ pub struct TextLayout<T> {
     needs_line_breaks: bool,
     layout: Layout<TextBrush>,
     scratch_scene: Scene,
+    // TODO - Add field to check whether text has changed since last layout
+    // #[cfg(debug_assertions)] last_text_start: String,
 }
 
 /// Whether a section of text should be hinted.
@@ -140,11 +141,10 @@ pub struct LayoutMetrics {
     //TODO: add inking_rect
 }
 
-impl<T> TextLayout<T> {
+impl TextLayout {
     /// Create a new `TextLayout` object.
-    pub fn new(text: T, text_size: f32) -> Self {
+    pub fn new(text_size: f32) -> Self {
         TextLayout {
-            text,
             scale: 1.0,
 
             brush: crate::theme::TEXT_COLOR.into(),
@@ -264,48 +264,20 @@ impl<T> TextLayout<T> {
     pub fn needs_rebuild(&self) -> bool {
         self.needs_layout || self.needs_line_breaks
     }
-
-    // TODO: What are the valid use cases for this, where we shouldn't use a run-specific check instead?
-    // /// Returns `true` if this layout's text appears to be right-to-left.
-    // ///
-    // /// See [`piet::util::first_strong_rtl`] for more information.
-    // ///
-    // /// [`piet::util::first_strong_rtl`]: crate::piet::util::first_strong_rtl
-    // pub fn text_is_rtl(&self) -> bool {
-    //     self.text_is_rtl
-    // }
 }
 
-impl<T: AsRef<str> + Eq> TextLayout<T> {
+impl TextLayout {
     #[track_caller]
     fn assert_rebuilt(&self, method: &str) {
         if self.needs_layout || self.needs_line_breaks {
-            debug_panic!(
-                "TextLayout::{method} called without rebuilding layout object. Text was '{}'",
-                self.text.as_ref().chars().take(250).collect::<String>()
-            );
+            if cfg!(debug_assertions) {
+                // TODO - Include self.last_text_start
+                #[cfg(debug_assertions)]
+                panic!("TextLayout::{method} called without rebuilding layout object.");
+            } else {
+                tracing::error!("TextLayout::{method} called without rebuilding layout object.",);
+            };
         }
-    }
-
-    /// Set the text to display.
-    pub fn set_text(&mut self, text: T) {
-        if self.text != text {
-            self.text = text;
-            self.invalidate();
-        }
-    }
-
-    /// Returns the string backing this layout, if it exists.
-    pub fn text(&self) -> &T {
-        &self.text
-    }
-
-    /// Returns the string backing this layout, if it exists.
-    ///
-    /// Invalidates the layout and so should only be used when definitely applying an edit
-    pub fn text_mut(&mut self) -> &mut T {
-        self.invalidate();
-        &mut self.text
     }
 
     /// Returns the inner Parley [`Layout`] value.
@@ -431,18 +403,23 @@ impl<T: AsRef<str> + Eq> TextLayout<T> {
     /// Rebuild the inner layout as needed.
     ///
     /// This `TextLayout` object manages a lower-level layout object that may
-    /// need to be rebuilt in response to changes to the text or attributes
-    /// like the font.
+    /// need to be rebuilt in response to changes to text attributes like the font.
     ///
     /// This method should be called whenever any of these things may have changed.
     /// A simple way to ensure this is correct is to always call this method
     /// as part of your widget's [`layout`][crate::Widget::layout] method.
+    ///
+    /// The `text_changed` parameter should be set to `true` if the text changed since
+    /// the last rebuild. Always setting it to true may lead to redundant work, wrongly
+    /// setting it to false may lead to invalidation bugs.
     pub fn rebuild(
         &mut self,
         font_ctx: &mut FontContext,
         layout_ctx: &mut LayoutContext<TextBrush>,
+        text: &str,
+        text_changed: bool,
     ) {
-        self.rebuild_with_attributes(font_ctx, layout_ctx, |builder| builder);
+        self.rebuild_with_attributes(font_ctx, layout_ctx, text, text_changed, |builder| builder);
     }
 
     /// Rebuild the inner layout as needed, adding attributes to the underlying layout.
@@ -452,14 +429,18 @@ impl<T: AsRef<str> + Eq> TextLayout<T> {
         &mut self,
         font_ctx: &mut FontContext,
         layout_ctx: &mut LayoutContext<TextBrush>,
+        text: &str,
+        text_changed: bool,
         attributes: impl for<'b> FnOnce(
             RangedBuilder<'b, TextBrush, &'b str>,
         ) -> RangedBuilder<'b, TextBrush, &'b str>,
     ) {
-        if self.needs_layout {
+        // TODO - check against self.last_text_start
+
+        if self.needs_layout || text_changed {
             self.needs_layout = false;
 
-            let mut builder = layout_ctx.ranged_builder(font_ctx, self.text.as_ref(), self.scale);
+            let mut builder = layout_ctx.ranged_builder(font_ctx, text, self.scale);
             builder.push_default(&StyleProperty::Brush(self.brush.clone()));
             builder.push_default(&StyleProperty::FontSize(self.text_size));
             builder.push_default(&StyleProperty::FontStack(self.font));
@@ -474,7 +455,7 @@ impl<T: AsRef<str> + Eq> TextLayout<T> {
 
             self.needs_line_breaks = true;
         }
-        if self.needs_line_breaks {
+        if self.needs_line_breaks || text_changed {
             self.needs_line_breaks = false;
             self.layout
                 .break_all_lines(self.max_advance, self.alignment);
@@ -505,10 +486,9 @@ impl<T: AsRef<str> + Eq> TextLayout<T> {
     }
 }
 
-impl<T: AsRef<str> + Eq> std::fmt::Debug for TextLayout<T> {
+impl std::fmt::Debug for TextLayout {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         f.debug_struct("TextLayout")
-            .field("text", &self.text.as_ref())
             .field("scale", &self.scale)
             .field("brush", &self.brush)
             .field("font", &self.font)
@@ -525,8 +505,8 @@ impl<T: AsRef<str> + Eq> std::fmt::Debug for TextLayout<T> {
     }
 }
 
-impl<T: AsRef<str> + Eq + Default> Default for TextLayout<T> {
+impl Default for TextLayout {
     fn default() -> Self {
-        Self::new(Default::default(), crate::theme::TEXT_SIZE_NORMAL as f32)
+        Self::new(crate::theme::TEXT_SIZE_NORMAL as f32)
     }
 }

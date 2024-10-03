@@ -25,7 +25,8 @@ pub struct ProgressBar {
     /// `None` variant can be used to show a progress bar without a percentage.
     /// It is also used if an invalid float (outside of [0, 1]) is passed.
     progress: Option<f64>,
-    label: TextLayout<ArcStr>,
+    progress_changed: bool,
+    label: TextLayout,
 }
 
 impl ProgressBar {
@@ -43,7 +44,8 @@ impl ProgressBar {
     fn new_indefinite() -> Self {
         Self {
             progress: None,
-            label: TextLayout::new("".into(), crate::theme::TEXT_SIZE_NORMAL as f32),
+            progress_changed: false,
+            label: TextLayout::new(crate::theme::TEXT_SIZE_NORMAL as f32),
         }
     }
 
@@ -52,13 +54,8 @@ impl ProgressBar {
         // check to see if we can avoid doing work
         if self.progress != progress {
             self.progress = progress;
-            self.update_text();
+            self.progress_changed = true;
         }
-    }
-
-    /// Updates the text layout with the current part-complete value
-    fn update_text(&mut self) {
-        self.label.set_text(self.value());
     }
 
     fn value(&self) -> ArcStr {
@@ -123,7 +120,9 @@ impl Widget for ProgressBar {
 
         if self.label.needs_rebuild() {
             let (font_ctx, layout_ctx) = ctx.text_contexts();
-            self.label.rebuild(font_ctx, layout_ctx);
+            self.label
+                .rebuild(font_ctx, layout_ctx, &self.value(), self.progress_changed);
+            self.progress_changed = false;
         }
         let label_size = self.label.size();
 
@@ -140,7 +139,10 @@ impl Widget for ProgressBar {
         let border_width = 1.;
 
         if self.label.needs_rebuild() {
-            debug_panic!("Called ProgressBar paint before layout");
+            debug_panic!(
+                "Called {name}::paint with invalid layout",
+                name = self.short_type_name()
+            );
         }
 
         let rect = ctx
