@@ -119,8 +119,6 @@ mod event;
 pub mod paint_scene_helpers;
 pub mod render_root;
 pub mod testing;
-// mod text;
-pub mod text_helpers;
 pub mod theme;
 pub mod widget;
 
@@ -151,4 +149,4 @@ pub use vello::peniko::{Color, Gradient};
 pub use widget::widget::{AllowRawMut, Widget, WidgetId};
 pub use widget::{WidgetPod, WidgetState};
 
-pub use text_helpers::ArcStr;
+pub use text::ArcStr;

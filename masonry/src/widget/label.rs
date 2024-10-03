@@ -35,11 +35,9 @@ pub enum LineBreaking {
 
 /// A widget displaying non-editable text.
 pub struct Label {
-    // We hardcode the underlying storage type as `ArcStr` for `Label`
-    // More advanced use cases will almost certainly need a custom widget, anyway
-    // (Rich text is not yet fully integrated, and so the architecture by which a label
-    // has rich text properties specified still needs to be designed)
-    text_layout: TextLayout<ArcStr>,
+    text: ArcStr,
+    text_changed: bool,
+    text_layout: TextLayout,
     line_break_mode: LineBreaking,
     show_disabled: bool,
     brush: TextBrush,
@@ -51,7 +49,9 @@ impl Label {
     /// Create a new label.
     pub fn new(text: impl Into<ArcStr>) -> Self {
         Self {
-            text_layout: TextLayout::new(text.into(), crate::theme::TEXT_SIZE_NORMAL as f32),
+            text: text.into(),
+            text_changed: false,
+            text_layout: TextLayout::new(crate::theme::TEXT_SIZE_NORMAL as f32),
             line_break_mode: LineBreaking::Overflow,
             show_disabled: true,
             brush: crate::theme::TEXT_COLOR.into(),
@@ -67,7 +67,7 @@ impl Label {
     }
 
     pub fn text(&self) -> &ArcStr {
-        self.text_layout.text()
+        &self.text
     }
 
     #[doc(alias = "with_text_color")]
@@ -109,10 +109,10 @@ impl Label {
 // --- MARK: WIDGETMUT ---
 impl WidgetMut<'_, Label> {
     pub fn text(&self) -> &ArcStr {
-        self.widget.text_layout.text()
+        &self.widget.text
     }
 
-    pub fn set_text_properties<R>(&mut self, f: impl FnOnce(&mut TextLayout<ArcStr>) -> R) -> R {
+    pub fn set_text_properties<R>(&mut self, f: impl FnOnce(&mut TextLayout) -> R) -> R {
         let ret = f(&mut self.widget.text_layout);
         if self.widget.text_layout.needs_rebuild() {
             self.ctx.request_layout();
@@ -122,7 +122,9 @@ impl WidgetMut<'_, Label> {
 
     pub fn set_text(&mut self, new_text: impl Into<ArcStr>) {
         let new_text = new_text.into();
-        self.set_text_properties(|layout| layout.set_text(new_text));
+        self.widget.text = new_text;
+        self.widget.text_changed = true;
+        self.ctx.request_layout();
     }
 
     #[doc(alias = "set_text_color")]
@@ -221,9 +223,11 @@ impl Widget for Label {
             None
         };
         self.text_layout.set_max_advance(max_advance);
-        if self.text_layout.needs_rebuild() {
+        if self.text_layout.needs_rebuild() || self.text_changed {
             let (font_ctx, layout_ctx) = ctx.text_contexts();
-            self.text_layout.rebuild(font_ctx, layout_ctx);
+            self.text_layout
+                .rebuild(font_ctx, layout_ctx, &self.text, self.text_changed);
+            self.text_changed = false;
         }
         // We ignore trailing whitespace for a label
         let text_size = self.text_layout.size();
@@ -243,7 +247,10 @@ impl Widget for Label {
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
         if self.text_layout.needs_rebuild() {
-            debug_panic!("Called Label paint before layout");
+            debug_panic!(
+                "Called {name}::paint with invalid layout",
+                name = self.short_type_name()
+            );
         }
         if self.line_break_mode == LineBreaking::Clip {
             let clip_rect = ctx.size().to_rect();
@@ -278,7 +285,7 @@ impl Widget for Label {
     }
 
     fn get_debug_text(&self) -> Option<String> {
-        Some(self.text_layout.text().as_ref().to_string())
+        Some(self.text.to_string())
     }
 }
 

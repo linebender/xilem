@@ -6,9 +6,10 @@
 use std::borrow::Cow;
 use std::ops::{Deref, DerefMut, Range};
 
-use parley::context::RangedBuilder;
+use parley::builder::RangedBuilder;
+use parley::layout::{Affinity, Cursor};
 use parley::{FontContext, LayoutContext};
-use tracing::debug;
+use tracing::{debug, warn};
 use unicode_segmentation::{GraphemeCursor, UnicodeSegmentation};
 use vello::kurbo::{Affine, Line, Point, Stroke};
 use vello::peniko::{Brush, Color};
@@ -21,7 +22,9 @@ use crate::{Handled, TextEvent};
 use super::{TextBrush, TextLayout};
 
 pub struct TextWithSelection<T: Selectable> {
-    pub layout: TextLayout<T>,
+    text: T,
+    text_changed: bool,
+    pub layout: TextLayout,
     /// The current selection within this widget
     // TODO: Allow multiple selections (i.e. by holding down control)
     pub selection: Option<Selection>,
@@ -35,7 +38,9 @@ pub struct TextWithSelection<T: Selectable> {
 impl<T: Selectable> TextWithSelection<T> {
     pub fn new(text: T, text_size: f32) -> Self {
         Self {
-            layout: TextLayout::new(text, text_size),
+            text,
+            text_changed: false,
+            layout: TextLayout::new(text_size),
             selection: None,
             needs_selection_update: false,
             selecting_with_mouse: false,
@@ -48,14 +53,24 @@ impl<T: Selectable> TextWithSelection<T> {
         }
     }
 
+    pub fn text(&self) -> &T {
+        &self.text
+    }
+
+    pub fn text_mut(&mut self) -> &mut T {
+        self.text_changed = true;
+        &mut self.text
+    }
+
     pub fn set_text(&mut self, text: T) {
+        self.text_changed = true;
         self.selection = None;
         self.needs_selection_update = true;
-        self.layout.set_text(text);
+        self.text = text;
     }
 
     pub fn needs_rebuild(&self) -> bool {
-        self.layout.needs_rebuild() || self.needs_selection_update
+        self.layout.needs_rebuild() || self.needs_selection_update || self.text_changed
     }
 
     pub fn pointer_down(
@@ -68,23 +83,19 @@ impl<T: Selectable> TextWithSelection<T> {
         if button == PointerButton::Primary {
             self.selecting_with_mouse = true;
             self.needs_selection_update = true;
-            // TODO: Much of this juggling seems unnecessary
-            let position = Point::new(state.position.x, state.position.y) - origin;
-            let position = self
-                .layout
-                .cursor_for_point(Point::new(position.x, position.y));
-            tracing::warn!("Got cursor point without getting affinity");
+
+            let pos = Point::new(state.position.x, state.position.y) - origin;
+            let new_cursor = Cursor::from_point(self.layout.layout(), pos.x as f32, pos.y as f32);
+
             if state.mods.state().shift_key() {
                 if let Some(selection) = self.selection.as_mut() {
-                    selection.active = position.insert_point;
-                    selection.active_affinity = Affinity::Downstream;
+                    selection.active = new_cursor.index();
+                    selection.active_affinity = new_cursor.affinity();
                     return true;
                 }
             }
-            self.selection = Some(Selection::caret(
-                position.insert_point,
-                Affinity::Downstream,
-            ));
+            self.selection = Some(Selection::caret(new_cursor.index(), new_cursor.affinity()));
+
             true
         } else {
             false
@@ -100,16 +111,15 @@ impl<T: Selectable> TextWithSelection<T> {
     pub fn pointer_move(&mut self, origin: Point, state: &PointerState) -> bool {
         if self.selecting_with_mouse {
             self.needs_selection_update = true;
-            let position = Point::new(state.position.x, state.position.y) - origin;
-            let position = self
-                .layout
-                .cursor_for_point(Point::new(position.x, position.y));
-            tracing::warn!("Got cursor point without getting affinity");
+
+            let pos = Point::new(state.position.x, state.position.y) - origin;
+            let new_cursor = Cursor::from_point(self.layout.layout(), pos.x as f32, pos.y as f32);
+
             if let Some(selection) = self.selection.as_mut() {
-                selection.active = position.insert_point;
-                selection.active_affinity = Affinity::Downstream;
+                selection.active = new_cursor.index();
+                selection.active_affinity = new_cursor.affinity();
             } else {
-                debug_panic!("No selection set whilst still dragging");
+                warn!("No selection set whilst still dragging");
             }
             true
         } else {
@@ -239,16 +249,18 @@ impl<T: Selectable> TextWithSelection<T> {
         &mut self,
         font_ctx: &mut FontContext,
         layout_ctx: &mut LayoutContext<TextBrush>,
-        attributes: impl for<'b> FnOnce(
-            RangedBuilder<'b, TextBrush, &'b str>,
-        ) -> RangedBuilder<'b, TextBrush, &'b str>,
+        attributes: impl for<'b> FnOnce(RangedBuilder<'b, TextBrush>) -> RangedBuilder<'b, TextBrush>,
     ) {
         // In theory, we could be clever here and only rebuild the layout if the
         // selected range was previously or currently non-zero size (i.e. there is a selected range)
-        if self.needs_selection_update || self.layout.needs_rebuild() {
+        if self.needs_selection_update || self.layout.needs_rebuild() || self.text_changed {
             self.layout.invalidate();
-            self.layout
-                .rebuild_with_attributes(font_ctx, layout_ctx, |mut builder| {
+            self.layout.rebuild_with_attributes(
+                font_ctx,
+                layout_ctx,
+                self.text.as_ref(),
+                self.text_changed,
+                |mut builder| {
                     if let Some(selection) = self.selection {
                         let range = selection.range();
                         if !range.is_empty() {
@@ -259,15 +271,20 @@ impl<T: Selectable> TextWithSelection<T> {
                         }
                     }
                     attributes(builder)
-                });
+                },
+            );
             self.needs_selection_update = false;
+            self.text_changed = false;
         }
     }
 
     pub fn draw(&mut self, scene: &mut Scene, point: impl Into<Point>) {
         // TODO: Calculate the location for this in layout lazily?
         if let Some(selection) = self.selection {
-            self.cursor_line = Some(self.layout.cursor_line_for_text_position(selection.active));
+            self.cursor_line = Some(
+                self.layout
+                    .caret_line_from_index(selection.active, selection.active_affinity),
+            );
         } else {
             self.cursor_line = None;
         }
@@ -301,7 +318,7 @@ fn shortcut_key(key: &winit::event::KeyEvent) -> winit::keyboard::Key {
 }
 
 impl<T: Selectable> Deref for TextWithSelection<T> {
-    type Target = TextLayout<T>;
+    type Target = TextLayout;
 
     fn deref(&self) -> &Self::Target {
         &self.layout
@@ -458,43 +475,6 @@ impl Selection {
     pub fn is_caret(&self) -> bool {
         self.len() == 0
     }
-}
-
-/// Distinguishes between two visually distinct locations with the same byte
-/// index.
-///
-/// Sometimes, a byte location in a document has two visual locations. For
-/// example, the end of a soft-wrapped line and the start of the subsequent line
-/// have different visual locations (and we want to be able to place an input
-/// caret in either place!) but the same byte-wise location. This also shows up
-/// in bidirectional text contexts. Affinity allows us to disambiguate between
-/// these two visual locations.
-///
-/// Note that in scenarios where soft line breaks interact with bidi text, this gets
-/// more complicated.
-///
-/// This also has an impact on rich text editing.
-/// For example, if the cursor is in a region like `a|1`, where `a` is bold and `1` is not.
-/// When editing, if we came from the start of the string, we should assume that the next
-/// character will be bold, from the right italic.
-#[derive(Copy, Clone, Debug, Hash, PartialEq)]
-pub enum Affinity {
-    /// The position which has an apparent position "earlier" in the text.
-    /// For soft line breaks, this is the position at the end of the first line.
-    ///
-    /// For positions in-between bidi contexts, this is the position which is
-    /// related to the "outgoing" text section. E.g. for the string "abcDEF" (rendered `abcFED`),
-    /// with the cursor at "abc|DEF" with upstream affinity, the cursor would be rendered at the
-    /// position `abc|DEF`
-    Upstream,
-    /// The position which has a higher apparent position in the text.
-    /// For soft line breaks, this is the position at the beginning of the second line.
-    ///
-    /// For positions in-between bidi contexts, this is the position which is
-    /// related to the "incoming" text section. E.g. for the string "abcDEF" (rendered `abcFED`),
-    /// with the cursor at "abc|DEF" with downstream affinity, the cursor would be rendered at the
-    /// position `abcDEF|`
-    Downstream,
 }
 
 /// Text which can have internal selections

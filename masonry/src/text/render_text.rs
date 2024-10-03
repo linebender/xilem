@@ -3,44 +3,13 @@
 
 //! Helper functions for working with text in Masonry.
 
+use parley::layout::PositionedLayoutItem;
 use parley::Layout;
-use vello::{
-    kurbo::{Affine, Line, Rect, Stroke},
-    peniko::Fill,
-    Scene,
-};
+use vello::kurbo::{Affine, Line, Rect, Stroke};
+use vello::peniko::Fill;
+use vello::Scene;
 
 use crate::text::TextBrush;
-
-/// A reference counted string slice.
-///
-/// This is a data-friendly way to represent strings in Masonry. Unlike `String`
-/// it cannot be mutated, but unlike `String` it can be cheaply cloned.
-pub type ArcStr = std::sync::Arc<str>;
-
-// Copy-pasted from druid_shell
-/// An event representing an application-initiated change in [`InputHandler`]
-/// state.
-///
-/// When we change state that may have previously been retrieved from an
-/// [`InputHandler`], we notify the platform so that it can invalidate any
-/// data if necessary.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-#[non_exhaustive]
-pub enum ImeChangeSignal {
-    /// Indicates the value returned by `InputHandler::selection` may have changed.
-    SelectionChanged,
-
-    /// Indicates the values returned by one or more of these methods may have changed:
-    /// - `InputHandler::hit_test_point`
-    /// - `InputHandler::line_range`
-    /// - `InputHandler::bounding_box`
-    /// - `InputHandler::slice_bounding_box`
-    LayoutChanged,
-
-    /// Indicates any value returned from any `InputHandler` method may have changed.
-    Reset,
-}
 
 /// A function that renders laid out glyphs to a [Scene].
 pub fn render_text(
@@ -52,7 +21,10 @@ pub fn render_text(
     scratch_scene.reset();
     for line in layout.lines() {
         let metrics = &line.metrics();
-        for glyph_run in line.glyph_runs() {
+        for item in line.items() {
+            let PositionedLayoutItem::GlyphRun(glyph_run) = item else {
+                continue;
+            };
             let mut x = glyph_run.offset();
             let y = glyph_run.baseline();
             let run = glyph_run.run();
