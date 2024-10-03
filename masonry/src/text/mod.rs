@@ -10,22 +10,17 @@
 //!
 //! All of these have the same set of global styling options, and can contain rich text
 
-mod layout;
-pub use layout::{Hinting, LayoutMetrics, TextBrush, TextLayout};
-
-mod selection;
-pub use selection::{len_utf8_from_first_byte, Selectable, StringCursor, TextWithSelection};
-
-// mod movement;
-
-mod edit;
-pub use edit::TextEditor;
-
 mod backspace;
-pub use backspace::offset_for_delete_backwards;
-
+mod edit;
 mod render_text;
+mod selection;
+mod text_layout;
+
+pub use backspace::offset_for_delete_backwards;
+pub use edit::TextEditor;
 pub use render_text::render_text;
+pub use selection::{len_utf8_from_first_byte, Selectable, StringCursor, TextWithSelection};
+pub use text_layout::{Hinting, LayoutMetrics, TextBrush, TextLayout};
 
 // ---
 
