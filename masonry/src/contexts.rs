@@ -14,7 +14,6 @@ use crate::action::Action;
 use crate::passes::layout::run_layout_on;
 use crate::render_root::{MutateCallback, RenderRootSignal, RenderRootState};
 use crate::text::TextBrush;
-use crate::text_helpers::ImeChangeSignal;
 use crate::tree_arena::{ArenaMutChildren, ArenaRefChildren};
 use crate::widget::{WidgetMut, WidgetRef, WidgetState};
 use crate::{
@@ -549,16 +548,6 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, LifeCycleCtx<'_>, {
     pub fn set_disabled(&mut self, disabled: bool) {
         self.widget_state.needs_update_disabled = true;
         self.widget_state.is_explicitly_disabled = disabled;
-    }
-
-    #[allow(unused)]
-    /// Indicate that text input state has changed.
-    ///
-    /// A widget that accepts text input should call this anytime input state
-    /// (such as the text or the selection) changes as a result of a non text-input
-    /// event.
-    pub fn invalidate_text_input(&mut self, event: ImeChangeSignal) {
-        todo!("invalidate_text_input");
     }
 });
 
