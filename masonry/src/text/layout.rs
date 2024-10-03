@@ -14,6 +14,8 @@ use vello::kurbo::{Affine, Line, Point, Rect, Size};
 use vello::peniko::{self, Color, Gradient};
 use vello::Scene;
 
+use crate::text::render_text;
+
 /// A component for displaying text on screen.
 ///
 /// This is a type intended to be used by other widgets that display text.
@@ -494,7 +496,7 @@ impl<T: AsRef<str> + Eq> TextLayout<T> {
         self.assert_rebuilt("draw");
         // TODO: This translation doesn't seem great
         let p: Point = point.into();
-        crate::text_helpers::render_text(
+        render_text(
             scene,
             &mut self.scratch_scene,
             Affine::translate((p.x, p.y)),

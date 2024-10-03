@@ -23,3 +23,14 @@ pub use edit::TextEditor;
 
 mod backspace;
 pub use backspace::offset_for_delete_backwards;
+
+mod render_text;
+pub use render_text::render_text;
+
+// ---
+
+/// A reference counted string slice.
+///
+/// This is a data-friendly way to represent strings in Masonry. Unlike `String`
+/// it cannot be mutated, but unlike `String` it can be cheaply cloned.
+pub type ArcStr = std::sync::Arc<str>;

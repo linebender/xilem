@@ -114,7 +114,7 @@ impl Widget for CustomWidget {
 
         let mut scratch_scene = Scene::new();
         // We can pass a transform matrix to rotate the text we render
-        masonry::text_helpers::render_text(
+        masonry::text::render_text(
             scene,
             &mut scratch_scene,
             Affine::rotate(std::f64::consts::FRAC_PI_4).then_translate((80.0, 40.0).into()),
