@@ -8,7 +8,7 @@ use std::num::NonZeroUsize;
 use image::{DynamicImage, ImageReader, Rgba, RgbaImage};
 use tracing::debug;
 use vello::util::RenderContext;
-use vello::{block_on_wgpu, RendererOptions};
+use vello::{block_on_wgpu, DebugLayers, RendererOptions};
 use wgpu::{
     BufferDescriptor, BufferUsages, CommandEncoderDescriptor, Extent3d, ImageCopyBuffer,
     TextureDescriptor, TextureFormat, TextureUsages,
@@ -283,6 +283,7 @@ impl TestHarness {
             width,
             height,
             antialiasing_method: vello::AaConfig::Area,
+            debug: DebugLayers::none(),
         };
 
         let size = Extent3d {
