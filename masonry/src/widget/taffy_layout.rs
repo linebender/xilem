@@ -7,6 +7,7 @@ use tracing::{trace_span, Span};
 use vello::kurbo::{Affine, Line, Stroke};
 use vello::Scene;
 use taffy;
+use taffy::LayoutInput;
 
 use crate::theme::get_debug_color;
 use crate::widget::WidgetMut;
@@ -15,6 +16,7 @@ use crate::{AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCyc
 pub struct TaffyLayout {
     children: Vec<Child>,
     style: taffy::Style,
+    pub cache: taffy::Cache,
 }
 
 struct Child {
@@ -56,6 +58,7 @@ impl TaffyLayout {
         TaffyLayout {
             children: Vec::new(),
             style,
+            cache: taffy::Cache::new(),
         }
     }
 
@@ -81,6 +84,35 @@ impl TaffyLayout {
         };
         self.children.push(child);
         self
+    }
+
+    fn get_cached_layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, inputs: LayoutInput) -> Option<Size>{
+        // Check to see if it's valid to use a cached layout by checking all children.
+        let mut needs_layout = false;
+        for child in &mut self.children {
+            if ctx.child_needs_layout(&mut child.widget) {
+                needs_layout = true;
+                break;
+            }
+        }
+        if !needs_layout {
+            // Use cached layout if available.
+            if let Some(cached_output) = self.cache.get(
+                inputs.known_dimensions,
+                inputs.available_space,
+                taffy::RunMode::PerformLayout,
+            ) {
+                for child in &mut self.children {
+                    ctx.skip_layout(&mut child.widget);
+                }
+                let max = bc.max();
+                return Some(Size {
+                    width: (cached_output.size.width as f64).min(max.width),
+                    height: (cached_output.size.height as f64).min(max.height),
+                });
+            }
+        }
+        None
     }
 }
 
@@ -212,7 +244,9 @@ impl Widget for TaffyLayout {
         );
         let node_id = taffy::NodeId::from(usize::MAX);
 
-        // TODO: Cache get
+        if let Some(cached_layout) = self.get_cached_layout(ctx, bc, inputs) {
+            return cached_layout
+        }
 
         // Dispatch to a layout algorithm based on the node's display style and whether the node has children or not.
         let mut layout_ctx = TaffyLayoutCtx::new(self, ctx);
@@ -235,24 +269,19 @@ impl Widget for TaffyLayout {
             }
         };
 
-        // TODO: Cache set
+        // Save output to cache
+        self.cache.store(
+            inputs.known_dimensions,
+            inputs.available_space,
+            taffy::RunMode::PerformLayout,
+            output,
+        );
 
         let max = bc.max();
         Size {
             width: (output.size.width as f64).min(max.width),
             height: (output.size.height as f64).min(max.height),
         }
-
-
-        /*let total_size = bc.max();
-        for child in &mut self.children {
-            let child_bc = bc;
-            let _ = ctx.run_layout(&mut child.widget, &child_bc);
-            ctx.place_child(
-                &mut child.widget,
-                Point::new(0.0, 0.0),
-            );
-        }*/
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
