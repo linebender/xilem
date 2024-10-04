@@ -88,29 +88,25 @@ impl TaffyLayout {
 
     fn get_cached_layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, inputs: LayoutInput) -> Option<Size>{
         // Check to see if it's valid to use a cached layout by checking all children.
-        let mut needs_layout = false;
         for child in &mut self.children {
             if ctx.child_needs_layout(&mut child.widget) {
-                needs_layout = true;
-                break;
+                return None // Can't use cache; needs a re-layout
             }
         }
-        if !needs_layout {
-            // Use cached layout if available.
-            if let Some(cached_output) = self.cache.get(
-                inputs.known_dimensions,
-                inputs.available_space,
-                taffy::RunMode::PerformLayout,
-            ) {
-                for child in &mut self.children {
-                    ctx.skip_layout(&mut child.widget);
-                }
-                let max = bc.max();
-                return Some(Size {
-                    width: (cached_output.size.width as f64).min(max.width),
-                    height: (cached_output.size.height as f64).min(max.height),
-                });
+        // Use cached layout if available.
+        if let Some(cached_output) = self.cache.get(
+            inputs.known_dimensions,
+            inputs.available_space,
+            taffy::RunMode::PerformLayout,
+        ) {
+            for child in &mut self.children {
+                ctx.skip_layout(&mut child.widget);
             }
+            let max = bc.max();
+            return Some(Size {
+                width: (cached_output.size.width as f64).min(max.width),
+                height: (cached_output.size.height as f64).min(max.height),
+            });
         }
         None
     }
