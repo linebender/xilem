@@ -7,21 +7,13 @@ use parley::{FontContext, LayoutContext};
 use tracing::warn;
 use vello::kurbo::Point;
 use vello::Scene;
-use winit::{
-    event::Ime,
-    keyboard::{Key, NamedKey},
-};
+use winit::event::Ime;
+use winit::keyboard::{Key, NamedKey};
 
-use crate::{
-    event::{PointerButton, PointerState},
-    Action, EventCtx, Handled, TextEvent,
-};
-
-use super::{
-    offset_for_delete_backwards,
-    selection::{Affinity, Selection},
-    Selectable, TextBrush, TextWithSelection,
-};
+use crate::event::{PointerButton, PointerState};
+use crate::text::selection::{Affinity, Selection};
+use crate::text::{offset_for_delete_backwards, Selectable, TextBrush, TextWithSelection};
+use crate::{Action, EventCtx, Handled, TextEvent};
 
 /// A region of text which can support editing operations
 pub struct TextEditor {

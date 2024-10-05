@@ -16,9 +16,8 @@ use vello::Scene;
 use winit::keyboard::NamedKey;
 
 use crate::event::{PointerButton, PointerState};
+use crate::text::{TextBrush, TextLayout};
 use crate::{Handled, TextEvent};
-
-use super::{TextBrush, TextLayout};
 
 pub struct TextWithSelection<T: Selectable> {
     pub layout: TextLayout<T>,
