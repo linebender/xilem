@@ -30,13 +30,13 @@ use crate::{
 // TODO - Fade scrollbars? Find out how Linux/MacOS/Windows do it
 // TODO - Rename cursor to oval/rect/bar/grabber/grabbybar
 // TODO - Rename progress to ???
-#[allow(dead_code)]
 pub struct ScrollBar {
     axis: Axis,
     pub(crate) cursor_progress: f64,
     pub(crate) moved: bool,
     pub(crate) portal_size: f64,
     pub(crate) content_size: f64,
+    #[allow(dead_code)]
     hovered: bool,
     grab_anchor: Option<f64>,
 }
