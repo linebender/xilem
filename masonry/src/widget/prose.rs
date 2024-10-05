@@ -152,6 +152,7 @@ impl Widget for Prose {
                     let made_change = self.text_layout.pointer_down(inner_origin, state, *button);
                     if made_change {
                         ctx.request_layout();
+                        ctx.request_paint();
                         ctx.request_focus();
                         ctx.capture_pointer();
                     }

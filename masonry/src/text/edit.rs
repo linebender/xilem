@@ -80,77 +80,61 @@ impl TextEditor {
                 if !(mods.control_key() || mods.alt_key() || mods.super_key()) {
                     match &event.logical_key {
                         Key::Named(NamedKey::Backspace) => {
-                            if let Some(selection) = self.inner.selection {
-                                if !selection.is_caret() {
-                                    self.text_mut().replace_range(selection.range(), "");
-                                    self.inner.selection =
-                                        Some(Selection::caret(selection.min(), Affinity::Upstream));
+                            let selection = self.inner.selection;
+                            if !selection.is_caret() {
+                                self.text_mut().replace_range(selection.range(), "");
+                                self.inner.selection =
+                                    Selection::caret(selection.min(), Affinity::Upstream);
 
-                                    let contents = self.text().clone();
-                                    ctx.submit_action(Action::TextChanged(contents));
-                                } else {
-                                    // TODO: more specific behavior may sometimes be warranted here
-                                    //       because whole EGCs are more coarse than what people expect
-                                    //       to be able to delete individual indic grapheme cluster
-                                    //       components among other things.
-                                    let text = self.text_mut();
-                                    let offset =
-                                        offset_for_delete_backwards(selection.active, text);
-                                    self.text_mut().replace_range(offset..selection.active, "");
-                                    self.inner.selection =
-                                        Some(Selection::caret(offset, selection.active_affinity));
-
-                                    let contents = self.text().clone();
-                                    ctx.submit_action(Action::TextChanged(contents));
-                                }
-                                Handled::Yes
+                                let contents = self.text().clone();
+                                ctx.submit_action(Action::TextChanged(contents));
                             } else {
-                                Handled::No
+                                // TODO: more specific behavior may sometimes be warranted here
+                                //       because whole EGCs are more coarse than what people expect
+                                //       to be able to delete individual indic grapheme cluster
+                                //       components among other things.
+                                let text = self.text_mut();
+                                let offset = offset_for_delete_backwards(selection.active, text);
+                                self.text_mut().replace_range(offset..selection.active, "");
+                                self.inner.selection =
+                                    Selection::caret(offset, selection.active_affinity);
+
+                                let contents = self.text().clone();
+                                ctx.submit_action(Action::TextChanged(contents));
                             }
+                            Handled::Yes
                         }
                         Key::Named(NamedKey::Delete) => {
-                            if let Some(selection) = self.inner.selection {
-                                if !selection.is_caret() {
-                                    self.text_mut().replace_range(selection.range(), "");
-                                    self.inner.selection = Some(Selection::caret(
-                                        selection.min(),
-                                        Affinity::Downstream,
-                                    ));
+                            let selection = self.inner.selection;
+                            if !selection.is_caret() {
+                                self.text_mut().replace_range(selection.range(), "");
+                                self.inner.selection =
+                                    Selection::caret(selection.min(), Affinity::Downstream);
 
-                                    let contents = self.text().clone();
-                                    ctx.submit_action(Action::TextChanged(contents));
-                                } else if let Some(offset) =
-                                    self.text().next_grapheme_offset(selection.active)
-                                {
-                                    self.text_mut().replace_range(selection.min()..offset, "");
-                                    self.inner.selection = Some(Selection::caret(
-                                        selection.min(),
-                                        selection.active_affinity,
-                                    ));
+                                let contents = self.text().clone();
+                                ctx.submit_action(Action::TextChanged(contents));
+                            } else if let Some(offset) =
+                                self.text().next_grapheme_offset(selection.active)
+                            {
+                                self.text_mut().replace_range(selection.min()..offset, "");
+                                self.inner.selection =
+                                    Selection::caret(selection.min(), selection.active_affinity);
 
-                                    let contents = self.text().clone();
-                                    ctx.submit_action(Action::TextChanged(contents));
-                                }
-                                Handled::Yes
-                            } else {
-                                Handled::No
+                                let contents = self.text().clone();
+                                ctx.submit_action(Action::TextChanged(contents));
                             }
+                            Handled::Yes
                         }
                         Key::Named(NamedKey::Space) => {
-                            let selection = self.inner.selection.unwrap_or(Selection {
-                                anchor: 0,
-                                active: 0,
-                                active_affinity: Affinity::Downstream,
-                                h_pos: None,
-                            });
+                            let selection = self.inner.selection;
                             let c = ' ';
                             self.text_mut()
                                 .replace_range(selection.range(), &c.to_string());
-                            self.inner.selection = Some(Selection::caret(
+                            self.inner.selection = Selection::caret(
                                 selection.min() + c.len_utf8(),
                                 // We have just added this character, so we are "affined" with it
                                 Affinity::Downstream,
-                            ));
+                            );
                             let contents = self.text().clone();
                             ctx.submit_action(Action::TextChanged(contents));
                             Handled::Yes
@@ -178,46 +162,37 @@ impl TextEditor {
                 {
                     match &event.logical_key {
                         Key::Named(NamedKey::Backspace) => {
-                            if let Some(selection) = self.inner.selection {
-                                if !selection.is_caret() {
-                                    self.text_mut().replace_range(selection.range(), "");
-                                    self.inner.selection =
-                                        Some(Selection::caret(selection.min(), Affinity::Upstream));
-                                }
-                                let offset =
-                                    self.text().prev_word_offset(selection.active).unwrap_or(0);
-                                self.text_mut().replace_range(offset..selection.active, "");
+                            let selection = self.inner.selection;
+                            if !selection.is_caret() {
+                                self.text_mut().replace_range(selection.range(), "");
                                 self.inner.selection =
-                                    Some(Selection::caret(offset, Affinity::Upstream));
-
-                                let contents = self.text().clone();
-                                ctx.submit_action(Action::TextChanged(contents));
-                                Handled::Yes
-                            } else {
-                                Handled::No
+                                    Selection::caret(selection.min(), Affinity::Upstream);
                             }
+                            let offset =
+                                self.text().prev_word_offset(selection.active).unwrap_or(0);
+                            self.text_mut().replace_range(offset..selection.active, "");
+                            self.inner.selection = Selection::caret(offset, Affinity::Upstream);
+
+                            let contents = self.text().clone();
+                            ctx.submit_action(Action::TextChanged(contents));
+                            Handled::Yes
                         }
                         Key::Named(NamedKey::Delete) => {
-                            if let Some(selection) = self.inner.selection {
-                                if !selection.is_caret() {
-                                    self.text_mut().replace_range(selection.range(), "");
-                                    self.inner.selection = Some(Selection::caret(
-                                        selection.min(),
-                                        Affinity::Downstream,
-                                    ));
-                                } else if let Some(offset) =
-                                    self.text().next_word_offset(selection.active)
-                                {
-                                    self.text_mut().replace_range(selection.active..offset, "");
-                                    self.inner.selection =
-                                        Some(Selection::caret(selection.min(), Affinity::Upstream));
-                                }
-                                let contents = self.text().clone();
-                                ctx.submit_action(Action::TextChanged(contents));
-                                Handled::Yes
-                            } else {
-                                Handled::No
+                            let selection = self.inner.selection;
+                            if !selection.is_caret() {
+                                self.text_mut().replace_range(selection.range(), "");
+                                self.inner.selection =
+                                    Selection::caret(selection.min(), Affinity::Downstream);
+                            } else if let Some(offset) =
+                                self.text().next_word_offset(selection.active)
+                            {
+                                self.text_mut().replace_range(selection.active..offset, "");
+                                self.inner.selection =
+                                    Selection::caret(selection.min(), Affinity::Upstream);
                             }
+                            let contents = self.text().clone();
+                            ctx.submit_action(Action::TextChanged(contents));
+                            Handled::Yes
                         }
                         _ => Handled::No,
                     }
@@ -228,13 +203,11 @@ impl TextEditor {
             TextEvent::KeyboardKey(_, _) => Handled::No,
             TextEvent::Ime(ime) => match ime {
                 Ime::Commit(text) => {
-                    if let Some(selection_range) = self.selection.map(|x| x.range()) {
-                        self.text_mut().replace_range(selection_range.clone(), text);
-                        self.selection = Some(Selection::caret(
-                            selection_range.start + text.len(),
-                            Affinity::Upstream,
-                        ));
-                    }
+                    let selection_range = self.selection.range();
+                    self.text_mut().replace_range(selection_range.clone(), text);
+                    self.selection =
+                        Selection::caret(selection_range.start + text.len(), Affinity::Upstream);
+
                     let contents = self.text().clone();
                     ctx.submit_action(Action::TextChanged(contents));
                     Handled::Yes
@@ -251,13 +224,9 @@ impl TextEditor {
                             Some(np.clone())
                         };
                         self.selection = if let Some(pec) = preedit_sel {
-                            Some(Selection::new(
-                                np.start + pec.0,
-                                np.start + pec.1,
-                                Affinity::Upstream,
-                            ))
+                            Selection::new(np.start + pec.0, np.start + pec.1, Affinity::Upstream)
                         } else {
-                            Some(Selection::caret(np.end, Affinity::Upstream))
+                            Selection::caret(np.end, Affinity::Upstream)
                         };
                     } else {
                         // If we've been sent an event to clear the preedit,
@@ -269,7 +238,7 @@ impl TextEditor {
                         if preedit_string.is_empty() {
                             return Handled::Yes;
                         }
-                        let sr = self.selection.map(|x| x.range()).unwrap_or(0..0);
+                        let sr = self.selection.range();
                         self.text_mut().replace_range(sr.clone(), preedit_string);
                         let np = sr.start..(sr.start + preedit_string.len());
                         self.preedit_range = if preedit_string.is_empty() {
@@ -278,13 +247,9 @@ impl TextEditor {
                             Some(np.clone())
                         };
                         self.selection = if let Some(pec) = preedit_sel {
-                            Some(Selection::new(
-                                np.start + pec.0,
-                                np.start + pec.1,
-                                Affinity::Upstream,
-                            ))
+                            Selection::new(np.start + pec.0, np.start + pec.1, Affinity::Upstream)
                         } else {
-                            Some(Selection::caret(np.start, Affinity::Upstream))
+                            Selection::caret(np.start, Affinity::Upstream)
                         };
                     }
                     Handled::Yes
@@ -293,10 +258,6 @@ impl TextEditor {
                     // Generally this shouldn't happen, but I can't prove it won't.
                     if let Some(preedit) = self.preedit_range.clone() {
                         self.text_mut().replace_range(preedit.clone(), "");
-                        self.selection = Some(
-                            self.selection
-                                .unwrap_or(Selection::caret(0, Affinity::Upstream)),
-                        );
                         self.preedit_range = None;
                     }
                     Handled::Yes
@@ -305,10 +266,9 @@ impl TextEditor {
                     if let Some(preedit) = self.preedit_range.clone() {
                         self.text_mut().replace_range(preedit.clone(), "");
                         self.preedit_range = None;
-                        let sm = self.selection.map(|x| x.min()).unwrap_or(0);
+                        let sm = self.selection.min();
                         if preedit.contains(&sm) {
-                            self.selection =
-                                Some(Selection::caret(preedit.start, Affinity::Upstream));
+                            self.selection = Selection::caret(preedit.start, Affinity::Upstream);
                         }
                     }
                     Handled::Yes
@@ -320,18 +280,13 @@ impl TextEditor {
     }
 
     fn insert_text(&mut self, c: &winit::keyboard::SmolStr, ctx: &mut EventCtx) -> Handled {
-        let selection = self.inner.selection.unwrap_or(Selection {
-            anchor: 0,
-            active: 0,
-            active_affinity: Affinity::Downstream,
-            h_pos: None,
-        });
+        let selection = self.inner.selection;
         self.text_mut().replace_range(selection.range(), c);
-        self.inner.selection = Some(Selection::caret(
+        self.inner.selection = Selection::caret(
             selection.min() + c.len(),
             // We have just added this character, so we are "affined" with it
             Affinity::Downstream,
-        ));
+        );
         let contents = self.text().clone();
         ctx.submit_action(Action::TextChanged(contents));
         Handled::Yes
