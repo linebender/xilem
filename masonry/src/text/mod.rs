@@ -22,8 +22,6 @@ pub use render_text::render_text;
 pub use selection::{len_utf8_from_first_byte, Selectable, StringCursor, TextWithSelection};
 pub use text_layout::{Hinting, LayoutMetrics, TextBrush, TextLayout};
 
-// ---
-
 /// A reference counted string slice.
 ///
 /// This is a data-friendly way to represent strings in Masonry. Unlike `String`
