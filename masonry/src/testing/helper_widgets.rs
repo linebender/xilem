@@ -374,7 +374,6 @@ impl Widget for ReplaceChild {
     }
 }
 
-#[allow(dead_code)]
 impl Recording {
     pub fn is_empty(&self) -> bool {
         self.0.borrow().is_empty()

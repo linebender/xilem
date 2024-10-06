@@ -10,7 +10,6 @@ pub(crate) struct WidgetArena {
     pub(crate) widget_states: TreeArena<WidgetState>,
 }
 
-#[allow(dead_code)]
 impl WidgetArena {
     pub(crate) fn has(&self, widget_id: WidgetId) -> bool {
         self.widgets.find(widget_id.to_raw()).is_some()
@@ -59,6 +58,7 @@ impl WidgetArena {
         (widget, state)
     }
 
+    #[allow(dead_code)]
     #[track_caller]
     pub(crate) fn get_widget(&self, widget_id: WidgetId) -> ArenaRef<Box<dyn Widget>> {
         self.widgets
@@ -66,6 +66,7 @@ impl WidgetArena {
             .expect("get_widget: widget not in widget tree")
     }
 
+    #[allow(dead_code)]
     #[track_caller]
     pub(crate) fn get_widget_mut(&mut self, widget_id: WidgetId) -> ArenaMut<Box<dyn Widget>> {
         self.widgets
