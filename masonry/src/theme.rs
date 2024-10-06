@@ -13,6 +13,8 @@ use crate::Insets;
 // They're picked for visual distinction and accessibility (99 percent)
 
 pub const WINDOW_BACKGROUND_COLOR: Color = Color::rgb8(0x29, 0x29, 0x29);
+pub const TITLE_BAR_HEIGHT: f64 = 32.0;
+pub const TITLE_BAR_COLOR: Color = Color::rgb8(0x1a, 0x1a, 0x1a);
 pub const TEXT_COLOR: Color = Color::rgb8(0xf0, 0xf0, 0xea);
 pub const DISABLED_TEXT_COLOR: Color = Color::rgb8(0xa0, 0xa0, 0x9a);
 pub const PLACEHOLDER_COLOR: Color = Color::rgb8(0x80, 0x80, 0x80);

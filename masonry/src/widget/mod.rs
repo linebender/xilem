@@ -15,6 +15,7 @@ mod tests;
 
 mod align;
 mod button;
+mod center_box;
 mod checkbox;
 mod flex;
 mod grid;
@@ -29,8 +30,12 @@ mod sized_box;
 mod spinner;
 mod split;
 mod textbox;
+mod title_bar;
 mod variable_label;
 mod widget_arena;
+mod window_button;
+mod window_decorations;
+mod window_handle;
 
 pub use self::image::Image;
 pub use align::Align;
@@ -48,13 +53,19 @@ pub use sized_box::SizedBox;
 pub use spinner::Spinner;
 pub use split::Split;
 pub use textbox::Textbox;
+pub use title_bar::TitleBar;
 pub use variable_label::VariableLabel;
 pub use widget_mut::WidgetMut;
 pub use widget_pod::WidgetPod;
 pub use widget_ref::WidgetRef;
 pub use widget_state::WidgetState;
+pub use window_decorations::WindowDecorations;
+pub use window_handle::WindowHandle;
 
 pub(crate) use widget_arena::WidgetArena;
+
+use center_box::CenterBox;
+use window_button::{WindowButton, WindowButtonType};
 
 use crate::{Affine, Size};
 
