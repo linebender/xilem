@@ -567,7 +567,7 @@ impl<'a> WidgetMut<'a, Flex> {
     ///
     /// # Panics
     ///
-    /// Panics if the the element at `idx` is not a spacer.
+    /// Panics if the element at `idx` is not a spacer.
     pub fn update_spacer_flex(&mut self, idx: usize, flex: f64) {
         let child = &mut self.widget.children[idx];
 
@@ -586,7 +586,7 @@ impl<'a> WidgetMut<'a, Flex> {
     ///
     /// # Panics
     ///
-    /// Panics if the the element at `idx` is not a spacer.
+    /// Panics if the element at `idx` is not a spacer.
     pub fn update_spacer_fixed(&mut self, idx: usize, len: f64) {
         let child = &mut self.widget.children[idx];
 
@@ -935,7 +935,7 @@ impl Widget for Flex {
         for child in &mut self.children {
             match child {
                 Child::Fixed { widget, alignment } => {
-                    // The BoxConstrains of fixed-children only depends on the BoxConstrains of the
+                    // The BoxConstraints of fixed-children only depends on the BoxConstraints of the
                     // Flex widget.
                     let child_size = if bc_changed || ctx.child_needs_layout(widget) {
                         let alignment = alignment.unwrap_or(self.cross_alignment);
@@ -996,7 +996,7 @@ impl Widget for Flex {
                     flex,
                     alignment,
                 } => {
-                    // The BoxConstrains of flex-children depends on the size of every sibling, which
+                    // The BoxConstraints of flex-children depends on the size of every sibling, which
                     // received layout earlier. Therefore we use any_changed.
                     let child_size = if any_changed || ctx.child_needs_layout(widget) {
                         let alignment = alignment.unwrap_or(self.cross_alignment);
