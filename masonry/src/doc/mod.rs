@@ -1,3 +1,6 @@
+// Copyright 2024 the Xilem Authors
+// SPDX-License-Identifier: Apache-2.0
+
 //! This is a documentation-only module.
 //!
 //! No symbols are defined here.
