@@ -23,8 +23,6 @@
 //! use masonry::{Action, WidgetId};
 //! use winit::window::Window;
 //!
-//! const VERTICAL_WIDGET_SPACING: f64 = 20.0;
-//!
 //! struct Driver {
 //!     next_task: String,
 //! }
@@ -47,6 +45,8 @@
 //! }
 //!
 //! fn main() {
+//!     const VERTICAL_WIDGET_SPACING: f64 = 20.0;
+//!
 //!     let main_widget = Portal::new(
 //!         Flex::column()
 //!             .with_child(
@@ -126,6 +126,7 @@ pub mod widget;
 pub mod app_driver;
 pub mod debug_logger;
 pub mod debug_values;
+pub mod doc;
 pub mod event_loop_runner;
 pub mod passes;
 pub mod text;
