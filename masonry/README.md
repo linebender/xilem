@@ -39,8 +39,6 @@ use masonry::widget::{Button, Flex, Label, Portal, RootWidget, Textbox, WidgetMu
 use masonry::{Action, AppDriver, DriverCtx, WidgetId};
 use winit::window::Window;
 
-const VERTICAL_WIDGET_SPACING: f64 = 20.0;
-
 struct Driver {
     next_task: String,
 }
@@ -63,6 +61,8 @@ impl AppDriver for Driver {
 }
 
 fn main() {
+    const VERTICAL_WIDGET_SPACING: f64 = 20.0;
+
     let main_widget = Portal::new(
         Flex::column()
             .with_child(
