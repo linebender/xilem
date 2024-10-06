@@ -14,11 +14,13 @@ mod widget_state;
 mod tests;
 
 mod align;
+mod board;
 mod button;
 mod checkbox;
 mod flex;
 mod grid;
 mod image;
+mod kurbo;
 mod label;
 mod portal;
 mod progress_bar;
@@ -34,10 +36,12 @@ mod widget_arena;
 
 pub use self::image::Image;
 pub use align::Align;
+pub use board::{Board, BoardParams, PositionedElement, SvgElement};
 pub use button::Button;
 pub use checkbox::Checkbox;
 pub use flex::{Axis, CrossAxisAlignment, Flex, FlexParams, MainAxisAlignment};
 pub use grid::{Grid, GridParams};
+pub use kurbo::{ConcreteShape, KurboShape};
 pub use label::{Label, LineBreaking};
 pub use portal::Portal;
 pub use progress_bar::ProgressBar;
