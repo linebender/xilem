@@ -36,8 +36,6 @@ pub struct ScrollBar {
     pub(crate) moved: bool,
     pub(crate) portal_size: f64,
     pub(crate) content_size: f64,
-    #[allow(dead_code)]
-    hovered: bool,
     grab_anchor: Option<f64>,
 }
 
@@ -50,7 +48,6 @@ impl ScrollBar {
             moved: false,
             portal_size,
             content_size,
-            hovered: false,
             grab_anchor: None,
         }
     }
