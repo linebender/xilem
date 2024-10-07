@@ -6,8 +6,9 @@ use masonry::{
         fontique::Weight,
         style::{FontFamily, FontStack, GenericFamily},
     },
+    text::ArcStr,
     text::TextBrush,
-    widget, ArcStr,
+    widget,
 };
 use xilem_core::{Mut, ViewMarker};
 

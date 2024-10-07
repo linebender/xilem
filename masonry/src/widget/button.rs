@@ -11,11 +11,11 @@ use vello::Scene;
 use crate::action::Action;
 use crate::event::PointerButton;
 use crate::paint_scene_helpers::{fill_lin_gradient, stroke, UnitPoint};
+use crate::text::ArcStr;
 use crate::widget::{Label, WidgetMut, WidgetPod};
-
 use crate::{
-    theme, AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, Insets, LayoutCtx,
-    LifeCycleCtx, PaintCtx, PointerEvent, Size, StatusChange, TextEvent, Widget, WidgetId,
+    theme, AccessCtx, AccessEvent, BoxConstraints, EventCtx, Insets, LayoutCtx, LifeCycleCtx,
+    PaintCtx, PointerEvent, Size, StatusChange, TextEvent, Widget, WidgetId,
 };
 
 // the minimum padding added to a button.

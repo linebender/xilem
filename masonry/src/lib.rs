@@ -17,7 +17,7 @@
 //! The to-do-list example looks like this:
 //!
 //! ```
-//! use masonry::app_driver::{AppDriver, DriverCtx};
+//! use masonry::{AppDriver, DriverCtx};
 //! use masonry::dpi::LogicalSize;
 //! use masonry::widget::{Button, Flex, Label, Portal, RootWidget, Textbox, WidgetMut};
 //! use masonry::{Action, WidgetId};
@@ -103,36 +103,42 @@
 
 // TODO - Add logo
 
-pub use cursor_icon::{CursorIcon, ParseError as CursorIconParseError};
-pub use dpi;
-pub use parley;
-pub use vello;
-pub use vello::kurbo;
-
 #[macro_use]
 mod util;
 
+#[allow(unused)]
+mod debug_logger;
+#[allow(unused)]
+mod debug_values;
+
 mod action;
+mod app_driver;
 mod box_constraints;
 mod contexts;
 mod event;
-pub mod paint_scene_helpers;
-pub mod render_root;
-pub mod testing;
-pub mod theme;
-pub mod widget;
-
-// TODO
-pub mod app_driver;
-pub mod debug_logger;
-pub mod debug_values;
-pub mod event_loop_runner;
-pub mod passes;
-pub mod text;
+mod paint_scene_helpers;
+mod passes;
+mod render_root;
 mod tracing_backend;
 mod tree_arena;
 
+pub mod event_loop_runner;
+pub mod testing;
+pub mod text;
+pub mod theme;
+pub mod widget;
+
+pub use cursor_icon::{CursorIcon, ParseError as CursorIconParseError};
+pub use dpi;
+pub use kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
+pub use parley;
+pub use parley::layout::Alignment as TextAlignment;
+pub use vello;
+pub use vello::kurbo;
+pub use vello::peniko::{Color, Gradient};
+
 pub use action::Action;
+pub use app_driver::{AppDriver, DriverCtx};
 pub use box_constraints::BoxConstraints;
 pub use contexts::{
     AccessCtx, ComposeCtx, EventCtx, IsContext, LayoutCtx, LifeCycleCtx, MutateCtx, PaintCtx,
@@ -142,11 +148,7 @@ pub use event::{
     AccessEvent, LifeCycle, PointerButton, PointerEvent, PointerState, StatusChange, TextEvent,
     WindowEvent, WindowTheme,
 };
-pub use kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
-pub use parley::layout::Alignment as TextAlignment;
+pub use render_root::{RenderRoot, RenderRootOptions, RenderRootSignal};
 pub use util::{AsAny, Handled};
-pub use vello::peniko::{Color, Gradient};
 pub use widget::widget::{AllowRawMut, Widget, WidgetId};
 pub use widget::{WidgetPod, WidgetState};
-
-pub use text::ArcStr;

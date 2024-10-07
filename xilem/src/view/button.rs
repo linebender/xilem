@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::{core::View, Pod};
-use masonry::{widget, ArcStr};
+use masonry::{text::ArcStr, widget};
 use xilem_core::{Mut, ViewMarker};
 
 pub use masonry::PointerButton;

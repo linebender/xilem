@@ -8,10 +8,10 @@
 use std::sync::Arc;
 
 use masonry::{
-    app_driver::AppDriver,
     event_loop_runner::MasonryUserEvent,
+    text::ArcStr,
     widget::{CrossAxisAlignment, MainAxisAlignment},
-    ArcStr, Color,
+    AppDriver, Color,
 };
 use winit::{
     application::ApplicationHandler,
