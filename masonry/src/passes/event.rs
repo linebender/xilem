@@ -8,9 +8,7 @@ use winit::keyboard::{KeyCode, PhysicalKey};
 
 use crate::passes::merge_state_up;
 use crate::render_root::RenderRoot;
-use crate::{
-    AccessEvent, EventCtx, Handled, PointerEvent, TextEvent, Widget, WidgetId, WidgetState,
-};
+use crate::{AccessEvent, EventCtx, Handled, PointerEvent, TextEvent, Widget, WidgetId};
 
 // --- MARK: HELPERS ---
 fn get_target_widget(
@@ -35,7 +33,6 @@ fn get_target_widget(
 
 fn run_event_pass<E>(
     root: &mut RenderRoot,
-    root_state: &mut WidgetState,
     target: Option<WidgetId>,
     event: &E,
     allow_pointer_capture: bool,
@@ -74,20 +71,13 @@ fn run_event_pass<E>(
         target_widget_id = parent_id;
     }
 
-    // Merge root widget state with synthetic state created at beginning of pass
-    root_state.merge_up(root.widget_arena.get_state_mut(root.root.id()).item);
-
     Handled::from(is_handled)
 }
 
 // TODO - Send synthetic MouseLeave events
 
 // --- MARK: POINTER_EVENT ---
-pub(crate) fn root_on_pointer_event(
-    root: &mut RenderRoot,
-    root_state: &mut WidgetState,
-    event: &PointerEvent,
-) -> Handled {
+pub(crate) fn root_on_pointer_event(root: &mut RenderRoot, event: &PointerEvent) -> Handled {
     let _span = info_span!("pointer_event").entered();
     if !event.is_high_density() {
         debug!("Running ON_POINTER_EVENT pass with {}", event.short_name());
@@ -99,7 +89,6 @@ pub(crate) fn root_on_pointer_event(
 
     let handled = run_event_pass(
         root,
-        root_state,
         target_widget_id,
         event,
         matches!(event, PointerEvent::PointerDown(..)),
@@ -135,11 +124,7 @@ pub(crate) fn root_on_pointer_event(
 // - If a Widget has focus, then none of its parents is hidden
 
 // --- MARK: TEXT EVENT ---
-pub(crate) fn root_on_text_event(
-    root: &mut RenderRoot,
-    root_state: &mut WidgetState,
-    event: &TextEvent,
-) -> Handled {
+pub(crate) fn root_on_text_event(root: &mut RenderRoot, event: &TextEvent) -> Handled {
     let _span = info_span!("text_event").entered();
     if !event.is_high_density() {
         debug!("Running ON_TEXT_EVENT pass with {}", event.short_name());
@@ -147,16 +132,9 @@ pub(crate) fn root_on_text_event(
 
     let target = root.state.focused_widget;
 
-    let mut handled = run_event_pass(
-        root,
-        root_state,
-        target,
-        event,
-        false,
-        |widget, ctx, event| {
-            widget.on_text_event(ctx, event);
-        },
-    );
+    let mut handled = run_event_pass(root, target, event, false, |widget, ctx, event| {
+        widget.on_text_event(ctx, event);
+    });
 
     // Handle Tab focus
     if let TextEvent::KeyboardKey(key, mods) = event {
@@ -185,26 +163,15 @@ pub(crate) fn root_on_text_event(
 }
 
 // --- MARK: ACCESS EVENT ---
-pub(crate) fn root_on_access_event(
-    root: &mut RenderRoot,
-    root_state: &mut WidgetState,
-    event: &AccessEvent,
-) -> Handled {
+pub(crate) fn root_on_access_event(root: &mut RenderRoot, event: &AccessEvent) -> Handled {
     let _span = info_span!("access_event").entered();
     debug!("Running ON_ACCESS_EVENT pass with {}", event.short_name());
 
     let target = Some(event.target);
 
-    let mut handled = run_event_pass(
-        root,
-        root_state,
-        target,
-        event,
-        false,
-        |widget, ctx, event| {
-            widget.on_access_event(ctx, event);
-        },
-    );
+    let mut handled = run_event_pass(root, target, event, false, |widget, ctx, event| {
+        widget.on_access_event(ctx, event);
+    });
 
     // Handle focus events
     match event.action {

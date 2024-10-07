@@ -27,16 +27,14 @@ use crate::passes::paint::root_paint;
 use crate::passes::recurse_on_children;
 use crate::passes::update::{
     run_update_anim_pass, run_update_disabled_pass, run_update_focus_chain_pass,
-    run_update_focus_pass, run_update_new_widgets_pass, run_update_pointer_pass,
-    run_update_scroll_pass, run_update_stashed_pass,
+    run_update_focus_pass, run_update_pointer_pass, run_update_scroll_pass,
+    run_update_stashed_pass, run_update_widget_tree_pass,
 };
 use crate::text::TextBrush;
 use crate::tree_arena::{ArenaMut, TreeArena};
 use crate::widget::WidgetArena;
 use crate::widget::{WidgetMut, WidgetRef, WidgetState};
-use crate::{
-    AccessEvent, Action, BoxConstraints, CursorIcon, Handled, QueryCtx, Widget, WidgetId, WidgetPod,
-};
+use crate::{AccessEvent, Action, CursorIcon, Handled, QueryCtx, Widget, WidgetId, WidgetPod};
 
 // --- MARK: STRUCTS ---
 
@@ -160,15 +158,7 @@ impl RenderRoot {
         };
 
         // We run a set of passes to initialize the widget tree
-        run_update_new_widgets_pass(&mut root);
-        // TODO - Remove this line
-        let mut dummy_state = WidgetState::synthetic(root.root.id(), root.get_kurbo_size());
-        root.post_event_processing(&mut dummy_state);
-
-        // We run a layout pass right away to have a SetSize signal ready
-        if size_policy == WindowSizePolicy::Content {
-            root.root_layout();
-        }
+        root.run_rewrite_passes();
 
         root
     }
@@ -192,6 +182,7 @@ impl RenderRoot {
             }
             WindowEvent::Resize(size) => {
                 self.size = size;
+                self.root_state().request_layout = true;
                 self.root_state().needs_layout = true;
                 self.state.emit_signal(RenderRootSignal::RequestRedraw);
                 Handled::Yes
@@ -205,7 +196,8 @@ impl RenderRoot {
                 let last = self.last_anim.take();
                 let elapsed_ns = last.map(|t| now.duration_since(t).as_nanos()).unwrap_or(0) as u64;
 
-                self.root_anim_frame(elapsed_ns);
+                run_update_anim_pass(self, elapsed_ns);
+                self.run_rewrite_passes();
 
                 // If this animation will continue, store the time.
                 // If a new animation starts, then it will have zero reported elapsed time.
@@ -229,13 +221,6 @@ impl RenderRoot {
 
     pub fn handle_text_event(&mut self, event: TextEvent) -> Handled {
         self.root_on_text_event(event)
-    }
-
-    pub(crate) fn root_anim_frame(&mut self, elapsed_ns: u64) {
-        run_update_anim_pass(self, elapsed_ns);
-
-        let mut root_state = self.widget_arena.get_state_mut(self.root.id()).item.clone();
-        self.post_event_processing(&mut root_state);
     }
 
     /// Registers all fonts that exist in the given data.
@@ -273,7 +258,7 @@ impl RenderRoot {
 
     pub fn redraw(&mut self) -> (Scene, TreeUpdate) {
         if self.root_state().needs_layout {
-            self.root_layout();
+            root_layout(self);
         }
         if self.root_state().needs_layout {
             warn!("Widget requested layout during layout pass");
@@ -379,8 +364,7 @@ impl RenderRoot {
             f(widget_mut)
         });
 
-        let mut root_state = self.widget_arena.get_state_mut(self.root.id()).item.clone();
-        self.post_event_processing(&mut root_state);
+        self.run_rewrite_passes();
 
         res
     }
@@ -395,20 +379,17 @@ impl RenderRoot {
     ) -> R {
         let res = mutate_widget(self, id, f);
 
-        let mut root_state = self.widget_arena.get_state_mut(self.root.id()).item.clone();
-        self.post_event_processing(&mut root_state);
+        self.run_rewrite_passes();
 
         res
     }
 
     // --- MARK: POINTER_EVENT ---
     fn root_on_pointer_event(&mut self, event: PointerEvent) -> Handled {
-        let mut dummy_state = WidgetState::synthetic(self.root.id(), self.get_kurbo_size());
+        let handled = root_on_pointer_event(self, &event);
+        run_update_pointer_pass(self);
 
-        let handled = root_on_pointer_event(self, &mut dummy_state, &event);
-        run_update_pointer_pass(self, &mut dummy_state);
-
-        self.post_event_processing(&mut dummy_state);
+        self.run_rewrite_passes();
         self.get_root_widget().debug_validate(false);
 
         handled
@@ -416,16 +397,14 @@ impl RenderRoot {
 
     // --- MARK: TEXT_EVENT ---
     fn root_on_text_event(&mut self, event: TextEvent) -> Handled {
-        let mut dummy_state = WidgetState::synthetic(self.root.id(), self.get_kurbo_size());
-
         if matches!(event, TextEvent::FocusChange(false)) {
-            root_on_pointer_event(self, &mut dummy_state, &PointerEvent::new_pointer_leave());
+            root_on_pointer_event(self, &PointerEvent::new_pointer_leave());
         }
 
-        let handled = root_on_text_event(self, &mut dummy_state, &event);
-        run_update_focus_pass(self, &mut dummy_state);
+        let handled = root_on_text_event(self, &event);
+        run_update_focus_pass(self);
 
-        self.post_event_processing(&mut dummy_state);
+        self.run_rewrite_passes();
         self.get_root_widget().debug_validate(false);
 
         handled
@@ -433,8 +412,6 @@ impl RenderRoot {
 
     // --- MARK: ACCESS_EVENT ---
     pub fn root_on_access_event(&mut self, event: ActionRequest) {
-        let mut dummy_state = WidgetState::synthetic(self.root.id(), self.get_kurbo_size());
-
         let Ok(id) = event.target.0.try_into() else {
             warn!("Received ActionRequest with id 0. This shouldn't be possible.");
             return;
@@ -445,34 +422,10 @@ impl RenderRoot {
             data: event.data,
         };
 
-        root_on_access_event(self, &mut dummy_state, &event);
+        root_on_access_event(self, &event);
 
-        self.post_event_processing(&mut dummy_state);
+        self.run_rewrite_passes();
         self.get_root_widget().debug_validate(false);
-    }
-
-    // --- MARK: LAYOUT ---
-    pub(crate) fn root_layout(&mut self) {
-        let window_size = self.get_kurbo_size();
-        let bc = match self.size_policy {
-            WindowSizePolicy::User => BoxConstraints::tight(window_size),
-            WindowSizePolicy::Content => BoxConstraints::UNBOUNDED,
-        };
-
-        let mut dummy_state = WidgetState::synthetic(self.root.id(), self.get_kurbo_size());
-        let size = root_layout(self, &mut dummy_state, &bc);
-
-        if let WindowSizePolicy::Content = self.size_policy {
-            let new_size = LogicalSize::new(size.width, size.height).to_physical(self.scale_factor);
-            if self.size != new_size {
-                self.size = new_size;
-                self.state.emit_signal(RenderRootSignal::SetSize(new_size));
-            }
-        }
-
-        run_update_pointer_pass(self, &mut dummy_state);
-
-        self.post_event_processing(&mut dummy_state);
     }
 
     // --- MARK: PAINT ---
@@ -501,44 +454,22 @@ impl RenderRoot {
         kurbo::Size::new(size.width, size.height)
     }
 
-    // --- MARK: POST-EVENT ---
-    fn post_event_processing(&mut self, widget_state: &mut WidgetState) {
-        // If children are changed during the handling of an event,
-        // we need to send RouteWidgetAdded now, so that they are ready for update/layout.
-        if widget_state.children_changed {
-            run_update_new_widgets_pass(self);
-        }
+    // --- MARK: REWRITE PASSES ---
+    pub(crate) fn run_rewrite_passes(&mut self) {
+        // TODO - Rerun passes if invalidation flags are still set
 
-        if self.state.debug_logger.layout_tree.root.is_none() {
-            self.state.debug_logger.layout_tree.root = Some(self.root.id().to_raw() as u32);
-        }
+        run_mutate_pass(self);
+        run_update_widget_tree_pass(self);
+        run_update_disabled_pass(self);
+        run_update_stashed_pass(self);
+        run_update_focus_chain_pass(self);
+        run_update_focus_pass(self);
+        root_layout(self);
+        run_update_scroll_pass(self);
+        root_compose(self);
+        run_update_pointer_pass(self);
 
-        if !self.state.scroll_request_targets.is_empty() {
-            run_update_scroll_pass(self);
-        }
-
-        if self.root_state().needs_compose && !self.root_state().needs_layout {
-            root_compose(self, widget_state);
-        }
-
-        // Update the disabled and stashed state if necessary
-        // Always do this before updating the focus-chain
-        if self.root_state().needs_update_disabled {
-            run_update_disabled_pass(self);
-        }
-        if self.root_state().needs_update_stashed {
-            run_update_stashed_pass(self);
-        }
-
-        // Update the focus-chain if necessary
-        // Always do this before sending focus change, since this event updates the focus chain.
-        if self.root_state().update_focus_chain {
-            run_update_focus_chain_pass(self);
-        }
-
-        run_update_focus_pass(self, widget_state);
-
-        if self.root_state().request_anim {
+        if self.root_state().needs_anim {
             self.state.emit_signal(RenderRootSignal::RequestAnimFrame);
         }
 
@@ -552,8 +483,6 @@ impl RenderRoot {
         {
             self.state.emit_signal(RenderRootSignal::RequestRedraw);
         }
-
-        run_mutate_pass(self, widget_state);
     }
 
     pub(crate) fn request_render_all(&mut self) {
