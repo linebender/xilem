@@ -207,8 +207,8 @@ impl TestHarness {
     /// as will any resulting commands. Commands created as a result of this event
     /// will also be dispatched.
     pub fn process_window_event(&mut self, event: WindowEvent) -> Handled {
-        let handled = self.render_root.handle_window_event(event);
-        handled
+        
+        self.render_root.handle_window_event(event)
     }
 
     /// Send an event to the widget.
@@ -217,8 +217,8 @@ impl TestHarness {
     /// as will any resulting commands. Commands created as a result of this event
     /// will also be dispatched.
     pub fn process_pointer_event(&mut self, event: PointerEvent) -> Handled {
-        let handled = self.render_root.handle_pointer_event(event);
-        handled
+        
+        self.render_root.handle_pointer_event(event)
     }
 
     /// Send an event to the widget.
@@ -227,8 +227,8 @@ impl TestHarness {
     /// as will any resulting commands. Commands created as a result of this event
     /// will also be dispatched.
     pub fn process_text_event(&mut self, event: TextEvent) -> Handled {
-        let handled = self.render_root.handle_text_event(event);
-        handled
+        
+        self.render_root.handle_text_event(event)
     }
 
     // --- MARK: RENDER ---
@@ -501,8 +501,8 @@ impl TestHarness {
         &mut self,
         f: impl FnOnce(WidgetMut<'_, Box<dyn Widget>>) -> R,
     ) -> R {
-        let res = self.render_root.edit_root_widget(f);
-        res
+        
+        self.render_root.edit_root_widget(f)
     }
 
     /// Get a [`WidgetMut`] to a specific widget.
@@ -513,8 +513,8 @@ impl TestHarness {
         id: WidgetId,
         f: impl FnOnce(WidgetMut<'_, Box<dyn Widget>>) -> R,
     ) -> R {
-        let res = self.render_root.edit_widget(id, f);
-        res
+        
+        self.render_root.edit_widget(id, f)
     }
 
     /// Pop next action from the queue
