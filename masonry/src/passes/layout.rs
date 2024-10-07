@@ -182,7 +182,6 @@ pub(crate) fn run_layout_inner<W: Widget>(
             widget_state_children: state_mut.children.reborrow_mut(),
             widget_children: widget_mut.children,
             global_state: parent_ctx.global_state,
-            mouse_pos: parent_ctx.mouse_pos,
         };
 
         // TODO - If constraints are the same and request_layout isn't set,
@@ -312,7 +311,6 @@ pub(crate) fn root_layout(
 ) -> Size {
     let _span = info_span!("layout").entered();
 
-    let mouse_pos = root.last_mouse_pos.map(|pos| (pos.x, pos.y).into());
     let root_state_token = root.widget_arena.widget_states.root_token_mut();
     let root_widget_token = root.widget_arena.widgets.root_token_mut();
     let mut ctx = LayoutCtx {
@@ -320,7 +318,6 @@ pub(crate) fn root_layout(
         widget_state: synthetic_root_state,
         widget_state_children: root_state_token,
         widget_children: root_widget_token,
-        mouse_pos,
     };
 
     let size = run_layout_on(&mut ctx, &mut root.root, bc);

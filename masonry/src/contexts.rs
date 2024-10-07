@@ -98,7 +98,6 @@ pub struct LayoutCtx<'a> {
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) widget_state_children: ArenaMutChildren<'a, WidgetState>,
     pub(crate) widget_children: ArenaMutChildren<'a, Box<dyn Widget>>,
-    pub(crate) mouse_pos: Option<Point>,
 }
 
 pub struct ComposeCtx<'a> {
