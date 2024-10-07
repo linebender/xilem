@@ -12,6 +12,7 @@ use crate::{
     AccessEvent, EventCtx, Handled, PointerEvent, TextEvent, Widget, WidgetId, WidgetState,
 };
 
+// --- MARK: HELPERS ---
 fn get_target_widget(
     root: &RenderRoot,
     pointer_pos: Option<LogicalPosition<f64>>,
@@ -79,10 +80,9 @@ fn run_event_pass<E>(
     Handled::from(is_handled)
 }
 
-// ----------------
-
 // TODO - Send synthetic MouseLeave events
 
+// --- MARK: POINTER_EVENT ---
 pub(crate) fn root_on_pointer_event(
     root: &mut RenderRoot,
     root_state: &mut WidgetState,
@@ -134,6 +134,7 @@ pub(crate) fn root_on_pointer_event(
 // focus is on it, its child or its parent.
 // - If a Widget has focus, then none of its parents is hidden
 
+// --- MARK: TEXT EVENT ---
 pub(crate) fn root_on_text_event(
     root: &mut RenderRoot,
     root_state: &mut WidgetState,
@@ -183,6 +184,7 @@ pub(crate) fn root_on_text_event(
     handled
 }
 
+// --- MARK: ACCESS EVENT ---
 pub(crate) fn root_on_access_event(
     root: &mut RenderRoot,
     root_state: &mut WidgetState,

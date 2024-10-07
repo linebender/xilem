@@ -24,6 +24,7 @@ fn rect_contains(larger: &Rect, smaller: &Rect) -> bool {
         && smaller.y1 <= larger.y1
 }
 
+// --- MARK: CHECKS ---
 // TODO - document
 // TODO - This method should take a 'can_skip: Fn(WidgetRef) -> bool'
 // predicate and only panic if can_skip returns false.
@@ -130,6 +131,7 @@ fn call_widget_method_with_checks<W: Widget, Ctx>(
     }
 }
 
+// --- MARK: RUN LAYOUT ---
 // Returns "true" if the Widget's layout method was called, in which case debug checks
 // need to be run. (See 'called_widget' in WidgetPod::call_widget_method_with_checks)
 pub(crate) fn run_layout_inner<W: Widget>(
@@ -305,6 +307,7 @@ pub(crate) fn run_layout_on<W: Widget>(
     state_mut.item.size
 }
 
+// --- MARK: ROOT ---
 pub(crate) fn root_layout(
     root: &mut RenderRoot,
     synthetic_root_state: &mut WidgetState,

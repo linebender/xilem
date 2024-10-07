@@ -13,6 +13,7 @@ use crate::render_root::RenderRootState;
 use crate::tree_arena::ArenaMut;
 use crate::{AccessCtx, Widget, WidgetState};
 
+// --- MARK: BUILD TREE ---
 fn build_accessibility_tree(
     global_state: &mut RenderRootState,
     tree_update: &mut TreeUpdate,
@@ -81,6 +82,7 @@ fn build_accessibility_tree(
     );
 }
 
+// --- MARK: BUILD NODE ---
 fn build_access_node(widget: &mut dyn Widget, ctx: &mut AccessCtx) -> Node {
     let mut node = NodeBuilder::new(widget.accessibility_role());
     node.set_bounds(to_accesskit_rect(
@@ -126,8 +128,7 @@ fn to_accesskit_rect(r: Rect, scale_factor: f64) -> accesskit::Rect {
     accesskit::Rect::new(sr.x0, sr.y0, sr.x1, sr.y1)
 }
 
-// ----------------
-
+// --- MARK: ROOT ---
 pub(crate) fn root_accessibility(
     root: &mut RenderRoot,
     rebuild_all: bool,
