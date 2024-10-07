@@ -116,7 +116,7 @@ where
                 &self.current_view,
                 &mut self.view_state,
                 &mut self.ctx,
-                root.get_element(),
+                root.child_mut(),
             );
             if cfg!(debug_assertions) && !self.ctx.view_tree_changed {
                 tracing::debug!("Nothing changed as result of action");

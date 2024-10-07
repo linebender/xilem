@@ -29,7 +29,7 @@ impl AppDriver for Driver {
             }
 
             ctx.get_root::<RootWidget<Grid>>()
-                .get_element()
+                .child_mut()
                 .set_spacing(self.grid_spacing);
         }
     }

@@ -51,7 +51,7 @@ impl AppDriver for Driver {
         match action {
             Action::ButtonPressed(_) => {
                 let mut root: WidgetMut<RootWidget<Portal<Flex>>> = ctx.get_root();
-                let mut root = root.get_element();
+                let mut root = root.child_mut();
                 let mut flex = root.child_mut();
                 flex.add_child(Label::new(self.next_task.clone()));
             }
