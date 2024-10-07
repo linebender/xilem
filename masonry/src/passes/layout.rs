@@ -11,141 +11,46 @@ use tracing::{info_span, trace};
 use vello::kurbo::{Point, Rect, Size};
 
 use crate::render_root::{RenderRoot, RenderRootSignal, WindowSizePolicy};
-use crate::tree_arena::ArenaRefChildren;
 use crate::widget::WidgetState;
 use crate::{BoxConstraints, LayoutCtx, Widget, WidgetPod};
 
-// --- MARK: CHECKS ---
-// TODO - document
-// TODO - This method should take a 'can_skip: Fn(WidgetRef) -> bool'
-// predicate and only panic if can_skip returns false.
-// TODO - This method was copy-pasted from WidgetPod. It was originally used
-// in multiple passes, but it's only used in layout right now. It should be
-// rewritten with that in mind.
-#[inline(always)]
-fn call_widget_method_with_checks<W: Widget, Ctx>(
-    pod: &mut WidgetPod<W>,
-    method_name: &str,
-    ctx: &mut Ctx,
-    get_tokens: impl Fn(
-        &mut Ctx,
-    ) -> (
-        ArenaRefChildren<'_, WidgetState>,
-        ArenaRefChildren<'_, Box<dyn Widget>>,
-    ),
-    visit: impl FnOnce(&mut WidgetPod<W>, &mut Ctx) -> bool,
-) {
-    if pod.incomplete() {
-        debug_panic!(
-            "Error in widget {}: method '{}' called before receiving WidgetAdded.",
-            pod.id(),
-            method_name,
-        );
-    }
-
-    let id = pod.id().to_raw();
-    let (parent_state_mut, parent_token) = get_tokens(ctx);
-    let widget_ref = parent_token
-        .get_child(id)
-        .expect("WidgetPod: inner widget not found in widget tree");
-    let state_ref = parent_state_mut
-        .get_child(id)
-        .expect("WidgetPod: inner widget not found in widget tree");
-    let widget = widget_ref.item;
-    let state = state_ref.item;
-
-    let _span = widget.make_trace_span().entered();
-
-    // TODO https://github.com/linebender/xilem/issues/370 - Re-implement debug logger
-
-    // TODO - explain this
-    state.mark_as_visited(true);
-
-    let mut children_ids = SmallVec::new();
-
-    if cfg!(debug_assertions) {
-        for child_state_ref in state_ref.children.iter_children() {
-            child_state_ref.item.mark_as_visited(false);
-        }
-        children_ids = widget.children_ids();
-    }
-
-    let called_widget = visit(pod, ctx);
-
-    let (parent_state_mut, parent_token) = get_tokens(ctx);
-    let widget_ref = parent_token
-        .get_child(id)
-        .expect("WidgetPod: inner widget not found in widget tree");
-    let state_ref = parent_state_mut
-        .get_child(id)
-        .expect("WidgetPod: inner widget not found in widget tree");
-    let widget = widget_ref.item;
-    let state = state_ref.item;
-
-    if cfg!(debug_assertions) && called_widget {
-        let new_children_ids = widget.children_ids();
-        if children_ids != new_children_ids && !state.children_changed {
-            debug_panic!(
-                    "Error in '{}' {}: children changed in method {} but ctx.children_changed() wasn't called",
-                    widget.short_type_name(),
-                    pod.id(),
-                    method_name,
-                );
-        }
-
-        for id in &new_children_ids {
-            if !state_ref.children.has_child(id.to_raw()) {
-                debug_panic!(
-                    "Error in '{}' {}: child widget {} not added in method {}",
-                    widget.short_type_name(),
-                    pod.id(),
-                    id,
-                    method_name,
-                );
-            }
-        }
-
-        #[cfg(debug_assertions)]
-        for child_state_ref in state_ref.children.iter_children() {
-            // FIXME - use can_skip callback instead
-            if child_state_ref.item.needs_visit() && !child_state_ref.item.is_stashed {
-                debug_panic!(
-                    "Error in '{}' {}: child widget '{}' {} not visited in method {}",
-                    widget.short_type_name(),
-                    pod.id(),
-                    child_state_ref.item.widget_name,
-                    child_state_ref.item.id,
-                    method_name,
-                );
-            }
-        }
-    }
-}
-
 // --- MARK: RUN LAYOUT ---
-// Returns "true" if the Widget's layout method was called, in which case debug checks
-// need to be run. (See 'called_widget' in WidgetPod::call_widget_method_with_checks)
-pub(crate) fn run_layout_inner<W: Widget>(
+/// Run [`Widget::layout`] method on the widget contained in `pod`.
+/// This will be called by [`LayoutCtx::run_layout`], which is itself called in the parent widget's `layout`.
+pub(crate) fn run_layout_on<W: Widget>(
     parent_ctx: &mut LayoutCtx<'_>,
     pod: &mut WidgetPod<W>,
     bc: &BoxConstraints,
-) -> bool {
+) -> Size {
     let id = pod.id().to_raw();
-    let widget_mut = parent_ctx
-        .widget_children
-        .get_child_mut(id)
-        .expect("WidgetPod: inner widget not found in widget tree");
-    let mut state_mut = parent_ctx
-        .widget_state_children
-        .get_child_mut(id)
-        .expect("WidgetPod: inner widget not found in widget tree");
+    let widget_mut = parent_ctx.widget_children.get_child_mut(id).unwrap();
+    let mut state_mut = parent_ctx.widget_state_children.get_child_mut(id).unwrap();
     let widget = widget_mut.item;
     let state = state_mut.item;
 
-    // The parent (and only the parent) controls the stashed state, and it is valid to set `stashed` in layout.
-    // Because of that, we use the local value rather than the global value.
-    // Note that if we are stashed by a grandparent, this check would trigger for that grandparent, so we should
-    // never be called.
+    let _span = widget.make_trace_span().entered();
+
+    let mut children_ids = SmallVec::new();
+    if cfg!(debug_assertions) {
+        children_ids = widget.children_ids();
+
+        // We forcefully set request_layout to true for all children.
+        // This is used below to check that widget.layout(..) visited all of them.
+        for child_id in widget.children_ids() {
+            let child_id = child_id.to_raw();
+            let child_state = state_mut.children.get_child_mut(child_id).unwrap().item;
+            if !child_state.is_stashed {
+                child_state.request_layout = true;
+            }
+        }
+    }
+
+    // This checks reads is_explicitly_stashed instead of is_stashed because the latter may be outdated.
+    // A widget's is_explicitly_stashed flag is controlled by its direct parent.
+    // The parent may set this flag during layout, in which case it should avoid calling run_layout.
+    // Note that, because this check exits before recursing, run_layout can only ever be
+    // reached for a widget whose parent is not stashed, which means is_explicitly_stashed
+    // being false is sufficient to know the widget is non-stashed.
     if state.is_explicitly_stashed {
         debug_panic!(
             "Error in '{}' {}: trying to compute layout of stashed widget.",
@@ -153,7 +58,7 @@ pub(crate) fn run_layout_inner<W: Widget>(
             pod.id(),
         );
         state.size = Size::ZERO;
-        return false;
+        return Size::ZERO;
     }
 
     // TODO - Not everything that has been re-laid out needs to be repainted.
@@ -207,14 +112,25 @@ pub(crate) fn run_layout_inner<W: Widget>(
     {
         for child_id in widget.children_ids() {
             let child_id = child_id.to_raw();
-            let child_state_mut = state_mut
-                .children
-                .get_child_mut(child_id)
-                .unwrap_or_else(|| panic!("widget #{child_id} not found"));
-            let child_state = child_state_mut.item;
+            let child_state = state_mut.children.get_child_mut(child_id).unwrap().item;
+
+            if child_state.is_stashed {
+                continue;
+            }
+
+            if child_state.request_layout {
+                debug_panic!(
+                    "Error in '{}' {}: LayoutCtx::run_layout() was not called with child widget '{}' {}.",
+                    widget.short_type_name(),
+                    pod.id(),
+                    child_state.widget_name,
+                    child_state.id,
+                );
+            }
+
             if child_state.is_expecting_place_child_call {
                 debug_panic!(
-                    "Error in '{}' {}: missing call to place_child method for child widget '{}' {}. During layout pass, if a widget calls WidgetPod::layout() on its child, it then needs to call LayoutCtx::place_child() on the same child.",
+                    "Error in '{}' {}: LayoutCtx::place_child() was not called with child widget '{}' {}.",
                     widget.short_type_name(),
                     pod.id(),
                     child_state.widget_name,
@@ -236,6 +152,44 @@ pub(crate) fn run_layout_inner<W: Widget>(
                 );
             }
         }
+
+        let new_children_ids = widget.children_ids();
+        if children_ids != new_children_ids && !state.children_changed {
+            debug_panic!(
+                "Error in '{}' {}: children changed during layout pass",
+                widget.short_type_name(),
+                pod.id(),
+            );
+        }
+
+        if new_size.width.is_infinite() {
+            debug_panic!(
+                "Error in '{}' {}: width is infinite",
+                widget.short_type_name(),
+                pod.id(),
+            );
+        }
+        if new_size.width.is_nan() {
+            debug_panic!(
+                "Error in '{}' {}: width is NaN",
+                widget.short_type_name(),
+                pod.id(),
+            );
+        }
+        if new_size.height.is_infinite() {
+            debug_panic!(
+                "Error in '{}' {}: height is infinite",
+                widget.short_type_name(),
+                pod.id(),
+            );
+        }
+        if new_size.height.is_nan() {
+            debug_panic!(
+                "Error in '{}' {}: height is NaN",
+                widget.short_type_name(),
+                pod.id(),
+            );
+        }
     }
 
     // TODO - Figure out how to deal with the overflow problem, eg:
@@ -248,59 +202,10 @@ pub(crate) fn run_layout_inner<W: Widget>(
     // size is (0,0)
     // See https://github.com/linebender/xilem/issues/377
 
-    let state_mut = parent_ctx
-        .widget_state_children
-        .get_child_mut(id)
-        .expect("WidgetPod: inner widget not found in widget tree");
+    let state_mut = parent_ctx.widget_state_children.get_child_mut(id).unwrap();
     parent_ctx.widget_state.merge_up(state_mut.item);
     state_mut.item.size = new_size;
-
-    {
-        if new_size.width.is_infinite() {
-            debug_panic!(
-                "Error in '{}' {}: width is infinite",
-                widget.short_type_name(),
-                pod.id(),
-            );
-        }
-        if new_size.height.is_infinite() {
-            debug_panic!(
-                "Error in '{}' {}: height is infinite",
-                widget.short_type_name(),
-                pod.id(),
-            );
-        }
-    }
-
-    true
-}
-
-/// Run [`Widget::layout`] method on the widget contained in `pod`.
-/// This will be called by [`LayoutCtx::run_layout`], which is itself called in the parent widget's `layout`.
-pub(crate) fn run_layout_on<W: Widget>(
-    parent_ctx: &mut LayoutCtx<'_>,
-    pod: &mut WidgetPod<W>,
-    bc: &BoxConstraints,
-) -> Size {
-    call_widget_method_with_checks(
-        pod,
-        "layout",
-        parent_ctx,
-        |ctx| {
-            (
-                ctx.widget_state_children.reborrow(),
-                ctx.widget_children.reborrow(),
-            )
-        },
-        |child, ctx| run_layout_inner(ctx, child, bc),
-    );
-
-    let id = pod.id().to_raw();
-    let state_mut = parent_ctx
-        .widget_state_children
-        .get_child_mut(id)
-        .expect("run_layout_on: inner widget not found in widget tree");
-    state_mut.item.size
+    new_size
 }
 
 // --- MARK: ROOT ---
