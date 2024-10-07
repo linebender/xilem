@@ -207,7 +207,6 @@ impl TestHarness {
     /// as will any resulting commands. Commands created as a result of this event
     /// will also be dispatched.
     pub fn process_window_event(&mut self, event: WindowEvent) -> Handled {
-        
         self.render_root.handle_window_event(event)
     }
 
@@ -217,7 +216,6 @@ impl TestHarness {
     /// as will any resulting commands. Commands created as a result of this event
     /// will also be dispatched.
     pub fn process_pointer_event(&mut self, event: PointerEvent) -> Handled {
-        
         self.render_root.handle_pointer_event(event)
     }
 
@@ -227,7 +225,6 @@ impl TestHarness {
     /// as will any resulting commands. Commands created as a result of this event
     /// will also be dispatched.
     pub fn process_text_event(&mut self, event: TextEvent) -> Handled {
-        
         self.render_root.handle_text_event(event)
     }
 
@@ -501,7 +498,6 @@ impl TestHarness {
         &mut self,
         f: impl FnOnce(WidgetMut<'_, Box<dyn Widget>>) -> R,
     ) -> R {
-        
         self.render_root.edit_root_widget(f)
     }
 
@@ -513,7 +509,6 @@ impl TestHarness {
         id: WidgetId,
         f: impl FnOnce(WidgetMut<'_, Box<dyn Widget>>) -> R,
     ) -> R {
-        
         self.render_root.edit_widget(id, f)
     }
 
