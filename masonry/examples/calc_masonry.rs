@@ -181,7 +181,6 @@ impl Widget for CalcButton {
                 _ => {}
             }
         }
-        ctx.skip_child(&mut self.inner);
     }
 
     fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange) {

@@ -277,15 +277,6 @@ impl<'a, Item> ArenaRefChildren<'a, Item> {
             .map(|child| child.arena_ref(self.id, self.parents_map.parents_map))
     }
 
-    // TODO - This method could not be implemented with an actual arena design.
-    // It's currently used for some sanity-checking of widget code, but will
-    // likely be removed.
-    pub(crate) fn iter_children(&self) -> impl Iterator<Item = ArenaRef<'_, Item>> {
-        self.children
-            .iter()
-            .map(|child| child.arena_ref(self.id, self.parents_map.parents_map))
-    }
-
     /// Find an arena item among descendants (this node not included).
     ///
     /// Returns a shared reference to the item if present.
@@ -361,15 +352,6 @@ impl<'a, Item> ArenaMutChildren<'a, Item> {
             .iter_mut()
             .find(|child| child.id == id)
             .map(|child| child.arena_mut(self.id, self.parents_map.parents_map))
-    }
-
-    // TODO - This method could not be implemented with an actual arena design.
-    // It's currently used for some sanity-checking of widget code, but will
-    // likely be removed.
-    pub(crate) fn iter_children(&self) -> impl Iterator<Item = ArenaRef<'_, Item>> {
-        self.children
-            .iter()
-            .map(|child| child.arena_ref(self.id, self.parents_map.parents_map))
     }
 
     // TODO - Remove the child_id argument once creation of Widgets is figured out.

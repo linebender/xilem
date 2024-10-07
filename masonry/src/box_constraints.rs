@@ -115,6 +115,26 @@ impl BoxConstraints {
             return;
         }
 
+        if self.min.width.is_nan() {
+            debug_panic!("Minimum width constraint passed to {name} is NaN");
+        }
+        if self.min.height.is_nan() {
+            debug_panic!("Minimum height constraint passed to {name} is NaN");
+        }
+        if self.max.width.is_nan() {
+            debug_panic!("Maximum width constraint passed to {name} is NaN");
+        }
+        if self.max.height.is_nan() {
+            debug_panic!("Maximum height constraint passed to {name} is NaN");
+        }
+
+        if self.min.width.is_infinite() {
+            debug_panic!("Infinite minimum width constraint passed to {name}");
+        }
+        if self.min.height.is_infinite() {
+            debug_panic!("Infinite minimum height constraint passed to {name}");
+        }
+
         if !(0.0 <= self.min.width
             && self.min.width <= self.max.width
             && 0.0 <= self.min.height
@@ -122,16 +142,7 @@ impl BoxConstraints {
             && self.min.expand() == self.min
             && self.max.expand() == self.max)
         {
-            tracing::warn!("Bad BoxConstraints passed to {}:", name);
-            tracing::warn!("{:?}", self);
-        }
-
-        if self.min.width.is_infinite() {
-            tracing::warn!("Infinite minimum width constraint passed to {}:", name);
-        }
-
-        if self.min.height.is_infinite() {
-            tracing::warn!("Infinite minimum height constraint passed to {}:", name);
+            debug_panic!("Bad BoxConstraints passed to {name}: {self:?}",);
         }
     }
 

@@ -3,7 +3,6 @@
 
 #![cfg(not(tarpaulin_include))]
 
-use std::sync::atomic::{AtomicBool, Ordering};
 use vello::kurbo::{Insets, Point, Rect, Size, Vec2};
 
 use crate::{CursorIcon, WidgetId};
@@ -149,19 +148,10 @@ pub struct WidgetState {
     pub(crate) in_focus_chain: bool,
 
     // --- DEBUG INFO ---
-    // Used in event/lifecycle/etc methods that are expected to be called recursively
-    // on a widget's children, to make sure each child was visited.
-    #[cfg(debug_assertions)]
-    pub(crate) needs_visit: VisitBool,
-
     // TODO - document
     #[cfg(debug_assertions)]
     pub(crate) widget_name: &'static str,
 }
-
-// This is a hack to have a simple Clone impl for WidgetState
-#[derive(Debug)]
-pub(crate) struct VisitBool(pub AtomicBool);
 
 impl WidgetState {
     pub(crate) fn new(id: WidgetId, widget_name: &'static str) -> WidgetState {
@@ -205,8 +195,6 @@ impl WidgetState {
             cursor: None,
             update_focus_chain: true,
             #[cfg(debug_assertions)]
-            needs_visit: VisitBool(false.into()),
-            #[cfg(debug_assertions)]
             widget_name,
         }
     }
@@ -233,19 +221,6 @@ impl WidgetState {
             update_focus_chain: false,
             ..WidgetState::new(id, "<root>")
         }
-    }
-
-    pub(crate) fn mark_as_visited(&self, visited: bool) {
-        #[cfg(debug_assertions)]
-        {
-            // TODO - the "!visited" is annoying
-            self.needs_visit.0.store(!visited, Ordering::SeqCst);
-        }
-    }
-
-    #[cfg(debug_assertions)]
-    pub(crate) fn needs_visit(&self) -> bool {
-        self.needs_visit.0.load(Ordering::SeqCst)
     }
 
     /// Update to incorporate state changes from a child.
@@ -311,11 +286,5 @@ impl WidgetState {
 
     pub(crate) fn window_origin(&self) -> Point {
         self.window_origin
-    }
-}
-
-impl Clone for VisitBool {
-    fn clone(&self) -> Self {
-        VisitBool(self.0.load(Ordering::SeqCst).into())
     }
 }
