@@ -43,7 +43,7 @@ pub struct Label {
     line_break_mode: LineBreaking,
     show_disabled: bool,
     brush: TextBrush,
-    skip_pointer: bool,
+    interactive: bool,
 }
 
 // --- MARK: BUILDERS ---
@@ -55,16 +55,18 @@ impl Label {
             line_break_mode: LineBreaking::Overflow,
             show_disabled: true,
             brush: crate::theme::TEXT_COLOR.into(),
-            skip_pointer: false,
+            interactive: true,
         }
     }
 
-    // TODO - Rename
-    // TODO - Document
-    pub fn with_skip_pointer(mut self, skip_pointer: bool) -> Self {
-        self.skip_pointer = skip_pointer;
+    /// Sets the value returned by [`accepts_pointer_interaction`].
+    ///
+    /// True by default.
+    pub fn with_pointer_interaction(mut self, interactive: bool) -> Self {
+        self.interactive = interactive;
         self
     }
+    // accepts_pointer_interaction
 
     pub fn text(&self) -> &ArcStr {
         self.text_layout.text()
@@ -204,7 +206,6 @@ impl Widget for Label {
                 // TODO: Parley seems to require a relayout when colours change
                 ctx.request_layout();
             }
-            LifeCycle::BuildFocusChain => {}
             _ => {}
         }
     }
@@ -258,12 +259,12 @@ impl Widget for Label {
         node.set_name(self.text().as_ref().to_string());
     }
 
-    fn skip_pointer(&self) -> bool {
-        self.skip_pointer
-    }
-
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         SmallVec::new()
+    }
+
+    fn accepts_pointer_interaction(&self) -> bool {
+        self.interactive
     }
 
     fn make_trace_span(&self) -> Span {

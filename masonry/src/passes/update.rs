@@ -253,7 +253,7 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot, root_state: &mut Widg
     if prev_focused != next_focused {
         let was_ime_active = root.state.is_ime_active;
         let is_ime_active = if let Some(id) = next_focused {
-            root.widget_arena.get_state(id).item.is_text_input
+            root.widget_arena.get_state(id).item.accepts_text_input
         } else {
             false
         };
@@ -559,8 +559,11 @@ fn update_new_widgets(
             "{} received LifeCycle::WidgetAdded",
             widget.item.short_type_name()
         );
+        state.item.accepts_pointer_interaction = widget.item.accepts_pointer_interaction();
+        state.item.accepts_focus = widget.item.accepts_focus();
+        state.item.accepts_text_input = widget.item.accepts_text_input();
+        state.item.is_new = false;
     }
-    state.item.is_new = false;
 
     // We can recurse on this widget's children, because they have already been added
     // to the arena above.
@@ -606,7 +609,7 @@ pub(crate) fn run_update_new_widgets_pass(root: &mut RenderRoot) {
 fn update_focus_chain_for_widget(
     global_state: &mut RenderRootState,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
-    mut state: ArenaMut<'_, WidgetState>,
+    state: ArenaMut<'_, WidgetState>,
     parent_focus_chain: &mut Vec<WidgetId>,
 ) {
     let _span = widget.item.make_trace_span().entered();
@@ -620,16 +623,9 @@ fn update_focus_chain_for_widget(
     state.item.has_focus = global_state.focused_widget == Some(id);
     let had_focus = state.item.has_focus;
 
-    state.item.in_focus_chain = false;
     state.item.focus_chain.clear();
-    {
-        let mut ctx = LifeCycleCtx {
-            global_state,
-            widget_state: state.item,
-            widget_state_children: state.children.reborrow_mut(),
-            widget_children: widget.children.reborrow_mut(),
-        };
-        widget.item.lifecycle(&mut ctx, &LifeCycle::BuildFocusChain);
+    if state.item.accepts_focus {
+        state.item.focus_chain.push(id);
     }
     state.item.update_focus_chain = false;
 

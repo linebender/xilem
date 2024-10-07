@@ -334,9 +334,19 @@ impl_context_method!(
             self.widget_state.has_focus
         }
 
-        /// Whether this specific widget is in the focus chain.
-        pub fn is_in_focus_chain(&self) -> bool {
-            self.widget_state.in_focus_chain
+        /// Whether this widget gets pointer events and hovered status.
+        pub fn accepts_pointer_interaction(&self) -> bool {
+            self.widget_state.accepts_pointer_interaction
+        }
+
+        /// Whether this widget gets text focus.
+        pub fn accepts_focus(&self) -> bool {
+            self.widget_state.accepts_focus
+        }
+
+        /// Whether this widget gets IME events.
+        pub fn accepts_text_input(&self) -> bool {
+            self.widget_state.accepts_text_input
         }
 
         /// The disabled state of a widget.
@@ -780,26 +790,6 @@ impl RegisterCtx<'_> {
 
         self.widget_children.insert_child(id, Box::new(widget));
         self.widget_state_children.insert_child(id, state);
-    }
-}
-
-impl LifeCycleCtx<'_> {
-    /// Register this widget to be eligile to accept focus automatically.
-    ///
-    /// This should only be called in response to a [`LifeCycle::BuildFocusChain`] event.
-    ///
-    /// See [`EventCtx::is_focused`](Self::is_focused) for more information about focus.
-    ///
-    /// [`LifeCycle::BuildFocusChain`]: crate::LifeCycle::BuildFocusChain
-    pub fn register_for_focus(&mut self) {
-        trace!("register_for_focus");
-        self.widget_state.focus_chain.push(self.widget_id());
-        self.widget_state.in_focus_chain = true;
-    }
-
-    /// Register this widget as accepting text input.
-    pub fn register_as_text_input(&mut self) {
-        self.widget_state.is_text_input = true;
     }
 }
 
