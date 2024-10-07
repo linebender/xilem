@@ -508,7 +508,8 @@ fn update_new_widgets(
         for child_id in widget.item.children_ids() {
             if widget.children.get_child(child_id.to_raw()).is_none() {
                 panic!(
-                    "Error in '{}' #{}: method register_children() did not call RegisterCtx::register_child() on child #{} returned by children_ids()",
+                    "Error in '{}' #{}: method register_children() did not call \
+                    RegisterCtx::register_child() on child #{} returned by children_ids()",
                     widget.item.short_type_name(),
                     id.to_raw(),
                     child_id.to_raw()
