@@ -15,12 +15,11 @@ use wgpu::{
 };
 use winit::event::Ime;
 
-use super::screenshots::get_image_diff;
-use super::snapshot_utils::get_cargo_workspace;
 use crate::action::Action;
 use crate::dpi::{LogicalPosition, PhysicalPosition, PhysicalSize};
 use crate::event::{PointerButton, PointerEvent, PointerState, TextEvent, WindowEvent};
 use crate::render_root::{RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy};
+use crate::testing::{screenshots::get_image_diff, snapshot_utils::get_cargo_workspace};
 use crate::tracing_backend::try_init_test_tracing;
 use crate::widget::{WidgetMut, WidgetRef};
 use crate::{Color, Handled, Point, Size, Vec2, Widget, WidgetId};
