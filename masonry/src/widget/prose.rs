@@ -2,23 +2,19 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use accesskit::{NodeBuilder, Role};
-use parley::{
-    layout::Alignment,
-    style::{FontFamily, FontStack},
-};
+use parley::layout::Alignment;
+use parley::style::{FontFamily, FontStack};
 use smallvec::SmallVec;
 use tracing::{trace, trace_span, Span};
-use vello::{
-    kurbo::{Affine, Point, Size},
-    peniko::BlendMode,
-    Scene,
-};
+use vello::kurbo::{Affine, Point, Size};
+use vello::peniko::BlendMode;
+use vello::Scene;
 
+use crate::text::{ArcStr, TextBrush, TextWithSelection};
+use crate::widget::label::LABEL_X_PADDING;
 use crate::widget::{LineBreaking, WidgetMut};
 use crate::{
-    text::{TextBrush, TextWithSelection},
-    widget::label::LABEL_X_PADDING,
-    AccessCtx, AccessEvent, ArcStr, BoxConstraints, CursorIcon, EventCtx, LayoutCtx, LifeCycle,
+    AccessCtx, AccessEvent, BoxConstraints, CursorIcon, EventCtx, LayoutCtx, LifeCycle,
     LifeCycleCtx, PaintCtx, PointerEvent, RegisterCtx, StatusChange, TextEvent, Widget, WidgetId,
 };
 

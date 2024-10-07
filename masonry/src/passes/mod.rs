@@ -5,13 +5,13 @@ use crate::tree_arena::{ArenaMut, ArenaMutChildren};
 use crate::widget::WidgetArena;
 use crate::{Widget, WidgetId, WidgetState};
 
-pub mod accessibility;
-pub mod compose;
-pub mod event;
-pub mod layout;
-pub mod mutate;
-pub mod paint;
-pub mod update;
+pub(crate) mod accessibility;
+pub(crate) mod compose;
+pub(crate) mod event;
+pub(crate) mod layout;
+pub(crate) mod mutate;
+pub(crate) mod paint;
+pub(crate) mod update;
 
 pub(crate) fn recurse_on_children(
     id: WidgetId,

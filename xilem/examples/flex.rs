@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::{
+    text::ArcStr,
     widget::{CrossAxisAlignment, MainAxisAlignment},
-    ArcStr,
 };
 use winit::error::EventLoopError;
 use xilem::{

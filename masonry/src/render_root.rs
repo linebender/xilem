@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use std::collections::{HashMap, VecDeque};
+#[cfg(not(target_arch = "wasm32"))]
+use std::time::Instant;
 
 use accesskit::{ActionRequest, Tree, TreeUpdate};
 use parley::fontique::{self, Collection, CollectionOptions};
@@ -9,9 +11,6 @@ use parley::{FontContext, LayoutContext};
 use tracing::warn;
 use vello::kurbo::{self, Rect};
 use vello::Scene;
-
-#[cfg(not(target_arch = "wasm32"))]
-use std::time::Instant;
 #[cfg(target_arch = "wasm32")]
 use web_time::Instant;
 
@@ -31,8 +30,7 @@ use crate::passes::update::{
 };
 use crate::text::TextBrush;
 use crate::tree_arena::TreeArena;
-use crate::widget::WidgetArena;
-use crate::widget::{WidgetMut, WidgetRef, WidgetState};
+use crate::widget::{WidgetArena, WidgetMut, WidgetRef, WidgetState};
 use crate::{
     AccessEvent, Action, BoxConstraints, CursorIcon, Handled, QueryCtx, Widget, WidgetId, WidgetPod,
 };

@@ -4,10 +4,9 @@
 use std::sync::Arc;
 
 use masonry::{
-    app_driver::AppDriver,
     event_loop_runner::{self, EventLoopProxy, MasonryUserEvent},
     widget::RootWidget,
-    WidgetId,
+    AppDriver, DriverCtx, WidgetId,
 };
 use xilem_core::{DynMessage, Message, MessageResult, ProxyError, RawProxy, ViewId};
 
@@ -72,7 +71,7 @@ where
 {
     fn on_action(
         &mut self,
-        masonry_ctx: &mut masonry::app_driver::DriverCtx<'_>,
+        masonry_ctx: &mut DriverCtx<'_>,
         widget_id: masonry::WidgetId,
         action: masonry::Action,
     ) {

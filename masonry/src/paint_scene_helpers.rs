@@ -3,11 +3,9 @@
 
 #![allow(missing_docs)]
 
-use vello::{
-    kurbo::{self, Affine, Rect, Shape, Stroke},
-    peniko::{BrushRef, Color, ColorStopsSource, Fill, Gradient},
-    Scene,
-};
+use vello::kurbo::{self, Affine, Rect, Shape, Stroke};
+use vello::peniko::{BrushRef, Color, ColorStopsSource, Fill, Gradient};
+use vello::Scene;
 
 // TODO - Remove this file
 

@@ -3,15 +3,15 @@
 
 //! Events.
 
-use crate::dpi::{LogicalPosition, PhysicalPosition, PhysicalSize};
-use crate::kurbo::Rect;
-// TODO - See issue https://github.com/linebender/xilem/issues/367
-use crate::WidgetId;
-
 use std::path::PathBuf;
 
 use winit::event::{Force, Ime, KeyEvent, Modifiers};
 use winit::keyboard::ModifiersState;
+
+use crate::dpi::{LogicalPosition, PhysicalPosition, PhysicalSize};
+use crate::kurbo::Rect;
+// TODO - See issue https://github.com/linebender/xilem/issues/367
+use crate::WidgetId;
 
 // TODO - Occluded(bool) event
 // TODO - winit ActivationTokenDone thing
