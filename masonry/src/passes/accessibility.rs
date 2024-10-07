@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::render_root::RenderRoot;
-use accesskit::{Node, NodeBuilder, NodeId, TreeUpdate};
+use accesskit::{NodeBuilder, NodeId, TreeUpdate};
 use tracing::debug;
 use tracing::info_span;
 use tracing::trace;
@@ -45,7 +45,9 @@ fn build_accessibility_tree(
             rebuild_all,
             scale_factor,
         };
-        let node = build_access_node(widget.item, &mut ctx);
+        let mut node = build_access_node(widget.item, &mut ctx);
+        widget.item.accessibility(&mut ctx, &mut node);
+        let node = node.build();
 
         let id: NodeId = ctx.widget_state.id.into();
         trace!(
@@ -83,7 +85,7 @@ fn build_accessibility_tree(
 }
 
 // --- MARK: BUILD NODE ---
-fn build_access_node(widget: &mut dyn Widget, ctx: &mut AccessCtx) -> Node {
+fn build_access_node(widget: &mut dyn Widget, ctx: &mut AccessCtx) -> NodeBuilder {
     let mut node = NodeBuilder::new(widget.accessibility_role());
     node.set_bounds(to_accesskit_rect(
         ctx.widget_state.window_layout_rect(),
@@ -118,9 +120,7 @@ fn build_access_node(widget: &mut dyn Widget, ctx: &mut AccessCtx) -> Node {
         node.add_action(accesskit::Action::Blur);
     }
 
-    widget.accessibility(ctx, &mut node);
-
-    node.build()
+    node
 }
 
 fn to_accesskit_rect(r: Rect, scale_factor: f64) -> accesskit::Rect {
