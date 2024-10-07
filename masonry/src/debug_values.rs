@@ -7,8 +7,9 @@ use std::collections::{HashMap, HashSet};
 use std::fmt::Display;
 use std::sync::Arc;
 
-use crate::Rect;
 use serde::{Deserialize, Serialize};
+
+use crate::Rect;
 
 pub type MyWidgetId = u32;
 
@@ -171,8 +172,9 @@ mod serde_arc {
 }
 
 mod serde_rect {
-    use crate::Rect;
     use serde::{Deserialize, Deserializer, Serialize, Serializer};
+
+    use crate::Rect;
 
     pub fn serialize<S: Serializer>(value: &Rect, serializer: S) -> Result<S::Ok, S::Error> {
         let value = (value.x0, value.y0, value.x1, value.y1);
