@@ -16,13 +16,11 @@ use vello::peniko::BlendMode;
 use vello::Scene;
 
 use crate::text::{Hinting, TextBrush, TextLayout};
-use crate::widget::WidgetMut;
+use crate::widget::{LineBreaking, WidgetMut};
 use crate::{
     AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx,
     PaintCtx, PointerEvent, RegisterCtx, StatusChange, TextEvent, Widget, WidgetId,
 };
-
-use super::LineBreaking;
 
 // added padding between the edges of the widget and the text.
 pub(super) const LABEL_X_PADDING: f64 = 2.0;
