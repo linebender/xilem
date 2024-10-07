@@ -62,8 +62,6 @@ pub(crate) struct WidgetState {
     /// the baseline. Widgets that contain text or controls that expect to be
     /// laid out alongside text can set this as appropriate.
     pub(crate) baseline_offset: f64,
-    // TODO - Remove
-    pub(crate) is_portal: bool,
 
     /// Tracks whether widget is eligible for IME events.
     /// Should be immutable after `WidgetAdded` event.
@@ -173,7 +171,6 @@ impl WidgetState {
             is_expecting_place_child_call: false,
             paint_insets: Insets::ZERO,
             local_paint_rect: Rect::ZERO,
-            is_portal: false,
             is_text_input: false,
             ime_area: None,
             clip: Default::default(),

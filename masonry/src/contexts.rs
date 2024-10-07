@@ -801,14 +801,6 @@ impl LifeCycleCtx<'_> {
     pub fn register_as_text_input(&mut self) {
         self.widget_state.is_text_input = true;
     }
-
-    // TODO - remove - See issue https://github.com/linebender/xilem/issues/366
-    /// Register this widget as a portal.
-    ///
-    /// This should only be used by scroll areas.
-    pub fn register_as_portal(&mut self) {
-        self.widget_state.is_portal = true;
-    }
 }
 
 // --- MARK: UPDATE LAYOUT ---
