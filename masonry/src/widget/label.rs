@@ -66,7 +66,6 @@ impl Label {
         self.interactive = interactive;
         self
     }
-    // accepts_pointer_interaction
 
     pub fn text(&self) -> &ArcStr {
         self.text_layout.text()

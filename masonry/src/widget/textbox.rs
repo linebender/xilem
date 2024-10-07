@@ -334,6 +334,14 @@ impl Widget for Textbox {
         SmallVec::new()
     }
 
+    fn accepts_focus(&self) -> bool {
+        true
+    }
+
+    fn accepts_text_input(&self) -> bool {
+        true
+    }
+
     fn make_trace_span(&self) -> Span {
         trace_span!("Textbox")
     }

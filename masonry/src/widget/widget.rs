@@ -242,7 +242,7 @@ pub trait Widget: AsAny {
             // The position must be inside the child's layout and inside the child's clip path (if
             // any).
             if !child.ctx().is_stashed()
-                && child.widget.accepts_pointer_interaction()
+                && child.ctx().accepts_pointer_interaction()
                 && child.ctx().window_layout_rect().contains(pos)
             {
                 return Some(child);
@@ -417,6 +417,18 @@ impl Widget for Box<dyn Widget> {
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         self.deref().children_ids()
+    }
+
+    fn accepts_pointer_interaction(&self) -> bool {
+        self.deref().accepts_pointer_interaction()
+    }
+
+    fn accepts_focus(&self) -> bool {
+        self.deref().accepts_focus()
+    }
+
+    fn accepts_text_input(&self) -> bool {
+        self.deref().accepts_text_input()
     }
 
     fn make_trace_span(&self) -> Span {
