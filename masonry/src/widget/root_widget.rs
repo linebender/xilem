@@ -33,8 +33,7 @@ impl<W: Widget> RootWidget<W> {
 }
 
 impl<W: Widget> WidgetMut<'_, RootWidget<W>> {
-    // TODO - rename to child_mut
-    pub fn get_element(&mut self) -> WidgetMut<'_, W> {
+    pub fn child_mut(&mut self) -> WidgetMut<'_, W> {
         self.ctx.get_mut(&mut self.widget.pod)
     }
 }
