@@ -12,7 +12,7 @@ expression: record
         BuildFocusChain,
     ),
     Layout(
-        400.0W×400.0H,
+        0.0W×0.0H,
     ),
     Compose,
 ]
