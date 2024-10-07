@@ -204,7 +204,7 @@ pub(crate) fn root_on_access_event(
             if event.target == ctx.widget_id() {
                 match event.action {
                     accesskit::Action::Focus => {
-                        if ctx.is_in_focus_chain() && !ctx.is_disabled() && !ctx.is_focused() {
+                        if ctx.accepts_focus() && !ctx.is_disabled() && !ctx.is_focused() {
                             ctx.request_focus();
                             ctx.set_handled();
                             return;
