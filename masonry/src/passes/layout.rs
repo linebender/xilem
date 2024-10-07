@@ -45,8 +45,8 @@ fn call_widget_method_with_checks<W: Widget, Ctx>(
 ) {
     if pod.incomplete() {
         debug_panic!(
-            "Error in widget #{}: method '{}' called before receiving WidgetAdded.",
-            pod.id().to_raw(),
+            "Error in widget {}: method '{}' called before receiving WidgetAdded.",
+            pod.id(),
             method_name,
         );
     }
@@ -94,20 +94,19 @@ fn call_widget_method_with_checks<W: Widget, Ctx>(
         let new_children_ids = widget.children_ids();
         if children_ids != new_children_ids && !state.children_changed {
             debug_panic!(
-                    "Error in '{}' #{}: children changed in method {} but ctx.children_changed() wasn't called",
+                    "Error in '{}' {}: children changed in method {} but ctx.children_changed() wasn't called",
                     widget.short_type_name(),
-                    pod.id().to_raw(),
+                    pod.id(),
                     method_name,
                 );
         }
 
         for id in &new_children_ids {
-            let id = id.to_raw();
-            if !state_ref.children.has_child(id) {
+            if !state_ref.children.has_child(id.to_raw()) {
                 debug_panic!(
-                    "Error in '{}' #{}: child widget #{} not added in method {}",
+                    "Error in '{}' {}: child widget {} not added in method {}",
                     widget.short_type_name(),
-                    pod.id().to_raw(),
+                    pod.id(),
                     id,
                     method_name,
                 );
@@ -119,11 +118,11 @@ fn call_widget_method_with_checks<W: Widget, Ctx>(
             // FIXME - use can_skip callback instead
             if child_state_ref.item.needs_visit() && !child_state_ref.item.is_stashed {
                 debug_panic!(
-                    "Error in '{}' #{}: child widget '{}' #{} not visited in method {}",
+                    "Error in '{}' {}: child widget '{}' {} not visited in method {}",
                     widget.short_type_name(),
-                    pod.id().to_raw(),
+                    pod.id(),
                     child_state_ref.item.widget_name,
-                    child_state_ref.item.id.to_raw(),
+                    child_state_ref.item.id,
                     method_name,
                 );
             }
@@ -156,9 +155,9 @@ pub(crate) fn run_layout_inner<W: Widget>(
     // never be called.
     if state.is_explicitly_stashed {
         debug_panic!(
-            "Error in '{}' #{}: trying to compute layout of stashed widget.",
+            "Error in '{}' {}: trying to compute layout of stashed widget.",
             widget.short_type_name(),
-            id,
+            pod.id(),
         );
         state.size = Size::ZERO;
         return false;
@@ -193,9 +192,9 @@ pub(crate) fn run_layout_inner<W: Widget>(
     };
     if state.request_layout {
         debug_panic!(
-            "Error in '{}' #{}: layout request flag was set during layout pass",
+            "Error in '{}' {}: layout request flag was set during layout pass",
             widget.short_type_name(),
-            id,
+            pod.id(),
         );
     }
 
@@ -217,11 +216,11 @@ pub(crate) fn run_layout_inner<W: Widget>(
             let child_state = child_state_mut.item;
             if child_state.is_expecting_place_child_call {
                 debug_panic!(
-                    "Error in '{}' #{}: missing call to place_child method for child widget '{}' #{}. During layout pass, if a widget calls WidgetPod::layout() on its child, it then needs to call LayoutCtx::place_child() on the same child.",
+                    "Error in '{}' {}: missing call to place_child method for child widget '{}' {}. During layout pass, if a widget calls WidgetPod::layout() on its child, it then needs to call LayoutCtx::place_child() on the same child.",
                     widget.short_type_name(),
-                    id,
+                    pod.id(),
                     child_state.widget_name,
-                    child_state.id.to_raw(),
+                    child_state.id,
                 );
             }
 
@@ -229,13 +228,13 @@ pub(crate) fn run_layout_inner<W: Widget>(
             let child_rect = child_state.paint_rect();
             if !rect_contains(&state.local_paint_rect, &child_rect) && !state.is_portal {
                 debug_panic!(
-                    "Error in '{}' #{}: paint_rect {:?} doesn't contain paint_rect {:?} of child widget '{}' #{}",
+                    "Error in '{}' {}: paint_rect {:?} doesn't contain paint_rect {:?} of child widget '{}' {}",
                     widget.short_type_name(),
-                    id,
+                    pod.id(),
                     state.local_paint_rect,
                     child_rect,
                     child_state.widget_name,
-                    child_state.id.to_raw(),
+                    child_state.id,
                 );
             }
         }
@@ -261,16 +260,16 @@ pub(crate) fn run_layout_inner<W: Widget>(
     {
         if new_size.width.is_infinite() {
             debug_panic!(
-                "Error in '{}' #{}: width is infinite",
+                "Error in '{}' {}: width is infinite",
                 widget.short_type_name(),
-                id,
+                pod.id(),
             );
         }
         if new_size.height.is_infinite() {
             debug_panic!(
-                "Error in '{}' #{}: height is infinite",
+                "Error in '{}' {}: height is infinite",
                 widget.short_type_name(),
-                id,
+                pod.id(),
             );
         }
     }

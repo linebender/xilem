@@ -34,11 +34,7 @@ fn paint_widget(
         debug_paint,
     };
     if ctx.widget_state.request_paint {
-        trace!(
-            "Painting widget '{}' #{}",
-            widget.item.short_type_name(),
-            id.to_raw(),
-        );
+        trace!("Painting widget '{}' {}", widget.item.short_type_name(), id,);
 
         // TODO - Reserve scene
         // https://github.com/linebender/xilem/issues/524

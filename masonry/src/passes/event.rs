@@ -60,9 +60,9 @@ fn run_event_pass<E>(
 
         if !is_handled {
             trace!(
-                "Widget '{}' #{} visited",
+                "Widget '{}' {} visited",
                 widget.short_type_name(),
-                widget_id.to_raw(),
+                widget_id,
             );
 
             pass_fn(widget, &mut ctx, event);
