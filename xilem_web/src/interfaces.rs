@@ -146,6 +146,59 @@ pub trait Element<State, Action = ()>:
         Attr::new(self, Cow::from("id"), value.into_attr_value())
     }
 
+    /// Set a style attribute
+    fn style(self, style: impl IntoStyles) -> Style<Self, State, Action>
+    where
+        <Self::DomNode as DomNode>::Props: WithStyle,
+    {
+        let mut styles = vec![];
+        style.into_styles(&mut styles);
+        Style::new(self, styles)
+    }
+
+    /// Add a `rotate(<radians>rad)` [transform-function](https://developer.mozilla.org/en-US/docs/Web/CSS/transform-function) to the current CSS `transform`
+    /// # Examples
+    ///
+    /// ```
+    /// use xilem_web::{style as s, interfaces::SvgElement, svg::kurbo::Rect};
+    ///
+    /// # fn component() -> impl SvgElement<()> {
+    /// Rect::from_origin_size((0.0, 10.0), (20.0, 30.0))
+    ///     .style(s("transform", "translate(10px, 0)")) // can be combined with untyped `transform`
+    ///     .rotate(std::f64::consts::PI / 4.0)
+    /// // results in the following html:
+    /// // <rect width="20" height="30" x="0.0" y="10.0" style="transform: translate(10px, 0) rotate(0.78539rad);"></rect>
+    /// # }
+    /// ```
+    fn rotate(self, radians: f64) -> Rotate<Self, State, Action>
+    where
+        <Self::DomNode as DomNode>::Props: WithStyle,
+    {
+        Rotate::new(self, radians)
+    }
+
+    /// Add a `scale(<scale>)` [transform-function](https://developer.mozilla.org/en-US/docs/Web/CSS/transform-function) to the current CSS `transform`
+    /// # Examples
+    ///
+    /// ```
+    /// use xilem_web::{style as s, interfaces::Element, svg::kurbo::Circle};
+    ///
+    /// # fn component() -> impl Element<()> {
+    /// Circle::new((10.0, 20.0), 30.0)
+    ///     .style(s("transform", "translate(10px, 0)")) // can be combined with untyped `transform`
+    ///     .scale(1.5)
+    ///     .scale((1.5, 2.0))
+    /// // results in the following html:
+    /// // <circle r="30" cy="20" cx="10" style="transform: translate(10px, 0) scale(1.5) scale(1.5, 2);"></circle>
+    /// # }
+    /// ```
+    fn scale(self, scale: impl Into<ScaleValue>) -> Scale<Self, State, Action>
+    where
+        <Self::DomNode as DomNode>::Props: WithStyle,
+    {
+        Scale::new(self, scale)
+    }
+
     // event list from
     // https://html.spec.whatwg.org/multipage/webappapis.html#idl-definitions
     //
@@ -498,60 +551,19 @@ where
 {
 }
 
-/// Keep this shared code in sync between `HtmlElement` and `SvgElement`
-macro_rules! style_impls {
-    () => {
-        /// Set a style attribute
-        fn style(self, style: impl IntoStyles) -> Style<Self, State, Action> {
-            let mut styles = vec![];
-            style.into_styles(&mut styles);
-            Style::new(self, styles)
-        }
+// pub trait StyleExt {
+// }
 
-        /// Add a `rotate(<radians>rad)` [transform-function](https://developer.mozilla.org/en-US/docs/Web/CSS/transform-function) to the current CSS `transform`
-        /// # Examples
-        ///
-        /// ```
-        /// use xilem_web::{style as s, interfaces::SvgElement, svg::kurbo::Rect};
-        ///
-        /// # fn component() -> impl SvgElement<()> {
-        /// Rect::from_origin_size((0.0, 10.0), (20.0, 30.0))
-        ///     .style(s("transform", "translate(10px, 0)")) // can be combined with untyped `transform`
-        ///     .rotate(std::f64::consts::PI / 4.0)
-        /// // results in the following html:
-        /// // <rect width="20" height="30" x="0.0" y="10.0" style="transform: translate(10px, 0) rotate(0.78539rad);"></rect>
-        /// # }
-        /// ```
-        fn rotate(self, radians: f64) -> Rotate<Self, State, Action> {
-            Rotate::new(self, radians)
-        }
-
-        /// Add a `scale(<scale>)` [transform-function](https://developer.mozilla.org/en-US/docs/Web/CSS/transform-function) to the current CSS `transform`
-        /// # Examples
-        ///
-        /// ```
-        /// use xilem_web::{style as s, interfaces::SvgElement, svg::kurbo::Circle};
-        ///
-        /// # fn component() -> impl SvgElement<()> {
-        /// Circle::new((10.0, 20.0), 30.0)
-        ///     .style(s("transform", "translate(10px, 0)")) // can be combined with untyped `transform`
-        ///     .scale(1.5)
-        ///     .scale((1.5, 2.0))
-        /// // results in the following html:
-        /// // <circle r="30" cy="20" cx="10" style="transform: translate(10px, 0) scale(1.5) scale(1.5, 2);"></circle>
-        /// # }
-        /// ```
-        fn scale(self, scale: impl Into<ScaleValue>) -> Scale<Self, State, Action> {
-            Scale::new(self, scale)
-        }
-    };
-}
+// /// Keep this shared code in sync between `HtmlElement` and `SvgElement`
+// macro_rules! style_impls {
+//     () => {};
+// }
 
 // #[cfg(feature = "HtmlElement")]
 pub trait HtmlElement<State, Action = ()>:
     Element<State, Action, DomNode: DomNode<Props: WithStyle> + AsRef<web_sys::HtmlElement>>
 {
-    style_impls!();
+    // style_impls!();
 }
 
 // #[cfg(feature = "HtmlElement")]
@@ -1523,7 +1535,7 @@ where
 pub trait SvgElement<State, Action = ()>:
     Element<State, Action, DomNode: DomNode<Props: WithStyle> + AsRef<web_sys::SvgElement>>
 {
-    style_impls!();
+    // style_impls!();
 }
 
 // #[cfg(feature = "SvgElement")]
