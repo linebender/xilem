@@ -14,6 +14,7 @@ use crate::theme::get_debug_color;
 use crate::tree_arena::ArenaMut;
 use crate::{PaintCtx, Widget, WidgetId, WidgetState};
 
+// --- MARK: PAINT WIDGET ---
 fn paint_widget(
     global_state: &mut RenderRootState,
     complete_scene: &mut Scene,
@@ -102,8 +103,7 @@ fn paint_widget(
     }
 }
 
-// ----------------
-
+// --- MARK: ROOT ---
 pub(crate) fn root_paint(root: &mut RenderRoot) -> Scene {
     let _span = info_span!("paint").entered();
 

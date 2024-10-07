@@ -11,6 +11,7 @@ use crate::render_root::{RenderRoot, RenderRootSignal, RenderRootState};
 use crate::tree_arena::ArenaMut;
 use crate::{LifeCycle, LifeCycleCtx, RegisterCtx, StatusChange, Widget, WidgetId, WidgetState};
 
+// --- MARK: HELPERS ---
 fn get_id_path(root: &RenderRoot, widget_id: Option<WidgetId>) -> Vec<WidgetId> {
     let Some(widget_id) = widget_id else {
         return Vec::new();
@@ -73,6 +74,9 @@ fn run_single_update_pass(
     }
 }
 
+// ----------------
+
+// --- MARK: UPDATE POINTER ---
 pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot, root_state: &mut WidgetState) {
     let pointer_pos = root.last_mouse_pos.map(|pos| (pos.x, pos.y).into());
 
@@ -180,6 +184,7 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot, root_state: &mut Wi
 
 // ----------------
 
+// --- MARK: UPDATE FOCUS ---
 pub(crate) fn run_update_focus_pass(root: &mut RenderRoot, root_state: &mut WidgetState) {
     // If the focused widget is disabled, stashed or removed, we set
     // the focused id to None
@@ -281,6 +286,7 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot, root_state: &mut Widg
 
 // ----------------
 
+// --- MARK: UPDATE DISABLED ---
 fn update_disabled_for_widget(
     global_state: &mut RenderRootState,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
@@ -337,6 +343,7 @@ pub(crate) fn run_update_disabled_pass(root: &mut RenderRoot) {
 // The stereotypical use case would be the contents of hidden tabs in a "tab group" widget.
 // Scrolled-out widgets are *not* stashed.
 
+// --- MARK: UPDATE STASHED ---
 #[allow(clippy::only_used_in_recursion)]
 fn update_stashed_for_widget(
     global_state: &mut RenderRootState,
@@ -387,6 +394,7 @@ pub(crate) fn run_update_stashed_pass(root: &mut RenderRoot) {
 
 // ----------------
 
+// --- MARK: UPDATE SCROLL ---
 // This pass will update scroll positions in cases where a widget has requested to be
 // scrolled into view (usually a textbox getting text events).
 // Each parent that implements scrolling will update its scroll position to ensure the
@@ -415,6 +423,7 @@ pub(crate) fn run_update_scroll_pass(root: &mut RenderRoot) {
 
 // ----------------
 
+// --- MARK: UPDATE ANIM ---
 fn update_anim_for_widget(
     global_state: &mut RenderRootState,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
@@ -472,6 +481,7 @@ pub(crate) fn run_update_anim_pass(root: &mut RenderRoot, elapsed_ns: u64) {
 
 // ----------------
 
+// --- MARK: UPDATE TREE ---
 fn update_new_widgets(
     global_state: &mut RenderRootState,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
@@ -540,6 +550,8 @@ pub(crate) fn run_update_new_widgets_pass(root: &mut RenderRoot) {
 }
 
 // ----------------
+
+// --- MARK: UPDATE FOCUS CHAIN ---
 
 // TODO https://github.com/linebender/xilem/issues/376 - Some implicit invariants:
 // - A widget only receives BuildFocusChain if none of its parents are hidden.

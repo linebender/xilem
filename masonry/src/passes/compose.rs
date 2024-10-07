@@ -9,6 +9,7 @@ use crate::render_root::{RenderRoot, RenderRootSignal, RenderRootState};
 use crate::tree_arena::ArenaMut;
 use crate::{ComposeCtx, Widget, WidgetState};
 
+// --- MARK: RECURSE ---
 fn compose_widget(
     global_state: &mut RenderRootState,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
@@ -70,8 +71,7 @@ fn compose_widget(
     );
 }
 
-// ----------------
-
+// --- MARK: ROOT ---
 pub(crate) fn root_compose(root: &mut RenderRoot, global_root_state: &mut WidgetState) {
     let _span = info_span!("compose").entered();
 
