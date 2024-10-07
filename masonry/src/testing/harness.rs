@@ -457,7 +457,7 @@ impl TestHarness {
     pub fn get_widget(&self, id: WidgetId) -> WidgetRef<'_, dyn Widget> {
         self.render_root
             .get_widget(id)
-            .unwrap_or_else(|| panic!("could not find widget #{}", id.to_raw()))
+            .unwrap_or_else(|| panic!("could not find widget {}", id))
     }
 
     /// Try to return the widget with the given id.

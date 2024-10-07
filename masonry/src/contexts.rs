@@ -664,8 +664,8 @@ impl EventCtx<'_> {
     pub fn capture_pointer(&mut self) {
         debug_assert!(
             self.allow_pointer_capture,
-            "Error in #{}: event does not allow pointer capture",
-            self.widget_id().to_raw(),
+            "Error in {}: event does not allow pointer capture",
+            self.widget_id(),
         );
         // TODO: plumb pointer capture through to platform (through winit)
         self.global_state.pointer_capture_target = Some(self.widget_state.id);
@@ -743,8 +743,8 @@ impl EventCtx<'_> {
             self.global_state.next_focused_widget = None;
         } else {
             warn!(
-                "resign_focus can only be called by the currently focused widget \
-                 or one of its ancestors. ({:?})",
+                "resign_focus can only be called by the currently focused widget {} \
+                 or one of its ancestors.",
                 self.widget_id()
             );
         }
@@ -803,11 +803,11 @@ impl LayoutCtx<'_> {
     fn assert_layout_done(&self, child: &WidgetPod<impl Widget>, method_name: &str) {
         if self.get_child_state(child).needs_layout {
             debug_panic!(
-                "Error in #{}: trying to call '{}' with child '{}' #{} before computing its layout",
-                self.widget_id().to_raw(),
+                "Error in {}: trying to call '{}' with child '{}' {} before computing its layout",
+                self.widget_id(),
                 method_name,
                 self.get_child(child).short_type_name(),
-                child.id().to_raw(),
+                child.id(),
             );
         }
     }
@@ -816,11 +816,11 @@ impl LayoutCtx<'_> {
     fn assert_placed(&self, child: &WidgetPod<impl Widget>, method_name: &str) {
         if self.get_child_state(child).is_expecting_place_child_call {
             debug_panic!(
-                "Error in #{}: trying to call '{}' with child '{}' #{} before placing it",
-                self.widget_id().to_raw(),
+                "Error in {}: trying to call '{}' with child '{}' {} before placing it",
+                self.widget_id(),
                 method_name,
                 self.get_child(child).short_type_name(),
-                child.id().to_raw(),
+                child.id(),
             );
         }
     }

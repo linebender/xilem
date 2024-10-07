@@ -30,9 +30,9 @@ fn build_accessibility_tree(
 
     if rebuild_all || state.item.request_accessibility {
         trace!(
-            "Building accessibility node for widget '{}' #{}",
+            "Building accessibility node for widget '{}' {}",
             widget.item.short_type_name(),
-            id.to_raw(),
+            id,
         );
 
         let mut ctx = AccessCtx {
@@ -48,7 +48,7 @@ fn build_accessibility_tree(
 
         let id: NodeId = ctx.widget_state.id.into();
         trace!(
-            "Built node #{} with role={:?}, default_action={:?}",
+            "Built node {} with role={:?}, default_action={:?}",
             id.0,
             node.role(),
             node.default_action_verb(),

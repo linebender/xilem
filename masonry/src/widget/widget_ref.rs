@@ -198,17 +198,17 @@ impl<'w> WidgetRef<'w, dyn Widget> {
         #[cfg(FALSE)]
         if self.state().is_new {
             debug_panic!(
-                "Widget '{}' #{} is invalid: widget did not receive WidgetAdded",
+                "Widget '{}' {} is invalid: widget did not receive WidgetAdded",
                 self.deref().short_type_name(),
-                self.state().id.to_raw(),
+                self.state().id,
             );
         }
 
         if after_layout && self.state().needs_layout {
             debug_panic!(
-                "Widget '{}' #{} is invalid: widget layout state not cleared",
+                "Widget '{}' {} is invalid: widget layout state not cleared",
                 self.deref().short_type_name(),
-                self.state().id.to_raw(),
+                self.state().id,
             );
         }
 

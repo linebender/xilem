@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use std::any::Any;
+use std::fmt::Display;
 use std::num::NonZeroU64;
 use std::ops::{Deref, DerefMut};
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -320,6 +321,12 @@ impl WidgetId {
 impl From<WidgetId> for accesskit::NodeId {
     fn from(id: WidgetId) -> accesskit::NodeId {
         accesskit::NodeId(id.0.into())
+    }
+}
+
+impl Display for WidgetId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "#{}", self.0)
     }
 }
 
