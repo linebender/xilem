@@ -66,15 +66,9 @@ pub const HARNESS_DEFAULT_BACKGROUND_COLOR: Color = Color::rgb8(0x29, 0x29, 0x29
 ///
 /// **(TODO - Painting invalidation might not be accurate.)**
 ///
-/// One minor difference is that layout is always calculated after every event, whereas
-/// in normal execution it is only calculated before paint. This might be create subtle
-/// differences in cases where timers are programmed to fire at the same time: in normal
-/// execution, they'll execute back-to-back; in the harness, they'll be separated with
-/// layout calls.
-///
-/// Also, paint only happens when the user explicitly calls rendering methods, whereas in
-/// a normal applications you could reasonably expect multiple paint calls between eg any
-/// two clicks.
+/// One minor difference is that paint only happens when the user explicitly calls rendering
+/// methods, whereas in a normal applications you could reasonably expect multiple paint calls
+/// between eg any two clicks.
 ///
 /// ## Example
 ///
@@ -213,7 +207,6 @@ impl TestHarness {
     /// will also be dispatched.
     pub fn process_window_event(&mut self, event: WindowEvent) -> Handled {
         let handled = self.render_root.handle_window_event(event);
-        self.process_state_after_event();
         handled
     }
 
@@ -224,7 +217,6 @@ impl TestHarness {
     /// will also be dispatched.
     pub fn process_pointer_event(&mut self, event: PointerEvent) -> Handled {
         let handled = self.render_root.handle_pointer_event(event);
-        self.process_state_after_event();
         handled
     }
 
@@ -235,14 +227,7 @@ impl TestHarness {
     /// will also be dispatched.
     pub fn process_text_event(&mut self, event: TextEvent) -> Handled {
         let handled = self.render_root.handle_text_event(event);
-        self.process_state_after_event();
         handled
-    }
-
-    fn process_state_after_event(&mut self) {
-        if self.root_widget().ctx.widget_state.needs_layout {
-            self.render_root.root_layout();
-        }
     }
 
     // --- MARK: RENDER ---
@@ -415,17 +400,11 @@ impl TestHarness {
             let event = TextEvent::Ime(Ime::Commit(c.to_string()));
             self.render_root.handle_text_event(event);
         }
-        self.process_state_after_event();
     }
 
     pub fn focus_on(&mut self, id: Option<WidgetId>) {
         self.render_root.state.next_focused_widget = id;
-        // FIXME - Change this once run_rewrite_passes is merged
-        let mut dummy_state = crate::WidgetState::synthetic(
-            self.render_root.root.id(),
-            self.render_root.get_kurbo_size(),
-        );
-        crate::passes::update::run_update_focus_pass(&mut self.render_root, &mut dummy_state);
+        self.render_root.run_rewrite_passes();
     }
 
     #[cfg(FALSE)]
@@ -515,7 +494,6 @@ impl TestHarness {
         f: impl FnOnce(WidgetMut<'_, Box<dyn Widget>>) -> R,
     ) -> R {
         let res = self.render_root.edit_root_widget(f);
-        self.process_state_after_event();
         res
     }
 
@@ -528,7 +506,6 @@ impl TestHarness {
         f: impl FnOnce(WidgetMut<'_, Box<dyn Widget>>) -> R,
     ) -> R {
         let res = self.render_root.edit_widget(id, f);
-        self.process_state_after_event();
         res
     }
 

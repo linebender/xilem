@@ -77,17 +77,15 @@ fn run_single_update_pass(
     }
 }
 
-// ----------------
-
 // --- MARK: UPDATE POINTER ---
-pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot, root_state: &mut WidgetState) {
+pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
     let pointer_pos = root.last_mouse_pos.map(|pos| (pos.x, pos.y).into());
 
     // Release pointer capture if target can no longer hold it.
     if let Some(id) = root.state.pointer_capture_target {
         if !root.is_still_interactive(id) {
             root.state.pointer_capture_target = None;
-            root_on_pointer_event(root, root_state, &PointerEvent::new_pointer_leave());
+            root_on_pointer_event(root, &PointerEvent::new_pointer_leave());
         }
     }
 
@@ -180,15 +178,12 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot, root_state: &mut Wi
 
     root.state.cursor_icon = new_cursor;
     root.state.hovered_path = next_hovered_path;
-
-    // Merge root widget state with synthetic state created at beginning of pass
-    root_state.merge_up(root.widget_arena.get_state_mut(root.root.id()).item);
 }
 
 // ----------------
 
 // --- MARK: UPDATE FOCUS ---
-pub(crate) fn run_update_focus_pass(root: &mut RenderRoot, root_state: &mut WidgetState) {
+pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
     // If the focused widget is disabled, stashed or removed, we set
     // the focused id to None
     if let Some(id) = root.state.next_focused_widget {
@@ -282,9 +277,6 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot, root_state: &mut Widg
 
     root.state.focused_widget = root.state.next_focused_widget;
     root.state.focused_path = next_focused_path;
-
-    // Merge root widget state with synthetic state created at beginning of pass
-    root_state.merge_up(root.widget_arena.get_state_mut(root.root.id()).item);
 }
 
 // ----------------
@@ -492,7 +484,7 @@ pub(crate) fn run_update_anim_pass(root: &mut RenderRoot, elapsed_ns: u64) {
 // ----------------
 
 // --- MARK: UPDATE TREE ---
-fn update_new_widgets(
+fn update_widget_tree(
     global_state: &mut RenderRootState,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
     mut state: ArenaMut<'_, WidgetState>,
@@ -570,13 +562,13 @@ fn update_new_widgets(
         widget.reborrow_mut(),
         state.children,
         |widget, mut state| {
-            update_new_widgets(global_state, widget, state.reborrow_mut());
+            update_widget_tree(global_state, widget, state.reborrow_mut());
             parent_state.merge_up(state.item);
         },
     );
 }
 
-pub(crate) fn run_update_new_widgets_pass(root: &mut RenderRoot) {
+pub(crate) fn run_update_widget_tree_pass(root: &mut RenderRoot) {
     let _span = info_span!("update_new_widgets").entered();
 
     if root.root.incomplete() {
@@ -590,7 +582,7 @@ pub(crate) fn run_update_new_widgets_pass(root: &mut RenderRoot) {
     }
 
     let (root_widget, mut root_state) = root.widget_arena.get_pair_mut(root.root.id());
-    update_new_widgets(&mut root.state, root_widget, root_state.reborrow_mut());
+    update_widget_tree(&mut root.state, root_widget, root_state.reborrow_mut());
 }
 
 // ----------------
