@@ -122,10 +122,10 @@ impl BoxConstraints {
             debug_panic!("Minimum height constraint passed to {name} is NaN");
         }
         if self.max.width.is_nan() {
-            debug_panic!("Maxium width constraint passed to {name} is NaN");
+            debug_panic!("Maximum width constraint passed to {name} is NaN");
         }
         if self.max.height.is_nan() {
-            debug_panic!("Maxium height constraint passed to {name} is NaN");
+            debug_panic!("Maximum height constraint passed to {name} is NaN");
         }
 
         if self.min.width.is_infinite() {
