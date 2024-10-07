@@ -488,6 +488,7 @@ fn update_new_widgets(
     mut state: ArenaMut<'_, WidgetState>,
 ) {
     let _span = widget.item.make_trace_span().entered();
+    let id = state.item.id;
 
     if !state.item.children_changed {
         return;
@@ -502,6 +503,18 @@ fn update_new_widgets(
         // The widget will call `RegisterCtx::register_child` on all its children,
         // which will add the new widgets to the arena.
         widget.item.register_children(&mut ctx);
+
+        #[cfg(debug_assertions)]
+        for child_id in widget.item.children_ids() {
+            if widget.children.get_child(child_id.to_raw()).is_none() {
+                panic!(
+                    "Error in '{}' #{}: method register_children() did not call RegisterCtx::register_child() on child #{} returned by children_ids()",
+                    widget.item.short_type_name(),
+                    id.to_raw(),
+                    child_id.to_raw()
+                );
+            }
+        }
     }
 
     if state.item.is_new {
@@ -521,7 +534,6 @@ fn update_new_widgets(
 
     // We can recurse on this widget's children, because they have already been added
     // to the arena above.
-    let id = state.item.id;
     let parent_state = state.item;
     recurse_on_children(
         id,
