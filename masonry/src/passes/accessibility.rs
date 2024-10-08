@@ -113,7 +113,7 @@ fn build_access_node(widget: &mut dyn Widget, ctx: &mut AccessCtx) -> NodeBuilde
     if ctx.widget_state.clip.is_some() {
         node.set_clips_children();
     }
-    if ctx.is_in_focus_chain() && !ctx.is_disabled() {
+    if ctx.accepts_focus() && !ctx.is_disabled() && !ctx.is_stashed() {
         node.add_action(accesskit::Action::Focus);
     }
     if ctx.is_focused() {
