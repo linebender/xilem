@@ -108,16 +108,16 @@ impl Widget for Spinner {
     }
 
     fn layout(&mut self, _ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
-        let size = if bc.is_width_bounded() && bc.is_height_bounded() {
+        
+
+        if bc.is_width_bounded() && bc.is_height_bounded() {
             bc.max()
         } else {
             bc.constrain(Size::new(
                 theme::BASIC_WIDGET_HEIGHT,
                 theme::BASIC_WIDGET_HEIGHT,
             ))
-        };
-
-        size
+        }
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
