@@ -7,7 +7,7 @@ use parley::{
     style::{FontFamily, FontStack},
 };
 use smallvec::SmallVec;
-use tracing::{trace, trace_span, Span};
+use tracing::{trace_span, Span};
 use vello::{
     kurbo::{Affine, Point, Size, Stroke},
     peniko::{BlendMode, Color},
@@ -294,14 +294,7 @@ impl Widget for Textbox {
             // TODO: Better heuristic here?
             width,
         };
-        let size = bc.constrain(label_size);
-        trace!(
-            "Computed layout: max={:?}. w={}, h={}",
-            max_advance,
-            size.width,
-            size.height,
-        );
-        size
+        bc.constrain(label_size)
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {

@@ -7,7 +7,7 @@ use std::f64::consts::PI;
 
 use accesskit::{NodeBuilder, Role};
 use smallvec::SmallVec;
-use tracing::{trace, trace_span, Span};
+use tracing::{trace_span, Span};
 use vello::kurbo::{Affine, Cap, Line, Stroke};
 use vello::Scene;
 
@@ -117,7 +117,6 @@ impl Widget for Spinner {
             ))
         };
 
-        trace!("Computed size: {}", size);
         size
     }
 

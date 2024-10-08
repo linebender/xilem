@@ -198,6 +198,12 @@ pub(crate) fn run_layout_inner<W: Widget>(
             pod.id(),
         );
     }
+    trace!(
+        "Computed layout: size={}, baseline={}, insets={:?}",
+        new_size,
+        state.baseline_offset,
+        state.paint_insets,
+    );
 
     state.needs_layout = false;
     state.is_expecting_place_child_call = true;

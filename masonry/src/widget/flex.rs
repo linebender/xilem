@@ -5,7 +5,7 @@
 
 use accesskit::{NodeBuilder, Role};
 use smallvec::SmallVec;
-use tracing::{trace, trace_span, Span};
+use tracing::{trace_span, Span};
 use vello::kurbo::{common::FloatExt, Affine, Line, Stroke, Vec2};
 use vello::Scene;
 
@@ -1158,11 +1158,6 @@ impl Widget for Flex {
         };
 
         ctx.set_baseline_offset(baseline_offset);
-        trace!(
-            "Computed layout: size={}, baseline_offset={}",
-            my_size,
-            baseline_offset
-        );
         my_size
     }
 

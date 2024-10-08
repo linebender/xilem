@@ -125,7 +125,6 @@ impl Widget for Checkbox {
         let baseline =
             ctx.child_baseline_offset(&self.label) + (our_size.height - label_size.height);
         ctx.set_baseline_offset(baseline);
-        trace!("Computed layout: size={}, baseline={}", our_size, baseline);
         our_size
     }
 

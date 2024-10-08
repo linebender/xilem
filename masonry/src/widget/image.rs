@@ -6,7 +6,7 @@
 
 use accesskit::{NodeBuilder, Role};
 use smallvec::SmallVec;
-use tracing::{trace, trace_span, Span};
+use tracing::{trace_span, Span};
 use vello::kurbo::Affine;
 use vello::peniko::{BlendMode, Image as ImageBuf};
 use vello::Scene;
@@ -90,11 +90,10 @@ impl Widget for Image {
         let image_size = Size::new(self.image_data.width as f64, self.image_data.height as f64);
         if image_size.is_empty() {
             let size = bc.min();
-            trace!("Computed size: {}", size);
             return size;
         }
         let image_aspect_ratio = image_size.height / image_size.width;
-        let size = match self.object_fit {
+        match self.object_fit {
             ObjectFit::Contain => bc.constrain_aspect_ratio(image_aspect_ratio, image_size.width),
             ObjectFit::Cover => Size::new(bc.max().width, bc.max().width * image_aspect_ratio),
             ObjectFit::Fill => bc.max(),
@@ -112,9 +111,7 @@ impl Widget for Image {
 
                 size
             }
-        };
-        trace!("Computed size: {}", size);
-        size
+        }
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
