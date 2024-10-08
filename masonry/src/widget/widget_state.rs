@@ -139,7 +139,7 @@ pub struct WidgetState {
     /// This widget or an ancestor has been stashed.
     pub(crate) is_stashed: bool,
 
-    pub(crate) is_hot: bool,
+    pub(crate) is_hovered: bool,
 
     /// In the focused path, starting from window and ending at the focused widget.
     /// Descendants of the focused widget are not in the focused path.
@@ -185,7 +185,7 @@ impl WidgetState {
             is_stashed: false,
             baseline_offset: 0.0,
             is_new: true,
-            is_hot: false,
+            is_hovered: false,
             request_layout: true,
             needs_layout: true,
             request_compose: true,

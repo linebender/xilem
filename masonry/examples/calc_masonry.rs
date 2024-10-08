@@ -191,7 +191,7 @@ impl Widget for CalcButton {
         // "hovered" visual effect, but it's somewhat non-idiomatic compared to
         // implementing the effect inside the "paint" method.
         match event {
-            StatusChange::HotChanged(true) => {
+            StatusChange::HoveredChanged(true) => {
                 ctx.mutate_later(&mut self.inner, move |mut inner| {
                     inner.set_border(Color::WHITE, 3.0);
                 });
@@ -199,7 +199,7 @@ impl Widget for CalcButton {
                 // Should be fixed once the pass spec RFC is implemented.
                 ctx.request_anim_frame();
             }
-            StatusChange::HotChanged(false) => {
+            StatusChange::HoveredChanged(false) => {
                 ctx.mutate_later(&mut self.inner, move |mut inner| {
                     inner.set_border(Color::TRANSPARENT, 3.0);
                 });
