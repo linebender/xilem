@@ -176,7 +176,7 @@ impl Widget for CalcButton {
             match event.action {
                 accesskit::Action::Default => {
                     ctx.submit_action(Action::Other(Box::new(self.action)));
-                    ctx.request_paint();
+                    ctx.request_paint_only();
                 }
                 _ => {}
             }

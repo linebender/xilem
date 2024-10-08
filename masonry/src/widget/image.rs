@@ -58,7 +58,7 @@ impl<'a> WidgetMut<'a, Image> {
     #[inline]
     pub fn set_fit_mode(&mut self, new_object_fit: ObjectFit) {
         self.widget.object_fit = new_object_fit;
-        self.ctx.request_paint();
+        self.ctx.request_layout();
     }
 
     /// Set new `ImageBuf`.

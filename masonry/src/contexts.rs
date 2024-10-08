@@ -483,10 +483,37 @@ impl<'w> QueryCtx<'w> {
 // Methods on MutateCtx, EventCtx, and LifeCycleCtx
 impl_context_method!(MutateCtx<'_>, EventCtx<'_>, LifeCycleCtx<'_>, {
     /// Request a [`paint`](crate::Widget::paint) pass.
-    pub fn request_paint(&mut self) {
+    ///
+    /// This doesn't request an [`accessibility`](crate::Widget::accessibility) pass,
+    /// which usually isn't what you want.
+    /// See [`request_render`](Self::request_render).
+    pub fn request_paint_only(&mut self) {
         trace!("request_paint");
         self.widget_state.request_paint = true;
         self.widget_state.needs_paint = true;
+    }
+
+    /// Request an [`accessibility`](crate::Widget::accessibility) pass.
+    ///
+    /// This doesn't request a [`paint`](crate::Widget::paint) pass,
+    /// which usually isn't what you want.
+    /// See [`request_render`](Self::request_render).
+    pub fn request_accessibility_update(&mut self) {
+        trace!("request_accessibility_update");
+        self.widget_state.needs_accessibility = true;
+        self.widget_state.request_accessibility = true;
+    }
+
+    /// Request a [`paint`](crate::Widget::paint) pass.
+    ///
+    /// This doesn't request an accessibility pass, which usually isn't what you want.
+    /// See [`request_render`](Self::request_render).
+    pub fn request_render(&mut self) {
+        trace!("request_render");
+        self.widget_state.request_paint = true;
+        self.widget_state.needs_paint = true;
+        self.widget_state.needs_accessibility = true;
+        self.widget_state.request_accessibility = true;
     }
 
     /// Request a layout pass.
@@ -514,12 +541,6 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, LifeCycleCtx<'_>, {
         trace!("request_compose");
         self.widget_state.needs_compose = true;
         self.widget_state.request_compose = true;
-    }
-
-    pub fn request_accessibility_update(&mut self) {
-        trace!("request_accessibility_update");
-        self.widget_state.needs_accessibility = true;
-        self.widget_state.request_accessibility = true;
     }
 
     /// Request an animation frame.

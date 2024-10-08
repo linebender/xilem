@@ -149,7 +149,7 @@ impl WidgetMut<'_, Label> {
     }
     pub fn set_line_break_mode(&mut self, line_break_mode: LineBreaking) {
         self.widget.line_break_mode = line_break_mode;
-        self.ctx.request_paint();
+        self.ctx.request_layout();
     }
 }
 

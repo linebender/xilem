@@ -136,7 +136,7 @@ impl WidgetMut<'_, Prose> {
     }
     pub fn set_line_break_mode(&mut self, line_break_mode: LineBreaking) {
         self.widget.line_break_mode = line_break_mode;
-        self.ctx.request_paint();
+        self.ctx.request_layout();
     }
 }
 
@@ -152,7 +152,6 @@ impl Widget for Prose {
                     let made_change = self.text_layout.pointer_down(inner_origin, state, *button);
                     if made_change {
                         ctx.request_layout();
-                        ctx.request_paint();
                         ctx.request_focus();
                         ctx.capture_pointer();
                     }

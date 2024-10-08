@@ -46,8 +46,7 @@ impl Checkbox {
 impl WidgetMut<'_, Checkbox> {
     pub fn set_checked(&mut self, checked: bool) {
         self.widget.checked = checked;
-        self.ctx.request_paint();
-        self.ctx.request_accessibility_update();
+        self.ctx.request_render();
     }
 
     /// Set the text.
@@ -69,7 +68,7 @@ impl Widget for Checkbox {
             PointerEvent::PointerDown(_, _) => {
                 if !ctx.is_disabled() {
                     ctx.capture_pointer();
-                    ctx.request_paint();
+                    ctx.request_render();
                     trace!("Checkbox {:?} pressed", ctx.widget_id());
                 }
             }
@@ -77,10 +76,9 @@ impl Widget for Checkbox {
                 if ctx.has_pointer_capture() && ctx.is_hovered() && !ctx.is_disabled() {
                     self.checked = !self.checked;
                     ctx.submit_action(Action::CheckboxChecked(self.checked));
-                    ctx.request_accessibility_update();
                     trace!("Checkbox {:?} released", ctx.widget_id());
                 }
-                ctx.request_paint();
+                ctx.request_render();
             }
             _ => (),
         }
@@ -94,8 +92,7 @@ impl Widget for Checkbox {
                 accesskit::Action::Default => {
                     self.checked = !self.checked;
                     ctx.submit_action(Action::CheckboxChecked(self.checked));
-                    ctx.request_paint();
-                    ctx.request_accessibility_update();
+                    ctx.request_render();
                 }
                 _ => {}
             }
@@ -103,7 +100,7 @@ impl Widget for Checkbox {
     }
 
     fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, _event: &StatusChange) {
-        ctx.request_paint();
+        ctx.request_render();
     }
 
     fn register_children(&mut self, ctx: &mut RegisterCtx) {
