@@ -604,12 +604,21 @@ impl RenderRoot {
     pub(crate) fn focus_chain(&mut self) -> &[WidgetId] {
         &self.root_state().focus_chain
     }
+
+    #[allow(dead_code)]
+    pub(crate) fn needs_rewrite_passes(&mut self) -> bool {
+        self.root_state().needs_rewrite_passes() || self.state.focus_changed()
+    }
 }
 
 impl RenderRootState {
     /// Send a signal to the runner of this app, which allows global actions to be triggered by a widget.
     pub(crate) fn emit_signal(&mut self, signal: RenderRootSignal) {
         self.signal_queue.push_back(signal);
+    }
+
+    pub(crate) fn focus_changed(&self) -> bool {
+        self.focused_widget != self.next_focused_widget
     }
 }
 

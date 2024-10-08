@@ -32,4 +32,12 @@ impl<'a> DriverCtx<'a> {
     pub fn get_root<W: Widget>(&mut self) -> WidgetMut<'_, W> {
         self.main_root_widget.downcast()
     }
+
+    pub fn needs_rewrite_passes(&self) -> bool {
+        self.main_root_widget
+            .ctx
+            .widget_state
+            .needs_rewrite_passes()
+            || self.main_root_widget.ctx.global_state.focus_changed()
+    }
 }
