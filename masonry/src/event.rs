@@ -276,8 +276,7 @@ pub enum LifeCycle {
     /// the monitor's refresh, causing lag or jerky animations.
     AnimFrame(u64),
 
-    // TODO - Put in StatusChange
-    /// Called when the Disabled state of the widgets is changed.
+    /// Called when the Disabled state of the widget is changed.
     ///
     /// To check if a widget is disabled, see [`is_disabled`].
     ///
@@ -287,6 +286,16 @@ pub enum LifeCycle {
     /// [`set_disabled`]: crate::EventCtx::set_disabled
     DisabledChanged(bool),
 
+    // TODO - Link to tutorial doc.
+    /// Called when the Stashed state of the widget is changed.
+    ///
+    /// To check if a widget is stashed, see [`is_stashed`].
+    ///
+    /// To change a widget's stashed state, see [`set_stashed`].
+    ///
+    /// [`is_stashed`]: crate::EventCtx::is_stashed
+    /// [`set_stashed`]: crate::EventCtx::set_stashed
+    StashedChanged(bool),
     /// Called when the widget tree changes and Masonry wants to rebuild the
     /// Focus-chain.
     ///
@@ -482,6 +491,7 @@ impl LifeCycle {
             LifeCycle::WidgetAdded => true,
             LifeCycle::AnimFrame(_) => true,
             LifeCycle::DisabledChanged(_) => true,
+            LifeCycle::StashedChanged(_) => true,
             LifeCycle::BuildFocusChain => false,
             LifeCycle::RequestPanToChild(_) => false,
         }
@@ -495,6 +505,7 @@ impl LifeCycle {
             LifeCycle::WidgetAdded => "WidgetAdded",
             LifeCycle::AnimFrame(_) => "AnimFrame",
             LifeCycle::DisabledChanged(_) => "DisabledChanged",
+            LifeCycle::StashedChanged(_) => "StashedChanged",
             LifeCycle::BuildFocusChain => "BuildFocusChain",
             LifeCycle::RequestPanToChild(_) => "RequestPanToChild",
         }
