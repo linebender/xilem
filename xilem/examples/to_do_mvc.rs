@@ -13,8 +13,16 @@ struct Task {
     done: bool,
 }
 
+#[derive(PartialEq, Eq, Copy, Clone)]
+pub enum Filter {
+    All,
+    Active,
+    Completed,
+}
+
 struct TaskList {
     next_task: String,
+    filter: Filter,
     tasks: Vec<Task>,
 }
 
@@ -40,6 +48,7 @@ fn app_logic(task_list: &mut TaskList) -> impl WidgetView<TaskList> {
     .on_enter(|task_list: &mut TaskList, _| {
         task_list.add_task();
     });
+
     let first_line = flex((
         input_box,
         button("Add task".to_string(), |task_list: &mut TaskList| {
@@ -48,22 +57,44 @@ fn app_logic(task_list: &mut TaskList) -> impl WidgetView<TaskList> {
     ))
     .direction(Axis::Vertical);
 
+    let filter_view = |label, filter| {
+        // TODO: replace with combo-buttons
+        checkbox(
+            label,
+            task_list.filter == filter,
+            move |state: &mut TaskList, _| state.filter = filter,
+        )
+    };
+
+    let footer_view = flex((
+        filter_view("All", Filter::All),
+        filter_view("Active", Filter::Active),
+        filter_view("Completed", Filter::Completed),
+    ))
+    .direction(Axis::Horizontal);
+
     let tasks = task_list
         .tasks
         .iter()
         .enumerate()
-        .map(|(i, task)| {
-            let checkbox = checkbox(
-                task.description.clone(),
-                task.done,
-                move |data: &mut TaskList, checked| {
-                    data.tasks[i].done = checked;
-                },
-            );
-            let delete_button = button("Delete", move |data: &mut TaskList| {
-                data.tasks.remove(i);
-            });
-            flex((checkbox, delete_button)).direction(Axis::Horizontal)
+        .filter_map(|(i, task)| {
+            if (task_list.filter == Filter::Active && task.done)
+                || (task_list.filter == Filter::Completed && !task.done)
+            {
+                None
+            } else {
+                let checkbox = checkbox(
+                    task.description.clone(),
+                    task.done,
+                    move |data: &mut TaskList, checked| {
+                        data.tasks[i].done = checked;
+                    },
+                );
+                let delete_button = button("Delete", move |data: &mut TaskList| {
+                    data.tasks.remove(i);
+                });
+                Some(flex((checkbox, delete_button)).direction(Axis::Horizontal))
+            }
         })
         .collect::<Vec<_>>();
 
@@ -71,6 +102,7 @@ fn app_logic(task_list: &mut TaskList) -> impl WidgetView<TaskList> {
         FlexSpacer::Fixed(40.), // HACK: Spacer for Androird
         first_line,
         tasks,
+        footer_view,
     ))
 }
 
@@ -78,6 +110,7 @@ fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
     let data = TaskList {
         // Add a placeholder task for Android, whilst the
         next_task: "My Next Task".into(),
+        filter: Filter::All,
         tasks: vec![
             Task {
                 description: "Buy milk".into(),

@@ -37,10 +37,9 @@ where
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         ctx.with_leaf_action_widget(|ctx| {
-            ctx.new_pod(masonry::widget::Checkbox::new(
-                self.checked,
-                self.label.clone(),
-            ))
+            let mut checkbox = masonry::widget::Checkbox::new(self.checked, self.label.clone());
+            checkbox.set_remote_controlled(true);
+            ctx.new_pod(checkbox)
         })
     }
 

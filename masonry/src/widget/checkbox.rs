@@ -21,6 +21,7 @@ use crate::{
 /// A checkbox that can be toggled.
 pub struct Checkbox {
     checked: bool,
+    remote_controlled: bool,
     label: WidgetPod<Label>,
 }
 
@@ -29,14 +30,20 @@ impl Checkbox {
     pub fn new(checked: bool, text: impl Into<ArcStr>) -> Checkbox {
         Checkbox {
             checked,
+            remote_controlled: false,
             label: WidgetPod::new(Label::new(text).with_skip_pointer(true)),
         }
+    }
+
+    pub fn set_remote_controlled(&mut self, remote_controlled: bool) {
+        self.remote_controlled = remote_controlled;
     }
 
     /// Create a new `Checkbox` with the given label.
     pub fn from_label(checked: bool, label: Label) -> Checkbox {
         Checkbox {
             checked,
+            remote_controlled: false,
             label: WidgetPod::new(label.with_skip_pointer(true)),
         }
     }
@@ -75,8 +82,11 @@ impl Widget for Checkbox {
             }
             PointerEvent::PointerUp(_, _) => {
                 if ctx.has_pointer_capture() && ctx.is_hot() && !ctx.is_disabled() {
-                    self.checked = !self.checked;
-                    ctx.submit_action(Action::CheckboxChecked(self.checked));
+                    let checked = !self.checked;
+                    if !self.remote_controlled {
+                        self.checked = checked;
+                    }
+                    ctx.submit_action(Action::CheckboxChecked(checked));
                     ctx.request_accessibility_update();
                     trace!("Checkbox {:?} released", ctx.widget_id());
                 }
