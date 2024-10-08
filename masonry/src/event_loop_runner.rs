@@ -235,6 +235,7 @@ impl MasonryState<'_> {
                     use_system_fonts: true,
                     size_policy: WindowSizePolicy::User,
                     scale_factor,
+                    test_font: None,
                 },
             ),
             renderer: None,
