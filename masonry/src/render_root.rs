@@ -96,6 +96,15 @@ pub struct RenderRootOptions {
     pub use_system_fonts: bool,
     pub size_policy: WindowSizePolicy,
     pub scale_factor: f64,
+
+    /// Add a font from its raw data for use in tests.
+    /// The font is added to the fallback chain for Latin scripts.
+    /// This is expected to be used with `use_system_fonts = false`
+    /// to ensure rendering is consistent cross-platform.
+    ///
+    /// We expect to develop a much more fully-featured font API in the future, but
+    /// this is necessary for our testing of Masonry.
+    pub test_font: Option<Vec<u8>>,
 }
 
 pub enum RenderRootSignal {
@@ -118,6 +127,7 @@ impl RenderRoot {
             use_system_fonts,
             size_policy,
             scale_factor,
+            test_font,
         }: RenderRootOptions,
     ) -> Self {
         let mut root = RenderRoot {
@@ -157,6 +167,16 @@ impl RenderRoot {
             rebuild_access_tree: true,
         };
 
+        if let Some(test_font_data) = test_font {
+            let families = root.register_fonts(test_font_data);
+            // Make sure that all of these fonts are in the fallback chain for the Latin script.
+            // <https://en.wikipedia.org/wiki/Script_(Unicode)#Latn>
+            root.state
+                .font_context
+                .collection
+                .append_fallbacks(*b"Latn", families.iter().map(|(family, _)| *family));
+        }
+
         // We run a set of passes to initialize the widget tree
         root.run_rewrite_passes();
 
@@ -184,7 +204,7 @@ impl RenderRoot {
                 self.size = size;
                 self.root_state().request_layout = true;
                 self.root_state().needs_layout = true;
-                self.state.emit_signal(RenderRootSignal::RequestRedraw);
+                self.run_rewrite_passes();
                 Handled::Yes
             }
             WindowEvent::AnimFrame => {
@@ -234,31 +254,10 @@ impl RenderRoot {
         self.state.font_context.collection.register_fonts(data)
     }
 
-    /// Add a font from its raw data for use in tests.
-    /// The font is added to the fallback chain for Latin scripts.
-    /// This is expected to be used with
-    /// [`RenderRootOptions.use_system_fonts = false`](RenderRootOptions::use_system_fonts)
-    /// to ensure rendering is consistent cross-platform.
-    ///
-    /// We expect to develop a much more fully-featured font API in the future, but
-    /// this is necessary for our testing of Masonry.
-    pub fn add_test_font(
-        &mut self,
-        data: Vec<u8>,
-    ) -> Vec<(fontique::FamilyId, Vec<fontique::FontInfo>)> {
-        let families = self.register_fonts(data);
-        // Make sure that all of these fonts are in the fallback chain for the Latin script.
-        // <https://en.wikipedia.org/wiki/Script_(Unicode)#Latn>
-        self.state
-            .font_context
-            .collection
-            .append_fallbacks(*b"Latn", families.iter().map(|(family, _)| *family));
-        families
-    }
-
     pub fn redraw(&mut self) -> (Scene, TreeUpdate) {
         if self.root_state().needs_layout {
-            root_layout(self);
+            // TODO - Rewrite more clearly after run_rewrite_passes is rewritten
+            self.run_rewrite_passes();
         }
         if self.root_state().needs_layout {
             warn!("Widget requested layout during layout pass");
@@ -508,6 +507,7 @@ impl RenderRoot {
 
         let (root_widget, mut root_state) = self.widget_arena.get_pair_mut(self.root.id());
         request_render_all_in(root_widget, root_state.reborrow_mut());
+        self.state.emit_signal(RenderRootSignal::RequestRedraw);
     }
 
     // Checks whether the given id points to a widget that is "interactive".

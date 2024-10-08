@@ -174,6 +174,12 @@ impl TestHarness {
         // harnesses.
         let _ = try_init_test_tracing();
 
+        const ROBOTO: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/resources/fonts/roboto/Roboto-Regular.ttf"
+        ));
+        let data = ROBOTO.to_vec();
+
         let mut harness = TestHarness {
             render_root: RenderRoot::new(
                 root_widget,
@@ -181,18 +187,13 @@ impl TestHarness {
                     use_system_fonts: false,
                     size_policy: WindowSizePolicy::User,
                     scale_factor: 1.0,
+                    test_font: Some(data),
                 },
             ),
             mouse_state,
             window_size,
             background_color,
         };
-        const ROBOTO: &[u8] = include_bytes!(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/resources/fonts/roboto/Roboto-Regular.ttf"
-        ));
-        let data = ROBOTO.to_vec();
-        harness.render_root.add_test_font(data);
         harness.process_window_event(WindowEvent::Resize(window_size));
 
         harness
