@@ -21,7 +21,7 @@ fn next_pointer_event(recording: &Recording) -> Option<PointerEvent> {
 }
 
 fn is_hovered(harness: &TestHarness, id: WidgetId) -> bool {
-    harness.get_widget(id).state().is_hovered
+    harness.get_widget(id).ctx().is_hovered()
 }
 
 fn next_hovered_changed(recording: &Recording) -> Option<bool> {
@@ -62,7 +62,7 @@ fn propagate_hovered() {
     padding_rec.clear();
     button_rec.clear();
 
-    harness.inspect_widgets(|widget| assert!(!widget.state().is_hovered));
+    harness.inspect_widgets(|widget| assert!(!widget.ctx().is_hovered()));
 
     // What we are doing here is moving the mouse to different widgets,
     // and verifying both the widget's `is_hovered` status and also that
@@ -72,10 +72,10 @@ fn propagate_hovered() {
 
     harness.mouse_move_to(empty);
 
-    dbg!(harness.get_widget(button).state().window_layout_rect());
-    dbg!(harness.get_widget(pad).state().window_layout_rect());
-    dbg!(harness.get_widget(root).state().window_layout_rect());
-    dbg!(harness.get_widget(empty).state().window_layout_rect());
+    dbg!(harness.get_widget(button).ctx().window_layout_rect());
+    dbg!(harness.get_widget(pad).ctx().window_layout_rect());
+    dbg!(harness.get_widget(root).ctx().window_layout_rect());
+    dbg!(harness.get_widget(empty).ctx().window_layout_rect());
 
     eprintln!("root: {root:?}");
     eprintln!("empty: {empty:?}");

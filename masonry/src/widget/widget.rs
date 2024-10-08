@@ -216,12 +216,12 @@ pub trait Widget: AsAny {
         for child_id in self.children_ids().iter().rev() {
             let child = ctx.get(*child_id);
 
-            let relative_pos = pos - child.state().window_origin().to_vec2();
+            let relative_pos = pos - child.ctx().window_origin().to_vec2();
             // The position must be inside the child's layout and inside the child's clip path (if
             // any).
-            if !child.state().is_stashed
+            if !child.ctx().is_stashed()
                 && !child.widget.skip_pointer()
-                && child.state().window_layout_rect().contains(pos)
+                && child.ctx().window_layout_rect().contains(pos)
             {
                 return Some(child);
             }

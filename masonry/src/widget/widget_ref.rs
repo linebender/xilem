@@ -6,7 +6,7 @@ use std::ops::Deref;
 use smallvec::SmallVec;
 use vello::kurbo::Point;
 
-use crate::{QueryCtx, Widget, WidgetId, WidgetState};
+use crate::{QueryCtx, Widget, WidgetId};
 
 /// A rich reference to a [`Widget`].
 ///
@@ -73,10 +73,9 @@ impl<'w, W: Widget + ?Sized> Deref for WidgetRef<'w, W> {
 // --- IMPLS ---
 
 impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
-    // TODO - Replace with individual methods from WidgetState
-    /// Get the [`WidgetState`] of the current widget.
-    pub fn state(self) -> &'w WidgetState {
-        self.ctx.widget_state
+    /// Get a [`QueryCtx`] with information about the current widget.
+    pub fn ctx(&self) -> &'_ QueryCtx<'w> {
+        &self.ctx
     }
 
     /// Get the actual referenced `Widget`.
@@ -151,7 +150,7 @@ impl<'w, W: Widget> WidgetRef<'w, W> {
 impl<'w> WidgetRef<'w, dyn Widget> {
     /// Recursively find child widget with given id.
     pub fn find_widget_by_id(&self, id: WidgetId) -> Option<WidgetRef<'w, dyn Widget>> {
-        if self.state().id == id {
+        if self.ctx.widget_state.id == id {
             Some(*self)
         } else {
             self.children()
@@ -169,7 +168,7 @@ impl<'w> WidgetRef<'w, dyn Widget> {
     pub fn find_widget_at_pos(&self, pos: Point) -> Option<WidgetRef<'_, dyn Widget>> {
         let mut innermost_widget = *self;
 
-        if !self.state().window_layout_rect().contains(pos) {
+        if !self.ctx.widget_state.window_layout_rect().contains(pos) {
             return None;
         }
 
@@ -196,19 +195,19 @@ impl<'w> WidgetRef<'w, dyn Widget> {
 
         // TODO
         #[cfg(FALSE)]
-        if self.state().is_new {
+        if self.ctx.widget_state.is_new {
             debug_panic!(
                 "Widget '{}' {} is invalid: widget did not receive WidgetAdded",
                 self.deref().short_type_name(),
-                self.state().id,
+                self.ctx.widget_state.id,
             );
         }
 
-        if after_layout && self.state().needs_layout {
+        if after_layout && self.ctx.widget_state.needs_layout {
             debug_panic!(
                 "Widget '{}' {} is invalid: widget layout state not cleared",
                 self.deref().short_type_name(),
-                self.state().id,
+                self.ctx.widget_state.id,
             );
         }
 
