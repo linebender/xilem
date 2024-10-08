@@ -125,7 +125,7 @@ pub(crate) fn root_paint(root: &mut RenderRoot) -> Scene {
     };
 
     // TODO - This is a bit of a hack until we refactor widget tree mutation.
-    // This should be removed once remove_child is exclusive to MutqteCtx.
+    // This should be removed once remove_child is exclusive to MutateCtx.
     let mut scenes = std::mem::take(&mut root.state.scenes);
 
     paint_widget(
