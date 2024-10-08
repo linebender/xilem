@@ -455,7 +455,7 @@ impl RenderRoot {
     pub(crate) fn root_layout(&mut self) {
         let window_size = self.get_kurbo_size();
         let bc = match self.size_policy {
-            WindowSizePolicy::User => BoxConstraints::tight(window_size),
+            WindowSizePolicy::User => BoxConstraints::new(window_size),
             WindowSizePolicy::Content => BoxConstraints::UNBOUNDED,
         };
 

@@ -239,8 +239,6 @@ impl Widget for Prose {
         } else if bc.max().width.is_finite() {
             // TODO: Does Prose have different needs here?
             Some(bc.max().width as f32 - 2. * LABEL_X_PADDING as f32)
-        } else if bc.min().width.is_sign_negative() {
-            Some(0.0)
         } else {
             None
         };

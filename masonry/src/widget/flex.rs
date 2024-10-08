@@ -127,7 +127,7 @@ impl Flex {
             cross_alignment: CrossAxisAlignment::Center,
             main_alignment: MainAxisAlignment::Start,
             fill_major_axis: false,
-            old_bc: BoxConstraints::tight(Size::ZERO),
+            old_bc: BoxConstraints::new(Size::ZERO),
             gap: None,
         }
     }
@@ -687,21 +687,10 @@ impl Axis {
     }
 
     /// Generate constraints with new values on the major axis.
-    pub(crate) fn constraints(
-        self,
-        bc: &BoxConstraints,
-        min_major: f64,
-        major: f64,
-    ) -> BoxConstraints {
+    pub(crate) fn constraints(self, bc: &BoxConstraints, major: f64) -> BoxConstraints {
         match self {
-            Axis::Horizontal => BoxConstraints::new(
-                Size::new(min_major, bc.min().height),
-                Size::new(major, bc.max().height),
-            ),
-            Axis::Vertical => BoxConstraints::new(
-                Size::new(bc.min().width, min_major),
-                Size::new(bc.max().width, major),
-            ),
+            Axis::Horizontal => BoxConstraints::new(Size::new(major, bc.max().height)),
+            Axis::Vertical => BoxConstraints::new(Size::new(bc.max().width, major)),
         }
     }
 }
@@ -911,10 +900,10 @@ impl Widget for Flex {
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
         // we loosen our constraints when passing to children.
-        let loosened_bc = bc.loosen();
+        let loosened_bc = bc;
 
         // minor-axis values for all children
-        let mut minor = self.direction.minor(bc.min());
+        let mut minor = 0_f64;
         // these two are calculated but only used if we're baseline aligned
         let mut max_above_baseline = 0_f64;
         let mut max_below_baseline = 0_f64;
@@ -1007,7 +996,7 @@ impl Widget for Flex {
                         remainder = desired_major - actual_major;
 
                         let old_size = ctx.widget_state.layout_rect().size();
-                        let child_bc = self.direction.constraints(&loosened_bc, 0.0, actual_major);
+                        let child_bc = self.direction.constraints(&loosened_bc, actual_major);
                         let child_size = ctx.run_layout(widget, &child_bc);
 
                         if old_size != child_size {
@@ -1043,8 +1032,8 @@ impl Widget for Flex {
             (remaining - major_flex).max(0.0)
         } else {
             // if we are *not* expected to fill our available space this usually
-            // means we don't have any extra, unless dictated by our constraints.
-            (self.direction.major(bc.min()) - (major_non_flex + major_flex)).max(0.0)
+            // means we don't have any extra
+            0.0
         };
 
         let mut spacing = Spacing::new(self.main_alignment, extra, self.children.len());
@@ -1085,7 +1074,7 @@ impl Widget for Flex {
                                 .pack(self.direction.major(child_size), minor_dim)
                                 .into();
                             if ctx.widget_state.layout_rect().size() != fill_size {
-                                let child_bc = BoxConstraints::tight(fill_size);
+                                let child_bc = BoxConstraints::new(fill_size);
                                 //TODO: this is the second call of layout on the same child, which
                                 // is bad, because it can lead to exponential increase in layout calls
                                 // when used multiple times in the widget hierarchy.

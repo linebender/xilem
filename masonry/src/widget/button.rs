@@ -121,7 +121,7 @@ impl Widget for Button {
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
         let padding = Size::new(LABEL_INSETS.x_value(), LABEL_INSETS.y_value());
-        let label_bc = bc.shrink(padding).loosen();
+        let label_bc = bc.shrink(padding);
 
         let label_size = ctx.run_layout(&mut self.label, &label_bc);
 

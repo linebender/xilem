@@ -371,10 +371,9 @@ impl<W: Widget> Widget for Portal<W> {
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
         // TODO - How Portal handles BoxConstraints is due for a rework
-        let min_child_size = if self.must_fill { bc.min() } else { Size::ZERO };
         let max_child_size = bc.max();
 
-        let child_bc = BoxConstraints::new(min_child_size, max_child_size);
+        let child_bc = BoxConstraints::new(max_child_size);
 
         let content_size = ctx.run_layout(&mut self.child, &child_bc);
         let portal_size = bc.constrain(content_size);

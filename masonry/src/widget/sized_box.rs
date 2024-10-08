@@ -274,26 +274,17 @@ impl SizedBox {
     fn child_constraints(&self, bc: &BoxConstraints) -> BoxConstraints {
         // if we don't have a width/height, we don't change that axis.
         // if we have a width/height, we clamp it on that axis.
-        let (min_width, max_width) = match self.width {
-            Some(width) => {
-                let w = width.max(bc.min().width).min(bc.max().width);
-                (w, w)
-            }
-            None => (bc.min().width, bc.max().width),
+        let max_width = match self.width {
+            Some(width) => width.min(bc.max().width),
+            None => bc.max().width,
         };
 
-        let (min_height, max_height) = match self.height {
-            Some(height) => {
-                let h = height.max(bc.min().height).min(bc.max().height);
-                (h, h)
-            }
-            None => (bc.min().height, bc.max().height),
+        let max_height = match self.height {
+            Some(height) => height.min(bc.max().height),
+            None => bc.max().height,
         };
 
-        BoxConstraints::new(
-            Size::new(min_width, min_height),
-            Size::new(max_width, max_height),
-        )
+        BoxConstraints::new(Size::new(max_width, max_height))
     }
 
     #[allow(dead_code)]
@@ -418,19 +409,10 @@ mod tests {
     use crate::widget::Label;
 
     #[test]
-    fn expand() {
-        let expand = SizedBox::new(Label::new("hello!")).expand();
-        let bc = BoxConstraints::tight(Size::new(400., 400.)).loosen();
-        let child_bc = expand.child_constraints(&bc);
-        assert_eq!(child_bc.min(), Size::new(400., 400.,));
-    }
-
-    #[test]
     fn no_width() {
         let expand = SizedBox::new(Label::new("hello!")).height(200.);
-        let bc = BoxConstraints::tight(Size::new(400., 400.)).loosen();
+        let bc = BoxConstraints::new(Size::new(400., 400.));
         let child_bc = expand.child_constraints(&bc);
-        assert_eq!(child_bc.min(), Size::new(0., 200.,));
         assert_eq!(child_bc.max(), Size::new(400., 200.,));
     }
 

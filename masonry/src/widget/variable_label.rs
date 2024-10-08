@@ -346,8 +346,6 @@ impl Widget for VariableLabel {
             None
         } else if bc.max().width.is_finite() {
             Some(bc.max().width as f32 - 2. * LABEL_X_PADDING as f32)
-        } else if bc.min().width.is_sign_negative() {
-            Some(0.0)
         } else {
             None
         };

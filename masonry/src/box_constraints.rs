@@ -8,9 +8,10 @@ use vello::kurbo::Size;
 /// The layout strategy for Masonry is strongly inspired by Flutter,
 /// and this struct is similar to the [Flutter BoxConstraints] class.
 ///
-/// At the moment, it represents simply a minimum and maximum size.
+/// At the moment, it represents only a maximum size.
 /// A widget's [`layout`] method should choose an appropriate size that
-/// meets these constraints.
+/// meets that constraint.
+/// The algorithm is supposed to use a minimum constraint, but we're phasing that out.
 ///
 /// Further, a container widget should compute appropriate constraints
 /// for each of its child widgets, and pass those down when recursing.
@@ -23,7 +24,6 @@ use vello::kurbo::Size;
 /// [rounded away from zero]: Size::expand
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct BoxConstraints {
-    min: Size,
     max: Size,
 }
 
@@ -32,7 +32,6 @@ impl BoxConstraints {
     ///
     /// Can be satisfied by any nonnegative size.
     pub const UNBOUNDED: BoxConstraints = BoxConstraints {
-        min: Size::ZERO,
         max: Size::new(f64::INFINITY, f64::INFINITY),
     };
 
@@ -44,37 +43,8 @@ impl BoxConstraints {
     /// so that the layout is aligned to integers.
     ///
     /// [rounded away from zero]: Size::expand
-    pub fn new(min: Size, max: Size) -> BoxConstraints {
-        BoxConstraints {
-            min: min.expand(),
-            max: max.expand(),
-        }
-    }
-
-    /// Create a "tight" box constraints object.
-    ///
-    /// A "tight" constraint can only be satisfied by a single size.
-    ///
-    /// The given size is also [rounded away from zero],
-    /// so that the layout is aligned to integers.
-    ///
-    /// [rounded away from zero]: Size::expand
-    pub fn tight(size: Size) -> BoxConstraints {
-        let size = size.expand();
-        BoxConstraints {
-            min: size,
-            max: size,
-        }
-    }
-
-    /// Create a "loose" version of the constraints.
-    ///
-    /// Make a version with zero minimum size, but the same maximum size.
-    pub fn loosen(&self) -> BoxConstraints {
-        BoxConstraints {
-            min: Size::ZERO,
-            max: self.max,
-        }
+    pub fn new(max: Size) -> BoxConstraints {
+        BoxConstraints { max: max.expand() }
     }
 
     /// Clamp a given size so that it fits within the constraints.
@@ -84,17 +54,12 @@ impl BoxConstraints {
     ///
     /// [rounded away from zero]: Size::expand
     pub fn constrain(&self, size: impl Into<Size>) -> Size {
-        size.into().expand().clamp(self.min, self.max)
+        size.into().expand().clamp(Size::ZERO, self.max)
     }
 
     /// Returns the max size of these constraints.
     pub fn max(&self) -> Size {
         self.max
-    }
-
-    /// Returns the min size of these constraints.
-    pub fn min(&self) -> Size {
-        self.min
     }
 
     /// Whether there is an upper bound on the width.
@@ -115,27 +80,13 @@ impl BoxConstraints {
             return;
         }
 
-        if !(0.0 <= self.min.width
-            && self.min.width <= self.max.width
-            && 0.0 <= self.min.height
-            && self.min.height <= self.max.height
-            && self.min.expand() == self.min
-            && self.max.expand() == self.max)
-        {
+        if !(0.0 <= self.max.width && 0.0 <= self.max.height && self.max.expand() == self.max) {
             tracing::warn!("Bad BoxConstraints passed to {}:", name);
             tracing::warn!("{:?}", self);
         }
-
-        if self.min.width.is_infinite() {
-            tracing::warn!("Infinite minimum width constraint passed to {}:", name);
-        }
-
-        if self.min.height.is_infinite() {
-            tracing::warn!("Infinite minimum height constraint passed to {}:", name);
-        }
     }
 
-    /// Shrink min and max constraints by size
+    /// Shrink max constraint by size
     ///
     /// The given size is also [rounded away from zero],
     /// so that the layout is aligned to integers.
@@ -143,23 +94,18 @@ impl BoxConstraints {
     /// [rounded away from zero]: Size::expand
     pub fn shrink(&self, diff: impl Into<Size>) -> BoxConstraints {
         let diff = diff.into().expand();
-        let min = Size::new(
-            (self.min().width - diff.width).max(0.),
-            (self.min().height - diff.height).max(0.),
-        );
         let max = Size::new(
             (self.max().width - diff.width).max(0.),
             (self.max().height - diff.height).max(0.),
         );
 
-        BoxConstraints::new(min, max)
+        BoxConstraints::new(max)
     }
 
     /// Test whether these constraints contain the given `Size`.
     pub fn contains(&self, size: impl Into<Size>) -> bool {
         let size = size.into();
-        (self.min.width <= size.width && size.width <= self.max.width)
-            && (self.min.height <= size.height && size.height <= self.max.height)
+        (size.width <= self.max.width) && (size.height <= self.max.height)
     }
 
     /// Find the `Size` within these `BoxConstraint`s that minimises the difference between the
@@ -192,9 +138,9 @@ impl BoxConstraints {
 
         // Then we check if any `Size`s with our desired aspect ratio are inside the constraints.
         // TODO this currently outputs garbage when things are < 0 - See https://github.com/linebender/xilem/issues/377
-        let min_w_min_h = self.min.height / self.min.width;
-        let max_w_min_h = self.min.height / self.max.width;
-        let min_w_max_h = self.max.height / self.min.width;
+        let min_w_min_h = 0.0 / 0.0;
+        let max_w_min_h = 0.0 / self.max.width;
+        let min_w_max_h = self.max.height / 0.0;
         let max_w_max_h = self.max.height / self.max.width;
 
         // When the aspect ratio line crosses the constraints, the closest point must be one of the
@@ -208,22 +154,22 @@ impl BoxConstraints {
         if aspect_ratio > min_w_max_h {
             // outside max height min width
             Size {
-                width: self.min.width,
+                width: 0.0,
                 height: self.max.height,
             }
         } else if aspect_ratio < max_w_min_h {
             // outside min height max width
             Size {
                 width: self.max.width,
-                height: self.min.height,
+                height: 0.0,
             }
         } else if aspect_ratio > min_w_min_h {
             // hits the constraints on the min width line
-            if width < self.min.width {
+            if width < 0.0 {
                 // we take the point on the min width
                 Size {
-                    width: self.min.width,
-                    height: self.min.width * aspect_ratio,
+                    width: 0.0,
+                    height: 0.0 * aspect_ratio,
                 }
             } else if aspect_ratio < max_w_max_h {
                 // exits through max.width
@@ -240,11 +186,11 @@ impl BoxConstraints {
             }
         } else {
             // final case is where we hit constraints on the min height line
-            if width < self.min.width {
+            if width < 0.0 {
                 // take the point on the min height
                 Size {
-                    width: self.min.height * aspect_ratio.recip(),
-                    height: self.min.height,
+                    width: 0.0 * aspect_ratio.recip(),
+                    height: 0.0,
                 }
             } else if aspect_ratio > max_w_max_h {
                 // exit thru max height
@@ -268,10 +214,7 @@ mod tests {
     use super::*;
 
     fn bc(min_width: f64, min_height: f64, max_width: f64, max_height: f64) -> BoxConstraints {
-        BoxConstraints::new(
-            Size::new(min_width, min_height),
-            Size::new(max_width, max_height),
-        )
+        BoxConstraints::new(Size::new(max_width, max_height))
     }
 
     #[test]
@@ -362,7 +305,5 @@ mod tests {
     fn unbounded() {
         assert!(!BoxConstraints::UNBOUNDED.is_width_bounded());
         assert!(!BoxConstraints::UNBOUNDED.is_height_bounded());
-
-        assert_eq!(BoxConstraints::UNBOUNDED.min(), Size::ZERO);
     }
 }

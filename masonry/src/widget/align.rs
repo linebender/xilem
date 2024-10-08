@@ -98,7 +98,7 @@ impl Widget for Align {
     fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange) {}
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
-        let size = ctx.run_layout(&mut self.child, &bc.loosen());
+        let size = ctx.run_layout(&mut self.child, &bc);
 
         log_size_warnings(size);
 

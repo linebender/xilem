@@ -271,8 +271,6 @@ impl Widget for Textbox {
             None
         } else if bc.max().width.is_finite() {
             Some((bc.max().width - 2. * TEXTBOX_PADDING - 2. * TEXTBOX_MARGIN) as f32)
-        } else if bc.min().width.is_sign_negative() {
-            Some(0.0)
         } else {
             None
         };

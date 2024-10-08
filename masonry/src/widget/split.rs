@@ -490,14 +490,8 @@ impl Widget for Split {
                     .max(0.0);
                 let child2_width = (reduced_size.width - child1_width).max(0.0);
                 (
-                    BoxConstraints::new(
-                        Size::new(child1_width, bc.min().height),
-                        Size::new(child1_width, bc.max().height),
-                    ),
-                    BoxConstraints::new(
-                        Size::new(child2_width, bc.min().height),
-                        Size::new(child2_width, bc.max().height),
-                    ),
+                    BoxConstraints::new(Size::new(child1_width, bc.max().height)),
+                    BoxConstraints::new(Size::new(child2_width, bc.max().height)),
                 )
             }
             Axis::Vertical => {
@@ -506,14 +500,8 @@ impl Widget for Split {
                     .max(0.0);
                 let child2_height = (reduced_size.height - child1_height).max(0.0);
                 (
-                    BoxConstraints::new(
-                        Size::new(bc.min().width, child1_height),
-                        Size::new(bc.max().width, child1_height),
-                    ),
-                    BoxConstraints::new(
-                        Size::new(bc.min().width, child2_height),
-                        Size::new(bc.max().width, child2_height),
-                    ),
+                    BoxConstraints::new(Size::new(bc.max().width, child1_height)),
+                    BoxConstraints::new(Size::new(bc.max().width, child2_height)),
                 )
             }
         };

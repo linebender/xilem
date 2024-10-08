@@ -89,7 +89,7 @@ impl Widget for Image {
         // the image.
         let image_size = Size::new(self.image_data.width as f64, self.image_data.height as f64);
         if image_size.is_empty() {
-            let size = bc.min();
+            let size = Size::ZERO;
             trace!("Computed size: {}", size);
             return size;
         }
