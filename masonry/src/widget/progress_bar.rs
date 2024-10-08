@@ -6,7 +6,7 @@
 use crate::Point;
 use accesskit::{NodeBuilder, Role};
 use smallvec::{smallvec, SmallVec};
-use tracing::{trace, trace_span, Span};
+use tracing::{trace_span, Span};
 use vello::Scene;
 
 use crate::kurbo::Size;
@@ -131,9 +131,7 @@ impl Widget for ProgressBar {
             DEFAULT_WIDTH.max(label_size.width),
             crate::theme::BASIC_WIDGET_HEIGHT.max(label_size.height),
         );
-        let our_size = bc.constrain(desired_size);
-        trace!("Computed layout: size={}", our_size);
-        our_size
+        bc.constrain(desired_size)
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {

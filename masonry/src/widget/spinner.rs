@@ -7,7 +7,7 @@ use std::f64::consts::PI;
 
 use accesskit::{NodeBuilder, Role};
 use smallvec::SmallVec;
-use tracing::{trace, trace_span, Span};
+use tracing::{trace_span, Span};
 use vello::kurbo::{Affine, Cap, Line, Stroke};
 use vello::Scene;
 
@@ -100,17 +100,14 @@ impl Widget for Spinner {
     }
 
     fn layout(&mut self, _ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
-        let size = if bc.is_width_bounded() && bc.is_height_bounded() {
+        if bc.is_width_bounded() && bc.is_height_bounded() {
             bc.max()
         } else {
             bc.constrain(Size::new(
                 theme::BASIC_WIDGET_HEIGHT,
                 theme::BASIC_WIDGET_HEIGHT,
             ))
-        };
-
-        trace!("Computed size: {}", size);
-        size
+        }
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {

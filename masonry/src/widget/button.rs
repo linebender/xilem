@@ -140,7 +140,6 @@ impl Widget for Button {
         let label_offset = (button_size.to_vec2() - label_size.to_vec2()) / 2.0;
         ctx.place_child(&mut self.label, label_offset.to_point());
 
-        trace!("Computed button size: {}", button_size);
         button_size
     }
 

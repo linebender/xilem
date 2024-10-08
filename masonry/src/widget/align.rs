@@ -10,7 +10,7 @@
 
 use accesskit::{NodeBuilder, Role};
 use smallvec::{smallvec, SmallVec};
-use tracing::{trace, trace_span, Span};
+use tracing::{trace_span, Span};
 use vello::Scene;
 
 use crate::contexts::AccessCtx;
@@ -135,12 +135,6 @@ impl Widget for Align {
             }
         }
 
-        trace!(
-            "Computed layout: origin={}, size={}, insets={:?}",
-            origin,
-            my_size,
-            my_insets
-        );
         my_size
     }
 

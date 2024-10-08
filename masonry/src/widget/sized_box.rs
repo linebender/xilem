@@ -5,7 +5,7 @@
 
 use accesskit::{NodeBuilder, Role};
 use smallvec::{smallvec, SmallVec};
-use tracing::{trace, trace_span, warn, Span};
+use tracing::{trace_span, warn, Span};
 use vello::kurbo::{Affine, RoundedRectRadii};
 use vello::peniko::{Brush, Color, Fill};
 use vello::Scene;
@@ -344,8 +344,6 @@ impl Widget for SizedBox {
 
         // TODO - figure out paint insets
         // TODO - figure out baseline offset
-
-        trace!("Computed size: {}", size);
 
         if size.width.is_infinite() {
             warn!("SizedBox is returning an infinite width.");
