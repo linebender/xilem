@@ -24,7 +24,7 @@ use crate::{
 /// To customize the spinner's size, you can place it inside a [`SizedBox`]
 /// that has a fixed width and height.
 ///
-/// [`SizedBox`]: struct.SizedBox.html
+/// [`SizedBox`]: crate::widget::SizedBox
 pub struct Spinner {
     t: f64,
     color: Color,
@@ -38,10 +38,6 @@ impl Spinner {
     }
 
     /// Builder-style method for setting the spinner's color.
-    ///
-    /// The argument can be either a `Color` or a [`Key<Color>`].
-    ///
-    /// [`Key<Color>`]: ../struct.Key.html
     pub fn with_color(mut self, color: impl Into<Color>) -> Self {
         self.color = color.into();
         self
@@ -62,10 +58,6 @@ impl Default for Spinner {
 // --- MARK: WIDGETMUT ---
 impl WidgetMut<'_, Spinner> {
     /// Set the spinner's color.
-    ///
-    /// The argument can be either a `Color` or a [`Key<Color>`].
-    ///
-    /// [`Key<Color>`]: ../struct.Key.html
     pub fn set_color(&mut self, color: impl Into<Color>) {
         self.widget.color = color.into();
         self.ctx.request_paint();
