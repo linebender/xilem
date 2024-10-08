@@ -195,36 +195,33 @@ pub(crate) fn root_on_access_event(
 
     let target = Some(event.target);
 
-    let handled = run_event_pass(
+    let mut handled = run_event_pass(
         root,
         root_state,
         target,
         event,
         false,
         |widget, ctx, event| {
-            // TODO - Split into "access_event_focus" pass or something similar.
-            if event.target == ctx.widget_id() {
-                match event.action {
-                    accesskit::Action::Focus => {
-                        if ctx.is_in_focus_chain() && !ctx.is_disabled() && !ctx.is_focused() {
-                            ctx.request_focus();
-                            ctx.set_handled();
-                            return;
-                        }
-                    }
-                    accesskit::Action::Blur => {
-                        if ctx.is_focused() {
-                            ctx.resign_focus();
-                            ctx.set_handled();
-                            return;
-                        }
-                    }
-                    _ => {}
-                }
-            }
             widget.on_access_event(ctx, event);
         },
     );
+
+    // Handle focus events
+    match event.action {
+        accesskit::Action::Focus if !handled.is_handled() => {
+            if root.is_still_interactive(event.target) {
+                root.state.next_focused_widget = Some(event.target);
+                handled = Handled::Yes;
+            }
+        }
+        accesskit::Action::Blur if !handled.is_handled() => {
+            if root.state.next_focused_widget == Some(event.target) {
+                root.state.next_focused_widget = None;
+                handled = Handled::Yes;
+            }
+        }
+        _ => {}
+    }
 
     debug!(
         focused_widget = root.state.focused_widget.map(|id| id.0),
