@@ -43,6 +43,7 @@ fn run_event_pass<E>(
 ) -> Handled {
     let mut pass_fn = pass_fn;
 
+    let original_target = target;
     let mut target_widget_id = target;
     let mut is_handled = false;
     while let Some(widget_id) = target_widget_id {
@@ -54,6 +55,7 @@ fn run_event_pass<E>(
             widget_state: state_mut.item,
             widget_state_children: state_mut.children,
             widget_children: widget_mut.children,
+            target: original_target.unwrap(),
             allow_pointer_capture,
             is_handled: false,
         };
@@ -189,21 +191,20 @@ pub(crate) fn root_on_access_event(
     root: &mut RenderRoot,
     root_state: &mut WidgetState,
     event: &AccessEvent,
+    target: WidgetId,
 ) -> Handled {
     let _span = info_span!("access_event").entered();
     debug!("Running ON_ACCESS_EVENT pass with {}", event.short_name());
 
-    let target = Some(event.target);
-
     let handled = run_event_pass(
         root,
         root_state,
-        target,
+        Some(target),
         event,
         false,
         |widget, ctx, event| {
             // TODO - Split into "access_event_focus" pass or something similar.
-            if event.target == ctx.widget_id() {
+            if target == ctx.widget_id() {
                 match event.action {
                     accesskit::Action::Focus => {
                         if ctx.is_in_focus_chain() && !ctx.is_disabled() && !ctx.is_focused() {
