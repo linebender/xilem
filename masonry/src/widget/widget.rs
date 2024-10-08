@@ -87,7 +87,8 @@ pub trait Widget: AsAny {
     /// Leaf widgets can implement this with an empty body.
     ///
     /// Container widgets need to call [`RegisterCtx::register_child`] for all
-    /// their children. Forgetting to do so is a logic error and may lead to crashes.
+    /// their children. Forgetting to do so is a logic error and may lead to debug panics.
+    /// All the children returned by `children_ids` should be visited.
     fn register_children(&mut self, ctx: &mut RegisterCtx);
 
     /// Handle a lifecycle notification.
@@ -110,6 +111,9 @@ pub trait Widget: AsAny {
     /// the size of non-flex widgets first, to determine the amount of space
     /// available for the flex widgets.
     ///
+    /// Forgetting to visit children is a logic error and may lead to debug panics.
+    /// All the children returned by `children_ids` should be visited.
+    ///
     /// For efficiency, a container should only invoke layout of a child widget
     /// once, though there is nothing enforcing this.
     ///
@@ -130,17 +134,18 @@ pub trait Widget: AsAny {
 
     fn accessibility(&mut self, ctx: &mut AccessCtx, node: &mut NodeBuilder);
 
-    /// Return references to this widget's children.
+    /// Return ids of this widget's children.
     ///
-    /// Leaf widgets return an empty array. Container widgets return references to
+    /// Leaf widgets return an empty array. Container widgets return ids of
     /// their children.
     ///
-    /// This methods has some validity invariants. A widget's children list must be
+    /// The list returned by this method is considered the "canonical" list of children
+    /// by Masonry.
+    ///
+    /// This method has some validity invariants. A widget's children list must be
     /// consistent. If children are added or removed, the parent widget should call
-    /// `children_changed` on one of the Ctx parameters. Container widgets are also
-    /// responsible for calling the main methods (`on_event`, `lifecycle`, `layout`,
-    /// `paint`) on their children.
-    /// TODO - Update this doc
+    /// `children_changed` on one of the Ctx parameters. Container widgets are
+    /// responsible for visiting all their children during `layout` and `register_children`.
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]>;
 
     // TODO - Rename
