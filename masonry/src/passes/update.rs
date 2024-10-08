@@ -499,10 +499,29 @@ fn update_new_widgets(
         let mut ctx = RegisterCtx {
             widget_state_children: state.children.reborrow_mut(),
             widget_children: widget.children.reborrow_mut(),
+            #[cfg(debug_assertions)]
+            registered_ids: Vec::new(),
         };
         // The widget will call `RegisterCtx::register_child` on all its children,
         // which will add the new widgets to the arena.
         widget.item.register_children(&mut ctx);
+
+        #[cfg(debug_assertions)]
+        {
+            let children_ids = widget.item.children_ids();
+            for child_id in ctx.registered_ids {
+                if !children_ids.contains(&child_id) {
+                    panic!(
+                        "Error in '{}' #{}: method register_children() called \
+                        RegisterCtx::register_child() on child #{}, which isn't \
+                        in the list returned by children_ids()",
+                        widget.item.short_type_name(),
+                        id.to_raw(),
+                        child_id.to_raw()
+                    );
+                }
+            }
+        }
 
         #[cfg(debug_assertions)]
         for child_id in widget.item.children_ids() {
@@ -554,6 +573,8 @@ pub(crate) fn run_update_new_widgets_pass(root: &mut RenderRoot) {
         let mut ctx = RegisterCtx {
             widget_state_children: root.widget_arena.widget_states.root_token_mut(),
             widget_children: root.widget_arena.widgets.root_token_mut(),
+            #[cfg(debug_assertions)]
+            registered_ids: Vec::new(),
         };
         ctx.register_child(&mut root.root);
     }
