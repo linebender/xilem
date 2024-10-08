@@ -40,6 +40,7 @@ fn run_event_pass<E>(
 ) -> Handled {
     let mut pass_fn = pass_fn;
 
+    let original_target = target;
     let mut target_widget_id = target;
     let mut is_handled = false;
     while let Some(widget_id) = target_widget_id {
@@ -51,6 +52,7 @@ fn run_event_pass<E>(
             widget_state: state_mut.item,
             widget_state_children: state_mut.children,
             widget_children: widget_mut.children,
+            target: original_target.unwrap(),
             allow_pointer_capture,
             is_handled: false,
         };
@@ -163,26 +165,28 @@ pub(crate) fn root_on_text_event(root: &mut RenderRoot, event: &TextEvent) -> Ha
 }
 
 // --- MARK: ACCESS EVENT ---
-pub(crate) fn root_on_access_event(root: &mut RenderRoot, event: &AccessEvent) -> Handled {
+pub(crate) fn root_on_access_event(
+    root: &mut RenderRoot,
+    event: &AccessEvent,
+    target: WidgetId,
+) -> Handled {
     let _span = info_span!("access_event").entered();
     debug!("Running ON_ACCESS_EVENT pass with {}", event.short_name());
 
-    let target = Some(event.target);
-
-    let mut handled = run_event_pass(root, target, event, false, |widget, ctx, event| {
+    let mut handled = run_event_pass(root, Some(target), event, false, |widget, ctx, event| {
         widget.on_access_event(ctx, event);
     });
 
     // Handle focus events
     match event.action {
         accesskit::Action::Focus if !handled.is_handled() => {
-            if root.is_still_interactive(event.target) {
-                root.state.next_focused_widget = Some(event.target);
+            if root.is_still_interactive(target) {
+                root.state.next_focused_widget = Some(target);
                 handled = Handled::Yes;
             }
         }
         accesskit::Action::Blur if !handled.is_handled() => {
-            if root.state.next_focused_widget == Some(event.target) {
+            if root.state.next_focused_widget == Some(target) {
                 root.state.next_focused_widget = None;
                 handled = Handled::Yes;
             }

@@ -5,8 +5,6 @@
 
 use crate::dpi::{LogicalPosition, PhysicalPosition, PhysicalSize};
 use crate::kurbo::Rect;
-// TODO - See issue https://github.com/linebender/xilem/issues/367
-use crate::WidgetId;
 
 use std::path::PathBuf;
 
@@ -211,8 +209,6 @@ pub enum TextEvent {
 
 #[derive(Debug, Clone)]
 pub struct AccessEvent {
-    // TODO - Split out widget id from AccessEvent
-    pub target: WidgetId,
     pub action: accesskit::Action,
     pub data: Option<accesskit::ActionData>,
 }
