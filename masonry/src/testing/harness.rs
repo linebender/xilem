@@ -418,6 +418,16 @@ impl TestHarness {
         self.process_state_after_event();
     }
 
+    pub fn focus_on(&mut self, id: Option<WidgetId>) {
+        self.render_root.state.next_focused_widget = id;
+        // FIXME - Change this once run_rewrite_passes is merged
+        let mut dummy_state = crate::WidgetState::synthetic(
+            self.render_root.root.id(),
+            self.render_root.get_kurbo_size(),
+        );
+        crate::passes::update::run_update_focus_pass(&mut self.render_root, &mut dummy_state);
+    }
+
     #[cfg(FALSE)]
     /// Simulate the passage of time.
     ///
