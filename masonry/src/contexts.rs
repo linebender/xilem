@@ -362,13 +362,13 @@ impl_context_method!(EventCtx<'_>, {
     /// Set the cursor icon.
     ///
     /// This setting will be retained until [`clear_cursor`] is called, but it will only take
-    /// effect when this widget is [`hovered`] and/or [`has_pointer_capture`]. If a child widget also
+    /// effect when this widget [`is_hovered`] and/or [`has_pointer_capture`]. If a child widget also
     /// sets a cursor, the child widget's cursor will take precedence. (If that isn't what you
     /// want, use [`override_cursor`] instead.)
     ///
     /// [`clear_cursor`]: EventCtx::clear_cursor
     /// [`override_cursor`]: EventCtx::override_cursor
-    /// [`hovered`]: EventCtx::is_hovered
+    /// [`is_hovered`]: EventCtx::is_hovered
     /// [`has_pointer_capture`]: EventCtx::has_pointer_capture
     pub fn set_cursor(&mut self, cursor: &CursorIcon) {
         trace!("set_cursor {:?}", cursor);
