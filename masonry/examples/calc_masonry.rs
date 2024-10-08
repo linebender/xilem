@@ -172,7 +172,7 @@ impl Widget for CalcButton {
     fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
 
     fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {
-        if event.target == ctx.widget_id() {
+        if ctx.target() == ctx.widget_id() {
             match event.action {
                 accesskit::Action::Default => {
                     ctx.submit_action(Action::Other(Box::new(self.action)));
