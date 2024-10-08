@@ -1,0 +1,18 @@
+---
+source: masonry/src/widget/tests/lifecycle_basic.rs
+assertion_line: 22
+expression: record
+---
+[
+    RegisterChildren,
+    L(
+        WidgetAdded,
+    ),
+    L(
+        BuildFocusChain,
+    ),
+    Layout(
+        0.0W×0.0H,
+    ),
+    Compose,
+]
