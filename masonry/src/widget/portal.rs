@@ -84,9 +84,7 @@ impl<W: Widget> Portal<W> {
 
     /// Builder-style method for deciding whether to constrain the child horizontally.
     ///
-    /// The default is `false`. See [`constrain_vertical`] for more details.
-    ///
-    /// [`constrain_vertical`]: struct.ClipBox.html#constrain_vertical
+    /// The default is `false`.
     pub fn constrain_horizontal(mut self, constrain: bool) -> Self {
         self.constrain_horizontal = constrain;
         self
@@ -184,20 +182,12 @@ impl<W: Widget> WidgetMut<'_, Portal<W>> {
 
     // TODO - rewrite doc
     /// Set whether to constrain the child horizontally.
-    ///
-    /// See [`constrain_vertical`] for more details.
-    ///
-    /// [`constrain_vertical`]: struct.ClipBox.html#constrain_vertical
     pub fn set_constrain_horizontal(&mut self, constrain: bool) {
         self.widget.constrain_horizontal = constrain;
         self.ctx.request_layout();
     }
 
     /// Set whether to constrain the child vertically.
-    ///
-    /// See [`constrain_vertical`] for more details.
-    ///
-    /// [`constrain_vertical`]: struct.ClipBox.html#constrain_vertical
     pub fn set_constrain_vertical(&mut self, constrain: bool) {
         self.widget.constrain_vertical = constrain;
         self.ctx.request_layout();
