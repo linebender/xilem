@@ -422,6 +422,10 @@ impl RenderRoot {
     fn root_on_text_event(&mut self, event: TextEvent) -> Handled {
         let mut dummy_state = WidgetState::synthetic(self.root.id(), self.get_kurbo_size());
 
+        if matches!(event, TextEvent::FocusChange(false)) {
+            root_on_pointer_event(self, &mut dummy_state, &PointerEvent::new_pointer_leave());
+        }
+
         let handled = root_on_text_event(self, &mut dummy_state, &event);
         run_update_focus_pass(self, &mut dummy_state);
 

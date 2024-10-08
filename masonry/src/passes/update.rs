@@ -6,10 +6,13 @@ use std::collections::HashSet;
 use cursor_icon::CursorIcon;
 use tracing::{info_span, trace};
 
+use crate::passes::event::root_on_pointer_event;
 use crate::passes::{merge_state_up, recurse_on_children};
 use crate::render_root::{RenderRoot, RenderRootSignal, RenderRootState};
 use crate::tree_arena::ArenaMut;
-use crate::{LifeCycle, LifeCycleCtx, RegisterCtx, StatusChange, Widget, WidgetId, WidgetState};
+use crate::{
+    LifeCycle, LifeCycleCtx, PointerEvent, RegisterCtx, StatusChange, Widget, WidgetId, WidgetState,
+};
 
 // --- MARK: HELPERS ---
 fn get_id_path(root: &RenderRoot, widget_id: Option<WidgetId>) -> Vec<WidgetId> {
@@ -80,15 +83,15 @@ fn run_single_update_pass(
 pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot, root_state: &mut WidgetState) {
     let pointer_pos = root.last_mouse_pos.map(|pos| (pos.x, pos.y).into());
 
-    // -- UPDATE HOVERED WIDGETS --
     // Release pointer capture if target can no longer hold it.
     if let Some(id) = root.state.pointer_capture_target {
         if !root.is_still_interactive(id) {
-            // TODO - Send PointerLeave event
             root.state.pointer_capture_target = None;
+            root_on_pointer_event(root, root_state, &PointerEvent::new_pointer_leave());
         }
     }
 
+    // -- UPDATE HOVERED WIDGETS --
     let mut next_hovered_widget = if let Some(pos) = pointer_pos {
         // TODO - Apply scale?
         root.get_root_widget()
