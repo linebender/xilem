@@ -232,13 +232,13 @@ impl WidgetMut<'_, SizedBox> {
     /// [`Image`]: vello::peniko::Image
     pub fn set_background(&mut self, brush: impl Into<Brush>) {
         self.widget.background = Some(brush.into());
-        self.ctx.request_paint();
+        self.ctx.request_paint_only();
     }
 
     /// Clears background.
     pub fn clear_background(&mut self) {
         self.widget.background = None;
-        self.ctx.request_paint();
+        self.ctx.request_paint_only();
     }
 
     /// Paint a border around the widget with a color and width.
@@ -259,7 +259,7 @@ impl WidgetMut<'_, SizedBox> {
     /// Round off corners of this container by setting a corner radius
     pub fn set_rounded(&mut self, radius: impl Into<RoundedRectRadii>) {
         self.widget.corner_radius = radius.into();
-        self.ctx.request_paint();
+        self.ctx.request_paint_only();
     }
 
     // TODO - Doc

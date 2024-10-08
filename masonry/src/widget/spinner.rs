@@ -68,7 +68,7 @@ impl WidgetMut<'_, Spinner> {
     /// [`Key<Color>`]: ../struct.Key.html
     pub fn set_color(&mut self, color: impl Into<Color>) {
         self.widget.color = color.into();
-        self.ctx.request_paint();
+        self.ctx.request_paint_only();
     }
 
     /// Reset the spinner's color to its default value.
@@ -93,7 +93,6 @@ impl Widget for Spinner {
         match event {
             LifeCycle::WidgetAdded => {
                 ctx.request_anim_frame();
-                ctx.request_paint();
             }
             LifeCycle::AnimFrame(interval) => {
                 self.t += (*interval as f64) * 1e-9;
@@ -101,7 +100,6 @@ impl Widget for Spinner {
                     self.t = 0.0;
                 }
                 ctx.request_anim_frame();
-                ctx.request_paint();
             }
             _ => (),
         }

@@ -109,14 +109,14 @@ impl WidgetMut<'_, ScrollBar> {
     pub fn set_sizes(&mut self, portal_size: f64, content_size: f64) {
         self.widget.portal_size = portal_size;
         self.widget.content_size = content_size;
-        self.ctx.request_paint();
+        self.ctx.request_render();
     }
 
     // TODO - Remove?
     pub fn set_content_size(&mut self, content_size: f64) {
         // TODO - cursor_progress
         self.widget.content_size = content_size;
-        self.ctx.request_paint();
+        self.ctx.request_render();
     }
 }
 
@@ -142,7 +142,7 @@ impl Widget for ScrollBar {
                     self.moved = true;
                     self.grab_anchor = Some(0.5);
                 };
-                ctx.request_paint();
+                ctx.request_render();
             }
             PointerEvent::PointerMove(state) => {
                 let mouse_pos =
@@ -157,11 +157,11 @@ impl Widget for ScrollBar {
                     );
                     self.moved = true;
                 }
-                ctx.request_paint();
+                ctx.request_render();
             }
             PointerEvent::PointerUp(_, _) => {
                 self.grab_anchor = None;
-                ctx.request_paint();
+                ctx.request_render();
             }
             _ => {}
         }
