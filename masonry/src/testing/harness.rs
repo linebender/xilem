@@ -250,7 +250,7 @@ impl TestHarness {
         while let Some(signal) = self.render_root.pop_signal() {
             match signal {
                 RenderRootSignal::Action(action, widget_id) => {
-                    self.action_queue.push_back((action, widget_id))
+                    self.action_queue.push_back((action, widget_id));
                 }
                 RenderRootSignal::StartIme => {
                     self.has_ime_session = true;
