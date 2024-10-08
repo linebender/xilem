@@ -76,6 +76,8 @@ pub struct EventCtx<'a> {
 pub struct RegisterCtx<'a> {
     pub(crate) widget_state_children: ArenaMutChildren<'a, WidgetState>,
     pub(crate) widget_children: ArenaMutChildren<'a, Box<dyn Widget>>,
+    #[cfg(debug_assertions)]
+    pub(crate) registered_ids: Vec<WidgetId>,
 }
 
 /// A context provided to the [`lifecycle`] method on widgets.
@@ -759,6 +761,11 @@ impl RegisterCtx<'_> {
         let Some(widget) = child.take_inner() else {
             return;
         };
+
+        #[cfg(debug_assertions)]
+        {
+            self.registered_ids.push(child.id());
+        }
 
         let id = child.id().to_raw();
         let state = WidgetState::new(child.id(), widget.short_type_name());

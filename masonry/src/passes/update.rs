@@ -488,6 +488,7 @@ fn update_new_widgets(
     mut state: ArenaMut<'_, WidgetState>,
 ) {
     let _span = widget.item.make_trace_span().entered();
+    let id = state.item.id;
 
     if !state.item.children_changed {
         return;
@@ -498,10 +499,42 @@ fn update_new_widgets(
         let mut ctx = RegisterCtx {
             widget_state_children: state.children.reborrow_mut(),
             widget_children: widget.children.reborrow_mut(),
+            #[cfg(debug_assertions)]
+            registered_ids: Vec::new(),
         };
         // The widget will call `RegisterCtx::register_child` on all its children,
         // which will add the new widgets to the arena.
         widget.item.register_children(&mut ctx);
+
+        #[cfg(debug_assertions)]
+        {
+            let children_ids = widget.item.children_ids();
+            for child_id in ctx.registered_ids {
+                if !children_ids.contains(&child_id) {
+                    panic!(
+                        "Error in '{}' #{}: method register_children() called \
+                        RegisterCtx::register_child() on child #{}, which isn't \
+                        in the list returned by children_ids()",
+                        widget.item.short_type_name(),
+                        id.to_raw(),
+                        child_id.to_raw()
+                    );
+                }
+            }
+        }
+
+        #[cfg(debug_assertions)]
+        for child_id in widget.item.children_ids() {
+            if widget.children.get_child(child_id.to_raw()).is_none() {
+                panic!(
+                    "Error in '{}' #{}: method register_children() did not call \
+                    RegisterCtx::register_child() on child #{} returned by children_ids()",
+                    widget.item.short_type_name(),
+                    id.to_raw(),
+                    child_id.to_raw()
+                );
+            }
+        }
     }
 
     if state.item.is_new {
@@ -521,7 +554,6 @@ fn update_new_widgets(
 
     // We can recurse on this widget's children, because they have already been added
     // to the arena above.
-    let id = state.item.id;
     let parent_state = state.item;
     recurse_on_children(
         id,
@@ -541,6 +573,8 @@ pub(crate) fn run_update_new_widgets_pass(root: &mut RenderRoot) {
         let mut ctx = RegisterCtx {
             widget_state_children: root.widget_arena.widget_states.root_token_mut(),
             widget_children: root.widget_arena.widgets.root_token_mut(),
+            #[cfg(debug_assertions)]
+            registered_ids: Vec::new(),
         };
         ctx.register_child(&mut root.root);
     }
