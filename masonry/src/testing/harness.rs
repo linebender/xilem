@@ -428,6 +428,13 @@ impl TestHarness {
         crate::passes::update::run_update_focus_pass(&mut self.render_root, &mut dummy_state);
     }
 
+    // TODO - Fold into move_timers_forward
+    /// Send animation events to the widget tree
+    pub fn animate_ms(&mut self, ms: u64) {
+        self.render_root.root_anim_frame(ms * 1_000_000);
+        self.process_state_after_event();
+    }
+
     #[cfg(FALSE)]
     /// Simulate the passage of time.
     ///
