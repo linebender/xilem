@@ -191,7 +191,7 @@ impl RenderRoot {
         match event {
             WindowEvent::Rescale(scale_factor) => {
                 self.scale_factor = scale_factor;
-                self.request_paint_all();
+                self.request_render_all();
                 Handled::Yes
             }
             WindowEvent::Resize(size) => {
@@ -557,8 +557,8 @@ impl RenderRoot {
         run_mutate_pass(self, widget_state);
     }
 
-    pub(crate) fn request_paint_all(&mut self) {
-        fn request_paint_all_in(
+    pub(crate) fn request_render_all(&mut self) {
+        fn request_render_all_in(
             global_state: &mut RenderRootState,
             mut widget: ArenaMut<'_, Box<dyn Widget>>,
             state: ArenaMut<'_, WidgetState>,
@@ -574,13 +574,13 @@ impl RenderRoot {
                 widget.reborrow_mut(),
                 state.children,
                 |widget, mut state| {
-                    request_paint_all_in(global_state, widget, state.reborrow_mut());
+                    request_render_all_in(global_state, widget, state.reborrow_mut());
                 },
             );
         }
 
         let (root_widget, mut root_state) = self.widget_arena.get_pair_mut(self.root.id());
-        request_paint_all_in(&mut self.state, root_widget, root_state.reborrow_mut());
+        request_render_all_in(&mut self.state, root_widget, root_state.reborrow_mut());
     }
 
     // Checks whether the given id points to a widget that is "interactive".
