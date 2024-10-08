@@ -113,6 +113,9 @@ pub trait Widget: AsAny {
     /// For efficiency, a container should only invoke layout of a child widget
     /// once, though there is nothing enforcing this.
     ///
+    /// **Container widgets should not add or remove children during layout.**
+    /// Doing so is a logic error and may trigger a debug assertion.
+    ///
     /// The layout strategy is strongly inspired by Flutter.
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size;
 
