@@ -200,7 +200,7 @@ impl DebugLogger {
                 w_state.is_expecting_place_child_call,
             ),
             StateTree::new("is_explicitly_disabled", w_state.is_explicitly_disabled),
-            StateTree::new("is_hot", w_state.is_hot),
+            StateTree::new("is_hovered", w_state.is_hovered),
             StateTree::new("needs_layout", w_state.needs_layout),
             StateTree::new("has_focus", w_state.has_focus),
             StateTree::new("request_anim", w_state.request_anim),

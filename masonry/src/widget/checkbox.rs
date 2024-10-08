@@ -74,7 +74,7 @@ impl Widget for Checkbox {
                 }
             }
             PointerEvent::PointerUp(_, _) => {
-                if ctx.has_pointer_capture() && ctx.is_hot() && !ctx.is_disabled() {
+                if ctx.has_pointer_capture() && ctx.is_hovered() && !ctx.is_disabled() {
                     self.checked = !self.checked;
                     ctx.submit_action(Action::CheckboxChecked(self.checked));
                     ctx.request_accessibility_update();
@@ -145,7 +145,7 @@ impl Widget for Checkbox {
             UnitPoint::BOTTOM,
         );
 
-        let border_color = if ctx.is_hot() && !ctx.is_disabled() {
+        let border_color = if ctx.is_hovered() && !ctx.is_disabled() {
             theme::BORDER_LIGHT
         } else {
             theme::BORDER_DARK

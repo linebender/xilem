@@ -129,12 +129,12 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot, root_state: &mut Wi
         hovered_set: &HashSet<WidgetId>,
     ) {
         run_targeted_update_pass(root, Some(widget_id), |widget, ctx| {
-            let is_hot = hovered_set.contains(&ctx.widget_id());
+            let is_hovered = hovered_set.contains(&ctx.widget_id());
 
-            if ctx.widget_state.is_hot != is_hot {
-                widget.on_status_change(ctx, &StatusChange::HotChanged(is_hot));
+            if ctx.widget_state.is_hovered != is_hovered {
+                widget.on_status_change(ctx, &StatusChange::HoveredChanged(is_hovered));
             }
-            ctx.widget_state.is_hot = is_hot;
+            ctx.widget_state.is_hovered = is_hovered;
         });
     }
 
@@ -142,7 +142,7 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot, root_state: &mut Wi
     // TODO - Document the iteration order for update_pointer pass.
     for widget_id in prev_hovered_path.iter().copied() {
         if root.widget_arena.has(widget_id)
-            && root.widget_arena.get_state_mut(widget_id).item.is_hot
+            && root.widget_arena.get_state_mut(widget_id).item.is_hovered
                 != hovered_set.contains(&widget_id)
         {
             update_hovered_status_of(root, widget_id, &hovered_set);
@@ -150,7 +150,7 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot, root_state: &mut Wi
     }
     for widget_id in next_hovered_path.iter().copied() {
         if root.widget_arena.has(widget_id)
-            && root.widget_arena.get_state_mut(widget_id).item.is_hot
+            && root.widget_arena.get_state_mut(widget_id).item.is_hovered
                 != hovered_set.contains(&widget_id)
         {
             update_hovered_status_of(root, widget_id, &hovered_set);

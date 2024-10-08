@@ -258,7 +258,7 @@ impl_context_method!(
 
 // --- MARK: GET STATUS ---
 // Methods on all context types except LayoutCtx
-// Access status information (hot/pointer captured/disabled/etc).
+// Access status information (hovered/pointer captured/disabled/etc).
 impl_context_method!(
     MutateCtx<'_>,
     QueryCtx<'_>,
@@ -268,22 +268,22 @@ impl_context_method!(
     PaintCtx<'_>,
     AccessCtx<'_>,
     {
-        /// The "hot" (aka hover) status of a widget.
+        /// The "hovered" status of a widget.
         ///
-        /// A widget is "hot" when the mouse is hovered over it. Widgets will
+        /// A widget is "hovered" when the mouse is hovered over it. Widgets will
         /// often change their appearance as a visual indication that they
         /// will respond to mouse interaction.
         ///
-        /// The hot status is computed from the widget's layout rect. In a
+        /// The hovered status is computed from the widget's layout rect. In a
         /// container hierarchy, all widgets with layout rects containing the
-        /// mouse position have hot status.
+        /// mouse position have hovered status.
         ///
         /// Discussion: there is currently some confusion about whether a
-        /// widget can be considered hot when some other widget has captured the
+        /// widget can be considered hovered when some other widget has captured the
         /// pointer (for example, when clicking one widget and dragging to the
         /// next). The documentation should clearly state the resolution.
-        pub fn is_hot(&self) -> bool {
-            self.widget_state.is_hot
+        pub fn is_hovered(&self) -> bool {
+            self.widget_state.is_hovered
         }
 
         /// Whether the pointer is captured by this widget.
@@ -364,13 +364,13 @@ impl_context_method!(EventCtx<'_>, {
     /// Set the cursor icon.
     ///
     /// This setting will be retained until [`clear_cursor`] is called, but it will only take
-    /// effect when this widget is [`hot`] and/or [`has_pointer_capture`]. If a child widget also
+    /// effect when this widget [`is_hovered`] and/or [`has_pointer_capture`]. If a child widget also
     /// sets a cursor, the child widget's cursor will take precedence. (If that isn't what you
     /// want, use [`override_cursor`] instead.)
     ///
     /// [`clear_cursor`]: EventCtx::clear_cursor
     /// [`override_cursor`]: EventCtx::override_cursor
-    /// [`hot`]: EventCtx::is_hot
+    /// [`is_hovered`]: EventCtx::is_hovered
     /// [`has_pointer_capture`]: EventCtx::has_pointer_capture
     pub fn set_cursor(&mut self, cursor: &CursorIcon) {
         trace!("set_cursor {:?}", cursor);
@@ -1006,8 +1006,8 @@ impl LayoutCtx<'_> {
         self.widget_state.needs_paint = true;
     }
 
-    /// Set the position of a child widget, in the parent's coordinate space. This
-    /// will also implicitly change "hot" status and affect the parent's display rect.
+    /// Set the position of a child widget, in the parent's coordinate space.
+    /// This will affect the parent's display rect.
     ///
     /// Container widgets must call this method with each non-stashed child in their
     /// layout method, after calling `child.layout(...)`.

@@ -397,7 +397,7 @@ impl Widget for Split {
                         // Depending on where the mouse cursor is when the button is released,
                         // the cursor might or might not need to be changed
                         self.is_bar_hover =
-                            ctx.is_hot() && self.bar_hit_test(ctx.size(), state.position);
+                            ctx.is_hovered() && self.bar_hit_test(ctx.size(), state.position);
                         if !self.is_bar_hover {
                             ctx.clear_cursor();
                         }
@@ -405,7 +405,7 @@ impl Widget for Split {
                 }
                 PointerEvent::PointerMove(state) => {
                     if ctx.has_pointer_capture() {
-                        // If active, assume always hover/hot
+                        // If widget has pointer capture, assume always it's hovered
                         let effective_pos = match self.split_axis {
                             Axis::Horizontal => {
                                 Point::new(state.position.x - self.click_offset, state.position.y)
@@ -418,7 +418,8 @@ impl Widget for Split {
                         ctx.request_layout();
                     } else {
                         // If not active, set cursor when hovering state changes
-                        let hover = ctx.is_hot() && self.bar_hit_test(ctx.size(), state.position);
+                        let hover =
+                            ctx.is_hovered() && self.bar_hit_test(ctx.size(), state.position);
                         if self.is_bar_hover != hover {
                             self.is_bar_hover = hover;
                             if hover {

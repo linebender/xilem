@@ -307,15 +307,15 @@ pub enum LifeCycle {
 #[non_exhaustive]
 #[derive(Debug, Clone)]
 pub enum StatusChange {
-    /// Called when the "hot" status changes.
+    /// Called when the "hovered" status changes.
     ///
     /// This will always be called _before_ the event that triggered it; that is,
     /// when the mouse moves over a widget, that widget will receive
-    /// `StatusChange::HotChanged` before it receives `Event::MouseMove`.
+    /// `StatusChange::HoveredChanged` before it receives `Event::MouseMove`.
     ///
-    /// See [`is_hot`](crate::EventCtx::is_hot) for
-    /// discussion about the hot status.
-    HotChanged(bool),
+    /// See [`is_hovered`](crate::EventCtx::is_hovered) for
+    /// discussion about the hovered status.
+    HoveredChanged(bool),
 
     /// Called when the focus status changes.
     ///
