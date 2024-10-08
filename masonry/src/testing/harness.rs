@@ -3,8 +3,11 @@
 
 //! Tools and infrastructure for testing widgets.
 
+use std::collections::VecDeque;
 use std::num::NonZeroUsize;
 
+use cursor_icon::CursorIcon;
+use dpi::LogicalSize;
 use image::{DynamicImage, ImageReader, Rgba, RgbaImage};
 use tracing::debug;
 use vello::util::RenderContext;
@@ -115,6 +118,10 @@ pub struct TestHarness {
     mouse_state: PointerState,
     window_size: PhysicalSize<u32>,
     background_color: Color,
+    action_queue: VecDeque<(Action, WidgetId)>,
+    has_ime_session: bool,
+    ime_rect: (LogicalPosition<f64>, LogicalSize<f64>),
+    title: String,
 }
 
 /// Assert a snapshot of a rendered frame of your app.
@@ -193,6 +200,10 @@ impl TestHarness {
             mouse_state,
             window_size,
             background_color,
+            action_queue: VecDeque::new(),
+            has_ime_session: false,
+            ime_rect: Default::default(),
+            title: String::new(),
         };
         harness.process_window_event(WindowEvent::Resize(window_size));
 
@@ -208,7 +219,9 @@ impl TestHarness {
     /// as will any resulting commands. Commands created as a result of this event
     /// will also be dispatched.
     pub fn process_window_event(&mut self, event: WindowEvent) -> Handled {
-        self.render_root.handle_window_event(event)
+        let handled = self.render_root.handle_window_event(event);
+        self.process_signals();
+        handled
     }
 
     /// Send an event to the widget.
@@ -217,7 +230,9 @@ impl TestHarness {
     /// as will any resulting commands. Commands created as a result of this event
     /// will also be dispatched.
     pub fn process_pointer_event(&mut self, event: PointerEvent) -> Handled {
-        self.render_root.handle_pointer_event(event)
+        let handled = self.render_root.handle_pointer_event(event);
+        self.process_signals();
+        handled
     }
 
     /// Send an event to the widget.
@@ -226,7 +241,39 @@ impl TestHarness {
     /// as will any resulting commands. Commands created as a result of this event
     /// will also be dispatched.
     pub fn process_text_event(&mut self, event: TextEvent) -> Handled {
-        self.render_root.handle_text_event(event)
+        let handled = self.render_root.handle_text_event(event);
+        self.process_signals();
+        handled
+    }
+
+    fn process_signals(&mut self) {
+        while let Some(signal) = self.render_root.pop_signal() {
+            match signal {
+                RenderRootSignal::Action(action, widget_id) => {
+                    self.action_queue.push_back((action, widget_id))
+                }
+                RenderRootSignal::StartIme => {
+                    self.has_ime_session = true;
+                }
+                RenderRootSignal::EndIme => {
+                    self.has_ime_session = false;
+                }
+                RenderRootSignal::ImeMoved(position, size) => {
+                    self.ime_rect = (position, size);
+                }
+                RenderRootSignal::RequestRedraw => (),
+                RenderRootSignal::RequestAnimFrame => (),
+                RenderRootSignal::TakeFocus => (),
+                RenderRootSignal::SetCursor(_) => (),
+                RenderRootSignal::SetSize(physical_size) => {
+                    self.window_size = physical_size;
+                    self.process_window_event(WindowEvent::Resize(physical_size));
+                }
+                RenderRootSignal::SetTitle(title) => {
+                    self.title = title;
+                }
+            }
+        }
     }
 
     // --- MARK: RENDER ---
@@ -411,6 +458,7 @@ impl TestHarness {
     pub fn animate_ms(&mut self, ms: u64) {
         run_update_anim_pass(&mut self.render_root, ms * 1_000_000);
         self.render_root.run_rewrite_passes();
+        self.process_signals();
     }
 
     #[cfg(FALSE)]
@@ -517,14 +565,27 @@ impl TestHarness {
     ///
     /// Note: Actions are still a WIP feature.
     pub fn pop_action(&mut self) -> Option<(Action, WidgetId)> {
-        let signal = self
-            .render_root
-            .pop_signal_matching(|signal| matches!(signal, RenderRootSignal::Action(..)));
-        match signal {
-            Some(RenderRootSignal::Action(action, id)) => Some((action, id)),
-            Some(_) => unreachable!(),
-            _ => None,
-        }
+        self.action_queue.pop_front()
+    }
+
+    pub fn cursor_icon(&self) -> CursorIcon {
+        self.render_root.cursor_icon()
+    }
+
+    pub fn has_ime_session(&self) -> bool {
+        self.has_ime_session
+    }
+
+    pub fn ime_rect(&self) -> (LogicalPosition<f64>, LogicalSize<f64>) {
+        self.ime_rect
+    }
+
+    pub fn window_size(&self) -> PhysicalSize<u32> {
+        self.window_size
+    }
+
+    pub fn title(&self) -> std::string::String {
+        self.title.clone()
     }
 
     // --- MARK: SNAPSHOT ---
