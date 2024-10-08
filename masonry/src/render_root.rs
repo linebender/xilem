@@ -559,7 +559,6 @@ impl RenderRoot {
 
     pub(crate) fn request_render_all(&mut self) {
         fn request_render_all_in(
-            global_state: &mut RenderRootState,
             mut widget: ArenaMut<'_, Box<dyn Widget>>,
             state: ArenaMut<'_, WidgetState>,
         ) {
@@ -574,13 +573,13 @@ impl RenderRoot {
                 widget.reborrow_mut(),
                 state.children,
                 |widget, mut state| {
-                    request_render_all_in(global_state, widget, state.reborrow_mut());
+                    request_render_all_in(widget, state.reborrow_mut());
                 },
             );
         }
 
         let (root_widget, mut root_state) = self.widget_arena.get_pair_mut(self.root.id());
-        request_render_all_in(&mut self.state, root_widget, root_state.reborrow_mut());
+        request_render_all_in(root_widget, root_state.reborrow_mut());
     }
 
     // Checks whether the given id points to a widget that is "interactive".
