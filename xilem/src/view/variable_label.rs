@@ -117,34 +117,28 @@ impl<State, Action> View<State, Action, ViewCtx> for VariableLabel {
         &self,
         prev: &Self,
         (): &mut Self::ViewState,
-        ctx: &mut ViewCtx,
+        _ctx: &mut ViewCtx,
         mut element: Mut<'el, Self::Element>,
     ) -> Mut<'el, Self::Element> {
         if prev.label != self.label {
             element.set_text(self.label.clone());
-            ctx.mark_changed();
         }
         if prev.text_brush != self.text_brush {
             element.set_text_brush(self.text_brush.clone());
-            ctx.mark_changed();
         }
         if prev.alignment != self.alignment {
             element.set_alignment(self.alignment);
-            ctx.mark_changed();
         }
         if prev.text_size != self.text_size {
             element.set_text_size(self.text_size);
-            ctx.mark_changed();
         }
         if prev.target_weight != self.target_weight {
             element.set_target_weight(self.target_weight.value(), self.over_millis);
-            ctx.mark_changed();
         }
         // First perform a fast filter, then perform a full comparison if that suggests a possible change.
         let fonts_eq = fonts_eq_fastpath(prev.font, self.font) || prev.font == self.font;
         if !fonts_eq {
             element.set_font(self.font);
-            ctx.mark_changed();
         }
         element
     }

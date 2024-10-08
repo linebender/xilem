@@ -127,23 +127,18 @@ where
     ) -> Mut<'el, Self::Element> {
         if prev.axis != self.axis {
             element.set_direction(self.axis);
-            ctx.mark_changed();
         }
         if prev.cross_axis_alignment != self.cross_axis_alignment {
             element.set_cross_axis_alignment(self.cross_axis_alignment);
-            ctx.mark_changed();
         }
         if prev.main_axis_alignment != self.main_axis_alignment {
             element.set_main_axis_alignment(self.main_axis_alignment);
-            ctx.mark_changed();
         }
         if prev.fill_major_axis != self.fill_major_axis {
             element.set_must_fill_main_axis(self.fill_major_axis);
-            ctx.mark_changed();
         }
         if prev.gap != self.gap {
             element.set_raw_gap(self.gap);
-            ctx.mark_changed();
         }
         // TODO: Re-use scratch space?
         let mut splice = FlexSplice::new(element);

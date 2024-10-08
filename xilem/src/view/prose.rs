@@ -63,24 +63,20 @@ impl<State, Action> View<State, Action, ViewCtx> for Prose {
         &self,
         prev: &Self,
         (): &mut Self::ViewState,
-        ctx: &mut ViewCtx,
+        _ctx: &mut ViewCtx,
         mut element: Mut<'el, Self::Element>,
     ) -> Mut<'el, Self::Element> {
         if prev.content != self.content {
             element.set_text(self.content.clone());
-            ctx.mark_changed();
         }
         if prev.text_brush != self.text_brush {
             element.set_text_brush(self.text_brush.clone());
-            ctx.mark_changed();
         }
         if prev.alignment != self.alignment {
             element.set_alignment(self.alignment);
-            ctx.mark_changed();
         }
         if prev.text_size != self.text_size {
             element.set_text_size(self.text_size);
-            ctx.mark_changed();
         }
         element
     }

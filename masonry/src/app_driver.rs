@@ -33,7 +33,7 @@ impl<'a> DriverCtx<'a> {
         self.main_root_widget.downcast()
     }
 
-    pub fn needs_rewrite_passes(&self) -> bool {
+    pub fn content_changed(&self) -> bool {
         self.main_root_widget
             .ctx
             .widget_state
