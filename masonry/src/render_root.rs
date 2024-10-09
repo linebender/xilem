@@ -24,13 +24,14 @@ use crate::passes::event::{root_on_access_event, root_on_pointer_event, root_on_
 use crate::passes::layout::root_layout;
 use crate::passes::mutate::{mutate_widget, run_mutate_pass};
 use crate::passes::paint::root_paint;
+use crate::passes::recurse_on_children;
 use crate::passes::update::{
     run_update_anim_pass, run_update_disabled_pass, run_update_focus_chain_pass,
     run_update_focus_pass, run_update_new_widgets_pass, run_update_pointer_pass,
     run_update_scroll_pass, run_update_stashed_pass,
 };
 use crate::text::TextBrush;
-use crate::tree_arena::TreeArena;
+use crate::tree_arena::{ArenaMut, TreeArena};
 use crate::widget::WidgetArena;
 use crate::widget::{WidgetMut, WidgetRef, WidgetState};
 use crate::{
@@ -186,10 +187,7 @@ impl RenderRoot {
         match event {
             WindowEvent::Rescale(scale_factor) => {
                 self.scale_factor = scale_factor;
-                // TODO - What we'd really like is to request a repaint and an accessibility
-                // pass for every single widget.
-                self.root_state().needs_layout = true;
-                self.state.emit_signal(RenderRootSignal::RequestRedraw);
+                self.request_render_all();
                 Handled::Yes
             }
             WindowEvent::Resize(size) => {
@@ -552,6 +550,31 @@ impl RenderRoot {
         }
 
         run_mutate_pass(self, widget_state);
+    }
+
+    pub(crate) fn request_render_all(&mut self) {
+        fn request_render_all_in(
+            mut widget: ArenaMut<'_, Box<dyn Widget>>,
+            state: ArenaMut<'_, WidgetState>,
+        ) {
+            state.item.needs_paint = true;
+            state.item.needs_accessibility = true;
+            state.item.request_paint = true;
+            state.item.request_accessibility = true;
+
+            let id = state.item.id;
+            recurse_on_children(
+                id,
+                widget.reborrow_mut(),
+                state.children,
+                |widget, mut state| {
+                    request_render_all_in(widget, state.reborrow_mut());
+                },
+            );
+        }
+
+        let (root_widget, mut root_state) = self.widget_arena.get_pair_mut(self.root.id());
+        request_render_all_in(root_widget, root_state.reborrow_mut());
     }
 
     // Checks whether the given id points to a widget that is "interactive".
