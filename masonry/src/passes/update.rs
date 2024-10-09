@@ -347,11 +347,10 @@ pub(crate) fn run_update_disabled_pass(root: &mut RenderRoot) {
 // Scrolled-out widgets are *not* stashed.
 
 // --- MARK: UPDATE STASHED ---
-#[allow(clippy::only_used_in_recursion)]
 fn update_stashed_for_widget(
     global_state: &mut RenderRootState,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
-    state: ArenaMut<'_, WidgetState>,
+    mut state: ArenaMut<'_, WidgetState>,
     parent_stashed: bool,
 ) {
     let _span = widget.item.make_trace_span().entered();
@@ -363,7 +362,15 @@ fn update_stashed_for_widget(
     }
 
     if stashed != state.item.is_stashed {
-        // TODO - Send update event
+        let mut ctx = LifeCycleCtx {
+            global_state,
+            widget_state: state.item,
+            widget_state_children: state.children.reborrow_mut(),
+            widget_children: widget.children.reborrow_mut(),
+        };
+        widget
+            .item
+            .lifecycle(&mut ctx, &LifeCycle::StashedChanged(stashed));
         state.item.is_stashed = stashed;
         state.item.update_focus_chain = true;
         // Note: We don't need request_repaint because stashing doesn't actually change
