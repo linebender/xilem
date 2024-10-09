@@ -90,7 +90,7 @@ impl Widget for Spinner {
             LifeCycle::AnimFrame(interval) => {
                 self.t += (*interval as f64) * 1e-9;
                 if self.t >= 1.0 {
-                    self.t = 0.0;
+                    self.t = self.t.rem_euclid(1.0);
                 }
                 ctx.request_anim_frame();
                 ctx.request_paint();
@@ -173,6 +173,9 @@ mod tests {
 
         harness.animate_ms(700);
         assert_render_snapshot!(harness, "spinner_700ms");
+
+        harness.animate_ms(400);
+        assert_render_snapshot!(harness, "spinner_1100ms");
     }
 
     #[test]
