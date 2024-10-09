@@ -56,15 +56,16 @@ impl Default for Spinner {
 }
 
 // --- MARK: WIDGETMUT ---
-impl WidgetMut<'_, Spinner> {
+use crate::{ImplMut, SelfMut};
+impl ImplMut!('_, Spinner) {
     /// Set the spinner's color.
-    pub fn set_color(&mut self, color: impl Into<Color>) {
+    pub fn set_color(self: SelfMut!('_, Spinner), color: impl Into<Color>) {
         self.widget.color = color.into();
         self.ctx.request_paint();
     }
 
     /// Reset the spinner's color to its default value.
-    pub fn reset_color(&mut self) {
+    pub fn reset_color(self: SelfMut!('_, Spinner)) {
         self.set_color(DEFAULT_SPINNER_COLOR);
     }
 }

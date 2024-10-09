@@ -184,8 +184,9 @@ impl SizedBox {
 }
 
 // --- MARK: WIDGETMUT ---
-impl WidgetMut<'_, SizedBox> {
-    pub fn set_child(&mut self, child: impl Widget) {
+use crate::{ImplMut, SelfMut};
+impl ImplMut!('_, SizedBox) {
+    pub fn set_child(self: SelfMut!('_, SizedBox), child: impl Widget) {
         if let Some(child) = self.widget.child.take() {
             self.ctx.remove_child(child);
         }
@@ -194,32 +195,32 @@ impl WidgetMut<'_, SizedBox> {
         self.ctx.request_layout();
     }
 
-    pub fn remove_child(&mut self) {
+    pub fn remove_child(self: SelfMut!('_, SizedBox)) {
         if let Some(child) = self.widget.child.take() {
             self.ctx.remove_child(child);
         }
     }
 
     /// Set container's width.
-    pub fn set_width(&mut self, width: f64) {
+    pub fn set_width(self: SelfMut!('_, SizedBox), width: f64) {
         self.widget.width = Some(width);
         self.ctx.request_layout();
     }
 
     /// Set container's height.
-    pub fn set_height(&mut self, height: f64) {
+    pub fn set_height(self: SelfMut!('_, SizedBox), height: f64) {
         self.widget.height = Some(height);
         self.ctx.request_layout();
     }
 
     /// Set container's width.
-    pub fn unset_width(&mut self) {
+    pub fn unset_width(self: SelfMut!('_, SizedBox)) {
         self.widget.width = None;
         self.ctx.request_layout();
     }
 
     /// Set container's height.
-    pub fn unset_height(&mut self) {
+    pub fn unset_height(self: SelfMut!('_, SizedBox)) {
         self.widget.height = None;
         self.ctx.request_layout();
     }
@@ -230,19 +231,23 @@ impl WidgetMut<'_, SizedBox> {
     /// notably, it can be any [`Color`], any gradient, or an [`Image`].
     ///
     /// [`Image`]: vello::peniko::Image
-    pub fn set_background(&mut self, brush: impl Into<Brush>) {
+    pub fn set_background(self: SelfMut!('_, SizedBox), brush: impl Into<Brush>) {
         self.widget.background = Some(brush.into());
         self.ctx.request_paint();
     }
 
     /// Clears background.
-    pub fn clear_background(&mut self) {
+    pub fn clear_background(self: SelfMut!('_, SizedBox)) {
         self.widget.background = None;
         self.ctx.request_paint();
     }
 
     /// Paint a border around the widget with a color and width.
-    pub fn set_border(&mut self, color: impl Into<Color>, width: impl Into<f64>) {
+    pub fn set_border(
+        self: SelfMut!('_, SizedBox),
+        color: impl Into<Color>,
+        width: impl Into<f64>,
+    ) {
         self.widget.border = Some(BorderStyle {
             color: color.into(),
             width: width.into(),
@@ -251,19 +256,19 @@ impl WidgetMut<'_, SizedBox> {
     }
 
     /// Clears border.
-    pub fn clear_border(&mut self) {
+    pub fn clear_border(self: SelfMut!('_, SizedBox)) {
         self.widget.border = None;
         self.ctx.request_layout();
     }
 
     /// Round off corners of this container by setting a corner radius
-    pub fn set_rounded(&mut self, radius: impl Into<RoundedRectRadii>) {
+    pub fn set_rounded(self: SelfMut!('_, SizedBox), radius: impl Into<RoundedRectRadii>) {
         self.widget.corner_radius = radius.into();
         self.ctx.request_paint();
     }
 
     // TODO - Doc
-    pub fn child_mut(&mut self) -> Option<WidgetMut<'_, Box<dyn Widget>>> {
+    pub fn child_mut(self: SelfMut!('_, SizedBox)) -> Option<WidgetMut<'_, Box<dyn Widget>>> {
         let child = self.widget.child.as_mut()?;
         Some(self.ctx.get_mut(child))
     }

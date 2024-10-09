@@ -100,6 +100,8 @@
 #![cfg_attr(not(debug_assertions), allow(unused))]
 // False-positive with dev-dependencies only used in examples
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
+// Needed because of the SelfMut macro
+#![allow(clippy::needless_arbitrary_self_type)]
 
 // TODO - Add logo
 

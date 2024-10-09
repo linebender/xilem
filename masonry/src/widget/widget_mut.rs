@@ -82,4 +82,87 @@ impl<'a> WidgetMut<'a, Box<dyn Widget>> {
     }
 }
 
+// --- MARK: RECEIVER ---
+
+#[cfg(FALSE)]
+mod example {
+    // This:
+
+    impl ImplMut!('_, Button) {
+        /// Set the text.
+        pub fn set_text(self: SelfMut!('_, Button), new_text: impl Into<ArcStr>) {
+            self.label_mut().set_text(new_text);
+        }
+
+        pub fn label_mut(&mut self) -> WidgetMut<'_, Label> {
+            self.ctx.get_mut(&mut self.widget.label)
+        }
+    }
+
+    // Will resolve to this if cfg(doc):
+    impl Button {
+        /// Set the text.
+        pub fn set_text(self: WidgetMut<'_, Button>, new_text: impl Into<ArcStr>) {
+            self.label_mut().set_text(new_text);
+        }
+    }
+
+    // Else resolve to this
+    use crate::ImplMut;
+    impl ImplMut!('_, Button) {
+        /// Set the text.
+        pub fn set_text(self: &mut Self, new_text: impl Into<ArcStr>) {
+            self.label_mut().set_text(new_text);
+        }
+    }
+}
+
+#[cfg(doc)]
+#[doc(hidden)]
+#[macro_export]
+macro_rules! ImplMut {
+    ($lifetime:lifetime, $widget:ty) => {
+        $widget
+    };
+}
+
+#[cfg(not(doc))]
+#[doc(hidden)]
+#[macro_export]
+macro_rules! ImplMut {
+    ($lifetime:lifetime, $widget:ty) => {
+        WidgetMut<$lifetime, $widget>
+    };
+}
+
+#[cfg(doc)]
+#[doc(hidden)]
+#[macro_export]
+macro_rules! SelfMut {
+    ($lifetime:lifetime, $widget:ty) => {
+        &'_ mut WidgetMut<$lifetime, $widget>
+    };
+}
+
+#[cfg(not(doc))]
+#[doc(hidden)]
+#[macro_export]
+macro_rules! SelfMut {
+    ($lifetime:lifetime, $widget:ty) => {
+        &mut Self
+    };
+}
+
+#[cfg(doc)]
+impl<W: Widget> std::ops::Deref for WidgetMut<'_, W> {
+    type Target = W;
+
+    fn deref(&self) -> &Self::Target {
+        &self.widget
+    }
+}
+
+#[cfg(doc)]
+impl<W: Widget> std::ops::Receiver for WidgetMut<'_, W> {}
+
 // TODO - unit tests

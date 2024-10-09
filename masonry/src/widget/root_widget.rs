@@ -32,8 +32,9 @@ impl<W: Widget> RootWidget<W> {
     }
 }
 
-impl<W: Widget> WidgetMut<'_, RootWidget<W>> {
-    pub fn child_mut(&mut self) -> WidgetMut<'_, W> {
+use crate::{ImplMut, SelfMut};
+impl<W: Widget> ImplMut!('_, RootWidget<W>) {
+    pub fn child_mut(self: SelfMut!('_, RootWidget<W>)) -> WidgetMut<'_, W> {
         self.ctx.get_mut(&mut self.widget.pod)
     }
 }
