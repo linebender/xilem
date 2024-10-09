@@ -168,7 +168,7 @@ impl<'w> WidgetRef<'w, dyn Widget> {
     pub fn find_widget_at_pos(&self, pos: Point) -> Option<WidgetRef<'_, dyn Widget>> {
         let mut innermost_widget = *self;
 
-        if !self.ctx.widget_state.window_layout_rect().contains(pos) {
+        if !self.ctx.window_layout_rect().contains(pos) {
             return None;
         }
 
