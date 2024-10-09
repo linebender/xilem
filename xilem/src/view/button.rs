@@ -57,12 +57,11 @@ where
         &self,
         prev: &Self,
         _: &mut Self::ViewState,
-        ctx: &mut ViewCtx,
+        _ctx: &mut ViewCtx,
         mut element: Mut<'el, Self::Element>,
     ) -> Mut<'el, Self::Element> {
         if prev.label != self.label {
             element.set_text(self.label.clone());
-            ctx.mark_changed();
         }
         element
     }

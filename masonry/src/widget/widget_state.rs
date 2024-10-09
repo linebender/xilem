@@ -312,6 +312,16 @@ impl WidgetState {
     pub(crate) fn window_origin(&self) -> Point {
         self.window_origin
     }
+
+    pub(crate) fn needs_rewrite_passes(&self) -> bool {
+        self.needs_layout
+            || self.needs_compose
+            || self.needs_paint
+            || self.needs_accessibility
+            || self.needs_anim
+            || self.needs_update_disabled
+            || self.needs_update_stashed
+    }
 }
 
 impl Clone for VisitBool {

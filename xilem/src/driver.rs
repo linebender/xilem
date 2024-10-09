@@ -118,10 +118,10 @@ where
                 &mut self.ctx,
                 root.child_mut(),
             );
-            if cfg!(debug_assertions) && !self.ctx.view_tree_changed {
-                tracing::debug!("Nothing changed as result of action");
-            }
             self.current_view = next_view;
+        }
+        if cfg!(debug_assertions) && rebuild && !masonry_ctx.content_changed() {
+            tracing::debug!("Nothing changed as result of action");
         }
     }
     fn on_start(&mut self, state: &mut event_loop_runner::MasonryState) {

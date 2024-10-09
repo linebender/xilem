@@ -86,15 +86,12 @@ where
     ) -> Mut<'el, Self::Element> {
         if prev.height != self.height {
             element.set_height(self.height);
-            ctx.mark_changed();
         }
         if prev.width != self.width {
             element.set_width(self.width);
-            ctx.mark_changed();
         }
         if prev.spacing != self.spacing {
             element.set_spacing(self.spacing);
-            ctx.mark_changed();
         }
 
         let mut splice = GridSplice::new(element);
