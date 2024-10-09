@@ -333,6 +333,21 @@ pub enum StatusChange {
 }
 
 impl PointerEvent {
+    pub fn new_pointer_leave() -> Self {
+        // TODO - The fact we're creating so many dummy values might be
+        // a sign we should refactor that struct
+        let pointer_state = PointerState {
+            physical_position: Default::default(),
+            position: Default::default(),
+            buttons: Default::default(),
+            mods: Default::default(),
+            count: 0,
+            focus: false,
+            force: None,
+        };
+        PointerEvent::PointerLeave(pointer_state)
+    }
+
     pub fn pointer_state(&self) -> &PointerState {
         match self {
             PointerEvent::PointerDown(_, state)
