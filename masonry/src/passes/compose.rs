@@ -72,11 +72,9 @@ fn compose_widget(
 }
 
 // --- MARK: ROOT ---
-pub(crate) fn root_compose(root: &mut RenderRoot, global_root_state: &mut WidgetState) {
+pub(crate) fn root_compose(root: &mut RenderRoot) {
     let _span = info_span!("compose").entered();
 
     let (root_widget, root_state) = root.widget_arena.get_pair_mut(root.root.id());
     compose_widget(&mut root.state, root_widget, root_state, false, Vec2::ZERO);
-
-    global_root_state.merge_up(root.widget_arena.get_state_mut(root.root.id()).item);
 }

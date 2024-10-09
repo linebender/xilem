@@ -5,11 +5,12 @@
 //! before any translations applied in [`compose`](crate::passes::compose).
 //! Most of the logic for this pass happens in [`Widget::layout`] implementations.
 
+use dpi::LogicalSize;
 use smallvec::SmallVec;
 use tracing::{info_span, trace};
 use vello::kurbo::{Point, Rect, Size};
 
-use crate::render_root::RenderRoot;
+use crate::render_root::{RenderRoot, RenderRootSignal, WindowSizePolicy};
 use crate::tree_arena::ArenaRefChildren;
 use crate::widget::WidgetState;
 use crate::{BoxConstraints, LayoutCtx, Widget, WidgetPod};
@@ -313,24 +314,35 @@ pub(crate) fn run_layout_on<W: Widget>(
 }
 
 // --- MARK: ROOT ---
-pub(crate) fn root_layout(
-    root: &mut RenderRoot,
-    synthetic_root_state: &mut WidgetState,
-    bc: &BoxConstraints,
-) -> Size {
+pub(crate) fn root_layout(root: &mut RenderRoot) -> Size {
     let _span = info_span!("layout").entered();
 
+    let window_size = root.get_kurbo_size();
+    let bc = match root.size_policy {
+        WindowSizePolicy::User => BoxConstraints::tight(window_size),
+        WindowSizePolicy::Content => BoxConstraints::UNBOUNDED,
+    };
+
+    let mut dummy_state = WidgetState::synthetic(root.root.id(), root.get_kurbo_size());
     let root_state_token = root.widget_arena.widget_states.root_token_mut();
     let root_widget_token = root.widget_arena.widgets.root_token_mut();
     let mut ctx = LayoutCtx {
         global_state: &mut root.state,
-        widget_state: synthetic_root_state,
+        widget_state: &mut dummy_state,
         widget_state_children: root_state_token,
         widget_children: root_widget_token,
     };
 
-    let size = run_layout_on(&mut ctx, &mut root.root, bc);
+    let size = run_layout_on(&mut ctx, &mut root.root, &bc);
     ctx.place_child(&mut root.root, Point::ORIGIN);
+
+    if let WindowSizePolicy::Content = root.size_policy {
+        let new_size = LogicalSize::new(size.width, size.height).to_physical(root.scale_factor);
+        if root.size != new_size {
+            root.size = new_size;
+            root.state.emit_signal(RenderRootSignal::SetSize(new_size));
+        }
+    }
 
     size
 }
