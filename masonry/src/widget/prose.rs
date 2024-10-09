@@ -85,13 +85,14 @@ impl Prose {
 }
 
 // --- MARK: WIDGETMUT ---
-impl WidgetMut<'_, Prose> {
+use crate::{ImplMut, SelfMut};
+impl ImplMut!('_, Prose) {
     pub fn text(&self) -> &ArcStr {
         self.widget.text_layout.text()
     }
 
     pub fn set_text_properties<R>(
-        &mut self,
+        self: SelfMut!('_, Prose),
         f: impl FnOnce(&mut TextWithSelection<ArcStr>) -> R,
     ) -> R {
         let ret = f(&mut self.widget.text_layout);
@@ -104,7 +105,7 @@ impl WidgetMut<'_, Prose> {
     /// Change the text. If the user currently has a selection in the box, this will delete that selection.
     ///
     /// We enforce this to be an `ArcStr` to make the allocation explicit.
-    pub fn set_text(&mut self, new_text: ArcStr) {
+    pub fn set_text(self: SelfMut!('_, Prose), new_text: ArcStr) {
         if self.ctx.is_focused() {
             tracing::info!(
                 "Called reset_text on a focused `Prose`. This will lose the user's current selection"
@@ -114,7 +115,7 @@ impl WidgetMut<'_, Prose> {
     }
 
     #[doc(alias = "set_text_color")]
-    pub fn set_text_brush(&mut self, brush: impl Into<TextBrush>) {
+    pub fn set_text_brush(self: SelfMut!('_, Prose), brush: impl Into<TextBrush>) {
         let brush = brush.into();
         self.widget.brush = brush;
         if !self.ctx.is_disabled() {
@@ -122,19 +123,19 @@ impl WidgetMut<'_, Prose> {
             self.set_text_properties(|layout| layout.set_brush(brush));
         }
     }
-    pub fn set_text_size(&mut self, size: f32) {
+    pub fn set_text_size(self: SelfMut!('_, Prose), size: f32) {
         self.set_text_properties(|layout| layout.set_text_size(size));
     }
-    pub fn set_alignment(&mut self, alignment: Alignment) {
+    pub fn set_alignment(self: SelfMut!('_, Prose), alignment: Alignment) {
         self.set_text_properties(|layout| layout.set_text_alignment(alignment));
     }
-    pub fn set_font(&mut self, font_stack: FontStack<'static>) {
+    pub fn set_font(self: SelfMut!('_, Prose), font_stack: FontStack<'static>) {
         self.set_text_properties(|layout| layout.set_font(font_stack));
     }
-    pub fn set_font_family(&mut self, family: FontFamily<'static>) {
+    pub fn set_font_family(self: SelfMut!('_, Prose), family: FontFamily<'static>) {
         self.set_font(FontStack::Single(family));
     }
-    pub fn set_line_break_mode(&mut self, line_break_mode: LineBreaking) {
+    pub fn set_line_break_mode(self: SelfMut!('_, Prose), line_break_mode: LineBreaking) {
         self.widget.line_break_mode = line_break_mode;
         self.ctx.request_paint();
     }

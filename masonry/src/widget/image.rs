@@ -53,7 +53,7 @@ impl Image {
 }
 
 // --- MARK: WIDGETMUT ---
-impl<'a> WidgetMut<'a, Image> {
+impl WidgetMut<'_, Image> {
     /// Modify the widget's object fit.
     #[inline]
     pub fn set_fit_mode(&mut self, new_object_fit: ObjectFit) {

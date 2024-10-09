@@ -107,12 +107,16 @@ impl Label {
 }
 
 // --- MARK: WIDGETMUT ---
-impl WidgetMut<'_, Label> {
+use crate::{ImplMut, SelfMut};
+impl ImplMut!('_, Label) {
     pub fn text(&self) -> &ArcStr {
         self.widget.text_layout.text()
     }
 
-    pub fn set_text_properties<R>(&mut self, f: impl FnOnce(&mut TextLayout<ArcStr>) -> R) -> R {
+    pub fn set_text_properties<R>(
+        self: SelfMut!('_, Label),
+        f: impl FnOnce(&mut TextLayout<ArcStr>) -> R,
+    ) -> R {
         let ret = f(&mut self.widget.text_layout);
         if self.widget.text_layout.needs_rebuild() {
             self.ctx.request_layout();
@@ -120,13 +124,13 @@ impl WidgetMut<'_, Label> {
         ret
     }
 
-    pub fn set_text(&mut self, new_text: impl Into<ArcStr>) {
+    pub fn set_text(self: SelfMut!('_, Label), new_text: impl Into<ArcStr>) {
         let new_text = new_text.into();
         self.set_text_properties(|layout| layout.set_text(new_text));
     }
 
     #[doc(alias = "set_text_color")]
-    pub fn set_text_brush(&mut self, brush: impl Into<TextBrush>) {
+    pub fn set_text_brush(self: SelfMut!('_, Label), brush: impl Into<TextBrush>) {
         let brush = brush.into();
         self.widget.brush = brush;
         if !self.ctx.is_disabled() {
@@ -134,19 +138,19 @@ impl WidgetMut<'_, Label> {
             self.set_text_properties(|layout| layout.set_brush(brush));
         }
     }
-    pub fn set_text_size(&mut self, size: f32) {
+    pub fn set_text_size(self: SelfMut!('_, Label), size: f32) {
         self.set_text_properties(|layout| layout.set_text_size(size));
     }
-    pub fn set_alignment(&mut self, alignment: Alignment) {
+    pub fn set_alignment(self: SelfMut!('_, Label), alignment: Alignment) {
         self.set_text_properties(|layout| layout.set_text_alignment(alignment));
     }
-    pub fn set_font(&mut self, font_stack: FontStack<'static>) {
+    pub fn set_font(self: SelfMut!('_, Label), font_stack: FontStack<'static>) {
         self.set_text_properties(|layout| layout.set_font(font_stack));
     }
-    pub fn set_font_family(&mut self, family: FontFamily<'static>) {
+    pub fn set_font_family(self: SelfMut!('_, Label), family: FontFamily<'static>) {
         self.set_font(FontStack::Single(family));
     }
-    pub fn set_line_break_mode(&mut self, line_break_mode: LineBreaking) {
+    pub fn set_line_break_mode(self: SelfMut!('_, Label), line_break_mode: LineBreaking) {
         self.widget.line_break_mode = line_break_mode;
         self.ctx.request_paint();
     }

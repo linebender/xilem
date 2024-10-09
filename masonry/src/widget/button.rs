@@ -14,8 +14,8 @@ use crate::paint_scene_helpers::{fill_lin_gradient, stroke, UnitPoint};
 use crate::widget::{Label, WidgetMut, WidgetPod};
 
 use crate::{
-    theme, AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, Insets, LayoutCtx,
-    LifeCycleCtx, PaintCtx, PointerEvent, Size, StatusChange, TextEvent, Widget, WidgetId,
+    theme, AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, ImplMut, Insets, LayoutCtx,
+    LifeCycleCtx, PaintCtx, PointerEvent, SelfMut, Size, StatusChange, TextEvent, Widget, WidgetId,
 };
 
 // the minimum padding added to a button.
@@ -64,13 +64,13 @@ impl Button {
 }
 
 // --- MARK: WIDGETMUT ---
-impl WidgetMut<'_, Button> {
+impl ImplMut!('_, Button) {
     /// Set the text.
-    pub fn set_text(&mut self, new_text: impl Into<ArcStr>) {
+    pub fn set_text(self: SelfMut!('_, Button), new_text: impl Into<ArcStr>) {
         self.label_mut().set_text(new_text);
     }
 
-    pub fn label_mut(&mut self) -> WidgetMut<'_, Label> {
+    pub fn label_mut(self: SelfMut!('_, Button)) -> WidgetMut<'_, Label> {
         self.ctx.get_mut(&mut self.widget.label)
     }
 }
