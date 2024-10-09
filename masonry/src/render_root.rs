@@ -39,7 +39,6 @@ use crate::{
 
 // --- MARK: STRUCTS ---
 
-// TODO - Remove pub(crate)
 pub struct RenderRoot {
     pub(crate) root: WidgetPod<Box<dyn Widget>>,
     pub(crate) size_policy: WindowSizePolicy,
@@ -100,9 +99,6 @@ pub struct RenderRootOptions {
     pub scale_factor: f64,
 }
 
-// TODO - Handle custom cursors?
-// TODO - handling timers
-// TODO - Text fields
 pub enum RenderRootSignal {
     Action(Action, WidgetId),
     StartIme,
@@ -274,9 +270,6 @@ impl RenderRoot {
     }
 
     pub fn redraw(&mut self) -> (Scene, TreeUpdate) {
-        // TODO - Xilem's reconciliation logic will have to be called
-        // by the function that calls this
-
         if self.root_state().needs_layout {
             self.root_layout();
         }
@@ -285,6 +278,7 @@ impl RenderRoot {
             self.state.emit_signal(RenderRootSignal::RequestRedraw);
         }
 
+        // TODO - Handle invalidation regions
         // TODO - Improve caching of scenes.
         (self.root_paint(), self.root_accessibility())
     }
@@ -510,9 +504,6 @@ impl RenderRoot {
         // If children are changed during the handling of an event,
         // we need to send RouteWidgetAdded now, so that they are ready for update/layout.
         if widget_state.children_changed {
-            // TODO - Update IME handlers
-            // Send TextFieldRemoved signal
-
             run_update_new_widgets_pass(self);
         }
 
@@ -631,11 +622,3 @@ impl RenderRootSignal {
         )
     }
 }
-
-/*
-TODO:
-- Invalidation regions
-- Timer handling
-- prepare_paint
-- Focus-related stuff
-*/
