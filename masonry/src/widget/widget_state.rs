@@ -37,7 +37,7 @@ use crate::{CursorIcon, WidgetId};
 /// [`paint`]: crate::Widget::paint
 /// [`WidgetPod`]: crate::WidgetPod
 #[derive(Clone, Debug)]
-pub struct WidgetState {
+pub(crate) struct WidgetState {
     pub(crate) id: WidgetId,
 
     // --- LAYOUT ---

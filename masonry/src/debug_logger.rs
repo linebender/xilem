@@ -164,14 +164,14 @@ impl DebugLogger {
         if !self.activated {
             return;
         }
-        let widget_id = widget.state().id.to_raw() as u32;
+        let widget_id = widget.ctx().widget_state.id.to_raw() as u32;
         let layout_info = LayoutInfo {
-            layout_rect: widget.state().layout_rect(),
+            layout_rect: widget.ctx().widget_state.layout_rect(),
             typename: widget.deref().short_type_name().into(),
             children: widget
                 .children()
                 .into_iter()
-                .map(|child| child.state().id.to_raw() as u32)
+                .map(|child| child.ctx().widget_state.id.to_raw() as u32)
                 .collect(),
         };
 
@@ -186,7 +186,7 @@ impl DebugLogger {
 
     pub fn get_widget_state(widget: WidgetRef<'_, dyn Widget>) -> StateTree {
         let mut state = StateTree::default();
-        let w_state = widget.state();
+        let w_state = widget.ctx().widget_state;
 
         // TODO
         #[cfg(debug_assertions)]
@@ -220,18 +220,18 @@ impl DebugLogger {
             widget: WidgetRef<'_, dyn Widget>,
         ) {
             let mut layout_info = LayoutInfo {
-                layout_rect: widget.state().layout_rect(),
+                layout_rect: widget.ctx().widget_state.layout_rect(),
                 typename: widget.deref().short_type_name().into(),
                 children: Default::default(),
             };
 
             for child in widget.children() {
-                let child_id = child.state().id.to_raw() as u32;
+                let child_id = child.ctx().widget_state.id.to_raw() as u32;
                 layout_info.children.insert(child_id);
                 add_to_tree(widgets_map, widget_states, child);
             }
 
-            let id = widget.state().id.to_raw() as u32;
+            let id = widget.ctx().widget_state.id.to_raw() as u32;
             widgets_map.insert(id, layout_info);
             widget_states.insert(id, DebugLogger::get_widget_state(widget));
         }
@@ -242,7 +242,7 @@ impl DebugLogger {
 
         (
             LayoutTree {
-                root: Some(root_widget.state().id.to_raw() as u32),
+                root: Some(root_widget.ctx().widget_state.id.to_raw() as u32),
                 widgets: Arc::new(widgets_map),
             },
             widget_states,

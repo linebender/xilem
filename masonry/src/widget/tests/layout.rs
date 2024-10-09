@@ -25,8 +25,8 @@ fn layout_simple() {
 
     let harness = TestHarness::create(widget);
 
-    let first_box_rect = harness.get_widget(id_1).state().layout_rect();
-    let first_box_paint_rect = harness.get_widget(id_1).state().paint_rect();
+    let first_box_rect = harness.get_widget(id_1).ctx().layout_rect();
+    let first_box_paint_rect = harness.get_widget(id_1).ctx().paint_rect();
 
     assert_eq!(first_box_rect.x0, 0.0);
     assert_eq!(first_box_rect.y0, 0.0);
@@ -55,8 +55,8 @@ fn layout_insets() {
 
     let harness = TestHarness::create(parent_widget);
 
-    let child_paint_rect = harness.get_widget(child_id).state().paint_rect();
-    let parent_paint_rect = harness.get_widget(parent_id).state().paint_rect();
+    let child_paint_rect = harness.get_widget(child_id).ctx().paint_rect();
+    let parent_paint_rect = harness.get_widget(parent_id).ctx().paint_rect();
 
     assert_eq!(child_paint_rect.x0, 0.0);
     assert_eq!(child_paint_rect.y0, -20.0);

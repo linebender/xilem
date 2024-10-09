@@ -147,6 +147,8 @@ pub use parley::layout::Alignment as TextAlignment;
 pub use util::{AsAny, Handled};
 pub use vello::peniko::{Color, Gradient};
 pub use widget::widget::{AllowRawMut, Widget, WidgetId};
-pub use widget::{WidgetPod, WidgetState};
+pub use widget::WidgetPod;
 
 pub use text::ArcStr;
+
+pub(crate) use widget::WidgetState;

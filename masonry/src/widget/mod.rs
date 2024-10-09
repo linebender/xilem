@@ -52,9 +52,9 @@ pub use variable_label::VariableLabel;
 pub use widget_mut::WidgetMut;
 pub use widget_pod::WidgetPod;
 pub use widget_ref::WidgetRef;
-pub use widget_state::WidgetState;
 
 pub(crate) use widget_arena::WidgetArena;
+pub(crate) use widget_state::WidgetState;
 
 use crate::{Affine, Size};
 

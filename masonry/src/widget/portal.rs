@@ -205,11 +205,11 @@ impl<W: Widget> WidgetMut<'_, Portal<W>> {
     }
 
     pub fn set_viewport_pos(&mut self, position: Point) -> bool {
-        let portal_size = self.state().layout_rect().size();
+        let portal_size = self.ctx.layout_rect().size();
         let content_size = self
             .ctx
             .get_mut(&mut self.widget.child)
-            .state()
+            .ctx
             .layout_rect()
             .size();
 
@@ -537,7 +537,7 @@ mod tests {
 
         assert_render_snapshot!(harness, "button_list_scrolled");
 
-        let item_3_rect = harness.get_widget(item_3_id).state().layout_rect();
+        let item_3_rect = harness.get_widget(item_3_id).ctx().layout_rect();
         harness.edit_root_widget(|mut portal| {
             let mut portal = portal.downcast::<Portal<Flex>>();
             portal.pan_viewport_to(item_3_rect);
@@ -545,7 +545,7 @@ mod tests {
 
         assert_render_snapshot!(harness, "button_list_scroll_to_item_3");
 
-        let item_13_rect = harness.get_widget(item_13_id).state().layout_rect();
+        let item_13_rect = harness.get_widget(item_13_id).ctx().layout_rect();
         harness.edit_root_widget(|mut portal| {
             let mut portal = portal.downcast::<Portal<Flex>>();
             portal.pan_viewport_to(item_13_rect);

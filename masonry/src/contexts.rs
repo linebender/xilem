@@ -239,6 +239,14 @@ impl_context_method!(
             self.widget_state.window_origin()
         }
 
+        pub fn window_layout_rect(&self) -> Rect {
+            self.widget_state.window_layout_rect()
+        }
+
+        pub fn paint_rect(&self) -> Rect {
+            self.widget_state.paint_rect()
+        }
+
         /// The clip path of the widget, if any was set.
         ///
         /// For more information, see
@@ -1219,6 +1227,11 @@ mod private {
     pub trait Sealed {}
 }
 
+// TODO - Rethink RawWrapper API
+// We're exporting a trait with a method that returns a private type.
+// It's mostly fine because the trait is sealed anyway, but it's not great for documentation.
+
+#[allow(private_interfaces)]
 pub trait IsContext: private::Sealed {
     fn get_widget_state(&mut self) -> &mut WidgetState;
 }
@@ -1227,6 +1240,7 @@ macro_rules! impl_context_trait {
     ($SomeCtx:tt) => {
         impl private::Sealed for $SomeCtx<'_> {}
 
+        #[allow(private_interfaces)]
         impl IsContext for $SomeCtx<'_> {
             fn get_widget_state(&mut self) -> &mut WidgetState {
                 self.widget_state
