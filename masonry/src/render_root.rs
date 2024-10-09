@@ -205,14 +205,11 @@ impl RenderRoot {
                 let last = self.last_anim.take();
                 let elapsed_ns = last.map(|t| now.duration_since(t).as_nanos()).unwrap_or(0) as u64;
 
-                run_update_anim_pass(self, elapsed_ns);
-
-                let mut root_state = self.widget_arena.get_state_mut(self.root.id()).item.clone();
-                self.post_event_processing(&mut root_state);
+                self.root_anim_frame(elapsed_ns);
 
                 // If this animation will continue, store the time.
                 // If a new animation starts, then it will have zero reported elapsed time.
-                let animation_continues = root_state.needs_anim;
+                let animation_continues = self.root_state().needs_anim;
                 self.last_anim = animation_continues.then_some(now);
 
                 Handled::Yes
@@ -232,6 +229,13 @@ impl RenderRoot {
 
     pub fn handle_text_event(&mut self, event: TextEvent) -> Handled {
         self.root_on_text_event(event)
+    }
+
+    pub(crate) fn root_anim_frame(&mut self, elapsed_ns: u64) {
+        run_update_anim_pass(self, elapsed_ns);
+
+        let mut root_state = self.widget_arena.get_state_mut(self.root.id()).item.clone();
+        self.post_event_processing(&mut root_state);
     }
 
     /// Registers all fonts that exist in the given data.
