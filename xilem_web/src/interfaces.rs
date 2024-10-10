@@ -54,7 +54,7 @@ pub trait Element<State, Action = ()>:
     + DomView<
         State,
         Action,
-        DomNode: DomNode<Props: WithAttributes + WithClasses> + AsRef<web_sys::Element>,
+        DomNode: DomNode<Props: WithAttributes + WithClasses + WithStyle> + AsRef<web_sys::Element>,
     >
 {
     /// Set an attribute for an [`Element`]
@@ -146,11 +146,20 @@ pub trait Element<State, Action = ()>:
         Attr::new(self, Cow::from("id"), value.into_attr_value())
     }
 
-    /// Set a style attribute
-    fn style(self, style: impl IntoStyles) -> Style<Self, State, Action>
-    where
-        <Self::DomNode as DomNode>::Props: WithStyle,
-    {
+    /// Set the [style](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/style) attribute
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use xilem_web::{style as s, interfaces::Element, svg::kurbo::Rect};
+    ///
+    /// # fn component() -> impl Element<()> {
+    /// div(())
+    ///     .style([s("display", "flex"), s("align-items", "center")])
+    ///     .style(s("justify-content", "center"))
+    /// # }
+    /// ```
+    fn style(self, style: impl IntoStyles) -> Style<Self, State, Action> {
         let mut styles = vec![];
         style.into_styles(&mut styles);
         Style::new(self, styles)
@@ -170,10 +179,7 @@ pub trait Element<State, Action = ()>:
     /// // <rect width="20" height="30" x="0.0" y="10.0" style="transform: translate(10px, 0) rotate(0.78539rad);"></rect>
     /// # }
     /// ```
-    fn rotate(self, radians: f64) -> Rotate<Self, State, Action>
-    where
-        <Self::DomNode as DomNode>::Props: WithStyle,
-    {
+    fn rotate(self, radians: f64) -> Rotate<Self, State, Action> {
         Rotate::new(self, radians)
     }
 
@@ -328,7 +334,7 @@ pub trait Element<State, Action = ()>:
 impl<State, Action, T> Element<State, Action> for T
 where
     T: DomView<State, Action>,
-    <T::DomNode as DomNode>::Props: WithAttributes + WithClasses,
+    <T::DomNode as DomNode>::Props: WithAttributes + WithClasses + WithStyle,
     T::DomNode: AsRef<web_sys::Element>,
 {
 }
@@ -551,19 +557,10 @@ where
 {
 }
 
-// pub trait StyleExt {
-// }
-
-// /// Keep this shared code in sync between `HtmlElement` and `SvgElement`
-// macro_rules! style_impls {
-//     () => {};
-// }
-
 // #[cfg(feature = "HtmlElement")]
 pub trait HtmlElement<State, Action = ()>:
     Element<State, Action, DomNode: DomNode<Props: WithStyle> + AsRef<web_sys::HtmlElement>>
 {
-    // style_impls!();
 }
 
 // #[cfg(feature = "HtmlElement")]
@@ -1535,7 +1532,6 @@ where
 pub trait SvgElement<State, Action = ()>:
     Element<State, Action, DomNode: DomNode<Props: WithStyle> + AsRef<web_sys::SvgElement>>
 {
-    // style_impls!();
 }
 
 // #[cfg(feature = "SvgElement")]
