@@ -151,7 +151,7 @@ pub trait Element<State, Action = ()>:
     /// # Examples
     ///
     /// ```
-    /// use xilem_web::{style as s, interfaces::Element, svg::kurbo::Rect};
+    /// use xilem_web::{style as s, elements::html::div, interfaces::Element};
     ///
     /// # fn component() -> impl Element<()> {
     /// div(())
