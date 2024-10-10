@@ -1,8 +1,10 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use peniko::kurbo::Vec2;
 use std::{
     collections::{BTreeMap, HashMap},
+    fmt::Display,
     marker::PhantomData,
 };
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
@@ -120,8 +122,16 @@ pub trait WithStyle {
     /// When in [`View::rebuild`] this has to be invoked *after* traversing the inner `View` with [`View::rebuild`]
     fn set_style(&mut self, name: &CowStr, value: &Option<CowStr>);
 
-    // TODO first find a use-case for this...
-    // fn get_style(&self, name: &str) -> Option<&CowStr>;
+    /// Gets a previously set style from this modifier.
+    ///
+    /// When in [`View::rebuild`] this has to be invoked *after* traversing the inner `View` with [`View::rebuild`]
+    fn get_style(&self, name: &str) -> Option<&CowStr>;
+
+    /// Returns `true` if a style property `name` was updated.
+    ///
+    /// This can be useful, for modifying a previously set value.
+    /// When in [`View::rebuild`] this has to be invoked *after* traversing the inner `View` with [`View::rebuild`]
+    fn was_updated(&self, name: &str) -> bool;
 }
 
 #[derive(Debug, PartialEq)]
@@ -307,6 +317,21 @@ impl WithStyle for Styles {
         self.idx += 1;
         self.start_idx = self.idx | (self.start_idx & RESERVED_BIT_MASK);
     }
+
+    fn get_style(&self, name: &str) -> Option<&CowStr> {
+        for modifier in self.style_modifiers[..self.idx as usize].iter().rev() {
+            match modifier {
+                StyleModifier::Remove(removed) if removed == name => return None,
+                StyleModifier::Set(key, value) if key == name => return Some(value),
+                _ => (),
+            }
+        }
+        None
+    }
+
+    fn was_updated(&self, name: &str) -> bool {
+        self.updated_styles.contains_key(name)
+    }
 }
 
 impl WithStyle for ElementProps {
@@ -320,6 +345,19 @@ impl WithStyle for ElementProps {
 
     fn set_style(&mut self, name: &CowStr, value: &Option<CowStr>) {
         self.styles().set_style(name, value);
+    }
+
+    fn get_style(&self, name: &str) -> Option<&CowStr> {
+        self.styles
+            .as_deref()
+            .and_then(|styles| styles.get_style(name))
+    }
+
+    fn was_updated(&self, name: &str) -> bool {
+        self.styles
+            .as_deref()
+            .map(|styles| styles.was_updated(name))
+            .unwrap_or(false)
     }
 }
 
@@ -338,6 +376,14 @@ where
     fn set_style(&mut self, name: &CowStr, value: &Option<CowStr>) {
         self.props.set_style(name, value);
     }
+
+    fn get_style(&self, name: &str) -> Option<&CowStr> {
+        self.props.get_style(name)
+    }
+
+    fn was_updated(&self, name: &str) -> bool {
+        self.props.was_updated(name)
+    }
 }
 
 impl<N: DomNode> WithStyle for PodMut<'_, N>
@@ -354,6 +400,14 @@ where
 
     fn set_style(&mut self, name: &CowStr, value: &Option<CowStr>) {
         self.props.set_style(name, value);
+    }
+
+    fn get_style(&self, name: &str) -> Option<&CowStr> {
+        self.props.get_style(name)
+    }
+
+    fn was_updated(&self, name: &str) -> bool {
+        self.props.was_updated(name)
     }
 }
 
@@ -434,6 +488,203 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
+        id_path: &[ViewId],
+        message: DynMessage,
+        app_state: &mut T,
+    ) -> MessageResult<A, DynMessage> {
+        self.el.message(view_state, id_path, message, app_state)
+    }
+}
+
+/// Add a `rotate(<radians>rad)` [transform-function](https://developer.mozilla.org/en-US/docs/Web/CSS/transform-function) to the current CSS `transform`
+pub struct Rotate<E, State, Action> {
+    el: E,
+    phantom: PhantomData<fn() -> (State, Action)>,
+    radians: f64,
+}
+
+impl<E, State, Action> Rotate<E, State, Action> {
+    pub(crate) fn new(element: E, radians: f64) -> Self {
+        Rotate {
+            el: element,
+            phantom: PhantomData,
+            radians,
+        }
+    }
+}
+
+fn modify_rotate_transform(transform: Option<&CowStr>, radians: f64) -> Option<CowStr> {
+    if let Some(transform) = transform {
+        Some(CowStr::from(format!("{transform} rotate({radians}rad)")))
+    } else {
+        Some(CowStr::from(format!("rotate({radians}rad)")))
+    }
+}
+
+impl<E, T, A> ViewMarker for Rotate<E, T, A> {}
+impl<T, A, E> View<T, A, ViewCtx, DynMessage> for Rotate<E, T, A>
+where
+    T: 'static,
+    A: 'static,
+    E: View<T, A, ViewCtx, DynMessage, Element: ElementWithStyle>,
+{
+    type Element = E::Element;
+
+    type ViewState = (E::ViewState, Option<CowStr>);
+
+    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+        ctx.add_modifier_size_hint::<Styles>(1);
+        let (mut element, state) = self.el.build(ctx);
+        let css_repr = modify_rotate_transform(element.get_style("transform"), self.radians);
+        element.set_style(&"transform".into(), &css_repr);
+        element.mark_end_of_style_modifier();
+        (element, (state, css_repr))
+    }
+
+    fn rebuild<'el>(
+        &self,
+        prev: &Self,
+        (view_state, css_repr): &mut Self::ViewState,
+        ctx: &mut ViewCtx,
+        mut element: Mut<'el, Self::Element>,
+    ) -> Mut<'el, Self::Element> {
+        element.rebuild_style_modifier();
+        let mut element = self.el.rebuild(&prev.el, view_state, ctx, element);
+        if prev.radians != self.radians || element.was_updated("transform") {
+            *css_repr = modify_rotate_transform(element.get_style("transform"), self.radians);
+        }
+        element.set_style(&"transform".into(), css_repr);
+        element.mark_end_of_style_modifier();
+        element
+    }
+
+    fn teardown(
+        &self,
+        (view_state, _): &mut Self::ViewState,
+        ctx: &mut ViewCtx,
+        element: Mut<'_, Self::Element>,
+    ) {
+        self.el.teardown(view_state, ctx, element);
+    }
+
+    fn message(
+        &self,
+        (view_state, _): &mut Self::ViewState,
+        id_path: &[ViewId],
+        message: DynMessage,
+        app_state: &mut T,
+    ) -> MessageResult<A, DynMessage> {
+        self.el.message(view_state, id_path, message, app_state)
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum ScaleValue {
+    Uniform(f64),
+    NonUniform(f64, f64),
+}
+
+impl Display for ScaleValue {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ScaleValue::Uniform(uniform) => write!(f, "{uniform}"),
+            ScaleValue::NonUniform(x, y) => write!(f, "{x}, {y}"),
+        }
+    }
+}
+
+impl From<f64> for ScaleValue {
+    fn from(value: f64) -> Self {
+        ScaleValue::Uniform(value)
+    }
+}
+
+impl From<(f64, f64)> for ScaleValue {
+    fn from(value: (f64, f64)) -> Self {
+        ScaleValue::NonUniform(value.0, value.1)
+    }
+}
+
+impl From<Vec2> for ScaleValue {
+    fn from(value: Vec2) -> Self {
+        ScaleValue::NonUniform(value.x, value.y)
+    }
+}
+
+/// Add a `rotate(<radians>rad)` [transform-function](https://developer.mozilla.org/en-US/docs/Web/CSS/transform-function) to the current CSS `transform`
+pub struct Scale<E, State, Action> {
+    el: E,
+    phantom: PhantomData<fn() -> (State, Action)>,
+    scale: ScaleValue,
+}
+
+impl<E, State, Action> Scale<E, State, Action> {
+    pub(crate) fn new(element: E, scale: impl Into<ScaleValue>) -> Self {
+        Scale {
+            el: element,
+            phantom: PhantomData,
+            scale: scale.into(),
+        }
+    }
+}
+
+fn modify_scale_transform(transform: Option<&CowStr>, scale: ScaleValue) -> Option<CowStr> {
+    if let Some(transform) = transform {
+        Some(CowStr::from(format!("{transform} scale({scale})")))
+    } else {
+        Some(CowStr::from(format!("scale({scale})")))
+    }
+}
+
+impl<E, T, A> ViewMarker for Scale<E, T, A> {}
+impl<T, A, E> View<T, A, ViewCtx, DynMessage> for Scale<E, T, A>
+where
+    T: 'static,
+    A: 'static,
+    E: View<T, A, ViewCtx, DynMessage, Element: ElementWithStyle>,
+{
+    type Element = E::Element;
+
+    type ViewState = (E::ViewState, Option<CowStr>);
+
+    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+        ctx.add_modifier_size_hint::<Styles>(1);
+        let (mut element, state) = self.el.build(ctx);
+        let css_repr = modify_scale_transform(element.get_style("transform"), self.scale);
+        element.set_style(&"transform".into(), &css_repr);
+        element.mark_end_of_style_modifier();
+        (element, (state, css_repr))
+    }
+
+    fn rebuild<'el>(
+        &self,
+        prev: &Self,
+        (view_state, css_repr): &mut Self::ViewState,
+        ctx: &mut ViewCtx,
+        mut element: Mut<'el, Self::Element>,
+    ) -> Mut<'el, Self::Element> {
+        element.rebuild_style_modifier();
+        let mut element = self.el.rebuild(&prev.el, view_state, ctx, element);
+        if prev.scale != self.scale || element.was_updated("transform") {
+            *css_repr = modify_scale_transform(element.get_style("transform"), self.scale);
+        }
+        element.set_style(&"transform".into(), css_repr);
+        element.mark_end_of_style_modifier();
+        element
+    }
+
+    fn teardown(
+        &self,
+        (view_state, _): &mut Self::ViewState,
+        ctx: &mut ViewCtx,
+        element: Mut<'_, Self::Element>,
+    ) {
+        self.el.teardown(view_state, ctx, element);
+    }
+
+    fn message(
+        &self,
+        (view_state, _): &mut Self::ViewState,
         id_path: &[ViewId],
         message: DynMessage,
         app_state: &mut T,

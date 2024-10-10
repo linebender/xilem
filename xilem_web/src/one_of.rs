@@ -232,6 +232,14 @@ impl WithStyle for Noop {
     fn mark_end_of_style_modifier(&mut self) {
         unreachable!()
     }
+
+    fn get_style(&self, _name: &str) -> Option<&CowStr> {
+        unreachable!()
+    }
+
+    fn was_updated(&self, _name: &str) -> bool {
+        unreachable!()
+    }
 }
 
 impl<T> AsRef<T> for Noop {
@@ -423,6 +431,34 @@ impl<
             OneOf::G(e) => e.mark_end_of_style_modifier(),
             OneOf::H(e) => e.mark_end_of_style_modifier(),
             OneOf::I(e) => e.mark_end_of_style_modifier(),
+        }
+    }
+
+    fn get_style(&self, name: &str) -> Option<&CowStr> {
+        match self {
+            OneOf::A(e) => e.get_style(name),
+            OneOf::B(e) => e.get_style(name),
+            OneOf::C(e) => e.get_style(name),
+            OneOf::D(e) => e.get_style(name),
+            OneOf::E(e) => e.get_style(name),
+            OneOf::F(e) => e.get_style(name),
+            OneOf::G(e) => e.get_style(name),
+            OneOf::H(e) => e.get_style(name),
+            OneOf::I(e) => e.get_style(name),
+        }
+    }
+
+    fn was_updated(&self, name: &str) -> bool {
+        match self {
+            OneOf::A(e) => e.was_updated(name),
+            OneOf::B(e) => e.was_updated(name),
+            OneOf::C(e) => e.was_updated(name),
+            OneOf::D(e) => e.was_updated(name),
+            OneOf::E(e) => e.was_updated(name),
+            OneOf::F(e) => e.was_updated(name),
+            OneOf::G(e) => e.was_updated(name),
+            OneOf::H(e) => e.was_updated(name),
+            OneOf::I(e) => e.was_updated(name),
         }
     }
 }
