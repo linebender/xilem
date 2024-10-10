@@ -160,9 +160,9 @@ pub trait Element<State, Action = ()>:
     /// # Examples
     ///
     /// ```
-    /// use xilem_web::{style as s, interfaces::SvgElement, svg::kurbo::Rect};
+    /// use xilem_web::{style as s, interfaces::Element, svg::kurbo::Rect};
     ///
-    /// # fn component() -> impl SvgElement<()> {
+    /// # fn component() -> impl Element<()> {
     /// Rect::from_origin_size((0.0, 10.0), (20.0, 30.0))
     ///     .style(s("transform", "translate(10px, 0)")) // can be combined with untyped `transform`
     ///     .rotate(std::f64::consts::PI / 4.0)
