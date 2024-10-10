@@ -533,6 +533,7 @@ where
     type ViewState = (E::ViewState, Option<CowStr>);
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+        ctx.add_modifier_size_hint::<Styles>(1);
         let (mut element, state) = self.el.build(ctx);
         let css_repr = modify_rotate_transform(element.get_style("transform"), self.radians);
         element.set_style(&"transform".into(), &css_repr);
@@ -647,6 +648,7 @@ where
     type ViewState = (E::ViewState, Option<CowStr>);
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+        ctx.add_modifier_size_hint::<Styles>(1);
         let (mut element, state) = self.el.build(ctx);
         let css_repr = modify_scale_transform(element.get_style("transform"), self.scale);
         element.set_style(&"transform".into(), &css_repr);
