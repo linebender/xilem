@@ -20,7 +20,9 @@ use crate::text::{TextBrush, TextLayout};
 use crate::{Handled, TextEvent};
 
 pub struct TextWithSelection<T: Selectable> {
-    pub layout: TextLayout<T>,
+    text: T,
+    text_changed: bool,
+    pub layout: TextLayout,
     /// The current selection within this widget
     // TODO: Allow multiple selections (i.e. by holding down control)
     pub selection: Selection,
@@ -35,7 +37,9 @@ pub struct TextWithSelection<T: Selectable> {
 impl<T: Selectable> TextWithSelection<T> {
     pub fn new(text: T, text_size: f32) -> Self {
         Self {
-            layout: TextLayout::new(text, text_size),
+            text,
+            text_changed: false,
+            layout: TextLayout::new(text_size),
             selection: Selection::caret(0, Affinity::Downstream),
             selection_visible: false,
             needs_selection_update: false,
@@ -49,14 +53,24 @@ impl<T: Selectable> TextWithSelection<T> {
         }
     }
 
+    pub fn text(&self) -> &T {
+        &self.text
+    }
+
+    pub fn text_mut(&mut self) -> &mut T {
+        self.text_changed = true;
+        &mut self.text
+    }
+
     pub fn set_text(&mut self, text: T) {
         self.selection = Selection::caret(0, Affinity::Downstream);
         self.needs_selection_update = true;
-        self.layout.set_text(text);
+        self.text_changed = true;
+        self.text = text;
     }
 
     pub fn needs_rebuild(&self) -> bool {
-        self.layout.needs_rebuild() || self.needs_selection_update
+        self.layout.needs_rebuild() || self.needs_selection_update || self.text_changed
     }
 
     pub fn pointer_down(
@@ -118,7 +132,7 @@ impl<T: Selectable> TextWithSelection<T> {
                         if mods.shift_key() {
                         } else {
                             let selection = self.selection;
-                            let t = self.text();
+                            let t = &self.text;
                             if mods.control_key() {
                                 let offset = t.prev_word_offset(selection.active).unwrap_or(0);
                                 self.selection = Selection::caret(offset, Affinity::Downstream);
@@ -133,7 +147,7 @@ impl<T: Selectable> TextWithSelection<T> {
                         if mods.shift_key() {
                             // TODO: Expand selection
                         } else {
-                            let t = self.text();
+                            let t = &self.text;
                             let selection = self.selection;
                             if mods.control_key() {
                                 if let Some(o) = t.next_word_offset(selection.active) {
@@ -150,7 +164,7 @@ impl<T: Selectable> TextWithSelection<T> {
                         "a" if mods.control_key() || /* macOS, yes this is a hack */ mods.super_key() =>
                         {
                             self.selection =
-                                Selection::new(0, self.text().len(), Affinity::Downstream);
+                                Selection::new(0, self.text.len(), Affinity::Downstream);
                             self.needs_selection_update = true;
                             Handled::Yes
                         }
@@ -158,8 +172,7 @@ impl<T: Selectable> TextWithSelection<T> {
                             let selection = self.selection;
                             // TODO: We know this is not the fullest model of copy-paste, and that we should work with the inner text
                             // e.g. to put HTML code if supported by the rich text kind
-                            if let Some(text) = self.text().slice(selection.min()..selection.max())
-                            {
+                            if let Some(text) = self.text.slice(selection.min()..selection.max()) {
                                 debug!(r#"Copying "{text}""#);
                             } else {
                                 debug_panic!("Had invalid selection");
@@ -224,10 +237,14 @@ impl<T: Selectable> TextWithSelection<T> {
     ) {
         // In theory, we could be clever here and only rebuild the layout if the
         // selected range was previously or currently non-zero size (i.e. there is a selected range)
-        if self.needs_selection_update || self.layout.needs_rebuild() {
+        if self.needs_selection_update || self.layout.needs_rebuild() || self.text_changed {
             self.layout.invalidate();
-            self.layout
-                .rebuild_with_attributes(font_ctx, layout_ctx, |mut builder| {
+            self.layout.rebuild_with_attributes(
+                font_ctx,
+                layout_ctx,
+                self.text.as_ref(),
+                self.text_changed,
+                |mut builder| {
                     if self.selection_visible {
                         let range = self.selection.range();
                         if !range.is_empty() {
@@ -238,18 +255,19 @@ impl<T: Selectable> TextWithSelection<T> {
                         }
                     }
                     attributes(builder)
-                });
+                },
+            );
             self.needs_selection_update = false;
+            self.text_changed = false;
         }
     }
 
     pub fn draw(&mut self, scene: &mut Scene, point: impl Into<Point>) {
         // TODO: Calculate the location for this in layout lazily?
         if self.selection_visible {
-            self.cursor_line = Some(
-                self.layout
-                    .cursor_line_for_text_position(self.selection.active),
-            );
+            self.cursor_line = self
+                .layout
+                .caret_line_from_byte_index(self.selection.active);
         } else {
             self.cursor_line = None;
         }
@@ -283,7 +301,7 @@ fn shortcut_key(key: &winit::event::KeyEvent) -> winit::keyboard::Key {
 }
 
 impl<T: Selectable> Deref for TextWithSelection<T> {
-    type Target = TextLayout<T>;
+    type Target = TextLayout;
 
     fn deref(&self) -> &Self::Target {
         &self.layout
