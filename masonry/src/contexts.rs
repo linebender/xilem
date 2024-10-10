@@ -68,6 +68,7 @@ pub struct EventCtx<'a> {
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) widget_state_children: ArenaMutChildren<'a, WidgetState>,
     pub(crate) widget_children: ArenaMutChildren<'a, Box<dyn Widget>>,
+    pub(crate) target: WidgetId,
     pub(crate) allow_pointer_capture: bool,
     pub(crate) is_handled: bool,
 }
@@ -714,6 +715,13 @@ impl EventCtx<'_> {
     /// Determine whether the event has been handled by some other widget.
     pub fn is_handled(&self) -> bool {
         self.is_handled
+    }
+
+    /// The widget originally targeted by the event.
+    ///
+    /// This will be different from [`widget_id`](Self::widget_id) during event bubbling.
+    pub fn target(&self) -> WidgetId {
+        self.target
     }
 
     /// Request keyboard focus.
