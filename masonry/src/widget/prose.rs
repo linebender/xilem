@@ -189,8 +189,17 @@ impl Widget for Prose {
         }
     }
 
-    fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {
-        // TODO - Handle accesskit::Action::SetTextSelection
+    fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {
+        if event.target == ctx.widget_id() {
+            match event.action {
+                accesskit::Action::SetTextSelection => {
+                    if self.text_layout.set_selection_from_access_event(event) {
+                        ctx.request_layout();
+                    }
+                }
+                _ => (),
+            }
+        }
     }
 
     fn register_children(&mut self, _ctx: &mut RegisterCtx) {}
