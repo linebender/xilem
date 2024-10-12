@@ -6,7 +6,7 @@
 use std::borrow::Cow;
 use std::ops::{Deref, DerefMut, Range};
 
-use accesskit::{NodeBuilder, TextPosition, TextSelection};
+use accesskit::{NodeBuilder, TextPosition, TextSelection, TreeUpdate};
 use parley::context::RangedBuilder;
 use parley::{FontContext, LayoutContext};
 use tracing::debug;
@@ -18,7 +18,7 @@ use winit::keyboard::NamedKey;
 
 use crate::event::{AccessEvent, PointerButton, PointerState};
 use crate::text::{TextBrush, TextLayout};
-use crate::{AccessCtx, Handled, TextEvent};
+use crate::{Handled, TextEvent};
 
 pub struct TextWithSelection<T: Selectable> {
     text: T,
@@ -335,8 +335,8 @@ impl<T: Selectable> TextWithSelection<T> {
         panic!("offset not within the range of any run");
     }
 
-    pub fn accessibility(&mut self, ctx: &mut AccessCtx, parent_node: &mut NodeBuilder) {
-        self.layout.accessibility(ctx, parent_node);
+    pub fn accessibility(&mut self, update: &mut TreeUpdate, parent_node: &mut NodeBuilder) {
+        self.layout.accessibility(update, parent_node);
         let anchor_affinity = if self.selection.anchor == self.selection.active {
             self.selection.active_affinity
         } else {

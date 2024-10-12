@@ -6,7 +6,7 @@
 use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
-use accesskit::{NodeBuilder, NodeId, Role};
+use accesskit::{NodeBuilder, NodeId, Role, TreeUpdate};
 use parley::context::RangedBuilder;
 use parley::fontique::{Style, Weight};
 use parley::layout::{Alignment, Cursor};
@@ -18,7 +18,7 @@ use vello::peniko::{self, Color, Gradient};
 use vello::Scene;
 
 use crate::text::render_text;
-use crate::{AccessCtx, WidgetId};
+use crate::WidgetId;
 
 /// A component for displaying text on screen.
 ///
@@ -471,7 +471,7 @@ impl TextLayout {
         );
     }
 
-    pub fn accessibility(&mut self, ctx: &mut AccessCtx, parent_node: &mut NodeBuilder) {
+    pub fn accessibility(&mut self, update: &mut TreeUpdate, parent_node: &mut NodeBuilder) {
         self.assert_rebuilt("accessibility");
 
         let text = self.text.as_ref();
@@ -507,7 +507,7 @@ impl TextLayout {
                 if let Some((last_id, mut last_node)) = last_node.take() {
                     last_node.set_next_on_line(id);
                     node.set_previous_on_line(last_id);
-                    ctx.tree_update.nodes.push((last_id, last_node.build()));
+                    update.nodes.push((last_id, last_node.build()));
                     parent_node.push_child(last_id);
                 }
 
@@ -544,7 +544,7 @@ impl TextLayout {
             }
 
             if let Some((id, node)) = last_node {
-                ctx.tree_update.nodes.push((id, node.build()));
+                update.nodes.push((id, node.build()));
                 parent_node.push_child(id);
             }
         }

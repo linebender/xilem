@@ -334,7 +334,7 @@ impl Widget for Textbox {
     }
 
     fn accessibility(&mut self, ctx: &mut AccessCtx, node: &mut NodeBuilder) {
-        self.editor.accessibility(ctx, node);
+        self.editor.accessibility(&mut ctx.tree_update, node);
     }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
