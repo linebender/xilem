@@ -77,9 +77,9 @@ fn create_event_listener<Event: JsCast + crate::Message>(
         thunk.push_message(event);
     });
 
-    let mut options = AddEventListenerOptions::new();
-    options.capture(capture);
-    options.passive(passive);
+    let options = AddEventListenerOptions::new();
+    options.set_capture(capture);
+    options.set_passive(passive);
 
     target
         .add_event_listener_with_callback_and_add_event_listener_options(
