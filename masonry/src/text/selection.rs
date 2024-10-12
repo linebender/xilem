@@ -385,6 +385,7 @@ impl<T: Selectable> TextWithSelection<T> {
             return false;
         };
         self.selection = Selection::new(anchor, active, active_affinity);
+        self.selection_visible = true;
         self.needs_selection_update = true;
         true
     }
