@@ -183,7 +183,7 @@ impl RenderRoot {
         root
     }
 
-    fn root_state(&mut self) -> &mut WidgetState {
+    pub(crate) fn root_state(&mut self) -> &mut WidgetState {
         self.widget_arena
             .widget_states
             .root_token_mut()
@@ -454,6 +454,12 @@ impl RenderRoot {
     }
 
     // --- MARK: REWRITE PASSES ---
+    /// Run all rewrite passes on widget tree.
+    ///
+    /// Rewrite passes are passes which occur after external events, and
+    /// update flags and internal values to a consistent state.
+    ///
+    /// See Pass Spec RFC for details. (TODO - Link to doc instead.)
     pub(crate) fn run_rewrite_passes(&mut self) {
         // TODO - Rerun passes if invalidation flags are still set
 

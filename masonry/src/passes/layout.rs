@@ -314,7 +314,11 @@ pub(crate) fn run_layout_on<W: Widget>(
 }
 
 // --- MARK: ROOT ---
-pub(crate) fn root_layout(root: &mut RenderRoot) -> Size {
+pub(crate) fn root_layout(root: &mut RenderRoot) {
+    if !root.root_state().needs_layout {
+        return;
+    }
+
     let _span = info_span!("layout").entered();
 
     let window_size = root.get_kurbo_size();
@@ -343,6 +347,4 @@ pub(crate) fn root_layout(root: &mut RenderRoot) -> Size {
             root.state.emit_signal(RenderRootSignal::SetSize(new_size));
         }
     }
-
-    size
 }
