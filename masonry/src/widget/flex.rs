@@ -931,7 +931,8 @@ impl Widget for Flex {
         let total_gap = self.children.len().saturating_sub(1) as f64 * gap;
         // Measure non-flex children.
         let mut major_non_flex = total_gap;
-        let mut flex_sum = 0.0;
+        // We start with a small value to avoid divide-by-zero errors.
+        let mut flex_sum = 0.001;
         for child in &mut self.children {
             match child {
                 Child::Fixed { widget, alignment } => {
