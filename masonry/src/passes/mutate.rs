@@ -6,7 +6,7 @@ use tracing::info_span;
 use crate::passes::merge_state_up;
 use crate::render_root::RenderRoot;
 use crate::widget::WidgetMut;
-use crate::{MutateCtx, Widget, WidgetId, WidgetState};
+use crate::{MutateCtx, Widget, WidgetId};
 
 pub(crate) fn mutate_widget<R>(
     root: &mut RenderRoot,
@@ -44,15 +44,9 @@ pub(crate) fn mutate_widget<R>(
 
 // TODO - Add link to mutate pass documentation
 /// Apply any deferred mutations (created using [`...Ctx::mutate_later`](crate::LayoutCtx::mutate_later)).
-pub(crate) fn run_mutate_pass(root: &mut RenderRoot, root_state: &mut WidgetState) {
-    // TODO - Factor out into a "pre-event" function?
-    // root.state.next_focused_widget = root.state.focused_widget;
-
+pub(crate) fn run_mutate_pass(root: &mut RenderRoot) {
     let callbacks = std::mem::take(&mut root.state.mutate_callbacks);
     for callback in callbacks {
         mutate_widget(root, callback.id, callback.callback);
     }
-
-    root_state.merge_up(root.widget_arena.get_state_mut(root.root.id()).item);
-    // root.post_event_processing(&mut root_state);
 }
