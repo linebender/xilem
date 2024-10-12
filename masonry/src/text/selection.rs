@@ -290,6 +290,14 @@ impl<T: Selectable> TextWithSelection<T> {
         assert!(offset <= text.len());
 
         for (line_index, line) in self.layout.layout.lines().enumerate() {
+            let range = line.text_range();
+            if !(range.contains(&offset)
+                || (offset == range.end
+                    && (affinity == Affinity::Upstream || line_index == self.layout.layout.len())))
+            {
+                continue;
+            }
+
             for (run_index, run) in line.runs().enumerate() {
                 let range = run.text_range();
                 if !(range.contains(&offset)
@@ -300,6 +308,7 @@ impl<T: Selectable> TextWithSelection<T> {
                 {
                     continue;
                 }
+
                 let run_offset = offset - range.start;
                 let run_path = (line_index, run_index);
                 let id = *self.layout.access_ids_by_run_path.get(&run_path).unwrap();
