@@ -110,6 +110,7 @@ pub(crate) fn run_layout_on<W: Widget>(
 
     #[cfg(debug_assertions)]
     {
+        let name = widget.short_type_name();
         for child_id in widget.children_ids() {
             let child_id = child_id.to_raw();
             let child_state = state_mut.children.get_child_mut(child_id).unwrap().item;
@@ -121,7 +122,7 @@ pub(crate) fn run_layout_on<W: Widget>(
             if child_state.request_layout {
                 debug_panic!(
                     "Error in '{}' {}: LayoutCtx::run_layout() was not called with child widget '{}' {}.",
-                    widget.short_type_name(),
+                    name,
                     pod.id(),
                     child_state.widget_name,
                     child_state.id,
@@ -131,7 +132,7 @@ pub(crate) fn run_layout_on<W: Widget>(
             if child_state.is_expecting_place_child_call {
                 debug_panic!(
                     "Error in '{}' {}: LayoutCtx::place_child() was not called with child widget '{}' {}.",
-                    widget.short_type_name(),
+                    name,
                     pod.id(),
                     child_state.widget_name,
                     child_state.id,
@@ -143,7 +144,7 @@ pub(crate) fn run_layout_on<W: Widget>(
             if !state.local_paint_rect.contains_rect(child_rect) && state.clip.is_none() {
                 debug_panic!(
                     "Error in '{}' {}: paint_rect {:?} doesn't contain paint_rect {:?} of child widget '{}' {}",
-                    widget.short_type_name(),
+                    name,
                     pod.id(),
                     state.local_paint_rect,
                     child_rect,
@@ -157,37 +158,17 @@ pub(crate) fn run_layout_on<W: Widget>(
         if children_ids != new_children_ids && !state.children_changed {
             debug_panic!(
                 "Error in '{}' {}: children changed during layout pass",
-                widget.short_type_name(),
+                name,
                 pod.id(),
             );
         }
 
-        if new_size.width.is_infinite() {
+        if !new_size.width.is_finite() || !new_size.height.is_finite() {
             debug_panic!(
-                "Error in '{}' {}: width is infinite",
-                widget.short_type_name(),
+                "Error in '{}' {}: invalid size {}",
+                name,
                 pod.id(),
-            );
-        }
-        if new_size.width.is_nan() {
-            debug_panic!(
-                "Error in '{}' {}: width is NaN",
-                widget.short_type_name(),
-                pod.id(),
-            );
-        }
-        if new_size.height.is_infinite() {
-            debug_panic!(
-                "Error in '{}' {}: height is infinite",
-                widget.short_type_name(),
-                pod.id(),
-            );
-        }
-        if new_size.height.is_nan() {
-            debug_panic!(
-                "Error in '{}' {}: height is NaN",
-                widget.short_type_name(),
-                pod.id(),
+                new_size
             );
         }
     }
