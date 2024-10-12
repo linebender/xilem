@@ -63,8 +63,29 @@ pub struct TextLayout {
     // TODO - Add field to check whether text has changed since last layout
     // #[cfg(debug_assertions)] last_text_start: String,
 
+    // The following two fields maintain a two-way mapping between runs
+    // and AccessKit node IDs, where each run is identified by its line index
+    // and run index within that line, or a run path for short. These maps
+    // are maintained by `TextLayout::accessibility`, which ensures that removed
+    // runs are removed from the maps on the next accessibility pass.
+    // `access_ids_by_run_path` is used by both `TextLayout::accessibility` and
+    // `TextWithSelection::access_position_from_offset`, while
+    // `run_paths_by_access_id` is used by
+    // `TextWithSelection::offset_from_access_position`.
     pub(crate) access_ids_by_run_path: HashMap<(usize, usize), NodeId>,
     pub(crate) run_paths_by_access_id: HashMap<NodeId, (usize, usize)>,
+
+    // This map duplicates the character lengths stored in the run nodes.
+    // This is necessary because this information is needed during the
+    // access event pass, after the previous tree update has already been
+    // pushed to AccessKit. AccessKit deliberately doesn't let toolkits access
+    // the current tree state, because the ideal AccessKit backend would push
+    // tree updates to assistive technologies and not retain a tree in memory.
+    // Even if `TextWithSelection` only needed this information when constructing
+    // the text selection on the parent node, it would still be more efficient
+    // to duplicate the character lengths here than to pull them from the
+    // appropriate `Node` in the `Vec` that's going to be added to the
+    // tree update.
     pub(crate) character_lengths_by_access_id: HashMap<NodeId, Box<[u8]>>,
 }
 
