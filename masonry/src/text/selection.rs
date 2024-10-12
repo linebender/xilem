@@ -287,7 +287,7 @@ impl<T: Selectable> TextWithSelection<T> {
 
     fn access_position_from_offset(&self, offset: usize, affinity: Affinity) -> TextPosition {
         let text = self.text().as_ref();
-        assert!(offset <= text.len());
+        debug_assert!(offset <= text.len(), "offset out of range");
 
         for (line_index, line) in self.layout.layout.lines().enumerate() {
             let range = line.text_range();
@@ -330,7 +330,8 @@ impl<T: Selectable> TextWithSelection<T> {
                 };
             }
         }
-        unreachable!()
+
+        panic!("offset not within the range of any run");
     }
 
     pub fn accessibility(&mut self, ctx: &mut AccessCtx, parent_node: &mut NodeBuilder) {
