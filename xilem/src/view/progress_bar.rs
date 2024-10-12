@@ -29,12 +29,11 @@ impl<State, Action> View<State, Action, ViewCtx> for ProgressBar {
         &self,
         prev: &Self,
         (): &mut Self::ViewState,
-        ctx: &mut ViewCtx,
+        _ctx: &mut ViewCtx,
         mut element: Mut<'el, Self::Element>,
     ) -> Mut<'el, Self::Element> {
         if prev.progress != self.progress {
             element.set_progress(self.progress);
-            ctx.mark_changed();
         }
         element
     }

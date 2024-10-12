@@ -82,7 +82,7 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<S
         &self,
         prev: &Self,
         _: &mut Self::ViewState,
-        ctx: &mut ViewCtx,
+        _ctx: &mut ViewCtx,
         mut element: Mut<'el, Self::Element>,
     ) -> Mut<'el, Self::Element> {
         // Unlike the other properties, we don't compare to the previous value;
@@ -94,16 +94,13 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<S
         // This is probably not the right behaviour, but determining what is the right behaviour is hard
         if self.contents != element.text() {
             element.reset_text(self.contents.clone());
-            ctx.mark_changed();
         }
 
         if prev.text_brush != self.text_brush {
             element.set_text_brush(self.text_brush.clone());
-            ctx.mark_changed();
         }
         if prev.alignment != self.alignment {
             element.set_alignment(self.alignment);
-            ctx.mark_changed();
         }
         element
     }
