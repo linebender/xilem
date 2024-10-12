@@ -3,10 +3,8 @@
 
 //! A type for laying out, drawing, and interacting with text.
 
-use std::{
-    collections::{HashMap, HashSet},
-    rc::Rc,
-};
+use std::collections::{HashMap, HashSet};
+use std::rc::Rc;
 
 use accesskit::{NodeBuilder, NodeId, Role};
 use parley::context::RangedBuilder;
