@@ -285,31 +285,18 @@ impl<T: Selectable> TextWithSelection<T> {
         self.layout.draw(scene, point);
     }
 
-    fn access_position_from_offset(
-        &self,
-        parent_node: &NodeBuilder,
-        offset: usize,
-        affinity: Affinity,
-    ) -> TextPosition {
+    fn access_position_from_offset(&self, offset: usize, affinity: Affinity) -> TextPosition {
         let text = self.text().as_ref();
         assert!(offset <= text.len());
-        if offset == text.len() {
-            let last_id = *parent_node.children().last().unwrap();
-            let character_lengths = self
-                .layout
-                .character_lengths_by_access_id
-                .get(&last_id)
-                .unwrap();
-            return TextPosition {
-                node: last_id,
-                character_index: character_lengths.len(),
-            };
-        }
+
         for (line_index, line) in self.layout.layout.lines().enumerate() {
             for (run_index, run) in line.runs().enumerate() {
                 let range = run.text_range();
                 if !(range.contains(&offset)
-                    || (affinity == Affinity::Upstream && offset == range.end))
+                    || (offset == range.end
+                        && (affinity == Affinity::Upstream
+                            || (line_index == self.layout.layout.len()
+                                && run_index == line.len()))))
                 {
                     continue;
                 }
@@ -344,13 +331,9 @@ impl<T: Selectable> TextWithSelection<T> {
         } else {
             Affinity::Downstream
         };
-        let anchor =
-            self.access_position_from_offset(parent_node, self.selection.anchor, anchor_affinity);
-        let focus = self.access_position_from_offset(
-            parent_node,
-            self.selection.active,
-            self.selection.active_affinity,
-        );
+        let anchor = self.access_position_from_offset(self.selection.anchor, anchor_affinity);
+        let focus =
+            self.access_position_from_offset(self.selection.active, self.selection.active_affinity);
         parent_node.set_text_selection(TextSelection { anchor, focus });
         parent_node.add_action(accesskit::Action::SetTextSelection);
     }
