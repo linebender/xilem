@@ -288,7 +288,7 @@ impl Widget for Prose {
 
     fn accessibility(&mut self, ctx: &mut AccessCtx, node: &mut NodeBuilder) {
         node.set_read_only();
-        self.text_layout.accessibility(&mut ctx.tree_update, node);
+        self.text_layout.accessibility(ctx.tree_update, node);
     }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
