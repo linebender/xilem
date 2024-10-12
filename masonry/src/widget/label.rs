@@ -4,6 +4,7 @@
 //! A label widget.
 
 use accesskit::{NodeBuilder, Role};
+use parley::fontique::Weight;
 use parley::layout::Alignment;
 use parley::style::{FontFamily, FontStack};
 use smallvec::SmallVec;
@@ -82,6 +83,11 @@ impl Label {
         self
     }
 
+    pub fn with_weight(mut self, weight: Weight) -> Self {
+        self.text_layout.set_weight(weight);
+        self
+    }
+
     pub fn with_text_alignment(mut self, alignment: Alignment) -> Self {
         self.text_layout.set_text_alignment(alignment);
         self
@@ -136,6 +142,9 @@ impl WidgetMut<'_, Label> {
     }
     pub fn set_text_size(&mut self, size: f32) {
         self.set_text_properties(|layout| layout.set_text_size(size));
+    }
+    pub fn set_weight(&mut self, weight: Weight) {
+        self.set_text_properties(|layout| layout.set_weight(weight));
     }
     pub fn set_alignment(&mut self, alignment: Alignment) {
         self.set_text_properties(|layout| layout.set_text_alignment(alignment));

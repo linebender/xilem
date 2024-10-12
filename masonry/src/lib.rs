@@ -143,6 +143,7 @@ pub use event::{
     WindowEvent, WindowTheme,
 };
 pub use kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
+pub use parley::fontique::Weight as TextWeight;
 pub use parley::layout::Alignment as TextAlignment;
 pub use util::{AsAny, Handled};
 pub use vello::peniko::{Color, Gradient};

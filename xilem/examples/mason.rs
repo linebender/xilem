@@ -12,7 +12,7 @@ use xilem::{
         button, button_any_pointer, checkbox, flex, label, prose, task, textbox, Axis,
         FlexExt as _, FlexSpacer,
     },
-    Color, EventLoop, EventLoopBuilder, TextAlignment, WidgetView, Xilem,
+    Color, EventLoop, EventLoopBuilder, TextAlignment, TextWeight, WidgetView, Xilem,
 };
 const LOREM: &str = r"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi cursus mi sed euismod euismod. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Nullam placerat efficitur tellus at semper. Morbi ac risus magna. Donec ut cursus ex. Etiam quis posuere tellus. Mauris posuere dui et turpis mollis, vitae luctus tellus consectetur. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur eu facilisis nisl.
 
@@ -65,6 +65,7 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> {
                 label("Label")
                     .brush(Color::REBECCA_PURPLE)
                     .alignment(TextAlignment::Start),
+                label("Bold Label").weight(TextWeight::BOLD),
                 // TODO masonry doesn't allow setting disabled manually anymore?
                 // label("Disabled label").disabled(),
             ))
