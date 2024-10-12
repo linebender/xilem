@@ -475,13 +475,22 @@ impl TextLayout {
         self.assert_rebuilt("accessibility");
 
         let text = self.text.as_ref();
+        // Build a set of node IDs for the runs encountered in this pass.
         let mut ids = HashSet::<NodeId>::new();
 
         for (line_index, line) in self.layout.lines().enumerate() {
+            // Defer adding each run node until we reach either the next run
+            // or the end of the line. That way, we can set relations between
+            // runs in a line and do anything special that might be required
+            // for the last run in a line.
             let mut last_node: Option<(NodeId, NodeBuilder)> = None;
 
             for (run_index, run) in line.runs().enumerate() {
                 let run_path = (line_index, run_index);
+                // If we encountered this same run path in the previous
+                // accessibility pass, reuse the same AccessKit ID. Otherwise,
+                // allocate a new one. This enables stable node IDs when merely
+                // updating the content of existing runs.
                 let id = self
                     .access_ids_by_run_path
                     .get(&run_path)
@@ -512,6 +521,10 @@ impl TextLayout {
                 let mut last_word_start = 0;
 
                 for grapheme in run_text.graphemes(true) {
+                    // The logic for determining word boundaries must match
+                    // that used by `TextWithSelection` when moving by word.
+                    // Note: AccessKit assumes that the end of one word equals
+                    // the start of the next one.
                     let is_word_char = grapheme.chars().next().unwrap().is_alphanumeric();
                     if is_word_char && was_at_word_end {
                         word_lengths.push((character_lengths.len() - last_word_start) as _);
@@ -531,12 +544,12 @@ impl TextLayout {
             }
 
             if let Some((id, node)) = last_node {
-                // TODO: trailing newline if not the last line?
                 ctx.tree_update.nodes.push((id, node.build()));
                 parent_node.push_child(id);
             }
         }
 
+        // Remove mappings for runs that no longer exist.
         let mut ids_to_remove = Vec::<NodeId>::new();
         let mut run_paths_to_remove = Vec::<(usize, usize)>::new();
         for (access_id, run_path) in self.run_paths_by_access_id.iter() {
