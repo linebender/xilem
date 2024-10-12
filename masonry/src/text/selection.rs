@@ -293,7 +293,8 @@ impl<T: Selectable> TextWithSelection<T> {
             let range = line.text_range();
             if !(range.contains(&offset)
                 || (offset == range.end
-                    && (affinity == Affinity::Upstream || line_index == self.layout.layout.len())))
+                    && (affinity == Affinity::Upstream
+                        || line_index == self.layout.layout.len() - 1)))
             {
                 continue;
             }
@@ -303,8 +304,8 @@ impl<T: Selectable> TextWithSelection<T> {
                 if !(range.contains(&offset)
                     || (offset == range.end
                         && (affinity == Affinity::Upstream
-                            || (line_index == self.layout.layout.len()
-                                && run_index == line.len()))))
+                            || (line_index == self.layout.layout.len() - 1
+                                && run_index == line.len() - 1))))
                 {
                     continue;
                 }
