@@ -118,11 +118,7 @@ fn check_pointer_capture_outside_pointer_down() {
 fn check_pointer_capture_text_event() {
     let id = WidgetId::next();
     let widget = ModularWidget::new(())
-        .lifecycle_fn(|_, ctx, event| {
-            if let LifeCycle::WidgetAdded = event {
-                ctx.register_for_focus();
-            }
-        })
+        .accepts_focus(true)
         .text_event_fn(|_, ctx, _event| {
             ctx.capture_pointer();
         })

@@ -329,9 +329,6 @@ impl<W: Widget> Widget for Portal<W> {
 
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
         match event {
-            LifeCycle::WidgetAdded => {
-                ctx.register_as_portal();
-            }
             LifeCycle::RequestPanToChild(target) => {
                 let portal_size = ctx.size();
                 let content_size = ctx.get_raw_ref(&mut self.child).ctx().layout_rect().size();

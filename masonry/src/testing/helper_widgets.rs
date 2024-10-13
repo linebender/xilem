@@ -45,6 +45,9 @@ pub const REPLACE_CHILD: Selector = Selector::new("masonry-test.replace-child");
 /// This widget is generic over its state, which is passed in at construction time.
 pub struct ModularWidget<S> {
     state: S,
+    accepts_pointer_interaction: bool,
+    accepts_focus: bool,
+    accepts_text_input: bool,
     on_pointer_event: Option<Box<PointerEventFn<S>>>,
     on_text_event: Option<Box<TextEventFn<S>>>,
     on_access_event: Option<Box<AccessEventFn<S>>>,
@@ -128,6 +131,9 @@ impl<S> ModularWidget<S> {
     pub fn new(state: S) -> Self {
         ModularWidget {
             state,
+            accepts_pointer_interaction: true,
+            accepts_focus: false,
+            accepts_text_input: false,
             on_pointer_event: None,
             on_text_event: None,
             on_access_event: None,
@@ -141,6 +147,21 @@ impl<S> ModularWidget<S> {
             access: None,
             children: None,
         }
+    }
+
+    pub fn accepts_pointer_interaction(mut self, flag: bool) -> Self {
+        self.accepts_pointer_interaction = flag;
+        self
+    }
+
+    pub fn accepts_focus(mut self, flag: bool) -> Self {
+        self.accepts_focus = flag;
+        self
+    }
+
+    pub fn accepts_text_input(mut self, flag: bool) -> Self {
+        self.accepts_text_input = flag;
+        self
     }
 
     pub fn pointer_event_fn(
@@ -314,6 +335,18 @@ impl<S: 'static> Widget for ModularWidget<S> {
         } else {
             SmallVec::new()
         }
+    }
+
+    fn accepts_pointer_interaction(&self) -> bool {
+        self.accepts_pointer_interaction
+    }
+
+    fn accepts_focus(&self) -> bool {
+        self.accepts_focus
+    }
+
+    fn accepts_text_input(&self) -> bool {
+        self.accepts_text_input
     }
 }
 

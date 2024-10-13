@@ -62,12 +62,17 @@ pub(crate) struct WidgetState {
     /// the baseline. Widgets that contain text or controls that expect to be
     /// laid out alongside text can set this as appropriate.
     pub(crate) baseline_offset: f64,
-    // TODO - Remove
-    pub(crate) is_portal: bool,
+
+    /// Tracks whether widget gets pointer events.
+    /// Should be immutable after `WidgetAdded` event.
+    pub(crate) accepts_pointer_interaction: bool,
+    /// Tracks whether widget gets text focus.
+    /// Should be immutable after `WidgetAdded` event.
+    pub(crate) accepts_focus: bool,
 
     /// Tracks whether widget is eligible for IME events.
     /// Should be immutable after `WidgetAdded` event.
-    pub(crate) is_text_input: bool,
+    pub(crate) accepts_text_input: bool,
     /// The area of the widget that is being edited by
     /// an IME, in local coordinates.
     pub(crate) ime_area: Option<Rect>,
@@ -145,9 +150,6 @@ pub(crate) struct WidgetState {
     /// Descendants of the focused widget are not in the focused path.
     pub(crate) has_focus: bool,
 
-    /// Whether this specific widget is in the focus chain.
-    pub(crate) in_focus_chain: bool,
-
     // --- DEBUG INFO ---
     // Used in event/lifecycle/etc methods that are expected to be called recursively
     // on a widget's children, to make sure each child was visited.
@@ -173,8 +175,9 @@ impl WidgetState {
             is_expecting_place_child_call: false,
             paint_insets: Insets::ZERO,
             local_paint_rect: Rect::ZERO,
-            is_portal: false,
-            is_text_input: false,
+            accepts_pointer_interaction: true,
+            accepts_focus: false,
+            accepts_text_input: false,
             ime_area: None,
             clip: Default::default(),
             translation: Vec2::ZERO,
@@ -195,7 +198,6 @@ impl WidgetState {
             request_accessibility: true,
             needs_accessibility: true,
             has_focus: false,
-            in_focus_chain: false,
             request_anim: true,
             needs_anim: true,
             needs_update_disabled: true,

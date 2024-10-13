@@ -225,9 +225,6 @@ impl Widget for Prose {
                 // TODO: Parley seems to require a relayout when colours change
                 ctx.request_layout();
             }
-            LifeCycle::BuildFocusChain => {
-                // When we add links to `Prose`, they will probably need to be handled here.
-            }
             _ => {}
         }
     }

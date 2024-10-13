@@ -8,9 +8,6 @@ expression: record
     L(
         WidgetAdded,
     ),
-    L(
-        BuildFocusChain,
-    ),
     Layout(
         0.0W×0.0H,
     ),

@@ -292,16 +292,6 @@ pub enum LifeCycle {
     /// [`is_stashed`]: crate::EventCtx::is_stashed
     /// [`set_stashed`]: crate::EventCtx::set_stashed
     StashedChanged(bool),
-    /// Called when the widget tree changes and Masonry wants to rebuild the
-    /// Focus-chain.
-    ///
-    /// It is the only place from which [`register_for_focus`] should be called.
-    /// By doing so the widget can get focused by other widgets using [`focus_next`] or [`focus_prev`].
-    ///
-    /// [`register_for_focus`]: crate::LifeCycleCtx::register_for_focus
-    /// [`focus_next`]: crate::EventCtx::focus_next
-    /// [`focus_prev`]: crate::EventCtx::focus_prev
-    BuildFocusChain,
 
     /// Called when a child widgets uses
     /// [`EventCtx::request_pan_to_this`](crate::EventCtx::request_pan_to_this).
@@ -488,26 +478,6 @@ impl PointerState {
 }
 
 impl LifeCycle {
-    // TODO - link this to documentation of stashed widgets - See issue https://github.com/linebender/xilem/issues/372
-    /// Whether this event should be sent to widgets which are currently not visible and not
-    /// accessible.
-    ///
-    /// If a widget changes which children are `hidden` it must call [`children_changed`].
-    /// For a more detailed explanation of the `hidden` state, see [`Event::should_propagate_to_hidden`].
-    ///
-    /// [`children_changed`]: crate::EventCtx::children_changed
-    /// [`Event::should_propagate_to_hidden`]: Event::should_propagate_to_hidden
-    pub fn should_propagate_to_hidden(&self) -> bool {
-        match self {
-            LifeCycle::WidgetAdded => true,
-            LifeCycle::AnimFrame(_) => true,
-            LifeCycle::DisabledChanged(_) => true,
-            LifeCycle::StashedChanged(_) => true,
-            LifeCycle::BuildFocusChain => false,
-            LifeCycle::RequestPanToChild(_) => false,
-        }
-    }
-
     /// Short name, for debug logging.
     ///
     /// Essentially returns the enum variant name.
@@ -517,7 +487,6 @@ impl LifeCycle {
             LifeCycle::AnimFrame(_) => "AnimFrame",
             LifeCycle::DisabledChanged(_) => "DisabledChanged",
             LifeCycle::StashedChanged(_) => "StashedChanged",
-            LifeCycle::BuildFocusChain => "BuildFocusChain",
             LifeCycle::RequestPanToChild(_) => "RequestPanToChild",
         }
     }

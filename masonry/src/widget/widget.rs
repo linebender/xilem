@@ -151,9 +151,31 @@ pub trait Widget: AsAny {
     /// responsible for visiting all their children during `layout` and `register_children`.
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]>;
 
-    // TODO - Rename
-    // TODO - Document
-    fn skip_pointer(&self) -> bool {
+    /// Whether this widget gets pointer events and hovered status. True by default.
+    ///
+    /// If false, the widget will be treated as "transparent" for the pointer, meaning
+    /// that the pointer will be considered as hovering whatever is under this widget.
+    ///
+    /// **Note:** The value returned by this method is cached at widget creation and can't be changed.
+    fn accepts_pointer_interaction(&self) -> bool {
+        true
+    }
+
+    /// Whether this widget gets text focus. False by default.
+    ///
+    /// If true, pressing Tab can focus this widget.
+    ///
+    /// **Note:** The value returned by this method is cached at widget creation and can't be changed.
+    fn accepts_focus(&self) -> bool {
+        false
+    }
+
+    /// Whether this widget gets IME events. False by default.
+    ///
+    /// If true, focusing this widget will start an IME session.
+    ///
+    /// **Note:** The value returned by this method is cached at widget creation and can't be changed.
+    fn accepts_text_input(&self) -> bool {
         false
     }
 
@@ -220,7 +242,7 @@ pub trait Widget: AsAny {
             // The position must be inside the child's layout and inside the child's clip path (if
             // any).
             if !child.ctx().is_stashed()
-                && !child.widget.skip_pointer()
+                && child.ctx().accepts_pointer_interaction()
                 && child.ctx().window_layout_rect().contains(pos)
             {
                 return Some(child);
@@ -397,8 +419,16 @@ impl Widget for Box<dyn Widget> {
         self.deref().children_ids()
     }
 
-    fn skip_pointer(&self) -> bool {
-        self.deref().skip_pointer()
+    fn accepts_pointer_interaction(&self) -> bool {
+        self.deref().accepts_pointer_interaction()
+    }
+
+    fn accepts_focus(&self) -> bool {
+        self.deref().accepts_focus()
+    }
+
+    fn accepts_text_input(&self) -> bool {
+        self.deref().accepts_text_input()
     }
 
     fn make_trace_span(&self) -> Span {

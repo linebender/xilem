@@ -234,7 +234,7 @@ pub(crate) fn run_layout_inner<W: Widget>(
 
             // TODO - This check might be redundant with the code updating local_paint_rect
             let child_rect = child_state.paint_rect();
-            if !rect_contains(&state.local_paint_rect, &child_rect) && !state.is_portal {
+            if !rect_contains(&state.local_paint_rect, &child_rect) && state.clip.is_none() {
                 debug_panic!(
                     "Error in '{}' {}: paint_rect {:?} doesn't contain paint_rect {:?} of child widget '{}' {}",
                     widget.short_type_name(),
