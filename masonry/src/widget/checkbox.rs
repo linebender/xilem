@@ -46,6 +46,7 @@ impl Checkbox {
 impl WidgetMut<'_, Checkbox> {
     pub fn set_checked(&mut self, checked: bool) {
         self.widget.checked = checked;
+        // Checked state impacts appearance and accessibility node
         self.ctx.request_render();
     }
 
@@ -68,6 +69,7 @@ impl Widget for Checkbox {
             PointerEvent::PointerDown(_, _) => {
                 if !ctx.is_disabled() {
                     ctx.capture_pointer();
+                    // Checked state impacts appearance and accessibility node
                     ctx.request_render();
                     trace!("Checkbox {:?} pressed", ctx.widget_id());
                 }
@@ -78,6 +80,7 @@ impl Widget for Checkbox {
                     ctx.submit_action(Action::CheckboxChecked(self.checked));
                     trace!("Checkbox {:?} released", ctx.widget_id());
                 }
+                // Checked state impacts appearance and accessibility node
                 ctx.request_render();
             }
             _ => (),
@@ -92,6 +95,7 @@ impl Widget for Checkbox {
                 accesskit::Action::Default => {
                     self.checked = !self.checked;
                     ctx.submit_action(Action::CheckboxChecked(self.checked));
+                    // Checked state impacts appearance and accessibility node
                     ctx.request_render();
                 }
                 _ => {}
@@ -100,7 +104,8 @@ impl Widget for Checkbox {
     }
 
     fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, _event: &StatusChange) {
-        ctx.request_render();
+        // Hovered/focused status impacts appearance, but not accessibility node
+        ctx.request_paint_only();
     }
 
     fn register_children(&mut self, ctx: &mut RegisterCtx) {

@@ -82,6 +82,7 @@ impl Widget for Button {
             PointerEvent::PointerDown(_, _) => {
                 if !ctx.is_disabled() {
                     ctx.capture_pointer();
+                    // Changes in pointer capture impact appearance, but not accessibility node
                     ctx.request_paint_only();
                     trace!("Button {:?} pressed", ctx.widget_id());
                 }
@@ -91,6 +92,7 @@ impl Widget for Button {
                     ctx.submit_action(Action::ButtonPressed(*button));
                     trace!("Button {:?} released", ctx.widget_id());
                 }
+                // Changes in pointer capture impact appearance, but not accessibility node
                 ctx.request_paint_only();
             }
             _ => (),
@@ -104,7 +106,6 @@ impl Widget for Button {
             match event.action {
                 accesskit::Action::Default => {
                     ctx.submit_action(Action::ButtonPressed(PointerButton::Primary));
-                    ctx.request_paint_only();
                 }
                 _ => {}
             }
@@ -112,6 +113,7 @@ impl Widget for Button {
     }
 
     fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, _event: &StatusChange) {
+        // Changes in hovered/focused status impact appearance, but not accessibility node
         ctx.request_paint_only();
     }
 

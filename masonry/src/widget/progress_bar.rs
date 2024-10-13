@@ -83,7 +83,7 @@ impl WidgetMut<'_, ProgressBar> {
     pub fn set_progress(&mut self, progress: Option<f64>) {
         self.widget.set_progress(progress);
         self.ctx.request_layout();
-        self.ctx.request_accessibility_update();
+        self.ctx.request_render();
     }
 }
 
@@ -102,19 +102,15 @@ fn clamp_progress(progress: &mut Option<f64>) {
 
 // --- MARK: IMPL WIDGET ---
 impl Widget for ProgressBar {
-    // pointer events unhandled for now
     fn on_pointer_event(&mut self, _ctx: &mut EventCtx, _event: &PointerEvent) {}
 
     fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
 
-    // access events unhandled for now
     fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {}
 
     fn register_children(&mut self, _ctx: &mut RegisterCtx) {}
 
-    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, _event: &StatusChange) {
-        ctx.request_paint_only();
-    }
+    fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange) {}
 
     fn lifecycle(&mut self, _ctx: &mut LifeCycleCtx, _event: &LifeCycle) {}
 

@@ -355,7 +355,9 @@ impl WidgetMut<'_, Split> {
     /// Set whether the split point can be changed by dragging.
     pub fn set_draggable(&mut self, draggable: bool) {
         self.widget.draggable = draggable;
-        self.ctx.request_render();
+        // Bar mutability impacts appearance, but not accessibility node
+        // TODO - This might change in a future implementation
+        self.ctx.request_paint_only();
     }
 
     /// Set whether the splitter bar is drawn as a solid rectangle.
@@ -363,7 +365,8 @@ impl WidgetMut<'_, Split> {
     /// If this is `false` (the default), the bar will be drawn as two parallel lines.
     pub fn set_bar_solid(&mut self, solid: bool) {
         self.widget.solid = solid;
-        self.ctx.request_render();
+        // Bar solidity impacts appearance, but not accessibility node
+        self.ctx.request_paint_only();
     }
 }
 

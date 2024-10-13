@@ -20,6 +20,7 @@ use crate::{
 
 // TODO - refactor - see https://github.com/linebender/xilem/issues/366
 // TODO - rename "Portal" to "ScrollPortal"?
+// TODO - Document which cases need request_layout, request_compose and request_render
 // Conceptually, a Portal is a Widget giving a restricted view of a child widget
 // Imagine a very large widget, and a rect that represents the part of the widget we see
 pub struct Portal<W: Widget> {
