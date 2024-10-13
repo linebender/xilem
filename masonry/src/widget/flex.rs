@@ -932,7 +932,8 @@ impl Widget for Flex {
         // Measure non-flex children.
         let mut major_non_flex = total_gap;
         // We start with a small value to avoid divide-by-zero errors.
-        let mut flex_sum = 0.001;
+        const MIN_FLEX_SUM: f64 = 0.0001;
+        let mut flex_sum = MIN_FLEX_SUM;
         for child in &mut self.children {
             match child {
                 Child::Fixed { widget, alignment } => {
@@ -1126,7 +1127,7 @@ impl Widget for Flex {
             major -= gap;
         }
 
-        if flex_sum > 0.0 {
+        if flex_sum > MIN_FLEX_SUM {
             major = total_major;
         }
 
@@ -1589,5 +1590,14 @@ mod tests {
         });
 
         // TODO - test out-of-bounds access?
+    }
+
+    #[test]
+    fn divide_by_zero() {
+        let widget = Flex::column().with_flex_spacer(0.0);
+
+        // Running layout should not panic when the flex sum is zero.
+        let mut harness = TestHarness::create(widget);
+        harness.render();
     }
 }
