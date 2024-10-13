@@ -104,16 +104,17 @@ impl ScrollBar {
 }
 
 // --- MARK: WIDGETMUT ---
-impl WidgetMut<'_, ScrollBar> {
+use crate::{ImplMut, SelfMut};
+impl ImplMut!('_, ScrollBar) {
     // TODO - Remove?
-    pub fn set_sizes(&mut self, portal_size: f64, content_size: f64) {
+    pub fn set_sizes(self: SelfMut!('_, ScrollBar), portal_size: f64, content_size: f64) {
         self.widget.portal_size = portal_size;
         self.widget.content_size = content_size;
         self.ctx.request_paint();
     }
 
     // TODO - Remove?
-    pub fn set_content_size(&mut self, content_size: f64) {
+    pub fn set_content_size(self: SelfMut!('_, ScrollBar), content_size: f64) {
         // TODO - cursor_progress
         self.widget.content_size = content_size;
         self.ctx.request_paint();

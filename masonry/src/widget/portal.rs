@@ -167,28 +167,30 @@ impl<W: Widget> Portal<W> {
 }
 
 // --- MARK: WIDGETMUT ---
-impl<W: Widget> WidgetMut<'_, Portal<W>> {
-    pub fn child_mut(&mut self) -> WidgetMut<'_, W> {
+
+use crate::{ImplMut, SelfMut};
+impl<W: Widget> ImplMut!('_, Portal<W>) {
+    pub fn child_mut(self: SelfMut!('_, Portal<W>)) -> WidgetMut<'_, W> {
         self.ctx.get_mut(&mut self.widget.child)
     }
 
-    pub fn horizontal_scrollbar_mut(&mut self) -> WidgetMut<'_, ScrollBar> {
+    pub fn horizontal_scrollbar_mut(self: SelfMut!('_, Portal<W>)) -> WidgetMut<'_, ScrollBar> {
         self.ctx.get_mut(&mut self.widget.scrollbar_horizontal)
     }
 
-    pub fn vertical_scrollbar_mut(&mut self) -> WidgetMut<'_, ScrollBar> {
+    pub fn vertical_scrollbar_mut(self: SelfMut!('_, Portal<W>)) -> WidgetMut<'_, ScrollBar> {
         self.ctx.get_mut(&mut self.widget.scrollbar_vertical)
     }
 
     // TODO - rewrite doc
     /// Set whether to constrain the child horizontally.
-    pub fn set_constrain_horizontal(&mut self, constrain: bool) {
+    pub fn set_constrain_horizontal(self: SelfMut!('_, Portal<W>), constrain: bool) {
         self.widget.constrain_horizontal = constrain;
         self.ctx.request_layout();
     }
 
     /// Set whether to constrain the child vertically.
-    pub fn set_constrain_vertical(&mut self, constrain: bool) {
+    pub fn set_constrain_vertical(self: SelfMut!('_, Portal<W>), constrain: bool) {
         self.widget.constrain_vertical = constrain;
         self.ctx.request_layout();
     }
@@ -199,12 +201,12 @@ impl<W: Widget> WidgetMut<'_, Portal<W>> {
     /// See [`content_must_fill`] for more details.
     ///
     /// [`content_must_fill`]: ClipBox::content_must_fill
-    pub fn set_content_must_fill(&mut self, must_fill: bool) {
+    pub fn set_content_must_fill(self: SelfMut!('_, Portal<W>), must_fill: bool) {
         self.widget.must_fill = must_fill;
         self.ctx.request_layout();
     }
 
-    pub fn set_viewport_pos(&mut self, position: Point) -> bool {
+    pub fn set_viewport_pos(self: SelfMut!('_, Portal<W>), position: Point) -> bool {
         let portal_size = self.ctx.layout_rect().size();
         let content_size = self
             .ctx
@@ -228,12 +230,12 @@ impl<W: Widget> WidgetMut<'_, Portal<W>> {
         pos_changed
     }
 
-    pub fn pan_viewport_by(&mut self, translation: Vec2) -> bool {
+    pub fn pan_viewport_by(self: SelfMut!('_, Portal<W>), translation: Vec2) -> bool {
         self.set_viewport_pos(self.widget.viewport_pos + translation)
     }
 
     // Note - Rect is in child coordinates
-    pub fn pan_viewport_to(&mut self, target: Rect) -> bool {
+    pub fn pan_viewport_to(self: SelfMut!('_, Portal<W>), target: Rect) -> bool {
         let viewport = Rect::from_origin_size(self.widget.viewport_pos, self.ctx.widget_state.size);
 
         let new_pos_x = compute_pan_range(

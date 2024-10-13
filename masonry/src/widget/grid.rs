@@ -143,24 +143,34 @@ impl GridParams {
 }
 
 // --- MARK: WIDGETMUT---
-impl<'a> WidgetMut<'a, Grid> {
+use crate::{ImplMut, SelfMut};
+impl ImplMut!('_, Grid) {
     /// Add a child widget.
     ///
     /// See also [`with_child`].
     ///
     /// [`with_child`]: Grid::with_child
-    pub fn add_child(&mut self, child: impl Widget, params: GridParams) {
+    pub fn add_child(self: SelfMut!('_, Grid), child: impl Widget, params: GridParams) {
         let child_pod: WidgetPod<Box<dyn Widget>> = WidgetPod::new(Box::new(child));
         self.insert_child_pod(child_pod, params);
     }
 
-    pub fn add_child_id(&mut self, child: impl Widget, id: WidgetId, params: GridParams) {
+    pub fn add_child_id(
+        self: SelfMut!('_, Grid),
+        child: impl Widget,
+        id: WidgetId,
+        params: GridParams,
+    ) {
         let child_pod: WidgetPod<Box<dyn Widget>> = WidgetPod::new_with_id(Box::new(child), id);
         self.insert_child_pod(child_pod, params);
     }
 
     /// Add a child widget.
-    pub fn insert_child_pod(&mut self, widget: WidgetPod<Box<dyn Widget>>, params: GridParams) {
+    pub fn insert_child_pod(
+        self: SelfMut!('_, Grid),
+        widget: WidgetPod<Box<dyn Widget>>,
+        params: GridParams,
+    ) {
         let child = new_grid_child(params, widget);
         self.widget.children.push(child);
         self.ctx.children_changed();
@@ -168,7 +178,7 @@ impl<'a> WidgetMut<'a, Grid> {
     }
 
     pub fn insert_grid_child_at(
-        &mut self,
+        self: SelfMut!('_, Grid),
         idx: usize,
         child: impl Widget,
         params: impl Into<GridParams>,
@@ -177,7 +187,7 @@ impl<'a> WidgetMut<'a, Grid> {
     }
 
     pub fn insert_grid_child_pod(
-        &mut self,
+        self: SelfMut!('_, Grid),
         idx: usize,
         child: WidgetPod<Box<dyn Widget>>,
         params: impl Into<GridParams>,
@@ -188,22 +198,25 @@ impl<'a> WidgetMut<'a, Grid> {
         self.ctx.request_layout();
     }
 
-    pub fn set_spacing(&mut self, spacing: f64) {
+    pub fn set_spacing(self: SelfMut!('_, Grid), spacing: f64) {
         self.widget.grid_spacing = spacing;
         self.ctx.request_layout();
     }
 
-    pub fn set_width(&mut self, width: i32) {
+    pub fn set_width(self: SelfMut!('_, Grid), width: i32) {
         self.widget.grid_width = width;
         self.ctx.request_layout();
     }
 
-    pub fn set_height(&mut self, height: i32) {
+    pub fn set_height(self: SelfMut!('_, Grid), height: i32) {
         self.widget.grid_height = height;
         self.ctx.request_layout();
     }
 
-    pub fn child_mut(&mut self, idx: usize) -> Option<WidgetMut<'_, Box<dyn Widget>>> {
+    pub fn child_mut(
+        self: SelfMut!('_, Grid),
+        idx: usize,
+    ) -> Option<WidgetMut<'_, Box<dyn Widget>>> {
         let child = match self.widget.children[idx].widget_mut() {
             Some(widget) => widget,
             None => return None,
@@ -217,13 +230,13 @@ impl<'a> WidgetMut<'a, Grid> {
     /// # Panics
     ///
     /// Panics if the element at `idx` is not a widget.
-    pub fn update_child_grid_params(&mut self, idx: usize, params: GridParams) {
+    pub fn update_child_grid_params(self: SelfMut!('_, Grid), idx: usize, params: GridParams) {
         let child = &mut self.widget.children[idx];
         child.update_params(params);
         self.ctx.request_layout();
     }
 
-    pub fn remove_child(&mut self, idx: usize) {
+    pub fn remove_child(self: SelfMut!('_, Grid), idx: usize) {
         let child = self.widget.children.remove(idx);
         self.ctx.remove_child(child.widget);
         self.ctx.request_layout();

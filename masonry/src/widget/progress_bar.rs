@@ -79,8 +79,9 @@ impl ProgressBar {
 }
 
 // --- MARK: WIDGETMUT ---
-impl WidgetMut<'_, ProgressBar> {
-    pub fn set_progress(&mut self, progress: Option<f64>) {
+use crate::{ImplMut, SelfMut};
+impl ImplMut!('_, ProgressBar) {
+    pub fn set_progress(self: SelfMut!('_, ProgressBar), progress: Option<f64>) {
         self.widget.set_progress(progress);
         self.ctx.request_layout();
         self.ctx.request_accessibility_update();

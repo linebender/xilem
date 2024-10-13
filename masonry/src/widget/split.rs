@@ -298,12 +298,13 @@ impl Split {
 // FIXME - Add unit tests for WidgetMut<Split>
 
 // --- MARK: WIDGETMUT ---
-impl WidgetMut<'_, Split> {
+use crate::{ImplMut, SelfMut};
+impl ImplMut!('_, Split) {
     /// Set the split point as a fraction of the split axis.
     ///
     /// The value must be between `0.0` and `1.0`, inclusive.
     /// The default split point is `0.5`.
-    pub fn set_split_point(&mut self, split_point: f64) {
+    pub fn set_split_point(self: SelfMut!('_, Split), split_point: f64) {
         assert!(
             (0.0..=1.0).contains(&split_point),
             "split_point must be in the range [0.0-1.0]!"
@@ -316,7 +317,7 @@ impl WidgetMut<'_, Split> {
     ///
     /// The value must be greater than or equal to `0.0`.
     /// The value will be rounded up to the nearest integer.
-    pub fn set_min_size(&mut self, first: f64, second: f64) {
+    pub fn set_min_size(self: SelfMut!('_, Split), first: f64, second: f64) {
         assert!(first >= 0.0);
         assert!(second >= 0.0);
         self.widget.min_size = (first.ceil(), second.ceil());
@@ -328,7 +329,7 @@ impl WidgetMut<'_, Split> {
     /// The value must be positive or zero.
     /// The value will be rounded up to the nearest integer.
     /// The default splitter bar size is `6.0`.
-    pub fn set_bar_size(&mut self, bar_size: f64) {
+    pub fn set_bar_size(self: SelfMut!('_, Split), bar_size: f64) {
         assert!(bar_size >= 0.0, "bar_size must be 0.0 or greater!");
         self.widget.bar_size = bar_size.ceil();
         self.ctx.request_layout();
@@ -346,14 +347,14 @@ impl WidgetMut<'_, Split> {
     /// The value must be positive or zero.
     /// The value will be rounded up to the nearest integer.
     /// The default minimum splitter bar area is `6.0`.
-    pub fn set_min_bar_area(&mut self, min_bar_area: f64) {
+    pub fn set_min_bar_area(self: SelfMut!('_, Split), min_bar_area: f64) {
         assert!(min_bar_area >= 0.0, "min_bar_area must be 0.0 or greater!");
         self.widget.min_bar_area = min_bar_area.ceil();
         self.ctx.request_layout();
     }
 
     /// Set whether the split point can be changed by dragging.
-    pub fn set_draggable(&mut self, draggable: bool) {
+    pub fn set_draggable(self: SelfMut!('_, Split), draggable: bool) {
         self.widget.draggable = draggable;
         self.ctx.request_paint();
     }
@@ -361,7 +362,7 @@ impl WidgetMut<'_, Split> {
     /// Set whether the splitter bar is drawn as a solid rectangle.
     ///
     /// If this is `false` (the default), the bar will be drawn as two parallel lines.
-    pub fn set_bar_solid(&mut self, solid: bool) {
+    pub fn set_bar_solid(self: SelfMut!('_, Split), solid: bool) {
         self.widget.solid = solid;
         self.ctx.request_paint();
     }

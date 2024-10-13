@@ -98,13 +98,14 @@ impl Textbox {
 }
 
 // --- MARK: WIDGETMUT ---
-impl WidgetMut<'_, Textbox> {
+use crate::{ImplMut, SelfMut};
+impl ImplMut!('_, Textbox) {
     pub fn text(&self) -> &str {
         self.widget.editor.text()
     }
 
     pub fn set_text_properties<R>(
-        &mut self,
+        self: SelfMut!('_, Textbox),
         f: impl FnOnce(&mut TextWithSelection<String>) -> R,
     ) -> R {
         let ret = f(&mut self.widget.editor);
@@ -121,7 +122,7 @@ impl WidgetMut<'_, Textbox> {
     // FIXME - it's not clear whether this is the right behaviour, or if there even
     // is one.
     // TODO: Create a method which sets the text and the cursor selection to be used if focused?
-    pub fn reset_text(&mut self, new_text: String) {
+    pub fn reset_text(self: SelfMut!('_, Textbox), new_text: String) {
         if self.ctx.is_focused() {
             tracing::warn!(
                 "Called reset_text on a focused `Textbox`. This will lose the user's current selection and cursor"
@@ -132,7 +133,7 @@ impl WidgetMut<'_, Textbox> {
     }
 
     #[doc(alias = "set_text_color")]
-    pub fn set_text_brush(&mut self, brush: impl Into<TextBrush>) {
+    pub fn set_text_brush(self: SelfMut!('_, Textbox), brush: impl Into<TextBrush>) {
         let brush = brush.into();
         self.widget.brush = brush;
         if !self.ctx.is_disabled() {
@@ -140,19 +141,19 @@ impl WidgetMut<'_, Textbox> {
             self.set_text_properties(|layout| layout.set_brush(brush));
         }
     }
-    pub fn set_text_size(&mut self, size: f32) {
+    pub fn set_text_size(self: SelfMut!('_, Textbox), size: f32) {
         self.set_text_properties(|layout| layout.set_text_size(size));
     }
-    pub fn set_alignment(&mut self, alignment: Alignment) {
+    pub fn set_alignment(self: SelfMut!('_, Textbox), alignment: Alignment) {
         self.set_text_properties(|layout| layout.set_text_alignment(alignment));
     }
-    pub fn set_font(&mut self, font_stack: FontStack<'static>) {
+    pub fn set_font(self: SelfMut!('_, Textbox), font_stack: FontStack<'static>) {
         self.set_text_properties(|layout| layout.set_font(font_stack));
     }
-    pub fn set_font_family(&mut self, family: FontFamily<'static>) {
+    pub fn set_font_family(self: SelfMut!('_, Textbox), family: FontFamily<'static>) {
         self.set_font(FontStack::Single(family));
     }
-    pub fn set_line_break_mode(&mut self, line_break_mode: LineBreaking) {
+    pub fn set_line_break_mode(self: SelfMut!('_, Textbox), line_break_mode: LineBreaking) {
         self.widget.line_break_mode = line_break_mode;
         self.ctx.request_paint();
         self.ctx.request_accessibility_update();

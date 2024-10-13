@@ -43,8 +43,9 @@ impl Checkbox {
 }
 
 // --- MARK: WIDGETMUT ---
-impl WidgetMut<'_, Checkbox> {
-    pub fn set_checked(&mut self, checked: bool) {
+use crate::{ImplMut, SelfMut};
+impl ImplMut!('_, Checkbox) {
+    pub fn set_checked(self: SelfMut!('_, Checkbox), checked: bool) {
         self.widget.checked = checked;
         self.ctx.request_paint();
         self.ctx.request_accessibility_update();
@@ -53,11 +54,11 @@ impl WidgetMut<'_, Checkbox> {
     /// Set the text.
     ///
     /// We enforce this to be an `ArcStr` to make the allocation explicit.
-    pub fn set_text(&mut self, new_text: ArcStr) {
+    pub fn set_text(self: SelfMut!('_, Checkbox), new_text: ArcStr) {
         self.label_mut().set_text(new_text);
     }
 
-    pub fn label_mut(&mut self) -> WidgetMut<'_, Label> {
+    pub fn label_mut(self: SelfMut!('_, Checkbox)) -> WidgetMut<'_, Label> {
         self.ctx.get_mut(&mut self.widget.label)
     }
 }
