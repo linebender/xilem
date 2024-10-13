@@ -416,12 +416,11 @@ impl RenderRoot {
             return;
         };
         let event = AccessEvent {
-            target: WidgetId(id),
             action: event.action,
             data: event.data,
         };
 
-        root_on_access_event(self, &event);
+        root_on_access_event(self, &event, WidgetId(id));
 
         self.run_rewrite_passes();
         self.get_root_widget().debug_validate(false);
