@@ -117,7 +117,7 @@ impl Widget for ProgressBar {
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
         const DEFAULT_WIDTH: f64 = 400.;
 
-        if self.label.needs_rebuild() {
+        if self.label.needs_rebuild() || self.progress_changed {
             let (font_ctx, layout_ctx) = ctx.text_contexts();
             self.label
                 .rebuild(font_ctx, layout_ctx, &self.value(), self.progress_changed);
