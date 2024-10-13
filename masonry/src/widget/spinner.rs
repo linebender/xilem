@@ -92,6 +92,7 @@ impl Widget for Spinner {
                     self.t = self.t.rem_euclid(1.0);
                 }
                 ctx.request_anim_frame();
+                ctx.request_paint_only();
             }
             _ => (),
         }
