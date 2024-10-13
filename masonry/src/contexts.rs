@@ -504,10 +504,7 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, LifeCycleCtx<'_>, {
         self.widget_state.request_accessibility = true;
     }
 
-    /// Request a [`paint`](crate::Widget::paint) pass.
-    ///
-    /// This doesn't request an accessibility pass, which usually isn't what you want.
-    /// See [`request_render`](Self::request_render).
+    /// Request a [`paint`](crate::Widget::paint) and an [`accessibility`](crate::Widget::accessibility) pass.
     pub fn request_render(&mut self) {
         trace!("request_render");
         self.widget_state.request_paint = true;
