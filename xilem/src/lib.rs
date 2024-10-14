@@ -25,7 +25,7 @@ use xilem_core::{
 pub use masonry::{
     dpi,
     event_loop_runner::{EventLoop, EventLoopBuilder},
-    Color, TextAlignment,
+    Color, TextAlignment, TextWeight,
 };
 pub use xilem_core as core;
 

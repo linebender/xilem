@@ -11,6 +11,7 @@ use masonry::app_driver::{AppDriver, DriverCtx};
 use masonry::dpi::LogicalSize;
 use masonry::widget::{Button, Flex, Label, RootWidget};
 use masonry::{Action, WidgetId};
+use parley::fontique::Weight;
 use winit::window::Window;
 
 const VERTICAL_WIDGET_SPACING: f64 = 20.0;
@@ -31,7 +32,9 @@ impl AppDriver for Driver {
 }
 
 pub fn main() {
-    let label = Label::new("Hello").with_text_size(32.0);
+    let label = Label::new("Hello")
+        .with_text_size(32.0)
+        .with_weight(Weight::BOLD);
     let button = Button::new("Say hello");
 
     // Arrange the two widgets vertically, with some padding

@@ -4,7 +4,7 @@
 use masonry::{text::TextBrush, widget, ArcStr};
 use xilem_core::{Mut, ViewMarker};
 
-use crate::{Color, MessageResult, Pod, TextAlignment, View, ViewCtx, ViewId};
+use crate::{Color, MessageResult, Pod, TextAlignment, TextWeight, View, ViewCtx, ViewId};
 
 pub fn label(label: impl Into<ArcStr>) -> Label {
     Label {
@@ -12,6 +12,7 @@ pub fn label(label: impl Into<ArcStr>) -> Label {
         text_brush: Color::WHITE.into(),
         alignment: TextAlignment::default(),
         text_size: masonry::theme::TEXT_SIZE_NORMAL as f32,
+        weight: TextWeight::NORMAL,
     }
 }
 
@@ -21,6 +22,7 @@ pub struct Label {
     text_brush: TextBrush,
     alignment: TextAlignment,
     text_size: f32,
+    weight: TextWeight,
     // TODO: add more attributes of `masonry::widget::Label`
 }
 
@@ -41,6 +43,11 @@ impl Label {
         self.text_size = text_size;
         self
     }
+
+    pub fn weight(mut self, weight: TextWeight) -> Self {
+        self.weight = weight;
+        self
+    }
 }
 
 impl ViewMarker for Label {}
@@ -53,7 +60,8 @@ impl<State, Action> View<State, Action, ViewCtx> for Label {
             widget::Label::new(self.label.clone())
                 .with_text_brush(self.text_brush.clone())
                 .with_text_alignment(self.alignment)
-                .with_text_size(self.text_size),
+                .with_text_size(self.text_size)
+                .with_weight(self.weight),
         );
         (widget_pod, ())
     }
@@ -76,6 +84,9 @@ impl<State, Action> View<State, Action, ViewCtx> for Label {
         }
         if prev.text_size != self.text_size {
             element.set_text_size(self.text_size);
+        }
+        if prev.weight != self.weight {
+            element.set_weight(self.weight);
         }
         element
     }
