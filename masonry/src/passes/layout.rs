@@ -15,16 +15,6 @@ use crate::tree_arena::ArenaRefChildren;
 use crate::widget::WidgetState;
 use crate::{BoxConstraints, LayoutCtx, Widget, WidgetPod};
 
-// TODO - Replace with contains_rect once new Kurbo version is released.
-// See https://github.com/linebender/kurbo/pull/347
-/// Return `true` if all of `smaller` is within `larger`.
-fn rect_contains(larger: &Rect, smaller: &Rect) -> bool {
-    smaller.x0 >= larger.x0
-        && smaller.x1 <= larger.x1
-        && smaller.y0 >= larger.y0
-        && smaller.y1 <= larger.y1
-}
-
 // --- MARK: CHECKS ---
 // TODO - document
 // TODO - This method should take a 'can_skip: Fn(WidgetRef) -> bool'
@@ -234,7 +224,7 @@ pub(crate) fn run_layout_inner<W: Widget>(
 
             // TODO - This check might be redundant with the code updating local_paint_rect
             let child_rect = child_state.paint_rect();
-            if !rect_contains(&state.local_paint_rect, &child_rect) && state.clip.is_none() {
+            if !state.local_paint_rect.contains_rect(child_rect) && state.clip.is_none() {
                 debug_panic!(
                     "Error in '{}' {}: paint_rect {:?} doesn't contain paint_rect {:?} of child widget '{}' {}",
                     widget.short_type_name(),

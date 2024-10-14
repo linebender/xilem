@@ -88,7 +88,7 @@ impl Widget for Image {
         // in the size exactly. If it is unconstrained by both width and height take the size of
         // the image.
         let image_size = Size::new(self.image_data.width as f64, self.image_data.height as f64);
-        if image_size.is_empty() {
+        if image_size.is_zero_area() {
             let size = bc.min();
             return size;
         }
