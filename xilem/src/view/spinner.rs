@@ -11,7 +11,7 @@ use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
 /// This can be used to display that progress is happening on some process,
 /// but that the exact status is not known.
 ///
-/// The underlying widget is the Masonry [Spinner](widget::Spinner).
+/// The underlying widget is the Masonry [`Spinner`](widget::Spinner).
 ///
 /// # Examples
 ///

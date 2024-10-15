@@ -12,7 +12,7 @@ use vello::{
 
 use crate::text::TextBrush;
 
-/// A function that renders laid out glyphs to a [Scene].
+/// A function that renders laid out glyphs to a [`Scene`].
 pub fn render_text(
     scene: &mut Scene,
     scratch_scene: &mut Scene,

@@ -113,9 +113,9 @@ pub trait View<State, Action, Context: ViewPathTracker, Message = DynMessage>:
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-/// An identifier used to differentiation between the direct children of a [View].
+/// An identifier used to differentiation between the direct children of a [`View`].
 ///
-/// These are [u64] backed identifiers, which will be added to the "view path" in
+/// These are [`u64`] backed identifiers, which will be added to the "view path" in
 /// [`View::build`] and [`View::rebuild`] (and their [`ViewSequence`](crate::ViewSequence) counterparts),
 /// and removed from the start of the path if necessary in [`View::message`].
 /// The value of `ViewId`s are only meaningful for the `View` or `ViewSequence` added them
