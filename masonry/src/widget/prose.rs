@@ -257,7 +257,10 @@ impl Widget for Prose {
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
         if self.text_layout.needs_rebuild() {
-            debug_panic!("Called Label paint before layout");
+            debug_panic!(
+                "Called {name}::paint with invalid layout",
+                name = self.short_type_name()
+            );
         }
         if self.line_break_mode == LineBreaking::Clip {
             let clip_rect = ctx.size().to_rect();
