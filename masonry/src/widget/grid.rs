@@ -248,6 +248,12 @@ impl Widget for Grid {
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
         let total_size = bc.max();
+        if !total_size.is_finite() {
+            debug_panic!(
+                "Error while computing layout for grid; infinite BoxConstraint max provided {}",
+                total_size
+            );
+        }
         let width_unit = (total_size.width + self.grid_spacing) / (self.grid_width as f64);
         let height_unit = (total_size.height + self.grid_spacing) / (self.grid_height as f64);
         for child in &mut self.children {
