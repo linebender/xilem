@@ -146,18 +146,6 @@ impl_context_method!(
             self.widget_state.id
         }
 
-        /// Skip iterating over the given child.
-        ///
-        /// Normally, container widgets are supposed to iterate over each of their
-        /// child widgets in their methods. By default, the framework treats not
-        /// doing so as a mistake, and panics if debug assertions are on.
-        ///
-        /// This tells the framework that a child was deliberately skipped.
-        // TODO - see event flow tutorial - See https://github.com/linebender/xilem/issues/376
-        pub fn skip_child(&self, child: &mut WidgetPod<impl Widget>) {
-            self.get_child_state(child).mark_as_visited(true);
-        }
-
         #[allow(dead_code)]
         /// Helper method to get a direct reference to a child widget from its `WidgetPod`.
         fn get_child<Child: Widget>(&self, child: &'_ WidgetPod<Child>) -> &'_ Child {
@@ -926,12 +914,6 @@ impl LayoutCtx<'_> {
         self.get_child_state(child).needs_layout
     }
 
-    #[allow(dead_code)]
-    pub(crate) fn mark_as_visited(&self, visited: bool) {
-        #[cfg(debug_assertions)]
-        self.widget_state.mark_as_visited(visited);
-    }
-
     /// The distance from the bottom of the given widget to the baseline.
     ///
     /// ## Panics
@@ -987,9 +969,7 @@ impl LayoutCtx<'_> {
     /// This may be removed in the future. Currently it's useful for
     /// stashed children and children whose layout is cached.
     pub fn skip_layout(&mut self, child: &mut WidgetPod<impl Widget>) {
-        #[cfg(debug_assertions)]
-        self.get_child_state(child).mark_as_visited(true);
-        self.get_child_state_mut(child).needs_layout = false;
+        self.get_child_state_mut(child).request_layout = false;
     }
 
     /// Gives the widget a clip path.
@@ -1033,6 +1013,19 @@ impl LayoutCtx<'_> {
     #[track_caller]
     pub fn place_child<W: Widget>(&mut self, child: &mut WidgetPod<W>, origin: Point) {
         self.assert_layout_done(child, "place_child");
+        if origin.x.is_nan()
+            || origin.x.is_infinite()
+            || origin.y.is_nan()
+            || origin.y.is_infinite()
+        {
+            debug_panic!(
+                "Error in {}: trying to call 'place_child' with child '{}' {} with invalid origin {:?}",
+                self.widget_id(),
+                self.get_child(child).short_type_name(),
+                child.id(),
+                origin,
+            );
+        }
         if origin != self.get_child_state_mut(child).origin {
             self.get_child_state_mut(child).origin = origin;
             self.get_child_state_mut(child).translation_changed = true;
@@ -1060,6 +1053,19 @@ impl ComposeCtx<'_> {
         child: &mut WidgetPod<W>,
         translation: Vec2,
     ) {
+        if translation.x.is_nan()
+            || translation.x.is_infinite()
+            || translation.y.is_nan()
+            || translation.y.is_infinite()
+        {
+            debug_panic!(
+                "Error in {}: trying to call 'set_child_translation' with child '{}' {} with invalid translation {:?}",
+                self.widget_id(),
+                self.get_child(child).short_type_name(),
+                child.id(),
+                translation,
+            );
+        }
         let child = self.get_child_state_mut(child);
         if translation != child.translation {
             child.translation = translation;

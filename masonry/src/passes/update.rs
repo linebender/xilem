@@ -371,6 +371,11 @@ fn update_stashed_for_widget(
         state.item.needs_accessibility = true;
         // TODO - Remove once accessibility can be composed, same as above.
         state.item.request_accessibility = true;
+        // A stashed child doesn't need layout. We assumed that a child that just got
+        // un-stashed will need relayout.
+        // TODO - Handle this interaction more elegantly.
+        state.item.needs_layout = !stashed;
+        state.item.request_layout = !stashed;
     }
 
     state.item.needs_update_stashed = false;

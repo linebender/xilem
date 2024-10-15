@@ -129,7 +129,7 @@ fn check_pointer_capture_text_event() {
     harness.keyboard_type_chars("a");
 }
 
-#[should_panic(expected = "not visited in method layout")]
+#[should_panic(expected = "LayoutCtx::run_layout() was not called")]
 #[test]
 #[cfg_attr(
     not(debug_assertions),
@@ -144,7 +144,7 @@ fn check_forget_to_recurse_layout() {
     let _harness = TestHarness::create(widget);
 }
 
-#[should_panic(expected = "missing call to place_child method for child widget")]
+#[should_panic(expected = "LayoutCtx::place_child() was not called")]
 #[test]
 #[cfg_attr(
     not(debug_assertions),
