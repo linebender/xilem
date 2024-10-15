@@ -154,8 +154,7 @@ impl WidgetMut<'_, Textbox> {
     }
     pub fn set_line_break_mode(&mut self, line_break_mode: LineBreaking) {
         self.widget.line_break_mode = line_break_mode;
-        self.ctx.request_paint();
-        self.ctx.request_accessibility_update();
+        self.ctx.request_render();
     }
 }
 
@@ -174,8 +173,7 @@ impl Widget for Textbox {
                     let made_change = self.editor.pointer_down(inner_origin, state, *button);
                     if made_change {
                         ctx.request_layout();
-                        ctx.request_paint();
-                        ctx.request_accessibility_update();
+                        ctx.request_render();
                         ctx.request_focus();
                         ctx.capture_pointer();
                     }
@@ -188,8 +186,7 @@ impl Widget for Textbox {
                 {
                     // We might have changed text colours, so we need to re-request a layout
                     ctx.request_layout();
-                    ctx.request_paint();
-                    ctx.request_accessibility_update();
+                    ctx.request_render();
                 }
             }
             PointerEvent::PointerUp(button, state) => {
@@ -214,8 +211,7 @@ impl Widget for Textbox {
             ctx.set_handled();
             // TODO: only some handlers need this repaint
             ctx.request_layout();
-            ctx.request_paint();
-            ctx.request_accessibility_update();
+            ctx.request_render();
         }
     }
 
