@@ -19,6 +19,7 @@ use crate::debug_logger::DebugLogger;
 use crate::dpi::{LogicalPosition, LogicalSize, PhysicalSize};
 use crate::event::{PointerEvent, TextEvent, WindowEvent};
 use crate::passes::accessibility::run_accessibility_pass;
+use crate::passes::anim::run_update_anim_pass;
 use crate::passes::compose::run_compose_pass;
 use crate::passes::event::{
     run_on_access_event_pass, run_on_pointer_event_pass, run_on_text_event_pass,
@@ -28,9 +29,9 @@ use crate::passes::mutate::{mutate_widget, run_mutate_pass};
 use crate::passes::paint::run_paint_pass;
 use crate::passes::recurse_on_children;
 use crate::passes::update::{
-    run_update_anim_pass, run_update_disabled_pass, run_update_focus_chain_pass,
-    run_update_focus_pass, run_update_pointer_pass, run_update_scroll_pass,
-    run_update_stashed_pass, run_update_widget_tree_pass,
+    run_update_disabled_pass, run_update_focus_chain_pass, run_update_focus_pass,
+    run_update_pointer_pass, run_update_scroll_pass, run_update_stashed_pass,
+    run_update_widget_tree_pass,
 };
 use crate::text::TextBrush;
 use crate::tree_arena::{ArenaMut, TreeArena};

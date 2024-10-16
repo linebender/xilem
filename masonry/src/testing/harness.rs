@@ -21,7 +21,7 @@ use winit::event::Ime;
 use crate::action::Action;
 use crate::dpi::{LogicalPosition, PhysicalPosition, PhysicalSize};
 use crate::event::{PointerButton, PointerEvent, PointerState, TextEvent, WindowEvent};
-use crate::passes::update::run_update_anim_pass;
+use crate::passes::anim::run_update_anim_pass;
 use crate::render_root::{RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy};
 use crate::testing::{screenshots::get_image_diff, snapshot_utils::get_cargo_workspace};
 use crate::tracing_backend::try_init_test_tracing;

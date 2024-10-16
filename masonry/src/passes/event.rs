@@ -76,8 +76,6 @@ fn run_event_pass<E>(
     Handled::from(is_handled)
 }
 
-// TODO - Send synthetic MouseLeave events
-
 // --- MARK: POINTER_EVENT ---
 pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEvent) -> Handled {
     let _span = info_span!("pointer_event").entered();
