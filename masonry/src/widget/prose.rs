@@ -190,15 +190,13 @@ impl Widget for Prose {
     }
 
     fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {
-        if event.target == ctx.widget_id() {
-            match event.action {
-                accesskit::Action::SetTextSelection => {
-                    if self.text_layout.set_selection_from_access_event(event) {
-                        ctx.request_layout();
-                    }
+        match event.action {
+            accesskit::Action::SetTextSelection => {
+                if self.text_layout.set_selection_from_access_event(event) {
+                    ctx.request_layout();
                 }
-                _ => (),
             }
+            _ => (),
         }
     }
 
