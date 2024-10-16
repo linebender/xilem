@@ -184,37 +184,6 @@ impl<'w> WidgetRef<'w, dyn Widget> {
 
         Some(innermost_widget)
     }
-
-    /// Recursively check that the Widget tree upholds various invariants.
-    ///
-    /// Can only be called after `on_event` and `lifecycle`.
-    pub fn debug_validate(&self, after_layout: bool) {
-        if cfg!(not(debug_assertions)) {
-            return;
-        }
-
-        // TODO
-        #[cfg(FALSE)]
-        if self.ctx.widget_state.is_new {
-            debug_panic!(
-                "Widget '{}' {} is invalid: widget did not receive WidgetAdded",
-                self.deref().short_type_name(),
-                self.ctx.widget_state.id,
-            );
-        }
-
-        if after_layout && self.ctx.widget_state.needs_layout {
-            debug_panic!(
-                "Widget '{}' {} is invalid: widget layout state not cleared",
-                self.deref().short_type_name(),
-                self.ctx.widget_state.id,
-            );
-        }
-
-        for child in self.children() {
-            child.debug_validate(after_layout);
-        }
-    }
 }
 
 // --- MARK: TESTS ---
