@@ -285,7 +285,11 @@ impl<T: Selectable> TextWithSelection<T> {
         self.layout.draw(scene, point);
     }
 
-    fn access_position_from_offset(&self, offset: usize, affinity: Affinity) -> TextPosition {
+    fn access_position_from_offset(
+        &self,
+        offset: usize,
+        affinity: Affinity,
+    ) -> Option<TextPosition> {
         let text = self.text().as_ref();
         debug_assert!(offset <= text.len(), "offset out of range");
 
@@ -318,21 +322,26 @@ impl<T: Selectable> TextWithSelection<T> {
                 let mut length_sum = 0_usize;
                 for (character_index, length) in character_lengths.iter().copied().enumerate() {
                     if run_offset == length_sum {
-                        return TextPosition {
+                        return Some(TextPosition {
                             node: id,
                             character_index,
-                        };
+                        });
                     }
                     length_sum += length as usize;
                 }
-                return TextPosition {
+                return Some(TextPosition {
                     node: id,
                     character_index: character_lengths.len(),
-                };
+                });
             }
         }
 
-        panic!("offset not within the range of any run");
+        debug_panic!(
+            "offset {} not within the range of any run; text length: {}",
+            offset,
+            text.len()
+        );
+        None
     }
 
     pub fn accessibility(&mut self, update: &mut TreeUpdate, parent_node: &mut NodeBuilder) {
@@ -342,10 +351,15 @@ impl<T: Selectable> TextWithSelection<T> {
         } else {
             Affinity::Downstream
         };
-        let anchor = self.access_position_from_offset(self.selection.anchor, anchor_affinity);
-        let focus =
-            self.access_position_from_offset(self.selection.active, self.selection.active_affinity);
-        parent_node.set_text_selection(TextSelection { anchor, focus });
+        if let Some(anchor) =
+            self.access_position_from_offset(self.selection.anchor, anchor_affinity)
+        {
+            if let Some(focus) = self
+                .access_position_from_offset(self.selection.active, self.selection.active_affinity)
+            {
+                parent_node.set_text_selection(TextSelection { anchor, focus });
+            }
+        }
         parent_node.add_action(accesskit::Action::SetTextSelection);
     }
 
