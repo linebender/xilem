@@ -307,6 +307,16 @@ impl Widget for VariableLabel {
 
     fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {}
 
+    fn on_anim_frame(&mut self, ctx: &mut UpdateCtx, interval: u64) {
+        let millis = (interval as f64 / 1_000_000.) as f32;
+        let result = self.weight.advance(millis);
+        self.text_layout.invalidate();
+        if !result.is_completed() {
+            ctx.request_anim_frame();
+        }
+        ctx.request_layout();
+    }
+
     fn register_children(&mut self, _ctx: &mut RegisterCtx) {}
 
     #[allow(missing_docs)]
@@ -331,15 +341,6 @@ impl Widget for VariableLabel {
                     }
                 }
                 // TODO: Parley seems to require a relayout when colours change
-                ctx.request_layout();
-            }
-            Update::AnimFrame(time) => {
-                let millis = (*time as f64 / 1_000_000.) as f32;
-                let result = self.weight.advance(millis);
-                self.text_layout.invalidate();
-                if !result.is_completed() {
-                    ctx.request_anim_frame();
-                }
                 ctx.request_layout();
             }
             _ => {}

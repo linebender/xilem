@@ -6,7 +6,7 @@ use tracing::info_span;
 use crate::passes::recurse_on_children;
 use crate::render_root::{RenderRoot, RenderRootState};
 use crate::tree_arena::ArenaMut;
-use crate::{Update, UpdateCtx, Widget, WidgetState};
+use crate::{UpdateCtx, Widget, WidgetState};
 
 // --- MARK: UPDATE ANIM ---
 fn update_anim_for_widget(
@@ -33,7 +33,7 @@ fn update_anim_for_widget(
             widget_state_children: state.children.reborrow_mut(),
             widget_children: widget.children.reborrow_mut(),
         };
-        widget.item.update(&mut ctx, &Update::AnimFrame(elapsed_ns));
+        widget.item.on_anim_frame(&mut ctx, elapsed_ns);
     }
 
     let id = state.item.id;
@@ -61,5 +61,3 @@ pub(crate) fn run_update_anim_pass(root: &mut RenderRoot, elapsed_ns: u64) {
         elapsed_ns,
     );
 }
-
-// ----------------

@@ -243,6 +243,7 @@ pub enum WindowTheme {
 /// widget has been added then.
 #[non_exhaustive]
 #[derive(Debug, Clone)]
+#[allow(variant_size_differences)]
 pub enum Update {
     /// Sent to a `Widget` when it is added to the widget tree. This should be
     /// the first message that each widget receives.
@@ -260,18 +261,6 @@ pub enum Update {
     /// children with the system; this is required for things like correct routing
     /// of events.
     WidgetAdded,
-
-    /// Called at the beginning of a new animation frame.
-    ///
-    /// On the first frame when transitioning from idle to animating, `interval`
-    /// will be 0. (This logic is presently per-window but might change to
-    /// per-widget to make it more consistent). Otherwise it is in nanoseconds.
-    ///
-    /// The `paint` method will be called shortly after this event is finished.
-    /// As a result, you should try to avoid doing anything computationally
-    /// intensive in response to an `AnimFrame` event: it might make the app miss
-    /// the monitor's refresh, causing lag or jerky animations.
-    AnimFrame(u64),
 
     /// Called when the Disabled state of the widget is changed.
     ///
@@ -485,7 +474,6 @@ impl Update {
     pub fn short_name(&self) -> &str {
         match self {
             Update::WidgetAdded => "WidgetAdded",
-            Update::AnimFrame(_) => "AnimFrame",
             Update::DisabledChanged(_) => "DisabledChanged",
             Update::StashedChanged(_) => "StashedChanged",
             Update::RequestPanToChild(_) => "RequestPanToChild",
