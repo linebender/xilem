@@ -353,7 +353,8 @@ impl<T: Selectable> TextWithSelection<T> {
             Affinity::Downstream
         };
         let anchor = self.access_position_from_offset(self.selection.anchor, anchor_affinity);
-        let focus = self.access_position_from_offset(self.selection.active, self.selection.active_affinity);
+        let focus =
+            self.access_position_from_offset(self.selection.active, self.selection.active_affinity);
         if let (Some(anchor), Some(focus)) = (anchor, focus) {
             parent_node.set_text_selection(TextSelection { anchor, focus });
         }
