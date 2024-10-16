@@ -12,9 +12,9 @@ use vello::Scene;
 use crate::paint_scene_helpers::{fill_color, stroke};
 use crate::widget::{Axis, WidgetMut};
 use crate::{
-    theme, AccessCtx, AccessEvent, AllowRawMut, BoxConstraints, EventCtx, LayoutCtx, LifeCycle,
-    LifeCycleCtx, PaintCtx, Point, PointerEvent, RegisterCtx, Size, StatusChange, TextEvent,
-    Widget, WidgetId,
+    theme, AccessCtx, AccessEvent, AllowRawMut, BoxConstraints, EventCtx, LayoutCtx, Update,
+    PaintCtx, Point, PointerEvent, RegisterCtx, Size, StatusChange, TextEvent, UpdateCtx, Widget,
+    WidgetId,
 };
 
 // RULES
@@ -175,9 +175,9 @@ impl Widget for ScrollBar {
 
     fn register_children(&mut self, _ctx: &mut RegisterCtx) {}
 
-    fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange) {}
+    fn on_status_change(&mut self, _ctx: &mut UpdateCtx, _event: &StatusChange) {}
 
-    fn lifecycle(&mut self, _ctx: &mut LifeCycleCtx, _event: &LifeCycle) {}
+    fn update(&mut self, _ctx: &mut UpdateCtx, _event: &Update) {}
 
     fn layout(&mut self, _ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
         // TODO - handle resize

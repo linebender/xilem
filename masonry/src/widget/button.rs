@@ -15,7 +15,7 @@ use crate::widget::{Label, WidgetMut, WidgetPod};
 
 use crate::{
     theme, AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, Insets, LayoutCtx,
-    LifeCycleCtx, PaintCtx, PointerEvent, Size, StatusChange, TextEvent, Widget, WidgetId,
+    UpdateCtx, PaintCtx, PointerEvent, Size, StatusChange, TextEvent, Widget, WidgetId,
 };
 
 // the minimum padding added to a button.
@@ -112,7 +112,7 @@ impl Widget for Button {
         }
     }
 
-    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, _event: &StatusChange) {
+    fn on_status_change(&mut self, ctx: &mut UpdateCtx, _event: &StatusChange) {
         // Changes in hovered/focused status impact appearance, but not accessibility node
         ctx.request_paint_only();
     }

@@ -17,8 +17,8 @@ use crate::contexts::ComposeCtx;
 use crate::event::{AccessEvent, PointerEvent, StatusChange, TextEvent};
 use crate::widget::WidgetRef;
 use crate::{
-    AccessCtx, AsAny, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
-    Point, QueryCtx, RegisterCtx, Size,
+    AccessCtx, AsAny, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, Point, QueryCtx, RegisterCtx,
+    Size, Update, UpdateCtx,
 };
 
 /// A unique identifier for a single [`Widget`].
@@ -31,7 +31,7 @@ use crate::{
 /// and passing a `WidgetId` as the [`Target`](crate::Target).
 ///
 /// A widget can retrieve its id via methods on the various contexts, such as
-/// [`LifeCycleCtx::widget_id`].
+/// [`UpdateCtx::widget_id`].
 ///
 /// ## Explicit `WidgetId`s.
 ///
@@ -51,7 +51,7 @@ pub struct WidgetId(pub(crate) NonZeroU64);
 /// For details on how to implement this trait, see tutorial **(TODO)**
 ///
 /// Whenever external events affect the given widget, methods [`on_event`],
-/// [`on_status_change`](Self::on_status_change) and [`lifecycle`](Self::lifecycle)
+/// [`on_status_change`](Self::on_status_change) and [`update`](Self::update)
 /// are called. Later on, when the widget is laid out and displayed, methods
 /// [`layout`](Self::layout) and [`paint`](Self::paint) are called.
 ///
@@ -64,7 +64,7 @@ pub struct WidgetId(pub(crate) NonZeroU64);
 ///
 /// Generally speaking, widgets aren't used directly. They are stored in
 /// [`WidgetPod`](crate::WidgetPod)s. Widget methods are called by `WidgetPod`s, and the
-/// widget is mutated either during a method call (eg `on_event` or `lifecycle`) or
+/// widget is mutated either during a method call (eg `on_event` or `update`) or
 /// through a [`WidgetMut`](crate::widget::WidgetMut).
 #[allow(unused_variables)]
 pub trait Widget: AsAny {
@@ -80,7 +80,7 @@ pub trait Widget: AsAny {
     fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {}
 
     #[allow(missing_docs)]
-    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange);
+    fn on_status_change(&mut self, ctx: &mut UpdateCtx, event: &StatusChange);
 
     /// Register child widgets with Masonry.
     ///
@@ -91,12 +91,12 @@ pub trait Widget: AsAny {
     /// All the children returned by `children_ids` should be visited.
     fn register_children(&mut self, ctx: &mut RegisterCtx);
 
-    /// Handle a lifecycle notification.
+    /// Handle an update to the widget's state.
     ///
     /// This method is called to notify your widget of certain special events,
-    /// (available in the [`LifeCycle`] enum) that are generally related to
+    /// (available in the [`Update`] enum) that are generally related to
     /// changes in the widget graph or in the state of your specific widget.
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {}
+    fn update(&mut self, ctx: &mut UpdateCtx, event: &Update) {}
 
     /// Compute layout.
     ///
@@ -295,9 +295,9 @@ pub trait Widget: AsAny {
 ///
 /// "Raw mut" means using a mutable reference (eg `&mut MyWidget`) to the data
 /// structure, instead of going through the Widget trait methods
-/// (`on_text_event`, `lifecycle`, `layout`, etc) or through `WidgetMut`.
+/// (`on_text_event`, `update`, `layout`, etc) or through `WidgetMut`.
 ///
-/// A parent widget can use [`EventCtx::get_raw_mut`], [`LifeCycleCtx::get_raw_mut`],
+/// A parent widget can use [`EventCtx::get_raw_mut`], [`UpdateCtx::get_raw_mut`],
 /// or [`LayoutCtx::get_raw_mut`] to directly access a child widget. In that case,
 /// these methods return both a mutable reference to the child widget and a new
 /// context (`MutateCtx`, `EventCtx`, etc) scoped to the child. The parent is
@@ -379,12 +379,12 @@ impl Widget for Box<dyn Widget> {
         self.deref_mut().register_children(ctx);
     }
 
-    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange) {
+    fn on_status_change(&mut self, ctx: &mut UpdateCtx, event: &StatusChange) {
         self.deref_mut().on_status_change(ctx, event);
     }
 
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
-        self.deref_mut().lifecycle(ctx, event);
+    fn update(&mut self, ctx: &mut UpdateCtx, event: &Update) {
+        self.deref_mut().update(ctx, event);
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {

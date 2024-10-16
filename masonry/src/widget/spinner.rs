@@ -13,8 +13,8 @@ use vello::Scene;
 
 use crate::widget::WidgetMut;
 use crate::{
-    theme, AccessCtx, AccessEvent, BoxConstraints, Color, EventCtx, LayoutCtx, LifeCycle,
-    LifeCycleCtx, PaintCtx, Point, PointerEvent, RegisterCtx, Size, StatusChange, TextEvent, Vec2,
+    theme, AccessCtx, AccessEvent, BoxConstraints, Color, EventCtx, LayoutCtx, Update,
+    UpdateCtx, PaintCtx, Point, PointerEvent, RegisterCtx, Size, StatusChange, TextEvent, Vec2,
     Widget, WidgetId,
 };
 
@@ -79,14 +79,14 @@ impl Widget for Spinner {
 
     fn register_children(&mut self, _ctx: &mut RegisterCtx) {}
 
-    fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange) {}
+    fn on_status_change(&mut self, _ctx: &mut UpdateCtx, _event: &StatusChange) {}
 
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
+    fn update(&mut self, ctx: &mut UpdateCtx, event: &Update) {
         match event {
-            LifeCycle::WidgetAdded => {
+            Update::WidgetAdded => {
                 ctx.request_anim_frame();
             }
-            LifeCycle::AnimFrame(interval) => {
+            Update::AnimFrame(interval) => {
                 self.t += (*interval as f64) * 1e-9;
                 if self.t >= 1.0 {
                     self.t = self.t.rem_euclid(1.0);

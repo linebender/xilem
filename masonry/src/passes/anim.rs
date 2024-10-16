@@ -6,7 +6,7 @@ use tracing::info_span;
 use crate::passes::recurse_on_children;
 use crate::render_root::{RenderRoot, RenderRootState};
 use crate::tree_arena::ArenaMut;
-use crate::{LifeCycle, LifeCycleCtx, Widget, WidgetState};
+use crate::{Update, UpdateCtx, Widget, WidgetState};
 
 // --- MARK: UPDATE ANIM ---
 fn update_anim_for_widget(
@@ -27,7 +27,7 @@ fn update_anim_for_widget(
     // set in response to `AnimFrame`.
     if state.item.request_anim {
         state.item.request_anim = false;
-        let mut ctx = LifeCycleCtx {
+        let mut ctx = UpdateCtx {
             global_state,
             widget_state: state.item,
             widget_state_children: state.children.reborrow_mut(),
@@ -35,7 +35,7 @@ fn update_anim_for_widget(
         };
         widget
             .item
-            .lifecycle(&mut ctx, &LifeCycle::AnimFrame(elapsed_ns));
+            .update(&mut ctx, &Update::AnimFrame(elapsed_ns));
     }
 
     let id = state.item.id;

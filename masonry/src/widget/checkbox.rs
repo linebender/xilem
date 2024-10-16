@@ -14,7 +14,7 @@ use crate::paint_scene_helpers::{fill_lin_gradient, stroke, UnitPoint};
 use crate::widget::{Label, WidgetMut};
 
 use crate::{
-    theme, AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, LayoutCtx, LifeCycleCtx,
+    theme, AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, LayoutCtx, UpdateCtx,
     PaintCtx, PointerEvent, RegisterCtx, StatusChange, TextEvent, Widget, WidgetId, WidgetPod,
 };
 
@@ -103,7 +103,7 @@ impl Widget for Checkbox {
         }
     }
 
-    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, _event: &StatusChange) {
+    fn on_status_change(&mut self, ctx: &mut UpdateCtx, _event: &StatusChange) {
         // Hovered/focused status impacts appearance, but not accessibility node
         ctx.request_paint_only();
     }

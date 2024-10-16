@@ -11,7 +11,7 @@ use crate::passes::{merge_state_up, recurse_on_children};
 use crate::render_root::{RenderRoot, RenderRootSignal, RenderRootState};
 use crate::tree_arena::ArenaMut;
 use crate::{
-    LifeCycle, LifeCycleCtx, PointerEvent, RegisterCtx, StatusChange, Widget, WidgetId, WidgetState,
+    PointerEvent, RegisterCtx, StatusChange, Update, UpdateCtx, Widget, WidgetId, WidgetState,
 };
 
 // --- MARK: HELPERS ---
@@ -28,18 +28,17 @@ fn get_id_path(root: &RenderRoot, widget_id: Option<WidgetId>) -> Vec<WidgetId> 
         .collect()
 }
 
-// TODO - Replace LifecycleCtx with UpdateCtx
 fn run_targeted_update_pass(
     root: &mut RenderRoot,
     target: Option<WidgetId>,
-    mut pass_fn: impl FnMut(&mut dyn Widget, &mut LifeCycleCtx),
+    mut pass_fn: impl FnMut(&mut dyn Widget, &mut UpdateCtx),
 ) {
     let mut current_id = target;
     while let Some(widget_id) = current_id {
         let parent_id = root.widget_arena.parent_of(widget_id);
         let (widget_mut, state_mut) = root.widget_arena.get_pair_mut(widget_id);
 
-        let mut ctx = LifeCycleCtx {
+        let mut ctx = UpdateCtx {
             global_state: &mut root.state,
             widget_state: state_mut.item,
             widget_state_children: state_mut.children,
@@ -52,16 +51,15 @@ fn run_targeted_update_pass(
     }
 }
 
-// TODO - Replace LifecycleCtx with UpdateCtx
 fn run_single_update_pass(
     root: &mut RenderRoot,
     target: Option<WidgetId>,
-    mut pass_fn: impl FnMut(&mut dyn Widget, &mut LifeCycleCtx),
+    mut pass_fn: impl FnMut(&mut dyn Widget, &mut UpdateCtx),
 ) {
     if let Some(widget_id) = target {
         let (widget_mut, state_mut) = root.widget_arena.get_pair_mut(widget_id);
 
-        let mut ctx = LifeCycleCtx {
+        let mut ctx = UpdateCtx {
             global_state: &mut root.state,
             widget_state: state_mut.item,
             widget_state_children: state_mut.children,
@@ -134,15 +132,15 @@ fn update_widget_tree(
     }
 
     if state.item.is_new {
-        let mut ctx = LifeCycleCtx {
+        let mut ctx = UpdateCtx {
             global_state,
             widget_state: state.item,
             widget_state_children: state.children.reborrow_mut(),
             widget_children: widget.children.reborrow_mut(),
         };
-        widget.item.lifecycle(&mut ctx, &LifeCycle::WidgetAdded);
+        widget.item.update(&mut ctx, &Update::WidgetAdded);
         trace!(
-            "{} received LifeCycle::WidgetAdded",
+            "{} received Update::WidgetAdded",
             widget.item.short_type_name()
         );
         state.item.accepts_pointer_interaction = widget.item.accepts_pointer_interaction();
@@ -200,7 +198,7 @@ fn update_disabled_for_widget(
     }
 
     if disabled != state.item.is_disabled {
-        let mut ctx = LifeCycleCtx {
+        let mut ctx = UpdateCtx {
             global_state,
             widget_state: state.item,
             widget_state_children: state.children.reborrow_mut(),
@@ -208,7 +206,7 @@ fn update_disabled_for_widget(
         };
         widget
             .item
-            .lifecycle(&mut ctx, &LifeCycle::DisabledChanged(disabled));
+            .update(&mut ctx, &Update::DisabledChanged(disabled));
         state.item.is_disabled = disabled;
         state.item.update_focus_chain = true;
     }
@@ -257,7 +255,7 @@ fn update_stashed_for_widget(
     }
 
     if stashed != state.item.is_stashed {
-        let mut ctx = LifeCycleCtx {
+        let mut ctx = UpdateCtx {
             global_state,
             widget_state: state.item,
             widget_state_children: state.children.reborrow_mut(),
@@ -265,7 +263,7 @@ fn update_stashed_for_widget(
         };
         widget
             .item
-            .lifecycle(&mut ctx, &LifeCycle::StashedChanged(stashed));
+            .update(&mut ctx, &Update::StashedChanged(stashed));
         state.item.is_stashed = stashed;
         state.item.update_focus_chain = true;
         // Note: We don't need request_repaint because stashing doesn't actually change
@@ -357,9 +355,7 @@ fn update_focus_chain_for_widget(
 
     // had_focus is the old focus value. state.has_focus was replaced with parent_ctx.is_focused().
     // Therefore if had_focus is true but state.has_focus is false then the widget which is
-    // currently focused is not part of the functional tree anymore
-    // (Lifecycle::BuildFocusChain.should_propagate_to_hidden() is false!) and should
-    // resign the focus.
+    // currently focused is not part of the functional tree anymore and should resign the focus.
     if had_focus && !state.item.has_focus {
         // Not sure about this logic, might remove
         global_state.next_focused_widget = None;
@@ -495,8 +491,8 @@ pub(crate) fn run_update_scroll_pass(root: &mut RenderRoot) {
         let mut target_rect = rect;
 
         run_targeted_update_pass(root, Some(target), |widget, ctx| {
-            let event = LifeCycle::RequestPanToChild(rect);
-            widget.lifecycle(ctx, &event);
+            let event = Update::RequestPanToChild(rect);
+            widget.update(ctx, &event);
 
             // TODO - We should run the compose method after this, so
             // translations are updated and the rect passed to parents

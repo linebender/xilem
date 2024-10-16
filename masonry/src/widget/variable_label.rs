@@ -18,7 +18,7 @@ use vello::Scene;
 use crate::text::{Hinting, TextBrush, TextLayout};
 use crate::widget::{LineBreaking, WidgetMut};
 use crate::{
-    AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx,
+    AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, LayoutCtx, Update, UpdateCtx,
     PaintCtx, PointerEvent, RegisterCtx, StatusChange, TextEvent, Widget, WidgetId,
 };
 
@@ -310,7 +310,7 @@ impl Widget for VariableLabel {
     fn register_children(&mut self, _ctx: &mut RegisterCtx) {}
 
     #[allow(missing_docs)]
-    fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, event: &StatusChange) {
+    fn on_status_change(&mut self, _ctx: &mut UpdateCtx, event: &StatusChange) {
         match event {
             StatusChange::FocusChanged(_) => {
                 // TODO: Focus on first link
@@ -319,9 +319,9 @@ impl Widget for VariableLabel {
         }
     }
 
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
+    fn update(&mut self, ctx: &mut UpdateCtx, event: &Update) {
         match event {
-            LifeCycle::DisabledChanged(disabled) => {
+            Update::DisabledChanged(disabled) => {
                 if self.show_disabled {
                     if *disabled {
                         self.text_layout
@@ -333,7 +333,7 @@ impl Widget for VariableLabel {
                 // TODO: Parley seems to require a relayout when colours change
                 ctx.request_layout();
             }
-            LifeCycle::AnimFrame(time) => {
+            Update::AnimFrame(time) => {
                 let millis = (*time as f64 / 1_000_000.) as f32;
                 let result = self.weight.advance(millis);
                 self.text_layout.invalidate();

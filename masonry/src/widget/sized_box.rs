@@ -13,7 +13,7 @@ use vello::Scene;
 use crate::paint_scene_helpers::stroke;
 use crate::widget::{WidgetMut, WidgetPod};
 use crate::{
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycleCtx, PaintCtx, Point,
+    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, UpdateCtx, PaintCtx, Point,
     PointerEvent, RegisterCtx, Size, StatusChange, TextEvent, Widget, WidgetId,
 };
 
@@ -310,7 +310,7 @@ impl Widget for SizedBox {
 
     fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {}
 
-    fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange) {}
+    fn on_status_change(&mut self, _ctx: &mut UpdateCtx, _event: &StatusChange) {}
 
     fn register_children(&mut self, ctx: &mut RegisterCtx) {
         if let Some(ref mut child) = self.child {

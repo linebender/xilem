@@ -49,7 +49,7 @@ pub const HARNESS_DEFAULT_BACKGROUND_COLOR: Color = Color::rgb8(0x29, 0x29, 0x29
 ///
 /// - Create a harness with some widget.
 /// - Send events to the widget as if you were a user interacting with a window.
-///   (Lifecycle and layout passes are handled automatically.)
+///   (rewrite passes are handled automatically.)
 /// - Check that the state of the widget graph matches what you expect.
 ///
 /// You can do that last part in a few different ways. You can get a [`WidgetRef`] to
@@ -63,7 +63,7 @@ pub const HARNESS_DEFAULT_BACKGROUND_COLOR: Color = Color::rgb8(0x29, 0x29, 0x29
 ///
 /// ## Fidelity
 ///
-/// `TestHarness` tries to act like the normal masonry environment. For instance, it will dispatch every `Command` sent during event handling, handle lifecycle methods, etc.
+/// `TestHarness` tries to act like the normal masonry environment. It will run the same passes as the normal app after every user event and animation.
 ///
 /// The passage of time is simulated with the [`move_timers_forward`](Self::move_timers_forward) methods. **(TODO -
 /// Doesn't move animations forward.)**
@@ -215,7 +215,7 @@ impl TestHarness {
 
     /// Send an event to the widget.
     ///
-    /// If this event triggers lifecycle events, they will also be dispatched,
+    /// If this event triggers update events, they will also be dispatched,
     /// as will any resulting commands. Commands created as a result of this event
     /// will also be dispatched.
     pub fn process_window_event(&mut self, event: WindowEvent) -> Handled {
@@ -226,7 +226,7 @@ impl TestHarness {
 
     /// Send an event to the widget.
     ///
-    /// If this event triggers lifecycle events, they will also be dispatched,
+    /// If this event triggers update events, they will also be dispatched,
     /// as will any resulting commands. Commands created as a result of this event
     /// will also be dispatched.
     pub fn process_pointer_event(&mut self, event: PointerEvent) -> Handled {
@@ -237,7 +237,7 @@ impl TestHarness {
 
     /// Send an event to the widget.
     ///
-    /// If this event triggers lifecycle events, they will also be dispatched,
+    /// If this event triggers update events, they will also be dispatched,
     /// as will any resulting commands. Commands created as a result of this event
     /// will also be dispatched.
     pub fn process_text_event(&mut self, event: TextEvent) -> Handled {

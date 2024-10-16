@@ -16,7 +16,7 @@ use crate::widget::flex::Axis;
 use crate::widget::{WidgetMut, WidgetPod};
 use crate::{
     theme, AccessCtx, AccessEvent, BoxConstraints, Color, CursorIcon, EventCtx, LayoutCtx,
-    LifeCycleCtx, PaintCtx, Point, PointerEvent, Rect, RegisterCtx, Size, StatusChange, TextEvent,
+    UpdateCtx, PaintCtx, Point, PointerEvent, Rect, RegisterCtx, Size, StatusChange, TextEvent,
     Widget, WidgetId,
 };
 
@@ -445,7 +445,7 @@ impl Widget for Split {
 
     fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {}
 
-    fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange) {}
+    fn on_status_change(&mut self, _ctx: &mut UpdateCtx, _event: &StatusChange) {}
 
     fn register_children(&mut self, ctx: &mut RegisterCtx) {
         ctx.register_child(&mut self.child1);

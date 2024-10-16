@@ -19,10 +19,10 @@ const CHANGE_DISABLED: Selector<bool> = Selector::new("masonry-test.change-disab
 fn make_focusable_widget(id: WidgetId, state: Rc<Cell<Option<bool>>>) -> impl Widget {
     ModularWidget::new(state)
         .lifecycle_fn(move |state, ctx, event| match event {
-            LifeCycle::BuildFocusChain => {
+            Update::BuildFocusChain => {
                 ctx.register_for_focus();
             }
-            LifeCycle::DisabledChanged(disabled) => {
+            Update::DisabledChanged(disabled) => {
                 state.set(Some(*disabled));
             }
             _ => {}

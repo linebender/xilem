@@ -5,7 +5,7 @@
 
 use accesskit::{NodeBuilder, Role};
 use masonry::{
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycleCtx, PaintCtx, Point,
+    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, UpdateCtx, PaintCtx, Point,
     PointerEvent, RegisterCtx, Size, StatusChange, TextEvent, Widget, WidgetId, WidgetPod,
 };
 use smallvec::{smallvec, SmallVec};
@@ -221,7 +221,7 @@ impl<
     fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {}
 
     #[allow(missing_docs)]
-    fn on_status_change(&mut self, _: &mut LifeCycleCtx, _: &StatusChange) {
+    fn on_status_change(&mut self, _: &mut UpdateCtx, _: &StatusChange) {
         // Intentionally do nothing
     }
 

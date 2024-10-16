@@ -81,10 +81,10 @@ pub struct RegisterCtx<'a> {
     pub(crate) registered_ids: Vec<WidgetId>,
 }
 
-/// A context provided to the [`lifecycle`] method on widgets.
+/// A context provided to the [`update`] method on widgets.
 ///
-/// [`lifecycle`]: Widget::lifecycle
-pub struct LifeCycleCtx<'a> {
+/// [`update`]: Widget::update
+pub struct UpdateCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) widget_state_children: ArenaMutChildren<'a, WidgetState>,
@@ -135,7 +135,7 @@ impl_context_method!(
     MutateCtx<'_>,
     QueryCtx<'_>,
     EventCtx<'_>,
-    LifeCycleCtx<'_>,
+    UpdateCtx<'_>,
     LayoutCtx<'_>,
     ComposeCtx<'_>,
     PaintCtx<'_>,
@@ -172,7 +172,7 @@ impl_context_method!(
 impl_context_method!(
     MutateCtx<'_>,
     EventCtx<'_>,
-    LifeCycleCtx<'_>,
+    UpdateCtx<'_>,
     LayoutCtx<'_>,
     ComposeCtx<'_>,
     {
@@ -200,7 +200,7 @@ impl_context_method!(
     MutateCtx<'_>,
     QueryCtx<'_>,
     EventCtx<'_>,
-    LifeCycleCtx<'_>,
+    UpdateCtx<'_>,
     ComposeCtx<'_>,
     PaintCtx<'_>,
     AccessCtx<'_>,
@@ -260,7 +260,7 @@ impl_context_method!(
     MutateCtx<'_>,
     QueryCtx<'_>,
     EventCtx<'_>,
-    LifeCycleCtx<'_>,
+    UpdateCtx<'_>,
     ComposeCtx<'_>,
     PaintCtx<'_>,
     AccessCtx<'_>,
@@ -308,7 +308,7 @@ impl_context_method!(
         /// all ancestors of that widget will also receive keyboard events.
         ///
         /// [`request_focus`]: EventCtx::request_focus
-        /// [`register_for_focus`]: LifeCycleCtx::register_for_focus
+        /// [`register_for_focus`]: UpdateCtx::register_for_focus
         /// [`StatusChange::FocusChanged`]: crate::StatusChange::FocusChanged
         /// [`has_focus`]: Self::has_focus
         pub fn is_focused(&self) -> bool {
@@ -468,8 +468,8 @@ impl<'w> QueryCtx<'w> {
 }
 
 // --- MARK: UPDATE FLAGS ---
-// Methods on MutateCtx, EventCtx, and LifeCycleCtx
-impl_context_method!(MutateCtx<'_>, EventCtx<'_>, LifeCycleCtx<'_>, {
+// Methods on MutateCtx, EventCtx, and UpdateCtx
+impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, {
     /// Request a [`paint`](crate::Widget::paint) and an [`accessibility`](crate::Widget::accessibility) pass.
     pub fn request_render(&mut self) {
         trace!("request_render");
@@ -580,7 +580,7 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, LifeCycleCtx<'_>, {
 impl_context_method!(
     MutateCtx<'_>,
     EventCtx<'_>,
-    LifeCycleCtx<'_>,
+    UpdateCtx<'_>,
     LayoutCtx<'_>,
     ComposeCtx<'_>,
     {
@@ -1161,7 +1161,7 @@ macro_rules! impl_get_raw {
 }
 
 impl_get_raw!(EventCtx);
-impl_get_raw!(LifeCycleCtx);
+impl_get_raw!(UpdateCtx);
 impl_get_raw!(LayoutCtx);
 
 impl<'s> AccessCtx<'s> {
@@ -1262,5 +1262,5 @@ macro_rules! impl_context_trait {
 }
 
 impl_context_trait!(EventCtx);
-impl_context_trait!(LifeCycleCtx);
+impl_context_trait!(UpdateCtx);
 impl_context_trait!(LayoutCtx);

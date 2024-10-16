@@ -135,11 +135,11 @@ mod tree_arena;
 pub use action::Action;
 pub use box_constraints::BoxConstraints;
 pub use contexts::{
-    AccessCtx, ComposeCtx, EventCtx, IsContext, LayoutCtx, LifeCycleCtx, MutateCtx, PaintCtx,
+    AccessCtx, ComposeCtx, EventCtx, IsContext, LayoutCtx, UpdateCtx, MutateCtx, PaintCtx,
     QueryCtx, RawWrapper, RawWrapperMut, RegisterCtx,
 };
 pub use event::{
-    AccessEvent, LifeCycle, PointerButton, PointerEvent, PointerState, StatusChange, TextEvent,
+    AccessEvent, Update, PointerButton, PointerEvent, PointerState, StatusChange, TextEvent,
     WindowEvent, WindowTheme,
 };
 pub use kurbo::{Affine, Insets, Point, Rect, Size, Vec2};

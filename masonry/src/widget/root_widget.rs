@@ -9,7 +9,7 @@ use vello::Scene;
 
 use crate::widget::{WidgetMut, WidgetPod};
 use crate::{
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycleCtx, PaintCtx,
+    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, UpdateCtx, PaintCtx,
     PointerEvent, RegisterCtx, Size, StatusChange, TextEvent, Widget, WidgetId,
 };
 
@@ -43,7 +43,7 @@ impl<W: Widget> Widget for RootWidget<W> {
     fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
     fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {}
 
-    fn on_status_change(&mut self, _: &mut LifeCycleCtx, _: &StatusChange) {}
+    fn on_status_change(&mut self, _: &mut UpdateCtx, _: &StatusChange) {}
 
     fn register_children(&mut self, ctx: &mut RegisterCtx) {
         ctx.register_child(&mut self.pod);
