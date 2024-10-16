@@ -225,31 +225,7 @@ pub trait Widget: AsAny {
         ctx: QueryCtx<'c>,
         pos: Point,
     ) -> Option<WidgetRef<'c, dyn Widget>> {
-        let relative_pos = pos - ctx.window_origin().to_vec2();
-        if !ctx
-            .clip_path()
-            .map_or(true, |clip| clip.contains(relative_pos))
-        {
-            return None;
-        }
-
-        // Assumes `Self::children_ids` is in increasing "z-order", picking the last child in case
-        // of overlapping children.
-        for child_id in self.children_ids().iter().rev() {
-            let child = ctx.get(*child_id);
-
-            let relative_pos = pos - child.ctx().window_origin().to_vec2();
-            // The position must be inside the child's layout and inside the child's clip path (if
-            // any).
-            if !child.ctx().is_stashed()
-                && child.ctx().accepts_pointer_interaction()
-                && child.ctx().window_layout_rect().contains(pos)
-            {
-                return Some(child);
-            }
-        }
-
-        None
+        get_child_at_pos(self, ctx, pos)
     }
 
     /// Get the (verbose) type name of the widget for debugging purposes.
@@ -289,6 +265,37 @@ pub trait Widget: AsAny {
     fn as_mut_any(&mut self) -> &mut dyn Any {
         self.as_mut_dyn_any()
     }
+}
+
+pub(crate) fn get_child_at_pos<'c>(
+    widget: &(impl Widget + ?Sized),
+    ctx: QueryCtx<'c>,
+    pos: Point,
+) -> Option<WidgetRef<'c, dyn Widget>> {
+    let relative_pos = pos - ctx.window_origin().to_vec2();
+    if !ctx
+        .clip_path()
+        .map_or(true, |clip| clip.contains(relative_pos))
+    {
+        return None;
+    }
+
+    // Assumes `Self::children_ids` is in increasing "z-order", picking the last child in case
+    // of overlapping children.
+    for child_id in widget.children_ids().iter().rev() {
+        let child = ctx.get(*child_id);
+
+        // The position must be inside the child's layout and inside the child's clip path (if
+        // any).
+        if !child.ctx().is_stashed()
+            && child.ctx().accepts_pointer_interaction()
+            && child.ctx().window_layout_rect().contains(pos)
+        {
+            return Some(child);
+        }
+    }
+
+    None
 }
 
 /// Marker trait for Widgets whose parents can get a raw mutable reference to them.
