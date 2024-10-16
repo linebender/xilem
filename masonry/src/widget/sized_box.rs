@@ -13,8 +13,8 @@ use vello::Scene;
 use crate::paint_scene_helpers::stroke;
 use crate::widget::{WidgetMut, WidgetPod};
 use crate::{
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, UpdateCtx, PaintCtx, Point,
-    PointerEvent, RegisterCtx, Size, StatusChange, TextEvent, Widget, WidgetId,
+    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, Point, PointerEvent,
+    RegisterCtx, Size, StatusChange, TextEvent, UpdateCtx, Widget, WidgetId,
 };
 
 // FIXME - Improve all doc in this module ASAP.

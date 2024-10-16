@@ -17,8 +17,8 @@ use crate::contexts::AccessCtx;
 use crate::paint_scene_helpers::UnitPoint;
 use crate::widget::WidgetPod;
 use crate::{
-    AccessEvent, BoxConstraints, EventCtx, LayoutCtx, UpdateCtx, PaintCtx, PointerEvent, Rect,
-    RegisterCtx, Size, StatusChange, TextEvent, Widget, WidgetId,
+    AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent, Rect, RegisterCtx,
+    Size, StatusChange, TextEvent, UpdateCtx, Widget, WidgetId,
 };
 
 // TODO - Have child widget type as generic argument

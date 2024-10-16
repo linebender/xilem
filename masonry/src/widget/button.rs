@@ -14,8 +14,8 @@ use crate::paint_scene_helpers::{fill_lin_gradient, stroke, UnitPoint};
 use crate::widget::{Label, WidgetMut, WidgetPod};
 
 use crate::{
-    theme, AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, Insets, LayoutCtx,
-    UpdateCtx, PaintCtx, PointerEvent, Size, StatusChange, TextEvent, Widget, WidgetId,
+    theme, AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, Insets, LayoutCtx, PaintCtx,
+    PointerEvent, Size, StatusChange, TextEvent, UpdateCtx, Widget, WidgetId,
 };
 
 // the minimum padding added to a button.

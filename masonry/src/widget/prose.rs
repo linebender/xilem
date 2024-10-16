@@ -18,8 +18,8 @@ use crate::widget::{LineBreaking, WidgetMut};
 use crate::{
     text::{TextBrush, TextWithSelection},
     widget::label::LABEL_X_PADDING,
-    AccessCtx, AccessEvent, ArcStr, BoxConstraints, CursorIcon, EventCtx, LayoutCtx, Update,
-    UpdateCtx, PaintCtx, PointerEvent, RegisterCtx, StatusChange, TextEvent, Widget, WidgetId,
+    AccessCtx, AccessEvent, ArcStr, BoxConstraints, CursorIcon, EventCtx, LayoutCtx, PaintCtx,
+    PointerEvent, RegisterCtx, StatusChange, TextEvent, Update, UpdateCtx, Widget, WidgetId,
 };
 
 /// The prose widget is a widget which displays text which can be

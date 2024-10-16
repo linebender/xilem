@@ -33,9 +33,7 @@ fn update_anim_for_widget(
             widget_state_children: state.children.reborrow_mut(),
             widget_children: widget.children.reborrow_mut(),
         };
-        widget
-            .item
-            .update(&mut ctx, &Update::AnimFrame(elapsed_ns));
+        widget.item.update(&mut ctx, &Update::AnimFrame(elapsed_ns));
     }
 
     let id = state.item.id;

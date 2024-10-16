@@ -16,7 +16,7 @@ use crate::widget::flex::Axis;
 use crate::widget::{WidgetMut, WidgetPod};
 use crate::{
     theme, AccessCtx, AccessEvent, BoxConstraints, Color, CursorIcon, EventCtx, LayoutCtx,
-    UpdateCtx, PaintCtx, Point, PointerEvent, Rect, RegisterCtx, Size, StatusChange, TextEvent,
+    PaintCtx, Point, PointerEvent, Rect, RegisterCtx, Size, StatusChange, TextEvent, UpdateCtx,
     Widget, WidgetId,
 };
 

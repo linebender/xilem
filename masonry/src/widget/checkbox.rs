@@ -14,8 +14,8 @@ use crate::paint_scene_helpers::{fill_lin_gradient, stroke, UnitPoint};
 use crate::widget::{Label, WidgetMut};
 
 use crate::{
-    theme, AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, LayoutCtx, UpdateCtx,
-    PaintCtx, PointerEvent, RegisterCtx, StatusChange, TextEvent, Widget, WidgetId, WidgetPod,
+    theme, AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, LayoutCtx, PaintCtx,
+    PointerEvent, RegisterCtx, StatusChange, TextEvent, UpdateCtx, Widget, WidgetId, WidgetPod,
 };
 
 /// A checkbox that can be toggled.

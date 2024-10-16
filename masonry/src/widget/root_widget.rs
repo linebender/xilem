@@ -9,8 +9,8 @@ use vello::Scene;
 
 use crate::widget::{WidgetMut, WidgetPod};
 use crate::{
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, UpdateCtx, PaintCtx,
-    PointerEvent, RegisterCtx, Size, StatusChange, TextEvent, Widget, WidgetId,
+    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
+    RegisterCtx, Size, StatusChange, TextEvent, UpdateCtx, Widget, WidgetId,
 };
 
 // TODO: This is a hack to provide an accessibility node with a Window type.

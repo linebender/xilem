@@ -12,8 +12,8 @@ use masonry::app_driver::{AppDriver, DriverCtx};
 use masonry::dpi::LogicalSize;
 use masonry::widget::{Align, CrossAxisAlignment, Flex, Label, RootWidget, SizedBox};
 use masonry::{
-    AccessCtx, AccessEvent, Action, BoxConstraints, Color, EventCtx, LayoutCtx, UpdateCtx,
-    PaintCtx, Point, PointerEvent, RegisterCtx, Size, StatusChange, TextEvent, Widget, WidgetId,
+    AccessCtx, AccessEvent, Action, BoxConstraints, Color, EventCtx, LayoutCtx, PaintCtx, Point,
+    PointerEvent, RegisterCtx, Size, StatusChange, TextEvent, UpdateCtx, Widget, WidgetId,
     WidgetPod,
 };
 use smallvec::{smallvec, SmallVec};

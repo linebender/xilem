@@ -13,8 +13,8 @@ use vello::Scene;
 
 use crate::widget::{ObjectFit, WidgetMut};
 use crate::{
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, Update, UpdateCtx, PaintCtx,
-    PointerEvent, RegisterCtx, Size, StatusChange, TextEvent, Widget, WidgetId,
+    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
+    RegisterCtx, Size, StatusChange, TextEvent, Update, UpdateCtx, Widget, WidgetId,
 };
 
 // TODO - Resolve name collision between masonry::Image and peniko::Image

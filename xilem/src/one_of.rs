@@ -5,8 +5,8 @@
 
 use accesskit::{NodeBuilder, Role};
 use masonry::{
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, UpdateCtx, PaintCtx, Point,
-    PointerEvent, RegisterCtx, Size, StatusChange, TextEvent, Widget, WidgetId, WidgetPod,
+    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, Point, PointerEvent,
+    RegisterCtx, Size, StatusChange, TextEvent, UpdateCtx, Widget, WidgetId, WidgetPod,
 };
 use smallvec::{smallvec, SmallVec};
 use vello::Scene;

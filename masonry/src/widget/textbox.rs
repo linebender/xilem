@@ -18,8 +18,8 @@ use winit::event::Ime;
 use crate::text::{TextBrush, TextEditor, TextWithSelection};
 use crate::widget::{LineBreaking, WidgetMut};
 use crate::{
-    AccessCtx, AccessEvent, BoxConstraints, CursorIcon, EventCtx, LayoutCtx, Update,
-    UpdateCtx, PaintCtx, PointerEvent, RegisterCtx, StatusChange, TextEvent, Widget, WidgetId,
+    AccessCtx, AccessEvent, BoxConstraints, CursorIcon, EventCtx, LayoutCtx, PaintCtx,
+    PointerEvent, RegisterCtx, StatusChange, TextEvent, Update, UpdateCtx, Widget, WidgetId,
 };
 
 const TEXTBOX_PADDING: f64 = 3.0;

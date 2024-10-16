@@ -13,8 +13,8 @@ use crate::theme::get_debug_color;
 use crate::widget::WidgetMut;
 
 use crate::{
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, UpdateCtx, PaintCtx, Point,
-    PointerEvent, Rect, Size, StatusChange, TextEvent, Widget, WidgetId, WidgetPod,
+    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, Point, PointerEvent,
+    Rect, Size, StatusChange, TextEvent, UpdateCtx, Widget, WidgetId, WidgetPod,
 };
 
 /// A container with either horizontal or vertical layout.
