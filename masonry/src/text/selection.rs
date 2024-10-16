@@ -352,14 +352,10 @@ impl<T: Selectable> TextWithSelection<T> {
         } else {
             Affinity::Downstream
         };
-        if let Some(anchor) =
-            self.access_position_from_offset(self.selection.anchor, anchor_affinity)
-        {
-            if let Some(focus) = self
-                .access_position_from_offset(self.selection.active, self.selection.active_affinity)
-            {
-                parent_node.set_text_selection(TextSelection { anchor, focus });
-            }
+        let anchor = self.access_position_from_offset(self.selection.anchor, anchor_affinity);
+        let focus = self.access_position_from_offset(self.selection.active, self.selection.active_affinity);
+        if let (Some(anchor), Some(focus)) = (anchor, focus) {
+            parent_node.set_text_selection(TextSelection { anchor, focus });
         }
         parent_node.add_action(accesskit::Action::SetTextSelection);
     }
