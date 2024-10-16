@@ -72,7 +72,7 @@ fn compose_widget(
 }
 
 // --- MARK: ROOT ---
-pub(crate) fn root_compose(root: &mut RenderRoot) {
+pub(crate) fn run_compose_pass(root: &mut RenderRoot) {
     let _span = info_span!("compose").entered();
 
     let (root_widget, root_state) = root.widget_arena.get_pair_mut(root.root.id());

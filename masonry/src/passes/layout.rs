@@ -205,7 +205,7 @@ pub(crate) fn run_layout_on<W: Widget>(
 }
 
 // --- MARK: ROOT ---
-pub(crate) fn root_layout(root: &mut RenderRoot) {
+pub(crate) fn run_layout_pass(root: &mut RenderRoot) {
     if !root.root_state().needs_layout {
         return;
     }

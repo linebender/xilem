@@ -6,7 +6,7 @@ use std::collections::HashSet;
 use cursor_icon::CursorIcon;
 use tracing::{info_span, trace};
 
-use crate::passes::event::root_on_pointer_event;
+use crate::passes::event::run_on_pointer_event_pass;
 use crate::passes::{merge_state_up, recurse_on_children};
 use crate::render_root::{RenderRoot, RenderRootSignal, RenderRootState};
 use crate::tree_arena::ArenaMut;
@@ -85,7 +85,7 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
     if let Some(id) = root.state.pointer_capture_target {
         if !root.is_still_interactive(id) {
             root.state.pointer_capture_target = None;
-            root_on_pointer_event(root, &PointerEvent::new_pointer_leave());
+            run_on_pointer_event_pass(root, &PointerEvent::new_pointer_leave());
         }
     }
 
