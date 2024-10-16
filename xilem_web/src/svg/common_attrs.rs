@@ -1,17 +1,14 @@
 // Copyright 2023 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use crate::{
+    attribute::WithAttributes,
+    core::{MessageResult, Mut, View, ViewId, ViewMarker},
+    AttributeValue, DomNode, DomView, DynMessage, IntoAttributeValue, ViewCtx,
+};
+use peniko::Brush;
 use std::fmt::Write as _;
 use std::marker::PhantomData;
-
-use peniko::Brush;
-use xilem_core::{MessageResult, Mut, View, ViewId, ViewMarker};
-
-use crate::AttributeValue;
-use crate::{
-    attribute::{ElementWithAttributes, WithAttributes},
-    DynMessage, IntoAttributeValue, ViewCtx,
-};
 
 pub struct Fill<V, State, Action> {
     child: V,
@@ -93,7 +90,7 @@ impl<State, Action, V> View<State, Action, ViewCtx, DynMessage> for Fill<V, Stat
 where
     State: 'static,
     Action: 'static,
-    V: View<State, Action, ViewCtx, DynMessage, Element: ElementWithAttributes>,
+    V: DomView<State, Action, DomNode: DomNode<Props: WithAttributes>>,
 {
     type ViewState = (Option<AttributeValue>, V::ViewState);
     type Element = V::Element;
@@ -107,29 +104,29 @@ where
         (element, (brush_svg_repr, child_state))
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         (brush_svg_repr, child_state): &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
+        mut element: Mut<Self::Element>,
+    ) {
         element.rebuild_attribute_modifier();
-        let mut element = self.child.rebuild(&prev.child, child_state, ctx, element);
+        self.child
+            .rebuild(&prev.child, child_state, ctx, element.reborrow());
         if self.brush != prev.brush {
             *brush_svg_repr = brush_to_string(&self.brush).into_attr_value();
         }
         element.set_attribute(&"fill".into(), brush_svg_repr);
         add_opacity_to_element(&self.brush, &mut element, "fill-opacity");
         element.mark_end_of_attribute_modifier();
-        element
     }
 
     fn teardown(
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<'_, Self::Element>,
+        element: Mut<Self::Element>,
     ) {
         self.child.teardown(&mut view_state.1, ctx, element);
     }
@@ -156,7 +153,7 @@ impl<State, Action, V> View<State, Action, ViewCtx, DynMessage> for Stroke<V, St
 where
     State: 'static,
     Action: 'static,
-    V: View<State, Action, ViewCtx, DynMessage, Element: ElementWithAttributes>,
+    V: DomView<State, Action, DomNode: DomNode<Props: WithAttributes>>,
 {
     type ViewState = StrokeState<V::ViewState>;
     type Element = V::Element;
@@ -185,7 +182,7 @@ where
         )
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         StrokeState {
@@ -194,11 +191,12 @@ where
             child_state,
         }: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
+        mut element: Mut<Self::Element>,
+    ) {
         element.rebuild_attribute_modifier();
 
-        let mut element = self.child.rebuild(&prev.child, child_state, ctx, element);
+        self.child
+            .rebuild(&prev.child, child_state, ctx, element.reborrow());
 
         if self.brush != prev.brush {
             *brush_svg_repr = brush_to_string(&self.brush).into_attr_value();
@@ -216,14 +214,13 @@ where
         add_opacity_to_element(&self.brush, &mut element, "stroke-opacity");
 
         element.mark_end_of_attribute_modifier();
-        element
     }
 
     fn teardown(
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<'_, Self::Element>,
+        element: Mut<Self::Element>,
     ) {
         self.child
             .teardown(&mut view_state.child_state, ctx, element);

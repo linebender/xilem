@@ -193,7 +193,7 @@ impl<'a, 'b, 'c, 'd> ElementSplice<AnyPod> for DomChildrenSplice<'a, 'b, 'c, 'd>
         self.children.insert(element);
     }
 
-    fn mutate<R>(&mut self, f: impl FnOnce(Mut<'_, AnyPod>) -> R) -> R {
+    fn mutate<R>(&mut self, f: impl FnOnce(Mut<AnyPod>) -> R) -> R {
         let child = self.children.mutate();
         let ret = f(child.as_mut(self.parent, self.parent_was_removed));
         self.ix += 1;
@@ -205,7 +205,7 @@ impl<'a, 'b, 'c, 'd> ElementSplice<AnyPod> for DomChildrenSplice<'a, 'b, 'c, 'd>
         self.ix += n;
     }
 
-    fn delete<R>(&mut self, f: impl FnOnce(Mut<'_, AnyPod>) -> R) -> R {
+    fn delete<R>(&mut self, f: impl FnOnce(Mut<AnyPod>) -> R) -> R {
         let mut child = self.children.delete_next();
         let child = child.as_mut(self.parent, true);
         // This is an optimization to avoid too much DOM traffic, otherwise first the children would be deleted from that node in an up-traversal
@@ -286,14 +286,13 @@ where
     )
 }
 
-pub(crate) fn rebuild_element<'el, State, Action, Element>(
+pub(crate) fn rebuild_element<State, Action, Element>(
     children: &dyn DomViewSequence<State, Action>,
     prev_children: &dyn DomViewSequence<State, Action>,
-    element: Mut<'el, Pod<Element>>,
+    element: Mut<Pod<Element>>,
     state: &mut ElementState,
     ctx: &mut ViewCtx,
-) -> Mut<'el, Pod<Element>>
-where
+) where
     State: 'static,
     Action: 'static,
     Element: 'static,
@@ -315,12 +314,11 @@ where
         ctx,
         &mut dom_children_splice,
     );
-    element
 }
 
 pub(crate) fn teardown_element<State, Action, Element>(
     children: &dyn DomViewSequence<State, Action>,
-    element: Mut<'_, Pod<Element>>,
+    element: Mut<Pod<Element>>,
     state: &mut ElementState,
     ctx: &mut ViewCtx,
 ) where
@@ -381,13 +379,13 @@ where
         build_element(&*self.children, &self.name, HTML_NS, ctx)
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         element_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
+        element: Mut<Self::Element>,
+    ) {
         if prev.name != self.name {
             let new_element = document()
                 .create_element_ns(Some(HTML_NS), &self.name)
@@ -410,14 +408,14 @@ where
             element,
             element_state,
             ctx,
-        )
+        );
     }
 
     fn teardown(
         &self,
         element_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<'_, Self::Element>,
+        element: Mut<Self::Element>,
     ) {
         teardown_element(&*self.children, element, element_state, ctx);
     }
@@ -472,27 +470,27 @@ macro_rules! define_element {
                 build_element(&*self.children, $tag_name, $ns, ctx)
             }
 
-            fn rebuild<'el>(
+            fn rebuild(
                 &self,
                 prev: &Self,
                 element_state: &mut Self::ViewState,
                 ctx: &mut ViewCtx,
-                element: Mut<'el, Self::Element>,
-            ) -> Mut<'el, Self::Element> {
+                element: Mut<Self::Element>,
+            ) {
                 rebuild_element(
                     &*self.children,
                     &*prev.children,
                     element,
                     element_state,
                     ctx,
-                )
+                );
             }
 
             fn teardown(
                 &self,
                 element_state: &mut Self::ViewState,
                 ctx: &mut ViewCtx,
-                element: Mut<'_, Self::Element>,
+                element: Mut<Self::Element>,
             ) {
                 teardown_element(&*self.children, element, element_state, ctx);
             }

@@ -1,12 +1,13 @@
 // Copyright 2023 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{elements::DomChildrenSplice, AnyPod, DomFragment, ViewCtx};
+use crate::{
+    core::{AppendVec, MessageResult, ViewId},
+    elements::DomChildrenSplice,
+    AnyPod, DomFragment, DynMessage, ViewCtx,
+};
 use std::{cell::RefCell, rc::Rc};
-
-use crate::DynMessage;
 use wasm_bindgen::UnwrapThrowExt;
-use xilem_core::{AppendVec, MessageResult, ViewId};
 
 pub(crate) struct AppMessage {
     pub id_path: Rc<[ViewId]>,

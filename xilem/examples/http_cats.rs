@@ -9,13 +9,13 @@ use std::sync::Arc;
 use vello::peniko::{Blob, Image};
 use winit::{dpi::LogicalSize, error::EventLoopError, window::Window};
 use xilem::{
+    core::{fork, one_of::OneOf3},
     view::{
         button, flex, image, portal, prose, sized_box, spinner, worker, Axis, CrossAxisAlignment,
         FlexExt, FlexSpacer,
     },
     Color, EventLoop, EventLoopBuilder, TextAlignment, WidgetView, Xilem,
 };
-use xilem_core::{fork, one_of::OneOf3};
 
 /// The main state of the application.
 struct HttpCats {

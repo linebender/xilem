@@ -92,22 +92,17 @@ where
         (NoElement, ())
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         _: &Self,
         (): &mut Self::ViewState,
         _: &mut Context,
-        (): crate::Mut<'el, Self::Element>,
-    ) -> crate::Mut<'el, Self::Element> {
+        (): crate::Mut<Self::Element>,
+    ) {
         // Nothing to do
     }
 
-    fn teardown(
-        &self,
-        (): &mut Self::ViewState,
-        _: &mut Context,
-        _: crate::Mut<'_, Self::Element>,
-    ) {
+    fn teardown(&self, (): &mut Self::ViewState, _: &mut Context, _: crate::Mut<Self::Element>) {
         // Nothing to do
     }
 

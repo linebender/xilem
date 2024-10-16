@@ -1,12 +1,12 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use crate::{
+    core::{MessageResult, Mut, View, ViewId, ViewMarker},
+    DomNode, DomView, DynMessage, PodMut, ViewCtx,
+};
 use std::{any::TypeId, ops::Deref as _, rc::Rc};
-
 use wasm_bindgen::UnwrapThrowExt;
-use xilem_core::{MessageResult, View, ViewMarker};
-
-use crate::{DomNode, DomView, DynMessage, PodMut, ViewCtx};
 
 /// This view creates an internally cached deep-clone of the underlying DOM node. When the inner view is created again, this will be done more efficiently.
 pub struct Templated<E>(Rc<E>);
@@ -65,20 +65,18 @@ where
         (element, state)
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: xilem_core::Mut<'el, Self::Element>,
-    ) -> xilem_core::Mut<'el, Self::Element> {
+        element: Mut<Self::Element>,
+    ) {
+        // If this is the same value, or no rebuild was forced, there's no need to rebuild
         if core::mem::take(&mut view_state.dirty) || !Rc::ptr_eq(&self.0, &prev.0) {
             self.0
                 .deref()
-                .rebuild(&prev.0, &mut view_state.view_state, ctx, element)
-        } else {
-            // If this is the same value, or no rebuild was forced, there's no need to rebuild
-            element
+                .rebuild(&prev.0, &mut view_state.view_state, ctx, element);
         }
     }
 
@@ -86,7 +84,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: xilem_core::Mut<'_, Self::Element>,
+        element: Mut<Self::Element>,
     ) {
         self.0.teardown(&mut view_state.view_state, ctx, element);
     }
@@ -94,10 +92,10 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[xilem_core::ViewId],
+        id_path: &[ViewId],
         message: DynMessage,
         app_state: &mut State,
-    ) -> xilem_core::MessageResult<Action, DynMessage> {
+    ) -> MessageResult<Action, DynMessage> {
         let message_result =
             self.0
                 .deref()

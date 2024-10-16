@@ -10,9 +10,11 @@ use masonry::{
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace_span, Span};
 use vello::Scene;
-use xilem_core::{AnyElement, AnyView, SuperElement};
 
-use crate::{Pod, ViewCtx};
+use crate::{
+    core::{AnyElement, AnyView, Mut, SuperElement},
+    Pod, ViewCtx,
+};
 
 /// A view which can have any underlying view type.
 ///
@@ -35,7 +37,7 @@ impl<W: Widget> SuperElement<Pod<W>, ViewCtx> for Pod<DynWidget> {
 
     fn with_downcast_val<R>(
         mut this: Self::Mut<'_>,
-        f: impl FnOnce(<Pod<W> as xilem_core::ViewElement>::Mut<'_>) -> R,
+        f: impl FnOnce(Mut<Pod<W>>) -> R,
     ) -> (Self::Mut<'_>, R) {
         let ret = {
             let mut child = this.ctx.get_mut(&mut this.widget.inner);

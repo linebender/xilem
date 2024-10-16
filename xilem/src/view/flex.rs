@@ -1,18 +1,18 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use std::marker::PhantomData;
-
+use crate::{
+    core::{
+        AppendVec, DynMessage, ElementSplice, MessageResult, Mut, SuperElement, View, ViewElement,
+        ViewId, ViewMarker, ViewPathTracker, ViewSequence,
+    },
+    AnyWidgetView, Pod, ViewCtx, WidgetView,
+};
 use masonry::{
     widget::{self, WidgetMut},
     Widget,
 };
-use xilem_core::{
-    AppendVec, DynMessage, ElementSplice, MessageResult, Mut, SuperElement, View, ViewElement,
-    ViewId, ViewMarker, ViewPathTracker, ViewSequence,
-};
-
-use crate::{AnyWidgetView, Pod, ViewCtx, WidgetView};
+use std::marker::PhantomData;
 
 pub use masonry::widget::{Axis, CrossAxisAlignment, FlexParams, MainAxisAlignment};
 
@@ -118,13 +118,13 @@ where
         (ctx.new_pod(widget), seq_state)
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
+        mut element: Mut<Self::Element>,
+    ) {
         if prev.axis != self.axis {
             element.set_direction(self.axis);
         }
@@ -145,14 +145,13 @@ where
         self.sequence
             .seq_rebuild(&prev.sequence, view_state, ctx, &mut splice);
         debug_assert!(splice.scratch.is_empty());
-        splice.element
     }
 
     fn teardown(
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<'_, Self::Element>,
+        element: Mut<Self::Element>,
     ) {
         let mut splice = FlexSplice::new(element);
         self.sequence.seq_teardown(view_state, ctx, &mut splice);
@@ -162,7 +161,7 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[xilem_core::ViewId],
+        id_path: &[ViewId],
         message: DynMessage,
         app_state: &mut State,
     ) -> MessageResult<Action> {
@@ -210,8 +209,8 @@ impl SuperElement<FlexElement, ViewCtx> for FlexElement {
     }
 
     fn with_downcast_val<R>(
-        mut this: Mut<'_, Self>,
-        f: impl FnOnce(Mut<'_, FlexElement>) -> R,
+        mut this: Mut<Self>,
+        f: impl FnOnce(Mut<FlexElement>) -> R,
     ) -> (Self::Mut<'_>, R) {
         let r = {
             let parent = this.parent.reborrow_mut();
@@ -231,9 +230,9 @@ impl<W: Widget> SuperElement<Pod<W>, ViewCtx> for FlexElement {
     }
 
     fn with_downcast_val<R>(
-        mut this: Mut<'_, Self>,
-        f: impl FnOnce(Mut<'_, Pod<W>>) -> R,
-    ) -> (Mut<'_, Self>, R) {
+        mut this: Mut<Self>,
+        f: impl FnOnce(Mut<Pod<W>>) -> R,
+    ) -> (Mut<Self>, R) {
         let ret = {
             let mut child = this
                 .parent
@@ -276,7 +275,7 @@ impl ElementSplice<FlexElement> for FlexSplice<'_> {
         ret
     }
 
-    fn mutate<R>(&mut self, f: impl FnOnce(Mut<'_, FlexElement>) -> R) -> R {
+    fn mutate<R>(&mut self, f: impl FnOnce(Mut<FlexElement>) -> R) -> R {
         let child = FlexElementMut {
             parent: self.element.reborrow_mut(),
             idx: self.idx,
@@ -286,7 +285,7 @@ impl ElementSplice<FlexElement> for FlexSplice<'_> {
         ret
     }
 
-    fn delete<R>(&mut self, f: impl FnOnce(Mut<'_, FlexElement>) -> R) -> R {
+    fn delete<R>(&mut self, f: impl FnOnce(Mut<FlexElement>) -> R) -> R {
         let ret = {
             let child = FlexElementMut {
                 parent: self.element.reborrow_mut(),
@@ -448,13 +447,13 @@ where
         (FlexElement::Child(ctx.boxed_pod(pod), self.params), state)
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
+        mut element: Mut<Self::Element>,
+    ) {
         {
             if self.params != prev.params {
                 element
@@ -468,14 +467,13 @@ where
             self.view
                 .rebuild(&prev.view, view_state, ctx, child.downcast());
         }
-        element
     }
 
     fn teardown(
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: Mut<'_, Self::Element>,
+        mut element: Mut<Self::Element>,
     ) {
         let mut child = element
             .parent
@@ -487,7 +485,7 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[xilem_core::ViewId],
+        id_path: &[ViewId],
         message: DynMessage,
         app_state: &mut State,
     ) -> MessageResult<Action> {
@@ -524,28 +522,27 @@ impl<State, Action> View<State, Action, ViewCtx> for FlexSpacer {
         (el, ())
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         _: &mut Self::ViewState,
         _: &mut ViewCtx,
-        mut element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
+        mut element: Mut<Self::Element>,
+    ) {
         if self != prev {
             match self {
                 FlexSpacer::Fixed(len) => element.parent.update_spacer_fixed(element.idx, *len),
                 FlexSpacer::Flex(flex) => element.parent.update_spacer_flex(element.idx, *flex),
             };
         }
-        element
     }
 
-    fn teardown(&self, _: &mut Self::ViewState, _: &mut ViewCtx, _: Mut<'_, Self::Element>) {}
+    fn teardown(&self, _: &mut Self::ViewState, _: &mut ViewCtx, _: Mut<Self::Element>) {}
 
     fn message(
         &self,
         _: &mut Self::ViewState,
-        _: &[xilem_core::ViewId],
+        _: &[ViewId],
         _: DynMessage,
         _: &mut State,
     ) -> MessageResult<Action> {
@@ -651,20 +648,21 @@ where
         )
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
+        mut element: Mut<Self::Element>,
+    ) {
         match (prev, self) {
-            (AnyFlexChild::Item(prev), AnyFlexChild::Item(this)) => ctx
-                .with_id(ViewId::new(view_state.generation), |ctx| {
-                    this.rebuild(prev, view_state.inner.as_mut().unwrap(), ctx, element)
-                }),
+            (AnyFlexChild::Item(prev), AnyFlexChild::Item(this)) => {
+                ctx.with_id(ViewId::new(view_state.generation), |ctx| {
+                    this.rebuild(prev, view_state.inner.as_mut().unwrap(), ctx, element);
+                });
+            }
             (AnyFlexChild::Spacer(prev), AnyFlexChild::Spacer(this)) => {
-                View::<(), (), ViewCtx>::rebuild(this, prev, &mut (), ctx, element)
+                View::<(), (), ViewCtx>::rebuild(this, prev, &mut (), ctx, element);
             }
             (AnyFlexChild::Item(prev_flex_item), AnyFlexChild::Spacer(new_spacer)) => {
                 // Run teardown with the old path
@@ -697,7 +695,6 @@ where
                     }
                     FlexElement::Child(_, _) => unreachable!(),
                 };
-                element
             }
             (AnyFlexChild::Spacer(prev_spacer), AnyFlexChild::Item(new_flex_item)) => {
                 View::<(), (), ViewCtx>::teardown(
@@ -723,8 +720,6 @@ where
                 } else {
                     unreachable!("We just created a new flex item, this should not be reached")
                 }
-
-                element
             }
         }
     }
@@ -733,7 +728,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<'_, Self::Element>,
+        element: Mut<Self::Element>,
     ) {
         match self {
             AnyFlexChild::Item(flex_item) => {
@@ -748,7 +743,7 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[xilem_core::ViewId],
+        id_path: &[ViewId],
         message: DynMessage,
         app_state: &mut State,
     ) -> MessageResult<Action> {

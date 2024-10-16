@@ -1,12 +1,12 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use std::marker::PhantomData;
-
+use crate::{
+    core::{DynMessage, Mut, ViewMarker},
+    MessageResult, Pod, View, ViewCtx, ViewId, WidgetView,
+};
 use masonry::widget;
-use xilem_core::{Mut, ViewMarker};
-
-use crate::{Pod, View, ViewCtx, ViewId, WidgetView};
+use std::marker::PhantomData;
 
 /// A view which puts `child` into a scrollable region.
 ///
@@ -44,24 +44,23 @@ where
         (widget_pod, child_state)
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
+        mut element: Mut<Self::Element>,
+    ) {
         let child_element = element.child_mut();
         self.child
             .rebuild(&prev.child, view_state, ctx, child_element);
-        element
     }
 
     fn teardown(
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: Mut<'_, Self::Element>,
+        mut element: Mut<Self::Element>,
     ) {
         let child_element = element.child_mut();
         self.child.teardown(view_state, ctx, child_element);
@@ -71,9 +70,9 @@ where
         &self,
         view_state: &mut Self::ViewState,
         id_path: &[ViewId],
-        message: xilem_core::DynMessage,
+        message: DynMessage,
         app_state: &mut State,
-    ) -> crate::MessageResult<Action> {
+    ) -> MessageResult<Action> {
         self.child.message(view_state, id_path, message, app_state)
     }
 }

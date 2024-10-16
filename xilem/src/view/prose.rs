@@ -1,10 +1,11 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use crate::{
+    core::{DynMessage, Mut, ViewMarker},
+    Color, MessageResult, Pod, TextAlignment, View, ViewCtx, ViewId,
+};
 use masonry::{text::TextBrush, widget, ArcStr};
-use xilem_core::{Mut, ViewMarker};
-
-use crate::{Color, MessageResult, Pod, TextAlignment, View, ViewCtx, ViewId};
 
 pub fn prose(content: impl Into<ArcStr>) -> Prose {
     Prose {
@@ -59,13 +60,13 @@ impl<State, Action> View<State, Action, ViewCtx> for Prose {
         (widget_pod, ())
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         (): &mut Self::ViewState,
         _ctx: &mut ViewCtx,
-        mut element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
+        mut element: Mut<Self::Element>,
+    ) {
         if prev.content != self.content {
             element.set_text(self.content.clone());
         }
@@ -78,16 +79,15 @@ impl<State, Action> View<State, Action, ViewCtx> for Prose {
         if prev.text_size != self.text_size {
             element.set_text_size(self.text_size);
         }
-        element
     }
 
-    fn teardown(&self, (): &mut Self::ViewState, _: &mut ViewCtx, _: Mut<'_, Self::Element>) {}
+    fn teardown(&self, (): &mut Self::ViewState, _: &mut ViewCtx, _: Mut<Self::Element>) {}
 
     fn message(
         &self,
         _view_state: &mut Self::ViewState,
         _id_path: &[ViewId],
-        message: xilem_core::DynMessage,
+        message: DynMessage,
         _app_state: &mut State,
     ) -> crate::MessageResult<Action> {
         tracing::error!("Message arrived in Prose::message, but Prose doesn't consume any messages, this is a bug");

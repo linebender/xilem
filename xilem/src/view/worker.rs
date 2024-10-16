@@ -1,24 +1,26 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use crate::{
+    core::{
+        DynMessage, Message, MessageProxy, MessageResult, Mut, NoElement, View, ViewId, ViewMarker,
+        ViewPathTracker,
+    },
+    ViewCtx,
+};
 use std::{future::Future, marker::PhantomData, sync::Arc};
-
 use tokio::{
     sync::mpsc::{UnboundedReceiver, UnboundedSender},
     task::JoinHandle,
 };
-use xilem_core::{
-    DynMessage, Message, MessageProxy, NoElement, View, ViewId, ViewMarker, ViewPathTracker,
-};
-
-use crate::ViewCtx;
 
 /// Launch a task which will run until the view is no longer in the tree.
+///
 /// `init_future` is given a [`MessageProxy`], which it will store in the future it returns.
 /// This `MessageProxy` can be used to send a message to `on_event`, which can then update
 /// the app's state.
 ///
-/// For exampe, this can be used with the time functions in [`crate::tokio::time`].
+/// For example, this can be used with the time functions in [`crate::tokio::time`].
 ///
 /// Note that this task will not be updated if the view is rebuilt, so `init_future`
 /// cannot capture.
@@ -114,40 +116,35 @@ where
         (NoElement, WorkerState { handle, sender: tx })
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         view_state: &mut Self::ViewState,
         _: &mut ViewCtx,
-        (): xilem_core::Mut<'el, Self::Element>,
-    ) -> xilem_core::Mut<'el, Self::Element> {
+        (): Mut<Self::Element>,
+    ) {
         if self.value != prev.value {
             // TODO: Error handling
             drop(view_state.sender.send(self.value.clone()));
         }
     }
 
-    fn teardown(
-        &self,
-        view_state: &mut Self::ViewState,
-        _: &mut ViewCtx,
-        _: xilem_core::Mut<'_, Self::Element>,
-    ) {
+    fn teardown(&self, view_state: &mut Self::ViewState, _: &mut ViewCtx, _: Mut<Self::Element>) {
         view_state.handle.abort();
     }
 
     fn message(
         &self,
         _: &mut Self::ViewState,
-        id_path: &[xilem_core::ViewId],
+        id_path: &[ViewId],
         message: DynMessage,
         app_state: &mut State,
-    ) -> xilem_core::MessageResult<Action> {
+    ) -> MessageResult<Action> {
         debug_assert!(
             id_path.is_empty(),
             "id path should be empty in Task::message"
         );
         let message = message.downcast::<M>().unwrap();
-        xilem_core::MessageResult::Action((self.on_response)(app_state, *message))
+        MessageResult::Action((self.on_response)(app_state, *message))
     }
 }

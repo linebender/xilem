@@ -3,12 +3,14 @@
 
 use std::{future::Future, marker::PhantomData, rc::Rc};
 
+use crate::{
+    context::MessageThunk,
+    core::{MessageResult, Mut, NoElement, View, ViewId, ViewMarker},
+    DynMessage, Message, ViewCtx,
+};
 use futures::{channel::oneshot, FutureExt};
 use wasm_bindgen::UnwrapThrowExt;
 use wasm_bindgen_futures::spawn_local;
-use xilem_core::{MessageResult, Mut, NoElement, View, ViewId, ViewMarker};
-
-use crate::{context::MessageThunk, DynMessage, Message, ViewCtx};
 
 /// Spawn an async task to update state asynchronously
 ///
@@ -148,22 +150,11 @@ where
         (NoElement, view_state)
     }
 
-    fn rebuild<'el>(
-        &self,
-        _: &Self,
-        _: &mut Self::ViewState,
-        _: &mut ViewCtx,
-        (): Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
+    fn rebuild(&self, _: &Self, _: &mut Self::ViewState, _: &mut ViewCtx, (): Mut<Self::Element>) {
         // Nothing to do
     }
 
-    fn teardown(
-        &self,
-        view_state: &mut Self::ViewState,
-        _: &mut ViewCtx,
-        _: Mut<'_, Self::Element>,
-    ) {
+    fn teardown(&self, view_state: &mut Self::ViewState, _: &mut ViewCtx, _: Mut<Self::Element>) {
         let handle = view_state.abort_handle.take().unwrap_throw();
         handle.abort();
     }

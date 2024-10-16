@@ -12,13 +12,13 @@ use masonry::parley::{
 use time::{error::IndeterminateOffset, macros::format_description, OffsetDateTime, UtcOffset};
 use winit::error::EventLoopError;
 use xilem::{
+    core::fork,
     view::{
         button, flex, label, portal, prose, sized_box, task, variable_label, Axis, FlexExt,
         FlexSpacer,
     },
     Color, EventLoop, EventLoopBuilder, WidgetView, Xilem,
 };
-use xilem_core::fork;
 
 /// The state of the application, owned by Xilem and updated by the callbacks below.
 struct Clocks {

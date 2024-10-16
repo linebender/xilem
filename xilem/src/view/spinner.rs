@@ -1,10 +1,11 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use crate::{
+    core::{DynMessage, Mut, ViewMarker},
+    MessageResult, Pod, View, ViewCtx, ViewId,
+};
 use masonry::{widget, Color};
-use xilem_core::{Mut, ViewMarker};
-
-use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
 
 /// An indefinite spinner.
 ///
@@ -59,29 +60,28 @@ impl<State, Action> View<State, Action, ViewCtx> for Spinner {
         (ctx.new_pod(widget::Spinner::new()), ())
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         (): &mut Self::ViewState,
         _: &mut ViewCtx,
-        mut element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
+        mut element: Mut<Self::Element>,
+    ) {
         if prev.color != self.color {
             match self.color {
                 Some(color) => element.set_color(color),
                 None => element.reset_color(),
             };
         }
-        element
     }
 
-    fn teardown(&self, (): &mut Self::ViewState, _: &mut ViewCtx, _: Mut<'_, Self::Element>) {}
+    fn teardown(&self, (): &mut Self::ViewState, _: &mut ViewCtx, _: Mut<Self::Element>) {}
 
     fn message(
         &self,
         (): &mut Self::ViewState,
         _: &[ViewId],
-        message: xilem_core::DynMessage,
+        message: DynMessage,
         _: &mut State,
     ) -> MessageResult<Action> {
         tracing::error!("Message arrived in Label::message, but Label doesn't consume any messages, this is a bug");

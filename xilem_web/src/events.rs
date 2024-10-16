@@ -1,12 +1,13 @@
 // Copyright 2023 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use crate::{
+    core::{MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker},
+    DynMessage, ElementAsRef, OptionalAction, ViewCtx,
+};
 use std::{borrow::Cow, marker::PhantomData};
 use wasm_bindgen::{prelude::Closure, throw_str, JsCast, UnwrapThrowExt};
 use web_sys::{js_sys, AddEventListenerOptions};
-use xilem_core::{MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker};
-
-use crate::{DynMessage, ElementAsRef, OptionalAction, ViewCtx};
 
 /// Use a distinctive number here, to be able to catch bugs.
 /// In case the generational-id view path in `View::Message` lead to a wrong view
@@ -143,10 +144,10 @@ where
 }
 
 #[allow(clippy::too_many_arguments)]
-fn rebuild_event_listener<'el, State, Action, V, Event>(
+fn rebuild_event_listener<State, Action, V, Event>(
     element_view: &V,
     prev_element_view: &V,
-    element: Mut<'el, V::Element>,
+    element: Mut<V::Element>,
     event: &str,
     capture: bool,
     passive: bool,
@@ -154,8 +155,7 @@ fn rebuild_event_listener<'el, State, Action, V, Event>(
     prev_passive: bool,
     state: &mut OnEventState<V::ViewState>,
     ctx: &mut ViewCtx,
-) -> Mut<'el, V::Element>
-where
+) where
     State: 'static,
     Action: 'static,
     V: View<State, Action, ViewCtx, DynMessage>,
@@ -169,13 +169,13 @@ where
             state.callback =
                 create_event_listener::<Event>(element.as_ref(), event, capture, passive, ctx);
         }
-        element_view.rebuild(prev_element_view, &mut state.child_state, ctx, element)
-    })
+        element_view.rebuild(prev_element_view, &mut state.child_state, ctx, element);
+    });
 }
 
 fn teardown_event_listener<State, Action, V>(
     element_view: &V,
-    element: Mut<'_, V::Element>,
+    element: Mut<V::Element>,
     _event: &str,
     state: &mut OnEventState<V::ViewState>,
     _capture: bool,
@@ -253,13 +253,13 @@ where
         )
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
+        element: Mut<Self::Element>,
+    ) {
         // special case, where event name can change, so we can't reuse the rebuild_event_listener function above
         ctx.with_id(ON_EVENT_VIEW_ID, |ctx| {
             if prev.capture != self.capture
@@ -282,15 +282,15 @@ where
                 );
             }
             self.element
-                .rebuild(&prev.element, &mut view_state.child_state, ctx, element)
-        })
+                .rebuild(&prev.element, &mut view_state.child_state, ctx, element);
+        });
     }
 
     fn teardown(
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<'_, Self::Element>,
+        element: Mut<Self::Element>,
     ) {
         teardown_event_listener(
             &self.element,
@@ -391,13 +391,13 @@ macro_rules! event_definitions {
                 )
             }
 
-            fn rebuild<'el>(
+            fn rebuild(
                 &self,
                 prev: &Self,
                 view_state: &mut Self::ViewState,
                 ctx: &mut ViewCtx,
-                element: Mut<'el, Self::Element>,
-            ) -> Mut<'el, Self::Element> {
+                element: Mut<Self::Element>,
+            ) {
                 rebuild_event_listener::<_, _, _, web_sys::$web_sys_ty>(
                     &self.element,
                     &prev.element,
@@ -409,14 +409,14 @@ macro_rules! event_definitions {
                     prev.passive,
                     view_state,
                     ctx,
-                )
+                );
             }
 
             fn teardown(
                 &self,
                 view_state: &mut Self::ViewState,
                 ctx: &mut ViewCtx,
-                element: Mut<'_, Self::Element>,
+                element: Mut<Self::Element>,
             ) {
                 teardown_event_listener(&self.element, element, $event_name, view_state, self.capture, ctx);
             }
@@ -563,24 +563,24 @@ where
         })
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
+        element: Mut<Self::Element>,
+    ) {
         ctx.with_id(ON_EVENT_VIEW_ID, |ctx| {
             self.element
-                .rebuild(&prev.element, &mut view_state.child_state, ctx, element)
-        })
+                .rebuild(&prev.element, &mut view_state.child_state, ctx, element);
+        });
     }
 
     fn teardown(
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<'_, Self::Element>,
+        element: Mut<Self::Element>,
     ) {
         ctx.with_id(ON_EVENT_VIEW_ID, |ctx| {
             view_state.observer.unobserve(element.as_ref());

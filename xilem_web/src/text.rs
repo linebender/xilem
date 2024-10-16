@@ -1,11 +1,12 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use crate::{
+    core::{MessageResult, Mut, OrphanView, ViewId},
+    DynMessage, Pod, ViewCtx,
+};
 #[cfg(feature = "hydration")]
 use wasm_bindgen::JsCast;
-use xilem_core::{Mut, OrphanView};
-
-use crate::{DynMessage, Pod, ViewCtx};
 
 // strings -> text nodes
 macro_rules! impl_string_view {
@@ -30,35 +31,34 @@ macro_rules! impl_string_view {
                 (Pod { node, props: () }, ())
             }
 
-            fn orphan_rebuild<'a>(
+            fn orphan_rebuild(
                 new: &$ty,
                 prev: &$ty,
                 (): &mut Self::OrphanViewState,
                 _ctx: &mut ViewCtx,
-                element: Mut<'a, Self::OrphanElement>,
-            ) -> Mut<'a, Self::OrphanElement> {
+                element: Mut<Self::OrphanElement>,
+            ) {
                 if prev != new {
                     element.node.set_data(new);
                 }
-                element
             }
 
             fn orphan_teardown(
                 _view: &$ty,
                 _view_state: &mut Self::OrphanViewState,
                 _ctx: &mut ViewCtx,
-                _element: Mut<'_, Pod<web_sys::Text>>,
+                _element: Mut<Self::OrphanElement>,
             ) {
             }
 
             fn orphan_message(
                 _view: &$ty,
                 _view_state: &mut Self::OrphanViewState,
-                _id_path: &[xilem_core::ViewId],
+                _id_path: &[ViewId],
                 message: DynMessage,
                 _app_state: &mut State,
-            ) -> xilem_core::MessageResult<Action, DynMessage> {
-                xilem_core::MessageResult::Stale(message)
+            ) -> MessageResult<Action, DynMessage> {
+                MessageResult::Stale(message)
             }
         }
     };
@@ -90,35 +90,34 @@ macro_rules! impl_to_string_view {
                 (Pod { node, props: () }, ())
             }
 
-            fn orphan_rebuild<'a>(
+            fn orphan_rebuild(
                 new: &$ty,
                 prev: &$ty,
                 (): &mut Self::OrphanViewState,
                 _ctx: &mut ViewCtx,
-                element: Mut<'a, Self::OrphanElement>,
-            ) -> Mut<'a, Self::OrphanElement> {
+                element: Mut<Self::OrphanElement>,
+            ) {
                 if prev != new {
                     element.node.set_data(&new.to_string());
                 }
-                element
             }
 
             fn orphan_teardown(
                 _view: &$ty,
                 _view_state: &mut Self::OrphanViewState,
                 _ctx: &mut ViewCtx,
-                _element: Mut<'_, Pod<web_sys::Text>>,
+                _element: Mut<Pod<web_sys::Text>>,
             ) {
             }
 
             fn orphan_message(
                 _view: &$ty,
                 _view_state: &mut Self::OrphanViewState,
-                _id_path: &[xilem_core::ViewId],
+                _id_path: &[ViewId],
                 message: DynMessage,
                 _app_state: &mut State,
-            ) -> xilem_core::MessageResult<Action, DynMessage> {
-                xilem_core::MessageResult::Stale(message)
+            ) -> MessageResult<Action, DynMessage> {
+                MessageResult::Stale(message)
             }
         }
     };

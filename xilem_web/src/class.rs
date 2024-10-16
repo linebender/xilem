@@ -1,12 +1,13 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use crate::{
+    core::{MessageResult, Mut, View, ViewElement, ViewId, ViewMarker},
+    vecmap::VecMap,
+    DomNode, DomView, DynMessage, ElementProps, Pod, PodMut, ViewCtx,
+};
 use std::marker::PhantomData;
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
-
-use xilem_core::{MessageResult, Mut, View, ViewElement, ViewId, ViewMarker};
-
-use crate::{vecmap::VecMap, DomNode, DynMessage, ElementProps, Pod, PodMut, ViewCtx};
 
 type CowStr = std::borrow::Cow<'static, str>;
 
@@ -327,7 +328,7 @@ where
     T: 'static,
     A: 'static,
     C: AsClassIter + 'static,
-    E: View<T, A, ViewCtx, DynMessage, Element: ElementWithClasses>,
+    E: DomView<T, A, DomNode: DomNode<Props: WithClasses>>,
 {
     type Element = E::Element;
 
@@ -344,29 +345,29 @@ where
         (e, s)
     }
 
-    fn rebuild<'e>(
+    fn rebuild(
         &self,
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: Mut<'e, Self::Element>,
-    ) -> Mut<'e, Self::Element> {
+        mut element: Mut<Self::Element>,
+    ) {
         // This has to happen, before any children are rebuilt, otherwise this state machine breaks...
         // The actual modifiers also have to happen after the children are rebuilt, see `add_class` below.
         element.rebuild_class_modifier();
-        let mut element = self.el.rebuild(&prev.el, view_state, ctx, element);
+        self.el
+            .rebuild(&prev.el, view_state, ctx, element.reborrow());
         for class in self.classes.class_iter() {
             element.add_class(&class);
         }
         element.mark_end_of_class_modifier();
-        element
     }
 
     fn teardown(
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<'_, Self::Element>,
+        element: Mut<Self::Element>,
     ) {
         self.el.teardown(view_state, ctx, element);
     }

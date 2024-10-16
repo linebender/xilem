@@ -1,12 +1,12 @@
 // Copyright 2024 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use crate::{
+    core::{MessageResult, Mut, NoElement, View, ViewId, ViewMarker},
+    DynMessage, OptionalAction, ViewCtx,
+};
 use std::marker::PhantomData;
-
 use wasm_bindgen::{closure::Closure, JsCast, UnwrapThrowExt};
-use xilem_core::{MessageResult, Mut, NoElement, View, ViewId, ViewMarker};
-
-use crate::{DynMessage, OptionalAction, ViewCtx};
 
 /// Start an interval which invokes `callback` every `ms` milliseconds
 pub struct Interval<Callback, State, Action> {
@@ -109,25 +109,20 @@ where
         (NoElement, state)
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         view_state: &mut Self::ViewState,
         _: &mut ViewCtx,
-        (): Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
+        (): Mut<Self::Element>,
+    ) {
         if prev.ms != self.ms {
             clear_interval(view_state.interval_handle);
             view_state.interval_handle = start_interval(&view_state.interval_fn, self.ms);
         }
     }
 
-    fn teardown(
-        &self,
-        view_state: &mut Self::ViewState,
-        _: &mut ViewCtx,
-        _: Mut<'_, Self::Element>,
-    ) {
+    fn teardown(&self, view_state: &mut Self::ViewState, _: &mut ViewCtx, _: Mut<Self::Element>) {
         clear_interval(view_state.interval_handle);
     }
 

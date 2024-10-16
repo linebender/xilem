@@ -6,6 +6,7 @@ use crate::{
 };
 
 /// This trait provides a way to add [`View`] implementations for types that would be restricted otherwise by the orphan rules.
+///
 /// Every type that can be supported with this trait, needs a concrete `View` implementation in `xilem_core`, possibly feature-gated.
 pub trait OrphanView<V, State, Action, Message = DynMessage>: ViewPathTracker + Sized {
     /// See [`View::Element`]
@@ -17,20 +18,20 @@ pub trait OrphanView<V, State, Action, Message = DynMessage>: ViewPathTracker + 
     fn orphan_build(view: &V, ctx: &mut Self) -> (Self::OrphanElement, Self::OrphanViewState);
 
     /// See [`View::rebuild`]
-    fn orphan_rebuild<'el>(
+    fn orphan_rebuild(
         new: &V,
         prev: &V,
         view_state: &mut Self::OrphanViewState,
         ctx: &mut Self,
-        element: Mut<'el, Self::OrphanElement>,
-    ) -> Mut<'el, Self::OrphanElement>;
+        element: Mut<Self::OrphanElement>,
+    );
 
     /// See [`View::teardown`]
     fn orphan_teardown(
         view: &V,
         view_state: &mut Self::OrphanViewState,
         ctx: &mut Self,
-        element: Mut<'_, Self::OrphanElement>,
+        element: Mut<Self::OrphanElement>,
     );
 
     /// See [`View::message`]
@@ -59,21 +60,21 @@ macro_rules! impl_orphan_view_for {
                 Context::orphan_build(self, ctx)
             }
 
-            fn rebuild<'el>(
+            fn rebuild(
                 &self,
                 prev: &Self,
                 view_state: &mut Self::ViewState,
                 ctx: &mut Context,
-                element: Mut<'el, Self::Element>,
-            ) -> Mut<'el, Self::Element> {
-                Context::orphan_rebuild(self, prev, view_state, ctx, element)
+                element: Mut<Self::Element>,
+            ) {
+                Context::orphan_rebuild(self, prev, view_state, ctx, element);
             }
 
             fn teardown(
                 &self,
                 view_state: &mut Self::ViewState,
                 ctx: &mut Context,
-                element: Mut<'_, Self::Element>,
+                element: Mut<Self::Element>,
             ) {
                 Context::orphan_teardown(self, view_state, ctx, element);
             }

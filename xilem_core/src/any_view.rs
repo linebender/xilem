@@ -35,13 +35,13 @@ pub trait AnyView<State, Action, Context, Element: ViewElement, Message = DynMes
     fn dyn_build(&self, ctx: &mut Context) -> (Element, AnyViewState);
 
     /// Type erased [`View::rebuild`].
-    fn dyn_rebuild<'el>(
+    fn dyn_rebuild(
         &self,
         dyn_state: &mut AnyViewState,
         ctx: &mut Context,
         prev: &dyn AnyView<State, Action, Context, Element, Message>,
-        element: Element::Mut<'el>,
-    ) -> Element::Mut<'el>;
+        element: Element::Mut<'_>,
+    );
 
     /// Type erased [`View::teardown`].
     ///
@@ -88,13 +88,13 @@ where
         )
     }
 
-    fn dyn_rebuild<'el>(
+    fn dyn_rebuild(
         &self,
         dyn_state: &mut AnyViewState,
         ctx: &mut Context,
         prev: &dyn AnyView<State, Action, Context, DynamicElement, Message>,
-        mut element: DynamicElement::Mut<'el>,
-    ) -> DynamicElement::Mut<'el> {
+        mut element: DynamicElement::Mut<'_>,
+    ) {
         if let Some(prev) = prev.as_any().downcast_ref() {
             // If we were previously of this type, then do a normal rebuild
             DynamicElement::with_downcast(element, |element| {
@@ -106,7 +106,7 @@ where
                 ctx.with_id(ViewId::new(dyn_state.generation), move |ctx| {
                     self.rebuild(prev, state, ctx, element);
                 });
-            })
+            });
         } else {
             // Otherwise, teardown the old element, then replace the value
             // Note that we need to use `dyn_teardown` here, because `prev`
@@ -120,7 +120,7 @@ where
             let (new_element, view_state) =
                 ctx.with_id(ViewId::new(dyn_state.generation), |ctx| self.build(ctx));
             dyn_state.inner_state = Box::new(view_state);
-            DynamicElement::replace_inner(element, new_element)
+            DynamicElement::replace_inner(element, new_element);
         }
     }
     fn dyn_teardown<'el>(
@@ -194,21 +194,21 @@ where
         self.dyn_build(ctx)
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
-        self.dyn_rebuild(view_state, ctx, prev, element)
+        element: Mut<Self::Element>,
+    ) {
+        self.dyn_rebuild(view_state, ctx, prev, element);
     }
 
     fn teardown(
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<'_, Self::Element>,
+        element: Mut<Self::Element>,
     ) {
         self.dyn_teardown(view_state, ctx, element);
     }
@@ -248,21 +248,21 @@ where
         self.dyn_build(ctx)
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
-        self.dyn_rebuild(view_state, ctx, prev, element)
+        element: Mut<Self::Element>,
+    ) {
+        self.dyn_rebuild(view_state, ctx, prev, element);
     }
 
     fn teardown(
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<'_, Self::Element>,
+        element: Mut<Self::Element>,
     ) {
         self.dyn_teardown(view_state, ctx, element);
     }
@@ -300,21 +300,21 @@ where
         self.dyn_build(ctx)
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
-        self.dyn_rebuild(view_state, ctx, prev, element)
+        element: Mut<Self::Element>,
+    ) {
+        self.dyn_rebuild(view_state, ctx, prev, element);
     }
 
     fn teardown(
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<'_, Self::Element>,
+        element: Mut<Self::Element>,
     ) {
         self.dyn_teardown(view_state, ctx, element);
     }
@@ -352,21 +352,21 @@ where
         self.dyn_build(ctx)
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
-        self.dyn_rebuild(view_state, ctx, prev, element)
+        element: Mut<Self::Element>,
+    ) {
+        self.dyn_rebuild(view_state, ctx, prev, element);
     }
 
     fn teardown(
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<'_, Self::Element>,
+        element: Mut<Self::Element>,
     ) {
         self.dyn_teardown(view_state, ctx, element);
     }

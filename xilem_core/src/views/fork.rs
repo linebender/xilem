@@ -47,16 +47,16 @@ where
         (element, (active_state, alongside_state))
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         (active_state, alongside_state): &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
-        let element = ctx.with_id(ViewId::new(0), |ctx| {
+        element: Mut<Self::Element>,
+    ) {
+        ctx.with_id(ViewId::new(0), |ctx| {
             self.active_view
-                .rebuild(&prev.active_view, active_state, ctx, element)
+                .rebuild(&prev.active_view, active_state, ctx, element);
         });
         ctx.with_id(ViewId::new(1), |ctx| {
             self.alongside_view.seq_rebuild(
@@ -66,14 +66,13 @@ where
                 &mut NoElements,
             );
         });
-        element
     }
 
     fn teardown(
         &self,
         (active_state, alongside_state): &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<'_, Self::Element>,
+        element: Mut<Self::Element>,
     ) {
         ctx.with_id(ViewId::new(0), |ctx| {
             self.alongside_view

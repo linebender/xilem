@@ -3,10 +3,11 @@
 
 //! The bitmap image widget.
 
+use crate::{
+    core::{DynMessage, Mut, ViewMarker},
+    MessageResult, Pod, View, ViewCtx, ViewId,
+};
 use masonry::widget::{self, ObjectFit};
-use xilem_core::{Mut, ViewMarker};
-
-use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
 
 /// Displays the bitmap `image`.
 ///
@@ -53,29 +54,28 @@ impl<State, Action> View<State, Action, ViewCtx> for Image {
         (ctx.new_pod(widget::Image::new(self.image.clone())), ())
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         (): &mut Self::ViewState,
         _: &mut ViewCtx,
-        mut element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
+        mut element: Mut<Self::Element>,
+    ) {
         if prev.object_fit != self.object_fit {
             element.set_fit_mode(self.object_fit);
         }
         if prev.image != self.image {
             element.set_image_data(self.image.clone());
         }
-        element
     }
 
-    fn teardown(&self, (): &mut Self::ViewState, _: &mut ViewCtx, _: Mut<'_, Self::Element>) {}
+    fn teardown(&self, (): &mut Self::ViewState, _: &mut ViewCtx, _: Mut<Self::Element>) {}
 
     fn message(
         &self,
         (): &mut Self::ViewState,
         _: &[ViewId],
-        message: xilem_core::DynMessage,
+        message: DynMessage,
         _: &mut State,
     ) -> MessageResult<Action> {
         tracing::error!("Message arrived in Label::message, but Label doesn't consume any messages, this is a bug");

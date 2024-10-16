@@ -3,14 +3,14 @@
 
 //! Interactivity with pointer events.
 
+use crate::{
+    core::{MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker},
+    interfaces::Element,
+    DynMessage, ElementAsRef, ViewCtx,
+};
 use std::marker::PhantomData;
-
 use wasm_bindgen::{prelude::Closure, throw_str, JsCast, UnwrapThrowExt};
 use web_sys::PointerEvent;
-
-use xilem_core::{MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker};
-
-use crate::{interfaces::Element, DynMessage, ElementAsRef, ViewCtx};
 
 /// A view that allows stateful handling of [`PointerEvent`]s with [`PointerMsg`]
 pub struct Pointer<V, T, A, F> {
@@ -128,24 +128,24 @@ where
         })
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
+        element: Mut<Self::Element>,
+    ) {
         ctx.with_id(ViewId::new(0), |ctx| {
             self.child
-                .rebuild(&prev.child, &mut view_state.child_state, ctx, element)
-        })
+                .rebuild(&prev.child, &mut view_state.child_state, ctx, element);
+        });
     }
 
     fn teardown(
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<'_, Self::Element>,
+        element: Mut<Self::Element>,
     ) {
         // TODO remove event listeners from child or is this not necessary?
         self.child
