@@ -471,10 +471,14 @@ impl TextLayout {
         );
     }
 
-    pub fn accessibility(&mut self, update: &mut TreeUpdate, parent_node: &mut NodeBuilder) {
+    pub fn accessibility(
+        &mut self,
+        text: &str,
+        update: &mut TreeUpdate,
+        parent_node: &mut NodeBuilder,
+    ) {
         self.assert_rebuilt("accessibility");
 
-        let text = self.text.as_ref();
         // Build a set of node IDs for the runs encountered in this pass.
         let mut ids = HashSet::<NodeId>::new();
 

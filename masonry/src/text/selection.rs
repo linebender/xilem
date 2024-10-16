@@ -345,7 +345,8 @@ impl<T: Selectable> TextWithSelection<T> {
     }
 
     pub fn accessibility(&mut self, update: &mut TreeUpdate, parent_node: &mut NodeBuilder) {
-        self.layout.accessibility(update, parent_node);
+        self.layout
+            .accessibility(self.text.as_ref(), update, parent_node);
         let anchor_affinity = if self.selection.anchor == self.selection.active {
             self.selection.active_affinity
         } else {
