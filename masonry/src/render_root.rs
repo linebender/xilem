@@ -391,7 +391,6 @@ impl RenderRoot {
         run_update_pointer_pass(self);
 
         self.run_rewrite_passes();
-        self.get_root_widget().debug_validate(false);
 
         handled
     }
@@ -406,7 +405,6 @@ impl RenderRoot {
         run_update_focus_pass(self);
 
         self.run_rewrite_passes();
-        self.get_root_widget().debug_validate(false);
 
         handled
     }
@@ -425,7 +423,6 @@ impl RenderRoot {
         run_on_access_event_pass(self, &event, WidgetId(id));
 
         self.run_rewrite_passes();
-        self.get_root_widget().debug_validate(false);
     }
 
     // --- MARK: PAINT ---
