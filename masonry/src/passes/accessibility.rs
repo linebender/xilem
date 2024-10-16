@@ -129,7 +129,7 @@ fn to_accesskit_rect(r: Rect, scale_factor: f64) -> accesskit::Rect {
 }
 
 // --- MARK: ROOT ---
-pub(crate) fn root_accessibility(
+pub(crate) fn run_accessibility_pass(
     root: &mut RenderRoot,
     rebuild_all: bool,
     scale_factor: f64,

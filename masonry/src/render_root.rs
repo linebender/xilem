@@ -18,12 +18,14 @@ use web_time::Instant;
 use crate::debug_logger::DebugLogger;
 use crate::dpi::{LogicalPosition, LogicalSize, PhysicalSize};
 use crate::event::{PointerEvent, TextEvent, WindowEvent};
-use crate::passes::accessibility::root_accessibility;
-use crate::passes::compose::root_compose;
-use crate::passes::event::{root_on_access_event, root_on_pointer_event, root_on_text_event};
-use crate::passes::layout::root_layout;
+use crate::passes::accessibility::run_accessibility_pass;
+use crate::passes::compose::run_compose_pass;
+use crate::passes::event::{
+    run_on_access_event_pass, run_on_pointer_event_pass, run_on_text_event_pass,
+};
+use crate::passes::layout::run_layout_pass;
 use crate::passes::mutate::{mutate_widget, run_mutate_pass};
-use crate::passes::paint::root_paint;
+use crate::passes::paint::run_paint_pass;
 use crate::passes::recurse_on_children;
 use crate::passes::update::{
     run_update_anim_pass, run_update_disabled_pass, run_update_focus_chain_pass,
@@ -385,7 +387,7 @@ impl RenderRoot {
 
     // --- MARK: POINTER_EVENT ---
     fn root_on_pointer_event(&mut self, event: PointerEvent) -> Handled {
-        let handled = root_on_pointer_event(self, &event);
+        let handled = run_on_pointer_event_pass(self, &event);
         run_update_pointer_pass(self);
 
         self.run_rewrite_passes();
@@ -397,10 +399,10 @@ impl RenderRoot {
     // --- MARK: TEXT_EVENT ---
     fn root_on_text_event(&mut self, event: TextEvent) -> Handled {
         if matches!(event, TextEvent::FocusChange(false)) {
-            root_on_pointer_event(self, &PointerEvent::new_pointer_leave());
+            run_on_pointer_event_pass(self, &PointerEvent::new_pointer_leave());
         }
 
-        let handled = root_on_text_event(self, &event);
+        let handled = run_on_text_event_pass(self, &event);
         run_update_focus_pass(self);
 
         self.run_rewrite_passes();
@@ -420,7 +422,7 @@ impl RenderRoot {
             data: event.data,
         };
 
-        root_on_access_event(self, &event, WidgetId(id));
+        run_on_access_event_pass(self, &event, WidgetId(id));
 
         self.run_rewrite_passes();
         self.get_root_widget().debug_validate(false);
@@ -428,13 +430,14 @@ impl RenderRoot {
 
     // --- MARK: PAINT ---
     fn root_paint(&mut self) -> Scene {
-        root_paint(self)
+        run_paint_pass(self)
     }
 
     // --- MARK: ACCESSIBILITY ---
     // TODO - Integrate in unit tests?
     fn root_accessibility(&mut self) -> TreeUpdate {
-        let mut tree_update = root_accessibility(self, self.rebuild_access_tree, self.scale_factor);
+        let mut tree_update =
+            run_accessibility_pass(self, self.rebuild_access_tree, self.scale_factor);
         self.rebuild_access_tree = false;
 
         tree_update.tree = Some(Tree {
@@ -473,9 +476,9 @@ impl RenderRoot {
         run_update_stashed_pass(self);
         run_update_focus_chain_pass(self);
         run_update_focus_pass(self);
-        root_layout(self);
+        run_layout_pass(self);
         run_update_scroll_pass(self);
-        root_compose(self);
+        run_compose_pass(self);
         run_update_pointer_pass(self);
 
         if self.root_state().needs_anim {

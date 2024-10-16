@@ -79,7 +79,7 @@ fn run_event_pass<E>(
 // TODO - Send synthetic MouseLeave events
 
 // --- MARK: POINTER_EVENT ---
-pub(crate) fn root_on_pointer_event(root: &mut RenderRoot, event: &PointerEvent) -> Handled {
+pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEvent) -> Handled {
     let _span = info_span!("pointer_event").entered();
     if !event.is_high_density() {
         debug!("Running ON_POINTER_EVENT pass with {}", event.short_name());
@@ -126,7 +126,7 @@ pub(crate) fn root_on_pointer_event(root: &mut RenderRoot, event: &PointerEvent)
 // - If a Widget has focus, then none of its parents is hidden
 
 // --- MARK: TEXT EVENT ---
-pub(crate) fn root_on_text_event(root: &mut RenderRoot, event: &TextEvent) -> Handled {
+pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -> Handled {
     let _span = info_span!("text_event").entered();
     if !event.is_high_density() {
         debug!("Running ON_TEXT_EVENT pass with {}", event.short_name());
@@ -165,7 +165,7 @@ pub(crate) fn root_on_text_event(root: &mut RenderRoot, event: &TextEvent) -> Ha
 }
 
 // --- MARK: ACCESS EVENT ---
-pub(crate) fn root_on_access_event(
+pub(crate) fn run_on_access_event_pass(
     root: &mut RenderRoot,
     event: &AccessEvent,
     target: WidgetId,
