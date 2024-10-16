@@ -189,8 +189,15 @@ impl Widget for Prose {
         }
     }
 
-    fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {
-        // TODO - Handle accesskit::Action::SetTextSelection
+    fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {
+        match event.action {
+            accesskit::Action::SetTextSelection => {
+                if self.text_layout.set_selection_from_access_event(event) {
+                    ctx.request_layout();
+                }
+            }
+            _ => (),
+        }
     }
 
     fn register_children(&mut self, _ctx: &mut RegisterCtx) {}
@@ -274,11 +281,12 @@ impl Widget for Prose {
     }
 
     fn accessibility_role(&self) -> Role {
-        Role::Paragraph
+        Role::Document
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx, node: &mut NodeBuilder) {
-        node.set_name(self.text().as_ref().to_string());
+    fn accessibility(&mut self, ctx: &mut AccessCtx, node: &mut NodeBuilder) {
+        node.set_read_only();
+        self.text_layout.accessibility(ctx.tree_update, node);
     }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {

@@ -215,8 +215,15 @@ impl Widget for Textbox {
         }
     }
 
-    fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {
-        // TODO - Handle accesskit::Action::SetTextSelection
+    fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {
+        match event.action {
+            accesskit::Action::SetTextSelection => {
+                if self.editor.set_selection_from_access_event(event) {
+                    ctx.request_layout();
+                }
+            }
+            _ => (),
+        }
         // TODO - Handle accesskit::Action::ReplaceSelectedText
         // TODO - Handle accesskit::Action::SetValue
     }
@@ -324,9 +331,8 @@ impl Widget for Textbox {
         Role::TextInput
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx, node: &mut NodeBuilder) {
-        // TODO: Replace with full accessibility.
-        node.set_value(self.text());
+    fn accessibility(&mut self, ctx: &mut AccessCtx, node: &mut NodeBuilder) {
+        self.editor.accessibility(ctx.tree_update, node);
     }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
