@@ -21,6 +21,9 @@ pub use flex::*;
 mod grid;
 pub use grid::*;
 
+mod taffy_layout;
+pub use taffy_layout::*;
+
 mod sized_box;
 pub use sized_box::*;
 

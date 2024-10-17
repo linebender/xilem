@@ -1510,6 +1510,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "grid"
+version = "0.14.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "be136d9dacc2a13cc70bb6c8f902b414fb2641f8db1314637c6b7933411a8f82"
+
+[[package]]
 name = "guillotiere"
 version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2045,6 +2051,7 @@ dependencies = [
  "serde",
  "serde_json",
  "smallvec",
+ "taffy",
  "tempfile",
  "time",
  "tracing",
@@ -3509,6 +3516,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "taffy"
+version = "0.5.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9cb893bff0f80ae17d3a57e030622a967b8dbc90e38284d9b4b1442e23873c94"
+dependencies = [
+ "arrayvec",
+ "grid",
+ "num-traits",
+ "serde",
+ "slotmap",
+]
+
+[[package]]
 name = "tempfile"
 version = "3.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4894,6 +4914,7 @@ dependencies = [
  "profiling",
  "reqwest",
  "smallvec",
+ "taffy",
  "time",
  "tokio",
  "tracing",
