@@ -18,7 +18,10 @@ use std::rc::Rc;
 use accesskit::{NodeBuilder, Role};
 use accesskit_winit::Event;
 use smallvec::SmallVec;
+use tracing::trace_span;
 use vello::Scene;
+use widget::widget::get_child_at_pos;
+use widget::WidgetRef;
 
 use crate::event::{PointerEvent, TextEvent};
 use crate::widget::SizedBox;
@@ -252,8 +255,7 @@ impl<S> ModularWidget<S> {
     }
 }
 
-// TODO
-// #[warn(clippy::missing_trait_methods)]
+#[warn(clippy::missing_trait_methods)]
 impl<S: 'static> Widget for ModularWidget<S> {
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &event::PointerEvent) {
         if let Some(f) = self.on_pointer_event.as_mut() {
@@ -348,6 +350,42 @@ impl<S: 'static> Widget for ModularWidget<S> {
     fn accepts_text_input(&self) -> bool {
         self.accepts_text_input
     }
+
+    fn make_trace_span(&self) -> tracing::Span {
+        trace_span!("ModularWidget")
+    }
+
+    fn get_debug_text(&self) -> Option<String> {
+        None
+    }
+
+    fn get_cursor(&self) -> CursorIcon {
+        CursorIcon::Default
+    }
+
+    fn get_child_at_pos<'c>(
+        &self,
+        ctx: QueryCtx<'c>,
+        pos: Point,
+    ) -> Option<WidgetRef<'c, dyn Widget>> {
+        get_child_at_pos(self, ctx, pos)
+    }
+
+    fn type_name(&self) -> &'static str {
+        std::any::type_name::<Self>()
+    }
+
+    fn short_type_name(&self) -> &'static str {
+        "ModularWidget"
+    }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self.as_dyn_any()
+    }
+
+    fn as_mut_any(&mut self) -> &mut dyn std::any::Any {
+        self.as_mut_dyn_any()
+    }
 }
 
 impl ReplaceChild {
@@ -437,6 +475,7 @@ impl Recording {
     }
 }
 
+#[warn(clippy::missing_trait_methods)]
 impl<W: Widget> Widget for Recorder<W> {
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &event::PointerEvent) {
         self.recording.push(Record::PE(event.clone()));
@@ -495,5 +534,53 @@ impl<W: Widget> Widget for Recorder<W> {
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         self.child.children_ids()
+    }
+
+    fn accepts_pointer_interaction(&self) -> bool {
+        self.child.accepts_pointer_interaction()
+    }
+
+    fn accepts_focus(&self) -> bool {
+        self.child.accepts_focus()
+    }
+
+    fn accepts_text_input(&self) -> bool {
+        self.child.accepts_text_input()
+    }
+
+    fn make_trace_span(&self) -> tracing::Span {
+        self.child.make_trace_span()
+    }
+
+    fn get_debug_text(&self) -> Option<String> {
+        self.child.get_debug_text()
+    }
+
+    fn get_cursor(&self) -> CursorIcon {
+        self.child.get_cursor()
+    }
+
+    fn get_child_at_pos<'c>(
+        &self,
+        ctx: QueryCtx<'c>,
+        pos: Point,
+    ) -> Option<WidgetRef<'c, dyn Widget>> {
+        self.child.get_child_at_pos(ctx, pos)
+    }
+
+    fn type_name(&self) -> &'static str {
+        std::any::type_name::<Self>()
+    }
+
+    fn short_type_name(&self) -> &'static str {
+        "Recorder"
+    }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self.child.as_any()
+    }
+
+    fn as_mut_any(&mut self) -> &mut dyn std::any::Any {
+        self.child.as_mut_any()
     }
 }
