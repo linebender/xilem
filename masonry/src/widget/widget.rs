@@ -100,6 +100,8 @@ pub trait Widget: AsAny {
     /// the monitor's refresh, causing lag or jerky animations.
     fn on_anim_frame(&mut self, ctx: &mut UpdateCtx, interval: u64) {}
 
+    // TODO - Reorder methods to match 02_implementing_widget.md
+
     /// Register child widgets with Masonry.
     ///
     /// Leaf widgets can implement this with an empty body.
