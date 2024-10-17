@@ -262,7 +262,8 @@ impl MasonryState<'_> {
 
                 let window = event_loop.create_window(attributes).unwrap();
 
-                let adapter = Adapter::with_event_loop_proxy(&window, self.proxy.clone());
+                let adapter =
+                    Adapter::with_event_loop_proxy(event_loop, &window, self.proxy.clone());
                 window.set_visible(visible);
                 let window = Arc::new(window);
                 // https://github.com/rust-windowing/winit/issues/2308
