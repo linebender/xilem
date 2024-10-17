@@ -34,7 +34,10 @@ pub enum LineBreaking {
     Overflow,
 }
 
-/// A widget displaying non-editable text.
+/// A widget displaying non-interactive text.
+///
+/// This is useful for creating interactive widgets which internally
+/// need support for displaying text, such as a button.
 pub struct Label {
     text: ArcStr,
     text_changed: bool,
@@ -42,7 +45,6 @@ pub struct Label {
     line_break_mode: LineBreaking,
     show_disabled: bool,
     brush: TextBrush,
-    interactive: bool,
 }
 
 // --- MARK: BUILDERS ---
@@ -56,16 +58,7 @@ impl Label {
             line_break_mode: LineBreaking::Overflow,
             show_disabled: true,
             brush: crate::theme::TEXT_COLOR.into(),
-            interactive: true,
         }
-    }
-
-    /// Sets the value returned by [`accepts_pointer_interaction`].
-    ///
-    /// True by default.
-    pub fn with_pointer_interaction(mut self, interactive: bool) -> Self {
-        self.interactive = interactive;
-        self
     }
 
     pub fn text(&self) -> &ArcStr {
@@ -166,41 +159,15 @@ impl WidgetMut<'_, Label> {
 
 // --- MARK: IMPL WIDGET ---
 impl Widget for Label {
-    fn on_pointer_event(&mut self, _ctx: &mut EventCtx, event: &PointerEvent) {
-        match event {
-            PointerEvent::PointerMove(_point) => {
-                // TODO: Set cursor if over link
-            }
-            PointerEvent::PointerDown(_button, _state) => {
-                // TODO: Start tracking currently pressed
-                // (i.e. don't press)
-            }
-            PointerEvent::PointerUp(_button, _state) => {
-                // TODO: Follow link (if not now dragging ?)
-            }
-            _ => {}
-        }
-    }
+    fn on_pointer_event(&mut self, _ctx: &mut EventCtx, _event: &PointerEvent) {}
 
-    fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {
-        // If focused on a link and enter pressed, follow it?
-        // TODO: This sure looks like each link needs its own widget, although I guess the challenge there is
-        // that the bounding boxes can go e.g. across line boundaries?
-    }
+    fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
 
     fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {}
 
     fn register_children(&mut self, _ctx: &mut RegisterCtx) {}
 
-    #[allow(missing_docs)]
-    fn on_status_change(&mut self, _ctx: &mut UpdateCtx, event: &StatusChange) {
-        match event {
-            StatusChange::FocusChanged(_) => {
-                // TODO: Focus on first link
-            }
-            _ => {}
-        }
-    }
+    fn on_status_change(&mut self, _ctx: &mut UpdateCtx, _event: &StatusChange) {}
 
     fn update(&mut self, ctx: &mut UpdateCtx, event: &Update) {
         match event {
@@ -279,7 +246,7 @@ impl Widget for Label {
     }
 
     fn accepts_pointer_interaction(&self) -> bool {
-        self.interactive
+        false
     }
 
     fn make_trace_span(&self) -> Span {
