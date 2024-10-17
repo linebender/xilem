@@ -136,3 +136,15 @@ This is in effect a MUTATE pass which only processes one callback.
 External mutation is how Xilem applies any changes to the widget tree produced by its reactive step.
 
 Calling the `edit_root_widget()` method, or any similar direct-mutation method, triggers the entire set of rewrite passes.
+
+
+
+Some stuff about pass context types:
+
+- Render passes should be pure and can be skipped occasionally, therefore their context types (`PaintCtx` and `AccessCtx`) can't set invalidation flags or send signals.
+- The `layout` and `compose` passes lay out all widgets, which are transiently invalid during the passes, therefore `LayoutCtx`and `ComposeCtx` cannot access the size and position of the `self` widget.
+They can access the layout of children if they have already been laid out.
+- For the same reason, `LayoutCtx`and `ComposeCtx` cannot create a `WidgetRef` reference to a child.
+- `MutateCtx`, `EventCtx` and `UpdateCtx` can let you add and remove children.
+- `RegisterCtx` can't do anything except register children.
+- `QueryCtx` provides read-only information about the widget.
