@@ -30,6 +30,7 @@ use crate::*;
 pub type PointerEventFn<S> = dyn FnMut(&mut S, &mut EventCtx, &PointerEvent);
 pub type TextEventFn<S> = dyn FnMut(&mut S, &mut EventCtx, &TextEvent);
 pub type AccessEventFn<S> = dyn FnMut(&mut S, &mut EventCtx, &AccessEvent);
+pub type AnimFrameFn<S> = dyn FnMut(&mut S, &mut UpdateCtx, u64);
 pub type RegisterChildrenFn<S> = dyn FnMut(&mut S, &mut RegisterCtx);
 pub type StatusChangeFn<S> = dyn FnMut(&mut S, &mut UpdateCtx, &StatusChange);
 pub type UpdateFn<S> = dyn FnMut(&mut S, &mut UpdateCtx, &Update);
@@ -54,6 +55,7 @@ pub struct ModularWidget<S> {
     on_pointer_event: Option<Box<PointerEventFn<S>>>,
     on_text_event: Option<Box<TextEventFn<S>>>,
     on_access_event: Option<Box<AccessEventFn<S>>>,
+    on_anim_frame: Option<Box<AnimFrameFn<S>>>,
     register_children: Option<Box<RegisterChildrenFn<S>>>,
     on_status_change: Option<Box<StatusChangeFn<S>>>,
     update: Option<Box<UpdateFn<S>>>,
@@ -85,8 +87,8 @@ pub struct ReplaceChild {
 /// let widget = Label::new("Hello").record(&recording);
 ///
 /// TestHarness::create(widget);
-/// assert_matches!(recording.next().unwrap(), Record::RegisterChildren);
-/// assert_matches!(recording.next().unwrap(), Record::L(Update::WidgetAdded));
+/// assert_matches!(recording.next().unwrap(), Record::RC);
+/// assert_matches!(recording.next().unwrap(), Record::U(Update::WidgetAdded));
 /// ```
 pub struct Recorder<W> {
     recording: Recording,
@@ -105,9 +107,10 @@ pub enum Record {
     PE(PointerEvent),
     TE(TextEvent),
     AE(AccessEvent),
-    RegisterChildren,
+    AF(u64),
+    RC,
     SC(StatusChange),
-    L(Update),
+    U(Update),
     Layout(Size),
     Compose,
     Paint,
@@ -140,6 +143,7 @@ impl<S> ModularWidget<S> {
             on_pointer_event: None,
             on_text_event: None,
             on_access_event: None,
+            on_anim_frame: None,
             register_children: None,
             on_status_change: None,
             update: None,
@@ -188,6 +192,11 @@ impl<S> ModularWidget<S> {
         f: impl FnMut(&mut S, &mut EventCtx, &AccessEvent) + 'static,
     ) -> Self {
         self.on_access_event = Some(Box::new(f));
+        self
+    }
+
+    pub fn anim_frame_fn(mut self, f: impl FnMut(&mut S, &mut UpdateCtx, u64) + 'static) -> Self {
+        self.on_anim_frame = Some(Box::new(f));
         self
     }
 
@@ -269,6 +278,12 @@ impl<S: 'static> Widget for ModularWidget<S> {
     fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {
         if let Some(f) = self.on_access_event.as_mut() {
             f(&mut self.state, ctx, event);
+        }
+    }
+
+    fn on_anim_frame(&mut self, ctx: &mut UpdateCtx, interval: u64) {
+        if let Some(f) = self.on_anim_frame.as_mut() {
+            f(&mut self.state, ctx, interval);
         }
     }
 
@@ -489,9 +504,9 @@ impl<W: Widget> Widget for Recorder<W> {
         self.child.on_access_event(ctx, event);
     }
 
-    fn register_children(&mut self, ctx: &mut RegisterCtx) {
-        self.recording.push(Record::RegisterChildren);
-        self.child.register_children(ctx);
+    fn on_anim_frame(&mut self, ctx: &mut UpdateCtx, interval: u64) {
+        self.recording.push(Record::AF(interval));
+        self.child.on_anim_frame(ctx, interval);
     }
 
     fn on_status_change(&mut self, ctx: &mut UpdateCtx, event: &StatusChange) {
@@ -499,8 +514,13 @@ impl<W: Widget> Widget for Recorder<W> {
         self.child.on_status_change(ctx, event);
     }
 
+    fn register_children(&mut self, ctx: &mut RegisterCtx) {
+        self.recording.push(Record::RC);
+        self.child.register_children(ctx);
+    }
+
     fn update(&mut self, ctx: &mut UpdateCtx, event: &Update) {
-        self.recording.push(Record::L(event.clone()));
+        self.recording.push(Record::U(event.clone()));
         self.child.update(ctx, event);
     }
 

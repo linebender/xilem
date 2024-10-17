@@ -79,6 +79,18 @@ pub trait Widget: AsAny {
     /// Handle an event from the platform's accessibility API.
     fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {}
 
+    /// Called at the beginning of a new animation frame.
+    ///
+    /// On the first frame when transitioning from idle to animating, `interval`
+    /// will be 0. (This logic is presently per-window but might change to
+    /// per-widget to make it more consistent). Otherwise it is in nanoseconds.
+    ///
+    /// The `paint` method will be called shortly after this event is finished.
+    /// As a result, you should try to avoid doing anything computationally
+    /// intensive in response to an `AnimFrame` event: it might make the app miss
+    /// the monitor's refresh, causing lag or jerky animations.
+    fn on_anim_frame(&mut self, ctx: &mut UpdateCtx, interval: u64) {}
+
     #[allow(missing_docs)]
     fn on_status_change(&mut self, ctx: &mut UpdateCtx, event: &StatusChange);
 
@@ -380,6 +392,10 @@ impl Widget for Box<dyn Widget> {
 
     fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {
         self.deref_mut().on_access_event(ctx, event);
+    }
+
+    fn on_anim_frame(&mut self, ctx: &mut UpdateCtx, interval: u64) {
+        self.deref_mut().on_anim_frame(ctx, interval);
     }
 
     fn register_children(&mut self, ctx: &mut RegisterCtx) {

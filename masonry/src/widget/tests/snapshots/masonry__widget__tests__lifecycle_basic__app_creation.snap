@@ -4,8 +4,8 @@ assertion_line: 22
 expression: record
 ---
 [
-    RegisterChildren,
-    L(
+    RC,
+    U(
         WidgetAdded,
     ),
     Layout(

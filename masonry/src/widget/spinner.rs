@@ -77,6 +77,15 @@ impl Widget for Spinner {
 
     fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {}
 
+    fn on_anim_frame(&mut self, ctx: &mut UpdateCtx, interval: u64) {
+        self.t += (interval as f64) * 1e-9;
+        if self.t >= 1.0 {
+            self.t = self.t.rem_euclid(1.0);
+        }
+        ctx.request_anim_frame();
+        ctx.request_paint_only();
+    }
+
     fn register_children(&mut self, _ctx: &mut RegisterCtx) {}
 
     fn on_status_change(&mut self, _ctx: &mut UpdateCtx, _event: &StatusChange) {}
@@ -85,14 +94,6 @@ impl Widget for Spinner {
         match event {
             Update::WidgetAdded => {
                 ctx.request_anim_frame();
-            }
-            Update::AnimFrame(interval) => {
-                self.t += (*interval as f64) * 1e-9;
-                if self.t >= 1.0 {
-                    self.t = self.t.rem_euclid(1.0);
-                }
-                ctx.request_anim_frame();
-                ctx.request_paint_only();
             }
             _ => (),
         }
