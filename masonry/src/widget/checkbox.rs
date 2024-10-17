@@ -29,7 +29,7 @@ impl Checkbox {
     pub fn new(checked: bool, text: impl Into<ArcStr>) -> Checkbox {
         Checkbox {
             checked,
-            label: WidgetPod::new(Label::new(text).with_pointer_interaction(false)),
+            label: WidgetPod::new(Label::new(text)),
         }
     }
 
@@ -37,7 +37,7 @@ impl Checkbox {
     pub fn from_label(checked: bool, label: Label) -> Checkbox {
         Checkbox {
             checked,
-            label: WidgetPod::new(label.with_pointer_interaction(false)),
+            label: WidgetPod::new(label),
         }
     }
 }
