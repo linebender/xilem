@@ -1,10 +1,11 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use crate::{
+    core::{DynMessage, Mut, ViewMarker},
+    MessageResult, Pod, View, ViewCtx, ViewId,
+};
 use masonry::{widget, ArcStr};
-use xilem_core::{Mut, ViewMarker};
-
-use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
 
 pub fn checkbox<F, State, Action>(
     label: impl Into<ArcStr>,
@@ -44,28 +45,22 @@ where
         })
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         (): &mut Self::ViewState,
         _ctx: &mut ViewCtx,
-        mut element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
+        mut element: Mut<Self::Element>,
+    ) {
         if prev.label != self.label {
             element.set_text(self.label.clone());
         }
         if prev.checked != self.checked {
             element.set_checked(self.checked);
         }
-        element
     }
 
-    fn teardown(
-        &self,
-        (): &mut Self::ViewState,
-        ctx: &mut ViewCtx,
-        element: Mut<'_, Self::Element>,
-    ) {
+    fn teardown(&self, (): &mut Self::ViewState, ctx: &mut ViewCtx, element: Mut<Self::Element>) {
         ctx.teardown_leaf(element);
     }
 
@@ -73,7 +68,7 @@ where
         &self,
         (): &mut Self::ViewState,
         id_path: &[ViewId],
-        message: xilem_core::DynMessage,
+        message: DynMessage,
         app_state: &mut State,
     ) -> MessageResult<Action> {
         debug_assert!(

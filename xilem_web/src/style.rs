@@ -1,6 +1,11 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use crate::{
+    core::{MessageResult, Mut, View, ViewElement, ViewId, ViewMarker},
+    vecmap::VecMap,
+    DomNode, DomView, DynMessage, ElementProps, Pod, PodMut, ViewCtx,
+};
 use peniko::kurbo::Vec2;
 use std::{
     collections::{BTreeMap, HashMap},
@@ -8,9 +13,6 @@ use std::{
     marker::PhantomData,
 };
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
-use xilem_core::{MessageResult, Mut, View, ViewElement, ViewId, ViewMarker};
-
-use crate::{vecmap::VecMap, DomNode, DynMessage, ElementProps, Pod, PodMut, ViewCtx};
 
 type CowStr = std::borrow::Cow<'static, str>;
 
@@ -444,7 +446,7 @@ impl<T, A, E> View<T, A, ViewCtx, DynMessage> for Style<E, T, A>
 where
     T: 'static,
     A: 'static,
-    E: View<T, A, ViewCtx, DynMessage, Element: ElementWithStyle>,
+    E: DomView<T, A, DomNode: DomNode<Props: WithStyle>>,
 {
     type Element = E::Element;
 
@@ -460,27 +462,27 @@ where
         (element, state)
     }
 
-    fn rebuild<'e>(
+    fn rebuild(
         &self,
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: Mut<'e, Self::Element>,
-    ) -> Mut<'e, Self::Element> {
+        mut element: Mut<Self::Element>,
+    ) {
         element.rebuild_style_modifier();
-        let mut element = self.el.rebuild(&prev.el, view_state, ctx, element);
+        self.el
+            .rebuild(&prev.el, view_state, ctx, element.reborrow_mut());
         for (key, value) in &self.styles {
             element.set_style(key, value);
         }
         element.mark_end_of_style_modifier();
-        element
     }
 
     fn teardown(
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<'_, Self::Element>,
+        element: Mut<Self::Element>,
     ) {
         self.el.teardown(view_state, ctx, element);
     }
@@ -526,7 +528,7 @@ impl<T, A, E> View<T, A, ViewCtx, DynMessage> for Rotate<E, T, A>
 where
     T: 'static,
     A: 'static,
-    E: View<T, A, ViewCtx, DynMessage, Element: ElementWithStyle>,
+    E: DomView<T, A, DomNode: DomNode<Props: WithStyle>>,
 {
     type Element = E::Element;
 
@@ -541,28 +543,28 @@ where
         (element, (state, css_repr))
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         (view_state, css_repr): &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
+        mut element: Mut<Self::Element>,
+    ) {
         element.rebuild_style_modifier();
-        let mut element = self.el.rebuild(&prev.el, view_state, ctx, element);
+        self.el
+            .rebuild(&prev.el, view_state, ctx, element.reborrow_mut());
         if prev.radians != self.radians || element.was_updated("transform") {
             *css_repr = modify_rotate_transform(element.get_style("transform"), self.radians);
         }
         element.set_style(&"transform".into(), css_repr);
         element.mark_end_of_style_modifier();
-        element
     }
 
     fn teardown(
         &self,
         (view_state, _): &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<'_, Self::Element>,
+        element: Mut<Self::Element>,
     ) {
         self.el.teardown(view_state, ctx, element);
     }
@@ -641,7 +643,7 @@ impl<T, A, E> View<T, A, ViewCtx, DynMessage> for Scale<E, T, A>
 where
     T: 'static,
     A: 'static,
-    E: View<T, A, ViewCtx, DynMessage, Element: ElementWithStyle>,
+    E: DomView<T, A, DomNode: DomNode<Props: WithStyle>>,
 {
     type Element = E::Element;
 
@@ -656,28 +658,28 @@ where
         (element, (state, css_repr))
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         (view_state, css_repr): &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
+        mut element: Mut<Self::Element>,
+    ) {
         element.rebuild_style_modifier();
-        let mut element = self.el.rebuild(&prev.el, view_state, ctx, element);
+        self.el
+            .rebuild(&prev.el, view_state, ctx, element.reborrow_mut());
         if prev.scale != self.scale || element.was_updated("transform") {
             *css_repr = modify_scale_transform(element.get_style("transform"), self.scale);
         }
         element.set_style(&"transform".into(), css_repr);
         element.mark_end_of_style_modifier();
-        element
     }
 
     fn teardown(
         &self,
         (view_state, _): &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<'_, Self::Element>,
+        element: Mut<Self::Element>,
     ) {
         self.el.teardown(view_state, ctx, element);
     }

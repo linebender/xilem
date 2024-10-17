@@ -135,21 +135,21 @@ where
         self.child.build(ctx)
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
-        self.child.rebuild(&prev.child, view_state, ctx, element)
+        element: Mut<Self::Element>,
+    ) {
+        self.child.rebuild(&prev.child, view_state, ctx, element);
     }
 
     fn teardown(
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<'_, Self::Element>,
+        element: Mut<Self::Element>,
     ) {
         self.child.teardown(view_state, ctx, element);
     }

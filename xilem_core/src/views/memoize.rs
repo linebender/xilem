@@ -90,20 +90,17 @@ where
         (element, memoize_state)
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
+        element: Mut<Self::Element>,
+    ) {
         if core::mem::take(&mut view_state.dirty) || prev.data != self.data {
             let view = (self.init_view)(&self.data);
-            let el = view.rebuild(&view_state.view, &mut view_state.view_state, ctx, element);
+            view.rebuild(&view_state.view, &mut view_state.view_state, ctx, element);
             view_state.view = view;
-            el
-        } else {
-            element
         }
     }
 
@@ -128,7 +125,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<'_, Self::Element>,
+        element: Mut<Self::Element>,
     ) {
         view_state
             .view
@@ -198,23 +195,19 @@ where
         (element, memoize_state)
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         _prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: crate::Mut<'el, Self::Element>,
-    ) -> crate::Mut<'el, Self::Element> {
+        element: Mut<Self::Element>,
+    ) {
         if core::mem::take(&mut view_state.dirty) {
             let view = (self.init_view)();
-            let element =
-                view_state
-                    .view
-                    .rebuild(&view_state.view, &mut view_state.view_state, ctx, element);
+            view_state
+                .view
+                .rebuild(&view_state.view, &mut view_state.view_state, ctx, element);
             view_state.view = view;
-            element
-        } else {
-            element
         }
     }
 
@@ -222,7 +215,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: crate::Mut<'_, Self::Element>,
+        element: Mut<Self::Element>,
     ) {
         view_state
             .view

@@ -3,13 +3,12 @@
 
 //! Implementation of the View trait for various kurbo shapes.
 
-use peniko::kurbo::{BezPath, Circle, Line, Rect};
-use xilem_core::{MessageResult, Mut, OrphanView};
-
 use crate::{
-    attribute::WithAttributes, AttributeValue, Attributes, DynMessage, IntoAttributeValue, Pod,
-    ViewCtx, SVG_NS,
+    attribute::WithAttributes,
+    core::{MessageResult, Mut, OrphanView, ViewId},
+    AttributeValue, Attributes, DynMessage, IntoAttributeValue, Pod, ViewCtx, SVG_NS,
 };
+use peniko::kurbo::{BezPath, Circle, Line, Rect};
 
 fn create_element(name: &str, ctx: &mut ViewCtx, attr_size_hint: usize) -> Pod<web_sys::Element> {
     ctx.add_modifier_size_hint::<Attributes>(attr_size_hint);
@@ -40,34 +39,33 @@ impl<State: 'static, Action: 'static> OrphanView<Line, State, Action, DynMessage
         (element, ())
     }
 
-    fn orphan_rebuild<'el>(
+    fn orphan_rebuild(
         new: &Line,
         _prev: &Line,
         (): &mut Self::OrphanViewState,
         _ctx: &mut ViewCtx,
-        mut element: Mut<'el, Self::OrphanElement>,
-    ) -> Mut<'el, Self::OrphanElement> {
+        mut element: Mut<Self::OrphanElement>,
+    ) {
         element.rebuild_attribute_modifier();
         element.set_attribute(&"x1".into(), &new.p0.x.into_attr_value());
         element.set_attribute(&"y1".into(), &new.p0.y.into_attr_value());
         element.set_attribute(&"x2".into(), &new.p1.x.into_attr_value());
         element.set_attribute(&"y2".into(), &new.p1.y.into_attr_value());
         element.mark_end_of_attribute_modifier();
-        element
     }
 
     fn orphan_teardown(
         _view: &Line,
         (): &mut Self::OrphanViewState,
         _ctx: &mut ViewCtx,
-        _element: Mut<'_, Self::OrphanElement>,
+        _element: Mut<Self::OrphanElement>,
     ) {
     }
 
     fn orphan_message(
         _view: &Line,
         (): &mut Self::OrphanViewState,
-        _id_path: &[xilem_core::ViewId],
+        _id_path: &[ViewId],
         message: DynMessage,
         _app_state: &mut State,
     ) -> MessageResult<Action, DynMessage> {
@@ -92,34 +90,33 @@ impl<State: 'static, Action: 'static> OrphanView<Rect, State, Action, DynMessage
         (element, ())
     }
 
-    fn orphan_rebuild<'el>(
+    fn orphan_rebuild(
         new: &Rect,
         _prev: &Rect,
         (): &mut Self::OrphanViewState,
         _ctx: &mut ViewCtx,
-        mut element: Mut<'el, Self::OrphanElement>,
-    ) -> Mut<'el, Self::OrphanElement> {
+        mut element: Mut<Self::OrphanElement>,
+    ) {
         element.rebuild_attribute_modifier();
         element.set_attribute(&"x".into(), &new.x0.into_attr_value());
         element.set_attribute(&"y".into(), &new.y0.into_attr_value());
         element.set_attribute(&"width".into(), &new.width().into_attr_value());
         element.set_attribute(&"height".into(), &new.height().into_attr_value());
         element.mark_end_of_attribute_modifier();
-        element
     }
 
     fn orphan_teardown(
         _view: &Rect,
         (): &mut Self::OrphanViewState,
         _ctx: &mut ViewCtx,
-        _element: Mut<'_, Self::OrphanElement>,
+        _element: Mut<Self::OrphanElement>,
     ) {
     }
 
     fn orphan_message(
         _view: &Rect,
         (): &mut Self::OrphanViewState,
-        _id_path: &[xilem_core::ViewId],
+        _id_path: &[ViewId],
         message: DynMessage,
         _app_state: &mut State,
     ) -> MessageResult<Action, DynMessage> {
@@ -143,33 +140,32 @@ impl<State: 'static, Action: 'static> OrphanView<Circle, State, Action, DynMessa
         (element, ())
     }
 
-    fn orphan_rebuild<'el>(
+    fn orphan_rebuild(
         new: &Circle,
         _prev: &Circle,
         (): &mut Self::OrphanViewState,
         _ctx: &mut ViewCtx,
-        mut element: Mut<'el, Self::OrphanElement>,
-    ) -> Mut<'el, Self::OrphanElement> {
+        mut element: Mut<Self::OrphanElement>,
+    ) {
         element.rebuild_attribute_modifier();
         element.set_attribute(&"cx".into(), &new.center.x.into_attr_value());
         element.set_attribute(&"cy".into(), &new.center.y.into_attr_value());
         element.set_attribute(&"r".into(), &new.radius.into_attr_value());
         element.mark_end_of_attribute_modifier();
-        element
     }
 
     fn orphan_teardown(
         _view: &Circle,
         (): &mut Self::OrphanViewState,
         _ctx: &mut ViewCtx,
-        _element: Mut<'_, Self::OrphanElement>,
+        _element: Mut<Self::OrphanElement>,
     ) {
     }
 
     fn orphan_message(
         _view: &Circle,
         (): &mut Self::OrphanViewState,
-        _id_path: &[xilem_core::ViewId],
+        _id_path: &[ViewId],
         message: DynMessage,
         _app_state: &mut State,
     ) -> MessageResult<Action, DynMessage> {
@@ -192,13 +188,13 @@ impl<State: 'static, Action: 'static> OrphanView<BezPath, State, Action, DynMess
         (element, svg_repr)
     }
 
-    fn orphan_rebuild<'el>(
+    fn orphan_rebuild(
         new: &BezPath,
         prev: &BezPath,
         svg_repr: &mut Self::OrphanViewState,
         _ctx: &mut ViewCtx,
-        mut element: Mut<'el, Self::OrphanElement>,
-    ) -> Mut<'el, Self::OrphanElement> {
+        mut element: Mut<Self::OrphanElement>,
+    ) {
         // slight optimization to avoid serialization/allocation
         if new != prev {
             *svg_repr = new.to_svg().into_attr_value();
@@ -206,21 +202,20 @@ impl<State: 'static, Action: 'static> OrphanView<BezPath, State, Action, DynMess
         element.rebuild_attribute_modifier();
         element.set_attribute(&"d".into(), svg_repr);
         element.mark_end_of_attribute_modifier();
-        element
     }
 
     fn orphan_teardown(
         _view: &BezPath,
         _view_state: &mut Self::OrphanViewState,
         _ctx: &mut ViewCtx,
-        _element: Mut<'_, Self::OrphanElement>,
+        _element: Mut<Self::OrphanElement>,
     ) {
     }
 
     fn orphan_message(
         _view: &BezPath,
         _view_state: &mut Self::OrphanViewState,
-        _id_path: &[xilem_core::ViewId],
+        _id_path: &[ViewId],
         message: DynMessage,
         _app_state: &mut State,
     ) -> MessageResult<Action, DynMessage> {

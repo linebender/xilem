@@ -292,7 +292,7 @@ impl<N: DomNode> SuperElement<Pod<N>, ViewCtx> for AnyPod {
 
     fn with_downcast_val<R>(
         mut this: Self::Mut<'_>,
-        f: impl FnOnce(PodMut<'_, N>) -> R,
+        f: impl FnOnce(PodMut<N>) -> R,
     ) -> (Self::Mut<'_>, R) {
         let downcast = this.downcast();
         let ret = f(downcast);
@@ -333,6 +333,7 @@ pub struct PodMut<'a, N: DomNode> {
     props: &'a mut N::Props,
     parent: Option<&'a web_sys::Node>,
     was_removed: bool,
+    is_reborrow: bool,
 }
 
 impl<'a, N: DomNode> PodMut<'a, N> {
@@ -347,12 +348,23 @@ impl<'a, N: DomNode> PodMut<'a, N> {
             props,
             parent,
             was_removed,
+            is_reborrow: false,
+        }
+    }
+
+    fn reborrow_mut(&mut self) -> PodMut<N> {
+        PodMut {
+            node: self.node,
+            props: self.props,
+            parent: self.parent,
+            was_removed: self.was_removed,
+            is_reborrow: true,
         }
     }
 }
 
 impl PodMut<'_, Box<dyn AnyNode>> {
-    fn downcast<N: DomNode>(&mut self) -> PodMut<'_, N> {
+    fn downcast<N: DomNode>(&mut self) -> PodMut<N> {
         PodMut::new(
             self.node.deref_mut().as_any_mut().downcast_mut().unwrap(),
             self.props.downcast_mut().unwrap(),
@@ -364,7 +376,7 @@ impl PodMut<'_, Box<dyn AnyNode>> {
 
 impl<N: DomNode> Drop for PodMut<'_, N> {
     fn drop(&mut self) {
-        if !self.was_removed {
+        if !self.is_reborrow && !self.was_removed {
             self.node.apply_props(self.props);
         }
     }

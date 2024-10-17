@@ -3,9 +3,10 @@
 
 use std::marker::PhantomData;
 
-use xilem_core::{MessageResult, Mut, View, ViewId, ViewMarker};
-
-use crate::{DomNode, DomView, DynMessage, ViewCtx};
+use crate::{
+    core::{MessageResult, Mut, View, ViewId, ViewMarker},
+    DomNode, DomView, DynMessage, ViewCtx,
+};
 
 /// Invokes the `callback` after the inner `element` [`DomView`] was created.
 /// See [`after_build`] for more details.
@@ -125,22 +126,22 @@ where
         (el, view_state)
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
+        element: Mut<Self::Element>,
+    ) {
         self.element
-            .rebuild(&prev.element, view_state, ctx, element)
+            .rebuild(&prev.element, view_state, ctx, element);
     }
 
     fn teardown(
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        el: Mut<'_, Self::Element>,
+        el: Mut<Self::Element>,
     ) {
         self.element.teardown(view_state, ctx, el);
     }
@@ -173,26 +174,24 @@ where
         self.element.build(ctx)
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
-        let element = self
-            .element
-            .rebuild(&prev.element, view_state, ctx, element);
+        mut element: Mut<Self::Element>,
+    ) {
+        self.element
+            .rebuild(&prev.element, view_state, ctx, element.reborrow_mut());
         element.node.apply_props(element.props);
         (self.callback)(element.node);
-        element
     }
 
     fn teardown(
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        el: Mut<'_, Self::Element>,
+        el: Mut<Self::Element>,
     ) {
         self.element.teardown(view_state, ctx, el);
     }
@@ -225,22 +224,22 @@ where
         self.element.build(ctx)
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
+        element: Mut<Self::Element>,
+    ) {
         self.element
-            .rebuild(&prev.element, view_state, ctx, element)
+            .rebuild(&prev.element, view_state, ctx, element);
     }
 
     fn teardown(
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        el: Mut<'_, Self::Element>,
+        el: Mut<Self::Element>,
     ) {
         (self.callback)(el.node);
         self.element.teardown(view_state, ctx, el);

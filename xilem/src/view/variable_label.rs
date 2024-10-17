@@ -1,6 +1,10 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use crate::{
+    core::{DynMessage, Mut, ViewMarker},
+    Color, MessageResult, Pod, TextAlignment, View, ViewCtx, ViewId,
+};
 use masonry::{
     parley::{
         fontique::Weight,
@@ -9,9 +13,6 @@ use masonry::{
     text::TextBrush,
     widget, ArcStr,
 };
-use xilem_core::{Mut, ViewMarker};
-
-use crate::{Color, MessageResult, Pod, TextAlignment, View, ViewCtx, ViewId};
 
 /// A view for displaying non-editable text, with a variable [weight](masonry::parley::style::FontWeight).
 pub fn variable_label(label: impl Into<ArcStr>) -> VariableLabel {
@@ -113,13 +114,13 @@ impl<State, Action> View<State, Action, ViewCtx> for VariableLabel {
         (widget_pod, ())
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         (): &mut Self::ViewState,
         _ctx: &mut ViewCtx,
-        mut element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
+        mut element: Mut<Self::Element>,
+    ) {
         if prev.label != self.label {
             element.set_text(self.label.clone());
         }
@@ -140,16 +141,15 @@ impl<State, Action> View<State, Action, ViewCtx> for VariableLabel {
         if !fonts_eq {
             element.set_font(self.font);
         }
-        element
     }
 
-    fn teardown(&self, (): &mut Self::ViewState, _: &mut ViewCtx, _: Mut<'_, Self::Element>) {}
+    fn teardown(&self, (): &mut Self::ViewState, _: &mut ViewCtx, _: Mut<Self::Element>) {}
 
     fn message(
         &self,
         (): &mut Self::ViewState,
         _id_path: &[ViewId],
-        message: xilem_core::DynMessage,
+        message: DynMessage,
         _app_state: &mut State,
     ) -> crate::MessageResult<Action> {
         tracing::error!("Message arrived in Label::message, but Label doesn't consume any messages, this is a bug");

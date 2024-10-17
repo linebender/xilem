@@ -6,7 +6,7 @@
 //!
 //! This is an integration test so that it can use the infrastructure in [`common`].
 
-use xilem_core::{DynMessage, MessageResult, Mut, OrphanView, View, ViewPathTracker};
+use xilem_core::{DynMessage, MessageResult, Mut, OrphanView, View, ViewId, ViewPathTracker};
 
 mod common;
 use common::*;
@@ -33,13 +33,13 @@ impl<State, Action> OrphanView<&'static str, State, Action> for TestCtx {
         )
     }
 
-    fn orphan_rebuild<'el>(
+    fn orphan_rebuild(
         new: &&'static str,
         prev: &&'static str,
         generation: &mut Self::OrphanViewState,
         ctx: &mut Self,
-        element: Mut<'el, Self::OrphanElement>,
-    ) -> Mut<'el, Self::OrphanElement> {
+        element: Mut<Self::OrphanElement>,
+    ) {
         assert_eq!(&*element.view_path, ctx.view_path());
 
         let old_generation = *generation;
@@ -52,14 +52,13 @@ impl<State, Action> OrphanView<&'static str, State, Action> for TestCtx {
             from: old_generation,
             to: *generation,
         });
-        element
     }
 
     fn orphan_teardown(
         _view: &&'static str,
         generation: &mut Self::OrphanViewState,
         _ctx: &mut Self,
-        element: Mut<'_, Self::OrphanElement>,
+        element: Mut<Self::OrphanElement>,
     ) {
         element.operations.push(Operation::Teardown(*generation));
     }
@@ -67,7 +66,7 @@ impl<State, Action> OrphanView<&'static str, State, Action> for TestCtx {
     fn orphan_message(
         _view: &&'static str,
         _view_state: &mut Self::OrphanViewState,
-        _id_path: &[xilem_core::ViewId],
+        _id_path: &[ViewId],
         message: DynMessage,
         _app_state: &mut State,
     ) -> MessageResult<Action, DynMessage> {
@@ -83,9 +82,8 @@ fn str_as_orphan_view() {
 
     let view2 = "This string is now an updated view";
     assert_eq!(element.operations[0], Operation::Build(0));
-    let element =
-        View::<(), (), TestCtx>::rebuild(&view1, &view2, &mut generation, &mut ctx, &mut element);
+    View::<(), (), TestCtx>::rebuild(&view1, &view2, &mut generation, &mut ctx, &mut element);
     assert_eq!(element.operations[1], Operation::Rebuild { from: 0, to: 1 });
-    View::<(), (), TestCtx>::teardown(&view1, &mut generation, &mut ctx, element);
+    View::<(), (), TestCtx>::teardown(&view1, &mut generation, &mut ctx, &mut element);
     assert_eq!(element.operations[2], Operation::Teardown(1));
 }

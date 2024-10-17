@@ -1,19 +1,19 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use std::marker::PhantomData;
-
+use crate::{
+    core::{
+        AppendVec, DynMessage, ElementSplice, MessageResult, Mut, SuperElement, View, ViewElement,
+        ViewId, ViewMarker, ViewSequence,
+    },
+    Pod, ViewCtx, WidgetView,
+};
 use masonry::widget::GridParams;
 use masonry::{
     widget::{self, WidgetMut},
     Widget,
 };
-use xilem_core::{
-    AppendVec, DynMessage, ElementSplice, MessageResult, Mut, SuperElement, View, ViewElement,
-    ViewMarker, ViewSequence,
-};
-
-use crate::{Pod, ViewCtx, WidgetView};
+use std::marker::PhantomData;
 
 pub fn grid<State, Action, Seq: GridSequence<State, Action>>(
     sequence: Seq,
@@ -77,13 +77,13 @@ where
         (ctx.new_pod(widget), seq_state)
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
+        mut element: Mut<Self::Element>,
+    ) {
         if prev.height != self.height {
             element.set_height(self.height);
         }
@@ -98,14 +98,13 @@ where
         self.sequence
             .seq_rebuild(&prev.sequence, view_state, ctx, &mut splice);
         debug_assert!(splice.scratch.is_empty());
-        splice.element
     }
 
     fn teardown(
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<'_, Self::Element>,
+        element: Mut<Self::Element>,
     ) {
         let mut splice = GridSplice::new(element);
         self.sequence.seq_teardown(view_state, ctx, &mut splice);
@@ -115,7 +114,7 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[xilem_core::ViewId],
+        id_path: &[ViewId],
         message: DynMessage,
         app_state: &mut State,
     ) -> MessageResult<Action> {
@@ -136,8 +135,8 @@ impl SuperElement<GridElement, ViewCtx> for GridElement {
     }
 
     fn with_downcast_val<R>(
-        mut this: Mut<'_, Self>,
-        f: impl FnOnce(Mut<'_, GridElement>) -> R,
+        mut this: Mut<Self>,
+        f: impl FnOnce(Mut<GridElement>) -> R,
     ) -> (Self::Mut<'_>, R) {
         let r = {
             let parent = this.parent.reborrow_mut();
@@ -162,9 +161,9 @@ impl<W: Widget> SuperElement<Pod<W>, ViewCtx> for GridElement {
     }
 
     fn with_downcast_val<R>(
-        mut this: Mut<'_, Self>,
-        f: impl FnOnce(Mut<'_, Pod<W>>) -> R,
-    ) -> (Mut<'_, Self>, R) {
+        mut this: Mut<Self>,
+        f: impl FnOnce(Mut<Pod<W>>) -> R,
+    ) -> (Mut<Self>, R) {
         let ret = {
             let mut child = this
                 .parent
@@ -204,7 +203,7 @@ impl ElementSplice<GridElement> for GridSplice<'_> {
         self.idx += 1;
     }
 
-    fn mutate<R>(&mut self, f: impl FnOnce(Mut<'_, GridElement>) -> R) -> R {
+    fn mutate<R>(&mut self, f: impl FnOnce(Mut<GridElement>) -> R) -> R {
         let child = GridElementMut {
             parent: self.element.reborrow_mut(),
             idx: self.idx,
@@ -218,7 +217,7 @@ impl ElementSplice<GridElement> for GridSplice<'_> {
         self.idx += n;
     }
 
-    fn delete<R>(&mut self, f: impl FnOnce(Mut<'_, GridElement>) -> R) -> R {
+    fn delete<R>(&mut self, f: impl FnOnce(Mut<GridElement>) -> R) -> R {
         let ret = {
             let child = GridElementMut {
                 parent: self.element.reborrow_mut(),
@@ -364,13 +363,13 @@ where
         (GridElement::Child(ctx.boxed_pod(pod), self.params), state)
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
+        mut element: Mut<Self::Element>,
+    ) {
         {
             if self.params != prev.params {
                 element
@@ -384,14 +383,13 @@ where
             self.view
                 .rebuild(&prev.view, view_state, ctx, child.downcast());
         }
-        element
     }
 
     fn teardown(
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: Mut<'_, Self::Element>,
+        mut element: Mut<Self::Element>,
     ) {
         let mut child = element
             .parent
@@ -403,7 +401,7 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[xilem_core::ViewId],
+        id_path: &[ViewId],
         message: DynMessage,
         app_state: &mut State,
     ) -> MessageResult<Action> {

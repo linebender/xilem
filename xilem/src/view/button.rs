@@ -1,13 +1,12 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{core::View, Pod};
-use masonry::{widget, ArcStr};
-use xilem_core::{Mut, ViewMarker};
-
+use crate::{
+    core::{DynMessage, Mut, View, ViewMarker},
+    MessageResult, Pod, ViewCtx, ViewId,
+};
 pub use masonry::PointerButton;
-
-use crate::{MessageResult, ViewCtx, ViewId};
+use masonry::{widget, ArcStr};
 
 /// A button which calls `callback` when the primary mouse button (normally left) is pressed.
 pub fn button<State, Action>(
@@ -53,25 +52,19 @@ where
         ctx.with_leaf_action_widget(|ctx| ctx.new_pod(widget::Button::new(self.label.clone())))
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         _: &mut Self::ViewState,
         _ctx: &mut ViewCtx,
-        mut element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
+        mut element: Mut<Self::Element>,
+    ) {
         if prev.label != self.label {
             element.set_text(self.label.clone());
         }
-        element
     }
 
-    fn teardown(
-        &self,
-        _: &mut Self::ViewState,
-        ctx: &mut ViewCtx,
-        element: Mut<'_, Self::Element>,
-    ) {
+    fn teardown(&self, _: &mut Self::ViewState, ctx: &mut ViewCtx, element: Mut<Self::Element>) {
         ctx.teardown_leaf(element);
     }
 
@@ -79,7 +72,7 @@ where
         &self,
         _: &mut Self::ViewState,
         id_path: &[ViewId],
-        message: xilem_core::DynMessage,
+        message: DynMessage,
         app_state: &mut State,
     ) -> MessageResult<Action> {
         debug_assert!(

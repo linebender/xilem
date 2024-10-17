@@ -7,6 +7,10 @@
 #![warn(clippy::print_stdout, clippy::print_stderr, clippy::dbg_macro)]
 use std::{collections::HashMap, sync::Arc};
 
+use crate::core::{
+    AsyncCtx, MessageResult, Mut, RawProxy, SuperElement, View, ViewElement, ViewId,
+    ViewPathTracker, ViewSequence,
+};
 use masonry::{
     dpi::LogicalSize,
     event_loop_runner,
@@ -16,10 +20,6 @@ use masonry::{
 use winit::{
     error::EventLoopError,
     window::{Window, WindowAttributes},
-};
-use xilem_core::{
-    AsyncCtx, MessageResult, RawProxy, SuperElement, View, ViewElement, ViewId, ViewPathTracker,
-    ViewSequence,
 };
 
 pub use masonry::{
@@ -166,7 +166,7 @@ impl<W: Widget> SuperElement<Pod<W>, ViewCtx> for Pod<Box<dyn Widget>> {
 
     fn with_downcast_val<R>(
         mut this: Self::Mut<'_>,
-        f: impl FnOnce(<Pod<W> as xilem_core::ViewElement>::Mut<'_>) -> R,
+        f: impl FnOnce(Mut<Pod<W>>) -> R,
     ) -> (Self::Mut<'_>, R) {
         let downcast = this.downcast();
         let ret = f(downcast);
@@ -245,7 +245,7 @@ pub struct ViewCtx {
 }
 
 impl ViewPathTracker for ViewCtx {
-    fn push_id(&mut self, id: xilem_core::ViewId) {
+    fn push_id(&mut self, id: ViewId) {
         self.id_path.push(id);
     }
 
@@ -253,7 +253,7 @@ impl ViewPathTracker for ViewCtx {
         self.id_path.pop();
     }
 
-    fn view_path(&mut self) -> &[xilem_core::ViewId] {
+    fn view_path(&mut self) -> &[ViewId] {
         &self.id_path
     }
 }

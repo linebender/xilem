@@ -6,10 +6,9 @@ use std::marker::PhantomData;
 use masonry::widget;
 use vello::kurbo::RoundedRectRadii;
 use vello::peniko::{Brush, Color};
-use xilem_core::ViewMarker;
 
 use crate::{
-    core::{Mut, View, ViewId},
+    core::{DynMessage, Mut, View, ViewId, ViewMarker},
     Pod, ViewCtx, WidgetView,
 };
 
@@ -138,13 +137,13 @@ where
         (ctx.new_pod(widget), child_state)
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
+        mut element: Mut<Self::Element>,
+    ) {
         if self.width != prev.width {
             match self.width {
                 Some(width) => element.set_width(width),
@@ -179,14 +178,13 @@ where
             self.inner
                 .rebuild(&prev.inner, view_state, ctx, child.downcast());
         }
-        element
     }
 
     fn teardown(
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: Mut<'_, Self::Element>,
+        mut element: Mut<Self::Element>,
     ) {
         let mut child = element
             .child_mut()
@@ -198,7 +196,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         id_path: &[ViewId],
-        message: xilem_core::DynMessage,
+        message: DynMessage,
         app_state: &mut State,
     ) -> crate::MessageResult<Action> {
         self.inner.message(view_state, id_path, message, app_state)

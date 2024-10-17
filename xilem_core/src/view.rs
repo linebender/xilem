@@ -74,17 +74,13 @@ pub trait View<State, Action, Context: ViewPathTracker, Message = DynMessage>:
     fn build(&self, ctx: &mut Context) -> (Self::Element, Self::ViewState);
 
     /// Update `element` based on the difference between `self` and `prev`.
-    ///
-    /// This returns `element`, to allow parent views to modify the element after this `rebuild` has
-    /// completed. This returning is needed as some reference types do not allow reborrowing,
-    /// without unwieldy boilerplate.
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element>;
+        element: Mut<Self::Element>,
+    );
 
     /// Handle `element` being removed from the tree.
     ///
@@ -97,7 +93,7 @@ pub trait View<State, Action, Context: ViewPathTracker, Message = DynMessage>:
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<'_, Self::Element>,
+        element: Mut<Self::Element>,
     );
 
     /// Route `message` to `id_path`, if that is still a valid path.
@@ -176,21 +172,21 @@ where
         self.deref().build(ctx)
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
-        self.deref().rebuild(prev, view_state, ctx, element)
+        element: Mut<Self::Element>,
+    ) {
+        self.deref().rebuild(prev, view_state, ctx, element);
     }
 
     fn teardown(
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<'_, Self::Element>,
+        element: Mut<Self::Element>,
     ) {
         self.deref().teardown(view_state, ctx, element);
     }
@@ -233,19 +229,17 @@ where
         )
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
+        element: Mut<Self::Element>,
+    ) {
+        // If this is the same value, or no rebuild was forced, there's no need to rebuild
         if core::mem::take(&mut view_state.dirty) || !Arc::ptr_eq(self, prev) {
             self.deref()
-                .rebuild(prev, &mut view_state.view_state, ctx, element)
-        } else {
-            // If this is the same value, or no rebuild was forced, there's no need to rebuild
-            element
+                .rebuild(prev, &mut view_state.view_state, ctx, element);
         }
     }
 
@@ -253,7 +247,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<'_, Self::Element>,
+        element: Mut<Self::Element>,
     ) {
         self.deref()
             .teardown(&mut view_state.view_state, ctx, element);

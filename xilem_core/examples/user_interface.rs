@@ -59,22 +59,21 @@ impl<State, Action> View<State, Action, ViewCtx> for Button {
         )
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         _prev: &Self,
         _view_state: &mut Self::ViewState,
         _ctx: &mut ViewCtx,
-        element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
+        _element: Mut<Self::Element>,
+    ) {
         // Nothing to do
-        element
     }
 
     fn teardown(
         &self,
         _view_state: &mut Self::ViewState,
         _ctx: &mut ViewCtx,
-        _element: Mut<'_, Self::Element>,
+        _element: Mut<Self::Element>,
     ) {
         // Nothing to do
     }

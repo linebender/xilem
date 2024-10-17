@@ -105,7 +105,7 @@ impl SuperElement<FsPath, ViewCtx> for FsPath {
 
     fn with_downcast_val<R>(
         this: Self::Mut<'_>,
-        f: impl FnOnce(Mut<'_, FsPath>) -> R,
+        f: impl FnOnce(Mut<FsPath>) -> R,
     ) -> (Self::Mut<'_>, R) {
         let ret = f(this);
         (this, ret)
@@ -158,13 +158,13 @@ impl<State, Action> View<State, Action, ViewCtx> for File {
         (path.into(), ())
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         _view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
+        element: Mut<Self::Element>,
+    ) {
         if prev.name != self.name {
             let new_path = ctx.current_folder_path.join(&*self.name);
             let _ = std::fs::rename(&*element, &new_path);
@@ -173,14 +173,13 @@ impl<State, Action> View<State, Action, ViewCtx> for File {
         if self.contents != prev.contents {
             let _ = std::fs::write(&*element, self.contents.as_bytes());
         }
-        element
     }
 
     fn teardown(
         &self,
         _view_state: &mut Self::ViewState,
         _ctx: &mut ViewCtx,
-        element: Mut<'_, Self::Element>,
+        element: Mut<Self::Element>,
     ) {
         let _ = std::fs::remove_file(element);
     }

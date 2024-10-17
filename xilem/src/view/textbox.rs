@@ -1,10 +1,11 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use crate::{
+    core::{DynMessage, Mut, View, ViewMarker},
+    Color, MessageResult, Pod, TextAlignment, ViewCtx, ViewId,
+};
 use masonry::{text::TextBrush, widget};
-use xilem_core::{Mut, View, ViewMarker};
-
-use crate::{Color, MessageResult, Pod, TextAlignment, ViewCtx, ViewId};
 
 // FIXME - A major problem of the current approach (always setting the textbox contents)
 // is that if the user forgets to hook up the modify the state's contents in the callback,
@@ -78,13 +79,13 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<S
         })
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         _: &mut Self::ViewState,
         _ctx: &mut ViewCtx,
-        mut element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
+        mut element: Mut<Self::Element>,
+    ) {
         // Unlike the other properties, we don't compare to the previous value;
         // instead, we compare directly to the element's text. This is to handle
         // cases like "Previous data says contents is 'fooba', user presses 'r',
@@ -102,15 +103,9 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<S
         if prev.alignment != self.alignment {
             element.set_alignment(self.alignment);
         }
-        element
     }
 
-    fn teardown(
-        &self,
-        _: &mut Self::ViewState,
-        ctx: &mut ViewCtx,
-        element: Mut<'_, Self::Element>,
-    ) {
+    fn teardown(&self, _: &mut Self::ViewState, ctx: &mut ViewCtx, element: Mut<Self::Element>) {
         ctx.teardown_leaf(element);
     }
 
@@ -118,7 +113,7 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<S
         &self,
         _: &mut Self::ViewState,
         id_path: &[ViewId],
-        message: xilem_core::DynMessage,
+        message: DynMessage,
         app_state: &mut State,
     ) -> MessageResult<Action> {
         debug_assert!(
