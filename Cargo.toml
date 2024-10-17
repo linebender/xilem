@@ -102,12 +102,11 @@ clippy.unseparated_literal_suffix = "warn"
 # clippy.print_stderr = "warn"
 
 [workspace.dependencies]
-xilem_web_core = { version = "0.1.0", path = "xilem_web/xilem_web_core" }
 masonry = { version = "0.2.0", path = "masonry" }
 xilem_core = { version = "0.1.0", path = "xilem_core" }
 vello = "0.2.1"
 wgpu = "0.20.1"
-kurbo = "0.11.0"
+kurbo = "0.11.1"
 parley = "0.1.0"
 peniko = "0.1.1"
 winit = "0.30.4"

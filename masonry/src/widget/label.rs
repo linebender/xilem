@@ -3,11 +3,12 @@
 
 //! A label widget.
 
-use accesskit::Role;
+use accesskit::{NodeBuilder, Role};
+use parley::fontique::Weight;
 use parley::layout::Alignment;
 use parley::style::{FontFamily, FontStack};
 use smallvec::SmallVec;
-use tracing::{trace, trace_span, Span};
+use tracing::{trace_span, Span};
 use vello::kurbo::{Affine, Point, Size};
 use vello::peniko::BlendMode;
 use vello::Scene;
@@ -35,15 +36,13 @@ pub enum LineBreaking {
 
 /// A widget displaying non-editable text.
 pub struct Label {
-    // We hardcode the underlying storage type as `ArcStr` for `Label`
-    // More advanced use cases will almost certainly need a custom widget, anyway
-    // (Rich text is not yet fully integrated, and so the architecture by which a label
-    // has rich text properties specified still needs to be designed)
-    text_layout: TextLayout<ArcStr>,
+    text: ArcStr,
+    text_changed: bool,
+    text_layout: TextLayout,
     line_break_mode: LineBreaking,
     show_disabled: bool,
     brush: TextBrush,
-    skip_pointer: bool,
+    interactive: bool,
 }
 
 // --- MARK: BUILDERS ---
@@ -51,23 +50,26 @@ impl Label {
     /// Create a new label.
     pub fn new(text: impl Into<ArcStr>) -> Self {
         Self {
-            text_layout: TextLayout::new(text.into(), crate::theme::TEXT_SIZE_NORMAL as f32),
+            text: text.into(),
+            text_changed: false,
+            text_layout: TextLayout::new(crate::theme::TEXT_SIZE_NORMAL as f32),
             line_break_mode: LineBreaking::Overflow,
             show_disabled: true,
             brush: crate::theme::TEXT_COLOR.into(),
-            skip_pointer: false,
+            interactive: true,
         }
     }
 
-    // TODO - Rename
-    // TODO - Document
-    pub fn with_skip_pointer(mut self, skip_pointer: bool) -> Self {
-        self.skip_pointer = skip_pointer;
+    /// Sets the value returned by [`accepts_pointer_interaction`].
+    ///
+    /// True by default.
+    pub fn with_pointer_interaction(mut self, interactive: bool) -> Self {
+        self.interactive = interactive;
         self
     }
 
     pub fn text(&self) -> &ArcStr {
-        self.text_layout.text()
+        &self.text
     }
 
     #[doc(alias = "with_text_color")]
@@ -79,6 +81,11 @@ impl Label {
     #[doc(alias = "with_font_size")]
     pub fn with_text_size(mut self, size: f32) -> Self {
         self.text_layout.set_text_size(size);
+        self
+    }
+
+    pub fn with_weight(mut self, weight: Weight) -> Self {
+        self.text_layout.set_weight(weight);
         self
     }
 
@@ -109,10 +116,10 @@ impl Label {
 // --- MARK: WIDGETMUT ---
 impl WidgetMut<'_, Label> {
     pub fn text(&self) -> &ArcStr {
-        self.widget.text_layout.text()
+        &self.widget.text
     }
 
-    pub fn set_text_properties<R>(&mut self, f: impl FnOnce(&mut TextLayout<ArcStr>) -> R) -> R {
+    pub fn set_text_properties<R>(&mut self, f: impl FnOnce(&mut TextLayout) -> R) -> R {
         let ret = f(&mut self.widget.text_layout);
         if self.widget.text_layout.needs_rebuild() {
             self.ctx.request_layout();
@@ -122,7 +129,9 @@ impl WidgetMut<'_, Label> {
 
     pub fn set_text(&mut self, new_text: impl Into<ArcStr>) {
         let new_text = new_text.into();
-        self.set_text_properties(|layout| layout.set_text(new_text));
+        self.widget.text = new_text;
+        self.widget.text_changed = true;
+        self.ctx.request_layout();
     }
 
     #[doc(alias = "set_text_color")]
@@ -137,6 +146,9 @@ impl WidgetMut<'_, Label> {
     pub fn set_text_size(&mut self, size: f32) {
         self.set_text_properties(|layout| layout.set_text_size(size));
     }
+    pub fn set_weight(&mut self, weight: Weight) {
+        self.set_text_properties(|layout| layout.set_weight(weight));
+    }
     pub fn set_alignment(&mut self, alignment: Alignment) {
         self.set_text_properties(|layout| layout.set_text_alignment(alignment));
     }
@@ -148,7 +160,7 @@ impl WidgetMut<'_, Label> {
     }
     pub fn set_line_break_mode(&mut self, line_break_mode: LineBreaking) {
         self.widget.line_break_mode = line_break_mode;
-        self.ctx.request_paint();
+        self.ctx.request_layout();
     }
 }
 
@@ -204,7 +216,6 @@ impl Widget for Label {
                 // TODO: Parley seems to require a relayout when colours change
                 ctx.request_layout();
             }
-            LifeCycle::BuildFocusChain => {}
             _ => {}
         }
     }
@@ -221,9 +232,11 @@ impl Widget for Label {
             None
         };
         self.text_layout.set_max_advance(max_advance);
-        if self.text_layout.needs_rebuild() {
+        if self.text_layout.needs_rebuild() || self.text_changed {
             let (font_ctx, layout_ctx) = ctx.text_contexts();
-            self.text_layout.rebuild(font_ctx, layout_ctx);
+            self.text_layout
+                .rebuild(font_ctx, layout_ctx, &self.text, self.text_changed);
+            self.text_changed = false;
         }
         // We ignore trailing whitespace for a label
         let text_size = self.text_layout.size();
@@ -231,19 +244,15 @@ impl Widget for Label {
             height: text_size.height,
             width: text_size.width + 2. * LABEL_X_PADDING,
         };
-        let size = bc.constrain(label_size);
-        trace!(
-            "Computed layout: max={:?}. w={}, h={}",
-            max_advance,
-            size.width,
-            size.height,
-        );
-        size
+        bc.constrain(label_size)
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
         if self.text_layout.needs_rebuild() {
-            debug_panic!("Called Label paint before layout");
+            debug_panic!(
+                "Called {name}::paint with invalid layout",
+                name = self.short_type_name()
+            );
         }
         if self.line_break_mode == LineBreaking::Clip {
             let clip_rect = ctx.size().to_rect();
@@ -261,17 +270,16 @@ impl Widget for Label {
         Role::Label
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx) {
-        ctx.current_node()
-            .set_name(self.text().as_ref().to_string());
-    }
-
-    fn skip_pointer(&self) -> bool {
-        self.skip_pointer
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, node: &mut NodeBuilder) {
+        node.set_name(self.text().as_ref().to_string());
     }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         SmallVec::new()
+    }
+
+    fn accepts_pointer_interaction(&self) -> bool {
+        self.interactive
     }
 
     fn make_trace_span(&self) -> Span {
@@ -279,7 +287,7 @@ impl Widget for Label {
     }
 
     fn get_debug_text(&self) -> Option<String> {
-        Some(self.text_layout.text().as_ref().to_string())
+        Some(self.text.to_string())
     }
 }
 

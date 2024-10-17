@@ -1,7 +1,7 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use accesskit::Role;
+use accesskit::{NodeBuilder, Role};
 use smallvec::SmallVec;
 use tracing::{trace_span, Span};
 use vello::kurbo::{Affine, Line, Stroke};
@@ -248,12 +248,18 @@ impl Widget for Grid {
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
         let total_size = bc.max();
+        if !total_size.is_finite() {
+            debug_panic!(
+                "Error while computing layout for grid; infinite BoxConstraint max provided {}",
+                total_size
+            );
+        }
         let width_unit = (total_size.width + self.grid_spacing) / (self.grid_width as f64);
         let height_unit = (total_size.height + self.grid_spacing) / (self.grid_height as f64);
         for child in &mut self.children {
             let cell_size = Size::new(
-                child.width as f64 * width_unit - self.grid_spacing,
-                child.height as f64 * height_unit - self.grid_spacing,
+                (child.width as f64 * width_unit - self.grid_spacing).max(0.0),
+                (child.height as f64 * height_unit - self.grid_spacing).max(0.0),
             );
             let child_bc = BoxConstraints::new(cell_size, cell_size);
             let _ = ctx.run_layout(&mut child.widget, &child_bc);
@@ -281,7 +287,7 @@ impl Widget for Grid {
         Role::GenericContainer
     }
 
-    fn accessibility(&mut self, _: &mut AccessCtx) {}
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, _node: &mut NodeBuilder) {}
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         self.children

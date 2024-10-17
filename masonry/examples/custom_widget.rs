@@ -7,10 +7,10 @@
 // On Windows platform, don't show a console when opening the app.
 #![windows_subsystem = "windows"]
 
-use accesskit::Role;
+use accesskit::{NodeBuilder, Role};
 use masonry::app_driver::{AppDriver, DriverCtx};
 use masonry::kurbo::{BezPath, Stroke};
-use masonry::widget::{FillStrat, RootWidget};
+use masonry::widget::{ObjectFit, RootWidget};
 use masonry::{
     AccessCtx, AccessEvent, Action, Affine, BoxConstraints, Color, EventCtx, LayoutCtx,
     LifeCycleCtx, PaintCtx, Point, PointerEvent, Rect, RegisterCtx, Size, StatusChange, TextEvent,
@@ -114,7 +114,7 @@ impl Widget for CustomWidget {
 
         let mut scratch_scene = Scene::new();
         // We can pass a transform matrix to rotate the text we render
-        masonry::text_helpers::render_text(
+        masonry::text::render_text(
             scene,
             &mut scratch_scene,
             Affine::rotate(std::f64::consts::FRAC_PI_4).then_translate((80.0, 40.0).into()),
@@ -124,7 +124,7 @@ impl Widget for CustomWidget {
         // Let's burn some CPU to make a (partially transparent) image buffer
         let image_data = make_image_data(256, 256);
         let image_data = Image::new(image_data.into(), Format::Rgba8, 256, 256);
-        let transform = FillStrat::Fill.affine_to_fill(ctx.size(), size);
+        let transform = ObjectFit::Fill.affine_to_fill(ctx.size(), size);
         scene.draw_image(&image_data, transform);
     }
 
@@ -132,9 +132,9 @@ impl Widget for CustomWidget {
         Role::Window
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx) {
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, node: &mut NodeBuilder) {
         let text = &self.0;
-        ctx.current_node().set_name(
+        node.set_name(
             format!("This is a demo of the Masonry Widget trait. Masonry has accessibility tree support. The demo shows colored shapes with the text '{text}'."),
         );
     }

@@ -3,7 +3,6 @@
 
 #![cfg(not(tarpaulin_include))]
 
-use std::sync::atomic::{AtomicBool, Ordering};
 use vello::kurbo::{Insets, Point, Rect, Size, Vec2};
 
 use crate::{CursorIcon, WidgetId};
@@ -37,7 +36,7 @@ use crate::{CursorIcon, WidgetId};
 /// [`paint`]: crate::Widget::paint
 /// [`WidgetPod`]: crate::WidgetPod
 #[derive(Clone, Debug)]
-pub struct WidgetState {
+pub(crate) struct WidgetState {
     pub(crate) id: WidgetId,
 
     // --- LAYOUT ---
@@ -62,12 +61,17 @@ pub struct WidgetState {
     /// the baseline. Widgets that contain text or controls that expect to be
     /// laid out alongside text can set this as appropriate.
     pub(crate) baseline_offset: f64,
-    // TODO - Remove
-    pub(crate) is_portal: bool,
+
+    /// Tracks whether widget gets pointer events.
+    /// Should be immutable after `WidgetAdded` event.
+    pub(crate) accepts_pointer_interaction: bool,
+    /// Tracks whether widget gets text focus.
+    /// Should be immutable after `WidgetAdded` event.
+    pub(crate) accepts_focus: bool,
 
     /// Tracks whether widget is eligible for IME events.
     /// Should be immutable after `WidgetAdded` event.
-    pub(crate) is_text_input: bool,
+    pub(crate) accepts_text_input: bool,
     /// The area of the widget that is being edited by
     /// an IME, in local coordinates.
     pub(crate) ime_area: Option<Rect>,
@@ -139,29 +143,17 @@ pub struct WidgetState {
     /// This widget or an ancestor has been stashed.
     pub(crate) is_stashed: bool,
 
-    pub(crate) is_hot: bool,
+    pub(crate) is_hovered: bool,
 
     /// In the focused path, starting from window and ending at the focused widget.
     /// Descendants of the focused widget are not in the focused path.
     pub(crate) has_focus: bool,
 
-    /// Whether this specific widget is in the focus chain.
-    pub(crate) in_focus_chain: bool,
-
     // --- DEBUG INFO ---
-    // Used in event/lifecycle/etc methods that are expected to be called recursively
-    // on a widget's children, to make sure each child was visited.
-    #[cfg(debug_assertions)]
-    pub(crate) needs_visit: VisitBool,
-
     // TODO - document
     #[cfg(debug_assertions)]
     pub(crate) widget_name: &'static str,
 }
-
-// This is a hack to have a simple Clone impl for WidgetState
-#[derive(Debug)]
-pub(crate) struct VisitBool(pub AtomicBool);
 
 impl WidgetState {
     pub(crate) fn new(id: WidgetId, widget_name: &'static str) -> WidgetState {
@@ -173,8 +165,9 @@ impl WidgetState {
             is_expecting_place_child_call: false,
             paint_insets: Insets::ZERO,
             local_paint_rect: Rect::ZERO,
-            is_portal: false,
-            is_text_input: false,
+            accepts_pointer_interaction: true,
+            accepts_focus: false,
+            accepts_text_input: false,
             ime_area: None,
             clip: Default::default(),
             translation: Vec2::ZERO,
@@ -185,7 +178,7 @@ impl WidgetState {
             is_stashed: false,
             baseline_offset: 0.0,
             is_new: true,
-            is_hot: false,
+            is_hovered: false,
             request_layout: true,
             needs_layout: true,
             request_compose: true,
@@ -195,7 +188,6 @@ impl WidgetState {
             request_accessibility: true,
             needs_accessibility: true,
             has_focus: false,
-            in_focus_chain: false,
             request_anim: true,
             needs_anim: true,
             needs_update_disabled: true,
@@ -204,8 +196,6 @@ impl WidgetState {
             children_changed: true,
             cursor: None,
             update_focus_chain: true,
-            #[cfg(debug_assertions)]
-            needs_visit: VisitBool(false.into()),
             #[cfg(debug_assertions)]
             widget_name,
         }
@@ -235,24 +225,13 @@ impl WidgetState {
         }
     }
 
-    pub(crate) fn mark_as_visited(&self, visited: bool) {
-        #[cfg(debug_assertions)]
-        {
-            // TODO - the "!visited" is annoying
-            self.needs_visit.0.store(!visited, Ordering::SeqCst);
-        }
-    }
-
-    #[cfg(debug_assertions)]
-    pub(crate) fn needs_visit(&self) -> bool {
-        self.needs_visit.0.load(Ordering::SeqCst)
-    }
-
     /// Update to incorporate state changes from a child.
     ///
-    /// This will also clear some requests in the child state.
-    ///
     /// This method is idempotent and can be called multiple times.
+    //
+    // TODO: though this method takes child state mutably, child state currently isn't actually
+    // mutated anymore. This method may start doing so again in the future, so keep taking &mut for
+    // now.
     pub(crate) fn merge_up(&mut self, child_state: &mut WidgetState) {
         self.needs_layout |= child_state.needs_layout;
         self.needs_compose |= child_state.needs_compose;
@@ -263,6 +242,7 @@ impl WidgetState {
         self.has_focus |= child_state.has_focus;
         self.children_changed |= child_state.children_changed;
         self.update_focus_chain |= child_state.update_focus_chain;
+        self.needs_update_stashed |= child_state.needs_update_stashed;
     }
 
     #[inline]
@@ -292,6 +272,13 @@ impl WidgetState {
         Rect::from_origin_size(self.window_origin(), self.size)
     }
 
+    /// The clip path of the widget, if any was set.
+    ///
+    /// For more information, see [`LayoutCtx::set_clip_path`](crate::LayoutCtx::set_clip_path).
+    pub fn clip_path(&self) -> Option<Rect> {
+        self.clip
+    }
+
     /// Returns the area being edited by an IME, in global coordinates.
     ///
     /// By default, returns the same as [`Self::window_layout_rect`].
@@ -302,10 +289,14 @@ impl WidgetState {
     pub(crate) fn window_origin(&self) -> Point {
         self.window_origin
     }
-}
 
-impl Clone for VisitBool {
-    fn clone(&self) -> Self {
-        VisitBool(self.0.load(Ordering::SeqCst).into())
+    pub(crate) fn needs_rewrite_passes(&self) -> bool {
+        self.needs_layout
+            || self.needs_compose
+            || self.needs_paint
+            || self.needs_accessibility
+            || self.needs_anim
+            || self.needs_update_disabled
+            || self.needs_update_stashed
     }
 }

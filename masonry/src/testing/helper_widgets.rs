@@ -15,7 +15,7 @@ use std::cell::RefCell;
 use std::collections::VecDeque;
 use std::rc::Rc;
 
-use accesskit::Role;
+use accesskit::{NodeBuilder, Role};
 use accesskit_winit::Event;
 use smallvec::SmallVec;
 use vello::Scene;
@@ -34,7 +34,7 @@ pub type LayoutFn<S> = dyn FnMut(&mut S, &mut LayoutCtx, &BoxConstraints) -> Siz
 pub type ComposeFn<S> = dyn FnMut(&mut S, &mut ComposeCtx);
 pub type PaintFn<S> = dyn FnMut(&mut S, &mut PaintCtx, &mut Scene);
 pub type RoleFn<S> = dyn Fn(&S) -> Role;
-pub type AccessFn<S> = dyn FnMut(&mut S, &mut AccessCtx);
+pub type AccessFn<S> = dyn FnMut(&mut S, &mut AccessCtx, &mut NodeBuilder);
 pub type ChildrenFn<S> = dyn Fn(&S) -> SmallVec<[WidgetId; 16]>;
 
 #[cfg(FALSE)]
@@ -45,6 +45,9 @@ pub const REPLACE_CHILD: Selector = Selector::new("masonry-test.replace-child");
 /// This widget is generic over its state, which is passed in at construction time.
 pub struct ModularWidget<S> {
     state: S,
+    accepts_pointer_interaction: bool,
+    accepts_focus: bool,
+    accepts_text_input: bool,
     on_pointer_event: Option<Box<PointerEventFn<S>>>,
     on_text_event: Option<Box<TextEventFn<S>>>,
     on_access_event: Option<Box<AccessEventFn<S>>>,
@@ -128,6 +131,9 @@ impl<S> ModularWidget<S> {
     pub fn new(state: S) -> Self {
         ModularWidget {
             state,
+            accepts_pointer_interaction: true,
+            accepts_focus: false,
+            accepts_text_input: false,
             on_pointer_event: None,
             on_text_event: None,
             on_access_event: None,
@@ -141,6 +147,21 @@ impl<S> ModularWidget<S> {
             access: None,
             children: None,
         }
+    }
+
+    pub fn accepts_pointer_interaction(mut self, flag: bool) -> Self {
+        self.accepts_pointer_interaction = flag;
+        self
+    }
+
+    pub fn accepts_focus(mut self, flag: bool) -> Self {
+        self.accepts_focus = flag;
+        self
+    }
+
+    pub fn accepts_text_input(mut self, flag: bool) -> Self {
+        self.accepts_text_input = flag;
+        self
     }
 
     pub fn pointer_event_fn(
@@ -214,7 +235,10 @@ impl<S> ModularWidget<S> {
         self
     }
 
-    pub fn access_fn(mut self, f: impl FnMut(&mut S, &mut AccessCtx) + 'static) -> Self {
+    pub fn access_fn(
+        mut self,
+        f: impl FnMut(&mut S, &mut AccessCtx, &mut NodeBuilder) + 'static,
+    ) -> Self {
         self.access = Some(Box::new(f));
         self
     }
@@ -293,9 +317,9 @@ impl<S: 'static> Widget for ModularWidget<S> {
         }
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx) {
+    fn accessibility(&mut self, ctx: &mut AccessCtx, node: &mut NodeBuilder) {
         if let Some(f) = self.access.as_mut() {
-            f(&mut self.state, ctx);
+            f(&mut self.state, ctx, node);
         }
     }
 
@@ -311,6 +335,18 @@ impl<S: 'static> Widget for ModularWidget<S> {
         } else {
             SmallVec::new()
         }
+    }
+
+    fn accepts_pointer_interaction(&self) -> bool {
+        self.accepts_pointer_interaction
+    }
+
+    fn accepts_focus(&self) -> bool {
+        self.accepts_focus
+    }
+
+    fn accepts_text_input(&self) -> bool {
+        self.accepts_text_input
     }
 }
 
@@ -364,14 +400,13 @@ impl Widget for ReplaceChild {
         Role::GenericContainer
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx) {}
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, _node: &mut NodeBuilder) {}
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         todo!()
     }
 }
 
-#[allow(dead_code)]
 impl Recording {
     pub fn is_empty(&self) -> bool {
         self.0.borrow().is_empty()
@@ -453,9 +488,9 @@ impl<W: Widget> Widget for Recorder<W> {
         self.child.accessibility_role()
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx) {
+    fn accessibility(&mut self, ctx: &mut AccessCtx, node: &mut NodeBuilder) {
         self.recording.push(Record::Access);
-        self.child.accessibility(ctx);
+        self.child.accessibility(ctx, node);
     }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {

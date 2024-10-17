@@ -34,7 +34,7 @@
 //!         match action {
 //!             Action::ButtonPressed(_) => {
 //!                 let mut root: WidgetMut<RootWidget<Portal<Flex>>> = ctx.get_root();
-//!                 let mut root = root.get_element();
+//!                 let mut root = root.child_mut();
 //!                 let mut flex = root.child_mut();
 //!                 flex.add_child(Label::new(self.next_task.clone()));
 //!             }
@@ -76,6 +76,13 @@
 //! }
 //! ```
 //!
+//! ## Create feature flags
+//!
+//! The following feature flags are available:
+//!
+//! - `tracy`: Enables creating output for the [Tracy](https://github.com/wolfpld/tracy) profiler using [`tracing-tracy`][tracing_tracy].
+//!   This can be used by installing Tracy and connecting to a Masonry with this feature enabled.
+//!
 //! [winit]: https://crates.io/crates/winit
 //! [Druid]: https://crates.io/crates/druid
 //! [Xilem]: https://crates.io/crates/xilem
@@ -112,8 +119,6 @@ mod event;
 pub mod paint_scene_helpers;
 pub mod render_root;
 pub mod testing;
-// mod text;
-pub mod text_helpers;
 pub mod theme;
 pub mod widget;
 
@@ -131,17 +136,20 @@ pub use action::Action;
 pub use box_constraints::BoxConstraints;
 pub use contexts::{
     AccessCtx, ComposeCtx, EventCtx, IsContext, LayoutCtx, LifeCycleCtx, MutateCtx, PaintCtx,
-    RawWrapper, RawWrapperMut, RegisterCtx,
+    QueryCtx, RawWrapper, RawWrapperMut, RegisterCtx,
 };
 pub use event::{
     AccessEvent, LifeCycle, PointerButton, PointerEvent, PointerState, StatusChange, TextEvent,
     WindowEvent, WindowTheme,
 };
 pub use kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
+pub use parley::fontique::Weight as TextWeight;
 pub use parley::layout::Alignment as TextAlignment;
 pub use util::{AsAny, Handled};
 pub use vello::peniko::{Color, Gradient};
 pub use widget::widget::{AllowRawMut, Widget, WidgetId};
-pub use widget::{WidgetPod, WidgetState};
+pub use widget::WidgetPod;
 
-pub use text_helpers::ArcStr;
+pub use text::ArcStr;
+
+pub(crate) use widget::WidgetState;

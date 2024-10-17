@@ -8,10 +8,9 @@ use winit::keyboard::{KeyCode, PhysicalKey};
 
 use crate::passes::merge_state_up;
 use crate::render_root::RenderRoot;
-use crate::{
-    AccessEvent, EventCtx, Handled, PointerEvent, TextEvent, Widget, WidgetId, WidgetState,
-};
+use crate::{AccessEvent, EventCtx, Handled, PointerEvent, TextEvent, Widget, WidgetId};
 
+// --- MARK: HELPERS ---
 fn get_target_widget(
     root: &RenderRoot,
     pointer_pos: Option<LogicalPosition<f64>>,
@@ -34,7 +33,6 @@ fn get_target_widget(
 
 fn run_event_pass<E>(
     root: &mut RenderRoot,
-    root_state: &mut WidgetState,
     target: Option<WidgetId>,
     event: &E,
     allow_pointer_capture: bool,
@@ -42,6 +40,7 @@ fn run_event_pass<E>(
 ) -> Handled {
     let mut pass_fn = pass_fn;
 
+    let original_target = target;
     let mut target_widget_id = target;
     let mut is_handled = false;
     while let Some(widget_id) = target_widget_id {
@@ -53,6 +52,7 @@ fn run_event_pass<E>(
             widget_state: state_mut.item,
             widget_state_children: state_mut.children,
             widget_children: widget_mut.children,
+            target: original_target.unwrap(),
             allow_pointer_capture,
             is_handled: false,
         };
@@ -60,9 +60,9 @@ fn run_event_pass<E>(
 
         if !is_handled {
             trace!(
-                "Widget '{}' #{} visited",
+                "Widget '{}' {} visited",
                 widget.short_type_name(),
-                widget_id.to_raw(),
+                widget_id,
             );
 
             pass_fn(widget, &mut ctx, event);
@@ -73,21 +73,11 @@ fn run_event_pass<E>(
         target_widget_id = parent_id;
     }
 
-    // Merge root widget state with synthetic state created at beginning of pass
-    root_state.merge_up(root.widget_arena.get_state_mut(root.root.id()).item);
-
     Handled::from(is_handled)
 }
 
-// ----------------
-
-// TODO - Send synthetic MouseLeave events
-
-pub(crate) fn root_on_pointer_event(
-    root: &mut RenderRoot,
-    root_state: &mut WidgetState,
-    event: &PointerEvent,
-) -> Handled {
+// --- MARK: POINTER_EVENT ---
+pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEvent) -> Handled {
     let _span = info_span!("pointer_event").entered();
     if !event.is_high_density() {
         debug!("Running ON_POINTER_EVENT pass with {}", event.short_name());
@@ -99,7 +89,6 @@ pub(crate) fn root_on_pointer_event(
 
     let handled = run_event_pass(
         root,
-        root_state,
         target_widget_id,
         event,
         matches!(event, PointerEvent::PointerDown(..)),
@@ -134,11 +123,8 @@ pub(crate) fn root_on_pointer_event(
 // focus is on it, its child or its parent.
 // - If a Widget has focus, then none of its parents is hidden
 
-pub(crate) fn root_on_text_event(
-    root: &mut RenderRoot,
-    root_state: &mut WidgetState,
-    event: &TextEvent,
-) -> Handled {
+// --- MARK: TEXT EVENT ---
+pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -> Handled {
     let _span = info_span!("text_event").entered();
     if !event.is_high_density() {
         debug!("Running ON_TEXT_EVENT pass with {}", event.short_name());
@@ -146,16 +132,9 @@ pub(crate) fn root_on_text_event(
 
     let target = root.state.focused_widget;
 
-    let mut handled = run_event_pass(
-        root,
-        root_state,
-        target,
-        event,
-        false,
-        |widget, ctx, event| {
-            widget.on_text_event(ctx, event);
-        },
-    );
+    let mut handled = run_event_pass(root, target, event, false, |widget, ctx, event| {
+        widget.on_text_event(ctx, event);
+    });
 
     // Handle Tab focus
     if let TextEvent::KeyboardKey(key, mods) = event {
@@ -183,46 +162,35 @@ pub(crate) fn root_on_text_event(
     handled
 }
 
-pub(crate) fn root_on_access_event(
+// --- MARK: ACCESS EVENT ---
+pub(crate) fn run_on_access_event_pass(
     root: &mut RenderRoot,
-    root_state: &mut WidgetState,
     event: &AccessEvent,
+    target: WidgetId,
 ) -> Handled {
     let _span = info_span!("access_event").entered();
     debug!("Running ON_ACCESS_EVENT pass with {}", event.short_name());
 
-    let target = Some(event.target);
+    let mut handled = run_event_pass(root, Some(target), event, false, |widget, ctx, event| {
+        widget.on_access_event(ctx, event);
+    });
 
-    let handled = run_event_pass(
-        root,
-        root_state,
-        target,
-        event,
-        false,
-        |widget, ctx, event| {
-            // TODO - Split into "access_event_focus" pass or something similar.
-            if event.target == ctx.widget_id() {
-                match event.action {
-                    accesskit::Action::Focus => {
-                        if ctx.is_in_focus_chain() && !ctx.is_disabled() && !ctx.is_focused() {
-                            ctx.request_focus();
-                            ctx.set_handled();
-                            return;
-                        }
-                    }
-                    accesskit::Action::Blur => {
-                        if ctx.is_focused() {
-                            ctx.resign_focus();
-                            ctx.set_handled();
-                            return;
-                        }
-                    }
-                    _ => {}
-                }
+    // Handle focus events
+    match event.action {
+        accesskit::Action::Focus if !handled.is_handled() => {
+            if root.is_still_interactive(target) {
+                root.state.next_focused_widget = Some(target);
+                handled = Handled::Yes;
             }
-            widget.on_access_event(ctx, event);
-        },
-    );
+        }
+        accesskit::Action::Blur if !handled.is_handled() => {
+            if root.state.next_focused_widget == Some(target) {
+                root.state.next_focused_widget = None;
+                handled = Handled::Yes;
+            }
+        }
+        _ => {}
+    }
 
     debug!(
         focused_widget = root.state.focused_widget.map(|id| id.0),

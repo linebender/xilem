@@ -54,17 +54,17 @@ pub use variable_label::VariableLabel;
 pub use widget_mut::WidgetMut;
 pub use widget_pod::WidgetPod;
 pub use widget_ref::WidgetRef;
-pub use widget_state::WidgetState;
 pub use widget::Axis;
 
 pub(crate) use widget_arena::WidgetArena;
+pub(crate) use widget_state::WidgetState;
 
 use crate::{Affine, Size};
 
-// These are based on https://api.flutter.dev/flutter/painting/BoxFit-class.html
+// These are based on https://developer.mozilla.org/en-US/docs/Web/CSS/object-fit
 /// Strategies for inscribing a rectangle inside another rectangle.
 #[derive(Clone, Copy, Default, PartialEq)]
-pub enum FillStrat {
+pub enum ObjectFit {
     /// As large as possible without changing aspect ratio of image and all of image shown
     #[default]
     Contain,
@@ -84,32 +84,32 @@ pub enum FillStrat {
 
 // TODO - Need to write tests for this, in a way that's relatively easy to visualize.
 
-impl FillStrat {
-    /// Calculate an origin and scale for an image with a given `FillStrat`.
+impl ObjectFit {
+    /// Calculate an origin and scale for an image with a given `ObjectFit`.
     ///
-    /// This takes some properties of a widget and a fill strategy and returns an affine matrix
+    /// This takes some properties of a widget and an object fit and returns an affine matrix
     /// used to position and scale the image in the widget.
     pub fn affine_to_fill(self, parent: Size, fit_box: Size) -> Affine {
         let raw_scalex = parent.width / fit_box.width;
         let raw_scaley = parent.height / fit_box.height;
 
         let (scalex, scaley) = match self {
-            FillStrat::Contain => {
+            ObjectFit::Contain => {
                 let scale = raw_scalex.min(raw_scaley);
                 (scale, scale)
             }
-            FillStrat::Cover => {
+            ObjectFit::Cover => {
                 let scale = raw_scalex.max(raw_scaley);
                 (scale, scale)
             }
-            FillStrat::Fill => (raw_scalex, raw_scaley),
-            FillStrat::FitHeight => (raw_scaley, raw_scaley),
-            FillStrat::FitWidth => (raw_scalex, raw_scalex),
-            FillStrat::ScaleDown => {
+            ObjectFit::Fill => (raw_scalex, raw_scaley),
+            ObjectFit::FitHeight => (raw_scaley, raw_scaley),
+            ObjectFit::FitWidth => (raw_scalex, raw_scalex),
+            ObjectFit::ScaleDown => {
                 let scale = raw_scalex.min(raw_scaley).min(1.0);
                 (scale, scale)
             }
-            FillStrat::None => (1.0, 1.0),
+            ObjectFit::None => (1.0, 1.0),
         };
 
         let origin_x = (parent.width - (fit_box.width * scalex)) / 2.0;
@@ -117,14 +117,4 @@ impl FillStrat {
 
         Affine::new([scalex, 0., 0., scaley, origin_x, origin_y])
     }
-}
-
-// TODO - remove prelude
-#[allow(missing_docs)]
-pub mod prelude {
-    #[doc(hidden)]
-    pub use crate::{
-        BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, PointerEvent, Size,
-        StatusChange, TextEvent, Widget, WidgetId,
-    };
 }

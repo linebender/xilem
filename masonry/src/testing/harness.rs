@@ -3,8 +3,11 @@
 
 //! Tools and infrastructure for testing widgets.
 
+use std::collections::VecDeque;
 use std::num::NonZeroUsize;
 
+use cursor_icon::CursorIcon;
+use dpi::LogicalSize;
 use image::{DynamicImage, ImageReader, Rgba, RgbaImage};
 use tracing::debug;
 use vello::util::RenderContext;
@@ -15,12 +18,12 @@ use wgpu::{
 };
 use winit::event::Ime;
 
-use super::screenshots::get_image_diff;
-use super::snapshot_utils::get_cargo_workspace;
 use crate::action::Action;
 use crate::dpi::{LogicalPosition, PhysicalPosition, PhysicalSize};
 use crate::event::{PointerButton, PointerEvent, PointerState, TextEvent, WindowEvent};
+use crate::passes::anim::run_update_anim_pass;
 use crate::render_root::{RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy};
+use crate::testing::{screenshots::get_image_diff, snapshot_utils::get_cargo_workspace};
 use crate::tracing_backend::try_init_test_tracing;
 use crate::widget::{WidgetMut, WidgetRef};
 use crate::{Color, Handled, Point, Size, Vec2, Widget, WidgetId};
@@ -67,15 +70,9 @@ pub const HARNESS_DEFAULT_BACKGROUND_COLOR: Color = Color::rgb8(0x29, 0x29, 0x29
 ///
 /// **(TODO - Painting invalidation might not be accurate.)**
 ///
-/// One minor difference is that layout is always calculated after every event, whereas
-/// in normal execution it is only calculated before paint. This might be create subtle
-/// differences in cases where timers are programmed to fire at the same time: in normal
-/// execution, they'll execute back-to-back; in the harness, they'll be separated with
-/// layout calls.
-///
-/// Also, paint only happens when the user explicitly calls rendering methods, whereas in
-/// a normal applications you could reasonably expect multiple paint calls between eg any
-/// two clicks.
+/// One minor difference is that paint only happens when the user explicitly calls rendering
+/// methods, whereas in a normal applications you could reasonably expect multiple paint calls
+/// between eg any two clicks.
 ///
 /// ## Example
 ///
@@ -121,6 +118,10 @@ pub struct TestHarness {
     mouse_state: PointerState,
     window_size: PhysicalSize<u32>,
     background_color: Color,
+    action_queue: VecDeque<(Action, WidgetId)>,
+    has_ime_session: bool,
+    ime_rect: (LogicalPosition<f64>, LogicalSize<f64>),
+    title: String,
 }
 
 /// Assert a snapshot of a rendered frame of your app.
@@ -180,6 +181,12 @@ impl TestHarness {
         // harnesses.
         let _ = try_init_test_tracing();
 
+        const ROBOTO: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/resources/fonts/roboto/Roboto-Regular.ttf"
+        ));
+        let data = ROBOTO.to_vec();
+
         let mut harness = TestHarness {
             render_root: RenderRoot::new(
                 root_widget,
@@ -187,18 +194,17 @@ impl TestHarness {
                     use_system_fonts: false,
                     size_policy: WindowSizePolicy::User,
                     scale_factor: 1.0,
+                    test_font: Some(data),
                 },
             ),
             mouse_state,
             window_size,
             background_color,
+            action_queue: VecDeque::new(),
+            has_ime_session: false,
+            ime_rect: Default::default(),
+            title: String::new(),
         };
-        const ROBOTO: &[u8] = include_bytes!(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/resources/fonts/roboto/Roboto-Regular.ttf"
-        ));
-        let data = ROBOTO.to_vec();
-        harness.render_root.add_test_font(data);
         harness.process_window_event(WindowEvent::Resize(window_size));
 
         harness
@@ -214,7 +220,7 @@ impl TestHarness {
     /// will also be dispatched.
     pub fn process_window_event(&mut self, event: WindowEvent) -> Handled {
         let handled = self.render_root.handle_window_event(event);
-        self.process_state_after_event();
+        self.process_signals();
         handled
     }
 
@@ -225,7 +231,7 @@ impl TestHarness {
     /// will also be dispatched.
     pub fn process_pointer_event(&mut self, event: PointerEvent) -> Handled {
         let handled = self.render_root.handle_pointer_event(event);
-        self.process_state_after_event();
+        self.process_signals();
         handled
     }
 
@@ -236,13 +242,37 @@ impl TestHarness {
     /// will also be dispatched.
     pub fn process_text_event(&mut self, event: TextEvent) -> Handled {
         let handled = self.render_root.handle_text_event(event);
-        self.process_state_after_event();
+        self.process_signals();
         handled
     }
 
-    fn process_state_after_event(&mut self) {
-        if self.root_widget().state().needs_layout {
-            self.render_root.root_layout();
+    fn process_signals(&mut self) {
+        while let Some(signal) = self.render_root.pop_signal() {
+            match signal {
+                RenderRootSignal::Action(action, widget_id) => {
+                    self.action_queue.push_back((action, widget_id));
+                }
+                RenderRootSignal::StartIme => {
+                    self.has_ime_session = true;
+                }
+                RenderRootSignal::EndIme => {
+                    self.has_ime_session = false;
+                }
+                RenderRootSignal::ImeMoved(position, size) => {
+                    self.ime_rect = (position, size);
+                }
+                RenderRootSignal::RequestRedraw => (),
+                RenderRootSignal::RequestAnimFrame => (),
+                RenderRootSignal::TakeFocus => (),
+                RenderRootSignal::SetCursor(_) => (),
+                RenderRootSignal::SetSize(physical_size) => {
+                    self.window_size = physical_size;
+                    self.process_window_event(WindowEvent::Resize(physical_size));
+                }
+                RenderRootSignal::SetTitle(title) => {
+                    self.title = title;
+                }
+            }
         }
     }
 
@@ -390,7 +420,7 @@ impl TestHarness {
     ///
     /// Combines [`mouse_move`](Self::mouse_move), [`mouse_button_press`](Self::mouse_button_press), and [`mouse_button_release`](Self::mouse_button_release).
     pub fn mouse_click_on(&mut self, id: WidgetId) {
-        let widget_rect = self.get_widget(id).state().window_layout_rect();
+        let widget_rect = self.get_widget(id).ctx().window_layout_rect();
         let widget_center = widget_rect.center();
 
         self.mouse_move(widget_center);
@@ -402,7 +432,7 @@ impl TestHarness {
     pub fn mouse_move_to(&mut self, id: WidgetId) {
         // FIXME - handle case where the widget isn't visible
         // FIXME - assert that the widget correctly receives the event otherwise?
-        let widget_rect = self.get_widget(id).state().window_layout_rect();
+        let widget_rect = self.get_widget(id).ctx().window_layout_rect();
         let widget_center = widget_rect.center();
 
         self.mouse_move(widget_center);
@@ -416,7 +446,19 @@ impl TestHarness {
             let event = TextEvent::Ime(Ime::Commit(c.to_string()));
             self.render_root.handle_text_event(event);
         }
-        self.process_state_after_event();
+    }
+
+    pub fn focus_on(&mut self, id: Option<WidgetId>) {
+        self.render_root.state.next_focused_widget = id;
+        self.render_root.run_rewrite_passes();
+    }
+
+    // TODO - Fold into move_timers_forward
+    /// Send animation events to the widget tree
+    pub fn animate_ms(&mut self, ms: u64) {
+        run_update_anim_pass(&mut self.render_root, ms * 1_000_000);
+        self.render_root.run_rewrite_passes();
+        self.process_signals();
     }
 
     #[cfg(FALSE)]
@@ -456,14 +498,13 @@ impl TestHarness {
     #[track_caller]
     pub fn get_widget(&self, id: WidgetId) -> WidgetRef<'_, dyn Widget> {
         self.render_root
-            .widget_arena
-            .try_get_widget_ref(id)
-            .unwrap_or_else(|| panic!("could not find widget #{}", id.to_raw()))
+            .get_widget(id)
+            .unwrap_or_else(|| panic!("could not find widget {}", id))
     }
 
     /// Try to return the widget with the given id.
     pub fn try_get_widget(&self, id: WidgetId) -> Option<WidgetRef<'_, dyn Widget>> {
-        self.render_root.widget_arena.try_get_widget_ref(id)
+        self.render_root.get_widget(id)
     }
 
     // TODO - link to focus documentation.
@@ -476,8 +517,7 @@ impl TestHarness {
     // TODO - Multiple pointers
     pub fn pointer_capture_target(&self) -> Option<WidgetRef<'_, dyn Widget>> {
         self.render_root
-            .widget_arena
-            .try_get_widget_ref(self.render_root.state.pointer_capture_target?)
+            .get_widget(self.render_root.state.pointer_capture_target?)
     }
 
     // TODO - This is kinda redundant with the above
@@ -507,9 +547,7 @@ impl TestHarness {
         &mut self,
         f: impl FnOnce(WidgetMut<'_, Box<dyn Widget>>) -> R,
     ) -> R {
-        let res = self.render_root.edit_root_widget(f);
-        self.process_state_after_event();
-        res
+        self.render_root.edit_root_widget(f)
     }
 
     /// Get a [`WidgetMut`] to a specific widget.
@@ -520,23 +558,34 @@ impl TestHarness {
         id: WidgetId,
         f: impl FnOnce(WidgetMut<'_, Box<dyn Widget>>) -> R,
     ) -> R {
-        let res = self.render_root.edit_widget(id, f);
-        self.process_state_after_event();
-        res
+        self.render_root.edit_widget(id, f)
     }
 
     /// Pop next action from the queue
     ///
     /// Note: Actions are still a WIP feature.
     pub fn pop_action(&mut self) -> Option<(Action, WidgetId)> {
-        let signal = self
-            .render_root
-            .pop_signal_matching(|signal| matches!(signal, RenderRootSignal::Action(..)));
-        match signal {
-            Some(RenderRootSignal::Action(action, id)) => Some((action, id)),
-            Some(_) => unreachable!(),
-            _ => None,
-        }
+        self.action_queue.pop_front()
+    }
+
+    pub fn cursor_icon(&self) -> CursorIcon {
+        self.render_root.cursor_icon()
+    }
+
+    pub fn has_ime_session(&self) -> bool {
+        self.has_ime_session
+    }
+
+    pub fn ime_rect(&self) -> (LogicalPosition<f64>, LogicalSize<f64>) {
+        self.ime_rect
+    }
+
+    pub fn window_size(&self) -> PhysicalSize<u32> {
+        self.window_size
+    }
+
+    pub fn title(&self) -> std::string::String {
+        self.title.clone()
     }
 
     // --- MARK: SNAPSHOT ---

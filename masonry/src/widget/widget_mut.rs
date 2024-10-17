@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::contexts::MutateCtx;
-use crate::{Widget, WidgetState};
+use crate::Widget;
 
 // TODO - Document extension trait workaround.
 // See https://xi.zulipchat.com/#narrow/stream/317477-masonry/topic/Thoughts.20on.20simplifying.20WidgetMut/near/436478885
@@ -39,12 +39,6 @@ impl<W: Widget> Drop for WidgetMut<'_, W> {
 }
 
 impl<'w, W: Widget> WidgetMut<'w, W> {
-    // TODO - Replace with individual methods from WidgetState
-    /// Get the [`WidgetState`] of the current widget.
-    pub fn state(&self) -> &WidgetState {
-        self.ctx.widget_state
-    }
-
     /// Get a `WidgetMut` for the same underlying widget with a shorter lifetime.
     pub fn reborrow_mut(&mut self) -> WidgetMut<'_, W> {
         let widget = &mut self.widget;

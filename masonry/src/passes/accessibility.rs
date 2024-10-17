@@ -13,6 +13,7 @@ use crate::render_root::RenderRootState;
 use crate::tree_arena::ArenaMut;
 use crate::{AccessCtx, Widget, WidgetState};
 
+// --- MARK: BUILD TREE ---
 fn build_accessibility_tree(
     global_state: &mut RenderRootState,
     tree_update: &mut TreeUpdate,
@@ -30,11 +31,10 @@ fn build_accessibility_tree(
 
     if rebuild_all || state.item.request_accessibility {
         trace!(
-            "Building accessibility node for widget '{}' #{}",
+            "Building accessibility node for widget '{}' {}",
             widget.item.short_type_name(),
-            id.to_raw(),
+            id,
         );
-        let current_node = build_access_node(widget.item, state.item, scale_factor);
 
         let mut ctx = AccessCtx {
             global_state,
@@ -42,21 +42,21 @@ fn build_accessibility_tree(
             widget_state_children: state.children.reborrow_mut(),
             widget_children: widget.children.reborrow_mut(),
             tree_update,
-            current_node,
             rebuild_all,
             scale_factor,
         };
-        set_common_properties(&mut ctx);
-        widget.item.accessibility(&mut ctx);
+        let mut node = build_access_node(widget.item, &mut ctx);
+        widget.item.accessibility(&mut ctx, &mut node);
+        let node = node.build();
 
         let id: NodeId = ctx.widget_state.id.into();
         trace!(
-            "Built node #{} with role={:?}, default_action={:?}",
+            "Built node {} with role={:?}, default_action={:?}",
             id.0,
-            ctx.current_node.role(),
-            ctx.current_node.default_action_verb(),
+            node.role(),
+            node.default_action_verb(),
         );
-        ctx.tree_update.nodes.push((id, ctx.current_node.build()));
+        ctx.tree_update.nodes.push((id, node));
     }
 
     state.item.request_accessibility = false;
@@ -84,9 +84,13 @@ fn build_accessibility_tree(
     );
 }
 
-fn build_access_node(widget: &dyn Widget, state: &WidgetState, scale_factor: f64) -> NodeBuilder {
+// --- MARK: BUILD NODE ---
+fn build_access_node(widget: &mut dyn Widget, ctx: &mut AccessCtx) -> NodeBuilder {
     let mut node = NodeBuilder::new(widget.accessibility_role());
-    node.set_bounds(to_accesskit_rect(state.window_layout_rect(), scale_factor));
+    node.set_bounds(to_accesskit_rect(
+        ctx.widget_state.window_layout_rect(),
+        ctx.scale_factor,
+    ));
 
     node.set_children(
         widget
@@ -97,28 +101,26 @@ fn build_access_node(widget: &dyn Widget, state: &WidgetState, scale_factor: f64
             .collect::<Vec<NodeId>>(),
     );
 
-    node
-}
-
-fn set_common_properties(ctx: &mut AccessCtx) {
-    if ctx.is_hot() {
-        ctx.current_node().set_hovered();
+    if ctx.is_hovered() {
+        node.set_hovered();
     }
     if ctx.is_disabled() {
-        ctx.current_node().set_disabled();
+        node.set_disabled();
     }
     if ctx.is_stashed() {
-        ctx.current_node().set_hidden();
+        node.set_hidden();
     }
     if ctx.widget_state.clip.is_some() {
-        ctx.current_node().set_clips_children();
+        node.set_clips_children();
     }
-    if ctx.is_in_focus_chain() && !ctx.is_disabled() {
-        ctx.current_node().add_action(accesskit::Action::Focus);
+    if ctx.accepts_focus() && !ctx.is_disabled() && !ctx.is_stashed() {
+        node.add_action(accesskit::Action::Focus);
     }
     if ctx.is_focused() {
-        ctx.current_node().add_action(accesskit::Action::Blur);
+        node.add_action(accesskit::Action::Blur);
     }
+
+    node
 }
 
 fn to_accesskit_rect(r: Rect, scale_factor: f64) -> accesskit::Rect {
@@ -126,9 +128,8 @@ fn to_accesskit_rect(r: Rect, scale_factor: f64) -> accesskit::Rect {
     accesskit::Rect::new(sr.x0, sr.y0, sr.x1, sr.y1)
 }
 
-// ----------------
-
-pub(crate) fn root_accessibility(
+// --- MARK: ROOT ---
+pub(crate) fn run_accessibility_pass(
     root: &mut RenderRoot,
     rebuild_all: bool,
     scale_factor: f64,

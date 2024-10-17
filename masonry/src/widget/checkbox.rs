@@ -3,7 +3,7 @@
 
 //! A checkbox widget.
 
-use accesskit::{DefaultActionVerb, Role, Toggled};
+use accesskit::{DefaultActionVerb, NodeBuilder, Role, Toggled};
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace, trace_span, Span};
 use vello::kurbo::{Affine, BezPath, Cap, Join, Size, Stroke};
@@ -29,7 +29,7 @@ impl Checkbox {
     pub fn new(checked: bool, text: impl Into<ArcStr>) -> Checkbox {
         Checkbox {
             checked,
-            label: WidgetPod::new(Label::new(text).with_skip_pointer(true)),
+            label: WidgetPod::new(Label::new(text).with_pointer_interaction(false)),
         }
     }
 
@@ -37,7 +37,7 @@ impl Checkbox {
     pub fn from_label(checked: bool, label: Label) -> Checkbox {
         Checkbox {
             checked,
-            label: WidgetPod::new(label.with_skip_pointer(true)),
+            label: WidgetPod::new(label.with_pointer_interaction(false)),
         }
     }
 }
@@ -46,8 +46,8 @@ impl Checkbox {
 impl WidgetMut<'_, Checkbox> {
     pub fn set_checked(&mut self, checked: bool) {
         self.widget.checked = checked;
-        self.ctx.request_paint();
-        self.ctx.request_accessibility_update();
+        // Checked state impacts appearance and accessibility node
+        self.ctx.request_render();
     }
 
     /// Set the text.
@@ -69,18 +69,19 @@ impl Widget for Checkbox {
             PointerEvent::PointerDown(_, _) => {
                 if !ctx.is_disabled() {
                     ctx.capture_pointer();
-                    ctx.request_paint();
+                    // Checked state impacts appearance and accessibility node
+                    ctx.request_render();
                     trace!("Checkbox {:?} pressed", ctx.widget_id());
                 }
             }
             PointerEvent::PointerUp(_, _) => {
-                if ctx.has_pointer_capture() && ctx.is_hot() && !ctx.is_disabled() {
+                if ctx.has_pointer_capture() && ctx.is_hovered() && !ctx.is_disabled() {
                     self.checked = !self.checked;
                     ctx.submit_action(Action::CheckboxChecked(self.checked));
-                    ctx.request_accessibility_update();
                     trace!("Checkbox {:?} released", ctx.widget_id());
                 }
-                ctx.request_paint();
+                // Checked state impacts appearance and accessibility node
+                ctx.request_render();
             }
             _ => (),
         }
@@ -89,13 +90,13 @@ impl Widget for Checkbox {
     fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
 
     fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {
-        if event.target == ctx.widget_id() {
+        if ctx.target() == ctx.widget_id() {
             match event.action {
                 accesskit::Action::Default => {
                     self.checked = !self.checked;
                     ctx.submit_action(Action::CheckboxChecked(self.checked));
-                    ctx.request_paint();
-                    ctx.request_accessibility_update();
+                    // Checked state impacts appearance and accessibility node
+                    ctx.request_render();
                 }
                 _ => {}
             }
@@ -103,7 +104,8 @@ impl Widget for Checkbox {
     }
 
     fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, _event: &StatusChange) {
-        ctx.request_paint();
+        // Hovered/focused status impacts appearance, but not accessibility node
+        ctx.request_paint_only();
     }
 
     fn register_children(&mut self, ctx: &mut RegisterCtx) {
@@ -125,7 +127,6 @@ impl Widget for Checkbox {
         let baseline =
             ctx.child_baseline_offset(&self.label) + (our_size.height - label_size.height);
         ctx.set_baseline_offset(baseline);
-        trace!("Computed layout: size={}, baseline={}", our_size, baseline);
         our_size
     }
 
@@ -146,7 +147,7 @@ impl Widget for Checkbox {
             UnitPoint::BOTTOM,
         );
 
-        let border_color = if ctx.is_hot() && !ctx.is_disabled() {
+        let border_color = if ctx.is_hovered() && !ctx.is_disabled() {
             theme::BORDER_LIGHT
         } else {
             theme::BORDER_DARK
@@ -185,23 +186,21 @@ impl Widget for Checkbox {
         Role::CheckBox
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx) {
+    fn accessibility(&mut self, ctx: &mut AccessCtx, node: &mut NodeBuilder) {
         // IMPORTANT: We don't want to merge this code in practice, because
         // the child label already has a 'name' property.
         // This is more of a proof of concept of `get_raw_ref()`.
         if false {
             let label = ctx.get_raw_ref(&self.label);
             let name = label.widget().text().as_ref().to_string();
-            ctx.current_node().set_name(name);
+            node.set_name(name);
         }
         if self.checked {
-            ctx.current_node().set_toggled(Toggled::True);
-            ctx.current_node()
-                .set_default_action_verb(DefaultActionVerb::Uncheck);
+            node.set_toggled(Toggled::True);
+            node.set_default_action_verb(DefaultActionVerb::Uncheck);
         } else {
-            ctx.current_node().set_toggled(Toggled::False);
-            ctx.current_node()
-                .set_default_action_verb(DefaultActionVerb::Check);
+            node.set_toggled(Toggled::False);
+            node.set_default_action_verb(DefaultActionVerb::Check);
         }
     }
 

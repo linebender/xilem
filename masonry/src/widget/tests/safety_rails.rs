@@ -3,9 +3,9 @@
 
 use smallvec::smallvec;
 
-use crate::testing::{ModularWidget, TestHarness};
+use crate::testing::{ModularWidget, TestHarness, TestWidgetExt};
 use crate::widget::Flex;
-use crate::{LifeCycle, Point, Size, Widget, WidgetPod};
+use crate::{LifeCycle, Point, PointerButton, Size, Widget, WidgetId, WidgetPod};
 
 fn make_parent_widget<W: Widget>(child: W) -> ModularWidget<WidgetPod<W>> {
     let child = WidgetPod::new(child);
@@ -64,7 +64,72 @@ fn check_forget_to_recurse_widget_added() {
     let _harness = TestHarness::create(widget);
 }
 
-#[should_panic(expected = "not visited in method layout")]
+#[should_panic(expected = "did not call RegisterCtx::register_child()")]
+#[test]
+#[cfg_attr(
+    not(debug_assertions),
+    ignore = "This test doesn't work without debug assertions (i.e. in release mode). See https://github.com/linebender/xilem/issues/477"
+)]
+fn check_forget_register_child() {
+    let widget = make_parent_widget(Flex::row()).register_children_fn(|_child, _ctx| {
+        // We forget to call ctx.register_child();
+    });
+
+    let _harness = TestHarness::create(widget);
+}
+
+#[should_panic(expected = "in the list returned by children_ids")]
+#[test]
+#[cfg_attr(
+    not(debug_assertions),
+    ignore = "This test doesn't work without debug assertions (i.e. in release mode). See https://github.com/linebender/xilem/issues/477"
+)]
+fn check_register_invalid_child() {
+    let widget = make_parent_widget(Flex::row()).register_children_fn(|child, ctx| {
+        ctx.register_child(child);
+        ctx.register_child(&mut WidgetPod::new(Flex::row()));
+    });
+
+    let _harness = TestHarness::create(widget);
+}
+
+#[should_panic(expected = "event does not allow pointer capture")]
+#[test]
+#[cfg_attr(
+    not(debug_assertions),
+    ignore = "This test doesn't work without debug assertions (i.e. in release mode). See https://github.com/linebender/xilem/issues/477"
+)]
+fn check_pointer_capture_outside_pointer_down() {
+    let widget = ModularWidget::new(()).pointer_event_fn(|_, ctx, _event| {
+        ctx.capture_pointer();
+    });
+
+    let mut harness = TestHarness::create(widget);
+    harness.mouse_move((10.0, 10.0));
+    harness.mouse_button_release(PointerButton::Primary);
+}
+
+#[should_panic(expected = "event does not allow pointer capture")]
+#[test]
+#[cfg_attr(
+    not(debug_assertions),
+    ignore = "This test doesn't work without debug assertions (i.e. in release mode). See https://github.com/linebender/xilem/issues/477"
+)]
+fn check_pointer_capture_text_event() {
+    let id = WidgetId::next();
+    let widget = ModularWidget::new(())
+        .accepts_focus(true)
+        .text_event_fn(|_, ctx, _event| {
+            ctx.capture_pointer();
+        })
+        .with_id(id);
+
+    let mut harness = TestHarness::create(widget);
+    harness.focus_on(Some(id));
+    harness.keyboard_type_chars("a");
+}
+
+#[should_panic(expected = "LayoutCtx::run_layout() was not called")]
 #[test]
 #[cfg_attr(
     not(debug_assertions),
@@ -79,7 +144,7 @@ fn check_forget_to_recurse_layout() {
     let _harness = TestHarness::create(widget);
 }
 
-#[should_panic(expected = "missing call to place_child method for child widget")]
+#[should_panic(expected = "LayoutCtx::place_child() was not called")]
 #[test]
 #[cfg_attr(
     not(debug_assertions),

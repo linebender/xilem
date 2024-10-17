@@ -3,15 +3,15 @@
 
 //! The bitmap image widget.
 
-use masonry::widget::{self, FillStrat};
+use masonry::widget::{self, ObjectFit};
 use xilem_core::{Mut, ViewMarker};
 
 use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
 
 /// Displays the bitmap `image`.
 ///
-/// By default, the Image will scale to fit its box constraints ([`FillStrat::Fill`]).
-/// To configure this, call [`fill`](Image::fill) on the returned value.
+/// By default, the Image will scale to fit its box constraints ([`ObjectFit::Fill`]).
+/// To configure this, call [`fit`](Image::fit) on the returned value.
 ///
 /// Corresponds to the [`Image`](widget::Image) widget.
 ///
@@ -24,7 +24,7 @@ pub fn image(image: &vello::peniko::Image) -> Image {
         // We take by reference as we expect all users of this API will need to clone, and it's
         // easier than documenting that cloning is cheap.
         image: image.clone(),
-        fill: FillStrat::default(),
+        object_fit: ObjectFit::default(),
     }
 }
 
@@ -33,13 +33,13 @@ pub fn image(image: &vello::peniko::Image) -> Image {
 /// See `image`'s docs for more details.
 pub struct Image {
     image: vello::peniko::Image,
-    fill: FillStrat,
+    object_fit: ObjectFit,
 }
 
 impl Image {
-    /// Specify the fill strategy.
-    pub fn fill(mut self, fill: FillStrat) -> Self {
-        self.fill = fill;
+    /// Specify the object fit.
+    pub fn fit(mut self, fill: ObjectFit) -> Self {
+        self.object_fit = fill;
         self
     }
 }
@@ -60,8 +60,8 @@ impl<State, Action> View<State, Action, ViewCtx> for Image {
         _: &mut ViewCtx,
         mut element: Mut<'el, Self::Element>,
     ) -> Mut<'el, Self::Element> {
-        if prev.fill != self.fill {
-            element.set_fill_mode(self.fill);
+        if prev.object_fit != self.object_fit {
+            element.set_fit_mode(self.object_fit);
         }
         if prev.image != self.image {
             element.set_image_data(self.image.clone());

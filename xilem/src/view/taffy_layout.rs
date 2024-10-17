@@ -80,7 +80,6 @@ where
     ) -> Mut<'el, Self::Element> {
         if prev.style != self.style {
             element.set_style(self.style.clone());
-            ctx.mark_changed();
         }
 
         let mut splice = TaffySplice::new(element);

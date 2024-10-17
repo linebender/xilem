@@ -14,6 +14,7 @@ use crate::theme::get_debug_color;
 use crate::tree_arena::ArenaMut;
 use crate::{PaintCtx, Widget, WidgetId, WidgetState};
 
+// --- MARK: PAINT WIDGET ---
 fn paint_widget(
     global_state: &mut RenderRootState,
     complete_scene: &mut Scene,
@@ -34,11 +35,7 @@ fn paint_widget(
         debug_paint,
     };
     if ctx.widget_state.request_paint {
-        trace!(
-            "Painting widget '{}' #{}",
-            widget.item.short_type_name(),
-            id.to_raw(),
-        );
+        trace!("Painting widget '{}' {}", widget.item.short_type_name(), id,);
 
         // TODO - Reserve scene
         // https://github.com/linebender/xilem/issues/524
@@ -102,9 +99,8 @@ fn paint_widget(
     }
 }
 
-// ----------------
-
-pub(crate) fn root_paint(root: &mut RenderRoot) -> Scene {
+// --- MARK: ROOT ---
+pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> Scene {
     let _span = info_span!("paint").entered();
 
     let debug_paint = std::env::var("MASONRY_DEBUG_PAINT").is_ok_and(|it| !it.is_empty());
@@ -129,7 +125,7 @@ pub(crate) fn root_paint(root: &mut RenderRoot) -> Scene {
     };
 
     // TODO - This is a bit of a hack until we refactor widget tree mutation.
-    // This should be removed once remove_child is exclusive to MutqteCtx.
+    // This should be removed once remove_child is exclusive to MutateCtx.
     let mut scenes = std::mem::take(&mut root.state.scenes);
 
     paint_widget(

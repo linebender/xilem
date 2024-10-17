@@ -3,7 +3,7 @@
 
 //! A button widget.
 
-use accesskit::{DefaultActionVerb, Role};
+use accesskit::{DefaultActionVerb, NodeBuilder, Role};
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace, trace_span, Span};
 use vello::Scene;
@@ -58,7 +58,7 @@ impl Button {
     /// ```
     pub fn from_label(label: Label) -> Button {
         Button {
-            label: WidgetPod::new(label.with_skip_pointer(true)),
+            label: WidgetPod::new(label.with_pointer_interaction(false)),
         }
     }
 }
@@ -82,16 +82,18 @@ impl Widget for Button {
             PointerEvent::PointerDown(_, _) => {
                 if !ctx.is_disabled() {
                     ctx.capture_pointer();
-                    ctx.request_paint();
+                    // Changes in pointer capture impact appearance, but not accessibility node
+                    ctx.request_paint_only();
                     trace!("Button {:?} pressed", ctx.widget_id());
                 }
             }
             PointerEvent::PointerUp(button, _) => {
-                if ctx.has_pointer_capture() && ctx.is_hot() && !ctx.is_disabled() {
+                if ctx.has_pointer_capture() && ctx.is_hovered() && !ctx.is_disabled() {
                     ctx.submit_action(Action::ButtonPressed(*button));
                     trace!("Button {:?} released", ctx.widget_id());
                 }
-                ctx.request_paint();
+                // Changes in pointer capture impact appearance, but not accessibility node
+                ctx.request_paint_only();
             }
             _ => (),
         }
@@ -100,11 +102,10 @@ impl Widget for Button {
     fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
 
     fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {
-        if event.target == ctx.widget_id() {
+        if ctx.target() == ctx.widget_id() {
             match event.action {
                 accesskit::Action::Default => {
                     ctx.submit_action(Action::ButtonPressed(PointerButton::Primary));
-                    ctx.request_paint();
                 }
                 _ => {}
             }
@@ -112,7 +113,8 @@ impl Widget for Button {
     }
 
     fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, _event: &StatusChange) {
-        ctx.request_paint();
+        // Changes in hovered/focused status impact appearance, but not accessibility node
+        ctx.request_paint_only();
     }
 
     fn register_children(&mut self, ctx: &mut crate::RegisterCtx) {
@@ -140,13 +142,12 @@ impl Widget for Button {
         let label_offset = (button_size.to_vec2() - label_size.to_vec2()) / 2.0;
         ctx.place_child(&mut self.label, label_offset.to_point());
 
-        trace!("Computed button size: {}", button_size);
         button_size
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
         let is_active = ctx.has_pointer_capture() && !ctx.is_disabled();
-        let is_hot = ctx.is_hot();
+        let is_hovered = ctx.is_hovered();
         let size = ctx.size();
         let stroke_width = theme::BUTTON_BORDER_WIDTH;
 
@@ -163,7 +164,7 @@ impl Widget for Button {
             [theme::BUTTON_LIGHT, theme::BUTTON_DARK]
         };
 
-        let border_color = if is_hot && !ctx.is_disabled() {
+        let border_color = if is_hovered && !ctx.is_disabled() {
             theme::BORDER_LIGHT
         } else {
             theme::BORDER_DARK
@@ -183,17 +184,16 @@ impl Widget for Button {
         Role::Button
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx) {
+    fn accessibility(&mut self, ctx: &mut AccessCtx, node: &mut NodeBuilder) {
         // IMPORTANT: We don't want to merge this code in practice, because
         // the child label already has a 'name' property.
         // This is more of a proof of concept of `get_raw_ref()`.
         if false {
             let label = ctx.get_raw_ref(&self.label);
             let name = label.widget().text().as_ref().to_string();
-            ctx.current_node().set_name(name);
+            node.set_name(name);
         }
-        ctx.current_node()
-            .set_default_action_verb(DefaultActionVerb::Click);
+        node.set_default_action_verb(DefaultActionVerb::Click);
     }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {

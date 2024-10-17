@@ -2,11 +2,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use std::any::Any;
+use std::fmt::Display;
 use std::num::NonZeroU64;
 use std::ops::{Deref, DerefMut};
 use std::sync::atomic::{AtomicU64, Ordering};
 
-use accesskit::Role;
+use accesskit::{NodeBuilder, Role};
 use cursor_icon::CursorIcon;
 use smallvec::SmallVec;
 use tracing::{trace_span, Span};
@@ -14,7 +15,11 @@ use vello::Scene;
 
 use crate::contexts::ComposeCtx;
 use crate::event::{AccessEvent, PointerEvent, StatusChange, TextEvent};
-use crate::{AccessCtx, AsAny, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Point, Rect, RegisterCtx, Size, Vec2};
+use crate::widget::WidgetRef;
+use crate::{
+    AccessCtx, AsAny, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
+    Point, QueryCtx, RegisterCtx, Size,
+};
 
 /// A unique identifier for a single [`Widget`].
 ///
@@ -96,7 +101,8 @@ pub trait Widget: AsAny {
     /// Leaf widgets can implement this with an empty body.
     ///
     /// Container widgets need to call [`RegisterCtx::register_child`] for all
-    /// their children. Forgetting to do so is a logic error and may lead to crashes.
+    /// their children. Forgetting to do so is a logic error and may lead to debug panics.
+    /// All the children returned by `children_ids` should be visited.
     fn register_children(&mut self, ctx: &mut RegisterCtx);
 
     /// Handle a lifecycle notification.
@@ -119,20 +125,17 @@ pub trait Widget: AsAny {
     /// the size of non-flex widgets first, to determine the amount of space
     /// available for the flex widgets.
     ///
+    /// Forgetting to visit children is a logic error and may lead to debug panics.
+    /// All the children returned by `children_ids` should be visited.
+    ///
     /// For efficiency, a container should only invoke layout of a child widget
     /// once, though there is nothing enforcing this.
     ///
+    /// **Container widgets should not add or remove children during layout.**
+    /// Doing so is a logic error and may trigger a debug assertion.
+    ///
     /// The layout strategy is strongly inspired by Flutter.
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size;
-
-    // TODO: Document
-    // Does not trigger a re-draw, unlike layout.
-    fn measure(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, axis: Axis) -> f64 {
-        match axis {
-            Axis::Horizontal => self.layout(ctx, bc).width,
-            Axis::Vertical => self.layout(ctx, bc).height,
-        }
-    }
 
     fn compose(&mut self, ctx: &mut ComposeCtx) {}
 
@@ -146,24 +149,47 @@ pub trait Widget: AsAny {
 
     fn accessibility_role(&self) -> Role;
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx);
+    fn accessibility(&mut self, ctx: &mut AccessCtx, node: &mut NodeBuilder);
 
-    /// Return references to this widget's children.
+    /// Return ids of this widget's children.
     ///
-    /// Leaf widgets return an empty array. Container widgets return references to
+    /// Leaf widgets return an empty array. Container widgets return ids of
     /// their children.
     ///
-    /// This methods has some validity invariants. A widget's children list must be
+    /// The list returned by this method is considered the "canonical" list of children
+    /// by Masonry.
+    ///
+    /// This method has some validity invariants. A widget's children list must be
     /// consistent. If children are added or removed, the parent widget should call
-    /// `children_changed` on one of the Ctx parameters. Container widgets are also
-    /// responsible for calling the main methods (`on_event`, `lifecycle`, `layout`,
-    /// `paint`) on their children.
-    /// TODO - Update this doc
+    /// `children_changed` on one of the Ctx parameters. Container widgets are
+    /// responsible for visiting all their children during `layout` and `register_children`.
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]>;
 
-    // TODO - Rename
-    // TODO - Document
-    fn skip_pointer(&self) -> bool {
+    /// Whether this widget gets pointer events and hovered status. True by default.
+    ///
+    /// If false, the widget will be treated as "transparent" for the pointer, meaning
+    /// that the pointer will be considered as hovering whatever is under this widget.
+    ///
+    /// **Note:** The value returned by this method is cached at widget creation and can't be changed.
+    fn accepts_pointer_interaction(&self) -> bool {
+        true
+    }
+
+    /// Whether this widget gets text focus. False by default.
+    ///
+    /// If true, pressing Tab can focus this widget.
+    ///
+    /// **Note:** The value returned by this method is cached at widget creation and can't be changed.
+    fn accepts_focus(&self) -> bool {
+        false
+    }
+
+    /// Whether this widget gets IME events. False by default.
+    ///
+    /// If true, focusing this widget will start an IME session.
+    ///
+    /// **Note:** The value returned by this method is cached at widget creation and can't be changed.
+    fn accepts_text_input(&self) -> bool {
         false
     }
 
@@ -197,20 +223,47 @@ pub trait Widget: AsAny {
 
     // --- Auto-generated implementations ---
 
-    // FIXME
-    #[cfg(FALSE)]
-    /// Return which child, if any, has the given `pos` in its layout rect.
+    /// Return which child, if any, has the given `pos` in its layout rect. In case of overlapping
+    /// children, the last child as determined by [`Widget::children_ids`] is chosen. No child is
+    /// returned if `pos` is outside the widget's clip path.
     ///
-    /// The child return is a direct child, not eg a grand-child. The position is in
-    /// relative coordinates. (Eg `(0,0)` is the top-left corner of `self`).
+    /// The child returned is a direct child, not e.g. a grand-child.
     ///
-    /// Has a default implementation, that can be overridden to search children more
-    /// efficiently.
-    fn get_child_at_pos(&self, pos: Point) -> Option<WidgetRef<'_, dyn Widget>> {
-        // layout_rect() is in parent coordinate space
-        self.children()
-            .into_iter()
-            .find(|child| child.state().layout_rect().contains(pos))
+    /// Has a default implementation that can be overridden to search children more efficiently.
+    /// Custom implementations must uphold the conditions outlined above.
+    ///
+    /// **pos** - the position in global coordinates (e.g. `(0,0)` is the top-left corner of the
+    /// window).
+    fn get_child_at_pos<'c>(
+        &self,
+        ctx: QueryCtx<'c>,
+        pos: Point,
+    ) -> Option<WidgetRef<'c, dyn Widget>> {
+        let relative_pos = pos - ctx.window_origin().to_vec2();
+        if !ctx
+            .clip_path()
+            .map_or(true, |clip| clip.contains(relative_pos))
+        {
+            return None;
+        }
+
+        // Assumes `Self::children_ids` is in increasing "z-order", picking the last child in case
+        // of overlapping children.
+        for child_id in self.children_ids().iter().rev() {
+            let child = ctx.get(*child_id);
+
+            let relative_pos = pos - child.ctx().window_origin().to_vec2();
+            // The position must be inside the child's layout and inside the child's clip path (if
+            // any).
+            if !child.ctx().is_stashed()
+                && child.ctx().accepts_pointer_interaction()
+                && child.ctx().window_layout_rect().contains(pos)
+            {
+                return Some(child);
+            }
+        }
+
+        None
     }
 
     /// Get the (verbose) type name of the widget for debugging purposes.
@@ -315,6 +368,12 @@ impl From<WidgetId> for accesskit::NodeId {
     }
 }
 
+impl Display for WidgetId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "#{}", self.0)
+    }
+}
+
 #[warn(clippy::missing_trait_methods)]
 // TODO - remove
 impl Widget for Box<dyn Widget> {
@@ -346,10 +405,6 @@ impl Widget for Box<dyn Widget> {
         self.deref_mut().layout(ctx, bc)
     }
 
-    fn measure(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, axis: Axis) -> f64 {
-        self.deref_mut().measure(ctx, bc, axis)
-    }
-
     fn compose(&mut self, ctx: &mut ComposeCtx) {
         self.deref_mut().compose(ctx);
     }
@@ -362,8 +417,8 @@ impl Widget for Box<dyn Widget> {
         self.deref().accessibility_role()
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx) {
-        self.deref_mut().accessibility(ctx);
+    fn accessibility(&mut self, ctx: &mut AccessCtx, node: &mut NodeBuilder) {
+        self.deref_mut().accessibility(ctx, node);
     }
 
     fn type_name(&self) -> &'static str {
@@ -378,8 +433,16 @@ impl Widget for Box<dyn Widget> {
         self.deref().children_ids()
     }
 
-    fn skip_pointer(&self) -> bool {
-        self.deref().skip_pointer()
+    fn accepts_pointer_interaction(&self) -> bool {
+        self.deref().accepts_pointer_interaction()
+    }
+
+    fn accepts_focus(&self) -> bool {
+        self.deref().accepts_focus()
+    }
+
+    fn accepts_text_input(&self) -> bool {
+        self.deref().accepts_text_input()
     }
 
     fn make_trace_span(&self) -> Span {
@@ -392,6 +455,14 @@ impl Widget for Box<dyn Widget> {
 
     fn get_cursor(&self) -> CursorIcon {
         self.deref().get_cursor()
+    }
+
+    fn get_child_at_pos<'c>(
+        &self,
+        ctx: QueryCtx<'c>,
+        pos: Point,
+    ) -> Option<WidgetRef<'c, dyn Widget>> {
+        self.deref().get_child_at_pos(ctx, pos)
     }
 
     fn as_any(&self) -> &dyn Any {

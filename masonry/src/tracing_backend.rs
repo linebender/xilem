@@ -91,6 +91,10 @@ fn try_init_layered_tracing(default_level: LevelFilter) -> Result<(), SetGlobalD
     #[cfg(target_os = "android")]
     let registry = registry.with(android_trace_layer);
 
+    // After the above line because of https://github.com/linebender/android_trace/pull/17
+    #[cfg(feature = "tracy")]
+    let registry = registry.with(tracing_tracy::TracyLayer::default());
+
     tracing::dispatcher::set_global_default(registry.into())?;
 
     if let Some(err) = env_var_error {

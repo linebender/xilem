@@ -3,9 +3,9 @@
 
 //! A widget which splits an area in two, with a settable ratio, and optional draggable resizing.
 
-use accesskit::Role;
+use accesskit::{NodeBuilder, Role};
 use smallvec::{smallvec, SmallVec};
-use tracing::{trace, trace_span, warn, Span};
+use tracing::{trace_span, warn, Span};
 use vello::Scene;
 
 use crate::dpi::LogicalPosition;
@@ -355,7 +355,9 @@ impl WidgetMut<'_, Split> {
     /// Set whether the split point can be changed by dragging.
     pub fn set_draggable(&mut self, draggable: bool) {
         self.widget.draggable = draggable;
-        self.ctx.request_paint();
+        // Bar mutability impacts appearance, but not accessibility node
+        // TODO - This might change in a future implementation
+        self.ctx.request_paint_only();
     }
 
     /// Set whether the splitter bar is drawn as a solid rectangle.
@@ -363,7 +365,8 @@ impl WidgetMut<'_, Split> {
     /// If this is `false` (the default), the bar will be drawn as two parallel lines.
     pub fn set_bar_solid(&mut self, solid: bool) {
         self.widget.solid = solid;
-        self.ctx.request_paint();
+        // Bar solidity impacts appearance, but not accessibility node
+        self.ctx.request_paint_only();
     }
 }
 
@@ -394,10 +397,10 @@ impl Widget for Split {
                 PointerEvent::PointerUp(PointerButton::Primary, state) => {
                     if ctx.has_pointer_capture() {
                         ctx.set_handled();
-                        // Dependending on where the mouse cursor is when the button is released,
+                        // Depending on where the mouse cursor is when the button is released,
                         // the cursor might or might not need to be changed
                         self.is_bar_hover =
-                            ctx.is_hot() && self.bar_hit_test(ctx.size(), state.position);
+                            ctx.is_hovered() && self.bar_hit_test(ctx.size(), state.position);
                         if !self.is_bar_hover {
                             ctx.clear_cursor();
                         }
@@ -405,7 +408,7 @@ impl Widget for Split {
                 }
                 PointerEvent::PointerMove(state) => {
                     if ctx.has_pointer_capture() {
-                        // If active, assume always hover/hot
+                        // If widget has pointer capture, assume always it's hovered
                         let effective_pos = match self.split_axis {
                             Axis::Horizontal => {
                                 Point::new(state.position.x - self.click_offset, state.position.y)
@@ -418,7 +421,8 @@ impl Widget for Split {
                         ctx.request_layout();
                     } else {
                         // If not active, set cursor when hovering state changes
-                        let hover = ctx.is_hot() && self.bar_hit_test(ctx.size(), state.position);
+                        let hover =
+                            ctx.is_hovered() && self.bar_hit_test(ctx.size(), state.position);
                         if self.is_bar_hover != hover {
                             self.is_bar_hover = hover;
                             if hover {
@@ -543,7 +547,6 @@ impl Widget for Split {
         let insets = paint_rect - my_size.to_rect();
         ctx.set_paint_insets(insets);
 
-        trace!("Computed layout: size={}, insets={:?}", my_size, insets);
         my_size
     }
 
@@ -560,7 +563,7 @@ impl Widget for Split {
         Role::Splitter
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx) {}
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, _node: &mut NodeBuilder) {}
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         smallvec![self.child1.id(), self.child2.id()]

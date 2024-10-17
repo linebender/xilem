@@ -6,6 +6,7 @@
 use std::borrow::Cow;
 use std::ops::{Deref, DerefMut, Range};
 
+use accesskit::{NodeBuilder, TextPosition, TextSelection, TreeUpdate};
 use parley::context::RangedBuilder;
 use parley::{FontContext, LayoutContext};
 use tracing::debug;
@@ -15,16 +16,18 @@ use vello::peniko::{Brush, Color};
 use vello::Scene;
 use winit::keyboard::NamedKey;
 
-use crate::event::{PointerButton, PointerState};
+use crate::event::{AccessEvent, PointerButton, PointerState};
+use crate::text::{TextBrush, TextLayout};
 use crate::{Handled, TextEvent};
 
-use super::{TextBrush, TextLayout};
-
 pub struct TextWithSelection<T: Selectable> {
-    pub layout: TextLayout<T>,
+    text: T,
+    text_changed: bool,
+    pub layout: TextLayout,
     /// The current selection within this widget
     // TODO: Allow multiple selections (i.e. by holding down control)
-    pub selection: Option<Selection>,
+    pub selection: Selection,
+    pub selection_visible: bool,
     highlight_brush: TextBrush,
     needs_selection_update: bool,
     selecting_with_mouse: bool,
@@ -35,8 +38,11 @@ pub struct TextWithSelection<T: Selectable> {
 impl<T: Selectable> TextWithSelection<T> {
     pub fn new(text: T, text_size: f32) -> Self {
         Self {
-            layout: TextLayout::new(text, text_size),
-            selection: None,
+            text,
+            text_changed: false,
+            layout: TextLayout::new(text_size),
+            selection: Selection::caret(0, Affinity::Downstream),
+            selection_visible: false,
             needs_selection_update: false,
             selecting_with_mouse: false,
             cursor_line: None,
@@ -48,14 +54,24 @@ impl<T: Selectable> TextWithSelection<T> {
         }
     }
 
+    pub fn text(&self) -> &T {
+        &self.text
+    }
+
+    pub fn text_mut(&mut self) -> &mut T {
+        self.text_changed = true;
+        &mut self.text
+    }
+
     pub fn set_text(&mut self, text: T) {
-        self.selection = None;
+        self.selection = Selection::caret(0, Affinity::Downstream);
         self.needs_selection_update = true;
-        self.layout.set_text(text);
+        self.text_changed = true;
+        self.text = text;
     }
 
     pub fn needs_rebuild(&self) -> bool {
-        self.layout.needs_rebuild() || self.needs_selection_update
+        self.layout.needs_rebuild() || self.needs_selection_update || self.text_changed
     }
 
     pub fn pointer_down(
@@ -66,6 +82,7 @@ impl<T: Selectable> TextWithSelection<T> {
     ) -> bool {
         // TODO: work out which button is the primary button?
         if button == PointerButton::Primary {
+            self.selection_visible = true;
             self.selecting_with_mouse = true;
             self.needs_selection_update = true;
             // TODO: Much of this juggling seems unnecessary
@@ -75,16 +92,11 @@ impl<T: Selectable> TextWithSelection<T> {
                 .cursor_for_point(Point::new(position.x, position.y));
             tracing::warn!("Got cursor point without getting affinity");
             if state.mods.state().shift_key() {
-                if let Some(selection) = self.selection.as_mut() {
-                    selection.active = position.insert_point;
-                    selection.active_affinity = Affinity::Downstream;
-                    return true;
-                }
+                self.selection.active = position.insert_point;
+                self.selection.active_affinity = Affinity::Downstream;
+            } else {
+                self.selection = Selection::caret(position.insert_point, Affinity::Downstream);
             }
-            self.selection = Some(Selection::caret(
-                position.insert_point,
-                Affinity::Downstream,
-            ));
             true
         } else {
             false
@@ -105,12 +117,8 @@ impl<T: Selectable> TextWithSelection<T> {
                 .layout
                 .cursor_for_point(Point::new(position.x, position.y));
             tracing::warn!("Got cursor point without getting affinity");
-            if let Some(selection) = self.selection.as_mut() {
-                selection.active = position.insert_point;
-                selection.active_affinity = Affinity::Downstream;
-            } else {
-                debug_panic!("No selection set whilst still dragging");
-            }
+            self.selection.active = position.insert_point;
+            self.selection.active_affinity = Affinity::Downstream;
             true
         } else {
             false
@@ -124,19 +132,15 @@ impl<T: Selectable> TextWithSelection<T> {
                     winit::keyboard::Key::Named(NamedKey::ArrowLeft) => {
                         if mods.shift_key() {
                         } else {
-                            let t = self.text();
-                            if let Some(selection) = self.selection {
-                                if mods.control_key() {
-                                    let offset = t.prev_word_offset(selection.active).unwrap_or(0);
-                                    self.selection =
-                                        Some(Selection::caret(offset, Affinity::Downstream));
-                                } else {
-                                    let offset =
-                                        t.prev_grapheme_offset(selection.active).unwrap_or(0);
-                                    self.selection =
-                                        Some(Selection::caret(offset, Affinity::Downstream));
-                                };
-                            }
+                            let selection = self.selection;
+                            let t = &self.text;
+                            if mods.control_key() {
+                                let offset = t.prev_word_offset(selection.active).unwrap_or(0);
+                                self.selection = Selection::caret(offset, Affinity::Downstream);
+                            } else {
+                                let offset = t.prev_grapheme_offset(selection.active).unwrap_or(0);
+                                self.selection = Selection::caret(offset, Affinity::Downstream);
+                            };
                         }
                         Handled::Yes
                     }
@@ -144,17 +148,15 @@ impl<T: Selectable> TextWithSelection<T> {
                         if mods.shift_key() {
                             // TODO: Expand selection
                         } else {
-                            let t = self.text();
-                            if let Some(selection) = self.selection {
-                                if mods.control_key() {
-                                    if let Some(o) = t.next_word_offset(selection.active) {
-                                        self.selection =
-                                            Some(Selection::caret(o, Affinity::Upstream));
-                                    }
-                                } else if let Some(o) = t.next_grapheme_offset(selection.active) {
-                                    self.selection = Some(Selection::caret(o, Affinity::Upstream));
-                                };
-                            }
+                            let t = &self.text;
+                            let selection = self.selection;
+                            if mods.control_key() {
+                                if let Some(o) = t.next_word_offset(selection.active) {
+                                    self.selection = Selection::caret(o, Affinity::Upstream);
+                                }
+                            } else if let Some(o) = t.next_grapheme_offset(selection.active) {
+                                self.selection = Selection::caret(o, Affinity::Upstream);
+                            };
                         }
                         Handled::Yes
                     }
@@ -163,21 +165,15 @@ impl<T: Selectable> TextWithSelection<T> {
                         "a" if mods.control_key() || /* macOS, yes this is a hack */ mods.super_key() =>
                         {
                             self.selection =
-                                Some(Selection::new(0, self.text().len(), Affinity::Downstream));
+                                Selection::new(0, self.text.len(), Affinity::Downstream);
                             self.needs_selection_update = true;
                             Handled::Yes
                         }
                         "c" if mods.control_key() || mods.super_key() => {
-                            let selection = self.selection.unwrap_or(Selection {
-                                anchor: 0,
-                                active: 0,
-                                active_affinity: Affinity::Downstream,
-                                h_pos: None,
-                            });
+                            let selection = self.selection;
                             // TODO: We know this is not the fullest model of copy-paste, and that we should work with the inner text
                             // e.g. to put HTML code if supported by the rich text kind
-                            if let Some(text) = self.text().slice(selection.min()..selection.max())
-                            {
+                            if let Some(text) = self.text.slice(selection.min()..selection.max()) {
                                 debug!(r#"Copying "{text}""#);
                             } else {
                                 debug_panic!("Had invalid selection");
@@ -206,16 +202,13 @@ impl<T: Selectable> TextWithSelection<T> {
 
     /// Call when this widget becomes focused
     pub fn focus_gained(&mut self) {
-        if self.selection.is_none() {
-            // TODO - We need to have some "memory" of the text selected instead.
-            self.selection = Some(Selection::caret(self.text().len(), Affinity::Downstream));
-        }
+        self.selection_visible = true;
         self.needs_selection_update = true;
     }
 
     /// Call when another widget becomes focused
     pub fn focus_lost(&mut self) {
-        self.selection = None;
+        self.selection_visible = false;
         self.selecting_with_mouse = false;
         self.needs_selection_update = true;
     }
@@ -245,12 +238,16 @@ impl<T: Selectable> TextWithSelection<T> {
     ) {
         // In theory, we could be clever here and only rebuild the layout if the
         // selected range was previously or currently non-zero size (i.e. there is a selected range)
-        if self.needs_selection_update || self.layout.needs_rebuild() {
+        if self.needs_selection_update || self.layout.needs_rebuild() || self.text_changed {
             self.layout.invalidate();
-            self.layout
-                .rebuild_with_attributes(font_ctx, layout_ctx, |mut builder| {
-                    if let Some(selection) = self.selection {
-                        let range = selection.range();
+            self.layout.rebuild_with_attributes(
+                font_ctx,
+                layout_ctx,
+                self.text.as_ref(),
+                self.text_changed,
+                |mut builder| {
+                    if self.selection_visible {
+                        let range = self.selection.range();
                         if !range.is_empty() {
                             builder.push(
                                 &parley::style::StyleProperty::Brush(self.highlight_brush.clone()),
@@ -259,15 +256,19 @@ impl<T: Selectable> TextWithSelection<T> {
                         }
                     }
                     attributes(builder)
-                });
+                },
+            );
             self.needs_selection_update = false;
+            self.text_changed = false;
         }
     }
 
     pub fn draw(&mut self, scene: &mut Scene, point: impl Into<Point>) {
         // TODO: Calculate the location for this in layout lazily?
-        if let Some(selection) = self.selection {
-            self.cursor_line = Some(self.layout.cursor_line_for_text_position(selection.active));
+        if self.selection_visible {
+            self.cursor_line = self
+                .layout
+                .caret_line_from_byte_index(self.selection.active);
         } else {
             self.cursor_line = None;
         }
@@ -282,6 +283,123 @@ impl<T: Selectable> TextWithSelection<T> {
             );
         }
         self.layout.draw(scene, point);
+    }
+
+    fn access_position_from_offset(
+        &self,
+        offset: usize,
+        affinity: Affinity,
+    ) -> Option<TextPosition> {
+        let text = self.text().as_ref();
+        debug_assert!(offset <= text.len(), "offset out of range");
+
+        for (line_index, line) in self.layout.layout.lines().enumerate() {
+            let range = line.text_range();
+            if !(range.contains(&offset)
+                || (offset == range.end
+                    && (affinity == Affinity::Upstream
+                        || line_index == self.layout.layout.len() - 1)))
+            {
+                continue;
+            }
+
+            for (run_index, run) in line.runs().enumerate() {
+                let range = run.text_range();
+                if !(range.contains(&offset)
+                    || (offset == range.end
+                        && (affinity == Affinity::Upstream
+                            || (line_index == self.layout.layout.len() - 1
+                                && run_index == line.len() - 1))))
+                {
+                    continue;
+                }
+
+                let run_offset = offset - range.start;
+                let run_path = (line_index, run_index);
+                let id = *self.layout.access_ids_by_run_path.get(&run_path).unwrap();
+                let character_lengths =
+                    self.layout.character_lengths_by_access_id.get(&id).unwrap();
+                let mut length_sum = 0_usize;
+                for (character_index, length) in character_lengths.iter().copied().enumerate() {
+                    if run_offset == length_sum {
+                        return Some(TextPosition {
+                            node: id,
+                            character_index,
+                        });
+                    }
+                    length_sum += length as usize;
+                }
+                return Some(TextPosition {
+                    node: id,
+                    character_index: character_lengths.len(),
+                });
+            }
+        }
+
+        debug_panic!(
+            "offset {} not within the range of any run; text length: {}",
+            offset,
+            text.len()
+        );
+        None
+    }
+
+    pub fn accessibility(&mut self, update: &mut TreeUpdate, parent_node: &mut NodeBuilder) {
+        self.layout
+            .accessibility(self.text.as_ref(), update, parent_node);
+        let anchor_affinity = if self.selection.anchor == self.selection.active {
+            self.selection.active_affinity
+        } else {
+            Affinity::Downstream
+        };
+        let anchor = self.access_position_from_offset(self.selection.anchor, anchor_affinity);
+        let focus =
+            self.access_position_from_offset(self.selection.active, self.selection.active_affinity);
+        if let (Some(anchor), Some(focus)) = (anchor, focus) {
+            parent_node.set_text_selection(TextSelection { anchor, focus });
+        }
+        parent_node.add_action(accesskit::Action::SetTextSelection);
+    }
+
+    fn offset_from_access_position(&self, pos: TextPosition) -> Option<(usize, Affinity)> {
+        let character_lengths = self.layout.character_lengths_by_access_id.get(&pos.node)?;
+        if pos.character_index > character_lengths.len() {
+            return None;
+        }
+        let run_path = *self.layout.run_paths_by_access_id.get(&pos.node)?;
+        let (line_index, run_index) = run_path;
+        let line = self.layout.layout.get(line_index)?;
+        let run = line.get(run_index)?;
+        let offset = run.text_range().start
+            + character_lengths[..pos.character_index]
+                .iter()
+                .copied()
+                .map(usize::from)
+                .sum::<usize>();
+        let affinity = if pos.character_index == character_lengths.len() && line_index < run.len() {
+            Affinity::Upstream
+        } else {
+            Affinity::Downstream
+        };
+        Some((offset, affinity))
+    }
+
+    pub fn set_selection_from_access_event(&mut self, event: &AccessEvent) -> bool {
+        let Some(accesskit::ActionData::SetTextSelection(access_selection)) = event.data else {
+            return false;
+        };
+        let Some((anchor, _)) = self.offset_from_access_position(access_selection.anchor) else {
+            return false;
+        };
+        let Some((active, active_affinity)) =
+            self.offset_from_access_position(access_selection.focus)
+        else {
+            return false;
+        };
+        self.selection = Selection::new(anchor, active, active_affinity);
+        self.selection_visible = true;
+        self.needs_selection_update = true;
+        true
     }
 }
 
@@ -301,7 +419,7 @@ fn shortcut_key(key: &winit::event::KeyEvent) -> winit::keyboard::Key {
 }
 
 impl<T: Selectable> Deref for TextWithSelection<T> {
-    type Target = TextLayout<T>;
+    type Target = TextLayout;
 
     fn deref(&self) -> &Self::Target {
         &self.layout

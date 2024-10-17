@@ -4,9 +4,9 @@
 //! A progress bar widget.
 
 use crate::Point;
-use accesskit::Role;
+use accesskit::{NodeBuilder, Role};
 use smallvec::{smallvec, SmallVec};
-use tracing::{trace, trace_span, Span};
+use tracing::{trace_span, Span};
 use vello::Scene;
 
 use crate::kurbo::Size;
@@ -25,7 +25,8 @@ pub struct ProgressBar {
     /// `None` variant can be used to show a progress bar without a percentage.
     /// It is also used if an invalid float (outside of [0, 1]) is passed.
     progress: Option<f64>,
-    label: TextLayout<ArcStr>,
+    progress_changed: bool,
+    label: TextLayout,
 }
 
 impl ProgressBar {
@@ -39,11 +40,11 @@ impl ProgressBar {
         out.set_progress(progress);
         out
     }
-
     fn new_indefinite() -> Self {
         Self {
             progress: None,
-            label: TextLayout::new("".into(), crate::theme::TEXT_SIZE_NORMAL as f32),
+            progress_changed: false,
+            label: TextLayout::new(crate::theme::TEXT_SIZE_NORMAL as f32),
         }
     }
 
@@ -52,13 +53,8 @@ impl ProgressBar {
         // check to see if we can avoid doing work
         if self.progress != progress {
             self.progress = progress;
-            self.update_text();
+            self.progress_changed = true;
         }
-    }
-
-    /// Updates the text layout with the current part-complete value
-    fn update_text(&mut self) {
-        self.label.set_text(self.value());
     }
 
     fn value(&self) -> ArcStr {
@@ -83,7 +79,7 @@ impl WidgetMut<'_, ProgressBar> {
     pub fn set_progress(&mut self, progress: Option<f64>) {
         self.widget.set_progress(progress);
         self.ctx.request_layout();
-        self.ctx.request_accessibility_update();
+        self.ctx.request_render();
     }
 }
 
@@ -102,28 +98,26 @@ fn clamp_progress(progress: &mut Option<f64>) {
 
 // --- MARK: IMPL WIDGET ---
 impl Widget for ProgressBar {
-    // pointer events unhandled for now
     fn on_pointer_event(&mut self, _ctx: &mut EventCtx, _event: &PointerEvent) {}
 
     fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
 
-    // access events unhandled for now
     fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {}
 
     fn register_children(&mut self, _ctx: &mut RegisterCtx) {}
 
-    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, _event: &StatusChange) {
-        ctx.request_paint();
-    }
+    fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange) {}
 
     fn lifecycle(&mut self, _ctx: &mut LifeCycleCtx, _event: &LifeCycle) {}
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
         const DEFAULT_WIDTH: f64 = 400.;
 
-        if self.label.needs_rebuild() {
+        if self.label.needs_rebuild() || self.progress_changed {
             let (font_ctx, layout_ctx) = ctx.text_contexts();
-            self.label.rebuild(font_ctx, layout_ctx);
+            self.label
+                .rebuild(font_ctx, layout_ctx, &self.value(), self.progress_changed);
+            self.progress_changed = false;
         }
         let label_size = self.label.size();
 
@@ -131,9 +125,7 @@ impl Widget for ProgressBar {
             DEFAULT_WIDTH.max(label_size.width),
             crate::theme::BASIC_WIDGET_HEIGHT.max(label_size.height),
         );
-        let our_size = bc.constrain(desired_size);
-        trace!("Computed layout: size={}", our_size);
-        our_size
+        bc.constrain(desired_size)
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
@@ -191,10 +183,10 @@ impl Widget for ProgressBar {
         Role::ProgressIndicator
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx) {
-        ctx.current_node().set_value(self.value_accessibility());
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, node: &mut NodeBuilder) {
+        node.set_value(self.value_accessibility());
         if let Some(value) = self.progress {
-            ctx.current_node().set_numeric_value(value * 100.0);
+            node.set_numeric_value(value * 100.0);
         }
     }
 

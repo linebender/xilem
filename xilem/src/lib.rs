@@ -25,7 +25,7 @@ use xilem_core::{
 pub use masonry::{
     dpi,
     event_loop_runner::{EventLoop, EventLoopBuilder},
-    Color, TextAlignment,
+    Color, TextAlignment, TextWeight,
 };
 pub use xilem_core as core;
 
@@ -131,7 +131,6 @@ where
         let mut ctx = ViewCtx {
             widget_map: WidgetMap::default(),
             id_path: Vec::new(),
-            view_tree_changed: false,
             proxy,
             runtime: self.runtime,
         };
@@ -241,7 +240,6 @@ pub struct ViewCtx {
     /// This includes only the widgets which might send actions
     widget_map: WidgetMap,
     id_path: Vec<ViewId>,
-    view_tree_changed: bool,
     proxy: Arc<dyn RawProxy>,
     runtime: tokio::runtime::Runtime,
 }
@@ -270,12 +268,6 @@ impl ViewCtx {
     pub fn boxed_pod<W: Widget>(&mut self, pod: Pod<W>) -> Pod<Box<dyn Widget>> {
         Pod {
             inner: pod.inner.boxed(),
-        }
-    }
-
-    pub fn mark_changed(&mut self) {
-        if cfg!(debug_assertions) {
-            self.view_tree_changed = true;
         }
     }
 

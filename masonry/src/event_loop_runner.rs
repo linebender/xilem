@@ -78,6 +78,8 @@ pub struct MasonryState<'a> {
     // TODO: Winit doesn't seem to let us create these proxies from within the loop
     // The reasons for this are unclear
     proxy: EventLoopProxy,
+    #[cfg(feature = "tracy")]
+    frame: Option<tracing_tracy::client::Frame>,
 
     // Per-Window state
     // In future, this will support multiple windows
@@ -233,9 +235,12 @@ impl MasonryState<'_> {
                     use_system_fonts: true,
                     size_policy: WindowSizePolicy::User,
                     scale_factor,
+                    test_font: None,
                 },
             ),
             renderer: None,
+            #[cfg(feature = "tracy")]
+            frame: None,
             pointer_state: PointerState::empty(),
             proxy: event_loop.create_proxy(),
 
@@ -392,12 +397,32 @@ impl MasonryState<'_> {
         {
             let _render_span = tracing::info_span!("Rendering using Vello").entered();
             self.renderer
-                .get_or_insert_with(|| Renderer::new(device, renderer_options).unwrap())
+                .get_or_insert_with(|| {
+                    // Should be `expect`, when we up our MSRV.
+                    #[cfg_attr(not(feature = "tracy"), allow(unused_mut))]
+                    let mut renderer = Renderer::new(device, renderer_options).unwrap();
+                    #[cfg(feature = "tracy")]
+                    {
+                        let new_profiler = wgpu_profiler::GpuProfiler::new_with_tracy_client(
+                            wgpu_profiler::GpuProfilerSettings::default(),
+                            // We don't have access to the adapter until we get  https://github.com/linebender/vello/pull/634
+                            // Luckily, this `backend` is only used for visual display in the profiling, so we can just guess here
+                            wgpu::Backend::Vulkan,
+                            device,
+                            queue,
+                        )
+                        .unwrap_or(renderer.profiler);
+                        renderer.profiler = new_profiler;
+                    }
+                    renderer
+                })
                 .render_to_surface(device, queue, scene_ref, &surface_texture, &render_params)
                 .expect("failed to render to surface");
         }
         surface_texture.present();
         device.poll(wgpu::Maintain::Wait);
+        #[cfg(feature = "tracy")]
+        drop(self.frame.take());
     }
 
     // --- MARK: WINDOW_EVENT ---
@@ -420,6 +445,10 @@ impl MasonryState<'_> {
             );
             return;
         };
+        #[cfg(feature = "tracy")]
+        if self.frame.is_none() {
+            self.frame = Some(tracing_tracy::client::non_continuous_frame!("Masonry"));
+        }
         accesskit_adapter.process_event(window, &event);
 
         match event {

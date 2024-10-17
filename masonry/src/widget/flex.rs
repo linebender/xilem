@@ -3,9 +3,9 @@
 
 //! A widget that arranges its children in a one-dimensional array.
 
-use accesskit::Role;
+use accesskit::{NodeBuilder, Role};
 use smallvec::SmallVec;
-use tracing::{trace, trace_span, Span};
+use tracing::{trace_span, Span};
 use vello::kurbo::{common::FloatExt, Affine, Line, Stroke, Vec2};
 use vello::Scene;
 
@@ -554,7 +554,7 @@ impl<'a> WidgetMut<'a, Flex> {
     ///
     /// # Panics
     ///
-    /// Panics if the the element at `idx` is not a spacer.
+    /// Panics if the element at `idx` is not a spacer.
     pub fn update_spacer_flex(&mut self, idx: usize, flex: f64) {
         let child = &mut self.widget.children[idx];
 
@@ -573,7 +573,7 @@ impl<'a> WidgetMut<'a, Flex> {
     ///
     /// # Panics
     ///
-    /// Panics if the the element at `idx` is not a spacer.
+    /// Panics if the element at `idx` is not a spacer.
     pub fn update_spacer_fixed(&mut self, idx: usize, len: f64) {
         let child = &mut self.widget.children[idx];
 
@@ -918,11 +918,13 @@ impl Widget for Flex {
         let total_gap = self.children.len().saturating_sub(1) as f64 * gap;
         // Measure non-flex children.
         let mut major_non_flex = total_gap;
-        let mut flex_sum = 0.0;
+        // We start with a small value to avoid divide-by-zero errors.
+        const MIN_FLEX_SUM: f64 = 0.0001;
+        let mut flex_sum = MIN_FLEX_SUM;
         for child in &mut self.children {
             match child {
                 Child::Fixed { widget, alignment } => {
-                    // The BoxConstrains of fixed-children only depends on the BoxConstrains of the
+                    // The BoxConstraints of fixed-children only depends on the BoxConstraints of the
                     // Flex widget.
                     let child_size = if bc_changed || ctx.child_needs_layout(widget) {
                         let alignment = alignment.unwrap_or(self.cross_alignment);
@@ -983,7 +985,7 @@ impl Widget for Flex {
                     flex,
                     alignment,
                 } => {
-                    // The BoxConstrains of flex-children depends on the size of every sibling, which
+                    // The BoxConstraints of flex-children depends on the size of every sibling, which
                     // received layout earlier. Therefore we use any_changed.
                     let child_size = if any_changed || ctx.child_needs_layout(widget) {
                         let alignment = alignment.unwrap_or(self.cross_alignment);
@@ -1112,7 +1114,7 @@ impl Widget for Flex {
             major -= gap;
         }
 
-        if flex_sum > 0.0 {
+        if flex_sum > MIN_FLEX_SUM {
             major = total_major;
         }
 
@@ -1145,11 +1147,6 @@ impl Widget for Flex {
         };
 
         ctx.set_baseline_offset(baseline_offset);
-        trace!(
-            "Computed layout: size={}, baseline_offset={}",
-            my_size,
-            baseline_offset
-        );
         my_size
     }
 
@@ -1169,7 +1166,7 @@ impl Widget for Flex {
         Role::GenericContainer
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx) {}
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, _node: &mut NodeBuilder) {}
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         self.children
@@ -1580,5 +1577,14 @@ mod tests {
         });
 
         // TODO - test out-of-bounds access?
+    }
+
+    #[test]
+    fn divide_by_zero() {
+        let widget = Flex::column().with_flex_spacer(0.0);
+
+        // Running layout should not panic when the flex sum is zero.
+        let mut harness = TestHarness::create(widget);
+        harness.render();
     }
 }

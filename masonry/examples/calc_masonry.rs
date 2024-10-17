@@ -7,7 +7,7 @@
 #![windows_subsystem = "windows"]
 #![allow(variant_size_differences, clippy::single_match)]
 
-use accesskit::{DefaultActionVerb, Role};
+use accesskit::{DefaultActionVerb, NodeBuilder, Role};
 use masonry::app_driver::{AppDriver, DriverCtx};
 use masonry::dpi::LogicalSize;
 use masonry::widget::{Align, CrossAxisAlignment, Flex, Label, RootWidget, SizedBox};
@@ -172,16 +172,14 @@ impl Widget for CalcButton {
     fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
 
     fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {
-        if event.target == ctx.widget_id() {
+        if ctx.target() == ctx.widget_id() {
             match event.action {
                 accesskit::Action::Default => {
                     ctx.submit_action(Action::Other(Box::new(self.action)));
-                    ctx.request_paint();
                 }
                 _ => {}
             }
         }
-        ctx.skip_child(&mut self.inner);
     }
 
     fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange) {
@@ -191,7 +189,7 @@ impl Widget for CalcButton {
         // "hovered" visual effect, but it's somewhat non-idiomatic compared to
         // implementing the effect inside the "paint" method.
         match event {
-            StatusChange::HotChanged(true) => {
+            StatusChange::HoveredChanged(true) => {
                 ctx.mutate_later(&mut self.inner, move |mut inner| {
                     inner.set_border(Color::WHITE, 3.0);
                 });
@@ -199,7 +197,7 @@ impl Widget for CalcButton {
                 // Should be fixed once the pass spec RFC is implemented.
                 ctx.request_anim_frame();
             }
-            StatusChange::HotChanged(false) => {
+            StatusChange::HoveredChanged(false) => {
                 ctx.mutate_later(&mut self.inner, move |mut inner| {
                     inner.set_border(Color::TRANSPARENT, 3.0);
                 });
@@ -228,15 +226,14 @@ impl Widget for CalcButton {
         Role::Button
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx) {
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, node: &mut NodeBuilder) {
         let _name = match self.action {
             CalcAction::Digit(digit) => digit.to_string(),
             CalcAction::Op(op) => op.to_string(),
         };
         // We may want to add a name if it doesn't interfere with the child label
         // ctx.current_node().set_name(name);
-        ctx.current_node()
-            .set_default_action_verb(DefaultActionVerb::Click);
+        node.set_default_action_verb(DefaultActionVerb::Click);
     }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
@@ -259,7 +256,7 @@ impl AppDriver for CalcState {
         }
 
         ctx.get_root::<RootWidget<Flex>>()
-            .get_element()
+            .child_mut()
             .child_mut(1)
             .unwrap()
             .downcast::<Label>()

@@ -5,8 +5,6 @@ use crate::event_loop_runner::MasonryState;
 use crate::widget::WidgetMut;
 use crate::{Action, Widget, WidgetId};
 
-// xilem::App will implement AppDriver
-
 pub struct DriverCtx<'a> {
     // TODO
     // This is exposed publicly for now to let people drive
@@ -28,8 +26,18 @@ pub trait AppDriver {
 }
 
 impl<'a> DriverCtx<'a> {
+    // TODO - Add method to create timer
+
     /// Return a [`WidgetMut`] to the root widget.
     pub fn get_root<W: Widget>(&mut self) -> WidgetMut<'_, W> {
         self.main_root_widget.downcast()
+    }
+
+    pub fn content_changed(&self) -> bool {
+        self.main_root_widget
+            .ctx
+            .widget_state
+            .needs_rewrite_passes()
+            || self.main_root_widget.ctx.global_state.focus_changed()
     }
 }

@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::tree_arena::{ArenaMut, ArenaRef, TreeArena};
-use crate::widget::WidgetRef;
 use crate::{Widget, WidgetId, WidgetState};
 
 pub(crate) struct WidgetArena {
@@ -11,7 +10,6 @@ pub(crate) struct WidgetArena {
     pub(crate) widget_states: TreeArena<WidgetState>,
 }
 
-#[allow(dead_code)]
 impl WidgetArena {
     pub(crate) fn has(&self, widget_id: WidgetId) -> bool {
         self.widgets.find(widget_id.to_raw()).is_some()
@@ -60,6 +58,7 @@ impl WidgetArena {
         (widget, state)
     }
 
+    #[allow(dead_code)]
     #[track_caller]
     pub(crate) fn get_widget(&self, widget_id: WidgetId) -> ArenaRef<Box<dyn Widget>> {
         self.widgets
@@ -67,6 +66,7 @@ impl WidgetArena {
             .expect("get_widget: widget not in widget tree")
     }
 
+    #[allow(dead_code)]
     #[track_caller]
     pub(crate) fn get_widget_mut(&mut self, widget_id: WidgetId) -> ArenaMut<Box<dyn Widget>> {
         self.widgets
@@ -86,26 +86,5 @@ impl WidgetArena {
         self.widget_states
             .find_mut(widget_id.to_raw())
             .expect("get_state_mut: widget state not in widget tree")
-    }
-
-    pub fn try_get_widget_ref(&self, id: WidgetId) -> Option<WidgetRef<dyn Widget>> {
-        let state_ref = self.widget_states.find(id.to_raw())?;
-        let widget_ref = self
-            .widgets
-            .find(id.to_raw())
-            .expect("found state but not widget");
-
-        // Box<dyn Widget> -> &dyn Widget
-        // Without this step, the type of `WidgetRef::widget` would be
-        // `&Box<dyn Widget> as &dyn Widget`, which would be an additional layer
-        // of indirection.
-        let widget = widget_ref.item;
-        let widget: &dyn Widget = &**widget;
-        Some(WidgetRef {
-            widget_state_children: state_ref.children,
-            widget_children: widget_ref.children,
-            widget_state: state_ref.item,
-            widget,
-        })
     }
 }

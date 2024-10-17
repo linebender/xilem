@@ -5,24 +5,22 @@
 
 use std::cmp::Ordering;
 
-use accesskit::Role;
+use accesskit::{NodeBuilder, Role};
 use parley::fontique::Weight;
 use parley::layout::Alignment;
 use parley::style::{FontFamily, FontStack};
 use smallvec::SmallVec;
-use tracing::{trace, trace_span, Span};
+use tracing::{trace_span, Span};
 use vello::kurbo::{Affine, Point, Size};
 use vello::peniko::BlendMode;
 use vello::Scene;
 
 use crate::text::{Hinting, TextBrush, TextLayout};
-use crate::widget::WidgetMut;
+use crate::widget::{LineBreaking, WidgetMut};
 use crate::{
     AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx,
     PaintCtx, PointerEvent, RegisterCtx, StatusChange, TextEvent, Widget, WidgetId,
 };
-
-use super::LineBreaking;
 
 // added padding between the edges of the widget and the text.
 pub(super) const LABEL_X_PADDING: f64 = 2.0;
@@ -136,7 +134,9 @@ impl AnimationStatus {
 // TODO: Make this a wrapper (around `Label`?)
 /// A widget displaying non-editable text, with a variable [weight](parley::style::FontWeight).
 pub struct VariableLabel {
-    text_layout: TextLayout<ArcStr>,
+    text: ArcStr,
+    text_changed: bool,
+    text_layout: TextLayout,
     line_break_mode: LineBreaking,
     show_disabled: bool,
     brush: TextBrush,
@@ -148,7 +148,9 @@ impl VariableLabel {
     /// Create a new label.
     pub fn new(text: impl Into<ArcStr>) -> Self {
         Self {
-            text_layout: TextLayout::new(text.into(), crate::theme::TEXT_SIZE_NORMAL as f32),
+            text: text.into(),
+            text_changed: false,
+            text_layout: TextLayout::new(crate::theme::TEXT_SIZE_NORMAL as f32),
             line_break_mode: LineBreaking::Overflow,
             show_disabled: true,
             brush: crate::theme::TEXT_COLOR.into(),
@@ -157,7 +159,7 @@ impl VariableLabel {
     }
 
     pub fn text(&self) -> &ArcStr {
-        self.text_layout.text()
+        &self.text
     }
 
     #[doc(alias = "with_text_color")]
@@ -218,13 +220,13 @@ impl VariableLabel {
 impl WidgetMut<'_, VariableLabel> {
     /// Read the text.
     pub fn text(&self) -> &ArcStr {
-        self.widget.text_layout.text()
+        &self.widget.text
     }
 
     /// Set a property on the underlying text.
     ///
     /// This cannot be used to set attributes.
-    pub fn set_text_properties<R>(&mut self, f: impl FnOnce(&mut TextLayout<ArcStr>) -> R) -> R {
+    pub fn set_text_properties<R>(&mut self, f: impl FnOnce(&mut TextLayout) -> R) -> R {
         let ret = f(&mut self.widget.text_layout);
         if self.widget.text_layout.needs_rebuild() {
             self.ctx.request_layout();
@@ -235,7 +237,9 @@ impl WidgetMut<'_, VariableLabel> {
     /// Modify the underlying text.
     pub fn set_text(&mut self, new_text: impl Into<ArcStr>) {
         let new_text = new_text.into();
-        self.set_text_properties(|layout| layout.set_text(new_text));
+        self.widget.text = new_text;
+        self.widget.text_changed = true;
+        self.ctx.request_layout();
     }
 
     #[doc(alias = "set_text_color")]
@@ -358,8 +362,12 @@ impl Widget for VariableLabel {
             self.text_layout
                 .set_brush(self.brush(ctx.widget_state.is_disabled));
             let (font_ctx, layout_ctx) = ctx.text_contexts();
-            self.text_layout
-                .rebuild_with_attributes(font_ctx, layout_ctx, |mut builder| {
+            self.text_layout.rebuild_with_attributes(
+                font_ctx,
+                layout_ctx,
+                &self.text,
+                self.text_changed,
+                |mut builder| {
                     builder.push_default(&parley::style::StyleProperty::FontWeight(Weight::new(
                         self.weight.value,
                     )));
@@ -367,7 +375,9 @@ impl Widget for VariableLabel {
                     //     parley::style::FontSettings::List(&[]),
                     // ));
                     builder
-                });
+                },
+            );
+            self.text_changed = false;
         }
         // We ignore trailing whitespace for a label
         let text_size = self.text_layout.size();
@@ -375,19 +385,15 @@ impl Widget for VariableLabel {
             height: text_size.height,
             width: text_size.width + 2. * LABEL_X_PADDING,
         };
-        let size = bc.constrain(label_size);
-        trace!(
-            "Computed layout: max={:?}. w={}, h={}",
-            max_advance,
-            size.width,
-            size.height,
-        );
-        size
+        bc.constrain(label_size)
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
         if self.text_layout.needs_rebuild() {
-            debug_panic!("Called Label paint before layout");
+            debug_panic!(
+                "Called {name}::paint with invalid layout",
+                name = self.short_type_name()
+            );
         }
         if self.line_break_mode == LineBreaking::Clip {
             let clip_rect = ctx.size().to_rect();
@@ -405,9 +411,8 @@ impl Widget for VariableLabel {
         Role::Label
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx) {
-        ctx.current_node()
-            .set_name(self.text().as_ref().to_string());
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, node: &mut NodeBuilder) {
+        node.set_name(self.text().as_ref().to_string());
     }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
@@ -419,7 +424,7 @@ impl Widget for VariableLabel {
     }
 
     fn get_debug_text(&self) -> Option<String> {
-        Some(self.text_layout.text().as_ref().to_string())
+        Some(self.text.to_string())
     }
 }
 

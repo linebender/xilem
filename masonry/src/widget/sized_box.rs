@@ -3,9 +3,9 @@
 
 //! A widget with predefined size.
 
-use accesskit::Role;
+use accesskit::{NodeBuilder, Role};
 use smallvec::{smallvec, SmallVec};
-use tracing::{trace, trace_span, warn, Span};
+use tracing::{trace_span, warn, Span};
 use vello::kurbo::{Affine, RoundedRectRadii};
 use vello::peniko::{Brush, Color, Fill};
 use vello::Scene;
@@ -232,13 +232,13 @@ impl WidgetMut<'_, SizedBox> {
     /// [`Image`]: vello::peniko::Image
     pub fn set_background(&mut self, brush: impl Into<Brush>) {
         self.widget.background = Some(brush.into());
-        self.ctx.request_paint();
+        self.ctx.request_paint_only();
     }
 
     /// Clears background.
     pub fn clear_background(&mut self) {
         self.widget.background = None;
-        self.ctx.request_paint();
+        self.ctx.request_paint_only();
     }
 
     /// Paint a border around the widget with a color and width.
@@ -259,7 +259,7 @@ impl WidgetMut<'_, SizedBox> {
     /// Round off corners of this container by setting a corner radius
     pub fn set_rounded(&mut self, radius: impl Into<RoundedRectRadii>) {
         self.widget.corner_radius = radius.into();
-        self.ctx.request_paint();
+        self.ctx.request_paint_only();
     }
 
     // TODO - Doc
@@ -345,8 +345,6 @@ impl Widget for SizedBox {
         // TODO - figure out paint insets
         // TODO - figure out baseline offset
 
-        trace!("Computed size: {}", size);
-
         if size.width.is_infinite() {
             warn!("SizedBox is returning an infinite width.");
         }
@@ -389,7 +387,7 @@ impl Widget for SizedBox {
         Role::GenericContainer
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx) {}
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, _node: &mut NodeBuilder) {}
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         if let Some(child) = &self.child {

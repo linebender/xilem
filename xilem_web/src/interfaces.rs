@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 //! Opinionated extension traits roughly resembling their equivalently named DOM interfaces.
+//!
 //! It is used for DOM elements, e.g. created with [`html::span`](`crate::elements::html::span`) to modify the underlying element, such as [`Element::attr`] or [`HtmlElement::style`]
 //!
 //! These traits can also be used as return type of components to allow modifying the underlying DOM element that is returned.
@@ -17,8 +18,8 @@ use crate::{
     attribute::{Attr, WithAttributes},
     class::{AsClassIter, Class, WithClasses},
     events,
-    style::{IntoStyles, Style, WithStyle},
-    DomView, IntoAttributeValue, OptionalAction, Pointer, PointerMsg,
+    style::{IntoStyles, Rotate, Scale, ScaleValue, Style, WithStyle},
+    DomNode, DomView, IntoAttributeValue, OptionalAction, Pointer, PointerMsg,
 };
 use wasm_bindgen::JsCast;
 
@@ -50,7 +51,11 @@ macro_rules! event_handler_mixin {
 
 pub trait Element<State, Action = ()>:
     Sized
-    + DomView<State, Action, Props: WithAttributes + WithClasses, DomNode: AsRef<web_sys::Element>>
+    + DomView<
+        State,
+        Action,
+        DomNode: DomNode<Props: WithAttributes + WithClasses + WithStyle> + AsRef<web_sys::Element>,
+    >
 {
     /// Set an attribute for an [`Element`]
     ///
@@ -139,6 +144,65 @@ pub trait Element<State, Action = ()>:
     /// See <https://developer.mozilla.org/en-US/docs/Web/API/Element/id> for more details
     fn id(self, value: impl IntoAttributeValue) -> Attr<Self, State, Action> {
         Attr::new(self, Cow::from("id"), value.into_attr_value())
+    }
+
+    /// Set the [style](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/style) attribute
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use xilem_web::{style as s, elements::html::div, interfaces::Element};
+    ///
+    /// # fn component() -> impl Element<()> {
+    /// div(())
+    ///     .style([s("display", "flex"), s("align-items", "center")])
+    ///     .style(s("justify-content", "center"))
+    /// # }
+    /// ```
+    fn style(self, style: impl IntoStyles) -> Style<Self, State, Action> {
+        let mut styles = vec![];
+        style.into_styles(&mut styles);
+        Style::new(self, styles)
+    }
+
+    /// Add a `rotate(<radians>rad)` [transform-function](https://developer.mozilla.org/en-US/docs/Web/CSS/transform-function) to the current CSS `transform`
+    /// # Examples
+    ///
+    /// ```
+    /// use xilem_web::{style as s, interfaces::Element, svg::kurbo::Rect};
+    ///
+    /// # fn component() -> impl Element<()> {
+    /// Rect::from_origin_size((0.0, 10.0), (20.0, 30.0))
+    ///     .style(s("transform", "translate(10px, 0)")) // can be combined with untyped `transform`
+    ///     .rotate(std::f64::consts::PI / 4.0)
+    /// // results in the following html:
+    /// // <rect width="20" height="30" x="0.0" y="10.0" style="transform: translate(10px, 0) rotate(0.78539rad);"></rect>
+    /// # }
+    /// ```
+    fn rotate(self, radians: f64) -> Rotate<Self, State, Action> {
+        Rotate::new(self, radians)
+    }
+
+    /// Add a `scale(<scale>)` [transform-function](https://developer.mozilla.org/en-US/docs/Web/CSS/transform-function) to the current CSS `transform`
+    /// # Examples
+    ///
+    /// ```
+    /// use xilem_web::{style as s, interfaces::Element, svg::kurbo::Circle};
+    ///
+    /// # fn component() -> impl Element<()> {
+    /// Circle::new((10.0, 20.0), 30.0)
+    ///     .style(s("transform", "translate(10px, 0)")) // can be combined with untyped `transform`
+    ///     .scale(1.5)
+    ///     .scale((1.5, 2.0))
+    /// // results in the following html:
+    /// // <circle r="30" cy="20" cx="10" style="transform: translate(10px, 0) scale(1.5) scale(1.5, 2);"></circle>
+    /// # }
+    /// ```
+    fn scale(self, scale: impl Into<ScaleValue>) -> Scale<Self, State, Action>
+    where
+        <Self::DomNode as DomNode>::Props: WithStyle,
+    {
+        Scale::new(self, scale)
     }
 
     // event list from
@@ -270,7 +334,7 @@ pub trait Element<State, Action = ()>:
 impl<State, Action, T> Element<State, Action> for T
 where
     T: DomView<State, Action>,
-    T::Props: WithAttributes + WithClasses,
+    <T::DomNode as DomNode>::Props: WithAttributes + WithClasses + WithStyle,
     T::DomNode: AsRef<web_sys::Element>,
 {
 }
@@ -495,14 +559,8 @@ where
 
 // #[cfg(feature = "HtmlElement")]
 pub trait HtmlElement<State, Action = ()>:
-    Element<State, Action, Props: WithStyle, DomNode: AsRef<web_sys::HtmlElement>>
+    Element<State, Action, DomNode: DomNode<Props: WithStyle> + AsRef<web_sys::HtmlElement>>
 {
-    /// Set a style attribute
-    fn style(self, style: impl IntoStyles) -> Style<Self, State, Action> {
-        let mut styles = vec![];
-        style.into_styles(&mut styles);
-        Style::new(self, styles)
-    }
 }
 
 // #[cfg(feature = "HtmlElement")]
@@ -510,7 +568,7 @@ impl<State, Action, T> HtmlElement<State, Action> for T
 where
     T: Element<State, Action>,
     T::DomNode: AsRef<web_sys::HtmlElement>,
-    T::Props: WithStyle,
+    <T::DomNode as DomNode>::Props: WithStyle,
 {
 }
 
@@ -1472,14 +1530,8 @@ where
 
 // #[cfg(feature = "SvgElement")]
 pub trait SvgElement<State, Action = ()>:
-    Element<State, Action, Props: WithStyle, DomNode: AsRef<web_sys::SvgElement>>
+    Element<State, Action, DomNode: DomNode<Props: WithStyle> + AsRef<web_sys::SvgElement>>
 {
-    /// Set a style attribute
-    fn style(self, style: impl IntoStyles) -> Style<Self, State, Action> {
-        let mut styles = vec![];
-        style.into_styles(&mut styles);
-        Style::new(self, styles)
-    }
 }
 
 // #[cfg(feature = "SvgElement")]
@@ -1487,7 +1539,7 @@ impl<State, Action, T> SvgElement<State, Action> for T
 where
     T: Element<State, Action>,
     T::DomNode: AsRef<web_sys::SvgElement>,
-    T::Props: WithStyle,
+    <T::DomNode as DomNode>::Props: WithStyle,
 {
 }
 

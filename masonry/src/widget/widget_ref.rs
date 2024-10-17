@@ -6,8 +6,7 @@ use std::ops::Deref;
 use smallvec::SmallVec;
 use vello::kurbo::Point;
 
-use crate::tree_arena::ArenaRefChildren;
-use crate::{Widget, WidgetId, WidgetState};
+use crate::{QueryCtx, Widget, WidgetId};
 
 /// A rich reference to a [`Widget`].
 ///
@@ -21,11 +20,8 @@ use crate::{Widget, WidgetId, WidgetState};
 /// children, and their children, etc).
 ///
 /// This is only for shared access to widgets. For widget mutation, see [`WidgetMut`](crate::widget::WidgetMut).
-
 pub struct WidgetRef<'w, W: Widget + ?Sized> {
-    pub(crate) widget_state_children: ArenaRefChildren<'w, WidgetState>,
-    pub(crate) widget_children: ArenaRefChildren<'w, Box<dyn Widget>>,
-    pub(crate) widget_state: &'w WidgetState,
+    pub(crate) ctx: QueryCtx<'w>,
     pub(crate) widget: &'w W,
 }
 
@@ -35,9 +31,7 @@ pub struct WidgetRef<'w, W: Widget + ?Sized> {
 impl<'w, W: Widget + ?Sized> Clone for WidgetRef<'w, W> {
     fn clone(&self) -> Self {
         Self {
-            widget_state_children: self.widget_state_children,
-            widget_children: self.widget_children,
-            widget_state: self.widget_state,
+            ctx: self.ctx,
             widget: self.widget,
         }
     }
@@ -79,10 +73,9 @@ impl<'w, W: Widget + ?Sized> Deref for WidgetRef<'w, W> {
 // --- IMPLS ---
 
 impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
-    // TODO - Replace with individual methods from WidgetState
-    /// Get the [`WidgetState`] of the current widget.
-    pub fn state(self) -> &'w WidgetState {
-        self.widget_state
+    /// Get a [`QueryCtx`] with information about the current widget.
+    pub fn ctx(&self) -> &'_ QueryCtx<'w> {
+        &self.ctx
     }
 
     /// Get the actual referenced `Widget`.
@@ -92,34 +85,32 @@ impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
 
     /// Get the [`WidgetId`] of the current widget.
     pub fn id(&self) -> WidgetId {
-        self.widget_state.id
+        self.ctx.widget_state.id
     }
 
     /// Attempt to downcast to `WidgetRef` of concrete Widget type.
     pub fn downcast<W2: Widget>(&self) -> Option<WidgetRef<'w, W2>> {
         Some(WidgetRef {
-            widget_state_children: self.widget_state_children,
-            widget_children: self.widget_children,
-            widget_state: self.widget_state,
+            ctx: self.ctx,
             widget: self.widget.as_any().downcast_ref()?,
         })
     }
 
     /// Return widget's children.
     pub fn children(&self) -> SmallVec<[WidgetRef<'w, dyn Widget>; 16]> {
-        let parent_id = self.widget_state.id.to_raw();
+        let parent_id = self.ctx.widget_state.id.to_raw();
         self.widget
             .children_ids()
             .iter()
             .map(|id| {
                 let id = id.to_raw();
-                let Some(state_ref) = self.widget_state_children.into_child(id) else {
+                let Some(state_ref) = self.ctx.widget_state_children.into_child(id) else {
                     panic!(
                         "Error in '{}' #{parent_id}: child #{id} has not been added to tree",
                         self.widget.short_type_name()
                     );
                 };
-                let Some(widget_ref) = self.widget_children.into_child(id) else {
+                let Some(widget_ref) = self.ctx.widget_children.into_child(id) else {
                     panic!(
                         "Error in '{}' #{parent_id}: child #{id} has not been added to tree",
                         self.widget.short_type_name()
@@ -133,12 +124,14 @@ impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
                 let widget = widget_ref.item;
                 let widget: &dyn Widget = &**widget;
 
-                WidgetRef {
+                let ctx = QueryCtx {
+                    global_state: self.ctx.global_state,
                     widget_state_children: state_ref.children,
                     widget_children: widget_ref.children,
                     widget_state: state_ref.item,
-                    widget,
-                }
+                };
+
+                WidgetRef { ctx, widget }
             })
             .collect()
     }
@@ -148,9 +141,7 @@ impl<'w, W: Widget> WidgetRef<'w, W> {
     /// Return a type-erased `WidgetRef`.
     pub fn as_dyn(&self) -> WidgetRef<'w, dyn Widget> {
         WidgetRef {
-            widget_state_children: self.widget_state_children,
-            widget_children: self.widget_children,
-            widget_state: self.widget_state,
+            ctx: self.ctx,
             widget: self.widget,
         }
     }
@@ -159,7 +150,7 @@ impl<'w, W: Widget> WidgetRef<'w, W> {
 impl<'w> WidgetRef<'w, dyn Widget> {
     /// Recursively find child widget with given id.
     pub fn find_widget_by_id(&self, id: WidgetId) -> Option<WidgetRef<'w, dyn Widget>> {
-        if self.state().id == id {
+        if self.ctx.widget_state.id == id {
             Some(*self)
         } else {
             self.children()
@@ -168,74 +159,30 @@ impl<'w> WidgetRef<'w, dyn Widget> {
         }
     }
 
-    /// Recursively find innermost widget at given position.
+    /// Recursively find the innermost widget at the given position, using
+    /// [`Widget::get_child_at_pos`] to descend the widget tree. If `self` does not contain the
+    /// given position in its layout rect or clip path, this returns `None`.
     ///
-    /// If multiple overlapping children of a widget contain the given position in their layout
-    /// boxes, the last child as determined by [`Widget::children_ids`] is chosen.
-    ///
-    /// **pos** - the position in local coordinates (zero being the top-left of the
-    /// inner widget).
-    pub fn find_widget_at_pos(&self, pos: Point) -> Option<WidgetRef<'w, dyn Widget>> {
-        let mut innermost_widget: WidgetRef<'w, dyn Widget> = *self;
+    /// **pos** - the position in global coordinates (e.g. `(0,0)` is the top-left corner of the
+    /// window).
+    pub fn find_widget_at_pos(&self, pos: Point) -> Option<WidgetRef<'_, dyn Widget>> {
+        let mut innermost_widget = *self;
 
-        if !self.state().layout_rect().contains(pos) {
+        if !self.ctx.window_layout_rect().contains(pos) {
             return None;
         }
 
-        // TODO - Rewrite more elegantly
-        loop {
-            if let Some(clip) = innermost_widget.state().clip {
-                let relative_pos = pos.to_vec2() - innermost_widget.state().window_origin.to_vec2();
-                // If the widget has a clip, the point must be inside
-                // else we don't iterate over children.
-                if !clip.contains(relative_pos.to_point()) {
-                    break;
-                }
-            }
-            // TODO - Use Widget::get_child_at_pos method
-            if let Some(child) = innermost_widget.children().into_iter().rev().find(|child| {
-                !child.state().is_stashed
-                    && !child.widget.skip_pointer()
-                    && child.state().window_layout_rect().contains(pos)
-            }) {
-                innermost_widget = child;
-            } else {
-                break;
-            }
+        // TODO: add debug assertion to check whether the child returned by
+        // `Widget::get_child_at_pos` upholds the conditions of that method. See
+        // https://github.com/linebender/xilem/pull/565#discussion_r1756536870
+        while let Some(child) = innermost_widget
+            .widget
+            .get_child_at_pos(innermost_widget.ctx, pos)
+        {
+            innermost_widget = child;
         }
 
         Some(innermost_widget)
-    }
-
-    /// Recursively check that the Widget tree upholds various invariants.
-    ///
-    /// Can only be called after `on_event` and `lifecycle`.
-    pub fn debug_validate(&self, after_layout: bool) {
-        if cfg!(not(debug_assertions)) {
-            return;
-        }
-
-        // TODO
-        #[cfg(FALSE)]
-        if self.state().is_new {
-            debug_panic!(
-                "Widget '{}' #{} is invalid: widget did not receive WidgetAdded",
-                self.deref().short_type_name(),
-                self.state().id.to_raw(),
-            );
-        }
-
-        if after_layout && self.state().needs_layout {
-            debug_panic!(
-                "Widget '{}' #{} is invalid: widget layout state not cleared",
-                self.deref().short_type_name(),
-                self.state().id.to_raw(),
-            );
-        }
-
-        for child in self.children() {
-            child.debug_validate(after_layout);
-        }
     }
 }
 

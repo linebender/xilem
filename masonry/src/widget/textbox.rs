@@ -1,13 +1,13 @@
 // Copyright 2018 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use accesskit::Role;
+use accesskit::{NodeBuilder, Role};
 use parley::{
     layout::Alignment,
     style::{FontFamily, FontStack},
 };
 use smallvec::SmallVec;
-use tracing::{trace, trace_span, Span};
+use tracing::{trace_span, Span};
 use vello::{
     kurbo::{Affine, Point, Size, Stroke},
     peniko::{BlendMode, Color},
@@ -154,8 +154,7 @@ impl WidgetMut<'_, Textbox> {
     }
     pub fn set_line_break_mode(&mut self, line_break_mode: LineBreaking) {
         self.widget.line_break_mode = line_break_mode;
-        self.ctx.request_paint();
-        self.ctx.request_accessibility_update();
+        self.ctx.request_render();
     }
 }
 
@@ -174,8 +173,7 @@ impl Widget for Textbox {
                     let made_change = self.editor.pointer_down(inner_origin, state, *button);
                     if made_change {
                         ctx.request_layout();
-                        ctx.request_paint();
-                        ctx.request_accessibility_update();
+                        ctx.request_render();
                         ctx.request_focus();
                         ctx.capture_pointer();
                     }
@@ -188,8 +186,7 @@ impl Widget for Textbox {
                 {
                     // We might have changed text colours, so we need to re-request a layout
                     ctx.request_layout();
-                    ctx.request_paint();
-                    ctx.request_accessibility_update();
+                    ctx.request_render();
                 }
             }
             PointerEvent::PointerUp(button, state) => {
@@ -214,13 +211,19 @@ impl Widget for Textbox {
             ctx.set_handled();
             // TODO: only some handlers need this repaint
             ctx.request_layout();
-            ctx.request_paint();
-            ctx.request_accessibility_update();
+            ctx.request_render();
         }
     }
 
-    fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {
-        // TODO - Handle accesskit::Action::SetTextSelection
+    fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {
+        match event.action {
+            accesskit::Action::SetTextSelection => {
+                if self.editor.set_selection_from_access_event(event) {
+                    ctx.request_layout();
+                }
+            }
+            _ => (),
+        }
         // TODO - Handle accesskit::Action::ReplaceSelectedText
         // TODO - Handle accesskit::Action::SetValue
     }
@@ -244,9 +247,6 @@ impl Widget for Textbox {
 
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
         match event {
-            LifeCycle::WidgetAdded => {
-                ctx.register_as_text_input();
-            }
             LifeCycle::DisabledChanged(disabled) => {
                 if self.show_disabled {
                     if *disabled {
@@ -257,9 +257,6 @@ impl Widget for Textbox {
                 }
                 // TODO: Parley seems to require a relayout when colours change
                 ctx.request_layout();
-            }
-            LifeCycle::BuildFocusChain => {
-                ctx.register_for_focus();
             }
             _ => {}
         }
@@ -294,19 +291,15 @@ impl Widget for Textbox {
             // TODO: Better heuristic here?
             width,
         };
-        let size = bc.constrain(label_size);
-        trace!(
-            "Computed layout: max={:?}. w={}, h={}",
-            max_advance,
-            size.width,
-            size.height,
-        );
-        size
+        bc.constrain(label_size)
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
         if self.editor.needs_rebuild() {
-            debug_panic!("Called Label paint before layout");
+            debug_panic!(
+                "Called {name}::paint with invalid layout",
+                name = self.short_type_name()
+            );
         }
         if self.line_break_mode == LineBreaking::Clip {
             let clip_rect = ctx.size().to_rect();
@@ -338,13 +331,20 @@ impl Widget for Textbox {
         Role::TextInput
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx) {
-        // TODO: Replace with full accessibility.
-        ctx.current_node().set_value(self.text());
+    fn accessibility(&mut self, ctx: &mut AccessCtx, node: &mut NodeBuilder) {
+        self.editor.accessibility(ctx.tree_update, node);
     }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         SmallVec::new()
+    }
+
+    fn accepts_focus(&self) -> bool {
+        true
+    }
+
+    fn accepts_text_input(&self) -> bool {
+        true
     }
 
     fn make_trace_span(&self) -> Span {

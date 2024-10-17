@@ -1,13 +1,13 @@
 // Copyright 2018 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use accesskit::Role;
+use accesskit::{NodeBuilder, Role};
 use parley::{
     layout::Alignment,
     style::{FontFamily, FontStack},
 };
 use smallvec::SmallVec;
-use tracing::{trace, trace_span, Span};
+use tracing::{trace_span, Span};
 use vello::{
     kurbo::{Affine, Point, Size},
     peniko::BlendMode,
@@ -136,7 +136,7 @@ impl WidgetMut<'_, Prose> {
     }
     pub fn set_line_break_mode(&mut self, line_break_mode: LineBreaking) {
         self.widget.line_break_mode = line_break_mode;
-        self.ctx.request_paint();
+        self.ctx.request_layout();
     }
 }
 
@@ -189,8 +189,15 @@ impl Widget for Prose {
         }
     }
 
-    fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {
-        // TODO - Handle accesskit::Action::SetTextSelection
+    fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {
+        match event.action {
+            accesskit::Action::SetTextSelection => {
+                if self.text_layout.set_selection_from_access_event(event) {
+                    ctx.request_layout();
+                }
+            }
+            _ => (),
+        }
     }
 
     fn register_children(&mut self, _ctx: &mut RegisterCtx) {}
@@ -224,9 +231,6 @@ impl Widget for Prose {
                 // TODO: Parley seems to require a relayout when colours change
                 ctx.request_layout();
             }
-            LifeCycle::BuildFocusChain => {
-                // When we add links to `Prose`, they will probably need to be handled here.
-            }
             _ => {}
         }
     }
@@ -254,19 +258,15 @@ impl Widget for Prose {
             height: text_size.height,
             width: text_size.width + 2. * LABEL_X_PADDING,
         };
-        let size = bc.constrain(label_size);
-        trace!(
-            "Computed layout: max={:?}. w={}, h={}",
-            max_advance,
-            size.width,
-            size.height,
-        );
-        size
+        bc.constrain(label_size)
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
         if self.text_layout.needs_rebuild() {
-            debug_panic!("Called Label paint before layout");
+            debug_panic!(
+                "Called {name}::paint with invalid layout",
+                name = self.short_type_name()
+            );
         }
         if self.line_break_mode == LineBreaking::Clip {
             let clip_rect = ctx.size().to_rect();
@@ -281,12 +281,12 @@ impl Widget for Prose {
     }
 
     fn accessibility_role(&self) -> Role {
-        Role::Paragraph
+        Role::Document
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx) {
-        ctx.current_node()
-            .set_name(self.text().as_ref().to_string());
+    fn accessibility(&mut self, ctx: &mut AccessCtx, node: &mut NodeBuilder) {
+        node.set_read_only();
+        self.text_layout.accessibility(ctx.tree_update, node);
     }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {

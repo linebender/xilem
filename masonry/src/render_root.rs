@@ -18,28 +18,29 @@ use web_time::Instant;
 use crate::debug_logger::DebugLogger;
 use crate::dpi::{LogicalPosition, LogicalSize, PhysicalSize};
 use crate::event::{PointerEvent, TextEvent, WindowEvent};
-use crate::passes::accessibility::root_accessibility;
-use crate::passes::compose::root_compose;
-use crate::passes::event::{root_on_access_event, root_on_pointer_event, root_on_text_event};
-use crate::passes::layout::root_layout;
+use crate::passes::accessibility::run_accessibility_pass;
+use crate::passes::anim::run_update_anim_pass;
+use crate::passes::compose::run_compose_pass;
+use crate::passes::event::{
+    run_on_access_event_pass, run_on_pointer_event_pass, run_on_text_event_pass,
+};
+use crate::passes::layout::run_layout_pass;
 use crate::passes::mutate::{mutate_widget, run_mutate_pass};
-use crate::passes::paint::root_paint;
+use crate::passes::paint::run_paint_pass;
+use crate::passes::recurse_on_children;
 use crate::passes::update::{
-    run_update_anim_pass, run_update_disabled_pass, run_update_focus_chain_pass,
-    run_update_focus_pass, run_update_new_widgets_pass, run_update_pointer_pass,
-    run_update_scroll_pass, run_update_stashed_pass,
+    run_update_disabled_pass, run_update_focus_chain_pass, run_update_focus_pass,
+    run_update_pointer_pass, run_update_scroll_pass, run_update_stashed_pass,
+    run_update_widget_tree_pass,
 };
 use crate::text::TextBrush;
-use crate::tree_arena::TreeArena;
+use crate::tree_arena::{ArenaMut, TreeArena};
 use crate::widget::WidgetArena;
 use crate::widget::{WidgetMut, WidgetRef, WidgetState};
-use crate::{
-    AccessEvent, Action, BoxConstraints, CursorIcon, Handled, Widget, WidgetId, WidgetPod,
-};
+use crate::{AccessEvent, Action, CursorIcon, Handled, QueryCtx, Widget, WidgetId, WidgetPod};
 
 // --- MARK: STRUCTS ---
 
-// TODO - Remove pub(crate)
 pub struct RenderRoot {
     pub(crate) root: WidgetPod<Box<dyn Widget>>,
     pub(crate) size_policy: WindowSizePolicy,
@@ -98,11 +99,17 @@ pub struct RenderRootOptions {
     pub use_system_fonts: bool,
     pub size_policy: WindowSizePolicy,
     pub scale_factor: f64,
+
+    /// Add a font from its raw data for use in tests.
+    /// The font is added to the fallback chain for Latin scripts.
+    /// This is expected to be used with `use_system_fonts = false`
+    /// to ensure rendering is consistent cross-platform.
+    ///
+    /// We expect to develop a much more fully-featured font API in the future, but
+    /// this is necessary for our testing of Masonry.
+    pub test_font: Option<Vec<u8>>,
 }
 
-// TODO - Handle custom cursors?
-// TODO - handling timers
-// TODO - Text fields
 pub enum RenderRootSignal {
     Action(Action, WidgetId),
     StartIme,
@@ -123,6 +130,7 @@ impl RenderRoot {
             use_system_fonts,
             size_policy,
             scale_factor,
+            test_font,
         }: RenderRootOptions,
     ) -> Self {
         let mut root = RenderRoot {
@@ -162,21 +170,23 @@ impl RenderRoot {
             rebuild_access_tree: true,
         };
 
-        // We run a set of passes to initialize the widget tree
-        run_update_new_widgets_pass(&mut root);
-        // TODO - Remove this line
-        let mut dummy_state = WidgetState::synthetic(root.root.id(), root.get_kurbo_size());
-        root.post_event_processing(&mut dummy_state);
-
-        // We run a layout pass right away to have a SetSize signal ready
-        if size_policy == WindowSizePolicy::Content {
-            root.root_layout();
+        if let Some(test_font_data) = test_font {
+            let families = root.register_fonts(test_font_data);
+            // Make sure that all of these fonts are in the fallback chain for the Latin script.
+            // <https://en.wikipedia.org/wiki/Script_(Unicode)#Latn>
+            root.state
+                .font_context
+                .collection
+                .append_fallbacks(*b"Latn", families.iter().map(|(family, _)| *family));
         }
+
+        // We run a set of passes to initialize the widget tree
+        root.run_rewrite_passes();
 
         root
     }
 
-    fn root_state(&mut self) -> &mut WidgetState {
+    pub(crate) fn root_state(&mut self) -> &mut WidgetState {
         self.widget_arena
             .widget_states
             .root_token_mut()
@@ -190,16 +200,14 @@ impl RenderRoot {
         match event {
             WindowEvent::Rescale(scale_factor) => {
                 self.scale_factor = scale_factor;
-                // TODO - What we'd really like is to request a repaint and an accessibility
-                // pass for every single widget.
-                self.root_state().needs_layout = true;
-                self.state.emit_signal(RenderRootSignal::RequestRedraw);
+                self.request_render_all();
                 Handled::Yes
             }
             WindowEvent::Resize(size) => {
                 self.size = size;
+                self.root_state().request_layout = true;
                 self.root_state().needs_layout = true;
-                self.state.emit_signal(RenderRootSignal::RequestRedraw);
+                self.run_rewrite_passes();
                 Handled::Yes
             }
             WindowEvent::AnimFrame => {
@@ -212,13 +220,11 @@ impl RenderRoot {
                 let elapsed_ns = last.map(|t| now.duration_since(t).as_nanos()).unwrap_or(0) as u64;
 
                 run_update_anim_pass(self, elapsed_ns);
-
-                let mut root_state = self.widget_arena.get_state_mut(self.root.id()).item.clone();
-                self.post_event_processing(&mut root_state);
+                self.run_rewrite_passes();
 
                 // If this animation will continue, store the time.
                 // If a new animation starts, then it will have zero reported elapsed time.
-                let animation_continues = root_state.needs_anim;
+                let animation_continues = self.root_state().needs_anim;
                 self.last_anim = animation_continues.then_some(now);
 
                 Handled::Yes
@@ -251,40 +257,17 @@ impl RenderRoot {
         self.state.font_context.collection.register_fonts(data)
     }
 
-    /// Add a font from its raw data for use in tests.
-    /// The font is added to the fallback chain for Latin scripts.
-    /// This is expected to be used with
-    /// [`RenderRootOptions.use_system_fonts = false`](RenderRootOptions::use_system_fonts)
-    /// to ensure rendering is consistent cross-platform.
-    ///
-    /// We expect to develop a much more fully-featured font API in the future, but
-    /// this is necessary for our testing of Masonry.
-    pub fn add_test_font(
-        &mut self,
-        data: Vec<u8>,
-    ) -> Vec<(fontique::FamilyId, Vec<fontique::FontInfo>)> {
-        let families = self.register_fonts(data);
-        // Make sure that all of these fonts are in the fallback chain for the Latin script.
-        // <https://en.wikipedia.org/wiki/Script_(Unicode)#Latn>
-        self.state
-            .font_context
-            .collection
-            .append_fallbacks(*b"Latn", families.iter().map(|(family, _)| *family));
-        families
-    }
-
     pub fn redraw(&mut self) -> (Scene, TreeUpdate) {
-        // TODO - Xilem's reconciliation logic will have to be called
-        // by the function that calls this
-
         if self.root_state().needs_layout {
-            self.root_layout();
+            // TODO - Rewrite more clearly after run_rewrite_passes is rewritten
+            self.run_rewrite_passes();
         }
         if self.root_state().needs_layout {
             warn!("Widget requested layout during layout pass");
             self.state.emit_signal(RenderRootSignal::RequestRedraw);
         }
 
+        // TODO - Handle invalidation regions
         // TODO - Improve caching of scenes.
         (self.root_paint(), self.root_accessibility())
     }
@@ -306,6 +289,7 @@ impl RenderRoot {
     }
 
     // --- MARK: ACCESS WIDGETS---
+    /// Get a [`WidgetRef`] to the root widget.
     pub fn get_root_widget(&self) -> WidgetRef<dyn Widget> {
         let root_state_token = self.widget_arena.widget_states.root_token();
         let root_widget_token = self.widget_arena.widgets.root_token();
@@ -325,12 +309,38 @@ impl RenderRoot {
             .downcast_ref::<Box<dyn Widget>>()
             .unwrap();
 
-        WidgetRef {
+        let ctx = QueryCtx {
+            global_state: &self.state,
             widget_state_children: state_ref.children,
             widget_children: widget_ref.children,
             widget_state: state_ref.item,
-            widget,
-        }
+        };
+
+        WidgetRef { ctx, widget }
+    }
+
+    /// Get a [`WidgetRef`] to a specific widget.
+    pub fn get_widget(&self, id: WidgetId) -> Option<WidgetRef<dyn Widget>> {
+        let state_ref = self.widget_arena.widget_states.find(id.to_raw())?;
+        let widget_ref = self
+            .widget_arena
+            .widgets
+            .find(id.to_raw())
+            .expect("found state but not widget");
+
+        // Box<dyn Widget> -> &dyn Widget
+        // Without this step, the type of `WidgetRef::widget` would be
+        // `&Box<dyn Widget> as &dyn Widget`, which would be an additional layer
+        // of indirection.
+        let widget = widget_ref.item;
+        let widget: &dyn Widget = &**widget;
+        let ctx = QueryCtx {
+            global_state: &self.state,
+            widget_state_children: state_ref.children,
+            widget_children: widget_ref.children,
+            widget_state: state_ref.item,
+        };
+        Some(WidgetRef { ctx, widget })
     }
 
     /// Get a [`WidgetMut`] to the root widget.
@@ -356,8 +366,7 @@ impl RenderRoot {
             f(widget_mut)
         });
 
-        let mut root_state = self.widget_arena.get_state_mut(self.root.id()).item.clone();
-        self.post_event_processing(&mut root_state);
+        self.run_rewrite_passes();
 
         res
     }
@@ -372,91 +381,61 @@ impl RenderRoot {
     ) -> R {
         let res = mutate_widget(self, id, f);
 
-        let mut root_state = self.widget_arena.get_state_mut(self.root.id()).item.clone();
-        self.post_event_processing(&mut root_state);
+        self.run_rewrite_passes();
 
         res
     }
 
     // --- MARK: POINTER_EVENT ---
     fn root_on_pointer_event(&mut self, event: PointerEvent) -> Handled {
-        let mut dummy_state = WidgetState::synthetic(self.root.id(), self.get_kurbo_size());
+        let handled = run_on_pointer_event_pass(self, &event);
+        run_update_pointer_pass(self);
 
-        let handled = root_on_pointer_event(self, &mut dummy_state, &event);
-        run_update_pointer_pass(self, &mut dummy_state);
-
-        self.post_event_processing(&mut dummy_state);
-        self.get_root_widget().debug_validate(false);
+        self.run_rewrite_passes();
 
         handled
     }
 
     // --- MARK: TEXT_EVENT ---
     fn root_on_text_event(&mut self, event: TextEvent) -> Handled {
-        let mut dummy_state = WidgetState::synthetic(self.root.id(), self.get_kurbo_size());
+        if matches!(event, TextEvent::FocusChange(false)) {
+            run_on_pointer_event_pass(self, &PointerEvent::new_pointer_leave());
+        }
 
-        let handled = root_on_text_event(self, &mut dummy_state, &event);
-        run_update_focus_pass(self, &mut dummy_state);
+        let handled = run_on_text_event_pass(self, &event);
+        run_update_focus_pass(self);
 
-        self.post_event_processing(&mut dummy_state);
-        self.get_root_widget().debug_validate(false);
+        self.run_rewrite_passes();
 
         handled
     }
 
     // --- MARK: ACCESS_EVENT ---
     pub fn root_on_access_event(&mut self, event: ActionRequest) {
-        let mut dummy_state = WidgetState::synthetic(self.root.id(), self.get_kurbo_size());
-
         let Ok(id) = event.target.0.try_into() else {
             warn!("Received ActionRequest with id 0. This shouldn't be possible.");
             return;
         };
         let event = AccessEvent {
-            target: WidgetId(id),
             action: event.action,
             data: event.data,
         };
 
-        root_on_access_event(self, &mut dummy_state, &event);
+        run_on_access_event_pass(self, &event, WidgetId(id));
 
-        self.post_event_processing(&mut dummy_state);
-        self.get_root_widget().debug_validate(false);
-    }
-
-    // --- MARK: LAYOUT ---
-    pub(crate) fn root_layout(&mut self) {
-        let window_size = self.get_kurbo_size();
-        let bc = match self.size_policy {
-            WindowSizePolicy::User => BoxConstraints::tight(window_size),
-            WindowSizePolicy::Content => BoxConstraints::UNBOUNDED,
-        };
-
-        let mut dummy_state = WidgetState::synthetic(self.root.id(), self.get_kurbo_size());
-        let size = root_layout(self, &mut dummy_state, &bc);
-
-        if let WindowSizePolicy::Content = self.size_policy {
-            let new_size = LogicalSize::new(size.width, size.height).to_physical(self.scale_factor);
-            if self.size != new_size {
-                self.size = new_size;
-                self.state.emit_signal(RenderRootSignal::SetSize(new_size));
-            }
-        }
-
-        run_update_pointer_pass(self, &mut dummy_state);
-
-        self.post_event_processing(&mut dummy_state);
+        self.run_rewrite_passes();
     }
 
     // --- MARK: PAINT ---
     fn root_paint(&mut self) -> Scene {
-        root_paint(self)
+        run_paint_pass(self)
     }
 
     // --- MARK: ACCESSIBILITY ---
     // TODO - Integrate in unit tests?
     fn root_accessibility(&mut self) -> TreeUpdate {
-        let mut tree_update = root_accessibility(self, self.rebuild_access_tree, self.scale_factor);
+        let mut tree_update =
+            run_accessibility_pass(self, self.rebuild_access_tree, self.scale_factor);
         self.rebuild_access_tree = false;
 
         tree_update.tree = Some(Tree {
@@ -474,47 +453,33 @@ impl RenderRoot {
         kurbo::Size::new(size.width, size.height)
     }
 
-    // --- MARK: POST-EVENT ---
-    fn post_event_processing(&mut self, widget_state: &mut WidgetState) {
-        // If children are changed during the handling of an event,
-        // we need to send RouteWidgetAdded now, so that they are ready for update/layout.
-        if widget_state.children_changed {
-            // TODO - Update IME handlers
-            // Send TextFieldRemoved signal
+    // --- MARK: REWRITE PASSES ---
+    /// Run all rewrite passes on widget tree.
+    ///
+    /// Rewrite passes are passes which occur after external events, and
+    /// update flags and internal values to a consistent state.
+    ///
+    /// See Pass Spec RFC for details. (TODO - Link to doc instead.)
+    pub(crate) fn run_rewrite_passes(&mut self) {
+        // TODO - Rerun passes if invalidation flags are still set
 
-            run_update_new_widgets_pass(self);
-        }
+        // Note: this code doesn't do any short-circuiting, because each pass is
+        // expected to have its own early exits.
+        // Calling a run_xxx_pass (or root_xxx) should always be very fast if
+        // the pass doesn't need to do anything.
 
-        if self.state.debug_logger.layout_tree.root.is_none() {
-            self.state.debug_logger.layout_tree.root = Some(self.root.id().to_raw() as u32);
-        }
+        run_mutate_pass(self);
+        run_update_widget_tree_pass(self);
+        run_update_disabled_pass(self);
+        run_update_stashed_pass(self);
+        run_update_focus_chain_pass(self);
+        run_update_focus_pass(self);
+        run_layout_pass(self);
+        run_update_scroll_pass(self);
+        run_compose_pass(self);
+        run_update_pointer_pass(self);
 
-        if !self.state.scroll_request_targets.is_empty() {
-            run_update_scroll_pass(self);
-        }
-
-        if self.root_state().needs_compose && !self.root_state().needs_layout {
-            root_compose(self, widget_state);
-        }
-
-        // Update the disabled and stashed state if necessary
-        // Always do this before updating the focus-chain
-        if self.root_state().needs_update_disabled {
-            run_update_disabled_pass(self);
-        }
-        if self.root_state().needs_update_stashed {
-            run_update_stashed_pass(self);
-        }
-
-        // Update the focus-chain if necessary
-        // Always do this before sending focus change, since this event updates the focus chain.
-        if self.root_state().update_focus_chain {
-            run_update_focus_chain_pass(self);
-        }
-
-        run_update_focus_pass(self, widget_state);
-
-        if self.root_state().request_anim {
+        if self.root_state().needs_anim {
             self.state.emit_signal(RenderRootSignal::RequestAnimFrame);
         }
 
@@ -528,8 +493,32 @@ impl RenderRoot {
         {
             self.state.emit_signal(RenderRootSignal::RequestRedraw);
         }
+    }
 
-        run_mutate_pass(self, widget_state);
+    pub(crate) fn request_render_all(&mut self) {
+        fn request_render_all_in(
+            mut widget: ArenaMut<'_, Box<dyn Widget>>,
+            state: ArenaMut<'_, WidgetState>,
+        ) {
+            state.item.needs_paint = true;
+            state.item.needs_accessibility = true;
+            state.item.request_paint = true;
+            state.item.request_accessibility = true;
+
+            let id = state.item.id;
+            recurse_on_children(
+                id,
+                widget.reborrow_mut(),
+                state.children,
+                |widget, mut state| {
+                    request_render_all_in(widget, state.reborrow_mut());
+                },
+            );
+        }
+
+        let (root_widget, mut root_state) = self.widget_arena.get_pair_mut(self.root.id());
+        request_render_all_in(root_widget, root_state.reborrow_mut());
+        self.state.emit_signal(RenderRootSignal::RequestRedraw);
     }
 
     // Checks whether the given id points to a widget that is "interactive".
@@ -577,12 +566,21 @@ impl RenderRoot {
     pub(crate) fn focus_chain(&mut self) -> &[WidgetId] {
         &self.root_state().focus_chain
     }
+
+    #[allow(dead_code)]
+    pub(crate) fn needs_rewrite_passes(&mut self) -> bool {
+        self.root_state().needs_rewrite_passes() || self.state.focus_changed()
+    }
 }
 
 impl RenderRootState {
     /// Send a signal to the runner of this app, which allows global actions to be triggered by a widget.
     pub(crate) fn emit_signal(&mut self, signal: RenderRootSignal) {
         self.signal_queue.push_back(signal);
+    }
+
+    pub(crate) fn focus_changed(&self) -> bool {
+        self.focused_widget != self.next_focused_widget
     }
 }
 
@@ -600,11 +598,3 @@ impl RenderRootSignal {
         )
     }
 }
-
-/*
-TODO:
-- Invalidation regions
-- Timer handling
-- prepare_paint
-- Focus-related stuff
-*/

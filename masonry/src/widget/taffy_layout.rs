@@ -1,7 +1,7 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use accesskit::Role;
+use accesskit::{NodeBuilder, Role};
 use smallvec::SmallVec;
 use tracing::{trace_span, Span};
 use vello::kurbo::{Affine, Line, Stroke};
@@ -10,7 +10,7 @@ use taffy;
 use taffy::LayoutInput;
 
 use crate::theme::get_debug_color;
-use crate::widget::WidgetMut;
+use crate::widget::{Axis, WidgetMut};
 use crate::{AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycleCtx, PaintCtx, Point, PointerEvent, RegisterCtx, Size, StatusChange, TextEvent, Widget, WidgetId, WidgetPod};
 
 pub struct TaffyLayout {
@@ -296,7 +296,7 @@ impl Widget for TaffyLayout {
         Role::GenericContainer
     }
 
-    fn accessibility(&mut self, _: &mut AccessCtx) {}
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, _node: &mut NodeBuilder) {}
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         self.children
@@ -372,7 +372,7 @@ impl<'w, 'a> taffy::LayoutPartialTree for TaffyLayoutCtx<'w, 'a> {
             }
             taffy::RunMode::ComputeSize => {
                 let child = &mut self.widget.children[usize::from(node_id)];
-                let axis_size = self.ctx.run_measure(&mut child.widget, &box_constraints, convert::from_taffy_axis(input.axis));
+                let axis_size = measure_child(child, self.ctx, &box_constraints, convert::from_taffy_axis(input.axis));
                 let taffy_size = match input.axis {
                     taffy::RequestedAxis::Horizontal => taffy::Size {
                         width: axis_size as f32,
@@ -391,6 +391,14 @@ impl<'w, 'a> taffy::LayoutPartialTree for TaffyLayoutCtx<'w, 'a> {
                 taffy::LayoutOutput::HIDDEN
             }
         }
+    }
+}
+
+
+fn measure_child(child: &mut Child, ctx: &mut LayoutCtx, bc: &BoxConstraints, axis: Axis) -> f64 {
+    match axis {
+        Axis::Horizontal => ctx.run_layout(&mut child.widget, bc).width,
+        Axis::Vertical => ctx.run_layout(&mut child.widget, bc).height,
     }
 }
 
@@ -482,7 +490,7 @@ mod convert {
             available_space: taffy::AvailableSpace,
         ) -> f64 {
             known_dimension.unwrap_or(match available_space {
-                taffy::AvailableSpace::Definite(val) => val,
+                taffy::AvailableSpace::Definite(val) => val.max(0.0),
                 taffy::AvailableSpace::MaxContent => f32::INFINITY,
                 taffy::AvailableSpace::MinContent => f32::INFINITY,
             }) as f64
@@ -490,16 +498,22 @@ mod convert {
 
         BoxConstraints::new(
             Size {
-                width: to_min_constraint(input.known_dimensions.width, input.available_space.width),
+                width: to_min_constraint(
+                    input.known_dimensions.width.and_then(|width| Some(width.max(0.0))),
+                    input.available_space.width,
+                ),
                 height: to_min_constraint(
-                    input.known_dimensions.height,
+                    input.known_dimensions.height.and_then(|height| Some(height.max(0.0))),
                     input.available_space.height,
                 ),
             },
             Size {
-                width: to_max_constraint(input.known_dimensions.width, input.available_space.width),
+                width: to_max_constraint(
+                    input.known_dimensions.width.and_then(|width| Some(width.max(0.0))),
+                    input.available_space.width,
+                ),
                 height: to_max_constraint(
-                    input.known_dimensions.height,
+                    input.known_dimensions.height.and_then(|height| Some(height.max(0.0))),
                     input.available_space.height,
                 ),
             },

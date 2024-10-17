@@ -3,15 +3,14 @@
 
 #![allow(missing_docs)]
 
-use accesskit::Role;
+use accesskit::{NodeBuilder, Role};
 use smallvec::SmallVec;
 use tracing::{trace_span, Span};
 use vello::kurbo::Rect;
 use vello::Scene;
 
-use super::Axis;
 use crate::paint_scene_helpers::{fill_color, stroke};
-use crate::widget::WidgetMut;
+use crate::widget::{Axis, WidgetMut};
 use crate::{
     theme, AccessCtx, AccessEvent, AllowRawMut, BoxConstraints, EventCtx, LayoutCtx, LifeCycle,
     LifeCycleCtx, PaintCtx, Point, PointerEvent, RegisterCtx, Size, StatusChange, TextEvent,
@@ -30,14 +29,12 @@ use crate::{
 // TODO - Fade scrollbars? Find out how Linux/MacOS/Windows do it
 // TODO - Rename cursor to oval/rect/bar/grabber/grabbybar
 // TODO - Rename progress to ???
-#[allow(dead_code)]
 pub struct ScrollBar {
     axis: Axis,
     pub(crate) cursor_progress: f64,
     pub(crate) moved: bool,
     pub(crate) portal_size: f64,
     pub(crate) content_size: f64,
-    hovered: bool,
     grab_anchor: Option<f64>,
 }
 
@@ -50,7 +47,6 @@ impl ScrollBar {
             moved: false,
             portal_size,
             content_size,
-            hovered: false,
             grab_anchor: None,
         }
     }
@@ -113,14 +109,14 @@ impl WidgetMut<'_, ScrollBar> {
     pub fn set_sizes(&mut self, portal_size: f64, content_size: f64) {
         self.widget.portal_size = portal_size;
         self.widget.content_size = content_size;
-        self.ctx.request_paint();
+        self.ctx.request_render();
     }
 
     // TODO - Remove?
     pub fn set_content_size(&mut self, content_size: f64) {
         // TODO - cursor_progress
         self.widget.content_size = content_size;
-        self.ctx.request_paint();
+        self.ctx.request_render();
     }
 }
 
@@ -146,7 +142,7 @@ impl Widget for ScrollBar {
                     self.moved = true;
                     self.grab_anchor = Some(0.5);
                 };
-                ctx.request_paint();
+                ctx.request_render();
             }
             PointerEvent::PointerMove(state) => {
                 let mouse_pos =
@@ -161,11 +157,11 @@ impl Widget for ScrollBar {
                     );
                     self.moved = true;
                 }
-                ctx.request_paint();
+                ctx.request_render();
             }
             PointerEvent::PointerUp(_, _) => {
                 self.grab_anchor = None;
-                ctx.request_paint();
+                ctx.request_render();
             }
             _ => {}
         }
@@ -221,7 +217,7 @@ impl Widget for ScrollBar {
         Role::ScrollBar
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx) {
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, _node: &mut NodeBuilder) {
         // TODO
         // Use set_scroll_x/y_min/max?
     }

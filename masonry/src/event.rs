@@ -5,8 +5,6 @@
 
 use crate::dpi::{LogicalPosition, PhysicalPosition, PhysicalSize};
 use crate::kurbo::Rect;
-// TODO - See issue https://github.com/linebender/xilem/issues/367
-use crate::WidgetId;
 
 use std::path::PathBuf;
 
@@ -211,8 +209,6 @@ pub enum TextEvent {
 
 #[derive(Debug, Clone)]
 pub struct AccessEvent {
-    // TODO - Split out widget id from AccessEvent
-    pub target: WidgetId,
     pub action: accesskit::Action,
     pub data: Option<accesskit::ActionData>,
 }
@@ -276,8 +272,7 @@ pub enum LifeCycle {
     /// the monitor's refresh, causing lag or jerky animations.
     AnimFrame(u64),
 
-    // TODO - Put in StatusChange
-    /// Called when the Disabled state of the widgets is changed.
+    /// Called when the Disabled state of the widget is changed.
     ///
     /// To check if a widget is disabled, see [`is_disabled`].
     ///
@@ -287,16 +282,16 @@ pub enum LifeCycle {
     /// [`set_disabled`]: crate::EventCtx::set_disabled
     DisabledChanged(bool),
 
-    /// Called when the widget tree changes and Masonry wants to rebuild the
-    /// Focus-chain.
+    // TODO - Link to tutorial doc.
+    /// Called when the Stashed state of the widget is changed.
     ///
-    /// It is the only place from which [`register_for_focus`] should be called.
-    /// By doing so the widget can get focused by other widgets using [`focus_next`] or [`focus_prev`].
+    /// To check if a widget is stashed, see [`is_stashed`].
     ///
-    /// [`register_for_focus`]: crate::LifeCycleCtx::register_for_focus
-    /// [`focus_next`]: crate::EventCtx::focus_next
-    /// [`focus_prev`]: crate::EventCtx::focus_prev
-    BuildFocusChain,
+    /// To change a widget's stashed state, see [`set_stashed`].
+    ///
+    /// [`is_stashed`]: crate::EventCtx::is_stashed
+    /// [`set_stashed`]: crate::EventCtx::set_stashed
+    StashedChanged(bool),
 
     /// Called when a child widgets uses
     /// [`EventCtx::request_pan_to_this`](crate::EventCtx::request_pan_to_this).
@@ -307,15 +302,15 @@ pub enum LifeCycle {
 #[non_exhaustive]
 #[derive(Debug, Clone)]
 pub enum StatusChange {
-    /// Called when the "hot" status changes.
+    /// Called when the "hovered" status changes.
     ///
     /// This will always be called _before_ the event that triggered it; that is,
     /// when the mouse moves over a widget, that widget will receive
-    /// `StatusChange::HotChanged` before it receives `Event::MouseMove`.
+    /// `StatusChange::HoveredChanged` before it receives `Event::MouseMove`.
     ///
-    /// See [`is_hot`](crate::EventCtx::is_hot) for
-    /// discussion about the hot status.
-    HotChanged(bool),
+    /// See [`is_hovered`](crate::EventCtx::is_hovered) for
+    /// discussion about the hovered status.
+    HoveredChanged(bool),
 
     /// Called when the focus status changes.
     ///
@@ -333,6 +328,21 @@ pub enum StatusChange {
 }
 
 impl PointerEvent {
+    pub fn new_pointer_leave() -> Self {
+        // TODO - The fact we're creating so many dummy values might be
+        // a sign we should refactor that struct
+        let pointer_state = PointerState {
+            physical_position: Default::default(),
+            position: Default::default(),
+            buttons: Default::default(),
+            mods: Default::default(),
+            count: 0,
+            focus: false,
+            force: None,
+        };
+        PointerEvent::PointerLeave(pointer_state)
+    }
+
     pub fn pointer_state(&self) -> &PointerState {
         match self {
             PointerEvent::PointerDown(_, state)
@@ -468,25 +478,6 @@ impl PointerState {
 }
 
 impl LifeCycle {
-    // TODO - link this to documentation of stashed widgets - See issue https://github.com/linebender/xilem/issues/372
-    /// Whether this event should be sent to widgets which are currently not visible and not
-    /// accessible.
-    ///
-    /// If a widget changes which children are `hidden` it must call [`children_changed`].
-    /// For a more detailed explanation of the `hidden` state, see [`Event::should_propagate_to_hidden`].
-    ///
-    /// [`children_changed`]: crate::EventCtx::children_changed
-    /// [`Event::should_propagate_to_hidden`]: Event::should_propagate_to_hidden
-    pub fn should_propagate_to_hidden(&self) -> bool {
-        match self {
-            LifeCycle::WidgetAdded => true,
-            LifeCycle::AnimFrame(_) => true,
-            LifeCycle::DisabledChanged(_) => true,
-            LifeCycle::BuildFocusChain => false,
-            LifeCycle::RequestPanToChild(_) => false,
-        }
-    }
-
     /// Short name, for debug logging.
     ///
     /// Essentially returns the enum variant name.
@@ -495,7 +486,7 @@ impl LifeCycle {
             LifeCycle::WidgetAdded => "WidgetAdded",
             LifeCycle::AnimFrame(_) => "AnimFrame",
             LifeCycle::DisabledChanged(_) => "DisabledChanged",
-            LifeCycle::BuildFocusChain => "BuildFocusChain",
+            LifeCycle::StashedChanged(_) => "StashedChanged",
             LifeCycle::RequestPanToChild(_) => "RequestPanToChild",
         }
     }
