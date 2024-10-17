@@ -30,21 +30,10 @@ pub fn taffy_layout<State, Action, Seq: TaffySequence<State, Action>>(
 pub struct TaffyLayout<Seq, State, Action = ()> {
     sequence: Seq,
     style: Style,
-    /// Used to associate the State and Action in the call to `.grid()` with the State and Action
-    /// used in the View implementation, to allow inference to flow backwards, allowing State and
-    /// Action to be inferred properly
+    /// Used to associate the State and Action in the call to `.taffy_layout()` with the State and
+    /// Action used in the View implementation, to allow inference to flow backwards, allowing
+    /// State and Action to be inferred properly
     phantom: PhantomData<fn() -> (State, Action)>,
-}
-
-impl<Seq, State, Action> TaffyLayout<Seq, State, Action> {
-    /*pub fn spacing(mut self, spacing: f64) -> Self {
-        if spacing.is_finite() && spacing >= 0.0 {
-            self.spacing = spacing;
-        } else {
-            panic!("Invalid `spacing` {spacing}; expected a non-negative finite value.")
-        }
-        self
-    }*/
 }
 
 impl<Seq, State, Action> ViewMarker for TaffyLayout<Seq, State, Action> {}
@@ -141,11 +130,8 @@ impl SuperElement<TaffyElement, ViewCtx> for TaffyElement {
 
 impl<W: Widget> SuperElement<Pod<W>, ViewCtx> for TaffyElement {
     fn upcast(ctx: &mut ViewCtx, child: Pod<W>) -> Self {
-        // Getting here means that the widget didn't use .grid_item or .grid_pos.
-        // This currently places the widget in the top left cell.
-        // There is not much else, beyond purposefully failing, that can be done here,
-        // because there isn't enough information to determine an appropriate spot
-        // for the widget.
+        // Getting here means that the widget didn't use .with_taffy_style.
+        // Uses the default Taffy style.
         TaffyElement::Child(ctx.boxed_pod(child), Style::default())
     }
 
