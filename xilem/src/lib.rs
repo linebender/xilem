@@ -13,6 +13,7 @@ use masonry::{
     widget::{RootWidget, WidgetMut},
     Widget, WidgetId, WidgetPod,
 };
+use view::{into_flex_seq, AsFlexSequence};
 use winit::{
     error::EventLoopError,
     window::{Window, WindowAttributes},
@@ -223,12 +224,18 @@ where
 /// }
 /// ```
 pub trait WidgetViewSequence<State, Action = ()>:
-    ViewSequence<State, Action, ViewCtx, Pod<any_view::DynWidget>>
+    ViewSequence<State, Action, ViewCtx, Pod<Box<dyn Widget>>>
 {
+    fn into_flex_seq(self) -> AsFlexSequence<Self, State, Action>
+    where
+        Self: Sized,
+    {
+        into_flex_seq(self)
+    }
 }
 
 impl<Seq, State, Action> WidgetViewSequence<State, Action> for Seq where
-    Seq: ViewSequence<State, Action, ViewCtx, Pod<any_view::DynWidget>>
+    Seq: ViewSequence<State, Action, ViewCtx, Pod<Box<dyn Widget>>>
 {
 }
 

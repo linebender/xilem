@@ -12,7 +12,7 @@ use xilem_core::{
     ViewId, ViewMarker, ViewPathTracker, ViewSequence,
 };
 
-use crate::{AnyWidgetView, Pod, ViewCtx, WidgetView};
+use crate::{AnyWidgetView, Pod, ViewCtx, WidgetView, WidgetViewSequence};
 
 pub use masonry::widget::{Axis, CrossAxisAlignment, FlexParams, MainAxisAlignment};
 
@@ -766,5 +766,132 @@ where
         };
 
         flex_item.message(view_state.inner.as_mut().unwrap(), rest, message, app_state)
+    }
+}
+
+pub struct AsFlexSequence<Seq, State, Action> {
+    inner: Seq,
+    phantom: PhantomData<fn() -> (State, Action)>,
+}
+
+pub fn into_flex_seq<State, Action, Seq: WidgetViewSequence<State, Action>>(
+    seq: Seq,
+) -> AsFlexSequence<Seq, State, Action> {
+    AsFlexSequence {
+        inner: seq,
+        phantom: PhantomData,
+    }
+}
+
+struct FlexConversionSplice<'s, FlexElementSplice> {
+    scratch: &'s mut AppendVec<Pod<Box<dyn Widget>>>,
+    flex_splice: &'s mut FlexElementSplice,
+}
+
+// intentionally doesn't use `SuperElement::with_downcast` as it results in unnecessary double-boxing
+impl<'s, FlexElementSplice: ElementSplice<FlexElement>> ElementSplice<Pod<Box<dyn Widget>>>
+    for FlexConversionSplice<'s, FlexElementSplice>
+{
+    fn with_scratch<R>(&mut self, f: impl FnOnce(&mut AppendVec<Pod<Box<dyn Widget>>>) -> R) -> R {
+        let r = f(self.scratch);
+        self.flex_splice.with_scratch(|scratch| {
+            for element in self.scratch.drain() {
+                scratch.push(FlexElement::Child(element, FlexParams::default()));
+            }
+        });
+        r
+    }
+
+    fn insert(&mut self, element: Pod<Box<dyn Widget>>) {
+        self.flex_splice
+            .insert(FlexElement::Child(element, FlexParams::default()));
+    }
+
+    fn mutate<R>(&mut self, f: impl FnOnce(WidgetMut<'_, Box<dyn Widget>>) -> R) -> R {
+        self.flex_splice.mutate(|mut e| {
+            f(e.parent
+                .child_mut(e.idx)
+                .expect("Guaranteed to be a widget"))
+        })
+    }
+
+    fn skip(&mut self, n: usize) {
+        self.flex_splice.skip(n);
+    }
+
+    fn delete<R>(
+        &mut self,
+        f: impl FnOnce(<Pod<Box<dyn Widget>> as ViewElement>::Mut<'_>) -> R,
+    ) -> R {
+        self.flex_splice.delete(|mut e| {
+            f(e.parent
+                .child_mut(e.idx)
+                .expect("Guaranteed to be a widget"))
+        })
+    }
+}
+
+impl<State, Action, Seq> ViewSequence<State, Action, ViewCtx, FlexElement>
+    for AsFlexSequence<Seq, State, Action>
+where
+    State: 'static,
+    Action: 'static,
+    Seq: ViewSequence<State, Action, ViewCtx, Pod<Box<dyn Widget>>>,
+{
+    type SeqState = (AppendVec<Pod<Box<dyn Widget>>>, Seq::SeqState);
+
+    fn seq_build(
+        &self,
+        ctx: &mut ViewCtx,
+        elements: &mut AppendVec<FlexElement>,
+    ) -> Self::SeqState {
+        let mut inner_elements = AppendVec::default();
+        // It would be nice to avoid extra allocations...
+        let state = self.inner.seq_build(ctx, &mut inner_elements);
+        for element in inner_elements.drain() {
+            elements.push(FlexElement::Child(element, FlexParams::default()));
+        }
+        (inner_elements, state)
+    }
+
+    fn seq_rebuild(
+        &self,
+        prev: &Self,
+        (inner_elements, seq_state): &mut Self::SeqState,
+        ctx: &mut ViewCtx,
+        elements: &mut impl ElementSplice<FlexElement>,
+    ) {
+        let mut inner_splice = FlexConversionSplice {
+            scratch: inner_elements,
+            flex_splice: elements,
+        };
+        self.inner
+            .seq_rebuild(&prev.inner, seq_state, ctx, &mut inner_splice);
+        debug_assert!(inner_elements.is_empty());
+    }
+
+    fn seq_teardown(
+        &self,
+        (inner_elements, seq_state): &mut Self::SeqState,
+        ctx: &mut ViewCtx,
+        elements: &mut impl ElementSplice<FlexElement>,
+    ) {
+        let mut inner_splice = FlexConversionSplice {
+            scratch: inner_elements,
+            flex_splice: elements,
+        };
+        self.inner.seq_teardown(seq_state, ctx, &mut inner_splice);
+        debug_assert!(inner_elements.is_empty());
+    }
+
+    fn seq_message(
+        &self,
+        (_, seq_state): &mut Self::SeqState,
+        id_path: &[ViewId],
+        message: DynMessage,
+        app_state: &mut State,
+    ) -> MessageResult<Action> {
+        self.inner
+            .seq_message(seq_state, id_path, message, app_state)
     }
 }
