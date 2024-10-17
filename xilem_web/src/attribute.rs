@@ -370,7 +370,7 @@ where
     ) {
         element.rebuild_attribute_modifier();
         self.el
-            .rebuild(&prev.el, view_state, ctx, element.reborrow());
+            .rebuild(&prev.el, view_state, ctx, element.reborrow_mut());
         element.set_attribute(&self.name, &self.value);
         element.mark_end_of_attribute_modifier();
     }

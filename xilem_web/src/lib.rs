@@ -352,7 +352,7 @@ impl<'a, N: DomNode> PodMut<'a, N> {
         }
     }
 
-    fn reborrow(&mut self) -> PodMut<N> {
+    fn reborrow_mut(&mut self) -> PodMut<N> {
         PodMut {
             node: self.node,
             props: self.props,

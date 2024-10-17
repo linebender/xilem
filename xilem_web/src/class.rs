@@ -356,7 +356,7 @@ where
         // The actual modifiers also have to happen after the children are rebuilt, see `add_class` below.
         element.rebuild_class_modifier();
         self.el
-            .rebuild(&prev.el, view_state, ctx, element.reborrow());
+            .rebuild(&prev.el, view_state, ctx, element.reborrow_mut());
         for class in self.classes.class_iter() {
             element.add_class(&class);
         }

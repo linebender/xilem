@@ -74,10 +74,6 @@ pub trait View<State, Action, Context: ViewPathTracker, Message = DynMessage>:
     fn build(&self, ctx: &mut Context) -> (Self::Element, Self::ViewState);
 
     /// Update `element` based on the difference between `self` and `prev`.
-    ///
-    /// This returns `element`, to allow parent views to modify the element after this `rebuild` has
-    /// completed. This returning is needed as some reference types do not allow reborrowing,
-    /// without unwieldy boilerplate.
     fn rebuild(
         &self,
         prev: &Self,

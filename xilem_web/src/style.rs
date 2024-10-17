@@ -471,7 +471,7 @@ where
     ) {
         element.rebuild_style_modifier();
         self.el
-            .rebuild(&prev.el, view_state, ctx, element.reborrow());
+            .rebuild(&prev.el, view_state, ctx, element.reborrow_mut());
         for (key, value) in &self.styles {
             element.set_style(key, value);
         }
@@ -552,7 +552,7 @@ where
     ) {
         element.rebuild_style_modifier();
         self.el
-            .rebuild(&prev.el, view_state, ctx, element.reborrow());
+            .rebuild(&prev.el, view_state, ctx, element.reborrow_mut());
         if prev.radians != self.radians || element.was_updated("transform") {
             *css_repr = modify_rotate_transform(element.get_style("transform"), self.radians);
         }
@@ -667,7 +667,7 @@ where
     ) {
         element.rebuild_style_modifier();
         self.el
-            .rebuild(&prev.el, view_state, ctx, element.reborrow());
+            .rebuild(&prev.el, view_state, ctx, element.reborrow_mut());
         if prev.scale != self.scale || element.was_updated("transform") {
             *css_repr = modify_scale_transform(element.get_style("transform"), self.scale);
         }

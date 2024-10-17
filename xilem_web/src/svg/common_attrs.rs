@@ -113,7 +113,7 @@ where
     ) {
         element.rebuild_attribute_modifier();
         self.child
-            .rebuild(&prev.child, child_state, ctx, element.reborrow());
+            .rebuild(&prev.child, child_state, ctx, element.reborrow_mut());
         if self.brush != prev.brush {
             *brush_svg_repr = brush_to_string(&self.brush).into_attr_value();
         }
@@ -196,7 +196,7 @@ where
         element.rebuild_attribute_modifier();
 
         self.child
-            .rebuild(&prev.child, child_state, ctx, element.reborrow());
+            .rebuild(&prev.child, child_state, ctx, element.reborrow_mut());
 
         if self.brush != prev.brush {
             *brush_svg_repr = brush_to_string(&self.brush).into_attr_value();

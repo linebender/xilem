@@ -182,7 +182,7 @@ where
         mut element: Mut<Self::Element>,
     ) {
         self.element
-            .rebuild(&prev.element, view_state, ctx, element.reborrow());
+            .rebuild(&prev.element, view_state, ctx, element.reborrow_mut());
         element.node.apply_props(element.props);
         (self.callback)(element.node);
     }
