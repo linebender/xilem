@@ -126,6 +126,7 @@ pub mod widget;
 pub mod app_driver;
 pub mod debug_logger;
 pub mod debug_values;
+#[cfg(doc)]
 pub mod doc;
 pub mod event_loop_runner;
 pub mod passes;

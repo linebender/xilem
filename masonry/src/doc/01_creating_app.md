@@ -1,4 +1,4 @@
-**TODO - Add screenshots**
+**TODO - Add screenshots - see [#501](https://github.com/linebender/xilem/issues/501)**
 
 This tutorial covers the to-do-list example shown in the README, and uses it as a support to explain the basic Masonry architecture.
 
