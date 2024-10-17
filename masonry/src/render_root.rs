@@ -582,6 +582,10 @@ impl RenderRootState {
     pub(crate) fn focus_changed(&self) -> bool {
         self.focused_widget != self.next_focused_widget
     }
+
+    pub(crate) fn is_focused(&self, id: WidgetId) -> bool {
+        self.focused_widget == Some(id)
+    }
 }
 
 impl RenderRootSignal {

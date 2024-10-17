@@ -38,7 +38,7 @@ fn compose_widget(
     }
 
     // TODO - Add unit tests for this.
-    if moved {
+    if moved && state.item.accepts_text_input && global_state.is_focused(state.item.id) {
         let ime_area = state.item.get_ime_area();
         global_state.emit_signal(RenderRootSignal::new_ime_moved_signal(ime_area));
     }
