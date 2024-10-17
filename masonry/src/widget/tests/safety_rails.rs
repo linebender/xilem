@@ -5,7 +5,7 @@ use smallvec::smallvec;
 
 use crate::testing::{ModularWidget, TestHarness, TestWidgetExt};
 use crate::widget::Flex;
-use crate::{LifeCycle, Point, PointerButton, Size, Widget, WidgetId, WidgetPod};
+use crate::{Point, PointerButton, Size, Update, Widget, WidgetId, WidgetPod};
 
 fn make_parent_widget<W: Widget>(child: W) -> ModularWidget<WidgetPod<W>> {
     let child = WidgetPod::new(child);
@@ -53,7 +53,7 @@ fn check_forget_to_recurse_lifecycle() {
 #[test]
 fn check_forget_to_recurse_widget_added() {
     let widget = make_parent_widget(Flex::row()).lifecycle_fn(|child, ctx, event| {
-        if let LifeCycle::WidgetAdded = event {
+        if let Update::WidgetAdded = event {
             // We forget to call child.lifecycle();
             ctx.skip_child(child);
         } else {
@@ -327,8 +327,8 @@ fn check_recurse_paint_twice() {
 #[test]
 fn check_layout_stashed() {
     let widget = make_parent_widget(Flex::row())
-        .lifecycle_fn(|child, ctx, event| {
-            if matches!(event, LifeCycle::WidgetAdded) {
+        .update_fn(|child, ctx, event| {
+            if matches!(event, Update::WidgetAdded) {
                 ctx.set_stashed(child, true);
             }
         })

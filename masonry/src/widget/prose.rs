@@ -18,8 +18,8 @@ use crate::widget::{LineBreaking, WidgetMut};
 use crate::{
     text::{TextBrush, TextWithSelection},
     widget::label::LABEL_X_PADDING,
-    AccessCtx, AccessEvent, ArcStr, BoxConstraints, CursorIcon, EventCtx, LayoutCtx, LifeCycle,
-    LifeCycleCtx, PaintCtx, PointerEvent, RegisterCtx, StatusChange, TextEvent, Widget, WidgetId,
+    AccessCtx, AccessEvent, ArcStr, BoxConstraints, CursorIcon, EventCtx, LayoutCtx, PaintCtx,
+    PointerEvent, RegisterCtx, StatusChange, TextEvent, Update, UpdateCtx, Widget, WidgetId,
 };
 
 /// The prose widget is a widget which displays text which can be
@@ -203,7 +203,7 @@ impl Widget for Prose {
     fn register_children(&mut self, _ctx: &mut RegisterCtx) {}
 
     #[allow(missing_docs)]
-    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange) {
+    fn on_status_change(&mut self, ctx: &mut UpdateCtx, event: &StatusChange) {
         match event {
             StatusChange::FocusChanged(false) => {
                 self.text_layout.focus_lost();
@@ -217,9 +217,9 @@ impl Widget for Prose {
         }
     }
 
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
+    fn update(&mut self, ctx: &mut UpdateCtx, event: &Update) {
         match event {
-            LifeCycle::DisabledChanged(disabled) => {
+            Update::DisabledChanged(disabled) => {
                 if self.show_disabled {
                     if *disabled {
                         self.text_layout

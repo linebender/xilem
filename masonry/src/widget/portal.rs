@@ -13,8 +13,8 @@ use vello::Scene;
 
 use crate::widget::{Axis, ScrollBar, WidgetMut};
 use crate::{
-    AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, LayoutCtx, LifeCycle,
-    LifeCycleCtx, PaintCtx, PointerEvent, RegisterCtx, StatusChange, TextEvent, Widget, WidgetId,
+    AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, LayoutCtx, PaintCtx,
+    PointerEvent, RegisterCtx, StatusChange, TextEvent, Update, UpdateCtx, Widget, WidgetId,
     WidgetPod,
 };
 
@@ -320,7 +320,7 @@ impl<W: Widget> Widget for Portal<W> {
     // TODO - Handle scroll-related events?
     fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {}
 
-    fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange) {}
+    fn on_status_change(&mut self, _ctx: &mut UpdateCtx, _event: &StatusChange) {}
 
     fn register_children(&mut self, ctx: &mut RegisterCtx) {
         ctx.register_child(&mut self.child);
@@ -328,9 +328,9 @@ impl<W: Widget> Widget for Portal<W> {
         ctx.register_child(&mut self.scrollbar_vertical);
     }
 
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
+    fn update(&mut self, ctx: &mut UpdateCtx, event: &Update) {
         match event {
-            LifeCycle::RequestPanToChild(target) => {
+            Update::RequestPanToChild(target) => {
                 let portal_size = ctx.size();
                 let content_size = ctx.get_raw_ref(&mut self.child).ctx().layout_rect().size();
 

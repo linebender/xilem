@@ -17,8 +17,8 @@ use crate::contexts::AccessCtx;
 use crate::paint_scene_helpers::UnitPoint;
 use crate::widget::WidgetPod;
 use crate::{
-    AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycleCtx, PaintCtx, PointerEvent, Rect,
-    RegisterCtx, Size, StatusChange, TextEvent, Widget, WidgetId,
+    AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent, Rect, RegisterCtx,
+    Size, StatusChange, TextEvent, UpdateCtx, Widget, WidgetId,
 };
 
 // TODO - Have child widget type as generic argument
@@ -95,7 +95,7 @@ impl Widget for Align {
         ctx.register_child(&mut self.child);
     }
 
-    fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange) {}
+    fn on_status_change(&mut self, _ctx: &mut UpdateCtx, _event: &StatusChange) {}
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
         let size = ctx.run_layout(&mut self.child, &bc.loosen());

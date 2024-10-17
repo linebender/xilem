@@ -12,8 +12,8 @@ use masonry::app_driver::{AppDriver, DriverCtx};
 use masonry::dpi::LogicalSize;
 use masonry::widget::{Align, CrossAxisAlignment, Flex, Label, RootWidget, SizedBox};
 use masonry::{
-    AccessCtx, AccessEvent, Action, BoxConstraints, Color, EventCtx, LayoutCtx, LifeCycleCtx,
-    PaintCtx, Point, PointerEvent, RegisterCtx, Size, StatusChange, TextEvent, Widget, WidgetId,
+    AccessCtx, AccessEvent, Action, BoxConstraints, Color, EventCtx, LayoutCtx, PaintCtx, Point,
+    PointerEvent, RegisterCtx, Size, StatusChange, TextEvent, UpdateCtx, Widget, WidgetId,
     WidgetPod,
 };
 use smallvec::{smallvec, SmallVec};
@@ -182,7 +182,7 @@ impl Widget for CalcButton {
         }
     }
 
-    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange) {
+    fn on_status_change(&mut self, ctx: &mut UpdateCtx, event: &StatusChange) {
         // Masonry doesn't let us change a widget's attributes directly.
         // We use `mutate_later` to get a mutable reference to the inner widget
         // and change its border color. This is a simple way to implement a

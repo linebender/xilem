@@ -12,9 +12,9 @@ use masonry::app_driver::{AppDriver, DriverCtx};
 use masonry::kurbo::{BezPath, Stroke};
 use masonry::widget::{ObjectFit, RootWidget};
 use masonry::{
-    AccessCtx, AccessEvent, Action, Affine, BoxConstraints, Color, EventCtx, LayoutCtx,
-    LifeCycleCtx, PaintCtx, Point, PointerEvent, Rect, RegisterCtx, Size, StatusChange, TextEvent,
-    Widget, WidgetId,
+    AccessCtx, AccessEvent, Action, Affine, BoxConstraints, Color, EventCtx, LayoutCtx, PaintCtx,
+    Point, PointerEvent, Rect, RegisterCtx, Size, StatusChange, TextEvent, UpdateCtx, Widget,
+    WidgetId,
 };
 use parley::layout::Alignment;
 use parley::style::{FontFamily, FontStack, StyleProperty};
@@ -32,9 +32,6 @@ impl AppDriver for Driver {
 
 struct CustomWidget(String);
 
-// If this widget has any child widgets it should call its event, update and layout
-// (and lifecycle) methods as well to make sure it works. Some things can be filtered,
-// but a general rule is to just pass it through unless you really know you don't want it.
 impl Widget for CustomWidget {
     fn on_pointer_event(&mut self, _ctx: &mut EventCtx, _event: &PointerEvent) {}
 
@@ -44,7 +41,7 @@ impl Widget for CustomWidget {
 
     fn register_children(&mut self, _ctx: &mut RegisterCtx) {}
 
-    fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange) {}
+    fn on_status_change(&mut self, _ctx: &mut UpdateCtx, _event: &StatusChange) {}
 
     fn layout(&mut self, _layout_ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
         // BoxConstraints are passed by the parent widget.

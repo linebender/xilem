@@ -31,8 +31,8 @@ pub type PointerEventFn<S> = dyn FnMut(&mut S, &mut EventCtx, &PointerEvent);
 pub type TextEventFn<S> = dyn FnMut(&mut S, &mut EventCtx, &TextEvent);
 pub type AccessEventFn<S> = dyn FnMut(&mut S, &mut EventCtx, &AccessEvent);
 pub type RegisterChildrenFn<S> = dyn FnMut(&mut S, &mut RegisterCtx);
-pub type StatusChangeFn<S> = dyn FnMut(&mut S, &mut LifeCycleCtx, &StatusChange);
-pub type LifeCycleFn<S> = dyn FnMut(&mut S, &mut LifeCycleCtx, &LifeCycle);
+pub type StatusChangeFn<S> = dyn FnMut(&mut S, &mut UpdateCtx, &StatusChange);
+pub type UpdateFn<S> = dyn FnMut(&mut S, &mut UpdateCtx, &Update);
 pub type LayoutFn<S> = dyn FnMut(&mut S, &mut LayoutCtx, &BoxConstraints) -> Size;
 pub type ComposeFn<S> = dyn FnMut(&mut S, &mut ComposeCtx);
 pub type PaintFn<S> = dyn FnMut(&mut S, &mut PaintCtx, &mut Scene);
@@ -56,7 +56,7 @@ pub struct ModularWidget<S> {
     on_access_event: Option<Box<AccessEventFn<S>>>,
     register_children: Option<Box<RegisterChildrenFn<S>>>,
     on_status_change: Option<Box<StatusChangeFn<S>>>,
-    lifecycle: Option<Box<LifeCycleFn<S>>>,
+    update: Option<Box<UpdateFn<S>>>,
     layout: Option<Box<LayoutFn<S>>>,
     compose: Option<Box<ComposeFn<S>>>,
     paint: Option<Box<PaintFn<S>>>,
@@ -77,7 +77,7 @@ pub struct ReplaceChild {
 ///
 /// ```
 /// # use masonry::widget::Label;
-/// # use masonry::{LifeCycle};
+/// # use masonry::{Update};
 /// use masonry::testing::{Recording, Record, TestWidgetExt};
 /// use masonry::testing::TestHarness;
 /// use assert_matches::assert_matches;
@@ -86,7 +86,7 @@ pub struct ReplaceChild {
 ///
 /// TestHarness::create(widget);
 /// assert_matches!(recording.next().unwrap(), Record::RegisterChildren);
-/// assert_matches!(recording.next().unwrap(), Record::L(LifeCycle::WidgetAdded));
+/// assert_matches!(recording.next().unwrap(), Record::L(Update::WidgetAdded));
 /// ```
 pub struct Recorder<W> {
     recording: Recording,
@@ -107,7 +107,7 @@ pub enum Record {
     AE(AccessEvent),
     RegisterChildren,
     SC(StatusChange),
-    L(LifeCycle),
+    L(Update),
     Layout(Size),
     Compose,
     Paint,
@@ -142,7 +142,7 @@ impl<S> ModularWidget<S> {
             on_access_event: None,
             register_children: None,
             on_status_change: None,
-            lifecycle: None,
+            update: None,
             layout: None,
             compose: None,
             paint: None,
@@ -201,17 +201,14 @@ impl<S> ModularWidget<S> {
 
     pub fn status_change_fn(
         mut self,
-        f: impl FnMut(&mut S, &mut LifeCycleCtx, &StatusChange) + 'static,
+        f: impl FnMut(&mut S, &mut UpdateCtx, &StatusChange) + 'static,
     ) -> Self {
         self.on_status_change = Some(Box::new(f));
         self
     }
 
-    pub fn lifecycle_fn(
-        mut self,
-        f: impl FnMut(&mut S, &mut LifeCycleCtx, &LifeCycle) + 'static,
-    ) -> Self {
-        self.lifecycle = Some(Box::new(f));
+    pub fn update_fn(mut self, f: impl FnMut(&mut S, &mut UpdateCtx, &Update) + 'static) -> Self {
+        self.update = Some(Box::new(f));
         self
     }
 
@@ -281,14 +278,14 @@ impl<S: 'static> Widget for ModularWidget<S> {
         }
     }
 
-    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange) {
+    fn on_status_change(&mut self, ctx: &mut UpdateCtx, event: &StatusChange) {
         if let Some(f) = self.on_status_change.as_mut() {
             f(&mut self.state, ctx, event);
         }
     }
 
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
-        if let Some(f) = self.lifecycle.as_mut() {
+    fn update(&mut self, ctx: &mut UpdateCtx, event: &Update) {
+        if let Some(f) = self.update.as_mut() {
             f(&mut self.state, ctx, event);
         }
     }
@@ -416,7 +413,7 @@ impl Widget for ReplaceChild {
 
     fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {}
 
-    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, _event: &StatusChange) {
+    fn on_status_change(&mut self, ctx: &mut UpdateCtx, _event: &StatusChange) {
         ctx.request_layout();
     }
 
@@ -424,7 +421,7 @@ impl Widget for ReplaceChild {
         ctx.register_child(&mut self.child);
     }
 
-    fn lifecycle(&mut self, _ctx: &mut LifeCycleCtx, _event: &LifeCycle) {}
+    fn update(&mut self, _ctx: &mut UpdateCtx, _event: &Update) {}
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
         ctx.run_layout(&mut self.child, bc)
@@ -497,14 +494,14 @@ impl<W: Widget> Widget for Recorder<W> {
         self.child.register_children(ctx);
     }
 
-    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange) {
+    fn on_status_change(&mut self, ctx: &mut UpdateCtx, event: &StatusChange) {
         self.recording.push(Record::SC(event.clone()));
         self.child.on_status_change(ctx, event);
     }
 
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
+    fn update(&mut self, ctx: &mut UpdateCtx, event: &Update) {
         self.recording.push(Record::L(event.clone()));
-        self.child.lifecycle(ctx, event);
+        self.child.update(ctx, event);
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {

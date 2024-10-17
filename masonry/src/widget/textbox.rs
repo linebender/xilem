@@ -18,8 +18,8 @@ use winit::event::Ime;
 use crate::text::{TextBrush, TextEditor, TextWithSelection};
 use crate::widget::{LineBreaking, WidgetMut};
 use crate::{
-    AccessCtx, AccessEvent, BoxConstraints, CursorIcon, EventCtx, LayoutCtx, LifeCycle,
-    LifeCycleCtx, PaintCtx, PointerEvent, RegisterCtx, StatusChange, TextEvent, Widget, WidgetId,
+    AccessCtx, AccessEvent, BoxConstraints, CursorIcon, EventCtx, LayoutCtx, PaintCtx,
+    PointerEvent, RegisterCtx, StatusChange, TextEvent, Update, UpdateCtx, Widget, WidgetId,
 };
 
 const TEXTBOX_PADDING: f64 = 3.0;
@@ -231,7 +231,7 @@ impl Widget for Textbox {
     fn register_children(&mut self, _ctx: &mut RegisterCtx) {}
 
     #[allow(missing_docs)]
-    fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange) {
+    fn on_status_change(&mut self, ctx: &mut UpdateCtx, event: &StatusChange) {
         match event {
             StatusChange::FocusChanged(false) => {
                 self.editor.focus_lost();
@@ -245,9 +245,9 @@ impl Widget for Textbox {
         }
     }
 
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
+    fn update(&mut self, ctx: &mut UpdateCtx, event: &Update) {
         match event {
-            LifeCycle::DisabledChanged(disabled) => {
+            Update::DisabledChanged(disabled) => {
                 if self.show_disabled {
                     if *disabled {
                         self.editor.set_brush(crate::theme::DISABLED_TEXT_COLOR);

@@ -38,7 +38,7 @@ impl FocusTaker {
                 }
             })
             .lifecycle_fn(|_is_focused, ctx, event| {
-                if let LifeCycle::BuildFocusChain = event {
+                if let Update::BuildFocusChain = event {
                     ctx.register_for_focus();
                 }
             })
