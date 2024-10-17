@@ -5,7 +5,7 @@ use assert_matches::assert_matches;
 
 use crate::event::{PointerButton, PointerEvent, PointerState};
 use crate::testing::{widget_ids, Record, Recording, TestHarness, TestWidgetExt as _};
-use crate::widget::{Button, Flex, Label, SizedBox};
+use crate::widget::{Button, Flex, SizedBox};
 use crate::*;
 
 fn next_pointer_event(recording: &Recording) -> Option<PointerEvent> {
@@ -138,23 +138,23 @@ fn propagate_hovered() {
 
 #[test]
 fn update_hovered_on_mouse_leave() {
-    let [label_id] = widget_ids();
+    let [button_id] = widget_ids();
 
-    let label_rec = Recording::default();
+    let button_rec = Recording::default();
 
-    let widget = Label::new("hello").with_id(label_id).record(&label_rec);
+    let widget = Button::new("hello").with_id(button_id).record(&button_rec);
 
     let mut harness = TestHarness::create(widget);
 
-    harness.mouse_move_to(label_id);
-    assert!(is_hovered(&harness, label_id));
+    harness.mouse_move_to(button_id);
+    assert!(is_hovered(&harness, button_id));
 
-    label_rec.clear();
+    button_rec.clear();
     println!("leaving");
     harness.process_pointer_event(PointerEvent::PointerLeave(PointerState::empty()));
 
-    assert!(!is_hovered(&harness, label_id));
-    assert_eq!(next_hovered_changed(&label_rec), Some(false));
+    assert!(!is_hovered(&harness, button_id));
+    assert_eq!(next_hovered_changed(&button_rec), Some(false));
 }
 
 // TODO - https://github.com/PoignardAzur/masonry-rs/issues/58
