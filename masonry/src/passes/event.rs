@@ -37,6 +37,7 @@ fn run_event_pass<E>(
     event: &E,
     allow_pointer_capture: bool,
     pass_fn: impl FnMut(&mut dyn Widget, &mut EventCtx, &E),
+    trace: bool,
 ) -> Handled {
     let mut pass_fn = pass_fn;
 
@@ -59,11 +60,14 @@ fn run_event_pass<E>(
         let widget = widget_mut.item;
 
         if !is_handled {
-            trace!(
-                "Widget '{}' {} visited",
-                widget.short_type_name(),
-                widget_id,
-            );
+            let _span = widget.make_trace_span().entered();
+            if trace {
+                trace!(
+                    "Widget '{}' {} visited",
+                    widget.short_type_name(),
+                    widget_id,
+                );
+            }
 
             pass_fn(widget, &mut ctx, event);
             is_handled = ctx.is_handled;
@@ -78,8 +82,14 @@ fn run_event_pass<E>(
 
 // --- MARK: POINTER_EVENT ---
 pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEvent) -> Handled {
-    let _span = info_span!("pointer_event").entered();
-    if !event.is_high_density() {
+    let _span = info_span!("dispatch_pointer_event").entered();
+
+    if event.is_high_density() {
+        // We still want to record that this pass occurred in the debug file log.
+        // However, we choose not record any other tracing for this event,
+        // as that would have a lot of noise.
+        trace!("Running ON_POINTER_EVENT pass with {}", event.short_name());
+    } else {
         debug!("Running ON_POINTER_EVENT pass with {}", event.short_name());
     }
 
@@ -98,6 +108,7 @@ pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEv
         |widget, ctx, event| {
             widget.on_pointer_event(ctx, event);
         },
+        !event.is_high_density(),
     );
 
     if matches!(
@@ -132,16 +143,29 @@ pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -
         run_on_pointer_event_pass(root, &PointerEvent::new_pointer_leave());
     }
 
-    let _span = info_span!("text_event").entered();
-    if !event.is_high_density() {
+    let _span = info_span!("dispatch_text_event").entered();
+
+    if event.is_high_density() {
+        // We still want to record that this pass occurred in the debug file log.
+        // However, we choose not record any other tracing for this event,
+        // as that would have a lot of noise.
+        trace!("Running ON_TEXT_EVENT pass with {}", event.short_name());
+    } else {
         debug!("Running ON_TEXT_EVENT pass with {}", event.short_name());
     }
 
     let target = root.global_state.focused_widget;
 
-    let mut handled = run_event_pass(root, target, event, false, |widget, ctx, event| {
-        widget.on_text_event(ctx, event);
-    });
+    let mut handled = run_event_pass(
+        root,
+        target,
+        event,
+        false,
+        |widget, ctx, event| {
+            widget.on_text_event(ctx, event);
+        },
+        !event.is_high_density(),
+    );
 
     // Handle Tab focus
     if let TextEvent::KeyboardKey(key, mods) = event {
@@ -178,9 +202,16 @@ pub(crate) fn run_on_access_event_pass(
     let _span = info_span!("access_event").entered();
     debug!("Running ON_ACCESS_EVENT pass with {}", event.short_name());
 
-    let mut handled = run_event_pass(root, Some(target), event, false, |widget, ctx, event| {
-        widget.on_access_event(ctx, event);
-    });
+    let mut handled = run_event_pass(
+        root,
+        Some(target),
+        event,
+        false,
+        |widget, ctx, event| {
+            widget.on_access_event(ctx, event);
+        },
+        true,
+    );
 
     // Handle focus events
     match event.action {
