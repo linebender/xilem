@@ -6,7 +6,7 @@ use std::collections::{HashMap, VecDeque};
 use accesskit::{ActionRequest, Tree, TreeUpdate};
 use parley::fontique::{self, Collection, CollectionOptions};
 use parley::{FontContext, LayoutContext};
-use tracing::warn;
+use tracing::{info_span, warn};
 use vello::kurbo::{self, Rect};
 use vello::Scene;
 
@@ -388,6 +388,7 @@ impl RenderRoot {
 
     // --- MARK: POINTER_EVENT ---
     fn root_on_pointer_event(&mut self, event: PointerEvent) -> Handled {
+        let _span = info_span!("pointer_event");
         let handled = run_on_pointer_event_pass(self, &event);
         run_update_pointer_pass(self);
 
@@ -398,6 +399,7 @@ impl RenderRoot {
 
     // --- MARK: TEXT_EVENT ---
     fn root_on_text_event(&mut self, event: TextEvent) -> Handled {
+        let _span = info_span!("text_event");
         if matches!(event, TextEvent::FocusChange(false)) {
             run_on_pointer_event_pass(self, &PointerEvent::new_pointer_leave());
         }
@@ -412,6 +414,7 @@ impl RenderRoot {
 
     // --- MARK: ACCESS_EVENT ---
     pub fn root_on_access_event(&mut self, event: ActionRequest) {
+        let _span = info_span!("access_event");
         let Ok(id) = event.target.0.try_into() else {
             warn!("Received ActionRequest with id 0. This shouldn't be possible.");
             return;
