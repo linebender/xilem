@@ -58,7 +58,7 @@ impl Button {
     /// ```
     pub fn from_label(label: Label) -> Button {
         Button {
-            label: WidgetPod::new(label.with_pointer_interaction(false)),
+            label: WidgetPod::new(label),
         }
     }
 }
