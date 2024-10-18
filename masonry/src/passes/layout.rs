@@ -27,7 +27,8 @@ pub(crate) fn run_layout_on<W: Widget>(
     let mut widget = parent_ctx.widget_children.get_child_mut(id).unwrap();
     let mut state = parent_ctx.widget_state_children.get_child_mut(id).unwrap();
 
-    let _span = widget.item.make_trace_span().entered();
+    let trace = parent_ctx.global_state.trace.layout;
+    let _span = trace.then(|| widget.item.make_trace_span().entered());
 
     let mut children_ids = SmallVec::new();
     if cfg!(debug_assertions) {
@@ -69,7 +70,9 @@ pub(crate) fn run_layout_on<W: Widget>(
     state.item.request_accessibility = true;
 
     bc.debug_check(widget.item.short_type_name());
-    trace!("Computing layout with constraints {:?}", bc);
+    if trace {
+        trace!("Computing layout with constraints {:?}", bc);
+    }
 
     state.item.local_paint_rect = Rect::ZERO;
 
@@ -108,12 +111,14 @@ pub(crate) fn run_layout_on<W: Widget>(
             pod.id(),
         );
     }
-    trace!(
-        "Computed layout: size={}, baseline={}, insets={:?}",
-        new_size,
-        state.item.baseline_offset,
-        state.item.paint_insets,
-    );
+    if trace {
+        trace!(
+            "Computed layout: size={}, baseline={}, insets={:?}",
+            new_size,
+            state.item.baseline_offset,
+            state.item.paint_insets,
+        );
+    }
 
     state.item.needs_layout = false;
     state.item.is_expecting_place_child_call = true;
