@@ -982,6 +982,9 @@ impl LayoutCtx<'_> {
     /// - It serves as a mask for painting operations of the widget's children (*not* the widget itself).
     /// - Pointer events must be inside that path to reach the widget's children.
     pub fn set_clip_path(&mut self, path: Rect) {
+        // This is intentionally not-gated because clip paths are:
+        // 1) Relatively rare in the tree
+        // 2) An easy potential source of items not being visible when expected
         trace!("set_clip_path {:?}", path);
         self.widget_state.clip = Some(path);
         // TODO - Updating the clip path may have
