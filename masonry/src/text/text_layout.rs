@@ -4,7 +4,6 @@
 //! A type for laying out, drawing, and interacting with text.
 
 use std::collections::{HashMap, HashSet};
-use std::rc::Rc;
 
 use accesskit::{NodeBuilder, NodeId, Role, TreeUpdate};
 use parley::context::RangedBuilder;
@@ -13,7 +12,7 @@ use parley::layout::{Alignment, Cursor};
 use parley::style::{FontFamily, FontStack, GenericFamily, StyleProperty};
 use parley::{FontContext, Layout, LayoutContext};
 use unicode_segmentation::UnicodeSegmentation;
-use vello::kurbo::{Affine, Line, Point, Rect, Size};
+use vello::kurbo::{Affine, Line, Point, Size};
 use vello::peniko::{self, Color, Gradient};
 use vello::Scene;
 
@@ -53,8 +52,6 @@ pub struct TextLayout {
 
     alignment: Alignment,
     max_advance: Option<f32>,
-
-    links: Rc<[(Rect, usize)]>,
 
     needs_layout: bool,
     needs_line_breaks: bool,
@@ -184,8 +181,6 @@ impl TextLayout {
 
             max_advance: None,
             alignment: Default::default(),
-
-            links: Rc::new([]),
 
             needs_layout: true,
             needs_line_breaks: true,
@@ -445,11 +440,6 @@ impl TextLayout {
             self.needs_line_breaks = false;
             self.layout
                 .break_all_lines(self.max_advance, self.alignment);
-
-            // TODO:
-            // self.links = text
-            //     .links()
-            // ...
         }
     }
 
@@ -586,7 +576,6 @@ impl std::fmt::Debug for TextLayout {
             .field("outdated?", &self.needs_rebuild())
             .field("width", &self.layout.width())
             .field("height", &self.layout.height())
-            .field("links", &self.links)
             .finish_non_exhaustive()
     }
 }
