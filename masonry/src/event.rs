@@ -384,6 +384,7 @@ impl PointerEvent {
 impl TextEvent {
     pub fn short_name(&self) -> &'static str {
         match self {
+            TextEvent::KeyboardKey(KeyEvent { repeat: true, .. }, _) => "KeyboardKey (repeat)",
             TextEvent::KeyboardKey(_, _) => "KeyboardKey",
             TextEvent::Ime(Ime::Disabled) => "Ime::Disabled",
             TextEvent::Ime(Ime::Enabled) => "Ime::Enabled",
@@ -397,7 +398,7 @@ impl TextEvent {
 
     pub fn is_high_density(&self) -> bool {
         match self {
-            TextEvent::KeyboardKey(event, _) => event.repeat,
+            TextEvent::KeyboardKey(_, _) => false,
             TextEvent::Ime(_) => false,
             // Basically every mouse click/scroll event seems to produce a modifier change event.
             TextEvent::ModifierChange(_) => true,
