@@ -47,6 +47,7 @@ mod vec_splice;
 mod vecmap;
 
 pub mod concurrent;
+pub mod diff;
 pub mod elements;
 pub mod events;
 pub mod interfaces;
@@ -57,16 +58,16 @@ pub use self::{
         after_build, after_rebuild, before_teardown, AfterBuild, AfterRebuild, BeforeTeardown,
     },
     app::App,
-    attribute::{Attr, Attributes, ElementWithAttributes, WithAttributes},
+    attribute::{Attr, AttributeModifier, Attributes},
     attribute_value::{AttributeValue, IntoAttributeValue},
-    class::{AsClassIter, Class, Classes, ElementWithClasses, WithClasses},
+    class::{Class, ClassIter, ClassModifier, Classes},
     context::{MessageThunk, ViewCtx},
     dom_helpers::{document, document_body, get_element_by_id, input_event_target_value},
     element_props::ElementProps,
     message::{DynMessage, Message},
     optional_action::{Action, OptionalAction},
     pointer::{Pointer, PointerDetails, PointerMsg},
-    style::{style, ElementWithStyle, IntoStyles, Style, Styles, WithStyle},
+    style::{style, Style, StyleIter, StyleModifier, Styles},
 };
 
 #[cfg(feature = "hydration")]
@@ -391,6 +392,25 @@ impl<T, N: AsRef<T> + DomNode> AsRef<T> for Pod<N> {
 impl<T, N: AsRef<T> + DomNode> AsRef<T> for PodMut<'_, N> {
     fn as_ref(&self) -> &T {
         <N as AsRef<T>>::as_ref(self.node)
+    }
+}
+
+/// This is basically equivalent to `AsMut`, it's intended to give access to modifiers of a [`ViewElement`].
+///
+/// The name is chosen, such that it reads nicely, e.g. in a trait bound: [`DomView<T, A, Element: With<Classes>>`], while not behaving differently as [`AsRef`] on [`Pod`] and [`PodMut`].
+pub trait With<M> {
+    fn modifier(&mut self) -> &mut M;
+}
+
+impl<T, N: DomNode<Props: With<T>>> With<T> for Pod<N> {
+    fn modifier(&mut self) -> &mut T {
+        <N::Props as With<T>>::modifier(&mut self.props)
+    }
+}
+
+impl<T, N: DomNode<Props: With<T>>> With<T> for PodMut<'_, N> {
+    fn modifier(&mut self) -> &mut T {
+        <N::Props as With<T>>::modifier(self.props)
     }
 }
 

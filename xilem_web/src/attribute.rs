@@ -4,68 +4,201 @@
 use crate::{
     core::{MessageResult, Mut, View, ViewElement, ViewId, ViewMarker},
     vecmap::VecMap,
-    AttributeValue, DomNode, DomView, DynMessage, ElementProps, Pod, PodMut, ViewCtx,
+    AttributeValue, DomView, DynMessage, ElementProps, IntoAttributeValue, ViewCtx, With,
 };
 use std::marker::PhantomData;
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
 type CowStr = std::borrow::Cow<'static, str>;
 
-/// This trait allows (modifying) HTML/SVG/MathML attributes on DOM [`Element`](`crate::interfaces::Element`)s.
+#[derive(Debug, PartialEq, Clone)]
+/// An modifier element to either set or remove an attribute.
 ///
-/// Modifications have to be done on the up-traversal of [`View::rebuild`], i.e. after [`View::rebuild`] was invoked for descendent views.
-/// See [`Attr::build`] and [`Attr::rebuild`], how to use this for [`ViewElement`]s that implement this trait.
-/// When these methods are used, they have to be used in every reconciliation pass (i.e. [`View::rebuild`]).
-pub trait WithAttributes {
-    /// Needs to be invoked within a [`View::rebuild`] before traversing to descendent views, and before any modifications (with [`set_attribute`](`WithAttributes::set_attribute`)) are done in that view
-    fn rebuild_attribute_modifier(&mut self);
-
-    /// Needs to be invoked after any modifications are done
-    fn mark_end_of_attribute_modifier(&mut self);
-
-    /// Sets or removes (when value is `None`) an attribute from the underlying element.
-    ///
-    /// When in [`View::rebuild`] this has to be invoked *after* traversing the inner `View` with [`View::rebuild`]
-    fn set_attribute(&mut self, name: &CowStr, value: &Option<AttributeValue>);
-
-    // TODO first find a use-case for this...
-    // fn get_attr(&self, name: &str) -> Option<&AttributeValue>;
-}
-
-#[derive(Debug, PartialEq)]
-enum AttributeModifier {
-    Remove(CowStr),
+/// It's used in [`Attributes`].
+pub enum AttributeModifier {
     Set(CowStr, AttributeValue),
-    EndMarker(u16),
+    Remove(CowStr),
 }
 
-const HYDRATING: u16 = 1 << 14;
-const CREATING: u16 = 1 << 15;
-const RESERVED_BIT_MASK: u16 = HYDRATING | CREATING;
+impl AttributeModifier {
+    /// Returns the attribute name of this modifier.
+    fn name(&self) -> &CowStr {
+        let (AttributeModifier::Set(name, _) | AttributeModifier::Remove(name)) = self;
+        name
+    }
 
-/// This contains all the current attributes of an [`Element`](`crate::interfaces::Element`)
-#[derive(Debug, Default)]
+    /// Convert this modifier into its attribute name.
+    fn into_name(self) -> CowStr {
+        let (AttributeModifier::Set(name, _) | AttributeModifier::Remove(name)) = self;
+        name
+    }
+}
+
+impl<K: Into<CowStr>, V: IntoAttributeValue> From<(K, V)> for AttributeModifier {
+    fn from((name, value): (K, V)) -> Self {
+        match value.into_attr_value() {
+            Some(value) => AttributeModifier::Set(name.into(), value),
+            None => AttributeModifier::Remove(name.into()),
+        }
+    }
+}
+
+#[derive(Default)]
+/// An Element modifier that manages all attributes of an Element.
 pub struct Attributes {
-    attribute_modifiers: Vec<AttributeModifier>,
-    updated_attributes: VecMap<CowStr, ()>,
+    modifiers: Vec<AttributeModifier>,
+    // TODO think about this (for a `VecSplice`) for more efficient insertion etc.,
+    // but this is an additional trade-off of memory-usage and complexity,
+    // while probably not helping much in the average case (of very few styles)...
+    updated: VecMap<CowStr, ()>,
     idx: u16,
-    /// the two most significant bits are reserved for whether this was just created (bit 15) and if it's currently being hydrated (bit 14)
-    start_idx: u16,
+    in_hydration: bool,
+    was_created: bool,
+}
+
+impl With<Attributes> for ElementProps {
+    fn modifier(&mut self) -> &mut Attributes {
+        self.attributes()
+    }
 }
 
 impl Attributes {
+    /// Creates a new `Attributes` modifier.
+    ///
+    /// `size_hint` is used to avoid unnecessary allocations while traversing up the view-tree when adding modifiers in [`View::build`].
     pub(crate) fn new(size_hint: usize, #[cfg(feature = "hydration")] in_hydration: bool) -> Self {
-        #[allow(unused_mut)]
-        let mut start_idx = CREATING;
-        #[cfg(feature = "hydration")]
-        if in_hydration {
-            start_idx |= HYDRATING;
-        }
-
         Self {
-            attribute_modifiers: Vec::with_capacity(size_hint),
-            start_idx,
+            modifiers: Vec::with_capacity(size_hint),
+            was_created: true,
+            #[cfg(feature = "hydration")]
+            in_hydration,
             ..Default::default()
+        }
+    }
+
+    /// Applies potential changes of the attributes of an element to the underlying DOM node.
+    pub fn apply_changes(&mut self, element: &web_sys::Element) {
+        #[cfg(feature = "hydration")]
+        if self.in_hydration {
+            self.in_hydration = false;
+            self.was_created = false;
+        } else if self.was_created {
+            for modifier in &self.modifiers {
+                match modifier {
+                    AttributeModifier::Remove(n) => remove_attribute(element, n),
+                    AttributeModifier::Set(n, v) => set_attribute(element, n, &v.serialize()),
+                }
+            }
+            self.was_created = false;
+        } else if !self.updated.is_empty() {
+            for modifier in self.modifiers.iter().rev() {
+                match modifier {
+                    AttributeModifier::Remove(name) if self.updated.remove(name).is_some() => {
+                        remove_attribute(element, name);
+                    }
+                    AttributeModifier::Set(name, value) if self.updated.remove(name).is_some() => {
+                        set_attribute(element, name, &value.serialize());
+                    }
+                    _ => {}
+                }
+            }
+            // if there's any remaining key in updated, it means these are deleted keys
+            for (name, ()) in self.updated.drain() {
+                remove_attribute(element, &name);
+            }
+        }
+        debug_assert!(self.updated.is_empty());
+    }
+
+    #[inline]
+    /// Rebuilds the current element, while ensuring that the order of the modifiers stays correct.
+    /// Any children should be rebuilt in inside `f`, *before* modifing any other properties of [`Attributes`].
+    pub fn rebuild<E: With<Self>>(mut element: E, prev_len: usize, f: impl FnOnce(E)) {
+        element.modifier().idx -= prev_len as u16;
+        f(element);
+    }
+
+    #[inline]
+    /// Returns whether the underlying element has been rebuilt, this could e.g. happen, when `OneOf` changes a variant to a different element.
+    pub fn was_recreated(&self) -> bool {
+        self.was_created
+    }
+
+    #[inline]
+    /// Pushes `modifier` at the end of the current modifiers.
+    pub fn push(&mut self, modifier: impl Into<AttributeModifier>) {
+        let modifier = modifier.into();
+        if !self.was_created && !self.in_hydration {
+            self.updated.insert(modifier.name().clone(), ());
+        }
+        self.modifiers.push(modifier);
+        self.idx += 1;
+    }
+
+    #[inline]
+    /// Inserts `modifier` at the current index.
+    pub fn insert(&mut self, modifier: impl Into<AttributeModifier>) {
+        let modifier = modifier.into();
+        self.updated.insert(modifier.name().clone(), ());
+        // TODO this could potentially be expensive, maybe think about `VecSplice` again.
+        // Although in the average case, this is likely not relevant, as usually very few attributes are used, thus shifting is probably good enough
+        // I.e. a `VecSplice` is probably less optimal (either more complicated code, and/or more memory usage)
+        self.modifiers.insert(self.idx as usize, modifier);
+        self.idx += 1;
+    }
+
+    #[inline]
+    /// Mutates the next modifier.
+    pub fn mutate<R>(&mut self, f: impl FnOnce(&mut AttributeModifier) -> R) -> R {
+        let modifier = &mut self.modifiers[self.idx as usize];
+        let old = modifier.name().clone();
+        let rv = f(modifier);
+        let new = modifier.name();
+        if *new != old {
+            self.updated.insert(new.clone(), ());
+        }
+        self.updated.insert(old, ());
+        self.idx += 1;
+        rv
+    }
+
+    /// Skips the next `count` modifiers.
+    pub fn skip(&mut self, count: usize) {
+        self.idx += count as u16;
+    }
+
+    /// Deletes the next `count` modifiers.
+    pub fn delete(&mut self, count: usize) {
+        let start = self.idx as usize;
+        for modifier in self.modifiers.drain(start..(start + count)) {
+            self.updated.insert(modifier.into_name(), ());
+        }
+    }
+
+    /// Updates the next modifier, based on the diff of `prev` and `next`.
+    pub fn update(&mut self, prev: &AttributeModifier, next: &AttributeModifier) {
+        if self.was_recreated() {
+            self.push(next.clone());
+        } else if next != prev {
+            self.mutate(|modifier| *modifier = next.clone());
+        } else {
+            self.skip(1);
+        }
+    }
+
+    /// Updates the next modifier, based on the diff of `prev` and `next`, this can be used only when the previous modifier has the same name `key`, and only its value has changed.
+    pub fn update_with_same_key<Value: IntoAttributeValue + PartialEq + Clone>(
+        &mut self,
+        key: impl Into<CowStr>,
+        prev: &Value,
+        next: &Value,
+    ) {
+        if self.was_recreated() {
+            self.push((key, next.clone()));
+        } else if next != prev {
+            self.mutate(|modifier| *modifier = (key, next.clone()).into());
+        } else {
+            self.skip(1);
         }
     }
 }
@@ -123,241 +256,48 @@ fn remove_attribute(element: &web_sys::Element, name: &str) {
     }
 }
 
-impl Attributes {
-    /// applies potential changes of the attributes of an element to the underlying DOM node
-    pub fn apply_attribute_changes(&mut self, element: &web_sys::Element) {
-        if (self.start_idx & HYDRATING) == HYDRATING {
-            self.start_idx &= !RESERVED_BIT_MASK;
-            return;
-        }
-
-        if (self.start_idx & CREATING) == CREATING {
-            for modifier in self.attribute_modifiers.iter().rev() {
-                match modifier {
-                    AttributeModifier::Remove(name) => {
-                        remove_attribute(element, name);
-                    }
-                    AttributeModifier::Set(name, value) => {
-                        set_attribute(element, name, &value.serialize());
-                    }
-                    AttributeModifier::EndMarker(_) => (),
-                }
-            }
-            self.start_idx &= !RESERVED_BIT_MASK;
-            debug_assert!(self.updated_attributes.is_empty());
-            return;
-        }
-
-        if !self.updated_attributes.is_empty() {
-            for modifier in self.attribute_modifiers.iter().rev() {
-                match modifier {
-                    AttributeModifier::Remove(name) => {
-                        if self.updated_attributes.remove(name).is_some() {
-                            remove_attribute(element, name);
-                        }
-                    }
-                    AttributeModifier::Set(name, value) => {
-                        if self.updated_attributes.remove(name).is_some() {
-                            set_attribute(element, name, &value.serialize());
-                        }
-                    }
-                    AttributeModifier::EndMarker(_) => (),
-                }
-            }
-            debug_assert!(self.updated_attributes.is_empty());
-        }
-    }
+/// A view to add an attribute to [`Element`](`crate::interfaces::Element`) derived components.
+///
+/// See [`Element::attr`](`crate::interfaces::Element::attr`) for more usage information.
+pub struct Attr<V, State, Action> {
+    inner: V,
+    modifier: AttributeModifier,
+    phantom: PhantomData<fn() -> (State, Action)>,
 }
 
-impl WithAttributes for Attributes {
-    fn set_attribute(&mut self, name: &CowStr, value: &Option<AttributeValue>) {
-        if (self.start_idx & RESERVED_BIT_MASK) != 0 {
-            let modifier = if let Some(value) = value {
-                AttributeModifier::Set(name.clone(), value.clone())
-            } else {
-                AttributeModifier::Remove(name.clone())
-            };
-            self.attribute_modifiers.push(modifier);
-        } else if let Some(modifier) = self.attribute_modifiers.get_mut(self.idx as usize) {
-            let dirty = match (&modifier, value) {
-                // early return if nothing has changed, avoids allocations
-                (AttributeModifier::Set(old_name, old_value), Some(new_value))
-                    if old_name == name =>
-                {
-                    if old_value == new_value {
-                        false
-                    } else {
-                        self.updated_attributes.insert(name.clone(), ());
-                        true
-                    }
-                }
-                (AttributeModifier::Remove(removed), None) if removed == name => false,
-                (AttributeModifier::Set(old_name, _), None)
-                | (AttributeModifier::Remove(old_name), Some(_))
-                    if old_name == name =>
-                {
-                    self.updated_attributes.insert(name.clone(), ());
-                    true
-                }
-                (AttributeModifier::EndMarker(_), None)
-                | (AttributeModifier::EndMarker(_), Some(_)) => {
-                    self.updated_attributes.insert(name.clone(), ());
-                    true
-                }
-                (AttributeModifier::Set(old_name, _), _)
-                | (AttributeModifier::Remove(old_name), _) => {
-                    self.updated_attributes.insert(name.clone(), ());
-                    self.updated_attributes.insert(old_name.clone(), ());
-                    true
-                }
-            };
-            if dirty {
-                *modifier = if let Some(value) = value {
-                    AttributeModifier::Set(name.clone(), value.clone())
-                } else {
-                    AttributeModifier::Remove(name.clone())
-                };
-            }
-            // else remove it out of updated_attributes? (because previous attributes are overwritten) not sure if worth it because potentially worse perf
-        } else {
-            let new_modifier = if let Some(value) = value {
-                AttributeModifier::Set(name.clone(), value.clone())
-            } else {
-                AttributeModifier::Remove(name.clone())
-            };
-            self.updated_attributes.insert(name.clone(), ());
-            self.attribute_modifiers.push(new_modifier);
-        }
-        self.idx += 1;
-    }
-
-    fn rebuild_attribute_modifier(&mut self) {
-        if self.idx == 0 {
-            self.start_idx &= RESERVED_BIT_MASK;
-        } else {
-            let AttributeModifier::EndMarker(start_idx) =
-                self.attribute_modifiers[(self.idx - 1) as usize]
-            else {
-                unreachable!("this should not happen, as either `rebuild_attribute_modifier` happens first, or follows an `mark_end_of_attribute_modifier`")
-            };
-            self.idx = start_idx;
-            self.start_idx = start_idx | (self.start_idx & RESERVED_BIT_MASK);
-        }
-    }
-
-    fn mark_end_of_attribute_modifier(&mut self) {
-        let start_idx = self.start_idx & !RESERVED_BIT_MASK;
-        match self.attribute_modifiers.get_mut(self.idx as usize) {
-            Some(AttributeModifier::EndMarker(prev_start_idx)) if *prev_start_idx == start_idx => {} // attribute modifier hasn't changed
-            Some(modifier) => *modifier = AttributeModifier::EndMarker(start_idx),
-            None => self
-                .attribute_modifiers
-                .push(AttributeModifier::EndMarker(start_idx)),
-        }
-        self.idx += 1;
-        self.start_idx = self.idx | (self.start_idx & RESERVED_BIT_MASK);
-    }
-}
-
-impl WithAttributes for ElementProps {
-    fn rebuild_attribute_modifier(&mut self) {
-        self.attributes().rebuild_attribute_modifier();
-    }
-
-    fn mark_end_of_attribute_modifier(&mut self) {
-        self.attributes().mark_end_of_attribute_modifier();
-    }
-
-    fn set_attribute(&mut self, name: &CowStr, value: &Option<AttributeValue>) {
-        self.attributes().set_attribute(name, value);
-    }
-}
-
-impl<N> WithAttributes for Pod<N>
-where
-    N: DomNode,
-    N::Props: WithAttributes,
-{
-    fn rebuild_attribute_modifier(&mut self) {
-        self.props.rebuild_attribute_modifier();
-    }
-
-    fn mark_end_of_attribute_modifier(&mut self) {
-        self.props.mark_end_of_attribute_modifier();
-    }
-
-    fn set_attribute(&mut self, name: &CowStr, value: &Option<AttributeValue>) {
-        self.props.set_attribute(name, value);
-    }
-}
-
-impl<N> WithAttributes for PodMut<'_, N>
-where
-    N: DomNode,
-    N::Props: WithAttributes,
-{
-    fn rebuild_attribute_modifier(&mut self) {
-        self.props.rebuild_attribute_modifier();
-    }
-
-    fn mark_end_of_attribute_modifier(&mut self) {
-        self.props.mark_end_of_attribute_modifier();
-    }
-
-    fn set_attribute(&mut self, name: &CowStr, value: &Option<AttributeValue>) {
-        self.props.set_attribute(name, value);
-    }
-}
-
-/// Syntax sugar for adding a type bound on the `ViewElement` of a view, such that both, [`ViewElement`] and [`ViewElement::Mut`] are bound to [`WithAttributes`]
-pub trait ElementWithAttributes:
-    for<'a> ViewElement<Mut<'a>: WithAttributes> + WithAttributes
-{
-}
-
-impl<T> ElementWithAttributes for T
-where
-    T: ViewElement + WithAttributes,
-    for<'a> T::Mut<'a>: WithAttributes,
-{
-}
-
-/// A view to add or remove an attribute to/from an element, see [`Element::attr`](`crate::interfaces::Element::attr`) for how it's usually used.
-#[derive(Clone, Debug)]
-pub struct Attr<E, T, A> {
-    el: E,
-    name: CowStr,
-    value: Option<AttributeValue>,
-    phantom: PhantomData<fn() -> (T, A)>,
-}
-
-impl<E, T, A> Attr<E, T, A> {
-    pub fn new(el: E, name: CowStr, value: Option<AttributeValue>) -> Self {
-        Attr {
-            el,
-            name,
-            value,
+impl<V, State, Action> Attr<V, State, Action> {
+    /// Create an [`Attr`] view. When `value` is `None`, it means remove the `name` attribute.
+    ///
+    /// Usually [`Element::attr`](`crate::interfaces::Element::attr`) should be used instead of this function.
+    pub fn new(el: V, name: CowStr, value: Option<AttributeValue>) -> Self {
+        let modifier = match value {
+            Some(value) => AttributeModifier::Set(name, value),
+            None => AttributeModifier::Remove(name),
+        };
+        Self {
+            inner: el,
+            modifier,
             phantom: PhantomData,
         }
     }
 }
 
-impl<E, T, A> ViewMarker for Attr<E, T, A> {}
-impl<E, T, A> View<T, A, ViewCtx, DynMessage> for Attr<E, T, A>
+impl<V, State, Action> ViewMarker for Attr<V, State, Action> {}
+impl<V, State, Action> View<State, Action, ViewCtx, DynMessage> for Attr<V, State, Action>
 where
-    T: 'static,
-    A: 'static,
-    E: DomView<T, A, DomNode: DomNode<Props: WithAttributes>>,
+    State: 'static,
+    Action: 'static,
+    V: DomView<State, Action, Element: With<Attributes>>,
+    for<'a> <V::Element as ViewElement>::Mut<'a>: With<Attributes>,
 {
-    type Element = E::Element;
+    type Element = V::Element;
 
-    type ViewState = E::ViewState;
+    type ViewState = V::ViewState;
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        ctx.add_modifier_size_hint::<Attributes>(1);
-        let (mut element, state) = self.el.build(ctx);
-        element.set_attribute(&self.name, &self.value);
-        element.mark_end_of_attribute_modifier();
+        let (mut element, state) =
+            ctx.with_size_hint::<Attributes, _>(1, |ctx| self.inner.build(ctx));
+        element.modifier().push(self.modifier.clone());
         (element, state)
     }
 
@@ -366,13 +306,15 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: Mut<Self::Element>,
+        element: Mut<Self::Element>,
     ) {
-        element.rebuild_attribute_modifier();
-        self.el
-            .rebuild(&prev.el, view_state, ctx, element.reborrow_mut());
-        element.set_attribute(&self.name, &self.value);
-        element.mark_end_of_attribute_modifier();
+        Attributes::rebuild(element, 1, |mut element| {
+            self.inner
+                .rebuild(&prev.inner, view_state, ctx, element.reborrow_mut());
+
+            let attrs = element.modifier();
+            attrs.update(&prev.modifier, &self.modifier);
+        });
     }
 
     fn teardown(
@@ -381,7 +323,7 @@ where
         ctx: &mut ViewCtx,
         element: Mut<Self::Element>,
     ) {
-        self.el.teardown(view_state, ctx, element);
+        self.inner.teardown(view_state, ctx, element);
     }
 
     fn message(
@@ -389,8 +331,8 @@ where
         view_state: &mut Self::ViewState,
         id_path: &[ViewId],
         message: DynMessage,
-        app_state: &mut T,
-    ) -> MessageResult<A, DynMessage> {
-        self.el.message(view_state, id_path, message, app_state)
+        app_state: &mut State,
+    ) -> MessageResult<Action, DynMessage> {
+        self.inner.message(view_state, id_path, message, app_state)
     }
 }

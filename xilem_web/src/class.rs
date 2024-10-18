@@ -3,152 +3,134 @@
 
 use crate::{
     core::{MessageResult, Mut, View, ViewElement, ViewId, ViewMarker},
+    diff::{diff_iters, Diff},
     vecmap::VecMap,
-    DomNode, DomView, DynMessage, ElementProps, Pod, PodMut, ViewCtx,
+    DomView, DynMessage, ElementProps, ViewCtx, With,
 };
-use std::marker::PhantomData;
+use std::{fmt::Debug, marker::PhantomData};
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
 type CowStr = std::borrow::Cow<'static, str>;
 
-/// Types implementing this trait can be used in the [`Class`] view, see also [`Element::class`](`crate::interfaces::Element::class`)
-pub trait AsClassIter {
-    fn class_iter(&self) -> impl Iterator<Item = CowStr>;
+#[derive(Debug, PartialEq, Clone)]
+/// An modifier element to either add or remove a class of an element.
+///
+/// It's used in [`Classes`].
+pub enum ClassModifier {
+    Add(CowStr),
+    Remove(CowStr),
 }
 
-impl<C: AsClassIter> AsClassIter for Option<C> {
+/// Types implementing this trait can be used in the [`Class`] view, see also [`Element::class`](`crate::interfaces::Element::class`).
+pub trait ClassIter: PartialEq + Debug + 'static {
+    /// Returns an iterator of class compliant strings (e.g. the strings aren't allowed to contain spaces).
+    fn class_iter(&self) -> impl Iterator<Item = CowStr>;
+
+    /// Returns an iterator of additive classes, i.e. all classes of this iterator are added to the current element.
+    fn add_class_iter(&self) -> impl Iterator<Item = ClassModifier> {
+        self.class_iter().map(ClassModifier::Add)
+    }
+
+    /// Returns an iterator of to remove classes, i.e. all classes of this iterator are removed from the current element.
+    fn remove_class_iter(&self) -> impl Iterator<Item = ClassModifier> {
+        self.class_iter().map(ClassModifier::Remove)
+    }
+}
+
+impl<C: ClassIter> ClassIter for Option<C> {
     fn class_iter(&self) -> impl Iterator<Item = CowStr> {
         self.iter().flat_map(|c| c.class_iter())
     }
 }
 
-impl AsClassIter for String {
+impl ClassIter for String {
     fn class_iter(&self) -> impl Iterator<Item = CowStr> {
         std::iter::once(self.clone().into())
     }
 }
 
-impl AsClassIter for &'static str {
+impl ClassIter for &'static str {
     fn class_iter(&self) -> impl Iterator<Item = CowStr> {
         std::iter::once(CowStr::from(*self))
     }
 }
 
-impl AsClassIter for CowStr {
+impl ClassIter for CowStr {
     fn class_iter(&self) -> impl Iterator<Item = CowStr> {
         std::iter::once(self.clone())
     }
 }
 
-impl<T> AsClassIter for Vec<T>
-where
-    T: AsClassIter,
-{
+impl<C: ClassIter> ClassIter for Vec<C> {
     fn class_iter(&self) -> impl Iterator<Item = CowStr> {
         self.iter().flat_map(|c| c.class_iter())
     }
 }
 
-impl<T: AsClassIter, const N: usize> AsClassIter for [T; N] {
+impl<C: ClassIter, const N: usize> ClassIter for [C; N] {
     fn class_iter(&self) -> impl Iterator<Item = CowStr> {
         self.iter().flat_map(|c| c.class_iter())
     }
 }
 
-/// This trait enables having classes (via `className`) on DOM [`Element`](`crate::interfaces::Element`)s. It is used within [`View`]s that modify the classes of an element.
-///
-/// Modifications have to be done on the up-traversal of [`View::rebuild`], i.e. after [`View::rebuild`] was invoked for descendent views.
-/// See [`Class::build`] and [`Class::rebuild`], how to use this for [`ViewElement`]s that implement this trait.
-/// When these methods are used, they have to be used in every reconciliation pass (i.e. [`View::rebuild`]).
-pub trait WithClasses {
-    /// Needs to be invoked within a [`View::rebuild`] before traversing to descendent views, and before any modifications (with [`add_class`](`WithClasses::add_class`) or [`remove_class`](`WithClasses::remove_class`)) are done in that view
-    fn rebuild_class_modifier(&mut self);
+const IN_HYDRATION: u8 = 1 << 0;
+const WAS_CREATED: u8 = 1 << 1;
 
-    /// Needs to be invoked after any modifications are done
-    fn mark_end_of_class_modifier(&mut self);
-
-    /// Adds a class to the element
-    ///
-    /// When in [`View::rebuild`] this has to be invoked *after* traversing the inner `View` with [`View::rebuild`]
-    fn add_class(&mut self, class_name: &CowStr);
-
-    /// Removes a possibly previously added class from the element
-    ///
-    /// When in [`View::rebuild`] this has to be invoked *after* traversing the inner `View` with [`View::rebuild`]
-    fn remove_class(&mut self, class_name: &CowStr);
-
-    // TODO something like the following, but I'm not yet sure how to support that efficiently (and without much binary bloat)
-    // The modifiers possibly have to be applied then...
-    // fn classes(&self) -> impl Iterator<CowStr>;
-    // maybe also something like:
-    // fn has_class(&self, class_name: &str) -> bool
-    // Need to find a use-case for this first though (i.e. a modifier needs to read previously added classes)
-}
-
-#[derive(Debug)]
-enum ClassModifier {
-    Remove(CowStr),
-    Add(CowStr),
-    EndMarker(u16),
-}
-
-const DIRTY: u16 = 1 << 14;
-const HYDRATING: u16 = 1 << 15;
-const RESERVED_BIT_MASK: u16 = HYDRATING | DIRTY;
-
-/// This contains all the current classes of an [`Element`](`crate::interfaces::Element`)
-#[derive(Debug, Default)]
+#[derive(Default)]
+/// An Element modifier that manages all classes of an Element.
 pub struct Classes {
-    // TODO maybe this attribute is redundant and can be formed just from the class_modifiers attribute
-    classes: VecMap<CowStr, ()>,
-    class_modifiers: Vec<ClassModifier>,
     class_name: String,
+    classes: VecMap<CowStr, ()>,
+    modifiers: Vec<ClassModifier>,
     idx: u16,
-    /// the two most significant bits are reserved for whether it's currently being hydrated (bit 15), or is dirty (bit 14)
-    start_idx: u16,
+    dirty: bool,
+    /// This is to avoid an additional alignment word with 2 booleans, it contains the two `IN_HYDRATION` and `WAS_CREATED` flags
+    flags: u8,
+}
+
+impl With<Classes> for ElementProps {
+    fn modifier(&mut self) -> &mut Classes {
+        self.classes()
+    }
 }
 
 impl Classes {
+    /// Creates a new `Classes` modifier.
+    ///
+    /// `size_hint` is used to avoid unnecessary allocations while traversing up the view-tree when adding modifiers in [`View::build`].
     pub(crate) fn new(size_hint: usize, #[cfg(feature = "hydration")] in_hydration: bool) -> Self {
         #[allow(unused_mut)]
-        let mut start_idx = 0;
+        let mut flags = WAS_CREATED;
         #[cfg(feature = "hydration")]
         if in_hydration {
-            start_idx |= HYDRATING;
+            flags |= IN_HYDRATION;
         }
-
         Self {
-            class_modifiers: Vec::with_capacity(size_hint),
-            start_idx,
+            modifiers: Vec::with_capacity(size_hint),
+            flags,
             ..Default::default()
         }
     }
-}
 
-impl Classes {
-    pub fn apply_class_changes(&mut self, element: &web_sys::Element) {
-        #[cfg(feature = "hydration")]
-        if (self.start_idx & HYDRATING) == HYDRATING {
-            self.start_idx &= !RESERVED_BIT_MASK;
-            return;
-        }
-
-        if (self.start_idx & DIRTY) == DIRTY {
-            self.start_idx &= !RESERVED_BIT_MASK;
+    /// Applies potential changes of the classes of an element to the underlying DOM node.
+    pub fn apply_changes(&mut self, element: &web_sys::Element) {
+        if (self.flags & IN_HYDRATION) == IN_HYDRATION {
+            self.flags = 0;
+            self.dirty = false;
+        } else if self.dirty {
+            self.flags = 0;
+            self.dirty = false;
             self.classes.clear();
-            for modifier in &self.class_modifiers {
+            self.classes.reserve(self.modifiers.len());
+            for modifier in &self.modifiers {
                 match modifier {
-                    ClassModifier::Remove(class_name) => {
-                        self.classes.remove(class_name);
-                    }
-                    ClassModifier::Add(class_name) => {
-                        self.classes.insert(class_name.clone(), ());
-                    }
-                    ClassModifier::EndMarker(_) => (),
-                }
+                    ClassModifier::Remove(class_name) => self.classes.remove(class_name),
+                    ClassModifier::Add(class_name) => self.classes.insert(class_name.clone(), ()),
+                };
             }
-            // intersperse would be the right way to do this, but avoid extra dependencies just for this (and otherwise it's unstable in std)...
             self.class_name.clear();
+            self.class_name
+                .reserve_exact(self.classes.keys().map(|k| k.len() + 1).sum());
             let last_idx = self.classes.len().saturating_sub(1);
             for (idx, class) in self.classes.keys().enumerate() {
                 self.class_name += class;
@@ -166,145 +148,122 @@ impl Classes {
             }
         }
     }
-}
 
-impl WithClasses for Classes {
-    fn rebuild_class_modifier(&mut self) {
-        if self.idx == 0 {
-            self.start_idx = 0;
+    #[inline]
+    /// Rebuilds the current element, while ensuring that the order of the modifiers stays correct.
+    /// Any children should be rebuilt in inside `f`, *before* modifing any other properties of [`Classes`].
+    pub fn rebuild<E: With<Self>>(mut element: E, prev_len: usize, f: impl FnOnce(E)) {
+        element.modifier().idx -= prev_len as u16;
+        f(element);
+    }
+
+    #[inline]
+    /// Returns whether the underlying element has been rebuilt, this could e.g. happen, when `OneOf` changes a variant to a different element.
+    pub fn was_recreated(&self) -> bool {
+        self.flags & WAS_CREATED != 0
+    }
+
+    #[inline]
+    /// Pushes `modifier` at the end of the current modifiers.
+    pub fn push(&mut self, modifier: ClassModifier) {
+        self.dirty = true;
+        self.modifiers.push(modifier);
+        self.idx += 1;
+    }
+
+    #[inline]
+    /// Inserts `modifier` at the current index.
+    pub fn insert(&mut self, modifier: ClassModifier) {
+        self.dirty = true;
+        // TODO this could potentially be expensive, maybe think about `VecSplice` again.
+        // Although in the average case, this is likely not relevant, as usually very few attributes are used, thus shifting is probably good enough
+        // I.e. a `VecSplice` is probably less optimal (either more complicated code, and/or more memory usage)
+        self.modifiers.insert(self.idx as usize, modifier);
+        self.idx += 1;
+    }
+
+    #[inline]
+    /// Mutates the next modifier.
+    pub fn mutate<R>(&mut self, f: impl FnOnce(&mut ClassModifier) -> R) -> R {
+        self.dirty = true;
+        let idx = self.idx;
+        self.idx += 1;
+        f(&mut self.modifiers[idx as usize])
+    }
+
+    #[inline]
+    /// Skips the next `count` modifiers.
+    pub fn skip(&mut self, count: usize) {
+        self.idx += count as u16;
+    }
+
+    #[inline]
+    /// Deletes the next `count` modifiers.
+    pub fn delete(&mut self, count: usize) {
+        let start = self.idx as usize;
+        self.dirty = true;
+        self.modifiers.drain(start..(start + count));
+    }
+
+    #[inline]
+    /// Extends the current modifiers with an iterator of modifiers. Returns the count of `modifiers`.
+    pub fn extend(&mut self, modifiers: impl Iterator<Item = ClassModifier>) -> usize {
+        self.dirty = true;
+        let prev_len = self.modifiers.len();
+        self.modifiers.extend(modifiers);
+        let new_len = self.modifiers.len() - prev_len;
+        self.idx += new_len as u16;
+        new_len
+    }
+
+    #[inline]
+    /// Diffs between two iterators, and updates the underlying modifiers if they have changed, returns the next iterator count.
+    pub fn apply_diff<T: Iterator<Item = ClassModifier>>(&mut self, prev: T, next: T) -> usize {
+        let mut new_len = 0;
+        for change in diff_iters(prev, next) {
+            match change {
+                Diff::Add(modifier) => {
+                    self.insert(modifier);
+                    new_len += 1;
+                }
+                Diff::Remove(count) => self.delete(count),
+                Diff::Change(new_modifier) => {
+                    self.mutate(|modifier| *modifier = new_modifier);
+                    new_len += 1;
+                }
+                Diff::Skip(count) => {
+                    self.skip(count);
+                    new_len += count;
+                }
+            }
+        }
+        new_len
+    }
+
+    /// Updates based on the diff between two class iterators (`prev`, `next`) interpreted as add modifiers.
+    ///
+    /// Updates the underlying modifiers if they have changed, returns the next iterator count.
+    /// Skips or adds modifiers, when nothing has changed, or the element was recreated.
+    pub fn update_as_add_class_iter<T: ClassIter>(
+        &mut self,
+        prev_len: usize,
+        prev: &T,
+        next: &T,
+    ) -> usize {
+        if self.was_recreated() {
+            self.extend(next.add_class_iter())
+        } else if next != prev {
+            self.apply_diff(prev.add_class_iter(), next.add_class_iter())
         } else {
-            let ClassModifier::EndMarker(start_idx) = self.class_modifiers[(self.idx - 1) as usize]
-            else {
-                unreachable!("this should not happen, as either `rebuild_class_modifier` is happens first, or follows an `mark_end_of_class_modifier`")
-            };
-            self.idx = start_idx;
-            self.start_idx = start_idx | (self.start_idx & RESERVED_BIT_MASK);
+            self.skip(prev_len);
+            prev_len
         }
     }
-
-    fn mark_end_of_class_modifier(&mut self) {
-        match self.class_modifiers.get_mut(self.idx as usize) {
-            Some(ClassModifier::EndMarker(_)) if self.start_idx & DIRTY != DIRTY => (), // class modifier hasn't changed
-            Some(modifier) => {
-                self.start_idx |= DIRTY;
-                *modifier = ClassModifier::EndMarker(self.start_idx & !RESERVED_BIT_MASK);
-            }
-            None => {
-                self.start_idx |= DIRTY;
-                self.class_modifiers.push(ClassModifier::EndMarker(
-                    self.start_idx & !RESERVED_BIT_MASK,
-                ));
-            }
-        }
-        self.idx += 1;
-        self.start_idx = self.idx | (self.start_idx & RESERVED_BIT_MASK);
-    }
-
-    fn add_class(&mut self, class_name: &CowStr) {
-        match self.class_modifiers.get_mut(self.idx as usize) {
-            Some(ClassModifier::Add(class)) if class == class_name => (), // class modifier hasn't changed
-            Some(modifier) => {
-                self.start_idx |= DIRTY;
-                *modifier = ClassModifier::Add(class_name.clone());
-            }
-            None => {
-                self.start_idx |= DIRTY;
-                self.class_modifiers
-                    .push(ClassModifier::Add(class_name.clone()));
-            }
-        }
-        self.idx += 1;
-    }
-
-    fn remove_class(&mut self, class_name: &CowStr) {
-        // Same code as add_class but with remove...
-        match self.class_modifiers.get_mut(self.idx as usize) {
-            Some(ClassModifier::Remove(class)) if class == class_name => (), // class modifier hasn't changed
-            Some(modifier) => {
-                self.start_idx |= DIRTY;
-                *modifier = ClassModifier::Remove(class_name.clone());
-            }
-            None => {
-                self.start_idx |= DIRTY;
-                self.class_modifiers
-                    .push(ClassModifier::Remove(class_name.clone()));
-            }
-        }
-        self.idx += 1;
-    }
 }
 
-impl WithClasses for ElementProps {
-    fn rebuild_class_modifier(&mut self) {
-        self.classes().rebuild_class_modifier();
-    }
-
-    fn mark_end_of_class_modifier(&mut self) {
-        self.classes().mark_end_of_class_modifier();
-    }
-
-    fn add_class(&mut self, class_name: &CowStr) {
-        self.classes().add_class(class_name);
-    }
-
-    fn remove_class(&mut self, class_name: &CowStr) {
-        self.classes().remove_class(class_name);
-    }
-}
-
-impl<N: DomNode> WithClasses for Pod<N>
-where
-    N::Props: WithClasses,
-{
-    fn rebuild_class_modifier(&mut self) {
-        self.props.rebuild_class_modifier();
-    }
-
-    fn mark_end_of_class_modifier(&mut self) {
-        self.props.mark_end_of_class_modifier();
-    }
-
-    fn add_class(&mut self, class_name: &CowStr) {
-        self.props.add_class(class_name);
-    }
-
-    fn remove_class(&mut self, class_name: &CowStr) {
-        self.props.remove_class(class_name);
-    }
-}
-
-impl<N: DomNode> WithClasses for PodMut<'_, N>
-where
-    N::Props: WithClasses,
-{
-    fn rebuild_class_modifier(&mut self) {
-        self.props.rebuild_class_modifier();
-    }
-
-    fn mark_end_of_class_modifier(&mut self) {
-        self.props.mark_end_of_class_modifier();
-    }
-
-    fn add_class(&mut self, class_name: &CowStr) {
-        self.props.add_class(class_name);
-    }
-
-    fn remove_class(&mut self, class_name: &CowStr) {
-        self.props.remove_class(class_name);
-    }
-}
-
-/// Syntax sugar for adding a type bound on the `ViewElement` of a view, such that both, [`ViewElement`] and [`ViewElement::Mut`] are bound to [`WithClasses`]
-pub trait ElementWithClasses: for<'a> ViewElement<Mut<'a>: WithClasses> + WithClasses {}
-
-impl<T> ElementWithClasses for T
-where
-    T: ViewElement + WithClasses,
-    for<'a> T::Mut<'a>: WithClasses,
-{
-}
-
-/// A view to add classes to elements
+/// A view to add classes to `Element` derived elements.
+///
+/// See [`Element::class`](`crate::interfaces::Element::class`) for more usage information.
 #[derive(Clone, Debug)]
 pub struct Class<E, C, T, A> {
     el: E,
@@ -313,6 +272,9 @@ pub struct Class<E, C, T, A> {
 }
 
 impl<E, C, T, A> Class<E, C, T, A> {
+    /// Create a `Class` view. `classes` is a [`ClassIter`].
+    ///
+    /// Usually [`Element::class`](`crate::interfaces::Element::class`) should be used instead of this function.
     pub fn new(el: E, classes: C) -> Self {
         Class {
             el,
@@ -322,50 +284,45 @@ impl<E, C, T, A> Class<E, C, T, A> {
     }
 }
 
-impl<E, C, T, A> ViewMarker for Class<E, C, T, A> {}
-impl<E, C, T, A> View<T, A, ViewCtx, DynMessage> for Class<E, C, T, A>
+impl<V, C, State, Action> ViewMarker for Class<V, C, State, Action> {}
+impl<V, C, State, Action> View<State, Action, ViewCtx, DynMessage> for Class<V, C, State, Action>
 where
-    T: 'static,
-    A: 'static,
-    C: AsClassIter + 'static,
-    E: DomView<T, A, DomNode: DomNode<Props: WithClasses>>,
+    State: 'static,
+    Action: 'static,
+    C: ClassIter,
+    V: DomView<State, Action, Element: With<Classes>>,
+    for<'a> <V::Element as ViewElement>::Mut<'a>: With<Classes>,
 {
-    type Element = E::Element;
+    type Element = V::Element;
 
-    type ViewState = E::ViewState;
+    type ViewState = (usize, V::ViewState);
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        let class_iter = self.classes.class_iter();
-        ctx.add_modifier_size_hint::<Classes>(class_iter.size_hint().0);
-        let (mut e, s) = self.el.build(ctx);
-        for class in class_iter {
-            e.add_class(&class);
-        }
-        e.mark_end_of_class_modifier();
-        (e, s)
+        let add_class_iter = self.classes.add_class_iter();
+        let (mut e, s) = ctx
+            .with_size_hint::<Classes, _>(add_class_iter.size_hint().0, |ctx| self.el.build(ctx));
+        let len = e.modifier().extend(add_class_iter);
+        (e, (len, s))
     }
 
     fn rebuild(
         &self,
         prev: &Self,
-        view_state: &mut Self::ViewState,
+        (len, view_state): &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: Mut<Self::Element>,
+        element: Mut<Self::Element>,
     ) {
-        // This has to happen, before any children are rebuilt, otherwise this state machine breaks...
-        // The actual modifiers also have to happen after the children are rebuilt, see `add_class` below.
-        element.rebuild_class_modifier();
-        self.el
-            .rebuild(&prev.el, view_state, ctx, element.reborrow_mut());
-        for class in self.classes.class_iter() {
-            element.add_class(&class);
-        }
-        element.mark_end_of_class_modifier();
+        Classes::rebuild(element, *len, |mut elem| {
+            self.el
+                .rebuild(&prev.el, view_state, ctx, elem.reborrow_mut());
+            let classes = elem.modifier();
+            *len = classes.update_as_add_class_iter(*len, &prev.classes, &self.classes);
+        });
     }
 
     fn teardown(
         &self,
-        view_state: &mut Self::ViewState,
+        (_, view_state): &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<Self::Element>,
     ) {
@@ -374,11 +331,11 @@ where
 
     fn message(
         &self,
-        view_state: &mut Self::ViewState,
+        (_, view_state): &mut Self::ViewState,
         id_path: &[ViewId],
         message: DynMessage,
-        app_state: &mut T,
-    ) -> MessageResult<A, DynMessage> {
+        app_state: &mut State,
+    ) -> MessageResult<Action, DynMessage> {
         self.el.message(view_state, id_path, message, app_state)
     }
 }

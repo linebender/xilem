@@ -118,6 +118,7 @@ impl ViewCtx {
         Some(node)
     }
 
+    #[inline]
     pub fn add_modifier_size_hint<T: 'static>(&mut self, request_size: usize) {
         let id = TypeId::of::<T>();
         match self.modifier_size_hints.get_mut(&id) {
@@ -128,11 +129,22 @@ impl ViewCtx {
         };
     }
 
+    #[inline]
     pub fn modifier_size_hint<T: 'static>(&mut self) -> usize {
         match self.modifier_size_hints.get_mut(&TypeId::of::<T>()) {
             Some(hint) => std::mem::take(hint),
             None => 0,
         }
+    }
+
+    #[inline]
+    pub fn with_size_hint<T: 'static, R>(
+        &mut self,
+        size: usize,
+        f: impl FnOnce(&mut Self) -> R,
+    ) -> R {
+        self.add_modifier_size_hint::<T>(size);
+        f(self)
     }
 }
 

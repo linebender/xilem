@@ -8,7 +8,7 @@ use wasm_bindgen::UnwrapThrowExt;
 
 // Lazy access to attributes etc. to avoid allocating unnecessary memory when it isn't needed
 // Benchmarks have shown, that this can significantly increase performance and reduce memory usage...
-/// This holds all the state for a DOM [`Element`](`crate::interfaces::Element`), it is used for [`DomView::Props`](`crate::DomView::Props`)
+/// This holds all the state for a DOM [`Element`](`crate::interfaces::Element`), it is used for [`DomNode::Props`](`crate::DomNode::Props`)
 pub struct ElementProps {
     #[cfg(feature = "hydration")]
     pub(crate) in_hydration: bool,
@@ -67,16 +67,17 @@ impl ElementProps {
     // because we want to minimize DOM traffic as much as possible (that's basically the bottleneck)
     pub fn update_element(&mut self, element: &web_sys::Element) {
         if let Some(attributes) = &mut self.attributes {
-            attributes.apply_attribute_changes(element);
+            attributes.apply_changes(element);
         }
         if let Some(classes) = &mut self.classes {
-            classes.apply_class_changes(element);
+            classes.apply_changes(element);
         }
         if let Some(styles) = &mut self.styles {
-            styles.apply_style_changes(element);
+            styles.apply_changes(element);
         }
     }
 
+    /// Lazily returns the [`Attributes`] modifier of this element.
     pub fn attributes(&mut self) -> &mut Attributes {
         self.attributes.get_or_insert_with(|| {
             Box::new(Attributes::new(
@@ -87,6 +88,7 @@ impl ElementProps {
         })
     }
 
+    /// Lazily returns the [`Styles`] modifier of this element.
     pub fn styles(&mut self) -> &mut Styles {
         self.styles.get_or_insert_with(|| {
             Box::new(Styles::new(
@@ -97,6 +99,7 @@ impl ElementProps {
         })
     }
 
+    /// Lazily returns the [`Classes`] modifier of this element.
     pub fn classes(&mut self) -> &mut Classes {
         self.classes.get_or_insert_with(|| {
             Box::new(Classes::new(
@@ -128,7 +131,7 @@ impl Pod<web_sys::Element> {
         )
     }
 
-    /// Creates a new Pod with [`web_sys::Element`] as element and `ElementProps` as its [`DomView::Props`](`crate::DomView::Props`)
+    /// Creates a new Pod with [`web_sys::Element`] as element and `ElementProps` as its [`DomNode::Props`](`crate::DomNode::Props`)
     pub fn new_element(
         children: Vec<AnyPod>,
         ns: &str,
