@@ -384,6 +384,7 @@ pub(crate) fn run_update_focus_chain_pass(root: &mut RenderRoot) {
 
 // --- MARK: UPDATE FOCUS ---
 pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
+    let _span = info_span!("update_focus").entered();
     // If the focused widget is disabled, stashed or removed, we set
     // the focused id to None
     if let Some(id) = root.global_state.next_focused_widget {
@@ -399,49 +400,53 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
     let prev_focused_path = std::mem::take(&mut root.global_state.focused_path);
     let next_focused_path = get_id_path(root, next_focused);
 
-    let mut focused_set = HashSet::new();
-    for widget_id in &next_focused_path {
-        focused_set.insert(*widget_id);
-    }
-
-    trace!("prev_focused_path: {:?}", prev_focused_path);
-    trace!("next_focused_path: {:?}", next_focused_path);
-
-    // This is the same algorithm as the one in
-    // run_update_pointer_pass
-    // See comment in that function.
-
-    fn update_focused_status_of(
-        root: &mut RenderRoot,
-        widget_id: WidgetId,
-        focused_set: &HashSet<WidgetId>,
-    ) {
-        run_targeted_update_pass(root, Some(widget_id), |widget, ctx| {
-            let has_focus = focused_set.contains(&ctx.widget_id());
-
-            if ctx.widget_state.has_focus != has_focus {
-                widget.update(ctx, &Update::ChildFocusChanged(has_focus));
-            }
-            ctx.widget_state.has_focus = has_focus;
-        });
-    }
-
-    // TODO - Make sure widgets are iterated from the bottom up.
-    // TODO - Document the iteration order for update_focus pass.
-    for widget_id in prev_focused_path.iter().copied() {
-        if root.widget_arena.has(widget_id)
-            && root.widget_arena.get_state_mut(widget_id).item.has_focus
-                != focused_set.contains(&widget_id)
-        {
-            update_focused_status_of(root, widget_id, &focused_set);
+    // We don't just compare `prev_focused` and `next_focused` they could be the same widget
+    // but one of their ancestors could have been reparented.
+    if prev_focused_path != next_focused_path {
+        let mut focused_set = HashSet::new();
+        for widget_id in &next_focused_path {
+            focused_set.insert(*widget_id);
         }
-    }
-    for widget_id in next_focused_path.iter().copied() {
-        if root.widget_arena.has(widget_id)
-            && root.widget_arena.get_state_mut(widget_id).item.has_focus
-                != focused_set.contains(&widget_id)
-        {
-            update_focused_status_of(root, widget_id, &focused_set);
+
+        trace!("prev_focused_path: {:?}", prev_focused_path);
+        trace!("next_focused_path: {:?}", next_focused_path);
+
+        // This is the same algorithm as the one in
+        // run_update_pointer_pass
+        // See comment in that function.
+
+        fn update_focused_status_of(
+            root: &mut RenderRoot,
+            widget_id: WidgetId,
+            focused_set: &HashSet<WidgetId>,
+        ) {
+            run_targeted_update_pass(root, Some(widget_id), |widget, ctx| {
+                let has_focus = focused_set.contains(&ctx.widget_id());
+
+                if ctx.widget_state.has_focus != has_focus {
+                    widget.update(ctx, &Update::ChildFocusChanged(has_focus));
+                }
+                ctx.widget_state.has_focus = has_focus;
+            });
+        }
+
+        // TODO - Make sure widgets are iterated from the bottom up.
+        // TODO - Document the iteration order for update_focus pass.
+        for widget_id in prev_focused_path.iter().copied() {
+            if root.widget_arena.has(widget_id)
+                && root.widget_arena.get_state_mut(widget_id).item.has_focus
+                    != focused_set.contains(&widget_id)
+            {
+                update_focused_status_of(root, widget_id, &focused_set);
+            }
+        }
+        for widget_id in next_focused_path.iter().copied() {
+            if root.widget_arena.has(widget_id)
+                && root.widget_arena.get_state_mut(widget_id).item.has_focus
+                    != focused_set.contains(&widget_id)
+            {
+                update_focused_status_of(root, widget_id, &focused_set);
+            }
         }
     }
 
@@ -521,6 +526,8 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
     if !root.global_state.needs_pointer_pass {
         return;
     }
+    let _span = info_span!("update_pointer").entered();
+
     root.global_state.needs_pointer_pass = false;
 
     let pointer_pos = root.last_mouse_pos.map(|pos| (pos.x, pos.y).into());
@@ -553,54 +560,56 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
     let prev_hovered_path = std::mem::take(&mut root.global_state.hovered_path);
     let next_hovered_path = get_id_path(root, next_hovered_widget);
 
-    let mut hovered_set = HashSet::new();
-    for widget_id in &next_hovered_path {
-        hovered_set.insert(*widget_id);
-    }
-
-    trace!("prev_hovered_path: {:?}", prev_hovered_path);
-    trace!("next_hovered_path: {:?}", next_hovered_path);
-
-    // This algorithm is written to be resilient to future changes like reparenting and multiple
-    // cursors. In theory it's O(Depth² * CursorCount) in the worst case, which isn't too bad
-    // (cursor count is usually 1 or 2, depth is usually small), but in practice it's virtually
-    // always O(Depth * CursorCount) because we only need to update the hovered status of the
-    // widgets that changed.
-    // The above assumes that accessing the widget tree is O(1) for simplicity.
-
-    fn update_hovered_status_of(
-        root: &mut RenderRoot,
-        widget_id: WidgetId,
-        hovered_set: &HashSet<WidgetId>,
-    ) {
-        run_targeted_update_pass(root, Some(widget_id), |widget, ctx| {
-            let is_hovered = hovered_set.contains(&ctx.widget_id());
-
-            if ctx.widget_state.is_hovered != is_hovered {
-                widget.update(ctx, &Update::HoveredChanged(is_hovered));
-                ctx.widget_state.request_accessibility = true;
-                ctx.widget_state.needs_accessibility = true;
-            }
-            ctx.widget_state.is_hovered = is_hovered;
-        });
-    }
-
-    // TODO - Make sure widgets are iterated from the bottom up.
-    // TODO - Document the iteration order for update_pointer pass.
-    for widget_id in prev_hovered_path.iter().copied() {
-        if root.widget_arena.has(widget_id)
-            && root.widget_arena.get_state_mut(widget_id).item.is_hovered
-                != hovered_set.contains(&widget_id)
-        {
-            update_hovered_status_of(root, widget_id, &hovered_set);
+    // We don't just compare `prev_focused` and `next_focused` they could be the same widget
+    // but one of their ancestors could have been reparented.
+    if prev_hovered_path != next_hovered_path {
+        let mut hovered_set = HashSet::new();
+        for widget_id in &next_hovered_path {
+            hovered_set.insert(*widget_id);
         }
-    }
-    for widget_id in next_hovered_path.iter().copied() {
-        if root.widget_arena.has(widget_id)
-            && root.widget_arena.get_state_mut(widget_id).item.is_hovered
-                != hovered_set.contains(&widget_id)
-        {
-            update_hovered_status_of(root, widget_id, &hovered_set);
+
+        trace!("prev_hovered_path: {:?}", prev_hovered_path);
+        trace!("next_hovered_path: {:?}", next_hovered_path);
+
+        // This algorithm is written to be resilient to future changes like reparenting and multiple
+        // cursors. In theory it's O(Depth² * CursorCount) in the worst case, which isn't too bad
+        // (cursor count is usually 1 or 2, depth is usually small), but in practice it's virtually
+        // always O(Depth * CursorCount) because we only need to update the hovered status of the
+        // widgets that changed.
+        // The above assumes that accessing the widget tree is O(1) for simplicity.
+
+        fn update_hovered_status_of(
+            root: &mut RenderRoot,
+            widget_id: WidgetId,
+            hovered_set: &HashSet<WidgetId>,
+        ) {
+            run_targeted_update_pass(root, Some(widget_id), |widget, ctx| {
+                let is_hovered = hovered_set.contains(&ctx.widget_id());
+
+                if ctx.widget_state.is_hovered != is_hovered {
+                    widget.on_status_change(ctx, &StatusChange::HoveredChanged(is_hovered));
+                }
+                ctx.widget_state.is_hovered = is_hovered;
+            });
+        }
+
+        // TODO - Make sure widgets are iterated from the bottom up.
+        // TODO - Document the iteration order for update_pointer pass.
+        for widget_id in prev_hovered_path.iter().copied() {
+            if root.widget_arena.has(widget_id)
+                && root.widget_arena.get_state_mut(widget_id).item.is_hovered
+                    != hovered_set.contains(&widget_id)
+            {
+                update_hovered_status_of(root, widget_id, &hovered_set);
+            }
+        }
+        for widget_id in next_hovered_path.iter().copied() {
+            if root.widget_arena.has(widget_id)
+                && root.widget_arena.get_state_mut(widget_id).item.is_hovered
+                    != hovered_set.contains(&widget_id)
+            {
+                update_hovered_status_of(root, widget_id, &hovered_set);
+            }
         }
     }
 
