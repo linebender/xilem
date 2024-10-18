@@ -19,7 +19,10 @@ fn build_accessibility_tree(
     rebuild_all: bool,
     scale_factor: f64,
 ) {
-    let _span = widget.item.make_trace_span().entered();
+    let _span = global_state
+        .trace
+        .access
+        .then(|| widget.item.make_trace_span().entered());
     let id = state.item.id;
 
     if !rebuild_all && !state.item.needs_accessibility {
@@ -27,11 +30,13 @@ fn build_accessibility_tree(
     }
 
     if rebuild_all || state.item.request_accessibility {
-        trace!(
-            "Building accessibility node for widget '{}' {}",
-            widget.item.short_type_name(),
-            id,
-        );
+        if global_state.trace.access {
+            trace!(
+                "Building accessibility node for widget '{}' {}",
+                widget.item.short_type_name(),
+                id,
+            );
+        }
 
         let mut ctx = AccessCtx {
             global_state,
@@ -47,12 +52,14 @@ fn build_accessibility_tree(
         let node = node.build();
 
         let id: NodeId = ctx.widget_state.id.into();
-        trace!(
-            "Built node {} with role={:?}, default_action={:?}",
-            id.0,
-            node.role(),
-            node.default_action_verb(),
-        );
+        if ctx.global_state.trace.access {
+            trace!(
+                "Built node {} with role={:?}, default_action={:?}",
+                id.0,
+                node.role(),
+                node.default_action_verb(),
+            );
+        }
         ctx.tree_update.nodes.push((id, node));
     }
 
