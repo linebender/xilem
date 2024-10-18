@@ -858,7 +858,9 @@ impl LayoutCtx<'_> {
     /// [`WidgetPod::paint_insets`]: crate::widget::WidgetPod::paint_insets
     pub fn set_paint_insets(&mut self, insets: impl Into<Insets>) {
         let insets = insets.into();
-        trace!("set_paint_insets {:?}", insets);
+        if self.global_state.trace.layout {
+            trace!("set_paint_insets {:?}", insets);
+        }
         self.widget_state.paint_insets = insets.nonnegative();
     }
 
@@ -900,7 +902,9 @@ impl LayoutCtx<'_> {
     /// The provided value should be the distance from the *bottom* of the
     /// widget to the baseline.
     pub fn set_baseline_offset(&mut self, baseline: f64) {
-        trace!("set_baseline_offset {}", baseline);
+        if self.global_state.trace.layout {
+            trace!("set_baseline_offset {}", baseline);
+        }
         self.widget_state.baseline_offset = baseline;
     }
 
