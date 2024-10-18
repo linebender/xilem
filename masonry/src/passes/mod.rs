@@ -79,9 +79,10 @@ pub(crate) fn merge_state_up(arena: &mut WidgetArena, widget_id: WidgetId) {
 ///
 /// Note that passes which are bounded by depth (rather than absolute size) are never filtered out here.
 pub(crate) struct PassTracing {
+    pub(crate) update_tree: bool,
     pub(crate) anim: bool,
     pub(crate) layout: bool,
-    /// Compose is the biggest offender, but other passes' tracing do have a cost
+    /// Compose is the biggest offender, as it is likely caused by a mouse move.
     pub(crate) compose: bool,
     pub(crate) paint: bool,
     pub(crate) access: bool,
@@ -109,6 +110,7 @@ impl PassTracing {
         let mut result = Self::unit(false);
         let mut show_help = false;
         let mut supported_passes = [
+            ("update_tree", &mut result.update_tree),
             ("anim", &mut result.anim),
             ("layout", &mut result.layout),
             ("compose", &mut result.compose),
@@ -155,11 +157,12 @@ impl PassTracing {
     /// A `PassTracing` where all the fields have the same `value`.
     const fn unit(value: bool) -> Self {
         Self {
+            update_tree: value,
+            anim: value,
+            layout: value,
             compose: value,
             paint: value,
-            anim: value,
             access: value,
-            layout: value,
         }
     }
 }

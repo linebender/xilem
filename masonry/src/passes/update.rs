@@ -79,7 +79,8 @@ fn update_widget_tree(
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
     mut state: ArenaMut<'_, WidgetState>,
 ) {
-    let _span = widget.item.make_trace_span().entered();
+    let trace = global_state.trace.update_tree;
+    let _span = trace.then(|| widget.item.make_trace_span().entered());
     let id = state.item.id;
 
     if !state.item.children_changed {
@@ -137,10 +138,12 @@ fn update_widget_tree(
             widget_children: widget.children.reborrow_mut(),
         };
         widget.item.update(&mut ctx, &Update::WidgetAdded);
-        trace!(
-            "{} received Update::WidgetAdded",
-            widget.item.short_type_name()
-        );
+        if trace {
+            trace!(
+                "{} received Update::WidgetAdded",
+                widget.item.short_type_name()
+            );
+        }
         state.item.accepts_pointer_interaction = widget.item.accepts_pointer_interaction();
         state.item.accepts_focus = widget.item.accepts_focus();
         state.item.accepts_text_input = widget.item.accepts_text_input();
