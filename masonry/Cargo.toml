@@ -54,6 +54,7 @@ time = { workspace = true, features = ["macros", "formatting"] }
 cursor-icon = "1.1.0"
 dpi.workspace = true
 nv-flip.workspace = true
+taffy.workspace = true
 tracing-tracy = { version = "0.11.3", optional = true }
 wgpu-profiler = { optional = true, version = "0.17.0", default-features = false }
 

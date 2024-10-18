@@ -45,6 +45,20 @@ use crate::{
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
 pub struct WidgetId(pub(crate) NonZeroU64);
 
+// TODO: Figure out where this should go.
+/// An axis in visual space.
+///
+/// Most often used by widgets to describe
+/// the direction in which they grow as their number of children increases.
+/// Has some methods for manipulating geometry with respect to the axis.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum Axis {
+    /// The x axis
+    Horizontal,
+    /// The y axis
+    Vertical,
+}
+
 // TODO - Add tutorial: implementing a widget - See https://github.com/linebender/xilem/issues/376
 /// The trait implemented by all widgets.
 ///

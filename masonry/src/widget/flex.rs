@@ -10,7 +10,7 @@ use vello::kurbo::{common::FloatExt, Affine, Line, Stroke, Vec2};
 use vello::Scene;
 
 use crate::theme::get_debug_color;
-use crate::widget::WidgetMut;
+use crate::widget::{Axis, WidgetMut};
 
 use crate::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, Point, PointerEvent,
@@ -41,19 +41,6 @@ pub struct Flex {
 pub struct FlexParams {
     flex: Option<f64>,
     alignment: Option<CrossAxisAlignment>,
-}
-
-/// An axis in visual space.
-///
-/// Most often used by widgets to describe
-/// the direction in which they grow as their number of children increases.
-/// Has some methods for manipulating geometry with respect to the axis.
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum Axis {
-    /// The x axis
-    Horizontal,
-    /// The y axis
-    Vertical,
 }
 
 /// The alignment of the widgets on the container's cross (or minor) axis.

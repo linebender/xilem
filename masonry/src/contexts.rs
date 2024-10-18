@@ -19,6 +19,7 @@ use crate::widget::{WidgetMut, WidgetRef, WidgetState};
 use crate::{
     AllowRawMut, BoxConstraints, CursorIcon, Insets, Point, Rect, Size, Widget, WidgetId, WidgetPod,
 };
+use crate::widget::widget::Axis;
 
 /// A macro for implementing methods on multiple contexts.
 ///
