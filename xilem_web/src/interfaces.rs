@@ -15,12 +15,12 @@
 use std::borrow::Cow;
 
 use crate::{
-    attribute::Attr,
-    class::{Class, ClassIter},
     events,
-    style::{Rotate, Scale, ScaleValue, Style, StyleIter, Styles},
-    Attributes, Classes, DomNode, DomView, IntoAttributeValue, OptionalAction, Pointer, PointerMsg,
-    With,
+    modifiers::{
+        Attr, Attributes, Class, ClassIter, Classes, Rotate, Scale, ScaleValue, Style, StyleIter,
+        Styles,
+    },
+    DomNode, DomView, IntoAttributeValue, OptionalAction, Pointer, PointerMsg, With,
 };
 use wasm_bindgen::JsCast;
 

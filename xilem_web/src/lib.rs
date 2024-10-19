@@ -29,9 +29,7 @@ pub const MATHML_NS: &str = "http://www.w3.org/1998/Math/MathML";
 
 mod after_update;
 mod app;
-mod attribute;
 mod attribute_value;
-mod class;
 mod context;
 mod dom_helpers;
 mod element_props;
@@ -39,7 +37,6 @@ mod message;
 mod one_of;
 mod optional_action;
 mod pointer;
-mod style;
 #[cfg(feature = "hydration")]
 mod templated;
 mod text;
@@ -51,6 +48,7 @@ pub mod diff;
 pub mod elements;
 pub mod events;
 pub mod interfaces;
+pub mod modifiers;
 pub mod svg;
 
 pub use self::{
@@ -58,16 +56,13 @@ pub use self::{
         after_build, after_rebuild, before_teardown, AfterBuild, AfterRebuild, BeforeTeardown,
     },
     app::App,
-    attribute::{Attr, AttributeModifier, Attributes},
     attribute_value::{AttributeValue, IntoAttributeValue},
-    class::{Class, ClassIter, ClassModifier, Classes},
     context::{MessageThunk, ViewCtx},
     dom_helpers::{document, document_body, get_element_by_id, input_event_target_value},
     element_props::ElementProps,
     message::{DynMessage, Message},
     optional_action::{Action, OptionalAction},
     pointer::{Pointer, PointerDetails, PointerMsg},
-    style::{style, Style, StyleIter, StyleModifier, Styles},
 };
 
 #[cfg(feature = "hydration")]

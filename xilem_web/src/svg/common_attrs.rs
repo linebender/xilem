@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::{
-    attribute::AttributeModifier,
     core::{MessageResult, Mut, View, ViewElement, ViewId, ViewMarker},
-    Attributes, DomView, DynMessage, ViewCtx, With,
+    modifiers::{AttributeModifier, Attributes},
+    DomView, DynMessage, ViewCtx, With,
 };
 use peniko::{kurbo, Brush};
 use std::fmt::Write as _;

@@ -12,10 +12,10 @@ use crate::{
     core::{AppendVec, ElementSplice, MessageResult, Mut, View, ViewId, ViewMarker},
     document,
     element_props::ElementProps,
+    modifiers::{Attributes, Classes, Styles},
     vec_splice::VecSplice,
     AnyPod, DomFragment, DomNode, DynMessage, Pod, ViewCtx, HTML_NS,
 };
-use crate::{Attributes, Classes, Styles};
 
 // sealed, because this should only cover `ViewSequences` with the blanket impl below
 /// This is basically a specialized dynamically dispatchable [`ViewSequence`], It's currently not able to change the underlying type unlike [`AnyDomView`](crate::AnyDomView), so it should not be used as `dyn DomViewSequence`.

@@ -1,7 +1,11 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{attribute::Attributes, class::Classes, document, style::Styles, AnyPod, Pod, ViewCtx};
+use crate::{
+    document,
+    modifiers::{Attributes, Classes, Styles},
+    AnyPod, Pod, ViewCtx,
+};
 #[cfg(feature = "hydration")]
 use wasm_bindgen::JsCast;
 use wasm_bindgen::UnwrapThrowExt;
