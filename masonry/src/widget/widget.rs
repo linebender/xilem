@@ -85,8 +85,8 @@ pub trait Widget: AsAny {
     /// will be 0. (This logic is presently per-window but might change to
     /// per-widget to make it more consistent). Otherwise it is in nanoseconds.
     ///
-    /// The `paint` method will be called shortly after this event is finished.
-    /// As a result, you should try to avoid doing anything computationally
+    /// The `paint` method will often be called shortly after this event is finished.
+    /// For that reason, you should try to avoid doing anything computationally
     /// intensive in response to an `AnimFrame` event: it might make the app miss
     /// the monitor's refresh, causing lag or jerky animations.
     fn on_anim_frame(&mut self, ctx: &mut UpdateCtx, interval: u64) {}
