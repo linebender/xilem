@@ -153,7 +153,7 @@ pub trait Element<State, Action = ()>:
     /// # Examples
     ///
     /// ```
-    /// use xilem_web::{style as s, elements::html::div, interfaces::Element};
+    /// use xilem_web::{modifiers::style as s, elements::html::div, interfaces::Element};
     ///
     /// # fn component() -> impl Element<()> {
     /// div(())
@@ -169,7 +169,7 @@ pub trait Element<State, Action = ()>:
     /// # Examples
     ///
     /// ```
-    /// use xilem_web::{style as s, interfaces::Element, svg::kurbo::Rect};
+    /// use xilem_web::{modifiers::style as s, interfaces::Element, svg::kurbo::Rect};
     ///
     /// # fn component() -> impl Element<()> {
     /// Rect::from_origin_size((0.0, 10.0), (20.0, 30.0))
@@ -187,7 +187,7 @@ pub trait Element<State, Action = ()>:
     /// # Examples
     ///
     /// ```
-    /// use xilem_web::{style as s, interfaces::Element, svg::kurbo::Circle};
+    /// use xilem_web::{modifiers::style as s, interfaces::Element, svg::kurbo::Circle};
     ///
     /// # fn component() -> impl Element<()> {
     /// Circle::new((10.0, 20.0), 30.0)

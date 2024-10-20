@@ -157,7 +157,7 @@ impl Classes {
 
     #[inline]
     /// Rebuilds the current element, while ensuring that the order of the modifiers stays correct.
-    /// Any children should be rebuilt in inside `f`, *before* modifing any other properties of [`Classes`].
+    /// Any children should be rebuilt in inside `f`, *before* modifying any other properties of [`Classes`].
     pub fn rebuild<E: With<Self>>(mut element: E, prev_len: usize, f: impl FnOnce(E)) {
         element.modifier().idx -= prev_len as u16;
         f(element);
