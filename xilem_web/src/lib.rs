@@ -388,25 +388,6 @@ impl<T, N: AsRef<T> + DomNode> AsRef<T> for PodMut<'_, N> {
     }
 }
 
-/// This is basically equivalent to `AsMut`, it's intended to give access to modifiers of a [`ViewElement`].
-///
-/// The name is chosen, such that it reads nicely, e.g. in a trait bound: [`DomView<T, A, Element: With<Classes>>`], while not behaving differently as [`AsRef`] on [`Pod`] and [`PodMut`].
-pub trait With<M> {
-    fn modifier(&mut self) -> &mut M;
-}
-
-impl<T, N: DomNode<Props: With<T>>> With<T> for Pod<N> {
-    fn modifier(&mut self) -> &mut T {
-        <N::Props as With<T>>::modifier(&mut self.props)
-    }
-}
-
-impl<T, N: DomNode<Props: With<T>>> With<T> for PodMut<'_, N> {
-    fn modifier(&mut self) -> &mut T {
-        <N::Props as With<T>>::modifier(self.props)
-    }
-}
-
 impl DomNode for web_sys::Element {
     type Props = ElementProps;
 

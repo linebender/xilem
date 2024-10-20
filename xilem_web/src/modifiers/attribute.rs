@@ -3,8 +3,9 @@
 
 use crate::{
     core::{MessageResult, Mut, View, ViewElement, ViewId, ViewMarker},
+    modifiers::With,
     vecmap::VecMap,
-    AttributeValue, DomView, DynMessage, ElementProps, IntoAttributeValue, ViewCtx, With,
+    AttributeValue, DomView, DynMessage, ElementProps, IntoAttributeValue, ViewCtx,
 };
 use std::marker::PhantomData;
 use wasm_bindgen::{JsCast, UnwrapThrowExt};

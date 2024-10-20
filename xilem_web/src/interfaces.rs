@@ -18,9 +18,9 @@ use crate::{
     events,
     modifiers::{
         Attr, Attributes, Class, ClassIter, Classes, Rotate, Scale, ScaleValue, Style, StyleIter,
-        Styles,
+        Styles, With,
     },
-    DomNode, DomView, IntoAttributeValue, OptionalAction, Pointer, PointerMsg, With,
+    DomNode, DomView, IntoAttributeValue, OptionalAction, Pointer, PointerMsg,
 };
 use wasm_bindgen::JsCast;
 

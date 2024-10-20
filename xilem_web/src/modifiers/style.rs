@@ -4,8 +4,9 @@
 use crate::{
     core::{MessageResult, Mut, View, ViewElement, ViewId, ViewMarker},
     diff::{diff_iters, Diff},
+    modifiers::With,
     vecmap::VecMap,
-    DomView, DynMessage, ElementProps, ViewCtx, With,
+    DomView, DynMessage, ElementProps, ViewCtx,
 };
 use peniko::kurbo::Vec2;
 use std::{
@@ -260,7 +261,7 @@ impl Styles {
     #[inline]
     /// Pushes `modifier` at the end of the current modifiers
     ///
-    /// Must only be used when `self.was_created() == true`.
+    /// Must only be used when `self.was_created() == true`, use `Styles::insert` otherwise.
     pub fn push(&mut self, modifier: StyleModifier) {
         debug_assert!(
             self.was_created(),
@@ -276,7 +277,7 @@ impl Styles {
     #[inline]
     /// Inserts `modifier` at the current index
     ///
-    /// Must only be used when `self.was_created() == false`.
+    /// Must only be used when `self.was_created() == false`, use `Styles::push` otherwise.
     pub fn insert(&mut self, modifier: StyleModifier) {
         debug_assert!(
             !self.was_created(),
@@ -355,11 +356,11 @@ impl Styles {
     #[inline]
     /// Extends the current modifiers with an iterator of modifiers. Returns the count of `modifiers`.
     ///
-    /// Must only be used when `self.was_created() == true`
+    /// Must only be used when `self.was_created() == true`, use `Styles::apply_diff` otherwise.
     pub fn extend(&mut self, modifiers: impl Iterator<Item = StyleModifier>) -> usize {
         debug_assert!(
             !self.was_created(),
-            "This should never be called, when the underlying element wasn't (re)created, use `Classes::apply_diff` instead."
+            "This should never be called, when the underlying element wasn't (re)created, use `Styles::apply_diff` instead."
         );
         let prev_len = self.modifiers.len();
         self.modifiers.extend(modifiers);
@@ -608,6 +609,7 @@ where
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
+/// A wrapper, for some syntax sugar, such that `el.scale(1.5).scale((0.75, 2.0))` is possible.
 pub enum ScaleValue {
     Uniform(f64),
     NonUniform(f64, f64),

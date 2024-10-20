@@ -4,8 +4,9 @@
 use crate::{
     core::{MessageResult, Mut, View, ViewElement, ViewId, ViewMarker},
     diff::{diff_iters, Diff},
+    modifiers::With,
     vecmap::VecMap,
-    DomView, DynMessage, ElementProps, ViewCtx, With,
+    DomView, DynMessage, ElementProps, ViewCtx,
 };
 use std::{fmt::Debug, marker::PhantomData};
 use wasm_bindgen::{JsCast, UnwrapThrowExt};

@@ -3,8 +3,9 @@
 
 use crate::{
     core::{MessageResult, Mut, View, ViewElement, ViewId, ViewMarker},
+    modifiers::With,
     modifiers::{AttributeModifier, Attributes},
-    DomView, DynMessage, ViewCtx, With,
+    DomView, DynMessage, ViewCtx,
 };
 use peniko::{kurbo, Brush};
 use std::fmt::Write as _;

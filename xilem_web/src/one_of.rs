@@ -6,7 +6,8 @@ use crate::{
         one_of::{OneOf, OneOfCtx, PhantomElementCtx},
         Mut,
     },
-    DomNode, Pod, PodMut, ViewCtx, With,
+    modifiers::With,
+    DomNode, Pod, PodMut, ViewCtx,
 };
 use wasm_bindgen::UnwrapThrowExt;
 
