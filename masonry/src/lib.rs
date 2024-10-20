@@ -93,6 +93,7 @@
 // #![warn(missing_docs)]
 #![warn(unused_imports)]
 #![warn(clippy::print_stdout, clippy::print_stderr, clippy::dbg_macro)]
+#![allow(clippy::needless_doctest_main)]
 #![allow(clippy::should_implement_trait)]
 #![allow(clippy::single_match)]
 #![cfg_attr(docsrs, feature(doc_cfg))]

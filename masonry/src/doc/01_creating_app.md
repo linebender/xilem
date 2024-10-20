@@ -11,7 +11,7 @@ The app we'll create is identical to the to-do-list example shown in the README.
 
 Let's start with the `main()` function.
 
-```rust
+```ignore
 fn main() {
     const VERTICAL_WIDGET_SPACING: f64 = 20.0;
 
@@ -53,7 +53,7 @@ During the course of the event loop, the widget tree will be displayed, and upda
 
 To handle user interactions, we need to implement the `AppDriver` trait:
 
-```rust
+```ignore
 trait AppDriver {
     fn on_action(&mut self, ctx: &mut DriverCtx<'_>, widget_id: WidgetId, action: Action);
 }
@@ -65,7 +65,7 @@ That method gives our app a `DriverCtx` context, which we can use to access the 
 
 We create a `Driver` struct to store a very simple app's state, and we implement the `AppDriver` trait for it:
 
-```rust
+```ignore
 use masonry::app_driver::{AppDriver, DriverCtx};
 use masonry::{Action, WidgetId};
 use masonry::widget::{Label};
@@ -112,7 +112,7 @@ We use `WidgetMut<Flex>::add_child()` to add a new `Label` with the text of our 
 
 In our main function, we create a `Driver` and pass it to `event_loop_runner::run`:
 
-```rust
+```ignore
     // ...
 
     let driver = Driver {
@@ -133,7 +133,7 @@ In our main function, we create a `Driver` and pass it to `event_loop_runner::ru
 
 The last step is to create our Winit window and start our main loop.
 
-```rust
+```ignore
     use masonry::dpi::LogicalSize;
     use winit::window::Window;
 
@@ -153,7 +153,7 @@ The last step is to create our Winit window and start our main loop.
 
 Our complete program therefore looks like this:
 
-```rust
+```ignore
 fn main() {
     const VERTICAL_WIDGET_SPACING: f64 = 20.0;
 

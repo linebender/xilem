@@ -13,7 +13,7 @@ Widgets are types which implement the `masonry::Widget` trait.
 
 This trait includes a set of methods that must be implemented to hook into Masonry's internals:
 
-```rust
+```ignore
 trait Widget {
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent);
     fn on_text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent);
@@ -82,7 +82,7 @@ This methods returns a WidgetMut to the root widget, which you can then project 
 
 The WidgetMut type only has two fields, both public:
 
-```rust
+```ignore
 pub struct WidgetMut<'a, W: Widget> {
     pub ctx: MutateCtx<'a>,
     pub widget: &'a mut W,
@@ -106,7 +106,7 @@ This Widget has a size, a color, and emits a `ButtonPressed` action when the use
 
 First, let's create our struct:
 
-```rust
+```ignore
 use vello::kurbo::Size;
 use vello::peniko::Color;
 
@@ -129,7 +129,7 @@ Note that we store a size, and not a position: our widget's position is picked b
 
 First we implement event methods:
 
-```rust
+```ignore
 use masonry::{
     Widget, EventCtx, PointerEvent, TextEvent, AccessEvent, Action
 };
@@ -165,7 +165,7 @@ We've also implemented the `on_access_event` method, which emulates the click be
 
 Next we can leave the `on_anim_frame` and `update` implementations empty:
 
-```rust
+```ignore
 use masonry::{
     UpdateCtx
 };
@@ -182,7 +182,7 @@ impl Widget for ColorRectangle {
 
 Next we implement layout:
 
-```rust
+```ignore
 use masonry::{
     LayoutCtx, BoxConstraints
 };
@@ -202,7 +202,7 @@ Our size is static, and doesn't depend on size constraints passed by our parent 
 
 Next we write our render methods:
 
-```rust
+```ignore
 use masonry::{
     PaintCtx, AccessCtx
 };
@@ -250,7 +250,7 @@ In `accessibility`, we define a default action of `Click`, which is how we regis
 
 Finally, we stub in some additional methods:
 
-```rust
+```ignore
 use masonry::{
     RegisterCtx, WidgetId
 };
@@ -277,7 +277,7 @@ Finally, we want to define some setters for external users:
 
 <!-- TODO - Rewrite once we've decided how WidgetMut should be implemented. -->
 
-```rust
+```ignore
 struct ColorRectangle {
     size: Size,
     color: Color,
