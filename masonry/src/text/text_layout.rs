@@ -41,7 +41,6 @@ use crate::WidgetId;
 /// TODO: Update docs to mentionParley
 #[derive(Clone)]
 pub struct TextLayout {
-    // TODO: Find a way to let this use borrowed data
     scale: f32,
 
     brush: TextBrush,
