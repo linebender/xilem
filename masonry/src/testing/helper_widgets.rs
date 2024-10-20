@@ -65,6 +65,7 @@ pub struct ModularWidget<S> {
 pub struct ReplaceChild {
     child: WidgetPod<Box<dyn Widget>>,
     #[allow(dead_code)]
+    // reason: This is probably bit-rotted code. Next version will SizedBox with WidgetMut instead.
     replacer: Box<dyn Fn() -> WidgetPod<Box<dyn Widget>>>,
 }
 
@@ -163,18 +164,20 @@ impl<S> ModularWidget<S> {
 /// Builder methods.
 ///
 /// Each method takes a flag which is then returned by the matching Widget method.
-#[allow(missing_docs)]
 impl<S> ModularWidget<S> {
+    /// See [`Widget::accepts_pointer_interaction`]
     pub fn accepts_pointer_interaction(mut self, flag: bool) -> Self {
         self.accepts_pointer_interaction = flag;
         self
     }
 
+    /// See [`Widget::accepts_focus`]
     pub fn accepts_focus(mut self, flag: bool) -> Self {
         self.accepts_focus = flag;
         self
     }
 
+    /// See [`Widget::accepts_text_input`]
     pub fn accepts_text_input(mut self, flag: bool) -> Self {
         self.accepts_text_input = flag;
         self
@@ -184,8 +187,8 @@ impl<S> ModularWidget<S> {
 /// Builder methods.
 ///
 /// Each method takes a callback that matches the behavior of the matching Widget method.
-#[allow(missing_docs)]
 impl<S> ModularWidget<S> {
+    /// See [`Widget::on_pointer_event`]
     pub fn pointer_event_fn(
         mut self,
         f: impl FnMut(&mut S, &mut EventCtx, &PointerEvent) + 'static,
@@ -194,6 +197,7 @@ impl<S> ModularWidget<S> {
         self
     }
 
+    /// See [`Widget::on_text_event`]
     pub fn text_event_fn(
         mut self,
         f: impl FnMut(&mut S, &mut EventCtx, &TextEvent) + 'static,
@@ -202,6 +206,7 @@ impl<S> ModularWidget<S> {
         self
     }
 
+    /// See [`Widget::on_access_event`]
     pub fn access_event_fn(
         mut self,
         f: impl FnMut(&mut S, &mut EventCtx, &AccessEvent) + 'static,
@@ -210,11 +215,13 @@ impl<S> ModularWidget<S> {
         self
     }
 
+    /// See [`Widget::on_anim_frame`]
     pub fn anim_frame_fn(mut self, f: impl FnMut(&mut S, &mut UpdateCtx, u64) + 'static) -> Self {
         self.on_anim_frame = Some(Box::new(f));
         self
     }
 
+    /// See [`Widget::register_children`]
     pub fn register_children_fn(
         mut self,
         f: impl FnMut(&mut S, &mut RegisterCtx) + 'static,
@@ -223,11 +230,13 @@ impl<S> ModularWidget<S> {
         self
     }
 
+    /// See [`Widget::update`]
     pub fn update_fn(mut self, f: impl FnMut(&mut S, &mut UpdateCtx, &Update) + 'static) -> Self {
         self.update = Some(Box::new(f));
         self
     }
 
+    /// See [`Widget::layout`]
     pub fn layout_fn(
         mut self,
         f: impl FnMut(&mut S, &mut LayoutCtx, &BoxConstraints) -> Size + 'static,
@@ -236,21 +245,25 @@ impl<S> ModularWidget<S> {
         self
     }
 
+    /// See [`Widget::compose`]
     pub fn compose_fn(mut self, f: impl FnMut(&mut S, &mut ComposeCtx) + 'static) -> Self {
         self.compose = Some(Box::new(f));
         self
     }
 
+    /// See [`Widget::paint`]
     pub fn paint_fn(mut self, f: impl FnMut(&mut S, &mut PaintCtx, &mut Scene) + 'static) -> Self {
         self.paint = Some(Box::new(f));
         self
     }
 
+    /// See [`Widget::accessibility_role`]
     pub fn role_fn(mut self, f: impl Fn(&S) -> Role + 'static) -> Self {
         self.role = Some(Box::new(f));
         self
     }
 
+    /// See [`Widget::accessibility`]
     pub fn access_fn(
         mut self,
         f: impl FnMut(&mut S, &mut AccessCtx, &mut NodeBuilder) + 'static,
@@ -259,6 +272,7 @@ impl<S> ModularWidget<S> {
         self
     }
 
+    /// See [`Widget::children_ids`]
     pub fn children_fn(
         mut self,
         children: impl Fn(&S) -> SmallVec<[WidgetId; 16]> + 'static,
