@@ -55,7 +55,7 @@ pub(crate) fn run_update_anim_pass(root: &mut RenderRoot, elapsed_ns: u64) {
 
     let (root_widget, mut root_state) = root.widget_arena.get_pair_mut(root.root.id());
     update_anim_for_widget(
-        &mut root.state,
+        &mut root.global_state,
         root_widget,
         root_state.reborrow_mut(),
         elapsed_ns,

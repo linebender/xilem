@@ -629,7 +629,7 @@ impl MasonryState<'_> {
             }
             MasonryUserEvent::Action(action, widget) => self
                 .render_root
-                .state
+                .global_state
                 .signal_queue
                 .push_back(render_root::RenderRootSignal::Action(action, widget)),
         }

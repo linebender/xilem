@@ -15,7 +15,7 @@ fn get_target_widget(
     root: &RenderRoot,
     pointer_pos: Option<LogicalPosition<f64>>,
 ) -> Option<WidgetId> {
-    if let Some(capture_target) = root.state.pointer_capture_target {
+    if let Some(capture_target) = root.global_state.pointer_capture_target {
         return Some(capture_target);
     }
 
@@ -48,7 +48,7 @@ fn run_event_pass<E>(
         let (widget_mut, state_mut) = root.widget_arena.get_pair_mut(widget_id);
 
         let mut ctx = EventCtx {
-            global_state: &mut root.state,
+            global_state: &mut root.global_state,
             widget_state: state_mut.item,
             widget_state_children: state_mut.children,
             widget_children: widget_mut.children,
@@ -104,12 +104,12 @@ pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEv
         // Automatically release the pointer on pointer up or leave. If a widget holds the capture,
         // it is notified of the pointer event before the capture is released, so it knows it is
         // about to lose the pointer.
-        root.state.pointer_capture_target = None;
+        root.global_state.pointer_capture_target = None;
     }
 
     if !event.is_high_density() {
         debug!(
-            focused_widget = root.state.focused_widget.map(|id| id.0),
+            focused_widget = root.global_state.focused_widget.map(|id| id.0),
             handled = handled.is_handled(),
             "ON_POINTER_EVENT finished",
         );
@@ -130,7 +130,7 @@ pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -
         debug!("Running ON_TEXT_EVENT pass with {}", event.short_name());
     }
 
-    let target = root.state.focused_widget;
+    let target = root.global_state.focused_widget;
 
     let mut handled = run_event_pass(root, target, event, false, |widget, ctx, event| {
         widget.on_text_event(ctx, event);
@@ -143,9 +143,9 @@ pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -
             && handled == Handled::No
         {
             if !mods.shift_key() {
-                root.state.next_focused_widget = root.widget_from_focus_chain(true);
+                root.global_state.next_focused_widget = root.widget_from_focus_chain(true);
             } else {
-                root.state.next_focused_widget = root.widget_from_focus_chain(false);
+                root.global_state.next_focused_widget = root.widget_from_focus_chain(false);
             }
             handled = Handled::Yes;
         }
@@ -153,7 +153,7 @@ pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -
 
     if !event.is_high_density() {
         debug!(
-            focused_widget = root.state.focused_widget.map(|id| id.0),
+            focused_widget = root.global_state.focused_widget.map(|id| id.0),
             handled = handled.is_handled(),
             "ON_TEXT_EVENT finished",
         );
@@ -179,13 +179,13 @@ pub(crate) fn run_on_access_event_pass(
     match event.action {
         accesskit::Action::Focus if !handled.is_handled() => {
             if root.is_still_interactive(target) {
-                root.state.next_focused_widget = Some(target);
+                root.global_state.next_focused_widget = Some(target);
                 handled = Handled::Yes;
             }
         }
         accesskit::Action::Blur if !handled.is_handled() => {
-            if root.state.next_focused_widget == Some(target) {
-                root.state.next_focused_widget = None;
+            if root.global_state.next_focused_widget == Some(target) {
+                root.global_state.next_focused_widget = None;
                 handled = Handled::Yes;
             }
         }
@@ -193,7 +193,7 @@ pub(crate) fn run_on_access_event_pass(
     }
 
     debug!(
-        focused_widget = root.state.focused_widget.map(|id| id.0),
+        focused_widget = root.global_state.focused_widget.map(|id| id.0),
         handled = handled.is_handled(),
         "ON_ACCESS_EVENT finished",
     );

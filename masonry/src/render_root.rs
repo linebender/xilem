@@ -52,7 +52,7 @@ pub struct RenderRoot {
     pub(crate) last_anim: Option<Instant>,
     pub(crate) last_mouse_pos: Option<LogicalPosition<f64>>,
     pub(crate) cursor_icon: CursorIcon,
-    pub(crate) state: RenderRootState,
+    pub(crate) global_state: RenderRootState,
     // TODO - Add "access_tree_active" to detect when you don't need to update the
     // access tree
     pub(crate) rebuild_access_tree: bool,
@@ -141,7 +141,7 @@ impl RenderRoot {
             last_anim: None,
             last_mouse_pos: None,
             cursor_icon: CursorIcon::Default,
-            state: RenderRootState {
+            global_state: RenderRootState {
                 debug_logger: DebugLogger::new(false),
                 signal_queue: VecDeque::new(),
                 focused_widget: None,
@@ -174,7 +174,7 @@ impl RenderRoot {
             let families = root.register_fonts(test_font_data);
             // Make sure that all of these fonts are in the fallback chain for the Latin script.
             // <https://en.wikipedia.org/wiki/Script_(Unicode)#Latn>
-            root.state
+            root.global_state
                 .font_context
                 .collection
                 .append_fallbacks(*b"Latn", families.iter().map(|(family, _)| *family));
@@ -231,7 +231,8 @@ impl RenderRoot {
             }
             WindowEvent::RebuildAccessTree => {
                 self.rebuild_access_tree = true;
-                self.state.emit_signal(RenderRootSignal::RequestRedraw);
+                self.global_state
+                    .emit_signal(RenderRootSignal::RequestRedraw);
                 Handled::Yes
             }
         }
@@ -254,7 +255,10 @@ impl RenderRoot {
         &mut self,
         data: Vec<u8>,
     ) -> Vec<(fontique::FamilyId, Vec<fontique::FontInfo>)> {
-        self.state.font_context.collection.register_fonts(data)
+        self.global_state
+            .font_context
+            .collection
+            .register_fonts(data)
     }
 
     pub fn redraw(&mut self) -> (Scene, TreeUpdate) {
@@ -264,7 +268,8 @@ impl RenderRoot {
         }
         if self.root_state().needs_layout {
             warn!("Widget requested layout during layout pass");
-            self.state.emit_signal(RenderRootSignal::RequestRedraw);
+            self.global_state
+                .emit_signal(RenderRootSignal::RequestRedraw);
         }
 
         // TODO - Handle invalidation regions
@@ -273,15 +278,15 @@ impl RenderRoot {
     }
 
     pub fn pop_signal(&mut self) -> Option<RenderRootSignal> {
-        self.state.signal_queue.pop_front()
+        self.global_state.signal_queue.pop_front()
     }
 
     pub fn pop_signal_matching(
         &mut self,
         predicate: impl Fn(&RenderRootSignal) -> bool,
     ) -> Option<RenderRootSignal> {
-        let idx = self.state.signal_queue.iter().position(predicate)?;
-        self.state.signal_queue.remove(idx)
+        let idx = self.global_state.signal_queue.iter().position(predicate)?;
+        self.global_state.signal_queue.remove(idx)
     }
 
     pub fn cursor_icon(&self) -> CursorIcon {
@@ -310,7 +315,7 @@ impl RenderRoot {
             .unwrap();
 
         let ctx = QueryCtx {
-            global_state: &self.state,
+            global_state: &self.global_state,
             widget_state_children: state_ref.children,
             widget_children: widget_ref.children,
             widget_state: state_ref.item,
@@ -335,7 +340,7 @@ impl RenderRoot {
         let widget = widget_ref.item;
         let widget: &dyn Widget = &**widget;
         let ctx = QueryCtx {
-            global_state: &self.state,
+            global_state: &self.global_state,
             widget_state_children: state_ref.children,
             widget_children: widget_ref.children,
             widget_state: state_ref.item,
@@ -480,7 +485,8 @@ impl RenderRoot {
         run_update_pointer_pass(self);
 
         if self.root_state().needs_anim {
-            self.state.emit_signal(RenderRootSignal::RequestAnimFrame);
+            self.global_state
+                .emit_signal(RenderRootSignal::RequestAnimFrame);
         }
 
         // We request a redraw if either the render tree or the accessibility
@@ -491,7 +497,8 @@ impl RenderRoot {
             || self.root_state().needs_accessibility
             || self.root_state().needs_layout
         {
-            self.state.emit_signal(RenderRootSignal::RequestRedraw);
+            self.global_state
+                .emit_signal(RenderRootSignal::RequestRedraw);
         }
     }
 
@@ -518,7 +525,8 @@ impl RenderRoot {
 
         let (root_widget, mut root_state) = self.widget_arena.get_pair_mut(self.root.id());
         request_render_all_in(root_widget, root_state.reborrow_mut());
-        self.state.emit_signal(RenderRootSignal::RequestRedraw);
+        self.global_state
+            .emit_signal(RenderRootSignal::RequestRedraw);
     }
 
     // Checks whether the given id points to a widget that is "interactive".
@@ -533,7 +541,7 @@ impl RenderRoot {
     }
 
     pub(crate) fn widget_from_focus_chain(&mut self, forward: bool) -> Option<WidgetId> {
-        let focused_widget = self.state.focused_widget;
+        let focused_widget = self.global_state.focused_widget;
         let focused_idx = focused_widget.and_then(|focused_widget| {
             self.focus_chain()
                 .iter()
@@ -569,7 +577,7 @@ impl RenderRoot {
 
     #[allow(dead_code)]
     pub(crate) fn needs_rewrite_passes(&mut self) -> bool {
-        self.root_state().needs_rewrite_passes() || self.state.focus_changed()
+        self.root_state().needs_rewrite_passes() || self.global_state.focus_changed()
     }
 }
 
