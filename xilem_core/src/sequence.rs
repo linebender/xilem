@@ -196,7 +196,7 @@ where
 }
 
 /// The state used to implement `ViewSequence` for `Option<impl ViewSequence>`
-#[allow(unnameable_types)] // Public because of trait visibility rules, but has no public API.
+#[allow(unnameable_types)] // reason: Implementation detail, public because of trait visibility rules
 pub struct OptionSeqState<InnerState> {
     /// The current state.
     ///
@@ -339,7 +339,8 @@ where
 /// to the index, and the other half used for the generation.
 ///
 // This is managed in [`create_vector_view_id`] and [`view_id_to_index_generation`]
-#[doc(hidden)] // Implementation detail, public because of trait visibility rules
+#[doc(hidden)]
+#[allow(unnameable_types)] // reason: Implementation detail, public because of trait visibility rules
 pub struct VecViewState<InnerState> {
     inner_states: Vec<InnerState>,
 

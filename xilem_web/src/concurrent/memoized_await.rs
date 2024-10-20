@@ -101,6 +101,7 @@ where
 }
 
 #[derive(Default)]
+#[allow(unnameable_types)] // reason: Implementation detail, public because of trait visibility rules
 pub struct MemoizedAwaitState {
     generation: u64,
     schedule_update: bool,

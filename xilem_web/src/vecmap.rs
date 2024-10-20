@@ -140,7 +140,6 @@ impl<K, V> VecMap<K, V> {
     /// assert_eq!((*first_key, *first_value), (1, "a"));
     /// ```
     pub fn iter(&self) -> impl Iterator<Item = (&K, &V)> {
-        #[allow(clippy::map_identity)]
         self.0.iter().map(|(k, v)| (k, v))
     }
 

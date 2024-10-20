@@ -9,7 +9,6 @@ use crate::event::PointerButton;
 
 // TODO - TextCursor changed, ImeChanged, EnterKey, MouseEnter
 #[non_exhaustive]
-#[allow(missing_docs)]
 /// Events from UI elements.
 ///
 /// Note: Actions are still a WIP feature.

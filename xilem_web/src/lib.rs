@@ -35,7 +35,6 @@ mod class;
 mod context;
 mod dom_helpers;
 mod element_props;
-mod events;
 mod message;
 mod one_of;
 mod optional_action;
@@ -49,6 +48,7 @@ mod vecmap;
 
 pub mod concurrent;
 pub mod elements;
+pub mod events;
 pub mod interfaces;
 pub mod svg;
 

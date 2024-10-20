@@ -21,7 +21,6 @@ pub struct Adapt<
 > {
     proxy_fn: ProxyFn,
     child: ChildView,
-    #[allow(clippy::type_complexity)]
     phantom: PhantomData<
         fn() -> (
             ParentState,

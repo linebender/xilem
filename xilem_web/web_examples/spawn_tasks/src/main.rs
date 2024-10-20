@@ -35,7 +35,10 @@ async fn create_ping_task(proxy: TaskProxy, shutdown_signal: ShutdownSignal) {
     log::debug!("Start ping task");
     let mut abort = shutdown_signal.into_future().fuse();
 
-    #[allow(clippy::infinite_loop)]
+    #[allow(
+        clippy::infinite_loop,
+        // reason = "False-Positive of clippy, not recognizing that the loop will be aborted"
+    )]
     loop {
         let mut timeout = TimeoutFuture::new(1_000).fuse();
 

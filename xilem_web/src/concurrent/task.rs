@@ -102,6 +102,7 @@ pub struct Task<F, H, M> {
     message: PhantomData<fn() -> M>,
 }
 
+#[allow(unnameable_types)] // reason: Implementation detail, public because of trait visibility rules
 pub struct TaskState {
     abort_handle: Option<AbortHandle>,
 }

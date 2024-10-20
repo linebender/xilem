@@ -57,6 +57,7 @@ where
     }
 }
 
+#[allow(unnameable_types)] // reason: Implementation detail, public because of trait visibility rules
 pub struct IntervalState {
     // Closures are retained so they can be called by environment
     interval_fn: Closure<dyn FnMut()>,

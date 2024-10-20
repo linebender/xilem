@@ -204,6 +204,7 @@ where
     }
 }
 
+#[allow(unnameable_types)] // reason: Implementation detail, public because of trait visibility rules
 pub struct ArcState<ViewState> {
     view_state: ViewState,
     dirty: bool,

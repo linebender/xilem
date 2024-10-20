@@ -142,6 +142,7 @@ where
     }
 }
 
+#[allow(unnameable_types)] // reason: Implementation detail, public because of trait visibility rules
 pub struct StrokeState<ChildState> {
     brush_svg_repr: Option<AttributeValue>,
     stroke_dash_pattern_svg_repr: Option<AttributeValue>,

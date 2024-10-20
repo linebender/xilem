@@ -11,6 +11,7 @@ use wasm_bindgen::UnwrapThrowExt;
 /// This view creates an internally cached deep-clone of the underlying DOM node. When the inner view is created again, this will be done more efficiently.
 pub struct Templated<E>(Rc<E>);
 
+#[allow(unnameable_types)] // reason: Implementation detail, public because of trait visibility rules
 pub struct TemplatedState<ViewState> {
     view_state: ViewState,
     dirty: bool,

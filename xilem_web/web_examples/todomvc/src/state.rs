@@ -7,7 +7,7 @@ use wasm_bindgen::UnwrapThrowExt;
 const KEY: &str = "todomvc_persist";
 
 #[derive(Default, Debug, Serialize, Deserialize)]
-pub struct AppState {
+pub(crate) struct AppState {
     #[serde(skip)]
     pub new_todo: String,
     pub todos: Vec<Todo>,
@@ -21,7 +21,7 @@ pub struct AppState {
 }
 
 impl AppState {
-    pub fn create_todo(&mut self) {
+    pub(crate) fn create_todo(&mut self) {
         if self.new_todo.is_empty() {
             return;
         }
@@ -39,13 +39,13 @@ impl AppState {
     }
 
     /// Are all the todos complete?
-    pub fn are_all_complete(&self) -> bool {
+    pub(crate) fn are_all_complete(&self) -> bool {
         self.todos.iter().all(|todo| todo.completed)
     }
 
     /// If all TODOs are complete, then mark them all not complete,
     /// else mark them all complete.
-    pub fn toggle_all_complete(&mut self) {
+    pub(crate) fn toggle_all_complete(&mut self) {
         if self.are_all_complete() {
             for todo in self.todos.iter_mut() {
                 todo.completed = false;
@@ -58,7 +58,7 @@ impl AppState {
         self.save();
     }
 
-    pub fn visible_todos(&mut self) -> impl Iterator<Item = (usize, &mut Todo)> {
+    pub(crate) fn visible_todos(&mut self) -> impl Iterator<Item = (usize, &mut Todo)> {
         self.todos
             .iter_mut()
             .enumerate()
@@ -69,12 +69,12 @@ impl AppState {
             })
     }
 
-    pub fn update_new_todo(&mut self, new_text: &str) {
+    pub(crate) fn update_new_todo(&mut self, new_text: &str) {
         self.new_todo.clear();
         self.new_todo.push_str(new_text);
     }
 
-    pub fn start_editing(&mut self, id: u64) {
+    pub(crate) fn start_editing(&mut self, id: u64) {
         if let Some(ref mut todo) = self.todos.iter_mut().find(|todo| todo.id == id) {
             todo.title_editing.clear();
             todo.title_editing.push_str(&todo.title);
@@ -83,7 +83,7 @@ impl AppState {
     }
 
     /// Load the current state from local storage, or use the default.
-    pub fn load() -> Self {
+    pub(crate) fn load() -> Self {
         let Some(raw) = storage().get_item(KEY).unwrap_throw() else {
             return Default::default();
         };
@@ -97,14 +97,14 @@ impl AppState {
     }
 
     /// Save the current state to local storage
-    pub fn save(&self) {
+    pub(crate) fn save(&self) {
         let raw = serde_json::to_string(self).unwrap_throw();
         storage().set_item(KEY, &raw).unwrap_throw();
     }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct Todo {
+pub(crate) struct Todo {
     pub id: u64,
     pub title: String,
     #[serde(skip)]
@@ -113,7 +113,7 @@ pub struct Todo {
 }
 
 impl Todo {
-    pub fn new(title: String, id: u64) -> Self {
+    pub(crate) fn new(title: String, id: u64) -> Self {
         let title_editing = title.clone();
         Self {
             id,
@@ -123,14 +123,14 @@ impl Todo {
         }
     }
 
-    pub fn save_editing(&mut self) {
+    pub(crate) fn save_editing(&mut self) {
         self.title.clear();
         self.title.push_str(&self.title_editing);
     }
 }
 
 #[derive(Debug, Default, PartialEq, Copy, Clone)]
-pub enum Filter {
+pub(crate) enum Filter {
     #[default]
     All,
     Active,

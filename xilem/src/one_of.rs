@@ -146,7 +146,7 @@ impl crate::core::one_of::PhantomElementCtx for ViewCtx {
     type PhantomElement = Pod<Box<dyn Widget>>;
 }
 
-#[allow(unnameable_types)] // Public because of trait visibility rules, but has no public API.
+#[allow(unnameable_types)] // reason: Implementation detail, public because of trait visibility rules
 pub enum OneOfWidget<A, B, C, D, E, F, G, H, I> {
     A(WidgetPod<A>),
     B(WidgetPod<B>),
@@ -175,7 +175,7 @@ impl<
     fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
     fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {}
 
-    #[allow(missing_docs)]
+    #[allow(missing_docs)] // reason: Doesn't do anything and is not available publicly
     fn on_status_change(&mut self, _: &mut UpdateCtx, _: &StatusChange) {
         // Intentionally do nothing
     }

@@ -4,6 +4,7 @@ version = "0.0.0" # not versioned
 publish = false
 license.workspace = true
 edition.workspace = true
+rust-version.workspace = true
 
 [lints]
 workspace = true
