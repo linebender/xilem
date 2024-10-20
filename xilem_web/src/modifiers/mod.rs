@@ -1,3 +1,6 @@
+// Copyright 2024 the Xilem Authors
+// SPDX-License-Identifier: Apache-2.0
+
 //! This module contains DOM element modifiers, e.g. to add attributes/classes/styles.
 //!
 //! A modifier is usually a part/attribute of a [`ViewElement`](crate::core::ViewElement),
