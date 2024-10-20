@@ -176,7 +176,7 @@ impl Classes {
     pub fn push(&mut self, modifier: ClassModifier) {
         debug_assert!(
             self.was_created(),
-            "This should never be called, when the underlying element wasn't (re)created, use `Classes::push` instead"
+            "This should never be called, when the underlying element wasn't (re)created."
         );
         self.dirty = true;
         self.modifiers.push(modifier);
@@ -190,7 +190,7 @@ impl Classes {
     pub fn insert(&mut self, modifier: ClassModifier) {
         debug_assert!(
             !self.was_created(),
-            "This should never be called, when the underlying element was (re)created, use `Classes::push` instead"
+            "This should never be called, when the underlying element was (re)created, use `Classes::push` instead."
         );
 
         self.dirty = true;
@@ -204,11 +204,11 @@ impl Classes {
     #[inline]
     /// Mutates the next modifier.
     ///
-    /// Must only be used when `!self.was_created()`
+    /// Must only be used when `self.was_created() == false`
     pub fn mutate<R>(&mut self, f: impl FnOnce(&mut ClassModifier) -> R) -> R {
         debug_assert!(
             !self.was_created(),
-            "This should never be called, when the underlying element was (re)created, use `Classes::push` instead"
+            "This should never be called, when the underlying element was (re)created, use `Classes::push` instead."
         );
 
         self.dirty = true;
@@ -219,13 +219,25 @@ impl Classes {
 
     #[inline]
     /// Skips the next `count` modifiers.
+    ///
+    /// Must only be used when `self.was_created() == false`
     pub fn skip(&mut self, count: usize) {
+        debug_assert!(
+            !self.was_created(),
+            "This should never be called, when the underlying element was (re)created"
+        );
         self.idx += count as u16;
     }
 
     #[inline]
     /// Deletes the next `count` modifiers.
+    ///
+    /// Must only be used when `self.was_created() == false`
     pub fn delete(&mut self, count: usize) {
+        debug_assert!(
+            !self.was_created(),
+            "This should never be called, when the underlying element was (re)created."
+        );
         let start = self.idx as usize;
         self.dirty = true;
         self.modifiers.drain(start..(start + count));
@@ -233,7 +245,13 @@ impl Classes {
 
     #[inline]
     /// Extends the current modifiers with an iterator of modifiers. Returns the count of `modifiers`.
+    ///
+    /// Must only be used when `self.was_created() == true`
     pub fn extend(&mut self, modifiers: impl Iterator<Item = ClassModifier>) -> usize {
+        debug_assert!(
+            !self.was_created(),
+            "This should never be called, when the underlying element wasn't (re)created, use `Classes::apply_diff` instead."
+        );
         self.dirty = true;
         let prev_len = self.modifiers.len();
         self.modifiers.extend(modifiers);
@@ -244,7 +262,13 @@ impl Classes {
 
     #[inline]
     /// Diffs between two iterators, and updates the underlying modifiers if they have changed, returns the `next` iterator count.
+    ///
+    /// Must only be used when `self.was_created() == false`
     pub fn apply_diff<T: Iterator<Item = ClassModifier>>(&mut self, prev: T, next: T) -> usize {
+        debug_assert!(
+            !self.was_created(),
+            "This should never be called, when the underlying element was (re)created, use `Classes::extend` instead."
+        );
         let mut new_len = 0;
         for change in diff_iters(prev, next) {
             match change {

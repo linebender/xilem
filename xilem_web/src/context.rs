@@ -109,9 +109,9 @@ impl ViewCtx {
     pub fn add_modifier_size_hint<T: 'static>(&mut self, request_size: usize) {
         let id = TypeId::of::<T>();
         match self.modifier_size_hints.get_mut(&id) {
-            Some(hint) => *hint += request_size + 1, // + 1 because of the marker
+            Some(hint) => *hint += request_size,
             None => {
-                self.modifier_size_hints.insert(id, request_size + 1);
+                self.modifier_size_hints.insert(id, request_size);
             }
         };
     }
