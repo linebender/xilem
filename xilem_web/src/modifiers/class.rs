@@ -251,7 +251,7 @@ impl Classes {
     /// Must only be used when `self.was_created() == true`
     pub fn extend(&mut self, modifiers: impl Iterator<Item = ClassModifier>) -> usize {
         debug_assert!(
-            !self.was_created(),
+            self.was_created(),
             "This should never be called, when the underlying element wasn't (re)created, use `Classes::apply_diff` instead."
         );
         self.dirty = true;

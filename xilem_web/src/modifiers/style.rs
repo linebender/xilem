@@ -359,7 +359,7 @@ impl Styles {
     /// Must only be used when `self.was_created() == true`, use `Styles::apply_diff` otherwise.
     pub fn extend(&mut self, modifiers: impl Iterator<Item = StyleModifier>) -> usize {
         debug_assert!(
-            !self.was_created(),
+            self.was_created(),
             "This should never be called, when the underlying element wasn't (re)created, use `Styles::apply_diff` instead."
         );
         let prev_len = self.modifiers.len();
