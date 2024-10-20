@@ -177,7 +177,11 @@ pub(crate) fn run_update_widget_tree_pass(root: &mut RenderRoot) {
     }
 
     let (root_widget, mut root_state) = root.widget_arena.get_pair_mut(root.root.id());
-    update_widget_tree(&mut root.global_state, root_widget, root_state.reborrow_mut());
+    update_widget_tree(
+        &mut root.global_state,
+        root_widget,
+        root_state.reborrow_mut(),
+    );
 }
 
 // ----------------
@@ -591,7 +595,10 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
 
     // If the pointer is captured, its cursor always reflects the
     // capture target, even when not hovered.
-    let cursor_source = root.global_state.pointer_capture_target.or(next_hovered_widget);
+    let cursor_source = root
+        .global_state
+        .pointer_capture_target
+        .or(next_hovered_widget);
 
     let new_cursor = if let Some(cursor_source) = cursor_source {
         let (widget, state) = root.widget_arena.get_pair(cursor_source);

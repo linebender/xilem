@@ -235,7 +235,8 @@ pub(crate) fn run_layout_pass(root: &mut RenderRoot) {
         let new_size = LogicalSize::new(size.width, size.height).to_physical(root.scale_factor);
         if root.size != new_size {
             root.size = new_size;
-            root.global_state.emit_signal(RenderRootSignal::SetSize(new_size));
+            root.global_state
+                .emit_signal(RenderRootSignal::SetSize(new_size));
         }
     }
 }

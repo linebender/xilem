@@ -139,7 +139,11 @@ pub(crate) fn run_accessibility_pass(
     let mut tree_update = TreeUpdate {
         nodes: vec![],
         tree: None,
-        focus: root.global_state.focused_widget.unwrap_or(root.root.id()).into(),
+        focus: root
+            .global_state
+            .focused_widget
+            .unwrap_or(root.root.id())
+            .into(),
     };
 
     let (root_widget, root_state) = {

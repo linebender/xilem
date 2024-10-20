@@ -660,6 +660,9 @@ impl TestHarness {
     // ex: harness.write_debug_logs("test_log.json");
     #[allow(missing_docs)]
     pub fn write_debug_logs(&mut self, path: &str) {
-        self.render_root.global_state.debug_logger.write_to_file(path);
+        self.render_root
+            .global_state
+            .debug_logger
+            .write_to_file(path);
     }
 }
