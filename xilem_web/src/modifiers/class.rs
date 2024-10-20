@@ -21,6 +21,14 @@ pub enum ClassModifier {
     Remove(CowStr),
 }
 
+impl ClassModifier {
+    /// Returns the class name of this modifier.
+    pub fn name(&self) -> &CowStr {
+        let (ClassModifier::Add(name) | ClassModifier::Remove(name)) = self;
+        name
+    }
+}
+
 /// Types implementing this trait can be used in the [`Class`] view, see also [`Element::class`](`crate::interfaces::Element::class`).
 pub trait ClassIter: PartialEq + Debug + 'static {
     /// Returns an iterator of class compliant strings (e.g. the strings aren't allowed to contain spaces).
@@ -98,10 +106,8 @@ impl Classes {
     /// Creates a new `Classes` modifier.
     ///
     /// `size_hint` is used to avoid unnecessary allocations while traversing up the view-tree when adding modifiers in [`View::build`].
-    pub(crate) fn new(size_hint: usize, #[cfg(feature = "hydration")] in_hydration: bool) -> Self {
-        #[allow(unused_mut)]
+    pub(crate) fn new(size_hint: usize, in_hydration: bool) -> Self {
         let mut flags = WAS_CREATED;
-        #[cfg(feature = "hydration")]
         if in_hydration {
             flags |= IN_HYDRATION;
         }
@@ -159,13 +165,19 @@ impl Classes {
 
     #[inline]
     /// Returns whether the underlying element has been rebuilt, this could e.g. happen, when `OneOf` changes a variant to a different element.
-    pub fn was_recreated(&self) -> bool {
+    pub fn was_created(&self) -> bool {
         self.flags & WAS_CREATED != 0
     }
 
     #[inline]
     /// Pushes `modifier` at the end of the current modifiers.
+    ///
+    /// Must only be used when `self.was_created() == true`
     pub fn push(&mut self, modifier: ClassModifier) {
+        debug_assert!(
+            self.was_created(),
+            "This should never be called, when the underlying element wasn't (re)created, use `Classes::push` instead"
+        );
         self.dirty = true;
         self.modifiers.push(modifier);
         self.idx += 1;
@@ -173,7 +185,14 @@ impl Classes {
 
     #[inline]
     /// Inserts `modifier` at the current index.
+    ///
+    /// Must only be used when `self.was_created() == false`
     pub fn insert(&mut self, modifier: ClassModifier) {
+        debug_assert!(
+            !self.was_created(),
+            "This should never be called, when the underlying element was (re)created, use `Classes::push` instead"
+        );
+
         self.dirty = true;
         // TODO this could potentially be expensive, maybe think about `VecSplice` again.
         // Although in the average case, this is likely not relevant, as usually very few attributes are used, thus shifting is probably good enough
@@ -184,7 +203,14 @@ impl Classes {
 
     #[inline]
     /// Mutates the next modifier.
+    ///
+    /// Must only be used when `!self.was_created()`
     pub fn mutate<R>(&mut self, f: impl FnOnce(&mut ClassModifier) -> R) -> R {
+        debug_assert!(
+            !self.was_created(),
+            "This should never be called, when the underlying element was (re)created, use `Classes::push` instead"
+        );
+
         self.dirty = true;
         let idx = self.idx;
         self.idx += 1;
@@ -217,7 +243,7 @@ impl Classes {
     }
 
     #[inline]
-    /// Diffs between two iterators, and updates the underlying modifiers if they have changed, returns the next iterator count.
+    /// Diffs between two iterators, and updates the underlying modifiers if they have changed, returns the `next` iterator count.
     pub fn apply_diff<T: Iterator<Item = ClassModifier>>(&mut self, prev: T, next: T) -> usize {
         let mut new_len = 0;
         for change in diff_iters(prev, next) {
@@ -250,7 +276,7 @@ impl Classes {
         prev: &T,
         next: &T,
     ) -> usize {
-        if self.was_recreated() {
+        if self.was_created() {
             self.extend(next.add_class_iter())
         } else if next != prev {
             self.apply_diff(prev.add_class_iter(), next.add_class_iter())

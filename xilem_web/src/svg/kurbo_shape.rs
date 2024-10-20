@@ -17,14 +17,11 @@ fn create_element<R>(
     f: impl FnOnce(Pod<web_sys::Element>) -> R,
 ) -> R {
     ctx.with_size_hint::<Attributes, _>(attr_size_hint, |ctx| {
-        #[cfg(feature = "hydration")]
         let element = if ctx.is_hydrating() {
             Pod::hydrate_element_with_ctx(Vec::new(), ctx.hydrate_node().unwrap(), ctx)
         } else {
             Pod::new_element_with_ctx(Vec::new(), SVG_NS, name, ctx)
         };
-        #[cfg(not(feature = "hydration"))]
-        let element = Pod::new_element_with_ctx(Vec::new(), SVG_NS, name, ctx);
         f(element)
     })
 }

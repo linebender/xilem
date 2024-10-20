@@ -22,13 +22,13 @@ pub enum AttributeModifier {
 
 impl AttributeModifier {
     /// Returns the attribute name of this modifier.
-    fn name(&self) -> &CowStr {
+    pub fn name(&self) -> &CowStr {
         let (AttributeModifier::Set(name, _) | AttributeModifier::Remove(name)) = self;
         name
     }
 
     /// Convert this modifier into its attribute name.
-    fn into_name(self) -> CowStr {
+    pub fn into_name(self) -> CowStr {
         let (AttributeModifier::Set(name, _) | AttributeModifier::Remove(name)) = self;
         name
     }
@@ -66,11 +66,10 @@ impl Attributes {
     /// Creates a new `Attributes` modifier.
     ///
     /// `size_hint` is used to avoid unnecessary allocations while traversing up the view-tree when adding modifiers in [`View::build`].
-    pub(crate) fn new(size_hint: usize, #[cfg(feature = "hydration")] in_hydration: bool) -> Self {
+    pub(crate) fn new(size_hint: usize, in_hydration: bool) -> Self {
         Self {
             modifiers: Vec::with_capacity(size_hint),
             was_created: true,
-            #[cfg(feature = "hydration")]
             in_hydration,
             ..Default::default()
         }
@@ -78,7 +77,6 @@ impl Attributes {
 
     /// Applies potential changes of the attributes of an element to the underlying DOM node.
     pub fn apply_changes(&mut self, element: &web_sys::Element) {
-        #[cfg(feature = "hydration")]
         if self.in_hydration {
             self.in_hydration = false;
             self.was_created = false;

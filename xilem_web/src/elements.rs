@@ -123,7 +123,6 @@ pub struct DomChildrenSplice<'a, 'b, 'c, 'd> {
     parent: &'d web_sys::Node,
     fragment: Rc<web_sys::DocumentFragment>,
     parent_was_removed: bool,
-    #[cfg(feature = "hydration")]
     in_hydration: bool,
 }
 
@@ -135,7 +134,7 @@ impl<'a, 'b, 'c, 'd> DomChildrenSplice<'a, 'b, 'c, 'd> {
         parent: &'d web_sys::Node,
         fragment: Rc<web_sys::DocumentFragment>,
         parent_was_deleted: bool,
-        #[cfg(feature = "hydration")] hydrate: bool,
+        hydrate: bool,
     ) -> Self {
         Self {
             scratch,
@@ -144,7 +143,6 @@ impl<'a, 'b, 'c, 'd> DomChildrenSplice<'a, 'b, 'c, 'd> {
             parent,
             fragment,
             parent_was_removed: parent_was_deleted,
-            #[cfg(feature = "hydration")]
             in_hydration: hydrate,
         }
     }
@@ -154,13 +152,7 @@ impl<'a, 'b, 'c, 'd> ElementSplice<AnyPod> for DomChildrenSplice<'a, 'b, 'c, 'd>
     fn with_scratch<R>(&mut self, f: impl FnOnce(&mut AppendVec<AnyPod>) -> R) -> R {
         let ret = f(self.scratch);
         if !self.scratch.is_empty() {
-            #[allow(unused_assignments, unused_mut)]
-            // reason: when the feature "hydration" is enabled/disabled, avoid warnings
-            let mut add_dom_children_to_parent = true;
-            #[cfg(feature = "hydration")]
-            {
-                add_dom_children_to_parent = !self.in_hydration;
-            }
+            let add_dom_children_to_parent = !self.in_hydration;
 
             for element in self.scratch.drain() {
                 if add_dom_children_to_parent {
@@ -253,27 +245,19 @@ where
     let class_size_hint = ctx.modifier_size_hint::<Classes>();
     let style_size_hint = ctx.modifier_size_hint::<Styles>();
     let mut elements = AppendVec::default();
-    #[cfg(feature = "hydration")]
     if ctx.is_hydrating() {
         ctx.enter_hydrating_children();
     }
     let state = ElementState::new(children.dyn_seq_build(ctx, &mut elements));
-    #[cfg(feature = "hydration")]
-    if ctx.is_hydrating() {
-        let hydrating_node = ctx.hydrate_node().unwrap_throw();
-        return (
-            Pod::hydrate_element(
-                elements.into_inner(),
-                hydrating_node,
-                attr_size_hint,
-                style_size_hint,
-                class_size_hint,
-            )
-            .into(),
-            state,
-        );
-    }
-    (
+    let element = if ctx.is_hydrating() {
+        Pod::hydrate_element(
+            elements.into_inner(),
+            ctx.hydrate_node().unwrap_throw(),
+            attr_size_hint,
+            style_size_hint,
+            class_size_hint,
+        )
+    } else {
         Pod::new_element(
             elements.into_inner(),
             ns,
@@ -282,9 +266,8 @@ where
             style_size_hint,
             class_size_hint,
         )
-        .into(),
-        state,
-    )
+    };
+    (element.into(), state)
 }
 
 pub(crate) fn rebuild_element<State, Action, Element>(
@@ -306,7 +289,6 @@ pub(crate) fn rebuild_element<State, Action, Element>(
         element.node.as_ref(),
         ctx.fragment.clone(),
         element.was_removed,
-        #[cfg(feature = "hydration")]
         ctx.is_hydrating(),
     );
     children.dyn_seq_rebuild(
@@ -335,7 +317,6 @@ pub(crate) fn teardown_element<State, Action, Element>(
         element.node.as_ref(),
         ctx.fragment.clone(),
         true,
-        #[cfg(feature = "hydration")]
         ctx.is_hydrating(),
     );
     children.dyn_seq_teardown(&mut state.seq_state, ctx, &mut dom_children_splice);

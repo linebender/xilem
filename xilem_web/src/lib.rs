@@ -37,7 +37,6 @@ mod message;
 mod one_of;
 mod optional_action;
 mod pointer;
-#[cfg(feature = "hydration")]
 mod templated;
 mod text;
 mod vec_splice;
@@ -65,7 +64,6 @@ pub use self::{
     pointer::{Pointer, PointerDetails, PointerMsg},
 };
 
-#[cfg(feature = "hydration")]
 pub use templated::{templated, Templated};
 
 pub use xilem_core as core;

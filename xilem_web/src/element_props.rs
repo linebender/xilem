@@ -6,7 +6,6 @@ use crate::{
     modifiers::{Attributes, Classes, Styles},
     AnyPod, Pod, ViewCtx,
 };
-#[cfg(feature = "hydration")]
 use wasm_bindgen::JsCast;
 use wasm_bindgen::UnwrapThrowExt;
 
@@ -14,7 +13,6 @@ use wasm_bindgen::UnwrapThrowExt;
 // Benchmarks have shown, that this can significantly increase performance and reduce memory usage...
 /// This holds all the state for a DOM [`Element`](`crate::interfaces::Element`), it is used for [`DomNode::Props`](`crate::DomNode::Props`)
 pub struct ElementProps {
-    #[cfg(feature = "hydration")]
     pub(crate) in_hydration: bool,
     pub(crate) attributes: Option<Box<Attributes>>,
     pub(crate) classes: Option<Box<Classes>>,
@@ -28,41 +26,16 @@ impl ElementProps {
         attr_size_hint: usize,
         style_size_hint: usize,
         class_size_hint: usize,
-        #[cfg(feature = "hydration")] in_hydration: bool,
+        in_hydration: bool,
     ) -> Self {
-        let attributes = if attr_size_hint > 0 {
-            Some(Box::new(Attributes::new(
-                attr_size_hint,
-                #[cfg(feature = "hydration")]
-                in_hydration,
-            )))
-        } else {
-            None
-        };
-        let styles = if style_size_hint > 0 {
-            Some(Box::new(Styles::new(
-                style_size_hint,
-                #[cfg(feature = "hydration")]
-                in_hydration,
-            )))
-        } else {
-            None
-        };
-        let classes = if class_size_hint > 0 {
-            Some(Box::new(Classes::new(
-                class_size_hint,
-                #[cfg(feature = "hydration")]
-                in_hydration,
-            )))
-        } else {
-            None
-        };
         Self {
-            attributes,
-            classes,
-            styles,
+            attributes: (attr_size_hint > 0)
+                .then(|| Box::new(Attributes::new(attr_size_hint, in_hydration))),
+            classes: (class_size_hint > 0)
+                .then(|| Box::new(Classes::new(class_size_hint, in_hydration))),
+            styles: (style_size_hint > 0)
+                .then(|| Box::new(Styles::new(style_size_hint, in_hydration))),
             children,
-            #[cfg(feature = "hydration")]
             in_hydration,
         }
     }
@@ -83,35 +56,20 @@ impl ElementProps {
 
     /// Lazily returns the [`Attributes`] modifier of this element.
     pub fn attributes(&mut self) -> &mut Attributes {
-        self.attributes.get_or_insert_with(|| {
-            Box::new(Attributes::new(
-                0,
-                #[cfg(feature = "hydration")]
-                self.in_hydration,
-            ))
-        })
+        self.attributes
+            .get_or_insert_with(|| Box::new(Attributes::new(0, self.in_hydration)))
     }
 
     /// Lazily returns the [`Styles`] modifier of this element.
     pub fn styles(&mut self) -> &mut Styles {
-        self.styles.get_or_insert_with(|| {
-            Box::new(Styles::new(
-                0,
-                #[cfg(feature = "hydration")]
-                self.in_hydration,
-            ))
-        })
+        self.styles
+            .get_or_insert_with(|| Box::new(Styles::new(0, self.in_hydration)))
     }
 
     /// Lazily returns the [`Classes`] modifier of this element.
     pub fn classes(&mut self) -> &mut Classes {
-        self.classes.get_or_insert_with(|| {
-            Box::new(Classes::new(
-                0,
-                #[cfg(feature = "hydration")]
-                self.in_hydration,
-            ))
-        })
+        self.classes
+            .get_or_insert_with(|| Box::new(Classes::new(0, self.in_hydration)))
     }
 }
 
@@ -162,13 +120,11 @@ impl Pod<web_sys::Element> {
                 attr_size_hint,
                 style_size_hint,
                 class_size_hint,
-                #[cfg(feature = "hydration")]
                 false,
             ),
         }
     }
 
-    #[cfg(feature = "hydration")]
     pub fn hydrate_element_with_ctx(
         children: Vec<AnyPod>,
         element: web_sys::Node,
@@ -186,7 +142,6 @@ impl Pod<web_sys::Element> {
         )
     }
 
-    #[cfg(feature = "hydration")]
     pub fn hydrate_element(
         children: Vec<AnyPod>,
         element: web_sys::Node,
@@ -201,7 +156,6 @@ impl Pod<web_sys::Element> {
                 attr_size_hint,
                 style_size_hint,
                 class_size_hint,
-                #[cfg(feature = "hydration")]
                 true,
             ),
         }

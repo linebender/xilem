@@ -5,7 +5,6 @@ use crate::{
     core::{MessageResult, Mut, OrphanView, ViewId},
     DynMessage, Pod, ViewCtx,
 };
-#[cfg(feature = "hydration")]
 use wasm_bindgen::JsCast;
 
 // strings -> text nodes
@@ -18,16 +17,13 @@ macro_rules! impl_string_view {
 
             fn orphan_build(
                 view: &$ty,
-                #[cfg_attr(not(feature = "hydration"), allow(unused_variables))] ctx: &mut ViewCtx,
+                ctx: &mut ViewCtx,
             ) -> (Self::OrphanElement, Self::OrphanViewState) {
-                #[cfg(feature = "hydration")]
                 let node = if ctx.is_hydrating() {
                     ctx.hydrate_node().unwrap().unchecked_into()
                 } else {
                     web_sys::Text::new_with_data(view).unwrap()
                 };
-                #[cfg(not(feature = "hydration"))]
-                let node = web_sys::Text::new_with_data(view).unwrap();
                 (Pod { node, props: () }, ())
             }
 
@@ -77,16 +73,13 @@ macro_rules! impl_to_string_view {
 
             fn orphan_build(
                 view: &$ty,
-                #[cfg_attr(not(feature = "hydration"), allow(unused_variables))] ctx: &mut ViewCtx,
+                ctx: &mut ViewCtx,
             ) -> (Self::OrphanElement, Self::OrphanViewState) {
-                #[cfg(feature = "hydration")]
                 let node = if ctx.is_hydrating() {
                     ctx.hydrate_node().unwrap().unchecked_into()
                 } else {
                     web_sys::Text::new_with_data(&view.to_string()).unwrap()
                 };
-                #[cfg(not(feature = "hydration"))]
-                let node = web_sys::Text::new_with_data(&view.to_string()).unwrap();
                 (Pod { node, props: () }, ())
             }
 

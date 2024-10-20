@@ -175,11 +175,10 @@ impl Styles {
     /// Creates a new `Styles` modifier.
     ///
     /// `size_hint` is used to avoid unnecessary allocations while traversing up the view-tree when adding modifiers in [`View::build`].
-    pub(crate) fn new(size_hint: usize, #[cfg(feature = "hydration")] in_hydration: bool) -> Self {
+    pub(crate) fn new(size_hint: usize, in_hydration: bool) -> Self {
         Self {
             modifiers: Vec::with_capacity(size_hint),
             was_created: true,
-            #[cfg(feature = "hydration")]
             in_hydration,
             ..Default::default()
         }
@@ -187,7 +186,6 @@ impl Styles {
 
     /// Applies potential changes of the inline styles of an element to the underlying DOM node.
     pub fn apply_changes(&mut self, element: &web_sys::Element) {
-        #[cfg(feature = "hydration")]
         if self.in_hydration {
             self.in_hydration = false;
             self.was_created = false;
@@ -249,7 +247,7 @@ impl Styles {
 
     #[inline]
     /// Returns whether the underlying element has been rebuilt, this could e.g. happen, when `OneOf` changes a variant to a different element.
-    pub fn was_recreated(&self) -> bool {
+    pub fn was_created(&self) -> bool {
         self.was_created
     }
 
@@ -315,7 +313,7 @@ impl Styles {
     #[inline]
     /// Updates the next modifier, based on the diff of `prev` and `next`.
     pub fn update(&mut self, prev: &StyleModifier, next: &StyleModifier) {
-        if self.was_recreated() {
+        if self.was_created() {
             self.push(next.clone());
         } else if next != prev {
             self.mutate(|modifier| *modifier = next.clone());
@@ -326,6 +324,8 @@ impl Styles {
 
     #[inline]
     /// Extends the current modifiers with an iterator of modifiers. Returns the count of `modifiers`.
+    ///
+    /// This should only be used, when creating or recreating ([`Self::was_recreated`] the whole modifier view.
     pub fn extend(&mut self, modifiers: impl Iterator<Item = StyleModifier>) -> usize {
         let prev_len = self.modifiers.len();
         self.modifiers.extend(modifiers);
@@ -340,7 +340,9 @@ impl Styles {
     }
 
     #[inline]
-    /// Diffs between two iterators, and updates the underlying modifiers if they have changed, returns the next iterator count.
+    /// Diffs between two iterators, and updates the underlying modifiers if they have changed, returns the `next` iterator count.
+    ///
+    /// This should only be used, when updating the modifier, when it wasn't recreated.
     pub fn apply_diff<T: Iterator<Item = StyleModifier>>(&mut self, prev: T, next: T) -> usize {
         let mut count = 0;
         for change in diff_iters(prev, next) {
@@ -371,7 +373,7 @@ impl Styles {
         prev: &T,
         next: &T,
     ) -> usize {
-        if self.was_recreated() {
+        if self.was_created() {
             self.extend(next.style_modifiers_iter())
         } else if next != prev {
             self.apply_diff(prev.style_modifiers_iter(), next.style_modifiers_iter())
@@ -390,7 +392,7 @@ impl Styles {
         next: &T,
         create_modifier: impl FnOnce(Option<&CowStr>, &T) -> StyleModifier,
     ) {
-        if self.was_recreated() {
+        if self.was_created() {
             self.push(create_modifier(self.get_style(name), next));
         } else if prev != next || self.was_updated(name) {
             let new_modifier = create_modifier(self.get_style(name), next);
@@ -480,7 +482,7 @@ where
     }
 }
 
-/// Add a `rotate(<radians>rad)` [transform-function](https://developer.mozilla.org/en-US/docs/Web/CSS/transform-function) to the current CSS `transform`.
+/// Add a `rotate(<radians>rad)` [transform-function](https://developer.mozilla.org/en-US/docs/Web/CSS/transform-function/rotate) to the current CSS `transform`.
 pub struct Rotate<E, State, Action> {
     el: E,
     phantom: PhantomData<fn() -> (State, Action)>,
@@ -600,7 +602,7 @@ impl From<Vec2> for ScaleValue {
     }
 }
 
-/// Add a `rotate(<radians>rad)` [transform-function](https://developer.mozilla.org/en-US/docs/Web/CSS/transform-function) to the current CSS `transform`.
+/// Add a `scale(<scale>)` [transform-function](https://developer.mozilla.org/en-US/docs/Web/CSS/transform-function/scale) to the current CSS `transform`.
 pub struct Scale<E, State, Action> {
     el: E,
     phantom: PhantomData<fn() -> (State, Action)>,
