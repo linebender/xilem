@@ -107,12 +107,17 @@ fn remove_event_listener(
         .unwrap_throw();
 }
 
-/// State for the `OnEvent` view.
-pub struct OnEventState<S> {
-    #[allow(unused)]
-    child_state: S,
-    callback: Closure<dyn FnMut(web_sys::Event)>,
+mod hidden {
+    use wasm_bindgen::prelude::Closure;
+    #[allow(unnameable_types)] // reason: Implementation detail, public because of trait visibility rules
+    /// State for the `OnEvent` view.
+    pub struct OnEventState<S> {
+        pub(crate) child_state: S,
+        pub(crate) callback: Closure<dyn FnMut(web_sys::Event)>,
+    }
 }
+
+use hidden::OnEventState;
 
 // These (boilerplatey) functions are there to reduce the boilerplate created by the macro-expansion below.
 
@@ -143,7 +148,7 @@ where
     })
 }
 
-#[allow(clippy::too_many_arguments)]
+#[allow(clippy::too_many_arguments)] // reason: This is only used to avoid more boilerplate in macros, also so that rust-analyzer can be of help here.
 fn rebuild_event_listener<State, Action, V, Event>(
     element_view: &V,
     prev_element_view: &V,
@@ -519,7 +524,7 @@ pub struct OnResize<V, State, Action, Callback> {
 
 pub struct OnResizeState<VState> {
     child_state: VState,
-    // Closures are retained so they can be called by environment
+    // reason: Closures are retained so they can be called by environment
     #[allow(unused)]
     callback: Closure<dyn FnMut(js_sys::Array)>,
     observer: web_sys::ResizeObserver,

@@ -73,7 +73,7 @@ where
 impl<State, Fragment: DomFragment<State>, InitFragment: FnMut(&mut State) -> Fragment>
     AppInner<State, Fragment, InitFragment>
 {
-    pub fn new(root: web_sys::Node, data: State, app_logic: InitFragment) -> Self {
+    fn new(root: web_sys::Node, data: State, app_logic: InitFragment) -> Self {
         let ctx = ViewCtx::default();
         AppInner {
             data,

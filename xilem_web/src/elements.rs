@@ -153,14 +153,15 @@ impl<'a, 'b, 'c, 'd> DomChildrenSplice<'a, 'b, 'c, 'd> {
 impl<'a, 'b, 'c, 'd> ElementSplice<AnyPod> for DomChildrenSplice<'a, 'b, 'c, 'd> {
     fn with_scratch<R>(&mut self, f: impl FnOnce(&mut AppendVec<AnyPod>) -> R) -> R {
         let ret = f(self.scratch);
-        #[allow(unused_assignments, unused_mut)]
-        let mut add_dom_children_to_parent = true;
-        #[cfg(feature = "hydration")]
-        {
-            add_dom_children_to_parent = !self.in_hydration;
-        }
-
         if !self.scratch.is_empty() {
+            #[allow(unused_assignments, unused_mut)]
+            // reason: when the feature "hydration" is enabled/disabled, avoid warnings
+            let mut add_dom_children_to_parent = true;
+            #[cfg(feature = "hydration")]
+            {
+                add_dom_children_to_parent = !self.in_hydration;
+            }
+
             for element in self.scratch.drain() {
                 if add_dom_children_to_parent {
                     self.fragment

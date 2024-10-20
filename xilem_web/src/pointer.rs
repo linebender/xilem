@@ -19,8 +19,9 @@ pub struct Pointer<V, T, A, F> {
     phantom: PhantomData<fn() -> (T, A)>,
 }
 
+#[allow(unnameable_types)] // reason: Implementation detail, public because of trait visibility rules
 pub struct PointerState<S> {
-    // Closures are retained so they can be called by environment
+    // reason: Closures are retained so they can be called by environment
     #[allow(unused)]
     down_closure: Closure<dyn FnMut(PointerEvent)>,
     #[allow(unused)]

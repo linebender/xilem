@@ -1236,6 +1236,7 @@ impl<'a, Ctx: IsContext, W> Drop for RawWrapperMut<'a, Ctx, W> {
 }
 
 mod private {
+    #[allow(unnameable_types)] // reason: see https://predr.ag/blog/definitive-guide-to-sealed-traits-in-rust/
     pub trait Sealed {}
 }
 
@@ -1243,7 +1244,7 @@ mod private {
 // We're exporting a trait with a method that returns a private type.
 // It's mostly fine because the trait is sealed anyway, but it's not great for documentation.
 
-#[allow(private_interfaces)]
+#[allow(private_interfaces)] // reason: see https://predr.ag/blog/definitive-guide-to-sealed-traits-in-rust/
 pub trait IsContext: private::Sealed {
     fn get_widget_state(&mut self) -> &mut WidgetState;
 }
@@ -1252,7 +1253,7 @@ macro_rules! impl_context_trait {
     ($SomeCtx:tt) => {
         impl private::Sealed for $SomeCtx<'_> {}
 
-        #[allow(private_interfaces)]
+        #[allow(private_interfaces)] // reason: see https://predr.ag/blog/definitive-guide-to-sealed-traits-in-rust/
         impl IsContext for $SomeCtx<'_> {
             fn get_widget_state(&mut self) -> &mut WidgetState {
                 self.widget_state

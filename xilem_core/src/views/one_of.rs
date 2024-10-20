@@ -524,7 +524,7 @@ mod hidden {
 
     use super::PhantomElementCtx;
 
-    #[allow(unreachable_pub)]
+    #[allow(unnameable_types)] // reason: Implementation detail, public because of trait visibility rules
     pub enum Never {}
 
     impl ViewMarker for Never {}
@@ -564,7 +564,7 @@ mod hidden {
         }
     }
     /// The state used to implement `View` for `OneOfN`
-    #[allow(unreachable_pub)]
+    #[allow(unnameable_types)] // reason: Implementation detail, public because of trait visibility rules
     pub struct OneOfState<A, B, C, D, E, F, G, H, I> {
         /// The current state of the inner view or view sequence.
         pub(super) inner_state: super::OneOf<A, B, C, D, E, F, G, H, I>,

@@ -170,9 +170,7 @@ where
     }
 }
 
-#[allow(clippy::large_enum_variant)]
 pub enum FlexElement {
-    // Avoid making the enum massive for the spacer cases by boxing
     Child(Pod<Box<dyn Widget>>, FlexParams),
     FixedSpacer(f64),
     FlexSpacer(f64),
@@ -598,21 +596,28 @@ where
     }
 }
 
-#[doc(hidden)] // Implementation detail, public because of trait visibility rules
-pub struct AnyFlexChildState<State: 'static, Action: 'static> {
-    /// Just the optional view state of the flex item view
-    #[allow(clippy::type_complexity)]
-    inner: Option<
-        <FlexItem<Box<AnyWidgetView<State, Action>>, State, Action> as View<
-            State,
-            Action,
-            ViewCtx,
-        >>::ViewState,
-    >,
-    /// The generational id handling is essentially very similar to that of the `Option<impl ViewSequence>`,
-    /// where `None` would represent a Spacer, and `Some` a view
-    generation: u64,
+mod hidden {
+    use super::FlexItem;
+    use crate::{core::View, AnyWidgetView, ViewCtx};
+    #[doc(hidden)] // Implementation detail, public because of trait visibility rules
+    #[allow(unnameable_types)] // reason: Implementation detail, public because of trait visibility rules
+    pub struct AnyFlexChildState<State: 'static, Action: 'static> {
+        /// Just the optional view state of the flex item view
+        #[allow(clippy::type_complexity)]
+        // reason: There's no reasonable other way to avoid this.
+        pub(crate) inner: Option<
+            <FlexItem<Box<AnyWidgetView<State, Action>>, State, Action> as View<
+                State,
+                Action,
+                ViewCtx,
+            >>::ViewState,
+        >,
+        /// The generational id handling is essentially very similar to that of the `Option<impl ViewSequence>`,
+        /// where `None` would represent a Spacer, and `Some` a view
+        pub(crate) generation: u64,
+    }
 }
+use hidden::AnyFlexChildState;
 
 impl<State, Action> ViewMarker for AnyFlexChild<State, Action> {}
 impl<State, Action> View<State, Action, ViewCtx> for AnyFlexChild<State, Action>

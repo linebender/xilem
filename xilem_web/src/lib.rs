@@ -35,7 +35,6 @@ mod class;
 mod context;
 mod dom_helpers;
 mod element_props;
-mod events;
 mod message;
 mod one_of;
 mod optional_action;
@@ -51,6 +50,7 @@ pub mod concurrent;
 pub mod elements;
 pub mod interfaces;
 pub mod svg;
+pub mod events;
 
 pub use self::{
     after_update::{
