@@ -23,8 +23,6 @@
 //! use masonry::{Action, WidgetId};
 //! use winit::window::Window;
 //!
-//! const VERTICAL_WIDGET_SPACING: f64 = 20.0;
-//!
 //! struct Driver {
 //!     next_task: String,
 //! }
@@ -47,6 +45,8 @@
 //! }
 //!
 //! fn main() {
+//!     const VERTICAL_WIDGET_SPACING: f64 = 20.0;
+//!
 //!     let main_widget = Portal::new(
 //!         Flex::column()
 //!             .with_child(
@@ -94,6 +94,7 @@
 // #![warn(missing_docs)]
 #![warn(unused_imports)]
 #![warn(clippy::print_stdout, clippy::print_stderr, clippy::dbg_macro)]
+#![allow(clippy::needless_doctest_main)]
 #![allow(clippy::should_implement_trait)]
 #![allow(clippy::single_match)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
@@ -125,6 +126,8 @@ pub mod widget;
 pub mod app_driver;
 pub mod debug_logger;
 pub mod debug_values;
+#[cfg(doc)]
+pub mod doc;
 pub mod event_loop_runner;
 pub mod passes;
 pub mod text;
