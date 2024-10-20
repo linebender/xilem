@@ -117,7 +117,7 @@ where
             self.child
                 .rebuild(&prev.child, view_state, ctx, element.reborrow_mut());
             let attrs = element.modifier();
-            if attrs.was_recreated() {
+            if attrs.was_created() {
                 attrs.push(("fill", brush_to_string(&self.brush)));
                 attrs.push(opacity_attr_modifier("fill-opacity", &self.brush));
             } else if self.brush != prev.brush {
@@ -160,6 +160,7 @@ fn push_stroke_modifiers(attrs: &mut Attributes, stroke: &kurbo::Stroke, brush: 
     attrs.push(opacity_attr_modifier("stroke-opacity", brush));
 }
 
+// This function is not inlined to avoid unnecessary monomorphization, which may result in a bigger binary.
 fn update_stroke_modifiers(
     attrs: &mut Attributes,
     prev_stroke: &kurbo::Stroke,
@@ -167,7 +168,7 @@ fn update_stroke_modifiers(
     prev_brush: &Brush,
     next_brush: &Brush,
 ) {
-    if attrs.was_recreated() {
+    if attrs.was_created() {
         push_stroke_modifiers(attrs, next_stroke, next_brush);
     } else {
         if next_stroke.dash_pattern != prev_stroke.dash_pattern {

@@ -46,10 +46,10 @@ impl<K: Into<CowStr>, V: IntoAttributeValue> From<(K, V)> for AttributeModifier 
 #[derive(Default)]
 /// An Element modifier that manages all attributes of an Element.
 pub struct Attributes {
-    modifiers: Vec<AttributeModifier>,
-    // TODO think about this (for a `VecSplice`) for more efficient insertion etc.,
+    // TODO think about using a `VecSplice` for more efficient insertion etc.,
     // but this is an additional trade-off of memory-usage and complexity,
     // while probably not helping much in the average case (of very few styles)...
+    modifiers: Vec<AttributeModifier>,
     updated: VecMap<CowStr, ()>,
     idx: u16,
     in_hydration: bool,
@@ -81,13 +81,13 @@ impl Attributes {
             self.in_hydration = false;
             self.was_created = false;
         } else if self.was_created {
+            self.was_created = false;
             for modifier in &self.modifiers {
                 match modifier {
                     AttributeModifier::Remove(n) => remove_attribute(element, n),
                     AttributeModifier::Set(n, v) => set_attribute(element, n, &v.serialize()),
                 }
             }
-            self.was_created = false;
         } else if !self.updated.is_empty() {
             for modifier in self.modifiers.iter().rev() {
                 match modifier {
@@ -117,25 +117,34 @@ impl Attributes {
     }
 
     #[inline]
-    /// Returns whether the underlying element has been rebuilt, this could e.g. happen, when `OneOf` changes a variant to a different element.
-    pub fn was_recreated(&self) -> bool {
+    /// Returns whether the underlying element has been built or rebuilt, this could e.g. happen, when `OneOf` changes a variant to a different element.
+    pub fn was_created(&self) -> bool {
         self.was_created
     }
 
     #[inline]
     /// Pushes `modifier` at the end of the current modifiers.
+    ///
+    /// Must only be used when `self.was_created() == true`.
     pub fn push(&mut self, modifier: impl Into<AttributeModifier>) {
+        debug_assert!(
+            self.was_created(),
+            "This should never be called, when the underlying element wasn't (re)created. Use `Attributes::insert` instead."
+        );
         let modifier = modifier.into();
-        if !self.was_created && !self.in_hydration {
-            self.updated.insert(modifier.name().clone(), ());
-        }
         self.modifiers.push(modifier);
         self.idx += 1;
     }
 
     #[inline]
     /// Inserts `modifier` at the current index.
+    ///
+    /// Must only be used when `self.was_created() == false`.
     pub fn insert(&mut self, modifier: impl Into<AttributeModifier>) {
+        debug_assert!(
+            !self.was_created(),
+            "This should never be called, when the underlying element was (re)created, use `Attributes::push` instead."
+        );
         let modifier = modifier.into();
         self.updated.insert(modifier.name().clone(), ());
         // TODO this could potentially be expensive, maybe think about `VecSplice` again.
@@ -147,7 +156,13 @@ impl Attributes {
 
     #[inline]
     /// Mutates the next modifier.
+    ///
+    /// Must only be used when `self.was_created() == false`.
     pub fn mutate<R>(&mut self, f: impl FnOnce(&mut AttributeModifier) -> R) -> R {
+        debug_assert!(
+            !self.was_created(),
+            "This should never be called, when the underlying element was (re)created."
+        );
         let modifier = &mut self.modifiers[self.idx as usize];
         let old = modifier.name().clone();
         let rv = f(modifier);
@@ -161,12 +176,24 @@ impl Attributes {
     }
 
     /// Skips the next `count` modifiers.
+    ///
+    /// Must only be used when `self.was_created() == false`.
     pub fn skip(&mut self, count: usize) {
+        debug_assert!(
+            !self.was_created(),
+            "This should never be called, when the underlying element was (re)created."
+        );
         self.idx += count as u16;
     }
 
     /// Deletes the next `count` modifiers.
+    ///
+    /// Must only be used when `self.was_created() == false`.
     pub fn delete(&mut self, count: usize) {
+        debug_assert!(
+            !self.was_created(),
+            "This should never be called, when the underlying element was (re)created."
+        );
         let start = self.idx as usize;
         for modifier in self.modifiers.drain(start..(start + count)) {
             self.updated.insert(modifier.into_name(), ());
@@ -175,7 +202,7 @@ impl Attributes {
 
     /// Updates the next modifier, based on the diff of `prev` and `next`.
     pub fn update(&mut self, prev: &AttributeModifier, next: &AttributeModifier) {
-        if self.was_recreated() {
+        if self.was_created() {
             self.push(next.clone());
         } else if next != prev {
             self.mutate(|modifier| *modifier = next.clone());
@@ -191,7 +218,7 @@ impl Attributes {
         prev: &Value,
         next: &Value,
     ) {
-        if self.was_recreated() {
+        if self.was_created() {
             self.push((key, next.clone()));
         } else if next != prev {
             self.mutate(|modifier| *modifier = (key, next.clone()).into());
@@ -309,9 +336,7 @@ where
         Attributes::rebuild(element, 1, |mut element| {
             self.inner
                 .rebuild(&prev.inner, view_state, ctx, element.reborrow_mut());
-
-            let attrs = element.modifier();
-            attrs.update(&prev.modifier, &self.modifier);
+            element.modifier().update(&prev.modifier, &self.modifier);
         });
     }
 

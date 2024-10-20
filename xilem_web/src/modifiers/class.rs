@@ -88,6 +88,7 @@ const WAS_CREATED: u8 = 1 << 1;
 /// An Element modifier that manages all classes of an Element.
 pub struct Classes {
     class_name: String,
+    // It would be nice to avoid this, as this results in extra allocations, when `Strings` are used as classes.
     classes: VecMap<CowStr, ()>,
     modifiers: Vec<ClassModifier>,
     idx: u16,
@@ -164,7 +165,7 @@ impl Classes {
     }
 
     #[inline]
-    /// Returns whether the underlying element has been rebuilt, this could e.g. happen, when `OneOf` changes a variant to a different element.
+    /// Returns whether the underlying element has been built or rebuilt, this could e.g. happen, when `OneOf` changes a variant to a different element.
     pub fn was_created(&self) -> bool {
         self.flags & WAS_CREATED != 0
     }
@@ -176,7 +177,7 @@ impl Classes {
     pub fn push(&mut self, modifier: ClassModifier) {
         debug_assert!(
             self.was_created(),
-            "This should never be called, when the underlying element wasn't (re)created."
+            "This should never be called, when the underlying element wasn't (re)created. Use `Classes::insert` instead."
         );
         self.dirty = true;
         self.modifiers.push(modifier);
