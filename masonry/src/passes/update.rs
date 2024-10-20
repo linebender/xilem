@@ -209,6 +209,8 @@ fn update_disabled_for_widget(
             .update(&mut ctx, &Update::DisabledChanged(disabled));
         state.item.is_disabled = disabled;
         state.item.update_focus_chain = true;
+        state.item.request_accessibility = true;
+        state.item.needs_accessibility = true;
     }
 
     state.item.needs_update_disabled = false;
@@ -450,11 +452,17 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
         };
         root.state.is_ime_active = is_ime_active;
 
+        // We send FocusChange event to widget that lost and the widget that gained focus.
+        // We also request accessibility, because build_access_node() depends on the focus state.
         run_single_update_pass(root, prev_focused, |widget, ctx| {
             widget.on_status_change(ctx, &StatusChange::FocusChanged(false));
+            ctx.widget_state.request_accessibility = true;
+            ctx.widget_state.needs_accessibility = true;
         });
         run_single_update_pass(root, next_focused, |widget, ctx| {
             widget.on_status_change(ctx, &StatusChange::FocusChanged(true));
+            ctx.widget_state.request_accessibility = true;
+            ctx.widget_state.needs_accessibility = true;
         });
 
         if prev_focused.is_some() && was_ime_active {
@@ -563,6 +571,8 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
 
             if ctx.widget_state.is_hovered != is_hovered {
                 widget.on_status_change(ctx, &StatusChange::HoveredChanged(is_hovered));
+                ctx.widget_state.request_accessibility = true;
+                ctx.widget_state.needs_accessibility = true;
             }
             ctx.widget_state.is_hovered = is_hovered;
         });
