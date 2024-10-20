@@ -8,15 +8,11 @@
 //! Note: Some of these types are undocumented. They're meant to help maintainers of
 //! Masonry, not to be user-facing.
 
-#![allow(missing_docs)]
-#![allow(unused)]
-
 use std::cell::RefCell;
 use std::collections::VecDeque;
 use std::rc::Rc;
 
 use accesskit::{NodeBuilder, Role};
-use accesskit_winit::Event;
 use smallvec::SmallVec;
 use tracing::trace_span;
 use vello::Scene;
@@ -68,10 +64,13 @@ pub struct ModularWidget<S> {
 /// A widget that can replace its child on command
 pub struct ReplaceChild {
     child: WidgetPod<Box<dyn Widget>>,
+    #[allow(dead_code)]
     replacer: Box<dyn Fn() -> WidgetPod<Box<dyn Widget>>>,
 }
 
-/// A widget that records each time one of its methods is called.
+/// A wrapper widget that records each time one of its methods is called.
+///
+/// Its intent is to let you observe the methods called on a widget in a test.
 ///
 /// Make one like this:
 ///
@@ -94,6 +93,8 @@ pub struct Recorder<W> {
 }
 
 /// A recording of widget method calls.
+///
+/// Internally stores a queue of [`Records`](Record).
 #[derive(Debug, Clone, Default)]
 pub struct Recording(Rc<RefCell<VecDeque<Record>>>);
 
@@ -114,7 +115,9 @@ pub enum Record {
     Access,
 }
 
-/// like `WidgetExt` but just for this one thing
+/// External trait implemented for all widgets.
+///
+/// Implements helper methods useful for unit testing.
 pub trait TestWidgetExt: Widget + Sized + 'static {
     fn record(self, recording: &Recording) -> Recorder<Self> {
         Recorder {
@@ -131,6 +134,10 @@ pub trait TestWidgetExt: Widget + Sized + 'static {
 impl<W: Widget + 'static> TestWidgetExt for W {}
 
 impl<S> ModularWidget<S> {
+    /// Create a new `ModularWidget`.
+    ///
+    /// By default none of its methods do anything, and its layout method returns
+    /// a static 100x100 size.
     pub fn new(state: S) -> Self {
         ModularWidget {
             state,
@@ -151,7 +158,13 @@ impl<S> ModularWidget<S> {
             children: None,
         }
     }
+}
 
+/// Builder methods.
+///
+/// Each method takes a flag which is then returned by the matching Widget method.
+#[allow(missing_docs)]
+impl<S> ModularWidget<S> {
     pub fn accepts_pointer_interaction(mut self, flag: bool) -> Self {
         self.accepts_pointer_interaction = flag;
         self
@@ -166,7 +179,13 @@ impl<S> ModularWidget<S> {
         self.accepts_text_input = flag;
         self
     }
+}
 
+/// Builder methods.
+///
+/// Each method takes a callback that matches the behavior of the matching Widget method.
+#[allow(missing_docs)]
+impl<S> ModularWidget<S> {
     pub fn pointer_event_fn(
         mut self,
         f: impl FnMut(&mut S, &mut EventCtx, &PointerEvent) + 'static,
@@ -383,6 +402,10 @@ impl<S: 'static> Widget for ModularWidget<S> {
 }
 
 impl ReplaceChild {
+    /// Create a new `ReplaceChild` widget.
+    ///
+    /// The `child` is the initial child widget, and `f` is a function that
+    /// returns a new widget to replace it with.
     pub fn new<W: Widget + 'static>(child: impl Widget, f: impl Fn() -> W + 'static) -> Self {
         let child = WidgetPod::new(child).boxed();
         let replacer = Box::new(move || WidgetPod::new(f()).boxed());
@@ -436,14 +459,17 @@ impl Widget for ReplaceChild {
 }
 
 impl Recording {
+    /// True if no events have been recorded.
     pub fn is_empty(&self) -> bool {
         self.0.borrow().is_empty()
     }
 
+    /// The number of events in the recording.
     pub fn len(&self) -> usize {
         self.0.borrow().len()
     }
 
+    /// Clear recorded events.
     pub fn clear(&self) {
         self.0.borrow_mut().clear();
     }

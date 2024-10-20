@@ -29,8 +29,6 @@ use crate::tracing_backend::try_init_test_tracing;
 use crate::widget::{WidgetMut, WidgetRef};
 use crate::{Color, Handled, Point, Size, Vec2, Widget, WidgetId};
 
-// TODO - Get shorter names
-// TODO - Make them associated consts
 /// Default canvas size for tests.
 pub const HARNESS_DEFAULT_SIZE: Size = Size::new(400., 400.);
 
@@ -39,37 +37,32 @@ pub const HARNESS_DEFAULT_BACKGROUND_COLOR: Color = Color::rgb8(0x29, 0x29, 0x29
 
 /// A safe headless environment to test widgets in.
 ///
-/// `TestHarness` is a type that simulates an [`AppRoot`](crate::AppRoot)
-/// with a single window.
+/// `TestHarness` is a type that simulates a [`RenderRoot`] for testing.
 ///
 /// ## Workflow
 ///
-/// One of the main goals of masonry is to provide primitives that allow application
-/// developers to test their app in a convenient and intuitive way. The basic testing
-/// workflow is as follows:
+/// One of the main goals of Masonry is to provide primitives that allow application
+/// developers to test their app in a convenient and intuitive way.
+/// The basic testing workflow is as follows:
 ///
 /// - Create a harness with some widget.
 /// - Send events to the widget as if you were a user interacting with a window.
-///   (rewrite passes are handled automatically.)
+///   (Rewrite passes are handled automatically.)
 /// - Check that the state of the widget graph matches what you expect.
 ///
-/// You can do that last part in a few different ways. You can get a [`WidgetRef`] to
-/// a specific widget through methods like [`try_get_widget`](Self::try_get_widget). [`WidgetRef`] implements
-/// `Debug`, so you can check the state of an entire tree with something like the `insta`
-/// crate.
+/// You can do that last part in a few different ways.
+/// You can get a [`WidgetRef`] to a specific widget through methods like [`try_get_widget`](Self::try_get_widget).
+/// [`WidgetRef`] implements `Debug`, so you can check the state of an entire tree with something like the [`insta`] crate.
 ///
-/// You can also render the widget tree directly with the [`render`](Self::render) method. Masonry also
-/// provides the [`assert_render_snapshot`] macro, which performs snapshot testing on the
+/// You can also render the widget tree directly with the [`render`](Self::render) method.
+/// Masonry also provides the [`assert_render_snapshot`] macro, which performs snapshot testing on the
 /// rendered widget tree automatically.
 ///
 /// ## Fidelity
 ///
 /// `TestHarness` tries to act like the normal masonry environment. It will run the same passes as the normal app after every user event and animation.
 ///
-/// The passage of time is simulated with the [`move_timers_forward`](Self::move_timers_forward) methods. **(TODO -
-/// Doesn't move animations forward.)**
-///
-/// **(TODO - Painting invalidation might not be accurate.)**
+/// Animations can be simulated with the [`animate_ms`](Self::animate_ms) method.
 ///
 /// One minor difference is that paint only happens when the user explicitly calls rendering
 /// methods, whereas in a normal applications you could reasonably expect multiple paint calls
@@ -132,6 +125,7 @@ pub struct TestHarness {
 ///
 /// If a screenshot already exists, the rendered value is compared against this screenshot.
 /// The assert passes if both are equal; otherwise, a diff file is created.
+/// If the test is run again and the new rendered value matches the old screenshot, the diff file is deleted.
 ///
 /// If a screenshot doesn't exist, the assert will fail; the new screenshot is stored as
 /// `./screenshots/<test_name>.new.png`, and must be renamed before the assert will pass.
@@ -214,33 +208,30 @@ impl TestHarness {
     // --- MARK: PROCESS EVENTS ---
     // FIXME - The docs for these three functions are copy-pasted. Rewrite them.
 
-    /// Send an event to the widget.
+    /// Send a [`WindowEvent`] to the simulated window.
     ///
-    /// If this event triggers update events, they will also be dispatched,
-    /// as will any resulting commands. Commands created as a result of this event
-    /// will also be dispatched.
+    /// If this event triggers rewrite passes, they will also run as normal.
+    // TODO - Link to tutorial about rewrite passes - See #632
     pub fn process_window_event(&mut self, event: WindowEvent) -> Handled {
         let handled = self.render_root.handle_window_event(event);
         self.process_signals();
         handled
     }
 
-    /// Send an event to the widget.
+    /// Send a [`PointerEvent`] to the simulated window.
     ///
-    /// If this event triggers update events, they will also be dispatched,
-    /// as will any resulting commands. Commands created as a result of this event
-    /// will also be dispatched.
+    /// If this event triggers rewrite passes, they will also run as normal.
+    // TODO - Link to tutorial about rewrite passes - See #632
     pub fn process_pointer_event(&mut self, event: PointerEvent) -> Handled {
         let handled = self.render_root.handle_pointer_event(event);
         self.process_signals();
         handled
     }
 
-    /// Send an event to the widget.
+    /// Send a [`TextEvent`] to the simulated window.
     ///
-    /// If this event triggers update events, they will also be dispatched,
-    /// as will any resulting commands. Commands created as a result of this event
-    /// will also be dispatched.
+    /// If this event triggers rewrite passes, they will also run as normal.
+    // TODO - Link to tutorial about rewrite passes - See #632
     pub fn process_text_event(&mut self, event: TextEvent) -> Handled {
         let handled = self.render_root.handle_text_event(event);
         self.process_signals();
@@ -441,6 +432,7 @@ impl TestHarness {
 
     // TODO - Handle complicated IME
     // TODO - Mock Winit keyboard events
+    /// Send a [`TextEvent`] for each character in the given string.
     pub fn keyboard_type_chars(&mut self, text: &str) {
         // For each character
         for c in text.split("").filter(|s| !s.is_empty()) {
@@ -449,13 +441,33 @@ impl TestHarness {
         }
     }
 
+    /// Sets the focused widget.
+    ///
+    /// ## Panics
+    ///
+    /// If the widget is not found in the tree or can't be focused.
+    // TODO - Link to focus definition in tutorial
+    #[track_caller]
     pub fn focus_on(&mut self, id: Option<WidgetId>) {
+        if let Some(id) = id {
+            let arena = &self.render_root.widget_arena;
+            let Some(state) = arena.widget_states.find(id.to_raw()) else {
+                panic!("Cannot focus widget {id}: widget not found in tree");
+            };
+            if state.item.is_stashed {
+                panic!("Cannot focus widget {id}: widget is stashed");
+            }
+            if state.item.is_disabled {
+                panic!("Cannot focus widget {id}: widget is disabled");
+            }
+        }
         self.render_root.global_state.next_focused_widget = id;
         self.render_root.run_rewrite_passes();
+        self.process_signals();
     }
 
     // TODO - Fold into move_timers_forward
-    /// Send animation events to the widget tree
+    /// Run an animation pass on the widget tree.
     pub fn animate_ms(&mut self, ms: u64) {
         run_update_anim_pass(&mut self.render_root, ms * 1_000_000);
         self.render_root.run_rewrite_passes();
@@ -486,12 +498,12 @@ impl TestHarness {
 
     // --- MARK: GETTERS ---
 
-    /// Return the root widget.
+    /// Return a [`WidgetRef`] to the root widget.
     pub fn root_widget(&self) -> WidgetRef<'_, dyn Widget> {
         self.render_root.get_root_widget()
     }
 
-    /// Return the widget with the given id.
+    /// Return a [`WidgetRef`] to the widget with the given id.
     ///
     /// ## Panics
     ///
@@ -503,24 +515,26 @@ impl TestHarness {
             .unwrap_or_else(|| panic!("could not find widget {}", id))
     }
 
-    /// Try to return the widget with the given id.
+    /// Try to return a [`WidgetRef`] to the widget with the given id.
     pub fn try_get_widget(&self, id: WidgetId) -> Option<WidgetRef<'_, dyn Widget>> {
         self.render_root.get_widget(id)
     }
 
-    // TODO - link to focus documentation.
-    /// Return the widget that receives keyboard events.
+    // TODO - Link to focus definition in tutorial
+    /// Return a [`WidgetRef`] to the widget that receives keyboard events.
     pub fn focused_widget(&self) -> Option<WidgetRef<'_, dyn Widget>> {
         self.root_widget()
             .find_widget_by_id(self.render_root.global_state.focused_widget?)
     }
 
-    // TODO - Multiple pointers
+    /// Return a [`WidgetRef`] to the widget which captures pointer events.
+    // TODO - Link to pointer capture definition in tutorial
     pub fn pointer_capture_target(&self) -> Option<WidgetRef<'_, dyn Widget>> {
         self.render_root
             .get_widget(self.render_root.global_state.pointer_capture_target?)
     }
 
+    /// Return the id of the widget which captures pointer events.
     // TODO - This is kinda redundant with the above
     pub fn pointer_capture_target_id(&self) -> Option<WidgetId> {
         self.render_root.global_state.pointer_capture_target
@@ -562,29 +576,41 @@ impl TestHarness {
         self.render_root.edit_widget(id, f)
     }
 
-    /// Pop next action from the queue
+    /// Pop the next action from the queue.
     ///
-    /// Note: Actions are still a WIP feature.
+    /// **Note:** Actions are still a WIP feature.
     pub fn pop_action(&mut self) -> Option<(Action, WidgetId)> {
         self.action_queue.pop_front()
     }
 
+    /// Return the app's current cursor icon.
+    ///
+    /// The cursor icon is the icon that would be displayed to indicate the mouse
+    /// position in a visual environment.
     pub fn cursor_icon(&self) -> CursorIcon {
         self.render_root.cursor_icon()
     }
 
+    /// Return whether the app has an IME session in progress.
+    ///
+    /// This usually means that a widget which [accepts text input](Widget::accepts_text_input) is focused.
     pub fn has_ime_session(&self) -> bool {
         self.has_ime_session
     }
 
+    /// Return the rectangle of the IME session.
+    ///
+    /// This is usually the layout rectangle of the focused widget.
     pub fn ime_rect(&self) -> (LogicalPosition<f64>, LogicalSize<f64>) {
         self.ime_rect
     }
 
+    /// Return the size of the simulated window.
     pub fn window_size(&self) -> PhysicalSize<u32> {
         self.window_size
     }
 
+    /// Return the title of the simulated window.
     pub fn title(&self) -> std::string::String {
         self.title.clone()
     }
@@ -600,6 +626,7 @@ impl TestHarness {
     /// * `test_file_path`: file path the current test is in.
     /// * `test_module_path`: import path of the module the current test is in.
     /// * `test_name`: arbitrary name; second argument of [`assert_render_snapshot`].
+    #[doc(hidden)]
     #[track_caller]
     pub fn check_render_snapshot(
         &mut self,
