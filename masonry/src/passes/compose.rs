@@ -75,6 +75,12 @@ fn compose_widget(
 pub(crate) fn run_compose_pass(root: &mut RenderRoot) {
     let _span = info_span!("compose").entered();
 
+    // If widgets are moved, pointer-related info may be stale.
+    // For instance, the "hovered" widget may have moved and no longer be under the pointer.
+    if root.root_state().needs_compose {
+        root.global_state.needs_pointer_pass = true;
+    }
+
     let (root_widget, root_state) = root.widget_arena.get_pair_mut(root.root.id());
     compose_widget(
         &mut root.global_state,

@@ -74,6 +74,8 @@ pub(crate) struct RenderRootState {
     pub(crate) mutate_callbacks: Vec<MutateCallback>,
     pub(crate) is_ime_active: bool,
     pub(crate) scenes: HashMap<WidgetId, Scene>,
+    /// Whether data set in the pointer pass has been invalidated.
+    pub(crate) needs_pointer_pass: bool,
 }
 
 pub(crate) struct MutateCallback {
@@ -161,6 +163,7 @@ impl RenderRoot {
                 mutate_callbacks: Vec::new(),
                 is_ime_active: false,
                 scenes: HashMap::new(),
+                needs_pointer_pass: false,
             },
             widget_arena: WidgetArena {
                 widgets: TreeArena::new(),
@@ -428,23 +431,38 @@ impl RenderRoot {
     ///
     /// See Pass Spec RFC for details. (TODO - Link to doc instead.)
     pub(crate) fn run_rewrite_passes(&mut self) {
-        // TODO - Rerun passes if invalidation flags are still set
+        const REWRITE_PASSES_MAX: usize = 4;
 
-        // Note: this code doesn't do any short-circuiting, because each pass is
-        // expected to have its own early exits.
-        // Calling a run_xxx_pass (or root_xxx) should always be very fast if
-        // the pass doesn't need to do anything.
+        for _ in 0..REWRITE_PASSES_MAX {
+            // Note: this code doesn't do any short-circuiting, because each pass is
+            // expected to have its own early exits.
+            // Calling a run_xxx_pass (or root_xxx) should always be very fast if
+            // the pass doesn't need to do anything.
 
-        run_mutate_pass(self);
-        run_update_widget_tree_pass(self);
-        run_update_disabled_pass(self);
-        run_update_stashed_pass(self);
-        run_update_focus_chain_pass(self);
-        run_update_focus_pass(self);
-        run_layout_pass(self);
-        run_update_scroll_pass(self);
-        run_compose_pass(self);
-        run_update_pointer_pass(self);
+            run_mutate_pass(self);
+            run_update_widget_tree_pass(self);
+            run_update_disabled_pass(self);
+            run_update_stashed_pass(self);
+            run_update_focus_chain_pass(self);
+            run_update_focus_pass(self);
+            run_layout_pass(self);
+            run_update_scroll_pass(self);
+            run_compose_pass(self);
+            run_update_pointer_pass(self);
+
+            if !self.root_state().needs_rewrite_passes()
+                && !self.global_state.needs_rewrite_passes()
+            {
+                break;
+            }
+        }
+
+        if self.root_state().needs_rewrite_passes() || self.global_state.needs_rewrite_passes() {
+            warn!("All rewrite passes have run {REWRITE_PASSES_MAX} times, but invalidations are still set");
+            // To avoid an infinite loop, we delay re-running the passes until the next frame.
+            self.global_state
+                .emit_signal(RenderRootSignal::RequestRedraw);
+        }
 
         if self.root_state().needs_anim {
             self.global_state
@@ -455,10 +473,7 @@ impl RenderRoot {
         // tree needs to be rebuilt. Usually both happen at the same time.
         // A redraw will trigger a rebuild of the accessibility tree.
         // TODO - We assume that a relayout will trigger a repaint
-        if self.root_state().needs_paint
-            || self.root_state().needs_accessibility
-            || self.root_state().needs_layout
-        {
+        if self.root_state().needs_paint || self.root_state().needs_accessibility {
             self.global_state
                 .emit_signal(RenderRootSignal::RequestRedraw);
         }
@@ -555,6 +570,10 @@ impl RenderRootState {
 
     pub(crate) fn is_focused(&self, id: WidgetId) -> bool {
         self.focused_widget == Some(id)
+    }
+
+    pub(crate) fn needs_rewrite_passes(&self) -> bool {
+        self.needs_pointer_pass || self.focused_widget != self.next_focused_widget
     }
 }
 

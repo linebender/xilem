@@ -653,6 +653,8 @@ impl MasonryState<'_> {
             tracing::warn!("Tried to handle a signal whilst suspended or before window created");
             return;
         };
+
+        let mut needs_redraw = false;
         while let Some(signal) = self.render_root.pop_signal() {
             match signal {
                 render_root::RenderRootSignal::Action(action, widget_id) => {
@@ -674,11 +676,11 @@ impl MasonryState<'_> {
                     window.set_ime_cursor_area(position, size);
                 }
                 render_root::RenderRootSignal::RequestRedraw => {
-                    window.request_redraw();
+                    needs_redraw = true;
                 }
                 render_root::RenderRootSignal::RequestAnimFrame => {
                     // TODO
-                    window.request_redraw();
+                    needs_redraw = true;
                 }
                 render_root::RenderRootSignal::TakeFocus => {
                     window.focus_window();
@@ -694,6 +696,12 @@ impl MasonryState<'_> {
                     window.set_title(&title);
                 }
             }
+        }
+
+        // If we're processing a lot of actions, we may have a lot of pending redraws.
+        // We batch them up to avoid redundant requests.
+        if needs_redraw {
+            window.request_redraw();
         }
     }
 
