@@ -3,20 +3,20 @@
 
 //! A stopwatch to display elapsed time.
 
+use std::ops::{Add, Sub};
+use std::time::{Duration, SystemTime};
+
 use masonry::dpi::LogicalSize;
 use masonry::event_loop_runner::{EventLoop, EventLoopBuilder};
 use masonry::widget::{Axis, CrossAxisAlignment, MainAxisAlignment};
-use std::ops::{Add, Sub};
-use std::time::{Duration, SystemTime};
 use tokio::time;
 use tracing::warn;
 use winit::error::EventLoopError;
 use winit::window::Window;
-use xilem::{
-    core::{fork, one_of::Either},
-    view::{button, flex, label, task, FlexSequence, FlexSpacer},
-    WidgetView, Xilem,
-};
+use xilem::core::fork;
+use xilem::core::one_of::Either;
+use xilem::view::{button, flex, label, task, FlexSequence, FlexSpacer};
+use xilem::{WidgetView, Xilem};
 
 /// The state of the entire application.
 ///

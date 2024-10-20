@@ -5,20 +5,17 @@
 
 use std::time::Duration;
 
-use masonry::parley::{
-    fontique::Weight,
-    style::{FontFamily, FontStack},
-};
-use time::{error::IndeterminateOffset, macros::format_description, OffsetDateTime, UtcOffset};
+use masonry::parley::fontique::Weight;
+use masonry::parley::style::{FontFamily, FontStack};
+use time::error::IndeterminateOffset;
+use time::macros::format_description;
+use time::{OffsetDateTime, UtcOffset};
 use winit::error::EventLoopError;
-use xilem::{
-    core::fork,
-    view::{
-        button, flex, label, portal, prose, sized_box, task, variable_label, Axis, FlexExt,
-        FlexSpacer,
-    },
-    Color, EventLoop, EventLoopBuilder, WidgetView, Xilem,
+use xilem::core::fork;
+use xilem::view::{
+    button, flex, label, portal, prose, sized_box, task, variable_label, Axis, FlexExt, FlexSpacer,
 };
+use xilem::{Color, EventLoop, EventLoopBuilder, WidgetView, Xilem};
 
 /// The state of the application, owned by Xilem and updated by the callbacks below.
 struct Clocks {

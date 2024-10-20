@@ -103,7 +103,6 @@
 
 // TODO - Add logo
 
-pub use cursor_icon::{CursorIcon, ParseError as CursorIconParseError};
 pub use dpi;
 pub use parley;
 pub use vello;
@@ -138,6 +137,7 @@ pub use contexts::{
     AccessCtx, ComposeCtx, EventCtx, IsContext, LayoutCtx, MutateCtx, PaintCtx, QueryCtx,
     RawWrapper, RawWrapperMut, RegisterCtx, UpdateCtx,
 };
+pub use cursor_icon::{CursorIcon, ParseError as CursorIconParseError};
 pub use event::{
     AccessEvent, PointerButton, PointerEvent, PointerState, StatusChange, TextEvent, Update,
     WindowEvent, WindowTheme,
@@ -145,11 +145,9 @@ pub use event::{
 pub use kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
 pub use parley::fontique::Weight as TextWeight;
 pub use parley::layout::Alignment as TextAlignment;
+pub use text::ArcStr;
 pub use util::{AsAny, Handled};
 pub use vello::peniko::{Color, Gradient};
 pub use widget::widget::{AllowRawMut, Widget, WidgetId};
 pub use widget::WidgetPod;
-
-pub use text::ArcStr;
-
 pub(crate) use widget::WidgetState;

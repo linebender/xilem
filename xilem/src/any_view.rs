@@ -11,10 +11,8 @@ use smallvec::{smallvec, SmallVec};
 use tracing::{trace_span, Span};
 use vello::Scene;
 
-use crate::{
-    core::{AnyElement, AnyView, Mut, SuperElement},
-    Pod, ViewCtx,
-};
+use crate::core::{AnyElement, AnyView, Mut, SuperElement};
+use crate::{Pod, ViewCtx};
 
 /// A view which can have any underlying view type.
 ///

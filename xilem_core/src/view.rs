@@ -3,11 +3,12 @@
 
 //! The primary view trait and associated trivial implementations.
 
+use alloc::boxed::Box;
+use alloc::sync::Arc;
 use core::ops::Deref;
 
-use alloc::{boxed::Box, sync::Arc};
-
-use crate::{message::MessageResult, DynMessage, Mut, ViewElement};
+use crate::message::MessageResult;
+use crate::{DynMessage, Mut, ViewElement};
 
 /// A type which can be a [`View`]. Imposes no requirements on the underlying type.
 /// Should be implemented alongside every `View` implementation:

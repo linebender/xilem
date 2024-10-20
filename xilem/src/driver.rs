@@ -1,17 +1,15 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{
-    core::{DynMessage, Message, MessageResult, ProxyError, RawProxy, ViewId},
-    ViewCtx, WidgetView,
-};
-use masonry::{
-    app_driver::AppDriver,
-    event_loop_runner::{self, EventLoopProxy, MasonryUserEvent},
-    widget::RootWidget,
-    WidgetId,
-};
 use std::sync::Arc;
+
+use masonry::app_driver::AppDriver;
+use masonry::event_loop_runner::{self, EventLoopProxy, MasonryUserEvent};
+use masonry::widget::RootWidget;
+use masonry::WidgetId;
+
+use crate::core::{DynMessage, Message, MessageResult, ProxyError, RawProxy, ViewId};
+use crate::{ViewCtx, WidgetView};
 
 pub struct MasonryDriver<State, Logic, View, ViewState> {
     pub(crate) state: State,

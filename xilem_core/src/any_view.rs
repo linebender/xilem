@@ -3,9 +3,8 @@
 
 //! Support for a type erased [`View`].
 
-use core::any::Any;
-
 use alloc::boxed::Box;
+use core::any::Any;
 
 use crate::{
     AnyElement, DynMessage, MessageResult, Mut, View, ViewElement, ViewId, ViewMarker,

@@ -1,15 +1,12 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::render_root::RenderRoot;
 use accesskit::{NodeBuilder, NodeId, TreeUpdate};
-use tracing::debug;
-use tracing::info_span;
-use tracing::trace;
+use tracing::{debug, info_span, trace};
 use vello::kurbo::Rect;
 
 use crate::passes::recurse_on_children;
-use crate::render_root::RenderRootState;
+use crate::render_root::{RenderRoot, RenderRootState};
 use crate::tree_arena::ArenaMut;
 use crate::{AccessCtx, Widget, WidgetState};
 

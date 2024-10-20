@@ -7,22 +7,16 @@
 //! Support for more custom embeddings would be welcome, but needs more design work
 use std::sync::Arc;
 
-use masonry::{
-    app_driver::AppDriver,
-    event_loop_runner::MasonryUserEvent,
-    widget::{CrossAxisAlignment, MainAxisAlignment},
-    ArcStr, Color,
-};
-use winit::{
-    application::ApplicationHandler,
-    error::EventLoopError,
-    event::ElementState,
-    keyboard::{KeyCode, PhysicalKey},
-};
-use xilem::{
-    view::{button, flex, label, sized_box, Axis},
-    EventLoop, MasonryProxy, WidgetView, Xilem,
-};
+use masonry::app_driver::AppDriver;
+use masonry::event_loop_runner::MasonryUserEvent;
+use masonry::widget::{CrossAxisAlignment, MainAxisAlignment};
+use masonry::{ArcStr, Color};
+use winit::application::ApplicationHandler;
+use winit::error::EventLoopError;
+use winit::event::ElementState;
+use winit::keyboard::{KeyCode, PhysicalKey};
+use xilem::view::{button, flex, label, sized_box, Axis};
+use xilem::{EventLoop, MasonryProxy, WidgetView, Xilem};
 
 /// A component to make a bigger than usual button
 fn big_button(

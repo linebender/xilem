@@ -1,19 +1,16 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{
-    core::{
-        AppendVec, DynMessage, ElementSplice, MessageResult, Mut, SuperElement, View, ViewElement,
-        ViewId, ViewMarker, ViewSequence,
-    },
-    Pod, ViewCtx, WidgetView,
-};
-use masonry::widget::GridParams;
-use masonry::{
-    widget::{self, WidgetMut},
-    Widget,
-};
 use std::marker::PhantomData;
+
+use masonry::widget::{self, GridParams, WidgetMut};
+use masonry::Widget;
+
+use crate::core::{
+    AppendVec, DynMessage, ElementSplice, MessageResult, Mut, SuperElement, View, ViewElement,
+    ViewId, ViewMarker, ViewSequence,
+};
+use crate::{Pod, ViewCtx, WidgetView};
 
 pub fn grid<State, Action, Seq: GridSequence<State, Action>>(
     sequence: Seq,

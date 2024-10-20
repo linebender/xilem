@@ -5,42 +5,34 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 #![warn(unnameable_types, unreachable_pub)]
 #![warn(clippy::print_stdout, clippy::print_stderr, clippy::dbg_macro)]
-use std::{collections::HashMap, sync::Arc};
+
+use std::collections::HashMap;
+use std::sync::Arc;
+
+use masonry::dpi::LogicalSize;
+use masonry::widget::{RootWidget, WidgetMut};
+use masonry::{event_loop_runner, Widget, WidgetId, WidgetPod};
+use winit::error::EventLoopError;
+use winit::window::{Window, WindowAttributes};
 
 use crate::core::{
     AsyncCtx, MessageResult, Mut, RawProxy, SuperElement, View, ViewElement, ViewId,
     ViewPathTracker, ViewSequence,
 };
-use masonry::{
-    dpi::LogicalSize,
-    event_loop_runner,
-    widget::{RootWidget, WidgetMut},
-    Widget, WidgetId, WidgetPod,
-};
-use winit::{
-    error::EventLoopError,
-    window::{Window, WindowAttributes},
-};
-
-pub use masonry::{
-    dpi,
-    event_loop_runner::{EventLoop, EventLoopBuilder},
-    Color, TextAlignment, TextWeight,
-};
+pub use masonry::event_loop_runner::{EventLoop, EventLoopBuilder};
+pub use masonry::{dpi, Color, TextAlignment, TextWeight};
 pub use xilem_core as core;
-
-mod one_of;
-
-mod any_view;
-pub use any_view::AnyWidgetView;
-
-mod driver;
-pub use driver::{async_action, MasonryDriver, MasonryProxy, ASYNC_MARKER_WIDGET};
-
-pub mod view;
 
 /// Tokio is the async runner used with Xilem.
 pub use tokio;
+
+mod any_view;
+mod driver;
+mod one_of;
+
+pub mod view;
+pub use any_view::AnyWidgetView;
+pub use driver::{async_action, MasonryDriver, MasonryProxy, ASYNC_MARKER_WIDGET};
 
 pub struct Xilem<State, Logic> {
     state: State,

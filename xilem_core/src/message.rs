@@ -3,9 +3,10 @@
 
 //! Message routing and type erasure primitives.
 
-use core::{any::Any, fmt::Debug, ops::Deref};
-
 use alloc::boxed::Box;
+use core::any::Any;
+use core::fmt::Debug;
+use core::ops::Deref;
 
 /// The possible outcomes from a [`View::message`]
 ///
@@ -121,9 +122,8 @@ pub trait ViewMessage<State, Action> {
 
 #[cfg(test)]
 mod tests {
-    use core::fmt::Debug;
-
     use alloc::boxed::Box;
+    use core::fmt::Debug;
 
     use crate::DynMessage;
 

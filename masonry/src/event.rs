@@ -3,13 +3,13 @@
 
 //! Events.
 
-use crate::dpi::{LogicalPosition, PhysicalPosition, PhysicalSize};
-use crate::kurbo::Rect;
-
 use std::path::PathBuf;
 
 use winit::event::{Force, Ime, KeyEvent, Modifiers};
 use winit::keyboard::ModifiersState;
+
+use crate::dpi::{LogicalPosition, PhysicalPosition, PhysicalSize};
+use crate::kurbo::Rect;
 
 // TODO - Occluded(bool) event
 // TODO - winit ActivationTokenDone thing

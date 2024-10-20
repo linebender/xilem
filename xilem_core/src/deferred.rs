@@ -1,9 +1,10 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use core::{fmt::Display, marker::PhantomData};
-
-use alloc::{boxed::Box, sync::Arc};
+use alloc::boxed::Box;
+use alloc::sync::Arc;
+use core::fmt::Display;
+use core::marker::PhantomData;
 
 use crate::{DynMessage, Message, NoElement, View, ViewId, ViewPathTracker};
 

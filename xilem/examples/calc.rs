@@ -5,12 +5,11 @@ use masonry::widget::{CrossAxisAlignment, GridParams, MainAxisAlignment};
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
 use winit::window::Window;
-use xilem::view::{grid, Flex, FlexSequence, FlexSpacer, GridExt, GridSequence};
-use xilem::EventLoopBuilder;
-use xilem::{
-    view::{button, flex, label, sized_box, Axis},
-    EventLoop, WidgetView, Xilem,
+use xilem::view::{
+    button, flex, grid, label, sized_box, Axis, Flex, FlexSequence, FlexSpacer, GridExt,
+    GridSequence,
 };
+use xilem::{EventLoop, EventLoopBuilder, WidgetView, Xilem};
 
 #[derive(Copy, Clone)]
 enum MathOperator {
