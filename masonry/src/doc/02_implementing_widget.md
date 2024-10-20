@@ -198,7 +198,7 @@ impl Widget for ColorRectangle {
 }
 ```
 
-Our size is static, and doesn't depend on size constraints passed by our parent or context information like "the widget is currenlty hovered", so it can be written as a one-liner.
+Our size is static, and doesn't depend on size constraints passed by our parent or context information like "the widget is currently hovered", so it can be written as a one-liner.
 
 Next we write our render methods:
 
