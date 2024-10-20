@@ -293,10 +293,11 @@ impl WidgetState {
     pub(crate) fn needs_rewrite_passes(&self) -> bool {
         self.needs_layout
             || self.needs_compose
-            || self.needs_paint
-            || self.needs_accessibility
-            || self.needs_anim
             || self.needs_update_disabled
             || self.needs_update_stashed
+    }
+
+    pub(crate) fn needs_render(&self) -> bool {
+        self.needs_anim || self.needs_paint || self.needs_accessibility
     }
 }

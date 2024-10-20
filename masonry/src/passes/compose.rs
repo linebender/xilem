@@ -75,6 +75,10 @@ fn compose_widget(
 pub(crate) fn run_compose_pass(root: &mut RenderRoot) {
     let _span = info_span!("compose").entered();
 
+    if root.root_state().needs_compose {
+        root.global_state.pointer_changed = true;
+    }
+
     let (root_widget, root_state) = root.widget_arena.get_pair_mut(root.root.id());
     compose_widget(
         &mut root.global_state,

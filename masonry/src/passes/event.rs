@@ -83,7 +83,10 @@ pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEv
         debug!("Running ON_POINTER_EVENT pass with {}", event.short_name());
     }
 
-    root.last_mouse_pos = event.position();
+    if event.position() != root.last_mouse_pos {
+        root.global_state.pointer_changed = true;
+        root.last_mouse_pos = event.position();
+    }
 
     let target_widget_id = get_target_widget(root, event.position());
 

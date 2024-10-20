@@ -512,6 +512,11 @@ pub(crate) fn run_update_scroll_pass(root: &mut RenderRoot) {
 
 // --- MARK: UPDATE POINTER ---
 pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
+    if !root.global_state.pointer_changed {
+        return;
+    }
+    root.global_state.pointer_changed = false;
+
     let pointer_pos = root.last_mouse_pos.map(|pos| (pos.x, pos.y).into());
 
     // Release pointer capture if target can no longer hold it.

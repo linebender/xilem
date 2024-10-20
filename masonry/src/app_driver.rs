@@ -34,10 +34,9 @@ impl<'a> DriverCtx<'a> {
     }
 
     pub fn content_changed(&self) -> bool {
-        self.main_root_widget
-            .ctx
-            .widget_state
-            .needs_rewrite_passes()
-            || self.main_root_widget.ctx.global_state.focus_changed()
+        let ctx = &self.main_root_widget.ctx;
+        ctx.widget_state.needs_rewrite_passes()
+            || ctx.widget_state.needs_render()
+            || ctx.global_state.focus_changed()
     }
 }
