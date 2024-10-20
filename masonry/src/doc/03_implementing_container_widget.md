@@ -1,4 +1,6 @@
-# Container widgets
+# Creating a container Widget
+
+**TODO - Add screenshots - see [#501](https://github.com/linebender/xilem/issues/501)**
 
 In the previous section we implemented a simple widget.
 Our widget was overall pretty simple, the tutorial skipped over a few methods with a "we'll explain later" handwave.
