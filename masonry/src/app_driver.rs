@@ -18,7 +18,8 @@ pub struct DriverCtx<'a> {
 pub trait AppDriver {
     fn on_action(&mut self, ctx: &mut DriverCtx<'_>, widget_id: WidgetId, action: Action);
 
-    #[allow(unused_variables)] // reason: otherwise `state` would need to be named `_state` which behaves badly when using rust-analyzer to implent the trait
+    #[allow(unused_variables)]
+    // reason: otherwise `state` would need to be named `_state` which behaves badly when using rust-analyzer to implent the trait
     /// A hook which will be executed when the application starts, to allow initial configuration of the `MasonryState`.
     ///
     /// Use cases include loading fonts.

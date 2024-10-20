@@ -48,9 +48,9 @@ mod vecmap;
 
 pub mod concurrent;
 pub mod elements;
+pub mod events;
 pub mod interfaces;
 pub mod svg;
-pub mod events;
 
 pub use self::{
     after_update::{
