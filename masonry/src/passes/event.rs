@@ -84,7 +84,7 @@ pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEv
     }
 
     if event.position() != root.last_mouse_pos {
-        root.global_state.pointer_changed = true;
+        root.global_state.needs_pointer_pass = true;
         root.last_mouse_pos = event.position();
     }
 

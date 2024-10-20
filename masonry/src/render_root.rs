@@ -74,7 +74,8 @@ pub(crate) struct RenderRootState {
     pub(crate) mutate_callbacks: Vec<MutateCallback>,
     pub(crate) is_ime_active: bool,
     pub(crate) scenes: HashMap<WidgetId, Scene>,
-    pub(crate) pointer_changed: bool,
+    /// Whether data set in the pointer pass has been invalidated.
+    pub(crate) needs_pointer_pass: bool,
 }
 
 pub(crate) struct MutateCallback {
@@ -162,7 +163,7 @@ impl RenderRoot {
                 mutate_callbacks: Vec::new(),
                 is_ime_active: false,
                 scenes: HashMap::new(),
-                pointer_changed: false,
+                needs_pointer_pass: false,
             },
             widget_arena: WidgetArena {
                 widgets: TreeArena::new(),
@@ -609,7 +610,7 @@ impl RenderRootState {
     }
 
     pub(crate) fn needs_rewrite_passes(&self) -> bool {
-        self.pointer_changed || self.focused_widget != self.next_focused_widget
+        self.needs_pointer_pass || self.focused_widget != self.next_focused_widget
     }
 }
 
