@@ -14,7 +14,7 @@ It stores handles to its children using a type called `WidgetPod`, and its `Widg
 
 As an example, let's write a `VerticalStack` widget, which lays out its children in a vertical line:
 
-```rust
+```ignore
 struct VerticalStack {
     children: Vec<WidgetPod<Box<dyn Widget>>>,
     gap: f64,
@@ -34,7 +34,7 @@ impl VerticalStack {
 
 A container widget needs to pay special attention to these methods:
 
-```rust
+```ignore
 trait Widget {
     // ...
 
@@ -65,7 +65,7 @@ When debug assertions are on, Masonry will actively try to detect cases where yo
 
 For our `VerticalStack`, we'll lay out our children in a vertical line, with a gap between each child; we give each child an equal share of the available height:
 
-```rust
+```ignore
 use masonry::{
     LayoutCtx, BoxConstraints
 };
@@ -118,7 +118,7 @@ For instance, if a widget in a list changes size, its siblings and parents must 
 
 In the case of our `VerticalStack`, we don't implement any transform-only changes, so we don't need to do anything in compose:
 
-```rust
+```ignore
 use masonry::{
     LayoutCtx, BoxConstraints
 };
@@ -134,7 +134,7 @@ impl Widget for VerticalStack {
 
 The `register_children` method must call `RegisterCtx::register_child` for each child:
 
-```rust
+```ignore
 use masonry::{
     Widget, RegisterCtx
 };
@@ -161,7 +161,7 @@ Not doing so is a logical bug, and may also trigger debug assertions.
 
 "All its children", in this context, means the children whose ids are returned by the `children_ids` method:
 
-```rust
+```ignore
 impl Widget for VerticalStack {
     // ...
 
@@ -185,7 +185,7 @@ But how do we add them in the first place?
 Widgets will usually be added or removed through a `WidgetMut` wrapper.
 Let's write WidgetMut methods for our `VerticalStack`:
 
-```rust
+```ignore
 impl WidgetMut<'_, VerticalStack> {
     pub fn add_child(&mut self, child: WidgetPod<Box<dyn Widget>>) {
         self.widget.children.push(child);
@@ -214,7 +214,7 @@ Now that we've implemented our container-specific methods, we should also implem
 
 In the case of our `VerticalStack`, all of them can be left empty:
 
-```rust
+```ignore
 impl Widget for VerticalStack {
     fn on_pointer_event(&mut self, _ctx: &mut EventCtx, _event: &PointerEvent) {}
     fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
