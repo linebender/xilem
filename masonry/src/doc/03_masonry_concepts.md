@@ -1,6 +1,6 @@
-**TODO - This is copy-pasted from the pass spec RFC, needs to be edited.**
+# Concepts and definitions
 
-This section describes concepts mentioned by name elsewhere in the RFCs and gives them a semi-formal definition for future reference.
+This section describes concepts mentioned by name elsewhere in the documentation and gives them a semi-formal definition for reference.
 
 ## Widget status
 
@@ -11,13 +11,14 @@ Statuses include:
 
 - Being hovered.
 - Having pointer capture.
-- Having local focus.
-- Having active focus.
+- Having local text focus.
+- Having active text focus.
 - Being disabled.
 - Being stashed.
 
 When one of these statuses changes, the `update` method is called on the widget.
 However, `update` can be called for reasons other than status changes.
+
 
 ## Pointer capture
 
@@ -37,7 +38,8 @@ Masonry should force the widget to lose pointer capture when some events occur; 
 
 Examples of use cases for pointer capture include selecting text, dragging a slider, or long-pressing a button.
 
-## Focus
+
+## Text focus
 
 Focus marks whether a widget receives text events.
 
@@ -54,11 +56,13 @@ Active focus is the default one; inactive focus is when the window your app runs
 
 In that case, we still mark the widget as focused, but with a different color to signal that e.g. typing on the keyboard won't actually affect it.
 
+
 ## Disabled
 
 A disabled widget is one which is visibly marked as non-interactive.
 
 It is usually grayed out, and can't receive pointer or text events.
+
 
 ## Stashed
 
@@ -70,13 +74,18 @@ The stereotypical stashed widget would be one inside a hidden tab in a "tab grou
 
 By contrast, widgets scrolled outside the viewport are **not** stashed: they can still get text events and are part of the accessibility tree.
 
+
 ## Interactivity
 
 A widget is considered "interactive" if it can still get text and/or pointer events.
 Stashed and disabled widget are non-interactive.
+
 
 ## Safety rails
 
 When debug assertions are on, Masonry runs a bunch of checks every frame to make sure widget code doesn't have logical errors.
 
 These checks are sometimes referred to as "safety rails".
+
+Safety rails aren't guaranteed to run and may be disabled even in debug mode for performance reasons.
+They should not be relied upon to check code correctness, but are meant to help you catch implementation errors early on during development.
