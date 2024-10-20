@@ -15,7 +15,7 @@ use crate::widget::label::LABEL_X_PADDING;
 use crate::widget::{LineBreaking, WidgetMut};
 use crate::{
     AccessCtx, AccessEvent, ArcStr, BoxConstraints, CursorIcon, EventCtx, LayoutCtx, PaintCtx,
-    PointerEvent, RegisterCtx, StatusChange, TextEvent, Update, UpdateCtx, Widget, WidgetId,
+    PointerEvent, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
 };
 
 /// The prose widget is a widget which displays text which can be
@@ -198,23 +198,16 @@ impl Widget for Prose {
 
     fn register_children(&mut self, _ctx: &mut RegisterCtx) {}
 
-    #[allow(missing_docs)]
-    fn on_status_change(&mut self, ctx: &mut UpdateCtx, event: &StatusChange) {
+    fn update(&mut self, ctx: &mut UpdateCtx, event: &Update) {
         match event {
-            StatusChange::FocusChanged(false) => {
+            Update::FocusChanged(false) => {
                 self.text_layout.focus_lost();
                 ctx.request_layout();
                 // TODO: Stop focusing on any links
             }
-            StatusChange::FocusChanged(true) => {
+            Update::FocusChanged(true) => {
                 // TODO: Focus on first link
             }
-            _ => {}
-        }
-    }
-
-    fn update(&mut self, ctx: &mut UpdateCtx, event: &Update) {
-        match event {
             Update::DisabledChanged(disabled) => {
                 if self.show_disabled {
                     if *disabled {

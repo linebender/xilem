@@ -13,8 +13,7 @@ use masonry::kurbo::{BezPath, Stroke};
 use masonry::widget::{ObjectFit, RootWidget};
 use masonry::{
     AccessCtx, AccessEvent, Action, Affine, BoxConstraints, Color, EventCtx, LayoutCtx, PaintCtx,
-    Point, PointerEvent, Rect, RegisterCtx, Size, StatusChange, TextEvent, UpdateCtx, Widget,
-    WidgetId,
+    Point, PointerEvent, Rect, RegisterCtx, Size, TextEvent, Widget, WidgetId,
 };
 use parley::layout::Alignment;
 use parley::style::{FontFamily, FontStack, StyleProperty};
@@ -40,8 +39,6 @@ impl Widget for CustomWidget {
     fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {}
 
     fn register_children(&mut self, _ctx: &mut RegisterCtx) {}
-
-    fn on_status_change(&mut self, _ctx: &mut UpdateCtx, _event: &StatusChange) {}
 
     fn layout(&mut self, _layout_ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
         // BoxConstraints are passed by the parent widget.

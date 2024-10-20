@@ -14,7 +14,7 @@ use vello::Scene;
 use crate::widget::{ObjectFit, WidgetMut};
 use crate::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
-    RegisterCtx, Size, StatusChange, TextEvent, Update, UpdateCtx, Widget, WidgetId,
+    RegisterCtx, Size, TextEvent, Update, UpdateCtx, Widget, WidgetId,
 };
 
 // TODO - Resolve name collision between masonry::Image and peniko::Image
@@ -78,8 +78,6 @@ impl Widget for Image {
     fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {}
 
     fn register_children(&mut self, _ctx: &mut RegisterCtx) {}
-
-    fn on_status_change(&mut self, _ctx: &mut UpdateCtx, _event: &StatusChange) {}
 
     fn update(&mut self, _ctx: &mut UpdateCtx, _event: &Update) {}
 

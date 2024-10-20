@@ -15,7 +15,7 @@ use crate::text::{TextBrush, TextEditor, TextWithSelection};
 use crate::widget::{LineBreaking, WidgetMut};
 use crate::{
     AccessCtx, AccessEvent, BoxConstraints, CursorIcon, EventCtx, LayoutCtx, PaintCtx,
-    PointerEvent, RegisterCtx, StatusChange, TextEvent, Update, UpdateCtx, Widget, WidgetId,
+    PointerEvent, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
 };
 
 const TEXTBOX_PADDING: f64 = 3.0;
@@ -226,23 +226,16 @@ impl Widget for Textbox {
 
     fn register_children(&mut self, _ctx: &mut RegisterCtx) {}
 
-    #[allow(missing_docs)]
-    fn on_status_change(&mut self, ctx: &mut UpdateCtx, event: &StatusChange) {
+    fn update(&mut self, ctx: &mut UpdateCtx, event: &Update) {
         match event {
-            StatusChange::FocusChanged(false) => {
+            Update::FocusChanged(false) => {
                 self.editor.focus_lost();
                 ctx.request_layout();
             }
-            StatusChange::FocusChanged(true) => {
+            Update::FocusChanged(true) => {
                 self.editor.focus_gained();
                 ctx.request_layout();
             }
-            _ => {}
-        }
-    }
-
-    fn update(&mut self, ctx: &mut UpdateCtx, event: &Update) {
-        match event {
             Update::DisabledChanged(disabled) => {
                 if self.show_disabled {
                     if *disabled {

@@ -17,7 +17,7 @@ use crate::text::{TextBrush, TextLayout};
 use crate::widget::WidgetMut;
 use crate::{
     AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
-    RegisterCtx, StatusChange, TextEvent, Update, UpdateCtx, Widget, WidgetId,
+    RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
 };
 
 // added padding between the edges of the widget and the text.
@@ -166,8 +166,6 @@ impl Widget for Label {
     fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {}
 
     fn register_children(&mut self, _ctx: &mut RegisterCtx) {}
-
-    fn on_status_change(&mut self, _ctx: &mut UpdateCtx, _event: &StatusChange) {}
 
     fn update(&mut self, ctx: &mut UpdateCtx, event: &Update) {
         match event {

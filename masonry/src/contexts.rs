@@ -302,14 +302,14 @@ impl_context_method!(
         /// A widget can request focus using the [`request_focus`] method.
         /// It's also possible to register for automatic focus via [`register_for_focus`].
         ///
-        /// If a widget gains or loses focus it will get a [`StatusChange::FocusChanged`] event.
+        /// If a widget gains or loses focus it will get a [`Update::FocusChanged`] event.
         ///
         /// Only one widget at a time is focused. However due to the way events are routed,
         /// all ancestors of that widget will also receive keyboard events.
         ///
         /// [`request_focus`]: EventCtx::request_focus
         /// [`register_for_focus`]: UpdateCtx::register_for_focus
-        /// [`StatusChange::FocusChanged`]: crate::StatusChange::FocusChanged
+        /// [`Update::FocusChanged`]: crate::Update::FocusChanged
         /// [`has_focus`]: Self::has_focus
         pub fn is_focused(&self) -> bool {
             self.global_state.focused_widget == Some(self.widget_id())

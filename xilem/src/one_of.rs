@@ -6,7 +6,7 @@
 use accesskit::{NodeBuilder, Role};
 use masonry::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, Point, PointerEvent,
-    RegisterCtx, Size, StatusChange, TextEvent, UpdateCtx, Widget, WidgetId, WidgetPod,
+    RegisterCtx, Size, TextEvent, Widget, WidgetId, WidgetPod,
 };
 use smallvec::{smallvec, SmallVec};
 use vello::Scene;
@@ -174,11 +174,6 @@ impl<
     fn on_pointer_event(&mut self, _ctx: &mut EventCtx, _event: &PointerEvent) {}
     fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
     fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {}
-
-    #[allow(missing_docs)] // reason: Doesn't do anything and is not available publicly
-    fn on_status_change(&mut self, _: &mut UpdateCtx, _: &StatusChange) {
-        // Intentionally do nothing
-    }
 
     fn register_children(&mut self, ctx: &mut RegisterCtx) {
         match self {

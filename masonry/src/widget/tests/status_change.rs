@@ -27,7 +27,7 @@ fn is_hovered(harness: &TestHarness, id: WidgetId) -> bool {
 fn next_hovered_changed(recording: &Recording) -> Option<bool> {
     while let Some(event) = recording.next() {
         match event {
-            Record::SC(StatusChange::HoveredChanged(hovered)) => return Some(hovered),
+            Record::U(Update::HoveredChanged(hovered)) => return Some(hovered),
             _ => {}
         }
     }

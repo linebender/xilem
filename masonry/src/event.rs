@@ -286,17 +286,12 @@ pub enum Update {
     /// Called when a child widgets uses
     /// [`EventCtx::request_pan_to_this`](crate::EventCtx::request_pan_to_this).
     RequestPanToChild(Rect),
-}
 
-/// Event indicating status changes within the widget hierarchy.
-#[non_exhaustive]
-#[derive(Debug, Clone)]
-pub enum StatusChange {
     /// Called when the "hovered" status changes.
     ///
     /// This will always be called _before_ the event that triggered it; that is,
     /// when the mouse moves over a widget, that widget will receive
-    /// `StatusChange::HoveredChanged` before it receives `Event::MouseMove`.
+    /// `Update::HoveredChanged` before it receives `Event::MouseMove`.
     ///
     /// See [`is_hovered`](crate::EventCtx::is_hovered) for
     /// discussion about the hovered status.
@@ -477,6 +472,9 @@ impl Update {
             Update::DisabledChanged(_) => "DisabledChanged",
             Update::StashedChanged(_) => "StashedChanged",
             Update::RequestPanToChild(_) => "RequestPanToChild",
+            Update::HoveredChanged(_) => "HoveredChanged",
+            Update::FocusChanged(_) => "FocusChanged",
+            Update::ChildFocusChanged(_) => "ChildFocusChanged",
         }
     }
 }
