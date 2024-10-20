@@ -126,17 +126,17 @@ pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> Scene {
 
     // TODO - This is a bit of a hack until we refactor widget tree mutation.
     // This should be removed once remove_child is exclusive to MutateCtx.
-    let mut scenes = std::mem::take(&mut root.state.scenes);
+    let mut scenes = std::mem::take(&mut root.global_state.scenes);
 
     paint_widget(
-        &mut root.state,
+        &mut root.global_state,
         &mut complete_scene,
         &mut scenes,
         root_widget,
         root_state,
         debug_paint,
     );
-    root.state.scenes = scenes;
+    root.global_state.scenes = scenes;
 
     complete_scene
 }

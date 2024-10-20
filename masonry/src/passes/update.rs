@@ -39,7 +39,7 @@ fn run_targeted_update_pass(
         let (widget_mut, state_mut) = root.widget_arena.get_pair_mut(widget_id);
 
         let mut ctx = UpdateCtx {
-            global_state: &mut root.state,
+            global_state: &mut root.global_state,
             widget_state: state_mut.item,
             widget_state_children: state_mut.children,
             widget_children: widget_mut.children,
@@ -60,7 +60,7 @@ fn run_single_update_pass(
         let (widget_mut, state_mut) = root.widget_arena.get_pair_mut(widget_id);
 
         let mut ctx = UpdateCtx {
-            global_state: &mut root.state,
+            global_state: &mut root.global_state,
             widget_state: state_mut.item,
             widget_state_children: state_mut.children,
             widget_children: widget_mut.children,
@@ -177,7 +177,11 @@ pub(crate) fn run_update_widget_tree_pass(root: &mut RenderRoot) {
     }
 
     let (root_widget, mut root_state) = root.widget_arena.get_pair_mut(root.root.id());
-    update_widget_tree(&mut root.state, root_widget, root_state.reborrow_mut());
+    update_widget_tree(
+        &mut root.global_state,
+        root_widget,
+        root_state.reborrow_mut(),
+    );
 }
 
 // ----------------
@@ -229,7 +233,7 @@ pub(crate) fn run_update_disabled_pass(root: &mut RenderRoot) {
     let _span = info_span!("update_disabled").entered();
 
     let (root_widget, root_state) = root.widget_arena.get_pair_mut(root.root.id());
-    update_disabled_for_widget(&mut root.state, root_widget, root_state, false);
+    update_disabled_for_widget(&mut root.global_state, root_widget, root_state, false);
 }
 
 // ----------------
@@ -297,7 +301,7 @@ pub(crate) fn run_update_stashed_pass(root: &mut RenderRoot) {
     let _span = info_span!("update_stashed").entered();
 
     let (root_widget, root_state) = root.widget_arena.get_pair_mut(root.root.id());
-    update_stashed_for_widget(&mut root.state, root_widget, root_state, false);
+    update_stashed_for_widget(&mut root.global_state, root_widget, root_state, false);
 }
 
 // ----------------
@@ -369,7 +373,7 @@ pub(crate) fn run_update_focus_chain_pass(root: &mut RenderRoot) {
 
     let (root_widget, mut root_state) = root.widget_arena.get_pair_mut(root.root.id());
     update_focus_chain_for_widget(
-        &mut root.state,
+        &mut root.global_state,
         root_widget,
         root_state.reborrow_mut(),
         &mut dummy_focus_chain,
@@ -382,17 +386,17 @@ pub(crate) fn run_update_focus_chain_pass(root: &mut RenderRoot) {
 pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
     // If the focused widget is disabled, stashed or removed, we set
     // the focused id to None
-    if let Some(id) = root.state.next_focused_widget {
+    if let Some(id) = root.global_state.next_focused_widget {
         if !root.is_still_interactive(id) {
-            root.state.next_focused_widget = None;
+            root.global_state.next_focused_widget = None;
         }
     }
 
-    let prev_focused = root.state.focused_widget;
-    let next_focused = root.state.next_focused_widget;
+    let prev_focused = root.global_state.focused_widget;
+    let next_focused = root.global_state.next_focused_widget;
 
     // "Focused path" means the focused widget, and all its parents.
-    let prev_focused_path = std::mem::take(&mut root.state.focused_path);
+    let prev_focused_path = std::mem::take(&mut root.global_state.focused_path);
     let next_focused_path = get_id_path(root, next_focused);
 
     let mut focused_set = HashSet::new();
@@ -442,13 +446,13 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
     }
 
     if prev_focused != next_focused {
-        let was_ime_active = root.state.is_ime_active;
+        let was_ime_active = root.global_state.is_ime_active;
         let is_ime_active = if let Some(id) = next_focused {
             root.widget_arena.get_state(id).item.accepts_text_input
         } else {
             false
         };
-        root.state.is_ime_active = is_ime_active;
+        root.global_state.is_ime_active = is_ime_active;
 
         run_single_update_pass(root, prev_focused, |widget, ctx| {
             widget.on_status_change(ctx, &StatusChange::FocusChanged(false));
@@ -458,21 +462,21 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
         });
 
         if prev_focused.is_some() && was_ime_active {
-            root.state.emit_signal(RenderRootSignal::EndIme);
+            root.global_state.emit_signal(RenderRootSignal::EndIme);
         }
         if next_focused.is_some() && is_ime_active {
-            root.state.emit_signal(RenderRootSignal::StartIme);
+            root.global_state.emit_signal(RenderRootSignal::StartIme);
         }
 
         if let Some(id) = next_focused {
             let ime_area = root.widget_arena.get_state(id).item.get_ime_area();
-            root.state
+            root.global_state
                 .emit_signal(RenderRootSignal::new_ime_moved_signal(ime_area));
         }
     }
 
-    root.state.focused_widget = root.state.next_focused_widget;
-    root.state.focused_path = next_focused_path;
+    root.global_state.focused_widget = root.global_state.next_focused_widget;
+    root.global_state.focused_path = next_focused_path;
 }
 
 // ----------------
@@ -486,7 +490,7 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
 pub(crate) fn run_update_scroll_pass(root: &mut RenderRoot) {
     let _span = info_span!("update_scroll").entered();
 
-    let scroll_request_targets = std::mem::take(&mut root.state.scroll_request_targets);
+    let scroll_request_targets = std::mem::take(&mut root.global_state.scroll_request_targets);
     for (target, rect) in scroll_request_targets {
         let mut target_rect = rect;
 
@@ -511,9 +515,9 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
     let pointer_pos = root.last_mouse_pos.map(|pos| (pos.x, pos.y).into());
 
     // Release pointer capture if target can no longer hold it.
-    if let Some(id) = root.state.pointer_capture_target {
+    if let Some(id) = root.global_state.pointer_capture_target {
         if !root.is_still_interactive(id) {
-            root.state.pointer_capture_target = None;
+            root.global_state.pointer_capture_target = None;
             run_on_pointer_event_pass(root, &PointerEvent::new_pointer_leave());
         }
     }
@@ -528,14 +532,14 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
         None
     };
     // If the pointer is captured, it can either hover its capture target or nothing.
-    if let Some(capture_target) = root.state.pointer_capture_target {
+    if let Some(capture_target) = root.global_state.pointer_capture_target {
         if next_hovered_widget != Some(capture_target) {
             next_hovered_widget = None;
         }
     }
 
     // "Hovered path" means the widget which is considered hovered, and all its parents.
-    let prev_hovered_path = std::mem::take(&mut root.state.hovered_path);
+    let prev_hovered_path = std::mem::take(&mut root.global_state.hovered_path);
     let next_hovered_path = get_id_path(root, next_hovered_widget);
 
     let mut hovered_set = HashSet::new();
@@ -591,7 +595,10 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
 
     // If the pointer is captured, its cursor always reflects the
     // capture target, even when not hovered.
-    let cursor_source = root.state.pointer_capture_target.or(next_hovered_widget);
+    let cursor_source = root
+        .global_state
+        .pointer_capture_target
+        .or(next_hovered_widget);
 
     let new_cursor = if let Some(cursor_source) = cursor_source {
         let (widget, state) = root.widget_arena.get_pair(cursor_source);
@@ -600,11 +607,11 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
         CursorIcon::Default
     };
 
-    if root.state.cursor_icon != new_cursor {
-        root.state
+    if root.global_state.cursor_icon != new_cursor {
+        root.global_state
             .emit_signal(RenderRootSignal::SetCursor(new_cursor));
     }
 
-    root.state.cursor_icon = new_cursor;
-    root.state.hovered_path = next_hovered_path;
+    root.global_state.cursor_icon = new_cursor;
+    root.global_state.hovered_path = next_hovered_path;
 }

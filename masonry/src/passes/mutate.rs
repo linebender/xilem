@@ -20,7 +20,7 @@ pub(crate) fn mutate_widget<R>(
     // state up to the root.
     let root_widget = WidgetMut {
         ctx: MutateCtx {
-            global_state: &mut root.state,
+            global_state: &mut root.global_state,
             parent_widget_state: None,
             widget_state: state_mut.item,
             widget_state_children: state_mut.children,
@@ -45,7 +45,7 @@ pub(crate) fn mutate_widget<R>(
 // TODO - Add link to mutate pass documentation
 /// Apply any deferred mutations (created using [`...Ctx::mutate_later`](crate::LayoutCtx::mutate_later)).
 pub(crate) fn run_mutate_pass(root: &mut RenderRoot) {
-    let callbacks = std::mem::take(&mut root.state.mutate_callbacks);
+    let callbacks = std::mem::take(&mut root.global_state.mutate_callbacks);
     for callback in callbacks {
         mutate_widget(root, callback.id, callback.callback);
     }

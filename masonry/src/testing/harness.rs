@@ -449,7 +449,7 @@ impl TestHarness {
     }
 
     pub fn focus_on(&mut self, id: Option<WidgetId>) {
-        self.render_root.state.next_focused_widget = id;
+        self.render_root.global_state.next_focused_widget = id;
         self.render_root.run_rewrite_passes();
     }
 
@@ -511,18 +511,18 @@ impl TestHarness {
     /// Return the widget that receives keyboard events.
     pub fn focused_widget(&self) -> Option<WidgetRef<'_, dyn Widget>> {
         self.root_widget()
-            .find_widget_by_id(self.render_root.state.focused_widget?)
+            .find_widget_by_id(self.render_root.global_state.focused_widget?)
     }
 
     // TODO - Multiple pointers
     pub fn pointer_capture_target(&self) -> Option<WidgetRef<'_, dyn Widget>> {
         self.render_root
-            .get_widget(self.render_root.state.pointer_capture_target?)
+            .get_widget(self.render_root.global_state.pointer_capture_target?)
     }
 
     // TODO - This is kinda redundant with the above
     pub fn pointer_capture_target_id(&self) -> Option<WidgetId> {
-        self.render_root.state.pointer_capture_target
+        self.render_root.global_state.pointer_capture_target
     }
 
     /// Call the provided visitor on every widget in the widget tree.
@@ -660,6 +660,9 @@ impl TestHarness {
     // ex: harness.write_debug_logs("test_log.json");
     #[allow(missing_docs)]
     pub fn write_debug_logs(&mut self, path: &str) {
-        self.render_root.state.debug_logger.write_to_file(path);
+        self.render_root
+            .global_state
+            .debug_logger
+            .write_to_file(path);
     }
 }

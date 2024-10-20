@@ -222,7 +222,7 @@ pub(crate) fn run_layout_pass(root: &mut RenderRoot) {
     let root_state_token = root.widget_arena.widget_states.root_token_mut();
     let root_widget_token = root.widget_arena.widgets.root_token_mut();
     let mut ctx = LayoutCtx {
-        global_state: &mut root.state,
+        global_state: &mut root.global_state,
         widget_state: &mut dummy_state,
         widget_state_children: root_state_token,
         widget_children: root_widget_token,
@@ -235,7 +235,8 @@ pub(crate) fn run_layout_pass(root: &mut RenderRoot) {
         let new_size = LogicalSize::new(size.width, size.height).to_physical(root.scale_factor);
         if root.size != new_size {
             root.size = new_size;
-            root.state.emit_signal(RenderRootSignal::SetSize(new_size));
+            root.global_state
+                .emit_signal(RenderRootSignal::SetSize(new_size));
         }
     }
 }

@@ -76,5 +76,11 @@ pub(crate) fn run_compose_pass(root: &mut RenderRoot) {
     let _span = info_span!("compose").entered();
 
     let (root_widget, root_state) = root.widget_arena.get_pair_mut(root.root.id());
-    compose_widget(&mut root.state, root_widget, root_state, false, Vec2::ZERO);
+    compose_widget(
+        &mut root.global_state,
+        root_widget,
+        root_state,
+        false,
+        Vec2::ZERO,
+    );
 }
