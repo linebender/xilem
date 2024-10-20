@@ -623,7 +623,7 @@ impl MasonryState<'_> {
                             .handle_window_event(WindowEvent::RebuildAccessTree);
                     }
                     accesskit_winit::WindowEvent::ActionRequested(action_request) => {
-                        self.render_root.root_on_access_event(action_request);
+                        self.render_root.handle_access_event(action_request);
                     }
                     accesskit_winit::WindowEvent::AccessibilityDeactivated => {}
                 }

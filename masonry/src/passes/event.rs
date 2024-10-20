@@ -125,6 +125,10 @@ pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEv
 
 // --- MARK: TEXT EVENT ---
 pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -> Handled {
+    if matches!(event, TextEvent::FocusChange(false)) {
+        run_on_pointer_event_pass(root, &PointerEvent::new_pointer_leave());
+    }
+
     let _span = info_span!("text_event").entered();
     if !event.is_high_density() {
         debug!("Running ON_TEXT_EVENT pass with {}", event.short_name());

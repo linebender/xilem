@@ -1,7 +1,7 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use accesskit::{NodeBuilder, NodeId, TreeUpdate};
+use accesskit::{NodeBuilder, NodeId, Tree, TreeUpdate};
 use tracing::{debug, info_span, trace};
 use vello::kurbo::Rect;
 
@@ -126,16 +126,17 @@ fn to_accesskit_rect(r: Rect, scale_factor: f64) -> accesskit::Rect {
 }
 
 // --- MARK: ROOT ---
-pub(crate) fn run_accessibility_pass(
-    root: &mut RenderRoot,
-    rebuild_all: bool,
-    scale_factor: f64,
-) -> TreeUpdate {
+pub(crate) fn run_accessibility_pass(root: &mut RenderRoot, scale_factor: f64) -> TreeUpdate {
     let _span = info_span!("accessibility").entered();
 
     let mut tree_update = TreeUpdate {
         nodes: vec![],
-        tree: None,
+        tree: Some(Tree {
+            root: root.root.id().into(),
+            app_name: None,
+            toolkit_name: Some("Masonry".to_string()),
+            toolkit_version: Some(env!("CARGO_PKG_VERSION").to_string()),
+        }),
         focus: root
             .global_state
             .focused_widget
@@ -158,18 +159,18 @@ pub(crate) fn run_accessibility_pass(
         (widget, state)
     };
 
-    if rebuild_all {
+    if root.rebuild_access_tree {
         debug!("Running ACCESSIBILITY pass with rebuild_all");
     }
-
     build_accessibility_tree(
         &mut root.global_state,
         &mut tree_update,
         root_widget,
         root_state,
-        rebuild_all,
+        root.rebuild_access_tree,
         scale_factor,
     );
+    root.rebuild_access_tree = false;
 
     tree_update
 }

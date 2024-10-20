@@ -3,7 +3,7 @@
 
 use std::collections::{HashMap, VecDeque};
 
-use accesskit::{ActionRequest, Tree, TreeUpdate};
+use accesskit::{ActionRequest, TreeUpdate};
 use parley::fontique::{self, Collection, CollectionOptions};
 use parley::{FontContext, LayoutContext};
 use tracing::warn;
@@ -239,11 +239,33 @@ impl RenderRoot {
 
     // --- MARK: PUB FUNCTIONS ---
     pub fn handle_pointer_event(&mut self, event: PointerEvent) -> Handled {
-        self.root_on_pointer_event(event)
+        let handled = run_on_pointer_event_pass(self, &event);
+        run_update_pointer_pass(self);
+        self.run_rewrite_passes();
+
+        handled
     }
 
     pub fn handle_text_event(&mut self, event: TextEvent) -> Handled {
-        self.root_on_text_event(event)
+        let handled = run_on_text_event_pass(self, &event);
+        run_update_focus_pass(self);
+        self.run_rewrite_passes();
+
+        handled
+    }
+
+    pub fn handle_access_event(&mut self, event: ActionRequest) {
+        let Ok(id) = event.target.0.try_into() else {
+            warn!("Received ActionRequest with id 0. This shouldn't be possible.");
+            return;
+        };
+        let event = AccessEvent {
+            action: event.action,
+            data: event.data,
+        };
+
+        run_on_access_event_pass(self, &event, WidgetId(id));
+        self.run_rewrite_passes();
     }
 
     /// Registers all fonts that exist in the given data.
@@ -273,7 +295,10 @@ impl RenderRoot {
 
         // TODO - Handle invalidation regions
         // TODO - Improve caching of scenes.
-        (self.root_paint(), self.root_accessibility())
+        (
+            run_paint_pass(self),
+            run_accessibility_pass(self, self.scale_factor),
+        )
     }
 
     pub fn pop_signal(&mut self) -> Option<RenderRootSignal> {
@@ -388,68 +413,6 @@ impl RenderRoot {
         self.run_rewrite_passes();
 
         res
-    }
-
-    // --- MARK: POINTER_EVENT ---
-    fn root_on_pointer_event(&mut self, event: PointerEvent) -> Handled {
-        let handled = run_on_pointer_event_pass(self, &event);
-        run_update_pointer_pass(self);
-
-        self.run_rewrite_passes();
-
-        handled
-    }
-
-    // --- MARK: TEXT_EVENT ---
-    fn root_on_text_event(&mut self, event: TextEvent) -> Handled {
-        if matches!(event, TextEvent::FocusChange(false)) {
-            run_on_pointer_event_pass(self, &PointerEvent::new_pointer_leave());
-        }
-
-        let handled = run_on_text_event_pass(self, &event);
-        run_update_focus_pass(self);
-
-        self.run_rewrite_passes();
-
-        handled
-    }
-
-    // --- MARK: ACCESS_EVENT ---
-    pub fn root_on_access_event(&mut self, event: ActionRequest) {
-        let Ok(id) = event.target.0.try_into() else {
-            warn!("Received ActionRequest with id 0. This shouldn't be possible.");
-            return;
-        };
-        let event = AccessEvent {
-            action: event.action,
-            data: event.data,
-        };
-
-        run_on_access_event_pass(self, &event, WidgetId(id));
-
-        self.run_rewrite_passes();
-    }
-
-    // --- MARK: PAINT ---
-    fn root_paint(&mut self) -> Scene {
-        run_paint_pass(self)
-    }
-
-    // --- MARK: ACCESSIBILITY ---
-    // TODO - Integrate in unit tests?
-    fn root_accessibility(&mut self) -> TreeUpdate {
-        let mut tree_update =
-            run_accessibility_pass(self, self.rebuild_access_tree, self.scale_factor);
-        self.rebuild_access_tree = false;
-
-        tree_update.tree = Some(Tree {
-            root: self.root.id().into(),
-            app_name: None,
-            toolkit_name: Some("Masonry".to_string()),
-            toolkit_version: Some(env!("CARGO_PKG_VERSION").to_string()),
-        });
-
-        tree_update
     }
 
     pub(crate) fn get_kurbo_size(&self) -> kurbo::Size {
