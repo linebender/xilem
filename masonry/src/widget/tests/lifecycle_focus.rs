@@ -33,7 +33,7 @@ impl FocusTaker {
                 }
             })
             .status_change_fn(|is_focused, _ctx, event| {
-                if let StatusChange::FocusChanged(focus) = event {
+                if let Update::FocusChanged(focus) = event {
                     is_focused.set(*focus);
                 }
             })

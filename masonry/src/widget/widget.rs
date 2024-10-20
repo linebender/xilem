@@ -14,7 +14,7 @@ use tracing::{trace_span, Span};
 use vello::Scene;
 
 use crate::contexts::ComposeCtx;
-use crate::event::{AccessEvent, PointerEvent, StatusChange, TextEvent};
+use crate::event::{AccessEvent, PointerEvent, TextEvent};
 use crate::widget::WidgetRef;
 use crate::{
     AccessCtx, AsAny, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, Point, QueryCtx, RegisterCtx,
@@ -90,9 +90,6 @@ pub trait Widget: AsAny {
     /// intensive in response to an `AnimFrame` event: it might make the app miss
     /// the monitor's refresh, causing lag or jerky animations.
     fn on_anim_frame(&mut self, ctx: &mut UpdateCtx, interval: u64) {}
-
-    #[allow(missing_docs)]
-    fn on_status_change(&mut self, ctx: &mut UpdateCtx, event: &StatusChange);
 
     /// Register child widgets with Masonry.
     ///
@@ -400,10 +397,6 @@ impl Widget for Box<dyn Widget> {
 
     fn register_children(&mut self, ctx: &mut RegisterCtx) {
         self.deref_mut().register_children(ctx);
-    }
-
-    fn on_status_change(&mut self, ctx: &mut UpdateCtx, event: &StatusChange) {
-        self.deref_mut().on_status_change(ctx, event);
     }
 
     fn update(&mut self, ctx: &mut UpdateCtx, event: &Update) {

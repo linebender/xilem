@@ -14,8 +14,7 @@ use vello::Scene;
 use crate::widget::{Axis, ScrollBar, WidgetMut};
 use crate::{
     AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, LayoutCtx, PaintCtx,
-    PointerEvent, RegisterCtx, StatusChange, TextEvent, Update, UpdateCtx, Widget, WidgetId,
-    WidgetPod,
+    PointerEvent, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetPod,
 };
 
 // TODO - refactor - see https://github.com/linebender/xilem/issues/366
@@ -319,8 +318,6 @@ impl<W: Widget> Widget for Portal<W> {
 
     // TODO - Handle scroll-related events?
     fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {}
-
-    fn on_status_change(&mut self, _ctx: &mut UpdateCtx, _event: &StatusChange) {}
 
     fn register_children(&mut self, ctx: &mut RegisterCtx) {
         ctx.register_child(&mut self.child);

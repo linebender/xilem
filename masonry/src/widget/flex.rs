@@ -14,7 +14,7 @@ use crate::theme::get_debug_color;
 use crate::widget::WidgetMut;
 use crate::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, Point, PointerEvent,
-    Rect, Size, StatusChange, TextEvent, UpdateCtx, Widget, WidgetId, WidgetPod,
+    Rect, Size, TextEvent, Widget, WidgetId, WidgetPod,
 };
 
 /// A container with either horizontal or vertical layout.
@@ -900,8 +900,6 @@ impl Widget for Flex {
     fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
 
     fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {}
-
-    fn on_status_change(&mut self, _ctx: &mut UpdateCtx, _event: &StatusChange) {}
 
     fn register_children(&mut self, ctx: &mut crate::RegisterCtx) {
         for child in self.children.iter_mut().filter_map(|x| x.widget_mut()) {

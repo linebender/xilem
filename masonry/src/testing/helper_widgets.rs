@@ -32,7 +32,6 @@ pub type TextEventFn<S> = dyn FnMut(&mut S, &mut EventCtx, &TextEvent);
 pub type AccessEventFn<S> = dyn FnMut(&mut S, &mut EventCtx, &AccessEvent);
 pub type AnimFrameFn<S> = dyn FnMut(&mut S, &mut UpdateCtx, u64);
 pub type RegisterChildrenFn<S> = dyn FnMut(&mut S, &mut RegisterCtx);
-pub type StatusChangeFn<S> = dyn FnMut(&mut S, &mut UpdateCtx, &StatusChange);
 pub type UpdateFn<S> = dyn FnMut(&mut S, &mut UpdateCtx, &Update);
 pub type LayoutFn<S> = dyn FnMut(&mut S, &mut LayoutCtx, &BoxConstraints) -> Size;
 pub type ComposeFn<S> = dyn FnMut(&mut S, &mut ComposeCtx);
@@ -57,7 +56,6 @@ pub struct ModularWidget<S> {
     on_access_event: Option<Box<AccessEventFn<S>>>,
     on_anim_frame: Option<Box<AnimFrameFn<S>>>,
     register_children: Option<Box<RegisterChildrenFn<S>>>,
-    on_status_change: Option<Box<StatusChangeFn<S>>>,
     update: Option<Box<UpdateFn<S>>>,
     layout: Option<Box<LayoutFn<S>>>,
     compose: Option<Box<ComposeFn<S>>>,
@@ -109,7 +107,6 @@ pub enum Record {
     AE(AccessEvent),
     AF(u64),
     RC,
-    SC(StatusChange),
     U(Update),
     Layout(Size),
     Compose,
@@ -145,7 +142,6 @@ impl<S> ModularWidget<S> {
             on_access_event: None,
             on_anim_frame: None,
             register_children: None,
-            on_status_change: None,
             update: None,
             layout: None,
             compose: None,
@@ -205,14 +201,6 @@ impl<S> ModularWidget<S> {
         f: impl FnMut(&mut S, &mut RegisterCtx) + 'static,
     ) -> Self {
         self.register_children = Some(Box::new(f));
-        self
-    }
-
-    pub fn status_change_fn(
-        mut self,
-        f: impl FnMut(&mut S, &mut UpdateCtx, &StatusChange) + 'static,
-    ) -> Self {
-        self.on_status_change = Some(Box::new(f));
         self
     }
 
@@ -290,12 +278,6 @@ impl<S: 'static> Widget for ModularWidget<S> {
     fn register_children(&mut self, ctx: &mut RegisterCtx) {
         if let Some(f) = self.register_children.as_mut() {
             f(&mut self.state, ctx);
-        }
-    }
-
-    fn on_status_change(&mut self, ctx: &mut UpdateCtx, event: &StatusChange) {
-        if let Some(f) = self.on_status_change.as_mut() {
-            f(&mut self.state, ctx, event);
         }
     }
 
@@ -428,10 +410,6 @@ impl Widget for ReplaceChild {
 
     fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {}
 
-    fn on_status_change(&mut self, ctx: &mut UpdateCtx, _event: &StatusChange) {
-        ctx.request_layout();
-    }
-
     fn register_children(&mut self, ctx: &mut RegisterCtx) {
         ctx.register_child(&mut self.child);
     }
@@ -507,11 +485,6 @@ impl<W: Widget> Widget for Recorder<W> {
     fn on_anim_frame(&mut self, ctx: &mut UpdateCtx, interval: u64) {
         self.recording.push(Record::AF(interval));
         self.child.on_anim_frame(ctx, interval);
-    }
-
-    fn on_status_change(&mut self, ctx: &mut UpdateCtx, event: &StatusChange) {
-        self.recording.push(Record::SC(event.clone()));
-        self.child.on_status_change(ctx, event);
     }
 
     fn register_children(&mut self, ctx: &mut RegisterCtx) {

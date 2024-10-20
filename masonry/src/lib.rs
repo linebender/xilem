@@ -139,8 +139,8 @@ pub use contexts::{
 };
 pub use cursor_icon::{CursorIcon, ParseError as CursorIconParseError};
 pub use event::{
-    AccessEvent, PointerButton, PointerEvent, PointerState, StatusChange, TextEvent, Update,
-    WindowEvent, WindowTheme,
+    AccessEvent, PointerButton, PointerEvent, PointerState, TextEvent, Update, WindowEvent,
+    WindowTheme,
 };
 pub use kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
 pub use parley::fontique::Weight as TextWeight;

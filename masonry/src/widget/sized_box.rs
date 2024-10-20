@@ -14,7 +14,7 @@ use crate::paint_scene_helpers::stroke;
 use crate::widget::{WidgetMut, WidgetPod};
 use crate::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, Point, PointerEvent,
-    RegisterCtx, Size, StatusChange, TextEvent, UpdateCtx, Widget, WidgetId,
+    RegisterCtx, Size, TextEvent, Widget, WidgetId,
 };
 
 // FIXME - Improve all doc in this module ASAP.
@@ -309,8 +309,6 @@ impl Widget for SizedBox {
     fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
 
     fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {}
-
-    fn on_status_change(&mut self, _ctx: &mut UpdateCtx, _event: &StatusChange) {}
 
     fn register_children(&mut self, ctx: &mut RegisterCtx) {
         if let Some(ref mut child) = self.child {

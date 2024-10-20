@@ -10,9 +10,7 @@ use crate::passes::event::run_on_pointer_event_pass;
 use crate::passes::{merge_state_up, recurse_on_children};
 use crate::render_root::{RenderRoot, RenderRootSignal, RenderRootState};
 use crate::tree_arena::ArenaMut;
-use crate::{
-    PointerEvent, RegisterCtx, StatusChange, Update, UpdateCtx, Widget, WidgetId, WidgetState,
-};
+use crate::{PointerEvent, RegisterCtx, Update, UpdateCtx, Widget, WidgetId, WidgetState};
 
 // --- MARK: HELPERS ---
 fn get_id_path(root: &RenderRoot, widget_id: Option<WidgetId>) -> Vec<WidgetId> {
@@ -422,7 +420,7 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
             let has_focus = focused_set.contains(&ctx.widget_id());
 
             if ctx.widget_state.has_focus != has_focus {
-                widget.on_status_change(ctx, &StatusChange::ChildFocusChanged(has_focus));
+                widget.update(ctx, &Update::ChildFocusChanged(has_focus));
             }
             ctx.widget_state.has_focus = has_focus;
         });
@@ -459,12 +457,12 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
         // We send FocusChange event to widget that lost and the widget that gained focus.
         // We also request accessibility, because build_access_node() depends on the focus state.
         run_single_update_pass(root, prev_focused, |widget, ctx| {
-            widget.on_status_change(ctx, &StatusChange::FocusChanged(false));
+            widget.update(ctx, &Update::FocusChanged(false));
             ctx.widget_state.request_accessibility = true;
             ctx.widget_state.needs_accessibility = true;
         });
         run_single_update_pass(root, next_focused, |widget, ctx| {
-            widget.on_status_change(ctx, &StatusChange::FocusChanged(true));
+            widget.update(ctx, &Update::FocusChanged(true));
             ctx.widget_state.request_accessibility = true;
             ctx.widget_state.needs_accessibility = true;
         });
@@ -579,7 +577,7 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
             let is_hovered = hovered_set.contains(&ctx.widget_id());
 
             if ctx.widget_state.is_hovered != is_hovered {
-                widget.on_status_change(ctx, &StatusChange::HoveredChanged(is_hovered));
+                widget.update(ctx, &Update::HoveredChanged(is_hovered));
                 ctx.widget_state.request_accessibility = true;
                 ctx.widget_state.needs_accessibility = true;
             }

@@ -13,8 +13,7 @@ use masonry::dpi::LogicalSize;
 use masonry::widget::{Align, CrossAxisAlignment, Flex, Label, RootWidget, SizedBox};
 use masonry::{
     AccessCtx, AccessEvent, Action, BoxConstraints, Color, EventCtx, LayoutCtx, PaintCtx, Point,
-    PointerEvent, RegisterCtx, Size, StatusChange, TextEvent, UpdateCtx, Widget, WidgetId,
-    WidgetPod,
+    PointerEvent, RegisterCtx, Size, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetPod,
 };
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace, trace_span, Span};
@@ -182,14 +181,14 @@ impl Widget for CalcButton {
         }
     }
 
-    fn on_status_change(&mut self, ctx: &mut UpdateCtx, event: &StatusChange) {
+    fn update(&mut self, ctx: &mut UpdateCtx, event: &Update) {
         // Masonry doesn't let us change a widget's attributes directly.
         // We use `mutate_later` to get a mutable reference to the inner widget
         // and change its border color. This is a simple way to implement a
         // "hovered" visual effect, but it's somewhat non-idiomatic compared to
         // implementing the effect inside the "paint" method.
         match event {
-            StatusChange::HoveredChanged(true) => {
+            Update::HoveredChanged(true) => {
                 ctx.mutate_later(&mut self.inner, move |mut inner| {
                     inner.set_border(Color::WHITE, 3.0);
                 });
@@ -197,7 +196,7 @@ impl Widget for CalcButton {
                 // Should be fixed once the pass spec RFC is implemented.
                 ctx.request_anim_frame();
             }
-            StatusChange::HoveredChanged(false) => {
+            Update::HoveredChanged(false) => {
                 ctx.mutate_later(&mut self.inner, move |mut inner| {
                     inner.set_border(Color::TRANSPARENT, 3.0);
                 });
