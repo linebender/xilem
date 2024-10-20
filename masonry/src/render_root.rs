@@ -35,8 +35,7 @@ use crate::passes::update::{
 };
 use crate::text::TextBrush;
 use crate::tree_arena::{ArenaMut, TreeArena};
-use crate::widget::WidgetArena;
-use crate::widget::{WidgetMut, WidgetRef, WidgetState};
+use crate::widget::{WidgetArena, WidgetMut, WidgetRef, WidgetState};
 use crate::{AccessEvent, Action, CursorIcon, Handled, QueryCtx, Widget, WidgetId, WidgetPod};
 
 // --- MARK: STRUCTS ---
