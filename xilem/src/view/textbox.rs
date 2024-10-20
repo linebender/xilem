@@ -1,11 +1,11 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{
-    core::{DynMessage, Mut, View, ViewMarker},
-    Color, MessageResult, Pod, TextAlignment, ViewCtx, ViewId,
-};
-use masonry::{text::TextBrush, widget};
+use masonry::text::TextBrush;
+use masonry::widget;
+
+use crate::core::{DynMessage, Mut, View, ViewMarker};
+use crate::{Color, MessageResult, Pod, TextAlignment, ViewCtx, ViewId};
 
 // FIXME - A major problem of the current approach (always setting the textbox contents)
 // is that if the user forgets to hook up the modify the state's contents in the callback,

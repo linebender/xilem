@@ -5,11 +5,9 @@
 
 use masonry::widget::MainAxisAlignment;
 use winit::error::EventLoopError;
-use xilem::{
-    core::lens,
-    view::{button, flex, label, Axis},
-    EventLoop, WidgetView, Xilem,
-};
+use xilem::core::lens;
+use xilem::view::{button, flex, label, Axis};
+use xilem::{EventLoop, WidgetView, Xilem};
 
 #[derive(Default)]
 struct AppState {

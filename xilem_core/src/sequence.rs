@@ -3,11 +3,8 @@
 
 //! Support for sequences of views with a shared element type.
 
-use core::sync::atomic::AtomicBool;
-use core::sync::atomic::Ordering;
-
-use alloc::vec::Drain;
-use alloc::vec::Vec;
+use alloc::vec::{Drain, Vec};
+use core::sync::atomic::{AtomicBool, Ordering};
 
 // use crate::element::NoElement;
 use crate::{

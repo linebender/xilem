@@ -1,18 +1,13 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{
-    core::{DynMessage, Mut, ViewMarker},
-    Color, MessageResult, Pod, TextAlignment, View, ViewCtx, ViewId,
-};
-use masonry::{
-    parley::{
-        fontique::Weight,
-        style::{FontFamily, FontStack, GenericFamily},
-    },
-    text::TextBrush,
-    widget, ArcStr,
-};
+use masonry::parley::fontique::Weight;
+use masonry::parley::style::{FontFamily, FontStack, GenericFamily};
+use masonry::text::TextBrush;
+use masonry::{widget, ArcStr};
+
+use crate::core::{DynMessage, Mut, ViewMarker};
+use crate::{Color, MessageResult, Pod, TextAlignment, View, ViewCtx, ViewId};
 
 /// A view for displaying non-editable text, with a variable [weight](masonry::parley::style::FontWeight).
 pub fn variable_label(label: impl Into<ArcStr>) -> VariableLabel {

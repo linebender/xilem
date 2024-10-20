@@ -3,8 +3,9 @@
 
 //! Statically typed alternatives to the type-erased [`AnyView`](`crate::AnyView`).
 
-use crate::{MessageResult, Mut, View, ViewElement, ViewId, ViewMarker, ViewPathTracker};
 use hidden::OneOfState;
+
+use crate::{MessageResult, Mut, View, ViewElement, ViewId, ViewMarker, ViewPathTracker};
 
 /// This trait allows, specifying a type as `ViewElement`, which should never be constructed or used.
 ///
@@ -520,9 +521,8 @@ where
 // to export it. Since this (`one_of`) module is public, we create a new module, allowing it to be pub but not exposed.
 #[doc(hidden)]
 mod hidden {
-    use crate::{View, ViewMarker};
-
     use super::PhantomElementCtx;
+    use crate::{View, ViewMarker};
 
     #[allow(unreachable_pub)]
     pub enum Never {}

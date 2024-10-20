@@ -6,12 +6,12 @@
 use accesskit::{NodeBuilder, Role};
 use smallvec::SmallVec;
 use tracing::{trace_span, Span};
-use vello::kurbo::{common::FloatExt, Affine, Line, Stroke, Vec2};
+use vello::kurbo::common::FloatExt;
+use vello::kurbo::{Affine, Line, Stroke, Vec2};
 use vello::Scene;
 
 use crate::theme::get_debug_color;
 use crate::widget::WidgetMut;
-
 use crate::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, Point, PointerEvent,
     Rect, Size, StatusChange, TextEvent, UpdateCtx, Widget, WidgetId, WidgetPod,

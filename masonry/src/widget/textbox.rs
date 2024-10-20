@@ -2,17 +2,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use accesskit::{NodeBuilder, Role};
-use parley::{
-    layout::Alignment,
-    style::{FontFamily, FontStack},
-};
+use parley::layout::Alignment;
+use parley::style::{FontFamily, FontStack};
 use smallvec::SmallVec;
 use tracing::{trace_span, Span};
-use vello::{
-    kurbo::{Affine, Point, Size, Stroke},
-    peniko::{BlendMode, Color},
-    Scene,
-};
+use vello::kurbo::{Affine, Point, Size, Stroke};
+use vello::peniko::{BlendMode, Color};
+use vello::Scene;
 use winit::event::Ime;
 
 use crate::text::{TextBrush, TextEditor, TextWithSelection};

@@ -1,20 +1,17 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{
-    core::{
-        AppendVec, DynMessage, ElementSplice, MessageResult, Mut, SuperElement, View, ViewElement,
-        ViewId, ViewMarker, ViewPathTracker, ViewSequence,
-    },
-    AnyWidgetView, Pod, ViewCtx, WidgetView,
-};
-use masonry::{
-    widget::{self, WidgetMut},
-    Widget,
-};
 use std::marker::PhantomData;
 
+use masonry::widget::{self, WidgetMut};
 pub use masonry::widget::{Axis, CrossAxisAlignment, FlexParams, MainAxisAlignment};
+use masonry::Widget;
+
+use crate::core::{
+    AppendVec, DynMessage, ElementSplice, MessageResult, Mut, SuperElement, View, ViewElement,
+    ViewId, ViewMarker, ViewPathTracker, ViewSequence,
+};
+use crate::{AnyWidgetView, Pod, ViewCtx, WidgetView};
 
 pub fn flex<State, Action, Seq: FlexSequence<State, Action>>(
     sequence: Seq,

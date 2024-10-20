@@ -1,12 +1,11 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{
-    core::{DynMessage, Mut, View, ViewMarker},
-    MessageResult, Pod, ViewCtx, ViewId,
-};
 pub use masonry::PointerButton;
 use masonry::{widget, ArcStr};
+
+use crate::core::{DynMessage, Mut, View, ViewMarker};
+use crate::{MessageResult, Pod, ViewCtx, ViewId};
 
 /// A button which calls `callback` when the primary mouse button (normally left) is pressed.
 pub fn button<State, Action>(

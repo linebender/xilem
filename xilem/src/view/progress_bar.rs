@@ -1,11 +1,10 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{
-    core::{DynMessage, Mut, ViewMarker},
-    MessageResult, Pod, View, ViewCtx, ViewId,
-};
 use masonry::widget;
+
+use crate::core::{DynMessage, Mut, ViewMarker};
+use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
 
 pub fn progress_bar(progress: Option<f64>) -> ProgressBar {
     ProgressBar { progress }

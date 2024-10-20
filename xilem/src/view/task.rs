@@ -1,15 +1,17 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{
-    core::{
-        DynMessage, Message, MessageProxy, MessageResult, Mut, NoElement, View, ViewId, ViewMarker,
-        ViewPathTracker,
-    },
-    ViewCtx,
-};
-use std::{future::Future, marker::PhantomData, sync::Arc};
+use std::future::Future;
+use std::marker::PhantomData;
+use std::sync::Arc;
+
 use tokio::task::JoinHandle;
+
+use crate::core::{
+    DynMessage, Message, MessageProxy, MessageResult, Mut, NoElement, View, ViewId, ViewMarker,
+    ViewPathTracker,
+};
+use crate::ViewCtx;
 
 /// Launch a task which will run until the view is no longer in the tree.
 /// `init_future` is given a [`MessageProxy`], which it will store in the future it returns.

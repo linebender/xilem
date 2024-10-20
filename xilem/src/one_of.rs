@@ -3,10 +3,6 @@
 
 //! Statically typed alternatives to the type-erased [`AnyView`](`crate::AnyView`).
 
-use crate::{
-    core::{one_of::OneOf, Mut},
-    Pod, ViewCtx,
-};
 use accesskit::{NodeBuilder, Role};
 use masonry::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, Point, PointerEvent,
@@ -14,6 +10,10 @@ use masonry::{
 };
 use smallvec::{smallvec, SmallVec};
 use vello::Scene;
+
+use crate::core::one_of::OneOf;
+use crate::core::Mut;
+use crate::{Pod, ViewCtx};
 
 impl<
         A: Widget,

@@ -1,11 +1,11 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{
-    core::{DynMessage, Mut, ViewMarker},
-    Color, MessageResult, Pod, TextAlignment, View, ViewCtx, ViewId,
-};
-use masonry::{text::TextBrush, widget, ArcStr};
+use masonry::text::TextBrush;
+use masonry::{widget, ArcStr};
+
+use crate::core::{DynMessage, Mut, ViewMarker};
+use crate::{Color, MessageResult, Pod, TextAlignment, View, ViewCtx, ViewId};
 
 pub fn prose(content: impl Into<ArcStr>) -> Prose {
     Prose {

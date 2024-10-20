@@ -8,6 +8,7 @@
 //! This is an integration test so that it can use the infrastructure in [`common`].
 
 use std::sync::Arc;
+
 use xilem_core::{MessageResult, View};
 
 mod common;

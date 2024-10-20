@@ -1,7 +1,8 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use std::{io::stdin, path::PathBuf};
+use std::io::stdin;
+use std::path::PathBuf;
 
 use xilem_core::{
     AnyElement, AnyView, Mut, SuperElement, View, ViewElement, ViewId, ViewMarker, ViewPathTracker,

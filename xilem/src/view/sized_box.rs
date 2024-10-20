@@ -7,10 +7,8 @@ use masonry::widget;
 use vello::kurbo::RoundedRectRadii;
 use vello::peniko::{Brush, Color};
 
-use crate::{
-    core::{DynMessage, Mut, View, ViewId, ViewMarker},
-    Pod, ViewCtx, WidgetView,
-};
+use crate::core::{DynMessage, Mut, View, ViewId, ViewMarker};
+use crate::{Pod, ViewCtx, WidgetView};
 
 /// A widget with predefined size.
 ///

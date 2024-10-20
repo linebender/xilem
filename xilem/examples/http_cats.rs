@@ -7,15 +7,16 @@
 use std::sync::Arc;
 
 use vello::peniko::{Blob, Image};
-use winit::{dpi::LogicalSize, error::EventLoopError, window::Window};
-use xilem::{
-    core::{fork, one_of::OneOf3},
-    view::{
-        button, flex, image, portal, prose, sized_box, spinner, worker, Axis, CrossAxisAlignment,
-        FlexExt, FlexSpacer,
-    },
-    Color, EventLoop, EventLoopBuilder, TextAlignment, WidgetView, Xilem,
+use winit::dpi::LogicalSize;
+use winit::error::EventLoopError;
+use winit::window::Window;
+use xilem::core::fork;
+use xilem::core::one_of::OneOf3;
+use xilem::view::{
+    button, flex, image, portal, prose, sized_box, spinner, worker, Axis, CrossAxisAlignment,
+    FlexExt, FlexSpacer,
 };
+use xilem::{Color, EventLoop, EventLoopBuilder, TextAlignment, WidgetView, Xilem};
 
 /// The main state of the application.
 struct HttpCats {

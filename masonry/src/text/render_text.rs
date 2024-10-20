@@ -4,11 +4,9 @@
 //! Helper functions for working with text in Masonry.
 
 use parley::Layout;
-use vello::{
-    kurbo::{Affine, Line, Rect, Stroke},
-    peniko::Fill,
-    Scene,
-};
+use vello::kurbo::{Affine, Line, Rect, Stroke};
+use vello::peniko::Fill;
+use vello::Scene;
 
 use crate::text::TextBrush;
 

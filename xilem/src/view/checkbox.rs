@@ -1,11 +1,10 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{
-    core::{DynMessage, Mut, ViewMarker},
-    MessageResult, Pod, View, ViewCtx, ViewId,
-};
 use masonry::{widget, ArcStr};
+
+use crate::core::{DynMessage, Mut, ViewMarker};
+use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
 
 pub fn checkbox<F, State, Action>(
     label: impl Into<ArcStr>,
