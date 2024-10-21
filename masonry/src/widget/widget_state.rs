@@ -24,10 +24,10 @@ use crate::{CursorIcon, WidgetId};
 /// ## Naming scheme
 ///
 /// Some fields follow a naming scheme:
-/// - request_xxx: this specific widget has requested the xxx pass to run on it
-/// - needs_xxx: this widget or a descendant has requested the xxx pass to run on it
-/// - is_xxx: this widget has the xxx property
-/// - has_xxx: this widget or an ancestor has the xxx property
+/// - `request_xxx`: this specific widget has requested the xxx pass to run on it
+/// - `needs_xxx`: this widget or a descendant has requested the xxx pass to run on it
+/// - `is_xxx`: this widget has the xxx property
+/// - `has_xxx`: this widget or an ancestor has the xxx property
 ///
 /// [`WidgetMut`]: crate::widget::WidgetMut
 #[derive(Clone, Debug)]
