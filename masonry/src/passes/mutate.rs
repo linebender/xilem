@@ -4,8 +4,8 @@
 use tracing::info_span;
 
 use crate::passes::merge_state_up;
-use crate::window_root::WindowRoot;
 use crate::widget::WidgetMut;
+use crate::window_root::WindowRoot;
 use crate::{MutateCtx, Widget, WidgetId};
 
 pub(crate) fn mutate_widget<R>(

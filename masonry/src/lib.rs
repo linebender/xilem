@@ -117,9 +117,9 @@ mod contexts;
 mod event;
 mod paint_scene_helpers;
 mod passes;
-mod window_root;
 mod tracing_backend;
 mod tree_arena;
+mod window_root;
 
 pub mod event_loop_runner;
 pub mod testing;
@@ -150,9 +150,9 @@ pub use event::{
     AccessEvent, PointerButton, PointerEvent, PointerState, TextEvent, Update, WindowEvent,
     WindowTheme,
 };
-pub use window_root::{WindowRoot, WindowRootOptions, WindowRootSignal};
 pub use util::{AsAny, Handled};
 pub use widget::widget::{AllowRawMut, Widget, WidgetId};
 pub use widget::WidgetPod;
+pub use window_root::{WindowRoot, WindowRootOptions, WindowRootSignal};
 
 pub(crate) use widget::WidgetState;

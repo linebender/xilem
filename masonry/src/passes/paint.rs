@@ -9,9 +9,9 @@ use vello::peniko::Mix;
 use vello::Scene;
 
 use crate::passes::recurse_on_children;
-use crate::window_root::{WindowRoot, WindowRootState};
 use crate::theme::get_debug_color;
 use crate::tree_arena::ArenaMut;
+use crate::window_root::{WindowRoot, WindowRootState};
 use crate::{PaintCtx, Widget, WidgetId, WidgetState};
 
 // --- MARK: PAINT WIDGET ---
