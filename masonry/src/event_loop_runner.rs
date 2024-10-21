@@ -5,7 +5,7 @@ use std::num::NonZeroUsize;
 use std::sync::Arc;
 
 use accesskit_winit::Adapter;
-use tracing::{debug, warn};
+use tracing::{debug, info_span, warn};
 use vello::kurbo::Affine;
 use vello::peniko::Color;
 use vello::util::{RenderContext, RenderSurface};
@@ -458,6 +458,7 @@ impl MasonryState<'_> {
                     .handle_window_event(WindowEvent::Rescale(scale_factor));
             }
             WinitWindowEvent::RedrawRequested => {
+                let _span = info_span!("redraw");
                 self.render_root.handle_window_event(WindowEvent::AnimFrame);
                 let (scene, tree_update) = self.render_root.redraw();
                 self.render(scene);
