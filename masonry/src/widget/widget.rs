@@ -81,6 +81,15 @@ pub trait Widget: AsAny {
 
     /// Called at the beginning of a new animation frame.
     ///
+    /// An animation frame does not implicitly request a repaint of this widget.
+    /// That is, if you change something which changes how this widget is
+    /// drawn, you should call
+    /// [`request_paint_only`](UpdateCtx::request_paint_only)
+    /// ([`request_render`](UpdateCtx::request_render) if an accessibility
+    /// update is also required). This method should itself call
+    /// [`request_anim`](UpdateCtx::request_anim_frame) unless the animation
+    /// has finished.
+    ///
     /// On the first frame when transitioning from idle to animating, `interval`
     /// will be 0. (This logic is presently per-window but might change to
     /// per-widget to make it more consistent). Otherwise it is in nanoseconds.
