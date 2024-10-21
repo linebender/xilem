@@ -23,7 +23,8 @@ fn paint_widget(
     mut state: ArenaMut<'_, WidgetState>,
     debug_paint: bool,
 ) {
-    let _span = widget.item.make_trace_span().entered();
+    let trace = global_state.trace.paint;
+    let _span = trace.then(|| widget.item.make_trace_span().entered());
     let id = state.item.id;
 
     // TODO - Handle invalidation regions
@@ -35,7 +36,9 @@ fn paint_widget(
         debug_paint,
     };
     if ctx.widget_state.request_paint {
-        trace!("Painting widget '{}' {}", widget.item.short_type_name(), id,);
+        if trace {
+            trace!("Painting widget '{}' {}", widget.item.short_type_name(), id);
+        }
 
         // TODO - Reserve scene
         // https://github.com/linebender/xilem/issues/524

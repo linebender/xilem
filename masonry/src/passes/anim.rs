@@ -15,7 +15,10 @@ fn update_anim_for_widget(
     mut state: ArenaMut<'_, WidgetState>,
     elapsed_ns: u64,
 ) {
-    let _span = widget.item.make_trace_span().entered();
+    let _span = global_state
+        .trace
+        .anim
+        .then(|| widget.item.make_trace_span().entered());
 
     if !state.item.needs_anim {
         return;

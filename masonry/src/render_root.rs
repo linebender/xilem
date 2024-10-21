@@ -27,12 +27,12 @@ use crate::passes::event::{
 use crate::passes::layout::run_layout_pass;
 use crate::passes::mutate::{mutate_widget, run_mutate_pass};
 use crate::passes::paint::run_paint_pass;
-use crate::passes::recurse_on_children;
 use crate::passes::update::{
     run_update_disabled_pass, run_update_focus_chain_pass, run_update_focus_pass,
     run_update_pointer_pass, run_update_scroll_pass, run_update_stashed_pass,
     run_update_widget_tree_pass,
 };
+use crate::passes::{recurse_on_children, PassTracing};
 use crate::text::TextBrush;
 use crate::tree_arena::{ArenaMut, TreeArena};
 use crate::widget::{WidgetArena, WidgetMut, WidgetRef, WidgetState};
@@ -76,6 +76,7 @@ pub(crate) struct RenderRootState {
     pub(crate) scenes: HashMap<WidgetId, Scene>,
     /// Whether data set in the pointer pass has been invalidated.
     pub(crate) needs_pointer_pass: bool,
+    pub(crate) trace: PassTracing,
 }
 
 pub(crate) struct MutateCallback {
@@ -164,6 +165,7 @@ impl RenderRoot {
                 is_ime_active: false,
                 scenes: HashMap::new(),
                 needs_pointer_pass: false,
+                trace: PassTracing::from_env(),
             },
             widget_arena: WidgetArena {
                 widgets: TreeArena::new(),
