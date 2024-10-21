@@ -37,7 +37,6 @@ pub(crate) fn run_layout_on<W: Widget>(
         // We forcefully set request_layout to true for all children.
         // This is used below to check that widget.layout(..) visited all of them.
         for child_id in widget.item.children_ids() {
-            let child_id = child_id;
             let child_state = state.children.get_child_mut(child_id).unwrap().item;
             if !child_state.is_stashed {
                 child_state.request_layout = true;
@@ -132,7 +131,6 @@ pub(crate) fn run_layout_on<W: Widget>(
     {
         let name = widget.item.short_type_name();
         for child_id in widget.item.children_ids() {
-            let child_id = child_id;
             let child_state = state.children.get_child_mut(child_id).unwrap().item;
 
             if child_state.is_stashed {
