@@ -82,13 +82,13 @@ where
         mut element: Mut<Self::Element>,
     ) {
         if prev.height != self.height {
-            element.set_height(self.height);
+            widget::Grid::set_height(&mut element, self.height);
         }
         if prev.width != self.width {
-            element.set_width(self.width);
+            widget::Grid::set_width(&mut element, self.width);
         }
         if prev.spacing != self.spacing {
-            element.set_spacing(self.spacing);
+            widget::Grid::set_spacing(&mut element, self.spacing);
         }
 
         let mut splice = GridSplice::new(element);
@@ -162,9 +162,7 @@ impl<W: Widget> SuperElement<Pod<W>, ViewCtx> for GridElement {
         f: impl FnOnce(Mut<Pod<W>>) -> R,
     ) -> (Mut<Self>, R) {
         let ret = {
-            let mut child = this
-                .parent
-                .child_mut(this.idx)
+            let mut child = widget::Grid::child_mut(&mut this.parent, this.idx)
                 .expect("This is supposed to be a widget");
             let downcast = child.downcast();
             f(downcast)
@@ -181,8 +179,12 @@ impl ElementSplice<GridElement> for GridSplice<'_> {
         for element in self.scratch.drain() {
             match element {
                 GridElement::Child(child, params) => {
-                    self.element
-                        .insert_grid_child_pod(self.idx, child.inner, params);
+                    widget::Grid::insert_grid_child_pod(
+                        &mut self.element,
+                        self.idx,
+                        child.inner,
+                        params,
+                    );
                 }
             };
             self.idx += 1;
@@ -193,8 +195,12 @@ impl ElementSplice<GridElement> for GridSplice<'_> {
     fn insert(&mut self, element: GridElement) {
         match element {
             GridElement::Child(child, params) => {
-                self.element
-                    .insert_grid_child_pod(self.idx, child.inner, params);
+                widget::Grid::insert_grid_child_pod(
+                    &mut self.element,
+                    self.idx,
+                    child.inner,
+                    params,
+                );
             }
         };
         self.idx += 1;
@@ -222,7 +228,7 @@ impl ElementSplice<GridElement> for GridSplice<'_> {
             };
             f(child)
         };
-        self.element.remove_child(self.idx);
+        widget::Grid::remove_child(&mut self.element, self.idx);
         ret
     }
 }
@@ -369,13 +375,13 @@ where
     ) {
         {
             if self.params != prev.params {
-                element
-                    .parent
-                    .update_child_grid_params(element.idx, self.params);
+                widget::Grid::update_child_grid_params(
+                    &mut element.parent,
+                    element.idx,
+                    self.params,
+                );
             }
-            let mut child = element
-                .parent
-                .child_mut(element.idx)
+            let mut child = widget::Grid::child_mut(&mut element.parent, element.idx)
                 .expect("GridWrapper always has a widget child");
             self.view
                 .rebuild(&prev.view, view_state, ctx, child.downcast());
@@ -388,9 +394,7 @@ where
         ctx: &mut ViewCtx,
         mut element: Mut<Self::Element>,
     ) {
-        let mut child = element
-            .parent
-            .child_mut(element.idx)
+        let mut child = widget::Grid::child_mut(&mut element.parent, element.idx)
             .expect("GridWrapper always has a widget child");
         self.view.teardown(view_state, ctx, child.downcast());
     }

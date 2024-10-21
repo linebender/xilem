@@ -81,18 +81,14 @@ impl Prose {
 }
 
 // --- MARK: WIDGETMUT ---
-impl WidgetMut<'_, Prose> {
-    pub fn text(&self) -> &ArcStr {
-        self.widget.text_layout.text()
-    }
-
+impl Prose {
     pub fn set_text_properties<R>(
-        &mut self,
+        this: &mut WidgetMut<'_, Self>,
         f: impl FnOnce(&mut TextWithSelection<ArcStr>) -> R,
     ) -> R {
-        let ret = f(&mut self.widget.text_layout);
-        if self.widget.text_layout.needs_rebuild() {
-            self.ctx.request_layout();
+        let ret = f(&mut this.widget.text_layout);
+        if this.widget.text_layout.needs_rebuild() {
+            this.ctx.request_layout();
         }
         ret
     }
@@ -100,39 +96,39 @@ impl WidgetMut<'_, Prose> {
     /// Change the text. If the user currently has a selection in the box, this will delete that selection.
     ///
     /// We enforce this to be an `ArcStr` to make the allocation explicit.
-    pub fn set_text(&mut self, new_text: ArcStr) {
-        if self.ctx.is_focused() {
+    pub fn set_text(this: &mut WidgetMut<'_, Self>, new_text: ArcStr) {
+        if this.ctx.is_focused() {
             tracing::info!(
                 "Called reset_text on a focused `Prose`. This will lose the user's current selection"
             );
         }
-        self.set_text_properties(|layout| layout.set_text(new_text));
+        Self::set_text_properties(this, |layout| layout.set_text(new_text));
     }
 
     #[doc(alias = "set_text_color")]
-    pub fn set_text_brush(&mut self, brush: impl Into<TextBrush>) {
+    pub fn set_text_brush(this: &mut WidgetMut<'_, Self>, brush: impl Into<TextBrush>) {
         let brush = brush.into();
-        self.widget.brush = brush;
-        if !self.ctx.is_disabled() {
-            let brush = self.widget.brush.clone();
-            self.set_text_properties(|layout| layout.set_brush(brush));
+        this.widget.brush = brush;
+        if !this.ctx.is_disabled() {
+            let brush = this.widget.brush.clone();
+            Self::set_text_properties(this, |layout| layout.set_brush(brush));
         }
     }
-    pub fn set_text_size(&mut self, size: f32) {
-        self.set_text_properties(|layout| layout.set_text_size(size));
+    pub fn set_text_size(this: &mut WidgetMut<'_, Self>, size: f32) {
+        Self::set_text_properties(this, |layout| layout.set_text_size(size));
     }
-    pub fn set_alignment(&mut self, alignment: Alignment) {
-        self.set_text_properties(|layout| layout.set_text_alignment(alignment));
+    pub fn set_alignment(this: &mut WidgetMut<'_, Self>, alignment: Alignment) {
+        Self::set_text_properties(this, |layout| layout.set_text_alignment(alignment));
     }
-    pub fn set_font(&mut self, font_stack: FontStack<'static>) {
-        self.set_text_properties(|layout| layout.set_font(font_stack));
+    pub fn set_font(this: &mut WidgetMut<'_, Self>, font_stack: FontStack<'static>) {
+        Self::set_text_properties(this, |layout| layout.set_font(font_stack));
     }
-    pub fn set_font_family(&mut self, family: FontFamily<'static>) {
-        self.set_font(FontStack::Single(family));
+    pub fn set_font_family(this: &mut WidgetMut<'_, Self>, family: FontFamily<'static>) {
+        Self::set_font(this, FontStack::Single(family));
     }
-    pub fn set_line_break_mode(&mut self, line_break_mode: LineBreaking) {
-        self.widget.line_break_mode = line_break_mode;
-        self.ctx.request_layout();
+    pub fn set_line_break_mode(this: &mut WidgetMut<'_, Self>, line_break_mode: LineBreaking) {
+        this.widget.line_break_mode = line_break_mode;
+        this.ctx.request_layout();
     }
 }
 
@@ -290,3 +286,5 @@ impl Widget for Prose {
         Some(self.text_layout.text().as_ref().chars().take(100).collect())
     }
 }
+
+// TODO - Add tests

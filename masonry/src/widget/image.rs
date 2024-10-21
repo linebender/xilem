@@ -53,19 +53,19 @@ impl Image {
 }
 
 // --- MARK: WIDGETMUT ---
-impl<'a> WidgetMut<'a, Image> {
+impl Image {
     /// Modify the widget's object fit.
     #[inline]
-    pub fn set_fit_mode(&mut self, new_object_fit: ObjectFit) {
-        self.widget.object_fit = new_object_fit;
-        self.ctx.request_layout();
+    pub fn set_fit_mode(this: &mut WidgetMut<'_, Self>, new_object_fit: ObjectFit) {
+        this.widget.object_fit = new_object_fit;
+        this.ctx.request_layout();
     }
 
     /// Set new `ImageBuf`.
     #[inline]
-    pub fn set_image_data(&mut self, image_data: ImageBuf) {
-        self.widget.image_data = image_data;
-        self.ctx.request_layout();
+    pub fn set_image_data(this: &mut WidgetMut<'_, Self>, image_data: ImageBuf) {
+        this.widget.image_data = image_data;
+        this.ctx.request_layout();
     }
 }
 
@@ -201,7 +201,7 @@ mod tests {
 
             harness.edit_root_widget(|mut image| {
                 let mut image = image.downcast::<Image>();
-                image.set_image_data(image_data);
+                Image::set_image_data(&mut image, image_data);
             });
 
             harness.render()

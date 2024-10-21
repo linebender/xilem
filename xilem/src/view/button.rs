@@ -60,7 +60,7 @@ where
         mut element: Mut<Self::Element>,
     ) {
         if prev.label != self.label {
-            element.set_text(self.label.clone());
+            widget::Button::set_text(&mut element, self.label.clone());
         }
     }
 

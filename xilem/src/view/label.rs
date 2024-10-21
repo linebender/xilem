@@ -75,19 +75,19 @@ impl<State, Action> View<State, Action, ViewCtx> for Label {
         mut element: Mut<Self::Element>,
     ) {
         if prev.label != self.label {
-            element.set_text(self.label.clone());
+            widget::Label::set_text(&mut element, self.label.clone());
         }
         if prev.text_brush != self.text_brush {
-            element.set_text_brush(self.text_brush.clone());
+            widget::Label::set_text_brush(&mut element, self.text_brush.clone());
         }
         if prev.alignment != self.alignment {
-            element.set_alignment(self.alignment);
+            widget::Label::set_alignment(&mut element, self.alignment);
         }
         if prev.text_size != self.text_size {
-            element.set_text_size(self.text_size);
+            widget::Label::set_text_size(&mut element, self.text_size);
         }
         if prev.weight != self.weight {
-            element.set_weight(self.weight);
+            widget::Label::set_weight(&mut element, self.weight);
         }
     }
 

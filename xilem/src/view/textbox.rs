@@ -93,15 +93,15 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<S
         // without calling `set_text`.
 
         // This is probably not the right behaviour, but determining what is the right behaviour is hard
-        if self.contents != element.text() {
-            element.reset_text(self.contents.clone());
+        if self.contents != element.widget.text() {
+            widget::Textbox::reset_text(&mut element, self.contents.clone());
         }
 
         if prev.text_brush != self.text_brush {
-            element.set_text_brush(self.text_brush.clone());
+            widget::Textbox::set_text_brush(&mut element, self.text_brush.clone());
         }
         if prev.alignment != self.alignment {
-            element.set_alignment(self.alignment);
+            widget::Textbox::set_alignment(&mut element, self.alignment);
         }
     }
 

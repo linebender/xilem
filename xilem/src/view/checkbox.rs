@@ -53,10 +53,10 @@ where
         mut element: Mut<Self::Element>,
     ) {
         if prev.label != self.label {
-            element.set_text(self.label.clone());
+            widget::Checkbox::set_text(&mut element, self.label.clone());
         }
         if prev.checked != self.checked {
-            element.set_checked(self.checked);
+            widget::Checkbox::set_checked(&mut element, self.checked);
         }
     }
 

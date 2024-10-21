@@ -33,7 +33,7 @@ impl<State, Action> View<State, Action, ViewCtx> for ProgressBar {
         mut element: Mut<Self::Element>,
     ) {
         if prev.progress != self.progress {
-            element.set_progress(self.progress);
+            widget::ProgressBar::set_progress(&mut element, self.progress);
         }
     }
 

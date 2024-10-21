@@ -117,24 +117,28 @@ impl<State, Action> View<State, Action, ViewCtx> for VariableLabel {
         mut element: Mut<Self::Element>,
     ) {
         if prev.label != self.label {
-            element.set_text(self.label.clone());
+            widget::VariableLabel::set_text(&mut element, self.label.clone());
         }
         if prev.text_brush != self.text_brush {
-            element.set_text_brush(self.text_brush.clone());
+            widget::VariableLabel::set_text_brush(&mut element, self.text_brush.clone());
         }
         if prev.alignment != self.alignment {
-            element.set_alignment(self.alignment);
+            widget::VariableLabel::set_alignment(&mut element, self.alignment);
         }
         if prev.text_size != self.text_size {
-            element.set_text_size(self.text_size);
+            widget::VariableLabel::set_text_size(&mut element, self.text_size);
         }
         if prev.target_weight != self.target_weight {
-            element.set_target_weight(self.target_weight.value(), self.over_millis);
+            widget::VariableLabel::set_target_weight(
+                &mut element,
+                self.target_weight.value(),
+                self.over_millis,
+            );
         }
         // First perform a fast filter, then perform a full comparison if that suggests a possible change.
         let fonts_eq = fonts_eq_fastpath(prev.font, self.font) || prev.font == self.font;
         if !fonts_eq {
-            element.set_font(self.font);
+            widget::VariableLabel::set_font(&mut element, self.font);
         }
     }
 

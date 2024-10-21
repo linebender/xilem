@@ -17,7 +17,6 @@ use crate::{
     PointerEvent, RegisterCtx, Size, TextEvent, Update, UpdateCtx, Vec2, Widget, WidgetId,
 };
 
-// TODO - Set color
 /// An animated spinner widget for showing a loading state.
 ///
 /// To customize the spinner's size, you can place it inside a [`SizedBox`]
@@ -55,16 +54,16 @@ impl Default for Spinner {
 }
 
 // --- MARK: WIDGETMUT ---
-impl WidgetMut<'_, Spinner> {
+impl Spinner {
     /// Set the spinner's color.
-    pub fn set_color(&mut self, color: impl Into<Color>) {
-        self.widget.color = color.into();
-        self.ctx.request_paint_only();
+    pub fn set_color(this: &mut WidgetMut<'_, Self>, color: impl Into<Color>) {
+        this.widget.color = color.into();
+        this.ctx.request_paint_only();
     }
 
     /// Reset the spinner's color to its default value.
-    pub fn reset_color(&mut self) {
-        self.set_color(DEFAULT_SPINNER_COLOR);
+    pub fn reset_color(this: &mut WidgetMut<'_, Self>) {
+        Self::set_color(this, DEFAULT_SPINNER_COLOR);
     }
 }
 
@@ -191,7 +190,7 @@ mod tests {
 
             harness.edit_root_widget(|mut spinner| {
                 let mut spinner = spinner.downcast::<Spinner>();
-                spinner.set_color(Color::PURPLE);
+                Spinner::set_color(&mut spinner, Color::PURPLE);
             });
 
             harness.render()

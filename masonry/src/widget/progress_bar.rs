@@ -36,7 +36,7 @@ impl ProgressBar {
     /// Otherwise, the input will be clamped to [0, 1].
     pub fn new(progress: Option<f64>) -> Self {
         let mut out = Self::new_indefinite();
-        out.set_progress(progress);
+        out.set_progress_inner(progress);
         out
     }
     fn new_indefinite() -> Self {
@@ -47,7 +47,7 @@ impl ProgressBar {
         }
     }
 
-    fn set_progress(&mut self, mut progress: Option<f64>) {
+    fn set_progress_inner(&mut self, mut progress: Option<f64>) {
         clamp_progress(&mut progress);
         // check to see if we can avoid doing work
         if self.progress != progress {
@@ -74,11 +74,11 @@ impl ProgressBar {
 }
 
 // --- MARK: WIDGETMUT ---
-impl WidgetMut<'_, ProgressBar> {
-    pub fn set_progress(&mut self, progress: Option<f64>) {
-        self.widget.set_progress(progress);
-        self.ctx.request_layout();
-        self.ctx.request_render();
+impl ProgressBar {
+    pub fn set_progress(this: &mut WidgetMut<'_, Self>, progress: Option<f64>) {
+        this.widget.set_progress_inner(progress);
+        this.ctx.request_layout();
+        this.ctx.request_render();
     }
 }
 
@@ -208,6 +208,8 @@ mod tests {
     use super::*;
     use crate::assert_render_snapshot;
     use crate::testing::{widget_ids, TestHarness, TestWidgetExt};
+
+    // TODO - Add WidgetMut test
 
     #[test]
     fn indeterminate_progressbar() {

@@ -147,7 +147,7 @@ impl Widget for CalcButton {
                     let color = self.active_color;
                     // See on_status_change for why we use `mutate_later` here.
                     ctx.mutate_later(&mut self.inner, move |mut inner| {
-                        inner.set_background(color);
+                        SizedBox::set_background(&mut inner, color);
                     });
                     ctx.capture_pointer();
                     trace!("CalcButton {:?} pressed", ctx.widget_id());
@@ -158,7 +158,7 @@ impl Widget for CalcButton {
                     let color = self.base_color;
                     // See on_status_change for why we use `mutate_later` here.
                     ctx.mutate_later(&mut self.inner, move |mut inner| {
-                        inner.set_background(color);
+                        SizedBox::set_background(&mut inner, color);
                     });
                     ctx.submit_action(Action::Other(Box::new(self.action)));
                     trace!("CalcButton {:?} released", ctx.widget_id());
@@ -190,7 +190,7 @@ impl Widget for CalcButton {
         match event {
             Update::HoveredChanged(true) => {
                 ctx.mutate_later(&mut self.inner, move |mut inner| {
-                    inner.set_border(Color::WHITE, 3.0);
+                    SizedBox::set_border(&mut inner, Color::WHITE, 3.0);
                 });
                 // FIXME - This is a monkey-patch for a problem where the mutate pass isn't run after this.
                 // Should be fixed once the pass spec RFC is implemented.
@@ -198,7 +198,7 @@ impl Widget for CalcButton {
             }
             Update::HoveredChanged(false) => {
                 ctx.mutate_later(&mut self.inner, move |mut inner| {
-                    inner.set_border(Color::TRANSPARENT, 3.0);
+                    SizedBox::set_border(&mut inner, Color::TRANSPARENT, 3.0);
                 });
                 // FIXME - This is a monkey-patch for a problem where the mutate pass isn't run after this.
                 // Should be fixed once the pass spec RFC is implemented.
@@ -254,12 +254,11 @@ impl AppDriver for CalcState {
             _ => unreachable!(),
         }
 
-        ctx.get_root::<RootWidget<Flex>>()
-            .child_mut()
-            .child_mut(1)
-            .unwrap()
-            .downcast::<Label>()
-            .set_text(&*self.value);
+        let mut root = ctx.get_root::<RootWidget<Flex>>();
+        let mut flex = RootWidget::child_mut(&mut root);
+        let mut label = Flex::child_mut(&mut flex, 1).unwrap();
+        let mut label = label.downcast::<Label>();
+        Label::set_text(&mut label, &*self.value);
     }
 }
 

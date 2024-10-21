@@ -217,67 +217,65 @@ impl VariableLabel {
 }
 
 // --- MARK: WIDGETMUT ---
-impl WidgetMut<'_, VariableLabel> {
-    /// Read the text.
-    pub fn text(&self) -> &ArcStr {
-        &self.widget.text
-    }
-
+impl VariableLabel {
     /// Set a property on the underlying text.
     ///
     /// This cannot be used to set attributes.
-    pub fn set_text_properties<R>(&mut self, f: impl FnOnce(&mut TextLayout) -> R) -> R {
-        let ret = f(&mut self.widget.text_layout);
-        if self.widget.text_layout.needs_rebuild() {
-            self.ctx.request_layout();
+    pub fn set_text_properties<R>(
+        this: &mut WidgetMut<'_, Self>,
+        f: impl FnOnce(&mut TextLayout) -> R,
+    ) -> R {
+        let ret = f(&mut this.widget.text_layout);
+        if this.widget.text_layout.needs_rebuild() {
+            this.ctx.request_layout();
         }
         ret
     }
 
     /// Modify the underlying text.
-    pub fn set_text(&mut self, new_text: impl Into<ArcStr>) {
+    pub fn set_text(this: &mut WidgetMut<'_, Self>, new_text: impl Into<ArcStr>) {
         let new_text = new_text.into();
-        self.widget.text = new_text;
-        self.widget.text_changed = true;
-        self.ctx.request_layout();
+        this.widget.text = new_text;
+        this.widget.text_changed = true;
+        this.ctx.request_layout();
     }
 
     #[doc(alias = "set_text_color")]
     /// Set the brush of the text, normally used for the colour.
-    pub fn set_text_brush(&mut self, brush: impl Into<TextBrush>) {
+    pub fn set_text_brush(this: &mut WidgetMut<'_, Self>, brush: impl Into<TextBrush>) {
         let brush = brush.into();
-        self.widget.brush = brush;
-        if !self.ctx.is_disabled() {
-            self.widget.text_layout.invalidate();
-            self.ctx.request_layout();
+        this.widget.brush = brush;
+        if !this.ctx.is_disabled() {
+            this.widget.text_layout.invalidate();
+            this.ctx.request_layout();
         }
     }
     /// Set the font size for this text.
-    pub fn set_text_size(&mut self, size: f32) {
-        self.set_text_properties(|layout| layout.set_text_size(size));
+    pub fn set_text_size(this: &mut WidgetMut<'_, Self>, size: f32) {
+        Self::set_text_properties(this, |layout| layout.set_text_size(size));
     }
     /// Set the text alignment of the contained text
-    pub fn set_alignment(&mut self, alignment: Alignment) {
-        self.set_text_properties(|layout| layout.set_text_alignment(alignment));
+    pub fn set_alignment(this: &mut WidgetMut<'_, Self>, alignment: Alignment) {
+        Self::set_text_properties(this, |layout| layout.set_text_alignment(alignment));
     }
     /// Set the font (potentially with fallbacks) which will be used for this text.
-    pub fn set_font(&mut self, font_stack: FontStack<'static>) {
-        self.set_text_properties(|layout| layout.set_font(font_stack));
+    pub fn set_font(this: &mut WidgetMut<'_, Self>, font_stack: FontStack<'static>) {
+        Self::set_text_properties(this, |layout| layout.set_font(font_stack));
     }
     /// A helper method to use a single font family.
-    pub fn set_font_family(&mut self, family: FontFamily<'static>) {
-        self.set_font(FontStack::Single(family));
+    pub fn set_font_family(this: &mut WidgetMut<'_, Self>, family: FontFamily<'static>) {
+        Self::set_font(this, FontStack::Single(family));
     }
     /// How to handle overflowing lines.
-    pub fn set_line_break_mode(&mut self, line_break_mode: LineBreaking) {
-        self.widget.line_break_mode = line_break_mode;
-        self.ctx.request_layout();
+    pub fn set_line_break_mode(this: &mut WidgetMut<'_, Self>, line_break_mode: LineBreaking) {
+        this.widget.line_break_mode = line_break_mode;
+        this.ctx.request_layout();
     }
     /// Set the weight which this font will target.
-    pub fn set_target_weight(&mut self, target: f32, over_millis: f32) {
-        self.widget.weight.move_to(target, over_millis);
-        self.ctx.request_layout();
-        self.ctx.request_anim_frame();
+    pub fn set_target_weight(this: &mut WidgetMut<'_, Self>, target: f32, over_millis: f32) {
+        this.widget.weight.move_to(target, over_millis);
+        this.ctx.request_layout();
+        this.ctx.request_anim_frame();
     }
 }
 
@@ -424,4 +422,6 @@ impl Widget for VariableLabel {
 
 // --- MARK: TESTS ---
 #[cfg(test)]
-mod tests {}
+mod tests {
+    // TODO - Add tests
+}
