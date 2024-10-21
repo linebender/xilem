@@ -8,7 +8,6 @@ use smallvec::{smallvec, SmallVec};
 use tracing::{trace_span, warn, Span};
 use vello::Scene;
 
-use crate::dpi::LogicalPosition;
 use crate::event::PointerButton;
 use crate::kurbo::Line;
 use crate::paint_scene_helpers::{fill_color, stroke};
@@ -16,7 +15,7 @@ use crate::widget::flex::Axis;
 use crate::widget::{WidgetMut, WidgetPod};
 use crate::{
     theme, AccessCtx, AccessEvent, BoxConstraints, Color, CursorIcon, EventCtx, LayoutCtx,
-    PaintCtx, Point, PointerEvent, Rect, RegisterCtx, Size, TextEvent, Widget, WidgetId,
+    PaintCtx, Point, PointerEvent, QueryCtx, Rect, RegisterCtx, Size, TextEvent, Widget, WidgetId,
 };
 
 // TODO - Have child widget type as generic argument
@@ -31,11 +30,6 @@ pub struct Split {
     min_bar_area: f64,    // Integers only
     solid: bool,
     draggable: bool,
-    /// The split bar is hovered by the mouse. This state is locked to `true` if the
-    /// widget is active (the bar is being dragged) to avoid cursor and painting jitter
-    /// if the mouse moves faster than the layout and temporarily gets outside of the
-    /// bar area while still being dragged.
-    is_bar_hover: bool,
     /// Offset from the split point (bar center) to the actual mouse position when the
     /// bar was clicked. This is used to ensure a click without mouse move is a no-op,
     /// instead of re-centering the bar on the mouse.
@@ -60,7 +54,6 @@ impl Split {
             min_bar_area: 6.0,
             solid: false,
             draggable: false,
-            is_bar_hover: false,
             click_offset: 0.0,
             child1: WidgetPod::new(child1).boxed(),
             child2: WidgetPod::new(child2).boxed(),
@@ -199,7 +192,7 @@ impl Split {
     }
 
     /// Returns true if the provided mouse position is inside the splitter bar area.
-    fn bar_hit_test(&self, size: Size, mouse_pos: LogicalPosition<f64>) -> bool {
+    fn bar_hit_test(&self, size: Size, mouse_pos: Point) -> bool {
         let (edge1, edge2) = self.bar_edges(size);
         match self.split_axis {
             Axis::Horizontal => mouse_pos.x >= edge1 && mouse_pos.x <= edge2,
@@ -375,7 +368,9 @@ impl Widget for Split {
         if self.draggable {
             match event {
                 PointerEvent::PointerDown(PointerButton::Primary, state) => {
-                    if self.bar_hit_test(ctx.size(), state.position) {
+                    let mouse_pos = Point::new(state.position.x, state.position.y);
+                    let local_mouse_pos = mouse_pos - ctx.window_origin().to_vec2();
+                    if self.bar_hit_test(ctx.size(), local_mouse_pos) {
                         ctx.set_handled();
                         ctx.capture_pointer();
                         // Save the delta between the mouse click position and the split point
@@ -383,26 +378,6 @@ impl Widget for Split {
                             Axis::Horizontal => state.position.x,
                             Axis::Vertical => state.position.y,
                         } - self.bar_position(ctx.size());
-                        // If not already hovering, force and change cursor appropriately
-                        if !self.is_bar_hover {
-                            self.is_bar_hover = true;
-                            match self.split_axis {
-                                Axis::Horizontal => ctx.set_cursor(&CursorIcon::EwResize),
-                                Axis::Vertical => ctx.set_cursor(&CursorIcon::NsResize),
-                            };
-                        }
-                    }
-                }
-                PointerEvent::PointerUp(PointerButton::Primary, state) => {
-                    if ctx.has_pointer_capture() {
-                        ctx.set_handled();
-                        // Depending on where the mouse cursor is when the button is released,
-                        // the cursor might or might not need to be changed
-                        self.is_bar_hover =
-                            ctx.is_hovered() && self.bar_hit_test(ctx.size(), state.position);
-                        if !self.is_bar_hover {
-                            ctx.clear_cursor();
-                        }
                     }
                 }
                 PointerEvent::PointerMove(state) => {
@@ -418,21 +393,6 @@ impl Widget for Split {
                         };
                         self.update_split_point(ctx.size(), effective_pos);
                         ctx.request_layout();
-                    } else {
-                        // If not active, set cursor when hovering state changes
-                        let hover =
-                            ctx.is_hovered() && self.bar_hit_test(ctx.size(), state.position);
-                        if self.is_bar_hover != hover {
-                            self.is_bar_hover = hover;
-                            if hover {
-                                match self.split_axis {
-                                    Axis::Horizontal => ctx.set_cursor(&CursorIcon::EwResize),
-                                    Axis::Vertical => ctx.set_cursor(&CursorIcon::NsResize),
-                                };
-                            } else {
-                                ctx.clear_cursor();
-                            }
-                        }
                     }
                 }
                 _ => {}
@@ -553,6 +513,20 @@ impl Widget for Split {
             self.paint_solid_bar(ctx, scene);
         } else {
             self.paint_stroked_bar(ctx, scene);
+        }
+    }
+
+    fn get_cursor(&self, ctx: &QueryCtx, pos: Point) -> CursorIcon {
+        let local_mouse_pos = pos - ctx.window_origin().to_vec2();
+        let is_bar_hovered = self.bar_hit_test(ctx.size(), local_mouse_pos);
+
+        if ctx.has_pointer_capture() || is_bar_hovered {
+            match self.split_axis {
+                Axis::Horizontal => CursorIcon::EwResize,
+                Axis::Vertical => CursorIcon::NsResize,
+            }
+        } else {
+            CursorIcon::Default
         }
     }
 

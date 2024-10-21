@@ -15,7 +15,7 @@ use crate::text::{TextBrush, TextEditor, TextWithSelection};
 use crate::widget::{LineBreaking, WidgetMut};
 use crate::{
     AccessCtx, AccessEvent, BoxConstraints, CursorIcon, EventCtx, LayoutCtx, PaintCtx,
-    PointerEvent, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
+    PointerEvent, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
 };
 
 const TEXTBOX_PADDING: f64 = 3.0;
@@ -312,7 +312,7 @@ impl Widget for Textbox {
         );
     }
 
-    fn get_cursor(&self) -> CursorIcon {
+    fn get_cursor(&self, _ctx: &QueryCtx, _pos: Point) -> CursorIcon {
         CursorIcon::Text
     }
 
