@@ -161,7 +161,9 @@ pub(crate) fn run_layout_on<W: Widget>(
 
             // TODO - This check might be redundant with the code updating local_paint_rect
             let child_rect = child_state.paint_rect();
-            if !state.item.local_paint_rect.contains_rect(child_rect) && state.item.clip.is_none() {
+            if !state.item.local_paint_rect.contains_rect(child_rect)
+                && state.item.clip_path.is_none()
+            {
                 debug_panic!(
                     "Error in '{}' {}: paint_rect {:?} doesn't contain paint_rect {:?} of child widget '{}' {}",
                     name,

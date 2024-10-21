@@ -114,7 +114,7 @@ fn build_access_node(widget: &mut dyn Widget, ctx: &mut AccessCtx) -> NodeBuilde
     if ctx.is_stashed() {
         node.set_hidden();
     }
-    if ctx.widget_state.clip.is_some() {
+    if ctx.widget_state.clip_path.is_some() {
         node.set_clips_children();
     }
     if ctx.accepts_focus() && !ctx.is_disabled() && !ctx.is_stashed() {

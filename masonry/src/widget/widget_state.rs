@@ -7,34 +7,29 @@ use vello::kurbo::{Insets, Point, Rect, Size, Vec2};
 
 use crate::{CursorIcon, WidgetId};
 
-// TODO - Sort out names of widget state flags in two categories:
-// - request_xxx: means this widget needs the xxx pass to run on it
-// - needs_xxx: means this widget or one of its descendants has requested the xxx pass
-
-// FIXME https://github.com/linebender/xilem/issues/376 - Make a note documenting this: the only way to get a &mut WidgetState should be in a pass.
-// A pass should reborrow the parent widget state (to avoid crossing wires) and call merge_up at
-// the end so that invalidations are always bubbled up.
-// Widgets with methods that require invalidation (eg Label::set_text) should take a
-// &mut WidgetState as a parameter. Because passes reborrow the parent WidgetState, the only
-// way to call such a method is during a pass on the given widget.
-
-// TODO: consider using bitflags for the booleans.
-
 /// Generic state for all widgets in the hierarchy.
 ///
-/// This struct contains the widget's layout rect, flags
-/// indicating when the widget is active or focused, and other
-/// state necessary for the widget to participate in event
-/// flow.
+/// This struct contains the metadata that passes need to know about widgets and that
+/// widgets don't store themselves.
 ///
-/// It is provided to [`paint`] calls as a non-mutable reference,
-/// largely so a widget can know its size, also because active
-/// and focus state can affect the widget's appearance. Other than
-/// that, widgets will generally not interact with it directly,
-/// but it is an important part of the [`WidgetPod`] struct.
+/// All context types include a reference to a `WidgetState`, so widgets can query
+/// information about their own state and set invalidation flags.
+/// Context types for render passes have a shared `&WidgetState`. Context types for
+/// other passes have a `&mut WidgetState`.
 ///
-/// [`paint`]: crate::Widget::paint
-/// [`WidgetPod`]: crate::WidgetPod
+/// In general, the only way to get a `&mut WidgetState` should be in a pass or as part of a
+/// [`WidgetMut`]. Both should reborrow the parent widget state and call
+/// [`WidgetState::merge_up`] at the end so that invalidations are always bubbled up.
+///
+/// ## Naming scheme
+///
+/// Some fields follow a naming scheme:
+/// - request_xxx: this specific widget has requested the xxx pass to run on it
+/// - needs_xxx: this widget or a descendant has requested the xxx pass to run on it
+/// - is_xxx: this widget has the xxx property
+/// - has_xxx: this widget or an ancestor has the xxx property
+///
+/// [`WidgetMut`]: crate::widget::WidgetMut
 #[derive(Clone, Debug)]
 pub(crate) struct WidgetState {
     pub(crate) id: WidgetId,
@@ -79,7 +74,7 @@ pub(crate) struct WidgetState {
     // TODO - Use general Shape
     // Currently Kurbo doesn't really provide a type that lets us
     // efficiently hold an arbitrary shape.
-    pub(crate) clip: Option<Rect>,
+    pub(crate) clip_path: Option<Rect>,
 
     // TODO - Handle matrix transforms
     pub(crate) translation: Vec2,
@@ -169,7 +164,7 @@ impl WidgetState {
             accepts_focus: false,
             accepts_text_input: false,
             ime_area: None,
-            clip: Default::default(),
+            clip_path: Default::default(),
             translation: Vec2::ZERO,
             translation_changed: false,
             is_explicitly_disabled: false,
@@ -245,11 +240,6 @@ impl WidgetState {
         self.needs_update_stashed |= child_state.needs_update_stashed;
     }
 
-    #[inline]
-    pub(crate) fn size(&self) -> Size {
-        self.size
-    }
-
     /// The paint region for this widget.
     ///
     /// For more information, see [`WidgetPod::paint_rect`](crate::WidgetPod::paint_rect).
@@ -270,13 +260,6 @@ impl WidgetState {
     /// away.
     pub fn window_layout_rect(&self) -> Rect {
         Rect::from_origin_size(self.window_origin(), self.size)
-    }
-
-    /// The clip path of the widget, if any was set.
-    ///
-    /// For more information, see [`LayoutCtx::set_clip_path`](crate::LayoutCtx::set_clip_path).
-    pub fn clip_path(&self) -> Option<Rect> {
-        self.clip
     }
 
     /// Returns the area being edited by an IME, in global coordinates.
@@ -300,4 +283,13 @@ impl WidgetState {
     pub(crate) fn needs_render(&self) -> bool {
         self.needs_anim || self.needs_paint || self.needs_accessibility
     }
+}
+
+#[test]
+#[ignore]
+fn test_widget_size() {
+    // See https://github.com/linebender/xilem/issues/706
+    let state = WidgetState::new(WidgetId::next(), "test");
+    dbg!(std::mem::size_of_val(&state));
+    panic!();
 }
