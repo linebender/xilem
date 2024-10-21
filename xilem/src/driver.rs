@@ -114,7 +114,7 @@ where
                 &self.current_view,
                 &mut self.view_state,
                 &mut self.ctx,
-                root.child_mut(),
+                RootWidget::child_mut(&mut root),
             );
             self.current_view = next_view;
         }

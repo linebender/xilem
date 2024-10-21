@@ -21,7 +21,7 @@ fn access_grandchild_widget() {
     dbg!(harness.root_widget());
     harness.edit_widget(id_label, |mut label| {
         let mut label = label.downcast::<Label>();
-        label.set_text("New text");
+        Label::set_text(&mut label, "New text");
     });
 
     assert_debug_snapshot!(harness.root_widget());

@@ -143,73 +143,85 @@ impl GridParams {
 }
 
 // --- MARK: WIDGETMUT---
-impl<'a> WidgetMut<'a, Grid> {
+impl Grid {
     /// Add a child widget.
     ///
     /// See also [`with_child`].
     ///
     /// [`with_child`]: Grid::with_child
-    pub fn add_child(&mut self, child: impl Widget, params: GridParams) {
+    pub fn add_child(this: &mut WidgetMut<'_, Self>, child: impl Widget, params: GridParams) {
         let child_pod: WidgetPod<Box<dyn Widget>> = WidgetPod::new(Box::new(child));
-        self.insert_child_pod(child_pod, params);
+        Self::insert_child_pod(this, child_pod, params);
     }
 
-    pub fn add_child_id(&mut self, child: impl Widget, id: WidgetId, params: GridParams) {
+    pub fn add_child_id(
+        this: &mut WidgetMut<'_, Self>,
+        child: impl Widget,
+        id: WidgetId,
+        params: GridParams,
+    ) {
         let child_pod: WidgetPod<Box<dyn Widget>> = WidgetPod::new_with_id(Box::new(child), id);
-        self.insert_child_pod(child_pod, params);
+        Self::insert_child_pod(this, child_pod, params);
     }
 
     /// Add a child widget.
-    pub fn insert_child_pod(&mut self, widget: WidgetPod<Box<dyn Widget>>, params: GridParams) {
+    pub fn insert_child_pod(
+        this: &mut WidgetMut<'_, Self>,
+        widget: WidgetPod<Box<dyn Widget>>,
+        params: GridParams,
+    ) {
         let child = new_grid_child(params, widget);
-        self.widget.children.push(child);
-        self.ctx.children_changed();
-        self.ctx.request_layout();
+        this.widget.children.push(child);
+        this.ctx.children_changed();
+        this.ctx.request_layout();
     }
 
     pub fn insert_grid_child_at(
-        &mut self,
+        this: &mut WidgetMut<'_, Self>,
         idx: usize,
         child: impl Widget,
         params: impl Into<GridParams>,
     ) {
-        self.insert_grid_child_pod(idx, WidgetPod::new(Box::new(child)), params);
+        Self::insert_grid_child_pod(this, idx, WidgetPod::new(Box::new(child)), params);
     }
 
     pub fn insert_grid_child_pod(
-        &mut self,
+        this: &mut WidgetMut<'_, Self>,
         idx: usize,
         child: WidgetPod<Box<dyn Widget>>,
         params: impl Into<GridParams>,
     ) {
         let child = new_grid_child(params.into(), child);
-        self.widget.children.insert(idx, child);
-        self.ctx.children_changed();
-        self.ctx.request_layout();
+        this.widget.children.insert(idx, child);
+        this.ctx.children_changed();
+        this.ctx.request_layout();
     }
 
-    pub fn set_spacing(&mut self, spacing: f64) {
-        self.widget.grid_spacing = spacing;
-        self.ctx.request_layout();
+    pub fn set_spacing(this: &mut WidgetMut<'_, Self>, spacing: f64) {
+        this.widget.grid_spacing = spacing;
+        this.ctx.request_layout();
     }
 
-    pub fn set_width(&mut self, width: i32) {
-        self.widget.grid_width = width;
-        self.ctx.request_layout();
+    pub fn set_width(this: &mut WidgetMut<'_, Self>, width: i32) {
+        this.widget.grid_width = width;
+        this.ctx.request_layout();
     }
 
-    pub fn set_height(&mut self, height: i32) {
-        self.widget.grid_height = height;
-        self.ctx.request_layout();
+    pub fn set_height(this: &mut WidgetMut<'_, Self>, height: i32) {
+        this.widget.grid_height = height;
+        this.ctx.request_layout();
     }
 
-    pub fn child_mut(&mut self, idx: usize) -> Option<WidgetMut<'_, Box<dyn Widget>>> {
-        let child = match self.widget.children[idx].widget_mut() {
+    pub fn child_mut<'w>(
+        this: &'w mut WidgetMut<'_, Self>,
+        idx: usize,
+    ) -> Option<WidgetMut<'w, Box<dyn Widget>>> {
+        let child = match this.widget.children[idx].widget_mut() {
             Some(widget) => widget,
             None => return None,
         };
 
-        Some(self.ctx.get_mut(child))
+        Some(this.ctx.get_mut(child))
     }
 
     /// Updates the grid parameters for the child at `idx`,
@@ -217,16 +229,20 @@ impl<'a> WidgetMut<'a, Grid> {
     /// # Panics
     ///
     /// Panics if the element at `idx` is not a widget.
-    pub fn update_child_grid_params(&mut self, idx: usize, params: GridParams) {
-        let child = &mut self.widget.children[idx];
+    pub fn update_child_grid_params(
+        this: &mut WidgetMut<'_, Self>,
+        idx: usize,
+        params: GridParams,
+    ) {
+        let child = &mut this.widget.children[idx];
         child.update_params(params);
-        self.ctx.request_layout();
+        this.ctx.request_layout();
     }
 
-    pub fn remove_child(&mut self, idx: usize) {
-        let child = self.widget.children.remove(idx);
-        self.ctx.remove_child(child.widget);
-        self.ctx.request_layout();
+    pub fn remove_child(this: &mut WidgetMut<'_, Self>, idx: usize) {
+        let child = this.widget.children.remove(idx);
+        this.ctx.remove_child(child.widget);
+        this.ctx.request_layout();
     }
 }
 
@@ -320,48 +336,60 @@ mod tests {
         // Expand it to a 4x4 grid
         harness.edit_root_widget(|mut grid| {
             let mut grid = grid.downcast::<Grid>();
-            grid.set_width(4);
+            Grid::set_width(&mut grid, 4);
         });
         assert_render_snapshot!(harness, "expanded_4x1");
 
         harness.edit_root_widget(|mut grid| {
             let mut grid = grid.downcast::<Grid>();
-            grid.set_height(4);
+            Grid::set_height(&mut grid, 4);
         });
         assert_render_snapshot!(harness, "expanded_4x4");
 
         // Add a widget that takes up more than one horizontal cell
         harness.edit_root_widget(|mut grid| {
             let mut grid = grid.downcast::<Grid>();
-            grid.add_child(button::Button::new("B"), GridParams::new(1, 0, 3, 1));
+            Grid::add_child(
+                &mut grid,
+                button::Button::new("B"),
+                GridParams::new(1, 0, 3, 1),
+            );
         });
         assert_render_snapshot!(harness, "with_horizontal_widget");
 
         // Add a widget that takes up more than one vertical cell
         harness.edit_root_widget(|mut grid| {
             let mut grid = grid.downcast::<Grid>();
-            grid.add_child(button::Button::new("C"), GridParams::new(0, 1, 1, 3));
+            Grid::add_child(
+                &mut grid,
+                button::Button::new("C"),
+                GridParams::new(0, 1, 1, 3),
+            );
         });
         assert_render_snapshot!(harness, "with_vertical_widget");
 
         // Add a widget that takes up more than one horizontal and vertical cell
         harness.edit_root_widget(|mut grid| {
             let mut grid = grid.downcast::<Grid>();
-            grid.add_child(button::Button::new("D"), GridParams::new(1, 1, 2, 2));
+            Grid::add_child(
+                &mut grid,
+                button::Button::new("D"),
+                GridParams::new(1, 1, 2, 2),
+            );
         });
         assert_render_snapshot!(harness, "with_2x2_widget");
 
         // Change the spacing
         harness.edit_root_widget(|mut grid| {
             let mut grid = grid.downcast::<Grid>();
-            grid.set_spacing(7.0);
+            Grid::set_spacing(&mut grid, 7.0);
         });
         assert_render_snapshot!(harness, "with_changed_spacing");
 
         // Make the spacing negative
         harness.edit_root_widget(|mut grid| {
             let mut grid = grid.downcast::<Grid>();
-            grid.set_spacing(-4.0);
+            Grid::set_spacing(&mut grid, -4.0);
         });
         assert_render_snapshot!(harness, "with_negative_spacing");
     }
@@ -377,28 +405,32 @@ mod tests {
         // Now remove the widget
         harness.edit_root_widget(|mut grid| {
             let mut grid = grid.downcast::<Grid>();
-            grid.remove_child(0);
+            Grid::remove_child(&mut grid, 0);
         });
         assert_render_snapshot!(harness, "2x2_with_removed_widget");
 
         // Add it back
         harness.edit_root_widget(|mut grid| {
             let mut grid = grid.downcast::<Grid>();
-            grid.add_child(button::Button::new("A"), GridParams::new(0, 0, 1, 1));
+            Grid::add_child(
+                &mut grid,
+                button::Button::new("A"),
+                GridParams::new(0, 0, 1, 1),
+            );
         });
         assert_render_snapshot!(harness, "initial_2x2"); // Should be back to the original state
 
         // Change the grid params to position it on the other corner
         harness.edit_root_widget(|mut grid| {
             let mut grid = grid.downcast::<Grid>();
-            grid.update_child_grid_params(0, GridParams::new(1, 1, 1, 1));
+            Grid::update_child_grid_params(&mut grid, 0, GridParams::new(1, 1, 1, 1));
         });
         assert_render_snapshot!(harness, "moved_2x2_1");
 
         // Now make it take up the entire grid
         harness.edit_root_widget(|mut grid| {
             let mut grid = grid.downcast::<Grid>();
-            grid.update_child_grid_params(0, GridParams::new(0, 0, 2, 2));
+            Grid::update_child_grid_params(&mut grid, 0, GridParams::new(0, 0, 2, 2));
         });
         assert_render_snapshot!(harness, "moved_2x2_2");
     }
@@ -414,7 +446,11 @@ mod tests {
         // Order sets the draw order, so draw a widget over A by adding it after
         harness.edit_root_widget(|mut grid| {
             let mut grid = grid.downcast::<Grid>();
-            grid.add_child(button::Button::new("B"), GridParams::new(0, 0, 1, 1));
+            Grid::add_child(
+                &mut grid,
+                button::Button::new("B"),
+                GridParams::new(0, 0, 1, 1),
+            );
         });
         assert_render_snapshot!(harness, "2x2_with_overlapping_b");
 
@@ -422,7 +458,12 @@ mod tests {
         // Make it wide enough to see it stick out, with half of it under A and B.
         harness.edit_root_widget(|mut grid| {
             let mut grid = grid.downcast::<Grid>();
-            grid.insert_grid_child_at(0, button::Button::new("C"), GridParams::new(0, 0, 2, 1));
+            Grid::insert_grid_child_at(
+                &mut grid,
+                0,
+                button::Button::new("C"),
+                GridParams::new(0, 0, 2, 1),
+            );
         });
         assert_render_snapshot!(harness, "2x2_with_overlapping_c");
     }

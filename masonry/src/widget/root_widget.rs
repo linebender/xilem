@@ -32,9 +32,9 @@ impl<W: Widget> RootWidget<W> {
     }
 }
 
-impl<W: Widget> WidgetMut<'_, RootWidget<W>> {
-    pub fn child_mut(&mut self) -> WidgetMut<'_, W> {
-        self.ctx.get_mut(&mut self.widget.pod)
+impl<W: Widget> RootWidget<W> {
+    pub fn child_mut<'s>(this: &'s mut WidgetMut<'_, Self>) -> WidgetMut<'s, W> {
+        this.ctx.get_mut(&mut this.widget.pod)
     }
 }
 

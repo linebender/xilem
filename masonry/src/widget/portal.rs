@@ -167,30 +167,34 @@ impl<W: Widget> Portal<W> {
 }
 
 // --- MARK: WIDGETMUT ---
-impl<W: Widget> WidgetMut<'_, Portal<W>> {
-    pub fn child_mut(&mut self) -> WidgetMut<'_, W> {
-        self.ctx.get_mut(&mut self.widget.child)
+impl<W: Widget> Portal<W> {
+    pub fn child_mut<'s>(this: &'s mut WidgetMut<'_, Self>) -> WidgetMut<'s, W> {
+        this.ctx.get_mut(&mut this.widget.child)
     }
 
-    pub fn horizontal_scrollbar_mut(&mut self) -> WidgetMut<'_, ScrollBar> {
-        self.ctx.get_mut(&mut self.widget.scrollbar_horizontal)
+    pub fn horizontal_scrollbar_mut<'s>(
+        this: &'s mut WidgetMut<'_, Self>,
+    ) -> WidgetMut<'s, ScrollBar> {
+        this.ctx.get_mut(&mut this.widget.scrollbar_horizontal)
     }
 
-    pub fn vertical_scrollbar_mut(&mut self) -> WidgetMut<'_, ScrollBar> {
-        self.ctx.get_mut(&mut self.widget.scrollbar_vertical)
+    pub fn vertical_scrollbar_mut<'s>(
+        this: &'s mut WidgetMut<'_, Self>,
+    ) -> WidgetMut<'s, ScrollBar> {
+        this.ctx.get_mut(&mut this.widget.scrollbar_vertical)
     }
 
     // TODO - rewrite doc
     /// Set whether to constrain the child horizontally.
-    pub fn set_constrain_horizontal(&mut self, constrain: bool) {
-        self.widget.constrain_horizontal = constrain;
-        self.ctx.request_layout();
+    pub fn set_constrain_horizontal(this: &mut WidgetMut<'_, Self>, constrain: bool) {
+        this.widget.constrain_horizontal = constrain;
+        this.ctx.request_layout();
     }
 
     /// Set whether to constrain the child vertically.
-    pub fn set_constrain_vertical(&mut self, constrain: bool) {
-        self.widget.constrain_vertical = constrain;
-        self.ctx.request_layout();
+    pub fn set_constrain_vertical(this: &mut WidgetMut<'_, Self>, constrain: bool) {
+        this.widget.constrain_vertical = constrain;
+        this.ctx.request_layout();
     }
 
     /// Set whether the child's size must be greater than or equal the size of
@@ -199,42 +203,42 @@ impl<W: Widget> WidgetMut<'_, Portal<W>> {
     /// See [`content_must_fill`] for more details.
     ///
     /// [`content_must_fill`]: ClipBox::content_must_fill
-    pub fn set_content_must_fill(&mut self, must_fill: bool) {
-        self.widget.must_fill = must_fill;
-        self.ctx.request_layout();
+    pub fn set_content_must_fill(this: &mut WidgetMut<'_, Self>, must_fill: bool) {
+        this.widget.must_fill = must_fill;
+        this.ctx.request_layout();
     }
 
-    pub fn set_viewport_pos(&mut self, position: Point) -> bool {
-        let portal_size = self.ctx.layout_rect().size();
-        let content_size = self
+    pub fn set_viewport_pos(this: &mut WidgetMut<'_, Self>, position: Point) -> bool {
+        let portal_size = this.ctx.layout_rect().size();
+        let content_size = this
             .ctx
-            .get_mut(&mut self.widget.child)
+            .get_mut(&mut this.widget.child)
             .ctx
             .layout_rect()
             .size();
 
-        let pos_changed = self
+        let pos_changed = this
             .widget
             .set_viewport_pos_raw(portal_size, content_size, position);
         if pos_changed {
-            let progress_x = self.widget.viewport_pos.x / (content_size - portal_size).width;
-            self.horizontal_scrollbar_mut().widget.cursor_progress = progress_x;
-            self.horizontal_scrollbar_mut().ctx.request_render();
-            let progress_y = self.widget.viewport_pos.y / (content_size - portal_size).height;
-            self.vertical_scrollbar_mut().widget.cursor_progress = progress_y;
-            self.vertical_scrollbar_mut().ctx.request_render();
-            self.ctx.request_layout();
+            let progress_x = this.widget.viewport_pos.x / (content_size - portal_size).width;
+            Self::horizontal_scrollbar_mut(this).widget.cursor_progress = progress_x;
+            Self::horizontal_scrollbar_mut(this).ctx.request_render();
+            let progress_y = this.widget.viewport_pos.y / (content_size - portal_size).height;
+            Self::vertical_scrollbar_mut(this).widget.cursor_progress = progress_y;
+            Self::vertical_scrollbar_mut(this).ctx.request_render();
+            this.ctx.request_layout();
         }
         pos_changed
     }
 
-    pub fn pan_viewport_by(&mut self, translation: Vec2) -> bool {
-        self.set_viewport_pos(self.widget.viewport_pos + translation)
+    pub fn pan_viewport_by(this: &mut WidgetMut<'_, Self>, translation: Vec2) -> bool {
+        Self::set_viewport_pos(this, this.widget.viewport_pos + translation)
     }
 
     // Note - Rect is in child coordinates
-    pub fn pan_viewport_to(&mut self, target: Rect) -> bool {
-        let viewport = Rect::from_origin_size(self.widget.viewport_pos, self.ctx.widget_state.size);
+    pub fn pan_viewport_to(this: &mut WidgetMut<'_, Self>, target: Rect) -> bool {
+        let viewport = Rect::from_origin_size(this.widget.viewport_pos, this.ctx.widget_state.size);
 
         let new_pos_x = compute_pan_range(
             viewport.min_x()..viewport.max_x(),
@@ -247,7 +251,7 @@ impl<W: Widget> WidgetMut<'_, Portal<W>> {
         )
         .start;
 
-        self.set_viewport_pos(Point::new(new_pos_x, new_pos_y))
+        Self::set_viewport_pos(this, Point::new(new_pos_x, new_pos_y))
     }
 }
 
@@ -527,7 +531,7 @@ mod tests {
 
         harness.edit_root_widget(|mut portal| {
             let mut portal = portal.downcast::<Portal<Flex>>();
-            portal.set_viewport_pos(Point::new(0.0, 130.0))
+            Portal::set_viewport_pos(&mut portal, Point::new(0.0, 130.0))
         });
 
         assert_render_snapshot!(harness, "button_list_scrolled");
@@ -535,7 +539,7 @@ mod tests {
         let item_3_rect = harness.get_widget(item_3_id).ctx().layout_rect();
         harness.edit_root_widget(|mut portal| {
             let mut portal = portal.downcast::<Portal<Flex>>();
-            portal.pan_viewport_to(item_3_rect);
+            Portal::pan_viewport_to(&mut portal, item_3_rect);
         });
 
         assert_render_snapshot!(harness, "button_list_scroll_to_item_3");
@@ -543,7 +547,7 @@ mod tests {
         let item_13_rect = harness.get_widget(item_13_id).ctx().layout_rect();
         harness.edit_root_widget(|mut portal| {
             let mut portal = portal.downcast::<Portal<Flex>>();
-            portal.pan_viewport_to(item_13_rect);
+            Portal::pan_viewport_to(&mut portal, item_13_rect);
         });
 
         assert_render_snapshot!(harness, "button_list_scroll_to_item_13");

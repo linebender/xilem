@@ -68,8 +68,8 @@ impl<State, Action> View<State, Action, ViewCtx> for Spinner {
     ) {
         if prev.color != self.color {
             match self.color {
-                Some(color) => element.set_color(color),
-                None => element.reset_color(),
+                Some(color) => widget::Spinner::set_color(&mut element, color),
+                None => widget::Spinner::reset_color(&mut element),
             };
         }
     }

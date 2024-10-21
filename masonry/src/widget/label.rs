@@ -107,53 +107,52 @@ impl Label {
 }
 
 // --- MARK: WIDGETMUT ---
-impl WidgetMut<'_, Label> {
-    pub fn text(&self) -> &ArcStr {
-        &self.widget.text
-    }
-
-    pub fn set_text_properties<R>(&mut self, f: impl FnOnce(&mut TextLayout) -> R) -> R {
-        let ret = f(&mut self.widget.text_layout);
-        if self.widget.text_layout.needs_rebuild() {
-            self.ctx.request_layout();
+impl Label {
+    pub fn set_text_properties<R>(
+        this: &mut WidgetMut<'_, Self>,
+        f: impl FnOnce(&mut TextLayout) -> R,
+    ) -> R {
+        let ret = f(&mut this.widget.text_layout);
+        if this.widget.text_layout.needs_rebuild() {
+            this.ctx.request_layout();
         }
         ret
     }
 
-    pub fn set_text(&mut self, new_text: impl Into<ArcStr>) {
+    pub fn set_text(this: &mut WidgetMut<'_, Self>, new_text: impl Into<ArcStr>) {
         let new_text = new_text.into();
-        self.widget.text = new_text;
-        self.widget.text_changed = true;
-        self.ctx.request_layout();
+        this.widget.text = new_text;
+        this.widget.text_changed = true;
+        this.ctx.request_layout();
     }
 
     #[doc(alias = "set_text_color")]
-    pub fn set_text_brush(&mut self, brush: impl Into<TextBrush>) {
+    pub fn set_text_brush(this: &mut WidgetMut<'_, Self>, brush: impl Into<TextBrush>) {
         let brush = brush.into();
-        self.widget.brush = brush;
-        if !self.ctx.is_disabled() {
-            let brush = self.widget.brush.clone();
-            self.set_text_properties(|layout| layout.set_brush(brush));
+        this.widget.brush = brush;
+        if !this.ctx.is_disabled() {
+            let brush = this.widget.brush.clone();
+            Self::set_text_properties(this, |layout| layout.set_brush(brush));
         }
     }
-    pub fn set_text_size(&mut self, size: f32) {
-        self.set_text_properties(|layout| layout.set_text_size(size));
+    pub fn set_text_size(this: &mut WidgetMut<'_, Self>, size: f32) {
+        Self::set_text_properties(this, |layout| layout.set_text_size(size));
     }
-    pub fn set_weight(&mut self, weight: Weight) {
-        self.set_text_properties(|layout| layout.set_weight(weight));
+    pub fn set_weight(this: &mut WidgetMut<'_, Self>, weight: Weight) {
+        Self::set_text_properties(this, |layout| layout.set_weight(weight));
     }
-    pub fn set_alignment(&mut self, alignment: Alignment) {
-        self.set_text_properties(|layout| layout.set_text_alignment(alignment));
+    pub fn set_alignment(this: &mut WidgetMut<'_, Self>, alignment: Alignment) {
+        Self::set_text_properties(this, |layout| layout.set_text_alignment(alignment));
     }
-    pub fn set_font(&mut self, font_stack: FontStack<'static>) {
-        self.set_text_properties(|layout| layout.set_font(font_stack));
+    pub fn set_font(this: &mut WidgetMut<'_, Self>, font_stack: FontStack<'static>) {
+        Self::set_text_properties(this, |layout| layout.set_font(font_stack));
     }
-    pub fn set_font_family(&mut self, family: FontFamily<'static>) {
-        self.set_font(FontStack::Single(family));
+    pub fn set_font_family(this: &mut WidgetMut<'_, Self>, family: FontFamily<'static>) {
+        Self::set_font(this, FontStack::Single(family));
     }
-    pub fn set_line_break_mode(&mut self, line_break_mode: LineBreaking) {
-        self.widget.line_break_mode = line_break_mode;
-        self.ctx.request_layout();
+    pub fn set_line_break_mode(this: &mut WidgetMut<'_, Self>, line_break_mode: LineBreaking) {
+        this.widget.line_break_mode = line_break_mode;
+        this.ctx.request_layout();
     }
 }
 
@@ -350,12 +349,12 @@ mod tests {
 
             harness.edit_root_widget(|mut label| {
                 let mut label = label.downcast::<Label>();
-                label.set_text("The quick brown fox jumps over the lazy dog");
-                label.set_text_brush(PRIMARY_LIGHT);
-                label.set_font_family(FontFamily::Generic(GenericFamily::Monospace));
-                label.set_text_size(20.0);
-                label.set_line_break_mode(LineBreaking::WordWrap);
-                label.set_alignment(Alignment::Middle);
+                Label::set_text(&mut label, "The quick brown fox jumps over the lazy dog");
+                Label::set_text_brush(&mut label, PRIMARY_LIGHT);
+                Label::set_font_family(&mut label, FontFamily::Generic(GenericFamily::Monospace));
+                Label::set_text_size(&mut label, 20.0);
+                Label::set_line_break_mode(&mut label, LineBreaking::WordWrap);
+                Label::set_alignment(&mut label, Alignment::Middle);
             });
 
             harness.render()

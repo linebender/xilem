@@ -63,14 +63,14 @@ impl Button {
 }
 
 // --- MARK: WIDGETMUT ---
-impl WidgetMut<'_, Button> {
+impl Button {
     /// Set the text.
-    pub fn set_text(&mut self, new_text: impl Into<ArcStr>) {
-        self.label_mut().set_text(new_text);
+    pub fn set_text(this: &mut WidgetMut<'_, Self>, new_text: impl Into<ArcStr>) {
+        Label::set_text(&mut Self::label_mut(this), new_text);
     }
 
-    pub fn label_mut(&mut self) -> WidgetMut<'_, Label> {
-        self.ctx.get_mut(&mut self.widget.label)
+    pub fn label_mut<'w>(this: &'w mut WidgetMut<'_, Self>) -> WidgetMut<'w, Label> {
+        this.ctx.get_mut(&mut this.widget.label)
     }
 }
 
@@ -263,10 +263,10 @@ mod tests {
 
             harness.edit_root_widget(|mut button| {
                 let mut button = button.downcast::<Button>();
-                button.set_text("The quick brown fox jumps over the lazy dog");
+                Button::set_text(&mut button, "The quick brown fox jumps over the lazy dog");
 
-                let mut label = button.label_mut();
-                label.set_text_properties(|props| {
+                let mut label = Button::label_mut(&mut button);
+                Label::set_text_properties(&mut label, |props| {
                     props.set_brush(PRIMARY_LIGHT);
                     props.set_text_size(20.0);
                 });

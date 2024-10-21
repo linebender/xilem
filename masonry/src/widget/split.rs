@@ -297,29 +297,29 @@ impl Split {
 // FIXME - Add unit tests for WidgetMut<Split>
 
 // --- MARK: WIDGETMUT ---
-impl WidgetMut<'_, Split> {
+impl Split {
     /// Set the split point as a fraction of the split axis.
     ///
     /// The value must be between `0.0` and `1.0`, inclusive.
     /// The default split point is `0.5`.
-    pub fn set_split_point(&mut self, split_point: f64) {
+    pub fn set_split_point(this: &mut WidgetMut<'_, Self>, split_point: f64) {
         assert!(
             (0.0..=1.0).contains(&split_point),
             "split_point must be in the range [0.0-1.0]!"
         );
-        self.widget.split_point_chosen = split_point;
-        self.ctx.request_layout();
+        this.widget.split_point_chosen = split_point;
+        this.ctx.request_layout();
     }
 
     /// Set the minimum size for both sides of the split axis.
     ///
     /// The value must be greater than or equal to `0.0`.
     /// The value will be rounded up to the nearest integer.
-    pub fn set_min_size(&mut self, first: f64, second: f64) {
+    pub fn set_min_size(this: &mut WidgetMut<'_, Self>, first: f64, second: f64) {
         assert!(first >= 0.0);
         assert!(second >= 0.0);
-        self.widget.min_size = (first.ceil(), second.ceil());
-        self.ctx.request_layout();
+        this.widget.min_size = (first.ceil(), second.ceil());
+        this.ctx.request_layout();
     }
 
     /// Set the size of the splitter bar.
@@ -327,10 +327,10 @@ impl WidgetMut<'_, Split> {
     /// The value must be positive or zero.
     /// The value will be rounded up to the nearest integer.
     /// The default splitter bar size is `6.0`.
-    pub fn set_bar_size(&mut self, bar_size: f64) {
+    pub fn set_bar_size(this: &mut WidgetMut<'_, Self>, bar_size: f64) {
         assert!(bar_size >= 0.0, "bar_size must be 0.0 or greater!");
-        self.widget.bar_size = bar_size.ceil();
-        self.ctx.request_layout();
+        this.widget.bar_size = bar_size.ceil();
+        this.ctx.request_layout();
     }
 
     /// Set the minimum size of the splitter bar area.
@@ -345,27 +345,27 @@ impl WidgetMut<'_, Split> {
     /// The value must be positive or zero.
     /// The value will be rounded up to the nearest integer.
     /// The default minimum splitter bar area is `6.0`.
-    pub fn set_min_bar_area(&mut self, min_bar_area: f64) {
+    pub fn set_min_bar_area(this: &mut WidgetMut<'_, Self>, min_bar_area: f64) {
         assert!(min_bar_area >= 0.0, "min_bar_area must be 0.0 or greater!");
-        self.widget.min_bar_area = min_bar_area.ceil();
-        self.ctx.request_layout();
+        this.widget.min_bar_area = min_bar_area.ceil();
+        this.ctx.request_layout();
     }
 
     /// Set whether the split point can be changed by dragging.
-    pub fn set_draggable(&mut self, draggable: bool) {
-        self.widget.draggable = draggable;
+    pub fn set_draggable(this: &mut WidgetMut<'_, Self>, draggable: bool) {
+        this.widget.draggable = draggable;
         // Bar mutability impacts appearance, but not accessibility node
         // TODO - This might change in a future implementation
-        self.ctx.request_paint_only();
+        this.ctx.request_paint_only();
     }
 
     /// Set whether the splitter bar is drawn as a solid rectangle.
     ///
     /// If this is `false` (the default), the bar will be drawn as two parallel lines.
-    pub fn set_bar_solid(&mut self, solid: bool) {
-        self.widget.solid = solid;
+    pub fn set_bar_solid(this: &mut WidgetMut<'_, Self>, solid: bool) {
+        this.widget.solid = solid;
         // Bar solidity impacts appearance, but not accessibility node
-        self.ctx.request_paint_only();
+        this.ctx.request_paint_only();
     }
 }
 
@@ -635,11 +635,11 @@ mod tests {
             harness.edit_root_widget(|mut splitter| {
                 let mut splitter = splitter.downcast::<Split>();
 
-                splitter.set_split_point(0.3);
-                splitter.set_min_size(40.0, 10.0);
-                splitter.set_bar_size(12.0);
-                splitter.set_draggable(true);
-                splitter.set_bar_solid(true);
+                Split::set_split_point(&mut splitter, 0.3);
+                Split::set_min_size(&mut splitter, 40.0, 10.0);
+                Split::set_bar_size(&mut splitter, 12.0);
+                Split::set_draggable(&mut splitter, true);
+                Split::set_bar_solid(&mut splitter, true);
             });
 
             harness.render()

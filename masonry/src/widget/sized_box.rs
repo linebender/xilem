@@ -184,44 +184,44 @@ impl SizedBox {
 }
 
 // --- MARK: WIDGETMUT ---
-impl WidgetMut<'_, SizedBox> {
-    pub fn set_child(&mut self, child: impl Widget) {
-        if let Some(child) = self.widget.child.take() {
-            self.ctx.remove_child(child);
+impl SizedBox {
+    pub fn set_child(this: &mut WidgetMut<'_, Self>, child: impl Widget) {
+        if let Some(child) = this.widget.child.take() {
+            this.ctx.remove_child(child);
         }
-        self.widget.child = Some(WidgetPod::new(child).boxed());
-        self.ctx.children_changed();
-        self.ctx.request_layout();
+        this.widget.child = Some(WidgetPod::new(child).boxed());
+        this.ctx.children_changed();
+        this.ctx.request_layout();
     }
 
-    pub fn remove_child(&mut self) {
-        if let Some(child) = self.widget.child.take() {
-            self.ctx.remove_child(child);
+    pub fn remove_child(this: &mut WidgetMut<'_, Self>) {
+        if let Some(child) = this.widget.child.take() {
+            this.ctx.remove_child(child);
         }
     }
 
     /// Set container's width.
-    pub fn set_width(&mut self, width: f64) {
-        self.widget.width = Some(width);
-        self.ctx.request_layout();
+    pub fn set_width(this: &mut WidgetMut<'_, Self>, width: f64) {
+        this.widget.width = Some(width);
+        this.ctx.request_layout();
     }
 
     /// Set container's height.
-    pub fn set_height(&mut self, height: f64) {
-        self.widget.height = Some(height);
-        self.ctx.request_layout();
+    pub fn set_height(this: &mut WidgetMut<'_, Self>, height: f64) {
+        this.widget.height = Some(height);
+        this.ctx.request_layout();
     }
 
     /// Set container's width.
-    pub fn unset_width(&mut self) {
-        self.widget.width = None;
-        self.ctx.request_layout();
+    pub fn unset_width(this: &mut WidgetMut<'_, Self>) {
+        this.widget.width = None;
+        this.ctx.request_layout();
     }
 
     /// Set container's height.
-    pub fn unset_height(&mut self) {
-        self.widget.height = None;
-        self.ctx.request_layout();
+    pub fn unset_height(this: &mut WidgetMut<'_, Self>) {
+        this.widget.height = None;
+        this.ctx.request_layout();
     }
 
     /// Set the background for this widget.
@@ -230,42 +230,48 @@ impl WidgetMut<'_, SizedBox> {
     /// notably, it can be any [`Color`], any gradient, or an [`Image`].
     ///
     /// [`Image`]: vello::peniko::Image
-    pub fn set_background(&mut self, brush: impl Into<Brush>) {
-        self.widget.background = Some(brush.into());
-        self.ctx.request_paint_only();
+    pub fn set_background(this: &mut WidgetMut<'_, Self>, brush: impl Into<Brush>) {
+        this.widget.background = Some(brush.into());
+        this.ctx.request_paint_only();
     }
 
     /// Clears background.
-    pub fn clear_background(&mut self) {
-        self.widget.background = None;
-        self.ctx.request_paint_only();
+    pub fn clear_background(this: &mut WidgetMut<'_, Self>) {
+        this.widget.background = None;
+        this.ctx.request_paint_only();
     }
 
     /// Paint a border around the widget with a color and width.
-    pub fn set_border(&mut self, color: impl Into<Color>, width: impl Into<f64>) {
-        self.widget.border = Some(BorderStyle {
+    pub fn set_border(
+        this: &mut WidgetMut<'_, Self>,
+        color: impl Into<Color>,
+        width: impl Into<f64>,
+    ) {
+        this.widget.border = Some(BorderStyle {
             color: color.into(),
             width: width.into(),
         });
-        self.ctx.request_layout();
+        this.ctx.request_layout();
     }
 
     /// Clears border.
-    pub fn clear_border(&mut self) {
-        self.widget.border = None;
-        self.ctx.request_layout();
+    pub fn clear_border(this: &mut WidgetMut<'_, Self>) {
+        this.widget.border = None;
+        this.ctx.request_layout();
     }
 
     /// Round off corners of this container by setting a corner radius
-    pub fn set_rounded(&mut self, radius: impl Into<RoundedRectRadii>) {
-        self.widget.corner_radius = radius.into();
-        self.ctx.request_paint_only();
+    pub fn set_rounded(this: &mut WidgetMut<'_, Self>, radius: impl Into<RoundedRectRadii>) {
+        this.widget.corner_radius = radius.into();
+        this.ctx.request_paint_only();
     }
 
     // TODO - Doc
-    pub fn child_mut(&mut self) -> Option<WidgetMut<'_, Box<dyn Widget>>> {
-        let child = self.widget.child.as_mut()?;
-        Some(self.ctx.get_mut(child))
+    pub fn child_mut<'s>(
+        this: &'s mut WidgetMut<'_, Self>,
+    ) -> Option<WidgetMut<'s, Box<dyn Widget>>> {
+        let child = this.widget.child.as_mut()?;
+        Some(this.ctx.get_mut(child))
     }
 }
 
@@ -400,8 +406,6 @@ impl Widget for SizedBox {
     }
 }
 
-// --- Tests ---
-
 // --- MARK: TESTS ---
 #[cfg(test)]
 mod tests {
@@ -412,6 +416,8 @@ mod tests {
     use crate::assert_render_snapshot;
     use crate::testing::TestHarness;
     use crate::widget::Label;
+
+    // TODO - Add WidgetMut tests
 
     #[test]
     fn expand() {
