@@ -115,7 +115,6 @@ pub use vello::kurbo;
 mod util;
 
 mod action;
-mod box_constraints;
 mod contexts;
 mod event;
 pub mod paint_scene_helpers;
@@ -135,7 +134,6 @@ mod tracing_backend;
 mod tree_arena;
 
 pub use action::Action;
-pub use box_constraints::BoxConstraints;
 pub use contexts::{
     AccessCtx, ComposeCtx, EventCtx, IsContext, LayoutCtx, MutateCtx, PaintCtx, QueryCtx,
     RawWrapper, RawWrapperMut, RegisterCtx, UpdateCtx,
