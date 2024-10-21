@@ -287,8 +287,10 @@ impl WidgetState {
 
 #[test]
 #[ignore]
+// See https://github.com/linebender/xilem/issues/706
 fn test_widget_size() {
-    // See https://github.com/linebender/xilem/issues/706
+    // reason: the dbg! call is the whole point of this test
+    #![allow(clippy::dbg_macro)]
     let state = WidgetState::new(WidgetId::next(), "test");
     dbg!(std::mem::size_of_val(&state));
     panic!();
