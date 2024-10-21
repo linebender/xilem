@@ -595,7 +595,8 @@ where
 
 mod hidden {
     use super::FlexItem;
-    use crate::{core::View, AnyWidgetView, ViewCtx};
+    use crate::core::View;
+    use crate::{AnyWidgetView, ViewCtx};
     #[doc(hidden)] // Implementation detail, public because of trait visibility rules
     #[allow(unnameable_types)] // reason: Implementation detail, public because of trait visibility rules
     pub struct AnyFlexChildState<State: 'static, Action: 'static> {

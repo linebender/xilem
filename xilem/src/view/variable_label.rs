@@ -3,8 +3,8 @@
 
 use masonry::parley::fontique::Weight;
 use masonry::parley::style::{FontFamily, FontStack, GenericFamily};
-use masonry::text::TextBrush;
-use masonry::{widget, text::ArcStr};
+use masonry::text::{ArcStr, TextBrush};
+use masonry::widget;
 
 use crate::core::{DynMessage, Mut, ViewMarker};
 use crate::{Color, MessageResult, Pod, TextAlignment, View, ViewCtx, ViewId};

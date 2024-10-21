@@ -5,8 +5,7 @@ use std::sync::Arc;
 
 use masonry::event_loop_runner::{self, EventLoopProxy, MasonryUserEvent};
 use masonry::widget::RootWidget;
-use masonry::AppDriver;
-use masonry::WidgetId;
+use masonry::{AppDriver, WidgetId};
 
 use crate::core::{DynMessage, Message, MessageResult, ProxyError, RawProxy, ViewId};
 use crate::{ViewCtx, WidgetView};
