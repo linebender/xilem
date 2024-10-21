@@ -24,7 +24,7 @@ use widget::widget::get_child_at_pos;
 use widget::WidgetRef;
 
 use crate::event::{PointerEvent, TextEvent};
-use crate::widget::SizedBox;
+use crate::widget::{BiAxial, ContentFill, SizedBox};
 use crate::*;
 
 pub type PointerEventFn<S> = dyn FnMut(&mut S, &mut EventCtx, &PointerEvent);
@@ -34,7 +34,7 @@ pub type AnimFrameFn<S> = dyn FnMut(&mut S, &mut UpdateCtx, u64);
 pub type RegisterChildrenFn<S> = dyn FnMut(&mut S, &mut RegisterCtx);
 pub type StatusChangeFn<S> = dyn FnMut(&mut S, &mut UpdateCtx, &StatusChange);
 pub type UpdateFn<S> = dyn FnMut(&mut S, &mut UpdateCtx, &Update);
-pub type LayoutFn<S> = dyn FnMut(&mut S, &mut LayoutCtx, &BoxConstraints) -> Size;
+pub type LayoutFn<S> = dyn FnMut(&mut S, &mut LayoutCtx, &BiAxial<f64>) -> BiAxial<f64>;
 pub type ComposeFn<S> = dyn FnMut(&mut S, &mut ComposeCtx);
 pub type PaintFn<S> = dyn FnMut(&mut S, &mut PaintCtx, &mut Scene);
 pub type RoleFn<S> = dyn Fn(&S) -> Role;
@@ -111,7 +111,7 @@ pub enum Record {
     RC,
     SC(StatusChange),
     U(Update),
-    Layout(Size),
+    Layout(BiAxial<f64>),
     Compose,
     Paint,
     Access,
@@ -223,7 +223,7 @@ impl<S> ModularWidget<S> {
 
     pub fn layout_fn(
         mut self,
-        f: impl FnMut(&mut S, &mut LayoutCtx, &BoxConstraints) -> Size + 'static,
+        f: impl FnMut(&mut S, &mut LayoutCtx, &BiAxial<f64>) -> BiAxial<f64> + 'static,
     ) -> Self {
         self.layout = Some(Box::new(f));
         self
@@ -305,7 +305,12 @@ impl<S: 'static> Widget for ModularWidget<S> {
         }
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
+    fn layout(
+        &mut self,
+        ctx: &mut LayoutCtx,
+        size: &BiAxial<f64>,
+        requested_fill: &BiAxial<ContentFill>,
+    ) -> BiAxial<f64> {
         let ModularWidget {
             ref mut state,
             ref mut layout,
@@ -313,8 +318,8 @@ impl<S: 'static> Widget for ModularWidget<S> {
         } = self;
         layout
             .as_mut()
-            .map(|f| f(state, ctx, bc))
-            .unwrap_or_else(|| Size::new(100., 100.))
+            .map(|f| f(state, ctx, size))
+            .unwrap_or_else(|| BiAxial::new_size(100., 100.))
     }
 
     fn compose(&mut self, ctx: &mut ComposeCtx) {
@@ -438,8 +443,13 @@ impl Widget for ReplaceChild {
 
     fn update(&mut self, _ctx: &mut UpdateCtx, _event: &Update) {}
 
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
-        ctx.run_layout(&mut self.child, bc)
+    fn layout(
+        &mut self,
+        ctx: &mut LayoutCtx,
+        size: &BiAxial<f64>,
+        requested_fill: &BiAxial<ContentFill>,
+    ) -> BiAxial<f64> {
+        ctx.run_layout(&mut self.child, size, requested_fill)
     }
 
     fn compose(&mut self, _ctx: &mut ComposeCtx) {}
@@ -524,10 +534,15 @@ impl<W: Widget> Widget for Recorder<W> {
         self.child.update(ctx, event);
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
-        let size = self.child.layout(ctx, bc);
-        self.recording.push(Record::Layout(size));
-        size
+    fn layout(
+        &mut self,
+        ctx: &mut LayoutCtx,
+        size: &BiAxial<f64>,
+        requested_fill: &BiAxial<ContentFill>,
+    ) -> BiAxial<f64> {
+        let child_size = self.child.layout(ctx, size, requested_fill);
+        self.recording.push(Record::Layout(child_size));
+        child_size
     }
 
     fn compose(&mut self, ctx: &mut ComposeCtx) {

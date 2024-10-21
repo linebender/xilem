@@ -35,7 +35,7 @@ use crate::passes::update::{
 };
 use crate::text::TextBrush;
 use crate::tree_arena::{ArenaMut, TreeArena};
-use crate::widget::WidgetArena;
+use crate::widget::{BiAxial, WidgetArena};
 use crate::widget::{WidgetMut, WidgetRef, WidgetState};
 use crate::{AccessEvent, Action, CursorIcon, Handled, QueryCtx, Widget, WidgetId, WidgetPod};
 
@@ -451,6 +451,11 @@ impl RenderRoot {
     pub(crate) fn get_kurbo_size(&self) -> kurbo::Size {
         let size = self.size.to_logical(self.scale_factor);
         kurbo::Size::new(size.width, size.height)
+    }
+
+    pub(crate) fn get_planar_size(&self) -> BiAxial<f64> {
+        let size = self.size.to_logical(self.scale_factor);
+        BiAxial::new_size(size.width, size.height)
     }
 
     // --- MARK: REWRITE PASSES ---

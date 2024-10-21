@@ -11,7 +11,7 @@ use vello::kurbo::Affine;
 use vello::peniko::{BlendMode, Image as ImageBuf};
 use vello::Scene;
 
-use crate::widget::{ObjectFit, WidgetMut};
+use crate::widget::{ObjectFit, BiAxial, WidgetMut, ContentFill};
 use crate::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
     RegisterCtx, Size, StatusChange, TextEvent, Update, UpdateCtx, Widget, WidgetId,
@@ -83,35 +83,39 @@ impl Widget for Image {
 
     fn update(&mut self, _ctx: &mut UpdateCtx, _event: &Update) {}
 
-    fn layout(&mut self, _ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
+    fn layout(
+        &mut self,
+        _ctx: &mut LayoutCtx,
+        available_space: &BiAxial<f64>,
+        requested_fill: &BiAxial<ContentFill>,
+    ) -> BiAxial<f64> {
         // If either the width or height is constrained calculate a value so that the image fits
         // in the size exactly. If it is unconstrained by both width and height take the size of
         // the image.
-        let image_size = Size::new(self.image_data.width as f64, self.image_data.height as f64);
+        let image_size = BiAxial::new_size(self.image_data.width as f64, self.image_data.height as f64);
         if image_size.is_zero_area() {
-            let size = bc.min();
-            return size;
+            return BiAxial::ZERO.use_fill_mode(requested_fill, available_space);
         }
-        let image_aspect_ratio = image_size.height / image_size.width;
+        let image_aspect_ratio = image_size.vertical / image_size.horizontal;
         match self.object_fit {
-            ObjectFit::Contain => bc.constrain_aspect_ratio(image_aspect_ratio, image_size.width),
-            ObjectFit::Cover => Size::new(bc.max().width, bc.max().width * image_aspect_ratio),
-            ObjectFit::Fill => bc.max(),
+            ObjectFit::Contain => available_space.constrain_aspect_ratio(image_aspect_ratio, image_size.horizontal),
+            ObjectFit::Cover => BiAxial::new_size(available_space.horizontal, available_space.horizontal * image_aspect_ratio),
+            ObjectFit::Fill => *available_space,
             ObjectFit::FitHeight => {
-                Size::new(bc.max().height / image_aspect_ratio, bc.max().height)
+                BiAxial::new_size(available_space.vertical / image_aspect_ratio, available_space.vertical)
             }
-            ObjectFit::FitWidth => Size::new(bc.max().width, bc.max().width * image_aspect_ratio),
+            ObjectFit::FitWidth => BiAxial::new_size(available_space.horizontal, available_space.horizontal * image_aspect_ratio),
             ObjectFit::None => image_size,
             ObjectFit::ScaleDown => {
                 let mut size = image_size;
 
-                if !bc.contains(size) {
-                    size = bc.constrain_aspect_ratio(image_aspect_ratio, size.width);
+                if !available_space.contains(size) {
+                    size = available_space.constrain_aspect_ratio(image_aspect_ratio, size.horizontal);
                 }
 
                 size
             }
-        }
+        }.use_fill_mode(requested_fill, available_space)
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
@@ -177,7 +181,7 @@ mod tests {
             2,
             2,
         );
-        let image_widget = Image::new(image_data);
+        let image_widget = Image::new(image_data).fit_mode(ObjectFit::FitWidth);
 
         let mut harness = TestHarness::create_with_size(image_widget, Size::new(40., 60.));
         assert_render_snapshot!(harness, "tall_paint");
@@ -235,6 +239,7 @@ mod tests {
         assert_render_snapshot!(harness, "layout_fill");
 
         // FitHeight.
+        // TODO: Determine if the old or new behavior is correct.
         let image_widget = Image::new(image_data.clone()).fit_mode(ObjectFit::FitHeight);
         let mut harness = TestHarness::create_with_size(image_widget, harness_size);
         assert_render_snapshot!(harness, "layout_fitheight");

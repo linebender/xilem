@@ -7,7 +7,7 @@ use tracing::{trace_span, Span};
 use vello::kurbo::Point;
 use vello::Scene;
 
-use crate::widget::{WidgetMut, WidgetPod};
+use crate::widget::{BiAxial, ContentFill, WidgetMut, WidgetPod};
 use crate::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
     RegisterCtx, Size, StatusChange, TextEvent, UpdateCtx, Widget, WidgetId,
@@ -49,8 +49,13 @@ impl<W: Widget> Widget for RootWidget<W> {
         ctx.register_child(&mut self.pod);
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
-        let size = ctx.run_layout(&mut self.pod, bc);
+    fn layout(
+        &mut self,
+        ctx: &mut LayoutCtx,
+        available_space: &BiAxial<f64>,
+        requested_fill: &BiAxial<ContentFill>,
+    ) -> BiAxial<f64> {
+        let size = ctx.run_layout(&mut self.pod, available_space, requested_fill);
         ctx.place_child(&mut self.pod, Point::ORIGIN);
         size
     }

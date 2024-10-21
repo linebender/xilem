@@ -6,6 +6,7 @@
 use vello::kurbo::{Insets, Point, Rect, Size, Vec2};
 
 use crate::{CursorIcon, WidgetId};
+use crate::widget::BiAxial;
 
 // TODO - Sort out names of widget state flags in two categories:
 // - request_xxx: means this widget needs the xxx pass to run on it
@@ -42,7 +43,7 @@ pub(crate) struct WidgetState {
     // --- LAYOUT ---
     /// The size of the widget; this is the value returned by the widget's layout
     /// method.
-    pub(crate) size: Size,
+    pub(crate) size: BiAxial<f64>,
     /// The origin of the widget in the parent's coordinate space; together with
     /// `size` these constitute the widget's layout rect.
     pub(crate) origin: Point,
@@ -161,7 +162,7 @@ impl WidgetState {
             id,
             origin: Point::ORIGIN,
             window_origin: Point::ORIGIN,
-            size: Size::ZERO,
+            size: BiAxial::ZERO,
             is_expecting_place_child_call: false,
             paint_insets: Insets::ZERO,
             local_paint_rect: Rect::ZERO,
@@ -204,7 +205,7 @@ impl WidgetState {
     /// Create a dummy root state.
     ///
     /// This is useful for passes that need a parent state for the root widget.
-    pub(crate) fn synthetic(id: WidgetId, size: Size) -> WidgetState {
+    pub(crate) fn synthetic(id: WidgetId, size: BiAxial<f64>) -> WidgetState {
         WidgetState {
             size,
             is_new: false,
@@ -247,7 +248,7 @@ impl WidgetState {
 
     #[inline]
     pub(crate) fn size(&self) -> Size {
-        self.size
+        self.size.to_size()
     }
 
     /// The paint region for this widget.
@@ -261,7 +262,7 @@ impl WidgetState {
     ///
     /// For more information, see [`WidgetPod::layout_rect`](crate::WidgetPod::layout_rect).
     pub fn layout_rect(&self) -> Rect {
-        Rect::from_origin_size(self.origin, self.size)
+        Rect::from_origin_size(self.origin, self.size.to_size())
     }
 
     /// The [`layout_rect`](crate::WidgetPod::layout_rect) in window coordinates.
@@ -269,7 +270,7 @@ impl WidgetState {
     /// This might not map to a visible area of the screen, eg if the widget is scrolled
     /// away.
     pub fn window_layout_rect(&self) -> Rect {
-        Rect::from_origin_size(self.window_origin(), self.size)
+        Rect::from_origin_size(self.window_origin(), self.size.to_size())
     }
 
     /// The clip path of the widget, if any was set.
@@ -283,7 +284,7 @@ impl WidgetState {
     ///
     /// By default, returns the same as [`Self::window_layout_rect`].
     pub(crate) fn get_ime_area(&self) -> Rect {
-        self.ime_area.unwrap_or_else(|| self.size.to_rect()) + self.window_origin.to_vec2()
+        self.ime_area.unwrap_or_else(|| self.size.to_size().to_rect()) + self.window_origin.to_vec2()
     }
 
     pub(crate) fn window_origin(&self) -> Point {

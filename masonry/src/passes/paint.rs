@@ -89,7 +89,7 @@ fn paint_widget(
 
     if debug_paint {
         const BORDER_WIDTH: f64 = 1.0;
-        let rect = size.to_rect().inset(BORDER_WIDTH / -2.0);
+        let rect = size.to_size().to_rect().inset(BORDER_WIDTH / -2.0);
         let color = get_debug_color(id.to_raw());
         complete_scene.stroke(&Stroke::new(BORDER_WIDTH), transform, color, None, &rect);
     }

@@ -31,7 +31,6 @@ pub fn main() {
     let window_size = LogicalSize::new(650.0, 450.0);
     let window_attributes = Window::default_attributes()
         .with_title("Simple image example")
-        .with_min_inner_size(window_size)
         .with_max_inner_size(window_size);
 
     masonry::event_loop_runner::run(

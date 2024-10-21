@@ -15,11 +15,12 @@ use vello::Scene;
 
 use crate::contexts::ComposeCtx;
 use crate::event::{AccessEvent, PointerEvent, StatusChange, TextEvent};
-use crate::widget::WidgetRef;
+use crate::widget::{ContentFill, WidgetRef};
 use crate::{
     AccessCtx, AsAny, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, Point, QueryCtx, RegisterCtx,
     Size, Update, UpdateCtx,
 };
+use crate::widget::layout::BiAxial;
 
 /// A unique identifier for a single [`Widget`].
 ///
@@ -131,9 +132,13 @@ pub trait Widget: AsAny {
     ///
     /// **Container widgets should not add or remove children during layout.**
     /// Doing so is a logic error and may trigger a debug assertion.
-    ///
-    /// The layout strategy is strongly inspired by Flutter.
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size;
+    // TODO: Should the parameters be put into one type? A reason not to is it discourages changing them.
+    fn layout(
+        &mut self,
+        ctx: &mut LayoutCtx,
+        available_space: &BiAxial<f64>,
+        requested_fill: &BiAxial<ContentFill>,
+    ) -> BiAxial<f64>;
 
     fn compose(&mut self, ctx: &mut ComposeCtx) {}
 
@@ -410,8 +415,13 @@ impl Widget for Box<dyn Widget> {
         self.deref_mut().update(ctx, event);
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
-        self.deref_mut().layout(ctx, bc)
+    fn layout(
+        &mut self,
+        ctx: &mut LayoutCtx,
+        size: &BiAxial<f64>,
+        requested_fill: &BiAxial<ContentFill>,
+    ) -> BiAxial<f64> {
+        self.deref_mut().layout(ctx, size, requested_fill)
     }
 
     fn compose(&mut self, ctx: &mut ComposeCtx) {

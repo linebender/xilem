@@ -15,7 +15,7 @@ use crate::passes::layout::run_layout_on;
 use crate::render_root::{MutateCallback, RenderRootSignal, RenderRootState};
 use crate::text::TextBrush;
 use crate::tree_arena::{ArenaMutChildren, ArenaRefChildren};
-use crate::widget::{WidgetMut, WidgetRef, WidgetState};
+use crate::widget::{BiAxial, ContentFill, WidgetMut, WidgetRef, WidgetState};
 use crate::{
     AllowRawMut, BoxConstraints, CursorIcon, Insets, Point, Rect, Size, Widget, WidgetId, WidgetPod,
 };
@@ -842,8 +842,13 @@ impl LayoutCtx<'_> {
     /// their [`layout`] method.
     ///
     /// [`layout`]: Widget::layout
-    pub fn run_layout<W: Widget>(&mut self, child: &mut WidgetPod<W>, bc: &BoxConstraints) -> Size {
-        run_layout_on(self, child, bc)
+    pub fn run_layout<W: Widget>(
+        &mut self,
+        child: &mut WidgetPod<W>,
+        size: &BiAxial<f64>,
+        requested_fill: &BiAxial<ContentFill>,
+    ) -> BiAxial<f64> {
+        run_layout_on(self, child, size, requested_fill)
     }
 
     /// Set explicit paint [`Insets`] for this widget.

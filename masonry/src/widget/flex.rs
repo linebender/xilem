@@ -127,7 +127,7 @@ impl Flex {
             cross_alignment: CrossAxisAlignment::Center,
             main_alignment: MainAxisAlignment::Start,
             fill_major_axis: false,
-            old_bc: BoxConstraints::tight(Size::ZERO),
+            old_bc: BoxConstraints::new(Size::ZERO),
             gap: None,
         }
     }
@@ -695,11 +695,9 @@ impl Axis {
     ) -> BoxConstraints {
         match self {
             Axis::Horizontal => BoxConstraints::new(
-                Size::new(min_major, bc.min().height),
                 Size::new(major, bc.max().height),
             ),
             Axis::Vertical => BoxConstraints::new(
-                Size::new(bc.min().width, min_major),
                 Size::new(bc.max().width, major),
             ),
         }
@@ -911,7 +909,8 @@ impl Widget for Flex {
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
         // we loosen our constraints when passing to children.
-        let loosened_bc = bc.loosen();
+        // TODO: This needs to change.
+        let overall_bc = bc.clone();
 
         // minor-axis values for all children
         let mut minor = self.direction.minor(bc.min());
@@ -944,7 +943,7 @@ impl Widget for Flex {
                         any_use_baseline |= alignment == CrossAxisAlignment::Baseline;
 
                         let old_size = ctx.widget_state.layout_rect().size();
-                        let child_size = ctx.run_layout(widget, &loosened_bc);
+                        let child_size = ctx.run_layout(widget, &overall_bc);
 
                         if child_size.width.is_infinite() {
                             tracing::warn!("A non-Flex child has an infinite width.");
@@ -1009,7 +1008,7 @@ impl Widget for Flex {
                         remainder = desired_major - actual_major;
 
                         let old_size = ctx.widget_state.layout_rect().size();
-                        let child_bc = self.direction.constraints(&loosened_bc, 0.0, actual_major);
+                        let child_bc = self.direction.constraints(&overall_bc, 0.0, actual_major);
                         let child_size = ctx.run_layout(widget, &child_bc);
 
                         if old_size != child_size {

@@ -12,8 +12,9 @@ use vello::kurbo::{Point, Rect, Size};
 
 use crate::passes::recurse_on_children;
 use crate::render_root::{RenderRoot, RenderRootSignal, WindowSizePolicy};
-use crate::widget::WidgetState;
+use crate::widget::{BiAxial, ContentFill, WidgetState};
 use crate::{BoxConstraints, LayoutCtx, Widget, WidgetPod};
+use crate::widget::ContentFill::Exact;
 
 // --- MARK: RUN LAYOUT ---
 /// Run [`Widget::layout`] method on the widget contained in `pod`.
@@ -21,8 +22,9 @@ use crate::{BoxConstraints, LayoutCtx, Widget, WidgetPod};
 pub(crate) fn run_layout_on<W: Widget>(
     parent_ctx: &mut LayoutCtx<'_>,
     pod: &mut WidgetPod<W>,
-    bc: &BoxConstraints,
-) -> Size {
+    size: &BiAxial<f64>,
+    requested_fill: &BiAxial<ContentFill>,
+) -> BiAxial<f64> {
     let id = pod.id().to_raw();
     let mut widget = parent_ctx.widget_children.get_child_mut(id).unwrap();
     let mut state = parent_ctx.widget_state_children.get_child_mut(id).unwrap();
@@ -56,8 +58,8 @@ pub(crate) fn run_layout_on<W: Widget>(
             widget.item.short_type_name(),
             pod.id(),
         );
-        state.item.size = Size::ZERO;
-        return Size::ZERO;
+        state.item.size = BiAxial::ZERO;
+        return BiAxial::ZERO;
     }
 
     // TODO - Not everything that has been re-laid out needs to be repainted.
@@ -68,8 +70,8 @@ pub(crate) fn run_layout_on<W: Widget>(
     state.item.request_compose = true;
     state.item.request_accessibility = true;
 
-    bc.debug_check(widget.item.short_type_name());
-    trace!("Computing layout with constraints {:?}", bc);
+    size.validate_sizes(widget.item.short_type_name());
+    trace!("Computing layout with constraints {:?}", size);
 
     state.item.local_paint_rect = Rect::ZERO;
 
@@ -99,7 +101,7 @@ pub(crate) fn run_layout_on<W: Widget>(
         // TODO - If constraints are the same and request_layout isn't set,
         // skip calling layout
         inner_ctx.widget_state.request_layout = false;
-        widget.item.layout(&mut inner_ctx, bc)
+        widget.item.layout(&mut inner_ctx, size, requested_fill)
     };
     if state.item.request_layout {
         debug_panic!(
@@ -121,7 +123,7 @@ pub(crate) fn run_layout_on<W: Widget>(
     state.item.local_paint_rect = state
         .item
         .local_paint_rect
-        .union(new_size.to_rect() + state.item.paint_insets);
+        .union(new_size.to_size().to_rect() + state.item.paint_insets);
 
     #[cfg(debug_assertions)]
     {
@@ -178,7 +180,7 @@ pub(crate) fn run_layout_on<W: Widget>(
             );
         }
 
-        if !new_size.width.is_finite() || !new_size.height.is_finite() {
+        if !new_size.horizontal.is_finite() || !new_size.vertical.is_finite() {
             debug_panic!(
                 "Error in '{}' {}: invalid size {}",
                 name,
@@ -212,13 +214,17 @@ pub(crate) fn run_layout_pass(root: &mut RenderRoot) {
 
     let _span = info_span!("layout").entered();
 
-    let window_size = root.get_kurbo_size();
-    let bc = match root.size_policy {
-        WindowSizePolicy::User => BoxConstraints::tight(window_size),
-        WindowSizePolicy::Content => BoxConstraints::UNBOUNDED,
+    let window_size = root.get_planar_size();
+    let input_size = match root.size_policy {
+        WindowSizePolicy::User => window_size, // Note: this was "tight"
+        WindowSizePolicy::Content => BiAxial::UNBOUNDED,
+    };
+    let content_fill = BiAxial {
+        horizontal: Exact,
+        vertical: Exact,
     };
 
-    let mut dummy_state = WidgetState::synthetic(root.root.id(), root.get_kurbo_size());
+    let mut dummy_state = WidgetState::synthetic(root.root.id(), root.get_planar_size());
     let root_state_token = root.widget_arena.widget_states.root_token_mut();
     let root_widget_token = root.widget_arena.widgets.root_token_mut();
     let mut ctx = LayoutCtx {
@@ -228,11 +234,11 @@ pub(crate) fn run_layout_pass(root: &mut RenderRoot) {
         widget_children: root_widget_token,
     };
 
-    let size = run_layout_on(&mut ctx, &mut root.root, &bc);
+    let size = run_layout_on(&mut ctx, &mut root.root, &input_size, &content_fill);
     ctx.place_child(&mut root.root, Point::ORIGIN);
 
     if let WindowSizePolicy::Content = root.size_policy {
-        let new_size = LogicalSize::new(size.width, size.height).to_physical(root.scale_factor);
+        let new_size = LogicalSize::new(size.horizontal, size.vertical).to_physical(root.scale_factor);
         if root.size != new_size {
             root.size = new_size;
             root.state.emit_signal(RenderRootSignal::SetSize(new_size));
