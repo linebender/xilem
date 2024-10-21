@@ -11,8 +11,8 @@ use tracing::{info_span, trace};
 use vello::kurbo::{Point, Rect, Size};
 
 use crate::passes::recurse_on_children;
-use crate::render_root::{RenderRoot, RenderRootSignal, WindowSizePolicy};
 use crate::widget::WidgetState;
+use crate::window_root::{WindowRoot, WindowRootSignal, WindowSizePolicy};
 use crate::{BoxConstraints, LayoutCtx, Widget, WidgetPod};
 
 // --- MARK: RUN LAYOUT ---
@@ -210,7 +210,7 @@ pub(crate) fn run_layout_on<W: Widget>(
 }
 
 // --- MARK: ROOT ---
-pub(crate) fn run_layout_pass(root: &mut RenderRoot) {
+pub(crate) fn run_layout_pass(root: &mut WindowRoot) {
     if !root.root_state().needs_layout {
         return;
     }
@@ -242,7 +242,7 @@ pub(crate) fn run_layout_pass(root: &mut RenderRoot) {
         if root.size != new_size {
             root.size = new_size;
             root.global_state
-                .emit_signal(RenderRootSignal::SetSize(new_size));
+                .emit_signal(WindowRootSignal::SetSize(new_size));
         }
     }
 }

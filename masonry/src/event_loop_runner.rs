@@ -23,7 +23,7 @@ use winit::window::{Window, WindowAttributes, WindowId};
 use crate::app_driver::{AppDriver, DriverCtx};
 use crate::dpi::LogicalPosition;
 use crate::event::{PointerButton, PointerState, WindowEvent};
-use crate::render_root::{self, RenderRoot, WindowSizePolicy};
+use crate::window_root::{self, WindowRoot, WindowSizePolicy};
 use crate::{PointerEvent, TextEvent, Widget, WidgetId};
 
 #[derive(Debug)]
@@ -73,7 +73,7 @@ pub enum WindowState<'a> {
 /// calling [`handle_window_event`](MasonryState::handle_window_event) in [`window_event`](ApplicationHandler::window_event)).
 pub struct MasonryState<'a> {
     render_cx: RenderContext,
-    render_root: RenderRoot,
+    window_root: WindowRoot,
     pointer_state: PointerState,
     renderer: Option<Renderer>,
     // TODO: Winit doesn't seem to let us create these proxies from within the loop
@@ -230,9 +230,9 @@ impl MasonryState<'_> {
 
         MasonryState {
             render_cx,
-            render_root: RenderRoot::new(
+            window_root: WindowRoot::new(
                 root_widget,
-                render_root::RenderRootOptions {
+                window_root::WindowRootOptions {
                     use_system_fonts: true,
                     size_policy: WindowSizePolicy::User,
                     scale_factor,
@@ -284,7 +284,7 @@ impl MasonryState<'_> {
                     surface,
                     accesskit_adapter: adapter,
                 };
-                self.render_root
+                self.window_root
                     .handle_window_event(WindowEvent::Rescale(scale_factor));
             }
             WindowState::Suspended {
@@ -454,13 +454,13 @@ impl MasonryState<'_> {
 
         match event {
             WinitWindowEvent::ScaleFactorChanged { scale_factor, .. } => {
-                self.render_root
+                self.window_root
                     .handle_window_event(WindowEvent::Rescale(scale_factor));
             }
             WinitWindowEvent::RedrawRequested => {
                 let _span = info_span!("redraw");
-                self.render_root.handle_window_event(WindowEvent::AnimFrame);
-                let (scene, tree_update) = self.render_root.redraw();
+                self.window_root.handle_window_event(WindowEvent::AnimFrame);
+                let (scene, tree_update) = self.window_root.redraw();
                 self.render(scene);
                 let WindowState::Rendering {
                     accesskit_adapter, ..
@@ -473,12 +473,12 @@ impl MasonryState<'_> {
             }
             WinitWindowEvent::CloseRequested => event_loop.exit(),
             WinitWindowEvent::Resized(size) => {
-                self.render_root
+                self.window_root
                     .handle_window_event(WindowEvent::Resize(size));
             }
             WinitWindowEvent::ModifiersChanged(modifiers) => {
                 self.pointer_state.mods = modifiers;
-                self.render_root
+                self.window_root
                     .handle_text_event(TextEvent::ModifierChange(modifiers.state()));
             }
             WinitWindowEvent::KeyboardInput {
@@ -486,42 +486,42 @@ impl MasonryState<'_> {
                 event,
                 is_synthetic: false, // TODO: Introduce an escape hatch for synthetic keys
             } => {
-                self.render_root.handle_text_event(TextEvent::KeyboardKey(
+                self.window_root.handle_text_event(TextEvent::KeyboardKey(
                     event,
                     self.pointer_state.mods.state(),
                 ));
             }
             WinitWindowEvent::Ime(ime) => {
-                self.render_root.handle_text_event(TextEvent::Ime(ime));
+                self.window_root.handle_text_event(TextEvent::Ime(ime));
             }
             WinitWindowEvent::Focused(new_focus) => {
-                self.render_root
+                self.window_root
                     .handle_text_event(TextEvent::FocusChange(new_focus));
             }
             WinitWindowEvent::CursorEntered { .. } => {
-                self.render_root
+                self.window_root
                     .handle_pointer_event(PointerEvent::PointerEnter(self.pointer_state.clone()));
             }
             WinitWindowEvent::CursorMoved { position, .. } => {
                 self.pointer_state.physical_position = position;
                 self.pointer_state.position = position.to_logical(window.scale_factor());
-                self.render_root
+                self.window_root
                     .handle_pointer_event(PointerEvent::PointerMove(self.pointer_state.clone()));
             }
             WinitWindowEvent::CursorLeft { .. } => {
-                self.render_root
+                self.window_root
                     .handle_pointer_event(PointerEvent::PointerLeave(self.pointer_state.clone()));
             }
             WinitWindowEvent::MouseInput { state, button, .. } => match state {
                 winit::event::ElementState::Pressed => {
-                    self.render_root
+                    self.window_root
                         .handle_pointer_event(PointerEvent::PointerDown(
                             button.into(),
                             self.pointer_state.clone(),
                         ));
                 }
                 winit::event::ElementState::Released => {
-                    self.render_root
+                    self.window_root
                         .handle_pointer_event(PointerEvent::PointerUp(
                             button.into(),
                             self.pointer_state.clone(),
@@ -537,7 +537,7 @@ impl MasonryState<'_> {
                         delta.to_logical(window.scale_factor())
                     }
                 };
-                self.render_root
+                self.window_root
                     .handle_pointer_event(PointerEvent::MouseWheel(
                         delta,
                         self.pointer_state.clone(),
@@ -556,31 +556,31 @@ impl MasonryState<'_> {
                 self.pointer_state.force = force;
                 match phase {
                     winit::event::TouchPhase::Started => {
-                        self.render_root
+                        self.window_root
                             .handle_pointer_event(PointerEvent::PointerMove(
                                 self.pointer_state.clone(),
                             ));
-                        self.render_root
+                        self.window_root
                             .handle_pointer_event(PointerEvent::PointerDown(
                                 PointerButton::Primary,
                                 self.pointer_state.clone(),
                             ));
                     }
                     winit::event::TouchPhase::Ended => {
-                        self.render_root
+                        self.window_root
                             .handle_pointer_event(PointerEvent::PointerUp(
                                 PointerButton::Primary,
                                 self.pointer_state.clone(),
                             ));
                     }
                     winit::event::TouchPhase::Moved => {
-                        self.render_root
+                        self.window_root
                             .handle_pointer_event(PointerEvent::PointerMove(
                                 self.pointer_state.clone(),
                             ));
                     }
                     winit::event::TouchPhase::Cancelled => {
-                        self.render_root
+                        self.window_root
                             .handle_pointer_event(PointerEvent::PointerLeave(
                                 self.pointer_state.clone(),
                             ));
@@ -588,7 +588,7 @@ impl MasonryState<'_> {
                 }
             }
             WinitWindowEvent::PinchGesture { delta, .. } => {
-                self.render_root
+                self.window_root
                     .handle_pointer_event(PointerEvent::Pinch(delta, self.pointer_state.clone()));
             }
             _ => (),
@@ -620,20 +620,20 @@ impl MasonryState<'_> {
                     // Note that this event can be called at any time, even multiple times if
                     // the user restarts their screen reader.
                     accesskit_winit::WindowEvent::InitialTreeRequested => {
-                        self.render_root
+                        self.window_root
                             .handle_window_event(WindowEvent::RebuildAccessTree);
                     }
                     accesskit_winit::WindowEvent::ActionRequested(action_request) => {
-                        self.render_root.handle_access_event(action_request);
+                        self.window_root.handle_access_event(action_request);
                     }
                     accesskit_winit::WindowEvent::AccessibilityDeactivated => {}
                 }
             }
             MasonryUserEvent::Action(action, widget) => self
-                .render_root
+                .window_root
                 .global_state
                 .signal_queue
-                .push_back(render_root::RenderRootSignal::Action(action, widget)),
+                .push_back(window_root::WindowRootSignal::Action(action, widget)),
         }
 
         self.handle_signals(event_loop, app_driver);
@@ -656,10 +656,10 @@ impl MasonryState<'_> {
         };
 
         let mut needs_redraw = false;
-        while let Some(signal) = self.render_root.pop_signal() {
+        while let Some(signal) = self.window_root.pop_signal() {
             match signal {
-                render_root::RenderRootSignal::Action(action, widget_id) => {
-                    self.render_root.edit_root_widget(|root| {
+                window_root::WindowRootSignal::Action(action, widget_id) => {
+                    self.window_root.edit_root_widget(|root| {
                         debug!("Action {:?} on widget {:?}", action, widget_id);
                         let mut driver_ctx = DriverCtx {
                             main_root_widget: root,
@@ -667,33 +667,33 @@ impl MasonryState<'_> {
                         app_driver.on_action(&mut driver_ctx, widget_id, action);
                     });
                 }
-                render_root::RenderRootSignal::StartIme => {
+                window_root::WindowRootSignal::StartIme => {
                     window.set_ime_allowed(true);
                 }
-                render_root::RenderRootSignal::EndIme => {
+                window_root::WindowRootSignal::EndIme => {
                     window.set_ime_allowed(false);
                 }
-                render_root::RenderRootSignal::ImeMoved(position, size) => {
+                window_root::WindowRootSignal::ImeMoved(position, size) => {
                     window.set_ime_cursor_area(position, size);
                 }
-                render_root::RenderRootSignal::RequestRedraw => {
+                window_root::WindowRootSignal::RequestRedraw => {
                     needs_redraw = true;
                 }
-                render_root::RenderRootSignal::RequestAnimFrame => {
+                window_root::WindowRootSignal::RequestAnimFrame => {
                     // TODO
                     needs_redraw = true;
                 }
-                render_root::RenderRootSignal::TakeFocus => {
+                window_root::WindowRootSignal::TakeFocus => {
                     window.focus_window();
                 }
-                render_root::RenderRootSignal::SetCursor(cursor) => {
+                window_root::WindowRootSignal::SetCursor(cursor) => {
                     window.set_cursor(cursor);
                 }
-                render_root::RenderRootSignal::SetSize(size) => {
+                window_root::WindowRootSignal::SetSize(size) => {
                     // TODO - Handle return value?
                     let _ = window.request_inner_size(size);
                 }
-                render_root::RenderRootSignal::SetTitle(title) => {
+                window_root::WindowRootSignal::SetTitle(title) => {
                     window.set_title(&title);
                 }
             }
@@ -710,8 +710,8 @@ impl MasonryState<'_> {
         &self.window
     }
 
-    pub fn get_root(&mut self) -> &mut RenderRoot {
-        &mut self.render_root
+    pub fn get_root(&mut self) -> &mut WindowRoot {
+        &mut self.window_root
     }
 
     pub fn set_present_mode(&mut self, present_mode: wgpu::PresentMode) {
