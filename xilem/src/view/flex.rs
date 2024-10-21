@@ -251,10 +251,10 @@ impl ElementSplice<FlexElement> for FlexSplice<'_> {
                 );
             }
             FlexElement::FixedSpacer(len) => {
-                widget::Flex::insert_spacer(&mut self.element, self.idx, len)
+                widget::Flex::insert_spacer(&mut self.element, self.idx, len);
             }
             FlexElement::FlexSpacer(len) => {
-                widget::Flex::insert_flex_spacer(&mut self.element, self.idx, len)
+                widget::Flex::insert_flex_spacer(&mut self.element, self.idx, len);
             }
         };
         self.idx += 1;
@@ -273,10 +273,10 @@ impl ElementSplice<FlexElement> for FlexSplice<'_> {
                     );
                 }
                 FlexElement::FixedSpacer(len) => {
-                    widget::Flex::insert_spacer(&mut self.element, self.idx, len)
+                    widget::Flex::insert_spacer(&mut self.element, self.idx, len);
                 }
                 FlexElement::FlexSpacer(len) => {
-                    widget::Flex::insert_flex_spacer(&mut self.element, self.idx, len)
+                    widget::Flex::insert_flex_spacer(&mut self.element, self.idx, len);
                 }
             };
             self.idx += 1;
@@ -539,10 +539,10 @@ impl<State, Action> View<State, Action, ViewCtx> for FlexSpacer {
         if self != prev {
             match self {
                 FlexSpacer::Fixed(len) => {
-                    widget::Flex::update_spacer_fixed(&mut element.parent, element.idx, *len)
+                    widget::Flex::update_spacer_fixed(&mut element.parent, element.idx, *len);
                 }
                 FlexSpacer::Flex(flex) => {
-                    widget::Flex::update_spacer_flex(&mut element.parent, element.idx, *flex)
+                    widget::Flex::update_spacer_flex(&mut element.parent, element.idx, *flex);
                 }
             };
         }
@@ -708,10 +708,10 @@ where
                 let (spacer_element, ()) = View::<(), (), ViewCtx>::build(new_spacer, ctx);
                 match spacer_element {
                     FlexElement::FixedSpacer(len) => {
-                        widget::Flex::insert_spacer(&mut element.parent, element.idx, len)
+                        widget::Flex::insert_spacer(&mut element.parent, element.idx, len);
                     }
                     FlexElement::FlexSpacer(len) => {
-                        widget::Flex::insert_flex_spacer(&mut element.parent, element.idx, len)
+                        widget::Flex::insert_flex_spacer(&mut element.parent, element.idx, len);
                     }
                     FlexElement::Child(_, _) => unreachable!(),
                 };

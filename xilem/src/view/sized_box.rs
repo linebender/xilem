@@ -157,7 +157,7 @@ where
         if self.background != prev.background {
             match &self.background {
                 Some(background) => {
-                    widget::SizedBox::set_background(&mut element, background.clone())
+                    widget::SizedBox::set_background(&mut element, background.clone());
                 }
                 None => widget::SizedBox::clear_background(&mut element),
             }
@@ -165,7 +165,7 @@ where
         if self.border != prev.border {
             match &self.border {
                 Some(border) => {
-                    widget::SizedBox::set_border(&mut element, border.color, border.width)
+                    widget::SizedBox::set_border(&mut element, border.color, border.width);
                 }
                 None => widget::SizedBox::clear_border(&mut element),
             }
