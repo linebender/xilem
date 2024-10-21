@@ -12,7 +12,7 @@ use masonry::app_driver::{AppDriver, DriverCtx};
 use masonry::dpi::LogicalSize;
 use masonry::widget::{Align, BiAxial, ContentFill, CrossAxisAlignment, Flex, Label, RootWidget, SizedBox};
 use masonry::{
-    AccessCtx, AccessEvent, Action, BoxConstraints, Color, EventCtx, LayoutCtx, PaintCtx, Point,
+    AccessCtx, AccessEvent, Action, Color, EventCtx, LayoutCtx, PaintCtx, Point,
     PointerEvent, RegisterCtx, Size, StatusChange, TextEvent, UpdateCtx, Widget, WidgetId,
     WidgetPod,
 };

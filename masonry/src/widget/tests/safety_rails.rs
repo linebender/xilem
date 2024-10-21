@@ -4,7 +4,7 @@
 use smallvec::smallvec;
 
 use crate::testing::{ModularWidget, TestHarness, TestWidgetExt};
-use crate::widget::Flex;
+use crate::widget::{BiAxial, Flex};
 use crate::{Point, PointerButton, Size, Update, Widget, WidgetId, WidgetPod};
 
 fn make_parent_widget<W: Widget>(child: W) -> ModularWidget<WidgetPod<W>> {
@@ -13,8 +13,8 @@ fn make_parent_widget<W: Widget>(child: W) -> ModularWidget<WidgetPod<W>> {
         .register_children_fn(move |child, ctx| {
             ctx.register_child(child);
         })
-        .layout_fn(move |child, ctx, bc| {
-            let size = ctx.run_layout(child, bc);
+        .layout_fn(move |child, ctx, available_space, requested_fill| {
+            let size = ctx.run_layout(child, available_space, requested_fill);
             ctx.place_child(child, Point::ZERO);
             size
         })
@@ -136,9 +136,9 @@ fn check_pointer_capture_text_event() {
     ignore = "This test doesn't work without debug assertions (i.e. in release mode). See https://github.com/linebender/xilem/issues/477"
 )]
 fn check_forget_to_recurse_layout() {
-    let widget = make_parent_widget(Flex::row()).layout_fn(|_child, _ctx, _| {
+    let widget = make_parent_widget(Flex::row()).layout_fn(|_child, _ctx, _, _| {
         // We forget to call ctx.run_layout();
-        Size::ZERO
+        BiAxial::ZERO
     });
 
     let _harness = TestHarness::create(widget);
@@ -151,9 +151,9 @@ fn check_forget_to_recurse_layout() {
     ignore = "This test doesn't work without debug assertions (i.e. in release mode). See https://github.com/linebender/xilem/issues/477"
 )]
 fn check_forget_to_call_place_child() {
-    let widget = make_parent_widget(Flex::row()).layout_fn(|child, ctx, bc| {
+    let widget = make_parent_widget(Flex::row()).layout_fn(|child, ctx, space_available, requested_fill| {
         // We call ctx.run_layout(), but forget place_child
-        ctx.run_layout(child, bc)
+        ctx.run_layout(child, space_available, requested_fill)
     });
 
     let _harness = TestHarness::create(widget);
@@ -332,8 +332,8 @@ fn check_layout_stashed() {
                 ctx.set_stashed(child, true);
             }
         })
-        .layout_fn(|child, ctx, bc| {
-            let size = ctx.run_layout(child, bc);
+        .layout_fn(|child, ctx, space, fill| {
+            let size = ctx.run_layout(child, space, fill);
             ctx.place_child(child, Point::ZERO);
             size
         });

@@ -17,7 +17,7 @@ use crate::contexts::AccessCtx;
 use crate::paint_scene_helpers::UnitPoint;
 use crate::widget::{BiAxial, ContentFill, WidgetPod};
 use crate::{
-    AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent, Rect, RegisterCtx,
+    AccessEvent, EventCtx, LayoutCtx, PaintCtx, PointerEvent, Rect, RegisterCtx,
     Size, StatusChange, TextEvent, UpdateCtx, Widget, WidgetId,
 };
 

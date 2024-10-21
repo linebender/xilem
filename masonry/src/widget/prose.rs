@@ -18,7 +18,7 @@ use crate::widget::{BiAxial, ContentFill, LineBreaking, WidgetMut};
 use crate::{
     text::{TextBrush, TextWithSelection},
     widget::label::LABEL_X_PADDING,
-    AccessCtx, AccessEvent, ArcStr, BoxConstraints, CursorIcon, EventCtx, LayoutCtx, PaintCtx,
+    AccessCtx, AccessEvent, ArcStr, CursorIcon, EventCtx, LayoutCtx, PaintCtx,
     PointerEvent, RegisterCtx, StatusChange, TextEvent, Update, UpdateCtx, Widget, WidgetId,
 };
 

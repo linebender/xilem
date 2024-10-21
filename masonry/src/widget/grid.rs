@@ -10,7 +10,7 @@ use vello::Scene;
 use crate::theme::get_debug_color;
 use crate::widget::{BiAxial, ContentFill, WidgetMut};
 use crate::{
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, Point, PointerEvent,
+    AccessCtx, AccessEvent, EventCtx, LayoutCtx, PaintCtx, Point, PointerEvent,
     Size, StatusChange, TextEvent, UpdateCtx, Widget, WidgetId, WidgetPod,
 };
 use crate::widget::ContentFill::Exact;

@@ -16,7 +16,7 @@ use vello::Scene;
 use crate::text::{TextBrush, TextLayout};
 use crate::widget::{BiAxial, ContentFill, WidgetMut};
 use crate::{
-    AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
+    AccessCtx, AccessEvent, ArcStr, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
     RegisterCtx, StatusChange, TextEvent, Update, UpdateCtx, Widget, WidgetId,
 };
 

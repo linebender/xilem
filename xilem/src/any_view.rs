@@ -4,7 +4,7 @@
 use accesskit::{NodeBuilder, Role};
 use masonry::widget::{BiAxial, ContentFill, WidgetMut};
 use masonry::{
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, Point, PointerEvent,
+    AccessCtx, AccessEvent, EventCtx, LayoutCtx, PaintCtx, Point, PointerEvent,
     RegisterCtx, Size, StatusChange, TextEvent, UpdateCtx, Widget, WidgetId, WidgetPod,
 };
 use smallvec::{smallvec, SmallVec};

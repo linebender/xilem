@@ -12,7 +12,7 @@ use vello::Scene;
 use crate::paint_scene_helpers::{fill_color, stroke};
 use crate::widget::{BiAxial, ContentFill, Axis, WidgetMut};
 use crate::{
-    theme, AccessCtx, AccessEvent, AllowRawMut, BoxConstraints, EventCtx, LayoutCtx, PaintCtx,
+    theme, AccessCtx, AccessEvent, AllowRawMut, EventCtx, LayoutCtx, PaintCtx,
     Point, PointerEvent, RegisterCtx, Size, StatusChange, TextEvent, Update, UpdateCtx, Widget,
     WidgetId,
 };

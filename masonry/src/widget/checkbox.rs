@@ -14,7 +14,7 @@ use crate::paint_scene_helpers::{fill_lin_gradient, stroke, UnitPoint};
 use crate::widget::{BiAxial, ContentFill, Label, WidgetMut};
 
 use crate::{
-    theme, AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, LayoutCtx, PaintCtx,
+    theme, AccessCtx, AccessEvent, ArcStr, EventCtx, LayoutCtx, PaintCtx,
     PointerEvent, RegisterCtx, StatusChange, TextEvent, UpdateCtx, Widget, WidgetId, WidgetPod,
 };
 

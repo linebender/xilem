@@ -18,7 +18,7 @@ use winit::event::Ime;
 use crate::text::{TextBrush, TextEditor, TextWithSelection};
 use crate::widget::{BiAxial, ContentFill, LineBreaking, WidgetMut};
 use crate::{
-    AccessCtx, AccessEvent, BoxConstraints, CursorIcon, EventCtx, LayoutCtx, PaintCtx,
+    AccessCtx, AccessEvent, CursorIcon, EventCtx, LayoutCtx, PaintCtx,
     PointerEvent, RegisterCtx, StatusChange, TextEvent, Update, UpdateCtx, Widget, WidgetId,
 };
 use crate::widget::label::LABEL_X_PADDING;

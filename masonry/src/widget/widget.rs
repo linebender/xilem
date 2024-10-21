@@ -17,7 +17,7 @@ use crate::contexts::ComposeCtx;
 use crate::event::{AccessEvent, PointerEvent, StatusChange, TextEvent};
 use crate::widget::{ContentFill, WidgetRef};
 use crate::{
-    AccessCtx, AsAny, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, Point, QueryCtx, RegisterCtx,
+    AccessCtx, AsAny, EventCtx, LayoutCtx, PaintCtx, Point, QueryCtx, RegisterCtx,
     Size, Update, UpdateCtx,
 };
 use crate::widget::layout::BiAxial;

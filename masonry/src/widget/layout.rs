@@ -1,7 +1,7 @@
 use core::fmt;
 use std::fmt::{Display, Formatter};
 use vello::kurbo::common::FloatExt;
-use crate::{BoxConstraints, kurbo, Point, Rect, Size, Vec2};
+use crate::{kurbo, Point, Rect, Size, Vec2};
 
 /// An axis in visual space.
 ///

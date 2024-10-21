@@ -34,7 +34,7 @@ pub type AnimFrameFn<S> = dyn FnMut(&mut S, &mut UpdateCtx, u64);
 pub type RegisterChildrenFn<S> = dyn FnMut(&mut S, &mut RegisterCtx);
 pub type StatusChangeFn<S> = dyn FnMut(&mut S, &mut UpdateCtx, &StatusChange);
 pub type UpdateFn<S> = dyn FnMut(&mut S, &mut UpdateCtx, &Update);
-pub type LayoutFn<S> = dyn FnMut(&mut S, &mut LayoutCtx, &BiAxial<f64>) -> BiAxial<f64>;
+pub type LayoutFn<S> = dyn FnMut(&mut S, &mut LayoutCtx, &BiAxial<f64>, &BiAxial<ContentFill>) -> BiAxial<f64>;
 pub type ComposeFn<S> = dyn FnMut(&mut S, &mut ComposeCtx);
 pub type PaintFn<S> = dyn FnMut(&mut S, &mut PaintCtx, &mut Scene);
 pub type RoleFn<S> = dyn Fn(&S) -> Role;
@@ -223,7 +223,7 @@ impl<S> ModularWidget<S> {
 
     pub fn layout_fn(
         mut self,
-        f: impl FnMut(&mut S, &mut LayoutCtx, &BiAxial<f64>) -> BiAxial<f64> + 'static,
+        f: impl FnMut(&mut S, &mut LayoutCtx, &BiAxial<f64>, &BiAxial<ContentFill>) -> BiAxial<f64> + 'static,
     ) -> Self {
         self.layout = Some(Box::new(f));
         self
@@ -318,7 +318,7 @@ impl<S: 'static> Widget for ModularWidget<S> {
         } = self;
         layout
             .as_mut()
-            .map(|f| f(state, ctx, size))
+            .map(|f| f(state, ctx, size, requested_fill))
             .unwrap_or_else(|| BiAxial::new_size(100., 100.))
     }
 

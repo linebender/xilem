@@ -13,7 +13,7 @@ use vello::Scene;
 use crate::paint_scene_helpers::stroke;
 use crate::widget::{ContentFill, WidgetMut, WidgetPod};
 use crate::{
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, Point, PointerEvent,
+    AccessCtx, AccessEvent, EventCtx, LayoutCtx, PaintCtx, Point, PointerEvent,
     RegisterCtx, Size, StatusChange, TextEvent, UpdateCtx, Widget, WidgetId,
 };
 use crate::widget::layout::BiAxial;
@@ -406,7 +406,7 @@ impl Widget for SizedBox {
 // --- Tests ---
 
 // --- MARK: TESTS ---
-/*#[cfg(test)]
+#[cfg(test)]
 mod tests {
     use insta::assert_debug_snapshot;
     use vello::peniko::Gradient;
@@ -417,20 +417,11 @@ mod tests {
     use crate::widget::Label;
 
     #[test]
-    fn expand() {
-        let expand = SizedBox::new(Label::new("hello!")).expand();
-        let bc = BoxConstraints::tight(Size::new(400., 400.)).loosen();
-        let child_bc = expand.child_constraints(&bc);
-        assert_eq!(child_bc.min(), Size::new(400., 400.,));
-    }
-
-    #[test]
     fn no_width() {
         let expand = SizedBox::new(Label::new("hello!")).height(200.);
-        let bc = BoxConstraints::tight(Size::new(400., 400.)).loosen();
-        let child_bc = expand.child_constraints(&bc);
-        assert_eq!(child_bc.min(), Size::new(0., 200.,));
-        assert_eq!(child_bc.max(), Size::new(400., 200.,));
+        let bc = BiAxial::new_size(400., 400.);
+        let child_size = expand.child_constraints(&bc);
+        assert_eq!(child_size, BiAxial::new_size(400., 200.,));
     }
 
     #[test]
@@ -511,4 +502,3 @@ mod tests {
 
     // TODO - add screenshot tests for different brush types
 }
-*/

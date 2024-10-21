@@ -13,7 +13,7 @@ use crate::theme::get_debug_color;
 use crate::widget::{BiAxial, ContentFill, WidgetMut};
 
 use crate::{
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, Point, PointerEvent,
+    AccessCtx, AccessEvent, EventCtx, LayoutCtx, PaintCtx, Point, PointerEvent,
     Rect, Size, StatusChange, TextEvent, UpdateCtx, Widget, WidgetId, WidgetPod,
 };
 use crate::widget::ContentFill::Exact;
@@ -850,8 +850,8 @@ impl Widget for Flex {
         for child in &mut self.children {
             match child {
                 Child::Fixed { widget, alignment } => {
-                    // The BoxConstraints of fixed-children only depends on the BoxConstraints of the
-                    // Flex widget.
+                    // The Space available to fixed-children only depends on the space available to
+                    // the Flex widget.
                     let child_size = if space_changed || ctx.child_needs_layout(widget) {
                         let alignment = alignment.unwrap_or(self.cross_alignment);
                         any_use_baseline |= alignment == CrossAxisAlignment::Baseline;
@@ -911,7 +911,7 @@ impl Widget for Flex {
                     flex,
                     alignment,
                 } => {
-                    // The BoxConstraints of flex-children depends on the size of every sibling, which
+                    // The space available to flex-children depends on the size of every sibling, which
                     // received layout earlier. Therefore we use any_changed.
                     let child_size = if any_changed || ctx.child_needs_layout(widget) {
                         let alignment = alignment.unwrap_or(self.cross_alignment);

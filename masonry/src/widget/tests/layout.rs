@@ -6,7 +6,7 @@
 use vello::kurbo::{Insets, Size};
 
 use crate::testing::{widget_ids, ModularWidget, TestHarness, TestWidgetExt};
-use crate::widget::{Flex, SizedBox};
+use crate::widget::{BiAxial, Flex, SizedBox};
 
 #[test]
 fn layout_simple() {
@@ -45,10 +45,10 @@ fn layout_insets() {
 
     let [child_id, parent_id] = widget_ids();
 
-    let child_widget = ModularWidget::new(()).layout_fn(|_, ctx, _| {
+    let child_widget = ModularWidget::new(()).layout_fn(|_, ctx, _, _| {
         // this widget paints twenty points above below its layout bounds
         ctx.set_paint_insets(Insets::uniform_xy(0., 20.));
-        Size::new(BOX_WIDTH, BOX_WIDTH)
+        BiAxial::new_size(BOX_WIDTH, BOX_WIDTH)
     });
 
     let parent_widget = SizedBox::new_with_id(child_widget, child_id).with_id(parent_id);

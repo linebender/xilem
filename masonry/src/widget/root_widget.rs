@@ -9,7 +9,7 @@ use vello::Scene;
 
 use crate::widget::{BiAxial, ContentFill, WidgetMut, WidgetPod};
 use crate::{
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
+    AccessCtx, AccessEvent, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
     RegisterCtx, Size, StatusChange, TextEvent, UpdateCtx, Widget, WidgetId,
 };
 

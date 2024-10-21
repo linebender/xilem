@@ -14,7 +14,7 @@ use crate::kurbo::Line;
 use crate::paint_scene_helpers::{fill_color, stroke};
 use crate::widget::{WidgetMut, WidgetPod, Axis, BiAxial, ContentFill};
 use crate::{
-    theme, AccessCtx, AccessEvent, BoxConstraints, Color, CursorIcon, EventCtx, LayoutCtx,
+    theme, AccessCtx, AccessEvent, Color, CursorIcon, EventCtx, LayoutCtx,
     PaintCtx, Point, PointerEvent, Rect, RegisterCtx, Size, StatusChange, TextEvent, UpdateCtx,
     Widget, WidgetId,
 };

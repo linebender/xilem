@@ -10,9 +10,9 @@
 use accesskit::{NodeBuilder, Role};
 use masonry::app_driver::{AppDriver, DriverCtx};
 use masonry::kurbo::{BezPath, Stroke};
-use masonry::widget::{ObjectFit, RootWidget};
+use masonry::widget::{BiAxial, ContentFill, ObjectFit, RootWidget};
 use masonry::{
-    AccessCtx, AccessEvent, Action, Affine, BoxConstraints, Color, EventCtx, LayoutCtx, PaintCtx,
+    AccessCtx, AccessEvent, Action, Affine, Color, EventCtx, LayoutCtx, PaintCtx,
     Point, PointerEvent, Rect, RegisterCtx, Size, StatusChange, TextEvent, UpdateCtx, Widget,
     WidgetId,
 };
@@ -43,23 +43,27 @@ impl Widget for CustomWidget {
 
     fn on_status_change(&mut self, _ctx: &mut UpdateCtx, _event: &StatusChange) {}
 
-    fn layout(&mut self, _layout_ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
-        // BoxConstraints are passed by the parent widget.
+    fn layout(
+        &mut self,
+        ctx: &mut LayoutCtx,
+        available_space: &BiAxial<f64>,
+        requested_fill: &BiAxial<ContentFill>,
+    ) -> BiAxial<f64> {
+        // Available space is passed by the parent widget.
         // This method can return any Size within those constraints:
-        // bc.constrain(my_size)
+        // available_space.constrain(my_size)
         //
         // To check if a dimension is infinite or not (e.g. scrolling):
-        // bc.is_width_bounded() / bc.is_height_bounded()
+        // available_space.is_width_bounded() / available_space.is_height_bounded()
         //
-        // bx.max() returns the maximum size of the widget. Be careful
-        // using this, since always make sure the widget is bounded.
-        // If bx.max() is used in a scrolling widget things will probably
-        // not work correctly.
-        if bc.is_width_bounded() && bc.is_height_bounded() {
-            bc.max()
+        // Be careful using available_space. Always make sure the widget is bounded.
+        // If the full available space is used in a scrolling widget things will
+        // probably not work correctly.
+        if available_space.is_width_bounded() && available_space.is_height_bounded() {
+            available_space.clone()
         } else {
-            let size = Size::new(100.0, 100.0);
-            bc.constrain(size)
+            let size = BiAxial::new(100.0, 100.0);
+            available_space.constrain(size)
         }
     }
 
