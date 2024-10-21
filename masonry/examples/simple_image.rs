@@ -8,10 +8,9 @@
 // On Windows platform, don't show a console when opening the app.
 #![windows_subsystem = "windows"]
 
-use masonry::{AppDriver, DriverCtx};
 use masonry::dpi::LogicalSize;
 use masonry::widget::{Image, ObjectFit, RootWidget};
-use masonry::{Action, WidgetId};
+use masonry::{Action, AppDriver, DriverCtx, WidgetId};
 use vello::peniko::{Format, Image as ImageBuf};
 use winit::window::Window;
 

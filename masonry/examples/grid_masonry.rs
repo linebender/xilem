@@ -8,8 +8,7 @@
 
 use masonry::dpi::LogicalSize;
 use masonry::widget::{Button, Grid, GridParams, Prose, RootWidget, SizedBox};
-use masonry::{Action, Color, PointerButton, WidgetId};
-use masonry::{AppDriver, DriverCtx};
+use masonry::{Action, AppDriver, Color, DriverCtx, PointerButton, WidgetId};
 use parley::layout::Alignment;
 use winit::window::Window;
 

@@ -10,12 +10,12 @@ use vello::kurbo::{Affine, Point, Size};
 use vello::peniko::BlendMode;
 use vello::Scene;
 
-use crate::text::{TextBrush, TextWithSelection};
+use crate::text::{ArcStr, TextBrush, TextWithSelection};
 use crate::widget::label::LABEL_X_PADDING;
 use crate::widget::{LineBreaking, WidgetMut};
 use crate::{
-    text::ArcStr, AccessCtx, AccessEvent, BoxConstraints, CursorIcon, EventCtx, LayoutCtx,
-    PaintCtx, PointerEvent, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
+    AccessCtx, AccessEvent, BoxConstraints, CursorIcon, EventCtx, LayoutCtx, PaintCtx,
+    PointerEvent, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
 };
 
 /// The prose widget is a widget which displays text which can be

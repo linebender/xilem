@@ -13,11 +13,11 @@ use vello::kurbo::{Affine, Point, Size};
 use vello::peniko::BlendMode;
 use vello::Scene;
 
-use crate::text::{TextBrush, TextLayout};
+use crate::text::{ArcStr, TextBrush, TextLayout};
 use crate::widget::WidgetMut;
 use crate::{
-    text::ArcStr, AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx,
-    PointerEvent, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
+    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
+    RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
 };
 
 // added padding between the edges of the widget and the text.

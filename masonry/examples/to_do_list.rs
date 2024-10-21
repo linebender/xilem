@@ -9,8 +9,7 @@
 
 use masonry::dpi::LogicalSize;
 use masonry::widget::{Button, Flex, Label, Portal, RootWidget, Textbox, WidgetMut};
-use masonry::{Action, WidgetId};
-use masonry::{AppDriver, DriverCtx};
+use masonry::{Action, AppDriver, DriverCtx, WidgetId};
 use winit::window::Window;
 
 const VERTICAL_WIDGET_SPACING: f64 = 20.0;
