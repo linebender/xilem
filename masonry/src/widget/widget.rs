@@ -374,6 +374,12 @@ impl WidgetId {
     }
 }
 
+impl From<WidgetId> for u64 {
+    fn from(id: WidgetId) -> u64 {
+        id.0.into()
+    }
+}
+
 impl From<WidgetId> for accesskit::NodeId {
     fn from(id: WidgetId) -> accesskit::NodeId {
         accesskit::NodeId(id.0.into())

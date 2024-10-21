@@ -20,7 +20,7 @@ fn get_id_path(root: &RenderRoot, widget_id: Option<WidgetId>) -> Vec<WidgetId> 
 
     root.widget_arena
         .widget_states
-        .get_id_path(widget_id.to_raw())
+        .get_id_path(widget_id)
         .iter()
         .map(|&id| WidgetId(id.try_into().unwrap()))
         .collect()
@@ -109,8 +109,8 @@ fn update_widget_tree(
                         RegisterCtx::register_child() on child #{}, which isn't \
                         in the list returned by children_ids()",
                         widget.item.short_type_name(),
-                        id.to_raw(),
-                        child_id.to_raw()
+                        id,
+                        child_id
                     );
                 }
             }
@@ -118,13 +118,13 @@ fn update_widget_tree(
 
         #[cfg(debug_assertions)]
         for child_id in widget.item.children_ids() {
-            if widget.children.get_child(child_id.to_raw()).is_none() {
+            if widget.children.get_child(child_id).is_none() {
                 panic!(
                     "Error in '{}' #{}: method register_children() did not call \
                     RegisterCtx::register_child() on child #{} returned by children_ids()",
                     widget.item.short_type_name(),
-                    id.to_raw(),
-                    child_id.to_raw()
+                    id,
+                    child_id
                 );
             }
         }

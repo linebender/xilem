@@ -24,23 +24,16 @@ pub(crate) fn recurse_on_children(
     let parent_id = id;
 
     for child_id in widget.item.children_ids() {
-        let widget = widget
-            .children
-            .get_child_mut(child_id.to_raw())
-            .unwrap_or_else(|| {
-                panic!(
-                    "Error in '{}' #{}: cannot find child #{} returned by children_ids()",
-                    parent_name,
-                    parent_id.to_raw(),
-                    child_id.to_raw()
-                )
-            });
-        let state = state.get_child_mut(child_id.to_raw()).unwrap_or_else(|| {
+        let widget = widget.children.get_child_mut(child_id).unwrap_or_else(|| {
             panic!(
                 "Error in '{}' #{}: cannot find child #{} returned by children_ids()",
-                parent_name,
-                parent_id.to_raw(),
-                child_id.to_raw()
+                parent_name, parent_id, child_id
+            )
+        });
+        let state = state.get_child_mut(child_id).unwrap_or_else(|| {
+            panic!(
+                "Error in '{}' #{}: cannot find child #{} returned by children_ids()",
+                parent_name, parent_id, child_id
             )
         });
 
@@ -56,11 +49,8 @@ pub(crate) fn merge_state_up(arena: &mut WidgetArena, widget_id: WidgetId) {
         return;
     };
 
-    let mut parent_state_mut = arena.widget_states.find_mut(parent_id.to_raw()).unwrap();
-    let child_state_mut = parent_state_mut
-        .children
-        .get_child_mut(widget_id.to_raw())
-        .unwrap();
+    let mut parent_state_mut = arena.widget_states.find_mut(parent_id).unwrap();
+    let child_state_mut = parent_state_mut.children.get_child_mut(widget_id).unwrap();
 
     parent_state_mut.item.merge_up(child_state_mut.item);
 }

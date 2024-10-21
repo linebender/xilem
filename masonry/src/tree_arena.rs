@@ -150,8 +150,8 @@ impl<Item> TreeArena<Item> {
     /// ## Complexity
     ///
     /// O(Depth). In future implementations, this will be O(1).
-    pub fn find(&self, id: u64) -> Option<ArenaRef<'_, Item>> {
-        self.root_token().find(id)
+    pub fn find(&self, id: impl Into<u64>) -> Option<ArenaRef<'_, Item>> {
+        self.root_token().find_inner(id.into())
     }
 
     /// Find an item in the tree.
@@ -161,8 +161,8 @@ impl<Item> TreeArena<Item> {
     /// ## Complexity
     ///
     /// O(Depth). In future implementations, this will be O(1).
-    pub fn find_mut(&mut self, id: u64) -> Option<ArenaMut<'_, Item>> {
-        self.root_token_mut().find_mut(id)
+    pub fn find_mut(&mut self, id: impl Into<u64>) -> Option<ArenaMut<'_, Item>> {
+        self.root_token_mut().find_mut_inner(id.into())
     }
 
     /// Construct the path of items from the given item to the root of the tree.
@@ -171,11 +171,11 @@ impl<Item> TreeArena<Item> {
     /// the root.
     ///
     /// If the id is not in the tree, returns an empty vector.
-    pub fn get_id_path(&self, id: u64) -> Vec<u64> {
+    pub fn get_id_path(&self, id: impl Into<u64>) -> Vec<u64> {
         let parents_map = ArenaMapRef {
             parents_map: &self.parents_map,
         };
-        parents_map.get_id_path(id, None)
+        parents_map.get_id_path(id.into(), None)
     }
 }
 
@@ -251,7 +251,8 @@ impl<'a, Item> ArenaMut<'a, Item> {
 
 impl<'a, Item> ArenaRefChildren<'a, Item> {
     /// Returns true if the handle has a child with the given id.
-    pub fn has_child(self, id: u64) -> bool {
+    pub fn has_child(self, id: impl Into<u64>) -> bool {
+        let id = id.into();
         self.children.iter().any(|child| child.id == id)
     }
 
@@ -259,7 +260,8 @@ impl<'a, Item> ArenaRefChildren<'a, Item> {
     ///
     /// Returns a tuple of a shared reference to the child and a handle to access
     /// its children.
-    pub fn get_child(&self, id: u64) -> Option<ArenaRef<'_, Item>> {
+    pub fn get_child(&self, id: impl Into<u64>) -> Option<ArenaRef<'_, Item>> {
+        let id = id.into();
         self.children
             .iter()
             .find(|child| child.id == id)
@@ -270,7 +272,8 @@ impl<'a, Item> ArenaRefChildren<'a, Item> {
     ///
     /// This is the same as [`get_child`](Self::get_child), except it consumes the
     /// handle. This is sometimes necessary to accommodate the borrow checker.
-    pub fn into_child(self, id: u64) -> Option<ArenaRef<'a, Item>> {
+    pub fn into_child(self, id: impl Into<u64>) -> Option<ArenaRef<'a, Item>> {
+        let id = id.into();
         self.children
             .iter()
             .find(|child| child.id == id)
@@ -284,7 +287,11 @@ impl<'a, Item> ArenaRefChildren<'a, Item> {
     /// ## Complexity
     ///
     /// O(Depth). In future implementations, this will be O(1).
-    pub fn find(self, id: u64) -> Option<ArenaRef<'a, Item>> {
+    pub fn find(self, id: impl Into<u64>) -> Option<ArenaRef<'a, Item>> {
+        self.find_inner(id.into())
+    }
+
+    fn find_inner(self, id: u64) -> Option<ArenaRef<'a, Item>> {
         let parent_id = self.parents_map.parents_map.get(&id)?;
 
         let id_path = if let Some(parent_id) = parent_id {
@@ -314,7 +321,8 @@ impl<'a, Item> ArenaMutChildren<'a, Item> {
     ///
     /// Returns a tuple of a shared reference to the child and a handle to access
     /// its children.
-    pub fn get_child(&self, id: u64) -> Option<ArenaRef<'_, Item>> {
+    pub fn get_child(&self, id: impl Into<u64>) -> Option<ArenaRef<'_, Item>> {
+        let id = id.into();
         self.children
             .iter()
             .find(|child| child.id == id)
@@ -325,7 +333,8 @@ impl<'a, Item> ArenaMutChildren<'a, Item> {
     ///
     /// Returns a tuple of a mutable reference to the child and a handle to access
     /// its children.
-    pub fn get_child_mut(&mut self, id: u64) -> Option<ArenaMut<'_, Item>> {
+    pub fn get_child_mut(&mut self, id: impl Into<u64>) -> Option<ArenaMut<'_, Item>> {
+        let id = id.into();
         self.children
             .iter_mut()
             .find(|child| child.id == id)
@@ -336,7 +345,8 @@ impl<'a, Item> ArenaMutChildren<'a, Item> {
     ///
     /// This is the same as [`get_child`](Self::get_child), except it consumes the
     /// handle. This is sometimes necessary to accommodate the borrow checker.
-    pub fn into_child(self, id: u64) -> Option<ArenaRef<'a, Item>> {
+    pub fn into_child(self, id: impl Into<u64>) -> Option<ArenaRef<'a, Item>> {
+        let id = id.into();
         self.children
             .iter()
             .find(|child| child.id == id)
@@ -347,7 +357,8 @@ impl<'a, Item> ArenaMutChildren<'a, Item> {
     ///
     /// This is the same as [`get_child_mut`](Self::get_child_mut), except it consumes
     /// the handle. This is sometimes necessary to accommodate the borrow checker.
-    pub fn into_child_mut(self, id: u64) -> Option<ArenaMut<'a, Item>> {
+    pub fn into_child_mut(self, id: impl Into<u64>) -> Option<ArenaMut<'a, Item>> {
+        let id = id.into();
         self.children
             .iter_mut()
             .find(|child| child.id == id)
@@ -365,7 +376,8 @@ impl<'a, Item> ArenaMutChildren<'a, Item> {
     ///
     /// The `insert_child` method will panic if the arena already contains a child
     /// with the given id.
-    pub fn insert_child(&mut self, child_id: u64, value: Item) {
+    pub fn insert_child(&mut self, child_id: impl Into<u64>, value: Item) {
+        let child_id = child_id.into();
         assert!(!self.parents_map.parents_map.contains_key(&child_id));
         self.parents_map.parents_map.insert(child_id, self.id);
 
@@ -384,7 +396,8 @@ impl<'a, Item> ArenaMutChildren<'a, Item> {
     ///
     /// Calling this will silently remove any recursive grandchildren of this item.
     #[must_use]
-    pub fn remove_child(&mut self, child_id: u64) -> Option<Item> {
+    pub fn remove_child(&mut self, child_id: impl Into<u64>) -> Option<Item> {
+        let child_id = child_id.into();
         let i = self
             .children
             .iter()
@@ -430,7 +443,7 @@ impl<'a, Item> ArenaMutChildren<'a, Item> {
     /// ## Complexity
     ///
     /// O(Depth). In future implementations, this will be O(1).
-    pub fn find(&self, id: u64) -> Option<ArenaRef<'_, Item>> {
+    pub fn find(&self, id: impl Into<u64>) -> Option<ArenaRef<'_, Item>> {
         self.reborrow().find(id)
     }
 
@@ -441,7 +454,11 @@ impl<'a, Item> ArenaMutChildren<'a, Item> {
     /// ## Complexity
     ///
     /// O(Depth). In future implementations, this will be O(1).
-    pub fn find_mut(self, id: u64) -> Option<ArenaMut<'a, Item>> {
+    pub fn find_mut(self, id: impl Into<u64>) -> Option<ArenaMut<'a, Item>> {
+        self.find_mut_inner(id.into())
+    }
+
+    fn find_mut_inner(self, id: u64) -> Option<ArenaMut<'a, Item>> {
         let parent_id = self.parents_map.parents_map.get(&id)?;
 
         let id_path = if let Some(parent_id) = parent_id {

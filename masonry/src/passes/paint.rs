@@ -117,12 +117,12 @@ pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> Scene {
         let widget = root
             .widget_arena
             .widgets
-            .find_mut(widget_id.to_raw())
+            .find_mut(widget_id)
             .expect("root_paint: root not in widget tree");
         let state = root
             .widget_arena
             .widget_states
-            .find_mut(widget_id.to_raw())
+            .find_mut(widget_id)
             .expect("root_paint: root state not in widget tree");
         (widget, state)
     };

@@ -158,12 +158,12 @@ pub(crate) fn run_accessibility_pass(root: &mut RenderRoot, scale_factor: f64) -
         let widget = root
             .widget_arena
             .widgets
-            .find_mut(widget_id.to_raw())
+            .find_mut(widget_id)
             .expect("root_accessibility: root not in widget tree");
         let state = root
             .widget_arena
             .widget_states
-            .find_mut(widget_id.to_raw())
+            .find_mut(widget_id)
             .expect("root_accessibility: root state not in widget tree");
         (widget, state)
     };

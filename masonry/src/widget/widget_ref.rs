@@ -98,12 +98,11 @@ impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
 
     /// Return widget's children.
     pub fn children(&self) -> SmallVec<[WidgetRef<'w, dyn Widget>; 16]> {
-        let parent_id = self.ctx.widget_state.id.to_raw();
+        let parent_id = self.ctx.widget_state.id;
         self.widget
             .children_ids()
             .iter()
-            .map(|id| {
-                let id = id.to_raw();
+            .map(|&id| {
                 let Some(state_ref) = self.ctx.widget_state_children.into_child(id) else {
                     panic!(
                         "Error in '{}' #{parent_id}: child #{id} has not been added to tree",

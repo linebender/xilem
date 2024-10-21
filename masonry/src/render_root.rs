@@ -194,7 +194,7 @@ impl RenderRoot {
         self.widget_arena
             .widget_states
             .root_token_mut()
-            .into_child_mut(self.root.id().to_raw())
+            .into_child_mut(self.root.id())
             .expect("root widget not in widget tree")
             .item
     }
@@ -331,10 +331,10 @@ impl RenderRoot {
         let root_state_token = self.widget_arena.widget_states.root_token();
         let root_widget_token = self.widget_arena.widgets.root_token();
         let state_ref = root_state_token
-            .into_child(self.root.id().to_raw())
+            .into_child(self.root.id())
             .expect("root widget not in widget tree");
         let widget_ref = root_widget_token
-            .into_child(self.root.id().to_raw())
+            .into_child(self.root.id())
             .expect("root widget not in widget tree");
 
         // Our WidgetArena stores all widgets as Box<dyn Widget>, but the "true"
@@ -358,11 +358,11 @@ impl RenderRoot {
 
     /// Get a [`WidgetRef`] to a specific widget.
     pub fn get_widget(&self, id: WidgetId) -> Option<WidgetRef<dyn Widget>> {
-        let state_ref = self.widget_arena.widget_states.find(id.to_raw())?;
+        let state_ref = self.widget_arena.widget_states.find(id)?;
         let widget_ref = self
             .widget_arena
             .widgets
-            .find(id.to_raw())
+            .find(id)
             .expect("found state but not widget");
 
         // Box<dyn Widget> -> &dyn Widget
@@ -515,7 +515,7 @@ impl RenderRoot {
     // i.e. not disabled or stashed.
     // Only interactive widgets can have text focus or pointer capture.
     pub(crate) fn is_still_interactive(&self, id: WidgetId) -> bool {
-        let Some(state) = self.widget_arena.widget_states.find(id.to_raw()) else {
+        let Some(state) = self.widget_arena.widget_states.find(id) else {
             return false;
         };
 
