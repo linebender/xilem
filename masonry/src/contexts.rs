@@ -979,11 +979,7 @@ impl LayoutCtx<'_> {
         // We intentionally always log this because clip paths are:
         // 1) Relatively rare in the tree
         // 2) An easy potential source of items not being visible when expected
-        trace!(
-            "{} ({}): set_clip_path {path:?}",
-            self.widget_state.widget_name,
-            self.widget_state.id
-        );
+        trace!("set_clip_path {path:?}");
         self.widget_state.clip = Some(path);
         // TODO - Updating the clip path may have
         // other knock-on effects we'd need to document.
