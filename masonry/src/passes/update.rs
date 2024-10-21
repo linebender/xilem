@@ -8,8 +8,8 @@ use tracing::{info_span, trace};
 
 use crate::passes::event::run_on_pointer_event_pass;
 use crate::passes::{merge_state_up, recurse_on_children};
-use crate::window_root::{WindowRootSignal, WindowRoot, WindowRootState};
 use crate::tree_arena::ArenaMut;
+use crate::window_root::{WindowRoot, WindowRootSignal, WindowRootState};
 use crate::{
     PointerEvent, QueryCtx, RegisterCtx, Update, UpdateCtx, Widget, WidgetId, WidgetState,
 };

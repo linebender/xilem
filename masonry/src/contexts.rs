@@ -12,10 +12,10 @@ use vello::kurbo::Vec2;
 
 use crate::action::Action;
 use crate::passes::layout::run_layout_on;
-use crate::window_root::{MutateCallback, WindowRootSignal, WindowRootState};
 use crate::text::TextBrush;
 use crate::tree_arena::{ArenaMutChildren, ArenaRefChildren};
 use crate::widget::{WidgetMut, WidgetRef, WidgetState};
+use crate::window_root::{MutateCallback, WindowRootSignal, WindowRootState};
 use crate::{AllowRawMut, BoxConstraints, Insets, Point, Rect, Size, Widget, WidgetId, WidgetPod};
 
 // Note - Most methods defined in this file revolve around `WidgetState` fields.

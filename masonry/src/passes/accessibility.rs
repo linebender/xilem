@@ -6,8 +6,8 @@ use tracing::{debug, info_span, trace};
 use vello::kurbo::Rect;
 
 use crate::passes::recurse_on_children;
-use crate::window_root::{WindowRoot, WindowRootState};
 use crate::tree_arena::ArenaMut;
+use crate::window_root::{WindowRoot, WindowRootState};
 use crate::{AccessCtx, Widget, WidgetState};
 
 // --- MARK: BUILD TREE ---

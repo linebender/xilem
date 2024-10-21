@@ -5,8 +5,8 @@ use tracing::info_span;
 use vello::kurbo::Vec2;
 
 use crate::passes::recurse_on_children;
-use crate::window_root::{WindowRoot, WindowRootSignal, WindowRootState};
 use crate::tree_arena::ArenaMut;
+use crate::window_root::{WindowRoot, WindowRootSignal, WindowRootState};
 use crate::{ComposeCtx, Widget, WidgetState};
 
 // --- MARK: RECURSE ---
