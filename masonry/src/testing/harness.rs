@@ -264,6 +264,12 @@ impl TestHarness {
                 RenderRootSignal::SetTitle(title) => {
                     self.title = title;
                 }
+                RenderRootSignal::DragWindow => (),
+                RenderRootSignal::DragResizeWindow(_) => (),
+                RenderRootSignal::ToggleMaximized => (),
+                RenderRootSignal::Minimize => (),
+                RenderRootSignal::Exit => (),
+                RenderRootSignal::ShowWindowMenu(_) => (),
             }
         }
     }
