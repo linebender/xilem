@@ -1,7 +1,7 @@
 use core::fmt;
 use std::fmt::{Display, Formatter};
 use vello::kurbo::common::FloatExt;
-use crate::{BoxConstraints, kurbo, Size};
+use crate::{BoxConstraints, kurbo, Point, Rect, Size, Vec2};
 
 /// An axis in visual space.
 ///
@@ -14,6 +14,65 @@ pub enum Axis {
     Horizontal,
     /// The y axis
     Vertical,
+}
+
+impl Axis {
+    /// Get the axis perpendicular to this one.
+    pub fn cross(self) -> Axis {
+        match self {
+            Axis::Horizontal => Axis::Vertical,
+            Axis::Vertical => Axis::Horizontal,
+        }
+    }
+
+    /// Extract the extent of the argument in this axis as a pair.
+    pub fn major_span(self, rect: Rect) -> (f64, f64) {
+        match self {
+            Axis::Horizontal => (rect.x0, rect.x1),
+            Axis::Vertical => (rect.y0, rect.y1),
+        }
+    }
+
+    /// Extract the extent of the argument in the minor axis as a pair.
+    pub fn minor_span(self, rect: Rect) -> (f64, f64) {
+        self.cross().major_span(rect)
+    }
+
+    /// Extract the coordinate locating the argument with respect to this axis.
+    pub fn major_pos(self, pos: Point) -> f64 {
+        match self {
+            Axis::Horizontal => pos.x,
+            Axis::Vertical => pos.y,
+        }
+    }
+
+    /// Extract the coordinate locating the argument with respect to this axis.
+    pub fn major_vec(self, vec: Vec2) -> f64 {
+        match self {
+            Axis::Horizontal => vec.x,
+            Axis::Vertical => vec.y,
+        }
+    }
+
+    /// Extract the coordinate locating the argument with respect to the perpendicular axis.
+    pub fn minor_pos(self, pos: Point) -> f64 {
+        self.cross().major_pos(pos)
+    }
+
+    /// Extract the coordinate locating the argument with respect to the perpendicular axis.
+    pub fn minor_vec(self, vec: Vec2) -> f64 {
+        self.cross().major_vec(vec)
+    }
+
+    // TODO - make_pos, make_size, make_rect
+    /// Arrange the major and minor measurements with respect to this axis such that it forms
+    /// an (x, y) pair.
+    pub fn pack(self, major: f64, minor: f64) -> (f64, f64) {
+        match self {
+            Axis::Horizontal => (major, minor),
+            Axis::Vertical => (minor, major),
+        }
+    }
 }
 
 // TODO: Document
@@ -56,15 +115,43 @@ pub struct BiAxial<T> {
     pub vertical: T,
 }
 
+impl<T> BiAxial<T> {
+    /// Constructs a size (planar with f64 type)
+    #[inline]
+    pub const fn new(horizontal: T, vertical: T) -> Self {
+        BiAxial { horizontal, vertical }
+    }
+
+    /// Extract the value for the given axis.
+    pub fn value_for_axis(self, axis: Axis) -> T {
+        match axis {
+            Axis::Horizontal => self.horizontal,
+            Axis::Vertical => self.vertical,
+        }
+    }
+
+    /// Construct a new BiAxial given a major axis and values for the major and minor axes.
+    pub fn new_by_axis(major: T, minor: T, axis: Axis) -> BiAxial<T> {
+        match axis {
+            Axis::Horizontal => BiAxial::new(major, minor),
+            Axis::Vertical => BiAxial::new(minor, major),
+        }
+    }
+
+    pub fn raw(self) -> (T, T) {
+        return (self.horizontal, self.vertical)
+    }
+}
+
 /// The f64 implementation of BiAxis represents a size.
 impl BiAxial<f64> {
-    pub const ZERO: BiAxial<f64> = BiAxial::new_size(0.0, 0.0);
-    pub const UNBOUNDED: BiAxial<f64> = BiAxial::new_size(f64::INFINITY, f64::INFINITY);
+    pub const ZERO: BiAxial<f64> = BiAxial::new(0.0, 0.0);
+    pub const UNBOUNDED: BiAxial<f64> = BiAxial::new(f64::INFINITY, f64::INFINITY);
 
     /// Constructs a size (planar with f64 type)
     #[inline]
-    pub const fn new_size(width: f64, height: f64) -> Self {
-        BiAxial { horizontal: width, vertical: height }
+    pub fn new_size(width: f64, height: f64) -> Self {
+        BiAxial { horizontal: width.expand(), vertical: height.expand() }
     }
 
     #[inline]
@@ -106,11 +193,17 @@ impl BiAxial<f64> {
         BiAxial { horizontal, vertical }
     }
 
+    // TODO: Is this the best way to do it, or should we potentially merge this with constrain,
+    //    or have self be the parent, and the child size passed in as a param?
     pub fn use_fill_mode(&self, axis_rules: &BiAxial<ContentFill>, parent_size: &BiAxial<f64>) -> BiAxial<f64> {
         BiAxial {
             horizontal: axis_rules.horizontal.follow_f64_fill_rule(self.horizontal, parent_size.horizontal),
             vertical: axis_rules.vertical.follow_f64_fill_rule(self.vertical, parent_size.vertical),
         }
+    }
+
+    pub fn constrain_and_fill(&self, axis_rules: &BiAxial<ContentFill>, other: impl Into<BiAxial<f64>>) -> BiAxial<f64> {
+        self.constrain(other).use_fill_mode(axis_rules, self)
     }
 
     // TODO: Documentation from BC
@@ -187,6 +280,20 @@ impl BiAxial<f64> {
 
     pub fn is_zero_area(&self) -> bool {
         return self.horizontal * self.vertical <= 0.0;
+    }
+
+    pub fn has_infinite_value(&self) -> bool {
+        return self.horizontal.is_infinite() || self.vertical.is_infinite()
+    }
+
+    /// Whether there is an upper bound on the width.
+    pub fn is_width_bounded(&self) -> bool {
+        self.horizontal.is_finite()
+    }
+
+    /// Whether there is an upper bound on the height.
+    pub fn is_height_bounded(&self) -> bool {
+        self.vertical.is_finite()
     }
 
     pub fn validate_sizes(&self, name: &str) {

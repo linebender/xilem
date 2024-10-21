@@ -12,8 +12,7 @@ use crate::dpi::LogicalPosition;
 use crate::event::PointerButton;
 use crate::kurbo::Line;
 use crate::paint_scene_helpers::{fill_color, stroke};
-use crate::widget::flex::Axis;
-use crate::widget::{WidgetMut, WidgetPod};
+use crate::widget::{WidgetMut, WidgetPod, Axis, BiAxial, ContentFill};
 use crate::{
     theme, AccessCtx, AccessEvent, BoxConstraints, Color, CursorIcon, EventCtx, LayoutCtx,
     PaintCtx, Point, PointerEvent, Rect, RegisterCtx, Size, StatusChange, TextEvent, UpdateCtx,
@@ -209,8 +208,8 @@ impl Split {
     }
 
     /// Returns the minimum and maximum split coordinate of the provided size.
-    fn split_side_limits(&self, size: Size) -> (f64, f64) {
-        let split_axis_size = self.split_axis.major(size);
+    fn split_side_limits(&self, size: BiAxial<f64>) -> (f64, f64) {
+        let split_axis_size = size.value_for_axis(self.split_axis);
 
         let (mut min_limit, min_second) = self.min_size;
         let mut max_limit = (split_axis_size - min_second).max(0.0);
@@ -224,11 +223,11 @@ impl Split {
     }
 
     /// Set a new chosen split point.
-    fn update_split_point(&mut self, size: Size, mouse_pos: Point) {
+    fn update_split_point(&mut self, size: BiAxial<f64>, mouse_pos: Point) {
         let (min_limit, max_limit) = self.split_side_limits(size);
         self.split_point_chosen = match self.split_axis {
-            Axis::Horizontal => mouse_pos.x.clamp(min_limit, max_limit) / size.width,
-            Axis::Vertical => mouse_pos.y.clamp(min_limit, max_limit) / size.height,
+            Axis::Horizontal => mouse_pos.x.clamp(min_limit, max_limit) / size.horizontal,
+            Axis::Vertical => mouse_pos.y.clamp(min_limit, max_limit) / size.vertical,
         }
     }
 
@@ -417,7 +416,7 @@ impl Widget for Split {
                                 Point::new(state.position.x, state.position.y - self.click_offset)
                             }
                         };
-                        self.update_split_point(ctx.size(), effective_pos);
+                        self.update_split_point(BiAxial::from_kurbo_size(ctx.size()), effective_pos);
                         ctx.request_layout();
                     } else {
                         // If not active, set cursor when hovering state changes
@@ -452,31 +451,36 @@ impl Widget for Split {
         ctx.register_child(&mut self.child2);
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
+    fn layout(
+        &mut self,
+        ctx: &mut LayoutCtx,
+        available_space: &BiAxial<f64>,
+        requested_fill: &BiAxial<ContentFill>,
+    ) -> BiAxial<f64> {
         match self.split_axis {
             Axis::Horizontal => {
-                if !bc.is_width_bounded() {
+                if !available_space.is_width_bounded() {
                     warn!("A Split widget was given an unbounded width to split.");
                 }
             }
             Axis::Vertical => {
-                if !bc.is_height_bounded() {
+                if !available_space.is_height_bounded() {
                     warn!("A Split widget was given an unbounded height to split.");
                 }
             }
         }
 
-        let mut my_size = bc.max();
+        let mut my_size = available_space.clone();
         let bar_area = self.bar_area();
-        let reduced_size = Size::new(
-            (my_size.width - bar_area).max(0.),
-            (my_size.height - bar_area).max(0.),
+        let reduced_size = BiAxial::new(
+            (my_size.horizontal - bar_area).max(0.),
+            (my_size.vertical - bar_area).max(0.),
         );
 
         // Update our effective split point to respect our constraints
         self.split_point_effective = {
             let (min_limit, max_limit) = self.split_side_limits(reduced_size);
-            let reduced_axis_size = self.split_axis.major(reduced_size);
+            let reduced_axis_size = reduced_size.value_for_axis(self.split_axis);
             if reduced_axis_size.is_infinite() || reduced_axis_size <= f64::EPSILON {
                 0.5
             } else {
@@ -487,55 +491,43 @@ impl Widget for Split {
 
         // TODO - The minimum height / width should really be zero here.
 
-        let (child1_bc, child2_bc) = match self.split_axis {
+        let (child1_space, child2_space) = match self.split_axis {
             Axis::Horizontal => {
-                let child1_width = (reduced_size.width * self.split_point_effective)
+                let child1_width = (reduced_size.horizontal * self.split_point_effective)
                     .floor()
                     .max(0.0);
-                let child2_width = (reduced_size.width - child1_width).max(0.0);
+                let child2_width = (reduced_size.horizontal - child1_width).max(0.0);
                 (
-                    BoxConstraints::new(
-                        Size::new(child1_width, bc.min().height),
-                        Size::new(child1_width, bc.max().height),
-                    ),
-                    BoxConstraints::new(
-                        Size::new(child2_width, bc.min().height),
-                        Size::new(child2_width, bc.max().height),
-                    ),
+                    BiAxial::new_size(child1_width, available_space.vertical),
+                    BiAxial::new_size(child2_width, available_space.vertical),
                 )
             }
             Axis::Vertical => {
-                let child1_height = (reduced_size.height * self.split_point_effective)
+                let child1_height = (reduced_size.vertical * self.split_point_effective)
                     .floor()
                     .max(0.0);
-                let child2_height = (reduced_size.height - child1_height).max(0.0);
+                let child2_height = (reduced_size.vertical - child1_height).max(0.0);
                 (
-                    BoxConstraints::new(
-                        Size::new(bc.min().width, child1_height),
-                        Size::new(bc.max().width, child1_height),
-                    ),
-                    BoxConstraints::new(
-                        Size::new(bc.min().width, child2_height),
-                        Size::new(bc.max().width, child2_height),
-                    ),
+                    BiAxial::new_size(available_space.horizontal, child1_height),
+                    BiAxial::new_size(available_space.horizontal, child2_height),
                 )
             }
         };
 
-        let child1_size = ctx.run_layout(&mut self.child1, &child1_bc);
-        let child2_size = ctx.run_layout(&mut self.child2, &child2_bc);
+        let child1_size = ctx.run_layout(&mut self.child1, &child1_space, requested_fill);
+        let child2_size = ctx.run_layout(&mut self.child2, &child2_space, requested_fill);
 
         // Top-left align for both children, out of laziness.
         // Reduce our unsplit direction to the larger of the two widgets
         let child1_pos = Point::ORIGIN;
         let child2_pos = match self.split_axis {
             Axis::Horizontal => {
-                my_size.height = child1_size.height.max(child2_size.height);
-                Point::new(child1_size.width + bar_area, 0.0)
+                my_size.vertical = child1_size.vertical.max(child2_size.vertical);
+                Point::new(child1_size.horizontal + bar_area, 0.0)
             }
             Axis::Vertical => {
-                my_size.width = child1_size.width.max(child2_size.width);
-                Point::new(0.0, child1_size.height + bar_area)
+                my_size.horizontal = child1_size.horizontal.max(child2_size.horizontal);
+                Point::new(0.0, child1_size.vertical + bar_area)
             }
         };
         ctx.place_child(&mut self.child1, child1_pos);
@@ -544,7 +536,7 @@ impl Widget for Split {
         let child1_paint_rect = ctx.child_paint_rect(&self.child1);
         let child2_paint_rect = ctx.child_paint_rect(&self.child2);
         let paint_rect = child1_paint_rect.union(child2_paint_rect);
-        let insets = paint_rect - my_size.to_rect();
+        let insets = paint_rect - my_size.to_size().to_rect();
         ctx.set_paint_insets(insets);
 
         my_size

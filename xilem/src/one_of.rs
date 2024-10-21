@@ -14,6 +14,7 @@ use masonry::{
 };
 use smallvec::{smallvec, SmallVec};
 use vello::Scene;
+use masonry::widget::{BiAxial, ContentFill};
 
 impl<
         A: Widget,
@@ -194,50 +195,55 @@ impl<
         }
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
+    fn layout(
+        &mut self,
+        ctx: &mut LayoutCtx,
+        available_space: &BiAxial<f64>,
+        requested_fill: &BiAxial<ContentFill>,
+    ) -> BiAxial<f64> {
         match self {
             OneOfWidget::A(w) => {
-                let size = ctx.run_layout(w, bc);
+                let size = ctx.run_layout(w, available_space, requested_fill);
                 ctx.place_child(w, Point::ORIGIN);
                 size
             }
             OneOfWidget::B(w) => {
-                let size = ctx.run_layout(w, bc);
+                let size = ctx.run_layout(w, available_space, requested_fill);
                 ctx.place_child(w, Point::ORIGIN);
                 size
             }
             OneOfWidget::C(w) => {
-                let size = ctx.run_layout(w, bc);
+                let size = ctx.run_layout(w, available_space, requested_fill);
                 ctx.place_child(w, Point::ORIGIN);
                 size
             }
             OneOfWidget::D(w) => {
-                let size = ctx.run_layout(w, bc);
+                let size = ctx.run_layout(w, available_space, requested_fill);
                 ctx.place_child(w, Point::ORIGIN);
                 size
             }
             OneOfWidget::E(w) => {
-                let size = ctx.run_layout(w, bc);
+                let size = ctx.run_layout(w, available_space, requested_fill);
                 ctx.place_child(w, Point::ORIGIN);
                 size
             }
             OneOfWidget::F(w) => {
-                let size = ctx.run_layout(w, bc);
+                let size = ctx.run_layout(w, available_space, requested_fill);
                 ctx.place_child(w, Point::ORIGIN);
                 size
             }
             OneOfWidget::G(w) => {
-                let size = ctx.run_layout(w, bc);
+                let size = ctx.run_layout(w, available_space, requested_fill);
                 ctx.place_child(w, Point::ORIGIN);
                 size
             }
             OneOfWidget::H(w) => {
-                let size = ctx.run_layout(w, bc);
+                let size = ctx.run_layout(w, available_space, requested_fill);
                 ctx.place_child(w, Point::ORIGIN);
                 size
             }
             OneOfWidget::I(w) => {
-                let size = ctx.run_layout(w, bc);
+                let size = ctx.run_layout(w, available_space, requested_fill);
                 ctx.place_child(w, Point::ORIGIN);
                 size
             }

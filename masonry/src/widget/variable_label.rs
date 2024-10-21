@@ -16,7 +16,7 @@ use vello::peniko::BlendMode;
 use vello::Scene;
 
 use crate::text::{Hinting, TextBrush, TextLayout};
-use crate::widget::{LineBreaking, WidgetMut};
+use crate::widget::{BiAxial, ContentFill, LineBreaking, WidgetMut};
 use crate::{
     AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
     RegisterCtx, StatusChange, TextEvent, Update, UpdateCtx, Widget, WidgetId,
@@ -347,14 +347,21 @@ impl Widget for VariableLabel {
         }
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
+    fn layout(
+        &mut self,
+        ctx: &mut LayoutCtx,
+        available_space: &BiAxial<f64>,
+        requested_fill: &BiAxial<ContentFill>,
+    ) -> BiAxial<f64> {
         // Compute max_advance from box constraints
-        let max_advance = if self.line_break_mode != LineBreaking::WordWrap {
+        let max_advance = if self.line_break_mode != LineBreaking::WordWrap
+            || requested_fill.horizontal == ContentFill::Max
+        {
             None
-        } else if bc.max().width.is_finite() {
-            Some(bc.max().width as f32 - 2. * LABEL_X_PADDING as f32)
-        } else if bc.min().width.is_sign_negative() {
+        } else if requested_fill.horizontal == ContentFill::Min {
             Some(0.0)
+        } else if available_space.horizontal.is_finite() {
+            Some(available_space.horizontal as f32 - 2. * crate::widget::label::LABEL_X_PADDING as f32)
         } else {
             None
         };
@@ -382,11 +389,11 @@ impl Widget for VariableLabel {
         }
         // We ignore trailing whitespace for a label
         let text_size = self.text_layout.size();
-        let label_size = Size {
-            height: text_size.height,
-            width: text_size.width + 2. * LABEL_X_PADDING,
-        };
-        bc.constrain(label_size)
+        let label_size = BiAxial::new(
+            text_size.width + 2. * LABEL_X_PADDING,
+            text_size.height,
+        );
+        available_space.constrain(label_size)
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {

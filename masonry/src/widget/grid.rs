@@ -8,11 +8,12 @@ use vello::kurbo::{Affine, Line, Stroke};
 use vello::Scene;
 
 use crate::theme::get_debug_color;
-use crate::widget::WidgetMut;
+use crate::widget::{BiAxial, ContentFill, WidgetMut};
 use crate::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, Point, PointerEvent,
     Size, StatusChange, TextEvent, UpdateCtx, Widget, WidgetId, WidgetPod,
 };
+use crate::widget::ContentFill::Exact;
 
 pub struct Grid {
     children: Vec<Child>,
@@ -246,29 +247,33 @@ impl Widget for Grid {
         }
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
-        let total_size = bc.max();
-        if !total_size.is_finite() {
+    fn layout(
+        &mut self,
+        ctx: &mut LayoutCtx,
+        available_space: &BiAxial<f64>,
+        _requested_fill: &BiAxial<ContentFill>,
+    ) -> BiAxial<f64> {
+        let total_size = available_space;
+        if total_size.has_infinite_value() {
             debug_panic!(
-                "Error while computing layout for grid; infinite BoxConstraint max provided {}",
+                "Error while computing layout for grid; infinite available space provided {}",
                 total_size
             );
         }
-        let width_unit = (total_size.width + self.grid_spacing) / (self.grid_width as f64);
-        let height_unit = (total_size.height + self.grid_spacing) / (self.grid_height as f64);
+        let width_unit = (total_size.horizontal + self.grid_spacing) / (self.grid_width as f64);
+        let height_unit = (total_size.vertical + self.grid_spacing) / (self.grid_height as f64);
         for child in &mut self.children {
-            let cell_size = Size::new(
+            let cell_size = BiAxial::new_size(
                 (child.width as f64 * width_unit - self.grid_spacing).max(0.0),
                 (child.height as f64 * height_unit - self.grid_spacing).max(0.0),
             );
-            let child_bc = BoxConstraints::new(cell_size, cell_size);
-            let _ = ctx.run_layout(&mut child.widget, &child_bc);
+            let _ = ctx.run_layout(&mut child.widget, &cell_size, &BiAxial::new(Exact, Exact));
             ctx.place_child(
                 &mut child.widget,
                 Point::new(child.x as f64 * width_unit, child.y as f64 * height_unit),
             );
         }
-        total_size
+        *total_size
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {

@@ -15,7 +15,7 @@ use vello::Scene;
 
 use crate::contexts::AccessCtx;
 use crate::paint_scene_helpers::UnitPoint;
-use crate::widget::WidgetPod;
+use crate::widget::{BiAxial, ContentFill, WidgetPod};
 use crate::{
     AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent, Rect, RegisterCtx,
     Size, StatusChange, TextEvent, UpdateCtx, Widget, WidgetId,
@@ -97,36 +97,41 @@ impl Widget for Align {
 
     fn on_status_change(&mut self, _ctx: &mut UpdateCtx, _event: &StatusChange) {}
 
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
-        let size = ctx.run_layout(&mut self.child, &bc);
+    fn layout(
+        &mut self,
+        ctx: &mut LayoutCtx,
+        available_space: &BiAxial<f64>,
+        requested_fill: &BiAxial<ContentFill>,
+    ) -> BiAxial<f64> {
+        let child_size = ctx.run_layout(&mut self.child, available_space, requested_fill);
 
-        log_size_warnings(size);
+        log_size_warnings(&child_size);
 
-        let mut my_size = size;
-        if bc.is_width_bounded() {
-            my_size.width = bc.max().width;
+        let mut my_size = child_size;
+        if available_space.is_width_bounded() {
+            my_size.horizontal = available_space.horizontal;
         }
-        if bc.is_height_bounded() {
-            my_size.height = bc.max().height;
+        if available_space.is_height_bounded() {
+            my_size.vertical = available_space.vertical;
         }
 
         if let Some(width) = self.width_factor {
-            my_size.width = size.width * width;
+            my_size.horizontal = child_size.horizontal * width;
         }
         if let Some(height) = self.height_factor {
-            my_size.height = size.height * height;
+            my_size.horizontal = child_size.vertical * height;
         }
 
-        my_size = bc.constrain(my_size);
-        let extra_width = (my_size.width - size.width).max(0.);
-        let extra_height = (my_size.height - size.height).max(0.);
+        my_size = available_space.constrain(my_size);
+        let extra_width = (my_size.horizontal - child_size.horizontal).max(0.);
+        let extra_height = (my_size.vertical - child_size.vertical).max(0.);
         let origin = self
             .align
             .resolve(Rect::new(0., 0., extra_width, extra_height))
             .expand();
         ctx.place_child(&mut self.child, origin);
 
-        let my_insets = ctx.compute_insets_from_child(&self.child, my_size);
+        let my_insets = ctx.compute_insets_from_child(&self.child, my_size.to_size());
         ctx.set_paint_insets(my_insets);
         if self.height_factor.is_some() {
             let baseline_offset = ctx.child_baseline_offset(&self.child);
@@ -155,12 +160,12 @@ impl Widget for Align {
     }
 }
 
-fn log_size_warnings(size: Size) {
-    if size.width.is_infinite() {
+fn log_size_warnings(size: &BiAxial<f64>) {
+    if size.horizontal.is_infinite() {
         tracing::warn!("Align widget's child has an infinite width.");
     }
 
-    if size.height.is_infinite() {
+    if size.vertical.is_infinite() {
         tracing::warn!("Align widget's child has an infinite height.");
     }
 }

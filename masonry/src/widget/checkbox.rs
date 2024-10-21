@@ -11,7 +11,7 @@ use vello::Scene;
 
 use crate::action::Action;
 use crate::paint_scene_helpers::{fill_lin_gradient, stroke, UnitPoint};
-use crate::widget::{Label, WidgetMut};
+use crate::widget::{BiAxial, ContentFill, Label, WidgetMut};
 
 use crate::{
     theme, AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, LayoutCtx, PaintCtx,
@@ -112,20 +112,25 @@ impl Widget for Checkbox {
         ctx.register_child(&mut self.label);
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
+    fn layout(
+        &mut self,
+        ctx: &mut LayoutCtx,
+        available_space: &BiAxial<f64>,
+        requested_fill: &BiAxial<ContentFill>,
+    ) -> BiAxial<f64> {
         let x_padding = theme::WIDGET_CONTROL_COMPONENT_PADDING;
         let check_size = theme::BASIC_WIDGET_HEIGHT;
 
-        let label_size = ctx.run_layout(&mut self.label, bc);
+        let label_size = ctx.run_layout(&mut self.label, available_space, requested_fill);
         ctx.place_child(&mut self.label, (check_size + x_padding, 0.0).into());
 
-        let desired_size = Size::new(
-            check_size + x_padding + label_size.width,
-            check_size.max(label_size.height),
+        let desired_size = BiAxial::new_size(
+            check_size + x_padding + label_size.horizontal,
+            check_size.max(label_size.vertical),
         );
-        let our_size = bc.constrain(desired_size);
+        let our_size = available_space.constrain(desired_size);
         let baseline =
-            ctx.child_baseline_offset(&self.label) + (our_size.height - label_size.height);
+            ctx.child_baseline_offset(&self.label) + (our_size.vertical - label_size.vertical);
         ctx.set_baseline_offset(baseline);
         our_size
     }

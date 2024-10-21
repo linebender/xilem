@@ -418,10 +418,10 @@ impl Widget for Box<dyn Widget> {
     fn layout(
         &mut self,
         ctx: &mut LayoutCtx,
-        size: &BiAxial<f64>,
+        available_space: &BiAxial<f64>,
         requested_fill: &BiAxial<ContentFill>,
     ) -> BiAxial<f64> {
-        self.deref_mut().layout(ctx, size, requested_fill)
+        self.deref_mut().layout(ctx, available_space, requested_fill)
     }
 
     fn compose(&mut self, ctx: &mut ComposeCtx) {

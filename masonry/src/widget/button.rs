@@ -11,12 +11,13 @@ use vello::Scene;
 use crate::action::Action;
 use crate::event::PointerButton;
 use crate::paint_scene_helpers::{fill_lin_gradient, stroke, UnitPoint};
-use crate::widget::{Label, WidgetMut, WidgetPod};
+use crate::widget::{BiAxial, ContentFill, Label, WidgetMut, WidgetPod};
 
 use crate::{
     theme, AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, Insets, LayoutCtx, PaintCtx,
     PointerEvent, Size, StatusChange, TextEvent, UpdateCtx, Widget, WidgetId,
 };
+use crate::widget::ContentFill::Constrain;
 
 // the minimum padding added to a button.
 // NOTE: these values are chosen to match the existing look of TextBox; these
@@ -121,11 +122,19 @@ impl Widget for Button {
         ctx.register_child(&mut self.label);
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
-        let padding = Size::new(LABEL_INSETS.x_value(), LABEL_INSETS.y_value());
-        let label_bc = bc.shrink(padding);
+    fn layout(
+        &mut self,
+        ctx: &mut LayoutCtx,
+        available_space: &BiAxial<f64>,
+        requested_fill: &BiAxial<ContentFill>,
+    ) -> BiAxial<f64> {
+        let padding = BiAxial::new_size(LABEL_INSETS.x_value(), LABEL_INSETS.y_value());
+        let label_space = available_space.shrink(padding);
 
-        let label_size = ctx.run_layout(&mut self.label, &label_bc);
+        // Use looser constraints for the label, since if it is smaller than the area available,
+        // we want it to be centered.
+        // TODO: Consider Max and Min intrinsic cases.
+        let label_size = ctx.run_layout(&mut self.label, &label_space, &BiAxial::new(Constrain, Constrain));
 
         let baseline = ctx.child_baseline_offset(&self.label);
         ctx.set_baseline_offset(baseline + LABEL_INSETS.y1);
@@ -134,12 +143,12 @@ impl Widget for Button {
         // we make sure we will have at least the same height as the default textbox.
         let min_height = theme::BORDERED_WIDGET_HEIGHT;
 
-        let button_size = bc.constrain(Size::new(
-            label_size.width + padding.width,
-            (label_size.height + padding.height).max(min_height),
+        let button_size = available_space.constrain_and_fill(requested_fill, BiAxial::new_size(
+            label_size.horizontal + padding.horizontal,
+            (label_size.vertical + padding.vertical).max(min_height),
         ));
 
-        let label_offset = (button_size.to_vec2() - label_size.to_vec2()) / 2.0;
+        let label_offset = (button_size.to_size().to_vec2() - label_size.to_size().to_vec2()) / 2.0;
         ctx.place_child(&mut self.label, label_offset.to_point());
 
         button_size

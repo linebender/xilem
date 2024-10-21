@@ -10,7 +10,7 @@ use vello::kurbo::Rect;
 use vello::Scene;
 
 use crate::paint_scene_helpers::{fill_color, stroke};
-use crate::widget::{Axis, WidgetMut};
+use crate::widget::{BiAxial, ContentFill, Axis, WidgetMut};
 use crate::{
     theme, AccessCtx, AccessEvent, AllowRawMut, BoxConstraints, EventCtx, LayoutCtx, PaintCtx,
     Point, PointerEvent, RegisterCtx, Size, StatusChange, TextEvent, Update, UpdateCtx, Widget,
@@ -62,17 +62,19 @@ impl ScrollBar {
 impl ScrollBar {
     fn get_cursor_rect(&self, layout_size: Size, min_length: f64) -> Rect {
         // TODO - handle invalid sizes
+        let layout_size = BiAxial::from_kurbo_size(layout_size);
         let size_ratio = self.portal_size / self.content_size;
         let size_ratio = size_ratio.clamp(0.0, 1.0);
 
-        let cursor_length = size_ratio * self.axis.major(layout_size);
+        let cursor_length = size_ratio * layout_size.value_for_axis(self.axis);
         let cursor_length = cursor_length.max(min_length);
 
-        let empty_space_length = (1.0 - size_ratio) * self.axis.major(layout_size);
+        let empty_space_length = (1.0 - size_ratio) * layout_size.value_for_axis(self.axis);
         let cursor_pos_major = self.cursor_progress * empty_space_length;
 
         let cursor_pos = self.axis.pack(cursor_pos_major, 0.0);
-        let cursor_size = self.axis.pack(cursor_length, self.axis.minor(layout_size));
+        let cursor_size = self.axis.pack(
+            cursor_length, layout_size.value_for_axis(self.axis.cross()));
 
         Rect::from_origin_size(cursor_pos, cursor_size)
     }
@@ -93,10 +95,11 @@ impl ScrollBar {
         // invariant: cursor_x == progress * (1 - size_ratio) * layout_width
         // invariant: cursor_x + anchor * cursor_width == mouse_x
 
-        let cursor_width = self.axis.major(cursor_rect.size());
+        let cursor_width = BiAxial::from_kurbo_size(cursor_rect.size()).value_for_axis(self.axis);
         let new_cursor_pos_major = self.axis.major_pos(mouse_pos) - anchor * cursor_width;
 
-        let empty_space_length = (1.0 - size_ratio) * self.axis.major(layout_size);
+        let empty_space_length = (1.0 - size_ratio) *
+            BiAxial::from_kurbo_size(layout_size).value_for_axis(self.axis);
         let new_cursor_progress = new_cursor_pos_major / empty_space_length;
 
         new_cursor_progress.clamp(0.0, 1.0)
@@ -179,17 +182,17 @@ impl Widget for ScrollBar {
 
     fn update(&mut self, _ctx: &mut UpdateCtx, _event: &Update) {}
 
-    fn layout(&mut self, _ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
+    fn layout(
+        &mut self,
+        _ctx: &mut LayoutCtx,
+        available_space: &BiAxial<f64>,
+        _requested_fill: &BiAxial<ContentFill>,
+    ) -> BiAxial<f64> {
         // TODO - handle resize
 
         let scrollbar_width = theme::SCROLLBAR_WIDTH;
         let cursor_padding = theme::SCROLLBAR_PAD;
-        self.axis
-            .pack(
-                self.axis.major(bc.max()),
-                scrollbar_width + cursor_padding * 2.0,
-            )
-            .into()
+        BiAxial::new_by_axis(available_space.value_for_axis(self.axis), scrollbar_width + cursor_padding * 2.0, self.axis)
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {

@@ -10,12 +10,14 @@ use vello::kurbo::{common::FloatExt, Affine, Line, Stroke, Vec2};
 use vello::Scene;
 
 use crate::theme::get_debug_color;
-use crate::widget::WidgetMut;
+use crate::widget::{BiAxial, ContentFill, WidgetMut};
 
 use crate::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, Point, PointerEvent,
     Rect, Size, StatusChange, TextEvent, UpdateCtx, Widget, WidgetId, WidgetPod,
 };
+use crate::widget::ContentFill::Exact;
+use crate::widget::Axis;
 
 /// A container with either horizontal or vertical layout.
 ///
@@ -26,7 +28,7 @@ pub struct Flex {
     main_alignment: MainAxisAlignment,
     fill_major_axis: bool,
     children: Vec<Child>,
-    old_bc: BoxConstraints,
+    old_space: BiAxial<f64>,
     gap: Option<f64>,
 }
 
@@ -41,19 +43,6 @@ pub struct Flex {
 pub struct FlexParams {
     flex: Option<f64>,
     alignment: Option<CrossAxisAlignment>,
-}
-
-/// An axis in visual space.
-///
-/// Most often used by widgets to describe
-/// the direction in which they grow as their number of children increases.
-/// Has some methods for manipulating geometry with respect to the axis.
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum Axis {
-    /// The x axis
-    Horizontal,
-    /// The y axis
-    Vertical,
 }
 
 /// The alignment of the widgets on the container's cross (or minor) axis.
@@ -127,7 +116,7 @@ impl Flex {
             cross_alignment: CrossAxisAlignment::Center,
             main_alignment: MainAxisAlignment::Start,
             fill_major_axis: false,
-            old_bc: BoxConstraints::new(Size::ZERO),
+            old_space: BiAxial::new_size(0.0, 0.0),
             gap: None,
         }
     }
@@ -615,95 +604,6 @@ impl<'a> WidgetMut<'a, Flex> {
 }
 
 // --- MARK: OTHER IMPLS---
-impl Axis {
-    /// Get the axis perpendicular to this one.
-    pub fn cross(self) -> Axis {
-        match self {
-            Axis::Horizontal => Axis::Vertical,
-            Axis::Vertical => Axis::Horizontal,
-        }
-    }
-
-    /// Extract from the argument the magnitude along this axis
-    pub fn major(self, size: Size) -> f64 {
-        match self {
-            Axis::Horizontal => size.width,
-            Axis::Vertical => size.height,
-        }
-    }
-
-    /// Extract from the argument the magnitude along the perpendicular axis
-    pub fn minor(self, size: Size) -> f64 {
-        self.cross().major(size)
-    }
-
-    /// Extract the extent of the argument in this axis as a pair.
-    pub fn major_span(self, rect: Rect) -> (f64, f64) {
-        match self {
-            Axis::Horizontal => (rect.x0, rect.x1),
-            Axis::Vertical => (rect.y0, rect.y1),
-        }
-    }
-
-    /// Extract the extent of the argument in the minor axis as a pair.
-    pub fn minor_span(self, rect: Rect) -> (f64, f64) {
-        self.cross().major_span(rect)
-    }
-
-    /// Extract the coordinate locating the argument with respect to this axis.
-    pub fn major_pos(self, pos: Point) -> f64 {
-        match self {
-            Axis::Horizontal => pos.x,
-            Axis::Vertical => pos.y,
-        }
-    }
-
-    /// Extract the coordinate locating the argument with respect to this axis.
-    pub fn major_vec(self, vec: Vec2) -> f64 {
-        match self {
-            Axis::Horizontal => vec.x,
-            Axis::Vertical => vec.y,
-        }
-    }
-
-    /// Extract the coordinate locating the argument with respect to the perpendicular axis.
-    pub fn minor_pos(self, pos: Point) -> f64 {
-        self.cross().major_pos(pos)
-    }
-
-    /// Extract the coordinate locating the argument with respect to the perpendicular axis.
-    pub fn minor_vec(self, vec: Vec2) -> f64 {
-        self.cross().major_vec(vec)
-    }
-
-    // TODO - make_pos, make_size, make_rect
-    /// Arrange the major and minor measurements with respect to this axis such that it forms
-    /// an (x, y) pair.
-    pub fn pack(self, major: f64, minor: f64) -> (f64, f64) {
-        match self {
-            Axis::Horizontal => (major, minor),
-            Axis::Vertical => (minor, major),
-        }
-    }
-
-    /// Generate constraints with new values on the major axis.
-    pub(crate) fn constraints(
-        self,
-        bc: &BoxConstraints,
-        min_major: f64,
-        major: f64,
-    ) -> BoxConstraints {
-        match self {
-            Axis::Horizontal => BoxConstraints::new(
-                Size::new(major, bc.max().height),
-            ),
-            Axis::Vertical => BoxConstraints::new(
-                Size::new(bc.max().width, major),
-            ),
-        }
-    }
-}
-
 impl FlexParams {
     /// Create custom `FlexParams` with a specific `flex_factor` and an optional
     /// [`CrossAxisAlignment`].
@@ -907,13 +807,27 @@ impl Widget for Flex {
         }
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
+    fn layout(
+        &mut self,
+        ctx: &mut LayoutCtx,
+        available_space: &BiAxial<f64>,
+        requested_fill: &BiAxial<ContentFill>,
+    ) -> BiAxial<f64> {
         // we loosen our constraints when passing to children.
         // TODO: This needs to change.
-        let overall_bc = bc.clone();
+        let overall_available_space = available_space.clone();
+        let major_axis = self.direction;
+        let minor_axis = self.direction.cross();
 
         // minor-axis values for all children
-        let mut minor = self.direction.minor(bc.min());
+        let minor_axis_fill = requested_fill.value_for_axis(minor_axis);
+        let mut minor = if minor_axis_fill == Exact {
+            available_space.value_for_axis(minor_axis)
+        } else {
+            0.0
+        };
+        // TODO: Is this the correct fill?
+        let child_requested_fill = &BiAxial::new_by_axis(ContentFill::Max, ContentFill::Constrain, self.direction);
         // these two are calculated but only used if we're baseline aligned
         let mut max_above_baseline = 0_f64;
         let mut max_below_baseline = 0_f64;
@@ -921,9 +835,9 @@ impl Widget for Flex {
 
         // indicates that the box constrains for the following children have changed. Therefore they
         // have to calculate layout again.
-        let bc_changed = self.old_bc != *bc;
-        let mut any_changed = bc_changed;
-        self.old_bc = *bc;
+        let space_changed = self.old_space != *available_space;
+        let mut any_changed = space_changed;
+        self.old_space = *available_space;
 
         let gap = self.gap.unwrap_or(axis_default_spacer(self.direction));
         // The gaps are only between the items, so 2 children means 1 gap.
@@ -938,18 +852,18 @@ impl Widget for Flex {
                 Child::Fixed { widget, alignment } => {
                     // The BoxConstraints of fixed-children only depends on the BoxConstraints of the
                     // Flex widget.
-                    let child_size = if bc_changed || ctx.child_needs_layout(widget) {
+                    let child_size = if space_changed || ctx.child_needs_layout(widget) {
                         let alignment = alignment.unwrap_or(self.cross_alignment);
                         any_use_baseline |= alignment == CrossAxisAlignment::Baseline;
 
-                        let old_size = ctx.widget_state.layout_rect().size();
-                        let child_size = ctx.run_layout(widget, &overall_bc);
+                        let old_size = BiAxial::from_kurbo_size(ctx.widget_state.layout_rect().size());
+                        let child_size = ctx.run_layout(widget, &overall_available_space, child_requested_fill);
 
-                        if child_size.width.is_infinite() {
+                        if child_size.horizontal.is_infinite() {
                             tracing::warn!("A non-Flex child has an infinite width.");
                         }
 
-                        if child_size.height.is_infinite() {
+                        if child_size.vertical.is_infinite() {
                             tracing::warn!("A non-Flex child has an infinite height.");
                         }
 
@@ -960,15 +874,15 @@ impl Widget for Flex {
                         child_size
                     } else {
                         ctx.skip_layout(widget);
-                        ctx.child_layout_rect(widget).size()
+                        BiAxial::from_kurbo_size(ctx.child_layout_rect(widget).size())
                     };
 
                     let baseline_offset = ctx.child_baseline_offset(widget);
 
-                    major_non_flex += self.direction.major(child_size).expand();
-                    minor = minor.max(self.direction.minor(child_size).expand());
+                    major_non_flex += child_size.value_for_axis(major_axis).expand();
+                    minor = minor.max(child_size.value_for_axis(minor_axis).expand());
                     max_above_baseline =
-                        max_above_baseline.max(child_size.height - baseline_offset);
+                        max_above_baseline.max(child_size.vertical - baseline_offset);
                     max_below_baseline = max_below_baseline.max(baseline_offset);
                 }
                 Child::FixedSpacer(kv, calculated_size) => {
@@ -983,7 +897,7 @@ impl Widget for Flex {
             }
         }
 
-        let total_major = self.direction.major(bc.max());
+        let total_major = available_space.value_for_axis(major_axis);
         let remaining = (total_major - major_non_flex).max(0.0);
         let mut remainder: f64 = 0.0;
 
@@ -1007,9 +921,13 @@ impl Widget for Flex {
                         let actual_major = desired_major.round();
                         remainder = desired_major - actual_major;
 
-                        let old_size = ctx.widget_state.layout_rect().size();
-                        let child_bc = self.direction.constraints(&overall_bc, 0.0, actual_major);
-                        let child_size = ctx.run_layout(widget, &child_bc);
+                        let old_size = BiAxial::from_kurbo_size(ctx.widget_state.layout_rect().size());
+                        let child_available_space = BiAxial::new_by_axis(
+                            actual_major,
+                            available_space.value_for_axis(minor_axis),
+                            major_axis,
+                        );
+                        let child_size = ctx.run_layout(widget, &child_available_space, requested_fill);
 
                         if old_size != child_size {
                             any_changed = true;
@@ -1018,15 +936,15 @@ impl Widget for Flex {
                         child_size
                     } else {
                         ctx.skip_layout(widget);
-                        ctx.child_layout_rect(widget).size()
+                        BiAxial::from_kurbo_size(ctx.child_layout_rect(widget).size())
                     };
 
                     let baseline_offset = ctx.child_baseline_offset(widget);
 
-                    major_flex += self.direction.major(child_size).expand();
-                    minor = minor.max(self.direction.minor(child_size).expand());
+                    major_flex += child_size.value_for_axis(major_axis).expand();
+                    minor = minor.max(child_size.value_for_axis(minor_axis).expand());
                     max_above_baseline =
-                        max_above_baseline.max(child_size.height - baseline_offset);
+                        max_above_baseline.max(child_size.vertical - baseline_offset);
                     max_below_baseline = max_below_baseline.max(baseline_offset);
                 }
                 Child::FlexedSpacer(flex, calculated_size) => {
@@ -1040,12 +958,10 @@ impl Widget for Flex {
         }
 
         // figure out if we have extra space on major axis, and if so how to use it
-        let extra = if self.fill_major_axis {
+        let extra = if self.fill_major_axis || requested_fill.value_for_axis(major_axis) == Exact {
             (remaining - major_flex).max(0.0)
         } else {
-            // if we are *not* expected to fill our available space this usually
-            // means we don't have any extra, unless dictated by our constraints.
-            (self.direction.major(bc.min()) - (major_non_flex + major_flex)).max(0.0)
+            0.0
         };
 
         let mut spacing = Spacing::new(self.main_alignment, extra, self.children.len());
@@ -1068,7 +984,7 @@ impl Widget for Flex {
                 | Child::Flex {
                     widget, alignment, ..
                 } => {
-                    let child_size = ctx.child_size(widget);
+                    let child_size = BiAxial::from_kurbo_size(ctx.child_size(widget));
                     let alignment = alignment.unwrap_or(self.cross_alignment);
                     let child_minor_offset = match alignment {
                         // This will ignore baseline alignment if it is overridden on children,
@@ -1077,33 +993,31 @@ impl Widget for Flex {
                             if matches!(self.direction, Axis::Horizontal) =>
                         {
                             let child_baseline = ctx.child_baseline_offset(widget);
-                            let child_above_baseline = child_size.height - child_baseline;
+                            let child_above_baseline = child_size.vertical - child_baseline;
                             extra_height + (max_above_baseline - child_above_baseline)
                         }
                         CrossAxisAlignment::Fill => {
-                            let fill_size: Size = self
-                                .direction
-                                .pack(self.direction.major(child_size), minor_dim)
-                                .into();
-                            if ctx.widget_state.layout_rect().size() != fill_size {
-                                let child_bc = BoxConstraints::tight(fill_size);
+                            let fill_size = BiAxial::new_by_axis(child_size.value_for_axis(major_axis), minor_dim, self.direction);
+                            if ctx.widget_state.layout_rect().size() != fill_size.to_size() {
                                 //TODO: this is the second call of layout on the same child, which
                                 // is bad, because it can lead to exponential increase in layout calls
                                 // when used multiple times in the widget hierarchy.
-                                ctx.run_layout(widget, &child_bc);
+                                // TODO: Determine if this is the correct fill. The old fill used
+                                //  tight, which is equal to Exact fill mode.
+                                ctx.run_layout(widget, &fill_size, child_requested_fill);
                             }
                             0.0
                         }
                         _ => {
-                            let extra_minor = minor_dim - self.direction.minor(child_size);
+                            let extra_minor = minor_dim - child_size.value_for_axis(minor_axis);
                             alignment.align(extra_minor)
                         }
                     };
 
-                    let child_pos: Point = self.direction.pack(major, child_minor_offset).into();
+                    let child_pos: Point = BiAxial::new_by_axis(major, child_minor_offset, major_axis).raw().into();
                     ctx.place_child(widget, child_pos);
                     child_paint_rect = child_paint_rect.union(ctx.widget_state.paint_rect());
-                    major += self.direction.major(child_size).expand();
+                    major += child_size.value_for_axis(major_axis).expand();
                     major += spacing.next().unwrap_or(0.);
                     major += gap;
                 }
@@ -1133,9 +1047,9 @@ impl Widget for Flex {
         // my_size may be larger than the given constraints.
         // In which case, the Flex widget will either overflow its parent
         // or be clipped (e.g. if its parent is a Portal).
-        let my_size: Size = self.direction.pack(major, minor_dim).into();
+        let my_size = BiAxial::new_by_axis(major, minor_dim, major_axis);
 
-        let my_bounds = Rect::ZERO.with_size(my_size);
+        let my_bounds = Rect::ZERO.with_size(my_size.to_size());
         let insets = child_paint_rect - my_bounds;
         ctx.set_paint_insets(insets);
 
@@ -1149,7 +1063,7 @@ impl Widget for Flex {
                     if let Some(widget) = child {
                         let child_bl = ctx.child_baseline_offset(widget);
                         let child_max_y = ctx.child_layout_rect(widget).max_y();
-                        let extra_bottom_padding = my_size.height - child_max_y;
+                        let extra_bottom_padding = my_size.vertical - child_max_y;
                         child_bl + extra_bottom_padding
                     } else {
                         0.0

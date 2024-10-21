@@ -10,7 +10,7 @@
 use accesskit::{DefaultActionVerb, NodeBuilder, Role};
 use masonry::app_driver::{AppDriver, DriverCtx};
 use masonry::dpi::LogicalSize;
-use masonry::widget::{Align, CrossAxisAlignment, Flex, Label, RootWidget, SizedBox};
+use masonry::widget::{Align, BiAxial, ContentFill, CrossAxisAlignment, Flex, Label, RootWidget, SizedBox};
 use masonry::{
     AccessCtx, AccessEvent, Action, BoxConstraints, Color, EventCtx, LayoutCtx, PaintCtx, Point,
     PointerEvent, RegisterCtx, Size, StatusChange, TextEvent, UpdateCtx, Widget, WidgetId,
@@ -213,8 +213,13 @@ impl Widget for CalcButton {
         ctx.register_child(&mut self.inner);
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
-        let size = ctx.run_layout(&mut self.inner, bc);
+    fn layout(
+        &mut self,
+        ctx: &mut LayoutCtx,
+        available_space: &BiAxial<f64>,
+        requested_fill: &BiAxial<ContentFill>,
+    ) -> BiAxial<f64> {
+        let size = ctx.run_layout(&mut self.inner, available_space, requested_fill);
         ctx.place_child(&mut self.inner, Point::ORIGIN);
 
         size

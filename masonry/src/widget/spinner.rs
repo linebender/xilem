@@ -11,7 +11,7 @@ use tracing::{trace_span, Span};
 use vello::kurbo::{Affine, Cap, Line, Stroke};
 use vello::Scene;
 
-use crate::widget::WidgetMut;
+use crate::widget::{BiAxial, ContentFill, WidgetMut};
 use crate::{
     theme, AccessCtx, AccessEvent, BoxConstraints, Color, EventCtx, LayoutCtx, PaintCtx, Point,
     PointerEvent, RegisterCtx, Size, StatusChange, TextEvent, Update, UpdateCtx, Vec2, Widget,
@@ -99,11 +99,16 @@ impl Widget for Spinner {
         }
     }
 
-    fn layout(&mut self, _ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
-        if bc.is_width_bounded() && bc.is_height_bounded() {
-            bc.max()
+    fn layout(
+        &mut self,
+        _ctx: &mut LayoutCtx,
+        available_space: &BiAxial<f64>,
+        _requested_fill: &BiAxial<ContentFill>,
+    ) -> BiAxial<f64> {
+        if available_space.is_width_bounded() && available_space.is_height_bounded() {
+            available_space.clone()
         } else {
-            bc.constrain(Size::new(
+            available_space.constrain(BiAxial::new(
                 theme::BASIC_WIDGET_HEIGHT,
                 theme::BASIC_WIDGET_HEIGHT,
             ))

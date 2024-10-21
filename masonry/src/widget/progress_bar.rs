@@ -12,7 +12,7 @@ use vello::Scene;
 use crate::kurbo::Size;
 use crate::paint_scene_helpers::{fill_lin_gradient, stroke, UnitPoint};
 use crate::text::TextLayout;
-use crate::widget::WidgetMut;
+use crate::widget::{BiAxial, ContentFill, WidgetMut};
 use crate::{
     theme, AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, LayoutCtx, PaintCtx,
     PointerEvent, RegisterCtx, StatusChange, TextEvent, Update, UpdateCtx, Widget, WidgetId,
@@ -110,7 +110,12 @@ impl Widget for ProgressBar {
 
     fn update(&mut self, _ctx: &mut UpdateCtx, _event: &Update) {}
 
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
+    fn layout(
+        &mut self,
+        ctx: &mut LayoutCtx,
+        available_space: &BiAxial<f64>,
+        requested_fill: &BiAxial<ContentFill>,
+    ) -> BiAxial<f64> {
         const DEFAULT_WIDTH: f64 = 400.;
 
         if self.label.needs_rebuild() || self.progress_changed {
@@ -121,11 +126,11 @@ impl Widget for ProgressBar {
         }
         let label_size = self.label.size();
 
-        let desired_size = Size::new(
+        let desired_size = BiAxial::new_size(
             DEFAULT_WIDTH.max(label_size.width),
             crate::theme::BASIC_WIDGET_HEIGHT.max(label_size.height),
         );
-        bc.constrain(desired_size)
+        available_space.constrain(desired_size).use_fill_mode(requested_fill, available_space)
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {

@@ -11,7 +11,7 @@ use tracing::{trace_span, Span};
 use vello::kurbo::{Point, Rect, Size, Vec2};
 use vello::Scene;
 
-use crate::widget::{Axis, ScrollBar, WidgetMut};
+use crate::widget::{Axis, BiAxial, ContentFill, ScrollBar, WidgetMut};
 use crate::{
     AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, LayoutCtx, PaintCtx,
     PointerEvent, RegisterCtx, StatusChange, TextEvent, Update, UpdateCtx, Widget, WidgetId,
@@ -235,7 +235,7 @@ impl<W: Widget> WidgetMut<'_, Portal<W>> {
 
     // Note - Rect is in child coordinates
     pub fn pan_viewport_to(&mut self, target: Rect) -> bool {
-        let viewport = Rect::from_origin_size(self.widget.viewport_pos, self.ctx.widget_state.size);
+        let viewport = Rect::from_origin_size(self.widget.viewport_pos, self.ctx.widget_state.size.to_size());
 
         let new_pos_x = compute_pan_range(
             viewport.min_x()..viewport.max_x(),
@@ -284,11 +284,12 @@ impl<W: Widget> Widget for Portal<W> {
                 scrollbar.widget().moved = false;
 
                 let progress = scrollbar.widget().cursor_progress;
-                self.viewport_pos = Axis::Horizontal
-                    .pack(
-                        progress * Axis::Horizontal.major(content_size - portal_size),
-                        Axis::Horizontal.minor_pos(self.viewport_pos),
+                self.viewport_pos = BiAxial::new(
+                        progress * BiAxial::from_kurbo_size(content_size - portal_size)
+                            .value_for_axis(Axis::Horizontal),
+                        self.viewport_pos.y,
                     )
+                    .raw()
                     .into();
                 scrollbar_moved = true;
             }
@@ -299,11 +300,12 @@ impl<W: Widget> Widget for Portal<W> {
                 scrollbar.widget().moved = false;
 
                 let progress = scrollbar.widget().cursor_progress;
-                self.viewport_pos = Axis::Vertical
-                    .pack(
-                        progress * Axis::Vertical.major(content_size - portal_size),
-                        Axis::Vertical.minor_pos(self.viewport_pos),
+                self.viewport_pos = BiAxial::new(
+                    progress * BiAxial::from_kurbo_size(content_size - portal_size)
+                            .value_for_axis(Axis::Vertical),
+                        self.viewport_pos.x,
                     )
+                    .raw()
                     .into();
                 scrollbar_moved = true;
             }
@@ -357,29 +359,38 @@ impl<W: Widget> Widget for Portal<W> {
         }
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
-        // TODO - How Portal handles BoxConstraints is due for a rework
-        let min_child_size = if self.must_fill { bc.min() } else { Size::ZERO };
-        let max_child_size = bc.max();
+    fn layout(
+        &mut self,
+        ctx: &mut LayoutCtx,
+        available_space: &BiAxial<f64>,
+        requested_fill: &BiAxial<ContentFill>,
+    ) -> BiAxial<f64> {
+        // TODO: Once parent size is added, make available space infinite.
+        let child_space = available_space;
+        let child_fill = if self.must_fill {
+            BiAxial::new(ContentFill::Exact, ContentFill::Exact)
+        } else {
+            // TODO: Somehow allow specifying which axis should overflow.
+            //  once that happens, we can specify the major axis as Max, and the minor as Constrain.
+            BiAxial::new(ContentFill::Constrain, ContentFill::Constrain)
+        };
 
-        let child_bc = BoxConstraints::new(min_child_size, max_child_size);
-
-        let content_size = ctx.run_layout(&mut self.child, &child_bc);
-        let portal_size = bc.constrain(content_size);
+        let content_size = ctx.run_layout(&mut self.child, &child_space, &child_fill);
+        let portal_size = available_space.constrain(content_size);
 
         // TODO - document better
         // Recompute the portal offset for the new layout
-        self.set_viewport_pos_raw(portal_size, content_size, self.viewport_pos);
+        self.set_viewport_pos_raw(portal_size.to_size(), content_size.to_size(), self.viewport_pos);
         // TODO - recompute portal progress
 
-        ctx.set_clip_path(portal_size.to_rect());
+        ctx.set_clip_path(portal_size.to_size().to_rect());
 
         ctx.place_child(&mut self.child, Point::ZERO);
 
         self.scrollbar_horizontal_visible =
-            !self.constrain_horizontal && portal_size.width < content_size.width;
+            !self.constrain_horizontal && portal_size.horizontal < content_size.horizontal;
         self.scrollbar_vertical_visible =
-            !self.constrain_vertical && portal_size.height < content_size.height;
+            !self.constrain_vertical && portal_size.vertical < content_size.vertical;
 
         ctx.set_stashed(
             &mut self.scrollbar_vertical,
@@ -392,30 +403,30 @@ impl<W: Widget> Widget for Portal<W> {
 
         if self.scrollbar_horizontal_visible {
             let mut scrollbar = ctx.get_raw_mut(&mut self.scrollbar_horizontal);
-            scrollbar.widget().portal_size = portal_size.width;
-            scrollbar.widget().content_size = content_size.width;
+            scrollbar.widget().portal_size = portal_size.horizontal;
+            scrollbar.widget().content_size = content_size.horizontal;
             // TODO - request paint for scrollbar?
             std::mem::drop(scrollbar);
 
-            let scrollbar_size = ctx.run_layout(&mut self.scrollbar_horizontal, bc);
+            let scrollbar_size = ctx.run_layout(&mut self.scrollbar_horizontal, available_space, requested_fill);
             ctx.place_child(
                 &mut self.scrollbar_horizontal,
-                Point::new(0.0, portal_size.height - scrollbar_size.height),
+                Point::new(0.0, portal_size.vertical - scrollbar_size.vertical),
             );
         } else {
             ctx.skip_layout(&mut self.scrollbar_horizontal);
         }
         if self.scrollbar_vertical_visible {
             let mut scrollbar = ctx.get_raw_mut(&mut self.scrollbar_vertical);
-            scrollbar.widget().portal_size = portal_size.height;
-            scrollbar.widget().content_size = content_size.height;
+            scrollbar.widget().portal_size = portal_size.vertical;
+            scrollbar.widget().content_size = content_size.vertical;
             // TODO - request paint for scrollbar?
             std::mem::drop(scrollbar);
 
-            let scrollbar_size = ctx.run_layout(&mut self.scrollbar_vertical, bc);
+            let scrollbar_size = ctx.run_layout(&mut self.scrollbar_vertical, available_space, requested_fill);
             ctx.place_child(
                 &mut self.scrollbar_vertical,
-                Point::new(portal_size.width - scrollbar_size.width, 0.0),
+                Point::new(portal_size.horizontal - scrollbar_size.horizontal, 0.0),
             );
         } else {
             ctx.skip_layout(&mut self.scrollbar_vertical);

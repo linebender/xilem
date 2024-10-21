@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use accesskit::{NodeBuilder, Role};
-use masonry::widget::WidgetMut;
+use masonry::widget::{BiAxial, ContentFill, WidgetMut};
 use masonry::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, Point, PointerEvent,
     RegisterCtx, Size, StatusChange, TextEvent, UpdateCtx, Widget, WidgetId, WidgetPod,
@@ -88,8 +88,13 @@ impl Widget for DynWidget {
         ctx.register_child(&mut self.inner);
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
-        let size = ctx.run_layout(&mut self.inner, bc);
+    fn layout(
+        &mut self,
+        ctx: &mut LayoutCtx,
+        available_space: &BiAxial<f64>,
+        requested_fill: &BiAxial<ContentFill>,
+    ) -> BiAxial<f64> {
+        let size = ctx.run_layout(&mut self.inner, available_space, requested_fill);
         ctx.place_child(&mut self.inner, Point::ORIGIN);
         size
     }
