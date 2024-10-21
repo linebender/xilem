@@ -8,15 +8,11 @@
 //! Note: Some of these types are undocumented. They're meant to help maintainers of
 //! Masonry, not to be user-facing.
 
-#![allow(missing_docs)]
-#![allow(unused)]
-
 use std::cell::RefCell;
 use std::collections::VecDeque;
 use std::rc::Rc;
 
 use accesskit::{NodeBuilder, Role};
-use accesskit_winit::Event;
 use smallvec::SmallVec;
 use tracing::trace_span;
 use vello::Scene;
@@ -68,10 +64,14 @@ pub struct ModularWidget<S> {
 /// A widget that can replace its child on command
 pub struct ReplaceChild {
     child: WidgetPod<Box<dyn Widget>>,
+    #[allow(dead_code)]
+    // reason: This is probably bit-rotted code. Next version will SizedBox with WidgetMut instead.
     replacer: Box<dyn Fn() -> WidgetPod<Box<dyn Widget>>>,
 }
 
-/// A widget that records each time one of its methods is called.
+/// A wrapper widget that records each time one of its methods is called.
+///
+/// Its intent is to let you observe the methods called on a widget in a test.
 ///
 /// Make one like this:
 ///
@@ -94,6 +94,8 @@ pub struct Recorder<W> {
 }
 
 /// A recording of widget method calls.
+///
+/// Internally stores a queue of [`Records`](Record).
 #[derive(Debug, Clone, Default)]
 pub struct Recording(Rc<RefCell<VecDeque<Record>>>);
 
@@ -114,7 +116,9 @@ pub enum Record {
     Access,
 }
 
-/// like `WidgetExt` but just for this one thing
+/// External trait implemented for all widgets.
+///
+/// Implements helper methods useful for unit testing.
 pub trait TestWidgetExt: Widget + Sized + 'static {
     fn record(self, recording: &Recording) -> Recorder<Self> {
         Recorder {
@@ -131,6 +135,10 @@ pub trait TestWidgetExt: Widget + Sized + 'static {
 impl<W: Widget + 'static> TestWidgetExt for W {}
 
 impl<S> ModularWidget<S> {
+    /// Create a new `ModularWidget`.
+    ///
+    /// By default none of its methods do anything, and its layout method returns
+    /// a static 100x100 size.
     pub fn new(state: S) -> Self {
         ModularWidget {
             state,
@@ -151,22 +159,36 @@ impl<S> ModularWidget<S> {
             children: None,
         }
     }
+}
 
+/// Builder methods.
+///
+/// Each method takes a flag which is then returned by the matching Widget method.
+impl<S> ModularWidget<S> {
+    /// See [`Widget::accepts_pointer_interaction`]
     pub fn accepts_pointer_interaction(mut self, flag: bool) -> Self {
         self.accepts_pointer_interaction = flag;
         self
     }
 
+    /// See [`Widget::accepts_focus`]
     pub fn accepts_focus(mut self, flag: bool) -> Self {
         self.accepts_focus = flag;
         self
     }
 
+    /// See [`Widget::accepts_text_input`]
     pub fn accepts_text_input(mut self, flag: bool) -> Self {
         self.accepts_text_input = flag;
         self
     }
+}
 
+/// Builder methods.
+///
+/// Each method takes a callback that matches the behavior of the matching Widget method.
+impl<S> ModularWidget<S> {
+    /// See [`Widget::on_pointer_event`]
     pub fn pointer_event_fn(
         mut self,
         f: impl FnMut(&mut S, &mut EventCtx, &PointerEvent) + 'static,
@@ -175,6 +197,7 @@ impl<S> ModularWidget<S> {
         self
     }
 
+    /// See [`Widget::on_text_event`]
     pub fn text_event_fn(
         mut self,
         f: impl FnMut(&mut S, &mut EventCtx, &TextEvent) + 'static,
@@ -183,6 +206,7 @@ impl<S> ModularWidget<S> {
         self
     }
 
+    /// See [`Widget::on_access_event`]
     pub fn access_event_fn(
         mut self,
         f: impl FnMut(&mut S, &mut EventCtx, &AccessEvent) + 'static,
@@ -191,11 +215,13 @@ impl<S> ModularWidget<S> {
         self
     }
 
+    /// See [`Widget::on_anim_frame`]
     pub fn anim_frame_fn(mut self, f: impl FnMut(&mut S, &mut UpdateCtx, u64) + 'static) -> Self {
         self.on_anim_frame = Some(Box::new(f));
         self
     }
 
+    /// See [`Widget::register_children`]
     pub fn register_children_fn(
         mut self,
         f: impl FnMut(&mut S, &mut RegisterCtx) + 'static,
@@ -204,11 +230,13 @@ impl<S> ModularWidget<S> {
         self
     }
 
+    /// See [`Widget::update`]
     pub fn update_fn(mut self, f: impl FnMut(&mut S, &mut UpdateCtx, &Update) + 'static) -> Self {
         self.update = Some(Box::new(f));
         self
     }
 
+    /// See [`Widget::layout`]
     pub fn layout_fn(
         mut self,
         f: impl FnMut(&mut S, &mut LayoutCtx, &BoxConstraints) -> Size + 'static,
@@ -217,21 +245,25 @@ impl<S> ModularWidget<S> {
         self
     }
 
+    /// See [`Widget::compose`]
     pub fn compose_fn(mut self, f: impl FnMut(&mut S, &mut ComposeCtx) + 'static) -> Self {
         self.compose = Some(Box::new(f));
         self
     }
 
+    /// See [`Widget::paint`]
     pub fn paint_fn(mut self, f: impl FnMut(&mut S, &mut PaintCtx, &mut Scene) + 'static) -> Self {
         self.paint = Some(Box::new(f));
         self
     }
 
+    /// See [`Widget::accessibility_role`]
     pub fn role_fn(mut self, f: impl Fn(&S) -> Role + 'static) -> Self {
         self.role = Some(Box::new(f));
         self
     }
 
+    /// See [`Widget::accessibility`]
     pub fn access_fn(
         mut self,
         f: impl FnMut(&mut S, &mut AccessCtx, &mut NodeBuilder) + 'static,
@@ -240,6 +272,7 @@ impl<S> ModularWidget<S> {
         self
     }
 
+    /// See [`Widget::children_ids`]
     pub fn children_fn(
         mut self,
         children: impl Fn(&S) -> SmallVec<[WidgetId; 16]> + 'static,
@@ -383,6 +416,10 @@ impl<S: 'static> Widget for ModularWidget<S> {
 }
 
 impl ReplaceChild {
+    /// Create a new `ReplaceChild` widget.
+    ///
+    /// The `child` is the initial child widget, and `f` is a function that
+    /// returns a new widget to replace it with.
     pub fn new<W: Widget + 'static>(child: impl Widget, f: impl Fn() -> W + 'static) -> Self {
         let child = WidgetPod::new(child).boxed();
         let replacer = Box::new(move || WidgetPod::new(f()).boxed());
@@ -436,14 +473,17 @@ impl Widget for ReplaceChild {
 }
 
 impl Recording {
+    /// True if no events have been recorded.
     pub fn is_empty(&self) -> bool {
         self.0.borrow().is_empty()
     }
 
+    /// The number of events in the recording.
     pub fn len(&self) -> usize {
         self.0.borrow().len()
     }
 
+    /// Clear recorded events.
     pub fn clear(&self) {
         self.0.borrow_mut().clear();
     }
