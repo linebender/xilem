@@ -151,7 +151,7 @@ impl_context_method!(
         fn get_child<Child: Widget>(&self, child: &'_ WidgetPod<Child>) -> &'_ Child {
             let child_ref = self
                 .widget_children
-                .get_child(child.id().to_raw())
+                .get_child(child.id())
                 .expect("get_child: child not found");
             child_ref.item.as_dyn_any().downcast_ref::<Child>().unwrap()
         }
@@ -161,7 +161,7 @@ impl_context_method!(
         fn get_child_state<Child: Widget>(&self, child: &'_ WidgetPod<Child>) -> &'_ WidgetState {
             let child_state_ref = self
                 .widget_state_children
-                .get_child(child.id().to_raw())
+                .get_child(child.id())
                 .expect("get_child_state: child not found");
             child_state_ref.item
         }
@@ -186,7 +186,7 @@ impl_context_method!(
         ) -> &'_ mut WidgetState {
             let child_state_mut = self
                 .widget_state_children
-                .get_child_mut(child.id().to_raw())
+                .get_child_mut(child.id())
                 .expect("get_child_state_mut: child not found");
             child_state_mut.item
         }
@@ -406,11 +406,11 @@ impl<'a> MutateCtx<'a> {
     ) -> WidgetMut<'c, Child> {
         let child_state_mut = self
             .widget_state_children
-            .get_child_mut(child.id().to_raw())
+            .get_child_mut(child.id())
             .expect("get_mut: child not found");
         let child_mut = self
             .widget_children
-            .get_child_mut(child.id().to_raw())
+            .get_child_mut(child.id())
             .expect("get_mut: child not found");
         let child_ctx = MutateCtx {
             global_state: self.global_state,
@@ -446,11 +446,11 @@ impl<'w> QueryCtx<'w> {
     pub fn get(self, child: WidgetId) -> WidgetRef<'w, dyn Widget> {
         let child_state = self
             .widget_state_children
-            .into_child(child.to_raw())
+            .into_child(child)
             .expect("get: child not found");
         let child = self
             .widget_children
-            .into_child(child.to_raw())
+            .into_child(child)
             .expect("get: child not found");
 
         let ctx = QueryCtx {
@@ -549,7 +549,7 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, {
     /// pass them to this method.
     pub fn remove_child(&mut self, child: WidgetPod<impl Widget>) {
         // TODO - Send recursive event to child
-        let id = child.id().to_raw();
+        let id = child.id();
         let _ = self
             .widget_state_children
             .remove_child(id)
@@ -797,7 +797,7 @@ impl RegisterCtx<'_> {
             self.registered_ids.push(child.id());
         }
 
-        let id = child.id().to_raw();
+        let id = child.id();
         let state = WidgetState::new(child.id(), widget.short_type_name());
 
         self.widget_children.insert_child(id, Box::new(widget));
@@ -1104,11 +1104,11 @@ macro_rules! impl_get_raw {
             {
                 let child_state_mut = self
                     .widget_state_children
-                    .get_child_mut(child.id().to_raw())
+                    .get_child_mut(child.id())
                     .expect("get_raw_ref: child not found");
                 let child_mut = self
                     .widget_children
-                    .get_child_mut(child.id().to_raw())
+                    .get_child_mut(child.id())
                     .expect("get_raw_ref: child not found");
                 #[allow(clippy::needless_update)]
                 let child_ctx = $SomeCtx {
@@ -1137,11 +1137,11 @@ macro_rules! impl_get_raw {
             {
                 let child_state_mut = self
                     .widget_state_children
-                    .get_child_mut(child.id().to_raw())
+                    .get_child_mut(child.id())
                     .expect("get_raw_mut: child not found");
                 let child_mut = self
                     .widget_children
-                    .get_child_mut(child.id().to_raw())
+                    .get_child_mut(child.id())
                     .expect("get_raw_mut: child not found");
                 #[allow(clippy::needless_update)]
                 let child_ctx = $SomeCtx {
@@ -1176,11 +1176,11 @@ impl<'s> AccessCtx<'s> {
     {
         let child_state_mut = self
             .widget_state_children
-            .get_child_mut(child.id().to_raw())
+            .get_child_mut(child.id())
             .expect("get_raw_ref: child not found");
         let child_mut = self
             .widget_children
-            .get_child_mut(child.id().to_raw())
+            .get_child_mut(child.id())
             .expect("get_raw_ref: child not found");
         let child_ctx = AccessCtx {
             widget_state: child_state_mut.item,
