@@ -16,8 +16,8 @@ use vello::Scene;
 use crate::text::{TextBrush, TextLayout};
 use crate::widget::WidgetMut;
 use crate::{
-    AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
-    RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
+    text::ArcStr, AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx,
+    PointerEvent, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
 };
 
 // added padding between the edges of the widget and the text.

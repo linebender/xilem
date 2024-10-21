@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::text::TextBrush;
-use masonry::{widget, ArcStr};
+use masonry::{widget, text::ArcStr};
 
 use crate::core::{DynMessage, Mut, ViewMarker};
 use crate::{Color, MessageResult, Pod, TextAlignment, View, ViewCtx, ViewId};

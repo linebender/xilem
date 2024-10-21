@@ -7,7 +7,7 @@
 // On Windows platform, don't show a console when opening the app.
 #![windows_subsystem = "windows"]
 
-use masonry::app_driver::{AppDriver, DriverCtx};
+use masonry::{AppDriver, DriverCtx};
 use masonry::dpi::LogicalSize;
 use masonry::widget::{Flex, RootWidget, Textbox};
 use masonry::{Action, WidgetId};

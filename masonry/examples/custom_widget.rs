@@ -8,7 +8,7 @@
 #![windows_subsystem = "windows"]
 
 use accesskit::{NodeBuilder, Role};
-use masonry::app_driver::{AppDriver, DriverCtx};
+use masonry::{AppDriver, DriverCtx};
 use masonry::kurbo::{BezPath, Stroke};
 use masonry::widget::{ObjectFit, RootWidget};
 use masonry::{

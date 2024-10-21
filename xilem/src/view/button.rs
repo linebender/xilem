@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 pub use masonry::PointerButton;
-use masonry::{widget, ArcStr};
+use masonry::{text::ArcStr, widget};
 
 use crate::core::{DynMessage, Mut, View, ViewMarker};
 use crate::{MessageResult, Pod, ViewCtx, ViewId};

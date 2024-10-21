@@ -8,13 +8,13 @@
 #![allow(variant_size_differences, clippy::single_match)]
 
 use accesskit::{DefaultActionVerb, NodeBuilder, Role};
-use masonry::app_driver::{AppDriver, DriverCtx};
 use masonry::dpi::LogicalSize;
 use masonry::widget::{Align, CrossAxisAlignment, Flex, Label, RootWidget, SizedBox};
 use masonry::{
     AccessCtx, AccessEvent, Action, BoxConstraints, Color, EventCtx, LayoutCtx, PaintCtx, Point,
     PointerEvent, RegisterCtx, Size, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetPod,
 };
+use masonry::{AppDriver, DriverCtx};
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace, trace_span, Span};
 use vello::Scene;
