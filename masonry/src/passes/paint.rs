@@ -50,7 +50,7 @@ fn paint_widget(
     state.item.request_paint = false;
     state.item.needs_paint = false;
 
-    let clip = state.item.clip;
+    let clip = state.item.clip_path;
     let has_clip = clip.is_some();
     let transform = Affine::translate(state.item.window_origin.to_vec2());
     let scene = scenes.get(&id).unwrap();

@@ -40,6 +40,13 @@ Contains widget-related items, including the Widget trait, and the WidgetRef, Wi
 
 Also includes a list of basic widgets, each defined in a single file.
 
+### `src/widget/widget_state.rs`
+
+Contains the WidgetState type, around which a lot of pass code is based.
+
+The WidgetState documentation has helpful information on its fields and their naming scheme.
+
+
 ### `src/render_root.rs`
 
 The composition root of the framework. See **General architecture** section.
