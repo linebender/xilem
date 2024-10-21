@@ -141,7 +141,6 @@ where
                 &inner.root,
                 inner.ctx.fragment.clone(),
                 false,
-                #[cfg(feature = "hydration")]
                 false,
             );
             new_fragment.seq_rebuild(

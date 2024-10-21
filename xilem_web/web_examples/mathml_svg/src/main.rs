@@ -4,7 +4,7 @@
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use xilem_web::{
     document_body, elements::html, elements::mathml as ml, elements::svg, interfaces::*,
-    style as s, App,
+    modifiers::style as s, App,
 };
 
 struct Triangle {

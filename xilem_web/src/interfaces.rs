@@ -3,7 +3,7 @@
 
 //! Opinionated extension traits roughly resembling their equivalently named DOM interfaces.
 //!
-//! It is used for DOM elements, e.g. created with [`html::span`](`crate::elements::html::span`) to modify the underlying element, such as [`Element::attr`] or [`HtmlElement::style`]
+//! It is used for DOM elements, e.g. created with [`html::span`](`crate::elements::html::span`) to modify the underlying element, such as [`Element::attr`] or [`Element::style`]
 //!
 //! These traits can also be used as return type of components to allow modifying the underlying DOM element that is returned.
 //! For example:
@@ -15,10 +15,11 @@
 use std::borrow::Cow;
 
 use crate::{
-    attribute::{Attr, WithAttributes},
-    class::{AsClassIter, Class, WithClasses},
     events,
-    style::{IntoStyles, Rotate, Scale, ScaleValue, Style, WithStyle},
+    modifiers::{
+        Attr, Attributes, Class, ClassIter, Classes, Rotate, Scale, ScaleValue, Style, StyleIter,
+        Styles, With,
+    },
     DomNode, DomView, IntoAttributeValue, OptionalAction, Pointer, PointerMsg,
 };
 use wasm_bindgen::JsCast;
@@ -54,7 +55,8 @@ pub trait Element<State, Action = ()>:
     + DomView<
         State,
         Action,
-        DomNode: DomNode<Props: WithAttributes + WithClasses + WithStyle> + AsRef<web_sys::Element>,
+        DomNode: DomNode<Props: With<Attributes> + With<Classes> + With<Styles>>
+                     + AsRef<web_sys::Element>,
     >
 {
     /// Set an attribute for an [`Element`]
@@ -97,7 +99,7 @@ pub trait Element<State, Action = ()>:
     ///     .class(Some("optional-class"))
     /// # }
     /// ```
-    fn class<AsClasses: AsClassIter>(
+    fn class<AsClasses: ClassIter>(
         self,
         as_classes: AsClasses,
     ) -> Class<Self, AsClasses, State, Action> {
@@ -151,7 +153,7 @@ pub trait Element<State, Action = ()>:
     /// # Examples
     ///
     /// ```
-    /// use xilem_web::{style as s, elements::html::div, interfaces::Element};
+    /// use xilem_web::{modifiers::style as s, elements::html::div, interfaces::Element};
     ///
     /// # fn component() -> impl Element<()> {
     /// div(())
@@ -159,9 +161,7 @@ pub trait Element<State, Action = ()>:
     ///     .style(s("justify-content", "center"))
     /// # }
     /// ```
-    fn style(self, style: impl IntoStyles) -> Style<Self, State, Action> {
-        let mut styles = vec![];
-        style.into_styles(&mut styles);
+    fn style<AsStyles: StyleIter>(self, styles: AsStyles) -> Style<Self, AsStyles, State, Action> {
         Style::new(self, styles)
     }
 
@@ -169,7 +169,7 @@ pub trait Element<State, Action = ()>:
     /// # Examples
     ///
     /// ```
-    /// use xilem_web::{style as s, interfaces::Element, svg::kurbo::Rect};
+    /// use xilem_web::{modifiers::style as s, interfaces::Element, svg::kurbo::Rect};
     ///
     /// # fn component() -> impl Element<()> {
     /// Rect::from_origin_size((0.0, 10.0), (20.0, 30.0))
@@ -187,7 +187,7 @@ pub trait Element<State, Action = ()>:
     /// # Examples
     ///
     /// ```
-    /// use xilem_web::{style as s, interfaces::Element, svg::kurbo::Circle};
+    /// use xilem_web::{modifiers::style as s, interfaces::Element, svg::kurbo::Circle};
     ///
     /// # fn component() -> impl Element<()> {
     /// Circle::new((10.0, 20.0), 30.0)
@@ -198,10 +198,7 @@ pub trait Element<State, Action = ()>:
     /// // <circle r="30" cy="20" cx="10" style="transform: translate(10px, 0) scale(1.5) scale(1.5, 2);"></circle>
     /// # }
     /// ```
-    fn scale(self, scale: impl Into<ScaleValue>) -> Scale<Self, State, Action>
-    where
-        <Self::DomNode as DomNode>::Props: WithStyle,
-    {
+    fn scale(self, scale: impl Into<ScaleValue>) -> Scale<Self, State, Action> {
         Scale::new(self, scale)
     }
 
@@ -334,7 +331,7 @@ pub trait Element<State, Action = ()>:
 impl<State, Action, T> Element<State, Action> for T
 where
     T: DomView<State, Action>,
-    <T::DomNode as DomNode>::Props: WithAttributes + WithClasses + WithStyle,
+    <T::DomNode as DomNode>::Props: With<Attributes> + With<Classes> + With<Styles>,
     T::DomNode: AsRef<web_sys::Element>,
 {
 }
@@ -559,7 +556,7 @@ where
 
 // #[cfg(feature = "HtmlElement")]
 pub trait HtmlElement<State, Action = ()>:
-    Element<State, Action, DomNode: DomNode<Props: WithStyle> + AsRef<web_sys::HtmlElement>>
+    Element<State, Action, DomNode: AsRef<web_sys::HtmlElement>>
 {
 }
 
@@ -568,7 +565,6 @@ impl<State, Action, T> HtmlElement<State, Action> for T
 where
     T: Element<State, Action>,
     T::DomNode: AsRef<web_sys::HtmlElement>,
-    <T::DomNode as DomNode>::Props: WithStyle,
 {
 }
 
@@ -1530,7 +1526,7 @@ where
 
 // #[cfg(feature = "SvgElement")]
 pub trait SvgElement<State, Action = ()>:
-    Element<State, Action, DomNode: DomNode<Props: WithStyle> + AsRef<web_sys::SvgElement>>
+    Element<State, Action, DomNode: AsRef<web_sys::SvgElement>>
 {
 }
 
@@ -1539,7 +1535,6 @@ impl<State, Action, T> SvgElement<State, Action> for T
 where
     T: Element<State, Action>,
     T::DomNode: AsRef<web_sys::SvgElement>,
-    <T::DomNode as DomNode>::Props: WithStyle,
 {
 }
 

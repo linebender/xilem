@@ -84,6 +84,33 @@ where
     }
 }
 
+impl<T, A, B, C, D, E, F, G, H, I> AsMut<T> for OneOf<A, B, C, D, E, F, G, H, I>
+where
+    A: AsMut<T>,
+    B: AsMut<T>,
+    C: AsMut<T>,
+    D: AsMut<T>,
+    E: AsMut<T>,
+    F: AsMut<T>,
+    G: AsMut<T>,
+    H: AsMut<T>,
+    I: AsMut<T>,
+{
+    fn as_mut(&mut self) -> &mut T {
+        match self {
+            OneOf::A(e) => <A as AsMut<T>>::as_mut(e),
+            OneOf::B(e) => <B as AsMut<T>>::as_mut(e),
+            OneOf::C(e) => <C as AsMut<T>>::as_mut(e),
+            OneOf::D(e) => <D as AsMut<T>>::as_mut(e),
+            OneOf::E(e) => <E as AsMut<T>>::as_mut(e),
+            OneOf::F(e) => <F as AsMut<T>>::as_mut(e),
+            OneOf::G(e) => <G as AsMut<T>>::as_mut(e),
+            OneOf::H(e) => <H as AsMut<T>>::as_mut(e),
+            OneOf::I(e) => <I as AsMut<T>>::as_mut(e),
+        }
+    }
+}
+
 /// A context type which can support [`OneOf9`] and [related views](super::one_of).
 ///
 /// This should be implemented by users of Xilem Core.
