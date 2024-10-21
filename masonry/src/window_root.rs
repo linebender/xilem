@@ -40,7 +40,7 @@ use crate::{AccessEvent, Action, CursorIcon, Handled, QueryCtx, Widget, WidgetId
 
 // --- MARK: STRUCTS ---
 
-pub struct RenderRoot {
+pub struct WindowRoot {
     pub(crate) root: WidgetPod<Box<dyn Widget>>,
     pub(crate) size_policy: WindowSizePolicy,
     pub(crate) size: PhysicalSize<u32>,
@@ -51,7 +51,7 @@ pub struct RenderRoot {
     pub(crate) last_anim: Option<Instant>,
     pub(crate) last_mouse_pos: Option<LogicalPosition<f64>>,
     pub(crate) cursor_icon: CursorIcon,
-    pub(crate) global_state: RenderRootState,
+    pub(crate) global_state: WindowRootState,
     // TODO - Add "access_tree_active" to detect when you don't need to update the
     // access tree
     pub(crate) rebuild_access_tree: bool,
@@ -59,9 +59,9 @@ pub struct RenderRoot {
 }
 
 // TODO - Document these fields.
-pub(crate) struct RenderRootState {
+pub(crate) struct WindowRootState {
     pub(crate) debug_logger: DebugLogger,
-    pub(crate) signal_queue: VecDeque<RenderRootSignal>,
+    pub(crate) signal_queue: VecDeque<WindowRootSignal>,
     pub(crate) focused_widget: Option<WidgetId>,
     pub(crate) focused_path: Vec<WidgetId>,
     pub(crate) next_focused_widget: Option<WidgetId>,
@@ -97,7 +97,7 @@ pub enum WindowSizePolicy {
     User,
 }
 
-pub struct RenderRootOptions {
+pub struct WindowRootOptions {
     pub use_system_fonts: bool,
     pub size_policy: WindowSizePolicy,
     pub scale_factor: f64,
@@ -112,7 +112,7 @@ pub struct RenderRootOptions {
     pub test_font: Option<Vec<u8>>,
 }
 
-pub enum RenderRootSignal {
+pub enum WindowRootSignal {
     Action(Action, WidgetId),
     StartIme,
     EndIme,
@@ -125,17 +125,17 @@ pub enum RenderRootSignal {
     SetTitle(String),
 }
 
-impl RenderRoot {
+impl WindowRoot {
     pub fn new(
         root_widget: impl Widget,
-        RenderRootOptions {
+        WindowRootOptions {
             use_system_fonts,
             size_policy,
             scale_factor,
             test_font,
-        }: RenderRootOptions,
+        }: WindowRootOptions,
     ) -> Self {
-        let mut root = RenderRoot {
+        let mut root = WindowRoot {
             root: WidgetPod::new(root_widget).boxed(),
             size_policy,
             size: PhysicalSize::new(0, 0),
@@ -143,7 +143,7 @@ impl RenderRoot {
             last_anim: None,
             last_mouse_pos: None,
             cursor_icon: CursorIcon::Default,
-            global_state: RenderRootState {
+            global_state: WindowRootState {
                 debug_logger: DebugLogger::new(false),
                 signal_queue: VecDeque::new(),
                 focused_widget: None,
@@ -236,7 +236,7 @@ impl RenderRoot {
             WindowEvent::RebuildAccessTree => {
                 self.rebuild_access_tree = true;
                 self.global_state
-                    .emit_signal(RenderRootSignal::RequestRedraw);
+                    .emit_signal(WindowRootSignal::RequestRedraw);
                 Handled::Yes
             }
         }
@@ -298,7 +298,7 @@ impl RenderRoot {
         if self.root_state().needs_layout {
             warn!("Widget requested layout during layout pass");
             self.global_state
-                .emit_signal(RenderRootSignal::RequestRedraw);
+                .emit_signal(WindowRootSignal::RequestRedraw);
         }
 
         // TODO - Handle invalidation regions
@@ -309,14 +309,14 @@ impl RenderRoot {
         )
     }
 
-    pub fn pop_signal(&mut self) -> Option<RenderRootSignal> {
+    pub fn pop_signal(&mut self) -> Option<WindowRootSignal> {
         self.global_state.signal_queue.pop_front()
     }
 
     pub fn pop_signal_matching(
         &mut self,
-        predicate: impl Fn(&RenderRootSignal) -> bool,
-    ) -> Option<RenderRootSignal> {
+        predicate: impl Fn(&WindowRootSignal) -> bool,
+    ) -> Option<WindowRootSignal> {
         let idx = self.global_state.signal_queue.iter().position(predicate)?;
         self.global_state.signal_queue.remove(idx)
     }
@@ -466,12 +466,12 @@ impl RenderRoot {
             warn!("All rewrite passes have run {REWRITE_PASSES_MAX} times, but invalidations are still set");
             // To avoid an infinite loop, we delay re-running the passes until the next frame.
             self.global_state
-                .emit_signal(RenderRootSignal::RequestRedraw);
+                .emit_signal(WindowRootSignal::RequestRedraw);
         }
 
         if self.root_state().needs_anim {
             self.global_state
-                .emit_signal(RenderRootSignal::RequestAnimFrame);
+                .emit_signal(WindowRootSignal::RequestAnimFrame);
         }
 
         // We request a redraw if either the render tree or the accessibility
@@ -480,7 +480,7 @@ impl RenderRoot {
         // TODO - We assume that a relayout will trigger a repaint
         if self.root_state().needs_paint || self.root_state().needs_accessibility {
             self.global_state
-                .emit_signal(RenderRootSignal::RequestRedraw);
+                .emit_signal(WindowRootSignal::RequestRedraw);
         }
     }
 
@@ -508,7 +508,7 @@ impl RenderRoot {
         let (root_widget, mut root_state) = self.widget_arena.get_pair_mut(self.root.id());
         request_render_all_in(root_widget, root_state.reborrow_mut());
         self.global_state
-            .emit_signal(RenderRootSignal::RequestRedraw);
+            .emit_signal(WindowRootSignal::RequestRedraw);
     }
 
     // Checks whether the given id points to a widget that is "interactive".
@@ -552,7 +552,7 @@ impl RenderRoot {
         }
     }
 
-    // TODO - Store in RenderRootState
+    // TODO - Store in WindowRootState
     pub(crate) fn focus_chain(&mut self) -> &[WidgetId] {
         &self.root_state().focus_chain
     }
@@ -563,9 +563,9 @@ impl RenderRoot {
     }
 }
 
-impl RenderRootState {
+impl WindowRootState {
     /// Send a signal to the runner of this app, which allows global actions to be triggered by a widget.
-    pub(crate) fn emit_signal(&mut self, signal: RenderRootSignal) {
+    pub(crate) fn emit_signal(&mut self, signal: WindowRootSignal) {
         self.signal_queue.push_back(signal);
     }
 
@@ -582,9 +582,9 @@ impl RenderRootState {
     }
 }
 
-impl RenderRootSignal {
+impl WindowRootSignal {
     pub(crate) fn new_ime_moved_signal(area: Rect) -> Self {
-        RenderRootSignal::ImeMoved(
+        WindowRootSignal::ImeMoved(
             LogicalPosition {
                 x: area.origin().x,
                 y: area.origin().y + area.size().height,

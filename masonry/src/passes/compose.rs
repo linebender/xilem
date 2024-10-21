@@ -5,13 +5,13 @@ use tracing::info_span;
 use vello::kurbo::Vec2;
 
 use crate::passes::recurse_on_children;
-use crate::render_root::{RenderRoot, RenderRootSignal, RenderRootState};
+use crate::window_root::{WindowRoot, WindowRootSignal, WindowRootState};
 use crate::tree_arena::ArenaMut;
 use crate::{ComposeCtx, Widget, WidgetState};
 
 // --- MARK: RECURSE ---
 fn compose_widget(
-    global_state: &mut RenderRootState,
+    global_state: &mut WindowRootState,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
     mut state: ArenaMut<'_, WidgetState>,
     parent_moved: bool,
@@ -43,7 +43,7 @@ fn compose_widget(
     // TODO - Add unit tests for this.
     if moved && state.item.accepts_text_input && global_state.is_focused(state.item.id) {
         let ime_area = state.item.get_ime_area();
-        global_state.emit_signal(RenderRootSignal::new_ime_moved_signal(ime_area));
+        global_state.emit_signal(WindowRootSignal::new_ime_moved_signal(ime_area));
     }
 
     // We need to update the accessibility node's coordinates and repaint it at the new position.
@@ -75,7 +75,7 @@ fn compose_widget(
 }
 
 // --- MARK: ROOT ---
-pub(crate) fn run_compose_pass(root: &mut RenderRoot) {
+pub(crate) fn run_compose_pass(root: &mut WindowRoot) {
     let _span = info_span!("compose").entered();
 
     // If widgets are moved, pointer-related info may be stale.

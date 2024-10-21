@@ -40,7 +40,7 @@ Contains widget-related items, including the Widget trait, and the WidgetRef, Wi
 
 Also includes a list of basic widgets, each defined in a single file.
 
-### `src/render_root.rs`
+### `src/window_root.rs`
 
 The composition root of the framework. See **General architecture** section.
 
@@ -83,7 +83,7 @@ Masonry should have no prelude. Examples and documentation should deliberately h
 
 The composition roots of Masonry are:
 
-- **RenderRoot**
+- **WindowRoot**
 - The **AppDriver** trait.
 - The **run_with** function in `event_loop_runner.rs`.
 
