@@ -40,6 +40,7 @@ use crate::{AccessEvent, Action, CursorIcon, Handled, QueryCtx, Widget, WidgetId
 
 // --- MARK: STRUCTS ---
 
+// Note - Old discussions may refer to this as "RenderRoot".
 pub struct WindowRoot {
     pub(crate) root: WidgetPod<Box<dyn Widget>>,
     pub(crate) size_policy: WindowSizePolicy,
