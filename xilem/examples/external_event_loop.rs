@@ -7,10 +7,10 @@
 //! Support for more custom embeddings would be welcome, but needs more design work
 use std::sync::Arc;
 
-use masonry::app_driver::AppDriver;
 use masonry::event_loop_runner::MasonryUserEvent;
+use masonry::text::ArcStr;
 use masonry::widget::{CrossAxisAlignment, MainAxisAlignment};
-use masonry::{ArcStr, Color};
+use masonry::{AppDriver, Color};
 use winit::application::ApplicationHandler;
 use winit::error::EventLoopError;
 use winit::event::ElementState;

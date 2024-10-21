@@ -17,10 +17,9 @@
 //! The to-do-list example looks like this:
 //!
 //! ```
-//! use masonry::app_driver::{AppDriver, DriverCtx};
 //! use masonry::dpi::LogicalSize;
 //! use masonry::widget::{Button, Flex, Label, Portal, RootWidget, Textbox, WidgetMut};
-//! use masonry::{Action, WidgetId};
+//! use masonry::{Action, AppDriver, DriverCtx, WidgetId};
 //! use winit::window::Window;
 //!
 //! const VERTICAL_WIDGET_SPACING: f64 = 20.0;
@@ -103,51 +102,57 @@
 
 // TODO - Add logo
 
+#[macro_use]
+mod util;
+
+#[allow(unused)]
+mod debug_logger;
+#[allow(unused)]
+mod debug_values;
+
+mod action;
+mod app_driver;
+mod box_constraints;
+mod contexts;
+mod event;
+mod paint_scene_helpers;
+mod passes;
+mod render_root;
+mod tracing_backend;
+mod tree_arena;
+
+pub mod event_loop_runner;
+pub mod testing;
+pub mod text;
+pub mod theme;
+pub mod widget;
+
+pub use cursor_icon;
 pub use dpi;
 pub use parley;
 pub use vello;
 pub use vello::kurbo;
 
-#[macro_use]
-mod util;
-
-mod action;
-mod box_constraints;
-mod contexts;
-mod event;
-pub mod paint_scene_helpers;
-pub mod render_root;
-pub mod testing;
-pub mod theme;
-pub mod widget;
-
-// TODO
-pub mod app_driver;
-pub mod debug_logger;
-pub mod debug_values;
-pub mod event_loop_runner;
-pub mod passes;
-pub mod text;
-mod tracing_backend;
-mod tree_arena;
+pub use cursor_icon::{CursorIcon, ParseError as CursorIconParseError};
+pub use kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
+pub use parley::fontique::Weight as TextWeight;
+pub use parley::layout::Alignment as TextAlignment;
+pub use vello::peniko::{Color, Gradient};
 
 pub use action::Action;
+pub use app_driver::{AppDriver, DriverCtx};
 pub use box_constraints::BoxConstraints;
 pub use contexts::{
     AccessCtx, ComposeCtx, EventCtx, IsContext, LayoutCtx, MutateCtx, PaintCtx, QueryCtx,
     RawWrapper, RawWrapperMut, RegisterCtx, UpdateCtx,
 };
-pub use cursor_icon::{CursorIcon, ParseError as CursorIconParseError};
 pub use event::{
     AccessEvent, PointerButton, PointerEvent, PointerState, TextEvent, Update, WindowEvent,
     WindowTheme,
 };
-pub use kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
-pub use parley::fontique::Weight as TextWeight;
-pub use parley::layout::Alignment as TextAlignment;
-pub use text::ArcStr;
+pub use render_root::{RenderRoot, RenderRootOptions, RenderRootSignal};
 pub use util::{AsAny, Handled};
-pub use vello::peniko::{Color, Gradient};
 pub use widget::widget::{AllowRawMut, Widget, WidgetId};
 pub use widget::WidgetPod;
+
 pub(crate) use widget::WidgetState;

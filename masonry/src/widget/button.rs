@@ -11,9 +11,10 @@ use vello::Scene;
 use crate::action::Action;
 use crate::event::PointerButton;
 use crate::paint_scene_helpers::{fill_lin_gradient, stroke, UnitPoint};
+use crate::text::ArcStr;
 use crate::widget::{Label, WidgetMut, WidgetPod};
 use crate::{
-    theme, AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, Insets, LayoutCtx, PaintCtx,
+    theme, AccessCtx, AccessEvent, BoxConstraints, EventCtx, Insets, LayoutCtx, PaintCtx,
     PointerEvent, Size, TextEvent, Update, UpdateCtx, Widget, WidgetId,
 };
 

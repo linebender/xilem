@@ -1,8 +1,8 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use masonry::text::ArcStr;
 use masonry::widget::{CrossAxisAlignment, MainAxisAlignment};
-use masonry::ArcStr;
 use winit::error::EventLoopError;
 use xilem::view::{button, flex, label, sized_box, Axis, FlexExt as _, FlexSpacer};
 use xilem::{EventLoop, WidgetView, Xilem};

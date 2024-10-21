@@ -11,10 +11,11 @@ use vello::Scene;
 
 use crate::action::Action;
 use crate::paint_scene_helpers::{fill_lin_gradient, stroke, UnitPoint};
+use crate::text::ArcStr;
 use crate::widget::{Label, WidgetMut};
 use crate::{
-    theme, AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, LayoutCtx, PaintCtx,
-    PointerEvent, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetPod,
+    theme, AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
+    RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetPod,
 };
 
 /// A checkbox that can be toggled.
