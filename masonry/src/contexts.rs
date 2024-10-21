@@ -858,9 +858,6 @@ impl LayoutCtx<'_> {
     /// [`WidgetPod::paint_insets`]: crate::widget::WidgetPod::paint_insets
     pub fn set_paint_insets(&mut self, insets: impl Into<Insets>) {
         let insets = insets.into();
-        if self.global_state.trace.layout {
-            trace!("set_paint_insets {:?}", insets);
-        }
         self.widget_state.paint_insets = insets.nonnegative();
     }
 
@@ -902,9 +899,6 @@ impl LayoutCtx<'_> {
     /// The provided value should be the distance from the *bottom* of the
     /// widget to the baseline.
     pub fn set_baseline_offset(&mut self, baseline: f64) {
-        if self.global_state.trace.layout {
-            trace!("set_baseline_offset {}", baseline);
-        }
         self.widget_state.baseline_offset = baseline;
     }
 
@@ -982,10 +976,14 @@ impl LayoutCtx<'_> {
     /// - It serves as a mask for painting operations of the widget's children (*not* the widget itself).
     /// - Pointer events must be inside that path to reach the widget's children.
     pub fn set_clip_path(&mut self, path: Rect) {
-        // This is intentionally not-gated because clip paths are:
+        // We intentionally always log this because clip paths are:
         // 1) Relatively rare in the tree
         // 2) An easy potential source of items not being visible when expected
-        trace!("set_clip_path {:?}", path);
+        trace!(
+            "{} ({}): set_clip_path {path:?}",
+            self.widget_state.widget_name,
+            self.widget_state.id
+        );
         self.widget_state.clip = Some(path);
         // TODO - Updating the clip path may have
         // other knock-on effects we'd need to document.
