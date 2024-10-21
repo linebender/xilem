@@ -12,7 +12,7 @@ use vello::kurbo::Vec2;
 
 use crate::action::Action;
 use crate::passes::layout::run_layout_on;
-use crate::render_root::{MutateCallback, RenderRootSignal, RenderRootState};
+use crate::window_root::{MutateCallback, WindowRootSignal, WindowRootState};
 use crate::text::TextBrush;
 use crate::tree_arena::{ArenaMutChildren, ArenaRefChildren};
 use crate::widget::{WidgetMut, WidgetRef, WidgetState};
@@ -45,7 +45,7 @@ macro_rules! impl_context_method {
 ///
 // TODO add tutorial - See https://github.com/linebender/xilem/issues/376
 pub struct MutateCtx<'a> {
-    pub(crate) global_state: &'a mut RenderRootState,
+    pub(crate) global_state: &'a mut WindowRootState,
     pub(crate) parent_widget_state: Option<&'a mut WidgetState>,
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) widget_state_children: ArenaMutChildren<'a, WidgetState>,
@@ -55,7 +55,7 @@ pub struct MutateCtx<'a> {
 /// A context provided to methods of widgets requiring shared, read-only access.
 #[derive(Clone, Copy)]
 pub struct QueryCtx<'a> {
-    pub(crate) global_state: &'a RenderRootState,
+    pub(crate) global_state: &'a WindowRootState,
     pub(crate) widget_state: &'a WidgetState,
     pub(crate) widget_state_children: ArenaRefChildren<'a, WidgetState>,
     pub(crate) widget_children: ArenaRefChildren<'a, Box<dyn Widget>>,
@@ -66,7 +66,7 @@ pub struct QueryCtx<'a> {
 /// Widgets should call [`request_paint`](Self::request_paint) whenever an event causes a change
 /// in the widget's appearance, to schedule a repaint.
 pub struct EventCtx<'a> {
-    pub(crate) global_state: &'a mut RenderRootState,
+    pub(crate) global_state: &'a mut WindowRootState,
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) widget_state_children: ArenaMutChildren<'a, WidgetState>,
     pub(crate) widget_children: ArenaMutChildren<'a, Box<dyn Widget>>,
@@ -87,7 +87,7 @@ pub struct RegisterCtx<'a> {
 ///
 /// [`update`]: Widget::update
 pub struct UpdateCtx<'a> {
-    pub(crate) global_state: &'a mut RenderRootState,
+    pub(crate) global_state: &'a mut WindowRootState,
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) widget_state_children: ArenaMutChildren<'a, WidgetState>,
     pub(crate) widget_children: ArenaMutChildren<'a, Box<dyn Widget>>,
@@ -99,14 +99,14 @@ pub struct UpdateCtx<'a> {
 /// creating text layout objects, which are likely to be useful
 /// during widget layout.
 pub struct LayoutCtx<'a> {
-    pub(crate) global_state: &'a mut RenderRootState,
+    pub(crate) global_state: &'a mut WindowRootState,
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) widget_state_children: ArenaMutChildren<'a, WidgetState>,
     pub(crate) widget_children: ArenaMutChildren<'a, Box<dyn Widget>>,
 }
 
 pub struct ComposeCtx<'a> {
-    pub(crate) global_state: &'a mut RenderRootState,
+    pub(crate) global_state: &'a mut WindowRootState,
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) widget_state_children: ArenaMutChildren<'a, WidgetState>,
     pub(crate) widget_children: ArenaMutChildren<'a, Box<dyn Widget>>,
@@ -114,7 +114,7 @@ pub struct ComposeCtx<'a> {
 
 /// A context passed to paint methods of widgets.
 pub struct PaintCtx<'a> {
-    pub(crate) global_state: &'a mut RenderRootState,
+    pub(crate) global_state: &'a mut WindowRootState,
     pub(crate) widget_state: &'a WidgetState,
     pub(crate) widget_state_children: ArenaMutChildren<'a, WidgetState>,
     pub(crate) widget_children: ArenaMutChildren<'a, Box<dyn Widget>>,
@@ -122,7 +122,7 @@ pub struct PaintCtx<'a> {
 }
 
 pub struct AccessCtx<'a> {
-    pub(crate) global_state: &'a mut RenderRootState,
+    pub(crate) global_state: &'a mut WindowRootState,
     pub(crate) widget_state: &'a WidgetState,
     pub(crate) widget_state_children: ArenaMutChildren<'a, WidgetState>,
     pub(crate) widget_children: ArenaMutChildren<'a, Box<dyn Widget>>,
@@ -603,7 +603,7 @@ impl_context_method!(
         pub fn submit_action(&mut self, action: Action) {
             trace!("submit_action");
             self.global_state
-                .emit_signal(RenderRootSignal::Action(action, self.widget_state.id));
+                .emit_signal(WindowRootSignal::Action(action, self.widget_state.id));
         }
 
         /// Request a timer event.

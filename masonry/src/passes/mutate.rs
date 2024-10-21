@@ -4,12 +4,12 @@
 use tracing::info_span;
 
 use crate::passes::merge_state_up;
-use crate::render_root::RenderRoot;
+use crate::window_root::WindowRoot;
 use crate::widget::WidgetMut;
 use crate::{MutateCtx, Widget, WidgetId};
 
 pub(crate) fn mutate_widget<R>(
-    root: &mut RenderRoot,
+    root: &mut WindowRoot,
     id: WidgetId,
     mutate_fn: impl FnOnce(WidgetMut<'_, Box<dyn Widget>>) -> R,
 ) -> R {
@@ -44,7 +44,7 @@ pub(crate) fn mutate_widget<R>(
 
 // TODO - Add link to mutate pass documentation
 /// Apply any deferred mutations (created using [`...Ctx::mutate_later`](crate::LayoutCtx::mutate_later)).
-pub(crate) fn run_mutate_pass(root: &mut RenderRoot) {
+pub(crate) fn run_mutate_pass(root: &mut WindowRoot) {
     let callbacks = std::mem::take(&mut root.global_state.mutate_callbacks);
     for callback in callbacks {
         mutate_widget(root, callback.id, callback.callback);

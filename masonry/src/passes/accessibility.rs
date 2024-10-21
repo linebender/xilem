@@ -6,13 +6,13 @@ use tracing::{debug, info_span, trace};
 use vello::kurbo::Rect;
 
 use crate::passes::recurse_on_children;
-use crate::render_root::{RenderRoot, RenderRootState};
+use crate::window_root::{WindowRoot, WindowRootState};
 use crate::tree_arena::ArenaMut;
 use crate::{AccessCtx, Widget, WidgetState};
 
 // --- MARK: BUILD TREE ---
 fn build_accessibility_tree(
-    global_state: &mut RenderRootState,
+    global_state: &mut WindowRootState,
     tree_update: &mut TreeUpdate,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
     mut state: ArenaMut<'_, WidgetState>,
@@ -135,7 +135,7 @@ fn to_accesskit_rect(r: Rect, scale_factor: f64) -> accesskit::Rect {
 }
 
 // --- MARK: ROOT ---
-pub(crate) fn run_accessibility_pass(root: &mut RenderRoot, scale_factor: f64) -> TreeUpdate {
+pub(crate) fn run_accessibility_pass(root: &mut WindowRoot, scale_factor: f64) -> TreeUpdate {
     let _span = info_span!("accessibility").entered();
 
     let mut tree_update = TreeUpdate {

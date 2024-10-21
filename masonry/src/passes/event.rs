@@ -7,12 +7,12 @@ use winit::event::ElementState;
 use winit::keyboard::{KeyCode, PhysicalKey};
 
 use crate::passes::merge_state_up;
-use crate::render_root::RenderRoot;
+use crate::window_root::WindowRoot;
 use crate::{AccessEvent, EventCtx, Handled, PointerEvent, TextEvent, Widget, WidgetId};
 
 // --- MARK: HELPERS ---
 fn get_target_widget(
-    root: &RenderRoot,
+    root: &WindowRoot,
     pointer_pos: Option<LogicalPosition<f64>>,
 ) -> Option<WidgetId> {
     if let Some(capture_target) = root.global_state.pointer_capture_target {
@@ -32,7 +32,7 @@ fn get_target_widget(
 }
 
 fn run_event_pass<E>(
-    root: &mut RenderRoot,
+    root: &mut WindowRoot,
     target: Option<WidgetId>,
     event: &E,
     allow_pointer_capture: bool,
@@ -81,7 +81,7 @@ fn run_event_pass<E>(
 }
 
 // --- MARK: POINTER_EVENT ---
-pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEvent) -> Handled {
+pub(crate) fn run_on_pointer_event_pass(root: &mut WindowRoot, event: &PointerEvent) -> Handled {
     let _span = info_span!("dispatch_pointer_event").entered();
 
     if event.is_high_density() {
@@ -138,7 +138,7 @@ pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEv
 // - If a Widget has focus, then none of its parents is hidden
 
 // --- MARK: TEXT EVENT ---
-pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -> Handled {
+pub(crate) fn run_on_text_event_pass(root: &mut WindowRoot, event: &TextEvent) -> Handled {
     if matches!(event, TextEvent::FocusChange(false)) {
         run_on_pointer_event_pass(root, &PointerEvent::new_pointer_leave());
     }
@@ -195,7 +195,7 @@ pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -
 
 // --- MARK: ACCESS EVENT ---
 pub(crate) fn run_on_access_event_pass(
-    root: &mut RenderRoot,
+    root: &mut WindowRoot,
     event: &AccessEvent,
     target: WidgetId,
 ) -> Handled {

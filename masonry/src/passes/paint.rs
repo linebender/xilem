@@ -9,14 +9,14 @@ use vello::peniko::Mix;
 use vello::Scene;
 
 use crate::passes::recurse_on_children;
-use crate::render_root::{RenderRoot, RenderRootState};
+use crate::window_root::{WindowRoot, WindowRootState};
 use crate::theme::get_debug_color;
 use crate::tree_arena::ArenaMut;
 use crate::{PaintCtx, Widget, WidgetId, WidgetState};
 
 // --- MARK: PAINT WIDGET ---
 fn paint_widget(
-    global_state: &mut RenderRootState,
+    global_state: &mut WindowRootState,
     complete_scene: &mut Scene,
     scenes: &mut HashMap<WidgetId, Scene>,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
@@ -103,7 +103,7 @@ fn paint_widget(
 }
 
 // --- MARK: ROOT ---
-pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> Scene {
+pub(crate) fn run_paint_pass(root: &mut WindowRoot) -> Scene {
     let _span = info_span!("paint").entered();
 
     let debug_paint = std::env::var("MASONRY_DEBUG_PAINT").is_ok_and(|it| !it.is_empty());

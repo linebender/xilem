@@ -47,8 +47,7 @@ Contains the WidgetState type, around which a lot of internal code is based.
 WidgetState is one of the most important internal types in Masonry.
 Understanding Masonry passes will likely be easier if you read WidgetState documentation first.
 
-
-### `src/render_root.rs`
+### `src/window_root.rs`
 
 The composition root of the framework. See **General architecture** section.
 
@@ -91,7 +90,7 @@ Masonry should have no prelude. Examples and documentation should deliberately h
 
 The composition roots of Masonry are:
 
-- **RenderRoot**
+- **WindowRoot**
 - The **AppDriver** trait.
 - The **run_with** function in `event_loop_runner.rs`.
 
