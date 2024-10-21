@@ -386,7 +386,7 @@ impl<S: 'static> Widget for ModularWidget<S> {
         None
     }
 
-    fn get_cursor(&self) -> CursorIcon {
+    fn get_cursor(&self, _ctx: &QueryCtx, _pos: Point) -> CursorIcon {
         CursorIcon::Default
     }
 
@@ -586,8 +586,8 @@ impl<W: Widget> Widget for Recorder<W> {
         self.child.get_debug_text()
     }
 
-    fn get_cursor(&self) -> CursorIcon {
-        self.child.get_cursor()
+    fn get_cursor(&self, ctx: &QueryCtx, pos: Point) -> CursorIcon {
+        self.child.get_cursor(ctx, pos)
     }
 
     fn get_child_at_pos<'c>(
