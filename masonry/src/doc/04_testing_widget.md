@@ -4,10 +4,12 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 
 <div class="rustdoc-hidden">
+
 > [!TIP]
 >
 > This file is intended to be read in rustdoc.
 > Use `cargo doc --open --package masonry --no-deps`.
+
 </div>
 
 TODO
