@@ -22,8 +22,6 @@
 //! use masonry::{Action, AppDriver, DriverCtx, WidgetId};
 //! use winit::window::Window;
 //!
-//! const VERTICAL_WIDGET_SPACING: f64 = 20.0;
-//!
 //! struct Driver {
 //!     next_task: String,
 //! }
@@ -46,6 +44,8 @@
 //! }
 //!
 //! fn main() {
+//!     const VERTICAL_WIDGET_SPACING: f64 = 20.0;
+//!
 //!     let main_widget = Portal::new(
 //!         Flex::column()
 //!             .with_child(
@@ -75,7 +75,9 @@
 //! }
 //! ```
 //!
-//! ## Create feature flags
+//! For more information, see [the documentation module](crate::doc).
+//!
+//! ## Crate feature flags
 //!
 //! The following feature flags are available:
 //!
@@ -93,6 +95,7 @@
 // #![warn(missing_docs)]
 #![warn(unused_imports)]
 #![warn(clippy::print_stdout, clippy::print_stderr, clippy::dbg_macro)]
+#![allow(clippy::needless_doctest_main)]
 #![allow(clippy::should_implement_trait)]
 #![allow(clippy::single_match)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
@@ -109,6 +112,9 @@ mod util;
 mod debug_logger;
 #[allow(unused)]
 mod debug_values;
+
+#[cfg(doc)]
+pub mod doc;
 
 mod action;
 mod app_driver;
