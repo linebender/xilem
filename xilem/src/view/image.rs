@@ -61,10 +61,10 @@ impl<State, Action> View<State, Action, ViewCtx> for Image {
         mut element: Mut<Self::Element>,
     ) {
         if prev.object_fit != self.object_fit {
-            element.set_fit_mode(self.object_fit);
+            widget::Image::set_fit_mode(&mut element, self.object_fit);
         }
         if prev.image != self.image {
-            element.set_image_data(self.image.clone());
+            widget::Image::set_image_data(&mut element, self.image.clone());
         }
     }
 

@@ -43,22 +43,22 @@ impl Checkbox {
 }
 
 // --- MARK: WIDGETMUT ---
-impl WidgetMut<'_, Checkbox> {
-    pub fn set_checked(&mut self, checked: bool) {
-        self.widget.checked = checked;
+impl Checkbox {
+    pub fn set_checked(this: &mut WidgetMut<'_, Self>, checked: bool) {
+        this.widget.checked = checked;
         // Checked state impacts appearance and accessibility node
-        self.ctx.request_render();
+        this.ctx.request_render();
     }
 
     /// Set the text.
     ///
     /// We enforce this to be an `ArcStr` to make the allocation explicit.
-    pub fn set_text(&mut self, new_text: ArcStr) {
-        self.label_mut().set_text(new_text);
+    pub fn set_text(this: &mut WidgetMut<'_, Self>, new_text: ArcStr) {
+        Label::set_text(&mut Checkbox::label_mut(this), new_text);
     }
 
-    pub fn label_mut(&mut self) -> WidgetMut<'_, Label> {
-        self.ctx.get_mut(&mut self.widget.label)
+    pub fn label_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, Label> {
+        this.ctx.get_mut(&mut this.widget.label)
     }
 }
 
@@ -286,12 +286,15 @@ mod tests {
 
             harness.edit_root_widget(|mut checkbox| {
                 let mut checkbox = checkbox.downcast::<Checkbox>();
-                checkbox.set_checked(true);
-                checkbox.set_text(ArcStr::from("The quick brown fox jumps over the lazy dog"));
+                Checkbox::set_checked(&mut checkbox, true);
+                Checkbox::set_text(
+                    &mut checkbox,
+                    ArcStr::from("The quick brown fox jumps over the lazy dog"),
+                );
 
-                let mut label = checkbox.label_mut();
-                label.set_text_brush(PRIMARY_LIGHT);
-                label.set_text_size(20.0);
+                let mut label = Checkbox::label_mut(&mut checkbox);
+                Label::set_text_brush(&mut label, PRIMARY_LIGHT);
+                Label::set_text_size(&mut label, 20.0);
             });
 
             harness.render()

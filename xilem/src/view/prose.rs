@@ -68,16 +68,16 @@ impl<State, Action> View<State, Action, ViewCtx> for Prose {
         mut element: Mut<Self::Element>,
     ) {
         if prev.content != self.content {
-            element.set_text(self.content.clone());
+            widget::Prose::set_text(&mut element, self.content.clone());
         }
         if prev.text_brush != self.text_brush {
-            element.set_text_brush(self.text_brush.clone());
+            widget::Prose::set_text_brush(&mut element, self.text_brush.clone());
         }
         if prev.alignment != self.alignment {
-            element.set_alignment(self.alignment);
+            widget::Prose::set_alignment(&mut element, self.alignment);
         }
         if prev.text_size != self.text_size {
-            element.set_text_size(self.text_size);
+            widget::Prose::set_text_size(&mut element, self.text_size);
         }
     }
 

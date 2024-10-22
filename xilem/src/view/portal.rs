@@ -51,7 +51,7 @@ where
         ctx: &mut ViewCtx,
         mut element: Mut<Self::Element>,
     ) {
-        let child_element = element.child_mut();
+        let child_element = widget::Portal::child_mut(&mut element);
         self.child
             .rebuild(&prev.child, view_state, ctx, child_element);
     }
@@ -62,7 +62,7 @@ where
         ctx: &mut ViewCtx,
         mut element: Mut<Self::Element>,
     ) {
-        let child_element = element.child_mut();
+        let child_element = widget::Portal::child_mut(&mut element);
         self.child.teardown(view_state, ctx, child_element);
     }
 

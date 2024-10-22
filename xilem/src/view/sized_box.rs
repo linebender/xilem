@@ -144,34 +144,37 @@ where
     ) {
         if self.width != prev.width {
             match self.width {
-                Some(width) => element.set_width(width),
-                None => element.unset_width(),
+                Some(width) => widget::SizedBox::set_width(&mut element, width),
+                None => widget::SizedBox::unset_width(&mut element),
             }
         }
         if self.height != prev.height {
             match self.height {
-                Some(height) => element.set_height(height),
-                None => element.unset_height(),
+                Some(height) => widget::SizedBox::set_height(&mut element, height),
+                None => widget::SizedBox::unset_height(&mut element),
             }
         }
         if self.background != prev.background {
             match &self.background {
-                Some(background) => element.set_background(background.clone()),
-                None => element.clear_background(),
+                Some(background) => {
+                    widget::SizedBox::set_background(&mut element, background.clone());
+                }
+                None => widget::SizedBox::clear_background(&mut element),
             }
         }
         if self.border != prev.border {
             match &self.border {
-                Some(border) => element.set_border(border.color, border.width),
-                None => element.clear_border(),
+                Some(border) => {
+                    widget::SizedBox::set_border(&mut element, border.color, border.width);
+                }
+                None => widget::SizedBox::clear_border(&mut element),
             }
         }
         if self.corner_radius != prev.corner_radius {
-            element.set_rounded(self.corner_radius);
+            widget::SizedBox::set_rounded(&mut element, self.corner_radius);
         }
         {
-            let mut child = element
-                .child_mut()
+            let mut child = widget::SizedBox::child_mut(&mut element)
                 .expect("We only create SizedBox with a child");
             self.inner
                 .rebuild(&prev.inner, view_state, ctx, child.downcast());
@@ -184,8 +187,7 @@ where
         ctx: &mut ViewCtx,
         mut element: Mut<Self::Element>,
     ) {
-        let mut child = element
-            .child_mut()
+        let mut child = widget::SizedBox::child_mut(&mut element)
             .expect("We only create SizedBox with a child");
         self.inner.teardown(view_state, ctx, child.downcast());
     }
