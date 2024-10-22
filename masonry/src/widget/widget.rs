@@ -222,7 +222,7 @@ pub trait Widget: AsAny {
 
     /// Return the cursor icon for this widget.
     ///
-    /// **pos** - the position in global coordinates (e.g. `(0,0)` is the top-left corner of the
+    /// **pos** - the mouse position in global coordinates (e.g. `(0,0)` is the top-left corner of the
     /// window).
     fn get_cursor(&self, ctx: &QueryCtx, pos: Point) -> CursorIcon {
         CursorIcon::Default

@@ -366,6 +366,9 @@ impl_context_method!(
 // Cursor-related impls.
 impl_context_method!(EventCtx<'_>, {
     /// Notifies Masonry that the cursor returned by [`Widget::get_cursor`] has changed.
+    ///
+    /// This is mostly meant for cases where the cursor changes even if the pointer doesn't
+    /// move, because the nature of the widget has changed somehow.
     pub fn cursor_icon_changed(&mut self) {
         trace!("cursor_icon_changed");
         self.global_state.needs_pointer_pass = true;

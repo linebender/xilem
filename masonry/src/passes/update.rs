@@ -237,6 +237,11 @@ fn update_disabled_for_widget(
 pub(crate) fn run_update_disabled_pass(root: &mut RenderRoot) {
     let _span = info_span!("update_disabled").entered();
 
+    // If a widget was enabled or disabled, the pointer icon may need to change.
+    if root.root_state().needs_update_disabled {
+        root.global_state.needs_pointer_pass = true;
+    }
+
     let (root_widget, root_state) = root.widget_arena.get_pair_mut(root.root.id());
     update_disabled_for_widget(&mut root.global_state, root_widget, root_state, false);
 }
@@ -638,7 +643,12 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
             widget_children: widget.children,
             widget_state: state.item,
         };
-        widget.item.get_cursor(&ctx, pos)
+
+        if state.item.is_disabled {
+            CursorIcon::Default
+        } else {
+            widget.item.get_cursor(&ctx, pos)
+        }
     } else {
         CursorIcon::Default
     };
