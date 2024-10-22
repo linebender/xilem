@@ -14,7 +14,7 @@ use crate::widgets::{Button, Flex, SizedBox};
 fn next_pointer_event(recording: &Recording) -> Option<PointerEvent> {
     while let Some(event) = recording.next() {
         match event {
-            Record::PE(event) => {
+            Record::PointerEvent(event) => {
                 return Some(event);
             }
             _ => {}
@@ -34,7 +34,7 @@ fn has_hovered(harness: &TestHarness, id: WidgetId) -> bool {
 fn next_hovered_changed(recording: &Recording) -> Option<bool> {
     while let Some(event) = recording.next() {
         match event {
-            Record::U(Update::HoveredChanged(hovered)) => return Some(hovered),
+            Record::Update(Update::HoveredChanged(hovered)) => return Some(hovered),
             _ => {}
         }
     }
