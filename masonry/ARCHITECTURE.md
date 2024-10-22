@@ -42,9 +42,10 @@ Also includes a list of basic widgets, each defined in a single file.
 
 ### `src/widget/widget_state.rs`
 
-Contains the WidgetState type, around which a lot of pass code is based.
+Contains the WidgetState type, around which a lot of internal code is based.
 
-The WidgetState documentation has helpful information on its fields and their naming scheme.
+WidgetState is one of the most important internal types in Masonry.
+Understanding Masonry passes will likely be easier if you read WidgetState documentation first.
 
 
 ### `src/render_root.rs`

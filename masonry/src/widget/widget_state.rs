@@ -7,6 +7,9 @@ use vello::kurbo::{Insets, Point, Rect, Size, Vec2};
 
 use crate::{CursorIcon, WidgetId};
 
+// TODO - Reduce WidgetState size.
+// See https://github.com/linebender/xilem/issues/706
+
 /// Generic state for all widgets in the hierarchy.
 ///
 /// This struct contains the metadata that passes need to know about widgets and that
@@ -283,15 +286,4 @@ impl WidgetState {
     pub(crate) fn needs_render(&self) -> bool {
         self.needs_anim || self.needs_paint || self.needs_accessibility
     }
-}
-
-#[test]
-#[ignore]
-// See https://github.com/linebender/xilem/issues/706
-fn test_widget_size() {
-    // reason: the dbg! call is the whole point of this test
-    #![allow(clippy::dbg_macro)]
-    let state = WidgetState::new(WidgetId::next(), "test");
-    dbg!(std::mem::size_of_val(&state));
-    panic!();
 }

@@ -20,6 +20,10 @@ use crate::{
     AllowRawMut, BoxConstraints, CursorIcon, Insets, Point, Rect, Size, Widget, WidgetId, WidgetPod,
 };
 
+// Note - Most methods defined in this file revolve around `WidgetState` fields.
+// Consider reading `WidgetState` documentation (especially the documented naming scheme)
+// before editing context method code.
+
 /// A macro for implementing methods on multiple contexts.
 ///
 /// There are a lot of methods defined on multiple contexts; this lets us only
@@ -33,9 +37,6 @@ macro_rules! impl_context_method {
         impl_context_method!($($more),+, { $($method)+ });
     };
 }
-
-// Note - Look at the documentation for WidgetState information on its fields
-// and their naming scheme.
 
 /// A context provided inside of [`WidgetMut`].
 ///
