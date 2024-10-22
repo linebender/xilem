@@ -40,6 +40,14 @@ Contains widget-related items, including the Widget trait, and the WidgetRef, Wi
 
 Also includes a list of basic widgets, each defined in a single file.
 
+### `src/widget/widget_state.rs`
+
+Contains the WidgetState type, around which a lot of internal code is based.
+
+WidgetState is one of the most important internal types in Masonry.
+Understanding Masonry passes will likely be easier if you read WidgetState documentation first.
+
+
 ### `src/render_root.rs`
 
 The composition root of the framework. See **General architecture** section.

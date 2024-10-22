@@ -20,6 +20,10 @@ use crate::{
     AllowRawMut, BoxConstraints, CursorIcon, Insets, Point, Rect, Size, Widget, WidgetId, WidgetPod,
 };
 
+// Note - Most methods defined in this file revolve around `WidgetState` fields.
+// Consider reading `WidgetState` documentation (especially the documented naming scheme)
+// before editing context method code.
+
 /// A macro for implementing methods on multiple contexts.
 ///
 /// There are a lot of methods defined on multiple contexts; this lets us only
@@ -215,7 +219,7 @@ impl_context_method!(
         ///
         /// [`layout`]: Widget::layout
         pub fn size(&self) -> Size {
-            self.widget_state.size()
+            self.widget_state.size
         }
 
         pub fn layout_rect(&self) -> Rect {
@@ -241,7 +245,7 @@ impl_context_method!(
         /// For more information, see
         /// [`LayoutCtx::set_clip_path`](crate::LayoutCtx::set_clip_path).
         pub fn clip_path(&self) -> Option<Rect> {
-            self.widget_state.clip_path()
+            self.widget_state.clip_path
         }
 
         /// Convert a point from the widget's coordinate space to the window's.
@@ -980,7 +984,7 @@ impl LayoutCtx<'_> {
         // 1) Relatively rare in the tree
         // 2) An easy potential source of items not being visible when expected
         trace!("set_clip_path {path:?}");
-        self.widget_state.clip = Some(path);
+        self.widget_state.clip_path = Some(path);
         // TODO - Updating the clip path may have
         // other knock-on effects we'd need to document.
         self.widget_state.request_accessibility = true;
@@ -993,7 +997,7 @@ impl LayoutCtx<'_> {
     /// See [`LayoutCtx::set_clip_path`] for details.
     pub fn clear_clip_path(&mut self) {
         trace!("clear_clip_path");
-        self.widget_state.clip = None;
+        self.widget_state.clip_path = None;
         // TODO - Updating the clip path may have
         // other knock-on effects we'd need to document.
         self.widget_state.request_accessibility = true;
