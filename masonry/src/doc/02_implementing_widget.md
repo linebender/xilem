@@ -1,10 +1,20 @@
 # Creating a new Widget
 
+<!-- Copyright 2024 the Xilem Authors -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
+<div class="rustdoc-hidden">
+> [!TIP]
+>
+> This file is intended to be read in rustdoc.
+> Use `cargo doc --open --package masonry --no-deps`.
+</div>
+
 **TODO - Add screenshots - see [#501](https://github.com/linebender/xilem/issues/501)**
 
-If you're building your own GUI framework on top of Masonry, or even a GUI app with specific needs, you'll probably want to specify your own widgets.
+If you're building your own GUI framework on top of Masonry, or even a GUI app with specific needs, you'll want to specify your own widgets.
 
-This document explains how.
+This tutorial explains how to create a simple leaf widget.
 
 
 ## The Widget trait
@@ -13,7 +23,7 @@ Widgets are types which implement the `masonry::Widget` trait.
 
 This trait includes a set of methods that must be implemented to hook into Masonry's internals:
 
-```ignore
+```rust,ignore
 trait Widget {
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent);
     fn on_text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent);
@@ -53,7 +63,6 @@ Most context types include these methods for requesting future passes:
 - `request_paint_only()`
 - `request_accessibility_update()`
 - `request_layout()`
-- `request_compose()`
 - `request_anim_frame()`
 
 
@@ -65,7 +74,7 @@ That is to say, even if you own a window, and even if that window holds a widget
 Instead, there are two ways to mutate `Label`:
 
 - Inside a Widget method. Most methods (`on_pointer_event`, `update`, `layout`, etc) take a `&mut self` argument.
-- Through a `WidgetMut` wrapper. So, to change your label's text, you will call `WidgetMut<Label>::set_text()`. This helps Masonry make sure that internal metadata is propagated after every widget change.
+- Through a `WidgetMut` wrapper. So, to change your label's text, you will call `WidgetMut::<Label>::set_text()`. This helps Masonry make sure that internal metadata is propagated after every widget change.
 
 As mentioned in the previous chapter, a `WidgetMut<...>` is a smart reference type to the Widget tree.
 Most Widgets will implement methods that let their users "project" a WidgetMut from a parent to its child.
@@ -82,7 +91,7 @@ This methods returns a WidgetMut to the root widget, which you can then project 
 
 The WidgetMut type only has two fields, both public:
 
-```ignore
+```rust,ignore
 pub struct WidgetMut<'a, W: Widget> {
     pub ctx: MutateCtx<'a>,
     pub widget: &'a mut W,
@@ -106,7 +115,7 @@ This Widget has a size, a color, and emits a `ButtonPressed` action when the use
 
 First, let's create our struct:
 
-```ignore
+```rust,ignore
 use vello::kurbo::Size;
 use vello::peniko::Color;
 
@@ -129,7 +138,7 @@ Note that we store a size, and not a position: our widget's position is picked b
 
 First we implement event methods:
 
-```ignore
+```rust,ignore
 use masonry::{
     Widget, EventCtx, PointerEvent, TextEvent, AccessEvent, Action
 };
@@ -165,7 +174,7 @@ We've also implemented the `on_access_event` method, which emulates the click be
 
 Next we can leave the `on_anim_frame` and `update` implementations empty:
 
-```ignore
+```rust,ignore
 use masonry::{
     UpdateCtx
 };
@@ -182,7 +191,7 @@ impl Widget for ColorRectangle {
 
 Next we implement layout:
 
-```ignore
+```rust,ignore
 use masonry::{
     LayoutCtx, BoxConstraints
 };
@@ -202,7 +211,7 @@ Our size is static, and doesn't depend on size constraints passed by our parent 
 
 Next we write our render methods:
 
-```ignore
+```rust,ignore
 use masonry::{
     PaintCtx, AccessCtx
 };
@@ -250,7 +259,7 @@ In `accessibility`, we define a default action of `Click`, which is how we regis
 
 Finally, we stub in some additional methods:
 
-```ignore
+```rust,ignore
 use masonry::{
     RegisterCtx, WidgetId
 };
@@ -277,7 +286,7 @@ Finally, we want to define some setters for external users:
 
 <!-- TODO - Rewrite once we've decided how WidgetMut should be implemented. -->
 
-```ignore
+```rust,ignore
 struct ColorRectangle {
     size: Size,
     color: Color,

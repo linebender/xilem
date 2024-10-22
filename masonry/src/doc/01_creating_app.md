@@ -1,5 +1,16 @@
 # Building a "To-Do List" app
 
+<!-- Copyright 2024 the Xilem Authors -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
+<div class="rustdoc-hidden">
+> [!TIP]
+>
+> This file is intended to be read in rustdoc.
+> Use `cargo doc --open --package masonry --no-deps`.
+</div>
+
+
 **TODO - Add screenshots - see [#501](https://github.com/linebender/xilem/issues/501)**
 
 This tutorial explains how to build a simple Masonry app, step by step.
@@ -11,7 +22,7 @@ The app we'll create is identical to the to-do-list example shown in the README.
 
 Let's start with the `main()` function.
 
-```ignore
+```rust,ignore
 fn main() {
     const VERTICAL_WIDGET_SPACING: f64 = 20.0;
 
@@ -53,7 +64,7 @@ During the course of the event loop, the widget tree will be displayed, and upda
 
 To handle user interactions, we need to implement the `AppDriver` trait:
 
-```ignore
+```rust,ignore
 trait AppDriver {
     fn on_action(&mut self, ctx: &mut DriverCtx<'_>, widget_id: WidgetId, action: Action);
 }
@@ -65,7 +76,7 @@ That method gives our app a `DriverCtx` context, which we can use to access the 
 
 We create a `Driver` struct to store a very simple app's state, and we implement the `AppDriver` trait for it:
 
-```ignore
+```rust,ignore
 use masonry::app_driver::{AppDriver, DriverCtx};
 use masonry::{Action, WidgetId};
 use masonry::widget::{Label};
@@ -112,7 +123,7 @@ We use `WidgetMut<Flex>::add_child()` to add a new `Label` with the text of our 
 
 In our main function, we create a `Driver` and pass it to `event_loop_runner::run`:
 
-```ignore
+```rust,ignore
     // ...
 
     let driver = Driver {
@@ -133,7 +144,7 @@ In our main function, we create a `Driver` and pass it to `event_loop_runner::ru
 
 The last step is to create our Winit window and start our main loop.
 
-```ignore
+```rust,ignore
     use masonry::dpi::LogicalSize;
     use winit::window::Window;
 
@@ -153,7 +164,7 @@ The last step is to create our Winit window and start our main loop.
 
 Our complete program therefore looks like this:
 
-```ignore
+```rust,ignore
 fn main() {
     const VERTICAL_WIDGET_SPACING: f64 = 20.0;
 

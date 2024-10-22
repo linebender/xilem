@@ -1,5 +1,15 @@
 # Masonry pass system
 
+<!-- Copyright 2024 the Xilem Authors -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
+<div class="rustdoc-hidden">
+> [!TIP]
+>
+> This file is intended to be read in rustdoc.
+> Use `cargo doc --open --package masonry --no-deps`.
+</div>
+
 Masonry has a set of **passes**, which are computations run over a subset of the widget tree during every frame.
 
 Passes can be split into roughly three categories:

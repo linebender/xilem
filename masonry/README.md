@@ -91,7 +91,9 @@ fn main() {
 }
 ```
 
-### Create feature flags
+For more information, see [the documentation module](https://docs.rs/masonry/latest/masonry/doc/).
+
+### Crate feature flags
 
 The following feature flags are available:
 

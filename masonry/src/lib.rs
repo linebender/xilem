@@ -75,7 +75,9 @@
 //! }
 //! ```
 //!
-//! ## Create feature flags
+//! For more information, see [the documentation module](crate::doc).
+//!
+//! ## Crate feature flags
 //!
 //! The following feature flags are available:
 //!
