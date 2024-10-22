@@ -267,9 +267,9 @@ impl SizedBox {
     }
 
     // TODO - Doc
-    pub fn child_mut<'s>(
-        this: &'s mut WidgetMut<'_, Self>,
-    ) -> Option<WidgetMut<'s, Box<dyn Widget>>> {
+    pub fn child_mut<'t>(
+        this: &'t mut WidgetMut<'_, Self>,
+    ) -> Option<WidgetMut<'t, Box<dyn Widget>>> {
         let child = this.widget.child.as_mut()?;
         Some(this.ctx.get_mut(child))
     }

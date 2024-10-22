@@ -168,19 +168,19 @@ impl<W: Widget> Portal<W> {
 
 // --- MARK: WIDGETMUT ---
 impl<W: Widget> Portal<W> {
-    pub fn child_mut<'s>(this: &'s mut WidgetMut<'_, Self>) -> WidgetMut<'s, W> {
+    pub fn child_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, W> {
         this.ctx.get_mut(&mut this.widget.child)
     }
 
-    pub fn horizontal_scrollbar_mut<'s>(
-        this: &'s mut WidgetMut<'_, Self>,
-    ) -> WidgetMut<'s, ScrollBar> {
+    pub fn horizontal_scrollbar_mut<'t>(
+        this: &'t mut WidgetMut<'_, Self>,
+    ) -> WidgetMut<'t, ScrollBar> {
         this.ctx.get_mut(&mut this.widget.scrollbar_horizontal)
     }
 
-    pub fn vertical_scrollbar_mut<'s>(
-        this: &'s mut WidgetMut<'_, Self>,
-    ) -> WidgetMut<'s, ScrollBar> {
+    pub fn vertical_scrollbar_mut<'t>(
+        this: &'t mut WidgetMut<'_, Self>,
+    ) -> WidgetMut<'t, ScrollBar> {
         this.ctx.get_mut(&mut this.widget.scrollbar_vertical)
     }
 

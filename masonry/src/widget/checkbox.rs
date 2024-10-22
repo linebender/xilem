@@ -56,7 +56,7 @@ impl Checkbox {
         Label::set_text(&mut Checkbox::label_mut(this), new_text);
     }
 
-    pub fn label_mut<'w>(this: &'w mut WidgetMut<'_, Self>) -> WidgetMut<'w, Label> {
+    pub fn label_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, Label> {
         this.ctx.get_mut(&mut this.widget.label)
     }
 }

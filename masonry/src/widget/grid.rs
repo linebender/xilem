@@ -212,10 +212,10 @@ impl Grid {
         this.ctx.request_layout();
     }
 
-    pub fn child_mut<'w>(
-        this: &'w mut WidgetMut<'_, Self>,
+    pub fn child_mut<'t>(
+        this: &'t mut WidgetMut<'_, Self>,
         idx: usize,
-    ) -> Option<WidgetMut<'w, Box<dyn Widget>>> {
+    ) -> Option<WidgetMut<'t, Box<dyn Widget>>> {
         let child = match this.widget.children[idx].widget_mut() {
             Some(widget) => widget,
             None => return None,

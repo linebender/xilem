@@ -542,10 +542,10 @@ impl Flex {
     }
 
     // FIXME - Remove Box
-    pub fn child_mut<'w>(
-        this: &'w mut WidgetMut<'_, Self>,
+    pub fn child_mut<'t>(
+        this: &'t mut WidgetMut<'_, Self>,
         idx: usize,
-    ) -> Option<WidgetMut<'w, Box<dyn Widget>>> {
+    ) -> Option<WidgetMut<'t, Box<dyn Widget>>> {
         let child = match &mut this.widget.children[idx] {
             Child::Fixed { widget, .. } | Child::Flex { widget, .. } => widget,
             Child::FixedSpacer(..) => return None,
