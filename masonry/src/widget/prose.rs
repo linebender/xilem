@@ -154,13 +154,9 @@ impl Widget for Prose {
                 }
             }
             PointerEvent::PointerMove(state) => {
-                if !ctx.is_disabled() {
-                    if ctx.has_pointer_capture()
-                        && self.text_layout.pointer_move(inner_origin, state)
-                    {
-                        // We might have changed text colours, so we need to re-request a layout
-                        ctx.request_layout();
-                    }
+                if !ctx.is_disabled() && ctx.has_pointer_capture() && self.text_layout.pointer_move(inner_origin, state) {
+                    // We might have changed text colours, so we need to re-request a layout
+                    ctx.request_layout();
                 }
             }
             PointerEvent::PointerUp(button, state) => {
