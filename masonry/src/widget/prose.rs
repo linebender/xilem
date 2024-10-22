@@ -15,7 +15,7 @@ use crate::widget::label::LABEL_X_PADDING;
 use crate::widget::{LineBreaking, WidgetMut};
 use crate::{
     AccessCtx, AccessEvent, BoxConstraints, CursorIcon, EventCtx, LayoutCtx, PaintCtx,
-    PointerEvent, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
+    PointerEvent, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
 };
 
 /// The prose widget is a widget which displays text which can be
@@ -150,15 +150,12 @@ impl Widget for Prose {
                 }
             }
             PointerEvent::PointerMove(state) => {
-                if !ctx.is_disabled() {
-                    // TODO: Set cursor if over link
-                    ctx.set_cursor(&CursorIcon::Text);
-                    if ctx.has_pointer_capture()
-                        && self.text_layout.pointer_move(inner_origin, state)
-                    {
-                        // We might have changed text colours, so we need to re-request a layout
-                        ctx.request_layout();
-                    }
+                if !ctx.is_disabled()
+                    && ctx.has_pointer_capture()
+                    && self.text_layout.pointer_move(inner_origin, state)
+                {
+                    // We might have changed text colours, so we need to re-request a layout
+                    ctx.request_layout();
                 }
             }
             PointerEvent::PointerUp(button, state) => {
@@ -263,6 +260,11 @@ impl Widget for Prose {
         if self.line_break_mode == LineBreaking::Clip {
             scene.pop_layer();
         }
+    }
+
+    fn get_cursor(&self, _ctx: &QueryCtx, _pos: Point) -> CursorIcon {
+        // TODO: Set cursor if over link
+        CursorIcon::Text
     }
 
     fn accessibility_role(&self) -> Role {

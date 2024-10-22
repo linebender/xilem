@@ -220,9 +220,11 @@ pub trait Widget: AsAny {
         None
     }
 
-    // TODO - Document
-    // TODO - Add &UpdateCtx argument
-    fn get_cursor(&self) -> CursorIcon {
+    /// Return the cursor icon for this widget.
+    ///
+    /// **pos** - the mouse position in global coordinates (e.g. `(0,0)` is the top-left corner of the
+    /// window).
+    fn get_cursor(&self, ctx: &QueryCtx, pos: Point) -> CursorIcon {
         CursorIcon::Default
     }
 
@@ -471,8 +473,8 @@ impl Widget for Box<dyn Widget> {
         self.deref().get_debug_text()
     }
 
-    fn get_cursor(&self) -> CursorIcon {
-        self.deref().get_cursor()
+    fn get_cursor(&self, ctx: &QueryCtx, pos: Point) -> CursorIcon {
+        self.deref().get_cursor(ctx, pos)
     }
 
     fn get_child_at_pos<'c>(

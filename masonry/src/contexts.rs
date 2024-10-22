@@ -16,9 +16,7 @@ use crate::render_root::{MutateCallback, RenderRootSignal, RenderRootState};
 use crate::text::TextBrush;
 use crate::tree_arena::{ArenaMutChildren, ArenaRefChildren};
 use crate::widget::{WidgetMut, WidgetRef, WidgetState};
-use crate::{
-    AllowRawMut, BoxConstraints, CursorIcon, Insets, Point, Rect, Size, Widget, WidgetId, WidgetPod,
-};
+use crate::{AllowRawMut, BoxConstraints, Insets, Point, Rect, Size, Widget, WidgetId, WidgetPod};
 
 // Note - Most methods defined in this file revolve around `WidgetState` fields.
 // Consider reading `WidgetState` documentation (especially the documented naming scheme)
@@ -371,32 +369,13 @@ impl_context_method!(
 // --- MARK: CURSOR ---
 // Cursor-related impls.
 impl_context_method!(EventCtx<'_>, {
-    // TODO - Rewrite doc
-    /// Set the cursor icon.
+    /// Notifies Masonry that the cursor returned by [`Widget::get_cursor`] has changed.
     ///
-    /// This setting will be retained until [`clear_cursor`] is called, but it will only take
-    /// effect when this widget [`is_hovered`] and/or [`has_pointer_capture`]. If a child widget also
-    /// sets a cursor, the child widget's cursor will take precedence. (If that isn't what you
-    /// want, use [`override_cursor`] instead.)
-    ///
-    /// [`clear_cursor`]: EventCtx::clear_cursor
-    /// [`override_cursor`]: EventCtx::override_cursor
-    /// [`is_hovered`]: EventCtx::is_hovered
-    /// [`has_pointer_capture`]: EventCtx::has_pointer_capture
-    pub fn set_cursor(&mut self, cursor: &CursorIcon) {
-        trace!("set_cursor {:?}", cursor);
-        self.widget_state.cursor = Some(*cursor);
-    }
-
-    /// Clear the cursor icon.
-    ///
-    /// This undoes the effect of [`set_cursor`] and [`override_cursor`].
-    ///
-    /// [`override_cursor`]: EventCtx::override_cursor
-    /// [`set_cursor`]: EventCtx::set_cursor
-    pub fn clear_cursor(&mut self) {
-        trace!("clear_cursor");
-        self.widget_state.cursor = None;
+    /// This is mostly meant for cases where the cursor changes even if the pointer doesn't
+    /// move, because the nature of the widget has changed somehow.
+    pub fn cursor_icon_changed(&mut self) {
+        trace!("cursor_icon_changed");
+        self.global_state.needs_pointer_pass = true;
     }
 });
 

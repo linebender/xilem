@@ -5,7 +5,7 @@
 
 use vello::kurbo::{Insets, Point, Rect, Size, Vec2};
 
-use crate::{CursorIcon, WidgetId};
+use crate::WidgetId;
 
 // TODO - Reduce WidgetState size.
 // See https://github.com/linebender/xilem/issues/706
@@ -126,9 +126,6 @@ pub(crate) struct WidgetState {
 
     pub(crate) children_changed: bool,
 
-    // TODO - Remove and handle in WidgetRoot instead
-    pub(crate) cursor: Option<CursorIcon>,
-
     // --- STATUS ---
     /// This widget has been disabled.
     pub(crate) is_explicitly_disabled: bool,
@@ -192,7 +189,6 @@ impl WidgetState {
             needs_update_stashed: true,
             focus_chain: Vec::new(),
             children_changed: true,
-            cursor: None,
             update_focus_chain: true,
             #[cfg(debug_assertions)]
             widget_name,
