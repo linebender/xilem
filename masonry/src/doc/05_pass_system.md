@@ -80,7 +80,7 @@ If passes are still requested past that limit, they're delayed to a later frame.
 The **mutate** pass runs a list of callbacks with mutable access to the widget tree.
 These callbacks can be queued with the `mutate_later()` method of various context types.
 
-"Mutable access" means that those callbacks are given a `WidgetMut` to the widget that requested them, something that is otherwise only accessible from the owner of the global `RenderRoot` object.
+"Mutable access" means that those callbacks are given a [`WidgetMut`] to the widget that requested them, something that is otherwise only accessible from the owner of the global [`RenderRoot`] object.
 
 If a callback is scheduled to run on a widget which is deleted before the callback is run, that callback is silently dropped.
 
@@ -110,7 +110,7 @@ The layout pass runs bidirectionally, passing constraints from the top down and 
 
 It is subject to be reworked in the future to be closer to the semantics of web layout engines and the Taffy crate.
 
-Unlike with other passes, container widgets' `Widget::layout()` method must call `WidgetPod::layout()` on all of their children.
+Unlike with other passes, container widgets' `Widget::layout()` method must "manually" recurse by calling [`LayoutCtx::run_layout`] then [`LayoutCtx::place_child`] for each of their children.
 
 Not doing so is a logical bug, and may trigger debug assertions.
 
@@ -159,10 +159,24 @@ Calling the `edit_root_widget()` method, or any similar direct-mutation method, 
 
 Some notes about pass context types:
 
-- Render passes should be pure and can be skipped occasionally, therefore their context types (`PaintCtx` and `AccessCtx`) can't set invalidation flags or send signals.
-- The `layout` and `compose` passes lay out all widgets, which are transiently invalid during the passes, therefore `LayoutCtx`and `ComposeCtx` cannot access the size and position of the `self` widget.
+- Render passes should be pure and can be skipped occasionally, therefore their context types ([`PaintCtx`] and [`AccessCtx`]) can't set invalidation flags or send signals.
+- The `layout` and `compose` passes lay out all widgets, which are transiently invalid during the passes, therefore [`LayoutCtx`]and [`ComposeCtx`] cannot access the size and position of the `self` widget.
 They can access the layout of children if they have already been laid out.
 - For the same reason, `LayoutCtx`and `ComposeCtx` cannot create a `WidgetRef` reference to a child.
-- `MutateCtx`, `EventCtx` and `UpdateCtx` can let you add and remove children.
-- `RegisterCtx` can't do anything except register children.
-- `QueryCtx` provides read-only information about the widget.
+- [`MutateCtx`], [`EventCtx`] and [`UpdateCtx`] can let you add and remove children.
+- [`RegisterCtx`] can't do anything except register children.
+- [`QueryCtx`] provides read-only information about the widget.
+
+[`LayoutCtx::place_child`]: crate::LayoutCtx::place_child
+[`LayoutCtx::run_layout`]: crate::LayoutCtx::run_layout
+[`WidgetMut`]: crate::widget::WidgetMut
+[`RenderRoot`]: crate::RenderRoot
+[`PaintCtx`]: crate::PaintCtx
+[`AccessCtx`]: crate::AccessCtx
+[`LayoutCtx`]: crate::LayoutCtx
+[`ComposeCtx`]: crate::ComposeCtx
+[`MutateCtx`]: crate::MutateCtx
+[`EventCtx`]: crate::EventCtx
+[`UpdateCtx`]: crate::UpdateCtx
+[`RegisterCtx`]: crate::RegisterCtx
+[`QueryCtx`]: crate::QueryCtx

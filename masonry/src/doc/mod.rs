@@ -12,6 +12,9 @@
 //! - **Masonry pass system:** Deep dive into Masonry internals.
 //! - **Concepts and definitions:** Glossary of concepts used in Masonry APIs and internals.
 
+// TODO: Remove this once the issues within masonry are fixed. Tracked in https://github.com/linebender/xilem/issues/449
+#![warn(rustdoc::broken_intra_doc_links)]
+
 // These docs all use the .rustdoc-hidden trick described in
 // https://linebender.org/blog/doc-include/
 

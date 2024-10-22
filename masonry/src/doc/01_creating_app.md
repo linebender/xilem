@@ -51,9 +51,9 @@ fn main() {
 ```
 
 First we create our initial widget hierarchy.
-We're trying to build a simple to-do list app, so our root widget is a scrollable area (`Portal`) with a vertical list (`Flex`), whose first row is a horizontal list (`Flex`) containing a text field (`Textbox`) and an "Add task" button (`Button`).
+We're trying to build a simple to-do list app, so our root widget is a scrollable area ([`Portal`]) with a vertical list ([`Flex`]), whose first row is a horizontal list (`Flex` again) containing a text field ([`Textbox`]) and an "Add task" button ([`Button`]).
 
-We wrap it in a `RootWidget`, whose main purpose is to include a `Window` node in the accessibility tree.
+We wrap it in a [`RootWidget`], whose main purpose is to include a `Window` node in the accessibility tree.
 
 At the end of the main function, we pass the root widget to the `event_loop_runner::run` function.
 That function starts the main event loop, which runs until the user closes the window.
@@ -62,7 +62,7 @@ During the course of the event loop, the widget tree will be displayed, and upda
 
 ## The `Driver`
 
-To handle user interactions, we need to implement the `AppDriver` trait:
+To handle user interactions, we need to implement the [`AppDriver`] trait:
 
 ```rust,ignore
 trait AppDriver {
@@ -70,9 +70,9 @@ trait AppDriver {
 }
 ```
 
-Every time the user interacts with the app in a meaningful way (clicking a button, entering text, etc), the `on_action` method is called.
+Every time the user interacts with the app in a meaningful way (clicking a button, entering text, etc), an [`Action`] is emitted, and the `on_action` method is called.
 
-That method gives our app a `DriverCtx` context, which we can use to access the root widget, and a `WidgetId` identifying the widget that emitted the action.
+That method gives our app a [`DriverCtx`] context, which we can use to access the root widget, and a [`WidgetId`] identifying the widget that emitted the action.
 
 We create a `Driver` struct to store a very simple app's state, and we implement the `AppDriver` trait for it:
 
@@ -108,7 +108,7 @@ In `on_action`, we handle the two possible actions:
 - `TextChanged`: Update the text of the next task.
 - `ButtonPressed`: Add a task to the list.
 
-Because our widget tree only has one button and one textbox, there is no possible ambiguity as to which widget emitted the event, so we can ignore the `_widget_id` argument.
+Because our widget tree only has one button and one textbox, there is no possible ambiguity as to which widget emitted the event, so we can ignore the `WidgetId` argument.
 
 When handling `ButtonPressed`:
 
@@ -116,10 +116,10 @@ When handling `ButtonPressed`:
 - `root.child_mut()` returns a `WidgetMut<Portal<...>>` for the `Portal`.
 - `portal.child_mut()` returns a `WidgetMut<Flex>` for the `Flex`.
 
-A `WidgetMut<...>` is a smart reference type which lets us modify the widget tree.
+A [`WidgetMut`] is a smart reference type which lets us modify the widget tree.
 It's set up to automatically propagate update flags and update internal state when dropped.
 
-We use `WidgetMut<Flex>::add_child()` to add a new `Label` with the text of our new task to our list.
+We use [`WidgetMut::<Flex>::add_child()`][add_child] to add a new `Label` with the text of our new task to our list.
 
 In our main function, we create a `Driver` and pass it to `event_loop_runner::run`:
 
@@ -234,8 +234,7 @@ All the Masonry examples follow this structure:
 - A struct implementing `AppDriver` to handle user interactions.
 - A Winit window and event loop.
 
-Some examples also define custom Widgets, but you can build an interactive app with Masonry's base widget set.
-Doing so isn't *quite* recommended: most users will probably want to use a higher layer on top of Masonry.
+Some examples also define custom Widgets, but you can build an interactive app with Masonry's base widget set, though it's not Masonry's intended use.
 
 
 ## Higher layers
@@ -247,3 +246,16 @@ In practice, we expect most implementations of `AppDriver` to be GUI frameworks 
 Currently, the only public framework built with Masonry is Xilem, though we hope others will develop as Masonry matures.
 
 Most of this documentation is written to help developers trying to build such a framework.
+
+[`Portal`]: crate::widget::Portal
+[`Flex`]: crate::widget::Flex
+[`Textbox`]: crate::widget::Textbox
+[`Button`]: crate::widget::Button
+[`RootWidget`]: crate::widget::RootWidget
+
+[`AppDriver`]: crate::AppDriver
+[`Action`]: crate::Action
+[`DriverCtx`]: crate::DriverCtx
+[`WidgetId`]: crate::WidgetId
+[`WidgetMut`]: crate::widget::WidgetMut
+[add_child]: crate::widget::WidgetMut::add_child

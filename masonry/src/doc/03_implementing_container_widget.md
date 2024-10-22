@@ -19,8 +19,8 @@ However, in some cases you want to write a widget which "contains" other widgets
 You want these child widgets to receive events and be painted as well, as part of the widget hierarchy.
 
 To do so, you need to implement a container widget.
-A container widget is still a type which implements the `Widget` trait.
-It stores handles to its children using a type called `WidgetPod`, and its `Widget` trait implementation is more complex.
+A container widget is still a type which implements the [`Widget`] trait.
+It stores handles for its children using a type called [`WidgetPod`], and its `Widget` trait implementation is more complex.
 
 As an example, let's write a `VerticalStack` widget, which lays out its children in a vertical line:
 
@@ -62,9 +62,9 @@ Let's go over them one by one.
 
 Like with a leaf widget, the `layout` method must compute and return the size of the container widget.
 
-Before that, it must call `LayoutCtx::run_layout` then `LayoutCtx::place_child` for each of its own children:
+Before that, it must call [`LayoutCtx::run_layout`] then [`LayoutCtx::place_child`] for each of its own children:
 
-- `LayoutCtx::run_layout` recursively calls `Widget::layout` on the child. It takes a `BoxConstraints` argument, which represents how much space the parent "gives" to the child.
+- `LayoutCtx::run_layout` recursively calls `Widget::layout` on the child. It takes a [`BoxConstraints`] argument, which represents how much space the parent "gives" to the child.
 - `LayoutCtx::place_child` sets the child's position relative to the container.
 
 Generally, containers first get the size of all their children, then use that information and the parent constraints to both compute their own size and spread the children within the available space.
@@ -142,7 +142,7 @@ impl Widget for VerticalStack {
 
 ### `register_children` and `children_ids`
 
-The `register_children` method must call `RegisterCtx::register_child` for each child:
+The `register_children` method must call [`RegisterCtx::register_child`] for each child:
 
 ```rust,ignore
 use masonry::{
@@ -192,7 +192,7 @@ We've seen how to deal with the children of a container widget once they're alre
 
 But how do we add them in the first place?
 
-Widgets will usually be added or removed through a `WidgetMut` wrapper.
+Widgets will usually be added or removed through a [`WidgetMut`] wrapper.
 Let's write WidgetMut methods for our `VerticalStack`:
 
 ```rust,ignore
@@ -258,3 +258,11 @@ So for instance, if `VerticalStack::children_ids()` returns a list of three chil
 
 So various methods in container widgets should only implement the logic that is specific to the container itself.
 For instance, a container widget with a background color should implement `paint` to draw the background.
+
+[`Widget`]: crate::Widget
+[`WidgetPod`]: crate::WidgetPod
+[`WidgetMut`]: crate::widget::WidgetMut
+[`LayoutCtx::place_child`]: crate::LayoutCtx::place_child
+[`LayoutCtx::run_layout`]: crate::LayoutCtx::run_layout
+[`BoxConstraints`]: crate::BoxConstraints
+[`RegisterCtx::register_child`]: crate::RegisterCtx::register_child

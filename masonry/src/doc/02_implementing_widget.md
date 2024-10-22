@@ -19,7 +19,7 @@ This tutorial explains how to create a simple leaf widget.
 
 ## The Widget trait
 
-Widgets are types which implement the `masonry::Widget` trait.
+Widgets are types which implement the [`Widget`] trait.
 
 This trait includes a set of methods that must be implemented to hook into Masonry's internals:
 
@@ -74,13 +74,13 @@ That is to say, even if you own a window, and even if that window holds a widget
 Instead, there are two ways to mutate `Label`:
 
 - Inside a Widget method. Most methods (`on_pointer_event`, `update`, `layout`, etc) take a `&mut self` argument.
-- Through a `WidgetMut` wrapper. So, to change your label's text, you will call `WidgetMut::<Label>::set_text()`. This helps Masonry make sure that internal metadata is propagated after every widget change.
+- Through a [`WidgetMut`] wrapper. So, to change your label's text, you will call `WidgetMut::<Label>::set_text()`. This helps Masonry make sure that internal metadata is propagated after every widget change.
 
-As mentioned in the previous chapter, a `WidgetMut<...>` is a smart reference type to the Widget tree.
+As mentioned in the previous chapter, a `WidgetMut` is a smart reference type to the Widget tree.
 Most Widgets will implement methods that let their users "project" a WidgetMut from a parent to its child.
 For example, `WidgetMut<Portal<MyWidget>>` has a `get_child_mut()` method that returns a `WidgetMut<MyWidget>`.
 
-So far, we've seen one way to get a WidgetMut: the `DriverCtx::get_root()` method in `AppDriver` implementations.
+So far, we've seen one way to get a WidgetMut: the [`DriverCtx::get_root()`] method in `AppDriver` implementations.
 This methods returns a WidgetMut to the root widget, which you can then project into a WidgetMut reference to its descendants.
 
 <!-- TODO - Change AppDriver trait to take a `&mut RenderRoot` instead, and rewrite above doc. -->
@@ -168,7 +168,7 @@ impl Widget for ColorRectangle {
 }
 ```
 
-Here we've written a simple handler which filters pointer events for left clicks, and submits a `ButtonPressed` action.
+Here we've written a simple handler which filters pointer events for left clicks, and submits a [`ButtonPressed`] action.
 
 We've also implemented the `on_access_event` method, which emulates the click behaviors for people using assistive technologies.
 
@@ -244,12 +244,12 @@ impl Widget for ColorRectangle {
 }
 ```
 
-In our `paint` method, we're given a `vello::Scene` and paint a rectangle into it.
+In our `paint` method, we're given a [`vello::Scene`] and paint a rectangle into it.
 
 The rectangle's position is zero (because coordinates in our scenes are local to our widget), and its size is `ctx.size()`, which is the value returned by `layout()`; though we could also have used `self.size`.
 
 Next we define our accessibility role.
-Returning `Role::Button` means that screen readers will report our widget as a button, which roughly makes sense since it is clickable.
+Returning [`Role::Button`] means that screen readers will report our widget as a button, which roughly makes sense since it is clickable.
 
 <!-- TODO - Add more detail about how you should choose your role. -->
 
@@ -257,14 +257,29 @@ In `accessibility`, we define a default action of `Click`, which is how we regis
 
 <!-- TODO - Is that actually true? I'm not sure what set_default_action does. -->
 
-Finally, we stub in some additional methods:
+We also write a `make_trace_span()` method, which is useful for debugging with the [tracing](https://docs.rs/tracing/latest/tracing/) framework.
+
+```rust,ignore
+use tracing::{trace_span, Span};
+
+impl Widget for ColorRectangle {
+    // ...
+
+    fn make_trace_span(&self) -> Span {
+        trace_span!("ColorRectangle")
+    }
+
+    // ...
+}
+```
+
+And last, we stub in some additional methods:
 
 ```rust,ignore
 use masonry::{
     RegisterCtx, WidgetId
 };
 use smallvec::SmallVec;
-use tracing::{trace_span, Span};
 
 impl Widget for ColorRectangle {
     // ...
@@ -272,10 +287,6 @@ impl Widget for ColorRectangle {
     fn register_children(&mut self, _ctx: &mut RegisterCtx) {}
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         SmallVec::new()
-    }
-
-    fn make_trace_span(&self) -> Span {
-        trace_span!("ColorRectangle")
     }
 }
 ```
@@ -305,7 +316,8 @@ impl WidgetMut<'_, ColorRectangle> {
 }
 ```
 
-By making ColorRectangle's fields private, and making it so the only way to mutate them is through a WidgetMut, we make our users never find themselves in a situation where they forget to propagate invalidation flags and the displayed widget tree ends up with hard-to-debug visual artifacts as a result.
+By making ColorRectangle's fields private, and making it so the only way to mutate them is through a WidgetMut, we make it "watertight".
+Our users can never find themselves in a situation where they forget to propagate invalidation flags, and end up with confusing bugs.
 
 
 ## Next up
@@ -313,3 +325,10 @@ By making ColorRectangle's fields private, and making it so the only way to muta
 This document was about how to create a simple leaf widget.
 
 The next one is about creating a container widgets, and the complications it adds.
+
+[`Widget`]: crate::Widget
+[`WidgetMut`]: crate::widget::WidgetMut
+[`DriverCtx::get_root()`]: crate::DriverCtx::get_root
+[`ButtonPressed`]: crate::Action::ButtonPressed
+[`vello::Scene`]: crate::vello::Scene
+[`Role::Button`]: accesskit::Role::Button
