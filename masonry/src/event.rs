@@ -178,7 +178,7 @@ impl From<PointerButton> for PointerButtons {
     }
 }
 
-// TODO - How can RenderRoot express "I started a drag-and-drop op"?
+// TODO - How can WindowRoot express "I started a drag-and-drop op"?
 // TODO - Touchpad, Touch, AxisMotion
 // TODO - How to handle CursorEntered?
 // Note to self: Events like "pointerenter", "pointerleave" are handled differently at the Widget level. But that's weird because WidgetPod can distribute them. Need to think about this again.
