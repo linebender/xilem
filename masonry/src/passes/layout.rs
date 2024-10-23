@@ -14,7 +14,7 @@ use crate::passes::recurse_on_children;
 use crate::render_root::{RenderRoot, RenderRootSignal, WindowSizePolicy};
 use crate::widget::{BiAxial, ContentFill, WidgetState};
 use crate::{LayoutCtx, Widget, WidgetPod};
-use crate::widget::ContentFill::Exact;
+use crate::widget::ContentFill::{Exact, Max};
 
 // --- MARK: RUN LAYOUT ---
 /// Run [`Widget::layout`] method on the widget contained in `pod`.
@@ -181,6 +181,7 @@ pub(crate) fn run_layout_on<W: Widget>(
         }
 
         if !new_size.horizontal.is_finite() || !new_size.vertical.is_finite() {
+            println!("hit invalid size.");
             debug_panic!(
                 "Error in '{}' {}: invalid size {}",
                 name,
@@ -215,13 +216,15 @@ pub(crate) fn run_layout_pass(root: &mut RenderRoot) {
     let _span = info_span!("layout").entered();
 
     let window_size = root.get_planar_size();
-    let input_size = match root.size_policy {
-        WindowSizePolicy::User => window_size, // Note: this was "tight"
-        WindowSizePolicy::Content => BiAxial::UNBOUNDED,
-    };
-    let content_fill = BiAxial {
-        horizontal: Exact,
-        vertical: Exact,
+    let (input_size, content_fill) = match root.size_policy {
+        WindowSizePolicy::User => (window_size, BiAxial {
+            horizontal: Exact,
+            vertical: Exact,
+        }), // Note: this was "tight"
+        WindowSizePolicy::Content => (BiAxial::UNBOUNDED, BiAxial {
+            horizontal: Max,
+            vertical: Max,
+        }),
     };
 
     let mut dummy_state = WidgetState::synthetic(root.root.id(), root.get_planar_size());
