@@ -948,7 +948,7 @@ impl Widget for Flex {
                     max_below_baseline = max_below_baseline.max(baseline_offset);
                 }
                 Child::FlexedSpacer(flex, calculated_size) => {
-                    if *calculated_size != 0.0 {
+                    if px_per_flex.is_finite() {
                         let desired_major = (*flex) * px_per_flex + remainder;
                         *calculated_size = desired_major.round();
                         remainder = desired_major - *calculated_size;

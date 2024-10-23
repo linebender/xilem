@@ -103,8 +103,6 @@
 
 // TODO - Add logo
 
-extern crate core;
-
 pub use cursor_icon::{CursorIcon, ParseError as CursorIconParseError};
 pub use dpi;
 pub use parley;
