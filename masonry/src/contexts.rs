@@ -368,7 +368,7 @@ impl_context_method!(
 
 // --- MARK: CURSOR ---
 // Cursor-related impls.
-impl_context_method!(EventCtx<'_>, {
+impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, {
     /// Notifies Masonry that the cursor returned by [`Widget::get_cursor`] has changed.
     ///
     /// This is mostly meant for cases where the cursor changes even if the pointer doesn't
