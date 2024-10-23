@@ -31,7 +31,7 @@ rust.unexpected_cfgs = { level = "warn", check-cfg = [
     'cfg(tarpaulin_include)',
 ] }
 # unsafe code is not allowed in Xilem or Masonry
-# We would like to set this to `forbid`, but we have to use `deny` because `android_activity` 
+# We would like to set this to `forbid`, but we have to use `deny` because `android_activity`
 # requires us to use the unsafe `#[no_mangle]` attribute
 # (And cargo doesn't let us have platform specific lints here)
 rust.unsafe_code = "deny"
@@ -104,11 +104,12 @@ clippy.unseparated_literal_suffix = "warn"
 [workspace.dependencies]
 masonry = { version = "0.2.0", path = "masonry" }
 xilem_core = { version = "0.1.0", path = "xilem_core" }
-vello = "0.2.1"
-wgpu = "0.20.1"
+vello = "0.3"
+wgpu = "22.1.0"
 kurbo = "0.11.1"
-parley = "0.1.0"
-peniko = "0.1.1"
+# Version 0.1.0, with patches to use Peniko 0.2.0 and Skrifa 0.22.0
+parley = { git = "https://github.com/DJMcNab/parley", rev = "c5c40982c2014e096d25f93c4750af4c5112860e" }
+peniko = "0.2.0"
 winit = "0.30.4"
 tracing = { version = "0.1.40", default-features = false }
 smallvec = "1.13.2"
