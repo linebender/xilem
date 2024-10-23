@@ -311,6 +311,10 @@ impl Widget for Grid {
             .collect()
     }
 
+    fn is_passthrough(&self) -> bool {
+        true
+    }
+
     fn make_trace_span(&self) -> Span {
         trace_span!("Grid")
     }
