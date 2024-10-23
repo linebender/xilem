@@ -199,6 +199,13 @@ pub trait Widget: AsAny {
         false
     }
 
+    /// Whether this widgets obstructs pointer events for something behind the window.
+    ///
+    /// Somewhat experimental.
+    fn is_passthrough(&self) -> bool {
+        false
+    }
+
     // TODO - Write a generic default implementation once
     // `const std::any::type_name` is stable.
     // See https://github.com/rust-lang/rust/issues/63084
@@ -465,6 +472,10 @@ impl Widget for Box<dyn Widget> {
 
     fn accepts_text_input(&self) -> bool {
         self.deref().accepts_text_input()
+    }
+
+    fn is_passthrough(&self) -> bool {
+        self.deref().is_passthrough()
     }
 
     fn make_trace_span(&self) -> Span {

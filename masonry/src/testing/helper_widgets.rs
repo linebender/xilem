@@ -378,6 +378,10 @@ impl<S: 'static> Widget for ModularWidget<S> {
         self.accepts_text_input
     }
 
+    fn is_passthrough(&self) -> bool {
+        false
+    }
+
     fn make_trace_span(&self) -> tracing::Span {
         trace_span!("ModularWidget")
     }
@@ -576,6 +580,10 @@ impl<W: Widget> Widget for Recorder<W> {
 
     fn accepts_text_input(&self) -> bool {
         self.child.accepts_text_input()
+    }
+
+    fn is_passthrough(&self) -> bool {
+        self.child.is_passthrough()
     }
 
     fn make_trace_span(&self) -> tracing::Span {

@@ -401,6 +401,10 @@ impl Widget for SizedBox {
         }
     }
 
+    fn is_passthrough(&self) -> bool {
+        self.background.is_none()
+    }
+
     fn make_trace_span(&self) -> Span {
         trace_span!("SizedBox")
     }
