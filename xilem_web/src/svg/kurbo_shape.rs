@@ -6,7 +6,7 @@
 use crate::{
     core::{MessageResult, Mut, OrphanView, ViewId},
     modifiers::{Attributes, With},
-    DynMessage, Pod, ViewCtx, SVG_NS,
+    DynMessage, FromWithContext, Pod, ViewCtx, SVG_NS,
 };
 use peniko::kurbo::{BezPath, Circle, Line, Rect};
 
@@ -14,15 +14,15 @@ fn create_element<R>(
     name: &str,
     ctx: &mut ViewCtx,
     attr_size_hint: usize,
-    f: impl FnOnce(Pod<web_sys::Element>) -> R,
+    f: impl FnOnce(Pod<web_sys::Element>, &mut ViewCtx) -> R,
 ) -> R {
     ctx.with_size_hint::<Attributes, _>(attr_size_hint, |ctx| {
         let element = if ctx.is_hydrating() {
-            Pod::hydrate_element_with_ctx(Vec::new(), ctx.hydrate_node().unwrap(), ctx)
+            Pod::hydrate_element_with_ctx(Vec::new(), ctx)
         } else {
             Pod::new_element_with_ctx(Vec::new(), SVG_NS, name, ctx)
         };
-        f(element)
+        f(element, ctx)
     })
 }
 
@@ -34,8 +34,8 @@ impl<State: 'static, Action: 'static> OrphanView<Line, State, Action, DynMessage
         view: &Line,
         ctx: &mut ViewCtx,
     ) -> (Self::OrphanElement, Self::OrphanViewState) {
-        create_element("line", ctx, 4, |element| {
-            let mut element: Self::OrphanElement = element.into();
+        create_element("line", ctx, 4, |element, ctx| {
+            let mut element = Self::OrphanElement::from_with_ctx(element, ctx);
             let attrs: &mut Attributes = element.modifier();
             attrs.push(("x1", view.p0.x));
             attrs.push(("y1", view.p0.y));
@@ -88,8 +88,8 @@ impl<State: 'static, Action: 'static> OrphanView<Rect, State, Action, DynMessage
         view: &Rect,
         ctx: &mut ViewCtx,
     ) -> (Self::OrphanElement, Self::OrphanViewState) {
-        create_element("rect", ctx, 4, |element| {
-            let mut element: Self::OrphanElement = element.into();
+        create_element("rect", ctx, 4, |element, ctx| {
+            let mut element = Self::OrphanElement::from_with_ctx(element, ctx);
             let attrs: &mut Attributes = element.modifier();
             attrs.push(("x", view.x0));
             attrs.push(("y", view.y0));
@@ -142,8 +142,8 @@ impl<State: 'static, Action: 'static> OrphanView<Circle, State, Action, DynMessa
         view: &Circle,
         ctx: &mut ViewCtx,
     ) -> (Self::OrphanElement, Self::OrphanViewState) {
-        create_element("circle", ctx, 3, |element| {
-            let mut element: Self::OrphanElement = element.into();
+        create_element("circle", ctx, 3, |element, ctx| {
+            let mut element = Self::OrphanElement::from_with_ctx(element, ctx);
             let attrs: &mut Attributes = element.modifier();
             attrs.push(("cx", view.center.x));
             attrs.push(("cy", view.center.y));
@@ -194,10 +194,9 @@ impl<State: 'static, Action: 'static> OrphanView<BezPath, State, Action, DynMess
         view: &BezPath,
         ctx: &mut ViewCtx,
     ) -> (Self::OrphanElement, Self::OrphanViewState) {
-        create_element("path", ctx, 1, |element| {
-            let mut element: Self::OrphanElement = element.into();
-            let attrs: &mut Attributes = element.modifier();
-            attrs.push(("path", view.to_svg()));
+        create_element("path", ctx, 1, |element, ctx| {
+            let mut element = Self::OrphanElement::from_with_ctx(element, ctx);
+            element.props.attributes().push(("path", view.to_svg()));
             (element, ())
         })
     }

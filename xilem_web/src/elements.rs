@@ -11,10 +11,9 @@ use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use crate::{
     core::{AppendVec, ElementSplice, MessageResult, Mut, View, ViewId, ViewMarker},
     document,
-    element_props::ElementProps,
-    modifiers::{Attributes, Classes, Styles},
+    modifiers::{Children, With},
     vec_splice::VecSplice,
-    AnyPod, DomFragment, DomNode, DynMessage, Pod, ViewCtx, HTML_NS,
+    AnyPod, DomFragment, DomNode, DynMessage, FromWithContext, Pod, ViewCtx, HTML_NS,
 };
 
 // sealed, because this should only cover `ViewSequences` with the blanket impl below
@@ -238,36 +237,19 @@ where
     State: 'static,
     Action: 'static,
     Element: 'static,
-    Element: From<Pod<web_sys::Element>>,
+    Element: FromWithContext<Pod<web_sys::Element>>,
 {
-    // We need to get those size hints before traversing to the children, otherwise the hints are messed up
-    let attr_size_hint = ctx.modifier_size_hint::<Attributes>();
-    let class_size_hint = ctx.modifier_size_hint::<Classes>();
-    let style_size_hint = ctx.modifier_size_hint::<Styles>();
     let mut elements = AppendVec::default();
-    if ctx.is_hydrating() {
-        ctx.enter_hydrating_children();
-    }
-    let state = ElementState::new(children.dyn_seq_build(ctx, &mut elements));
+    let children_state = ctx.with_build_children(|ctx| children.dyn_seq_build(ctx, &mut elements));
     let element = if ctx.is_hydrating() {
-        Pod::hydrate_element(
-            elements.into_inner(),
-            ctx.hydrate_node().unwrap_throw(),
-            attr_size_hint,
-            style_size_hint,
-            class_size_hint,
-        )
+        Pod::hydrate_element_with_ctx(elements.into_inner(), ctx)
     } else {
-        Pod::new_element(
-            elements.into_inner(),
-            ns,
-            tag_name,
-            attr_size_hint,
-            style_size_hint,
-            class_size_hint,
-        )
+        Pod::new_element_with_ctx(elements.into_inner(), ns, tag_name, ctx)
     };
-    (element.into(), state)
+    (
+        Element::from_with_ctx(element, ctx),
+        ElementState::new(children_state),
+    )
 }
 
 pub(crate) fn rebuild_element<State, Action, Element>(
@@ -280,11 +262,11 @@ pub(crate) fn rebuild_element<State, Action, Element>(
     State: 'static,
     Action: 'static,
     Element: 'static,
-    Element: DomNode<Props = ElementProps>,
+    Element: DomNode<Props: With<Children>>,
 {
     let mut dom_children_splice = DomChildrenSplice::new(
         &mut state.append_scratch,
-        &mut element.props.children,
+        With::<Children>::modifier(element.props),
         &mut state.vec_splice_scratch,
         element.node.as_ref(),
         ctx.fragment.clone(),
@@ -308,11 +290,11 @@ pub(crate) fn teardown_element<State, Action, Element>(
     State: 'static,
     Action: 'static,
     Element: 'static,
-    Element: DomNode<Props = ElementProps>,
+    Element: DomNode<Props: With<Children>>,
 {
     let mut dom_children_splice = DomChildrenSplice::new(
         &mut state.append_scratch,
-        &mut element.props.children,
+        With::<Children>::modifier(element.props),
         &mut state.vec_splice_scratch,
         element.node.as_ref(),
         ctx.fragment.clone(),

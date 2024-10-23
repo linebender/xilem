@@ -63,7 +63,7 @@ pub use class::*;
 mod style;
 pub use style::*;
 
-use crate::{DomNode, Pod, PodMut};
+use crate::{AnyPod, DomNode, Pod, PodMut};
 
 /// This is basically equivalent to [`AsMut`], it's intended to give access to modifiers of a [`ViewElement`](crate::core::ViewElement).
 ///
@@ -83,3 +83,5 @@ impl<T, N: DomNode<Props: With<T>>> With<T> for PodMut<'_, N> {
         <N::Props as With<T>>::modifier(self.props)
     }
 }
+
+pub type Children = Vec<AnyPod>;

@@ -42,7 +42,9 @@ pub struct ViewCtx {
     hydration_node_stack: Vec<web_sys::Node>,
     is_hydrating: bool,
     pub(crate) templates: VecMap<TypeId, (web_sys::Node, Rc<dyn Any>)>,
-    modifier_size_hints: VecMap<TypeId, usize>,
+    /// A stack containing modifier count size-hints for each element context, mostly to avoid unnecessary allocations.
+    modifier_size_hints: Vec<VecMap<TypeId, usize>>,
+    modifier_size_hint_stack_idx: usize,
 }
 
 impl Default for ViewCtx {
@@ -54,7 +56,9 @@ impl Default for ViewCtx {
             templates: Default::default(),
             hydration_node_stack: Default::default(),
             is_hydrating: false,
-            modifier_size_hints: Default::default(),
+            // One element for the root `DomFragment`. will be extended with `Self::push_size_hints`
+            modifier_size_hints: vec![VecMap::default()],
+            modifier_size_hint_stack_idx: 0,
         }
     }
 }
@@ -71,23 +75,33 @@ impl ViewCtx {
         self.app_ref = Some(Box::new(runner));
     }
 
-    pub(crate) fn push_hydration_node(&mut self, node: web_sys::Node) {
+    /// Should be used when creating children of a DOM node, e.g. to handle hydration and size hints correctly.
+    pub fn with_build_children<R>(&mut self, f: impl FnOnce(&mut Self) -> R) -> R {
+        self.enter_hydrating_children();
+        self.push_size_hints();
+        let r = f(self);
+        self.pop_size_hints();
+        r
+    }
+
+    pub fn with_hydration_node<R>(
+        &mut self,
+        node: web_sys::Node,
+        f: impl FnOnce(&mut Self) -> R,
+    ) -> R {
         self.hydration_node_stack.push(node);
-    }
-
-    pub(crate) fn enable_hydration(&mut self) {
+        let is_hydrating = self.is_hydrating;
         self.is_hydrating = true;
-    }
-
-    pub(crate) fn disable_hydration(&mut self) {
-        self.is_hydrating = false;
+        let r = f(self);
+        self.is_hydrating = is_hydrating;
+        r
     }
 
     pub(crate) fn is_hydrating(&self) -> bool {
         self.is_hydrating
     }
 
-    pub(crate) fn enter_hydrating_children(&mut self) {
+    fn enter_hydrating_children(&mut self) {
         if let Some(node) = self.hydration_node_stack.last() {
             if let Some(child) = node.first_child() {
                 self.hydration_node_stack.push(child);
@@ -105,23 +119,45 @@ impl ViewCtx {
         Some(node)
     }
 
-    #[inline]
-    pub fn add_modifier_size_hint<T: 'static>(&mut self, request_size: usize) {
+    fn current_size_hints_mut(&mut self) -> &mut VecMap<TypeId, usize> {
+        &mut self.modifier_size_hints[self.modifier_size_hint_stack_idx]
+    }
+
+    fn add_modifier_size_hint<T: 'static>(&mut self, request_size: usize) {
         let id = TypeId::of::<T>();
-        match self.modifier_size_hints.get_mut(&id) {
+        let hints = self.current_size_hints_mut();
+        match hints.get_mut(&id) {
             Some(hint) => *hint += request_size,
             None => {
-                self.modifier_size_hints.insert(id, request_size);
+                hints.insert(id, request_size);
             }
-        };
+        }
     }
 
     #[inline]
-    pub fn modifier_size_hint<T: 'static>(&mut self) -> usize {
-        match self.modifier_size_hints.get_mut(&TypeId::of::<T>()) {
-            Some(hint) => std::mem::take(hint),
-            None => 0,
+    pub fn take_modifier_size_hint<T: 'static>(&mut self) -> usize {
+        self.current_size_hints_mut()
+            .get_mut(&TypeId::of::<T>())
+            .map(std::mem::take)
+            .unwrap_or(0)
+    }
+
+    fn push_size_hints(&mut self) {
+        if self.modifier_size_hint_stack_idx == self.modifier_size_hints.len() - 1 {
+            self.modifier_size_hints.push(VecMap::default());
         }
+        self.modifier_size_hint_stack_idx += 1;
+    }
+
+    fn pop_size_hints(&mut self) {
+        debug_assert!(
+            self.modifier_size_hints[self.modifier_size_hint_stack_idx]
+                .iter()
+                .map(|(_, size_hint)| *size_hint)
+                .sum::<usize>()
+                == 0
+        );
+        self.modifier_size_hint_stack_idx -= 1;
     }
 
     #[inline]

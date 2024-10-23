@@ -3,7 +3,7 @@
 
 use crate::{
     document,
-    modifiers::{Attributes, Classes, Styles},
+    modifiers::{Attributes, Children, Classes, Styles, With},
     AnyPod, Pod, ViewCtx,
 };
 use wasm_bindgen::JsCast;
@@ -18,6 +18,12 @@ pub struct ElementProps {
     pub(crate) classes: Option<Box<Classes>>,
     pub(crate) styles: Option<Box<Styles>>,
     pub(crate) children: Vec<AnyPod>,
+}
+
+impl With<Children> for ElementProps {
+    fn modifier(&mut self) -> &mut Children {
+        &mut self.children
+    }
 }
 
 impl ElementProps {
@@ -74,34 +80,16 @@ impl ElementProps {
 }
 
 impl Pod<web_sys::Element> {
+    /// Creates a new Pod with [`web_sys::Element`] as element and `ElementProps` as its [`DomNode::Props`](`crate::DomNode::Props`).
     pub fn new_element_with_ctx(
         children: Vec<AnyPod>,
         ns: &str,
         elem_name: &str,
         ctx: &mut ViewCtx,
     ) -> Self {
-        let attr_size_hint = ctx.modifier_size_hint::<Attributes>();
-        let class_size_hint = ctx.modifier_size_hint::<Classes>();
-        let style_size_hint = ctx.modifier_size_hint::<Styles>();
-        Self::new_element(
-            children,
-            ns,
-            elem_name,
-            attr_size_hint,
-            style_size_hint,
-            class_size_hint,
-        )
-    }
-
-    /// Creates a new Pod with [`web_sys::Element`] as element and `ElementProps` as its [`DomNode::Props`](`crate::DomNode::Props`)
-    pub fn new_element(
-        children: Vec<AnyPod>,
-        ns: &str,
-        elem_name: &str,
-        attr_size_hint: usize,
-        style_size_hint: usize,
-        class_size_hint: usize,
-    ) -> Self {
+        let attr_size_hint = ctx.take_modifier_size_hint::<Attributes>();
+        let class_size_hint = ctx.take_modifier_size_hint::<Classes>();
+        let style_size_hint = ctx.take_modifier_size_hint::<Styles>();
         let element = document()
             .create_element_ns(
                 Some(wasm_bindgen::intern(ns)),
@@ -125,30 +113,13 @@ impl Pod<web_sys::Element> {
         }
     }
 
-    pub fn hydrate_element_with_ctx(
-        children: Vec<AnyPod>,
-        element: web_sys::Node,
-        ctx: &mut ViewCtx,
-    ) -> Self {
-        let attr_size_hint = ctx.modifier_size_hint::<Attributes>();
-        let class_size_hint = ctx.modifier_size_hint::<Classes>();
-        let style_size_hint = ctx.modifier_size_hint::<Styles>();
-        Self::hydrate_element(
-            children,
-            element,
-            attr_size_hint,
-            style_size_hint,
-            class_size_hint,
-        )
-    }
+    /// Creates a new Pod that hydrates an existing node (within the `ViewCtx`) as [`web_sys::Element`] and [`ElementProps`] as its [`DomNode::Props`](`crate::DomNode::Props`).
+    pub fn hydrate_element_with_ctx(children: Vec<AnyPod>, ctx: &mut ViewCtx) -> Self {
+        let attr_size_hint = ctx.take_modifier_size_hint::<Attributes>();
+        let class_size_hint = ctx.take_modifier_size_hint::<Classes>();
+        let style_size_hint = ctx.take_modifier_size_hint::<Styles>();
+        let element = ctx.hydrate_node().unwrap_throw();
 
-    pub fn hydrate_element(
-        children: Vec<AnyPod>,
-        element: web_sys::Node,
-        attr_size_hint: usize,
-        style_size_hint: usize,
-        class_size_hint: usize,
-    ) -> Self {
         Self {
             node: element.unchecked_into(),
             props: ElementProps::new(

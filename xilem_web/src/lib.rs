@@ -402,6 +402,16 @@ impl DomNode for web_sys::Text {
     fn apply_props(&self, (): &mut ()) {}
 }
 
+pub trait FromWithContext<T>: Sized {
+    fn from_with_ctx(value: T, ctx: &mut ViewCtx) -> Self;
+}
+
+impl<T> FromWithContext<T> for T {
+    fn from_with_ctx(value: T, _ctx: &mut ViewCtx) -> Self {
+        value
+    }
+}
+
 // TODO specialize some of these elements, maybe via features?
 macro_rules! impl_dom_node_for_elements {
     ($($ty:ident, )*) => {$(
@@ -413,8 +423,8 @@ macro_rules! impl_dom_node_for_elements {
             }
         }
 
-        impl From<Pod<web_sys::Element>> for Pod<web_sys::$ty> {
-            fn from(value: Pod<web_sys::Element>) -> Self {
+        impl FromWithContext<Pod<web_sys::Element>> for Pod<web_sys::$ty> {
+            fn from_with_ctx(value: Pod<web_sys::Element>, _ctx: &mut ViewCtx) -> Self {
                 Self {
                     node: value.node.unchecked_into(),
                     props: value.props,

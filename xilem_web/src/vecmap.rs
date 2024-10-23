@@ -345,6 +345,19 @@ impl<'a, K, V> IntoIterator for &'a VecMap<K, V> {
     }
 }
 
+impl<'a, K, V> IntoIterator for &'a mut VecMap<K, V> {
+    type Item = (&'a mut K, &'a mut V);
+
+    type IntoIter = std::iter::Map<
+        std::slice::IterMut<'a, (K, V)>,
+        fn(&'a mut (K, V)) -> (&'a mut K, &'a mut V),
+    >;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.iter_mut().map(|(k, v)| (k, v))
+    }
+}
+
 impl<K, V> IntoIterator for VecMap<K, V> {
     type Item = (K, V);
 
