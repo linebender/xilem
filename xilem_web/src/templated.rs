@@ -35,14 +35,8 @@ where
             let prev = view.clone();
             let prev = prev.downcast_ref::<E>().unwrap_throw();
             let node = template_node.clone_node_with_deep(true).unwrap_throw();
-            let is_already_hydrating = ctx.is_hydrating();
-            ctx.enable_hydration();
-            ctx.push_hydration_node(node);
-            let (mut el, mut state) = prev.build(ctx);
+            let (mut el, mut state) = ctx.with_hydration_node(node, |ctx| prev.build(ctx));
             el.node.apply_props(&mut el.props);
-            if !is_already_hydrating {
-                ctx.disable_hydration();
-            }
             let pod_mut = PodMut::new(&mut el.node, &mut el.props, None, false);
             self.0.rebuild(prev, &mut state, ctx, pod_mut);
 

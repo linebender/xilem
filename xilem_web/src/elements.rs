@@ -11,11 +11,10 @@ use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use crate::{
     core::{AppendVec, ElementSplice, MessageResult, Mut, View, ViewId, ViewMarker},
     document,
-    element_props::ElementProps,
+    modifiers::{Children, With},
     vec_splice::VecSplice,
-    AnyPod, DomFragment, DomNode, DynMessage, Pod, ViewCtx, HTML_NS,
+    AnyPod, DomFragment, DomNode, DynMessage, FromWithContext, Pod, ViewCtx, HTML_NS,
 };
-use crate::{Attributes, Classes, Styles};
 
 // sealed, because this should only cover `ViewSequences` with the blanket impl below
 /// This is basically a specialized dynamically dispatchable [`ViewSequence`], It's currently not able to change the underlying type unlike [`AnyDomView`](crate::AnyDomView), so it should not be used as `dyn DomViewSequence`.
@@ -123,7 +122,6 @@ pub struct DomChildrenSplice<'a, 'b, 'c, 'd> {
     parent: &'d web_sys::Node,
     fragment: Rc<web_sys::DocumentFragment>,
     parent_was_removed: bool,
-    #[cfg(feature = "hydration")]
     in_hydration: bool,
 }
 
@@ -135,7 +133,7 @@ impl<'a, 'b, 'c, 'd> DomChildrenSplice<'a, 'b, 'c, 'd> {
         parent: &'d web_sys::Node,
         fragment: Rc<web_sys::DocumentFragment>,
         parent_was_deleted: bool,
-        #[cfg(feature = "hydration")] hydrate: bool,
+        hydrate: bool,
     ) -> Self {
         Self {
             scratch,
@@ -144,7 +142,6 @@ impl<'a, 'b, 'c, 'd> DomChildrenSplice<'a, 'b, 'c, 'd> {
             parent,
             fragment,
             parent_was_removed: parent_was_deleted,
-            #[cfg(feature = "hydration")]
             in_hydration: hydrate,
         }
     }
@@ -154,13 +151,7 @@ impl<'a, 'b, 'c, 'd> ElementSplice<AnyPod> for DomChildrenSplice<'a, 'b, 'c, 'd>
     fn with_scratch<R>(&mut self, f: impl FnOnce(&mut AppendVec<AnyPod>) -> R) -> R {
         let ret = f(self.scratch);
         if !self.scratch.is_empty() {
-            #[allow(unused_assignments, unused_mut)]
-            // reason: when the feature "hydration" is enabled/disabled, avoid warnings
-            let mut add_dom_children_to_parent = true;
-            #[cfg(feature = "hydration")]
-            {
-                add_dom_children_to_parent = !self.in_hydration;
-            }
+            let add_dom_children_to_parent = !self.in_hydration;
 
             for element in self.scratch.drain() {
                 if add_dom_children_to_parent {
@@ -246,44 +237,18 @@ where
     State: 'static,
     Action: 'static,
     Element: 'static,
-    Element: From<Pod<web_sys::Element>>,
+    Element: FromWithContext<Pod<web_sys::Element>>,
 {
-    // We need to get those size hints before traversing to the children, otherwise the hints are messed up
-    let attr_size_hint = ctx.modifier_size_hint::<Attributes>();
-    let class_size_hint = ctx.modifier_size_hint::<Classes>();
-    let style_size_hint = ctx.modifier_size_hint::<Styles>();
     let mut elements = AppendVec::default();
-    #[cfg(feature = "hydration")]
-    if ctx.is_hydrating() {
-        ctx.enter_hydrating_children();
-    }
-    let state = ElementState::new(children.dyn_seq_build(ctx, &mut elements));
-    #[cfg(feature = "hydration")]
-    if ctx.is_hydrating() {
-        let hydrating_node = ctx.hydrate_node().unwrap_throw();
-        return (
-            Pod::hydrate_element(
-                elements.into_inner(),
-                hydrating_node,
-                attr_size_hint,
-                style_size_hint,
-                class_size_hint,
-            )
-            .into(),
-            state,
-        );
-    }
+    let children_state = ctx.with_build_children(|ctx| children.dyn_seq_build(ctx, &mut elements));
+    let element = if ctx.is_hydrating() {
+        Pod::hydrate_element_with_ctx(elements.into_inner(), ctx)
+    } else {
+        Pod::new_element_with_ctx(elements.into_inner(), ns, tag_name, ctx)
+    };
     (
-        Pod::new_element(
-            elements.into_inner(),
-            ns,
-            tag_name,
-            attr_size_hint,
-            style_size_hint,
-            class_size_hint,
-        )
-        .into(),
-        state,
+        Element::from_with_ctx(element, ctx),
+        ElementState::new(children_state),
     )
 }
 
@@ -297,16 +262,15 @@ pub(crate) fn rebuild_element<State, Action, Element>(
     State: 'static,
     Action: 'static,
     Element: 'static,
-    Element: DomNode<Props = ElementProps>,
+    Element: DomNode<Props: With<Children>>,
 {
     let mut dom_children_splice = DomChildrenSplice::new(
         &mut state.append_scratch,
-        &mut element.props.children,
+        With::<Children>::modifier(element.props),
         &mut state.vec_splice_scratch,
         element.node.as_ref(),
         ctx.fragment.clone(),
         element.was_removed,
-        #[cfg(feature = "hydration")]
         ctx.is_hydrating(),
     );
     children.dyn_seq_rebuild(
@@ -326,16 +290,15 @@ pub(crate) fn teardown_element<State, Action, Element>(
     State: 'static,
     Action: 'static,
     Element: 'static,
-    Element: DomNode<Props = ElementProps>,
+    Element: DomNode<Props: With<Children>>,
 {
     let mut dom_children_splice = DomChildrenSplice::new(
         &mut state.append_scratch,
-        &mut element.props.children,
+        With::<Children>::modifier(element.props),
         &mut state.vec_splice_scratch,
         element.node.as_ref(),
         ctx.fragment.clone(),
         true,
-        #[cfg(feature = "hydration")]
         ctx.is_hydrating(),
     );
     children.dyn_seq_teardown(&mut state.seq_state, ctx, &mut dom_children_splice);

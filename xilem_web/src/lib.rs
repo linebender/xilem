@@ -29,9 +29,7 @@ pub const MATHML_NS: &str = "http://www.w3.org/1998/Math/MathML";
 
 mod after_update;
 mod app;
-mod attribute;
 mod attribute_value;
-mod class;
 mod context;
 mod dom_helpers;
 mod element_props;
@@ -39,17 +37,17 @@ mod message;
 mod one_of;
 mod optional_action;
 mod pointer;
-mod style;
-#[cfg(feature = "hydration")]
 mod templated;
 mod text;
 mod vec_splice;
 mod vecmap;
 
 pub mod concurrent;
+pub mod diff;
 pub mod elements;
 pub mod events;
 pub mod interfaces;
+pub mod modifiers;
 pub mod svg;
 
 pub use self::{
@@ -57,19 +55,15 @@ pub use self::{
         after_build, after_rebuild, before_teardown, AfterBuild, AfterRebuild, BeforeTeardown,
     },
     app::App,
-    attribute::{Attr, Attributes, ElementWithAttributes, WithAttributes},
     attribute_value::{AttributeValue, IntoAttributeValue},
-    class::{AsClassIter, Class, Classes, ElementWithClasses, WithClasses},
     context::{MessageThunk, ViewCtx},
     dom_helpers::{document, document_body, get_element_by_id, input_event_target_value},
     element_props::ElementProps,
     message::{DynMessage, Message},
     optional_action::{Action, OptionalAction},
     pointer::{Pointer, PointerDetails, PointerMsg},
-    style::{style, ElementWithStyle, IntoStyles, Style, Styles, WithStyle},
 };
 
-#[cfg(feature = "hydration")]
 pub use templated::{templated, Templated};
 
 pub use xilem_core as core;
@@ -408,6 +402,16 @@ impl DomNode for web_sys::Text {
     fn apply_props(&self, (): &mut ()) {}
 }
 
+pub trait FromWithContext<T>: Sized {
+    fn from_with_ctx(value: T, ctx: &mut ViewCtx) -> Self;
+}
+
+impl<T> FromWithContext<T> for T {
+    fn from_with_ctx(value: T, _ctx: &mut ViewCtx) -> Self {
+        value
+    }
+}
+
 // TODO specialize some of these elements, maybe via features?
 macro_rules! impl_dom_node_for_elements {
     ($($ty:ident, )*) => {$(
@@ -419,8 +423,8 @@ macro_rules! impl_dom_node_for_elements {
             }
         }
 
-        impl From<Pod<web_sys::Element>> for Pod<web_sys::$ty> {
-            fn from(value: Pod<web_sys::Element>) -> Self {
+        impl FromWithContext<Pod<web_sys::Element>> for Pod<web_sys::$ty> {
+            fn from_with_ctx(value: Pod<web_sys::Element>, _ctx: &mut ViewCtx) -> Self {
                 Self {
                     node: value.node.unchecked_into(),
                     props: value.props,

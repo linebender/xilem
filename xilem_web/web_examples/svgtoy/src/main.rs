@@ -5,7 +5,7 @@ use xilem_web::{
     document_body,
     elements::svg::{g, svg, text},
     interfaces::*,
-    style as s,
+    modifiers::style as s,
     svg::{
         kurbo::{Circle, Line, Rect, Stroke},
         peniko::Color,
