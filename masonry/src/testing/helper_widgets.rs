@@ -13,7 +13,7 @@ use std::collections::VecDeque;
 use std::rc::Rc;
 
 use accesskit::{NodeBuilder, Role};
-use smallvec::SmallVec;
+use smallvec::{smallvec, SmallVec};
 use tracing::trace_span;
 use vello::Scene;
 use widget::widget::get_child_at_pos;
@@ -43,7 +43,7 @@ pub const REPLACE_CHILD: Selector = Selector::new("masonry-test.replace-child");
 ///
 /// This widget is generic over its state, which is passed in at construction time.
 pub struct ModularWidget<S> {
-    state: S,
+    pub state: S,
     accepts_pointer_interaction: bool,
     accepts_focus: bool,
     accepts_text_input: bool,
@@ -102,18 +102,18 @@ pub struct Recording(Rc<RefCell<VecDeque<Record>>>);
 /// A recording of a method call on a widget.
 ///
 /// Each member of the enum corresponds to one of the methods on `Widget`.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Record {
-    PE(PointerEvent),
-    TE(TextEvent),
-    AE(AccessEvent),
-    AF(u64),
-    RC,
-    U(Update),
+    PointerEvent(PointerEvent),
+    TextEvent(TextEvent),
+    AccessEvent(AccessEvent),
+    AnimFrame(u64),
+    RegisterChildren,
+    Update(Update),
     Layout(Size),
-    Compose,
+    Compose(Point),
     Paint,
-    Access,
+    Accessibilty,
 }
 
 /// External trait implemented for all widgets.
@@ -158,6 +158,22 @@ impl<S> ModularWidget<S> {
             access: None,
             children: None,
         }
+    }
+}
+
+impl<W: Widget> ModularWidget<WidgetPod<W>> {
+    pub fn new_parent(child: W) -> ModularWidget<WidgetPod<W>> {
+        let child = WidgetPod::new(child);
+        ModularWidget::new(child)
+            .register_children_fn(move |child, ctx| {
+                ctx.register_child(child);
+            })
+            .layout_fn(move |child, ctx, bc| {
+                let size = ctx.run_layout(child, bc);
+                ctx.place_child(child, Point::ZERO);
+                size
+            })
+            .children_fn(|child| smallvec![child.id()])
     }
 }
 
@@ -508,32 +524,32 @@ impl Recording {
 #[warn(clippy::missing_trait_methods)]
 impl<W: Widget> Widget for Recorder<W> {
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &event::PointerEvent) {
-        self.recording.push(Record::PE(event.clone()));
+        self.recording.push(Record::PointerEvent(event.clone()));
         self.child.on_pointer_event(ctx, event);
     }
 
     fn on_text_event(&mut self, ctx: &mut EventCtx, event: &event::TextEvent) {
-        self.recording.push(Record::TE(event.clone()));
+        self.recording.push(Record::TextEvent(event.clone()));
         self.child.on_text_event(ctx, event);
     }
 
     fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {
-        self.recording.push(Record::AE(event.clone()));
+        self.recording.push(Record::AccessEvent(event.clone()));
         self.child.on_access_event(ctx, event);
     }
 
     fn on_anim_frame(&mut self, ctx: &mut UpdateCtx, interval: u64) {
-        self.recording.push(Record::AF(interval));
+        self.recording.push(Record::AnimFrame(interval));
         self.child.on_anim_frame(ctx, interval);
     }
 
     fn register_children(&mut self, ctx: &mut RegisterCtx) {
-        self.recording.push(Record::RC);
+        self.recording.push(Record::RegisterChildren);
         self.child.register_children(ctx);
     }
 
     fn update(&mut self, ctx: &mut UpdateCtx, event: &Update) {
-        self.recording.push(Record::U(event.clone()));
+        self.recording.push(Record::Update(event.clone()));
         self.child.update(ctx, event);
     }
 
@@ -544,7 +560,7 @@ impl<W: Widget> Widget for Recorder<W> {
     }
 
     fn compose(&mut self, ctx: &mut ComposeCtx) {
-        self.recording.push(Record::Compose);
+        self.recording.push(Record::Compose(ctx.window_origin()));
         self.child.compose(ctx);
     }
 
@@ -558,7 +574,7 @@ impl<W: Widget> Widget for Recorder<W> {
     }
 
     fn accessibility(&mut self, ctx: &mut AccessCtx, node: &mut NodeBuilder) {
-        self.recording.push(Record::Access);
+        self.recording.push(Record::Accessibilty);
         self.child.accessibility(ctx, node);
     }
 

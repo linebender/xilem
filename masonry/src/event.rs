@@ -182,7 +182,7 @@ impl From<PointerButton> for PointerButtons {
 // TODO - Touchpad, Touch, AxisMotion
 // TODO - How to handle CursorEntered?
 // Note to self: Events like "pointerenter", "pointerleave" are handled differently at the Widget level. But that's weird because WidgetPod can distribute them. Need to think about this again.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum PointerEvent {
     PointerDown(PointerButton, PointerState),
     PointerUp(PointerButton, PointerState),
@@ -198,7 +198,7 @@ pub enum PointerEvent {
 
 // TODO - Clipboard Paste?
 // TODO skip is_synthetic=true events
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum TextEvent {
     KeyboardKey(KeyEvent, ModifiersState),
     Ime(Ime),
@@ -207,13 +207,13 @@ pub enum TextEvent {
     FocusChange(bool),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct AccessEvent {
     pub action: accesskit::Action,
     pub data: Option<accesskit::ActionData>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct PointerState {
     // TODO
     // pub device_id: DeviceId,
@@ -242,7 +242,7 @@ pub enum WindowTheme {
 /// may occur during an [`on_event`](crate::Widget::on_event) pass, if some
 /// widget has been added then.
 #[non_exhaustive]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 #[allow(variant_size_differences)]
 pub enum Update {
     /// Sent to a `Widget` when it is added to the widget tree. This should be

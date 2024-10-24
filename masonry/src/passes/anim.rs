@@ -64,3 +64,30 @@ pub(crate) fn run_update_anim_pass(root: &mut RenderRoot, elapsed_ns: u64) {
         elapsed_ns,
     );
 }
+
+// --- MARK: TESTS ---
+#[cfg(test)]
+mod tests {
+    use crate::testing::{Record, Recording, TestHarness, TestWidgetExt as _};
+    use crate::widget::SizedBox;
+    use crate::WidgetId;
+
+    #[test]
+    fn test_update_anim_pass() {
+        let record = Recording::default();
+
+        let id = WidgetId::next();
+        let widget = SizedBox::new_with_id(SizedBox::empty().record(&record), id);
+
+        let mut harness = TestHarness::create(widget);
+
+        record.clear();
+
+        harness.edit_widget(id, |mut widget| {
+            widget.ctx.request_anim_frame();
+        });
+        harness.animate_ms(20);
+
+        assert_eq!(record.next(), Some(Record::AnimFrame(20_000_000)));
+    }
+}
