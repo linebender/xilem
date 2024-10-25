@@ -211,7 +211,7 @@ impl<State: 'static, Action: 'static> OrphanView<BezPath, State, Action, DynMess
         Attributes::rebuild(element, 1, |mut element| {
             let attrs: &mut Attributes = element.modifier();
             if attrs.was_created() {
-                attrs.push(("path", new.to_svg()));
+                attrs.push(("d", new.to_svg()));
             } else if new != prev {
                 attrs.mutate(|m| *m = ("d", new.to_svg()).into());
             } else {
