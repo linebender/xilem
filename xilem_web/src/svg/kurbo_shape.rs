@@ -196,7 +196,7 @@ impl<State: 'static, Action: 'static> OrphanView<BezPath, State, Action, DynMess
     ) -> (Self::OrphanElement, Self::OrphanViewState) {
         create_element("path", ctx, 1, |element, ctx| {
             let mut element = Self::OrphanElement::from_with_ctx(element, ctx);
-            element.props.attributes().push(("path", view.to_svg()));
+            element.props.attributes().push(("d", view.to_svg()));
             (element, ())
         })
     }
@@ -213,7 +213,7 @@ impl<State: 'static, Action: 'static> OrphanView<BezPath, State, Action, DynMess
             if attrs.was_created() {
                 attrs.push(("path", new.to_svg()));
             } else if new != prev {
-                attrs.mutate(|m| *m = ("path", new.to_svg()).into());
+                attrs.mutate(|m| *m = ("d", new.to_svg()).into());
             } else {
                 attrs.skip(1);
             }
