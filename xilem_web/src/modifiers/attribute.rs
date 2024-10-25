@@ -5,7 +5,7 @@ use crate::{
     core::{MessageResult, Mut, View, ViewElement, ViewId, ViewMarker},
     modifiers::With,
     vecmap::VecMap,
-    AttributeValue, DomView, DynMessage, ElementProps, IntoAttributeValue, ViewCtx,
+    AttributeValue, DomView, DynMessage, IntoAttributeValue, ViewCtx,
 };
 use std::marker::PhantomData;
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
@@ -55,12 +55,6 @@ pub struct Attributes {
     idx: u16,
     in_hydration: bool,
     was_created: bool,
-}
-
-impl With<Attributes> for ElementProps {
-    fn modifier(&mut self) -> &mut Attributes {
-        self.attributes()
-    }
 }
 
 impl Attributes {
@@ -229,7 +223,22 @@ impl Attributes {
     }
 }
 
-fn set_attribute(element: &web_sys::Element, name: &str, value: &str) {
+fn html_input_attr_assertions(element: &web_sys::Element, name: &str) {
+    debug_assert!(
+        !(element.is_instance_of::<web_sys::HtmlInputElement>() && name == "checked"),
+        "Using `checked` as attribute on a checkbox is not supported, \
+         use the `el.checked()` or `el.default_checked()` modifier instead. \
+         You may have to enable the feature \"HtmlInputElement\"."
+    );
+    debug_assert!(
+        !(element.is_instance_of::<web_sys::HtmlInputElement>() && name == "disabled"),
+        "Using `disabled` as attribute on an input element is not supported, \
+         use the `el.checked()` modifier instead. \
+         You may have to enable the feature \"HtmlInputElement\"."
+    );
+}
+
+fn element_attr_assertions(element: &web_sys::Element, name: &str) {
     debug_assert_ne!(
         name, "class",
         "Using `class` as attribute is not supported, use the `el.class()` modifier instead"
@@ -238,6 +247,11 @@ fn set_attribute(element: &web_sys::Element, name: &str, value: &str) {
         name, "style",
         "Using `style` as attribute is not supported, use the `el.style()` modifier instead"
     );
+    html_input_attr_assertions(element, name);
+}
+
+fn set_attribute(element: &web_sys::Element, name: &str, value: &str) {
+    element_attr_assertions(element, name);
 
     // we have to special-case `value` because setting the value using `set_attribute`
     // doesn't work after the value has been changed.
@@ -249,37 +263,14 @@ fn set_attribute(element: &web_sys::Element, name: &str, value: &str) {
         } else {
             element.set_attribute("value", value).unwrap_throw();
         }
-    } else if name == "checked" {
-        if let Some(input_element) = element.dyn_ref::<web_sys::HtmlInputElement>() {
-            input_element.set_checked(true);
-        } else {
-            element.set_attribute("checked", value).unwrap_throw();
-        }
     } else {
         element.set_attribute(name, value).unwrap_throw();
     }
 }
 
 fn remove_attribute(element: &web_sys::Element, name: &str) {
-    debug_assert_ne!(
-        name, "class",
-        "Using `class` as attribute is not supported, use the `el.class()` modifier instead"
-    );
-    debug_assert_ne!(
-        name, "style",
-        "Using `style` as attribute is not supported, use the `el.style()` modifier instead"
-    );
-    // we have to special-case `checked` because setting the value using `set_attribute`
-    // doesn't work after the value has been changed.
-    if name == "checked" {
-        if let Some(input_element) = element.dyn_ref::<web_sys::HtmlInputElement>() {
-            input_element.set_checked(false);
-        } else {
-            element.remove_attribute("checked").unwrap_throw();
-        }
-    } else {
-        element.remove_attribute(name).unwrap_throw();
-    }
+    element_attr_assertions(element, name);
+    element.remove_attribute(name).unwrap_throw();
 }
 
 /// A view to add an attribute to [`Element`](`crate::interfaces::Element`) derived components.

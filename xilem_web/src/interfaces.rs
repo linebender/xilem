@@ -758,10 +758,97 @@ where
 {
 }
 
+use crate::modifiers::html_input_element;
 // #[cfg(feature = "HtmlInputElement")]
 pub trait HtmlInputElement<State, Action = ()>:
-    HtmlElement<State, Action, DomNode: AsRef<web_sys::HtmlInputElement>>
+    HtmlElement<
+    State,
+    Action,
+    DomNode: DomNode<
+        Props: With<html_input_element::Checked>
+                   + With<html_input_element::Disabled>
+                   + With<html_input_element::Required>
+                   + With<html_input_element::Multiple>,
+    > + AsRef<web_sys::HtmlInputElement>,
+>
 {
+    /// See <https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/checked> for more details.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use xilem_web::{interfaces::{Element, HtmlInputElement}, elements::html::input};
+    ///
+    /// # fn component() -> impl HtmlInputElement<()> {
+    /// input(()).attr("type", "checkbox").checked(true) // results in <input type="checkbox" checked></input>
+    /// # }
+    /// ```
+    fn checked(self, checked: bool) -> html_input_element::view::Checked<Self, State, Action> {
+        html_input_element::view::Checked::new(self, checked)
+    }
+
+    /// See <https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/checked> for more details.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use xilem_web::{interfaces::{Element, HtmlInputElement}, elements::html::input};
+    ///
+    /// # fn component() -> impl HtmlInputElement<()> {
+    /// input(()).attr("type", "radio").default_checked(true) // results in <input type="radio" checked></input>
+    /// # }
+    /// ```
+    fn default_checked(
+        self,
+        default_checked: bool,
+    ) -> html_input_element::view::DefaultChecked<Self, State, Action> {
+        html_input_element::view::DefaultChecked::new(self, default_checked)
+    }
+
+    /// See <https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/disabled> for more details.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use xilem_web::{interfaces::{Element, HtmlInputElement}, elements::html::input};
+    ///
+    /// # fn component() -> impl HtmlInputElement<()> {
+    /// input(()).disabled(true) // results in <input disabled></input>
+    /// # }
+    /// ```
+    fn disabled(self, disabled: bool) -> html_input_element::view::Disabled<Self, State, Action> {
+        html_input_element::view::Disabled::new(self, disabled)
+    }
+
+    /// See <https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/disabled> for more details.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use xilem_web::{interfaces::{Element, HtmlInputElement}, elements::html::input};
+    ///
+    /// # fn component() -> impl HtmlInputElement<()> {
+    /// input(()).required(true) // results in <input required></input>
+    /// # }
+    /// ```
+    fn required(self, required: bool) -> html_input_element::view::Required<Self, State, Action> {
+        html_input_element::view::Required::new(self, required)
+    }
+
+    /// See <https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/multiple> for more details.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use xilem_web::{interfaces::{Element, HtmlInputElement}, elements::html::input};
+    ///
+    /// # fn component() -> impl HtmlInputElement<()> {
+    /// input(()).required(true) // results in <input required></input>
+    /// # }
+    /// ```
+    fn multiple(self, required: bool) -> html_input_element::view::Multiple<Self, State, Action> {
+        html_input_element::view::Multiple::new(self, required)
+    }
 }
 
 // #[cfg(feature = "HtmlInputElement")]
@@ -769,6 +856,10 @@ impl<State, Action, T> HtmlInputElement<State, Action> for T
 where
     T: HtmlElement<State, Action>,
     T::DomNode: AsRef<web_sys::HtmlInputElement>,
+    <T::DomNode as DomNode>::Props: With<html_input_element::Checked>
+        + With<html_input_element::Disabled>
+        + With<html_input_element::Required>
+        + With<html_input_element::Multiple>,
 {
 }
 

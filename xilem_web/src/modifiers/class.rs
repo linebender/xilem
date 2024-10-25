@@ -6,7 +6,7 @@ use crate::{
     diff::{diff_iters, Diff},
     modifiers::With,
     vecmap::VecMap,
-    DomView, DynMessage, ElementProps, ViewCtx,
+    DomView, DynMessage, ViewCtx,
 };
 use std::{fmt::Debug, marker::PhantomData};
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
@@ -96,12 +96,6 @@ pub struct Classes {
     dirty: bool,
     /// This is to avoid an additional alignment word with 2 booleans, it contains the two `IN_HYDRATION` and `WAS_CREATED` flags
     flags: u8,
-}
-
-impl With<Classes> for ElementProps {
-    fn modifier(&mut self) -> &mut Classes {
-        self.classes()
-    }
 }
 
 impl Classes {

@@ -12,7 +12,7 @@ use wasm_bindgen::UnwrapThrowExt;
 // Lazy access to attributes etc. to avoid allocating unnecessary memory when it isn't needed
 // Benchmarks have shown, that this can significantly increase performance and reduce memory usage...
 /// This holds all the state for a DOM [`Element`](`crate::interfaces::Element`), it is used for [`DomNode::Props`](`crate::DomNode::Props`)
-pub struct ElementProps {
+pub struct Element {
     pub(crate) in_hydration: bool,
     pub(crate) attributes: Option<Box<Attributes>>,
     pub(crate) classes: Option<Box<Classes>>,
@@ -20,13 +20,7 @@ pub struct ElementProps {
     pub(crate) children: Vec<AnyPod>,
 }
 
-impl With<Children> for ElementProps {
-    fn modifier(&mut self) -> &mut Children {
-        &mut self.children
-    }
-}
-
-impl ElementProps {
+impl Element {
     pub fn new(
         children: Vec<AnyPod>,
         attr_size_hint: usize,
@@ -103,7 +97,7 @@ impl Pod<web_sys::Element> {
 
         Self {
             node: element,
-            props: ElementProps::new(
+            props: Element::new(
                 children,
                 attr_size_hint,
                 style_size_hint,
@@ -122,7 +116,7 @@ impl Pod<web_sys::Element> {
 
         Self {
             node: element.unchecked_into(),
-            props: ElementProps::new(
+            props: Element::new(
                 children,
                 attr_size_hint,
                 style_size_hint,
@@ -130,5 +124,29 @@ impl Pod<web_sys::Element> {
                 true,
             ),
         }
+    }
+}
+
+impl With<Children> for Element {
+    fn modifier(&mut self) -> &mut Children {
+        &mut self.children
+    }
+}
+
+impl With<Attributes> for Element {
+    fn modifier(&mut self) -> &mut Attributes {
+        self.attributes()
+    }
+}
+
+impl With<Classes> for Element {
+    fn modifier(&mut self) -> &mut Classes {
+        self.classes()
+    }
+}
+
+impl With<Styles> for Element {
+    fn modifier(&mut self) -> &mut Styles {
+        self.styles()
     }
 }

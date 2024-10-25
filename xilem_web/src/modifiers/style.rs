@@ -6,7 +6,7 @@ use crate::{
     diff::{diff_iters, Diff},
     modifiers::With,
     vecmap::VecMap,
-    DomView, DynMessage, ElementProps, ViewCtx,
+    DomView, DynMessage, ViewCtx,
 };
 use peniko::kurbo::Vec2;
 use std::{
@@ -148,12 +148,6 @@ pub struct Styles {
     idx: u16,
     in_hydration: bool,
     was_created: bool,
-}
-
-impl With<Styles> for ElementProps {
-    fn modifier(&mut self) -> &mut Styles {
-        self.styles()
-    }
 }
 
 fn set_style(element: &web_sys::Element, name: &str, value: &str) {
@@ -424,7 +418,7 @@ impl Styles {
 
     #[inline]
     /// Updates the style property `name` by modifying its previous value with `create_modifier`.
-    pub fn update_style_mutator<T: PartialEq>(
+    pub fn update_with_modify_style<T: PartialEq>(
         &mut self,
         name: &'static str,
         prev: &T,
@@ -579,7 +573,7 @@ where
         Styles::rebuild(element, 1, |mut element| {
             self.el
                 .rebuild(&prev.el, view_state, ctx, element.reborrow_mut());
-            element.modifier().update_style_mutator(
+            element.modifier().update_with_modify_style(
                 "transform",
                 &prev.radians,
                 &self.radians,
@@ -700,7 +694,7 @@ where
         Styles::rebuild(element, 1, |mut element| {
             self.el
                 .rebuild(&prev.el, view_state, ctx, element.reborrow_mut());
-            element.modifier().update_style_mutator(
+            element.modifier().update_with_modify_style(
                 "transform",
                 &prev.scale,
                 &self.scale,

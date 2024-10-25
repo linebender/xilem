@@ -63,6 +63,12 @@ pub use class::*;
 mod style;
 pub use style::*;
 
+mod overwrite;
+pub use overwrite::*;
+
+mod elements;
+pub use elements::*;
+
 use crate::{AnyPod, DomNode, Pod, PodMut};
 
 /// This is basically equivalent to [`AsMut`], it's intended to give access to modifiers of a [`ViewElement`](crate::core::ViewElement).
