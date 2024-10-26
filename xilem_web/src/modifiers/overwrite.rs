@@ -1,3 +1,6 @@
+// Copyright 2024 the Xilem Authors
+// SPDX-License-Identifier: Apache-2.0
+
 use super::Modifier;
 
 /// A specialized optimized boolean overwrite modifier, with support of up to 32 boolean elements, to avoid allocations.

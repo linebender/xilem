@@ -1,3 +1,6 @@
+// Copyright 2024 the Xilem Authors
+// SPDX-License-Identifier: Apache-2.0
+
 pub mod html_input_element {
     use crate::overwrite_bool_modifier;
     overwrite_bool_modifier!(Checked);
