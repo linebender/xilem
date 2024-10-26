@@ -4,7 +4,7 @@
 use crate::{
     core::{MessageResult, Mut, View, ViewElement, ViewId, ViewMarker},
     diff::{diff_iters, Diff},
-    modifiers::With,
+    modifiers::{Modifier, With},
     vecmap::VecMap,
     DomView, DynMessage, ViewCtx,
 };
@@ -82,9 +82,6 @@ impl<C: ClassIter, const N: usize> ClassIter for [C; N] {
     }
 }
 
-const IN_HYDRATION: u8 = 1 << 0;
-const WAS_CREATED: u8 = 1 << 1;
-
 #[derive(Default)]
 /// An Element modifier that manages all classes of an Element.
 pub struct Classes {
@@ -94,59 +91,55 @@ pub struct Classes {
     modifiers: Vec<ClassModifier>,
     idx: u16,
     dirty: bool,
-    /// This is to avoid an additional alignment word with 2 booleans, it contains the two `IN_HYDRATION` and `WAS_CREATED` flags
-    flags: u8,
 }
 
 impl Classes {
     /// Creates a new `Classes` modifier.
     ///
     /// `size_hint` is used to avoid unnecessary allocations while traversing up the view-tree when adding modifiers in [`View::build`].
-    pub(crate) fn new(size_hint: usize, in_hydration: bool) -> Self {
-        let mut flags = WAS_CREATED;
-        if in_hydration {
-            flags |= IN_HYDRATION;
-        }
+    pub(crate) fn new(size_hint: usize) -> Self {
         Self {
             modifiers: Vec::with_capacity(size_hint),
-            flags,
             ..Default::default()
         }
     }
 
     /// Applies potential changes of the classes of an element to the underlying DOM node.
-    pub fn apply_changes(&mut self, element: &web_sys::Element) {
-        if (self.flags & IN_HYDRATION) == IN_HYDRATION {
-            self.flags = 0;
-            self.dirty = false;
-        } else if self.dirty {
-            self.flags = 0;
-            self.dirty = false;
-            self.classes.clear();
-            self.classes.reserve(self.modifiers.len());
-            for modifier in &self.modifiers {
-                match modifier {
-                    ClassModifier::Remove(class_name) => self.classes.remove(class_name),
-                    ClassModifier::Add(class_name) => self.classes.insert(class_name.clone(), ()),
+    pub fn apply_changes(this: Modifier<'_, Self>, element: &web_sys::Element) {
+        let Modifier { modifier, flags } = this;
+
+        if flags.in_hydration() {
+            modifier.dirty = false;
+        } else if modifier.dirty {
+            modifier.dirty = false;
+            modifier.classes.clear();
+            modifier.classes.reserve(modifier.modifiers.len());
+            for m in &modifier.modifiers {
+                match m {
+                    ClassModifier::Remove(class_name) => modifier.classes.remove(class_name),
+                    ClassModifier::Add(class_name) => {
+                        modifier.classes.insert(class_name.clone(), ())
+                    }
                 };
             }
-            self.class_name.clear();
-            self.class_name
-                .reserve_exact(self.classes.keys().map(|k| k.len() + 1).sum());
-            let last_idx = self.classes.len().saturating_sub(1);
-            for (idx, class) in self.classes.keys().enumerate() {
-                self.class_name += class;
+            modifier.class_name.clear();
+            modifier
+                .class_name
+                .reserve_exact(modifier.classes.keys().map(|k| k.len() + 1).sum());
+            let last_idx = modifier.classes.len().saturating_sub(1);
+            for (idx, class) in modifier.classes.keys().enumerate() {
+                modifier.class_name += class;
                 if idx != last_idx {
-                    self.class_name += " ";
+                    modifier.class_name += " ";
                 }
             }
             // Svg elements do have issues with className, see https://developer.mozilla.org/en-US/docs/Web/API/Element/className
             if element.dyn_ref::<web_sys::SvgElement>().is_some() {
                 element
-                    .set_attribute(wasm_bindgen::intern("class"), &self.class_name)
+                    .set_attribute(wasm_bindgen::intern("class"), &modifier.class_name)
                     .unwrap_throw();
             } else {
-                element.set_class_name(&self.class_name);
+                element.set_class_name(&modifier.class_name);
             }
         }
     }
@@ -155,104 +148,108 @@ impl Classes {
     /// Rebuilds the current element, while ensuring that the order of the modifiers stays correct.
     /// Any children should be rebuilt in inside `f`, *before* modifying any other properties of [`Classes`].
     pub fn rebuild<E: With<Self>>(mut element: E, prev_len: usize, f: impl FnOnce(E)) {
-        element.modifier().idx -= prev_len as u16;
+        element.modifier().modifier.idx -= prev_len as u16;
         f(element);
-    }
-
-    #[inline]
-    /// Returns whether the underlying element has been built or rebuilt, this could e.g. happen, when `OneOf` changes a variant to a different element.
-    pub fn was_created(&self) -> bool {
-        self.flags & WAS_CREATED != 0
     }
 
     #[inline]
     /// Pushes `modifier` at the end of the current modifiers.
     ///
     /// Must only be used when `self.was_created() == true`
-    pub fn push(&mut self, modifier: ClassModifier) {
+    pub fn push(this: &mut Modifier<'_, Self>, modifier: ClassModifier) {
         debug_assert!(
-            self.was_created(),
+            this.flags.was_created(),
             "This should never be called, when the underlying element wasn't (re)created. Use `Classes::insert` instead."
         );
-        self.dirty = true;
-        self.modifiers.push(modifier);
-        self.idx += 1;
+        this.modifier.dirty = true;
+        this.flags.set_needs_update();
+        this.modifier.modifiers.push(modifier);
+        this.modifier.idx += 1;
     }
 
     #[inline]
     /// Inserts `modifier` at the current index.
     ///
     /// Must only be used when `self.was_created() == false`
-    pub fn insert(&mut self, modifier: ClassModifier) {
+    pub fn insert(this: &mut Modifier<'_, Self>, modifier: ClassModifier) {
         debug_assert!(
-            !self.was_created(),
+            !this.flags.was_created(),
             "This should never be called, when the underlying element was (re)created, use `Classes::push` instead."
         );
 
-        self.dirty = true;
+        this.modifier.dirty = true;
+        this.flags.set_needs_update();
         // TODO this could potentially be expensive, maybe think about `VecSplice` again.
         // Although in the average case, this is likely not relevant, as usually very few attributes are used, thus shifting is probably good enough
         // I.e. a `VecSplice` is probably less optimal (either more complicated code, and/or more memory usage)
-        self.modifiers.insert(self.idx as usize, modifier);
-        self.idx += 1;
+        this.modifier
+            .modifiers
+            .insert(this.modifier.idx as usize, modifier);
+        this.modifier.idx += 1;
     }
 
     #[inline]
     /// Mutates the next modifier.
     ///
     /// Must only be used when `self.was_created() == false`
-    pub fn mutate<R>(&mut self, f: impl FnOnce(&mut ClassModifier) -> R) -> R {
+    pub fn mutate<R>(this: &mut Modifier<'_, Self>, f: impl FnOnce(&mut ClassModifier) -> R) -> R {
         debug_assert!(
-            !self.was_created(),
+            !this.flags.was_created(),
             "This should never be called, when the underlying element was (re)created, use `Classes::push` instead."
         );
 
-        self.dirty = true;
-        let idx = self.idx;
-        self.idx += 1;
-        f(&mut self.modifiers[idx as usize])
+        this.modifier.dirty = true;
+        this.flags.set_needs_update();
+        let idx = this.modifier.idx;
+        this.modifier.idx += 1;
+        f(&mut this.modifier.modifiers[idx as usize])
     }
 
     #[inline]
     /// Skips the next `count` modifiers.
     ///
     /// Must only be used when `self.was_created() == false`
-    pub fn skip(&mut self, count: usize) {
+    pub fn skip(this: &mut Modifier<'_, Self>, count: usize) {
         debug_assert!(
-            !self.was_created(),
+            !this.flags.was_created(),
             "This should never be called, when the underlying element was (re)created"
         );
-        self.idx += count as u16;
+        this.modifier.idx += count as u16;
     }
 
     #[inline]
     /// Deletes the next `count` modifiers.
     ///
     /// Must only be used when `self.was_created() == false`
-    pub fn delete(&mut self, count: usize) {
+    pub fn delete(this: &mut Modifier<'_, Self>, count: usize) {
         debug_assert!(
-            !self.was_created(),
+            !this.flags.was_created(),
             "This should never be called, when the underlying element was (re)created."
         );
-        let start = self.idx as usize;
-        self.dirty = true;
-        self.modifiers.drain(start..(start + count));
+        let start = this.modifier.idx as usize;
+        this.modifier.dirty = true;
+        this.flags.set_needs_update();
+        this.modifier.modifiers.drain(start..(start + count));
     }
 
     #[inline]
     /// Extends the current modifiers with an iterator of modifiers. Returns the count of `modifiers`.
     ///
     /// Must only be used when `self.was_created() == true`
-    pub fn extend(&mut self, modifiers: impl Iterator<Item = ClassModifier>) -> usize {
+    pub fn extend(
+        this: &mut Modifier<'_, Self>,
+        modifiers: impl Iterator<Item = ClassModifier>,
+    ) -> usize {
         debug_assert!(
-            self.was_created(),
+            this.flags.was_created(),
             "This should never be called, when the underlying element wasn't (re)created, use `Classes::apply_diff` instead."
         );
-        self.dirty = true;
-        let prev_len = self.modifiers.len();
-        self.modifiers.extend(modifiers);
-        let new_len = self.modifiers.len() - prev_len;
-        self.idx += new_len as u16;
+        this.modifier.dirty = true;
+        this.flags.set_needs_update();
+        let prev_len = this.modifier.modifiers.len();
+        this.modifier.modifiers.extend(modifiers);
+        let new_len = this.modifier.modifiers.len() - prev_len;
+        this.modifier.idx += new_len as u16;
         new_len
     }
 
@@ -260,25 +257,29 @@ impl Classes {
     /// Diffs between two iterators, and updates the underlying modifiers if they have changed, returns the `next` iterator count.
     ///
     /// Must only be used when `self.was_created() == false`
-    pub fn apply_diff<T: Iterator<Item = ClassModifier>>(&mut self, prev: T, next: T) -> usize {
+    pub fn apply_diff<T: Iterator<Item = ClassModifier>>(
+        this: &mut Modifier<'_, Self>,
+        prev: T,
+        next: T,
+    ) -> usize {
         debug_assert!(
-            !self.was_created(),
+            !this.flags.was_created(),
             "This should never be called, when the underlying element was (re)created, use `Classes::extend` instead."
         );
         let mut new_len = 0;
         for change in diff_iters(prev, next) {
             match change {
                 Diff::Add(modifier) => {
-                    self.insert(modifier);
+                    Classes::insert(this, modifier);
                     new_len += 1;
                 }
-                Diff::Remove(count) => self.delete(count),
+                Diff::Remove(count) => Classes::delete(this, count),
                 Diff::Change(new_modifier) => {
-                    self.mutate(|modifier| *modifier = new_modifier);
+                    Classes::mutate(this, |modifier| *modifier = new_modifier);
                     new_len += 1;
                 }
                 Diff::Skip(count) => {
-                    self.skip(count);
+                    Classes::skip(this, count);
                     new_len += count;
                 }
             }
@@ -291,17 +292,17 @@ impl Classes {
     /// Updates the underlying modifiers if they have changed, returns the next iterator count.
     /// Skips or adds modifiers, when nothing has changed, or the element was recreated.
     pub fn update_as_add_class_iter<T: ClassIter>(
-        &mut self,
+        this: &mut Modifier<'_, Self>,
         prev_len: usize,
         prev: &T,
         next: &T,
     ) -> usize {
-        if self.was_created() {
-            self.extend(next.add_class_iter())
+        if this.flags.was_created() {
+            Classes::extend(this, next.add_class_iter())
         } else if next != prev {
-            self.apply_diff(prev.add_class_iter(), next.add_class_iter())
+            Classes::apply_diff(this, prev.add_class_iter(), next.add_class_iter())
         } else {
-            self.skip(prev_len);
+            Classes::skip(this, prev_len);
             prev_len
         }
     }
@@ -347,7 +348,7 @@ where
         let add_class_iter = self.classes.add_class_iter();
         let (mut e, s) = ctx
             .with_size_hint::<Classes, _>(add_class_iter.size_hint().0, |ctx| self.el.build(ctx));
-        let len = e.modifier().extend(add_class_iter);
+        let len = Classes::extend(&mut e.modifier(), add_class_iter);
         (e, (len, s))
     }
 
@@ -361,8 +362,12 @@ where
         Classes::rebuild(element, *len, |mut elem| {
             self.el
                 .rebuild(&prev.el, view_state, ctx, elem.reborrow_mut());
-            let classes = elem.modifier();
-            *len = classes.update_as_add_class_iter(*len, &prev.classes, &self.classes);
+            *len = Classes::update_as_add_class_iter(
+                &mut elem.modifier(),
+                *len,
+                &prev.classes,
+                &self.classes,
+            );
         });
     }
 

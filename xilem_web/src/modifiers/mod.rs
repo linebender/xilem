@@ -69,23 +69,35 @@ pub use overwrite::*;
 mod elements;
 pub use elements::*;
 
-use crate::{AnyPod, DomNode, Pod, PodMut};
+use crate::{props::ElementFlags, AnyPod, DomNode, Pod, PodMut};
 
-/// This is basically equivalent to [`AsMut`], it's intended to give access to modifiers of a [`ViewElement`](crate::core::ViewElement).
+/// This struct is a container, with the current Element state (e.g. whether it was created/hydrated or generally needs an update), and the modifier itself.
+pub struct Modifier<'a, M> {
+    pub modifier: &'a mut M,
+    pub flags: &'a mut ElementFlags,
+}
+
+impl<'a, M> Modifier<'a, M> {
+    pub fn new(modifier: &'a mut M, flags: &'a mut ElementFlags) -> Self {
+        Self { modifier, flags }
+    }
+}
+
+/// This trait is intended to give access to modifiers of a [`ViewElement`](crate::core::ViewElement).
 ///
 /// The name is chosen, such that it reads nicely, e.g. in a trait bound: [`DomView<T, A, Element: With<Classes>>`](crate::DomView), while not behaving differently as [`AsRef`] on [`Pod`] and [`PodMut`].
 pub trait With<M> {
-    fn modifier(&mut self) -> &mut M;
+    fn modifier(&mut self) -> Modifier<'_, M>;
 }
 
 impl<T, N: DomNode<Props: With<T>>> With<T> for Pod<N> {
-    fn modifier(&mut self) -> &mut T {
+    fn modifier(&mut self) -> Modifier<'_, T> {
         <N::Props as With<T>>::modifier(&mut self.props)
     }
 }
 
 impl<T, N: DomNode<Props: With<T>>> With<T> for PodMut<'_, N> {
-    fn modifier(&mut self) -> &mut T {
+    fn modifier(&mut self) -> Modifier<'_, T> {
         <N::Props as With<T>>::modifier(self.props)
     }
 }

@@ -1,5 +1,5 @@
 use crate::modifiers::html_input_element::{Checked, DefaultChecked, Disabled, Multiple, Required};
-use crate::modifiers::With;
+use crate::modifiers::{Modifier, With};
 use crate::{props, FromWithContext, Pod, ViewCtx};
 use wasm_bindgen::JsCast as _;
 
@@ -15,34 +15,39 @@ pub struct HtmlInputElement {
 
 impl HtmlInputElement {
     pub(crate) fn update_element(&mut self, element: &web_sys::HtmlInputElement) {
+        if self.element_props.flags.needs_update() {
+            let in_hydration = self.element_props.flags.in_hydration();
+
+            // Set booleans to `false` as this is the default,
+            // if we wouldn't do that, possibly the previous value would persist, which is likely unwanted.
+            self.checked.apply_changes(|value| {
+                if !in_hydration {
+                    element.set_checked(value.unwrap_or(false));
+                }
+            });
+            self.default_checked.apply_changes(|value| {
+                if !in_hydration {
+                    element.set_default_checked(value.unwrap_or(false));
+                }
+            });
+            self.disabled.apply_changes(|value| {
+                if !in_hydration {
+                    element.set_disabled(value.unwrap_or(false));
+                }
+            });
+            self.required.apply_changes(|value| {
+                if !in_hydration {
+                    element.set_required(value.unwrap_or(false));
+                }
+            });
+            self.multiple.apply_changes(|value| {
+                if !in_hydration {
+                    element.set_multiple(value.unwrap_or(false));
+                }
+            });
+        }
+        // flags are cleared in the following call
         self.element_props.update_element(element);
-        // Set booleans to `false` as this is the default,
-        // if we wouldn't do that, possibly the previous value would persist, which is likely unwanted.
-        self.checked.apply_changes(|in_hydration, value| {
-            if !in_hydration {
-                element.set_checked(value.unwrap_or(false));
-            }
-        });
-        self.default_checked.apply_changes(|in_hydration, value| {
-            if !in_hydration {
-                element.set_default_checked(value.unwrap_or(false));
-            }
-        });
-        self.disabled.apply_changes(|in_hydration, value| {
-            if !in_hydration {
-                element.set_disabled(value.unwrap_or(false));
-            }
-        });
-        self.required.apply_changes(|in_hydration, value| {
-            if !in_hydration {
-                element.set_required(value.unwrap_or(false));
-            }
-        });
-        self.multiple.apply_changes(|in_hydration, value| {
-            if !in_hydration {
-                element.set_multiple(value.unwrap_or(false));
-            }
-        });
     }
 }
 
@@ -53,15 +58,14 @@ impl FromWithContext<Pod<web_sys::Element>> for Pod<web_sys::HtmlInputElement> {
         let disabled_size_hint = ctx.take_modifier_size_hint::<Disabled>();
         let required_size_hint = ctx.take_modifier_size_hint::<Required>();
         let multiple_size_hint = ctx.take_modifier_size_hint::<Multiple>();
-        let in_hydration = value.props.in_hydration;
         Pod {
             node: value.node.unchecked_into(),
             props: HtmlInputElement {
-                checked: Checked::new(checked_size_hint, in_hydration),
-                default_checked: DefaultChecked::new(default_checked_size_hint, in_hydration),
-                disabled: Disabled::new(disabled_size_hint, in_hydration),
-                required: Required::new(required_size_hint, in_hydration),
-                multiple: Multiple::new(multiple_size_hint, in_hydration),
+                checked: Checked::new(checked_size_hint),
+                default_checked: DefaultChecked::new(default_checked_size_hint),
+                disabled: Disabled::new(disabled_size_hint),
+                required: Required::new(required_size_hint),
+                multiple: Multiple::new(multiple_size_hint),
                 element_props: value.props,
             },
         }
@@ -72,37 +76,37 @@ impl<T> With<T> for HtmlInputElement
 where
     props::Element: With<T>,
 {
-    fn modifier(&mut self) -> &mut T {
+    fn modifier(&mut self) -> Modifier<'_, T> {
         self.element_props.modifier()
     }
 }
 
 impl With<Checked> for HtmlInputElement {
-    fn modifier(&mut self) -> &mut Checked {
-        &mut self.checked
+    fn modifier(&mut self) -> Modifier<'_, Checked> {
+        Modifier::new(&mut self.checked, &mut self.element_props.flags)
     }
 }
 
 impl With<DefaultChecked> for HtmlInputElement {
-    fn modifier(&mut self) -> &mut DefaultChecked {
-        &mut self.default_checked
+    fn modifier(&mut self) -> Modifier<'_, DefaultChecked> {
+        Modifier::new(&mut self.default_checked, &mut self.element_props.flags)
     }
 }
 
 impl With<Disabled> for HtmlInputElement {
-    fn modifier(&mut self) -> &mut Disabled {
-        &mut self.disabled
+    fn modifier(&mut self) -> Modifier<'_, Disabled> {
+        Modifier::new(&mut self.disabled, &mut self.element_props.flags)
     }
 }
 
 impl With<Required> for HtmlInputElement {
-    fn modifier(&mut self) -> &mut Required {
-        &mut self.required
+    fn modifier(&mut self) -> Modifier<'_, Required> {
+        Modifier::new(&mut self.required, &mut self.element_props.flags)
     }
 }
 
 impl With<Multiple> for HtmlInputElement {
-    fn modifier(&mut self) -> &mut Multiple {
-        &mut self.multiple
+    fn modifier(&mut self) -> Modifier<'_, Multiple> {
+        Modifier::new(&mut self.multiple, &mut self.element_props.flags)
     }
 }

@@ -6,7 +6,7 @@ use crate::{
         one_of::{OneOf, OneOfCtx, PhantomElementCtx},
         Mut,
     },
-    modifiers::With,
+    modifiers::{Modifier, With},
     DomNode, Pod, PodMut, ViewCtx,
 };
 use wasm_bindgen::UnwrapThrowExt;
@@ -230,7 +230,7 @@ where
     H: With<T>,
     I: With<T>,
 {
-    fn modifier(&mut self) -> &mut T {
+    fn modifier(&mut self) -> Modifier<'_, T> {
         match self {
             OneOf::A(e) => <A as With<T>>::modifier(e),
             OneOf::B(e) => <B as With<T>>::modifier(e),
@@ -261,7 +261,7 @@ impl<T> AsMut<T> for Noop {
 }
 
 impl<T> With<T> for Noop {
-    fn modifier(&mut self) -> &mut T {
+    fn modifier(&mut self) -> Modifier<'_, T> {
         match *self {}
     }
 }

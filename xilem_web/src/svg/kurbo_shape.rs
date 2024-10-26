@@ -36,11 +36,11 @@ impl<State: 'static, Action: 'static> OrphanView<Line, State, Action, DynMessage
     ) -> (Self::OrphanElement, Self::OrphanViewState) {
         create_element("line", ctx, 4, |element, ctx| {
             let mut element = Self::OrphanElement::from_with_ctx(element, ctx);
-            let attrs: &mut Attributes = element.modifier();
-            attrs.push(("x1", view.p0.x));
-            attrs.push(("y1", view.p0.y));
-            attrs.push(("x2", view.p1.x));
-            attrs.push(("y2", view.p1.y));
+            let attrs = &mut element.modifier();
+            Attributes::push(attrs, ("x1", view.p0.x));
+            Attributes::push(attrs, ("y1", view.p0.y));
+            Attributes::push(attrs, ("x2", view.p1.x));
+            Attributes::push(attrs, ("y2", view.p1.y));
             (element, ())
         })
     }
@@ -53,11 +53,11 @@ impl<State: 'static, Action: 'static> OrphanView<Line, State, Action, DynMessage
         element: Mut<Self::OrphanElement>,
     ) {
         Attributes::rebuild(element, 4, |mut element| {
-            let attrs: &mut Attributes = element.modifier();
-            attrs.update_with_same_key("x1", &prev.p0.x, &new.p0.x);
-            attrs.update_with_same_key("y1", &prev.p0.y, &new.p0.y);
-            attrs.update_with_same_key("x2", &prev.p1.x, &new.p1.x);
-            attrs.update_with_same_key("y2", &prev.p1.y, &new.p1.y);
+            let attrs = &mut element.modifier();
+            Attributes::update_with_same_key(attrs, "x1", &prev.p0.x, &new.p0.x);
+            Attributes::update_with_same_key(attrs, "y1", &prev.p0.y, &new.p0.y);
+            Attributes::update_with_same_key(attrs, "x2", &prev.p1.x, &new.p1.x);
+            Attributes::update_with_same_key(attrs, "y2", &prev.p1.y, &new.p1.y);
         });
     }
 
@@ -90,11 +90,11 @@ impl<State: 'static, Action: 'static> OrphanView<Rect, State, Action, DynMessage
     ) -> (Self::OrphanElement, Self::OrphanViewState) {
         create_element("rect", ctx, 4, |element, ctx| {
             let mut element = Self::OrphanElement::from_with_ctx(element, ctx);
-            let attrs: &mut Attributes = element.modifier();
-            attrs.push(("x", view.x0));
-            attrs.push(("y", view.y0));
-            attrs.push(("width", view.width()));
-            attrs.push(("height", view.height()));
+            let attrs = &mut element.modifier();
+            Attributes::push(attrs, ("x", view.x0));
+            Attributes::push(attrs, ("y", view.y0));
+            Attributes::push(attrs, ("width", view.width()));
+            Attributes::push(attrs, ("height", view.height()));
             (element, ())
         })
     }
@@ -107,11 +107,11 @@ impl<State: 'static, Action: 'static> OrphanView<Rect, State, Action, DynMessage
         element: Mut<Self::OrphanElement>,
     ) {
         Attributes::rebuild(element, 4, |mut element| {
-            let attrs: &mut Attributes = element.modifier();
-            attrs.update_with_same_key("x", &prev.x0, &new.x0);
-            attrs.update_with_same_key("y", &prev.y0, &new.y0);
-            attrs.update_with_same_key("width", &prev.width(), &new.width());
-            attrs.update_with_same_key("height", &prev.height(), &new.height());
+            let attrs = &mut element.modifier();
+            Attributes::update_with_same_key(attrs, "x", &prev.x0, &new.x0);
+            Attributes::update_with_same_key(attrs, "y", &prev.y0, &new.y0);
+            Attributes::update_with_same_key(attrs, "width", &prev.width(), &new.width());
+            Attributes::update_with_same_key(attrs, "height", &prev.height(), &new.height());
         });
     }
 
@@ -144,10 +144,10 @@ impl<State: 'static, Action: 'static> OrphanView<Circle, State, Action, DynMessa
     ) -> (Self::OrphanElement, Self::OrphanViewState) {
         create_element("circle", ctx, 3, |element, ctx| {
             let mut element = Self::OrphanElement::from_with_ctx(element, ctx);
-            let attrs: &mut Attributes = element.modifier();
-            attrs.push(("cx", view.center.x));
-            attrs.push(("cy", view.center.y));
-            attrs.push(("r", view.radius));
+            let attrs = &mut element.modifier();
+            Attributes::push(attrs, ("cx", view.center.x));
+            Attributes::push(attrs, ("cy", view.center.y));
+            Attributes::push(attrs, ("r", view.radius));
             (element, ())
         })
     }
@@ -160,10 +160,10 @@ impl<State: 'static, Action: 'static> OrphanView<Circle, State, Action, DynMessa
         element: Mut<Self::OrphanElement>,
     ) {
         Attributes::rebuild(element, 3, |mut element| {
-            let attrs: &mut Attributes = element.modifier();
-            attrs.update_with_same_key("cx", &prev.center.x, &new.center.x);
-            attrs.update_with_same_key("cy", &prev.center.y, &new.center.y);
-            attrs.update_with_same_key("height", &prev.radius, &new.radius);
+            let attrs = &mut element.modifier();
+            Attributes::update_with_same_key(attrs, "cx", &prev.center.x, &new.center.x);
+            Attributes::update_with_same_key(attrs, "cy", &prev.center.y, &new.center.y);
+            Attributes::update_with_same_key(attrs, "height", &prev.radius, &new.radius);
         });
     }
 
@@ -196,7 +196,8 @@ impl<State: 'static, Action: 'static> OrphanView<BezPath, State, Action, DynMess
     ) -> (Self::OrphanElement, Self::OrphanViewState) {
         create_element("path", ctx, 1, |element, ctx| {
             let mut element = Self::OrphanElement::from_with_ctx(element, ctx);
-            element.props.attributes().push(("d", view.to_svg()));
+            let attrs = &mut element.modifier();
+            Attributes::push(attrs, ("d", view.to_svg()));
             (element, ())
         })
     }
@@ -209,13 +210,13 @@ impl<State: 'static, Action: 'static> OrphanView<BezPath, State, Action, DynMess
         element: Mut<Self::OrphanElement>,
     ) {
         Attributes::rebuild(element, 1, |mut element| {
-            let attrs: &mut Attributes = element.modifier();
-            if attrs.was_created() {
-                attrs.push(("d", new.to_svg()));
+            let attrs = &mut element.modifier();
+            if attrs.flags.was_created() {
+                Attributes::push(attrs, ("d", new.to_svg()));
             } else if new != prev {
-                attrs.mutate(|m| *m = ("d", new.to_svg()).into());
+                Attributes::mutate(attrs, |m| *m = ("d", new.to_svg()).into());
             } else {
-                attrs.skip(1);
+                Attributes::skip(attrs, 1);
             }
         });
     }

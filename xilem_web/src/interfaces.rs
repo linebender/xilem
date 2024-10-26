@@ -766,6 +766,7 @@ pub trait HtmlInputElement<State, Action = ()>:
     Action,
     DomNode: DomNode<
         Props: With<html_input_element::Checked>
+                   + With<html_input_element::DefaultChecked>
                    + With<html_input_element::Disabled>
                    + With<html_input_element::Required>
                    + With<html_input_element::Multiple>,
@@ -857,6 +858,7 @@ where
     T: HtmlElement<State, Action>,
     T::DomNode: AsRef<web_sys::HtmlInputElement>,
     <T::DomNode as DomNode>::Props: With<html_input_element::Checked>
+        + With<html_input_element::DefaultChecked>
         + With<html_input_element::Disabled>
         + With<html_input_element::Required>
         + With<html_input_element::Multiple>,

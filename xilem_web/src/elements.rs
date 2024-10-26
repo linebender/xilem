@@ -266,7 +266,7 @@ pub(crate) fn rebuild_element<State, Action, Element>(
 {
     let mut dom_children_splice = DomChildrenSplice::new(
         &mut state.append_scratch,
-        With::<Children>::modifier(element.props),
+        With::<Children>::modifier(element.props).modifier,
         &mut state.vec_splice_scratch,
         element.node.as_ref(),
         ctx.fragment.clone(),
@@ -294,7 +294,7 @@ pub(crate) fn teardown_element<State, Action, Element>(
 {
     let mut dom_children_splice = DomChildrenSplice::new(
         &mut state.append_scratch,
-        With::<Children>::modifier(element.props),
+        With::<Children>::modifier(element.props).modifier,
         &mut state.vec_splice_scratch,
         element.node.as_ref(),
         ctx.fragment.clone(),
