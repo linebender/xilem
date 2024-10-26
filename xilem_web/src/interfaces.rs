@@ -16,10 +16,8 @@ use std::borrow::Cow;
 
 use crate::{
     events,
-    modifiers::{
-        Attr, Attributes, Class, ClassIter, Classes, Rotate, Scale, ScaleValue, Style, StyleIter,
-        Styles, With,
-    },
+    modifiers::{Attr, Class, ClassIter, Rotate, Scale, ScaleValue, Style, StyleIter},
+    props::{WithElementProps, WithHtmlInputElementProps},
     DomNode, DomView, IntoAttributeValue, OptionalAction, Pointer, PointerMsg,
 };
 use wasm_bindgen::JsCast;
@@ -51,13 +49,7 @@ macro_rules! event_handler_mixin {
 }
 
 pub trait Element<State, Action = ()>:
-    Sized
-    + DomView<
-        State,
-        Action,
-        DomNode: DomNode<Props: With<Attributes> + With<Classes> + With<Styles>>
-                     + AsRef<web_sys::Element>,
-    >
+    Sized + DomView<State, Action, DomNode: DomNode<Props: WithElementProps> + AsRef<web_sys::Element>>
 {
     /// Set an attribute for an [`Element`]
     ///
@@ -331,7 +323,7 @@ pub trait Element<State, Action = ()>:
 impl<State, Action, T> Element<State, Action> for T
 where
     T: DomView<State, Action>,
-    <T::DomNode as DomNode>::Props: With<Attributes> + With<Classes> + With<Styles>,
+    <T::DomNode as DomNode>::Props: WithElementProps,
     T::DomNode: AsRef<web_sys::Element>,
 {
 }
@@ -764,13 +756,7 @@ pub trait HtmlInputElement<State, Action = ()>:
     HtmlElement<
     State,
     Action,
-    DomNode: DomNode<
-        Props: With<html_input_element::Checked>
-                   + With<html_input_element::DefaultChecked>
-                   + With<html_input_element::Disabled>
-                   + With<html_input_element::Required>
-                   + With<html_input_element::Multiple>,
-    > + AsRef<web_sys::HtmlInputElement>,
+    DomNode: DomNode<Props: WithHtmlInputElementProps> + AsRef<web_sys::HtmlInputElement>,
 >
 {
     /// See <https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/checked> for more details.
@@ -857,11 +843,7 @@ impl<State, Action, T> HtmlInputElement<State, Action> for T
 where
     T: HtmlElement<State, Action>,
     T::DomNode: AsRef<web_sys::HtmlInputElement>,
-    <T::DomNode as DomNode>::Props: With<html_input_element::Checked>
-        + With<html_input_element::DefaultChecked>
-        + With<html_input_element::Disabled>
-        + With<html_input_element::Required>
-        + With<html_input_element::Multiple>,
+    <T::DomNode as DomNode>::Props: WithHtmlInputElementProps,
 {
 }
 

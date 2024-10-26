@@ -6,6 +6,8 @@ use crate::modifiers::{Modifier, With};
 use crate::{props, FromWithContext, Pod, ViewCtx};
 use wasm_bindgen::JsCast as _;
 
+use super::WithElementProps;
+
 /// Props specific to an input element.
 pub struct HtmlInputElement {
     element_props: props::Element,
@@ -112,4 +114,24 @@ impl With<Multiple> for HtmlInputElement {
     fn modifier(&mut self) -> Modifier<'_, Multiple> {
         Modifier::new(&mut self.multiple, &mut self.element_props.flags)
     }
+}
+
+pub trait WithHtmlInputElementProps:
+    WithElementProps
+    + With<Checked>
+    + With<DefaultChecked>
+    + With<Disabled>
+    + With<Required>
+    + With<Multiple>
+{
+}
+impl<
+        T: WithElementProps
+            + With<Checked>
+            + With<DefaultChecked>
+            + With<Disabled>
+            + With<Required>
+            + With<Multiple>,
+    > WithHtmlInputElementProps for T
+{
 }

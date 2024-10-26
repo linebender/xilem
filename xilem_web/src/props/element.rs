@@ -47,6 +47,7 @@ impl ElementFlags {
         self.0 |= Self::NEEDS_UPDATE;
     }
 }
+
 // Lazy access to attributes etc. to avoid allocating unnecessary memory when it isn't needed
 // Benchmarks have shown, that this can significantly increase performance and reduce memory usage...
 /// This holds all the state for a DOM [`Element`](`crate::interfaces::Element`), it is used for [`DomNode::Props`](`crate::DomNode::Props`)
@@ -175,3 +176,9 @@ impl With<Styles> for Element {
         Modifier::new(modifier, &mut self.flags)
     }
 }
+
+pub trait WithElementProps:
+    With<Attributes> + With<Children> + With<Classes> + With<Styles>
+{
+}
+impl<T: With<Attributes> + With<Children> + With<Classes> + With<Styles>> WithElementProps for T {}
