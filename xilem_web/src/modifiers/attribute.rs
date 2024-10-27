@@ -110,7 +110,7 @@ impl Attributes {
     #[inline]
     /// Pushes `modifier` at the end of the current modifiers.
     ///
-    /// Must only be used when `self.was_created() == true`.
+    /// Must only be used when `this.flags.was_created() == true`.
     pub fn push(this: &mut Modifier<'_, Self>, modifier: impl Into<AttributeModifier>) {
         debug_assert!(
             this.flags.was_created(),
@@ -124,7 +124,7 @@ impl Attributes {
     #[inline]
     /// Inserts `modifier` at the current index.
     ///
-    /// Must only be used when `self.was_created() == false`.
+    /// Must only be used when `this.flags.was_created() == false`.
     pub fn insert(this: &mut Modifier<'_, Self>, modifier: impl Into<AttributeModifier>) {
         debug_assert!(
             !this.flags.was_created(),
@@ -143,7 +143,7 @@ impl Attributes {
     #[inline]
     /// Mutates the next modifier.
     ///
-    /// Must only be used when `self.was_created() == false`.
+    /// Must only be used when `this.flags.was_created() == false`.
     pub fn mutate<R>(
         this: &mut Modifier<'_, Self>,
         f: impl FnOnce(&mut AttributeModifier) -> R,
@@ -167,7 +167,7 @@ impl Attributes {
 
     /// Skips the next `count` modifiers.
     ///
-    /// Must only be used when `self.was_created() == false`.
+    /// Must only be used when `this.flags.was_created() == false`.
     pub fn skip(this: &mut Modifier<'_, Self>, count: usize) {
         debug_assert!(
             !this.flags.was_created(),
@@ -178,7 +178,7 @@ impl Attributes {
 
     /// Deletes the next `count` modifiers.
     ///
-    /// Must only be used when `self.was_created() == false`.
+    /// Must only be used when `this.flags.was_created() == false`.
     pub fn delete(this: &mut Modifier<'_, Self>, count: usize) {
         debug_assert!(
             !this.flags.was_created(),

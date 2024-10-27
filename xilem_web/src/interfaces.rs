@@ -830,7 +830,7 @@ pub trait HtmlInputElement<State, Action = ()>:
     /// use xilem_web::{interfaces::{Element, HtmlInputElement}, elements::html::input};
     ///
     /// # fn component() -> impl HtmlInputElement<()> {
-    /// input(()).required(true) // results in <input required></input>
+    /// input(()).multiple(true) // results in <input multiple></input>
     /// # }
     /// ```
     fn multiple(self, required: bool) -> html_input_element::view::Multiple<Self, State, Action> {

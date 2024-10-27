@@ -33,9 +33,7 @@ macro_rules! assert_overflow {
 }
 
 impl OverwriteBool {
-    /// Creates a new `Attributes` modifier.
-    ///
-    /// `size_hint` is used to avoid unnecessary allocations while traversing up the view-tree when adding modifiers in [`View::build`].
+    /// Creates a new [`OverwriteBool`] modifier, which is usually wrapped with a separate type for boolean (DOM) attributes.
     pub(crate) fn new(size_hint: usize) -> Self {
         assert_overflow!(size_hint);
         Self {
@@ -71,7 +69,7 @@ impl OverwriteBool {
     #[inline]
     /// Pushes `modifier` at the end of the current modifiers.
     ///
-    /// Must only be used when `self.was_created() == true`.
+    /// Must only be used when `this.flags.was_created() == true`.
     pub fn push(this: &mut Modifier<'_, Self>, modifier: bool) {
         debug_assert!(
             this.flags.was_created(),
@@ -88,7 +86,7 @@ impl OverwriteBool {
     #[inline]
     /// Mutates the next modifier.
     ///
-    /// Must only be used when `self.was_created() == false`.
+    /// Must only be used when `this.flags.was_created() == false`.
     pub fn mutate<R>(this: &mut Modifier<'_, Self>, f: impl FnOnce(&mut bool) -> R) -> R {
         debug_assert!(
             !this.flags.was_created(),
@@ -108,7 +106,7 @@ impl OverwriteBool {
     #[inline]
     /// Skips the next `count` modifiers.
     ///
-    /// Must only be used when `self.was_created() == false`.
+    /// Must only be used when `this.flags.was_created() == false`.
     pub fn skip(this: &mut Modifier<'_, Self>, count: u8) {
         debug_assert!(
             !this.flags.was_created(),
@@ -134,7 +132,7 @@ impl OverwriteBool {
     #[inline]
     /// Applies potential changes with `f`.
     ///
-    /// First argument of `f` is `in_hydration`, the second the new value, if it is set (i.e. is `Some(_)`). When previously modifiers existed, but were deleted it uses `None` as value.
+    /// Argument of `f` is the new value, `Some(_)` if set, and `None` if all values were deleted.
     pub fn apply_changes(&mut self, f: impl FnOnce(Option<bool>)) {
         let needs_update = self.needs_update;
         self.needs_update = false;
@@ -148,7 +146,7 @@ impl OverwriteBool {
 }
 
 #[macro_export]
-/// A macro to create a boolean attribute modifier.
+/// A macro to create a boolean overwrite modifier.
 macro_rules! overwrite_bool_modifier {
     ($modifier: ident) => {
         pub struct $modifier($crate::modifiers::OverwriteBool);
@@ -172,7 +170,7 @@ macro_rules! overwrite_bool_modifier {
 }
 
 #[macro_export]
-/// A macro to create a boolean attribute modifier view for a modifier that's in the parent module with the same name,
+/// A macro to create a boolean overwrite modifier view for a modifier that's in the parent module with the same name.
 macro_rules! overwrite_bool_modifier_view {
     ($modifier: ident) => {
         pub struct $modifier<V, State, Action> {

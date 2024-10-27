@@ -155,7 +155,7 @@ impl Classes {
     #[inline]
     /// Pushes `modifier` at the end of the current modifiers.
     ///
-    /// Must only be used when `self.was_created() == true`
+    /// Must only be used when `this.flags.was_created() == true`
     pub fn push(this: &mut Modifier<'_, Self>, modifier: ClassModifier) {
         debug_assert!(
             this.flags.was_created(),
@@ -170,7 +170,7 @@ impl Classes {
     #[inline]
     /// Inserts `modifier` at the current index.
     ///
-    /// Must only be used when `self.was_created() == false`
+    /// Must only be used when `this.flags.was_created() == false`
     pub fn insert(this: &mut Modifier<'_, Self>, modifier: ClassModifier) {
         debug_assert!(
             !this.flags.was_created(),
@@ -191,7 +191,7 @@ impl Classes {
     #[inline]
     /// Mutates the next modifier.
     ///
-    /// Must only be used when `self.was_created() == false`
+    /// Must only be used when `this.flags.was_created() == false`
     pub fn mutate<R>(this: &mut Modifier<'_, Self>, f: impl FnOnce(&mut ClassModifier) -> R) -> R {
         debug_assert!(
             !this.flags.was_created(),
@@ -208,7 +208,7 @@ impl Classes {
     #[inline]
     /// Skips the next `count` modifiers.
     ///
-    /// Must only be used when `self.was_created() == false`
+    /// Must only be used when `this.flags.was_created() == false`
     pub fn skip(this: &mut Modifier<'_, Self>, count: usize) {
         debug_assert!(
             !this.flags.was_created(),
@@ -220,7 +220,7 @@ impl Classes {
     #[inline]
     /// Deletes the next `count` modifiers.
     ///
-    /// Must only be used when `self.was_created() == false`
+    /// Must only be used when `this.flags.was_created() == false`
     pub fn delete(this: &mut Modifier<'_, Self>, count: usize) {
         debug_assert!(
             !this.flags.was_created(),
@@ -235,7 +235,7 @@ impl Classes {
     #[inline]
     /// Extends the current modifiers with an iterator of modifiers. Returns the count of `modifiers`.
     ///
-    /// Must only be used when `self.was_created() == true`
+    /// Must only be used when `this.flags.was_created() == true`
     pub fn extend(
         this: &mut Modifier<'_, Self>,
         modifiers: impl Iterator<Item = ClassModifier>,
@@ -256,7 +256,7 @@ impl Classes {
     #[inline]
     /// Diffs between two iterators, and updates the underlying modifiers if they have changed, returns the `next` iterator count.
     ///
-    /// Must only be used when `self.was_created() == false`
+    /// Must only be used when `this.flags.was_created() == false`
     pub fn apply_diff<T: Iterator<Item = ClassModifier>>(
         this: &mut Modifier<'_, Self>,
         prev: T,
