@@ -3,7 +3,7 @@
 
 use crate::{
     core::{MessageResult, Mut, View, ViewElement, ViewId, ViewMarker},
-    modifiers::{AttributeModifier, Attributes, Modifier, With},
+    modifiers::{AttributeModifier, Attributes, Modifier, WithModifier},
     DomView, DynMessage, ViewCtx,
 };
 use peniko::{kurbo, Brush};
@@ -91,8 +91,8 @@ impl<State, Action, V> View<State, Action, ViewCtx, DynMessage> for Fill<V, Stat
 where
     State: 'static,
     Action: 'static,
-    V: DomView<State, Action, Element: With<Attributes>>,
-    for<'a> <V::Element as ViewElement>::Mut<'a>: With<Attributes>,
+    V: DomView<State, Action, Element: WithModifier<Attributes>>,
+    for<'a> <V::Element as ViewElement>::Mut<'a>: WithModifier<Attributes>,
 {
     type ViewState = V::ViewState;
     type Element = V::Element;
@@ -228,8 +228,8 @@ impl<State, Action, V> View<State, Action, ViewCtx, DynMessage> for Stroke<V, St
 where
     State: 'static,
     Action: 'static,
-    V: DomView<State, Action, Element: With<Attributes>>,
-    for<'a> <V::Element as ViewElement>::Mut<'a>: With<Attributes>,
+    V: DomView<State, Action, Element: WithModifier<Attributes>>,
+    for<'a> <V::Element as ViewElement>::Mut<'a>: WithModifier<Attributes>,
 {
     type ViewState = V::ViewState;
     type Element = V::Element;

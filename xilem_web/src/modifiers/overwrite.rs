@@ -196,16 +196,20 @@ macro_rules! overwrite_bool_modifier_view {
         where
             State: 'static,
             Action: 'static,
-            V: $crate::DomView<State, Action, Element: $crate::modifiers::With<super::$modifier>>,
+            V: $crate::DomView<
+                State,
+                Action,
+                Element: $crate::modifiers::WithModifier<super::$modifier>,
+            >,
             for<'a> <V::Element as $crate::core::ViewElement>::Mut<'a>:
-                $crate::modifiers::With<super::$modifier>,
+                $crate::modifiers::WithModifier<super::$modifier>,
         {
             type Element = V::Element;
 
             type ViewState = V::ViewState;
 
             fn build(&self, ctx: &mut $crate::ViewCtx) -> (Self::Element, Self::ViewState) {
-                use $crate::modifiers::With;
+                use $crate::modifiers::WithModifier;
                 let (mut el, state) =
                     ctx.with_size_hint::<super::$modifier, _>(1, |ctx| self.inner.build(ctx));
                 let modifier = &mut super::$modifier::as_overwrite_bool_modifier(el.modifier());
@@ -220,7 +224,7 @@ macro_rules! overwrite_bool_modifier_view {
                 ctx: &mut $crate::ViewCtx,
                 mut element: $crate::core::Mut<Self::Element>,
             ) {
-                use $crate::modifiers::With;
+                use $crate::modifiers::WithModifier;
                 element.modifier().modifier.0.rebuild(1);
                 self.inner
                     .rebuild(&prev.inner, view_state, ctx, element.reborrow_mut());

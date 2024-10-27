@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::modifiers::html_input_element::{Checked, DefaultChecked, Disabled, Multiple, Required};
-use crate::modifiers::{Modifier, With};
+use crate::modifiers::{Modifier, WithModifier};
 use crate::{props, FromWithContext, Pod, ViewCtx};
 use wasm_bindgen::JsCast as _;
 
@@ -77,61 +77,62 @@ impl FromWithContext<Pod<web_sys::Element>> for Pod<web_sys::HtmlInputElement> {
     }
 }
 
-impl<T> With<T> for HtmlInputElement
+impl<T> WithModifier<T> for HtmlInputElement
 where
-    props::Element: With<T>,
+    props::Element: WithModifier<T>,
 {
     fn modifier(&mut self) -> Modifier<'_, T> {
         self.element_props.modifier()
     }
 }
 
-impl With<Checked> for HtmlInputElement {
+impl WithModifier<Checked> for HtmlInputElement {
     fn modifier(&mut self) -> Modifier<'_, Checked> {
         Modifier::new(&mut self.checked, &mut self.element_props.flags)
     }
 }
 
-impl With<DefaultChecked> for HtmlInputElement {
+impl WithModifier<DefaultChecked> for HtmlInputElement {
     fn modifier(&mut self) -> Modifier<'_, DefaultChecked> {
         Modifier::new(&mut self.default_checked, &mut self.element_props.flags)
     }
 }
 
-impl With<Disabled> for HtmlInputElement {
+impl WithModifier<Disabled> for HtmlInputElement {
     fn modifier(&mut self) -> Modifier<'_, Disabled> {
         Modifier::new(&mut self.disabled, &mut self.element_props.flags)
     }
 }
 
-impl With<Required> for HtmlInputElement {
+impl WithModifier<Required> for HtmlInputElement {
     fn modifier(&mut self) -> Modifier<'_, Required> {
         Modifier::new(&mut self.required, &mut self.element_props.flags)
     }
 }
 
-impl With<Multiple> for HtmlInputElement {
+impl WithModifier<Multiple> for HtmlInputElement {
     fn modifier(&mut self) -> Modifier<'_, Multiple> {
         Modifier::new(&mut self.multiple, &mut self.element_props.flags)
     }
 }
 
+/// An alias trait to sum up all modifiers that a DOM `HTMLInputElement` can have. It's used to avoid a lot of boilerplate in public APIs.
 pub trait WithHtmlInputElementProps:
     WithElementProps
-    + With<Checked>
-    + With<DefaultChecked>
-    + With<Disabled>
-    + With<Required>
-    + With<Multiple>
+    + WithModifier<Checked>
+    + WithModifier<DefaultChecked>
+    + WithModifier<Disabled>
+    + WithModifier<Required>
+    + WithModifier<Multiple>
 {
 }
 impl<
         T: WithElementProps
-            + With<Checked>
-            + With<DefaultChecked>
-            + With<Disabled>
-            + With<Required>
-            + With<Multiple>,
+            + WithModifier<Checked>
+            + WithModifier<DefaultChecked>
+            + WithModifier<Disabled>
+            + WithModifier<Required>
+            + WithModifier<Multiple>,
     > WithHtmlInputElementProps for T
 {
 }

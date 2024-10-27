@@ -6,7 +6,7 @@ use crate::{
         one_of::{OneOf, OneOfCtx, PhantomElementCtx},
         Mut,
     },
-    modifiers::{Modifier, With},
+    modifiers::{Modifier, WithModifier},
     DomNode, Pod, PodMut, ViewCtx,
 };
 use wasm_bindgen::UnwrapThrowExt;
@@ -218,29 +218,29 @@ where
     }
 }
 
-impl<T, A, B, C, D, E, F, G, H, I> With<T> for OneOf<A, B, C, D, E, F, G, H, I>
+impl<T, A, B, C, D, E, F, G, H, I> WithModifier<T> for OneOf<A, B, C, D, E, F, G, H, I>
 where
-    A: With<T>,
-    B: With<T>,
-    C: With<T>,
-    D: With<T>,
-    E: With<T>,
-    F: With<T>,
-    G: With<T>,
-    H: With<T>,
-    I: With<T>,
+    A: WithModifier<T>,
+    B: WithModifier<T>,
+    C: WithModifier<T>,
+    D: WithModifier<T>,
+    E: WithModifier<T>,
+    F: WithModifier<T>,
+    G: WithModifier<T>,
+    H: WithModifier<T>,
+    I: WithModifier<T>,
 {
     fn modifier(&mut self) -> Modifier<'_, T> {
         match self {
-            OneOf::A(e) => <A as With<T>>::modifier(e),
-            OneOf::B(e) => <B as With<T>>::modifier(e),
-            OneOf::C(e) => <C as With<T>>::modifier(e),
-            OneOf::D(e) => <D as With<T>>::modifier(e),
-            OneOf::E(e) => <E as With<T>>::modifier(e),
-            OneOf::F(e) => <F as With<T>>::modifier(e),
-            OneOf::G(e) => <G as With<T>>::modifier(e),
-            OneOf::H(e) => <H as With<T>>::modifier(e),
-            OneOf::I(e) => <I as With<T>>::modifier(e),
+            OneOf::A(e) => <A as WithModifier<T>>::modifier(e),
+            OneOf::B(e) => <B as WithModifier<T>>::modifier(e),
+            OneOf::C(e) => <C as WithModifier<T>>::modifier(e),
+            OneOf::D(e) => <D as WithModifier<T>>::modifier(e),
+            OneOf::E(e) => <E as WithModifier<T>>::modifier(e),
+            OneOf::F(e) => <F as WithModifier<T>>::modifier(e),
+            OneOf::G(e) => <G as WithModifier<T>>::modifier(e),
+            OneOf::H(e) => <H as WithModifier<T>>::modifier(e),
+            OneOf::I(e) => <I as WithModifier<T>>::modifier(e),
         }
     }
 }
@@ -260,7 +260,7 @@ impl<T> AsMut<T> for Noop {
     }
 }
 
-impl<T> With<T> for Noop {
+impl<T> WithModifier<T> for Noop {
     fn modifier(&mut self) -> Modifier<'_, T> {
         match *self {}
     }

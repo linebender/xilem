@@ -84,21 +84,19 @@ impl<'a, M> Modifier<'a, M> {
 }
 
 /// This trait is intended to give access to modifiers of a [`ViewElement`](crate::core::ViewElement).
-///
-/// The name is chosen, such that it reads nicely, e.g. in a trait bound: [`DomView<T, A, Element: With<Classes>>`](crate::DomView), while not behaving differently as [`AsRef`] on [`Pod`] and [`PodMut`].
-pub trait With<M> {
+pub trait WithModifier<M> {
     fn modifier(&mut self) -> Modifier<'_, M>;
 }
 
-impl<T, N: DomNode<Props: With<T>>> With<T> for Pod<N> {
+impl<T, N: DomNode<Props: WithModifier<T>>> WithModifier<T> for Pod<N> {
     fn modifier(&mut self) -> Modifier<'_, T> {
-        <N::Props as With<T>>::modifier(&mut self.props)
+        <N::Props as WithModifier<T>>::modifier(&mut self.props)
     }
 }
 
-impl<T, N: DomNode<Props: With<T>>> With<T> for PodMut<'_, N> {
+impl<T, N: DomNode<Props: WithModifier<T>>> WithModifier<T> for PodMut<'_, N> {
     fn modifier(&mut self) -> Modifier<'_, T> {
-        <N::Props as With<T>>::modifier(self.props)
+        <N::Props as WithModifier<T>>::modifier(self.props)
     }
 }
 

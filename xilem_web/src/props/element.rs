@@ -3,7 +3,7 @@
 
 use crate::{
     document,
-    modifiers::{Attributes, Children, Classes, Modifier, Styles, With},
+    modifiers::{Attributes, Children, Classes, Modifier, Styles, WithModifier},
     AnyPod, Pod, ViewCtx,
 };
 use wasm_bindgen::JsCast;
@@ -31,18 +31,22 @@ impl ElementFlags {
         self.0 = 0;
     }
 
+    /// Whether the current element was just created, this is usually `true` within `View::build`, but can also happen, e.g. within a `OneOf` variant change.
     pub fn was_created(&self) -> bool {
         self.0 & Self::WAS_CREATED != 0
     }
 
+    /// Whether the current element is within a hydration context, that could e.g. happen when inside a [`Templated`](crate::Templated) view.
     pub fn in_hydration(&self) -> bool {
         self.0 & Self::IN_HYDRATION != 0
     }
 
+    /// Whether the current element generally needs to be updated, this serves as cheap preliminary check whether anything changed at all.
     pub fn needs_update(&self) -> bool {
         self.0 & Self::NEEDS_UPDATE != 0
     }
 
+    /// This should be called as soon as anything has changed for the current element (except children, as they're handled within the element views).
     pub fn set_needs_update(&mut self) {
         self.0 |= Self::NEEDS_UPDATE;
     }
@@ -95,7 +99,7 @@ impl Element {
 }
 
 impl Pod<web_sys::Element> {
-    /// Creates a new Pod with [`web_sys::Element`] as element and `ElementProps` as its [`DomNode::Props`](`crate::DomNode::Props`).
+    /// Creates a new Pod with [`web_sys::Element`] as element and [`Element`] as its [`DomNode::Props`](`crate::DomNode::Props`).
     pub fn new_element_with_ctx(
         children: Vec<AnyPod>,
         ns: &str,
@@ -128,7 +132,7 @@ impl Pod<web_sys::Element> {
         }
     }
 
-    /// Creates a new Pod that hydrates an existing node (within the `ViewCtx`) as [`web_sys::Element`] and [`ElementProps`] as its [`DomNode::Props`](`crate::DomNode::Props`).
+    /// Creates a new Pod that hydrates an existing node (within the `ViewCtx`) as [`web_sys::Element`] and [`Element`] as its [`DomNode::Props`](`crate::DomNode::Props`).
     pub fn hydrate_element_with_ctx(children: Vec<AnyPod>, ctx: &mut ViewCtx) -> Self {
         let attr_size_hint = ctx.take_modifier_size_hint::<Attributes>();
         let class_size_hint = ctx.take_modifier_size_hint::<Classes>();
@@ -148,7 +152,7 @@ impl Pod<web_sys::Element> {
     }
 }
 
-impl With<Attributes> for Element {
+impl WithModifier<Attributes> for Element {
     fn modifier(&mut self) -> Modifier<'_, Attributes> {
         let modifier = self
             .attributes
@@ -157,28 +161,36 @@ impl With<Attributes> for Element {
     }
 }
 
-impl With<Children> for Element {
+impl WithModifier<Children> for Element {
     fn modifier(&mut self) -> Modifier<'_, Children> {
         Modifier::new(&mut self.children, &mut self.flags)
     }
 }
 
-impl With<Classes> for Element {
+impl WithModifier<Classes> for Element {
     fn modifier(&mut self) -> Modifier<'_, Classes> {
         let modifier = self.classes.get_or_insert_with(|| Classes::new(0).into());
         Modifier::new(modifier, &mut self.flags)
     }
 }
 
-impl With<Styles> for Element {
+impl WithModifier<Styles> for Element {
     fn modifier(&mut self) -> Modifier<'_, Styles> {
         let modifier = self.styles.get_or_insert_with(|| Styles::new(0).into());
         Modifier::new(modifier, &mut self.flags)
     }
 }
 
+/// An alias trait to sum up all modifiers that a DOM `Element` can have. It's used to avoid a lot of boilerplate in public APIs.
 pub trait WithElementProps:
-    With<Attributes> + With<Children> + With<Classes> + With<Styles>
+    WithModifier<Attributes> + WithModifier<Children> + WithModifier<Classes> + WithModifier<Styles>
 {
 }
-impl<T: With<Attributes> + With<Children> + With<Classes> + With<Styles>> WithElementProps for T {}
+impl<
+        T: WithModifier<Attributes>
+            + WithModifier<Children>
+            + WithModifier<Classes>
+            + WithModifier<Styles>,
+    > WithElementProps for T
+{
+}

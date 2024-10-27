@@ -4,7 +4,7 @@
 use crate::{
     core::{MessageResult, Mut, View, ViewElement, ViewId, ViewMarker},
     diff::{diff_iters, Diff},
-    modifiers::{Modifier, With},
+    modifiers::{Modifier, WithModifier},
     vecmap::VecMap,
     DomView, DynMessage, ViewCtx,
 };
@@ -147,7 +147,7 @@ impl Classes {
     #[inline]
     /// Rebuilds the current element, while ensuring that the order of the modifiers stays correct.
     /// Any children should be rebuilt in inside `f`, *before* modifying any other properties of [`Classes`].
-    pub fn rebuild<E: With<Self>>(mut element: E, prev_len: usize, f: impl FnOnce(E)) {
+    pub fn rebuild<E: WithModifier<Self>>(mut element: E, prev_len: usize, f: impl FnOnce(E)) {
         element.modifier().modifier.idx -= prev_len as u16;
         f(element);
     }
@@ -337,8 +337,8 @@ where
     State: 'static,
     Action: 'static,
     C: ClassIter,
-    V: DomView<State, Action, Element: With<Classes>>,
-    for<'a> <V::Element as ViewElement>::Mut<'a>: With<Classes>,
+    V: DomView<State, Action, Element: WithModifier<Classes>>,
+    for<'a> <V::Element as ViewElement>::Mut<'a>: WithModifier<Classes>,
 {
     type Element = V::Element;
 

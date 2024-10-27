@@ -16,7 +16,7 @@ use std::{
 };
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
-use super::{Modifier, With};
+use super::{Modifier, WithModifier};
 
 type CowStr = std::borrow::Cow<'static, str>;
 
@@ -232,7 +232,7 @@ impl Styles {
     #[inline]
     /// Rebuilds the current element, while ensuring that the order of the modifiers stays correct.
     /// Any children should be rebuilt in inside `f`, *before* modifying any other properties of [`Styles`].
-    pub fn rebuild<E: With<Self>>(mut element: E, prev_len: usize, f: impl FnOnce(E)) {
+    pub fn rebuild<E: WithModifier<Self>>(mut element: E, prev_len: usize, f: impl FnOnce(E)) {
         element.modifier().modifier.idx -= prev_len;
         f(element);
     }
@@ -462,8 +462,8 @@ where
     State: 'static,
     Action: 'static,
     S: StyleIter,
-    V: DomView<State, Action, Element: With<Styles>>,
-    for<'a> <V::Element as ViewElement>::Mut<'a>: With<Styles>,
+    V: DomView<State, Action, Element: WithModifier<Styles>>,
+    for<'a> <V::Element as ViewElement>::Mut<'a>: WithModifier<Styles>,
 {
     type Element = V::Element;
 
@@ -543,8 +543,8 @@ impl<V, State, Action> View<State, Action, ViewCtx, DynMessage> for Rotate<V, St
 where
     State: 'static,
     Action: 'static,
-    V: DomView<State, Action, Element: With<Styles>>,
-    for<'a> <V::Element as ViewElement>::Mut<'a>: With<Styles>,
+    V: DomView<State, Action, Element: WithModifier<Styles>>,
+    for<'a> <V::Element as ViewElement>::Mut<'a>: WithModifier<Styles>,
 {
     type Element = V::Element;
 
@@ -666,8 +666,8 @@ impl<State, Action, V> View<State, Action, ViewCtx, DynMessage> for Scale<V, Sta
 where
     State: 'static,
     Action: 'static,
-    V: DomView<State, Action, Element: With<Styles>>,
-    for<'a> <V::Element as ViewElement>::Mut<'a>: With<Styles>,
+    V: DomView<State, Action, Element: WithModifier<Styles>>,
+    for<'a> <V::Element as ViewElement>::Mut<'a>: WithModifier<Styles>,
 {
     type Element = V::Element;
 

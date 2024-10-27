@@ -5,7 +5,7 @@
 
 use crate::{
     core::{MessageResult, Mut, OrphanView, ViewId},
-    modifiers::{Attributes, With},
+    modifiers::{Attributes, WithModifier},
     DynMessage, FromWithContext, Pod, ViewCtx, SVG_NS,
 };
 use peniko::kurbo::{BezPath, Circle, Line, Rect};

@@ -3,7 +3,7 @@
 
 use crate::{
     core::{MessageResult, Mut, View, ViewElement, ViewId, ViewMarker},
-    modifiers::{Modifier, With},
+    modifiers::{Modifier, WithModifier},
     vecmap::VecMap,
     AttributeValue, DomView, DynMessage, IntoAttributeValue, ViewCtx,
 };
@@ -102,7 +102,7 @@ impl Attributes {
     #[inline]
     /// Rebuilds the current element, while ensuring that the order of the modifiers stays correct.
     /// Any children should be rebuilt in inside `f`, *before* modifying any other properties of [`Attributes`].
-    pub fn rebuild<E: With<Self>>(mut element: E, prev_len: usize, f: impl FnOnce(E)) {
+    pub fn rebuild<E: WithModifier<Self>>(mut element: E, prev_len: usize, f: impl FnOnce(E)) {
         element.modifier().modifier.idx -= prev_len;
         f(element);
     }
@@ -302,8 +302,8 @@ impl<V, State, Action> View<State, Action, ViewCtx, DynMessage> for Attr<V, Stat
 where
     State: 'static,
     Action: 'static,
-    V: DomView<State, Action, Element: With<Attributes>>,
-    for<'a> <V::Element as ViewElement>::Mut<'a>: With<Attributes>,
+    V: DomView<State, Action, Element: WithModifier<Attributes>>,
+    for<'a> <V::Element as ViewElement>::Mut<'a>: WithModifier<Attributes>,
 {
     type Element = V::Element;
 
