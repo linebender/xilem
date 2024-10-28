@@ -11,7 +11,7 @@ use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use crate::{
     core::{AppendVec, ElementSplice, MessageResult, Mut, View, ViewId, ViewMarker},
     document,
-    modifiers::{Children, WithModifier},
+    modifiers::Children,
     vec_splice::VecSplice,
     AnyPod, DomFragment, DomNode, DynMessage, FromWithContext, Pod, ViewCtx, HTML_NS,
 };
@@ -262,11 +262,11 @@ pub(crate) fn rebuild_element<State, Action, Element>(
     State: 'static,
     Action: 'static,
     Element: 'static,
-    Element: DomNode<Props: WithModifier<Children>>,
+    Element: DomNode<Props: AsMut<Children>>,
 {
     let mut dom_children_splice = DomChildrenSplice::new(
         &mut state.append_scratch,
-        WithModifier::<Children>::modifier(element.props).modifier,
+        element.props.as_mut(),
         &mut state.vec_splice_scratch,
         element.node.as_ref(),
         ctx.fragment.clone(),
@@ -290,11 +290,11 @@ pub(crate) fn teardown_element<State, Action, Element>(
     State: 'static,
     Action: 'static,
     Element: 'static,
-    Element: DomNode<Props: WithModifier<Children>>,
+    Element: DomNode<Props: AsMut<Children>>,
 {
     let mut dom_children_splice = DomChildrenSplice::new(
         &mut state.append_scratch,
-        WithModifier::<Children>::modifier(element.props).modifier,
+        element.props.as_mut(),
         &mut state.vec_splice_scratch,
         element.node.as_ref(),
         ctx.fragment.clone(),

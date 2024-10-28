@@ -2,8 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::{
-    core::{MessageResult, Mut, View, ViewElement, ViewId, ViewMarker, ViewPathTracker},
-    modifiers::WithModifier,
+    core::{MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker},
     DomView, DynMessage, ElementAsRef, OptionalAction, ViewCtx,
 };
 use std::{borrow::Cow, marker::PhantomData};
@@ -135,8 +134,7 @@ fn build_event_listener<State, Action, V, Event>(
 where
     State: 'static,
     Action: 'static,
-    V: View<State, Action, ViewCtx, DynMessage>,
-    V::Element: ElementAsRef<web_sys::EventTarget>,
+    V: DomView<State, Action>,
     Event: JsCast + 'static + crate::Message,
 {
     // we use a placeholder id here, the id can never change, so we don't need to store it anywhere
@@ -167,9 +165,7 @@ fn rebuild_event_listener<State, Action, V, Event>(
 ) where
     State: 'static,
     Action: 'static,
-    V: DomView<State, Action, Element: AsRef<web_sys::EventTarget> + WithModifier<Events>>,
-    for<'a> <V::Element as ViewElement>::Mut<'a>:
-        AsRef<web_sys::EventTarget> + WithModifier<Events>,
+    V: DomView<State, Action>,
     Event: JsCast + 'static + crate::Message,
 {
     ctx.with_id(ON_EVENT_VIEW_ID, |ctx| {
@@ -179,7 +175,7 @@ fn rebuild_event_listener<State, Action, V, Event>(
             ctx,
             element.reborrow_mut(),
         );
-        let was_created = element.modifier().flags.was_created();
+        let was_created = element.flags.was_created();
         if prev_capture != capture || prev_passive != passive || was_created {
             if !was_created {
                 remove_event_listener(element.as_ref(), event, &state.callback, prev_capture);
@@ -201,9 +197,7 @@ fn teardown_event_listener<State, Action, V>(
 ) where
     State: 'static,
     Action: 'static,
-    V: DomView<State, Action, Element: AsRef<web_sys::EventTarget> + WithModifier<Events>>,
-    for<'a> <V::Element as ViewElement>::Mut<'a>:
-        AsRef<web_sys::EventTarget> + WithModifier<Events>,
+    V: DomView<State, Action>,
 {
     // TODO: is this really needed (as the element will be removed anyway)?
     // remove_event_listener(element.as_ref(), event, &state.callback, capture);
@@ -223,9 +217,7 @@ fn message_event_listener<State, Action, V, Event, OA, Callback>(
 where
     State: 'static,
     Action: 'static,
-    V: DomView<State, Action, Element: AsRef<web_sys::EventTarget> + WithModifier<Events>>,
-    for<'a> <V::Element as ViewElement>::Mut<'a>:
-        AsRef<web_sys::EventTarget> + WithModifier<Events>,
+    V: DomView<State, Action>,
     Event: JsCast + 'static + crate::Message,
     OA: OptionalAction<Action>,
     Callback: Fn(&mut State, Event) -> OA + 'static,
@@ -253,11 +245,9 @@ impl<V, State, Action, Event, Callback, OA> View<State, Action, ViewCtx, DynMess
 where
     State: 'static,
     Action: 'static,
+    V: DomView<State, Action>,
     OA: OptionalAction<Action>,
     Callback: Fn(&mut State, Event) -> OA + 'static,
-    V: DomView<State, Action, Element: AsRef<web_sys::EventTarget> + WithModifier<Events>>,
-    for<'a> <V::Element as ViewElement>::Mut<'a>:
-        AsRef<web_sys::EventTarget> + WithModifier<Events>,
     Event: JsCast + 'static + crate::Message,
 {
     type ViewState = OnEventState<V::ViewState>;
@@ -290,7 +280,7 @@ where
                 element.reborrow_mut(),
             );
 
-            let was_created = element.modifier().flags.was_created();
+            let was_created = element.flags.was_created();
 
             if prev.capture != self.capture
                 || prev.passive != self.passive
@@ -403,10 +393,9 @@ macro_rules! event_definitions {
         where
             State: 'static,
             Action: 'static,
+            V: DomView<State, Action>,
             OA: OptionalAction<Action>,
             Callback: Fn(&mut State, web_sys::$web_sys_ty) -> OA + 'static,
-            V: DomView<State, Action, Element: WithModifier<Events> + AsRef<web_sys::EventTarget>>,
-            for<'a> <V::Element as ViewElement>::Mut<'a>: WithModifier<Events> + AsRef<web_sys::EventTarget>,
         {
             type ViewState = OnEventState<V::ViewState>;
 

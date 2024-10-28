@@ -36,8 +36,8 @@ where
             let prev = prev.downcast_ref::<E>().unwrap_throw();
             let node = template_node.clone_node_with_deep(true).unwrap_throw();
             let (mut el, mut state) = ctx.with_hydration_node(node, |ctx| prev.build(ctx));
-            el.node.apply_props(&mut el.props);
-            let pod_mut = PodMut::new(&mut el.node, &mut el.props, None, false);
+            el.node.apply_props(&mut el.props, &mut el.flags);
+            let pod_mut = PodMut::new(&mut el.node, &mut el.props, &mut el.flags, None, false);
             self.0.rebuild(prev, &mut state, ctx, pod_mut);
 
             (el, state)

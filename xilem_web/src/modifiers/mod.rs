@@ -69,16 +69,16 @@ pub use overwrite::*;
 mod elements;
 pub use elements::*;
 
-use crate::{props::ElementFlags, AnyPod, DomNode, Pod, PodMut};
+use crate::{AnyPod, DomNode, Pod, PodFlags, PodMut};
 
 /// This struct is a container, with the current Element state (e.g. whether it was created/hydrated or generally needs an update), and the modifier itself.
 pub struct Modifier<'a, M> {
     pub modifier: &'a mut M,
-    pub flags: &'a mut ElementFlags,
+    pub flags: &'a mut PodFlags,
 }
 
 impl<'a, M> Modifier<'a, M> {
-    pub fn new(modifier: &'a mut M, flags: &'a mut ElementFlags) -> Self {
+    pub fn new(modifier: &'a mut M, flags: &'a mut PodFlags) -> Self {
         Self { modifier, flags }
     }
 }
@@ -88,15 +88,18 @@ pub trait WithModifier<M> {
     fn modifier(&mut self) -> Modifier<'_, M>;
 }
 
-impl<T, N: DomNode<Props: WithModifier<T>>> WithModifier<T> for Pod<N> {
+impl<T, N: DomNode<Props: AsMut<T>>> WithModifier<T> for Pod<N> {
     fn modifier(&mut self) -> Modifier<'_, T> {
-        <N::Props as WithModifier<T>>::modifier(&mut self.props)
+        Modifier::new(
+            <N::Props as AsMut<T>>::as_mut(&mut self.props),
+            &mut self.flags,
+        )
     }
 }
 
-impl<T, N: DomNode<Props: WithModifier<T>>> WithModifier<T> for PodMut<'_, N> {
+impl<T, N: DomNode<Props: AsMut<T>>> WithModifier<T> for PodMut<'_, N> {
     fn modifier(&mut self) -> Modifier<'_, T> {
-        <N::Props as WithModifier<T>>::modifier(self.props)
+        Modifier::new(<N::Props as AsMut<T>>::as_mut(self.props), self.flags)
     }
 }
 

@@ -6,7 +6,7 @@
 use crate::{
     core::{MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker},
     interfaces::Element,
-    DynMessage, ElementAsRef, ViewCtx,
+    DomView, DynMessage, ViewCtx,
 };
 use std::marker::PhantomData;
 use wasm_bindgen::{prelude::Closure, throw_str, JsCast, UnwrapThrowExt};
@@ -77,8 +77,7 @@ where
     State: 'static,
     Action: 'static,
     Callback: Fn(&mut State, PointerMsg) -> Action + 'static,
-    V: View<State, Action, ViewCtx, DynMessage>,
-    V::Element: ElementAsRef<web_sys::Element>,
+    V: DomView<State, Action>,
 {
     type ViewState = PointerState<V::ViewState>;
     type Element = V::Element;

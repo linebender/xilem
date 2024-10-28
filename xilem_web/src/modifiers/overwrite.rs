@@ -242,14 +242,14 @@ macro_rules! overwrite_bool_modifier_view {
 
 #[cfg(test)]
 mod tests {
-    use crate::props::ElementFlags;
+    use crate::PodFlags;
 
     use super::*;
 
     #[test]
     fn overwrite_bool_push() {
         let mut modifier = OverwriteBool::default();
-        let flags = &mut ElementFlags::new(false);
+        let flags = &mut PodFlags::new(false);
         let m = &mut Modifier::new(&mut modifier, flags);
         assert!(!m.flags.needs_update());
         OverwriteBool::push(m, true);
@@ -271,7 +271,7 @@ mod tests {
     #[test]
     fn overwrite_bool_mutate() {
         let mut modifier = OverwriteBool::default();
-        let flags = &mut ElementFlags::new(false);
+        let flags = &mut PodFlags::new(false);
         let m = &mut Modifier::new(&mut modifier, flags);
         OverwriteBool::push(m, true);
         OverwriteBool::push(m, false);
@@ -314,7 +314,7 @@ mod tests {
     #[test]
     fn overwrite_bool_skip() {
         let mut modifier = OverwriteBool::default();
-        let flags = &mut ElementFlags::new(false);
+        let flags = &mut PodFlags::new(false);
         let m = &mut Modifier::new(&mut modifier, flags);
         OverwriteBool::push(m, true);
         OverwriteBool::push(m, false);
@@ -352,7 +352,7 @@ mod tests {
     #[test]
     fn overwrite_bool_update() {
         let mut modifier = OverwriteBool::default();
-        let flags = &mut ElementFlags::new(false);
+        let flags = &mut PodFlags::new(false);
         let m = &mut Modifier::new(&mut modifier, flags);
         OverwriteBool::push(m, true);
         OverwriteBool::push(m, false);
@@ -394,7 +394,7 @@ mod tests {
 
         // test recreation
         let mut modifier = OverwriteBool::default();
-        let flags = &mut ElementFlags::new(false);
+        let flags = &mut PodFlags::new(false);
         let modifier = &mut Modifier::new(&mut modifier, flags);
         assert_eq!(modifier.modifier.len, 0);
         assert_eq!(modifier.modifier.idx, 0);
@@ -422,7 +422,7 @@ mod tests {
     )]
     fn panic_if_use_mutate_on_creation() {
         let mut modifier = OverwriteBool::default();
-        let flags = &mut ElementFlags::new(false);
+        let flags = &mut PodFlags::new(false);
         let m = &mut Modifier::new(&mut modifier, flags);
         assert!(m.flags.was_created());
         OverwriteBool::mutate(m, |m| *m = false);
@@ -434,7 +434,7 @@ mod tests {
     )]
     fn panic_if_use_push_on_rebuild() {
         let mut modifier = OverwriteBool::default();
-        let flags = &mut ElementFlags::new(false);
+        let flags = &mut PodFlags::new(false);
         let m = &mut Modifier::new(&mut modifier, flags);
         assert!(m.flags.was_created());
         OverwriteBool::push(m, true);

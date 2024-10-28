@@ -3,7 +3,7 @@
 
 use crate::{
     core::{MessageResult, Mut, OrphanView, ViewId},
-    DynMessage, Pod, ViewCtx,
+    DynMessage, Pod, PodFlags, ViewCtx,
 };
 use wasm_bindgen::JsCast;
 
@@ -24,7 +24,7 @@ macro_rules! impl_string_view {
                 } else {
                     web_sys::Text::new_with_data(view).unwrap()
                 };
-                (Pod { node, props: () }, ())
+                (Pod::new(node, (), PodFlags::new(ctx.is_hydrating())), ())
             }
 
             fn orphan_rebuild(
@@ -80,7 +80,7 @@ macro_rules! impl_to_string_view {
                 } else {
                     web_sys::Text::new_with_data(&view.to_string()).unwrap()
                 };
-                (Pod { node, props: () }, ())
+                (Pod::new(node, (), PodFlags::new(ctx.is_hydrating())), ())
             }
 
             fn orphan_rebuild(
