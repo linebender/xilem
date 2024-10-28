@@ -9,7 +9,7 @@ use xilem_web::{
     core::{fork, one_of::Either},
     document_body,
     elements::html::*,
-    interfaces::{Element, HtmlDivElement, HtmlImageElement, HtmlLabelElement},
+    interfaces::{Element, HtmlDivElement, HtmlImageElement, HtmlInputElement, HtmlLabelElement},
     App,
 };
 
@@ -188,7 +188,7 @@ fn cat_fetch_controls(state: &AppState) -> impl Element<AppState> {
                 td(input(())
                     .id("reset-debounce-update")
                     .attr("type", "checkbox")
-                    .attr("checked", state.reset_debounce_on_update)
+                    .checked(state.reset_debounce_on_update)
                     .on_input(|state: &mut AppState, event: web_sys::Event| {
                         state.reset_debounce_on_update = input_target(&event).checked();
                     })),

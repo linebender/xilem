@@ -4,9 +4,8 @@
 use crate::{
     core::{MessageResult, Mut, View, ViewElement, ViewId, ViewMarker},
     diff::{diff_iters, Diff},
-    modifiers::With,
     vecmap::VecMap,
-    DomView, DynMessage, ElementProps, ViewCtx,
+    DomView, DynMessage, ViewCtx,
 };
 use peniko::kurbo::Vec2;
 use std::{
@@ -16,6 +15,8 @@ use std::{
     marker::PhantomData,
 };
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
+
+use super::{Modifier, WithModifier};
 
 type CowStr = std::borrow::Cow<'static, str>;
 
@@ -145,15 +146,7 @@ pub struct Styles {
     // while probably not helping much in the average case (of very few styles)...
     modifiers: Vec<StyleModifier>,
     updated: VecMap<CowStr, ()>,
-    idx: u16,
-    in_hydration: bool,
-    was_created: bool,
-}
-
-impl With<Styles> for ElementProps {
-    fn modifier(&mut self) -> &mut Styles {
-        self.styles()
-    }
+    idx: usize,
 }
 
 fn set_style(element: &web_sys::Element, name: &str, value: &str) {
@@ -176,51 +169,49 @@ impl Styles {
     /// Creates a new `Styles` modifier.
     ///
     /// `size_hint` is used to avoid unnecessary allocations while traversing up the view-tree when adding modifiers in [`View::build`].
-    pub(crate) fn new(size_hint: usize, in_hydration: bool) -> Self {
+    pub(crate) fn new(size_hint: usize) -> Self {
         Self {
             modifiers: Vec::with_capacity(size_hint),
-            was_created: true,
-            in_hydration,
             ..Default::default()
         }
     }
 
     /// Applies potential changes of the inline styles of an element to the underlying DOM node.
-    pub fn apply_changes(&mut self, element: &web_sys::Element) {
-        if self.in_hydration {
-            self.in_hydration = false;
-            self.was_created = false;
-        } else if self.was_created {
-            self.was_created = false;
-            for modifier in &self.modifiers {
+    pub fn apply_changes(this: Modifier<'_, Self>, element: &web_sys::Element) {
+        if this.flags.in_hydration() {
+            return;
+        } else if this.flags.was_created() {
+            for modifier in &this.modifier.modifiers {
                 match modifier {
                     StyleModifier::Remove(name) => remove_style(element, name),
                     StyleModifier::Set(name, value) => set_style(element, name, value),
                 }
             }
-        } else if !self.updated.is_empty() {
-            for modifier in self.modifiers.iter().rev() {
+        } else if !this.modifier.updated.is_empty() {
+            for modifier in this.modifier.modifiers.iter().rev() {
                 match modifier {
-                    StyleModifier::Remove(name) if self.updated.remove(name).is_some() => {
+                    StyleModifier::Remove(name) if this.modifier.updated.remove(name).is_some() => {
                         remove_style(element, name);
                     }
-                    StyleModifier::Set(name, value) if self.updated.remove(name).is_some() => {
+                    StyleModifier::Set(name, value)
+                        if this.modifier.updated.remove(name).is_some() =>
+                    {
                         set_style(element, name, value);
                     }
                     _ => {}
                 }
             }
             // if there's any remaining key in updated, it means these are deleted keys
-            for (name, ()) in self.updated.drain() {
+            for (name, ()) in this.modifier.updated.drain() {
                 remove_style(element, &name);
             }
         }
-        debug_assert!(self.updated.is_empty());
+        debug_assert!(this.modifier.updated.is_empty());
     }
 
     /// Returns a previous [`StyleModifier`], when `predicate` returns true, this is similar to [`Iterator::find`].
     pub fn get(&self, mut predicate: impl FnMut(&StyleModifier) -> bool) -> Option<&StyleModifier> {
-        self.modifiers[..self.idx as usize]
+        self.modifiers[..self.idx]
             .iter()
             .rev()
             .find(|modifier| predicate(modifier))
@@ -241,15 +232,9 @@ impl Styles {
     #[inline]
     /// Rebuilds the current element, while ensuring that the order of the modifiers stays correct.
     /// Any children should be rebuilt in inside `f`, *before* modifying any other properties of [`Styles`].
-    pub fn rebuild<E: With<Self>>(mut element: E, prev_len: usize, f: impl FnOnce(E)) {
-        element.modifier().idx -= prev_len as u16;
+    pub fn rebuild<E: WithModifier<Self>>(mut element: E, prev_len: usize, f: impl FnOnce(E)) {
+        element.modifier().modifier.idx -= prev_len;
         f(element);
-    }
-
-    #[inline]
-    /// Returns whether the underlying element has been built or rebuilt, this could e.g. happen, when `OneOf` changes a variant to a different element.
-    pub fn was_created(&self) -> bool {
-        self.was_created
     }
 
     #[inline]
@@ -261,142 +246,144 @@ impl Styles {
     #[inline]
     /// Pushes `modifier` at the end of the current modifiers
     ///
-    /// Must only be used when `self.was_created() == true`, use `Styles::insert` otherwise.
-    pub fn push(&mut self, modifier: StyleModifier) {
+    /// Must only be used when `this.flags.was_created() == true`, use `Styles::insert` otherwise.
+    pub fn push(this: &mut Modifier<'_, Self>, modifier: StyleModifier) {
         debug_assert!(
-            self.was_created(),
+            this.flags.was_created(),
             "This should never be called, when the underlying element wasn't (re)created. Use `Styles::insert` instead."
         );
-        if !self.was_created && !self.in_hydration {
-            self.updated.insert(modifier.name().clone(), ());
-        }
-        self.modifiers.push(modifier);
-        self.idx += 1;
+        this.flags.set_needs_update();
+        this.modifier.modifiers.push(modifier);
+        this.modifier.idx += 1;
     }
 
     #[inline]
     /// Inserts `modifier` at the current index
     ///
-    /// Must only be used when `self.was_created() == false`, use `Styles::push` otherwise.
-    pub fn insert(&mut self, modifier: StyleModifier) {
+    /// Must only be used when `this.flags.was_created() == false`, use `Styles::push` otherwise.
+    pub fn insert(this: &mut Modifier<'_, Self>, modifier: StyleModifier) {
         debug_assert!(
-            !self.was_created(),
+            !this.flags.was_created(),
             "This should never be called, when the underlying element was (re)created, use `Styles::push` instead."
         );
-        if !self.was_created && !self.in_hydration {
-            self.updated.insert(modifier.name().clone(), ());
-        }
+        this.modifier.updated.insert(modifier.name().clone(), ());
+        this.flags.set_needs_update();
         // TODO this could potentially be expensive, maybe think about `VecSplice` again.
         // Although in the average case, this is likely not relevant, as usually very few attributes are used, thus shifting is probably good enough
         // I.e. a `VecSplice` is probably less optimal (either more complicated code, and/or more memory usage)
-        self.modifiers.insert(self.idx as usize, modifier);
-        self.idx += 1;
+        this.modifier.modifiers.insert(this.modifier.idx, modifier);
+        this.modifier.idx += 1;
     }
 
     #[inline]
     /// Mutates the next modifier.
     ///
-    /// Must only be used when `self.was_created() == false`.
-    pub fn mutate<R>(&mut self, f: impl FnOnce(&mut StyleModifier) -> R) -> R {
+    /// Must only be used when `this.flags.was_created() == false`.
+    pub fn mutate<R>(this: &mut Modifier<'_, Self>, f: impl FnOnce(&mut StyleModifier) -> R) -> R {
         debug_assert!(
-            !self.was_created(),
+            !this.flags.was_created(),
             "This should never be called, when the underlying element was (re)created."
         );
-        let modifier = &mut self.modifiers[self.idx as usize];
+        let modifier = &mut this.modifier.modifiers[this.modifier.idx];
         let old = modifier.name().clone();
         let rv = f(modifier);
         let new = modifier.name();
         if *new != old {
-            self.updated.insert(new.clone(), ());
+            this.modifier.updated.insert(new.clone(), ());
         }
-        self.updated.insert(old, ());
-        self.idx += 1;
+        this.flags.set_needs_update();
+        this.modifier.updated.insert(old, ());
+        this.modifier.idx += 1;
         rv
     }
 
     #[inline]
     /// Skips the next `count` modifiers.
     ///
-    /// Must only be used when `self.was_created() == false`.
-    pub fn skip(&mut self, count: usize) {
+    /// Must only be used when `this.flags.was_created() == false`.
+    pub fn skip(this: &mut Modifier<'_, Self>, count: usize) {
         debug_assert!(
-            !self.was_created(),
+            !this.flags.was_created(),
             "This should never be called, when the underlying element was (re)created."
         );
-        self.idx += count as u16;
+        this.modifier.idx += count;
     }
 
     #[inline]
     /// Deletes the next `count` modifiers.
     ///
-    /// Must only be used when `self.was_created() == false`.
-    pub fn delete(&mut self, count: usize) {
+    /// Must only be used when `this.flags.was_created() == false`.
+    pub fn delete(this: &mut Modifier<'_, Self>, count: usize) {
         debug_assert!(
-            !self.was_created(),
+            !this.flags.was_created(),
             "This should never be called, when the underlying element was (re)created."
         );
-        let start = self.idx as usize;
-        for modifier in self.modifiers.drain(start..(start + count)) {
-            self.updated.insert(modifier.into_name(), ());
+        let start = this.modifier.idx;
+        this.flags.set_needs_update();
+        for modifier in this.modifier.modifiers.drain(start..(start + count)) {
+            this.modifier.updated.insert(modifier.into_name(), ());
         }
     }
 
     #[inline]
     /// Updates the next modifier, based on the diff of `prev` and `next`.
-    pub fn update(&mut self, prev: &StyleModifier, next: &StyleModifier) {
-        if self.was_created() {
-            self.push(next.clone());
+    pub fn update(this: &mut Modifier<'_, Self>, prev: &StyleModifier, next: &StyleModifier) {
+        if this.flags.was_created() {
+            Self::push(this, next.clone());
         } else if next != prev {
-            self.mutate(|modifier| *modifier = next.clone());
+            Self::mutate(this, |modifier| *modifier = next.clone());
         } else {
-            self.skip(1);
+            Self::skip(this, 1);
         }
     }
 
     #[inline]
     /// Extends the current modifiers with an iterator of modifiers. Returns the count of `modifiers`.
     ///
-    /// Must only be used when `self.was_created() == true`, use `Styles::apply_diff` otherwise.
-    pub fn extend(&mut self, modifiers: impl Iterator<Item = StyleModifier>) -> usize {
+    /// Must only be used when `this.flags.was_created() == true`, use `Styles::apply_diff` otherwise.
+    pub fn extend(
+        this: &mut Modifier<'_, Self>,
+        modifiers: impl Iterator<Item = StyleModifier>,
+    ) -> usize {
         debug_assert!(
-            self.was_created(),
+            this.flags.was_created(),
             "This should never be called, when the underlying element wasn't (re)created, use `Styles::apply_diff` instead."
         );
-        let prev_len = self.modifiers.len();
-        self.modifiers.extend(modifiers);
-        let iter_count = self.modifiers.len() - prev_len;
-        if !self.was_created && !self.in_hydration && iter_count > 0 {
-            for modifier in &self.modifiers[prev_len..] {
-                self.updated.insert(modifier.name().clone(), ());
-            }
-        }
-        self.idx += iter_count as u16;
+        let prev_len = this.modifier.modifiers.len();
+        this.modifier.modifiers.extend(modifiers);
+        let iter_count = this.modifier.modifiers.len() - prev_len;
+        this.flags.set_needs_update();
+        this.modifier.idx += iter_count;
         iter_count
     }
 
     #[inline]
     /// Diffs between two iterators, and updates the underlying modifiers if they have changed, returns the `next` iterator count.
     ///
-    /// Must only be used when `self.was_created() == false`, use [`Styles::extend`] otherwise.
-    pub fn apply_diff<T: Iterator<Item = StyleModifier>>(&mut self, prev: T, next: T) -> usize {
+    /// Must only be used when `this.flags.was_created() == false`, use [`Styles::extend`] otherwise.
+    pub fn apply_diff<T: Iterator<Item = StyleModifier>>(
+        this: &mut Modifier<'_, Self>,
+        prev: T,
+        next: T,
+    ) -> usize {
         debug_assert!(
-            !self.was_created(),
+            !this.flags.was_created(),
             "This should never be called, when the underlying element was (re)created, use `Styles::extend` instead."
         );
         let mut count = 0;
         for change in diff_iters(prev, next) {
             match change {
                 Diff::Add(modifier) => {
-                    self.insert(modifier);
+                    Self::insert(this, modifier);
                     count += 1;
                 }
-                Diff::Remove(count) => self.delete(count),
+                Diff::Remove(count) => Self::delete(this, count),
                 Diff::Change(new_modifier) => {
-                    self.mutate(|modifier| *modifier = new_modifier);
+                    Self::mutate(this, |modifier| *modifier = new_modifier);
                     count += 1;
                 }
                 Diff::Skip(c) => {
-                    self.skip(c);
+                    Self::skip(this, c);
                     count += c;
                 }
             }
@@ -407,37 +394,41 @@ impl Styles {
     #[inline]
     /// Updates styles defined by an iterator, returns the `next` iterator length.
     pub fn update_style_modifier_iter<T: StyleIter>(
-        &mut self,
+        this: &mut Modifier<'_, Self>,
         prev_len: usize,
         prev: &T,
         next: &T,
     ) -> usize {
-        if self.was_created() {
-            self.extend(next.style_modifiers_iter())
+        if this.flags.was_created() {
+            Self::extend(this, next.style_modifiers_iter())
         } else if next != prev {
-            self.apply_diff(prev.style_modifiers_iter(), next.style_modifiers_iter())
+            Self::apply_diff(
+                this,
+                prev.style_modifiers_iter(),
+                next.style_modifiers_iter(),
+            )
         } else {
-            self.skip(prev_len);
+            Self::skip(this, prev_len);
             prev_len
         }
     }
 
     #[inline]
     /// Updates the style property `name` by modifying its previous value with `create_modifier`.
-    pub fn update_style_mutator<T: PartialEq>(
-        &mut self,
+    pub fn update_with_modify_style<T: PartialEq>(
+        this: &mut Modifier<'_, Self>,
         name: &'static str,
         prev: &T,
         next: &T,
         create_modifier: impl FnOnce(Option<&CowStr>, &T) -> StyleModifier,
     ) {
-        if self.was_created() {
-            self.push(create_modifier(self.get_style(name), next));
-        } else if prev != next || self.was_updated(name) {
-            let new_modifier = create_modifier(self.get_style(name), next);
-            self.mutate(|modifier| *modifier = new_modifier);
+        if this.flags.was_created() {
+            Self::push(this, create_modifier(this.modifier.get_style(name), next));
+        } else if prev != next || this.modifier.was_updated(name) {
+            let new_modifier = create_modifier(this.modifier.get_style(name), next);
+            Self::mutate(this, |modifier| *modifier = new_modifier);
         } else {
-            self.skip(1);
+            Self::skip(this, 1);
         }
     }
 }
@@ -471,8 +462,8 @@ where
     State: 'static,
     Action: 'static,
     S: StyleIter,
-    V: DomView<State, Action, Element: With<Styles>>,
-    for<'a> <V::Element as ViewElement>::Mut<'a>: With<Styles>,
+    V: DomView<State, Action, Element: WithModifier<Styles>>,
+    for<'a> <V::Element as ViewElement>::Mut<'a>: WithModifier<Styles>,
 {
     type Element = V::Element;
 
@@ -482,7 +473,7 @@ where
         let style_iter = self.styles.style_modifiers_iter();
         let (mut e, s) =
             ctx.with_size_hint::<Styles, _>(style_iter.size_hint().0, |ctx| self.el.build(ctx));
-        let len = e.modifier().extend(style_iter);
+        let len = Styles::extend(&mut e.modifier(), style_iter);
         (e, (len, s))
     }
 
@@ -496,8 +487,8 @@ where
         Styles::rebuild(element, *len, |mut elem| {
             self.el
                 .rebuild(&prev.el, view_state, ctx, elem.reborrow_mut());
-            let styles = elem.modifier();
-            *len = styles.update_style_modifier_iter(*len, &prev.styles, &self.styles);
+            let styles = &mut elem.modifier();
+            *len = Styles::update_style_modifier_iter(styles, *len, &prev.styles, &self.styles);
         });
     }
 
@@ -552,8 +543,8 @@ impl<V, State, Action> View<State, Action, ViewCtx, DynMessage> for Rotate<V, St
 where
     State: 'static,
     Action: 'static,
-    V: DomView<State, Action, Element: With<Styles>>,
-    for<'a> <V::Element as ViewElement>::Mut<'a>: With<Styles>,
+    V: DomView<State, Action, Element: WithModifier<Styles>>,
+    for<'a> <V::Element as ViewElement>::Mut<'a>: WithModifier<Styles>,
 {
     type Element = V::Element;
 
@@ -561,11 +552,11 @@ where
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let (mut element, state) = ctx.with_size_hint::<Styles, _>(1, |ctx| self.el.build(ctx));
-        let styles = element.modifier();
-        styles.push(rotate_transform_modifier(
-            styles.get_style("transform"),
-            &self.radians,
-        ));
+        let styles = &mut element.modifier();
+        Styles::push(
+            styles,
+            rotate_transform_modifier(styles.modifier.get_style("transform"), &self.radians),
+        );
         (element, state)
     }
 
@@ -579,7 +570,9 @@ where
         Styles::rebuild(element, 1, |mut element| {
             self.el
                 .rebuild(&prev.el, view_state, ctx, element.reborrow_mut());
-            element.modifier().update_style_mutator(
+            let mut styles = element.modifier();
+            Styles::update_with_modify_style(
+                &mut styles,
                 "transform",
                 &prev.radians,
                 &self.radians,
@@ -673,8 +666,8 @@ impl<State, Action, V> View<State, Action, ViewCtx, DynMessage> for Scale<V, Sta
 where
     State: 'static,
     Action: 'static,
-    V: DomView<State, Action, Element: With<Styles>>,
-    for<'a> <V::Element as ViewElement>::Mut<'a>: With<Styles>,
+    V: DomView<State, Action, Element: WithModifier<Styles>>,
+    for<'a> <V::Element as ViewElement>::Mut<'a>: WithModifier<Styles>,
 {
     type Element = V::Element;
 
@@ -682,11 +675,11 @@ where
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let (mut element, state) = ctx.with_size_hint::<Styles, _>(1, |ctx| self.el.build(ctx));
-        let styles = element.modifier();
-        styles.push(scale_transform_modifier(
-            styles.get_style("transform"),
-            &self.scale,
-        ));
+        let styles = &mut element.modifier();
+        Styles::push(
+            styles,
+            scale_transform_modifier(styles.modifier.get_style("transform"), &self.scale),
+        );
         (element, state)
     }
 
@@ -700,7 +693,9 @@ where
         Styles::rebuild(element, 1, |mut element| {
             self.el
                 .rebuild(&prev.el, view_state, ctx, element.reborrow_mut());
-            element.modifier().update_style_mutator(
+            let styles = &mut element.modifier();
+            Styles::update_with_modify_style(
+                styles,
                 "transform",
                 &prev.scale,
                 &self.scale,

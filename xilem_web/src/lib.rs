@@ -32,7 +32,6 @@ mod app;
 mod attribute_value;
 mod context;
 mod dom_helpers;
-mod element_props;
 mod message;
 mod one_of;
 mod optional_action;
@@ -48,6 +47,7 @@ pub mod elements;
 pub mod events;
 pub mod interfaces;
 pub mod modifiers;
+pub mod props;
 pub mod svg;
 
 pub use self::{
@@ -58,7 +58,6 @@ pub use self::{
     attribute_value::{AttributeValue, IntoAttributeValue},
     context::{MessageThunk, ViewCtx},
     dom_helpers::{document, document_body, get_element_by_id, input_event_target_value},
-    element_props::ElementProps,
     message::{DynMessage, Message},
     optional_action::{Action, OptionalAction},
     pointer::{Pointer, PointerDetails, PointerMsg},
@@ -251,11 +250,11 @@ pub struct Pod<N: DomNode> {
 pub type AnyPod = Pod<Box<dyn AnyNode>>;
 
 impl<N: DomNode> Pod<N> {
-    pub fn into_any_pod(node: N, mut props: N::Props) -> AnyPod {
-        node.apply_props(&mut props);
+    pub fn into_any_pod(mut pod: Pod<N>) -> AnyPod {
+        pod.node.apply_props(&mut pod.props);
         Pod {
-            node: Box::new(node),
-            props: Box::new(props),
+            node: Box::new(pod.node),
+            props: Box::new(pod.props),
         }
     }
 }
@@ -281,7 +280,7 @@ impl<N: DomNode> ViewElement for Pod<N> {
 
 impl<N: DomNode> SuperElement<Pod<N>, ViewCtx> for AnyPod {
     fn upcast(_ctx: &mut ViewCtx, child: Pod<N>) -> Self {
-        Pod::into_any_pod(child.node, child.props)
+        Pod::into_any_pod(child)
     }
 
     fn with_downcast_val<R>(
@@ -389,9 +388,9 @@ impl<T, N: AsRef<T> + DomNode> AsRef<T> for PodMut<'_, N> {
 }
 
 impl DomNode for web_sys::Element {
-    type Props = ElementProps;
+    type Props = props::Element;
 
-    fn apply_props(&self, props: &mut ElementProps) {
+    fn apply_props(&self, props: &mut props::Element) {
         props.update_element(self);
     }
 }
@@ -400,6 +399,14 @@ impl DomNode for web_sys::Text {
     type Props = ();
 
     fn apply_props(&self, (): &mut ()) {}
+}
+
+impl DomNode for web_sys::HtmlInputElement {
+    type Props = props::HtmlInputElement;
+
+    fn apply_props(&self, props: &mut props::HtmlInputElement) {
+        props.update_element(self);
+    }
 }
 
 pub trait FromWithContext<T>: Sized {
@@ -416,9 +423,9 @@ impl<T> FromWithContext<T> for T {
 macro_rules! impl_dom_node_for_elements {
     ($($ty:ident, )*) => {$(
         impl DomNode for web_sys::$ty {
-            type Props = ElementProps;
+            type Props = props::Element;
 
-            fn apply_props(&self, props: &mut ElementProps) {
+            fn apply_props(&self, props: &mut props::Element) {
                 props.update_element(self);
             }
         }
@@ -464,7 +471,7 @@ impl_dom_node_for_elements!(
     // HtmlHtmlElement, TODO include metadata?
     HtmlIFrameElement,
     HtmlImageElement,
-    HtmlInputElement,
+    // HtmlInputElement, has specialized impl
     HtmlLabelElement,
     HtmlLegendElement,
     HtmlLiElement,

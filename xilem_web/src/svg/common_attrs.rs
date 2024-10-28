@@ -3,8 +3,7 @@
 
 use crate::{
     core::{MessageResult, Mut, View, ViewElement, ViewId, ViewMarker},
-    modifiers::With,
-    modifiers::{AttributeModifier, Attributes},
+    modifiers::{AttributeModifier, Attributes, Modifier, WithModifier},
     DomView, DynMessage, ViewCtx,
 };
 use peniko::{kurbo, Brush};
@@ -92,8 +91,8 @@ impl<State, Action, V> View<State, Action, ViewCtx, DynMessage> for Fill<V, Stat
 where
     State: 'static,
     Action: 'static,
-    V: DomView<State, Action, Element: With<Attributes>>,
-    for<'a> <V::Element as ViewElement>::Mut<'a>: With<Attributes>,
+    V: DomView<State, Action, Element: WithModifier<Attributes>>,
+    for<'a> <V::Element as ViewElement>::Mut<'a>: WithModifier<Attributes>,
 {
     type ViewState = V::ViewState;
     type Element = V::Element;
@@ -101,9 +100,12 @@ where
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let (mut element, state) =
             ctx.with_size_hint::<Attributes, _>(2, |ctx| self.child.build(ctx));
-        let attrs = element.modifier();
-        attrs.push(("fill", brush_to_string(&self.brush)));
-        attrs.push(opacity_attr_modifier("fill-opacity", &self.brush));
+        let mut attrs = element.modifier();
+        Attributes::push(&mut attrs, ("fill", brush_to_string(&self.brush)));
+        Attributes::push(
+            &mut attrs,
+            opacity_attr_modifier("fill-opacity", &self.brush),
+        );
         (element, state)
     }
 
@@ -117,15 +119,22 @@ where
         Attributes::rebuild(element, 2, |mut element| {
             self.child
                 .rebuild(&prev.child, view_state, ctx, element.reborrow_mut());
-            let attrs = element.modifier();
-            if attrs.was_created() {
-                attrs.push(("fill", brush_to_string(&self.brush)));
-                attrs.push(opacity_attr_modifier("fill-opacity", &self.brush));
+            let mut attrs = element.modifier();
+            if attrs.flags.was_created() {
+                Attributes::push(&mut attrs, ("fill", brush_to_string(&self.brush)));
+                Attributes::push(
+                    &mut attrs,
+                    opacity_attr_modifier("fill-opacity", &self.brush),
+                );
             } else if self.brush != prev.brush {
-                attrs.mutate(|m| *m = ("fill", brush_to_string(&self.brush)).into());
-                attrs.mutate(|m| *m = opacity_attr_modifier("fill-opacity", &self.brush));
+                Attributes::mutate(&mut attrs, |m| {
+                    *m = ("fill", brush_to_string(&self.brush)).into();
+                });
+                Attributes::mutate(&mut attrs, |m| {
+                    *m = opacity_attr_modifier("fill-opacity", &self.brush);
+                });
             } else {
-                attrs.skip(2);
+                Attributes::skip(&mut attrs, 2);
             }
         });
     }
@@ -150,50 +159,66 @@ where
     }
 }
 
-fn push_stroke_modifiers(attrs: &mut Attributes, stroke: &kurbo::Stroke, brush: &Brush) {
+fn push_stroke_modifiers(
+    mut attrs: Modifier<'_, Attributes>,
+    stroke: &kurbo::Stroke,
+    brush: &Brush,
+) {
     let dash_pattern =
         (!stroke.dash_pattern.is_empty()).then(|| join(&mut stroke.dash_pattern.iter(), " "));
-    attrs.push(("stroke-dasharray", dash_pattern));
+    Attributes::push(&mut attrs, ("stroke", brush_to_string(brush)));
+    Attributes::push(&mut attrs, opacity_attr_modifier("stroke-opacity", brush));
+    Attributes::push(&mut attrs, ("stroke-dasharray", dash_pattern));
 
     let dash_offset = (stroke.dash_offset != 0.0).then_some(stroke.dash_offset);
-    attrs.push(("stroke-dashoffset", dash_offset));
-    attrs.push(("stroke-width", stroke.width));
-    attrs.push(opacity_attr_modifier("stroke-opacity", brush));
+    Attributes::push(&mut attrs, ("stroke-dashoffset", dash_offset));
+    Attributes::push(&mut attrs, ("stroke-width", stroke.width));
 }
 
 // This function is not inlined to avoid unnecessary monomorphization, which may result in a bigger binary.
 fn update_stroke_modifiers(
-    attrs: &mut Attributes,
+    mut attrs: Modifier<'_, Attributes>,
     prev_stroke: &kurbo::Stroke,
     next_stroke: &kurbo::Stroke,
     prev_brush: &Brush,
     next_brush: &Brush,
 ) {
-    if attrs.was_created() {
+    if attrs.flags.was_created() {
         push_stroke_modifiers(attrs, next_stroke, next_brush);
     } else {
+        if next_brush != prev_brush {
+            Attributes::mutate(&mut attrs, |m| {
+                *m = ("stroke", brush_to_string(next_brush)).into();
+            });
+            Attributes::mutate(&mut attrs, |m| {
+                *m = opacity_attr_modifier("stroke-opacity", next_brush);
+            });
+        } else {
+            Attributes::skip(&mut attrs, 2);
+        }
         if next_stroke.dash_pattern != prev_stroke.dash_pattern {
             let dash_pattern = (!next_stroke.dash_pattern.is_empty())
                 .then(|| join(&mut next_stroke.dash_pattern.iter(), " "));
-            attrs.mutate(|m| *m = ("stroke-dasharray", dash_pattern).into());
+            Attributes::mutate(&mut attrs, |m| {
+                *m = ("stroke-dasharray", dash_pattern).into();
+            });
         } else {
-            attrs.skip(1);
+            Attributes::skip(&mut attrs, 1);
         }
         if next_stroke.dash_offset != prev_stroke.dash_offset {
             let dash_offset = (next_stroke.dash_offset != 0.0).then_some(next_stroke.dash_offset);
-            attrs.mutate(|m| *m = ("stroke-dashoffset", dash_offset).into());
+            Attributes::mutate(&mut attrs, |m| {
+                *m = ("stroke-dashoffset", dash_offset).into();
+            });
         } else {
-            attrs.skip(1);
+            Attributes::skip(&mut attrs, 1);
         }
         if next_stroke.width != prev_stroke.width {
-            attrs.mutate(|m| *m = ("stroke-width", next_stroke.width).into());
+            Attributes::mutate(&mut attrs, |m| {
+                *m = ("stroke-width", next_stroke.width).into();
+            });
         } else {
-            attrs.skip(1);
-        }
-        if next_brush != prev_brush {
-            attrs.mutate(|m| *m = opacity_attr_modifier("stroke-opacity", next_brush));
-        } else {
-            attrs.skip(1);
+            Attributes::skip(&mut attrs, 1);
         }
     }
 }
@@ -203,15 +228,15 @@ impl<State, Action, V> View<State, Action, ViewCtx, DynMessage> for Stroke<V, St
 where
     State: 'static,
     Action: 'static,
-    V: DomView<State, Action, Element: With<Attributes>>,
-    for<'a> <V::Element as ViewElement>::Mut<'a>: With<Attributes>,
+    V: DomView<State, Action, Element: WithModifier<Attributes>>,
+    for<'a> <V::Element as ViewElement>::Mut<'a>: WithModifier<Attributes>,
 {
     type ViewState = V::ViewState;
     type Element = V::Element;
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let (mut element, state) =
-            ctx.with_size_hint::<Attributes, _>(4, |ctx| self.child.build(ctx));
+            ctx.with_size_hint::<Attributes, _>(5, |ctx| self.child.build(ctx));
         push_stroke_modifiers(element.modifier(), &self.style, &self.brush);
         (element, state)
     }
@@ -223,7 +248,7 @@ where
         ctx: &mut ViewCtx,
         element: Mut<Self::Element>,
     ) {
-        Attributes::rebuild(element, 4, |mut element| {
+        Attributes::rebuild(element, 5, |mut element| {
             self.child
                 .rebuild(&prev.child, view_state, ctx, element.reborrow_mut());
             update_stroke_modifiers(
