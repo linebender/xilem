@@ -833,8 +833,8 @@ pub trait HtmlInputElement<State, Action = ()>:
     /// input(()).multiple(true) // results in <input multiple></input>
     /// # }
     /// ```
-    fn multiple(self, required: bool) -> html_input_element::view::Multiple<Self, State, Action> {
-        html_input_element::view::Multiple::new(self, required)
+    fn multiple(self, multiple: bool) -> html_input_element::view::Multiple<Self, State, Action> {
+        html_input_element::view::Multiple::new(self, multiple)
     }
 }
 

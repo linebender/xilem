@@ -3,6 +3,7 @@
 
 use super::Modifier;
 
+#[derive(Default)]
 /// A specialized optimized boolean overwrite modifier, with support of up to 32 boolean elements, to avoid allocations.
 ///
 /// It is intended for just overwriting a possibly previous set value.
@@ -33,17 +34,6 @@ macro_rules! assert_overflow {
 }
 
 impl OverwriteBool {
-    /// Creates a new [`OverwriteBool`] modifier, which is usually wrapped with a separate type for boolean (DOM) attributes.
-    pub(crate) fn new(size_hint: usize) -> Self {
-        assert_overflow!(size_hint);
-        Self {
-            modifiers: 0,
-            needs_update: false,
-            idx: 0,
-            len: 0,
-        }
-    }
-
     #[inline]
     pub fn rebuild(&mut self, prev_len: u8) {
         self.idx -= prev_len;
@@ -149,13 +139,10 @@ impl OverwriteBool {
 /// A macro to create a boolean overwrite modifier.
 macro_rules! overwrite_bool_modifier {
     ($modifier: ident) => {
+        #[derive(Default)]
         pub struct $modifier($crate::modifiers::OverwriteBool);
 
         impl $modifier {
-            pub(crate) fn new(size_hint: usize) -> Self {
-                $modifier($crate::modifiers::OverwriteBool::new(size_hint))
-            }
-
             fn as_overwrite_bool_modifier(
                 this: $crate::modifiers::Modifier<'_, Self>,
             ) -> $crate::modifiers::Modifier<'_, $crate::modifiers::OverwriteBool> {
@@ -262,7 +249,7 @@ mod tests {
 
     #[test]
     fn overwrite_bool_push() {
-        let mut modifier = OverwriteBool::new(2);
+        let mut modifier = OverwriteBool::default();
         let flags = &mut ElementFlags::new(false);
         let m = &mut Modifier::new(&mut modifier, flags);
         assert!(!m.flags.needs_update());
@@ -284,7 +271,7 @@ mod tests {
 
     #[test]
     fn overwrite_bool_mutate() {
-        let mut modifier = OverwriteBool::new(4);
+        let mut modifier = OverwriteBool::default();
         let flags = &mut ElementFlags::new(false);
         let m = &mut Modifier::new(&mut modifier, flags);
         OverwriteBool::push(m, true);
@@ -327,7 +314,7 @@ mod tests {
 
     #[test]
     fn overwrite_bool_skip() {
-        let mut modifier = OverwriteBool::new(3);
+        let mut modifier = OverwriteBool::default();
         let flags = &mut ElementFlags::new(false);
         let m = &mut Modifier::new(&mut modifier, flags);
         OverwriteBool::push(m, true);
@@ -365,7 +352,7 @@ mod tests {
 
     #[test]
     fn overwrite_bool_update() {
-        let mut modifier = OverwriteBool::new(3);
+        let mut modifier = OverwriteBool::default();
         let flags = &mut ElementFlags::new(false);
         let m = &mut Modifier::new(&mut modifier, flags);
         OverwriteBool::push(m, true);
@@ -407,7 +394,7 @@ mod tests {
         assert!(was_applied);
 
         // test recreation
-        let mut modifier = OverwriteBool::new(3);
+        let mut modifier = OverwriteBool::default();
         let flags = &mut ElementFlags::new(false);
         let modifier = &mut Modifier::new(&mut modifier, flags);
         assert_eq!(modifier.modifier.len, 0);
@@ -435,7 +422,7 @@ mod tests {
         expected = "This should never be called, when the underlying element was (re)created."
     )]
     fn panic_if_use_mutate_on_creation() {
-        let mut modifier = OverwriteBool::new(4);
+        let mut modifier = OverwriteBool::default();
         let flags = &mut ElementFlags::new(false);
         let m = &mut Modifier::new(&mut modifier, flags);
         assert!(m.flags.was_created());
@@ -447,7 +434,7 @@ mod tests {
         expected = "This should never be called, when the underlying element wasn't (re)created."
     )]
     fn panic_if_use_push_on_rebuild() {
-        let mut modifier = OverwriteBool::new(4);
+        let mut modifier = OverwriteBool::default();
         let flags = &mut ElementFlags::new(false);
         let m = &mut Modifier::new(&mut modifier, flags);
         assert!(m.flags.was_created());

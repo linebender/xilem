@@ -57,20 +57,15 @@ impl HtmlInputElement {
 }
 
 impl FromWithContext<Pod<web_sys::Element>> for Pod<web_sys::HtmlInputElement> {
-    fn from_with_ctx(value: Pod<web_sys::Element>, ctx: &mut ViewCtx) -> Self {
-        let checked_size_hint = ctx.take_modifier_size_hint::<Checked>();
-        let default_checked_size_hint = ctx.take_modifier_size_hint::<DefaultChecked>();
-        let disabled_size_hint = ctx.take_modifier_size_hint::<Disabled>();
-        let required_size_hint = ctx.take_modifier_size_hint::<Required>();
-        let multiple_size_hint = ctx.take_modifier_size_hint::<Multiple>();
+    fn from_with_ctx(value: Pod<web_sys::Element>, _ctx: &mut ViewCtx) -> Self {
         Pod {
             node: value.node.unchecked_into(),
             props: HtmlInputElement {
-                checked: Checked::new(checked_size_hint),
-                default_checked: DefaultChecked::new(default_checked_size_hint),
-                disabled: Disabled::new(disabled_size_hint),
-                required: Required::new(required_size_hint),
-                multiple: Multiple::new(multiple_size_hint),
+                checked: Checked::default(),
+                default_checked: DefaultChecked::default(),
+                disabled: Disabled::default(),
+                required: Required::default(),
+                multiple: Multiple::default(),
                 element_props: value.props,
             },
         }
