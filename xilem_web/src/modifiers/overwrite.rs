@@ -197,8 +197,7 @@ macro_rules! overwrite_bool_modifier_view {
 
             fn build(&self, ctx: &mut $crate::ViewCtx) -> (Self::Element, Self::ViewState) {
                 use $crate::modifiers::WithModifier;
-                let (mut el, state) =
-                    ctx.with_size_hint::<super::$modifier, _>(1, |ctx| self.inner.build(ctx));
+                let (mut el, state) = self.inner.build(ctx);
                 let modifier = &mut super::$modifier::as_overwrite_bool_modifier(el.modifier());
                 $crate::modifiers::OverwriteBool::push(modifier, self.value);
                 (el, state)
