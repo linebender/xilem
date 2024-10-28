@@ -3,6 +3,7 @@
 
 use crate::{
     document,
+    events::Events,
     modifiers::{Attributes, Children, Classes, Modifier, Styles, WithModifier},
     AnyPod, Pod, ViewCtx,
 };
@@ -61,6 +62,7 @@ pub struct Element {
     pub(crate) classes: Option<Box<Classes>>,
     pub(crate) styles: Option<Box<Styles>>,
     pub(crate) children: Vec<AnyPod>,
+    pub(crate) events: Events,
 }
 
 impl Element {
@@ -77,6 +79,7 @@ impl Element {
             styles: (style_size_hint > 0).then(|| Styles::new(style_size_hint).into()),
             children,
             flags: ElementFlags::new(in_hydration),
+            events: Events,
         }
     }
 
@@ -171,6 +174,12 @@ impl WithModifier<Classes> for Element {
     fn modifier(&mut self) -> Modifier<'_, Classes> {
         let modifier = self.classes.get_or_insert_with(|| Classes::new(0).into());
         Modifier::new(modifier, &mut self.flags)
+    }
+}
+
+impl WithModifier<Events> for Element {
+    fn modifier(&mut self) -> Modifier<'_, Events> {
+        Modifier::new(&mut self.events, &mut self.flags)
     }
 }
 

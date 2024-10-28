@@ -2,8 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::{
-    core::{MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker},
-    DynMessage, ElementAsRef, OptionalAction, ViewCtx,
+    core::{MessageResult, Mut, View, ViewElement, ViewId, ViewMarker, ViewPathTracker},
+    modifiers::WithModifier,
+    DomView, DynMessage, ElementAsRef, OptionalAction, ViewCtx,
 };
 use std::{borrow::Cow, marker::PhantomData};
 use wasm_bindgen::{prelude::Closure, throw_str, JsCast, UnwrapThrowExt};
@@ -13,12 +14,15 @@ use web_sys::{js_sys, AddEventListenerOptions};
 /// In case the generational-id view path in `View::Message` lead to a wrong view
 const ON_EVENT_VIEW_ID: ViewId = ViewId::new(0x2357_1113);
 
+/// A marker type, to give a hint whether the element can receive events.
+pub struct Events;
+
 /// Wraps a [`View`] `V` and attaches an event listener.
 ///
 /// The event type `Event` should inherit from [`web_sys::Event`]
 #[derive(Clone, Debug)]
 pub struct OnEvent<V, State, Action, Event, Callback> {
-    pub(crate) element: V,
+    pub(crate) view: V,
     pub(crate) event: Cow<'static, str>,
     pub(crate) capture: bool,
     pub(crate) passive: bool,
@@ -32,7 +36,7 @@ where
 {
     pub fn new(element: V, event: impl Into<Cow<'static, str>>, handler: Callback) -> Self {
         OnEvent {
-            element,
+            view: element,
             event: event.into(),
             passive: true,
             capture: false,
@@ -152,7 +156,7 @@ where
 fn rebuild_event_listener<State, Action, V, Event>(
     element_view: &V,
     prev_element_view: &V,
-    element: Mut<V::Element>,
+    mut element: Mut<V::Element>,
     event: &str,
     capture: bool,
     passive: bool,
@@ -163,18 +167,27 @@ fn rebuild_event_listener<State, Action, V, Event>(
 ) where
     State: 'static,
     Action: 'static,
-    V: View<State, Action, ViewCtx, DynMessage>,
-    V::Element: ElementAsRef<web_sys::EventTarget>,
+    V: DomView<State, Action, Element: AsRef<web_sys::EventTarget> + WithModifier<Events>>,
+    for<'a> <V::Element as ViewElement>::Mut<'a>:
+        AsRef<web_sys::EventTarget> + WithModifier<Events>,
     Event: JsCast + 'static + crate::Message,
 {
     ctx.with_id(ON_EVENT_VIEW_ID, |ctx| {
-        if prev_capture != capture || prev_passive != passive {
-            remove_event_listener(element.as_ref(), event, &state.callback, prev_capture);
+        element_view.rebuild(
+            prev_element_view,
+            &mut state.child_state,
+            ctx,
+            element.reborrow_mut(),
+        );
+        let was_created = element.modifier().flags.was_created();
+        if prev_capture != capture || prev_passive != passive || was_created {
+            if !was_created {
+                remove_event_listener(element.as_ref(), event, &state.callback, prev_capture);
+            }
 
             state.callback =
                 create_event_listener::<Event>(element.as_ref(), event, capture, passive, ctx);
         }
-        element_view.rebuild(prev_element_view, &mut state.child_state, ctx, element);
     });
 }
 
@@ -188,8 +201,9 @@ fn teardown_event_listener<State, Action, V>(
 ) where
     State: 'static,
     Action: 'static,
-    V: View<State, Action, ViewCtx, DynMessage>,
-    V::Element: ElementAsRef<web_sys::EventTarget>,
+    V: DomView<State, Action, Element: AsRef<web_sys::EventTarget> + WithModifier<Events>>,
+    for<'a> <V::Element as ViewElement>::Mut<'a>:
+        AsRef<web_sys::EventTarget> + WithModifier<Events>,
 {
     // TODO: is this really needed (as the element will be removed anyway)?
     // remove_event_listener(element.as_ref(), event, &state.callback, capture);
@@ -209,8 +223,9 @@ fn message_event_listener<State, Action, V, Event, OA, Callback>(
 where
     State: 'static,
     Action: 'static,
-    V: View<State, Action, ViewCtx, DynMessage>,
-    V::Element: ElementAsRef<web_sys::EventTarget>,
+    V: DomView<State, Action, Element: AsRef<web_sys::EventTarget> + WithModifier<Events>>,
+    for<'a> <V::Element as ViewElement>::Mut<'a>:
+        AsRef<web_sys::EventTarget> + WithModifier<Events>,
     Event: JsCast + 'static + crate::Message,
     OA: OptionalAction<Action>,
     Callback: Fn(&mut State, Event) -> OA + 'static,
@@ -240,8 +255,9 @@ where
     Action: 'static,
     OA: OptionalAction<Action>,
     Callback: Fn(&mut State, Event) -> OA + 'static,
-    V: View<State, Action, ViewCtx, DynMessage>,
-    V::Element: ElementAsRef<web_sys::EventTarget>,
+    V: DomView<State, Action, Element: AsRef<web_sys::EventTarget> + WithModifier<Events>>,
+    for<'a> <V::Element as ViewElement>::Mut<'a>:
+        AsRef<web_sys::EventTarget> + WithModifier<Events>,
     Event: JsCast + 'static + crate::Message,
 {
     type ViewState = OnEventState<V::ViewState>;
@@ -250,7 +266,7 @@ where
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         build_event_listener::<_, _, _, Event>(
-            &self.element,
+            &self.view,
             &self.event,
             self.capture,
             self.passive,
@@ -263,20 +279,32 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<Self::Element>,
+        mut element: Mut<Self::Element>,
     ) {
         // special case, where event name can change, so we can't reuse the rebuild_event_listener function above
         ctx.with_id(ON_EVENT_VIEW_ID, |ctx| {
+            self.view.rebuild(
+                &prev.view,
+                &mut view_state.child_state,
+                ctx,
+                element.reborrow_mut(),
+            );
+
+            let was_created = element.modifier().flags.was_created();
+
             if prev.capture != self.capture
                 || prev.passive != self.passive
                 || prev.event != self.event
+                || was_created
             {
-                remove_event_listener(
-                    element.as_ref(),
-                    &prev.event,
-                    &view_state.callback,
-                    prev.capture,
-                );
+                if !was_created {
+                    remove_event_listener(
+                        element.as_ref(),
+                        &prev.event,
+                        &view_state.callback,
+                        prev.capture,
+                    );
+                }
 
                 view_state.callback = create_event_listener::<Event>(
                     element.as_ref(),
@@ -286,8 +314,6 @@ where
                     ctx,
                 );
             }
-            self.element
-                .rebuild(&prev.element, &mut view_state.child_state, ctx, element);
         });
     }
 
@@ -298,7 +324,7 @@ where
         element: Mut<Self::Element>,
     ) {
         teardown_event_listener(
-            &self.element,
+            &self.view,
             element,
             &self.event,
             view_state,
@@ -315,7 +341,7 @@ where
         app_state: &mut State,
     ) -> MessageResult<Action, DynMessage> {
         message_event_listener(
-            &self.element,
+            &self.view,
             view_state,
             id_path,
             message,
@@ -379,8 +405,8 @@ macro_rules! event_definitions {
             Action: 'static,
             OA: OptionalAction<Action>,
             Callback: Fn(&mut State, web_sys::$web_sys_ty) -> OA + 'static,
-            V: View<State, Action, ViewCtx, DynMessage>,
-            V::Element: ElementAsRef<web_sys::EventTarget>,
+            V: DomView<State, Action, Element: WithModifier<Events> + AsRef<web_sys::EventTarget>>,
+            for<'a> <V::Element as ViewElement>::Mut<'a>: WithModifier<Events> + AsRef<web_sys::EventTarget>,
         {
             type ViewState = OnEventState<V::ViewState>;
 
