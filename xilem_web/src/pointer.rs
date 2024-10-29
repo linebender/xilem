@@ -12,6 +12,10 @@ use std::marker::PhantomData;
 use wasm_bindgen::{prelude::Closure, throw_str, JsCast, UnwrapThrowExt};
 use web_sys::PointerEvent;
 
+/// Use a distinctive number here, to be able to catch bugs.
+/// In case the generational-id view path in `View::Message` lead to a wrong view
+const POINTER_VIEW_ID: ViewId = ViewId::new(0x1234_5014);
+
 /// A view that allows stateful handling of [`PointerEvent`]s with [`PointerMsg`]
 pub struct Pointer<V, T, A, F> {
     child: V,
@@ -70,6 +74,43 @@ pub fn pointer<T, A, F: Fn(&mut T, PointerMsg), V: Element<T, A>>(
     }
 }
 
+fn build_event_listeners(
+    ctx: &mut ViewCtx,
+    el: &web_sys::Element,
+) -> [Closure<dyn FnMut(PointerEvent)>; 3] {
+    let el_clone = el.clone();
+
+    let thunk = ctx.message_thunk();
+    let down_closure = Closure::new(move |e: PointerEvent| {
+        thunk.push_message(PointerMsg::Down(PointerDetails::from_pointer_event(&e)));
+        el_clone.set_pointer_capture(e.pointer_id()).unwrap();
+        e.prevent_default();
+        e.stop_propagation();
+    });
+    el.add_event_listener_with_callback("pointerdown", down_closure.as_ref().unchecked_ref())
+        .unwrap();
+
+    let thunk = ctx.message_thunk();
+    let move_closure = Closure::new(move |e: PointerEvent| {
+        thunk.push_message(PointerMsg::Move(PointerDetails::from_pointer_event(&e)));
+        e.prevent_default();
+        e.stop_propagation();
+    });
+    el.add_event_listener_with_callback("pointermove", move_closure.as_ref().unchecked_ref())
+        .unwrap();
+
+    let thunk = ctx.message_thunk();
+    let up_closure = Closure::new(move |e: PointerEvent| {
+        thunk.push_message(PointerMsg::Up(PointerDetails::from_pointer_event(&e)));
+        e.prevent_default();
+        e.stop_propagation();
+    });
+    el.add_event_listener_with_callback("pointerup", up_closure.as_ref().unchecked_ref())
+        .unwrap();
+
+    [down_closure, move_closure, up_closure]
+}
+
 impl<V, State, Action, Callback> ViewMarker for Pointer<V, State, Action, Callback> {}
 impl<State, Action, Callback, V> View<State, Action, ViewCtx, DynMessage>
     for Pointer<V, State, Action, Callback>
@@ -77,47 +118,17 @@ where
     State: 'static,
     Action: 'static,
     Callback: Fn(&mut State, PointerMsg) -> Action + 'static,
-    V: DomView<State, Action>,
+    V: DomView<State, Action, DomNode: AsRef<web_sys::Element>>,
 {
     type ViewState = PointerState<V::ViewState>;
     type Element = V::Element;
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        ctx.with_id(ViewId::new(0), |ctx| {
+        ctx.with_id(POINTER_VIEW_ID, |ctx| {
             let (element, child_state) = self.child.build(ctx);
-            let thunk = ctx.message_thunk();
             let el = element.as_ref().unchecked_ref::<web_sys::Element>();
-            let el_clone = el.clone();
-            let down_closure = Closure::new(move |e: PointerEvent| {
-                thunk.push_message(PointerMsg::Down(PointerDetails::from_pointer_event(&e)));
-                el_clone.set_pointer_capture(e.pointer_id()).unwrap();
-                e.prevent_default();
-                e.stop_propagation();
-            });
-            el.add_event_listener_with_callback(
-                "pointerdown",
-                down_closure.as_ref().unchecked_ref(),
-            )
-            .unwrap();
-            let thunk = ctx.message_thunk();
-            let move_closure = Closure::new(move |e: PointerEvent| {
-                thunk.push_message(PointerMsg::Move(PointerDetails::from_pointer_event(&e)));
-                e.prevent_default();
-                e.stop_propagation();
-            });
-            el.add_event_listener_with_callback(
-                "pointermove",
-                move_closure.as_ref().unchecked_ref(),
-            )
-            .unwrap();
-            let thunk = ctx.message_thunk();
-            let up_closure = Closure::new(move |e: PointerEvent| {
-                thunk.push_message(PointerMsg::Up(PointerDetails::from_pointer_event(&e)));
-                e.prevent_default();
-                e.stop_propagation();
-            });
-            el.add_event_listener_with_callback("pointerup", up_closure.as_ref().unchecked_ref())
-                .unwrap();
+
+            let [down_closure, move_closure, up_closure] = build_event_listeners(ctx, el);
             let state = PointerState {
                 down_closure,
                 move_closure,
@@ -131,13 +142,18 @@ where
     fn rebuild(
         &self,
         prev: &Self,
-        view_state: &mut Self::ViewState,
+        state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<Self::Element>,
+        mut el: Mut<Self::Element>,
     ) {
-        ctx.with_id(ViewId::new(0), |ctx| {
+        ctx.with_id(POINTER_VIEW_ID, |ctx| {
             self.child
-                .rebuild(&prev.child, &mut view_state.child_state, ctx, element);
+                .rebuild(&prev.child, &mut state.child_state, ctx, el.reborrow_mut());
+
+            if el.flags.was_created() {
+                [state.down_closure, state.move_closure, state.up_closure] =
+                    build_event_listeners(ctx, el.node.as_ref());
+            }
         });
     }
 
@@ -147,9 +163,11 @@ where
         ctx: &mut ViewCtx,
         element: Mut<Self::Element>,
     ) {
-        // TODO remove event listeners from child or is this not necessary?
-        self.child
-            .teardown(&mut view_state.child_state, ctx, element);
+        ctx.with_id(POINTER_VIEW_ID, |ctx| {
+            // TODO remove event listeners from child or is this not necessary?
+            self.child
+                .teardown(&mut view_state.child_state, ctx, element);
+        });
     }
 
     fn message(

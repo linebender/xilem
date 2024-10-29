@@ -65,9 +65,7 @@ pub use templated::{templated, Templated};
 
 pub use xilem_core as core;
 
-use core::{
-    Adapt, AdaptThunk, AnyView, MapAction, MapState, MessageResult, View, ViewElement, ViewSequence,
-};
+use core::{Adapt, AdaptThunk, AnyView, MapAction, MapState, MessageResult, View, ViewSequence};
 
 /// A trait used for type erasure of [`DomNode`]s
 /// It is e.g. used in [`AnyPod`]
@@ -225,16 +223,6 @@ impl<V, State, Action> DomFragment<State, Action> for V where
 {
 }
 
-/// Syntax sugar for adding a type bound on the `ViewElement` of a view, such that both, [`ViewElement`] and [`ViewElement::Mut`] have the same [`AsRef`] type
-pub trait ElementAsRef<E>: for<'a> ViewElement<Mut<'a>: AsRef<E>> + AsRef<E> {}
-
-impl<E, T> ElementAsRef<E> for T
-where
-    T: ViewElement + AsRef<E>,
-    for<'a> T::Mut<'a>: AsRef<E>,
-{
-}
-
 impl DomNode for Box<dyn AnyNode> {
     type Props = Box<dyn Any>;
 
@@ -254,29 +242,21 @@ impl DomNode for web_sys::Element {
     type Props = props::Element;
 
     fn apply_props(&self, props: &mut props::Element, flags: &mut PodFlags) {
-        if flags.needs_update() {
-            props.update_element(self, flags);
-        }
-        flags.clear();
+        props.update_element(self, flags);
     }
 }
 
 impl DomNode for web_sys::Text {
     type Props = ();
 
-    fn apply_props(&self, (): &mut (), flags: &mut PodFlags) {
-        flags.clear();
-    }
+    fn apply_props(&self, (): &mut (), _flags: &mut PodFlags) {}
 }
 
 impl DomNode for web_sys::HtmlInputElement {
     type Props = props::HtmlInputElement;
 
     fn apply_props(&self, props: &mut props::HtmlInputElement, flags: &mut PodFlags) {
-        if flags.needs_update() {
-            props.update_element(self, flags);
-        }
-        flags.clear();
+        props.update_element(self, flags);
     }
 }
 
@@ -297,10 +277,7 @@ macro_rules! impl_dom_node_for_elements {
             type Props = props::Element;
 
             fn apply_props(&self, props: &mut props::Element, flags: &mut PodFlags) {
-                if flags.needs_update() {
-                    props.update_element(self, flags);
-                }
-                flags.clear();
+                props.update_element(self, flags);
             }
         }
 

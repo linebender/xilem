@@ -1,3 +1,6 @@
+// Copyright 2024 the Xilem Authors
+// SPDX-License-Identifier: Apache-2.0
+
 use std::ops::DerefMut as _;
 
 use crate::core::{AnyElement, SuperElement, ViewElement};
@@ -21,13 +24,22 @@ impl<N: DomNode> Pod<N> {
         Pod { node, props, flags }
     }
 
+    /// Erases the type of this [`Pod`] and applies props if necessary.
     pub fn into_any_pod(mut pod: Pod<N>) -> AnyPod {
-        pod.node.apply_props(&mut pod.props, &mut pod.flags);
+        pod.apply_changes();
         Pod {
             node: Box::new(pod.node),
             props: Box::new(pod.props),
             flags: pod.flags,
         }
+    }
+
+    /// Applies props and cleans flags.
+    pub(crate) fn apply_changes(&mut self) {
+        if self.flags.needs_update() {
+            self.node.apply_props(&mut self.props, &mut self.flags);
+        }
+        self.flags.clear();
     }
 }
 
@@ -68,7 +80,7 @@ impl<N: DomNode> SuperElement<Pod<N>, ViewCtx> for AnyPod {
 
 impl<N: DomNode> AnyElement<Pod<N>, ViewCtx> for AnyPod {
     fn replace_inner(this: Self::Mut<'_>, mut child: Pod<N>) -> Self::Mut<'_> {
-        child.node.apply_props(&mut child.props, &mut child.flags);
+        child.apply_changes();
         if let Some(parent) = this.parent {
             parent
                 .replace_child(child.node.as_ref(), this.node.as_ref())
@@ -122,6 +134,13 @@ impl<'a, N: DomNode> PodMut<'a, N> {
             is_reborrow: true,
         }
     }
+
+    pub(crate) fn apply_changes(&mut self) {
+        if self.flags.needs_update() {
+            self.node.apply_props(self.props, self.flags);
+        }
+        self.flags.clear();
+    }
 }
 
 impl PodMut<'_, Box<dyn AnyNode>> {
@@ -139,7 +158,7 @@ impl PodMut<'_, Box<dyn AnyNode>> {
 impl<N: DomNode> Drop for PodMut<'_, N> {
     fn drop(&mut self) {
         if !self.is_reborrow && !self.was_removed {
-            self.node.apply_props(self.props, self.flags);
+            self.apply_changes();
         }
     }
 }

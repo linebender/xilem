@@ -3,7 +3,7 @@
 
 use crate::{
     core::{MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker},
-    DomView, DynMessage, ElementAsRef, OptionalAction, ViewCtx,
+    DomView, DynMessage, OptionalAction, ViewCtx,
 };
 use std::{borrow::Cow, marker::PhantomData};
 use wasm_bindgen::{prelude::Closure, throw_str, JsCast, UnwrapThrowExt};
@@ -13,15 +13,12 @@ use web_sys::{js_sys, AddEventListenerOptions};
 /// In case the generational-id view path in `View::Message` lead to a wrong view
 const ON_EVENT_VIEW_ID: ViewId = ViewId::new(0x2357_1113);
 
-/// A marker type, to give a hint whether the element can receive events.
-pub struct Events;
-
 /// Wraps a [`View`] `V` and attaches an event listener.
 ///
 /// The event type `Event` should inherit from [`web_sys::Event`]
 #[derive(Clone, Debug)]
 pub struct OnEvent<V, State, Action, Event, Callback> {
-    pub(crate) view: V,
+    pub(crate) dom_view: V,
     pub(crate) event: Cow<'static, str>,
     pub(crate) capture: bool,
     pub(crate) passive: bool,
@@ -33,9 +30,9 @@ impl<V, State, Action, Event, Callback> OnEvent<V, State, Action, Event, Callbac
 where
     Event: JsCast + 'static,
 {
-    pub fn new(element: V, event: impl Into<Cow<'static, str>>, handler: Callback) -> Self {
+    pub fn new(dom_view: V, event: impl Into<Cow<'static, str>>, handler: Callback) -> Self {
         OnEvent {
-            view: element,
+            dom_view,
             event: event.into(),
             passive: true,
             capture: false,
@@ -256,7 +253,7 @@ where
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         build_event_listener::<_, _, _, Event>(
-            &self.view,
+            &self.dom_view,
             &self.event,
             self.capture,
             self.passive,
@@ -273,8 +270,8 @@ where
     ) {
         // special case, where event name can change, so we can't reuse the rebuild_event_listener function above
         ctx.with_id(ON_EVENT_VIEW_ID, |ctx| {
-            self.view.rebuild(
-                &prev.view,
+            self.dom_view.rebuild(
+                &prev.dom_view,
                 &mut view_state.child_state,
                 ctx,
                 element.reborrow_mut(),
@@ -314,7 +311,7 @@ where
         element: Mut<Self::Element>,
     ) {
         teardown_event_listener(
-            &self.view,
+            &self.dom_view,
             element,
             &self.event,
             view_state,
@@ -331,7 +328,7 @@ where
         app_state: &mut State,
     ) -> MessageResult<Action, DynMessage> {
         message_event_listener(
-            &self.view,
+            &self.dom_view,
             view_state,
             id_path,
             message,
@@ -345,7 +342,7 @@ macro_rules! event_definitions {
     ($(($ty_name:ident, $event_name:literal, $web_sys_ty:ident)),*) => {
         $(
         pub struct $ty_name<V, State, Action, Callback> {
-            pub(crate) element: V,
+            pub(crate) dom_view: V,
             pub(crate) capture: bool,
             pub(crate) passive: bool,
             pub(crate) handler: Callback,
@@ -354,9 +351,9 @@ macro_rules! event_definitions {
 
         impl<V, State, Action, Callback> ViewMarker for $ty_name<V, State, Action, Callback> {}
         impl<V, State, Action, Callback> $ty_name<V, State, Action, Callback> {
-            pub fn new(element: V, handler: Callback) -> Self {
+            pub fn new(dom_view: V, handler: Callback) -> Self {
                 Self {
-                    element,
+                    dom_view,
                     passive: true,
                     capture: false,
                     handler,
@@ -403,7 +400,7 @@ macro_rules! event_definitions {
 
             fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
                 build_event_listener::<_, _, _, web_sys::$web_sys_ty>(
-                    &self.element,
+                    &self.dom_view,
                     $event_name,
                     self.capture,
                     self.passive,
@@ -419,8 +416,8 @@ macro_rules! event_definitions {
                 element: Mut<Self::Element>,
             ) {
                 rebuild_event_listener::<_, _, _, web_sys::$web_sys_ty>(
-                    &self.element,
-                    &prev.element,
+                    &self.dom_view,
+                    &prev.dom_view,
                     element,
                     $event_name,
                     self.capture,
@@ -438,7 +435,7 @@ macro_rules! event_definitions {
                 ctx: &mut ViewCtx,
                 element: Mut<Self::Element>,
             ) {
-                teardown_event_listener(&self.element, element, $event_name, view_state, self.capture, ctx);
+                teardown_event_listener(&self.dom_view, element, $event_name, view_state, self.capture, ctx);
             }
 
             fn message(
@@ -448,7 +445,7 @@ macro_rules! event_definitions {
                 message: crate::DynMessage,
                 app_state: &mut State,
             ) -> MessageResult<Action, DynMessage> {
-                message_event_listener(&self.element, view_state, id_path, message, app_state, &self.handler)
+                message_event_listener(&self.dom_view, view_state, id_path, message, app_state, &self.handler)
             }
         }
         )*
@@ -532,7 +529,7 @@ event_definitions!(
 );
 
 pub struct OnResize<V, State, Action, Callback> {
-    pub(crate) element: V,
+    pub(crate) dom_view: V,
     pub(crate) handler: Callback,
     pub(crate) phantom_event_ty: PhantomData<fn() -> (State, Action)>,
 }
@@ -553,8 +550,7 @@ where
     Action: 'static,
     OA: OptionalAction<Action>,
     Callback: Fn(&mut State, web_sys::ResizeObserverEntry) -> OA + 'static,
-    V: View<State, Action, ViewCtx, DynMessage>,
-    V::Element: ElementAsRef<web_sys::Element>,
+    V: DomView<State, Action, DomNode: AsRef<web_sys::Element>>,
 {
     type Element = V::Element;
 
@@ -570,7 +566,7 @@ where
 
             let observer =
                 web_sys::ResizeObserver::new(callback.as_ref().unchecked_ref()).unwrap_throw();
-            let (element, child_state) = self.element.build(ctx);
+            let (element, child_state) = self.dom_view.build(ctx);
             observer.observe(element.as_ref());
 
             let state = OnResizeState {
@@ -588,11 +584,19 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<Self::Element>,
+        mut element: Mut<Self::Element>,
     ) {
         ctx.with_id(ON_EVENT_VIEW_ID, |ctx| {
-            self.element
-                .rebuild(&prev.element, &mut view_state.child_state, ctx, element);
+            self.dom_view.rebuild(
+                &prev.dom_view,
+                &mut view_state.child_state,
+                ctx,
+                element.reborrow_mut(),
+            );
+            if element.flags.was_created() {
+                view_state.observer.disconnect();
+                view_state.observer.observe(element.as_ref());
+            }
         });
     }
 
@@ -603,8 +607,8 @@ where
         element: Mut<Self::Element>,
     ) {
         ctx.with_id(ON_EVENT_VIEW_ID, |ctx| {
-            view_state.observer.unobserve(element.as_ref());
-            self.element
+            view_state.observer.disconnect();
+            self.dom_view
                 .teardown(&mut view_state.child_state, ctx, element);
         });
     }
@@ -631,7 +635,7 @@ where
                 None => MessageResult::Nop,
             }
         } else {
-            self.element
+            self.dom_view
                 .message(&mut view_state.child_state, remainder, message, app_state)
         }
     }

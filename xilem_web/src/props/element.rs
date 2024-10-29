@@ -3,7 +3,6 @@
 
 use crate::{
     document,
-    events::Events,
     modifiers::{Attributes, Children, Classes, Modifier, Styles},
     AnyPod, Pod, PodFlags, ViewCtx,
 };
@@ -18,7 +17,6 @@ pub struct Element {
     pub(crate) classes: Option<Box<Classes>>,
     pub(crate) styles: Option<Box<Styles>>,
     pub(crate) children: Vec<AnyPod>,
-    pub(crate) events: Events,
 }
 
 impl Element {
@@ -33,7 +31,6 @@ impl Element {
             classes: (class_size_hint > 0).then(|| Classes::new(class_size_hint).into()),
             styles: (style_size_hint > 0).then(|| Styles::new(style_size_hint).into()),
             children,
-            events: Events,
         }
     }
 
@@ -112,12 +109,6 @@ impl AsMut<Classes> for Element {
 impl AsMut<Styles> for Element {
     fn as_mut(&mut self) -> &mut Styles {
         self.styles.get_or_insert_with(|| Styles::new(0).into())
-    }
-}
-
-impl AsMut<Events> for Element {
-    fn as_mut(&mut self) -> &mut Events {
-        &mut self.events
     }
 }
 
