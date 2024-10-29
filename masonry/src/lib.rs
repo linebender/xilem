@@ -156,6 +156,7 @@ pub use event::{
     AccessEvent, PointerButton, PointerEvent, PointerState, TextEvent, Update, WindowEvent,
     WindowTheme,
 };
+pub use paint_scene_helpers::UnitPoint;
 pub use render_root::{RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy};
 pub use util::{AsAny, Handled};
 pub use widget::widget::{AllowRawMut, Widget, WidgetId};
