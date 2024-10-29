@@ -156,7 +156,7 @@ pub use event::{
     AccessEvent, PointerButton, PointerEvent, PointerState, TextEvent, Update, WindowEvent,
     WindowTheme,
 };
-pub use render_root::{RenderRoot, RenderRootOptions, RenderRootSignal};
+pub use render_root::{RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy};
 pub use util::{AsAny, Handled};
 pub use widget::widget::{AllowRawMut, Widget, WidgetId};
 pub use widget::WidgetPod;
