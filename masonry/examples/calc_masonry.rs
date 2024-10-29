@@ -145,7 +145,7 @@ impl Widget for CalcButton {
             PointerEvent::PointerDown(_, _) => {
                 if !ctx.is_disabled() {
                     let color = self.active_color;
-                    // See on_status_change for why we use `mutate_later` here.
+                    // See `update` for why we use `mutate_later` here.
                     ctx.mutate_later(&mut self.inner, move |mut inner| {
                         SizedBox::set_background(&mut inner, color);
                     });
@@ -156,7 +156,7 @@ impl Widget for CalcButton {
             PointerEvent::PointerUp(_, _) => {
                 if ctx.has_pointer_capture() && !ctx.is_disabled() {
                     let color = self.base_color;
-                    // See on_status_change for why we use `mutate_later` here.
+                    // See `update` for why we use `mutate_later` here.
                     ctx.mutate_later(&mut self.inner, move |mut inner| {
                         SizedBox::set_background(&mut inner, color);
                     });
