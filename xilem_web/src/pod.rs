@@ -107,7 +107,7 @@ pub struct PodMut<'a, N: DomNode> {
 }
 
 impl<'a, N: DomNode> PodMut<'a, N> {
-    pub const fn new(
+    pub fn new(
         node: &'a mut N,
         props: &'a mut N::Props,
         flags: &'a mut PodFlags,
