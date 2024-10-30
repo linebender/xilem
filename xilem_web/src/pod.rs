@@ -20,7 +20,7 @@ pub struct Pod<N: DomNode> {
 pub type AnyPod = Pod<Box<dyn AnyNode>>;
 
 impl<N: DomNode> Pod<N> {
-    pub fn new(node: N, props: N::Props, flags: PodFlags) -> Self {
+    pub const fn new(node: N, props: N::Props, flags: PodFlags) -> Self {
         Pod { node, props, flags }
     }
 
@@ -107,7 +107,7 @@ pub struct PodMut<'a, N: DomNode> {
 }
 
 impl<'a, N: DomNode> PodMut<'a, N> {
-    pub fn new(
+    pub const fn new(
         node: &'a mut N,
         props: &'a mut N::Props,
         flags: &'a mut PodFlags,
@@ -157,9 +157,10 @@ impl PodMut<'_, Box<dyn AnyNode>> {
 
 impl<N: DomNode> Drop for PodMut<'_, N> {
     fn drop(&mut self) {
-        if !self.is_reborrow && !self.was_removed {
-            self.apply_changes();
+        if self.is_reborrow || self.was_removed {
+            return;
         }
+        self.apply_changes();
     }
 }
 
