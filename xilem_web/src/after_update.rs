@@ -121,7 +121,7 @@ where
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let (mut el, view_state) = self.element.build(ctx);
-        el.node.apply_props(&mut el.props);
+        el.node.apply_props(&mut el.props, &mut el.flags);
         (self.callback)(&el.node);
         (el, view_state)
     }
@@ -183,7 +183,7 @@ where
     ) {
         self.element
             .rebuild(&prev.element, view_state, ctx, element.reborrow_mut());
-        element.node.apply_props(element.props);
+        element.node.apply_props(element.props, element.flags);
         (self.callback)(element.node);
     }
 

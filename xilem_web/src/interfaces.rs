@@ -313,7 +313,7 @@ pub trait Element<State, Action = ()>:
         Self::Element: AsRef<web_sys::Element>,
     {
         events::OnResize {
-            element: self,
+            dom_view: self,
             handler,
             phantom_event_ty: std::marker::PhantomData,
         }
