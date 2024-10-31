@@ -173,14 +173,15 @@ fn rebuild_event_listener<State, Action, V, Event>(
             element.reborrow_mut(),
         );
         let was_created = element.flags.was_created();
-        if prev_capture != capture || prev_passive != passive || was_created {
-            if !was_created {
-                remove_event_listener(element.as_ref(), event, &state.callback, prev_capture);
-            }
-
-            state.callback =
-                create_event_listener::<Event>(element.as_ref(), event, capture, passive, ctx);
+        let needs_update = prev_capture != capture || prev_passive != passive || was_created;
+        if !needs_update {
+            return;
         }
+        if !was_created {
+            remove_event_listener(element.as_ref(), event, &state.callback, prev_capture);
+        }
+        state.callback =
+            create_event_listener::<Event>(element.as_ref(), event, capture, passive, ctx);
     });
 }
 
@@ -278,29 +279,29 @@ where
             );
 
             let was_created = element.flags.was_created();
-
-            if prev.capture != self.capture
+            let needs_update = prev.capture != self.capture
                 || prev.passive != self.passive
                 || prev.event != self.event
-                || was_created
-            {
-                if !was_created {
-                    remove_event_listener(
-                        element.as_ref(),
-                        &prev.event,
-                        &view_state.callback,
-                        prev.capture,
-                    );
-                }
-
-                view_state.callback = create_event_listener::<Event>(
+                || was_created;
+            if !needs_update {
+                return;
+            }
+            if !was_created {
+                remove_event_listener(
                     element.as_ref(),
-                    &self.event,
-                    self.capture,
-                    self.passive,
-                    ctx,
+                    &prev.event,
+                    &view_state.callback,
+                    prev.capture,
                 );
             }
+
+            view_state.callback = create_event_listener::<Event>(
+                element.as_ref(),
+                &self.event,
+                self.capture,
+                self.passive,
+                ctx,
+            );
         });
     }
 
