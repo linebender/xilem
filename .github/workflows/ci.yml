@@ -51,13 +51,17 @@ env:
 #
 # The MSRV jobs run only cargo check because different clippy versions can disagree on goals and
 # running tests introduces dev dependencies which may require a higher MSRV than the bare package.
+#
+# We don't save caches in the merge-group cases, because those caches will never be re-used (apart
+# from the very rare cases where there are multiple PRs in the merge queue).
+# This is because GitHub doesn't share caches between merge queues and the main branch.
 
 name: CI
 
 on:
   pull_request:
   merge_group:
-  # We run on push, even though the commit is the same as when we ran in merge_group. 
+  # We run on push, even though the commit is the same as when we ran in merge_group.
   # This allows the cache to be primed.
   # See https://github.com/orgs/community/discussions/66430
   push:
@@ -127,10 +131,10 @@ jobs:
         run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev
 
       - name: cargo clippy
-        run: cargo hack clippy --workspace --locked --each-feature --optional-deps -- -D warnings
+        run: cargo hack clippy --workspace --locked --optional-deps --each-feature -- -D warnings
 
       - name: cargo clippy (auxiliary)
-        run: cargo hack clippy --workspace --locked --each-feature --optional-deps --tests --benches --examples -- -D warnings
+        run: cargo hack clippy --workspace --locked --optional-deps --each-feature --tests --benches --examples -- -D warnings
 
       # Verify that we can build in release mode
       # TODO: Find a way for this to share artifacts with the above job?
@@ -161,10 +165,10 @@ jobs:
           tool: cargo-hack
 
       - name: cargo clippy
-        run: cargo hack clippy --workspace ${{ env.NO_WASM_PKGS }} --locked --target wasm32-unknown-unknown --each-feature --optional-deps -- -D warnings
+        run: cargo hack clippy --workspace ${{ env.NO_WASM_PKGS }} --locked --target wasm32-unknown-unknown --optional-deps --each-feature -- -D warnings
 
       - name: cargo clippy (auxiliary)
-        run: cargo hack clippy --workspace ${{ env.NO_WASM_PKGS }} --locked --target wasm32-unknown-unknown --each-feature --optional-deps --tests --benches --examples -- -D warnings
+        run: cargo hack clippy --workspace ${{ env.NO_WASM_PKGS }} --locked --target wasm32-unknown-unknown --optional-deps --each-feature --tests --benches --examples -- -D warnings
 
       # Verify that we can build in release mode
       # TODO: Find a way for this to share artifacts with the above job?
@@ -265,11 +269,12 @@ jobs:
       - name: cargo test doc
         run: cargo test --doc --workspace --locked --all-features
       
-      - uses: actions/upload-artifact@v4
+      - name: Upload test results due to failure
+        uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: masonry-snapshot-tests-${{ matrix.os }}
-          path: masonry/src/widget/screenshots/
+          path: masonry/src/widget/screenshots
 
   test-stable-wasm:
     name: cargo test (wasm32)
@@ -347,7 +352,7 @@ jobs:
         run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev
 
       - name: cargo check
-        run: cargo hack check ${{ env.RUST_MIN_VER_PKGS }} --locked --each-feature --optional-deps
+        run: cargo hack check ${{ env.RUST_MIN_VER_PKGS }} --locked --optional-deps --each-feature
 
   check-msrv-wasm:
     name: cargo check (msrv) (wasm32)
@@ -372,7 +377,7 @@ jobs:
           tool: cargo-hack
 
       - name: cargo check
-        run: cargo hack check ${{ env.RUST_MIN_VER_WASM_PKGS }} --locked --target wasm32-unknown-unknown --each-feature --optional-deps
+        run: cargo hack check ${{ env.RUST_MIN_VER_WASM_PKGS }} --locked --target wasm32-unknown-unknown --optional-deps --each-feature
 
   doc:
     name: cargo doc
