@@ -409,7 +409,7 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, {
 
 // --- MARK: WIDGET_MUT ---
 // Methods to get a child WidgetMut from a parent.
-impl<'a> MutateCtx<'a> {
+impl MutateCtx<'_> {
     /// Return a [`WidgetMut`] to a child widget.
     pub fn get_mut<'c, Child: Widget>(
         &'c mut self,
@@ -1303,7 +1303,7 @@ impl<Ctx: IsContext, W> RawWrapperMut<'_, Ctx, W> {
     }
 }
 
-impl<'a, Ctx: IsContext, W> Drop for RawWrapperMut<'a, Ctx, W> {
+impl<Ctx: IsContext, W> Drop for RawWrapperMut<'_, Ctx, W> {
     fn drop(&mut self) {
         self.parent_widget_state
             .merge_up(self.ctx.get_widget_state());

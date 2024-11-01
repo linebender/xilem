@@ -269,7 +269,7 @@ pub(super) fn assert_action(result: MessageResult<Action>, id: u32) {
     assert_eq!(inner.id, id);
 }
 
-impl<'a> ElementSplice<TestElement> for SeqTracker<'a> {
+impl ElementSplice<TestElement> for SeqTracker<'_> {
     fn with_scratch<R>(&mut self, f: impl FnOnce(&mut AppendVec<TestElement>) -> R) -> R {
         let ret = f(self.scratch);
         for element in self.scratch.drain() {
