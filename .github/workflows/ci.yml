@@ -11,25 +11,18 @@ env:
   RUST_MIN_VER: "1.79"
   # List of packages that will be checked with the minimum supported Rust version.
   # This should be limited to packages that are intended for publishing.
-  # If updating, synchronise RUST_MIN_VER_WASM_PKGS
   RUST_MIN_VER_PKGS: "-p xilem -p xilem_core -p masonry"
-
   # List of packages that can not target Wasm.
-  # If updating, synchronise RUST_MIN_VER_WASM_PKGS
   NO_WASM_PKGS: "--exclude masonry --exclude xilem"
-  # RUST_MIN_VER_PKGS + NO_WASM_PKGS, evaluated.
-  # This is required because `cargo hack` does not support -p {x} --exclude {x}
-  RUST_MIN_VER_WASM_PKGS: "-p xilem_core"
-
   # Only some of our examples support Android (primarily due to extra required boilerplate).
-  ANDROID_TARGETS: -p xilem --example mason_android --example calc_android --example stopwatch_android --example variable_clock_android --example http_cats_android --example to_do_mvc_android
-
+  ANDROID_TARGETS: "-p xilem --example mason_android --example calc_android --example stopwatch_android --example variable_clock_android --example http_cats_android --example to_do_mvc_android"
   # We do not run the masonry snapshot tests, because those currently require a specific font stack
   # See https://github.com/linebender/xilem/pull/233
   SKIP_RENDER_SNAPSHOTS: 1
   # We do not run the masonry render tests, because those require Vello rendering to be working
   # See also https://github.com/linebender/vello/pull/610
   SKIP_RENDER_TESTS: 1
+
 
 # Rationale
 #
@@ -377,7 +370,7 @@ jobs:
           tool: cargo-hack
 
       - name: cargo check
-        run: cargo hack check ${{ env.RUST_MIN_VER_WASM_PKGS }} --locked --target wasm32-unknown-unknown --optional-deps --each-feature
+        run: cargo hack check ${{ env.RUST_MIN_VER_PKGS }} ${{ env.NO_WASM_PKGS }} --locked --target wasm32-unknown-unknown --optional-deps --each-feature
 
   doc:
     name: cargo doc
