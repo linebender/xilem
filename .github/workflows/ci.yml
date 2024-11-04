@@ -103,11 +103,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: restore cache
-        uses: Swatinem/rust-cache@v2
-        with:
-          save-if: ${{ github.event_name != 'merge_group' }}
-
       - name: install stable toolchain
         uses: dtolnay/rust-toolchain@master
         with:
@@ -122,6 +117,11 @@ jobs:
       - name: install native dependencies
         if: matrix.os == 'ubuntu-latest'
         run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev
+
+      - name: restore cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.event_name != 'merge_group' }}
 
       - name: cargo clippy
         run: cargo hack clippy --workspace --locked --optional-deps --each-feature -- -D warnings
@@ -140,11 +140,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: restore cache
-        uses: Swatinem/rust-cache@v2
-        with:
-          save-if: ${{ github.event_name != 'merge_group' }}
-
       - name: install stable toolchain
         uses: dtolnay/rust-toolchain@master
         with:
@@ -156,6 +151,11 @@ jobs:
         uses: taiki-e/install-action@v2
         with:
           tool: cargo-hack
+
+      - name: restore cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.event_name != 'merge_group' }}
 
       - name: cargo clippy
         run: cargo hack clippy --workspace ${{ env.NO_WASM_PKGS }} --locked --target wasm32-unknown-unknown --optional-deps --each-feature -- -D warnings
@@ -210,11 +210,6 @@ jobs:
       - uses: actions/checkout@v4
         # We intentionally do not use lfs: true here, instead using the caching method to save LFS bandwidth.
 
-      - name: restore cache
-        uses: Swatinem/rust-cache@v2
-        with:
-          save-if: ${{ github.event_name != 'merge_group' }}
-
       - name: Restore lfs cache
         id: lfs-cache
         uses: actions/cache/restore@v4
@@ -252,6 +247,11 @@ jobs:
         with:
           tool: cargo-nextest
 
+      - name: restore cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.event_name != 'merge_group' }}
+
       - name: cargo test
         run: cargo nextest run --workspace --locked --all-features
         env:
@@ -275,16 +275,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: restore cache
-        uses: Swatinem/rust-cache@v2
-        with:
-          save-if: ${{ github.event_name != 'merge_group' }}
-
       - name: install stable toolchain
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ env.RUST_STABLE_VER }}
           targets: wasm32-unknown-unknown
+
+      - name: restore cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.event_name != 'merge_group' }}
 
       # TODO: Find a way to make tests work. Until then the tests are merely compiled.
       - name: cargo test compile
@@ -296,16 +296,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: restore cache
-        uses: Swatinem/rust-cache@v2
-        with:
-          save-if: ${{ github.event_name != 'merge_group' }}
-
       - name: install stable toolchain
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ env.RUST_STABLE_VER }}
           targets: aarch64-linux-android
+
+      - name: restore cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.event_name != 'merge_group' }}
 
       - name: install cargo apk
         run: cargo install cargo-apk
@@ -325,11 +325,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: restore cache
-        uses: Swatinem/rust-cache@v2
-        with:
-          save-if: ${{ github.event_name != 'merge_group' }}
-
       - name: install msrv toolchain
         uses: dtolnay/rust-toolchain@master
         with:
@@ -344,6 +339,11 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev
 
+      - name: restore cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.event_name != 'merge_group' }}
+
       - name: cargo check
         run: cargo hack check ${{ env.RUST_MIN_VER_PKGS }} --locked --optional-deps --each-feature
 
@@ -352,11 +352,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: restore cache
-        uses: Swatinem/rust-cache@v2
-        with:
-          save-if: ${{ github.event_name != 'merge_group' }}
 
       - name: install msrv toolchain
         uses: dtolnay/rust-toolchain@master
@@ -369,6 +364,11 @@ jobs:
         with:
           tool: cargo-hack
 
+      - name: restore cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.event_name != 'merge_group' }}
+
       - name: cargo check
         run: cargo hack check ${{ env.RUST_MIN_VER_PKGS }} ${{ env.NO_WASM_PKGS }} --locked --target wasm32-unknown-unknown --optional-deps --each-feature
 
@@ -380,13 +380,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: install nightly toolchain
+        uses: dtolnay/rust-toolchain@nightly
+
       - name: restore cache
         uses: Swatinem/rust-cache@v2
         with:
           save-if: ${{ github.event_name != 'merge_group' }}
-
-      - name: install nightly toolchain
-        uses: dtolnay/rust-toolchain@nightly
 
       # We test documentation using nightly to match docs.rs. This prevents potential breakages
       - name: cargo doc
