@@ -99,6 +99,7 @@
 #![allow(clippy::should_implement_trait)]
 #![allow(clippy::single_match)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
 #![cfg_attr(not(debug_assertions), allow(unused))]
 // False-positive with dev-dependencies only used in examples
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]

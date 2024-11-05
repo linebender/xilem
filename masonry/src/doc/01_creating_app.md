@@ -5,7 +5,7 @@
 
 <div class="rustdoc-hidden">
 
-> [!TIP]
+> 💡 Tip
 >
 > This file is intended to be read in rustdoc.
 > Use `cargo doc --open --package masonry --no-deps`.
@@ -78,10 +78,9 @@ That method gives our app a [`DriverCtx`] context, which we can use to access th
 
 We create a `Driver` struct to store a very simple app's state, and we implement the `AppDriver` trait for it:
 
-```rust,ignore
-use masonry::app_driver::{AppDriver, DriverCtx};
-use masonry::{Action, WidgetId};
-use masonry::widget::{Label};
+```rust
+use masonry::{Action, AppDriver, DriverCtx, WidgetId};
+use masonry::widget::{Flex, Label, Portal, RootWidget, WidgetMut};
 
 struct Driver {
     next_task: String,
@@ -92,9 +91,9 @@ impl AppDriver for Driver {
         match action {
             Action::ButtonPressed(_) => {
                 let mut root: WidgetMut<RootWidget<Portal<Flex>>> = ctx.get_root();
-                let mut portal = root.child_mut();
-                let mut flex = portal.child_mut();
-                flex.add_child(Label::new(self.next_task.clone()));
+                let mut portal = RootWidget::child_mut(&mut root);
+                let mut flex = Portal::child_mut(&mut portal);
+                Flex::add_child(&mut flex, Label::new(self.next_task.clone()));
             }
             Action::TextChanged(new_text) => {
                 self.next_task = new_text.clone();
@@ -121,7 +120,7 @@ When handling `ButtonPressed`:
 A [`WidgetMut`] is a smart reference type which lets us modify the widget tree.
 It's set up to automatically propagate update flags and update internal state when dropped.
 
-We use [`WidgetMut::<Flex>::add_child()`][add_child] to add a new `Label` with the text of our new task to our list.
+We use [`Flex::add_child()`][add_child] to add a new `Label` with the text of our new task to our list.
 
 In our main function, we create a `Driver` and pass it to `event_loop_runner::run`:
 
@@ -260,4 +259,4 @@ Most of this documentation is written to help developers trying to build such a 
 [`DriverCtx`]: crate::DriverCtx
 [`WidgetId`]: crate::WidgetId
 [`WidgetMut`]: crate::widget::WidgetMut
-[add_child]: crate::widget::WidgetMut::add_child
+[add_child]: crate::widget::Flex::add_child

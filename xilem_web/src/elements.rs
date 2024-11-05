@@ -17,7 +17,7 @@ use crate::{
 };
 
 // sealed, because this should only cover `ViewSequences` with the blanket impl below
-/// This is basically a specialized dynamically dispatchable [`ViewSequence`], It's currently not able to change the underlying type unlike [`AnyDomView`](crate::AnyDomView), so it should not be used as `dyn DomViewSequence`.
+/// This is basically a specialized dynamically dispatchable [`ViewSequence`][crate::core::ViewSequence], It's currently not able to change the underlying type unlike [`AnyDomView`](crate::AnyDomView), so it should not be used as `dyn DomViewSequence`.
 /// It's mostly a hack to avoid a completely static view tree, which unfortunately brings rustc (type-checking) down to its knees and results in long compile-times
 pub(crate) trait DomViewSequence<State, Action>: 'static {
     /// Get an [`Any`] reference to `self`.

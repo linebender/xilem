@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #![cfg_attr(not(test), no_std)]
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
 #![forbid(unsafe_code)]
 #![warn(missing_docs, unreachable_pub, unused_crate_dependencies)]
 #![warn(clippy::print_stdout, clippy::print_stderr, clippy::dbg_macro)]

@@ -338,7 +338,7 @@ where
 /// We use a generation arena for vector types, with half of the `ViewId` dedicated
 /// to the index, and the other half used for the generation.
 ///
-// This is managed in [`create_vector_view_id`] and [`view_id_to_index_generation`]
+// This is managed in [`create_generational_view_id`] and [`view_id_to_index_generation`]
 #[doc(hidden)]
 #[allow(unnameable_types)] // reason: Implementation detail, public because of trait visibility rules
 pub struct VecViewState<InnerState> {
@@ -360,7 +360,7 @@ fn create_generational_view_id(index: usize, generation: u32) -> ViewId {
     ViewId::new(id_high | id_low)
 }
 
-/// Undoes [`create_vector_view_id`]
+/// Undoes [`create_generational_view_id`]
 fn view_id_to_index_generation(view_id: ViewId) -> (usize, u32) {
     #![allow(clippy::cast_possible_truncation)]
     let view_id = view_id.routing_id();

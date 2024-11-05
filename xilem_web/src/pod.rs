@@ -193,7 +193,7 @@ impl PodFlags {
         }
     }
 
-    /// This should only be used in tests, other than within the [`Element`] props
+    /// This should only be used in tests, other than within the element props
     pub(crate) fn clear(&mut self) {
         self.0 = 0;
     }

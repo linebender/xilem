@@ -11,9 +11,16 @@ rust-version.workspace = true
 
 publish = false # We'll publish this alongside Xilem 0.2
 
+[package.metadata.docs.rs]
+all-features = true
+# There are no platform specific docs.
+default-target = "x86_64-unknown-linux-gnu"
+targets = []
+# rustdoc-scrape-examples tracking issue https://github.com/rust-lang/rust/issues/88791
+cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
+
 [features]
 kurbo = ["dep:kurbo"]
-
 
 [dependencies]
 tracing.workspace = true
@@ -22,8 +29,8 @@ kurbo = { optional = true, workspace = true }
 [lints]
 workspace = true
 
-[package.metadata.docs.rs]
-default-target = "x86_64-unknown-linux-gnu"
-# xilem_core is entirely platform-agnostic, so only display docs for one platform
-targets = []
-features = ["kurbo"]
+[[example]]
+name = "user_interface"
+# This actually enables scraping for all examples, not just this one.
+# However it is possible to set doc-scrape-examples to false for other specific examples.
+doc-scrape-examples = true
