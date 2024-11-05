@@ -13,8 +13,8 @@ use winit::window::Window;
 use xilem::core::fork;
 use xilem::core::one_of::OneOf3;
 use xilem::view::{
-    button, flex, image, portal, prose, sized_box, spinner, worker, Axis, CrossAxisAlignment,
-    FlexExt, FlexSpacer,
+    button, flex, image, inline_prose, portal, prose, sized_box, spinner, worker, Axis, FlexExt,
+    FlexSpacer,
 };
 use xilem::{Color, EventLoop, EventLoopBuilder, TextAlignment, WidgetView, Xilem};
 
@@ -102,12 +102,10 @@ impl HttpCats {
                     portal(sized_box(info_area).expand_width()).flex(1.),
                 ))
                 .direction(Axis::Horizontal)
-                .cross_axis_alignment(CrossAxisAlignment::Fill)
                 .must_fill_major_axis(true)
                 .flex(1.),
             ))
-            .must_fill_major_axis(true)
-            .cross_axis_alignment(CrossAxisAlignment::Fill),
+            .must_fill_major_axis(true),
             worker(
                 worker_value,
                 |proxy, mut rx| async move {
@@ -164,8 +162,8 @@ impl Status {
         let code = self.code;
         flex((
             // TODO: Reduce allocations here?
-            prose(self.code.to_string()),
-            prose(self.message),
+            inline_prose(self.code.to_string()),
+            inline_prose(self.message),
             FlexSpacer::Flex(1.),
             // TODO: Spinner if image pending?
             // TODO: Tick if image loaded?
@@ -199,7 +197,6 @@ impl Status {
             prose("Copyright ©️ https://http.cat      ").alignment(TextAlignment::End),
         ))
         .main_axis_alignment(xilem::view::MainAxisAlignment::Start)
-        .cross_axis_alignment(CrossAxisAlignment::Fill)
     }
 }
 

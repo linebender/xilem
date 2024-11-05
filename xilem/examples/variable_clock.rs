@@ -13,7 +13,8 @@ use time::{OffsetDateTime, UtcOffset};
 use winit::error::EventLoopError;
 use xilem::core::fork;
 use xilem::view::{
-    button, flex, label, portal, prose, sized_box, task, variable_label, Axis, FlexExt, FlexSpacer,
+    button, flex, inline_prose, label, portal, prose, sized_box, task, variable_label, Axis,
+    FlexExt, FlexSpacer,
 };
 use xilem::{Color, EventLoop, EventLoopBuilder, WidgetView, Xilem};
 
@@ -113,7 +114,7 @@ impl TimeZone {
         let date_time_in_self = data.now_utc.to_offset(self.offset);
         sized_box(flex((
             flex((
-                prose(self.region),
+                inline_prose(self.region),
                 FlexSpacer::Flex(1.),
                 label(format!("UTC{}", self.offset)).brush(
                     if data.local_offset.is_ok_and(|it| it == self.offset) {
