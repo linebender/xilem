@@ -13,11 +13,17 @@ exclude = ["/resources/fonts/roboto_flex/", "/resources/data/http_cats_status/"]
 
 [package.metadata.docs.rs]
 all-features = true
+# There are no platform specific docs.
+default-target = "x86_64-unknown-linux-gnu"
+targets = []
 # rustdoc-scrape-examples tracking issue https://github.com/rust-lang/rust/issues/88791
 cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
 
 [[example]]
 name = "mason"
+# This actually enables scraping for all examples, not just this one.
+# However it is possible to set doc-scrape-examples to false for other specific examples.
+doc-scrape-examples = true
 
 # Also add to ANDROID_TARGETS in .github/ci.yml if adding a new Android example
 [[example]]

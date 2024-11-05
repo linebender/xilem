@@ -8,7 +8,7 @@ use core::marker::PhantomData;
 
 use crate::{DynMessage, Message, NoElement, View, ViewId, ViewPathTracker};
 
-/// A `Context` for a [`View`](crate::View) implementation which supports
+/// A `Context` for a [`View`] implementation which supports
 /// asynchronous message reporting.
 pub trait AsyncCtx<Message = DynMessage>: ViewPathTracker {
     /// Get a [`RawProxy`] for this context.
@@ -29,13 +29,13 @@ pub trait AsyncCtx<Message = DynMessage>: ViewPathTracker {
 ///
 /// ## Lifetimes
 ///
-/// It is valid for a [`RawProxy`] to outlive the [`View`](crate::View) it is associated with.
+/// It is valid for a [`RawProxy`] to outlive the [`View`] it is associated with.
 pub trait RawProxy<Message = DynMessage>: Send + Sync + 'static {
     /// Send a `message` to the view at `path` in this driver.
     ///
     /// Note that it is only valid to send messages to views which expect
     /// them, of the type they expect.
-    /// It is expected for [`View`](crate::View)s to panic otherwise, and the routing
+    /// It is expected for [`View`]s to panic otherwise, and the routing
     /// will prefer to send stable.
     ///
     /// # Errors
@@ -105,7 +105,7 @@ pub enum ProxyError {
     ///
     /// TODO: Should this also support a source message?
     DriverFinished(DynMessage),
-    /// The [`View`](crate::View) the message was being routed to is no longer in the view tree.
+    /// The [`View`] the message was being routed to is no longer in the view tree.
     ///
     /// This likely requires async error handling to happen.
     ViewExpired(DynMessage, Arc<[ViewId]>),

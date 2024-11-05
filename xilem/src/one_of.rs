@@ -1,7 +1,7 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-//! Statically typed alternatives to the type-erased [`AnyView`](`crate::AnyView`).
+//! Statically typed alternatives to the type-erased [`AnyWidgetView`](`crate::any_view::AnyWidgetView`).
 
 use accesskit::{NodeBuilder, Role};
 use masonry::{

@@ -5,7 +5,7 @@
 
 <div class="rustdoc-hidden">
 
-> [!TIP]
+> 💡 Tip
 >
 > This file is intended to be read in rustdoc.
 > Use `cargo doc --open --package masonry --no-deps`.

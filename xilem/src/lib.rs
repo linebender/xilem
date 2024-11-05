@@ -3,6 +3,7 @@
 
 // False-positive with dev-dependencies only used in examples
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
 #![warn(unnameable_types, unreachable_pub)]
 #![warn(clippy::print_stdout, clippy::print_stderr, clippy::dbg_macro)]
 

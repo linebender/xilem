@@ -388,15 +388,17 @@ jobs:
         with:
           save-if: ${{ github.event_name != 'merge_group' }}
 
-      # We test documentation using nightly to match docs.rs. This prevents potential breakages
+      # We test documentation using nightly to match docs.rs.
       - name: cargo doc
         run: cargo doc --workspace --locked --all-features --no-deps --document-private-items -Zunstable-options -Zrustdoc-scrape-examples
+        env:
+          RUSTDOCFLAGS: '--cfg docsrs -D warnings'
 
-  # If this fails, consider changing your text or adding something to .typos.toml
+  # If this fails, consider changing your text or adding something to .typos.toml.
   typos:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
       - name: check typos
-        uses: crate-ci/typos@v1.26.0
+        uses: crate-ci/typos@v1.27.0
