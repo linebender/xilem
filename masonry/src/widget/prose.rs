@@ -11,7 +11,7 @@ use vello::peniko::BlendMode;
 use vello::Scene;
 
 use crate::text::{ArcStr, TextBrush, TextWithSelection};
-use crate::widget::label::LABEL_X_PADDING;
+use crate::widget::label::PROSE_X_PADDING;
 use crate::widget::{LineBreaking, WidgetMut};
 use crate::{
     AccessCtx, AccessEvent, BoxConstraints, CursorIcon, EventCtx, LayoutCtx, PaintCtx,
@@ -136,7 +136,7 @@ impl Prose {
 impl Widget for Prose {
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
         let window_origin = ctx.widget_state.window_origin();
-        let inner_origin = Point::new(window_origin.x + LABEL_X_PADDING, window_origin.y);
+        let inner_origin = Point::new(window_origin.x + PROSE_X_PADDING, window_origin.y);
         match event {
             PointerEvent::PointerDown(button, state) => {
                 if !ctx.is_disabled() {
@@ -223,7 +223,7 @@ impl Widget for Prose {
             None
         } else if bc.max().width.is_finite() {
             // TODO: Does Prose have different needs here?
-            Some(bc.max().width as f32 - 2. * LABEL_X_PADDING as f32)
+            Some(bc.max().width as f32 - 2. * PROSE_X_PADDING as f32)
         } else if bc.min().width.is_sign_negative() {
             Some(0.0)
         } else {
@@ -234,11 +234,11 @@ impl Widget for Prose {
             let (font_ctx, layout_ctx) = ctx.text_contexts();
             self.text_layout.rebuild(font_ctx, layout_ctx);
         }
-        // We ignore trailing whitespace for a label
-        let text_size = self.text_layout.size();
+        // We include trailing whitespace for prose, as it can be selected.
+        let text_size = self.text_layout.full_size();
         let label_size = Size {
             height: text_size.height,
-            width: text_size.width + 2. * LABEL_X_PADDING,
+            width: text_size.width + 2. * PROSE_X_PADDING,
         };
         bc.constrain(label_size)
     }
@@ -255,7 +255,7 @@ impl Widget for Prose {
             scene.push_layer(BlendMode::default(), 1., Affine::IDENTITY, &clip_rect);
         }
         self.text_layout
-            .draw(scene, Point::new(LABEL_X_PADDING, 0.0));
+            .draw(scene, Point::new(PROSE_X_PADDING, 0.0));
 
         if self.line_break_mode == LineBreaking::Clip {
             scene.pop_layer();
@@ -307,7 +307,7 @@ mod tests {
     fn prose_alignment_flex() {
         fn base_label() -> Prose {
             // Trailing whitespace is displayed when laying out prose.
-            Prose::new("Hello    ")
+            Prose::new("Hello  ")
                 .with_text_size(10.0)
                 .with_line_break_mode(LineBreaking::WordWrap)
         }
