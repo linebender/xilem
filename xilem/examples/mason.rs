@@ -61,9 +61,7 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> {
     fork(
         flex((
             flex((
-                label("Label")
-                    .brush(Color::REBECCA_PURPLE)
-                    .alignment(TextAlignment::Start),
+                label("Label").brush(Color::REBECCA_PURPLE),
                 label("Bold Label").weight(TextWeight::BOLD),
                 // TODO masonry doesn't allow setting disabled manually anymore?
                 // label("Disabled label").disabled(),

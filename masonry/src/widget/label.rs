@@ -20,8 +20,9 @@ use crate::{
     RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
 };
 
-// added padding between the edges of the widget and the text.
-pub(super) const LABEL_X_PADDING: f64 = 2.0;
+/// Added padding between each horizontal edge of the widget
+/// and the text in logical pixels.
+const LABEL_X_PADDING: f64 = 2.0;
 
 /// Options for handling lines that are too wide for the label.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -202,7 +203,9 @@ impl Widget for Label {
                 .rebuild(font_ctx, layout_ctx, &self.text, self.text_changed);
             self.text_changed = false;
         }
-        // We ignore trailing whitespace for a label
+        // We would like to ignore trailing whitespace for a label.
+        // However, Parley doesn't make that an option when using `max_advance`.
+        // If we aren't wrapping words, we can safely ignore this, however.
         let text_size = self.text_layout.size();
         let label_size = Size {
             height: text_size.height,
@@ -265,7 +268,7 @@ mod tests {
     use crate::assert_render_snapshot;
     use crate::testing::TestHarness;
     use crate::theme::{PRIMARY_DARK, PRIMARY_LIGHT};
-    use crate::widget::{Flex, SizedBox};
+    use crate::widget::{CrossAxisAlignment, Flex, SizedBox};
 
     #[test]
     fn simple_label() {
@@ -289,6 +292,35 @@ mod tests {
         let mut harness = TestHarness::create_with_size(label, Size::new(200.0, 200.0));
 
         assert_render_snapshot!(harness, "styled_label");
+    }
+
+    #[test]
+    /// A wrapping label's alignment should be respected, regardkess of
+    /// its parent's alignment.
+    fn label_alignment_flex() {
+        fn base_label() -> Label {
+            Label::new("Hello")
+                .with_text_size(10.0)
+                .with_line_break_mode(LineBreaking::WordWrap)
+        }
+        let label1 = base_label().with_text_alignment(Alignment::Start);
+        let label2 = base_label().with_text_alignment(Alignment::Middle);
+        let label3 = base_label().with_text_alignment(Alignment::End);
+        let label4 = base_label().with_text_alignment(Alignment::Start);
+        let label5 = base_label().with_text_alignment(Alignment::Middle);
+        let label6 = base_label().with_text_alignment(Alignment::End);
+        let flex = Flex::column()
+            .with_flex_child(label1, CrossAxisAlignment::Start)
+            .with_flex_child(label2, CrossAxisAlignment::Start)
+            .with_flex_child(label3, CrossAxisAlignment::Start)
+            .with_flex_child(label4, CrossAxisAlignment::Center)
+            .with_flex_child(label5, CrossAxisAlignment::Center)
+            .with_flex_child(label6, CrossAxisAlignment::Center)
+            .gap(0.0);
+
+        let mut harness = TestHarness::create_with_size(flex, Size::new(80.0, 80.0));
+
+        assert_render_snapshot!(harness, "label_alignment_flex");
     }
 
     #[test]

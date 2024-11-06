@@ -11,12 +11,15 @@ use vello::peniko::BlendMode;
 use vello::Scene;
 
 use crate::text::{ArcStr, TextBrush, TextWithSelection};
-use crate::widget::label::LABEL_X_PADDING;
 use crate::widget::{LineBreaking, WidgetMut};
 use crate::{
     AccessCtx, AccessEvent, BoxConstraints, CursorIcon, EventCtx, LayoutCtx, PaintCtx,
     PointerEvent, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
 };
+
+/// Added padding between each horizontal edge of the widget
+/// and the text in logical pixels.
+const PROSE_X_PADDING: f64 = 2.0;
 
 /// The prose widget is a widget which displays text which can be
 /// selected with keyboard and mouse, and which can be copied from,
@@ -136,7 +139,7 @@ impl Prose {
 impl Widget for Prose {
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
         let window_origin = ctx.widget_state.window_origin();
-        let inner_origin = Point::new(window_origin.x + LABEL_X_PADDING, window_origin.y);
+        let inner_origin = Point::new(window_origin.x + PROSE_X_PADDING, window_origin.y);
         match event {
             PointerEvent::PointerDown(button, state) => {
                 if !ctx.is_disabled() {
@@ -223,7 +226,7 @@ impl Widget for Prose {
             None
         } else if bc.max().width.is_finite() {
             // TODO: Does Prose have different needs here?
-            Some(bc.max().width as f32 - 2. * LABEL_X_PADDING as f32)
+            Some(bc.max().width as f32 - 2. * PROSE_X_PADDING as f32)
         } else if bc.min().width.is_sign_negative() {
             Some(0.0)
         } else {
@@ -234,11 +237,11 @@ impl Widget for Prose {
             let (font_ctx, layout_ctx) = ctx.text_contexts();
             self.text_layout.rebuild(font_ctx, layout_ctx);
         }
-        // We ignore trailing whitespace for a label
-        let text_size = self.text_layout.size();
+        // We include trailing whitespace for prose, as it can be selected.
+        let text_size = self.text_layout.full_size();
         let label_size = Size {
             height: text_size.height,
-            width: text_size.width + 2. * LABEL_X_PADDING,
+            width: text_size.width + 2. * PROSE_X_PADDING,
         };
         bc.constrain(label_size)
     }
@@ -255,7 +258,7 @@ impl Widget for Prose {
             scene.push_layer(BlendMode::default(), 1., Affine::IDENTITY, &clip_rect);
         }
         self.text_layout
-            .draw(scene, Point::new(LABEL_X_PADDING, 0.0));
+            .draw(scene, Point::new(PROSE_X_PADDING, 0.0));
 
         if self.line_break_mode == LineBreaking::Clip {
             scene.pop_layer();
@@ -289,4 +292,45 @@ impl Widget for Prose {
     }
 }
 
-// TODO - Add tests
+// TODO - Add more tests
+#[cfg(test)]
+mod tests {
+    use parley::layout::Alignment;
+    use vello::kurbo::Size;
+
+    use crate::{
+        assert_render_snapshot,
+        testing::TestHarness,
+        widget::{CrossAxisAlignment, Flex, LineBreaking, Prose},
+    };
+
+    #[test]
+    /// A wrapping prose's alignment should be respected, regardkess of
+    /// its parent's alignment.
+    fn prose_alignment_flex() {
+        fn base_label() -> Prose {
+            // Trailing whitespace is displayed when laying out prose.
+            Prose::new("Hello  ")
+                .with_text_size(10.0)
+                .with_line_break_mode(LineBreaking::WordWrap)
+        }
+        let label1 = base_label().with_text_alignment(Alignment::Start);
+        let label2 = base_label().with_text_alignment(Alignment::Middle);
+        let label3 = base_label().with_text_alignment(Alignment::End);
+        let label4 = base_label().with_text_alignment(Alignment::Start);
+        let label5 = base_label().with_text_alignment(Alignment::Middle);
+        let label6 = base_label().with_text_alignment(Alignment::End);
+        let flex = Flex::column()
+            .with_flex_child(label1, CrossAxisAlignment::Start)
+            .with_flex_child(label2, CrossAxisAlignment::Start)
+            .with_flex_child(label3, CrossAxisAlignment::Start)
+            .with_flex_child(label4, CrossAxisAlignment::Center)
+            .with_flex_child(label5, CrossAxisAlignment::Center)
+            .with_flex_child(label6, CrossAxisAlignment::Center)
+            .gap(0.0);
+
+        let mut harness = TestHarness::create_with_size(flex, Size::new(80.0, 80.0));
+
+        assert_render_snapshot!(harness, "prose_alignment_flex");
+    }
+}

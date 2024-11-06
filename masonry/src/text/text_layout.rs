@@ -255,6 +255,9 @@ impl TextLayout {
     }
 
     /// Set the [`Alignment`] for this layout.
+    ///
+    /// This alignment can only be meaningful when a
+    /// [maximum width](Self::set_max_advance) is provided.
     pub fn set_text_alignment(&mut self, alignment: Alignment) {
         if self.alignment != alignment {
             self.alignment = alignment;
@@ -313,20 +316,43 @@ impl TextLayout {
         &self.layout
     }
 
-    /// The size of the laid-out text, excluding any trailing whitespace.
+    /// The size of the region the text should be drawn in,
+    /// excluding any trailing whitespace if present.
+    ///
+    /// Should be used for the drawing of non-interactive text (as the
+    /// trailing whitespace is selectable for interactive text).
     ///
     /// This is not meaningful until [`Self::rebuild`] has been called.
     pub fn size(&self) -> Size {
         self.assert_rebuilt("size");
-        Size::new(self.layout.width().into(), self.layout.height().into())
+        Size::new(
+            self.layout_width(self.layout.width()).into(),
+            self.layout.height().into(),
+        )
     }
 
     /// The size of the laid-out text, including any trailing whitespace.
     ///
+    /// Should be used for the drawing of interactive text.
+    ///
     /// This is not meaningful until [`Self::rebuild`] has been called.
     pub fn full_size(&self) -> Size {
         self.assert_rebuilt("full_size");
-        Size::new(self.layout.full_width().into(), self.layout.height().into())
+        Size::new(
+            self.layout_width(self.layout.full_width()).into(),
+            self.layout.height().into(),
+        )
+    }
+
+    /// If performing layout `max_advance` to calculate text alignment, the only
+    /// reasonable behaviour is to take up the entire available width.
+    ///
+    /// The coherent way to have multiple items laid out on the same line is for them to
+    /// be inside the same text layout object "region". This is currently deferred.
+    /// As an interim solution, we allow multiple items to be on the same line if the `max_advance` wasn't used
+    /// (and therefore the text alignment argument is effectively ignored).
+    fn layout_width(&self, width: f32) -> f32 {
+        self.max_advance.unwrap_or(width)
     }
 
     /// Return the text's [`LayoutMetrics`].

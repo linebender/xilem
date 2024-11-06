@@ -100,7 +100,6 @@ impl<State, Action> View<State, Action, ViewCtx> for VariableLabel {
         let widget_pod = ctx.new_pod(
             widget::VariableLabel::new(self.label.clone())
                 .with_text_brush(self.text_brush.clone())
-                .with_line_break_mode(widget::LineBreaking::WordWrap)
                 .with_text_alignment(self.alignment)
                 .with_font(self.font)
                 .with_text_size(self.text_size)
