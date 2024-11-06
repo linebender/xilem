@@ -20,8 +20,9 @@ use crate::{
     RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
 };
 
-// added padding between the edges of the widget and the text.
-pub(super) const PROSE_X_PADDING: f64 = 2.0;
+/// Added padding between each horizontal edge of the widget
+/// and the text in logical pixels.
+const LABEL_X_PADDING: f64 = 2.0;
 
 /// Options for handling lines that are too wide for the label.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -189,7 +190,7 @@ impl Widget for Label {
         let max_advance = if self.line_break_mode != LineBreaking::WordWrap {
             None
         } else if bc.max().width.is_finite() {
-            Some(bc.max().width as f32 - 2. * PROSE_X_PADDING as f32)
+            Some(bc.max().width as f32 - 2. * LABEL_X_PADDING as f32)
         } else if bc.min().width.is_sign_negative() {
             Some(0.0)
         } else {
@@ -208,7 +209,7 @@ impl Widget for Label {
         let text_size = self.text_layout.size();
         let label_size = Size {
             height: text_size.height,
-            width: text_size.width + 2. * PROSE_X_PADDING,
+            width: text_size.width + 2. * LABEL_X_PADDING,
         };
         bc.constrain(label_size)
     }
@@ -225,7 +226,7 @@ impl Widget for Label {
             scene.push_layer(BlendMode::default(), 1., Affine::IDENTITY, &clip_rect);
         }
         self.text_layout
-            .draw(scene, Point::new(PROSE_X_PADDING, 0.0));
+            .draw(scene, Point::new(LABEL_X_PADDING, 0.0));
 
         if self.line_break_mode == LineBreaking::Clip {
             scene.pop_layer();

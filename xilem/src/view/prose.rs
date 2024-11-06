@@ -22,6 +22,7 @@ pub fn prose(content: impl Into<ArcStr>) -> Prose {
 ///
 /// Note that setting [`alignment`](Prose::alignment) on the result
 /// will be meaningless.
+#[doc(alias = "span")]
 pub fn inline_prose(content: impl Into<ArcStr>) -> Prose {
     prose(content).line_break_mode(LineBreaking::Overflow)
 }

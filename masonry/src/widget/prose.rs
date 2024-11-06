@@ -11,12 +11,15 @@ use vello::peniko::BlendMode;
 use vello::Scene;
 
 use crate::text::{ArcStr, TextBrush, TextWithSelection};
-use crate::widget::label::PROSE_X_PADDING;
 use crate::widget::{LineBreaking, WidgetMut};
 use crate::{
     AccessCtx, AccessEvent, BoxConstraints, CursorIcon, EventCtx, LayoutCtx, PaintCtx,
     PointerEvent, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
 };
+
+/// Added padding between each horizontal edge of the widget
+/// and the text in logical pixels.
+const PROSE_X_PADDING: f64 = 2.0;
 
 /// The prose widget is a widget which displays text which can be
 /// selected with keyboard and mouse, and which can be copied from,
