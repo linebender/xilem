@@ -332,8 +332,8 @@ impl Widget for Textbox {
         true
     }
 
-    fn make_trace_span(&self) -> Span {
-        trace_span!("Textbox")
+    fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
+        trace_span!("Textbox", id = ctx.widget_id().trace())
     }
 
     fn get_debug_text(&self) -> Option<String> {

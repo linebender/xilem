@@ -14,7 +14,7 @@ use crate::paint_scene_helpers::stroke;
 use crate::widget::{WidgetMut, WidgetPod};
 use crate::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, Point, PointerEvent,
-    RegisterCtx, Size, TextEvent, Widget, WidgetId,
+    QueryCtx, RegisterCtx, Size, TextEvent, Widget, WidgetId,
 };
 
 // FIXME - Improve all doc in this module ASAP.
@@ -401,8 +401,8 @@ impl Widget for SizedBox {
         }
     }
 
-    fn make_trace_span(&self) -> Span {
-        trace_span!("SizedBox")
+    fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
+        trace_span!("SizedBox", id = ctx.widget_id().trace())
     }
 }
 

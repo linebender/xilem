@@ -9,7 +9,7 @@ use vello::Scene;
 
 use crate::widget::{WidgetMut, WidgetPod};
 use crate::{
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
+    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent, QueryCtx,
     RegisterCtx, Size, TextEvent, Widget, WidgetId,
 };
 
@@ -65,7 +65,7 @@ impl<W: Widget> Widget for RootWidget<W> {
         smallvec![self.pod.id()]
     }
 
-    fn make_trace_span(&self) -> Span {
-        trace_span!("RootWidget")
+    fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
+        trace_span!("RootWidget", id = ctx.widget_id().trace())
     }
 }

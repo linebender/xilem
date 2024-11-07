@@ -540,8 +540,8 @@ impl Widget for Split {
         smallvec![self.child1.id(), self.child2.id()]
     }
 
-    fn make_trace_span(&self) -> Span {
-        trace_span!("Split")
+    fn make_trace_span(&self, ctx: &QueryCtx) -> Span {
+        trace_span!("Split", id = ctx.widget_id().trace())
     }
 }
 

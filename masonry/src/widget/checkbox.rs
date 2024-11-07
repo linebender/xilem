@@ -15,7 +15,7 @@ use crate::text::ArcStr;
 use crate::widget::{Label, WidgetMut};
 use crate::{
     theme, AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
-    RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetPod,
+    QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetPod,
 };
 
 /// A checkbox that can be toggled.
@@ -213,8 +213,8 @@ impl Widget for Checkbox {
         smallvec![self.label.id()]
     }
 
-    fn make_trace_span(&self) -> Span {
-        trace_span!("Checkbox")
+    fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
+        trace_span!("Checkbox", id = ctx.widget_id().trace())
     }
 
     fn get_debug_text(&self) -> Option<String> {

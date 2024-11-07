@@ -14,7 +14,7 @@ use crate::text::{ArcStr, TextLayout};
 use crate::widget::WidgetMut;
 use crate::{
     theme, AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, Point,
-    PointerEvent, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
+    PointerEvent, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
 };
 
 /// A progress bar
@@ -191,8 +191,8 @@ impl Widget for ProgressBar {
         smallvec![]
     }
 
-    fn make_trace_span(&self) -> Span {
-        trace_span!("ProgressBar")
+    fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
+        trace_span!("ProgressBar", id = ctx.widget_id().trace())
     }
 
     fn get_debug_text(&self) -> Option<String> {

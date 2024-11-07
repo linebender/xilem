@@ -11,7 +11,7 @@ use crate::theme::get_debug_color;
 use crate::widget::WidgetMut;
 use crate::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, Point, PointerEvent,
-    Size, TextEvent, Widget, WidgetId, WidgetPod,
+    QueryCtx, Size, TextEvent, Widget, WidgetId, WidgetPod,
 };
 
 pub struct Grid {
@@ -311,8 +311,8 @@ impl Widget for Grid {
             .collect()
     }
 
-    fn make_trace_span(&self) -> Span {
-        trace_span!("Grid")
+    fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
+        trace_span!("Grid", id = ctx.widget_id().trace())
     }
 }
 

@@ -14,7 +14,7 @@ use crate::theme::get_debug_color;
 use crate::widget::WidgetMut;
 use crate::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, Point, PointerEvent,
-    Rect, Size, TextEvent, Widget, WidgetId, WidgetPod,
+    QueryCtx, Rect, Size, TextEvent, Widget, WidgetId, WidgetPod,
 };
 
 /// A container with either horizontal or vertical layout.
@@ -1202,8 +1202,8 @@ impl Widget for Flex {
             .collect()
     }
 
-    fn make_trace_span(&self) -> Span {
-        trace_span!("Flex")
+    fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
+        trace_span!("Flex", id = ctx.widget_id().trace())
     }
 }
 
