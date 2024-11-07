@@ -1,9 +1,12 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::tree_arena::{ArenaMut, ArenaMutChildren};
+use tracing::span::EnteredSpan;
+
+use crate::render_root::RenderRootState;
+use crate::tree_arena::{ArenaMut, ArenaMutChildren, ArenaRef};
 use crate::widget::WidgetArena;
-use crate::{Widget, WidgetId, WidgetState};
+use crate::{QueryCtx, Widget, WidgetId, WidgetState};
 
 pub(crate) mod accessibility;
 pub(crate) mod anim;
@@ -13,6 +16,35 @@ pub(crate) mod layout;
 pub(crate) mod mutate;
 pub(crate) mod paint;
 pub(crate) mod update;
+
+#[must_use = "Span will be immediately closed if dropped"]
+pub(crate) fn enter_span_if(
+    enabled: bool,
+    global_state: &RenderRootState,
+    widget: ArenaRef<'_, Box<dyn Widget>>,
+    state: ArenaRef<'_, WidgetState>,
+) -> Option<EnteredSpan> {
+    if enabled {
+        Some(enter_span(global_state, widget, state))
+    } else {
+        None
+    }
+}
+
+#[must_use = "Span will be immediately closed if dropped"]
+pub(crate) fn enter_span(
+    global_state: &RenderRootState,
+    widget: ArenaRef<'_, Box<dyn Widget>>,
+    state: ArenaRef<'_, WidgetState>,
+) -> EnteredSpan {
+    let ctx = QueryCtx {
+        global_state,
+        widget_state: state.item,
+        widget_state_children: state.children,
+        widget_children: widget.children,
+    };
+    widget.item.make_trace_span(&ctx).entered()
+}
 
 pub(crate) fn recurse_on_children(
     id: WidgetId,

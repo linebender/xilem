@@ -3,7 +3,6 @@
 
 #![cfg(not(tarpaulin_include))]
 
-use tracing::Span;
 use vello::kurbo::{Insets, Point, Rect, Size, Vec2};
 
 use crate::WidgetId;
@@ -146,11 +145,6 @@ pub(crate) struct WidgetState {
     pub(crate) has_focus: bool,
 
     // --- DEBUG INFO ---
-    /// The tracing span of this widget
-    pub(crate) span: tracing::Span,
-    /// Whether this element's span is out of date.
-    pub(crate) request_span: bool,
-
     // TODO - document
     #[cfg(debug_assertions)]
     pub(crate) widget_name: &'static str,
@@ -196,8 +190,6 @@ impl WidgetState {
             focus_chain: Vec::new(),
             children_changed: true,
             update_focus_chain: true,
-            request_span: true,
-            span: Span::none(),
             #[cfg(debug_assertions)]
             widget_name,
         }

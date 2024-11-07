@@ -6,7 +6,7 @@ use tracing::{debug, info_span, trace};
 use winit::event::ElementState;
 use winit::keyboard::{KeyCode, PhysicalKey};
 
-use crate::passes::merge_state_up;
+use crate::passes::{enter_span, merge_state_up};
 use crate::render_root::RenderRoot;
 use crate::{AccessEvent, EventCtx, Handled, PointerEvent, TextEvent, Widget, WidgetId};
 
@@ -46,21 +46,24 @@ fn run_event_pass<E>(
     let mut is_handled = false;
     while let Some(widget_id) = target_widget_id {
         let parent_id = root.widget_arena.parent_of(widget_id);
-        let (widget_mut, state_mut) = root.widget_arena.get_pair_mut(widget_id);
-
-        let mut ctx = EventCtx {
-            global_state: &mut root.global_state,
-            widget_state: state_mut.item,
-            widget_state_children: state_mut.children,
-            widget_children: widget_mut.children,
-            target: original_target.unwrap(),
-            allow_pointer_capture,
-            is_handled: false,
-        };
-        let widget = widget_mut.item;
+        let (mut widget_mut, mut state_mut) = root.widget_arena.get_pair_mut(widget_id);
 
         if !is_handled {
-            let _span = widget.make_trace_span().entered();
+            let _span = enter_span(
+                &root.global_state,
+                widget_mut.reborrow(),
+                state_mut.reborrow(),
+            );
+            let mut ctx = EventCtx {
+                global_state: &mut root.global_state,
+                widget_state: state_mut.item,
+                widget_state_children: state_mut.children,
+                widget_children: widget_mut.children,
+                target: original_target.unwrap(),
+                allow_pointer_capture,
+                is_handled: false,
+            };
+            let widget = widget_mut.item;
             if trace {
                 trace!(
                     "Widget '{}' {} visited",

@@ -12,8 +12,8 @@ use masonry::dpi::LogicalSize;
 use masonry::widget::{Align, CrossAxisAlignment, Flex, Label, RootWidget, SizedBox};
 use masonry::{
     AccessCtx, AccessEvent, Action, AppDriver, BoxConstraints, Color, DriverCtx, EventCtx,
-    LayoutCtx, PaintCtx, Point, PointerEvent, RegisterCtx, Size, TextEvent, Update, UpdateCtx,
-    Widget, WidgetId, WidgetPod,
+    LayoutCtx, PaintCtx, Point, PointerEvent, QueryCtx, RegisterCtx, Size, TextEvent, Update,
+    UpdateCtx, Widget, WidgetId, WidgetPod,
 };
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace, trace_span, Span};
@@ -239,8 +239,8 @@ impl Widget for CalcButton {
         smallvec![self.inner.id()]
     }
 
-    fn make_trace_span(&self) -> Span {
-        trace_span!("CalcButton")
+    fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
+        trace_span!("CalcButton", id = ctx.widget_id().trace())
     }
 }
 

@@ -4,7 +4,7 @@
 use tracing::info_span;
 use vello::kurbo::Vec2;
 
-use crate::passes::recurse_on_children;
+use crate::passes::{enter_span_if, recurse_on_children};
 use crate::render_root::{RenderRoot, RenderRootSignal, RenderRootState};
 use crate::tree_arena::ArenaMut;
 use crate::{ComposeCtx, Widget, WidgetState};
@@ -17,10 +17,12 @@ fn compose_widget(
     parent_moved: bool,
     parent_translation: Vec2,
 ) {
-    let _span = global_state
-        .trace
-        .compose
-        .then(|| widget.item.make_trace_span().entered());
+    let _span = enter_span_if(
+        global_state.trace.compose,
+        global_state,
+        widget.reborrow(),
+        state.reborrow(),
+    );
 
     let moved = parent_moved || state.item.translation_changed;
     let translation = parent_translation + state.item.translation + state.item.origin.to_vec2();

@@ -7,7 +7,7 @@ use cursor_icon::CursorIcon;
 use tracing::{info_span, trace};
 
 use crate::passes::event::run_on_pointer_event_pass;
-use crate::passes::{merge_state_up, recurse_on_children};
+use crate::passes::{enter_span, enter_span_if, merge_state_up, recurse_on_children};
 use crate::render_root::{RenderRoot, RenderRootSignal, RenderRootState};
 use crate::tree_arena::ArenaMut;
 use crate::{
@@ -82,7 +82,7 @@ fn update_widget_tree(
     mut state: ArenaMut<'_, WidgetState>,
 ) {
     let trace = global_state.trace.update_tree;
-    let _span = trace.then(|| widget.item.make_trace_span().entered());
+    let _span = enter_span_if(trace, global_state, widget.reborrow(), state.reborrow());
     let id = state.item.id;
 
     if !state.item.children_changed {
@@ -196,7 +196,7 @@ fn update_disabled_for_widget(
     mut state: ArenaMut<'_, WidgetState>,
     parent_disabled: bool,
 ) {
-    let _span = widget.item.make_trace_span().entered();
+    let _span = enter_span(global_state, widget.reborrow(), state.reborrow());
     let id = state.item.id;
 
     let disabled = state.item.is_explicitly_disabled || parent_disabled;
@@ -260,7 +260,7 @@ fn update_stashed_for_widget(
     mut state: ArenaMut<'_, WidgetState>,
     parent_stashed: bool,
 ) {
-    let _span = widget.item.make_trace_span().entered();
+    let _span = enter_span(global_state, widget.reborrow(), state.reborrow());
     let id = state.item.id;
 
     let stashed = state.item.is_explicitly_stashed || parent_stashed;
@@ -327,10 +327,10 @@ pub(crate) fn run_update_stashed_pass(root: &mut RenderRoot) {
 fn update_focus_chain_for_widget(
     global_state: &mut RenderRootState,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
-    state: ArenaMut<'_, WidgetState>,
+    mut state: ArenaMut<'_, WidgetState>,
     parent_focus_chain: &mut Vec<WidgetId>,
 ) {
-    let _span = widget.item.make_trace_span().entered();
+    let _span = enter_span(global_state, widget.reborrow(), state.reborrow());
     let id = state.item.id;
 
     if !state.item.update_focus_chain {

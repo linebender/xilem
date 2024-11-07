@@ -10,6 +10,8 @@ use crate::render_root::{RenderRoot, RenderRootState};
 use crate::tree_arena::ArenaMut;
 use crate::{AccessCtx, Widget, WidgetState};
 
+use super::enter_span_if;
+
 // --- MARK: BUILD TREE ---
 fn build_accessibility_tree(
     global_state: &mut RenderRootState,
@@ -19,10 +21,12 @@ fn build_accessibility_tree(
     rebuild_all: bool,
     scale_factor: f64,
 ) {
-    let _span = global_state
-        .trace
-        .access
-        .then(|| widget.item.make_trace_span().entered());
+    let _span = enter_span_if(
+        global_state.trace.access,
+        global_state,
+        widget.reborrow(),
+        state.reborrow(),
+    );
     let id = state.item.id;
 
     if !rebuild_all && !state.item.needs_accessibility {
