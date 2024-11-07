@@ -100,6 +100,12 @@ pub(crate) fn merge_state_up(arena: &mut WidgetArena, widget_id: WidgetId) {
 /// `MASONRY_TRACE_PASSES` environment variable.
 ///
 /// Note that passes which are bounded by depth (rather than absolute size) are never filtered out here.
+///
+/// Ideally, we'd cache the spans, which would make a lot (but not all) of this unnecessary.
+/// However, each pass uses a different parent span (with the individual pass's name), so it's
+/// (at best) non-trivial to make that work.
+///
+/// We could *maybe* use a global parent span called "Pass", with a name field, but that's extremely ugly.
 pub(crate) struct PassTracing {
     pub(crate) update_tree: bool,
     pub(crate) anim: bool,
