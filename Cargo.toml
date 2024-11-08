@@ -96,7 +96,6 @@ clippy.redundant_feature_names = "warn"
 clippy.wildcard_dependencies = "warn"
 # END LINEBENDER LINT SET
 
-
 # "https://github.com/rust-lang/rust-clippy/issues/13355"
 # Please remove once 1.83 is stable
 clippy.duplicated_attributes = "allow"

@@ -5,7 +5,6 @@
 
 #![expect(clippy::use_self, reason = "Deferred: Noisy")]
 #![expect(elided_lifetimes_in_paths, reason = "Deferred: Noisy")]
-
 #![expect(let_underscore_drop, reason = "Deferred: Noisy")]
 
 use std::io::stdin;
