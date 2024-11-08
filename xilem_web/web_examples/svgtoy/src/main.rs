@@ -11,7 +11,7 @@ use xilem_web::{
     interfaces::*,
     modifiers::style as s,
     svg::{
-        kurbo::{Circle, Line, Rect, Stroke},
+        kurbo::{Circle, Line, Rect, Stroke, Vec2},
         peniko::Color,
     },
     App, DomView, PointerMsg,
@@ -28,8 +28,7 @@ struct AppState {
 struct GrabState {
     is_down: bool,
     id: i32,
-    dx: f64,
-    dy: f64,
+    delta: Vec2,
 }
 
 impl GrabState {
@@ -37,16 +36,16 @@ impl GrabState {
         match p {
             PointerMsg::Down(e) => {
                 if e.button == 0 {
-                    self.dx = *x - e.x;
-                    self.dy = *y - e.y;
+                    self.delta.x = *x - e.position.x;
+                    self.delta.y = *y - e.position.y;
                     self.id = e.id;
                     self.is_down = true;
                 }
             }
             PointerMsg::Move(e) => {
                 if self.is_down && self.id == e.id {
-                    *x = self.dx + e.x;
-                    *y = self.dy + e.y;
+                    *x = self.delta.x + e.position.x;
+                    *y = self.delta.y + e.position.y;
                 }
             }
             PointerMsg::Up(e) => {

@@ -15,6 +15,7 @@ members = [
     "xilem_web/web_examples/raw_dom_access",
     "xilem_web/web_examples/spawn_tasks",
     "xilem_web/web_examples/svgtoy",
+    "xilem_web/web_examples/svgdraw",
 ]
 
 [workspace.package]

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>
+    SvgDraw | Xilem Web
+  </title>
+  <style>
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      touch-action: none;
+    }
+
+    .controls {
+      display: block;
+      left: 0;
+      right: 0;
+      margin-inline: auto;
+      width: fit-content;
+      height: 1.5rem;
+      padding-top: 0.25rem;
+      padding-bottom: 0.25rem;
+    }
+
+    .controls>span {
+      vertical-align: top;
+    }
+
+    .value-range {
+      display: inline-block;
+      position: relative;
+      height: 1.5rem;
+      width: 20rem;
+
+    }
+
+    .value-range::before,
+    .value-range::after {
+      display: block;
+      position: absolute;
+      z-index: 99;
+      color: #000;
+      width: 100%;
+      line-height: 1rem;
+      padding-top: 0.25rem;
+      padding-bottom: 0.25rem;
+      pointer-events: none;
+    }
+
+    .value-range::before {
+      text-align: left;
+      /* hardcoded values aren't optimal here, but this example is not about styling/layouting */
+      content: "1";
+    }
+
+    .value-range::after {
+      text-align: right;
+      content: "30";
+    }
+
+    input[type=range] {
+      -webkit-appearance: none;
+      background-color: rgba(255, 255, 255, 0.2);
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      margin: 0;
+      padding: 0;
+      width: 20rem;
+      height: 1.5rem;
+      transform: translate(-50%, -50%);
+      border-radius: 0.5rem;
+      overflow: hidden;
+      cursor: col-resize;
+    }
+
+    input[type=range][step] {
+      background-color: rgba(0, 0, 0, 0.2);
+    }
+
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 0;
+      box-shadow: -20rem 0 0 20rem rgba(0, 0, 0, 0.2);
+    }
+
+    input[type=range]::-moz-range-thumb {
+      border: none;
+      width: 0;
+      box-shadow: -20rem 0 0 20rem rgba(0, 0, 0, 0.2);
+    }
+
+    label {
+      line-height: 1.5rem;
+      position: absolute;
+    }
+  </style>
+</head>
+
+<body>
+</body>
+
+</html>

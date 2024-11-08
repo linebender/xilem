@@ -3461,6 +3461,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "20e16a0f46cf5fd675563ef54f26e83e20f2366bcf027bcb3cc3ed2b98aaf2ca"
 
 [[package]]
+name = "svgdraw"
+version = "0.1.0"
+dependencies = [
+ "console_error_panic_hook",
+ "wasm-bindgen",
+ "web-sys",
+ "xilem_web",
+]
+
+[[package]]
 name = "svgtoy"
 version = "0.1.0"
 dependencies = [
