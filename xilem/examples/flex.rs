@@ -1,6 +1,9 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+//! Flex properties can be set in Xilem.
+
+#![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
 use masonry::text::ArcStr;
 use masonry::widget::{CrossAxisAlignment, MainAxisAlignment};
 use winit::error::EventLoopError;

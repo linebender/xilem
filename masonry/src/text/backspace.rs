@@ -3,6 +3,11 @@
 
 //! Calc start of a backspace delete interval
 
+// TODO: `expect` doesn't work here
+#[allow(
+    clippy::wildcard_imports,
+    reason = "Mostly a wrapper around xi_unicode."
+)]
 use xi_unicode::*;
 
 use crate::text::StringCursor;

@@ -3,6 +3,8 @@
 
 //! A state machine to detect whether the button was pressed an even or an odd number of times.
 
+#![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
+
 use winit::error::EventLoopError;
 use xilem::core::one_of::{OneOf, OneOf3};
 use xilem::view::{button, flex, label, prose, sized_box, spinner};

@@ -1,11 +1,15 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+//! A playground used in the development for new Xilem Masonry features.
+
 // On Windows platform, don't show a console when opening the app.
 #![windows_subsystem = "windows"]
+#![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
 
 use std::time::Duration;
 
+use winit::error::EventLoopError;
 use xilem::core::{fork, run_once};
 use xilem::tokio::time;
 use xilem::view::{
@@ -137,7 +141,7 @@ struct AppData {
     active: bool,
 }
 
-fn run(event_loop: EventLoopBuilder) {
+fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
     let data = AppData {
         count: 0,
         textbox_contents: "Not quite a placeholder".into(),
@@ -147,41 +151,30 @@ fn run(event_loop: EventLoopBuilder) {
     Xilem::new(data, app_logic)
         .background_color(Color::rgb8(0x20, 0x20, 0x20))
         .run_windowed(event_loop, "First Example".into())
-        .unwrap();
 }
 
-#[cfg(not(target_os = "android"))]
-#[allow(dead_code)]
+// Boilerplate code: Identical across all applications which support Android
+
+#[expect(clippy::allow_attributes, reason = "No way to specify the condition")]
+#[allow(dead_code, reason = "False positive: needed in not-_android version")]
 // This is treated as dead code by the Android version of the example, but is actually live
 // This hackery is required because Cargo doesn't care to support this use case, of one
 // example which works across Android and desktop
-fn main() {
-    run(EventLoop::with_user_event());
+fn main() -> Result<(), EventLoopError> {
+    run(EventLoop::with_user_event())
 }
-
-// Boilerplate code for android: Identical across all applications
-
-#[cfg(target_os = "android")]
-use winit::platform::android::activity::AndroidApp;
-
 #[cfg(target_os = "android")]
 // Safety: We are following `android_activity`'s docs here
-// We believe that there are no other declarations using this name in the compiled objects here
-#[allow(unsafe_code)]
+#[expect(
+    unsafe_code,
+    reason = "We believe that there are no other declarations using this name in the compiled objects here"
+)]
 #[no_mangle]
-fn android_main(app: AndroidApp) {
+fn android_main(app: winit::platform::android::activity::AndroidApp) {
     use winit::platform::android::EventLoopBuilderExtAndroid;
 
     let mut event_loop = EventLoop::with_user_event();
     event_loop.with_android_app(app);
 
-    run(event_loop);
-}
-
-// TODO: This is a hack because of how we handle our examples in Cargo.toml
-// Ideally, we change Cargo to be more sensible here?
-#[cfg(target_os = "android")]
-#[allow(dead_code)]
-fn main() {
-    unreachable!()
+    run(event_loop).expect("Can create app");
 }

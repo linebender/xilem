@@ -21,6 +21,9 @@ use widget::WidgetRef;
 
 use crate::event::{PointerEvent, TextEvent};
 use crate::widget::SizedBox;
+
+// TODO: Expect doesn't work here
+#[allow(clippy::wildcard_imports, reason = "Deferred: Noisy")]
 use crate::*;
 
 pub type PointerEventFn<S> = dyn FnMut(&mut S, &mut EventCtx, &PointerEvent);

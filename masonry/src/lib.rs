@@ -88,28 +88,67 @@
 //! [Druid]: https://crates.io/crates/druid
 //! [Xilem]: https://crates.io/crates/xilem
 
-// TODO: Remove this once the issues within masonry are fixed. Tracked in https://github.com/linebender/xilem/issues/449
-#![allow(rustdoc::broken_intra_doc_links)]
-#![deny(clippy::trivially_copy_pass_by_ref)]
-// #![deny(rustdoc::broken_intra_doc_links)]
-// #![warn(missing_docs)]
-#![warn(unused_imports)]
-#![warn(clippy::print_stdout, clippy::print_stderr, clippy::dbg_macro)]
-#![allow(clippy::needless_doctest_main)]
-#![allow(clippy::should_implement_trait)]
-#![allow(clippy::single_match)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
-#![cfg_attr(not(debug_assertions), allow(unused))]
-// False-positive with dev-dependencies only used in examples
-#![cfg_attr(not(test), warn(unused_crate_dependencies))]
+// LINEBENDER LINT SET - v1
+// See https://linebender.org/wiki/canonical-lints/
+// These lints aren't included in Cargo.toml because they
+// shouldn't apply to examples and tests
+#![warn(unused_crate_dependencies)]
+#![warn(clippy::print_stdout, clippy::print_stderr)]
+#![cfg_attr(
+    test,
+    expect(
+        unused_crate_dependencies,
+        reason = "False-positive with dev-dependencies only used in examples"
+    )
+)]
+#![expect(clippy::allow_attributes, reason = "Deferred: Noisy")]
+#![expect(clippy::allow_attributes_without_reason, reason = "Deferred: Noisy")]
+// TODO: Remove any items listed as "Deferred"
+#![expect(
+    rustdoc::broken_intra_doc_links,
+    reason = "Deferred: Noisy. Tracked in https://github.com/linebender/xilem/issues/449"
+)]
+#![expect(clippy::needless_doctest_main, reason = "Deferred: Noisy")]
+#![expect(clippy::should_implement_trait, reason = "Deferred: Noisy")]
+#![cfg_attr(not(debug_assertions), expect(unused, reason = "Deferred: Noisy"))]
+#![expect(let_underscore_drop, reason = "Deferred: Noisy")]
+#![expect(missing_debug_implementations, reason = "Deferred: Noisy")]
+#![expect(unused_qualifications, reason = "Deferred: Noisy")]
+#![expect(single_use_lifetimes, reason = "Deferred: Noisy")]
+#![expect(clippy::exhaustive_enums, reason = "Deferred: Noisy")]
+#![expect(clippy::match_same_arms, reason = "Deferred: Noisy")]
+#![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
+#![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
+#![expect(clippy::return_self_not_must_use, reason = "Deferred: Noisy")]
+#![expect(elided_lifetimes_in_paths, reason = "Deferred: Noisy")]
+#![expect(clippy::use_self, reason = "Deferred: Noisy")]
+// https://github.com/rust-lang/rust/pull/130025
+#![allow(missing_docs, reason = "We have many as-yet undocumented items")]
+#![expect(unreachable_pub, reason = "Potentially controversial code style")]
+#![expect(
+    unnameable_types,
+    reason = "Requires lint_reasons rustc feature for exceptions"
+)]
+#![expect(clippy::todo, reason = "We have a lot of 'real' todos")]
+#![expect(clippy::missing_errors_doc, reason = "Can be quite noisy?")]
+#![expect(clippy::missing_panics_doc, reason = "Can be quite noisy?")]
+#![expect(
+    clippy::partial_pub_fields,
+    reason = "Potentially controversial code style"
+)]
+#![expect(
+    clippy::shadow_unrelated,
+    reason = "Potentially controversial code style"
+)]
+#![expect(clippy::single_match, reason = "General policy not decided")]
 
 // TODO - Add logo
 
 #[macro_use]
 mod util;
 
-#[allow(unused)]
 mod debug_logger;
 #[allow(unused)]
 mod debug_values;

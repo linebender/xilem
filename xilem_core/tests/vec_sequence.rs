@@ -1,6 +1,11 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+#![expect(
+    clippy::shadow_unrelated,
+    reason = "Deferred: Noisy. Fix is to use scopes"
+)]
+
 mod common;
 use common::*;
 use xilem_core::{MessageResult, View};

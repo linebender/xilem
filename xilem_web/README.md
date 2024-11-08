@@ -52,7 +52,7 @@ pub fn main() {
 
 ## Minimum supported Rust Version (MSRV)
 
-This version of Xilem Web has been verified to compile with **Rust 1.79** and later.
+This version of Xilem Web has been verified to compile with **Rust 1.81** and later.
 
 Future versions of Xilem Web might increase the Rust version requirement.
 It will not be treated as a breaking change and as such can even happen with small patch releases.

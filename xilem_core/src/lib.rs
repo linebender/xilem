@@ -4,8 +4,6 @@
 #![cfg_attr(not(test), no_std)]
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 #![forbid(unsafe_code)]
-#![warn(missing_docs, unreachable_pub, unused_crate_dependencies)]
-#![warn(clippy::print_stdout, clippy::print_stderr, clippy::dbg_macro)]
 // https://linebender.org/blog/doc-include
 //! <!-- This license link is in a .rustdoc-hidden section, but we may as well give the correct link -->
 //! [LICENSE]: https://github.com/linebender/xilem/blob/main/xilem_core/LICENSE
@@ -18,7 +16,33 @@
 //! .rustdoc-hidden { display: none; }
 //! </style>
 #![doc = include_str!("../README.md")]
-
+// LINEBENDER LINT SET - v1
+// See https://linebender.org/wiki/canonical-lints/
+// These lints aren't included in Cargo.toml because they
+// shouldn't apply to examples and tests
+#![warn(unused_crate_dependencies)]
+#![warn(clippy::print_stdout, clippy::print_stderr)]
+// TODO: Remove any items listed as "Deferred"
+#![expect(
+    rustdoc::broken_intra_doc_links,
+    reason = "Deferred: Noisy. Tracked in https://github.com/linebender/xilem/issues/449"
+)]
+#![deny(clippy::trivially_copy_pass_by_ref)]
+#![cfg_attr(not(debug_assertions), expect(unused, reason = "Deferred: Noisy"))]
+#![expect(missing_debug_implementations, reason = "Deferred: Noisy")]
+#![expect(unused_qualifications, reason = "Deferred: Noisy")]
+#![expect(single_use_lifetimes, reason = "Deferred: Noisy")]
+#![expect(clippy::exhaustive_enums, reason = "Deferred: Noisy")]
+#![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
+#![expect(elided_lifetimes_in_paths, reason = "Deferred: Noisy")]
+#![expect(clippy::use_self, reason = "Deferred: Noisy")]
+#![expect(clippy::missing_errors_doc, reason = "Can be quite noisy?")]
+#![expect(
+    clippy::shadow_unrelated,
+    reason = "Potentially controversial code style"
+)]
+#![expect(clippy::allow_attributes, reason = "Deferred: Noisy")]
+#![expect(clippy::allow_attributes_without_reason, reason = "Deferred: Noisy")]
 extern crate alloc;
 
 mod deferred;

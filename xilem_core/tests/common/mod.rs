@@ -1,8 +1,17 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-#![allow(dead_code)] // This is a utility module, which means that some exposed items aren't
+#![allow(
+    dead_code,
+    reason = "This is a utility module, which means that some exposed items aren't used in all instantiations"
+)]
 #![deny(unreachable_pub)]
+#![expect(clippy::allow_attributes, reason = "Deferred: Noisy")]
+#![expect(clippy::allow_attributes_without_reason, reason = "Deferred: Noisy")]
+#![expect(elided_lifetimes_in_paths, reason = "Deferred: Noisy")]
+#![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
+#![expect(clippy::use_self, reason = "Deferred: Noisy")]
+#![expect(single_use_lifetimes, reason = "Deferred: Noisy")]
 
 use xilem_core::*;
 
