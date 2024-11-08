@@ -1,4 +1,3 @@
-#![feature(iter_map_windows)]
 // Copyright 2023 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
