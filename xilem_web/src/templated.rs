@@ -5,7 +5,7 @@ use crate::{
     core::{MessageResult, Mut, View, ViewId, ViewMarker},
     DomView, DynMessage, PodMut, ViewCtx,
 };
-use std::{any::TypeId, ops::Deref as _, rc::Rc};
+use std::{any::TypeId, rc::Rc};
 use wasm_bindgen::UnwrapThrowExt;
 
 /// This view creates an internally cached deep-clone of the underlying DOM node. When the inner view is created again, this will be done more efficiently.
@@ -26,14 +26,14 @@ where
 {
     type Element = E::Element;
 
-    type ViewState = TemplatedState<E::ViewState>;
+    type ViewState = TemplatedState<<Rc<E> as View<State, Action, ViewCtx, DynMessage>>::ViewState>;
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let type_id = TypeId::of::<Self>();
         let (element, view_state) = if let Some((template_node, view)) = ctx.templates.get(&type_id)
         {
             let prev = view.clone();
-            let prev = prev.downcast_ref::<E>().unwrap_throw();
+            let prev = prev.downcast_ref::<Rc<E>>().unwrap_throw();
             let node = template_node.clone_node_with_deep(true).unwrap_throw();
             let (mut el, mut state) = ctx.with_hydration_node(node, |ctx| prev.build(ctx));
             el.apply_changes();
@@ -50,7 +50,8 @@ where
                 .clone_node_with_deep(true)
                 .unwrap_throw();
 
-            ctx.templates.insert(type_id, (template, self.0.clone()));
+            ctx.templates
+                .insert(type_id, (template, Rc::new(self.0.clone())));
             (element, state)
         };
         let state = TemplatedState {
@@ -70,7 +71,6 @@ where
         // If this is the same value, or no rebuild was forced, there's no need to rebuild
         if core::mem::take(&mut view_state.dirty) || !Rc::ptr_eq(&self.0, &prev.0) {
             self.0
-                .deref()
                 .rebuild(&prev.0, &mut view_state.view_state, ctx, element);
         }
     }
@@ -93,7 +93,6 @@ where
     ) -> MessageResult<Action, DynMessage> {
         let message_result =
             self.0
-                .deref()
                 .message(&mut view_state.view_state, id_path, message, app_state);
         if matches!(message_result, MessageResult::RequestRebuild) {
             view_state.dirty = true;
