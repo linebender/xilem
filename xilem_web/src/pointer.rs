@@ -55,6 +55,18 @@ impl PointerMsg {
             PointerMsg::Down(p) | PointerMsg::Move(p) | PointerMsg::Up(p) => p.position,
         }
     }
+
+    pub fn button(&self) -> i16 {
+        match self {
+            PointerMsg::Down(p) | PointerMsg::Move(p) | PointerMsg::Up(p) => p.button,
+        }
+    }
+
+    pub fn id(&self) -> i32 {
+        match self {
+            PointerMsg::Down(p) | PointerMsg::Move(p) | PointerMsg::Up(p) => p.id,
+        }
+    }
 }
 
 #[derive(Debug)]
