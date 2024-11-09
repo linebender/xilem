@@ -1,8 +1,8 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-// False-positive with dev-dependencies only used in examples
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
+#![deny(clippy::trivially_copy_pass_by_ref)]
 // LINEBENDER LINT SET - v1
 // See https://linebender.org/wiki/canonical-lints/
 // These lints aren't included in Cargo.toml because they
@@ -17,9 +17,6 @@
     )
 )]
 // TODO: Remove any items listed as "Deferred"
-#![deny(clippy::trivially_copy_pass_by_ref)]
-#![cfg_attr(docsrs, feature(doc_cfg))]
-#![cfg_attr(docsrs, feature(doc_auto_cfg))]
 #![cfg_attr(not(debug_assertions), allow(unused))]
 #![expect(missing_debug_implementations, reason = "Deferred: Noisy")]
 #![expect(unused_qualifications, reason = "Deferred: Noisy")]

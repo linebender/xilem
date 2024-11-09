@@ -1,9 +1,6 @@
 // Copyright 2022 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-#![cfg_attr(not(test), no_std)]
-#![cfg_attr(docsrs, feature(doc_auto_cfg))]
-#![forbid(unsafe_code)]
 // https://linebender.org/blog/doc-include
 //! <!-- This license link is in a .rustdoc-hidden section, but we may as well give the correct link -->
 //! [LICENSE]: https://github.com/linebender/xilem/blob/main/xilem_core/LICENSE
@@ -16,6 +13,9 @@
 //! .rustdoc-hidden { display: none; }
 //! </style>
 #![doc = include_str!("../README.md")]
+#![cfg_attr(not(test), no_std)]
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
+#![forbid(unsafe_code)]
 // LINEBENDER LINT SET - v1
 // See https://linebender.org/wiki/canonical-lints/
 // These lints aren't included in Cargo.toml because they
