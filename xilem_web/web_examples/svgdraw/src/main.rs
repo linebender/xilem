@@ -18,7 +18,7 @@ use xilem_web::{
         kurbo::{BezPath, Point, QuadSpline, Shape, Stroke},
         peniko::Color,
     },
-    AnyDomView, App, DomFragment, PointerMsg,
+    AnyDomView, App, DomFragment,
 };
 
 const RAINBOW_COLORS: &[Color] = &[
