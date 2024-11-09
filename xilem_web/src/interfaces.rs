@@ -132,20 +132,20 @@ pub trait Element<State, Action = ()>:
     /// # Examples
     ///
     /// ```
-    /// use xilem_web::{interfaces::Element, elements::html::div, PointerMsg};
+    /// use xilem_web::{interfaces::Element, elements::html::div, PointerDetails, PointerMsg};
     /// use web_sys::console::log_1;
     ///
     /// # fn component() -> impl Element<()> {
     /// div(()).pointer(|_, pointer_msg| {
     ///     match pointer_msg {
-    ///         PointerMsg::Down(e) => {
-    ///             log_1(&format!("Down at position: {:?} with button: {}", e.button, e.position).into());
+    ///         PointerMsg::Down(PointerDetails { position, button, id }) => {
+    ///             log_1(&format!("Down({id}) at {position} and button: {button}").into());
     ///         }
-    ///         PointerMsg::Move(e) => {
-    ///             log_1(&format!("Move at position: {:?} with button: {}", e.button, e.position).into());
+    ///         PointerMsg::Move(PointerDetails { position, button, id }) => {
+    ///             log_1(&format!("Move({id}) at {position} and button: {button}").into());
     ///         }
-    ///         PointerMsg::Up(e) => {
-    ///             log_1(&format!("Up at position: {:?} with button: {}", e.button, e.position).into());
+    ///         PointerMsg::Up(PointerDetails { position, button, id }) => {
+    ///             log_1(&format!("Up({id}) at {position} and button: {button}").into());
     ///         }
     ///     };
     /// })
