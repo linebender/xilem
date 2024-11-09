@@ -71,13 +71,12 @@ impl SplineLine {
 
 #[derive(Default)]
 struct Draw {
-    cur_line: Option<SplineLine>,
+    active_line: Option<SplineLine>,
     cursor_position: Point,
     canvas_position: Point,
     draw_position: Point,
     lines_cached: Vec<Rc<AnyDomView<Draw>>>,
     new_line_width: f64,
-    is_drawing: bool,
     is_moving: bool,
     zoom: f64,
 }
@@ -120,21 +119,19 @@ impl Draw {
         let line = SplineLine::new(self.draw_position, random_color(), self.new_line_width);
         self.lines_cached
             .push(Rc::new(line.view()) as Rc<AnyDomView<Self>>);
-        self.cur_line = Some(line);
-        self.is_drawing = true;
+        self.active_line = Some(line);
     }
 
-    fn extend_current_line(&mut self) {
-        if self.is_drawing {
-            let cur_line = self.cur_line.as_mut().unwrap();
+    fn extend_active_line(&mut self) {
+        if let Some(cur_line) = &mut self.active_line {
             cur_line.points.push(self.draw_position);
             *self.lines_cached.last_mut().unwrap() =
                 Rc::new(cur_line.view()) as Rc<AnyDomView<Self>>;
         }
     }
 
-    fn finish_current_line(&mut self) {
-        self.is_drawing = false;
+    fn finish_active_line(&mut self) {
+        self.active_line = None;
     }
 
     fn view(&mut self) -> impl DomFragment<Self> {
@@ -147,17 +144,17 @@ impl Draw {
                 "transform",
                 format!("scale({zoom}) translate({x}px, {y}px)"),
             )))
-        .pointer(|state: &mut Self, e| {
-            state.update_cursor(e.position());
-            match e {
-                PointerMsg::Down(e) => match e.button {
+        .pointer(|state: &mut Self, event| {
+            state.update_cursor(event.position());
+            match event {
+                PointerMsg::Down(event) => match event.button {
                     0 => state.start_new_line(),
                     1 | 2 => state.is_moving = true,
                     _ => (),
                 },
-                PointerMsg::Move(_) => state.extend_current_line(),
-                PointerMsg::Up(e) => match e.button {
-                    0 => state.finish_current_line(),
+                PointerMsg::Move(_) => state.extend_active_line(),
+                PointerMsg::Up(event) => match event.button {
+                    0 => state.finish_active_line(),
                     1 | 2 => state.is_moving = false,
                     _ => (),
                 },
