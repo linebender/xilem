@@ -1,6 +1,8 @@
 // Copyright 2023 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+//! An example showing how SVG paths can be used for a vector-drawing application
+
 use wasm_bindgen::UnwrapThrowExt;
 use xilem_web::{
     document_body,
@@ -9,7 +11,7 @@ use xilem_web::{
         svg::{g, svg},
     },
     input_event_target_value,
-    interfaces::*,
+    interfaces::{Element, SvgGeometryElement, SvgPathElement, SvggElement},
     modifiers::style as s,
     svg::{
         kurbo::{BezPath, Point, QuadSpline, Shape, Stroke},
@@ -33,6 +35,10 @@ const RAINBOW_COLORS: &[Color] = &[
 ];
 
 fn random_color() -> Color {
+    #![allow(
+        clippy::cast_possible_truncation,
+        reason = "This will never happen here"
+    )]
     RAINBOW_COLORS[(web_sys::js_sys::Math::random() * 1000000.0) as usize % RAINBOW_COLORS.len()]
 }
 
@@ -44,7 +50,7 @@ struct SplineLine {
 
 impl SplineLine {
     fn new(p: Point, color: Color, width: f64) -> Self {
-        SplineLine {
+        Self {
             points: vec![p],
             color,
             width,
@@ -70,10 +76,10 @@ struct Draw {
 }
 
 impl Draw {
-    fn view(&mut self) -> impl DomFragment<Draw> {
+    fn view(&mut self) -> impl DomFragment<Self> {
         let lines = self.lines.iter().map(SplineLine::view).collect::<Vec<_>>();
         let canvas = svg(g(lines).fill(Color::TRANSPARENT))
-            .pointer(|state: &mut Draw, e| {
+            .pointer(|state: &mut Self, e| {
                 match e {
                     PointerMsg::Down(p) => {
                         let l = SplineLine::new(p.position, random_color(), state.new_line_width);
@@ -98,7 +104,7 @@ impl Draw {
                 .attr("max", 30)
                 .attr("step", 0.01)
                 .attr("value", self.new_line_width)
-                .on_input(|state: &mut Draw, event| {
+                .on_input(|state: &mut Self, event| {
                     state.new_line_width = input_event_target_value(&event)
                         .unwrap_throw()
                         .parse()
@@ -111,7 +117,7 @@ impl Draw {
     }
 }
 
-pub fn main() {
+fn main() {
     console_error_panic_hook::set_once();
     App::new(
         document_body(),
