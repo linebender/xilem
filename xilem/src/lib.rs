@@ -17,10 +17,6 @@
     )
 )]
 // TODO: Remove any items listed as "Deferred"
-#![expect(
-    rustdoc::broken_intra_doc_links,
-    reason = "Deferred: Noisy. Tracked in https://github.com/linebender/xilem/issues/449"
-)]
 #![deny(clippy::trivially_copy_pass_by_ref)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]

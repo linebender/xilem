@@ -20,11 +20,6 @@
 #![warn(clippy::print_stdout, clippy::print_stderr)]
 // TODO: Remove any items listed as "Deferred"
 #![cfg_attr(test, expect(clippy::print_stdout, reason = "Deferred: Noisy"))]
-#![expect(
-    rustdoc::broken_intra_doc_links,
-    reason = "Deferred: Noisy. Tracked in https://github.com/linebender/xilem/issues/449"
-)]
-#![cfg_attr(not(debug_assertions), expect(unused, reason = "Deferred: Noisy"))]
 #![expect(let_underscore_drop, reason = "Deferred: Noisy")]
 #![expect(missing_debug_implementations, reason = "Deferred: Noisy")]
 #![expect(unused_qualifications, reason = "Deferred: Noisy")]
