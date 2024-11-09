@@ -75,9 +75,9 @@ struct Draw {
     cursor_position: Point,
     canvas_position: Point,
     draw_position: Point,
-    lines_cached: Vec<Rc<AnyDomView<Draw>>>,
+    memoized_line_views: Vec<Rc<AnyDomView<Self>>>,
     new_line_width: f64,
-    is_moving: bool,
+    is_panning: bool,
     zoom: f64,
 }
 
@@ -88,7 +88,7 @@ impl Draw {
         let cursor_delta = self.cursor_position - last_cursor_position;
         let zoom_corrected_delta = cursor_delta / self.zoom;
         self.draw_position += zoom_corrected_delta;
-        if self.is_moving {
+        if self.is_panning {
             self.canvas_position -= zoom_corrected_delta;
             self.draw_position -= zoom_corrected_delta;
         }
@@ -116,8 +116,12 @@ impl Draw {
     }
 
     fn start_new_line(&mut self) {
+        debug_assert!(
+            self.active_line.is_none(),
+            "There shouldn't be an active line when starting a new one"
+        );
         let line = SplineLine::new(self.draw_position, random_color(), self.new_line_width);
-        self.lines_cached
+        self.memoized_line_views
             .push(Rc::new(line.view()) as Rc<AnyDomView<Self>>);
         self.active_line = Some(line);
     }
@@ -125,7 +129,7 @@ impl Draw {
     fn extend_active_line(&mut self) {
         if let Some(cur_line) = &mut self.active_line {
             cur_line.points.push(self.draw_position);
-            *self.lines_cached.last_mut().unwrap() =
+            *self.memoized_line_views.last_mut().unwrap() =
                 Rc::new(cur_line.view()) as Rc<AnyDomView<Self>>;
         }
     }
@@ -138,7 +142,7 @@ impl Draw {
         let x = -self.canvas_position.x;
         let y = -self.canvas_position.y;
         let zoom = self.zoom;
-        let canvas = svg(g(self.lines_cached.clone())
+        let canvas = svg(g(self.memoized_line_views.clone())
             .fill(Color::TRANSPARENT)
             .style(s(
                 "transform",
@@ -149,13 +153,13 @@ impl Draw {
             match event {
                 PointerMsg::Down(event) => match event.button {
                     0 => state.start_new_line(),
-                    1 | 2 => state.is_moving = true,
+                    1 | 2 => state.is_panning = true,
                     _ => (),
                 },
                 PointerMsg::Move(_) => state.extend_active_line(),
                 PointerMsg::Up(event) => match event.button {
                     0 => state.finish_active_line(),
-                    1 | 2 => state.is_moving = false,
+                    1 | 2 => state.is_panning = false,
                     _ => (),
                 },
             };
