@@ -206,7 +206,7 @@ where
 }
 
 #[allow(unnameable_types)] // reason: Implementation detail, public because of trait visibility rules
-pub struct ArcState<ViewState> {
+pub struct RcState<ViewState> {
     view_state: ViewState,
     dirty: bool,
 }
@@ -219,13 +219,13 @@ where
     V: View<State, Action, Context, Message> + ?Sized,
 {
     type Element = V::Element;
-    type ViewState = ArcState<V::ViewState>;
+    type ViewState = RcState<V::ViewState>;
 
     fn build(&self, ctx: &mut Context) -> (Self::Element, Self::ViewState) {
         let (element, view_state) = self.deref().build(ctx);
         (
             element,
-            ArcState {
+            RcState {
                 view_state,
                 dirty: false,
             },
@@ -281,13 +281,13 @@ where
     V: View<State, Action, Context, Message> + ?Sized,
 {
     type Element = V::Element;
-    type ViewState = ArcState<V::ViewState>;
+    type ViewState = RcState<V::ViewState>;
 
     fn build(&self, ctx: &mut Context) -> (Self::Element, Self::ViewState) {
         let (element, view_state) = self.deref().build(ctx);
         (
             element,
-            ArcState {
+            RcState {
                 view_state,
                 dirty: false,
             },
