@@ -44,6 +44,16 @@ pub enum PointerMsg {
     Up(PointerDetails),
 }
 
+impl PointerMsg {
+    pub fn position(&self) -> Point {
+        match self {
+            PointerMsg::Down(p) => p.position,
+            PointerMsg::Move(p) => p.position,
+            PointerMsg::Up(p) => p.position,
+        }
+    }
+}
+
 #[derive(Debug)]
 /// Details of a pointer event.
 pub struct PointerDetails {
