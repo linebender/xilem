@@ -30,7 +30,7 @@ impl AppDriver for Driver {
     }
 }
 
-pub fn main() {
+fn main() {
     let label = Label::new("Hello")
         .with_text_size(32.0)
         .with_weight(Weight::BOLD);

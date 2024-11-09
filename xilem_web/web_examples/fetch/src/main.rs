@@ -1,6 +1,12 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+//! Demonstrates fetching other web content from Xilem Web
+
+#![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
+// TODO: `expect` doesn't work here for unknown reasons
+#![allow(clippy::wildcard_imports, reason = "HTML elements are an exception")]
+
 use gloo_net::http::Request;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
@@ -16,10 +22,10 @@ use xilem_web::{
 const TOO_MANY_CATS: usize = 8;
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub struct Cat {
-    pub url: String,
-    pub width: u16,
-    pub height: u16,
+struct Cat {
+    url: String,
+    width: u16,
+    height: u16,
 }
 
 struct AppState {
@@ -88,7 +94,7 @@ async fn fetch_cats(count: usize) -> Result<Vec<Cat>, gloo_net::Error> {
         .collect())
 }
 
-pub fn input_target<T>(event: &T) -> web_sys::HtmlInputElement
+fn input_target<T>(event: &T) -> web_sys::HtmlInputElement
 where
     T: JsCast,
 {
@@ -209,7 +215,7 @@ fn cat_fetch_controls(state: &AppState) -> impl Element<AppState> {
     .class("cat-fetch-controls")
 }
 
-pub fn main() {
+fn main() {
     _ = console_log::init_with_level(log::Level::Debug);
     console_error_panic_hook::set_once();
 

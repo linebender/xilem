@@ -20,7 +20,7 @@ impl AppDriver for Driver {
     fn on_action(&mut self, _ctx: &mut DriverCtx<'_>, _widget_id: WidgetId, _action: Action) {}
 }
 
-pub fn main() {
+fn main() {
     let main_widget = Flex::column()
         .with_child(Textbox::new(""))
         .with_child(Textbox::new(""))

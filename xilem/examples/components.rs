@@ -3,6 +3,8 @@
 
 //! Modularizing state can be done with `lens` which allows using modular components.
 
+#![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
+
 use masonry::widget::MainAxisAlignment;
 use winit::error::EventLoopError;
 use xilem::core::lens;

@@ -3,6 +3,8 @@
 
 //! Model version of Masonry for exploration
 
+#![expect(elided_lifetimes_in_paths, reason = "Deferred: Noisy")]
+
 use core::any::Any;
 
 use xilem_core::{
@@ -10,11 +12,11 @@ use xilem_core::{
     ViewPathTracker,
 };
 
-pub fn app_logic(_: &mut u32) -> impl WidgetView<u32> {
+fn app_logic(_: &mut u32) -> impl WidgetView<u32> {
     Button {}
 }
 
-pub fn main() {
+fn main() {
     let view = app_logic(&mut 10);
     let mut ctx = ViewCtx { path: vec![] };
     let (_widget_tree, _state) = view.build(&mut ctx);
@@ -22,13 +24,13 @@ pub fn main() {
 }
 
 // Toy version of Masonry
-pub trait Widget: 'static + Any {
+trait Widget: 'static + Any {
     fn as_mut_any(&mut self) -> &mut dyn Any;
 }
-pub struct WidgetPod<W: Widget> {
+struct WidgetPod<W: Widget> {
     widget: W,
 }
-pub struct WidgetMut<'a, W: Widget> {
+struct WidgetMut<'a, W: Widget> {
     value: &'a mut W,
 }
 impl Widget for Box<dyn Widget> {
@@ -89,9 +91,9 @@ impl<State, Action> View<State, Action, ViewCtx> for Button {
     }
 }
 
-pub struct Button {}
+struct Button {}
 
-pub struct ButtonWidget {}
+struct ButtonWidget {}
 impl Widget for ButtonWidget {
     fn as_mut_any(&mut self) -> &mut dyn Any {
         self
@@ -118,7 +120,7 @@ impl<W: Widget> SuperElement<WidgetPod<W>, ViewCtx> for WidgetPod<Box<dyn Widget
     }
 }
 
-pub struct ViewCtx {
+struct ViewCtx {
     path: Vec<ViewId>,
 }
 
@@ -136,7 +138,7 @@ impl ViewPathTracker for ViewCtx {
     }
 }
 
-pub trait WidgetView<State, Action = ()>:
+trait WidgetView<State, Action = ()>:
     View<State, Action, ViewCtx, Element = WidgetPod<Self::Widget>> + Send + Sync
 {
     type Widget: Widget + Send + Sync;

@@ -6,6 +6,9 @@
 //!
 //! This is an integration test so that it can use the infrastructure in [`common`].
 
+#![expect(elided_lifetimes_in_paths, reason = "Deferred: Noisy")]
+#![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
+
 use xilem_core::{DynMessage, MessageResult, Mut, OrphanView, View, ViewId, ViewPathTracker};
 
 mod common;

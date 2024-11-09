@@ -1,8 +1,11 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+//! A to-do-list app, loosely inspired by todomvc.
+
 // On Windows platform, don't show a console when opening the app.
 #![windows_subsystem = "windows"]
+#![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
 
 use winit::error::EventLoopError;
 use xilem::view::{button, checkbox, flex, textbox, Axis, FlexSpacer};
@@ -98,21 +101,22 @@ fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
     app.run_windowed(event_loop, "First Example".into())
 }
 
-// Boilerplate code for android: Identical across all applications
+// Boilerplate code: Identical across all applications which support Android
 
-#[cfg(not(target_os = "android"))]
-#[allow(dead_code)]
+#[expect(clippy::allow_attributes, reason = "No way to specify the condition")]
+#[allow(dead_code, reason = "False positive: needed in not-_android version")]
 // This is treated as dead code by the Android version of the example, but is actually live
 // This hackery is required because Cargo doesn't care to support this use case, of one
 // example which works across Android and desktop
 fn main() -> Result<(), EventLoopError> {
     run(EventLoop::with_user_event())
 }
-
 #[cfg(target_os = "android")]
 // Safety: We are following `android_activity`'s docs here
-// We believe that there are no other declarations using this name in the compiled objects here
-#[allow(unsafe_code)]
+#[expect(
+    unsafe_code,
+    reason = "We believe that there are no other declarations using this name in the compiled objects here"
+)]
 #[no_mangle]
 fn android_main(app: winit::platform::android::activity::AndroidApp) {
     use winit::platform::android::EventLoopBuilderExtAndroid;
@@ -121,12 +125,4 @@ fn android_main(app: winit::platform::android::activity::AndroidApp) {
     event_loop.with_android_app(app);
 
     run(event_loop).expect("Can create app");
-}
-
-// TODO: This is a hack because of how we handle our examples in Cargo.toml
-// Ideally, we change Cargo to be more sensible here?
-#[cfg(target_os = "android")]
-#[allow(dead_code)]
-fn main() {
-    unreachable!()
 }

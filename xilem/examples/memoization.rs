@@ -1,6 +1,9 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+//! You can use memoization to avoid allocations.
+#![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
+
 use std::sync::Arc;
 
 use xilem::core::{frozen, memoize};

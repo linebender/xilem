@@ -1,6 +1,13 @@
 // Copyright 2023 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+//! Shows using mathml and SVG on the web
+
+// TODO: `expect` doesn't work here for unknown reasons
+#![allow(clippy::wildcard_imports, reason = "HTML elements are an exception")]
+#![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
+#![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
+
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use xilem_web::{
     document_body, elements::html, elements::mathml as ml, elements::svg, interfaces::*,
@@ -48,7 +55,7 @@ fn slider(
         .on_input(cb)
 }
 
-pub fn main() {
+fn main() {
     console_error_panic_hook::set_once();
     App::new(document_body(), Triangle { a: 200, b: 100 }, |t| {
         let x1 = 390;

@@ -41,7 +41,7 @@ fn grid_button(params: GridParams) -> Button {
     ))
 }
 
-pub fn main() {
+fn main() {
     let label = SizedBox::new(
         Prose::new("Change spacing by right and left clicking on the buttons")
             .with_text_size(14.0)

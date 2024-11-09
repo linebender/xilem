@@ -1,8 +1,7 @@
 // Copyright 2022 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-#![allow(missing_docs)]
-
+#![expect(unused, reason = "Vestigial functionality")]
 use std::collections::HashMap;
 use std::sync::Arc;
 

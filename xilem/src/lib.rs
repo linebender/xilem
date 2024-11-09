@@ -1,11 +1,42 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-// False-positive with dev-dependencies only used in examples
-#![cfg_attr(not(test), warn(unused_crate_dependencies))]
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
-#![warn(unnameable_types, unreachable_pub)]
-#![warn(clippy::print_stdout, clippy::print_stderr, clippy::dbg_macro)]
+#![deny(clippy::trivially_copy_pass_by_ref)]
+// LINEBENDER LINT SET - v1
+// See https://linebender.org/wiki/canonical-lints/
+// These lints aren't included in Cargo.toml because they
+// shouldn't apply to examples and tests
+#![warn(unused_crate_dependencies)]
+#![warn(clippy::print_stdout, clippy::print_stderr)]
+#![cfg_attr(
+    test,
+    expect(
+        unused_crate_dependencies,
+        reason = "False-positive with dev-dependencies only used in examples"
+    )
+)]
+// TODO: Remove any items listed as "Deferred"
+#![cfg_attr(not(debug_assertions), allow(unused))]
+#![expect(missing_debug_implementations, reason = "Deferred: Noisy")]
+#![expect(unused_qualifications, reason = "Deferred: Noisy")]
+#![expect(clippy::exhaustive_enums, reason = "Deferred: Noisy")]
+#![expect(clippy::match_same_arms, reason = "Deferred: Noisy")]
+#![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
+#![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
+#![expect(clippy::return_self_not_must_use, reason = "Deferred: Noisy")]
+#![expect(elided_lifetimes_in_paths, reason = "Deferred: Noisy")]
+#![expect(clippy::use_self, reason = "Deferred: Noisy")]
+// https://github.com/rust-lang/rust/pull/130025
+#![allow(missing_docs, reason = "We have many as-yet undocumented items")]
+#![expect(clippy::missing_errors_doc, reason = "Can be quite noisy?")]
+#![expect(clippy::missing_panics_doc, reason = "Can be quite noisy?")]
+#![expect(
+    clippy::shadow_unrelated,
+    reason = "Potentially controversial code style"
+)]
+#![expect(clippy::allow_attributes, reason = "Deferred: Noisy")]
+#![expect(clippy::allow_attributes_without_reason, reason = "Deferred: Noisy")]
 
 use std::collections::HashMap;
 use std::sync::Arc;

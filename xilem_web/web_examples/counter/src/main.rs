@@ -1,6 +1,9 @@
 // Copyright 2023 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+//! A simple counter
+#![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
+
 use xilem_web::{
     document_body,
     elements::html as el,
@@ -72,7 +75,7 @@ fn app_logic(state: &mut AppState) -> impl DomFragment<AppState> {
     )
 }
 
-pub fn main() {
+fn main() {
     console_error_panic_hook::set_once();
     App::new(document_body(), AppState::default(), app_logic).run();
 }

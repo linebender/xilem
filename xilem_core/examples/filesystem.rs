@@ -1,6 +1,12 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+//! An example using Xilem Core to manipulate a filesystem.
+
+#![expect(clippy::use_self, reason = "Deferred: Noisy")]
+#![expect(elided_lifetimes_in_paths, reason = "Deferred: Noisy")]
+#![expect(let_underscore_drop, reason = "Deferred: Noisy")]
+
 use std::io::stdin;
 use std::path::PathBuf;
 
@@ -34,7 +40,7 @@ fn app_logic(state: &mut State) -> impl FileView<State> {
             seq: (),
         }) */
         {
-            todo!()
+            unimplemented!()
         }
         State::Complex(value) => Box::new(complex_state(value.as_str())),
     };

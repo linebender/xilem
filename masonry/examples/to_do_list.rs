@@ -6,6 +6,7 @@
 
 // On Windows platform, don't show a console when opening the app.
 #![windows_subsystem = "windows"]
+#![expect(elided_lifetimes_in_paths, reason = "Deferred: Noisy")]
 
 use masonry::dpi::LogicalSize;
 use masonry::widget::{Button, Flex, Label, Portal, RootWidget, Textbox, WidgetMut};
@@ -41,7 +42,7 @@ impl AppDriver for Driver {
     }
 }
 
-pub fn main() {
+fn main() {
     let main_widget = Portal::new(
         Flex::column()
             .with_child(

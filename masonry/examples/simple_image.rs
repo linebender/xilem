@@ -20,7 +20,7 @@ impl AppDriver for Driver {
     fn on_action(&mut self, _ctx: &mut DriverCtx<'_>, _widget_id: WidgetId, _action: Action) {}
 }
 
-pub fn main() {
+fn main() {
     let image_bytes = include_bytes!("./assets/PicWithAlpha.png");
     let image_data = image::load_from_memory(image_bytes).unwrap().to_rgba8();
     let (width, height) = image_data.dimensions();

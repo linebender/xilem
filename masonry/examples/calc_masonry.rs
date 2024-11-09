@@ -5,7 +5,12 @@
 
 // On Windows platform, don't show a console when opening the app.
 #![windows_subsystem = "windows"]
-#![allow(variant_size_differences, clippy::single_match)]
+#![allow(
+    variant_size_differences,
+    clippy::single_match,
+    reason = "Don't matter for example code"
+)]
+#![expect(elided_lifetimes_in_paths, reason = "Deferred: Noisy")]
 
 use accesskit::{DefaultActionVerb, NodeBuilder, Role};
 use masonry::dpi::LogicalSize;
@@ -373,7 +378,7 @@ fn build_calc() -> impl Widget {
         )
 }
 
-pub fn main() {
+fn main() {
     let window_size = LogicalSize::new(223., 300.);
 
     let window_attributes = Window::default_attributes()

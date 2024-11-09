@@ -1,6 +1,13 @@
 // Copyright 2023 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+//! A recreation of todomvc in Xilem Web
+// TODO: Link
+
+// TODO: `expect` doesn't work here
+#![allow(clippy::wildcard_imports, reason = "HTML elements are an exception")]
+#![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
+
 mod state;
 
 use state::{AppState, Filter, Todo};
@@ -208,7 +215,7 @@ fn app_logic(state: &mut AppState) -> impl DomView<AppState> {
     ))
 }
 
-pub fn main() {
+fn main() {
     console_error_panic_hook::set_once();
     tracing_wasm::set_as_global_default();
     App::new(get_element_by_id("todoapp"), AppState::load(), app_logic).run();

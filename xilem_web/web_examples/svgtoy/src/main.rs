@@ -1,6 +1,10 @@
 // Copyright 2023 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+//! A simple example showing the interaction between SVG and event handling
+// TODO: `expect` doesn't work here
+#![allow(clippy::wildcard_imports, reason = "HTML elements are an exception")]
+
 use xilem_web::{
     document_body,
     elements::svg::{g, svg, text},
@@ -96,7 +100,7 @@ fn app_logic(state: &mut AppState) -> impl DomView<AppState> {
     .attr("height", 600)
 }
 
-pub fn main() {
+fn main() {
     console_error_panic_hook::set_once();
     App::new(document_body(), AppState::default(), app_logic).run();
 }

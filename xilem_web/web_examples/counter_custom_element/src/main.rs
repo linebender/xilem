@@ -1,6 +1,10 @@
 // Copyright 2023 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+//! Shows creating a element by raw tag name. This can be useful for web components
+
+#![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
+
 use xilem_web::{
     document_body,
     elements::custom_element,
@@ -46,7 +50,7 @@ fn app_logic(state: &mut AppState) -> impl DomView<AppState> {
     )
 }
 
-pub fn main() {
+fn main() {
     console_error_panic_hook::set_once();
     App::new(document_body(), AppState::default(), app_logic).run();
 }

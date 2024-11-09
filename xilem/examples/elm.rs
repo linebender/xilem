@@ -5,6 +5,8 @@
 //! You can also emulate the elm architecture for a subset of your app.
 //! Though usually it's more idiomatic to modularize state with `map_state` and update state directly within event callbacks, as seen in the `components` example.
 
+#![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
+
 use masonry::widget::{CrossAxisAlignment, MainAxisAlignment};
 use winit::error::EventLoopError;
 use xilem::core::{adapt, map_action, MessageResult};
