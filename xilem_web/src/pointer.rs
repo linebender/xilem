@@ -8,6 +8,7 @@ use crate::{
     interfaces::Element,
     DomView, DynMessage, ViewCtx,
 };
+use peniko::kurbo::Point;
 use std::marker::PhantomData;
 use wasm_bindgen::{prelude::Closure, throw_str, JsCast, UnwrapThrowExt};
 use web_sys::PointerEvent;
@@ -48,8 +49,7 @@ pub enum PointerMsg {
 pub struct PointerDetails {
     pub id: i32,
     pub button: i16,
-    pub x: f64,
-    pub y: f64,
+    pub position: Point,
 }
 
 impl PointerDetails {
@@ -57,8 +57,7 @@ impl PointerDetails {
         PointerDetails {
             id: e.pointer_id(),
             button: e.button(),
-            x: e.client_x() as f64,
-            y: e.client_y() as f64,
+            position: Point::new(e.client_x() as f64, e.client_y() as f64),
         }
     }
 }
