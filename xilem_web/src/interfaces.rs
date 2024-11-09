@@ -125,6 +125,32 @@ pub trait Element<State, Action = ()>:
         events::OnEvent::new(self, event, handler)
     }
 
+    /// Add a stateful pointer event (down/move/up) listener to this [`Element`].
+    ///
+    /// The pointer ids are captured from the underlying element.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use xilem_web::{interfaces::Element, elements::html::div, PointerMsg};
+    /// use web_sys::console::log_1;
+    ///
+    /// # fn component() -> impl Element<()> {
+    /// div(()).pointer(|_, pointer_msg| {
+    ///     match pointer_msg {
+    ///         PointerMsg::Down(e) => {
+    ///             log_1(&format!("Down at position: {:?} with button: {}", e.button, e.position).into());
+    ///         }
+    ///         PointerMsg::Move(e) => {
+    ///             log_1(&format!("Move at position: {:?} with button: {}", e.button, e.position).into());
+    ///         }
+    ///         PointerMsg::Up(e) => {
+    ///             log_1(&format!("Up at position: {:?} with button: {}", e.button, e.position).into());
+    ///         }
+    ///     };
+    /// })
+    /// # }
+    /// ```
     fn pointer<Callback: Fn(&mut State, PointerMsg)>(
         self,
         handler: Callback,

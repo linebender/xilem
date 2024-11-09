@@ -18,13 +18,18 @@ use web_sys::PointerEvent;
 const POINTER_VIEW_ID: ViewId = ViewId::new(0x1234_5014);
 
 /// A view that allows stateful handling of [`PointerEvent`]s with [`PointerMsg`]
+///
+/// See [`Element::pointer`] for more details how to use this view.
 pub struct Pointer<V, T, A, F> {
     child: V,
     callback: F,
     phantom: PhantomData<fn() -> (T, A)>,
 }
 
-#[allow(unnameable_types)] // reason: Implementation detail, public because of trait visibility rules
+#[allow(
+    unnameable_types,
+    reason = "Implementation detail, public because of trait visibility rules"
+)]
 pub struct PointerState<S> {
     // reason: Closures are retained so they can be called by environment
     #[allow(unused)]
@@ -47,9 +52,7 @@ pub enum PointerMsg {
 impl PointerMsg {
     pub fn position(&self) -> Point {
         match self {
-            PointerMsg::Down(p) => p.position,
-            PointerMsg::Move(p) => p.position,
-            PointerMsg::Up(p) => p.position,
+            PointerMsg::Down(p) | PointerMsg::Move(p) | PointerMsg::Up(p) => p.position,
         }
     }
 }
@@ -135,7 +138,7 @@ where
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         ctx.with_id(POINTER_VIEW_ID, |ctx| {
             let (element, child_state) = self.child.build(ctx);
-            let el = element.as_ref().unchecked_ref::<web_sys::Element>();
+            let el = element.node.as_ref();
 
             let [down_closure, move_closure, up_closure] = build_event_listeners(ctx, el);
             let state = PointerState {
