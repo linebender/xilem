@@ -71,6 +71,7 @@ impl SplineLine {
 
 #[derive(Default)]
 struct Draw {
+    pressed_buttons: [bool; 8],
     active_line: Option<SplineLine>,
     cursor_position: Point,
     canvas_position: Point,
@@ -138,38 +139,47 @@ impl Draw {
         self.active_line = None;
     }
 
+    fn toggle_button(&mut self, button: i16) {
+        // ignore exotic amount of buttons
+        if (0..8).contains(&button) {
+            self.pressed_buttons[button as usize] = !self.pressed_buttons[button as usize];
+        }
+    }
+
     fn view(&mut self) -> impl DomFragment<Self> {
         let x = -self.canvas_position.x;
         let y = -self.canvas_position.y;
         let zoom = self.zoom;
-        let canvas = svg(g(self.memoized_line_views.clone())
+        let transform = format!("scale({zoom}) translate({x}px, {y}px)");
+        let lines = g(self.memoized_line_views.clone())
             .fill(Color::TRANSPARENT)
-            .style(s(
-                "transform",
-                format!("scale({zoom}) translate({x}px, {y}px)"),
-            )))
-        .pointer(|state: &mut Self, event| {
-            state.update_cursor(event.position());
-            match event {
-                PointerMsg::Down(event) => match event.button {
-                    0 => state.start_new_line(),
-                    1 | 2 => state.is_panning = true,
-                    _ => (),
-                },
-                PointerMsg::Move(_) => state.extend_active_line(),
-                PointerMsg::Up(event) => match event.button {
-                    0 => state.finish_active_line(),
-                    1 | 2 => state.is_panning = false,
-                    _ => (),
-                },
-            };
-        })
-        .style([s("width", "100vw"), s("height", "100vh")])
-        .on_wheel(|state, event| state.zoom_with_wheel_event(event))
-        .on_click(|_, event| event.prevent_default())
-        .passive(false)
-        .on_contextmenu(|_, event| event.prevent_default())
-        .passive(false);
+            .style(s("transform", transform));
+        let canvas = svg(lines)
+            .pointer(|state: &mut Self, event| {
+                state.update_cursor(event.position());
+                let button = event.button();
+                // button state changed
+                if button != -1 {
+                    state.toggle_button(button);
+
+                    if state.pressed_buttons[0] && state.active_line.is_none() {
+                        state.start_new_line();
+                    } else if !state.pressed_buttons[0] && state.active_line.is_some() {
+                        state.finish_active_line();
+                    }
+
+                    state.is_panning = state.pressed_buttons[1] || state.pressed_buttons[2];
+                }
+                if state.pressed_buttons[0] && state.active_line.is_some() {
+                    state.extend_active_line();
+                }
+            })
+            .style([s("width", "100vw"), s("height", "100vh")])
+            .on_wheel(|state, event| state.zoom_with_wheel_event(event))
+            .on_click(|_, event| event.prevent_default())
+            .passive(false)
+            .on_contextmenu(|_, event| event.prevent_default())
+            .passive(false);
 
         let controls = label((
             // a space width would be more ideal, but for some reason spaces are truncated...
