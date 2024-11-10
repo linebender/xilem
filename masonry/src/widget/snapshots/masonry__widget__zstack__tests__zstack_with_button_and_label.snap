@@ -1,0 +1,10 @@
+---
+source: masonry/src/widget/zstack.rs
+expression: harness.root_widget()
+---
+ZStack(
+    Button(
+        Label<Button>,
+    ),
+    Label<Label>,
+)
