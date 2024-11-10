@@ -10,6 +10,7 @@ struct Child {
     widget: WidgetPod<Box<dyn Widget>>,
 }
 
+#[derive(Default)]
 pub struct ZStack {
     children: Vec<Child>,
 }
