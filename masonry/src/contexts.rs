@@ -226,6 +226,11 @@ impl_context_method!(
             self.widget_state.layout_rect()
         }
 
+        /// The offset of the baseline relative to the bottom of the widget.
+        pub fn baseline_offset(&self) -> f64 {
+            self.widget_state.baseline_offset
+        }
+
         /// The origin of the widget in window coordinates, relative to the top left corner of the
         /// content area.
         pub fn window_origin(&self) -> Point {
@@ -1122,6 +1127,12 @@ impl_context_method!(LayoutCtx<'_>, PaintCtx<'_>, {
         )
     }
 });
+
+impl PaintCtx<'_> {
+    pub fn debug_paint(&self) -> bool {
+        self.debug_paint
+    }
+}
 
 // --- MARK: RAW WRAPPERS ---
 macro_rules! impl_get_raw {

@@ -1178,9 +1178,9 @@ impl Widget for Flex {
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
         // paint the baseline if we're debugging layout
-        if ctx.debug_paint && ctx.widget_state.baseline_offset != 0.0 {
+        if ctx.debug_paint() && ctx.baseline_offset() != 0.0 {
             let color = get_debug_color(ctx.widget_id().to_raw());
-            let my_baseline = ctx.size().height - ctx.widget_state.baseline_offset;
+            let my_baseline = ctx.size().height - ctx.baseline_offset();
             let line = Line::new((0.0, my_baseline), (ctx.size().width, my_baseline));
 
             let stroke_style = Stroke::new(1.0).with_dashes(0., [4.0, 4.0]);
