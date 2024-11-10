@@ -392,7 +392,7 @@ macro_rules! event_definitions {
             State: 'static,
             Action: 'static,
             V: DomView<State, Action>,
-            OA: OptionalAction<Action>,
+            OA: OptionalAction<Action> + 'static,
             Callback: Fn(&mut State, web_sys::$web_sys_ty) -> OA + 'static,
         {
             type ViewState = OnEventState<V::ViewState>;
@@ -453,11 +453,9 @@ macro_rules! event_definitions {
     };
 }
 
-// click/auxclick/contextmenu are still mouse events in either Safari as well as Firefox,
-// see: https://stackoverflow.com/questions/70626381/why-chrome-emits-pointerevents-and-firefox-mouseevents-and-which-type-definition/76900433#76900433
 event_definitions!(
     (OnAbort, "abort", Event),
-    (OnAuxClick, "auxclick", MouseEvent),
+    (OnAuxClick, "auxclick", PointerEvent),
     (OnBeforeInput, "beforeinput", InputEvent),
     (OnBeforeMatch, "beforematch", Event),
     (OnBeforeToggle, "beforetoggle", Event),
@@ -466,10 +464,10 @@ event_definitions!(
     (OnCanPlay, "canplay", Event),
     (OnCanPlayThrough, "canplaythrough", Event),
     (OnChange, "change", Event),
-    (OnClick, "click", MouseEvent),
+    (OnClick, "click", PointerEvent),
     (OnClose, "close", Event),
     (OnContextLost, "contextlost", Event),
-    (OnContextMenu, "contextmenu", MouseEvent),
+    (OnContextMenu, "contextmenu", PointerEvent),
     (OnContextRestored, "contextrestored", Event),
     (OnCopy, "copy", Event),
     (OnCueChange, "cuechange", Event),
@@ -509,6 +507,15 @@ event_definitions!(
     (OnPause, "pause", Event),
     (OnPlay, "play", Event),
     (OnPlaying, "playing", Event),
+    (OnPointerCancel, "pointercancel", PointerEvent),
+    (OnPointerDown, "pointerdown", PointerEvent),
+    (OnPointerEnter, "pointerenter", PointerEvent),
+    (OnPointerLeave, "pointerleave", PointerEvent),
+    (OnPointerMove, "pointermove", PointerEvent),
+    (OnPointerOut, "pointerout", PointerEvent),
+    (OnPointerOver, "pointerover", PointerEvent),
+    (OnPointerRawUpdate, "pointerrawupdate", PointerEvent),
+    (OnPointerUp, "pointerup", PointerEvent),
     (OnProgress, "progress", Event),
     (OnRateChange, "ratechange", Event),
     (OnReset, "reset", Event),

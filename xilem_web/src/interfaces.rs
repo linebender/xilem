@@ -37,10 +37,10 @@ macro_rules! event_handler_mixin {
             handler: Callback,
         ) -> events::$event_ty<Self, State, Action, Callback>
         where
-            Self: Sized,
-            Self::Element: AsRef<web_sys::Element>,
-            OA: OptionalAction<Action>,
-            Callback: Fn(&mut State, web_sys::$web_sys_event_type) -> OA,
+            State: 'static,
+            Action: 'static,
+            OA: OptionalAction<Action> + 'static,
+            Callback: Fn(&mut State, web_sys::$web_sys_event_type) -> OA + 'static,
         {
             events::$event_ty::new(self, handler)
         }
@@ -116,15 +116,41 @@ pub trait Element<State, Action = ()>:
         handler: Callback,
     ) -> events::OnEvent<Self, State, Action, Event, Callback>
     where
-        Self::Element: AsRef<web_sys::Element>,
-        Event: JsCast + 'static,
+        State: 'static,
+        Action: 'static,
         OA: OptionalAction<Action>,
-        Callback: Fn(&mut State, Event) -> OA,
-        Self: Sized,
+        Callback: Fn(&mut State, Event) -> OA + 'static,
+        Event: JsCast + 'static + crate::Message,
     {
         events::OnEvent::new(self, event, handler)
     }
 
+    /// Add a stateful pointer event (down/move/up) listener to this [`Element`].
+    ///
+    /// The pointer ids are captured from the underlying element.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use xilem_web::{interfaces::Element, elements::html::div, PointerDetails, PointerMsg};
+    /// use web_sys::console::log_1;
+    ///
+    /// # fn component() -> impl Element<()> {
+    /// div(()).pointer(|_, pointer_msg| {
+    ///     match pointer_msg {
+    ///         PointerMsg::Down(PointerDetails { position, button, id }) => {
+    ///             log_1(&format!("Down({id}) at {position} and button: {button}").into());
+    ///         }
+    ///         PointerMsg::Move(PointerDetails { position, button, id }) => {
+    ///             log_1(&format!("Move({id}) at {position} and button: {button}").into());
+    ///         }
+    ///         PointerMsg::Up(PointerDetails { position, button, id }) => {
+    ///             log_1(&format!("Up({id}) at {position} and button: {button}").into());
+    ///         }
+    ///     };
+    /// })
+    /// # }
+    /// ```
     fn pointer<Callback: Fn(&mut State, PointerMsg)>(
         self,
         handler: Callback,
@@ -210,7 +236,7 @@ pub trait Element<State, Action = ()>:
         (OnCanPlay, on_canplay, "canplay", Event),
         (OnCanPlayThrough, on_canplaythrough, "canplaythrough", Event),
         (OnChange, on_change, "change", Event),
-        (OnClick, on_click, "click", MouseEvent),
+        (OnClick, on_click, "click", PointerEvent),
         (OnClose, on_close, "close", Event),
         (OnContextLost, on_contextlost, "contextlost", Event),
         (OnContextMenu, on_contextmenu, "contextmenu", PointerEvent),
@@ -258,6 +284,35 @@ pub trait Element<State, Action = ()>:
         (OnPause, on_pause, "pause", Event),
         (OnPlay, on_play, "play", Event),
         (OnPlaying, on_playing, "playing", Event),
+        (
+            OnPointerCancel,
+            on_pointercancel,
+            "pointercancel",
+            PointerEvent
+        ),
+        (OnPointerDown, on_pointerdown, "pointerdown", PointerEvent),
+        (
+            OnPointerEnter,
+            on_pointerenter,
+            "pointerenter",
+            PointerEvent
+        ),
+        (
+            OnPointerLeave,
+            on_pointerleave,
+            "pointerleave",
+            PointerEvent
+        ),
+        (OnPointerMove, on_pointermove, "pointermove", PointerEvent),
+        (OnPointerOut, on_pointerout, "pointerout", PointerEvent),
+        (OnPointerOver, on_pointerover, "pointerover", PointerEvent),
+        (
+            OnPointerRawUpdate,
+            on_pointerrawupdate,
+            "pointerrawupdate",
+            PointerEvent
+        ),
+        (OnPointerUp, on_pointerup, "pointerup", PointerEvent),
         (OnProgress, on_progress, "progress", Event),
         (OnRateChange, on_ratechange, "ratechange", Event),
         (OnReset, on_reset, "reset", Event),
