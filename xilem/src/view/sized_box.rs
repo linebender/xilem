@@ -277,10 +277,17 @@ impl From<f64> for Padding {
     }
 }
 
-// Follows CSS padding order of values
+// Follows CSS padding order for 4 values (top, trailing, bottom, leading)
 impl From<(f64, f64, f64, f64)> for Padding {
     fn from(value: (f64, f64, f64, f64)) -> Self {
         Self::new(value.0, value.1, value.2, value.3)
+    }
+}
+
+// Follows CSS padding order for 2 values (vertical, horizontal)
+impl From<(f64, f64)> for Padding {
+    fn from(value: (f64, f64)) -> Self {
+        Self::new(value.0, value.1, value.0, value.1)
     }
 }
 
