@@ -297,8 +297,8 @@ impl From<Insets> for Padding {
     }
 }
 
-impl Into<Insets> for Padding {
-    fn into(self) -> Insets {
-        Insets::new(self.leading, self.top, self.trailing, self.bottom)
+impl From<Padding> for Insets {
+    fn from(value: Padding) -> Self {
+        Insets::new(value.leading, value.top, value.trailing, value.bottom)
     }
 }
