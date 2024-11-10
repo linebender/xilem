@@ -6,7 +6,7 @@
 use accesskit::{NodeBuilder, Role};
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace_span, warn, Span};
-use vello::kurbo::{Affine, RoundedRectRadii};
+use vello::kurbo::{Affine, Insets, RoundedRectRadii};
 use vello::peniko::{Brush, Color, Fill};
 use vello::Scene;
 
@@ -26,7 +26,6 @@ struct BorderStyle {
 }
 
 // TODO - Have Widget type as generic argument
-// TODO - Add Padding
 
 /// A widget with predefined size.
 ///
@@ -44,6 +43,7 @@ pub struct SizedBox {
     background: Option<Brush>,
     border: Option<BorderStyle>,
     corner_radius: RoundedRectRadii,
+    padding: Insets,
 }
 
 // --- MARK: BUILDERS ---
@@ -57,6 +57,7 @@ impl SizedBox {
             background: None,
             border: None,
             corner_radius: RoundedRectRadii::from_single_radius(0.0),
+            padding: Insets::ZERO,
         }
     }
 
@@ -69,6 +70,7 @@ impl SizedBox {
             background: None,
             border: None,
             corner_radius: RoundedRectRadii::from_single_radius(0.0),
+            padding: Insets::ZERO,
         }
     }
 
@@ -81,6 +83,7 @@ impl SizedBox {
             background: None,
             border: None,
             corner_radius: RoundedRectRadii::from_single_radius(0.0),
+            padding: Insets::ZERO,
         }
     }
 
@@ -97,6 +100,7 @@ impl SizedBox {
             background: None,
             border: None,
             corner_radius: RoundedRectRadii::from_single_radius(0.0),
+            padding: Insets::ZERO,
         }
     }
 
@@ -177,6 +181,11 @@ impl SizedBox {
     /// Set the height directly. Intended for toolkits abstracting over `SizedBox`
     pub fn raw_height(mut self, value: Option<f64>) -> Self {
         self.height = value;
+        self
+    }
+
+    pub fn padding(mut self, padding: impl Into<Insets>) -> Self {
+        self.padding = padding.into();
         self
     }
 
@@ -266,6 +275,18 @@ impl SizedBox {
         this.ctx.request_paint_only();
     }
 
+    /// Clears padding.
+    pub fn clear_padding(this: &mut WidgetMut<'_, Self>) {
+        this.widget.padding = Insets::ZERO;
+        this.ctx.request_paint_only();
+    }
+
+    /// Set the padding around this widget.
+    pub fn set_padding(this: &mut WidgetMut<'_, Self>, padding: impl Into<Insets>) {
+        this.widget.padding = padding.into();
+        this.ctx.request_paint_only();
+    }
+
     // TODO - Doc
     pub fn child_mut<'t>(
         this: &'t mut WidgetMut<'_, Self>,
@@ -333,6 +354,14 @@ impl Widget for SizedBox {
         let child_bc = child_bc.shrink((2.0 * border_width, 2.0 * border_width));
         let origin = Point::new(border_width, border_width);
 
+        // Shrink constraints by padding inset
+        let padding_size = Size::new(
+            self.padding.x0 + self.padding.x1,
+            self.padding.y0 + self.padding.y1,
+        );
+        let child_bc = child_bc.shrink(padding_size);
+        let origin = origin + (self.padding.x0, self.padding.y0);
+
         let mut size;
         match self.child.as_mut() {
             Some(child) => {
@@ -341,7 +370,7 @@ impl Widget for SizedBox {
                 size = Size::new(
                     size.width + 2.0 * border_width,
                     size.height + 2.0 * border_width,
-                );
+                ) + padding_size;
             }
             None => size = bc.constrain((self.width.unwrap_or(0.0), self.height.unwrap_or(0.0))),
         };
@@ -477,6 +506,19 @@ mod tests {
     }
 
     #[test]
+    fn label_box_with_padding() {
+        let widget = SizedBox::new(Label::new("hello"))
+            .border(Color::BLUE, 5.0)
+            .rounded(5.0)
+            .padding((60., 40.));
+
+        let mut harness = TestHarness::create(widget);
+
+        assert_debug_snapshot!(harness.root_widget());
+        assert_render_snapshot!(harness, "label_box_with_padding");
+    }
+
+    #[test]
     fn label_box_with_solid_background() {
         let widget = SizedBox::new(Label::new("hello"))
             .width(40.0)
@@ -510,6 +552,38 @@ mod tests {
 
         assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "empty_box_with_gradient_background");
+    }
+
+    #[test]
+    fn label_box_with_padding_and_background() {
+        let widget = SizedBox::new(Label::new("hello"))
+            .width(40.0)
+            .height(40.0)
+            .background(Color::PLUM)
+            .border(Color::LIGHT_SKY_BLUE, 5.)
+            .padding(100.);
+
+        let mut harness = TestHarness::create(widget);
+
+        assert_debug_snapshot!(harness.root_widget());
+        assert_render_snapshot!(harness, "label_box_with_background_and_padding");
+    }
+
+    #[test]
+    fn label_box_with_padding_outside() {
+        let widget = SizedBox::new(
+            SizedBox::new(Label::new("hello"))
+                .width(40.0)
+                .height(40.0)
+                .background(Color::PLUM)
+                .border(Color::LIGHT_SKY_BLUE, 5.),
+        )
+        .padding(100.);
+
+        let mut harness = TestHarness::create(widget);
+
+        assert_debug_snapshot!(harness.root_widget());
+        assert_render_snapshot!(harness, "label_box_with_outer_padding");
     }
 
     // TODO - add screenshot tests for different brush types
