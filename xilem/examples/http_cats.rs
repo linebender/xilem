@@ -18,7 +18,7 @@ use xilem::core::fork;
 use xilem::core::one_of::OneOf3;
 use xilem::view::{
     button, flex, image, inline_prose, portal, prose, sized_box, spinner, worker, Axis, FlexExt,
-    FlexSpacer,
+    FlexSpacer, Padding,
 };
 use xilem::{Color, EventLoop, EventLoopBuilder, TextAlignment, WidgetView, Xilem};
 
@@ -47,13 +47,15 @@ enum ImageState {
 
 impl HttpCats {
     fn view(&mut self) -> impl WidgetView<HttpCats> {
-        let left_column = portal(flex((
+        let left_column = sized_box(portal(flex((
             prose("Status"),
             self.statuses
                 .iter_mut()
                 .map(Status::list_view)
                 .collect::<Vec<_>>(),
-        )));
+        ))))
+        .padding(Padding::leading(20.));
+
         let (info_area, worker_value) = if let Some(selected_code) = self.selected_code {
             if let Some(selected_status) =
                 self.statuses.iter_mut().find(|it| it.code == selected_code)
@@ -197,8 +199,8 @@ impl Status {
             FlexSpacer::Fixed(10.),
             image,
             // TODO: Overlay on top of the image?
-            // HACK: Trailing spaces workaround scrollbar covering content
-            prose("Copyright ©️ https://http.cat      ").alignment(TextAlignment::End),
+            sized_box(prose("Copyright ©️ https://http.cat").alignment(TextAlignment::End))
+                .padding(Padding::trailing(20.)),
         ))
         .main_axis_alignment(xilem::view::MainAxisAlignment::Start)
     }

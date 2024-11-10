@@ -3,7 +3,7 @@
 
 use std::marker::PhantomData;
 
-use masonry::widget;
+use masonry::{widget, Insets};
 use vello::kurbo::RoundedRectRadii;
 use vello::peniko::{Brush, Color};
 
@@ -26,6 +26,7 @@ where
         background: None,
         border: None,
         corner_radius: RoundedRectRadii::from_single_radius(0.0),
+        padding: Padding::ZERO,
         phantom: PhantomData,
     }
 }
@@ -37,6 +38,7 @@ pub struct SizedBox<V, State, Action = ()> {
     background: Option<Brush>,
     border: Option<BorderStyle>,
     corner_radius: RoundedRectRadii,
+    padding: Padding,
     phantom: PhantomData<fn() -> (State, Action)>,
 }
 
@@ -103,9 +105,15 @@ impl<V, State, Action> SizedBox<V, State, Action> {
         self
     }
 
-    /// Builder style method for rounding off corners of this container by setting a corner radius
+    /// Builder style method for rounding off corners of this container by setting a corner radius.
     pub fn rounded(mut self, radius: impl Into<RoundedRectRadii>) -> Self {
         self.corner_radius = radius.into();
+        self
+    }
+
+    /// Builder style method for adding a padding around the widget.
+    pub fn padding(mut self, padding: impl Into<Padding>) -> Self {
+        self.padding = padding.into();
         self
     }
 }
@@ -125,7 +133,8 @@ where
         let mut widget = widget::SizedBox::new_pod(child.inner.boxed())
             .raw_width(self.width)
             .raw_height(self.height)
-            .rounded(self.corner_radius);
+            .rounded(self.corner_radius)
+            .padding(self.padding);
         if let Some(background) = &self.background {
             widget = widget.background(background.clone());
         }
@@ -173,6 +182,9 @@ where
         if self.corner_radius != prev.corner_radius {
             widget::SizedBox::set_rounded(&mut element, self.corner_radius);
         }
+        if self.padding != prev.padding {
+            widget::SizedBox::set_padding(&mut element, self.padding);
+        }
         {
             let mut child = widget::SizedBox::child_mut(&mut element)
                 .expect("We only create SizedBox with a child");
@@ -208,4 +220,78 @@ where
 struct BorderStyle {
     width: f64,
     color: Color,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Padding {
+    top: f64,
+    trailing: f64,
+    bottom: f64,
+    leading: f64,
+}
+
+impl Padding {
+    pub const fn new(top: f64, trailing: f64, bottom: f64, leading: f64) -> Self {
+        Self {
+            top,
+            trailing,
+            bottom,
+            leading,
+        }
+    }
+
+    pub const ZERO: Padding = Padding::all(0.);
+
+    pub const fn all(padding: f64) -> Self {
+        Self::new(padding, padding, padding, padding)
+    }
+
+    pub const fn horizontal(padding: f64) -> Self {
+        Self::new(0., padding, 0., padding)
+    }
+
+    pub const fn vertical(padding: f64) -> Self {
+        Self::new(padding, 0., padding, 0.)
+    }
+
+    pub const fn top(padding: f64) -> Self {
+        Self::new(padding, 0., 0., 0.)
+    }
+
+    pub const fn trailing(padding: f64) -> Self {
+        Self::new(0., padding, 0., 0.)
+    }
+
+    pub const fn bottom(padding: f64) -> Self {
+        Self::new(0., 0., padding, 0.)
+    }
+
+    pub const fn leading(padding: f64) -> Self {
+        Self::new(0., 0., 0., padding)
+    }
+}
+
+impl From<f64> for Padding {
+    fn from(value: f64) -> Self {
+        Self::all(value)
+    }
+}
+
+// Follows CSS padding order of values
+impl From<(f64, f64, f64, f64)> for Padding {
+    fn from(value: (f64, f64, f64, f64)) -> Self {
+        Self::new(value.0, value.1, value.2, value.3)
+    }
+}
+
+impl From<Insets> for Padding {
+    fn from(value: Insets) -> Self {
+        Self::new(value.y0, value.x1, value.y1, value.x0)
+    }
+}
+
+impl Into<Insets> for Padding {
+    fn into(self) -> Insets {
+        Insets::new(self.leading, self.top, self.trailing, self.bottom)
+    }
 }
