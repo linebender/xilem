@@ -88,7 +88,7 @@ impl ViewElement for ZStackElement {
 }
 
 impl SuperElement<ZStackElement, ViewCtx> for ZStackElement {
-    fn upcast(ctx: &mut ViewCtx, child: ZStackElement) -> Self {
+    fn upcast(_ctx: &mut ViewCtx, child: ZStackElement) -> Self {
         child
     }
 
