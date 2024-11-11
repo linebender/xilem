@@ -10,12 +10,14 @@ use dpi::LogicalPosition;
 use parley::{FontContext, LayoutContext};
 use tracing::{trace, warn};
 use vello::kurbo::Vec2;
+use vello::peniko::Color;
 use winit::window::ResizeDirection;
 
 use crate::action::Action;
 use crate::passes::layout::run_layout_on;
 use crate::render_root::{MutateCallback, RenderRootSignal, RenderRootState};
 use crate::text::TextBrush;
+use crate::theme::get_debug_color;
 use crate::tree_arena::{ArenaMutChildren, ArenaRefChildren};
 use crate::widget::{WidgetMut, WidgetRef, WidgetState};
 use crate::{AllowRawMut, BoxConstraints, Insets, Point, Rect, Size, Widget, WidgetId, WidgetPod};
@@ -224,6 +226,11 @@ impl_context_method!(
 
         pub fn layout_rect(&self) -> Rect {
             self.widget_state.layout_rect()
+        }
+
+        /// The offset of the baseline relative to the bottom of the widget.
+        pub fn baseline_offset(&self) -> f64 {
+            self.widget_state.baseline_offset
         }
 
         /// The origin of the widget in window coordinates, relative to the top left corner of the
@@ -1122,6 +1129,29 @@ impl_context_method!(LayoutCtx<'_>, PaintCtx<'_>, {
         )
     }
 });
+
+impl PaintCtx<'_> {
+    /// Whether debug paint is enabled.
+    ///
+    /// If this property is set, your widget may draw additional debug information
+    /// (such as the position of the text baseline).
+    /// These should normally use the [debug color][Self::debug_color] for this widget.
+    /// Please note that when debug painting is enabled, each widget's layout boundaries are
+    /// outlined by Masonry, so you should avoid duplicating that.
+    ///
+    /// Debug paint can be enabled by setting the environment variable `MASONRY_DEBUG_PAINT`.
+    pub fn debug_paint_enabled(&self) -> bool {
+        self.debug_paint
+    }
+
+    /// A color used for debug painting in this widget.
+    ///
+    /// This is normally used to paint additional debugging information
+    /// when debug paint is enabled, see [`Self::debug_paint_enabled`].
+    pub fn debug_color(&self) -> Color {
+        get_debug_color(self.widget_id().to_raw())
+    }
+}
 
 // --- MARK: RAW WRAPPERS ---
 macro_rules! impl_get_raw {
