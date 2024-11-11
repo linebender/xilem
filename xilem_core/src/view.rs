@@ -4,6 +4,7 @@
 //! The primary view trait and associated trivial implementations.
 
 use alloc::boxed::Box;
+use alloc::rc::Rc;
 use alloc::sync::Arc;
 use core::ops::Deref;
 
@@ -205,8 +206,12 @@ where
 }
 
 #[allow(unnameable_types)] // reason: Implementation detail, public because of trait visibility rules
-pub struct ArcState<ViewState> {
+pub struct RcState<ViewState> {
     view_state: ViewState,
+    /// This is a flag that is set, when an inner view signifies that it requires a rebuild (via [`MessageResult::RequestRebuild`]).
+    /// This can happen, e.g. when an inner view wasn't changed by the app-developer directly (i.e. it points to the same view),
+    /// but e.g. through some kind of async action.
+    /// An example would be an async virtualized list, which fetches new entries, and requires a rebuild for the new entries.
     dirty: bool,
 }
 
@@ -218,13 +223,13 @@ where
     V: View<State, Action, Context, Message> + ?Sized,
 {
     type Element = V::Element;
-    type ViewState = ArcState<V::ViewState>;
+    type ViewState = RcState<V::ViewState>;
 
     fn build(&self, ctx: &mut Context) -> (Self::Element, Self::ViewState) {
         let (element, view_state) = self.deref().build(ctx);
         (
             element,
-            ArcState {
+            RcState {
                 view_state,
                 dirty: false,
             },
@@ -238,8 +243,68 @@ where
         ctx: &mut Context,
         element: Mut<Self::Element>,
     ) {
-        // If this is the same value, or no rebuild was forced, there's no need to rebuild
         if core::mem::take(&mut view_state.dirty) || !Arc::ptr_eq(self, prev) {
+            self.deref()
+                .rebuild(prev, &mut view_state.view_state, ctx, element);
+        }
+    }
+
+    fn teardown(
+        &self,
+        view_state: &mut Self::ViewState,
+        ctx: &mut Context,
+        element: Mut<Self::Element>,
+    ) {
+        self.deref()
+            .teardown(&mut view_state.view_state, ctx, element);
+    }
+
+    fn message(
+        &self,
+        view_state: &mut Self::ViewState,
+        id_path: &[ViewId],
+        message: Message,
+        app_state: &mut State,
+    ) -> MessageResult<Action, Message> {
+        let message_result =
+            self.deref()
+                .message(&mut view_state.view_state, id_path, message, app_state);
+        if matches!(message_result, MessageResult::RequestRebuild) {
+            view_state.dirty = true;
+        }
+        message_result
+    }
+}
+
+impl<V: ?Sized> ViewMarker for Rc<V> {}
+/// An implementation of [`View`] which only runs rebuild if the states are different
+impl<State, Action, Context, Message, V> View<State, Action, Context, Message> for Rc<V>
+where
+    Context: ViewPathTracker,
+    V: View<State, Action, Context, Message> + ?Sized,
+{
+    type Element = V::Element;
+    type ViewState = RcState<V::ViewState>;
+
+    fn build(&self, ctx: &mut Context) -> (Self::Element, Self::ViewState) {
+        let (element, view_state) = self.deref().build(ctx);
+        (
+            element,
+            RcState {
+                view_state,
+                dirty: false,
+            },
+        )
+    }
+
+    fn rebuild(
+        &self,
+        prev: &Self,
+        view_state: &mut Self::ViewState,
+        ctx: &mut Context,
+        element: Mut<Self::Element>,
+    ) {
+        if core::mem::take(&mut view_state.dirty) || !Rc::ptr_eq(self, prev) {
             self.deref()
                 .rebuild(prev, &mut view_state.view_state, ctx, element);
         }
