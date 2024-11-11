@@ -10,7 +10,6 @@ use vello::kurbo::common::FloatExt;
 use vello::kurbo::{Affine, Line, Stroke, Vec2};
 use vello::Scene;
 
-use crate::theme::get_debug_color;
 use crate::widget::WidgetMut;
 use crate::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, Point, PointerEvent,
@@ -1178,8 +1177,8 @@ impl Widget for Flex {
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
         // paint the baseline if we're debugging layout
-        if ctx.debug_paint() && ctx.baseline_offset() != 0.0 {
-            let color = get_debug_color(ctx.widget_id().to_raw());
+        if ctx.debug_paint_enabled() && ctx.baseline_offset() != 0.0 {
+            let color = ctx.debug_color();
             let my_baseline = ctx.size().height - ctx.baseline_offset();
             let line = Line::new((0.0, my_baseline), (ctx.size().width, my_baseline));
 

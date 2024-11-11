@@ -82,6 +82,7 @@ static DEBUG_COLOR: &[Color] = &[
 /// A color used for debug painting.
 ///
 /// The same color is always returned given the same id, usually the id of a widget.
+/// When painting a widget, [`PaintCtx::debug_color`][crate::contexts::PaintCtx::debug_color] is typically used instead.
 pub fn get_debug_color(id: u64) -> Color {
     let color_num = id as usize % DEBUG_COLOR.len();
     DEBUG_COLOR[color_num]
