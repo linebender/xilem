@@ -20,6 +20,7 @@ pub fn fork<Active, Alongside>(
 }
 
 /// The view for [`fork`].
+#[derive(Debug)]
 pub struct Fork<Active, Alongside> {
     active_view: Active,
     alongside_view: Alongside,

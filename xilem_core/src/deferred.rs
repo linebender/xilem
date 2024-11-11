@@ -3,7 +3,7 @@
 
 use alloc::boxed::Box;
 use alloc::sync::Arc;
-use core::fmt::Display;
+use core::fmt::{Debug, Display};
 use core::marker::PhantomData;
 
 use crate::{DynMessage, Message, NoElement, View, ViewId, ViewPathTracker};
@@ -47,9 +47,18 @@ pub trait RawProxy<Message = DynMessage>: Send + Sync + 'static {
     //
     // e.g. an `Option<Arc<dyn FnMut(ProxyError, ProxyMessageId?)>>`?
     fn send_message(&self, path: Arc<[ViewId]>, message: Message) -> Result<(), ProxyError>;
+    /// Get the debug formatter for this proxy type.
+    fn dyn_debug(&self) -> &dyn Debug;
+}
+
+impl<Message: 'static> Debug for dyn RawProxy<Message> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        self.dyn_debug().fmt(f)
+    }
 }
 
 /// A way to send a message of an expected type to a specific view.
+#[derive(Debug)]
 pub struct MessageProxy<M: Message> {
     proxy: Arc<dyn RawProxy<DynMessage>>,
     path: Arc<[ViewId]>,
@@ -109,10 +118,8 @@ pub enum ProxyError {
     ///
     /// This likely requires async error handling to happen.
     ViewExpired(DynMessage, Arc<[ViewId]>),
-    #[allow(missing_docs)]
-    Other(&'static str),
-    // TODO: When core::error::Error is stabilised
-    // Other(Box<dyn core::error::Error + Send>),
+    /// An error specific to the driver being used.
+    Other(Box<dyn core::error::Error + Send>),
 }
 
 // Is it fine to use thiserror in this crate?
@@ -123,17 +130,16 @@ impl Display for ProxyError {
             ProxyError::ViewExpired(_, _) => {
                 f.write_fmt(format_args!("the corresponding view is no longer present"))
             }
-
-            ProxyError::Other(inner) => inner.fmt(f),
+            ProxyError::Other(inner) => Display::fmt(inner, f),
         }
     }
 }
 
-// impl std::error::Error for ProxyError {
-//     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-//         match self {
-//             ProxyError::Other(inner) => inner.source(),
-//             _ => None,
-//         }
-//     }
-// }
+impl core::error::Error for ProxyError {
+    fn source(&self) -> Option<&(dyn core::error::Error + 'static)> {
+        match self {
+            ProxyError::Other(inner) => inner.source(),
+            _ => None,
+        }
+    }
+}

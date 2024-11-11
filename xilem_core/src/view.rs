@@ -206,6 +206,7 @@ where
 }
 
 #[allow(unnameable_types)] // reason: Implementation detail, public because of trait visibility rules
+#[derive(Debug)]
 pub struct RcState<ViewState> {
     view_state: ViewState,
     /// This is a flag that is set, when an inner view signifies that it requires a rebuild (via [`MessageResult::RequestRebuild`]).
