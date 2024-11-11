@@ -208,6 +208,9 @@ where
 #[allow(unnameable_types)] // reason: Implementation detail, public because of trait visibility rules
 pub struct RcState<ViewState> {
     view_state: ViewState,
+    /// This is a flag that is set, when an inner view signifies that it requires a rebuild (via [`MessageResult::RequestRebuild`]).
+    /// This can happen, e.g. when an inner view wasn't changed by the user directly, but e.g. some kind of async action.
+    /// An example would be an async virtualized list, which fetches new entries, and requires a rebuild for the new entries.
     dirty: bool,
 }
 
@@ -239,7 +242,6 @@ where
         ctx: &mut Context,
         element: Mut<Self::Element>,
     ) {
-        // If this is the same value, or no rebuild was forced, there's no need to rebuild
         if core::mem::take(&mut view_state.dirty) || !Arc::ptr_eq(self, prev) {
             self.deref()
                 .rebuild(prev, &mut view_state.view_state, ctx, element);
@@ -301,7 +303,6 @@ where
         ctx: &mut Context,
         element: Mut<Self::Element>,
     ) {
-        // If this is the same value, or no rebuild was forced, there's no need to rebuild
         if core::mem::take(&mut view_state.dirty) || !Rc::ptr_eq(self, prev) {
             self.deref()
                 .rebuild(prev, &mut view_state.view_state, ctx, element);

@@ -17,9 +17,10 @@ pub enum MessageResult<Action, Message = DynMessage> {
     ///
     /// This allows for sub-sections of your app to use an elm-like architecture
     Action(Action),
-    // TODO: What does this mean?
-    /// This message's handler needs a rebuild to happen.
-    /// The exact semantics of this method haven't been determined.
+    /// A view has requested a full rebuild, even if it wasn't changed by the user directly.
+    ///
+    /// This can happen for example by some kind of async action.
+    /// An example would be an async virtualized list, which fetches new entries, and requires a rebuild for the new entries.
     RequestRebuild,
     #[default]
     /// This event had no impact on the app state, or the impact it did have
