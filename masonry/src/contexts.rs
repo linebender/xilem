@@ -6,9 +6,11 @@
 use std::time::Duration;
 
 use accesskit::TreeUpdate;
+use dpi::LogicalPosition;
 use parley::{FontContext, LayoutContext};
 use tracing::{trace, warn};
 use vello::kurbo::Vec2;
+use winit::window::ResizeDirection;
 
 use crate::action::Action;
 use crate::passes::layout::run_layout_on;
@@ -604,6 +606,58 @@ impl_context_method!(
             trace!("submit_action");
             self.global_state
                 .emit_signal(RenderRootSignal::Action(action, self.widget_state.id));
+        }
+
+        /// Start a window drag.
+        ///
+        /// Moves the window with the left mouse button until the button is released.
+        pub fn drag_window(&mut self) {
+            trace!("drag_window");
+            self.global_state
+                .signal_queue
+                .push_back(RenderRootSignal::DragWindow);
+        }
+
+        /// Start a window resize.
+        ///
+        /// Resizes the window with the left mouse button until the button is released.
+        pub fn drag_resize_window(&mut self, direction: ResizeDirection) {
+            trace!("drag_resize_window");
+            self.global_state
+                .signal_queue
+                .push_back(RenderRootSignal::DragResizeWindow(direction));
+        }
+
+        /// Toggle the maximized state of the window.
+        pub fn toggle_maximized(&mut self) {
+            trace!("toggle_maximized");
+            self.global_state
+                .signal_queue
+                .push_back(RenderRootSignal::ToggleMaximized);
+        }
+
+        /// Minimize the window.
+        pub fn minimize(&mut self) {
+            trace!("minimize");
+            self.global_state
+                .signal_queue
+                .push_back(RenderRootSignal::Minimize);
+        }
+
+        /// Exit the application.
+        pub fn exit(&mut self) {
+            trace!("exit");
+            self.global_state
+                .signal_queue
+                .push_back(RenderRootSignal::Exit);
+        }
+
+        /// Show the window menu at a specified position.
+        pub fn show_window_menu(&mut self, position: LogicalPosition<f64>) {
+            trace!("show_window_menu");
+            self.global_state
+                .signal_queue
+                .push_back(RenderRootSignal::ShowWindowMenu(position));
         }
 
         /// Request a timer event.
