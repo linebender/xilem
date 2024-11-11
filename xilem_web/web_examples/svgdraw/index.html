@@ -14,29 +14,48 @@
       touch-action: none;
     }
 
-    .controls {
-      display: block;
-      left: 0;
-      right: 0;
-      margin-inline: auto;
-      width: fit-content;
-      height: 1.5rem;
-      padding-top: 0.25rem;
-      padding-bottom: 0.25rem;
-      font-family: monospace, monospace;
+    input[type=radio] {
+      display: none;
     }
 
-    .controls>span {
-      vertical-align: top;
-      font-family: monospace, monospace;
+    .color>input[type=radio]:checked+div {
+      transform: scale(1.25);
+    }
+
+    .color>input[type=radio]+div {
+      transition: transform 0.3s ease-in-out;
+      border-radius: 50%;
+      border-color: black;
+      border-width: 1px;
+      border-style: solid;
+      width: 23px;
+      height: 23px;
+      margin: 2.2px;
+      background-color: red;
+      display: block;
+    }
+
+    .color {
+      display: inline-block
+    }
+
+    .controls {
+      position: absolute;
+      left: 0;
+      width: fit-content;
+      height: 1.5rem;
+      padding: 1.0rem;
+      font-family: Arial, Helvetica, sans-serif, monospace;
+    }
+
+    .controls>div {
+      margin-bottom: 10px;
     }
 
     .value-range {
-      display: inline-block;
-      position: relative;
+      position: absolute;
       height: 1.5rem;
       width: 20rem;
-
     }
 
     .value-range::before,
@@ -60,7 +79,7 @@
 
     .value-range::after {
       text-align: right;
-      content: "30";
+      content: "1000";
     }
 
     input[type=range] {
@@ -97,7 +116,6 @@
 
     label {
       line-height: 1.5rem;
-      position: absolute;
     }
   </style>
 </head>

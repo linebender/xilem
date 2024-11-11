@@ -36,7 +36,7 @@ impl Action for TodoAction {}
 fn todo_item(todo: &mut Todo, editing: bool) -> impl Element<Todo, TodoAction> {
     let checkbox = el::input(())
         .class("toggle")
-        .attr("type", "checkbox")
+        .type_("checkbox")
         .checked(todo.completed)
         .on_click(|state: &mut Todo, _| state.completed = !state.completed);
 
@@ -166,7 +166,7 @@ fn main_view(state: &mut AppState, should_display: bool) -> impl Element<AppStat
     let toggle_all = el::input(())
         .attr("id", "toggle-all")
         .class("toggle-all")
-        .attr("type", "checkbox")
+        .type_("checkbox")
         .checked(state.are_all_complete());
 
     el::section((

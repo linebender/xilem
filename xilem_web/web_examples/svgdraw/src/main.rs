@@ -12,7 +12,7 @@ use xilem_web::{
         svg::{g, svg},
     },
     input_event_target_value,
-    interfaces::{Element, SvgGeometryElement, SvgPathElement, SvggElement},
+    interfaces::{Element, HtmlInputElement, SvgGeometryElement, SvgPathElement, SvggElement},
     modifiers::style as s,
     svg::{
         kurbo::{BezPath, Point, QuadSpline, Shape, Stroke},
@@ -21,27 +21,19 @@ use xilem_web::{
     AnyDomView, App, DomFragment,
 };
 
-const RAINBOW_COLORS: &[Color] = &[
+const RAINBOW_COLORS: [Color; 11] = [
     Color::rgb8(228, 3, 3),     // Red
     Color::rgb8(255, 140, 0),   // Orange
     Color::rgb8(255, 237, 0),   // Yellow
     Color::rgb8(0, 128, 38),    // Green
     Color::rgb8(0, 76, 255),    // Indigo
     Color::rgb8(115, 41, 130),  // Violet
-    Color::rgb8(214, 2, 112),   // Pink
+    Color::rgb8(214, 2, 112),   // Magenta
     Color::rgb8(155, 79, 150),  // Lavender
     Color::rgb8(0, 56, 168),    // Blue
     Color::rgb8(91, 206, 250),  // Light Blue
     Color::rgb8(245, 169, 184), // Pink
 ];
-
-fn random_color() -> Color {
-    #![allow(
-        clippy::cast_possible_truncation,
-        reason = "This will never happen here"
-    )]
-    RAINBOW_COLORS[(web_sys::js_sys::Math::random() * 1000000.0) as usize % RAINBOW_COLORS.len()]
-}
 
 struct SplineLine {
     points: Vec<Point>,
@@ -72,6 +64,7 @@ impl SplineLine {
 #[derive(Default)]
 struct Draw {
     pressed_buttons: [bool; 8],
+    selected_color: usize,
     active_line: Option<SplineLine>,
     cursor_position: Point,
     canvas_position: Point,
@@ -121,7 +114,8 @@ impl Draw {
             self.active_line.is_none(),
             "There shouldn't be an active line when starting a new one"
         );
-        let line = SplineLine::new(self.draw_position, random_color(), self.new_line_width);
+        let color = RAINBOW_COLORS[self.selected_color];
+        let line = SplineLine::new(self.draw_position, color, self.new_line_width);
         self.memoized_line_views
             .push(Rc::new(line.view()) as Rc<AnyDomView<Self>>);
         self.active_line = Some(line);
@@ -158,8 +152,9 @@ impl Draw {
             .pointer(|state: &mut Self, event| {
                 state.update_cursor(event.position());
                 let button = event.button();
-                // button state changed
-                if button != -1 {
+                let button_state_changed = button != -1;
+
+                if button_state_changed {
                     state.toggle_button(button);
 
                     if state.pressed_buttons[0] && state.active_line.is_none() {
@@ -180,23 +175,43 @@ impl Draw {
             .passive(false)
             .on_contextmenu(|_, event| event.prevent_default())
             .passive(false);
+        let mut i = 0; // we can't use enumerate with array::map
+        let colors = div(RAINBOW_COLORS.map(|color| {
+            let color_button = label((
+                input(())
+                    .type_("radio")
+                    .name("color")
+                    .checked(self.selected_color == i)
+                    .on_input(move |state: &mut Self, _| state.selected_color = i),
+                div(()).style(s(
+                    "background-color",
+                    format!("#{:02x}{:02x}{:02x}", color.r, color.g, color.b),
+                )),
+            ))
+            .class("color");
+            i += 1;
+            color_button
+        }));
 
-        let controls = label((
-            // a space width would be more ideal, but for some reason spaces are truncated...
-            span(format!("Stroke width {:>05.2}: ", self.new_line_width)),
-            div(input(())
-                .attr("type", "range")
-                .attr("min", 0.1)
-                .attr("max", 30)
-                .attr("step", 0.01)
-                .attr("value", self.new_line_width)
-                .on_input(|state: &mut Self, event| {
-                    state.new_line_width = input_event_target_value(&event)
-                        .unwrap_throw()
-                        .parse()
-                        .unwrap_throw();
-                }))
-            .class("value-range"),
+        let controls = div((
+            colors,
+            label((
+                span(format!("Stroke width {:.3}: ", self.new_line_width)),
+                div(input(())
+                    .type_("range")
+                    .attr("min", 0.1_f64.ln())
+                    .attr("max", 1000.0_f64.ln())
+                    .attr("step", 0.01)
+                    .attr("value", self.new_line_width.ln())
+                    .on_input(|state: &mut Self, event| {
+                        state.new_line_width = input_event_target_value(&event)
+                            .unwrap_throw()
+                            .parse()
+                            .unwrap_throw();
+                        state.new_line_width = state.new_line_width.exp();
+                    }))
+                .class("value-range"),
+            )),
         ))
         .class("controls");
         (controls, canvas)
