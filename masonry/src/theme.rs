@@ -79,6 +79,9 @@ static DEBUG_COLOR: &[Color] = &[
     Color::rgb8(0, 0, 0),
 ];
 
+/// A color used for debug painting.
+///
+/// The same color is always returned given the same id, usually the id of a widget.
 pub fn get_debug_color(id: u64) -> Color {
     let color_num = id as usize % DEBUG_COLOR.len();
     DEBUG_COLOR[color_num]

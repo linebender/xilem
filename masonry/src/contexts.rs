@@ -1129,6 +1129,10 @@ impl_context_method!(LayoutCtx<'_>, PaintCtx<'_>, {
 });
 
 impl PaintCtx<'_> {
+    /// Whether debug paint is enabled.
+    ///
+    /// Debug paint can be enabled using the environment variable `MASONRY_DEBUG_PAINT`.
+    /// When enabled widget boundaries are outlined.
     pub fn debug_paint(&self) -> bool {
         self.debug_paint
     }
