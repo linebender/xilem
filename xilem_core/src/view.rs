@@ -210,7 +210,7 @@ pub struct RcState<ViewState> {
     view_state: ViewState,
     /// This is a flag that is set, when an inner view signifies that it requires a rebuild (via [`MessageResult::RequestRebuild`]).
     /// This can happen, e.g. when an inner view wasn't changed by the app-developer directly (i.e. it points to the same view),
-    /// but e.g. some kind of async action.
+    /// but e.g. through some kind of async action.
     /// An example would be an async virtualized list, which fetches new entries, and requires a rebuild for the new entries.
     dirty: bool,
 }
