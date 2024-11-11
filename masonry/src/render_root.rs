@@ -4,10 +4,11 @@
 use std::collections::{HashMap, VecDeque};
 
 use accesskit::{ActionRequest, TreeUpdate};
+use dpi::PhysicalPosition;
 use parley::fontique::{self, Collection, CollectionOptions};
 use parley::{FontContext, LayoutContext};
 use tracing::{info_span, warn};
-use vello::kurbo::{self, Rect};
+use vello::kurbo::{self, Rect, Vec2};
 use vello::Scene;
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -323,6 +324,28 @@ impl RenderRoot {
 
     pub fn cursor_icon(&self) -> CursorIcon {
         self.cursor_icon
+    }
+
+    pub fn is_passthrough(&self, pos: PhysicalPosition<f64>) -> bool {
+        let pos = Vec2::new(pos.x, pos.y) / self.scale_factor;
+
+        let mut target_id = self
+            .get_root_widget()
+            .find_widget_at_pos(pos.to_point())
+            .map(|widget| widget.id());
+
+        while let Some(widget_id) = target_id {
+            let parent_id = self.widget_arena.parent_of(widget_id);
+            let widget = self.widget_arena.get_widget(widget_id);
+
+            if !widget.item.is_passthrough() {
+                return false;
+            }
+
+            target_id = parent_id;
+        }
+
+        true
     }
 
     // --- MARK: ACCESS WIDGETS---
