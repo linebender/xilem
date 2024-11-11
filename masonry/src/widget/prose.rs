@@ -283,8 +283,8 @@ impl Widget for Prose {
         SmallVec::new()
     }
 
-    fn make_trace_span(&self) -> Span {
-        trace_span!("Prose")
+    fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
+        trace_span!("Prose", id = ctx.widget_id().trace())
     }
 
     fn get_debug_text(&self) -> Option<String> {

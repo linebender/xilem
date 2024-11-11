@@ -3,7 +3,7 @@
 
 use tracing::info_span;
 
-use crate::passes::recurse_on_children;
+use crate::passes::{enter_span_if, recurse_on_children};
 use crate::render_root::{RenderRoot, RenderRootState};
 use crate::tree_arena::ArenaMut;
 use crate::{UpdateCtx, Widget, WidgetState};
@@ -15,11 +15,12 @@ fn update_anim_for_widget(
     mut state: ArenaMut<'_, WidgetState>,
     elapsed_ns: u64,
 ) {
-    let _span = global_state
-        .trace
-        .anim
-        .then(|| widget.item.make_trace_span().entered());
-
+    let _span = enter_span_if(
+        global_state.trace.anim,
+        global_state,
+        widget.reborrow(),
+        state.reborrow(),
+    );
     if !state.item.needs_anim {
         return;
     }

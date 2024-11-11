@@ -15,7 +15,8 @@ use masonry::kurbo::{BezPath, Stroke};
 use masonry::widget::{ObjectFit, RootWidget};
 use masonry::{
     AccessCtx, AccessEvent, Action, Affine, AppDriver, BoxConstraints, Color, DriverCtx, EventCtx,
-    LayoutCtx, PaintCtx, Point, PointerEvent, Rect, RegisterCtx, Size, TextEvent, Widget, WidgetId,
+    LayoutCtx, PaintCtx, Point, PointerEvent, QueryCtx, Rect, RegisterCtx, Size, TextEvent, Widget,
+    WidgetId,
 };
 use parley::layout::Alignment;
 use parley::style::{FontFamily, FontStack, StyleProperty};
@@ -139,8 +140,8 @@ impl Widget for CustomWidget {
         SmallVec::new()
     }
 
-    fn make_trace_span(&self) -> Span {
-        trace_span!("CustomWidget")
+    fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
+        trace_span!("CustomWidget", id = ctx.widget_id().trace())
     }
 }
 

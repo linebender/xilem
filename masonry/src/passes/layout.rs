@@ -10,7 +10,7 @@ use smallvec::SmallVec;
 use tracing::{info_span, trace};
 use vello::kurbo::{Point, Rect, Size};
 
-use crate::passes::recurse_on_children;
+use crate::passes::{enter_span_if, recurse_on_children};
 use crate::render_root::{RenderRoot, RenderRootSignal, WindowSizePolicy};
 use crate::widget::WidgetState;
 use crate::{BoxConstraints, LayoutCtx, Widget, WidgetPod};
@@ -28,7 +28,12 @@ pub(crate) fn run_layout_on<W: Widget>(
     let mut state = parent_ctx.widget_state_children.get_child_mut(id).unwrap();
 
     let trace = parent_ctx.global_state.trace.layout;
-    let _span = trace.then(|| widget.item.make_trace_span().entered());
+    let _span = enter_span_if(
+        trace,
+        parent_ctx.global_state,
+        widget.reborrow(),
+        state.reborrow(),
+    );
 
     let mut children_ids = SmallVec::new();
     if cfg!(debug_assertions) {

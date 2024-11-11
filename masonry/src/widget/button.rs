@@ -15,7 +15,7 @@ use crate::text::ArcStr;
 use crate::widget::{Label, WidgetMut, WidgetPod};
 use crate::{
     theme, AccessCtx, AccessEvent, BoxConstraints, EventCtx, Insets, LayoutCtx, PaintCtx,
-    PointerEvent, Size, TextEvent, Update, UpdateCtx, Widget, WidgetId,
+    PointerEvent, QueryCtx, Size, TextEvent, Update, UpdateCtx, Widget, WidgetId,
 };
 
 // the minimum padding added to a button.
@@ -204,8 +204,8 @@ impl Widget for Button {
         smallvec![self.label.id()]
     }
 
-    fn make_trace_span(&self) -> Span {
-        trace_span!("Button")
+    fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
+        trace_span!("Button", id = ctx.widget_id().trace())
     }
 
     // FIXME

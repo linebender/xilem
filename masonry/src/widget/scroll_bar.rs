@@ -13,7 +13,8 @@ use crate::paint_scene_helpers::{fill_color, stroke};
 use crate::widget::{Axis, WidgetMut};
 use crate::{
     theme, AccessCtx, AccessEvent, AllowRawMut, BoxConstraints, EventCtx, LayoutCtx, PaintCtx,
-    Point, PointerEvent, RegisterCtx, Size, TextEvent, Update, UpdateCtx, Widget, WidgetId,
+    Point, PointerEvent, QueryCtx, RegisterCtx, Size, TextEvent, Update, UpdateCtx, Widget,
+    WidgetId,
 };
 
 // RULES
@@ -223,8 +224,8 @@ impl Widget for ScrollBar {
         SmallVec::new()
     }
 
-    fn make_trace_span(&self) -> Span {
-        trace_span!("ScrollBar")
+    fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
+        trace_span!("ScrollBar", id = ctx.widget_id().trace())
     }
 }
 

@@ -10,6 +10,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use accesskit::{NodeBuilder, Role};
 use cursor_icon::CursorIcon;
 use smallvec::SmallVec;
+use tracing::field::DisplayValue;
 use tracing::{trace_span, Span};
 use vello::Scene;
 
@@ -44,6 +45,12 @@ use crate::{
 /// is unique. Two widgets must not be created with the same id.
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
 pub struct WidgetId(pub(crate) NonZeroU64);
+
+impl WidgetId {
+    pub fn trace(self) -> DisplayValue<Self> {
+        tracing::field::display(self)
+    }
+}
 
 // TODO - Add tutorial: implementing a widget - See https://github.com/linebender/xilem/issues/376
 /// The trait implemented by all widgets.
@@ -208,8 +215,12 @@ pub trait Widget: AsAny {
     /// widget visited, and popped when control flow goes back to the parent. This method
     /// returns a static span (that you can use to filter traces and logs).
     // TODO: Make include the widget's id?
-    fn make_trace_span(&self) -> Span {
-        trace_span!("Widget", r#type = self.short_type_name())
+    fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
+        trace_span!(
+            "Widget",
+            r#type = self.short_type_name(),
+            id = ctx.widget_id().trace()
+        )
     }
 
     /// Return a small string representing important info about this widget instance.
@@ -469,8 +480,8 @@ impl Widget for Box<dyn Widget> {
         self.deref().accepts_text_input()
     }
 
-    fn make_trace_span(&self) -> Span {
-        self.deref().make_trace_span()
+    fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
+        self.deref().make_trace_span(ctx)
     }
 
     fn get_debug_text(&self) -> Option<String> {

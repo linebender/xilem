@@ -16,7 +16,7 @@ use vello::Scene;
 use crate::text::{ArcStr, TextBrush, TextLayout};
 use crate::widget::WidgetMut;
 use crate::{
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
+    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent, QueryCtx,
     RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
 };
 
@@ -249,8 +249,8 @@ impl Widget for Label {
         false
     }
 
-    fn make_trace_span(&self) -> Span {
-        trace_span!("Label")
+    fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
+        trace_span!("Label", id = ctx.widget_id().trace())
     }
 
     fn get_debug_text(&self) -> Option<String> {

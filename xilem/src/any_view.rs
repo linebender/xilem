@@ -5,7 +5,7 @@ use accesskit::{NodeBuilder, Role};
 use masonry::widget::WidgetMut;
 use masonry::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, Point, PointerEvent,
-    RegisterCtx, Size, TextEvent, Widget, WidgetId, WidgetPod,
+    QueryCtx, RegisterCtx, Size, TextEvent, Widget, WidgetId, WidgetPod,
 };
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace_span, Span};
@@ -100,7 +100,7 @@ impl Widget for DynWidget {
         smallvec![self.inner.id()]
     }
 
-    fn make_trace_span(&self) -> Span {
-        trace_span!("DynWidget")
+    fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
+        trace_span!("DynWidget", id = ctx.widget_id().trace())
     }
 }

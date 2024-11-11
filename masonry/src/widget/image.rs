@@ -13,7 +13,7 @@ use vello::Scene;
 
 use crate::widget::{ObjectFit, WidgetMut};
 use crate::{
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
+    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent, QueryCtx,
     RegisterCtx, Size, TextEvent, Update, UpdateCtx, Widget, WidgetId,
 };
 
@@ -134,8 +134,8 @@ impl Widget for Image {
         SmallVec::new()
     }
 
-    fn make_trace_span(&self) -> Span {
-        trace_span!("Image")
+    fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
+        trace_span!("Image", id = ctx.widget_id().trace())
     }
 }
 
@@ -163,14 +163,20 @@ mod tests {
 
     #[test]
     fn tall_paint() {
-        #[rustfmt::skip]
         let image_data = ImageBuf::new(
-            vec![
-                255, 255, 255, 255, 
-                0, 0, 0, 255,
-                0, 0, 0, 255,
-                255, 255, 255, 255,
-            ].into(),
+            // This could have a more concise chain, but previously used versions either
+            // had unreadable formatting or used `rustfmt::skip`, which broke formatting
+            // across large parts of the file.
+            [
+                [255, 255, 255, 255],
+                [000, 000, 000, 255],
+                [000, 000, 000, 255],
+                [255, 255, 255, 255],
+            ]
+            .into_iter()
+            .flatten()
+            .collect::<Vec<_>>()
+            .into(),
             Format::Rgba8,
             2,
             2,

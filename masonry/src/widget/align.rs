@@ -17,8 +17,8 @@ use crate::contexts::AccessCtx;
 use crate::paint_scene_helpers::UnitPoint;
 use crate::widget::WidgetPod;
 use crate::{
-    AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent, Rect, RegisterCtx,
-    Size, TextEvent, Widget, WidgetId,
+    AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent, QueryCtx, Rect,
+    RegisterCtx, Size, TextEvent, Widget, WidgetId,
 };
 
 // TODO - Have child widget type as generic argument
@@ -148,8 +148,8 @@ impl Widget for Align {
         smallvec![self.child.id()]
     }
 
-    fn make_trace_span(&self) -> Span {
-        trace_span!("Align")
+    fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
+        trace_span!("Align", id = ctx.widget_id().trace())
     }
 }
 

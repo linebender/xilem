@@ -14,7 +14,8 @@ use vello::Scene;
 use crate::widget::WidgetMut;
 use crate::{
     theme, AccessCtx, AccessEvent, BoxConstraints, Color, EventCtx, LayoutCtx, PaintCtx, Point,
-    PointerEvent, RegisterCtx, Size, TextEvent, Update, UpdateCtx, Vec2, Widget, WidgetId,
+    PointerEvent, QueryCtx, RegisterCtx, Size, TextEvent, Update, UpdateCtx, Vec2, Widget,
+    WidgetId,
 };
 
 /// An animated spinner widget for showing a loading state.
@@ -148,8 +149,8 @@ impl Widget for Spinner {
         SmallVec::new()
     }
 
-    fn make_trace_span(&self) -> Span {
-        trace_span!("Spinner")
+    fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
+        trace_span!("Spinner", id = ctx.widget_id().trace())
     }
 }
 

@@ -381,8 +381,8 @@ impl<S: 'static> Widget for ModularWidget<S> {
         self.accepts_text_input
     }
 
-    fn make_trace_span(&self) -> tracing::Span {
-        trace_span!("ModularWidget")
+    fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> tracing::Span {
+        trace_span!("ModularWidget", id = ctx.widget_id().trace())
     }
 
     fn get_debug_text(&self) -> Option<String> {
@@ -581,8 +581,8 @@ impl<W: Widget> Widget for Recorder<W> {
         self.child.accepts_text_input()
     }
 
-    fn make_trace_span(&self) -> tracing::Span {
-        self.child.make_trace_span()
+    fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> tracing::Span {
+        self.child.make_trace_span(ctx)
     }
 
     fn get_debug_text(&self) -> Option<String> {

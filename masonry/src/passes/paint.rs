@@ -8,7 +8,7 @@ use vello::kurbo::{Affine, Stroke};
 use vello::peniko::Mix;
 use vello::Scene;
 
-use crate::passes::recurse_on_children;
+use crate::passes::{enter_span_if, recurse_on_children};
 use crate::render_root::{RenderRoot, RenderRootState};
 use crate::theme::get_debug_color;
 use crate::tree_arena::ArenaMut;
@@ -24,7 +24,8 @@ fn paint_widget(
     debug_paint: bool,
 ) {
     let trace = global_state.trace.paint;
-    let _span = trace.then(|| widget.item.make_trace_span().entered());
+    let _span = enter_span_if(trace, global_state, widget.reborrow(), state.reborrow());
+
     let id = state.item.id;
 
     // TODO - Handle invalidation regions

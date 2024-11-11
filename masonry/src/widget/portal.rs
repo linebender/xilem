@@ -14,7 +14,7 @@ use vello::Scene;
 use crate::widget::{Axis, ScrollBar, WidgetMut};
 use crate::{
     AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, LayoutCtx, PaintCtx,
-    PointerEvent, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetPod,
+    PointerEvent, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetPod,
 };
 
 // TODO - refactor - see https://github.com/linebender/xilem/issues/366
@@ -467,8 +467,8 @@ impl<W: Widget> Widget for Portal<W> {
         ]
     }
 
-    fn make_trace_span(&self) -> Span {
-        trace_span!("Portal")
+    fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
+        trace_span!("Portal", id = ctx.widget_id().trace())
     }
 }
 

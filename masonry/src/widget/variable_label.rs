@@ -18,7 +18,7 @@ use vello::Scene;
 use crate::text::{ArcStr, Hinting, TextBrush, TextLayout};
 use crate::widget::{LineBreaking, WidgetMut};
 use crate::{
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
+    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent, QueryCtx,
     RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
 };
 
@@ -411,8 +411,8 @@ impl Widget for VariableLabel {
         SmallVec::new()
     }
 
-    fn make_trace_span(&self) -> Span {
-        trace_span!("VariableLabel")
+    fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
+        trace_span!("VariableLabel", id = ctx.widget_id().trace())
     }
 
     fn get_debug_text(&self) -> Option<String> {
