@@ -42,6 +42,10 @@ env:
 # Using cargo-hack also allows us to more easily test the feature matrix of our packages.
 # We use --each-feature & --optional-deps which will run a separate check for every feature.
 #
+# We use cargo-nextest, which has a faster concurrency model for running tests.
+# However cargo-nextest does not support running doc tests, so we also have a cargo test --doc step.
+# For more information see https://github.com/nextest-rs/nextest/issues/16
+#
 # The MSRV jobs run only cargo check because different clippy versions can disagree on goals and
 # running tests introduces dev dependencies which may require a higher MSRV than the bare package.
 #
@@ -242,7 +246,7 @@ jobs:
           sudo apt-get update
           sudo apt install -y xvfb libegl1-mesa libgl1-mesa-dri libxcb-xfixes0-dev mesa-vulkan-drivers
 
-      - name: Install cargo-nextest
+      - name: install cargo-nextest
         uses: taiki-e/install-action@v2
         with:
           tool: cargo-nextest
@@ -252,15 +256,10 @@ jobs:
         with:
           save-if: ${{ github.event_name != 'merge_group' }}
 
-      - name: cargo test
-        run: cargo nextest run --workspace --locked --all-features
+      - name: cargo nextest
+        run: cargo nextest run --workspace --locked --all-features --no-fail-fast
         env:
           SKIP_RENDER_TESTS: ${{ matrix.skip_gpu }}
-
-      # Run doc tests separately because nexttest doesn't run them.
-      # See https://github.com/linebender/xilem/issues/500
-      - name: cargo test doc
-        run: cargo test --doc --workspace --locked --all-features
       
       - name: Upload test results due to failure
         uses: actions/upload-artifact@v4
@@ -268,6 +267,9 @@ jobs:
         with:
           name: masonry-snapshot-tests-${{ matrix.os }}
           path: masonry/src/widget/screenshots
+
+      - name: cargo test --doc
+        run: cargo test --doc --workspace --locked --all-features --no-fail-fast
 
   test-stable-wasm:
     name: cargo test (wasm32)
