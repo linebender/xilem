@@ -17,7 +17,7 @@ pub enum MessageResult<Action, Message = DynMessage> {
     ///
     /// This allows for sub-sections of your app to use an elm-like architecture
     Action(Action),
-    /// A view has requested a full rebuild, even if it wasn't changed by the user directly.
+    /// A view has requested a rebuild, even though its value hasn't changed.
     ///
     /// This can happen for example by some kind of async action.
     /// An example would be an async virtualized list, which fetches new entries, and requires a rebuild for the new entries.
