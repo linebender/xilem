@@ -3,7 +3,7 @@
 
 use std::marker::PhantomData;
 
-use masonry::{widget, Insets};
+use masonry::widget::{self, Padding};
 use vello::kurbo::RoundedRectRadii;
 use vello::peniko::{Brush, Color};
 
@@ -220,85 +220,4 @@ where
 struct BorderStyle {
     width: f64,
     color: Color,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct Padding {
-    top: f64,
-    trailing: f64,
-    bottom: f64,
-    leading: f64,
-}
-
-impl Padding {
-    pub const fn new(top: f64, trailing: f64, bottom: f64, leading: f64) -> Self {
-        Self {
-            top,
-            trailing,
-            bottom,
-            leading,
-        }
-    }
-
-    pub const ZERO: Padding = Padding::all(0.);
-
-    pub const fn all(padding: f64) -> Self {
-        Self::new(padding, padding, padding, padding)
-    }
-
-    pub const fn horizontal(padding: f64) -> Self {
-        Self::new(0., padding, 0., padding)
-    }
-
-    pub const fn vertical(padding: f64) -> Self {
-        Self::new(padding, 0., padding, 0.)
-    }
-
-    pub const fn top(padding: f64) -> Self {
-        Self::new(padding, 0., 0., 0.)
-    }
-
-    pub const fn trailing(padding: f64) -> Self {
-        Self::new(0., padding, 0., 0.)
-    }
-
-    pub const fn bottom(padding: f64) -> Self {
-        Self::new(0., 0., padding, 0.)
-    }
-
-    pub const fn leading(padding: f64) -> Self {
-        Self::new(0., 0., 0., padding)
-    }
-}
-
-impl From<f64> for Padding {
-    fn from(value: f64) -> Self {
-        Self::all(value)
-    }
-}
-
-// Follows CSS padding order for 4 values (top, trailing, bottom, leading)
-impl From<(f64, f64, f64, f64)> for Padding {
-    fn from(value: (f64, f64, f64, f64)) -> Self {
-        Self::new(value.0, value.1, value.2, value.3)
-    }
-}
-
-// Follows CSS padding order for 2 values (vertical, horizontal)
-impl From<(f64, f64)> for Padding {
-    fn from(value: (f64, f64)) -> Self {
-        Self::new(value.0, value.1, value.0, value.1)
-    }
-}
-
-impl From<Insets> for Padding {
-    fn from(value: Insets) -> Self {
-        Self::new(value.y0, value.x1, value.y1, value.x0)
-    }
-}
-
-impl From<Padding> for Insets {
-    fn from(value: Padding) -> Self {
-        Insets::new(value.leading, value.top, value.trailing, value.bottom)
-    }
 }

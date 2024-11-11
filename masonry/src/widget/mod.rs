@@ -44,7 +44,7 @@ pub use progress_bar::ProgressBar;
 pub use prose::Prose;
 pub use root_widget::RootWidget;
 pub use scroll_bar::ScrollBar;
-pub use sized_box::SizedBox;
+pub use sized_box::{Padding, SizedBox};
 pub use spinner::Spinner;
 pub use split::Split;
 pub use textbox::Textbox;

@@ -10,6 +10,7 @@
 
 use std::sync::Arc;
 
+use masonry::widget::Padding;
 use vello::peniko::{Blob, Image};
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
@@ -18,7 +19,7 @@ use xilem::core::fork;
 use xilem::core::one_of::OneOf3;
 use xilem::view::{
     button, flex, image, inline_prose, portal, prose, sized_box, spinner, worker, Axis, FlexExt,
-    FlexSpacer, Padding,
+    FlexSpacer,
 };
 use xilem::{Color, EventLoop, EventLoopBuilder, TextAlignment, WidgetView, Xilem};
 
@@ -54,7 +55,7 @@ impl HttpCats {
                 .map(Status::list_view)
                 .collect::<Vec<_>>(),
         ))))
-        .padding(Padding::leading(20.));
+        .padding(Padding::leading(5.));
 
         let (info_area, worker_value) = if let Some(selected_code) = self.selected_code {
             if let Some(selected_status) =
@@ -199,8 +200,9 @@ impl Status {
             FlexSpacer::Fixed(10.),
             image,
             // TODO: Overlay on top of the image?
+            // HACK: Trailing padding workaround scrollbar covering content
             sized_box(prose("Copyright ©️ https://http.cat").alignment(TextAlignment::End))
-                .padding(Padding::trailing(20.)),
+                .padding(Padding::trailing(15.)),
         ))
         .main_axis_alignment(xilem::view::MainAxisAlignment::Start)
     }
