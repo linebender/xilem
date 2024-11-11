@@ -6,6 +6,7 @@ use core::marker::PhantomData;
 use crate::{MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker};
 
 /// A view that wraps a child view and modifies the state that callbacks have access to.
+#[derive(Debug)]
 pub struct Adapt<
     ParentState,
     ParentAction,
@@ -37,6 +38,7 @@ pub struct Adapt<
 ///
 /// The closure passed to [`Adapt`] should call this thunk with the child's
 /// app state.
+#[derive(Debug)]
 pub struct AdaptThunk<'a, ChildState, ChildAction, Context, ChildView, Message>
 where
     Context: ViewPathTracker,

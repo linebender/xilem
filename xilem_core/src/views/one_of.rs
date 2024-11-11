@@ -22,6 +22,7 @@ pub trait PhantomElementCtx: ViewPathTracker {
 
 /// A [`View`] which can be one of nine inner view types.
 #[allow(missing_docs)] // On variants
+#[derive(Debug)]
 pub enum OneOf<A = (), B = (), C = (), D = (), E = (), F = (), G = (), H = (), I = ()> {
     A(A),
     B(B),
@@ -552,6 +553,7 @@ mod hidden {
     use crate::{View, ViewMarker};
 
     #[allow(unnameable_types)] // reason: Implementation detail, public because of trait visibility rules
+    #[derive(Debug)]
     pub enum Never {}
 
     impl ViewMarker for Never {}
@@ -592,6 +594,7 @@ mod hidden {
     }
     /// The state used to implement `View` for `OneOfN`
     #[allow(unnameable_types)] // reason: Implementation detail, public because of trait visibility rules
+    #[derive(Debug)]
     pub struct OneOfState<A, B, C, D, E, F, G, H, I> {
         /// The current state of the inner view or view sequence.
         pub(super) inner_state: super::OneOf<A, B, C, D, E, F, G, H, I>,

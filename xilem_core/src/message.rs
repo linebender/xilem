@@ -11,7 +11,7 @@ use core::ops::Deref;
 /// The possible outcomes from a [`View::message`]
 ///
 /// [`View::message`]: crate::View::message
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub enum MessageResult<Action, Message = DynMessage> {
     /// An action for a parent message handler to use
     ///

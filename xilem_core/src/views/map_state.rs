@@ -1,7 +1,7 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use core::marker::PhantomData;
+use core::{fmt::Debug, marker::PhantomData};
 
 use crate::{MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker};
 
@@ -12,6 +12,18 @@ pub struct MapState<V, F, ParentState, ChildState, Action, Context, Message> {
     map_state: F,
     child: V,
     phantom: PhantomData<fn(ParentState) -> (ChildState, Action, Context, Message)>,
+}
+
+impl<V, F, ParentState, ChildState, Action, Context, Message> Debug
+    for MapState<V, F, ParentState, ChildState, Action, Context, Message>
+where
+    V: Debug,
+{
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("MapAction")
+            .field("child", &self.child)
+            .finish_non_exhaustive()
+    }
 }
 
 /// A view that "extracts" state from a [`View<ParentState,_,_>`] to [`View<ChildState,_,_>`].

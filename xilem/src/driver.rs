@@ -52,8 +52,12 @@ impl RawProxy for MasonryProxy {
             }
         }
     }
+    fn dyn_debug(&self) -> &dyn std::fmt::Debug {
+        self
+    }
 }
 
+#[derive(Debug)]
 pub struct MasonryProxy(pub(crate) EventLoopProxy);
 
 impl MasonryProxy {

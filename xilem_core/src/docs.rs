@@ -38,6 +38,7 @@
 use crate::{run_once, View, ViewPathTracker};
 
 /// A type used for documentation
+#[derive(Debug)]
 pub enum Fake {}
 
 impl ViewPathTracker for Fake {
@@ -63,6 +64,7 @@ pub trait DocsView<State, Action = ()>: View<State, Action, Fake> {}
 impl<V, State, Action> DocsView<State, Action> for V where V: View<State, Action, Fake> {}
 
 /// A state type usable in a component
+#[derive(Debug)]
 pub struct State;
 
 /// A minimal component.

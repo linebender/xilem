@@ -75,6 +75,12 @@ pub struct RunOnce<F> {
     once: F,
 }
 
+impl<F> Debug for RunOnce<F> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("RunOnce").finish_non_exhaustive()
+    }
+}
+
 impl<F> ViewMarker for RunOnce<F> {}
 impl<F, State, Action, Context, Message> View<State, Action, Context, Message> for RunOnce<F>
 where

@@ -1,23 +1,38 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use core::marker::PhantomData;
+use core::{fmt::Debug, marker::PhantomData};
 
 use crate::{Mut, View, ViewId, ViewMarker, ViewPathTracker};
 
 /// A view that maps a child [`View<State,ChildAction,_>`] to [`View<State,ParentAction,_>`] while providing mutable access to `State` in the map function.
 ///
-/// This is very similar to the Elm architecture, where the parent view can update state based on the action message from the child view.
+/// This is very similar to the Elm architecture, where the parent view can update state based on the action message from the child view
 pub struct MapAction<
+    V,
     State,
     ParentAction,
     ChildAction,
-    V,
+    Context,
+    Message,
+    // This default only exists for documentation purposes.
     F = fn(&mut State, ChildAction) -> ParentAction,
 > {
     map_fn: F,
     child: V,
-    phantom: PhantomData<fn() -> (State, ParentAction, ChildAction)>,
+    phantom: PhantomData<fn() -> (State, ParentAction, ChildAction, Context, Message)>,
+}
+
+impl<V, State, ParentAction, ChildAction, Context, Message, F> Debug
+    for MapAction<V, State, ParentAction, ChildAction, Context, Message, F>
+where
+    V: Debug,
+{
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("MapAction")
+            .field("child", &self.child)
+            .finish_non_exhaustive()
+    }
 }
 
 /// A view that maps a child [`View<State,ChildAction,_>`] to [`View<State,ParentAction,_>`] while providing mutable access to `State` in the map function.
@@ -52,7 +67,7 @@ pub struct MapAction<
 pub fn map_action<State, ParentAction, ChildAction, Context: ViewPathTracker, Message, V, F>(
     view: V,
     map_fn: F,
-) -> MapAction<State, ParentAction, ChildAction, V, F>
+) -> MapAction<V, State, ParentAction, ChildAction, Context, Message, F>
 where
     State: 'static,
     ParentAction: 'static,
@@ -67,19 +82,21 @@ where
     }
 }
 
-impl<State, ParentAction, ChildAction, V, F> ViewMarker
-    for MapAction<State, ParentAction, ChildAction, V, F>
+impl<V, State, ParentAction, ChildAction, F, Context, Message> ViewMarker
+    for MapAction<V, State, ParentAction, ChildAction, Context, Message, F>
 {
 }
-impl<State, ParentAction, ChildAction, Context: ViewPathTracker, Message, V, F>
+impl<V, State, ParentAction, ChildAction, Context, Message, F>
     View<State, ParentAction, Context, Message>
-    for MapAction<State, ParentAction, ChildAction, V, F>
+    for MapAction<V, State, ParentAction, ChildAction, Context, Message, F>
 where
+    V: View<State, ChildAction, Context, Message>,
     State: 'static,
     ParentAction: 'static,
     ChildAction: 'static,
-    V: View<State, ChildAction, Context, Message>,
     F: Fn(&mut State, ChildAction) -> ParentAction + 'static,
+    Context: ViewPathTracker + 'static,
+    Message: 'static,
 {
     type ViewState = V::ViewState;
     type Element = V::Element;
