@@ -164,7 +164,9 @@ mod tests {
     #[test]
     fn tall_paint() {
         let image_data = ImageBuf::new(
-            // This could have a more concise chain, but
+            // This could have a more concise chain, but previously used versions either
+            // had unreadable formatting or used `rustfmt::skip`, which broke formatting
+            // across large parts of the file.
             [
                 [255, 255, 255, 255],
                 [000, 000, 000, 255],
