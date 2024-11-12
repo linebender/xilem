@@ -578,7 +578,12 @@ mod hidden {
             match *self {}
         }
 
-        fn teardown(&self, _: &mut Self::ViewState, _: &mut Context, _: crate::Mut<'_, Self::Element>) {
+        fn teardown(
+            &self,
+            _: &mut Self::ViewState,
+            _: &mut Context,
+            _: crate::Mut<'_, Self::Element>,
+        ) {
             match *self {}
         }
 
