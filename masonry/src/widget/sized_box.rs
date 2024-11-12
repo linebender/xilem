@@ -26,6 +26,9 @@ struct BorderStyle {
 }
 
 /// Padding specifies the spacing between the edges of the box and the child view.
+///
+/// A Padding can also be constructed using [`from(value: f64)`][Self::from]
+/// as well as from a `(f64, f64)` tuple, or `(f64, f64, f64, f64)` tuple, following the CSS padding conventions.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Padding {
     /// The amount of padding in logical pixels for the top edge.

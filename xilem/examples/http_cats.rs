@@ -10,7 +10,6 @@
 
 use std::sync::Arc;
 
-use masonry::widget::Padding;
 use vello::peniko::{Blob, Image};
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
@@ -19,7 +18,7 @@ use xilem::core::fork;
 use xilem::core::one_of::OneOf3;
 use xilem::view::{
     button, flex, image, inline_prose, portal, prose, sized_box, spinner, worker, Axis, FlexExt,
-    FlexSpacer,
+    FlexSpacer, Padding,
 };
 use xilem::{Color, EventLoop, EventLoopBuilder, TextAlignment, WidgetView, Xilem};
 
