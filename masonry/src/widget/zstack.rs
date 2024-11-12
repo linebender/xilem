@@ -1,8 +1,8 @@
 use crate::{
     vello::Scene, widget::WidgetMut, AccessCtx, BoxConstraints, LayoutCtx, PaintCtx, Point,
-    RegisterCtx, Size, Widget, WidgetId, WidgetPod,
+    QueryCtx, RegisterCtx, Size, Widget, WidgetId, WidgetPod,
 };
-use accesskit::{NodeBuilder, Role};
+use accesskit::{Node, Role};
 use smallvec::SmallVec;
 use tracing::trace_span;
 
@@ -255,10 +255,10 @@ impl Widget for ZStack {
         Role::GenericContainer
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx, _node: &mut NodeBuilder) {}
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, _node: &mut Node) {}
 
-    fn make_trace_span(&self) -> tracing::Span {
-        trace_span!("ZStack")
+    fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> tracing::Span {
+        trace_span!("ZStack", id = ctx.widget_id().trace())
     }
 }
 
