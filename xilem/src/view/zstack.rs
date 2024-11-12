@@ -6,20 +6,31 @@ use crate::{
     Pod, ViewCtx,
 };
 use masonry::{
-    widget::{self, WidgetMut},
+    widget::{self, Alignment, WidgetMut},
     Widget,
 };
 
-pub fn zstack<State, Action, Seq: ZStackSequence<State, Action>>(sequence: Seq) -> Stack<Seq> {
-    Stack { sequence }
+pub fn zstack<State, Action, Seq: ZStackSequence<State, Action>>(sequence: Seq) -> ZStack<Seq> {
+    ZStack {
+        sequence,
+        alignment: Alignment::default(),
+    }
 }
 
-pub struct Stack<Seq> {
+pub struct ZStack<Seq> {
     sequence: Seq,
+    alignment: Alignment,
 }
 
-impl<Seq> ViewMarker for Stack<Seq> {}
-impl<State, Action, Seq> View<State, Action, ViewCtx> for Stack<Seq>
+impl<Seq> ZStack<Seq> {
+    pub fn alignment(mut self, alignment: impl Into<Alignment>) -> Self {
+        self.alignment = alignment.into();
+        self
+    }
+}
+
+impl<Seq> ViewMarker for ZStack<Seq> {}
+impl<State, Action, Seq> View<State, Action, ViewCtx> for ZStack<Seq>
 where
     State: 'static,
     Action: 'static,
@@ -31,7 +42,7 @@ where
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let mut elements = AppendVec::default();
-        let mut widget = widget::ZStack::new();
+        let mut widget = widget::ZStack::new().with_alignment(self.alignment);
         let seq_state = self.sequence.seq_build(ctx, &mut elements);
         for child in elements.into_inner() {
             widget = widget.with_child_pod(child.0.inner);
@@ -44,8 +55,12 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: crate::core::Mut<Self::Element>,
+        mut element: crate::core::Mut<Self::Element>,
     ) {
+        if self.alignment != prev.alignment {
+            widget::ZStack::set_alignment(&mut element, self.alignment);
+        }
+
         let mut splice = StackSplice::new(element);
         self.sequence
             .seq_rebuild(&prev.sequence, view_state, ctx, &mut splice);
