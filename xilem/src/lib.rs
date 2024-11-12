@@ -18,12 +18,14 @@
 )]
 // TODO: Remove any items listed as "Deferred"
 #![cfg_attr(not(debug_assertions), allow(unused))]
-#![expect(missing_debug_implementations, reason = "Deferred: Noisy")]
-#![expect(unused_qualifications, reason = "Deferred: Noisy")]
+#![expect(
+    missing_debug_implementations,
+    reason = "Deferred: Noisy. Requires same lint to be addressed in Masonry"
+)]
+// #![expect(unused_qualifications, reason = "Deferred: Noisy")]
 #![expect(clippy::exhaustive_enums, reason = "Deferred: Noisy")]
 #![expect(clippy::match_same_arms, reason = "Deferred: Noisy")]
 #![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
-#![expect(clippy::return_self_not_must_use, reason = "Deferred: Noisy")]
 #![expect(elided_lifetimes_in_paths, reason = "Deferred: Noisy")]
 #![expect(clippy::use_self, reason = "Deferred: Noisy")]
 // https://github.com/rust-lang/rust/pull/130025
@@ -65,6 +67,7 @@ pub mod view;
 pub use any_view::AnyWidgetView;
 pub use driver::{async_action, MasonryDriver, MasonryProxy, ASYNC_MARKER_WIDGET};
 
+#[must_use = "A Xilem app does nothing unless ran."]
 pub struct Xilem<State, Logic> {
     state: State,
     logic: Logic,

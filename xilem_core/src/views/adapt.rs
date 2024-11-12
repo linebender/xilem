@@ -7,6 +7,7 @@ use crate::{MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker};
 
 /// A view that wraps a child view and modifies the state that callbacks have access to.
 #[derive(Debug)]
+#[must_use = "View values do nothing unless provided to Xilem."]
 pub struct Adapt<
     ParentState,
     ParentAction,

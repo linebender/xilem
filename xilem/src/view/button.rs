@@ -35,6 +35,7 @@ pub fn button_any_pointer<State, Action>(
     }
 }
 
+#[must_use = "View values do nothing unless provided to Xilem."]
 pub struct Button<F> {
     label: ArcStr,
     callback: F,

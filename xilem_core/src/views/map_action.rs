@@ -8,6 +8,7 @@ use crate::{Mut, View, ViewId, ViewMarker, ViewPathTracker};
 /// A view that maps a child [`View<State,ChildAction,_>`] to [`View<State,ParentAction,_>`] while providing mutable access to `State` in the map function.
 ///
 /// This is very similar to the Elm architecture, where the parent view can update state based on the action message from the child view
+#[must_use = "View values do nothing unless provided to Xilem."]
 pub struct MapAction<
     V,
     State,

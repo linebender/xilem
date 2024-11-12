@@ -35,7 +35,7 @@ impl RawProxy for MasonryProxy {
     fn send_message(&self, path: Arc<[ViewId]>, message: DynMessage) -> Result<(), ProxyError> {
         match self
             .0
-            .send_event(event_loop_runner::MasonryUserEvent::Action(
+            .send_event(MasonryUserEvent::Action(
                 async_action(path, message),
                 ASYNC_MARKER_WIDGET,
             )) {
@@ -74,7 +74,7 @@ where
     fn on_action(
         &mut self,
         masonry_ctx: &mut masonry::DriverCtx<'_>,
-        widget_id: masonry::WidgetId,
+        widget_id: WidgetId,
         action: masonry::Action,
     ) {
         let message_result = if widget_id == ASYNC_MARKER_WIDGET {

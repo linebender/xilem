@@ -28,6 +28,7 @@ where
     }
 }
 
+#[must_use = "View values do nothing unless provided to Xilem."]
 pub struct Textbox<State, Action> {
     contents: String,
     on_changed: Callback<State, Action>,
@@ -72,7 +73,7 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<S
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         ctx.with_leaf_action_widget(|ctx| {
             ctx.new_pod(
-                masonry::widget::Textbox::new(self.contents.clone())
+                widget::Textbox::new(self.contents.clone())
                     .with_text_brush(self.text_brush.clone())
                     .with_text_alignment(self.alignment),
             )

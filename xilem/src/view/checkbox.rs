@@ -22,6 +22,7 @@ where
     }
 }
 
+#[must_use = "View values do nothing unless provided to Xilem."]
 pub struct Checkbox<F> {
     label: ArcStr,
     checked: bool,
@@ -38,10 +39,7 @@ where
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         ctx.with_leaf_action_widget(|ctx| {
-            ctx.new_pod(masonry::widget::Checkbox::new(
-                self.checked,
-                self.label.clone(),
-            ))
+            ctx.new_pod(widget::Checkbox::new(self.checked, self.label.clone()))
         })
     }
 
