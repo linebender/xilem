@@ -4,7 +4,6 @@
 //! An example using Xilem Core to manipulate a filesystem.
 
 #![expect(clippy::use_self, reason = "Deferred: Noisy")]
-#![expect(elided_lifetimes_in_paths, reason = "Deferred: Noisy")]
 #![expect(let_underscore_drop, reason = "Deferred: Noisy")]
 
 use std::io::stdin;
@@ -112,7 +111,7 @@ impl SuperElement<FsPath, ViewCtx> for FsPath {
 
     fn with_downcast_val<R>(
         this: Self::Mut<'_>,
-        f: impl FnOnce(Mut<FsPath>) -> R,
+        f: impl FnOnce(Mut<'_, FsPath>) -> R,
     ) -> (Self::Mut<'_>, R) {
         let ret = f(this);
         (this, ret)
@@ -170,7 +169,7 @@ impl<State, Action> View<State, Action, ViewCtx> for File {
         prev: &Self,
         _view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
     ) {
         if prev.name != self.name {
             let new_path = ctx.current_folder_path.join(&*self.name);
@@ -186,7 +185,7 @@ impl<State, Action> View<State, Action, ViewCtx> for File {
         &self,
         _view_state: &mut Self::ViewState,
         _ctx: &mut ViewCtx,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
     ) {
         let _ = std::fs::remove_file(element);
     }

@@ -6,7 +6,6 @@
 //! This is an integration test so that it can use the infrastructure in [`common`].
 
 #![expect(clippy::match_same_arms, reason = "Deferred: Noisy")]
-#![expect(elided_lifetimes_in_paths, reason = "Deferred: Noisy")]
 #![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
 
 use xilem_core::one_of::{OneOf, OneOf2, OneOfCtx, PhantomElementCtx};
@@ -64,7 +63,7 @@ impl
     }
 
     fn update_one_of_element_mut(
-        elem_mut: &mut Mut<Self::OneOfElement>,
+        elem_mut: &mut Mut<'_, Self::OneOfElement>,
         new_elem: OneOf<
             TestElement,
             TestElement,
@@ -91,60 +90,66 @@ impl
         }
     }
 
-    fn with_downcast_a(elem: &mut Mut<Self::OneOfElement>, f: impl FnOnce(Mut<TestElement>)) {
+    fn with_downcast_a(
+        elem: &mut Mut<'_, Self::OneOfElement>,
+        f: impl FnOnce(Mut<'_, TestElement>),
+    ) {
         f(elem);
     }
 
-    fn with_downcast_b(elem: &mut Mut<Self::OneOfElement>, f: impl FnOnce(Mut<TestElement>)) {
+    fn with_downcast_b(
+        elem: &mut Mut<'_, Self::OneOfElement>,
+        f: impl FnOnce(Mut<'_, TestElement>),
+    ) {
         f(elem);
     }
 
     // when one of the following would be invoked, it would be an error in the impl of `OneOfN`
     fn with_downcast_c(
-        _elem: &mut Mut<Self::OneOfElement>,
-        _f: impl FnOnce(Mut<<Self as PhantomElementCtx>::PhantomElement>),
+        _elem: &mut Mut<'_, Self::OneOfElement>,
+        _f: impl FnOnce(Mut<'_, <Self as PhantomElementCtx>::PhantomElement>),
     ) {
         unreachable!()
     }
 
     fn with_downcast_d(
-        _elem: &mut Mut<Self::OneOfElement>,
-        _f: impl FnOnce(Mut<<Self as PhantomElementCtx>::PhantomElement>),
+        _elem: &mut Mut<'_, Self::OneOfElement>,
+        _f: impl FnOnce(Mut<'_, <Self as PhantomElementCtx>::PhantomElement>),
     ) {
         unreachable!()
     }
 
     fn with_downcast_e(
-        _elem: &mut Mut<Self::OneOfElement>,
-        _f: impl FnOnce(Mut<<Self as PhantomElementCtx>::PhantomElement>),
+        _elem: &mut Mut<'_, Self::OneOfElement>,
+        _f: impl FnOnce(Mut<'_, <Self as PhantomElementCtx>::PhantomElement>),
     ) {
         unreachable!()
     }
 
     fn with_downcast_f(
-        _elem: &mut Mut<Self::OneOfElement>,
-        _f: impl FnOnce(Mut<<Self as PhantomElementCtx>::PhantomElement>),
+        _elem: &mut Mut<'_, Self::OneOfElement>,
+        _f: impl FnOnce(Mut<'_, <Self as PhantomElementCtx>::PhantomElement>),
     ) {
         unreachable!()
     }
 
     fn with_downcast_g(
-        _elem: &mut Mut<Self::OneOfElement>,
-        _f: impl FnOnce(Mut<<Self as PhantomElementCtx>::PhantomElement>),
+        _elem: &mut Mut<'_, Self::OneOfElement>,
+        _f: impl FnOnce(Mut<'_, <Self as PhantomElementCtx>::PhantomElement>),
     ) {
         unreachable!()
     }
 
     fn with_downcast_h(
-        _elem: &mut Mut<Self::OneOfElement>,
-        _f: impl FnOnce(Mut<<Self as PhantomElementCtx>::PhantomElement>),
+        _elem: &mut Mut<'_, Self::OneOfElement>,
+        _f: impl FnOnce(Mut<'_, <Self as PhantomElementCtx>::PhantomElement>),
     ) {
         unreachable!()
     }
 
     fn with_downcast_i(
-        _elem: &mut Mut<Self::OneOfElement>,
-        _f: impl FnOnce(Mut<<Self as PhantomElementCtx>::PhantomElement>),
+        _elem: &mut Mut<'_, Self::OneOfElement>,
+        _f: impl FnOnce(Mut<'_, <Self as PhantomElementCtx>::PhantomElement>),
     ) {
         unreachable!()
     }

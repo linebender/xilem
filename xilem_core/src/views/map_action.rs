@@ -110,7 +110,7 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
     ) {
         self.child.rebuild(&prev.child, view_state, ctx, element);
     }
@@ -119,7 +119,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
     ) {
         self.child.teardown(view_state, ctx, element);
     }

@@ -6,7 +6,6 @@
 //!
 //! This is an integration test so that it can use the infrastructure in [`common`].
 
-#![expect(elided_lifetimes_in_paths, reason = "Deferred: Noisy")]
 #![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
 
 use xilem_core::{DynMessage, MessageResult, Mut, OrphanView, View, ViewId, ViewPathTracker};
@@ -41,7 +40,7 @@ impl<State, Action> OrphanView<&'static str, State, Action> for TestCtx {
         prev: &&'static str,
         generation: &mut Self::OrphanViewState,
         ctx: &mut Self,
-        element: Mut<Self::OrphanElement>,
+        element: Mut<'_, Self::OrphanElement>,
     ) {
         assert_eq!(&*element.view_path, ctx.view_path());
 
@@ -61,7 +60,7 @@ impl<State, Action> OrphanView<&'static str, State, Action> for TestCtx {
         _view: &&'static str,
         generation: &mut Self::OrphanViewState,
         _ctx: &mut Self,
-        element: Mut<Self::OrphanElement>,
+        element: Mut<'_, Self::OrphanElement>,
     ) {
         element.operations.push(Operation::Teardown(*generation));
     }

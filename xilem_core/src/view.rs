@@ -81,7 +81,7 @@ pub trait View<State, Action, Context: ViewPathTracker, Message = DynMessage>:
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
     );
 
     /// Handle `element` being removed from the tree.
@@ -95,7 +95,7 @@ pub trait View<State, Action, Context: ViewPathTracker, Message = DynMessage>:
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
     );
 
     /// Route `message` to `id_path`, if that is still a valid path.
@@ -179,7 +179,7 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
     ) {
         self.deref().rebuild(prev, view_state, ctx, element);
     }
@@ -188,7 +188,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
     ) {
         self.deref().teardown(view_state, ctx, element);
     }
@@ -242,7 +242,7 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
     ) {
         if core::mem::take(&mut view_state.dirty) || !Arc::ptr_eq(self, prev) {
             self.deref()
@@ -254,7 +254,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
     ) {
         self.deref()
             .teardown(&mut view_state.view_state, ctx, element);
@@ -303,7 +303,7 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
     ) {
         if core::mem::take(&mut view_state.dirty) || !Rc::ptr_eq(self, prev) {
             self.deref()
@@ -315,7 +315,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
     ) {
         self.deref()
             .teardown(&mut view_state.view_state, ctx, element);

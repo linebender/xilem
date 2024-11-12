@@ -3,8 +3,6 @@
 
 //! Model version of Masonry for exploration
 
-#![expect(elided_lifetimes_in_paths, reason = "Deferred: Noisy")]
-
 use core::any::Any;
 
 use xilem_core::{
@@ -66,7 +64,7 @@ impl<State, Action> View<State, Action, ViewCtx> for Button {
         _prev: &Self,
         _view_state: &mut Self::ViewState,
         _ctx: &mut ViewCtx,
-        _element: Mut<Self::Element>,
+        _element: Mut<'_, Self::Element>,
     ) {
         // Nothing to do
     }
@@ -75,7 +73,7 @@ impl<State, Action> View<State, Action, ViewCtx> for Button {
         &self,
         _view_state: &mut Self::ViewState,
         _ctx: &mut ViewCtx,
-        _element: Mut<Self::Element>,
+        _element: Mut<'_, Self::Element>,
     ) {
         // Nothing to do
     }

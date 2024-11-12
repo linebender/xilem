@@ -132,39 +132,39 @@ pub trait OneOfCtx<
 
     /// Casts the view element `elem` to the `OneOf::A` variant.
     /// `f` needs to be invoked with that inner `ViewElement`
-    fn with_downcast_a(elem: &mut Mut<Self::OneOfElement>, f: impl FnOnce(Mut<A>));
+    fn with_downcast_a(elem: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, A>));
 
     /// Casts the view element `elem` to the `OneOf::B` variant.
     /// `f` needs to be invoked with that inner `ViewElement`
-    fn with_downcast_b(elem: &mut Mut<Self::OneOfElement>, f: impl FnOnce(Mut<B>));
+    fn with_downcast_b(elem: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, B>));
 
     /// Casts the view element `elem` to the `OneOf::C` variant.
     /// `f` needs to be invoked with that inner `ViewElement`
-    fn with_downcast_c(elem: &mut Mut<Self::OneOfElement>, f: impl FnOnce(Mut<C>));
+    fn with_downcast_c(elem: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, C>));
 
     /// Casts the view element `elem` to the `OneOf::D` variant.
     /// `f` needs to be invoked with that inner `ViewElement`
-    fn with_downcast_d(elem: &mut Mut<Self::OneOfElement>, f: impl FnOnce(Mut<D>));
+    fn with_downcast_d(elem: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, D>));
 
     /// Casts the view element `elem` to the `OneOf::E` variant.
     /// `f` needs to be invoked with that inner `ViewElement`
-    fn with_downcast_e(elem: &mut Mut<Self::OneOfElement>, f: impl FnOnce(Mut<E>));
+    fn with_downcast_e(elem: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, E>));
 
     /// Casts the view element `elem` to the `OneOf::F` variant.
     /// `f` needs to be invoked with that inner `ViewElement`
-    fn with_downcast_f(elem: &mut Mut<Self::OneOfElement>, f: impl FnOnce(Mut<F>));
+    fn with_downcast_f(elem: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, F>));
 
     /// Casts the view element `elem` to the `OneOf::G` variant.
     /// `f` needs to be invoked with that inner `ViewElement`
-    fn with_downcast_g(elem: &mut Mut<Self::OneOfElement>, f: impl FnOnce(Mut<G>));
+    fn with_downcast_g(elem: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, G>));
 
     /// Casts the view element `elem` to the `OneOf::H` variant.
     /// `f` needs to be invoked with that inner `ViewElement`
-    fn with_downcast_h(elem: &mut Mut<Self::OneOfElement>, f: impl FnOnce(Mut<H>));
+    fn with_downcast_h(elem: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, H>));
 
     /// Casts the view element `elem` to the `OneOf::I` variant.
     /// `f` needs to be invoked with that inner `ViewElement`
-    fn with_downcast_i(elem: &mut Mut<Self::OneOfElement>, f: impl FnOnce(Mut<I>));
+    fn with_downcast_i(elem: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, I>));
 
     /// Creates the wrapping element, this is used in `View::build` to wrap the inner view element variant
     fn upcast_one_of_element(
@@ -174,7 +174,7 @@ pub trait OneOfCtx<
 
     /// When the variant of the inner view element has changed, the wrapping element needs to be updated, this is used in `View::rebuild`
     fn update_one_of_element_mut(
-        elem_mut: &mut Mut<Self::OneOfElement>,
+        elem_mut: &mut Mut<'_, Self::OneOfElement>,
         new_elem: OneOf<A, B, C, D, E, F, G, H, I>,
     );
 }
@@ -280,7 +280,7 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        mut element: Mut<Self::Element>,
+        mut element: Mut<'_, Self::Element>,
     ) {
         let id = ViewId::new(view_state.generation);
         // If both elements are of the same type, do a simple rebuild
@@ -462,7 +462,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        mut element: Mut<Self::Element>,
+        mut element: Mut<'_, Self::Element>,
     ) {
         ctx.with_id(ViewId::new(view_state.generation), |ctx| {
             match (self, &mut view_state.inner_state) {
@@ -573,12 +573,17 @@ mod hidden {
             _: &Self,
             _: &mut Self::ViewState,
             _: &mut Context,
-            _: crate::Mut<Self::Element>,
+            _: crate::Mut<'_, Self::Element>,
         ) {
             match *self {}
         }
 
-        fn teardown(&self, _: &mut Self::ViewState, _: &mut Context, _: crate::Mut<Self::Element>) {
+        fn teardown(
+            &self,
+            _: &mut Self::ViewState,
+            _: &mut Context,
+            _: crate::Mut<'_, Self::Element>,
+        ) {
             match *self {}
         }
 
