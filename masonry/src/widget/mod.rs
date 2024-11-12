@@ -55,7 +55,7 @@ pub use variable_label::VariableLabel;
 pub use widget_mut::WidgetMut;
 pub use widget_pod::WidgetPod;
 pub use widget_ref::WidgetRef;
-pub use zstack::ZStack;
+pub use zstack::{Alignment, HorizontalAlignment, VerticalAlignment, ZStack};
 
 pub(crate) use widget_arena::WidgetArena;
 pub(crate) use widget_state::WidgetState;
