@@ -230,40 +230,40 @@ where
         let generation = 0;
         let (element, state) = ctx.with_id(ViewId::new(generation), |ctx| match self {
             OneOf::A(v) => {
-                let (element, state) = v.build(ctx);
-                (OneOf::A(element), OneOf::A(state))
+                let (new_element, state) = v.build(ctx);
+                (OneOf::A(new_element), OneOf::A(state))
             }
             OneOf::B(v) => {
-                let (element, state) = v.build(ctx);
-                (OneOf::B(element), OneOf::B(state))
+                let (new_element, state) = v.build(ctx);
+                (OneOf::B(new_element), OneOf::B(state))
             }
             OneOf::C(v) => {
-                let (element, state) = v.build(ctx);
-                (OneOf::C(element), OneOf::C(state))
+                let (new_element, state) = v.build(ctx);
+                (OneOf::C(new_element), OneOf::C(state))
             }
             OneOf::D(v) => {
-                let (element, state) = v.build(ctx);
-                (OneOf::D(element), OneOf::D(state))
+                let (new_element, state) = v.build(ctx);
+                (OneOf::D(new_element), OneOf::D(state))
             }
             OneOf::E(v) => {
-                let (element, state) = v.build(ctx);
-                (OneOf::E(element), OneOf::E(state))
+                let (new_element, state) = v.build(ctx);
+                (OneOf::E(new_element), OneOf::E(state))
             }
             OneOf::F(v) => {
-                let (element, state) = v.build(ctx);
-                (OneOf::F(element), OneOf::F(state))
+                let (new_element, state) = v.build(ctx);
+                (OneOf::F(new_element), OneOf::F(state))
             }
             OneOf::G(v) => {
-                let (element, state) = v.build(ctx);
-                (OneOf::G(element), OneOf::G(state))
+                let (new_element, state) = v.build(ctx);
+                (OneOf::G(new_element), OneOf::G(state))
             }
             OneOf::H(v) => {
-                let (element, state) = v.build(ctx);
-                (OneOf::H(element), OneOf::H(state))
+                let (new_element, state) = v.build(ctx);
+                (OneOf::H(new_element), OneOf::H(state))
             }
             OneOf::I(v) => {
-                let (element, state) = v.build(ctx);
-                (OneOf::I(element), OneOf::I(state))
+                let (new_element, state) = v.build(ctx);
+                (OneOf::I(new_element), OneOf::I(state))
             }
         });
         (
@@ -415,43 +415,44 @@ where
         view_state.generation = view_state.generation.wrapping_add(1);
 
         // And rebuild the new one
+        #[expect(clippy::shadow_unrelated, reason = "The old value is no longer valid.")]
         let id = ViewId::new(view_state.generation);
         let (new_element, state) = ctx.with_id(id, |ctx| match self {
             OneOf::A(v) => {
-                let (element, state) = v.build(ctx);
-                (OneOf::A(element), OneOf::A(state))
+                let (new_element, state) = v.build(ctx);
+                (OneOf::A(new_element), OneOf::A(state))
             }
             OneOf::B(v) => {
-                let (element, state) = v.build(ctx);
-                (OneOf::B(element), OneOf::B(state))
+                let (new_element, state) = v.build(ctx);
+                (OneOf::B(new_element), OneOf::B(state))
             }
             OneOf::C(v) => {
-                let (element, state) = v.build(ctx);
-                (OneOf::C(element), OneOf::C(state))
+                let (new_element, state) = v.build(ctx);
+                (OneOf::C(new_element), OneOf::C(state))
             }
             OneOf::D(v) => {
-                let (element, state) = v.build(ctx);
-                (OneOf::D(element), OneOf::D(state))
+                let (new_element, state) = v.build(ctx);
+                (OneOf::D(new_element), OneOf::D(state))
             }
             OneOf::E(v) => {
-                let (element, state) = v.build(ctx);
-                (OneOf::E(element), OneOf::E(state))
+                let (new_element, state) = v.build(ctx);
+                (OneOf::E(new_element), OneOf::E(state))
             }
             OneOf::F(v) => {
-                let (element, state) = v.build(ctx);
-                (OneOf::F(element), OneOf::F(state))
+                let (new_element, state) = v.build(ctx);
+                (OneOf::F(new_element), OneOf::F(state))
             }
             OneOf::G(v) => {
-                let (element, state) = v.build(ctx);
-                (OneOf::G(element), OneOf::G(state))
+                let (new_element, state) = v.build(ctx);
+                (OneOf::G(new_element), OneOf::G(state))
             }
             OneOf::H(v) => {
-                let (element, state) = v.build(ctx);
-                (OneOf::H(element), OneOf::H(state))
+                let (new_element, state) = v.build(ctx);
+                (OneOf::H(new_element), OneOf::H(state))
             }
             OneOf::I(v) => {
-                let (element, state) = v.build(ctx);
-                (OneOf::I(element), OneOf::I(state))
+                let (new_element, state) = v.build(ctx);
+                (OneOf::I(new_element), OneOf::I(state))
             }
         });
         view_state.inner_state = state;
