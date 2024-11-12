@@ -25,8 +25,27 @@ struct BorderStyle {
     color: Color,
 }
 
+/// Padding specifies the spacing between the edges of the box and the child view.
+///
+/// A Padding can also be constructed using [`from(value: f64)`][Self::from]
+/// as well as from a `(f64, f64)` tuple, or `(f64, f64, f64, f64)` tuple, following the CSS padding conventions.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Padding {
+    /// The amount of padding in logical pixels for the top edge.
+    pub top: f64,
+    /// The amount of padding in logical pixels for the trailing edge.
+    ///
+    /// For LTR contexts this is the right edge, for RTL it is the left edge.
+    pub trailing: f64,
+    /// The amount of padding in logical pixels for the bottom edge.
+    pub bottom: f64,
+    /// The amount of padding in logical pixels for the leading edge.
+    ///
+    /// For LTR contexts this is the left edge, for RTL it is the right edge.
+    pub leading: f64,
+}
+
 // TODO - Have Widget type as generic argument
-// TODO - Add Padding
 
 /// A widget with predefined size.
 ///
@@ -44,6 +63,84 @@ pub struct SizedBox {
     background: Option<Brush>,
     border: Option<BorderStyle>,
     corner_radius: RoundedRectRadii,
+    padding: Padding,
+}
+
+// --- MARK: IMPL PADDING ---
+
+impl Padding {
+    /// Constructs a new `Padding` by specifying the amount of padding for each edge.
+    pub const fn new(top: f64, trailing: f64, bottom: f64, leading: f64) -> Self {
+        Self {
+            top,
+            trailing,
+            bottom,
+            leading,
+        }
+    }
+
+    /// A padding of zero for all edges.
+    pub const ZERO: Padding = Padding::all(0.);
+
+    /// Constructs a new `Padding` with equal amount of padding for all edges.
+    pub const fn all(padding: f64) -> Self {
+        Self::new(padding, padding, padding, padding)
+    }
+
+    /// Constructs a new `Padding` with the same amount of padding for the horizontal edges,
+    /// and zero padding for the vertical edges.
+    pub const fn horizontal(padding: f64) -> Self {
+        Self::new(0., padding, 0., padding)
+    }
+
+    /// Constructs a new `Padding` with the same amount of padding for the vertical edges,
+    /// and zero padding for the horizontal edges.
+    pub const fn vertical(padding: f64) -> Self {
+        Self::new(padding, 0., padding, 0.)
+    }
+
+    /// Constructs a new `Padding` with padding only at the top edge and zero padding for all other edges.
+    pub const fn top(padding: f64) -> Self {
+        Self::new(padding, 0., 0., 0.)
+    }
+
+    /// Constructs a new `Padding` with padding only at the trailing edge and zero padding for all other edges.
+    pub const fn trailing(padding: f64) -> Self {
+        Self::new(0., padding, 0., 0.)
+    }
+
+    /// Constructs a new `Padding` with padding only at the bottom edge and zero padding for all other edges.
+    pub const fn bottom(padding: f64) -> Self {
+        Self::new(0., 0., padding, 0.)
+    }
+
+    /// Constructs a new `Padding` with padding only at the leading edge and zero padding for all other edges.
+    pub const fn leading(padding: f64) -> Self {
+        Self::new(0., 0., 0., padding)
+    }
+}
+
+impl From<f64> for Padding {
+    /// Converts the value to a `Padding` object with that amount of padding on all edges.
+    fn from(value: f64) -> Self {
+        Self::all(value)
+    }
+}
+
+impl From<(f64, f64, f64, f64)> for Padding {
+    /// Converts the tuple to a `Padding` object,
+    /// following CSS padding order for 4 values (top, trailing, bottom, leading).
+    fn from(value: (f64, f64, f64, f64)) -> Self {
+        Self::new(value.0, value.1, value.2, value.3)
+    }
+}
+
+impl From<(f64, f64)> for Padding {
+    /// Converts the tuple to a `Padding` object,
+    /// following CSS padding order for 2 values (vertical, horizontal)
+    fn from(value: (f64, f64)) -> Self {
+        Self::new(value.0, value.1, value.0, value.1)
+    }
 }
 
 // --- MARK: BUILDERS ---
@@ -57,6 +154,7 @@ impl SizedBox {
             background: None,
             border: None,
             corner_radius: RoundedRectRadii::from_single_radius(0.0),
+            padding: Padding::ZERO,
         }
     }
 
@@ -69,6 +167,7 @@ impl SizedBox {
             background: None,
             border: None,
             corner_radius: RoundedRectRadii::from_single_radius(0.0),
+            padding: Padding::ZERO,
         }
     }
 
@@ -81,6 +180,7 @@ impl SizedBox {
             background: None,
             border: None,
             corner_radius: RoundedRectRadii::from_single_radius(0.0),
+            padding: Padding::ZERO,
         }
     }
 
@@ -97,6 +197,7 @@ impl SizedBox {
             background: None,
             border: None,
             corner_radius: RoundedRectRadii::from_single_radius(0.0),
+            padding: Padding::ZERO,
         }
     }
 
@@ -177,6 +278,12 @@ impl SizedBox {
     /// Set the height directly. Intended for toolkits abstracting over `SizedBox`
     pub fn raw_height(mut self, value: Option<f64>) -> Self {
         self.height = value;
+        self
+    }
+
+    /// Builder style method for specifying the padding added by the box.
+    pub fn padding(mut self, padding: impl Into<Padding>) -> Self {
+        self.padding = padding.into();
         self
     }
 
@@ -266,6 +373,17 @@ impl SizedBox {
         this.ctx.request_paint_only();
     }
 
+    /// Clears padding.
+    pub fn clear_padding(this: &mut WidgetMut<'_, Self>) {
+        Self::set_padding(this, Padding::ZERO);
+    }
+
+    /// Set the padding around this widget.
+    pub fn set_padding(this: &mut WidgetMut<'_, Self>, padding: impl Into<Padding>) {
+        this.widget.padding = padding.into();
+        this.ctx.request_layout();
+    }
+
     // TODO - Doc
     pub fn child_mut<'t>(
         this: &'t mut WidgetMut<'_, Self>,
@@ -333,6 +451,14 @@ impl Widget for SizedBox {
         let child_bc = child_bc.shrink((2.0 * border_width, 2.0 * border_width));
         let origin = Point::new(border_width, border_width);
 
+        // Shrink constraints by padding inset
+        let padding_size = Size::new(
+            self.padding.leading + self.padding.trailing,
+            self.padding.top + self.padding.bottom,
+        );
+        let child_bc = child_bc.shrink(padding_size);
+        let origin = origin + (self.padding.leading, self.padding.top);
+
         let mut size;
         match self.child.as_mut() {
             Some(child) => {
@@ -341,7 +467,7 @@ impl Widget for SizedBox {
                 size = Size::new(
                     size.width + 2.0 * border_width,
                     size.height + 2.0 * border_width,
-                );
+                ) + padding_size;
             }
             None => size = bc.constrain((self.width.unwrap_or(0.0), self.height.unwrap_or(0.0))),
         };
@@ -477,6 +603,19 @@ mod tests {
     }
 
     #[test]
+    fn label_box_with_padding() {
+        let widget = SizedBox::new(Label::new("hello"))
+            .border(Color::BLUE, 5.0)
+            .rounded(5.0)
+            .padding((60., 40.));
+
+        let mut harness = TestHarness::create(widget);
+
+        assert_debug_snapshot!(harness.root_widget());
+        assert_render_snapshot!(harness, "label_box_with_padding");
+    }
+
+    #[test]
     fn label_box_with_solid_background() {
         let widget = SizedBox::new(Label::new("hello"))
             .width(40.0)
@@ -510,6 +649,38 @@ mod tests {
 
         assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "empty_box_with_gradient_background");
+    }
+
+    #[test]
+    fn label_box_with_padding_and_background() {
+        let widget = SizedBox::new(Label::new("hello"))
+            .width(40.0)
+            .height(40.0)
+            .background(Color::PLUM)
+            .border(Color::LIGHT_SKY_BLUE, 5.)
+            .padding(100.);
+
+        let mut harness = TestHarness::create(widget);
+
+        assert_debug_snapshot!(harness.root_widget());
+        assert_render_snapshot!(harness, "label_box_with_background_and_padding");
+    }
+
+    #[test]
+    fn label_box_with_padding_outside() {
+        let widget = SizedBox::new(
+            SizedBox::new(Label::new("hello"))
+                .width(40.0)
+                .height(40.0)
+                .background(Color::PLUM)
+                .border(Color::LIGHT_SKY_BLUE, 5.),
+        )
+        .padding(100.);
+
+        let mut harness = TestHarness::create(widget);
+
+        assert_debug_snapshot!(harness.root_widget());
+        assert_render_snapshot!(harness, "label_box_with_outer_padding");
     }
 
     // TODO - add screenshot tests for different brush types

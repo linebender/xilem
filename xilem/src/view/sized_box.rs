@@ -4,6 +4,7 @@
 use std::marker::PhantomData;
 
 use masonry::widget;
+pub use masonry::widget::Padding;
 use vello::kurbo::RoundedRectRadii;
 use vello::peniko::{Brush, Color};
 
@@ -26,6 +27,7 @@ where
         background: None,
         border: None,
         corner_radius: RoundedRectRadii::from_single_radius(0.0),
+        padding: Padding::ZERO,
         phantom: PhantomData,
     }
 }
@@ -38,6 +40,7 @@ pub struct SizedBox<V, State, Action = ()> {
     background: Option<Brush>,
     border: Option<BorderStyle>,
     corner_radius: RoundedRectRadii,
+    padding: Padding,
     phantom: PhantomData<fn() -> (State, Action)>,
 }
 
@@ -104,9 +107,15 @@ impl<V, State, Action> SizedBox<V, State, Action> {
         self
     }
 
-    /// Builder style method for rounding off corners of this container by setting a corner radius
+    /// Builder style method for rounding off corners of this container by setting a corner radius.
     pub fn rounded(mut self, radius: impl Into<RoundedRectRadii>) -> Self {
         self.corner_radius = radius.into();
+        self
+    }
+
+    /// Builder style method for adding a padding around the widget.
+    pub fn padding(mut self, padding: impl Into<Padding>) -> Self {
+        self.padding = padding.into();
         self
     }
 }
@@ -126,7 +135,8 @@ where
         let mut widget = widget::SizedBox::new_pod(child.inner.boxed())
             .raw_width(self.width)
             .raw_height(self.height)
-            .rounded(self.corner_radius);
+            .rounded(self.corner_radius)
+            .padding(self.padding);
         if let Some(background) = &self.background {
             widget = widget.background(background.clone());
         }
@@ -173,6 +183,9 @@ where
         }
         if self.corner_radius != prev.corner_radius {
             widget::SizedBox::set_rounded(&mut element, self.corner_radius);
+        }
+        if self.padding != prev.padding {
+            widget::SizedBox::set_padding(&mut element, self.padding);
         }
         {
             let mut child = widget::SizedBox::child_mut(&mut element)
