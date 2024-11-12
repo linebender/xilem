@@ -15,7 +15,7 @@ pub fn variable_label(label: impl Into<ArcStr>) -> VariableLabel {
         label: label.into(),
         text_brush: Color::WHITE.into(),
         alignment: TextAlignment::default(),
-        text_size: masonry::theme::TEXT_SIZE_NORMAL as f32,
+        text_size: masonry::theme::TEXT_SIZE_NORMAL,
         target_weight: Weight::NORMAL,
         over_millis: 0.,
         font: FontStack::Single(FontFamily::Generic(GenericFamily::SystemUi)),

@@ -12,7 +12,7 @@ pub fn label(label: impl Into<ArcStr>) -> Label {
         label: label.into(),
         text_brush: Color::WHITE.into(),
         alignment: TextAlignment::default(),
-        text_size: masonry::theme::TEXT_SIZE_NORMAL as f32,
+        text_size: masonry::theme::TEXT_SIZE_NORMAL,
         weight: TextWeight::NORMAL,
     }
 }

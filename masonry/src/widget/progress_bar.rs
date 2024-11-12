@@ -43,7 +43,7 @@ impl ProgressBar {
         Self {
             progress: None,
             progress_changed: false,
-            label: TextLayout::new(crate::theme::TEXT_SIZE_NORMAL as f32),
+            label: TextLayout::new(crate::theme::TEXT_SIZE_NORMAL),
         }
     }
 

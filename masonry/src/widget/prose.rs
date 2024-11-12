@@ -39,7 +39,7 @@ pub struct Prose {
 impl Prose {
     pub fn new(text: impl Into<ArcStr>) -> Self {
         Prose {
-            text_layout: TextWithSelection::new(text.into(), crate::theme::TEXT_SIZE_NORMAL as f32),
+            text_layout: TextWithSelection::new(text.into(), crate::theme::TEXT_SIZE_NORMAL),
             line_break_mode: LineBreaking::WordWrap,
             show_disabled: true,
             brush: crate::theme::TEXT_COLOR.into(),

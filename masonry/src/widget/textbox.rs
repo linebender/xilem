@@ -50,7 +50,7 @@ pub struct Textbox {
 impl Textbox {
     pub fn new(initial_text: impl Into<String>) -> Self {
         Textbox {
-            editor: TextEditor::new(initial_text.into(), crate::theme::TEXT_SIZE_NORMAL as f32),
+            editor: TextEditor::new(initial_text.into(), crate::theme::TEXT_SIZE_NORMAL),
             line_break_mode: LineBreaking::WordWrap,
             show_disabled: true,
             brush: crate::theme::TEXT_COLOR.into(),
