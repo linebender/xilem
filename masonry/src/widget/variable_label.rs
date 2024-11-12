@@ -150,7 +150,7 @@ impl VariableLabel {
         Self {
             text: text.into(),
             text_changed: false,
-            text_layout: TextLayout::new(crate::theme::TEXT_SIZE_NORMAL as f32),
+            text_layout: TextLayout::new(crate::theme::TEXT_SIZE_NORMAL),
             line_break_mode: LineBreaking::Overflow,
             show_disabled: true,
             brush: crate::theme::TEXT_COLOR.into(),

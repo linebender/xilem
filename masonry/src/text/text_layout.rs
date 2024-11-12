@@ -607,6 +607,6 @@ impl std::fmt::Debug for TextLayout {
 
 impl Default for TextLayout {
     fn default() -> Self {
-        Self::new(crate::theme::TEXT_SIZE_NORMAL as f32)
+        Self::new(crate::theme::TEXT_SIZE_NORMAL)
     }
 }

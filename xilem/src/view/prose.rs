@@ -12,7 +12,7 @@ pub fn prose(content: impl Into<ArcStr>) -> Prose {
         content: content.into(),
         text_brush: Color::WHITE.into(),
         alignment: TextAlignment::default(),
-        text_size: masonry::theme::TEXT_SIZE_NORMAL as f32,
+        text_size: masonry::theme::TEXT_SIZE_NORMAL,
         line_break_mode: LineBreaking::WordWrap,
     }
 }
