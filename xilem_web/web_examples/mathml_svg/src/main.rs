@@ -48,7 +48,7 @@ fn slider(
     cb: fn(&mut Triangle, web_sys::Event),
 ) -> impl HtmlInputElement<Triangle> {
     html::input(())
-        .attr("type", "range")
+        .type_("range")
         .attr("min", 1)
         .attr("max", max)
         .attr("value", value)

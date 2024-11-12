@@ -822,11 +822,41 @@ pub trait HtmlInputElement<State, Action = ()>:
     /// use xilem_web::{interfaces::{Element, HtmlInputElement}, elements::html::input};
     ///
     /// # fn component() -> impl HtmlInputElement<()> {
-    /// input(()).attr("type", "checkbox").checked(true) // results in <input type="checkbox" checked></input>
+    /// input(()).type_("checkbox").checked(true) // results in <input type="checkbox" checked></input>
     /// # }
     /// ```
     fn checked(self, checked: bool) -> html_input_element::view::Checked<Self, State, Action> {
         html_input_element::view::Checked::new(self, checked)
+    }
+
+    /// See <https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/type> for more details.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use xilem_web::{interfaces::{Element, HtmlInputElement}, elements::html::input};
+    ///
+    /// # fn component() -> impl HtmlInputElement<()> {
+    /// input(()).type_("radio") // results in <input type="radio"></input>
+    /// # }
+    /// ```
+    fn type_(self, value: impl Into<Cow<'static, str>>) -> Attr<Self, State, Action> {
+        Attr::new(self, "type".into(), value.into().into_attr_value())
+    }
+
+    /// See <https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/name> for more details.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use xilem_web::{interfaces::{Element, HtmlInputElement}, elements::html::input};
+    ///
+    /// # fn component() -> impl HtmlInputElement<()> {
+    /// input(()).name("color") // results in <input name="color"></input>
+    /// # }
+    /// ```
+    fn name(self, value: impl Into<Cow<'static, str>>) -> Attr<Self, State, Action> {
+        Attr::new(self, "name".into(), value.into().into_attr_value())
     }
 
     /// See <https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/checked> for more details.
@@ -837,7 +867,7 @@ pub trait HtmlInputElement<State, Action = ()>:
     /// use xilem_web::{interfaces::{Element, HtmlInputElement}, elements::html::input};
     ///
     /// # fn component() -> impl HtmlInputElement<()> {
-    /// input(()).attr("type", "radio").default_checked(true) // results in <input type="radio" checked></input>
+    /// input(()).type_("radio").default_checked(true) // results in <input type="radio" checked></input>
     /// # }
     /// ```
     fn default_checked(

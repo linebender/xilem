@@ -175,7 +175,7 @@ fn cat_fetch_controls(state: &AppState) -> impl Element<AppState> {
                 td(label("How many cats would you like?").for_("cat-count")),
                 td(input(())
                     .id("cat-count")
-                    .attr("type", "number")
+                    .type_("number")
                     .attr("min", 0)
                     .attr("value", state.cats_to_fetch)
                     .on_input(|state: &mut AppState, ev: web_sys::Event| {
@@ -193,7 +193,7 @@ fn cat_fetch_controls(state: &AppState) -> impl Element<AppState> {
                 ),
                 td(input(())
                     .id("reset-debounce-update")
-                    .attr("type", "checkbox")
+                    .type_("checkbox")
                     .checked(state.reset_debounce_on_update)
                     .on_input(|state: &mut AppState, event: web_sys::Event| {
                         state.reset_debounce_on_update = input_target(&event).checked();
@@ -203,7 +203,7 @@ fn cat_fetch_controls(state: &AppState) -> impl Element<AppState> {
                 td(label("Debounce timeout in ms:").for_("debounce-timeout-duration")),
                 td(input(())
                     .id("debounce-timeout-duration")
-                    .attr("type", "number")
+                    .type_("number")
                     .attr("min", 0)
                     .attr("value", state.debounce_in_ms)
                     .on_input(|state: &mut AppState, ev: web_sys::Event| {
