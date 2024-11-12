@@ -24,7 +24,6 @@
 #![warn(clippy::print_stdout, clippy::print_stderr)]
 // TODO: Remove any items listed as "Deferred"
 #![deny(clippy::trivially_copy_pass_by_ref)]
-#![expect(unused_qualifications, reason = "Deferred: Noisy")]
 #![expect(single_use_lifetimes, reason = "Deferred: Noisy")]
 #![expect(clippy::exhaustive_enums, reason = "Deferred: Noisy")]
 #![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]

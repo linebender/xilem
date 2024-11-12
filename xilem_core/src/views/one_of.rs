@@ -213,7 +213,7 @@ where
     type Element = Context::OneOfElement;
 
     #[doc(hidden)]
-    type ViewState = hidden::OneOfState<
+    type ViewState = OneOfState<
         A::ViewState,
         B::ViewState,
         C::ViewState,

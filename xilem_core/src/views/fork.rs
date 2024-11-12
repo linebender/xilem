@@ -88,7 +88,7 @@ where
     fn message(
         &self,
         (active_state, alongside_state): &mut Self::ViewState,
-        id_path: &[crate::ViewId],
+        id_path: &[ViewId],
         message: Message,
         app_state: &mut State,
     ) -> crate::MessageResult<Action, Message> {
