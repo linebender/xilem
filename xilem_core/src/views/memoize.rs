@@ -250,10 +250,10 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[crate::ViewId],
+        id_path: &[ViewId],
         message: Message,
         app_state: &mut State,
-    ) -> crate::MessageResult<Action, Message> {
+    ) -> MessageResult<Action, Message> {
         let message_result =
             view_state
                 .view

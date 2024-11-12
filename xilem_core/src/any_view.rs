@@ -182,7 +182,7 @@ impl<State, Action, Context, Element, Message> View<State, Action, Context, Mess
 where
     // Element must be `static` so it can be downcasted
     Element: ViewElement + 'static,
-    Context: crate::ViewPathTracker + 'static,
+    Context: ViewPathTracker + 'static,
     State: 'static,
     Action: 'static,
     Message: 'static,
@@ -217,10 +217,10 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[crate::ViewId],
+        id_path: &[ViewId],
         message: Message,
         app_state: &mut State,
-    ) -> crate::MessageResult<Action, Message> {
+    ) -> MessageResult<Action, Message> {
         self.dyn_message(view_state, id_path, message, app_state)
     }
 }
@@ -236,7 +236,7 @@ impl<State, Action, Context, Element, Message> View<State, Action, Context, Mess
 where
     // Element must be `static` so it can be downcasted
     Element: ViewElement + 'static,
-    Context: crate::ViewPathTracker + 'static,
+    Context: ViewPathTracker + 'static,
     State: 'static,
     Action: 'static,
     Message: 'static,
@@ -271,10 +271,10 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[crate::ViewId],
+        id_path: &[ViewId],
         message: Message,
         app_state: &mut State,
-    ) -> crate::MessageResult<Action, Message> {
+    ) -> MessageResult<Action, Message> {
         self.dyn_message(view_state, id_path, message, app_state)
     }
 }
@@ -288,7 +288,7 @@ impl<State, Action, Context, Element, Message> View<State, Action, Context, Mess
 where
     // Element must be `static` so it can be downcasted
     Element: ViewElement + 'static,
-    Context: crate::ViewPathTracker + 'static,
+    Context: ViewPathTracker + 'static,
     State: 'static,
     Action: 'static,
     Message: 'static,
@@ -323,10 +323,10 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[crate::ViewId],
+        id_path: &[ViewId],
         message: Message,
         app_state: &mut State,
-    ) -> crate::MessageResult<Action, Message> {
+    ) -> MessageResult<Action, Message> {
         self.dyn_message(view_state, id_path, message, app_state)
     }
 }
@@ -340,7 +340,7 @@ impl<State, Action, Context, Element, Message> View<State, Action, Context, Mess
 where
     // Element must be `static` so it can be downcasted
     Element: ViewElement + 'static,
-    Context: crate::ViewPathTracker + 'static,
+    Context: ViewPathTracker + 'static,
     State: 'static,
     Action: 'static,
     Message: 'static,
@@ -375,10 +375,10 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[crate::ViewId],
+        id_path: &[ViewId],
         message: Message,
         app_state: &mut State,
-    ) -> crate::MessageResult<Action, Message> {
+    ) -> MessageResult<Action, Message> {
         self.dyn_message(view_state, id_path, message, app_state)
     }
 }
