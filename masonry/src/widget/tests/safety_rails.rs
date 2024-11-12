@@ -1,24 +1,12 @@
 // Copyright 2022 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use smallvec::smallvec;
-
 use crate::testing::{ModularWidget, TestHarness, TestWidgetExt};
 use crate::widget::Flex;
 use crate::{Point, PointerButton, Size, Update, Widget, WidgetId, WidgetPod};
 
 fn make_parent_widget<W: Widget>(child: W) -> ModularWidget<WidgetPod<W>> {
-    let child = WidgetPod::new(child);
-    ModularWidget::new(child)
-        .register_children_fn(move |child, ctx| {
-            ctx.register_child(child);
-        })
-        .layout_fn(move |child, ctx, bc| {
-            let size = ctx.run_layout(child, bc);
-            ctx.place_child(child, Point::ZERO);
-            size
-        })
-        .children_fn(|child| smallvec![child.id()])
+    ModularWidget::new_parent(child)
 }
 
 #[cfg(FALSE)]
