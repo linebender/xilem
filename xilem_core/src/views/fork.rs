@@ -21,6 +21,7 @@ pub fn fork<Active, Alongside>(
 
 /// The view for [`fork`].
 #[derive(Debug)]
+#[must_use = "View values do nothing unless provided to Xilem."]
 pub struct Fork<Active, Alongside> {
     active_view: Active,
     alongside_view: Alongside,

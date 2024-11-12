@@ -10,6 +10,7 @@ use crate::{MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker};
 ///
 /// The story of Memoization in Xilem is still being worked out,
 /// so the details of this view might change.
+#[must_use = "View values do nothing unless provided to Xilem."]
 pub struct Memoize<Data, InitView, State, Action, Context, Message> {
     data: Data,
     init_view: InitView,

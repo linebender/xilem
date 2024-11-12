@@ -33,7 +33,7 @@ where
 {
     const {
         assert!(
-            core::mem::size_of::<F>() == 0,
+            size_of::<F>() == 0,
             "`task` will not be ran again when its captured variables are updated.\n\
             To ignore this warning, use `task_raw`."
         );

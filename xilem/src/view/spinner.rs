@@ -38,6 +38,7 @@ pub fn spinner() -> Spinner {
 /// The [`View`] created by [`spinner`].
 ///
 /// See `spinner`'s docs for more details.
+#[must_use = "View values do nothing unless provided to Xilem."]
 pub struct Spinner {
     color: Option<Color>,
 }

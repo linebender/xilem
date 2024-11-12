@@ -27,6 +27,7 @@ pub fn flex<State, Action, Seq: FlexSequence<State, Action>>(
     }
 }
 
+#[must_use = "View values do nothing unless provided to Xilem."]
 pub struct Flex<Seq, State, Action = ()> {
     sequence: Seq,
     axis: Axis,

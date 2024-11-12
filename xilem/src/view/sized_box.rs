@@ -30,6 +30,7 @@ where
     }
 }
 
+#[must_use = "View values do nothing unless provided to Xilem."]
 pub struct SizedBox<V, State, Action = ()> {
     inner: V,
     width: Option<f64>,

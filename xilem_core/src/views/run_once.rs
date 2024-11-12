@@ -71,6 +71,7 @@ where
 /// The view type for [`run_once`].
 ///
 /// This is a [`NoElement`] view.
+#[must_use = "View values do nothing unless provided to Xilem."]
 pub struct RunOnce<F> {
     once: F,
 }

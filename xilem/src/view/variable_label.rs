@@ -22,6 +22,7 @@ pub fn variable_label(label: impl Into<ArcStr>) -> VariableLabel {
     }
 }
 
+#[must_use = "View values do nothing unless provided to Xilem."]
 pub struct VariableLabel {
     label: ArcStr,
 
@@ -149,7 +150,7 @@ impl<State, Action> View<State, Action, ViewCtx> for VariableLabel {
         _id_path: &[ViewId],
         message: DynMessage,
         _app_state: &mut State,
-    ) -> crate::MessageResult<Action> {
+    ) -> MessageResult<Action> {
         tracing::error!("Message arrived in Label::message, but Label doesn't consume any messages, this is a bug");
         MessageResult::Stale(message)
     }

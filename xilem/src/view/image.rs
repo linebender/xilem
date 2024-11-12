@@ -31,6 +31,7 @@ pub fn image(image: &vello::peniko::Image) -> Image {
 /// The [`View`] created by [`image`].
 ///
 /// See `image`'s docs for more details.
+#[must_use = "View values do nothing unless provided to Xilem."]
 pub struct Image {
     image: vello::peniko::Image,
     object_fit: ObjectFit,

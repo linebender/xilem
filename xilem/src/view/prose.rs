@@ -27,6 +27,7 @@ pub fn inline_prose(content: impl Into<ArcStr>) -> Prose {
     prose(content).line_break_mode(LineBreaking::Overflow)
 }
 
+#[must_use = "View values do nothing unless provided to Xilem."]
 pub struct Prose {
     content: ArcStr,
 
@@ -109,7 +110,7 @@ impl<State, Action> View<State, Action, ViewCtx> for Prose {
         _id_path: &[ViewId],
         message: DynMessage,
         _app_state: &mut State,
-    ) -> crate::MessageResult<Action> {
+    ) -> MessageResult<Action> {
         tracing::error!("Message arrived in Prose::message, but Prose doesn't consume any messages, this is a bug");
         MessageResult::Stale(message)
     }

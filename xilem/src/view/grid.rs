@@ -26,6 +26,7 @@ pub fn grid<State, Action, Seq: GridSequence<State, Action>>(
     }
 }
 
+#[must_use = "View values do nothing unless provided to Xilem."]
 pub struct Grid<Seq, State, Action = ()> {
     sequence: Seq,
     spacing: f64,
