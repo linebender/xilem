@@ -22,7 +22,6 @@
     missing_debug_implementations,
     reason = "Deferred: Noisy. Requires same lint to be addressed in Masonry"
 )]
-// #![expect(unused_qualifications, reason = "Deferred: Noisy")]
 #![expect(clippy::exhaustive_enums, reason = "Deferred: Noisy")]
 #![expect(clippy::match_same_arms, reason = "Deferred: Noisy")]
 #![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
