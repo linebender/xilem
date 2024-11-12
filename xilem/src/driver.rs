@@ -33,12 +33,10 @@ type MessagePackage = (Arc<[ViewId]>, DynMessage);
 
 impl RawProxy for MasonryProxy {
     fn send_message(&self, path: Arc<[ViewId]>, message: DynMessage) -> Result<(), ProxyError> {
-        match self
-            .0
-            .send_event(MasonryUserEvent::Action(
-                async_action(path, message),
-                ASYNC_MARKER_WIDGET,
-            )) {
+        match self.0.send_event(MasonryUserEvent::Action(
+            async_action(path, message),
+            ASYNC_MARKER_WIDGET,
+        )) {
             Ok(()) => Ok(()),
             Err(err) => {
                 let MasonryUserEvent::Action(masonry::Action::Other(res), _) = err.0 else {
