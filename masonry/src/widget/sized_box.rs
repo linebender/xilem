@@ -25,6 +25,23 @@ struct BorderStyle {
     color: Color,
 }
 
+/// Padding specifies the spacing between the edges of the box and the child view.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Padding {
+    /// The amount of padding in logical pixels for the top edge.
+    pub top: f64,
+    /// The amount of padding in logical pixels for the trailing edge.
+    ///
+    /// For LTR contexts this is the right edge, for RTL it is the left edge.
+    pub trailing: f64,
+    /// The amount of padding in logical pixels for the bottom edge.
+    pub bottom: f64,
+    /// The amount of padding in logical pixels for the leading edge.
+    ///
+    /// For LTR contexts this is the left edge, for RTL it is the right edge.
+    pub leading: f64,
+}
+
 // TODO - Have Widget type as generic argument
 
 /// A widget with predefined size.
@@ -44,6 +61,83 @@ pub struct SizedBox {
     border: Option<BorderStyle>,
     corner_radius: RoundedRectRadii,
     padding: Padding,
+}
+
+// --- MARK: IMPL PADDING ---
+
+impl Padding {
+    /// Constructs a new `Padding` by specifying the amount of padding for each edge.
+    pub const fn new(top: f64, trailing: f64, bottom: f64, leading: f64) -> Self {
+        Self {
+            top,
+            trailing,
+            bottom,
+            leading,
+        }
+    }
+
+    /// A padding of zero for all edges.
+    pub const ZERO: Padding = Padding::all(0.);
+
+    /// Constructs a new `Padding` with equal amount of padding for all edges.
+    pub const fn all(padding: f64) -> Self {
+        Self::new(padding, padding, padding, padding)
+    }
+
+    /// Constructs a new `Padding` with the same amount of padding for the horizontal edges,
+    /// and zero padding for the vertical edges.
+    pub const fn horizontal(padding: f64) -> Self {
+        Self::new(0., padding, 0., padding)
+    }
+
+    /// Constructs a new `Padding` with the same amount of padding for the vertical edges,
+    /// and zero padding for the horizontal edges.
+    pub const fn vertical(padding: f64) -> Self {
+        Self::new(padding, 0., padding, 0.)
+    }
+
+    /// Constructs a new `Padding` with padding only at the top edge and zero padding for all other edges.
+    pub const fn top(padding: f64) -> Self {
+        Self::new(padding, 0., 0., 0.)
+    }
+
+    /// Constructs a new `Padding` with padding only at the trailing edge and zero padding for all other edges.
+    pub const fn trailing(padding: f64) -> Self {
+        Self::new(0., padding, 0., 0.)
+    }
+
+    /// Constructs a new `Padding` with padding only at the bottom edge and zero padding for all other edges.
+    pub const fn bottom(padding: f64) -> Self {
+        Self::new(0., 0., padding, 0.)
+    }
+
+    /// Constructs a new `Padding` with padding only at the leading edge and zero padding for all other edges.
+    pub const fn leading(padding: f64) -> Self {
+        Self::new(0., 0., 0., padding)
+    }
+}
+
+impl From<f64> for Padding {
+    /// Converts the value to a `Padding` object with that amount of padding on all edges.
+    fn from(value: f64) -> Self {
+        Self::all(value)
+    }
+}
+
+impl From<(f64, f64, f64, f64)> for Padding {
+    /// Converts the tuple to a `Padding` object,
+    /// following CSS padding order for 4 values (top, trailing, bottom, leading).
+    fn from(value: (f64, f64, f64, f64)) -> Self {
+        Self::new(value.0, value.1, value.2, value.3)
+    }
+}
+
+impl From<(f64, f64)> for Padding {
+    /// Converts the tuple to a `Padding` object,
+    /// following CSS padding order for 2 values (vertical, horizontal)
+    fn from(value: (f64, f64)) -> Self {
+        Self::new(value.0, value.1, value.0, value.1)
+    }
 }
 
 // --- MARK: BUILDERS ---
@@ -184,7 +278,7 @@ impl SizedBox {
         self
     }
 
-    /// Builder style method for specifying the padding between the box and the child widget.
+    /// Builder style method for specifying the padding added by the box.
     pub fn padding(mut self, padding: impl Into<Padding>) -> Self {
         self.padding = padding.into();
         self
@@ -587,98 +681,4 @@ mod tests {
     }
 
     // TODO - add screenshot tests for different brush types
-}
-
-// --- MARK: PADDING STRUCT ---
-
-/// Padding specifies the spacing between the edges of the box and the child view.
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct Padding {
-    /// The amount of padding for the top edge.
-    pub top: f64,
-    /// The amount of padding for the trailing edge.
-    ///
-    /// For LTR contexts this is the right edge, for RTL it is the left edge.
-    pub trailing: f64,
-    /// The amount of padding for the bottom edge.
-    pub bottom: f64,
-    /// The amount of padding for the leading edge.
-    ///
-    /// For LTR contexts this is the left edge, for RTL it is the right edge.
-    pub leading: f64,
-}
-
-impl Padding {
-    /// Creates a new [Padding] object by specifying the amount of padding for each edge.
-    pub const fn new(top: f64, trailing: f64, bottom: f64, leading: f64) -> Self {
-        Self {
-            top,
-            trailing,
-            bottom,
-            leading,
-        }
-    }
-
-    /// A padding of zero for all edges.
-    pub const ZERO: Padding = Padding::all(0.);
-
-    /// Creates a new [Padding] object with equal amount of padding for all edges.
-    pub const fn all(padding: f64) -> Self {
-        Self::new(padding, padding, padding, padding)
-    }
-
-    /// Creates a new [Padding] object with the same amount of padding for the horizontal edges,
-    /// and zero padding for the vertical edges.
-    pub const fn horizontal(padding: f64) -> Self {
-        Self::new(0., padding, 0., padding)
-    }
-
-    /// Creates a new [Padding] object with the same amount of padding for the vertical edges,
-    /// and zero padding for the horizontal edges.
-    pub const fn vertical(padding: f64) -> Self {
-        Self::new(padding, 0., padding, 0.)
-    }
-
-    /// Creates a new [Padding] object with padding only at the top edge and zero padding for all other edges.
-    pub const fn top(padding: f64) -> Self {
-        Self::new(padding, 0., 0., 0.)
-    }
-
-    /// Creates a new [Padding] object with padding only at the trailing edge and zero padding for all other edges.
-    pub const fn trailing(padding: f64) -> Self {
-        Self::new(0., padding, 0., 0.)
-    }
-
-    /// Creates a new [Padding] object with padding only at the bottom edge and zero padding for all other edges.
-    pub const fn bottom(padding: f64) -> Self {
-        Self::new(0., 0., padding, 0.)
-    }
-
-    /// Creates a new [Padding] object with padding only at the leading edge and zero padding for all other edges.
-    pub const fn leading(padding: f64) -> Self {
-        Self::new(0., 0., 0., padding)
-    }
-}
-
-impl From<f64> for Padding {
-    /// Converts the value to a [Padding] object with that amount of padding on all edges.
-    fn from(value: f64) -> Self {
-        Self::all(value)
-    }
-}
-
-impl From<(f64, f64, f64, f64)> for Padding {
-    /// Converts the tuple to a [Padding] object,
-    /// following CSS padding order for 4 values (top, trailing, bottom, leading).
-    fn from(value: (f64, f64, f64, f64)) -> Self {
-        Self::new(value.0, value.1, value.2, value.3)
-    }
-}
-
-impl From<(f64, f64)> for Padding {
-    /// Converts the tuple to a [Padding] object,
-    /// following CSS padding order for 2 values (vertical, horizontal)
-    fn from(value: (f64, f64)) -> Self {
-        Self::new(value.0, value.1, value.0, value.1)
-    }
 }

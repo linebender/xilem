@@ -3,7 +3,8 @@
 
 use std::marker::PhantomData;
 
-use masonry::widget::{self, Padding};
+use masonry::widget;
+pub use masonry::widget::Padding;
 use vello::kurbo::RoundedRectRadii;
 use vello::peniko::{Brush, Color};
 
