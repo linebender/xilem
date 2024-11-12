@@ -200,7 +200,7 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
     ) {
         self.dyn_rebuild(view_state, ctx, prev, element);
     }
@@ -209,7 +209,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
     ) {
         self.dyn_teardown(view_state, ctx, element);
     }
@@ -254,7 +254,7 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
     ) {
         self.dyn_rebuild(view_state, ctx, prev, element);
     }
@@ -263,7 +263,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
     ) {
         self.dyn_teardown(view_state, ctx, element);
     }
@@ -306,7 +306,7 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
     ) {
         self.dyn_rebuild(view_state, ctx, prev, element);
     }
@@ -315,7 +315,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
     ) {
         self.dyn_teardown(view_state, ctx, element);
     }
@@ -358,7 +358,7 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
     ) {
         self.dyn_rebuild(view_state, ctx, prev, element);
     }
@@ -367,7 +367,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
     ) {
         self.dyn_teardown(view_state, ctx, element);
     }

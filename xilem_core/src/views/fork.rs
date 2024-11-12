@@ -53,7 +53,7 @@ where
         prev: &Self,
         (active_state, alongside_state): &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
     ) {
         ctx.with_id(ViewId::new(0), |ctx| {
             self.active_view
@@ -73,7 +73,7 @@ where
         &self,
         (active_state, alongside_state): &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
     ) {
         ctx.with_id(ViewId::new(0), |ctx| {
             self.alongside_view

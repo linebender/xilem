@@ -8,7 +8,6 @@
 #![deny(unreachable_pub)]
 #![expect(clippy::allow_attributes, reason = "Deferred: Noisy")]
 #![expect(clippy::allow_attributes_without_reason, reason = "Deferred: Noisy")]
-#![expect(elided_lifetimes_in_paths, reason = "Deferred: Noisy")]
 #![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
 #![expect(clippy::use_self, reason = "Deferred: Noisy")]
 #![expect(single_use_lifetimes, reason = "Deferred: Noisy")]
@@ -117,7 +116,7 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut TestCtx,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
     ) {
         assert_eq!(&*element.view_path, ctx.view_path());
         element.operations.push(Operation::Rebuild {
@@ -137,7 +136,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut TestCtx,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
     ) {
         assert_eq!(&*element.view_path, ctx.view_path());
         element.operations.push(Operation::Teardown(self.id));
@@ -183,7 +182,7 @@ impl<const N: u32> View<(), Action, TestCtx> for OperationView<N> {
         prev: &Self,
         _: &mut Self::ViewState,
         ctx: &mut TestCtx,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
     ) {
         assert_eq!(&*element.view_path, ctx.view_path());
         element.operations.push(Operation::Rebuild {
@@ -192,7 +191,12 @@ impl<const N: u32> View<(), Action, TestCtx> for OperationView<N> {
         });
     }
 
-    fn teardown(&self, _: &mut Self::ViewState, ctx: &mut TestCtx, element: Mut<Self::Element>) {
+    fn teardown(
+        &self,
+        _: &mut Self::ViewState,
+        ctx: &mut TestCtx,
+        element: Mut<'_, Self::Element>,
+    ) {
         assert_eq!(&*element.view_path, ctx.view_path());
         element.operations.push(Operation::Teardown(self.0));
     }
@@ -219,7 +223,7 @@ impl SuperElement<TestElement, TestCtx> for TestElement {
 
     fn with_downcast_val<R>(
         this: Self::Mut<'_>,
-        f: impl FnOnce(Mut<TestElement>) -> R,
+        f: impl FnOnce(Mut<'_, TestElement>) -> R,
     ) -> (Self::Mut<'_>, R) {
         let ret = f(this);
         (this, ret)
@@ -277,7 +281,7 @@ impl<'a> ElementSplice<TestElement> for SeqTracker<'a> {
     fn insert(&mut self, element: TestElement) {
         self.inner.active.push(element);
     }
-    fn mutate<R>(&mut self, f: impl FnOnce(Mut<TestElement>) -> R) -> R {
+    fn mutate<R>(&mut self, f: impl FnOnce(Mut<'_, TestElement>) -> R) -> R {
         let ix = self.ix;
         self.ix += 1;
         f(&mut self.inner.active[ix])
@@ -285,7 +289,7 @@ impl<'a> ElementSplice<TestElement> for SeqTracker<'a> {
     fn skip(&mut self, n: usize) {
         self.ix += n;
     }
-    fn delete<R>(&mut self, f: impl FnOnce(Mut<TestElement>) -> R) -> R {
+    fn delete<R>(&mut self, f: impl FnOnce(Mut<'_, TestElement>) -> R) -> R {
         let ret = f(&mut self.inner.active[self.ix]);
         let val = self.inner.active.remove(self.ix);
         self.inner.deleted.push((self.ix, val));

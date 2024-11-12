@@ -103,12 +103,17 @@ where
         _: &Self,
         (): &mut Self::ViewState,
         _: &mut Context,
-        (): crate::Mut<Self::Element>,
+        (): crate::Mut<'_, Self::Element>,
     ) {
         // Nothing to do
     }
 
-    fn teardown(&self, (): &mut Self::ViewState, _: &mut Context, _: crate::Mut<Self::Element>) {
+    fn teardown(
+        &self,
+        (): &mut Self::ViewState,
+        _: &mut Context,
+        _: crate::Mut<'_, Self::Element>,
+    ) {
         // Nothing to do
     }
 

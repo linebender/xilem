@@ -23,7 +23,7 @@ pub trait OrphanView<V, State, Action, Message = DynMessage>: ViewPathTracker + 
         prev: &V,
         view_state: &mut Self::OrphanViewState,
         ctx: &mut Self,
-        element: Mut<Self::OrphanElement>,
+        element: Mut<'_, Self::OrphanElement>,
     );
 
     /// See [`View::teardown`]
@@ -31,7 +31,7 @@ pub trait OrphanView<V, State, Action, Message = DynMessage>: ViewPathTracker + 
         view: &V,
         view_state: &mut Self::OrphanViewState,
         ctx: &mut Self,
-        element: Mut<Self::OrphanElement>,
+        element: Mut<'_, Self::OrphanElement>,
     );
 
     /// See [`View::message`]
@@ -65,7 +65,7 @@ macro_rules! impl_orphan_view_for {
                 prev: &Self,
                 view_state: &mut Self::ViewState,
                 ctx: &mut Context,
-                element: Mut<Self::Element>,
+                element: Mut<'_, Self::Element>,
             ) {
                 Context::orphan_rebuild(self, prev, view_state, ctx, element);
             }
@@ -74,7 +74,7 @@ macro_rules! impl_orphan_view_for {
                 &self,
                 view_state: &mut Self::ViewState,
                 ctx: &mut Context,
-                element: Mut<Self::Element>,
+                element: Mut<'_, Self::Element>,
             ) {
                 Context::orphan_teardown(self, view_state, ctx, element);
             }

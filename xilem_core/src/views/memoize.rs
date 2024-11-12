@@ -113,7 +113,7 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
     ) {
         if core::mem::take(&mut view_state.dirty) || prev.data != self.data {
             let view = (self.init_view)(&self.data);
@@ -143,7 +143,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
     ) {
         view_state
             .view
@@ -224,7 +224,7 @@ where
         _prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
     ) {
         if core::mem::take(&mut view_state.dirty) {
             let view = (self.init_view)();
@@ -239,7 +239,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
     ) {
         view_state
             .view

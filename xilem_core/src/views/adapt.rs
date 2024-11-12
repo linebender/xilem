@@ -17,7 +17,7 @@ pub struct Adapt<
     Message,
     ProxyFn = fn(
         &mut ParentState,
-        AdaptThunk<ChildState, ChildAction, Context, ChildView, Message>,
+        AdaptThunk<'_, ChildState, ChildAction, Context, ChildView, Message>,
     ) -> MessageResult<ParentAction>,
 > {
     proxy_fn: ProxyFn,
@@ -120,7 +120,7 @@ where
     ChildView: View<ChildState, ChildAction, Context, Message>,
     ProxyFn: Fn(
             &mut ParentState,
-            AdaptThunk<ChildState, ChildAction, Context, ChildView, Message>,
+            AdaptThunk<'_, ChildState, ChildAction, Context, ChildView, Message>,
         ) -> MessageResult<ParentAction, Message>
         + 'static,
 {
@@ -163,7 +163,7 @@ where
     V: View<ChildState, ChildAction, Context, Message>,
     F: Fn(
             &mut ParentState,
-            AdaptThunk<ChildState, ChildAction, Context, V, Message>,
+            AdaptThunk<'_, ChildState, ChildAction, Context, V, Message>,
         ) -> MessageResult<ParentAction, Message>
         + 'static,
 {
@@ -180,7 +180,7 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
     ) {
         self.child.rebuild(&prev.child, view_state, ctx, element);
     }
@@ -189,7 +189,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
     ) {
         self.child.teardown(view_state, ctx, element);
     }
