@@ -126,11 +126,11 @@ pub enum ProxyError {
 impl Display for ProxyError {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match &self {
-            ProxyError::DriverFinished(_) => f.write_fmt(format_args!("the driver finished")),
-            ProxyError::ViewExpired(_, _) => {
+            Self::DriverFinished(_) => f.write_fmt(format_args!("the driver finished")),
+            Self::ViewExpired(_, _) => {
                 f.write_fmt(format_args!("the corresponding view is no longer present"))
             }
-            ProxyError::Other(inner) => Display::fmt(inner, f),
+            Self::Other(inner) => Display::fmt(inner, f),
         }
     }
 }
@@ -138,7 +138,7 @@ impl Display for ProxyError {
 impl core::error::Error for ProxyError {
     fn source(&self) -> Option<&(dyn core::error::Error + 'static)> {
         match self {
-            ProxyError::Other(inner) => inner.source(),
+            Self::Other(inner) => inner.source(),
             _ => None,
         }
     }
