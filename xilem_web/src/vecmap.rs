@@ -3,6 +3,7 @@
 
 use std::{borrow::Borrow, fmt, ops::Index, vec::Drain};
 
+#[derive(Clone)]
 /// Basically an ordered `Map` (similar as `BTreeMap`) with a `Vec` as backend for very few elements
 /// As it uses linear search instead of a tree traversal,
 /// which seems to be faster for small `n` (currently roughly `n < ~20` for the use case of diffing html attributes)

@@ -75,6 +75,38 @@ impl ViewCtx {
         self.app_ref = Some(Box::new(runner));
     }
 
+    /// Provides a way to access a cloned view context, to avoid named lifetime issues.
+    ///
+    /// One Motiviation for this is to allow custom view contexts with access to the app runtime.
+    ///
+    /// # Examples
+    /// ```ignore
+    /// struct MyContext { parent: ViewCtx };
+    /// ctx.with_owned_ctx(|ctx| {
+    ///     let my_ctx = MyContext { parent: ctx };
+    ///     self.child_view_with_different_ctx.build(&mut my_ctx);
+    ///     (my_ctx.parent, ())
+    /// });
+    /// ```
+    pub fn with_owned_ctx<R>(&mut self, f: impl FnOnce(Self) -> (Self, R)) -> R {
+        let temporary_cloned_ctx = ViewCtx {
+            id_path: self.id_path.clone(),
+            app_ref: self.app_ref.as_ref().map(|app| app.clone_box()),
+            fragment: self.fragment.clone(),
+            hydration_node_stack: self.hydration_node_stack.clone(),
+            is_hydrating: self.is_hydrating,
+            templates: self.templates.clone(),
+            modifier_size_hints: self.modifier_size_hints.clone(),
+            modifier_size_hint_stack_idx: self.modifier_size_hint_stack_idx,
+        };
+        let (ctx, retval) = f(temporary_cloned_ctx);
+        self.id_path = ctx.id_path;
+        self.hydration_node_stack = ctx.hydration_node_stack.clone();
+        self.is_hydrating = ctx.is_hydrating;
+        self.templates = ctx.templates.clone();
+        retval
+    }
+
     /// Should be used when creating children of a DOM node, e.g. to handle hydration and size hints correctly.
     pub fn with_build_children<R>(&mut self, f: impl FnOnce(&mut Self) -> R) -> R {
         self.enter_hydrating_children();
