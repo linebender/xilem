@@ -20,23 +20,17 @@ checksum = "c71b1793ee61086797f5c80b6efa2b8ffa6d5dd703f118545808a7f2e27f7046"
 
 [[package]]
 name = "accesskit"
-version = "0.16.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "99b76d84ee70e30a4a7e39ab9018e2b17a6a09e31084176cc7c0b2dec036ba45"
-
-[[package]]
-name = "accesskit"
 version = "0.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "45c97bb3cc1dacbdc6d1147040fc61309590d3e1ab5efd92a8a09c7a2e07284c"
 
 [[package]]
 name = "accesskit_atspi_common"
-version = "0.9.3"
+version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f5393c75d4666f580f4cac0a968bc97c36076bb536a129f28210dac54ee127ed"
+checksum = "03db49d2948db6875c69a1ef17816efa8e3d9f36c7cd79e467d8562a6695662b"
 dependencies = [
- "accesskit 0.16.3",
+ "accesskit",
  "accesskit_consumer",
  "atspi-common",
  "serde",
@@ -46,21 +40,21 @@ dependencies = [
 
 [[package]]
 name = "accesskit_consumer"
-version = "0.24.3"
+version = "0.25.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7a12dc159d52233c43d9fe5415969433cbdd52c3d6e0df51bda7d447427b9986"
+checksum = "fa3a17950ce0d911f132387777b9b3d05eddafb59b773ccaa53fceefaeb0228e"
 dependencies = [
- "accesskit 0.16.3",
+ "accesskit",
  "immutable-chunkmap",
 ]
 
 [[package]]
 name = "accesskit_macos"
-version = "0.17.4"
+version = "0.18.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bfc6c1ecd82053d127961ad80a8beaa6004fb851a3a5b96506d7a6bd462403f6"
+checksum = "e8d94b7544775dddce398e2500a8b3cc2be3655190879071ce6a9e5610195be4"
 dependencies = [
- "accesskit 0.16.3",
+ "accesskit",
  "accesskit_consumer",
  "objc2",
  "objc2-app-kit",
@@ -70,11 +64,11 @@ dependencies = [
 
 [[package]]
 name = "accesskit_unix"
-version = "0.12.3"
+version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "be7f5cf6165be10a54b2655fa2e0e12b2509f38ed6fc43e11c31fdb7ee6230bb"
+checksum = "3a88d913b144104dd825f75db1b82c63d754b01c53c2f9b7545dcdfae63bb0ed"
 dependencies = [
- "accesskit 0.16.3",
+ "accesskit",
  "accesskit_atspi_common",
  "async-channel",
  "async-executor",
@@ -88,11 +82,11 @@ dependencies = [
 
 [[package]]
 name = "accesskit_windows"
-version = "0.23.2"
+version = "0.24.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "974e96c347384d9133427167fb8a58c340cb0496988dacceebdc1ed27071023b"
+checksum = "0aaa870a5d047338f03707706141f22c98c20e79d5403bf3c9b195549e6cdeea"
 dependencies = [
- "accesskit 0.16.3",
+ "accesskit",
  "accesskit_consumer",
  "paste",
  "static_assertions",
@@ -102,11 +96,11 @@ dependencies = [
 
 [[package]]
 name = "accesskit_winit"
-version = "0.22.4"
+version = "0.23.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aea3522719f1c44564d03e9469a8e2f3a98b3a8a880bd66d0789c6b9c4a669dd"
+checksum = "3555a67a9bb208f620cfc3746f1502d1512f0ffbdb19c6901aa90b111aa56ec5"
 dependencies = [
- "accesskit 0.16.3",
+ "accesskit",
  "accesskit_macos",
  "accesskit_unix",
  "accesskit_windows",
@@ -2027,7 +2021,7 @@ dependencies = [
 name = "masonry"
 version = "0.2.0"
 dependencies = [
- "accesskit 0.16.3",
+ "accesskit",
  "accesskit_winit",
  "assert_matches",
  "cursor-icon",
@@ -2622,7 +2616,7 @@ name = "parley"
 version = "0.2.0"
 source = "git+https://github.com/linebender/parley?rev=737ab310d0b331c574078b069b1810b0798478cd#737ab310d0b331c574078b069b1810b0798478cd"
 dependencies = [
- "accesskit 0.17.0",
+ "accesskit",
  "fontique",
  "hashbrown 0.15.1",
  "peniko",
@@ -4908,7 +4902,7 @@ checksum = "a67300977d3dc3f8034dae89778f502b6ba20b269527b3223ba59c0cf393bb8a"
 name = "xilem"
 version = "0.1.0"
 dependencies = [
- "accesskit 0.16.3",
+ "accesskit",
  "anyhow",
  "image",
  "masonry",
