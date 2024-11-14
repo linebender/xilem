@@ -3,7 +3,7 @@
 
 #![allow(
     unused_qualifications,
-    reason = "We have `std` enabled when testing, which means that some items are conditionally in the prelude."
+    reason = "We have `std` enabled when testing, which means that some items are conditionally in the prelude"
 )]
 
 use crate::{

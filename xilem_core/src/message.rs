@@ -34,10 +34,10 @@ impl<A, Message> MessageResult<A, Message> {
     /// Maps the action type `A` to `B`, i.e. [`MessageResult<A>`] to [`MessageResult<B>`]
     pub fn map<B>(self, f: impl FnOnce(A) -> B) -> MessageResult<B, Message> {
         match self {
-            MessageResult::Action(a) => MessageResult::Action(f(a)),
-            MessageResult::RequestRebuild => MessageResult::RequestRebuild,
-            MessageResult::Stale(message) => MessageResult::Stale(message),
-            MessageResult::Nop => MessageResult::Nop,
+            Self::Action(a) => MessageResult::Action(f(a)),
+            Self::RequestRebuild => MessageResult::RequestRebuild,
+            Self::Stale(message) => MessageResult::Stale(message),
+            Self::Nop => MessageResult::Nop,
         }
     }
 }

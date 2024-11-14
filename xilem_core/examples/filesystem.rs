@@ -3,7 +3,6 @@
 
 //! An example using Xilem Core to manipulate a filesystem.
 
-#![expect(clippy::use_self, reason = "Deferred: Noisy")]
 #![expect(let_underscore_drop, reason = "Deferred: Noisy")]
 
 use std::io::stdin;
@@ -104,22 +103,22 @@ impl<V, State, Action> FileView<State, Action> for V where
 
 type DynFileView<State, Action = ()> = Box<dyn AnyView<State, Action, ViewCtx, FsPath>>;
 
-impl SuperElement<FsPath, ViewCtx> for FsPath {
-    fn upcast(_ctx: &mut ViewCtx, child: FsPath) -> Self {
+impl SuperElement<Self, ViewCtx> for FsPath {
+    fn upcast(_ctx: &mut ViewCtx, child: Self) -> Self {
         child
     }
 
     fn with_downcast_val<R>(
         this: Self::Mut<'_>,
-        f: impl FnOnce(Mut<'_, FsPath>) -> R,
+        f: impl FnOnce(Mut<'_, Self>) -> R,
     ) -> (Self::Mut<'_>, R) {
         let ret = f(this);
         (this, ret)
     }
 }
 
-impl AnyElement<FsPath, ViewCtx> for FsPath {
-    fn replace_inner(this: Self::Mut<'_>, child: FsPath) -> Self::Mut<'_> {
+impl AnyElement<Self, ViewCtx> for FsPath {
+    fn replace_inner(this: Self::Mut<'_>, child: Self) -> Self::Mut<'_> {
         *this = child.0;
         this
     }

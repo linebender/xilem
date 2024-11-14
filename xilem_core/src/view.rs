@@ -244,6 +244,7 @@ where
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
     ) {
+        #![expect(clippy::use_self, reason = "`Arc::ptr_eq` is the canonical form")]
         if core::mem::take(&mut view_state.dirty) || !Arc::ptr_eq(self, prev) {
             self.deref()
                 .rebuild(prev, &mut view_state.view_state, ctx, element);
@@ -305,6 +306,7 @@ where
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
     ) {
+        #![expect(clippy::use_self, reason = "`Rc::ptr_eq` is the canonical form")]
         if core::mem::take(&mut view_state.dirty) || !Rc::ptr_eq(self, prev) {
             self.deref()
                 .rebuild(prev, &mut view_state.view_state, ctx, element);

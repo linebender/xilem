@@ -9,7 +9,6 @@
 #![expect(clippy::allow_attributes, reason = "Deferred: Noisy")]
 #![expect(clippy::allow_attributes_without_reason, reason = "Deferred: Noisy")]
 #![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
-#![expect(clippy::use_self, reason = "Deferred: Noisy")]
 #![expect(single_use_lifetimes, reason = "Deferred: Noisy")]
 
 use xilem_core::*;
@@ -216,22 +215,22 @@ impl<const N: u32> View<(), Action, TestCtx> for OperationView<N> {
     }
 }
 
-impl SuperElement<TestElement, TestCtx> for TestElement {
-    fn upcast(_ctx: &mut TestCtx, child: TestElement) -> Self {
+impl SuperElement<Self, TestCtx> for TestElement {
+    fn upcast(_ctx: &mut TestCtx, child: Self) -> Self {
         child
     }
 
     fn with_downcast_val<R>(
         this: Self::Mut<'_>,
-        f: impl FnOnce(Mut<'_, TestElement>) -> R,
+        f: impl FnOnce(Mut<'_, Self>) -> R,
     ) -> (Self::Mut<'_>, R) {
         let ret = f(this);
         (this, ret)
     }
 }
 
-impl AnyElement<TestElement, TestCtx> for TestElement {
-    fn replace_inner(this: Self::Mut<'_>, child: TestElement) -> Self::Mut<'_> {
+impl AnyElement<Self, TestCtx> for TestElement {
+    fn replace_inner(this: Self::Mut<'_>, child: Self) -> Self::Mut<'_> {
         assert_eq!(child.operations.len(), 1);
         let Operation::Build(child_id) = child.operations.first().unwrap() else {
             panic!()
