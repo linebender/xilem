@@ -415,7 +415,7 @@ where
         view_state.generation = view_state.generation.wrapping_add(1);
 
         // And rebuild the new one
-        #[expect(clippy::shadow_unrelated, reason = "The old value is no longer valid.")]
+        #[expect(clippy::shadow_unrelated, reason = "The old value is no longer valid")]
         let id = ViewId::new(view_state.generation);
         let (new_element, state) = ctx.with_id(id, |ctx| match self {
             Self::A(v) => {

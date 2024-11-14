@@ -6,7 +6,7 @@
 // TODO: `expect` doesn't work here
 #[allow(
     clippy::wildcard_imports,
-    reason = "Mostly a wrapper around xi_unicode."
+    reason = "Mostly a wrapper around xi_unicode"
 )]
 use xi_unicode::*;
 
