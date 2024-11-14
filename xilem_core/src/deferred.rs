@@ -86,6 +86,13 @@ impl<M: Message> MessageProxy<M> {
     }
 
     /// Send `message` to the `View` which created this `MessageProxy`
+    ///
+    /// # Errors
+    ///
+    /// - `DriverFinished`: If the main thread event loop couldn't receive the message (for example if it was shut down).
+    /// - `Other`: As determined by the Xilem implementation.
+    ///
+    /// This method is currently not expected to return `ViewExpired`, as it does not block.
     pub fn message(&self, message: M) -> Result<(), ProxyError> {
         self.proxy
             .send_message(self.path.clone(), Box::new(message))

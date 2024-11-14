@@ -256,7 +256,11 @@ where
         // If `prev` was `Some`, we set `seq_state` in reacting to it (and building the inner view)
         // This could only fail if some malicious parent view was messing with our internal state
         // (i.e. mixing up the state from different instances)
-        assert_eq!(prev.is_some(), seq_state.inner.is_some());
+        assert_eq!(
+            prev.is_some(),
+            seq_state.inner.is_some(),
+            "Inconsistent ViewSequence state. Perhaps the parent is mixing up children"
+        );
         match (self, prev.as_ref().zip(seq_state.inner.as_mut())) {
             (None, None) => {
                 // Nothing to do, there is no corresponding element
@@ -301,7 +305,11 @@ where
         ctx: &mut Context,
         elements: &mut impl ElementSplice<Element>,
     ) {
-        assert_eq!(self.is_some(), seq_state.inner.is_some());
+        assert_eq!(
+            self.is_some(),
+            seq_state.inner.is_some(),
+            "Inconsistent ViewSequence state. Perhaps the parent is mixing up children"
+        );
         if let Some((seq, inner_state)) = self.as_ref().zip(seq_state.inner.as_mut()) {
             ctx.with_id(ViewId::new(seq_state.generation), |ctx| {
                 seq.seq_teardown(inner_state, ctx, elements);
@@ -324,7 +332,11 @@ where
             // The message was sent to a previous edition of the inner value
             return MessageResult::Stale(message);
         }
-        assert_eq!(self.is_some(), seq_state.inner.is_some());
+        assert_eq!(
+            self.is_some(),
+            seq_state.inner.is_some(),
+            "Inconsistent ViewSequence state. Perhaps the parent is mixing up children"
+        );
         if let Some((seq, inner_state)) = self.as_ref().zip(seq_state.inner.as_mut()) {
             seq.seq_message(inner_state, rest, message, app_state)
         } else {
