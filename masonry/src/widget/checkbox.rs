@@ -293,7 +293,7 @@ mod tests {
                 );
 
                 let mut label = Checkbox::label_mut(&mut checkbox);
-                Label::set_text_brush(&mut label, PRIMARY_LIGHT);
+                Label::set_brush(&mut label, PRIMARY_LIGHT);
                 Label::set_text_size(&mut label, 20.0);
             });
 

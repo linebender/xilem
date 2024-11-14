@@ -5,17 +5,18 @@
 
 use parley::Layout;
 use vello::kurbo::{Affine, Line, Rect, Stroke};
-use vello::peniko::Fill;
+use vello::peniko::{Brush, Fill};
 use vello::Scene;
 
-use crate::text::TextBrush;
+use super::BrushIndex;
 
 /// A function that renders laid out glyphs to a [`Scene`].
 pub fn render_text(
     scene: &mut Scene,
     scratch_scene: &mut Scene,
     transform: Affine,
-    layout: &Layout<TextBrush>,
+    layout: &Layout<BrushIndex>,
+    brushes: &[Brush],
 ) {
     scratch_scene.reset();
     for line in layout.lines() {

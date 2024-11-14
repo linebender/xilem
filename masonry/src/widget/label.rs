@@ -3,21 +3,22 @@
 
 //! A label widget.
 
-use accesskit::{NodeBuilder, Role};
-use parley::fontique::Weight;
+use std::mem::Discriminant;
+
+use accesskit::{NodeBuilder, Role, TextAlign};
 use parley::layout::Alignment;
-use parley::style::{FontFamily, FontStack};
+use parley::{Layout, LayoutAccessibility};
 use smallvec::SmallVec;
 use tracing::{trace_span, Span};
-use vello::kurbo::{Affine, Point, Size};
-use vello::peniko::BlendMode;
+use vello::kurbo::{Affine, Size};
+use vello::peniko::{BlendMode, Brush};
 use vello::Scene;
 
-use crate::text::{ArcStr, TextBrush, TextLayout};
+use crate::text::{ArcStr, BrushIndex, StyleProperty, StyleSet};
 use crate::widget::WidgetMut;
 use crate::{
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent, QueryCtx,
-    RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
+    theme, AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
+    QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
 };
 
 /// Added padding between each horizontal edge of the widget
@@ -40,12 +41,30 @@ pub enum LineBreaking {
 /// This is useful for creating interactive widgets which internally
 /// need support for displaying text, such as a button.
 pub struct Label {
+    text_layout: Layout<()>,
+    accessibility: LayoutAccessibility,
+
     text: ArcStr,
-    text_changed: bool,
-    text_layout: TextLayout,
+    styles: StyleSet,
+    /// Whether `text` or `styles` has been updated since `text_layout` was created.
+    ///
+    /// If they have, the layout needs to be recreated.
+    styles_changed: bool,
+
     line_break_mode: LineBreaking,
-    show_disabled: bool,
-    brush: TextBrush,
+    alignment: Alignment,
+    /// Whether the alignment has changed since the last layout, which would force a re-alignment.
+    alignment_changed: bool,
+    /// The value of max_advance when this layout was last calculated.
+    ///
+    /// If it has changed, we need to re-perform line-breaking.
+    last_max_advance: Option<f32>,
+
+    brush: Brush,
+    /// The brush to use whilst this widget is disabled.
+    ///
+    /// When this is `None`, `brush` will be used.
+    disabled_brush: Option<Brush>,
 }
 
 // --- MARK: BUILDERS ---
@@ -53,47 +72,42 @@ impl Label {
     /// Create a new label.
     pub fn new(text: impl Into<ArcStr>) -> Self {
         Self {
+            text_layout: Layout::new(),
+            accessibility: Default::default(),
             text: text.into(),
-            text_changed: false,
-            text_layout: TextLayout::new(crate::theme::TEXT_SIZE_NORMAL),
+            styles: StyleSet::new(theme::TEXT_SIZE_NORMAL),
+            styles_changed: true,
             line_break_mode: LineBreaking::Overflow,
-            show_disabled: true,
-            brush: crate::theme::TEXT_COLOR.into(),
+            alignment: Alignment::Start,
+            alignment_changed: true,
+            last_max_advance: None,
+            brush: theme::TEXT_COLOR.into(),
+            disabled_brush: Some(theme::DISABLED_TEXT_COLOR.into()),
         }
     }
 
+    /// Get the current of this label.
     pub fn text(&self) -> &ArcStr {
         &self.text
     }
 
-    #[doc(alias = "with_text_color")]
-    pub fn with_text_brush(mut self, brush: impl Into<TextBrush>) -> Self {
-        self.text_layout.set_brush(brush);
+    /// Set a style property for the new label.
+    ///
+    /// To add a style property on an existing label, use [`insert_style`](Self::insert_style).
+    pub fn with_style(mut self, property: impl Into<StyleProperty>) -> Self {
+        self.insert_style_inner(property.into());
         self
     }
 
-    #[doc(alias = "with_font_size")]
-    pub fn with_text_size(mut self, size: f32) -> Self {
-        self.text_layout.set_text_size(size);
-        self
-    }
-
-    pub fn with_weight(mut self, weight: Weight) -> Self {
-        self.text_layout.set_weight(weight);
-        self
-    }
-
-    pub fn with_text_alignment(mut self, alignment: Alignment) -> Self {
-        self.text_layout.set_text_alignment(alignment);
-        self
-    }
-
-    pub fn with_font(mut self, font: FontStack<'static>) -> Self {
-        self.text_layout.set_font(font);
-        self
-    }
-    pub fn with_font_family(self, font: FontFamily<'static>) -> Self {
-        self.with_font(FontStack::Single(font))
+    /// Set a style property, returning the old value.
+    ///
+    /// Most users should prefer [`with_style`](Self::with_style) instead.
+    pub fn try_with_style(
+        mut self,
+        property: impl Into<StyleProperty>,
+    ) -> (Self, Option<StyleProperty>) {
+        let old = self.insert_style_inner(property.into());
+        (self, old)
     }
 
     pub fn with_line_break_mode(mut self, line_break_mode: LineBreaking) -> Self {
@@ -101,58 +115,90 @@ impl Label {
         self
     }
 
+    /// Set the alignment of the text.
+    ///
+    /// Text alignment is ignored when the label has no horizontal constraints.
+    pub fn with_alignment(mut self, alignment: Alignment) -> Self {
+        self.alignment = alignment;
+        self
+    }
+
     /// Create a label with empty text.
     pub fn empty() -> Self {
         Self::new("")
+    }
+
+    /// Shared logic between `with_style` and `insert_style`
+    fn insert_style_inner(&mut self, property: StyleProperty) -> Option<StyleProperty> {
+        let property = property.into();
+        if let StyleProperty::Brush(idx @ BrushIndex(1..)) = &property {
+            debug_panic!(
+                "Can't set a non-zero brush index ({idx:?}) on a `Label`, as it only supports global styling."
+            );
+        }
+        self.styles.insert(property)
     }
 }
 
 // --- MARK: WIDGETMUT ---
 impl Label {
-    pub fn set_text_properties<R>(
+    pub fn insert_style(
         this: &mut WidgetMut<'_, Self>,
-        f: impl FnOnce(&mut TextLayout) -> R,
-    ) -> R {
-        let ret = f(&mut this.widget.text_layout);
-        if this.widget.text_layout.needs_rebuild() {
-            this.ctx.request_layout();
-        }
-        ret
+        property: impl Into<StyleProperty>,
+    ) -> Option<StyleProperty> {
+        let old = this.widget.insert_style_inner(property.into());
+
+        this.widget.styles_changed = true;
+        this.ctx.request_layout();
+        old
     }
 
-    pub fn set_text(this: &mut WidgetMut<'_, Self>, new_text: impl Into<ArcStr>) {
-        let new_text = new_text.into();
-        this.widget.text = new_text;
-        this.widget.text_changed = true;
+    pub fn retain_styles(this: &mut WidgetMut<'_, Self>, f: impl FnMut(&StyleProperty) -> bool) {
+        this.widget.styles.retain(f);
+
+        this.widget.styles_changed = true;
         this.ctx.request_layout();
     }
 
-    #[doc(alias = "set_text_color")]
-    pub fn set_text_brush(this: &mut WidgetMut<'_, Self>, brush: impl Into<TextBrush>) {
+    pub fn remove_style(
+        this: &mut WidgetMut<'_, Self>,
+        property: Discriminant<StyleProperty>,
+    ) -> Option<StyleProperty> {
+        let old = this.widget.styles.remove(property);
+
+        this.widget.styles_changed = true;
+        this.ctx.request_layout();
+        old
+    }
+
+    pub fn set_text(this: &mut WidgetMut<'_, Self>, new_text: impl Into<ArcStr>) {
+        this.widget.text = new_text.into();
+
+        this.widget.styles_changed = true;
+        this.ctx.request_layout();
+    }
+
+    pub fn set_alignment(this: &mut WidgetMut<'_, Self>, alignment: Alignment) {
+        this.widget.alignment = alignment;
+
+        this.widget.alignment_changed = true;
+        this.ctx.request_layout();
+    }
+
+    #[doc(alias = "set_color")]
+    pub fn set_brush(this: &mut WidgetMut<'_, Self>, brush: impl Into<Brush>) {
         let brush = brush.into();
         this.widget.brush = brush;
-        if !this.ctx.is_disabled() {
-            let brush = this.widget.brush.clone();
-            Self::set_text_properties(this, |layout| layout.set_brush(brush));
+
+        // We need to repaint unless the disabled brush is currently being used.
+        if this.widget.disabled_brush.is_none() || this.ctx.is_disabled() {
+            this.ctx.request_paint_only();
         }
     }
-    pub fn set_text_size(this: &mut WidgetMut<'_, Self>, size: f32) {
-        Self::set_text_properties(this, |layout| layout.set_text_size(size));
-    }
-    pub fn set_weight(this: &mut WidgetMut<'_, Self>, weight: Weight) {
-        Self::set_text_properties(this, |layout| layout.set_weight(weight));
-    }
-    pub fn set_alignment(this: &mut WidgetMut<'_, Self>, alignment: Alignment) {
-        Self::set_text_properties(this, |layout| layout.set_text_alignment(alignment));
-    }
-    pub fn set_font(this: &mut WidgetMut<'_, Self>, font_stack: FontStack<'static>) {
-        Self::set_text_properties(this, |layout| layout.set_font(font_stack));
-    }
-    pub fn set_font_family(this: &mut WidgetMut<'_, Self>, family: FontFamily<'static>) {
-        Self::set_font(this, FontStack::Single(family));
-    }
+
     pub fn set_line_break_mode(this: &mut WidgetMut<'_, Self>, line_break_mode: LineBreaking) {
         this.widget.line_break_mode = line_break_mode;
+        // We don't need to set an internal invalidation, as `max_advance` is always recalculated
         this.ctx.request_layout();
     }
 }
@@ -169,44 +215,66 @@ impl Widget for Label {
 
     fn update(&mut self, ctx: &mut UpdateCtx, event: &Update) {
         match event {
-            Update::DisabledChanged(disabled) => {
-                if self.show_disabled {
-                    if *disabled {
-                        self.text_layout
-                            .set_brush(crate::theme::DISABLED_TEXT_COLOR);
-                    } else {
-                        self.text_layout.set_brush(self.brush.clone());
-                    }
+            Update::DisabledChanged(_) => {
+                if self.disabled_brush.is_some() {
+                    ctx.request_paint_only();
                 }
-                // TODO: Parley seems to require a relayout when colours change
-                ctx.request_layout();
             }
             _ => {}
         }
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
-        // Compute max_advance from box constraints
-        let max_advance = if self.line_break_mode != LineBreaking::WordWrap {
-            None
-        } else if bc.max().width.is_finite() {
+        let available_width = if bc.max().width.is_finite() {
             Some(bc.max().width as f32 - 2. * LABEL_X_PADDING as f32)
-        } else if bc.min().width.is_sign_negative() {
-            Some(0.0)
         } else {
             None
         };
-        self.text_layout.set_max_advance(max_advance);
-        if self.text_layout.needs_rebuild() || self.text_changed {
+
+        let max_advance = if self.line_break_mode == LineBreaking::WordWrap {
+            available_width
+        } else {
+            None
+        };
+        let styles_changed = self.styles_changed;
+        if self.styles_changed {
             let (font_ctx, layout_ctx) = ctx.text_contexts();
-            self.text_layout
-                .rebuild(font_ctx, layout_ctx, &self.text, self.text_changed);
-            self.text_changed = false;
+            // TODO(DJM): Build self.text_layout
+            self.styles_changed = false;
         }
-        // We would like to ignore trailing whitespace for a label.
-        // However, Parley doesn't make that an option when using `max_advance`.
-        // If we aren't wrapping words, we can safely ignore this, however.
-        let text_size = self.text_layout.size();
+
+        if max_advance != self.last_max_advance || styles_changed {
+            self.text_layout.break_all_lines(max_advance);
+            self.last_max_advance = max_advance;
+            self.alignment_changed = true;
+        }
+
+        let alignment_width = if self.alignment == Alignment::Start {
+            self.text_layout.width()
+        } else if let Some(width) = available_width {
+            // We use the full available space to calculate text alignment and therefore
+            // determine the widget's current width.
+            //
+            // As a special case, we don't do that if the alignment is to the start.
+            // In theory, we should be passed down how our parent expects us to be aligned;
+            // however that isn't currently handled.
+            //
+            // This does effectively mean that the widget takes up all the available space and
+            // therefore doesn't play nicely with adjacent widgets unless `Start` alignment is used.
+            //
+            // The coherent way to have multiple items laid out on the same line and alignment is for them to
+            // be inside the same text layout object "region".
+            width
+        } else {
+            // TODO: Warn on the rising edge of entering this state for this widget?
+            self.text_layout.width()
+        };
+        if self.alignment_changed {
+            self.text_layout
+                .align(Some(alignment_width), self.alignment);
+        }
+        let text_size = Size::new(alignment_width.into(), self.text_layout.height().into());
+
         let label_size = Size {
             height: text_size.height,
             width: text_size.width + 2. * LABEL_X_PADDING,
@@ -215,18 +283,12 @@ impl Widget for Label {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
-        if self.text_layout.needs_rebuild() {
-            debug_panic!(
-                "Called {name}::paint with invalid layout",
-                name = self.short_type_name()
-            );
-        }
         if self.line_break_mode == LineBreaking::Clip {
             let clip_rect = ctx.size().to_rect();
             scene.push_layer(BlendMode::default(), 1., Affine::IDENTITY, &clip_rect);
         }
-        self.text_layout
-            .draw(scene, Point::new(LABEL_X_PADDING, 0.0));
+
+        // render_text();
 
         if self.line_break_mode == LineBreaking::Clip {
             scene.pop_layer();
@@ -238,7 +300,16 @@ impl Widget for Label {
     }
 
     fn accessibility(&mut self, _ctx: &mut AccessCtx, node: &mut NodeBuilder) {
-        node.set_name(self.text().as_ref().to_string());
+        self.accessibility.build_nodes(
+            &self.text.as_ref(),
+            layout,
+            update,
+            parent_node,
+            next_node_id,
+            x_offset,
+            y_offset,
+        );
+        node.set_name(self.text.as_ref().to_string());
     }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
@@ -382,7 +453,7 @@ mod tests {
             harness.edit_root_widget(|mut label| {
                 let mut label = label.downcast::<Label>();
                 Label::set_text(&mut label, "The quick brown fox jumps over the lazy dog");
-                Label::set_text_brush(&mut label, PRIMARY_LIGHT);
+                Label::set_brush(&mut label, PRIMARY_LIGHT);
                 Label::set_font_family(&mut label, FontFamily::Generic(GenericFamily::Monospace));
                 Label::set_text_size(&mut label, 20.0);
                 Label::set_line_break_mode(&mut label, LineBreaking::WordWrap);

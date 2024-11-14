@@ -79,7 +79,7 @@ impl<State, Action> View<State, Action, ViewCtx> for Label {
             widget::Label::set_text(&mut element, self.label.clone());
         }
         if prev.text_brush != self.text_brush {
-            widget::Label::set_text_brush(&mut element, self.text_brush.clone());
+            widget::Label::set_brush(&mut element, self.text_brush.clone());
         }
         if prev.alignment != self.alignment {
             widget::Label::set_alignment(&mut element, self.alignment);

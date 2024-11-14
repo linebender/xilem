@@ -6,14 +6,13 @@
 use std::collections::{HashMap, HashSet};
 
 use accesskit::{NodeBuilder, NodeId, Role, TreeUpdate};
-use parley::context::RangedBuilder;
 use parley::fontique::{Style, Weight};
 use parley::layout::{Alignment, Cursor};
 use parley::style::{FontFamily, FontStack, GenericFamily, StyleProperty};
 use parley::{FontContext, Layout, LayoutContext};
 use unicode_segmentation::UnicodeSegmentation;
 use vello::kurbo::{Affine, Line, Point, Size};
-use vello::peniko::{self, Color, Gradient};
+use vello::peniko::{self, Brush, Color, Gradient};
 use vello::Scene;
 
 use crate::text::render_text;
@@ -38,12 +37,12 @@ use crate::WidgetId;
 /// [`needs_rebuild_after_update`]: #method.needs_rebuild_after_update
 /// [`rebuild_if_needed`]: #method.rebuild_if_needed
 ///
-/// TODO: Update docs to mentionParley
+/// TODO: Update docs to mention Parley
 #[derive(Clone)]
 pub struct TextLayout {
     scale: f32,
 
-    brush: TextBrush,
+    brush: Brush,
     font: FontStack<'static>,
     text_size: f32,
     weight: Weight,
@@ -54,104 +53,9 @@ pub struct TextLayout {
 
     needs_layout: bool,
     needs_line_breaks: bool,
-    pub(crate) layout: Layout<TextBrush>,
+    pub(crate) layout: Layout<Brush>,
     scratch_scene: Scene,
-    // TODO - Add field to check whether text has changed since last layout
-    // #[cfg(debug_assertions)] last_text_start: String,
-
-    // The following two fields maintain a two-way mapping between runs
-    // and AccessKit node IDs, where each run is identified by its line index
-    // and run index within that line, or a run path for short. These maps
-    // are maintained by `TextLayout::accessibility`, which ensures that removed
-    // runs are removed from the maps on the next accessibility pass.
-    // `access_ids_by_run_path` is used by both `TextLayout::accessibility` and
-    // `TextWithSelection::access_position_from_offset`, while
-    // `run_paths_by_access_id` is used by
-    // `TextWithSelection::offset_from_access_position`.
-    pub(crate) access_ids_by_run_path: HashMap<(usize, usize), NodeId>,
-    pub(crate) run_paths_by_access_id: HashMap<NodeId, (usize, usize)>,
-
-    // This map duplicates the character lengths stored in the run nodes.
-    // This is necessary because this information is needed during the
-    // access event pass, after the previous tree update has already been
-    // pushed to AccessKit. AccessKit deliberately doesn't let toolkits access
-    // the current tree state, because the ideal AccessKit backend would push
-    // tree updates to assistive technologies and not retain a tree in memory.
-    // Even if `TextWithSelection` only needed this information when constructing
-    // the text selection on the parent node, it would still be more efficient
-    // to duplicate the character lengths here than to pull them from the
-    // appropriate `Node` in the `Vec` that's going to be added to the
-    // tree update.
-    pub(crate) character_lengths_by_access_id: HashMap<NodeId, Box<[u8]>>,
-}
-
-/// Whether a section of text should be hinted.
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, Default)]
-pub enum Hinting {
-    #[default]
-    Yes,
-    No,
-}
-
-impl Hinting {
-    /// Whether the
-    pub fn should_hint(self) -> bool {
-        match self {
-            Hinting::Yes => true,
-            Hinting::No => false,
-        }
-    }
-}
-
-/// A custom brush for `Parley`, enabling using Parley to pass-through
-/// which glyphs are selected/highlighted
-#[derive(Clone, Debug, PartialEq)]
-pub enum TextBrush {
-    Normal(peniko::Brush, Hinting),
-    Highlight {
-        text: peniko::Brush,
-        fill: peniko::Brush,
-        hinting: Hinting,
-    },
-}
-
-impl TextBrush {
-    pub fn set_hinting(&mut self, hinting: Hinting) {
-        match self {
-            TextBrush::Normal(_, should_hint) => *should_hint = hinting,
-            TextBrush::Highlight {
-                hinting: should_hint,
-                ..
-            } => *should_hint = hinting,
-        }
-    }
-}
-
-impl parley::style::Brush for TextBrush {}
-
-impl From<peniko::Brush> for TextBrush {
-    fn from(value: peniko::Brush) -> Self {
-        Self::Normal(value, Hinting::default())
-    }
-}
-
-impl From<Gradient> for TextBrush {
-    fn from(value: Gradient) -> Self {
-        Self::Normal(value.into(), Hinting::default())
-    }
-}
-
-impl From<Color> for TextBrush {
-    fn from(value: Color) -> Self {
-        Self::Normal(value.into(), Hinting::default())
-    }
-}
-
-// Parley requires their Brush implementations to implement Default
-impl Default for TextBrush {
-    fn default() -> Self {
-        Self::Normal(Default::default(), Hinting::default())
-    }
+    hint: bool,
 }
 
 /// Metrics describing the layout text.
@@ -186,9 +90,7 @@ impl TextLayout {
             layout: Layout::new(),
             scratch_scene: Scene::new(),
 
-            access_ids_by_run_path: HashMap::new(),
-            run_paths_by_access_id: HashMap::new(),
-            character_lengths_by_access_id: HashMap::new(),
+            hint: true,
         }
     }
 
@@ -213,10 +115,12 @@ impl TextLayout {
     /// This is the non-layout impacting styling (primarily colour)
     /// used when displaying the text
     #[doc(alias = "set_color")]
-    pub fn set_brush(&mut self, brush: impl Into<TextBrush>) {
+    pub fn set_brush(&mut self, brush: impl Into<Brush>) {
         let brush = brush.into();
         if brush != self.brush {
             self.brush = brush;
+            // TODO: Changing the brush doesn't (as such) invalidate
+            // the layout, it only invalidates the rendering.
             self.invalidate();
         }
     }
@@ -381,26 +285,6 @@ impl TextLayout {
         // grapheme clusters within a parley cluster.
         // We can also try
         Cursor::from_point(&self.layout, point.x as f32, point.y as f32)
-    }
-
-    /// Given the utf-8 position of a character boundary in the underlying text,
-    /// return a `Line` suitable for drawing a vertical cursor at that boundary.
-    ///
-    /// This is not meaningful until [`Self::rebuild`] has been called.
-    pub fn caret_line_from_byte_index(&self, byte_index: usize) -> Option<Line> {
-        // TODO - Handle affinity
-        // For now we give is_leading: true, which means the caret is before
-        // the character at byte_index, which matches how we interpret character boundaries.
-        let caret = Cursor::from_position(&self.layout, byte_index, true);
-
-        let line = caret.path.line(&self.layout)?;
-        let line_metrics = line.metrics();
-
-        let baseline = line_metrics.baseline + line_metrics.descent;
-        let line_size = line_metrics.size();
-        let p1 = (caret.offset as f64, baseline as f64);
-        let p2 = (caret.offset as f64, (baseline - line_size) as f64);
-        Some(Line::new(p1, p2))
     }
 
     /// Rebuild the inner layout as needed.
