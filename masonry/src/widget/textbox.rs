@@ -9,7 +9,7 @@ use accesskit::{Node, NodeId, Role};
 use parley::layout::Alignment;
 use smallvec::SmallVec;
 use tracing::{trace_span, Span};
-use vello::kurbo::{Affine, Point, Size, Stroke};
+use vello::kurbo::{Affine, Insets, Point, Size, Stroke};
 use vello::peniko::{BlendMode, Brush, Color, Fill};
 use vello::Scene;
 use winit::keyboard::{Key, NamedKey};
@@ -22,7 +22,7 @@ use crate::{
     WidgetId,
 };
 
-const TEXTBOX_PADDING: f64 = 3.0;
+const TEXTBOX_PADDING: f64 = 5.0;
 /// HACK: A "margin" which is placed around the outside of all textboxes, ensuring that
 /// they do not fill the entire width of the window.
 ///
@@ -31,7 +31,7 @@ const TEXTBOX_PADDING: f64 = 3.0;
 ///
 /// In theory, this should be proper margin/padding in the parent widget, but that hasn't been
 /// designed.
-const TEXTBOX_X_MARGIN: f64 = 8.0;
+const TEXTBOX_X_MARGIN: f64 = 6.0;
 /// The fallback minimum width for a textbox with infinite provided maximum width.
 const INFINITE_TEXTBOX_WIDTH: f32 = 400.0;
 
@@ -502,6 +502,7 @@ impl Widget for Textbox {
                     }),
                     Key::Named(NamedKey::Enter) => {
                         ctx.submit_action(crate::Action::TextEntered(self.text().to_string()));
+                        return;
                         // let (fctx, lctx) = ctx.text_contexts();
                         // self.editor
                         //     .transact(fctx, lctx, |txn| txn.insert_or_replace_selection("\n"));
@@ -605,14 +606,22 @@ impl Widget for Textbox {
             }
             max_advance
         });
+        let new_generation = self.editor.generation();
+        if new_generation != self.rendered_generation {
+            self.rendered_generation = new_generation;
+        }
+
         let text_width = available_width
             .unwrap_or(self.editor.layout().full_width())
-            .max(INFINITE_TEXTBOX_WIDTH.min(bc.max().width as f32) - 2. * TEXTBOX_PADDING as f32);
+            .max(
+                INFINITE_TEXTBOX_WIDTH.min(bc.max().width as f32)
+                    - (2. * TEXTBOX_PADDING + 2. * TEXTBOX_X_MARGIN) as f32,
+            );
         let text_size = Size::new(text_width.into(), self.editor.layout().height().into());
 
         let textbox_size = Size {
             height: text_size.height + 2. * TEXTBOX_PADDING,
-            width: text_size.width + 2. * TEXTBOX_PADDING,
+            width: text_size.width + 2. * TEXTBOX_PADDING + 2. * TEXTBOX_X_MARGIN,
         };
         bc.constrain(textbox_size)
     }
@@ -655,7 +664,9 @@ impl Widget for Textbox {
             scene.pop_layer();
         }
         let size = ctx.size();
-        let outline_rect = size.to_rect().inset(1.0);
+        let outline_rect = size
+            .to_rect()
+            .inset(Insets::uniform_xy(-TEXTBOX_X_MARGIN - 1.0, -1.0));
         scene.stroke(
             &Stroke::new(1.0),
             Affine::IDENTITY,
