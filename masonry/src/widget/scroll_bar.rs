@@ -3,7 +3,7 @@
 
 #![allow(missing_docs)]
 
-use accesskit::{NodeBuilder, Role};
+use accesskit::{Node, Role};
 use smallvec::SmallVec;
 use tracing::{trace_span, Span};
 use vello::kurbo::Rect;
@@ -215,7 +215,7 @@ impl Widget for ScrollBar {
         Role::ScrollBar
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx, _node: &mut NodeBuilder) {
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, _node: &mut Node) {
         // TODO
         // Use set_scroll_x/y_min/max?
     }

@@ -10,7 +10,7 @@
 #![expect(clippy::shadow_unrelated, reason = "Deferred: Noisy")]
 #![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
 
-use accesskit::{NodeBuilder, Role};
+use accesskit::{Node, Role};
 use masonry::kurbo::{BezPath, Stroke};
 use masonry::widget::{ObjectFit, RootWidget};
 use masonry::{
@@ -129,7 +129,7 @@ impl Widget for CustomWidget {
         Role::Window
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx, node: &mut NodeBuilder) {
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, node: &mut Node) {
         let text = &self.0;
         node.set_name(
             format!("This is a demo of the Masonry Widget trait. Masonry has accessibility tree support. The demo shows colored shapes with the text '{text}'."),

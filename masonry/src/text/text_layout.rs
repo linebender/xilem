@@ -5,7 +5,7 @@
 
 use std::collections::{HashMap, HashSet};
 
-use accesskit::{NodeBuilder, NodeId, Role, TreeUpdate};
+use accesskit::{Node, NodeId, Role, TreeUpdate};
 use parley::fontique::{Style, Weight};
 use parley::layout::{Alignment, Cursor};
 use parley::style::{FontFamily, FontStack, GenericFamily, StyleProperty};
@@ -374,7 +374,7 @@ impl TextLayout {
         &mut self,
         text: &str,
         update: &mut TreeUpdate,
-        parent_node: &mut NodeBuilder,
+        parent_node: &mut Node,
     ) {
         self.assert_rebuilt("accessibility");
 
@@ -386,7 +386,7 @@ impl TextLayout {
             // or the end of the line. That way, we can set relations between
             // runs in a line and do anything special that might be required
             // for the last run in a line.
-            let mut last_node: Option<(NodeId, NodeBuilder)> = None;
+            let mut last_node: Option<(NodeId, Node)> = None;
 
             for (run_index, run) in line.runs().enumerate() {
                 let run_path = (line_index, run_index);
@@ -405,7 +405,7 @@ impl TextLayout {
                         id
                     });
                 ids.insert(id);
-                let mut node = NodeBuilder::new(Role::InlineTextBox);
+                let mut node = Node::new(Role::InlineTextBox);
 
                 if let Some((last_id, mut last_node)) = last_node.take() {
                     last_node.set_next_on_line(id);

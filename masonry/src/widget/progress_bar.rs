@@ -3,7 +3,7 @@
 
 //! A progress bar widget.
 
-use accesskit::{NodeBuilder, Role};
+use accesskit::{Node, Role};
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace_span, Span};
 use vello::Scene;
@@ -180,7 +180,7 @@ impl Widget for ProgressBar {
         Role::ProgressIndicator
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx, node: &mut NodeBuilder) {
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, node: &mut Node) {
         node.set_value(self.value_accessibility());
         if let Some(value) = self.progress {
             node.set_numeric_value(value * 100.0);

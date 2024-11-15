@@ -12,7 +12,7 @@
 )]
 #![expect(elided_lifetimes_in_paths, reason = "Deferred: Noisy")]
 
-use accesskit::{DefaultActionVerb, NodeBuilder, Role};
+use accesskit::{DefaultActionVerb, Node, Role};
 use masonry::dpi::LogicalSize;
 use masonry::widget::{Align, CrossAxisAlignment, Flex, Label, RootWidget, SizedBox};
 use masonry::{
@@ -230,7 +230,7 @@ impl Widget for CalcButton {
         Role::Button
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx, node: &mut NodeBuilder) {
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, node: &mut Node) {
         let _name = match self.action {
             CalcAction::Digit(digit) => digit.to_string(),
             CalcAction::Op(op) => op.to_string(),

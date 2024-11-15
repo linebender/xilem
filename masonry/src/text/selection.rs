@@ -6,7 +6,7 @@
 use std::borrow::Cow;
 use std::ops::{Deref, DerefMut, Range};
 
-use accesskit::{NodeBuilder, TextPosition, TextSelection, TreeUpdate};
+use accesskit::{Node, TextPosition, TextSelection, TreeUpdate};
 use parley::context::RangedBuilder;
 use parley::{FontContext, LayoutContext};
 use tracing::debug;
@@ -344,7 +344,7 @@ impl<T: Selectable> TextWithSelection<T> {
         None
     }
 
-    pub fn accessibility(&mut self, update: &mut TreeUpdate, parent_node: &mut NodeBuilder) {
+    pub fn accessibility(&mut self, update: &mut TreeUpdate, parent_node: &mut Node) {
         self.layout
             .accessibility(self.text.as_ref(), update, parent_node);
         let anchor_affinity = if self.selection.anchor == self.selection.active {

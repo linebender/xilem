@@ -3,7 +3,7 @@
 
 //! A button widget.
 
-use accesskit::{DefaultActionVerb, NodeBuilder, Role};
+use accesskit::{Node, Role};
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace, trace_span, Span};
 use vello::Scene;
@@ -104,7 +104,7 @@ impl Widget for Button {
     fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {
         if ctx.target() == ctx.widget_id() {
             match event.action {
-                accesskit::Action::Default => {
+                accesskit::Action::Click => {
                     ctx.submit_action(Action::ButtonPressed(PointerButton::Primary));
                 }
                 _ => {}
@@ -188,16 +188,16 @@ impl Widget for Button {
         Role::Button
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx, node: &mut NodeBuilder) {
+    fn accessibility(&mut self, ctx: &mut AccessCtx, node: &mut Node) {
         // IMPORTANT: We don't want to merge this code in practice, because
         // the child label already has a 'name' property.
         // This is more of a proof of concept of `get_raw_ref()`.
         if false {
             let label = ctx.get_raw_ref(&self.label);
             let name = label.widget().text().as_ref().to_string();
-            node.set_name(name);
+            node.set_value(name);
         }
-        node.set_default_action_verb(DefaultActionVerb::Click);
+        node.add_action(accesskit::Action::Click);
     }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {

@@ -5,7 +5,7 @@
 
 use std::mem::Discriminant;
 
-use accesskit::{NodeBuilder, Role, TextAlign};
+use accesskit::{Node, Role, TextAlign};
 use parley::layout::Alignment;
 use parley::{Layout, LayoutAccessibility};
 use smallvec::SmallVec;
@@ -299,7 +299,7 @@ impl Widget for Label {
         Role::Label
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx, node: &mut NodeBuilder) {
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, node: &mut Node) {
         self.accessibility.build_nodes(
             &self.text.as_ref(),
             layout,

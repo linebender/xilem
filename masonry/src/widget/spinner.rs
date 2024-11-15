@@ -5,7 +5,7 @@
 
 use std::f64::consts::PI;
 
-use accesskit::{NodeBuilder, Role};
+use accesskit::{Node, Role};
 use smallvec::SmallVec;
 use tracing::{trace_span, Span};
 use vello::kurbo::{Affine, Cap, Line, Stroke};
@@ -143,7 +143,7 @@ impl Widget for Spinner {
         Role::Unknown
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx, _node: &mut NodeBuilder) {}
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, _node: &mut Node) {}
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         SmallVec::new()

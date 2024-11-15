@@ -243,7 +243,7 @@ impl Widget for VerticalStack {
         Role::GenericContainer
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx, _node: &mut NodeBuilder) {}
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, _node: &mut Node) {}
 
     // ...
 }

@@ -38,7 +38,7 @@ trait Widget {
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene);
     fn accessibility_role(&self) -> Role;
-    fn accessibility(&mut self, ctx: &mut AccessCtx, node: &mut NodeBuilder);
+    fn accessibility(&mut self, ctx: &mut AccessCtx, node: &mut Node);
 
     // ...
 }
@@ -218,7 +218,7 @@ use masonry::{
     PaintCtx, AccessCtx
 };
 use vello::Scene;
-use accesskit::{NodeBuilder, Role};
+use accesskit::{Node, Role};
 
 impl Widget for ColorRectangle {
     // ...
@@ -238,7 +238,7 @@ impl Widget for ColorRectangle {
         Role::Button
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx, node: &mut NodeBuilder) {
+    fn accessibility(&mut self, ctx: &mut AccessCtx, node: &mut Node) {
         node.set_default_action_verb(DefaultActionVerb::Click);
     }
 
