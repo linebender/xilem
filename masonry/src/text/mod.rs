@@ -12,9 +12,9 @@
 
 mod backspace;
 mod edit;
+mod editor;
 mod render_text;
 mod selection;
-mod text_layout;
 
 use std::{collections::HashMap, mem::Discriminant};
 
@@ -22,7 +22,6 @@ pub use backspace::offset_for_delete_backwards;
 pub use edit::TextEditor;
 pub use render_text::render_text;
 pub use selection::{len_utf8_from_first_byte, Selectable, StringCursor, TextWithSelection};
-pub use text_layout::{LayoutMetrics, TextLayout};
 
 /// A reference counted string slice.
 ///
@@ -56,5 +55,9 @@ impl StyleSet {
 
     pub fn remove(&mut self, property: Discriminant<StyleProperty>) -> Option<StyleProperty> {
         self.0.remove(&property)
+    }
+
+    pub fn inner(&self) -> &HashMap<Discriminant<StyleProperty>, StyleProperty> {
+        &self.0
     }
 }
