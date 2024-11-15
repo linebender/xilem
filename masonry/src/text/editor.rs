@@ -1,5 +1,7 @@
-// Copyright 2024 the Parley Authors
-// SPDX-License-Identifier: Apache-2.0 OR MIT
+// Copyright 2020 the Xilem Authors and the Parley Authors
+// SPDX-License-Identifier: Apache-2.0
+
+// We need to be careful with contributions to this file, as we want them to get back to Parley.
 
 //! Import of Parley's `PlainEditor` as the version in Parley is insufficient for our needs.
 
