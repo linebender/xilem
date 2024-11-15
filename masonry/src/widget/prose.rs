@@ -320,8 +320,8 @@ impl Widget for Prose {
                     self.last_click_time = Some(now);
                     let click_count = self.click_count;
                     let cursor_pos = Point::new(state.position.x, state.position.y) - inner_origin;
-                    let (fcx, lcx) = ctx.text_contexts();
-                    self.editor.transact(fcx, lcx, |txn| match click_count {
+                    let (fctx, lctx) = ctx.text_contexts();
+                    self.editor.transact(fctx, lctx, |txn| match click_count {
                         2 => txn.select_word_at_point(cursor_pos.x as f32, cursor_pos.y as f32),
                         3 => txn.select_line_at_point(cursor_pos.x as f32, cursor_pos.y as f32),
                         _ => txn.move_to_point(cursor_pos.x as f32, cursor_pos.y as f32),
@@ -339,8 +339,8 @@ impl Widget for Prose {
             PointerEvent::PointerMove(state) => {
                 if !ctx.is_disabled() && ctx.has_pointer_capture() {
                     let cursor_pos = Point::new(state.position.x, state.position.y) - inner_origin;
-                    let (fcx, lcx) = ctx.text_contexts();
-                    self.editor.transact(fcx, lcx, |txn| {
+                    let (fctx, lctx) = ctx.text_contexts();
+                    self.editor.transact(fctx, lctx, |txn| {
                         txn.extend_selection_to_point(cursor_pos.x as f32, cursor_pos.y as f32);
                     });
                     let new_generation = self.editor.generation();
@@ -372,7 +372,7 @@ impl Widget for Prose {
                         modifiers_state.control_key()
                     },
                 );
-                let (fcx, lcx) = ctx.text_contexts();
+                let (fctx, lctx) = ctx.text_contexts();
                 match &key_event.logical_key {
                     #[cfg(any(target_os = "windows", target_os = "macos", target_os = "linux"))]
                     Key::Character(c) if action_mod && matches!(c.as_str(), "c") => {
@@ -388,7 +388,7 @@ impl Widget for Prose {
                         }
                     }
                     Key::Character(c) if action_mod && matches!(c.to_lowercase().as_str(), "a") => {
-                        self.editor.transact(fcx, lcx, |txn| {
+                        self.editor.transact(fctx, lctx, |txn| {
                             if shift {
                                 txn.collapse_selection();
                             } else {
@@ -396,7 +396,7 @@ impl Widget for Prose {
                             }
                         });
                     }
-                    Key::Named(NamedKey::ArrowLeft) => self.editor.transact(fcx, lcx, |txn| {
+                    Key::Named(NamedKey::ArrowLeft) => self.editor.transact(fctx, lctx, |txn| {
                         if action_mod {
                             if shift {
                                 txn.select_word_left();
@@ -409,7 +409,7 @@ impl Widget for Prose {
                             txn.move_left();
                         }
                     }),
-                    Key::Named(NamedKey::ArrowRight) => self.editor.transact(fcx, lcx, |txn| {
+                    Key::Named(NamedKey::ArrowRight) => self.editor.transact(fctx, lctx, |txn| {
                         if action_mod {
                             if shift {
                                 txn.select_word_right();
@@ -422,21 +422,21 @@ impl Widget for Prose {
                             txn.move_right();
                         }
                     }),
-                    Key::Named(NamedKey::ArrowUp) => self.editor.transact(fcx, lcx, |txn| {
+                    Key::Named(NamedKey::ArrowUp) => self.editor.transact(fctx, lctx, |txn| {
                         if shift {
                             txn.select_up();
                         } else {
                             txn.move_up();
                         }
                     }),
-                    Key::Named(NamedKey::ArrowDown) => self.editor.transact(fcx, lcx, |txn| {
+                    Key::Named(NamedKey::ArrowDown) => self.editor.transact(fctx, lctx, |txn| {
                         if shift {
                             txn.select_down();
                         } else {
                             txn.move_down();
                         }
                     }),
-                    Key::Named(NamedKey::Home) => self.editor.transact(fcx, lcx, |txn| {
+                    Key::Named(NamedKey::Home) => self.editor.transact(fctx, lctx, |txn| {
                         if action_mod {
                             if shift {
                                 txn.select_to_text_start();
@@ -449,7 +449,7 @@ impl Widget for Prose {
                             txn.move_to_line_start();
                         }
                     }),
-                    Key::Named(NamedKey::End) => self.editor.transact(fcx, lcx, |txn| {
+                    Key::Named(NamedKey::End) => self.editor.transact(fctx, lctx, |txn| {
                         if action_mod {
                             if shift {
                                 txn.select_to_text_end();
@@ -487,9 +487,9 @@ impl Widget for Prose {
     fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {
         if event.action == accesskit::Action::SetTextSelection {
             if let Some(accesskit::ActionData::SetTextSelection(selection)) = &event.data {
-                let (fcx, lcx) = ctx.text_contexts();
+                let (fctx, lctx) = ctx.text_contexts();
                 self.editor
-                    .transact(fcx, lcx, |txn| txn.select_from_accesskit(selection));
+                    .transact(fctx, lctx, |txn| txn.select_from_accesskit(selection));
             }
         }
     }
@@ -513,8 +513,8 @@ impl Widget for Prose {
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
-        let (fcx, lcx) = ctx.text_contexts();
-        let max_advance = self.editor.transact(fcx, lcx, |txn| {
+        let (fctx, lctx) = ctx.text_contexts();
+        let max_advance = self.editor.transact(fctx, lctx, |txn| {
             if let Some(pending_text) = self.pending_text.take() {
                 txn.select_to_text_start();
                 txn.collapse_selection();

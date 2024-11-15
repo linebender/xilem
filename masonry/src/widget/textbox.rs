@@ -331,8 +331,8 @@ impl Widget for Textbox {
                     self.last_click_time = Some(now);
                     let click_count = self.click_count;
                     let cursor_pos = Point::new(state.position.x, state.position.y) - inner_origin;
-                    let (fcx, lcx) = ctx.text_contexts();
-                    self.editor.transact(fcx, lcx, |txn| match click_count {
+                    let (fctx, lctx) = ctx.text_contexts();
+                    self.editor.transact(fctx, lctx, |txn| match click_count {
                         2 => txn.select_word_at_point(cursor_pos.x as f32, cursor_pos.y as f32),
                         3 => txn.select_line_at_point(cursor_pos.x as f32, cursor_pos.y as f32),
                         _ => txn.move_to_point(cursor_pos.x as f32, cursor_pos.y as f32),
@@ -350,8 +350,8 @@ impl Widget for Textbox {
             PointerEvent::PointerMove(state) => {
                 if !ctx.is_disabled() && ctx.has_pointer_capture() {
                     let cursor_pos = Point::new(state.position.x, state.position.y) - inner_origin;
-                    let (fcx, lcx) = ctx.text_contexts();
-                    self.editor.transact(fcx, lcx, |txn| {
+                    let (fctx, lctx) = ctx.text_contexts();
+                    self.editor.transact(fctx, lctx, |txn| {
                         txn.extend_selection_to_point(cursor_pos.x as f32, cursor_pos.y as f32);
                     });
                     let new_generation = self.editor.generation();
@@ -371,6 +371,9 @@ impl Widget for Textbox {
         }
         match event {
             TextEvent::KeyboardKey(key_event, modifiers_state) => {
+                if !key_event.state.is_pressed() {
+                    return;
+                }
                 #[allow(unused)]
                 let (shift, action_mod) = (
                     modifiers_state.shift_key(),
@@ -380,7 +383,7 @@ impl Widget for Textbox {
                         modifiers_state.control_key()
                     },
                 );
-                let (fcx, lcx) = ctx.text_contexts();
+                let (fctx, lctx) = ctx.text_contexts();
                 // Ideally we'd use key_without_modifiers, but that's broken
                 match &key_event.logical_key {
                     #[cfg(any(target_os = "windows", target_os = "macos", target_os = "linux"))]
@@ -397,19 +400,19 @@ impl Widget for Textbox {
                                 // if let ActiveText::Selection(text) = self.editor.active_text() {
                                 //     let cb = ClipboardContext::new().unwrap();
                                 //     cb.set_text(text.to_owned()).ok();
-                                //     self.transact(|txn| txn.delete_selection());
+                                //     self.editor.transact(fcx, lcx, |txn| txn.delete_selection());
                                 // }
                             }
                             "v" => {
                                 // let cb = ClipboardContext::new().unwrap();
                                 // let text = cb.get_text().unwrap_or_default();
-                                // self.transact(|txn| txn.insert_or_replace_selection(&text));
+                                // self.editor.transact(fcx, lcx, |txn| txn.insert_or_replace_selection(&text));
                             }
                             _ => (),
                         }
                     }
                     Key::Character(c) if action_mod && matches!(c.to_lowercase().as_str(), "a") => {
-                        self.editor.transact(fcx, lcx, |txn| {
+                        self.editor.transact(fctx, lctx, |txn| {
                             if shift {
                                 txn.collapse_selection();
                             } else {
@@ -417,7 +420,7 @@ impl Widget for Textbox {
                             }
                         });
                     }
-                    Key::Named(NamedKey::ArrowLeft) => self.editor.transact(fcx, lcx, |txn| {
+                    Key::Named(NamedKey::ArrowLeft) => self.editor.transact(fctx, lctx, |txn| {
                         if action_mod {
                             if shift {
                                 txn.select_word_left();
@@ -430,7 +433,7 @@ impl Widget for Textbox {
                             txn.move_left();
                         }
                     }),
-                    Key::Named(NamedKey::ArrowRight) => self.editor.transact(fcx, lcx, |txn| {
+                    Key::Named(NamedKey::ArrowRight) => self.editor.transact(fctx, lctx, |txn| {
                         if action_mod {
                             if shift {
                                 txn.select_word_right();
@@ -443,21 +446,21 @@ impl Widget for Textbox {
                             txn.move_right();
                         }
                     }),
-                    Key::Named(NamedKey::ArrowUp) => self.editor.transact(fcx, lcx, |txn| {
+                    Key::Named(NamedKey::ArrowUp) => self.editor.transact(fctx, lctx, |txn| {
                         if shift {
                             txn.select_up();
                         } else {
                             txn.move_up();
                         }
                     }),
-                    Key::Named(NamedKey::ArrowDown) => self.editor.transact(fcx, lcx, |txn| {
+                    Key::Named(NamedKey::ArrowDown) => self.editor.transact(fctx, lctx, |txn| {
                         if shift {
                             txn.select_down();
                         } else {
                             txn.move_down();
                         }
                     }),
-                    Key::Named(NamedKey::Home) => self.editor.transact(fcx, lcx, |txn| {
+                    Key::Named(NamedKey::Home) => self.editor.transact(fctx, lctx, |txn| {
                         if action_mod {
                             if shift {
                                 txn.select_to_text_start();
@@ -470,7 +473,7 @@ impl Widget for Textbox {
                             txn.move_to_line_start();
                         }
                     }),
-                    Key::Named(NamedKey::End) => self.editor.transact(fcx, lcx, |txn| {
+                    Key::Named(NamedKey::End) => self.editor.transact(fctx, lctx, |txn| {
                         if action_mod {
                             if shift {
                                 txn.select_to_text_end();
@@ -483,13 +486,41 @@ impl Widget for Textbox {
                             txn.move_to_line_end();
                         }
                     }),
-                    _ => match key_event.text {
-                        Some(_) => {}
+                    Key::Named(NamedKey::Delete) => self.editor.transact(fctx, lctx, |txn| {
+                        if action_mod {
+                            txn.delete_word();
+                        } else {
+                            txn.delete();
+                        }
+                    }),
+                    Key::Named(NamedKey::Backspace) => self.editor.transact(fctx, lctx, |txn| {
+                        if action_mod {
+                            txn.backdelete_word();
+                        } else {
+                            txn.backdelete();
+                        }
+                    }),
+                    Key::Named(NamedKey::Enter) => {
+                        ctx.submit_action(crate::Action::TextEntered(self.text().to_string()));
+                        // let (fctx, lctx) = ctx.text_contexts();
+                        // self.editor
+                        //     .transact(fctx, lctx, |txn| txn.insert_or_replace_selection("\n"));
+                    }
+                    Key::Named(NamedKey::Space) => {
+                        self.editor
+                            .transact(fctx, lctx, |txn| txn.insert_or_replace_selection(" "));
+                    }
+                    _ => match &key_event.text {
+                        Some(text) => {
+                            self.editor
+                                .transact(fctx, lctx, |txn| txn.insert_or_replace_selection(text));
+                        }
                         None => {}
                     },
                 }
                 let new_generation = self.editor.generation();
                 if new_generation != self.rendered_generation {
+                    ctx.submit_action(crate::Action::TextChanged(self.text().to_string()));
                     // TODO: For all the non-text-input actions
                     ctx.request_layout();
                     self.rendered_generation = new_generation;
@@ -517,9 +548,9 @@ impl Widget for Textbox {
     fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {
         if event.action == accesskit::Action::SetTextSelection {
             if let Some(accesskit::ActionData::SetTextSelection(selection)) = &event.data {
-                let (fcx, lcx) = ctx.text_contexts();
+                let (fctx, lctx) = ctx.text_contexts();
                 self.editor
-                    .transact(fcx, lcx, |txn| txn.select_from_accesskit(selection));
+                    .transact(fctx, lctx, |txn| txn.select_from_accesskit(selection));
             }
         }
     }
@@ -543,8 +574,8 @@ impl Widget for Textbox {
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
-        let (fcx, lcx) = ctx.text_contexts();
-        let available_width = self.editor.transact(fcx, lcx, |txn| {
+        let (fctx, lctx) = ctx.text_contexts();
+        let available_width = self.editor.transact(fctx, lctx, |txn| {
             if let Some(pending_text) = self.pending_text.take() {
                 txn.select_to_text_start();
                 txn.collapse_selection();
