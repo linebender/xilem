@@ -93,7 +93,7 @@ impl Textbox {
             click_count: 0,
             styles: StyleSet::new(theme::TEXT_SIZE_NORMAL),
             styles_changed: true,
-            line_break_mode: LineBreaking::Overflow,
+            line_break_mode: LineBreaking::WordWrap,
             alignment: Alignment::Start,
             alignment_changed: true,
             last_max_advance: None,
@@ -252,8 +252,9 @@ impl Textbox {
         old
     }
 
-    /// Replace the text of this widget.
-    pub fn set_text(this: &mut WidgetMut<'_, Self>, new_text: impl Into<ArcStr>) {
+    /// This is likely to be disruptive if the user is focused on this widget,
+    /// and so should be avoided if possible.
+    pub fn reset_text(this: &mut WidgetMut<'_, Self>, new_text: impl Into<ArcStr>) {
         this.widget.pending_text = Some(new_text.into());
 
         this.ctx.request_layout();
@@ -616,7 +617,8 @@ impl Widget for Textbox {
         } else {
             self.brush.clone()
         };
-        render_text(scene, transform, self.editor.layout(), &[brush]);
+        // TODO: Is disabling hinting ever right for textbox?
+        render_text(scene, transform, self.editor.layout(), &[brush], self.hint);
 
         if self.line_break_mode == LineBreaking::Clip {
             scene.pop_layer();

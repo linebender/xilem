@@ -22,7 +22,7 @@ use parley::layout::Alignment;
 use parley::style::{FontFamily, FontStack, StyleProperty};
 use smallvec::SmallVec;
 use tracing::{trace_span, Span};
-use vello::peniko::{Brush, Fill, Format, Image};
+use vello::peniko::{Fill, Format, Image};
 use vello::Scene;
 use winit::window::Window;
 
@@ -100,22 +100,22 @@ impl Widget for CustomWidget {
         let mut lcx = parley::LayoutContext::new();
         let mut text_layout_builder = lcx.ranged_builder(ctx.text_contexts().0, &self.0, 1.0);
 
-        text_layout_builder.push_default(&StyleProperty::FontStack(FontStack::Single(
+        text_layout_builder.push_default(StyleProperty::FontStack(FontStack::Single(
             FontFamily::Generic(parley::style::GenericFamily::Serif),
         )));
-        text_layout_builder.push_default(&StyleProperty::FontSize(24.0));
-        text_layout_builder.push_default(&StyleProperty::Brush(Brush::Solid(fill_color).into()));
+        text_layout_builder.push_default(StyleProperty::FontSize(24.0));
 
-        let mut text_layout = text_layout_builder.build();
-        text_layout.break_all_lines(None, Alignment::Start);
+        let mut text_layout = text_layout_builder.build(&self.0);
+        text_layout.break_all_lines(None);
+        text_layout.align(None, Alignment::Start);
 
-        let mut scratch_scene = Scene::new();
         // We can pass a transform matrix to rotate the text we render
         masonry::text::render_text(
             scene,
-            &mut scratch_scene,
             Affine::rotate(std::f64::consts::FRAC_PI_4).then_translate((80.0, 40.0).into()),
             &text_layout,
+            &[fill_color.into()],
+            true,
         );
 
         // Let's burn some CPU to make a (partially transparent) image buffer
@@ -131,7 +131,7 @@ impl Widget for CustomWidget {
 
     fn accessibility(&mut self, _ctx: &mut AccessCtx, node: &mut Node) {
         let text = &self.0;
-        node.set_name(
+        node.set_label(
             format!("This is a demo of the Masonry Widget trait. Masonry has accessibility tree support. The demo shows colored shapes with the text '{text}'."),
         );
     }

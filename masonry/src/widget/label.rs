@@ -403,7 +403,7 @@ impl Widget for Label {
         } else {
             self.brush.clone()
         };
-        render_text(scene, transform, &self.text_layout, &[brush]);
+        render_text(scene, transform, &self.text_layout, &[brush], self.hint);
 
         if self.line_break_mode == LineBreaking::Clip {
             scene.pop_layer();

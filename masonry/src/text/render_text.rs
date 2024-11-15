@@ -16,6 +16,8 @@ pub fn render_text(
     transform: Affine,
     layout: &Layout<BrushIndex>,
     brushes: &[Brush],
+    // TODO: Should this be part of `BrushIndex`?
+    hint: bool,
 ) {
     for line in layout.lines() {
         for item in line.items() {
@@ -40,7 +42,7 @@ pub fn render_text(
             scene
                 .draw_glyphs(font)
                 .brush(brush)
-                .hint(true)
+                .hint(hint)
                 .transform(transform)
                 .glyph_transform(glyph_xform)
                 .font_size(font_size)

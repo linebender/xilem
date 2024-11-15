@@ -86,7 +86,7 @@ impl Prose {
             click_count: 0,
             styles: StyleSet::new(theme::TEXT_SIZE_NORMAL),
             styles_changed: true,
-            line_break_mode: LineBreaking::Overflow,
+            line_break_mode: LineBreaking::WordWrap,
             alignment: Alignment::Start,
             alignment_changed: true,
             last_max_advance: None,
@@ -360,6 +360,9 @@ impl Widget for Prose {
         }
         match event {
             TextEvent::KeyboardKey(key_event, modifiers_state) => {
+                if !key_event.state.is_pressed() {
+                    return;
+                }
                 #[allow(unused)]
                 let (shift, action_mod) = (
                     modifiers_state.shift_key(),
@@ -583,7 +586,8 @@ impl Widget for Prose {
         } else {
             self.brush.clone()
         };
-        render_text(scene, transform, self.editor.layout(), &[brush]);
+        // TODO: Is disabling hinting ever right for prose?
+        render_text(scene, transform, self.editor.layout(), &[brush], self.hint);
 
         if self.line_break_mode == LineBreaking::Clip {
             scene.pop_layer();
