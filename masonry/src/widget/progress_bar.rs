@@ -38,12 +38,13 @@ impl ProgressBar {
     /// Otherwise, the input will be clamped to [0, 1].
     pub fn new(mut progress: Option<f64>) -> Self {
         clamp_progress(&mut progress);
+        let label = WidgetPod::new(
+            Label::new(Self::value(progress)).with_line_break_mode(LineBreaking::Overflow),
+        );
         Self {
-            progress: None,
+            progress,
             progress_changed: false,
-            label: WidgetPod::new(
-                Label::new(Self::value(progress)).with_line_break_mode(LineBreaking::Overflow),
-            ),
+            label,
         }
     }
 
@@ -112,7 +113,7 @@ impl Widget for ProgressBar {
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
         const DEFAULT_WIDTH: f64 = 400.;
         // TODO: Clearer constraints here
-        let label_size = ctx.run_layout(&mut self.label, bc);
+        let label_size = ctx.run_layout(&mut self.label, &bc.loosen());
         let desired_size = Size::new(
             DEFAULT_WIDTH.max(label_size.width),
             crate::theme::BASIC_WIDGET_HEIGHT.max(label_size.height),

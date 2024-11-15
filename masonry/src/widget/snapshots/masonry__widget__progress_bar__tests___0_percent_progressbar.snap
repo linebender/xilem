@@ -1,7 +1,10 @@
 ---
 source: masonry/src/widget/progress_bar.rs
 expression: harness.root_widget()
+snapshot_kind: text
 ---
 SizedBox(
-    ProgressBar<0%>,
+    ProgressBar<0%>(
+        Label<0%>,
+    ),
 )
