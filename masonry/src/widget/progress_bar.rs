@@ -10,14 +10,16 @@ use vello::Scene;
 
 use crate::kurbo::Size;
 use crate::paint_scene_helpers::{fill_lin_gradient, stroke, UnitPoint};
-use crate::text::{ArcStr, TextLayout};
+use crate::text::ArcStr;
 use crate::widget::WidgetMut;
 use crate::{
     theme, AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, Point,
     PointerEvent, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
 };
 
-/// A progress bar
+use super::{Label, LineBreaking, WidgetPod};
+
+/// A progress bar.
 pub struct ProgressBar {
     /// A value in the range `[0, 1]` inclusive, where 0 is 0% and 1 is 100% complete.
     ///
@@ -25,7 +27,7 @@ pub struct ProgressBar {
     /// It is also used if an invalid float (outside of [0, 1]) is passed.
     progress: Option<f64>,
     progress_changed: bool,
-    label: TextLayout,
+    label: WidgetPod<Label>,
 }
 
 impl ProgressBar {
@@ -34,16 +36,14 @@ impl ProgressBar {
     /// `progress` is a number between 0 and 1 inclusive. If it is `NaN`, then an
     /// indefinite progress bar will be shown.
     /// Otherwise, the input will be clamped to [0, 1].
-    pub fn new(progress: Option<f64>) -> Self {
-        let mut out = Self::new_indefinite();
-        out.set_progress_inner(progress);
-        out
-    }
-    fn new_indefinite() -> Self {
+    pub fn new(mut progress: Option<f64>) -> Self {
+        clamp_progress(&mut progress);
         Self {
             progress: None,
             progress_changed: false,
-            label: TextLayout::new(crate::theme::TEXT_SIZE_NORMAL),
+            label: WidgetPod::new(
+                Label::new(Self::value(progress)).with_line_break_mode(LineBreaking::Overflow),
+            ),
         }
     }
 
@@ -56,19 +56,19 @@ impl ProgressBar {
         }
     }
 
-    fn value(&self) -> ArcStr {
-        if let Some(value) = self.progress {
-            format!("{:.0}%", value * 100.).into()
-        } else {
-            "".into()
-        }
-    }
-
     fn value_accessibility(&self) -> Box<str> {
         if let Some(value) = self.progress {
             format!("{:.0}%", value * 100.).into()
         } else {
             "progress unspecified".into()
+        }
+    }
+
+    fn value(progress: Option<f64>) -> ArcStr {
+        if let Some(value) = progress {
+            format!("{:.0}%", value * 100.).into()
+        } else {
+            "".into()
         }
     }
 }
@@ -79,6 +79,10 @@ impl ProgressBar {
         this.widget.set_progress_inner(progress);
         this.ctx.request_layout();
         this.ctx.request_render();
+    }
+
+    fn label_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, Label> {
+        this.ctx.get_mut(&mut this.widget.label)
     }
 }
 
@@ -103,34 +107,33 @@ impl Widget for ProgressBar {
 
     fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {}
 
-    fn register_children(&mut self, _ctx: &mut RegisterCtx) {}
+    fn register_children(&mut self, ctx: &mut RegisterCtx) {
+        ctx.register_child(&mut self.label);
+    }
 
     fn update(&mut self, _ctx: &mut UpdateCtx, _event: &Update) {}
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
         const DEFAULT_WIDTH: f64 = 400.;
-
-        if self.label.needs_rebuild() || self.progress_changed {
-            let (font_ctx, layout_ctx) = ctx.text_contexts();
-            self.label
-                .rebuild(font_ctx, layout_ctx, &self.value(), self.progress_changed);
-            self.progress_changed = false;
-        }
-        let label_size = self.label.size();
-
+        // TODO: Clearer constraints here
+        let label_size = ctx.run_layout(&mut self.label, bc);
         let desired_size = Size::new(
             DEFAULT_WIDTH.max(label_size.width),
             crate::theme::BASIC_WIDGET_HEIGHT.max(label_size.height),
         );
-        bc.constrain(desired_size)
+        let final_size = bc.constrain(desired_size);
+
+        // center text
+        let text_pos = Point::new(
+            ((final_size.width - label_size.width) * 0.5).max(0.),
+            ((final_size.height - label_size.height) * 0.5).max(0.),
+        );
+        ctx.place_child(&mut self.label, text_pos);
+        final_size
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
         let border_width = 1.;
-
-        if self.label.needs_rebuild() {
-            debug_panic!("Called ProgressBar paint before layout");
-        }
 
         let rect = ctx
             .size()
@@ -165,15 +168,6 @@ impl Widget for ProgressBar {
             UnitPoint::BOTTOM,
         );
         stroke(scene, &progress_rect, theme::BORDER_DARK, border_width);
-
-        // center text
-        let widget_size = ctx.size();
-        let label_size = self.label.size();
-        let text_pos = Point::new(
-            ((widget_size.width - label_size.width) * 0.5).max(0.),
-            ((widget_size.height - label_size.height) * 0.5).max(0.),
-        );
-        self.label.draw(scene, text_pos);
     }
 
     fn accessibility_role(&self) -> Role {
@@ -188,7 +182,7 @@ impl Widget for ProgressBar {
     }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
-        smallvec![]
+        smallvec![self.label.id()]
     }
 
     fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {

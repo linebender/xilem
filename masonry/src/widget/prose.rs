@@ -371,13 +371,13 @@ impl Widget for Prose {
                     },
                 );
                 let (fcx, lcx) = ctx.text_contexts();
-                match key_event.logical_key {
+                match &key_event.logical_key {
                     #[cfg(any(target_os = "windows", target_os = "macos", target_os = "linux"))]
                     Key::Character(c) if action_mod && matches!(c.as_str(), "c") => {
                         // TODO: use clipboard_rs::{Clipboard, ClipboardContext};
                         match c.to_lowercase().as_str() {
                             "c" => {
-                                if let ActiveText::Selection(text) = self.editor.active_text() {
+                                if let ActiveText::Selection(_) = self.editor.active_text() {
                                     // let cb = ClipboardContext::new().unwrap();
                                     // cb.set_text(text.to_owned()).ok();
                                 }
@@ -529,7 +529,6 @@ impl Widget for Prose {
             } else {
                 None
             };
-            let styles_changed = self.styles_changed;
             if self.styles_changed {
                 let style = self.styles.inner().values().cloned().collect();
                 txn.set_default_style(style);

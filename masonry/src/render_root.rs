@@ -34,7 +34,7 @@ use crate::passes::update::{
     run_update_widget_tree_pass,
 };
 use crate::passes::{recurse_on_children, PassTracing};
-use crate::text::TextBrush;
+use crate::text::BrushIndex;
 use crate::tree_arena::{ArenaMut, TreeArena};
 use crate::widget::{WidgetArena, WidgetMut, WidgetRef, WidgetState};
 use crate::{AccessEvent, Action, CursorIcon, Handled, QueryCtx, Widget, WidgetId, WidgetPod};
@@ -71,7 +71,7 @@ pub(crate) struct RenderRootState {
     pub(crate) pointer_capture_target: Option<WidgetId>,
     pub(crate) cursor_icon: CursorIcon,
     pub(crate) font_context: FontContext,
-    pub(crate) text_layout_context: LayoutContext<TextBrush>,
+    pub(crate) text_layout_context: LayoutContext<BrushIndex>,
     pub(crate) mutate_callbacks: Vec<MutateCallback>,
     pub(crate) is_ime_active: bool,
     pub(crate) scenes: HashMap<WidgetId, Scene>,

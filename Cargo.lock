@@ -2044,13 +2044,11 @@ dependencies = [
  "tracing-subscriber",
  "tracing-tracy",
  "tracing_android_trace",
- "unicode-segmentation",
  "vello",
  "web-time",
  "wgpu 22.1.0",
  "wgpu-profiler 0.17.0",
  "winit",
- "xi-unicode",
 ]
 
 [[package]]
@@ -4891,12 +4889,6 @@ dependencies = [
  "libc",
  "windows-sys 0.59.0",
 ]
-
-[[package]]
-name = "xi-unicode"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a67300977d3dc3f8034dae89778f502b6ba20b269527b3223ba59c0cf393bb8a"
 
 [[package]]
 name = "xilem"

@@ -8,7 +8,7 @@ use std::cmp::Ordering;
 use accesskit::{Node, Role};
 use parley::fontique::Weight;
 use parley::StyleProperty;
-use smallvec::SmallVec;
+use smallvec::{smallvec, SmallVec};
 use tracing::{trace_span, Span};
 use vello::kurbo::{Point, Size};
 use vello::Scene;
@@ -238,7 +238,7 @@ impl Widget for VariableLabel {
     fn accessibility(&mut self, _ctx: &mut AccessCtx, _node: &mut Node) {}
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
-        [self.label.id()].into_iter().collect()
+        smallvec![self.label.id()]
     }
 
     fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {

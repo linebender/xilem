@@ -10,19 +10,13 @@
 //!
 //! All of these have the same set of global styling options, and can contain rich text
 
-mod backspace;
-mod edit;
 mod editor;
 mod render_text;
-mod selection;
 
 use std::{collections::HashMap, mem::Discriminant};
 
-pub use backspace::offset_for_delete_backwards;
-pub use edit::TextEditor;
 pub use editor::{ActiveText, Generation, PlainEditor, PlainEditorTxn};
 pub use render_text::render_text;
-pub use selection::{len_utf8_from_first_byte, Selectable, StringCursor, TextWithSelection};
 
 /// A reference counted string slice.
 ///
