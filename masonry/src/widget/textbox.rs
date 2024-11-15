@@ -4,7 +4,7 @@
 use std::mem::Discriminant;
 use std::time::Instant;
 
-use crate::text::{render_text, ActiveText, Generation, PlainEditor};
+use crate::text::{render_text, Generation, PlainEditor};
 use accesskit::{Node, NodeId, Role};
 use parley::layout::Alignment;
 use smallvec::SmallVec;
@@ -391,13 +391,15 @@ impl Widget for Textbox {
                         // TODO: use clipboard_rs::{Clipboard, ClipboardContext};
                         match c.to_lowercase().as_str() {
                             "c" => {
-                                if let ActiveText::Selection(_) = self.editor.active_text() {
+                                if let crate::text::ActiveText::Selection(_) =
+                                    self.editor.active_text()
+                                {
                                     // let cb = ClipboardContext::new().unwrap();
                                     // cb.set_text(text.to_owned()).ok();
                                 }
                             }
                             "x" => {
-                                // if let ActiveText::Selection(text) = self.editor.active_text() {
+                                // if let crate::text::ActiveText::Selection(text) = self.editor.active_text() {
                                 //     let cb = ClipboardContext::new().unwrap();
                                 //     cb.set_text(text.to_owned()).ok();
                                 //     self.editor.transact(fcx, lcx, |txn| txn.delete_selection());
