@@ -5,7 +5,7 @@
 
 use std::mem::Discriminant;
 
-use accesskit::{Node, Role, TextAlign};
+use accesskit::{Node, NodeId, Role};
 use parley::layout::Alignment;
 use parley::{Layout, LayoutAccessibility};
 use smallvec::SmallVec;
@@ -41,7 +41,7 @@ pub enum LineBreaking {
 /// This is useful for creating interactive widgets which internally
 /// need support for displaying text, such as a button.
 pub struct Label {
-    text_layout: Layout<()>,
+    text_layout: Layout<BrushIndex>,
     accessibility: LayoutAccessibility,
 
     text: ArcStr,
@@ -60,16 +60,28 @@ pub struct Label {
     /// If it has changed, we need to re-perform line-breaking.
     last_max_advance: Option<f32>,
 
+    /// The brush for drawing this label's text.
+    ///
+    /// Requires a new paint if edited whilst `disabled_brush` is not being used.
     brush: Brush,
     /// The brush to use whilst this widget is disabled.
     ///
     /// When this is `None`, `brush` will be used.
+    /// Requires a new paint if edited whilst this widget is disabled.
     disabled_brush: Option<Brush>,
+    /// Whether to hint whilst drawing the text.
+    ///
+    /// Should be disabled whilst an animation involving this label is ongoing.
+    // TODO: What classes of animations?
+    hint: bool,
 }
 
 // --- MARK: BUILDERS ---
 impl Label {
-    /// Create a new label.
+    /// Create a new label with the given text.
+    ///
+    // This is written out fully to appease rust-analyzer.
+    /// To change the font size, use `with_style`, setting [`StyleProperty::FontSize`](parley::StyleProperty::FontSize).
     pub fn new(text: impl Into<ArcStr>) -> Self {
         Self {
             text_layout: Layout::new(),
@@ -83,23 +95,29 @@ impl Label {
             last_max_advance: None,
             brush: theme::TEXT_COLOR.into(),
             disabled_brush: Some(theme::DISABLED_TEXT_COLOR.into()),
+            hint: true,
         }
     }
 
-    /// Get the current of this label.
+    /// Get the current text of this label.
+    ///
+    /// To update the text of an active label, use [`set_text`](Self::set_text).
     pub fn text(&self) -> &ArcStr {
         &self.text
     }
 
     /// Set a style property for the new label.
     ///
-    /// To add a style property on an existing label, use [`insert_style`](Self::insert_style).
+    /// Setting [`StyleProperty::Brush`](parley::StyleProperty::Brush) is not supported.
+    /// Use `with_brush` instead.
+    ///
+    /// To set a style property on an active label, use [`insert_style`](Self::insert_style).
     pub fn with_style(mut self, property: impl Into<StyleProperty>) -> Self {
         self.insert_style_inner(property.into());
         self
     }
 
-    /// Set a style property, returning the old value.
+    /// Set a style property for the new label, returning the old value.
     ///
     /// Most users should prefer [`with_style`](Self::with_style) instead.
     pub fn try_with_style(
@@ -110,6 +128,9 @@ impl Label {
         (self, old)
     }
 
+    /// Set how line breaks will be handled by this label.
+    ///
+    /// To modify this on an active label, use [`set_line_break_mode`](Self::set_line_break_mode).
     pub fn with_line_break_mode(mut self, line_break_mode: LineBreaking) -> Self {
         self.line_break_mode = line_break_mode;
         self
@@ -117,15 +138,51 @@ impl Label {
 
     /// Set the alignment of the text.
     ///
-    /// Text alignment is ignored when the label has no horizontal constraints.
+    /// Text alignment might have unexpected results when the label has no horizontal constraints.
+    /// To modify this on an active label, use [`set_alignment`](Self::set_alignment).
     pub fn with_alignment(mut self, alignment: Alignment) -> Self {
         self.alignment = alignment;
         self
     }
 
-    /// Create a label with empty text.
-    pub fn empty() -> Self {
-        Self::new("")
+    /// Set the brush used to paint this label.
+    ///
+    /// In most cases, this will be the text's color, but gradients and images are also supported.
+    ///
+    /// To modify this on an active label, use [`set_brush`](Self::set_brush).
+    #[doc(alias = "with_color")]
+    pub fn with_brush(mut self, brush: impl Into<Brush>) -> Self {
+        self.brush = brush.into();
+        self
+    }
+
+    /// Set the brush which will be used to paint this label whilst it is disabled.
+    ///
+    /// If this is `None`, the [normal brush](Self::with_brush) will be used.
+    /// To modify this on an active label, use [`set_disabled_brush`](Self::set_disabled_brush).
+    #[doc(alias = "with_color")]
+    pub fn with_disabled_brush(mut self, disabled_brush: impl Into<Option<Brush>>) -> Self {
+        self.disabled_brush = disabled_brush.into();
+        self
+    }
+
+    /// Set whether [hinting](https://en.wikipedia.org/wiki/Font_hinting) will be used for this label.
+    ///
+    /// Hinting is a process where text is drawn "snapped" to pixel boundaries to improve fidelity.
+    /// The default is true, i.e. hinting is enabled by default.
+    ///
+    /// This should be set to false if the label will be animated at creation.
+    /// The kinds of relevant animations include changing variable font parameters,
+    /// translating or scaling.
+    /// Failing to do so will likely lead to an unpleasant shimmering effect, as different parts of the
+    /// text "snap" at different times.
+    ///
+    /// To modify this on an active label, use [`set_hint`](Self::set_hint).
+    // TODO: Should we tell each widget if smooth scrolling is ongoing so they can disable their hinting?
+    // Alternatively, we should automate disabling hinting at the Vello layer when composing.
+    pub fn with_hint(mut self, hint: bool) -> Self {
+        self.hint = hint;
+        self
     }
 
     /// Shared logic between `with_style` and `insert_style`
@@ -142,6 +199,11 @@ impl Label {
 
 // --- MARK: WIDGETMUT ---
 impl Label {
+    // Note: These docs are lazy, but also have a decreased likelihood of going out of date.
+    /// The runtime requivalent of [`with_style`](Self::with_style).
+    ///
+    /// Setting [`StyleProperty::Brush`](parley::StyleProperty::Brush) is not supported.
+    /// Use [`set_brush`](Self::set_brush) instead.
     pub fn insert_style(
         this: &mut WidgetMut<'_, Self>,
         property: impl Into<StyleProperty>,
@@ -153,6 +215,12 @@ impl Label {
         old
     }
 
+    /// Keep only the styles for which `f` returns true.
+    ///
+    /// Styles which are removed return to Parley's default values.
+    /// In most cases, these are the defaults for this widget.
+    ///
+    /// Of note, behaviour is unspecified for unsetting the [FontSize](parley::StyleProperty::FontSize).
     pub fn retain_styles(this: &mut WidgetMut<'_, Self>, f: impl FnMut(&StyleProperty) -> bool) {
         this.widget.styles.retain(f);
 
@@ -160,6 +228,16 @@ impl Label {
         this.ctx.request_layout();
     }
 
+    /// Remove the style with the discriminant `property`.
+    ///
+    /// To get the discriminant requires constructing a valid `StyleProperty` for the
+    /// the desired property and passing it to [`core::mem::discriminant`].
+    /// Getting this discriminant is usually possible in a `const` context.
+    ///
+    /// Styles which are removed return to Parley's default values.
+    /// In most cases, these are the defaults for this widget.
+    ///
+    /// Of note, behaviour is unspecified for unsetting the [FontSize](parley::StyleProperty::FontSize).
     pub fn remove_style(
         this: &mut WidgetMut<'_, Self>,
         property: Discriminant<StyleProperty>,
@@ -171,6 +249,7 @@ impl Label {
         old
     }
 
+    /// Replace the text of this widget.
     pub fn set_text(this: &mut WidgetMut<'_, Self>, new_text: impl Into<ArcStr>) {
         this.widget.text = new_text.into();
 
@@ -178,6 +257,14 @@ impl Label {
         this.ctx.request_layout();
     }
 
+    /// The runtime requivalent of [`with_line_break_mode`](Self::with_line_break_mode).
+    pub fn set_line_break_mode(this: &mut WidgetMut<'_, Self>, line_break_mode: LineBreaking) {
+        this.widget.line_break_mode = line_break_mode;
+        // We don't need to set an internal invalidation, as `max_advance` is always recalculated
+        this.ctx.request_layout();
+    }
+
+    /// The runtime requivalent of [`with_alignment`](Self::with_alignment).
     pub fn set_alignment(this: &mut WidgetMut<'_, Self>, alignment: Alignment) {
         this.widget.alignment = alignment;
 
@@ -186,6 +273,7 @@ impl Label {
     }
 
     #[doc(alias = "set_color")]
+    /// The runtime requivalent of [`with_brush`](Self::with_brush).
     pub fn set_brush(this: &mut WidgetMut<'_, Self>, brush: impl Into<Brush>) {
         let brush = brush.into();
         this.widget.brush = brush;
@@ -196,16 +284,30 @@ impl Label {
         }
     }
 
-    pub fn set_line_break_mode(this: &mut WidgetMut<'_, Self>, line_break_mode: LineBreaking) {
-        this.widget.line_break_mode = line_break_mode;
-        // We don't need to set an internal invalidation, as `max_advance` is always recalculated
-        this.ctx.request_layout();
+    /// The runtime requivalent of [`with_disabled_brush`](Self::with_disabled_brush).
+    pub fn set_disabled_brush(this: &mut WidgetMut<'_, Self>, brush: impl Into<Option<Brush>>) {
+        let brush = brush.into();
+        this.widget.disabled_brush = brush;
+
+        if this.ctx.is_disabled() {
+            this.ctx.request_paint_only();
+        }
+    }
+
+    /// The runtime requivalent of [`with_hint`](Self::with_hint).
+    pub fn set_hint(this: &mut WidgetMut<'_, Self>, hint: bool) {
+        this.widget.hint = hint;
+        this.ctx.request_paint_only();
     }
 }
 
 // --- MARK: IMPL WIDGET ---
 impl Widget for Label {
     fn on_pointer_event(&mut self, _ctx: &mut EventCtx, _event: &PointerEvent) {}
+
+    fn accepts_pointer_interaction(&self) -> bool {
+        false
+    }
 
     fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
 
@@ -302,22 +404,17 @@ impl Widget for Label {
     fn accessibility(&mut self, _ctx: &mut AccessCtx, node: &mut Node) {
         self.accessibility.build_nodes(
             &self.text.as_ref(),
-            layout,
-            update,
-            parent_node,
-            next_node_id,
-            x_offset,
-            y_offset,
+            &self.text_layout,
+            _ctx.tree_update,
+            node,
+            || NodeId::from(WidgetId::next()),
+            LABEL_X_PADDING,
+            0.0,
         );
-        node.set_name(self.text.as_ref().to_string());
     }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         SmallVec::new()
-    }
-
-    fn accepts_pointer_interaction(&self) -> bool {
-        false
     }
 
     fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
@@ -334,6 +431,7 @@ impl Widget for Label {
 mod tests {
     use insta::assert_debug_snapshot;
     use parley::style::GenericFamily;
+    use parley::FontFamily;
 
     use super::*;
     use crate::assert_render_snapshot;
@@ -354,11 +452,11 @@ mod tests {
     #[test]
     fn styled_label() {
         let label = Label::new("The quick brown fox jumps over the lazy dog")
-            .with_text_brush(PRIMARY_LIGHT)
-            .with_font_family(FontFamily::Generic(GenericFamily::Monospace))
-            .with_text_size(20.0)
+            .with_brush(PRIMARY_LIGHT)
+            .with_style(FontFamily::Generic(GenericFamily::Monospace))
+            .with_style(StyleProperty::FontSize(20.0))
             .with_line_break_mode(LineBreaking::WordWrap)
-            .with_text_alignment(Alignment::Middle);
+            .with_alignment(Alignment::Middle);
 
         let mut harness = TestHarness::create_with_size(label, Size::new(200.0, 200.0));
 
@@ -371,15 +469,15 @@ mod tests {
     fn label_alignment_flex() {
         fn base_label() -> Label {
             Label::new("Hello")
-                .with_text_size(10.0)
+                .with_style(StyleProperty::FontSize(10.0))
                 .with_line_break_mode(LineBreaking::WordWrap)
         }
-        let label1 = base_label().with_text_alignment(Alignment::Start);
-        let label2 = base_label().with_text_alignment(Alignment::Middle);
-        let label3 = base_label().with_text_alignment(Alignment::End);
-        let label4 = base_label().with_text_alignment(Alignment::Start);
-        let label5 = base_label().with_text_alignment(Alignment::Middle);
-        let label6 = base_label().with_text_alignment(Alignment::End);
+        let label1 = base_label().with_alignment(Alignment::Start);
+        let label2 = base_label().with_alignment(Alignment::Middle);
+        let label3 = base_label().with_alignment(Alignment::End);
+        let label4 = base_label().with_alignment(Alignment::Start);
+        let label5 = base_label().with_alignment(Alignment::Middle);
+        let label6 = base_label().with_alignment(Alignment::End);
         let flex = Flex::column()
             .with_flex_child(label1, CrossAxisAlignment::Start)
             .with_flex_child(label2, CrossAxisAlignment::Start)
@@ -432,11 +530,11 @@ mod tests {
     fn edit_label() {
         let image_1 = {
             let label = Label::new("The quick brown fox jumps over the lazy dog")
-                .with_text_brush(PRIMARY_LIGHT)
-                .with_font_family(FontFamily::Generic(GenericFamily::Monospace))
-                .with_text_size(20.0)
+                .with_brush(PRIMARY_LIGHT)
+                .with_style(FontFamily::Generic(GenericFamily::Monospace))
+                .with_style(StyleProperty::FontSize(20.0))
                 .with_line_break_mode(LineBreaking::WordWrap)
-                .with_text_alignment(Alignment::Middle);
+                .with_alignment(Alignment::Middle);
 
             let mut harness = TestHarness::create_with_size(label, Size::new(50.0, 50.0));
 
@@ -445,8 +543,8 @@ mod tests {
 
         let image_2 = {
             let label = Label::new("Hello world")
-                .with_text_brush(PRIMARY_DARK)
-                .with_text_size(40.0);
+                .with_brush(PRIMARY_DARK)
+                .with_style(StyleProperty::FontSize(40.0));
 
             let mut harness = TestHarness::create_with_size(label, Size::new(50.0, 50.0));
 
@@ -454,8 +552,8 @@ mod tests {
                 let mut label = label.downcast::<Label>();
                 Label::set_text(&mut label, "The quick brown fox jumps over the lazy dog");
                 Label::set_brush(&mut label, PRIMARY_LIGHT);
-                Label::set_font_family(&mut label, FontFamily::Generic(GenericFamily::Monospace));
-                Label::set_text_size(&mut label, 20.0);
+                Label::insert_style(&mut label, FontFamily::Generic(GenericFamily::Monospace));
+                Label::insert_style(&mut label, StyleProperty::FontSize(20.0));
                 Label::set_line_break_mode(&mut label, LineBreaking::WordWrap);
                 Label::set_alignment(&mut label, Alignment::Middle);
             });

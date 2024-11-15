@@ -229,6 +229,7 @@ impl Widget for Checkbox {
 #[cfg(test)]
 mod tests {
     use insta::assert_debug_snapshot;
+    use parley::StyleProperty;
 
     use super::*;
     use crate::assert_render_snapshot;
@@ -269,8 +270,8 @@ mod tests {
             let checkbox = Checkbox::from_label(
                 true,
                 Label::new("The quick brown fox jumps over the lazy dog")
-                    .with_text_brush(PRIMARY_LIGHT)
-                    .with_text_size(20.0),
+                    .with_brush(PRIMARY_LIGHT)
+                    .with_style(StyleProperty::FontSize(20.0)),
             );
 
             let mut harness = TestHarness::create_with_size(checkbox, Size::new(50.0, 50.0));
@@ -293,7 +294,7 @@ mod tests {
 
                 let mut label = Checkbox::label_mut(&mut checkbox);
                 Label::set_brush(&mut label, PRIMARY_LIGHT);
-                Label::set_text_size(&mut label, 20.0);
+                Label::insert_style(&mut label, StyleProperty::FontSize(20.0));
             });
 
             harness.render()
