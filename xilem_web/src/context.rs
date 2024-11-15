@@ -90,7 +90,7 @@ impl ViewCtx {
 
     /// Provides a way to access this context without having to deal with lifetime issues.
     ///
-    /// One Motiviation for this is to allow custom view contexts with access to the app runtime.
+    /// One Motivation for this is to allow custom view contexts with access to the app runtime.
     ///
     /// # Examples
     /// ```ignore
