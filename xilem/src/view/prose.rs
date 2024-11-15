@@ -1,8 +1,9 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::text::{ArcStr, TextBrush};
+use masonry::text::{ArcStr, StyleProperty};
 use masonry::widget::{self, LineBreaking};
+use vello::peniko::Brush;
 
 use crate::core::{DynMessage, Mut, ViewMarker};
 use crate::{Color, MessageResult, Pod, TextAlignment, View, ViewCtx, ViewId};
@@ -31,7 +32,7 @@ pub fn inline_prose(content: impl Into<ArcStr>) -> Prose {
 pub struct Prose {
     content: ArcStr,
 
-    text_brush: TextBrush,
+    text_brush: Brush,
     alignment: TextAlignment,
     text_size: f32,
     line_break_mode: LineBreaking,
@@ -41,7 +42,7 @@ pub struct Prose {
 
 impl Prose {
     #[doc(alias = "color")]
-    pub fn brush(mut self, brush: impl Into<TextBrush>) -> Self {
+    pub fn brush(mut self, brush: impl Into<Brush>) -> Self {
         self.text_brush = brush.into();
         self
     }
@@ -70,9 +71,9 @@ impl<State, Action> View<State, Action, ViewCtx> for Prose {
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let widget_pod = ctx.new_pod(
             widget::Prose::new(self.content.clone())
-                .with_text_brush(self.text_brush.clone())
-                .with_text_alignment(self.alignment)
-                .with_text_size(self.text_size)
+                .with_brush(self.text_brush.clone())
+                .with_alignment(self.alignment)
+                .with_style(StyleProperty::FontSize(self.text_size))
                 .with_line_break_mode(self.line_break_mode),
         );
         (widget_pod, ())
@@ -89,13 +90,13 @@ impl<State, Action> View<State, Action, ViewCtx> for Prose {
             widget::Prose::set_text(&mut element, self.content.clone());
         }
         if prev.text_brush != self.text_brush {
-            widget::Prose::set_text_brush(&mut element, self.text_brush.clone());
+            widget::Prose::set_brush(&mut element, self.text_brush.clone());
         }
         if prev.alignment != self.alignment {
             widget::Prose::set_alignment(&mut element, self.alignment);
         }
         if prev.text_size != self.text_size {
-            widget::Prose::set_text_size(&mut element, self.text_size);
+            widget::Prose::insert_style(&mut element, StyleProperty::FontSize(self.text_size));
         }
         if prev.line_break_mode != self.line_break_mode {
             widget::Prose::set_line_break_mode(&mut element, self.line_break_mode);

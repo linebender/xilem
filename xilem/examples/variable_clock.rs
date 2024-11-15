@@ -7,7 +7,6 @@
 use std::time::Duration;
 
 use masonry::parley::fontique::Weight;
-use masonry::parley::style::{FontFamily, FontStack};
 use time::error::IndeterminateOffset;
 use time::macros::format_description;
 use time::{OffsetDateTime, UtcOffset};
@@ -138,7 +137,7 @@ impl TimeZone {
                 )
                 .text_size(48.)
                 // Use the roboto flex we have just loaded.
-                .with_font(FontStack::List(&[FontFamily::Named("Roboto Flex")]))
+                .with_font("Roboto Flex")
                 .target_weight(data.weight, 400.),
                 FlexSpacer::Flex(1.0),
                 (data.local_now().date() != date_time_in_self.date()).then(|| {

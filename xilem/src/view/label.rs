@@ -1,8 +1,10 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::text::{ArcStr, TextBrush};
+use masonry::parley::FontStack;
+use masonry::text::{ArcStr, StyleProperty};
 use masonry::widget;
+use vello::peniko::Brush;
 
 use crate::core::{DynMessage, Mut, ViewMarker};
 use crate::{Color, MessageResult, Pod, TextAlignment, TextWeight, View, ViewCtx, ViewId};
@@ -14,6 +16,7 @@ pub fn label(label: impl Into<ArcStr>) -> Label {
         alignment: TextAlignment::default(),
         text_size: masonry::theme::TEXT_SIZE_NORMAL,
         weight: TextWeight::NORMAL,
+        font: FontStack::List(std::borrow::Cow::Borrowed(&[])),
     }
 }
 
@@ -21,16 +24,17 @@ pub fn label(label: impl Into<ArcStr>) -> Label {
 pub struct Label {
     label: ArcStr,
 
-    text_brush: TextBrush,
-    alignment: TextAlignment,
-    text_size: f32,
-    weight: TextWeight,
-    // TODO: add more attributes of `masonry::widget::Label`
+    // Public for variable_label as a semi-interims state.
+    pub(in crate::view) text_brush: Brush,
+    pub(in crate::view) alignment: TextAlignment,
+    pub(in crate::view) text_size: f32,
+    pub(in crate::view) weight: TextWeight,
+    pub(in crate::view) font: FontStack<'static>, // TODO: add more attributes of `masonry::widget::Label`
 }
 
 impl Label {
     #[doc(alias = "color")]
-    pub fn brush(mut self, brush: impl Into<TextBrush>) -> Self {
+    pub fn brush(mut self, brush: impl Into<Brush>) -> Self {
         self.text_brush = brush.into();
         self
     }
@@ -50,6 +54,15 @@ impl Label {
         self.weight = weight;
         self
     }
+
+    /// Set the [font stack](FontStack) this label will use.
+    ///
+    /// A font stack allows for providing fallbacks. If there is no matching font
+    /// for a character, a system font will be used (if the system fonts are enabled).
+    pub fn with_font(mut self, font: impl Into<FontStack<'static>>) -> Self {
+        self.font = font.into();
+        self
+    }
 }
 
 impl ViewMarker for Label {}
@@ -60,10 +73,11 @@ impl<State, Action> View<State, Action, ViewCtx> for Label {
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let widget_pod = ctx.new_pod(
             widget::Label::new(self.label.clone())
-                .with_text_brush(self.text_brush.clone())
-                .with_text_alignment(self.alignment)
-                .with_text_size(self.text_size)
-                .with_weight(self.weight),
+                .with_brush(self.text_brush.clone())
+                .with_alignment(self.alignment)
+                .with_style(StyleProperty::FontSize(self.text_size))
+                .with_style(StyleProperty::FontWeight(self.weight))
+                .with_style(StyleProperty::FontStack(self.font.clone())),
         );
         (widget_pod, ())
     }
@@ -85,10 +99,13 @@ impl<State, Action> View<State, Action, ViewCtx> for Label {
             widget::Label::set_alignment(&mut element, self.alignment);
         }
         if prev.text_size != self.text_size {
-            widget::Label::set_text_size(&mut element, self.text_size);
+            widget::Label::insert_style(&mut element, StyleProperty::FontSize(self.text_size));
         }
         if prev.weight != self.weight {
-            widget::Label::set_weight(&mut element, self.weight);
+            widget::Label::insert_style(&mut element, StyleProperty::FontWeight(self.weight));
+        }
+        if prev.font != self.font {
+            widget::Label::insert_style(&mut element, StyleProperty::FontStack(self.font.clone()));
         }
     }
 
