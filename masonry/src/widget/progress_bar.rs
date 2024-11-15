@@ -80,10 +80,6 @@ impl ProgressBar {
         this.ctx.request_layout();
         this.ctx.request_render();
     }
-
-    fn label_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, Label> {
-        this.ctx.get_mut(&mut this.widget.label)
-    }
 }
 
 /// Helper to ensure progress is either a number between [0, 1] inclusive, or `None`.

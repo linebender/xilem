@@ -55,7 +55,7 @@ pub struct Label {
     alignment: Alignment,
     /// Whether the alignment has changed since the last layout, which would force a re-alignment.
     alignment_changed: bool,
-    /// The value of max_advance when this layout was last calculated.
+    /// The value of `max_advance` when this layout was last calculated.
     ///
     /// If it has changed, we need to re-perform line-breaking.
     last_max_advance: Option<f32>,
@@ -187,7 +187,6 @@ impl Label {
 
     /// Shared logic between `with_style` and `insert_style`
     fn insert_style_inner(&mut self, property: StyleProperty) -> Option<StyleProperty> {
-        let property = property.into();
         if let StyleProperty::Brush(idx @ BrushIndex(1..)) = &property {
             debug_panic!(
                 "Can't set a non-zero brush index ({idx:?}) on a `Label`, as it only supports global styling."
@@ -220,7 +219,7 @@ impl Label {
     /// Styles which are removed return to Parley's default values.
     /// In most cases, these are the defaults for this widget.
     ///
-    /// Of note, behaviour is unspecified for unsetting the [FontSize](parley::StyleProperty::FontSize).
+    /// Of note, behaviour is unspecified for unsetting the [`FontSize`](parley::StyleProperty::FontSize).
     pub fn retain_styles(this: &mut WidgetMut<'_, Self>, f: impl FnMut(&StyleProperty) -> bool) {
         this.widget.styles.retain(f);
 
@@ -237,7 +236,7 @@ impl Label {
     /// Styles which are removed return to Parley's default values.
     /// In most cases, these are the defaults for this widget.
     ///
-    /// Of note, behaviour is unspecified for unsetting the [FontSize](parley::StyleProperty::FontSize).
+    /// Of note, behaviour is unspecified for unsetting the [`FontSize`](parley::StyleProperty::FontSize).
     pub fn remove_style(
         this: &mut WidgetMut<'_, Self>,
         property: Discriminant<StyleProperty>,
@@ -341,6 +340,12 @@ impl Widget for Label {
         let styles_changed = self.styles_changed;
         if self.styles_changed {
             let (font_ctx, layout_ctx) = ctx.text_contexts();
+            // TODO: Should we use a different scale?
+            let mut builder = layout_ctx.ranged_builder(font_ctx, &self.text, 1.0);
+            for prop in self.styles.inner().values() {
+                builder.push_default(prop.to_owned());
+            }
+            builder.build_into(&mut self.text_layout, &self.text);
             // TODO(DJM): Build self.text_layout
             self.styles_changed = false;
         }
@@ -403,7 +408,7 @@ impl Widget for Label {
 
     fn accessibility(&mut self, _ctx: &mut AccessCtx, node: &mut Node) {
         self.accessibility.build_nodes(
-            &self.text.as_ref(),
+            self.text.as_ref(),
             &self.text_layout,
             _ctx.tree_update,
             node,

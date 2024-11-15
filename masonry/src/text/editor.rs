@@ -1,7 +1,7 @@
 // Copyright 2024 the Parley Authors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
-//! Import of Parley's PlainEditor as the version in Parley is insufficient for our needs.
+//! Import of Parley's `PlainEditor` as the version in Parley is insufficient for our needs.
 
 use core::{cmp::PartialEq, default::Default, fmt::Debug};
 

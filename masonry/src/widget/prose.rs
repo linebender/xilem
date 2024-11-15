@@ -4,13 +4,13 @@
 use std::mem::Discriminant;
 use std::time::Instant;
 
-use crate::text::{ActiveText, Generation, PlainEditor};
+use crate::text::{render_text, ActiveText, Generation, PlainEditor};
 use accesskit::{Node, NodeId, Role};
 use parley::layout::Alignment;
 use smallvec::SmallVec;
 use tracing::{trace_span, Span};
 use vello::kurbo::{Affine, Point, Size};
-use vello::peniko::{BlendMode, Brush};
+use vello::peniko::{BlendMode, Brush, Color, Fill};
 use vello::Scene;
 use winit::keyboard::{Key, NamedKey};
 
@@ -53,7 +53,7 @@ pub struct Prose {
     alignment: Alignment,
     /// Whether the alignment has changed since the last layout, which would force a re-alignment.
     alignment_changed: bool,
-    /// The value of max_advance when this layout was last calculated.
+    /// The value of `max_advance` when this layout was last calculated.
     ///
     /// If it has changed, we need to re-perform line-breaking.
     last_max_advance: Option<f32>,
@@ -100,7 +100,7 @@ impl Prose {
     ///
     /// To update the text of an active label, use [`set_text`](Self::set_text).
     pub fn text(&self) -> &str {
-        &self.editor.text()
+        self.editor.text()
     }
 
     /// Set a style property for the new label.
@@ -184,7 +184,6 @@ impl Prose {
 
     /// Shared logic between `with_style` and `insert_style`
     fn insert_style_inner(&mut self, property: StyleProperty) -> Option<StyleProperty> {
-        let property = property.into();
         if let StyleProperty::Brush(idx @ BrushIndex(1..)) = &property {
             debug_panic!(
                 "Can't set a non-zero brush index ({idx:?}) on a `Label`, as it only supports global styling."
@@ -217,7 +216,7 @@ impl Prose {
     /// Styles which are removed return to Parley's default values.
     /// In most cases, these are the defaults for this widget.
     ///
-    /// Of note, behaviour is unspecified for unsetting the [FontSize](parley::StyleProperty::FontSize).
+    /// Of note, behaviour is unspecified for unsetting the [`FontSize`](parley::StyleProperty::FontSize).
     pub fn retain_styles(this: &mut WidgetMut<'_, Self>, f: impl FnMut(&StyleProperty) -> bool) {
         this.widget.styles.retain(f);
 
@@ -234,7 +233,7 @@ impl Prose {
     /// Styles which are removed return to Parley's default values.
     /// In most cases, these are the defaults for this widget.
     ///
-    /// Of note, behaviour is unspecified for unsetting the [FontSize](parley::StyleProperty::FontSize).
+    /// Of note, behaviour is unspecified for unsetting the [`FontSize`](parley::StyleProperty::FontSize).
     pub fn remove_style(
         this: &mut WidgetMut<'_, Self>,
         property: Discriminant<StyleProperty>,
@@ -300,7 +299,7 @@ impl Prose {
 // --- MARK: IMPL WIDGET ---
 impl Widget for Prose {
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
-        if let Some(_) = self.pending_text.take() {
+        if self.pending_text.is_some() {
             debug_panic!("`set_text` on `Prose` was called before an event started");
         }
         let window_origin = ctx.widget_state.window_origin();
@@ -356,7 +355,7 @@ impl Widget for Prose {
     }
 
     fn on_text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent) {
-        if let Some(_) = self.pending_text.take() {
+        if self.pending_text.is_some() {
             debug_panic!("`set_text` on `Prose` was called before an event started");
         }
         match event {
@@ -559,8 +558,32 @@ impl Widget for Prose {
             let clip_rect = ctx.size().to_rect();
             scene.push_layer(BlendMode::default(), 1., Affine::IDENTITY, &clip_rect);
         }
+        let transform = Affine::translate((PROSE_X_PADDING, 0.));
+        for rect in self.editor.selection_geometry().iter() {
+            // TODO: If window not focused, use a different color
+            // TODO: Make configurable
+            scene.fill(Fill::NonZero, transform, Color::STEEL_BLUE, None, &rect);
+        }
 
-        // render_text();
+        if ctx.is_focused() {
+            if let Some(cursor) = self.editor.selection_strong_geometry(1.5) {
+                // TODO: Make configurable
+                scene.fill(Fill::NonZero, transform, Color::WHITE, None, &cursor);
+            };
+            if let Some(cursor) = self.editor.selection_weak_geometry(1.5) {
+                // TODO: Make configurable
+                scene.fill(Fill::NonZero, transform, Color::LIGHT_GRAY, None, &cursor);
+            };
+        }
+
+        let brush = if ctx.is_disabled() {
+            self.disabled_brush
+                .clone()
+                .unwrap_or_else(|| self.brush.clone())
+        } else {
+            self.brush.clone()
+        };
+        render_text(scene, transform, self.editor.layout(), &[brush]);
 
         if self.line_break_mode == LineBreaking::Clip {
             scene.pop_layer();

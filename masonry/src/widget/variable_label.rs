@@ -22,9 +22,6 @@ use crate::{
 
 use super::{Label, WidgetPod};
 
-// added padding between the edges of the widget and the text.
-pub(super) const LABEL_X_PADDING: f64 = 2.0;
-
 /// An `f32` value which can move towards a target value at a linear rate over time.
 #[derive(Clone, Debug)]
 pub struct AnimatedF32 {
@@ -46,11 +43,6 @@ impl AnimatedF32 {
             value,
             rate_per_millisecond: 0.,
         }
-    }
-
-    /// Is this animation finished?
-    pub fn is_completed(&self) -> bool {
-        self.target == self.value
     }
 
     /// Move this value to the `target` over `over_millis` milliseconds.
