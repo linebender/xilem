@@ -14,7 +14,7 @@ use vello::kurbo::{Affine, Size};
 use vello::peniko::{BlendMode, Brush};
 use vello::Scene;
 
-use crate::text::{ArcStr, BrushIndex, StyleProperty, StyleSet};
+use crate::text::{render_text, ArcStr, BrushIndex, StyleProperty, StyleSet};
 use crate::widget::WidgetMut;
 use crate::{
     theme, AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
@@ -394,8 +394,16 @@ impl Widget for Label {
             let clip_rect = ctx.size().to_rect();
             scene.push_layer(BlendMode::default(), 1., Affine::IDENTITY, &clip_rect);
         }
+        let transform = Affine::translate((LABEL_X_PADDING, 0.));
 
-        // render_text();
+        let brush = if ctx.is_disabled() {
+            self.disabled_brush
+                .clone()
+                .unwrap_or_else(|| self.brush.clone())
+        } else {
+            self.brush.clone()
+        };
+        render_text(scene, transform, &self.text_layout, &[brush]);
 
         if self.line_break_mode == LineBreaking::Clip {
             scene.pop_layer();
@@ -487,6 +495,7 @@ mod tests {
             .with_flex_child(label1, CrossAxisAlignment::Start)
             .with_flex_child(label2, CrossAxisAlignment::Start)
             .with_flex_child(label3, CrossAxisAlignment::Start)
+            // Text alignment start is "overwritten" by CrossAxisAlignment::Center.
             .with_flex_child(label4, CrossAxisAlignment::Center)
             .with_flex_child(label5, CrossAxisAlignment::Center)
             .with_flex_child(label6, CrossAxisAlignment::Center)
