@@ -1,6 +1,8 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use wasm_bindgen_futures::spawn_local;
+
 use crate::vecmap::VecMap;
 use std::any::Any;
 use std::any::TypeId;
@@ -24,13 +26,24 @@ impl MessageThunk {
     ///
     /// # Panics
     ///
-    /// When this is called synchronously (i.e. not via an event callback or by queuing it in the event loop with e.g. [`spawn_local`](`wasm_bindgen_futures::spawn_local`).
+    /// When this is called synchronously (i.e. not via an event callback or by enqueuing it in the event loop with e.g. [`spawn_local`](`wasm_bindgen_futures::spawn_local`).
+    /// Use [`MessageThunk::enqueue_message`] instead in this case.
     pub fn push_message(&self, message_body: impl Message) {
         let message = AppMessage {
             id_path: Rc::clone(&self.id_path),
             body: Box::new(message_body),
         };
         self.app_ref.handle_message(message);
+    }
+
+    /// Sends a message to the [`View`](`crate::core::View`) this thunk was being created in. This is similar as [`MessageThunk::push_message`] but enqueues the message as next microtask.
+    pub fn enqueue_message(&self, message_body: impl Message) {
+        let message = AppMessage {
+            id_path: Rc::clone(&self.id_path),
+            body: Box::new(message_body),
+        };
+        let app_ref = self.app_ref.clone_box();
+        spawn_local(async move { app_ref.handle_message(message) });
     }
 }
 
@@ -75,35 +88,37 @@ impl ViewCtx {
         self.app_ref = Some(Box::new(runner));
     }
 
-    /// Provides a way to access a cloned view context, to avoid named lifetime issues.
+    /// Provides a way to access this context without having to deal with lifetime issues.
     ///
     /// One Motiviation for this is to allow custom view contexts with access to the app runtime.
     ///
     /// # Examples
     /// ```ignore
     /// struct MyContext { parent: ViewCtx };
-    /// ctx.with_owned_ctx(|ctx| {
+    /// ctx.as_owned(|ctx| {
     ///     let my_ctx = MyContext { parent: ctx };
     ///     self.child_view_with_different_ctx.build(&mut my_ctx);
     ///     (my_ctx.parent, ())
     /// });
     /// ```
-    pub fn with_owned_ctx<R>(&mut self, f: impl FnOnce(Self) -> (Self, R)) -> R {
-        let temporary_cloned_ctx = ViewCtx {
-            id_path: self.id_path.clone(),
+    pub fn as_owned<R>(&mut self, f: impl FnOnce(Self) -> (Self, R)) -> R {
+        let temporary_owned_ctx = ViewCtx {
+            id_path: std::mem::take(&mut self.id_path),
             app_ref: self.app_ref.as_ref().map(|app| app.clone_box()),
             fragment: self.fragment.clone(),
-            hydration_node_stack: self.hydration_node_stack.clone(),
+            hydration_node_stack: std::mem::take(&mut self.hydration_node_stack),
             is_hydrating: self.is_hydrating,
-            templates: self.templates.clone(),
-            modifier_size_hints: self.modifier_size_hints.clone(),
+            templates: std::mem::take(&mut self.templates),
+            modifier_size_hints: std::mem::take(&mut self.modifier_size_hints),
             modifier_size_hint_stack_idx: self.modifier_size_hint_stack_idx,
         };
-        let (ctx, retval) = f(temporary_cloned_ctx);
+        let (ctx, retval) = f(temporary_owned_ctx);
         self.id_path = ctx.id_path;
-        self.hydration_node_stack = ctx.hydration_node_stack.clone();
+        self.hydration_node_stack = ctx.hydration_node_stack;
         self.is_hydrating = ctx.is_hydrating;
-        self.templates = ctx.templates.clone();
+        self.templates = ctx.templates;
+        self.modifier_size_hints = ctx.modifier_size_hints;
+        self.modifier_size_hint_stack_idx = ctx.modifier_size_hint_stack_idx;
         retval
     }
 
