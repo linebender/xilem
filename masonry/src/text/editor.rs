@@ -62,6 +62,11 @@ where
     // Not all operations on `PlainEditor` need to operate on a
     // clean layout, and not all operations trigger a layout.
     layout_dirty: bool,
+    // TODO: We could avoid redoing the full text layout if linebreaking or
+    // alignment were unsupported
+    // linebreak_dirty: bool,
+    // alignment_dirty: bool,
+    alignment: Alignment,
     generation: Generation,
 }
 
@@ -81,6 +86,7 @@ where
             width: Default::default(),
             scale: 1.0,
             layout_dirty: Default::default(),
+            alignment: Alignment::Start,
             // We don't use the `default` value to start with, as our consumers
             // will choose to use that as their initial value, but will probably need
             // to redraw if they haven't already.
@@ -114,6 +120,12 @@ where
     /// Set the width of the layout.
     pub fn set_width(&mut self, width: Option<f32>) {
         self.editor.width = width;
+        self.editor.layout_dirty = true;
+    }
+
+    /// Set the alignment of the layout.
+    pub fn set_alignment(&mut self, alignment: Alignment) {
+        self.editor.alignment = alignment;
         self.editor.layout_dirty = true;
     }
 
@@ -498,19 +510,20 @@ where
 {
     /// Run a series of [`PlainEditorTxn`] methods, updating the layout
     /// if necessary.
-    pub fn transact(
+    pub fn transact<R>(
         &mut self,
         font_cx: &mut FontContext,
         layout_cx: &mut LayoutContext<T>,
-        callback: impl FnOnce(&mut PlainEditorTxn<'_, T>),
-    ) {
+        callback: impl FnOnce(&mut PlainEditorTxn<'_, T>) -> R,
+    ) -> R {
         let mut txn = PlainEditorTxn {
             editor: self,
             font_cx,
             layout_cx,
         };
-        callback(&mut txn);
+        let ret = callback(&mut txn);
         txn.update_layout();
+        ret
     }
 
     /// Make a cursor at a given byte index
@@ -603,6 +616,11 @@ where
         self.generation
     }
 
+    /// Get the full read-only details from the layout.
+    pub fn layout(&self) -> &Layout<T> {
+        &self.layout
+    }
+
     /// Update the layout if it is dirty.
     fn refresh_layout(&mut self, font_cx: &mut FontContext, layout_cx: &mut LayoutContext<T>) {
         if self.layout_dirty {
@@ -618,7 +636,7 @@ where
         }
         builder.build_into(&mut self.layout, &self.buffer);
         self.layout.break_all_lines(self.width);
-        self.layout.align(self.width, Alignment::Start);
+        self.layout.align(self.width, self.alignment);
         self.selection = self.selection.refresh(&self.layout);
         self.layout_dirty = false;
         self.generation.nudge();

@@ -1120,7 +1120,7 @@ impl ComposeCtx<'_> {
 }
 
 // --- MARK: OTHER STUFF ---
-impl_context_method!(LayoutCtx<'_>, PaintCtx<'_>, {
+impl_context_method!(EventCtx<'_>, LayoutCtx<'_>, PaintCtx<'_>, {
     /// Get the contexts needed to build and paint text sections.
     pub fn text_contexts(&mut self) -> (&mut FontContext, &mut LayoutContext<TextBrush>) {
         (
