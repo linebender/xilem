@@ -59,3 +59,9 @@ mod sequence;
 pub use sequence::{AppendVec, ElementSplice, ViewSequence};
 
 pub mod docs;
+
+#[cfg(not(debug_assertions))]
+/// Super wrong function.
+pub fn Wrong() {
+    let x = 5;
+}
