@@ -1,3 +1,6 @@
+// Copyright 2024 the Xilem Authors
+// SPDX-License-Identifier: Apache-2.0
+
 use crate::{
     core::{
         AppendVec, DynMessage, ElementSplice, Mut, SuperElement, View, ViewElement, ViewMarker,

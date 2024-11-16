@@ -1,3 +1,6 @@
+// Copyright 2024 the Xilem Authors
+// SPDX-License-Identifier: Apache-2.0
+
 use crate::{
     vello::Scene, widget::WidgetMut, AccessCtx, BoxConstraints, LayoutCtx, PaintCtx, Point,
     QueryCtx, RegisterCtx, Size, Widget, WidgetId, WidgetPod,
