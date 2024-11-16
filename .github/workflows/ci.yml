@@ -17,7 +17,7 @@ env:
   # Only some of our examples support Android (primarily due to extra required boilerplate).
   ANDROID_TARGETS: "-p xilem --example mason_android --example calc_android --example stopwatch_android --example variable_clock_android --example http_cats_android --example to_do_mvc_android"
   # Whether the workspace contains Rust code using the debug_assertions configuration option.
-  USING_DEBUG_ASSERTIONS: false
+  USING_DEBUG_ASSERTIONS: true
 
 
 # Rationale
