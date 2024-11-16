@@ -136,13 +136,13 @@ jobs:
         run: cargo hack clippy --workspace --locked --profile ci --optional-deps --each-feature --tests --benches --examples -- -D warnings
 
       - name: cargo clippy (no debug_assertions)
-        if: env.USING_DEBUG_ASSERTIONS == true
+        if: env.USING_DEBUG_ASSERTIONS
         run: cargo hack clippy --workspace --locked --profile ci --optional-deps --each-feature -- -D warnings
         env:
           CARGO_PROFILE_CI_DEBUG_ASSERTIONS: false
 
       - name: cargo clippy (auxiliary) (no debug_assertions)
-        if: env.USING_DEBUG_ASSERTIONS == true
+        if: env.USING_DEBUG_ASSERTIONS == 'true'
         run: cargo hack clippy --workspace --locked --profile ci --optional-deps --each-feature --tests --benches --examples -- -D warnings
         env:
           CARGO_PROFILE_CI_DEBUG_ASSERTIONS: false
@@ -177,13 +177,13 @@ jobs:
         run: cargo hack clippy --workspace ${{ env.NO_WASM_PKGS }} --locked --profile ci --target wasm32-unknown-unknown --optional-deps --each-feature --tests --benches --examples -- -D warnings
 
       - name: cargo clippy (no debug_assertions)
-        if: env.USING_DEBUG_ASSERTIONS == true
+        if: ${{ env.USING_DEBUG_ASSERTIONS == true }}
         run: cargo hack clippy --workspace ${{ env.NO_WASM_PKGS }} --locked --profile ci --target wasm32-unknown-unknown --optional-deps --each-feature -- -D warnings
         env:
           CARGO_PROFILE_CI_DEBUG_ASSERTIONS: false
 
       - name: cargo clippy (auxiliary) (no debug_assertions)
-        if: env.USING_DEBUG_ASSERTIONS == true
+        if: ${{ env.USING_DEBUG_ASSERTIONS }}
         run: cargo hack clippy --workspace ${{ env.NO_WASM_PKGS }} --locked --profile ci --target wasm32-unknown-unknown --optional-deps --each-feature --tests --benches --examples -- -D warnings
         env:
           CARGO_PROFILE_CI_DEBUG_ASSERTIONS: false
